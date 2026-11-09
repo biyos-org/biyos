@@ -1,0 +1,11 @@
+BasedOnStyle: LLVM
+Standard: c++20
+IndentWidth: 4
+ColumnLimit: 100
+AccessModifierOffset: -2
+PointerAlignment: Right
+AllowShortFunctionsOnASingleLine: Inline
+BreakBeforeBraces: Allman
+InsertBraces: true
+FixNamespaceComments: false
+IndentExternBlock: NoIndent
