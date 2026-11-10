@@ -12,5 +12,5 @@ class Error(Exception):
 
 def check(handle, status):
     if status != OK:
-        message = lib.biyos_last_error_message(handle).decode()
+        message = lib.biyos_last_error_message(handle).decode(errors="replace")
         raise Error(message, status)
