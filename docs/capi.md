@@ -216,12 +216,13 @@ biyos never prints. It reports through events, and a caller reads them by subscr
 
 A level is more severe the larger its value. The kinds and levels come from `biyos/events.h`.
 
-A field is a name and a value, both text. The only events biyos sends so far are error messages. A call on an environment that fails sends one: its level is `BIYOS_LEVEL_ERROR`, its module `capi` and its text the message `biyos_last_error_message` returns for the failure.
+A field is a name and a value, both text. The only events biyos sends so far are error messages. A call on an environment that fails sends one, unless the environment is delivering an event: its level is `BIYOS_LEVEL_ERROR`, its module `capi` and its text the message `biyos_last_error_message` returns for the failure.
 
 ### Subscribers
 
-A subscriber is called with the event and the `user_data` its subscription was given.
+A subscriber is called with the event and the `user_data` its subscription was given. While it runs, the environment delivers an event.
 
+- A call that fails inside a subscriber keeps its message as usual, so `biyos_last_error_message` explains it, but sends no event.
 - Inside an error event, `biyos_last_error_message` returns that event's failure.
 - The event and every string read from it are valid only until the subscriber returns.
 

@@ -42,12 +42,17 @@ inline void announce(Environment &env, std::string_view text) noexcept
 }
 
 // A failure is recorded before it is announced, so a subscriber reads it as the last error, and
-// again after, so a failure inside a subscriber never replaces it.
+// again after, so a failure inside a subscriber never replaces it. A failure during delivery is
+// recorded only: announcing it could call the same subscriber again without end.
 inline void report(Environment *env, std::string_view text) noexcept
 {
-    if (env != nullptr)
+    if (env == nullptr)
     {
-        env->record_error(text);
+        return;
+    }
+    env->record_error(text);
+    if (!env->events().delivering())
+    {
         announce(*env, text);
         env->record_error(text);
     }

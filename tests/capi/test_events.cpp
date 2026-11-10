@@ -41,6 +41,14 @@ struct Ticket
     biyos_status status = BIYOS_INTERNAL_ERROR;
 };
 
+struct Probe
+{
+    biyos_env *env = nullptr;
+    int calls = 0;
+    biyos_status status = BIYOS_OK;
+    std::string message;
+};
+
 void receive(const biyos_event *event, void *user_data)
 {
     Inbox *inbox = static_cast<Inbox *>(user_data);
@@ -56,6 +64,14 @@ void leave(const biyos_event *, void *user_data)
     Ticket *ticket = static_cast<Ticket *>(user_data);
     ++ticket->calls;
     ticket->status = biyos_unsubscribe(ticket->env, ticket->id);
+}
+
+void unsubscribe_unknown(const biyos_event *, void *user_data)
+{
+    Probe *probe = static_cast<Probe *>(user_data);
+    ++probe->calls;
+    probe->status = biyos_unsubscribe(probe->env, 999);
+    probe->message = biyos_last_error_message(probe->env);
 }
 
 biyos_status listen(biyos_env *env, biyos_subscriber subscriber, void *user_data, int lowest,
@@ -110,6 +126,20 @@ TEST(CApiTest, OneShot)
     fail(env);
     EXPECT_EQ(ticket.calls, 1);
     EXPECT_EQ(ticket.status, BIYOS_OK);
+}
+
+TEST(CApiTest, NestedFailure)
+{
+    const Env env;
+    Probe probe;
+    probe.env = env.get();
+    int id = 0;
+    ASSERT_EQ(listen(env.get(), unsubscribe_unknown, &probe, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
+    fail(env);
+    EXPECT_EQ(probe.calls, 1);
+    EXPECT_EQ(probe.status, BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(probe.message, "invalid argument: subscription 999: unknown");
+    EXPECT_EQ(env.message(), "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
 }
 
 TEST(CApiTest, BadSubscribe)

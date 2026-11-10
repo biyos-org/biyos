@@ -129,6 +129,16 @@ TEST_F(EventTest, LowestLevel)
     EXPECT_FALSE(events.wanted(EventKind::Message, Level::Error));
 }
 
+TEST_F(EventTest, Delivering)
+{
+    bool inside = false;
+    listen(Level::Debug, [&](const biyos::Event &) { inside = events.delivering(); });
+    EXPECT_FALSE(events.delivering());
+    say(Level::Info, "one");
+    EXPECT_TRUE(inside);
+    EXPECT_FALSE(events.delivering());
+}
+
 TEST_F(EventTest, Order)
 {
     listen(Level::Debug, recorder("a "));

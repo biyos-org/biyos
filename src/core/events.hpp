@@ -60,6 +60,7 @@ class Events
     void unsubscribe(int id);
 
     bool wanted(EventKind kind, Level level) const noexcept { return lowest_[slot(kind)] <= level; }
+    bool delivering() const noexcept { return depth_ > 0; }
 
     template <std::invocable<Event &> Fill>
     void emit(EventKind kind, Level level, Fill &&fill) noexcept
