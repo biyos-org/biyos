@@ -32,6 +32,9 @@ struct Inbox
     int level = 0;
     std::string module;
     std::string text;
+    int fields = 0;
+    std::string name;
+    std::string value;
 };
 
 struct Probe
@@ -50,6 +53,9 @@ void receive(const biyos_event *event, void *user_data)
     inbox->level = biyos_event_level(event);
     inbox->module = biyos_event_module(event);
     inbox->text = biyos_event_text(event);
+    inbox->fields = biyos_event_field_count(event);
+    inbox->name = biyos_event_field_name(event, 0);
+    inbox->value = biyos_event_field_value(event, 0);
 }
 
 void unsubscribe_unknown(const biyos_event *, void *user_data)
@@ -138,6 +144,9 @@ TEST(CApiTest, Subscribe)
     EXPECT_EQ(inbox.module, "capi");
     EXPECT_EQ(inbox.text, "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
     EXPECT_EQ(inbox.text, env.message());
+    EXPECT_EQ(inbox.fields, 1);
+    EXPECT_EQ(inbox.name, "code");
+    EXPECT_EQ(inbox.value, "-100");
 }
 
 TEST(CApiTest, Unsubscribe)

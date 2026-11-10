@@ -216,7 +216,7 @@ biyos never prints. It reports through events, and a caller reads them by subscr
 
 A level is more severe the larger its value. The kinds and levels come from `biyos/events.h`.
 
-A field is a name and a value, both text. The only events biyos sends so far are error messages. A call on an environment that fails sends one, unless the environment is delivering an event: its level is `BIYOS_LEVEL_ERROR`, its module `capi` and its text the message `biyos_last_error_message` returns for the failure.
+A field is a name and a value, both text. The only events biyos sends so far are error messages. A call on an environment that fails sends one, unless the environment is delivering an event: its level is `BIYOS_LEVEL_ERROR`, its module `capi`, its text the message `biyos_last_error_message` returns for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a subscriber can tell the group from the range.
 
 ### Subscribers
 

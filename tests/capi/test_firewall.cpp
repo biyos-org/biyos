@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <functional>
 #include <new>
 #include <stdexcept>
@@ -139,6 +140,26 @@ TEST(FirewallTest, ErrorEvent)
     EXPECT_EQ(kept[0].text, "invalid argument: argument 'n': negative");
     EXPECT_EQ(kept[1].text, "out of memory");
     EXPECT_EQ(kept[2].text, "internal error: unknown exception");
+}
+
+TEST(FirewallTest, ErrorCode)
+{
+    biyos::Environment env;
+    std::vector<biyos::Event> kept;
+    const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
+    env.events().subscribe(EventKind::Message, Level::Error, keep);
+    const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_NO_MEMORY);
+    EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_INTERNAL_ERROR);
+    ASSERT_EQ(kept.size(), 3U);
+    const char *codes[] = {"-100", "-400", "-500"};
+    for (std::size_t i = 0; i < kept.size(); ++i)
+    {
+        ASSERT_EQ(kept[i].fields.size(), 1U);
+        EXPECT_EQ(kept[i].fields[0].name, "code");
+        EXPECT_EQ(kept[i].fields[0].value, codes[i]);
+    }
 }
 
 TEST(FirewallTest, ThrowingSubscriber)

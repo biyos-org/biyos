@@ -29,22 +29,24 @@ inline biyos_status status_of(ErrorKind kind) noexcept
     return BIYOS_INTERNAL_ERROR;
 }
 
-inline void describe_failure(Event &event, std::string_view text)
+inline void describe_failure(Event &event, biyos_status status, std::string_view text)
 {
     event.module = "capi";
     event.text.assign(text);
+    event.fields.push_back(Field{.name = "code", .value = std::to_string(status)});
 }
 
-inline void announce(Environment &env, std::string_view text) noexcept
+inline void announce(Environment &env, ErrorKind kind, std::string_view text) noexcept
 {
-    const auto fill = [text](Event &event) { describe_failure(event, text); };
+    const biyos_status status = status_of(kind);
+    const auto fill = [status, text](Event &event) { describe_failure(event, status, text); };
     env.events().emit(EventKind::Message, Level::Error, fill);
 }
 
 // A failure is recorded before it is announced, so a subscriber reads it as the last error. A
 // failure during delivery is recorded only: announcing it could call the same subscriber again
 // without end.
-inline void report(Environment *env, std::string_view text) noexcept
+inline void report(Environment *env, ErrorKind kind, std::string_view text) noexcept
 {
     if (env == nullptr)
     {
@@ -53,7 +55,7 @@ inline void report(Environment *env, std::string_view text) noexcept
     env->record_error(text);
     if (!env->events().delivering())
     {
-        announce(*env, text);
+        announce(*env, kind, text);
     }
 }
 
@@ -63,11 +65,11 @@ inline biyos_status fail(Environment *env, ErrorKind kind, std::string_view mess
     {
         try
         {
-            report(env, Error(kind, "", std::string(message)).what());
+            report(env, kind, Error(kind, "", std::string(message)).what());
         }
         catch (...)
         {
-            report(env, kind_name(kind));
+            report(env, kind, kind_name(kind));
         }
     }
     return status_of(kind);
@@ -82,12 +84,12 @@ template <std::invocable Body> biyos_status guard(Environment *env, Body &&body)
     }
     catch (const Error &error)
     {
-        report(env, error.what());
+        report(env, error.kind(), error.what());
         return status_of(error.kind());
     }
     catch (const std::bad_alloc &)
     {
-        report(env, kind_name(ErrorKind::NoMemory));
+        report(env, ErrorKind::NoMemory, kind_name(ErrorKind::NoMemory));
         return status_of(ErrorKind::NoMemory);
     }
     catch (const std::exception &error)
