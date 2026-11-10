@@ -19,6 +19,10 @@ enum class Option
     CheckLevel = BIYOS_OPT_CHECK_LEVEL,
     Presolve = BIYOS_OPT_PRESOLVE,
     Reproducer = BIYOS_OPT_REPRODUCER,
+    FeasibilityAbs = BIYOS_OPT_FEASIBILITY_ABS,
+    FeasibilityRel = BIYOS_OPT_FEASIBILITY_REL,
+    IntegralityTol = BIYOS_OPT_INTEGRALITY_TOL,
+    ZeroTol = BIYOS_OPT_ZERO_TOL,
 };
 
 enum class OptionKind

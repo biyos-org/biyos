@@ -38,6 +38,10 @@ TEST(OptionTest, Defaults)
     EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
     EXPECT_TRUE(options.get_bool(Option::Presolve));
     EXPECT_EQ(options.get_string(Option::Reproducer), "");
+    EXPECT_DOUBLE_EQ(options.get_double(Option::FeasibilityAbs), 1e-6);
+    EXPECT_DOUBLE_EQ(options.get_double(Option::FeasibilityRel), 1e-6);
+    EXPECT_DOUBLE_EQ(options.get_double(Option::IntegralityTol), 1e-5);
+    EXPECT_DOUBLE_EQ(options.get_double(Option::ZeroTol), 1e-9);
 }
 
 TEST(OptionTest, Bool)
@@ -85,6 +89,26 @@ TEST(OptionTest, DoubleRange)
     EXPECT_EQ(failure([&] { options.set_double(Option::TimeLimit, kNan); }),
               "invalid argument: option 'time_limit': nan is outside [0, inf]");
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), 2.5);
+}
+
+TEST(OptionTest, ToleranceRange)
+{
+    biyos::Options options;
+    for (const Option option :
+         {Option::FeasibilityAbs, Option::FeasibilityRel, Option::IntegralityTol, Option::ZeroTol})
+    {
+        const std::string name(biyos::name_of(option));
+        options.set_double(option, 0.0);
+        EXPECT_DOUBLE_EQ(options.get_double(option), 0.0);
+        options.set_double(option, kInfinity);
+        EXPECT_DOUBLE_EQ(options.get_double(option), kInfinity);
+        options.set_double(option, 1e-3);
+        EXPECT_EQ(failure([&] { options.set_double(option, -1e-9); }),
+                  "invalid argument: option '" + name + "': -1e-09 is outside [0, inf]");
+        EXPECT_EQ(failure([&] { options.set_double(option, kNan); }),
+                  "invalid argument: option '" + name + "': nan is outside [0, inf]");
+        EXPECT_DOUBLE_EQ(options.get_double(option), 1e-3);
+    }
 }
 
 TEST(OptionTest, String)
@@ -141,8 +165,9 @@ TEST(OptionTest, WrongKind)
 
 TEST(OptionTest, Names)
 {
-    for (const Option option : {Option::Seed, Option::TimeLimit, Option::CheckLevel,
-                                Option::Presolve, Option::Reproducer})
+    for (const Option option :
+         {Option::Seed, Option::TimeLimit, Option::CheckLevel, Option::Presolve, Option::Reproducer,
+          Option::FeasibilityAbs, Option::FeasibilityRel, Option::IntegralityTol, Option::ZeroTol})
     {
         EXPECT_EQ(biyos::find_option(biyos::name_of(option)), option);
         EXPECT_EQ(biyos::find_option(static_cast<int>(option)), option);
@@ -158,6 +183,10 @@ TEST(OptionTest, Kinds)
     EXPECT_EQ(biyos::kind_of(Option::CheckLevel), OptionKind::Enum);
     EXPECT_EQ(biyos::kind_of(Option::Presolve), OptionKind::Bool);
     EXPECT_EQ(biyos::kind_of(Option::Reproducer), OptionKind::String);
+    EXPECT_EQ(biyos::kind_of(Option::FeasibilityAbs), OptionKind::Double);
+    EXPECT_EQ(biyos::kind_of(Option::FeasibilityRel), OptionKind::Double);
+    EXPECT_EQ(biyos::kind_of(Option::IntegralityTol), OptionKind::Double);
+    EXPECT_EQ(biyos::kind_of(Option::ZeroTol), OptionKind::Double);
 }
 
 TEST(OptionTest, UnknownName)
@@ -170,21 +199,21 @@ TEST(OptionTest, UnknownName)
 TEST(OptionTest, UnknownId)
 {
     EXPECT_EQ(failure([] { biyos::find_option(0); }), "invalid argument: option 0: unknown");
-    EXPECT_EQ(failure([] { biyos::find_option(6); }), "invalid argument: option 6: unknown");
+    EXPECT_EQ(failure([] { biyos::find_option(10); }), "invalid argument: option 10: unknown");
     EXPECT_EQ(failure([] { biyos::find_option(-3); }), "invalid argument: option -3: unknown");
 }
 
 TEST(OptionTest, MissingRow)
 {
     biyos::Options options;
-    const Option past = static_cast<Option>(6);
+    const Option past = static_cast<Option>(10);
     const Option zero = static_cast<Option>(0);
     EXPECT_EQ(failure([&] { options.set_int(past, 1); }),
-              "internal error: option 6: has no table row");
+              "internal error: option 10: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_string(zero)); }),
               "internal error: option 0: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(biyos::name_of(past)); }),
-              "internal error: option 6: has no table row");
+              "internal error: option 10: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(biyos::kind_of(past)); }),
-              "internal error: option 6: has no table row");
+              "internal error: option 10: has no table row");
 }

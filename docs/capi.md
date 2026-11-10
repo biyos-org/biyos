@@ -116,8 +116,14 @@ The ids are the `BIYOS_OPT_*` macros of `biyos/options.h` and count from 1. `biy
 | `BIYOS_OPT_CHECK_LEVEL` | 3 | `check_level` | enum | `cheap` | `none`, `cheap`, `full` | Invariant checks to run. |
 | `BIYOS_OPT_PRESOLVE` | 4 | `presolve` | bool | true | true, false | Simplify the model before solving it. |
 | `BIYOS_OPT_REPRODUCER` | 5 | `reproducer` | string | empty | any string | File the solve writes its model, options, seed and version to. Empty for none. |
+| `BIYOS_OPT_FEASIBILITY_ABS` | 6 | `feasibility_abs` | double | 1e-6 | [0, infinity] | Absolute tolerance of a bound or an equality. |
+| `BIYOS_OPT_FEASIBILITY_REL` | 7 | `feasibility_rel` | double | 1e-6 | [0, infinity] | Relative tolerance of a bound or an equality. |
+| `BIYOS_OPT_INTEGRALITY_TOL` | 8 | `integrality_tol` | double | 1e-5 | [0, infinity] | Largest distance to the nearest integer of a value taken as integral. |
+| `BIYOS_OPT_ZERO_TOL` | 9 | `zero_tol` | double | 1e-9 | [0, infinity] | Largest magnitude of a value taken as zero. |
 
-Ranges include their bounds, and NaN is outside every range. Nothing acts on these options yet, since biyos solves nothing: they are checked, stored and read back.
+The ranges in the Accepts column include their ends and are checked exactly, with no tolerance, and NaN is outside every range. Nothing acts on these options yet, since biyos solves nothing: they are checked, stored and read back.
+
+The tolerance options say when a value of a model, such as a variable or a constraint function at a point, meets a lower or upper bound the model puts on it, equals another such value, is zero or is integral. A finite value meets a finite bound unless it lies beyond it by more than both `feasibility_abs` and `feasibility_rel` times the larger of 1 and the magnitude of the bound. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. Two finite values are equal unless they differ by more than both `feasibility_abs` and `feasibility_rel` times the larger of 1 and their magnitudes. An infinite value equals only itself and is not integral. NaN is not zero, not integral, equal to no value and meets no bound.
 
 ### `biyos_option_id`
 

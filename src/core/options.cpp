@@ -91,6 +91,30 @@ constexpr std::array kTable{
         .rule = StringRule{.default_value = ""},
         .doc = "File the solve writes its model, options, seed and version to. Empty for none.",
     },
+    OptionSpec{
+        .id = Option::FeasibilityAbs,
+        .name = "feasibility_abs",
+        .rule = DoubleRule{.default_value = 1e-6, .lower = 0.0},
+        .doc = "Absolute tolerance of a bound or an equality.",
+    },
+    OptionSpec{
+        .id = Option::FeasibilityRel,
+        .name = "feasibility_rel",
+        .rule = DoubleRule{.default_value = 1e-6, .lower = 0.0},
+        .doc = "Relative tolerance of a bound or an equality.",
+    },
+    OptionSpec{
+        .id = Option::IntegralityTol,
+        .name = "integrality_tol",
+        .rule = DoubleRule{.default_value = 1e-5, .lower = 0.0},
+        .doc = "Largest distance to the nearest integer of a value taken as integral.",
+    },
+    OptionSpec{
+        .id = Option::ZeroTol,
+        .name = "zero_tol",
+        .rule = DoubleRule{.default_value = 1e-9, .lower = 0.0},
+        .doc = "Largest magnitude of a value taken as zero.",
+    },
 };
 
 constexpr bool admits(const BoolRule &)
@@ -139,7 +163,7 @@ constexpr bool well_formed()
 }
 
 static_assert(well_formed());
-static_assert(kTable.size() == static_cast<std::size_t>(Option::Reproducer));
+static_assert(kTable.size() == static_cast<std::size_t>(Option::ZeroTol));
 
 constexpr std::string_view noun(const BoolRule &)
 {

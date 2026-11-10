@@ -18,7 +18,8 @@
 #error "BIYOS_INTERNAL_ERROR must be an internal error"
 #endif
 #if BIYOS_OPT_SEED != 1 || BIYOS_OPT_TIME_LIMIT != 2 || BIYOS_OPT_CHECK_LEVEL != 3 ||              \
-    BIYOS_OPT_PRESOLVE != 4 || BIYOS_OPT_REPRODUCER != 5
+    BIYOS_OPT_PRESOLVE != 4 || BIYOS_OPT_REPRODUCER != 5 || BIYOS_OPT_FEASIBILITY_ABS != 6 ||      \
+    BIYOS_OPT_FEASIBILITY_REL != 7 || BIYOS_OPT_INTEGRALITY_TOL != 8 || BIYOS_OPT_ZERO_TOL != 9
 #error "a public option id changed"
 #endif
 #if BIYOS_KIND_BOOL != 1 || BIYOS_KIND_INT != 2 || BIYOS_KIND_DOUBLE != 3 ||                       \
