@@ -111,6 +111,19 @@ TEST(OptionTest, EnumValue)
     EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
 }
 
+TEST(OptionTest, TypedEnum)
+{
+    using biyos::CheckLevel;
+    biyos::Options options;
+    EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Cheap);
+    options.set_string(Option::CheckLevel, "full");
+    EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Full);
+    options.set_string(Option::CheckLevel, "none");
+    EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::None);
+    EXPECT_EQ(failure([&] { static_cast<void>(options.get_enum<CheckLevel>(Option::Seed)); }),
+              "invalid argument: option 'seed': is an int, not an enum");
+}
+
 TEST(OptionTest, WrongKind)
 {
     biyos::Options options;

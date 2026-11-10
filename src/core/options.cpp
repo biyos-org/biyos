@@ -58,6 +58,7 @@ struct OptionSpec
 };
 
 constexpr std::array<std::string_view, 3> kCheckLevels{"none", "cheap", "full"};
+static_assert(kCheckLevels.size() == static_cast<std::size_t>(CheckLevel::Full) + 1);
 
 constexpr std::array kTable{
     OptionSpec{
@@ -367,6 +368,14 @@ const std::string &Options::get_string(Option option) const
         rule_of<StringRule>(spec);
     }
     return std::get<std::string>(values_[index_of(option)]);
+}
+
+std::size_t Options::position_of(Option option) const
+{
+    const EnumRule &rule = rule_of<EnumRule>(spec_of(option));
+    const std::string &value = std::get<std::string>(values_[index_of(option)]);
+    const auto found = std::ranges::find(rule.values, value);
+    return static_cast<std::size_t>(found - rule.values.begin());
 }
 
 }
