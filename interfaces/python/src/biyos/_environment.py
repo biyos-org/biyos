@@ -4,6 +4,8 @@ from ctypes import byref, c_char_p, c_double, c_int, c_void_p
 from biyos import _capi
 from biyos._capi import lib
 from biyos._error import Error, check
+from biyos._relay import Relay
+from biyos._subscribers import Subscribers
 
 
 def _encoded(text):
@@ -22,6 +24,22 @@ def _name(name):
 def _rejected(name, noun, value):
     found = type(value).__name__
     return TypeError(f"option '{name}' takes {noun}, not {found}")
+
+
+def _number(name, value):
+    if isinstance(value, bool) or not isinstance(value, int):
+        found = type(value).__name__
+        raise TypeError(f"{name} must be an int, not {found}")
+    if c_int(value).value != value:
+        raise OverflowError(f"{name}: {value} does not fit in a C int")
+    return value
+
+
+def _callable(function):
+    if not callable(function):
+        found = type(function).__name__
+        raise TypeError(f"subscriber must be callable, not {found}")
+    return function
 
 
 def _bool(name, value):
@@ -76,6 +94,8 @@ class Environment:
             raise Error("cannot create the environment", status)
         self._handle = handle
         self._free = weakref.finalize(self, lib.biyos_env_free, handle)
+        self._relay = Relay()
+        self._subscribers = Subscribers(self._relay)
 
     def __enter__(self):
         return self
@@ -88,6 +108,7 @@ class Environment:
             return
         check(self._handle, lib.biyos_env_free(self._handle))
         self._free.detach()
+        self._subscribers.clear()
 
     def set_option(self, name, value):
         option, kind = self._lookup(name)
@@ -101,6 +122,25 @@ class Environment:
         self._call(getter, option, byref(value))
         return convert(value.value)
 
+    def subscribe(self, function, kind, lowest):
+        function = _callable(function)
+        kind = _number("kind", kind)
+        lowest = _number("lowest", lowest)
+        callback = self._subscribers.callback
+        subscription = c_int()
+        out = byref(subscription)
+        key = self._subscribers.add(function)
+        try:
+            self._call(lib.biyos_subscribe, callback, key, kind, lowest, out)
+        finally:
+            self._subscribers.settle(key, subscription.value)
+        return subscription.value
+
+    def unsubscribe(self, subscription):
+        subscription = _number("subscription", subscription)
+        self._call(lib.biyos_unsubscribe, subscription)
+        self._subscribers.remove(subscription)
+
     def _lookup(self, name):
         option = c_int()
         kind = c_int()
@@ -111,4 +151,7 @@ class Environment:
     def _call(self, function, *arguments):
         if not self._free.alive:
             raise ValueError("the environment is closed")
-        check(self._handle, function(self._handle, *arguments))
+        self._relay.start()
+        status = function(self._handle, *arguments)
+        self._relay.finish(self._handle, status)
+        check(self._handle, status)
