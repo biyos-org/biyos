@@ -121,7 +121,9 @@ The ids are the `BIYOS_OPT_*` macros of `biyos/options.h` and count from 1. `biy
 | `BIYOS_OPT_INTEGRALITY_TOL` | 8 | `integrality_tol` | double | 1e-5 | [0, infinity] | Largest distance to the nearest integer of a value taken as integral. |
 | `BIYOS_OPT_ZERO_TOL` | 9 | `zero_tol` | double | 1e-9 | [0, infinity] | Largest magnitude of a value taken as zero. |
 
-Ranges include their bounds, and NaN is outside every range. Nothing acts on these options yet, since biyos solves nothing: they are checked, stored and read back.
+The ranges in the Accepts column include their ends and are checked exactly, with no tolerance, and NaN is outside every range. Nothing acts on these options yet, since biyos solves nothing: they are checked, stored and read back.
+
+The tolerance options say when a value of a model, such as a variable or a constraint function at a point, meets a lower or upper bound the model puts on it, equals another such value, is zero or is integral. A value meets a finite bound unless it lies beyond it by more than both `feasibility_abs` and `feasibility_rel` times the larger of 1 and the magnitude of the bound. An infinite bound takes no tolerance: every value but NaN meets a lower bound of minus infinity and an upper bound of infinity, only infinity meets a lower bound of infinity, and only minus infinity meets an upper bound of minus infinity. Two finite values are equal unless they differ by more than both `feasibility_abs` and `feasibility_rel` times the larger of 1 and their magnitudes. An infinite value equals only itself and is not integral. NaN is not zero, not integral, equal to no value and meets no bound.
 
 ### `biyos_option_id`
 
