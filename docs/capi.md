@@ -326,7 +326,7 @@ Returns the value of field number `field`.
 | `BIYOS_TERMINATION_CPU_TIME_LIMIT` | 203 | the CPU time limit was reached |
 | `BIYOS_TERMINATION_EVALUATION_LIMIT` | 204 | the limit on function evaluations was reached |
 | `BIYOS_TERMINATION_USER_STOP` | 205 | the user asked the solve to stop |
-| `BIYOS_TERMINATION_INFEASIBLE` | 301 | the model is infeasible, proved by a certificate |
+| `BIYOS_TERMINATION_INFEASIBLE` | 301 | the model was proved infeasible. The dual result status says whether a certificate comes with it: `BIYOS_RESULT_CERTIFICATE` when one does |
 | `BIYOS_TERMINATION_LOCALLY_INFEASIBLE` | 302 | the solve reached a local minimum of the infeasibility that is not zero. Nothing proves the model infeasible |
 | `BIYOS_TERMINATION_UNBOUNDED` | 303 | the objective is unbounded below on the feasible set |
 | `BIYOS_TERMINATION_SLOW_PROGRESS` | 401 | progress stalled before the convergence tests held |
