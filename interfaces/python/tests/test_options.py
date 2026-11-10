@@ -4,6 +4,7 @@ import pytest
 
 import biyos
 from biyos._capi import OK, lib
+from biyos._versions import version_text
 
 INVALID_ARGUMENT = -100
 
@@ -43,6 +44,8 @@ WRONG = [
     ("presolve", 1),
     ("reproducer", b"replay.txt"),
 ]
+
+NUMBERS = [(0, None), (100, "0.1.0"), (10203, "1.2.3"), (990099, "99.0.99")]
 
 
 @pytest.fixture
@@ -153,3 +156,26 @@ def test_null_value(env):
 def test_unicode(env):
     env.set_option("reproducer", "réplique.txt")
     assert env.get_option("reproducer") == "réplique.txt"
+
+
+@pytest.mark.parametrize("name", DEFAULTS)
+def test_versions(env, name):
+    versions = env.option_versions(name)
+    assert versions == biyos.Versions("0.1.0", None, None)
+    assert versions.since == "0.1.0"
+
+
+@pytest.mark.parametrize("number, text", NUMBERS)
+def test_version_text(number, text):
+    assert version_text(number) == text
+
+
+def test_unknown_versions(env):
+    with pytest.raises(biyos.Error) as caught:
+        env.option_versions("seeds")
+    assert caught.value.code == INVALID_ARGUMENT
+
+
+def test_name_versions(env):
+    with pytest.raises(TypeError):
+        env.option_versions(1)

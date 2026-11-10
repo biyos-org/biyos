@@ -6,6 +6,7 @@ from biyos._capi import lib
 from biyos._error import Error, check
 from biyos._relay import Relay
 from biyos._subscribers import Subscribers
+from biyos._versions import Versions, version_text
 
 
 def _encoded(text):
@@ -122,6 +123,13 @@ class Environment:
         self._call(getter, option, byref(value))
         return convert(value.value)
 
+    def option_versions(self, name):
+        option = self._option(name)
+        numbers = (c_int(), c_int(), c_int())
+        pointers = (byref(number) for number in numbers)
+        self._call(lib.biyos_option_versions, option, *pointers)
+        return Versions(*(version_text(number.value) for number in numbers))
+
     def subscribe(self, function, kind, lowest):
         function = _callable(function)
         kind = _number("kind", kind)
@@ -142,11 +150,15 @@ class Environment:
         self._subscribers.remove(subscription)
 
     def _lookup(self, name):
-        option = c_int()
+        option = self._option(name)
         kind = c_int()
-        self._call(lib.biyos_option_id, _name(name), byref(option))
         self._call(lib.biyos_option_kind, option, byref(kind))
-        return option.value, kind.value
+        return option, kind.value
+
+    def _option(self, name):
+        option = c_int()
+        self._call(lib.biyos_option_id, _name(name), byref(option))
+        return option.value
 
     def _call(self, function, *arguments):
         if not self._free.alive:

@@ -42,6 +42,8 @@ def _load():
     _declare(lib, "biyos_last_error_message", c_char_p, c_void_p)
     _declare(lib, "biyos_option_id", c_int, c_void_p, c_char_p, ints)
     _declare(lib, "biyos_option_kind", c_int, c_void_p, c_int, ints)
+    versions = (c_void_p, c_int, ints, ints, ints)
+    _declare(lib, "biyos_option_versions", c_int, *versions)
     _declare(lib, "biyos_set_bool_option", c_int, c_void_p, c_int, c_int)
     _declare(lib, "biyos_set_int_option", c_int, c_void_p, c_int, c_int)
     _declare(lib, "biyos_set_double_option", c_int, c_void_p, c_int, c_double)

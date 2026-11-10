@@ -1,0 +1,25 @@
+from biyos import _capi
+from biyos._capi import lib
+from header import functions, lines, macros
+
+
+def declared(name):
+    return getattr(lib, name).argtypes is not None
+
+
+def test_functions():
+    names = functions("biyos.h")
+    assert len(names) == lines("biyos.h", "BIYOS_API ")
+    assert [name for name in names if not declared(name)] == []
+
+
+def test_kinds():
+    found = macros("options.h")
+    kinds = {name: value for name, value in found.items() if "_KIND_" in name}
+    assert len(kinds) == lines("options.h", "#define BIYOS_KIND_")
+    names = [name for name in dir(_capi) if name.startswith("KIND_")]
+    assert kinds == {f"BIYOS_{name}": getattr(_capi, name) for name in names}
+
+
+def test_ok():
+    assert macros("biyos.h")["BIYOS_OK"] == _capi.OK
