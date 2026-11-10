@@ -4,6 +4,7 @@ from ctypes import byref, c_char_p, c_double, c_int, c_void_p
 from biyos import _capi
 from biyos._capi import lib
 from biyos._error import Error, check
+from biyos._relay import Relay
 from biyos._subscribers import Subscribers
 
 
@@ -93,7 +94,8 @@ class Environment:
             raise Error("cannot create the environment", status)
         self._handle = handle
         self._free = weakref.finalize(self, lib.biyos_env_free, handle)
-        self._subscribers = Subscribers()
+        self._relay = Relay()
+        self._subscribers = Subscribers(self._relay)
 
     def __enter__(self):
         return self
@@ -149,4 +151,7 @@ class Environment:
     def _call(self, function, *arguments):
         if not self._free.alive:
             raise ValueError("the environment is closed")
-        check(self._handle, function(self._handle, *arguments))
+        self._relay.start()
+        status = function(self._handle, *arguments)
+        self._relay.finish(self._handle, status)
+        check(self._handle, status)

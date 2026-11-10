@@ -14,6 +14,9 @@ minimum-version = "build-system.requires"
 wheel.py-api = "py3"
 cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET = "14.0"
 
+[tool.pytest.ini_options]
+filterwarnings = ["error::pytest.PytestUnraisableExceptionWarning"]
+
 [[tool.dynamic-metadata]]
 provider = "scikit_build_core.metadata.regex"
 field = "version"

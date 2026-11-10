@@ -147,3 +147,92 @@ def test_freed():
         assert not free.alive
     finally:
         gc.enable()
+
+
+class Stop(BaseException):
+    pass
+
+
+def explode(event):
+    raise RuntimeError("subscriber failed")
+
+
+def refuse(event):
+    raise ValueError("second subscriber failed")
+
+
+def stop(event):
+    raise Stop
+
+
+def read_seed(env, seeds, event):
+    seeds.append(env.get_option("seed"))
+
+
+def raised(env):
+    try:
+        env.set_option("seed", -1)
+    except RuntimeError:
+        return True
+    return False
+
+
+def test_raised():
+    with biyos.Environment() as env:
+        env.subscribe(explode, EventKind.MESSAGE, Level.DEBUG)
+        with pytest.raises(RuntimeError, match="subscriber failed") as caught:
+            env.set_option("seed", -1)
+        env.set_option("seed", 3)
+        seed = env.get_option("seed")
+    assert seed == 3
+    context = caught.value.__context__
+    assert type(context) is biyos.Error
+    assert context.code == -100
+
+
+def test_later():
+    seen = []
+    with biyos.Environment() as env:
+        env.subscribe(explode, EventKind.MESSAGE, Level.DEBUG)
+        env.subscribe(refuse, EventKind.MESSAGE, Level.DEBUG)
+        env.subscribe(partial(record, seen), EventKind.MESSAGE, Level.DEBUG)
+        with pytest.raises(RuntimeError):
+            env.set_option("seed", -1)
+    assert len(seen) == 1
+
+
+def test_nested():
+    seeds = []
+    with biyos.Environment() as env:
+        function = partial(read_seed, env, seeds)
+        env.subscribe(explode, EventKind.MESSAGE, Level.DEBUG)
+        env.subscribe(function, EventKind.MESSAGE, Level.DEBUG)
+        with pytest.raises(RuntimeError):
+            env.set_option("seed", -1)
+    assert seeds == [0]
+
+
+def test_base():
+    with biyos.Environment() as env:
+        env.subscribe(stop, EventKind.MESSAGE, Level.DEBUG)
+        with pytest.raises(Stop):
+            env.set_option("seed", -1)
+
+
+def test_cycle():
+    gc.disable()
+    try:
+        env = biyos.Environment()
+        env.subscribe(explode, EventKind.MESSAGE, Level.DEBUG)
+        assert raised(env)
+        free = env._free
+        del env
+        assert not free.alive
+    finally:
+        gc.enable()
+
+
+def test_stale():
+    with biyos.Environment() as env:
+        env._relay.run(explode, None)
+        assert env.get_option("seed") == 0
