@@ -16,6 +16,14 @@
 #if BIYOS_INTERNAL_ERROR > -500 || BIYOS_INTERNAL_ERROR < -599
 #error "BIYOS_INTERNAL_ERROR must be an internal error"
 #endif
+#if BIYOS_OPT_SEED != 1 || BIYOS_OPT_TIME_LIMIT != 2 || BIYOS_OPT_CHECK_LEVEL != 3 ||              \
+    BIYOS_OPT_PRESOLVE != 4 || BIYOS_OPT_REPRODUCER != 5
+#error "a public option id changed"
+#endif
+#if BIYOS_KIND_BOOL != 1 || BIYOS_KIND_INT != 2 || BIYOS_KIND_DOUBLE != 3 ||                       \
+    BIYOS_KIND_STRING != 4 || BIYOS_KIND_ENUM != 5
+#error "a public option kind changed"
+#endif
 
 int main(void)
 {
@@ -25,6 +33,7 @@ int main(void)
     int minor = -1;
     int patch = -1;
     int seed = -1;
+    int kind = 0;
     biyos_version(&major, &minor, &patch);
     if (major < 0 || minor < 0 || patch < 0)
     {
@@ -36,6 +45,10 @@ int main(void)
     }
     if (biyos_set_int_option(env, BIYOS_OPT_SEED, 3) != BIYOS_OK ||
         biyos_get_int_option(env, BIYOS_OPT_SEED, &seed) != BIYOS_OK || seed != 3)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    if (biyos_option_kind(env, BIYOS_OPT_SEED, &kind) != BIYOS_OK || kind != BIYOS_KIND_INT)
     {
         status = BIYOS_INTERNAL_ERROR;
     }

@@ -38,6 +38,21 @@ TEST(CApiTest, OptionIds)
     }
 }
 
+TEST(CApiTest, OptionKinds)
+{
+    const Env env;
+    const int ids[] = {BIYOS_OPT_SEED, BIYOS_OPT_TIME_LIMIT, BIYOS_OPT_CHECK_LEVEL,
+                       BIYOS_OPT_PRESOLVE, BIYOS_OPT_REPRODUCER};
+    const int kinds[] = {BIYOS_KIND_INT, BIYOS_KIND_DOUBLE, BIYOS_KIND_ENUM, BIYOS_KIND_BOOL,
+                         BIYOS_KIND_STRING};
+    for (int i = 0; i < 5; ++i)
+    {
+        int kind = 0;
+        EXPECT_EQ(biyos_option_kind(env.get(), ids[i], &kind), BIYOS_OK);
+        EXPECT_EQ(kind, kinds[i]) << ids[i];
+    }
+}
+
 TEST(CApiTest, UnknownName)
 {
     const Env env;
@@ -54,6 +69,8 @@ TEST(CApiTest, UnknownId)
     EXPECT_EQ(env.message(), "invalid argument: option 99: unknown");
     EXPECT_EQ(biyos_get_int_option(env.get(), 0, &value), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(env.message(), "invalid argument: option 0: unknown");
+    EXPECT_EQ(biyos_option_kind(env.get(), -1, &value), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(env.message(), "invalid argument: option -1: unknown");
 }
 
 TEST(CApiTest, Bool)
@@ -176,6 +193,8 @@ TEST(CApiTest, NullArguments)
     EXPECT_EQ(env.message(), "invalid argument: argument 'name': is null");
     EXPECT_EQ(biyos_option_id(env.get(), "seed", nullptr), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(env.message(), "invalid argument: argument 'option': is null");
+    EXPECT_EQ(biyos_option_kind(env.get(), BIYOS_OPT_SEED, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'kind': is null");
     EXPECT_EQ(biyos_set_string_option(env.get(), BIYOS_OPT_REPRODUCER, nullptr),
               BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(env.message(), "invalid argument: argument 'value': is null");
@@ -187,6 +206,7 @@ TEST(CApiTest, NullEnvironment)
 {
     int value = 0;
     EXPECT_EQ(biyos_option_id(nullptr, "seed", &value), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_option_kind(nullptr, BIYOS_OPT_SEED, &value), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_set_int_option(nullptr, BIYOS_OPT_SEED, 1), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_get_int_option(nullptr, BIYOS_OPT_SEED, &value), BIYOS_INVALID_ARGUMENT);
 }

@@ -171,6 +171,31 @@ constexpr std::string_view noun(const OptionSpec &spec)
     return std::visit([](const auto &rule) { return noun(rule); }, spec.rule);
 }
 
+constexpr OptionKind kind_of(const BoolRule &)
+{
+    return OptionKind::Bool;
+}
+
+constexpr OptionKind kind_of(const IntRule &)
+{
+    return OptionKind::Int;
+}
+
+constexpr OptionKind kind_of(const DoubleRule &)
+{
+    return OptionKind::Double;
+}
+
+constexpr OptionKind kind_of(const StringRule &)
+{
+    return OptionKind::String;
+}
+
+constexpr OptionKind kind_of(const EnumRule &)
+{
+    return OptionKind::Enum;
+}
+
 bool default_of(const BoolRule &rule)
 {
     return rule.default_value;
@@ -296,6 +321,11 @@ Option find_option(int id)
 std::string_view name_of(Option option)
 {
     return spec_of(option).name;
+}
+
+OptionKind kind_of(Option option)
+{
+    return std::visit([](const auto &rule) { return kind_of(rule); }, spec_of(option).rule);
 }
 
 Options::Options()
