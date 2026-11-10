@@ -40,7 +40,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | Macro | Value | Meaning |
 | --- | --- | --- |
 | `BIYOS_OK` | 0 | the call succeeded |
-| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer or environment, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
+| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count, an unknown variable kind or variable index, a bound a variable does not accept, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
 | `BIYOS_NO_MEMORY` | -400 | an allocation failed |
 | `BIYOS_INTERNAL_ERROR` | -500 | a fault in biyos |
 
@@ -384,6 +384,10 @@ Every kind but continuous is discrete.
 
 A model is made on an environment and reports there. A call on the model that fails keeps its message on that environment and sends its error event there, and while the environment delivers an event the model is read-only, as the environment is (see Subscribers). The environment cannot be freed while a model made on it is not, so a model never outlives its environment.
 
+Variables are numbered from 0 in the order they are added, and a count or an index of variables is an `int`. The calls on variables take many at once: a count and arrays of that many entries, which biyos reads during the call and does not keep. A call that fails changes nothing.
+
+A bound may be `INFINITY` or `-INFINITY` of `<math.h>`, and no finite bound is taken as infinite, however large. A lower bound of minus infinity or an upper bound of infinity leaves that side unbounded. A lower bound of infinity, an upper bound of minus infinity and NaN are refused, and so is a bound outside the widest bounds of the variable's kind: 0 and 1 for a binary, minus infinity and infinity for any other kind. Any other pair is kept as given, a lower bound above the upper one included.
+
 ### `biyos_model_create`
 
 ```c
@@ -399,6 +403,50 @@ biyos_status biyos_model_free(biyos_model *model);
 ```
 
 Frees the model. A null `model` gives `BIYOS_OK`. While the environment of `model` delivers an event it returns `BIYOS_INVALID_ARGUMENT` and frees nothing.
+
+### `biyos_add_variables`
+
+```c
+biyos_status biyos_add_variables(biyos_model *model, int count, const int *kinds,
+                                 const double *lower, const double *upper);
+```
+
+Adds `count` variables after the last one. Entry `j` of each array gives variable `n + j`, where `n` is the number of variables before the call: its kind, a `BIYOS_VAR_*` value, and its lower and upper bounds. A null `kinds` makes every new variable continuous, and a null `lower` or `upper` gives each the widest such bound of its kind. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, a kind is unknown or a bound is refused, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 variables.
+
+### `biyos_set_variable_bounds`
+
+```c
+biyos_status biyos_set_variable_bounds(biyos_model *model, int count, const int *indices,
+                                       const double *lower, const double *upper);
+```
+
+Sets the bounds of variable `indices[j]` to `lower[j]` and `upper[j]`, for each `j` below `count`. A null `lower` or `upper` leaves those bounds as they are, and `indices` may be null when `count` is 0. A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of a variable or a bound is refused.
+
+### `biyos_set_variable_kinds`
+
+```c
+biyos_status biyos_set_variable_kinds(biyos_model *model, int count, const int *indices,
+                                      const int *kinds);
+```
+
+Sets the kind of variable `indices[j]` to `kinds[j]`, for each `j` below `count`, and keeps its bounds. A null `kinds` changes nothing, and `indices` may be null when `count` is 0. A variable may appear more than once, as in `biyos_set_variable_bounds`. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of a variable, a kind is unknown or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
+
+### `biyos_variable_count`
+
+```c
+biyos_status biyos_variable_count(biyos_model *model, int *count);
+```
+
+Writes the number of variables of the model to `*count`.
+
+### `biyos_get_variables`
+
+```c
+biyos_status biyos_get_variables(biyos_model *model, int first, int count, int *kinds,
+                                 double *lower, double *upper);
+```
+
+Writes to entry `j` of each array, for each `j` below `count`, the kind and the lower and upper bounds of variable `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of variables.
 
 ## Solve status
 

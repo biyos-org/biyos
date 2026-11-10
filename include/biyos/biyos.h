@@ -73,6 +73,15 @@ BIYOS_API biyos_status biyos_format_json(const biyos_event *event, char *buffer,
 
 BIYOS_API biyos_status biyos_model_create(biyos_env *env, biyos_model **model);
 BIYOS_API biyos_status biyos_model_free(biyos_model *model);
+BIYOS_API biyos_status biyos_add_variables(biyos_model *model, int count, const int *kinds,
+                                           const double *lower, const double *upper);
+BIYOS_API biyos_status biyos_set_variable_bounds(biyos_model *model, int count, const int *indices,
+                                                 const double *lower, const double *upper);
+BIYOS_API biyos_status biyos_set_variable_kinds(biyos_model *model, int count, const int *indices,
+                                                const int *kinds);
+BIYOS_API biyos_status biyos_variable_count(biyos_model *model, int *count);
+BIYOS_API biyos_status biyos_get_variables(biyos_model *model, int first, int count, int *kinds,
+                                           double *lower, double *upper);
 
 #ifdef __cplusplus
 }

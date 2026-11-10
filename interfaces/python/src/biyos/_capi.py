@@ -53,7 +53,7 @@ def _load():
     _declare(lib, "biyos_get_double_option", c_int, c_void_p, c_int, doubles)
     _declare(lib, "biyos_get_string_option", c_int, c_void_p, c_int, strings)
     _declare_events(lib, ints)
-    _declare_model(lib)
+    _declare_model(lib, ints, doubles)
     return lib
 
 
@@ -77,9 +77,17 @@ def _declare_formats(lib):
     _declare(lib, "biyos_format_json", c_int, *arguments)
 
 
-def _declare_model(lib):
+def _declare_model(lib, ints, doubles):
     _declare(lib, "biyos_model_create", c_int, c_void_p, POINTER(c_void_p))
     _declare(lib, "biyos_model_free", c_int, c_void_p)
+    variables = (c_void_p, c_int, ints, doubles, doubles)
+    _declare(lib, "biyos_add_variables", c_int, *variables)
+    _declare(lib, "biyos_set_variable_bounds", c_int, *variables)
+    kinds = (c_void_p, c_int, ints, ints)
+    _declare(lib, "biyos_set_variable_kinds", c_int, *kinds)
+    _declare(lib, "biyos_variable_count", c_int, c_void_p, ints)
+    read = (c_void_p, c_int, c_int, ints, doubles, doubles)
+    _declare(lib, "biyos_get_variables", c_int, *read)
 
 
 lib = _load()

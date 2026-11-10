@@ -84,6 +84,12 @@ int main(void)
     int lowest = BIYOS_LEVEL_DEBUG;
     int errors = 0;
     int id = 0;
+    const int kinds[2] = {BIYOS_VAR_CONTINUOUS, BIYOS_VAR_BINARY};
+    const double lower[2] = {-1.0, 0.0};
+    const double upper[2] = {1.0, 1.0};
+    const int indices[1] = {0};
+    int found[2] = {0, 0};
+    int variables = 0;
     biyos_version(&major, &minor, &patch);
     if (major < 0 || minor < 0 || patch < 0)
     {
@@ -108,8 +114,17 @@ int main(void)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (biyos_model_create(env, &model) != BIYOS_OK || biyos_env_free(env) == BIYOS_OK ||
-        biyos_model_free(model) != BIYOS_OK)
+    if (biyos_model_create(env, &model) != BIYOS_OK ||
+        biyos_add_variables(model, 2, kinds, lower, upper) != BIYOS_OK ||
+        biyos_set_variable_bounds(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
+        biyos_set_variable_kinds(model, 1, indices, kinds + 1) != BIYOS_OK ||
+        biyos_variable_count(model, &variables) != BIYOS_OK || variables != 2 ||
+        biyos_get_variables(model, 0, 2, found, NULL, NULL) != BIYOS_OK ||
+        found[0] != BIYOS_VAR_BINARY || found[1] != BIYOS_VAR_BINARY)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    if (biyos_env_free(env) == BIYOS_OK || biyos_model_free(model) != BIYOS_OK)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
