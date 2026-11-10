@@ -39,7 +39,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | Macro | Value | Meaning |
 | --- | --- | --- |
 | `BIYOS_OK` | 0 | the call succeeded |
-| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer or environment, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, or an unknown event kind, level or subscription |
+| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer or environment, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, an unknown event kind, level or subscription, or a change to an environment while it delivers an event |
 | `BIYOS_NO_MEMORY` | -400 | an allocation failed |
 | `BIYOS_INTERNAL_ERROR` | -500 | a fault in biyos |
 
@@ -222,6 +222,8 @@ A field is a name and a value, both text. The only events biyos sends so far are
 
 A subscriber is called with the event and the `user_data` its subscription was given. While it runs, the environment delivers an event.
 
+- The subscriber may read options, the last error message and the event.
+- Every call that would change the environment, setting an option, subscribing or unsubscribing, fails with `BIYOS_INVALID_ARGUMENT` and the message `invalid argument: environment: is read-only while delivering an event`, and changes nothing.
 - A call that fails inside a subscriber keeps its message as usual, so `biyos_last_error_message` explains it, but sends no event.
 - Inside an error event, `biyos_last_error_message` returns that event's failure.
 - The event and every string read from it are valid only until the subscriber returns.

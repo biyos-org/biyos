@@ -31,6 +31,16 @@ template <typename T> T *require(T *pointer, std::string_view name)
     return pointer;
 }
 
+biyos::Environment &writable(biyos::Environment &env)
+{
+    if (env.events().delivering())
+    {
+        const std::string reason = "is read-only while delivering an event";
+        throw biyos::Error(biyos::ErrorKind::InvalidArgument, "environment", reason);
+    }
+    return env;
+}
+
 void option_id(biyos::Environment &, const char *name, int *option)
 {
     const biyos::Option found = biyos::find_option(std::string_view(require(name, "name")));
@@ -45,23 +55,24 @@ void option_kind(biyos::Environment &, int option, int *kind)
 
 void set_bool(biyos::Environment &env, int option, int value)
 {
-    env.options().set_bool(biyos::find_option(option), value != 0);
+    writable(env).options().set_bool(biyos::find_option(option), value != 0);
 }
 
 void set_int(biyos::Environment &env, int option, int value)
 {
-    env.options().set_int(biyos::find_option(option), value);
+    writable(env).options().set_int(biyos::find_option(option), value);
 }
 
 void set_double(biyos::Environment &env, int option, double value)
 {
-    env.options().set_double(biyos::find_option(option), value);
+    writable(env).options().set_double(biyos::find_option(option), value);
 }
 
 void set_string(biyos::Environment &env, int option, const char *value)
 {
+    biyos::Options &options = writable(env).options();
     const biyos::Option found = biyos::find_option(option);
-    env.options().set_string(found, require(value, "value"));
+    options.set_string(found, require(value, "value"));
 }
 
 void get_bool(biyos::Environment &env, int option, int *value)
@@ -103,16 +114,17 @@ struct Forwarder
 void subscribe(biyos::Environment &env, biyos_subscriber subscriber, void *user_data, int kind,
                int lowest, int *subscription)
 {
+    biyos::Events &events = writable(env).events();
     const Forwarder forwarder{require(subscriber, "subscriber"), user_data};
     const biyos::EventKind found = biyos::find_kind(kind);
     const biyos::Level level = biyos::find_level(lowest);
     int *id = require(subscription, "subscription");
-    *id = env.events().subscribe(found, level, forwarder);
+    *id = events.subscribe(found, level, forwarder);
 }
 
 void unsubscribe(biyos::Environment &env, int subscription)
 {
-    env.events().unsubscribe(subscription);
+    writable(env).events().unsubscribe(subscription);
 }
 
 const biyos::Field *field_of(const biyos_event *event, int field)

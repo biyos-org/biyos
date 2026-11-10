@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -33,14 +34,6 @@ struct Inbox
     std::string text;
 };
 
-struct Ticket
-{
-    biyos_env *env = nullptr;
-    int id = 0;
-    int calls = 0;
-    biyos_status status = BIYOS_INTERNAL_ERROR;
-};
-
 struct Probe
 {
     biyos_env *env = nullptr;
@@ -57,13 +50,6 @@ void receive(const biyos_event *event, void *user_data)
     inbox->level = biyos_event_level(event);
     inbox->module = biyos_event_module(event);
     inbox->text = biyos_event_text(event);
-}
-
-void leave(const biyos_event *, void *user_data)
-{
-    Ticket *ticket = static_cast<Ticket *>(user_data);
-    ++ticket->calls;
-    ticket->status = biyos_unsubscribe(ticket->env, ticket->id);
 }
 
 void unsubscribe_unknown(const biyos_event *, void *user_data)
@@ -83,6 +69,34 @@ biyos_status listen(biyos_env *env, biyos_subscriber subscriber, void *user_data
 void fail(const Env &env)
 {
     EXPECT_EQ(biyos_set_int_option(env.get(), BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
+}
+
+struct Attempt
+{
+    biyos_env *env = nullptr;
+    std::vector<biyos_status> statuses;
+    std::vector<std::string> messages;
+    int seed = -1;
+};
+
+void note(Attempt &attempt, biyos_status status)
+{
+    attempt.statuses.push_back(status);
+    attempt.messages.emplace_back(biyos_last_error_message(attempt.env));
+}
+
+void change(const biyos_event *, void *user_data)
+{
+    Attempt &attempt = *static_cast<Attempt *>(user_data);
+    biyos_env *env = attempt.env;
+    int id = 0;
+    note(attempt, biyos_set_bool_option(env, BIYOS_OPT_PRESOLVE, 0));
+    note(attempt, biyos_set_int_option(env, BIYOS_OPT_SEED, 42));
+    note(attempt, biyos_set_double_option(env, BIYOS_OPT_TIME_LIMIT, 1.0));
+    note(attempt, biyos_set_string_option(env, BIYOS_OPT_REPRODUCER, "replay.txt"));
+    note(attempt, listen(env, receive, nullptr, BIYOS_LEVEL_DEBUG, &id));
+    note(attempt, biyos_unsubscribe(env, 1));
+    note(attempt, biyos_get_int_option(env, BIYOS_OPT_SEED, &attempt.seed));
 }
 
 }
@@ -116,16 +130,27 @@ TEST(CApiTest, Unsubscribe)
     EXPECT_EQ(env.message(), "invalid argument: subscription 1: unknown");
 }
 
-TEST(CApiTest, OneShot)
+TEST(CApiTest, ReadOnly)
 {
     const Env env;
-    Ticket ticket;
-    ticket.env = env.get();
-    ASSERT_EQ(listen(env.get(), leave, &ticket, BIYOS_LEVEL_ERROR, &ticket.id), BIYOS_OK);
+    Attempt attempt;
+    attempt.env = env.get();
+    int id = 0;
+    ASSERT_EQ(listen(env.get(), change, &attempt, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
     fail(env);
-    fail(env);
-    EXPECT_EQ(ticket.calls, 1);
-    EXPECT_EQ(ticket.status, BIYOS_OK);
+    const biyos_status refused = BIYOS_INVALID_ARGUMENT;
+    const std::vector<biyos_status> statuses{refused, refused, refused, refused,
+                                             refused, refused, BIYOS_OK};
+    const std::string reason =
+        "invalid argument: environment: is read-only while delivering an event";
+    EXPECT_EQ(attempt.statuses, statuses);
+    EXPECT_EQ(attempt.messages, std::vector<std::string>(7, reason));
+    EXPECT_EQ(attempt.seed, 0);
+    int seed = -1;
+    EXPECT_EQ(biyos_get_int_option(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_OK);
+    EXPECT_EQ(seed, 0);
+    EXPECT_EQ(env.message(), "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
+    EXPECT_EQ(biyos_unsubscribe(env.get(), id), BIYOS_OK);
 }
 
 TEST(CApiTest, NestedFailure)
@@ -138,7 +163,8 @@ TEST(CApiTest, NestedFailure)
     fail(env);
     EXPECT_EQ(probe.calls, 1);
     EXPECT_EQ(probe.status, BIYOS_INVALID_ARGUMENT);
-    EXPECT_EQ(probe.message, "invalid argument: subscription 999: unknown");
+    EXPECT_EQ(probe.message,
+              "invalid argument: environment: is read-only while delivering an event");
     EXPECT_EQ(env.message(), "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
 }
 
