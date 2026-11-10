@@ -1,8 +1,10 @@
 #pragma once
 
+#include "core/clock.hpp"
 #include "core/events.hpp"
 #include "core/options.hpp"
 
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -12,6 +14,9 @@ namespace biyos
 class Environment
 {
   public:
+    Environment();
+    explicit Environment(std::unique_ptr<Clock> clock);
+
     // A failure recorded inside a scope is undone when the scope ends, so a subscriber's failed
     // call never changes the last error another reads. The outer message is swapped aside on the
     // first failure only, so a scope without one allocates nothing.
@@ -35,6 +40,8 @@ class Environment
     Options &options() noexcept;
     const Options &options() const noexcept;
 
+    const Clock &clock() const noexcept;
+
     Events &events() noexcept;
     const Events &events() const noexcept;
 
@@ -43,6 +50,7 @@ class Environment
 
   private:
     Options options_;
+    std::unique_ptr<Clock> clock_;
     Events events_;
     std::string last_error_;
     ErrorScope *scope_ = nullptr;

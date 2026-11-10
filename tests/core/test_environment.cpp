@@ -1,6 +1,11 @@
+#include "core/clock.hpp"
 #include "core/environment.hpp"
+#include "core/error.hpp"
 
 #include <gtest/gtest.h>
+
+#include <memory>
+#include <utility>
 
 TEST(EnvironmentTest, NoError)
 {
@@ -22,6 +27,25 @@ TEST(EnvironmentTest, OwnsOptions)
     env.options().set_int(biyos::Option::Seed, 9);
     const biyos::Environment &view = env;
     EXPECT_EQ(view.options().get_int(biyos::Option::Seed), 9);
+}
+
+TEST(EnvironmentTest, SystemClock)
+{
+    const biyos::Environment env;
+    EXPECT_NE(dynamic_cast<const biyos::SystemClock *>(&env.clock()), nullptr);
+}
+
+TEST(EnvironmentTest, OwnsClock)
+{
+    auto fake = std::make_unique<biyos::FakeClock>();
+    const biyos::Clock *installed = fake.get();
+    const biyos::Environment env(std::move(fake));
+    EXPECT_EQ(&env.clock(), installed);
+}
+
+TEST(EnvironmentTest, NullClock)
+{
+    EXPECT_THROW(biyos::Environment(nullptr), biyos::Error);
 }
 
 TEST(EnvironmentTest, OwnsEvents)
