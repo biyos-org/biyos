@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <functional>
 #include <limits>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -99,7 +99,7 @@ int Events::subscribe(EventKind kind, Level lowest, Subscriber subscriber)
         .id = next_id_,
         .kind = kind,
         .lowest = lowest,
-        .subscriber = std::move(subscriber),
+        .subscriber = std::make_unique<const Subscriber>(std::move(subscriber)),
         .active = true,
     });
     const std::size_t at = slot(kind);
@@ -114,16 +114,13 @@ void Events::unsubscribe(int id)
     {
         throw Error(ErrorKind::InvalidArgument, "subscription " + std::to_string(id), "unknown");
     }
-    const EventKind kind = found->kind;
-    if (depth_ > 0)
+    found->active = false;
+    refresh(found->kind);
+    if (depth_ == 0)
     {
-        found->active = false;
-    }
-    else
-    {
+        const std::unique_ptr<const Subscriber> removed = std::move(found->subscriber);
         subscriptions_.erase(found);
     }
-    refresh(kind);
 }
 
 bool Events::accepts(const Subscription &subscription, EventKind kind, Level level) noexcept
@@ -153,12 +150,31 @@ void Events::deliver(const Event &event) noexcept
         const Subscription &subscription = subscriptions_[i];
         if (accepts(subscription, event.kind, event.level))
         {
-            notify(subscription.subscriber, event);
+            notify(*subscription.subscriber, event);
         }
     }
     if (depth_ == 1)
     {
-        std::erase_if(subscriptions_, std::not_fn(&Subscription::active));
+        prune();
+    }
+}
+
+void Events::prune() noexcept
+{
+    std::size_t kept = 0;
+    for (std::size_t i = 0; i < subscriptions_.size(); ++i)
+    {
+        if (subscriptions_[i].active)
+        {
+            std::swap(subscriptions_[kept], subscriptions_[i]);
+            ++kept;
+        }
+    }
+    while (!subscriptions_.empty() && !subscriptions_.back().active)
+    {
+        const std::unique_ptr<const Subscriber> removed =
+            std::move(subscriptions_.back().subscriber);
+        subscriptions_.pop_back();
     }
 }
 

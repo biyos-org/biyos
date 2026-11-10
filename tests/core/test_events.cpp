@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <functional>
+#include <memory>
 #include <new>
 #include <stdexcept>
 #include <string>
@@ -38,6 +39,38 @@ void describe(biyos::Event &event)
     event.text = "removed rows";
     event.fields.push_back(biyos::Field{.name = "rows", .value = "3"});
 }
+
+void farewell(biyos::Event &event)
+{
+    event.text = "farewell";
+}
+
+class Farewell
+{
+  public:
+    explicit Farewell(biyos::Events &events) : events_(events) {}
+    ~Farewell() { events_.emit(EventKind::Message, Level::Debug, farewell); }
+    Farewell(const Farewell &) = delete;
+    Farewell &operator=(const Farewell &) = delete;
+
+  private:
+    biyos::Events &events_;
+};
+
+class Parting
+{
+  public:
+    Parting(biyos::Events &events, Texts &texts)
+        : farewell_(std::make_shared<Farewell>(events)), texts_(&texts)
+    {
+    }
+
+    void operator()(const biyos::Event &event) const { texts_->push_back("p " + event.text); }
+
+  private:
+    std::shared_ptr<Farewell> farewell_;
+    Texts *texts_;
+};
 
 class EventTest : public ::testing::Test
 {
@@ -224,6 +257,23 @@ TEST_F(EventTest, NestedRemoval)
     listen(Level::Debug, [this, x](const biyos::Event &event) { rewire(x, event); });
     say(Level::Info, "outer");
     EXPECT_EQ(texts, (Texts{"x outer", "c outer", "d outer"}));
+}
+
+TEST_F(EventTest, ErasedFarewell)
+{
+    const int id = listen(Level::Debug, Parting(events, texts));
+    listen(Level::Debug, recorder("r "));
+    events.unsubscribe(id);
+    EXPECT_EQ(texts, Texts{"r farewell"});
+}
+
+TEST_F(EventTest, PrunedFarewell)
+{
+    const int id = listen(Level::Debug, Parting(events, texts));
+    listen(Level::Debug, recorder("r "));
+    listen(Level::Info, [this, id](const biyos::Event &) { events.unsubscribe(id); });
+    say(Level::Info, "one");
+    EXPECT_EQ(texts, (Texts{"p one", "r one", "r farewell"}));
 }
 
 TEST_F(EventTest, LateSubscriber)

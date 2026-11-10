@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <deque>
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -48,9 +49,10 @@ struct Event
 
 using Subscriber = std::function<void(const Event &)>;
 
-// Delivery follows subscription order. Subscribing or unsubscribing during delivery is allowed:
-// the deque never moves a running subscriber and removal waits until delivery ends. An exception
-// from a fill or a subscriber is dropped, so observing never changes the outcome of a call.
+// Delivery follows subscription order. A subscriber may subscribe or unsubscribe during delivery:
+// each subscriber has its own allocation, so none moves while it runs, removal waits until the
+// outermost delivery ends, and a removed subscriber is destroyed only after the list is compacted.
+// An exception from a fill or a subscriber is dropped, so observing never changes a call.
 class Events
 {
   public:
@@ -87,7 +89,7 @@ class Events
         int id;
         EventKind kind;
         Level lowest;
-        Subscriber subscriber;
+        std::unique_ptr<const Subscriber> subscriber;
         bool active;
     };
 
@@ -99,6 +101,7 @@ class Events
 
     void refresh(EventKind kind) noexcept;
     void deliver(const Event &event) noexcept;
+    void prune() noexcept;
 
     std::deque<Subscription> subscriptions_;
     std::array<Level, kEventKinds.size()> lowest_;
