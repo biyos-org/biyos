@@ -58,6 +58,7 @@ std::size_t TimingTree::add(std::string_view name)
         .wall = nanoseconds::zero(),
         .cpu = nanoseconds::zero(),
         .count = 0,
+        .open = false,
     });
     return nodes_.size() - 1;
 }
@@ -69,8 +70,19 @@ std::size_t TimingTree::enter(std::string_view name)
     {
         node = add(name);
     }
+    nodes_[node].open = true;
     current_ = node;
     return node;
+}
+
+std::size_t TimingTree::open_ancestor(std::size_t node) const noexcept
+{
+    std::size_t at = nodes_[node].parent;
+    while (at != kNone && !nodes_[at].open)
+    {
+        at = nodes_[at].parent;
+    }
+    return at;
 }
 
 void TimingTree::leave(std::size_t node, nanoseconds wall, nanoseconds cpu) noexcept
@@ -79,7 +91,11 @@ void TimingTree::leave(std::size_t node, nanoseconds wall, nanoseconds cpu) noex
     timed.wall += wall;
     timed.cpu += cpu;
     ++timed.count;
-    current_ = timed.parent;
+    timed.open = false;
+    if (node == current_)
+    {
+        current_ = open_ancestor(node);
+    }
 }
 
 Timer::Timer(Environment &env, TimingTree &tree, FixedName module, FixedName name)

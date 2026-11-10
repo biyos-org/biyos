@@ -268,6 +268,29 @@ TEST_F(TimerTest, Unwinding)
     EXPECT_EQ(summary(tree), expected);
 }
 
+TEST_F(TimerTest, OutOfOrder)
+{
+    std::unique_ptr<Timer> a(new Timer(env, tree, "nlp", "a"));
+    std::unique_ptr<Timer> b(new Timer(env, tree, "nlp", "b"));
+    advance(1ns, 0ns);
+    a.reset();
+    advance(2ns, 0ns);
+    std::unique_ptr<Timer> c(new Timer(env, tree, "nlp", "c"));
+    advance(4ns, 0ns);
+    c.reset();
+    b.reset();
+    {
+        const Timer d(env, tree, "nlp", "d");
+    }
+    const Texts expected{
+        "a count=1 wall=1 cpu=0",
+        "a/b count=1 wall=7 cpu=0",
+        "a/b/c count=1 wall=4 cpu=0",
+        "d count=1 wall=0 cpu=0",
+    };
+    EXPECT_EQ(summary(tree), expected);
+}
+
 TEST_F(TimerTest, FailedEntry)
 {
     auto owned = std::make_unique<FlakyClock>();
