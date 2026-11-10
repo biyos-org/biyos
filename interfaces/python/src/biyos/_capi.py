@@ -1,5 +1,4 @@
 import ctypes
-import sys
 from ctypes import POINTER, byref, c_char_p, c_double, c_int, c_void_p
 from importlib.resources import files
 
@@ -12,14 +11,6 @@ KIND_STRING = 4
 KIND_ENUM = 5
 
 
-def _file_name():
-    if sys.platform == "win32":
-        return "biyos.dll"
-    if sys.platform == "darwin":
-        return "libbiyos.dylib"
-    return "libbiyos.so"
-
-
 def _declare(lib, name, result, *arguments):
     function = getattr(lib, name)
     function.restype = result
@@ -27,7 +18,9 @@ def _declare(lib, name, result, *arguments):
 
 
 def _load():
-    lib = ctypes.CDLL(str(files("biyos") / _file_name()))
+    package = files("biyos")
+    name = (package / "library.txt").read_text()
+    lib = ctypes.CDLL(str(package / name))
     ints = POINTER(c_int)
     doubles = POINTER(c_double)
     strings = POINTER(c_char_p)
