@@ -4,13 +4,17 @@
 #include <gtest/gtest.h>
 
 #include <functional>
+#include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace
 {
 
 using biyos::EventKind;
 using biyos::Level;
+using Texts = std::vector<std::string>;
 
 std::string failure(const std::function<void()> &body)
 {
@@ -25,16 +29,47 @@ std::string failure(const std::function<void()> &body)
     return "no error";
 }
 
+void ignore(const biyos::Event &) {}
+
+void describe(biyos::Event &event)
+{
+    event.module = "presolve";
+    event.text = "removed rows";
+    event.fields.push_back(biyos::Field{.name = "rows", .value = "3"});
 }
 
-TEST(EventTest, KindIds)
+class EventTest : public ::testing::Test
+{
+  protected:
+    int listen(Level lowest, biyos::Subscriber subscriber)
+    {
+        return events.subscribe(EventKind::Message, lowest, std::move(subscriber));
+    }
+
+    void say(Level level, const std::string &text)
+    {
+        events.emit(EventKind::Message, level, [&](biyos::Event &event) { event.text = text; });
+    }
+
+    biyos::Subscriber recorder(const std::string &name)
+    {
+        return [this, name](const biyos::Event &event) { texts.push_back(name + event.text); };
+    }
+
+    biyos::Events events;
+    Texts texts;
+};
+
+}
+
+TEST_F(EventTest, KindIds)
 {
     EXPECT_EQ(biyos::find_kind(BIYOS_EVENT_MESSAGE), EventKind::Message);
     EXPECT_EQ(failure([] { biyos::find_kind(0); }), "invalid argument: event kind 0: unknown");
     EXPECT_EQ(failure([] { biyos::find_kind(2); }), "invalid argument: event kind 2: unknown");
 }
 
-TEST(EventTest, LevelIds)
+TEST_F(EventTest, LevelIds)
 {
     EXPECT_EQ(biyos::find_level(BIYOS_LEVEL_DEBUG), Level::Debug);
     EXPECT_EQ(biyos::find_level(BIYOS_LEVEL_INFO), Level::Info);
@@ -42,4 +77,117 @@ TEST(EventTest, LevelIds)
     EXPECT_EQ(biyos::find_level(BIYOS_LEVEL_ERROR), Level::Error);
     EXPECT_EQ(failure([] { biyos::find_level(0); }), "invalid argument: level 0: unknown");
     EXPECT_EQ(failure([] { biyos::find_level(5); }), "invalid argument: level 5: unknown");
+}
+
+TEST_F(EventTest, NoRecord)
+{
+    int built = 0;
+    const auto count = [&built](biyos::Event &) { ++built; };
+    events.emit(EventKind::Message, Level::Error, count);
+    events.unsubscribe(listen(Level::Debug, ignore));
+    events.emit(EventKind::Message, Level::Error, count);
+    listen(Level::Error, ignore);
+    events.emit(EventKind::Message, Level::Warning, count);
+    EXPECT_EQ(built, 0);
+    events.emit(EventKind::Message, Level::Error, count);
+    EXPECT_EQ(built, 1);
+}
+
+TEST_F(EventTest, LevelFilter)
+{
+    listen(Level::Warning, recorder(""));
+    say(Level::Debug, "debug");
+    say(Level::Info, "info");
+    say(Level::Warning, "warning");
+    say(Level::Error, "error");
+    EXPECT_EQ(texts, (Texts{"warning", "error"}));
+    EXPECT_FALSE(events.wanted(EventKind::Message, Level::Info));
+    EXPECT_TRUE(events.wanted(EventKind::Message, Level::Warning));
+}
+
+TEST_F(EventTest, Order)
+{
+    listen(Level::Debug, recorder("a "));
+    const int b = listen(Level::Debug, recorder("b "));
+    listen(Level::Debug, recorder("c "));
+    say(Level::Info, "one");
+    events.unsubscribe(b);
+    listen(Level::Debug, recorder("b "));
+    say(Level::Info, "two");
+    EXPECT_EQ(texts, (Texts{"a one", "b one", "c one", "a two", "c two", "b two"}));
+}
+
+TEST_F(EventTest, Contents)
+{
+    std::vector<biyos::Event> kept;
+    listen(Level::Debug, [&kept](const biyos::Event &event) { kept.push_back(event); });
+    events.emit(EventKind::Message, Level::Warning, describe);
+    ASSERT_EQ(kept.size(), 1U);
+    const biyos::Event &event = kept.front();
+    EXPECT_EQ(event.kind, EventKind::Message);
+    EXPECT_EQ(event.level, Level::Warning);
+    EXPECT_EQ(event.module, "presolve");
+    EXPECT_EQ(event.text, "removed rows");
+    ASSERT_EQ(event.fields.size(), 1U);
+    EXPECT_EQ(event.fields.front().name, "rows");
+    EXPECT_EQ(event.fields.front().value, "3");
+}
+
+TEST_F(EventTest, Ids)
+{
+    const int first = listen(Level::Debug, ignore);
+    const int second = listen(Level::Debug, ignore);
+    events.unsubscribe(second);
+    const int third = listen(Level::Debug, ignore);
+    EXPECT_EQ(first, 1);
+    EXPECT_EQ(second, 2);
+    EXPECT_EQ(third, 3);
+}
+
+TEST_F(EventTest, UnknownId)
+{
+    const int id = listen(Level::Debug, ignore);
+    events.unsubscribe(id);
+    EXPECT_EQ(failure([&] { events.unsubscribe(id); }),
+              "invalid argument: subscription 1: unknown");
+    EXPECT_EQ(failure([&] { events.unsubscribe(7); }), "invalid argument: subscription 7: unknown");
+}
+
+TEST_F(EventTest, SelfRemoval)
+{
+    int id = 0;
+    id = listen(Level::Debug, [&](const biyos::Event &) { events.unsubscribe(id); });
+    say(Level::Info, "one");
+    EXPECT_FALSE(events.wanted(EventKind::Message, Level::Error));
+    EXPECT_NO_THROW(say(Level::Info, "two"));
+}
+
+TEST_F(EventTest, PeerRemoval)
+{
+    int peer = 0;
+    listen(Level::Debug, [&](const biyos::Event &) { events.unsubscribe(peer); });
+    peer = listen(Level::Debug, recorder(""));
+    say(Level::Info, "one");
+    EXPECT_TRUE(texts.empty());
+    EXPECT_EQ(failure([&] { events.unsubscribe(peer); }),
+              "invalid argument: subscription 2: unknown");
+}
+
+TEST_F(EventTest, LateSubscriber)
+{
+    listen(Level::Debug, [this](const biyos::Event &) { listen(Level::Debug, recorder("")); });
+    say(Level::Info, "one");
+    say(Level::Info, "two");
+    EXPECT_EQ(texts, Texts{"two"});
+}
+
+TEST_F(EventTest, SubscriberThrows)
+{
+    const auto fail = [](const biyos::Event &) { throw std::runtime_error("subscriber"); };
+    const int id = listen(Level::Debug, fail);
+    EXPECT_THROW(say(Level::Info, "one"), std::runtime_error);
+    events.unsubscribe(id);
+    listen(Level::Debug, recorder(""));
+    say(Level::Info, "two");
+    EXPECT_EQ(texts, Texts{"two"});
 }
