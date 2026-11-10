@@ -10,6 +10,7 @@ import pytest
 import biyos
 from biyos import EventKind, Level
 from header import lines, macros
+from number import Number
 
 CODE = (("code", "-100"),)
 
@@ -118,6 +119,18 @@ def test_overflow():
             env.subscribe(print, 2**32 + EventKind.MESSAGE, Level.DEBUG)
         with pytest.raises(OverflowError):
             env.unsubscribe(2**32 + first)
+        fail(env)
+    assert len(seen) == 1
+
+
+def test_index():
+    seen = []
+    with biyos.Environment() as env:
+        kind = Number(int(EventKind.MESSAGE))
+        lowest = Number(int(Level.DEBUG))
+        subscription = env.subscribe(partial(record, seen), kind, lowest)
+        fail(env)
+        env.unsubscribe(Number(subscription))
         fail(env)
     assert len(seen) == 1
 

@@ -1,5 +1,6 @@
 import weakref
 from ctypes import byref, c_char_p, c_double, c_int, c_void_p
+from numbers import Real
 
 from biyos import _capi
 from biyos._capi import lib
@@ -42,16 +43,14 @@ def _bool(name, value):
 
 
 def _int(name, value):
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise _rejected(name, "an int", value)
-    if c_int(value).value != value:
-        message = f"option '{name}': {value} does not fit in a C int"
-        raise OverflowError(message)
-    return value
+    try:
+        return integer(f"option '{name}'", value)
+    except TypeError:
+        raise _rejected(name, "an int", value) from None
 
 
 def _double(name, value):
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    if isinstance(value, bool) or not isinstance(value, Real):
         raise _rejected(name, "a number", value)
     return float(value)
 
