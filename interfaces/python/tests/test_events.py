@@ -1,6 +1,9 @@
 import gc
+import json
+import re
 import weakref
 from functools import partial
+from operator import attrgetter, methodcaller
 
 import pytest
 
@@ -20,6 +23,16 @@ WRONG = [
 
 NUMBERS = [True, "1", 1.0, None]
 
+READERS = [
+    attrgetter("kind"),
+    attrgetter("level"),
+    attrgetter("module"),
+    attrgetter("text"),
+    attrgetter("fields"),
+    methodcaller("format_text"),
+    methodcaller("format_json"),
+]
+
 
 class Sink:
     def __call__(self, event):
@@ -32,6 +45,10 @@ def snapshot(event):
 
 def record(seen, event):
     seen.append(snapshot(event))
+
+
+def keep_lines(lines, event):
+    lines.append((event.format_text(), event.format_json()))
 
 
 def fail(env):
@@ -109,13 +126,35 @@ def test_number(subscription):
         env.unsubscribe(subscription)
 
 
-def test_expired():
+@pytest.mark.parametrize("read", READERS)
+def test_expired(read):
     kept = []
     with biyos.Environment() as env:
         env.subscribe(kept.append, EventKind.MESSAGE, Level.DEBUG)
         fail(env)
     with pytest.raises(ValueError, match="the event is no longer valid"):
-        kept[0].text
+        read(kept[0])
+
+
+def test_formats():
+    lines = []
+    with biyos.Environment() as env:
+        function = partial(keep_lines, lines)
+        env.subscribe(function, EventKind.MESSAGE, Level.ERROR)
+        error = fail(env)
+    text, line = lines[0]
+    stamp, rest = text.split(" ", 1)
+    assert re.fullmatch(r"\d+\.\d{6}", stamp)
+    assert rest == f"error capi: {error} code=-100"
+    parsed = json.loads(line)
+    assert parsed.pop("time") == float(stamp)
+    assert parsed == {
+        "kind": "message",
+        "level": "error",
+        "module": "capi",
+        "text": str(error),
+        "fields": {"code": "-100"},
+    }
 
 
 def test_kept():

@@ -3,9 +3,11 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     byref,
+    c_char,
     c_char_p,
     c_double,
     c_int,
+    c_size_t,
     c_void_p,
 )
 from importlib.resources import files
@@ -63,6 +65,13 @@ def _declare_events(lib, ints):
     _declare(lib, "biyos_event_field_count", c_int, c_void_p)
     _declare(lib, "biyos_event_field_name", c_char_p, c_void_p, c_int)
     _declare(lib, "biyos_event_field_value", c_char_p, c_void_p, c_int)
+    _declare_formats(lib)
+
+
+def _declare_formats(lib):
+    arguments = (c_void_p, POINTER(c_char), c_size_t, POINTER(c_size_t))
+    _declare(lib, "biyos_format_text", c_int, *arguments)
+    _declare(lib, "biyos_format_json", c_int, *arguments)
 
 
 lib = _load()
