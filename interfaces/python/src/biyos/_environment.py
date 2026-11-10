@@ -19,6 +19,46 @@ def _name(name):
     return _encoded(name)
 
 
+def _rejected(name, noun, value):
+    found = type(value).__name__
+    return TypeError(f"option '{name}' takes {noun}, not {found}")
+
+
+def _bool(name, value):
+    if not isinstance(value, bool):
+        raise _rejected(name, "a bool", value)
+    return int(value)
+
+
+def _int(name, value):
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise _rejected(name, "an int", value)
+    if c_int(value).value != value:
+        message = f"option '{name}': {value} does not fit in a C int"
+        raise OverflowError(message)
+    return value
+
+
+def _double(name, value):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise _rejected(name, "a number", value)
+    return float(value)
+
+
+def _string(name, value):
+    if not isinstance(value, str):
+        raise _rejected(name, "a str", value)
+    return _encoded(value)
+
+
+_SETTERS = {
+    _capi.KIND_BOOL: (lib.biyos_set_bool_option, _bool),
+    _capi.KIND_INT: (lib.biyos_set_int_option, _int),
+    _capi.KIND_DOUBLE: (lib.biyos_set_double_option, _double),
+    _capi.KIND_STRING: (lib.biyos_set_string_option, _string),
+    _capi.KIND_ENUM: (lib.biyos_set_string_option, _string),
+}
+
 _GETTERS = {
     _capi.KIND_BOOL: (lib.biyos_get_bool_option, c_int, bool),
     _capi.KIND_INT: (lib.biyos_get_int_option, c_int, int),
@@ -45,6 +85,11 @@ class Environment:
 
     def close(self):
         self._free()
+
+    def set_option(self, name, value):
+        option, kind = self._lookup(name)
+        setter, convert = _SETTERS[kind]
+        self._call(setter, option, convert(name, value))
 
     def get_option(self, name):
         option, kind = self._lookup(name)
