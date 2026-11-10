@@ -125,6 +125,16 @@ TEST_F(EventTest, LevelIds)
     EXPECT_EQ(failure([] { biyos::find_level(5); }), "invalid argument: level 5: unknown");
 }
 
+TEST_F(EventTest, Names)
+{
+    EXPECT_EQ(biyos::name_of(EventKind::Message), "message");
+    EXPECT_EQ(biyos::name_of(EventKind::Check), "check");
+    EXPECT_EQ(biyos::name_of(Level::Debug), "debug");
+    EXPECT_EQ(biyos::name_of(Level::Info), "info");
+    EXPECT_EQ(biyos::name_of(Level::Warning), "warning");
+    EXPECT_EQ(biyos::name_of(Level::Error), "error");
+}
+
 TEST_F(EventTest, NoRecord)
 {
     int built = 0;

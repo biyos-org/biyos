@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace biyos
@@ -34,6 +35,8 @@ inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Check};
 
 EventKind find_kind(int id);
 Level find_level(int id);
+std::string_view name_of(EventKind kind) noexcept;
+std::string_view name_of(Level level) noexcept;
 
 struct Field
 {
