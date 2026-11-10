@@ -23,6 +23,7 @@ enum class Option
     FeasibilityRel = BIYOS_OPT_FEASIBILITY_REL,
     IntegralityTol = BIYOS_OPT_INTEGRALITY_TOL,
     ZeroTol = BIYOS_OPT_ZERO_TOL,
+    CpuTimeLimit = BIYOS_OPT_CPU_TIME_LIMIT,
 };
 
 enum class OptionKind

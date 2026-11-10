@@ -42,6 +42,7 @@ TEST(OptionTest, Defaults)
     EXPECT_DOUBLE_EQ(options.get_double(Option::FeasibilityRel), 1e-6);
     EXPECT_DOUBLE_EQ(options.get_double(Option::IntegralityTol), 1e-5);
     EXPECT_DOUBLE_EQ(options.get_double(Option::ZeroTol), 1e-9);
+    EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), kInfinity);
 }
 
 TEST(OptionTest, Bool)
@@ -89,6 +90,19 @@ TEST(OptionTest, DoubleRange)
     EXPECT_EQ(failure([&] { options.set_double(Option::TimeLimit, kNan); }),
               "invalid argument: option 'time_limit': nan is outside [0, inf]");
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), 2.5);
+}
+
+TEST(OptionTest, CpuLimit)
+{
+    biyos::Options options;
+    options.set_double(Option::CpuTimeLimit, 0.0);
+    EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), 0.0);
+    options.set_double(Option::CpuTimeLimit, 2.5);
+    EXPECT_EQ(failure([&] { options.set_double(Option::CpuTimeLimit, -0.5); }),
+              "invalid argument: option 'cpu_time_limit': -0.5 is outside [0, inf]");
+    EXPECT_EQ(failure([&] { options.set_double(Option::CpuTimeLimit, kNan); }),
+              "invalid argument: option 'cpu_time_limit': nan is outside [0, inf]");
+    EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), 2.5);
 }
 
 TEST(OptionTest, ToleranceRange)
@@ -167,7 +181,8 @@ TEST(OptionTest, Names)
 {
     for (const Option option :
          {Option::Seed, Option::TimeLimit, Option::CheckLevel, Option::Presolve, Option::Reproducer,
-          Option::FeasibilityAbs, Option::FeasibilityRel, Option::IntegralityTol, Option::ZeroTol})
+          Option::FeasibilityAbs, Option::FeasibilityRel, Option::IntegralityTol, Option::ZeroTol,
+          Option::CpuTimeLimit})
     {
         EXPECT_EQ(biyos::find_option(biyos::name_of(option)), option);
         EXPECT_EQ(biyos::find_option(static_cast<int>(option)), option);
@@ -187,6 +202,7 @@ TEST(OptionTest, Kinds)
     EXPECT_EQ(biyos::kind_of(Option::FeasibilityRel), OptionKind::Double);
     EXPECT_EQ(biyos::kind_of(Option::IntegralityTol), OptionKind::Double);
     EXPECT_EQ(biyos::kind_of(Option::ZeroTol), OptionKind::Double);
+    EXPECT_EQ(biyos::kind_of(Option::CpuTimeLimit), OptionKind::Double);
 }
 
 TEST(OptionTest, UnknownName)
@@ -199,21 +215,21 @@ TEST(OptionTest, UnknownName)
 TEST(OptionTest, UnknownId)
 {
     EXPECT_EQ(failure([] { biyos::find_option(0); }), "invalid argument: option 0: unknown");
-    EXPECT_EQ(failure([] { biyos::find_option(10); }), "invalid argument: option 10: unknown");
+    EXPECT_EQ(failure([] { biyos::find_option(11); }), "invalid argument: option 11: unknown");
     EXPECT_EQ(failure([] { biyos::find_option(-3); }), "invalid argument: option -3: unknown");
 }
 
 TEST(OptionTest, MissingRow)
 {
     biyos::Options options;
-    const Option past = static_cast<Option>(10);
+    const Option past = static_cast<Option>(11);
     const Option zero = static_cast<Option>(0);
     EXPECT_EQ(failure([&] { options.set_int(past, 1); }),
-              "internal error: option 10: has no table row");
+              "internal error: option 11: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_string(zero)); }),
               "internal error: option 0: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(biyos::name_of(past)); }),
-              "internal error: option 10: has no table row");
+              "internal error: option 11: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(biyos::kind_of(past)); }),
-              "internal error: option 10: has no table row");
+              "internal error: option 11: has no table row");
 }
