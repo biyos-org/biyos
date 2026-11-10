@@ -1,46 +1,24 @@
 #include "biyos/biyos.h"
 
+#include "capi/entry.hpp"
 #include "capi/event.hpp"
 #include "capi/firewall.hpp"
 #include "core/environment.hpp"
-#include "core/error.hpp"
 #include "core/events.hpp"
 #include "core/options.hpp"
 #include "core/version.hpp"
 
 #include <cstddef>
 #include <optional>
-#include <string>
 #include <string_view>
 #include <vector>
 
-struct biyos_env
-{
-    biyos::Environment core;
-};
+using biyos::capi::guarded;
+using biyos::capi::require;
+using biyos::capi::writable;
 
 namespace
 {
-
-template <typename T> T *require(T *pointer, std::string_view name)
-{
-    if (pointer == nullptr)
-    {
-        throw biyos::Error(biyos::ErrorKind::InvalidArgument,
-                           "argument '" + std::string(name) + "'", "is null");
-    }
-    return pointer;
-}
-
-biyos::Environment &writable(biyos::Environment &env)
-{
-    if (env.events().delivering())
-    {
-        const std::string reason = "is read-only while delivering an event";
-        throw biyos::Error(biyos::ErrorKind::InvalidArgument, "environment", reason);
-    }
-    return env;
-}
 
 void option_id(biyos::Environment &, const char *name, int *option)
 {
@@ -155,15 +133,6 @@ const biyos::Field *field_of(const biyos_event *event, int field)
     const std::vector<biyos::Field> &fields = event->core->fields;
     const auto index = static_cast<std::size_t>(field);
     return index < fields.size() ? &fields[index] : nullptr;
-}
-
-template <auto Body, typename... Args> biyos_status guarded(biyos_env *env, Args... args) noexcept
-{
-    if (env == nullptr)
-    {
-        return BIYOS_INVALID_ARGUMENT;
-    }
-    return biyos::capi::guard(&env->core, [&] { Body(env->core, args...); });
 }
 
 }
