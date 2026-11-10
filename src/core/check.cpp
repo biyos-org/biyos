@@ -41,10 +41,15 @@ void Checker::fail(ErrorKind kind, std::string_view invariant, std::string_view 
 {
     const Error error(kind, std::string(object), message_of(invariant, values));
     const auto fill = [&](Event &event) { describe(event, module_, error, invariant, values); };
-    env_.record_error(error.what());
-    if (!env_.events().delivering())
+    Events &events = env_.events();
+    if (events.filling())
     {
-        env_.events().emit(EventKind::Check, Level::Error, fill);
+        throw error;
+    }
+    env_.record_error(error.what());
+    if (!events.delivering())
+    {
+        events.emit(EventKind::Check, Level::Error, fill);
     }
     throw error;
 }

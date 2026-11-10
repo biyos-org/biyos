@@ -210,3 +210,16 @@ TEST_F(CheckTest, Delivering)
     EXPECT_EQ(received, 1);
     EXPECT_EQ(nested, "invalid argument: row 3: check 'sorted' failed: 3 > 2");
 }
+
+TEST_F(CheckTest, Filling)
+{
+    const biyos::Checker checker = at("cheap");
+    const auto fill = [&](biyos::Event &) { check(checker, CheckLevel::Cheap, false); };
+    keep(EventKind::Check);
+    keep(EventKind::Message);
+    env.record_error("earlier");
+    env.events().emit(EventKind::Message, Level::Info, fill);
+    EXPECT_EQ(evaluated, 1);
+    EXPECT_TRUE(kept.empty());
+    EXPECT_EQ(env.last_error(), "earlier");
+}

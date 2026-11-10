@@ -226,7 +226,7 @@ A level is more severe the larger its value. The kinds and levels come from `biy
 
 A field is a name and a value, both text. The only events biyos sends so far are error messages. A call on an environment that fails sends one, unless the environment is delivering an event: its level is `BIYOS_LEVEL_ERROR`, its module `capi`, its text the message `biyos_last_error_message` returns for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a subscriber can tell the group from the range.
 
-A check event reports an invariant that does not hold, found by a check the `check_level` option runs, and the call then fails. Its level is `BIYOS_LEVEL_ERROR`, its module the module that ran the check, its text the message `biyos_last_error_message` returns for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. No call runs a check yet.
+A check event reports an invariant that does not hold, found by a check the `check_level` option runs, and the call then fails. Its level is `BIYOS_LEVEL_ERROR`, its module the module that ran the check, its text the message `biyos_last_error_message` returns for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. A check that fails while biyos is building an event sends no check event and does not fail the call: the event being built is not sent, the check's error is dropped, and the last error message is left as it was. No call runs a check yet.
 
 ### Subscribers
 
