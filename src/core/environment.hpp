@@ -5,6 +5,7 @@
 #include "core/options.hpp"
 
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -16,6 +17,9 @@ class Environment
   public:
     Environment();
     explicit Environment(std::unique_ptr<Clock> clock);
+    Environment(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table);
+    Environment(const Environment &) = delete;
+    Environment &operator=(const Environment &) = delete;
 
     // A failure recorded inside a scope is undone when the scope ends, so a subscriber's failed
     // call never changes the last error another reads. The outer message is swapped aside on the
@@ -49,9 +53,9 @@ class Environment
     void record_error(std::string_view text) noexcept;
 
   private:
-    Options options_;
     std::unique_ptr<Clock> clock_;
     Events events_;
+    Options options_;
     std::string last_error_;
     ErrorScope *scope_ = nullptr;
 };

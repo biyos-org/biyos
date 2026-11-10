@@ -39,7 +39,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | Macro | Value | Meaning |
 | --- | --- | --- |
 | `BIYOS_OK` | 0 | the call succeeded |
-| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer or environment, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, an unknown event kind, level or subscription, or a change to an environment while it delivers an event |
+| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer or environment, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, or a change to an environment while it delivers an event |
 | `BIYOS_NO_MEMORY` | -400 | an allocation failed |
 | `BIYOS_INTERNAL_ERROR` | -500 | a fault in biyos |
 
@@ -126,6 +126,8 @@ The ranges in the Accepts column include their ends and are checked exactly, wit
 
 The tolerance options say when a value of a model, such as a variable or a constraint function at a point, meets a lower or upper bound the model puts on it, equals another such value, is zero or is integral. A finite value meets a finite bound unless it lies beyond it by more than both `feasibility_abs` and `feasibility_rel` times the larger of 1 and the magnitude of the bound. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. Two finite values are equal unless they differ by more than both `feasibility_abs` and `feasibility_rel` times the larger of 1 and their magnitudes. An infinite value equals only itself and is not integral. NaN is not zero, not integral, equal to no value and meets no bound.
 
+Each option records the version of biyos that added it and, once it is no longer wanted, the version that deprecated it and the version that retired it, read with `biyos_option_versions`. A deprecated option still works: setting it sets it and sends a message event at level `BIYOS_LEVEL_WARNING`, from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. Setting a retired option, by any call, returns `BIYOS_INVALID_ARGUMENT` with a message such as `invalid argument: option 'old': retired in 0.3.0, use 'new'` and changes nothing, and getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither. Every option above was added in 0.1.0, and none is deprecated or retired.
+
 ### `biyos_option_id`
 
 ```c
@@ -141,6 +143,15 @@ biyos_status biyos_option_kind(biyos_env *env, int option, int *kind);
 ```
 
 Writes to `*kind` the kind of the option, one of the `BIYOS_KIND_*` values.
+
+### `biyos_option_versions`
+
+```c
+biyos_status biyos_option_versions(biyos_env *env, int option, int *since, int *deprecated,
+                                   int *retired);
+```
+
+Writes three versions of biyos: to `*since` the one that added the option, to `*deprecated` the one that deprecated it and to `*retired` the one that retired it. Each is written as `10000 * major + 100 * minor + patch`, such as 100 for 0.1.0, or as 0 when the option is not deprecated or not retired. A minor or patch number stays below 100, so two versions compare as their numbers do.
 
 ### `biyos_set_bool_option`
 
@@ -225,7 +236,7 @@ biyos never prints. It reports through events, and a caller reads them by subscr
 
 A level is more severe the larger its value. The kinds and levels come from `biyos/events.h`.
 
-A field is a name and a value, both text. The only events biyos sends so far are error messages. A call on an environment that fails sends one, unless the environment is delivering an event: its level is `BIYOS_LEVEL_ERROR`, its module `capi`, its text the message `biyos_last_error_message` returns for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a subscriber can tell the group from the range.
+A field is a name and a value, both text. Messages, check events and phase events are described below in turn. The messages biyos sends so far are an error when a call fails and a warning when a deprecated option is set. A call on an environment that fails sends an error message, unless the environment is delivering an event: its level is `BIYOS_LEVEL_ERROR`, its module `capi`, its text the message `biyos_last_error_message` returns for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a subscriber can tell the group from the range. Setting a deprecated option sends a warning message from module `core`, whose text and fields are given under Options. No option is deprecated yet.
 
 A check event reports an invariant that does not hold, found by a check the `check_level` option runs, and the call then fails. Its level is `BIYOS_LEVEL_ERROR`, its module the module that ran the check, its text the message `biyos_last_error_message` returns for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. A check that fails while biyos is building an event sends no check event and does not fail the call: the event being built is not sent, the check's error is dropped, and the last error message is left as it was. No call runs a check yet.
 

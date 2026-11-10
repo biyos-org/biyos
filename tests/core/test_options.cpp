@@ -1,19 +1,61 @@
+#include "core/clock.hpp"
 #include "core/error.hpp"
+#include "core/events.hpp"
 #include "core/options.hpp"
+#include "core/version.hpp"
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <functional>
 #include <limits>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace
 {
 
+using biyos::EventKind;
+using biyos::IntRule;
+using biyos::Level;
 using biyos::Option;
+using biyos::OptionSpec;
+using biyos::Version;
+using Rows = std::array<OptionSpec, 3>;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr std::string_view kMalformed = "internal error: option table: is not well formed";
+constexpr Version kFirst{0, 0, 1};
+constexpr Version kSecond{0, 0, 2};
+constexpr Version kThird{0, 0, 3};
+
+constexpr Rows kRows{
+    OptionSpec{
+        .id = Option{1},
+        .name = "new",
+        .rule = IntRule{.default_value = 1, .lower = 0},
+        .doc = "Current.",
+        .versions = {.since = kFirst},
+    },
+    OptionSpec{
+        .id = Option{2},
+        .name = "old",
+        .rule = IntRule{.default_value = 1, .lower = 0},
+        .doc = "Deprecated.",
+        .versions = {.since = kFirst, .deprecated = kSecond},
+        .replacement = Option{1},
+    },
+    OptionSpec{
+        .id = Option{3},
+        .name = "gone",
+        .rule = IntRule{.default_value = 1, .lower = 0},
+        .doc = "Retired.",
+        .versions = {.since = kFirst, .deprecated = kSecond, .retired = kThird},
+        .replacement = Option{1},
+    },
+};
 
 std::string failure(const std::function<void()> &body)
 {
@@ -28,11 +70,45 @@ std::string failure(const std::function<void()> &body)
     return "no error";
 }
 
+struct Stream
+{
+    Stream()
+    {
+        const auto record = [this](const biyos::Event &event) { heard.push_back(event); };
+        events.subscribe(EventKind::Message, Level::Debug, record);
+    }
+    Stream(const Stream &) = delete;
+    Stream &operator=(const Stream &) = delete;
+
+    biyos::FakeClock clock;
+    biyos::Events events{clock};
+    std::vector<biyos::Event> heard;
+};
+
+std::string built(const std::function<void(Rows &)> &change)
+{
+    Rows rows = kRows;
+    change(rows);
+    Stream stream;
+    return failure([&] { const biyos::Options options(rows, stream.events); });
+}
+
+std::string listed(const std::vector<biyos::Field> &fields)
+{
+    std::string text;
+    for (const biyos::Field &field : fields)
+    {
+        text += (text.empty() ? "" : " ") + field.name + "=" + field.value;
+    }
+    return text;
+}
+
 }
 
 TEST(OptionTest, Defaults)
 {
-    const biyos::Options options;
+    Stream stream;
+    const biyos::Options options(stream.events);
     EXPECT_EQ(options.get_int(Option::Seed), 0);
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), kInfinity);
     EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
@@ -47,14 +123,16 @@ TEST(OptionTest, Defaults)
 
 TEST(OptionTest, Bool)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_bool(Option::Presolve, false);
     EXPECT_FALSE(options.get_bool(Option::Presolve));
 }
 
 TEST(OptionTest, Int)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_int(Option::Seed, 42);
     EXPECT_EQ(options.get_int(Option::Seed), 42);
     options.set_int(Option::Seed, (std::numeric_limits<int>::max)());
@@ -63,7 +141,8 @@ TEST(OptionTest, Int)
 
 TEST(OptionTest, IntRange)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_int(Option::Seed, 7);
     EXPECT_EQ(failure([&] { options.set_int(Option::Seed, -1); }),
               "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
@@ -72,7 +151,8 @@ TEST(OptionTest, IntRange)
 
 TEST(OptionTest, Double)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_double(Option::TimeLimit, 2.5);
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), 2.5);
     options.set_double(Option::TimeLimit, 0.0);
@@ -83,7 +163,8 @@ TEST(OptionTest, Double)
 
 TEST(OptionTest, DoubleRange)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_double(Option::TimeLimit, 2.5);
     EXPECT_EQ(failure([&] { options.set_double(Option::TimeLimit, -0.5); }),
               "invalid argument: option 'time_limit': -0.5 is outside [0, inf]");
@@ -94,7 +175,8 @@ TEST(OptionTest, DoubleRange)
 
 TEST(OptionTest, CpuLimit)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_double(Option::CpuTimeLimit, 0.0);
     EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), 0.0);
     options.set_double(Option::CpuTimeLimit, 2.5);
@@ -107,7 +189,8 @@ TEST(OptionTest, CpuLimit)
 
 TEST(OptionTest, ToleranceRange)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     for (const Option option :
          {Option::FeasibilityAbs, Option::FeasibilityRel, Option::IntegralityTol, Option::ZeroTol})
     {
@@ -127,14 +210,16 @@ TEST(OptionTest, ToleranceRange)
 
 TEST(OptionTest, String)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_string(Option::Reproducer, "replay.txt");
     EXPECT_EQ(options.get_string(Option::Reproducer), "replay.txt");
 }
 
 TEST(OptionTest, Enum)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_string(Option::CheckLevel, "full");
     EXPECT_EQ(options.get_string(Option::CheckLevel), "full");
     options.set_string(Option::CheckLevel, "none");
@@ -143,7 +228,8 @@ TEST(OptionTest, Enum)
 
 TEST(OptionTest, EnumValue)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     EXPECT_EQ(failure([&] { options.set_string(Option::CheckLevel, "most"); }),
               "invalid argument: option 'check_level': 'most' is not one of none, cheap, full");
     EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
@@ -152,7 +238,8 @@ TEST(OptionTest, EnumValue)
 TEST(OptionTest, TypedEnum)
 {
     using biyos::CheckLevel;
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Cheap);
     options.set_string(Option::CheckLevel, "full");
     EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Full);
@@ -164,7 +251,8 @@ TEST(OptionTest, TypedEnum)
 
 TEST(OptionTest, WrongKind)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     EXPECT_EQ(failure([&] { options.set_double(Option::Seed, 1.0); }),
               "invalid argument: option 'seed': is an int, not a double");
     EXPECT_EQ(failure([&] { options.set_string(Option::Presolve, "yes"); }),
@@ -205,6 +293,14 @@ TEST(OptionTest, Kinds)
     EXPECT_EQ(biyos::kind_of(Option::CpuTimeLimit), OptionKind::Double);
 }
 
+TEST(OptionTest, Versions)
+{
+    const biyos::Versions seed = biyos::versions_of(Option::Seed);
+    EXPECT_EQ(seed.since, (Version{0, 1, 0}));
+    EXPECT_FALSE(seed.deprecated);
+    EXPECT_FALSE(seed.retired);
+}
+
 TEST(OptionTest, UnknownName)
 {
     EXPECT_EQ(failure([] { biyos::find_option("seeds"); }),
@@ -221,7 +317,8 @@ TEST(OptionTest, UnknownId)
 
 TEST(OptionTest, MissingRow)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     const Option past = static_cast<Option>(11);
     const Option zero = static_cast<Option>(0);
     EXPECT_EQ(failure([&] { options.set_int(past, 1); }),
@@ -232,4 +329,86 @@ TEST(OptionTest, MissingRow)
               "internal error: option 11: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(biyos::kind_of(past)); }),
               "internal error: option 11: has no table row");
+    EXPECT_EQ(failure([&] { static_cast<void>(biyos::versions_of(past)); }),
+              "internal error: option 11: has no table row");
+}
+
+TEST(OptionTest, Table)
+{
+    Stream stream;
+    biyos::Options options(kRows, stream.events);
+    EXPECT_EQ(options.get_int(Option{1}), 1);
+    options.set_int(Option{1}, 5);
+    EXPECT_EQ(options.get_int(Option{1}), 5);
+    EXPECT_EQ(failure([&] { options.set_int(Option{1}, -1); }),
+              "invalid argument: option 'new': -1 is outside [0, 2147483647]");
+    EXPECT_EQ(failure([&] { static_cast<void>(options.get_int(Option{4})); }),
+              "internal error: option 4: has no table row");
+    EXPECT_TRUE(stream.heard.empty());
+}
+
+TEST(OptionTest, BadTable)
+{
+    EXPECT_EQ(built([](Rows &) {}), "no error");
+    EXPECT_EQ(built([](Rows &rows) { rows[1].id = Option{3}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].name = "new"; }), kMalformed);
+    const IntRule below{.default_value = -1, .lower = 0};
+    EXPECT_EQ(built([&below](Rows &rows) { rows[1].rule = below; }), kMalformed);
+}
+
+TEST(OptionTest, Dates)
+{
+    const Version project = biyos::version();
+    const Version later{project.major + 1, 0, 0};
+    EXPECT_EQ(built([&](Rows &rows) { rows[2].versions.retired = project; }), "no error");
+    EXPECT_EQ(built([](Rows &rows) { rows[0].versions.since = Version{}; }), kMalformed);
+    EXPECT_EQ(built([&](Rows &rows) { rows[0].versions.since = later; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].versions.deprecated = kFirst; }), kMalformed);
+    EXPECT_EQ(built([&](Rows &rows) { rows[1].versions.deprecated = later; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[2].versions.retired = kSecond; }), kMalformed);
+    EXPECT_EQ(built([&](Rows &rows) { rows[2].versions.retired = later; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[0].versions.retired = kThird; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[2].versions.retired = Version{0, 0, 100}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[2].versions.retired = Version{0, 1, -1}; }), kMalformed);
+}
+
+TEST(OptionTest, Replacements)
+{
+    EXPECT_EQ(built([](Rows &rows) { rows[1].replacement.reset(); }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[0].replacement = Option{1}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].replacement = Option{2}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].replacement = Option{3}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].replacement = Option{4}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].replacement = Option{0}; }), kMalformed);
+}
+
+TEST(OptionTest, Retired)
+{
+    const std::string retired = "invalid argument: option 'gone': retired in 0.0.3, use 'new'";
+    Stream stream;
+    biyos::Options options(kRows, stream.events);
+    EXPECT_EQ(failure([&] { options.set_int(Option{3}, 5); }), retired);
+    EXPECT_EQ(failure([&] { options.set_bool(Option{3}, true); }), retired);
+    EXPECT_EQ(failure([&] { options.set_double(Option{3}, 5.0); }), retired);
+    EXPECT_EQ(failure([&] { options.set_string(Option{3}, "5"); }), retired);
+    EXPECT_EQ(options.get_int(Option{3}), 1);
+    EXPECT_TRUE(stream.heard.empty());
+}
+
+TEST(OptionTest, Deprecated)
+{
+    Stream stream;
+    biyos::Options options(kRows, stream.events);
+    options.set_int(Option{2}, 5);
+    EXPECT_EQ(options.get_int(Option{2}), 5);
+    ASSERT_EQ(stream.heard.size(), 1U);
+    const biyos::Event &event = stream.heard.front();
+    EXPECT_EQ(event.kind, EventKind::Message);
+    EXPECT_EQ(event.level, Level::Warning);
+    EXPECT_EQ(event.module, "core");
+    EXPECT_EQ(event.text, "option 'old': deprecated in 0.0.2, use 'new'");
+    EXPECT_EQ(listed(event.fields), "option=old deprecated=0.0.2 replacement=new");
+    EXPECT_EQ(failure([&] { options.set_int(Option{2}, -1); }),
+              "invalid argument: option 'old': -1 is outside [0, 2147483647]");
+    EXPECT_EQ(stream.heard.size(), 1U);
 }

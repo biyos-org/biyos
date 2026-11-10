@@ -9,6 +9,7 @@
 #include "core/version.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -51,6 +52,22 @@ void option_kind(biyos::Environment &, int option, int *kind)
 {
     const biyos::OptionKind found = biyos::kind_of(biyos::find_option(option));
     *require(kind, "kind") = static_cast<int>(found);
+}
+
+int optional_number(std::optional<biyos::Version> version)
+{
+    return version ? biyos::number_of(*version) : 0;
+}
+
+void option_versions(biyos::Environment &, int option, int *since, int *deprecated, int *retired)
+{
+    const biyos::Versions versions = biyos::versions_of(biyos::find_option(option));
+    require(since, "since");
+    require(deprecated, "deprecated");
+    require(retired, "retired");
+    *since = biyos::number_of(versions.since);
+    *deprecated = optional_number(versions.deprecated);
+    *retired = optional_number(versions.retired);
 }
 
 void set_bool(biyos::Environment &env, int option, int value)
@@ -205,6 +222,12 @@ biyos_status biyos_option_id(biyos_env *env, const char *name, int *option)
 biyos_status biyos_option_kind(biyos_env *env, int option, int *kind)
 {
     return guarded<option_kind>(env, option, kind);
+}
+
+biyos_status biyos_option_versions(biyos_env *env, int option, int *since, int *deprecated,
+                                   int *retired)
+{
+    return guarded<option_versions>(env, option, since, deprecated, retired);
 }
 
 biyos_status biyos_set_bool_option(biyos_env *env, int option, int value)

@@ -1,8 +1,12 @@
 #pragma once
 
 #include "biyos/options.h"
+#include "core/version.hpp"
 
 #include <cstddef>
+#include <limits>
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -11,6 +15,8 @@
 
 namespace biyos
 {
+
+class Events;
 
 enum class Option
 {
@@ -42,15 +48,71 @@ enum class CheckLevel
     Full,
 };
 
+struct BoolRule
+{
+    bool default_value;
+};
+
+struct IntRule
+{
+    int default_value;
+    int lower = (std::numeric_limits<int>::min)();
+    int upper = (std::numeric_limits<int>::max)();
+};
+
+struct DoubleRule
+{
+    double default_value;
+    double lower = -std::numeric_limits<double>::infinity();
+    double upper = std::numeric_limits<double>::infinity();
+};
+
+struct StringRule
+{
+    std::string_view default_value;
+};
+
+struct EnumRule
+{
+    std::string_view default_value;
+    std::span<const std::string_view> values;
+};
+
+// 0.0.0 < since < deprecated < retired <= the project version, each numbered, and only a deprecated
+// option is retired.
+struct Versions
+{
+    Version since;
+    std::optional<Version> deprecated = std::nullopt;
+    std::optional<Version> retired = std::nullopt;
+};
+
+// A deprecated row names a replacement, another row that is not deprecated. A current row names
+// none.
+struct OptionSpec
+{
+    Option id;
+    std::string_view name;
+    std::variant<BoolRule, IntRule, DoubleRule, StringRule, EnumRule> rule;
+    std::string_view doc;
+    Versions versions;
+    std::optional<Option> replacement = std::nullopt;
+};
+
 Option find_option(std::string_view name);
 Option find_option(int id);
 std::string_view name_of(Option option);
 OptionKind kind_of(Option option);
+Versions versions_of(Option option);
 
+// A value for each row of an option table, which outlives the store unchanged. The built-in table
+// is checked at compile time, a given one when the store is built. Setting a deprecated option
+// warns on the store's event stream.
 class Options
 {
   public:
-    Options();
+    explicit Options(Events &events);
+    Options(std::span<const OptionSpec> table, Events &events);
 
     void set_bool(Option option, bool value);
     void set_int(Option option, int value);
@@ -72,8 +134,14 @@ class Options
   private:
     using Value = std::variant<bool, int, double, std::string>;
 
+    static std::vector<Value> defaults(std::span<const OptionSpec> table);
+
+    void store(const OptionSpec &spec, Value value);
+
     std::size_t position_of(Option option) const;
 
+    std::span<const OptionSpec> table_;
+    Events &events_;
     std::vector<Value> values_;
 };
 

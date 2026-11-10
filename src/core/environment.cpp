@@ -25,7 +25,12 @@ std::unique_ptr<Clock> checked(std::unique_ptr<Clock> clock)
 Environment::Environment() : Environment(std::make_unique<SystemClock>()) {}
 
 Environment::Environment(std::unique_ptr<Clock> clock)
-    : clock_(checked(std::move(clock))), events_(*clock_)
+    : clock_(checked(std::move(clock))), events_(*clock_), options_(events_)
+{
+}
+
+Environment::Environment(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table)
+    : clock_(checked(std::move(clock))), events_(*clock_), options_(table, events_)
 {
 }
 

@@ -4,8 +4,12 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <memory>
+#include <string>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 TEST(EnvironmentTest, NoError)
 {
@@ -105,4 +109,49 @@ TEST(EnvironmentTest, CleanScope)
         EXPECT_EQ(env.last_error(), "outer");
     }
     EXPECT_EQ(env.last_error(), "outer");
+}
+
+TEST(EnvironmentTest, Unmovable)
+{
+    EXPECT_FALSE(std::is_copy_constructible_v<biyos::Environment>);
+    EXPECT_FALSE(std::is_copy_assignable_v<biyos::Environment>);
+    EXPECT_FALSE(std::is_move_constructible_v<biyos::Environment>);
+    EXPECT_FALSE(std::is_move_assignable_v<biyos::Environment>);
+}
+
+namespace
+{
+
+using biyos::Option;
+using biyos::OptionSpec;
+
+constexpr std::array kRows{
+    OptionSpec{
+        .id = Option{1},
+        .name = "new",
+        .rule = biyos::IntRule{.default_value = 1},
+        .doc = "Current.",
+        .versions = {.since = {0, 0, 1}},
+    },
+    OptionSpec{
+        .id = Option{2},
+        .name = "old",
+        .rule = biyos::IntRule{.default_value = 1},
+        .doc = "Deprecated.",
+        .versions = {.since = {0, 0, 1}, .deprecated = biyos::Version{0, 0, 2}},
+        .replacement = Option{1},
+    },
+};
+
+}
+
+TEST(EnvironmentTest, Deprecated)
+{
+    biyos::Environment env(std::make_unique<biyos::FakeClock>(), kRows);
+    std::vector<std::string> heard;
+    const auto record = [&heard](const biyos::Event &event) { heard.push_back(event.text); };
+    env.events().subscribe(biyos::EventKind::Message, biyos::Level::Warning, record);
+    env.options().set_int(Option{2}, 5);
+    EXPECT_EQ(env.options().get_int(Option{2}), 5);
+    EXPECT_EQ(heard, std::vector<std::string>{"option 'old': deprecated in 0.0.2, use 'new'"});
 }
