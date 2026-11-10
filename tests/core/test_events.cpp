@@ -57,6 +57,15 @@ class EventTest : public ::testing::Test
         return [this, name](const biyos::Event &event) { texts.push_back(name + event.text); };
     }
 
+    void rewire(int removed, const biyos::Event &event)
+    {
+        if (event.level == Level::Debug)
+        {
+            events.unsubscribe(removed);
+            listen(Level::Info, recorder("e "));
+        }
+    }
+
     biyos::Events events;
     Texts texts;
 };
@@ -194,6 +203,17 @@ TEST_F(EventTest, PeerRemoval)
     EXPECT_TRUE(texts.empty());
     EXPECT_EQ(failure([&] { events.unsubscribe(peer); }),
               "invalid argument: subscription 2: unknown");
+}
+
+TEST_F(EventTest, NestedRemoval)
+{
+    const int x = listen(Level::Info, recorder("x "));
+    listen(Level::Info, [this](const biyos::Event &) { say(Level::Debug, "inner"); });
+    listen(Level::Info, recorder("c "));
+    listen(Level::Info, recorder("d "));
+    listen(Level::Debug, [this, x](const biyos::Event &event) { rewire(x, event); });
+    say(Level::Info, "outer");
+    EXPECT_EQ(texts, (Texts{"x outer", "c outer", "d outer"}));
 }
 
 TEST_F(EventTest, LateSubscriber)
