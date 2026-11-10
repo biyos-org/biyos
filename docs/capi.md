@@ -222,6 +222,7 @@ A field is a name and a value, both text. The only events biyos sends so far are
 
 A subscriber is called with the event and the `user_data` its subscription was given.
 
+- Inside an error event, `biyos_last_error_message` returns that event's failure.
 - The event and every string read from it are valid only until the subscriber returns.
 
 ### `biyos_subscribe`

@@ -166,6 +166,17 @@ TEST(FirewallTest, ThrowingFill)
     EXPECT_TRUE(kept.empty());
 }
 
+TEST(FirewallTest, CurrentMessage)
+{
+    biyos::Environment env;
+    env.record_error("earlier");
+    std::string seen;
+    const auto read = [&](const biyos::Event &) { seen = env.last_error(); };
+    env.events().subscribe(EventKind::Message, Level::Error, read);
+    EXPECT_EQ(status_after(env, [] { throw std::runtime_error("now"); }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(seen, "internal error: now");
+}
+
 TEST(FirewallTest, NestedFailure)
 {
     biyos::Environment env;
