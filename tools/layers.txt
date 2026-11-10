@@ -3,7 +3,7 @@ linalg: core
 expr: core
 cones: core linalg
 model: core expr
-io: core model
+io: core expr model
 presolve: core linalg model
 lp: core linalg
 conic: core linalg cones
@@ -16,4 +16,4 @@ cuts: core linalg model relax
 heur: core model relax lp conic nlp
 callback: core tree
 solver: core linalg expr cones model io presolve lp conic nlp relax propagate tree branch cuts heur callback
-capi: core solver
+capi: core model io solver
