@@ -66,7 +66,7 @@ TEST(FirewallTest, ErrorMessage)
     EXPECT_EQ(env.last_error(), "invalid argument: argument 'n': negative");
 }
 
-TEST(FirewallTest, BadAllocMessage)
+TEST(FirewallTest, MemoryMessage)
 {
     biyos::Environment env;
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_NO_MEMORY);
@@ -87,7 +87,7 @@ TEST(FirewallTest, UnknownMessage)
     EXPECT_EQ(env.last_error(), "unknown exception");
 }
 
-TEST(FirewallTest, SuccessKeepsMessage)
+TEST(FirewallTest, KeptMessage)
 {
     biyos::Environment env;
     env.record_error("earlier");

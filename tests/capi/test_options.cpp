@@ -115,7 +115,7 @@ TEST(CApiTest, BadSet)
     EXPECT_EQ(value, 0);
 }
 
-TEST(CApiTest, BadEnumValue)
+TEST(CApiTest, BadEnum)
 {
     const Env env;
     EXPECT_EQ(biyos_set_string_option(env.get(), BIYOS_OPT_CHECK_LEVEL, "most"),
@@ -131,7 +131,7 @@ TEST(CApiTest, WrongKind)
     EXPECT_EQ(env.message(), "invalid argument: option 'seed': is an int, not a double");
 }
 
-TEST(CApiTest, MessageSurvivesSuccess)
+TEST(CApiTest, KeptMessage)
 {
     const Env env;
     EXPECT_EQ(biyos_set_int_option(env.get(), BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
