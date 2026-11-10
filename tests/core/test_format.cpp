@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace
@@ -32,6 +33,17 @@ biyos::Event removed()
 std::string text_of(std::string text)
 {
     return biyos::format_text(message(Level::Info, std::move(text)));
+}
+
+std::string json_of(std::string text)
+{
+    return biyos::format_json(message(Level::Info, std::move(text)));
+}
+
+std::string json_line(std::string_view quoted)
+{
+    const std::string head = R"({"kind":"message","level":"info","module":"core","text":)";
+    return head + std::string(quoted) + R"(,"fields":{}})";
 }
 
 }
@@ -75,4 +87,53 @@ TEST(FormatTest, TextFields)
     event.fields.push_back(biyos::Field{.name = "x\ty", .value = "1\n2"});
     event.fields.push_back(biyos::Field{.name = "", .value = ""});
     EXPECT_EQ(biyos::format_text(event), "info a\\nb: x\\ty=1\\n2 =");
+}
+
+TEST(FormatTest, Json)
+{
+    const std::string line = R"({"kind":"message","level":"info","module":"core",)"
+                             R"("text":"removed rows","fields":{"rows":"3","columns":"1"}})";
+    EXPECT_EQ(biyos::format_json(removed()), line);
+}
+
+TEST(FormatTest, JsonLevels)
+{
+    const std::string tail = R"(","module":"core","text":"","fields":{}})";
+    const std::string head = R"({"kind":"message","level":")";
+    EXPECT_EQ(biyos::format_json(message(Level::Debug, "")), head + "debug" + tail);
+    EXPECT_EQ(biyos::format_json(message(Level::Info, "")), head + "info" + tail);
+    EXPECT_EQ(biyos::format_json(message(Level::Warning, "")), head + "warning" + tail);
+    EXPECT_EQ(biyos::format_json(message(Level::Error, "")), head + "error" + tail);
+}
+
+TEST(FormatTest, JsonEscapes)
+{
+    const std::string quote = R"("say \"hi\"")";
+    const std::string backslash = R"("a\\b")";
+    const std::string newline = R"("a\nb")";
+    const std::string tab = R"("a\tb")";
+    const std::string others = R"("a\u000db\u0008c\u000cd")";
+    const std::string zero = R"("a\u0000b")";
+    const std::string bounds = R"("\u0001\u001f")";
+    EXPECT_EQ(json_of("say \"hi\""), json_line(quote));
+    EXPECT_EQ(json_of("a\\b"), json_line(backslash));
+    EXPECT_EQ(json_of("a\nb"), json_line(newline));
+    EXPECT_EQ(json_of("a\tb"), json_line(tab));
+    EXPECT_EQ(json_of("a\rb\bc\fd"), json_line(others));
+    EXPECT_EQ(json_of(std::string("a\0b", 3)), json_line(zero));
+    EXPECT_EQ(json_of("\x01\x1f"), json_line(bounds));
+    EXPECT_EQ(json_of("\x7f /"), json_line("\"\x7f /\""));
+    const std::string utf8 = "caf\xc3\xa9 \xe2\x82\xac \xf0\x9d\x84\x9e";
+    EXPECT_EQ(json_of(utf8), json_line("\"" + utf8 + "\""));
+}
+
+TEST(FormatTest, JsonFields)
+{
+    biyos::Event event = message(Level::Info, "");
+    event.module = "a\"b";
+    event.fields.push_back(biyos::Field{.name = "x\ny", .value = "\\"});
+    event.fields.push_back(biyos::Field{.name = "", .value = ""});
+    const std::string line = R"({"kind":"message","level":"info","module":"a\"b","text":"",)"
+                             R"("fields":{"x\ny":"\\","":""}})";
+    EXPECT_EQ(biyos::format_json(event), line);
 }
