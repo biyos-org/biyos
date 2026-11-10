@@ -1,9 +1,11 @@
 #pragma once
 
 #include "biyos/options.h"
+#include "core/version.hpp"
 
 #include <cstddef>
 #include <limits>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -74,12 +76,25 @@ struct EnumRule
     std::span<const std::string_view> values;
 };
 
+// 0.0.0 < since < deprecated < retired <= the project version, each numbered, and only a deprecated
+// option is retired.
+struct Versions
+{
+    Version since;
+    std::optional<Version> deprecated = std::nullopt;
+    std::optional<Version> retired = std::nullopt;
+};
+
+// A deprecated row names a replacement, another row that is not deprecated. A current row names
+// none.
 struct OptionSpec
 {
     Option id;
     std::string_view name;
     std::variant<BoolRule, IntRule, DoubleRule, StringRule, EnumRule> rule;
     std::string_view doc;
+    Versions versions;
+    std::optional<Option> replacement = std::nullopt;
 };
 
 Option find_option(std::string_view name);

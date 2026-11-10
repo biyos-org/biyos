@@ -4,6 +4,7 @@
 #include "core/option_checks.hpp"
 #include "core/option_table.hpp"
 #include "core/option_text.hpp"
+#include "core/version.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -79,7 +80,7 @@ void check_value(const OptionSpec &spec, const EnumRule &rule, std::string_view 
 
 std::span<const OptionSpec> checked(std::span<const OptionSpec> table)
 {
-    if (!well_formed(table))
+    if (!well_formed(table, version()))
     {
         throw Error(ErrorKind::Internal, "option table", "is not well formed");
     }

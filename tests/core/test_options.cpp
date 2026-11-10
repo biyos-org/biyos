@@ -1,5 +1,6 @@
 #include "core/error.hpp"
 #include "core/options.hpp"
+#include "core/version.hpp"
 
 #include <gtest/gtest.h>
 
@@ -15,11 +16,15 @@ namespace
 using biyos::IntRule;
 using biyos::Option;
 using biyos::OptionSpec;
+using biyos::Version;
 using Rows = std::array<OptionSpec, 3>;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
 constexpr std::string_view kMalformed = "internal error: option table: is not well formed";
+constexpr Version kFirst{0, 0, 1};
+constexpr Version kSecond{0, 0, 2};
+constexpr Version kThird{0, 0, 3};
 
 constexpr Rows kRows{
     OptionSpec{
@@ -27,18 +32,23 @@ constexpr Rows kRows{
         .name = "new",
         .rule = IntRule{.default_value = 1, .lower = 0},
         .doc = "Current.",
+        .versions = {.since = kFirst},
     },
     OptionSpec{
         .id = Option{2},
         .name = "old",
         .rule = IntRule{.default_value = 1, .lower = 0},
         .doc = "Deprecated.",
+        .versions = {.since = kFirst, .deprecated = kSecond},
+        .replacement = Option{1},
     },
     OptionSpec{
         .id = Option{3},
         .name = "gone",
         .rule = IntRule{.default_value = 1, .lower = 0},
         .doc = "Retired.",
+        .versions = {.since = kFirst, .deprecated = kSecond, .retired = kThird},
+        .replacement = Option{1},
     },
 };
 
@@ -287,4 +297,30 @@ TEST(OptionTest, BadTable)
     EXPECT_EQ(built([](Rows &rows) { rows[1].name = "new"; }), kMalformed);
     const IntRule below{.default_value = -1, .lower = 0};
     EXPECT_EQ(built([&below](Rows &rows) { rows[1].rule = below; }), kMalformed);
+}
+
+TEST(OptionTest, Dates)
+{
+    const Version project = biyos::version();
+    const Version later{project.major + 1, 0, 0};
+    EXPECT_EQ(built([&](Rows &rows) { rows[2].versions.retired = project; }), "no error");
+    EXPECT_EQ(built([](Rows &rows) { rows[0].versions.since = Version{}; }), kMalformed);
+    EXPECT_EQ(built([&](Rows &rows) { rows[0].versions.since = later; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].versions.deprecated = kFirst; }), kMalformed);
+    EXPECT_EQ(built([&](Rows &rows) { rows[1].versions.deprecated = later; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[2].versions.retired = kSecond; }), kMalformed);
+    EXPECT_EQ(built([&](Rows &rows) { rows[2].versions.retired = later; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[0].versions.retired = kThird; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[2].versions.retired = Version{0, 0, 100}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[2].versions.retired = Version{0, 1, -1}; }), kMalformed);
+}
+
+TEST(OptionTest, Replacements)
+{
+    EXPECT_EQ(built([](Rows &rows) { rows[1].replacement.reset(); }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[0].replacement = Option{1}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].replacement = Option{2}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].replacement = Option{3}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].replacement = Option{4}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].replacement = Option{0}; }), kMalformed);
 }
