@@ -320,7 +320,7 @@ Returns the value of field number `field`.
 | `BIYOS_TERMINATION_NOT_SOLVED` | 0 | no solve has ended |
 | `BIYOS_TERMINATION_OPTIMAL` | 101 | a global optimum was found and proved. It comes only with the claim `BIYOS_CLAIM_GLOBAL` |
 | `BIYOS_TERMINATION_LOCALLY_SOLVED` | 102 | a local solution: every convergence test held at its tolerance |
-| `BIYOS_TERMINATION_ALMOST_LOCALLY_SOLVED` | 103 | every convergence test held, but only at its relaxed tolerance |
+| `BIYOS_TERMINATION_ALMOST_LOCALLY_SOLVED` | 103 | every convergence test held at its relaxed tolerance, after the strict tolerances were not all met |
 | `BIYOS_TERMINATION_ITERATION_LIMIT` | 201 | the iteration limit was reached |
 | `BIYOS_TERMINATION_TIME_LIMIT` | 202 | the wall time limit was reached |
 | `BIYOS_TERMINATION_CPU_TIME_LIMIT` | 203 | the CPU time limit was reached |
