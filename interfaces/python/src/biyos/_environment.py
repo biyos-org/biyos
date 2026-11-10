@@ -5,6 +5,7 @@ from numbers import Real
 from biyos import _capi
 from biyos._capi import lib
 from biyos._error import Error, check
+from biyos._handles import Handles
 from biyos._integers import integer
 from biyos._relay import Relay
 from biyos._subscribers import Subscribers
@@ -78,6 +79,11 @@ _GETTERS = {
 }
 
 
+def _release(models, handle):
+    models.release()
+    lib.biyos_env_free(handle)
+
+
 class Environment:
     def __init__(self):
         handle = c_void_p()
@@ -85,7 +91,8 @@ class Environment:
         if status != _capi.OK:
             raise Error("cannot create the environment", status)
         self._handle = handle
-        self._free = weakref.finalize(self, lib.biyos_env_free, handle)
+        self._models = Handles()
+        self._free = weakref.finalize(self, _release, self._models, handle)
         self._relay = Relay()
         self._subscribers = Subscribers(self._relay)
 
@@ -96,9 +103,21 @@ class Environment:
         self.close()
 
     def close(self):
+        """Free the environment and every model made on it.
+
+        The models still open are closed first, so using one afterwards
+        raises ``ValueError``. Closing a closed environment does nothing.
+
+        Raises
+        ------
+        Error
+            While the environment delivers an event. Nothing is freed.
+        """
         if not self._free.alive:
             return
-        check(self._handle, lib.biyos_env_free(self._handle))
+        if self._relay.idle():
+            self._models.release()
+        self._run(lib.biyos_env_free, self._handle)
         self._free.detach()
         self._subscribers.clear()
 
@@ -152,9 +171,17 @@ class Environment:
         return option.value
 
     def _call(self, function, *arguments):
+        self._run(function, self._handle, *arguments)
+
+    def _run(self, function, *arguments):
         if not self._free.alive:
             raise ValueError("the environment is closed")
         self._relay.start()
-        status = function(self._handle, *arguments)
+        status = function(*arguments)
+        self._settle()
         self._relay.finish(self._handle, status)
         check(self._handle, status)
+
+    def _settle(self):
+        if self._relay.idle():
+            self._models.drain()

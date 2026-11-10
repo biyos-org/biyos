@@ -15,6 +15,9 @@ class Relay:
         finally:
             self._depth -= 1
 
+    def idle(self):
+        return self._depth == 0
+
     def start(self):
         if self._depth == 0:
             self._raised = None
