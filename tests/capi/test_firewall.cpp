@@ -7,6 +7,7 @@
 #include <functional>
 #include <new>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace
@@ -23,6 +24,12 @@ biyos_status status_after(const std::function<void()> &body)
 biyos_status status_after(biyos::Environment &env, const std::function<void()> &body)
 {
     return biyos::capi::guard(&env, body);
+}
+
+void say(biyos::Environment &env, const std::string &text)
+{
+    const auto fill = [&text](biyos::Event &event) { event.text = text; };
+    env.events().emit(EventKind::Message, Level::Info, fill);
 }
 
 void fail_once(biyos::Environment &env, int &calls)
@@ -139,9 +146,24 @@ TEST(FirewallTest, ThrowingSubscriber)
 {
     biyos::Environment env;
     const auto fail = [](const biyos::Event &) { throw std::runtime_error("subscriber"); };
-    env.events().subscribe(EventKind::Message, Level::Error, fail);
+    env.events().subscribe(EventKind::Message, Level::Debug, fail);
+    EXPECT_EQ(status_after(env, [&] { say(env, "info"); }), BIYOS_OK);
+    EXPECT_EQ(env.last_error(), "");
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_NO_MEMORY);
     EXPECT_EQ(env.last_error(), "out of memory");
+}
+
+TEST(FirewallTest, ThrowingFill)
+{
+    biyos::Environment env;
+    std::vector<biyos::Event> kept;
+    const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
+    env.events().subscribe(EventKind::Message, Level::Debug, keep);
+    const auto fill = [](biyos::Event &) { throw std::bad_alloc(); };
+    const auto body = [&] { env.events().emit(EventKind::Message, Level::Info, fill); };
+    EXPECT_EQ(status_after(env, body), BIYOS_OK);
+    EXPECT_EQ(env.last_error(), "");
+    EXPECT_TRUE(kept.empty());
 }
 
 TEST(FirewallTest, NestedFailure)

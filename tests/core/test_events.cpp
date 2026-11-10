@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <functional>
+#include <new>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -206,10 +207,17 @@ TEST_F(EventTest, LateSubscriber)
 TEST_F(EventTest, SubscriberThrows)
 {
     const auto fail = [](const biyos::Event &) { throw std::runtime_error("subscriber"); };
-    const int id = listen(Level::Debug, fail);
-    EXPECT_THROW(say(Level::Info, "one"), std::runtime_error);
-    events.unsubscribe(id);
+    listen(Level::Debug, fail);
     listen(Level::Debug, recorder(""));
-    say(Level::Info, "two");
-    EXPECT_EQ(texts, Texts{"two"});
+    EXPECT_NO_THROW(say(Level::Info, "one"));
+    EXPECT_EQ(texts, Texts{"one"});
+}
+
+TEST_F(EventTest, ThrowingFill)
+{
+    listen(Level::Debug, recorder(""));
+    const auto fill = [](biyos::Event &) { throw std::bad_alloc(); };
+    EXPECT_NO_THROW(events.emit(EventKind::Message, Level::Info, fill));
+    say(Level::Info, "after");
+    EXPECT_EQ(texts, Texts{"after"});
 }

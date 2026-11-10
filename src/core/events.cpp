@@ -33,6 +33,17 @@ constexpr bool numbered()
 static_assert(numbered());
 static_assert(std::ranges::is_sorted(kLevels));
 
+void notify(const Subscriber &subscriber, const Event &event) noexcept
+{
+    try
+    {
+        subscriber(event);
+    }
+    catch (...)
+    {
+    }
+}
+
 class Delivery
 {
   public:
@@ -133,7 +144,7 @@ void Events::refresh(EventKind kind) noexcept
     lowest_[slot(kind)] = lowest;
 }
 
-void Events::deliver(const Event &event)
+void Events::deliver(const Event &event) noexcept
 {
     const Delivery delivery(depth_);
     const std::size_t count = subscriptions_.size();
@@ -142,7 +153,7 @@ void Events::deliver(const Event &event)
         const Subscription &subscription = subscriptions_[i];
         if (accepts(subscription, event.kind, event.level))
         {
-            subscription.subscriber(event);
+            notify(subscription.subscriber, event);
         }
     }
     if (depth_ == 1)

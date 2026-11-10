@@ -38,13 +38,7 @@ inline void describe_failure(Event &event, std::string_view text)
 inline void announce(Environment &env, std::string_view text) noexcept
 {
     const auto fill = [text](Event &event) { describe_failure(event, text); };
-    try
-    {
-        env.events().emit(EventKind::Message, Level::Error, fill);
-    }
-    catch (...)
-    {
-    }
+    env.events().emit(EventKind::Message, Level::Error, fill);
 }
 
 inline void report(Environment *env, std::string_view text) noexcept

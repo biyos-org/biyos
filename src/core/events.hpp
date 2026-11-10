@@ -49,7 +49,8 @@ struct Event
 using Subscriber = std::function<void(const Event &)>;
 
 // Delivery follows subscription order. Subscribing or unsubscribing during delivery is allowed:
-// the deque never moves a running subscriber and removal waits until delivery ends.
+// the deque never moves a running subscriber and removal waits until delivery ends. An exception
+// from a fill or a subscriber is dropped, so observing never changes the outcome of a call.
 class Events
 {
   public:
@@ -60,14 +61,22 @@ class Events
 
     bool wanted(EventKind kind, Level level) const noexcept { return lowest_[slot(kind)] <= level; }
 
-    template <std::invocable<Event &> Fill> void emit(EventKind kind, Level level, Fill &&fill)
+    template <std::invocable<Event &> Fill>
+    void emit(EventKind kind, Level level, Fill &&fill) noexcept
     {
         if (!wanted(kind, level))
         {
             return;
         }
         Event event{.kind = kind, .level = level, .module = {}, .text = {}, .fields = {}};
-        fill(event);
+        try
+        {
+            fill(event);
+        }
+        catch (...)
+        {
+            return;
+        }
         deliver(event);
     }
 
@@ -88,7 +97,7 @@ class Events
     static bool accepts(const Subscription &subscription, EventKind kind, Level level) noexcept;
 
     void refresh(EventKind kind) noexcept;
-    void deliver(const Event &event);
+    void deliver(const Event &event) noexcept;
 
     std::deque<Subscription> subscriptions_;
     std::array<Level, kEventKinds.size()> lowest_;
