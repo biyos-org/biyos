@@ -1,5 +1,7 @@
 #include "biyos/biyos.h"
 
+#include <stddef.h>
+
 #if BIYOS_OK != 0
 #error "BIYOS_OK must be zero"
 #endif
@@ -16,13 +18,25 @@
 int main(void)
 {
     biyos_status status = BIYOS_OK;
+    biyos_env *env = NULL;
     int major = -1;
     int minor = -1;
     int patch = -1;
+    int seed = -1;
     biyos_version(&major, &minor, &patch);
     if (major < 0 || minor < 0 || patch < 0)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
+    if (biyos_env_create(&env) != BIYOS_OK || biyos_last_error_message(env)[0] != '\0')
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    if (biyos_set_int_option(env, BIYOS_OPT_SEED, 3) != BIYOS_OK ||
+        biyos_get_int_option(env, BIYOS_OPT_SEED, &seed) != BIYOS_OK || seed != 3)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    biyos_env_free(env);
     return status == BIYOS_OK ? 0 : 1;
 }
