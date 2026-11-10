@@ -1,3 +1,4 @@
+import biyos
 from biyos import _capi
 from biyos._capi import lib
 from header import functions, lines, macros
@@ -19,6 +20,14 @@ def test_kinds():
     assert len(kinds) == lines("options.h", "#define BIYOS_KIND_")
     names = [name for name in dir(_capi) if name.startswith("KIND_")]
     assert kinds == {f"BIYOS_{name}": getattr(_capi, name) for name in names}
+
+
+def test_variable_kinds():
+    found = macros("model.h")
+    kinds = {name: value for name, value in found.items() if "_VAR_" in name}
+    assert len(kinds) == lines("model.h", "#define BIYOS_VAR_")
+    names = {f"BIYOS_VAR_{kind.name}": kind for kind in biyos.VariableKind}
+    assert kinds == names
 
 
 def test_ok():
