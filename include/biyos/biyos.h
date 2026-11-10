@@ -1,5 +1,6 @@
 #pragma once
 
+#include "biyos/events.h"
 #include "biyos/options.h"
 
 #if defined(BIYOS_STATIC)

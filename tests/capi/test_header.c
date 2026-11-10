@@ -1,3 +1,4 @@
+#include "biyos/events.h"
 #include "biyos/options.h"
 
 #include "biyos/biyos.h"

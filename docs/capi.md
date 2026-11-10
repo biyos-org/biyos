@@ -196,3 +196,18 @@ biyos_status biyos_get_string_option(biyos_env *env, int option, const char **va
 ```
 
 Writes to `*value` the value of a string option, or the name of the value of an enum option. The pointer stays valid until the option is set again or `env` is freed. A failed set of the option and a set of another option leave it valid.
+
+## Events
+
+| Macro | Value | Kind |
+| --- | --- | --- |
+| `BIYOS_EVENT_MESSAGE` | 1 | a message: a level, the module that sent it, a text and fields |
+
+| Macro | Value | Level |
+| --- | --- | --- |
+| `BIYOS_LEVEL_DEBUG` | 1 | debug, the least severe |
+| `BIYOS_LEVEL_INFO` | 2 | info |
+| `BIYOS_LEVEL_WARNING` | 3 | warning |
+| `BIYOS_LEVEL_ERROR` | 4 | error, the most severe |
+
+A level is more severe the larger its value. The kinds and levels come from `biyos/events.h`.
