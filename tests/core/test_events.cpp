@@ -105,6 +105,20 @@ TEST_F(EventTest, LevelFilter)
     EXPECT_TRUE(events.wanted(EventKind::Message, Level::Warning));
 }
 
+TEST_F(EventTest, LowestLevel)
+{
+    EXPECT_FALSE(events.wanted(EventKind::Message, Level::Error));
+    const int info = listen(Level::Info, ignore);
+    const int error = listen(Level::Error, ignore);
+    EXPECT_FALSE(events.wanted(EventKind::Message, Level::Debug));
+    EXPECT_TRUE(events.wanted(EventKind::Message, Level::Info));
+    events.unsubscribe(info);
+    EXPECT_FALSE(events.wanted(EventKind::Message, Level::Warning));
+    EXPECT_TRUE(events.wanted(EventKind::Message, Level::Error));
+    events.unsubscribe(error);
+    EXPECT_FALSE(events.wanted(EventKind::Message, Level::Error));
+}
+
 TEST_F(EventTest, Order)
 {
     listen(Level::Debug, recorder("a "));

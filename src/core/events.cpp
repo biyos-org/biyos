@@ -16,9 +16,21 @@ namespace biyos
 namespace
 {
 
-constexpr std::array kKinds{EventKind::Message};
 constexpr std::array kLevels{Level::Debug, Level::Info, Level::Warning, Level::Error};
 
+constexpr bool numbered()
+{
+    for (std::size_t i = 0; i < kEventKinds.size(); ++i)
+    {
+        if (static_cast<std::size_t>(kEventKinds[i]) != i + 1)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+static_assert(numbered());
 static_assert(std::ranges::is_sorted(kLevels));
 
 class Delivery
@@ -40,7 +52,7 @@ class Delivery
 EventKind find_kind(int id)
 {
     const auto kind = static_cast<EventKind>(id);
-    if (std::ranges::find(kKinds, kind) == kKinds.end())
+    if (std::ranges::find(kEventKinds, kind) == kEventKinds.end())
     {
         throw Error(ErrorKind::InvalidArgument, "event kind " + std::to_string(id), "unknown");
     }
@@ -55,6 +67,11 @@ Level find_level(int id)
         throw Error(ErrorKind::InvalidArgument, "level " + std::to_string(id), "unknown");
     }
     return level;
+}
+
+Events::Events()
+{
+    lowest_.fill(kNobody);
 }
 
 int Events::subscribe(EventKind kind, Level lowest, Subscriber subscriber)
@@ -74,6 +91,8 @@ int Events::subscribe(EventKind kind, Level lowest, Subscriber subscriber)
         .subscriber = std::move(subscriber),
         .active = true,
     });
+    const std::size_t at = slot(kind);
+    lowest_[at] = (std::min)(lowest_[at], lowest);
     return next_id_++;
 }
 
@@ -84,29 +103,34 @@ void Events::unsubscribe(int id)
     {
         throw Error(ErrorKind::InvalidArgument, "subscription " + std::to_string(id), "unknown");
     }
+    const EventKind kind = found->kind;
     if (depth_ > 0)
     {
         found->active = false;
-        return;
     }
-    subscriptions_.erase(found);
-}
-
-bool Events::wanted(EventKind kind, Level level) const noexcept
-{
-    for (const Subscription &subscription : subscriptions_)
+    else
     {
-        if (accepts(subscription, kind, level))
-        {
-            return true;
-        }
+        subscriptions_.erase(found);
     }
-    return false;
+    refresh(kind);
 }
 
 bool Events::accepts(const Subscription &subscription, EventKind kind, Level level) noexcept
 {
     return subscription.active && subscription.kind == kind && subscription.lowest <= level;
+}
+
+void Events::refresh(EventKind kind) noexcept
+{
+    Level lowest = kNobody;
+    for (const Subscription &subscription : subscriptions_)
+    {
+        if (subscription.active && subscription.kind == kind)
+        {
+            lowest = (std::min)(lowest, subscription.lowest);
+        }
+    }
+    lowest_[slot(kind)] = lowest;
 }
 
 void Events::deliver(const Event &event)

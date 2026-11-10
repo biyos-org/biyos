@@ -2,7 +2,9 @@
 
 #include "biyos/events.h"
 
+#include <array>
 #include <concepts>
+#include <cstddef>
 #include <deque>
 #include <functional>
 #include <string>
@@ -23,6 +25,8 @@ enum class Level
     Warning = BIYOS_LEVEL_WARNING,
     Error = BIYOS_LEVEL_ERROR,
 };
+
+inline constexpr std::array kEventKinds{EventKind::Message};
 
 EventKind find_kind(int id);
 Level find_level(int id);
@@ -49,10 +53,12 @@ using Subscriber = std::function<void(const Event &)>;
 class Events
 {
   public:
+    Events();
+
     int subscribe(EventKind kind, Level lowest, Subscriber subscriber);
     void unsubscribe(int id);
 
-    bool wanted(EventKind kind, Level level) const noexcept;
+    bool wanted(EventKind kind, Level level) const noexcept { return lowest_[slot(kind)] <= level; }
 
     template <std::invocable<Event &> Fill> void emit(EventKind kind, Level level, Fill &&fill)
     {
@@ -75,11 +81,17 @@ class Events
         bool active;
     };
 
+    static constexpr Level kNobody = static_cast<Level>(BIYOS_LEVEL_ERROR + 1);
+
+    static std::size_t slot(EventKind kind) noexcept { return static_cast<std::size_t>(kind) - 1; }
+
     static bool accepts(const Subscription &subscription, EventKind kind, Level level) noexcept;
 
+    void refresh(EventKind kind) noexcept;
     void deliver(const Event &event);
 
     std::deque<Subscription> subscriptions_;
+    std::array<Level, kEventKinds.size()> lowest_;
     int next_id_ = 1;
     int depth_ = 0;
 };
