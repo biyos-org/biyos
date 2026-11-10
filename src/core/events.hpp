@@ -96,6 +96,20 @@ class Events
     }
 
   private:
+    class Depth
+    {
+      public:
+        explicit Depth(int &count) noexcept : count_(count) { ++count_; }
+
+        ~Depth() { --count_; }
+
+        Depth(const Depth &) = delete;
+        Depth &operator=(const Depth &) = delete;
+
+      private:
+        int &count_;
+    };
+
     struct Subscription
     {
         int id;

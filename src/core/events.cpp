@@ -44,20 +44,6 @@ void notify(const Subscriber &subscriber, const Event &event) noexcept
     }
 }
 
-class Delivery
-{
-  public:
-    explicit Delivery(int &depth) noexcept : depth_(depth) { ++depth_; }
-
-    ~Delivery() { --depth_; }
-
-    Delivery(const Delivery &) = delete;
-    Delivery &operator=(const Delivery &) = delete;
-
-  private:
-    int &depth_;
-};
-
 }
 
 EventKind find_kind(int id)
@@ -143,7 +129,7 @@ void Events::refresh(EventKind kind) noexcept
 
 void Events::deliver(const Event &event) noexcept
 {
-    const Delivery delivery(depth_);
+    const Depth delivery(depth_);
     const std::size_t count = subscriptions_.size();
     for (std::size_t i = 0; i < count; ++i)
     {
