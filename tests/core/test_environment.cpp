@@ -23,3 +23,12 @@ TEST(EnvironmentTest, OwnsOptions)
     const biyos::Environment &view = env;
     EXPECT_EQ(view.options().get_int(biyos::Option::Seed), 9);
 }
+
+TEST(EnvironmentTest, OwnsEvents)
+{
+    biyos::Environment env;
+    env.events().subscribe(biyos::EventKind::Message, biyos::Level::Info,
+                           [](const biyos::Event &) {});
+    const biyos::Environment &view = env;
+    EXPECT_TRUE(view.events().wanted(biyos::EventKind::Message, biyos::Level::Info));
+}
