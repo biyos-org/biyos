@@ -29,6 +29,11 @@ Environment::Environment(std::unique_ptr<Clock> clock)
 {
 }
 
+Environment::Environment(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table)
+    : clock_(checked(std::move(clock))), events_(*clock_), options_(table, events_)
+{
+}
+
 Options &Environment::options() noexcept
 {
     return options_;

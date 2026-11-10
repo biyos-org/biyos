@@ -5,6 +5,7 @@
 #include "core/options.hpp"
 
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -16,6 +17,7 @@ class Environment
   public:
     Environment();
     explicit Environment(std::unique_ptr<Clock> clock);
+    Environment(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table);
     Environment(const Environment &) = delete;
     Environment &operator=(const Environment &) = delete;
 
