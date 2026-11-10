@@ -45,7 +45,16 @@ TEST(EnvironmentTest, OwnsClock)
 
 TEST(EnvironmentTest, NullClock)
 {
-    EXPECT_THROW(biyos::Environment(nullptr), biyos::Error);
+    try
+    {
+        const biyos::Environment env(nullptr);
+        ADD_FAILURE() << "no error";
+    }
+    catch (const biyos::Error &error)
+    {
+        EXPECT_EQ(error.kind(), biyos::ErrorKind::InvalidArgument);
+        EXPECT_STREQ(error.what(), "invalid argument: clock: is null");
+    }
 }
 
 TEST(EnvironmentTest, OwnsEvents)
