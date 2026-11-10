@@ -2,6 +2,7 @@
 
 #include "core/error.hpp"
 
+#include <cstddef>
 #include <memory>
 #include <utility>
 
@@ -93,6 +94,26 @@ void Environment::record_error(std::string_view text) noexcept
     {
         last_error_.clear();
     }
+}
+
+std::size_t Environment::handles() const noexcept
+{
+    return handles_;
+}
+
+Environment::Handle::Handle(Environment &env) noexcept : env_(env)
+{
+    ++env_.handles_;
+}
+
+Environment::Handle::~Handle()
+{
+    --env_.handles_;
+}
+
+Environment &Environment::Handle::env() const noexcept
+{
+    return env_;
 }
 
 }
