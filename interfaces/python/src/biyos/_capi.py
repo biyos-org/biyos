@@ -26,7 +26,7 @@ def _load():
     strings = POINTER(c_char_p)
     _declare(lib, "biyos_version", None, ints, ints, ints)
     _declare(lib, "biyos_env_create", c_int, POINTER(c_void_p))
-    _declare(lib, "biyos_env_free", None, c_void_p)
+    _declare(lib, "biyos_env_free", c_int, c_void_p)
     _declare(lib, "biyos_last_error_message", c_char_p, c_void_p)
     _declare(lib, "biyos_option_id", c_int, c_void_p, c_char_p, ints)
     _declare(lib, "biyos_option_kind", c_int, c_void_p, c_int, ints)
