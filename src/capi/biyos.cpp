@@ -27,60 +27,60 @@ template <typename T> T *require(T *pointer, std::string_view name)
     return pointer;
 }
 
-void option_id(biyos::Options &, const char *name, int *option)
+void option_id(biyos::Environment &, const char *name, int *option)
 {
     const biyos::Option found = biyos::find_option(std::string_view(require(name, "name")));
     *require(option, "option") = static_cast<int>(found);
 }
 
-void option_kind(biyos::Options &, int option, int *kind)
+void option_kind(biyos::Environment &, int option, int *kind)
 {
     const biyos::OptionKind found = biyos::kind_of(biyos::find_option(option));
     *require(kind, "kind") = static_cast<int>(found);
 }
 
-void set_bool(biyos::Options &options, int option, int value)
+void set_bool(biyos::Environment &env, int option, int value)
 {
-    options.set_bool(biyos::find_option(option), value != 0);
+    env.options().set_bool(biyos::find_option(option), value != 0);
 }
 
-void set_int(biyos::Options &options, int option, int value)
+void set_int(biyos::Environment &env, int option, int value)
 {
-    options.set_int(biyos::find_option(option), value);
+    env.options().set_int(biyos::find_option(option), value);
 }
 
-void set_double(biyos::Options &options, int option, double value)
+void set_double(biyos::Environment &env, int option, double value)
 {
-    options.set_double(biyos::find_option(option), value);
+    env.options().set_double(biyos::find_option(option), value);
 }
 
-void set_string(biyos::Options &options, int option, const char *value)
+void set_string(biyos::Environment &env, int option, const char *value)
 {
     const biyos::Option found = biyos::find_option(option);
-    options.set_string(found, require(value, "value"));
+    env.options().set_string(found, require(value, "value"));
 }
 
-void get_bool(biyos::Options &options, int option, int *value)
+void get_bool(biyos::Environment &env, int option, int *value)
 {
-    const bool found = options.get_bool(biyos::find_option(option));
+    const bool found = env.options().get_bool(biyos::find_option(option));
     *require(value, "value") = found ? 1 : 0;
 }
 
-void get_int(biyos::Options &options, int option, int *value)
+void get_int(biyos::Environment &env, int option, int *value)
 {
-    const int found = options.get_int(biyos::find_option(option));
+    const int found = env.options().get_int(biyos::find_option(option));
     *require(value, "value") = found;
 }
 
-void get_double(biyos::Options &options, int option, double *value)
+void get_double(biyos::Environment &env, int option, double *value)
 {
-    const double found = options.get_double(biyos::find_option(option));
+    const double found = env.options().get_double(biyos::find_option(option));
     *require(value, "value") = found;
 }
 
-void get_string(biyos::Options &options, int option, const char **value)
+void get_string(biyos::Environment &env, int option, const char **value)
 {
-    const char *found = options.get_string(biyos::find_option(option)).c_str();
+    const char *found = env.options().get_string(biyos::find_option(option)).c_str();
     *require(value, "value") = found;
 }
 
@@ -90,7 +90,7 @@ template <auto Body, typename... Args> biyos_status guarded(biyos_env *env, Args
     {
         return BIYOS_INVALID_ARGUMENT;
     }
-    return biyos::capi::guard(&env->core, [&] { Body(env->core.options(), args...); });
+    return biyos::capi::guard(&env->core, [&] { Body(env->core, args...); });
 }
 
 }
