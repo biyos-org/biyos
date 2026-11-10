@@ -11,6 +11,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -122,22 +123,23 @@ std::vector<Options::Value> Options::defaults(std::span<const OptionSpec> table)
 
 void Options::set_bool(Option option, bool value)
 {
-    rule_of<BoolRule>(settable(table_, option));
-    std::get<bool>(values_[index_of(option)]) = value;
+    const OptionSpec &spec = settable(table_, option);
+    rule_of<BoolRule>(spec);
+    store(spec, value);
 }
 
 void Options::set_int(Option option, int value)
 {
     const OptionSpec &spec = settable(table_, option);
     check_range(spec, rule_of<IntRule>(spec), value);
-    std::get<int>(values_[index_of(option)]) = value;
+    store(spec, value);
 }
 
 void Options::set_double(Option option, double value)
 {
     const OptionSpec &spec = settable(table_, option);
     check_range(spec, rule_of<DoubleRule>(spec), value);
-    std::get<double>(values_[index_of(option)]) = value;
+    store(spec, value);
 }
 
 void Options::set_string(Option option, std::string_view value)
@@ -151,7 +153,12 @@ void Options::set_string(Option option, std::string_view value)
     {
         rule_of<StringRule>(spec);
     }
-    std::get<std::string>(values_[index_of(option)]).assign(value);
+    store(spec, std::string(value));
+}
+
+void Options::store(const OptionSpec &spec, Value value)
+{
+    values_[index_of(spec.id)] = std::move(value);
 }
 
 bool Options::get_bool(Option option) const
