@@ -1,6 +1,7 @@
 #pragma once
 
 #define BIYOS_EVENT_MESSAGE 1
+#define BIYOS_EVENT_CHECK 2
 
 #define BIYOS_LEVEL_DEBUG 1
 #define BIYOS_LEVEL_INFO 2

@@ -19,6 +19,7 @@ namespace biyos
 enum class EventKind
 {
     Message = BIYOS_EVENT_MESSAGE,
+    Check = BIYOS_EVENT_CHECK,
 };
 
 enum class Level
@@ -29,7 +30,7 @@ enum class Level
     Error = BIYOS_LEVEL_ERROR,
 };
 
-inline constexpr std::array kEventKinds{EventKind::Message};
+inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Check};
 
 EventKind find_kind(int id);
 Level find_level(int id);
@@ -67,6 +68,7 @@ class Events
 
     bool wanted(EventKind kind, Level level) const noexcept { return lowest_[slot(kind)] <= level; }
     bool delivering() const noexcept { return depth_ > 0; }
+    bool filling() const noexcept { return fills_ > 0; }
 
     template <std::invocable<Event &> Fill>
     void emit(EventKind kind, Level level, Fill &&fill) noexcept
@@ -85,6 +87,7 @@ class Events
         };
         try
         {
+            const Depth inside(fills_);
             fill(event);
         }
         catch (...)
@@ -95,6 +98,20 @@ class Events
     }
 
   private:
+    class Depth
+    {
+      public:
+        explicit Depth(int &count) noexcept : count_(count) { ++count_; }
+
+        ~Depth() { --count_; }
+
+        Depth(const Depth &) = delete;
+        Depth &operator=(const Depth &) = delete;
+
+      private:
+        int &count_;
+    };
+
     struct Subscription
     {
         int id;
@@ -120,6 +137,7 @@ class Events
     std::array<Level, kEventKinds.size()> lowest_;
     int next_id_ = 1;
     int depth_ = 0;
+    int fills_ = 0;
 };
 
 }
