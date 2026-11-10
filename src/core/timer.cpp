@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -13,7 +14,7 @@ namespace
 
 using std::chrono::nanoseconds;
 
-nanoseconds cpu_or(const Clock &clock, nanoseconds fallback) noexcept
+std::optional<nanoseconds> cpu_of(const Clock &clock) noexcept
 {
     try
     {
@@ -21,7 +22,7 @@ nanoseconds cpu_or(const Clock &clock, nanoseconds fallback) noexcept
     }
     catch (...)
     {
-        return fallback;
+        return std::nullopt;
     }
 }
 
@@ -83,7 +84,8 @@ void TimingTree::leave(std::size_t node, nanoseconds wall, nanoseconds cpu) noex
 
 Timer::Timer(Environment &env, TimingTree &tree, FixedName module, FixedName name)
     : clock_(env.clock()), events_(env.events()), tree_(tree), module_(module.text()),
-      wall_(clock_.wall_time()), cpu_(clock_.cpu_time()), node_(tree.enter(name.text()))
+      wall_(clock_.wall_time()), cpu_(clock_.cpu_time()), observed_wall_(tree.observed_wall_),
+      observed_cpu_(tree.observed_cpu_), node_(tree.enter(name.text()))
 {
     announce("begin", wall_, cpu_);
 }
@@ -91,17 +93,26 @@ Timer::Timer(Environment &env, TimingTree &tree, FixedName module, FixedName nam
 Timer::~Timer()
 {
     const nanoseconds wall = clock_.wall_time();
-    const nanoseconds cpu = cpu_or(clock_, cpu_);
-    tree_.leave(node_, wall - wall_, cpu - cpu_);
-    announce("end", wall, cpu);
+    const std::optional<nanoseconds> cpu = cpu_of(clock_);
+    const nanoseconds observed_wall = tree_.observed_wall_ - observed_wall_;
+    const nanoseconds observed_cpu = tree_.observed_cpu_ - observed_cpu_;
+    const nanoseconds cpu_spent = cpu ? *cpu - cpu_ - observed_cpu : nanoseconds::zero();
+    tree_.leave(node_, wall - wall_ - observed_wall, cpu_spent);
+    announce("end", wall, cpu.value_or(cpu_));
 }
 
 void Timer::announce(std::string_view edge, nanoseconds wall, nanoseconds cpu) noexcept
 {
+    if (!events_.wanted(EventKind::Phase, Level::Info))
+    {
+        return;
+    }
     const std::string_view name = tree_.nodes()[node_].name;
     const nanoseconds since = wall - events_.origin();
     const auto fill = [&](Event &event) { describe(event, module_, name, edge, since, cpu); };
     events_.emit(EventKind::Phase, Level::Info, fill);
+    tree_.observed_wall_ += clock_.wall_time() - wall;
+    tree_.observed_cpu_ += cpu_of(clock_).value_or(cpu) - cpu;
 }
 
 }

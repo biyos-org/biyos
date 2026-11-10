@@ -19,9 +19,11 @@ namespace biyos
 // Time by phase, nested as Timer scopes nest, with a phase event from the timer's module as each
 // scope begins and ends. A node is keyed by parent and name, so a phase entered again under one
 // parent adds its wall time, CPU time and count to the same node. In the tree only a node's first
-// entry allocates; a phase subscriber's events allocate as every event does. A Timer reads both
-// clocks before entering and throws if the CPU time is unreadable, leaving the tree unchanged. On
-// leaving, an unreadable CPU time counts as none, since a destructor cannot throw.
+// entry allocates; a phase subscriber's events allocate as every event does. The time spent
+// delivering phase events is left out of every node, so subscribing never changes the tree. A
+// Timer reads both clocks before entering and throws if the CPU time is unreadable, leaving the
+// tree unchanged. On leaving, an unreadable CPU time counts as none, since a destructor cannot
+// throw.
 class TimingTree
 {
   public:
@@ -49,6 +51,8 @@ class TimingTree
 
     std::vector<Node> nodes_;
     std::size_t current_ = kNone;
+    std::chrono::nanoseconds observed_wall_{0};
+    std::chrono::nanoseconds observed_cpu_{0};
 };
 
 class Timer
@@ -70,6 +74,8 @@ class Timer
     std::string_view module_;
     std::chrono::nanoseconds wall_;
     std::chrono::nanoseconds cpu_;
+    std::chrono::nanoseconds observed_wall_;
+    std::chrono::nanoseconds observed_cpu_;
     std::size_t node_;
 };
 

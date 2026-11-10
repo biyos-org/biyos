@@ -121,6 +121,12 @@ class TimerTest : public ::testing::Test
         clock.advance_cpu(cpu);
     }
 
+    void lag(const biyos::Event &event)
+    {
+        kept.push_back(event);
+        advance(10ns, 10ns);
+    }
+
     void listen(biyos::Environment &target)
     {
         const auto keep = [this](const biyos::Event &event) { kept.push_back(event); };
@@ -225,6 +231,30 @@ TEST_F(TimerTest, PhaseEvents)
     EXPECT_EQ(kept.back().time, 12ns);
 }
 
+TEST_F(TimerTest, SlowSubscriber)
+{
+    const auto slow = [this](const biyos::Event &event) { lag(event); };
+    env.events().subscribe(EventKind::Phase, Level::Debug, slow);
+    {
+        const Timer solve(env, tree, "nlp", "solve");
+        advance(1ns, 1ns);
+        const Timer presolve(env, tree, "nlp", "presolve");
+        advance(2ns, 1ns);
+    }
+    const Texts nodes{
+        "solve count=1 wall=3 cpu=2",
+        "solve/presolve count=1 wall=2 cpu=1",
+    };
+    EXPECT_EQ(summary(tree), nodes);
+    const Texts stamps{
+        "solve edge=begin wall=0 cpu=0",
+        "presolve edge=begin wall=11 cpu=11",
+        "presolve edge=end wall=23 cpu=22",
+        "solve edge=end wall=33 cpu=32",
+    };
+    EXPECT_EQ(lines(kept), stamps);
+}
+
 TEST_F(TimerTest, Unwinding)
 {
     EXPECT_THROW(abandon(env, tree, clock), std::runtime_error);
@@ -264,6 +294,8 @@ TEST_F(TimerTest, FailedLeave)
     FlakyClock &flaky = *owned;
     biyos::Environment local(std::move(owned));
     listen(local);
+    const auto drift = [&flaky](const biyos::Event &) { flaky.cpu += 10ns; };
+    local.events().subscribe(EventKind::Phase, Level::Debug, drift);
     {
         const Timer solve(local, tree, "nlp", "solve");
         flaky.wall += 5ns;
