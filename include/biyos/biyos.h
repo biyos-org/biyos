@@ -17,6 +17,13 @@ extern "C"
 {
 #endif
 
+typedef int biyos_status;
+
+#define BIYOS_OK 0
+#define BIYOS_INVALID_ARGUMENT (-100)
+#define BIYOS_NO_MEMORY (-400)
+#define BIYOS_INTERNAL_ERROR (-500)
+
 BIYOS_API void biyos_version(int *major, int *minor, int *patch);
 
 #ifdef __cplusplus

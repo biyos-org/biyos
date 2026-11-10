@@ -21,11 +21,11 @@ function(biyos_add_test name)
     gtest_discover_tests(${name})
 endfunction()
 
-biyos_add_test(test_core core/test_version.cpp)
+biyos_add_test(test_core core/test_error.cpp core/test_version.cpp)
 target_link_libraries(test_core PRIVATE biyos_internal)
 
-biyos_add_test(test_capi capi/test_version.cpp)
-target_link_libraries(test_capi PRIVATE biyos::biyos)
+biyos_add_test(test_capi capi/test_firewall.cpp capi/test_version.cpp)
+target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
 add_executable(test_capi_c capi/test_header.c)
 target_link_libraries(test_capi_c PRIVATE biyos::biyos)
