@@ -3,6 +3,7 @@
 #include "biyos/biyos.h"
 #include "core/environment.hpp"
 #include "core/error.hpp"
+#include "core/events.hpp"
 
 #include <concepts>
 #include <exception>
@@ -28,10 +29,29 @@ inline biyos_status status_of(ErrorKind kind) noexcept
     return BIYOS_INTERNAL_ERROR;
 }
 
+inline void describe_failure(Event &event, std::string_view text)
+{
+    event.module = "capi";
+    event.text.assign(text);
+}
+
+inline void announce(Environment &env, std::string_view text) noexcept
+{
+    const auto fill = [text](Event &event) { describe_failure(event, text); };
+    try
+    {
+        env.events().emit(EventKind::Message, Level::Error, fill);
+    }
+    catch (...)
+    {
+    }
+}
+
 inline void report(Environment *env, std::string_view text) noexcept
 {
     if (env != nullptr)
     {
+        announce(*env, text);
         env->record_error(text);
     }
 }
@@ -42,11 +62,11 @@ inline biyos_status fail(Environment *env, ErrorKind kind, std::string_view mess
     {
         try
         {
-            env->record_error(Error(kind, "", std::string(message)).what());
+            report(env, Error(kind, "", std::string(message)).what());
         }
         catch (...)
         {
-            env->record_error(kind_name(kind));
+            report(env, kind_name(kind));
         }
     }
     return status_of(kind);
