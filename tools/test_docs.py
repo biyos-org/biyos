@@ -84,8 +84,8 @@ class DocTest(unittest.TestCase):
         self.assertEqual(self.problems(), missing("events.h:3", "BIYOS_DEBUG"))
 
     def test_condition(self):
-        self.header("biyos.h", "#ifdef BIYOS_SHARED\n#endif\n")
-        self.assertEqual(self.problems(), missing("biyos.h:1", "BIYOS_SHARED"))
+        self.header("biyos.h", HEADER + "#ifdef BIYOS_DLL\n#endif\n")
+        self.assertEqual(self.problems(), missing("biyos.h:10", "BIYOS_DLL"))
 
     def test_enum(self):
         self.header("biyos.h", HEADER + "enum\n{\n    BIYOS_RED = 1,\n};\n")
@@ -145,6 +145,17 @@ class DocTest(unittest.TestCase):
     def test_indented(self):
         self.doc(DOC.replace("| `BIYOS_OK` |", "  | `BIYOS_OK` |"))
         self.assertEqual(self.problems(), [])
+
+    def test_stale(self):
+        text = "| `BIYOS_GONE` | gone |\n| `seed` | seed |\n"
+        text += "### `biyos_old`\n### `biyos_old`\n"
+        self.doc(DOC + text)
+        stale = "has an entry but no header declares it"
+        expected = [
+            f"docs/capi.md:10: BIYOS_GONE {stale}",
+            f"docs/capi.md:12: biyos_old {stale}",
+        ]
+        self.assertEqual(self.problems(), expected)
 
     def test_mention(self):
         prose = "Call `biyos_run` first.\n"

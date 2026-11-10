@@ -68,35 +68,43 @@ def scan(path):
 
 
 def entries(path):
-    names = set()
+    names = {}
     fenced = False
-    for line in path.read_text().splitlines():
+    for number, line in enumerate(path.read_text().splitlines(), 1):
         line = line.strip()
         if line.startswith("```"):
             fenced = not fenced
-        elif fenced:
             continue
-        elif HEADING.match(line):
-            names.update(NAME.findall(line))
+        if fenced:
+            continue
+        if HEADING.match(line):
+            found = NAME.findall(line)
         elif line.startswith("|"):
-            names.update(NAME.findall(line.split("|")[1]))
+            found = NAME.findall(line.split("|")[1])
+        else:
+            found = []
+        for name in found:
+            names.setdefault(name, number)
     return names
 
 
 def check(root):
     documented = entries(root / DOC)
     problems = []
-    seen = set()
+    declared = set()
     for path in sorted((root / "include" / "biyos").rglob("*.h")):
         header = path.relative_to(root).as_posix()
         names, unnamed = scan(path)
         found = [(n, "BIYOS_API declares no function") for n in unnamed]
         for name, number in names.items():
-            if name in documented or name in seen:
-                continue
-            seen.add(name)
-            found.append((number, f"{name} has no entry in {DOC}"))
+            if name not in documented and name not in declared:
+                found.append((number, f"{name} has no entry in {DOC}"))
+            declared.add(name)
         problems += [f"{header}:{n}: {text}" for n, text in sorted(found)]
+    for name, number in documented.items():
+        if PUBLIC.fullmatch(name) and name not in declared:
+            text = f"{name} has an entry but no header declares it"
+            problems.append(f"{DOC}:{number}: {text}")
     return problems
 
 
