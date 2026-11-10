@@ -65,12 +65,13 @@ Option find_option(int id)
 
 std::string_view name_of(Option option)
 {
-    return spec_of(option).name;
+    return row_of(option_table(), option).name;
 }
 
 OptionKind kind_of(Option option)
 {
-    return std::visit([](const auto &rule) { return kind_of(rule); }, spec_of(option).rule);
+    const OptionSpec &spec = row_of(option_table(), option);
+    return std::visit([](const auto &rule) { return kind_of(rule); }, spec.rule);
 }
 
 }

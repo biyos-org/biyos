@@ -100,9 +100,8 @@ std::size_t index_of(Option option)
     return static_cast<std::size_t>(option) - 1;
 }
 
-const OptionSpec &spec_of(Option option)
+const OptionSpec &row_of(std::span<const OptionSpec> table, Option option)
 {
-    const std::span<const OptionSpec> table = option_table();
     const std::size_t index = index_of(option);
     if (index >= table.size())
     {

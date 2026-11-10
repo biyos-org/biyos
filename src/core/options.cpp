@@ -1,6 +1,7 @@
 #include "core/options.hpp"
 
 #include "core/error.hpp"
+#include "core/option_checks.hpp"
 #include "core/option_table.hpp"
 #include "core/option_text.hpp"
 
@@ -10,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <variant>
+#include <vector>
 
 namespace biyos
 {
@@ -75,42 +77,59 @@ void check_value(const OptionSpec &spec, const EnumRule &rule, std::string_view 
                 "'" + std::string(value) + "' is not one of " + joined(rule.values));
 }
 
+std::span<const OptionSpec> checked(std::span<const OptionSpec> table)
+{
+    if (!well_formed(table))
+    {
+        throw Error(ErrorKind::Internal, "option table", "is not well formed");
+    }
+    return table;
 }
 
-Options::Options()
+}
+
+Options::Options() : table_(option_table()), values_(defaults(table_)) {}
+
+Options::Options(std::span<const OptionSpec> table)
+    : table_(checked(table)), values_(defaults(table_))
 {
-    const std::span<const OptionSpec> table = option_table();
-    values_.reserve(table.size());
+}
+
+std::vector<Options::Value> Options::defaults(std::span<const OptionSpec> table)
+{
+    std::vector<Value> values;
+    values.reserve(table.size());
     const auto value_of = [](const auto &rule) { return Value(default_of(rule)); };
     for (const OptionSpec &spec : table)
     {
-        values_.push_back(std::visit(value_of, spec.rule));
+        values.push_back(std::visit(value_of, spec.rule));
     }
+    return values;
 }
 
 void Options::set_bool(Option option, bool value)
 {
-    rule_of<BoolRule>(spec_of(option));
+    rule_of<BoolRule>(row_of(table_, option));
     std::get<bool>(values_[index_of(option)]) = value;
 }
 
 void Options::set_int(Option option, int value)
 {
-    const OptionSpec &spec = spec_of(option);
+    const OptionSpec &spec = row_of(table_, option);
     check_range(spec, rule_of<IntRule>(spec), value);
     std::get<int>(values_[index_of(option)]) = value;
 }
 
 void Options::set_double(Option option, double value)
 {
-    const OptionSpec &spec = spec_of(option);
+    const OptionSpec &spec = row_of(table_, option);
     check_range(spec, rule_of<DoubleRule>(spec), value);
     std::get<double>(values_[index_of(option)]) = value;
 }
 
 void Options::set_string(Option option, std::string_view value)
 {
-    const OptionSpec &spec = spec_of(option);
+    const OptionSpec &spec = row_of(table_, option);
     if (const EnumRule *rule = std::get_if<EnumRule>(&spec.rule))
     {
         check_value(spec, *rule, value);
@@ -124,25 +143,25 @@ void Options::set_string(Option option, std::string_view value)
 
 bool Options::get_bool(Option option) const
 {
-    rule_of<BoolRule>(spec_of(option));
+    rule_of<BoolRule>(row_of(table_, option));
     return std::get<bool>(values_[index_of(option)]);
 }
 
 int Options::get_int(Option option) const
 {
-    rule_of<IntRule>(spec_of(option));
+    rule_of<IntRule>(row_of(table_, option));
     return std::get<int>(values_[index_of(option)]);
 }
 
 double Options::get_double(Option option) const
 {
-    rule_of<DoubleRule>(spec_of(option));
+    rule_of<DoubleRule>(row_of(table_, option));
     return std::get<double>(values_[index_of(option)]);
 }
 
 const std::string &Options::get_string(Option option) const
 {
-    const OptionSpec &spec = spec_of(option);
+    const OptionSpec &spec = row_of(table_, option);
     if (!std::holds_alternative<EnumRule>(spec.rule))
     {
         rule_of<StringRule>(spec);
@@ -152,7 +171,7 @@ const std::string &Options::get_string(Option option) const
 
 std::size_t Options::position_of(Option option) const
 {
-    const EnumRule &rule = rule_of<EnumRule>(spec_of(option));
+    const EnumRule &rule = rule_of<EnumRule>(row_of(table_, option));
     const std::string &value = std::get<std::string>(values_[index_of(option)]);
     const auto found = std::ranges::find(rule.values, value);
     return static_cast<std::size_t>(found - rule.values.begin());

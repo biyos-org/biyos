@@ -87,10 +87,13 @@ Option find_option(int id);
 std::string_view name_of(Option option);
 OptionKind kind_of(Option option);
 
+// A value for each row of an option table, which outlives the store unchanged. The built-in table
+// is checked at compile time, a given one when the store is built.
 class Options
 {
   public:
     Options();
+    explicit Options(std::span<const OptionSpec> table);
 
     void set_bool(Option option, bool value);
     void set_int(Option option, int value);
@@ -112,8 +115,11 @@ class Options
   private:
     using Value = std::variant<bool, int, double, std::string>;
 
+    static std::vector<Value> defaults(std::span<const OptionSpec> table);
+
     std::size_t position_of(Option option) const;
 
+    std::span<const OptionSpec> table_;
     std::vector<Value> values_;
 };
 

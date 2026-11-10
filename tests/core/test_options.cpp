@@ -3,17 +3,44 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <functional>
 #include <limits>
 #include <string>
+#include <string_view>
 
 namespace
 {
 
+using biyos::IntRule;
 using biyos::Option;
+using biyos::OptionSpec;
+using Rows = std::array<OptionSpec, 3>;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr std::string_view kMalformed = "internal error: option table: is not well formed";
+
+constexpr Rows kRows{
+    OptionSpec{
+        .id = Option{1},
+        .name = "new",
+        .rule = IntRule{.default_value = 1, .lower = 0},
+        .doc = "Current.",
+    },
+    OptionSpec{
+        .id = Option{2},
+        .name = "old",
+        .rule = IntRule{.default_value = 1, .lower = 0},
+        .doc = "Deprecated.",
+    },
+    OptionSpec{
+        .id = Option{3},
+        .name = "gone",
+        .rule = IntRule{.default_value = 1, .lower = 0},
+        .doc = "Retired.",
+    },
+};
 
 std::string failure(const std::function<void()> &body)
 {
@@ -26,6 +53,13 @@ std::string failure(const std::function<void()> &body)
         return error.what();
     }
     return "no error";
+}
+
+std::string built(const std::function<void(Rows &)> &change)
+{
+    Rows rows = kRows;
+    change(rows);
+    return failure([&rows] { const biyos::Options options(rows); });
 }
 
 }
@@ -232,4 +266,25 @@ TEST(OptionTest, MissingRow)
               "internal error: option 11: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(biyos::kind_of(past)); }),
               "internal error: option 11: has no table row");
+}
+
+TEST(OptionTest, Table)
+{
+    biyos::Options options(kRows);
+    EXPECT_EQ(options.get_int(Option{1}), 1);
+    options.set_int(Option{1}, 5);
+    EXPECT_EQ(options.get_int(Option{1}), 5);
+    EXPECT_EQ(failure([&] { options.set_int(Option{1}, -1); }),
+              "invalid argument: option 'new': -1 is outside [0, 2147483647]");
+    EXPECT_EQ(failure([&] { static_cast<void>(options.get_int(Option{4})); }),
+              "internal error: option 4: has no table row");
+}
+
+TEST(OptionTest, BadTable)
+{
+    EXPECT_EQ(built([](Rows &) {}), "no error");
+    EXPECT_EQ(built([](Rows &rows) { rows[1].id = Option{3}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[1].name = "new"; }), kMalformed);
+    const IntRule below{.default_value = -1, .lower = 0};
+    EXPECT_EQ(built([&below](Rows &rows) { rows[1].rule = below; }), kMalformed);
 }
