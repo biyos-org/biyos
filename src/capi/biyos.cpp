@@ -33,6 +33,12 @@ void option_id(biyos::Options &, const char *name, int *option)
     *require(option, "option") = static_cast<int>(found);
 }
 
+void option_kind(biyos::Options &, int option, int *kind)
+{
+    const biyos::OptionKind found = biyos::kind_of(biyos::find_option(option));
+    *require(kind, "kind") = static_cast<int>(found);
+}
+
 void set_bool(biyos::Options &options, int option, int value)
 {
     options.set_bool(biyos::find_option(option), value != 0);
@@ -129,6 +135,11 @@ const char *biyos_last_error_message(const biyos_env *env)
 biyos_status biyos_option_id(biyos_env *env, const char *name, int *option)
 {
     return guarded<option_id>(env, name, option);
+}
+
+biyos_status biyos_option_kind(biyos_env *env, int option, int *kind)
+{
+    return guarded<option_kind>(env, option, kind);
 }
 
 biyos_status biyos_set_bool_option(biyos_env *env, int option, int value)

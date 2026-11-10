@@ -25,6 +25,7 @@ int main(void)
     int minor = -1;
     int patch = -1;
     int seed = -1;
+    int kind = 0;
     biyos_version(&major, &minor, &patch);
     if (major < 0 || minor < 0 || patch < 0)
     {
@@ -36,6 +37,10 @@ int main(void)
     }
     if (biyos_set_int_option(env, BIYOS_OPT_SEED, 3) != BIYOS_OK ||
         biyos_get_int_option(env, BIYOS_OPT_SEED, &seed) != BIYOS_OK || seed != 3)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    if (biyos_option_kind(env, BIYOS_OPT_SEED, &kind) != BIYOS_OK || kind != BIYOS_KIND_INT)
     {
         status = BIYOS_INTERNAL_ERROR;
     }

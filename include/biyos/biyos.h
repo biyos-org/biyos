@@ -34,6 +34,7 @@ BIYOS_API void biyos_env_free(biyos_env *env);
 BIYOS_API const char *biyos_last_error_message(const biyos_env *env);
 
 BIYOS_API biyos_status biyos_option_id(biyos_env *env, const char *name, int *option);
+BIYOS_API biyos_status biyos_option_kind(biyos_env *env, int option, int *kind);
 BIYOS_API biyos_status biyos_set_bool_option(biyos_env *env, int option, int value);
 BIYOS_API biyos_status biyos_set_int_option(biyos_env *env, int option, int value);
 BIYOS_API biyos_status biyos_set_double_option(biyos_env *env, int option, double value);
