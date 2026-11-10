@@ -1,0 +1,7 @@
+#pragma once
+
+#define BIYOS_OPT_SEED 1
+#define BIYOS_OPT_TIME_LIMIT 2
+#define BIYOS_OPT_CHECK_LEVEL 3
+#define BIYOS_OPT_PRESOLVE 4
+#define BIYOS_OPT_REPRODUCER 5
