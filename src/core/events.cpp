@@ -59,6 +59,10 @@ Level find_level(int id)
 
 int Events::subscribe(EventKind kind, Level lowest, Subscriber subscriber)
 {
+    if (!subscriber)
+    {
+        throw Error(ErrorKind::InvalidArgument, "subscriber", "is empty");
+    }
     if (next_id_ == (std::numeric_limits<int>::max)())
     {
         throw Error(ErrorKind::NoMemory, "subscription", "no id left");

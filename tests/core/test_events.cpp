@@ -144,6 +144,14 @@ TEST_F(EventTest, Ids)
     EXPECT_EQ(third, 3);
 }
 
+TEST_F(EventTest, EmptySubscriber)
+{
+    EXPECT_EQ(failure([&] { listen(Level::Debug, nullptr); }),
+              "invalid argument: subscriber: is empty");
+    EXPECT_FALSE(events.wanted(EventKind::Message, Level::Error));
+    EXPECT_EQ(listen(Level::Debug, ignore), 1);
+}
+
 TEST_F(EventTest, UnknownId)
 {
     const int id = listen(Level::Debug, ignore);
