@@ -24,11 +24,15 @@ DOC = """# C API
 | `BIYOS_OK` | success |
 
 ### `biyos_run`
+
+```c
+int biyos_run(int *steps);
+```
 """
 
 
-def missing(where, symbol):
-    return [f"include/biyos/{where}: {symbol} has no entry in docs/capi.md"]
+def missing(where, symbol, what="entry"):
+    return [f"include/biyos/{where}: {symbol} has no {what} in docs/capi.md"]
 
 
 class DocTest(unittest.TestCase):
@@ -152,10 +156,32 @@ class DocTest(unittest.TestCase):
         self.doc(DOC + text)
         stale = "has an entry but no header declares it"
         expected = [
-            f"docs/capi.md:10: BIYOS_GONE {stale}",
-            f"docs/capi.md:12: biyos_old {stale}",
+            f"docs/capi.md:14: BIYOS_GONE {stale}",
+            f"docs/capi.md:16: biyos_old {stale}",
         ]
         self.assertEqual(self.problems(), expected)
+
+    def test_prototype(self):
+        self.doc(DOC.replace("(int *steps)", "(int steps)"))
+        where = "include/biyos/biyos.h:9"
+        problem = f"docs/capi.md:12: biyos_run differs from {where}"
+        self.assertEqual(self.problems(), [problem])
+
+    def test_bare(self):
+        self.doc(DOC.replace("```c\nint biyos_run(int *steps);\n```\n", ""))
+        expected = missing("biyos.h:9", "biyos_run", "prototype")
+        self.assertEqual(self.problems(), expected)
+
+    def test_spacing(self):
+        shown = "BIYOS_API int\nbiyos_run( int * steps );"
+        self.doc(DOC.replace("int biyos_run(int *steps);", shown))
+        self.assertEqual(self.problems(), [])
+
+    def test_example(self):
+        calls = "biyos_run(&steps);\nstatus = biyos_run(&steps);\n"
+        calls += "if (biyos_run(&steps) != 0)\n"
+        self.doc(DOC + "\n```c\n" + calls + "```\n")
+        self.assertEqual(self.problems(), [])
 
     def test_mention(self):
         prose = "Call `biyos_run` first.\n"
