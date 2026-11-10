@@ -1,4 +1,5 @@
 #include "capi/firewall.hpp"
+#include "core/environment.hpp"
 
 #include <gtest/gtest.h>
 
@@ -12,6 +13,11 @@ namespace
 biyos_status status_after(const std::function<void()> &body)
 {
     return biyos::capi::guard(body);
+}
+
+biyos_status status_after(biyos::Environment &env, const std::function<void()> &body)
+{
+    return biyos::capi::guard(&env, body);
 }
 
 }
@@ -50,4 +56,41 @@ TEST(FirewallTest, ForeignException)
 TEST(FirewallTest, UnknownException)
 {
     EXPECT_EQ(status_after([] { throw 42; }), BIYOS_INTERNAL_ERROR);
+}
+
+TEST(FirewallTest, ErrorMessage)
+{
+    biyos::Environment env;
+    const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(env.last_error(), "invalid argument: argument 'n': negative");
+}
+
+TEST(FirewallTest, BadAllocMessage)
+{
+    biyos::Environment env;
+    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_NO_MEMORY);
+    EXPECT_EQ(env.last_error(), "out of memory");
+}
+
+TEST(FirewallTest, ForeignMessage)
+{
+    biyos::Environment env;
+    EXPECT_EQ(status_after(env, [] { throw std::runtime_error("foreign"); }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(env.last_error(), "foreign");
+}
+
+TEST(FirewallTest, UnknownMessage)
+{
+    biyos::Environment env;
+    EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(env.last_error(), "unknown exception");
+}
+
+TEST(FirewallTest, SuccessKeepsMessage)
+{
+    biyos::Environment env;
+    env.record_error("earlier");
+    EXPECT_EQ(status_after(env, [] {}), BIYOS_OK);
+    EXPECT_EQ(env.last_error(), "earlier");
 }
