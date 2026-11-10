@@ -1,4 +1,5 @@
 #include "biyos/events.h"
+#include "biyos/model.h"
 #include "biyos/options.h"
 #include "biyos/status.h"
 
@@ -55,6 +56,10 @@
 #if !defined(BIYOS_CLAIM_NONE) || BIYOS_CLAIM_NONE != 0 || BIYOS_CLAIM_LOCAL != 1 ||               \
     BIYOS_CLAIM_GLOBAL != 2
 #error "a public claim changed"
+#endif
+#if !defined(BIYOS_VAR_CONTINUOUS) || BIYOS_VAR_CONTINUOUS != 1 || BIYOS_VAR_BINARY != 2 ||        \
+    BIYOS_VAR_INTEGER != 3 || BIYOS_VAR_SEMICONTINUOUS != 4 || BIYOS_VAR_SEMIINTEGER != 5
+#error "a public variable kind changed"
 #endif
 
 static void count(const biyos_event *event, void *user_data)

@@ -366,6 +366,20 @@ Writes the event for tools, as one JSON object with the members `time`, `kind`, 
 {"time":0.000041,"kind":"message","level":"error","module":"capi","text":"invalid argument: option 'seed': -1 is outside [0, 2147483647]","fields":{"code":"-100"}}
 ```
 
+## Model
+
+A model holds the variables of a problem. Each variable has a kind, which says what values it may take, and a lower and an upper bound. The kinds come from `biyos/model.h`.
+
+| Macro | Value | Kind | Takes |
+| --- | --- | --- | --- |
+| `BIYOS_VAR_CONTINUOUS` | 1 | continuous | any value between its bounds |
+| `BIYOS_VAR_BINARY` | 2 | binary | 0 or 1, between its bounds |
+| `BIYOS_VAR_INTEGER` | 3 | integer | any integer between its bounds |
+| `BIYOS_VAR_SEMICONTINUOUS` | 4 | semi-continuous | 0, or any value between its bounds |
+| `BIYOS_VAR_SEMIINTEGER` | 5 | semi-integer | 0, or any integer between its bounds |
+
+Every kind but continuous is discrete. No call makes a model yet.
+
 ## Solve status
 
 `biyos/status.h` holds the numbers that describe how a solve ended. The termination says why the solve stopped, a result status says what a returned point is, the primal point and the dual point each having one, and the claim says what was proved. They are kept apart, so a result never says more than its method proved. None of them is an error code: a limit reached or an infeasible model is an outcome, not a failed call. No call returns them yet, since biyos solves nothing.
