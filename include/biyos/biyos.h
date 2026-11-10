@@ -2,6 +2,7 @@
 
 #include "biyos/events.h"
 #include "biyos/options.h"
+#include "biyos/status.h"
 
 #if defined(BIYOS_STATIC)
 #define BIYOS_API
