@@ -1,13 +1,17 @@
 #include "biyos/biyos.h"
 
+#include "capi/event.hpp"
 #include "capi/firewall.hpp"
 #include "core/environment.hpp"
 #include "core/error.hpp"
+#include "core/events.hpp"
 #include "core/options.hpp"
 #include "core/version.hpp"
 
+#include <cstddef>
 #include <string>
 #include <string_view>
+#include <vector>
 
 struct biyos_env
 {
@@ -82,6 +86,44 @@ void get_string(biyos::Environment &env, int option, const char **value)
 {
     const char *found = env.options().get_string(biyos::find_option(option)).c_str();
     *require(value, "value") = found;
+}
+
+struct Forwarder
+{
+    biyos_subscriber subscriber;
+    void *user_data;
+
+    void operator()(const biyos::Event &event) const
+    {
+        const biyos_event view{&event};
+        subscriber(&view, user_data);
+    }
+};
+
+void subscribe(biyos::Environment &env, biyos_subscriber subscriber, void *user_data, int kind,
+               int lowest, int *subscription)
+{
+    const Forwarder forwarder{require(subscriber, "subscriber"), user_data};
+    const biyos::EventKind found = biyos::find_kind(kind);
+    const biyos::Level level = biyos::find_level(lowest);
+    int *id = require(subscription, "subscription");
+    *id = env.events().subscribe(found, level, forwarder);
+}
+
+void unsubscribe(biyos::Environment &env, int subscription)
+{
+    env.events().unsubscribe(subscription);
+}
+
+const biyos::Field *field_of(const biyos_event *event, int field)
+{
+    if (event == nullptr || field < 0)
+    {
+        return nullptr;
+    }
+    const std::vector<biyos::Field> &fields = event->core->fields;
+    const auto index = static_cast<std::size_t>(field);
+    return index < fields.size() ? &fields[index] : nullptr;
 }
 
 template <auto Body, typename... Args> biyos_status guarded(biyos_env *env, Args... args) noexcept
@@ -180,4 +222,52 @@ biyos_status biyos_get_double_option(biyos_env *env, int option, double *value)
 biyos_status biyos_get_string_option(biyos_env *env, int option, const char **value)
 {
     return guarded<get_string>(env, option, value);
+}
+
+biyos_status biyos_subscribe(biyos_env *env, biyos_subscriber subscriber, void *user_data, int kind,
+                             int lowest, int *subscription)
+{
+    return guarded<subscribe>(env, subscriber, user_data, kind, lowest, subscription);
+}
+
+biyos_status biyos_unsubscribe(biyos_env *env, int subscription)
+{
+    return guarded<unsubscribe>(env, subscription);
+}
+
+int biyos_event_kind(const biyos_event *event)
+{
+    return event == nullptr ? 0 : static_cast<int>(event->core->kind);
+}
+
+int biyos_event_level(const biyos_event *event)
+{
+    return event == nullptr ? 0 : static_cast<int>(event->core->level);
+}
+
+const char *biyos_event_module(const biyos_event *event)
+{
+    return event == nullptr ? "" : event->core->module.c_str();
+}
+
+const char *biyos_event_text(const biyos_event *event)
+{
+    return event == nullptr ? "" : event->core->text.c_str();
+}
+
+int biyos_event_field_count(const biyos_event *event)
+{
+    return event == nullptr ? 0 : static_cast<int>(event->core->fields.size());
+}
+
+const char *biyos_event_field_name(const biyos_event *event, int field)
+{
+    const biyos::Field *found = field_of(event, field);
+    return found == nullptr ? "" : found->name.c_str();
+}
+
+const char *biyos_event_field_value(const biyos_event *event, int field)
+{
+    const biyos::Field *found = field_of(event, field);
+    return found == nullptr ? "" : found->value.c_str();
 }

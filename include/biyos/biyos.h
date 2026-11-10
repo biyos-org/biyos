@@ -22,6 +22,8 @@ extern "C"
 
 typedef int biyos_status;
 typedef struct biyos_env biyos_env;
+typedef struct biyos_event biyos_event;
+typedef void (*biyos_subscriber)(const biyos_event *event, void *user_data);
 
 #define BIYOS_OK 0
 #define BIYOS_INVALID_ARGUMENT (-100)
@@ -44,6 +46,18 @@ BIYOS_API biyos_status biyos_get_bool_option(biyos_env *env, int option, int *va
 BIYOS_API biyos_status biyos_get_int_option(biyos_env *env, int option, int *value);
 BIYOS_API biyos_status biyos_get_double_option(biyos_env *env, int option, double *value);
 BIYOS_API biyos_status biyos_get_string_option(biyos_env *env, int option, const char **value);
+
+BIYOS_API biyos_status biyos_subscribe(biyos_env *env, biyos_subscriber subscriber, void *user_data,
+                                       int kind, int lowest, int *subscription);
+BIYOS_API biyos_status biyos_unsubscribe(biyos_env *env, int subscription);
+
+BIYOS_API int biyos_event_kind(const biyos_event *event);
+BIYOS_API int biyos_event_level(const biyos_event *event);
+BIYOS_API const char *biyos_event_module(const biyos_event *event);
+BIYOS_API const char *biyos_event_text(const biyos_event *event);
+BIYOS_API int biyos_event_field_count(const biyos_event *event);
+BIYOS_API const char *biyos_event_field_name(const biyos_event *event, int field);
+BIYOS_API const char *biyos_event_field_value(const biyos_event *event, int field);
 
 #ifdef __cplusplus
 }
