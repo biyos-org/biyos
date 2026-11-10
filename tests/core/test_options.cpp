@@ -293,6 +293,14 @@ TEST(OptionTest, Kinds)
     EXPECT_EQ(biyos::kind_of(Option::CpuTimeLimit), OptionKind::Double);
 }
 
+TEST(OptionTest, Versions)
+{
+    const biyos::Versions seed = biyos::versions_of(Option::Seed);
+    EXPECT_EQ(seed.since, (Version{0, 1, 0}));
+    EXPECT_FALSE(seed.deprecated);
+    EXPECT_FALSE(seed.retired);
+}
+
 TEST(OptionTest, UnknownName)
 {
     EXPECT_EQ(failure([] { biyos::find_option("seeds"); }),
@@ -320,6 +328,8 @@ TEST(OptionTest, MissingRow)
     EXPECT_EQ(failure([&] { static_cast<void>(biyos::name_of(past)); }),
               "internal error: option 11: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(biyos::kind_of(past)); }),
+              "internal error: option 11: has no table row");
+    EXPECT_EQ(failure([&] { static_cast<void>(biyos::versions_of(past)); }),
               "internal error: option 11: has no table row");
 }
 

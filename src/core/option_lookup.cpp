@@ -74,4 +74,9 @@ OptionKind kind_of(Option option)
     return std::visit([](const auto &rule) { return kind_of(rule); }, spec.rule);
 }
 
+Versions versions_of(Option option)
+{
+    return row_of(option_table(), option).versions;
+}
+
 }

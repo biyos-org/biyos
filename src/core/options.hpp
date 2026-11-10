@@ -103,6 +103,7 @@ Option find_option(std::string_view name);
 Option find_option(int id);
 std::string_view name_of(Option option);
 OptionKind kind_of(Option option);
+Versions versions_of(Option option);
 
 // A value for each row of an option table, which outlives the store unchanged. The built-in table
 // is checked at compile time, a given one when the store is built. Setting a deprecated option
