@@ -2,14 +2,18 @@
 
 An optimization solver for problems of the form
 
-```text
-minimize    f(x)
-subject to  l <= g(x) <= u
-            x_I in K
-            x_J integer
-```
+$$
+\begin{aligned}
+\min_{x \in \mathbb{R}^n} \quad & f(x) \\
+\text{s.t.} \quad & l \le g(x) \le u \\
+& x_I \in \mathcal{K} \\
+& x_J \in \mathbb{Z}^{|J|}
+\end{aligned}
+$$
 
-where `K` is a product of cones. The core is C++20 behind a C API, and every language interface is built on that C API.
+where $`g : \mathbb{R}^n \to \mathbb{R}^m`$, the bounds $`l`$ and $`u`$ may be infinite, $`x_I`$ is the subvector of $`x`$ indexed by $`I`$, $`J`$ indexes the integer variables, and $`\mathcal{K} = \mathcal{K}_1 \times \cdots \times \mathcal{K}_p`$ is a product of cones such as the nonnegative orthant and the second-order, exponential, power and semidefinite cones.
+
+The core is C++20 behind a C API, and every language interface is built on that C API.
 
 The project is at its start and solves nothing yet.
 
