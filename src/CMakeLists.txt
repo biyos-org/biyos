@@ -33,7 +33,7 @@ set_target_properties(biyos_internal PROPERTIES
 biyos_set_warnings(biyos_internal)
 
 add_library(biyos
-    capi/biyos.cpp
+    capi/environment.cpp
     capi/events.cpp
     capi/format.cpp
     capi/options.cpp
