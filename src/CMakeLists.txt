@@ -1,4 +1,5 @@
 add_library(biyos_internal STATIC
+    core/environment.cpp
     core/error.cpp
     core/options.cpp
     core/version.cpp)
