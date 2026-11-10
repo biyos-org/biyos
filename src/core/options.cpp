@@ -5,6 +5,7 @@
 #include "core/option_table.hpp"
 #include "core/option_text.hpp"
 #include "core/option_warning.hpp"
+#include "core/text.hpp"
 #include "core/version.hpp"
 
 #include <algorithm>

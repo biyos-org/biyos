@@ -1,5 +1,7 @@
 #include "core/option_text.hpp"
 
+#include "core/text.hpp"
+
 #include <span>
 #include <string>
 #include <string_view>
