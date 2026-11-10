@@ -5,6 +5,7 @@ add_library(biyos_internal STATIC
     core/environment.cpp
     core/error.cpp
     core/events.cpp
+    core/format.cpp
     core/options.cpp
     core/status.cpp
     core/tolerances.cpp
