@@ -25,6 +25,13 @@
     BIYOS_KIND_STRING != 4 || BIYOS_KIND_ENUM != 5
 #error "a public option kind changed"
 #endif
+#if BIYOS_EVENT_MESSAGE != 1
+#error "a public event kind changed"
+#endif
+#if BIYOS_LEVEL_DEBUG != 1 || BIYOS_LEVEL_INFO != 2 || BIYOS_LEVEL_WARNING != 3 ||                 \
+    BIYOS_LEVEL_ERROR != 4
+#error "a public level changed"
+#endif
 
 static void count(const biyos_event *event, void *user_data)
 {
