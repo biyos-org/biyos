@@ -41,7 +41,7 @@ bool Tolerances::approx_equal(double a, double b) const noexcept
 
 bool Tolerances::satisfies_lower(double x, double lower) const noexcept
 {
-    if (std::isinf(lower))
+    if (std::isinf(lower) || std::isinf(x))
     {
         return x >= lower;
     }
@@ -51,7 +51,7 @@ bool Tolerances::satisfies_lower(double x, double lower) const noexcept
 
 bool Tolerances::satisfies_upper(double x, double upper) const noexcept
 {
-    if (std::isinf(upper))
+    if (std::isinf(upper) || std::isinf(x))
     {
         return x <= upper;
     }

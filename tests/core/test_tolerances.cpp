@@ -134,6 +134,13 @@ TEST(ToleranceTest, Infinity)
     const biyos::Tolerances loose = uniform(kInfinity);
     EXPECT_FALSE(loose.satisfies_lower(kLargest, kInfinity));
     EXPECT_FALSE(loose.satisfies_upper(-kLargest, -kInfinity));
+    EXPECT_FALSE(loose.satisfies_lower(-kInfinity, 0.0));
+    EXPECT_FALSE(loose.satisfies_lower(-kInfinity, -kLargest));
+    EXPECT_FALSE(loose.satisfies_upper(kInfinity, 0.0));
+    EXPECT_FALSE(loose.satisfies_upper(kInfinity, kLargest));
+    EXPECT_TRUE(loose.satisfies_lower(kInfinity, 0.0));
+    EXPECT_TRUE(loose.satisfies_upper(-kInfinity, 0.0));
+    EXPECT_FALSE(loose.approx_equal(-kInfinity, 0.0));
 }
 
 TEST(ToleranceTest, NanFails)
