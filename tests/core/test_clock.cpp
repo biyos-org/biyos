@@ -99,7 +99,7 @@ TEST_F(ClockTest, InfiniteLimit)
     EXPECT_FALSE(deadline.reached());
 }
 
-TEST_F(ClockTest, HugeLimit)
+TEST_F(ClockTest, AboveBound)
 {
     options.set_double(Option::TimeLimit, 1e10);
     options.set_double(Option::CpuTimeLimit, 1e300);
@@ -109,7 +109,7 @@ TEST_F(ClockTest, HugeLimit)
     EXPECT_FALSE(deadline.reached());
 }
 
-TEST_F(ClockTest, LongLimit)
+TEST_F(ClockTest, BelowBound)
 {
     options.set_double(Option::TimeLimit, 9e9);
     const biyos::Deadline deadline(options, clock);
