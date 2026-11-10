@@ -33,7 +33,7 @@ typedef void (*biyos_subscriber)(const biyos_event *event, void *user_data);
 BIYOS_API void biyos_version(int *major, int *minor, int *patch);
 
 BIYOS_API biyos_status biyos_env_create(biyos_env **env);
-BIYOS_API void biyos_env_free(biyos_env *env);
+BIYOS_API biyos_status biyos_env_free(biyos_env *env);
 BIYOS_API const char *biyos_last_error_message(const biyos_env *env);
 
 BIYOS_API biyos_status biyos_option_id(biyos_env *env, const char *name, int *option);

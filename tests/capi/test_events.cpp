@@ -60,6 +60,14 @@ void unsubscribe_unknown(const biyos_event *, void *user_data)
     probe->message = biyos_last_error_message(probe->env);
 }
 
+void free_inside(const biyos_event *, void *user_data)
+{
+    Probe *probe = static_cast<Probe *>(user_data);
+    ++probe->calls;
+    probe->status = biyos_env_free(probe->env);
+    probe->message = biyos_last_error_message(probe->env);
+}
+
 biyos_status listen(biyos_env *env, biyos_subscriber subscriber, void *user_data, int lowest,
                     int *id)
 {
@@ -166,6 +174,24 @@ TEST(CApiTest, NestedFailure)
     EXPECT_EQ(probe.message,
               "invalid argument: environment: is read-only while delivering an event");
     EXPECT_EQ(env.message(), "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
+}
+
+TEST(CApiTest, BusyFree)
+{
+    const Env env;
+    Probe probe;
+    probe.env = env.get();
+    int id = 0;
+    ASSERT_EQ(listen(env.get(), free_inside, &probe, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
+    fail(env);
+    EXPECT_EQ(probe.calls, 1);
+    EXPECT_EQ(probe.status, BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(probe.message,
+              "invalid argument: environment: is read-only while delivering an event");
+    int seed = -1;
+    EXPECT_EQ(biyos_set_int_option(env.get(), BIYOS_OPT_SEED, 5), BIYOS_OK);
+    EXPECT_EQ(biyos_get_int_option(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_OK);
+    EXPECT_EQ(seed, 5);
 }
 
 TEST(CApiTest, BadSubscribe)

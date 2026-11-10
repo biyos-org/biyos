@@ -78,6 +78,9 @@ int main(void)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    biyos_env_free(env);
+    if (biyos_env_free(env) != BIYOS_OK)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
     return status == BIYOS_OK ? 0 : 1;
 }

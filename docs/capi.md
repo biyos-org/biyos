@@ -80,10 +80,10 @@ Creates an environment with every option at its default and an empty error messa
 ### `biyos_env_free`
 
 ```c
-void biyos_env_free(biyos_env *env);
+biyos_status biyos_env_free(biyos_env *env);
 ```
 
-Frees the environment and every string read from it. A null `env` is ignored.
+Frees the environment and every string read from it. A null `env` gives `BIYOS_OK`. While `env` delivers an event it returns `BIYOS_INVALID_ARGUMENT` and frees nothing, as every call that would change `env` does then (see Subscribers).
 
 ### `biyos_last_error_message`
 
@@ -220,10 +220,10 @@ A field is a name and a value, both text. The only events biyos sends so far are
 
 ### Subscribers
 
-A subscriber is called with the event and the `user_data` its subscription was given. While it runs, the environment delivers an event.
+A subscriber is called with the event and the `user_data` its subscription was given. While it runs, the environment delivers an event and is read-only.
 
 - The subscriber may read options, the last error message and the event.
-- Every call that would change the environment, setting an option, subscribing or unsubscribing, fails with `BIYOS_INVALID_ARGUMENT` and the message `invalid argument: environment: is read-only while delivering an event`, and changes nothing.
+- Every call that would change the environment, setting an option, subscribing, unsubscribing or freeing it, fails with `BIYOS_INVALID_ARGUMENT` and the message `invalid argument: environment: is read-only while delivering an event`, and changes nothing.
 - A call that fails inside a subscriber keeps its message as usual, so `biyos_last_error_message` explains it, but sends no event.
 - Inside an error event, `biyos_last_error_message` returns that event's failure.
 - The event and every string read from it are valid only until the subscriber returns.
