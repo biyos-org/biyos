@@ -3,6 +3,7 @@
 An optimization solver for problems of the form
 
 $$
+\Large
 \begin{aligned}
 \min_{x \in \mathbb{R}^n} \quad & f(x) \\
 \text{s.t.} \quad & l \le g(x) \le u \\
