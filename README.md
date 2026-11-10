@@ -32,3 +32,7 @@ ctest --test-dir build --output-on-failure
 | `src/capi/` | the C API implementation |
 | `tests/<module>/` | tests for each module |
 | `cmake/` | build helpers |
+
+## Licence
+
+Copyright 2026 BIYOS Authors. Licensed under the [Apache License 2.0](LICENSE).
