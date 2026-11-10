@@ -3,6 +3,8 @@
 #include "biyos/options.h"
 
 #include <cstddef>
+#include <limits>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -40,6 +42,44 @@ enum class CheckLevel
     None,
     Cheap,
     Full,
+};
+
+struct BoolRule
+{
+    bool default_value;
+};
+
+struct IntRule
+{
+    int default_value;
+    int lower = (std::numeric_limits<int>::min)();
+    int upper = (std::numeric_limits<int>::max)();
+};
+
+struct DoubleRule
+{
+    double default_value;
+    double lower = -std::numeric_limits<double>::infinity();
+    double upper = std::numeric_limits<double>::infinity();
+};
+
+struct StringRule
+{
+    std::string_view default_value;
+};
+
+struct EnumRule
+{
+    std::string_view default_value;
+    std::span<const std::string_view> values;
+};
+
+struct OptionSpec
+{
+    Option id;
+    std::string_view name;
+    std::variant<BoolRule, IntRule, DoubleRule, StringRule, EnumRule> rule;
+    std::string_view doc;
 };
 
 Option find_option(std::string_view name);
