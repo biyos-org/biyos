@@ -1,4 +1,6 @@
 add_library(biyos_internal STATIC
+    core/clock.cpp
+    core/deadline.cpp
     core/environment.cpp
     core/error.cpp
     core/events.cpp

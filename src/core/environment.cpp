@@ -1,7 +1,33 @@
 #include "core/environment.hpp"
 
+#include "core/error.hpp"
+
+#include <memory>
+#include <utility>
+
 namespace biyos
 {
+
+namespace
+{
+
+std::unique_ptr<Clock> checked(std::unique_ptr<Clock> clock)
+{
+    if (!clock)
+    {
+        throw Error(ErrorKind::InvalidArgument, "clock", "is null");
+    }
+    return clock;
+}
+
+}
+
+Environment::Environment() : Environment(std::make_unique<SystemClock>()) {}
+
+Environment::Environment(std::unique_ptr<Clock> clock)
+    : clock_(checked(std::move(clock))), events_(*clock_)
+{
+}
 
 Options &Environment::options() noexcept
 {
@@ -11,6 +37,11 @@ Options &Environment::options() noexcept
 const Options &Environment::options() const noexcept
 {
     return options_;
+}
+
+const Clock &Environment::clock() const noexcept
+{
+    return *clock_;
 }
 
 Events &Environment::events() noexcept

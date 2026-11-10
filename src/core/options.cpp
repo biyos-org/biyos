@@ -115,6 +115,12 @@ constexpr std::array kTable{
         .rule = DoubleRule{.default_value = 1e-9, .lower = 0.0},
         .doc = "Largest magnitude of a value taken as zero.",
     },
+    OptionSpec{
+        .id = Option::CpuTimeLimit,
+        .name = "cpu_time_limit",
+        .rule = DoubleRule{.default_value = kInfinity, .lower = 0.0},
+        .doc = "CPU time limit in seconds, counting every thread of the process.",
+    },
 };
 
 constexpr bool admits(const BoolRule &)
@@ -163,7 +169,7 @@ constexpr bool well_formed()
 }
 
 static_assert(well_formed());
-static_assert(kTable.size() == static_cast<std::size_t>(Option::ZeroTol));
+static_assert(kTable.size() == static_cast<std::size_t>(Option::CpuTimeLimit));
 
 constexpr std::string_view noun(const BoolRule &)
 {

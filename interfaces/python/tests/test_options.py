@@ -17,6 +17,7 @@ DEFAULTS = {
     "feasibility_rel": 1e-6,
     "integrality_tol": 1e-5,
     "zero_tol": 1e-9,
+    "cpu_time_limit": float("inf"),
 }
 
 VALUES = {
@@ -29,6 +30,7 @@ VALUES = {
     "feasibility_rel": 1e-8,
     "integrality_tol": 1e-4,
     "zero_tol": 1e-12,
+    "cpu_time_limit": 60.0,
 }
 
 WRONG = [

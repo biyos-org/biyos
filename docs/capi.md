@@ -120,6 +120,7 @@ The ids are the `BIYOS_OPT_*` macros of `biyos/options.h` and count from 1. `biy
 | `BIYOS_OPT_FEASIBILITY_REL` | 7 | `feasibility_rel` | double | 1e-6 | [0, infinity] | Relative tolerance of a bound or an equality. |
 | `BIYOS_OPT_INTEGRALITY_TOL` | 8 | `integrality_tol` | double | 1e-5 | [0, infinity] | Largest distance to the nearest integer of a value taken as integral. |
 | `BIYOS_OPT_ZERO_TOL` | 9 | `zero_tol` | double | 1e-9 | [0, infinity] | Largest magnitude of a value taken as zero. |
+| `BIYOS_OPT_CPU_TIME_LIMIT` | 10 | `cpu_time_limit` | double | infinity | [0, infinity] | CPU time limit in seconds, counting every thread of the process. |
 
 The ranges in the Accepts column include their ends and are checked exactly, with no tolerance, and NaN is outside every range. Nothing acts on these options yet, since biyos solves nothing: they are checked, stored and read back.
 

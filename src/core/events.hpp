@@ -1,8 +1,10 @@
 #pragma once
 
 #include "biyos/events.h"
+#include "core/clock.hpp"
 
 #include <array>
+#include <chrono>
 #include <concepts>
 #include <cstddef>
 #include <deque>
@@ -42,6 +44,7 @@ struct Event
 {
     EventKind kind;
     Level level;
+    std::chrono::nanoseconds time;
     std::string module;
     std::string text;
     std::vector<Field> fields;
@@ -52,11 +55,12 @@ using Subscriber = std::function<void(const Event &)>;
 // Delivery follows subscription order. A subscriber may subscribe or unsubscribe during delivery:
 // each subscriber has its own allocation, so none moves while it runs, removal waits until the
 // outermost delivery ends, and a removed subscriber is destroyed only after the list is compacted.
-// An exception from a fill or a subscriber is dropped, so observing never changes a call.
+// An exception from a fill or a subscriber is dropped, so observing never changes a call. An
+// event's time is the wall time elapsed since the stream was made.
 class Events
 {
   public:
-    Events();
+    explicit Events(const Clock &clock);
 
     int subscribe(EventKind kind, Level lowest, Subscriber subscriber);
     void unsubscribe(int id);
@@ -71,7 +75,14 @@ class Events
         {
             return;
         }
-        Event event{.kind = kind, .level = level, .module = {}, .text = {}, .fields = {}};
+        Event event{
+            .kind = kind,
+            .level = level,
+            .time = clock_.wall_time() - origin_,
+            .module = {},
+            .text = {},
+            .fields = {},
+        };
         try
         {
             fill(event);
@@ -103,6 +114,8 @@ class Events
     void deliver(const Event &event) noexcept;
     void prune() noexcept;
 
+    const Clock &clock_;
+    std::chrono::nanoseconds origin_;
     std::deque<Subscription> subscriptions_;
     std::array<Level, kEventKinds.size()> lowest_;
     int next_id_ = 1;
