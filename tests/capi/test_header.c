@@ -75,6 +75,7 @@ int main(void)
 {
     biyos_status status = BIYOS_OK;
     biyos_env *env = NULL;
+    biyos_model *model = NULL;
     int major = -1;
     int minor = -1;
     int patch = -1;
@@ -104,6 +105,11 @@ int main(void)
     if (biyos_subscribe(env, count, &errors, BIYOS_EVENT_MESSAGE, lowest, &id) != BIYOS_OK ||
         biyos_set_int_option(env, BIYOS_OPT_SEED, -1) != BIYOS_INVALID_ARGUMENT ||
         biyos_unsubscribe(env, id) != BIYOS_OK || errors != 1)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    if (biyos_model_create(env, &model) != BIYOS_OK || biyos_env_free(env) == BIYOS_OK ||
+        biyos_model_free(model) != BIYOS_OK)
     {
         status = BIYOS_INTERNAL_ERROR;
     }

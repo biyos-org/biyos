@@ -37,6 +37,7 @@ add_library(biyos
     capi/environment.cpp
     capi/events.cpp
     capi/format.cpp
+    capi/model.cpp
     capi/options.cpp
     capi/version.cpp)
 add_library(biyos::biyos ALIAS biyos)

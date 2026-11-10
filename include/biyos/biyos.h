@@ -27,6 +27,7 @@ extern "C"
 typedef int biyos_status;
 typedef struct biyos_env biyos_env;
 typedef struct biyos_event biyos_event;
+typedef struct biyos_model biyos_model;
 typedef void (*biyos_subscriber)(const biyos_event *event, void *user_data);
 
 #define BIYOS_OK 0
@@ -69,6 +70,9 @@ BIYOS_API biyos_status biyos_format_text(const biyos_event *event, char *buffer,
                                          size_t *needed);
 BIYOS_API biyos_status biyos_format_json(const biyos_event *event, char *buffer, size_t size,
                                          size_t *needed);
+
+BIYOS_API biyos_status biyos_model_create(biyos_env *env, biyos_model **model);
+BIYOS_API biyos_status biyos_model_free(biyos_model *model);
 
 #ifdef __cplusplus
 }

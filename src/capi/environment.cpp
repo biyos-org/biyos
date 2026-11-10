@@ -3,9 +3,26 @@
 #include "capi/entry.hpp"
 #include "capi/firewall.hpp"
 #include "core/environment.hpp"
+#include "core/error.hpp"
+
+#include <string>
 
 using biyos::capi::guarded;
 using biyos::capi::writable;
+
+namespace
+{
+
+void freeable(biyos::Environment &env)
+{
+    if (writable(env).handles() > 0)
+    {
+        const std::string reason = "has a model that is not freed";
+        throw biyos::Error(biyos::ErrorKind::InvalidArgument, "environment", reason);
+    }
+}
+
+}
 
 biyos_status biyos_env_create(biyos_env **env)
 {
@@ -23,7 +40,7 @@ biyos_status biyos_env_free(biyos_env *env)
     {
         return BIYOS_OK;
     }
-    const biyos_status status = guarded<writable>(env);
+    const biyos_status status = guarded<freeable>(env);
     if (status == BIYOS_OK)
     {
         delete env;
