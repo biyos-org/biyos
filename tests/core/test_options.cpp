@@ -324,3 +324,14 @@ TEST(OptionTest, Replacements)
     EXPECT_EQ(built([](Rows &rows) { rows[1].replacement = Option{4}; }), kMalformed);
     EXPECT_EQ(built([](Rows &rows) { rows[1].replacement = Option{0}; }), kMalformed);
 }
+
+TEST(OptionTest, Retired)
+{
+    const std::string retired = "invalid argument: option 'gone': retired in 0.0.3, use 'new'";
+    biyos::Options options(kRows);
+    EXPECT_EQ(failure([&] { options.set_int(Option{3}, 5); }), retired);
+    EXPECT_EQ(failure([&] { options.set_bool(Option{3}, true); }), retired);
+    EXPECT_EQ(failure([&] { options.set_double(Option{3}, 5.0); }), retired);
+    EXPECT_EQ(failure([&] { options.set_string(Option{3}, "5"); }), retired);
+    EXPECT_EQ(options.get_int(Option{3}), 1);
+}

@@ -57,4 +57,15 @@ std::string_view noun(const OptionSpec &spec)
     return std::visit([](const auto &rule) { return noun(rule); }, spec.rule);
 }
 
+std::string dotted(Version version)
+{
+    return text_of(version.major) + "." + text_of(version.minor) + "." + text_of(version.patch);
+}
+
+std::string notice(std::string_view stage, Version version, std::string_view replacement)
+{
+    const std::string use = ", use '" + std::string(replacement) + "'";
+    return std::string(stage) + " in " + dotted(version) + use;
+}
+
 }

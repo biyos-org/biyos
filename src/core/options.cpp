@@ -87,6 +87,18 @@ std::span<const OptionSpec> checked(std::span<const OptionSpec> table)
     return table;
 }
 
+const OptionSpec &settable(std::span<const OptionSpec> table, Option option)
+{
+    const OptionSpec &spec = row_of(table, option);
+    if (!spec.versions.retired)
+    {
+        return spec;
+    }
+    const std::string_view replacement = row_of(table, *spec.replacement).name;
+    const std::string reason = notice("retired", *spec.versions.retired, replacement);
+    throw Error(ErrorKind::InvalidArgument, subject(spec.name), reason);
+}
+
 }
 
 Options::Options() : table_(option_table()), values_(defaults(table_)) {}
@@ -110,27 +122,27 @@ std::vector<Options::Value> Options::defaults(std::span<const OptionSpec> table)
 
 void Options::set_bool(Option option, bool value)
 {
-    rule_of<BoolRule>(row_of(table_, option));
+    rule_of<BoolRule>(settable(table_, option));
     std::get<bool>(values_[index_of(option)]) = value;
 }
 
 void Options::set_int(Option option, int value)
 {
-    const OptionSpec &spec = row_of(table_, option);
+    const OptionSpec &spec = settable(table_, option);
     check_range(spec, rule_of<IntRule>(spec), value);
     std::get<int>(values_[index_of(option)]) = value;
 }
 
 void Options::set_double(Option option, double value)
 {
-    const OptionSpec &spec = row_of(table_, option);
+    const OptionSpec &spec = settable(table_, option);
     check_range(spec, rule_of<DoubleRule>(spec), value);
     std::get<double>(values_[index_of(option)]) = value;
 }
 
 void Options::set_string(Option option, std::string_view value)
 {
-    const OptionSpec &spec = row_of(table_, option);
+    const OptionSpec &spec = settable(table_, option);
     if (const EnumRule *rule = std::get_if<EnumRule>(&spec.rule))
     {
         check_value(spec, *rule, value);
