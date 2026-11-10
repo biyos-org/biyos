@@ -15,6 +15,10 @@ namespace biyos
 namespace
 {
 
+constexpr int kIntMin = (std::numeric_limits<int>::min)();
+constexpr int kIntMax = (std::numeric_limits<int>::max)();
+constexpr double kInfinity = std::numeric_limits<double>::infinity();
+
 struct BoolRule
 {
     bool default_value;
@@ -23,15 +27,15 @@ struct BoolRule
 struct IntRule
 {
     int default_value;
-    int lower;
-    int upper;
+    int lower = kIntMin;
+    int upper = kIntMax;
 };
 
 struct DoubleRule
 {
     double default_value;
-    double lower;
-    double upper;
+    double lower = -kInfinity;
+    double upper = kInfinity;
 };
 
 struct StringRule
@@ -53,21 +57,19 @@ struct OptionSpec
     std::string_view doc;
 };
 
-constexpr int kIntMax = (std::numeric_limits<int>::max)();
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr std::array<std::string_view, 3> kCheckLevels{"none", "cheap", "full"};
 
 constexpr std::array kTable{
     OptionSpec{
         .id = Option::Seed,
         .name = "seed",
-        .rule = IntRule{.default_value = 0, .lower = 0, .upper = kIntMax},
+        .rule = IntRule{.default_value = 0, .lower = 0},
         .doc = "Seed of every random choice.",
     },
     OptionSpec{
         .id = Option::TimeLimit,
         .name = "time_limit",
-        .rule = DoubleRule{.default_value = kInfinity, .lower = 0.0, .upper = kInfinity},
+        .rule = DoubleRule{.default_value = kInfinity, .lower = 0.0},
         .doc = "Wall time limit in seconds.",
     },
     OptionSpec{
