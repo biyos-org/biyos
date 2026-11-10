@@ -11,7 +11,7 @@ namespace biyos
 namespace
 {
 
-std::unique_ptr<Clock> present(std::unique_ptr<Clock> clock)
+std::unique_ptr<Clock> checked(std::unique_ptr<Clock> clock)
 {
     if (!clock)
     {
@@ -25,7 +25,7 @@ std::unique_ptr<Clock> present(std::unique_ptr<Clock> clock)
 Environment::Environment() : Environment(std::make_unique<SystemClock>()) {}
 
 Environment::Environment(std::unique_ptr<Clock> clock)
-    : clock_(present(std::move(clock))), events_(*clock_)
+    : clock_(checked(std::move(clock))), events_(*clock_)
 {
 }
 
