@@ -6,7 +6,7 @@
 
 #include <stddef.h>
 
-#if BIYOS_OK != 0
+#if !defined(BIYOS_OK) || BIYOS_OK != 0
 #error "BIYOS_OK must be zero"
 #endif
 #if BIYOS_INVALID_ARGUMENT > -100 || BIYOS_INVALID_ARGUMENT < -199
