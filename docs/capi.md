@@ -214,6 +214,7 @@ biyos never prints. It reports through events, and a caller reads them by subscr
 | --- | --- | --- |
 | `BIYOS_EVENT_MESSAGE` | 1 | a message: a level, the module that sent it, a text and fields |
 | `BIYOS_EVENT_CHECK` | 2 | a failed check: the invariant that does not hold, the object it was checked on and the values involved |
+| `BIYOS_EVENT_PHASE` | 3 | a phase of a solve beginning or ending: its name and the wall and CPU time |
 
 | Macro | Value | Level |
 | --- | --- | --- |
@@ -227,6 +228,8 @@ A level is more severe the larger its value. The kinds and levels come from `biy
 A field is a name and a value, both text. The only events biyos sends so far are error messages. A call on an environment that fails sends one, unless the environment is delivering an event: its level is `BIYOS_LEVEL_ERROR`, its module `capi`, its text the message `biyos_last_error_message` returns for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a subscriber can tell the group from the range.
 
 A check event reports an invariant that does not hold, found by a check the `check_level` option runs, and the call then fails. Its level is `BIYOS_LEVEL_ERROR`, its module the module that ran the check, its text the message `biyos_last_error_message` returns for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. A check that fails while biyos is building an event sends no check event and does not fail the call: the event being built is not sent, the check's error is dropped, and the last error message is left as it was. No call runs a check yet.
+
+A phase event marks a phase of a solve, such as presolve, beginning or ending. Phases nest: a phase begun inside another ends before it. Its level is `BIYOS_LEVEL_INFO`, its module the module that timed the phase, its text the name of the phase, and its fields are `edge`, `wall` and `cpu`, in that order. `edge` is `begin` or `end`. `wall` is the wall time since the environment was created and `cpu` the CPU time the process has used, every thread included, both read as the phase begins or ends and written in nanoseconds as decimal text. biyos adds up the time of each phase in a timing tree, nested as phases nest, which no call reads yet. The tree leaves out the time spent delivering phase events, so subscribing never changes it, but the stamps do not: a phase's time in the tree is its end's `wall` and `cpu` less its begin's, less, for each phase event sent between the two, the time from that event's stamps until its subscribers return. Those events are the phase's own begin event and the events of the phases inside it. Should the CPU time be unreadable as a phase begins, the call fails with `BIYOS_INTERNAL_ERROR`, and the phase neither begins nor sends an event. Should it be unreadable as a phase ends, `cpu` repeats its begin value and the phase counts as using no CPU time. No call times a phase yet.
 
 ### Subscribers
 
@@ -346,7 +349,7 @@ biyos_status biyos_format_json(const biyos_event *event, char *buffer, size_t si
                                size_t *needed);
 ```
 
-Writes the event for tools, as one JSON object with the members `time`, `kind`, `level`, `module`, `text` and `fields`, in that order. `time` is a JSON number, written as in text. `kind` is the name of the kind: `message` for `BIYOS_EVENT_MESSAGE` and `check` for `BIYOS_EVENT_CHECK`. `level` is the name of the level: `debug`, `info`, `warning` or `error`. `fields` is an object holding the event's fields in their order, each value a string. A quote and a backslash are written as `\"` and `\\`. Bytes that are not well-formed UTF-8 become U+FFFD, one for each maximal subpart as the Unicode Standard recommends, so the line is always valid JSON. Every other byte from 0x20 up is written as it is. The same error event reads
+Writes the event for tools, as one JSON object with the members `time`, `kind`, `level`, `module`, `text` and `fields`, in that order. `time` is a JSON number, written as in text. `kind` is the name of the kind: `message` for `BIYOS_EVENT_MESSAGE`, `check` for `BIYOS_EVENT_CHECK` and `phase` for `BIYOS_EVENT_PHASE`. `level` is the name of the level: `debug`, `info`, `warning` or `error`. `fields` is an object holding the event's fields in their order, each value a string. A quote and a backslash are written as `\"` and `\\`. Bytes that are not well-formed UTF-8 become U+FFFD, one for each maximal subpart as the Unicode Standard recommends, so the line is always valid JSON. Every other byte from 0x20 up is written as it is. The same error event reads
 
 ```json
 {"time":0.000041,"kind":"message","level":"error","module":"capi","text":"invalid argument: option 'seed': -1 is outside [0, 2147483647]","fields":{"code":"-100"}}

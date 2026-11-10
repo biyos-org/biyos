@@ -21,6 +21,7 @@ enum class EventKind
 {
     Message = BIYOS_EVENT_MESSAGE,
     Check = BIYOS_EVENT_CHECK,
+    Phase = BIYOS_EVENT_PHASE,
 };
 
 enum class Level
@@ -31,7 +32,7 @@ enum class Level
     Error = BIYOS_LEVEL_ERROR,
 };
 
-inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Check};
+inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Check, EventKind::Phase};
 
 EventKind find_kind(int id);
 Level find_level(int id);
@@ -72,6 +73,7 @@ class Events
     bool wanted(EventKind kind, Level level) const noexcept { return lowest_[slot(kind)] <= level; }
     bool delivering() const noexcept { return depth_ > 0; }
     bool filling() const noexcept { return fills_ > 0; }
+    std::chrono::nanoseconds origin() const noexcept { return origin_; }
 
     template <std::invocable<Event &> Fill>
     void emit(EventKind kind, Level level, Fill &&fill) noexcept

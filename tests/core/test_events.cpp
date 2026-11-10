@@ -111,8 +111,9 @@ TEST_F(EventTest, KindIds)
 {
     EXPECT_EQ(biyos::find_kind(BIYOS_EVENT_MESSAGE), EventKind::Message);
     EXPECT_EQ(biyos::find_kind(BIYOS_EVENT_CHECK), EventKind::Check);
+    EXPECT_EQ(biyos::find_kind(BIYOS_EVENT_PHASE), EventKind::Phase);
     EXPECT_EQ(failure([] { biyos::find_kind(0); }), "invalid argument: event kind 0: unknown");
-    EXPECT_EQ(failure([] { biyos::find_kind(3); }), "invalid argument: event kind 3: unknown");
+    EXPECT_EQ(failure([] { biyos::find_kind(4); }), "invalid argument: event kind 4: unknown");
 }
 
 TEST_F(EventTest, LevelIds)
@@ -129,6 +130,7 @@ TEST_F(EventTest, Names)
 {
     EXPECT_EQ(biyos::name_of(EventKind::Message), "message");
     EXPECT_EQ(biyos::name_of(EventKind::Check), "check");
+    EXPECT_EQ(biyos::name_of(EventKind::Phase), "phase");
     EXPECT_EQ(biyos::name_of(Level::Debug), "debug");
     EXPECT_EQ(biyos::name_of(Level::Info), "info");
     EXPECT_EQ(biyos::name_of(Level::Warning), "warning");
