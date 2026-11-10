@@ -4,6 +4,8 @@
 #include "biyos/options.h"
 #include "biyos/status.h"
 
+#include <stddef.h>
+
 #if defined(BIYOS_STATIC)
 #define BIYOS_API
 #elif defined(_WIN32)
@@ -59,6 +61,11 @@ BIYOS_API const char *biyos_event_text(const biyos_event *event);
 BIYOS_API int biyos_event_field_count(const biyos_event *event);
 BIYOS_API const char *biyos_event_field_name(const biyos_event *event, int field);
 BIYOS_API const char *biyos_event_field_value(const biyos_event *event, int field);
+
+BIYOS_API biyos_status biyos_format_text(const biyos_event *event, char *buffer, size_t size,
+                                         size_t *needed);
+BIYOS_API biyos_status biyos_format_json(const biyos_event *event, char *buffer, size_t size,
+                                         size_t *needed);
 
 #ifdef __cplusplus
 }
