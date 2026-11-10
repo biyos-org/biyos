@@ -27,10 +27,19 @@ class Env
 TEST(CApiTest, OptionIds)
 {
     const Env env;
-    const char *names[] = {"seed", "time_limit", "check_level", "presolve", "reproducer"};
-    const int ids[] = {BIYOS_OPT_SEED, BIYOS_OPT_TIME_LIMIT, BIYOS_OPT_CHECK_LEVEL,
-                       BIYOS_OPT_PRESOLVE, BIYOS_OPT_REPRODUCER};
-    for (int i = 0; i < 5; ++i)
+    const char *names[] = {"seed",       "time_limit",      "check_level",     "presolve",
+                           "reproducer", "feasibility_abs", "feasibility_rel", "integrality_tol",
+                           "zero_tol"};
+    const int ids[] = {BIYOS_OPT_SEED,
+                       BIYOS_OPT_TIME_LIMIT,
+                       BIYOS_OPT_CHECK_LEVEL,
+                       BIYOS_OPT_PRESOLVE,
+                       BIYOS_OPT_REPRODUCER,
+                       BIYOS_OPT_FEASIBILITY_ABS,
+                       BIYOS_OPT_FEASIBILITY_REL,
+                       BIYOS_OPT_INTEGRALITY_TOL,
+                       BIYOS_OPT_ZERO_TOL};
+    for (int i = 0; i < 9; ++i)
     {
         int id = 0;
         EXPECT_EQ(biyos_option_id(env.get(), names[i], &id), BIYOS_OK);
@@ -41,11 +50,19 @@ TEST(CApiTest, OptionIds)
 TEST(CApiTest, OptionKinds)
 {
     const Env env;
-    const int ids[] = {BIYOS_OPT_SEED, BIYOS_OPT_TIME_LIMIT, BIYOS_OPT_CHECK_LEVEL,
-                       BIYOS_OPT_PRESOLVE, BIYOS_OPT_REPRODUCER};
-    const int kinds[] = {BIYOS_KIND_INT, BIYOS_KIND_DOUBLE, BIYOS_KIND_ENUM, BIYOS_KIND_BOOL,
-                         BIYOS_KIND_STRING};
-    for (int i = 0; i < 5; ++i)
+    const int ids[] = {BIYOS_OPT_SEED,
+                       BIYOS_OPT_TIME_LIMIT,
+                       BIYOS_OPT_CHECK_LEVEL,
+                       BIYOS_OPT_PRESOLVE,
+                       BIYOS_OPT_REPRODUCER,
+                       BIYOS_OPT_FEASIBILITY_ABS,
+                       BIYOS_OPT_FEASIBILITY_REL,
+                       BIYOS_OPT_INTEGRALITY_TOL,
+                       BIYOS_OPT_ZERO_TOL};
+    const int kinds[] = {BIYOS_KIND_INT,    BIYOS_KIND_DOUBLE, BIYOS_KIND_ENUM,
+                         BIYOS_KIND_BOOL,   BIYOS_KIND_STRING, BIYOS_KIND_DOUBLE,
+                         BIYOS_KIND_DOUBLE, BIYOS_KIND_DOUBLE, BIYOS_KIND_DOUBLE};
+    for (int i = 0; i < 9; ++i)
     {
         int kind = 0;
         EXPECT_EQ(biyos_option_kind(env.get(), ids[i], &kind), BIYOS_OK);

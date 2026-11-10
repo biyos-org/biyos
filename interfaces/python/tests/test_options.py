@@ -13,6 +13,10 @@ DEFAULTS = {
     "check_level": "cheap",
     "presolve": True,
     "reproducer": "",
+    "feasibility_abs": 1e-6,
+    "feasibility_rel": 1e-6,
+    "integrality_tol": 1e-5,
+    "zero_tol": 1e-9,
 }
 
 VALUES = {
@@ -21,6 +25,10 @@ VALUES = {
     "check_level": "full",
     "presolve": False,
     "reproducer": "replay.txt",
+    "feasibility_abs": 1e-7,
+    "feasibility_rel": 1e-8,
+    "integrality_tol": 1e-4,
+    "zero_tol": 1e-12,
 }
 
 WRONG = [
