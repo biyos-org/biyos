@@ -1,3 +1,4 @@
+#include "biyos/status.h"
 #include "core/status.hpp"
 
 #include <gtest/gtest.h>
@@ -89,6 +90,21 @@ template <typename Status, std::size_t N> void expect_distinct(const std::array<
     EXPECT_FALSE(names.contains(""));
 }
 
+std::string_view termination_name(int code)
+{
+    return biyos::name_of(static_cast<TerminationStatus>(code));
+}
+
+std::string_view result_name(int code)
+{
+    return biyos::name_of(static_cast<ResultStatus>(code));
+}
+
+std::string_view claim_name(int code)
+{
+    return biyos::name_of(static_cast<Claim>(code));
+}
+
 template <typename Status, std::size_t N> void expect_listed(const std::array<Status, N> &all)
 {
     for (int code = -kLargest; code <= kLargest; ++code)
@@ -129,11 +145,38 @@ TEST(StatusTest, Groups)
     }
 }
 
-TEST(StatusTest, Names)
+TEST(StatusTest, TerminationNames)
 {
-    EXPECT_EQ(biyos::name_of(TerminationStatus::AlmostLocallySolved), "almost locally solved");
-    EXPECT_EQ(biyos::name_of(TerminationStatus::CpuTimeLimit), "CPU time limit");
-    EXPECT_EQ(biyos::name_of(ResultStatus::NearlyFeasible), "nearly feasible");
-    EXPECT_EQ(biyos::name_of(Claim::Global), "global");
-    EXPECT_EQ(biyos::name_of(static_cast<TerminationStatus>(104)), "");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_NOT_SOLVED), "not solved");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_OPTIMAL), "optimal");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_LOCALLY_SOLVED), "locally solved");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_ALMOST_LOCALLY_SOLVED), "almost locally solved");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_ITERATION_LIMIT), "iteration limit");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_TIME_LIMIT), "time limit");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_CPU_TIME_LIMIT), "CPU time limit");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_EVALUATION_LIMIT), "evaluation limit");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_USER_STOP), "user stop");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_INFEASIBLE), "infeasible");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_LOCALLY_INFEASIBLE), "locally infeasible");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_UNBOUNDED), "unbounded");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_SLOW_PROGRESS), "slow progress");
+    EXPECT_EQ(termination_name(BIYOS_TERMINATION_NUMERICAL_TROUBLE), "numerical trouble");
+}
+
+TEST(StatusTest, ResultNames)
+{
+    EXPECT_EQ(result_name(BIYOS_RESULT_NONE), "none");
+    EXPECT_EQ(result_name(BIYOS_RESULT_FEASIBLE), "feasible");
+    EXPECT_EQ(result_name(BIYOS_RESULT_NEARLY_FEASIBLE), "nearly feasible");
+    EXPECT_EQ(result_name(BIYOS_RESULT_INFEASIBLE), "infeasible");
+    EXPECT_EQ(result_name(BIYOS_RESULT_CERTIFICATE), "certificate");
+    EXPECT_EQ(result_name(BIYOS_RESULT_NEARLY_CERTIFICATE), "nearly certificate");
+    EXPECT_EQ(result_name(BIYOS_RESULT_UNKNOWN), "unknown");
+}
+
+TEST(StatusTest, ClaimNames)
+{
+    EXPECT_EQ(claim_name(BIYOS_CLAIM_NONE), "none");
+    EXPECT_EQ(claim_name(BIYOS_CLAIM_LOCAL), "local");
+    EXPECT_EQ(claim_name(BIYOS_CLAIM_GLOBAL), "global");
 }
