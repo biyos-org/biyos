@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <chrono>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -23,6 +24,7 @@ using Times = std::vector<std::chrono::nanoseconds>;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr std::chrono::nanoseconds kForever = (std::chrono::nanoseconds::max)();
+constexpr double kEdgeSeconds = 0x1.12e0be826d695p+33;
 
 class ClockTest : public ::testing::Test
 {
@@ -107,6 +109,26 @@ TEST_F(ClockTest, AboveBound)
     clock.advance_wall(kForever);
     clock.advance_cpu(kForever);
     EXPECT_FALSE(deadline.reached());
+}
+
+TEST_F(ClockTest, AtBound)
+{
+    options.set_double(Option::TimeLimit, kEdgeSeconds);
+    options.set_double(Option::CpuTimeLimit, kEdgeSeconds);
+    const biyos::Deadline deadline(options, clock);
+    clock.advance_wall(kForever);
+    clock.advance_cpu(kForever);
+    EXPECT_FALSE(deadline.reached());
+}
+
+TEST_F(ClockTest, JustBelow)
+{
+    options.set_double(Option::TimeLimit, std::nextafter(kEdgeSeconds, 0.0));
+    const biyos::Deadline deadline(options, clock);
+    clock.advance_wall(std::chrono::nanoseconds(9'223'372'036'854'774'784) - 1ns);
+    EXPECT_FALSE(deadline.reached());
+    clock.advance_wall(1ns);
+    EXPECT_TRUE(deadline.reached());
 }
 
 TEST_F(ClockTest, BelowBound)
