@@ -75,6 +75,8 @@ std::string_view name_of(EventKind kind) noexcept
         return "message";
     case EventKind::Check:
         return "check";
+    case EventKind::Phase:
+        return "phase";
     }
     return "";
 }

@@ -214,6 +214,7 @@ biyos never prints. It reports through events, and a caller reads them by subscr
 | --- | --- | --- |
 | `BIYOS_EVENT_MESSAGE` | 1 | a message: a level, the module that sent it, a text and fields |
 | `BIYOS_EVENT_CHECK` | 2 | a failed check: the invariant that does not hold, the object it was checked on and the values involved |
+| `BIYOS_EVENT_PHASE` | 3 | a phase of a solve beginning or ending: its name and the wall and CPU time |
 
 | Macro | Value | Level |
 | --- | --- | --- |
@@ -346,7 +347,7 @@ biyos_status biyos_format_json(const biyos_event *event, char *buffer, size_t si
                                size_t *needed);
 ```
 
-Writes the event for tools, as one JSON object with the members `time`, `kind`, `level`, `module`, `text` and `fields`, in that order. `time` is a JSON number, written as in text. `kind` is the name of the kind: `message` for `BIYOS_EVENT_MESSAGE` and `check` for `BIYOS_EVENT_CHECK`. `level` is the name of the level: `debug`, `info`, `warning` or `error`. `fields` is an object holding the event's fields in their order, each value a string. A quote and a backslash are written as `\"` and `\\`. Bytes that are not well-formed UTF-8 become U+FFFD, one for each maximal subpart as the Unicode Standard recommends, so the line is always valid JSON. Every other byte from 0x20 up is written as it is. The same error event reads
+Writes the event for tools, as one JSON object with the members `time`, `kind`, `level`, `module`, `text` and `fields`, in that order. `time` is a JSON number, written as in text. `kind` is the name of the kind: `message` for `BIYOS_EVENT_MESSAGE`, `check` for `BIYOS_EVENT_CHECK` and `phase` for `BIYOS_EVENT_PHASE`. `level` is the name of the level: `debug`, `info`, `warning` or `error`. `fields` is an object holding the event's fields in their order, each value a string. A quote and a backslash are written as `\"` and `\\`. Bytes that are not well-formed UTF-8 become U+FFFD, one for each maximal subpart as the Unicode Standard recommends, so the line is always valid JSON. Every other byte from 0x20 up is written as it is. The same error event reads
 
 ```json
 {"time":0.000041,"kind":"message","level":"error","module":"capi","text":"invalid argument: option 'seed': -1 is outside [0, 2147483647]","fields":{"code":"-100"}}
