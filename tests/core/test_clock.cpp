@@ -121,11 +121,20 @@ TEST_F(ClockTest, BelowBound)
 
 TEST_F(ClockTest, PartialTick)
 {
-    options.set_double(Option::CpuTimeLimit, 1.5e-9);
+    options.set_double(Option::CpuTimeLimit, 1.2e-9);
     const biyos::Deadline deadline(options, clock);
     clock.advance_cpu(1ns);
     EXPECT_FALSE(deadline.reached());
     clock.advance_cpu(1ns);
+    EXPECT_TRUE(deadline.reached());
+}
+
+TEST_F(ClockTest, TinyLimit)
+{
+    options.set_double(Option::TimeLimit, std::numeric_limits<double>::denorm_min());
+    const biyos::Deadline deadline(options, clock);
+    EXPECT_FALSE(deadline.reached());
+    clock.advance_wall(1ns);
     EXPECT_TRUE(deadline.reached());
 }
 
