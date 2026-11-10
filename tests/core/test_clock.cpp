@@ -223,6 +223,19 @@ TEST_F(ClockTest, ReadOnce)
     EXPECT_TRUE(deadline.reached());
 }
 
+TEST_F(ClockTest, UnwantedEvent)
+{
+    const CountingClock counter;
+    biyos::Events events(counter);
+    events.emit(EventKind::Message, Level::Error, blank);
+    events.subscribe(EventKind::Message, Level::Error, [](const biyos::Event &) {});
+    events.emit(EventKind::Message, Level::Warning, blank);
+    EXPECT_EQ(counter.wall_reads(), 1);
+    events.emit(EventKind::Message, Level::Error, blank);
+    EXPECT_EQ(counter.wall_reads(), 2);
+    EXPECT_EQ(counter.cpu_reads(), 0);
+}
+
 TEST_F(ClockTest, EventTime)
 {
     auto owned = std::make_unique<biyos::FakeClock>();
