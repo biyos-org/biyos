@@ -1,6 +1,7 @@
 #include "core/format.hpp"
 
 #include "core/events.hpp"
+#include "core/utf8.hpp"
 
 #include <cstddef>
 #include <string>
@@ -14,6 +15,7 @@ namespace
 {
 
 constexpr std::string_view kHex = "0123456789abcdef";
+constexpr std::string_view kReplacement = "\xef\xbf\xbd";
 
 bool control(char c)
 {
@@ -54,24 +56,32 @@ void append_plain(std::string &line, std::string_view text)
     }
 }
 
+std::size_t append_char(std::string &line, std::string_view rest)
+{
+    const char c = rest.front();
+    if (c == '"' || c == '\\')
+    {
+        line += '\\';
+        line += c;
+        return 1;
+    }
+    if (control(c))
+    {
+        append_control(line, c);
+        return 1;
+    }
+    const utf8::Sequence sequence = utf8::first_sequence(rest);
+    line += sequence.valid ? rest.substr(0, sequence.size) : kReplacement;
+    return sequence.size;
+}
+
 void append_quoted(std::string &line, std::string_view text)
 {
     line += '"';
-    for (const char c : text)
+    std::size_t at = 0;
+    while (at < text.size())
     {
-        if (c == '"' || c == '\\')
-        {
-            line += '\\';
-            line += c;
-        }
-        else if (control(c))
-        {
-            append_control(line, c);
-        }
-        else
-        {
-            line += c;
-        }
+        at += append_char(line, text.substr(at));
     }
     line += '"';
 }

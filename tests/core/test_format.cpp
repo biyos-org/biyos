@@ -127,6 +127,16 @@ TEST(FormatTest, JsonEscapes)
     EXPECT_EQ(json_of(utf8), json_line("\"" + utf8 + "\""));
 }
 
+TEST(FormatTest, Malformed)
+{
+    const std::string mark = "\xef\xbf\xbd";
+    EXPECT_EQ(json_of("seed\xff"), json_line("\"seed" + mark + "\""));
+    EXPECT_EQ(json_of("\xe2\x82 \x80"), json_line("\"" + mark + " " + mark + "\""));
+    EXPECT_EQ(json_of("\xed\xa0\x80"), json_line("\"" + mark + mark + mark + "\""));
+    EXPECT_EQ(json_of("\xc3\xa9\xc3"), json_line("\"\xc3\xa9" + mark + "\""));
+    EXPECT_EQ(text_of("seed\xff"), "info core: seed\xff");
+}
+
 TEST(FormatTest, JsonFields)
 {
     biyos::Event event = message(Level::Info, "");

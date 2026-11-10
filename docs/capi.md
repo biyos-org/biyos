@@ -345,7 +345,7 @@ biyos_status biyos_format_json(const biyos_event *event, char *buffer, size_t si
                                size_t *needed);
 ```
 
-Writes the event for tools, as one JSON object with the members `kind`, `level`, `module`, `text` and `fields`, in that order. `kind` is the name of the kind: `message` for `BIYOS_EVENT_MESSAGE` and `check` for `BIYOS_EVENT_CHECK`. `level` is the name of the level: `debug`, `info`, `warning` or `error`. `fields` is an object holding the event's fields in their order, each value a string. A quote and a backslash are written as `\"` and `\\`, and every other byte from 0x20 up as it is. The same error event reads
+Writes the event for tools, as one JSON object with the members `kind`, `level`, `module`, `text` and `fields`, in that order. `kind` is the name of the kind: `message` for `BIYOS_EVENT_MESSAGE` and `check` for `BIYOS_EVENT_CHECK`. `level` is the name of the level: `debug`, `info`, `warning` or `error`. `fields` is an object holding the event's fields in their order, each value a string. A quote and a backslash are written as `\"` and `\\`. Bytes that are not well-formed UTF-8 become U+FFFD, one for each maximal subpart as the Unicode Standard recommends, so the line is always valid JSON. Every other byte from 0x20 up is written as it is. The same error event reads
 
 ```json
 {"kind":"message","level":"error","module":"capi","text":"invalid argument: option 'seed': -1 is outside [0, 2147483647]","fields":{"code":"-100"}}
