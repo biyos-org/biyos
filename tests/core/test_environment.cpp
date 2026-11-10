@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 TEST(EnvironmentTest, NoError)
@@ -105,4 +106,12 @@ TEST(EnvironmentTest, CleanScope)
         EXPECT_EQ(env.last_error(), "outer");
     }
     EXPECT_EQ(env.last_error(), "outer");
+}
+
+TEST(EnvironmentTest, Unmovable)
+{
+    EXPECT_FALSE(std::is_copy_constructible_v<biyos::Environment>);
+    EXPECT_FALSE(std::is_copy_assignable_v<biyos::Environment>);
+    EXPECT_FALSE(std::is_move_constructible_v<biyos::Environment>);
+    EXPECT_FALSE(std::is_move_assignable_v<biyos::Environment>);
 }

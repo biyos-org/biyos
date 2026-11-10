@@ -16,6 +16,8 @@ class Environment
   public:
     Environment();
     explicit Environment(std::unique_ptr<Clock> clock);
+    Environment(const Environment &) = delete;
+    Environment &operator=(const Environment &) = delete;
 
     // A failure recorded inside a scope is undone when the scope ends, so a subscriber's failed
     // call never changes the last error another reads. The outer message is swapped aside on the
