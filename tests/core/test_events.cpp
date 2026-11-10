@@ -110,8 +110,9 @@ class EventTest : public ::testing::Test
 TEST_F(EventTest, KindIds)
 {
     EXPECT_EQ(biyos::find_kind(BIYOS_EVENT_MESSAGE), EventKind::Message);
+    EXPECT_EQ(biyos::find_kind(BIYOS_EVENT_CHECK), EventKind::Check);
     EXPECT_EQ(failure([] { biyos::find_kind(0); }), "invalid argument: event kind 0: unknown");
-    EXPECT_EQ(failure([] { biyos::find_kind(2); }), "invalid argument: event kind 2: unknown");
+    EXPECT_EQ(failure([] { biyos::find_kind(3); }), "invalid argument: event kind 3: unknown");
 }
 
 TEST_F(EventTest, LevelIds)
@@ -148,6 +149,18 @@ TEST_F(EventTest, LevelFilter)
     EXPECT_EQ(texts, (Texts{"warning", "error"}));
     EXPECT_FALSE(events.wanted(EventKind::Message, Level::Info));
     EXPECT_TRUE(events.wanted(EventKind::Message, Level::Warning));
+}
+
+TEST_F(EventTest, KindFilter)
+{
+    const auto two = [](biyos::Event &event) { event.text = "two"; };
+    listen(Level::Debug, recorder("m "));
+    events.subscribe(EventKind::Check, Level::Error, recorder("c "));
+    EXPECT_TRUE(events.wanted(EventKind::Message, Level::Debug));
+    EXPECT_FALSE(events.wanted(EventKind::Check, Level::Warning));
+    say(Level::Error, "one");
+    events.emit(EventKind::Check, Level::Error, two);
+    EXPECT_EQ(texts, (Texts{"m one", "c two"}));
 }
 
 TEST_F(EventTest, LowestLevel)

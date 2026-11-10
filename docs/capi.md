@@ -213,6 +213,7 @@ biyos never prints. It reports through events, and a caller reads them by subscr
 | Macro | Value | Kind |
 | --- | --- | --- |
 | `BIYOS_EVENT_MESSAGE` | 1 | a message: a level, the module that sent it, a text and fields |
+| `BIYOS_EVENT_CHECK` | 2 | a failed check: the invariant that does not hold, the object it was checked on and the values involved |
 
 | Macro | Value | Level |
 | --- | --- | --- |
