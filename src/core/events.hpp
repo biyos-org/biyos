@@ -73,6 +73,7 @@ class Events
     bool wanted(EventKind kind, Level level) const noexcept { return lowest_[slot(kind)] <= level; }
     bool delivering() const noexcept { return depth_ > 0; }
     bool filling() const noexcept { return fills_ > 0; }
+    std::chrono::nanoseconds origin() const noexcept { return origin_; }
 
     template <std::invocable<Event &> Fill>
     void emit(EventKind kind, Level level, Fill &&fill) noexcept

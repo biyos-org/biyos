@@ -8,6 +8,7 @@ add_library(biyos_internal STATIC
     core/format.cpp
     core/options.cpp
     core/status.cpp
+    core/timer.cpp
     core/tolerances.cpp
     core/utf8.cpp
     core/version.cpp)
