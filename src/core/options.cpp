@@ -4,6 +4,7 @@
 #include "core/option_checks.hpp"
 #include "core/option_table.hpp"
 #include "core/option_text.hpp"
+#include "core/option_warning.hpp"
 #include "core/version.hpp"
 
 #include <algorithm>
@@ -104,8 +105,13 @@ const OptionSpec &settable(std::span<const OptionSpec> table, Option option)
 
 Options::Options() : table_(option_table()), values_(defaults(table_)) {}
 
-Options::Options(std::span<const OptionSpec> table)
-    : table_(checked(table)), values_(defaults(table_))
+Options::Options(Events &events)
+    : table_(option_table()), events_(&events), values_(defaults(table_))
+{
+}
+
+Options::Options(std::span<const OptionSpec> table, Events &events)
+    : table_(checked(table)), events_(&events), values_(defaults(table_))
 {
 }
 
@@ -159,6 +165,10 @@ void Options::set_string(Option option, std::string_view value)
 void Options::store(const OptionSpec &spec, Value value)
 {
     values_[index_of(spec.id)] = std::move(value);
+    if (events_ != nullptr)
+    {
+        warn_deprecated(*events_, table_, spec);
+    }
 }
 
 bool Options::get_bool(Option option) const

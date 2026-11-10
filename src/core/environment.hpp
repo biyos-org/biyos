@@ -51,9 +51,9 @@ class Environment
     void record_error(std::string_view text) noexcept;
 
   private:
-    Options options_;
     std::unique_ptr<Clock> clock_;
     Events events_;
+    Options options_;
     std::string last_error_;
     ErrorScope *scope_ = nullptr;
 };

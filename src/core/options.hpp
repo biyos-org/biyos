@@ -16,6 +16,8 @@
 namespace biyos
 {
 
+class Events;
+
 enum class Option
 {
     Seed = BIYOS_OPT_SEED,
@@ -103,12 +105,14 @@ std::string_view name_of(Option option);
 OptionKind kind_of(Option option);
 
 // A value for each row of an option table, which outlives the store unchanged. The built-in table
-// is checked at compile time, a given one when the store is built.
+// is checked at compile time, a given one when the store is built. Setting a deprecated option
+// warns on the store's event stream, and a store built without one warns nobody.
 class Options
 {
   public:
     Options();
-    explicit Options(std::span<const OptionSpec> table);
+    explicit Options(Events &events);
+    Options(std::span<const OptionSpec> table, Events &events);
 
     void set_bool(Option option, bool value);
     void set_int(Option option, int value);
@@ -137,6 +141,7 @@ class Options
     std::size_t position_of(Option option) const;
 
     std::span<const OptionSpec> table_;
+    Events *events_ = nullptr;
     std::vector<Value> values_;
 };
 
