@@ -1,3 +1,5 @@
+#include "biyos/options.h"
+
 #include "biyos/biyos.h"
 
 #include <stddef.h>

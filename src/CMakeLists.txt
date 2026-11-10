@@ -4,7 +4,9 @@ add_library(biyos_internal STATIC
     core/options.cpp
     core/version.cpp)
 
-target_include_directories(biyos_internal PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(biyos_internal PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/include)
 target_compile_features(biyos_internal PUBLIC cxx_std_20)
 target_compile_definitions(biyos_internal PRIVATE
     BIYOS_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}

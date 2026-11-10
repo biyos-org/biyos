@@ -1,5 +1,7 @@
 #pragma once
 
+#include "biyos/options.h"
+
 #if defined(BIYOS_STATIC)
 #define BIYOS_API
 #elif defined(_WIN32)
@@ -24,12 +26,6 @@ typedef struct biyos_env biyos_env;
 #define BIYOS_INVALID_ARGUMENT (-100)
 #define BIYOS_NO_MEMORY (-400)
 #define BIYOS_INTERNAL_ERROR (-500)
-
-#define BIYOS_OPT_SEED 1
-#define BIYOS_OPT_TIME_LIMIT 2
-#define BIYOS_OPT_CHECK_LEVEL 3
-#define BIYOS_OPT_PRESOLVE 4
-#define BIYOS_OPT_REPRODUCER 5
 
 BIYOS_API void biyos_version(int *major, int *minor, int *patch);
 
