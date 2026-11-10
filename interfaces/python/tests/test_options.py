@@ -67,7 +67,7 @@ def test_unknown_name(env):
     assert caught.value.code == INVALID_ARGUMENT
 
 
-def test_name_type(env):
+def test_name_kind(env):
     with pytest.raises(TypeError, match="option name must be a str, not int"):
         env.get_option(1)
 
@@ -93,13 +93,13 @@ def test_int_double(env):
 
 
 @pytest.mark.parametrize("name, value", WRONG)
-def test_wrong_type(env, name, value):
+def test_wrong_kind(env, name, value):
     with pytest.raises(TypeError):
         env.set_option(name, value)
     assert env.get_option(name) == DEFAULTS[name]
 
 
-def test_type_message(env):
+def test_kind_message(env):
     message = "option 'seed' takes an int, not bool"
     with pytest.raises(TypeError, match=message):
         env.set_option("seed", True)
