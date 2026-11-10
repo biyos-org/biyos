@@ -86,7 +86,7 @@ constexpr std::array kTable{
         .id = Option::Reproducer,
         .name = "reproducer",
         .rule = StringRule{.default_value = ""},
-        .doc = "File the solve writes its model, options and seed to. Empty for none.",
+        .doc = "File the solve writes its model, options, seed and version to. Empty for none.",
     },
 };
 
