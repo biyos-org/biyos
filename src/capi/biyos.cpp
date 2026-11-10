@@ -137,23 +137,6 @@ const biyos::Field *field_of(const biyos_event *event, int field)
 
 }
 
-void biyos_version(int *major, int *minor, int *patch)
-{
-    const biyos::Version v = biyos::version();
-    if (major != nullptr)
-    {
-        *major = v.major;
-    }
-    if (minor != nullptr)
-    {
-        *minor = v.minor;
-    }
-    if (patch != nullptr)
-    {
-        *patch = v.patch;
-    }
-}
-
 biyos_status biyos_env_create(biyos_env **env)
 {
     if (env == nullptr)

@@ -34,7 +34,8 @@ biyos_set_warnings(biyos_internal)
 
 add_library(biyos
     capi/biyos.cpp
-    capi/format.cpp)
+    capi/format.cpp
+    capi/version.cpp)
 add_library(biyos::biyos ALIAS biyos)
 
 target_include_directories(biyos PUBLIC
