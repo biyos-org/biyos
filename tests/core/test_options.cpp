@@ -107,7 +107,8 @@ std::string listed(const std::vector<biyos::Field> &fields)
 
 TEST(OptionTest, Defaults)
 {
-    const biyos::Options options;
+    Stream stream;
+    const biyos::Options options(stream.events);
     EXPECT_EQ(options.get_int(Option::Seed), 0);
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), kInfinity);
     EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
@@ -122,14 +123,16 @@ TEST(OptionTest, Defaults)
 
 TEST(OptionTest, Bool)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_bool(Option::Presolve, false);
     EXPECT_FALSE(options.get_bool(Option::Presolve));
 }
 
 TEST(OptionTest, Int)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_int(Option::Seed, 42);
     EXPECT_EQ(options.get_int(Option::Seed), 42);
     options.set_int(Option::Seed, (std::numeric_limits<int>::max)());
@@ -138,7 +141,8 @@ TEST(OptionTest, Int)
 
 TEST(OptionTest, IntRange)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_int(Option::Seed, 7);
     EXPECT_EQ(failure([&] { options.set_int(Option::Seed, -1); }),
               "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
@@ -147,7 +151,8 @@ TEST(OptionTest, IntRange)
 
 TEST(OptionTest, Double)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_double(Option::TimeLimit, 2.5);
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), 2.5);
     options.set_double(Option::TimeLimit, 0.0);
@@ -158,7 +163,8 @@ TEST(OptionTest, Double)
 
 TEST(OptionTest, DoubleRange)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_double(Option::TimeLimit, 2.5);
     EXPECT_EQ(failure([&] { options.set_double(Option::TimeLimit, -0.5); }),
               "invalid argument: option 'time_limit': -0.5 is outside [0, inf]");
@@ -169,7 +175,8 @@ TEST(OptionTest, DoubleRange)
 
 TEST(OptionTest, CpuLimit)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_double(Option::CpuTimeLimit, 0.0);
     EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), 0.0);
     options.set_double(Option::CpuTimeLimit, 2.5);
@@ -182,7 +189,8 @@ TEST(OptionTest, CpuLimit)
 
 TEST(OptionTest, ToleranceRange)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     for (const Option option :
          {Option::FeasibilityAbs, Option::FeasibilityRel, Option::IntegralityTol, Option::ZeroTol})
     {
@@ -202,14 +210,16 @@ TEST(OptionTest, ToleranceRange)
 
 TEST(OptionTest, String)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_string(Option::Reproducer, "replay.txt");
     EXPECT_EQ(options.get_string(Option::Reproducer), "replay.txt");
 }
 
 TEST(OptionTest, Enum)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     options.set_string(Option::CheckLevel, "full");
     EXPECT_EQ(options.get_string(Option::CheckLevel), "full");
     options.set_string(Option::CheckLevel, "none");
@@ -218,7 +228,8 @@ TEST(OptionTest, Enum)
 
 TEST(OptionTest, EnumValue)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     EXPECT_EQ(failure([&] { options.set_string(Option::CheckLevel, "most"); }),
               "invalid argument: option 'check_level': 'most' is not one of none, cheap, full");
     EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
@@ -227,7 +238,8 @@ TEST(OptionTest, EnumValue)
 TEST(OptionTest, TypedEnum)
 {
     using biyos::CheckLevel;
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Cheap);
     options.set_string(Option::CheckLevel, "full");
     EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Full);
@@ -239,7 +251,8 @@ TEST(OptionTest, TypedEnum)
 
 TEST(OptionTest, WrongKind)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     EXPECT_EQ(failure([&] { options.set_double(Option::Seed, 1.0); }),
               "invalid argument: option 'seed': is an int, not a double");
     EXPECT_EQ(failure([&] { options.set_string(Option::Presolve, "yes"); }),
@@ -296,7 +309,8 @@ TEST(OptionTest, UnknownId)
 
 TEST(OptionTest, MissingRow)
 {
-    biyos::Options options;
+    Stream stream;
+    biyos::Options options(stream.events);
     const Option past = static_cast<Option>(11);
     const Option zero = static_cast<Option>(0);
     EXPECT_EQ(failure([&] { options.set_int(past, 1); }),

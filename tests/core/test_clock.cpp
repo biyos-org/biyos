@@ -31,8 +31,9 @@ class ClockTest : public ::testing::Test
   protected:
     bool reached() const { return biyos::Deadline(options, clock).reached(); }
 
-    biyos::Options options;
     biyos::FakeClock clock;
+    biyos::Events stream{clock};
+    biyos::Options options{stream};
 };
 
 class CountingClock final : public biyos::Clock

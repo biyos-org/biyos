@@ -106,11 +106,10 @@ OptionKind kind_of(Option option);
 
 // A value for each row of an option table, which outlives the store unchanged. The built-in table
 // is checked at compile time, a given one when the store is built. Setting a deprecated option
-// warns on the store's event stream, and a store built without one warns nobody.
+// warns on the store's event stream.
 class Options
 {
   public:
-    Options();
     explicit Options(Events &events);
     Options(std::span<const OptionSpec> table, Events &events);
 
@@ -141,7 +140,7 @@ class Options
     std::size_t position_of(Option option) const;
 
     std::span<const OptionSpec> table_;
-    Events *events_ = nullptr;
+    Events &events_;
     std::vector<Value> values_;
 };
 

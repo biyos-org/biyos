@@ -1,3 +1,5 @@
+#include "core/clock.hpp"
+#include "core/events.hpp"
 #include "core/options.hpp"
 #include "core/tolerances.hpp"
 
@@ -17,12 +19,16 @@ constexpr double kLargest = (std::numeric_limits<double>::max)();
 
 biyos::Tolerances defaults()
 {
-    return biyos::Tolerances(biyos::Options());
+    biyos::FakeClock clock;
+    biyos::Events events(clock);
+    return biyos::Tolerances(biyos::Options(events));
 }
 
 biyos::Tolerances relative(double rel)
 {
-    biyos::Options options;
+    biyos::FakeClock clock;
+    biyos::Events events(clock);
+    biyos::Options options(events);
     options.set_double(Option::FeasibilityAbs, 0.0);
     options.set_double(Option::FeasibilityRel, rel);
     return biyos::Tolerances(options);
@@ -30,7 +36,9 @@ biyos::Tolerances relative(double rel)
 
 biyos::Tolerances uniform(double value)
 {
-    biyos::Options options;
+    biyos::FakeClock clock;
+    biyos::Events events(clock);
+    biyos::Options options(events);
     for (const Option option :
          {Option::FeasibilityAbs, Option::FeasibilityRel, Option::IntegralityTol, Option::ZeroTol})
     {
@@ -166,7 +174,9 @@ TEST(ToleranceTest, NanFails)
 
 TEST(ToleranceTest, ReadsOptions)
 {
-    biyos::Options options;
+    biyos::FakeClock clock;
+    biyos::Events events(clock);
+    biyos::Options options(events);
     options.set_double(Option::FeasibilityAbs, 1e-2);
     options.set_double(Option::FeasibilityRel, 1e-4);
     options.set_double(Option::IntegralityTol, 0.1);
@@ -247,7 +257,9 @@ TEST(ToleranceTest, Exact)
 
 TEST(ToleranceTest, Immutable)
 {
-    biyos::Options options;
+    biyos::FakeClock clock;
+    biyos::Events events(clock);
+    biyos::Options options(events);
     const biyos::Tolerances tolerances(options);
     options.set_double(Option::ZeroTol, 1.0);
     options.set_double(Option::FeasibilityAbs, 1.0);
