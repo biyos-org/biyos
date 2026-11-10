@@ -1,3 +1,4 @@
+#include "biyos/events.h"
 #include "biyos/options.h"
 
 #include "biyos/biyos.h"
@@ -24,6 +25,22 @@
     BIYOS_KIND_STRING != 4 || BIYOS_KIND_ENUM != 5
 #error "a public option kind changed"
 #endif
+#if BIYOS_EVENT_MESSAGE != 1
+#error "a public event kind changed"
+#endif
+#if BIYOS_LEVEL_DEBUG != 1 || BIYOS_LEVEL_INFO != 2 || BIYOS_LEVEL_WARNING != 3 ||                 \
+    BIYOS_LEVEL_ERROR != 4
+#error "a public level changed"
+#endif
+
+static void count(const biyos_event *event, void *user_data)
+{
+    int *errors = user_data;
+    if (biyos_event_level(event) == BIYOS_LEVEL_ERROR)
+    {
+        ++*errors;
+    }
+}
 
 int main(void)
 {
@@ -34,6 +51,9 @@ int main(void)
     int patch = -1;
     int seed = -1;
     int kind = 0;
+    int lowest = BIYOS_LEVEL_DEBUG;
+    int errors = 0;
+    int id = 0;
     biyos_version(&major, &minor, &patch);
     if (major < 0 || minor < 0 || patch < 0)
     {
@@ -52,6 +72,15 @@ int main(void)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    biyos_env_free(env);
+    if (biyos_subscribe(env, count, &errors, BIYOS_EVENT_MESSAGE, lowest, &id) != BIYOS_OK ||
+        biyos_set_int_option(env, BIYOS_OPT_SEED, -1) != BIYOS_INVALID_ARGUMENT ||
+        biyos_unsubscribe(env, id) != BIYOS_OK || errors != 1)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    if (biyos_env_free(env) != BIYOS_OK)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
     return status == BIYOS_OK ? 0 : 1;
 }

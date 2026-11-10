@@ -84,7 +84,10 @@ class Environment:
         self.close()
 
     def close(self):
-        self._free()
+        if not self._free.alive:
+            return
+        check(self._handle, lib.biyos_env_free(self._handle))
+        self._free.detach()
 
     def set_option(self, name, value):
         option, kind = self._lookup(name)

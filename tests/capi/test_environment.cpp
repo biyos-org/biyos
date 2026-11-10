@@ -8,7 +8,7 @@ TEST(CApiTest, Create)
     ASSERT_EQ(biyos_env_create(&env), BIYOS_OK);
     EXPECT_NE(env, nullptr);
     EXPECT_STREQ(biyos_last_error_message(env), "");
-    biyos_env_free(env);
+    EXPECT_EQ(biyos_env_free(env), BIYOS_OK);
 }
 
 TEST(CApiTest, NullCreate)
@@ -18,7 +18,7 @@ TEST(CApiTest, NullCreate)
 
 TEST(CApiTest, NullFree)
 {
-    biyos_env_free(nullptr);
+    EXPECT_EQ(biyos_env_free(nullptr), BIYOS_OK);
 }
 
 TEST(CApiTest, NullMessage)
