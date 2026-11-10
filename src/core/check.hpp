@@ -17,7 +17,7 @@ namespace biyos
 // call site. holds is called only when the check runs, values only when holds is false. object is
 // a fixed name, taken even by a check that does not run, so detail such as an index goes in
 // values. A failure records its error on the environment, emits one check event from the
-// checker's module, then throws.
+// checker's module unless an event is being delivered, then throws.
 class Checker
 {
   public:

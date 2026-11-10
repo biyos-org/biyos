@@ -94,10 +94,21 @@ class CheckTest : public ::testing::Test
         env.events().subscribe(kind, Level::Debug, store);
     }
 
+    void reenter(const biyos::Checker &checker)
+    {
+        ++received;
+        if (received == 1)
+        {
+            nested = caught([&] { check(checker, CheckLevel::Cheap, false); }).what();
+        }
+    }
+
     biyos::Environment env;
     int evaluated = 0;
     int described = 0;
     std::vector<biyos::Event> kept;
+    int received = 0;
+    std::string nested;
 };
 
 }
@@ -187,4 +198,15 @@ TEST_F(CheckTest, EmptyValues)
     const biyos::Checker checker = at("cheap");
     const biyos::Error error = caught([&checker] { finite(checker); });
     EXPECT_STREQ(error.what(), "internal error: x: check 'finite' failed");
+}
+
+TEST_F(CheckTest, Delivering)
+{
+    const biyos::Checker checker = at("cheap");
+    const auto inner = [this, &checker](const biyos::Event &) { reenter(checker); };
+    env.events().subscribe(EventKind::Check, Level::Debug, inner);
+    EXPECT_EQ(caught([&] { check(checker, CheckLevel::Cheap, false); }).kind(),
+              ErrorKind::InvalidArgument);
+    EXPECT_EQ(received, 1);
+    EXPECT_EQ(nested, "invalid argument: row 3: check 'sorted' failed: 3 > 2");
 }
