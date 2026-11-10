@@ -187,6 +187,21 @@ TEST_F(EventTest, Delivering)
     EXPECT_FALSE(events.delivering());
 }
 
+TEST_F(EventTest, Filling)
+{
+    bool filled = false;
+    bool delivered = true;
+    const auto fill = [&](biyos::Event &) { filled = events.filling(); };
+    const auto fail = [](biyos::Event &) { throw std::runtime_error("fill"); };
+    listen(Level::Debug, [&](const biyos::Event &) { delivered = events.filling(); });
+    EXPECT_FALSE(events.filling());
+    events.emit(EventKind::Message, Level::Info, fill);
+    EXPECT_TRUE(filled);
+    EXPECT_FALSE(delivered);
+    events.emit(EventKind::Message, Level::Info, fail);
+    EXPECT_FALSE(events.filling());
+}
+
 TEST_F(EventTest, Order)
 {
     listen(Level::Debug, recorder("a "));

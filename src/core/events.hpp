@@ -68,6 +68,7 @@ class Events
 
     bool wanted(EventKind kind, Level level) const noexcept { return lowest_[slot(kind)] <= level; }
     bool delivering() const noexcept { return depth_ > 0; }
+    bool filling() const noexcept { return fills_ > 0; }
 
     template <std::invocable<Event &> Fill>
     void emit(EventKind kind, Level level, Fill &&fill) noexcept
@@ -86,6 +87,7 @@ class Events
         };
         try
         {
+            const Depth inside(fills_);
             fill(event);
         }
         catch (...)
@@ -135,6 +137,7 @@ class Events
     std::array<Level, kEventKinds.size()> lowest_;
     int next_id_ = 1;
     int depth_ = 0;
+    int fills_ = 0;
 };
 
 }
