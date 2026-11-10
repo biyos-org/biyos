@@ -5,9 +5,11 @@ add_library(biyos_internal STATIC
     core/environment.cpp
     core/error.cpp
     core/events.cpp
+    core/format.cpp
     core/options.cpp
     core/status.cpp
     core/tolerances.cpp
+    core/utf8.cpp
     core/version.cpp)
 
 target_include_directories(biyos_internal PUBLIC
@@ -26,7 +28,8 @@ set_target_properties(biyos_internal PROPERTIES
 biyos_set_warnings(biyos_internal)
 
 add_library(biyos
-    capi/biyos.cpp)
+    capi/biyos.cpp
+    capi/format.cpp)
 add_library(biyos::biyos ALIAS biyos)
 
 target_include_directories(biyos PUBLIC

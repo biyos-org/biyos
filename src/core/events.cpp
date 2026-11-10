@@ -8,6 +8,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace biyos
@@ -64,6 +65,34 @@ Level find_level(int id)
         throw Error(ErrorKind::InvalidArgument, "level " + std::to_string(id), "unknown");
     }
     return level;
+}
+
+std::string_view name_of(EventKind kind) noexcept
+{
+    switch (kind)
+    {
+    case EventKind::Message:
+        return "message";
+    case EventKind::Check:
+        return "check";
+    }
+    return "";
+}
+
+std::string_view name_of(Level level) noexcept
+{
+    switch (level)
+    {
+    case Level::Debug:
+        return "debug";
+    case Level::Info:
+        return "info";
+    case Level::Warning:
+        return "warning";
+    case Level::Error:
+        return "error";
+    }
+    return "";
 }
 
 Events::Events(const Clock &clock) : clock_(clock), origin_(clock.wall_time())

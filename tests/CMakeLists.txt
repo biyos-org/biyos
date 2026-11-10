@@ -21,10 +21,10 @@ function(biyos_add_test name)
     gtest_discover_tests(${name})
 endfunction()
 
-biyos_add_test(test_core core/test_check.cpp core/test_clock.cpp core/test_environment.cpp core/test_error.cpp core/test_events.cpp core/test_options.cpp core/test_status.cpp core/test_tolerances.cpp core/test_version.cpp)
+biyos_add_test(test_core core/test_check.cpp core/test_clock.cpp core/test_environment.cpp core/test_error.cpp core/test_events.cpp core/test_format.cpp core/test_options.cpp core/test_status.cpp core/test_tolerances.cpp core/test_utf8.cpp core/test_version.cpp)
 target_link_libraries(test_core PRIVATE biyos_internal)
 
-biyos_add_test(test_capi capi/test_environment.cpp capi/test_events.cpp capi/test_firewall.cpp capi/test_options.cpp capi/test_version.cpp)
+biyos_add_test(test_capi capi/test_environment.cpp capi/test_events.cpp capi/test_firewall.cpp capi/test_format.cpp capi/test_options.cpp capi/test_version.cpp)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
 add_executable(test_capi_c capi/test_header.c)

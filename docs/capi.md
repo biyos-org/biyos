@@ -7,7 +7,7 @@
 Every call that returns `biyos_status` follows these rules.
 
 - It returns `BIYOS_OK` or a negative error code.
-- On failure it keeps its message on the environment, read with `biyos_last_error_message`. It keeps none when given a null environment, and `biyos_env_create` keeps none since it has no environment yet. If memory runs out while the message is kept, the message is left empty.
+- On failure it keeps its message on the environment, read with `biyos_last_error_message`. It keeps none when given a null environment or when it takes none, as the formatting calls do, and `biyos_env_create` keeps none since it has no environment yet. If memory runs out while the message is kept, the message is left empty.
 - On success it leaves the message as it was.
 - A null pointer argument, the environment included, gives `BIYOS_INVALID_ARGUMENT`, unless its entry says otherwise.
 - On failure it leaves its output arguments as they were, unless its entry says otherwise.
@@ -23,7 +23,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | --- | --- |
 | `biyos_status` | an `int`, `BIYOS_OK` or an error code |
 | `biyos_env` | an opaque environment, holding the options, the subscriptions and the last error message |
-| `biyos_event` | an opaque event, read with the `biyos_event_*` calls while a subscriber runs |
+| `biyos_event` | an opaque event, read with the `biyos_event_*` calls and formatted with `biyos_format_text` and `biyos_format_json` while a subscriber runs |
 | `biyos_subscriber` | `void (*)(const biyos_event *event, void *user_data)`, a function called with each event a subscription receives |
 
 ## Linking
@@ -314,6 +314,43 @@ const char *biyos_event_field_value(const biyos_event *event, int field);
 ```
 
 Returns the value of field number `field`.
+
+### Formatting an event
+
+These calls write an event as one line into a buffer the caller gives, in the manner of `snprintf`. biyos writes the line nowhere else. They read only the event, so a subscriber may call them.
+
+- `size` is the size of `buffer` in bytes. When it is at least 1, the call writes at most `size - 1` bytes of the line, then a NUL. A buffer that is too small receives the start of the line, cut at a byte, which may fall inside a UTF-8 character. A `size` of 1 receives the NUL alone.
+- `*needed` receives the length of the whole line in bytes, without the NUL, whether it fits or not. The line fits when `*needed` is less than `size`, so a buffer of `*needed + 1` bytes holds it.
+- When `size` is 0 the call writes nothing to `buffer`, not even a NUL, and `buffer` may be null, to learn `*needed` alone.
+- The line has no trailing newline. A byte below 0x20 is written as `\n` for a newline, `\t` for a tab and `\u00XX` with lowercase hex digits for any other, such as `\u000d` for a carriage return, so the line never breaks. Each call says how it writes the other bytes.
+- The time of an event is the wall time since its environment was created. It is written in seconds with six decimals, cut to the microsecond, such as `0.001234` for 1234567 nanoseconds. The decimal point is always `.`, whatever the locale.
+- They take no environment, so a failure keeps no message and sends no event. They return `BIYOS_INVALID_ARGUMENT` when `event` or `needed` is null, or when `buffer` is null and `size` is not 0. A failed call writes nothing.
+
+### `biyos_format_text`
+
+```c
+biyos_status biyos_format_text(const biyos_event *event, char *buffer, size_t size,
+                               size_t *needed);
+```
+
+Writes the event for people: its time, a space, the name of its level, a space, its module and a colon, then a space and its text unless the text is empty, then for each field in order a space, its name, `=` and its value. Every byte from 0x20 up is written as it is, and nothing is quoted: for a line a program reads, use `biyos_format_json`. The error event of a failed `biyos_set_int_option`, sent 41 microseconds after the environment was created, reads
+
+```text
+0.000041 error capi: invalid argument: option 'seed': -1 is outside [0, 2147483647] code=-100
+```
+
+### `biyos_format_json`
+
+```c
+biyos_status biyos_format_json(const biyos_event *event, char *buffer, size_t size,
+                               size_t *needed);
+```
+
+Writes the event for tools, as one JSON object with the members `time`, `kind`, `level`, `module`, `text` and `fields`, in that order. `time` is a JSON number, written as in text. `kind` is the name of the kind: `message` for `BIYOS_EVENT_MESSAGE` and `check` for `BIYOS_EVENT_CHECK`. `level` is the name of the level: `debug`, `info`, `warning` or `error`. `fields` is an object holding the event's fields in their order, each value a string. A quote and a backslash are written as `\"` and `\\`. Bytes that are not well-formed UTF-8 become U+FFFD, one for each maximal subpart as the Unicode Standard recommends, so the line is always valid JSON. Every other byte from 0x20 up is written as it is. The same error event reads
+
+```json
+{"time":0.000041,"kind":"message","level":"error","module":"capi","text":"invalid argument: option 'seed': -1 is outside [0, 2147483647]","fields":{"code":"-100"}}
+```
 
 ## Solve status
 
