@@ -15,7 +15,8 @@ add_library(biyos_internal STATIC
     core/timer.cpp
     core/tolerances.cpp
     core/utf8.cpp
-    core/version.cpp)
+    core/version.cpp
+    model/model.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
