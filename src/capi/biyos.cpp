@@ -14,12 +14,6 @@ struct biyos_env
     biyos::Environment core;
 };
 
-static_assert(BIYOS_OPT_SEED == static_cast<int>(biyos::Option::Seed));
-static_assert(BIYOS_OPT_TIME_LIMIT == static_cast<int>(biyos::Option::TimeLimit));
-static_assert(BIYOS_OPT_CHECK_LEVEL == static_cast<int>(biyos::Option::CheckLevel));
-static_assert(BIYOS_OPT_PRESOLVE == static_cast<int>(biyos::Option::Presolve));
-static_assert(BIYOS_OPT_REPRODUCER == static_cast<int>(biyos::Option::Reproducer));
-
 namespace
 {
 

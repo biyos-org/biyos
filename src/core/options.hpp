@@ -1,5 +1,7 @@
 #pragma once
 
+#include "biyos/options.h"
+
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -12,11 +14,11 @@ namespace biyos
 
 enum class Option
 {
-    Seed = 1,
-    TimeLimit,
-    CheckLevel,
-    Presolve,
-    Reproducer,
+    Seed = BIYOS_OPT_SEED,
+    TimeLimit = BIYOS_OPT_TIME_LIMIT,
+    CheckLevel = BIYOS_OPT_CHECK_LEVEL,
+    Presolve = BIYOS_OPT_PRESOLVE,
+    Reproducer = BIYOS_OPT_REPRODUCER,
 };
 
 enum class CheckLevel
