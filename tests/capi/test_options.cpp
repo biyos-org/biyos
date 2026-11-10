@@ -72,6 +72,46 @@ TEST(CApiTest, OptionKinds)
     }
 }
 
+TEST(CApiTest, OptionVersions)
+{
+    const Env env;
+    for (int id = BIYOS_OPT_SEED; id <= BIYOS_OPT_CPU_TIME_LIMIT; ++id)
+    {
+        int since = -1;
+        int deprecated = -1;
+        int retired = -1;
+        EXPECT_EQ(biyos_option_versions(env.get(), id, &since, &deprecated, &retired), BIYOS_OK);
+        EXPECT_EQ(since, 100) << id;
+        EXPECT_EQ(deprecated, 0) << id;
+        EXPECT_EQ(retired, 0) << id;
+    }
+}
+
+TEST(CApiTest, VersionArguments)
+{
+    const Env env;
+    int since = -1;
+    int deprecated = -1;
+    int retired = -1;
+    EXPECT_EQ(biyos_option_versions(env.get(), 11, &since, &deprecated, &retired),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(env.message(), "invalid argument: option 11: unknown");
+    EXPECT_EQ(biyos_option_versions(env.get(), BIYOS_OPT_SEED, nullptr, &deprecated, &retired),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'since': is null");
+    EXPECT_EQ(biyos_option_versions(env.get(), BIYOS_OPT_SEED, &since, nullptr, &retired),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'deprecated': is null");
+    EXPECT_EQ(biyos_option_versions(env.get(), BIYOS_OPT_SEED, &since, &deprecated, nullptr),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'retired': is null");
+    EXPECT_EQ(biyos_option_versions(nullptr, BIYOS_OPT_SEED, &since, &deprecated, &retired),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(since, -1);
+    EXPECT_EQ(deprecated, -1);
+    EXPECT_EQ(retired, -1);
+}
+
 TEST(CApiTest, UnknownName)
 {
     const Env env;
