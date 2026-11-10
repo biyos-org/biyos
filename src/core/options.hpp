@@ -19,7 +19,7 @@ enum class Option
 
 Option find_option(std::string_view name);
 Option find_option(int id);
-std::string_view name_of(Option option) noexcept;
+std::string_view name_of(Option option);
 
 class Options
 {

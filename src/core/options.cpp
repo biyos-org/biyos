@@ -195,6 +195,14 @@ std::string default_of(const EnumRule &rule)
     return std::string(rule.default_value);
 }
 
+template <typename T> std::string text_of(T value)
+{
+    std::array<char, 32> buffer{};
+    const std::to_chars_result result =
+        std::to_chars(buffer.data(), buffer.data() + buffer.size(), value);
+    return std::string(buffer.data(), result.ptr);
+}
+
 std::size_t index_of(Option option)
 {
     return static_cast<std::size_t>(option) - 1;
@@ -202,20 +210,18 @@ std::size_t index_of(Option option)
 
 const OptionSpec &spec_of(Option option)
 {
-    return kTable[index_of(option)];
+    const std::size_t index = index_of(option);
+    if (index >= kTable.size())
+    {
+        const std::string id = text_of(static_cast<int>(option));
+        throw Error(ErrorKind::Internal, "option " + id, "has no table row");
+    }
+    return kTable[index];
 }
 
 std::string subject(std::string_view name)
 {
     return "option '" + std::string(name) + "'";
-}
-
-template <typename T> std::string text_of(T value)
-{
-    std::array<char, 32> buffer{};
-    const std::to_chars_result result =
-        std::to_chars(buffer.data(), buffer.data() + buffer.size(), value);
-    return std::string(buffer.data(), result.ptr);
 }
 
 template <typename Rule> const Rule &rule_of(const OptionSpec &spec)
@@ -286,7 +292,7 @@ Option find_option(int id)
     return static_cast<Option>(id);
 }
 
-std::string_view name_of(Option option) noexcept
+std::string_view name_of(Option option)
 {
     return spec_of(option).name;
 }
