@@ -41,3 +41,11 @@ jobs:
       - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_C_FLAGS=$FLAGS" "-DCMAKE_CXX_FLAGS=$FLAGS"
       - run: cmake --build build --parallel
       - run: ctest --test-dir build --output-on-failure
+
+  tidy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: pip install clang-tidy==21.1.6
+      - run: cmake -S . -B build -DBIYOS_BUILD_TESTS=OFF
+      - run: git ls-files 'src/*.cpp' | xargs clang-tidy -p build --quiet
