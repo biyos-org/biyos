@@ -1,3 +1,4 @@
+#include "core/clock.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
 
@@ -99,7 +100,8 @@ class EventTest : public ::testing::Test
         }
     }
 
-    biyos::Events events;
+    biyos::FakeClock clock;
+    biyos::Events events{clock};
     Texts texts;
 };
 

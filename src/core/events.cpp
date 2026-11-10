@@ -80,7 +80,7 @@ Level find_level(int id)
     return level;
 }
 
-Events::Events()
+Events::Events(const Clock &clock) : clock_(clock), origin_(clock.wall_time())
 {
     lowest_.fill(kNobody);
 }

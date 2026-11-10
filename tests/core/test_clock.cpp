@@ -1,17 +1,25 @@
 #include "core/clock.hpp"
 #include "core/deadline.hpp"
+#include "core/environment.hpp"
+#include "core/events.hpp"
 #include "core/options.hpp"
 
 #include <gtest/gtest.h>
 
 #include <chrono>
 #include <limits>
+#include <memory>
+#include <utility>
+#include <vector>
 
 namespace
 {
 
 using namespace std::chrono_literals;
+using biyos::EventKind;
+using biyos::Level;
 using biyos::Option;
+using Times = std::vector<std::chrono::nanoseconds>;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr std::chrono::nanoseconds kForever = (std::chrono::nanoseconds::max)();
@@ -24,6 +32,8 @@ class ClockTest : public ::testing::Test
     biyos::Options options;
     biyos::FakeClock clock;
 };
+
+void blank(biyos::Event &) {}
 
 }
 
@@ -128,4 +138,22 @@ TEST_F(ClockTest, ReadOnce)
     EXPECT_FALSE(deadline.reached());
     clock.advance_wall(1s);
     EXPECT_TRUE(deadline.reached());
+}
+
+TEST_F(ClockTest, EventTime)
+{
+    auto owned = std::make_unique<biyos::FakeClock>();
+    biyos::FakeClock &fake = *owned;
+    fake.advance_wall(7s);
+    biyos::Environment env(std::move(owned));
+    Times times;
+    const auto keep = [&times](const biyos::Event &event) { times.push_back(event.time); };
+    env.events().subscribe(EventKind::Message, Level::Debug, keep);
+    env.events().emit(EventKind::Message, Level::Info, blank);
+    fake.advance_wall(250ns);
+    fake.advance_cpu(1s);
+    env.events().emit(EventKind::Message, Level::Info, blank);
+    fake.advance_wall(3ms);
+    env.events().emit(EventKind::Message, Level::Error, blank);
+    EXPECT_EQ(times, (Times{0ns, 250ns, 3ms + 250ns}));
 }

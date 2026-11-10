@@ -24,7 +24,10 @@ std::unique_ptr<Clock> present(std::unique_ptr<Clock> clock)
 
 Environment::Environment() : Environment(std::make_unique<SystemClock>()) {}
 
-Environment::Environment(std::unique_ptr<Clock> clock) : clock_(present(std::move(clock))) {}
+Environment::Environment(std::unique_ptr<Clock> clock)
+    : clock_(present(std::move(clock))), events_(*clock_)
+{
+}
 
 Options &Environment::options() noexcept
 {
