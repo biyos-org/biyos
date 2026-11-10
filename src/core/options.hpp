@@ -21,6 +21,15 @@ enum class Option
     Reproducer = BIYOS_OPT_REPRODUCER,
 };
 
+enum class OptionKind
+{
+    Bool = BIYOS_KIND_BOOL,
+    Int = BIYOS_KIND_INT,
+    Double = BIYOS_KIND_DOUBLE,
+    String = BIYOS_KIND_STRING,
+    Enum = BIYOS_KIND_ENUM,
+};
+
 enum class CheckLevel
 {
     None,
@@ -31,6 +40,7 @@ enum class CheckLevel
 Option find_option(std::string_view name);
 Option find_option(int id);
 std::string_view name_of(Option option);
+OptionKind kind_of(Option option);
 
 class Options
 {

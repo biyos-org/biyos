@@ -150,6 +150,16 @@ TEST(OptionTest, Names)
     EXPECT_EQ(biyos::name_of(Option::TimeLimit), "time_limit");
 }
 
+TEST(OptionTest, Kinds)
+{
+    using biyos::OptionKind;
+    EXPECT_EQ(biyos::kind_of(Option::Seed), OptionKind::Int);
+    EXPECT_EQ(biyos::kind_of(Option::TimeLimit), OptionKind::Double);
+    EXPECT_EQ(biyos::kind_of(Option::CheckLevel), OptionKind::Enum);
+    EXPECT_EQ(biyos::kind_of(Option::Presolve), OptionKind::Bool);
+    EXPECT_EQ(biyos::kind_of(Option::Reproducer), OptionKind::String);
+}
+
 TEST(OptionTest, UnknownName)
 {
     EXPECT_EQ(failure([] { biyos::find_option("seeds"); }),
@@ -174,5 +184,7 @@ TEST(OptionTest, MissingRow)
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_string(zero)); }),
               "internal error: option 0: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(biyos::name_of(past)); }),
+              "internal error: option 6: has no table row");
+    EXPECT_EQ(failure([&] { static_cast<void>(biyos::kind_of(past)); }),
               "internal error: option 6: has no table row");
 }
