@@ -165,7 +165,7 @@ constexpr std::string_view noun(const EnumRule &)
     return "an enum";
 }
 
-std::string_view noun(const OptionSpec &spec)
+constexpr std::string_view noun(const OptionSpec &spec)
 {
     return std::visit([](const auto &rule) { return noun(rule); }, spec.rule);
 }
