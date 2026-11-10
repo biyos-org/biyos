@@ -1,11 +1,12 @@
 #include "biyos/events.h"
 #include "biyos/options.h"
+#include "biyos/status.h"
 
 #include "biyos/biyos.h"
 
 #include <stddef.h>
 
-#if BIYOS_OK != 0
+#if !defined(BIYOS_OK) || BIYOS_OK != 0
 #error "BIYOS_OK must be zero"
 #endif
 #if BIYOS_INVALID_ARGUMENT > -100 || BIYOS_INVALID_ARGUMENT < -199
@@ -32,6 +33,27 @@
 #if BIYOS_LEVEL_DEBUG != 1 || BIYOS_LEVEL_INFO != 2 || BIYOS_LEVEL_WARNING != 3 ||                 \
     BIYOS_LEVEL_ERROR != 4
 #error "a public level changed"
+#endif
+
+#if !defined(BIYOS_TERMINATION_NOT_SOLVED) || BIYOS_TERMINATION_NOT_SOLVED != 0 ||                 \
+    BIYOS_TERMINATION_OPTIMAL != 101 || BIYOS_TERMINATION_LOCALLY_SOLVED != 102 ||                 \
+    BIYOS_TERMINATION_ALMOST_LOCALLY_SOLVED != 103 || BIYOS_TERMINATION_ITERATION_LIMIT != 201 ||  \
+    BIYOS_TERMINATION_TIME_LIMIT != 202 || BIYOS_TERMINATION_CPU_TIME_LIMIT != 203 ||              \
+    BIYOS_TERMINATION_EVALUATION_LIMIT != 204 || BIYOS_TERMINATION_USER_STOP != 205 ||             \
+    BIYOS_TERMINATION_INFEASIBLE != 301 || BIYOS_TERMINATION_LOCALLY_INFEASIBLE != 302 ||          \
+    BIYOS_TERMINATION_UNBOUNDED != 303 || BIYOS_TERMINATION_SLOW_PROGRESS != 401 ||                \
+    BIYOS_TERMINATION_NUMERICAL_TROUBLE != 402
+#error "a public termination changed"
+#endif
+#if !defined(BIYOS_RESULT_NONE) || BIYOS_RESULT_NONE != 0 || BIYOS_RESULT_FEASIBLE != 1 ||         \
+    BIYOS_RESULT_NEARLY_FEASIBLE != 2 || BIYOS_RESULT_INFEASIBLE != 3 ||                           \
+    BIYOS_RESULT_CERTIFICATE != 4 || BIYOS_RESULT_NEARLY_CERTIFICATE != 5 ||                       \
+    BIYOS_RESULT_UNKNOWN != 6
+#error "a public result status changed"
+#endif
+#if !defined(BIYOS_CLAIM_NONE) || BIYOS_CLAIM_NONE != 0 || BIYOS_CLAIM_LOCAL != 1 ||               \
+    BIYOS_CLAIM_GLOBAL != 2
+#error "a public claim changed"
 #endif
 
 static void count(const biyos_event *event, void *user_data)

@@ -310,3 +310,53 @@ const char *biyos_event_field_value(const biyos_event *event, int field);
 ```
 
 Returns the value of field number `field`.
+
+## Solve status
+
+`biyos/status.h` holds the numbers that describe how a solve ended. The termination says why the solve stopped, a result status says what a returned point is, the primal point and the dual point each having one, and the claim says what was proved. They are kept apart, so a result never says more than its method proved. None of them is an error code: a limit reached or an infeasible model is an outcome, not a failed call. No call returns them yet, since biyos solves nothing.
+
+| Macro | Value | Meaning |
+| --- | --- | --- |
+| `BIYOS_TERMINATION_NOT_SOLVED` | 0 | no solve has ended |
+| `BIYOS_TERMINATION_OPTIMAL` | 101 | a global optimum was found and proved. It comes only with the claim `BIYOS_CLAIM_GLOBAL` |
+| `BIYOS_TERMINATION_LOCALLY_SOLVED` | 102 | a local solution: every convergence test held at its tolerance |
+| `BIYOS_TERMINATION_ALMOST_LOCALLY_SOLVED` | 103 | every convergence test held at its relaxed tolerance, after the strict tolerances were not all met |
+| `BIYOS_TERMINATION_ITERATION_LIMIT` | 201 | the iteration limit was reached |
+| `BIYOS_TERMINATION_TIME_LIMIT` | 202 | the wall time limit was reached |
+| `BIYOS_TERMINATION_CPU_TIME_LIMIT` | 203 | the CPU time limit was reached |
+| `BIYOS_TERMINATION_EVALUATION_LIMIT` | 204 | the limit on function evaluations was reached |
+| `BIYOS_TERMINATION_USER_STOP` | 205 | the user asked the solve to stop |
+| `BIYOS_TERMINATION_INFEASIBLE` | 301 | the model was proved infeasible. The dual result status says whether a certificate comes with it: `BIYOS_RESULT_CERTIFICATE` when one does |
+| `BIYOS_TERMINATION_LOCALLY_INFEASIBLE` | 302 | the solve reached a local minimum of the infeasibility that is not zero. Nothing proves the model infeasible |
+| `BIYOS_TERMINATION_UNBOUNDED` | 303 | the objective is unbounded below on the feasible set |
+| `BIYOS_TERMINATION_SLOW_PROGRESS` | 401 | progress stalled before the convergence tests held |
+| `BIYOS_TERMINATION_NUMERICAL_TROUBLE` | 402 | numerical difficulties kept the solve from going on |
+
+Terminations are grouped by hundreds, like the error codes. A new one joins its group, so test a group by range rather than by value.
+
+| Codes | Group |
+| --- | --- |
+| 100 to 199 | solved |
+| 200 to 299 | stopped early, by a limit or by the user |
+| 300 to 399 | infeasibility or unboundedness detected |
+| 400 to 499 | no progress |
+
+A result status describes the primal point or the dual point. For the dual point, feasible means feasible for the dual problem.
+
+| Macro | Value | Meaning |
+| --- | --- | --- |
+| `BIYOS_RESULT_NONE` | 0 | no point is returned |
+| `BIYOS_RESULT_FEASIBLE` | 1 | the point is feasible |
+| `BIYOS_RESULT_NEARLY_FEASIBLE` | 2 | the point is feasible only at the relaxed tolerance |
+| `BIYOS_RESULT_INFEASIBLE` | 3 | the point is infeasible |
+| `BIYOS_RESULT_CERTIFICATE` | 4 | the point is a certificate of infeasibility: a primal one proves the dual problem infeasible, a dual one the primal problem |
+| `BIYOS_RESULT_NEARLY_CERTIFICATE` | 5 | the point is a certificate only at the relaxed tolerance |
+| `BIYOS_RESULT_UNKNOWN` | 6 | a point is returned, and nothing is known of it |
+
+The claim says how far the termination was proved to hold.
+
+| Macro | Value | Meaning |
+| --- | --- | --- |
+| `BIYOS_CLAIM_NONE` | 0 | nothing is proved |
+| `BIYOS_CLAIM_LOCAL` | 1 | what the termination says holds near the returned point |
+| `BIYOS_CLAIM_GLOBAL` | 2 | what the termination says holds for the whole model |

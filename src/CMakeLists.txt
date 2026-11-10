@@ -3,6 +3,7 @@ add_library(biyos_internal STATIC
     core/error.cpp
     core/events.cpp
     core/options.cpp
+    core/status.cpp
     core/tolerances.cpp
     core/version.cpp)
 
