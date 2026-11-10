@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -11,6 +12,7 @@ namespace
 {
 
 using biyos::Level;
+using namespace std::chrono_literals;
 
 biyos::Event message(Level level, std::string text)
 {
@@ -35,6 +37,23 @@ std::string text_of(std::string text)
     return biyos::format_text(message(Level::Info, std::move(text)));
 }
 
+biyos::Event stamped(std::chrono::nanoseconds time)
+{
+    biyos::Event event = message(Level::Info, "a");
+    event.time = time;
+    return event;
+}
+
+std::string text_at(std::chrono::nanoseconds time)
+{
+    return biyos::format_text(stamped(time));
+}
+
+std::string json_at(std::chrono::nanoseconds time)
+{
+    return biyos::format_json(stamped(time));
+}
+
 std::string json_of(std::string text)
 {
     return biyos::format_json(message(Level::Info, std::move(text)));
@@ -42,7 +61,8 @@ std::string json_of(std::string text)
 
 std::string json_line(std::string_view quoted)
 {
-    const std::string head = R"({"kind":"message","level":"info","module":"core","text":)";
+    const std::string head =
+        R"({"time":0.000000,"kind":"message","level":"info","module":"core","text":)";
     return head + std::string(quoted) + R"(,"fields":{}})";
 }
 
@@ -50,34 +70,35 @@ std::string json_line(std::string_view quoted)
 
 TEST(FormatTest, Text)
 {
-    EXPECT_EQ(biyos::format_text(removed()), "info core: removed rows rows=3 columns=1");
+    EXPECT_EQ(biyos::format_text(removed()), "0.000000 info core: removed rows rows=3 columns=1");
 }
 
 TEST(FormatTest, TextLevels)
 {
-    EXPECT_EQ(biyos::format_text(message(Level::Debug, "a")), "debug core: a");
-    EXPECT_EQ(biyos::format_text(message(Level::Info, "a")), "info core: a");
-    EXPECT_EQ(biyos::format_text(message(Level::Warning, "a")), "warning core: a");
-    EXPECT_EQ(biyos::format_text(message(Level::Error, "a")), "error core: a");
+    EXPECT_EQ(biyos::format_text(message(Level::Debug, "a")), "0.000000 debug core: a");
+    EXPECT_EQ(biyos::format_text(message(Level::Info, "a")), "0.000000 info core: a");
+    EXPECT_EQ(biyos::format_text(message(Level::Warning, "a")), "0.000000 warning core: a");
+    EXPECT_EQ(biyos::format_text(message(Level::Error, "a")), "0.000000 error core: a");
 }
 
 TEST(FormatTest, EmptyText)
 {
     biyos::Event event = removed();
     event.text.clear();
-    EXPECT_EQ(biyos::format_text(event), "info core: rows=3 columns=1");
+    EXPECT_EQ(biyos::format_text(event), "0.000000 info core: rows=3 columns=1");
     event.fields.clear();
-    EXPECT_EQ(biyos::format_text(event), "info core:");
+    EXPECT_EQ(biyos::format_text(event), "0.000000 info core:");
 }
 
 TEST(FormatTest, TextEscapes)
 {
-    EXPECT_EQ(text_of("a\nb"), "info core: a\\nb");
-    EXPECT_EQ(text_of("a\tb"), "info core: a\\tb");
-    EXPECT_EQ(text_of("a\rb"), "info core: a\\u000db");
-    EXPECT_EQ(text_of(std::string("a\0b", 3)), "info core: a\\u0000b");
-    EXPECT_EQ(text_of("\x01\x1f"), "info core: \\u0001\\u001f");
-    EXPECT_EQ(text_of("\x7f \"q\" \\ caf\xc3\xa9"), "info core: \x7f \"q\" \\ caf\xc3\xa9");
+    EXPECT_EQ(text_of("a\nb"), "0.000000 info core: a\\nb");
+    EXPECT_EQ(text_of("a\tb"), "0.000000 info core: a\\tb");
+    EXPECT_EQ(text_of("a\rb"), "0.000000 info core: a\\u000db");
+    EXPECT_EQ(text_of(std::string("a\0b", 3)), "0.000000 info core: a\\u0000b");
+    EXPECT_EQ(text_of("\x01\x1f"), "0.000000 info core: \\u0001\\u001f");
+    EXPECT_EQ(text_of("\x7f \"q\" \\ caf\xc3\xa9"),
+              "0.000000 info core: \x7f \"q\" \\ caf\xc3\xa9");
 }
 
 TEST(FormatTest, TextFields)
@@ -86,12 +107,35 @@ TEST(FormatTest, TextFields)
     event.module = "a\nb";
     event.fields.push_back(biyos::Field{.name = "x\ty", .value = "1\n2"});
     event.fields.push_back(biyos::Field{.name = "", .value = ""});
-    EXPECT_EQ(biyos::format_text(event), "info a\\nb: x\\ty=1\\n2 =");
+    EXPECT_EQ(biyos::format_text(event), "0.000000 info a\\nb: x\\ty=1\\n2 =");
+}
+
+TEST(FormatTest, TextTime)
+{
+    EXPECT_EQ(text_at(0ns), "0.000000 info core: a");
+    EXPECT_EQ(text_at(999ns), "0.000000 info core: a");
+    EXPECT_EQ(text_at(1us), "0.000001 info core: a");
+    EXPECT_EQ(text_at(1234567890ns), "1.234567 info core: a");
+    EXPECT_EQ(text_at(3600s), "3600.000000 info core: a");
+    EXPECT_EQ(text_at(-1500ns), "-0.000001 info core: a");
+    EXPECT_EQ(text_at(-2s), "-2.000000 info core: a");
+    const auto largest = (std::chrono::nanoseconds::max)();
+    EXPECT_EQ(text_at(largest), "9223372036.854775 info core: a");
+}
+
+TEST(FormatTest, JsonTime)
+{
+    const std::string tail = R"(,"kind":"message","level":"info","module":"core","text":"a",)"
+                             R"("fields":{}})";
+    const std::string later = R"({"time":1.234567)";
+    const std::string earlier = R"({"time":-0.000001)";
+    EXPECT_EQ(json_at(1234567890ns), later + tail);
+    EXPECT_EQ(json_at(-1500ns), earlier + tail);
 }
 
 TEST(FormatTest, Json)
 {
-    const std::string line = R"({"kind":"message","level":"info","module":"core",)"
+    const std::string line = R"({"time":0.000000,"kind":"message","level":"info","module":"core",)"
                              R"("text":"removed rows","fields":{"rows":"3","columns":"1"}})";
     EXPECT_EQ(biyos::format_json(removed()), line);
 }
@@ -99,7 +143,7 @@ TEST(FormatTest, Json)
 TEST(FormatTest, JsonLevels)
 {
     const std::string tail = R"(","module":"core","text":"","fields":{}})";
-    const std::string head = R"({"kind":"message","level":")";
+    const std::string head = R"({"time":0.000000,"kind":"message","level":")";
     EXPECT_EQ(biyos::format_json(message(Level::Debug, "")), head + "debug" + tail);
     EXPECT_EQ(biyos::format_json(message(Level::Info, "")), head + "info" + tail);
     EXPECT_EQ(biyos::format_json(message(Level::Warning, "")), head + "warning" + tail);
@@ -134,7 +178,7 @@ TEST(FormatTest, Malformed)
     EXPECT_EQ(json_of("\xe2\x82 \x80"), json_line("\"" + mark + " " + mark + "\""));
     EXPECT_EQ(json_of("\xed\xa0\x80"), json_line("\"" + mark + mark + mark + "\""));
     EXPECT_EQ(json_of("\xc3\xa9\xc3"), json_line("\"\xc3\xa9" + mark + "\""));
-    EXPECT_EQ(text_of("seed\xff"), "info core: seed\xff");
+    EXPECT_EQ(text_of("seed\xff"), "0.000000 info core: seed\xff");
 }
 
 TEST(FormatTest, JsonFields)
@@ -143,7 +187,8 @@ TEST(FormatTest, JsonFields)
     event.module = "a\"b";
     event.fields.push_back(biyos::Field{.name = "x\ny", .value = "\\"});
     event.fields.push_back(biyos::Field{.name = "", .value = ""});
-    const std::string line = R"({"kind":"message","level":"info","module":"a\"b","text":"",)"
-                             R"("fields":{"x\ny":"\\","":""}})";
+    const std::string line =
+        R"({"time":0.000000,"kind":"message","level":"info","module":"a\"b","text":"",)"
+        R"("fields":{"x\ny":"\\","":""}})";
     EXPECT_EQ(biyos::format_json(event), line);
 }

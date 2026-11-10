@@ -3,6 +3,9 @@
 #include "core/events.hpp"
 #include "core/utf8.hpp"
 
+#include <array>
+#include <charconv>
+#include <chrono>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -16,6 +19,7 @@ namespace
 
 constexpr std::string_view kHex = "0123456789abcdef";
 constexpr std::string_view kReplacement = "\xef\xbf\xbd";
+constexpr std::size_t kDecimals = 6;
 
 bool control(char c)
 {
@@ -39,6 +43,33 @@ void append_control(std::string &line, char c)
         line += kHex[byte / 16U];
         line += kHex[byte % 16U];
     }
+}
+
+void append_digits(std::string &line, long long value, std::size_t width)
+{
+    std::array<char, 24> digits{};
+    const std::to_chars_result result =
+        std::to_chars(digits.data(), digits.data() + digits.size(), value);
+    const auto count = static_cast<std::size_t>(result.ptr - digits.data());
+    if (count < width)
+    {
+        line.append(width - count, '0');
+    }
+    line.append(digits.data(), count);
+}
+
+void append_seconds(std::string &line, std::chrono::nanoseconds time)
+{
+    const auto micros = std::chrono::duration_cast<std::chrono::microseconds>(time);
+    const std::chrono::microseconds magnitude = std::chrono::abs(micros);
+    const auto whole = std::chrono::duration_cast<std::chrono::seconds>(magnitude);
+    if (micros.count() < 0)
+    {
+        line += '-';
+    }
+    append_digits(line, whole.count(), 1);
+    line += '.';
+    append_digits(line, (magnitude - whole).count(), kDecimals);
 }
 
 void append_plain(std::string &line, std::string_view text)
@@ -117,7 +148,10 @@ void append_fields(std::string &line, const std::vector<Field> &fields)
 
 std::string format_text(const Event &event)
 {
-    std::string line(name_of(event.level));
+    std::string line;
+    append_seconds(line, event.time);
+    line += ' ';
+    line += name_of(event.level);
     line += ' ';
     append_plain(line, event.module);
     line += ':';
@@ -139,6 +173,8 @@ std::string format_text(const Event &event)
 std::string format_json(const Event &event)
 {
     std::string line = "{";
+    append_key(line, "time");
+    append_seconds(line, event.time);
     append_member(line, "kind", name_of(event.kind));
     append_member(line, "level", name_of(event.level));
     append_member(line, "module", event.module);
