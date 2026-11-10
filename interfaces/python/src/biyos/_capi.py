@@ -1,5 +1,13 @@
 import ctypes
-from ctypes import POINTER, byref, c_char_p, c_double, c_int, c_void_p
+from ctypes import (
+    CFUNCTYPE,
+    POINTER,
+    byref,
+    c_char_p,
+    c_double,
+    c_int,
+    c_void_p,
+)
 from importlib.resources import files
 
 OK = 0
@@ -9,6 +17,8 @@ KIND_INT = 2
 KIND_DOUBLE = 3
 KIND_STRING = 4
 KIND_ENUM = 5
+
+SUBSCRIBER = CFUNCTYPE(None, c_void_p, c_void_p)
 
 
 def _declare(lib, name, result, *arguments):
@@ -38,7 +48,21 @@ def _load():
     _declare(lib, "biyos_get_int_option", c_int, c_void_p, c_int, ints)
     _declare(lib, "biyos_get_double_option", c_int, c_void_p, c_int, doubles)
     _declare(lib, "biyos_get_string_option", c_int, c_void_p, c_int, strings)
+    _declare_events(lib, ints)
     return lib
+
+
+def _declare_events(lib, ints):
+    subscribe = (c_void_p, SUBSCRIBER, c_void_p, c_int, c_int, ints)
+    _declare(lib, "biyos_subscribe", c_int, *subscribe)
+    _declare(lib, "biyos_unsubscribe", c_int, c_void_p, c_int)
+    _declare(lib, "biyos_event_kind", c_int, c_void_p)
+    _declare(lib, "biyos_event_level", c_int, c_void_p)
+    _declare(lib, "biyos_event_module", c_char_p, c_void_p)
+    _declare(lib, "biyos_event_text", c_char_p, c_void_p)
+    _declare(lib, "biyos_event_field_count", c_int, c_void_p)
+    _declare(lib, "biyos_event_field_name", c_char_p, c_void_p, c_int)
+    _declare(lib, "biyos_event_field_value", c_char_p, c_void_p, c_int)
 
 
 lib = _load()
