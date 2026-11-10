@@ -4,6 +4,7 @@ from ctypes import byref, c_char_p, c_double, c_int, c_void_p
 from biyos import _capi
 from biyos._capi import lib
 from biyos._error import Error, check
+from biyos._integers import integer
 from biyos._relay import Relay
 from biyos._subscribers import Subscribers
 from biyos._versions import Versions, version_text
@@ -25,15 +26,6 @@ def _name(name):
 def _rejected(name, noun, value):
     found = type(value).__name__
     return TypeError(f"option '{name}' takes {noun}, not {found}")
-
-
-def _number(name, value):
-    if isinstance(value, bool) or not isinstance(value, int):
-        found = type(value).__name__
-        raise TypeError(f"{name} must be an int, not {found}")
-    if c_int(value).value != value:
-        raise OverflowError(f"{name}: {value} does not fit in a C int")
-    return value
 
 
 def _callable(function):
@@ -132,8 +124,8 @@ class Environment:
 
     def subscribe(self, function, kind, lowest):
         function = _callable(function)
-        kind = _number("kind", kind)
-        lowest = _number("lowest", lowest)
+        kind = integer("kind", kind)
+        lowest = integer("lowest", lowest)
         callback = self._subscribers.callback
         subscription = c_int()
         out = byref(subscription)
@@ -145,7 +137,7 @@ class Environment:
         return subscription.value
 
     def unsubscribe(self, subscription):
-        subscription = _number("subscription", subscription)
+        subscription = integer("subscription", subscription)
         self._call(lib.biyos_unsubscribe, subscription)
         self._subscribers.remove(subscription)
 
