@@ -34,6 +34,7 @@ void say(biyos::Environment &env, const std::string &text)
 
 void fail_inside(biyos::Environment &env, int &calls)
 {
+    const biyos::Environment::ErrorScope scope(env);
     ++calls;
     status_after(env, [] { throw std::runtime_error("inner"); });
 }
@@ -184,4 +185,16 @@ TEST(FirewallTest, NestedFailure)
     EXPECT_EQ(status_after(env, [] { throw std::runtime_error("outer"); }), BIYOS_INTERNAL_ERROR);
     EXPECT_EQ(calls, 1);
     EXPECT_EQ(env.last_error(), "internal error: outer");
+}
+
+TEST(FirewallTest, QuietSuccess)
+{
+    biyos::Environment env;
+    env.record_error("earlier");
+    int calls = 0;
+    const auto nest = [&](const biyos::Event &) { fail_inside(env, calls); };
+    env.events().subscribe(EventKind::Message, Level::Info, nest);
+    EXPECT_EQ(status_after(env, [&] { say(env, "info"); }), BIYOS_OK);
+    EXPECT_EQ(calls, 1);
+    EXPECT_EQ(env.last_error(), "earlier");
 }

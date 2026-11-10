@@ -91,9 +91,9 @@ Frees the environment and every string read from it. A null `env` gives `BIYOS_O
 const char *biyos_last_error_message(const biyos_env *env);
 ```
 
-Returns the message of the last call on `env` that failed, or an empty string if none has. Successful calls leave it in place. It starts with the kind of failure (`invalid argument`, `out of memory` or `internal error`) and is written for people: branch on the status code, not on the text. It is also empty after a failure if memory ran out while keeping the message.
+Returns the message of the last call on `env` that failed, or an empty string if none has. Successful calls leave it in place. A call that fails inside a subscriber is the last failure only until that subscriber returns: the message is then again what it was before the subscriber ran. It starts with the kind of failure (`invalid argument`, `out of memory` or `internal error`) and is written for people: branch on the status code, not on the text. It is also empty after a failure if memory ran out while keeping the message.
 
-The pointer is never null. It stays valid until the next failed call on `env` or until `env` is freed. A null `env` gives an empty string that is always valid.
+The pointer is never null. It stays valid until the next failed call on `env` or until `env` is freed, and one read inside a subscriber only until that subscriber returns. A null `env` gives an empty string that is always valid.
 
 ## Options
 
@@ -225,7 +225,7 @@ A subscriber is called with the event and the `user_data` its subscription was g
 - The subscriber may read options, the last error message and the event.
 - Every call that would change the environment, setting an option, subscribing, unsubscribing or freeing it, fails with `BIYOS_INVALID_ARGUMENT` and the message `invalid argument: environment: is read-only while delivering an event`, and changes nothing.
 - A call that fails inside a subscriber keeps its message as usual, so `biyos_last_error_message` explains it, but sends no event.
-- Inside an error event, `biyos_last_error_message` returns that event's failure.
+- Inside an error event, `biyos_last_error_message` returns that event's failure. When the subscriber returns, the message is again what it was before the subscriber ran, so one subscriber's failures change neither what the next subscriber reads nor what the caller reads after the call.
 - The event and every string read from it are valid only until the subscriber returns.
 
 ### `biyos_subscribe`

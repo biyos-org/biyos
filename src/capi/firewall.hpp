@@ -41,9 +41,9 @@ inline void announce(Environment &env, std::string_view text) noexcept
     env.events().emit(EventKind::Message, Level::Error, fill);
 }
 
-// A failure is recorded before it is announced, so a subscriber reads it as the last error, and
-// again after, so a failure inside a subscriber never replaces it. A failure during delivery is
-// recorded only: announcing it could call the same subscriber again without end.
+// A failure is recorded before it is announced, so a subscriber reads it as the last error. A
+// failure during delivery is recorded only: announcing it could call the same subscriber again
+// without end.
 inline void report(Environment *env, std::string_view text) noexcept
 {
     if (env == nullptr)
@@ -54,7 +54,6 @@ inline void report(Environment *env, std::string_view text) noexcept
     if (!env->events().delivering())
     {
         announce(*env, text);
-        env->record_error(text);
     }
 }
 

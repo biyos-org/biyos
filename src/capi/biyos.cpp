@@ -101,11 +101,13 @@ void get_string(biyos::Environment &env, int option, const char **value)
 
 struct Forwarder
 {
+    biyos::Environment *env;
     biyos_subscriber subscriber;
     void *user_data;
 
     void operator()(const biyos::Event &event) const
     {
+        const biyos::Environment::ErrorScope scope(*env);
         const biyos_event view{&event};
         subscriber(&view, user_data);
     }
@@ -115,7 +117,7 @@ void subscribe(biyos::Environment &env, biyos_subscriber subscriber, void *user_
                int lowest, int *subscription)
 {
     biyos::Events &events = writable(env).events();
-    const Forwarder forwarder{require(subscriber, "subscriber"), user_data};
+    const Forwarder forwarder{&env, require(subscriber, "subscriber"), user_data};
     const biyos::EventKind found = biyos::find_kind(kind);
     const biyos::Level level = biyos::find_level(lowest);
     int *id = require(subscription, "subscription");
