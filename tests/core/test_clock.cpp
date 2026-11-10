@@ -35,6 +35,29 @@ class ClockTest : public ::testing::Test
     biyos::FakeClock clock;
 };
 
+class CountingClock final : public biyos::Clock
+{
+  public:
+    std::chrono::nanoseconds wall_time() const noexcept override
+    {
+        ++wall_reads_;
+        return 0ns;
+    }
+
+    std::chrono::nanoseconds cpu_time() const noexcept override
+    {
+        ++cpu_reads_;
+        return 0ns;
+    }
+
+    int wall_reads() const noexcept { return wall_reads_; }
+    int cpu_reads() const noexcept { return cpu_reads_; }
+
+  private:
+    mutable int wall_reads_ = 0;
+    mutable int cpu_reads_ = 0;
+};
+
 void blank(biyos::Event &) {}
 
 }
@@ -158,6 +181,35 @@ TEST_F(ClockTest, TinyLimit)
     EXPECT_FALSE(deadline.reached());
     clock.advance_wall(1ns);
     EXPECT_TRUE(deadline.reached());
+}
+
+TEST_F(ClockTest, NoReads)
+{
+    const CountingClock counter;
+    const biyos::Deadline deadline(options, counter);
+    EXPECT_FALSE(deadline.reached());
+    EXPECT_EQ(counter.wall_reads(), 0);
+    EXPECT_EQ(counter.cpu_reads(), 0);
+}
+
+TEST_F(ClockTest, WallReads)
+{
+    options.set_double(Option::TimeLimit, 1.0);
+    const CountingClock counter;
+    const biyos::Deadline deadline(options, counter);
+    EXPECT_FALSE(deadline.reached());
+    EXPECT_EQ(counter.wall_reads(), 2);
+    EXPECT_EQ(counter.cpu_reads(), 0);
+}
+
+TEST_F(ClockTest, CpuReads)
+{
+    options.set_double(Option::CpuTimeLimit, 1.0);
+    const CountingClock counter;
+    const biyos::Deadline deadline(options, counter);
+    EXPECT_FALSE(deadline.reached());
+    EXPECT_EQ(counter.wall_reads(), 0);
+    EXPECT_EQ(counter.cpu_reads(), 2);
 }
 
 TEST_F(ClockTest, ReadOnce)
