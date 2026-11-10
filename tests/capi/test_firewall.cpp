@@ -36,6 +36,13 @@ TEST(FirewallTest, InvalidArgument)
     EXPECT_EQ(status, BIYOS_INVALID_ARGUMENT);
 }
 
+TEST(FirewallTest, NoMemory)
+{
+    const biyos_status status = status_after(
+        [] { throw biyos::Error(biyos::ErrorKind::NoMemory, "workspace", "too large"); });
+    EXPECT_EQ(status, BIYOS_NO_MEMORY);
+}
+
 TEST(FirewallTest, Internal)
 {
     const biyos_status status = status_after(
@@ -66,7 +73,7 @@ TEST(FirewallTest, ErrorMessage)
     EXPECT_EQ(env.last_error(), "invalid argument: argument 'n': negative");
 }
 
-TEST(FirewallTest, BadAllocMessage)
+TEST(FirewallTest, MemoryMessage)
 {
     biyos::Environment env;
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_NO_MEMORY);
@@ -77,17 +84,17 @@ TEST(FirewallTest, ForeignMessage)
 {
     biyos::Environment env;
     EXPECT_EQ(status_after(env, [] { throw std::runtime_error("foreign"); }), BIYOS_INTERNAL_ERROR);
-    EXPECT_EQ(env.last_error(), "foreign");
+    EXPECT_EQ(env.last_error(), "internal error: foreign");
 }
 
 TEST(FirewallTest, UnknownMessage)
 {
     biyos::Environment env;
     EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_INTERNAL_ERROR);
-    EXPECT_EQ(env.last_error(), "unknown exception");
+    EXPECT_EQ(env.last_error(), "internal error: unknown exception");
 }
 
-TEST(FirewallTest, SuccessKeepsMessage)
+TEST(FirewallTest, KeptMessage)
 {
     biyos::Environment env;
     env.record_error("earlier");

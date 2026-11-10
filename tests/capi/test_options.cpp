@@ -67,6 +67,16 @@ TEST(CApiTest, Bool)
     EXPECT_EQ(value, 0);
 }
 
+TEST(CApiTest, NonzeroBool)
+{
+    const Env env;
+    int value = -1;
+    EXPECT_EQ(biyos_set_bool_option(env.get(), BIYOS_OPT_PRESOLVE, 0), BIYOS_OK);
+    EXPECT_EQ(biyos_set_bool_option(env.get(), BIYOS_OPT_PRESOLVE, 2), BIYOS_OK);
+    EXPECT_EQ(biyos_get_bool_option(env.get(), BIYOS_OPT_PRESOLVE, &value), BIYOS_OK);
+    EXPECT_EQ(value, 1);
+}
+
 TEST(CApiTest, Int)
 {
     const Env env;
@@ -94,6 +104,25 @@ TEST(CApiTest, String)
     EXPECT_STREQ(value, "replay.txt");
 }
 
+TEST(CApiTest, StringLifetime)
+{
+    const Env env;
+    const char *path = nullptr;
+    const char *level = nullptr;
+    ASSERT_EQ(biyos_set_string_option(env.get(), BIYOS_OPT_REPRODUCER, "replay.txt"), BIYOS_OK);
+    ASSERT_EQ(biyos_get_string_option(env.get(), BIYOS_OPT_REPRODUCER, &path), BIYOS_OK);
+    ASSERT_EQ(biyos_get_string_option(env.get(), BIYOS_OPT_CHECK_LEVEL, &level), BIYOS_OK);
+    EXPECT_EQ(biyos_set_string_option(env.get(), BIYOS_OPT_REPRODUCER, nullptr),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_set_double_option(env.get(), BIYOS_OPT_REPRODUCER, 1.0),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_set_string_option(env.get(), BIYOS_OPT_CHECK_LEVEL, "most"),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_set_int_option(env.get(), BIYOS_OPT_SEED, 5), BIYOS_OK);
+    EXPECT_STREQ(path, "replay.txt");
+    EXPECT_STREQ(level, "cheap");
+}
+
 TEST(CApiTest, Enum)
 {
     const Env env;
@@ -115,7 +144,7 @@ TEST(CApiTest, BadSet)
     EXPECT_EQ(value, 0);
 }
 
-TEST(CApiTest, BadEnumValue)
+TEST(CApiTest, BadEnum)
 {
     const Env env;
     EXPECT_EQ(biyos_set_string_option(env.get(), BIYOS_OPT_CHECK_LEVEL, "most"),
@@ -131,7 +160,7 @@ TEST(CApiTest, WrongKind)
     EXPECT_EQ(env.message(), "invalid argument: option 'seed': is an int, not a double");
 }
 
-TEST(CApiTest, MessageSurvivesSuccess)
+TEST(CApiTest, KeptMessage)
 {
     const Env env;
     EXPECT_EQ(biyos_set_int_option(env.get(), BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);

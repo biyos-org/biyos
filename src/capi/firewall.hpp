@@ -7,6 +7,7 @@
 #include <concepts>
 #include <exception>
 #include <new>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -19,6 +20,8 @@ inline biyos_status status_of(ErrorKind kind) noexcept
     {
     case ErrorKind::InvalidArgument:
         return BIYOS_INVALID_ARGUMENT;
+    case ErrorKind::NoMemory:
+        return BIYOS_NO_MEMORY;
     case ErrorKind::Internal:
         return BIYOS_INTERNAL_ERROR;
     }
@@ -31,6 +34,22 @@ inline void report(Environment *env, std::string_view text) noexcept
     {
         env->record_error(text);
     }
+}
+
+inline biyos_status fail(Environment *env, ErrorKind kind, std::string_view message) noexcept
+{
+    if (env != nullptr)
+    {
+        try
+        {
+            env->record_error(Error(kind, "", std::string(message)).what());
+        }
+        catch (...)
+        {
+            env->record_error(kind_name(kind));
+        }
+    }
+    return status_of(kind);
 }
 
 template <std::invocable Body> biyos_status guard(Environment *env, Body &&body) noexcept
@@ -47,18 +66,16 @@ template <std::invocable Body> biyos_status guard(Environment *env, Body &&body)
     }
     catch (const std::bad_alloc &)
     {
-        report(env, "out of memory");
-        return BIYOS_NO_MEMORY;
+        report(env, kind_name(ErrorKind::NoMemory));
+        return status_of(ErrorKind::NoMemory);
     }
     catch (const std::exception &error)
     {
-        report(env, error.what());
-        return BIYOS_INTERNAL_ERROR;
+        return fail(env, ErrorKind::Internal, error.what());
     }
     catch (...)
     {
-        report(env, "unknown exception");
-        return BIYOS_INTERNAL_ERROR;
+        return fail(env, ErrorKind::Internal, "unknown exception");
     }
 }
 

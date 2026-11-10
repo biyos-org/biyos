@@ -15,6 +15,10 @@ namespace biyos
 namespace
 {
 
+constexpr int kIntMin = (std::numeric_limits<int>::min)();
+constexpr int kIntMax = (std::numeric_limits<int>::max)();
+constexpr double kInfinity = std::numeric_limits<double>::infinity();
+
 struct BoolRule
 {
     bool default_value;
@@ -23,15 +27,15 @@ struct BoolRule
 struct IntRule
 {
     int default_value;
-    int lower;
-    int upper;
+    int lower = kIntMin;
+    int upper = kIntMax;
 };
 
 struct DoubleRule
 {
     double default_value;
-    double lower;
-    double upper;
+    double lower = -kInfinity;
+    double upper = kInfinity;
 };
 
 struct StringRule
@@ -53,21 +57,20 @@ struct OptionSpec
     std::string_view doc;
 };
 
-constexpr int kIntMax = (std::numeric_limits<int>::max)();
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr std::array<std::string_view, 3> kCheckLevels{"none", "cheap", "full"};
+static_assert(kCheckLevels.size() == static_cast<std::size_t>(CheckLevel::Full) + 1);
 
 constexpr std::array kTable{
     OptionSpec{
         .id = Option::Seed,
         .name = "seed",
-        .rule = IntRule{.default_value = 0, .lower = 0, .upper = kIntMax},
+        .rule = IntRule{.default_value = 0, .lower = 0},
         .doc = "Seed of every random choice.",
     },
     OptionSpec{
         .id = Option::TimeLimit,
         .name = "time_limit",
-        .rule = DoubleRule{.default_value = kInfinity, .lower = 0.0, .upper = kInfinity},
+        .rule = DoubleRule{.default_value = kInfinity, .lower = 0.0},
         .doc = "Wall time limit in seconds.",
     },
     OptionSpec{
@@ -86,7 +89,7 @@ constexpr std::array kTable{
         .id = Option::Reproducer,
         .name = "reproducer",
         .rule = StringRule{.default_value = ""},
-        .doc = "File the solve writes its model, options and seed to. Empty for none.",
+        .doc = "File the solve writes its model, options, seed and version to. Empty for none.",
     },
 };
 
@@ -163,7 +166,7 @@ constexpr std::string_view noun(const EnumRule &)
     return "an enum";
 }
 
-std::string_view noun(const OptionSpec &spec)
+constexpr std::string_view noun(const OptionSpec &spec)
 {
     return std::visit([](const auto &rule) { return noun(rule); }, spec.rule);
 }
@@ -193,6 +196,14 @@ std::string default_of(const EnumRule &rule)
     return std::string(rule.default_value);
 }
 
+template <typename T> std::string text_of(T value)
+{
+    std::array<char, 32> buffer{};
+    const std::to_chars_result result =
+        std::to_chars(buffer.data(), buffer.data() + buffer.size(), value);
+    return std::string(buffer.data(), result.ptr);
+}
+
 std::size_t index_of(Option option)
 {
     return static_cast<std::size_t>(option) - 1;
@@ -200,20 +211,18 @@ std::size_t index_of(Option option)
 
 const OptionSpec &spec_of(Option option)
 {
-    return kTable[index_of(option)];
+    const std::size_t index = index_of(option);
+    if (index >= kTable.size())
+    {
+        const std::string id = text_of(static_cast<int>(option));
+        throw Error(ErrorKind::Internal, "option " + id, "has no table row");
+    }
+    return kTable[index];
 }
 
 std::string subject(std::string_view name)
 {
     return "option '" + std::string(name) + "'";
-}
-
-template <typename T> std::string text_of(T value)
-{
-    std::array<char, 32> buffer{};
-    const std::to_chars_result result =
-        std::to_chars(buffer.data(), buffer.data() + buffer.size(), value);
-    return std::string(buffer.data(), result.ptr);
 }
 
 template <typename Rule> const Rule &rule_of(const OptionSpec &spec)
@@ -284,7 +293,7 @@ Option find_option(int id)
     return static_cast<Option>(id);
 }
 
-std::string_view name_of(Option option) noexcept
+std::string_view name_of(Option option)
 {
     return spec_of(option).name;
 }
@@ -359,6 +368,14 @@ const std::string &Options::get_string(Option option) const
         rule_of<StringRule>(spec);
     }
     return std::get<std::string>(values_[index_of(option)]);
+}
+
+std::size_t Options::position_of(Option option) const
+{
+    const EnumRule &rule = rule_of<EnumRule>(spec_of(option));
+    const std::string &value = std::get<std::string>(values_[index_of(option)]);
+    const auto found = std::ranges::find(rule.values, value);
+    return static_cast<std::size_t>(found - rule.values.begin());
 }
 
 }

@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(CApiTest, CreateAndFree)
+TEST(CApiTest, Create)
 {
     biyos_env *env = nullptr;
     ASSERT_EQ(biyos_env_create(&env), BIYOS_OK);
@@ -11,17 +11,17 @@ TEST(CApiTest, CreateAndFree)
     biyos_env_free(env);
 }
 
-TEST(CApiTest, CreateRejectsNull)
+TEST(CApiTest, NullCreate)
 {
     EXPECT_EQ(biyos_env_create(nullptr), BIYOS_INVALID_ARGUMENT);
 }
 
-TEST(CApiTest, FreeAcceptsNull)
+TEST(CApiTest, NullFree)
 {
     biyos_env_free(nullptr);
 }
 
-TEST(CApiTest, MessageWithoutEnvironment)
+TEST(CApiTest, NullMessage)
 {
     EXPECT_STREQ(biyos_last_error_message(nullptr), "");
 }

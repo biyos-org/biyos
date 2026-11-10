@@ -18,6 +18,8 @@ std::string_view kind_name(ErrorKind kind) noexcept
     {
     case ErrorKind::InvalidArgument:
         return "invalid argument";
+    case ErrorKind::NoMemory:
+        return "out of memory";
     case ErrorKind::Internal:
         return "internal error";
     }

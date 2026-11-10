@@ -23,7 +23,6 @@ std::string failure(const std::function<void()> &body)
     }
     catch (const biyos::Error &error)
     {
-        EXPECT_EQ(error.kind(), biyos::ErrorKind::InvalidArgument);
         return error.what();
     }
     return "no error";
@@ -112,6 +111,19 @@ TEST(OptionTest, EnumValue)
     EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
 }
 
+TEST(OptionTest, TypedEnum)
+{
+    using biyos::CheckLevel;
+    biyos::Options options;
+    EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Cheap);
+    options.set_string(Option::CheckLevel, "full");
+    EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Full);
+    options.set_string(Option::CheckLevel, "none");
+    EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::None);
+    EXPECT_EQ(failure([&] { static_cast<void>(options.get_enum<CheckLevel>(Option::Seed)); }),
+              "invalid argument: option 'seed': is an int, not an enum");
+}
+
 TEST(OptionTest, WrongKind)
 {
     biyos::Options options;
@@ -150,4 +162,17 @@ TEST(OptionTest, UnknownId)
     EXPECT_EQ(failure([] { biyos::find_option(0); }), "invalid argument: option 0: unknown");
     EXPECT_EQ(failure([] { biyos::find_option(6); }), "invalid argument: option 6: unknown");
     EXPECT_EQ(failure([] { biyos::find_option(-3); }), "invalid argument: option -3: unknown");
+}
+
+TEST(OptionTest, MissingRow)
+{
+    biyos::Options options;
+    const Option past = static_cast<Option>(6);
+    const Option zero = static_cast<Option>(0);
+    EXPECT_EQ(failure([&] { options.set_int(past, 1); }),
+              "internal error: option 6: has no table row");
+    EXPECT_EQ(failure([&] { static_cast<void>(options.get_string(zero)); }),
+              "internal error: option 0: has no table row");
+    EXPECT_EQ(failure([&] { static_cast<void>(biyos::name_of(past)); }),
+              "internal error: option 6: has no table row");
 }

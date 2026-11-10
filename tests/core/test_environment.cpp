@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(EnvironmentTest, NoErrorAtStart)
+TEST(EnvironmentTest, NoError)
 {
     const biyos::Environment env;
     EXPECT_EQ(env.last_error(), "");

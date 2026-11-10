@@ -16,6 +16,13 @@ TEST(ErrorTest, InvalidArgument)
     EXPECT_STREQ(error.what(), "invalid argument: argument 'n': must be positive");
 }
 
+TEST(ErrorTest, NoMemory)
+{
+    const biyos::Error error(biyos::ErrorKind::NoMemory, "workspace", "needs 3 GB");
+    EXPECT_EQ(error.kind(), biyos::ErrorKind::NoMemory);
+    EXPECT_STREQ(error.what(), "out of memory: workspace: needs 3 GB");
+}
+
 TEST(ErrorTest, Internal)
 {
     const biyos::Error error(biyos::ErrorKind::Internal, "factorization", "pivot is not finite");

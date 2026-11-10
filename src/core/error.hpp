@@ -11,6 +11,7 @@ namespace biyos
 enum class ErrorKind
 {
     InvalidArgument,
+    NoMemory,
     Internal,
 };
 
