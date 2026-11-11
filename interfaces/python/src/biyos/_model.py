@@ -58,14 +58,9 @@ class Model:
     """
 
     def __init__(self, env):
-        env = _environment(env)
-        self._env = env
-        self._handle = c_void_p()
-        self._calls = 0
-        self._closing = False
-        self._version = 0
-        with env._busy():
-            self._create()
+        self._start(_environment(env))
+        with self._env._busy():
+            self._make(self._env._call, lib.biyos_model_create)
         self._hold()
 
     def __enter__(self):
@@ -276,10 +271,17 @@ class Model:
         self._call(lib.biyos_get_constraints, first, count, *arrays)
         return list(functions), list(lower), list(upper)
 
-    def _create(self):
+    def _start(self, env):
+        self._env = env
+        self._handle = c_void_p()
+        self._calls = 0
+        self._closing = False
+        self._version = 0
+
+    def _make(self, call, *arguments):
         handle = self._handle
         try:
-            self._env._call(lib.biyos_model_create, byref(handle))
+            call(*arguments, byref(handle))
         finally:
             if handle.value is not None:
                 self._env._models.add(handle.value)
