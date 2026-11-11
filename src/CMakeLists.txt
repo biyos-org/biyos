@@ -16,6 +16,8 @@ add_library(biyos_internal STATIC
     core/tolerances.cpp
     core/utf8.cpp
     core/version.cpp
+    expr/graph.cpp
+    expr/node.cpp
     model/model.cpp)
 
 target_include_directories(biyos_internal PUBLIC

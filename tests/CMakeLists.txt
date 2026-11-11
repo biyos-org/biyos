@@ -33,6 +33,9 @@ add_test(NAME NameTest.LocalBuffer
     COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target local_name --config $<CONFIG>)
 set_tests_properties(NameTest.LocalBuffer PROPERTIES PASS_REGULAR_EXPRESSION "constant expression")
 
+biyos_add_test(test_expr expr/test_graph.cpp)
+target_link_libraries(test_expr PRIVATE biyos_internal)
+
 biyos_add_test(test_model model/test_variables.cpp)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
