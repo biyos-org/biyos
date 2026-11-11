@@ -25,6 +25,7 @@ struct Parts
     std::vector<LinearTerm> terms;
     Quadratic quadratic;
     std::vector<Constraint> constraints;
+    std::vector<Objective> objectives;
 };
 
 inline Parts sample()
@@ -62,6 +63,25 @@ inline Parts sample()
                 {.function = 1, .lower = 0.0, .upper = kInfinity},
                 {.function = 0, .lower = 3.0, .upper = 3.0},
             },
+        .objectives =
+            {
+                {
+                    .function = 2,
+                    .sense = Sense::Maximize,
+                    .priority = 1,
+                    .weight = 2.0,
+                    .absolute = 0.5,
+                    .relative = 0.0,
+                },
+                {
+                    .function = 0,
+                    .sense = Sense::Minimize,
+                    .priority = 0,
+                    .weight = 1.0,
+                    .absolute = 0.0,
+                    .relative = kInfinity,
+                },
+            },
     };
 }
 
@@ -73,6 +93,7 @@ inline Model built(const Parts &parts)
     const Quadratic &quadratic = parts.quadratic;
     model.add_quadratic_terms(quadratic.functions, quadratic.starts, quadratic.terms);
     model.add_constraints(parts.constraints);
+    model.add_objectives(parts.objectives);
     return model;
 }
 

@@ -94,6 +94,7 @@ def _declare_model(lib, ints, doubles):
     _declare_functions(lib, ints, doubles)
     _declare_quadratic(lib, ints, doubles)
     _declare_constraints(lib, ints, doubles)
+    _declare_objectives(lib, ints, doubles)
 
 
 def _declare_functions(lib, ints, doubles):
@@ -123,6 +124,17 @@ def _declare_constraints(lib, ints, doubles):
     _declare(lib, "biyos_constraint_count", c_int, c_void_p, ints)
     read = (c_void_p, c_int, c_int, ints, doubles, doubles)
     _declare(lib, "biyos_get_constraints", c_int, *read)
+
+
+def _declare_objectives(lib, ints, doubles):
+    fields = (ints, ints, doubles, doubles, doubles)
+    add = (c_void_p, c_int, ints, *fields, ints)
+    _declare(lib, "biyos_add_objectives", c_int, *add)
+    change = (c_void_p, c_int, ints, *fields)
+    _declare(lib, "biyos_set_objectives", c_int, *change)
+    _declare(lib, "biyos_objective_count", c_int, c_void_p, ints)
+    read = (c_void_p, c_int, c_int, ints, *fields)
+    _declare(lib, "biyos_get_objectives", c_int, *read)
 
 
 lib = _load()

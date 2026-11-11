@@ -30,5 +30,14 @@ def test_variable_kinds():
     assert kinds == names
 
 
+def test_senses():
+    found = macros("model.h")
+    senses = {name: found[name] for name in found if "_VAR_" not in name}
+    kinds = lines("model.h", "#define BIYOS_VAR_")
+    assert len(senses) == lines("model.h", "#define BIYOS_") - kinds
+    names = {f"BIYOS_{sense.name}": sense for sense in biyos.Sense}
+    assert senses == names
+
+
 def test_ok():
     assert macros("biyos.h")["BIYOS_OK"] == _capi.OK

@@ -245,12 +245,50 @@ class Constraints(Block):
         return model.constraint_count()
 
 
+class Objective(View):
+    """One objective of a model, as indexing an ``Objectives`` block gives.
+
+    A view holds its model and its index, and passes as that index wherever
+    its model takes an index of objectives. Any other model refuses it as an
+    index. A view made before a deletion from its model raises ``ValueError``
+    when used, as its index may name another objective.
+    """
+
+    __slots__ = ()
+    _noun = "objective"
+
+
+class Objectives(Block):
+    """Consecutive objectives, as ``Model.add_objectives`` returns.
+
+    A block holds its model, its first index and its count, so it costs the
+    same at any size. ``len`` gives the count, and iterating gives each
+    objective in order as an ``Objective``, so a block passes wherever its
+    model takes indices of objectives. Any other model refuses it as indices,
+    and ``on`` gives the block of the same indices in another model, such as
+    a copy. A block made before a deletion from its model raises
+    ``ValueError`` when used, as its indices may name other objectives.
+    """
+
+    __slots__ = ()
+    _element = Objective
+
+    def _held(self, model):
+        return model.objective_count()
+
+
+def _indefinite(noun):
+    article = "an" if noun[0] in "aeiou" else "a"
+    return f"{article} {noun}"
+
+
 def _member(model, family, name, view):
-    noun = family._element._noun
+    noun = _indefinite(family._element._noun)
     if not isinstance(view, family._element):
-        raise ValueError(f"{name} is a {view._noun}, not a {noun}")
+        found = _indefinite(view._noun)
+        raise ValueError(f"{name} is {found}, not {noun}")
     if view._model is not model:
-        raise ValueError(f"{name} is a {noun} of another model")
+        raise ValueError(f"{name} is {noun} of another model")
 
 
 def index_of(model, family, name, value):

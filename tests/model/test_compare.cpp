@@ -15,7 +15,9 @@ namespace
 using biyos::difference;
 using biyos::LinearTerm;
 using biyos::Model;
+using biyos::Objective;
 using biyos::QuadraticTerm;
+using biyos::Sense;
 using biyos::VariableKind;
 using biyos::test::built;
 using biyos::test::Parts;
@@ -107,6 +109,28 @@ TEST(CompareTest, ConstraintFields)
     EXPECT_EQ(from_sample(upper), "constraint 1: upper bound inf against 5");
 }
 
+TEST(CompareTest, ObjectiveFields)
+{
+    Parts function = sample();
+    function.objectives[1].function = 1;
+    EXPECT_EQ(from_sample(function), "objective 1: function 0 against 1");
+    Parts sense = sample();
+    sense.objectives[0].sense = Sense::Minimize;
+    EXPECT_EQ(from_sample(sense), "objective 0: sense 2 against 1");
+    Parts priority = sample();
+    priority.objectives[1].priority = -4;
+    EXPECT_EQ(from_sample(priority), "objective 1: priority 0 against -4");
+    Parts weight = sample();
+    weight.objectives[0].weight = 3.0;
+    EXPECT_EQ(from_sample(weight), "objective 0: weight 2 against 3");
+    Parts absolute = sample();
+    absolute.objectives[1].absolute = kInfinity;
+    EXPECT_EQ(from_sample(absolute), "objective 1: absolute tolerance 0 against inf");
+    Parts relative = sample();
+    relative.objectives[1].relative = 0.25;
+    EXPECT_EQ(from_sample(relative), "objective 1: relative tolerance inf against 0.25");
+}
+
 TEST(CompareTest, Counts)
 {
     Parts variables = sample();
@@ -116,6 +140,9 @@ TEST(CompareTest, Counts)
     Parts constraints = sample();
     constraints.constraints.pop_back();
     EXPECT_EQ(from_sample(constraints), "constraint count 3 against 2");
+    Parts objectives = sample();
+    objectives.objectives.pop_back();
+    EXPECT_EQ(from_sample(objectives), "objective count 2 against 1");
 }
 
 TEST(CompareTest, OneUlp)
@@ -131,6 +158,9 @@ TEST(CompareTest, OneUlp)
     quadratic.quadratic.terms[0].coefficient = std::nextafter(0.5, kInfinity);
     EXPECT_EQ(from_sample(quadratic),
               "function 2: quadratic term 0: coefficient 0.5 against 0.5000000000000001");
+    Parts weight = sample();
+    weight.objectives[0].weight = std::nextafter(2.0, kInfinity);
+    EXPECT_EQ(from_sample(weight), "objective 0: weight 2 against 2.0000000000000004");
 }
 
 TEST(CompareTest, SignedZero)
@@ -147,6 +177,9 @@ TEST(CompareTest, SignedZero)
     negative.quadratic.terms[0].coefficient = -0.0;
     EXPECT_EQ(difference(built(positive), built(negative)),
               "function 2: quadratic term 0: coefficient 0 against -0");
+    Parts tolerance = sample();
+    tolerance.objectives[1].absolute = -0.0;
+    EXPECT_EQ(from_sample(tolerance), "objective 1: absolute tolerance 0 against -0");
 }
 
 TEST(CompareTest, SharedFunction)
@@ -181,6 +214,10 @@ TEST(CompareTest, Order)
     quadratic.constants[2] = 0.2;
     quadratic.quadratic.terms[0].coefficient = 1.0;
     EXPECT_EQ(from_sample(quadratic), "function 2: constant 0.1 against 0.2");
+    Parts objective = sample();
+    objective.constraints[2].upper = 4.0;
+    objective.objectives[0].weight = 3.0;
+    EXPECT_EQ(from_sample(objective), "constraint 2: upper bound 3 against 4");
 }
 
 TEST(CompareTest, FieldOrder)
@@ -213,4 +250,31 @@ TEST(CompareTest, FieldOrder)
     Parts both = sample();
     both.quadratic.terms[1] = QuadraticTerm{.first = 1, .second = 1, .coefficient = -1.5};
     EXPECT_EQ(from_sample(both), "function 0: quadratic term 1: first variable 0 against 1");
+}
+
+TEST(CompareTest, ObjectiveOrder)
+{
+    Parts changed = sample();
+    Objective &objective = changed.objectives[0];
+    objective = Objective{
+        .function = 1,
+        .sense = Sense::Minimize,
+        .priority = 5,
+        .weight = 3.0,
+        .absolute = 1.0,
+        .relative = 1.0,
+    };
+    EXPECT_EQ(from_sample(changed), "objective 0: function 2 against 1");
+    objective.function = 2;
+    EXPECT_EQ(from_sample(changed), "objective 0: sense 2 against 1");
+    objective.sense = Sense::Maximize;
+    EXPECT_EQ(from_sample(changed), "objective 0: priority 1 against 5");
+    objective.priority = 1;
+    EXPECT_EQ(from_sample(changed), "objective 0: weight 2 against 3");
+    objective.weight = 2.0;
+    EXPECT_EQ(from_sample(changed), "objective 0: absolute tolerance 0.5 against 1");
+    objective.absolute = 0.5;
+    EXPECT_EQ(from_sample(changed), "objective 0: relative tolerance 0 against 1");
+    objective.relative = 0.0;
+    EXPECT_EQ(from_sample(changed), "");
 }

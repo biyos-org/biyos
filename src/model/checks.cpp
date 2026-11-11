@@ -90,4 +90,12 @@ void check_span(std::string_view noun, Index first, Index count, Index size)
     }
 }
 
+void check_function(std::string_view noun, Index index, Index function, Index functions)
+{
+    if (function < 0 || function >= functions)
+    {
+        refuse(noun, index, item("function", function) + " is unknown");
+    }
+}
+
 }

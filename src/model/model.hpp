@@ -38,12 +38,35 @@ struct Variable
 
 Variable widest(VariableKind kind) noexcept;
 
+enum class Sense
+{
+    Minimize = BIYOS_MINIMIZE,
+    Maximize = BIYOS_MAXIMIZE,
+};
+
+inline constexpr std::array kSenses{
+    Sense::Minimize,
+    Sense::Maximize,
+};
+
 struct Constraint
 {
     Index function;
     double lower;
     double upper;
 };
+
+struct Objective
+{
+    Index function;
+    Sense sense;
+    int priority;
+    double weight;
+    double absolute;
+    double relative;
+};
+
+Objective default_objective(Index function, Index index) noexcept;
 
 class Model
 {
@@ -78,6 +101,14 @@ class Model
     void add_constraints(std::span<const Constraint> added);
     void set_constraints(std::span<const Index> indices, std::span<const Constraint> changed);
 
+    Index objective_count() const noexcept;
+    const Objective &objective(Index index) const;
+    std::span<const Objective> objectives(Index first, Index count) const;
+
+    void check_objective_room(std::size_t added) const;
+    void add_objectives(std::span<const Objective> added);
+    void set_objectives(std::span<const Index> indices, std::span<const Objective> changed);
+
   private:
     Offset begin_of(std::size_t function) const noexcept;
     void append(std::span<const double> constants,
@@ -92,6 +123,7 @@ class Model
     std::vector<Offset> quadratic_ends_;
     std::vector<QuadraticTerm> quadratic_terms_;
     std::vector<Constraint> constraints_;
+    std::vector<Objective> objectives_;
 };
 
 }

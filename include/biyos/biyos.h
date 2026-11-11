@@ -160,6 +160,33 @@ BIYOS_API biyos_status biyos_get_constraints(biyos_model *model,
                                              int *functions,
                                              double *lower,
                                              double *upper);
+BIYOS_API biyos_status biyos_add_objectives(biyos_model *model,
+                                            int count,
+                                            const int *functions,
+                                            const int *senses,
+                                            const int *priorities,
+                                            const double *weights,
+                                            const double *absolute,
+                                            const double *relative,
+                                            int *first);
+BIYOS_API biyos_status biyos_set_objectives(biyos_model *model,
+                                            int count,
+                                            const int *indices,
+                                            const int *senses,
+                                            const int *priorities,
+                                            const double *weights,
+                                            const double *absolute,
+                                            const double *relative);
+BIYOS_API biyos_status biyos_objective_count(biyos_model *model, int *count);
+BIYOS_API biyos_status biyos_get_objectives(biyos_model *model,
+                                            int first,
+                                            int count,
+                                            int *functions,
+                                            int *senses,
+                                            int *priorities,
+                                            double *weights,
+                                            double *absolute,
+                                            double *relative);
 
 #ifdef __cplusplus
 }

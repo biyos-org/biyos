@@ -17,14 +17,6 @@ namespace
 
 constexpr std::string_view kNoun = "constraint";
 
-void check_function(Index index, Index function, Index functions)
-{
-    if (function < 0 || function >= functions)
-    {
-        refuse(kNoun, index, item("function", function) + " is unknown");
-    }
-}
-
 void check_bounds(Index index, const Constraint &constraint)
 {
     const std::string_view fault = bound_fault(constraint.lower, constraint.upper);
@@ -36,7 +28,7 @@ void check_bounds(Index index, const Constraint &constraint)
 
 void check(Index index, const Constraint &constraint, Index functions)
 {
-    check_function(index, constraint.function, functions);
+    check_function(kNoun, index, constraint.function, functions);
     check_bounds(index, constraint);
 }
 

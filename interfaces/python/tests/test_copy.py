@@ -6,7 +6,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import EventKind, Level, VariableKind
+from biyos import EventKind, Level, Sense, VariableKind
 from biyos._capi import lib
 from spies import interrupted, preceded
 
@@ -49,6 +49,9 @@ def add_sample(model):
     pairs = ([0, 1, 3], [2, 0, 1], [2, 1, 1], [0.5, -1.0, 3.0])
     model.add_quadratic_terms([1, 0], *pairs)
     model.add_constraints([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, INFINITY, 3.0])
+    senses = [Sense.MAXIMIZE, Sense.MINIMIZE]
+    tolerances = ([0.25, 0.0], [0.0, INFINITY])
+    model.add_objectives([1, 0], senses, [3, -2], [0.5, 2.0], *tolerances)
 
 
 def read(model):
@@ -57,6 +60,7 @@ def read(model):
         model.get_functions(),
         model.get_quadratic_terms(),
         model.get_constraints(),
+        model.get_objectives(),
     )
     return repr(found)
 
@@ -115,6 +119,7 @@ def test_apart(place, model):
     copy.set_variable_bounds([0], [1.0])
     copy.add_constraints([1])
     copy.add_quadratic_terms([0], [0, 1], [0], [0], [1.0])
+    copy.set_objectives([1], [Sense.MAXIMIZE])
     assert read(model) == before
     assert copy.variable_count() == 4
     model.add_functions(1)

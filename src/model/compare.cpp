@@ -105,6 +105,23 @@ std::string differ(const Constraint &a, const Constraint &b)
     });
 }
 
+int sense_of(const Objective &objective)
+{
+    return static_cast<int>(objective.sense);
+}
+
+std::string differ(const Objective &a, const Objective &b)
+{
+    return first_of({
+        compared("function", a.function, b.function),
+        compared("sense", sense_of(a), sense_of(b)),
+        compared("priority", a.priority, b.priority),
+        compared("weight", a.weight, b.weight),
+        compared("absolute tolerance", a.absolute, b.absolute),
+        compared("relative tolerance", a.relative, b.relative),
+    });
+}
+
 template <typename T> Offset size_of(std::span<const T> terms)
 {
     return static_cast<Offset>(terms.size());
@@ -159,6 +176,12 @@ std::string constraints_difference(const Model &a, const Model &b)
     return table_difference("constraint", a.constraint_count(), b.constraint_count(), constraint);
 }
 
+std::string objectives_difference(const Model &a, const Model &b)
+{
+    const auto objective = [&](Index k) { return differ(a.objective(k), b.objective(k)); };
+    return table_difference("objective", a.objective_count(), b.objective_count(), objective);
+}
+
 }
 
 std::string difference(const Model &a, const Model &b)
@@ -171,6 +194,10 @@ std::string difference(const Model &a, const Model &b)
     if (found.empty())
     {
         found = constraints_difference(a, b);
+    }
+    if (found.empty())
+    {
+        found = objectives_difference(a, b);
     }
     return found;
 }
