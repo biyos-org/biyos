@@ -272,3 +272,21 @@ def test_closed(env):
     for call in calls:
         with pytest.raises(ValueError, match="the model is closed"):
             call()
+
+
+def test_on(env, model):
+    c = add_sample(model)
+    copy = model.copy()
+    d = c[1:].on(copy)
+    assert type(d) is biyos.Constraints
+    copy.set_constraint_bounds(d, [0.0, 0.0])
+    assert copy.get_constraints()[1] == [-1.0, 0.0, 0.0]
+    assert model.get_constraints() == SAMPLE
+    smaller = biyos.Model(env)
+    smaller.add_functions(1)
+    smaller.add_constraints([0, 0])
+    few = "model holds too few constraints: 2, the block needs 3"
+    with pytest.raises(ValueError, match=few):
+        c.on(smaller)
+    assert len(c[:2].on(smaller)) == 2
+    copy.close()

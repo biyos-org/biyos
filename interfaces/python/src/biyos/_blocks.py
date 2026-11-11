@@ -6,6 +6,15 @@ def _current(model, version, noun):
         raise ValueError(f"the {noun} predates a deletion from its model")
 
 
+def _target(value):
+    from biyos._model import Model
+
+    if not isinstance(value, Model):
+        found = type(value).__name__
+        raise TypeError(f"model must be a Model, not {found}")
+    return value
+
+
 class View:
     __slots__ = ("_model", "_index", "_version")
 
@@ -79,6 +88,41 @@ class Block:
             return self._slice(key)
         return self._view(self._first + self._position(key))
 
+    def on(self, model):
+        """Return the block's items in another model.
+
+        The block keeps its first index and count, so it names the items
+        under the same indices in ``model``, such as those of a copy.
+
+        Parameters
+        ----------
+        model : Model
+            The model the new block belongs to.
+
+        Returns
+        -------
+        block
+            A block of the same family on ``model``.
+
+        Raises
+        ------
+        TypeError
+            When ``model`` is not a ``Model``.
+        ValueError
+            When ``model`` is closed or holds too few items of the family, or
+            when the block's own model has had a deletion since the block was
+            made.
+        """
+        self._check()
+        model = _target(model)
+        held = self._held(model)
+        end = self._first + self._count
+        if held < end:
+            noun = self._element._noun
+            needs = f"{held}, the block needs {end}"
+            raise ValueError(f"model holds too few {noun}s: {needs}")
+        return type(self)(model, self._first, self._count, model._version)
+
     def _check(self):
         _current(self._model, self._version, "block")
 
@@ -124,13 +168,17 @@ class Variables(Block):
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
     variable in order as a ``Variable``, so a block passes wherever its model
-    takes indices of variables. Any other model refuses it as indices. A block
-    made before a deletion from its model raises ``ValueError`` when used, as
-    its indices may name other variables.
+    takes indices of variables. Any other model refuses it as indices, and
+    ``on`` gives the block of the same indices in another model, such as a
+    copy. A block made before a deletion from its model raises ``ValueError``
+    when used, as its indices may name other variables.
     """
 
     __slots__ = ()
     _element = Variable
+
+    def _held(self, model):
+        return model.variable_count()
 
 
 class Function(View):
@@ -152,13 +200,17 @@ class Functions(Block):
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
     function in order as a ``Function``, so a block passes wherever its model
-    takes indices of functions. Any other model refuses it as indices. A block
-    made before a deletion from its model raises ``ValueError`` when used, as
-    its indices may name other functions.
+    takes indices of functions. Any other model refuses it as indices, and
+    ``on`` gives the block of the same indices in another model, such as a
+    copy. A block made before a deletion from its model raises ``ValueError``
+    when used, as its indices may name other functions.
     """
 
     __slots__ = ()
     _element = Function
+
+    def _held(self, model):
+        return model.function_count()
 
 
 class Constraint(View):
@@ -181,12 +233,16 @@ class Constraints(Block):
     same at any size. ``len`` gives the count, and iterating gives each
     constraint in order as a ``Constraint``, so a block passes wherever its
     model takes indices of constraints. Any other model refuses it as
-    indices. A block made before a deletion from its model raises
+    indices, and ``on`` gives the block of the same indices in another model,
+    such as a copy. A block made before a deletion from its model raises
     ``ValueError`` when used, as its indices may name other constraints.
     """
 
     __slots__ = ()
     _element = Constraint
+
+    def _held(self, model):
+        return model.constraint_count()
 
 
 def _member(model, family, name, view):
