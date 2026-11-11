@@ -1,17 +1,18 @@
 #include "biyos/biyos.h"
 
+#include "capi/arrays.hpp"
 #include "capi/entry.hpp"
 #include "core/environment.hpp"
-#include "core/error.hpp"
 #include "core/index.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
 #include <span>
-#include <string>
 #include <vector>
 
 using biyos::capi::guarded;
+using biyos::capi::length;
+using biyos::capi::listed;
 using biyos::capi::require;
 using biyos::capi::writable;
 
@@ -28,26 +29,6 @@ void create(biyos::Environment &env, biyos_model **model)
 void freeable(biyos_model &model)
 {
     writable(model);
-}
-
-std::size_t length(int count)
-{
-    if (count < 0)
-    {
-        const std::string reason = std::to_string(count) + " is negative";
-        throw biyos::Error(biyos::ErrorKind::InvalidArgument, "argument 'count'", reason);
-    }
-    return static_cast<std::size_t>(count);
-}
-
-std::span<const biyos::Index> listed(int count, const int *indices)
-{
-    const std::size_t size = length(count);
-    if (size > 0)
-    {
-        require(indices, "indices");
-    }
-    return {indices, size};
 }
 
 biyos::VariableKind kind_at(const int *kinds, std::size_t k)
