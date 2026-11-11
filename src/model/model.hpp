@@ -7,6 +7,8 @@
 #include <array>
 #include <cstddef>
 #include <span>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace biyos
@@ -71,6 +73,10 @@ Objective default_objective(Index function, Index index) noexcept;
 class Model
 {
   public:
+    const std::string *name() const noexcept;
+    void set_name(std::string_view name);
+    void del_name() noexcept;
+
     Index variable_count() const noexcept;
     const Variable &variable(Index index) const;
     std::span<const Variable> variables(Index first, Index count) const;
@@ -116,6 +122,7 @@ class Model
                 std::span<const LinearTerm> terms);
     Offset quadratic_begin(std::size_t function) const noexcept;
 
+    std::string name_;
     std::vector<Variable> variables_;
     std::vector<double> constants_;
     std::vector<Offset> ends_;

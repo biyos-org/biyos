@@ -54,6 +54,8 @@ add_library(biyos_internal STATIC
     model/functions.cpp
     model/merge.cpp
     model/model.cpp
+    model/names.cpp
+    model/naming.cpp
     model/objectives.cpp
     model/pairs.cpp
     model/quadratic.cpp
