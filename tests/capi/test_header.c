@@ -83,6 +83,49 @@ static void count(const biyos_event *event, void *user_data)
     }
 }
 
+static biyos_status use_functions(biyos_model *model)
+{
+    const double constants[2] = {1.0, 2.0};
+    const int64_t starts[3] = {0, 2, 3};
+    const int variables[3] = {1, 0, 1};
+    const double values[3] = {1.0, 2.0, 3.0};
+    int64_t offsets[3] = {-1, -1, -1};
+    int64_t needed = -1;
+    int held[3] = {-1, -1, -1};
+    double kept[3] = {0.0, 0.0, 0.0};
+    int first = -1;
+    int functions = 0;
+    if (biyos_add_functions(model, 2, constants, starts, variables, values, &first) != BIYOS_OK ||
+        first != 0 || biyos_function_count(model, &functions) != BIYOS_OK || functions != 2)
+    {
+        return BIYOS_INTERNAL_ERROR;
+    }
+    if (biyos_get_functions(model, 0, 2, NULL, offsets, 3, &needed, held, kept) != BIYOS_OK ||
+        needed != 3 || offsets[1] != 2 || held[0] != 0 || held[1] != 1)
+    {
+        return BIYOS_INTERNAL_ERROR;
+    }
+    return BIYOS_OK;
+}
+
+static biyos_status use_constraints(biyos_model *model)
+{
+    const int functions[2] = {1, 1};
+    const double lower[2] = {0.0, -1.0};
+    const int indices[1] = {1};
+    int found[2] = {-1, -1};
+    int first = -1;
+    int constraints = 0;
+    if (biyos_add_constraints(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
+        biyos_set_constraint_bounds(model, 1, indices, NULL, lower) != BIYOS_OK ||
+        biyos_constraint_count(model, &constraints) != BIYOS_OK || constraints != 2 ||
+        biyos_get_constraints(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1)
+    {
+        return BIYOS_INTERNAL_ERROR;
+    }
+    return BIYOS_OK;
+}
+
 int main(void)
 {
     biyos_status status = BIYOS_OK;
@@ -134,6 +177,10 @@ int main(void)
         biyos_variable_count(model, &variables) != BIYOS_OK || variables != 2 ||
         biyos_get_variables(model, 0, 2, found, NULL, NULL) != BIYOS_OK ||
         found[0] != BIYOS_VAR_BINARY || found[1] != BIYOS_VAR_BINARY)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    if (use_functions(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK)
     {
         status = BIYOS_INTERNAL_ERROR;
     }

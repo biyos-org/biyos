@@ -7,6 +7,7 @@
 #include "biyos/status.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
 #if defined(BIYOS_STATIC)
 #define BIYOS_API
@@ -107,6 +108,41 @@ BIYOS_API biyos_status biyos_get_variables(biyos_model *model,
                                            int *kinds,
                                            double *lower,
                                            double *upper);
+BIYOS_API biyos_status biyos_add_functions(biyos_model *model,
+                                           int count,
+                                           const double *constants,
+                                           const int64_t *starts,
+                                           const int *variables,
+                                           const double *values,
+                                           int *first);
+BIYOS_API biyos_status biyos_function_count(biyos_model *model, int *count);
+BIYOS_API biyos_status biyos_get_functions(biyos_model *model,
+                                           int first,
+                                           int count,
+                                           double *constants,
+                                           int64_t *starts,
+                                           int64_t size,
+                                           int64_t *needed,
+                                           int *variables,
+                                           double *values);
+BIYOS_API biyos_status biyos_add_constraints(biyos_model *model,
+                                             int count,
+                                             const int *functions,
+                                             const double *lower,
+                                             const double *upper,
+                                             int *first);
+BIYOS_API biyos_status biyos_set_constraint_bounds(biyos_model *model,
+                                                   int count,
+                                                   const int *indices,
+                                                   const double *lower,
+                                                   const double *upper);
+BIYOS_API biyos_status biyos_constraint_count(biyos_model *model, int *count);
+BIYOS_API biyos_status biyos_get_constraints(biyos_model *model,
+                                             int first,
+                                             int count,
+                                             int *functions,
+                                             double *lower,
+                                             double *upper);
 
 #ifdef __cplusplus
 }

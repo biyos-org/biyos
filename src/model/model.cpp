@@ -3,13 +3,14 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text.hpp"
+#include "model/checks.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <span>
 #include <string>
+#include <string_view>
 
 namespace biyos
 {
@@ -18,12 +19,7 @@ namespace
 {
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr auto kRoom = static_cast<std::size_t>((std::numeric_limits<Index>::max)());
-
-[[noreturn]] void refuse(Index index, const std::string &reason)
-{
-    throw Error(ErrorKind::InvalidArgument, "variable " + text_of(index), reason);
-}
+constexpr std::string_view kNoun = "variable";
 
 std::string interval(double lower, double upper)
 {
@@ -34,27 +30,16 @@ void check_kind(Index index, VariableKind kind)
 {
     if (std::ranges::find(kVariableKinds, kind) == kVariableKinds.end())
     {
-        refuse(index, "kind " + text_of(static_cast<int>(kind)) + " is unknown");
+        refuse(kNoun, index, "kind " + text_of(static_cast<int>(kind)) + " is unknown");
     }
 }
 
 void check_values(Index index, const Variable &variable)
 {
-    if (std::isnan(variable.lower))
+    const std::string_view fault = bound_fault(variable.lower, variable.upper);
+    if (!fault.empty())
     {
-        refuse(index, "lower bound is NaN");
-    }
-    if (std::isnan(variable.upper))
-    {
-        refuse(index, "upper bound is NaN");
-    }
-    if (std::isinf(variable.lower) && !std::signbit(variable.lower))
-    {
-        refuse(index, "lower bound is infinity");
-    }
-    if (std::isinf(variable.upper) && std::signbit(variable.upper))
-    {
-        refuse(index, "upper bound is minus infinity");
+        refuse(kNoun, index, std::string(fault));
     }
 }
 
@@ -67,7 +52,8 @@ void check_range(Index index, const Variable &variable)
     }
     const std::string bounds = interval(variable.lower, variable.upper);
     const std::string allowed = interval(range.lower, range.upper);
-    refuse(index, "bounds " + bounds + " are outside " + allowed + ", the widest of its kind");
+    const std::string reason = "bounds " + bounds + " are outside " + allowed;
+    refuse(kNoun, index, reason + ", the widest of its kind");
 }
 
 void check(Index index, const Variable &variable)
@@ -101,36 +87,20 @@ Index Model::variable_count() const noexcept
 
 const Variable &Model::variable(Index index) const
 {
-    check_index(index);
+    check_index(kNoun, index, variable_count());
     return variables_[static_cast<std::size_t>(index)];
 }
 
 std::span<const Variable> Model::variables(Index first, Index count) const
 {
-    const Index size = variable_count();
-    if (count < 0)
-    {
-        const std::string reason = text_of(count) + " is negative";
-        throw Error(ErrorKind::InvalidArgument, "argument 'count'", reason);
-    }
-    if (first < 0 || first > size)
-    {
-        refuse(first, "unknown");
-    }
-    if (count > size - first)
-    {
-        refuse(size, "unknown");
-    }
+    check_span(kNoun, first, count, variable_count());
     const auto start = static_cast<std::size_t>(first);
     return std::span(variables_).subspan(start, static_cast<std::size_t>(count));
 }
 
 void Model::add_variables(std::span<const Variable> added)
 {
-    if (added.size() > kRoom - variables_.size())
-    {
-        throw Error(ErrorKind::NoMemory, "model", "no variable index left");
-    }
+    check_count(kNoun, variables_, added.size());
     for (std::size_t k = 0; k < added.size(); ++k)
     {
         check(static_cast<Index>(variables_.size() + k), added[k]);
@@ -146,20 +116,12 @@ void Model::set_variables(std::span<const Index> indices, std::span<const Variab
     }
     for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        check_index(indices[k]);
+        check_index(kNoun, indices[k], variable_count());
         check(indices[k], changed[k]);
     }
     for (std::size_t k = 0; k < indices.size(); ++k)
     {
         variables_[static_cast<std::size_t>(indices[k])] = changed[k];
-    }
-}
-
-void Model::check_index(Index index) const
-{
-    if (index < 0 || index >= variable_count())
-    {
-        refuse(index, "unknown");
     }
 }
 

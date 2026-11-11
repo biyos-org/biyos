@@ -28,7 +28,11 @@ add_library(biyos_internal STATIC
     expr/tape.cpp
     expr/terms.cpp
     expr/value.cpp
-    model/model.cpp)
+    model/checks.cpp
+    model/constraints.cpp
+    model/functions.cpp
+    model/model.cpp
+    model/terms.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -46,9 +50,12 @@ set_target_properties(biyos_internal PROPERTIES
 biyos_set_warnings(biyos_internal)
 
 add_library(biyos
+    capi/arrays.cpp
+    capi/constraints.cpp
     capi/environment.cpp
     capi/events.cpp
     capi/format.cpp
+    capi/functions.cpp
     capi/model.cpp
     capi/options.cpp
     capi/version.cpp)

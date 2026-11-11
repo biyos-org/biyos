@@ -1,6 +1,7 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "model/model.hpp"
+#include "refusal.hpp"
 
 #include <gtest/gtest.h>
 
@@ -17,6 +18,7 @@ using biyos::Index;
 using biyos::Model;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::test::refusal;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
@@ -36,21 +38,6 @@ void expect_same(const Variable &found, const Variable &wanted)
     EXPECT_EQ(found.kind, wanted.kind);
     EXPECT_DOUBLE_EQ(found.lower, wanted.lower);
     EXPECT_DOUBLE_EQ(found.upper, wanted.upper);
-}
-
-template <typename Call> std::string refusal(Call call)
-{
-    try
-    {
-        call();
-    }
-    catch (const biyos::Error &error)
-    {
-        EXPECT_EQ(error.kind(), biyos::ErrorKind::InvalidArgument);
-        return error.what();
-    }
-    ADD_FAILURE() << "no error";
-    return "";
 }
 
 std::string add_refusal(Model &model, const Variable &variable)

@@ -3,7 +3,7 @@ from operator import index, itemgetter
 import pytest
 
 import biyos
-from biyos._arrays import variable_indices
+from biyos._arrays import indices_of
 from number import Number
 
 INFINITY = float("inf")
@@ -169,4 +169,17 @@ def test_empty(model):
 def test_sized_block(model):
     x = model.add_variables(3)
     with pytest.raises(ValueError, match="columns has length 3, not 5"):
-        variable_indices(model, "columns", x, 5)
+        indices_of(model, biyos.Variables, "columns", x, 5)
+
+
+def test_subclass(model):
+    class Mine(biyos.Variable):
+        __slots__ = ()
+
+    class Ours(biyos.Variables):
+        __slots__ = ()
+
+    model.add_variables(3)
+    model.set_variable_bounds([Mine(model, 1, model._version)], [3.0])
+    model.set_variable_bounds(Ours(model, 2, 1, model._version), [4.0])
+    assert model.get_variables()[1] == [-INFINITY, 3.0, 4.0]

@@ -2,8 +2,10 @@
 
 #include "biyos/model.h"
 #include "core/index.hpp"
+#include "expr/terms.hpp"
 
 #include <array>
+#include <cstddef>
 #include <span>
 #include <vector>
 
@@ -36,6 +38,15 @@ struct Variable
 
 Variable widest(VariableKind kind) noexcept;
 
+struct Constraint
+{
+    Index function;
+    double lower;
+    double upper;
+};
+
+void check_starts(std::span<const Offset> starts);
+
 class Model
 {
   public:
@@ -46,10 +57,33 @@ class Model
     void add_variables(std::span<const Variable> added);
     void set_variables(std::span<const Index> indices, std::span<const Variable> changed);
 
+    Index function_count() const noexcept;
+    std::span<const double> constants(Index first, Index count) const;
+    std::span<const LinearTerm> terms(Index first, Index count) const;
+
+    void check_room(std::size_t functions, Offset terms) const;
+    void add_functions(std::span<const double> constants,
+                       std::span<const Offset> starts,
+                       std::vector<LinearTerm> terms);
+
+    Index constraint_count() const noexcept;
+    const Constraint &constraint(Index index) const;
+    std::span<const Constraint> constraints(Index first, Index count) const;
+
+    void add_constraints(std::span<const Constraint> added);
+    void set_constraints(std::span<const Index> indices, std::span<const Constraint> changed);
+
   private:
-    void check_index(Index index) const;
+    Offset begin_of(std::size_t function) const noexcept;
+    void append(std::span<const double> constants,
+                std::span<const Offset> starts,
+                std::span<const LinearTerm> terms);
 
     std::vector<Variable> variables_;
+    std::vector<double> constants_;
+    std::vector<Offset> ends_;
+    std::vector<LinearTerm> terms_;
+    std::vector<Constraint> constraints_;
 };
 
 }

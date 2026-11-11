@@ -1,8 +1,11 @@
 #include "biyos/biyos.h"
+#include "doubles.hpp"
+#include "handles.hpp"
 
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>
@@ -10,34 +13,9 @@
 namespace
 {
 
-class Env
-{
-  public:
-    Env() { EXPECT_EQ(biyos_env_create(&ptr_), BIYOS_OK); }
-    ~Env() { biyos_env_free(ptr_); }
-    Env(const Env &) = delete;
-    Env &operator=(const Env &) = delete;
-
-    biyos_env *get() const { return ptr_; }
-    std::string message() const { return biyos_last_error_message(ptr_); }
-
-  private:
-    biyos_env *ptr_ = nullptr;
-};
-
-class Model
-{
-  public:
-    explicit Model(const Env &env) { EXPECT_EQ(biyos_model_create(env.get(), &ptr_), BIYOS_OK); }
-    ~Model() { biyos_model_free(ptr_); }
-    Model(const Model &) = delete;
-    Model &operator=(const Model &) = delete;
-
-    biyos_model *get() const { return ptr_; }
-
-  private:
-    biyos_model *ptr_ = nullptr;
-};
+using biyos::test::Env;
+using biyos::test::expect_doubles;
+using biyos::test::Model;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 
@@ -64,15 +42,6 @@ Columns read_all(const Model &model)
                                                     read.upper.data());
     EXPECT_EQ(status, BIYOS_OK);
     return read;
-}
-
-void expect_doubles(const std::vector<double> &found, const std::vector<double> &wanted)
-{
-    ASSERT_EQ(found.size(), wanted.size());
-    for (std::size_t k = 0; k < found.size(); ++k)
-    {
-        EXPECT_DOUBLE_EQ(found[k], wanted[k]) << "entry " << k;
-    }
 }
 
 void expect_columns(const Columns &found, const Columns &wanted)
@@ -156,6 +125,19 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(biyos_set_variable_kinds(nullptr, 1, &index, &index), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_variable_count(nullptr, &count), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_get_variables(nullptr, 0, 0, nullptr, nullptr, nullptr),
+              BIYOS_INVALID_ARGUMENT);
+    std::int64_t needed = 0;
+    EXPECT_EQ(biyos_add_functions(nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_function_count(nullptr, &count), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_get_functions(nullptr, 0, 0, nullptr, nullptr, 0, &needed, nullptr, nullptr),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_add_constraints(nullptr, 1, &index, nullptr, nullptr, nullptr),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_set_constraint_bounds(nullptr, 1, &index, &bound, &bound),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_constraint_count(nullptr, &count), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_get_constraints(nullptr, 0, 0, nullptr, nullptr, nullptr),
               BIYOS_INVALID_ARGUMENT);
 }
 

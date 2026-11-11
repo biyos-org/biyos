@@ -1,8 +1,8 @@
-from ctypes import c_double, c_int
+from ctypes import c_double, c_int, c_int64
 from numbers import Real
 
-from biyos._blocks import Variables, variable_index
-from biyos._integers import integer
+from biyos._blocks import Block, index_of, range_of
+from biyos._integers import integer, offset
 
 
 def _sized(name, values, count):
@@ -45,10 +45,31 @@ def ints(name, values, count):
     return (c_int * count)(*(integer(entry, value) for value in values))
 
 
-def variable_indices(model, name, values, count):
+def indices_of(model, family, name, values, count):
+    if values is None:
+        return None
     _sized(name, values, count)
-    if isinstance(values, Variables):
-        return (c_int * count)(*values._indices(model, name))
+    if isinstance(values, Block):
+        return (c_int * count)(*range_of(model, family, name, values))
     entry = f"an entry of {name}"
-    found = (variable_index(model, entry, value) for value in values)
+    found = (index_of(model, family, entry, value) for value in values)
     return (c_int * count)(*found)
+
+
+def _ordered(name, starts):
+    if len(starts) > 0 and starts[0] != 0:
+        raise ValueError(f"{name} begins at {starts[0]}, not 0")
+    for k in range(1, len(starts)):
+        if starts[k] < starts[k - 1]:
+            fall = f"{starts[k - 1]} to {starts[k]}"
+            raise ValueError(f"{name} decreases from {fall} at entry {k}")
+
+
+def offsets(name, values, count):
+    if values is None:
+        return None
+    _sized(name, values, count)
+    entry = f"an entry of {name}"
+    copied = (c_int64 * count)(*(offset(entry, value) for value in values))
+    _ordered(name, copied)
+    return copied
