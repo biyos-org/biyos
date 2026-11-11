@@ -17,10 +17,12 @@ add_library(biyos_internal STATIC
     core/utf8.cpp
     core/version.cpp
     expr/builder.cpp
+    expr/canonical.cpp
     expr/compact.cpp
     expr/graph.cpp
     expr/node.cpp
     expr/parents.cpp
+    expr/terms.cpp
     model/model.cpp)
 
 target_include_directories(biyos_internal PUBLIC
