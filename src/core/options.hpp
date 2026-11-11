@@ -78,8 +78,6 @@ struct EnumRule
     std::span<const std::string_view> values;
 };
 
-// 0.0.0 < since < deprecated < retired <= the project version, each numbered, and only a deprecated
-// option is retired.
 struct Versions
 {
     Version since;
@@ -87,8 +85,6 @@ struct Versions
     std::optional<Version> retired = std::nullopt;
 };
 
-// A deprecated row names a replacement, another row that is not deprecated. A current row names
-// none.
 struct OptionSpec
 {
     Option id;
@@ -105,9 +101,6 @@ std::string_view name_of(Option option);
 OptionKind kind_of(Option option);
 Versions versions_of(Option option);
 
-// A value for each row of an option table, which outlives the store unchanged. The built-in table
-// is checked at compile time, a given one when the store is built. Setting a deprecated option
-// warns on the store's event stream.
 class Options
 {
   public:

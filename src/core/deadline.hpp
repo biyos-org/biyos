@@ -9,9 +9,6 @@
 namespace biyos
 {
 
-// The time limits of one solve, read once when it starts. A limit is its seconds times 1e9 in
-// double, rounded up to whole nanoseconds, since elapsed time is whole. A product of 2^63 or more,
-// infinity included, is no limit, and its clock is never read.
 class Deadline
 {
   public:

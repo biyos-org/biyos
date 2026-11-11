@@ -6,9 +6,6 @@
 namespace biyos
 {
 
-// A name fixed at compile time, such as a phase or a module. The constructor is consteval and
-// reads the text, so only a constant array binds: a local or mutable buffer does not compile, and
-// the view never dangles.
 class FixedName
 {
   public:

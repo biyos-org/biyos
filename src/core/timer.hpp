@@ -16,15 +16,6 @@
 namespace biyos
 {
 
-// Time by phase, nested as Timer scopes nest, with a phase event from the timer's module as each
-// scope begins and ends. A node is keyed by parent and name, so a phase entered again under one
-// parent adds its wall time, CPU time and count to the same node. In the tree only a node's first
-// entry allocates; a phase subscriber's events allocate as every event does. The time spent
-// delivering phase events is left out of every node, so subscribing never changes the tree. A
-// node left while it is not current is only closed, and leaving the current one moves to its
-// nearest open ancestor, so timers destroyed out of order keep the nesting. A Timer reads both
-// clocks before entering and throws if the CPU time is unreadable, leaving the tree unchanged. On
-// leaving, an unreadable CPU time counts as none, since a destructor cannot throw.
 class TimingTree
 {
   public:

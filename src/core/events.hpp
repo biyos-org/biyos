@@ -57,11 +57,6 @@ struct Event
 
 using Subscriber = std::function<void(const Event &)>;
 
-// Delivery follows subscription order. A subscriber may subscribe or unsubscribe during delivery:
-// each subscriber has its own allocation, so none moves while it runs, removal waits until the
-// outermost delivery ends, and a removed subscriber is destroyed only after the list is compacted.
-// An exception from a fill or a subscriber is dropped, so observing never changes a call. An
-// event's time is the wall time elapsed since the stream was made.
 class Events
 {
   public:

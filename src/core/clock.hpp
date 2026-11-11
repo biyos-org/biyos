@@ -5,8 +5,6 @@
 namespace biyos
 {
 
-// Wall time is monotonic. CPU time is the process's, every thread included. Each counts from an
-// origin of the clock's choosing, so only differences mean anything.
 class Clock
 {
   public:
