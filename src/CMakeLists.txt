@@ -29,6 +29,7 @@ add_library(biyos_internal STATIC
     expr/terms.cpp
     expr/value.cpp
     model/checks.cpp
+    model/constraints.cpp
     model/functions.cpp
     model/model.cpp
     model/terms.cpp)

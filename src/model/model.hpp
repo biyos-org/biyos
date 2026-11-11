@@ -38,6 +38,13 @@ struct Variable
 
 Variable widest(VariableKind kind) noexcept;
 
+struct Constraint
+{
+    Index function;
+    double lower;
+    double upper;
+};
+
 void check_starts(std::span<const Offset> starts);
 
 class Model
@@ -59,6 +66,13 @@ class Model
                        std::span<const Offset> starts,
                        std::vector<LinearTerm> terms);
 
+    Index constraint_count() const noexcept;
+    const Constraint &constraint(Index index) const;
+    std::span<const Constraint> constraints(Index first, Index count) const;
+
+    void add_constraints(std::span<const Constraint> added);
+    void set_constraints(std::span<const Index> indices, std::span<const Constraint> changed);
+
   private:
     Offset begin_of(std::size_t function) const noexcept;
     void append(std::span<const double> constants,
@@ -69,6 +83,7 @@ class Model
     std::vector<double> constants_;
     std::vector<Offset> ends_;
     std::vector<LinearTerm> terms_;
+    std::vector<Constraint> constraints_;
 };
 
 }
