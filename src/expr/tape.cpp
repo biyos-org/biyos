@@ -4,8 +4,8 @@
 #include "core/index.hpp"
 #include "core/text.hpp"
 #include "expr/graph.hpp"
-#include "expr/intervals.hpp"
 #include "expr/layout.hpp"
+#include "expr/locator.hpp"
 #include "expr/node.hpp"
 #include "expr/plan.hpp"
 
@@ -155,7 +155,7 @@ Block Compiler::compile(Offset index, std::span<const Offset> outputs, Offset fi
         .weights = {},
         .loads = {},
         .outputs = {},
-        .intervals = {},
+        .runs = {},
         .starts = {},
     };
     block.instructions.reserve(layout_.nodes().size());
@@ -280,7 +280,7 @@ std::span<const Block> Tape::blocks() const noexcept
     return blocks_;
 }
 
-std::span<const Interval> Tape::intervals(Offset root) const
+std::span<const Run> Tape::runs(Offset root) const
 {
     if (root < 0 || root >= roots_)
     {
@@ -292,7 +292,7 @@ std::span<const Interval> Tape::intervals(Offset root) const
     const std::size_t output = at(root - block.first);
     const Offset begin = block.starts[output];
     const Offset end = block.starts[output + 1];
-    return std::span(block.intervals).subspan(at(begin), at(end - begin));
+    return std::span(block.runs).subspan(at(begin), at(end - begin));
 }
 
 }

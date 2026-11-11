@@ -112,9 +112,9 @@ std::vector<std::uint32_t> targets(const Block &block)
 Spans spans(const Tape &tape, Offset root)
 {
     Spans found;
-    for (const biyos::Interval &interval : tape.intervals(root))
+    for (const biyos::Run &run : tape.runs(root))
     {
-        found.emplace_back(interval.begin, interval.end);
+        found.emplace_back(run.begin, run.end);
     }
     return found;
 }
@@ -256,7 +256,7 @@ TEST(TapeTest, Budget)
     EXPECT_EQ(sizes(Tape(large, halves)), (Counts{2, 1}));
 }
 
-TEST(TapeTest, Intervals)
+TEST(TapeTest, Runs)
 {
     Graph graph;
     const Offset shared = unary(graph, Operator::Exp, graph.add_variable(0));
@@ -287,8 +287,8 @@ TEST(TapeTest, Intervals)
     EXPECT_EQ(spans(split, 0), (Spans{{0, 3}}));
     EXPECT_EQ(spans(split, 1), (Spans{{0, 1}}));
     EXPECT_TRUE(spans(split, 2).empty());
-    EXPECT_EQ(refusal([&] { split.intervals(3); }), "invalid argument: tape: root 3 is unknown");
-    EXPECT_EQ(refusal([&] { split.intervals(-1); }), "invalid argument: tape: root -1 is unknown");
+    EXPECT_EQ(refusal([&] { split.runs(3); }), "invalid argument: tape: root 3 is unknown");
+    EXPECT_EQ(refusal([&] { split.runs(-1); }), "invalid argument: tape: root -1 is unknown");
 
     Graph lattice;
     Offset top = lattice.add_variable(0);
@@ -355,5 +355,5 @@ TEST(TapeTest, NoRoots)
     EXPECT_TRUE(tape.blocks().empty());
     EXPECT_EQ(tape.roots(), 0);
     EXPECT_EQ(tape.width(), 0U);
-    EXPECT_EQ(refusal([&] { tape.intervals(0); }), "invalid argument: tape: root 0 is unknown");
+    EXPECT_EQ(refusal([&] { tape.runs(0); }), "invalid argument: tape: root 0 is unknown");
 }

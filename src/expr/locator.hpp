@@ -32,14 +32,14 @@ class Locator
     void join(std::size_t position);
     void enter(Offset node, std::size_t walk);
     void keep(std::size_t position);
-    std::span<const Interval> runs_of(Offset node) const noexcept;
+    std::span<const Run> runs_of(Offset node) const noexcept;
 
     const Graph &graph_;
     const Layout &layout_;
     std::vector<Offset> uses_;
     std::vector<Runs> joins_;
-    std::vector<Interval> runs_;
-    std::vector<Interval> pieces_;
+    std::vector<Run> runs_;
+    std::vector<Run> pieces_;
     std::vector<std::size_t> seen_;
     std::vector<Offset> stack_;
 };

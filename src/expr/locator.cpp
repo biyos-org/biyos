@@ -1,4 +1,4 @@
-#include "expr/intervals.hpp"
+#include "expr/locator.hpp"
 
 #include "core/index.hpp"
 #include "expr/graph.hpp"
@@ -32,7 +32,7 @@ Offset count_of(std::size_t value) noexcept
     return static_cast<Offset>(value);
 }
 
-Interval point(std::size_t position) noexcept
+Run point(std::size_t position) noexcept
 {
     const auto begin = static_cast<std::uint32_t>(position);
     return {.begin = begin, .end = begin + 1};
@@ -59,9 +59,9 @@ void Locator::locate(std::span<const Offset> outputs, Block &block)
     block.starts.push_back(0);
     for (const Offset output : outputs)
     {
-        const std::span<const Interval> runs = runs_of(output);
-        block.intervals.insert(block.intervals.end(), runs.begin(), runs.end());
-        block.starts.push_back(count_of(block.intervals.size()));
+        const std::span<const Run> runs = runs_of(output);
+        block.runs.insert(block.runs.end(), runs.begin(), runs.end());
+        block.starts.push_back(count_of(block.runs.size()));
     }
 }
 
@@ -124,16 +124,16 @@ void Locator::enter(Offset node, std::size_t walk)
     if (seen_[place] != walk)
     {
         seen_[place] = walk;
-        const std::span<const Interval> runs = runs_of(node);
+        const std::span<const Run> runs = runs_of(node);
         pieces_.insert(pieces_.end(), runs.begin(), runs.end());
     }
 }
 
 void Locator::keep(std::size_t position)
 {
-    std::ranges::sort(pieces_, {}, &Interval::begin);
+    std::ranges::sort(pieces_, {}, &Run::begin);
     const std::size_t first = runs_.size();
-    for (const Interval &piece : pieces_)
+    for (const Run &piece : pieces_)
     {
         if (runs_.size() > first && piece.begin <= runs_.back().end)
         {
@@ -145,7 +145,7 @@ void Locator::keep(std::size_t position)
     joins_[position] = {.first = count_of(first), .count = count_of(runs_.size() - first)};
 }
 
-std::span<const Interval> Locator::runs_of(Offset node) const noexcept
+std::span<const Run> Locator::runs_of(Offset node) const noexcept
 {
     const Offset position = layout_.position(node);
     if (position == kUnset)
