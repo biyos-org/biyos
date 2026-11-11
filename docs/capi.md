@@ -448,6 +448,44 @@ biyos_status biyos_get_variables(biyos_model *model, int first, int count, int *
 
 Writes to entry `j` of each array, for each `j` below `count`, the kind and the lower and upper bounds of variable `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of variables.
 
+## Expressions
+
+`biyos/expr.h` numbers the operators of expressions, which form the nonlinear parts of functions. An expression is a node of the model's graph, an operator applied to its children, and a node that several parents share is stored once. No call takes the operators yet.
+
+| Macro | Value | Node | Children |
+| --- | --- | --- | --- |
+| `BIYOS_OP_CONSTANT` | 1 | a constant `c` | none |
+| `BIYOS_OP_VARIABLE` | 2 | a variable `x_j` | none |
+| `BIYOS_OP_SUM` | 3 | `c + a_1 e_1 + ... + a_n e_n`, with a constant `c` and a coefficient `a_i` for each child `e_i` | one or more |
+| `BIYOS_OP_PRODUCT` | 4 | `c e_1 ... e_n`, with a coefficient `c` | one or more |
+| `BIYOS_OP_NEGATION` | 5 | `-e` | one |
+| `BIYOS_OP_DIVISION` | 6 | `e_1 / e_2` | two |
+| `BIYOS_OP_CONSTANT_POWER` | 7 | `e^c`, with a constant exponent `c` | one |
+| `BIYOS_OP_POWER` | 8 | `e_1^e_2` | two |
+| `BIYOS_OP_EXP` | 9 | `exp(e)` | one |
+| `BIYOS_OP_LOG` | 10 | `log(e)`, the natural logarithm | one |
+| `BIYOS_OP_SQRT` | 11 | `sqrt(e)` | one |
+| `BIYOS_OP_SIN` | 12 | `sin(e)` | one |
+| `BIYOS_OP_COS` | 13 | `cos(e)` | one |
+| `BIYOS_OP_TAN` | 14 | `tan(e)` | one |
+| `BIYOS_OP_ABS` | 15 | `abs(e)`, the absolute value | one |
+| `BIYOS_OP_MAX` | 16 | `max(e_1, ..., e_n)` | one or more |
+| `BIYOS_OP_MIN` | 17 | `min(e_1, ..., e_n)` | one or more |
+| `BIYOS_OP_ASIN` | 18 | `asin(e)` | one |
+| `BIYOS_OP_ACOS` | 19 | `acos(e)` | one |
+| `BIYOS_OP_ATAN` | 20 | `atan(e)` | one |
+| `BIYOS_OP_SINH` | 21 | `sinh(e)` | one |
+| `BIYOS_OP_COSH` | 22 | `cosh(e)` | one |
+| `BIYOS_OP_TANH` | 23 | `tanh(e)` | one |
+| `BIYOS_OP_ASINH` | 24 | `asinh(e)` | one |
+| `BIYOS_OP_ACOSH` | 25 | `acosh(e)` | one |
+| `BIYOS_OP_ATANH` | 26 | `atanh(e)` | one |
+| `BIYOS_OP_ENTROPY` | 27 | `e log(e)` | one |
+| `BIYOS_OP_SIGN_POWER` | 28 | `sign(e) abs(e)^c`, with a constant exponent `c > 0` | one |
+| `BIYOS_OP_ERF` | 29 | `erf(e)`, the error function | one |
+
+Every constant, coefficient and exponent of an expression is finite.
+
 ## Solve status
 
 `biyos/status.h` holds the numbers that describe how a solve ended. The termination says why the solve stopped, a result status says what a returned point is, the primal point and the dual point each having one, and the claim says what was proved. They are kept apart, so a result never says more than its method proved. None of them is an error code: a limit reached or an infeasible model is an outcome, not a failed call. No call returns them yet, since biyos solves nothing.

@@ -1,4 +1,5 @@
 #include "biyos/events.h"
+#include "biyos/expr.h"
 #include "biyos/model.h"
 #include "biyos/options.h"
 #include "biyos/status.h"
@@ -60,6 +61,17 @@
 #if !defined(BIYOS_VAR_CONTINUOUS) || BIYOS_VAR_CONTINUOUS != 1 || BIYOS_VAR_BINARY != 2 ||        \
     BIYOS_VAR_INTEGER != 3 || BIYOS_VAR_SEMICONTINUOUS != 4 || BIYOS_VAR_SEMIINTEGER != 5
 #error "a public variable kind changed"
+#endif
+#if !defined(BIYOS_OP_CONSTANT) || BIYOS_OP_CONSTANT != 1 || BIYOS_OP_VARIABLE != 2 ||             \
+    BIYOS_OP_SUM != 3 || BIYOS_OP_PRODUCT != 4 || BIYOS_OP_NEGATION != 5 ||                        \
+    BIYOS_OP_DIVISION != 6 || BIYOS_OP_CONSTANT_POWER != 7 || BIYOS_OP_POWER != 8 ||               \
+    BIYOS_OP_EXP != 9 || BIYOS_OP_LOG != 10 || BIYOS_OP_SQRT != 11 || BIYOS_OP_SIN != 12 ||        \
+    BIYOS_OP_COS != 13 || BIYOS_OP_TAN != 14 || BIYOS_OP_ABS != 15 || BIYOS_OP_MAX != 16 ||        \
+    BIYOS_OP_MIN != 17 || BIYOS_OP_ASIN != 18 || BIYOS_OP_ACOS != 19 || BIYOS_OP_ATAN != 20 ||     \
+    BIYOS_OP_SINH != 21 || BIYOS_OP_COSH != 22 || BIYOS_OP_TANH != 23 || BIYOS_OP_ASINH != 24 ||   \
+    BIYOS_OP_ACOSH != 25 || BIYOS_OP_ATANH != 26 || BIYOS_OP_ENTROPY != 27 ||                      \
+    BIYOS_OP_SIGN_POWER != 28 || BIYOS_OP_ERF != 29
+#error "a public operator changed"
 #endif
 
 static void count(const biyos_event *event, void *user_data)
