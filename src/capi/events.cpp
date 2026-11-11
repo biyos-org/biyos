@@ -29,8 +29,12 @@ struct Forwarder
     }
 };
 
-void subscribe(biyos::Environment &env, biyos_subscriber subscriber, void *user_data, int kind,
-               int lowest, int *subscription)
+void subscribe(biyos::Environment &env,
+               biyos_subscriber subscriber,
+               void *user_data,
+               int kind,
+               int lowest,
+               int *subscription)
 {
     biyos::Events &events = writable(env).events();
     const Forwarder forwarder{&env, require(subscriber, "subscriber"), user_data};
@@ -58,8 +62,12 @@ const biyos::Field *field_of(const biyos_event *event, int field)
 
 }
 
-biyos_status biyos_subscribe(biyos_env *env, biyos_subscriber subscriber, void *user_data, int kind,
-                             int lowest, int *subscription)
+biyos_status biyos_subscribe(biyos_env *env,
+                             biyos_subscriber subscriber,
+                             void *user_data,
+                             int kind,
+                             int lowest,
+                             int *subscription)
 {
     return guarded<subscribe>(env, subscriber, user_data, kind, lowest, subscription);
 }

@@ -32,8 +32,12 @@ class Checker
     template <typename Holds, typename Values>
         requires std::predicate<Holds &> && std::invocable<Values &> &&
                  std::convertible_to<std::invoke_result_t<Values &>, std::string_view>
-    void require(CheckLevel level, ErrorKind kind, std::string_view invariant,
-                 std::string_view object, Holds &&holds, Values &&values) const
+    void require(CheckLevel level,
+                 ErrorKind kind,
+                 std::string_view invariant,
+                 std::string_view object,
+                 Holds &&holds,
+                 Values &&values) const
     {
         if (active(level) && !holds())
         {
@@ -42,7 +46,9 @@ class Checker
     }
 
   private:
-    [[noreturn]] void fail(ErrorKind kind, std::string_view invariant, std::string_view object,
+    [[noreturn]] void fail(ErrorKind kind,
+                           std::string_view invariant,
+                           std::string_view object,
                            std::string_view values) const;
 
     Environment &env_;

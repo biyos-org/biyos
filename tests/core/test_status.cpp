@@ -19,18 +19,29 @@ using biyos::TerminationStatus;
 constexpr int kLargest = 999;
 
 constexpr std::array kTerminations{
-    TerminationStatus::NotSolved,         TerminationStatus::Optimal,
-    TerminationStatus::LocallySolved,     TerminationStatus::AlmostLocallySolved,
-    TerminationStatus::IterationLimit,    TerminationStatus::TimeLimit,
-    TerminationStatus::CpuTimeLimit,      TerminationStatus::EvaluationLimit,
-    TerminationStatus::UserStop,          TerminationStatus::Infeasible,
-    TerminationStatus::LocallyInfeasible, TerminationStatus::Unbounded,
-    TerminationStatus::SlowProgress,      TerminationStatus::NumericalTrouble,
+    TerminationStatus::NotSolved,
+    TerminationStatus::Optimal,
+    TerminationStatus::LocallySolved,
+    TerminationStatus::AlmostLocallySolved,
+    TerminationStatus::IterationLimit,
+    TerminationStatus::TimeLimit,
+    TerminationStatus::CpuTimeLimit,
+    TerminationStatus::EvaluationLimit,
+    TerminationStatus::UserStop,
+    TerminationStatus::Infeasible,
+    TerminationStatus::LocallyInfeasible,
+    TerminationStatus::Unbounded,
+    TerminationStatus::SlowProgress,
+    TerminationStatus::NumericalTrouble,
 };
 
 constexpr std::array kResults{
-    ResultStatus::None,       ResultStatus::Feasible,    ResultStatus::NearlyFeasible,
-    ResultStatus::Infeasible, ResultStatus::Certificate, ResultStatus::NearlyCertificate,
+    ResultStatus::None,
+    ResultStatus::Feasible,
+    ResultStatus::NearlyFeasible,
+    ResultStatus::Infeasible,
+    ResultStatus::Certificate,
+    ResultStatus::NearlyCertificate,
     ResultStatus::Unknown,
 };
 

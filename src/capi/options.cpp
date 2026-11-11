@@ -101,7 +101,10 @@ biyos_status biyos_option_kind(biyos_env *env, int option, int *kind)
     return guarded<option_kind>(env, option, kind);
 }
 
-biyos_status biyos_option_versions(biyos_env *env, int option, int *since, int *deprecated,
+biyos_status biyos_option_versions(biyos_env *env,
+                                   int option,
+                                   int *since,
+                                   int *deprecated,
                                    int *retired)
 {
     return guarded<option_versions>(env, option, since, deprecated, retired);

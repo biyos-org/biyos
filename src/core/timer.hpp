@@ -49,7 +49,8 @@ class TimingTree
     std::size_t add(std::string_view name);
     std::size_t enter(std::string_view name);
     std::size_t open_ancestor(std::size_t node) const noexcept;
-    void leave(std::size_t node, std::chrono::nanoseconds wall,
+    void leave(std::size_t node,
+               std::chrono::nanoseconds wall,
                std::chrono::nanoseconds cpu) noexcept;
 
     std::vector<Node> nodes_;
@@ -68,7 +69,8 @@ class Timer
     Timer &operator=(const Timer &) = delete;
 
   private:
-    void announce(std::string_view edge, std::chrono::nanoseconds wall,
+    void announce(std::string_view edge,
+                  std::chrono::nanoseconds wall,
                   std::chrono::nanoseconds cpu) noexcept;
 
     const Clock &clock_;

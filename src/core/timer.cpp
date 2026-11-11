@@ -26,8 +26,12 @@ std::optional<nanoseconds> cpu_of(const Clock &clock) noexcept
     }
 }
 
-void describe(Event &event, std::string_view module, std::string_view name, std::string_view edge,
-              nanoseconds wall, nanoseconds cpu)
+void describe(Event &event,
+              std::string_view module,
+              std::string_view name,
+              std::string_view edge,
+              nanoseconds wall,
+              nanoseconds cpu)
 {
     event.module.assign(module);
     event.text.assign(name);

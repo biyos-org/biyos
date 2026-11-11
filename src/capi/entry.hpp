@@ -31,7 +31,8 @@ template <typename T> T *require(T *pointer, std::string_view name)
     if (pointer == nullptr)
     {
         throw biyos::Error(biyos::ErrorKind::InvalidArgument,
-                           "argument '" + std::string(name) + "'", "is null");
+                           "argument '" + std::string(name) + "'",
+                           "is null");
     }
     return pointer;
 }

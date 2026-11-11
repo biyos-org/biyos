@@ -90,7 +90,9 @@ TEST(VariableTest, EachKind)
 
 TEST(VariableTest, BinaryBounds)
 {
-    const std::vector<Variable> kept{binary(0.0, 1.0), binary(0.0, 0.0), binary(1.0, 1.0),
+    const std::vector<Variable> kept{binary(0.0, 1.0),
+                                     binary(0.0, 0.0),
+                                     binary(1.0, 1.0),
                                      binary(0.25, 0.75)};
     Model model;
     model.add_variables(kept);
@@ -104,7 +106,8 @@ TEST(VariableTest, BinaryBounds)
 
 TEST(VariableTest, BinaryChange)
 {
-    const std::vector<Variable> added{continuous(0.0, 5.0), continuous(0.0, 1.0),
+    const std::vector<Variable> added{continuous(0.0, 5.0),
+                                      continuous(0.0, 1.0),
                                       continuous(-kInfinity, kInfinity)};
     Model model;
     model.add_variables(added);
@@ -122,7 +125,8 @@ TEST(VariableTest, BinaryChange)
 
 TEST(VariableTest, Infinities)
 {
-    const std::vector<Variable> kept{continuous(-kInfinity, kInfinity), continuous(-kInfinity, 0.0),
+    const std::vector<Variable> kept{continuous(-kInfinity, kInfinity),
+                                     continuous(-kInfinity, 0.0),
                                      continuous(0.0, kInfinity)};
     Model model;
     model.add_variables(kept);
@@ -211,7 +215,8 @@ TEST(VariableTest, LastWins)
     Model model;
     model.add_variables(added);
     const std::vector<Index> indices{1, 0, 1};
-    const std::vector<Variable> changed{continuous(1.0, 2.0), continuous(3.0, 4.0),
+    const std::vector<Variable> changed{continuous(1.0, 2.0),
+                                        continuous(3.0, 4.0),
                                         continuous(5.0, 6.0)};
     model.set_variables(indices, changed);
     expect_same(model.variable(0), changed[1]);
@@ -220,7 +225,8 @@ TEST(VariableTest, LastWins)
 
 TEST(VariableTest, ReadRange)
 {
-    const std::vector<Variable> added{continuous(0.0, 1.0), continuous(2.0, 3.0),
+    const std::vector<Variable> added{continuous(0.0, 1.0),
+                                      continuous(2.0, 3.0),
                                       continuous(4.0, 5.0)};
     Model model;
     model.add_variables(added);

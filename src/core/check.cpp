@@ -19,7 +19,10 @@ std::string message_of(std::string_view invariant, std::string_view values)
     return message;
 }
 
-void describe(Event &event, std::string_view module, const Error &error, std::string_view invariant,
+void describe(Event &event,
+              std::string_view module,
+              const Error &error,
+              std::string_view invariant,
               std::string_view values)
 {
     event.module.assign(module);
@@ -36,7 +39,9 @@ Checker::Checker(Environment &env, std::string_view module)
 {
 }
 
-void Checker::fail(ErrorKind kind, std::string_view invariant, std::string_view object,
+void Checker::fail(ErrorKind kind,
+                   std::string_view invariant,
+                   std::string_view object,
                    std::string_view values) const
 {
     const Error error(kind, std::string(object), message_of(invariant, values));

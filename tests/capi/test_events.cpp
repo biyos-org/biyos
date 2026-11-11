@@ -89,7 +89,10 @@ void free_inside(const biyos_event *, void *user_data)
     probe->message = biyos_last_error_message(probe->env);
 }
 
-biyos_status listen(biyos_env *env, biyos_subscriber subscriber, void *user_data, int lowest,
+biyos_status listen(biyos_env *env,
+                    biyos_subscriber subscriber,
+                    void *user_data,
+                    int lowest,
                     int *id)
 {
     return biyos_subscribe(env, subscriber, user_data, BIYOS_EVENT_MESSAGE, lowest, id);
@@ -171,8 +174,8 @@ TEST(CApiTest, ReadOnly)
     ASSERT_EQ(listen(env.get(), change, &attempt, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
     fail(env);
     const biyos_status refused = BIYOS_INVALID_ARGUMENT;
-    const std::vector<biyos_status> statuses{refused, refused, refused, refused,
-                                             refused, refused, BIYOS_OK};
+    const std::vector<biyos_status>
+        statuses{refused, refused, refused, refused, refused, refused, BIYOS_OK};
     const std::string reason =
         "invalid argument: environment: is read-only while delivering an event";
     EXPECT_EQ(attempt.statuses, statuses);
