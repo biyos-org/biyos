@@ -64,6 +64,13 @@ class Model
                        std::span<const Offset> starts,
                        std::vector<LinearTerm> terms);
 
+    std::span<const QuadraticTerm> quadratic_terms(Index first, Index count) const;
+
+    void check_quadratic_room(Offset terms) const;
+    void add_quadratic_terms(std::span<const Index> functions,
+                             std::span<const Offset> starts,
+                             std::vector<QuadraticTerm> terms);
+
     Index constraint_count() const noexcept;
     const Constraint &constraint(Index index) const;
     std::span<const Constraint> constraints(Index first, Index count) const;
@@ -76,11 +83,14 @@ class Model
     void append(std::span<const double> constants,
                 std::span<const Offset> starts,
                 std::span<const LinearTerm> terms);
+    Offset quadratic_begin(std::size_t function) const noexcept;
 
     std::vector<Variable> variables_;
     std::vector<double> constants_;
     std::vector<Offset> ends_;
     std::vector<LinearTerm> terms_;
+    std::vector<Offset> quadratic_ends_;
+    std::vector<QuadraticTerm> quadratic_terms_;
     std::vector<Constraint> constraints_;
 };
 

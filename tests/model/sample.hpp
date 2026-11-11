@@ -10,6 +10,13 @@
 namespace biyos::test
 {
 
+struct Quadratic
+{
+    std::vector<Index> functions;
+    std::vector<Offset> starts;
+    std::vector<QuadraticTerm> terms;
+};
+
 struct Parts
 {
     std::vector<Variable> variables;

@@ -33,7 +33,10 @@ add_library(biyos_internal STATIC
     model/compressed.cpp
     model/constraints.cpp
     model/functions.cpp
+    model/merge.cpp
     model/model.cpp
+    model/pairs.cpp
+    model/quadratic.cpp
     model/terms.cpp)
 
 target_include_directories(biyos_internal PUBLIC
