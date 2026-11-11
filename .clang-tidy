@@ -27,7 +27,7 @@ CheckOptions:
   readability-identifier-naming.EnumCase: CamelCase
   readability-identifier-naming.EnumConstantCase: CamelCase
   readability-identifier-naming.TypeAliasCase: CamelCase
-  readability-identifier-naming.TypeAliasIgnoredRegexp: '^(value_type|size_type|difference_type|reference|const_reference|pointer|const_pointer|iterator|const_iterator|iterator_category|iterator_concept|element_type)$'
+  readability-identifier-naming.TypeAliasIgnoredRegexp: '^(value_type|size_type|difference_type|reference|const_reference|pointer|const_pointer|iterator|const_iterator|iterator_category|iterator_concept|element_type|is_transparent)$'
   readability-identifier-naming.TypedefCase: CamelCase
   readability-identifier-naming.TypedefIgnoredRegexp: '^BIYOS_.*'
   readability-identifier-naming.ConceptCase: lower_case
