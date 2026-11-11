@@ -18,6 +18,7 @@ struct biyos_env
 struct biyos_model
 {
     explicit biyos_model(biyos::Environment &env) : handle(env) {}
+    biyos_model(biyos::Environment &env, const biyos::Model &model) : handle(env), core(model) {}
 
     biyos::Environment::Handle handle;
     biyos::Model core;
@@ -37,14 +38,19 @@ template <typename T> T *require(T *pointer, std::string_view name)
     return pointer;
 }
 
-inline biyos::Environment &writable(biyos::Environment &env)
+inline biyos::Environment &idle(biyos::Environment &env, std::string_view object)
 {
     if (env.events().delivering())
     {
         const std::string reason = "is read-only while delivering an event";
-        throw biyos::Error(biyos::ErrorKind::InvalidArgument, "environment", reason);
+        throw biyos::Error(biyos::ErrorKind::InvalidArgument, std::string(object), reason);
     }
     return env;
+}
+
+inline biyos::Environment &writable(biyos::Environment &env)
+{
+    return idle(env, "environment");
 }
 
 inline biyos::Model &writable(biyos_model &model)

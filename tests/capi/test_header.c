@@ -126,6 +126,23 @@ static biyos_status use_constraints(biyos_model *model)
     return BIYOS_OK;
 }
 
+static biyos_status use_copy(biyos_env *env, biyos_model *model)
+{
+    biyos_model *copy = NULL;
+    int constraints = 0;
+    biyos_status status = biyos_model_copy(model, env, &copy);
+    if (status == BIYOS_OK &&
+        (biyos_constraint_count(copy, &constraints) != BIYOS_OK || constraints != 2))
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    if (biyos_model_free(copy) != BIYOS_OK)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    return status;
+}
+
 int main(void)
 {
     biyos_status status = BIYOS_OK;
@@ -180,7 +197,8 @@ int main(void)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (use_functions(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK)
+    if (use_functions(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK ||
+        use_copy(env, model) != BIYOS_OK)
     {
         status = BIYOS_INTERNAL_ERROR;
     }

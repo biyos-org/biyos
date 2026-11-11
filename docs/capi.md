@@ -398,6 +398,14 @@ biyos_status biyos_model_create(biyos_env *env, biyos_model **model);
 
 Creates a model with no variables on `env` and writes it to `*model`. On failure it sets `*model` to null.
 
+### `biyos_model_copy`
+
+```c
+biyos_status biyos_model_copy(biyos_model *model, biyos_env *env, biyos_model **copy);
+```
+
+Creates a copy of `model` on `env` and writes it to `*copy`. On failure it sets `*copy` to null. `env` may be the environment of `model` or another one. The copy holds the same variables, functions and constraints as `model`, under the same indices, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of `model` and the copy may be freed first. The call reads `model` and changes `env`, so no other thread may use either environment while it runs. It may run while the environment of `model` delivers an event, and returns `BIYOS_INVALID_ARGUMENT` while `env` does. A failure keeps its message on the environment of `model`, as for every call on a model.
+
 ### `biyos_model_free`
 
 ```c

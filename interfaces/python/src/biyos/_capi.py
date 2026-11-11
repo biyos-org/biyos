@@ -80,6 +80,8 @@ def _declare_formats(lib):
 
 def _declare_model(lib, ints, doubles):
     _declare(lib, "biyos_model_create", c_int, c_void_p, POINTER(c_void_p))
+    copy = (c_void_p, c_void_p, POINTER(c_void_p))
+    _declare(lib, "biyos_model_copy", c_int, *copy)
     _declare(lib, "biyos_model_free", c_int, c_void_p)
     variables = (c_void_p, c_int, ints, doubles, doubles)
     _declare(lib, "biyos_add_variables", c_int, *variables, ints)
