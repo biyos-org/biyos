@@ -52,6 +52,19 @@ std::string_view bound_fault(double lower, double upper) noexcept
     return "";
 }
 
+std::string_view value_fault(double value) noexcept
+{
+    if (std::isnan(value))
+    {
+        return "is NaN";
+    }
+    if (std::isinf(value))
+    {
+        return std::signbit(value) ? "is minus infinity" : "is infinity";
+    }
+    return "";
+}
+
 void check_index(std::string_view noun, Index index, Index size)
 {
     if (index < 0 || index >= size)

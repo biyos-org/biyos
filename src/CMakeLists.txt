@@ -29,7 +29,9 @@ add_library(biyos_internal STATIC
     expr/terms.cpp
     expr/value.cpp
     model/checks.cpp
-    model/model.cpp)
+    model/functions.cpp
+    model/model.cpp
+    model/terms.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
