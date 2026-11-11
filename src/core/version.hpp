@@ -5,8 +5,6 @@
 namespace biyos
 {
 
-// number_of writes a version as major * 10000 + minor * 100 + patch. It is one to one and keeps the
-// order on numbered versions, whose parts are not negative and whose minor and patch are below 100.
 struct Version
 {
     int major;

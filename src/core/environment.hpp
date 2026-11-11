@@ -22,9 +22,6 @@ class Environment
     Environment(const Environment &) = delete;
     Environment &operator=(const Environment &) = delete;
 
-    // A failure recorded inside a scope is undone when the scope ends, so a subscriber's failed
-    // call never changes the last error another reads. The outer message is swapped aside on the
-    // first failure only, so a scope without one allocates nothing.
     class ErrorScope
     {
       public:

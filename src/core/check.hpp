@@ -12,13 +12,6 @@
 namespace biyos
 {
 
-// A check runs when its level is cheap or full and at most check_level, read once when the
-// checker is built: below its level it costs one compare when the level is a constant at the
-// call site. holds is called only when the check runs, values only when holds is false. object is
-// a fixed name, taken even by a check that does not run, so detail such as an index goes in
-// values. A failure records its error on the environment, emits one check event from the
-// checker's module unless an event is being delivered, then throws. Inside a fill it only
-// throws, so the error is dropped with the event being filled.
 class Checker
 {
   public:
