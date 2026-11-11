@@ -17,8 +17,10 @@ using biyos::difference;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
+using biyos::Objective;
 using biyos::Offset;
 using biyos::QuadraticTerm;
+using biyos::Sense;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::built;
@@ -38,6 +40,16 @@ void change(Model &model)
     model.add_quadratic_terms(std::span(&index, 1), starts, {pair});
     model.set_constraints(std::span(&index, 1), std::span(&constraint, 1));
     model.add_constraints(std::span(&constraint, 1));
+    const Objective objective{
+        .function = 3,
+        .sense = Sense::Maximize,
+        .priority = 2,
+        .weight = 4.0,
+        .absolute = 1.0,
+        .relative = 0.0,
+    };
+    model.set_objectives(std::span(&index, 1), std::span(&objective, 1));
+    model.add_objectives(std::span(&objective, 1));
 }
 
 }

@@ -1,6 +1,7 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "model/checks.hpp"
+#include "model/compare.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 
@@ -21,6 +22,7 @@ namespace
 
 using biyos::Constraint;
 using biyos::default_objective;
+using biyos::difference;
 using biyos::Index;
 using biyos::Model;
 using biyos::Objective;
@@ -359,4 +361,16 @@ TEST(ObjectiveTest, Moved)
     EXPECT_TRUE(model.objectives(0, 0).empty());
     EXPECT_EQ(add_refusal(model, kMaximize),
               "invalid argument: objective 0: function 1 is unknown");
+}
+
+TEST(ObjectiveTest, Copied)
+{
+    Model model = with_functions(2);
+    model.add_objectives(std::vector<Objective>{kMaximize, default_objective(0, 1)});
+    Model copy = model;
+    EXPECT_EQ(difference(model, copy), "");
+    const Index index = 1;
+    copy.set_objectives(std::span(&index, 1), std::span(&kMaximize, 1));
+    EXPECT_EQ(difference(model, copy), "objective 1: function 0 against 1");
+    expect_objective(model.objective(1), default_objective(0, 1));
 }
