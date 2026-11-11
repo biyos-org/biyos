@@ -22,6 +22,7 @@ add_library(biyos_internal STATIC
     expr/graph.cpp
     expr/node.cpp
     expr/parents.cpp
+    expr/terms.cpp
     model/model.cpp)
 
 target_include_directories(biyos_internal PUBLIC

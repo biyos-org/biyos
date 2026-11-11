@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <bit>
 #include <cstddef>
 #include <cstdint>
@@ -31,6 +32,7 @@ constexpr double kHuge = 1e200;
 constexpr double kLargest = 1e308;
 constexpr double kNearTwo = 2.0000000000000004;
 constexpr double kNearOne = 1.0000000000000002;
+constexpr double kAbsorber = 0x1p54;
 
 std::uint64_t bits(double value)
 {
@@ -609,4 +611,95 @@ TEST(CanonicalTest, OldParents)
     EXPECT_EQ(refusal([&] { biyos::split(graph, parents, exponential); }),
               "invalid argument: expression: parents are older than node 1");
     EXPECT_EQ(graph.size(), 2);
+}
+
+TEST(CanonicalTest, Sorted)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const Offset pair = product(graph, 1.0, {x[2], x[1]});
+    const Offset square = power(graph, x[0], 2.0);
+    const Offset root =
+        sum(graph, 0.0, {x[2], pair, x[0], square, x[1]}, {1.0, 2.0, 3.0, 4.0, 5.0});
+    const Parts parts = parts_of(graph, root);
+    expect_linear(parts,
+                  {
+                      {.variable = 0, .coefficient = 3.0},
+                      {.variable = 1, .coefficient = 5.0},
+                      {.variable = 2, .coefficient = 1.0},
+                  });
+    expect_quadratic(parts,
+                     {
+                         {.first = 0, .second = 0, .coefficient = 4.0},
+                         {.first = 1, .second = 2, .coefficient = 2.0},
+                     });
+}
+
+TEST(CanonicalTest, PairAdded)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset pair = product(graph, 2.0, {x[0], x[1]});
+    const Offset reversed = product(graph, 3.0, {x[1], x[0]});
+    const Offset square = power(graph, x[0], 2.0);
+    const Offset itself = product(graph, 1.0, {x[0], x[0]});
+    const Offset root = sum(graph, 0.0, {pair, square, reversed, itself}, {1.0, 1.0, 1.0, -0.5});
+    const Parts parts = parts_of(graph, root);
+    expect_quadratic(parts,
+                     {
+                         {.first = 0, .second = 0, .coefficient = 0.5},
+                         {.first = 0, .second = 1, .coefficient = 5.0},
+                     });
+}
+
+TEST(CanonicalTest, VariableAdded)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset scaled = product(graph, 4.0, {x[0]});
+    const Offset root = sum(graph, 0.0, {x[0], x[1], scaled, x[0]}, {1.0, 2.0, 1.0, -5.0});
+    const Parts parts = parts_of(graph, root);
+    expect_linear(parts,
+                  {
+                      {.variable = 0, .coefficient = 0.0},
+                      {.variable = 1, .coefficient = 2.0},
+                  });
+}
+
+TEST(CanonicalTest, AddedOverflow)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset exponential = unary(graph, Operator::Exp, x[0]);
+    const Offset linear = sum(graph, 0.0, {x[0], exponential, x[0]}, {kLargest, 1.0, kLargest});
+    expect_whole(parts_of(graph, linear), linear);
+    const Offset pair = product(graph, kLargest, {x[0], x[1]});
+    const Offset again = product(graph, kLargest, {x[1], x[0]});
+    const Offset quadratic = sum(graph, 0.0, {pair, exponential, again}, {1.0, 1.0, 1.0});
+    expect_whole(parts_of(graph, quadratic), quadratic);
+}
+
+TEST(CanonicalTest, StableOrder)
+{
+    Graph graph;
+    const Index count = 16;
+    const std::vector<Offset> x = variables(graph, count);
+    const std::array<double, 5> absorbed{kAbsorber, 1.0, 1.0, 1.0, -kAbsorber};
+    std::vector<Offset> terms;
+    std::vector<double> weights;
+    for (Index k = 1; k < count; ++k)
+    {
+        terms.push_back(x[static_cast<std::size_t>(k)]);
+        weights.push_back(1.0);
+        if (k % 3 == 0)
+        {
+            terms.push_back(x[0]);
+            weights.push_back(absorbed[static_cast<std::size_t>(k / 3 - 1)]);
+        }
+    }
+    const Offset root = sum(graph, 0.0, terms, weights);
+    const Parts parts = parts_of(graph, root);
+    ASSERT_EQ(parts.linear.size(), x.size());
+    EXPECT_EQ(parts.linear[0].variable, 0);
+    EXPECT_EQ(bits(parts.linear[0].coefficient), bits(0.0));
 }

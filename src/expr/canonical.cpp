@@ -177,6 +177,8 @@ void Walk::run(Offset node)
         stack_.pop_back();
         visit(item);
     }
+    add_alike(linear_);
+    add_alike(quadratic_);
 }
 
 bool Walk::moved() const noexcept
@@ -186,7 +188,9 @@ bool Walk::moved() const noexcept
 
 bool Walk::finite() const noexcept
 {
-    return is_finite(constant_);
+    return is_finite(constant_) &&
+           std::ranges::all_of(linear_, is_finite, &LinearTerm::coefficient) &&
+           std::ranges::all_of(quadratic_, is_finite, &QuadraticTerm::coefficient);
 }
 
 Parts Walk::parts(Graph &graph)
@@ -367,11 +371,7 @@ void Walk::add_linear(Index variable, double coefficient)
 
 void Walk::add_quadratic(Index first, Index second, double coefficient)
 {
-    quadratic_.push_back({
-        .first = (std::min)(first, second),
-        .second = (std::max)(first, second),
-        .coefficient = coefficient,
-    });
+    quadratic_.push_back({.first = first, .second = second, .coefficient = coefficient});
     moved_ = true;
 }
 
