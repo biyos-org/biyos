@@ -13,6 +13,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 
 include(cmake/BiyosWarnings.cmake)
 
+if(NOT MSVC)
+    add_compile_options(-ffp-contract=off)
+endif()
+
 add_subdirectory(src)
 
 if(BIYOS_BUILD_TESTS)
