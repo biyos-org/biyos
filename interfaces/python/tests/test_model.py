@@ -9,6 +9,7 @@ import biyos
 from biyos import EventKind, Level, VariableKind
 from biyos._capi import OK, lib
 from number import Number
+from spies import followed, interrupted, preceded, spied
 
 INVALID_ARGUMENT = -100
 INFINITY = float("inf")
@@ -59,12 +60,6 @@ def keep(texts, event):
     texts.append(event.text)
 
 
-def spied(function, statuses, *arguments):
-    status = function(*arguments)
-    statuses.append(status)
-    return status
-
-
 def refused(*arguments):
     return -100
 
@@ -82,11 +77,6 @@ def collected(log, function, handle):
     return function(handle)
 
 
-def interrupted(function, *arguments):
-    function(*arguments)
-    raise KeyboardInterrupt
-
-
 def freed(log, function, handle):
     log.append("free")
     return function(handle)
@@ -95,23 +85,6 @@ def freed(log, function, handle):
 def reached(log, function, *arguments):
     log.append("call")
     return OK if "free" in log else function(*arguments)
-
-
-def run(actions):
-    while actions:
-        action = actions.pop(0)
-        action()
-
-
-def preceded(actions, function, *arguments):
-    run(actions)
-    return function(*arguments)
-
-
-def followed(actions, function, *arguments):
-    result = function(*arguments)
-    run(actions)
-    return result
 
 
 def refusal(call, *arguments):
