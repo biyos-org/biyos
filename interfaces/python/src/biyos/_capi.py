@@ -81,7 +81,7 @@ def _declare_model(lib, ints, doubles):
     _declare(lib, "biyos_model_create", c_int, c_void_p, POINTER(c_void_p))
     _declare(lib, "biyos_model_free", c_int, c_void_p)
     variables = (c_void_p, c_int, ints, doubles, doubles)
-    _declare(lib, "biyos_add_variables", c_int, *variables)
+    _declare(lib, "biyos_add_variables", c_int, *variables, ints)
     _declare(lib, "biyos_set_variable_bounds", c_int, *variables)
     kinds = (c_void_p, c_int, ints, ints)
     _declare(lib, "biyos_set_variable_kinds", c_int, *kinds)

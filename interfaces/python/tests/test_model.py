@@ -9,11 +9,11 @@ import biyos
 from biyos import EventKind, Level, VariableKind
 from biyos._capi import OK, lib
 from number import Number
+from spies import followed, interrupted, preceded, spied
 
 INVALID_ARGUMENT = -100
 INFINITY = float("inf")
 LOCKED = "invalid argument: model: is read-only while delivering an event"
-BUSY = "invalid argument: environment: is read-only while delivering an event"
 
 KINDS = [
     VariableKind.CONTINUOUS,
@@ -59,12 +59,6 @@ def keep(texts, event):
     texts.append(event.text)
 
 
-def spied(function, statuses, *arguments):
-    status = function(*arguments)
-    statuses.append(status)
-    return status
-
-
 def refused(*arguments):
     return -100
 
@@ -82,11 +76,6 @@ def collected(log, function, handle):
     return function(handle)
 
 
-def interrupted(function, *arguments):
-    function(*arguments)
-    raise KeyboardInterrupt
-
-
 def freed(log, function, handle):
     log.append("free")
     return function(handle)
@@ -95,23 +84,6 @@ def freed(log, function, handle):
 def reached(log, function, *arguments):
     log.append("call")
     return OK if "free" in log else function(*arguments)
-
-
-def run(actions):
-    while actions:
-        action = actions.pop(0)
-        action()
-
-
-def preceded(actions, function, *arguments):
-    run(actions)
-    return function(*arguments)
-
-
-def followed(actions, function, *arguments):
-    result = function(*arguments)
-    run(actions)
-    return result
 
 
 def refusal(call, *arguments):
@@ -329,23 +301,24 @@ def test_unmasked():
     assert not env._free.alive
 
 
-def test_busy_close(env, model):
+def test_busy_close(log):
+    env = biyos.Environment()
+    model = biyos.Model(env)
     seen = []
 
     def close_inside(event):
+        env.close()
         try:
-            env.close()
-        except biyos.Error as error:
+            model.variable_count()
+        except ValueError as error:
             seen.append(str(error))
 
-    model.add_variables(1)
     env.subscribe(close_inside, EventKind.MESSAGE, Level.ERROR)
-    with pytest.raises(biyos.Error):
-        env.set_option("seed", -1)
-    assert seen == [BUSY]
-    model.add_variables(1)
-    assert model.variable_count() == 2
-    assert env.get_option("seed") == 0
+    message = refusal(model.set_variable_bounds, [0], [0.0], [1.0])
+    assert message == "invalid argument: variable 0: unknown"
+    assert seen == ["the model is closed"]
+    assert log == ["free"]
+    assert not env._free.alive
 
 
 def test_gap(log, monkeypatch):
@@ -494,7 +467,9 @@ def test_closed_env():
 def test_add(model):
     lower = [-INFINITY, 0.0, -3.0, 2.0, 1.0]
     upper = [INFINITY, 1.0, 7.0, 10.0, 4.0]
-    model.add_variables(5, KINDS, lower, upper)
+    added = model.add_variables(5, KINDS, lower, upper)
+    assert type(added) is biyos.Variables
+    assert len(added) == 5
     assert model.variable_count() == 5
     found = model.get_variables()
     assert found == (KINDS, lower, upper)
@@ -535,9 +510,9 @@ def test_buffer(model, monkeypatch):
     seen = []
     original = lib.biyos_add_variables
 
-    def spy(handle, count, kinds, low, high):
+    def spy(handle, count, kinds, low, high, first):
         seen.append((ctypes.addressof(low), ctypes.addressof(high)))
-        return original(handle, count, kinds, low, high)
+        return original(handle, count, kinds, low, high, first)
 
     monkeypatch.setattr(lib, "biyos_add_variables", spy)
     model.add_variables(2, None, lower, upper)

@@ -101,6 +101,7 @@ int main(void)
     const double upper[2] = {1.0, 1.0};
     const int indices[1] = {0};
     int found[2] = {0, 0};
+    int first = -1;
     int variables = 0;
     biyos_version(&major, &minor, &patch);
     if (major < 0 || minor < 0 || patch < 0)
@@ -127,7 +128,7 @@ int main(void)
         status = BIYOS_INTERNAL_ERROR;
     }
     if (biyos_model_create(env, &model) != BIYOS_OK ||
-        biyos_add_variables(model, 2, kinds, lower, upper) != BIYOS_OK ||
+        biyos_add_variables(model, 2, kinds, lower, upper, &first) != BIYOS_OK || first != 0 ||
         biyos_set_variable_bounds(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
         biyos_set_variable_kinds(model, 1, indices, kinds + 1) != BIYOS_OK ||
         biyos_variable_count(model, &variables) != BIYOS_OK || variables != 2 ||
