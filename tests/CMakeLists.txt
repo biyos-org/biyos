@@ -40,7 +40,7 @@ target_link_libraries(test_expr PRIVATE biyos_internal)
 biyos_add_test(test_model model/test_constraints.cpp model/test_functions.cpp model/test_variables.cpp)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
-biyos_add_test(test_capi capi/test_environment.cpp capi/test_events.cpp capi/test_firewall.cpp capi/test_format.cpp capi/test_functions.cpp capi/test_model.cpp capi/test_options.cpp capi/test_version.cpp)
+biyos_add_test(test_capi capi/test_constraints.cpp capi/test_environment.cpp capi/test_events.cpp capi/test_firewall.cpp capi/test_format.cpp capi/test_functions.cpp capi/test_model.cpp capi/test_options.cpp capi/test_version.cpp)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
 add_executable(test_capi_c capi/test_header.c)

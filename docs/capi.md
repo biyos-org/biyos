@@ -24,7 +24,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | `biyos_status` | an `int`, `BIYOS_OK` or an error code |
 | `biyos_env` | an opaque environment, holding the options, the subscriptions and the last error message |
 | `biyos_event` | an opaque event, read with the `biyos_event_*` calls and formatted with `biyos_format_text` and `biyos_format_json` while a subscriber runs |
-| `biyos_model` | an opaque model, made on an environment and holding the variables and functions of a problem |
+| `biyos_model` | an opaque model, made on an environment and holding the variables, functions and constraints of a problem |
 | `biyos_subscriber` | `void (*)(const biyos_event *event, void *user_data)`, a function called with each event a subscription receives |
 
 ## Linking
@@ -40,7 +40,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | Macro | Value | Meaning |
 | --- | --- | --- |
 | `BIYOS_OK` | 0 | the call succeeded |
-| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count or size, an unknown variable kind or variable index, a bound a variable does not accept, an unknown function index, starts that do not begin at 0 or that decrease, a term whose variable is not one of the model or appears twice in a function, a constant or a coefficient that is not finite, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
+| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count or size, an unknown variable kind or variable index, a bound a variable does not accept, an unknown function index, starts that do not begin at 0 or that decrease, a term whose variable is not one of the model or appears twice in a function, a constant or a coefficient that is not finite, an unknown constraint index, a constraint on a function the model does not hold, a bound a constraint does not accept, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
 | `BIYOS_NO_MEMORY` | -400 | an allocation failed |
 | `BIYOS_INTERNAL_ERROR` | -500 | a fault in biyos |
 
@@ -370,7 +370,7 @@ Writes the event for tools, as one JSON object with the members `time`, `kind`, 
 
 ## Model
 
-A model holds the variables of a problem and functions of them. Each variable has a kind, which says what values it may take, and a lower and an upper bound. The kinds come from `biyos/model.h`.
+A model holds the variables of a problem, functions of them and constraints on those functions. Each variable has a kind, which says what values it may take, and a lower and an upper bound. The kinds come from `biyos/model.h`.
 
 | Macro | Value | Kind | Takes |
 | --- | --- | --- | --- |
@@ -384,7 +384,7 @@ Every kind but continuous is discrete.
 
 A model is made on an environment and reports there. A call on the model that fails keeps its message on that environment and sends its error event there, and while the environment delivers an event the model is read-only, as the environment is (see Subscribers). The environment cannot be freed while a model made on it is not, so a model never outlives its environment.
 
-Variables are numbered from 0 in the order they are added, and a count or an index of variables is an `int`. The calls on variables and functions take many at once: a count and arrays of that many entries, or, for the terms of functions, arrays in the compressed form described under Functions. biyos reads them during the call and does not keep them. A call that fails changes nothing.
+Variables are numbered from 0 in the order they are added, and a count or an index of variables is an `int`. The calls on variables, functions and constraints take many at once: a count and arrays of that many entries, or, for the terms of functions, arrays in the compressed form described under Functions. biyos reads them during the call and does not keep them. A call that fails changes nothing.
 
 A call that adds items takes `int *first` as its last argument. When the call succeeds and `first` is not null, it writes to `*first` the index of the first new item, which is the number of items held before the call, a count of 0 included. The new items follow it in order.
 
@@ -493,6 +493,45 @@ Writes the constants of the `count` functions from `first`, and their linear ter
 - A null `constants`, `starts`, `variables` or `values` is skipped, so a `size` of 0 with null arrays learns `*needed` alone.
 
 Returns `BIYOS_INVALID_ARGUMENT` when `first`, `count` or `size` is negative, `first + count` exceeds the number of functions, or `needed` is null.
+
+### Constraints
+
+A constraint `lower <= f(x) <= upper` bounds a function `f` of the model. It holds the index of the function and a lower and an upper bound, and several constraints may share a function. Constraints are numbered from 0 in the order they are added, separately from variables and functions, and a count or an index of constraints is an `int`. A constraint's bounds follow the rule of a continuous variable's: `INFINITY` or `-INFINITY` leaves that side unbounded, a lower bound of infinity, an upper bound of minus infinity and NaN are refused, and any other pair is kept as given, a lower bound above the upper one included. A constraint whose bounds are equal is an equality, and one whose bounds are both infinite is free.
+
+### `biyos_add_constraints`
+
+```c
+biyos_status biyos_add_constraints(biyos_model *model, int count, const int *functions,
+                                   const double *lower, const double *upper, int *first);
+```
+
+Adds `count` constraints after the last one. Entry `j` of each array gives constraint `m + j`, where `m` is the number of constraints before the call: the index of its function and its lower and upper bounds. `functions` has no default, and may be null only when `count` is 0. A null `lower` or `upper` leaves that side of every new constraint unbounded, so with both null the constraints are free. `*first` receives `m`, and a null `first` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, a function is not one of the model or a bound is refused, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 constraints.
+
+### `biyos_set_constraint_bounds`
+
+```c
+biyos_status biyos_set_constraint_bounds(biyos_model *model, int count, const int *indices,
+                                         const double *lower, const double *upper);
+```
+
+Sets the bounds of constraint `indices[j]` to `lower[j]` and `upper[j]`, for each `j` below `count`, and keeps its function. A null `lower` or `upper` leaves those bounds as they are, and `indices` may be null when `count` is 0. A constraint may appear more than once, as in `biyos_set_variable_bounds`. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of a constraint or a bound is refused.
+
+### `biyos_constraint_count`
+
+```c
+biyos_status biyos_constraint_count(biyos_model *model, int *count);
+```
+
+Writes the number of constraints of the model to `*count`.
+
+### `biyos_get_constraints`
+
+```c
+biyos_status biyos_get_constraints(biyos_model *model, int first, int count, int *functions,
+                                   double *lower, double *upper);
+```
+
+Writes to entry `j` of each array, for each `j` below `count`, the function and the lower and upper bounds of constraint `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of constraints.
 
 ## Expressions
 

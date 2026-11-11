@@ -51,6 +51,7 @@ biyos_set_warnings(biyos_internal)
 
 add_library(biyos
     capi/arrays.cpp
+    capi/constraints.cpp
     capi/environment.cpp
     capi/events.cpp
     capi/format.cpp

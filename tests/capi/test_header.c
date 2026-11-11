@@ -108,6 +108,24 @@ static biyos_status use_functions(biyos_model *model)
     return BIYOS_OK;
 }
 
+static biyos_status use_constraints(biyos_model *model)
+{
+    const int functions[2] = {1, 1};
+    const double lower[2] = {0.0, -1.0};
+    const int indices[1] = {1};
+    int found[2] = {-1, -1};
+    int first = -1;
+    int constraints = 0;
+    if (biyos_add_constraints(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
+        biyos_set_constraint_bounds(model, 1, indices, NULL, lower) != BIYOS_OK ||
+        biyos_constraint_count(model, &constraints) != BIYOS_OK || constraints != 2 ||
+        biyos_get_constraints(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1)
+    {
+        return BIYOS_INTERNAL_ERROR;
+    }
+    return BIYOS_OK;
+}
+
 int main(void)
 {
     biyos_status status = BIYOS_OK;
@@ -162,7 +180,7 @@ int main(void)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (use_functions(model) != BIYOS_OK)
+    if (use_functions(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK)
     {
         status = BIYOS_INTERNAL_ERROR;
     }

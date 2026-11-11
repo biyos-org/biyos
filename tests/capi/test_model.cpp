@@ -132,6 +132,13 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(biyos_function_count(nullptr, &count), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_get_functions(nullptr, 0, 0, nullptr, nullptr, 0, &needed, nullptr, nullptr),
               BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_add_constraints(nullptr, 1, &index, nullptr, nullptr, nullptr),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_set_constraint_bounds(nullptr, 1, &index, &bound, &bound),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_constraint_count(nullptr, &count), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_get_constraints(nullptr, 0, 0, nullptr, nullptr, nullptr),
+              BIYOS_INVALID_ARGUMENT);
 }
 
 TEST(CApiTest, HeldFree)

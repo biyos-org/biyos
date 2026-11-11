@@ -90,6 +90,7 @@ def _declare_model(lib, ints, doubles):
     read = (c_void_p, c_int, c_int, ints, doubles, doubles)
     _declare(lib, "biyos_get_variables", c_int, *read)
     _declare_functions(lib, ints, doubles)
+    _declare_constraints(lib, ints, doubles)
 
 
 def _declare_functions(lib, ints, doubles):
@@ -100,6 +101,16 @@ def _declare_functions(lib, ints, doubles):
     sized = (c_int64, offsets, ints, doubles)
     read = (c_void_p, c_int, c_int, doubles, offsets, *sized)
     _declare(lib, "biyos_get_functions", c_int, *read)
+
+
+def _declare_constraints(lib, ints, doubles):
+    add = (c_void_p, c_int, ints, doubles, doubles, ints)
+    _declare(lib, "biyos_add_constraints", c_int, *add)
+    bounds = (c_void_p, c_int, ints, doubles, doubles)
+    _declare(lib, "biyos_set_constraint_bounds", c_int, *bounds)
+    _declare(lib, "biyos_constraint_count", c_int, c_void_p, ints)
+    read = (c_void_p, c_int, c_int, ints, doubles, doubles)
+    _declare(lib, "biyos_get_constraints", c_int, *read)
 
 
 lib = _load()
