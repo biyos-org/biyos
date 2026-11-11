@@ -1,4 +1,9 @@
-# biyos
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/lockup-reversed.svg">
+    <img src="docs/logo/lockup.svg" alt="biyos" width="280">
+  </picture>
+</h1>
 
 An optimization solver for problems of the form
 
