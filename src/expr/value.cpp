@@ -5,6 +5,7 @@
 #include "core/text.hpp"
 #include "expr/frame.hpp"
 #include "expr/node.hpp"
+#include "expr/partials.hpp"
 #include "expr/tape.hpp"
 
 #include <cmath>
@@ -181,7 +182,10 @@ Frame enter(const Block &block, std::span<const double> point, Workspace &worksp
 
 }
 
-Workspace::Workspace(const Tape &tape) : shared(at(tape.pinned()), 0.0), slots(tape.width(), 0.0) {}
+Workspace::Workspace(const Tape &tape)
+    : shared(at(tape.pinned()), 0.0), slots(tape.width(), 0.0), partials(at(tape.partials()), 0.0)
+{
+}
 
 void check_sweep(const Tape &tape,
                  std::span<const double> point,
@@ -213,6 +217,21 @@ void forward(const Block &block, std::span<const double> point, Workspace &works
     for (const Instruction &instruction : block.instructions)
     {
         frame.slots[instruction.target] = value(instruction, frame);
+    }
+}
+
+void linearize(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
+{
+    const Frame frame = enter(block, point, workspace);
+    const std::span<double> partials = region(block, std::span(workspace.partials));
+    for (std::size_t k = 0; k < block.instructions.size(); ++k)
+    {
+        const Instruction &instruction = block.instructions[k];
+        const double result = value(instruction, frame);
+        const std::uint32_t first = block.places[k];
+        const std::uint32_t count = block.places[k + 1] - first;
+        partials_of(instruction, frame, result, partials.subspan(first, count));
+        frame.slots[instruction.target] = result;
     }
 }
 
