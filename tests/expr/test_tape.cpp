@@ -4,6 +4,7 @@
 #include "expr/layout.hpp"
 #include "expr/node.hpp"
 #include "expr/tape.hpp"
+#include "graphs.hpp"
 #include "refusal.hpp"
 #include "sweep.hpp"
 
@@ -161,6 +162,292 @@ Ranges route(const Tape &tape, Offset root)
 std::vector<Offset> loads(const Block &block)
 {
     return {block.loads.begin(), block.loads.end()};
+}
+
+constexpr Offset kLoaded = -1;
+
+struct Dag
+{
+    std::vector<std::vector<Offset>> children;
+    std::vector<Offset> outputs;
+};
+
+bool is_leaf(Operator op)
+{
+    return op == Operator::Constant || op == Operator::Variable;
+}
+
+bool is_listed(Operator op)
+{
+    return op == Operator::Sum || op == Operator::Product || op == Operator::Max ||
+           op == Operator::Min;
+}
+
+std::vector<std::uint32_t> operand_slots(const Block &block, const biyos::Instruction &instruction)
+{
+    if (is_leaf(instruction.op))
+    {
+        return {};
+    }
+    if (is_listed(instruction.op))
+    {
+        const auto first = block.operands.begin();
+        return std::vector<std::uint32_t>(first + instruction.first, first + instruction.second);
+    }
+    return {instruction.first, instruction.second};
+}
+
+Dag dag_of(const Block &block)
+{
+    std::vector<Offset> holder(block.width, kLoaded);
+    Dag dag;
+    for (const biyos::Instruction &instruction : block.instructions)
+    {
+        std::vector<Offset> children;
+        for (const std::uint32_t slot : operand_slots(block, instruction))
+        {
+            children.push_back(holder[slot]);
+        }
+        holder[instruction.target] = static_cast<Offset>(dag.children.size());
+        dag.children.push_back(children);
+    }
+    for (const std::uint32_t slot : block.outputs)
+    {
+        dag.outputs.push_back(holder[slot]);
+    }
+    return dag;
+}
+
+Spans merged(const std::vector<bool> &inside)
+{
+    Spans found;
+    for (std::uint32_t position = 0; position < inside.size(); ++position)
+    {
+        if (!inside[position])
+        {
+            continue;
+        }
+        if (!found.empty() && found.back().second == position)
+        {
+            ++found.back().second;
+            continue;
+        }
+        found.emplace_back(position, position + 1);
+    }
+    return found;
+}
+
+Spans cone_of(const Dag &dag, std::size_t output, bool prepass)
+{
+    const Offset start = dag.outputs[output];
+    if (start == kLoaded)
+    {
+        return {};
+    }
+    std::vector<bool> stops(dag.children.size(), false);
+    if (prepass)
+    {
+        for (const Offset other : dag.outputs)
+        {
+            stops[at(other)] = true;
+        }
+    }
+    std::vector<bool> inside(dag.children.size(), false);
+    inside[at(start)] = true;
+    std::vector<Offset> stack{start};
+    while (!stack.empty())
+    {
+        const Offset node = stack.back();
+        stack.pop_back();
+        for (const Offset child : dag.children[at(node)])
+        {
+            if (child != kLoaded && !inside[at(child)] && !stops[at(child)])
+            {
+                inside[at(child)] = true;
+                stack.push_back(child);
+            }
+        }
+    }
+    return merged(inside);
+}
+
+void expect_cones(const Tape &tape)
+{
+    const std::span<const Block> blocks = tape.blocks();
+    for (std::size_t b = 0; b < blocks.size(); ++b)
+    {
+        SCOPED_TRACE(b);
+        const Block &block = blocks[b];
+        ASSERT_EQ(block.starts.size(), block.outputs.size() + 1);
+        const Dag dag = dag_of(block);
+        for (std::size_t output = 0; output < block.outputs.size(); ++output)
+        {
+            EXPECT_EQ(spans_of(block, output), cone_of(dag, output, b < at(tape.prepass())));
+        }
+    }
+}
+
+std::vector<Offset> running(Graph &graph, Index size)
+{
+    Offset total = graph.add_variable(0);
+    std::vector<Offset> terms;
+    Offset middle = total;
+    for (Index k = 1; k <= size; ++k)
+    {
+        total = graph.add(Operator::Product, 1.0, std::array{total, graph.add_variable(k)});
+        terms.push_back(unary(graph, Operator::Exp, total));
+        if (k == size / 2)
+        {
+            middle = total;
+        }
+    }
+    const std::vector<double> ones(terms.size(), 1.0);
+    return {graph.add_sum(0.0, terms, ones), total, middle, terms[at(size / 2)]};
+}
+
+std::vector<Offset> exponentials(Graph &graph, Index size)
+{
+    Offset total = graph.add_variable(0);
+    std::vector<Offset> roots;
+    for (Index k = 1; k <= size; ++k)
+    {
+        total = graph.add(Operator::Product, 1.0, std::array{total, graph.add_variable(k)});
+        roots.push_back(unary(graph, Operator::Exp, total));
+    }
+    return roots;
+}
+
+std::vector<Offset> pinched(Graph &graph, Index size)
+{
+    const std::vector<Offset> product = running(graph, 12);
+    Offset power = unary(graph, Operator::Sin, product[1]);
+    Index next = 100;
+    std::vector<Offset> steps;
+    for (Index k = 0; k < size; ++k)
+    {
+        std::vector<Offset> factors{power, product[1]};
+        for (Index j = 0; j < 9; ++j)
+        {
+            factors.push_back(graph.add_variable(next++));
+        }
+        power = unary(graph, Operator::Sin, graph.add(Operator::Product, 1.0, factors));
+        steps.push_back(
+            graph.add(Operator::Product, 1.0, std::array{power, graph.add_variable(next++)}));
+    }
+    std::vector<Offset> roots{product[0]};
+    roots.insert(roots.end(), steps.rbegin(), steps.rend());
+    return roots;
+}
+
+std::vector<Offset> stepped(Graph &graph, Index size)
+{
+    Offset level = graph.add_variable(0);
+    std::vector<Offset> steps;
+    for (Index k = 1; k <= size; ++k)
+    {
+        std::vector<Offset> terms{unary(graph, Operator::Sin, level)};
+        for (Index j = 0; j < 8; ++j)
+        {
+            const Offset inner = unary(graph, Operator::Sin, unary(graph, Operator::Cos, level));
+            terms.push_back(graph.add(Operator::Product, 0.3, std::array{inner, level}));
+            terms.push_back(unary(graph, Operator::Cos, inner));
+        }
+        const std::vector<double> weights(terms.size(), 0.1);
+        level = graph.add_sum(0.0, terms, weights);
+        steps.push_back(
+            graph.add(Operator::Product, 1.0, std::array{level, graph.add_variable(k)}));
+    }
+    return {steps.rbegin(), steps.rend()};
+}
+
+std::vector<Offset> shared(Graph &graph, Index size)
+{
+    Index next = 0;
+    std::vector<Offset> powers;
+    std::vector<Offset> tops;
+    for (Index c = 0; c < 9; ++c)
+    {
+        Offset total = graph.add_variable(next++);
+        for (Index k = 0; k < 12; ++k)
+        {
+            total =
+                graph.add(Operator::Product, 1.0, std::array{total, graph.add_variable(next++)});
+            powers.push_back(unary(graph, Operator::Exp, total));
+        }
+        tops.push_back(total);
+    }
+    const std::vector<double> ones(powers.size(), 1.0);
+    std::vector<Offset> roots{graph.add_sum(0.0, powers, ones)};
+    std::vector<Offset> waves;
+    for (Index j = 0; j < size; ++j)
+    {
+        std::vector<Offset> terms;
+        for (const Offset top : tops)
+        {
+            terms.push_back(graph.add(Operator::Product, 1.0 + j, std::span(&top, 1)));
+        }
+        const std::vector<double> weights(terms.size(), 1.0);
+        const Offset term = graph.add_sum(0.0, terms, weights);
+        waves.push_back(unary(graph, Operator::Sin, term));
+        waves.push_back(unary(graph, Operator::Cos, term));
+    }
+    const std::vector<double> halves(waves.size(), 0.5);
+    const Offset total = graph.add_sum(0.0, waves, halves);
+    for (Index j = 0; j < size; ++j)
+    {
+        roots.push_back(
+            graph.add(Operator::Product, 1.0, std::array{total, graph.add_variable(next++)}));
+    }
+    return roots;
+}
+
+std::vector<Offset> alternate(Graph &graph, Index size)
+{
+    std::vector<Offset> odd;
+    std::vector<Offset> waves;
+    for (Index k = 0; k < size; ++k)
+    {
+        odd.push_back(unary(graph, Operator::Sin, graph.add_variable(2 * k)));
+        waves.push_back(odd.back());
+        waves.push_back(unary(graph, Operator::Sin, graph.add_variable(2 * k + 1)));
+    }
+    const std::vector<double> ones(waves.size(), 1.0);
+    const Offset total = graph.add_sum(0.0, waves, ones);
+    const std::vector<double> weights(odd.size(), 1.0);
+    const Offset half = graph.add_sum(0.0, odd, weights);
+    const std::array pair{half, total};
+    const Offset both = graph.add_sum(0.0, pair, std::array{1.0, 1.0});
+    return {total, both, unary(graph, Operator::Cos, half)};
+}
+
+std::vector<Offset> fan(Graph &graph, Index size)
+{
+    Offset level = graph.add_variable(0);
+    std::vector<Offset> waves{unary(graph, Operator::Sin, level)};
+    Index next = 1;
+    for (Index k = 1; k <= size; ++k)
+    {
+        const std::array pair{level, graph.add_variable(next++)};
+        level = graph.add_sum(0.0, pair, std::array{0.5, 0.5});
+        waves.push_back(unary(graph, Operator::Sin, level));
+    }
+    const std::vector<double> ones(waves.size(), 1.0);
+    std::vector<Offset> roots{graph.add_sum(0.0, waves, ones)};
+    std::vector<Offset> heads;
+    for (Index k = 0; k < size; ++k)
+    {
+        const std::array pair{level, graph.add_variable(next++)};
+        heads.push_back(graph.add(Operator::Product, 1.0, pair));
+        roots.push_back(unary(graph, Operator::Sin, heads.back()));
+    }
+    for (Index k = 0; k < size; ++k)
+    {
+        std::vector<Offset> terms = heads;
+        terms.push_back(graph.add_variable(next++));
+        const std::vector<double> weights(terms.size(), 1.0 / size);
+        roots.push_back(graph.add_sum(0.0, terms, weights));
+    }
+    return roots;
 }
 
 }
@@ -338,6 +625,46 @@ TEST(TapeTest, Runs)
     }
     const Tape deep(lattice, std::span(&top, 1));
     EXPECT_EQ(spans(deep, 0), (Spans{{0, 65}}));
+}
+
+TEST(TapeTest, Cones)
+{
+    constexpr std::array shapes{running, exponentials, fan, pinched, stepped, shared, alternate};
+    for (const Offset budget : {Offset{1}, Offset{3}, Offset{30}, kBudget})
+    {
+        SCOPED_TRACE(budget);
+        for (const Index size : {6, 100})
+        {
+            SCOPED_TRACE(size);
+            for (const auto shape : shapes)
+            {
+                Graph graph;
+                const std::vector<Offset> roots = shape(graph, size);
+                expect_cones(Tape(graph, roots, budget));
+            }
+        }
+    }
+    Graph shifted;
+    std::vector<Offset> echoes(150, shifted.add_variable(1000));
+    const std::vector<Offset> steps = exponentials(shifted, 100);
+    echoes.insert(echoes.end(), steps.begin(), steps.end());
+    expect_cones(Tape(shifted, echoes));
+    Graph product;
+    const Tape whole(product, running(product, 100));
+    EXPECT_EQ(whole.pinned(), 0);
+    EXPECT_EQ(spans(whole, 0), (Spans{{0, 302}}));
+    EXPECT_EQ(spans(whole, 1).size(), 100U);
+    for (std::uint64_t seed = 1; seed <= 40; ++seed)
+    {
+        SCOPED_TRACE(seed);
+        biyos::test::Random random(seed);
+        const Graph graph = biyos::test::random_graph(random);
+        const std::vector<Offset> roots = biyos::test::picks(random, graph, biyos::test::kRoots);
+        for (const Offset budget : biyos::test::kBudgets)
+        {
+            expect_cones(Tape(graph, roots, budget));
+        }
+    }
 }
 
 TEST(TapeTest, Reads)
