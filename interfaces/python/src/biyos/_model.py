@@ -18,6 +18,11 @@ class VariableKind(IntEnum):
     SEMIINTEGER = 5
 
 
+class Sense(IntEnum):
+    MINIMIZE = 1
+    MAXIMIZE = 2
+
+
 def _environment(env):
     if not isinstance(env, Environment):
         found = type(env).__name__

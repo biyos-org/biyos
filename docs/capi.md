@@ -563,6 +563,17 @@ biyos_status biyos_get_constraints(biyos_model *model, int first, int count, int
 
 Writes to entry `j` of each array, for each `j` below `count`, the function and the lower and upper bounds of constraint `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of constraints.
 
+### Objectives
+
+An objective is a function of the model to minimize or maximize, with a priority, a weight and an absolute and a relative tolerance. Objectives refer to functions by index, so several may share a function, and an objective may use the function of a constraint. Objectives are numbered from 0 in the order they are added, separately from variables, functions and constraints, and a count or an index of objectives is an `int`. The senses come from `biyos/model.h`.
+
+| Macro | Value | Sense |
+| --- | --- | --- |
+| `BIYOS_MINIMIZE` | 1 | the function is minimized |
+| `BIYOS_MAXIMIZE` | 2 | the function is maximized |
+
+The objectives are optimized in stages, one for each priority they hold, the lowest priority first. A stage minimizes the weighted sum `Σ w_i s_i f_i(x)` of the objectives of its priority, where `w_i` is the weight of objective `i`, `s_i` is 1 when it minimizes and -1 when it maximizes, and `f_i` is its function. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it, the absolute tolerance in the units of its function and the relative one as a fraction of the size of that optimum. So objectives of distinct priorities are optimized in sequence, and objectives of one priority are blended. A priority is any `int`. A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. No call optimizes the objectives yet, since biyos solves nothing.
+
 ## Expressions
 
 `biyos/expr.h` numbers the operators of expressions, which form the nonlinear parts of functions. An expression is a node of the model's graph, an operator applied to its children, and a node that several parents share is stored once. No call takes the operators yet.

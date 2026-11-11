@@ -62,6 +62,9 @@
     BIYOS_VAR_INTEGER != 3 || BIYOS_VAR_SEMICONTINUOUS != 4 || BIYOS_VAR_SEMIINTEGER != 5
 #error "a public variable kind changed"
 #endif
+#if !defined(BIYOS_MINIMIZE) || BIYOS_MINIMIZE != 1 || BIYOS_MAXIMIZE != 2
+#error "a public objective sense changed"
+#endif
 #if !defined(BIYOS_OP_CONSTANT) || BIYOS_OP_CONSTANT != 1 || BIYOS_OP_VARIABLE != 2 ||             \
     BIYOS_OP_SUM != 3 || BIYOS_OP_PRODUCT != 4 || BIYOS_OP_NEGATION != 5 ||                        \
     BIYOS_OP_DIVISION != 6 || BIYOS_OP_CONSTANT_POWER != 7 || BIYOS_OP_POWER != 8 ||               \

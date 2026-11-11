@@ -38,6 +38,12 @@ struct Variable
 
 Variable widest(VariableKind kind) noexcept;
 
+enum class Sense
+{
+    Minimize = BIYOS_MINIMIZE,
+    Maximize = BIYOS_MAXIMIZE,
+};
+
 struct Constraint
 {
     Index function;
