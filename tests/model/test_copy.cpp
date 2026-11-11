@@ -18,6 +18,7 @@ using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
+using biyos::QuadraticTerm;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::built;
@@ -33,6 +34,8 @@ void change(Model &model)
     model.set_variables(std::span(&index, 1), std::span(&variable, 1));
     model.add_variables(std::span(&variable, 1));
     model.add_functions(constants, starts, {LinearTerm{.variable = 3, .coefficient = 1.0}});
+    const QuadraticTerm pair{.first = 3, .second = 1, .coefficient = 2.0};
+    model.add_quadratic_terms(std::span(&index, 1), starts, {pair});
     model.set_constraints(std::span(&index, 1), std::span(&constraint, 1));
     model.add_constraints(std::span(&constraint, 1));
 }

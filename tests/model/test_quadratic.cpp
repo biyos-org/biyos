@@ -1,5 +1,6 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "model/compare.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 #include "sample.hpp"
@@ -18,6 +19,7 @@
 namespace
 {
 
+using biyos::difference;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
@@ -417,4 +419,15 @@ TEST(QuadraticTest, Moved)
     model.add_functions(std::vector<double>{0.0}, std::vector<Offset>{0, 0}, {});
     add(model, single(0, {{0, 0, 3.0}}));
     expect_pairs(held(model), {{0, 0, 3.0}});
+}
+
+TEST(QuadraticTest, Copied)
+{
+    Model model = with_functions(3, 2);
+    add(model, single(1, {{2, 0, 1.5}, {1, 1, -0.0}}));
+    Model copy = model;
+    EXPECT_EQ(difference(model, copy), "");
+    add(copy, single(1, {{0, 2, 1.0}}));
+    EXPECT_EQ(difference(model, copy), "function 1: quadratic term 0: coefficient 1.5 against 2.5");
+    expect_pairs(held(model), {{0, 2, 1.5}, {1, 1, -0.0}});
 }
