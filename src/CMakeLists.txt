@@ -16,6 +16,7 @@ add_library(biyos_internal STATIC
     core/tolerances.cpp
     core/utf8.cpp
     core/version.cpp
+    expr/arithmetic.cpp
     expr/bends.cpp
     expr/builder.cpp
     expr/canonical.cpp

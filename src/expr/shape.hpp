@@ -1,8 +1,11 @@
 #pragma once
 
+#include "core/index.hpp"
 #include "expr/interval.hpp"
 
+#include <cstddef>
 #include <cstdint>
+#include <span>
 
 namespace biyos
 {
@@ -36,6 +39,19 @@ struct Profile
     Argument argument;
 };
 
+struct Operands
+{
+    std::span<const Offset> children;
+    std::span<const Interval> nodes;
+
+    std::size_t size() const noexcept { return children.size(); }
+
+    Interval operator[](std::size_t position) const noexcept
+    {
+        return nodes[static_cast<std::size_t>(children[position])];
+    }
+};
+
 bool is_convex(Curvature curvature) noexcept;
 bool is_concave(Curvature curvature) noexcept;
 Curvature curvature_of(bool convex, bool concave) noexcept;
@@ -46,5 +62,6 @@ Monotonicity monotonicity_of(bool rising, bool falling) noexcept;
 Monotonicity common(Monotonicity left, Monotonicity right) noexcept;
 Monotonicity monotonicity_of(Interval slope) noexcept;
 bool is_point(Interval value) noexcept;
+bool any_empty(const Operands &operands) noexcept;
 
 }

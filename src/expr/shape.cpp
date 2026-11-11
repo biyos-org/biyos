@@ -2,6 +2,8 @@
 
 #include "expr/interval.hpp"
 
+#include <cstddef>
+
 namespace biyos
 {
 
@@ -102,6 +104,18 @@ Monotonicity monotonicity_of(Interval slope) noexcept
 bool is_point(Interval value) noexcept
 {
     return !value.is_empty() && !(value.lower() < value.upper());
+}
+
+bool any_empty(const Operands &operands) noexcept
+{
+    for (std::size_t k = 0; k < operands.size(); ++k)
+    {
+        if (operands[k].is_empty())
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 }
