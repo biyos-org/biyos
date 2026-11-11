@@ -1,4 +1,4 @@
-<h1>
+<h1 align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/logo/lockup-reversed.svg">
     <img src="docs/logo/lockup.svg" alt="biyos" width="280">
