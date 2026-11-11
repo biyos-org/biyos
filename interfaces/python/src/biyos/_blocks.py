@@ -245,12 +245,18 @@ class Constraints(Block):
         return model.constraint_count()
 
 
+def _indefinite(noun):
+    article = "an" if noun[0] in "aeiou" else "a"
+    return f"{article} {noun}"
+
+
 def _member(model, family, name, view):
-    noun = family._element._noun
+    noun = _indefinite(family._element._noun)
     if not isinstance(view, family._element):
-        raise ValueError(f"{name} is a {view._noun}, not a {noun}")
+        found = _indefinite(view._noun)
+        raise ValueError(f"{name} is {found}, not {noun}")
     if view._model is not model:
-        raise ValueError(f"{name} is a {noun} of another model")
+        raise ValueError(f"{name} is {noun} of another model")
 
 
 def index_of(model, family, name, value):
