@@ -18,6 +18,8 @@ namespace
 using biyos::Graph;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Payload;
+using biyos::payload_of;
 using biyos::test::refusal;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
@@ -294,4 +296,26 @@ TEST(GraphTest, Counts)
     EXPECT_EQ(refusal([&] { graph.add_variable(-1); }),
               "invalid argument: expression: variable -1 is unknown");
     EXPECT_EQ(graph.size(), 1);
+}
+
+TEST(GraphTest, PayloadKind)
+{
+    EXPECT_EQ(payload_of(Operator::Constant), Payload::Constant);
+    EXPECT_EQ(payload_of(Operator::Variable), Payload::Variable);
+    EXPECT_EQ(payload_of(Operator::Sum), Payload::Coefficients);
+    EXPECT_EQ(payload_of(Operator::Product), Payload::Constant);
+    EXPECT_EQ(payload_of(Operator::Division), Payload::None);
+    EXPECT_EQ(payload_of(Operator::Power), Payload::None);
+    EXPECT_EQ(payload_of(Operator::Max), Payload::None);
+    EXPECT_EQ(payload_of(Operator::Min), Payload::None);
+    for (const Operator op : kExponents)
+    {
+        EXPECT_EQ(payload_of(op), Payload::Constant);
+    }
+    for (const Operator op : kUnary)
+    {
+        EXPECT_EQ(payload_of(op), Payload::None);
+    }
+    EXPECT_EQ(refusal([] { payload_of(static_cast<Operator>(99)); }),
+              "invalid argument: expression: operator 99 is unknown");
 }

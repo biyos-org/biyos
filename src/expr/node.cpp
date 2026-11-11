@@ -126,6 +126,11 @@ bool positive(double value) noexcept
 
 }
 
+Payload payload_of(Operator op)
+{
+    return shape_of(op).payload;
+}
+
 void check_shape(Operator op, Payload payload, Offset children)
 {
     const Shape shape = shape_of(op);

@@ -52,6 +52,7 @@ enum class Payload
     Coefficients,
 };
 
+Payload payload_of(Operator op);
 void check_shape(Operator op, Payload payload, Offset children);
 void check_child(Offset child, Offset size);
 void check_variable(Index variable);
