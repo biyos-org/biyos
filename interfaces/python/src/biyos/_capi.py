@@ -7,6 +7,7 @@ from ctypes import (
     c_char_p,
     c_double,
     c_int,
+    c_int64,
     c_size_t,
     c_void_p,
 )
@@ -88,6 +89,17 @@ def _declare_model(lib, ints, doubles):
     _declare(lib, "biyos_variable_count", c_int, c_void_p, ints)
     read = (c_void_p, c_int, c_int, ints, doubles, doubles)
     _declare(lib, "biyos_get_variables", c_int, *read)
+    _declare_functions(lib, ints, doubles)
+
+
+def _declare_functions(lib, ints, doubles):
+    offsets = POINTER(c_int64)
+    add = (c_void_p, c_int, doubles, offsets, ints, doubles, ints)
+    _declare(lib, "biyos_add_functions", c_int, *add)
+    _declare(lib, "biyos_function_count", c_int, c_void_p, ints)
+    sized = (c_int64, offsets, ints, doubles)
+    read = (c_void_p, c_int, c_int, doubles, offsets, *sized)
+    _declare(lib, "biyos_get_functions", c_int, *read)
 
 
 lib = _load()

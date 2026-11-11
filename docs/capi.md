@@ -24,7 +24,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | `biyos_status` | an `int`, `BIYOS_OK` or an error code |
 | `biyos_env` | an opaque environment, holding the options, the subscriptions and the last error message |
 | `biyos_event` | an opaque event, read with the `biyos_event_*` calls and formatted with `biyos_format_text` and `biyos_format_json` while a subscriber runs |
-| `biyos_model` | an opaque model, made on an environment and holding the variables of a problem |
+| `biyos_model` | an opaque model, made on an environment and holding the variables and functions of a problem |
 | `biyos_subscriber` | `void (*)(const biyos_event *event, void *user_data)`, a function called with each event a subscription receives |
 
 ## Linking
@@ -40,7 +40,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | Macro | Value | Meaning |
 | --- | --- | --- |
 | `BIYOS_OK` | 0 | the call succeeded |
-| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count, an unknown variable kind or variable index, a bound a variable does not accept, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
+| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count or size, an unknown variable kind or variable index, a bound a variable does not accept, an unknown function index, starts that do not begin at 0 or that decrease, a term whose variable is not one of the model or appears twice in a function, a constant or a coefficient that is not finite, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
 | `BIYOS_NO_MEMORY` | -400 | an allocation failed |
 | `BIYOS_INTERNAL_ERROR` | -500 | a fault in biyos |
 
@@ -370,7 +370,7 @@ Writes the event for tools, as one JSON object with the members `time`, `kind`, 
 
 ## Model
 
-A model holds the variables of a problem. Each variable has a kind, which says what values it may take, and a lower and an upper bound. The kinds come from `biyos/model.h`.
+A model holds the variables of a problem and functions of them. Each variable has a kind, which says what values it may take, and a lower and an upper bound. The kinds come from `biyos/model.h`.
 
 | Macro | Value | Kind | Takes |
 | --- | --- | --- | --- |
@@ -384,7 +384,7 @@ Every kind but continuous is discrete.
 
 A model is made on an environment and reports there. A call on the model that fails keeps its message on that environment and sends its error event there, and while the environment delivers an event the model is read-only, as the environment is (see Subscribers). The environment cannot be freed while a model made on it is not, so a model never outlives its environment.
 
-Variables are numbered from 0 in the order they are added, and a count or an index of variables is an `int`. The calls on variables take many at once: a count and arrays of that many entries, which biyos reads during the call and does not keep. A call that fails changes nothing.
+Variables are numbered from 0 in the order they are added, and a count or an index of variables is an `int`. The calls on variables and functions take many at once: a count and arrays of that many entries, or, for the terms of functions, arrays in the compressed form described under Functions. biyos reads them during the call and does not keep them. A call that fails changes nothing.
 
 A call that adds items takes `int *first` as its last argument. When the call succeeds and `first` is not null, it writes to `*first` the index of the first new item, which is the number of items held before the call, a count of 0 included. The new items follow it in order.
 
@@ -449,6 +449,50 @@ biyos_status biyos_get_variables(biyos_model *model, int first, int count, int *
 ```
 
 Writes to entry `j` of each array, for each `j` below `count`, the kind and the lower and upper bounds of variable `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of variables.
+
+### Functions
+
+A function is a constant plus linear terms, `c + a x` over the variables `x`. Each linear term is a variable, given by its index, and its coefficient in `a`. Constraints refer to functions by index, so one function may serve several of them. Functions are numbered from 0 in the order they are added, separately from variables, and a count or an index of functions is an `int`.
+
+A function's constant must be finite. Its terms may come in any order and are kept sorted by variable. Each must name a variable of the model, appear once in the function and have a finite coefficient, neither NaN nor infinite. A term whose coefficient is 0 is kept.
+
+The terms of many functions travel in compressed form, as three arrays. Function `j` of them has the terms from `starts[j]` to `starts[j + 1] - 1` of `variables` and `values`, which hold a variable and its coefficient each. So `starts` holds one more offset than there are functions: the first is 0, none is below the one before it, and the last is the number of terms. An offset or a number of terms is an `int64_t` of `<stdint.h>`, which `biyos/biyos.h` includes.
+
+### `biyos_add_functions`
+
+```c
+biyos_status biyos_add_functions(biyos_model *model, int count, const double *constants,
+                                 const int64_t *starts, const int *variables,
+                                 const double *values, int *first);
+```
+
+Adds `count` functions after the last one. Entry `j` of `constants` gives the constant of function `n + j`, where `n` is the number of functions before the call, and `starts`, `variables` and `values` give the linear terms of the functions in compressed form, `starts` holding `count + 1` offsets. A null `constants` gives every new function the constant 0. A null `starts` adds functions without terms. `variables` and `values` are not read when there are no terms, and may then be null. `*first` receives `n`, and a null `first` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, `starts` does not begin at 0 or decreases, a constant is not finite, a variable is not one of the model or appears twice in a function, or a coefficient is not finite, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 functions or more terms than any allocation can hold.
+
+### `biyos_function_count`
+
+```c
+biyos_status biyos_function_count(biyos_model *model, int *count);
+```
+
+Writes the number of functions of the model to `*count`.
+
+### `biyos_get_functions`
+
+```c
+biyos_status biyos_get_functions(biyos_model *model, int first, int count, double *constants,
+                                 int64_t *starts, int64_t size, int64_t *needed, int *variables,
+                                 double *values);
+```
+
+Writes the constants of the `count` functions from `first`, and their linear terms in compressed form, each function's sorted by variable, into arrays the caller gives, in the manner of the formatting calls.
+
+- `constants` receives `count` constants, entry `j` that of function `first + j`.
+- `starts` receives `count + 1` offsets from 0, whatever `size` is, so that `starts[j]` is the number of terms of the `j` functions before function `first + j`.
+- `size` is the number of terms `variables` and `values` hold. The call writes at most `size` terms to each: the first `size` terms of the functions, in order, when the functions have more.
+- `*needed` receives the number of terms of the functions, whether they fit or not. They fit when `*needed` is at most `size`, and function `first + j` is whole in `variables` and `values` when `starts[j + 1]` is at most `size`.
+- A null `constants`, `starts`, `variables` or `values` is skipped, so a `size` of 0 with null arrays learns `*needed` alone.
+
+Returns `BIYOS_INVALID_ARGUMENT` when `first`, `count` or `size` is negative, `first + count` exceeds the number of functions, or `needed` is null.
 
 ## Expressions
 
