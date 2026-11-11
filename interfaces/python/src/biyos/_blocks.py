@@ -6,15 +6,7 @@ def _current(model, version, noun):
         raise ValueError(f"the {noun} predates a deletion from its model")
 
 
-class Variable:
-    """One variable of a model, as indexing a ``Variables`` block gives.
-
-    A view holds its model and its index, and passes as that index wherever
-    its model takes an index of variables. Any other model refuses it as an
-    index. A view made before a deletion from its model raises ``ValueError``
-    when used, as its index may name another variable.
-    """
-
+class View:
     __slots__ = ("_model", "_index", "_version")
 
     def __init__(self, model, index, version):
@@ -23,33 +15,23 @@ class Variable:
         self._version = version
 
     def __index__(self):
-        """Return the index of the variable.
+        """Return the index of the item.
 
         Returns
         -------
         int
-            The index of the variable in its model.
+            The index of the item in its model.
 
         Raises
         ------
         ValueError
             When the model has had a deletion since the view was made.
         """
-        _current(self._model, self._version, "variable")
+        _current(self._model, self._version, self._noun)
         return self._index
 
 
-class Variables:
-    """Consecutive variables of a model, as ``Model.add_variables`` returns.
-
-    A block holds its model, its first index and its count, so it costs the
-    same at any size. ``len`` gives the count, and iterating gives each
-    variable in order as a ``Variable``, so a block passes wherever its model
-    takes indices of variables. Any other model refuses it as indices. A block
-    made before a deletion from its model raises ``ValueError`` when used, as
-    its indices may name other variables.
-    """
-
+class Block:
     __slots__ = ("_model", "_first", "_count", "_version")
 
     def __init__(self, model, first, count, version):
@@ -67,7 +49,7 @@ class Variables:
         return map(self._view, self._range())
 
     def __getitem__(self, key):
-        """Return one variable of the block, or a block for a slice.
+        """Return one item of the block, or a block for a slice.
 
         Parameters
         ----------
@@ -77,8 +59,10 @@ class Variables:
 
         Returns
         -------
-        Variable or Variables
-            The variable at the position, or the variables of the slice.
+        view or block
+            The item at the position, such as a ``Variable`` of a
+            ``Variables`` block, or the items of the slice, as a block of
+            the same family.
 
         Raises
         ------
@@ -95,11 +79,6 @@ class Variables:
             return self._slice(key)
         return self._view(self._first + self._position(key))
 
-    def _indices(self, model, name):
-        if self._model is not model:
-            raise ValueError(f"{name} is a block of another model")
-        return self._range()
-
     def _check(self):
         _current(self._model, self._version, "block")
 
@@ -107,7 +86,7 @@ class Variables:
         return range(self._first, self._first + self._count)
 
     def _view(self, index):
-        return Variable(self._model, index, self._version)
+        return self._element(self._model, index, self._version)
 
     def _position(self, key):
         number = whole("index", key)
@@ -123,10 +102,56 @@ class Variables:
             raise ValueError(f"slice step must be 1, not {step}")
         first = self._first + start
         count = max(stop - start, 0)
-        return Variables(self._model, first, count, self._version)
+        return type(self)(self._model, first, count, self._version)
 
 
-def variable_index(model, name, value):
-    if isinstance(value, Variable) and value._model is not model:
-        raise ValueError(f"{name} is a variable of another model")
+class Variable(View):
+    """One variable of a model, as indexing a ``Variables`` block gives.
+
+    A view holds its model and its index, and passes as that index wherever
+    its model takes an index of variables. Any other model refuses it as an
+    index. A view made before a deletion from its model raises ``ValueError``
+    when used, as its index may name another variable.
+    """
+
+    __slots__ = ()
+    _noun = "variable"
+
+
+class Variables(Block):
+    """Consecutive variables of a model, as ``Model.add_variables`` returns.
+
+    A block holds its model, its first index and its count, so it costs the
+    same at any size. ``len`` gives the count, and iterating gives each
+    variable in order as a ``Variable``, so a block passes wherever its model
+    takes indices of variables. Any other model refuses it as indices. A block
+    made before a deletion from its model raises ``ValueError`` when used, as
+    its indices may name other variables.
+    """
+
+    __slots__ = ()
+    _element = Variable
+
+
+def _member(model, family, name, view):
+    noun = family._element._noun
+    if not isinstance(view, family._element):
+        raise ValueError(f"{name} is a {view._noun}, not a {noun}")
+    if view._model is not model:
+        raise ValueError(f"{name} is a {noun} of another model")
+
+
+def index_of(model, family, name, value):
+    if isinstance(value, View):
+        _member(model, family, name, value)
     return integer(name, value)
+
+
+def range_of(model, family, name, block):
+    if not isinstance(block, family):
+        found = block._element._noun
+        noun = family._element._noun
+        raise ValueError(f"{name} is a block of {found}s, not {noun}s")
+    if block._model is not model:
+        raise ValueError(f"{name} is a block of another model")
+    return block._range()

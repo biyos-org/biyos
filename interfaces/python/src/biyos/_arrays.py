@@ -1,7 +1,7 @@
 from ctypes import c_double, c_int
 from numbers import Real
 
-from biyos._blocks import Variables, variable_index
+from biyos._blocks import Block, index_of, range_of
 from biyos._integers import integer
 
 
@@ -45,10 +45,10 @@ def ints(name, values, count):
     return (c_int * count)(*(integer(entry, value) for value in values))
 
 
-def variable_indices(model, name, values, count):
+def indices_of(model, family, name, values, count):
     _sized(name, values, count)
-    if isinstance(values, Variables):
-        return (c_int * count)(*values._indices(model, name))
+    if isinstance(values, Block):
+        return (c_int * count)(*range_of(model, family, name, values))
     entry = f"an entry of {name}"
-    found = (variable_index(model, entry, value) for value in values)
+    found = (index_of(model, family, entry, value) for value in values)
     return (c_int * count)(*found)

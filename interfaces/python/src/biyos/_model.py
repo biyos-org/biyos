@@ -2,8 +2,8 @@ import weakref
 from ctypes import byref, c_double, c_int, c_void_p
 from enum import IntEnum
 
-from biyos._arrays import doubles, ints, variable_indices
-from biyos._blocks import Variables, variable_index
+from biyos._arrays import doubles, indices_of, ints
+from biyos._blocks import Variables, index_of
 from biyos._capi import lib
 from biyos._environment import Environment
 from biyos._error import Error
@@ -119,7 +119,7 @@ class Model:
     def set_variable_bounds(self, indices, lower=None, upper=None):
         count = len(indices)
         arrays = (
-            variable_indices(self, "indices", indices, count),
+            indices_of(self, Variables, "indices", indices, count),
             doubles("lower", lower, count),
             doubles("upper", upper, count),
         )
@@ -128,7 +128,7 @@ class Model:
     def set_variable_kinds(self, indices, kinds):
         count = len(indices)
         arrays = (
-            variable_indices(self, "indices", indices, count),
+            indices_of(self, Variables, "indices", indices, count),
             ints("kinds", kinds, count),
         )
         self._call(lib.biyos_set_variable_kinds, count, *arrays)
@@ -139,7 +139,7 @@ class Model:
         return count.value
 
     def get_variables(self, first=0, count=None):
-        first = variable_index(self, "first", first)
+        first = index_of(self, Variables, "first", first)
         count, inside = _span(first, count, self.variable_count)
         if not inside:
             self._call(lib.biyos_get_variables, first, count, None, None, None)
