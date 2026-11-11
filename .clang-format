@@ -9,3 +9,9 @@ BreakBeforeBraces: Allman
 InsertBraces: true
 FixNamespaceComments: false
 IndentExternBlock: NoIndent
+BinPackArguments: false
+BinPackParameters: OnePerLine
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+StatementAttributeLikeMacros: [BIYOS_API]
+PenaltyReturnTypeOnItsOwnLine: 100000

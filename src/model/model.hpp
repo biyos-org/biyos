@@ -20,8 +20,11 @@ enum class VariableKind
 };
 
 inline constexpr std::array kVariableKinds{
-    VariableKind::Continuous,     VariableKind::Binary,      VariableKind::Integer,
-    VariableKind::SemiContinuous, VariableKind::SemiInteger,
+    VariableKind::Continuous,
+    VariableKind::Binary,
+    VariableKind::Integer,
+    VariableKind::SemiContinuous,
+    VariableKind::SemiInteger,
 };
 
 struct Variable

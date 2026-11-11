@@ -27,7 +27,8 @@ void describe(Event &event, std::span<const OptionSpec> table, const OptionSpec 
 
 }
 
-void warn_deprecated(Events &events, std::span<const OptionSpec> table,
+void warn_deprecated(Events &events,
+                     std::span<const OptionSpec> table,
                      const OptionSpec &spec) noexcept
 {
     if (!spec.versions.deprecated)

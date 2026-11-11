@@ -43,8 +43,11 @@ BIYOS_API const char *biyos_last_error_message(const biyos_env *env);
 
 BIYOS_API biyos_status biyos_option_id(biyos_env *env, const char *name, int *option);
 BIYOS_API biyos_status biyos_option_kind(biyos_env *env, int option, int *kind);
-BIYOS_API biyos_status biyos_option_versions(biyos_env *env, int option, int *since,
-                                             int *deprecated, int *retired);
+BIYOS_API biyos_status biyos_option_versions(biyos_env *env,
+                                             int option,
+                                             int *since,
+                                             int *deprecated,
+                                             int *retired);
 BIYOS_API biyos_status biyos_set_bool_option(biyos_env *env, int option, int value);
 BIYOS_API biyos_status biyos_set_int_option(biyos_env *env, int option, int value);
 BIYOS_API biyos_status biyos_set_double_option(biyos_env *env, int option, double value);
@@ -54,8 +57,12 @@ BIYOS_API biyos_status biyos_get_int_option(biyos_env *env, int option, int *val
 BIYOS_API biyos_status biyos_get_double_option(biyos_env *env, int option, double *value);
 BIYOS_API biyos_status biyos_get_string_option(biyos_env *env, int option, const char **value);
 
-BIYOS_API biyos_status biyos_subscribe(biyos_env *env, biyos_subscriber subscriber, void *user_data,
-                                       int kind, int lowest, int *subscription);
+BIYOS_API biyos_status biyos_subscribe(biyos_env *env,
+                                       biyos_subscriber subscriber,
+                                       void *user_data,
+                                       int kind,
+                                       int lowest,
+                                       int *subscription);
 BIYOS_API biyos_status biyos_unsubscribe(biyos_env *env, int subscription);
 
 BIYOS_API int biyos_event_kind(const biyos_event *event);
@@ -66,22 +73,38 @@ BIYOS_API int biyos_event_field_count(const biyos_event *event);
 BIYOS_API const char *biyos_event_field_name(const biyos_event *event, int field);
 BIYOS_API const char *biyos_event_field_value(const biyos_event *event, int field);
 
-BIYOS_API biyos_status biyos_format_text(const biyos_event *event, char *buffer, size_t size,
+BIYOS_API biyos_status biyos_format_text(const biyos_event *event,
+                                         char *buffer,
+                                         size_t size,
                                          size_t *needed);
-BIYOS_API biyos_status biyos_format_json(const biyos_event *event, char *buffer, size_t size,
+BIYOS_API biyos_status biyos_format_json(const biyos_event *event,
+                                         char *buffer,
+                                         size_t size,
                                          size_t *needed);
 
 BIYOS_API biyos_status biyos_model_create(biyos_env *env, biyos_model **model);
 BIYOS_API biyos_status biyos_model_free(biyos_model *model);
-BIYOS_API biyos_status biyos_add_variables(biyos_model *model, int count, const int *kinds,
-                                           const double *lower, const double *upper);
-BIYOS_API biyos_status biyos_set_variable_bounds(biyos_model *model, int count, const int *indices,
-                                                 const double *lower, const double *upper);
-BIYOS_API biyos_status biyos_set_variable_kinds(biyos_model *model, int count, const int *indices,
+BIYOS_API biyos_status biyos_add_variables(biyos_model *model,
+                                           int count,
+                                           const int *kinds,
+                                           const double *lower,
+                                           const double *upper);
+BIYOS_API biyos_status biyos_set_variable_bounds(biyos_model *model,
+                                                 int count,
+                                                 const int *indices,
+                                                 const double *lower,
+                                                 const double *upper);
+BIYOS_API biyos_status biyos_set_variable_kinds(biyos_model *model,
+                                                int count,
+                                                const int *indices,
                                                 const int *kinds);
 BIYOS_API biyos_status biyos_variable_count(biyos_model *model, int *count);
-BIYOS_API biyos_status biyos_get_variables(biyos_model *model, int first, int count, int *kinds,
-                                           double *lower, double *upper);
+BIYOS_API biyos_status biyos_get_variables(biyos_model *model,
+                                           int first,
+                                           int count,
+                                           int *kinds,
+                                           double *lower,
+                                           double *upper);
 
 #ifdef __cplusplus
 }

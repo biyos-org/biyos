@@ -64,7 +64,8 @@ TEST(EnvironmentTest, NullClock)
 TEST(EnvironmentTest, OwnsEvents)
 {
     biyos::Environment env;
-    env.events().subscribe(biyos::EventKind::Message, biyos::Level::Info,
+    env.events().subscribe(biyos::EventKind::Message,
+                           biyos::Level::Info,
                            [](const biyos::Event &) {});
     const biyos::Environment &view = env;
     EXPECT_TRUE(view.events().wanted(biyos::EventKind::Message, biyos::Level::Info));

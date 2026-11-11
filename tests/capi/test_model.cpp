@@ -56,8 +56,12 @@ Columns read_all(const Model &model)
     Columns read{.kinds = std::vector<int>(size),
                  .lower = std::vector<double>(size),
                  .upper = std::vector<double>(size)};
-    const biyos_status status = biyos_get_variables(model.get(), 0, count, read.kinds.data(),
-                                                    read.lower.data(), read.upper.data());
+    const biyos_status status = biyos_get_variables(model.get(),
+                                                    0,
+                                                    count,
+                                                    read.kinds.data(),
+                                                    read.lower.data(),
+                                                    read.upper.data());
     EXPECT_EQ(status, BIYOS_OK);
     return read;
 }
@@ -186,8 +190,8 @@ TEST(CApiTest, LockedModel)
               BIYOS_OK);
     fail(env);
     const biyos_status refused = BIYOS_INVALID_ARGUMENT;
-    const std::vector<biyos_status> statuses{refused, refused,  refused, refused,
-                                             refused, BIYOS_OK, BIYOS_OK};
+    const std::vector<biyos_status>
+        statuses{refused, refused, refused, refused, refused, BIYOS_OK, BIYOS_OK};
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
     const std::string failure = "invalid argument: option 'seed': -1 is outside [0, 2147483647]";
     const std::vector<std::string> messages{
@@ -211,8 +215,11 @@ TEST(CApiTest, BulkAdd)
     const Env env;
     const Model model(env);
     const Columns added{
-        .kinds = {BIYOS_VAR_CONTINUOUS, BIYOS_VAR_BINARY, BIYOS_VAR_INTEGER,
-                  BIYOS_VAR_SEMICONTINUOUS, BIYOS_VAR_SEMIINTEGER},
+        .kinds = {BIYOS_VAR_CONTINUOUS,
+                  BIYOS_VAR_BINARY,
+                  BIYOS_VAR_INTEGER,
+                  BIYOS_VAR_SEMICONTINUOUS,
+                  BIYOS_VAR_SEMIINTEGER},
         .lower = {-kInfinity, 0.0, -3.0, 2.0, 1.0},
         .upper = {kInfinity, 1.0, 7.0, 10.0, 4.0},
     };
@@ -258,8 +265,9 @@ TEST(CApiTest, BinaryKind)
     const int index = 0;
     const int binary = BIYOS_VAR_BINARY;
     EXPECT_EQ(biyos_set_variable_kinds(model.get(), 1, &index, &binary), BIYOS_INVALID_ARGUMENT);
-    EXPECT_EQ(env.message(), "invalid argument: variable 0: bounds [-inf, inf] are outside "
-                             "[0, 1], the widest of its kind");
+    EXPECT_EQ(env.message(),
+              "invalid argument: variable 0: bounds [-inf, inf] are outside "
+              "[0, 1], the widest of its kind");
     const double lower = 0.0;
     const double upper = 1.0;
     const double wide = 2.0;
@@ -312,8 +320,8 @@ TEST(CApiTest, NullAdd)
     ASSERT_EQ(biyos_add_variables(model.get(), 2, kinds, nullptr, bounds), BIYOS_OK);
     const int continuous = BIYOS_VAR_CONTINUOUS;
     const Columns wanted{
-        .kinds = {continuous, continuous, kinds[0], kinds[1], kinds[0], kinds[1], kinds[0],
-                  kinds[1]},
+        .kinds =
+            {continuous, continuous, kinds[0], kinds[1], kinds[0], kinds[1], kinds[0], kinds[1]},
         .lower = {-kInfinity, -kInfinity, 0.0, -kInfinity, 0.5, 0.75, 0.0, -kInfinity},
         .upper = {kInfinity, kInfinity, 1.0, kInfinity, 1.0, kInfinity, 0.5, 0.75},
     };
@@ -334,8 +342,9 @@ TEST(CApiTest, NullSet)
     ASSERT_EQ(biyos_set_variable_bounds(model.get(), 2, indices, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(biyos_set_variable_kinds(model.get(), 2, indices, nullptr), BIYOS_OK);
     const int continuous = BIYOS_VAR_CONTINUOUS;
-    const Columns bounded{
-        .kinds = {continuous, continuous}, .lower = {2.0, 1.0}, .upper = {kInfinity, 3.0}};
+    const Columns bounded{.kinds = {continuous, continuous},
+                          .lower = {2.0, 1.0},
+                          .upper = {kInfinity, 3.0}};
     expect_columns(read_all(model), bounded);
     ASSERT_EQ(biyos_set_variable_kinds(model.get(), 2, indices, kinds), BIYOS_OK);
     expect_columns(

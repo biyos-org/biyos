@@ -267,10 +267,16 @@ TEST(OptionTest, WrongKind)
 
 TEST(OptionTest, Names)
 {
-    for (const Option option :
-         {Option::Seed, Option::TimeLimit, Option::CheckLevel, Option::Presolve, Option::Reproducer,
-          Option::FeasibilityAbs, Option::FeasibilityRel, Option::IntegralityTol, Option::ZeroTol,
-          Option::CpuTimeLimit})
+    for (const Option option : {Option::Seed,
+                                Option::TimeLimit,
+                                Option::CheckLevel,
+                                Option::Presolve,
+                                Option::Reproducer,
+                                Option::FeasibilityAbs,
+                                Option::FeasibilityRel,
+                                Option::IntegralityTol,
+                                Option::ZeroTol,
+                                Option::CpuTimeLimit})
     {
         EXPECT_EQ(biyos::find_option(biyos::name_of(option)), option);
         EXPECT_EQ(biyos::find_option(static_cast<int>(option)), option);

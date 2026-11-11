@@ -80,7 +80,9 @@ class CheckTest : public ::testing::Test
         return "3 > 2";
     }
 
-    void check(const biyos::Checker &checker, CheckLevel level, bool result,
+    void check(const biyos::Checker &checker,
+               CheckLevel level,
+               bool result,
                ErrorKind kind = ErrorKind::InvalidArgument)
     {
         const auto holds = [this, result] { return evaluate(result); };

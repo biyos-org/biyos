@@ -27,9 +27,16 @@ class Env
 TEST(CApiTest, OptionIds)
 {
     const Env env;
-    const char *names[] = {"seed",       "time_limit",      "check_level",     "presolve",
-                           "reproducer", "feasibility_abs", "feasibility_rel", "integrality_tol",
-                           "zero_tol",   "cpu_time_limit"};
+    const char *names[] = {"seed",
+                           "time_limit",
+                           "check_level",
+                           "presolve",
+                           "reproducer",
+                           "feasibility_abs",
+                           "feasibility_rel",
+                           "integrality_tol",
+                           "zero_tol",
+                           "cpu_time_limit"};
     const int ids[] = {BIYOS_OPT_SEED,
                        BIYOS_OPT_TIME_LIMIT,
                        BIYOS_OPT_CHECK_LEVEL,
@@ -61,9 +68,16 @@ TEST(CApiTest, OptionKinds)
                        BIYOS_OPT_INTEGRALITY_TOL,
                        BIYOS_OPT_ZERO_TOL,
                        BIYOS_OPT_CPU_TIME_LIMIT};
-    const int kinds[] = {BIYOS_KIND_INT,    BIYOS_KIND_DOUBLE, BIYOS_KIND_ENUM,   BIYOS_KIND_BOOL,
-                         BIYOS_KIND_STRING, BIYOS_KIND_DOUBLE, BIYOS_KIND_DOUBLE, BIYOS_KIND_DOUBLE,
-                         BIYOS_KIND_DOUBLE, BIYOS_KIND_DOUBLE};
+    const int kinds[] = {BIYOS_KIND_INT,
+                         BIYOS_KIND_DOUBLE,
+                         BIYOS_KIND_ENUM,
+                         BIYOS_KIND_BOOL,
+                         BIYOS_KIND_STRING,
+                         BIYOS_KIND_DOUBLE,
+                         BIYOS_KIND_DOUBLE,
+                         BIYOS_KIND_DOUBLE,
+                         BIYOS_KIND_DOUBLE,
+                         BIYOS_KIND_DOUBLE};
     for (int i = 0; i < 10; ++i)
     {
         int kind = 0;

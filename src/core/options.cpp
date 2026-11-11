@@ -67,7 +67,8 @@ void check_range(const OptionSpec &spec, const Rule &rule, T value)
         return;
     }
     const std::string range = "[" + text_of(rule.lower) + ", " + text_of(rule.upper) + "]";
-    throw Error(ErrorKind::InvalidArgument, subject(spec.name),
+    throw Error(ErrorKind::InvalidArgument,
+                subject(spec.name),
                 text_of(value) + " is outside " + range);
 }
 
@@ -77,7 +78,8 @@ void check_value(const OptionSpec &spec, const EnumRule &rule, std::string_view 
     {
         return;
     }
-    throw Error(ErrorKind::InvalidArgument, subject(spec.name),
+    throw Error(ErrorKind::InvalidArgument,
+                subject(spec.name),
                 "'" + std::string(value) + "' is not one of " + joined(rule.values));
 }
 

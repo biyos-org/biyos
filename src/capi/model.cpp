@@ -56,7 +56,9 @@ biyos::VariableKind kind_at(const int *kinds, std::size_t k)
                             : static_cast<biyos::VariableKind>(kinds[k]);
 }
 
-biyos::Variable bounded(biyos::Variable variable, std::size_t k, const double *lower,
+biyos::Variable bounded(biyos::Variable variable,
+                        std::size_t k,
+                        const double *lower,
                         const double *upper)
 {
     if (lower != nullptr)
@@ -91,7 +93,10 @@ void set_each(biyos::Model &core, std::span<const biyos::Index> indices, Arrays.
     core.set_variables(indices, changed);
 }
 
-void add_variables(biyos_model &model, int count, const int *kinds, const double *lower,
+void add_variables(biyos_model &model,
+                   int count,
+                   const int *kinds,
+                   const double *lower,
                    const double *upper)
 {
     biyos::Model &core = writable(model);
@@ -105,7 +110,10 @@ void add_variables(biyos_model &model, int count, const int *kinds, const double
     core.add_variables(added);
 }
 
-void set_bounds(biyos_model &model, int count, const int *indices, const double *lower,
+void set_bounds(biyos_model &model,
+                int count,
+                const int *indices,
+                const double *lower,
                 const double *upper)
 {
     biyos::Model &core = writable(model);
@@ -123,7 +131,10 @@ void variable_count(biyos_model &model, int *count)
     *require(count, "count") = model.core.variable_count();
 }
 
-void copy_out(const biyos::Variable &variable, std::size_t k, int *kinds, double *lower,
+void copy_out(const biyos::Variable &variable,
+              std::size_t k,
+              int *kinds,
+              double *lower,
               double *upper)
 {
     if (kinds != nullptr)
@@ -140,7 +151,11 @@ void copy_out(const biyos::Variable &variable, std::size_t k, int *kinds, double
     }
 }
 
-void get_variables(biyos_model &model, int first, int count, int *kinds, double *lower,
+void get_variables(biyos_model &model,
+                   int first,
+                   int count,
+                   int *kinds,
+                   double *lower,
                    double *upper)
 {
     const std::span<const biyos::Variable> found = model.core.variables(first, count);
@@ -175,19 +190,27 @@ biyos_status biyos_model_free(biyos_model *model)
     return status;
 }
 
-biyos_status biyos_add_variables(biyos_model *model, int count, const int *kinds,
-                                 const double *lower, const double *upper)
+biyos_status biyos_add_variables(biyos_model *model,
+                                 int count,
+                                 const int *kinds,
+                                 const double *lower,
+                                 const double *upper)
 {
     return guarded<add_variables>(model, count, kinds, lower, upper);
 }
 
-biyos_status biyos_set_variable_bounds(biyos_model *model, int count, const int *indices,
-                                       const double *lower, const double *upper)
+biyos_status biyos_set_variable_bounds(biyos_model *model,
+                                       int count,
+                                       const int *indices,
+                                       const double *lower,
+                                       const double *upper)
 {
     return guarded<set_bounds>(model, count, indices, lower, upper);
 }
 
-biyos_status biyos_set_variable_kinds(biyos_model *model, int count, const int *indices,
+biyos_status biyos_set_variable_kinds(biyos_model *model,
+                                      int count,
+                                      const int *indices,
                                       const int *kinds)
 {
     return guarded<set_kinds>(model, count, indices, kinds);
@@ -198,8 +221,12 @@ biyos_status biyos_variable_count(biyos_model *model, int *count)
     return guarded<variable_count>(model, count);
 }
 
-biyos_status biyos_get_variables(biyos_model *model, int first, int count, int *kinds,
-                                 double *lower, double *upper)
+biyos_status biyos_get_variables(biyos_model *model,
+                                 int first,
+                                 int count,
+                                 int *kinds,
+                                 double *lower,
+                                 double *upper)
 {
     return guarded<get_variables>(model, first, count, kinds, lower, upper);
 }

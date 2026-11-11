@@ -21,7 +21,9 @@ void copy_line(const std::string &line, char *buffer, std::size_t size, std::siz
 }
 
 template <auto Formatter>
-biyos_status formatted(const biyos_event *event, char *buffer, std::size_t size,
+biyos_status formatted(const biyos_event *event,
+                       char *buffer,
+                       std::size_t size,
                        std::size_t *needed) noexcept
 {
     if (event == nullptr || needed == nullptr || (buffer == nullptr && size > 0))
