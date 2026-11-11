@@ -439,6 +439,38 @@ def test_deferred(log):
     assert log == ["free"]
 
 
+def test_reentered(monkeypatch):
+    log = []
+    free = partial(once, log, lib.biyos_model_free)
+    monkeypatch.setattr(lib, "biyos_model_free", free)
+    env = biyos.Environment()
+    model = biyos.Model(env)
+    handle = model._handle.value
+    models = env._models
+    take = partial(preceded, [model.close], models.take)
+    monkeypatch.setattr(models, "take", take)
+    model.close()
+    env.close()
+    assert log == [handle]
+
+
+def test_interrupted_take(monkeypatch):
+    statuses = []
+    spy = partial(spied, lib.biyos_model_free, statuses)
+    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    env = biyos.Environment()
+    model = biyos.Model(env)
+    models = env._models
+    monkeypatch.setattr(models, "take", partial(interrupted, models.take))
+    with pytest.raises(KeyboardInterrupt):
+        model.close()
+    monkeypatch.delattr(models, "take")
+    model.close()
+    env.close()
+    assert statuses == [OK]
+    assert not env._free.alive
+
+
 def test_holds_env():
     model = biyos.Model(biyos.Environment())
     gc.collect()

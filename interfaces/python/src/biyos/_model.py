@@ -71,7 +71,8 @@ class Model:
             return
         models = self._env._models
         models.take(self._handle.value)
-        self._free.detach()
+        if self._free.detach() is None:
+            return
         try:
             self._env._run(lib.biyos_model_free, self._handle)
         except Error:
