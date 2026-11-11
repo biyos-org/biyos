@@ -37,6 +37,7 @@ using biyos::test::binary;
 using biyos::test::ChainRule;
 using biyos::test::constant;
 using biyos::test::every_operator;
+using biyos::test::gradient_of;
 using biyos::test::jacobian_of;
 using biyos::test::kBudgets;
 using biyos::test::kRoots;
@@ -249,6 +250,20 @@ void call_jacobian(const Call &call)
     biyos::jacobian(*call.tape, call.point, *call.workspace, *call.adjoints, call.values, call.out);
 }
 
+void call_weighted(const Call &call)
+{
+    const Tape &tape = *call.tape;
+    Workspace &workspace = *call.workspace;
+    Adjoints &adjoints = *call.adjoints;
+    biyos::weighted_gradient(tape,
+                             call.point,
+                             call.weights,
+                             workspace,
+                             adjoints,
+                             call.values,
+                             call.out);
+}
+
 std::string refused(void (*sweep)(const Call &), const Call &call)
 {
     return refusal([&] { sweep(call); });
@@ -268,6 +283,42 @@ void expect_close(const std::vector<double> &found, const std::vector<double> &w
     {
         EXPECT_NEAR(found[k], wanted[k], kRounding * (1.0 + std::fabs(wanted[k]))) << k;
     }
+}
+
+void expect_weighted(const Tape &tape,
+                     const std::vector<double> &point,
+                     const std::vector<double> &weights,
+                     const std::vector<double> &found)
+{
+    const Rows rows = dense(tape, jacobian_of(tape, point), point.size());
+    for (std::size_t j = 0; j < point.size(); ++j)
+    {
+        double wanted = 0.0;
+        double scale = 1.0;
+        for (std::size_t r = 0; r < rows.size(); ++r)
+        {
+            wanted += weights[r] * rows[r][j];
+            scale += std::fabs(weights[r] * rows[r][j]);
+        }
+        if (std::isfinite(wanted))
+        {
+            EXPECT_NEAR(found[j], wanted, kRounding * scale) << j;
+        }
+        else
+        {
+            EXPECT_FALSE(std::isfinite(found[j])) << j;
+        }
+    }
+}
+
+std::vector<double> random_weights(Random &random, std::size_t count)
+{
+    std::vector<double> weights;
+    for (std::size_t k = 0; k < count; ++k)
+    {
+        weights.push_back(random.uniform(-2.0, 2.0));
+    }
+    return weights;
 }
 
 std::vector<double> interior_point(Random &random)
@@ -661,6 +712,56 @@ TEST(DerivativeTest, NanValues)
                    {kNan, kNan, kNan, kNan, kNan, kNan, kNan});
 }
 
+TEST(DerivativeTest, Weighted)
+{
+    for (std::uint64_t seed = 1; seed <= 40; ++seed)
+    {
+        SCOPED_TRACE(seed);
+        Random random(seed);
+        const Graph graph = random_graph(random);
+        const std::vector<Offset> roots = picks(random, graph, kRoots);
+        const Tape tape(graph, roots, kBudgets[random.below(kBudgets.size())]);
+        Workspace workspace(tape);
+        Adjoints adjoints(tape);
+        std::vector<double> values(roots.size());
+        std::vector<double> gradient(kVariables);
+        for (int k = 0; k < 2; ++k)
+        {
+            const std::vector<double> point = random_point(random);
+            const std::vector<double> weights = random_weights(random, roots.size());
+            std::ranges::fill(gradient, kNan);
+            biyos::weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
+            EXPECT_TRUE(cleared(adjoints));
+            expect_weighted(tape, point, weights, gradient);
+        }
+    }
+    Graph graph;
+    const std::vector<Offset> roots = shared_roots(graph);
+    const std::vector<double> point{0.7, 1.3, 2.1, 0.4};
+    Random random(7);
+    for (const Offset budget : {Offset{1}, Offset{2}, Offset{5}, Offset{8}, biyos::kBudget})
+    {
+        SCOPED_TRACE(budget);
+        const Tape tape(graph, roots, budget);
+        const std::vector<double> weights = random_weights(random, roots.size());
+        const std::vector<double> gradient = gradient_of(tape, point, weights);
+        expect_weighted(tape, point, weights, gradient);
+        EXPECT_DOUBLE_EQ(gradient[3], 0.0);
+    }
+}
+
+TEST(DerivativeTest, ZeroWeight)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset y = graph.add_variable(1);
+    const std::array roots{unary(graph, Operator::Sqrt, x), unary(graph, Operator::Sin, y)};
+    const Tape tape(graph, roots);
+    const std::array point{0.0, 1.0};
+    const std::array weights{0.0, 1.0};
+    expect_entries(gradient_of(tape, point, weights), {0.0, std::cos(1.0)});
+}
+
 TEST(DerivativeTest, Sizes)
 {
     Graph graph;
@@ -714,4 +815,49 @@ TEST(DerivativeTest, Sizes)
         EXPECT_EQ(refused(call_jacobian, bad),
                   "invalid argument: adjoints: sized for another tape");
     }
+}
+
+TEST(DerivativeTest, WeightSizes)
+{
+    Graph graph;
+    const Offset shared = unary(graph, Operator::Exp, graph.add_variable(1));
+    const std::array roots{
+        unary(graph, Operator::Sin, shared),
+        unary(graph, Operator::Cos, shared),
+    };
+    const Tape tape(graph, roots, 3);
+    Workspace workspace(tape);
+    Adjoints adjoints(tape);
+    std::vector<double> values(2);
+    std::vector<double> gradient(2);
+    const std::array point{0.5, 0.25};
+    const std::array weights{1.0, -1.0};
+    const Call call{
+        .tape = &tape,
+        .point = point,
+        .weights = weights,
+        .workspace = &workspace,
+        .adjoints = &adjoints,
+        .values = values,
+        .out = gradient,
+    };
+    Call bad = call;
+    bad.weights = std::span(weights).first(1);
+    EXPECT_EQ(refused(call_weighted, bad),
+              "invalid argument: weights: size 1, not the root count 2");
+    std::vector<double> more(3);
+    bad = call;
+    bad.out = more;
+    EXPECT_EQ(refused(call_weighted, bad),
+              "invalid argument: gradient: size 3, not the point size 2");
+    Adjoints small(tape);
+    small.shared.pop_back();
+    bad = call;
+    bad.adjoints = &small;
+    EXPECT_EQ(refused(call_weighted, bad), "invalid argument: adjoints: sized for another tape");
+    std::vector<double> fewer(1);
+    bad = call;
+    bad.values = fewer;
+    EXPECT_EQ(refused(call_weighted, bad),
+              "invalid argument: values: size 1, not the root count 2");
 }

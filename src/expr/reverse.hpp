@@ -24,5 +24,9 @@ void retrace(const Block &block,
              const Workspace &workspace,
              Adjoints &adjoints,
              std::span<double> gradient) noexcept;
+void reverse(const Block &block,
+             const Workspace &workspace,
+             Adjoints &adjoints,
+             std::span<double> gradient) noexcept;
 
 }

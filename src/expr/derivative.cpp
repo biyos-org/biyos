@@ -137,6 +137,25 @@ void differentiate(const Tape &tape,
     }
 }
 
+void seed(const Block &block, std::span<const double> weights, std::span<double> slots) noexcept
+{
+    const std::span<const double> mine = weights.subspan(at(block.first), block.outputs.size());
+    for (std::size_t k = 0; k < mine.size(); ++k)
+    {
+        slots[block.outputs[k]] += mine[k];
+    }
+}
+
+void pull(const Block &block, Adjoints &adjoints) noexcept
+{
+    const std::span<double> shared = std::span(adjoints.shared);
+    const std::span<double> mine = shared.subspan(at(block.first), block.outputs.size());
+    for (std::size_t k = 0; k < mine.size(); ++k)
+    {
+        adjoints.slots[block.outputs[k]] += std::exchange(mine[k], 0.0);
+    }
+}
+
 }
 
 void jacobian(const Tape &tape,
@@ -156,6 +175,36 @@ void jacobian(const Tape &tape,
         linearize(block, point, workspace);
         store(block, workspace.slots, values);
         differentiate(tape, block, workspace, adjoints, gradients);
+    }
+}
+
+void weighted_gradient(const Tape &tape,
+                       std::span<const double> point,
+                       std::span<const double> weights,
+                       Workspace &workspace,
+                       Adjoints &adjoints,
+                       std::span<double> values,
+                       std::span<double> gradient)
+{
+    check_sweep(tape, point, workspace, values);
+    check_reverse(tape, workspace, adjoints);
+    check_size("weights", weights, tape.roots(), "the root count");
+    check_size("gradient", gradient, count_of(point.size()), "the point size");
+    std::ranges::fill(gradient, 0.0);
+    prepare(tape, point, workspace);
+    const std::span<const Block> blocks = tape.blocks();
+    const std::size_t prepass = at(tape.prepass());
+    for (const Block &block : blocks.subspan(prepass))
+    {
+        linearize(block, point, workspace);
+        store(block, workspace.slots, values);
+        seed(block, weights, adjoints.slots);
+        reverse(block, workspace, adjoints, gradient);
+    }
+    for (const Block &block : std::views::reverse(blocks.first(prepass)))
+    {
+        pull(block, adjoints);
+        reverse(block, workspace, adjoints, gradient);
     }
 }
 

@@ -197,4 +197,16 @@ void retrace(const Block &block,
     }
 }
 
+void reverse(const Block &block,
+             const Workspace &workspace,
+             Adjoints &adjoints,
+             std::span<double> gradient) noexcept
+{
+    const Trail trail = trail_of(block, workspace, adjoints, gradient);
+    const auto count = static_cast<std::uint32_t>(block.instructions.size());
+    sweep(block, {.begin = 0, .end = count}, trail);
+    const auto loads = static_cast<std::uint32_t>(block.loads.size());
+    release(block, {.begin = 0, .end = loads}, adjoints);
+}
+
 }

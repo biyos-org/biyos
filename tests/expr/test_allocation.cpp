@@ -178,6 +178,19 @@ std::size_t jacobian_cost(const Tape &tape)
     return biyos::test::allocations() - start;
 }
 
+std::size_t gradient_cost(const Tape &tape)
+{
+    biyos::Workspace workspace(tape);
+    biyos::Adjoints adjoints(tape);
+    std::vector<double> values(static_cast<std::size_t>(tape.roots()));
+    const std::vector<double> weights(values.size(), 0.5);
+    const std::array point{0.5, 2.0};
+    std::vector<double> gradient(point.size());
+    const std::size_t start = biyos::test::allocations();
+    biyos::weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
+    return biyos::test::allocations() - start;
+}
+
 std::size_t sweep_cost(const Tape &tape)
 {
     biyos::Workspace workspace(tape);
@@ -254,4 +267,13 @@ TEST(AllocationTest, JacobianSweep)
     const Tape tape(graph, roots, 4);
     ASSERT_GT(tape.prepass(), 0);
     EXPECT_EQ(jacobian_cost(tape), 0U);
+}
+
+TEST(AllocationTest, GradientSweep)
+{
+    Graph graph;
+    const std::vector<Offset> roots = products(graph);
+    const Tape tape(graph, roots, 4);
+    ASSERT_GT(tape.prepass(), 0);
+    EXPECT_EQ(gradient_cost(tape), 0U);
 }
