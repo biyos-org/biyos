@@ -1,0 +1,269 @@
+#include "core/error.hpp"
+#include "core/index.hpp"
+#include "expr/graph.hpp"
+#include "expr/layout.hpp"
+#include "expr/node.hpp"
+#include "expr/tape.hpp"
+#include "refusal.hpp"
+
+#include <gtest/gtest.h>
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <span>
+#include <vector>
+
+namespace
+{
+
+using biyos::Block;
+using biyos::Graph;
+using biyos::Index;
+using biyos::kBudget;
+using biyos::Offset;
+using biyos::Operator;
+using biyos::Tape;
+using biyos::test::failure;
+using biyos::test::refusal;
+
+using Counts = std::vector<std::size_t>;
+
+std::size_t at(Offset value)
+{
+    return static_cast<std::size_t>(value);
+}
+
+Offset unary(Graph &graph, Operator op, Offset child)
+{
+    return graph.add(op, std::span(&child, 1));
+}
+
+Offset binary(Graph &graph, Operator op, Offset left, Offset right)
+{
+    const std::array children{left, right};
+    return graph.add(op, children);
+}
+
+Offset chain(Graph &graph, Offset start, Offset length)
+{
+    Offset node = start;
+    for (Offset k = 0; k < length; ++k)
+    {
+        node = unary(graph, Operator::Exp, node);
+    }
+    return node;
+}
+
+std::span<const Block> partitions(const Tape &tape)
+{
+    return tape.blocks().subspan(at(tape.prepass()));
+}
+
+Counts sizes(const Tape &tape)
+{
+    Counts counts;
+    for (const Block &block : partitions(tape))
+    {
+        counts.push_back(block.outputs.size());
+    }
+    return counts;
+}
+
+Counts lengths(const Tape &tape)
+{
+    Counts counts;
+    for (const Block &block : partitions(tape))
+    {
+        counts.push_back(block.instructions.size());
+    }
+    return counts;
+}
+
+std::size_t count(const Tape &tape, Operator op)
+{
+    std::size_t total = 0;
+    for (const Block &block : tape.blocks())
+    {
+        for (const biyos::Instruction &instruction : block.instructions)
+        {
+            total += instruction.op == op ? 1 : 0;
+        }
+    }
+    return total;
+}
+
+std::vector<std::uint32_t> targets(const Block &block)
+{
+    std::vector<std::uint32_t> slots;
+    for (const biyos::Instruction &instruction : block.instructions)
+    {
+        slots.push_back(instruction.target);
+    }
+    return slots;
+}
+
+std::vector<Offset> loads(const Block &block)
+{
+    return {block.loads.begin(), block.loads.end()};
+}
+
+}
+
+TEST(TapeTest, Reuse)
+{
+    Graph line;
+    const Offset end = chain(line, line.add_variable(0), 100);
+    const Tape long_chain(line, std::span(&end, 1));
+    EXPECT_EQ(long_chain.width(), 1U);
+    EXPECT_EQ(long_chain.blocks()[0].instructions.size(), 101U);
+
+    Graph pair;
+    const Offset left = chain(pair, pair.add_variable(0), 3);
+    const Offset right = chain(pair, pair.add_variable(1), 3);
+    const Offset ratio = binary(pair, Operator::Division, left, right);
+    const Tape two(pair, std::span(&ratio, 1));
+    EXPECT_EQ(two.width(), 2U);
+    EXPECT_EQ(targets(two.blocks()[0]), (std::vector<std::uint32_t>{0, 0, 0, 0, 1, 1, 1, 1, 1}));
+
+    Graph graph;
+    const Offset shared = unary(graph, Operator::Exp, graph.add_variable(0));
+    const Offset sine = unary(graph, Operator::Sin, shared);
+    const Offset cosine = unary(graph, Operator::Cos, shared);
+    const std::array terms{sine, cosine};
+    const Offset root = graph.add_sum(0.0, terms, std::array{1.0, 1.0});
+    const Tape tape(graph, std::span(&root, 1));
+    EXPECT_EQ(tape.width(), 2U);
+    EXPECT_EQ(targets(tape.blocks()[0]), (std::vector<std::uint32_t>{0, 0, 1, 0, 0}));
+}
+
+TEST(TapeTest, Pinned)
+{
+    Graph graph;
+    const std::array leaves{graph.add_variable(0), graph.add_variable(1)};
+    const Offset inner = graph.add_sum(0.0, leaves, std::array{1.0, 1.0});
+    const Offset shared = unary(graph, Operator::Exp, inner);
+    const Offset sine = unary(graph, Operator::Sin, shared);
+    const Offset cosine = unary(graph, Operator::Cos, shared);
+    const std::array roots{sine, cosine};
+
+    const Tape split(graph, roots, 5);
+    EXPECT_EQ(sizes(split), (Counts{1, 1}));
+    EXPECT_EQ(split.prepass(), 1);
+    EXPECT_EQ(split.pinned(), 2);
+    EXPECT_EQ(count(split, Operator::Exp), 1U);
+    EXPECT_EQ(count(split, Operator::Sum), 1U);
+    for (const Block &block : partitions(split))
+    {
+        EXPECT_EQ(loads(block), (std::vector<Offset>{1}));
+    }
+
+    const Tape whole(graph, roots);
+    EXPECT_EQ(sizes(whole), (Counts{2}));
+    EXPECT_EQ(whole.prepass(), 0);
+    EXPECT_EQ(whole.pinned(), 0);
+    EXPECT_EQ(count(whole, Operator::Exp), 1U);
+}
+
+TEST(TapeTest, SharedVariable)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    std::vector<Offset> roots;
+    for (int k = 0; k < 4; ++k)
+    {
+        roots.push_back(unary(graph, Operator::Sin, x));
+    }
+    const Tape tape(graph, roots, 2);
+    EXPECT_EQ(sizes(tape), (Counts{1, 1, 1, 1}));
+    EXPECT_EQ(tape.pinned(), 0);
+    EXPECT_EQ(tape.prepass(), 0);
+    EXPECT_EQ(count(tape, Operator::Variable), 4U);
+    for (const Block &block : partitions(tape))
+    {
+        EXPECT_TRUE(block.loads.empty());
+    }
+}
+
+TEST(TapeTest, Budget)
+{
+    Graph own;
+    std::vector<Offset> chains;
+    const std::array steps{3, 3, 3, 10, 1, 7};
+    for (std::size_t k = 0; k < steps.size(); ++k)
+    {
+        chains.push_back(chain(own, own.add_variable(static_cast<Index>(k)), steps[k]));
+    }
+    const Tape cut(own, chains, 10);
+    EXPECT_EQ(sizes(cut), (Counts{2, 1, 1, 2}));
+    EXPECT_EQ(lengths(cut), (Counts{8, 4, 11, 10}));
+
+    Graph common;
+    const Offset x = common.add_variable(0);
+    std::vector<Offset> exps;
+    for (int k = 0; k < 7; ++k)
+    {
+        exps.push_back(unary(common, Operator::Exp, x));
+    }
+    const Tape leaves(common, exps, 4);
+    EXPECT_EQ(sizes(leaves), (Counts{3, 3, 1}));
+    EXPECT_EQ(lengths(leaves), (Counts{4, 4, 2}));
+
+    Graph moved;
+    const std::array pair{moved.add_variable(0), moved.add_variable(1)};
+    const std::array recounted{
+        moved.add(Operator::Product, 1.0, pair),
+        chain(moved, pair[0], 2),
+        chain(moved, moved.add_variable(2), 1),
+    };
+    const Tape fresh(moved, recounted, 4);
+    EXPECT_EQ(sizes(fresh), (Counts{1, 1, 1}));
+    EXPECT_EQ(lengths(fresh), (Counts{3, 3, 2}));
+
+    Graph heavy;
+    const Offset first = chain(heavy, heavy.add_variable(0), 12);
+    const Offset second = chain(heavy, heavy.add_variable(1), 1);
+    EXPECT_EQ(sizes(Tape(heavy, std::array{first, second}, 10)), (Counts{1, 1}));
+
+    Graph leaf;
+    const Offset lone = leaf.add_variable(0);
+    const Tape repeated(leaf, std::array{lone, lone, lone, lone}, 2);
+    EXPECT_EQ(sizes(repeated), (Counts{4}));
+    EXPECT_EQ(lengths(repeated), (Counts{1}));
+
+    Graph large;
+    std::vector<Offset> halves;
+    for (Index k = 0; k < 3; ++k)
+    {
+        halves.push_back(chain(large, large.add_variable(k), kBudget / 2 - 1));
+    }
+    EXPECT_EQ(sizes(Tape(large, halves)), (Counts{2, 1}));
+}
+
+TEST(TapeTest, MissingRoot)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const std::array roots{x, x + 1};
+    EXPECT_EQ(refusal([&] { const Tape tape(graph, roots); }),
+              "invalid argument: expression: node 1 is unknown");
+}
+
+TEST(TapeTest, Bound)
+{
+    const std::size_t largest = (std::numeric_limits<std::uint32_t>::max)();
+    EXPECT_EQ(biyos::narrow(largest), largest);
+    EXPECT_EQ(failure([&] { biyos::narrow(largest + 1); }, biyos::ErrorKind::NoMemory),
+              "out of memory: tape: a block is too large for 32-bit slots");
+}
+
+TEST(TapeTest, NoRoots)
+{
+    Graph graph;
+    graph.add_variable(0);
+    const Tape tape(graph, {});
+    EXPECT_TRUE(tape.blocks().empty());
+    EXPECT_EQ(tape.roots(), 0);
+    EXPECT_EQ(tape.width(), 0U);
+}
