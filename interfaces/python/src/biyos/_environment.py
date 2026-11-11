@@ -1,4 +1,5 @@
 import weakref
+from contextlib import contextmanager
 from ctypes import byref, c_char_p, c_double, c_int, c_void_p
 from numbers import Real
 
@@ -81,7 +82,7 @@ _GETTERS = {
 
 def _release(models, handle):
     models.release()
-    lib.biyos_env_free(handle)
+    return lib.biyos_env_free(handle)
 
 
 class Environment:
@@ -92,9 +93,12 @@ class Environment:
             raise Error("cannot create the environment", status)
         self._handle = handle
         self._models = Handles()
-        self._free = weakref.finalize(self, _release, self._models, handle)
+        self._arm()
         self._relay = Relay()
         self._subscribers = Subscribers(self._relay)
+        self._calls = 0
+        self._closing = False
+        self._pending = False
 
     def __enter__(self):
         return self
@@ -106,20 +110,24 @@ class Environment:
         """Free the environment and every model made on it.
 
         The models still open are closed first, so using one afterwards
-        raises ``ValueError``. Closing a closed environment does nothing.
+        raises ``ValueError``. Closing a freed environment does nothing.
+        Closed during a call on it or on one of its models, by a subscriber
+        or a finalizer, it reads as closed at once and is freed when the
+        outermost call returns. Such a deferred close never raises.
 
         Raises
         ------
         Error
-            While the environment delivers an event. Nothing is freed.
+            When the free is refused because a model is still allocated, as
+            after an interrupted ``Model.close``. An exception raised by a
+            subscriber during the refusal is raised instead. The environment
+            stays allocated, and only a later ``close`` or its collection
+            tries again; the collection cannot raise and fails silently.
         """
-        if not self._free.alive:
-            return
-        if self._relay.idle():
-            self._models.release()
-        self._run(lib.biyos_env_free, self._handle)
-        self._free.detach()
-        self._subscribers.clear()
+        self._closing = True
+        self._pending = True
+        if self._calls == 0:
+            self._run(self._dispose)
 
     def set_option(self, name, value):
         option, kind = self._lookup(name)
@@ -144,18 +152,26 @@ class Environment:
         function = _callable(function)
         kind = integer("kind", kind)
         lowest = integer("lowest", lowest)
-        callback = self._subscribers.callback
         subscription = c_int()
+        with self._busy():
+            self._subscribe(function, kind, lowest, subscription)
+        return subscription.value
+
+    def unsubscribe(self, subscription):
+        subscription = integer("subscription", subscription)
+        with self._busy():
+            self._unsubscribe(subscription)
+
+    def _subscribe(self, function, kind, lowest, subscription):
+        callback = self._subscribers.callback
         out = byref(subscription)
         key = self._subscribers.add(function)
         try:
             self._call(lib.biyos_subscribe, callback, key, kind, lowest, out)
         finally:
             self._subscribers.settle(key, subscription.value)
-        return subscription.value
 
-    def unsubscribe(self, subscription):
-        subscription = integer("subscription", subscription)
+    def _unsubscribe(self, subscription):
         self._call(lib.biyos_unsubscribe, subscription)
         self._subscribers.remove(subscription)
 
@@ -171,17 +187,61 @@ class Environment:
         return option.value
 
     def _call(self, function, *arguments):
-        self._run(function, self._handle, *arguments)
+        with self._busy():
+            if not self._open():
+                raise ValueError("the environment is closed")
+            self._run(function, self._handle, *arguments)
+
+    @contextmanager
+    def _busy(self):
+        """Keep the environment allocated while the block runs.
+
+        A close during the block reads as closed at once and frees when the
+        last hold ends. Inside the block, check ``_open()`` before calling C,
+        register any handle the call creates in a ``finally``, and hold every
+        other environment the call uses.
+        """
+        self._calls += 1
+        try:
+            yield
+        finally:
+            self._calls -= 1
+            self._settle()
 
     def _run(self, function, *arguments):
-        if not self._free.alive:
-            raise ValueError("the environment is closed")
         self._relay.start()
         status = function(*arguments)
         self._settle()
         self._relay.finish(self._handle, status)
         check(self._handle, status)
 
+    def _open(self):
+        return self._free.alive and not self._closing
+
+    def _arm(self):
+        arguments = (self._models, self._handle)
+        self._free = weakref.finalize(self, _release, *arguments)
+
     def _settle(self):
         if self._relay.idle():
+            self._drain()
+        if self._calls == 0 and self._pending:
+            self._dispose()
+
+    def _drain(self):
+        self._calls += 1
+        try:
             self._models.drain()
+        finally:
+            self._calls -= 1
+
+    def _dispose(self):
+        self._pending = False
+        if self._free.detach() is None:
+            return _capi.OK
+        status = _release(self._models, self._handle)
+        if status == _capi.OK:
+            self._subscribers.clear()
+        else:
+            self._arm()
+        return status

@@ -14,7 +14,6 @@ from spies import followed, interrupted, preceded, spied
 INVALID_ARGUMENT = -100
 INFINITY = float("inf")
 LOCKED = "invalid argument: model: is read-only while delivering an event"
-BUSY = "invalid argument: environment: is read-only while delivering an event"
 
 KINDS = [
     VariableKind.CONTINUOUS,
@@ -302,23 +301,24 @@ def test_unmasked():
     assert not env._free.alive
 
 
-def test_busy_close(env, model):
+def test_busy_close(log):
+    env = biyos.Environment()
+    model = biyos.Model(env)
     seen = []
 
     def close_inside(event):
+        env.close()
         try:
-            env.close()
-        except biyos.Error as error:
+            model.variable_count()
+        except ValueError as error:
             seen.append(str(error))
 
-    model.add_variables(1)
     env.subscribe(close_inside, EventKind.MESSAGE, Level.ERROR)
-    with pytest.raises(biyos.Error):
-        env.set_option("seed", -1)
-    assert seen == [BUSY]
-    model.add_variables(1)
-    assert model.variable_count() == 2
-    assert env.get_option("seed") == 0
+    message = refusal(model.set_variable_bounds, [0], [0.0], [1.0])
+    assert message == "invalid argument: variable 0: unknown"
+    assert seen == ["the model is closed"]
+    assert log == ["free"]
+    assert not env._free.alive
 
 
 def test_gap(log, monkeypatch):

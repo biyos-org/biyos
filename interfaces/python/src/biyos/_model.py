@@ -44,17 +44,12 @@ class Model:
 
     def __init__(self, env):
         env = _environment(env)
-        handle = c_void_p()
-        models = env._models
-        try:
-            env._call(lib.biyos_model_create, byref(handle))
-        finally:
-            if handle.value is not None:
-                models.add(handle.value)
         self._env = env
-        self._handle = handle
+        self._handle = c_void_p()
         self._calls = 0
         self._closing = False
+        with env._busy():
+            self._create()
         self._hold()
 
     def __enter__(self):
@@ -64,6 +59,10 @@ class Model:
         self.close()
 
     def close(self):
+        with self._env._busy():
+            self._close()
+
+    def _close(self):
         if not self._open():
             return
         if self._calls > 0:
@@ -121,6 +120,14 @@ class Model:
         self._call(lib.biyos_get_variables, first, count, *arrays)
         return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
 
+    def _create(self):
+        handle = self._handle
+        try:
+            self._env._call(lib.biyos_model_create, byref(handle))
+        finally:
+            if handle.value is not None:
+                self._env._models.add(handle.value)
+
     def _hold(self):
         park = self._env._models.park
         self._free = weakref.finalize(self, park, self._handle.value)
@@ -128,9 +135,13 @@ class Model:
     def _open(self):
         if self._closing:
             return False
-        return self._free.alive and not self._env._models.closed
+        return self._free.alive and self._env._open()
 
     def _call(self, function, *arguments):
+        with self._env._busy():
+            self._run(function, *arguments)
+
+    def _run(self, function, *arguments):
         self._calls += 1
         try:
             if not self._open():
@@ -143,4 +154,3 @@ class Model:
     def _settle(self):
         if self._calls == 0 and self._closing:
             self._free()
-            self._env._settle()
