@@ -26,19 +26,6 @@ constexpr std::string_view kNoun = "function";
     throw Error(ErrorKind::InvalidArgument, "argument 'starts'", reason);
 }
 
-void check_shape(std::size_t functions, std::span<const Offset> starts, std::size_t terms)
-{
-    if (starts.size() != functions + 1)
-    {
-        throw Error(ErrorKind::Internal, "model", "functions and starts differ in number");
-    }
-    check_starts(starts);
-    if (starts.back() != static_cast<Offset>(terms))
-    {
-        throw Error(ErrorKind::Internal, "model", "starts and terms differ in number");
-    }
-}
-
 void check_constant(Index function, double constant)
 {
     const std::string_view fault = value_fault(constant);
@@ -48,9 +35,8 @@ void check_constant(Index function, double constant)
     }
 }
 
-std::span<LinearTerm> slice(std::span<LinearTerm> terms,
-                            std::span<const Offset> starts,
-                            std::size_t k)
+template <typename T>
+std::span<T> slice(std::span<T> terms, std::span<const Offset> starts, std::size_t k)
 {
     const auto begin = static_cast<std::size_t>(starts[k]);
     const auto end = static_cast<std::size_t>(starts[k + 1]);
@@ -82,6 +68,19 @@ void check_starts(std::span<const Offset> starts)
             const std::string fall = text_of(starts[k - 1]) + " to " + text_of(starts[k]);
             refuse_starts("decreases from " + fall + " at entry " + text_of(k));
         }
+    }
+}
+
+void check_shape(std::size_t functions, std::span<const Offset> starts, std::size_t terms)
+{
+    if (starts.size() != functions + 1)
+    {
+        throw Error(ErrorKind::Internal, "model", "functions and starts differ in number");
+    }
+    check_starts(starts);
+    if (starts.back() != static_cast<Offset>(terms))
+    {
+        throw Error(ErrorKind::Internal, "model", "starts and terms differ in number");
     }
 }
 
@@ -123,7 +122,7 @@ void Model::add_functions(std::span<const double> constants,
     for (std::size_t k = 0; k < constants.size(); ++k)
     {
         const auto function = static_cast<Index>(constants_.size() + k);
-        const std::span<LinearTerm> part = slice(terms, starts, k);
+        const std::span<LinearTerm> part = slice(std::span(terms), starts, k);
         check_constant(function, constants[k]);
         check_terms(function, part, variable_count());
         sort_terms(function, part);
