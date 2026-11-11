@@ -46,6 +46,8 @@ def add_sample(model):
     ]
     model.add_variables(3, kinds, [-0.0, 0.0, -INFINITY], [2.5, 1.0, 3.0])
     model.add_functions(2, [1.5, 0.1], [0, 2, 3], [2, 0, 1], [-1.0, 2.0, 0.1])
+    pairs = ([0, 1, 3], [2, 0, 1], [2, 1, 1], [0.5, -1.0, 3.0])
+    model.add_quadratic_terms([1, 0], *pairs)
     model.add_constraints([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, INFINITY, 3.0])
 
 
@@ -53,6 +55,7 @@ def read(model):
     found = (
         model.get_variables(),
         model.get_functions(),
+        model.get_quadratic_terms(),
         model.get_constraints(),
     )
     return repr(found)
@@ -111,6 +114,7 @@ def test_apart(place, model):
     copy.add_variables(1)
     copy.set_variable_bounds([0], [1.0])
     copy.add_constraints([1])
+    copy.add_quadratic_terms([0], [0, 1], [0], [0], [1.0])
     assert read(model) == before
     assert copy.variable_count() == 4
     model.add_functions(1)

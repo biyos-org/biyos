@@ -261,6 +261,59 @@ class Model:
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
 
+    def add_quadratic_terms(self, functions, starts, firsts, seconds, values):
+        """Add quadratic terms to functions of the model.
+
+        Function ``functions[j]`` gains the terms from ``starts[j]`` to
+        ``starts[j + 1] - 1``. Term ``k`` adds ``values[k]`` times the
+        product of variables ``firsts[k]`` and ``seconds[k]``, with no factor
+        1/2. The two variables of a pair may come in either order. A pair
+        the function holds already adds its coefficient to the one held.
+
+        Parameters
+        ----------
+        functions : sequence of int
+            The functions that gain terms, each listed once.
+        starts : sequence of int
+            The ``len(functions) + 1`` offsets of the functions' terms in
+            ``firsts``, ``seconds`` and ``values``, from 0 and never
+            decreasing.
+        firsts, seconds : sequence of int
+            The two variables of each term, ``starts[-1]`` of each.
+        values : sequence of float
+            The coefficient of each term, ``starts[-1]`` of them.
+        """
+        count = len(functions)
+        starts = offsets("starts", starts, count + 1)
+        size = _total(starts, count)
+        arrays = (
+            indices_of(self, Functions, "functions", functions, count),
+            starts,
+            indices_of(self, Variables, "firsts", firsts, size),
+            indices_of(self, Variables, "seconds", seconds, size),
+            doubles("values", values, size),
+        )
+        self._call(lib.biyos_add_quadratic_terms, count, *arrays)
+
+    def get_quadratic_terms(self, first=0, count=None):
+        first = index_of(self, Functions, "first", first)
+        count, inside = _span(first, count, self.function_count)
+        needed = c_int64()
+        if not inside:
+            empty = (None, 0, byref(needed), None, None, None)
+            self._call(lib.biyos_get_quadratic_terms, first, count, *empty)
+        starts = (c_int64 * (count + 1))()
+        learn = (starts, 0, byref(needed), None, None, None)
+        self._call(lib.biyos_get_quadratic_terms, first, count, *learn)
+        size = needed.value
+        firsts = (c_int * size)()
+        seconds = (c_int * size)()
+        values = (c_double * size)()
+        fill = (None, size, byref(needed), firsts, seconds, values)
+        self._call(lib.biyos_get_quadratic_terms, first, count, *fill)
+        terms = (list(firsts), list(seconds), list(values))
+        return (list(starts), *terms)
+
     def add_constraints(self, functions, lower=None, upper=None):
         """Add constraints after the last one, one for each function given.
 
