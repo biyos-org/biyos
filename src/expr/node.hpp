@@ -5,6 +5,8 @@
 
 #include <cstdint>
 #include <span>
+#include <string>
+#include <string_view>
 
 namespace biyos
 {
@@ -56,5 +58,6 @@ void check_variable(Index variable);
 void check_constant(double value);
 void check_constant(Operator op, double value);
 void check_coefficients(std::span<const double> coefficients, Offset children);
+std::string count_text(Offset count, std::string_view one, std::string_view many);
 
 }

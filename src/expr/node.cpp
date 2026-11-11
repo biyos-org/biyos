@@ -99,11 +99,6 @@ std::string_view payload_name(Payload payload) noexcept
     return "an unknown payload";
 }
 
-std::string count_text(Offset count, std::string_view one, std::string_view many)
-{
-    return text_of(count) + " " + std::string(count == 1 ? one : many);
-}
-
 std::string children_text(Offset count)
 {
     return count_text(count, "child", "children");
@@ -193,6 +188,11 @@ void check_coefficients(std::span<const double> coefficients, Offset children)
             refuse("coefficient " + text_of(k) + " " + std::string(fault(coefficients[k])));
         }
     }
+}
+
+std::string count_text(Offset count, std::string_view one, std::string_view many)
+{
+    return text_of(count) + " " + std::string(count == 1 ? one : many);
 }
 
 }
