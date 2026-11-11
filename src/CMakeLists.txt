@@ -25,11 +25,15 @@ add_library(biyos_internal STATIC
     expr/interval.cpp
     expr/layout.cpp
     expr/locator.cpp
+    expr/memo.cpp
     expr/node.cpp
     expr/parents.cpp
     expr/periodic.cpp
     expr/plan.cpp
     expr/powers.cpp
+    expr/radix.cpp
+    expr/reach.cpp
+    expr/reads.cpp
     expr/rounding.cpp
     expr/tape.cpp
     expr/terms.cpp

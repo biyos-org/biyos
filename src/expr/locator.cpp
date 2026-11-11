@@ -40,7 +40,10 @@ Run point(std::size_t position) noexcept
 
 }
 
-Locator::Locator(const Graph &graph, const Layout &layout) : graph_(graph), layout_(layout) {}
+Locator::Locator(const Graph &graph, std::span<const Offset> pinned, const Layout &layout)
+    : graph_(graph), pinned_(pinned), layout_(layout)
+{
+}
 
 void Locator::locate(std::span<const Offset> outputs, Block &block)
 {
@@ -121,7 +124,7 @@ void Locator::enter(Offset node, std::size_t walk)
         stack_.push_back(node);
         return;
     }
-    if (seen_[place] != walk)
+    if (seen_[place] != walk && pinned_[at(node)] == kUnset)
     {
         seen_[place] = walk;
         const std::span<const Run> runs = runs_of(node);

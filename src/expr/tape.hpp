@@ -3,6 +3,7 @@
 #include "core/index.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
+#include "expr/reach.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -43,6 +44,8 @@ struct Block
     std::vector<std::uint32_t> outputs;
     std::vector<Run> runs;
     std::vector<Offset> starts;
+    std::vector<Run> reads;
+    std::vector<Offset> read_starts;
 };
 
 class Tape
@@ -57,9 +60,12 @@ class Tape
     Offset prepass() const noexcept;
     std::span<const Block> blocks() const noexcept;
     std::span<const Run> runs(Offset root) const;
+    const Pattern &pattern() const noexcept;
+    std::span<const Range> route(Offset root) const noexcept;
 
   private:
     std::vector<Block> blocks_;
+    Reach reach_;
     Offset roots_ = 0;
     Offset variables_ = 0;
     Offset pinned_ = 0;

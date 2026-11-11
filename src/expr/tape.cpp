@@ -8,6 +8,8 @@
 #include "expr/locator.hpp"
 #include "expr/node.hpp"
 #include "expr/plan.hpp"
+#include "expr/reach.hpp"
+#include "expr/reads.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -106,7 +108,7 @@ class Compiler
   public:
     Compiler(const Graph &graph, const Plan &plan);
 
-    std::vector<Block> blocks(std::span<const Offset> roots);
+    std::vector<Block> blocks(std::span<const Offset> roots, const Reach &reach);
 
   private:
     Block compile(Offset index, std::span<const Offset> outputs, Offset first);
@@ -121,24 +123,28 @@ class Compiler
 };
 
 Compiler::Compiler(const Graph &graph, const Plan &plan)
-    : graph_(graph), plan_(plan), layout_(graph, plan), locator_(graph, layout_)
+    : graph_(graph), plan_(plan), layout_(graph, plan), locator_(graph, plan.position, layout_)
 {
 }
 
-std::vector<Block> Compiler::blocks(std::span<const Offset> roots)
+std::vector<Block> Compiler::blocks(std::span<const Offset> roots, const Reach &reach)
 {
     std::vector<Block> blocks;
     const Offset prepass = count_of(plan_.prepass.size()) - 1;
     for (std::size_t k = 0; k + 1 < plan_.prepass.size(); ++k)
     {
         const std::span<const Offset> outputs = part(plan_.pinned, plan_.prepass, k);
-        blocks.push_back(compile(count_of(k), outputs, plan_.prepass[k]));
+        Block pinned = compile(count_of(k), outputs, plan_.prepass[k]);
+        locator_.locate(outputs, pinned);
+        read_children(graph_, layout_, outputs, pinned);
+        blocks.push_back(std::move(pinned));
     }
     for (std::size_t k = 0; k + 1 < plan_.partitions.size(); ++k)
     {
         const std::span<const Offset> outputs = part(roots, plan_.partitions, k);
         Block partition = compile(prepass + count_of(k), outputs, plan_.partitions[k]);
         locator_.locate(outputs, partition);
+        read_routes(reach, partition);
         blocks.push_back(std::move(partition));
     }
     return blocks;
@@ -157,6 +163,8 @@ Block Compiler::compile(Offset index, std::span<const Offset> outputs, Offset fi
         .outputs = {},
         .runs = {},
         .starts = {},
+        .reads = {},
+        .read_starts = {},
     };
     block.instructions.reserve(layout_.nodes().size());
     for (const Offset node : layout_.nodes())
@@ -240,7 +248,8 @@ Tape::Tape(const Graph &graph, std::span<const Offset> roots, Offset budget)
         check_child(root, graph.size());
     }
     const Plan plan = plan_of(graph, roots, budget);
-    blocks_ = Compiler(graph, plan).blocks(roots);
+    reach_ = reach_of(graph, plan.position, roots);
+    blocks_ = Compiler(graph, plan).blocks(roots, reach_);
     pinned_ = count_of(plan.pinned.size());
     prepass_ = count_of(plan.prepass.size()) - 1;
     for (const Block &block : blocks_)
@@ -293,6 +302,18 @@ std::span<const Run> Tape::runs(Offset root) const
     const Offset begin = block.starts[output];
     const Offset end = block.starts[output + 1];
     return std::span(block.runs).subspan(at(begin), at(end - begin));
+}
+
+const Pattern &Tape::pattern() const noexcept
+{
+    return reach_.pattern;
+}
+
+std::span<const Range> Tape::route(Offset root) const noexcept
+{
+    const Offset begin = reach_.route.starts[at(root)];
+    const Offset end = reach_.route.starts[at(root) + 1];
+    return std::span(reach_.route.runs).subspan(at(begin), at(end - begin));
 }
 
 }

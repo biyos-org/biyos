@@ -34,6 +34,7 @@ using biyos::test::values_of;
 
 using Counts = std::vector<std::size_t>;
 using Spans = std::vector<std::pair<std::uint32_t, std::uint32_t>>;
+using Ranges = std::vector<std::pair<Offset, Offset>>;
 
 std::size_t at(Offset value)
 {
@@ -113,6 +114,44 @@ Spans spans(const Tape &tape, Offset root)
 {
     Spans found;
     for (const biyos::Run &run : tape.runs(root))
+    {
+        found.emplace_back(run.begin, run.end);
+    }
+    return found;
+}
+
+Spans runs_of(std::span<const biyos::Run> runs)
+{
+    Spans found;
+    for (const biyos::Run &run : runs)
+    {
+        found.emplace_back(run.begin, run.end);
+    }
+    return found;
+}
+
+std::span<const biyos::Run> part(const std::vector<biyos::Run> &runs,
+                                 const std::vector<Offset> &starts,
+                                 std::size_t output)
+{
+    const Offset begin = starts[output];
+    return std::span(runs).subspan(at(begin), at(starts[output + 1] - begin));
+}
+
+Spans spans_of(const Block &block, std::size_t output)
+{
+    return runs_of(part(block.runs, block.starts, output));
+}
+
+Spans reads_of(const Block &block, std::size_t output)
+{
+    return runs_of(part(block.reads, block.read_starts, output));
+}
+
+Ranges route(const Tape &tape, Offset root)
+{
+    Ranges found;
+    for (const biyos::Range &run : tape.route(root))
     {
         found.emplace_back(run.begin, run.end);
     }
@@ -299,6 +338,107 @@ TEST(TapeTest, Runs)
     }
     const Tape deep(lattice, std::span(&top, 1));
     EXPECT_EQ(spans(deep, 0), (Spans{{0, 65}}));
+}
+
+TEST(TapeTest, Reads)
+{
+    Graph graph;
+    const std::array leaves{graph.add_variable(0), graph.add_variable(1)};
+    const Offset inner = graph.add_sum(0.0, leaves, std::array{1.0, 1.0});
+    const Offset shared = unary(graph, Operator::Exp, inner);
+    const std::array roots{
+        unary(graph, Operator::Sin, shared),
+        unary(graph, Operator::Cos, shared),
+    };
+
+    const Tape joined(graph, roots, 5);
+    ASSERT_EQ(joined.prepass(), 1);
+    const Block &both = joined.blocks()[0];
+    EXPECT_EQ(spans_of(both, 0), (Spans{{0, 3}}));
+    EXPECT_EQ(spans_of(both, 1), (Spans{{3, 4}}));
+    EXPECT_TRUE(both.reads.empty());
+    for (const Block &block : partitions(joined))
+    {
+        EXPECT_EQ(spans_of(block, 0), (Spans{{0, 1}}));
+        EXPECT_EQ(reads_of(block, 0), (Spans{{0, 1}}));
+    }
+
+    const Tape split(graph, roots, 3);
+    ASSERT_EQ(split.prepass(), 2);
+    const std::span<const Block> blocks = split.blocks();
+    EXPECT_EQ(spans_of(blocks[0], 0), (Spans{{0, 3}}));
+    EXPECT_TRUE(reads_of(blocks[0], 0).empty());
+    EXPECT_EQ(spans_of(blocks[1], 0), (Spans{{0, 1}}));
+    EXPECT_EQ(reads_of(blocks[1], 0), (Spans{{0, 1}}));
+    EXPECT_EQ(loads(blocks[1]), (std::vector<Offset>{0}));
+
+    Graph wide;
+    std::vector<Offset> waves;
+    for (Index k = 0; k < 6; ++k)
+    {
+        waves.push_back(unary(wide, Operator::Sin, wide.add_variable(k)));
+    }
+    const std::vector<double> ones(waves.size(), 1.0);
+    const Offset total = wide.add_sum(0.0, waves, ones);
+    const std::array sums{total, unary(wide, Operator::Cos, wide.add_sum(1.0, waves, ones))};
+    const Tape cut(wide, sums, 13);
+    ASSERT_EQ(cut.pinned(), 6);
+    for (const Block &block : partitions(cut))
+    {
+        EXPECT_EQ(reads_of(block, 0), (Spans{{0, 6}}));
+    }
+
+    Graph pair;
+    const Offset wave = unary(pair, Operator::Sin, pair.add_variable(0));
+    const Offset swell = unary(pair, Operator::Cos, pair.add_variable(1));
+    const Offset joint = pair.add(Operator::Product, 1.0, std::array{wave, swell});
+    const std::array ends{unary(pair, Operator::Exp, joint), unary(pair, Operator::Log, joint)};
+    const Tape apart(pair, ends, 1);
+    ASSERT_EQ(apart.prepass(), 3);
+    EXPECT_EQ(reads_of(apart.blocks()[2], 0), (Spans{{0, 2}}));
+}
+
+TEST(TapeTest, Route)
+{
+    Graph graph;
+    const std::array leaves{graph.add_variable(0), graph.add_variable(1)};
+    const Offset inner = graph.add_sum(0.0, leaves, std::array{1.0, 1.0});
+    const Offset shared = unary(graph, Operator::Exp, inner);
+    const Offset sine = unary(graph, Operator::Sin, shared);
+    const Offset other = unary(graph, Operator::Cos, graph.add_variable(2));
+    const std::array roots{sine, other, shared};
+
+    const Tape split(graph, roots, 5);
+    EXPECT_EQ(sizes(split), (Counts{1, 2}));
+    EXPECT_EQ(route(split, 0), (Ranges{{0, 2}}));
+    EXPECT_TRUE(route(split, 1).empty());
+    EXPECT_EQ(route(split, 2), (Ranges{{0, 2}}));
+    const biyos::Pattern &pattern = split.pattern();
+    EXPECT_EQ(pattern.variables, (std::vector<Index>{0, 1, 2, 0, 1}));
+    EXPECT_EQ(pattern.starts, (std::vector<Offset>{0, 2, 3, 5}));
+
+    const Tape whole(graph, roots);
+    for (Offset root = 0; root < 3; ++root)
+    {
+        EXPECT_TRUE(route(whole, root).empty());
+    }
+    EXPECT_EQ(whole.pattern().variables, pattern.variables);
+
+    Graph line;
+    const Offset end = chain(line, line.add_variable(0), 20);
+    std::vector<Offset> rows;
+    for (Index k = 1; k <= 3; ++k)
+    {
+        const std::array pair{end, line.add_variable(k)};
+        rows.push_back(line.add(Operator::Product, 1.0, pair));
+    }
+    const Tape long_route(line, rows, 3);
+    ASSERT_EQ(long_route.pinned(), 20);
+    for (Offset root = 0; root < 3; ++root)
+    {
+        EXPECT_EQ(route(long_route, root), (Ranges{{0, 20}}));
+    }
+    EXPECT_EQ(long_route.pattern().variables, (std::vector<Index>{0, 1, 0, 2, 0, 3}));
 }
 
 TEST(TapeTest, Recompile)
