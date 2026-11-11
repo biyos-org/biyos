@@ -26,6 +26,7 @@ add_library(biyos_internal STATIC
     expr/locator.cpp
     expr/node.cpp
     expr/parents.cpp
+    expr/periodic.cpp
     expr/plan.cpp
     expr/rounding.cpp
     expr/tape.cpp
