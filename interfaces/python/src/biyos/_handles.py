@@ -22,8 +22,11 @@ class Handles:
             self._parked.append(handle)
 
     def drain(self):
-        while self._parked and not self.closed:
-            handle = self._parked.pop()
+        while not self.closed:
+            try:
+                handle = self._parked.pop()
+            except IndexError:
+                return
             if self.take(handle) and lib.biyos_model_free(handle) != OK:
                 self._live.add(handle)
 
