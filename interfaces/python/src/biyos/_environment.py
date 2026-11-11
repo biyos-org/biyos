@@ -10,20 +10,15 @@ from biyos._handles import Handles
 from biyos._integers import integer
 from biyos._relay import Relay
 from biyos._subscribers import Subscribers
+from biyos._text import encoded
 from biyos._versions import Versions, version_text
-
-
-def _encoded(text):
-    if "\0" in text:
-        raise ValueError("embedded null character")
-    return text.encode()
 
 
 def _name(name):
     if not isinstance(name, str):
         found = type(name).__name__
         raise TypeError(f"option name must be a str, not {found}")
-    return _encoded(name)
+    return encoded(name)
 
 
 def _rejected(name, noun, value):
@@ -60,7 +55,7 @@ def _double(name, value):
 def _string(name, value):
     if not isinstance(value, str):
         raise _rejected(name, "a str", value)
-    return _encoded(value)
+    return encoded(value)
 
 
 _SETTERS = {
