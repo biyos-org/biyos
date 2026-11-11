@@ -1,0 +1,171 @@
+#include "expr/terms.hpp"
+#include "model/compare.hpp"
+#include "model/model.hpp"
+#include "sample.hpp"
+
+#include <gtest/gtest.h>
+
+#include <cmath>
+#include <limits>
+#include <string>
+
+namespace
+{
+
+using biyos::difference;
+using biyos::LinearTerm;
+using biyos::Model;
+using biyos::VariableKind;
+using biyos::test::built;
+using biyos::test::Parts;
+using biyos::test::sample;
+
+constexpr double kInfinity = std::numeric_limits<double>::infinity();
+
+std::string from_sample(const Parts &parts)
+{
+    return difference(built(sample()), built(parts));
+}
+
+Parts with_copy(const Parts &parts)
+{
+    Parts more = parts;
+    more.constants.push_back(more.constants[0]);
+    more.starts.push_back(more.starts.back() + 2);
+    more.terms.push_back(more.terms[0]);
+    more.terms.push_back(more.terms[1]);
+    return more;
+}
+
+}
+
+TEST(CompareTest, Equal)
+{
+    const Model model = built(sample());
+    EXPECT_EQ(difference(model, model), "");
+    EXPECT_EQ(difference(model, built(sample())), "");
+    EXPECT_EQ(difference(Model(), Model()), "");
+}
+
+TEST(CompareTest, VariableFields)
+{
+    Parts kind = sample();
+    kind.variables[1].kind = VariableKind::Integer;
+    EXPECT_EQ(from_sample(kind), "variable 1: kind 2 against 3");
+    Parts lower = sample();
+    lower.variables[2].lower = -4.0;
+    EXPECT_EQ(from_sample(lower), "variable 2: lower bound -inf against -4");
+    Parts upper = sample();
+    upper.variables[0].upper = kInfinity;
+    EXPECT_EQ(from_sample(upper), "variable 0: upper bound 2.5 against inf");
+}
+
+TEST(CompareTest, FunctionFields)
+{
+    Parts constant = sample();
+    constant.constants[2] = 0.2;
+    EXPECT_EQ(from_sample(constant), "function 2: constant 0.1 against 0.2");
+    Parts variable = sample();
+    variable.terms[1].variable = 1;
+    EXPECT_EQ(from_sample(variable), "function 0: term 1: variable 2 against 1");
+    Parts coefficient = sample();
+    coefficient.terms[2].coefficient = 0.2;
+    EXPECT_EQ(from_sample(coefficient), "function 1: term 0: coefficient 0.1 against 0.2");
+    Parts count = sample();
+    count.starts = {0, 2, 2, 3};
+    EXPECT_EQ(from_sample(count), "function 1: term count 1 against 0");
+}
+
+TEST(CompareTest, ConstraintFields)
+{
+    Parts function = sample();
+    function.constraints[2].function = 1;
+    EXPECT_EQ(from_sample(function), "constraint 2: function 0 against 1");
+    Parts lower = sample();
+    lower.constraints[0].lower = -kInfinity;
+    EXPECT_EQ(from_sample(lower), "constraint 0: lower bound -1 against -inf");
+    Parts upper = sample();
+    upper.constraints[1].upper = 5.0;
+    EXPECT_EQ(from_sample(upper), "constraint 1: upper bound inf against 5");
+}
+
+TEST(CompareTest, Counts)
+{
+    Parts variables = sample();
+    variables.variables.push_back(variables.variables[0]);
+    EXPECT_EQ(from_sample(variables), "variable count 3 against 4");
+    EXPECT_EQ(from_sample(with_copy(sample())), "function count 3 against 4");
+    Parts constraints = sample();
+    constraints.constraints.pop_back();
+    EXPECT_EQ(from_sample(constraints), "constraint count 3 against 2");
+}
+
+TEST(CompareTest, OneUlp)
+{
+    Parts bound = sample();
+    bound.constraints[2].upper = std::nextafter(3.0, kInfinity);
+    EXPECT_EQ(from_sample(bound), "constraint 2: upper bound 3 against 3.0000000000000004");
+    Parts coefficient = sample();
+    coefficient.terms[0].coefficient = std::nextafter(2.0, 0.0);
+    EXPECT_EQ(from_sample(coefficient),
+              "function 0: term 0: coefficient 2 against 1.9999999999999998");
+}
+
+TEST(CompareTest, SignedZero)
+{
+    Parts bound = sample();
+    bound.variables[0].lower = 0.0;
+    EXPECT_EQ(from_sample(bound), "variable 0: lower bound -0 against 0");
+    Parts constant = sample();
+    constant.constants[1] = -0.0;
+    EXPECT_EQ(from_sample(constant), "function 1: constant 0 against -0");
+}
+
+TEST(CompareTest, SharedFunction)
+{
+    const Parts shared = with_copy(sample());
+    Parts separate = shared;
+    separate.constraints[2].function = 3;
+    EXPECT_EQ(difference(built(shared), built(separate)), "constraint 2: function 0 against 3");
+    EXPECT_EQ(difference(built(sample()), built(separate)), "function count 3 against 4");
+}
+
+TEST(CompareTest, Order)
+{
+    Parts tables = sample();
+    tables.variables[2].upper = 4.0;
+    tables.constraints[0].lower = -2.0;
+    EXPECT_EQ(from_sample(tables), "variable 2: upper bound 3 against 4");
+    Parts count = sample();
+    count.variables[0].upper = 1.0;
+    count.variables.push_back(count.variables[0]);
+    EXPECT_EQ(from_sample(count), "variable count 3 against 4");
+    Parts function = sample();
+    function.constants[0] = 2.0;
+    function.terms[0] = LinearTerm{.variable = 1, .coefficient = 2.0};
+    EXPECT_EQ(from_sample(function), "function 0: constant 1.5 against 2");
+    EXPECT_EQ(difference(built(function), built(sample())), "function 0: constant 2 against 1.5");
+}
+
+TEST(CompareTest, FieldOrder)
+{
+    Parts kind = sample();
+    kind.variables[1].kind = VariableKind::Integer;
+    kind.variables[1].lower = 0.5;
+    EXPECT_EQ(from_sample(kind), "variable 1: kind 2 against 3");
+    Parts bounds = sample();
+    bounds.variables[0].lower = -1.0;
+    bounds.variables[0].upper = 3.0;
+    EXPECT_EQ(from_sample(bounds), "variable 0: lower bound -0 against -1");
+    Parts term = sample();
+    term.terms[0] = LinearTerm{.variable = 1, .coefficient = 3.0};
+    EXPECT_EQ(from_sample(term), "function 0: term 0: variable 0 against 1");
+    Parts function = sample();
+    function.constraints[0].function = 1;
+    function.constraints[0].lower = -2.0;
+    EXPECT_EQ(from_sample(function), "constraint 0: function 0 against 1");
+    Parts range = sample();
+    range.constraints[1].lower = -1.0;
+    range.constraints[1].upper = 5.0;
+    EXPECT_EQ(from_sample(range), "constraint 1: lower bound 0 against -1");
+}
