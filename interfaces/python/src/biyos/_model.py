@@ -30,8 +30,11 @@ class Model:
     The model keeps its environment alive and reports its failures there.
     It is closed by ``close``, on leaving a ``with`` block, or when its
     environment is closed. Using it once closed raises ``ValueError``, and
-    closing it again does nothing. ``close`` raises ``biyos.Error`` while the
-    environment delivers an event, and the model stays open.
+    closing it again does nothing. Closed during one of its own calls, by a
+    subscriber or a finalizer, it reads as closed at once and is freed when
+    the call returns, or when the outermost call returns if the call was
+    made from a subscriber. Otherwise ``close`` raises ``biyos.Error`` while
+    the environment delivers an event, and the model stays open.
 
     Parameters
     ----------
@@ -50,6 +53,8 @@ class Model:
                 models.add(handle.value)
         self._env = env
         self._handle = handle
+        self._calls = 0
+        self._closing = False
         self._hold()
 
     def __enter__(self):
@@ -60,6 +65,9 @@ class Model:
 
     def close(self):
         if not self._open():
+            return
+        if self._calls > 0:
+            self._closing = True
             return
         models = self._env._models
         models.take(self._handle.value)
@@ -117,9 +125,21 @@ class Model:
         self._free = weakref.finalize(self, park, self._handle.value)
 
     def _open(self):
+        if self._closing:
+            return False
         return self._free.alive and not self._env._models.closed
 
     def _call(self, function, *arguments):
-        if not self._open():
-            raise ValueError("the model is closed")
-        self._env._run(function, self._handle, *arguments)
+        self._calls += 1
+        try:
+            if not self._open():
+                raise ValueError("the model is closed")
+            self._env._run(function, self._handle, *arguments)
+        finally:
+            self._calls -= 1
+            self._settle()
+
+    def _settle(self):
+        if self._calls == 0 and self._closing:
+            self._free()
+            self._env._settle()
