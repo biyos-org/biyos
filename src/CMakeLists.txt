@@ -36,9 +36,13 @@ add_library(biyos_internal STATIC
     expr/value.cpp
     model/checks.cpp
     model/compare.cpp
+    model/compressed.cpp
     model/constraints.cpp
     model/functions.cpp
+    model/merge.cpp
     model/model.cpp
+    model/pairs.cpp
+    model/quadratic.cpp
     model/terms.cpp)
 
 target_include_directories(biyos_internal PUBLIC
@@ -65,6 +69,7 @@ add_library(biyos
     capi/functions.cpp
     capi/model.cpp
     capi/options.cpp
+    capi/quadratic.cpp
     capi/version.cpp)
 add_library(biyos::biyos ALIAS biyos)
 

@@ -460,11 +460,13 @@ Writes to entry `j` of each array, for each `j` below `count`, the kind and the 
 
 ### Functions
 
-A function is a constant plus linear terms, `c + a x` over the variables `x`. Each linear term is a variable, given by its index, and its coefficient in `a`. Constraints refer to functions by index, so one function may serve several of them. Functions are numbered from 0 in the order they are added, separately from variables, and a count or an index of functions is an `int`.
+A function of the variables `x` is `f(x) = c + Σ a_j x_j + Σ q_ij x_i x_j`: a constant `c`, linear terms and quadratic terms. Each linear term is a variable `j`, given by its index, and its coefficient `a_j`. Each quadratic term is a pair of variables `i` and `j` and its coefficient `q_ij`, taken as written, with no factor ½: `x_0²` is the pair (0, 0) with the coefficient 1, and `x_0 x_1` the pair (0, 1) with the coefficient 1. Constraints refer to functions by index, so one function may serve several of them. Functions are numbered from 0 in the order they are added, separately from variables, and a count or an index of functions is an `int`.
 
-A function's constant must be finite. Its terms may come in any order and are kept sorted by variable. Each must name a variable of the model, appear once in the function and have a finite coefficient, neither NaN nor infinite. A term whose coefficient is 0 is kept.
+A function's constant must be finite. Its linear terms may come in any order and are kept sorted by variable. Each must name a variable of the model, appear once in the function and have a finite coefficient, neither NaN nor infinite. A term whose coefficient is 0 is kept.
 
-The terms of many functions travel in compressed form, as three arrays. Function `j` of them has the terms from `starts[j]` to `starts[j + 1] - 1` of `variables` and `values`, which hold a variable and its coefficient each. So `starts` holds one more offset than there are functions: the first is 0, none is below the one before it, and the last is the number of terms. An offset or a number of terms is an `int64_t` of `<stdint.h>`, which `biyos/biyos.h` includes.
+A function is added with no quadratic terms, and `biyos_add_quadratic_terms` adds them to functions the model holds. A pair may be given in either order and is kept as `(i, j)` with `i <= j`, a function's pairs sorted by `i`, then by `j`. Each must name variables of the model, appear once for its function in a call and have a finite coefficient. A pair the function already holds adds its coefficient to the one held, which must stay finite, so every call adds `q_ij x_i x_j` to its functions. A term whose coefficient is 0, given or summed, is kept.
+
+The terms of many functions travel in compressed form, as three arrays. Function `j` of them has the terms from `starts[j]` to `starts[j + 1] - 1` of `variables` and `values`, which hold a variable and its coefficient each. So `starts` holds one more offset than there are functions: the first is 0, none is below the one before it, and the last is the number of terms. An offset or a number of terms is an `int64_t` of `<stdint.h>`, which `biyos/biyos.h` includes. Quadratic terms travel in the same form, with `firsts`, `seconds` and `values` holding the two variables of each pair and its coefficient.
 
 ### `biyos_add_functions`
 
@@ -501,6 +503,26 @@ Writes the constants of the `count` functions from `first`, and their linear ter
 - A null `constants`, `starts`, `variables` or `values` is skipped, so a `size` of 0 with null arrays learns `*needed` alone.
 
 Returns `BIYOS_INVALID_ARGUMENT` when `first`, `count` or `size` is negative, `first + count` exceeds the number of functions, or `needed` is null.
+
+### `biyos_add_quadratic_terms`
+
+```c
+biyos_status biyos_add_quadratic_terms(biyos_model *model, int count, const int *functions,
+                                       const int64_t *starts, const int *firsts,
+                                       const int *seconds, const double *values);
+```
+
+Adds quadratic terms to `count` functions of the model. Function `functions[j]` gains the terms from `starts[j]` to `starts[j + 1] - 1` of `firsts`, `seconds` and `values`, `starts` holding `count + 1` offsets: term `k` adds `values[k]` times the product of variables `firsts[k]` and `seconds[k]`. A function appears at most once in `functions`, which has no default and may be null only when `count` is 0. A null `starts` adds no terms. `firsts`, `seconds` and `values` are not read when there are no terms, and may then be null. A call that adds new pairs moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call, or those of a function right after it is added. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, a function is not one of the model or is listed twice, `starts` does not begin at 0 or decreases, a variable is not one of the model, a pair appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite, and `BIYOS_NO_MEMORY` when the model would hold more quadratic terms than any allocation can hold.
+
+### `biyos_get_quadratic_terms`
+
+```c
+biyos_status biyos_get_quadratic_terms(biyos_model *model, int first, int count, int64_t *starts,
+                                       int64_t size, int64_t *needed, int *firsts, int *seconds,
+                                       double *values);
+```
+
+Writes the quadratic terms of the `count` functions from `first` in compressed form, each function's sorted by pair with `firsts[k] <= seconds[k]`, as `biyos_get_functions` writes linear terms. `starts` receives `count + 1` offsets from 0, whatever `size` is. `size` is the number of terms `firsts`, `seconds` and `values` hold, and the call writes at most `size` terms to each. `*needed` receives the number of quadratic terms of the functions, whether they fit or not. A null `starts`, `firsts`, `seconds` or `values` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first`, `count` or `size` is negative, `first + count` exceeds the number of functions, or `needed` is null.
 
 ### Constraints
 

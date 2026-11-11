@@ -27,14 +27,23 @@ std::size_t length(std::int64_t count, std::string_view name)
     return static_cast<std::size_t>(count);
 }
 
-std::span<const Index> listed(int count, const int *indices)
+std::span<const Index> listed(int count, const int *indices, std::string_view name)
 {
     const std::size_t size = length(count);
     if (size > 0)
     {
-        require(indices, "indices");
+        require(indices, name);
     }
     return {indices, size};
+}
+
+std::vector<Offset> offsets(std::size_t count, const std::int64_t *starts)
+{
+    if (starts == nullptr)
+    {
+        return std::vector<Offset>(count + 1, 0);
+    }
+    return std::vector<Offset>(starts, starts + count + 1);
 }
 
 std::vector<LinearTerm> packed(std::size_t size, const int *variables, const double *values)
@@ -61,6 +70,54 @@ void unpack(std::span<const LinearTerm> terms, std::size_t size, int *variables,
         if (variables != nullptr)
         {
             variables[k] = terms[k].variable;
+        }
+        if (values != nullptr)
+        {
+            values[k] = terms[k].coefficient;
+        }
+    }
+}
+
+std::vector<QuadraticTerm> packed(std::size_t size,
+                                  const int *firsts,
+                                  const int *seconds,
+                                  const double *values)
+{
+    if (size > 0)
+    {
+        require(firsts, "firsts");
+        require(seconds, "seconds");
+        require(values, "values");
+    }
+    std::vector<QuadraticTerm> terms;
+    terms.reserve(size);
+    for (std::size_t k = 0; k < size; ++k)
+    {
+        terms.push_back(QuadraticTerm{
+            .first = firsts[k],
+            .second = seconds[k],
+            .coefficient = values[k],
+        });
+    }
+    return terms;
+}
+
+void unpack(std::span<const QuadraticTerm> terms,
+            std::size_t size,
+            int *firsts,
+            int *seconds,
+            double *values)
+{
+    const std::size_t written = (std::min)(size, terms.size());
+    for (std::size_t k = 0; k < written; ++k)
+    {
+        if (firsts != nullptr)
+        {
+            firsts[k] = terms[k].first;
+        }
+        if (seconds != nullptr)
+        {
+            seconds[k] = terms[k].second;
         }
         if (values != nullptr)
         {

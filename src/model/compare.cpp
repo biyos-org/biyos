@@ -3,7 +3,6 @@
 #include "core/index.hpp"
 #include "core/text.hpp"
 #include "expr/terms.hpp"
-#include "model/checks.hpp"
 #include "model/model.hpp"
 
 #include <bit>
@@ -48,19 +47,19 @@ std::string first_of(std::initializer_list<std::string> found)
     return "";
 }
 
-template <typename Compare>
-std::string table_difference(std::string_view noun, Index a, Index b, Compare compare)
+template <typename Count, typename Compare>
+std::string table_difference(std::string_view noun, Count a, Count b, Compare compare)
 {
     if (a != b)
     {
         return against(std::string(noun) + " count", a, b);
     }
-    for (Index k = 0; k < a; ++k)
+    for (Count k = 0; k < a; ++k)
     {
         const std::string found = compare(k);
         if (!found.empty())
         {
-            return item(noun, k) + ": " + found;
+            return std::string(noun) + " " + text_of(k) + ": " + found;
         }
     }
     return "";
@@ -88,6 +87,15 @@ std::string differ(const LinearTerm &a, const LinearTerm &b)
     });
 }
 
+std::string differ(const QuadraticTerm &a, const QuadraticTerm &b)
+{
+    return first_of({
+        compared("first variable", a.first, b.first),
+        compared("second variable", a.second, b.second),
+        compared("coefficient", a.coefficient, b.coefficient),
+    });
+}
+
 std::string differ(const Constraint &a, const Constraint &b)
 {
     return first_of({
@@ -97,20 +105,21 @@ std::string differ(const Constraint &a, const Constraint &b)
     });
 }
 
-Index size_of(std::span<const LinearTerm> terms)
+template <typename T> Offset size_of(std::span<const T> terms)
 {
-    return static_cast<Index>(terms.size());
+    return static_cast<Offset>(terms.size());
 }
 
-const LinearTerm &at(std::span<const LinearTerm> terms, Index k)
+template <typename T> const T &at(std::span<const T> terms, Offset k)
 {
     return terms[static_cast<std::size_t>(k)];
 }
 
-std::string terms_difference(std::span<const LinearTerm> a, std::span<const LinearTerm> b)
+template <typename T>
+std::string terms_difference(std::string_view noun, std::span<const T> a, std::span<const T> b)
 {
-    const auto term = [&](Index k) { return differ(at(a, k), at(b, k)); };
-    return table_difference("term", size_of(a), size_of(b), term);
+    const auto term = [&](Offset k) { return differ(at(a, k), at(b, k)); };
+    return table_difference(noun, size_of(a), size_of(b), term);
 }
 
 double constant_of(const Model &model, Index function)
@@ -118,11 +127,17 @@ double constant_of(const Model &model, Index function)
     return model.constants(function, 1).front();
 }
 
+std::span<const QuadraticTerm> quadratic_of(const Model &model, Index function)
+{
+    return model.quadratic_terms(function, 1);
+}
+
 std::string function_difference(const Model &a, const Model &b, Index function)
 {
     return first_of({
         compared("constant", constant_of(a, function), constant_of(b, function)),
-        terms_difference(a.terms(function, 1), b.terms(function, 1)),
+        terms_difference("term", a.terms(function, 1), b.terms(function, 1)),
+        terms_difference("quadratic term", quadratic_of(a, function), quadratic_of(b, function)),
     });
 }
 

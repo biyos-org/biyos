@@ -15,6 +15,7 @@ namespace
 using biyos::difference;
 using biyos::LinearTerm;
 using biyos::Model;
+using biyos::QuadraticTerm;
 using biyos::VariableKind;
 using biyos::test::built;
 using biyos::test::Parts;
@@ -76,6 +77,23 @@ TEST(CompareTest, FunctionFields)
     EXPECT_EQ(from_sample(count), "function 1: term count 1 against 0");
 }
 
+TEST(CompareTest, QuadraticFields)
+{
+    Parts first = sample();
+    first.quadratic.terms[0].first = 0;
+    EXPECT_EQ(from_sample(first), "function 2: quadratic term 0: first variable 1 against 0");
+    Parts second = sample();
+    second.quadratic.terms[1].first = 1;
+    EXPECT_EQ(from_sample(second), "function 0: quadratic term 1: second variable 2 against 1");
+    Parts coefficient = sample();
+    coefficient.quadratic.terms[2].coefficient = 2.5;
+    EXPECT_EQ(from_sample(coefficient), "function 0: quadratic term 0: coefficient 2 against 2.5");
+    Parts count = sample();
+    count.quadratic.starts = {0, 1, 2};
+    count.quadratic.terms.pop_back();
+    EXPECT_EQ(from_sample(count), "function 0: quadratic term count 2 against 1");
+}
+
 TEST(CompareTest, ConstraintFields)
 {
     Parts function = sample();
@@ -109,6 +127,10 @@ TEST(CompareTest, OneUlp)
     coefficient.terms[0].coefficient = std::nextafter(2.0, 0.0);
     EXPECT_EQ(from_sample(coefficient),
               "function 0: term 0: coefficient 2 against 1.9999999999999998");
+    Parts quadratic = sample();
+    quadratic.quadratic.terms[0].coefficient = std::nextafter(0.5, kInfinity);
+    EXPECT_EQ(from_sample(quadratic),
+              "function 2: quadratic term 0: coefficient 0.5 against 0.5000000000000001");
 }
 
 TEST(CompareTest, SignedZero)
@@ -119,6 +141,12 @@ TEST(CompareTest, SignedZero)
     Parts constant = sample();
     constant.constants[1] = -0.0;
     EXPECT_EQ(from_sample(constant), "function 1: constant 0 against -0");
+    Parts positive = sample();
+    positive.quadratic.terms[0].coefficient = 0.0;
+    Parts negative = sample();
+    negative.quadratic.terms[0].coefficient = -0.0;
+    EXPECT_EQ(difference(built(positive), built(negative)),
+              "function 2: quadratic term 0: coefficient 0 against -0");
 }
 
 TEST(CompareTest, SharedFunction)
@@ -145,6 +173,14 @@ TEST(CompareTest, Order)
     function.terms[0] = LinearTerm{.variable = 1, .coefficient = 2.0};
     EXPECT_EQ(from_sample(function), "function 0: constant 1.5 against 2");
     EXPECT_EQ(difference(built(function), built(sample())), "function 0: constant 2 against 1.5");
+    Parts linear = sample();
+    linear.terms[1].coefficient = -2.0;
+    linear.quadratic.terms[2].coefficient = 2.5;
+    EXPECT_EQ(from_sample(linear), "function 0: term 1: coefficient -1 against -2");
+    Parts quadratic = sample();
+    quadratic.constants[2] = 0.2;
+    quadratic.quadratic.terms[0].coefficient = 1.0;
+    EXPECT_EQ(from_sample(quadratic), "function 2: constant 0.1 against 0.2");
 }
 
 TEST(CompareTest, FieldOrder)
@@ -168,4 +204,13 @@ TEST(CompareTest, FieldOrder)
     range.constraints[1].lower = -1.0;
     range.constraints[1].upper = 5.0;
     EXPECT_EQ(from_sample(range), "constraint 1: lower bound 0 against -1");
+    Parts pair = sample();
+    pair.quadratic.terms[1] = QuadraticTerm{.first = 1, .second = 2, .coefficient = 3.0};
+    EXPECT_EQ(from_sample(pair), "function 0: quadratic term 1: first variable 0 against 1");
+    Parts later = sample();
+    later.quadratic.terms[1] = QuadraticTerm{.first = 1, .second = 0, .coefficient = 3.0};
+    EXPECT_EQ(from_sample(later), "function 0: quadratic term 1: second variable 2 against 1");
+    Parts both = sample();
+    both.quadratic.terms[1] = QuadraticTerm{.first = 1, .second = 1, .coefficient = -1.5};
+    EXPECT_EQ(from_sample(both), "function 0: quadratic term 1: first variable 0 against 1");
 }
