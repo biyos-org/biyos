@@ -19,6 +19,7 @@ add_library(biyos_internal STATIC
     expr/builder.cpp
     expr/canonical.cpp
     expr/compact.cpp
+    expr/elementary.cpp
     expr/graph.cpp
     expr/interval.cpp
     expr/layout.cpp
