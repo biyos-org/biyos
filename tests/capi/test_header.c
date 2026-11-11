@@ -154,6 +154,38 @@ static biyos_status use_constraints(biyos_model *model)
     return BIYOS_OK;
 }
 
+static biyos_status use_objectives(biyos_model *model)
+{
+    const int functions[2] = {0, 1};
+    const int senses[2] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
+    const double weights[1] = {2.0};
+    const int indices[1] = {1};
+    int found[2] = {-1, -1};
+    int priorities[2] = {-1, -1};
+    int first = -1;
+    int objectives = 0;
+    biyos_status status =
+        biyos_add_objectives(model, 2, functions, senses, NULL, NULL, NULL, NULL, &first);
+    if (status == BIYOS_OK)
+    {
+        status = biyos_set_objectives(model, 1, indices, NULL, NULL, weights, NULL, NULL);
+    }
+    if (status == BIYOS_OK)
+    {
+        status = biyos_objective_count(model, &objectives);
+    }
+    if (status == BIYOS_OK)
+    {
+        status = biyos_get_objectives(model, 0, 2, NULL, found, priorities, NULL, NULL, NULL);
+    }
+    if (status != BIYOS_OK || first != 0 || objectives != 2 || found[0] != BIYOS_MAXIMIZE ||
+        found[1] != BIYOS_MINIMIZE || priorities[1] != 1)
+    {
+        return BIYOS_INTERNAL_ERROR;
+    }
+    return BIYOS_OK;
+}
+
 static biyos_status use_copy(biyos_env *env, biyos_model *model)
 {
     biyos_model *copy = NULL;
@@ -226,7 +258,8 @@ int main(void)
         status = BIYOS_INTERNAL_ERROR;
     }
     if (use_functions(model) != BIYOS_OK || use_quadratic(model) != BIYOS_OK ||
-        use_constraints(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK)
+        use_constraints(model) != BIYOS_OK || use_objectives(model) != BIYOS_OK ||
+        use_copy(env, model) != BIYOS_OK)
     {
         status = BIYOS_INTERNAL_ERROR;
     }

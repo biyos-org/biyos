@@ -63,6 +63,7 @@ add_library(biyos
     capi/format.cpp
     capi/functions.cpp
     capi/model.cpp
+    capi/objectives.cpp
     capi/options.cpp
     capi/quadratic.cpp
     capi/version.cpp)

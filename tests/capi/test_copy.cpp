@@ -47,12 +47,28 @@ void add_sample(biyos_model *model)
     const int seconds[] = {2, 1, 1};
     const double products[] = {0.5, -1.0, 3.0};
     const int functions[] = {0, 1, 0};
+    const int targets[] = {1, 0};
+    const int senses[] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
+    const int priorities[] = {3, -2};
+    const double weights[] = {0.5, 2.0};
+    const double absolute[] = {0.25, 0.0};
+    const double relative[] = {0.0, 0.125};
     ASSERT_EQ(biyos_add_variables(model, 3, kinds, lower, upper, nullptr), BIYOS_OK);
     ASSERT_EQ(biyos_add_functions(model, 2, constants, starts, variables, values, nullptr),
               BIYOS_OK);
     ASSERT_EQ(biyos_add_quadratic_terms(model, 2, owners, offsets, firsts, seconds, products),
               BIYOS_OK);
     ASSERT_EQ(biyos_add_constraints(model, 3, functions, lower, upper, nullptr), BIYOS_OK);
+    ASSERT_EQ(biyos_add_objectives(model,
+                                   2,
+                                   targets,
+                                   senses,
+                                   priorities,
+                                   weights,
+                                   absolute,
+                                   relative,
+                                   nullptr),
+              BIYOS_OK);
 }
 
 biyos_env *created()

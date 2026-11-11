@@ -24,7 +24,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | `biyos_status` | an `int`, `BIYOS_OK` or an error code |
 | `biyos_env` | an opaque environment, holding the options, the subscriptions and the last error message |
 | `biyos_event` | an opaque event, read with the `biyos_event_*` calls and formatted with `biyos_format_text` and `biyos_format_json` while a subscriber runs |
-| `biyos_model` | an opaque model, made on an environment and holding the variables, functions and constraints of a problem |
+| `biyos_model` | an opaque model, made on an environment and holding the variables, functions, constraints and objectives of a problem |
 | `biyos_subscriber` | `void (*)(const biyos_event *event, void *user_data)`, a function called with each event a subscription receives |
 
 ## Linking
@@ -40,7 +40,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | Macro | Value | Meaning |
 | --- | --- | --- |
 | `BIYOS_OK` | 0 | the call succeeded |
-| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count or size, an unknown variable kind or variable index, a bound a variable does not accept, an unknown function index, starts that do not begin at 0 or that decrease, a term whose variable is not one of the model or appears twice in a function, a constant or a coefficient that is not finite, an unknown constraint index, a constraint on a function the model does not hold, a bound a constraint does not accept, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
+| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count or size, an unknown variable kind or variable index, a bound a variable does not accept, an unknown function index, starts that do not begin at 0 or that decrease, a term whose variable is not one of the model or appears twice in a function, a constant or a coefficient that is not finite, an unknown constraint index, a constraint on a function the model does not hold, a bound a constraint does not accept, an unknown objective index, an objective on a function the model does not hold, an unknown sense, a weight that is not finite and positive, a tolerance that is NaN or negative, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
 | `BIYOS_NO_MEMORY` | -400 | an allocation failed |
 | `BIYOS_INTERNAL_ERROR` | -500 | a fault in biyos |
 
@@ -370,7 +370,7 @@ Writes the event for tools, as one JSON object with the members `time`, `kind`, 
 
 ## Model
 
-A model holds the variables of a problem, functions of them and constraints on those functions. Each variable has a kind, which says what values it may take, and a lower and an upper bound. The kinds come from `biyos/model.h`.
+A model holds the variables of a problem, functions of them, and constraints and objectives on those functions. Each variable has a kind, which says what values it may take, and a lower and an upper bound. The kinds come from `biyos/model.h`.
 
 | Macro | Value | Kind | Takes |
 | --- | --- | --- | --- |
@@ -384,7 +384,7 @@ Every kind but continuous is discrete.
 
 A model is made on an environment and reports there. A call on the model that fails keeps its message on that environment and sends its error event there, and while the environment delivers an event the model is read-only, as the environment is (see Subscribers). The environment cannot be freed while a model made on it is not, so a model never outlives its environment.
 
-Variables are numbered from 0 in the order they are added, and a count or an index of variables is an `int`. The calls on variables, functions and constraints take many at once: a count and arrays of that many entries, or, for the terms of functions, arrays in the compressed form described under Functions. biyos reads them during the call and does not keep them. A call that fails changes nothing.
+Variables are numbered from 0 in the order they are added, and a count or an index of variables is an `int`. The calls on variables, functions, constraints and objectives take many at once: a count and arrays of that many entries, or, for the terms of functions, arrays in the compressed form described under Functions. biyos reads them during the call and does not keep them. A call that fails changes nothing.
 
 A call that adds items takes `int *first` as its last argument. When the call succeeds and `first` is not null, it writes to `*first` the index of the first new item, which is the number of items held before the call, a count of 0 included. The new items follow it in order.
 
@@ -404,7 +404,7 @@ Creates a model with no variables on `env` and writes it to `*model`. On failure
 biyos_status biyos_model_copy(biyos_model *model, biyos_env *env, biyos_model **copy);
 ```
 
-Creates a copy of `model` on `env` and writes it to `*copy`. On failure it sets `*copy` to null. `env` may be the environment of `model` or another one. The copy holds the same variables, functions and constraints as `model`, under the same indices, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of `model` and the copy may be freed first. The call reads `model` and changes `env`, so no other thread may use either environment while it runs. It may run while the environment of `model` delivers an event, and returns `BIYOS_INVALID_ARGUMENT` while `env` does. A failure keeps its message on the environment of `model`, as for every call on a model.
+Creates a copy of `model` on `env` and writes it to `*copy`. On failure it sets `*copy` to null. `env` may be the environment of `model` or another one. The copy holds the same variables, functions, constraints and objectives as `model`, under the same indices, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of `model` and the copy may be freed first. The call reads `model` and changes `env`, so no other thread may use either environment while it runs. It may run while the environment of `model` delivers an event, and returns `BIYOS_INVALID_ARGUMENT` while `env` does. A failure keeps its message on the environment of `model`, as for every call on a model.
 
 ### `biyos_model_free`
 
@@ -460,7 +460,7 @@ Writes to entry `j` of each array, for each `j` below `count`, the kind and the 
 
 ### Functions
 
-A function of the variables `x` is `f(x) = c + Σ a_j x_j + Σ q_ij x_i x_j`: a constant `c`, linear terms and quadratic terms. Each linear term is a variable `j`, given by its index, and its coefficient `a_j`. Each quadratic term is a pair of variables `i` and `j` and its coefficient `q_ij`, taken as written, with no factor ½: `x_0²` is the pair (0, 0) with the coefficient 1, and `x_0 x_1` the pair (0, 1) with the coefficient 1. Constraints refer to functions by index, so one function may serve several of them. Functions are numbered from 0 in the order they are added, separately from variables, and a count or an index of functions is an `int`.
+A function of the variables `x` is `f(x) = c + Σ a_j x_j + Σ q_ij x_i x_j`: a constant `c`, linear terms and quadratic terms. Each linear term is a variable `j`, given by its index, and its coefficient `a_j`. Each quadratic term is a pair of variables `i` and `j` and its coefficient `q_ij`, taken as written, with no factor ½: `x_0²` is the pair (0, 0) with the coefficient 1, and `x_0 x_1` the pair (0, 1) with the coefficient 1. Constraints and objectives refer to functions by index, so one function may serve several of them. Functions are numbered from 0 in the order they are added, separately from variables, and a count or an index of functions is an `int`.
 
 A function's constant must be finite. Its linear terms may come in any order and are kept sorted by variable. Each must name a variable of the model, appear once in the function and have a finite coefficient, neither NaN nor infinite. A term whose coefficient is 0 is kept.
 
@@ -573,6 +573,44 @@ An objective is a function of the model to minimize or maximize, with a priority
 | `BIYOS_MAXIMIZE` | 2 | the function is maximized |
 
 The objectives are optimized in stages, one for each priority they hold, the lowest priority first. A stage minimizes the weighted sum `Σ w_i s_i f_i(x)` of the objectives of its priority, where `w_i` is the weight of objective `i`, `s_i` is 1 when it minimizes and -1 when it maximizes, and `f_i` is its function. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it, the absolute tolerance in the units of its function and the relative one as a fraction of the size of that optimum. So objectives of distinct priorities are optimized in sequence, and objectives of one priority are blended. A priority is any `int`. A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. No call optimizes the objectives yet, since biyos solves nothing.
+
+### `biyos_add_objectives`
+
+```c
+biyos_status biyos_add_objectives(biyos_model *model, int count, const int *functions,
+                                  const int *senses, const int *priorities, const double *weights,
+                                  const double *absolute, const double *relative, int *first);
+```
+
+Adds `count` objectives after the last one. Entry `j` of each array gives objective `p + j`, where `p` is the number of objectives before the call: the index of its function, its sense, a `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE` value, its priority, its weight and its absolute and relative tolerances. `functions` has no default, and may be null only when `count` is 0. A null `senses` makes every new objective minimize, a null `priorities` gives objective `p + j` the priority `p + j`, a null `weights` gives each the weight 1, and a null `absolute` or `relative` gives each that tolerance 0. So by default the objectives are optimized one after another in the order they are added, and objectives given one priority are blended. `*first` receives `p`, and a null `first` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, a function is not one of the model, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 objectives.
+
+### `biyos_set_objectives`
+
+```c
+biyos_status biyos_set_objectives(biyos_model *model, int count, const int *indices,
+                                  const int *senses, const int *priorities, const double *weights,
+                                  const double *absolute, const double *relative);
+```
+
+Sets the sense, the priority, the weight and the absolute and relative tolerances of objective `indices[j]` to `senses[j]`, `priorities[j]`, `weights[j]`, `absolute[j]` and `relative[j]`, for each `j` below `count`, and keeps its function. A null `senses`, `priorities`, `weights`, `absolute` or `relative` leaves those values as they are, and `indices` may be null when `count` is 0. An objective may appear more than once, as in `biyos_set_variable_bounds`. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of an objective, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative.
+
+### `biyos_objective_count`
+
+```c
+biyos_status biyos_objective_count(biyos_model *model, int *count);
+```
+
+Writes the number of objectives of the model to `*count`.
+
+### `biyos_get_objectives`
+
+```c
+biyos_status biyos_get_objectives(biyos_model *model, int first, int count, int *functions,
+                                  int *senses, int *priorities, double *weights, double *absolute,
+                                  double *relative);
+```
+
+Writes to entry `j` of each array, for each `j` below `count`, the function, the sense, the priority, the weight and the absolute and relative tolerances of objective `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of objectives.
 
 ## Expressions
 
