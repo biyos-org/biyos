@@ -9,10 +9,9 @@ import biyos
 from biyos import EventKind, Level, VariableKind
 from biyos._capi import OK, lib
 from number import Number
+from refusal import INVALID_ARGUMENT, LOCKED, refusal
 
-INVALID_ARGUMENT = -100
 INFINITY = float("inf")
-LOCKED = "invalid argument: model: is read-only while delivering an event"
 BUSY = "invalid argument: environment: is read-only while delivering an event"
 
 KINDS = [
@@ -75,13 +74,6 @@ def collected(log, function, handle):
 def interrupted(function, *arguments):
     function(*arguments)
     raise KeyboardInterrupt
-
-
-def refusal(call, *arguments):
-    with pytest.raises(biyos.Error) as caught:
-        call(*arguments)
-    assert caught.value.code == INVALID_ARGUMENT
-    return str(caught.value)
 
 
 def test_context(env):
