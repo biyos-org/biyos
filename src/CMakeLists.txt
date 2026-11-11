@@ -28,6 +28,7 @@ add_library(biyos_internal STATIC
     expr/parents.cpp
     expr/periodic.cpp
     expr/plan.cpp
+    expr/powers.cpp
     expr/rounding.cpp
     expr/tape.cpp
     expr/terms.cpp
