@@ -9,11 +9,10 @@ import biyos
 from biyos import EventKind, Level, VariableKind
 from biyos._capi import OK, lib
 from number import Number
+from refusal import INVALID_ARGUMENT, LOCKED, refusal
 from spies import followed, interrupted, preceded, spied
 
-INVALID_ARGUMENT = -100
 INFINITY = float("inf")
-LOCKED = "invalid argument: model: is read-only while delivering an event"
 
 KINDS = [
     VariableKind.CONTINUOUS,
@@ -84,13 +83,6 @@ def freed(log, function, handle):
 def reached(log, function, *arguments):
     log.append("call")
     return OK if "free" in log else function(*arguments)
-
-
-def refusal(call, *arguments):
-    with pytest.raises(biyos.Error) as caught:
-        call(*arguments)
-    assert caught.value.code == INVALID_ARGUMENT
-    return str(caught.value)
 
 
 def test_context(env):
