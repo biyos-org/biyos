@@ -2,7 +2,9 @@
 #include "core/index.hpp"
 #include "expr/builder.hpp"
 #include "expr/compact.hpp"
+#include "expr/enclosure.hpp"
 #include "expr/graph.hpp"
+#include "expr/interval.hpp"
 #include "expr/node.hpp"
 #include "expr/tape.hpp"
 #include "expr/value.hpp"
@@ -21,12 +23,20 @@ namespace
 
 using biyos::Builder;
 using biyos::Graph;
+using biyos::Interval;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Tape;
 using biyos::test::refusal;
 
 constexpr std::size_t kAttempts = 100;
+
+constexpr std::array kUnary{
+    Operator::Negation, Operator::Exp,   Operator::Log,     Operator::Sqrt, Operator::Sin,
+    Operator::Cos,      Operator::Tan,   Operator::Abs,     Operator::Asin, Operator::Acos,
+    Operator::Atan,     Operator::Sinh,  Operator::Cosh,    Operator::Tanh, Operator::Asinh,
+    Operator::Acosh,    Operator::Atanh, Operator::Entropy, Operator::Erf,
+};
 
 struct PendingFailure
 {
@@ -164,6 +174,28 @@ std::size_t sweep_cost(const Tape &tape)
     return biyos::test::allocations() - start;
 }
 
+Graph every_operator()
+{
+    Graph graph;
+    const std::array x{graph.add_variable(0), graph.add_variable(1)};
+    const std::span<const Offset> one(x.data(), 1);
+    const std::array weights{2.0, -1.0};
+    graph.add(Operator::Constant, 1.5, {});
+    graph.add_sum(0.5, x, weights);
+    graph.add(Operator::Product, 3.0, x);
+    graph.add(Operator::Division, x);
+    graph.add(Operator::ConstantPower, 2.0, one);
+    graph.add(Operator::SignPower, 1.5, one);
+    graph.add(Operator::Power, x);
+    graph.add(Operator::Max, x);
+    graph.add(Operator::Min, x);
+    for (const Operator op : kUnary)
+    {
+        graph.add(op, one);
+    }
+    return graph;
+}
+
 }
 
 TEST(AllocationTest, MergedSum)
@@ -188,4 +220,15 @@ TEST(AllocationTest, ForwardSweep)
     const Tape tape(graph, roots, 4);
     ASSERT_GT(tape.prepass(), 0);
     EXPECT_EQ(sweep_cost(tape), 0U);
+}
+
+TEST(AllocationTest, Intervals)
+{
+    const Graph graph = every_operator();
+    std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
+    const std::array box{Interval(-0.5, 2.0), Interval(-1.0, 3.0)};
+    const std::size_t before = biyos::test::allocations();
+    biyos::enclose(graph, box, nodes);
+    EXPECT_EQ(biyos::test::allocations(), before);
+    EXPECT_FALSE(nodes.back().is_empty());
 }
