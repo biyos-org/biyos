@@ -43,6 +43,7 @@ add_library(biyos
     capi/format.cpp
     capi/model.cpp
     capi/options.cpp
+    capi/rows.cpp
     capi/version.cpp)
 add_library(biyos::biyos ALIAS biyos)
 

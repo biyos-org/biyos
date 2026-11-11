@@ -6,6 +6,7 @@
 #include "biyos/status.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
 #if defined(BIYOS_STATIC)
 #define BIYOS_API
@@ -82,6 +83,17 @@ BIYOS_API biyos_status biyos_set_variable_kinds(biyos_model *model, int count, c
 BIYOS_API biyos_status biyos_variable_count(biyos_model *model, int *count);
 BIYOS_API biyos_status biyos_get_variables(biyos_model *model, int first, int count, int *kinds,
                                            double *lower, double *upper);
+BIYOS_API biyos_status biyos_add_rows(biyos_model *model, int count, const double *lower,
+                                      const double *upper, const int64_t *starts,
+                                      const int *columns, const double *values);
+BIYOS_API biyos_status biyos_set_row_bounds(biyos_model *model, int count, const int *indices,
+                                            const double *lower, const double *upper);
+BIYOS_API biyos_status biyos_row_count(biyos_model *model, int *count);
+BIYOS_API biyos_status biyos_get_rows(biyos_model *model, int first, int count, double *lower,
+                                      double *upper);
+BIYOS_API biyos_status biyos_get_entries(biyos_model *model, int first, int count, int64_t *starts,
+                                         int64_t size, int64_t *needed, int *columns,
+                                         double *values);
 
 #ifdef __cplusplus
 }

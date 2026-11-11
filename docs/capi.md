@@ -24,7 +24,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | `biyos_status` | an `int`, `BIYOS_OK` or an error code |
 | `biyos_env` | an opaque environment, holding the options, the subscriptions and the last error message |
 | `biyos_event` | an opaque event, read with the `biyos_event_*` calls and formatted with `biyos_format_text` and `biyos_format_json` while a subscriber runs |
-| `biyos_model` | an opaque model, made on an environment and holding the variables of a problem |
+| `biyos_model` | an opaque model, made on an environment and holding the variables and rows of a problem |
 | `biyos_subscriber` | `void (*)(const biyos_event *event, void *user_data)`, a function called with each event a subscription receives |
 
 ## Linking
@@ -40,7 +40,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | Macro | Value | Meaning |
 | --- | --- | --- |
 | `BIYOS_OK` | 0 | the call succeeded |
-| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count, an unknown variable kind or variable index, a bound a variable does not accept, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
+| `BIYOS_INVALID_ARGUMENT` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count or size, an unknown variable kind or variable index, a bound a variable does not accept, an unknown row index, a bound a row does not accept, starts that do not begin at 0 or that decrease, a column that is not a variable or that repeats in a row, a coefficient that is not finite, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
 | `BIYOS_NO_MEMORY` | -400 | an allocation failed |
 | `BIYOS_INTERNAL_ERROR` | -500 | a fault in biyos |
 
@@ -370,7 +370,7 @@ Writes the event for tools, as one JSON object with the members `time`, `kind`, 
 
 ## Model
 
-A model holds the variables of a problem. Each variable has a kind, which says what values it may take, and a lower and an upper bound. The kinds come from `biyos/model.h`.
+A model holds the variables of a problem and its rows. Each variable has a kind, which says what values it may take, and a lower and an upper bound. The kinds come from `biyos/model.h`.
 
 | Macro | Value | Kind | Takes |
 | --- | --- | --- | --- |
@@ -384,7 +384,7 @@ Every kind but continuous is discrete.
 
 A model is made on an environment and reports there. A call on the model that fails keeps its message on that environment and sends its error event there, and while the environment delivers an event the model is read-only, as the environment is (see Subscribers). The environment cannot be freed while a model made on it is not, so a model never outlives its environment.
 
-Variables are numbered from 0 in the order they are added, and a count or an index of variables is an `int`. The calls on variables take many at once: a count and arrays of that many entries, which biyos reads during the call and does not keep. A call that fails changes nothing.
+Variables are numbered from 0 in the order they are added, and a count or an index of variables is an `int`. The calls on variables and rows take many at once: a count and arrays of that many entries, or, for the entries of rows, arrays in the compressed form described under Rows. biyos reads them during the call and does not keep them. A call that fails changes nothing.
 
 A bound may be `INFINITY` or `-INFINITY` of `<math.h>`, and no finite bound is taken as infinite, however large. A lower bound of minus infinity or an upper bound of infinity leaves that side unbounded. A lower bound of infinity, an upper bound of minus infinity and NaN are refused, and so is a bound outside the widest bounds of the variable's kind: 0 and 1 for a binary, minus infinity and infinity for any other kind. Any other pair is kept as given, a lower bound above the upper one included.
 
@@ -447,6 +447,66 @@ biyos_status biyos_get_variables(biyos_model *model, int first, int count, int *
 ```
 
 Writes to entry `j` of each array, for each `j` below `count`, the kind and the lower and upper bounds of variable `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of variables.
+
+### Rows
+
+A row is a linear constraint `lower <= a x <= upper` on the variables `x`. It has a lower and an upper bound and entries, each a column, the index of a variable, with its coefficient in `a`. Rows are numbered from 0 in the order they are added, and a count or an index of rows is an `int`. A row's bounds follow the rule of a continuous variable's: `INFINITY` or `-INFINITY` leaves that side unbounded, a lower bound of infinity, an upper bound of minus infinity and NaN are refused, and any other pair is kept as given, a lower bound above the upper one included. A row whose bounds are equal is an equality, and one whose bounds are both infinite is free.
+
+A row's entries may come in any order and are kept sorted by column. Each column must be that of a variable and appear once in the row, and each coefficient must be finite, neither NaN nor infinite. An entry whose coefficient is 0 is kept.
+
+The entries of many rows travel in compressed form, as three arrays. Row `j` of them has the entries from `starts[j]` to `starts[j + 1] - 1` of `columns` and `values`, which hold a column and its coefficient each. So `starts` holds one more offset than there are rows: the first is 0, none is below the one before it, and the last is the number of entries. An offset or a number of entries is an `int64_t` of `<stdint.h>`, which `biyos/biyos.h` includes.
+
+### `biyos_add_rows`
+
+```c
+biyos_status biyos_add_rows(biyos_model *model, int count, const double *lower,
+                            const double *upper, const int64_t *starts,
+                            const int *columns, const double *values);
+```
+
+Adds `count` rows after the last one. Entry `j` of `lower` and `upper` gives the bounds of row `m + j`, where `m` is the number of rows before the call, and `starts`, `columns` and `values` give the entries of the rows in compressed form, `starts` holding `count + 1` offsets. A null `lower` or `upper` leaves that side of every new row unbounded, so with both null the rows are free. A null `starts` adds rows without entries. `columns` and `values` are not read when there are no entries, and may then be null. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, `starts` does not begin at 0 or decreases, a bound is refused, a column is not that of a variable or appears twice in a row, or a coefficient is not finite, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 rows or more entries than any allocation can hold.
+
+### `biyos_set_row_bounds`
+
+```c
+biyos_status biyos_set_row_bounds(biyos_model *model, int count, const int *indices,
+                                  const double *lower, const double *upper);
+```
+
+Sets the bounds of row `indices[j]` to `lower[j]` and `upper[j]`, for each `j` below `count`, and keeps its entries. A null `lower` or `upper` leaves those bounds as they are, and `indices` may be null when `count` is 0. A row may appear more than once, as in `biyos_set_variable_bounds`. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of a row or a bound is refused.
+
+### `biyos_row_count`
+
+```c
+biyos_status biyos_row_count(biyos_model *model, int *count);
+```
+
+Writes the number of rows of the model to `*count`.
+
+### `biyos_get_rows`
+
+```c
+biyos_status biyos_get_rows(biyos_model *model, int first, int count, double *lower,
+                            double *upper);
+```
+
+Writes to entry `j` of each array, for each `j` below `count`, the lower and upper bounds of row `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of rows.
+
+### `biyos_get_entries`
+
+```c
+biyos_status biyos_get_entries(biyos_model *model, int first, int count, int64_t *starts,
+                               int64_t size, int64_t *needed, int *columns, double *values);
+```
+
+Writes the entries of the `count` rows from `first` in compressed form, each row's sorted by column, into arrays the caller gives, in the manner of the formatting calls.
+
+- `starts` receives `count + 1` offsets from 0, whatever `size` is, so that `starts[j]` is the number of entries of the `j` rows before row `first + j`.
+- `size` is the number of entries `columns` and `values` hold. The call writes at most `size` entries to each: the first `size` entries of the rows, in order, when the rows have more.
+- `*needed` receives the number of entries of the rows, whether they fit or not. They fit when `*needed` is at most `size`, and row `first + j` is whole in `columns` and `values` when `starts[j + 1]` is at most `size`.
+- A null `starts`, `columns` or `values` is skipped, so a `size` of 0 with null arrays learns `*needed` alone.
+
+Returns `BIYOS_INVALID_ARGUMENT` when `first`, `count` or `size` is negative, `first + count` exceeds the number of rows, or `needed` is null.
 
 ## Solve status
 

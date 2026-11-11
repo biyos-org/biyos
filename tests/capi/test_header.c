@@ -90,6 +90,14 @@ int main(void)
     const int indices[1] = {0};
     int found[2] = {0, 0};
     int variables = 0;
+    const int64_t starts[3] = {0, 2, 3};
+    const int columns[3] = {1, 0, 1};
+    const double values[3] = {1.0, 2.0, 3.0};
+    int64_t offsets[3] = {-1, -1, -1};
+    int64_t needed = -1;
+    int read[3] = {-1, -1, -1};
+    double coefficients[3] = {0.0, 0.0, 0.0};
+    int rows = 0;
     biyos_version(&major, &minor, &patch);
     if (major < 0 || minor < 0 || patch < 0)
     {
@@ -121,6 +129,15 @@ int main(void)
         biyos_variable_count(model, &variables) != BIYOS_OK || variables != 2 ||
         biyos_get_variables(model, 0, 2, found, NULL, NULL) != BIYOS_OK ||
         found[0] != BIYOS_VAR_BINARY || found[1] != BIYOS_VAR_BINARY)
+    {
+        status = BIYOS_INTERNAL_ERROR;
+    }
+    if (biyos_add_rows(model, 2, lower, NULL, starts, columns, values) != BIYOS_OK ||
+        biyos_set_row_bounds(model, 1, indices, NULL, upper) != BIYOS_OK ||
+        biyos_row_count(model, &rows) != BIYOS_OK || rows != 2 ||
+        biyos_get_rows(model, 0, 2, NULL, NULL) != BIYOS_OK ||
+        biyos_get_entries(model, 0, 2, offsets, 3, &needed, read, coefficients) != BIYOS_OK ||
+        needed != 3 || offsets[1] != 2 || read[0] != 0 || read[1] != 1)
     {
         status = BIYOS_INTERNAL_ERROR;
     }

@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>
@@ -119,6 +120,14 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(biyos_set_variable_kinds(nullptr, 1, &index, &index), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_variable_count(nullptr, &count), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_get_variables(nullptr, 0, 0, nullptr, nullptr, nullptr),
+              BIYOS_INVALID_ARGUMENT);
+    std::int64_t needed = 0;
+    EXPECT_EQ(biyos_add_rows(nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_set_row_bounds(nullptr, 1, &index, &bound, &bound), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_row_count(nullptr, &count), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_get_rows(nullptr, 0, 0, nullptr, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_get_entries(nullptr, 0, 0, nullptr, 0, &needed, nullptr, nullptr),
               BIYOS_INVALID_ARGUMENT);
 }
 
