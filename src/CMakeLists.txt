@@ -17,6 +17,7 @@ add_library(biyos_internal STATIC
     core/utf8.cpp
     core/version.cpp
     expr/builder.cpp
+    expr/compact.cpp
     expr/graph.cpp
     expr/node.cpp
     expr/parents.cpp
