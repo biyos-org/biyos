@@ -20,9 +20,14 @@ add_library(biyos_internal STATIC
     expr/canonical.cpp
     expr/compact.cpp
     expr/graph.cpp
+    expr/intervals.cpp
+    expr/layout.cpp
     expr/node.cpp
     expr/parents.cpp
+    expr/plan.cpp
+    expr/tape.cpp
     expr/terms.cpp
+    expr/value.cpp
     model/model.cpp)
 
 target_include_directories(biyos_internal PUBLIC
