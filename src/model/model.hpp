@@ -36,9 +36,6 @@ struct Variable
 
 Variable widest(VariableKind kind) noexcept;
 
-// Variables are numbered from 0 in the order they are added. Each one held has a known kind, no
-// NaN bound, no lower bound of infinity, no upper bound of minus infinity, and bounds within the
-// widest of its kind; a lower bound above the upper one is kept. A refused call changes nothing.
 class Model
 {
   public:
