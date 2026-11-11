@@ -3,6 +3,8 @@ from biyos._blocks import (
     Constraints,
     Function,
     Functions,
+    Objective,
+    Objectives,
     Variable,
     Variables,
 )
@@ -24,6 +26,8 @@ __all__ = [
     "Functions",
     "Level",
     "Model",
+    "Objective",
+    "Objectives",
     "Sense",
     "Variable",
     "VariableKind",

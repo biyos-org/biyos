@@ -3,7 +3,13 @@ from ctypes import byref, c_double, c_int, c_int64, c_void_p
 from enum import IntEnum
 
 from biyos._arrays import doubles, indices_of, ints, offsets
-from biyos._blocks import Constraints, Functions, Variables, index_of
+from biyos._blocks import (
+    Constraints,
+    Functions,
+    Objectives,
+    Variables,
+    index_of,
+)
 from biyos._capi import lib
 from biyos._environment import Environment
 from biyos._error import Error
@@ -42,6 +48,16 @@ def _total(starts, count):
     if starts is None or count < 0:
         return 0
     return starts[count]
+
+
+def _fields(count, senses, priorities, weights, absolute, relative):
+    return (
+        ints("senses", senses, count),
+        ints("priorities", priorities, count),
+        doubles("weights", weights, count),
+        doubles("absolute", absolute, count),
+        doubles("relative", relative, count),
+    )
 
 
 class Model:
@@ -104,9 +120,9 @@ class Model:
     def copy(self, env=None):
         """Return a copy of the model, made on an environment.
 
-        The copy holds the same variables, functions and constraints under
-        the same indices, and changes apart from the model. It reports on
-        its own environment, like any model made there.
+        The copy holds the same variables, functions, constraints and
+        objectives under the same indices, and changes apart from the model.
+        It reports on its own environment, like any model made there.
 
         Parameters
         ----------
@@ -370,6 +386,95 @@ class Model:
         arrays = (functions, lower, upper)
         self._call(lib.biyos_get_constraints, first, count, *arrays)
         return list(functions), list(lower), list(upper)
+
+    def add_objectives(
+        self,
+        functions,
+        senses=None,
+        priorities=None,
+        weights=None,
+        absolute=None,
+        relative=None,
+    ):
+        """Add objectives after the last one, one for each function given.
+
+        The objectives are optimized in stages, one for each priority, the
+        lowest first. A stage minimizes the weighted sum of its objectives,
+        each counted negatively when it is maximized, and keeps every
+        objective of an earlier stage within its tolerances of the optimum
+        found for it.
+
+        Parameters
+        ----------
+        functions : sequence of int
+            The function each new objective optimizes.
+        senses : sequence of Sense, optional
+            Whether each is minimized or maximized, minimized by default.
+        priorities : sequence of int, optional
+            The priority of each. By default each takes its own index, so
+            the objectives are optimized one after another in the order
+            they are added.
+        weights : sequence of float, optional
+            The weight of each in the sum of its stage, finite and
+            positive, 1 by default.
+        absolute, relative : sequence of float, optional
+            How far each may move from its optimum in later stages, as a
+            value of its function and as a fraction of the size of that
+            optimum. Each is 0 or more, ``inf`` setting no limit, and 0 by
+            default.
+
+        Returns
+        -------
+        Objectives
+            The new objectives.
+        """
+        count = len(functions)
+        arrays = (
+            indices_of(self, Functions, "functions", functions, count),
+            *_fields(count, senses, priorities, weights, absolute, relative),
+        )
+        first = c_int()
+        self._call(lib.biyos_add_objectives, count, *arrays, byref(first))
+        return Objectives(self, first.value, count, self._version)
+
+    def set_objectives(
+        self,
+        indices,
+        senses=None,
+        priorities=None,
+        weights=None,
+        absolute=None,
+        relative=None,
+    ):
+        count = len(indices)
+        arrays = (
+            indices_of(self, Objectives, "indices", indices, count),
+            *_fields(count, senses, priorities, weights, absolute, relative),
+        )
+        self._call(lib.biyos_set_objectives, count, *arrays)
+
+    def objective_count(self):
+        count = c_int()
+        self._call(lib.biyos_objective_count, byref(count))
+        return count.value
+
+    def get_objectives(self, first=0, count=None):
+        first = index_of(self, Objectives, "first", first)
+        count, inside = _span(first, count, self.objective_count)
+        if not inside:
+            empty = (None,) * 6
+            self._call(lib.biyos_get_objectives, first, count, *empty)
+        functions = (c_int * count)()
+        codes = (c_int * count)()
+        priorities = (c_int * count)()
+        weights = (c_double * count)()
+        absolute = (c_double * count)()
+        relative = (c_double * count)()
+        found = (functions, codes, priorities, weights, absolute, relative)
+        self._call(lib.biyos_get_objectives, first, count, *found)
+        senses = [Sense(code) for code in codes]
+        values = (list(weights), list(absolute), list(relative))
+        return (list(functions), senses, list(priorities), *values)
 
     def _start(self, env):
         self._env = env
