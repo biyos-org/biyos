@@ -47,8 +47,6 @@ class Model
     void set_variables(std::span<const Index> indices, std::span<const Variable> changed);
 
   private:
-    void check_index(Index index) const;
-
     std::vector<Variable> variables_;
 };
 
