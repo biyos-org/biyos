@@ -90,6 +90,15 @@ Monotonicity common(Monotonicity left, Monotonicity right) noexcept
     return monotonicity_of(rises(left) && rises(right), falls(left) && falls(right));
 }
 
+Monotonicity monotonicity_of(Interval slope) noexcept
+{
+    if (slope.is_empty())
+    {
+        return Monotonicity::Unknown;
+    }
+    return monotonicity_of(slope.lower() >= 0.0, slope.upper() <= 0.0);
+}
+
 bool is_point(Interval value) noexcept
 {
     return !value.is_empty() && !(value.lower() < value.upper());

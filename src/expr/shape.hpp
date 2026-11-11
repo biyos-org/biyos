@@ -44,6 +44,7 @@ bool rises(Monotonicity monotonicity) noexcept;
 bool falls(Monotonicity monotonicity) noexcept;
 Monotonicity monotonicity_of(bool rising, bool falling) noexcept;
 Monotonicity common(Monotonicity left, Monotonicity right) noexcept;
+Monotonicity monotonicity_of(Interval slope) noexcept;
 bool is_point(Interval value) noexcept;
 
 }

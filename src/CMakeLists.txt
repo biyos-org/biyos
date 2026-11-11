@@ -23,6 +23,7 @@ add_library(biyos_internal STATIC
     expr/derivative.cpp
     expr/elementary.cpp
     expr/enclosure.cpp
+    expr/exponents.cpp
     expr/graph.cpp
     expr/interval.cpp
     expr/layout.cpp
