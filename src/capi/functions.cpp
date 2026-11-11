@@ -3,6 +3,7 @@
 #include "capi/arrays.hpp"
 #include "capi/entry.hpp"
 #include "core/index.hpp"
+#include "model/compressed.hpp"
 #include "model/model.hpp"
 
 #include <algorithm>

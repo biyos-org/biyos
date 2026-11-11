@@ -45,9 +45,6 @@ struct Constraint
     double upper;
 };
 
-void check_starts(std::span<const Offset> starts);
-void check_shape(std::size_t functions, std::span<const Offset> starts, std::size_t terms);
-
 class Model
 {
   public:
