@@ -21,6 +21,7 @@ add_library(biyos_internal STATIC
     expr/builder.cpp
     expr/canonical.cpp
     expr/compact.cpp
+    expr/curvature.cpp
     expr/derivative.cpp
     expr/elementary.cpp
     expr/enclosure.cpp

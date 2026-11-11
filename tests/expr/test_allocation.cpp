@@ -2,6 +2,7 @@
 #include "core/index.hpp"
 #include "expr/builder.hpp"
 #include "expr/compact.hpp"
+#include "expr/curvature.hpp"
 #include "expr/derivative.hpp"
 #include "expr/enclosure.hpp"
 #include "expr/graph.hpp"
@@ -276,4 +277,18 @@ TEST(AllocationTest, GradientSweep)
     const Tape tape(graph, roots, 4);
     ASSERT_GT(tape.prepass(), 0);
     EXPECT_EQ(gradient_cost(tape), 0U);
+}
+
+TEST(AllocationTest, Curvature)
+{
+    const Graph graph = every_operator();
+    std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
+    const std::array box{Interval(-0.5, 2.0), Interval(-1.0, 3.0)};
+    biyos::enclose(graph, box, nodes);
+    biyos::Shapes shapes(graph);
+    const std::size_t before = biyos::test::allocations();
+    shapes.classify(graph, nodes);
+    EXPECT_EQ(biyos::test::allocations(), before);
+    EXPECT_EQ(shapes.curvature(0), biyos::Curvature::Affine);
+    EXPECT_EQ(shapes.curvature(graph.size() - 1), biyos::Curvature::Unknown);
 }
