@@ -133,6 +133,34 @@ class Variables(Block):
     _element = Variable
 
 
+class Function(View):
+    """One function of a model, as indexing a ``Functions`` block gives.
+
+    A view holds its model and its index, and passes as that index wherever
+    its model takes an index of functions. Any other model refuses it as an
+    index. A view made before a deletion from its model raises ``ValueError``
+    when used, as its index may name another function.
+    """
+
+    __slots__ = ()
+    _noun = "function"
+
+
+class Functions(Block):
+    """Consecutive functions of a model, as ``Model.add_functions`` returns.
+
+    A block holds its model, its first index and its count, so it costs the
+    same at any size. ``len`` gives the count, and iterating gives each
+    function in order as a ``Function``, so a block passes wherever its model
+    takes indices of functions. Any other model refuses it as indices. A block
+    made before a deletion from its model raises ``ValueError`` when used, as
+    its indices may name other functions.
+    """
+
+    __slots__ = ()
+    _element = Function
+
+
 def _member(model, family, name, view):
     noun = family._element._noun
     if not isinstance(view, family._element):

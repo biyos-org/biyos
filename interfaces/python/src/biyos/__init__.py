@@ -1,4 +1,4 @@
-from biyos._blocks import Variable, Variables
+from biyos._blocks import Function, Functions, Variable, Variables
 from biyos._capi import version
 from biyos._environment import Environment
 from biyos._error import Error
@@ -11,6 +11,8 @@ __all__ = [
     "Error",
     "Event",
     "EventKind",
+    "Function",
+    "Functions",
     "Level",
     "Model",
     "Variable",

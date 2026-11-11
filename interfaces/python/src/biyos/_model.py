@@ -1,9 +1,9 @@
 import weakref
-from ctypes import byref, c_double, c_int, c_void_p
+from ctypes import byref, c_double, c_int, c_int64, c_void_p
 from enum import IntEnum
 
-from biyos._arrays import doubles, indices_of, ints
-from biyos._blocks import Variables, index_of
+from biyos._arrays import doubles, indices_of, ints, offsets
+from biyos._blocks import Functions, Variables, index_of
 from biyos._capi import lib
 from biyos._environment import Environment
 from biyos._error import Error
@@ -33,8 +33,14 @@ def _span(first, count, size):
     return count, inside
 
 
+def _total(starts, count):
+    if starts is None or count < 0:
+        return 0
+    return starts[count]
+
+
 class Model:
-    """A model made on an environment, holding the variables of a problem.
+    """A model of a problem, made on an environment.
 
     The model keeps its environment alive and reports its failures there.
     It is closed by ``close``, on leaving a ``with`` block, or when its
@@ -149,6 +155,74 @@ class Model:
         arrays = (kinds, lower, upper)
         self._call(lib.biyos_get_variables, first, count, *arrays)
         return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
+
+    def add_functions(
+        self,
+        count,
+        constants=None,
+        starts=None,
+        variables=None,
+        values=None,
+    ):
+        """Add functions after the last one.
+
+        Parameters
+        ----------
+        count : int
+            The number of functions to add.
+        constants : sequence of float, optional
+            The constant of each, 0 by default.
+        starts : sequence of int, optional
+            The ``count + 1`` offsets of the functions' linear terms in
+            ``variables`` and ``values``, from 0 and never decreasing.
+            Function ``j`` has the terms from ``starts[j]`` to
+            ``starts[j + 1] - 1``. By default the functions have no terms.
+        variables : sequence of int, optional
+            The variable of each term, ``starts[count]`` of them.
+        values : sequence of float, optional
+            The coefficient of each term, ``starts[count]`` of them.
+
+        Returns
+        -------
+        Functions
+            The new functions.
+        """
+        count = integer("count", count)
+        starts = offsets("starts", starts, count + 1)
+        size = _total(starts, count)
+        arrays = (
+            doubles("constants", constants, count),
+            starts,
+            indices_of(self, Variables, "variables", variables, size),
+            doubles("values", values, size),
+        )
+        first = c_int()
+        self._call(lib.biyos_add_functions, count, *arrays, byref(first))
+        return Functions(self, first.value, count, self._version)
+
+    def function_count(self):
+        count = c_int()
+        self._call(lib.biyos_function_count, byref(count))
+        return count.value
+
+    def get_functions(self, first=0, count=None):
+        first = index_of(self, Functions, "first", first)
+        count, inside = _span(first, count, self.function_count)
+        needed = c_int64()
+        if not inside:
+            empty = (None, None, 0, byref(needed), None, None)
+            self._call(lib.biyos_get_functions, first, count, *empty)
+        constants = (c_double * count)()
+        starts = (c_int64 * (count + 1))()
+        learn = (constants, starts, 0, byref(needed), None, None)
+        self._call(lib.biyos_get_functions, first, count, *learn)
+        size = needed.value
+        variables = (c_int * size)()
+        values = (c_double * size)()
+        fill = (None, None, size, byref(needed), variables, values)
+        self._call(lib.biyos_get_functions, first, count, *fill)
+        terms = (list(starts), list(variables), list(values))
+        return (list(constants), *terms)
 
     def _create(self):
         handle = self._handle
