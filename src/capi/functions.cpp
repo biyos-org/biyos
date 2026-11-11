@@ -14,8 +14,10 @@
 
 using biyos::capi::guarded;
 using biyos::capi::length;
+using biyos::capi::offsets;
 using biyos::capi::require;
 using biyos::capi::writable;
+using biyos::capi::write_starts;
 
 namespace
 {
@@ -27,15 +29,6 @@ std::vector<double> constants_of(std::size_t count, const double *constants)
         return std::vector<double>(count, 0.0);
     }
     return std::vector<double>(constants, constants + count);
-}
-
-std::vector<biyos::Offset> offsets(std::size_t count, const std::int64_t *starts)
-{
-    if (starts == nullptr)
-    {
-        return std::vector<biyos::Offset>(count + 1, 0);
-    }
-    return std::vector<biyos::Offset>(starts, starts + count + 1);
 }
 
 void add_functions(biyos_model &model,
@@ -74,19 +67,6 @@ void write_constants(std::span<const double> found, double *constants)
     }
 }
 
-void write_starts(const biyos::Model &core, int first, std::size_t count, std::int64_t *starts)
-{
-    if (starts == nullptr)
-    {
-        return;
-    }
-    for (std::size_t j = 0; j <= count; ++j)
-    {
-        const std::size_t before = core.terms(first, static_cast<biyos::Index>(j)).size();
-        starts[j] = static_cast<std::int64_t>(before);
-    }
-}
-
 void get_functions(biyos_model &model,
                    int first,
                    int count,
@@ -102,7 +82,8 @@ void get_functions(biyos_model &model,
     const std::size_t room = length(size, "size");
     require(needed, "needed");
     write_constants(held, constants);
-    write_starts(model.core, first, held.size(), starts);
+    const auto before = [&](biyos::Index j) { return model.core.terms(first, j); };
+    write_starts(held.size(), starts, before);
     biyos::capi::unpack(found, room, variables, values);
     *needed = static_cast<std::int64_t>(found.size());
 }

@@ -27,14 +27,23 @@ std::size_t length(std::int64_t count, std::string_view name)
     return static_cast<std::size_t>(count);
 }
 
-std::span<const Index> listed(int count, const int *indices)
+std::span<const Index> listed(int count, const int *indices, std::string_view name)
 {
     const std::size_t size = length(count);
     if (size > 0)
     {
-        require(indices, "indices");
+        require(indices, name);
     }
     return {indices, size};
+}
+
+std::vector<Offset> offsets(std::size_t count, const std::int64_t *starts)
+{
+    if (starts == nullptr)
+    {
+        return std::vector<Offset>(count + 1, 0);
+    }
+    return std::vector<Offset>(starts, starts + count + 1);
 }
 
 std::vector<LinearTerm> packed(std::size_t size, const int *variables, const double *values)
