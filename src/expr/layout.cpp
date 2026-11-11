@@ -71,6 +71,12 @@ std::uint32_t Layout::slot(Offset node) const noexcept
     return slots_[local(node)];
 }
 
+Offset Layout::position(Offset node) const noexcept
+{
+    const std::size_t id = local(node);
+    return id < loads_.size() ? kUnset : count_of(id - loads_.size());
+}
+
 std::uint32_t Layout::width() const noexcept
 {
     return width_;

@@ -1,7 +1,10 @@
 #include "expr/tape.hpp"
 
+#include "core/error.hpp"
 #include "core/index.hpp"
+#include "core/text.hpp"
 #include "expr/graph.hpp"
+#include "expr/intervals.hpp"
 #include "expr/layout.hpp"
 #include "expr/node.hpp"
 #include "expr/plan.hpp"
@@ -11,6 +14,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace biyos
@@ -112,10 +117,11 @@ class Compiler
     const Graph &graph_;
     const Plan &plan_;
     Layout layout_;
+    Locator locator_;
 };
 
 Compiler::Compiler(const Graph &graph, const Plan &plan)
-    : graph_(graph), plan_(plan), layout_(graph, plan)
+    : graph_(graph), plan_(plan), layout_(graph, plan), locator_(graph, layout_)
 {
 }
 
@@ -131,7 +137,9 @@ std::vector<Block> Compiler::blocks(std::span<const Offset> roots)
     for (std::size_t k = 0; k + 1 < plan_.partitions.size(); ++k)
     {
         const std::span<const Offset> outputs = part(roots, plan_.partitions, k);
-        blocks.push_back(compile(prepass + count_of(k), outputs, plan_.partitions[k]));
+        Block partition = compile(prepass + count_of(k), outputs, plan_.partitions[k]);
+        locator_.locate(outputs, partition);
+        blocks.push_back(std::move(partition));
     }
     return blocks;
 }
@@ -147,6 +155,8 @@ Block Compiler::compile(Offset index, std::span<const Offset> outputs, Offset fi
         .weights = {},
         .loads = {},
         .outputs = {},
+        .intervals = {},
+        .starts = {},
     };
     block.instructions.reserve(layout_.nodes().size());
     for (const Offset node : layout_.nodes())
@@ -268,6 +278,21 @@ Offset Tape::prepass() const noexcept
 std::span<const Block> Tape::blocks() const noexcept
 {
     return blocks_;
+}
+
+std::span<const Interval> Tape::intervals(Offset root) const
+{
+    if (root < 0 || root >= roots_)
+    {
+        throw Error(ErrorKind::InvalidArgument, "tape", "root " + text_of(root) + " is unknown");
+    }
+    const std::span<const Block> partitions = std::span(blocks_).subspan(at(prepass_));
+    const auto after = std::ranges::upper_bound(partitions, root, {}, &Block::first);
+    const Block &block = *(after - 1);
+    const std::size_t output = at(root - block.first);
+    const Offset begin = block.starts[output];
+    const Offset end = block.starts[output + 1];
+    return std::span(block.intervals).subspan(at(begin), at(end - begin));
 }
 
 }

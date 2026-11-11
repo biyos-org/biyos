@@ -26,6 +26,12 @@ struct Instruction
 
 static_assert(sizeof(Instruction) == 24);
 
+struct Interval
+{
+    std::uint32_t begin;
+    std::uint32_t end;
+};
+
 struct Block
 {
     Offset first;
@@ -35,6 +41,8 @@ struct Block
     std::vector<double> weights;
     std::vector<Offset> loads;
     std::vector<std::uint32_t> outputs;
+    std::vector<Interval> intervals;
+    std::vector<Offset> starts;
 };
 
 class Tape
@@ -48,6 +56,7 @@ class Tape
     std::uint32_t width() const noexcept;
     Offset prepass() const noexcept;
     std::span<const Block> blocks() const noexcept;
+    std::span<const Interval> intervals(Offset root) const;
 
   private:
     std::vector<Block> blocks_;

@@ -21,6 +21,7 @@ class Layout
     std::span<const Offset> nodes() const noexcept;
     std::span<const Offset> loads() const noexcept;
     std::uint32_t slot(Offset node) const noexcept;
+    Offset position(Offset node) const noexcept;
     std::uint32_t width() const noexcept;
 
   private:

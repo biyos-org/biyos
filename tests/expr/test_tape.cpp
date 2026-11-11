@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <limits>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace
@@ -29,6 +30,7 @@ using biyos::test::failure;
 using biyos::test::refusal;
 
 using Counts = std::vector<std::size_t>;
+using Spans = std::vector<std::pair<std::uint32_t, std::uint32_t>>;
 
 std::size_t at(Offset value)
 {
@@ -102,6 +104,16 @@ std::vector<std::uint32_t> targets(const Block &block)
         slots.push_back(instruction.target);
     }
     return slots;
+}
+
+Spans spans(const Tape &tape, Offset root)
+{
+    Spans found;
+    for (const biyos::Interval &interval : tape.intervals(root))
+    {
+        found.emplace_back(interval.begin, interval.end);
+    }
+    return found;
 }
 
 std::vector<Offset> loads(const Block &block)
@@ -241,6 +253,51 @@ TEST(TapeTest, Budget)
     EXPECT_EQ(sizes(Tape(large, halves)), (Counts{2, 1}));
 }
 
+TEST(TapeTest, Intervals)
+{
+    Graph graph;
+    const Offset shared = unary(graph, Operator::Exp, graph.add_variable(0));
+    const Offset sine = unary(graph, Operator::Sin, graph.add_variable(1));
+    const Offset ratio = binary(graph, Operator::Division, shared, sine);
+    const Offset negation = unary(graph, Operator::Negation, shared);
+    const std::array roots{ratio, negation, shared};
+
+    const Tape whole(graph, roots);
+    EXPECT_EQ(spans(whole, 0), (Spans{{0, 5}}));
+    EXPECT_EQ(spans(whole, 1), (Spans{{0, 2}, {5, 6}}));
+    EXPECT_EQ(spans(whole, 2), (Spans{{0, 2}}));
+    const Tape inner(graph, std::array{ratio, sine});
+    EXPECT_EQ(spans(inner, 1), (Spans{{2, 4}}));
+
+    Graph nested;
+    const Offset x = nested.add_variable(0);
+    const Offset rise = unary(nested, Operator::Exp, nested.add_variable(1));
+    const Offset total = nested.add_sum(0.0, std::array{x, rise}, std::array{1.0, 1.0});
+    const Offset wave = unary(nested, Operator::Sin, total);
+    const Offset quotient = binary(nested, Operator::Division, wave, rise);
+    const Tape joined(nested, std::array{wave, quotient});
+    EXPECT_EQ(spans(joined, 0), (Spans{{0, 5}}));
+    EXPECT_EQ(spans(joined, 1), (Spans{{0, 6}}));
+
+    const Tape split(graph, roots, 5);
+    EXPECT_EQ(sizes(split), (Counts{1, 2}));
+    EXPECT_EQ(spans(split, 0), (Spans{{0, 3}}));
+    EXPECT_EQ(spans(split, 1), (Spans{{0, 1}}));
+    EXPECT_TRUE(spans(split, 2).empty());
+    EXPECT_EQ(refusal([&] { split.intervals(3); }), "invalid argument: tape: root 3 is unknown");
+    EXPECT_EQ(refusal([&] { split.intervals(-1); }), "invalid argument: tape: root -1 is unknown");
+
+    Graph lattice;
+    Offset top = lattice.add_variable(0);
+    for (int k = 0; k < 64; ++k)
+    {
+        const std::array twice{top, top};
+        top = lattice.add(Operator::Product, 1.0, twice);
+    }
+    const Tape deep(lattice, std::span(&top, 1));
+    EXPECT_EQ(spans(deep, 0), (Spans{{0, 65}}));
+}
+
 TEST(TapeTest, MissingRoot)
 {
     Graph graph;
@@ -266,4 +323,5 @@ TEST(TapeTest, NoRoots)
     EXPECT_TRUE(tape.blocks().empty());
     EXPECT_EQ(tape.roots(), 0);
     EXPECT_EQ(tape.width(), 0U);
+    EXPECT_EQ(refusal([&] { tape.intervals(0); }), "invalid argument: tape: root 0 is unknown");
 }
