@@ -78,4 +78,52 @@ void unpack(std::span<const LinearTerm> terms, std::size_t size, int *variables,
     }
 }
 
+std::vector<QuadraticTerm> packed(std::size_t size,
+                                  const int *firsts,
+                                  const int *seconds,
+                                  const double *values)
+{
+    if (size > 0)
+    {
+        require(firsts, "firsts");
+        require(seconds, "seconds");
+        require(values, "values");
+    }
+    std::vector<QuadraticTerm> terms;
+    terms.reserve(size);
+    for (std::size_t k = 0; k < size; ++k)
+    {
+        terms.push_back(QuadraticTerm{
+            .first = firsts[k],
+            .second = seconds[k],
+            .coefficient = values[k],
+        });
+    }
+    return terms;
+}
+
+void unpack(std::span<const QuadraticTerm> terms,
+            std::size_t size,
+            int *firsts,
+            int *seconds,
+            double *values)
+{
+    const std::size_t written = (std::min)(size, terms.size());
+    for (std::size_t k = 0; k < written; ++k)
+    {
+        if (firsts != nullptr)
+        {
+            firsts[k] = terms[k].first;
+        }
+        if (seconds != nullptr)
+        {
+            seconds[k] = terms[k].second;
+        }
+        if (values != nullptr)
+        {
+            values[k] = terms[k].coefficient;
+        }
+    }
+}
+
 }

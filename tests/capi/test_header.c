@@ -108,6 +108,31 @@ static biyos_status use_functions(biyos_model *model)
     return BIYOS_OK;
 }
 
+static biyos_status use_quadratic(biyos_model *model)
+{
+    const int functions[1] = {1};
+    const int64_t starts[2] = {0, 2};
+    const int firsts[2] = {1, 0};
+    const int seconds[2] = {0, 0};
+    const double values[2] = {2.0, 1.0};
+    int64_t offsets[3] = {-1, -1, -1};
+    int64_t needed = -1;
+    int held[2] = {-1, -1};
+    int paired[2] = {-1, -1};
+    biyos_status status =
+        biyos_add_quadratic_terms(model, 1, functions, starts, firsts, seconds, values);
+    if (status == BIYOS_OK)
+    {
+        status = biyos_get_quadratic_terms(model, 0, 2, offsets, 2, &needed, held, paired, NULL);
+    }
+    if (status != BIYOS_OK || needed != 2 || offsets[1] != 0 || offsets[2] != 2 || held[1] != 0 ||
+        paired[1] != 1)
+    {
+        return BIYOS_INTERNAL_ERROR;
+    }
+    return BIYOS_OK;
+}
+
 static biyos_status use_constraints(biyos_model *model)
 {
     const int functions[2] = {1, 1};
@@ -197,8 +222,8 @@ int main(void)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (use_functions(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK ||
-        use_copy(env, model) != BIYOS_OK)
+    if (use_functions(model) != BIYOS_OK || use_quadratic(model) != BIYOS_OK ||
+        use_constraints(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK)
     {
         status = BIYOS_INTERNAL_ERROR;
     }

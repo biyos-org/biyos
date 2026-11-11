@@ -132,6 +132,11 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(biyos_function_count(nullptr, &count), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_get_functions(nullptr, 0, 0, nullptr, nullptr, 0, &needed, nullptr, nullptr),
               BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_add_quadratic_terms(nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(
+        biyos_get_quadratic_terms(nullptr, 0, 0, nullptr, 0, &needed, nullptr, nullptr, nullptr),
+        BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_add_constraints(nullptr, 1, &index, nullptr, nullptr, nullptr),
               BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_set_constraint_bounds(nullptr, 1, &index, &bound, &bound),
