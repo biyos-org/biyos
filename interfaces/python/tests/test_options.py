@@ -1,10 +1,12 @@
 from ctypes import byref, c_int
+from fractions import Fraction
 
 import pytest
 
 import biyos
 from biyos._capi import OK, lib
 from biyos._versions import version_text
+from number import Number
 
 INVALID_ARGUMENT = -100
 
@@ -116,6 +118,19 @@ def test_kind_message(env):
     message = "option 'seed' takes an int, not bool"
     with pytest.raises(TypeError, match=message):
         env.set_option("seed", True)
+    message = "option 'seed' takes an int, not str"
+    with pytest.raises(TypeError, match=message):
+        env.set_option("seed", "3")
+
+
+def test_index(env):
+    env.set_option("seed", Number(5))
+    assert env.get_option("seed") == 5
+
+
+def test_real(env):
+    env.set_option("time_limit", Fraction(7, 2))
+    assert env.get_option("time_limit") == 3.5
 
 
 def test_bad_value(env):

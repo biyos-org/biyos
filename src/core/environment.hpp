@@ -4,6 +4,7 @@
 #include "core/events.hpp"
 #include "core/options.hpp"
 
+#include <cstddef>
 #include <memory>
 #include <span>
 #include <string>
@@ -41,6 +42,20 @@ class Environment
         bool swapped_ = false;
     };
 
+    class Handle
+    {
+      public:
+        explicit Handle(Environment &env) noexcept;
+        ~Handle();
+        Handle(const Handle &) = delete;
+        Handle &operator=(const Handle &) = delete;
+
+        Environment &env() const noexcept;
+
+      private:
+        Environment &env_;
+    };
+
     Options &options() noexcept;
     const Options &options() const noexcept;
 
@@ -52,12 +67,15 @@ class Environment
     const std::string &last_error() const noexcept;
     void record_error(std::string_view text) noexcept;
 
+    std::size_t handles() const noexcept;
+
   private:
     std::unique_ptr<Clock> clock_;
     Events events_;
     Options options_;
     std::string last_error_;
     ErrorScope *scope_ = nullptr;
+    std::size_t handles_ = 0;
 };
 
 }

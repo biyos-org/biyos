@@ -2,7 +2,7 @@
 
 #include "core/error.hpp"
 #include "core/option_checks.hpp"
-#include "core/option_text.hpp"
+#include "core/text.hpp"
 #include "core/version.hpp"
 
 #include <array>

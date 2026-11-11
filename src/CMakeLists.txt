@@ -15,7 +15,8 @@ add_library(biyos_internal STATIC
     core/timer.cpp
     core/tolerances.cpp
     core/utf8.cpp
-    core/version.cpp)
+    core/version.cpp
+    model/model.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36,6 +37,7 @@ add_library(biyos
     capi/environment.cpp
     capi/events.cpp
     capi/format.cpp
+    capi/model.cpp
     capi/options.cpp
     capi/version.cpp)
 add_library(biyos::biyos ALIAS biyos)

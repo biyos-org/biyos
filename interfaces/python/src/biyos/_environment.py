@@ -1,9 +1,12 @@
 import weakref
 from ctypes import byref, c_char_p, c_double, c_int, c_void_p
+from numbers import Real
 
 from biyos import _capi
 from biyos._capi import lib
 from biyos._error import Error, check
+from biyos._handles import Handles
+from biyos._integers import integer
 from biyos._relay import Relay
 from biyos._subscribers import Subscribers
 from biyos._versions import Versions, version_text
@@ -27,15 +30,6 @@ def _rejected(name, noun, value):
     return TypeError(f"option '{name}' takes {noun}, not {found}")
 
 
-def _number(name, value):
-    if isinstance(value, bool) or not isinstance(value, int):
-        found = type(value).__name__
-        raise TypeError(f"{name} must be an int, not {found}")
-    if c_int(value).value != value:
-        raise OverflowError(f"{name}: {value} does not fit in a C int")
-    return value
-
-
 def _callable(function):
     if not callable(function):
         found = type(function).__name__
@@ -50,16 +44,14 @@ def _bool(name, value):
 
 
 def _int(name, value):
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise _rejected(name, "an int", value)
-    if c_int(value).value != value:
-        message = f"option '{name}': {value} does not fit in a C int"
-        raise OverflowError(message)
-    return value
+    try:
+        return integer(f"option '{name}'", value)
+    except TypeError:
+        raise _rejected(name, "an int", value) from None
 
 
 def _double(name, value):
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    if isinstance(value, bool) or not isinstance(value, Real):
         raise _rejected(name, "a number", value)
     return float(value)
 
@@ -87,6 +79,11 @@ _GETTERS = {
 }
 
 
+def _release(models, handle):
+    models.release()
+    lib.biyos_env_free(handle)
+
+
 class Environment:
     def __init__(self):
         handle = c_void_p()
@@ -94,7 +91,8 @@ class Environment:
         if status != _capi.OK:
             raise Error("cannot create the environment", status)
         self._handle = handle
-        self._free = weakref.finalize(self, lib.biyos_env_free, handle)
+        self._models = Handles()
+        self._free = weakref.finalize(self, _release, self._models, handle)
         self._relay = Relay()
         self._subscribers = Subscribers(self._relay)
 
@@ -105,9 +103,21 @@ class Environment:
         self.close()
 
     def close(self):
+        """Free the environment and every model made on it.
+
+        The models still open are closed first, so using one afterwards
+        raises ``ValueError``. Closing a closed environment does nothing.
+
+        Raises
+        ------
+        Error
+            While the environment delivers an event. Nothing is freed.
+        """
         if not self._free.alive:
             return
-        check(self._handle, lib.biyos_env_free(self._handle))
+        if self._relay.idle():
+            self._models.release()
+        self._run(lib.biyos_env_free, self._handle)
         self._free.detach()
         self._subscribers.clear()
 
@@ -132,8 +142,8 @@ class Environment:
 
     def subscribe(self, function, kind, lowest):
         function = _callable(function)
-        kind = _number("kind", kind)
-        lowest = _number("lowest", lowest)
+        kind = integer("kind", kind)
+        lowest = integer("lowest", lowest)
         callback = self._subscribers.callback
         subscription = c_int()
         out = byref(subscription)
@@ -145,7 +155,7 @@ class Environment:
         return subscription.value
 
     def unsubscribe(self, subscription):
-        subscription = _number("subscription", subscription)
+        subscription = integer("subscription", subscription)
         self._call(lib.biyos_unsubscribe, subscription)
         self._subscribers.remove(subscription)
 
@@ -161,9 +171,17 @@ class Environment:
         return option.value
 
     def _call(self, function, *arguments):
+        self._run(function, self._handle, *arguments)
+
+    def _run(self, function, *arguments):
         if not self._free.alive:
             raise ValueError("the environment is closed")
         self._relay.start()
-        status = function(self._handle, *arguments)
+        status = function(*arguments)
+        self._settle()
         self._relay.finish(self._handle, status)
         check(self._handle, status)
+
+    def _settle(self):
+        if self._relay.idle():
+            self._models.drain()

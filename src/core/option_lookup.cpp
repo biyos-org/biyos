@@ -3,6 +3,7 @@
 #include "core/error.hpp"
 #include "core/option_table.hpp"
 #include "core/option_text.hpp"
+#include "core/text.hpp"
 
 #include <algorithm>
 #include <cstddef>

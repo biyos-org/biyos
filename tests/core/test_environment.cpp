@@ -111,6 +111,19 @@ TEST(EnvironmentTest, CleanScope)
     EXPECT_EQ(env.last_error(), "outer");
 }
 
+TEST(EnvironmentTest, Handles)
+{
+    biyos::Environment env;
+    EXPECT_EQ(env.handles(), 0U);
+    {
+        const biyos::Environment::Handle first(env);
+        const biyos::Environment::Handle second(env);
+        EXPECT_EQ(env.handles(), 2U);
+        EXPECT_EQ(&first.env(), &env);
+    }
+    EXPECT_EQ(env.handles(), 0U);
+}
+
 TEST(EnvironmentTest, Unmovable)
 {
     EXPECT_FALSE(std::is_copy_constructible_v<biyos::Environment>);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "biyos/events.h"
+#include "biyos/model.h"
 #include "biyos/options.h"
 #include "biyos/status.h"
 
@@ -26,6 +27,7 @@ extern "C"
 typedef int biyos_status;
 typedef struct biyos_env biyos_env;
 typedef struct biyos_event biyos_event;
+typedef struct biyos_model biyos_model;
 typedef void (*biyos_subscriber)(const biyos_event *event, void *user_data);
 
 #define BIYOS_OK 0
@@ -68,6 +70,18 @@ BIYOS_API biyos_status biyos_format_text(const biyos_event *event, char *buffer,
                                          size_t *needed);
 BIYOS_API biyos_status biyos_format_json(const biyos_event *event, char *buffer, size_t size,
                                          size_t *needed);
+
+BIYOS_API biyos_status biyos_model_create(biyos_env *env, biyos_model **model);
+BIYOS_API biyos_status biyos_model_free(biyos_model *model);
+BIYOS_API biyos_status biyos_add_variables(biyos_model *model, int count, const int *kinds,
+                                           const double *lower, const double *upper);
+BIYOS_API biyos_status biyos_set_variable_bounds(biyos_model *model, int count, const int *indices,
+                                                 const double *lower, const double *upper);
+BIYOS_API biyos_status biyos_set_variable_kinds(biyos_model *model, int count, const int *indices,
+                                                const int *kinds);
+BIYOS_API biyos_status biyos_variable_count(biyos_model *model, int *count);
+BIYOS_API biyos_status biyos_get_variables(biyos_model *model, int first, int count, int *kinds,
+                                           double *lower, double *upper);
 
 #ifdef __cplusplus
 }
