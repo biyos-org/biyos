@@ -24,6 +24,15 @@ def _environment(env):
     return env
 
 
+def _span(first, count, size):
+    first = integer("first", first)
+    given = None if count is None else integer("count", count)
+    total = size()
+    count = max(total - first, 0) if given is None else given
+    inside = 0 <= first <= total and 0 <= count <= total - first
+    return first, count, inside
+
+
 class Model:
     """A model made on an environment, holding the variables of a problem.
 
@@ -100,14 +109,12 @@ class Model:
         return count.value
 
     def get_variables(self, first=0, count=None):
-        first = integer("first", first)
-        if count is None:
-            count = max(self.variable_count() - first, 0)
-        count = integer("count", count)
-        size = max(count, 0)
-        kinds = (c_int * size)()
-        lower = (c_double * size)()
-        upper = (c_double * size)()
+        first, count, inside = _span(first, count, self.variable_count)
+        if not inside:
+            self._call(lib.biyos_get_variables, first, count, None, None, None)
+        kinds = (c_int * count)()
+        lower = (c_double * count)()
+        upper = (c_double * count)()
         arrays = (kinds, lower, upper)
         self._call(lib.biyos_get_variables, first, count, *arrays)
         return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
