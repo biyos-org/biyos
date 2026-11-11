@@ -45,6 +45,16 @@ def model(env):
         yield model
 
 
+@pytest.fixture
+def log(monkeypatch):
+    log = []
+    free = partial(freed, log, lib.biyos_model_free)
+    count = partial(reached, log, lib.biyos_variable_count)
+    monkeypatch.setattr(lib, "biyos_model_free", free)
+    monkeypatch.setattr(lib, "biyos_variable_count", count)
+    return log
+
+
 def keep(texts, event):
     texts.append(event.text)
 
@@ -75,6 +85,33 @@ def collected(log, function, handle):
 def interrupted(function, *arguments):
     function(*arguments)
     raise KeyboardInterrupt
+
+
+def freed(log, function, handle):
+    log.append("free")
+    return function(handle)
+
+
+def reached(log, function, *arguments):
+    log.append("call")
+    return OK if "free" in log else function(*arguments)
+
+
+def run(actions):
+    while actions:
+        action = actions.pop(0)
+        action()
+
+
+def preceded(actions, function, *arguments):
+    run(actions)
+    return function(*arguments)
+
+
+def followed(actions, function, *arguments):
+    result = function(*arguments)
+    run(actions)
+    return result
 
 
 def refusal(call, *arguments):
@@ -309,6 +346,129 @@ def test_busy_close(env, model):
     model.add_variables(1)
     assert model.variable_count() == 2
     assert env.get_option("seed") == 0
+
+
+def test_gap(log, monkeypatch):
+    env = biyos.Environment()
+    model = biyos.Model(env)
+    start = partial(preceded, [model.close], env._relay.start)
+    monkeypatch.setattr(env._relay, "start", start)
+    assert model.variable_count() == 0
+    assert log == ["call", "free"]
+    with pytest.raises(ValueError, match="the model is closed"):
+        model.variable_count()
+    env.close()
+    assert log == ["call", "free"]
+
+
+def test_early(log, monkeypatch):
+    env = biyos.Environment()
+    model = biyos.Model(env)
+    opened = partial(preceded, [model.close], model._open)
+    monkeypatch.setattr(model, "_open", opened)
+    with pytest.raises(ValueError, match="the model is closed"):
+        model.variable_count()
+    assert log == ["free"]
+    env.close()
+    assert log == ["free"]
+
+
+def test_checked(log, monkeypatch):
+    env = biyos.Environment()
+    model = biyos.Model(env)
+    opened = partial(followed, [model.close], model._open)
+    monkeypatch.setattr(model, "_open", opened)
+    assert model.variable_count() == 0
+    assert log == ["call", "free"]
+    env.close()
+    assert log == ["call", "free"]
+
+
+def test_nested(log, monkeypatch):
+    env = biyos.Environment()
+    model = biyos.Model(env)
+    actions = [model.variable_count, model.close]
+    start = partial(preceded, actions, env._relay.start)
+    monkeypatch.setattr(env._relay, "start", start)
+    assert model.variable_count() == 0
+    assert log == ["call", "call", "free"]
+    env.close()
+    assert log == ["call", "call", "free"]
+
+
+def test_drained(log, monkeypatch):
+    env = biyos.Environment()
+    model = biyos.Model(env)
+    actions = [model.close, partial(env.get_option, "seed")]
+    start = partial(preceded, actions, env._relay.start)
+    monkeypatch.setattr(env._relay, "start", start)
+    assert model.variable_count() == 0
+    assert log == ["call", "free"]
+    env.close()
+    assert log == ["call", "free"]
+
+
+def test_interrupted_call(log, monkeypatch):
+    env = biyos.Environment()
+    model = biyos.Model(env)
+    count = partial(interrupted, lib.biyos_variable_count)
+    monkeypatch.setattr(lib, "biyos_variable_count", count)
+    start = partial(preceded, [model.close], env._relay.start)
+    monkeypatch.setattr(env._relay, "start", start)
+    with pytest.raises(KeyboardInterrupt):
+        model.variable_count()
+    assert log == ["call", "free"]
+    env.close()
+    assert log == ["call", "free"]
+
+
+def test_deferred(log):
+    env = biyos.Environment()
+    model = biyos.Model(env)
+
+    def close_inside(event):
+        model.close()
+
+    env.subscribe(close_inside, EventKind.MESSAGE, Level.ERROR)
+    message = refusal(model.set_variable_bounds, [0], [0.0], [1.0])
+    assert message == "invalid argument: variable 0: unknown"
+    assert log == ["free"]
+    with pytest.raises(ValueError, match="the model is closed"):
+        model.variable_count()
+    env.close()
+    assert log == ["free"]
+
+
+def test_reentered(monkeypatch):
+    log = []
+    free = partial(once, log, lib.biyos_model_free)
+    monkeypatch.setattr(lib, "biyos_model_free", free)
+    env = biyos.Environment()
+    model = biyos.Model(env)
+    handle = model._handle.value
+    models = env._models
+    take = partial(preceded, [model.close], models.take)
+    monkeypatch.setattr(models, "take", take)
+    model.close()
+    env.close()
+    assert log == [handle]
+
+
+def test_interrupted_take(monkeypatch):
+    statuses = []
+    spy = partial(spied, lib.biyos_model_free, statuses)
+    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    env = biyos.Environment()
+    model = biyos.Model(env)
+    models = env._models
+    monkeypatch.setattr(models, "take", partial(interrupted, models.take))
+    with pytest.raises(KeyboardInterrupt):
+        model.close()
+    monkeypatch.delattr(models, "take")
+    model.close()
+    env.close()
+    assert statuses == [OK]
+    assert not env._free.alive
 
 
 def test_holds_env():
