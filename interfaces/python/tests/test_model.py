@@ -508,9 +508,9 @@ def test_buffer(model, monkeypatch):
     seen = []
     original = lib.biyos_add_variables
 
-    def spy(handle, count, kinds, low, high):
+    def spy(handle, count, kinds, low, high, first):
         seen.append((ctypes.addressof(low), ctypes.addressof(high)))
-        return original(handle, count, kinds, low, high)
+        return original(handle, count, kinds, low, high, first)
 
     monkeypatch.setattr(lib, "biyos_add_variables", spy)
     model.add_variables(2, None, lower, upper)

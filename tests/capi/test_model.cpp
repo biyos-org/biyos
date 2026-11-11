@@ -107,7 +107,7 @@ void change(const biyos_event *, void *user_data)
     const int kind = BIYOS_VAR_INTEGER;
     note(attempt, biyos_model_create(attempt.env, &made));
     note(attempt, biyos_model_free(model));
-    note(attempt, biyos_add_variables(model, 1, nullptr, nullptr, nullptr));
+    note(attempt, biyos_add_variables(model, 1, nullptr, nullptr, nullptr, nullptr));
     note(attempt, biyos_set_variable_bounds(model, 1, &index, &bound, &bound));
     note(attempt, biyos_set_variable_kinds(model, 1, &index, &kind));
     note(attempt, biyos_variable_count(model, &attempt.count));
@@ -149,7 +149,8 @@ TEST(CApiTest, NullModel)
     const int index = 0;
     const double bound = 0.0;
     int count = 0;
-    EXPECT_EQ(biyos_add_variables(nullptr, 1, nullptr, nullptr, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_add_variables(nullptr, 1, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_set_variable_bounds(nullptr, 1, &index, &bound, &bound),
               BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(biyos_set_variable_kinds(nullptr, 1, &index, &index), BIYOS_INVALID_ARGUMENT);
@@ -183,7 +184,7 @@ TEST(CApiTest, LockedModel)
     Attempt attempt;
     attempt.env = env.get();
     attempt.model = model.get();
-    ASSERT_EQ(biyos_add_variables(model.get(), 1, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     int id = 0;
     const int message = BIYOS_EVENT_MESSAGE;
     ASSERT_EQ(biyos_subscribe(env.get(), change, &attempt, message, BIYOS_LEVEL_ERROR, &id),
@@ -224,9 +225,10 @@ TEST(CApiTest, BulkAdd)
         .upper = {kInfinity, 1.0, 7.0, 10.0, 4.0},
     };
     const int *kinds = added.kinds.data();
-    ASSERT_EQ(biyos_add_variables(model.get(), 5, kinds, added.lower.data(), added.upper.data()),
-              BIYOS_OK);
-    ASSERT_EQ(biyos_add_variables(model.get(), 0, nullptr, nullptr, nullptr), BIYOS_OK);
+    const double *low = added.lower.data();
+    const double *high = added.upper.data();
+    ASSERT_EQ(biyos_add_variables(model.get(), 5, kinds, low, high, nullptr), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     expect_columns(read_all(model), added);
     int kind = 0;
     double lower = 0.0;
@@ -239,19 +241,40 @@ TEST(CApiTest, BulkAdd)
     EXPECT_EQ(env.message(), "");
 }
 
+TEST(CApiTest, FirstIndex)
+{
+    const Env env;
+    const Model model(env);
+    int first = -1;
+    ASSERT_EQ(biyos_add_variables(model.get(), 0, nullptr, nullptr, nullptr, &first), BIYOS_OK);
+    EXPECT_EQ(first, 0);
+    ASSERT_EQ(biyos_add_variables(model.get(), 1, nullptr, nullptr, nullptr, &first), BIYOS_OK);
+    EXPECT_EQ(first, 0);
+    ASSERT_EQ(biyos_add_variables(model.get(), 3, nullptr, nullptr, nullptr, &first), BIYOS_OK);
+    EXPECT_EQ(first, 1);
+    ASSERT_EQ(biyos_add_variables(model.get(), 2, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 0, nullptr, nullptr, nullptr, &first), BIYOS_OK);
+    EXPECT_EQ(first, 6);
+    EXPECT_EQ(env.message(), "");
+}
+
 TEST(CApiTest, RefusedAdd)
 {
     const Env env;
     const Model model(env);
+    int first = -1;
     const int kinds[] = {BIYOS_VAR_CONTINUOUS, 9};
-    EXPECT_EQ(biyos_add_variables(model.get(), 2, kinds, nullptr, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_add_variables(model.get(), 2, kinds, nullptr, nullptr, &first),
+              BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(env.message(), "invalid argument: variable 1: kind 9 is unknown");
     const double lower[] = {0.0, kInfinity};
-    EXPECT_EQ(biyos_add_variables(model.get(), 2, nullptr, lower, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(biyos_add_variables(model.get(), 2, nullptr, lower, nullptr, &first),
+              BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(env.message(), "invalid argument: variable 1: lower bound is infinity");
-    EXPECT_EQ(biyos_add_variables(model.get(), -1, nullptr, nullptr, nullptr),
+    EXPECT_EQ(biyos_add_variables(model.get(), -1, nullptr, nullptr, nullptr, &first),
               BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(env.message(), "invalid argument: argument 'count': -1 is negative");
+    EXPECT_EQ(first, -1);
     int count = -1;
     EXPECT_EQ(biyos_variable_count(model.get(), &count), BIYOS_OK);
     EXPECT_EQ(count, 0);
@@ -261,7 +284,7 @@ TEST(CApiTest, BinaryKind)
 {
     const Env env;
     const Model model(env);
-    ASSERT_EQ(biyos_add_variables(model.get(), 1, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const int index = 0;
     const int binary = BIYOS_VAR_BINARY;
     EXPECT_EQ(biyos_set_variable_kinds(model.get(), 1, &index, &binary), BIYOS_INVALID_ARGUMENT);
@@ -282,7 +305,7 @@ TEST(CApiTest, BadIndex)
 {
     const Env env;
     const Model model(env);
-    ASSERT_EQ(biyos_add_variables(model.get(), 3, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const Columns before = read_all(model);
     const int beyond[] = {0, 3};
     const double bounds[] = {0.0, 1.0};
@@ -314,10 +337,10 @@ TEST(CApiTest, NullAdd)
     const Model model(env);
     const int kinds[] = {BIYOS_VAR_BINARY, BIYOS_VAR_INTEGER};
     const double bounds[] = {0.5, 0.75};
-    ASSERT_EQ(biyos_add_variables(model.get(), 2, nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(biyos_add_variables(model.get(), 2, kinds, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(biyos_add_variables(model.get(), 2, kinds, bounds, nullptr), BIYOS_OK);
-    ASSERT_EQ(biyos_add_variables(model.get(), 2, kinds, nullptr, bounds), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 2, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 2, kinds, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 2, kinds, bounds, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 2, kinds, nullptr, bounds, nullptr), BIYOS_OK);
     const int continuous = BIYOS_VAR_CONTINUOUS;
     const Columns wanted{
         .kinds =
@@ -332,7 +355,7 @@ TEST(CApiTest, NullSet)
 {
     const Env env;
     const Model model(env);
-    ASSERT_EQ(biyos_add_variables(model.get(), 2, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 2, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const int indices[] = {1, 0};
     const double lower[] = {1.0, 2.0};
     const double upper[] = {3.0, 4.0};
@@ -366,7 +389,7 @@ TEST(CApiTest, NullGet)
     const int kinds[] = {BIYOS_VAR_INTEGER, BIYOS_VAR_BINARY};
     const double lower[] = {-1.0, 0.0};
     const double upper[] = {1.0, 0.5};
-    ASSERT_EQ(biyos_add_variables(model.get(), 2, kinds, lower, upper), BIYOS_OK);
+    ASSERT_EQ(biyos_add_variables(model.get(), 2, kinds, lower, upper, nullptr), BIYOS_OK);
     EXPECT_EQ(biyos_get_variables(model.get(), 0, 2, nullptr, nullptr, nullptr), BIYOS_OK);
     int found[] = {0, 0};
     double low[] = {9.0, 9.0};

@@ -86,7 +86,7 @@ class Model:
             doubles("lower", lower, count),
             doubles("upper", upper, count),
         )
-        self._call(lib.biyos_add_variables, count, *arrays)
+        self._call(lib.biyos_add_variables, count, *arrays, None)
 
     def set_variable_bounds(self, indices, lower=None, upper=None):
         count = len(indices)

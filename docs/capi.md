@@ -386,6 +386,8 @@ A model is made on an environment and reports there. A call on the model that fa
 
 Variables are numbered from 0 in the order they are added, and a count or an index of variables is an `int`. The calls on variables take many at once: a count and arrays of that many entries, which biyos reads during the call and does not keep. A call that fails changes nothing.
 
+A call that adds items takes `int *first` as its last argument. When the call succeeds and `first` is not null, it writes to `*first` the index of the first new item, which is the number of items held before the call, a count of 0 included. The new items follow it in order.
+
 A bound may be `INFINITY` or `-INFINITY` of `<math.h>`, and no finite bound is taken as infinite, however large. A lower bound of minus infinity or an upper bound of infinity leaves that side unbounded. A lower bound of infinity, an upper bound of minus infinity and NaN are refused, and so is a bound outside the widest bounds of the variable's kind: 0 and 1 for a binary, minus infinity and infinity for any other kind. Any other pair is kept as given, a lower bound above the upper one included.
 
 ### `biyos_model_create`
@@ -408,10 +410,10 @@ Frees the model. A null `model` gives `BIYOS_OK`. While the environment of `mode
 
 ```c
 biyos_status biyos_add_variables(biyos_model *model, int count, const int *kinds,
-                                 const double *lower, const double *upper);
+                                 const double *lower, const double *upper, int *first);
 ```
 
-Adds `count` variables after the last one. Entry `j` of each array gives variable `n + j`, where `n` is the number of variables before the call: its kind, a `BIYOS_VAR_*` value, and its lower and upper bounds. A null `kinds` makes every new variable continuous, and a null `lower` or `upper` gives each the widest such bound of its kind. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, a kind is unknown or a bound is refused, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 variables.
+Adds `count` variables after the last one. Entry `j` of each array gives variable `n + j`, where `n` is the number of variables before the call: its kind, a `BIYOS_VAR_*` value, and its lower and upper bounds. A null `kinds` makes every new variable continuous, and a null `lower` or `upper` gives each the widest such bound of its kind. `*first` receives `n`, and a null `first` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, a kind is unknown or a bound is refused, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 variables.
 
 ### `biyos_set_variable_bounds`
 

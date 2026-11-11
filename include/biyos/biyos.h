@@ -89,7 +89,8 @@ BIYOS_API biyos_status biyos_add_variables(biyos_model *model,
                                            int count,
                                            const int *kinds,
                                            const double *lower,
-                                           const double *upper);
+                                           const double *upper,
+                                           int *first);
 BIYOS_API biyos_status biyos_set_variable_bounds(biyos_model *model,
                                                  int count,
                                                  const int *indices,
