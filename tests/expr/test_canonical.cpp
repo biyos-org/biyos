@@ -2,6 +2,7 @@
 #include "expr/canonical.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
+#include "expr/parents.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>
@@ -21,6 +22,7 @@ using biyos::kNoRemainder;
 using biyos::LinearTerm;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Parents;
 using biyos::Parts;
 using biyos::QuadraticTerm;
 using biyos::test::refusal;
@@ -90,7 +92,8 @@ void expect_whole(const Parts &parts, Offset node)
 
 Parts parts_of(Graph &graph, Offset node)
 {
-    return biyos::split(graph, node);
+    const Parents parents(graph);
+    return biyos::split(graph, parents, node);
 }
 
 Offset constant(Graph &graph, double value)
@@ -358,8 +361,15 @@ TEST(CanonicalTest, SharedAlone)
     const std::vector<Offset> x = variables(graph, 3);
     const Offset exponential = unary(graph, Operator::Exp, x[2]);
     const Offset shared = sum(graph, 0.0, {x[1], exponential}, {1.0, 1.0});
-    unary(graph, Operator::Sin, shared);
-    expect_wrapped(graph, x[0], shared);
+    const Offset negated_sum = sum(graph, 0.0, {x[1], exponential}, {1.0, 1.0});
+    const Offset negated = unary(graph, Operator::Negation, negated_sum);
+    const Offset scaled_sum = sum(graph, 0.0, {x[1], exponential}, {1.0, 1.0});
+    const Offset scaled = product(graph, 3.0, {scaled_sum});
+    for (const Offset node : {shared, negated, scaled})
+    {
+        unary(graph, Operator::Sin, node);
+        expect_wrapped(graph, x[0], node);
+    }
 }
 
 TEST(CanonicalTest, NearSquare)
@@ -422,4 +432,181 @@ TEST(CanonicalTest, MissingNode)
     EXPECT_EQ(refusal([&] { parts_of(graph, 1); }),
               "invalid argument: expression: node 1 is unknown");
     EXPECT_EQ(graph.size(), 1);
+}
+
+TEST(CanonicalTest, Negation)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const Offset exponential = unary(graph, Operator::Exp, x[1]);
+    const Offset inner = sum(graph, 0.0, {x[0], exponential}, {1.0, 1.0});
+    const Offset negated = unary(graph, Operator::Negation, inner);
+    const Parts parts = parts_of(graph, negated);
+    expect_linear(parts, {{.variable = 0, .coefficient = -1.0}});
+    ASSERT_NE(parts.remainder, kNoRemainder);
+    EXPECT_EQ(graph.op(parts.remainder), Operator::Sum);
+    EXPECT_EQ(ids(graph.children(parts.remainder)), std::vector<Offset>{exponential});
+    expect_values(graph.coefficients(parts.remainder), {-1.0});
+    const Offset once = unary(graph, Operator::Negation, x[2]);
+    const Offset twice = unary(graph, Operator::Negation, once);
+    const Offset root = sum(graph, 0.0, {x[0], twice}, {1.0, 3.0});
+    expect_linear(parts_of(graph, root),
+                  {
+                      {.variable = 0, .coefficient = 1.0},
+                      {.variable = 2, .coefficient = 3.0},
+                  });
+}
+
+TEST(CanonicalTest, ScaledSum)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset exponential = unary(graph, Operator::Exp, x[1]);
+    const Offset inner = sum(graph, 1.0, {x[0], exponential}, {1.0, 1.0});
+    const Offset two = constant(graph, 2.0);
+    const Offset scaled = product(graph, 1.5, {two, inner});
+    const Parts parts = parts_of(graph, scaled);
+    EXPECT_DOUBLE_EQ(parts.constant, 3.0);
+    expect_linear(parts, {{.variable = 0, .coefficient = 3.0}});
+    ASSERT_NE(parts.remainder, kNoRemainder);
+    EXPECT_EQ(ids(graph.children(parts.remainder)), std::vector<Offset>{exponential});
+    expect_values(graph.coefficients(parts.remainder), {3.0});
+}
+
+TEST(CanonicalTest, InnerSum)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const Offset exponential = unary(graph, Operator::Exp, x[2]);
+    const Offset inner = sum(graph, 2.0, {x[1], exponential}, {4.0, 1.0});
+    const Offset root = sum(graph, 1.0, {x[0], inner}, {1.0, 0.5});
+    const Parts parts = parts_of(graph, root);
+    EXPECT_DOUBLE_EQ(parts.constant, 2.0);
+    expect_linear(parts,
+                  {
+                      {.variable = 0, .coefficient = 1.0},
+                      {.variable = 1, .coefficient = 2.0},
+                  });
+    ASSERT_NE(parts.remainder, kNoRemainder);
+    EXPECT_EQ(ids(graph.children(parts.remainder)), std::vector<Offset>{exponential});
+    expect_values(graph.coefficients(parts.remainder), {0.5});
+}
+
+TEST(CanonicalTest, SharedSum)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const Offset exponential = unary(graph, Operator::Exp, x[2]);
+    const Offset shared = sum(graph, 1.0, {x[1], exponential}, {1.0, 1.0});
+    unary(graph, Operator::Sin, shared);
+    const Offset negated = unary(graph, Operator::Negation, x[1]);
+    unary(graph, Operator::Cos, negated);
+    const Offset single = unary(graph, Operator::Negation, x[2]);
+    const Offset inner = sum(graph, 0.0, {x[0], exponential}, {1.0, 1.0});
+    const Offset scaled = product(graph, 3.0, {inner});
+    unary(graph, Operator::Tan, scaled);
+    const std::vector<Offset> terms{shared, x[0], negated, single, scaled};
+    const Offset root = sum(graph, 0.0, terms, {2.0, 1.0, 1.0, 1.0, 1.0});
+    const Parts parts = parts_of(graph, root);
+    EXPECT_DOUBLE_EQ(parts.constant, 0.0);
+    expect_linear(parts,
+                  {
+                      {.variable = 0, .coefficient = 1.0},
+                      {.variable = 2, .coefficient = -1.0},
+                  });
+    ASSERT_NE(parts.remainder, kNoRemainder);
+    const std::vector<Offset> kept{shared, negated, scaled};
+    EXPECT_EQ(ids(graph.children(parts.remainder)), kept);
+    expect_values(graph.coefficients(parts.remainder), {2.0, 1.0, 1.0});
+}
+
+TEST(CanonicalTest, PushedAgain)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const Offset exponential = unary(graph, Operator::Exp, x[1]);
+    const Offset shared = sum(graph, 0.0, {x[2], exponential}, {1.0, 1.0});
+    unary(graph, Operator::Sin, shared);
+    const Offset inner = sum(graph, 0.0, {x[0], exponential, shared}, {1.0, 1.0, 1.0});
+    const Offset negated = unary(graph, Operator::Negation, inner);
+    const Parts parts = parts_of(graph, negated);
+    expect_linear(parts, {{.variable = 0, .coefficient = -1.0}});
+    ASSERT_NE(parts.remainder, kNoRemainder);
+    const Offset size = graph.size();
+    expect_whole(parts_of(graph, parts.remainder), parts.remainder);
+    EXPECT_EQ(graph.size(), size);
+}
+
+TEST(CanonicalTest, ScaledOverflow)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const Offset exponential = unary(graph, Operator::Exp, x[0]);
+    const Offset inner = sum(graph, 0.0, {x[0], exponential}, {1.0, 1.0});
+    const Offset scaled = product(graph, kHuge, {inner});
+    const Offset wide = sum(graph, 0.0, {x[0], exponential}, {kHuge, 1.0});
+    const Offset offset = sum(graph, kHuge, {exponential}, {1.0});
+    for (const Offset term : {scaled, wide, offset})
+    {
+        const Offset negated = unary(graph, Operator::Negation, x[2]);
+        const Offset root = sum(graph, 0.0, {term, x[1], negated}, {kHuge, 1.0, 1.0});
+        const Parts parts = parts_of(graph, root);
+        expect_linear(parts,
+                      {
+                          {.variable = 1, .coefficient = 1.0},
+                          {.variable = 2, .coefficient = -1.0},
+                      });
+        ASSERT_NE(parts.remainder, kNoRemainder);
+        EXPECT_EQ(ids(graph.children(parts.remainder)), std::vector<Offset>{term});
+        expect_values(graph.coefficients(parts.remainder), {kHuge});
+    }
+}
+
+TEST(CanonicalTest, SharedRoot)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset shared = sum(graph, -1.0, {x[0], x[1]}, {1.0, 1.0});
+    unary(graph, Operator::Sin, shared);
+    unary(graph, Operator::Cos, shared);
+    const Parts parts = parts_of(graph, shared);
+    EXPECT_DOUBLE_EQ(parts.constant, -1.0);
+    expect_linear(parts,
+                  {
+                      {.variable = 0, .coefficient = 1.0},
+                      {.variable = 1, .coefficient = 1.0},
+                  });
+    EXPECT_EQ(parts.remainder, kNoRemainder);
+    const Offset pair = product(graph, 2.0, {x[0], x[1]});
+    unary(graph, Operator::Cos, pair);
+    const Parts square = parts_of(graph, pair);
+    expect_quadratic(square, {{.first = 0, .second = 1, .coefficient = 2.0}});
+    EXPECT_EQ(square.remainder, kNoRemainder);
+}
+
+TEST(CanonicalTest, CallOrder)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset exponential = unary(graph, Operator::Exp, x[1]);
+    const Offset root = sum(graph, -1.0, {x[0], exponential}, {2.0, 1.0});
+    const Parts before = parts_of(graph, root);
+    unary(graph, Operator::Sin, root);
+    const Parts after = parts_of(graph, root);
+    expect_linear(before, {{.variable = 0, .coefficient = 2.0}});
+    EXPECT_EQ(before.remainder, exponential);
+    EXPECT_DOUBLE_EQ(after.constant, before.constant);
+    expect_linear(after, before.linear);
+    EXPECT_EQ(after.remainder, before.remainder);
+}
+
+TEST(CanonicalTest, OldParents)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Parents parents(graph);
+    const Offset exponential = unary(graph, Operator::Exp, x);
+    EXPECT_EQ(refusal([&] { biyos::split(graph, parents, exponential); }),
+              "invalid argument: expression: parents are older than node 1");
+    EXPECT_EQ(graph.size(), 2);
 }

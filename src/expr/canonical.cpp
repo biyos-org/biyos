@@ -1,8 +1,11 @@
 #include "expr/canonical.hpp"
 
+#include "core/error.hpp"
 #include "core/index.hpp"
+#include "core/text.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
+#include "expr/parents.hpp"
 #include "expr/terms.hpp"
 
 #include <algorithm>
@@ -11,6 +14,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -23,6 +27,7 @@ namespace
 constexpr double kSquare = 2.0;
 constexpr double kUnit = 1.0;
 constexpr std::size_t kDegree = 2;
+constexpr Offset kNoFactor = -1;
 
 struct Item
 {
@@ -36,8 +41,18 @@ struct Monomial
     double coefficient;
     std::array<Index, kDegree> variables;
     std::size_t degree;
+    Offset compound;
     std::size_t compound_count;
 };
+
+void check_parents(const Parents &parents, Offset node)
+{
+    if (node >= parents.size())
+    {
+        const std::string reason = "parents are older than node " + text_of(node);
+        throw Error(ErrorKind::InvalidArgument, "expression", reason);
+    }
+}
 
 bool same(double a, double b) noexcept
 {
@@ -54,6 +69,22 @@ bool is_finite(double value) noexcept
     return std::isfinite(value);
 }
 
+bool scales(const Graph &graph, Offset sum, double factor) noexcept
+{
+    if (!is_finite(factor * graph.constant(sum)))
+    {
+        return false;
+    }
+    for (const double weight : graph.coefficients(sum))
+    {
+        if (!is_finite(factor * weight))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 void add_factor(const Graph &graph, Offset factor, Monomial &monomial)
 {
     const Operator op = graph.op(factor);
@@ -64,6 +95,7 @@ void add_factor(const Graph &graph, Offset factor, Monomial &monomial)
     }
     if (op != Operator::Variable)
     {
+        monomial.compound = factor;
         ++monomial.compound_count;
         return;
     }
@@ -80,6 +112,7 @@ Monomial monomial_of(const Graph &graph, Offset node, double factor)
         .coefficient = factor * graph.constant(node),
         .variables = {},
         .degree = 0,
+        .compound = kNoFactor,
         .compound_count = 0,
     };
     for (const Offset child : graph.children(node))
@@ -97,7 +130,7 @@ Parts whole(Offset node)
 class Walk
 {
   public:
-    explicit Walk(const Graph &graph);
+    Walk(const Graph &graph, const Parents &parents);
 
     void run(Offset node);
     bool moved() const noexcept;
@@ -108,8 +141,10 @@ class Walk
     void visit(const Item &item);
     void open_constant(const Item &item);
     void open_sum(const Item &item);
+    void open_negation(const Item &item);
     void open_product(const Item &item);
     void open_power(const Item &item);
+    bool shared(const Item &item) const noexcept;
     void push(Offset node, double factor);
     void add_monomial(const Monomial &monomial);
     void add_constant(double value);
@@ -120,6 +155,7 @@ class Walk
     Offset remainder(Graph &graph) const;
 
     const Graph &graph_;
+    const Parents &parents_;
     std::vector<Item> stack_;
     double constant_ = 0.0;
     std::vector<LinearTerm> linear_;
@@ -130,7 +166,7 @@ class Walk
     bool closed_ = false;
 };
 
-Walk::Walk(const Graph &graph) : graph_(graph) {}
+Walk::Walk(const Graph &graph, const Parents &parents) : graph_(graph), parents_(parents) {}
 
 void Walk::run(Offset node)
 {
@@ -179,10 +215,12 @@ void Walk::visit(const Item &item)
     case Operator::Product:
         open_product(item);
         break;
+    case Operator::Negation:
+        open_negation(item);
+        break;
     case Operator::ConstantPower:
         open_power(item);
         break;
-    case Operator::Negation:
     case Operator::Division:
     case Operator::Power:
     case Operator::Exp:
@@ -224,7 +262,7 @@ void Walk::open_constant(const Item &item)
 
 void Walk::open_sum(const Item &item)
 {
-    if (!item.root)
+    if (shared(item) || !scales(graph_, item.node, item.factor))
     {
         close(item);
         return;
@@ -242,6 +280,16 @@ void Walk::open_sum(const Item &item)
     }
 }
 
+void Walk::open_negation(const Item &item)
+{
+    if (shared(item))
+    {
+        close(item);
+        return;
+    }
+    push(graph_.children(item.node).front(), -item.factor);
+}
+
 void Walk::open_product(const Item &item)
 {
     const Monomial monomial = monomial_of(graph_, item.node, item.factor);
@@ -255,7 +303,17 @@ void Walk::open_product(const Item &item)
         add_monomial(monomial);
         return;
     }
-    keep(item);
+    if (monomial.compound_count != 1 || monomial.degree != 0)
+    {
+        keep(item);
+        return;
+    }
+    if (shared(item))
+    {
+        close(item);
+        return;
+    }
+    push(monomial.compound, monomial.coefficient);
 }
 
 void Walk::open_power(const Item &item)
@@ -268,6 +326,11 @@ void Walk::open_power(const Item &item)
     }
     const Index variable = graph_.variable(base);
     add_quadratic(variable, variable, item.factor);
+}
+
+bool Walk::shared(const Item &item) const noexcept
+{
+    return !item.root && parents_.of(item.node).size() > 1;
 }
 
 void Walk::push(Offset node, double factor)
@@ -339,10 +402,11 @@ Offset Walk::remainder(Graph &graph) const
 
 }
 
-Parts split(Graph &graph, Offset node)
+Parts split(Graph &graph, const Parents &parents, Offset node)
 {
     check_child(node, graph.size());
-    Walk walk(graph);
+    check_parents(parents, node);
+    Walk walk(graph, parents);
     walk.run(node);
     if (!walk.moved() || !walk.finite())
     {

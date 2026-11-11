@@ -2,6 +2,7 @@
 
 #include "core/index.hpp"
 #include "expr/graph.hpp"
+#include "expr/parents.hpp"
 #include "expr/terms.hpp"
 
 #include <vector>
@@ -19,6 +20,6 @@ struct Parts
     Offset remainder;
 };
 
-Parts split(Graph &graph, Offset node);
+Parts split(Graph &graph, const Parents &parents, Offset node);
 
 }
