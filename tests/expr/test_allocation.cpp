@@ -3,6 +3,9 @@
 #include "expr/builder.hpp"
 #include "expr/compact.hpp"
 #include "expr/graph.hpp"
+#include "expr/node.hpp"
+#include "expr/tape.hpp"
+#include "expr/value.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>
@@ -19,6 +22,8 @@ namespace
 using biyos::Builder;
 using biyos::Graph;
 using biyos::Offset;
+using biyos::Operator;
+using biyos::Tape;
 using biyos::test::refusal;
 
 constexpr std::size_t kAttempts = 100;
@@ -135,6 +140,30 @@ std::size_t compaction_cost(std::size_t width)
     return biyos::test::allocations() - start;
 }
 
+std::vector<Offset> products(Graph &graph)
+{
+    const std::array pair{graph.add_variable(0), graph.add_variable(1)};
+    const Offset shared = graph.add_sum(1.0, pair, std::array{2.0, 3.0});
+    std::vector<Offset> roots;
+    for (std::size_t k = 0; k < 8; ++k)
+    {
+        const std::array factors{shared, pair[k % 2]};
+        const Offset product = graph.add(Operator::Product, 1.5, factors);
+        roots.push_back(graph.add(Operator::Max, std::array{product, pair[0]}));
+    }
+    return roots;
+}
+
+std::size_t sweep_cost(const Tape &tape)
+{
+    biyos::Workspace workspace(tape);
+    std::vector<double> values(static_cast<std::size_t>(tape.roots()));
+    const std::array point{0.5, 2.0};
+    const std::size_t start = biyos::test::allocations();
+    biyos::forward(tape, point, workspace, values);
+    return biyos::test::allocations() - start;
+}
+
 }
 
 TEST(AllocationTest, MergedSum)
@@ -150,4 +179,13 @@ TEST(AllocationTest, MergedProduct)
 TEST(AllocationTest, CompactWorkspace)
 {
     EXPECT_EQ(compaction_cost(2), compaction_cost(64));
+}
+
+TEST(AllocationTest, ForwardSweep)
+{
+    Graph graph;
+    const std::vector<Offset> roots = products(graph);
+    const Tape tape(graph, roots, 4);
+    ASSERT_GT(tape.prepass(), 0);
+    EXPECT_EQ(sweep_cost(tape), 0U);
 }

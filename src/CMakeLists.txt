@@ -27,6 +27,7 @@ add_library(biyos_internal STATIC
     expr/plan.cpp
     expr/tape.cpp
     expr/terms.cpp
+    expr/value.cpp
     model/model.cpp)
 
 target_include_directories(biyos_internal PUBLIC

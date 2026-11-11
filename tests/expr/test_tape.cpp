@@ -5,10 +5,12 @@
 #include "expr/node.hpp"
 #include "expr/tape.hpp"
 #include "refusal.hpp"
+#include "sweep.hpp"
 
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -28,6 +30,7 @@ using biyos::Operator;
 using biyos::Tape;
 using biyos::test::failure;
 using biyos::test::refusal;
+using biyos::test::values_of;
 
 using Counts = std::vector<std::size_t>;
 using Spans = std::vector<std::pair<std::uint32_t, std::uint32_t>>;
@@ -296,6 +299,35 @@ TEST(TapeTest, Intervals)
     }
     const Tape deep(lattice, std::span(&top, 1));
     EXPECT_EQ(spans(deep, 0), (Spans{{0, 65}}));
+}
+
+TEST(TapeTest, Recompile)
+{
+    Graph graph;
+    const Offset first = unary(graph, Operator::Exp, graph.add_variable(0));
+    const Tape before(graph, std::span(&first, 1));
+    Offset second = first;
+    for (int k = 0; k < 1000; ++k)
+    {
+        second = unary(graph, Operator::Sin, second);
+    }
+    const std::array roots{first, second};
+    const Tape after(graph, roots);
+
+    const std::array point{0.3};
+    const double start = std::exp(point[0]);
+    double sine = start;
+    for (int k = 0; k < 1000; ++k)
+    {
+        sine = std::sin(sine);
+    }
+    const std::vector<double> old_values = values_of(before, point);
+    ASSERT_EQ(old_values.size(), 1U);
+    EXPECT_DOUBLE_EQ(old_values[0], start);
+    const std::vector<double> new_values = values_of(after, point);
+    ASSERT_EQ(new_values.size(), 2U);
+    EXPECT_DOUBLE_EQ(new_values[0], start);
+    EXPECT_DOUBLE_EQ(new_values[1], sine);
 }
 
 TEST(TapeTest, MissingRoot)
