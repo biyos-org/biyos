@@ -58,14 +58,9 @@ class Model:
     """
 
     def __init__(self, env):
-        env = _environment(env)
-        self._env = env
-        self._handle = c_void_p()
-        self._calls = 0
-        self._closing = False
-        self._version = 0
-        with env._busy():
-            self._create()
+        self._start(_environment(env))
+        with self._env._busy():
+            self._make(self._env._call, lib.biyos_model_create)
         self._hold()
 
     def __enter__(self):
@@ -73,6 +68,12 @@ class Model:
 
     def __exit__(self, *exc_info):
         self.close()
+
+    def __copy__(self):
+        raise TypeError("copy a model with Model.copy")
+
+    def __deepcopy__(self, memo):
+        return self.__copy__()
 
     def close(self):
         with self._env._busy():
@@ -94,6 +95,42 @@ class Model:
             models.add(self._handle.value)
             self._hold()
             raise
+
+    def copy(self, env=None):
+        """Return a copy of the model, made on an environment.
+
+        The copy holds the same variables, functions and constraints under
+        the same indices, and changes apart from the model. It reports on
+        its own environment, like any model made there.
+
+        Parameters
+        ----------
+        env : Environment, optional
+            The environment the copy is made on, the model's own by default.
+
+        Returns
+        -------
+        Model
+            The copy.
+
+        Raises
+        ------
+        TypeError
+            When ``env`` is not an ``Environment``.
+        Error
+            While ``env`` delivers an event.
+        ValueError
+            When the model or ``env`` is closed.
+        """
+        env = self._env if env is None else _environment(env)
+        if not self._open():
+            raise ValueError("the model is closed")
+        copy = Model.__new__(Model)
+        copy._start(env)
+        with env._busy():
+            copy._copy(self)
+        copy._hold()
+        return copy
 
     def add_variables(self, count, kinds=None, lower=None, upper=None):
         """Add variables after the last one.
@@ -276,13 +313,26 @@ class Model:
         self._call(lib.biyos_get_constraints, first, count, *arrays)
         return list(functions), list(lower), list(upper)
 
-    def _create(self):
+    def _start(self, env):
+        self._env = env
+        self._handle = c_void_p()
+        self._calls = 0
+        self._closing = False
+        self._version = 0
+
+    def _make(self, call, *arguments):
         handle = self._handle
         try:
-            self._env._call(lib.biyos_model_create, byref(handle))
+            call(*arguments, byref(handle))
         finally:
             if handle.value is not None:
                 self._env._models.add(handle.value)
+
+    def _copy(self, source):
+        if not self._env._open():
+            raise ValueError("the environment is closed")
+        target = self._env._handle
+        self._make(source._call, lib.biyos_model_copy, target)
 
     def _hold(self):
         park = self._env._models.park

@@ -85,6 +85,7 @@ BIYOS_API biyos_status biyos_format_json(const biyos_event *event,
                                          size_t *needed);
 
 BIYOS_API biyos_status biyos_model_create(biyos_env *env, biyos_model **model);
+BIYOS_API biyos_status biyos_model_copy(biyos_model *model, biyos_env *env, biyos_model **copy);
 BIYOS_API biyos_status biyos_model_free(biyos_model *model);
 BIYOS_API biyos_status biyos_add_variables(biyos_model *model,
                                            int count,

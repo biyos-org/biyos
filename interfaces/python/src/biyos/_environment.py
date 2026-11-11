@@ -106,6 +106,12 @@ class Environment:
     def __exit__(self, *exc_info):
         self.close()
 
+    def __copy__(self):
+        raise TypeError("an environment cannot be copied")
+
+    def __deepcopy__(self, memo):
+        return self.__copy__()
+
     def close(self):
         """Free the environment and every model made on it.
 

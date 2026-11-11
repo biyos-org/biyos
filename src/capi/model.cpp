@@ -11,6 +11,7 @@
 #include <vector>
 
 using biyos::capi::guarded;
+using biyos::capi::idle;
 using biyos::capi::length;
 using biyos::capi::listed;
 using biyos::capi::require;
@@ -24,6 +25,13 @@ void create(biyos::Environment &env, biyos_model **model)
     biyos_model **made = require(model, "model");
     writable(env);
     *made = new biyos_model(env);
+}
+
+void make_copy(biyos_model &model, biyos_env *env, biyos_model **copy)
+{
+    biyos_model **made = require(copy, "copy");
+    biyos::Environment &target = idle(require(env, "env")->core, "argument 'env'");
+    *made = new biyos_model(target, model.core);
 }
 
 void freeable(biyos_model &model)
@@ -161,6 +169,15 @@ biyos_status biyos_model_create(biyos_env *env, biyos_model **model)
         *model = nullptr;
     }
     return guarded<create>(env, model);
+}
+
+biyos_status biyos_model_copy(biyos_model *model, biyos_env *env, biyos_model **copy)
+{
+    if (copy != nullptr)
+    {
+        *copy = nullptr;
+    }
+    return guarded<make_copy>(model, env, copy);
 }
 
 biyos_status biyos_model_free(biyos_model *model)

@@ -37,10 +37,10 @@ set_tests_properties(NameTest.LocalBuffer PROPERTIES PASS_REGULAR_EXPRESSION "co
 biyos_add_test(test_expr expr/reference.cpp expr/sampling.cpp expr/test_builder.cpp expr/test_canonical.cpp expr/test_compact.cpp expr/test_elementary.cpp expr/test_enclosure.cpp expr/test_graph.cpp expr/test_interval.cpp expr/test_parents.cpp expr/test_periodic.cpp expr/test_powers.cpp expr/test_tape.cpp expr/test_terms.cpp expr/test_value.cpp)
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
-biyos_add_test(test_model model/test_constraints.cpp model/test_functions.cpp model/test_variables.cpp)
+biyos_add_test(test_model model/test_compare.cpp model/test_constraints.cpp model/test_copy.cpp model/test_functions.cpp model/test_variables.cpp)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
-biyos_add_test(test_capi capi/test_constraints.cpp capi/test_environment.cpp capi/test_events.cpp capi/test_firewall.cpp capi/test_format.cpp capi/test_functions.cpp capi/test_model.cpp capi/test_options.cpp capi/test_version.cpp)
+biyos_add_test(test_capi capi/test_constraints.cpp capi/test_copy.cpp capi/test_environment.cpp capi/test_events.cpp capi/test_firewall.cpp capi/test_format.cpp capi/test_functions.cpp capi/test_model.cpp capi/test_options.cpp capi/test_version.cpp)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
 add_executable(test_capi_c capi/test_header.c)

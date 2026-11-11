@@ -183,3 +183,60 @@ def test_subclass(model):
     model.set_variable_bounds([Mine(model, 1, model._version)], [3.0])
     model.set_variable_bounds(Ours(model, 2, 1, model._version), [4.0])
     assert model.get_variables()[1] == [-INFINITY, 3.0, 4.0]
+
+
+def test_on(model):
+    model.add_variables(1)
+    x = model.add_variables(3)
+    copy = model.copy()
+    y = x.on(copy)
+    assert type(y) is biyos.Variables
+    assert indices(y) == [1, 2, 3]
+    copy.set_variable_bounds(y[1:], None, [5.0, 6.0])
+    assert copy.get_variables()[2] == [INFINITY, INFINITY, 5.0, 6.0]
+    with pytest.raises(ValueError, match="indices is a block of another"):
+        model.set_variable_bounds(y, None, [1.0] * 3)
+    assert model.get_variables()[2] == [INFINITY] * 4
+    assert indices(x) == [1, 2, 3]
+    copy.close()
+
+
+def test_smaller(env, model):
+    x = model.add_variables(3)
+    other = biyos.Model(env)
+    other.add_variables(2)
+    few = "model holds too few variables: 2, the block needs 3"
+    with pytest.raises(ValueError, match=few):
+        x.on(other)
+    with pytest.raises(ValueError, match=few):
+        x[3:].on(other)
+    assert indices(x[:2].on(other)) == [0, 1]
+    assert len(x[2:2].on(other)) == 0
+    other.add_variables(1)
+    assert indices(x.on(other)) == [0, 1, 2]
+
+
+def test_target(env, model):
+    x = model.add_variables(3)
+    with pytest.raises(TypeError, match="model must be a Model, not int"):
+        x.on(1)
+    other = biyos.Model(env)
+    other.close()
+    with pytest.raises(ValueError, match="the model is closed"):
+        x.on(other)
+    model._version += 1
+    with pytest.raises(ValueError, match=STALE):
+        x.on(model)
+
+
+def test_rebound(model):
+    x = model.add_variables(3)
+    copy = model.copy()
+    copy._version += 2
+    y = x.on(copy)
+    assert len(y) == 3
+    copy._version += 1
+    with pytest.raises(ValueError, match=STALE):
+        len(y)
+    assert len(x) == 3
+    copy.close()

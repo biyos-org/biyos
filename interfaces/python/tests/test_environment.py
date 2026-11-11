@@ -1,4 +1,6 @@
 import gc
+from copy import copy as shallow
+from copy import deepcopy
 from functools import partial
 
 import pytest
@@ -82,6 +84,14 @@ def test_close():
     env.close()
     with pytest.raises(ValueError, match="the environment is closed"):
         env.get_option("seed")
+
+
+def test_copied():
+    with biyos.Environment() as env:
+        for copier in (shallow, deepcopy):
+            with pytest.raises(TypeError, match="cannot be copied"):
+                copier(env)
+        assert env.get_option("seed") == 0
 
 
 def test_collected():

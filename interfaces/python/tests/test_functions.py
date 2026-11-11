@@ -299,3 +299,21 @@ def test_closed(env):
     for call in calls:
         with pytest.raises(ValueError, match="the model is closed"):
             call()
+
+
+def test_on(env, model):
+    f = add_sample(model)
+    copy = model.copy()
+    g = f.on(copy)
+    assert type(g) is biyos.Functions
+    copy.add_constraints(g)
+    assert copy.get_constraints()[0] == [0, 1, 2]
+    with pytest.raises(ValueError, match="functions is a block of another"):
+        model.add_constraints(g)
+    smaller = biyos.Model(env)
+    smaller.add_functions(2)
+    few = "model holds too few functions: 2, the block needs 3"
+    with pytest.raises(ValueError, match=few):
+        f.on(smaller)
+    assert [index(function) for function in f[:2].on(smaller)] == [0, 1]
+    copy.close()
