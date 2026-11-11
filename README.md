@@ -8,7 +8,7 @@
 An optimization solver for problems of the form
 
 ```text
-minimize    f(x)
+minimize    f_1(x), ..., f_p(x) in priority order
 subject to  l <= g(x) <= u
             h(x) in K
             x[J] integer
