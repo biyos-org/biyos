@@ -1,6 +1,7 @@
 #include "allocations.hpp"
 #include "core/index.hpp"
 #include "expr/builder.hpp"
+#include "expr/compact.hpp"
 #include "expr/graph.hpp"
 #include "refusal.hpp"
 
@@ -122,6 +123,18 @@ void expect_kept(void (*prepare)(Builder &), void (*call)(Builder &))
     ADD_FAILURE() << "the call never completed";
 }
 
+std::size_t compaction_cost(std::size_t width)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const std::vector<Offset> terms(width, x);
+    const std::vector<double> weights(width, 1.0);
+    const Offset root = graph.add_sum(0.0, terms, weights);
+    const std::size_t start = biyos::test::allocations();
+    biyos::compact(graph, std::span(&root, 1));
+    return biyos::test::allocations() - start;
+}
+
 }
 
 TEST(AllocationTest, MergedSum)
@@ -132,4 +145,9 @@ TEST(AllocationTest, MergedSum)
 TEST(AllocationTest, MergedProduct)
 {
     expect_kept(pending_product, merge_product);
+}
+
+TEST(AllocationTest, CompactWorkspace)
+{
+    EXPECT_EQ(compaction_cost(2), compaction_cost(64));
 }
