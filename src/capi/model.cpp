@@ -97,7 +97,8 @@ void add_variables(biyos_model &model,
                    int count,
                    const int *kinds,
                    const double *lower,
-                   const double *upper)
+                   const double *upper,
+                   int *first)
 {
     biyos::Model &core = writable(model);
     const std::size_t size = length(count);
@@ -107,7 +108,12 @@ void add_variables(biyos_model &model,
     {
         added.push_back(bounded(biyos::widest(kind_at(kinds, k)), k, lower, upper));
     }
+    const biyos::Index start = core.variable_count();
     core.add_variables(added);
+    if (first != nullptr)
+    {
+        *first = start;
+    }
 }
 
 void set_bounds(biyos_model &model,
@@ -194,9 +200,10 @@ biyos_status biyos_add_variables(biyos_model *model,
                                  int count,
                                  const int *kinds,
                                  const double *lower,
-                                 const double *upper)
+                                 const double *upper,
+                                 int *first)
 {
-    return guarded<add_variables>(model, count, kinds, lower, upper);
+    return guarded<add_variables>(model, count, kinds, lower, upper, first);
 }
 
 biyos_status biyos_set_variable_bounds(biyos_model *model,

@@ -467,7 +467,9 @@ def test_closed_env():
 def test_add(model):
     lower = [-INFINITY, 0.0, -3.0, 2.0, 1.0]
     upper = [INFINITY, 1.0, 7.0, 10.0, 4.0]
-    model.add_variables(5, KINDS, lower, upper)
+    added = model.add_variables(5, KINDS, lower, upper)
+    assert type(added) is biyos.Variables
+    assert len(added) == 5
     assert model.variable_count() == 5
     found = model.get_variables()
     assert found == (KINDS, lower, upper)
@@ -508,9 +510,9 @@ def test_buffer(model, monkeypatch):
     seen = []
     original = lib.biyos_add_variables
 
-    def spy(handle, count, kinds, low, high):
+    def spy(handle, count, kinds, low, high, first):
         seen.append((ctypes.addressof(low), ctypes.addressof(high)))
-        return original(handle, count, kinds, low, high)
+        return original(handle, count, kinds, low, high, first)
 
     monkeypatch.setattr(lib, "biyos_add_variables", spy)
     model.add_variables(2, None, lower, upper)
