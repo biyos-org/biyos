@@ -1,6 +1,7 @@
 from ctypes import c_double, c_int
 from numbers import Real
 
+from biyos._blocks import Variables, variable_index
 from biyos._integers import integer
 
 
@@ -42,3 +43,12 @@ def ints(name, values, count):
     _sized(name, values, count)
     entry = f"an entry of {name}"
     return (c_int * count)(*(integer(entry, value) for value in values))
+
+
+def variable_indices(model, name, values, count):
+    _sized(name, values, count)
+    if isinstance(values, Variables):
+        return (c_int * count)(*values._indices(model, name))
+    entry = f"an entry of {name}"
+    found = (variable_index(model, entry, value) for value in values)
+    return (c_int * count)(*found)
