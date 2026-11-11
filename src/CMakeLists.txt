@@ -17,7 +17,9 @@ add_library(biyos_internal STATIC
     core/utf8.cpp
     core/version.cpp
     model/checks.cpp
-    model/model.cpp)
+    model/entries.cpp
+    model/model.cpp
+    model/rows.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
