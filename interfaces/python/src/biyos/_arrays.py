@@ -1,7 +1,7 @@
-from ctypes import c_double, c_int
+from ctypes import c_double, c_int, c_int64
 from numbers import Real
 
-from biyos._integers import integer
+from biyos._integers import integer, offset
 
 
 def _sized(name, values, count):
@@ -42,3 +42,22 @@ def ints(name, values, count):
     _sized(name, values, count)
     entry = f"an entry of {name}"
     return (c_int * count)(*(integer(entry, value) for value in values))
+
+
+def _ordered(name, starts):
+    if len(starts) > 0 and starts[0] != 0:
+        raise ValueError(f"{name} begins at {starts[0]}, not 0")
+    for k in range(1, len(starts)):
+        if starts[k] < starts[k - 1]:
+            fall = f"{starts[k - 1]} to {starts[k]}"
+            raise ValueError(f"{name} decreases from {fall} at entry {k}")
+
+
+def offsets(name, values, count):
+    if values is None:
+        return None
+    _sized(name, values, count)
+    entry = f"an entry of {name}"
+    copied = (c_int64 * count)(*(offset(entry, value) for value in values))
+    _ordered(name, copied)
+    return copied

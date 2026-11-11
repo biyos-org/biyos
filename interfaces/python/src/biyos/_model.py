@@ -1,8 +1,8 @@
 import weakref
-from ctypes import byref, c_double, c_int, c_void_p
+from ctypes import byref, c_double, c_int, c_int64, c_void_p
 from enum import IntEnum
 
-from biyos._arrays import doubles, ints
+from biyos._arrays import doubles, ints, offsets
 from biyos._capi import lib
 from biyos._environment import Environment
 from biyos._error import Error
@@ -33,8 +33,14 @@ def _span(first, count, size):
     return first, count, inside
 
 
+def _total(starts, count):
+    if starts is None or count < 0:
+        return 0
+    return starts[count]
+
+
 class Model:
-    """A model made on an environment, holding the variables of a problem.
+    """A model of a problem, made on an environment.
 
     The model keeps its environment alive and reports its failures there.
     It is closed by ``close``, on leaving a ``with`` block, or when its
@@ -118,6 +124,66 @@ class Model:
         arrays = (kinds, lower, upper)
         self._call(lib.biyos_get_variables, first, count, *arrays)
         return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
+
+    def add_rows(
+        self,
+        count,
+        lower=None,
+        upper=None,
+        starts=None,
+        columns=None,
+        values=None,
+    ):
+        count = integer("count", count)
+        starts = offsets("starts", starts, count + 1)
+        size = _total(starts, count)
+        arrays = (
+            doubles("lower", lower, count),
+            doubles("upper", upper, count),
+            starts,
+            ints("columns", columns, size),
+            doubles("values", values, size),
+        )
+        self._call(lib.biyos_add_rows, count, *arrays)
+
+    def set_row_bounds(self, indices, lower=None, upper=None):
+        count = len(indices)
+        arrays = (
+            ints("indices", indices, count),
+            doubles("lower", lower, count),
+            doubles("upper", upper, count),
+        )
+        self._call(lib.biyos_set_row_bounds, count, *arrays)
+
+    def row_count(self):
+        count = c_int()
+        self._call(lib.biyos_row_count, byref(count))
+        return count.value
+
+    def get_rows(self, first=0, count=None):
+        first, count, inside = _span(first, count, self.row_count)
+        if not inside:
+            self._call(lib.biyos_get_rows, first, count, None, None)
+        lower = (c_double * count)()
+        upper = (c_double * count)()
+        self._call(lib.biyos_get_rows, first, count, lower, upper)
+        return list(lower), list(upper)
+
+    def get_entries(self, first=0, count=None):
+        first, count, inside = _span(first, count, self.row_count)
+        needed = c_int64()
+        if not inside:
+            empty = (None, 0, byref(needed), None, None)
+            self._call(lib.biyos_get_entries, first, count, *empty)
+        starts = (c_int64 * (count + 1))()
+        learn = (starts, 0, byref(needed), None, None)
+        self._call(lib.biyos_get_entries, first, count, *learn)
+        size = needed.value
+        columns = (c_int * size)()
+        values = (c_double * size)()
+        fill = (None, size, byref(needed), columns, values)
+        self._call(lib.biyos_get_entries, first, count, *fill)
+        return list(starts), list(columns), list(values)
 
     def _hold(self):
         park = self._env._models.park
