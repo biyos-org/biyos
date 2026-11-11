@@ -16,6 +16,7 @@ add_library(biyos_internal STATIC
     core/tolerances.cpp
     core/utf8.cpp
     core/version.cpp
+    expr/bends.cpp
     expr/builder.cpp
     expr/canonical.cpp
     expr/compact.cpp
@@ -38,6 +39,7 @@ add_library(biyos_internal STATIC
     expr/reads.cpp
     expr/reverse.cpp
     expr/rounding.cpp
+    expr/shape.cpp
     expr/tape.cpp
     expr/terms.cpp
     expr/value.cpp

@@ -1,0 +1,98 @@
+#include "expr/shape.hpp"
+
+#include "expr/interval.hpp"
+
+namespace biyos
+{
+
+bool is_convex(Curvature curvature) noexcept
+{
+    switch (curvature)
+    {
+    case Curvature::Convex:
+    case Curvature::Affine:
+        return true;
+    case Curvature::Unknown:
+    case Curvature::Concave:
+        return false;
+    }
+    return false;
+}
+
+bool is_concave(Curvature curvature) noexcept
+{
+    switch (curvature)
+    {
+    case Curvature::Concave:
+    case Curvature::Affine:
+        return true;
+    case Curvature::Unknown:
+    case Curvature::Convex:
+        return false;
+    }
+    return false;
+}
+
+Curvature curvature_of(bool convex, bool concave) noexcept
+{
+    if (convex)
+    {
+        return concave ? Curvature::Affine : Curvature::Convex;
+    }
+    return concave ? Curvature::Concave : Curvature::Unknown;
+}
+
+Curvature common(Curvature left, Curvature right) noexcept
+{
+    const bool convex = is_convex(left) && is_convex(right);
+    return curvature_of(convex, is_concave(left) && is_concave(right));
+}
+
+bool rises(Monotonicity monotonicity) noexcept
+{
+    switch (monotonicity)
+    {
+    case Monotonicity::Nondecreasing:
+    case Monotonicity::Constant:
+        return true;
+    case Monotonicity::Unknown:
+    case Monotonicity::Nonincreasing:
+        return false;
+    }
+    return false;
+}
+
+bool falls(Monotonicity monotonicity) noexcept
+{
+    switch (monotonicity)
+    {
+    case Monotonicity::Nonincreasing:
+    case Monotonicity::Constant:
+        return true;
+    case Monotonicity::Unknown:
+    case Monotonicity::Nondecreasing:
+        return false;
+    }
+    return false;
+}
+
+Monotonicity monotonicity_of(bool rising, bool falling) noexcept
+{
+    if (rising)
+    {
+        return falling ? Monotonicity::Constant : Monotonicity::Nondecreasing;
+    }
+    return falling ? Monotonicity::Nonincreasing : Monotonicity::Unknown;
+}
+
+Monotonicity common(Monotonicity left, Monotonicity right) noexcept
+{
+    return monotonicity_of(rises(left) && rises(right), falls(left) && falls(right));
+}
+
+bool is_point(Interval value) noexcept
+{
+    return !value.is_empty() && !(value.lower() < value.upper());
+}
+
+}
