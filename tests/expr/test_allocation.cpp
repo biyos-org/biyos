@@ -2,10 +2,12 @@
 #include "core/index.hpp"
 #include "expr/builder.hpp"
 #include "expr/compact.hpp"
+#include "expr/derivative.hpp"
 #include "expr/enclosure.hpp"
 #include "expr/graph.hpp"
 #include "expr/interval.hpp"
 #include "expr/node.hpp"
+#include "expr/reverse.hpp"
 #include "expr/tape.hpp"
 #include "expr/value.hpp"
 #include "refusal.hpp"
@@ -164,6 +166,18 @@ std::vector<Offset> products(Graph &graph)
     return roots;
 }
 
+std::size_t jacobian_cost(const Tape &tape)
+{
+    biyos::Workspace workspace(tape);
+    biyos::Adjoints adjoints(tape);
+    std::vector<double> values(static_cast<std::size_t>(tape.roots()));
+    std::vector<double> gradients(tape.pattern().variables.size());
+    const std::array point{0.5, 2.0};
+    const std::size_t start = biyos::test::allocations();
+    biyos::jacobian(tape, point, workspace, adjoints, values, gradients);
+    return biyos::test::allocations() - start;
+}
+
 std::size_t sweep_cost(const Tape &tape)
 {
     biyos::Workspace workspace(tape);
@@ -231,4 +245,13 @@ TEST(AllocationTest, Intervals)
     biyos::enclose(graph, box, nodes);
     EXPECT_EQ(biyos::test::allocations(), before);
     EXPECT_FALSE(nodes.back().is_empty());
+}
+
+TEST(AllocationTest, JacobianSweep)
+{
+    Graph graph;
+    const std::vector<Offset> roots = products(graph);
+    const Tape tape(graph, roots, 4);
+    ASSERT_GT(tape.prepass(), 0);
+    EXPECT_EQ(jacobian_cost(tape), 0U);
 }

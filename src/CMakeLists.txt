@@ -19,6 +19,7 @@ add_library(biyos_internal STATIC
     expr/builder.cpp
     expr/canonical.cpp
     expr/compact.cpp
+    expr/derivative.cpp
     expr/elementary.cpp
     expr/enclosure.cpp
     expr/graph.cpp
@@ -35,6 +36,7 @@ add_library(biyos_internal STATIC
     expr/radix.cpp
     expr/reach.cpp
     expr/reads.cpp
+    expr/reverse.cpp
     expr/rounding.cpp
     expr/tape.cpp
     expr/terms.cpp
