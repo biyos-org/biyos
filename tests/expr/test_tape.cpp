@@ -441,6 +441,38 @@ TEST(TapeTest, Route)
     EXPECT_EQ(long_route.pattern().variables, (std::vector<Index>{0, 1, 0, 2, 0, 3}));
 }
 
+TEST(TapeTest, Places)
+{
+    Graph line;
+    const Offset x = line.add_variable(0);
+    const Offset y = line.add_variable(1);
+    const Offset z = line.add_variable(2);
+    const Offset product = line.add(Operator::Product, 2.0, std::array{x, y, z});
+    const Offset ratio = binary(line, Operator::Division, unary(line, Operator::Sin, product), y);
+    const Offset sum = line.add_sum(1.0, std::array{ratio, x}, std::array{1.0, 2.0});
+    const Offset root = binary(line, Operator::Max, unary(line, Operator::Negation, sum), z);
+    const Tape whole(line, std::span(&root, 1));
+    const std::vector<std::uint32_t> places{0, 0, 0, 0, 3, 4, 6, 7, 8, 9};
+    EXPECT_EQ(whole.blocks()[0].places, places);
+    EXPECT_EQ(whole.blocks()[0].origin, 0);
+    EXPECT_EQ(whole.partials(), 9);
+
+    Graph graph;
+    const std::array pair{graph.add_variable(0), graph.add_variable(1)};
+    const Offset shared = unary(graph, Operator::Exp, graph.add(Operator::Product, 1.0, pair));
+    const std::array roots{unary(graph, Operator::Sin, shared),
+                           unary(graph, Operator::Cos, shared)};
+    const Tape split(graph, roots, 3);
+    ASSERT_EQ(split.prepass(), 2);
+    std::vector<Offset> origins;
+    for (const Block &block : split.blocks())
+    {
+        origins.push_back(block.origin);
+    }
+    EXPECT_EQ(origins, (std::vector<Offset>{0, 2, 3, 3}));
+    EXPECT_EQ(split.partials(), 4);
+}
+
 TEST(TapeTest, Recompile)
 {
     Graph graph;

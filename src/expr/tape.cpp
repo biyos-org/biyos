@@ -7,6 +7,7 @@
 #include "expr/layout.hpp"
 #include "expr/locator.hpp"
 #include "expr/node.hpp"
+#include "expr/partials.hpp"
 #include "expr/plan.hpp"
 #include "expr/reach.hpp"
 #include "expr/reads.hpp"
@@ -103,6 +104,37 @@ Offset variables_of(const Block &block) noexcept
     return count;
 }
 
+std::vector<std::uint32_t> places_of(std::span<const Instruction> instructions)
+{
+    std::vector<std::uint32_t> places;
+    places.reserve(instructions.size() + 1);
+    std::size_t count = 0;
+    for (const Instruction &instruction : instructions)
+    {
+        places.push_back(narrow(count));
+        count += partial_count(instruction);
+    }
+    places.push_back(narrow(count));
+    return places;
+}
+
+Offset set_origins(std::span<Block> blocks, Offset prepass) noexcept
+{
+    Offset total = 0;
+    for (Block &block : blocks.first(at(prepass)))
+    {
+        block.origin = total;
+        total += block.places.back();
+    }
+    Offset widest = 0;
+    for (Block &block : blocks.subspan(at(prepass)))
+    {
+        block.origin = total;
+        widest = (std::max)(widest, Offset{block.places.back()});
+    }
+    return total + widest;
+}
+
 class Compiler
 {
   public:
@@ -165,6 +197,8 @@ Block Compiler::compile(Offset index, std::span<const Offset> outputs, Offset fi
         .starts = {},
         .reads = {},
         .read_starts = {},
+        .places = {},
+        .origin = 0,
     };
     block.instructions.reserve(layout_.nodes().size());
     for (const Offset node : layout_.nodes())
@@ -179,6 +213,7 @@ Block Compiler::compile(Offset index, std::span<const Offset> outputs, Offset fi
     {
         block.outputs.push_back(layout_.slot(output));
     }
+    block.places = places_of(block.instructions);
     return block;
 }
 
@@ -252,6 +287,7 @@ Tape::Tape(const Graph &graph, std::span<const Offset> roots, Offset budget)
     blocks_ = Compiler(graph, plan).blocks(roots, reach_);
     pinned_ = count_of(plan.pinned.size());
     prepass_ = count_of(plan.prepass.size()) - 1;
+    partials_ = set_origins(blocks_, prepass_);
     for (const Block &block : blocks_)
     {
         variables_ = (std::max)(variables_, variables_of(block));
@@ -314,6 +350,11 @@ std::span<const Range> Tape::route(Offset root) const noexcept
     const Offset begin = reach_.route.starts[at(root)];
     const Offset end = reach_.route.starts[at(root) + 1];
     return std::span(reach_.route.runs).subspan(at(begin), at(end - begin));
+}
+
+Offset Tape::partials() const noexcept
+{
+    return partials_;
 }
 
 }

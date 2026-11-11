@@ -46,6 +46,8 @@ struct Block
     std::vector<Offset> starts;
     std::vector<Run> reads;
     std::vector<Offset> read_starts;
+    std::vector<std::uint32_t> places;
+    Offset origin;
 };
 
 class Tape
@@ -62,6 +64,7 @@ class Tape
     std::span<const Run> runs(Offset root) const;
     const Pattern &pattern() const noexcept;
     std::span<const Range> route(Offset root) const noexcept;
+    Offset partials() const noexcept;
 
   private:
     std::vector<Block> blocks_;
@@ -71,6 +74,7 @@ class Tape
     Offset pinned_ = 0;
     std::uint32_t width_ = 0;
     Offset prepass_ = 0;
+    Offset partials_ = 0;
 };
 
 }

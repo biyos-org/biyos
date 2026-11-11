@@ -28,6 +28,7 @@ add_library(biyos_internal STATIC
     expr/memo.cpp
     expr/node.cpp
     expr/parents.cpp
+    expr/partials.cpp
     expr/periodic.cpp
     expr/plan.cpp
     expr/powers.cpp
