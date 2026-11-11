@@ -3,10 +3,10 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text.hpp"
+#include "expr/frame.hpp"
 #include "expr/node.hpp"
 #include "expr/tape.hpp"
 
-#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -21,42 +21,9 @@ namespace biyos
 namespace
 {
 
-struct Frame
-{
-    std::span<const double> point;
-    std::span<const std::uint32_t> operands;
-    std::span<const double> weights;
-    std::span<double> slots;
-};
-
 std::size_t at(Offset value) noexcept
 {
     return static_cast<std::size_t>(value);
-}
-
-std::size_t place(std::uint64_t payload) noexcept
-{
-    return static_cast<std::size_t>(payload);
-}
-
-double constant_of(const Instruction &instruction) noexcept
-{
-    return std::bit_cast<double>(instruction.payload);
-}
-
-double left(const Instruction &instruction, const Frame &frame) noexcept
-{
-    return frame.slots[instruction.first];
-}
-
-double right(const Instruction &instruction, const Frame &frame) noexcept
-{
-    return frame.slots[instruction.second];
-}
-
-std::span<const std::uint32_t> listed(const Instruction &instruction, const Frame &frame) noexcept
-{
-    return frame.operands.subspan(instruction.first, instruction.second - instruction.first);
 }
 
 double entropy(double value) noexcept
@@ -75,7 +42,7 @@ double sign_power(double value, double exponent) noexcept
 
 double sum_of(const Instruction &instruction, const Frame &frame) noexcept
 {
-    const std::span<const std::uint32_t> terms = listed(instruction, frame);
+    const std::span<const std::uint32_t> terms = listed(instruction, frame.operands);
     const std::span<const double> weights =
         frame.weights.subspan(place(instruction.payload), terms.size() + 1);
     double total = weights[0];
@@ -89,7 +56,7 @@ double sum_of(const Instruction &instruction, const Frame &frame) noexcept
 double product_of(const Instruction &instruction, const Frame &frame) noexcept
 {
     double total = constant_of(instruction);
-    for (const std::uint32_t factor : listed(instruction, frame))
+    for (const std::uint32_t factor : listed(instruction, frame.operands))
     {
         total *= frame.slots[factor];
     }
@@ -98,7 +65,7 @@ double product_of(const Instruction &instruction, const Frame &frame) noexcept
 
 double first_largest(const Instruction &instruction, const Frame &frame) noexcept
 {
-    const std::span<const std::uint32_t> operands = listed(instruction, frame);
+    const std::span<const std::uint32_t> operands = listed(instruction, frame.operands);
     double best = frame.slots[operands[0]];
     for (const std::uint32_t operand : operands.subspan(1))
     {
@@ -113,7 +80,7 @@ double first_largest(const Instruction &instruction, const Frame &frame) noexcep
 
 double first_smallest(const Instruction &instruction, const Frame &frame) noexcept
 {
-    const std::span<const std::uint32_t> operands = listed(instruction, frame);
+    const std::span<const std::uint32_t> operands = listed(instruction, frame.operands);
     double best = frame.slots[operands[0]];
     for (const std::uint32_t operand : operands.subspan(1))
     {
@@ -192,32 +159,19 @@ double value(const Instruction &instruction, const Frame &frame) noexcept
     return (std::numeric_limits<double>::quiet_NaN)();
 }
 
-void run(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
+Frame enter(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
 {
     const std::span<double> slots(workspace.slots);
     for (std::size_t k = 0; k < block.loads.size(); ++k)
     {
         slots[k] = workspace.shared[at(block.loads[k])];
     }
-    const Frame frame{
+    return {
         .point = point,
         .operands = block.operands,
         .weights = block.weights,
         .slots = slots,
     };
-    for (const Instruction &instruction : block.instructions)
-    {
-        slots[instruction.target] = value(instruction, frame);
-    }
-}
-
-void store(const Block &block, std::span<const double> slots, std::span<double> outputs) noexcept
-{
-    const std::span<double> mine = outputs.subspan(at(block.first), block.outputs.size());
-    for (std::size_t k = 0; k < mine.size(); ++k)
-    {
-        mine[k] = slots[block.outputs[k]];
-    }
 }
 
 [[noreturn]] void refuse(std::string object, std::string reason)
@@ -225,10 +179,14 @@ void store(const Block &block, std::span<const double> slots, std::span<double> 
     throw Error(ErrorKind::InvalidArgument, std::move(object), std::move(reason));
 }
 
-void check(const Tape &tape,
-           std::span<const double> point,
-           const Workspace &workspace,
-           std::span<const double> values)
+}
+
+Workspace::Workspace(const Tape &tape) : shared(at(tape.pinned()), 0.0), slots(tape.width(), 0.0) {}
+
+void check_sweep(const Tape &tape,
+                 std::span<const double> point,
+                 const Workspace &workspace,
+                 std::span<const double> values)
 {
     const auto given = static_cast<Offset>(point.size());
     if (given < tape.variables())
@@ -249,21 +207,35 @@ void check(const Tape &tape,
     }
 }
 
+void forward(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
+{
+    const Frame frame = enter(block, point, workspace);
+    for (const Instruction &instruction : block.instructions)
+    {
+        frame.slots[instruction.target] = value(instruction, frame);
+    }
 }
 
-Workspace::Workspace(const Tape &tape) : shared(at(tape.pinned()), 0.0), slots(tape.width(), 0.0) {}
+void store(const Block &block, std::span<const double> slots, std::span<double> outputs) noexcept
+{
+    const std::span<double> mine = outputs.subspan(at(block.first), block.outputs.size());
+    for (std::size_t k = 0; k < mine.size(); ++k)
+    {
+        mine[k] = slots[block.outputs[k]];
+    }
+}
 
 void forward(const Tape &tape,
              std::span<const double> point,
              Workspace &workspace,
              std::span<double> values)
 {
-    check(tape, point, workspace, values);
+    check_sweep(tape, point, workspace, values);
     const std::span<const Block> blocks = tape.blocks();
     const std::size_t prepass = at(tape.prepass());
     for (std::size_t k = 0; k < blocks.size(); ++k)
     {
-        run(blocks[k], point, workspace);
+        forward(blocks[k], point, workspace);
         const std::span<double> outputs = k < prepass ? std::span(workspace.shared) : values;
         store(blocks[k], workspace.slots, outputs);
     }
