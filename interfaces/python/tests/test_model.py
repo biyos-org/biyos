@@ -6,10 +6,11 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import EventKind, Level, VariableKind
+from biyos import EventKind, Level, VariableKind, _model
 from biyos._capi import OK, lib
-from number import Number
+from number import Growing, Number
 from refusal import INVALID_ARGUMENT, LOCKED, refusal
+from sized import Room, limit
 from spies import followed, interrupted, preceded, spied
 
 INFINITY = float("inf")
@@ -83,6 +84,10 @@ def freed(log, function, handle):
 def reached(log, function, *arguments):
     log.append("call")
     return OK if "free" in log else function(*arguments)
+
+
+def read_lengths(handle, first, count, *arrays):
+    return [(array, count) for array in arrays]
 
 
 def test_context(env):
@@ -549,6 +554,32 @@ def test_refused(model):
     assert message == "invalid argument: argument 'count': -1 is negative"
     continuous = [VariableKind.CONTINUOUS]
     assert model.get_variables() == (continuous, [-INFINITY], [INFINITY])
+
+
+def test_outside(model, monkeypatch):
+    model.add_variables(1)
+    limit(monkeypatch, _model, 1)
+    message = refusal(model.get_variables, 0, 2**31 - 1)
+    assert message == "invalid argument: variable 1: unknown"
+    message = refusal(model.get_variables, 2, 2**31 - 3)
+    assert message == "invalid argument: variable 2: unknown"
+
+
+def test_growing(model):
+    grow = partial(model.add_variables, 3, None, [1.0, 2.0, 3.0])
+    kinds, lower, upper = model.get_variables(0, Growing(3, grow))
+    assert kinds == [VariableKind.CONTINUOUS] * 3
+    assert lower == [1.0, 2.0, 3.0]
+    assert upper == [INFINITY] * 3
+
+
+def test_stale(model, monkeypatch):
+    model.add_variables(2, None, [1.0, 2.0])
+    monkeypatch.setattr(model, "variable_count", lambda: 0)
+    spy = Room(lib.biyos_get_variables, read_lengths)
+    monkeypatch.setattr(lib, "biyos_get_variables", spy)
+    assert model.get_variables(0, 2)[1] == [1.0, 2.0]
+    assert model.get_variables(1)[1] == []
 
 
 def test_lengths(model):
