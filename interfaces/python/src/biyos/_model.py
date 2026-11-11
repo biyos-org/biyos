@@ -3,7 +3,7 @@ from ctypes import byref, c_double, c_int, c_int64, c_void_p
 from enum import IntEnum
 
 from biyos._arrays import doubles, indices_of, ints, offsets
-from biyos._blocks import Functions, Variables, index_of
+from biyos._blocks import Constraints, Functions, Variables, index_of
 from biyos._capi import lib
 from biyos._environment import Environment
 from biyos._error import Error
@@ -223,6 +223,58 @@ class Model:
         self._call(lib.biyos_get_functions, first, count, *fill)
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
+
+    def add_constraints(self, functions, lower=None, upper=None):
+        """Add constraints after the last one, one for each function given.
+
+        Parameters
+        ----------
+        functions : sequence of int
+            The function each new constraint bounds.
+        lower, upper : sequence of float, optional
+            The bounds of each, unbounded by default.
+
+        Returns
+        -------
+        Constraints
+            The new constraints.
+        """
+        count = len(functions)
+        arrays = (
+            indices_of(self, Functions, "functions", functions, count),
+            doubles("lower", lower, count),
+            doubles("upper", upper, count),
+        )
+        first = c_int()
+        self._call(lib.biyos_add_constraints, count, *arrays, byref(first))
+        return Constraints(self, first.value, count, self._version)
+
+    def set_constraint_bounds(self, indices, lower=None, upper=None):
+        count = len(indices)
+        arrays = (
+            indices_of(self, Constraints, "indices", indices, count),
+            doubles("lower", lower, count),
+            doubles("upper", upper, count),
+        )
+        self._call(lib.biyos_set_constraint_bounds, count, *arrays)
+
+    def constraint_count(self):
+        count = c_int()
+        self._call(lib.biyos_constraint_count, byref(count))
+        return count.value
+
+    def get_constraints(self, first=0, count=None):
+        first = index_of(self, Constraints, "first", first)
+        count, inside = _span(first, count, self.constraint_count)
+        if not inside:
+            empty = (None, None, None)
+            self._call(lib.biyos_get_constraints, first, count, *empty)
+        functions = (c_int * count)()
+        lower = (c_double * count)()
+        upper = (c_double * count)()
+        arrays = (functions, lower, upper)
+        self._call(lib.biyos_get_constraints, first, count, *arrays)
+        return list(functions), list(lower), list(upper)
 
     def _create(self):
         handle = self._handle

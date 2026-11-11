@@ -161,6 +161,34 @@ class Functions(Block):
     _element = Function
 
 
+class Constraint(View):
+    """One constraint of a model, as indexing a ``Constraints`` block gives.
+
+    A view holds its model and its index, and passes as that index wherever
+    its model takes an index of constraints. Any other model refuses it as an
+    index. A view made before a deletion from its model raises ``ValueError``
+    when used, as its index may name another constraint.
+    """
+
+    __slots__ = ()
+    _noun = "constraint"
+
+
+class Constraints(Block):
+    """Consecutive constraints, as ``Model.add_constraints`` returns.
+
+    A block holds its model, its first index and its count, so it costs the
+    same at any size. ``len`` gives the count, and iterating gives each
+    constraint in order as a ``Constraint``, so a block passes wherever its
+    model takes indices of constraints. Any other model refuses it as
+    indices. A block made before a deletion from its model raises
+    ``ValueError`` when used, as its indices may name other constraints.
+    """
+
+    __slots__ = ()
+    _element = Constraint
+
+
 def _member(model, family, name, view):
     noun = family._element._noun
     if not isinstance(view, family._element):
