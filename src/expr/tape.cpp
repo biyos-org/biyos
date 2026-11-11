@@ -4,8 +4,8 @@
 #include "core/index.hpp"
 #include "core/text.hpp"
 #include "expr/graph.hpp"
-#include "expr/intervals.hpp"
 #include "expr/layout.hpp"
+#include "expr/locator.hpp"
 #include "expr/node.hpp"
 #include "expr/plan.hpp"
 
