@@ -16,7 +16,7 @@ namespace biyos
 class Locator
 {
   public:
-    Locator(const Graph &graph, const Layout &layout);
+    Locator(const Graph &graph, std::span<const Offset> pinned, const Layout &layout);
 
     void locate(std::span<const Offset> outputs, Block &block);
 
@@ -35,6 +35,7 @@ class Locator
     std::span<const Run> runs_of(Offset node) const noexcept;
 
     const Graph &graph_;
+    std::span<const Offset> pinned_;
     const Layout &layout_;
     std::vector<Offset> uses_;
     std::vector<Runs> joins_;
