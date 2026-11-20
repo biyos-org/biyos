@@ -38,6 +38,13 @@ class LayerTest(unittest.TestCase):
             self.problems(), ["src/core/error.cpp:1: core may not use tree"]
         )
 
+    def test_relative(self):
+        self.source("tree/node.hpp", "")
+        self.source("core/error.cpp", '#include "../tree/node.hpp"\n')
+        self.assertEqual(
+            self.problems(), ["src/core/error.cpp:1: core may not use tree"]
+        )
+
     def test_external(self):
         text = '#include "biyos/biyos.h"\n#include <map>\n'
         self.source("core/error.cpp", text)

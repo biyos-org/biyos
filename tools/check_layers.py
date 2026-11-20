@@ -1,3 +1,4 @@
+import posixpath
 import re
 import sys
 from pathlib import Path
@@ -33,11 +34,17 @@ def check_table(layers):
     return problems
 
 
-def includes(path):
+def resolve(src, path, target):
+    folder = path.parent.relative_to(src).as_posix()
+    local = posixpath.normpath(posixpath.join(folder, target))
+    return local if (src / local).is_file() else target
+
+
+def includes(src, path):
     for number, line in enumerate(path.read_text().splitlines(), 1):
         match = INCLUDE.match(line)
         if match:
-            yield number, match.group(1)
+            yield number, resolve(src, path, match.group(1))
 
 
 def refuse(module, target, layers):
@@ -53,7 +60,7 @@ def check_file(src, path, layers):
     if len(parts) < 2 or parts[0] not in layers:
         return [f"{name}: not in a declared module"]
     problems = []
-    for number, target in includes(path):
+    for number, target in includes(src, path):
         refusal = refuse(parts[0], target, layers)
         if refusal:
             problems.append(f"{name}:{number}: {refusal}")
