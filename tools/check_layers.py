@@ -72,11 +72,34 @@ def role_of(path, roles):
     return role if len(parts) > 2 and role in roles else None
 
 
-def refuse_role(role, target, roles):
-    used = module_of(target)
-    if role_of(target, roles) == role or used in roles[role]:
+def stem(path):
+    return PurePosixPath(path).with_suffix("")
+
+
+def is_interface(path, role):
+    return stem(path) == PurePosixPath(role, PurePosixPath(role).name)
+
+
+def is_brick(path, roles):
+    role = role_of(path, roles)
+    return role is not None and not is_interface(path, role)
+
+
+def refuse_sibling(role, source, target):
+    if is_interface(target, role) or stem(target) == stem(source):
         return None
-    return f"{role} may not use {used}"
+    return f"{role} may not use sibling {target}"
+
+
+def refuse_role(role, source, target, roles):
+    if role_of(target, roles) == role:
+        return refuse_sibling(role, source, target)
+    if is_brick(target, roles):
+        return f"{role} may not use brick {target}"
+    used = module_of(target)
+    if used not in roles[role]:
+        return f"{role} may not use {used}"
+    return None
 
 
 def refuse_module(module, target, layers):
@@ -91,7 +114,7 @@ def refuse(source, target, layers, roles):
         return None
     role = role_of(source, roles)
     if role:
-        return refuse_role(role, target, roles)
+        return refuse_role(role, source, target, roles)
     return refuse_module(module_of(source), target, layers)
 
 

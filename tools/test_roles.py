@@ -66,6 +66,47 @@ class RoleTest(unittest.TestCase):
             self.source(name, *targets)
         self.assertEqual(self.problems(), [])
 
+    def test_sibling(self):
+        self.source(
+            "ipm/barrier/mehrotra.cpp",
+            "ipm/barrier/mehrotra.hpp",
+            "ipm/barrier/monotone.hpp",
+        )
+        self.assertEqual(
+            self.problems(),
+            [
+                "src/ipm/barrier/mehrotra.cpp:2: "
+                "ipm/barrier may not use sibling ipm/barrier/monotone.hpp"
+            ],
+        )
+
+    def test_relative(self):
+        self.source("ipm/barrier/monotone.hpp")
+        self.source("ipm/barrier/mehrotra.cpp", "monotone.hpp")
+        self.assertEqual(
+            self.problems(),
+            [
+                "src/ipm/barrier/mehrotra.cpp:1: "
+                "ipm/barrier may not use sibling ipm/barrier/monotone.hpp"
+            ],
+        )
+
+    def test_role(self):
+        self.source(
+            "ipm/kkt/augmented.cpp",
+            "ipm/barrier/mehrotra.hpp",
+            "linalg/factor/ldlt.hpp",
+        )
+        self.assertEqual(
+            self.problems(),
+            [
+                "src/ipm/kkt/augmented.cpp:1: "
+                "ipm/kkt may not use brick ipm/barrier/mehrotra.hpp",
+                "src/ipm/kkt/augmented.cpp:2: "
+                "ipm/kkt may not use brick linalg/factor/ldlt.hpp",
+            ],
+        )
+
     def test_narrow(self):
         self.roles = self.table("roles.txt", "ipm/barrier: core\n")
         self.source(
