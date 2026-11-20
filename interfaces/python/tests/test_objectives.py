@@ -85,9 +85,9 @@ def test_range(model):
 
 def test_defaults(model):
     model.addobjs([0, 1])
-    model.addobjs([1], priorities=[-7])
+    model.addobjs([1], prios=[-7])
     model.addobjs([0], senses=[MAX], weights=[2.0])
-    model.addobjs([1], absolute=[0.5], relative=[INFINITY])
+    model.addobjs([1], abs=[0.5], rel=[INFINITY])
     model.addobjs([0])
     functions, senses, priorities, *values = model.getobjs()
     assert functions == [0, 1, 1, 0, 1, 0]
@@ -123,10 +123,10 @@ def test_views(env, model):
     other = biyos.Model(env)
     g = other.addfuns(2)
     p = other.addobjs(g)
-    entry = "an entry of functions is a function of another model"
+    entry = "an entry of funs is a function of another model"
     with pytest.raises(ValueError, match=entry):
         model.addobjs([0, g[1]])
-    with pytest.raises(ValueError, match="functions is a block of another"):
+    with pytest.raises(ValueError, match="funs is a block of another"):
         model.addobjs(g)
     with pytest.raises(ValueError, match="is a variable, not a function"):
         model.addobjs([x[0]])
@@ -136,7 +136,7 @@ def test_views(env, model):
         model.setobjs([p[0]], [MAX])
     with pytest.raises(ValueError, match="is a block of another model"):
         model.setobjs(p, [MAX, MAX])
-    with pytest.raises(ValueError, match="first is an objective of another"):
+    with pytest.raises(ValueError, match="beg is an objective of another"):
         model.getobjs(p[0])
     c = model.addcons([0])
     with pytest.raises(ValueError, match="is a constraint, not an objective"):
@@ -217,9 +217,9 @@ def test_sequences(model):
 def test_set(model):
     add_sample(model)
     model.setobjs([2, 0], senses=[MAX, MIN])
-    model.setobjs([2], priorities=[-5])
+    model.setobjs([2], prios=[-5])
     model.setobjs([0, 2], weights=[4.0, 8.0])
-    model.setobjs([1], absolute=[INFINITY], relative=[0.5])
+    model.setobjs([1], abs=[INFINITY], rel=[0.5])
     model.setobjs([1, 2], None, None, None, None, None)
     found = model.getobjs()
     assert found[0] == FUNCTIONS
@@ -269,25 +269,25 @@ def test_refused(model):
 def test_lengths(model):
     with pytest.raises(ValueError, match="senses has length 1, not 2"):
         model.addobjs([0, 1], [MIN])
-    with pytest.raises(ValueError, match="priorities has length 3, not 2"):
+    with pytest.raises(ValueError, match="prios has length 3, not 2"):
         model.addobjs([0, 1], None, [0, 1, 2])
-    with pytest.raises(ValueError, match="relative has length 1, not 2"):
-        model.setobjs([0, 1], relative=[1.0])
+    with pytest.raises(ValueError, match="rel has length 1, not 2"):
+        model.setobjs([0, 1], rel=[1.0])
     assert model.getnobjs() == 0
 
 
 def test_numbers(model):
-    with pytest.raises(TypeError, match="an entry of functions must be an"):
+    with pytest.raises(TypeError, match="an entry of funs must be an"):
         model.addobjs([0.0])
     with pytest.raises(TypeError, match="an entry of senses must be an int"):
         model.addobjs([0], [1.0])
-    with pytest.raises(OverflowError, match="priorities: 2147483648 does not"):
+    with pytest.raises(OverflowError, match="prios: 2147483648 does not"):
         model.addobjs([0], None, [2**31])
     with pytest.raises(TypeError, match="an entry of weights must be a"):
         model.addobjs([0], None, None, ["1"])
-    with pytest.raises(TypeError, match="an entry of absolute must be a"):
+    with pytest.raises(TypeError, match="an entry of abs must be a"):
         model.addobjs([0], None, None, None, [True])
-    with pytest.raises(OverflowError, match="first: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
         model.getobjs(2**32)
     assert model.getnobjs() == 0
 

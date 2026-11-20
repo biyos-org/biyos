@@ -34,7 +34,7 @@ def _rejected(name, noun, value):
 def _callable(function):
     if not callable(function):
         found = type(function).__name__
-        raise TypeError(f"subscriber must be callable, not {found}")
+        raise TypeError(f"hook must be callable, not {found}")
     return function
 
 
@@ -135,10 +135,10 @@ class Env:
         if self._calls == 0:
             self._run(self._dispose)
 
-    def setopt(self, name, value):
+    def setopt(self, name, val):
         option, kind = self._lookup(name)
         setter, convert = _SETTERS[kind]
-        self._call(setter, option, convert(name, value))
+        self._call(setter, option, convert(name, val))
 
     def getopt(self, name):
         option, kind = self._lookup(name)
@@ -154,19 +154,19 @@ class Env:
         self._call(lib.BIYOS_getoptversions, option, *pointers)
         return Versions(*(version_text(number.value) for number in numbers))
 
-    def addhook(self, function, kind, lowest):
-        function = _callable(function)
+    def addhook(self, hook, kind, lowest):
+        hook = _callable(hook)
         kind = integer("kind", kind)
         lowest = integer("lowest", lowest)
         subscription = c_int()
         with self._busy():
-            self._addhook(function, kind, lowest, subscription)
+            self._addhook(hook, kind, lowest, subscription)
         return subscription.value
 
-    def delhook(self, subscription):
-        subscription = integer("subscription", subscription)
+    def delhook(self, id):
+        id = integer("id", id)
         with self._busy():
-            self._delhook(subscription)
+            self._delhook(id)
 
     def _addhook(self, function, kind, lowest, subscription):
         callback = self._subscribers.callback

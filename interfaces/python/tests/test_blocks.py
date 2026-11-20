@@ -81,8 +81,8 @@ def test_outside(model):
 def test_view(model):
     x = model.addvars(3)
     model.setvarbounds([x[1]], [0.0], [1.0])
-    model.setvarbounds(x[1:], upper=[5.0, 6.0])
-    model.setvarbounds([0, x[2]], lower=[-1.0, -2.0])
+    model.setvarbounds(x[1:], ub=[5.0, 6.0])
+    model.setvarbounds([0, x[2]], lb=[-1.0, -2.0])
     found = model.getvars()[1:]
     assert found == ([-1.0, 0.0, -2.0], [INFINITY, 5.0, 6.0])
     assert model.getvars(x[2])[1] == [-2.0]
@@ -92,12 +92,12 @@ def test_foreign_view(env, model):
     other = biyos.Model(env)
     x = other.addvars(3)
     model.addvars(3)
-    entry = "an entry of indices is a variable of another model"
+    entry = "an entry of idx is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.setvarbounds([0, x[1]], [0.0, 0.0], [1.0, 1.0])
     with pytest.raises(ValueError, match=entry):
         model.setvarkinds([x[0]], [biyos.VariableKind.INTEGER])
-    with pytest.raises(ValueError, match="first is a variable of another"):
+    with pytest.raises(ValueError, match="beg is a variable of another"):
         model.getvars(x[1], 1)
     assert model.getvars() == other.getvars()
 
@@ -106,7 +106,7 @@ def test_foreign_block(env, model):
     other = biyos.Model(env)
     x = other.addvars(3)
     model.addvars(3)
-    block = "indices is a block of another model"
+    block = "idx is a block of another model"
     with pytest.raises(ValueError, match=block):
         model.setvarbounds(x, None, [1.0] * 3)
     with pytest.raises(ValueError, match=block):
@@ -119,7 +119,7 @@ def test_closed_block(env, model):
     x = other.addvars(3)
     other.close()
     model.addvars(3)
-    with pytest.raises(ValueError, match="indices is a block of another"):
+    with pytest.raises(ValueError, match="idx is a block of another"):
         model.setvarbounds(x, None, [1.0] * 3)
     assert model.getvars()[2] == [INFINITY] * 3
 
@@ -194,7 +194,7 @@ def test_on(model):
     assert indices(y) == [1, 2, 3]
     copy.setvarbounds(y[1:], None, [5.0, 6.0])
     assert copy.getvars()[2] == [INFINITY, INFINITY, 5.0, 6.0]
-    with pytest.raises(ValueError, match="indices is a block of another"):
+    with pytest.raises(ValueError, match="idx is a block of another"):
         model.setvarbounds(y, None, [1.0] * 3)
     assert model.getvars()[2] == [INFINITY] * 4
     assert indices(x) == [1, 2, 3]

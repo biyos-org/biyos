@@ -74,8 +74,8 @@ def test_range(model):
 
 def test_defaults(model):
     model.addcons([0, 1])
-    model.addcons([1], lower=[0.5])
-    model.addcons([0], upper=[0.5])
+    model.addcons([1], lb=[0.5])
+    model.addcons([0], ub=[0.5])
     low, high = -INFINITY, INFINITY
     functions, lower, upper = model.getcons()
     assert functions == [0, 1, 1, 0]
@@ -104,10 +104,10 @@ def test_views(env, model):
     other = biyos.Model(env)
     g = other.addfuns(2)
     d = other.addcons(g)
-    entry = "an entry of functions is a function of another model"
+    entry = "an entry of funs is a function of another model"
     with pytest.raises(ValueError, match=entry):
         model.addcons([0, g[1]])
-    with pytest.raises(ValueError, match="functions is a block of another"):
+    with pytest.raises(ValueError, match="funs is a block of another"):
         model.addcons(g)
     with pytest.raises(ValueError, match="is a variable, not a function"):
         model.addcons([x[0]])
@@ -117,7 +117,7 @@ def test_views(env, model):
         model.setconbounds([d[0]], [0.0])
     with pytest.raises(ValueError, match="is a block of another model"):
         model.setconbounds(d, [0.0, 0.0])
-    with pytest.raises(ValueError, match="first is a constraint of another"):
+    with pytest.raises(ValueError, match="beg is a constraint of another"):
         model.getcons(d[0])
     f = model.addfuns(1)
     with pytest.raises(ValueError, match="is a function, not a constraint"):
@@ -125,7 +125,7 @@ def test_views(env, model):
     with pytest.raises(ValueError, match="of functions, not constraints"):
         model.setconbounds(f, [0.0])
     model.setconbounds([c[2]], [5.0], [6.0])
-    model.setconbounds(c[:2], upper=[7.0, 8.0])
+    model.setconbounds(c[:2], ub=[7.0, 8.0])
     found = model.getcons(c[1])
     assert found == ([0, 1], [-INFINITY, 5.0], [8.0, 6.0])
     assert model.getncons() == 3
@@ -192,8 +192,8 @@ def test_sequences(model):
 
 def test_bounds(model):
     model.addcons([0, 1])
-    model.setconbounds([1, 0], lower=[1.0, 2.0])
-    model.setconbounds([1], upper=[3.0])
+    model.setconbounds([1, 0], lb=[1.0, 2.0])
+    model.setconbounds([1], ub=[3.0])
     assert model.getcons() == ([0, 1], [2.0, 1.0], [INFINITY, 3.0])
     model.setconbounds([0, 0], [5.0, 6.0], [7.0, 8.0])
     assert model.getcons(0, 1) == ([0], [6.0], [8.0])
@@ -221,19 +221,19 @@ def test_refused(model):
 
 
 def test_lengths(model):
-    with pytest.raises(ValueError, match="lower has length 1, not 2"):
+    with pytest.raises(ValueError, match="lb has length 1, not 2"):
         model.addcons([0, 1], [0.0])
-    with pytest.raises(ValueError, match="upper has length 1, not 2"):
-        model.setconbounds([0, 1], upper=[1.0])
+    with pytest.raises(ValueError, match="ub has length 1, not 2"):
+        model.setconbounds([0, 1], ub=[1.0])
     assert model.getncons() == 0
 
 
 def test_numbers(model):
-    with pytest.raises(TypeError, match="an entry of functions must be an"):
+    with pytest.raises(TypeError, match="an entry of funs must be an"):
         model.addcons([0.0])
-    with pytest.raises(TypeError, match="an entry of lower must be a number"):
+    with pytest.raises(TypeError, match="an entry of lb must be a number"):
         model.addcons([0], ["1"])
-    with pytest.raises(OverflowError, match="first: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
         model.getcons(2**32)
     assert model.getncons() == 0
 

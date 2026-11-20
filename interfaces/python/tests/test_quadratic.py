@@ -199,20 +199,20 @@ def test_views(env, model):
     other = biyos.Model(env)
     y = other.addvars(1)
     g = other.addfuns(1)
-    entry = "an entry of firsts is a variable of another model"
+    entry = "an entry of vars1 is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.addquadterms([0], [0, 1], [y[0]], [0], [1.0])
-    with pytest.raises(ValueError, match="seconds is a block of another"):
+    with pytest.raises(ValueError, match="vars2 is a block of another"):
         model.addquadterms([0], [0, 1], [0], y, [1.0])
-    with pytest.raises(ValueError, match="functions is a block of another"):
+    with pytest.raises(ValueError, match="funs is a block of another"):
         model.addquadterms(g, [0, 1], [0], [0], [1.0])
-    with pytest.raises(ValueError, match="first is a function of another"):
+    with pytest.raises(ValueError, match="beg is a function of another"):
         model.getquadterms(g[0])
     with pytest.raises(ValueError, match="is a function, not a variable"):
         model.addquadterms([0], [0, 1], [f[0]], [0], [1.0])
-    with pytest.raises(ValueError, match="functions is a block of variables"):
+    with pytest.raises(ValueError, match="funs is a block of variables"):
         model.addquadterms(x, [0, 1, 1], [0], [0], [1.0])
-    with pytest.raises(ValueError, match="first is a variable, not a"):
+    with pytest.raises(ValueError, match="beg is a variable, not a"):
         model.getquadterms(x[0])
     assert model.getquadterms(f[0]) == found
 
@@ -285,11 +285,11 @@ def test_refused(model):
 def test_lengths(model):
     with pytest.raises(ValueError, match="starts has length 1, not 2"):
         model.addquadterms([0], [0], [], [], [])
-    with pytest.raises(ValueError, match="firsts has length 1, not 2"):
+    with pytest.raises(ValueError, match="vars1 has length 1, not 2"):
         model.addquadterms([0], [0, 2], [0], [0, 1], [1.0, 2.0])
-    with pytest.raises(ValueError, match="seconds has length 1, not 2"):
+    with pytest.raises(ValueError, match="vars2 has length 1, not 2"):
         model.addquadterms([0], [0, 2], [0, 1], [0], [1.0, 2.0])
-    with pytest.raises(ValueError, match="values has length 1, not 0"):
+    with pytest.raises(ValueError, match="vals has length 1, not 0"):
         model.addquadterms([0], None, None, None, [1.0])
     assert model.getquadterms() == NONE
 
@@ -302,15 +302,15 @@ def test_wrong(model, starts, error, message):
 
 
 def test_numbers(model):
-    with pytest.raises(TypeError, match="an entry of values must be a number"):
+    with pytest.raises(TypeError, match="an entry of vals must be a number"):
         model.addquadterms([0], [0, 1], [0], [0], ["1"])
-    with pytest.raises(TypeError, match="an entry of firsts must be an"):
+    with pytest.raises(TypeError, match="an entry of vars1 must be an"):
         model.addquadterms([0], [0, 1], [0.0], [0], [1.0])
-    with pytest.raises(TypeError, match="an entry of seconds must be an"):
+    with pytest.raises(TypeError, match="an entry of vars2 must be an"):
         model.addquadterms([0], [0, 1], [0], [0.0], [1.0])
-    with pytest.raises(TypeError, match="an entry of functions must be an"):
+    with pytest.raises(TypeError, match="an entry of funs must be an"):
         model.addquadterms([0.0], [0, 0], [], [], [])
-    with pytest.raises(OverflowError, match="first: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
         model.getquadterms(2**32)
     assert model.getquadterms() == NONE
 

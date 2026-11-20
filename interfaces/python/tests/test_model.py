@@ -480,8 +480,8 @@ def test_defaults(model):
     kinds = [VariableKind.BINARY, VariableKind.INTEGER]
     model.addvars(2)
     model.addvars(2, kinds)
-    model.addvars(2, kinds, lower=[0.5, 0.75])
-    model.addvars(2, kinds, upper=[0.5, 0.75])
+    model.addvars(2, kinds, lb=[0.5, 0.75])
+    model.addvars(2, kinds, ub=[0.5, 0.75])
     found = model.getvars()
     low, high = -INFINITY, INFINITY
     assert found[0] == [VariableKind.CONTINUOUS] * 2 + kinds * 3
@@ -519,15 +519,15 @@ def test_buffer(model, monkeypatch):
 
 def test_bounds(model):
     model.addvars(2)
-    model.setvarbounds([1, 0], lower=[1.0, 2.0])
-    model.setvarbounds([1], upper=[3.0])
+    model.setvarbounds([1, 0], lb=[1.0, 2.0])
+    model.setvarbounds([1], ub=[3.0])
     assert model.getvars()[1:] == ([2.0, 1.0], [INFINITY, 3.0])
     model.setvarbounds([0, 0], [5.0, 6.0], [7.0, 8.0])
     assert model.getvars(0, 1)[1:] == ([6.0], [8.0])
 
 
 def test_kinds(model):
-    model.addvars(2, lower=[0.0, 0.0], upper=[1.0, 1.0])
+    model.addvars(2, lb=[0.0, 0.0], ub=[1.0, 1.0])
     model.setvarkinds([1], [VariableKind.BINARY])
     model.setvarkinds([0, 1], None)
     assert model.getvars()[0] == [
@@ -583,8 +583,8 @@ def test_stale(model, monkeypatch):
 
 
 def test_lengths(model):
-    with pytest.raises(ValueError, match="lower has length 1, not 2"):
-        model.addvars(2, lower=[0.0])
+    with pytest.raises(ValueError, match="lb has length 1, not 2"):
+        model.addvars(2, lb=[0.0])
     with pytest.raises(ValueError, match="kinds has length 2, not 1"):
         model.setvarkinds([0], [1, 2])
     assert model.getnvars() == 0
@@ -594,14 +594,14 @@ def test_lengths(model):
 def test_wrong(model, kinds, error, message):
     with pytest.raises(error, match=message):
         model.addvars(1, kinds)
-    with pytest.raises(error, match=message.replace("kinds", "indices")):
+    with pytest.raises(error, match=message.replace("kinds", "idx")):
         model.setvarbounds(kinds, [0.0])
     assert model.getnvars() == 0
 
 
 @pytest.mark.parametrize("value, found", REALS)
 def test_reals(model, value, found):
-    message = f"an entry of lower must be a number, not {found}"
+    message = f"an entry of lb must be a number, not {found}"
     with pytest.raises(TypeError, match=message):
         model.addvars(1, None, [value])
     with pytest.raises(TypeError, match=message):
@@ -619,9 +619,9 @@ def test_index(model):
 
 
 def test_numbers(model):
-    with pytest.raises(TypeError, match="count must be an int, not str"):
+    with pytest.raises(TypeError, match="n must be an int, not str"):
         model.addvars("1")
-    with pytest.raises(OverflowError, match="first: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
         model.getvars(2**32)
     assert model.getnvars() == 0
 
