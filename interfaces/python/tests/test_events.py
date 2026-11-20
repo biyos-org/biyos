@@ -75,7 +75,7 @@ def test_constants():
 
 def test_error():
     seen = []
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         env.subscribe(partial(record, seen), EventKind.MESSAGE, Level.ERROR)
         error = fail(env)
     message = (EventKind.MESSAGE, Level.ERROR, "capi", str(error), CODE)
@@ -86,7 +86,7 @@ def test_error():
 
 def test_kind():
     seen = []
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         env.subscribe(partial(record, seen), EventKind.CHECK, Level.DEBUG)
         fail(env)
     assert seen == []
@@ -94,7 +94,7 @@ def test_kind():
 
 def test_unsubscribe():
     seen = []
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         function = partial(record, seen)
         subscription = env.subscribe(function, EventKind.MESSAGE, Level.DEBUG)
         env.unsubscribe(subscription)
@@ -107,19 +107,19 @@ def test_unsubscribe():
 
 @pytest.mark.parametrize("arguments", WRONG)
 def test_wrong(arguments):
-    with biyos.Environment() as env, pytest.raises(TypeError):
+    with biyos.Env() as env, pytest.raises(TypeError):
         env.subscribe(*arguments)
 
 
 def test_unknown():
-    with biyos.Environment() as env, pytest.raises(biyos.Error) as caught:
+    with biyos.Env() as env, pytest.raises(biyos.Error) as caught:
         env.subscribe(print, 9, Level.DEBUG)
     assert caught.value.code == -100
 
 
 def test_overflow():
     seen = []
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         function = partial(record, seen)
         first = env.subscribe(function, EventKind.MESSAGE, Level.DEBUG)
         with pytest.raises(OverflowError):
@@ -132,7 +132,7 @@ def test_overflow():
 
 def test_index():
     seen = []
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         kind = Number(int(EventKind.MESSAGE))
         lowest = Number(int(Level.DEBUG))
         subscription = env.subscribe(partial(record, seen), kind, lowest)
@@ -144,14 +144,14 @@ def test_index():
 
 @pytest.mark.parametrize("subscription", NUMBERS)
 def test_number(subscription):
-    with biyos.Environment() as env, pytest.raises(TypeError):
+    with biyos.Env() as env, pytest.raises(TypeError):
         env.unsubscribe(subscription)
 
 
 @pytest.mark.parametrize("read", READERS)
 def test_expired(read):
     kept = []
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         env.subscribe(kept.append, EventKind.MESSAGE, Level.DEBUG)
         fail(env)
     with pytest.raises(ValueError, match="the event is no longer valid"):
@@ -160,7 +160,7 @@ def test_expired(read):
 
 def test_formats():
     lines = []
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         function = partial(keep_lines, lines)
         env.subscribe(function, EventKind.MESSAGE, Level.ERROR)
         error = fail(env)
@@ -181,7 +181,7 @@ def test_formats():
 
 def test_kept():
     seen = []
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         env.subscribe(partial(record, seen), EventKind.MESSAGE, Level.DEBUG)
         gc.collect()
         fail(env)
@@ -191,7 +191,7 @@ def test_kept():
 def test_cleared():
     sink = Sink()
     alive = weakref.ref(sink)
-    env = biyos.Environment()
+    env = biyos.Env()
     env.subscribe(sink, EventKind.MESSAGE, Level.DEBUG)
     del sink
     env.close()
@@ -201,7 +201,7 @@ def test_cleared():
 def test_freed():
     gc.disable()
     try:
-        env = biyos.Environment()
+        env = biyos.Env()
         env.subscribe(Sink(), EventKind.MESSAGE, Level.DEBUG)
         free = env._free
         del env
@@ -239,7 +239,7 @@ def raised(env):
 
 
 def test_raised():
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         env.subscribe(explode, EventKind.MESSAGE, Level.DEBUG)
         with pytest.raises(RuntimeError, match="subscriber failed") as caught:
             env.set_option("seed", -1)
@@ -253,7 +253,7 @@ def test_raised():
 
 def test_later():
     seen = []
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         env.subscribe(explode, EventKind.MESSAGE, Level.DEBUG)
         env.subscribe(refuse, EventKind.MESSAGE, Level.DEBUG)
         env.subscribe(partial(record, seen), EventKind.MESSAGE, Level.DEBUG)
@@ -264,7 +264,7 @@ def test_later():
 
 def test_nested():
     seeds = []
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         function = partial(read_seed, env, seeds)
         env.subscribe(explode, EventKind.MESSAGE, Level.DEBUG)
         env.subscribe(function, EventKind.MESSAGE, Level.DEBUG)
@@ -274,7 +274,7 @@ def test_nested():
 
 
 def test_base():
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         env.subscribe(stop, EventKind.MESSAGE, Level.DEBUG)
         with pytest.raises(Stop):
             env.set_option("seed", -1)
@@ -283,7 +283,7 @@ def test_base():
 def test_cycle():
     gc.disable()
     try:
-        env = biyos.Environment()
+        env = biyos.Env()
         env.subscribe(explode, EventKind.MESSAGE, Level.DEBUG)
         assert raised(env)
         free = env._free
@@ -294,6 +294,6 @@ def test_cycle():
 
 
 def test_stale():
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         env._relay.run(explode, None)
         assert env.get_option("seed") == 0

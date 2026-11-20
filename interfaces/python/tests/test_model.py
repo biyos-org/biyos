@@ -35,7 +35,7 @@ REALS = [("0", "str"), (True, "bool"), (None, "NoneType")]
 
 @pytest.fixture
 def env():
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         yield env
 
 
@@ -119,7 +119,7 @@ def test_cycle(monkeypatch):
     texts = []
     spy = partial(spied, lib.BIYOS_freeenv, statuses)
     monkeypatch.setattr(lib, "BIYOS_freeenv", spy)
-    env = biyos.Environment()
+    env = biyos.Env()
     env.subscribe(partial(keep, texts), EventKind.MESSAGE, Level.DEBUG)
     env.cycle = biyos.Model(env)
     del env
@@ -137,7 +137,7 @@ def test_window(monkeypatch):
     monkeypatch.setattr(lib, "BIYOS_freeenv", env_free)
     gc.disable()
     try:
-        env = biyos.Environment()
+        env = biyos.Env()
         model = biyos.Model(env)
         handle = model._handle.value
         model.cycle = model
@@ -154,7 +154,7 @@ def test_interrupted_create(monkeypatch):
     monkeypatch.setattr(lib, "BIYOS_newmodel", create)
     spy = partial(spied, lib.BIYOS_freemodel, statuses)
     monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
-    env = biyos.Environment()
+    env = biyos.Env()
     with pytest.raises(KeyboardInterrupt):
         biyos.Model(env)
     env.close()
@@ -264,7 +264,7 @@ def test_closes(monkeypatch):
     statuses = []
     spy = partial(spied, lib.BIYOS_freemodel, statuses)
     monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
-    env = biyos.Environment()
+    env = biyos.Env()
     first = biyos.Model(env)
     second = biyos.Model(env)
     second.close()
@@ -281,7 +281,7 @@ def test_closes(monkeypatch):
 
 
 def test_with():
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         model = biyos.Model(env)
         model.add_variables(1)
     assert not env._free.alive
@@ -291,7 +291,7 @@ def test_with():
 
 def test_unmasked():
     with pytest.raises(KeyError, match="inside"):
-        with biyos.Environment() as env:
+        with biyos.Env() as env:
             model = biyos.Model(env)
             model.add_variables(1)
             raise KeyError("inside")
@@ -299,7 +299,7 @@ def test_unmasked():
 
 
 def test_busy_close(log):
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
     seen = []
 
@@ -319,7 +319,7 @@ def test_busy_close(log):
 
 
 def test_gap(log, monkeypatch):
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
     start = partial(preceded, [model.close], env._relay.start)
     monkeypatch.setattr(env._relay, "start", start)
@@ -332,7 +332,7 @@ def test_gap(log, monkeypatch):
 
 
 def test_early(log, monkeypatch):
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
     opened = partial(preceded, [model.close], model._open)
     monkeypatch.setattr(model, "_open", opened)
@@ -344,7 +344,7 @@ def test_early(log, monkeypatch):
 
 
 def test_checked(log, monkeypatch):
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
     opened = partial(followed, [model.close], model._open)
     monkeypatch.setattr(model, "_open", opened)
@@ -355,7 +355,7 @@ def test_checked(log, monkeypatch):
 
 
 def test_nested(log, monkeypatch):
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
     actions = [model.variable_count, model.close]
     start = partial(preceded, actions, env._relay.start)
@@ -367,7 +367,7 @@ def test_nested(log, monkeypatch):
 
 
 def test_drained(log, monkeypatch):
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
     actions = [model.close, partial(env.get_option, "seed")]
     start = partial(preceded, actions, env._relay.start)
@@ -379,7 +379,7 @@ def test_drained(log, monkeypatch):
 
 
 def test_interrupted_call(log, monkeypatch):
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
     count = partial(interrupted, lib.BIYOS_getnvars)
     monkeypatch.setattr(lib, "BIYOS_getnvars", count)
@@ -393,7 +393,7 @@ def test_interrupted_call(log, monkeypatch):
 
 
 def test_deferred(log):
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
 
     def close_inside(event):
@@ -413,7 +413,7 @@ def test_reentered(monkeypatch):
     log = []
     free = partial(once, log, lib.BIYOS_freemodel)
     monkeypatch.setattr(lib, "BIYOS_freemodel", free)
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
     handle = model._handle.value
     models = env._models
@@ -428,7 +428,7 @@ def test_interrupted_take(monkeypatch):
     statuses = []
     spy = partial(spied, lib.BIYOS_freemodel, statuses)
     monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
     models = env._models
     monkeypatch.setattr(models, "take", partial(interrupted, models.take))
@@ -442,7 +442,7 @@ def test_interrupted_take(monkeypatch):
 
 
 def test_holds_env():
-    model = biyos.Model(biyos.Environment())
+    model = biyos.Model(biyos.Env())
     gc.collect()
     model.add_variables(1)
     assert model.variable_count() == 1
@@ -450,12 +450,12 @@ def test_holds_env():
 
 
 def test_wrong_env():
-    with pytest.raises(TypeError, match="env must be an Environment, not int"):
+    with pytest.raises(TypeError, match="env must be an Env, not int"):
         biyos.Model(1)
 
 
 def test_closed_env():
-    env = biyos.Environment()
+    env = biyos.Env()
     env.close()
     with pytest.raises(ValueError, match="the environment is closed"):
         biyos.Model(env)

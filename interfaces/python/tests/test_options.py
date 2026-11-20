@@ -52,7 +52,7 @@ NUMBERS = [(0, None), (100, "0.1.0"), (10203, "1.2.3"), (990099, "99.0.99")]
 
 @pytest.fixture
 def env():
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         yield env
 
 

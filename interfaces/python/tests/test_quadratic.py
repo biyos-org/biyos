@@ -52,7 +52,7 @@ class Shrinking:
 
 @pytest.fixture
 def env():
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         yield env
 
 

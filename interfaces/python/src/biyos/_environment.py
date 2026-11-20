@@ -85,7 +85,7 @@ def _release(models, handle):
     return lib.BIYOS_freeenv(handle)
 
 
-class Environment:
+class Env:
     def __init__(self):
         handle = c_void_p()
         status = lib.BIYOS_newenv(byref(handle))

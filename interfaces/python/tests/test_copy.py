@@ -21,13 +21,13 @@ REFUSED = -100
 
 @pytest.fixture
 def env():
-    with biyos.Environment() as env:
+    with biyos.Env() as env:
         yield env
 
 
 @pytest.fixture
 def other():
-    with biyos.Environment() as other:
+    with biyos.Env() as other:
         yield other
 
 
@@ -147,8 +147,8 @@ def test_copy_closed(place, model):
 
 
 def test_envs(env, model):
-    first = biyos.Environment()
-    second = biyos.Environment()
+    first = biyos.Env()
+    second = biyos.Env()
     copy = model.copy(first)
     kept = model.copy(second)
     env.close()
@@ -216,7 +216,7 @@ def test_module(model):
 
 
 def test_wrong_env(model):
-    with pytest.raises(TypeError, match="env must be an Environment, not int"):
+    with pytest.raises(TypeError, match="env must be an Env, not int"):
         model.copy(1)
 
 
@@ -246,7 +246,7 @@ def test_locked(env, other, model):
 
 def test_gap(model, monkeypatch):
     log = []
-    other = biyos.Environment()
+    other = biyos.Env()
     before_copy(log, [other.close], monkeypatch)
     copy = model.copy(other)
     assert log == ["copy", "env"]
@@ -258,7 +258,7 @@ def test_gap(model, monkeypatch):
 
 def test_source_gap(other, monkeypatch):
     log = []
-    env = biyos.Environment()
+    env = biyos.Env()
     model = biyos.Model(env)
     add_sample(model)
     before_copy(log, [env.close], monkeypatch)

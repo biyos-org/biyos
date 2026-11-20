@@ -11,7 +11,7 @@ from biyos._blocks import (
     index_of,
 )
 from biyos._capi import lib
-from biyos._environment import Environment
+from biyos._environment import Env
 from biyos._error import Error
 from biyos._integers import integer
 
@@ -30,9 +30,9 @@ class Sense(IntEnum):
 
 
 def _environment(env):
-    if not isinstance(env, Environment):
+    if not isinstance(env, Env):
         found = type(env).__name__
-        raise TypeError(f"env must be an Environment, not {found}")
+        raise TypeError(f"env must be an Env, not {found}")
     return env
 
 
@@ -74,7 +74,7 @@ class Model:
 
     Parameters
     ----------
-    env : Environment
+    env : Env
         The environment the model is made on.
     """
 
@@ -126,7 +126,7 @@ class Model:
 
         Parameters
         ----------
-        env : Environment, optional
+        env : Env, optional
             The environment the copy is made on, the model's own by default.
 
         Returns
@@ -137,7 +137,7 @@ class Model:
         Raises
         ------
         TypeError
-            When ``env`` is not an ``Environment``.
+            When ``env`` is not an ``Env``.
         Error
             While ``env`` delivers an event.
         ValueError
