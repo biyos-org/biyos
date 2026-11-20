@@ -149,7 +149,7 @@ TEST(CApiTest, ErrorLine)
     BIYOS_env *env = nullptr;
     ASSERT_EQ(BIYOS_newenv(&env), BIYOS_OK);
     Lines lines;
-    int id = 0;
+    BIYOS_index id = 0;
     const int kind = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env, keep, &lines, kind, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setintopt(env, BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);

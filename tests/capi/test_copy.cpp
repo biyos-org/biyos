@@ -88,7 +88,7 @@ Held copied(const Held &source, BIYOS_env *env)
 
 int variable_count(BIYOS_model *model)
 {
-    int count = -1;
+    BIYOS_index count = -1;
     EXPECT_EQ(BIYOS_getnvars(model, &count), BIYOS_OK);
     return count;
 }
@@ -130,7 +130,7 @@ void keep(const BIYOS_evt *event, void *data)
 
 int subscribe(const Env &env, std::vector<std::string> &texts)
 {
-    int id = 0;
+    BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     EXPECT_EQ(BIYOS_addhook(env.get(), keep, &texts, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     return id;
@@ -192,7 +192,7 @@ TEST(CApiTest, LockedCopy)
     delivery.idle = Held{.env = idle.get(), .model = on_idle.get()};
     std::vector<std::string> texts;
     const int kept = subscribe(idle, texts);
-    int id = 0;
+    BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(busy.get(), copy_inside, &delivery, message, BIYOS_LVL_ERR, &id),
               BIYOS_OK);
@@ -234,8 +234,8 @@ TEST(CApiTest, CopyReports)
     const int second = subscribe(to, received);
     const Held source = made_on(from.get());
     const Held copy = copied(source, to.get());
-    const int index = 7;
-    const double bound = 0.0;
+    const BIYOS_index index = 7;
+    const BIYOS_real bound = 0.0;
     const std::string unknown = "invalid argument: variable 7: unknown";
     EXPECT_EQ(BIYOS_setvarbounds(copy.model, 1, &index, &bound, &bound), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(to.message(), unknown);

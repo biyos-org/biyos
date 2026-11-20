@@ -51,7 +51,7 @@ void add_sample(const Model &model)
 
 int constraint_count(const Model &model)
 {
-    int count = -1;
+    BIYOS_index count = -1;
     EXPECT_EQ(BIYOS_getncons(model.get(), &count), BIYOS_OK);
     return count;
 }
@@ -100,9 +100,9 @@ void change(const BIYOS_evt *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
-    const int index = 0;
-    const double bound = 0.0;
-    int count = 0;
+    const BIYOS_index index = 0;
+    const BIYOS_real bound = 0.0;
+    BIYOS_index count = 0;
     note(attempt, BIYOS_addcons(model, 1, &index, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_setconbounds(model, 1, &index, &bound, &bound));
     note(attempt, BIYOS_getncons(model, &count));
@@ -127,7 +127,7 @@ TEST(CApiTest, FirstConstraint)
     const Model model(env);
     add_functions(model, 1);
     const int functions[] = {0, 0, 0};
-    int first = -1;
+    BIYOS_index first = -1;
     ASSERT_EQ(BIYOS_addcons(model.get(), 0, nullptr, nullptr, nullptr, &first), BIYOS_OK);
     EXPECT_EQ(first, 0);
     ASSERT_EQ(BIYOS_addcons(model.get(), 2, functions, nullptr, nullptr, &first), BIYOS_OK);
@@ -135,7 +135,7 @@ TEST(CApiTest, FirstConstraint)
     ASSERT_EQ(BIYOS_addcons(model.get(), 3, functions, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addcons(model.get(), 1, functions, nullptr, nullptr, &first), BIYOS_OK);
     EXPECT_EQ(first, 5);
-    const int unknown = 1;
+    const BIYOS_index unknown = 1;
     EXPECT_EQ(BIYOS_addcons(model.get(), 1, &unknown, nullptr, nullptr, &first),
               BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(first, 5);
@@ -244,19 +244,19 @@ TEST(CApiTest, RefusedConstraints)
     add_sample(model);
     BIYOS_model *held = model.get();
     const int functions[] = {0, 2};
-    const double nan = std::numeric_limits<double>::quiet_NaN();
+    const BIYOS_real nan = std::numeric_limits<double>::quiet_NaN();
     EXPECT_EQ(BIYOS_addcons(held, 2, functions, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 4: function 2 is unknown");
     EXPECT_EQ(BIYOS_addcons(held, 1, functions, &nan, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: lower bound is NaN");
     EXPECT_EQ(BIYOS_addcons(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
-    const int index = 3;
-    const double bound = 0.0;
+    const BIYOS_index index = 3;
+    const BIYOS_real bound = 0.0;
     EXPECT_EQ(BIYOS_setconbounds(held, 1, &index, &bound, &bound), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
-    const int first = 0;
-    const double infinite = kInfinity;
+    const BIYOS_index first = 0;
+    const BIYOS_real infinite = kInfinity;
     EXPECT_EQ(BIYOS_setconbounds(held, 1, &first, &infinite, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 0: lower bound is infinity");
     EXPECT_EQ(BIYOS_getcons(held, 2, 2, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
@@ -274,9 +274,9 @@ TEST(CApiTest, LockedConstraints)
     attempt.env = env.get();
     attempt.model = model.get();
     add_functions(model, 1);
-    const int function = 0;
+    const BIYOS_index function = 0;
     ASSERT_EQ(BIYOS_addcons(model.get(), 1, &function, nullptr, nullptr, nullptr), BIYOS_OK);
-    int id = 0;
+    BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);

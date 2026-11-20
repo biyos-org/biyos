@@ -91,61 +91,61 @@ void get_string(biyos::Environment &env, int option, const char **value)
 
 }
 
-BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, int *opt)
+BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt)
 {
     return guarded<option_id>(env, name, opt);
 }
 
-BIYOS_status BIYOS_getoptkind(BIYOS_env *env, int opt, int *kind)
+BIYOS_status BIYOS_getoptkind(BIYOS_env *env, BIYOS_int opt, BIYOS_int *kind)
 {
     return guarded<option_kind>(env, opt, kind);
 }
 
 BIYOS_status BIYOS_getoptversions(BIYOS_env *env,
-                                  int opt,
-                                  int *since,
-                                  int *deprecated,
-                                  int *retired)
+                                  BIYOS_int opt,
+                                  BIYOS_int *since,
+                                  BIYOS_int *deprecated,
+                                  BIYOS_int *retired)
 {
     return guarded<option_versions>(env, opt, since, deprecated, retired);
 }
 
-BIYOS_status BIYOS_setboolopt(BIYOS_env *env, int opt, int val)
+BIYOS_status BIYOS_setboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val)
 {
     return guarded<set_bool>(env, opt, val);
 }
 
-BIYOS_status BIYOS_setintopt(BIYOS_env *env, int opt, int val)
+BIYOS_status BIYOS_setintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val)
 {
     return guarded<set_int>(env, opt, val);
 }
 
-BIYOS_status BIYOS_setdblopt(BIYOS_env *env, int opt, double val)
+BIYOS_status BIYOS_setdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val)
 {
     return guarded<set_double>(env, opt, val);
 }
 
-BIYOS_status BIYOS_setstropt(BIYOS_env *env, int opt, const char *val)
+BIYOS_status BIYOS_setstropt(BIYOS_env *env, BIYOS_int opt, const char *val)
 {
     return guarded<set_string>(env, opt, val);
 }
 
-BIYOS_status BIYOS_getboolopt(BIYOS_env *env, int opt, int *val)
+BIYOS_status BIYOS_getboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val)
 {
     return guarded<get_bool>(env, opt, val);
 }
 
-BIYOS_status BIYOS_getintopt(BIYOS_env *env, int opt, int *val)
+BIYOS_status BIYOS_getintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val)
 {
     return guarded<get_int>(env, opt, val);
 }
 
-BIYOS_status BIYOS_getdblopt(BIYOS_env *env, int opt, double *val)
+BIYOS_status BIYOS_getdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real *val)
 {
     return guarded<get_double>(env, opt, val);
 }
 
-BIYOS_status BIYOS_getstropt(BIYOS_env *env, int opt, const char **val)
+BIYOS_status BIYOS_getstropt(BIYOS_env *env, BIYOS_int opt, const char **val)
 {
     return guarded<get_string>(env, opt, val);
 }

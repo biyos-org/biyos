@@ -195,35 +195,43 @@ BIYOS_status BIYOS_freemodel(BIYOS_model *mdl)
 }
 
 BIYOS_status BIYOS_addvars(BIYOS_model *mdl,
-                           int n,
-                           const int *kinds,
-                           const double *lb,
-                           const double *ub,
-                           int *beg)
+                           BIYOS_index n,
+                           const BIYOS_int *kinds,
+                           const BIYOS_real *lb,
+                           const BIYOS_real *ub,
+                           BIYOS_index *beg)
 {
     return guarded<add_variables>(mdl, n, kinds, lb, ub, beg);
 }
 
 BIYOS_status BIYOS_setvarbounds(BIYOS_model *mdl,
-                                int n,
-                                const int *idx,
-                                const double *lb,
-                                const double *ub)
+                                BIYOS_index n,
+                                const BIYOS_index *idx,
+                                const BIYOS_real *lb,
+                                const BIYOS_real *ub)
 {
     return guarded<set_bounds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_setvarkinds(BIYOS_model *mdl, int n, const int *idx, const int *kinds)
+BIYOS_status BIYOS_setvarkinds(BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               const BIYOS_int *kinds)
 {
     return guarded<set_kinds>(mdl, n, idx, kinds);
 }
 
-BIYOS_status BIYOS_getnvars(BIYOS_model *mdl, int *n)
+BIYOS_status BIYOS_getnvars(BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<variable_count>(mdl, n);
 }
 
-BIYOS_status BIYOS_getvars(BIYOS_model *mdl, int beg, int n, int *kinds, double *lb, double *ub)
+BIYOS_status BIYOS_getvars(BIYOS_model *mdl,
+                           BIYOS_index beg,
+                           BIYOS_index n,
+                           BIYOS_int *kinds,
+                           BIYOS_real *lb,
+                           BIYOS_real *ub)
 {
     return guarded<get_variables>(mdl, beg, n, kinds, lb, ub);
 }

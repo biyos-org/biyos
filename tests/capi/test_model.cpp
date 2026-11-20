@@ -28,7 +28,7 @@ struct Columns
 
 Columns read_all(const Model &model)
 {
-    int count = -1;
+    BIYOS_index count = -1;
     EXPECT_EQ(BIYOS_getnvars(model.get(), &count), BIYOS_OK);
     const auto size = static_cast<std::size_t>(count);
     Columns read{.kinds = std::vector<int>(size),
@@ -71,9 +71,9 @@ void change(const BIYOS_evt *, void *data)
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
     BIYOS_model *made = nullptr;
-    const int index = 0;
-    const double bound = 0.0;
-    const int kind = BIYOS_VAR_INTEGER;
+    const BIYOS_index index = 0;
+    const BIYOS_real bound = 0.0;
+    const BIYOS_int kind = BIYOS_VAR_INTEGER;
     note(attempt, BIYOS_newmodel(attempt.env, &made));
     note(attempt, BIYOS_freemodel(model));
     note(attempt, BIYOS_addvars(model, 1, nullptr, nullptr, nullptr, nullptr));
@@ -115,15 +115,15 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_newmodel(env.get(), nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'mdl': is null");
     EXPECT_EQ(BIYOS_freemodel(nullptr), BIYOS_OK);
-    const int index = 0;
-    const double bound = 0.0;
-    int count = 0;
+    const BIYOS_index index = 0;
+    const BIYOS_real bound = 0.0;
+    BIYOS_index count = 0;
     EXPECT_EQ(BIYOS_addvars(nullptr, 1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(BIYOS_setvarbounds(nullptr, 1, &index, &bound, &bound), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(BIYOS_setvarkinds(nullptr, 1, &index, &index), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(BIYOS_getnvars(nullptr, &count), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(BIYOS_getvars(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
-    std::int64_t needed = 0;
+    BIYOS_offset needed = 0;
     EXPECT_EQ(BIYOS_addfuns(nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(BIYOS_getnfuns(nullptr, &count), BIYOS_ERR_INVALIDARG);
@@ -173,7 +173,7 @@ TEST(CApiTest, LockedModel)
     attempt.env = env.get();
     attempt.model = model.get();
     ASSERT_EQ(BIYOS_addvars(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    int id = 0;
+    BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
@@ -217,9 +217,9 @@ TEST(CApiTest, BulkAdd)
     ASSERT_EQ(BIYOS_addvars(model.get(), 5, kinds, low, high, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addvars(model.get(), 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     expect_columns(read_all(model), added);
-    int kind = 0;
-    double lower = 0.0;
-    double upper = 0.0;
+    BIYOS_int kind = 0;
+    BIYOS_real lower = 0.0;
+    BIYOS_real upper = 0.0;
     EXPECT_EQ(BIYOS_getvars(model.get(), 2, 1, &kind, &lower, &upper), BIYOS_OK);
     EXPECT_EQ(kind, BIYOS_VAR_INTEGER);
     EXPECT_DOUBLE_EQ(lower, -3.0);
@@ -232,7 +232,7 @@ TEST(CApiTest, FirstIndex)
 {
     const Env env;
     const Model model(env);
-    int first = -1;
+    BIYOS_index first = -1;
     ASSERT_EQ(BIYOS_addvars(model.get(), 0, nullptr, nullptr, nullptr, &first), BIYOS_OK);
     EXPECT_EQ(first, 0);
     ASSERT_EQ(BIYOS_addvars(model.get(), 1, nullptr, nullptr, nullptr, &first), BIYOS_OK);
@@ -249,7 +249,7 @@ TEST(CApiTest, RefusedAdd)
 {
     const Env env;
     const Model model(env);
-    int first = -1;
+    BIYOS_index first = -1;
     const int kinds[] = {BIYOS_VAR_CONTINUOUS, 9};
     EXPECT_EQ(BIYOS_addvars(model.get(), 2, kinds, nullptr, nullptr, &first), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 1: kind 9 is unknown");
@@ -260,7 +260,7 @@ TEST(CApiTest, RefusedAdd)
               BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     EXPECT_EQ(first, -1);
-    int count = -1;
+    BIYOS_index count = -1;
     EXPECT_EQ(BIYOS_getnvars(model.get(), &count), BIYOS_OK);
     EXPECT_EQ(count, 0);
 }
@@ -270,15 +270,15 @@ TEST(CApiTest, BinaryKind)
     const Env env;
     const Model model(env);
     ASSERT_EQ(BIYOS_addvars(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    const int index = 0;
-    const int binary = BIYOS_VAR_BINARY;
+    const BIYOS_index index = 0;
+    const BIYOS_int binary = BIYOS_VAR_BINARY;
     EXPECT_EQ(BIYOS_setvarkinds(model.get(), 1, &index, &binary), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(),
               "invalid argument: variable 0: bounds [-inf, inf] are outside "
               "[0, 1], the widest of its kind");
-    const double lower = 0.0;
-    const double upper = 1.0;
-    const double wide = 2.0;
+    const BIYOS_real lower = 0.0;
+    const BIYOS_real upper = 1.0;
+    const BIYOS_real wide = 2.0;
     ASSERT_EQ(BIYOS_setvarbounds(model.get(), 1, &index, &lower, &upper), BIYOS_OK);
     EXPECT_EQ(BIYOS_setvarkinds(model.get(), 1, &index, &binary), BIYOS_OK);
     EXPECT_EQ(BIYOS_setvarbounds(model.get(), 1, &index, nullptr, &wide), BIYOS_ERR_INVALIDARG);
@@ -389,11 +389,11 @@ TEST(CApiTest, ModelEvent)
     const Env env;
     const Model model(env);
     std::vector<std::string> texts;
-    int id = 0;
+    BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), keep, &texts, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    const int index = 0;
-    const double bound = 0.0;
+    const BIYOS_index index = 0;
+    const BIYOS_real bound = 0.0;
     EXPECT_EQ(BIYOS_setvarbounds(model.get(), 1, &index, &bound, &bound), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(texts, std::vector<std::string>{"invalid argument: variable 0: unknown"});
     EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);

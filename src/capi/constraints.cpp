@@ -128,30 +128,35 @@ void get_constraints(BIYOS_model &model,
 }
 
 BIYOS_status BIYOS_addcons(BIYOS_model *mdl,
-                           int n,
-                           const int *funs,
-                           const double *lb,
-                           const double *ub,
-                           int *beg)
+                           BIYOS_index n,
+                           const BIYOS_index *funs,
+                           const BIYOS_real *lb,
+                           const BIYOS_real *ub,
+                           BIYOS_index *beg)
 {
     return guarded<add_constraints>(mdl, n, funs, lb, ub, beg);
 }
 
 BIYOS_status BIYOS_setconbounds(BIYOS_model *mdl,
-                                int n,
-                                const int *idx,
-                                const double *lb,
-                                const double *ub)
+                                BIYOS_index n,
+                                const BIYOS_index *idx,
+                                const BIYOS_real *lb,
+                                const BIYOS_real *ub)
 {
     return guarded<set_bounds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_getncons(BIYOS_model *mdl, int *n)
+BIYOS_status BIYOS_getncons(BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<constraint_count>(mdl, n);
 }
 
-BIYOS_status BIYOS_getcons(BIYOS_model *mdl, int beg, int n, int *funs, double *lb, double *ub)
+BIYOS_status BIYOS_getcons(BIYOS_model *mdl,
+                           BIYOS_index beg,
+                           BIYOS_index n,
+                           BIYOS_index *funs,
+                           BIYOS_real *lb,
+                           BIYOS_real *ub)
 {
     return guarded<get_constraints>(mdl, beg, n, funs, lb, ub);
 }

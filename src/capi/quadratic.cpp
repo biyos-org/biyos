@@ -61,25 +61,25 @@ void get_terms(BIYOS_model &model,
 }
 
 BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl,
-                                int n,
-                                const int *funs,
-                                const int64_t *starts,
-                                const int *vars1,
-                                const int *vars2,
-                                const double *vals)
+                                BIYOS_index n,
+                                const BIYOS_index *funs,
+                                const BIYOS_offset *starts,
+                                const BIYOS_index *vars1,
+                                const BIYOS_index *vars2,
+                                const BIYOS_real *vals)
 {
     return guarded<add_terms>(mdl, n, funs, starts, vars1, vars2, vals);
 }
 
 BIYOS_status BIYOS_getquadterms(BIYOS_model *mdl,
-                                int beg,
-                                int n,
-                                int64_t *starts,
-                                int64_t size,
-                                int64_t *needed,
-                                int *vars1,
-                                int *vars2,
-                                double *vals)
+                                BIYOS_index beg,
+                                BIYOS_index n,
+                                BIYOS_offset *starts,
+                                BIYOS_offset size,
+                                BIYOS_offset *needed,
+                                BIYOS_index *vars1,
+                                BIYOS_index *vars2,
+                                BIYOS_real *vals)
 {
     return guarded<get_terms>(mdl, beg, n, starts, size, needed, vars1, vars2, vals);
 }

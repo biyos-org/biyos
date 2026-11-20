@@ -59,9 +59,9 @@ const Records kSample{
 
 BIYOS_status add_with(BIYOS_model *model,
                       int count,
-                      const int *functions,
+                      const BIYOS_index *functions,
                       const Fields &fields,
-                      int *first = nullptr)
+                      BIYOS_index *first = nullptr)
 {
     return BIYOS_addobjs(model,
                          count,
@@ -74,7 +74,10 @@ BIYOS_status add_with(BIYOS_model *model,
                          first);
 }
 
-BIYOS_status set_with(BIYOS_model *model, int count, const int *indices, const Fields &fields)
+BIYOS_status set_with(BIYOS_model *model,
+                      int count,
+                      const BIYOS_index *indices,
+                      const Fields &fields)
 {
     return BIYOS_setobjs(model,
                          count,
@@ -99,7 +102,7 @@ BIYOS_status get_with(BIYOS_model *model, int first, int count, const Outputs &o
                          outputs.relative);
 }
 
-BIYOS_status add_records(const Model &model, const Records &records, int *first = nullptr)
+BIYOS_status add_records(const Model &model, const Records &records, BIYOS_index *first = nullptr)
 {
     const Fields fields{
         .senses = records.senses.data(),
@@ -126,7 +129,7 @@ void add_sample(const Model &model)
 
 int objective_count(const Model &model)
 {
-    int count = -1;
+    BIYOS_index count = -1;
     EXPECT_EQ(BIYOS_getnobjs(model.get(), &count), BIYOS_OK);
     return count;
 }
@@ -216,9 +219,9 @@ void change(const BIYOS_evt *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
-    const int index = 0;
+    const BIYOS_index index = 0;
     const double weight = 2.0;
-    int count = 0;
+    BIYOS_index count = 0;
     note(attempt, add_with(model, 1, &index, {}));
     note(attempt, set_with(model, 1, &index, {.weights = &weight}));
     note(attempt, BIYOS_getnobjs(model, &count));
@@ -243,7 +246,7 @@ TEST(CApiTest, FirstObjective)
     const Model model(env);
     add_functions(model, 1);
     const int functions[] = {0, 0, 0};
-    int first = -1;
+    BIYOS_index first = -1;
     ASSERT_EQ(add_with(model.get(), 0, nullptr, {}, &first), BIYOS_OK);
     EXPECT_EQ(first, 0);
     ASSERT_EQ(add_records(model, defaults({0, 0}), &first), BIYOS_OK);
@@ -406,10 +409,10 @@ TEST(CApiTest, RefusedObjectives)
     EXPECT_EQ(env.message(), "invalid argument: objective 3: absolute tolerance is NaN");
     EXPECT_EQ(add_with(held, -1, nullptr, {}), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
-    const int unknown = 3;
+    const BIYOS_index unknown = 3;
     EXPECT_EQ(set_with(held, 1, &unknown, {}), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
-    const int zero = 0;
+    const BIYOS_index zero = 0;
     EXPECT_EQ(set_with(held, 1, &zero, {.senses = &zero}), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: sense 0 is unknown");
     EXPECT_EQ(set_with(held, 1, &zero, {.relative = &negative}), BIYOS_ERR_INVALIDARG);
@@ -431,9 +434,9 @@ TEST(CApiTest, LockedObjectives)
     attempt.env = env.get();
     attempt.model = model.get();
     add_functions(model, 1);
-    const int function = 0;
+    const BIYOS_index function = 0;
     ASSERT_EQ(add_with(model.get(), 1, &function, {}), BIYOS_OK);
-    int id = 0;
+    BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);

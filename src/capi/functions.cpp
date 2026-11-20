@@ -91,30 +91,30 @@ void get_functions(BIYOS_model &model,
 }
 
 BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
-                           int n,
-                           const double *consts,
-                           const int64_t *starts,
-                           const int *vars,
-                           const double *vals,
-                           int *beg)
+                           BIYOS_index n,
+                           const BIYOS_real *consts,
+                           const BIYOS_offset *starts,
+                           const BIYOS_index *vars,
+                           const BIYOS_real *vals,
+                           BIYOS_index *beg)
 {
     return guarded<add_functions>(mdl, n, consts, starts, vars, vals, beg);
 }
 
-BIYOS_status BIYOS_getnfuns(BIYOS_model *mdl, int *n)
+BIYOS_status BIYOS_getnfuns(BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<function_count>(mdl, n);
 }
 
 BIYOS_status BIYOS_getfuns(BIYOS_model *mdl,
-                           int beg,
-                           int n,
-                           double *consts,
-                           int64_t *starts,
-                           int64_t size,
-                           int64_t *needed,
-                           int *vars,
-                           double *vals)
+                           BIYOS_index beg,
+                           BIYOS_index n,
+                           BIYOS_real *consts,
+                           BIYOS_offset *starts,
+                           BIYOS_offset size,
+                           BIYOS_offset *needed,
+                           BIYOS_index *vars,
+                           BIYOS_real *vals)
 {
     return guarded<get_functions>(mdl, beg, n, consts, starts, size, needed, vars, vals);
 }

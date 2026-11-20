@@ -172,44 +172,44 @@ void get_objectives(BIYOS_model &model,
 }
 
 BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
-                           int n,
-                           const int *funs,
-                           const int *senses,
-                           const int *prios,
-                           const double *weights,
-                           const double *abs,
-                           const double *rel,
-                           int *beg)
+                           BIYOS_index n,
+                           const BIYOS_index *funs,
+                           const BIYOS_int *senses,
+                           const BIYOS_int *prios,
+                           const BIYOS_real *weights,
+                           const BIYOS_real *abs,
+                           const BIYOS_real *rel,
+                           BIYOS_index *beg)
 {
     return guarded<add_objectives>(mdl, n, funs, senses, prios, weights, abs, rel, beg);
 }
 
 BIYOS_status BIYOS_setobjs(BIYOS_model *mdl,
-                           int n,
-                           const int *idx,
-                           const int *senses,
-                           const int *prios,
-                           const double *weights,
-                           const double *abs,
-                           const double *rel)
+                           BIYOS_index n,
+                           const BIYOS_index *idx,
+                           const BIYOS_int *senses,
+                           const BIYOS_int *prios,
+                           const BIYOS_real *weights,
+                           const BIYOS_real *abs,
+                           const BIYOS_real *rel)
 {
     return guarded<set_objectives>(mdl, n, idx, senses, prios, weights, abs, rel);
 }
 
-BIYOS_status BIYOS_getnobjs(BIYOS_model *mdl, int *n)
+BIYOS_status BIYOS_getnobjs(BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<objective_count>(mdl, n);
 }
 
 BIYOS_status BIYOS_getobjs(BIYOS_model *mdl,
-                           int beg,
-                           int n,
-                           int *funs,
-                           int *senses,
-                           int *prios,
-                           double *weights,
-                           double *abs,
-                           double *rel)
+                           BIYOS_index beg,
+                           BIYOS_index n,
+                           BIYOS_index *funs,
+                           BIYOS_int *senses,
+                           BIYOS_int *prios,
+                           BIYOS_real *weights,
+                           BIYOS_real *abs,
+                           BIYOS_real *rel)
 {
     return guarded<get_objectives>(mdl, beg, n, funs, senses, prios, weights, abs, rel);
 }

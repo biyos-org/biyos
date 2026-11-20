@@ -8,6 +8,11 @@
 
 #include <stddef.h>
 
+extern char index_size[sizeof(BIYOS_index) == 4 ? 1 : -1];
+extern char int_size[sizeof(BIYOS_int) == 4 ? 1 : -1];
+extern char offset_size[sizeof(BIYOS_offset) == 8 ? 1 : -1];
+extern char real_size[sizeof(BIYOS_real) == 8 ? 1 : -1];
+
 #if !defined(BIYOS_OK) || BIYOS_OK != 0
 #error "BIYOS_OK must be zero"
 #endif
@@ -89,11 +94,11 @@ static BIYOS_status use_functions(BIYOS_model *model)
     const int variables[3] = {1, 0, 1};
     const double values[3] = {1.0, 2.0, 3.0};
     int64_t offsets[3] = {-1, -1, -1};
-    int64_t needed = -1;
+    BIYOS_offset needed = -1;
     int held[3] = {-1, -1, -1};
     double kept[3] = {0.0, 0.0, 0.0};
-    int first = -1;
-    int functions = 0;
+    BIYOS_index first = -1;
+    BIYOS_index functions = 0;
     if (BIYOS_addfuns(model, 2, constants, starts, variables, values, &first) != BIYOS_OK ||
         first != 0 || BIYOS_getnfuns(model, &functions) != BIYOS_OK || functions != 2)
     {
@@ -115,7 +120,7 @@ static BIYOS_status use_quadratic(BIYOS_model *model)
     const int seconds[2] = {0, 0};
     const double values[2] = {2.0, 1.0};
     int64_t offsets[3] = {-1, -1, -1};
-    int64_t needed = -1;
+    BIYOS_offset needed = -1;
     int held[2] = {-1, -1};
     int paired[2] = {-1, -1};
     BIYOS_status status = BIYOS_addquadterms(model, 1, functions, starts, firsts, seconds, values);
@@ -137,8 +142,8 @@ static BIYOS_status use_constraints(BIYOS_model *model)
     const double lower[2] = {0.0, -1.0};
     const int indices[1] = {1};
     int found[2] = {-1, -1};
-    int first = -1;
-    int constraints = 0;
+    BIYOS_index first = -1;
+    BIYOS_index constraints = 0;
     if (BIYOS_addcons(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
         BIYOS_setconbounds(model, 1, indices, NULL, lower) != BIYOS_OK ||
         BIYOS_getncons(model, &constraints) != BIYOS_OK || constraints != 2 ||
@@ -157,8 +162,8 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     const int indices[1] = {1};
     int found[2] = {-1, -1};
     int priorities[2] = {-1, -1};
-    int first = -1;
-    int objectives = 0;
+    BIYOS_index first = -1;
+    BIYOS_index objectives = 0;
     BIYOS_status status =
         BIYOS_addobjs(model, 2, functions, senses, NULL, NULL, NULL, NULL, &first);
     if (status == BIYOS_OK)
@@ -184,7 +189,7 @@ static BIYOS_status use_objectives(BIYOS_model *model)
 static BIYOS_status use_copy(BIYOS_env *env, BIYOS_model *model)
 {
     BIYOS_model *copy = NULL;
-    int constraints = 0;
+    BIYOS_index constraints = 0;
     BIYOS_status status = BIYOS_copymodel(model, env, &copy);
     if (status == BIYOS_OK && (BIYOS_getncons(copy, &constraints) != BIYOS_OK || constraints != 2))
     {
@@ -202,21 +207,21 @@ int main(void)
     BIYOS_status status = BIYOS_OK;
     BIYOS_env *env = NULL;
     BIYOS_model *model = NULL;
-    int major = -1;
-    int minor = -1;
-    int patch = -1;
-    int seed = -1;
-    int kind = 0;
+    BIYOS_int major = -1;
+    BIYOS_int minor = -1;
+    BIYOS_int patch = -1;
+    BIYOS_int seed = -1;
+    BIYOS_int kind = 0;
     int lowest = BIYOS_LVL_DBG;
     int errors = 0;
-    int id = 0;
+    BIYOS_index id = 0;
     const int kinds[2] = {BIYOS_VAR_CONTINUOUS, BIYOS_VAR_BINARY};
     const double lower[2] = {-1.0, 0.0};
     const double upper[2] = {1.0, 1.0};
     const int indices[1] = {0};
     int found[2] = {0, 0};
-    int first = -1;
-    int variables = 0;
+    BIYOS_index first = -1;
+    BIYOS_index variables = 0;
     BIYOS_version(&major, &minor, &patch);
     if (major < 0 || minor < 0 || patch < 0)
     {

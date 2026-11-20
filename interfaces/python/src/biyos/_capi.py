@@ -7,6 +7,7 @@ from ctypes import (
     c_char_p,
     c_double,
     c_int,
+    c_int32,
     c_int64,
     c_size_t,
     c_void_p,
@@ -34,7 +35,7 @@ def _load():
     package = files("biyos")
     name = (package / "library.txt").read_text()
     lib = ctypes.CDLL(str(package / name))
-    ints = POINTER(c_int)
+    ints = POINTER(c_int32)
     doubles = POINTER(c_double)
     strings = POINTER(c_char_p)
     _declare(lib, "BIYOS_version", None, ints, ints, ints)
@@ -42,33 +43,33 @@ def _load():
     _declare(lib, "BIYOS_freeenv", c_int, c_void_p)
     _declare(lib, "BIYOS_lasterror", c_char_p, c_void_p)
     _declare(lib, "BIYOS_getoptid", c_int, c_void_p, c_char_p, ints)
-    _declare(lib, "BIYOS_getoptkind", c_int, c_void_p, c_int, ints)
-    versions = (c_void_p, c_int, ints, ints, ints)
+    _declare(lib, "BIYOS_getoptkind", c_int, c_void_p, c_int32, ints)
+    versions = (c_void_p, c_int32, ints, ints, ints)
     _declare(lib, "BIYOS_getoptversions", c_int, *versions)
-    _declare(lib, "BIYOS_setboolopt", c_int, c_void_p, c_int, c_int)
-    _declare(lib, "BIYOS_setintopt", c_int, c_void_p, c_int, c_int)
-    _declare(lib, "BIYOS_setdblopt", c_int, c_void_p, c_int, c_double)
-    _declare(lib, "BIYOS_setstropt", c_int, c_void_p, c_int, c_char_p)
-    _declare(lib, "BIYOS_getboolopt", c_int, c_void_p, c_int, ints)
-    _declare(lib, "BIYOS_getintopt", c_int, c_void_p, c_int, ints)
-    _declare(lib, "BIYOS_getdblopt", c_int, c_void_p, c_int, doubles)
-    _declare(lib, "BIYOS_getstropt", c_int, c_void_p, c_int, strings)
+    _declare(lib, "BIYOS_setboolopt", c_int, c_void_p, c_int32, c_int32)
+    _declare(lib, "BIYOS_setintopt", c_int, c_void_p, c_int32, c_int32)
+    _declare(lib, "BIYOS_setdblopt", c_int, c_void_p, c_int32, c_double)
+    _declare(lib, "BIYOS_setstropt", c_int, c_void_p, c_int32, c_char_p)
+    _declare(lib, "BIYOS_getboolopt", c_int, c_void_p, c_int32, ints)
+    _declare(lib, "BIYOS_getintopt", c_int, c_void_p, c_int32, ints)
+    _declare(lib, "BIYOS_getdblopt", c_int, c_void_p, c_int32, doubles)
+    _declare(lib, "BIYOS_getstropt", c_int, c_void_p, c_int32, strings)
     _declare_events(lib, ints)
     _declare_model(lib, ints, doubles)
     return lib
 
 
 def _declare_events(lib, ints):
-    subscribe = (c_void_p, SUBSCRIBER, c_void_p, c_int, c_int, ints)
+    subscribe = (c_void_p, SUBSCRIBER, c_void_p, c_int32, c_int32, ints)
     _declare(lib, "BIYOS_addhook", c_int, *subscribe)
-    _declare(lib, "BIYOS_delhook", c_int, c_void_p, c_int)
-    _declare(lib, "BIYOS_getevtkind", c_int, c_void_p)
-    _declare(lib, "BIYOS_getevtlvl", c_int, c_void_p)
+    _declare(lib, "BIYOS_delhook", c_int, c_void_p, c_int32)
+    _declare(lib, "BIYOS_getevtkind", c_int32, c_void_p)
+    _declare(lib, "BIYOS_getevtlvl", c_int32, c_void_p)
     _declare(lib, "BIYOS_getevtmodule", c_char_p, c_void_p)
     _declare(lib, "BIYOS_getevttext", c_char_p, c_void_p)
-    _declare(lib, "BIYOS_getnevtfields", c_int, c_void_p)
-    _declare(lib, "BIYOS_getevtfieldname", c_char_p, c_void_p, c_int)
-    _declare(lib, "BIYOS_getevtfieldvalue", c_char_p, c_void_p, c_int)
+    _declare(lib, "BIYOS_getnevtfields", c_int32, c_void_p)
+    _declare(lib, "BIYOS_getevtfieldname", c_char_p, c_void_p, c_int32)
+    _declare(lib, "BIYOS_getevtfieldvalue", c_char_p, c_void_p, c_int32)
     _declare_formats(lib)
 
 
@@ -83,13 +84,13 @@ def _declare_model(lib, ints, doubles):
     copy = (c_void_p, c_void_p, POINTER(c_void_p))
     _declare(lib, "BIYOS_copymodel", c_int, *copy)
     _declare(lib, "BIYOS_freemodel", c_int, c_void_p)
-    variables = (c_void_p, c_int, ints, doubles, doubles)
+    variables = (c_void_p, c_int32, ints, doubles, doubles)
     _declare(lib, "BIYOS_addvars", c_int, *variables, ints)
     _declare(lib, "BIYOS_setvarbounds", c_int, *variables)
-    kinds = (c_void_p, c_int, ints, ints)
+    kinds = (c_void_p, c_int32, ints, ints)
     _declare(lib, "BIYOS_setvarkinds", c_int, *kinds)
     _declare(lib, "BIYOS_getnvars", c_int, c_void_p, ints)
-    read = (c_void_p, c_int, c_int, ints, doubles, doubles)
+    read = (c_void_p, c_int32, c_int32, ints, doubles, doubles)
     _declare(lib, "BIYOS_getvars", c_int, *read)
     _declare_functions(lib, ints, doubles)
     _declare_quadratic(lib, ints, doubles)
@@ -99,41 +100,41 @@ def _declare_model(lib, ints, doubles):
 
 def _declare_functions(lib, ints, doubles):
     offsets = POINTER(c_int64)
-    add = (c_void_p, c_int, doubles, offsets, ints, doubles, ints)
+    add = (c_void_p, c_int32, doubles, offsets, ints, doubles, ints)
     _declare(lib, "BIYOS_addfuns", c_int, *add)
     _declare(lib, "BIYOS_getnfuns", c_int, c_void_p, ints)
     sized = (c_int64, offsets, ints, doubles)
-    read = (c_void_p, c_int, c_int, doubles, offsets, *sized)
+    read = (c_void_p, c_int32, c_int32, doubles, offsets, *sized)
     _declare(lib, "BIYOS_getfuns", c_int, *read)
 
 
 def _declare_quadratic(lib, ints, doubles):
     offsets = POINTER(c_int64)
-    add = (c_void_p, c_int, ints, offsets, ints, ints, doubles)
+    add = (c_void_p, c_int32, ints, offsets, ints, ints, doubles)
     _declare(lib, "BIYOS_addquadterms", c_int, *add)
     sized = (c_int64, offsets, ints, ints, doubles)
-    read = (c_void_p, c_int, c_int, offsets, *sized)
+    read = (c_void_p, c_int32, c_int32, offsets, *sized)
     _declare(lib, "BIYOS_getquadterms", c_int, *read)
 
 
 def _declare_constraints(lib, ints, doubles):
-    add = (c_void_p, c_int, ints, doubles, doubles, ints)
+    add = (c_void_p, c_int32, ints, doubles, doubles, ints)
     _declare(lib, "BIYOS_addcons", c_int, *add)
-    bounds = (c_void_p, c_int, ints, doubles, doubles)
+    bounds = (c_void_p, c_int32, ints, doubles, doubles)
     _declare(lib, "BIYOS_setconbounds", c_int, *bounds)
     _declare(lib, "BIYOS_getncons", c_int, c_void_p, ints)
-    read = (c_void_p, c_int, c_int, ints, doubles, doubles)
+    read = (c_void_p, c_int32, c_int32, ints, doubles, doubles)
     _declare(lib, "BIYOS_getcons", c_int, *read)
 
 
 def _declare_objectives(lib, ints, doubles):
     fields = (ints, ints, doubles, doubles, doubles)
-    add = (c_void_p, c_int, ints, *fields, ints)
+    add = (c_void_p, c_int32, ints, *fields, ints)
     _declare(lib, "BIYOS_addobjs", c_int, *add)
-    change = (c_void_p, c_int, ints, *fields)
+    change = (c_void_p, c_int32, ints, *fields)
     _declare(lib, "BIYOS_setobjs", c_int, *change)
     _declare(lib, "BIYOS_getnobjs", c_int, c_void_p, ints)
-    read = (c_void_p, c_int, c_int, ints, *fields)
+    read = (c_void_p, c_int32, c_int32, ints, *fields)
     _declare(lib, "BIYOS_getobjs", c_int, *read)
 
 

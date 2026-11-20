@@ -65,24 +65,24 @@ const biyos::Field *field_of(const BIYOS_evt *event, int field)
 BIYOS_status BIYOS_addhook(BIYOS_env *env,
                            BIYOS_hook hook,
                            void *data,
-                           int kind,
-                           int lowest,
-                           int *id)
+                           BIYOS_int kind,
+                           BIYOS_int lowest,
+                           BIYOS_index *id)
 {
     return guarded<subscribe>(env, hook, data, kind, lowest, id);
 }
 
-BIYOS_status BIYOS_delhook(BIYOS_env *env, int id)
+BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index id)
 {
     return guarded<unsubscribe>(env, id);
 }
 
-int BIYOS_getevtkind(const BIYOS_evt *evt)
+BIYOS_int BIYOS_getevtkind(const BIYOS_evt *evt)
 {
     return evt == nullptr ? 0 : static_cast<int>(evt->core->kind);
 }
 
-int BIYOS_getevtlvl(const BIYOS_evt *evt)
+BIYOS_int BIYOS_getevtlvl(const BIYOS_evt *evt)
 {
     return evt == nullptr ? 0 : static_cast<int>(evt->core->level);
 }
@@ -97,18 +97,18 @@ const char *BIYOS_getevttext(const BIYOS_evt *evt)
     return evt == nullptr ? "" : evt->core->text.c_str();
 }
 
-int BIYOS_getnevtfields(const BIYOS_evt *evt)
+BIYOS_index BIYOS_getnevtfields(const BIYOS_evt *evt)
 {
     return evt == nullptr ? 0 : static_cast<int>(evt->core->fields.size());
 }
 
-const char *BIYOS_getevtfieldname(const BIYOS_evt *evt, int field)
+const char *BIYOS_getevtfieldname(const BIYOS_evt *evt, BIYOS_index field)
 {
     const biyos::Field *found = field_of(evt, field);
     return found == nullptr ? "" : found->name.c_str();
 }
 
-const char *BIYOS_getevtfieldvalue(const BIYOS_evt *evt, int field)
+const char *BIYOS_getevtfieldvalue(const BIYOS_evt *evt, BIYOS_index field)
 {
     const biyos::Field *found = field_of(evt, field);
     return found == nullptr ? "" : found->value.c_str();

@@ -72,7 +72,7 @@ BIYOS_status fill(const Model &model,
                   int count,
                   Compressed &read,
                   std::int64_t size,
-                  std::int64_t *needed)
+                  BIYOS_offset *needed)
 {
     return BIYOS_getfuns(model.get(),
                          first,
@@ -91,7 +91,7 @@ std::int64_t read_with(const Model &model,
                        Compressed &read,
                        std::int64_t size)
 {
-    std::int64_t needed = -1;
+    BIYOS_offset needed = -1;
     EXPECT_EQ(fill(model, first, count, read, size, &needed), BIYOS_OK);
     return needed;
 }
@@ -111,7 +111,7 @@ void expect_compressed(const Compressed &found, const Compressed &wanted)
 
 int function_count(const Model &model)
 {
-    int count = -1;
+    BIYOS_index count = -1;
     EXPECT_EQ(BIYOS_getnfuns(model.get(), &count), BIYOS_OK);
     return count;
 }
@@ -134,8 +134,8 @@ void change(const BIYOS_evt *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
-    int count = 0;
-    std::int64_t needed = 0;
+    BIYOS_index count = 0;
+    BIYOS_offset needed = 0;
     note(attempt, BIYOS_addfuns(model, 1, nullptr, nullptr, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_getnfuns(model, &count));
     note(attempt, BIYOS_getfuns(model, 0, 1, nullptr, nullptr, 0, &needed, nullptr, nullptr));
@@ -159,7 +159,7 @@ TEST(CApiTest, FirstFunction)
 {
     const Env env;
     const Model model(env);
-    int first = -1;
+    BIYOS_index first = -1;
     ASSERT_EQ(BIYOS_addfuns(model.get(), 0, nullptr, nullptr, nullptr, nullptr, &first), BIYOS_OK);
     EXPECT_EQ(first, 0);
     ASSERT_EQ(BIYOS_addfuns(model.get(), 2, nullptr, nullptr, nullptr, nullptr, &first), BIYOS_OK);
@@ -167,7 +167,7 @@ TEST(CApiTest, FirstFunction)
     ASSERT_EQ(BIYOS_addfuns(model.get(), 3, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfuns(model.get(), 1, nullptr, nullptr, nullptr, nullptr, &first), BIYOS_OK);
     EXPECT_EQ(first, 5);
-    const double infinite = kInfinity;
+    const BIYOS_real infinite = kInfinity;
     EXPECT_EQ(BIYOS_addfuns(model.get(), 1, &infinite, nullptr, nullptr, nullptr, &first),
               BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(first, 5);
@@ -179,7 +179,7 @@ TEST(CApiTest, SizeZero)
     const Env env;
     const Model model(env);
     add_sample(model);
-    std::int64_t needed = -1;
+    BIYOS_offset needed = -1;
     EXPECT_EQ(BIYOS_getfuns(model.get(), 0, 3, nullptr, nullptr, 0, &needed, nullptr, nullptr),
               BIYOS_OK);
     EXPECT_EQ(needed, 5);
@@ -261,8 +261,8 @@ TEST(CApiTest, NullFunctions)
     expect_doubles(read.constants, {0.0, 0.0, 0.5, 0.75});
     EXPECT_EQ(read.starts, (std::vector<std::int64_t>{0, 0, 0, 0, 0}));
     const std::int64_t one[] = {0, 1};
-    const int variable = 0;
-    const double value = 1.0;
+    const BIYOS_index variable = 0;
+    const BIYOS_real value = 1.0;
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, nullptr, &value, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'vars': is null");
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, &variable, nullptr, nullptr),
@@ -277,7 +277,7 @@ TEST(CApiTest, NullTerms)
     const Model model(env);
     add_sample(model);
     Compressed read = blank(3, 5);
-    std::int64_t needed = -1;
+    BIYOS_offset needed = -1;
     BIYOS_model *held = model.get();
     double *constants = read.constants.data();
     std::int64_t *starts = read.starts.data();
@@ -308,7 +308,7 @@ TEST(CApiTest, RefusedFunctions)
     const std::int64_t negative[] = {0, -1};
     const int variables[] = {0, 3};
     const double values[] = {1.0, 2.0};
-    const double nan = std::numeric_limits<double>::quiet_NaN();
+    const BIYOS_real nan = std::numeric_limits<double>::quiet_NaN();
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, late, variables, values, nullptr),
               BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'starts': begins at 1, not 0");
@@ -330,7 +330,7 @@ TEST(CApiTest, RefusedFunctions)
     EXPECT_EQ(BIYOS_addfuns(held, -1, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
-    std::int64_t needed = -1;
+    BIYOS_offset needed = -1;
     Compressed untouched = blank(3, 5);
     EXPECT_EQ(fill(model, 2, 2, untouched, 5, &needed), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function 3: unknown");
@@ -353,7 +353,7 @@ TEST(CApiTest, LockedFunctions)
     attempt.env = env.get();
     attempt.model = model.get();
     ASSERT_EQ(BIYOS_addfuns(model.get(), 1, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    int id = 0;
+    BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
