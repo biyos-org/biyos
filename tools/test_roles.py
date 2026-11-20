@@ -107,6 +107,23 @@ class RoleTest(unittest.TestCase):
             ],
         )
 
+    def test_engine(self):
+        self.source(
+            "ipm/engine.cpp",
+            "ipm/engine.hpp",
+            "ipm/barrier/mehrotra.hpp",
+            "linalg/factor/ldlt.hpp",
+        )
+        self.assertEqual(
+            self.problems(),
+            [
+                "src/ipm/engine.cpp:2: "
+                "engine may not use brick ipm/barrier/mehrotra.hpp",
+                "src/ipm/engine.cpp:3: "
+                "engine may not use brick linalg/factor/ldlt.hpp",
+            ],
+        )
+
     def test_narrow(self):
         self.roles = self.table("roles.txt", "ipm/barrier: core\n")
         self.source(

@@ -5,6 +5,7 @@ from pathlib import Path, PurePosixPath
 
 INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"')
 SOURCES = {".c", ".h", ".cpp", ".hpp"}
+ENGINE = "engine"
 
 
 def read_layers(path):
@@ -85,6 +86,11 @@ def is_brick(path, roles):
     return role is not None and not is_interface(path, role)
 
 
+def is_engine(path):
+    file = PurePosixPath(path)
+    return len(file.parts) == 2 and file.stem == ENGINE
+
+
 def refuse_sibling(role, source, target):
     if is_interface(target, role) or stem(target) == stem(source):
         return None
@@ -115,6 +121,8 @@ def refuse(source, target, layers, roles):
     role = role_of(source, roles)
     if role:
         return refuse_role(role, source, target, roles)
+    if is_engine(source) and is_brick(target, roles):
+        return f"engine may not use brick {target}"
     return refuse_module(module_of(source), target, layers)
 
 
