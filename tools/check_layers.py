@@ -2,7 +2,7 @@ import re
 import sys
 from pathlib import Path
 
-INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"/]+)/')
+INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"')
 SOURCES = {".c", ".h", ".cpp", ".hpp"}
 
 
@@ -33,28 +33,38 @@ def check_table(layers):
     return problems
 
 
+def includes(path):
+    for number, line in enumerate(path.read_text().splitlines(), 1):
+        match = INCLUDE.match(line)
+        if match:
+            yield number, match.group(1)
+
+
+def refuse(module, target, layers):
+    used = target.split("/")[0]
+    if used in layers and used not in layers[module] and used != module:
+        return f"{module} may not use {used}"
+    return None
+
+
+def check_file(src, path, layers):
+    name = path.relative_to(src.parent).as_posix()
+    parts = path.relative_to(src).parts
+    if len(parts) < 2 or parts[0] not in layers:
+        return [f"{name}: not in a declared module"]
+    problems = []
+    for number, target in includes(path):
+        refusal = refuse(parts[0], target, layers)
+        if refusal:
+            problems.append(f"{name}:{number}: {refusal}")
+    return problems
+
+
 def check_sources(src, layers):
     problems = []
     for path in sorted(src.rglob("*")):
-        if path.suffix not in SOURCES:
-            continue
-        name = path.relative_to(src.parent).as_posix()
-        parts = path.relative_to(src).parts
-        if len(parts) < 2 or parts[0] not in layers:
-            problems.append(f"{name}: not in a declared module")
-            continue
-        module = parts[0]
-        allowed = set(layers[module]) | {module}
-        lines = path.read_text().splitlines()
-        for number, line in enumerate(lines, 1):
-            match = INCLUDE.match(line)
-            if not match:
-                continue
-            target = match.group(1)
-            if target in layers and target not in allowed:
-                problems.append(
-                    f"{name}:{number}: {module} may not use {target}"
-                )
+        if path.suffix in SOURCES:
+            problems += check_file(src, path, layers)
     return problems
 
 
