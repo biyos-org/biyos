@@ -19,17 +19,17 @@ namespace biyos
 
 enum class EventKind
 {
-    Message = BIYOS_EVENT_MESSAGE,
-    Check = BIYOS_EVENT_CHECK,
-    Phase = BIYOS_EVENT_PHASE,
+    Message = BIYOS_EVT_MESSAGE,
+    Check = BIYOS_EVT_CHECK,
+    Phase = BIYOS_EVT_PHASE,
 };
 
 enum class Level
 {
-    Debug = BIYOS_LEVEL_DEBUG,
-    Info = BIYOS_LEVEL_INFO,
-    Warning = BIYOS_LEVEL_WARNING,
-    Error = BIYOS_LEVEL_ERROR,
+    Debug = BIYOS_LVL_DBG,
+    Info = BIYOS_LVL_INFO,
+    Warning = BIYOS_LVL_WARN,
+    Error = BIYOS_LVL_ERR,
 };
 
 inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Check, EventKind::Phase};
@@ -121,7 +121,7 @@ class Events
         bool active;
     };
 
-    static constexpr Level kNobody = static_cast<Level>(BIYOS_LEVEL_ERROR + 1);
+    static constexpr Level kNobody = static_cast<Level>(BIYOS_LVL_ERR + 1);
 
     static std::size_t slot(EventKind kind) noexcept { return static_cast<std::size_t>(kind) - 1; }
 

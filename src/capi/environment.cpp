@@ -28,7 +28,7 @@ BIYOS_status BIYOS_newenv(BIYOS_env **env)
 {
     if (env == nullptr)
     {
-        return BIYOS_INVALID_ARGUMENT;
+        return BIYOS_ERR_INVALIDARG;
     }
     *env = nullptr;
     return biyos::capi::guard([&] { *env = new BIYOS_env; });

@@ -33,9 +33,9 @@ typedef struct BIYOS_model BIYOS_model;
 typedef void (*BIYOS_hook)(const BIYOS_evt *event, void *data);
 
 #define BIYOS_OK 0
-#define BIYOS_INVALID_ARGUMENT (-100)
-#define BIYOS_NO_MEMORY (-400)
-#define BIYOS_INTERNAL_ERROR (-500)
+#define BIYOS_ERR_INVALIDARG (-100)
+#define BIYOS_ERR_NOMEMORY (-400)
+#define BIYOS_ERR_INTERNAL (-500)
 
 BIYOS_API void BIYOS_version(int *major, int *minor, int *patch);
 

@@ -13,7 +13,7 @@ TEST(CApiTest, Create)
 
 TEST(CApiTest, NullCreate)
 {
-    EXPECT_EQ(BIYOS_newenv(nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_newenv(nullptr), BIYOS_ERR_INVALIDARG);
 }
 
 TEST(CApiTest, NullFree)

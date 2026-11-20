@@ -251,16 +251,16 @@ TEST(CApiTest, NullQuadratic)
     EXPECT_EQ(BIYOS_addquadterms(held, 0, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addquadterms(held, 2, functions, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addquadterms(held, 1, nullptr, one, &variable, &variable, &value),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'functions': is null");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, nullptr, &variable, &value),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'firsts': is null");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, &variable, nullptr, &value),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'seconds': is null");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, &variable, &variable, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'values': is null");
     expect_sample(model);
 }
@@ -288,7 +288,7 @@ TEST(CApiTest, NullPairs)
     starts = kept.starts.data();
     firsts = kept.firsts.data();
     EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, starts, 5, nullptr, firsts, nullptr, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'needed': is null");
     expect_compressed(kept, blank(3, 5));
 }
@@ -313,36 +313,36 @@ TEST(CApiTest, RefusedQuadratic)
     const double values[] = {1.0, 2.0};
     const double nan = std::numeric_limits<double>::quiet_NaN();
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, late, firsts, seconds, values),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'starts': begins at 1, not 0");
     EXPECT_EQ(BIYOS_addquadterms(held, 2, functions, falling, firsts, seconds, values),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(),
               "invalid argument: argument 'starts': decreases from 1 to 0 at entry 2");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, negative, firsts, seconds, values),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(),
               "invalid argument: argument 'starts': decreases from 0 to -1 at entry 1");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, unknown, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function 3: unknown");
     EXPECT_EQ(BIYOS_addquadterms(held, 2, repeated, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'functions': function 1 is repeated");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, both, firsts, seconds, values),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function 0: variable 3 is unknown");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, both, seconds, firsts, values),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function 0: variable 3 is unknown");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, firsts, seconds, &nan),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function 0: coefficient of pair (1, 0) is NaN");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, both, crossed, seconds, values),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function 0: pair (0, 1) is repeated");
     EXPECT_EQ(BIYOS_addquadterms(held, -1, nullptr, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'count': -1 is negative");
     expect_sample(model);
 }
@@ -373,7 +373,7 @@ TEST(CApiTest, RefusedPairs)
                                      read.firsts.data(),
                                      read.seconds.data(),
                                      read.values.data()),
-                  BIYOS_INVALID_ARGUMENT);
+                  BIYOS_ERR_INVALIDARG);
         EXPECT_EQ(env.message(), messages[k]);
         EXPECT_EQ(needed, -1);
         expect_compressed(read, blank(3, 5));
@@ -389,7 +389,7 @@ TEST(CApiTest, RefusedPairs)
                                  read.firsts.data(),
                                  read.seconds.data(),
                                  read.values.data()),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'size': -1 is negative");
     EXPECT_EQ(needed, -1);
     expect_compressed(read, blank(3, 5));
@@ -404,11 +404,10 @@ TEST(CApiTest, LockedQuadratic)
     attempt.env = env.get();
     attempt.model = model.get();
     int id = 0;
-    const int message = BIYOS_EVENT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LEVEL_ERROR, &id),
-              BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
-    const std::vector<BIYOS_status> statuses{BIYOS_INVALID_ARGUMENT, BIYOS_OK};
+    const int message = BIYOS_EVT_MESSAGE;
+    ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
+    const std::vector<BIYOS_status> statuses{BIYOS_ERR_INVALIDARG, BIYOS_OK};
     EXPECT_EQ(attempt.statuses, statuses);
     EXPECT_EQ(attempt.messages[0],
               "invalid argument: model: is read-only while delivering an event");
@@ -431,9 +430,9 @@ TEST(CApiTest, HugeQuadratic)
     Compressed large = most;
     large.starts = {0, std::int64_t{1} << 59};
     const std::string message = "out of memory: model: no quadratic term offset left";
-    EXPECT_EQ(add_terms(model, function, most), BIYOS_NO_MEMORY);
+    EXPECT_EQ(add_terms(model, function, most), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
-    EXPECT_EQ(add_terms(model, function, large), BIYOS_NO_MEMORY);
+    EXPECT_EQ(add_terms(model, function, large), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
     expect_sample(model);
 }

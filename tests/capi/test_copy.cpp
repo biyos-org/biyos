@@ -131,8 +131,8 @@ void keep(const BIYOS_evt *event, void *data)
 int subscribe(const Env &env, std::vector<std::string> &texts)
 {
     int id = 0;
-    const int message = BIYOS_EVENT_MESSAGE;
-    EXPECT_EQ(BIYOS_addhook(env.get(), keep, &texts, message, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
+    const int message = BIYOS_EVT_MESSAGE;
+    EXPECT_EQ(BIYOS_addhook(env.get(), keep, &texts, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     return id;
 }
 
@@ -171,11 +171,11 @@ TEST(CApiTest, HeldCopy)
     const Held same = copied(source, source.env);
     const Held other = copied(source, created());
     EXPECT_EQ(BIYOS_freemodel(source.model), BIYOS_OK);
-    EXPECT_EQ(BIYOS_freeenv(source.env), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_freeenv(source.env), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(BIYOS_lasterror(source.env), held);
     EXPECT_EQ(BIYOS_freemodel(same.model), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(source.env), BIYOS_OK);
-    EXPECT_EQ(BIYOS_freeenv(other.env), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_freeenv(other.env), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(BIYOS_lasterror(other.env), held);
     EXPECT_EQ(BIYOS_freemodel(other.model), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(other.env), BIYOS_OK);
@@ -193,11 +193,11 @@ TEST(CApiTest, LockedCopy)
     std::vector<std::string> texts;
     const int kept = subscribe(idle, texts);
     int id = 0;
-    const int message = BIYOS_EVENT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(busy.get(), copy_inside, &delivery, message, BIYOS_LEVEL_ERROR, &id),
+    const int message = BIYOS_EVT_MESSAGE;
+    ASSERT_EQ(BIYOS_addhook(busy.get(), copy_inside, &delivery, message, BIYOS_LVL_ERR, &id),
               BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(busy.get(), BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
-    const BIYOS_status refused = BIYOS_INVALID_ARGUMENT;
+    EXPECT_EQ(BIYOS_setintopt(busy.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
+    const BIYOS_status refused = BIYOS_ERR_INVALIDARG;
     const std::vector<BIYOS_status> statuses{refused, BIYOS_OK, refused, BIYOS_OK};
     EXPECT_EQ(delivery.statuses, statuses);
     EXPECT_EQ(delivery.nulls, (std::vector<bool>{true, false, true, false}));
@@ -213,14 +213,14 @@ TEST(CApiTest, NullCopy)
     const Env env;
     const Model model(env);
     BIYOS_model *copy = model.get();
-    EXPECT_EQ(BIYOS_copymodel(nullptr, env.get(), &copy), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_copymodel(nullptr, env.get(), &copy), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(copy, nullptr);
     EXPECT_EQ(env.message(), "");
     copy = model.get();
-    EXPECT_EQ(BIYOS_copymodel(model.get(), nullptr, &copy), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_copymodel(model.get(), nullptr, &copy), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(copy, nullptr);
     EXPECT_EQ(env.message(), "invalid argument: argument 'env': is null");
-    EXPECT_EQ(BIYOS_copymodel(model.get(), env.get(), nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_copymodel(model.get(), env.get(), nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'copy': is null");
 }
 
@@ -237,7 +237,7 @@ TEST(CApiTest, CopyReports)
     const int index = 7;
     const double bound = 0.0;
     const std::string unknown = "invalid argument: variable 7: unknown";
-    EXPECT_EQ(BIYOS_setvarbounds(copy.model, 1, &index, &bound, &bound), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_setvarbounds(copy.model, 1, &index, &bound, &bound), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(to.message(), unknown);
     EXPECT_EQ(received, std::vector<std::string>{unknown});
     EXPECT_EQ(from.message(), "");

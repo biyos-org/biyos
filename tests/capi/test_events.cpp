@@ -91,12 +91,12 @@ void free_inside(const BIYOS_evt *, void *data)
 
 BIYOS_status listen(BIYOS_env *env, BIYOS_hook subscriber, void *data, int lowest, int *id)
 {
-    return BIYOS_addhook(env, subscriber, data, BIYOS_EVENT_MESSAGE, lowest, id);
+    return BIYOS_addhook(env, subscriber, data, BIYOS_EVT_MESSAGE, lowest, id);
 }
 
 void fail(const Env &env)
 {
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
 }
 
 struct Attempt
@@ -120,9 +120,9 @@ void change(const BIYOS_evt *, void *data)
     int id = 0;
     note(attempt, BIYOS_setboolopt(env, BIYOS_OPT_PRESOLVE, 0));
     note(attempt, BIYOS_setintopt(env, BIYOS_OPT_SEED, 42));
-    note(attempt, BIYOS_setdblopt(env, BIYOS_OPT_TIME_LIMIT, 1.0));
-    note(attempt, BIYOS_setstropt(env, BIYOS_OPT_REPRODUCER, "replay.txt"));
-    note(attempt, listen(env, receive, nullptr, BIYOS_LEVEL_DEBUG, &id));
+    note(attempt, BIYOS_setdblopt(env, BIYOS_OPT_MAXTIME, 1.0));
+    note(attempt, BIYOS_setstropt(env, BIYOS_OPT_REPRO, "replay.txt"));
+    note(attempt, listen(env, receive, nullptr, BIYOS_LVL_DBG, &id));
     note(attempt, BIYOS_delhook(env, 1));
     note(attempt, BIYOS_getintopt(env, BIYOS_OPT_SEED, &attempt.seed));
 }
@@ -134,12 +134,12 @@ TEST(CApiTest, Subscribe)
     const Env env;
     Inbox inbox;
     int id = 0;
-    ASSERT_EQ(listen(env.get(), receive, &inbox, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), receive, &inbox, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(id, 1);
     fail(env);
     EXPECT_EQ(inbox.calls, 1);
-    EXPECT_EQ(inbox.kind, BIYOS_EVENT_MESSAGE);
-    EXPECT_EQ(inbox.level, BIYOS_LEVEL_ERROR);
+    EXPECT_EQ(inbox.kind, BIYOS_EVT_MESSAGE);
+    EXPECT_EQ(inbox.level, BIYOS_LVL_ERR);
     EXPECT_EQ(inbox.module, "capi");
     EXPECT_EQ(inbox.text, "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
     EXPECT_EQ(inbox.text, env.message());
@@ -153,11 +153,11 @@ TEST(CApiTest, Unsubscribe)
     const Env env;
     Inbox inbox;
     int id = 0;
-    ASSERT_EQ(listen(env.get(), receive, &inbox, BIYOS_LEVEL_DEBUG, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), receive, &inbox, BIYOS_LVL_DBG, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(inbox.calls, 0);
-    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: subscription 1: unknown");
 }
 
@@ -167,9 +167,9 @@ TEST(CApiTest, ReadOnly)
     Attempt attempt;
     attempt.env = env.get();
     int id = 0;
-    ASSERT_EQ(listen(env.get(), change, &attempt, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), change, &attempt, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
-    const BIYOS_status refused = BIYOS_INVALID_ARGUMENT;
+    const BIYOS_status refused = BIYOS_ERR_INVALIDARG;
     const std::vector<BIYOS_status>
         statuses{refused, refused, refused, refused, refused, refused, BIYOS_OK};
     const std::string reason =
@@ -190,10 +190,10 @@ TEST(CApiTest, NestedFailure)
     Probe probe;
     probe.env = env.get();
     int id = 0;
-    ASSERT_EQ(listen(env.get(), unsubscribe_unknown, &probe, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), unsubscribe_unknown, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(probe.calls, 1);
-    EXPECT_EQ(probe.status, BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(probe.status, BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(probe.message,
               "invalid argument: environment: is read-only while delivering an event");
     EXPECT_EQ(env.message(), "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
@@ -207,11 +207,11 @@ TEST(CApiTest, TwoSubscribers)
     first.env = env.get();
     second.env = env.get();
     int id = 0;
-    ASSERT_EQ(listen(env.get(), refuse, &first, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
-    ASSERT_EQ(listen(env.get(), read_error, &second, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), refuse, &first, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), read_error, &second, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
     const std::string failure = "invalid argument: option 'seed': -1 is outside [0, 2147483647]";
-    EXPECT_EQ(first.status, BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(first.status, BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(first.message,
               "invalid argument: environment: is read-only while delivering an event");
     EXPECT_EQ(second.calls, 1);
@@ -225,10 +225,10 @@ TEST(CApiTest, BusyFree)
     Probe probe;
     probe.env = env.get();
     int id = 0;
-    ASSERT_EQ(listen(env.get(), free_inside, &probe, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), free_inside, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(probe.calls, 1);
-    EXPECT_EQ(probe.status, BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(probe.status, BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(probe.message,
               "invalid argument: environment: is read-only while delivering an event");
     int seed = -1;
@@ -242,17 +242,16 @@ TEST(CApiTest, BadSubscribe)
     const Env env;
     Inbox inbox;
     int id = 0;
-    const int message = BIYOS_EVENT_MESSAGE;
-    const int debug = BIYOS_LEVEL_DEBUG;
-    EXPECT_EQ(BIYOS_addhook(env.get(), nullptr, &inbox, message, debug, &id),
-              BIYOS_INVALID_ARGUMENT);
+    const int message = BIYOS_EVT_MESSAGE;
+    const int debug = BIYOS_LVL_DBG;
+    EXPECT_EQ(BIYOS_addhook(env.get(), nullptr, &inbox, message, debug, &id), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'subscriber': is null");
-    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, 0, debug, &id), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, 0, debug, &id), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: event kind 0: unknown");
-    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, 9, &id), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, 9, &id), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: level 9: unknown");
     EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, debug, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'subscription': is null");
     EXPECT_EQ(inbox.calls, 0);
     EXPECT_EQ(id, 0);
@@ -261,8 +260,8 @@ TEST(CApiTest, BadSubscribe)
 TEST(CApiTest, NullSubscribe)
 {
     int id = 0;
-    EXPECT_EQ(listen(nullptr, receive, nullptr, BIYOS_LEVEL_DEBUG, &id), BIYOS_INVALID_ARGUMENT);
-    EXPECT_EQ(BIYOS_delhook(nullptr, 1), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(listen(nullptr, receive, nullptr, BIYOS_LVL_DBG, &id), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_delhook(nullptr, 1), BIYOS_ERR_INVALIDARG);
 }
 
 TEST(CApiTest, Accessors)
@@ -276,8 +275,8 @@ TEST(CApiTest, Accessors)
         .fields = {{.name = "rows", .value = "3"}, {.name = "columns", .value = "1"}},
     };
     const BIYOS_evt view{&event};
-    EXPECT_EQ(BIYOS_getevtkind(&view), BIYOS_EVENT_MESSAGE);
-    EXPECT_EQ(BIYOS_getevtlvl(&view), BIYOS_LEVEL_WARNING);
+    EXPECT_EQ(BIYOS_getevtkind(&view), BIYOS_EVT_MESSAGE);
+    EXPECT_EQ(BIYOS_getevtlvl(&view), BIYOS_LVL_WARN);
     EXPECT_STREQ(BIYOS_getevtmodule(&view), "presolve");
     EXPECT_STREQ(BIYOS_getevttext(&view), "removed rows");
     EXPECT_EQ(BIYOS_getnevtfields(&view), 2);

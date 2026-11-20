@@ -169,7 +169,7 @@ TEST(CApiTest, FirstFunction)
     EXPECT_EQ(first, 5);
     const double infinite = kInfinity;
     EXPECT_EQ(BIYOS_addfuns(model.get(), 1, &infinite, nullptr, nullptr, nullptr, &first),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(first, 5);
     EXPECT_EQ(function_count(model), 6);
 }
@@ -263,11 +263,10 @@ TEST(CApiTest, NullFunctions)
     const std::int64_t one[] = {0, 1};
     const int variable = 0;
     const double value = 1.0;
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, nullptr, &value, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, nullptr, &value, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'variables': is null");
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, &variable, nullptr, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'values': is null");
     EXPECT_EQ(function_count(model), 4);
 }
@@ -291,10 +290,10 @@ TEST(CApiTest, NullTerms)
               BIYOS_OK);
     expect_compressed(read, kSorted);
     Compressed untouched = blank(3, 5);
-    EXPECT_EQ(fill(model, 0, 3, untouched, 5, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(fill(model, 0, 3, untouched, 5, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'needed': is null");
     expect_compressed(untouched, blank(3, 5));
-    EXPECT_EQ(BIYOS_getnfuns(held, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_getnfuns(held, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'count': is null");
 }
 
@@ -311,33 +310,33 @@ TEST(CApiTest, RefusedFunctions)
     const double values[] = {1.0, 2.0};
     const double nan = std::numeric_limits<double>::quiet_NaN();
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, late, variables, values, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'starts': begins at 1, not 0");
     EXPECT_EQ(BIYOS_addfuns(held, 2, nullptr, falling, variables, values, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(),
               "invalid argument: argument 'starts': decreases from 1 to 0 at entry 2");
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, negative, variables, values, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(),
               "invalid argument: argument 'starts': decreases from 0 to -1 at entry 1");
     const std::int64_t both[] = {0, 2};
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, both, variables, values, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function 3: variable 3 is unknown");
     EXPECT_EQ(BIYOS_addfuns(held, 1, &nan, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function 3: constant is NaN");
     EXPECT_EQ(BIYOS_addfuns(held, -1, nullptr, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'count': -1 is negative");
     std::int64_t needed = -1;
     Compressed untouched = blank(3, 5);
-    EXPECT_EQ(fill(model, 2, 2, untouched, 5, &needed), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(fill(model, 2, 2, untouched, 5, &needed), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function 3: unknown");
-    EXPECT_EQ(fill(model, -1, 1, untouched, 5, &needed), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(fill(model, -1, 1, untouched, 5, &needed), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function -1: unknown");
-    EXPECT_EQ(fill(model, 0, 1, untouched, -1, &needed), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(fill(model, 0, 1, untouched, -1, &needed), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'size': -1 is negative");
     EXPECT_EQ(needed, -1);
     expect_compressed(untouched, blank(3, 5));
@@ -355,11 +354,10 @@ TEST(CApiTest, LockedFunctions)
     attempt.model = model.get();
     ASSERT_EQ(BIYOS_addfuns(model.get(), 1, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     int id = 0;
-    const int message = BIYOS_EVENT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LEVEL_ERROR, &id),
-              BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
-    const std::vector<BIYOS_status> statuses{BIYOS_INVALID_ARGUMENT, BIYOS_OK, BIYOS_OK};
+    const int message = BIYOS_EVT_MESSAGE;
+    ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
+    const std::vector<BIYOS_status> statuses{BIYOS_ERR_INVALIDARG, BIYOS_OK, BIYOS_OK};
     EXPECT_EQ(attempt.statuses, statuses);
     EXPECT_EQ(attempt.messages[0],
               "invalid argument: model: is read-only while delivering an event");
@@ -377,9 +375,11 @@ TEST(CApiTest, HugeFunctions)
     const std::int64_t large[] = {0, std::int64_t{1} << 59};
     const int variables[] = {0, 1};
     const double values[] = {1.0, 2.0};
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, most, variables, values, nullptr), BIYOS_NO_MEMORY);
+    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, most, variables, values, nullptr),
+              BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), "out of memory: model: no term offset left");
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, large, variables, values, nullptr), BIYOS_NO_MEMORY);
+    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, large, variables, values, nullptr),
+              BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), "out of memory: model: no term offset left");
     Compressed read = blank(3, 5);
     EXPECT_EQ(read_functions(model, 0, 3, read), 5);

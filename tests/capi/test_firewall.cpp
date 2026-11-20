@@ -53,64 +53,64 @@ TEST(FirewallTest, InvalidArgument)
 {
     const BIYOS_status status = status_after(
         [] { throw biyos::Error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative"); });
-    EXPECT_EQ(status, BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(status, BIYOS_ERR_INVALIDARG);
 }
 
 TEST(FirewallTest, NoMemory)
 {
     const BIYOS_status status = status_after(
         [] { throw biyos::Error(biyos::ErrorKind::NoMemory, "workspace", "too large"); });
-    EXPECT_EQ(status, BIYOS_NO_MEMORY);
+    EXPECT_EQ(status, BIYOS_ERR_NOMEMORY);
 }
 
 TEST(FirewallTest, Internal)
 {
     const BIYOS_status status = status_after(
         [] { throw biyos::Error(biyos::ErrorKind::Internal, "", "unreachable state"); });
-    EXPECT_EQ(status, BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(status, BIYOS_ERR_INTERNAL);
 }
 
 TEST(FirewallTest, BadAlloc)
 {
-    EXPECT_EQ(status_after([] { throw std::bad_alloc(); }), BIYOS_NO_MEMORY);
+    EXPECT_EQ(status_after([] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
 }
 
 TEST(FirewallTest, ForeignException)
 {
-    EXPECT_EQ(status_after([] { throw std::runtime_error("foreign"); }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(status_after([] { throw std::runtime_error("foreign"); }), BIYOS_ERR_INTERNAL);
 }
 
 TEST(FirewallTest, UnknownException)
 {
-    EXPECT_EQ(status_after([] { throw 42; }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(status_after([] { throw 42; }), BIYOS_ERR_INTERNAL);
 }
 
 TEST(FirewallTest, ErrorMessage)
 {
     biyos::Environment env;
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
-    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.last_error(), "invalid argument: argument 'n': negative");
 }
 
 TEST(FirewallTest, MemoryMessage)
 {
     biyos::Environment env;
-    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_NO_MEMORY);
+    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error(), "out of memory");
 }
 
 TEST(FirewallTest, ForeignMessage)
 {
     biyos::Environment env;
-    EXPECT_EQ(status_after(env, [] { throw std::runtime_error("foreign"); }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(status_after(env, [] { throw std::runtime_error("foreign"); }), BIYOS_ERR_INTERNAL);
     EXPECT_EQ(env.last_error(), "internal error: foreign");
 }
 
 TEST(FirewallTest, UnknownMessage)
 {
     biyos::Environment env;
-    EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
     EXPECT_EQ(env.last_error(), "internal error: unknown exception");
 }
 
@@ -130,9 +130,9 @@ TEST(FirewallTest, ErrorEvent)
     env.events().subscribe(EventKind::Message, Level::Error, keep);
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
     EXPECT_EQ(status_after(env, [] {}), BIYOS_OK);
-    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_INVALID_ARGUMENT);
-    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_NO_MEMORY);
-    EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
     ASSERT_EQ(kept.size(), 3U);
     EXPECT_EQ(kept[0].kind, EventKind::Message);
     EXPECT_EQ(kept[0].level, Level::Error);
@@ -149,9 +149,9 @@ TEST(FirewallTest, ErrorCode)
     const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
     env.events().subscribe(EventKind::Message, Level::Error, keep);
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
-    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_INVALID_ARGUMENT);
-    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_NO_MEMORY);
-    EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
     ASSERT_EQ(kept.size(), 3U);
     const char *codes[] = {"-100", "-400", "-500"};
     for (std::size_t i = 0; i < kept.size(); ++i)
@@ -169,7 +169,7 @@ TEST(FirewallTest, ThrowingSubscriber)
     env.events().subscribe(EventKind::Message, Level::Debug, fail);
     EXPECT_EQ(status_after(env, [&] { say(env, "info"); }), BIYOS_OK);
     EXPECT_EQ(env.last_error(), "");
-    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_NO_MEMORY);
+    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error(), "out of memory");
 }
 
@@ -193,7 +193,7 @@ TEST(FirewallTest, CurrentMessage)
     std::string seen;
     const auto read = [&](const biyos::Event &) { seen = env.last_error(); };
     env.events().subscribe(EventKind::Message, Level::Error, read);
-    EXPECT_EQ(status_after(env, [] { throw std::runtime_error("now"); }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(status_after(env, [] { throw std::runtime_error("now"); }), BIYOS_ERR_INTERNAL);
     EXPECT_EQ(seen, "internal error: now");
 }
 
@@ -203,7 +203,7 @@ TEST(FirewallTest, NestedFailure)
     int calls = 0;
     const auto nest = [&](const biyos::Event &) { fail_inside(env, calls); };
     env.events().subscribe(EventKind::Message, Level::Error, nest);
-    EXPECT_EQ(status_after(env, [] { throw std::runtime_error("outer"); }), BIYOS_INTERNAL_ERROR);
+    EXPECT_EQ(status_after(env, [] { throw std::runtime_error("outer"); }), BIYOS_ERR_INTERNAL);
     EXPECT_EQ(calls, 1);
     EXPECT_EQ(env.last_error(), "internal error: outer");
 }

@@ -20,13 +20,13 @@ inline BIYOS_status status_of(ErrorKind kind) noexcept
     switch (kind)
     {
     case ErrorKind::InvalidArgument:
-        return BIYOS_INVALID_ARGUMENT;
+        return BIYOS_ERR_INVALIDARG;
     case ErrorKind::NoMemory:
-        return BIYOS_NO_MEMORY;
+        return BIYOS_ERR_NOMEMORY;
     case ErrorKind::Internal:
-        return BIYOS_INTERNAL_ERROR;
+        return BIYOS_ERR_INTERNAL;
     }
-    return BIYOS_INTERNAL_ERROR;
+    return BIYOS_ERR_INTERNAL;
 }
 
 inline void describe_failure(Event &event, BIYOS_status status, std::string_view text)

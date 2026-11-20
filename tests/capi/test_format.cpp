@@ -136,9 +136,9 @@ TEST(CApiTest, BadFormat)
     std::size_t needed = 7;
     for (const Format format : {BIYOS_fmttext, BIYOS_fmtjson})
     {
-        EXPECT_EQ(format(nullptr, buffer.data(), buffer.size(), &needed), BIYOS_INVALID_ARGUMENT);
-        EXPECT_EQ(format(&view, buffer.data(), buffer.size(), nullptr), BIYOS_INVALID_ARGUMENT);
-        EXPECT_EQ(format(&view, nullptr, 1, &needed), BIYOS_INVALID_ARGUMENT);
+        EXPECT_EQ(format(nullptr, buffer.data(), buffer.size(), &needed), BIYOS_ERR_INVALIDARG);
+        EXPECT_EQ(format(&view, buffer.data(), buffer.size(), nullptr), BIYOS_ERR_INVALIDARG);
+        EXPECT_EQ(format(&view, nullptr, 1, &needed), BIYOS_ERR_INVALIDARG);
     }
     EXPECT_STREQ(buffer.data(), "abc");
     EXPECT_EQ(needed, 7U);
@@ -150,9 +150,9 @@ TEST(CApiTest, ErrorLine)
     ASSERT_EQ(BIYOS_newenv(&env), BIYOS_OK);
     Lines lines;
     int id = 0;
-    const int kind = BIYOS_EVENT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(env, keep, &lines, kind, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(env, BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
+    const int kind = BIYOS_EVT_MESSAGE;
+    ASSERT_EQ(BIYOS_addhook(env, keep, &lines, kind, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setintopt(env, BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
     const std::string text = "invalid argument: option 'seed': -1 is outside [0, 2147483647]";
     const std::string head = R"(,"kind":"message","level":"error","module":"capi","text":")";
     const std::string tail = R"(","fields":{"code":"-100"}})";

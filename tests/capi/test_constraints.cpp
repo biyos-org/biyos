@@ -137,7 +137,7 @@ TEST(CApiTest, FirstConstraint)
     EXPECT_EQ(first, 5);
     const int unknown = 1;
     EXPECT_EQ(BIYOS_addcons(model.get(), 1, &unknown, nullptr, nullptr, &first),
-              BIYOS_INVALID_ARGUMENT);
+              BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(first, 5);
     EXPECT_EQ(constraint_count(model), 6);
 }
@@ -196,7 +196,7 @@ TEST(CApiTest, NullConstraints)
         .upper = {kInfinity, kInfinity, kInfinity, kInfinity, 0.5, 0.75},
     };
     expect_records(read_all(model), wanted);
-    EXPECT_EQ(BIYOS_addcons(held, 1, nullptr, bounds, bounds, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_addcons(held, 1, nullptr, bounds, bounds, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'functions': is null");
     EXPECT_EQ(constraint_count(model), 6);
 }
@@ -217,7 +217,7 @@ TEST(CApiTest, NullBounds)
     ASSERT_EQ(BIYOS_setconbounds(held, 2, indices, nullptr, nullptr), BIYOS_OK);
     const Records wanted{.functions = {0, 0}, .lower = {2.0, 1.0}, .upper = {kInfinity, 3.0}};
     expect_records(read_all(model), wanted);
-    EXPECT_EQ(BIYOS_setconbounds(held, 2, nullptr, lower, upper), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_setconbounds(held, 2, nullptr, lower, upper), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'indices': is null");
     EXPECT_EQ(BIYOS_setconbounds(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
 }
@@ -233,7 +233,7 @@ TEST(CApiTest, NullReads)
     EXPECT_EQ(BIYOS_getcons(model.get(), 1, 2, functions, nullptr, high), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({functions[0], functions[1]}), std::vector<int>({0, 1}));
     expect_doubles({high[0], high[1]}, {kInfinity, 2.0});
-    EXPECT_EQ(BIYOS_getncons(model.get(), nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_getncons(model.get(), nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'count': is null");
 }
 
@@ -245,23 +245,23 @@ TEST(CApiTest, RefusedConstraints)
     BIYOS_model *held = model.get();
     const int functions[] = {0, 2};
     const double nan = std::numeric_limits<double>::quiet_NaN();
-    EXPECT_EQ(BIYOS_addcons(held, 2, functions, nullptr, nullptr, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_addcons(held, 2, functions, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 4: function 2 is unknown");
-    EXPECT_EQ(BIYOS_addcons(held, 1, functions, &nan, nullptr, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_addcons(held, 1, functions, &nan, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: lower bound is NaN");
-    EXPECT_EQ(BIYOS_addcons(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_addcons(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'count': -1 is negative");
     const int index = 3;
     const double bound = 0.0;
-    EXPECT_EQ(BIYOS_setconbounds(held, 1, &index, &bound, &bound), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_setconbounds(held, 1, &index, &bound, &bound), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
     const int first = 0;
     const double infinite = kInfinity;
-    EXPECT_EQ(BIYOS_setconbounds(held, 1, &first, &infinite, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_setconbounds(held, 1, &first, &infinite, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 0: lower bound is infinity");
-    EXPECT_EQ(BIYOS_getcons(held, 2, 2, nullptr, nullptr, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_getcons(held, 2, 2, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
-    EXPECT_EQ(BIYOS_getcons(held, -1, 1, nullptr, nullptr, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_getcons(held, -1, 1, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint -1: unknown");
     expect_records(read_all(model), kSample);
 }
@@ -277,11 +277,10 @@ TEST(CApiTest, LockedConstraints)
     const int function = 0;
     ASSERT_EQ(BIYOS_addcons(model.get(), 1, &function, nullptr, nullptr, nullptr), BIYOS_OK);
     int id = 0;
-    const int message = BIYOS_EVENT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LEVEL_ERROR, &id),
-              BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
-    const BIYOS_status refused = BIYOS_INVALID_ARGUMENT;
+    const int message = BIYOS_EVT_MESSAGE;
+    ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
+    const BIYOS_status refused = BIYOS_ERR_INVALIDARG;
     const std::vector<BIYOS_status> statuses{refused, refused, BIYOS_OK, BIYOS_OK};
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
     EXPECT_EQ(attempt.statuses, statuses);
