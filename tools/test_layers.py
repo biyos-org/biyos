@@ -25,7 +25,7 @@ class LayerTest(unittest.TestCase):
         path.write_text(text)
 
     def problems(self):
-        return check(self.root / "src", self.layers)
+        return check(self.root / "src", self.layers, {})
 
     def test_allowed(self):
         self.source("tree/node.hpp", '#include "core/error.hpp"\n')
