@@ -17,12 +17,12 @@ namespace
 using biyos::EventKind;
 using biyos::Level;
 
-biyos_status status_after(const std::function<void()> &body)
+BIYOS_status status_after(const std::function<void()> &body)
 {
     return biyos::capi::guard(body);
 }
 
-biyos_status status_after(biyos::Environment &env, const std::function<void()> &body)
+BIYOS_status status_after(biyos::Environment &env, const std::function<void()> &body)
 {
     return biyos::capi::guard(&env, body);
 }
@@ -51,21 +51,21 @@ TEST(FirewallTest, NoThrow)
 
 TEST(FirewallTest, InvalidArgument)
 {
-    const biyos_status status = status_after(
+    const BIYOS_status status = status_after(
         [] { throw biyos::Error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative"); });
     EXPECT_EQ(status, BIYOS_INVALID_ARGUMENT);
 }
 
 TEST(FirewallTest, NoMemory)
 {
-    const biyos_status status = status_after(
+    const BIYOS_status status = status_after(
         [] { throw biyos::Error(biyos::ErrorKind::NoMemory, "workspace", "too large"); });
     EXPECT_EQ(status, BIYOS_NO_MEMORY);
 }
 
 TEST(FirewallTest, Internal)
 {
-    const biyos_status status = status_after(
+    const BIYOS_status status = status_after(
         [] { throw biyos::Error(biyos::ErrorKind::Internal, "", "unreachable state"); });
     EXPECT_EQ(status, BIYOS_INTERNAL_ERROR);
 }

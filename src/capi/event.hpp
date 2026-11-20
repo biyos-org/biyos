@@ -3,7 +3,7 @@
 #include "biyos/biyos.h"
 #include "core/events.hpp"
 
-struct biyos_event
+struct BIYOS_evt
 {
     const biyos::Event *core;
 };

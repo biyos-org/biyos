@@ -148,8 +148,8 @@ def test_values(model, monkeypatch):
     lower = array.array("d", [0.0, 1.0])
     upper = array.array("d", [2.0, 3.0])
     seen = []
-    spy = partial(recorded, seen, lib.biyos_add_constraints)
-    monkeypatch.setattr(lib, "biyos_add_constraints", spy)
+    spy = partial(recorded, seen, lib.BIYOS_addcons)
+    monkeypatch.setattr(lib, "BIYOS_addcons", spy)
     model.add_constraints([0, 1], lower, upper)
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][3]) == lower.buffer_info()[0]
@@ -167,8 +167,8 @@ def test_growing(model):
 def test_stale(model, monkeypatch):
     add_sample(model)
     monkeypatch.setattr(model, "constraint_count", lambda: 0)
-    spy = Room(lib.biyos_get_constraints, read_lengths)
-    monkeypatch.setattr(lib, "biyos_get_constraints", spy)
+    spy = Room(lib.BIYOS_getcons, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getcons", spy)
     assert model.get_constraints(0, 3) == SAMPLE
     assert model.get_constraints(1) == ([], [], [])
 

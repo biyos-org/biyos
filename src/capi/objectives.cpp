@@ -74,7 +74,7 @@ std::vector<biyos::Objective> new_objectives(std::span<const biyos::Index> funct
     return added;
 }
 
-void add_objectives(biyos_model &model,
+void add_objectives(BIYOS_model &model,
                     int count,
                     const int *functions,
                     const int *senses,
@@ -102,7 +102,7 @@ void add_objectives(biyos_model &model,
     }
 }
 
-void set_objectives(biyos_model &model,
+void set_objectives(BIYOS_model &model,
                     int count,
                     const int *indices,
                     const int *senses,
@@ -129,7 +129,7 @@ void set_objectives(biyos_model &model,
     core.set_objectives(changed, objectives);
 }
 
-void objective_count(biyos_model &model, int *count)
+void objective_count(BIYOS_model &model, int *count)
 {
     *require(count, "count") = model.core.objective_count();
 }
@@ -144,7 +144,7 @@ void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &o
     put(outputs.relative, k, objective.relative);
 }
 
-void get_objectives(biyos_model &model,
+void get_objectives(BIYOS_model &model,
                     int first,
                     int count,
                     int *functions,
@@ -171,15 +171,15 @@ void get_objectives(biyos_model &model,
 
 }
 
-biyos_status biyos_add_objectives(biyos_model *model,
-                                  int count,
-                                  const int *functions,
-                                  const int *senses,
-                                  const int *priorities,
-                                  const double *weights,
-                                  const double *absolute,
-                                  const double *relative,
-                                  int *first)
+BIYOS_status BIYOS_addobjs(BIYOS_model *model,
+                           int count,
+                           const int *functions,
+                           const int *senses,
+                           const int *priorities,
+                           const double *weights,
+                           const double *absolute,
+                           const double *relative,
+                           int *first)
 {
     return guarded<add_objectives>(model,
                                    count,
@@ -192,14 +192,14 @@ biyos_status biyos_add_objectives(biyos_model *model,
                                    first);
 }
 
-biyos_status biyos_set_objectives(biyos_model *model,
-                                  int count,
-                                  const int *indices,
-                                  const int *senses,
-                                  const int *priorities,
-                                  const double *weights,
-                                  const double *absolute,
-                                  const double *relative)
+BIYOS_status BIYOS_setobjs(BIYOS_model *model,
+                           int count,
+                           const int *indices,
+                           const int *senses,
+                           const int *priorities,
+                           const double *weights,
+                           const double *absolute,
+                           const double *relative)
 {
     return guarded<set_objectives>(model,
                                    count,
@@ -211,20 +211,20 @@ biyos_status biyos_set_objectives(biyos_model *model,
                                    relative);
 }
 
-biyos_status biyos_objective_count(biyos_model *model, int *count)
+BIYOS_status BIYOS_getnobjs(BIYOS_model *model, int *count)
 {
     return guarded<objective_count>(model, count);
 }
 
-biyos_status biyos_get_objectives(biyos_model *model,
-                                  int first,
-                                  int count,
-                                  int *functions,
-                                  int *senses,
-                                  int *priorities,
-                                  double *weights,
-                                  double *absolute,
-                                  double *relative)
+BIYOS_status BIYOS_getobjs(BIYOS_model *model,
+                           int first,
+                           int count,
+                           int *functions,
+                           int *senses,
+                           int *priorities,
+                           double *weights,
+                           double *absolute,
+                           double *relative)
 {
     return guarded<get_objectives>(model,
                                    first,

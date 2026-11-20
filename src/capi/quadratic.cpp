@@ -22,7 +22,7 @@ using biyos::capi::write_starts;
 namespace
 {
 
-void add_terms(biyos_model &model,
+void add_terms(BIYOS_model &model,
                int count,
                const int *functions,
                const std::int64_t *starts,
@@ -39,7 +39,7 @@ void add_terms(biyos_model &model,
     core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, firsts, seconds, values));
 }
 
-void get_terms(biyos_model &model,
+void get_terms(BIYOS_model &model,
                int first,
                int count,
                std::int64_t *starts,
@@ -60,26 +60,26 @@ void get_terms(biyos_model &model,
 
 }
 
-biyos_status biyos_add_quadratic_terms(biyos_model *model,
-                                       int count,
-                                       const int *functions,
-                                       const int64_t *starts,
-                                       const int *firsts,
-                                       const int *seconds,
-                                       const double *values)
+BIYOS_status BIYOS_addquadterms(BIYOS_model *model,
+                                int count,
+                                const int *functions,
+                                const int64_t *starts,
+                                const int *firsts,
+                                const int *seconds,
+                                const double *values)
 {
     return guarded<add_terms>(model, count, functions, starts, firsts, seconds, values);
 }
 
-biyos_status biyos_get_quadratic_terms(biyos_model *model,
-                                       int first,
-                                       int count,
-                                       int64_t *starts,
-                                       int64_t size,
-                                       int64_t *needed,
-                                       int *firsts,
-                                       int *seconds,
-                                       double *values)
+BIYOS_status BIYOS_getquadterms(BIYOS_model *model,
+                                int first,
+                                int count,
+                                int64_t *starts,
+                                int64_t size,
+                                int64_t *needed,
+                                int *firsts,
+                                int *seconds,
+                                double *values)
 {
     return guarded<get_terms>(model, first, count, starts, size, needed, firsts, seconds, values);
 }

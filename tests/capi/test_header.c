@@ -77,16 +77,16 @@
 #error "a public operator changed"
 #endif
 
-static void count(const biyos_event *event, void *user_data)
+static void count(const BIYOS_evt *event, void *data)
 {
-    int *errors = user_data;
-    if (biyos_event_level(event) == BIYOS_LEVEL_ERROR)
+    int *errors = data;
+    if (BIYOS_getevtlvl(event) == BIYOS_LEVEL_ERROR)
     {
         ++*errors;
     }
 }
 
-static biyos_status use_functions(biyos_model *model)
+static BIYOS_status use_functions(BIYOS_model *model)
 {
     const double constants[2] = {1.0, 2.0};
     const int64_t starts[3] = {0, 2, 3};
@@ -98,12 +98,12 @@ static biyos_status use_functions(biyos_model *model)
     double kept[3] = {0.0, 0.0, 0.0};
     int first = -1;
     int functions = 0;
-    if (biyos_add_functions(model, 2, constants, starts, variables, values, &first) != BIYOS_OK ||
-        first != 0 || biyos_function_count(model, &functions) != BIYOS_OK || functions != 2)
+    if (BIYOS_addfuns(model, 2, constants, starts, variables, values, &first) != BIYOS_OK ||
+        first != 0 || BIYOS_getnfuns(model, &functions) != BIYOS_OK || functions != 2)
     {
         return BIYOS_INTERNAL_ERROR;
     }
-    if (biyos_get_functions(model, 0, 2, NULL, offsets, 3, &needed, held, kept) != BIYOS_OK ||
+    if (BIYOS_getfuns(model, 0, 2, NULL, offsets, 3, &needed, held, kept) != BIYOS_OK ||
         needed != 3 || offsets[1] != 2 || held[0] != 0 || held[1] != 1)
     {
         return BIYOS_INTERNAL_ERROR;
@@ -111,7 +111,7 @@ static biyos_status use_functions(biyos_model *model)
     return BIYOS_OK;
 }
 
-static biyos_status use_quadratic(biyos_model *model)
+static BIYOS_status use_quadratic(BIYOS_model *model)
 {
     const int functions[1] = {1};
     const int64_t starts[2] = {0, 2};
@@ -122,11 +122,10 @@ static biyos_status use_quadratic(biyos_model *model)
     int64_t needed = -1;
     int held[2] = {-1, -1};
     int paired[2] = {-1, -1};
-    biyos_status status =
-        biyos_add_quadratic_terms(model, 1, functions, starts, firsts, seconds, values);
+    BIYOS_status status = BIYOS_addquadterms(model, 1, functions, starts, firsts, seconds, values);
     if (status == BIYOS_OK)
     {
-        status = biyos_get_quadratic_terms(model, 0, 2, offsets, 2, &needed, held, paired, NULL);
+        status = BIYOS_getquadterms(model, 0, 2, offsets, 2, &needed, held, paired, NULL);
     }
     if (status != BIYOS_OK || needed != 2 || offsets[1] != 0 || offsets[2] != 2 || held[1] != 0 ||
         paired[1] != 1)
@@ -136,7 +135,7 @@ static biyos_status use_quadratic(biyos_model *model)
     return BIYOS_OK;
 }
 
-static biyos_status use_constraints(biyos_model *model)
+static BIYOS_status use_constraints(BIYOS_model *model)
 {
     const int functions[2] = {1, 1};
     const double lower[2] = {0.0, -1.0};
@@ -144,17 +143,17 @@ static biyos_status use_constraints(biyos_model *model)
     int found[2] = {-1, -1};
     int first = -1;
     int constraints = 0;
-    if (biyos_add_constraints(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
-        biyos_set_constraint_bounds(model, 1, indices, NULL, lower) != BIYOS_OK ||
-        biyos_constraint_count(model, &constraints) != BIYOS_OK || constraints != 2 ||
-        biyos_get_constraints(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1)
+    if (BIYOS_addcons(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
+        BIYOS_setconbounds(model, 1, indices, NULL, lower) != BIYOS_OK ||
+        BIYOS_getncons(model, &constraints) != BIYOS_OK || constraints != 2 ||
+        BIYOS_getcons(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1)
     {
         return BIYOS_INTERNAL_ERROR;
     }
     return BIYOS_OK;
 }
 
-static biyos_status use_objectives(biyos_model *model)
+static BIYOS_status use_objectives(BIYOS_model *model)
 {
     const int functions[2] = {0, 1};
     const int senses[2] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
@@ -164,19 +163,19 @@ static biyos_status use_objectives(biyos_model *model)
     int priorities[2] = {-1, -1};
     int first = -1;
     int objectives = 0;
-    biyos_status status =
-        biyos_add_objectives(model, 2, functions, senses, NULL, NULL, NULL, NULL, &first);
+    BIYOS_status status =
+        BIYOS_addobjs(model, 2, functions, senses, NULL, NULL, NULL, NULL, &first);
     if (status == BIYOS_OK)
     {
-        status = biyos_set_objectives(model, 1, indices, NULL, NULL, weights, NULL, NULL);
+        status = BIYOS_setobjs(model, 1, indices, NULL, NULL, weights, NULL, NULL);
     }
     if (status == BIYOS_OK)
     {
-        status = biyos_objective_count(model, &objectives);
+        status = BIYOS_getnobjs(model, &objectives);
     }
     if (status == BIYOS_OK)
     {
-        status = biyos_get_objectives(model, 0, 2, NULL, found, priorities, NULL, NULL, NULL);
+        status = BIYOS_getobjs(model, 0, 2, NULL, found, priorities, NULL, NULL, NULL);
     }
     if (status != BIYOS_OK || first != 0 || objectives != 2 || found[0] != BIYOS_MAXIMIZE ||
         found[1] != BIYOS_MINIMIZE || priorities[1] != 1)
@@ -186,17 +185,16 @@ static biyos_status use_objectives(biyos_model *model)
     return BIYOS_OK;
 }
 
-static biyos_status use_copy(biyos_env *env, biyos_model *model)
+static BIYOS_status use_copy(BIYOS_env *env, BIYOS_model *model)
 {
-    biyos_model *copy = NULL;
+    BIYOS_model *copy = NULL;
     int constraints = 0;
-    biyos_status status = biyos_model_copy(model, env, &copy);
-    if (status == BIYOS_OK &&
-        (biyos_constraint_count(copy, &constraints) != BIYOS_OK || constraints != 2))
+    BIYOS_status status = BIYOS_copymodel(model, env, &copy);
+    if (status == BIYOS_OK && (BIYOS_getncons(copy, &constraints) != BIYOS_OK || constraints != 2))
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (biyos_model_free(copy) != BIYOS_OK)
+    if (BIYOS_freemodel(copy) != BIYOS_OK)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
@@ -205,9 +203,9 @@ static biyos_status use_copy(biyos_env *env, biyos_model *model)
 
 int main(void)
 {
-    biyos_status status = BIYOS_OK;
-    biyos_env *env = NULL;
-    biyos_model *model = NULL;
+    BIYOS_status status = BIYOS_OK;
+    BIYOS_env *env = NULL;
+    BIYOS_model *model = NULL;
     int major = -1;
     int minor = -1;
     int patch = -1;
@@ -223,37 +221,37 @@ int main(void)
     int found[2] = {0, 0};
     int first = -1;
     int variables = 0;
-    biyos_version(&major, &minor, &patch);
+    BIYOS_version(&major, &minor, &patch);
     if (major < 0 || minor < 0 || patch < 0)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (biyos_env_create(&env) != BIYOS_OK || biyos_last_error_message(env)[0] != '\0')
+    if (BIYOS_newenv(&env) != BIYOS_OK || BIYOS_lasterror(env)[0] != '\0')
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (biyos_set_int_option(env, BIYOS_OPT_SEED, 3) != BIYOS_OK ||
-        biyos_get_int_option(env, BIYOS_OPT_SEED, &seed) != BIYOS_OK || seed != 3)
+    if (BIYOS_setintopt(env, BIYOS_OPT_SEED, 3) != BIYOS_OK ||
+        BIYOS_getintopt(env, BIYOS_OPT_SEED, &seed) != BIYOS_OK || seed != 3)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (biyos_option_kind(env, BIYOS_OPT_SEED, &kind) != BIYOS_OK || kind != BIYOS_KIND_INT)
+    if (BIYOS_getoptkind(env, BIYOS_OPT_SEED, &kind) != BIYOS_OK || kind != BIYOS_KIND_INT)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (biyos_subscribe(env, count, &errors, BIYOS_EVENT_MESSAGE, lowest, &id) != BIYOS_OK ||
-        biyos_set_int_option(env, BIYOS_OPT_SEED, -1) != BIYOS_INVALID_ARGUMENT ||
-        biyos_unsubscribe(env, id) != BIYOS_OK || errors != 1)
+    if (BIYOS_addhook(env, count, &errors, BIYOS_EVENT_MESSAGE, lowest, &id) != BIYOS_OK ||
+        BIYOS_setintopt(env, BIYOS_OPT_SEED, -1) != BIYOS_INVALID_ARGUMENT ||
+        BIYOS_delhook(env, id) != BIYOS_OK || errors != 1)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (biyos_model_create(env, &model) != BIYOS_OK ||
-        biyos_add_variables(model, 2, kinds, lower, upper, &first) != BIYOS_OK || first != 0 ||
-        biyos_set_variable_bounds(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
-        biyos_set_variable_kinds(model, 1, indices, kinds + 1) != BIYOS_OK ||
-        biyos_variable_count(model, &variables) != BIYOS_OK || variables != 2 ||
-        biyos_get_variables(model, 0, 2, found, NULL, NULL) != BIYOS_OK ||
-        found[0] != BIYOS_VAR_BINARY || found[1] != BIYOS_VAR_BINARY)
+    if (BIYOS_newmodel(env, &model) != BIYOS_OK ||
+        BIYOS_addvars(model, 2, kinds, lower, upper, &first) != BIYOS_OK || first != 0 ||
+        BIYOS_setvarbounds(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
+        BIYOS_setvarkinds(model, 1, indices, kinds + 1) != BIYOS_OK ||
+        BIYOS_getnvars(model, &variables) != BIYOS_OK || variables != 2 ||
+        BIYOS_getvars(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[0] != BIYOS_VAR_BINARY ||
+        found[1] != BIYOS_VAR_BINARY)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
@@ -263,11 +261,11 @@ int main(void)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (biyos_env_free(env) == BIYOS_OK || biyos_model_free(model) != BIYOS_OK)
+    if (BIYOS_freeenv(env) == BIYOS_OK || BIYOS_freemodel(model) != BIYOS_OK)
     {
         status = BIYOS_INTERNAL_ERROR;
     }
-    if (biyos_env_free(env) != BIYOS_OK)
+    if (BIYOS_freeenv(env) != BIYOS_OK)
     {
         status = BIYOS_INTERNAL_ERROR;
     }

@@ -59,7 +59,7 @@ def env():
 def option_count(env):
     count = 0
     kind = c_int()
-    while lib.biyos_option_kind(env._handle, count + 1, byref(kind)) == OK:
+    while lib.BIYOS_getoptkind(env._handle, count + 1, byref(kind)) == OK:
         count += 1
     return count
 

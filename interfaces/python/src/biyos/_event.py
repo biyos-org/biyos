@@ -28,31 +28,31 @@ class Event:
 
     @property
     def kind(self):
-        return EventKind(lib.biyos_event_kind(self._live()))
+        return EventKind(lib.BIYOS_getevtkind(self._live()))
 
     @property
     def level(self):
-        return Level(lib.biyos_event_level(self._live()))
+        return Level(lib.BIYOS_getevtlvl(self._live()))
 
     @property
     def module(self):
-        return _decoded(lib.biyos_event_module(self._live()))
+        return _decoded(lib.BIYOS_getevtmodule(self._live()))
 
     @property
     def text(self):
-        return _decoded(lib.biyos_event_text(self._live()))
+        return _decoded(lib.BIYOS_getevttext(self._live()))
 
     @property
     def fields(self):
         pointer = self._live()
-        count = lib.biyos_event_field_count(pointer)
+        count = lib.BIYOS_getnevtfields(pointer)
         return tuple(_field(pointer, index) for index in range(count))
 
     def format_text(self):
-        return _formatted(lib.biyos_format_text, self._live())
+        return _formatted(lib.BIYOS_fmttext, self._live())
 
     def format_json(self):
-        return _formatted(lib.biyos_format_json, self._live())
+        return _formatted(lib.BIYOS_fmtjson, self._live())
 
     def _live(self):
         if self._pointer is None:
@@ -61,8 +61,8 @@ class Event:
 
 
 def _field(pointer, index):
-    name = lib.biyos_event_field_name(pointer, index)
-    value = lib.biyos_event_field_value(pointer, index)
+    name = lib.BIYOS_getevtfieldname(pointer, index)
+    value = lib.BIYOS_getevtfieldvalue(pointer, index)
     return _decoded(name), _decoded(value)
 
 

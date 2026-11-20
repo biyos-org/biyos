@@ -4,10 +4,10 @@
 
 ## Conventions
 
-Every call that returns `biyos_status` follows these rules.
+Every call that returns `BIYOS_status` follows these rules.
 
 - It returns `BIYOS_OK` or a negative error code.
-- On failure it keeps its message on the environment, read with `biyos_last_error_message`, which for a call on a model is the environment the model was made on. It keeps none when given a null environment or model or when it takes none, as the formatting calls do, and `biyos_env_create` keeps none since it has no environment yet. If memory runs out while the message is kept, the message is left empty.
+- On failure it keeps its message on the environment, read with `BIYOS_lasterror`, which for a call on a model is the environment the model was made on. It keeps none when given a null environment or model or when it takes none, as the formatting calls do, and `BIYOS_newenv` keeps none since it has no environment yet. If memory runs out while the message is kept, the message is left empty.
 - On success it leaves the message as it was.
 - A null pointer argument, the environment or the model included, gives `BIYOS_INVALID_ARGUMENT`, unless its entry says otherwise.
 - On failure it leaves its output arguments as they were, unless its entry says otherwise.
@@ -21,11 +21,11 @@ Every number the headers define, such as an option id, an option kind or an erro
 
 | Type | What |
 | --- | --- |
-| `biyos_status` | an `int`, `BIYOS_OK` or an error code |
-| `biyos_env` | an opaque environment, holding the options, the subscriptions and the last error message |
-| `biyos_event` | an opaque event, read with the `biyos_event_*` calls and formatted with `biyos_format_text` and `biyos_format_json` while a subscriber runs |
-| `biyos_model` | an opaque model, made on an environment and holding the variables, functions, constraints and objectives of a problem |
-| `biyos_subscriber` | `void (*)(const biyos_event *event, void *user_data)`, a function called with each event a subscription receives |
+| `BIYOS_status` | an `int`, `BIYOS_OK` or an error code |
+| `BIYOS_env` | an opaque environment, holding the options, the subscriptions and the last error message |
+| `BIYOS_evt` | an opaque event, read with `BIYOS_getnevtfields` and the `BIYOS_getevt*` calls, and formatted with `BIYOS_fmttext` and `BIYOS_fmtjson` while a subscriber runs |
+| `BIYOS_model` | an opaque model, made on an environment and holding the variables, functions, constraints and objectives of a problem |
+| `BIYOS_hook` | `void (*)(const BIYOS_evt *event, void *data)`, a function called with each event a subscription receives |
 
 ## Linking
 
@@ -58,10 +58,10 @@ No code exists yet in the model and user code groups.
 
 ## Version
 
-### `biyos_version`
+### `BIYOS_version`
 
 ```c
-void biyos_version(int *major, int *minor, int *patch);
+void BIYOS_version(int *major, int *minor, int *patch);
 ```
 
 Writes the version of the library. A null argument is skipped. It cannot fail.
@@ -70,26 +70,26 @@ Writes the version of the library. A null argument is skipped. It cannot fail.
 
 Environments share no state, so separate threads may use separate environments at the same time. One environment is used by one thread at a time, together with the models made on it.
 
-### `biyos_env_create`
+### `BIYOS_newenv`
 
 ```c
-biyos_status biyos_env_create(biyos_env **env);
+BIYOS_status BIYOS_newenv(BIYOS_env **env);
 ```
 
 Creates an environment with every option at its default and an empty error message, and writes it to `*env`. On failure it sets `*env` to null. Returns `BIYOS_INVALID_ARGUMENT` when `env` is null.
 
-### `biyos_env_free`
+### `BIYOS_freeenv`
 
 ```c
-biyos_status biyos_env_free(biyos_env *env);
+BIYOS_status BIYOS_freeenv(BIYOS_env *env);
 ```
 
 Frees the environment and every string read from it. A null `env` gives `BIYOS_OK`. While `env` delivers an event it returns `BIYOS_INVALID_ARGUMENT` and frees nothing, as every call that would change `env` does then (see Subscribers). While a model made on `env` is not freed, it returns `BIYOS_INVALID_ARGUMENT` with the message `invalid argument: environment: has a model that is not freed`, and frees nothing.
 
-### `biyos_last_error_message`
+### `BIYOS_lasterror`
 
 ```c
-const char *biyos_last_error_message(const biyos_env *env);
+const char *BIYOS_lasterror(const BIYOS_env *env);
 ```
 
 Returns the message of the last call on `env` that failed, or an empty string if none has. Successful calls leave it in place. A call that fails inside a subscriber is the last failure only until that subscriber returns: the message is then again what it was before the subscriber ran. It starts with the kind of failure (`invalid argument`, `out of memory` or `internal error`) and is written for people: branch on the status code, not on the text. It is also empty after a failure if memory ran out while keeping the message.
@@ -98,17 +98,17 @@ The pointer is never null. It stays valid until the next failed call on `env` or
 
 ## Options
 
-An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_INVALID_ARGUMENT`. Nothing is converted, so an int option rejects `biyos_set_double_option`. Every call that takes an option id returns `BIYOS_INVALID_ARGUMENT` when it is not a known id. A failed set leaves the option as it was.
+An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_INVALID_ARGUMENT`. Nothing is converted, so an int option rejects `BIYOS_setdblopt`. Every call that takes an option id returns `BIYOS_INVALID_ARGUMENT` when it is not a known id. A failed set leaves the option as it was.
 
 | Macro | Value | Kind | Set and get with |
 | --- | --- | --- | --- |
-| `BIYOS_KIND_BOOL` | 1 | bool | `biyos_set_bool_option`, `biyos_get_bool_option` |
-| `BIYOS_KIND_INT` | 2 | int | `biyos_set_int_option`, `biyos_get_int_option` |
-| `BIYOS_KIND_DOUBLE` | 3 | double | `biyos_set_double_option`, `biyos_get_double_option` |
-| `BIYOS_KIND_STRING` | 4 | string | `biyos_set_string_option`, `biyos_get_string_option` |
-| `BIYOS_KIND_ENUM` | 5 | enum | `biyos_set_string_option`, `biyos_get_string_option`, by the name of the value |
+| `BIYOS_KIND_BOOL` | 1 | bool | `BIYOS_setboolopt`, `BIYOS_getboolopt` |
+| `BIYOS_KIND_INT` | 2 | int | `BIYOS_setintopt`, `BIYOS_getintopt` |
+| `BIYOS_KIND_DOUBLE` | 3 | double | `BIYOS_setdblopt`, `BIYOS_getdblopt` |
+| `BIYOS_KIND_STRING` | 4 | string | `BIYOS_setstropt`, `BIYOS_getstropt` |
+| `BIYOS_KIND_ENUM` | 5 | enum | `BIYOS_setstropt`, `BIYOS_getstropt`, by the name of the value |
 
-The ids are the `BIYOS_OPT_*` macros of `biyos/options.h` and count from 1. `biyos_option_id` finds the id of a name at run time, and `biyos_option_kind` the kind of an id.
+The ids are the `BIYOS_OPT_*` macros of `biyos/options.h` and count from 1. `BIYOS_getoptid` finds the id of a name at run time, and `BIYOS_getoptkind` the kind of an id.
 
 | Macro | Value | Name | Kind | Default | Accepts | Meaning |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -127,93 +127,93 @@ The ranges in the Accepts column include their ends and are checked exactly, wit
 
 The tolerance options say when a value of a model, such as a variable or a constraint function at a point, meets a lower or upper bound the model puts on it, equals another such value, is zero or is integral. A finite value meets a finite bound unless it lies beyond it by more than both `feasibility_abs` and `feasibility_rel` times the larger of 1 and the magnitude of the bound. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. Two finite values are equal unless they differ by more than both `feasibility_abs` and `feasibility_rel` times the larger of 1 and their magnitudes. An infinite value equals only itself and is not integral. NaN is not zero, not integral, equal to no value and meets no bound.
 
-Each option records the version of biyos that added it and, once it is no longer wanted, the version that deprecated it and the version that retired it, read with `biyos_option_versions`. A deprecated option still works: setting it sets it and sends a message event at level `BIYOS_LEVEL_WARNING`, from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. Setting a retired option, by any call, returns `BIYOS_INVALID_ARGUMENT` with a message such as `invalid argument: option 'old': retired in 0.3.0, use 'new'` and changes nothing, and getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither. Every option above was added in 0.1.0, and none is deprecated or retired.
+Each option records the version of biyos that added it and, once it is no longer wanted, the version that deprecated it and the version that retired it, read with `BIYOS_getoptversions`. A deprecated option still works: setting it sets it and sends a message event at level `BIYOS_LEVEL_WARNING`, from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. Setting a retired option, by any call, returns `BIYOS_INVALID_ARGUMENT` with a message such as `invalid argument: option 'old': retired in 0.3.0, use 'new'` and changes nothing, and getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither. Every option above was added in 0.1.0, and none is deprecated or retired.
 
-### `biyos_option_id`
+### `BIYOS_getoptid`
 
 ```c
-biyos_status biyos_option_id(biyos_env *env, const char *name, int *option);
+BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, int *option);
 ```
 
 Writes to `*option` the id of the option called `name`, which must match exactly. Returns `BIYOS_INVALID_ARGUMENT` when no option has that name.
 
-### `biyos_option_kind`
+### `BIYOS_getoptkind`
 
 ```c
-biyos_status biyos_option_kind(biyos_env *env, int option, int *kind);
+BIYOS_status BIYOS_getoptkind(BIYOS_env *env, int option, int *kind);
 ```
 
 Writes to `*kind` the kind of the option, one of the `BIYOS_KIND_*` values.
 
-### `biyos_option_versions`
+### `BIYOS_getoptversions`
 
 ```c
-biyos_status biyos_option_versions(biyos_env *env, int option, int *since, int *deprecated,
-                                   int *retired);
+BIYOS_status BIYOS_getoptversions(BIYOS_env *env, int option, int *since, int *deprecated,
+                                  int *retired);
 ```
 
 Writes three versions of biyos: to `*since` the one that added the option, to `*deprecated` the one that deprecated it and to `*retired` the one that retired it. Each is written as `10000 * major + 100 * minor + patch`, such as 100 for 0.1.0, or as 0 when the option is not deprecated or not retired. A minor or patch number stays below 100, so two versions compare as their numbers do.
 
-### `biyos_set_bool_option`
+### `BIYOS_setboolopt`
 
 ```c
-biyos_status biyos_set_bool_option(biyos_env *env, int option, int value);
+BIYOS_status BIYOS_setboolopt(BIYOS_env *env, int option, int value);
 ```
 
 Sets a bool option to true when `value` is nonzero and to false when it is zero.
 
-### `biyos_set_int_option`
+### `BIYOS_setintopt`
 
 ```c
-biyos_status biyos_set_int_option(biyos_env *env, int option, int value);
+BIYOS_status BIYOS_setintopt(BIYOS_env *env, int option, int value);
 ```
 
 Sets an int option. Returns `BIYOS_INVALID_ARGUMENT` when `value` is outside its range.
 
-### `biyos_set_double_option`
+### `BIYOS_setdblopt`
 
 ```c
-biyos_status biyos_set_double_option(biyos_env *env, int option, double value);
+BIYOS_status BIYOS_setdblopt(BIYOS_env *env, int option, double value);
 ```
 
 Sets a double option. Returns `BIYOS_INVALID_ARGUMENT` when `value` is outside its range or is NaN.
 
-### `biyos_set_string_option`
+### `BIYOS_setstropt`
 
 ```c
-biyos_status biyos_set_string_option(biyos_env *env, int option, const char *value);
+BIYOS_status BIYOS_setstropt(BIYOS_env *env, int option, const char *value);
 ```
 
 Sets a string or enum option to a copy of `value`. For an enum option, `value` is the name of one of its values and must match exactly. Returns `BIYOS_INVALID_ARGUMENT` when it names none of them. On success, pointers read earlier from this option are no longer valid.
 
-### `biyos_get_bool_option`
+### `BIYOS_getboolopt`
 
 ```c
-biyos_status biyos_get_bool_option(biyos_env *env, int option, int *value);
+BIYOS_status BIYOS_getboolopt(BIYOS_env *env, int option, int *value);
 ```
 
 Writes 1 to `*value` when the bool option is true and 0 when it is false.
 
-### `biyos_get_int_option`
+### `BIYOS_getintopt`
 
 ```c
-biyos_status biyos_get_int_option(biyos_env *env, int option, int *value);
+BIYOS_status BIYOS_getintopt(BIYOS_env *env, int option, int *value);
 ```
 
 Writes the value of an int option to `*value`.
 
-### `biyos_get_double_option`
+### `BIYOS_getdblopt`
 
 ```c
-biyos_status biyos_get_double_option(biyos_env *env, int option, double *value);
+BIYOS_status BIYOS_getdblopt(BIYOS_env *env, int option, double *value);
 ```
 
 Writes the value of a double option to `*value`.
 
-### `biyos_get_string_option`
+### `BIYOS_getstropt`
 
 ```c
-biyos_status biyos_get_string_option(biyos_env *env, int option, const char **value);
+BIYOS_status BIYOS_getstropt(BIYOS_env *env, int option, const char **value);
 ```
 
 Writes to `*value` the value of a string option, or the name of the value of an enum option. The pointer stays valid until the option is set again or `env` is freed. A failed set of the option and a set of another option leave it valid.
@@ -237,36 +237,36 @@ biyos never prints. It reports through events, and a caller reads them by subscr
 
 A level is more severe the larger its value. The kinds and levels come from `biyos/events.h`.
 
-A field is a name and a value, both text. Messages, check events and phase events are described below in turn. The messages biyos sends so far are an error when a call fails and a warning when a deprecated option is set. A call on an environment that fails sends an error message, unless the environment is delivering an event: its level is `BIYOS_LEVEL_ERROR`, its module `capi`, its text the message `biyos_last_error_message` returns for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a subscriber can tell the group from the range. Setting a deprecated option sends a warning message from module `core`, whose text and fields are given under Options. No option is deprecated yet.
+A field is a name and a value, both text. Messages, check events and phase events are described below in turn. The messages biyos sends so far are an error when a call fails and a warning when a deprecated option is set. A call on an environment that fails sends an error message, unless the environment is delivering an event: its level is `BIYOS_LEVEL_ERROR`, its module `capi`, its text the message `BIYOS_lasterror` returns for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a subscriber can tell the group from the range. Setting a deprecated option sends a warning message from module `core`, whose text and fields are given under Options. No option is deprecated yet.
 
-A check event reports an invariant that does not hold, found by a check the `check_level` option runs, and the call then fails. Its level is `BIYOS_LEVEL_ERROR`, its module the module that ran the check, its text the message `biyos_last_error_message` returns for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. A check that fails while biyos is building an event sends no check event and does not fail the call: the event being built is not sent, the check's error is dropped, and the last error message is left as it was. No call runs a check yet.
+A check event reports an invariant that does not hold, found by a check the `check_level` option runs, and the call then fails. Its level is `BIYOS_LEVEL_ERROR`, its module the module that ran the check, its text the message `BIYOS_lasterror` returns for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. A check that fails while biyos is building an event sends no check event and does not fail the call: the event being built is not sent, the check's error is dropped, and the last error message is left as it was. No call runs a check yet.
 
 A phase event marks a phase of a solve, such as presolve, beginning or ending. Phases nest: a phase begun inside another ends before it. Its level is `BIYOS_LEVEL_INFO`, its module the module that timed the phase, its text the name of the phase, and its fields are `edge`, `wall` and `cpu`, in that order. `edge` is `begin` or `end`. `wall` is the wall time since the environment was created and `cpu` the CPU time the process has used, every thread included, both read as the phase begins or ends and written in nanoseconds as decimal text. biyos adds up the time of each phase in a timing tree, nested as phases nest, which no call reads yet. The tree leaves out the time spent delivering phase events, so subscribing never changes it, but the stamps do not: a phase's time in the tree is its end's `wall` and `cpu` less its begin's, less, for each phase event sent between the two, the time from that event's stamps until its subscribers return. Those events are the phase's own begin event and the events of the phases inside it. Should the CPU time be unreadable as a phase begins, the call fails with `BIYOS_INTERNAL_ERROR`, and the phase neither begins nor sends an event. Should it be unreadable as a phase ends, `cpu` repeats its begin value and the phase counts as using no CPU time. No call times a phase yet.
 
 ### Subscribers
 
-A subscriber is called with the event and the `user_data` its subscription was given. While it runs, the environment delivers an event and is read-only.
+A subscriber is called with the event and the `data` its subscription was given. While it runs, the environment delivers an event and is read-only.
 
 - The subscriber may read options, the last error message, the event and the models made on the environment.
 - Every call that would change the environment, setting an option, subscribing, unsubscribing, creating a model on it or freeing it, fails with `BIYOS_INVALID_ARGUMENT` and the message `invalid argument: environment: is read-only while delivering an event`, and changes nothing.
 - Every call that would change or free a model made on the environment fails with `BIYOS_INVALID_ARGUMENT` and the message `invalid argument: model: is read-only while delivering an event`, and changes nothing.
-- A call that fails inside a subscriber keeps its message as usual, so `biyos_last_error_message` explains it, but sends no event.
-- Inside an error event, `biyos_last_error_message` returns that event's failure. When the subscriber returns, the message is again what it was before the subscriber ran, so one subscriber's failures change neither what the next subscriber reads nor what the caller reads after the call.
+- A call that fails inside a subscriber keeps its message as usual, so `BIYOS_lasterror` explains it, but sends no event.
+- Inside an error event, `BIYOS_lasterror` returns that event's failure. When the subscriber returns, the message is again what it was before the subscriber ran, so one subscriber's failures change neither what the next subscriber reads nor what the caller reads after the call.
 - The event and every string read from it are valid only until the subscriber returns.
 
-### `biyos_subscribe`
+### `BIYOS_addhook`
 
 ```c
-biyos_status biyos_subscribe(biyos_env *env, biyos_subscriber subscriber, void *user_data,
-                             int kind, int lowest, int *subscription);
+BIYOS_status BIYOS_addhook(BIYOS_env *env, BIYOS_hook subscriber, void *data,
+                           int kind, int lowest, int *subscription);
 ```
 
-Subscribes `subscriber` to the events of `kind`, a `BIYOS_EVENT_*` value, at level `lowest`, a `BIYOS_LEVEL_*` value, and above, and writes the id of the new subscription to `*subscription`. Ids count from 1 in each environment and are never reused. biyos keeps `subscriber` and `user_data` until the subscription is removed with `biyos_unsubscribe` or `env` is freed, and passes `user_data` back as given: it may be null. Returns `BIYOS_INVALID_ARGUMENT` for an unknown kind or level. A failed call subscribes nothing. An environment that has given out 2147483646 ids returns `BIYOS_NO_MEMORY`.
+Subscribes `subscriber` to the events of `kind`, a `BIYOS_EVENT_*` value, at level `lowest`, a `BIYOS_LEVEL_*` value, and above, and writes the id of the new subscription to `*subscription`. Ids count from 1 in each environment and are never reused. biyos keeps `subscriber` and `data` until the subscription is removed with `BIYOS_delhook` or `env` is freed, and passes `data` back as given: it may be null. Returns `BIYOS_INVALID_ARGUMENT` for an unknown kind or level. A failed call subscribes nothing. An environment that has given out 2147483646 ids returns `BIYOS_NO_MEMORY`.
 
-### `biyos_unsubscribe`
+### `BIYOS_delhook`
 
 ```c
-biyos_status biyos_unsubscribe(biyos_env *env, int subscription);
+BIYOS_status BIYOS_delhook(BIYOS_env *env, int subscription);
 ```
 
 Removes the subscription with id `subscription`, whose subscriber is not called again. Returns `BIYOS_INVALID_ARGUMENT` when `env` has no such subscription, as for one already removed.
@@ -275,58 +275,58 @@ Removes the subscription with id `subscription`, whose subscriber is not called 
 
 These calls read the event a subscriber is given. They cannot fail. A null `event` gives 0 or an empty string, as does a field number outside the event's fields. A string they return is valid until the subscriber returns.
 
-### `biyos_event_kind`
+### `BIYOS_getevtkind`
 
 ```c
-int biyos_event_kind(const biyos_event *event);
+int BIYOS_getevtkind(const BIYOS_evt *event);
 ```
 
 Returns the kind of the event, a `BIYOS_EVENT_*` value.
 
-### `biyos_event_level`
+### `BIYOS_getevtlvl`
 
 ```c
-int biyos_event_level(const biyos_event *event);
+int BIYOS_getevtlvl(const BIYOS_evt *event);
 ```
 
 Returns the level of the event, a `BIYOS_LEVEL_*` value.
 
-### `biyos_event_module`
+### `BIYOS_getevtmodule`
 
 ```c
-const char *biyos_event_module(const biyos_event *event);
+const char *BIYOS_getevtmodule(const BIYOS_evt *event);
 ```
 
 Returns the name of the module that sent the event, such as `capi`.
 
-### `biyos_event_text`
+### `BIYOS_getevttext`
 
 ```c
-const char *biyos_event_text(const biyos_event *event);
+const char *BIYOS_getevttext(const BIYOS_evt *event);
 ```
 
 Returns the text of the event.
 
-### `biyos_event_field_count`
+### `BIYOS_getnevtfields`
 
 ```c
-int biyos_event_field_count(const biyos_event *event);
+int BIYOS_getnevtfields(const BIYOS_evt *event);
 ```
 
 Returns the number of fields of the event. Fields are numbered from 0.
 
-### `biyos_event_field_name`
+### `BIYOS_getevtfieldname`
 
 ```c
-const char *biyos_event_field_name(const biyos_event *event, int field);
+const char *BIYOS_getevtfieldname(const BIYOS_evt *event, int field);
 ```
 
 Returns the name of field number `field`.
 
-### `biyos_event_field_value`
+### `BIYOS_getevtfieldvalue`
 
 ```c
-const char *biyos_event_field_value(const biyos_event *event, int field);
+const char *BIYOS_getevtfieldvalue(const BIYOS_evt *event, int field);
 ```
 
 Returns the value of field number `field`.
@@ -342,24 +342,24 @@ These calls write an event as one line into a buffer the caller gives, in the ma
 - The time of an event is the wall time since its environment was created. It is written in seconds with six decimals, cut to the microsecond, such as `0.001234` for 1234567 nanoseconds. The decimal point is always `.`, whatever the locale.
 - They take no environment, so a failure keeps no message and sends no event. They return `BIYOS_INVALID_ARGUMENT` when `event` or `needed` is null, or when `buffer` is null and `size` is not 0. A failed call writes nothing.
 
-### `biyos_format_text`
+### `BIYOS_fmttext`
 
 ```c
-biyos_status biyos_format_text(const biyos_event *event, char *buffer, size_t size,
-                               size_t *needed);
+BIYOS_status BIYOS_fmttext(const BIYOS_evt *event, char *buffer, size_t size,
+                           size_t *needed);
 ```
 
-Writes the event for people: its time, a space, the name of its level, a space, its module and a colon, then a space and its text unless the text is empty, then for each field in order a space, its name, `=` and its value. Every byte from 0x20 up is written as it is, and nothing is quoted: for a line a program reads, use `biyos_format_json`. The error event of a failed `biyos_set_int_option`, sent 41 microseconds after the environment was created, reads
+Writes the event for people: its time, a space, the name of its level, a space, its module and a colon, then a space and its text unless the text is empty, then for each field in order a space, its name, `=` and its value. Every byte from 0x20 up is written as it is, and nothing is quoted: for a line a program reads, use `BIYOS_fmtjson`. The error event of a failed `BIYOS_setintopt`, sent 41 microseconds after the environment was created, reads
 
 ```text
 0.000041 error capi: invalid argument: option 'seed': -1 is outside [0, 2147483647] code=-100
 ```
 
-### `biyos_format_json`
+### `BIYOS_fmtjson`
 
 ```c
-biyos_status biyos_format_json(const biyos_event *event, char *buffer, size_t size,
-                               size_t *needed);
+BIYOS_status BIYOS_fmtjson(const BIYOS_evt *event, char *buffer, size_t size,
+                           size_t *needed);
 ```
 
 Writes the event for tools, as one JSON object with the members `time`, `kind`, `level`, `module`, `text` and `fields`, in that order. `time` is a JSON number, written as in text. `kind` is the name of the kind: `message` for `BIYOS_EVENT_MESSAGE`, `check` for `BIYOS_EVENT_CHECK` and `phase` for `BIYOS_EVENT_PHASE`. `level` is the name of the level: `debug`, `info`, `warning` or `error`. `fields` is an object holding the event's fields in their order, each value a string. A quote and a backslash are written as `\"` and `\\`. Bytes that are not well-formed UTF-8 become U+FFFD, one for each maximal subpart as the Unicode Standard recommends, so the line is always valid JSON. Every other byte from 0x20 up is written as it is. The same error event reads
@@ -390,70 +390,70 @@ A call that adds items takes `int *first` as its last argument. When the call su
 
 A bound may be `INFINITY` or `-INFINITY` of `<math.h>`, and no finite bound is taken as infinite, however large. A lower bound of minus infinity or an upper bound of infinity leaves that side unbounded. A lower bound of infinity, an upper bound of minus infinity and NaN are refused, and so is a bound outside the widest bounds of the variable's kind: 0 and 1 for a binary, minus infinity and infinity for any other kind. Any other pair is kept as given, a lower bound above the upper one included.
 
-### `biyos_model_create`
+### `BIYOS_newmodel`
 
 ```c
-biyos_status biyos_model_create(biyos_env *env, biyos_model **model);
+BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **model);
 ```
 
 Creates a model with no variables on `env` and writes it to `*model`. On failure it sets `*model` to null.
 
-### `biyos_model_copy`
+### `BIYOS_copymodel`
 
 ```c
-biyos_status biyos_model_copy(biyos_model *model, biyos_env *env, biyos_model **copy);
+BIYOS_status BIYOS_copymodel(BIYOS_model *model, BIYOS_env *env, BIYOS_model **copy);
 ```
 
 Creates a copy of `model` on `env` and writes it to `*copy`. On failure it sets `*copy` to null. `env` may be the environment of `model` or another one. The copy holds the same variables, functions, constraints and objectives as `model`, under the same indices, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of `model` and the copy may be freed first. The call reads `model` and changes `env`, so no other thread may use either environment while it runs. It may run while the environment of `model` delivers an event, and returns `BIYOS_INVALID_ARGUMENT` while `env` does. A failure keeps its message on the environment of `model`, as for every call on a model.
 
-### `biyos_model_free`
+### `BIYOS_freemodel`
 
 ```c
-biyos_status biyos_model_free(biyos_model *model);
+BIYOS_status BIYOS_freemodel(BIYOS_model *model);
 ```
 
 Frees the model. A null `model` gives `BIYOS_OK`. While the environment of `model` delivers an event it returns `BIYOS_INVALID_ARGUMENT` and frees nothing.
 
-### `biyos_add_variables`
+### `BIYOS_addvars`
 
 ```c
-biyos_status biyos_add_variables(biyos_model *model, int count, const int *kinds,
-                                 const double *lower, const double *upper, int *first);
+BIYOS_status BIYOS_addvars(BIYOS_model *model, int count, const int *kinds,
+                           const double *lower, const double *upper, int *first);
 ```
 
 Adds `count` variables after the last one. Entry `j` of each array gives variable `n + j`, where `n` is the number of variables before the call: its kind, a `BIYOS_VAR_*` value, and its lower and upper bounds. A null `kinds` makes every new variable continuous, and a null `lower` or `upper` gives each the widest such bound of its kind. `*first` receives `n`, and a null `first` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, a kind is unknown or a bound is refused, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 variables.
 
-### `biyos_set_variable_bounds`
+### `BIYOS_setvarbounds`
 
 ```c
-biyos_status biyos_set_variable_bounds(biyos_model *model, int count, const int *indices,
-                                       const double *lower, const double *upper);
+BIYOS_status BIYOS_setvarbounds(BIYOS_model *model, int count, const int *indices,
+                                const double *lower, const double *upper);
 ```
 
 Sets the bounds of variable `indices[j]` to `lower[j]` and `upper[j]`, for each `j` below `count`. A null `lower` or `upper` leaves those bounds as they are, and `indices` may be null when `count` is 0. A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of a variable or a bound is refused.
 
-### `biyos_set_variable_kinds`
+### `BIYOS_setvarkinds`
 
 ```c
-biyos_status biyos_set_variable_kinds(biyos_model *model, int count, const int *indices,
-                                      const int *kinds);
+BIYOS_status BIYOS_setvarkinds(BIYOS_model *model, int count, const int *indices,
+                               const int *kinds);
 ```
 
-Sets the kind of variable `indices[j]` to `kinds[j]`, for each `j` below `count`, and keeps its bounds. A null `kinds` changes nothing, and `indices` may be null when `count` is 0. A variable may appear more than once, as in `biyos_set_variable_bounds`. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of a variable, a kind is unknown or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
+Sets the kind of variable `indices[j]` to `kinds[j]`, for each `j` below `count`, and keeps its bounds. A null `kinds` changes nothing, and `indices` may be null when `count` is 0. A variable may appear more than once, as in `BIYOS_setvarbounds`. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of a variable, a kind is unknown or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
 
-### `biyos_variable_count`
+### `BIYOS_getnvars`
 
 ```c
-biyos_status biyos_variable_count(biyos_model *model, int *count);
+BIYOS_status BIYOS_getnvars(BIYOS_model *model, int *count);
 ```
 
 Writes the number of variables of the model to `*count`.
 
-### `biyos_get_variables`
+### `BIYOS_getvars`
 
 ```c
-biyos_status biyos_get_variables(biyos_model *model, int first, int count, int *kinds,
-                                 double *lower, double *upper);
+BIYOS_status BIYOS_getvars(BIYOS_model *model, int first, int count, int *kinds,
+                           double *lower, double *upper);
 ```
 
 Writes to entry `j` of each array, for each `j` below `count`, the kind and the lower and upper bounds of variable `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of variables.
@@ -464,34 +464,34 @@ A function of the variables `x` is `f(x) = c + Σ a_j x_j + Σ q_ij x_i x_j`: a 
 
 A function's constant must be finite. Its linear terms may come in any order and are kept sorted by variable. Each must name a variable of the model, appear once in the function and have a finite coefficient, neither NaN nor infinite. A term whose coefficient is 0 is kept.
 
-A function is added with no quadratic terms, and `biyos_add_quadratic_terms` adds them to functions the model holds. A pair may be given in either order and is kept as `(i, j)` with `i <= j`, a function's pairs sorted by `i`, then by `j`. Each must name variables of the model, appear once for its function in a call and have a finite coefficient. A pair the function already holds adds its coefficient to the one held, which must stay finite, so every call adds `q_ij x_i x_j` to its functions. A term whose coefficient is 0, given or summed, is kept.
+A function is added with no quadratic terms, and `BIYOS_addquadterms` adds them to functions the model holds. A pair may be given in either order and is kept as `(i, j)` with `i <= j`, a function's pairs sorted by `i`, then by `j`. Each must name variables of the model, appear once for its function in a call and have a finite coefficient. A pair the function already holds adds its coefficient to the one held, which must stay finite, so every call adds `q_ij x_i x_j` to its functions. A term whose coefficient is 0, given or summed, is kept.
 
 The terms of many functions travel in compressed form, as three arrays. Function `j` of them has the terms from `starts[j]` to `starts[j + 1] - 1` of `variables` and `values`, which hold a variable and its coefficient each. So `starts` holds one more offset than there are functions: the first is 0, none is below the one before it, and the last is the number of terms. An offset or a number of terms is an `int64_t` of `<stdint.h>`, which `biyos/biyos.h` includes. Quadratic terms travel in the same form, with `firsts`, `seconds` and `values` holding the two variables of each pair and its coefficient.
 
-### `biyos_add_functions`
+### `BIYOS_addfuns`
 
 ```c
-biyos_status biyos_add_functions(biyos_model *model, int count, const double *constants,
-                                 const int64_t *starts, const int *variables,
-                                 const double *values, int *first);
+BIYOS_status BIYOS_addfuns(BIYOS_model *model, int count, const double *constants,
+                           const int64_t *starts, const int *variables,
+                           const double *values, int *first);
 ```
 
 Adds `count` functions after the last one. Entry `j` of `constants` gives the constant of function `n + j`, where `n` is the number of functions before the call, and `starts`, `variables` and `values` give the linear terms of the functions in compressed form, `starts` holding `count + 1` offsets. A null `constants` gives every new function the constant 0. A null `starts` adds functions without terms. `variables` and `values` are not read when there are no terms, and may then be null. `*first` receives `n`, and a null `first` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, `starts` does not begin at 0 or decreases, a constant is not finite, a variable is not one of the model or appears twice in a function, or a coefficient is not finite, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 functions or more terms than any allocation can hold.
 
-### `biyos_function_count`
+### `BIYOS_getnfuns`
 
 ```c
-biyos_status biyos_function_count(biyos_model *model, int *count);
+BIYOS_status BIYOS_getnfuns(BIYOS_model *model, int *count);
 ```
 
 Writes the number of functions of the model to `*count`.
 
-### `biyos_get_functions`
+### `BIYOS_getfuns`
 
 ```c
-biyos_status biyos_get_functions(biyos_model *model, int first, int count, double *constants,
-                                 int64_t *starts, int64_t size, int64_t *needed, int *variables,
-                                 double *values);
+BIYOS_status BIYOS_getfuns(BIYOS_model *model, int first, int count, double *constants,
+                           int64_t *starts, int64_t size, int64_t *needed, int *variables,
+                           double *values);
 ```
 
 Writes the constants of the `count` functions from `first`, and their linear terms in compressed form, each function's sorted by variable, into arrays the caller gives, in the manner of the formatting calls.
@@ -504,61 +504,61 @@ Writes the constants of the `count` functions from `first`, and their linear ter
 
 Returns `BIYOS_INVALID_ARGUMENT` when `first`, `count` or `size` is negative, `first + count` exceeds the number of functions, or `needed` is null.
 
-### `biyos_add_quadratic_terms`
+### `BIYOS_addquadterms`
 
 ```c
-biyos_status biyos_add_quadratic_terms(biyos_model *model, int count, const int *functions,
-                                       const int64_t *starts, const int *firsts,
-                                       const int *seconds, const double *values);
+BIYOS_status BIYOS_addquadterms(BIYOS_model *model, int count, const int *functions,
+                                const int64_t *starts, const int *firsts,
+                                const int *seconds, const double *values);
 ```
 
 Adds quadratic terms to `count` functions of the model. Function `functions[j]` gains the terms from `starts[j]` to `starts[j + 1] - 1` of `firsts`, `seconds` and `values`, `starts` holding `count + 1` offsets: term `k` adds `values[k]` times the product of variables `firsts[k]` and `seconds[k]`. A function appears at most once in `functions`, which has no default and may be null only when `count` is 0. A null `starts` adds no terms. `firsts`, `seconds` and `values` are not read when there are no terms, and may then be null. A call that adds new pairs moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call, or those of a function right after it is added. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, a function is not one of the model or is listed twice, `starts` does not begin at 0 or decreases, a variable is not one of the model, a pair appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite, and `BIYOS_NO_MEMORY` when the model would hold more quadratic terms than any allocation can hold.
 
-### `biyos_get_quadratic_terms`
+### `BIYOS_getquadterms`
 
 ```c
-biyos_status biyos_get_quadratic_terms(biyos_model *model, int first, int count, int64_t *starts,
-                                       int64_t size, int64_t *needed, int *firsts, int *seconds,
-                                       double *values);
+BIYOS_status BIYOS_getquadterms(BIYOS_model *model, int first, int count, int64_t *starts,
+                                int64_t size, int64_t *needed, int *firsts, int *seconds,
+                                double *values);
 ```
 
-Writes the quadratic terms of the `count` functions from `first` in compressed form, each function's sorted by pair with `firsts[k] <= seconds[k]`, as `biyos_get_functions` writes linear terms. `starts` receives `count + 1` offsets from 0, whatever `size` is. `size` is the number of terms `firsts`, `seconds` and `values` hold, and the call writes at most `size` terms to each. `*needed` receives the number of quadratic terms of the functions, whether they fit or not. A null `starts`, `firsts`, `seconds` or `values` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first`, `count` or `size` is negative, `first + count` exceeds the number of functions, or `needed` is null.
+Writes the quadratic terms of the `count` functions from `first` in compressed form, each function's sorted by pair with `firsts[k] <= seconds[k]`, as `BIYOS_getfuns` writes linear terms. `starts` receives `count + 1` offsets from 0, whatever `size` is. `size` is the number of terms `firsts`, `seconds` and `values` hold, and the call writes at most `size` terms to each. `*needed` receives the number of quadratic terms of the functions, whether they fit or not. A null `starts`, `firsts`, `seconds` or `values` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first`, `count` or `size` is negative, `first + count` exceeds the number of functions, or `needed` is null.
 
 ### Constraints
 
 A constraint `lower <= f(x) <= upper` bounds a function `f` of the model. It holds the index of the function and a lower and an upper bound, and several constraints may share a function. Constraints are numbered from 0 in the order they are added, separately from variables and functions, and a count or an index of constraints is an `int`. A constraint's bounds follow the rule of a continuous variable's: `INFINITY` or `-INFINITY` leaves that side unbounded, a lower bound of infinity, an upper bound of minus infinity and NaN are refused, and any other pair is kept as given, a lower bound above the upper one included. A constraint whose bounds are equal is an equality, and one whose bounds are both infinite is free.
 
-### `biyos_add_constraints`
+### `BIYOS_addcons`
 
 ```c
-biyos_status biyos_add_constraints(biyos_model *model, int count, const int *functions,
-                                   const double *lower, const double *upper, int *first);
+BIYOS_status BIYOS_addcons(BIYOS_model *model, int count, const int *functions,
+                           const double *lower, const double *upper, int *first);
 ```
 
 Adds `count` constraints after the last one. Entry `j` of each array gives constraint `m + j`, where `m` is the number of constraints before the call: the index of its function and its lower and upper bounds. `functions` has no default, and may be null only when `count` is 0. A null `lower` or `upper` leaves that side of every new constraint unbounded, so with both null the constraints are free. `*first` receives `m`, and a null `first` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, a function is not one of the model or a bound is refused, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 constraints.
 
-### `biyos_set_constraint_bounds`
+### `BIYOS_setconbounds`
 
 ```c
-biyos_status biyos_set_constraint_bounds(biyos_model *model, int count, const int *indices,
-                                         const double *lower, const double *upper);
+BIYOS_status BIYOS_setconbounds(BIYOS_model *model, int count, const int *indices,
+                                const double *lower, const double *upper);
 ```
 
-Sets the bounds of constraint `indices[j]` to `lower[j]` and `upper[j]`, for each `j` below `count`, and keeps its function. A null `lower` or `upper` leaves those bounds as they are, and `indices` may be null when `count` is 0. A constraint may appear more than once, as in `biyos_set_variable_bounds`. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of a constraint or a bound is refused.
+Sets the bounds of constraint `indices[j]` to `lower[j]` and `upper[j]`, for each `j` below `count`, and keeps its function. A null `lower` or `upper` leaves those bounds as they are, and `indices` may be null when `count` is 0. A constraint may appear more than once, as in `BIYOS_setvarbounds`. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of a constraint or a bound is refused.
 
-### `biyos_constraint_count`
+### `BIYOS_getncons`
 
 ```c
-biyos_status biyos_constraint_count(biyos_model *model, int *count);
+BIYOS_status BIYOS_getncons(BIYOS_model *model, int *count);
 ```
 
 Writes the number of constraints of the model to `*count`.
 
-### `biyos_get_constraints`
+### `BIYOS_getcons`
 
 ```c
-biyos_status biyos_get_constraints(biyos_model *model, int first, int count, int *functions,
-                                   double *lower, double *upper);
+BIYOS_status BIYOS_getcons(BIYOS_model *model, int first, int count, int *functions,
+                           double *lower, double *upper);
 ```
 
 Writes to entry `j` of each array, for each `j` below `count`, the function and the lower and upper bounds of constraint `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of constraints.
@@ -574,40 +574,40 @@ An objective is a function of the model to minimize or maximize, with a priority
 
 The objectives are optimized in stages, one for each priority they hold, the lowest priority first. A stage minimizes the weighted sum `Σ w_i s_i f_i(x)` of the objectives of its priority, where `w_i` is the weight of objective `i`, `s_i` is 1 when it minimizes and -1 when it maximizes, and `f_i` is its function. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it, the absolute tolerance in the units of its function and the relative one as a fraction of the size of that optimum. So objectives of distinct priorities are optimized in sequence, and objectives of one priority are blended. A priority is any `int`. A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. No call optimizes the objectives yet, since biyos solves nothing.
 
-### `biyos_add_objectives`
+### `BIYOS_addobjs`
 
 ```c
-biyos_status biyos_add_objectives(biyos_model *model, int count, const int *functions,
-                                  const int *senses, const int *priorities, const double *weights,
-                                  const double *absolute, const double *relative, int *first);
+BIYOS_status BIYOS_addobjs(BIYOS_model *model, int count, const int *functions,
+                           const int *senses, const int *priorities, const double *weights,
+                           const double *absolute, const double *relative, int *first);
 ```
 
 Adds `count` objectives after the last one. Entry `j` of each array gives objective `p + j`, where `p` is the number of objectives before the call: the index of its function, its sense, a `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE` value, its priority, its weight and its absolute and relative tolerances. `functions` has no default, and may be null only when `count` is 0. A null `senses` makes every new objective minimize, a null `priorities` gives objective `p + j` the priority `p + j`, a null `weights` gives each the weight 1, and a null `absolute` or `relative` gives each that tolerance 0. So by default the objectives are optimized one after another in the order they are added, and objectives given one priority are blended. `*first` receives `p`, and a null `first` is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, a function is not one of the model, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative, and `BIYOS_NO_MEMORY` when the model would hold more than 2147483647 objectives.
 
-### `biyos_set_objectives`
+### `BIYOS_setobjs`
 
 ```c
-biyos_status biyos_set_objectives(biyos_model *model, int count, const int *indices,
-                                  const int *senses, const int *priorities, const double *weights,
-                                  const double *absolute, const double *relative);
+BIYOS_status BIYOS_setobjs(BIYOS_model *model, int count, const int *indices,
+                           const int *senses, const int *priorities, const double *weights,
+                           const double *absolute, const double *relative);
 ```
 
-Sets the sense, the priority, the weight and the absolute and relative tolerances of objective `indices[j]` to `senses[j]`, `priorities[j]`, `weights[j]`, `absolute[j]` and `relative[j]`, for each `j` below `count`, and keeps its function. A null `senses`, `priorities`, `weights`, `absolute` or `relative` leaves those values as they are, and `indices` may be null when `count` is 0. An objective may appear more than once, as in `biyos_set_variable_bounds`. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of an objective, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative.
+Sets the sense, the priority, the weight and the absolute and relative tolerances of objective `indices[j]` to `senses[j]`, `priorities[j]`, `weights[j]`, `absolute[j]` and `relative[j]`, for each `j` below `count`, and keeps its function. A null `senses`, `priorities`, `weights`, `absolute` or `relative` leaves those values as they are, and `indices` may be null when `count` is 0. An objective may appear more than once, as in `BIYOS_setvarbounds`. Returns `BIYOS_INVALID_ARGUMENT` when `count` is negative, an index is not that of an objective, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative.
 
-### `biyos_objective_count`
+### `BIYOS_getnobjs`
 
 ```c
-biyos_status biyos_objective_count(biyos_model *model, int *count);
+BIYOS_status BIYOS_getnobjs(BIYOS_model *model, int *count);
 ```
 
 Writes the number of objectives of the model to `*count`.
 
-### `biyos_get_objectives`
+### `BIYOS_getobjs`
 
 ```c
-biyos_status biyos_get_objectives(biyos_model *model, int first, int count, int *functions,
-                                  int *senses, int *priorities, double *weights, double *absolute,
-                                  double *relative);
+BIYOS_status BIYOS_getobjs(BIYOS_model *model, int first, int count, int *functions,
+                           int *senses, int *priorities, double *weights, double *absolute,
+                           double *relative);
 ```
 
 Writes to entry `j` of each array, for each `j` below `count`, the function, the sense, the priority, the weight and the absolute and relative tolerances of objective `first + j`. A null array is skipped. Returns `BIYOS_INVALID_ARGUMENT` when `first` or `count` is negative or `first + count` exceeds the number of objectives.

@@ -21,7 +21,7 @@ void copy_line(const std::string &line, char *buffer, std::size_t size, std::siz
 }
 
 template <auto Formatter>
-biyos_status formatted(const biyos_event *event,
+BIYOS_status formatted(const BIYOS_evt *event,
                        char *buffer,
                        std::size_t size,
                        std::size_t *needed) noexcept
@@ -35,12 +35,12 @@ biyos_status formatted(const biyos_event *event,
 
 }
 
-biyos_status biyos_format_text(const biyos_event *event, char *buffer, size_t size, size_t *needed)
+BIYOS_status BIYOS_fmttext(const BIYOS_evt *event, char *buffer, size_t size, size_t *needed)
 {
     return formatted<biyos::format_text>(event, buffer, size, needed);
 }
 
-biyos_status biyos_format_json(const biyos_event *event, char *buffer, size_t size, size_t *needed)
+BIYOS_status BIYOS_fmtjson(const BIYOS_evt *event, char *buffer, size_t size, size_t *needed)
 {
     return formatted<biyos::format_json>(event, buffer, size, needed);
 }

@@ -25,7 +25,7 @@ class Parked(list):
 @pytest.fixture
 def freed(monkeypatch):
     freed = []
-    monkeypatch.setattr(lib, "biyos_model_free", partial(record, freed))
+    monkeypatch.setattr(lib, "BIYOS_freemodel", partial(record, freed))
     return freed
 
 

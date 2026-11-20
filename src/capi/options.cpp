@@ -91,61 +91,61 @@ void get_string(biyos::Environment &env, int option, const char **value)
 
 }
 
-biyos_status biyos_option_id(biyos_env *env, const char *name, int *option)
+BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, int *option)
 {
     return guarded<option_id>(env, name, option);
 }
 
-biyos_status biyos_option_kind(biyos_env *env, int option, int *kind)
+BIYOS_status BIYOS_getoptkind(BIYOS_env *env, int option, int *kind)
 {
     return guarded<option_kind>(env, option, kind);
 }
 
-biyos_status biyos_option_versions(biyos_env *env,
-                                   int option,
-                                   int *since,
-                                   int *deprecated,
-                                   int *retired)
+BIYOS_status BIYOS_getoptversions(BIYOS_env *env,
+                                  int option,
+                                  int *since,
+                                  int *deprecated,
+                                  int *retired)
 {
     return guarded<option_versions>(env, option, since, deprecated, retired);
 }
 
-biyos_status biyos_set_bool_option(biyos_env *env, int option, int value)
+BIYOS_status BIYOS_setboolopt(BIYOS_env *env, int option, int value)
 {
     return guarded<set_bool>(env, option, value);
 }
 
-biyos_status biyos_set_int_option(biyos_env *env, int option, int value)
+BIYOS_status BIYOS_setintopt(BIYOS_env *env, int option, int value)
 {
     return guarded<set_int>(env, option, value);
 }
 
-biyos_status biyos_set_double_option(biyos_env *env, int option, double value)
+BIYOS_status BIYOS_setdblopt(BIYOS_env *env, int option, double value)
 {
     return guarded<set_double>(env, option, value);
 }
 
-biyos_status biyos_set_string_option(biyos_env *env, int option, const char *value)
+BIYOS_status BIYOS_setstropt(BIYOS_env *env, int option, const char *value)
 {
     return guarded<set_string>(env, option, value);
 }
 
-biyos_status biyos_get_bool_option(biyos_env *env, int option, int *value)
+BIYOS_status BIYOS_getboolopt(BIYOS_env *env, int option, int *value)
 {
     return guarded<get_bool>(env, option, value);
 }
 
-biyos_status biyos_get_int_option(biyos_env *env, int option, int *value)
+BIYOS_status BIYOS_getintopt(BIYOS_env *env, int option, int *value)
 {
     return guarded<get_int>(env, option, value);
 }
 
-biyos_status biyos_get_double_option(biyos_env *env, int option, double *value)
+BIYOS_status BIYOS_getdblopt(BIYOS_env *env, int option, double *value)
 {
     return guarded<get_double>(env, option, value);
 }
 
-biyos_status biyos_get_string_option(biyos_env *env, int option, const char **value)
+BIYOS_status BIYOS_getstropt(BIYOS_env *env, int option, const char **value)
 {
     return guarded<get_string>(env, option, value);
 }

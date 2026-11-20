@@ -2,7 +2,7 @@
 
 #include "core/version.hpp"
 
-void biyos_version(int *major, int *minor, int *patch)
+void BIYOS_version(int *major, int *minor, int *patch)
 {
     const biyos::Version v = biyos::version();
     if (major != nullptr)

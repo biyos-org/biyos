@@ -76,11 +76,11 @@ class DocTest(unittest.TestCase):
         self.assertEqual(self.problems(), [problem])
 
     def test_typedef(self):
-        text = "typedef struct biyos_event biyos_event;\n"
-        text += "typedef void (*biyos_subscriber)(const biyos_event *event);\n"
+        text = "typedef struct BIYOS_evt BIYOS_evt;\n"
+        text += "typedef void (*BIYOS_hook)(const BIYOS_evt *event);\n"
         self.header("biyos.h", HEADER + text)
-        expected = missing("biyos.h:10", "biyos_event")
-        expected += missing("biyos.h:11", "biyos_subscriber")
+        expected = missing("biyos.h:10", "BIYOS_evt")
+        expected += missing("biyos.h:11", "BIYOS_hook")
         self.assertEqual(self.problems(), expected)
 
     def test_macro(self):

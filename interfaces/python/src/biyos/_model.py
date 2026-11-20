@@ -81,7 +81,7 @@ class Model:
     def __init__(self, env):
         self._start(_environment(env))
         with self._env._busy():
-            self._make(self._env._call, lib.biyos_model_create)
+            self._make(self._env._call, lib.BIYOS_newmodel)
         self._hold()
 
     def __enter__(self):
@@ -111,7 +111,7 @@ class Model:
         if self._free.detach() is None:
             return
         try:
-            self._env._run(lib.biyos_model_free, self._handle)
+            self._env._run(lib.BIYOS_freemodel, self._handle)
         except Error:
             models.add(self._handle.value)
             self._hold()
@@ -177,7 +177,7 @@ class Model:
             doubles("upper", upper, count),
         )
         first = c_int()
-        self._call(lib.biyos_add_variables, count, *arrays, byref(first))
+        self._call(lib.BIYOS_addvars, count, *arrays, byref(first))
         return Variables(self, first.value, count, self._version)
 
     def set_variable_bounds(self, indices, lower=None, upper=None):
@@ -187,7 +187,7 @@ class Model:
             doubles("lower", lower, count),
             doubles("upper", upper, count),
         )
-        self._call(lib.biyos_set_variable_bounds, count, *arrays)
+        self._call(lib.BIYOS_setvarbounds, count, *arrays)
 
     def set_variable_kinds(self, indices, kinds):
         count = len(indices)
@@ -195,23 +195,23 @@ class Model:
             indices_of(self, Variables, "indices", indices, count),
             ints("kinds", kinds, count),
         )
-        self._call(lib.biyos_set_variable_kinds, count, *arrays)
+        self._call(lib.BIYOS_setvarkinds, count, *arrays)
 
     def variable_count(self):
         count = c_int()
-        self._call(lib.biyos_variable_count, byref(count))
+        self._call(lib.BIYOS_getnvars, byref(count))
         return count.value
 
     def get_variables(self, first=0, count=None):
         first = index_of(self, Variables, "first", first)
         count, inside = _span(first, count, self.variable_count)
         if not inside:
-            self._call(lib.biyos_get_variables, first, count, None, None, None)
+            self._call(lib.BIYOS_getvars, first, count, None, None, None)
         kinds = (c_int * count)()
         lower = (c_double * count)()
         upper = (c_double * count)()
         arrays = (kinds, lower, upper)
-        self._call(lib.biyos_get_variables, first, count, *arrays)
+        self._call(lib.BIYOS_getvars, first, count, *arrays)
         return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
 
     def add_functions(
@@ -255,12 +255,12 @@ class Model:
             doubles("values", values, size),
         )
         first = c_int()
-        self._call(lib.biyos_add_functions, count, *arrays, byref(first))
+        self._call(lib.BIYOS_addfuns, count, *arrays, byref(first))
         return Functions(self, first.value, count, self._version)
 
     def function_count(self):
         count = c_int()
-        self._call(lib.biyos_function_count, byref(count))
+        self._call(lib.BIYOS_getnfuns, byref(count))
         return count.value
 
     def get_functions(self, first=0, count=None):
@@ -269,16 +269,16 @@ class Model:
         needed = c_int64()
         if not inside:
             empty = (None, None, 0, byref(needed), None, None)
-            self._call(lib.biyos_get_functions, first, count, *empty)
+            self._call(lib.BIYOS_getfuns, first, count, *empty)
         constants = (c_double * count)()
         starts = (c_int64 * (count + 1))()
         learn = (constants, starts, 0, byref(needed), None, None)
-        self._call(lib.biyos_get_functions, first, count, *learn)
+        self._call(lib.BIYOS_getfuns, first, count, *learn)
         size = needed.value
         variables = (c_int * size)()
         values = (c_double * size)()
         fill = (None, None, size, byref(needed), variables, values)
-        self._call(lib.biyos_get_functions, first, count, *fill)
+        self._call(lib.BIYOS_getfuns, first, count, *fill)
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
 
@@ -314,7 +314,7 @@ class Model:
             indices_of(self, Variables, "seconds", seconds, size),
             doubles("values", values, size),
         )
-        self._call(lib.biyos_add_quadratic_terms, count, *arrays)
+        self._call(lib.BIYOS_addquadterms, count, *arrays)
 
     def get_quadratic_terms(self, first=0, count=None):
         first = index_of(self, Functions, "first", first)
@@ -322,16 +322,16 @@ class Model:
         needed = c_int64()
         if not inside:
             empty = (None, 0, byref(needed), None, None, None)
-            self._call(lib.biyos_get_quadratic_terms, first, count, *empty)
+            self._call(lib.BIYOS_getquadterms, first, count, *empty)
         starts = (c_int64 * (count + 1))()
         learn = (starts, 0, byref(needed), None, None, None)
-        self._call(lib.biyos_get_quadratic_terms, first, count, *learn)
+        self._call(lib.BIYOS_getquadterms, first, count, *learn)
         size = needed.value
         firsts = (c_int * size)()
         seconds = (c_int * size)()
         values = (c_double * size)()
         fill = (None, size, byref(needed), firsts, seconds, values)
-        self._call(lib.biyos_get_quadratic_terms, first, count, *fill)
+        self._call(lib.BIYOS_getquadterms, first, count, *fill)
         terms = (list(firsts), list(seconds), list(values))
         return (list(starts), *terms)
 
@@ -357,7 +357,7 @@ class Model:
             doubles("upper", upper, count),
         )
         first = c_int()
-        self._call(lib.biyos_add_constraints, count, *arrays, byref(first))
+        self._call(lib.BIYOS_addcons, count, *arrays, byref(first))
         return Constraints(self, first.value, count, self._version)
 
     def set_constraint_bounds(self, indices, lower=None, upper=None):
@@ -367,11 +367,11 @@ class Model:
             doubles("lower", lower, count),
             doubles("upper", upper, count),
         )
-        self._call(lib.biyos_set_constraint_bounds, count, *arrays)
+        self._call(lib.BIYOS_setconbounds, count, *arrays)
 
     def constraint_count(self):
         count = c_int()
-        self._call(lib.biyos_constraint_count, byref(count))
+        self._call(lib.BIYOS_getncons, byref(count))
         return count.value
 
     def get_constraints(self, first=0, count=None):
@@ -379,12 +379,12 @@ class Model:
         count, inside = _span(first, count, self.constraint_count)
         if not inside:
             empty = (None, None, None)
-            self._call(lib.biyos_get_constraints, first, count, *empty)
+            self._call(lib.BIYOS_getcons, first, count, *empty)
         functions = (c_int * count)()
         lower = (c_double * count)()
         upper = (c_double * count)()
         arrays = (functions, lower, upper)
-        self._call(lib.biyos_get_constraints, first, count, *arrays)
+        self._call(lib.BIYOS_getcons, first, count, *arrays)
         return list(functions), list(lower), list(upper)
 
     def add_objectives(
@@ -434,7 +434,7 @@ class Model:
             *_fields(count, senses, priorities, weights, absolute, relative),
         )
         first = c_int()
-        self._call(lib.biyos_add_objectives, count, *arrays, byref(first))
+        self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
         return Objectives(self, first.value, count, self._version)
 
     def set_objectives(
@@ -451,11 +451,11 @@ class Model:
             indices_of(self, Objectives, "indices", indices, count),
             *_fields(count, senses, priorities, weights, absolute, relative),
         )
-        self._call(lib.biyos_set_objectives, count, *arrays)
+        self._call(lib.BIYOS_setobjs, count, *arrays)
 
     def objective_count(self):
         count = c_int()
-        self._call(lib.biyos_objective_count, byref(count))
+        self._call(lib.BIYOS_getnobjs, byref(count))
         return count.value
 
     def get_objectives(self, first=0, count=None):
@@ -463,7 +463,7 @@ class Model:
         count, inside = _span(first, count, self.objective_count)
         if not inside:
             empty = (None,) * 6
-            self._call(lib.biyos_get_objectives, first, count, *empty)
+            self._call(lib.BIYOS_getobjs, first, count, *empty)
         functions = (c_int * count)()
         codes = (c_int * count)()
         priorities = (c_int * count)()
@@ -471,7 +471,7 @@ class Model:
         absolute = (c_double * count)()
         relative = (c_double * count)()
         found = (functions, codes, priorities, weights, absolute, relative)
-        self._call(lib.biyos_get_objectives, first, count, *found)
+        self._call(lib.BIYOS_getobjs, first, count, *found)
         senses = [Sense(code) for code in codes]
         values = (list(weights), list(absolute), list(relative))
         return (list(functions), senses, list(priorities), *values)
@@ -495,7 +495,7 @@ class Model:
         if not self._env._open():
             raise ValueError("the environment is closed")
         target = self._env._handle
-        self._make(source._call, lib.biyos_model_copy, target)
+        self._make(source._call, lib.BIYOS_copymodel, target)
 
     def _hold(self):
         park = self._env._models.park

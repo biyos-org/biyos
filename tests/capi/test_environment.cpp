@@ -4,24 +4,24 @@
 
 TEST(CApiTest, Create)
 {
-    biyos_env *env = nullptr;
-    ASSERT_EQ(biyos_env_create(&env), BIYOS_OK);
+    BIYOS_env *env = nullptr;
+    ASSERT_EQ(BIYOS_newenv(&env), BIYOS_OK);
     EXPECT_NE(env, nullptr);
-    EXPECT_STREQ(biyos_last_error_message(env), "");
-    EXPECT_EQ(biyos_env_free(env), BIYOS_OK);
+    EXPECT_STREQ(BIYOS_lasterror(env), "");
+    EXPECT_EQ(BIYOS_freeenv(env), BIYOS_OK);
 }
 
 TEST(CApiTest, NullCreate)
 {
-    EXPECT_EQ(biyos_env_create(nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_newenv(nullptr), BIYOS_INVALID_ARGUMENT);
 }
 
 TEST(CApiTest, NullFree)
 {
-    EXPECT_EQ(biyos_env_free(nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_freeenv(nullptr), BIYOS_OK);
 }
 
 TEST(CApiTest, NullMessage)
 {
-    EXPECT_STREQ(biyos_last_error_message(nullptr), "");
+    EXPECT_STREQ(BIYOS_lasterror(nullptr), "");
 }

@@ -57,49 +57,49 @@ const Records kSample{
     .relative = {0.25, 0.0, 0.0},
 };
 
-biyos_status add_with(biyos_model *model,
+BIYOS_status add_with(BIYOS_model *model,
                       int count,
                       const int *functions,
                       const Fields &fields,
                       int *first = nullptr)
 {
-    return biyos_add_objectives(model,
-                                count,
-                                functions,
-                                fields.senses,
-                                fields.priorities,
-                                fields.weights,
-                                fields.absolute,
-                                fields.relative,
-                                first);
+    return BIYOS_addobjs(model,
+                         count,
+                         functions,
+                         fields.senses,
+                         fields.priorities,
+                         fields.weights,
+                         fields.absolute,
+                         fields.relative,
+                         first);
 }
 
-biyos_status set_with(biyos_model *model, int count, const int *indices, const Fields &fields)
+BIYOS_status set_with(BIYOS_model *model, int count, const int *indices, const Fields &fields)
 {
-    return biyos_set_objectives(model,
-                                count,
-                                indices,
-                                fields.senses,
-                                fields.priorities,
-                                fields.weights,
-                                fields.absolute,
-                                fields.relative);
+    return BIYOS_setobjs(model,
+                         count,
+                         indices,
+                         fields.senses,
+                         fields.priorities,
+                         fields.weights,
+                         fields.absolute,
+                         fields.relative);
 }
 
-biyos_status get_with(biyos_model *model, int first, int count, const Outputs &outputs)
+BIYOS_status get_with(BIYOS_model *model, int first, int count, const Outputs &outputs)
 {
-    return biyos_get_objectives(model,
-                                first,
-                                count,
-                                outputs.functions,
-                                outputs.senses,
-                                outputs.priorities,
-                                outputs.weights,
-                                outputs.absolute,
-                                outputs.relative);
+    return BIYOS_getobjs(model,
+                         first,
+                         count,
+                         outputs.functions,
+                         outputs.senses,
+                         outputs.priorities,
+                         outputs.weights,
+                         outputs.absolute,
+                         outputs.relative);
 }
 
-biyos_status add_records(const Model &model, const Records &records, int *first = nullptr)
+BIYOS_status add_records(const Model &model, const Records &records, int *first = nullptr)
 {
     const Fields fields{
         .senses = records.senses.data(),
@@ -114,7 +114,7 @@ biyos_status add_records(const Model &model, const Records &records, int *first 
 
 void add_functions(const Model &model, int count)
 {
-    ASSERT_EQ(biyos_add_functions(model.get(), count, nullptr, nullptr, nullptr, nullptr, nullptr),
+    ASSERT_EQ(BIYOS_addfuns(model.get(), count, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);
 }
 
@@ -127,7 +127,7 @@ void add_sample(const Model &model)
 int objective_count(const Model &model)
 {
     int count = -1;
-    EXPECT_EQ(biyos_objective_count(model.get(), &count), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnobjs(model.get(), &count), BIYOS_OK);
     return count;
 }
 
@@ -200,28 +200,28 @@ Records defaults(const std::vector<int> &functions)
 
 struct Attempt
 {
-    biyos_env *env = nullptr;
-    biyos_model *model = nullptr;
-    std::vector<biyos_status> statuses;
+    BIYOS_env *env = nullptr;
+    BIYOS_model *model = nullptr;
+    std::vector<BIYOS_status> statuses;
     std::vector<std::string> messages;
 };
 
-void note(Attempt &attempt, biyos_status status)
+void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos_last_error_message(attempt.env));
+    attempt.messages.emplace_back(BIYOS_lasterror(attempt.env));
 }
 
-void change(const biyos_event *, void *user_data)
+void change(const BIYOS_evt *, void *data)
 {
-    Attempt &attempt = *static_cast<Attempt *>(user_data);
-    biyos_model *model = attempt.model;
+    Attempt &attempt = *static_cast<Attempt *>(data);
+    BIYOS_model *model = attempt.model;
     const int index = 0;
     const double weight = 2.0;
     int count = 0;
     note(attempt, add_with(model, 1, &index, {}));
     note(attempt, set_with(model, 1, &index, {.weights = &weight}));
-    note(attempt, biyos_objective_count(model, &count));
+    note(attempt, BIYOS_getnobjs(model, &count));
     note(attempt, get_with(model, 0, 1, {}));
 }
 
@@ -284,7 +284,7 @@ TEST(CApiTest, NullObjectives)
     const int senses[] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
     const int priorities[] = {7, 7};
     const double values[] = {0.5, 2.0};
-    biyos_model *held = model.get();
+    BIYOS_model *held = model.get();
     ASSERT_EQ(add_with(held, 2, functions, {.senses = senses}), BIYOS_OK);
     ASSERT_EQ(add_with(held, 2, functions, {.priorities = priorities}), BIYOS_OK);
     ASSERT_EQ(add_with(held, 2, functions, {.weights = values}), BIYOS_OK);
@@ -311,7 +311,7 @@ TEST(CApiTest, NullSetters)
     const Env env;
     const Model model(env);
     add_sample(model);
-    biyos_model *held = model.get();
+    BIYOS_model *held = model.get();
     const int indices[] = {2, 0};
     const int senses[] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
     const int priorities[] = {-5, 6};
@@ -376,14 +376,14 @@ TEST(CApiTest, NullOutputs)
     const Env env;
     const Model model(env);
     add_sample(model);
-    biyos_model *held = model.get();
+    BIYOS_model *held = model.get();
     EXPECT_EQ(get_with(held, 0, 3, {}), BIYOS_OK);
     int senses[] = {-1, -1};
     double absolute[] = {9.0, 9.0};
     EXPECT_EQ(get_with(held, 1, 2, {.senses = senses, .absolute = absolute}), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({senses[0], senses[1]}), std::vector<int>(2, BIYOS_MINIMIZE));
     EXPECT_EQ(bits_of({absolute[0], absolute[1]}), bits_of({1.5, kInfinity}));
-    EXPECT_EQ(biyos_objective_count(held, nullptr), BIYOS_INVALID_ARGUMENT);
+    EXPECT_EQ(BIYOS_getnobjs(held, nullptr), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(env.message(), "invalid argument: argument 'count': is null");
 }
 
@@ -392,7 +392,7 @@ TEST(CApiTest, RefusedObjectives)
     const Env env;
     const Model model(env);
     add_sample(model);
-    biyos_model *held = model.get();
+    BIYOS_model *held = model.get();
     const int functions[] = {0, 2};
     EXPECT_EQ(add_with(held, 2, functions, {}), BIYOS_INVALID_ARGUMENT);
     EXPECT_EQ(env.message(), "invalid argument: objective 4: function 2 is unknown");
@@ -435,15 +435,15 @@ TEST(CApiTest, LockedObjectives)
     ASSERT_EQ(add_with(model.get(), 1, &function, {}), BIYOS_OK);
     int id = 0;
     const int message = BIYOS_EVENT_MESSAGE;
-    ASSERT_EQ(biyos_subscribe(env.get(), change, &attempt, message, BIYOS_LEVEL_ERROR, &id),
+    ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LEVEL_ERROR, &id),
               BIYOS_OK);
-    EXPECT_EQ(biyos_set_int_option(env.get(), BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
-    const biyos_status refused = BIYOS_INVALID_ARGUMENT;
-    const std::vector<biyos_status> statuses{refused, refused, BIYOS_OK, BIYOS_OK};
+    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
+    const BIYOS_status refused = BIYOS_INVALID_ARGUMENT;
+    const std::vector<BIYOS_status> statuses{refused, refused, BIYOS_OK, BIYOS_OK};
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
     EXPECT_EQ(attempt.statuses, statuses);
     EXPECT_EQ(attempt.messages[0], locked);
     EXPECT_EQ(attempt.messages[1], locked);
-    EXPECT_EQ(biyos_unsubscribe(env.get(), id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
     expect_records(read_all(model), defaults({0}));
 }

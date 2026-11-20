@@ -110,8 +110,8 @@ def test_defaults(model):
 def test_offsets(model, monkeypatch):
     starts = array.array("q", [0, 2])
     seen = []
-    spy = partial(recorded, seen, lib.biyos_add_functions)
-    monkeypatch.setattr(lib, "biyos_add_functions", spy)
+    spy = partial(recorded, seen, lib.BIYOS_addfuns)
+    monkeypatch.setattr(lib, "BIYOS_addfuns", spy)
     model.add_functions(1, None, starts, [1, 0], [1.0, 2.0])
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][3]) != starts.buffer_info()[0]
@@ -122,8 +122,8 @@ def test_values(model, monkeypatch):
     constants = array.array("d", [4.0])
     values = array.array("d", [1.0, 2.0])
     seen = []
-    spy = partial(recorded, seen, lib.biyos_add_functions)
-    monkeypatch.setattr(lib, "biyos_add_functions", spy)
+    spy = partial(recorded, seen, lib.BIYOS_addfuns)
+    monkeypatch.setattr(lib, "BIYOS_addfuns", spy)
     model.add_functions(1, constants, [0, 2], [1, 0], values)
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][2]) == constants.buffer_info()[0]
@@ -141,8 +141,8 @@ def test_growing(model):
 def test_stale(model, monkeypatch):
     add_sample(model)
     monkeypatch.setattr(model, "function_count", lambda: 0)
-    spy = Room(lib.biyos_get_functions, read_lengths)
-    monkeypatch.setattr(lib, "biyos_get_functions", spy)
+    spy = Room(lib.BIYOS_getfuns, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getfuns", spy)
     assert model.get_functions(0, 3) == SORTED
     assert model.get_functions(1) == ([], [0], [], [])
 

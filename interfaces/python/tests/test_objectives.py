@@ -170,8 +170,8 @@ def test_values(model, monkeypatch):
     absolute = array.array("d", [3.0, 4.0])
     relative = array.array("d", [5.0, 6.0])
     seen = []
-    spy = partial(recorded, seen, lib.biyos_add_objectives)
-    monkeypatch.setattr(lib, "biyos_add_objectives", spy)
+    spy = partial(recorded, seen, lib.BIYOS_addobjs)
+    monkeypatch.setattr(lib, "BIYOS_addobjs", spy)
     model.add_objectives([0, 1], None, None, weights, absolute, relative)
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][5]) == weights.buffer_info()[0]
@@ -190,8 +190,8 @@ def test_growing(model):
 def test_stale(model, monkeypatch):
     add_sample(model)
     monkeypatch.setattr(model, "objective_count", lambda: 0)
-    spy = Room(lib.biyos_get_objectives, read_lengths)
-    monkeypatch.setattr(lib, "biyos_get_objectives", spy)
+    spy = Room(lib.BIYOS_getobjs, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getobjs", spy)
     assert model.get_objectives(0, 3) == SAMPLE
     assert model.get_objectives(1) == NONE
 

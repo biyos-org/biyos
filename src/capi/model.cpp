@@ -20,21 +20,21 @@ using biyos::capi::writable;
 namespace
 {
 
-void create(biyos::Environment &env, biyos_model **model)
+void create(biyos::Environment &env, BIYOS_model **model)
 {
-    biyos_model **made = require(model, "model");
+    BIYOS_model **made = require(model, "model");
     writable(env);
-    *made = new biyos_model(env);
+    *made = new BIYOS_model(env);
 }
 
-void make_copy(biyos_model &model, biyos_env *env, biyos_model **copy)
+void make_copy(BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
 {
-    biyos_model **made = require(copy, "copy");
+    BIYOS_model **made = require(copy, "copy");
     biyos::Environment &target = idle(require(env, "env")->core, "argument 'env'");
-    *made = new biyos_model(target, model.core);
+    *made = new BIYOS_model(target, model.core);
 }
 
-void freeable(biyos_model &model)
+void freeable(BIYOS_model &model)
 {
     writable(model);
 }
@@ -82,7 +82,7 @@ void set_each(biyos::Model &core, std::span<const biyos::Index> indices, Arrays.
     core.set_variables(indices, changed);
 }
 
-void add_variables(biyos_model &model,
+void add_variables(BIYOS_model &model,
                    int count,
                    const int *kinds,
                    const double *lower,
@@ -105,7 +105,7 @@ void add_variables(biyos_model &model,
     }
 }
 
-void set_bounds(biyos_model &model,
+void set_bounds(BIYOS_model &model,
                 int count,
                 const int *indices,
                 const double *lower,
@@ -115,13 +115,13 @@ void set_bounds(biyos_model &model,
     set_each<bounded>(core, listed(count, indices), lower, upper);
 }
 
-void set_kinds(biyos_model &model, int count, const int *indices, const int *kinds)
+void set_kinds(BIYOS_model &model, int count, const int *indices, const int *kinds)
 {
     biyos::Model &core = writable(model);
     set_each<kinded>(core, listed(count, indices), kinds);
 }
 
-void variable_count(biyos_model &model, int *count)
+void variable_count(BIYOS_model &model, int *count)
 {
     *require(count, "count") = model.core.variable_count();
 }
@@ -146,7 +146,7 @@ void copy_out(const biyos::Variable &variable,
     }
 }
 
-void get_variables(biyos_model &model,
+void get_variables(BIYOS_model &model,
                    int first,
                    int count,
                    int *kinds,
@@ -162,7 +162,7 @@ void get_variables(biyos_model &model,
 
 }
 
-biyos_status biyos_model_create(biyos_env *env, biyos_model **model)
+BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **model)
 {
     if (model != nullptr)
     {
@@ -171,7 +171,7 @@ biyos_status biyos_model_create(biyos_env *env, biyos_model **model)
     return guarded<create>(env, model);
 }
 
-biyos_status biyos_model_copy(biyos_model *model, biyos_env *env, biyos_model **copy)
+BIYOS_status BIYOS_copymodel(BIYOS_model *model, BIYOS_env *env, BIYOS_model **copy)
 {
     if (copy != nullptr)
     {
@@ -180,13 +180,13 @@ biyos_status biyos_model_copy(biyos_model *model, biyos_env *env, biyos_model **
     return guarded<make_copy>(model, env, copy);
 }
 
-biyos_status biyos_model_free(biyos_model *model)
+BIYOS_status BIYOS_freemodel(BIYOS_model *model)
 {
     if (model == nullptr)
     {
         return BIYOS_OK;
     }
-    const biyos_status status = guarded<freeable>(model);
+    const BIYOS_status status = guarded<freeable>(model);
     if (status == BIYOS_OK)
     {
         delete model;
@@ -194,44 +194,41 @@ biyos_status biyos_model_free(biyos_model *model)
     return status;
 }
 
-biyos_status biyos_add_variables(biyos_model *model,
-                                 int count,
-                                 const int *kinds,
-                                 const double *lower,
-                                 const double *upper,
-                                 int *first)
+BIYOS_status BIYOS_addvars(BIYOS_model *model,
+                           int count,
+                           const int *kinds,
+                           const double *lower,
+                           const double *upper,
+                           int *first)
 {
     return guarded<add_variables>(model, count, kinds, lower, upper, first);
 }
 
-biyos_status biyos_set_variable_bounds(biyos_model *model,
-                                       int count,
-                                       const int *indices,
-                                       const double *lower,
-                                       const double *upper)
+BIYOS_status BIYOS_setvarbounds(BIYOS_model *model,
+                                int count,
+                                const int *indices,
+                                const double *lower,
+                                const double *upper)
 {
     return guarded<set_bounds>(model, count, indices, lower, upper);
 }
 
-biyos_status biyos_set_variable_kinds(biyos_model *model,
-                                      int count,
-                                      const int *indices,
-                                      const int *kinds)
+BIYOS_status BIYOS_setvarkinds(BIYOS_model *model, int count, const int *indices, const int *kinds)
 {
     return guarded<set_kinds>(model, count, indices, kinds);
 }
 
-biyos_status biyos_variable_count(biyos_model *model, int *count)
+BIYOS_status BIYOS_getnvars(BIYOS_model *model, int *count)
 {
     return guarded<variable_count>(model, count);
 }
 
-biyos_status biyos_get_variables(biyos_model *model,
-                                 int first,
-                                 int count,
-                                 int *kinds,
-                                 double *lower,
-                                 double *upper)
+BIYOS_status BIYOS_getvars(BIYOS_model *model,
+                           int first,
+                           int count,
+                           int *kinds,
+                           double *lower,
+                           double *upper)
 {
     return guarded<get_variables>(model, first, count, kinds, lower, upper);
 }
