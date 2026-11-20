@@ -10,7 +10,7 @@ from biyos._error import check
 
 def test_pickle():
     with biyos.Env() as env, pytest.raises(biyos.Error) as caught:
-        env.get_option("seeds")
+        env.getopt("seeds")
     copy = pickle.loads(pickle.dumps(caught.value))
     assert type(copy) is biyos.Error
     assert str(copy) == str(caught.value)

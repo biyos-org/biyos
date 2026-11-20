@@ -153,7 +153,7 @@ class Model:
         copy._hold()
         return copy
 
-    def add_variables(self, count, kinds=None, lower=None, upper=None):
+    def addvars(self, count, kinds=None, lower=None, upper=None):
         """Add variables after the last one.
 
         Parameters
@@ -180,7 +180,7 @@ class Model:
         self._call(lib.BIYOS_addvars, count, *arrays, byref(first))
         return Variables(self, first.value, count, self._version)
 
-    def set_variable_bounds(self, indices, lower=None, upper=None):
+    def setvarbounds(self, indices, lower=None, upper=None):
         count = len(indices)
         arrays = (
             indices_of(self, Variables, "indices", indices, count),
@@ -189,7 +189,7 @@ class Model:
         )
         self._call(lib.BIYOS_setvarbounds, count, *arrays)
 
-    def set_variable_kinds(self, indices, kinds):
+    def setvarkinds(self, indices, kinds):
         count = len(indices)
         arrays = (
             indices_of(self, Variables, "indices", indices, count),
@@ -197,14 +197,14 @@ class Model:
         )
         self._call(lib.BIYOS_setvarkinds, count, *arrays)
 
-    def variable_count(self):
+    def getnvars(self):
         count = c_int()
         self._call(lib.BIYOS_getnvars, byref(count))
         return count.value
 
-    def get_variables(self, first=0, count=None):
+    def getvars(self, first=0, count=None):
         first = index_of(self, Variables, "first", first)
-        count, inside = _span(first, count, self.variable_count)
+        count, inside = _span(first, count, self.getnvars)
         if not inside:
             self._call(lib.BIYOS_getvars, first, count, None, None, None)
         kinds = (c_int * count)()
@@ -214,7 +214,7 @@ class Model:
         self._call(lib.BIYOS_getvars, first, count, *arrays)
         return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
 
-    def add_functions(
+    def addfuns(
         self,
         count,
         constants=None,
@@ -258,14 +258,14 @@ class Model:
         self._call(lib.BIYOS_addfuns, count, *arrays, byref(first))
         return Functions(self, first.value, count, self._version)
 
-    def function_count(self):
+    def getnfuns(self):
         count = c_int()
         self._call(lib.BIYOS_getnfuns, byref(count))
         return count.value
 
-    def get_functions(self, first=0, count=None):
+    def getfuns(self, first=0, count=None):
         first = index_of(self, Functions, "first", first)
-        count, inside = _span(first, count, self.function_count)
+        count, inside = _span(first, count, self.getnfuns)
         needed = c_int64()
         if not inside:
             empty = (None, None, 0, byref(needed), None, None)
@@ -282,7 +282,7 @@ class Model:
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
 
-    def add_quadratic_terms(self, functions, starts, firsts, seconds, values):
+    def addquadterms(self, functions, starts, firsts, seconds, values):
         """Add quadratic terms to functions of the model.
 
         Function ``functions[j]`` gains the terms from ``starts[j]`` to
@@ -316,9 +316,9 @@ class Model:
         )
         self._call(lib.BIYOS_addquadterms, count, *arrays)
 
-    def get_quadratic_terms(self, first=0, count=None):
+    def getquadterms(self, first=0, count=None):
         first = index_of(self, Functions, "first", first)
-        count, inside = _span(first, count, self.function_count)
+        count, inside = _span(first, count, self.getnfuns)
         needed = c_int64()
         if not inside:
             empty = (None, 0, byref(needed), None, None, None)
@@ -335,7 +335,7 @@ class Model:
         terms = (list(firsts), list(seconds), list(values))
         return (list(starts), *terms)
 
-    def add_constraints(self, functions, lower=None, upper=None):
+    def addcons(self, functions, lower=None, upper=None):
         """Add constraints after the last one, one for each function given.
 
         Parameters
@@ -360,7 +360,7 @@ class Model:
         self._call(lib.BIYOS_addcons, count, *arrays, byref(first))
         return Constraints(self, first.value, count, self._version)
 
-    def set_constraint_bounds(self, indices, lower=None, upper=None):
+    def setconbounds(self, indices, lower=None, upper=None):
         count = len(indices)
         arrays = (
             indices_of(self, Constraints, "indices", indices, count),
@@ -369,14 +369,14 @@ class Model:
         )
         self._call(lib.BIYOS_setconbounds, count, *arrays)
 
-    def constraint_count(self):
+    def getncons(self):
         count = c_int()
         self._call(lib.BIYOS_getncons, byref(count))
         return count.value
 
-    def get_constraints(self, first=0, count=None):
+    def getcons(self, first=0, count=None):
         first = index_of(self, Constraints, "first", first)
-        count, inside = _span(first, count, self.constraint_count)
+        count, inside = _span(first, count, self.getncons)
         if not inside:
             empty = (None, None, None)
             self._call(lib.BIYOS_getcons, first, count, *empty)
@@ -387,7 +387,7 @@ class Model:
         self._call(lib.BIYOS_getcons, first, count, *arrays)
         return list(functions), list(lower), list(upper)
 
-    def add_objectives(
+    def addobjs(
         self,
         functions,
         senses=None,
@@ -437,7 +437,7 @@ class Model:
         self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
         return Objectives(self, first.value, count, self._version)
 
-    def set_objectives(
+    def setobjs(
         self,
         indices,
         senses=None,
@@ -453,14 +453,14 @@ class Model:
         )
         self._call(lib.BIYOS_setobjs, count, *arrays)
 
-    def objective_count(self):
+    def getnobjs(self):
         count = c_int()
         self._call(lib.BIYOS_getnobjs, byref(count))
         return count.value
 
-    def get_objectives(self, first=0, count=None):
+    def getobjs(self, first=0, count=None):
         first = index_of(self, Objectives, "first", first)
-        count, inside = _span(first, count, self.objective_count)
+        count, inside = _span(first, count, self.getnobjs)
         if not inside:
             empty = (None,) * 6
             self._call(lib.BIYOS_getobjs, first, count, *empty)

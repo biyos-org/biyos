@@ -163,7 +163,7 @@ class Variable(View):
 
 
 class Variables(Block):
-    """Consecutive variables of a model, as ``Model.add_variables`` returns.
+    """Consecutive variables of a model, as ``Model.addvars`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
@@ -178,7 +178,7 @@ class Variables(Block):
     _element = Variable
 
     def _held(self, model):
-        return model.variable_count()
+        return model.getnvars()
 
 
 class Function(View):
@@ -195,7 +195,7 @@ class Function(View):
 
 
 class Functions(Block):
-    """Consecutive functions of a model, as ``Model.add_functions`` returns.
+    """Consecutive functions of a model, as ``Model.addfuns`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
@@ -210,7 +210,7 @@ class Functions(Block):
     _element = Function
 
     def _held(self, model):
-        return model.function_count()
+        return model.getnfuns()
 
 
 class Constraint(View):
@@ -227,7 +227,7 @@ class Constraint(View):
 
 
 class Constraints(Block):
-    """Consecutive constraints, as ``Model.add_constraints`` returns.
+    """Consecutive constraints, as ``Model.addcons`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
@@ -242,7 +242,7 @@ class Constraints(Block):
     _element = Constraint
 
     def _held(self, model):
-        return model.constraint_count()
+        return model.getncons()
 
 
 class Objective(View):
@@ -259,7 +259,7 @@ class Objective(View):
 
 
 class Objectives(Block):
-    """Consecutive objectives, as ``Model.add_objectives`` returns.
+    """Consecutive objectives, as ``Model.addobjs`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
@@ -274,7 +274,7 @@ class Objectives(Block):
     _element = Objective
 
     def _held(self, model):
-        return model.objective_count()
+        return model.getnobjs()
 
 
 def _indefinite(noun):

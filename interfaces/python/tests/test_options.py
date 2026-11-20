@@ -70,39 +70,39 @@ def test_complete(env):
 
 @pytest.mark.parametrize("name, default", DEFAULTS.items())
 def test_default(env, name, default):
-    value = env.get_option(name)
+    value = env.getopt(name)
     assert type(value) is type(default)
     assert value == default
 
 
 def test_unknown_name(env):
     with pytest.raises(biyos.Error) as caught:
-        env.get_option("seeds")
+        env.getopt("seeds")
     assert str(caught.value) == "invalid argument: option 'seeds': unknown"
     assert caught.value.code == INVALID_ARGUMENT
 
 
 def test_name_kind(env):
     with pytest.raises(TypeError, match="option name must be a str, not int"):
-        env.get_option(1)
+        env.getopt(1)
 
 
 def test_null_name(env):
     with pytest.raises(ValueError, match="embedded null character"):
-        env.get_option("seed\0")
+        env.getopt("seed\0")
 
 
 @pytest.mark.parametrize("name, value", VALUES.items())
 def test_round_trip(env, name, value):
-    env.set_option(name, value)
-    found = env.get_option(name)
+    env.setopt(name, value)
+    found = env.getopt(name)
     assert type(found) is type(value)
     assert found == value
 
 
 def test_int_double(env):
-    env.set_option("maxtime", 10)
-    value = env.get_option("maxtime")
+    env.setopt("maxtime", 10)
+    value = env.getopt("maxtime")
     assert type(value) is float
     assert value == 10.0
 
@@ -110,27 +110,27 @@ def test_int_double(env):
 @pytest.mark.parametrize("name, value", WRONG)
 def test_wrong_kind(env, name, value):
     with pytest.raises(TypeError):
-        env.set_option(name, value)
-    assert env.get_option(name) == DEFAULTS[name]
+        env.setopt(name, value)
+    assert env.getopt(name) == DEFAULTS[name]
 
 
 def test_kind_message(env):
     message = "option 'seed' takes an int, not bool"
     with pytest.raises(TypeError, match=message):
-        env.set_option("seed", True)
+        env.setopt("seed", True)
     message = "option 'seed' takes an int, not str"
     with pytest.raises(TypeError, match=message):
-        env.set_option("seed", "3")
+        env.setopt("seed", "3")
 
 
 def test_index(env):
-    env.set_option("seed", Number(5))
-    assert env.get_option("seed") == 5
+    env.setopt("seed", Number(5))
+    assert env.getopt("seed") == 5
 
 
 def test_real(env):
-    env.set_option("maxtime", Fraction(7, 2))
-    assert env.get_option("maxtime") == 3.5
+    env.setopt("maxtime", Fraction(7, 2))
+    assert env.getopt("maxtime") == 3.5
 
 
 def test_bad_value(env):
@@ -139,7 +139,7 @@ def test_bad_value(env):
         "-1 is outside [0, 2147483647]"
     )
     with pytest.raises(biyos.Error) as caught:
-        env.set_option("seed", -1)
+        env.setopt("seed", -1)
     assert str(caught.value) == message
     assert caught.value.code == INVALID_ARGUMENT
 
@@ -150,7 +150,7 @@ def test_bad_enum(env):
         "'most' is not one of none, cheap, full"
     )
     with pytest.raises(biyos.Error) as caught:
-        env.set_option("check_lvl", "most")
+        env.setopt("check_lvl", "most")
     assert str(caught.value) == message
     assert caught.value.code == INVALID_ARGUMENT
 
@@ -158,24 +158,24 @@ def test_bad_enum(env):
 @pytest.mark.parametrize("value", [2**31, 2**32 + 5])
 def test_overflow(env, value):
     with pytest.raises(OverflowError):
-        env.set_option("seed", value)
-    assert env.get_option("seed") == 0
+        env.setopt("seed", value)
+    assert env.getopt("seed") == 0
 
 
 def test_null_value(env):
     with pytest.raises(ValueError, match="embedded null character"):
-        env.set_option("repro", "replay\0.txt")
-    assert env.get_option("repro") == ""
+        env.setopt("repro", "replay\0.txt")
+    assert env.getopt("repro") == ""
 
 
 def test_unicode(env):
-    env.set_option("repro", "réplique.txt")
-    assert env.get_option("repro") == "réplique.txt"
+    env.setopt("repro", "réplique.txt")
+    assert env.getopt("repro") == "réplique.txt"
 
 
 @pytest.mark.parametrize("name", DEFAULTS)
 def test_versions(env, name):
-    versions = env.option_versions(name)
+    versions = env.getoptversions(name)
     assert versions == biyos.Versions("0.1.0", None, None)
     assert versions.since == "0.1.0"
 
@@ -187,10 +187,10 @@ def test_version_text(number, text):
 
 def test_unknown_versions(env):
     with pytest.raises(biyos.Error) as caught:
-        env.option_versions("seeds")
+        env.getoptversions("seeds")
     assert caught.value.code == INVALID_ARGUMENT
 
 
 def test_name_versions(env):
     with pytest.raises(TypeError):
-        env.option_versions(1)
+        env.getoptversions(1)
