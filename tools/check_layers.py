@@ -102,6 +102,8 @@ def refuse_role(role, source, target, roles):
         return refuse_sibling(role, source, target)
     if is_brick(target, roles):
         return f"{role} may not use brick {target}"
+    if is_engine(target):
+        return f"{role} may not use engine {target}"
     used = module_of(target)
     if used not in roles[role]:
         return f"{role} may not use {used}"

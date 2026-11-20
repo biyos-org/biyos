@@ -124,6 +124,16 @@ class RoleTest(unittest.TestCase):
             ],
         )
 
+    def test_upward(self):
+        self.source("ipm/barrier/mehrotra.cpp", "ipm/engine.hpp")
+        self.assertEqual(
+            self.problems(),
+            [
+                "src/ipm/barrier/mehrotra.cpp:1: "
+                "ipm/barrier may not use engine ipm/engine.hpp"
+            ],
+        )
+
     def test_narrow(self):
         self.roles = self.table("roles.txt", "ipm/barrier: core\n")
         self.source(
