@@ -104,6 +104,13 @@ class DocTest(unittest.TestCase):
         self.header("biyos.h", HEADER + "#define Biyos_Limit 3\n")
         self.assertEqual(self.problems(), missing("biyos.h:10", "Biyos_Limit"))
 
+    def test_case(self):
+        text = "#define BIYOS_RUN 1\nBIYOS_API void BIYOS_ok(void);\n"
+        self.header("biyos.h", HEADER + text)
+        expected = missing("biyos.h:10", "BIYOS_RUN")
+        expected += missing("biyos.h:11", "BIYOS_ok")
+        self.assertEqual(self.problems(), expected)
+
     def test_continued(self):
         text = "#define BIYOS_EXPORT(name) \\\n    BIYOS_API void name(void)\n"
         self.header("biyos.h", HEADER + text)
