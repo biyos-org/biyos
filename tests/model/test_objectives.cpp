@@ -325,7 +325,7 @@ TEST(ObjectiveTest, ReadRange)
     EXPECT_EQ(refusal([&] { model.objectives(1, 3); }), "invalid argument: objective 3: unknown");
     EXPECT_EQ(refusal([&] { model.objectives(4, 0); }), "invalid argument: objective 4: unknown");
     EXPECT_EQ(refusal([&] { model.objectives(0, -1); }),
-              "invalid argument: argument 'count': -1 is negative");
+              "invalid argument: argument 'n': -1 is negative");
 }
 
 TEST(ObjectiveTest, Mismatch)

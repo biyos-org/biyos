@@ -14,7 +14,7 @@
 namespace
 {
 
-using Format = biyos_status (*)(const biyos_event *, char *, size_t, size_t *);
+using Format = BIYOS_status (*)(const BIYOS_evt *, char *, size_t, size_t *);
 
 constexpr std::string_view kText = "0.000000 warning presolve: removed rows rows=3";
 constexpr std::string_view kJson =
@@ -34,7 +34,7 @@ biyos::Event removed()
 
 std::string fill(Format format, const biyos::Event &event, std::size_t size, std::size_t &needed)
 {
-    const biyos_event view{&event};
+    const BIYOS_evt view{&event};
     std::vector<char> buffer(size, 'x');
     EXPECT_EQ(format(&view, buffer.data(), buffer.size(), &needed), BIYOS_OK);
     EXPECT_EQ(buffer.back(), '\0');
@@ -53,7 +53,7 @@ void expect_resize(Format format, std::string_view line)
     EXPECT_EQ(needed, length);
 }
 
-std::string line_of(Format format, const biyos_event *event)
+std::string line_of(Format format, const BIYOS_evt *event)
 {
     std::size_t needed = 0;
     if (format(event, nullptr, 0, &needed) != BIYOS_OK)
@@ -74,32 +74,32 @@ struct Lines
     std::string json;
 };
 
-void keep(const biyos_event *event, void *user_data)
+void keep(const BIYOS_evt *event, void *data)
 {
-    Lines *lines = static_cast<Lines *>(user_data);
-    lines->text = line_of(biyos_format_text, event);
-    lines->json = line_of(biyos_format_json, event);
+    Lines *lines = static_cast<Lines *>(data);
+    lines->text = line_of(BIYOS_fmttext, event);
+    lines->json = line_of(BIYOS_fmtjson, event);
 }
 
 }
 
 TEST(CApiTest, TextBuffer)
 {
-    expect_resize(biyos_format_text, kText);
+    expect_resize(BIYOS_fmttext, kText);
 }
 
 TEST(CApiTest, JsonBuffer)
 {
-    expect_resize(biyos_format_json, kJson);
+    expect_resize(BIYOS_fmtjson, kJson);
 }
 
 TEST(CApiTest, OneByte)
 {
     const biyos::Event event = removed();
     std::size_t needed = 0;
-    EXPECT_EQ(fill(biyos_format_text, event, 1, needed), "");
+    EXPECT_EQ(fill(BIYOS_fmttext, event, 1, needed), "");
     EXPECT_EQ(needed, kText.size());
-    EXPECT_EQ(fill(biyos_format_json, event, 1, needed), "");
+    EXPECT_EQ(fill(BIYOS_fmtjson, event, 1, needed), "");
     EXPECT_EQ(needed, kJson.size());
 }
 
@@ -110,7 +110,7 @@ TEST(CApiTest, SplitCharacter)
     event.fields.clear();
     const std::string line = "0.000000 warning presolve: caf\xc3\xa9";
     std::size_t needed = 0;
-    EXPECT_EQ(fill(biyos_format_text, event, line.size(), needed),
+    EXPECT_EQ(fill(BIYOS_fmttext, event, line.size(), needed),
               "0.000000 warning presolve: caf\xc3");
     EXPECT_EQ(needed, line.size());
 }
@@ -118,12 +118,12 @@ TEST(CApiTest, SplitCharacter)
 TEST(CApiTest, ZeroSize)
 {
     const biyos::Event event = removed();
-    const biyos_event view{&event};
+    const BIYOS_evt view{&event};
     std::size_t needed = 0;
-    EXPECT_EQ(biyos_format_text(&view, nullptr, 0, &needed), BIYOS_OK);
+    EXPECT_EQ(BIYOS_fmttext(&view, nullptr, 0, &needed), BIYOS_OK);
     EXPECT_EQ(needed, kText.size());
     char kept = 'x';
-    EXPECT_EQ(biyos_format_json(&view, &kept, 0, &needed), BIYOS_OK);
+    EXPECT_EQ(BIYOS_fmtjson(&view, &kept, 0, &needed), BIYOS_OK);
     EXPECT_EQ(needed, kJson.size());
     EXPECT_EQ(kept, 'x');
 }
@@ -131,14 +131,14 @@ TEST(CApiTest, ZeroSize)
 TEST(CApiTest, BadFormat)
 {
     const biyos::Event event = removed();
-    const biyos_event view{&event};
+    const BIYOS_evt view{&event};
     std::array<char, 4> buffer{'a', 'b', 'c', '\0'};
     std::size_t needed = 7;
-    for (const Format format : {biyos_format_text, biyos_format_json})
+    for (const Format format : {BIYOS_fmttext, BIYOS_fmtjson})
     {
-        EXPECT_EQ(format(nullptr, buffer.data(), buffer.size(), &needed), BIYOS_INVALID_ARGUMENT);
-        EXPECT_EQ(format(&view, buffer.data(), buffer.size(), nullptr), BIYOS_INVALID_ARGUMENT);
-        EXPECT_EQ(format(&view, nullptr, 1, &needed), BIYOS_INVALID_ARGUMENT);
+        EXPECT_EQ(format(nullptr, buffer.data(), buffer.size(), &needed), BIYOS_ERR_INVALIDARG);
+        EXPECT_EQ(format(&view, buffer.data(), buffer.size(), nullptr), BIYOS_ERR_INVALIDARG);
+        EXPECT_EQ(format(&view, nullptr, 1, &needed), BIYOS_ERR_INVALIDARG);
     }
     EXPECT_STREQ(buffer.data(), "abc");
     EXPECT_EQ(needed, 7U);
@@ -146,13 +146,13 @@ TEST(CApiTest, BadFormat)
 
 TEST(CApiTest, ErrorLine)
 {
-    biyos_env *env = nullptr;
-    ASSERT_EQ(biyos_env_create(&env), BIYOS_OK);
+    BIYOS_env *env = nullptr;
+    ASSERT_EQ(BIYOS_newenv(&env), BIYOS_OK);
     Lines lines;
-    int id = 0;
-    const int kind = BIYOS_EVENT_MESSAGE;
-    ASSERT_EQ(biyos_subscribe(env, keep, &lines, kind, BIYOS_LEVEL_ERROR, &id), BIYOS_OK);
-    EXPECT_EQ(biyos_set_int_option(env, BIYOS_OPT_SEED, -1), BIYOS_INVALID_ARGUMENT);
+    BIYOS_index id = 0;
+    const int kind = BIYOS_EVT_MESSAGE;
+    ASSERT_EQ(BIYOS_addhook(env, keep, &lines, kind, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setintopt(env, BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
     const std::string text = "invalid argument: option 'seed': -1 is outside [0, 2147483647]";
     const std::string head = R"(,"kind":"message","level":"error","module":"capi","text":")";
     const std::string tail = R"(","fields":{"code":"-100"}})";
@@ -165,5 +165,5 @@ TEST(CApiTest, ErrorLine)
     EXPECT_EQ(plain[1], json[1]);
     EXPECT_EQ(plain[2], "error capi: " + text + " code=-100");
     EXPECT_EQ(json[2], head + text + tail);
-    EXPECT_EQ(biyos_env_free(env), BIYOS_OK);
+    EXPECT_EQ(BIYOS_freeenv(env), BIYOS_OK);
 }

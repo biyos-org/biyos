@@ -13,14 +13,14 @@ namespace biyos
 
 enum class Operator : std::uint8_t
 {
-    Constant = BIYOS_OP_CONSTANT,
-    Variable = BIYOS_OP_VARIABLE,
+    Constant = BIYOS_OP_CONST,
+    Variable = BIYOS_OP_VAR,
     Sum = BIYOS_OP_SUM,
-    Product = BIYOS_OP_PRODUCT,
-    Negation = BIYOS_OP_NEGATION,
-    Division = BIYOS_OP_DIVISION,
-    ConstantPower = BIYOS_OP_CONSTANT_POWER,
-    Power = BIYOS_OP_POWER,
+    Product = BIYOS_OP_PROD,
+    Negation = BIYOS_OP_NEG,
+    Division = BIYOS_OP_DIV,
+    ConstantPower = BIYOS_OP_CPOW,
+    Power = BIYOS_OP_POW,
     Exp = BIYOS_OP_EXP,
     Log = BIYOS_OP_LOG,
     Sqrt = BIYOS_OP_SQRT,
@@ -39,8 +39,8 @@ enum class Operator : std::uint8_t
     Asinh = BIYOS_OP_ASINH,
     Acosh = BIYOS_OP_ACOSH,
     Atanh = BIYOS_OP_ATANH,
-    Entropy = BIYOS_OP_ENTROPY,
-    SignPower = BIYOS_OP_SIGN_POWER,
+    Entropy = BIYOS_OP_ENT,
+    SignPower = BIYOS_OP_SPOW,
     Erf = BIYOS_OP_ERF,
 };
 

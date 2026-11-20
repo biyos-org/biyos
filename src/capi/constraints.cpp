@@ -37,7 +37,7 @@ biyos::Constraint bounded(biyos::Constraint constraint,
     return constraint;
 }
 
-void add_constraints(biyos_model &model,
+void add_constraints(BIYOS_model &model,
                      int count,
                      const int *functions,
                      const double *lower,
@@ -48,7 +48,7 @@ void add_constraints(biyos_model &model,
     const std::size_t size = length(count);
     if (size > 0)
     {
-        require(functions, "functions");
+        require(functions, "funs");
     }
     std::vector<biyos::Constraint> added;
     added.reserve(size);
@@ -69,7 +69,7 @@ void add_constraints(biyos_model &model,
     }
 }
 
-void set_bounds(biyos_model &model,
+void set_bounds(BIYOS_model &model,
                 int count,
                 const int *indices,
                 const double *lower,
@@ -86,9 +86,9 @@ void set_bounds(biyos_model &model,
     core.set_constraints(changed, constraints);
 }
 
-void constraint_count(biyos_model &model, int *count)
+void constraint_count(BIYOS_model &model, int *count)
 {
-    *require(count, "count") = model.core.constraint_count();
+    *require(count, "n") = model.core.constraint_count();
 }
 
 void copy_out(const biyos::Constraint &constraint,
@@ -111,7 +111,7 @@ void copy_out(const biyos::Constraint &constraint,
     }
 }
 
-void get_constraints(biyos_model &model,
+void get_constraints(BIYOS_model &model,
                      int first,
                      int count,
                      int *functions,
@@ -127,36 +127,36 @@ void get_constraints(biyos_model &model,
 
 }
 
-biyos_status biyos_add_constraints(biyos_model *model,
-                                   int count,
-                                   const int *functions,
-                                   const double *lower,
-                                   const double *upper,
-                                   int *first)
+BIYOS_status BIYOS_addcons(BIYOS_model *mdl,
+                           BIYOS_index n,
+                           const BIYOS_index *funs,
+                           const BIYOS_real *lb,
+                           const BIYOS_real *ub,
+                           BIYOS_index *beg)
 {
-    return guarded<add_constraints>(model, count, functions, lower, upper, first);
+    return guarded<add_constraints>(mdl, n, funs, lb, ub, beg);
 }
 
-biyos_status biyos_set_constraint_bounds(biyos_model *model,
-                                         int count,
-                                         const int *indices,
-                                         const double *lower,
-                                         const double *upper)
+BIYOS_status BIYOS_setconbounds(BIYOS_model *mdl,
+                                BIYOS_index n,
+                                const BIYOS_index *idx,
+                                const BIYOS_real *lb,
+                                const BIYOS_real *ub)
 {
-    return guarded<set_bounds>(model, count, indices, lower, upper);
+    return guarded<set_bounds>(mdl, n, idx, lb, ub);
 }
 
-biyos_status biyos_constraint_count(biyos_model *model, int *count)
+BIYOS_status BIYOS_getncons(BIYOS_model *mdl, BIYOS_index *n)
 {
-    return guarded<constraint_count>(model, count);
+    return guarded<constraint_count>(mdl, n);
 }
 
-biyos_status biyos_get_constraints(biyos_model *model,
-                                   int first,
-                                   int count,
-                                   int *functions,
-                                   double *lower,
-                                   double *upper)
+BIYOS_status BIYOS_getcons(BIYOS_model *mdl,
+                           BIYOS_index beg,
+                           BIYOS_index n,
+                           BIYOS_index *funs,
+                           BIYOS_real *lb,
+                           BIYOS_real *ub)
 {
-    return guarded<get_constraints>(model, first, count, functions, lower, upper);
+    return guarded<get_constraints>(mdl, beg, n, funs, lb, ub);
 }

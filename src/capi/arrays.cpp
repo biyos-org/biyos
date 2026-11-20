@@ -50,8 +50,8 @@ std::vector<LinearTerm> packed(std::size_t size, const int *variables, const dou
 {
     if (size > 0)
     {
-        require(variables, "variables");
-        require(values, "values");
+        require(variables, "vars");
+        require(values, "vals");
     }
     std::vector<LinearTerm> terms;
     terms.reserve(size);
@@ -85,9 +85,9 @@ std::vector<QuadraticTerm> packed(std::size_t size,
 {
     if (size > 0)
     {
-        require(firsts, "firsts");
-        require(seconds, "seconds");
-        require(values, "values");
+        require(firsts, "vars1");
+        require(seconds, "vars2");
+        require(values, "vals");
     }
     std::vector<QuadraticTerm> terms;
     terms.reserve(size);

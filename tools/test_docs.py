@@ -12,7 +12,7 @@ HEADER = """#pragma once
 
 #define BIYOS_OK 0
 
-BIYOS_API int biyos_run(int *steps);
+BIYOS_API int BIYOS_run(int *steps);
 """
 
 DOC = """# C API
@@ -23,10 +23,10 @@ DOC = """# C API
 | `BIYOS_STATIC` | static |
 | `BIYOS_OK` | success |
 
-### `biyos_run`
+### `BIYOS_run`
 
 ```c
-int biyos_run(int *steps);
+int BIYOS_run(int *steps);
 ```
 """
 
@@ -62,13 +62,13 @@ class DocTest(unittest.TestCase):
         self.assertEqual(self.problems(), [])
 
     def test_function(self):
-        self.header("biyos.h", HEADER + "BIYOS_API void biyos_stop(void);\n")
-        self.assertEqual(self.problems(), missing("biyos.h:10", "biyos_stop"))
+        self.header("biyos.h", HEADER + "BIYOS_API void BIYOS_stop(void);\n")
+        self.assertEqual(self.problems(), missing("biyos.h:10", "BIYOS_stop"))
 
     def test_wrapped(self):
-        text = HEADER + "BIYOS_API int\nbiyos_stop(int *steps,\n int n);\n"
+        text = HEADER + "BIYOS_API int\nBIYOS_stop(int *steps,\n int n);\n"
         self.header("biyos.h", text)
-        self.assertEqual(self.problems(), missing("biyos.h:11", "biyos_stop"))
+        self.assertEqual(self.problems(), missing("biyos.h:11", "BIYOS_stop"))
 
     def test_unnamed(self):
         self.header("biyos.h", HEADER + "BIYOS_API int count;\n")
@@ -76,11 +76,11 @@ class DocTest(unittest.TestCase):
         self.assertEqual(self.problems(), [problem])
 
     def test_typedef(self):
-        text = "typedef struct biyos_event biyos_event;\n"
-        text += "typedef void (*biyos_subscriber)(const biyos_event *event);\n"
+        text = "typedef struct BIYOS_evt BIYOS_evt;\n"
+        text += "typedef void (*BIYOS_hook)(const BIYOS_evt *event);\n"
         self.header("biyos.h", HEADER + text)
-        expected = missing("biyos.h:10", "biyos_event")
-        expected += missing("biyos.h:11", "biyos_subscriber")
+        expected = missing("biyos.h:10", "BIYOS_evt")
+        expected += missing("biyos.h:11", "BIYOS_hook")
         self.assertEqual(self.problems(), expected)
 
     def test_macro(self):
@@ -96,13 +96,20 @@ class DocTest(unittest.TestCase):
         self.assertEqual(self.problems(), missing("biyos.h:12", "BIYOS_RED"))
 
     def test_lowercase(self):
-        text = "#define biyos_max(a, b) ((a) > (b) ? (a) : (b))\n"
+        text = "#define BIYOS_max(a, b) ((a) > (b) ? (a) : (b))\n"
         self.header("biyos.h", HEADER + text)
-        self.assertEqual(self.problems(), missing("biyos.h:10", "biyos_max"))
+        self.assertEqual(self.problems(), missing("biyos.h:10", "BIYOS_max"))
 
     def test_mixed(self):
         self.header("biyos.h", HEADER + "#define Biyos_Limit 3\n")
         self.assertEqual(self.problems(), missing("biyos.h:10", "Biyos_Limit"))
+
+    def test_case(self):
+        text = "#define BIYOS_RUN 1\nBIYOS_API void BIYOS_ok(void);\n"
+        self.header("biyos.h", HEADER + text)
+        expected = missing("biyos.h:10", "BIYOS_RUN")
+        expected += missing("biyos.h:11", "BIYOS_ok")
+        self.assertEqual(self.problems(), expected)
 
     def test_continued(self):
         text = "#define BIYOS_EXPORT(name) \\\n    BIYOS_API void name(void)\n"
@@ -111,23 +118,23 @@ class DocTest(unittest.TestCase):
         self.assertEqual(self.problems(), [])
 
     def test_comment(self):
-        text = "/* BIYOS_API void biyos_stop(void);\n   BIYOS_OLD */\n"
+        text = "/* BIYOS_API void BIYOS_stop(void);\n   BIYOS_OLD */\n"
         text += "// BIYOS_GONE\n"
         self.header("biyos.h", HEADER + text)
         self.assertEqual(self.problems(), [])
 
     def test_lines(self):
-        text = "/* one\n   two\n   end */\nBIYOS_API void biyos_stop(void);\n"
+        text = "/* one\n   two\n   end */\nBIYOS_API void BIYOS_stop(void);\n"
         self.header("biyos.h", HEADER + text)
-        self.assertEqual(self.problems(), missing("biyos.h:13", "biyos_stop"))
+        self.assertEqual(self.problems(), missing("biyos.h:13", "BIYOS_stop"))
 
     def test_literal(self):
         text = '#define BIYOS_GLOB "lib/*"\n'
-        text += "BIYOS_API void biyos_stop(void);\n"
-        text += '#define BIYOS_NOTE "BIYOS_FAKE */ // biyos_fake"\n'
+        text += "BIYOS_API void BIYOS_stop(void);\n"
+        text += '#define BIYOS_NOTE "BIYOS_FAKE */ // BIYOS_fake"\n'
         self.header("biyos.h", HEADER + text)
         self.doc(DOC + "| `BIYOS_GLOB` | glob |\n| `BIYOS_NOTE` | note |\n")
-        self.assertEqual(self.problems(), missing("biyos.h:11", "biyos_stop"))
+        self.assertEqual(self.problems(), missing("biyos.h:11", "BIYOS_stop"))
 
     def test_once(self):
         text = "#ifdef BIYOS_NEW\n#endif\n#ifdef BIYOS_NEW\n#endif\n"
@@ -152,43 +159,43 @@ class DocTest(unittest.TestCase):
 
     def test_stale(self):
         text = "| `BIYOS_GONE` | gone |\n| `seed` | seed |\n"
-        text += "### `biyos_old`\n### `biyos_old`\n"
+        text += "### `BIYOS_old`\n### `BIYOS_old`\n"
         self.doc(DOC + text)
         stale = "has an entry but no header declares it"
         expected = [
             f"docs/capi.md:14: BIYOS_GONE {stale}",
-            f"docs/capi.md:16: biyos_old {stale}",
+            f"docs/capi.md:16: BIYOS_old {stale}",
         ]
         self.assertEqual(self.problems(), expected)
 
     def test_prototype(self):
         self.doc(DOC.replace("(int *steps)", "(int steps)"))
         where = "include/biyos/biyos.h:9"
-        problem = f"docs/capi.md:12: biyos_run differs from {where}"
+        problem = f"docs/capi.md:12: BIYOS_run differs from {where}"
         self.assertEqual(self.problems(), [problem])
 
     def test_bare(self):
-        self.doc(DOC.replace("```c\nint biyos_run(int *steps);\n```\n", ""))
-        expected = missing("biyos.h:9", "biyos_run", "prototype")
+        self.doc(DOC.replace("```c\nint BIYOS_run(int *steps);\n```\n", ""))
+        expected = missing("biyos.h:9", "BIYOS_run", "prototype")
         self.assertEqual(self.problems(), expected)
 
     def test_spacing(self):
-        shown = "BIYOS_API int\nbiyos_run( int * steps );"
-        self.doc(DOC.replace("int biyos_run(int *steps);", shown))
+        shown = "BIYOS_API int\nBIYOS_run( int * steps );"
+        self.doc(DOC.replace("int BIYOS_run(int *steps);", shown))
         self.assertEqual(self.problems(), [])
 
     def test_example(self):
-        calls = "biyos_run(&steps);\nstatus = biyos_run(&steps);\n"
-        calls += "if (biyos_run(&steps) != 0)\n"
+        calls = "BIYOS_run(&steps);\nstatus = BIYOS_run(&steps);\n"
+        calls += "if (BIYOS_run(&steps) != 0)\n"
         self.doc(DOC + "\n```c\n" + calls + "```\n")
         self.assertEqual(self.problems(), [])
 
     def test_mention(self):
-        prose = "Call `biyos_run` first.\n"
-        code = "```c\n# `biyos_run`\n```\n"
-        cell = "| Step | Call |\n| 1 | `biyos_run` |\n"
-        self.doc(DOC.replace("### `biyos_run`\n", prose + code + cell))
-        self.assertEqual(self.problems(), missing("biyos.h:9", "biyos_run"))
+        prose = "Call `BIYOS_run` first.\n"
+        code = "```c\n# `BIYOS_run`\n```\n"
+        cell = "| Step | Call |\n| 1 | `BIYOS_run` |\n"
+        self.doc(DOC.replace("### `BIYOS_run`\n", prose + code + cell))
+        self.assertEqual(self.problems(), missing("biyos.h:9", "BIYOS_run"))
 
 
 if __name__ == "__main__":

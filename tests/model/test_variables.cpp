@@ -227,7 +227,7 @@ TEST(VariableTest, ReadRange)
     EXPECT_EQ(refusal([&] { model.variables(1, 3); }), "invalid argument: variable 3: unknown");
     EXPECT_EQ(refusal([&] { model.variables(4, 0); }), "invalid argument: variable 4: unknown");
     EXPECT_EQ(refusal([&] { model.variables(0, -1); }),
-              "invalid argument: argument 'count': -1 is negative");
+              "invalid argument: argument 'n': -1 is negative");
 }
 
 TEST(VariableTest, Mismatch)

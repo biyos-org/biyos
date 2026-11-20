@@ -46,7 +46,7 @@ using biyos::test::text;
 using biyos::test::within;
 
 constexpr std::uint64_t kSeed = 20261111;
-constexpr int kFirst = BIYOS_OP_CONSTANT;
+constexpr int kFirst = BIYOS_OP_CONST;
 constexpr int kLast = BIYOS_OP_ERF;
 constexpr int kBoxes = 300;
 constexpr int kExact = 0;

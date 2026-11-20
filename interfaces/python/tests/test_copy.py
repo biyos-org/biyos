@@ -82,11 +82,11 @@ def reached(log, function, *arguments):
 
 
 def before_copy(log, actions, monkeypatch):
-    env_free = partial(logged, log, "env", lib.biyos_env_free)
-    monkeypatch.setattr(lib, "biyos_env_free", env_free)
-    copy = partial(reached, log, lib.biyos_model_copy)
+    env_free = partial(logged, log, "env", lib.BIYOS_freeenv)
+    monkeypatch.setattr(lib, "BIYOS_freeenv", env_free)
+    copy = partial(reached, log, lib.BIYOS_copymodel)
     spy = partial(preceded, actions, copy)
-    monkeypatch.setattr(lib, "biyos_model_copy", spy)
+    monkeypatch.setattr(lib, "BIYOS_copymodel", spy)
 
 
 @pytest.fixture(params=["env", "other"])
@@ -164,8 +164,8 @@ def test_envs(env, model):
 
 def test_collected(env, other, model, monkeypatch):
     log = []
-    spy = partial(freed, log, lib.biyos_model_free)
-    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    spy = partial(freed, log, lib.BIYOS_freemodel)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
     copy = model.copy(other)
     handle = copy._handle.value
     del copy
@@ -178,10 +178,10 @@ def test_collected(env, other, model, monkeypatch):
 
 def test_interrupted(other, model, monkeypatch):
     log = []
-    interrupt = partial(interrupted, lib.biyos_model_copy)
-    monkeypatch.setattr(lib, "biyos_model_copy", interrupt)
-    spy = partial(freed, log, lib.biyos_model_free)
-    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    interrupt = partial(interrupted, lib.BIYOS_copymodel)
+    monkeypatch.setattr(lib, "BIYOS_copymodel", interrupt)
+    spy = partial(freed, log, lib.BIYOS_freemodel)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
     with pytest.raises(KeyboardInterrupt):
         model.copy(other)
     [handle] = other._models._live
@@ -192,7 +192,7 @@ def test_interrupted(other, model, monkeypatch):
 
 def test_closed(other, model, monkeypatch):
     calls = []
-    monkeypatch.setattr(lib, "biyos_model_copy", calls.append)
+    monkeypatch.setattr(lib, "BIYOS_copymodel", calls.append)
     other.close()
     with pytest.raises(ValueError, match="the environment is closed"):
         model.copy(other)

@@ -12,39 +12,39 @@ INVALID_ARGUMENT = -100
 
 DEFAULTS = {
     "seed": 0,
-    "time_limit": float("inf"),
-    "check_level": "cheap",
+    "maxtime": float("inf"),
+    "check_lvl": "cheap",
     "presolve": True,
-    "reproducer": "",
-    "feasibility_abs": 1e-6,
-    "feasibility_rel": 1e-6,
-    "integrality_tol": 1e-5,
-    "zero_tol": 1e-9,
-    "cpu_time_limit": float("inf"),
+    "repro": "",
+    "feastol_abs": 1e-6,
+    "feastol_rel": 1e-6,
+    "inttol": 1e-5,
+    "zerotol": 1e-9,
+    "maxcputime": float("inf"),
 }
 
 VALUES = {
     "seed": 42,
-    "time_limit": 3.5,
-    "check_level": "full",
+    "maxtime": 3.5,
+    "check_lvl": "full",
     "presolve": False,
-    "reproducer": "replay.txt",
-    "feasibility_abs": 1e-7,
-    "feasibility_rel": 1e-8,
-    "integrality_tol": 1e-4,
-    "zero_tol": 1e-12,
-    "cpu_time_limit": 60.0,
+    "repro": "replay.txt",
+    "feastol_abs": 1e-7,
+    "feastol_rel": 1e-8,
+    "inttol": 1e-4,
+    "zerotol": 1e-12,
+    "maxcputime": 60.0,
 }
 
 WRONG = [
     ("seed", 1.5),
     ("seed", True),
     ("seed", "3"),
-    ("time_limit", True),
-    ("time_limit", "10"),
-    ("check_level", 2),
+    ("maxtime", True),
+    ("maxtime", "10"),
+    ("check_lvl", 2),
     ("presolve", 1),
-    ("reproducer", b"replay.txt"),
+    ("repro", b"replay.txt"),
 ]
 
 NUMBERS = [(0, None), (100, "0.1.0"), (10203, "1.2.3"), (990099, "99.0.99")]
@@ -59,7 +59,7 @@ def env():
 def option_count(env):
     count = 0
     kind = c_int()
-    while lib.biyos_option_kind(env._handle, count + 1, byref(kind)) == OK:
+    while lib.BIYOS_getoptkind(env._handle, count + 1, byref(kind)) == OK:
         count += 1
     return count
 
@@ -101,8 +101,8 @@ def test_round_trip(env, name, value):
 
 
 def test_int_double(env):
-    env.set_option("time_limit", 10)
-    value = env.get_option("time_limit")
+    env.set_option("maxtime", 10)
+    value = env.get_option("maxtime")
     assert type(value) is float
     assert value == 10.0
 
@@ -129,8 +129,8 @@ def test_index(env):
 
 
 def test_real(env):
-    env.set_option("time_limit", Fraction(7, 2))
-    assert env.get_option("time_limit") == 3.5
+    env.set_option("maxtime", Fraction(7, 2))
+    assert env.get_option("maxtime") == 3.5
 
 
 def test_bad_value(env):
@@ -146,11 +146,11 @@ def test_bad_value(env):
 
 def test_bad_enum(env):
     message = (
-        "invalid argument: option 'check_level': "
+        "invalid argument: option 'check_lvl': "
         "'most' is not one of none, cheap, full"
     )
     with pytest.raises(biyos.Error) as caught:
-        env.set_option("check_level", "most")
+        env.set_option("check_lvl", "most")
     assert str(caught.value) == message
     assert caught.value.code == INVALID_ARGUMENT
 
@@ -164,13 +164,13 @@ def test_overflow(env, value):
 
 def test_null_value(env):
     with pytest.raises(ValueError, match="embedded null character"):
-        env.set_option("reproducer", "replay\0.txt")
-    assert env.get_option("reproducer") == ""
+        env.set_option("repro", "replay\0.txt")
+    assert env.get_option("repro") == ""
 
 
 def test_unicode(env):
-    env.set_option("reproducer", "réplique.txt")
-    assert env.get_option("reproducer") == "réplique.txt"
+    env.set_option("repro", "réplique.txt")
+    assert env.get_option("repro") == "réplique.txt"
 
 
 @pytest.mark.parametrize("name", DEFAULTS)

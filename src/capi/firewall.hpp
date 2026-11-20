@@ -15,21 +15,21 @@
 namespace biyos::capi
 {
 
-inline biyos_status status_of(ErrorKind kind) noexcept
+inline BIYOS_status status_of(ErrorKind kind) noexcept
 {
     switch (kind)
     {
     case ErrorKind::InvalidArgument:
-        return BIYOS_INVALID_ARGUMENT;
+        return BIYOS_ERR_INVALIDARG;
     case ErrorKind::NoMemory:
-        return BIYOS_NO_MEMORY;
+        return BIYOS_ERR_NOMEMORY;
     case ErrorKind::Internal:
-        return BIYOS_INTERNAL_ERROR;
+        return BIYOS_ERR_INTERNAL;
     }
-    return BIYOS_INTERNAL_ERROR;
+    return BIYOS_ERR_INTERNAL;
 }
 
-inline void describe_failure(Event &event, biyos_status status, std::string_view text)
+inline void describe_failure(Event &event, BIYOS_status status, std::string_view text)
 {
     event.module = "capi";
     event.text.assign(text);
@@ -38,7 +38,7 @@ inline void describe_failure(Event &event, biyos_status status, std::string_view
 
 inline void announce(Environment &env, ErrorKind kind, std::string_view text) noexcept
 {
-    const biyos_status status = status_of(kind);
+    const BIYOS_status status = status_of(kind);
     const auto fill = [status, text](Event &event) { describe_failure(event, status, text); };
     env.events().emit(EventKind::Message, Level::Error, fill);
 }
@@ -56,7 +56,7 @@ inline void report(Environment *env, ErrorKind kind, std::string_view text) noex
     }
 }
 
-inline biyos_status fail(Environment *env, ErrorKind kind, std::string_view message) noexcept
+inline BIYOS_status fail(Environment *env, ErrorKind kind, std::string_view message) noexcept
 {
     if (env != nullptr)
     {
@@ -72,7 +72,7 @@ inline biyos_status fail(Environment *env, ErrorKind kind, std::string_view mess
     return status_of(kind);
 }
 
-template <std::invocable Body> biyos_status guard(Environment *env, Body &&body) noexcept
+template <std::invocable Body> BIYOS_status guard(Environment *env, Body &&body) noexcept
 {
     try
     {
@@ -99,7 +99,7 @@ template <std::invocable Body> biyos_status guard(Environment *env, Body &&body)
     }
 }
 
-template <std::invocable Body> biyos_status guard(Body &&body) noexcept
+template <std::invocable Body> BIYOS_status guard(Body &&body) noexcept
 {
     return guard(nullptr, std::forward<Body>(body));
 }

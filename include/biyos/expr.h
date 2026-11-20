@@ -1,13 +1,13 @@
 #pragma once
 
-#define BIYOS_OP_CONSTANT 1
-#define BIYOS_OP_VARIABLE 2
+#define BIYOS_OP_CONST 1
+#define BIYOS_OP_VAR 2
 #define BIYOS_OP_SUM 3
-#define BIYOS_OP_PRODUCT 4
-#define BIYOS_OP_NEGATION 5
-#define BIYOS_OP_DIVISION 6
-#define BIYOS_OP_CONSTANT_POWER 7
-#define BIYOS_OP_POWER 8
+#define BIYOS_OP_PROD 4
+#define BIYOS_OP_NEG 5
+#define BIYOS_OP_DIV 6
+#define BIYOS_OP_CPOW 7
+#define BIYOS_OP_POW 8
 #define BIYOS_OP_EXP 9
 #define BIYOS_OP_LOG 10
 #define BIYOS_OP_SQRT 11
@@ -26,6 +26,6 @@
 #define BIYOS_OP_ASINH 24
 #define BIYOS_OP_ACOSH 25
 #define BIYOS_OP_ATANH 26
-#define BIYOS_OP_ENTROPY 27
-#define BIYOS_OP_SIGN_POWER 28
+#define BIYOS_OP_ENT 27
+#define BIYOS_OP_SPOW 28
 #define BIYOS_OP_ERF 29

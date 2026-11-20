@@ -18,29 +18,29 @@ namespace
 struct Forwarder
 {
     biyos::Environment *env;
-    biyos_subscriber subscriber;
-    void *user_data;
+    BIYOS_hook subscriber;
+    void *data;
 
     void operator()(const biyos::Event &event) const
     {
         const biyos::Environment::ErrorScope scope(*env);
-        const biyos_event view{&event};
-        subscriber(&view, user_data);
+        const BIYOS_evt view{&event};
+        subscriber(&view, data);
     }
 };
 
 void subscribe(biyos::Environment &env,
-               biyos_subscriber subscriber,
-               void *user_data,
+               BIYOS_hook subscriber,
+               void *data,
                int kind,
                int lowest,
                int *subscription)
 {
     biyos::Events &events = writable(env).events();
-    const Forwarder forwarder{&env, require(subscriber, "subscriber"), user_data};
+    const Forwarder forwarder{&env, require(subscriber, "hook"), data};
     const biyos::EventKind found = biyos::find_kind(kind);
     const biyos::Level level = biyos::find_level(lowest);
-    int *id = require(subscription, "subscription");
+    int *id = require(subscription, "id");
     *id = events.subscribe(found, level, forwarder);
 }
 
@@ -49,7 +49,7 @@ void unsubscribe(biyos::Environment &env, int subscription)
     writable(env).events().unsubscribe(subscription);
 }
 
-const biyos::Field *field_of(const biyos_event *event, int field)
+const biyos::Field *field_of(const BIYOS_evt *event, int field)
 {
     if (event == nullptr || field < 0)
     {
@@ -62,54 +62,54 @@ const biyos::Field *field_of(const biyos_event *event, int field)
 
 }
 
-biyos_status biyos_subscribe(biyos_env *env,
-                             biyos_subscriber subscriber,
-                             void *user_data,
-                             int kind,
-                             int lowest,
-                             int *subscription)
+BIYOS_status BIYOS_addhook(BIYOS_env *env,
+                           BIYOS_hook hook,
+                           void *data,
+                           BIYOS_int kind,
+                           BIYOS_int lowest,
+                           BIYOS_index *id)
 {
-    return guarded<subscribe>(env, subscriber, user_data, kind, lowest, subscription);
+    return guarded<subscribe>(env, hook, data, kind, lowest, id);
 }
 
-biyos_status biyos_unsubscribe(biyos_env *env, int subscription)
+BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index id)
 {
-    return guarded<unsubscribe>(env, subscription);
+    return guarded<unsubscribe>(env, id);
 }
 
-int biyos_event_kind(const biyos_event *event)
+BIYOS_int BIYOS_getevtkind(const BIYOS_evt *evt)
 {
-    return event == nullptr ? 0 : static_cast<int>(event->core->kind);
+    return evt == nullptr ? 0 : static_cast<int>(evt->core->kind);
 }
 
-int biyos_event_level(const biyos_event *event)
+BIYOS_int BIYOS_getevtlvl(const BIYOS_evt *evt)
 {
-    return event == nullptr ? 0 : static_cast<int>(event->core->level);
+    return evt == nullptr ? 0 : static_cast<int>(evt->core->level);
 }
 
-const char *biyos_event_module(const biyos_event *event)
+const char *BIYOS_getevtmodule(const BIYOS_evt *evt)
 {
-    return event == nullptr ? "" : event->core->module.c_str();
+    return evt == nullptr ? "" : evt->core->module.c_str();
 }
 
-const char *biyos_event_text(const biyos_event *event)
+const char *BIYOS_getevttext(const BIYOS_evt *evt)
 {
-    return event == nullptr ? "" : event->core->text.c_str();
+    return evt == nullptr ? "" : evt->core->text.c_str();
 }
 
-int biyos_event_field_count(const biyos_event *event)
+BIYOS_index BIYOS_getnevtfields(const BIYOS_evt *evt)
 {
-    return event == nullptr ? 0 : static_cast<int>(event->core->fields.size());
+    return evt == nullptr ? 0 : static_cast<int>(evt->core->fields.size());
 }
 
-const char *biyos_event_field_name(const biyos_event *event, int field)
+const char *BIYOS_getevtfieldname(const BIYOS_evt *evt, BIYOS_index field)
 {
-    const biyos::Field *found = field_of(event, field);
+    const biyos::Field *found = field_of(evt, field);
     return found == nullptr ? "" : found->name.c_str();
 }
 
-const char *biyos_event_field_value(const biyos_event *event, int field)
+const char *BIYOS_getevtfieldvalue(const BIYOS_evt *evt, BIYOS_index field)
 {
-    const biyos::Field *found = field_of(event, field);
+    const biyos::Field *found = field_of(evt, field);
     return found == nullptr ? "" : found->value.c_str();
 }

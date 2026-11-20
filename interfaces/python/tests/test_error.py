@@ -20,7 +20,7 @@ def test_pickle():
 def test_undecodable():
     option = c_int()
     with biyos.Environment() as env, pytest.raises(biyos.Error) as caught:
-        status = lib.biyos_option_id(env._handle, b"seed\xff", byref(option))
+        status = lib.BIYOS_getoptid(env._handle, b"seed\xff", byref(option))
         check(env._handle, status)
     message = "invalid argument: option 'seed\ufffd': unknown"
     assert str(caught.value) == message

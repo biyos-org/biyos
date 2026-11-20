@@ -207,7 +207,7 @@ TEST(ConstraintTest, ReadRange)
     EXPECT_EQ(refusal([&] { model.constraints(1, 3); }), "invalid argument: constraint 3: unknown");
     EXPECT_EQ(refusal([&] { model.constraints(4, 0); }), "invalid argument: constraint 4: unknown");
     EXPECT_EQ(refusal([&] { model.constraints(0, -1); }),
-              "invalid argument: argument 'count': -1 is negative");
+              "invalid argument: argument 'n': -1 is negative");
 }
 
 TEST(ConstraintTest, Mismatch)

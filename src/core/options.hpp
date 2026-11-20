@@ -21,23 +21,23 @@ class Events;
 enum class Option
 {
     Seed = BIYOS_OPT_SEED,
-    TimeLimit = BIYOS_OPT_TIME_LIMIT,
-    CheckLevel = BIYOS_OPT_CHECK_LEVEL,
+    TimeLimit = BIYOS_OPT_MAXTIME,
+    CheckLevel = BIYOS_OPT_CHECKLVL,
     Presolve = BIYOS_OPT_PRESOLVE,
-    Reproducer = BIYOS_OPT_REPRODUCER,
-    FeasibilityAbs = BIYOS_OPT_FEASIBILITY_ABS,
-    FeasibilityRel = BIYOS_OPT_FEASIBILITY_REL,
-    IntegralityTol = BIYOS_OPT_INTEGRALITY_TOL,
-    ZeroTol = BIYOS_OPT_ZERO_TOL,
-    CpuTimeLimit = BIYOS_OPT_CPU_TIME_LIMIT,
+    Reproducer = BIYOS_OPT_REPRO,
+    FeasibilityAbs = BIYOS_OPT_FEASTOLABS,
+    FeasibilityRel = BIYOS_OPT_FEASTOLREL,
+    IntegralityTol = BIYOS_OPT_INTTOL,
+    ZeroTol = BIYOS_OPT_ZEROTOL,
+    CpuTimeLimit = BIYOS_OPT_MAXCPUTIME,
 };
 
 enum class OptionKind
 {
     Bool = BIYOS_KIND_BOOL,
     Int = BIYOS_KIND_INT,
-    Double = BIYOS_KIND_DOUBLE,
-    String = BIYOS_KIND_STRING,
+    Double = BIYOS_KIND_DBL,
+    String = BIYOS_KIND_STR,
     Enum = BIYOS_KIND_ENUM,
 };
 

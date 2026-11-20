@@ -115,8 +115,8 @@ def test_defaults(model):
 def test_offsets(model, monkeypatch):
     starts = array.array("q", [0, 2])
     seen = []
-    spy = partial(recorded, seen, lib.biyos_add_quadratic_terms)
-    monkeypatch.setattr(lib, "biyos_add_quadratic_terms", spy)
+    spy = partial(recorded, seen, lib.BIYOS_addquadterms)
+    monkeypatch.setattr(lib, "BIYOS_addquadterms", spy)
     model.add_quadratic_terms([1], starts, [1, 0], [0, 0], [1.0, 2.0])
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][3]) != starts.buffer_info()[0]
@@ -127,8 +127,8 @@ def test_offsets(model, monkeypatch):
 def test_values(model, monkeypatch):
     values = array.array("d", [1.0, 2.0])
     seen = []
-    spy = partial(recorded, seen, lib.biyos_add_quadratic_terms)
-    monkeypatch.setattr(lib, "biyos_add_quadratic_terms", spy)
+    spy = partial(recorded, seen, lib.BIYOS_addquadterms)
+    monkeypatch.setattr(lib, "BIYOS_addquadterms", spy)
     model.add_quadratic_terms([0], [0, 2], [1, 0], [0, 0], values)
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][6]) == values.buffer_info()[0]
@@ -147,8 +147,8 @@ def test_growing(model):
 def test_stale(model, monkeypatch):
     add_sample(model)
     monkeypatch.setattr(model, "function_count", lambda: 0)
-    spy = Room(lib.biyos_get_quadratic_terms, read_lengths)
-    monkeypatch.setattr(lib, "biyos_get_quadratic_terms", spy)
+    spy = Room(lib.BIYOS_getquadterms, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getquadterms", spy)
     assert model.get_quadratic_terms(0, 3) == SORTED
     assert model.get_quadratic_terms(1) == ([0], [], [], [])
 
@@ -225,7 +225,7 @@ def test_gone(model, monkeypatch):
     function, other, variable = f[0], f[1], x[1]
     model._version += 1
     seen = []
-    for name in ("biyos_add_quadratic_terms", "biyos_get_quadratic_terms"):
+    for name in ("BIYOS_addquadterms", "BIYOS_getquadterms"):
         spy = partial(recorded, seen, getattr(lib, name))
         monkeypatch.setattr(lib, name, spy)
     block = "the block predates a deletion"
@@ -250,7 +250,7 @@ def test_refused(model):
     add_sample(model)
     message = refusal(model.add_quadratic_terms, [1, 1], [0, 0, 0], [], [], [])
     assert message == (
-        "invalid argument: argument 'functions': function 1 is repeated"
+        "invalid argument: argument 'funs': function 1 is repeated"
     )
     message = refusal(model.add_quadratic_terms, [3], [0, 0], [], [], [])
     assert message == "invalid argument: function 3: unknown"
@@ -276,7 +276,7 @@ def test_refused(model):
     message = refusal(model.get_quadratic_terms, 4)
     assert message == "invalid argument: function 4: unknown"
     message = refusal(model.get_quadratic_terms, 0, -1)
-    assert message == "invalid argument: argument 'count': -1 is negative"
+    assert message == "invalid argument: argument 'n': -1 is negative"
     found = model.get_quadratic_terms()
     assert found[0] == [0, 3, 4, 6]
     assert found[3] == [2.0, 0.0, -1.0, LARGE, 3.0, 1.0]

@@ -78,7 +78,7 @@ void check_span(std::string_view noun, Index first, Index count, Index size)
     if (count < 0)
     {
         const std::string reason = text_of(count) + " is negative";
-        throw Error(ErrorKind::InvalidArgument, "argument 'count'", reason);
+        throw Error(ErrorKind::InvalidArgument, "argument 'n'", reason);
     }
     if (first < 0 || first > size)
     {

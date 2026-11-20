@@ -3,6 +3,14 @@ from biyos import _capi
 from biyos._capi import lib
 from header import functions, lines, macros
 
+KINDS = {
+    "BIYOS_KIND_BOOL": "KIND_BOOL",
+    "BIYOS_KIND_INT": "KIND_INT",
+    "BIYOS_KIND_DBL": "KIND_DOUBLE",
+    "BIYOS_KIND_STR": "KIND_STRING",
+    "BIYOS_KIND_ENUM": "KIND_ENUM",
+}
+
 
 def declared(name):
     return getattr(lib, name).argtypes is not None
@@ -19,7 +27,9 @@ def test_kinds():
     kinds = {name: value for name, value in found.items() if "_KIND_" in name}
     assert len(kinds) == lines("options.h", "#define BIYOS_KIND_")
     names = [name for name in dir(_capi) if name.startswith("KIND_")]
-    assert kinds == {f"BIYOS_{name}": getattr(_capi, name) for name in names}
+    assert sorted(names) == sorted(KINDS.values())
+    paired = {macro: getattr(_capi, name) for macro, name in KINDS.items()}
+    assert kinds == paired
 
 
 def test_variable_kinds():

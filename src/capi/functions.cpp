@@ -31,7 +31,7 @@ std::vector<double> constants_of(std::size_t count, const double *constants)
     return std::vector<double>(constants, constants + count);
 }
 
-void add_functions(biyos_model &model,
+void add_functions(BIYOS_model &model,
                    int count,
                    const double *constants,
                    const std::int64_t *starts,
@@ -54,9 +54,9 @@ void add_functions(biyos_model &model,
     }
 }
 
-void function_count(biyos_model &model, int *count)
+void function_count(BIYOS_model &model, int *count)
 {
-    *require(count, "count") = model.core.function_count();
+    *require(count, "n") = model.core.function_count();
 }
 
 void write_constants(std::span<const double> found, double *constants)
@@ -67,7 +67,7 @@ void write_constants(std::span<const double> found, double *constants)
     }
 }
 
-void get_functions(biyos_model &model,
+void get_functions(BIYOS_model &model,
                    int first,
                    int count,
                    double *constants,
@@ -90,39 +90,31 @@ void get_functions(biyos_model &model,
 
 }
 
-biyos_status biyos_add_functions(biyos_model *model,
-                                 int count,
-                                 const double *constants,
-                                 const int64_t *starts,
-                                 const int *variables,
-                                 const double *values,
-                                 int *first)
+BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
+                           BIYOS_index n,
+                           const BIYOS_real *consts,
+                           const BIYOS_offset *starts,
+                           const BIYOS_index *vars,
+                           const BIYOS_real *vals,
+                           BIYOS_index *beg)
 {
-    return guarded<add_functions>(model, count, constants, starts, variables, values, first);
+    return guarded<add_functions>(mdl, n, consts, starts, vars, vals, beg);
 }
 
-biyos_status biyos_function_count(biyos_model *model, int *count)
+BIYOS_status BIYOS_getnfuns(BIYOS_model *mdl, BIYOS_index *n)
 {
-    return guarded<function_count>(model, count);
+    return guarded<function_count>(mdl, n);
 }
 
-biyos_status biyos_get_functions(biyos_model *model,
-                                 int first,
-                                 int count,
-                                 double *constants,
-                                 int64_t *starts,
-                                 int64_t size,
-                                 int64_t *needed,
-                                 int *variables,
-                                 double *values)
+BIYOS_status BIYOS_getfuns(BIYOS_model *mdl,
+                           BIYOS_index beg,
+                           BIYOS_index n,
+                           BIYOS_real *consts,
+                           BIYOS_offset *starts,
+                           BIYOS_offset size,
+                           BIYOS_offset *needed,
+                           BIYOS_index *vars,
+                           BIYOS_real *vals)
 {
-    return guarded<get_functions>(model,
-                                  first,
-                                  count,
-                                  constants,
-                                  starts,
-                                  size,
-                                  needed,
-                                  variables,
-                                  values);
+    return guarded<get_functions>(mdl, beg, n, consts, starts, size, needed, vars, vals);
 }

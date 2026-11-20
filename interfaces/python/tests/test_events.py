@@ -14,6 +14,13 @@ from number import Number
 
 CODE = (("code", "-100"),)
 
+LEVELS = {
+    "BIYOS_LVL_DBG": Level.DEBUG,
+    "BIYOS_LVL_INFO": Level.INFO,
+    "BIYOS_LVL_WARN": Level.WARNING,
+    "BIYOS_LVL_ERR": Level.ERROR,
+}
+
 WRONG = [
     ("record", EventKind.MESSAGE, Level.DEBUG),
     (print, True, Level.DEBUG),
@@ -59,11 +66,11 @@ def fail(env):
 
 
 def test_constants():
-    kinds = {f"BIYOS_EVENT_{kind.name}": kind for kind in biyos.EventKind}
-    levels = {f"BIYOS_LEVEL_{level.name}": level for level in biyos.Level}
+    kinds = {f"BIYOS_EVT_{kind.name}": kind for kind in biyos.EventKind}
     found = macros("events.h")
     assert len(found) == lines("events.h", "#define BIYOS_")
-    assert found == kinds | levels
+    assert set(LEVELS.values()) == set(Level)
+    assert found == kinds | LEVELS
 
 
 def test_error():

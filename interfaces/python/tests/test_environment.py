@@ -13,10 +13,10 @@ from spies import followed, interrupted, preceded, spied
 REFUSED = -100
 
 CALLS = [
-    "biyos_option_versions",
-    "biyos_subscribe",
-    "biyos_unsubscribe",
-    "biyos_variable_count",
+    "BIYOS_getoptversions",
+    "BIYOS_addhook",
+    "BIYOS_delhook",
+    "BIYOS_getnvars",
 ]
 
 
@@ -24,7 +24,7 @@ CALLS = [
 def log(monkeypatch):
     log = []
     for name in ("model", "env"):
-        entry = f"biyos_{name}_free"
+        entry = f"BIYOS_free{name}"
         spy = partial(freed, log, name, getattr(lib, entry))
         monkeypatch.setattr(lib, entry, spy)
     for entry in CALLS:
@@ -55,7 +55,7 @@ def raising(event):
 def stranded(env, monkeypatch):
     model = biyos.Model(env)
     with monkeypatch.context() as patch:
-        patch.setattr(lib, "biyos_model_free", halted)
+        patch.setattr(lib, "BIYOS_freemodel", halted)
         with pytest.raises(KeyboardInterrupt):
             model.close()
     return model._handle.value
@@ -122,7 +122,7 @@ def test_deferred(log):
 def test_gap(log, monkeypatch):
     env = biyos.Environment()
     model = biyos.Model(env)
-    before_entry("biyos_option_versions", [env.close], monkeypatch)
+    before_entry("BIYOS_getoptversions", [env.close], monkeypatch)
     assert env.option_versions("seed").since == "0.1.0"
     assert log == ["call", "model", "env"]
     with pytest.raises(ValueError, match="the model is closed"):
@@ -153,8 +153,8 @@ def test_nested(log, monkeypatch):
 def test_interrupted(log, monkeypatch):
     env = biyos.Environment()
     model = biyos.Model(env)
-    count = partial(interrupted, lib.biyos_variable_count)
-    monkeypatch.setattr(lib, "biyos_variable_count", count)
+    count = partial(interrupted, lib.BIYOS_getnvars)
+    monkeypatch.setattr(lib, "BIYOS_getnvars", count)
     before_start(env, [env.close], monkeypatch)
     with pytest.raises(KeyboardInterrupt):
         model.variable_count()
@@ -173,8 +173,8 @@ def test_closing(log, monkeypatch):
 
 def test_created(log, monkeypatch):
     env = biyos.Environment()
-    create = partial(followed, [env.close], lib.biyos_model_create)
-    monkeypatch.setattr(lib, "biyos_model_create", create)
+    create = partial(followed, [env.close], lib.BIYOS_newmodel)
+    monkeypatch.setattr(lib, "BIYOS_newmodel", create)
     model = biyos.Model(env)
     assert log == ["model", "env"]
     with pytest.raises(ValueError, match="the model is closed"):
@@ -184,7 +184,7 @@ def test_created(log, monkeypatch):
 def test_reentered(log, monkeypatch):
     env = biyos.Environment()
     model = biyos.Model(env)
-    before_entry("biyos_env_free", [env.close], monkeypatch)
+    before_entry("BIYOS_freeenv", [env.close], monkeypatch)
     env.close()
     assert log == ["model", "env"]
     model.close()
@@ -208,8 +208,8 @@ def test_held(log):
 
 def test_draining(monkeypatch):
     statuses = []
-    env_free = partial(spied, lib.biyos_env_free, statuses)
-    monkeypatch.setattr(lib, "biyos_env_free", env_free)
+    env_free = partial(spied, lib.BIYOS_freeenv, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freeenv", env_free)
     env = biyos.Environment()
     model = biyos.Model(env)
     before_start(env, [model.close], monkeypatch)
@@ -227,15 +227,15 @@ def test_refused(monkeypatch):
     with pytest.raises(biyos.Error, match="has a model that is not freed"):
         env.close()
     assert env._free.alive
-    lib.biyos_model_free(handle)
+    lib.BIYOS_freemodel(handle)
     env.close()
     assert not env._free.alive
 
 
 def test_deferred_refusal(monkeypatch):
     statuses = []
-    env_free = partial(spied, lib.biyos_env_free, statuses)
-    monkeypatch.setattr(lib, "biyos_env_free", env_free)
+    env_free = partial(spied, lib.BIYOS_freeenv, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freeenv", env_free)
     env = biyos.Environment()
     handle = stranded(env, monkeypatch)
     with env._busy():
@@ -244,15 +244,15 @@ def test_deferred_refusal(monkeypatch):
         env.get_option("seed")
     assert statuses == [REFUSED]
     assert env._free.alive
-    lib.biyos_model_free(handle)
+    lib.BIYOS_freemodel(handle)
     env.close()
     assert statuses == [REFUSED, OK]
 
 
 def test_explicit_retry(monkeypatch):
     statuses = []
-    env_free = partial(spied, lib.biyos_env_free, statuses)
-    monkeypatch.setattr(lib, "biyos_env_free", env_free)
+    env_free = partial(spied, lib.BIYOS_freeenv, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freeenv", env_free)
     events = []
     env = biyos.Environment()
     env.subscribe(events.append, EventKind.MESSAGE, Level.ERROR)
@@ -268,7 +268,7 @@ def test_explicit_retry(monkeypatch):
         env.close()
     assert statuses == [REFUSED, REFUSED]
     assert len(events) == 2
-    lib.biyos_model_free(handle)
+    lib.BIYOS_freemodel(handle)
     env.close()
     assert statuses == [REFUSED, REFUSED, OK]
 
@@ -281,14 +281,14 @@ def test_relayed(monkeypatch):
         env.close()
     assert env._relay._raised is None
     assert env._free.alive
-    lib.biyos_model_free(handle)
+    lib.BIYOS_freemodel(handle)
     env.close()
     assert not env._free.alive
 
 
 def test_subscribing(log, monkeypatch):
     env = biyos.Environment()
-    before_entry("biyos_subscribe", [env.close], monkeypatch)
+    before_entry("BIYOS_addhook", [env.close], monkeypatch)
     with pytest.raises(biyos.Error, match="event kind 99: unknown"):
         env.subscribe(print, 99, Level.ERROR)
     assert log == ["call", "env"]
@@ -297,7 +297,7 @@ def test_subscribing(log, monkeypatch):
 def test_unsubscribing(log, monkeypatch):
     env = biyos.Environment()
     subscription = env.subscribe(print, EventKind.MESSAGE, Level.ERROR)
-    before_entry("biyos_unsubscribe", [env.close], monkeypatch)
+    before_entry("BIYOS_delhook", [env.close], monkeypatch)
     env.unsubscribe(subscription)
     assert log == ["call", "call", "env"]
 

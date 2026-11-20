@@ -48,10 +48,10 @@ def model(env):
 @pytest.fixture
 def log(monkeypatch):
     log = []
-    free = partial(freed, log, lib.biyos_model_free)
-    count = partial(reached, log, lib.biyos_variable_count)
-    monkeypatch.setattr(lib, "biyos_model_free", free)
-    monkeypatch.setattr(lib, "biyos_variable_count", count)
+    free = partial(freed, log, lib.BIYOS_freemodel)
+    count = partial(reached, log, lib.BIYOS_getnvars)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", free)
+    monkeypatch.setattr(lib, "BIYOS_getnvars", count)
     return log
 
 
@@ -117,8 +117,8 @@ def test_cycle(monkeypatch):
     gc.collect()
     statuses = []
     texts = []
-    spy = partial(spied, lib.biyos_env_free, statuses)
-    monkeypatch.setattr(lib, "biyos_env_free", spy)
+    spy = partial(spied, lib.BIYOS_freeenv, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freeenv", spy)
     env = biyos.Environment()
     env.subscribe(partial(keep, texts), EventKind.MESSAGE, Level.DEBUG)
     env.cycle = biyos.Model(env)
@@ -131,10 +131,10 @@ def test_cycle(monkeypatch):
 def test_window(monkeypatch):
     gc.collect()
     log = []
-    model_free = partial(once, log, lib.biyos_model_free)
-    env_free = partial(collected, log, lib.biyos_env_free)
-    monkeypatch.setattr(lib, "biyos_model_free", model_free)
-    monkeypatch.setattr(lib, "biyos_env_free", env_free)
+    model_free = partial(once, log, lib.BIYOS_freemodel)
+    env_free = partial(collected, log, lib.BIYOS_freeenv)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", model_free)
+    monkeypatch.setattr(lib, "BIYOS_freeenv", env_free)
     gc.disable()
     try:
         env = biyos.Environment()
@@ -150,10 +150,10 @@ def test_window(monkeypatch):
 
 def test_interrupted_create(monkeypatch):
     statuses = []
-    create = partial(interrupted, lib.biyos_model_create)
-    monkeypatch.setattr(lib, "biyos_model_create", create)
-    spy = partial(spied, lib.biyos_model_free, statuses)
-    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    create = partial(interrupted, lib.BIYOS_newmodel)
+    monkeypatch.setattr(lib, "BIYOS_newmodel", create)
+    spy = partial(spied, lib.BIYOS_freemodel, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
     env = biyos.Environment()
     with pytest.raises(KeyboardInterrupt):
         biyos.Model(env)
@@ -164,13 +164,13 @@ def test_interrupted_create(monkeypatch):
 
 def test_interrupted_close(env, monkeypatch):
     log = []
-    free = partial(once, log, lib.biyos_model_free)
-    monkeypatch.setattr(lib, "biyos_model_free", partial(interrupted, free))
+    free = partial(once, log, lib.BIYOS_freemodel)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", partial(interrupted, free))
     model = biyos.Model(env)
     handle = model._handle.value
     with pytest.raises(KeyboardInterrupt):
         model.close()
-    monkeypatch.setattr(lib, "biyos_model_free", free)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", free)
     del model
     gc.collect()
     env.get_option("seed")
@@ -181,8 +181,8 @@ def test_interrupted_close(env, monkeypatch):
 
 def test_put_back(env, monkeypatch):
     statuses = []
-    spy = partial(spied, lib.biyos_model_free, statuses)
-    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    spy = partial(spied, lib.BIYOS_freemodel, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
     models = [biyos.Model(env)]
     seen = []
 
@@ -204,8 +204,8 @@ def test_put_back(env, monkeypatch):
 
 def test_dropped(env, monkeypatch):
     statuses = []
-    spy = partial(spied, lib.biyos_model_free, statuses)
-    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    spy = partial(spied, lib.BIYOS_freemodel, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
     models = [biyos.Model(env)]
 
     def drop(event):
@@ -223,8 +223,8 @@ def test_dropped(env, monkeypatch):
 def test_delivery(env, monkeypatch):
     gc.collect()
     statuses = []
-    spy = partial(spied, lib.biyos_model_free, statuses)
-    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    spy = partial(spied, lib.BIYOS_freemodel, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
     model = biyos.Model(env)
     model.cycle = model
     del model
@@ -245,14 +245,14 @@ def test_delivery(env, monkeypatch):
 
 
 def test_kept(env, monkeypatch):
-    original = lib.biyos_model_free
+    original = lib.BIYOS_freemodel
     statuses = []
     models = [biyos.Model(env)]
-    monkeypatch.setattr(lib, "biyos_model_free", refused)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", refused)
     models.clear()
     env.get_option("seed")
     spy = partial(spied, original, statuses)
-    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
     env.get_option("seed")
     assert statuses == []
     env.close()
@@ -262,8 +262,8 @@ def test_kept(env, monkeypatch):
 
 def test_closes(monkeypatch):
     statuses = []
-    spy = partial(spied, lib.biyos_model_free, statuses)
-    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    spy = partial(spied, lib.BIYOS_freemodel, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
     env = biyos.Environment()
     first = biyos.Model(env)
     second = biyos.Model(env)
@@ -381,8 +381,8 @@ def test_drained(log, monkeypatch):
 def test_interrupted_call(log, monkeypatch):
     env = biyos.Environment()
     model = biyos.Model(env)
-    count = partial(interrupted, lib.biyos_variable_count)
-    monkeypatch.setattr(lib, "biyos_variable_count", count)
+    count = partial(interrupted, lib.BIYOS_getnvars)
+    monkeypatch.setattr(lib, "BIYOS_getnvars", count)
     start = partial(preceded, [model.close], env._relay.start)
     monkeypatch.setattr(env._relay, "start", start)
     with pytest.raises(KeyboardInterrupt):
@@ -411,8 +411,8 @@ def test_deferred(log):
 
 def test_reentered(monkeypatch):
     log = []
-    free = partial(once, log, lib.biyos_model_free)
-    monkeypatch.setattr(lib, "biyos_model_free", free)
+    free = partial(once, log, lib.BIYOS_freemodel)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", free)
     env = biyos.Environment()
     model = biyos.Model(env)
     handle = model._handle.value
@@ -426,8 +426,8 @@ def test_reentered(monkeypatch):
 
 def test_interrupted_take(monkeypatch):
     statuses = []
-    spy = partial(spied, lib.biyos_model_free, statuses)
-    monkeypatch.setattr(lib, "biyos_model_free", spy)
+    spy = partial(spied, lib.BIYOS_freemodel, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
     env = biyos.Environment()
     model = biyos.Model(env)
     models = env._models
@@ -505,13 +505,13 @@ def test_buffer(model, monkeypatch):
     lower = array.array("d", [0.0, 1.0])
     upper = array.array("d", [2.0, 3.0])
     seen = []
-    original = lib.biyos_add_variables
+    original = lib.BIYOS_addvars
 
     def spy(handle, count, kinds, low, high, first):
         seen.append((ctypes.addressof(low), ctypes.addressof(high)))
         return original(handle, count, kinds, low, high, first)
 
-    monkeypatch.setattr(lib, "biyos_add_variables", spy)
+    monkeypatch.setattr(lib, "BIYOS_addvars", spy)
     model.add_variables(2, None, lower, upper)
     assert seen == [(lower.buffer_info()[0], upper.buffer_info()[0])]
     assert model.get_variables()[1:] == ([0.0, 1.0], [2.0, 3.0])
@@ -551,7 +551,7 @@ def test_refused(model):
     message = refusal(model.get_variables, 2)
     assert message == "invalid argument: variable 2: unknown"
     message = refusal(model.get_variables, 0, -1)
-    assert message == "invalid argument: argument 'count': -1 is negative"
+    assert message == "invalid argument: argument 'n': -1 is negative"
     continuous = [VariableKind.CONTINUOUS]
     assert model.get_variables() == (continuous, [-INFINITY], [INFINITY])
 
@@ -576,8 +576,8 @@ def test_growing(model):
 def test_stale(model, monkeypatch):
     model.add_variables(2, None, [1.0, 2.0])
     monkeypatch.setattr(model, "variable_count", lambda: 0)
-    spy = Room(lib.biyos_get_variables, read_lengths)
-    monkeypatch.setattr(lib, "biyos_get_variables", spy)
+    spy = Room(lib.BIYOS_getvars, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getvars", spy)
     assert model.get_variables(0, 2)[1] == [1.0, 2.0]
     assert model.get_variables(1)[1] == []
 

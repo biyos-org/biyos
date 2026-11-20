@@ -24,23 +24,23 @@ void freeable(biyos::Environment &env)
 
 }
 
-biyos_status biyos_env_create(biyos_env **env)
+BIYOS_status BIYOS_newenv(BIYOS_env **env)
 {
     if (env == nullptr)
     {
-        return BIYOS_INVALID_ARGUMENT;
+        return BIYOS_ERR_INVALIDARG;
     }
     *env = nullptr;
-    return biyos::capi::guard([&] { *env = new biyos_env; });
+    return biyos::capi::guard([&] { *env = new BIYOS_env; });
 }
 
-biyos_status biyos_env_free(biyos_env *env)
+BIYOS_status BIYOS_freeenv(BIYOS_env *env)
 {
     if (env == nullptr)
     {
         return BIYOS_OK;
     }
-    const biyos_status status = guarded<freeable>(env);
+    const BIYOS_status status = guarded<freeable>(env);
     if (status == BIYOS_OK)
     {
         delete env;
@@ -48,7 +48,7 @@ biyos_status biyos_env_free(biyos_env *env)
     return status;
 }
 
-const char *biyos_last_error_message(const biyos_env *env)
+const char *BIYOS_lasterror(const BIYOS_env *env)
 {
     return env == nullptr ? "" : env->core.last_error().c_str();
 }

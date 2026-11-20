@@ -3,7 +3,7 @@ from pathlib import Path
 
 INCLUDE = Path(__file__).resolve().parents[3] / "include" / "biyos"
 MACRO = re.compile(r"^#define (BIYOS_\w+) \(?(-?\d+)\)?$", re.M)
-FUNCTION = re.compile(r"\bBIYOS_API [^(;]*?\b(biyos_\w+)\(")
+FUNCTION = re.compile(r"\bBIYOS_API [^(;]*?\b(BIYOS_[a-z]\w*)\(")
 
 
 def macros(name):
