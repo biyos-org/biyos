@@ -12,8 +12,8 @@
 namespace biyos::capi
 {
 
-std::size_t length(std::int64_t count, std::string_view name = "count");
-std::span<const Index> listed(int count, const int *indices, std::string_view name = "indices");
+std::size_t length(std::int64_t count, std::string_view name = "n");
+std::span<const Index> listed(int count, const int *indices, std::string_view name = "idx");
 std::vector<Offset> offsets(std::size_t count, const std::int64_t *starts);
 std::vector<LinearTerm> packed(std::size_t size, const int *variables, const double *values);
 void unpack(std::span<const LinearTerm> terms, std::size_t size, int *variables, double *values);

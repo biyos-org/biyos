@@ -113,7 +113,7 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_newmodel(nullptr, &model), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(model, nullptr);
     EXPECT_EQ(BIYOS_newmodel(env.get(), nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'model': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'mdl': is null");
     EXPECT_EQ(BIYOS_freemodel(nullptr), BIYOS_OK);
     const int index = 0;
     const double bound = 0.0;
@@ -258,7 +258,7 @@ TEST(CApiTest, RefusedAdd)
     EXPECT_EQ(env.message(), "invalid argument: variable 1: lower bound is infinity");
     EXPECT_EQ(BIYOS_addvars(model.get(), -1, nullptr, nullptr, nullptr, &first),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'count': -1 is negative");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     EXPECT_EQ(first, -1);
     int count = -1;
     EXPECT_EQ(BIYOS_getnvars(model.get(), &count), BIYOS_OK);
@@ -306,7 +306,7 @@ TEST(CApiTest, BadIndex)
     EXPECT_EQ(BIYOS_getvars(model.get(), -1, 1, found, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: variable -1: unknown");
     EXPECT_EQ(BIYOS_getvars(model.get(), 0, -1, found, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'count': -1 is negative");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     EXPECT_EQ(found[0], 0);
     EXPECT_EQ(found[1], 0);
 }
@@ -354,9 +354,9 @@ TEST(CApiTest, NullSet)
         read_all(model),
         Columns{.kinds = {kinds[1], kinds[0]}, .lower = bounded.lower, .upper = bounded.upper});
     EXPECT_EQ(BIYOS_setvarbounds(model.get(), 2, nullptr, lower, upper), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'indices': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
     EXPECT_EQ(BIYOS_setvarkinds(model.get(), 2, nullptr, kinds), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'indices': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
     EXPECT_EQ(BIYOS_setvarbounds(model.get(), 0, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_setvarkinds(model.get(), 0, nullptr, nullptr), BIYOS_OK);
 }
@@ -381,7 +381,7 @@ TEST(CApiTest, NullGet)
     EXPECT_DOUBLE_EQ(high[0], 0.5);
     EXPECT_DOUBLE_EQ(high[1], 9.0);
     EXPECT_EQ(BIYOS_getnvars(model.get(), nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'count': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
 
 TEST(CApiTest, ModelEvent)

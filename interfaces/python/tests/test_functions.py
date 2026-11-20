@@ -235,9 +235,9 @@ def test_refused(model):
     message = refusal(model.get_functions, 4)
     assert message == "invalid argument: function 4: unknown"
     message = refusal(model.get_functions, 0, -1)
-    assert message == "invalid argument: argument 'count': -1 is negative"
+    assert message == "invalid argument: argument 'n': -1 is negative"
     message = refusal(model.add_functions, -1)
-    assert message == "invalid argument: argument 'count': -1 is negative"
+    assert message == "invalid argument: argument 'n': -1 is negative"
     assert model.get_functions() == SORTED
 
 

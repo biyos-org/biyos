@@ -252,16 +252,16 @@ TEST(CApiTest, NullQuadratic)
     EXPECT_EQ(BIYOS_addquadterms(held, 2, functions, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addquadterms(held, 1, nullptr, one, &variable, &variable, &value),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'functions': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'funs': is null");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, nullptr, &variable, &value),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'firsts': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'vars1': is null");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, &variable, nullptr, &value),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'seconds': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'vars2': is null");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, &variable, &variable, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'values': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'vals': is null");
     expect_sample(model);
 }
 
@@ -328,7 +328,7 @@ TEST(CApiTest, RefusedQuadratic)
     EXPECT_EQ(env.message(), "invalid argument: function 3: unknown");
     EXPECT_EQ(BIYOS_addquadterms(held, 2, repeated, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'functions': function 1 is repeated");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'funs': function 1 is repeated");
     EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, both, firsts, seconds, values),
               BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: function 0: variable 3 is unknown");
@@ -343,7 +343,7 @@ TEST(CApiTest, RefusedQuadratic)
     EXPECT_EQ(env.message(), "invalid argument: function 0: pair (0, 1) is repeated");
     EXPECT_EQ(BIYOS_addquadterms(held, -1, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'count': -1 is negative");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     expect_sample(model);
 }
 
@@ -356,7 +356,7 @@ TEST(CApiTest, RefusedPairs)
     const std::vector<std::string> messages{
         "invalid argument: function 3: unknown",
         "invalid argument: function -1: unknown",
-        "invalid argument: argument 'count': -1 is negative",
+        "invalid argument: argument 'n': -1 is negative",
         "invalid argument: function 4: unknown",
     };
     for (std::size_t k = 0; k < ranges.size(); ++k)

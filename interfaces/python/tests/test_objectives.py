@@ -262,7 +262,7 @@ def test_refused(model):
     message = refusal(model.get_objectives, 4)
     assert message == "invalid argument: objective 4: unknown"
     message = refusal(model.get_objectives, 0, -1)
-    assert message == "invalid argument: argument 'count': -1 is negative"
+    assert message == "invalid argument: argument 'n': -1 is negative"
     assert model.get_objectives() == SAMPLE
 
 

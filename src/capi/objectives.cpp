@@ -85,7 +85,7 @@ void add_objectives(BIYOS_model &model,
                     int *first)
 {
     biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> owners = listed(count, functions, "functions");
+    const std::span<const biyos::Index> owners = listed(count, functions, "funs");
     core.check_objective_room(owners.size());
     const Fields fields{
         .senses = senses,
@@ -131,7 +131,7 @@ void set_objectives(BIYOS_model &model,
 
 void objective_count(BIYOS_model &model, int *count)
 {
-    *require(count, "count") = model.core.objective_count();
+    *require(count, "n") = model.core.objective_count();
 }
 
 void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &outputs)
@@ -171,68 +171,45 @@ void get_objectives(BIYOS_model &model,
 
 }
 
-BIYOS_status BIYOS_addobjs(BIYOS_model *model,
-                           int count,
-                           const int *functions,
+BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
+                           int n,
+                           const int *funs,
                            const int *senses,
-                           const int *priorities,
+                           const int *prios,
                            const double *weights,
-                           const double *absolute,
-                           const double *relative,
-                           int *first)
+                           const double *abs,
+                           const double *rel,
+                           int *beg)
 {
-    return guarded<add_objectives>(model,
-                                   count,
-                                   functions,
-                                   senses,
-                                   priorities,
-                                   weights,
-                                   absolute,
-                                   relative,
-                                   first);
+    return guarded<add_objectives>(mdl, n, funs, senses, prios, weights, abs, rel, beg);
 }
 
-BIYOS_status BIYOS_setobjs(BIYOS_model *model,
-                           int count,
-                           const int *indices,
+BIYOS_status BIYOS_setobjs(BIYOS_model *mdl,
+                           int n,
+                           const int *idx,
                            const int *senses,
-                           const int *priorities,
+                           const int *prios,
                            const double *weights,
-                           const double *absolute,
-                           const double *relative)
+                           const double *abs,
+                           const double *rel)
 {
-    return guarded<set_objectives>(model,
-                                   count,
-                                   indices,
-                                   senses,
-                                   priorities,
-                                   weights,
-                                   absolute,
-                                   relative);
+    return guarded<set_objectives>(mdl, n, idx, senses, prios, weights, abs, rel);
 }
 
-BIYOS_status BIYOS_getnobjs(BIYOS_model *model, int *count)
+BIYOS_status BIYOS_getnobjs(BIYOS_model *mdl, int *n)
 {
-    return guarded<objective_count>(model, count);
+    return guarded<objective_count>(mdl, n);
 }
 
-BIYOS_status BIYOS_getobjs(BIYOS_model *model,
-                           int first,
-                           int count,
-                           int *functions,
+BIYOS_status BIYOS_getobjs(BIYOS_model *mdl,
+                           int beg,
+                           int n,
+                           int *funs,
                            int *senses,
-                           int *priorities,
+                           int *prios,
                            double *weights,
-                           double *absolute,
-                           double *relative)
+                           double *abs,
+                           double *rel)
 {
-    return guarded<get_objectives>(model,
-                                   first,
-                                   count,
-                                   functions,
-                                   senses,
-                                   priorities,
-                                   weights,
-                                   absolute,
-                                   relative);
+    return guarded<get_objectives>(mdl, beg, n, funs, senses, prios, weights, abs, rel);
 }

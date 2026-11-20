@@ -264,10 +264,10 @@ TEST(CApiTest, NullFunctions)
     const int variable = 0;
     const double value = 1.0;
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, nullptr, &value, nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'variables': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'vars': is null");
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, &variable, nullptr, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'values': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'vals': is null");
     EXPECT_EQ(function_count(model), 4);
 }
 
@@ -294,7 +294,7 @@ TEST(CApiTest, NullTerms)
     EXPECT_EQ(env.message(), "invalid argument: argument 'needed': is null");
     expect_compressed(untouched, blank(3, 5));
     EXPECT_EQ(BIYOS_getnfuns(held, nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'count': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
 
 TEST(CApiTest, RefusedFunctions)
@@ -329,7 +329,7 @@ TEST(CApiTest, RefusedFunctions)
     EXPECT_EQ(env.message(), "invalid argument: function 3: constant is NaN");
     EXPECT_EQ(BIYOS_addfuns(held, -1, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'count': -1 is negative");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     std::int64_t needed = -1;
     Compressed untouched = blank(3, 5);
     EXPECT_EQ(fill(model, 2, 2, untouched, 5, &needed), BIYOS_ERR_INVALIDARG);

@@ -56,7 +56,7 @@ void add_functions(BIYOS_model &model,
 
 void function_count(BIYOS_model &model, int *count)
 {
-    *require(count, "count") = model.core.function_count();
+    *require(count, "n") = model.core.function_count();
 }
 
 void write_constants(std::span<const double> found, double *constants)
@@ -90,39 +90,31 @@ void get_functions(BIYOS_model &model,
 
 }
 
-BIYOS_status BIYOS_addfuns(BIYOS_model *model,
-                           int count,
-                           const double *constants,
+BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
+                           int n,
+                           const double *consts,
                            const int64_t *starts,
-                           const int *variables,
-                           const double *values,
-                           int *first)
+                           const int *vars,
+                           const double *vals,
+                           int *beg)
 {
-    return guarded<add_functions>(model, count, constants, starts, variables, values, first);
+    return guarded<add_functions>(mdl, n, consts, starts, vars, vals, beg);
 }
 
-BIYOS_status BIYOS_getnfuns(BIYOS_model *model, int *count)
+BIYOS_status BIYOS_getnfuns(BIYOS_model *mdl, int *n)
 {
-    return guarded<function_count>(model, count);
+    return guarded<function_count>(mdl, n);
 }
 
-BIYOS_status BIYOS_getfuns(BIYOS_model *model,
-                           int first,
-                           int count,
-                           double *constants,
+BIYOS_status BIYOS_getfuns(BIYOS_model *mdl,
+                           int beg,
+                           int n,
+                           double *consts,
                            int64_t *starts,
                            int64_t size,
                            int64_t *needed,
-                           int *variables,
-                           double *values)
+                           int *vars,
+                           double *vals)
 {
-    return guarded<get_functions>(model,
-                                  first,
-                                  count,
-                                  constants,
-                                  starts,
-                                  size,
-                                  needed,
-                                  variables,
-                                  values);
+    return guarded<get_functions>(mdl, beg, n, consts, starts, size, needed, vars, vals);
 }

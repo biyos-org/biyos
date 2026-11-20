@@ -250,7 +250,7 @@ def test_refused(model):
     add_sample(model)
     message = refusal(model.add_quadratic_terms, [1, 1], [0, 0, 0], [], [], [])
     assert message == (
-        "invalid argument: argument 'functions': function 1 is repeated"
+        "invalid argument: argument 'funs': function 1 is repeated"
     )
     message = refusal(model.add_quadratic_terms, [3], [0, 0], [], [], [])
     assert message == "invalid argument: function 3: unknown"
@@ -276,7 +276,7 @@ def test_refused(model):
     message = refusal(model.get_quadratic_terms, 4)
     assert message == "invalid argument: function 4: unknown"
     message = refusal(model.get_quadratic_terms, 0, -1)
-    assert message == "invalid argument: argument 'count': -1 is negative"
+    assert message == "invalid argument: argument 'n': -1 is negative"
     found = model.get_quadratic_terms()
     assert found[0] == [0, 3, 4, 6]
     assert found[3] == [2.0, 0.0, -1.0, LARGE, 3.0, 1.0]

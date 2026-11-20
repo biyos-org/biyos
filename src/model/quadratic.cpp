@@ -34,7 +34,7 @@ void check_functions(std::span<const Index> functions, Index held)
     if (repeat != sorted.end())
     {
         const std::string reason = item(kNoun, *repeat) + " is repeated";
-        throw Error(ErrorKind::InvalidArgument, "argument 'functions'", reason);
+        throw Error(ErrorKind::InvalidArgument, "argument 'funs'", reason);
     }
 }
 

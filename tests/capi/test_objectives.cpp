@@ -302,7 +302,7 @@ TEST(CApiTest, NullObjectives)
     wanted.relative[9] = 2.0;
     expect_records(read_all(model), wanted);
     EXPECT_EQ(add_with(held, 1, nullptr, {.senses = senses}), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'functions': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'funs': is null");
     EXPECT_EQ(objective_count(model), 10);
 }
 
@@ -334,7 +334,7 @@ TEST(CApiTest, NullSetters)
     };
     expect_records(read_all(model), wanted);
     EXPECT_EQ(set_with(held, 2, nullptr, {.senses = senses}), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'indices': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
     EXPECT_EQ(set_with(held, 0, nullptr, {}), BIYOS_OK);
     expect_records(read_all(model), wanted);
 }
@@ -384,7 +384,7 @@ TEST(CApiTest, NullOutputs)
     EXPECT_EQ(std::vector<int>({senses[0], senses[1]}), std::vector<int>(2, BIYOS_MINIMIZE));
     EXPECT_EQ(bits_of({absolute[0], absolute[1]}), bits_of({1.5, kInfinity}));
     EXPECT_EQ(BIYOS_getnobjs(held, nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'count': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
 
 TEST(CApiTest, RefusedObjectives)
@@ -405,7 +405,7 @@ TEST(CApiTest, RefusedObjectives)
     EXPECT_EQ(add_with(held, 1, functions, {.absolute = &kNan}), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: absolute tolerance is NaN");
     EXPECT_EQ(add_with(held, -1, nullptr, {}), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'count': -1 is negative");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     const int unknown = 3;
     EXPECT_EQ(set_with(held, 1, &unknown, {}), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");

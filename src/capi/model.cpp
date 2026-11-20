@@ -22,7 +22,7 @@ namespace
 
 void create(biyos::Environment &env, BIYOS_model **model)
 {
-    BIYOS_model **made = require(model, "model");
+    BIYOS_model **made = require(model, "mdl");
     writable(env);
     *made = new BIYOS_model(env);
 }
@@ -123,7 +123,7 @@ void set_kinds(BIYOS_model &model, int count, const int *indices, const int *kin
 
 void variable_count(BIYOS_model &model, int *count)
 {
-    *require(count, "count") = model.core.variable_count();
+    *require(count, "n") = model.core.variable_count();
 }
 
 void copy_out(const biyos::Variable &variable,
@@ -162,73 +162,68 @@ void get_variables(BIYOS_model &model,
 
 }
 
-BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **model)
+BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **mdl)
 {
-    if (model != nullptr)
+    if (mdl != nullptr)
     {
-        *model = nullptr;
+        *mdl = nullptr;
     }
-    return guarded<create>(env, model);
+    return guarded<create>(env, mdl);
 }
 
-BIYOS_status BIYOS_copymodel(BIYOS_model *model, BIYOS_env *env, BIYOS_model **copy)
+BIYOS_status BIYOS_copymodel(BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy)
 {
     if (copy != nullptr)
     {
         *copy = nullptr;
     }
-    return guarded<make_copy>(model, env, copy);
+    return guarded<make_copy>(mdl, env, copy);
 }
 
-BIYOS_status BIYOS_freemodel(BIYOS_model *model)
+BIYOS_status BIYOS_freemodel(BIYOS_model *mdl)
 {
-    if (model == nullptr)
+    if (mdl == nullptr)
     {
         return BIYOS_OK;
     }
-    const BIYOS_status status = guarded<freeable>(model);
+    const BIYOS_status status = guarded<freeable>(mdl);
     if (status == BIYOS_OK)
     {
-        delete model;
+        delete mdl;
     }
     return status;
 }
 
-BIYOS_status BIYOS_addvars(BIYOS_model *model,
-                           int count,
+BIYOS_status BIYOS_addvars(BIYOS_model *mdl,
+                           int n,
                            const int *kinds,
-                           const double *lower,
-                           const double *upper,
-                           int *first)
+                           const double *lb,
+                           const double *ub,
+                           int *beg)
 {
-    return guarded<add_variables>(model, count, kinds, lower, upper, first);
+    return guarded<add_variables>(mdl, n, kinds, lb, ub, beg);
 }
 
-BIYOS_status BIYOS_setvarbounds(BIYOS_model *model,
-                                int count,
-                                const int *indices,
-                                const double *lower,
-                                const double *upper)
+BIYOS_status BIYOS_setvarbounds(BIYOS_model *mdl,
+                                int n,
+                                const int *idx,
+                                const double *lb,
+                                const double *ub)
 {
-    return guarded<set_bounds>(model, count, indices, lower, upper);
+    return guarded<set_bounds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_setvarkinds(BIYOS_model *model, int count, const int *indices, const int *kinds)
+BIYOS_status BIYOS_setvarkinds(BIYOS_model *mdl, int n, const int *idx, const int *kinds)
 {
-    return guarded<set_kinds>(model, count, indices, kinds);
+    return guarded<set_kinds>(mdl, n, idx, kinds);
 }
 
-BIYOS_status BIYOS_getnvars(BIYOS_model *model, int *count)
+BIYOS_status BIYOS_getnvars(BIYOS_model *mdl, int *n)
 {
-    return guarded<variable_count>(model, count);
+    return guarded<variable_count>(mdl, n);
 }
 
-BIYOS_status BIYOS_getvars(BIYOS_model *model,
-                           int first,
-                           int count,
-                           int *kinds,
-                           double *lower,
-                           double *upper)
+BIYOS_status BIYOS_getvars(BIYOS_model *mdl, int beg, int n, int *kinds, double *lb, double *ub)
 {
-    return guarded<get_variables>(model, first, count, kinds, lower, upper);
+    return guarded<get_variables>(mdl, beg, n, kinds, lb, ub);
 }

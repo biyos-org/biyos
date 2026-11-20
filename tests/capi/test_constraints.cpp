@@ -197,7 +197,7 @@ TEST(CApiTest, NullConstraints)
     };
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_addcons(held, 1, nullptr, bounds, bounds, nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'functions': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'funs': is null");
     EXPECT_EQ(constraint_count(model), 6);
 }
 
@@ -218,7 +218,7 @@ TEST(CApiTest, NullBounds)
     const Records wanted{.functions = {0, 0}, .lower = {2.0, 1.0}, .upper = {kInfinity, 3.0}};
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_setconbounds(held, 2, nullptr, lower, upper), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'indices': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
     EXPECT_EQ(BIYOS_setconbounds(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
@@ -234,7 +234,7 @@ TEST(CApiTest, NullReads)
     EXPECT_EQ(std::vector<int>({functions[0], functions[1]}), std::vector<int>({0, 1}));
     expect_doubles({high[0], high[1]}, {kInfinity, 2.0});
     EXPECT_EQ(BIYOS_getncons(model.get(), nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'count': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
 
 TEST(CApiTest, RefusedConstraints)
@@ -250,7 +250,7 @@ TEST(CApiTest, RefusedConstraints)
     EXPECT_EQ(BIYOS_addcons(held, 1, functions, &nan, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: lower bound is NaN");
     EXPECT_EQ(BIYOS_addcons(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'count': -1 is negative");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     const int index = 3;
     const double bound = 0.0;
     EXPECT_EQ(BIYOS_setconbounds(held, 1, &index, &bound, &bound), BIYOS_ERR_INVALIDARG);

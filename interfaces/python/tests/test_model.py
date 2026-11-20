@@ -551,7 +551,7 @@ def test_refused(model):
     message = refusal(model.get_variables, 2)
     assert message == "invalid argument: variable 2: unknown"
     message = refusal(model.get_variables, 0, -1)
-    assert message == "invalid argument: argument 'count': -1 is negative"
+    assert message == "invalid argument: argument 'n': -1 is negative"
     continuous = [VariableKind.CONTINUOUS]
     assert model.get_variables() == (continuous, [-INFINITY], [INFINITY])
 

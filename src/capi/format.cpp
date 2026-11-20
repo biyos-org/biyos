@@ -35,12 +35,12 @@ BIYOS_status formatted(const BIYOS_evt *event,
 
 }
 
-BIYOS_status BIYOS_fmttext(const BIYOS_evt *event, char *buffer, size_t size, size_t *needed)
+BIYOS_status BIYOS_fmttext(const BIYOS_evt *evt, char *buf, size_t size, size_t *needed)
 {
-    return formatted<biyos::format_text>(event, buffer, size, needed);
+    return formatted<biyos::format_text>(evt, buf, size, needed);
 }
 
-BIYOS_status BIYOS_fmtjson(const BIYOS_evt *event, char *buffer, size_t size, size_t *needed)
+BIYOS_status BIYOS_fmtjson(const BIYOS_evt *evt, char *buf, size_t size, size_t *needed)
 {
-    return formatted<biyos::format_json>(event, buffer, size, needed);
+    return formatted<biyos::format_json>(evt, buf, size, needed);
 }

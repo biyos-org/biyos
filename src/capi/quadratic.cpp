@@ -31,7 +31,7 @@ void add_terms(BIYOS_model &model,
                const double *values)
 {
     biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> owners = listed(count, functions, "functions");
+    const std::span<const biyos::Index> owners = listed(count, functions, "funs");
     const std::vector<biyos::Offset> begins = offsets(owners.size(), starts);
     biyos::check_starts(begins);
     core.check_quadratic_room(begins.back());
@@ -60,26 +60,26 @@ void get_terms(BIYOS_model &model,
 
 }
 
-BIYOS_status BIYOS_addquadterms(BIYOS_model *model,
-                                int count,
-                                const int *functions,
+BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl,
+                                int n,
+                                const int *funs,
                                 const int64_t *starts,
-                                const int *firsts,
-                                const int *seconds,
-                                const double *values)
+                                const int *vars1,
+                                const int *vars2,
+                                const double *vals)
 {
-    return guarded<add_terms>(model, count, functions, starts, firsts, seconds, values);
+    return guarded<add_terms>(mdl, n, funs, starts, vars1, vars2, vals);
 }
 
-BIYOS_status BIYOS_getquadterms(BIYOS_model *model,
-                                int first,
-                                int count,
+BIYOS_status BIYOS_getquadterms(BIYOS_model *mdl,
+                                int beg,
+                                int n,
                                 int64_t *starts,
                                 int64_t size,
                                 int64_t *needed,
-                                int *firsts,
-                                int *seconds,
-                                double *values)
+                                int *vars1,
+                                int *vars2,
+                                double *vals)
 {
-    return guarded<get_terms>(model, first, count, starts, size, needed, firsts, seconds, values);
+    return guarded<get_terms>(mdl, beg, n, starts, size, needed, vars1, vars2, vals);
 }

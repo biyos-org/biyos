@@ -225,7 +225,7 @@ TEST(FunctionTest, ReadRange)
     EXPECT_EQ(refusal([&] { model.terms(1, 3); }), "invalid argument: function 3: unknown");
     EXPECT_EQ(refusal([&] { model.terms(4, 0); }), "invalid argument: function 4: unknown");
     EXPECT_EQ(refusal([&] { model.terms(0, -1); }),
-              "invalid argument: argument 'count': -1 is negative");
+              "invalid argument: argument 'n': -1 is negative");
 }
 
 TEST(FunctionTest, Mismatch)

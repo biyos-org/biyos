@@ -48,7 +48,7 @@ void add_constraints(BIYOS_model &model,
     const std::size_t size = length(count);
     if (size > 0)
     {
-        require(functions, "functions");
+        require(functions, "funs");
     }
     std::vector<biyos::Constraint> added;
     added.reserve(size);
@@ -88,7 +88,7 @@ void set_bounds(BIYOS_model &model,
 
 void constraint_count(BIYOS_model &model, int *count)
 {
-    *require(count, "count") = model.core.constraint_count();
+    *require(count, "n") = model.core.constraint_count();
 }
 
 void copy_out(const biyos::Constraint &constraint,
@@ -127,36 +127,31 @@ void get_constraints(BIYOS_model &model,
 
 }
 
-BIYOS_status BIYOS_addcons(BIYOS_model *model,
-                           int count,
-                           const int *functions,
-                           const double *lower,
-                           const double *upper,
-                           int *first)
+BIYOS_status BIYOS_addcons(BIYOS_model *mdl,
+                           int n,
+                           const int *funs,
+                           const double *lb,
+                           const double *ub,
+                           int *beg)
 {
-    return guarded<add_constraints>(model, count, functions, lower, upper, first);
+    return guarded<add_constraints>(mdl, n, funs, lb, ub, beg);
 }
 
-BIYOS_status BIYOS_setconbounds(BIYOS_model *model,
-                                int count,
-                                const int *indices,
-                                const double *lower,
-                                const double *upper)
+BIYOS_status BIYOS_setconbounds(BIYOS_model *mdl,
+                                int n,
+                                const int *idx,
+                                const double *lb,
+                                const double *ub)
 {
-    return guarded<set_bounds>(model, count, indices, lower, upper);
+    return guarded<set_bounds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_getncons(BIYOS_model *model, int *count)
+BIYOS_status BIYOS_getncons(BIYOS_model *mdl, int *n)
 {
-    return guarded<constraint_count>(model, count);
+    return guarded<constraint_count>(mdl, n);
 }
 
-BIYOS_status BIYOS_getcons(BIYOS_model *model,
-                           int first,
-                           int count,
-                           int *functions,
-                           double *lower,
-                           double *upper)
+BIYOS_status BIYOS_getcons(BIYOS_model *mdl, int beg, int n, int *funs, double *lb, double *ub)
 {
-    return guarded<get_constraints>(model, first, count, functions, lower, upper);
+    return guarded<get_constraints>(mdl, beg, n, funs, lb, ub);
 }

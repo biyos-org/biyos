@@ -245,14 +245,14 @@ TEST(CApiTest, BadSubscribe)
     const int message = BIYOS_EVT_MESSAGE;
     const int debug = BIYOS_LVL_DBG;
     EXPECT_EQ(BIYOS_addhook(env.get(), nullptr, &inbox, message, debug, &id), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'subscriber': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'hook': is null");
     EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, 0, debug, &id), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: event kind 0: unknown");
     EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, 9, &id), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: level 9: unknown");
     EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, debug, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'subscription': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'id': is null");
     EXPECT_EQ(inbox.calls, 0);
     EXPECT_EQ(id, 0);
 }
