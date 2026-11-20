@@ -28,15 +28,15 @@ TEST(CApiTest, OptionIds)
 {
     const Env env;
     const char *names[] = {"seed",
-                           "time_limit",
-                           "check_level",
+                           "maxtime",
+                           "check_lvl",
                            "presolve",
-                           "reproducer",
-                           "feasibility_abs",
-                           "feasibility_rel",
-                           "integrality_tol",
-                           "zero_tol",
-                           "cpu_time_limit"};
+                           "repro",
+                           "feastol_abs",
+                           "feastol_rel",
+                           "inttol",
+                           "zerotol",
+                           "maxcputime"};
     const int ids[] = {BIYOS_OPT_SEED,
                        BIYOS_OPT_MAXTIME,
                        BIYOS_OPT_CHECKLVL,
@@ -236,7 +236,7 @@ TEST(CApiTest, BadEnum)
     const Env env;
     EXPECT_EQ(BIYOS_setstropt(env.get(), BIYOS_OPT_CHECKLVL, "most"), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(),
-              "invalid argument: option 'check_level': 'most' is not one of none, cheap, full");
+              "invalid argument: option 'check_lvl': 'most' is not one of none, cheap, full");
 }
 
 TEST(CApiTest, WrongKind)

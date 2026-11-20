@@ -167,9 +167,9 @@ TEST(OptionTest, DoubleRange)
     biyos::Options options(stream.events);
     options.set_double(Option::TimeLimit, 2.5);
     EXPECT_EQ(failure([&] { options.set_double(Option::TimeLimit, -0.5); }),
-              "invalid argument: option 'time_limit': -0.5 is outside [0, inf]");
+              "invalid argument: option 'maxtime': -0.5 is outside [0, inf]");
     EXPECT_EQ(failure([&] { options.set_double(Option::TimeLimit, kNan); }),
-              "invalid argument: option 'time_limit': nan is outside [0, inf]");
+              "invalid argument: option 'maxtime': nan is outside [0, inf]");
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), 2.5);
 }
 
@@ -181,9 +181,9 @@ TEST(OptionTest, CpuLimit)
     EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), 0.0);
     options.set_double(Option::CpuTimeLimit, 2.5);
     EXPECT_EQ(failure([&] { options.set_double(Option::CpuTimeLimit, -0.5); }),
-              "invalid argument: option 'cpu_time_limit': -0.5 is outside [0, inf]");
+              "invalid argument: option 'maxcputime': -0.5 is outside [0, inf]");
     EXPECT_EQ(failure([&] { options.set_double(Option::CpuTimeLimit, kNan); }),
-              "invalid argument: option 'cpu_time_limit': nan is outside [0, inf]");
+              "invalid argument: option 'maxcputime': nan is outside [0, inf]");
     EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), 2.5);
 }
 
@@ -231,7 +231,7 @@ TEST(OptionTest, EnumValue)
     Stream stream;
     biyos::Options options(stream.events);
     EXPECT_EQ(failure([&] { options.set_string(Option::CheckLevel, "most"); }),
-              "invalid argument: option 'check_level': 'most' is not one of none, cheap, full");
+              "invalid argument: option 'check_lvl': 'most' is not one of none, cheap, full");
     EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
 }
 
@@ -258,11 +258,11 @@ TEST(OptionTest, WrongKind)
     EXPECT_EQ(failure([&] { options.set_string(Option::Presolve, "yes"); }),
               "invalid argument: option 'presolve': is a bool, not a string");
     EXPECT_EQ(failure([&] { options.set_int(Option::CheckLevel, 2); }),
-              "invalid argument: option 'check_level': is an enum, not an int");
+              "invalid argument: option 'check_lvl': is an enum, not an int");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_bool(Option::Reproducer)); }),
-              "invalid argument: option 'reproducer': is a string, not a bool");
+              "invalid argument: option 'repro': is a string, not a bool");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_int(Option::TimeLimit)); }),
-              "invalid argument: option 'time_limit': is a double, not an int");
+              "invalid argument: option 'maxtime': is a double, not an int");
 }
 
 TEST(OptionTest, Names)
@@ -281,7 +281,7 @@ TEST(OptionTest, Names)
         EXPECT_EQ(biyos::find_option(biyos::name_of(option)), option);
         EXPECT_EQ(biyos::find_option(static_cast<int>(option)), option);
     }
-    EXPECT_EQ(biyos::name_of(Option::TimeLimit), "time_limit");
+    EXPECT_EQ(biyos::name_of(Option::TimeLimit), "maxtime");
 }
 
 TEST(OptionTest, Kinds)
