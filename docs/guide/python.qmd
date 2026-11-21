@@ -23,7 +23,7 @@ Indexing a block gives a view, such as a `Variable`, which passes as its index w
 
 ## Arrays {#sec-python-arrays}
 
-A method that takes an array accepts any sequence of the right length: a list, a tuple, a block where indices are due. A sequence of the wrong length raises `ValueError`, an entry of the wrong type `TypeError`, and an integer too large for 32 bits, or an offset too large for 64, `OverflowError`. A writable, contiguous buffer of doubles, such as an `array.array("d")`, passes to C without a copy where doubles are due; everything else is copied into a C array for the call. `None` stands for a null array and takes the default the C call gives it.
+A method that takes an array accepts any sequence of the right length: a list, a tuple, a block where indices are due. A sequence of the wrong length raises `ValueError`, an entry of the wrong type `TypeError`, and an integer too large for 32 bits, or an offset too large for 64, `OverflowError`. A writable, contiguous buffer of doubles, such as an `array.array("d")`, passes to C without a copy where doubles are due; everything else is copied into a C array for the call. The annotations name sequences, so a type checker refuses a NumPy or a ctypes array, though both work at run time: a contiguous NumPy array of float64 is such a buffer and passes without a copy, while a ctypes array of doubles is copied. `None` stands for a null array and takes the default the C call gives it.
 
 The readers return lists, in the order of the C call's arrays:
 
