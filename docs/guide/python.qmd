@@ -6,7 +6,7 @@ The package `biyos` calls the C library through `ctypes` and needs no compiled e
 
 `Env()` creates an environment and `Model(env)` a model on it. Both are context managers, so a `with` block frees them when it ends, and both have a `close` method that does the same. Closing an environment closes every model made on it first. Using a closed environment or model raises `ValueError`, and closing one twice does nothing.
 
-A model keeps its environment alive, so an environment the program no longer references stays allocated while one of its models is open. An environment or a model closed from inside one of its own calls, by a hook for instance, reads as closed at once and is freed when that call returns.
+A model keeps its environment alive, so an environment the program no longer references stays allocated while one of its models is open. An environment or a model closed from inside one of its own calls, by a hook for instance, reads as closed at once and is freed when that call returns. A model closed by a hook during any other call reads as closed at once too, and is freed when the outermost call returns, where `BIYOS_freemdl` would fail (@sec-events-inside).
 
 ## Blocks and views {#sec-python-blocks}
 

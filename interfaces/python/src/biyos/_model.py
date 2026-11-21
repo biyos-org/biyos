@@ -97,8 +97,8 @@ class Model:
     closing it again does nothing. Closed during one of its own calls, by a
     hook or a finalizer, it reads as closed at once and is freed when
     the call returns, or when the outermost call returns if the call was
-    made from a hook. Otherwise ``close`` raises ``biyos.Error`` while
-    the environment delivers an event, and the model stays open.
+    made from a hook. Closed while its environment delivers an event, it
+    reads as closed at once and is freed when the outermost call returns.
 
     Parameters
     ----------
@@ -132,13 +132,15 @@ class Model:
         """Free the model.
 
         Using it afterwards raises ``ValueError``, and closing it again does
-        nothing.
+        nothing. Closed during one of its own calls or while its environment
+        delivers an event, by a hook or a finalizer, it reads as closed at
+        once and is freed when the outermost call returns. Such a deferred
+        close never raises.
 
         Raises
         ------
         Error
-            While the environment delivers an event, outside the model's own
-            calls.
+            When the free is refused. The model then stays open.
 
         See Also
         --------
@@ -152,6 +154,9 @@ class Model:
             return
         if self._calls > 0:
             self._closing = True
+            return
+        if not self._env._relay.idle():
+            self._free()
             return
         models = self._env._models
         models.take(self._handle.value)

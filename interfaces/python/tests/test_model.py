@@ -9,7 +9,7 @@ import biyos
 from biyos import EventKind, EventLevel, VariableKind, _model
 from biyos._capi import OK, lib
 from number import Growing, Number
-from refusal import INVALID_ARGUMENT, LOCKED, refusal
+from refusal import LOCKED, refusal
 from sized import Room, limit
 from spies import followed, interrupted, preceded, spied
 
@@ -179,7 +179,7 @@ def test_interrupted_close(env, monkeypatch):
     assert not env._free.alive
 
 
-def test_put_back(env, monkeypatch):
+def test_parked(env, monkeypatch):
     statuses = []
     spy = partial(spied, lib.BIYOS_freemdl, statuses)
     monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
@@ -187,19 +187,36 @@ def test_put_back(env, monkeypatch):
     seen = []
 
     def close_inside(event):
+        models[0].close()
+        seen.append(list(statuses))
         try:
-            models[0].close()
-        except biyos.Error as error:
+            models[0].getnvars()
+        except ValueError as error:
             seen.append(str(error))
 
     env.addhook(close_inside, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [LOCKED]
+    assert seen == [[], "the model is closed"]
+    assert statuses == [OK]
+    models[0].close()
+    env.close()
+    assert statuses == [OK]
+
+
+def test_put_back(env, monkeypatch):
+    statuses = []
+    spy = partial(spied, lib.BIYOS_freemdl, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
+    models = [biyos.Model(env)]
+    with monkeypatch.context() as patch:
+        patch.setattr(lib, "BIYOS_freemdl", refused)
+        with pytest.raises(biyos.Error):
+            models[0].close()
     assert models[0].getnvars() == 0
     models.clear()
     env.getopt("seed")
-    assert statuses == [INVALID_ARGUMENT, OK]
+    assert statuses == [OK]
 
 
 def test_dropped(env, monkeypatch):
@@ -652,16 +669,15 @@ def test_locked(env, model):
     seen = []
 
     def change(event):
-        for call in (partial(model.addvars, 1), model.close):
-            try:
-                call()
-            except biyos.Error as error:
-                seen.append(str(error))
+        try:
+            model.addvars(1)
+        except biyos.Error as error:
+            seen.append(str(error))
         seen.append(model.getnvars())
 
     model.addvars(1)
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [LOCKED, LOCKED, 1]
+    assert seen == [LOCKED, 1]
     assert model.getnvars() == 1
