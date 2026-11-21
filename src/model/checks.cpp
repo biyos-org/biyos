@@ -101,7 +101,7 @@ void check_function(std::string_view noun, Index index, Index function, Index fu
     }
 }
 
-void check_functions(std::span<const Index> functions, Index held)
+void check_functions(std::span<const Index> functions, Index held, std::string_view argument)
 {
     for (const Index function : functions)
     {
@@ -113,7 +113,7 @@ void check_functions(std::span<const Index> functions, Index held)
     if (repeat != sorted.end())
     {
         const std::string reason = item("function", *repeat) + " is repeated";
-        throw Error(ErrorKind::InvalidArgument, "argument 'funidx'", reason);
+        throw Error(ErrorKind::InvalidArgument, "argument '" + std::string(argument) + "'", reason);
     }
 }
 

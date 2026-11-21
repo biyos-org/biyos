@@ -50,6 +50,7 @@ add_library(biyos_internal STATIC
     expr/uses.cpp
     expr/value.cpp
     expr/waves.cpp
+    model/attach.cpp
     model/checks.cpp
     model/compare.cpp
     model/compressed.cpp

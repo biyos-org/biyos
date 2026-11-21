@@ -140,7 +140,7 @@ void Model::add_linear_terms(std::span<const Index> functions,
 {
     check_room(0, static_cast<Offset>(terms.size()));
     check_shape(functions.size(), starts, terms.size());
-    check_functions(functions, n_functions());
+    check_functions(functions, n_functions(), "funidx");
     std::vector<AddedTerms> additions;
     additions.reserve(functions.size());
     for (std::size_t k = 0; k < functions.size(); ++k)

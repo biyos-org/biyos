@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <new>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -202,6 +203,41 @@ void add_sum(Model &model)
     model.add_node(BIYOS_OP_SUM, children, values);
 }
 
+Model with_roots()
+{
+    Model model = with_nodes();
+    model.add_functions(std::vector<double>(3, 1.0),
+                        std::vector<Offset>{0, 1, 1, 2},
+                        {{2, 1.0}, {0, 3.0}});
+    const std::vector<Index> held{2};
+    const std::vector<Offset> one{0, 1};
+    model.add_quadratic_terms(held, one, {{1, 1, 2.0}});
+    const std::vector<Offset> x{0};
+    const std::vector<double> values{0.5, 2.0};
+    const std::vector<Offset> sum{model.add_node(BIYOS_OP_SUM, x, values)};
+    const std::vector<Offset> pair{0, 0};
+    const Offset square = model.add_node(BIYOS_OP_PROD, pair, std::vector<double>{3.0});
+    const std::vector<Offset> terms{1, square, 0};
+    model.add_node(BIYOS_OP_SUM, terms, std::vector<double>{1.0, 1.0, 1.0, 4.0});
+    const std::vector<Index> functions{0, 1};
+    const std::vector<Offset> roots{sum.front(), 1};
+    model.attach_expressions(functions, roots);
+    return model;
+}
+
+void attach_all(Model &model)
+{
+    const std::vector<Index> functions{2, 0, 1};
+    const std::vector<Offset> nodes{4, 4, 1};
+    model.attach_expressions(functions, nodes);
+}
+
+std::vector<Offset> roots_of(const Model &model)
+{
+    const std::span<const Offset> roots = model.roots(0, model.n_functions());
+    return {roots.begin(), roots.end()};
+}
+
 bool runs_out_with(Model &model, void (*change)(Model &), std::size_t successes)
 {
     const PendingFailure failure(successes);
@@ -319,4 +355,25 @@ TEST(AllocationTest, VariableNode)
 TEST(AllocationTest, SumNode)
 {
     expect_graph(add_sum);
+}
+
+TEST(AllocationTest, Attach)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        const Model before = with_roots();
+        Model model = before;
+        if (!runs_out_with(model, attach_all, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(model.linear_terms(0, 3).size(), 3U);
+            EXPECT_EQ(model.quadratic_terms(0, 3).size(), 3U);
+            EXPECT_EQ(roots_of(model), (std::vector<Offset>{1, 5, 1}));
+            return;
+        }
+        EXPECT_EQ(biyos::difference(model, before), "");
+        EXPECT_EQ(model.graph().mark(), before.graph().mark());
+        EXPECT_EQ(roots_of(model), roots_of(before));
+    }
+    ADD_FAILURE() << "the call never completed";
 }
