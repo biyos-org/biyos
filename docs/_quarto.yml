@@ -27,6 +27,7 @@ book:
         - guide/copy.qmd
         - guide/errors.qmd
         - guide/threads.qmd
+        - guide/python.qmd
 
 number-sections: true
 
