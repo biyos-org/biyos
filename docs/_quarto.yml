@@ -1,6 +1,8 @@
 project:
   type: book
   output-dir: _book
+  pre-render:
+    - ../tools/capi_page.py
 
 book:
   title: biyos
@@ -35,6 +37,10 @@ book:
         - method/tapes.qmd
         - method/derivatives.qmd
         - method/intervals.qmd
+    - part: Reference
+      chapters:
+        - reference/capi.qmd
+        - reference/codes.qmd
     - references.qmd
 
 number-sections: true
@@ -42,6 +48,8 @@ number-sections: true
 bibliography: references.bib
 link-citations: true
 filters:
+  - path: filters/generated.lua
+    at: pre-ast
   - path: filters/include.lua
     at: pre-ast
   - path: filters/figures.lua

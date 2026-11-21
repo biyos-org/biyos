@@ -1,0 +1,68 @@
+# The C API {#sec-capi}
+
+`biyos/biyos.h` is the binary interface of biyos, one C99 header that declares every function, type and constant. This chapter has an entry for each of them. The declarations are read from the header and the rest from one specification beside this book, and a check in continuous integration fails when a public name has no entry, when an entry names nothing, or when an entry's parameters differ from the declaration.
+
+## Conventions {#sec-capi-conventions}
+
+Every call that returns `BIYOS_status` follows these rules:
+
+- It returns `BIYOS_OK` or a negative error code.
+- On failure it keeps its message on the environment, read with `BIYOS_lasterror`, which for a call on a model is the environment the model was made on. It keeps none when given a null environment or model or when it takes none, as the formatting calls do, and `BIYOS_newenv` keeps none since it has no environment yet. If memory runs out while the message is kept, the message is left empty.
+- On success it leaves the message as it was.
+- A null pointer argument, the environment or the model included, gives `BIYOS_ERR_BADARG`, unless its entry says otherwise.
+- On failure it changes nothing and leaves its output arguments as they were, unless its entry says otherwise.
+- Besides the codes its entry names, it can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos.
+
+No call lets an exception out. A call keeps no pointer the caller passes in, unless its entry says so. A string a call returns belongs to biyos, and its entry says how long the pointer stays valid.
+
+Every number the header defines, such as an option id, an option kind or an error code, keeps its value for good and is never reused. A new one takes the next free number of its group. An option that is no longer wanted is retired, not removed: it keeps its id, and setting it reports that it is retired.
+
+Each entry gives the declaration, then each parameter with its direction, `in` when the call reads it and `out` when the call writes through it, then what the call returns, the errors it names and the version that added it.
+
+::: {source="reference/_capi/types.md"}
+:::
+
+::: {source="reference/_capi/linking.md"}
+:::
+
+::: {source="reference/_capi/version.md"}
+:::
+
+::: {source="reference/_capi/env.md"}
+:::
+
+::: {source="reference/_capi/options.md"}
+:::
+
+::: {source="reference/_capi/events.md"}
+:::
+
+::: {source="reference/_capi/reading.md"}
+:::
+
+::: {source="reference/_capi/formatting.md"}
+:::
+
+::: {source="reference/_capi/model.md"}
+:::
+
+::: {source="reference/_capi/variables.md"}
+:::
+
+::: {source="reference/_capi/functions.md"}
+:::
+
+::: {source="reference/_capi/quadratic.md"}
+:::
+
+::: {source="reference/_capi/constraints.md"}
+:::
+
+::: {source="reference/_capi/objectives.md"}
+:::
+
+::: {source="reference/_capi/expressions.md"}
+:::
+
+::: {source="reference/_capi/status.md"}
+:::
