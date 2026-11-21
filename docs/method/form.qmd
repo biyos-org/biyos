@@ -1,0 +1,68 @@
+# The problem form {#sec-form}
+
+This part states what biyos computes, in mathematics alone. This chapter fixes the problem; the next ones describe how its functions are represented and evaluated.
+
+## The problem {#sec-form-problem}
+
+biyos is built for problems of the form
+
+$$
+\begin{aligned}
+\text{minimize}\quad & f_1(x),\ \dots,\ f_p(x) && \text{in priority order} \\
+\text{subject to}\quad & l \le g(x) \le u \\
+& h(x) \in K \\
+& x_j \in D_j && \text{for every variable } j,
+\end{aligned}
+$$ {#eq-form}
+
+over $x \in \mathbb{R}^n$. Here $g$ maps to $\mathbb{R}^m$ and its bounds $l, u \in (\mathbb{R} \cup \{\pm\infty\})^m$ may be infinite, $K = K_1 \times \dots \times K_q$ is a product of cones, and each $D_j$ is the domain of a variable, which its kind fixes. Every component of $f$, $g$ and $h$ is drawn from one table of functions, so a function may serve a constraint, a cone and an objective at once.
+
+A model holds part of @eq-form today: the variables with their domains, the functions with their constant, linear and quadratic parts, the constraints $l \le g(x) \le u$ and the objectives. Cones, complementarity, special ordered sets and indicator constraints join the form later, as further tables of records over the same functions.
+
+## Variables {#sec-form-variables}
+
+Each variable $x_j$ has a lower bound $\ell_j \in \mathbb{R} \cup \{-\infty\}$, an upper bound $\upsilon_j \in \mathbb{R} \cup \{+\infty\}$ and a kind, which fixes its domain:
+
+| Kind | Domain $D_j$ |
+| ------------ | ------------------------------------ |
+| continuous | $[\ell_j, \upsilon_j]$ |
+| binary | $\{0, 1\} \cap [\ell_j, \upsilon_j]$, with $[\ell_j, \upsilon_j] \subseteq [0, 1]$ |
+| integer | $\mathbb{Z} \cap [\ell_j, \upsilon_j]$ |
+| semi-continuous | $\{0\} \cup [\ell_j, \upsilon_j]$ |
+| semi-integer | $\{0\} \cup \left(\mathbb{Z} \cap [\ell_j, \upsilon_j]\right)$ |
+
+Every kind but continuous is discrete, and a problem with a discrete variable is a discrete problem. An infinite bound leaves its side open. A box with $\ell_j > \upsilon_j$ is empty, and the model keeps it as given.
+
+## Functions {#sec-form-functions}
+
+Every function of the table has the form
+
+$$
+f(x) = c + \sum_{j} a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x),
+$$ {#eq-function}
+
+a constant $c$, a linear part, a quadratic part over unordered pairs of variables and a nonlinear part $\varphi$, a node of the model's expression graph (@sec-graph). Each pair $(i, j)$ appears once, with $i \le j$, and its coefficient is taken as written, with no factor $\tfrac12$. In matrix form the quadratic part is $x^\top Q x$ for the upper triangular $Q = (q_{ij})$, and its Hessian is $Q + Q^\top$.
+
+The parts are kept apart because each is handled best on its own. A linear part has constant derivatives, a quadratic part adds the constant matrix $Q + Q^\top$ to a Hessian with no evaluation at all, and the convexity of a quadratic part is a property of $Q$ alone. Only $\varphi$ needs the expression graph, and an expression given whole is split on entry, so that its linear and quadratic terms join the first parts and $\varphi$ keeps only the rest.
+
+## Constraints {#sec-form-constraints}
+
+A constraint is a record $(k, l, u)$ that bounds function $k$ of the table: $l \le f_k(x) \le u$. A constraint with $l = u$ is an equality, one with $l = -\infty$ and $u = +\infty$ is free, and two constraints may bound the same function. Records refer to functions by index, never by copy, so one function may serve several records of any family.
+
+## Several objectives {#sec-form-objectives}
+
+An objective is a record $(k, s, \pi, w, a, r)$: the function $f_k$, a sense $s$, which is $+1$ to minimize and $-1$ to maximize, a priority $\pi \in \mathbb{Z}$, a weight $w > 0$, and an absolute and a relative tolerance $a, r \ge 0$. Let $\pi_1 < \pi_2 < \dots$ be the distinct priorities held and $P_t$ the objectives of priority $\pi_t$. The objectives are optimized in stages, stage $t$ solving
+
+$$
+\begin{aligned}
+\text{minimize}\quad & \sum_{i \in P_t} w_i\, s_i\, f_{k_i}(x) \\
+\text{subject to}\quad & x \text{ feasible}, \\
+& \text{every objective of an earlier stage within its tolerances of the optimum found for it.}
+\end{aligned}
+$$
+
+where feasible means every constraint and domain of @eq-form holds. The absolute tolerance of an objective is in the units of its function, the relative one a fraction of the size of its optimum, and a tolerance of $\infty$ sets no limit. Objectives of different priorities are thus optimized in sequence, and objectives of one priority are blended into one weighted sum. A weight is positive, so the sense alone gives the direction. By default each objective takes its own position as its priority, which makes the optimization sequential in the order the objectives were given; equal priorities express a weighted sum.
+
+## What a result claims {#sec-form-claims}
+
+A solve will end with four separate statements: why it stopped, what the returned primal point is, what the returned dual point is, and how far its conclusion was proved. Keeping the stopping reason apart from the status of each point follows MathOptInterface [@legat2022]. The last statement, the claim, is `global` when the conclusion holds for the whole problem, `local` when it holds near the returned point, and `none` when nothing is proved. A method never claims more than it proved: a local method reports a local claim even when its point happens to be a global optimum, and convexity that cannot be proved counts as absent.

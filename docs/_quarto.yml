@@ -28,9 +28,15 @@ book:
         - guide/errors.qmd
         - guide/threads.qmd
         - guide/python.qmd
+    - part: Method
+      chapters:
+        - method/form.qmd
+    - references.qmd
 
 number-sections: true
 
+bibliography: references.bib
+link-citations: true
 filters:
   - path: filters/include.lua
     at: pre-ast
