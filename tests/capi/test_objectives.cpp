@@ -57,31 +57,28 @@ const Records kSample{
     .relative = {0.25, 0.0, 0.0},
 };
 
-BIYOS_status add_with(BIYOS_model *model,
-                      int count,
-                      const BIYOS_index *functions,
+BIYOS_status add_with(BIYOS_model *mdl,
+                      int n,
+                      const BIYOS_index *funs,
                       const Fields &fields,
-                      BIYOS_index *first = nullptr)
+                      BIYOS_index *beg = nullptr)
 {
-    return BIYOS_addobjs(model,
-                         count,
-                         functions,
+    return BIYOS_addobjs(mdl,
+                         n,
+                         funs,
                          fields.senses,
                          fields.priorities,
                          fields.weights,
                          fields.absolute,
                          fields.relative,
-                         first);
+                         beg);
 }
 
-BIYOS_status set_with(BIYOS_model *model,
-                      int count,
-                      const BIYOS_index *indices,
-                      const Fields &fields)
+BIYOS_status set_with(BIYOS_model *mdl, int n, const BIYOS_index *idx, const Fields &fields)
 {
-    return BIYOS_setobjs(model,
-                         count,
-                         indices,
+    return BIYOS_setobjs(mdl,
+                         n,
+                         idx,
                          fields.senses,
                          fields.priorities,
                          fields.weights,
@@ -89,11 +86,11 @@ BIYOS_status set_with(BIYOS_model *model,
                          fields.relative);
 }
 
-BIYOS_status get_with(BIYOS_model *model, int first, int count, const Outputs &outputs)
+BIYOS_status get_with(BIYOS_model *mdl, int beg, int n, const Outputs &outputs)
 {
-    return BIYOS_getobjs(model,
-                         first,
-                         count,
+    return BIYOS_getobjs(mdl,
+                         beg,
+                         n,
                          outputs.functions,
                          outputs.senses,
                          outputs.priorities,
@@ -102,7 +99,7 @@ BIYOS_status get_with(BIYOS_model *model, int first, int count, const Outputs &o
                          outputs.relative);
 }
 
-BIYOS_status add_records(const Model &model, const Records &records, BIYOS_index *first = nullptr)
+BIYOS_status add_records(const Model &mdl, const Records &records, BIYOS_index *beg = nullptr)
 {
     const Fields fields{
         .senses = records.senses.data(),
@@ -111,32 +108,31 @@ BIYOS_status add_records(const Model &model, const Records &records, BIYOS_index
         .absolute = records.absolute.data(),
         .relative = records.relative.data(),
     };
-    const auto count = static_cast<int>(records.functions.size());
-    return add_with(model.get(), count, records.functions.data(), fields, first);
+    const auto n = static_cast<int>(records.functions.size());
+    return add_with(mdl.get(), n, records.functions.data(), fields, beg);
 }
 
-void add_functions(const Model &model, int count)
+void add_funs(const Model &mdl, int n)
 {
-    ASSERT_EQ(BIYOS_addfuns(model.get(), count, nullptr, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfuns(mdl.get(), n, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
-void add_sample(const Model &model)
+void add_sample(const Model &mdl)
 {
-    add_functions(model, 2);
-    ASSERT_EQ(add_records(model, kSample), BIYOS_OK);
+    add_funs(mdl, 2);
+    ASSERT_EQ(add_records(mdl, kSample), BIYOS_OK);
 }
 
-int objective_count(const Model &model)
+int n_objs(const Model &mdl)
 {
-    BIYOS_index count = -1;
-    EXPECT_EQ(BIYOS_getnobjs(model.get(), &count), BIYOS_OK);
-    return count;
+    BIYOS_index n = -1;
+    EXPECT_EQ(BIYOS_getnobjs(mdl.get(), &n), BIYOS_OK);
+    return n;
 }
 
-Records read_range(const Model &model, int first, int count)
+Records read_range(const Model &mdl, int beg, int n)
 {
-    const auto size = static_cast<std::size_t>(count);
+    const auto size = static_cast<std::size_t>(n);
     Records read{
         .functions = std::vector<int>(size, -9),
         .senses = std::vector<int>(size, -9),
@@ -153,13 +149,13 @@ Records read_range(const Model &model, int first, int count)
         .absolute = read.absolute.data(),
         .relative = read.relative.data(),
     };
-    EXPECT_EQ(get_with(model.get(), first, count, outputs), BIYOS_OK);
+    EXPECT_EQ(get_with(mdl.get(), beg, n, outputs), BIYOS_OK);
     return read;
 }
 
-Records read_all(const Model &model)
+Records read_all(const Model &mdl)
 {
-    return read_range(model, 0, objective_count(model));
+    return read_range(mdl, 0, n_objs(mdl));
 }
 
 std::vector<std::uint64_t> bits_of(const std::vector<double> &values)
@@ -183,11 +179,11 @@ void expect_records(const Records &found, const Records &wanted)
     EXPECT_EQ(bits_of(found.relative), bits_of(wanted.relative));
 }
 
-Records defaults(const std::vector<int> &functions)
+Records defaults(const std::vector<int> &funs)
 {
-    const std::size_t size = functions.size();
+    const std::size_t size = funs.size();
     Records records{
-        .functions = functions,
+        .functions = funs,
         .senses = std::vector<int>(size, BIYOS_MINIMIZE),
         .priorities = std::vector<int>(size),
         .weights = std::vector<double>(size, 1.0),
@@ -218,14 +214,14 @@ void note(Attempt &attempt, BIYOS_status status)
 void change(const BIYOS_event *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
-    BIYOS_model *model = attempt.model;
-    const BIYOS_index index = 0;
+    BIYOS_model *mdl = attempt.model;
+    const BIYOS_index idx = 0;
     const double weight = 2.0;
-    BIYOS_index count = 0;
-    note(attempt, add_with(model, 1, &index, {}));
-    note(attempt, set_with(model, 1, &index, {.weights = &weight}));
-    note(attempt, BIYOS_getnobjs(model, &count));
-    note(attempt, get_with(model, 0, 1, {}));
+    BIYOS_index n = 0;
+    note(attempt, add_with(mdl, 1, &idx, {}));
+    note(attempt, set_with(mdl, 1, &idx, {.weights = &weight}));
+    note(attempt, BIYOS_getnobjs(mdl, &n));
+    note(attempt, get_with(mdl, 0, 1, {}));
 }
 
 }
@@ -233,66 +229,66 @@ void change(const BIYOS_event *, void *data)
 TEST(CApiTest, AddedObjectives)
 {
     const Env env;
-    const Model model(env);
-    add_sample(model);
-    EXPECT_EQ(objective_count(model), 3);
-    expect_records(read_all(model), kSample);
+    const Model mdl(env);
+    add_sample(mdl);
+    EXPECT_EQ(n_objs(mdl), 3);
+    expect_records(read_all(mdl), kSample);
     EXPECT_EQ(env.message(), "");
 }
 
 TEST(CApiTest, FirstObjective)
 {
     const Env env;
-    const Model model(env);
-    add_functions(model, 1);
-    const int functions[] = {0, 0, 0};
-    BIYOS_index first = -1;
-    ASSERT_EQ(add_with(model.get(), 0, nullptr, {}, &first), BIYOS_OK);
-    EXPECT_EQ(first, 0);
-    ASSERT_EQ(add_records(model, defaults({0, 0}), &first), BIYOS_OK);
-    EXPECT_EQ(first, 0);
-    ASSERT_EQ(add_with(model.get(), 3, functions, {}), BIYOS_OK);
-    ASSERT_EQ(add_with(model.get(), 0, functions, {}, &first), BIYOS_OK);
-    EXPECT_EQ(first, 5);
-    ASSERT_EQ(add_records(model, defaults({0}), &first), BIYOS_OK);
-    EXPECT_EQ(first, 5);
-    EXPECT_EQ(add_records(model, defaults({1}), &first), BIYOS_ERR_BADARG);
-    EXPECT_EQ(first, 5);
-    EXPECT_EQ(objective_count(model), 6);
+    const Model mdl(env);
+    add_funs(mdl, 1);
+    const int funs[] = {0, 0, 0};
+    BIYOS_index beg = -1;
+    ASSERT_EQ(add_with(mdl.get(), 0, nullptr, {}, &beg), BIYOS_OK);
+    EXPECT_EQ(beg, 0);
+    ASSERT_EQ(add_records(mdl, defaults({0, 0}), &beg), BIYOS_OK);
+    EXPECT_EQ(beg, 0);
+    ASSERT_EQ(add_with(mdl.get(), 3, funs, {}), BIYOS_OK);
+    ASSERT_EQ(add_with(mdl.get(), 0, funs, {}, &beg), BIYOS_OK);
+    EXPECT_EQ(beg, 5);
+    ASSERT_EQ(add_records(mdl, defaults({0}), &beg), BIYOS_OK);
+    EXPECT_EQ(beg, 5);
+    EXPECT_EQ(add_records(mdl, defaults({1}), &beg), BIYOS_ERR_BADARG);
+    EXPECT_EQ(beg, 5);
+    EXPECT_EQ(n_objs(mdl), 6);
 }
 
 TEST(CApiTest, DefaultObjectives)
 {
     const Env env;
-    const Model model(env);
-    add_functions(model, 2);
-    const int functions[] = {1, 0, 1};
-    ASSERT_EQ(add_with(model.get(), 2, functions, {}), BIYOS_OK);
-    expect_records(read_all(model), defaults({1, 0}));
+    const Model mdl(env);
+    add_funs(mdl, 2);
+    const int funs[] = {1, 0, 1};
+    ASSERT_EQ(add_with(mdl.get(), 2, funs, {}), BIYOS_OK);
+    expect_records(read_all(mdl), defaults({1, 0}));
     const int priorities[] = {-4, 0};
-    ASSERT_EQ(add_with(model.get(), 2, functions, {.priorities = priorities}), BIYOS_OK);
-    ASSERT_EQ(add_with(model.get(), 3, functions, {}), BIYOS_OK);
+    ASSERT_EQ(add_with(mdl.get(), 2, funs, {.priorities = priorities}), BIYOS_OK);
+    ASSERT_EQ(add_with(mdl.get(), 3, funs, {}), BIYOS_OK);
     Records wanted = defaults({1, 0, 1, 0, 1, 0, 1});
     wanted.priorities[2] = -4;
     wanted.priorities[3] = 0;
-    expect_records(read_all(model), wanted);
+    expect_records(read_all(mdl), wanted);
 }
 
 TEST(CApiTest, NullObjectives)
 {
     const Env env;
-    const Model model(env);
-    add_functions(model, 1);
-    const int functions[] = {0, 0};
+    const Model mdl(env);
+    add_funs(mdl, 1);
+    const int funs[] = {0, 0};
     const int senses[] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
     const int priorities[] = {7, 7};
     const double values[] = {0.5, 2.0};
-    BIYOS_model *held = model.get();
-    ASSERT_EQ(add_with(held, 2, functions, {.senses = senses}), BIYOS_OK);
-    ASSERT_EQ(add_with(held, 2, functions, {.priorities = priorities}), BIYOS_OK);
-    ASSERT_EQ(add_with(held, 2, functions, {.weights = values}), BIYOS_OK);
-    ASSERT_EQ(add_with(held, 2, functions, {.absolute = values}), BIYOS_OK);
-    ASSERT_EQ(add_with(held, 2, functions, {.relative = values}), BIYOS_OK);
+    BIYOS_model *held = mdl.get();
+    ASSERT_EQ(add_with(held, 2, funs, {.senses = senses}), BIYOS_OK);
+    ASSERT_EQ(add_with(held, 2, funs, {.priorities = priorities}), BIYOS_OK);
+    ASSERT_EQ(add_with(held, 2, funs, {.weights = values}), BIYOS_OK);
+    ASSERT_EQ(add_with(held, 2, funs, {.absolute = values}), BIYOS_OK);
+    ASSERT_EQ(add_with(held, 2, funs, {.relative = values}), BIYOS_OK);
     Records wanted = defaults(std::vector<int>(10, 0));
     wanted.senses[0] = BIYOS_MAXIMIZE;
     wanted.priorities[2] = 7;
@@ -303,30 +299,30 @@ TEST(CApiTest, NullObjectives)
     wanted.absolute[7] = 2.0;
     wanted.relative[8] = 0.5;
     wanted.relative[9] = 2.0;
-    expect_records(read_all(model), wanted);
+    expect_records(read_all(mdl), wanted);
     EXPECT_EQ(add_with(held, 1, nullptr, {.senses = senses}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
-    EXPECT_EQ(objective_count(model), 10);
+    EXPECT_EQ(n_objs(mdl), 10);
 }
 
 TEST(CApiTest, NullSetters)
 {
     const Env env;
-    const Model model(env);
-    add_sample(model);
-    BIYOS_model *held = model.get();
-    const int indices[] = {2, 0};
+    const Model mdl(env);
+    add_sample(mdl);
+    BIYOS_model *held = mdl.get();
+    const int idx[] = {2, 0};
     const int senses[] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
     const int priorities[] = {-5, 6};
     const double weights[] = {4.0, 8.0};
     const double absolute[] = {kInfinity, 0.125};
     const double relative[] = {1.0, 0.75};
-    EXPECT_EQ(set_with(held, 2, indices, {.senses = senses}), BIYOS_OK);
-    EXPECT_EQ(set_with(held, 2, indices, {.priorities = priorities}), BIYOS_OK);
-    EXPECT_EQ(set_with(held, 1, indices, {.weights = weights}), BIYOS_OK);
-    EXPECT_EQ(set_with(held, 2, indices, {.absolute = absolute}), BIYOS_OK);
-    EXPECT_EQ(set_with(held, 1, indices, {.relative = relative}), BIYOS_OK);
-    EXPECT_EQ(set_with(held, 2, indices, {}), BIYOS_OK);
+    EXPECT_EQ(set_with(held, 2, idx, {.senses = senses}), BIYOS_OK);
+    EXPECT_EQ(set_with(held, 2, idx, {.priorities = priorities}), BIYOS_OK);
+    EXPECT_EQ(set_with(held, 1, idx, {.weights = weights}), BIYOS_OK);
+    EXPECT_EQ(set_with(held, 2, idx, {.absolute = absolute}), BIYOS_OK);
+    EXPECT_EQ(set_with(held, 1, idx, {.relative = relative}), BIYOS_OK);
+    EXPECT_EQ(set_with(held, 2, idx, {}), BIYOS_OK);
     const Records wanted{
         .functions = kSample.functions,
         .senses = {BIYOS_MINIMIZE, BIYOS_MINIMIZE, BIYOS_MAXIMIZE},
@@ -335,33 +331,33 @@ TEST(CApiTest, NullSetters)
         .absolute = {0.125, 1.5, kInfinity},
         .relative = {0.25, 0.0, 1.0},
     };
-    expect_records(read_all(model), wanted);
+    expect_records(read_all(mdl), wanted);
     EXPECT_EQ(set_with(held, 2, nullptr, {.senses = senses}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
     EXPECT_EQ(set_with(held, 0, nullptr, {}), BIYOS_OK);
-    expect_records(read_all(model), wanted);
+    expect_records(read_all(mdl), wanted);
 }
 
 TEST(CApiTest, RepeatedObjective)
 {
     const Env env;
-    const Model model(env);
-    add_sample(model);
-    const int indices[] = {1, 1};
+    const Model mdl(env);
+    add_sample(mdl);
+    const int idx[] = {1, 1};
     const int senses[] = {BIYOS_MINIMIZE, BIYOS_MAXIMIZE};
     const double weights[] = {2.0, 3.0};
-    ASSERT_EQ(set_with(model.get(), 2, indices, {.senses = senses, .weights = weights}), BIYOS_OK);
+    ASSERT_EQ(set_with(mdl.get(), 2, idx, {.senses = senses, .weights = weights}), BIYOS_OK);
     Records wanted = kSample;
     wanted.senses[1] = BIYOS_MAXIMIZE;
     wanted.weights[1] = 3.0;
-    expect_records(read_all(model), wanted);
+    expect_records(read_all(mdl), wanted);
 }
 
 TEST(CApiTest, ObjectiveRange)
 {
     const Env env;
-    const Model model(env);
-    add_sample(model);
+    const Model mdl(env);
+    add_sample(mdl);
     const Records wanted{
         .functions = {0, 1},
         .senses = {BIYOS_MINIMIZE, BIYOS_MINIMIZE},
@@ -370,16 +366,16 @@ TEST(CApiTest, ObjectiveRange)
         .absolute = {1.5, kInfinity},
         .relative = {0.0, 0.0},
     };
-    expect_records(read_range(model, 1, 2), wanted);
-    expect_records(read_range(model, 3, 0), Records{});
+    expect_records(read_range(mdl, 1, 2), wanted);
+    expect_records(read_range(mdl, 3, 0), Records{});
 }
 
 TEST(CApiTest, NullOutputs)
 {
     const Env env;
-    const Model model(env);
-    add_sample(model);
-    BIYOS_model *held = model.get();
+    const Model mdl(env);
+    add_sample(mdl);
+    BIYOS_model *held = mdl.get();
     EXPECT_EQ(get_with(held, 0, 3, {}), BIYOS_OK);
     int senses[] = {-1, -1};
     double absolute[] = {9.0, 9.0};
@@ -393,19 +389,19 @@ TEST(CApiTest, NullOutputs)
 TEST(CApiTest, RefusedObjectives)
 {
     const Env env;
-    const Model model(env);
-    add_sample(model);
-    BIYOS_model *held = model.get();
-    const int functions[] = {0, 2};
-    EXPECT_EQ(add_with(held, 2, functions, {}), BIYOS_ERR_BADARG);
+    const Model mdl(env);
+    add_sample(mdl);
+    BIYOS_model *held = mdl.get();
+    const int funs[] = {0, 2};
+    EXPECT_EQ(add_with(held, 2, funs, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 4: function 2 is unknown");
     const int sense = 3;
-    EXPECT_EQ(add_with(held, 1, functions, {.senses = &sense}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(add_with(held, 1, funs, {.senses = &sense}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: sense 3 is unknown");
     const double negative = -1.0;
-    EXPECT_EQ(add_with(held, 1, functions, {.weights = &negative}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(add_with(held, 1, funs, {.weights = &negative}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: weight -1 is not positive");
-    EXPECT_EQ(add_with(held, 1, functions, {.absolute = &kNan}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(add_with(held, 1, funs, {.absolute = &kNan}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: absolute tolerance is NaN");
     EXPECT_EQ(add_with(held, -1, nullptr, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
@@ -423,19 +419,19 @@ TEST(CApiTest, RefusedObjectives)
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
     EXPECT_EQ(get_with(held, -1, 1, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective -1: unknown");
-    expect_records(read_all(model), kSample);
+    expect_records(read_all(mdl), kSample);
 }
 
 TEST(CApiTest, LockedObjectives)
 {
     const Env env;
-    const Model model(env);
+    const Model mdl(env);
     Attempt attempt;
     attempt.env = env.get();
-    attempt.model = model.get();
-    add_functions(model, 1);
-    const BIYOS_index function = 0;
-    ASSERT_EQ(add_with(model.get(), 1, &function, {}), BIYOS_OK);
+    attempt.model = mdl.get();
+    add_funs(mdl, 1);
+    const BIYOS_index fun = 0;
+    ASSERT_EQ(add_with(mdl.get(), 1, &fun, {}), BIYOS_OK);
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
@@ -447,5 +443,5 @@ TEST(CApiTest, LockedObjectives)
     EXPECT_EQ(attempt.messages[0], locked);
     EXPECT_EQ(attempt.messages[1], locked);
     EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
-    expect_records(read_all(model), defaults({0}));
+    expect_records(read_all(mdl), defaults({0}));
 }

@@ -21,16 +21,16 @@ void copy_line(const std::string &line, char *buffer, std::size_t size, std::siz
 }
 
 template <auto Formatter>
-BIYOS_status formatted(const BIYOS_event *event,
+BIYOS_status formatted(const BIYOS_event *evt,
                        char *buffer,
                        std::size_t size,
                        std::size_t *needed) noexcept
 {
-    if (event == nullptr || needed == nullptr || (buffer == nullptr && size > 0))
+    if (evt == nullptr || needed == nullptr || (buffer == nullptr && size > 0))
     {
         return BIYOS_ERR_BADARG;
     }
-    return biyos::capi::guard([&] { copy_line(Formatter(*event->core), buffer, size, needed); });
+    return biyos::capi::guard([&] { copy_line(Formatter(*evt->core), buffer, size, needed); });
 }
 
 }

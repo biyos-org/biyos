@@ -22,16 +22,16 @@ using biyos::capi::write_starts;
 namespace
 {
 
-void add_terms(BIYOS_model &model,
-               int count,
-               const int *functions,
+void add_terms(BIYOS_model &mdl,
+               int n,
+               const int *funs,
                const std::int64_t *starts,
                const int *firsts,
                const int *seconds,
                const double *values)
 {
-    biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> owners = listed(count, functions, "funidx");
+    biyos::Model &core = writable(mdl);
+    const std::span<const biyos::Index> owners = listed(n, funs, "funidx");
     const std::vector<biyos::Offset> begins = offsets(owners.size(), starts);
     biyos::check_starts(begins);
     core.check_quad_room(begins.back());
@@ -39,9 +39,9 @@ void add_terms(BIYOS_model &model,
     core.add_quad_terms(owners, begins, biyos::capi::packed(total, firsts, seconds, values));
 }
 
-void get_terms(const BIYOS_model &model,
-               int first,
-               int count,
+void get_terms(const BIYOS_model &mdl,
+               int beg,
+               int n,
                std::int64_t *starts,
                std::int64_t size,
                std::int64_t *needed,
@@ -49,11 +49,11 @@ void get_terms(const BIYOS_model &model,
                int *seconds,
                double *values)
 {
-    const std::span<const biyos::QuadraticTerm> found = model.core.quad_terms(first, count);
+    const std::span<const biyos::QuadraticTerm> found = mdl.core.quad_terms(beg, n);
     const std::size_t room = length(size, "size");
     require(needed, "nnz");
-    const auto before = [&](biyos::Index j) { return model.core.quad_terms(first, j); };
-    write_starts(static_cast<std::size_t>(count), starts, before);
+    const auto before = [&](biyos::Index j) { return mdl.core.quad_terms(beg, j); };
+    write_starts(static_cast<std::size_t>(n), starts, before);
     biyos::capi::unpack(found, room, firsts, seconds, values);
     *needed = static_cast<std::int64_t>(found.size());
 }

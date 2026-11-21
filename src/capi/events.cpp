@@ -21,22 +21,22 @@ struct Forwarder
     BIYOS_hook hook;
     void *data;
 
-    void operator()(const biyos::Event &event) const
+    void operator()(const biyos::Event &evt) const
     {
         const biyos::Env::ErrorScope scope(*env);
-        const BIYOS_event view{&event};
+        const BIYOS_event view{&evt};
         hook(&view, data);
     }
 };
 
-void add_hook(biyos::Env &env, BIYOS_hook hk, void *data, int kind, int lvl, int *idx)
+void add_hook(biyos::Env &env, BIYOS_hook hk, void *data, int knd, int lvl, int *idx)
 {
-    biyos::Events &events = writable(env).events();
+    biyos::Events &evts = writable(env).events();
     const Forwarder forwarder{&env, require(hk, "hk"), data};
-    const biyos::EventKind found = biyos::find_kind(kind);
+    const biyos::EventKind found = biyos::find_kind(knd);
     const biyos::EventLevel level = biyos::find_level(lvl);
     int *id = require(idx, "idx");
-    *id = events.add_hook(found, level, forwarder);
+    *id = evts.add_hook(found, level, forwarder);
 }
 
 void del_hook(biyos::Env &env, int idx)
@@ -44,15 +44,15 @@ void del_hook(biyos::Env &env, int idx)
     writable(env).events().del_hook(idx);
 }
 
-const biyos::Field *field_of(const BIYOS_event *event, int field)
+const biyos::Field *field_of(const BIYOS_event *evt, int field)
 {
-    if (event == nullptr || field < 0)
+    if (evt == nullptr || field < 0)
     {
         return nullptr;
     }
-    const std::vector<biyos::Field> &fields = event->core->fields;
-    const auto index = static_cast<std::size_t>(field);
-    return index < fields.size() ? &fields[index] : nullptr;
+    const std::vector<biyos::Field> &fields = evt->core->fields;
+    const auto idx = static_cast<std::size_t>(field);
+    return idx < fields.size() ? &fields[idx] : nullptr;
 }
 
 }

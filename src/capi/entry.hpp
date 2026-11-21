@@ -20,7 +20,7 @@ struct BIYOS_env
 struct BIYOS_model
 {
     explicit BIYOS_model(biyos::Env &env) : handle(env) {}
-    BIYOS_model(biyos::Env &env, const biyos::Model &model) : handle(env), core(model) {}
+    BIYOS_model(biyos::Env &env, const biyos::Model &mdl) : handle(env), core(mdl) {}
 
     biyos::Env::Handle handle;
     biyos::Model core;
@@ -55,14 +55,14 @@ inline biyos::Env &writable(biyos::Env &env)
     return idle(env, "environment");
 }
 
-inline biyos::Model &writable(BIYOS_model &model)
+inline biyos::Model &writable(BIYOS_model &mdl)
 {
-    if (model.handle.env().events().delivering())
+    if (mdl.handle.env().events().delivering())
     {
         const std::string reason = "is read-only while delivering an event";
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "model", reason);
     }
-    return model.core;
+    return mdl.core;
 }
 
 template <auto Body, typename... Args> BIYOS_status guarded(BIYOS_env *env, Args... args) noexcept
@@ -76,13 +76,13 @@ template <auto Body, typename... Args> BIYOS_status guarded(BIYOS_env *env, Args
 
 template <auto Body, typename Model, typename... Args>
     requires std::same_as<std::remove_const_t<Model>, BIYOS_model>
-BIYOS_status guarded(Model *model, Args... args) noexcept
+BIYOS_status guarded(Model *mdl, Args... args) noexcept
 {
-    if (model == nullptr)
+    if (mdl == nullptr)
     {
         return BIYOS_ERR_BADARG;
     }
-    return biyos::capi::guard(&model->handle.env(), [&] { Body(*model, args...); });
+    return biyos::capi::guard(&mdl->handle.env(), [&] { Body(*mdl, args...); });
 }
 
 }

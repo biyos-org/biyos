@@ -68,21 +68,21 @@ TEST(CApiTest, OptionKinds)
                        BIYOS_OPT_INTTOL,
                        BIYOS_OPT_ZEROTOL,
                        BIYOS_OPT_MAXCPUTIME};
-    const int kinds[] = {BIYOS_KND_INT,
-                         BIYOS_KND_DBL,
-                         BIYOS_KND_ENUM,
-                         BIYOS_KND_BOOL,
-                         BIYOS_KND_STR,
-                         BIYOS_KND_DBL,
-                         BIYOS_KND_DBL,
-                         BIYOS_KND_DBL,
-                         BIYOS_KND_DBL,
-                         BIYOS_KND_DBL};
+    const int knds[] = {BIYOS_KND_INT,
+                        BIYOS_KND_DBL,
+                        BIYOS_KND_ENUM,
+                        BIYOS_KND_BOOL,
+                        BIYOS_KND_STR,
+                        BIYOS_KND_DBL,
+                        BIYOS_KND_DBL,
+                        BIYOS_KND_DBL,
+                        BIYOS_KND_DBL,
+                        BIYOS_KND_DBL};
     for (int i = 0; i < 10; ++i)
     {
-        BIYOS_int kind = 0;
-        EXPECT_EQ(BIYOS_getoptknd(env.get(), ids[i], &kind), BIYOS_OK);
-        EXPECT_EQ(kind, kinds[i]) << ids[i];
+        BIYOS_int knd = 0;
+        EXPECT_EQ(BIYOS_getoptknd(env.get(), ids[i], &knd), BIYOS_OK);
+        EXPECT_EQ(knd, knds[i]) << ids[i];
     }
 }
 
@@ -197,16 +197,16 @@ TEST(CApiTest, StringLifetime)
 {
     const Env env;
     const char *path = nullptr;
-    const char *level = nullptr;
+    const char *lvl = nullptr;
     ASSERT_EQ(BIYOS_setstropt(env.get(), BIYOS_OPT_REPRO, "replay.txt"), BIYOS_OK);
     ASSERT_EQ(BIYOS_getstropt(env.get(), BIYOS_OPT_REPRO, &path), BIYOS_OK);
-    ASSERT_EQ(BIYOS_getstropt(env.get(), BIYOS_OPT_CHECKLVL, &level), BIYOS_OK);
+    ASSERT_EQ(BIYOS_getstropt(env.get(), BIYOS_OPT_CHECKLVL, &lvl), BIYOS_OK);
     EXPECT_EQ(BIYOS_setstropt(env.get(), BIYOS_OPT_REPRO, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setdblopt(env.get(), BIYOS_OPT_REPRO, 1.0), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setstropt(env.get(), BIYOS_OPT_CHECKLVL, "most"), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, 5), BIYOS_OK);
     EXPECT_STREQ(path, "replay.txt");
-    EXPECT_STREQ(level, "cheap");
+    EXPECT_STREQ(lvl, "cheap");
 }
 
 TEST(CApiTest, Enum)

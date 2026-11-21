@@ -45,17 +45,17 @@ struct Probe
     std::string message;
 };
 
-void receive(const BIYOS_event *event, void *data)
+void receive(const BIYOS_event *evt, void *data)
 {
     Inbox *inbox = static_cast<Inbox *>(data);
     ++inbox->calls;
-    inbox->kind = BIYOS_getevtknd(event);
-    inbox->level = BIYOS_getevtlvl(event);
-    inbox->module = BIYOS_getevtmod(event);
-    inbox->text = BIYOS_getevttext(event);
-    inbox->fields = BIYOS_getnevtflds(event);
-    inbox->name = BIYOS_getevtfldname(event, 0);
-    inbox->value = BIYOS_getevtfldval(event, 0);
+    inbox->kind = BIYOS_getevtknd(evt);
+    inbox->level = BIYOS_getevtlvl(evt);
+    inbox->module = BIYOS_getevtmod(evt);
+    inbox->text = BIYOS_getevttext(evt);
+    inbox->fields = BIYOS_getnevtflds(evt);
+    inbox->name = BIYOS_getevtfldname(evt, 0);
+    inbox->value = BIYOS_getevtfldval(evt, 0);
 }
 
 void del_unknown(const BIYOS_event *, void *data)
@@ -265,7 +265,7 @@ TEST(CApiTest, NullHook)
 
 TEST(CApiTest, Accessors)
 {
-    const biyos::Event event{
+    const biyos::Event evt{
         .kind = biyos::EventKind::Message,
         .level = biyos::EventLevel::Warning,
         .time = {},
@@ -273,7 +273,7 @@ TEST(CApiTest, Accessors)
         .text = "removed rows",
         .fields = {{.name = "rows", .value = "3"}, {.name = "columns", .value = "1"}},
     };
-    const BIYOS_event view{&event};
+    const BIYOS_event view{&evt};
     EXPECT_EQ(BIYOS_getevtknd(&view), BIYOS_EVT_MESSAGE);
     EXPECT_EQ(BIYOS_getevtlvl(&view), BIYOS_LVL_WARN);
     EXPECT_STREQ(BIYOS_getevtmod(&view), "presolve");
