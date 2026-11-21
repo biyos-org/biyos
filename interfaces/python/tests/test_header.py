@@ -1,7 +1,7 @@
 import biyos
 from biyos import _capi
 from biyos._capi import lib
-from header import functions, lines, macros
+from header import functions, group, lines, macros
 
 KINDS = {
     "BIYOS_KND_BOOL": "KIND_BOOL",
@@ -41,18 +41,16 @@ def test_kinds():
 
 
 def test_variable_kinds():
-    found = macros("model.h")
+    found = macros("biyos.h")
     kinds = {name: value for name, value in found.items() if "_VAR_" in name}
-    assert len(kinds) == lines("model.h", "#define BIYOS_VAR_")
+    assert len(kinds) == lines("biyos.h", "#define BIYOS_VAR_")
     assert set(VARIABLES.values()) == set(biyos.VariableKind)
     assert kinds == VARIABLES
 
 
 def test_senses():
-    found = macros("model.h")
-    senses = {name: found[name] for name in found if "_VAR_" not in name}
-    kinds = lines("model.h", "#define BIYOS_VAR_")
-    assert len(senses) == lines("model.h", "#define BIYOS_") - kinds
+    senses, defined = group("biyos.h", "BIYOS_MINIMIZE")
+    assert len(senses) == defined
     names = {f"BIYOS_{sense.name}": sense for sense in biyos.Sense}
     assert senses == names
 

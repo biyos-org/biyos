@@ -372,7 +372,7 @@ Writes the event for tools, as one JSON object with the members `time`, `kind`, 
 
 ## Model
 
-A model holds the variables of a problem, functions of them, and constraints and objectives on those functions. Each variable has a kind, which says what values it may take, and a lower and an upper bound. The kinds come from `biyos/model.h`.
+A model holds the variables of a problem, functions of them, and constraints and objectives on those functions. Each variable has a kind, which says what values it may take, and a lower and an upper bound.
 
 | Macro | Value | Kind | Takes |
 | --- | --- | --- | --- |
@@ -567,7 +567,7 @@ Writes to entry `j` of each array, for each `j` below `n`, the function and the 
 
 ### Objectives
 
-An objective is a function of the model to minimize or maximize, with a priority, a weight and an absolute and a relative tolerance. Objectives refer to functions by index, so several may share a function, and an objective may use the function of a constraint. Objectives are numbered from 0 in the order they are added, separately from variables, functions and constraints, and a count or an index of objectives is a `BIYOS_index`. The senses come from `biyos/model.h`.
+An objective is a function of the model to minimize or maximize, with a priority, a weight and an absolute and a relative tolerance. Objectives refer to functions by index, so several may share a function, and an objective may use the function of a constraint. Objectives are numbered from 0 in the order they are added, separately from variables, functions and constraints, and a count or an index of objectives is a `BIYOS_index`.
 
 | Macro | Value | Sense |
 | --- | --- | --- |

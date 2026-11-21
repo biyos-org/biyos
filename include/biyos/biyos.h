@@ -1,7 +1,6 @@
 #pragma once
 
 #include "biyos/expr.h"
-#include "biyos/model.h"
 #include "biyos/options.h"
 #include "biyos/status.h"
 
@@ -89,6 +88,15 @@ BIYOS_API const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx
 
 BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, size_t size, char *buf, size_t *len);
 BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t size, char *buf, size_t *len);
+
+#define BIYOS_VAR_CONT 1
+#define BIYOS_VAR_BIN 2
+#define BIYOS_VAR_INT 3
+#define BIYOS_VAR_SEMICONT 4
+#define BIYOS_VAR_SEMIINT 5
+
+#define BIYOS_MINIMIZE 1
+#define BIYOS_MAXIMIZE 2
 
 BIYOS_API BIYOS_status BIYOS_newmdl(BIYOS_env *env, BIYOS_model **mdl);
 BIYOS_API BIYOS_status BIYOS_copymdl(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
