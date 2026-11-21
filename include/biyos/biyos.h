@@ -32,9 +32,9 @@ typedef int32_t BIYOS_int;
 typedef int64_t BIYOS_offset;
 typedef double BIYOS_real;
 typedef struct BIYOS_env BIYOS_env;
-typedef struct BIYOS_evt BIYOS_evt;
+typedef struct BIYOS_event BIYOS_event;
 typedef struct BIYOS_model BIYOS_model;
-typedef void (*BIYOS_hook)(const BIYOS_evt *evt, void *data);
+typedef void (*BIYOS_hook)(const BIYOS_event *evt, void *data);
 
 #define BIYOS_OK 0
 #define BIYOS_ERR_INVALIDARG (-100)
@@ -71,16 +71,22 @@ BIYOS_API BIYOS_status BIYOS_addhook(BIYOS_env *env,
                                      BIYOS_index *id);
 BIYOS_API BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index id);
 
-BIYOS_API BIYOS_int BIYOS_getevtkind(const BIYOS_evt *evt);
-BIYOS_API BIYOS_int BIYOS_getevtlvl(const BIYOS_evt *evt);
-BIYOS_API const char *BIYOS_getevtmodule(const BIYOS_evt *evt);
-BIYOS_API const char *BIYOS_getevttext(const BIYOS_evt *evt);
-BIYOS_API BIYOS_index BIYOS_getnevtfields(const BIYOS_evt *evt);
-BIYOS_API const char *BIYOS_getevtfieldname(const BIYOS_evt *evt, BIYOS_index field);
-BIYOS_API const char *BIYOS_getevtfieldvalue(const BIYOS_evt *evt, BIYOS_index field);
+BIYOS_API BIYOS_int BIYOS_getevtkind(const BIYOS_event *evt);
+BIYOS_API BIYOS_int BIYOS_getevtlvl(const BIYOS_event *evt);
+BIYOS_API const char *BIYOS_getevtmodule(const BIYOS_event *evt);
+BIYOS_API const char *BIYOS_getevttext(const BIYOS_event *evt);
+BIYOS_API BIYOS_index BIYOS_getnevtfields(const BIYOS_event *evt);
+BIYOS_API const char *BIYOS_getevtfieldname(const BIYOS_event *evt, BIYOS_index field);
+BIYOS_API const char *BIYOS_getevtfieldvalue(const BIYOS_event *evt, BIYOS_index field);
 
-BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_evt *evt, char *buf, size_t size, size_t *needed);
-BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_evt *evt, char *buf, size_t size, size_t *needed);
+BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt,
+                                     char *buf,
+                                     size_t size,
+                                     size_t *needed);
+BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt,
+                                     char *buf,
+                                     size_t size,
+                                     size_t *needed);
 
 BIYOS_API BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **mdl);
 BIYOS_API BIYOS_status BIYOS_copymodel(BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
