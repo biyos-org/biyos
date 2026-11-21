@@ -562,6 +562,14 @@ BIYOS_API BIYOS_status BIYOS_delobjnamerg(BIYOS_model *mdl, BIYOS_index pos, BIY
 #define BIYOS_OP_ERF 29
 #define BIYOS_OP_NODE 30
 
+BIYOS_API BIYOS_status BIYOS_addvarnode(BIYOS_model *mdl, BIYOS_index var, BIYOS_offset *node);
+BIYOS_API BIYOS_status BIYOS_addnode(BIYOS_model *mdl,
+                                     BIYOS_int op,
+                                     BIYOS_offset n,
+                                     const BIYOS_offset *arg,
+                                     const BIYOS_real *val,
+                                     BIYOS_offset *node);
+
 #define BIYOS_TRM_NONE 0
 #define BIYOS_TRM_OPTIMAL 101
 #define BIYOS_TRM_LOCAL 102

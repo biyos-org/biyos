@@ -227,6 +227,26 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status use_nodes(BIYOS_model *model)
+{
+    BIYOS_offset x = -1;
+    BIYOS_offset children[2] = {-1, -1};
+    const BIYOS_real weights[3] = {0.0, 1.0, 2.0};
+    BIYOS_offset sum = -1;
+    if (BIYOS_addvarnode(model, 1, &x) != BIYOS_OK ||
+        BIYOS_addnode(model, BIYOS_OP_EXP, 1, &x, NULL, &children[0]) != BIYOS_OK)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    children[1] = x;
+    if (BIYOS_addnode(model, BIYOS_OP_SUM, 2, children, weights, &sum) != BIYOS_OK || x != 0 ||
+        children[0] != 1 || sum != 2)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static int matches(const char *found, const char *wanted)
 {
     return found != NULL && strcmp(found, wanted) == 0;
@@ -441,9 +461,10 @@ int main(void)
         status = BIYOS_ERR_INTERNAL;
     }
     if (use_functions(model) != BIYOS_OK || use_linear(model) != BIYOS_OK ||
-        use_quadratic(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK ||
-        use_objectives(model) != BIYOS_OK || use_names(model) != BIYOS_OK ||
-        use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
+        use_quadratic(model) != BIYOS_OK || use_nodes(model) != BIYOS_OK ||
+        use_constraints(model) != BIYOS_OK || use_objectives(model) != BIYOS_OK ||
+        use_names(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK ||
+        use_readers(env, model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

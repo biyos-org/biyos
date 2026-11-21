@@ -1219,7 +1219,7 @@ see BIYOS_setobjnamesp
 since 0.1.0
 
 group expressions Expressions
-text The `BIYOS_OP_` constants number the operators of expressions, which will form the nonlinear parts of functions. An expression is a node of the model's graph, an operator applied to its children, and a node that several parents share is stored once. Every constant, coefficient and exponent of an expression is finite. No call takes the operators yet; @sec-graph describes each one.
+text An expression is a node of the model's graph, an operator applied to its children, and the `BIYOS_OP_` constants number the operators, which will form the nonlinear parts of functions. A node is named by its id, a `BIYOS_offset` counted from 0 in the order the nodes are added. Passing a node's id again shares the node, which is stored once however many parents use it, and each variable has one node. Every constant, coefficient and exponent of an expression is finite. @sec-graph describes each operator.
 
 table Operators
 value BIYOS_OP_CONST A constant $c$, with no child.
@@ -1252,6 +1252,31 @@ value BIYOS_OP_ENT $e \log e$.
 value BIYOS_OP_SPOW $\operatorname{sign}(e)\, \lvert e \rvert^c$, with a constant exponent $c > 0$.
 value BIYOS_OP_ERF $\operatorname{erf} e$, the error function.
 value BIYOS_OP_NODE No operator: in postfix, a node the model already holds, named by its id.
+since 0.1.0
+
+function BIYOS_addvarnode
+summary Give the node of a variable.
+param mdl in The model.
+param var in The variable.
+param node out Receives the id of the variable's node; skipped when null.
+return `BIYOS_OK` once the node exists.
+error BIYOS_ERR_BADARG `var` is not a variable of the model.
+note A variable has one node: the first call adds it, and every later call gives the same id.
+see BIYOS_addnode
+since 0.1.0
+
+function BIYOS_addnode
+summary Add a node, an operator applied to nodes the model holds.
+param mdl in The model.
+param op in The operator, a `BIYOS_OP_` constant other than `BIYOS_OP_VAR` and `BIYOS_OP_NODE`.
+param n in The number of children.
+param arg in The ids of the `n` children, in order; may be null only when `n` is 0.
+param val in The values the operator takes, in order; null when it takes none. `BIYOS_OP_CONST` takes its value, `BIYOS_OP_PROD` its coefficient, `BIYOS_OP_CPOW` and `BIYOS_OP_SPOW` their exponent, and `BIYOS_OP_SUM` its constant followed by the weight of each child, `n + 1` values. The call reads no others.
+param node out Receives the id of the new node; skipped when null.
+return `BIYOS_OK` once the node is added.
+error BIYOS_ERR_BADARG `n` is negative, `op` is not an operator the call takes, a child is not a node of the model, the operator does not take `n` children, a value is not finite, or the exponent of `BIYOS_OP_SPOW` is not positive.
+note The node is added as given, so a sum among the children of a sum stays a child, and so does a product among those of a product. An id given twice in `arg` names the same child twice.
+see BIYOS_addvarnode
 since 0.1.0
 
 group status Solve status

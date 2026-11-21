@@ -94,6 +94,7 @@ add_library(biyos
     capi/constraints.cpp
     capi/env.cpp
     capi/events.cpp
+    capi/expressions.cpp
     capi/format.cpp
     capi/functions.cpp
     capi/linear.cpp

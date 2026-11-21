@@ -197,6 +197,9 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_getobjtolsp(nullptr, 1, &index, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getnobj(nullptr, &n), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getobjrg(nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    BIYOS_offset node = 0;
+    EXPECT_EQ(BIYOS_addvarnode(nullptr, 0, &node), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addnode(nullptr, BIYOS_OP_EXP, 1, &node, nullptr, &node), BIYOS_ERR_BADARG);
 }
 
 TEST(CApiTest, HeldFree)
