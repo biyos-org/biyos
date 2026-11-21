@@ -34,7 +34,7 @@ void describe(Event &event,
 
 }
 
-Checker::Checker(Environment &env, std::string_view module)
+Checker::Checker(Env &env, std::string_view module)
     : env_(env), module_(module), level_(env.options().get_enum<CheckLevel>(Option::CheckLevel))
 {
 }

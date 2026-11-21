@@ -94,7 +94,7 @@ Texts lines(const std::vector<biyos::Event> &events)
     return lines;
 }
 
-void run(biyos::Environment &env, TimingTree &tree)
+void run(biyos::Env &env, TimingTree &tree)
 {
     const Timer solve(env, tree, "nlp", "solve");
     for (int step = 0; step < 3; ++step)
@@ -103,7 +103,7 @@ void run(biyos::Environment &env, TimingTree &tree)
     }
 }
 
-void abandon(biyos::Environment &env, TimingTree &tree, biyos::FakeClock &clock)
+void abandon(biyos::Env &env, TimingTree &tree, biyos::FakeClock &clock)
 {
     const Timer solve(env, tree, "nlp", "solve");
     clock.advance_wall(3ns);
@@ -127,14 +127,14 @@ class TimerTest : public ::testing::Test
         advance(10ns, 10ns);
     }
 
-    void listen(biyos::Environment &target)
+    void listen(biyos::Env &target)
     {
         const auto keep = [this](const biyos::Event &event) { kept.push_back(event); };
         target.events().subscribe(EventKind::Phase, Level::Debug, keep);
     }
 
     biyos::FakeClock &clock;
-    biyos::Environment env;
+    biyos::Env env;
     TimingTree tree;
     std::vector<biyos::Event> kept;
 
@@ -204,7 +204,7 @@ TEST_F(TimerTest, PhaseEvents)
     biyos::FakeClock &fake = *owned;
     fake.advance_wall(7s);
     fake.advance_cpu(3ns);
-    biyos::Environment local(std::move(owned));
+    biyos::Env local(std::move(owned));
     listen(local);
     {
         fake.advance_wall(5ns);
@@ -295,7 +295,7 @@ TEST_F(TimerTest, FailedEntry)
 {
     auto owned = std::make_unique<FlakyClock>();
     FlakyClock &flaky = *owned;
-    biyos::Environment local(std::move(owned));
+    biyos::Env local(std::move(owned));
     listen(local);
     flaky.broken = true;
     EXPECT_THROW(run(local, tree), biyos::Error);
@@ -315,7 +315,7 @@ TEST_F(TimerTest, FailedLeave)
     static_assert(std::is_nothrow_destructible_v<Timer>);
     auto owned = std::make_unique<FlakyClock>();
     FlakyClock &flaky = *owned;
-    biyos::Environment local(std::move(owned));
+    biyos::Env local(std::move(owned));
     listen(local);
     const auto drift = [&flaky](const biyos::Event &) { flaky.cpu += 10ns; };
     local.events().subscribe(EventKind::Phase, Level::Debug, drift);

@@ -105,7 +105,7 @@ class CheckTest : public ::testing::Test
         }
     }
 
-    biyos::Environment env;
+    biyos::Env env;
     int evaluated = 0;
     int described = 0;
     std::vector<biyos::Event> kept;

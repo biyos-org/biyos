@@ -13,27 +13,27 @@
 namespace biyos
 {
 
-class Environment
+class Env
 {
   public:
-    Environment();
-    explicit Environment(std::unique_ptr<Clock> clock);
-    Environment(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table);
-    Environment(const Environment &) = delete;
-    Environment &operator=(const Environment &) = delete;
+    Env();
+    explicit Env(std::unique_ptr<Clock> clock);
+    Env(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table);
+    Env(const Env &) = delete;
+    Env &operator=(const Env &) = delete;
 
     class ErrorScope
     {
       public:
-        explicit ErrorScope(Environment &env) noexcept;
+        explicit ErrorScope(Env &env) noexcept;
         ~ErrorScope();
         ErrorScope(const ErrorScope &) = delete;
         ErrorScope &operator=(const ErrorScope &) = delete;
 
       private:
-        friend class Environment;
+        friend class Env;
 
-        Environment &env_;
+        Env &env_;
         ErrorScope *outer_;
         std::string kept_;
         bool swapped_ = false;
@@ -42,15 +42,15 @@ class Environment
     class Handle
     {
       public:
-        explicit Handle(Environment &env) noexcept;
+        explicit Handle(Env &env) noexcept;
         ~Handle();
         Handle(const Handle &) = delete;
         Handle &operator=(const Handle &) = delete;
 
-        Environment &env() const noexcept;
+        Env &env() const noexcept;
 
       private:
-        Environment &env_;
+        Env &env_;
     };
 
     Options &options() noexcept;

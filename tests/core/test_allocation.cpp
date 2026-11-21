@@ -14,7 +14,7 @@ namespace
 
 void ignore(const biyos::Event &) {}
 
-void run(biyos::Environment &env, biyos::TimingTree &tree)
+void run(biyos::Env &env, biyos::TimingTree &tree)
 {
     const biyos::Timer solve(env, tree, "nlp", "solve");
     for (int step = 0; step < 3; ++step)
@@ -27,7 +27,7 @@ void run(biyos::Environment &env, biyos::TimingTree &tree)
 
 TEST(AllocationTest, SecondEntry)
 {
-    biyos::Environment env(std::make_unique<biyos::FakeClock>());
+    biyos::Env env(std::make_unique<biyos::FakeClock>());
     env.events().subscribe(biyos::EventKind::Phase, biyos::Level::Warning, ignore);
     biyos::TimingTree tree;
     const std::size_t start = biyos::test::allocations();

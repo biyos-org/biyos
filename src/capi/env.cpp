@@ -13,7 +13,7 @@ using biyos::capi::writable;
 namespace
 {
 
-void freeable(biyos::Environment &env)
+void freeable(biyos::Env &env)
 {
     if (writable(env).handles() > 0)
     {

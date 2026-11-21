@@ -36,14 +36,14 @@ inline void describe_failure(Event &event, BIYOS_status status, std::string_view
     event.fields.push_back(Field{.name = "code", .value = std::to_string(status)});
 }
 
-inline void announce(Environment &env, ErrorKind kind, std::string_view text) noexcept
+inline void announce(Env &env, ErrorKind kind, std::string_view text) noexcept
 {
     const BIYOS_status status = status_of(kind);
     const auto fill = [status, text](Event &event) { describe_failure(event, status, text); };
     env.events().emit(EventKind::Message, Level::Error, fill);
 }
 
-inline void report(Environment *env, ErrorKind kind, std::string_view text) noexcept
+inline void report(Env *env, ErrorKind kind, std::string_view text) noexcept
 {
     if (env == nullptr)
     {
@@ -56,7 +56,7 @@ inline void report(Environment *env, ErrorKind kind, std::string_view text) noex
     }
 }
 
-inline BIYOS_status fail(Environment *env, ErrorKind kind, std::string_view message) noexcept
+inline BIYOS_status fail(Env *env, ErrorKind kind, std::string_view message) noexcept
 {
     if (env != nullptr)
     {
@@ -72,7 +72,7 @@ inline BIYOS_status fail(Environment *env, ErrorKind kind, std::string_view mess
     return status_of(kind);
 }
 
-template <std::invocable Body> BIYOS_status guard(Environment *env, Body &&body) noexcept
+template <std::invocable Body> BIYOS_status guard(Env *env, Body &&body) noexcept
 {
     try
     {

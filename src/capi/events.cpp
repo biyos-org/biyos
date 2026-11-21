@@ -17,19 +17,19 @@ namespace
 
 struct Forwarder
 {
-    biyos::Environment *env;
+    biyos::Env *env;
     BIYOS_hook subscriber;
     void *data;
 
     void operator()(const biyos::Event &event) const
     {
-        const biyos::Environment::ErrorScope scope(*env);
+        const biyos::Env::ErrorScope scope(*env);
         const BIYOS_event view{&event};
         subscriber(&view, data);
     }
 };
 
-void subscribe(biyos::Environment &env,
+void subscribe(biyos::Env &env,
                BIYOS_hook subscriber,
                void *data,
                int kind,
@@ -44,7 +44,7 @@ void subscribe(biyos::Environment &env,
     *id = events.subscribe(found, level, forwarder);
 }
 
-void unsubscribe(biyos::Environment &env, int subscription)
+void unsubscribe(biyos::Env &env, int subscription)
 {
     writable(env).events().unsubscribe(subscription);
 }

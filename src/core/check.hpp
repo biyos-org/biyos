@@ -15,7 +15,7 @@ namespace biyos
 class Checker
 {
   public:
-    Checker(Environment &env, std::string_view module);
+    Checker(Env &env, std::string_view module);
 
     bool active(CheckLevel level) const noexcept
     {
@@ -44,7 +44,7 @@ class Checker
                            std::string_view object,
                            std::string_view values) const;
 
-    Environment &env_;
+    Env &env_;
     std::string module_;
     CheckLevel level_;
 };

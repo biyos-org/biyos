@@ -269,7 +269,7 @@ TEST(CApiTest, NullArguments)
     EXPECT_EQ(env.message(), "invalid argument: argument 'val': is null");
 }
 
-TEST(CApiTest, NullEnvironment)
+TEST(CApiTest, NullEnv)
 {
     BIYOS_int value = 0;
     EXPECT_EQ(BIYOS_getoptid(nullptr, "seed", &value), BIYOS_ERR_BADARG);

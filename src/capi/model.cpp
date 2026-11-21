@@ -20,7 +20,7 @@ using biyos::capi::writable;
 namespace
 {
 
-void create(biyos::Environment &env, BIYOS_model **model)
+void create(biyos::Env &env, BIYOS_model **model)
 {
     BIYOS_model **made = require(model, "mdl");
     writable(env);
@@ -30,7 +30,7 @@ void create(biyos::Environment &env, BIYOS_model **model)
 void make_copy(const BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
 {
     BIYOS_model **made = require(copy, "copy");
-    biyos::Environment &target = idle(require(env, "env")->core, "argument 'env'");
+    biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
     *made = new BIYOS_model(target, model.core);
 }
 

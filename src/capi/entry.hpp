@@ -14,15 +14,15 @@
 
 struct BIYOS_env
 {
-    biyos::Environment core;
+    biyos::Env core;
 };
 
 struct BIYOS_model
 {
-    explicit BIYOS_model(biyos::Environment &env) : handle(env) {}
-    BIYOS_model(biyos::Environment &env, const biyos::Model &model) : handle(env), core(model) {}
+    explicit BIYOS_model(biyos::Env &env) : handle(env) {}
+    BIYOS_model(biyos::Env &env, const biyos::Model &model) : handle(env), core(model) {}
 
-    biyos::Environment::Handle handle;
+    biyos::Env::Handle handle;
     biyos::Model core;
 };
 
@@ -40,7 +40,7 @@ template <typename T> T *require(T *pointer, std::string_view name)
     return pointer;
 }
 
-inline biyos::Environment &idle(biyos::Environment &env, std::string_view object)
+inline biyos::Env &idle(biyos::Env &env, std::string_view object)
 {
     if (env.events().delivering())
     {
@@ -50,7 +50,7 @@ inline biyos::Environment &idle(biyos::Environment &env, std::string_view object
     return env;
 }
 
-inline biyos::Environment &writable(biyos::Environment &env)
+inline biyos::Env &writable(biyos::Env &env)
 {
     return idle(env, "environment");
 }

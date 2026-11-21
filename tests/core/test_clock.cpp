@@ -242,7 +242,7 @@ TEST_F(ClockTest, EventTime)
     auto owned = std::make_unique<biyos::FakeClock>();
     biyos::FakeClock &fake = *owned;
     fake.advance_wall(7s);
-    biyos::Environment env(std::move(owned));
+    biyos::Env env(std::move(owned));
     Times times;
     const auto keep = [&times](const biyos::Event &event) { times.push_back(event.time); };
     env.events().subscribe(EventKind::Message, Level::Debug, keep);

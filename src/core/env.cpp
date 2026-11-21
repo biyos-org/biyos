@@ -23,54 +23,54 @@ std::unique_ptr<Clock> checked(std::unique_ptr<Clock> clock)
 
 }
 
-Environment::Environment() : Environment(std::make_unique<SystemClock>()) {}
+Env::Env() : Env(std::make_unique<SystemClock>()) {}
 
-Environment::Environment(std::unique_ptr<Clock> clock)
+Env::Env(std::unique_ptr<Clock> clock)
     : clock_(checked(std::move(clock))), events_(*clock_), options_(events_)
 {
 }
 
-Environment::Environment(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table)
+Env::Env(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table)
     : clock_(checked(std::move(clock))), events_(*clock_), options_(table, events_)
 {
 }
 
-Options &Environment::options() noexcept
+Options &Env::options() noexcept
 {
     return options_;
 }
 
-const Options &Environment::options() const noexcept
+const Options &Env::options() const noexcept
 {
     return options_;
 }
 
-const Clock &Environment::clock() const noexcept
+const Clock &Env::clock() const noexcept
 {
     return *clock_;
 }
 
-Events &Environment::events() noexcept
+Events &Env::events() noexcept
 {
     return events_;
 }
 
-const Events &Environment::events() const noexcept
+const Events &Env::events() const noexcept
 {
     return events_;
 }
 
-const std::string &Environment::last_error() const noexcept
+const std::string &Env::last_error() const noexcept
 {
     return last_error_;
 }
 
-Environment::ErrorScope::ErrorScope(Environment &env) noexcept : env_(env), outer_(env.scope_)
+Env::ErrorScope::ErrorScope(Env &env) noexcept : env_(env), outer_(env.scope_)
 {
     env_.scope_ = this;
 }
 
-Environment::ErrorScope::~ErrorScope()
+Env::ErrorScope::~ErrorScope()
 {
     if (swapped_)
     {
@@ -79,7 +79,7 @@ Environment::ErrorScope::~ErrorScope()
     env_.scope_ = outer_;
 }
 
-void Environment::record_error(std::string_view text) noexcept
+void Env::record_error(std::string_view text) noexcept
 {
     if (scope_ != nullptr && !scope_->swapped_)
     {
@@ -96,22 +96,22 @@ void Environment::record_error(std::string_view text) noexcept
     }
 }
 
-std::size_t Environment::handles() const noexcept
+std::size_t Env::handles() const noexcept
 {
     return handles_;
 }
 
-Environment::Handle::Handle(Environment &env) noexcept : env_(env)
+Env::Handle::Handle(Env &env) noexcept : env_(env)
 {
     ++env_.handles_;
 }
 
-Environment::Handle::~Handle()
+Env::Handle::~Handle()
 {
     --env_.handles_;
 }
 
-Environment &Environment::Handle::env() const noexcept
+Env &Env::Handle::env() const noexcept
 {
     return env_;
 }
