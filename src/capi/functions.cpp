@@ -54,7 +54,7 @@ void add_functions(BIYOS_model &model,
     }
 }
 
-void function_count(BIYOS_model &model, int *count)
+void function_count(const BIYOS_model &model, int *count)
 {
     *require(count, "n") = model.core.function_count();
 }
@@ -67,7 +67,7 @@ void write_constants(std::span<const double> found, double *constants)
     }
 }
 
-void get_functions(BIYOS_model &model,
+void get_functions(const BIYOS_model &model,
                    int first,
                    int count,
                    double *constants,
@@ -101,12 +101,12 @@ BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
     return guarded<add_functions>(mdl, n, consts, starts, varidx, vals, beg);
 }
 
-BIYOS_status BIYOS_getnfuns(BIYOS_model *mdl, BIYOS_index *n)
+BIYOS_status BIYOS_getnfuns(const BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<function_count>(mdl, n);
 }
 
-BIYOS_status BIYOS_getfuns(BIYOS_model *mdl,
+BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
                            BIYOS_index beg,
                            BIYOS_index n,
                            BIYOS_offset size,

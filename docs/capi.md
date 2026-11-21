@@ -403,7 +403,7 @@ Creates a model with no variables on `env` and writes it to `*mdl`. On failure i
 ### `BIYOS_copymodel`
 
 ```c
-BIYOS_status BIYOS_copymodel(BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
+BIYOS_status BIYOS_copymodel(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
 ```
 
 Creates a copy of `mdl` on `env` and writes it to `*copy`. On failure it sets `*copy` to null. `env` may be the environment of `mdl` or another one. The copy holds the same variables, functions, constraints and objectives as `mdl`, under the same indices, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of `mdl` and the copy may be freed first. The call reads `mdl` and changes `env`, so no other thread may use either environment while it runs. It may run while the environment of `mdl` delivers an event, and returns `BIYOS_ERR_INVALIDARG` while `env` does. A failure keeps its message on the environment of `mdl`, as for every call on a model.
@@ -446,7 +446,7 @@ Sets the kind of variable `idx[j]` to `kinds[j]`, for each `j` below `n`, and ke
 ### `BIYOS_getnvars`
 
 ```c
-BIYOS_status BIYOS_getnvars(BIYOS_model *mdl, BIYOS_index *n);
+BIYOS_status BIYOS_getnvars(const BIYOS_model *mdl, BIYOS_index *n);
 ```
 
 Writes the number of variables of the model to `*n`.
@@ -454,7 +454,7 @@ Writes the number of variables of the model to `*n`.
 ### `BIYOS_getvars`
 
 ```c
-BIYOS_status BIYOS_getvars(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n, BIYOS_int *kinds,
+BIYOS_status BIYOS_getvars(const BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n, BIYOS_int *kinds,
                            BIYOS_real *lb, BIYOS_real *ub);
 ```
 
@@ -483,7 +483,7 @@ Adds `n` functions after the last one. Entry `j` of `consts` gives the constant 
 ### `BIYOS_getnfuns`
 
 ```c
-BIYOS_status BIYOS_getnfuns(BIYOS_model *mdl, BIYOS_index *n);
+BIYOS_status BIYOS_getnfuns(const BIYOS_model *mdl, BIYOS_index *n);
 ```
 
 Writes the number of functions of the model to `*n`.
@@ -491,9 +491,9 @@ Writes the number of functions of the model to `*n`.
 ### `BIYOS_getfuns`
 
 ```c
-BIYOS_status BIYOS_getfuns(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n, BIYOS_offset size,
-                           BIYOS_real *consts, BIYOS_offset *starts, BIYOS_offset *needed,
-                           BIYOS_index *varidx, BIYOS_real *vals);
+BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n,
+                           BIYOS_offset size, BIYOS_real *consts, BIYOS_offset *starts,
+                           BIYOS_offset *needed, BIYOS_index *varidx, BIYOS_real *vals);
 ```
 
 Writes the constants of the `n` functions from `beg`, and their linear terms in compressed form, each function's sorted by variable, into arrays the caller gives, in the manner of the formatting calls.
@@ -519,9 +519,9 @@ Adds quadratic terms to `n` functions of the model. Function `funs[j]` gains the
 ### `BIYOS_getquadterms`
 
 ```c
-BIYOS_status BIYOS_getquadterms(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n, BIYOS_offset size,
-                                BIYOS_offset *starts, BIYOS_offset *needed, BIYOS_index *vars1,
-                                BIYOS_index *vars2, BIYOS_real *vals);
+BIYOS_status BIYOS_getquadterms(const BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n,
+                                BIYOS_offset size, BIYOS_offset *starts, BIYOS_offset *needed,
+                                BIYOS_index *vars1, BIYOS_index *vars2, BIYOS_real *vals);
 ```
 
 Writes the quadratic terms of the `n` functions from `beg` in compressed form, each function's sorted by pair with `vars1[k] <= vars2[k]`, as `BIYOS_getfuns` writes linear terms. `starts` receives `n + 1` offsets from 0, whatever `size` is. `size` is the number of terms `vars1`, `vars2` and `vals` hold, and the call writes at most `size` terms to each. `*needed` receives the number of quadratic terms of the functions, whether they fit or not. A null `starts`, `vars1`, `vars2` or `vals` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `beg`, `n` or `size` is negative, `beg + n` exceeds the number of functions, or `needed` is null.
@@ -551,7 +551,7 @@ Sets the bounds of constraint `idx[j]` to `lb[j]` and `ub[j]`, for each `j` belo
 ### `BIYOS_getncons`
 
 ```c
-BIYOS_status BIYOS_getncons(BIYOS_model *mdl, BIYOS_index *n);
+BIYOS_status BIYOS_getncons(const BIYOS_model *mdl, BIYOS_index *n);
 ```
 
 Writes the number of constraints of the model to `*n`.
@@ -559,8 +559,8 @@ Writes the number of constraints of the model to `*n`.
 ### `BIYOS_getcons`
 
 ```c
-BIYOS_status BIYOS_getcons(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n, BIYOS_index *funs,
-                           BIYOS_real *lb, BIYOS_real *ub);
+BIYOS_status BIYOS_getcons(const BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n,
+                           BIYOS_index *funs, BIYOS_real *lb, BIYOS_real *ub);
 ```
 
 Writes to entry `j` of each array, for each `j` below `n`, the function and the lower and upper bounds of constraint `beg + j`. A null array is skipped. Returns `BIYOS_ERR_INVALIDARG` when `beg` or `n` is negative or `beg + n` exceeds the number of constraints.
@@ -601,7 +601,7 @@ Sets the sense, the priority, the weight and the absolute and relative tolerance
 ### `BIYOS_getnobjs`
 
 ```c
-BIYOS_status BIYOS_getnobjs(BIYOS_model *mdl, BIYOS_index *n);
+BIYOS_status BIYOS_getnobjs(const BIYOS_model *mdl, BIYOS_index *n);
 ```
 
 Writes the number of objectives of the model to `*n`.
@@ -609,9 +609,9 @@ Writes the number of objectives of the model to `*n`.
 ### `BIYOS_getobjs`
 
 ```c
-BIYOS_status BIYOS_getobjs(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n, BIYOS_index *funs,
-                           BIYOS_int *senses, BIYOS_int *prios, BIYOS_real *weights,
-                           BIYOS_real *abstol, BIYOS_real *reltol);
+BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n,
+                           BIYOS_index *funs, BIYOS_int *senses, BIYOS_int *prios,
+                           BIYOS_real *weights, BIYOS_real *abstol, BIYOS_real *reltol);
 ```
 
 Writes to entry `j` of each array, for each `j` below `n`, the function, the sense, the priority, the weight and the absolute and relative tolerances of objective `beg + j`. A null array is skipped. Returns `BIYOS_ERR_INVALIDARG` when `beg` or `n` is negative or `beg + n` exceeds the number of objectives.

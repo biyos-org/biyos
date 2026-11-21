@@ -27,7 +27,7 @@ void create(biyos::Environment &env, BIYOS_model **model)
     *made = new BIYOS_model(env);
 }
 
-void make_copy(BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
+void make_copy(const BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
 {
     BIYOS_model **made = require(copy, "copy");
     biyos::Environment &target = idle(require(env, "env")->core, "argument 'env'");
@@ -121,7 +121,7 @@ void set_kinds(BIYOS_model &model, int count, const int *indices, const int *kin
     set_each<kinded>(core, listed(count, indices), kinds);
 }
 
-void variable_count(BIYOS_model &model, int *count)
+void variable_count(const BIYOS_model &model, int *count)
 {
     *require(count, "n") = model.core.variable_count();
 }
@@ -146,7 +146,7 @@ void copy_out(const biyos::Variable &variable,
     }
 }
 
-void get_variables(BIYOS_model &model,
+void get_variables(const BIYOS_model &model,
                    int first,
                    int count,
                    int *kinds,
@@ -171,7 +171,7 @@ BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **mdl)
     return guarded<create>(env, mdl);
 }
 
-BIYOS_status BIYOS_copymodel(BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy)
+BIYOS_status BIYOS_copymodel(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy)
 {
     if (copy != nullptr)
     {
@@ -221,12 +221,12 @@ BIYOS_status BIYOS_setvarkinds(BIYOS_model *mdl,
     return guarded<set_kinds>(mdl, n, idx, kinds);
 }
 
-BIYOS_status BIYOS_getnvars(BIYOS_model *mdl, BIYOS_index *n)
+BIYOS_status BIYOS_getnvars(const BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<variable_count>(mdl, n);
 }
 
-BIYOS_status BIYOS_getvars(BIYOS_model *mdl,
+BIYOS_status BIYOS_getvars(const BIYOS_model *mdl,
                            BIYOS_index beg,
                            BIYOS_index n,
                            BIYOS_int *kinds,

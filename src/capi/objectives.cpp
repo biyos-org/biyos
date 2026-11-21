@@ -129,7 +129,7 @@ void set_objectives(BIYOS_model &model,
     core.set_objectives(changed, objectives);
 }
 
-void objective_count(BIYOS_model &model, int *count)
+void objective_count(const BIYOS_model &model, int *count)
 {
     *require(count, "n") = model.core.objective_count();
 }
@@ -144,7 +144,7 @@ void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &o
     put(outputs.relative, k, objective.relative);
 }
 
-void get_objectives(BIYOS_model &model,
+void get_objectives(const BIYOS_model &model,
                     int first,
                     int count,
                     int *functions,
@@ -196,12 +196,12 @@ BIYOS_status BIYOS_setobjs(BIYOS_model *mdl,
     return guarded<set_objectives>(mdl, n, idx, senses, prios, weights, abstol, reltol);
 }
 
-BIYOS_status BIYOS_getnobjs(BIYOS_model *mdl, BIYOS_index *n)
+BIYOS_status BIYOS_getnobjs(const BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<objective_count>(mdl, n);
 }
 
-BIYOS_status BIYOS_getobjs(BIYOS_model *mdl,
+BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
                            BIYOS_index beg,
                            BIYOS_index n,
                            BIYOS_index *funs,
