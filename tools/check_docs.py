@@ -2,7 +2,11 @@ import re
 import sys
 from pathlib import Path
 
-DOC = "docs/capi.md"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import spec
+
+DOC = "docs/reference/capi.txt"
 MASKED = re.compile(
     r'"(?:\\.|[^"\\\n])*"'
     r"|'(?:\\.|[^'\\\n])*'"
@@ -12,8 +16,6 @@ MASKED = re.compile(
 PUBLIC = re.compile(r"\b(?i:biyos)_\w+")
 STATEMENT = re.compile(r"[^;{}]+")
 TOKEN = re.compile(r"\w+|[^\w\s]")
-HEADING = re.compile(r"#{1,6}\s")
-NAME = re.compile(r"`(\w+)`")
 
 
 def mask(match):
@@ -43,8 +45,15 @@ def named(tokens):
     return tokens[at - 1]
 
 
-def typed(words):
-    return bool(words) and all(w.isidentifier() or w == "*" for w in words)
+def arguments(words):
+    close = len(words) - 1 - words[::-1].index(")")
+    pieces = [[]]
+    for word in words[words.index("(") + 1 : close]:
+        if word == ",":
+            pieces.append([])
+        else:
+            pieces[-1].append(word)
+    return [piece[-1] for piece in pieces if piece and piece != ["void"]]
 
 
 def scan(path):
@@ -74,73 +83,40 @@ def scan(path):
     return names, functions, unnamed
 
 
-def entries(path):
+def documented(path):
     names = {}
-    fenced = False
-    for number, line in enumerate(path.read_text().splitlines(), 1):
-        line = line.strip()
-        if line.startswith("```"):
-            fenced = not fenced
-            continue
-        if fenced:
-            continue
-        if HEADING.match(line):
-            found = NAME.findall(line)
-        elif line.startswith("|"):
-            found = NAME.findall(line.split("|")[1])
-        else:
-            found = []
-        for name in found:
-            names.setdefault(name, number)
-    return names
-
-
-def prototypes(path):
-    shown = {}
-    block = None
-    for number, line in enumerate(path.read_text().splitlines(), 1):
-        if not line.strip().startswith("```"):
-            if block is not None:
-                block.append(line)
-            continue
-        if block is None:
-            block = []
-            first = number + 1
-            continue
-        for tokens in statements("\n".join(block)):
-            name = named(tokens)
-            words = [word for word, _ in tokens if word != "BIYOS_API"]
-            if name is None or not typed(words[: words.index(name[0])]):
-                continue
-            shown.setdefault(name[0], []).append((first + name[1] - 1, words))
-        block = None
-    return shown
+    params = {}
+    for group in spec.read(path):
+        for entry in group.entries:
+            if entry.kind != "table":
+                names.setdefault(entry.name, entry.line)
+                named_params = [name for name, _, _ in entry.params]
+                params[entry.name] = (entry.line, named_params)
+            for name, _, line in entry.values:
+                names.setdefault(name, line)
+    return names, params
 
 
 def check(root):
-    documented = entries(root / DOC)
-    shown = prototypes(root / DOC)
+    names, params = documented(root / DOC)
     problems = []
     doc_problems = []
     declared = set()
     for path in sorted((root / "include" / "biyos").rglob("*.h")):
         header = path.relative_to(root).as_posix()
-        names, functions, unnamed = scan(path)
+        found_names, functions, unnamed = scan(path)
         found = [(n, "BIYOS_API declares no function") for n in unnamed]
-        for name, number in names.items():
-            if name not in documented and name not in declared:
+        for name, number in found_names.items():
+            if name not in names and name not in declared:
                 found.append((number, f"{name} has no entry in {DOC}"))
             declared.add(name)
         for name, (number, words) in functions.items():
-            if name in documented and name not in shown:
-                found.append((number, f"{name} has no prototype in {DOC}"))
-            for line, doc_words in shown.get(name, []):
-                if doc_words != words:
-                    text = f"{name} differs from {header}:{number}"
-                    doc_problems.append((line, text))
+            if name in params and params[name][1] != arguments(words):
+                text = f"{name} parameters differ from {header}:{number}"
+                doc_problems.append((params[name][0], text))
         problems += [f"{header}:{n}: {text}" for n, text in sorted(found)]
-    for name, number in documented.items():
-        if PUBLIC.fullmatch(name) and name not in declared:
+    for name, number in names.items():
+        if name not in declared:
             text = f"{name} has an entry but no header declares it"
             doc_problems.append((number, text))
     problems += [f"{DOC}:{n}: {text}" for n, text in sorted(doc_problems)]
