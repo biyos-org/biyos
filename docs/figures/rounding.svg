@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 196" font-family="Inter, sans-serif" font-size="13">
   <defs>
-    <marker id="rounding-tip" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+    <marker id="rounding-tip" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
       <path class="tip-blue" d="M0 0L8 4L0 8Z" fill="#3C6BF0"/>
     </marker>
   </defs>
@@ -12,7 +12,7 @@
   <circle class="blue" cx="500" cy="110" r="6" fill="#3C6BF0"/>
   <path class="ink" d="M436 101L444 110L436 119L428 110Z" fill="#16181D"/>
   <circle class="ink" cx="80" cy="110" r="5" fill="#16181D"/>
-  <path class="accent" d="M494 72H90" stroke="#3C6BF0" stroke-width="1.5" fill="none" marker-end="url(#rounding-tip)"/>
+  <path class="accent" d="M500 72H80" stroke="#3C6BF0" stroke-width="1.5" fill="none" marker-end="url(#rounding-tip)"/>
   <g class="ink" fill="#16181D" text-anchor="middle">
     <text x="500" y="150">computed value</text>
     <text x="436" y="178">exact value</text>

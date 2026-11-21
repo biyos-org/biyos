@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 378" font-family="Inter, sans-serif" font-size="15">
   <defs>
-    <marker id="layers-tip" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+    <marker id="layers-tip" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
       <path class="tip" d="M0 0L8 4L0 8Z" fill="#5B6069"/>
     </marker>
   </defs>
@@ -39,12 +39,12 @@
     <text x="572" y="352">events, errors, tolerances</text>
   </g>
   <g class="wire" stroke="#5B6069" stroke-width="1.25" fill="none" marker-end="url(#layers-tip)">
-    <path d="M370 53V79"/>
-    <path d="M370 127V179"/>
-    <path d="M296 227V247"/>
-    <path d="M363 272H375"/>
-    <path d="M296 295V313"/>
-    <path d="M444 295V313"/>
-    <path d="M230 205H210V339H227"/>
+    <path d="M370 53V82"/>
+    <path d="M370 127V182"/>
+    <path d="M296 227V250"/>
+    <path d="M363 272.5H378"/>
+    <path d="M296 295V316"/>
+    <path d="M444 295V316"/>
+    <path d="M230 204.5H216Q210 204.5 210 210.5V332.5Q210 338.5 216 338.5H230"/>
   </g>
 </svg>
