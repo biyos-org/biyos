@@ -25,6 +25,7 @@ book:
         - guide/options.qmd
         - guide/events.qmd
         - guide/copy.qmd
+        - guide/errors.qmd
 
 number-sections: true
 
