@@ -7,7 +7,7 @@ from operator import index
 import pytest
 
 import biyos
-from biyos import EventKind, Level, Sense, _model
+from biyos import EventKind, EventLevel, Sense, _model
 from biyos._capi import lib
 from number import Growing, Number
 from refusal import LOCKED, refusal
@@ -307,7 +307,7 @@ def test_locked(env, model):
         seen.append(model.getobjs())
 
     add_sample(model)
-    env.addhook(change, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
     assert seen == [LOCKED, LOCKED, SAMPLE]

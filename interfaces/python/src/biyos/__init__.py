@@ -11,7 +11,7 @@ from biyos._blocks import (
 from biyos._capi import version
 from biyos._environment import Env
 from biyos._error import Error
-from biyos._event import Event, EventKind, Level
+from biyos._event import Event, EventKind, EventLevel
 from biyos._model import Model, Sense, VariableKind
 from biyos._versions import Versions
 
@@ -24,7 +24,7 @@ __all__ = [
     "EventKind",
     "Function",
     "Functions",
-    "Level",
+    "EventLevel",
     "Model",
     "Objective",
     "Objectives",

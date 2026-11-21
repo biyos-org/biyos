@@ -6,7 +6,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import EventKind, Level, VariableKind, _model
+from biyos import EventKind, EventLevel, VariableKind, _model
 from biyos._capi import OK, lib
 from number import Growing, Number
 from refusal import INVALID_ARGUMENT, LOCKED, refusal
@@ -120,7 +120,7 @@ def test_cycle(monkeypatch):
     spy = partial(spied, lib.BIYOS_freeenv, statuses)
     monkeypatch.setattr(lib, "BIYOS_freeenv", spy)
     env = biyos.Env()
-    env.addhook(partial(keep, texts), EventKind.MESSAGE, Level.DEBUG)
+    env.addhook(partial(keep, texts), EventKind.MESSAGE, EventLevel.DEBUG)
     env.cycle = biyos.Model(env)
     del env
     gc.collect()
@@ -192,7 +192,7 @@ def test_put_back(env, monkeypatch):
         except biyos.Error as error:
             seen.append(str(error))
 
-    env.addhook(close_inside, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(close_inside, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
     assert seen == [LOCKED]
@@ -211,7 +211,7 @@ def test_dropped(env, monkeypatch):
     def drop(event):
         models.clear()
 
-    env.addhook(drop, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(drop, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
     assert models == []
@@ -232,7 +232,7 @@ def test_delivery(env, monkeypatch):
     def collect(event):
         gc.collect()
 
-    env.addhook(collect, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(collect, EventKind.MESSAGE, EventLevel.ERROR)
     gc.disable()
     try:
         with pytest.raises(biyos.Error):
@@ -310,7 +310,7 @@ def test_busy_close(log):
         except ValueError as error:
             seen.append(str(error))
 
-    env.addhook(close_inside, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(close_inside, EventKind.MESSAGE, EventLevel.ERROR)
     message = refusal(model.setvarbnd, [0], [0.0], [1.0])
     assert message == "invalid argument: variable 0: unknown"
     assert seen == ["the model is closed"]
@@ -399,7 +399,7 @@ def test_deferred(log):
     def close_inside(event):
         model.close()
 
-    env.addhook(close_inside, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(close_inside, EventKind.MESSAGE, EventLevel.ERROR)
     message = refusal(model.setvarbnd, [0], [0.0], [1.0])
     assert message == "invalid argument: variable 0: unknown"
     assert log == ["free"]
@@ -632,7 +632,7 @@ def test_event(env, model):
     def record(event):
         texts.append(event.text)
 
-    env.addhook(record, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(record, EventKind.MESSAGE, EventLevel.ERROR)
     refusal(model.setvarbnd, [0], [0.0], [1.0])
     assert texts == ["invalid argument: variable 0: unknown"]
 
@@ -642,7 +642,7 @@ def test_raising(env):
         raise RuntimeError("subscriber")
 
     model = biyos.Model(env)
-    env.addhook(explode, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(explode, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(RuntimeError, match="subscriber"):
         model.addvars(1, None, [INFINITY])
     model.close()
@@ -660,7 +660,7 @@ def test_locked(env, model):
         seen.append(model.getnvars())
 
     model.addvars(1)
-    env.addhook(change, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
     assert seen == [LOCKED, LOCKED, 1]

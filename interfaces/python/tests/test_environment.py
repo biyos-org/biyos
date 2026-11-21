@@ -6,7 +6,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import EventKind, Level
+from biyos import EventKind, EventLevel
 from biyos._capi import OK, lib
 from spies import followed, interrupted, preceded, spied
 
@@ -108,7 +108,7 @@ def test_deferred(log):
 
     env = biyos.Env()
     model = biyos.Model(env)
-    env.addhook(close_inside, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(close_inside, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error) as caught:
         env.setopt("seed", -1)
     assert str(caught.value).startswith("invalid argument: option 'seed'")
@@ -255,7 +255,7 @@ def test_explicit_retry(monkeypatch):
     monkeypatch.setattr(lib, "BIYOS_freeenv", env_free)
     events = []
     env = biyos.Env()
-    env.addhook(events.append, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(events.append, EventKind.MESSAGE, EventLevel.ERROR)
     other = biyos.Model(env)
     handle = stranded(env, monkeypatch)
     with pytest.raises(biyos.Error, match="has a model that is not freed"):
@@ -276,7 +276,7 @@ def test_explicit_retry(monkeypatch):
 def test_relayed(monkeypatch):
     env = biyos.Env()
     handle = stranded(env, monkeypatch)
-    env.addhook(raising, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(raising, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(RuntimeError, match="subscriber failed"):
         env.close()
     assert env._relay._raised is None
@@ -290,13 +290,13 @@ def test_subscribing(log, monkeypatch):
     env = biyos.Env()
     before_entry("BIYOS_addhook", [env.close], monkeypatch)
     with pytest.raises(biyos.Error, match="event kind 99: unknown"):
-        env.addhook(print, 99, Level.ERROR)
+        env.addhook(print, 99, EventLevel.ERROR)
     assert log == ["call", "env"]
 
 
 def test_unsubscribing(log, monkeypatch):
     env = biyos.Env()
-    subscription = env.addhook(print, EventKind.MESSAGE, Level.ERROR)
+    subscription = env.addhook(print, EventKind.MESSAGE, EventLevel.ERROR)
     before_entry("BIYOS_delhook", [env.close], monkeypatch)
     env.delhook(subscription)
     assert log == ["call", "call", "env"]
@@ -306,4 +306,4 @@ def test_closed_subscribe():
     env = biyos.Env()
     env.close()
     with pytest.raises(ValueError, match="the environment is closed"):
-        env.addhook(print, EventKind.MESSAGE, Level.ERROR)
+        env.addhook(print, EventKind.MESSAGE, EventLevel.ERROR)

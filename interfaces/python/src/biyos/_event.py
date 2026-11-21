@@ -11,7 +11,7 @@ class EventKind(IntEnum):
     PHASE = 3
 
 
-class Level(IntEnum):
+class EventLevel(IntEnum):
     DEBUG = 1
     INFO = 2
     WARNING = 3
@@ -31,8 +31,8 @@ class Event:
         return EventKind(lib.BIYOS_getevtknd(self._live()))
 
     @property
-    def lvl(self):
-        return Level(lib.BIYOS_getevtlvl(self._live()))
+    def level(self):
+        return EventLevel(lib.BIYOS_getevtlvl(self._live()))
 
     @property
     def module(self):

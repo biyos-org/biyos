@@ -6,7 +6,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import EventKind, Level, Sense, VariableKind
+from biyos import EventKind, EventLevel, Sense, VariableKind
 from biyos._capi import lib
 from spies import interrupted, preceded
 
@@ -235,7 +235,7 @@ def test_locked(env, other, model):
             seen.append(copy.getnvars())
             copy.close()
 
-    env.addhook(copy_inside, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(copy_inside, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
     assert seen == [BUSY, BUSY, 3, 0]
