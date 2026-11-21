@@ -211,7 +211,7 @@ def test_views(env, model):
 def test_gone(model):
     f = model.addfuns(2)
     view = f[0]
-    model._version += 1
+    model._gen += 1
     with pytest.raises(ValueError, match="the function predates a deletion"):
         index(view)
     with pytest.raises(ValueError, match="the function predates a deletion"):

@@ -134,7 +134,7 @@ def test_views(env, model):
 def test_gone(model):
     c = add_sample(model)
     view = c[0]
-    model._version += 1
+    model._gen += 1
     with pytest.raises(ValueError, match="the constraint predates a deletion"):
         index(view)
     with pytest.raises(ValueError, match="the constraint predates a deletion"):

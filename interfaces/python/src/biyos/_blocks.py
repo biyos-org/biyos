@@ -1,8 +1,8 @@
 from biyos._integers import integer, whole
 
 
-def _current(model, version, noun):
-    if model._version != version:
+def _current(mdl, gen, noun):
+    if mdl._gen != gen:
         raise ValueError(f"the {noun} predates a deletion from its model")
 
 
@@ -16,12 +16,12 @@ def _target(value):
 
 
 class View:
-    __slots__ = ("_model", "_index", "_version")
+    __slots__ = ("_model", "_idx", "_gen")
 
-    def __init__(self, model, index, version):
-        self._model = model
-        self._index = index
-        self._version = version
+    def __init__(self, mdl, idx, gen):
+        self._model = mdl
+        self._idx = idx
+        self._gen = gen
 
     def __index__(self):
         """Return the index of the item.
@@ -36,22 +36,22 @@ class View:
         ValueError
             When the model has had a deletion since the view was made.
         """
-        _current(self._model, self._version, self._noun)
-        return self._index
+        _current(self._model, self._gen, self._noun)
+        return self._idx
 
 
 class Block:
-    __slots__ = ("_model", "_first", "_count", "_version")
+    __slots__ = ("_model", "_begin", "_size", "_gen")
 
-    def __init__(self, model, first, count, version):
-        self._model = model
-        self._first = first
-        self._count = count
-        self._version = version
+    def __init__(self, mdl, beg, n, gen):
+        self._model = mdl
+        self._begin = beg
+        self._size = n
+        self._gen = gen
 
     def __len__(self):
         self._check()
-        return self._count
+        return self._size
 
     def __iter__(self):
         self._check()
@@ -86,7 +86,7 @@ class Block:
         self._check()
         if isinstance(key, slice):
             return self._slice(key)
-        return self._view(self._first + self._position(key))
+        return self._view(self._begin + self._position(key))
 
     def on(self, model):
         """Return the block's items in another model.
@@ -116,37 +116,37 @@ class Block:
         self._check()
         model = _target(model)
         held = self._held(model)
-        end = self._first + self._count
+        end = self._begin + self._size
         if held < end:
             noun = self._element._noun
             needs = f"{held}, the block needs {end}"
             raise ValueError(f"model holds too few {noun}s: {needs}")
-        return type(self)(model, self._first, self._count, model._version)
+        return type(self)(model, self._begin, self._size, model._gen)
 
     def _check(self):
-        _current(self._model, self._version, "block")
+        _current(self._model, self._gen, "block")
 
     def _range(self):
-        return range(self._first, self._first + self._count)
+        return range(self._begin, self._begin + self._size)
 
-    def _view(self, index):
-        return self._element(self._model, index, self._version)
+    def _view(self, idx):
+        return self._element(self._model, idx, self._gen)
 
     def _position(self, key):
         number = whole("index", key)
-        position = number + self._count if number < 0 else number
-        if not 0 <= position < self._count:
-            count = self._count
+        position = number + self._size if number < 0 else number
+        if not 0 <= position < self._size:
+            count = self._size
             raise IndexError(f"index {number} is outside a block of {count}")
         return position
 
     def _slice(self, key):
-        start, stop, step = key.indices(self._count)
+        start, stop, step = key.indices(self._size)
         if step != 1:
             raise ValueError(f"slice step must be 1, not {step}")
-        first = self._first + start
-        count = max(stop - start, 0)
-        return type(self)(self._model, first, count, self._version)
+        beg = self._begin + start
+        n = max(stop - start, 0)
+        return type(self)(self._model, beg, n, self._gen)
 
 
 class Variable(View):

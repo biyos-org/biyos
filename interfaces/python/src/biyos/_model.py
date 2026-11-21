@@ -178,7 +178,7 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addvars, n, *arrays, byref(first))
-        return Variables(self, first.value, n, self._version)
+        return Variables(self, first.value, n, self._gen)
 
     def setvarbnd(self, idx, lb=None, ub=None):
         count = len(idx)
@@ -256,7 +256,7 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addfuns, n, *arrays, byref(first))
-        return Functions(self, first.value, n, self._version)
+        return Functions(self, first.value, n, self._gen)
 
     def getnfuns(self):
         count = c_int()
@@ -358,7 +358,7 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addcons, count, *arrays, byref(first))
-        return Constraints(self, first.value, count, self._version)
+        return Constraints(self, first.value, count, self._gen)
 
     def setconbnd(self, idx, lb=None, ub=None):
         count = len(idx)
@@ -435,7 +435,7 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
-        return Objectives(self, first.value, count, self._version)
+        return Objectives(self, first.value, count, self._gen)
 
     def setobjs(
         self,
@@ -481,7 +481,7 @@ class Model:
         self._handle = c_void_p()
         self._calls = 0
         self._closing = False
-        self._version = 0
+        self._gen = 0
 
     def _make(self, call, *arguments):
         handle = self._handle

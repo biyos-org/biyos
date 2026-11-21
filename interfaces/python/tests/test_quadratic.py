@@ -223,7 +223,7 @@ def test_gone(model, monkeypatch):
     model.addquadterms(f, [0, 1, 2], [0, 1], x, [1.0, 2.0])
     before = model.getquadterms()
     function, other, variable = f[0], f[1], x[1]
-    model._version += 1
+    model._gen += 1
     seen = []
     for name in ("BIYOS_addquadterms", "BIYOS_getquadterms"):
         spy = partial(recorded, seen, getattr(lib, name))

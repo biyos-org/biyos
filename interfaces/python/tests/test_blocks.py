@@ -126,7 +126,7 @@ def test_closed_block(env, model):
 
 def test_stale(model):
     x = model.addvars(3)
-    model._version += 1
+    model._gen += 1
     for use in (len, iter, itemgetter(0), itemgetter(slice(1))):
         with pytest.raises(ValueError, match=STALE):
             use(x)
@@ -136,7 +136,7 @@ def test_gone(model):
     x = model.addvars(3)
     view = x[1]
     views = iter(x)
-    model._version += 1
+    model._gen += 1
     with pytest.raises(ValueError, match=GONE):
         index(view)
     with pytest.raises(ValueError, match=GONE):
@@ -148,7 +148,7 @@ def test_gone(model):
 
 def test_fresh(model):
     model.addvars(1)
-    model._version += 1
+    model._gen += 1
     x = model.addvars(3)
     assert len(x) == 3
     assert indices(x[1:]) == [2, 3]
@@ -180,8 +180,8 @@ def test_subclass(model):
         __slots__ = ()
 
     model.addvars(3)
-    model.setvarbnd([Mine(model, 1, model._version)], [3.0])
-    model.setvarbnd(Ours(model, 2, 1, model._version), [4.0])
+    model.setvarbnd([Mine(model, 1, model._gen)], [3.0])
+    model.setvarbnd(Ours(model, 2, 1, model._gen), [4.0])
     assert model.getvars()[1] == [-INFINITY, 3.0, 4.0]
 
 
@@ -224,7 +224,7 @@ def test_target(env, model):
     other.close()
     with pytest.raises(ValueError, match="the model is closed"):
         x.on(other)
-    model._version += 1
+    model._gen += 1
     with pytest.raises(ValueError, match=STALE):
         x.on(model)
 
@@ -232,10 +232,10 @@ def test_target(env, model):
 def test_rebound(model):
     x = model.addvars(3)
     copy = model.copy()
-    copy._version += 2
+    copy._gen += 2
     y = x.on(copy)
     assert len(y) == 3
-    copy._version += 1
+    copy._gen += 1
     with pytest.raises(ValueError, match=STALE):
         len(y)
     assert len(x) == 3

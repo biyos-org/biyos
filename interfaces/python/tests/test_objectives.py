@@ -155,7 +155,7 @@ def test_views(env, model):
 def test_gone(model):
     o = add_sample(model)
     view = o[0]
-    model._version += 1
+    model._gen += 1
     with pytest.raises(ValueError, match="the objective predates a deletion"):
         index(view)
     with pytest.raises(ValueError, match="the objective predates a deletion"):
