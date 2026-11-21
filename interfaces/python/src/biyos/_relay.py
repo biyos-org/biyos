@@ -23,19 +23,19 @@ class Relay:
             self._raised = None
 
     def finish(self, handle, status):
-        if self._depth > 0 or self._raised is None:
+        raised = self._raised
+        if self._depth > 0 or raised is None:
             return
+        self._raised = None
         try:
             check(handle, status)
         except Error:
-            raise self._take()
-        raise self._take()
+            raise raised
+        else:
+            raise raised
+        finally:
+            del raised
 
     def _keep(self, error):
         if self._raised is None:
             self._raised = error
-
-    def _take(self):
-        raised = self._raised
-        self._raised = None
-        return raised

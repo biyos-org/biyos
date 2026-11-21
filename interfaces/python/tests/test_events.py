@@ -11,6 +11,7 @@ import biyos
 from biyos import EventKind, EventLevel
 from header import lines, macros
 from number import Number
+from spies import followed, preceded
 
 CODE = (("code", "-100"),)
 
@@ -303,3 +304,30 @@ def test_stale():
     with biyos.Env() as env:
         env._relay.run(explode, None)
         assert env.getopt("seed") == 0
+
+
+def test_finish(monkeypatch):
+    with biyos.Env() as env:
+        nested = partial(env.getopt, "seed")
+        check = partial(preceded, [nested], biyos._relay.check)
+        monkeypatch.setattr(biyos._relay, "check", check)
+        env.addhook(explode, EventKind.MESSAGE, EventLevel.DEBUG)
+        with pytest.raises(RuntimeError, match="subscriber failed") as caught:
+            env.setopt("seed", -1)
+        assert env.getopt("seed") == 0
+    assert type(caught.value.__context__) is biyos.Error
+
+
+def test_succeeded(monkeypatch):
+    with biyos.Env() as env:
+        relay = env._relay
+        relayed = partial(relay.run, explode, None)
+        start = partial(followed, [relayed], relay.start)
+        monkeypatch.setattr(relay, "start", start)
+        nested = partial(env.getopt, "seed")
+        check = partial(preceded, [nested], biyos._relay.check)
+        monkeypatch.setattr(biyos._relay, "check", check)
+        with pytest.raises(RuntimeError, match="subscriber failed") as caught:
+            env.getopt("seed")
+        assert env.getopt("seed") == 0
+    assert caught.value.__context__ is None
