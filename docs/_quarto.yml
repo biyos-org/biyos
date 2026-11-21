@@ -18,8 +18,17 @@ book:
     style: floating
   chapters:
     - index.qmd
+    - part: User guide
+      chapters:
+        - guide/start.qmd
 
 number-sections: true
+
+filters:
+  - path: filters/include.lua
+    at: pre-ast
+  - path: filters/figures.lua
+    at: pre-ast
 
 format:
   html:
