@@ -239,7 +239,7 @@ biyos never prints. It reports through events, and a caller reads them by subscr
 | `BIYOS_LVL_WARN` | 3 | warning |
 | `BIYOS_LVL_ERR` | 4 | error, the most severe |
 
-A level is more severe the larger its value. The kinds and levels come from `biyos/events.h`.
+A level is more severe the larger its value.
 
 A field is a name and a value, both text. Messages, check events and phase events are described below in turn. The messages biyos sends so far are an error when a call fails and a warning when a deprecated option is set. A call on an environment that fails sends an error message, unless the environment is delivering an event: its level is `BIYOS_LVL_ERR`, its module `capi`, its text the message `BIYOS_lasterror` returns for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a subscriber can tell the group from the range. Setting a deprecated option sends a warning message from module `core`, whose text and fields are given under Options. No option is deprecated yet.
 

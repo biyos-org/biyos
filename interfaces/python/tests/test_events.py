@@ -14,6 +14,8 @@ from number import Number
 
 CODE = (("code", "-100"),)
 
+EVENTS = ("BIYOS_EVT_", "BIYOS_LVL_")
+
 LEVELS = {
     "BIYOS_LVL_DBG": EventLevel.DEBUG,
     "BIYOS_LVL_INFO": EventLevel.INFO,
@@ -67,10 +69,12 @@ def fail(env):
 
 def test_constants():
     kinds = {f"BIYOS_EVT_{kind.name}": kind for kind in biyos.EventKind}
-    found = macros("events.h")
-    assert len(found) == lines("events.h", "#define BIYOS_")
+    found = macros("biyos.h")
+    events = {name: found[name] for name in found if name.startswith(EVENTS)}
+    defined = sum(lines("biyos.h", f"#define {start}") for start in EVENTS)
+    assert len(events) == defined
     assert set(LEVELS.values()) == set(EventLevel)
-    assert found == kinds | LEVELS
+    assert events == kinds | LEVELS
 
 
 def test_error():
