@@ -27,11 +27,11 @@ class Handles:
                 handle = self._parked.pop()
             except IndexError:
                 return
-            if self.take(handle) and lib.BIYOS_freemodel(handle) != OK:
+            if self.take(handle) and lib.BIYOS_freemdl(handle) != OK:
                 self._live.add(handle)
 
     def release(self):
         self.closed = True
         self._parked.clear()
         while self._live:
-            lib.BIYOS_freemodel(self._live.pop())
+            lib.BIYOS_freemdl(self._live.pop())

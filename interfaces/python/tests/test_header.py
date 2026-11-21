@@ -4,11 +4,19 @@ from biyos._capi import lib
 from header import functions, lines, macros
 
 KINDS = {
-    "BIYOS_KIND_BOOL": "KIND_BOOL",
-    "BIYOS_KIND_INT": "KIND_INT",
-    "BIYOS_KIND_DBL": "KIND_DOUBLE",
-    "BIYOS_KIND_STR": "KIND_STRING",
-    "BIYOS_KIND_ENUM": "KIND_ENUM",
+    "BIYOS_KND_BOOL": "KIND_BOOL",
+    "BIYOS_KND_INT": "KIND_INT",
+    "BIYOS_KND_DBL": "KIND_DOUBLE",
+    "BIYOS_KND_STR": "KIND_STRING",
+    "BIYOS_KND_ENUM": "KIND_ENUM",
+}
+
+VARIABLES = {
+    "BIYOS_VAR_CONT": biyos.VariableKind.CONTINUOUS,
+    "BIYOS_VAR_BIN": biyos.VariableKind.BINARY,
+    "BIYOS_VAR_INT": biyos.VariableKind.INTEGER,
+    "BIYOS_VAR_SEMICONT": biyos.VariableKind.SEMICONTINUOUS,
+    "BIYOS_VAR_SEMIINT": biyos.VariableKind.SEMIINTEGER,
 }
 
 
@@ -24,8 +32,8 @@ def test_functions():
 
 def test_kinds():
     found = macros("options.h")
-    kinds = {name: value for name, value in found.items() if "_KIND_" in name}
-    assert len(kinds) == lines("options.h", "#define BIYOS_KIND_")
+    kinds = {name: value for name, value in found.items() if "_KND_" in name}
+    assert len(kinds) == lines("options.h", "#define BIYOS_KND_")
     names = [name for name in dir(_capi) if name.startswith("KIND_")]
     assert sorted(names) == sorted(KINDS.values())
     paired = {macro: getattr(_capi, name) for macro, name in KINDS.items()}
@@ -36,8 +44,8 @@ def test_variable_kinds():
     found = macros("model.h")
     kinds = {name: value for name, value in found.items() if "_VAR_" in name}
     assert len(kinds) == lines("model.h", "#define BIYOS_VAR_")
-    names = {f"BIYOS_VAR_{kind.name}": kind for kind in biyos.VariableKind}
-    assert kinds == names
+    assert set(VARIABLES.values()) == set(biyos.VariableKind)
+    assert kinds == VARIABLES
 
 
 def test_senses():

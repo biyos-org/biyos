@@ -106,13 +106,13 @@ An option has a name, an id and a kind. Its kind decides which calls set and get
 
 | Macro | Value | Kind | Set and get with |
 | --- | --- | --- | --- |
-| `BIYOS_KIND_BOOL` | 1 | bool | `BIYOS_setboolopt`, `BIYOS_getboolopt` |
-| `BIYOS_KIND_INT` | 2 | int | `BIYOS_setintopt`, `BIYOS_getintopt` |
-| `BIYOS_KIND_DBL` | 3 | double | `BIYOS_setdblopt`, `BIYOS_getdblopt` |
-| `BIYOS_KIND_STR` | 4 | string | `BIYOS_setstropt`, `BIYOS_getstropt` |
-| `BIYOS_KIND_ENUM` | 5 | enum | `BIYOS_setstropt`, `BIYOS_getstropt`, by the name of the value |
+| `BIYOS_KND_BOOL` | 1 | bool | `BIYOS_setboolopt`, `BIYOS_getboolopt` |
+| `BIYOS_KND_INT` | 2 | int | `BIYOS_setintopt`, `BIYOS_getintopt` |
+| `BIYOS_KND_DBL` | 3 | double | `BIYOS_setdblopt`, `BIYOS_getdblopt` |
+| `BIYOS_KND_STR` | 4 | string | `BIYOS_setstropt`, `BIYOS_getstropt` |
+| `BIYOS_KND_ENUM` | 5 | enum | `BIYOS_setstropt`, `BIYOS_getstropt`, by the name of the value |
 
-The ids are the `BIYOS_OPT_*` macros of `biyos/options.h` and count from 1. `BIYOS_getoptid` finds the id of a name at run time, and `BIYOS_getoptkind` the kind of an id.
+The ids are the `BIYOS_OPT_*` macros of `biyos/options.h` and count from 1. `BIYOS_getoptid` finds the id of a name at run time, and `BIYOS_getoptknd` the kind of an id.
 
 | Macro | Value | Name | Kind | Default | Accepts | Meaning |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -141,13 +141,13 @@ BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt);
 
 Writes to `*opt` the id of the option called `name`, which must match exactly. Returns `BIYOS_ERR_INVALIDARG` when no option has that name.
 
-### `BIYOS_getoptkind`
+### `BIYOS_getoptknd`
 
 ```c
-BIYOS_status BIYOS_getoptkind(BIYOS_env *env, BIYOS_int opt, BIYOS_int *kind);
+BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *kind);
 ```
 
-Writes to `*kind` the kind of the option, one of the `BIYOS_KIND_*` values.
+Writes to `*kind` the kind of the option, one of the `BIYOS_KND_*` values.
 
 ### `BIYOS_getoptversions`
 
@@ -279,10 +279,10 @@ Removes the subscription with id `hookid`, whose subscriber is not called again.
 
 These calls read the event a subscriber is given. They cannot fail. A null `evt` gives 0 or an empty string, as does a field number outside the event's fields. A string they return is valid until the subscriber returns.
 
-### `BIYOS_getevtkind`
+### `BIYOS_getevtknd`
 
 ```c
-BIYOS_int BIYOS_getevtkind(const BIYOS_event *evt);
+BIYOS_int BIYOS_getevtknd(const BIYOS_event *evt);
 ```
 
 Returns the kind of the event, a `BIYOS_EVT_*` value.
@@ -376,11 +376,11 @@ A model holds the variables of a problem, functions of them, and constraints and
 
 | Macro | Value | Kind | Takes |
 | --- | --- | --- | --- |
-| `BIYOS_VAR_CONTINUOUS` | 1 | continuous | any value between its bounds |
-| `BIYOS_VAR_BINARY` | 2 | binary | 0 or 1, between its bounds |
-| `BIYOS_VAR_INTEGER` | 3 | integer | any integer between its bounds |
-| `BIYOS_VAR_SEMICONTINUOUS` | 4 | semi-continuous | 0, or any value between its bounds |
-| `BIYOS_VAR_SEMIINTEGER` | 5 | semi-integer | 0, or any integer between its bounds |
+| `BIYOS_VAR_CONT` | 1 | continuous | any value between its bounds |
+| `BIYOS_VAR_BIN` | 2 | binary | 0 or 1, between its bounds |
+| `BIYOS_VAR_INT` | 3 | integer | any integer between its bounds |
+| `BIYOS_VAR_SEMICONT` | 4 | semi-continuous | 0, or any value between its bounds |
+| `BIYOS_VAR_SEMIINT` | 5 | semi-integer | 0, or any integer between its bounds |
 
 Every kind but continuous is discrete.
 
@@ -392,26 +392,26 @@ A call that adds items takes `BIYOS_index *beg` as its last argument. When the c
 
 A bound may be `INFINITY` or `-INFINITY` of `<math.h>`, and no finite bound is taken as infinite, however large. A lower bound of minus infinity or an upper bound of infinity leaves that side unbounded. A lower bound of infinity, an upper bound of minus infinity and NaN are refused, and so is a bound outside the widest bounds of the variable's kind: 0 and 1 for a binary, minus infinity and infinity for any other kind. Any other pair is kept as given, a lower bound above the upper one included.
 
-### `BIYOS_newmodel`
+### `BIYOS_newmdl`
 
 ```c
-BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **mdl);
+BIYOS_status BIYOS_newmdl(BIYOS_env *env, BIYOS_model **mdl);
 ```
 
 Creates a model with no variables on `env` and writes it to `*mdl`. On failure it sets `*mdl` to null.
 
-### `BIYOS_copymodel`
+### `BIYOS_copymdl`
 
 ```c
-BIYOS_status BIYOS_copymodel(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
+BIYOS_status BIYOS_copymdl(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
 ```
 
 Creates a copy of `mdl` on `env` and writes it to `*copy`. On failure it sets `*copy` to null. `env` may be the environment of `mdl` or another one. The copy holds the same variables, functions, constraints and objectives as `mdl`, under the same indices, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of `mdl` and the copy may be freed first. The call reads `mdl` and changes `env`, so no other thread may use either environment while it runs. It may run while the environment of `mdl` delivers an event, and returns `BIYOS_ERR_INVALIDARG` while `env` does. A failure keeps its message on the environment of `mdl`, as for every call on a model.
 
-### `BIYOS_freemodel`
+### `BIYOS_freemdl`
 
 ```c
-BIYOS_status BIYOS_freemodel(BIYOS_model *mdl);
+BIYOS_status BIYOS_freemdl(BIYOS_model *mdl);
 ```
 
 Frees the model. A null `mdl` gives `BIYOS_OK`. While the environment of `mdl` delivers an event it returns `BIYOS_ERR_INVALIDARG` and frees nothing.
@@ -425,23 +425,23 @@ BIYOS_status BIYOS_addvars(BIYOS_model *mdl, BIYOS_index n, const BIYOS_int *kin
 
 Adds `n` variables after the last one. Entry `j` of each array gives variable `m + j`, where `m` is the number of variables before the call: its kind, a `BIYOS_VAR_*` value, and its lower and upper bounds. A null `kinds` makes every new variable continuous, and a null `lb` or `ub` gives each the widest such bound of its kind. `*beg` receives `m`, and a null `beg` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, a kind is unknown or a bound is refused, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 variables.
 
-### `BIYOS_setvarbounds`
+### `BIYOS_setvarbnd`
 
 ```c
-BIYOS_status BIYOS_setvarbounds(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx,
-                                const BIYOS_real *lb, const BIYOS_real *ub);
+BIYOS_status BIYOS_setvarbnd(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx,
+                             const BIYOS_real *lb, const BIYOS_real *ub);
 ```
 
 Sets the bounds of variable `idx[j]` to `lb[j]` and `ub[j]`, for each `j` below `n`. A null `lb` or `ub` leaves those bounds as they are, and `idx` may be null when `n` is 0. A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of a variable or a bound is refused.
 
-### `BIYOS_setvarkinds`
+### `BIYOS_setvarknd`
 
 ```c
-BIYOS_status BIYOS_setvarkinds(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx,
-                               const BIYOS_int *kinds);
+BIYOS_status BIYOS_setvarknd(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx,
+                             const BIYOS_int *kinds);
 ```
 
-Sets the kind of variable `idx[j]` to `kinds[j]`, for each `j` below `n`, and keeps its bounds. A null `kinds` changes nothing, and `idx` may be null when `n` is 0. A variable may appear more than once, as in `BIYOS_setvarbounds`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of a variable, a kind is unknown or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
+Sets the kind of variable `idx[j]` to `kinds[j]`, for each `j` below `n`, and keeps its bounds. A null `kinds` changes nothing, and `idx` may be null when `n` is 0. A variable may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of a variable, a kind is unknown or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
 
 ### `BIYOS_getnvars`
 
@@ -539,14 +539,14 @@ BIYOS_status BIYOS_addcons(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *f
 
 Adds `n` constraints after the last one. Entry `j` of each array gives constraint `m + j`, where `m` is the number of constraints before the call: the index of its function and its lower and upper bounds. `funs` has no default, and may be null only when `n` is 0. A null `lb` or `ub` leaves that side of every new constraint unbounded, so with both null the constraints are free. `*beg` receives `m`, and a null `beg` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, a function is not one of the model or a bound is refused, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 constraints.
 
-### `BIYOS_setconbounds`
+### `BIYOS_setconbnd`
 
 ```c
-BIYOS_status BIYOS_setconbounds(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx,
-                                const BIYOS_real *lb, const BIYOS_real *ub);
+BIYOS_status BIYOS_setconbnd(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx,
+                             const BIYOS_real *lb, const BIYOS_real *ub);
 ```
 
-Sets the bounds of constraint `idx[j]` to `lb[j]` and `ub[j]`, for each `j` below `n`, and keeps its function. A null `lb` or `ub` leaves those bounds as they are, and `idx` may be null when `n` is 0. A constraint may appear more than once, as in `BIYOS_setvarbounds`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of a constraint or a bound is refused.
+Sets the bounds of constraint `idx[j]` to `lb[j]` and `ub[j]`, for each `j` below `n`, and keeps its function. A null `lb` or `ub` leaves those bounds as they are, and `idx` may be null when `n` is 0. A constraint may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of a constraint or a bound is refused.
 
 ### `BIYOS_getncons`
 
@@ -596,7 +596,7 @@ BIYOS_status BIYOS_setobjs(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *i
                            const BIYOS_real *reltol);
 ```
 
-Sets the sense, the priority, the weight and the absolute and relative tolerances of objective `idx[j]` to `senses[j]`, `prios[j]`, `weights[j]`, `abstol[j]` and `reltol[j]`, for each `j` below `n`, and keeps its function. A null `senses`, `prios`, `weights`, `abstol` or `reltol` leaves those values as they are, and `idx` may be null when `n` is 0. An objective may appear more than once, as in `BIYOS_setvarbounds`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of an objective, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative.
+Sets the sense, the priority, the weight and the absolute and relative tolerances of objective `idx[j]` to `senses[j]`, `prios[j]`, `weights[j]`, `abstol[j]` and `reltol[j]`, for each `j` below `n`, and keeps its function. A null `senses`, `prios`, `weights`, `abstol` or `reltol` leaves those values as they are, and `idx` may be null when `n` is 0. An objective may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of an objective, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative.
 
 ### `BIYOS_getnobjs`
 

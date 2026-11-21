@@ -49,7 +49,7 @@ void receive(const BIYOS_event *event, void *data)
 {
     Inbox *inbox = static_cast<Inbox *>(data);
     ++inbox->calls;
-    inbox->kind = BIYOS_getevtkind(event);
+    inbox->kind = BIYOS_getevtknd(event);
     inbox->level = BIYOS_getevtlvl(event);
     inbox->module = BIYOS_getevtmodule(event);
     inbox->text = BIYOS_getevttext(event);
@@ -275,7 +275,7 @@ TEST(CApiTest, Accessors)
         .fields = {{.name = "rows", .value = "3"}, {.name = "columns", .value = "1"}},
     };
     const BIYOS_event view{&event};
-    EXPECT_EQ(BIYOS_getevtkind(&view), BIYOS_EVT_MESSAGE);
+    EXPECT_EQ(BIYOS_getevtknd(&view), BIYOS_EVT_MESSAGE);
     EXPECT_EQ(BIYOS_getevtlvl(&view), BIYOS_LVL_WARN);
     EXPECT_STREQ(BIYOS_getevtmodule(&view), "presolve");
     EXPECT_STREQ(BIYOS_getevttext(&view), "removed rows");
@@ -290,7 +290,7 @@ TEST(CApiTest, Accessors)
 
 TEST(CApiTest, NullEvent)
 {
-    EXPECT_EQ(BIYOS_getevtkind(nullptr), 0);
+    EXPECT_EQ(BIYOS_getevtknd(nullptr), 0);
     EXPECT_EQ(BIYOS_getevtlvl(nullptr), 0);
     EXPECT_STREQ(BIYOS_getevtmodule(nullptr), "");
     EXPECT_STREQ(BIYOS_getevttext(nullptr), "");

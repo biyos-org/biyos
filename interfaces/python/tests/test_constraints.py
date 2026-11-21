@@ -114,18 +114,18 @@ def test_views(env, model):
     with pytest.raises(ValueError, match="of variables, not functions"):
         model.addcons(x)
     with pytest.raises(ValueError, match="is a constraint of another model"):
-        model.setconbounds([d[0]], [0.0])
+        model.setconbnd([d[0]], [0.0])
     with pytest.raises(ValueError, match="is a block of another model"):
-        model.setconbounds(d, [0.0, 0.0])
+        model.setconbnd(d, [0.0, 0.0])
     with pytest.raises(ValueError, match="beg is a constraint of another"):
         model.getcons(d[0])
     f = model.addfuns(1)
     with pytest.raises(ValueError, match="is a function, not a constraint"):
-        model.setconbounds([f[0]], [0.0])
+        model.setconbnd([f[0]], [0.0])
     with pytest.raises(ValueError, match="of functions, not constraints"):
-        model.setconbounds(f, [0.0])
-    model.setconbounds([c[2]], [5.0], [6.0])
-    model.setconbounds(c[:2], ub=[7.0, 8.0])
+        model.setconbnd(f, [0.0])
+    model.setconbnd([c[2]], [5.0], [6.0])
+    model.setconbnd(c[:2], ub=[7.0, 8.0])
     found = model.getcons(c[1])
     assert found == ([0, 1], [-INFINITY, 5.0], [8.0, 6.0])
     assert model.getncons() == 3
@@ -138,9 +138,9 @@ def test_gone(model):
     with pytest.raises(ValueError, match="the constraint predates a deletion"):
         index(view)
     with pytest.raises(ValueError, match="the constraint predates a deletion"):
-        model.setconbounds([view], [0.0])
+        model.setconbnd([view], [0.0])
     with pytest.raises(ValueError, match="the block predates a deletion"):
-        model.setconbounds(c, [0.0] * 3)
+        model.setconbnd(c, [0.0] * 3)
     assert model.getcons() == SAMPLE
 
 
@@ -192,10 +192,10 @@ def test_sequences(model):
 
 def test_bounds(model):
     model.addcons([0, 1])
-    model.setconbounds([1, 0], lb=[1.0, 2.0])
-    model.setconbounds([1], ub=[3.0])
+    model.setconbnd([1, 0], lb=[1.0, 2.0])
+    model.setconbnd([1], ub=[3.0])
     assert model.getcons() == ([0, 1], [2.0, 1.0], [INFINITY, 3.0])
-    model.setconbounds([0, 0], [5.0, 6.0], [7.0, 8.0])
+    model.setconbnd([0, 0], [5.0, 6.0], [7.0, 8.0])
     assert model.getcons(0, 1) == ([0], [6.0], [8.0])
 
 
@@ -209,9 +209,9 @@ def test_refused(model):
     assert message == (
         "invalid argument: constraint 3: upper bound is minus infinity"
     )
-    message = refusal(model.setconbounds, [3], [0.0], [1.0])
+    message = refusal(model.setconbnd, [3], [0.0], [1.0])
     assert message == "invalid argument: constraint 3: unknown"
-    message = refusal(model.setconbounds, [0], [INFINITY])
+    message = refusal(model.setconbnd, [0], [INFINITY])
     assert message == "invalid argument: constraint 0: lower bound is infinity"
     message = refusal(model.getcons, 4)
     assert message == "invalid argument: constraint 4: unknown"
@@ -224,7 +224,7 @@ def test_lengths(model):
     with pytest.raises(ValueError, match="lb has length 1, not 2"):
         model.addcons([0, 1], [0.0])
     with pytest.raises(ValueError, match="ub has length 1, not 2"):
-        model.setconbounds([0, 1], ub=[1.0])
+        model.setconbnd([0, 1], ub=[1.0])
     assert model.getncons() == 0
 
 
@@ -244,7 +244,7 @@ def test_locked(env, model):
     def change(event):
         for call in (
             partial(model.addcons, [0]),
-            partial(model.setconbounds, [0], [0.0]),
+            partial(model.setconbnd, [0], [0.0]),
         ):
             try:
                 call()
@@ -265,7 +265,7 @@ def test_closed(env):
     model.close()
     calls = (
         partial(model.addcons, [0]),
-        partial(model.setconbounds, []),
+        partial(model.setconbnd, []),
         model.getncons,
         model.getcons,
     )
@@ -279,7 +279,7 @@ def test_on(env, model):
     copy = model.copy()
     d = c[1:].on(copy)
     assert type(d) is biyos.Constraints
-    copy.setconbounds(d, [0.0, 0.0])
+    copy.setconbnd(d, [0.0, 0.0])
     assert copy.getcons()[1] == [-1.0, 0.0, 0.0]
     assert model.getcons() == SAMPLE
     smaller = biyos.Model(env)

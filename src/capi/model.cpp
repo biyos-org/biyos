@@ -162,7 +162,7 @@ void get_variables(const BIYOS_model &model,
 
 }
 
-BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **mdl)
+BIYOS_status BIYOS_newmdl(BIYOS_env *env, BIYOS_model **mdl)
 {
     if (mdl != nullptr)
     {
@@ -171,7 +171,7 @@ BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **mdl)
     return guarded<create>(env, mdl);
 }
 
-BIYOS_status BIYOS_copymodel(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy)
+BIYOS_status BIYOS_copymdl(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy)
 {
     if (copy != nullptr)
     {
@@ -180,7 +180,7 @@ BIYOS_status BIYOS_copymodel(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model
     return guarded<make_copy>(mdl, env, copy);
 }
 
-BIYOS_status BIYOS_freemodel(BIYOS_model *mdl)
+BIYOS_status BIYOS_freemdl(BIYOS_model *mdl)
 {
     if (mdl == nullptr)
     {
@@ -204,19 +204,19 @@ BIYOS_status BIYOS_addvars(BIYOS_model *mdl,
     return guarded<add_variables>(mdl, n, kinds, lb, ub, beg);
 }
 
-BIYOS_status BIYOS_setvarbounds(BIYOS_model *mdl,
-                                BIYOS_index n,
-                                const BIYOS_index *idx,
-                                const BIYOS_real *lb,
-                                const BIYOS_real *ub)
+BIYOS_status BIYOS_setvarbnd(BIYOS_model *mdl,
+                             BIYOS_index n,
+                             const BIYOS_index *idx,
+                             const BIYOS_real *lb,
+                             const BIYOS_real *ub)
 {
     return guarded<set_bounds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_setvarkinds(BIYOS_model *mdl,
-                               BIYOS_index n,
-                               const BIYOS_index *idx,
-                               const BIYOS_int *kinds)
+BIYOS_status BIYOS_setvarknd(BIYOS_model *mdl,
+                             BIYOS_index n,
+                             const BIYOS_index *idx,
+                             const BIYOS_int *kinds)
 {
     return guarded<set_kinds>(mdl, n, idx, kinds);
 }

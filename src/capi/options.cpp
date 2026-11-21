@@ -96,7 +96,7 @@ BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt)
     return guarded<option_id>(env, name, opt);
 }
 
-BIYOS_status BIYOS_getoptkind(BIYOS_env *env, BIYOS_int opt, BIYOS_int *kind)
+BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *kind)
 {
     return guarded<option_kind>(env, opt, kind);
 }

@@ -184,7 +184,7 @@ class Env:
     def _lookup(self, name):
         option = self._option(name)
         kind = c_int()
-        self._call(lib.BIYOS_getoptkind, option, byref(kind))
+        self._call(lib.BIYOS_getoptknd, option, byref(kind))
         return option, kind.value
 
     def _option(self, name):

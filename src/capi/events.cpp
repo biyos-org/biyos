@@ -77,7 +77,7 @@ BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index hookid)
     return guarded<unsubscribe>(env, hookid);
 }
 
-BIYOS_int BIYOS_getevtkind(const BIYOS_event *evt)
+BIYOS_int BIYOS_getevtknd(const BIYOS_event *evt)
 {
     return evt == nullptr ? 0 : static_cast<int>(evt->core->kind);
 }

@@ -34,11 +34,11 @@ enum class Option
 
 enum class OptionKind
 {
-    Bool = BIYOS_KIND_BOOL,
-    Int = BIYOS_KIND_INT,
-    Double = BIYOS_KIND_DBL,
-    String = BIYOS_KIND_STR,
-    Enum = BIYOS_KIND_ENUM,
+    Bool = BIYOS_KND_BOOL,
+    Int = BIYOS_KND_INT,
+    Double = BIYOS_KND_DBL,
+    String = BIYOS_KND_STR,
+    Enum = BIYOS_KND_ENUM,
 };
 
 enum class CheckLevel

@@ -137,11 +137,11 @@ BIYOS_status BIYOS_addcons(BIYOS_model *mdl,
     return guarded<add_constraints>(mdl, n, funs, lb, ub, beg);
 }
 
-BIYOS_status BIYOS_setconbounds(BIYOS_model *mdl,
-                                BIYOS_index n,
-                                const BIYOS_index *idx,
-                                const BIYOS_real *lb,
-                                const BIYOS_real *ub)
+BIYOS_status BIYOS_setconbnd(BIYOS_model *mdl,
+                             BIYOS_index n,
+                             const BIYOS_index *idx,
+                             const BIYOS_real *lb,
+                             const BIYOS_real *ub)
 {
     return guarded<set_bounds>(mdl, n, idx, lb, ub);
 }

@@ -14,11 +14,11 @@ namespace biyos
 
 enum class VariableKind
 {
-    Continuous = BIYOS_VAR_CONTINUOUS,
-    Binary = BIYOS_VAR_BINARY,
-    Integer = BIYOS_VAR_INTEGER,
-    SemiContinuous = BIYOS_VAR_SEMICONTINUOUS,
-    SemiInteger = BIYOS_VAR_SEMIINTEGER,
+    Continuous = BIYOS_VAR_CONT,
+    Binary = BIYOS_VAR_BIN,
+    Integer = BIYOS_VAR_INT,
+    SemiContinuous = BIYOS_VAR_SEMICONT,
+    SemiInteger = BIYOS_VAR_SEMIINT,
 };
 
 inline constexpr std::array kVariableKinds{

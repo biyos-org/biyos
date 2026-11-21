@@ -68,20 +68,20 @@ TEST(CApiTest, OptionKinds)
                        BIYOS_OPT_INTTOL,
                        BIYOS_OPT_ZEROTOL,
                        BIYOS_OPT_MAXCPUTIME};
-    const int kinds[] = {BIYOS_KIND_INT,
-                         BIYOS_KIND_DBL,
-                         BIYOS_KIND_ENUM,
-                         BIYOS_KIND_BOOL,
-                         BIYOS_KIND_STR,
-                         BIYOS_KIND_DBL,
-                         BIYOS_KIND_DBL,
-                         BIYOS_KIND_DBL,
-                         BIYOS_KIND_DBL,
-                         BIYOS_KIND_DBL};
+    const int kinds[] = {BIYOS_KND_INT,
+                         BIYOS_KND_DBL,
+                         BIYOS_KND_ENUM,
+                         BIYOS_KND_BOOL,
+                         BIYOS_KND_STR,
+                         BIYOS_KND_DBL,
+                         BIYOS_KND_DBL,
+                         BIYOS_KND_DBL,
+                         BIYOS_KND_DBL,
+                         BIYOS_KND_DBL};
     for (int i = 0; i < 10; ++i)
     {
         BIYOS_int kind = 0;
-        EXPECT_EQ(BIYOS_getoptkind(env.get(), ids[i], &kind), BIYOS_OK);
+        EXPECT_EQ(BIYOS_getoptknd(env.get(), ids[i], &kind), BIYOS_OK);
         EXPECT_EQ(kind, kinds[i]) << ids[i];
     }
 }
@@ -142,7 +142,7 @@ TEST(CApiTest, UnknownId)
     EXPECT_EQ(env.message(), "invalid argument: option 99: unknown");
     EXPECT_EQ(BIYOS_getintopt(env.get(), 0, &value), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: option 0: unknown");
-    EXPECT_EQ(BIYOS_getoptkind(env.get(), -1, &value), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_getoptknd(env.get(), -1, &value), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: option -1: unknown");
 }
 
@@ -262,7 +262,7 @@ TEST(CApiTest, NullArguments)
     EXPECT_EQ(env.message(), "invalid argument: argument 'name': is null");
     EXPECT_EQ(BIYOS_getoptid(env.get(), "seed", nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'opt': is null");
-    EXPECT_EQ(BIYOS_getoptkind(env.get(), BIYOS_OPT_SEED, nullptr), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_getoptknd(env.get(), BIYOS_OPT_SEED, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'kind': is null");
     EXPECT_EQ(BIYOS_setstropt(env.get(), BIYOS_OPT_REPRO, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'val': is null");
@@ -274,7 +274,7 @@ TEST(CApiTest, NullEnvironment)
 {
     BIYOS_int value = 0;
     EXPECT_EQ(BIYOS_getoptid(nullptr, "seed", &value), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(BIYOS_getoptkind(nullptr, BIYOS_OPT_SEED, &value), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_getoptknd(nullptr, BIYOS_OPT_SEED, &value), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(BIYOS_setintopt(nullptr, BIYOS_OPT_SEED, 1), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(BIYOS_getintopt(nullptr, BIYOS_OPT_SEED, &value), BIYOS_ERR_INVALIDARG);
 }

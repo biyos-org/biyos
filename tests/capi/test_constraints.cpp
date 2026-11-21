@@ -104,7 +104,7 @@ void change(const BIYOS_event *, void *data)
     const BIYOS_real bound = 0.0;
     BIYOS_index count = 0;
     note(attempt, BIYOS_addcons(model, 1, &index, nullptr, nullptr, nullptr));
-    note(attempt, BIYOS_setconbounds(model, 1, &index, &bound, &bound));
+    note(attempt, BIYOS_setconbnd(model, 1, &index, &bound, &bound));
     note(attempt, BIYOS_getncons(model, &count));
     note(attempt, BIYOS_getcons(model, 0, 1, nullptr, nullptr, nullptr));
 }
@@ -212,14 +212,14 @@ TEST(CApiTest, NullBounds)
     const double lower[] = {1.0, 2.0};
     const double upper[] = {3.0, 4.0};
     BIYOS_model *held = model.get();
-    ASSERT_EQ(BIYOS_setconbounds(held, 2, indices, lower, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setconbounds(held, 1, indices, nullptr, upper), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setconbounds(held, 2, indices, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setconbnd(held, 2, indices, lower, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setconbnd(held, 1, indices, nullptr, upper), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setconbnd(held, 2, indices, nullptr, nullptr), BIYOS_OK);
     const Records wanted{.functions = {0, 0}, .lower = {2.0, 1.0}, .upper = {kInfinity, 3.0}};
     expect_records(read_all(model), wanted);
-    EXPECT_EQ(BIYOS_setconbounds(held, 2, nullptr, lower, upper), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_setconbnd(held, 2, nullptr, lower, upper), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
-    EXPECT_EQ(BIYOS_setconbounds(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setconbnd(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
 TEST(CApiTest, NullReads)
@@ -253,11 +253,11 @@ TEST(CApiTest, RefusedConstraints)
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     const BIYOS_index index = 3;
     const BIYOS_real bound = 0.0;
-    EXPECT_EQ(BIYOS_setconbounds(held, 1, &index, &bound, &bound), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_setconbnd(held, 1, &index, &bound, &bound), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
     const BIYOS_index first = 0;
     const BIYOS_real infinite = kInfinity;
-    EXPECT_EQ(BIYOS_setconbounds(held, 1, &first, &infinite, nullptr), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_setconbnd(held, 1, &first, &infinite, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 0: lower bound is infinity");
     EXPECT_EQ(BIYOS_getcons(held, 2, 2, nullptr, nullptr, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");

@@ -28,7 +28,7 @@ class Event:
 
     @property
     def kind(self):
-        return EventKind(lib.BIYOS_getevtkind(self._live()))
+        return EventKind(lib.BIYOS_getevtknd(self._live()))
 
     @property
     def lvl(self):

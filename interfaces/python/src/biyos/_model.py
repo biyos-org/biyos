@@ -81,7 +81,7 @@ class Model:
     def __init__(self, env):
         self._start(_environment(env))
         with self._env._busy():
-            self._make(self._env._call, lib.BIYOS_newmodel)
+            self._make(self._env._call, lib.BIYOS_newmdl)
         self._hold()
 
     def __enter__(self):
@@ -111,7 +111,7 @@ class Model:
         if self._free.detach() is None:
             return
         try:
-            self._env._run(lib.BIYOS_freemodel, self._handle)
+            self._env._run(lib.BIYOS_freemdl, self._handle)
         except Error:
             models.add(self._handle.value)
             self._hold()
@@ -180,22 +180,22 @@ class Model:
         self._call(lib.BIYOS_addvars, n, *arrays, byref(first))
         return Variables(self, first.value, n, self._version)
 
-    def setvarbounds(self, idx, lb=None, ub=None):
+    def setvarbnd(self, idx, lb=None, ub=None):
         count = len(idx)
         arrays = (
             indices_of(self, Variables, "idx", idx, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
-        self._call(lib.BIYOS_setvarbounds, count, *arrays)
+        self._call(lib.BIYOS_setvarbnd, count, *arrays)
 
-    def setvarkinds(self, idx, kinds):
+    def setvarknd(self, idx, kinds):
         count = len(idx)
         arrays = (
             indices_of(self, Variables, "idx", idx, count),
             ints("kinds", kinds, count),
         )
-        self._call(lib.BIYOS_setvarkinds, count, *arrays)
+        self._call(lib.BIYOS_setvarknd, count, *arrays)
 
     def getnvars(self):
         count = c_int()
@@ -360,14 +360,14 @@ class Model:
         self._call(lib.BIYOS_addcons, count, *arrays, byref(first))
         return Constraints(self, first.value, count, self._version)
 
-    def setconbounds(self, idx, lb=None, ub=None):
+    def setconbnd(self, idx, lb=None, ub=None):
         count = len(idx)
         arrays = (
             indices_of(self, Constraints, "idx", idx, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
-        self._call(lib.BIYOS_setconbounds, count, *arrays)
+        self._call(lib.BIYOS_setconbnd, count, *arrays)
 
     def getncons(self):
         count = c_int()
@@ -495,7 +495,7 @@ class Model:
         if not self._env._open():
             raise ValueError("the environment is closed")
         target = self._env._handle
-        self._make(source._call, lib.BIYOS_copymodel, target)
+        self._make(source._call, lib.BIYOS_copymdl, target)
 
     def _hold(self):
         park = self._env._models.park

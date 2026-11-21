@@ -31,8 +31,8 @@ extern char real_size[sizeof(BIYOS_real) == 8 ? 1 : -1];
     BIYOS_OPT_MAXCPUTIME != 10
 #error "a public option id changed"
 #endif
-#if BIYOS_KIND_BOOL != 1 || BIYOS_KIND_INT != 2 || BIYOS_KIND_DBL != 3 || BIYOS_KIND_STR != 4 ||   \
-    BIYOS_KIND_ENUM != 5
+#if BIYOS_KND_BOOL != 1 || BIYOS_KND_INT != 2 || BIYOS_KND_DBL != 3 || BIYOS_KND_STR != 4 ||       \
+    BIYOS_KND_ENUM != 5
 #error "a public option kind changed"
 #endif
 #if BIYOS_EVT_MESSAGE != 1 || BIYOS_EVT_CHECK != 2 || BIYOS_EVT_PHASE != 3
@@ -60,8 +60,8 @@ extern char real_size[sizeof(BIYOS_real) == 8 ? 1 : -1];
     BIYOS_CLAIM_GLOBAL != 2
 #error "a public claim changed"
 #endif
-#if !defined(BIYOS_VAR_CONTINUOUS) || BIYOS_VAR_CONTINUOUS != 1 || BIYOS_VAR_BINARY != 2 ||        \
-    BIYOS_VAR_INTEGER != 3 || BIYOS_VAR_SEMICONTINUOUS != 4 || BIYOS_VAR_SEMIINTEGER != 5
+#if !defined(BIYOS_VAR_CONT) || BIYOS_VAR_CONT != 1 || BIYOS_VAR_BIN != 2 || BIYOS_VAR_INT != 3 || \
+    BIYOS_VAR_SEMICONT != 4 || BIYOS_VAR_SEMIINT != 5
 #error "a public variable kind changed"
 #endif
 #if !defined(BIYOS_MINIMIZE) || BIYOS_MINIMIZE != 1 || BIYOS_MAXIMIZE != 2
@@ -145,7 +145,7 @@ static BIYOS_status use_constraints(BIYOS_model *model)
     BIYOS_index first = -1;
     BIYOS_index constraints = 0;
     if (BIYOS_addcons(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
-        BIYOS_setconbounds(model, 1, indices, NULL, lower) != BIYOS_OK ||
+        BIYOS_setconbnd(model, 1, indices, NULL, lower) != BIYOS_OK ||
         BIYOS_getncons(model, &constraints) != BIYOS_OK || constraints != 2 ||
         BIYOS_getcons(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1)
     {
@@ -190,12 +190,12 @@ static BIYOS_status use_copy(BIYOS_env *env, BIYOS_model *model)
 {
     BIYOS_model *copy = NULL;
     BIYOS_index constraints = 0;
-    BIYOS_status status = BIYOS_copymodel(model, env, &copy);
+    BIYOS_status status = BIYOS_copymdl(model, env, &copy);
     if (status == BIYOS_OK && (BIYOS_getncons(copy, &constraints) != BIYOS_OK || constraints != 2))
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_freemodel(copy) != BIYOS_OK)
+    if (BIYOS_freemdl(copy) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }
@@ -217,11 +217,11 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getcons(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnobjs(model, &count) != BIYOS_OK ||
         BIYOS_getobjs(model, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL) != BIYOS_OK ||
-        BIYOS_copymodel(model, env, &copy) != BIYOS_OK)
+        BIYOS_copymdl(model, env, &copy) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_freemodel(copy) != BIYOS_OK)
+    if (BIYOS_freemdl(copy) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }
@@ -241,7 +241,7 @@ int main(void)
     int lowest = BIYOS_LVL_DBG;
     int errors = 0;
     BIYOS_index id = 0;
-    const int kinds[2] = {BIYOS_VAR_CONTINUOUS, BIYOS_VAR_BINARY};
+    const int kinds[2] = {BIYOS_VAR_CONT, BIYOS_VAR_BIN};
     const double lower[2] = {-1.0, 0.0};
     const double upper[2] = {1.0, 1.0};
     const int indices[1] = {0};
@@ -262,7 +262,7 @@ int main(void)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_getoptkind(env, BIYOS_OPT_SEED, &kind) != BIYOS_OK || kind != BIYOS_KIND_INT)
+    if (BIYOS_getoptknd(env, BIYOS_OPT_SEED, &kind) != BIYOS_OK || kind != BIYOS_KND_INT)
     {
         status = BIYOS_ERR_INTERNAL;
     }
@@ -272,13 +272,13 @@ int main(void)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_newmodel(env, &model) != BIYOS_OK ||
+    if (BIYOS_newmdl(env, &model) != BIYOS_OK ||
         BIYOS_addvars(model, 2, kinds, lower, upper, &first) != BIYOS_OK || first != 0 ||
-        BIYOS_setvarbounds(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
-        BIYOS_setvarkinds(model, 1, indices, kinds + 1) != BIYOS_OK ||
+        BIYOS_setvarbnd(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
+        BIYOS_setvarknd(model, 1, indices, kinds + 1) != BIYOS_OK ||
         BIYOS_getnvars(model, &variables) != BIYOS_OK || variables != 2 ||
-        BIYOS_getvars(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[0] != BIYOS_VAR_BINARY ||
-        found[1] != BIYOS_VAR_BINARY)
+        BIYOS_getvars(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[0] != BIYOS_VAR_BIN ||
+        found[1] != BIYOS_VAR_BIN)
     {
         status = BIYOS_ERR_INTERNAL;
     }
@@ -288,7 +288,7 @@ int main(void)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_freeenv(env) == BIYOS_OK || BIYOS_freemodel(model) != BIYOS_OK)
+    if (BIYOS_freeenv(env) == BIYOS_OK || BIYOS_freemdl(model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }
