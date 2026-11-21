@@ -8,10 +8,11 @@ biyos is built for problems of the form
 
 $$
 \begin{aligned}
-\text{minimize}\quad & f_1(x),\ \dots,\ f_p(x) && \text{in priority order} \\
+\text{minimize}\quad & f_1(x),\ \dots,\ f_p(x) \\
+& \text{in priority order} \\
 \text{subject to}\quad & l \le g(x) \le u \\
 & h(x) \in K \\
-& x_j \in D_j && \text{for every variable } j,
+& x_j \in D_j \quad \text{for every variable } j,
 \end{aligned}
 $$ {#eq-form}
 
@@ -41,9 +42,9 @@ $$
 f(x) = c + \sum_{j} a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x),
 $$ {#eq-function}
 
-a constant $c$, a linear part, a quadratic part over unordered pairs of variables and a nonlinear part $\varphi$, a node of the model's expression graph (@sec-graph). Each pair $(i, j)$ appears once, with $i \le j$, and its coefficient is taken as written, with no factor $\tfrac12$. In matrix form the quadratic part is $x^\top Q x$ for the upper triangular $Q = (q_{ij})$, and its Hessian is $Q + Q^\top$.
+a constant $c$, a linear part, a quadratic part over unordered pairs of variables and a nonlinear part $\varphi(x)$, a node of the model's expression graph (@sec-graph). Each pair $(i, j)$ appears once, with $i \le j$, and its coefficient is taken as written, with no factor $\tfrac12$. In matrix form the quadratic part is $x^{\mathsf{T}} Q x$ for the upper triangular $Q = (q_{ij})$, and its Hessian is $Q + Q^{\mathsf{T}}$.
 
-The parts are kept apart because each is handled best on its own. A linear part has constant derivatives, a quadratic part adds the constant matrix $Q + Q^\top$ to a Hessian with no evaluation at all, and the convexity of a quadratic part is a property of $Q$ alone. Only $\varphi$ needs the expression graph, and an expression given whole is split on entry, so that its linear and quadratic terms join the first parts and $\varphi$ keeps only the rest.
+The parts are kept apart because each is handled best on its own. A linear part has constant derivatives, a quadratic part adds the constant matrix $Q + Q^{\mathsf{T}}$ to a Hessian with no evaluation at all, and the convexity of a quadratic part is a property of $Q$ alone. Only $\varphi(x)$ needs the expression graph, and an expression given whole is split on entry, so that its linear and quadratic terms join the first parts and $\varphi(x)$ keeps only the rest.
 
 ## Constraints {#sec-form-constraints}
 
@@ -51,17 +52,13 @@ A constraint is a record $(k, l, u)$ that bounds function $k$ of the table: $l \
 
 ## Several objectives {#sec-form-objectives}
 
-An objective is a record $(k, s, \pi, w, a, r)$: the function $f_k$, a sense $s$, which is $+1$ to minimize and $-1$ to maximize, a priority $\pi \in \mathbb{Z}$, a weight $w > 0$, and an absolute and a relative tolerance $a, r \ge 0$. Let $\pi_1 < \pi_2 < \dots$ be the distinct priorities held and $P_t$ the objectives of priority $\pi_t$. The objectives are optimized in stages, stage $t$ solving
+An objective is a record $(k, s, \pi, w, a, r)$: the function $f_k$, a sense $s$, which is $+1$ to minimize and $-1$ to maximize, a priority $\pi \in \mathbb{Z}$, a weight $w > 0$, and an absolute and a relative tolerance $a, r \ge 0$. Let $\pi_1 < \dots < \pi_T$ be the distinct priorities held and $P_t$ the objectives of priority $\pi_t$. The objectives are optimized in stages, stage $t$ solving
 
 $$
-\begin{aligned}
-\text{minimize}\quad & \sum_{i \in P_t} w_i\, s_i\, f_{k_i}(x) \\
-\text{subject to}\quad & x \text{ feasible}, \\
-& \text{every objective of an earlier stage within its tolerances of the optimum found for it.}
-\end{aligned}
+\text{minimize}\quad \sum_{i \in P_t} w_i\, s_i\, f_{k_i}(x)
 $$
 
-where feasible means every constraint and domain of @eq-form holds. The absolute tolerance of an objective is in the units of its function, the relative one a fraction of the size of its optimum, and a tolerance of $\infty$ sets no limit. Objectives of different priorities are thus optimized in sequence, and objectives of one priority are blended into one weighted sum. A weight is positive, so the sense alone gives the direction. By default each objective takes its own position as its priority, which makes the optimization sequential in the order the objectives were given; equal priorities express a weighted sum.
+over the points $x$ where every constraint and domain of @eq-form holds and every objective of an earlier stage stays within its tolerances of the optimum found for it. The absolute tolerance of an objective is in the units of its function, the relative one a fraction of the size of its optimum, and a tolerance of $\infty$ sets no limit. Objectives of different priorities are thus optimized in sequence, and objectives of one priority are blended into one weighted sum. A weight is positive, so the sense alone gives the direction. By default each objective takes its own position as its priority, which makes the optimization sequential in the order the objectives were given; equal priorities express a weighted sum.
 
 ## What a result claims {#sec-form-claims}
 

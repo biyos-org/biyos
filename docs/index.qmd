@@ -25,7 +25,8 @@ It is designed for problems of the form
 ::: {.form}
 $$
 \begin{aligned}
-\text{minimize}\quad & f_1(x),\ \dots,\ f_p(x) \quad \text{in priority order} \\
+\text{minimize}\quad & f_1(x),\ \dots,\ f_p(x) \\
+& \text{in priority order} \\
 \text{subject to}\quad & l \le g(x) \le u \\
 & h(x) \in K \\
 & x_j \in \mathbb{Z} \quad \text{for } j \in J

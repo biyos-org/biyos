@@ -7,8 +7,10 @@ The methods of biyos need the gradient of every function and weighted sums of th
 Given the stored partials $\partial \phi_k / \partial v_j$ of a straight-line program, the reverse sweep assigns each value $v_k$ an adjoint $\bar v_k$. It starts from a seed on the outputs and visits the instructions in reverse order, adding each adjoint into the adjoints of the operands:
 
 $$
-\bar v_j \mathrel{+}= \bar v_k\, \frac{\partial \phi_k}{\partial v_j} \qquad \text{for } k = N, \dots, 1 \text{ and } j \in \mathcal{C}(k).
+\bar v_j \mathrel{+}= \bar v_k\, \frac{\partial \phi_k}{\partial v_j}
 $$ {#eq-adjoint}
+
+for $k$ from $N$ down to 1 and every operand $j \in \mathcal{C}(k)$.
 
 When the sweep ends, the adjoint of each variable is the derivative of the seeded combination of outputs with respect to that variable. Two seeds serve the methods:
 

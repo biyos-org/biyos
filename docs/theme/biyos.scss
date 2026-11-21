@@ -662,6 +662,13 @@ mjx-container[display="true"] {
   overflow-x: auto;
   overflow-y: hidden;
   max-width: 100%;
+  min-width: 0 !important;
+}
+
+@media (max-width: 575.98px) {
+  mjx-container[display="true"] {
+    font-size: 85% !important;
+  }
 }
 
 .citation a,

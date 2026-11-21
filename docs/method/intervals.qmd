@@ -30,7 +30,7 @@ Each result is then cut to the image of its function, itself rounded outward: $[
 
 ## Why 256 steps {#sec-intervals-margin}
 
-Suppose the library computes $f$ within $k$ units in the last place. Then its result $\tilde f$ satisfies $|\tilde f - f| \le r |f| + s$ with $r = k \cdot 2^{-52}$ and $s = k \cdot 2^{-1074}$, the second term covering subnormal results. Take $f$ monotone on a piece of the box, its least value at an end $e$, and $\tilde v = \tilde f(e)$. Since $z - r|z| - s$ grows with $z$, every value computed on the piece is at least
+Suppose the library computes $f$ within $k$ units in the last place. Then its result $\tilde f(x)$ satisfies $|\tilde f(x) - f(x)| \le r |f(x)| + s$ with $r = k \cdot 2^{-52}$ and $s = k \cdot 2^{-1074}$, the second term covering subnormal results. Take $f$ monotone on a piece of the box, its least value at an end $e$, and $\tilde v = \tilde f(e)$. Since $z - r|z| - s$ grows with $z$, every value computed on the piece is at least
 
 $$
 \tilde v - 2.01\,\big(r |\tilde v| + s\big).
