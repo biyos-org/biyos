@@ -53,7 +53,7 @@ TEST(FirewallTest, InvalidArgument)
 {
     const BIYOS_status status = status_after(
         [] { throw biyos::Error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative"); });
-    EXPECT_EQ(status, BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(status, BIYOS_ERR_BADARG);
 }
 
 TEST(FirewallTest, NoMemory)
@@ -89,7 +89,7 @@ TEST(FirewallTest, ErrorMessage)
 {
     biyos::Environment env;
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
-    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.last_error(), "invalid argument: argument 'n': negative");
 }
 
@@ -130,7 +130,7 @@ TEST(FirewallTest, ErrorEvent)
     env.events().subscribe(EventKind::Message, Level::Error, keep);
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
     EXPECT_EQ(status_after(env, [] {}), BIYOS_OK);
-    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_BADARG);
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
     ASSERT_EQ(kept.size(), 3U);
@@ -149,7 +149,7 @@ TEST(FirewallTest, ErrorCode)
     const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
     env.events().subscribe(EventKind::Message, Level::Error, keep);
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
-    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_BADARG);
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
     ASSERT_EQ(kept.size(), 3U);

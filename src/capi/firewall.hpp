@@ -20,7 +20,7 @@ inline BIYOS_status status_of(ErrorKind kind) noexcept
     switch (kind)
     {
     case ErrorKind::InvalidArgument:
-        return BIYOS_ERR_INVALIDARG;
+        return BIYOS_ERR_BADARG;
     case ErrorKind::NoMemory:
         return BIYOS_ERR_NOMEMORY;
     case ErrorKind::Internal:

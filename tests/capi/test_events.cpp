@@ -96,7 +96,7 @@ BIYOS_status listen(BIYOS_env *env, BIYOS_hook subscriber, void *data, int lowes
 
 void fail(const Env &env)
 {
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
 }
 
 struct Attempt
@@ -157,7 +157,7 @@ TEST(CApiTest, Unsubscribe)
     EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(inbox.calls, 0);
-    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: subscription 1: unknown");
 }
 
@@ -169,7 +169,7 @@ TEST(CApiTest, ReadOnly)
     BIYOS_index id = 0;
     ASSERT_EQ(listen(env.get(), change, &attempt, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
-    const BIYOS_status refused = BIYOS_ERR_INVALIDARG;
+    const BIYOS_status refused = BIYOS_ERR_BADARG;
     const std::vector<BIYOS_status>
         statuses{refused, refused, refused, refused, refused, refused, BIYOS_OK};
     const std::string reason =
@@ -193,7 +193,7 @@ TEST(CApiTest, NestedFailure)
     ASSERT_EQ(listen(env.get(), unsubscribe_unknown, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(probe.calls, 1);
-    EXPECT_EQ(probe.status, BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(probe.status, BIYOS_ERR_BADARG);
     EXPECT_EQ(probe.message,
               "invalid argument: environment: is read-only while delivering an event");
     EXPECT_EQ(env.message(), "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
@@ -211,7 +211,7 @@ TEST(CApiTest, TwoSubscribers)
     ASSERT_EQ(listen(env.get(), read_error, &second, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
     const std::string failure = "invalid argument: option 'seed': -1 is outside [0, 2147483647]";
-    EXPECT_EQ(first.status, BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(first.status, BIYOS_ERR_BADARG);
     EXPECT_EQ(first.message,
               "invalid argument: environment: is read-only while delivering an event");
     EXPECT_EQ(second.calls, 1);
@@ -228,7 +228,7 @@ TEST(CApiTest, BusyFree)
     ASSERT_EQ(listen(env.get(), free_inside, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(probe.calls, 1);
-    EXPECT_EQ(probe.status, BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(probe.status, BIYOS_ERR_BADARG);
     EXPECT_EQ(probe.message,
               "invalid argument: environment: is read-only while delivering an event");
     BIYOS_int seed = -1;
@@ -244,14 +244,13 @@ TEST(CApiTest, BadSubscribe)
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     const int debug = BIYOS_LVL_DBG;
-    EXPECT_EQ(BIYOS_addhook(env.get(), nullptr, &inbox, message, debug, &id), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_addhook(env.get(), nullptr, &inbox, message, debug, &id), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'hk': is null");
-    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, 0, debug, &id), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, 0, debug, &id), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: event kind 0: unknown");
-    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, 9, &id), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, 9, &id), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: level 9: unknown");
-    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, debug, nullptr),
-              BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, debug, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
     EXPECT_EQ(inbox.calls, 0);
     EXPECT_EQ(id, 0);
@@ -260,8 +259,8 @@ TEST(CApiTest, BadSubscribe)
 TEST(CApiTest, NullSubscribe)
 {
     BIYOS_index id = 0;
-    EXPECT_EQ(listen(nullptr, receive, nullptr, BIYOS_LVL_DBG, &id), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(BIYOS_delhook(nullptr, 1), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(listen(nullptr, receive, nullptr, BIYOS_LVL_DBG, &id), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delhook(nullptr, 1), BIYOS_ERR_BADARG);
 }
 
 TEST(CApiTest, Accessors)

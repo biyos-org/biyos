@@ -37,7 +37,7 @@ typedef struct BIYOS_model BIYOS_model;
 typedef void (*BIYOS_hook)(const BIYOS_event *evt, void *data);
 
 #define BIYOS_OK 0
-#define BIYOS_ERR_INVALIDARG (-100)
+#define BIYOS_ERR_BADARG (-100)
 #define BIYOS_ERR_NOMEMORY (-400)
 #define BIYOS_ERR_INTERNAL (-500)
 

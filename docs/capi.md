@@ -9,7 +9,7 @@ Every call that returns `BIYOS_status` follows these rules.
 - It returns `BIYOS_OK` or a negative error code.
 - On failure it keeps its message on the environment, read with `BIYOS_lasterror`, which for a call on a model is the environment the model was made on. It keeps none when given a null environment or model or when it takes none, as the formatting calls do, and `BIYOS_newenv` keeps none since it has no environment yet. If memory runs out while the message is kept, the message is left empty.
 - On success it leaves the message as it was.
-- A null pointer argument, the environment or the model included, gives `BIYOS_ERR_INVALIDARG`, unless its entry says otherwise.
+- A null pointer argument, the environment or the model included, gives `BIYOS_ERR_BADARG`, unless its entry says otherwise.
 - On failure it leaves its output arguments as they were, unless its entry says otherwise.
 - Besides the codes its entry names, it can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos.
 
@@ -44,7 +44,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | Macro | Value | Meaning |
 | --- | --- | --- |
 | `BIYOS_OK` | 0 | the call succeeded |
-| `BIYOS_ERR_INVALIDARG` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count or size, an unknown variable kind or variable index, a bound a variable does not accept, an unknown function index, starts that do not begin at 0 or that decrease, a term whose variable is not one of the model or appears twice in a function, a constant or a coefficient that is not finite, an unknown constraint index, a constraint on a function the model does not hold, a bound a constraint does not accept, an unknown objective index, an objective on a function the model does not hold, an unknown sense, a weight that is not finite and positive, a tolerance that is NaN or negative, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
+| `BIYOS_ERR_BADARG` | -100 | a null pointer, environment or model, an unknown option name or id, a call of the wrong kind for its option, a value the option does not accept, a set of a retired option, an unknown event kind, level or subscription, a negative count or size, an unknown variable kind or variable index, a bound a variable does not accept, an unknown function index, starts that do not begin at 0 or that decrease, a term whose variable is not one of the model or appears twice in a function, a constant or a coefficient that is not finite, an unknown constraint index, a constraint on a function the model does not hold, a bound a constraint does not accept, an unknown objective index, an objective on a function the model does not hold, an unknown sense, a weight that is not finite and positive, a tolerance that is NaN or negative, a change to an environment or to a model made on it while the environment delivers an event, or a free of an environment that has a model not yet freed |
 | `BIYOS_ERR_NOMEMORY` | -400 | an allocation failed |
 | `BIYOS_ERR_INTERNAL` | -500 | a fault in biyos |
 
@@ -80,7 +80,7 @@ Environments share no state, so separate threads may use separate environments a
 BIYOS_status BIYOS_newenv(BIYOS_env **env);
 ```
 
-Creates an environment with every option at its default and an empty error message, and writes it to `*env`. On failure it sets `*env` to null. Returns `BIYOS_ERR_INVALIDARG` when `env` is null.
+Creates an environment with every option at its default and an empty error message, and writes it to `*env`. On failure it sets `*env` to null. Returns `BIYOS_ERR_BADARG` when `env` is null.
 
 ### `BIYOS_freeenv`
 
@@ -88,7 +88,7 @@ Creates an environment with every option at its default and an empty error messa
 BIYOS_status BIYOS_freeenv(BIYOS_env *env);
 ```
 
-Frees the environment and every string read from it. A null `env` gives `BIYOS_OK`. While `env` delivers an event it returns `BIYOS_ERR_INVALIDARG` and frees nothing, as every call that would change `env` does then (see Subscribers). While a model made on `env` is not freed, it returns `BIYOS_ERR_INVALIDARG` with the message `invalid argument: environment: has a model that is not freed`, and frees nothing.
+Frees the environment and every string read from it. A null `env` gives `BIYOS_OK`. While `env` delivers an event it returns `BIYOS_ERR_BADARG` and frees nothing, as every call that would change `env` does then (see Subscribers). While a model made on `env` is not freed, it returns `BIYOS_ERR_BADARG` with the message `invalid argument: environment: has a model that is not freed`, and frees nothing.
 
 ### `BIYOS_lasterror`
 
@@ -102,7 +102,7 @@ The pointer is never null. It stays valid until the next failed call on `env` or
 
 ## Options
 
-An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_ERR_INVALIDARG`. Nothing is converted, so an int option rejects `BIYOS_setdblopt`. Every call that takes an option id returns `BIYOS_ERR_INVALIDARG` when it is not a known id. A failed set leaves the option as it was.
+An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_ERR_BADARG`. Nothing is converted, so an int option rejects `BIYOS_setdblopt`. Every call that takes an option id returns `BIYOS_ERR_BADARG` when it is not a known id. A failed set leaves the option as it was.
 
 | Macro | Value | Kind | Set and get with |
 | --- | --- | --- | --- |
@@ -131,7 +131,7 @@ The ranges in the Accepts column include their ends and are checked exactly, wit
 
 The tolerance options say when a value of a model, such as a variable or a constraint function at a point, meets a lower or upper bound the model puts on it, equals another such value, is zero or is integral. A finite value meets a finite bound unless it lies beyond it by more than both `feastol_abs` and `feastol_rel` times the larger of 1 and the magnitude of the bound. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. Two finite values are equal unless they differ by more than both `feastol_abs` and `feastol_rel` times the larger of 1 and their magnitudes. An infinite value equals only itself and is not integral. NaN is not zero, not integral, equal to no value and meets no bound.
 
-Each option records the version of biyos that added it and, once it is no longer wanted, the version that deprecated it and the version that retired it, read with `BIYOS_getoptversions`. A deprecated option still works: setting it sets it and sends a message event at level `BIYOS_LVL_WARN`, from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. Setting a retired option, by any call, returns `BIYOS_ERR_INVALIDARG` with a message such as `invalid argument: option 'old': retired in 0.3.0, use 'new'` and changes nothing, and getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither. Every option above was added in 0.1.0, and none is deprecated or retired.
+Each option records the version of biyos that added it and, once it is no longer wanted, the version that deprecated it and the version that retired it, read with `BIYOS_getoptversions`. A deprecated option still works: setting it sets it and sends a message event at level `BIYOS_LVL_WARN`, from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. Setting a retired option, by any call, returns `BIYOS_ERR_BADARG` with a message such as `invalid argument: option 'old': retired in 0.3.0, use 'new'` and changes nothing, and getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither. Every option above was added in 0.1.0, and none is deprecated or retired.
 
 ### `BIYOS_getoptid`
 
@@ -139,7 +139,7 @@ Each option records the version of biyos that added it and, once it is no longer
 BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt);
 ```
 
-Writes to `*opt` the id of the option called `name`, which must match exactly. Returns `BIYOS_ERR_INVALIDARG` when no option has that name.
+Writes to `*opt` the id of the option called `name`, which must match exactly. Returns `BIYOS_ERR_BADARG` when no option has that name.
 
 ### `BIYOS_getoptknd`
 
@@ -172,7 +172,7 @@ Sets a bool option to true when `val` is nonzero and to false when it is zero.
 BIYOS_status BIYOS_setintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
 ```
 
-Sets an int option. Returns `BIYOS_ERR_INVALIDARG` when `val` is outside its range.
+Sets an int option. Returns `BIYOS_ERR_BADARG` when `val` is outside its range.
 
 ### `BIYOS_setdblopt`
 
@@ -180,7 +180,7 @@ Sets an int option. Returns `BIYOS_ERR_INVALIDARG` when `val` is outside its ran
 BIYOS_status BIYOS_setdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val);
 ```
 
-Sets a double option. Returns `BIYOS_ERR_INVALIDARG` when `val` is outside its range or is NaN.
+Sets a double option. Returns `BIYOS_ERR_BADARG` when `val` is outside its range or is NaN.
 
 ### `BIYOS_setstropt`
 
@@ -188,7 +188,7 @@ Sets a double option. Returns `BIYOS_ERR_INVALIDARG` when `val` is outside its r
 BIYOS_status BIYOS_setstropt(BIYOS_env *env, BIYOS_int opt, const char *val);
 ```
 
-Sets a string or enum option to a copy of `val`. For an enum option, `val` is the name of one of its values and must match exactly. Returns `BIYOS_ERR_INVALIDARG` when it names none of them. On success, pointers read earlier from this option are no longer valid.
+Sets a string or enum option to a copy of `val`. For an enum option, `val` is the name of one of its values and must match exactly. Returns `BIYOS_ERR_BADARG` when it names none of them. On success, pointers read earlier from this option are no longer valid.
 
 ### `BIYOS_getboolopt`
 
@@ -252,8 +252,8 @@ A phase event marks a phase of a solve, such as presolve, beginning or ending. P
 A subscriber is called with the event and the `data` its subscription was given. While it runs, the environment delivers an event and is read-only.
 
 - The subscriber may read options, the last error message, the event and the models made on the environment.
-- Every call that would change the environment, setting an option, subscribing, unsubscribing, creating a model on it or freeing it, fails with `BIYOS_ERR_INVALIDARG` and the message `invalid argument: environment: is read-only while delivering an event`, and changes nothing.
-- Every call that would change or free a model made on the environment fails with `BIYOS_ERR_INVALIDARG` and the message `invalid argument: model: is read-only while delivering an event`, and changes nothing.
+- Every call that would change the environment, setting an option, subscribing, unsubscribing, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and changes nothing.
+- Every call that would change or free a model made on the environment fails with `BIYOS_ERR_BADARG` and the message `invalid argument: model: is read-only while delivering an event`, and changes nothing.
 - A call that fails inside a subscriber keeps its message as usual, so `BIYOS_lasterror` explains it, but sends no event.
 - Inside an error event, `BIYOS_lasterror` returns that event's failure. When the subscriber returns, the message is again what it was before the subscriber ran, so one subscriber's failures change neither what the next subscriber reads nor what the caller reads after the call.
 - The event and every string read from it are valid only until the subscriber returns.
@@ -265,7 +265,7 @@ BIYOS_status BIYOS_addhook(BIYOS_env *env, BIYOS_hook hk, void *data,
                            BIYOS_int knd, BIYOS_int lvl, BIYOS_index *idx);
 ```
 
-Subscribes `hk` to the events of `knd`, a `BIYOS_EVT_*` value, at level `lvl`, a `BIYOS_LVL_*` value, and above, and writes the id of the new subscription to `*idx`. Ids count from 1 in each environment and are never reused. biyos keeps `hk` and `data` until the subscription is removed with `BIYOS_delhook` or `env` is freed, and passes `data` back as given: it may be null. Returns `BIYOS_ERR_INVALIDARG` for an unknown kind or level. A failed call subscribes nothing. An environment that has given out 2147483646 ids returns `BIYOS_ERR_NOMEMORY`.
+Subscribes `hk` to the events of `knd`, a `BIYOS_EVT_*` value, at level `lvl`, a `BIYOS_LVL_*` value, and above, and writes the id of the new subscription to `*idx`. Ids count from 1 in each environment and are never reused. biyos keeps `hk` and `data` until the subscription is removed with `BIYOS_delhook` or `env` is freed, and passes `data` back as given: it may be null. Returns `BIYOS_ERR_BADARG` for an unknown kind or level. A failed call subscribes nothing. An environment that has given out 2147483646 ids returns `BIYOS_ERR_NOMEMORY`.
 
 ### `BIYOS_delhook`
 
@@ -273,7 +273,7 @@ Subscribes `hk` to the events of `knd`, a `BIYOS_EVT_*` value, at level `lvl`, a
 BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index idx);
 ```
 
-Removes the subscription with id `idx`, whose subscriber is not called again. Returns `BIYOS_ERR_INVALIDARG` when `env` has no such subscription, as for one already removed.
+Removes the subscription with id `idx`, whose subscriber is not called again. Returns `BIYOS_ERR_BADARG` when `env` has no such subscription, as for one already removed.
 
 ### Reading an event
 
@@ -344,7 +344,7 @@ These calls write an event as one line into a buffer the caller gives, in the ma
 - When `size` is 0 the call writes nothing to `buf`, not even a NUL, and `buf` may be null, to learn `*len` alone.
 - The line has no trailing newline. A byte below 0x20 is written as `\n` for a newline, `\t` for a tab and `\u00XX` with lowercase hex digits for any other, such as `\u000d` for a carriage return, so the line never breaks. Each call says how it writes the other bytes.
 - The time of an event is the wall time since its environment was created. It is written in seconds with six decimals, cut to the microsecond, such as `0.001234` for 1234567 nanoseconds. The decimal point is always `.`, whatever the locale.
-- They take no environment, so a failure keeps no message and sends no event. They return `BIYOS_ERR_INVALIDARG` when `evt` or `len` is null, or when `buf` is null and `size` is not 0. A failed call writes nothing.
+- They take no environment, so a failure keeps no message and sends no event. They return `BIYOS_ERR_BADARG` when `evt` or `len` is null, or when `buf` is null and `size` is not 0. A failed call writes nothing.
 
 ### `BIYOS_fmttext`
 
@@ -406,7 +406,7 @@ Creates a model with no variables on `env` and writes it to `*mdl`. On failure i
 BIYOS_status BIYOS_copymdl(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
 ```
 
-Creates a copy of `mdl` on `env` and writes it to `*copy`. On failure it sets `*copy` to null. `env` may be the environment of `mdl` or another one. The copy holds the same variables, functions, constraints and objectives as `mdl`, under the same indices, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of `mdl` and the copy may be freed first. The call reads `mdl` and changes `env`, so no other thread may use either environment while it runs. It may run while the environment of `mdl` delivers an event, and returns `BIYOS_ERR_INVALIDARG` while `env` does. A failure keeps its message on the environment of `mdl`, as for every call on a model.
+Creates a copy of `mdl` on `env` and writes it to `*copy`. On failure it sets `*copy` to null. `env` may be the environment of `mdl` or another one. The copy holds the same variables, functions, constraints and objectives as `mdl`, under the same indices, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of `mdl` and the copy may be freed first. The call reads `mdl` and changes `env`, so no other thread may use either environment while it runs. It may run while the environment of `mdl` delivers an event, and returns `BIYOS_ERR_BADARG` while `env` does. A failure keeps its message on the environment of `mdl`, as for every call on a model.
 
 ### `BIYOS_freemdl`
 
@@ -414,7 +414,7 @@ Creates a copy of `mdl` on `env` and writes it to `*copy`. On failure it sets `*
 BIYOS_status BIYOS_freemdl(BIYOS_model *mdl);
 ```
 
-Frees the model. A null `mdl` gives `BIYOS_OK`. While the environment of `mdl` delivers an event it returns `BIYOS_ERR_INVALIDARG` and frees nothing.
+Frees the model. A null `mdl` gives `BIYOS_OK`. While the environment of `mdl` delivers an event it returns `BIYOS_ERR_BADARG` and frees nothing.
 
 ### `BIYOS_addvars`
 
@@ -423,7 +423,7 @@ BIYOS_status BIYOS_addvars(BIYOS_model *mdl, BIYOS_index n, const BIYOS_int *knd
                            const BIYOS_real *lb, const BIYOS_real *ub, BIYOS_index *beg);
 ```
 
-Adds `n` variables after the last one. Entry `j` of each array gives variable `m + j`, where `m` is the number of variables before the call: its kind, a `BIYOS_VAR_*` value, and its lower and upper bounds. A null `knd` makes every new variable continuous, and a null `lb` or `ub` gives each the widest such bound of its kind. `*beg` receives `m`, and a null `beg` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, a kind is unknown or a bound is refused, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 variables.
+Adds `n` variables after the last one. Entry `j` of each array gives variable `m + j`, where `m` is the number of variables before the call: its kind, a `BIYOS_VAR_*` value, and its lower and upper bounds. A null `knd` makes every new variable continuous, and a null `lb` or `ub` gives each the widest such bound of its kind. `*beg` receives `m`, and a null `beg` is skipped. Returns `BIYOS_ERR_BADARG` when `n` is negative, a kind is unknown or a bound is refused, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 variables.
 
 ### `BIYOS_setvarbnd`
 
@@ -432,7 +432,7 @@ BIYOS_status BIYOS_setvarbnd(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index 
                              const BIYOS_real *lb, const BIYOS_real *ub);
 ```
 
-Sets the bounds of variable `idx[j]` to `lb[j]` and `ub[j]`, for each `j` below `n`. A null `lb` or `ub` leaves those bounds as they are, and `idx` may be null when `n` is 0. A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of a variable or a bound is refused.
+Sets the bounds of variable `idx[j]` to `lb[j]` and `ub[j]`, for each `j` below `n`. A null `lb` or `ub` leaves those bounds as they are, and `idx` may be null when `n` is 0. A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted. Returns `BIYOS_ERR_BADARG` when `n` is negative, an index is not that of a variable or a bound is refused.
 
 ### `BIYOS_setvarknd`
 
@@ -441,7 +441,7 @@ BIYOS_status BIYOS_setvarknd(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index 
                              const BIYOS_int *knd);
 ```
 
-Sets the kind of variable `idx[j]` to `knd[j]`, for each `j` below `n`, and keeps its bounds. A null `knd` changes nothing, and `idx` may be null when `n` is 0. A variable may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of a variable, a kind is unknown or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
+Sets the kind of variable `idx[j]` to `knd[j]`, for each `j` below `n`, and keeps its bounds. A null `knd` changes nothing, and `idx` may be null when `n` is 0. A variable may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_BADARG` when `n` is negative, an index is not that of a variable, a kind is unknown or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
 
 ### `BIYOS_getnvars`
 
@@ -458,7 +458,7 @@ BIYOS_status BIYOS_getvars(const BIYOS_model *mdl, BIYOS_index beg, BIYOS_index 
                            BIYOS_real *lb, BIYOS_real *ub);
 ```
 
-Writes to entry `j` of each array, for each `j` below `n`, the kind and the lower and upper bounds of variable `beg + j`. A null array is skipped. Returns `BIYOS_ERR_INVALIDARG` when `beg` or `n` is negative or `beg + n` exceeds the number of variables.
+Writes to entry `j` of each array, for each `j` below `n`, the kind and the lower and upper bounds of variable `beg + j`. A null array is skipped. Returns `BIYOS_ERR_BADARG` when `beg` or `n` is negative or `beg + n` exceeds the number of variables.
 
 ### Functions
 
@@ -478,7 +478,7 @@ BIYOS_status BIYOS_addfuns(BIYOS_model *mdl, BIYOS_index n, const BIYOS_real *cs
                            const BIYOS_real *coef, BIYOS_index *beg);
 ```
 
-Adds `n` functions after the last one. Entry `j` of `cst` gives the constant of function `m + j`, where `m` is the number of functions before the call, and `off`, `varidx` and `coef` give the linear terms of the functions in compressed form, `off` holding `n + 1` offsets. A null `cst` gives every new function the constant 0. A null `off` adds functions without terms. `varidx` and `coef` are not read when there are no terms, and may then be null. `*beg` receives `m`, and a null `beg` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, `off` does not begin at 0 or decreases, a constant is not finite, a variable is not one of the model or appears twice in a function, or a coefficient is not finite, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 functions or more terms than any allocation can hold.
+Adds `n` functions after the last one. Entry `j` of `cst` gives the constant of function `m + j`, where `m` is the number of functions before the call, and `off`, `varidx` and `coef` give the linear terms of the functions in compressed form, `off` holding `n + 1` offsets. A null `cst` gives every new function the constant 0. A null `off` adds functions without terms. `varidx` and `coef` are not read when there are no terms, and may then be null. `*beg` receives `m`, and a null `beg` is skipped. Returns `BIYOS_ERR_BADARG` when `n` is negative, `off` does not begin at 0 or decreases, a constant is not finite, a variable is not one of the model or appears twice in a function, or a coefficient is not finite, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 functions or more terms than any allocation can hold.
 
 ### `BIYOS_getnfuns`
 
@@ -504,7 +504,7 @@ Writes the constants of the `n` functions from `beg`, and their linear terms in 
 - `*nnz` receives the number of terms of the functions, whether they fit or not. They fit when `*nnz` is at most `size`, and function `beg + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `size`.
 - A null `cst`, `off`, `varidx` or `coef` is skipped, so a `size` of 0 with null arrays learns `*nnz` alone.
 
-Returns `BIYOS_ERR_INVALIDARG` when `beg`, `n` or `size` is negative, `beg + n` exceeds the number of functions, or `nnz` is null.
+Returns `BIYOS_ERR_BADARG` when `beg`, `n` or `size` is negative, `beg + n` exceeds the number of functions, or `nnz` is null.
 
 ### `BIYOS_addquadterms`
 
@@ -514,7 +514,7 @@ BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl, BIYOS_index n, const BIYOS_ind
                                 const BIYOS_index *varidx2, const BIYOS_real *coef);
 ```
 
-Adds quadratic terms to `n` functions of the model. Function `funidx[j]` gains the terms from `off[j]` to `off[j + 1] - 1` of `varidx1`, `varidx2` and `coef`, `off` holding `n + 1` offsets: term `k` adds `coef[k]` times the product of variables `varidx1[k]` and `varidx2[k]`. A function appears at most once in `funidx`, which has no default and may be null only when `n` is 0. A null `off` adds no terms. `varidx1`, `varidx2` and `coef` are not read when there are no terms, and may then be null. A call that adds new pairs moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call, or those of a function right after it is added. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, a function is not one of the model or is listed twice, `off` does not begin at 0 or decreases, a variable is not one of the model, a pair appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite, and `BIYOS_ERR_NOMEMORY` when the model would hold more quadratic terms than any allocation can hold.
+Adds quadratic terms to `n` functions of the model. Function `funidx[j]` gains the terms from `off[j]` to `off[j + 1] - 1` of `varidx1`, `varidx2` and `coef`, `off` holding `n + 1` offsets: term `k` adds `coef[k]` times the product of variables `varidx1[k]` and `varidx2[k]`. A function appears at most once in `funidx`, which has no default and may be null only when `n` is 0. A null `off` adds no terms. `varidx1`, `varidx2` and `coef` are not read when there are no terms, and may then be null. A call that adds new pairs moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call, or those of a function right after it is added. Returns `BIYOS_ERR_BADARG` when `n` is negative, a function is not one of the model or is listed twice, `off` does not begin at 0 or decreases, a variable is not one of the model, a pair appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite, and `BIYOS_ERR_NOMEMORY` when the model would hold more quadratic terms than any allocation can hold.
 
 ### `BIYOS_getquadterms`
 
@@ -524,7 +524,7 @@ BIYOS_status BIYOS_getquadterms(const BIYOS_model *mdl, BIYOS_index beg, BIYOS_i
                                 BIYOS_index *varidx1, BIYOS_index *varidx2, BIYOS_real *coef);
 ```
 
-Writes the quadratic terms of the `n` functions from `beg` in compressed form, each function's sorted by pair with `varidx1[k] <= varidx2[k]`, as `BIYOS_getfuns` writes linear terms. `off` receives `n + 1` offsets from 0, whatever `size` is. `size` is the number of terms `varidx1`, `varidx2` and `coef` hold, and the call writes at most `size` terms to each. `*nnz` receives the number of quadratic terms of the functions, whether they fit or not. A null `off`, `varidx1`, `varidx2` or `coef` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `beg`, `n` or `size` is negative, `beg + n` exceeds the number of functions, or `nnz` is null.
+Writes the quadratic terms of the `n` functions from `beg` in compressed form, each function's sorted by pair with `varidx1[k] <= varidx2[k]`, as `BIYOS_getfuns` writes linear terms. `off` receives `n + 1` offsets from 0, whatever `size` is. `size` is the number of terms `varidx1`, `varidx2` and `coef` hold, and the call writes at most `size` terms to each. `*nnz` receives the number of quadratic terms of the functions, whether they fit or not. A null `off`, `varidx1`, `varidx2` or `coef` is skipped. Returns `BIYOS_ERR_BADARG` when `beg`, `n` or `size` is negative, `beg + n` exceeds the number of functions, or `nnz` is null.
 
 ### Constraints
 
@@ -537,7 +537,7 @@ BIYOS_status BIYOS_addcons(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *f
                            const BIYOS_real *lb, const BIYOS_real *ub, BIYOS_index *beg);
 ```
 
-Adds `n` constraints after the last one. Entry `j` of each array gives constraint `m + j`, where `m` is the number of constraints before the call: the index of its function and its lower and upper bounds. `funidx` has no default, and may be null only when `n` is 0. A null `lb` or `ub` leaves that side of every new constraint unbounded, so with both null the constraints are free. `*beg` receives `m`, and a null `beg` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, a function is not one of the model or a bound is refused, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 constraints.
+Adds `n` constraints after the last one. Entry `j` of each array gives constraint `m + j`, where `m` is the number of constraints before the call: the index of its function and its lower and upper bounds. `funidx` has no default, and may be null only when `n` is 0. A null `lb` or `ub` leaves that side of every new constraint unbounded, so with both null the constraints are free. `*beg` receives `m`, and a null `beg` is skipped. Returns `BIYOS_ERR_BADARG` when `n` is negative, a function is not one of the model or a bound is refused, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 constraints.
 
 ### `BIYOS_setconbnd`
 
@@ -546,7 +546,7 @@ BIYOS_status BIYOS_setconbnd(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index 
                              const BIYOS_real *lb, const BIYOS_real *ub);
 ```
 
-Sets the bounds of constraint `idx[j]` to `lb[j]` and `ub[j]`, for each `j` below `n`, and keeps its function. A null `lb` or `ub` leaves those bounds as they are, and `idx` may be null when `n` is 0. A constraint may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of a constraint or a bound is refused.
+Sets the bounds of constraint `idx[j]` to `lb[j]` and `ub[j]`, for each `j` below `n`, and keeps its function. A null `lb` or `ub` leaves those bounds as they are, and `idx` may be null when `n` is 0. A constraint may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_BADARG` when `n` is negative, an index is not that of a constraint or a bound is refused.
 
 ### `BIYOS_getncons`
 
@@ -563,7 +563,7 @@ BIYOS_status BIYOS_getcons(const BIYOS_model *mdl, BIYOS_index beg, BIYOS_index 
                            BIYOS_index *funidx, BIYOS_real *lb, BIYOS_real *ub);
 ```
 
-Writes to entry `j` of each array, for each `j` below `n`, the function and the lower and upper bounds of constraint `beg + j`. A null array is skipped. Returns `BIYOS_ERR_INVALIDARG` when `beg` or `n` is negative or `beg + n` exceeds the number of constraints.
+Writes to entry `j` of each array, for each `j` below `n`, the function and the lower and upper bounds of constraint `beg + j`. A null array is skipped. Returns `BIYOS_ERR_BADARG` when `beg` or `n` is negative or `beg + n` exceeds the number of constraints.
 
 ### Objectives
 
@@ -585,7 +585,7 @@ BIYOS_status BIYOS_addobjs(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *f
                            const BIYOS_real *rtol, BIYOS_index *beg);
 ```
 
-Adds `n` objectives after the last one. Entry `j` of each array gives objective `p + j`, where `p` is the number of objectives before the call: the index of its function, its sense, a `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE` value, its priority, its weight and its absolute and relative tolerances. `funidx` has no default, and may be null only when `n` is 0. A null `sense` makes every new objective minimize, a null `prio` gives objective `p + j` the priority `p + j`, a null `coef` gives each the weight 1, and a null `atol` or `rtol` gives each that tolerance 0. So by default the objectives are optimized one after another in the order they are added, and objectives given one priority are blended. `*beg` receives `p`, and a null `beg` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, a function is not one of the model, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 objectives.
+Adds `n` objectives after the last one. Entry `j` of each array gives objective `p + j`, where `p` is the number of objectives before the call: the index of its function, its sense, a `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE` value, its priority, its weight and its absolute and relative tolerances. `funidx` has no default, and may be null only when `n` is 0. A null `sense` makes every new objective minimize, a null `prio` gives objective `p + j` the priority `p + j`, a null `coef` gives each the weight 1, and a null `atol` or `rtol` gives each that tolerance 0. So by default the objectives are optimized one after another in the order they are added, and objectives given one priority are blended. `*beg` receives `p`, and a null `beg` is skipped. Returns `BIYOS_ERR_BADARG` when `n` is negative, a function is not one of the model, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 objectives.
 
 ### `BIYOS_setobjs`
 
@@ -596,7 +596,7 @@ BIYOS_status BIYOS_setobjs(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *i
                            const BIYOS_real *rtol);
 ```
 
-Sets the sense, the priority, the weight and the absolute and relative tolerances of objective `idx[j]` to `sense[j]`, `prio[j]`, `coef[j]`, `atol[j]` and `rtol[j]`, for each `j` below `n`, and keeps its function. A null `sense`, `prio`, `coef`, `atol` or `rtol` leaves those values as they are, and `idx` may be null when `n` is 0. An objective may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of an objective, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative.
+Sets the sense, the priority, the weight and the absolute and relative tolerances of objective `idx[j]` to `sense[j]`, `prio[j]`, `coef[j]`, `atol[j]` and `rtol[j]`, for each `j` below `n`, and keeps its function. A null `sense`, `prio`, `coef`, `atol` or `rtol` leaves those values as they are, and `idx` may be null when `n` is 0. An objective may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_BADARG` when `n` is negative, an index is not that of an objective, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative.
 
 ### `BIYOS_getnobjs`
 
@@ -614,7 +614,7 @@ BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl, BIYOS_index beg, BIYOS_index 
                            BIYOS_real *coef, BIYOS_real *atol, BIYOS_real *rtol);
 ```
 
-Writes to entry `j` of each array, for each `j` below `n`, the function, the sense, the priority, the weight and the absolute and relative tolerances of objective `beg + j`. A null array is skipped. Returns `BIYOS_ERR_INVALIDARG` when `beg` or `n` is negative or `beg + n` exceeds the number of objectives.
+Writes to entry `j` of each array, for each `j` below `n`, the function, the sense, the priority, the weight and the absolute and relative tolerances of objective `beg + j`. A null array is skipped. Returns `BIYOS_ERR_BADARG` when `beg` or `n` is negative or `beg + n` exceeds the number of objectives.
 
 ## Expressions
 
@@ -660,20 +660,20 @@ Every constant, coefficient and exponent of an expression is finite.
 
 | Macro | Value | Meaning |
 | --- | --- | --- |
-| `BIYOS_TERM_NOTSOLVED` | 0 | no solve has ended |
-| `BIYOS_TERM_OPTIMAL` | 101 | a global optimum was found and proved. It comes only with the claim `BIYOS_CLAIM_GLOBAL` |
-| `BIYOS_TERM_LOCALLYSOLVED` | 102 | a local solution: every convergence test held at its tolerance |
-| `BIYOS_TERM_ALMOSTLOCALLYSOLVED` | 103 | every convergence test held at its relaxed tolerance, after the strict tolerances were not all met |
-| `BIYOS_TERM_ITERLIMIT` | 201 | the iteration limit was reached |
-| `BIYOS_TERM_TIMELIMIT` | 202 | the wall time limit was reached |
-| `BIYOS_TERM_CPUTIMELIMIT` | 203 | the CPU time limit was reached |
-| `BIYOS_TERM_EVALLIMIT` | 204 | the limit on function evaluations was reached |
-| `BIYOS_TERM_USERSTOP` | 205 | the user asked the solve to stop |
-| `BIYOS_TERM_INFEASIBLE` | 301 | the model was proved infeasible. The dual result status says whether a certificate comes with it: `BIYOS_RES_CERTIFICATE` when one does |
-| `BIYOS_TERM_LOCALLYINFEASIBLE` | 302 | the solve reached a local minimum of the infeasibility that is not zero. Nothing proves the model infeasible |
-| `BIYOS_TERM_UNBOUNDED` | 303 | the objective is unbounded below on the feasible set |
-| `BIYOS_TERM_SLOWPROGRESS` | 401 | progress stalled before the convergence tests held |
-| `BIYOS_TERM_NUMERICALTROUBLE` | 402 | numerical difficulties kept the solve from going on |
+| `BIYOS_TRM_NONE` | 0 | no solve has ended |
+| `BIYOS_TRM_OPTIMAL` | 101 | a global optimum was found and proved. It comes only with the claim `BIYOS_CLM_GLOBAL` |
+| `BIYOS_TRM_LOCAL` | 102 | a local solution: every convergence test held at its tolerance |
+| `BIYOS_TRM_NEARLOCAL` | 103 | every convergence test held at its relaxed tolerance, after the strict tolerances were not all met |
+| `BIYOS_TRM_ITERLIM` | 201 | the iteration limit was reached |
+| `BIYOS_TRM_TIMELIM` | 202 | the wall time limit was reached |
+| `BIYOS_TRM_CPULIM` | 203 | the CPU time limit was reached |
+| `BIYOS_TRM_EVALLIM` | 204 | the limit on function evaluations was reached |
+| `BIYOS_TRM_STOP` | 205 | the user asked the solve to stop |
+| `BIYOS_TRM_INFEAS` | 301 | the model was proved infeasible. The dual result status says whether a certificate comes with it: `BIYOS_RES_CER` when one does |
+| `BIYOS_TRM_LOCINFEAS` | 302 | the solve reached a local minimum of the infeasibility that is not zero. Nothing proves the model infeasible |
+| `BIYOS_TRM_UNBND` | 303 | the objective is unbounded below on the feasible set |
+| `BIYOS_TRM_SLOW` | 401 | progress stalled before the convergence tests held |
+| `BIYOS_TRM_NUMERIC` | 402 | numerical difficulties kept the solve from going on |
 
 Terminations are grouped by hundreds, like the error codes. A new one joins its group, so test a group by range rather than by value.
 
@@ -689,17 +689,17 @@ A result status describes the primal point or the dual point. For the dual point
 | Macro | Value | Meaning |
 | --- | --- | --- |
 | `BIYOS_RES_NONE` | 0 | no point is returned |
-| `BIYOS_RES_FEASIBLE` | 1 | the point is feasible |
-| `BIYOS_RES_NEARLYFEASIBLE` | 2 | the point is feasible only at the relaxed tolerance |
-| `BIYOS_RES_INFEASIBLE` | 3 | the point is infeasible |
-| `BIYOS_RES_CERTIFICATE` | 4 | the point is a certificate of infeasibility: a primal one proves the dual problem infeasible, a dual one the primal problem |
-| `BIYOS_RES_NEARLYCERTIFICATE` | 5 | the point is a certificate only at the relaxed tolerance |
+| `BIYOS_RES_FEAS` | 1 | the point is feasible |
+| `BIYOS_RES_NEARFEAS` | 2 | the point is feasible only at the relaxed tolerance |
+| `BIYOS_RES_INFEAS` | 3 | the point is infeasible |
+| `BIYOS_RES_CER` | 4 | the point is a certificate of infeasibility: a primal one proves the dual problem infeasible, a dual one the primal problem |
+| `BIYOS_RES_NEARCER` | 5 | the point is a certificate only at the relaxed tolerance |
 | `BIYOS_RES_UNKNOWN` | 6 | a point is returned, and nothing is known of it |
 
 The claim says how far the termination was proved to hold.
 
 | Macro | Value | Meaning |
 | --- | --- | --- |
-| `BIYOS_CLAIM_NONE` | 0 | nothing is proved |
-| `BIYOS_CLAIM_LOCAL` | 1 | what the termination says holds near the returned point |
-| `BIYOS_CLAIM_GLOBAL` | 2 | what the termination says holds for the whole model |
+| `BIYOS_CLM_NONE` | 0 | nothing is proved |
+| `BIYOS_CLM_LOCAL` | 1 | what the termination says holds near the returned point |
+| `BIYOS_CLM_GLOBAL` | 2 | what the termination says holds for the whole model |

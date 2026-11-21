@@ -256,7 +256,7 @@ TEST(CApiTest, FirstObjective)
     EXPECT_EQ(first, 5);
     ASSERT_EQ(add_records(model, defaults({0}), &first), BIYOS_OK);
     EXPECT_EQ(first, 5);
-    EXPECT_EQ(add_records(model, defaults({1}), &first), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(add_records(model, defaults({1}), &first), BIYOS_ERR_BADARG);
     EXPECT_EQ(first, 5);
     EXPECT_EQ(objective_count(model), 6);
 }
@@ -304,7 +304,7 @@ TEST(CApiTest, NullObjectives)
     wanted.relative[8] = 0.5;
     wanted.relative[9] = 2.0;
     expect_records(read_all(model), wanted);
-    EXPECT_EQ(add_with(held, 1, nullptr, {.senses = senses}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(add_with(held, 1, nullptr, {.senses = senses}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
     EXPECT_EQ(objective_count(model), 10);
 }
@@ -336,7 +336,7 @@ TEST(CApiTest, NullSetters)
         .relative = {0.25, 0.0, 1.0},
     };
     expect_records(read_all(model), wanted);
-    EXPECT_EQ(set_with(held, 2, nullptr, {.senses = senses}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(set_with(held, 2, nullptr, {.senses = senses}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
     EXPECT_EQ(set_with(held, 0, nullptr, {}), BIYOS_OK);
     expect_records(read_all(model), wanted);
@@ -386,7 +386,7 @@ TEST(CApiTest, NullOutputs)
     EXPECT_EQ(get_with(held, 1, 2, {.senses = senses, .absolute = absolute}), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({senses[0], senses[1]}), std::vector<int>(2, BIYOS_MINIMIZE));
     EXPECT_EQ(bits_of({absolute[0], absolute[1]}), bits_of({1.5, kInfinity}));
-    EXPECT_EQ(BIYOS_getnobjs(held, nullptr), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_getnobjs(held, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
 
@@ -397,31 +397,31 @@ TEST(CApiTest, RefusedObjectives)
     add_sample(model);
     BIYOS_model *held = model.get();
     const int functions[] = {0, 2};
-    EXPECT_EQ(add_with(held, 2, functions, {}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(add_with(held, 2, functions, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 4: function 2 is unknown");
     const int sense = 3;
-    EXPECT_EQ(add_with(held, 1, functions, {.senses = &sense}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(add_with(held, 1, functions, {.senses = &sense}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: sense 3 is unknown");
     const double negative = -1.0;
-    EXPECT_EQ(add_with(held, 1, functions, {.weights = &negative}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(add_with(held, 1, functions, {.weights = &negative}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: weight -1 is not positive");
-    EXPECT_EQ(add_with(held, 1, functions, {.absolute = &kNan}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(add_with(held, 1, functions, {.absolute = &kNan}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: absolute tolerance is NaN");
-    EXPECT_EQ(add_with(held, -1, nullptr, {}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(add_with(held, -1, nullptr, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     const BIYOS_index unknown = 3;
-    EXPECT_EQ(set_with(held, 1, &unknown, {}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(set_with(held, 1, &unknown, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
     const BIYOS_index zero = 0;
-    EXPECT_EQ(set_with(held, 1, &zero, {.senses = &zero}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(set_with(held, 1, &zero, {.senses = &zero}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: sense 0 is unknown");
-    EXPECT_EQ(set_with(held, 1, &zero, {.relative = &negative}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(set_with(held, 1, &zero, {.relative = &negative}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: relative tolerance -1 is negative");
-    EXPECT_EQ(set_with(held, 1, &zero, {.weights = &kInfinity}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(set_with(held, 1, &zero, {.weights = &kInfinity}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: weight is infinity");
-    EXPECT_EQ(get_with(held, 2, 2, {}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(get_with(held, 2, 2, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
-    EXPECT_EQ(get_with(held, -1, 1, {}), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(get_with(held, -1, 1, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective -1: unknown");
     expect_records(read_all(model), kSample);
 }
@@ -439,8 +439,8 @@ TEST(CApiTest, LockedObjectives)
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
-    const BIYOS_status refused = BIYOS_ERR_INVALIDARG;
+    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    const BIYOS_status refused = BIYOS_ERR_BADARG;
     const std::vector<BIYOS_status> statuses{refused, refused, BIYOS_OK, BIYOS_OK};
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
     EXPECT_EQ(attempt.statuses, statuses);

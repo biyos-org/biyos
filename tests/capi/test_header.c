@@ -16,8 +16,8 @@ extern char real_size[sizeof(BIYOS_real) == 8 ? 1 : -1];
 #if !defined(BIYOS_OK) || BIYOS_OK != 0
 #error "BIYOS_OK must be zero"
 #endif
-#if BIYOS_ERR_INVALIDARG > -100 || BIYOS_ERR_INVALIDARG < -199
-#error "BIYOS_ERR_INVALIDARG must be a caller error"
+#if BIYOS_ERR_BADARG > -100 || BIYOS_ERR_BADARG < -199
+#error "BIYOS_ERR_BADARG must be a caller error"
 #endif
 #if BIYOS_ERR_NOMEMORY > -400 || BIYOS_ERR_NOMEMORY < -499
 #error "BIYOS_ERR_NOMEMORY must be a resource error"
@@ -42,22 +42,19 @@ extern char real_size[sizeof(BIYOS_real) == 8 ? 1 : -1];
 #error "a public level changed"
 #endif
 
-#if !defined(BIYOS_TERM_NOTSOLVED) || BIYOS_TERM_NOTSOLVED != 0 || BIYOS_TERM_OPTIMAL != 101 ||    \
-    BIYOS_TERM_LOCALLYSOLVED != 102 || BIYOS_TERM_ALMOSTLOCALLYSOLVED != 103 ||                    \
-    BIYOS_TERM_ITERLIMIT != 201 || BIYOS_TERM_TIMELIMIT != 202 ||                                  \
-    BIYOS_TERM_CPUTIMELIMIT != 203 || BIYOS_TERM_EVALLIMIT != 204 || BIYOS_TERM_USERSTOP != 205 || \
-    BIYOS_TERM_INFEASIBLE != 301 || BIYOS_TERM_LOCALLYINFEASIBLE != 302 ||                         \
-    BIYOS_TERM_UNBOUNDED != 303 || BIYOS_TERM_SLOWPROGRESS != 401 ||                               \
-    BIYOS_TERM_NUMERICALTROUBLE != 402
+#if !defined(BIYOS_TRM_NONE) || BIYOS_TRM_NONE != 0 || BIYOS_TRM_OPTIMAL != 101 ||                 \
+    BIYOS_TRM_LOCAL != 102 || BIYOS_TRM_NEARLOCAL != 103 || BIYOS_TRM_ITERLIM != 201 ||            \
+    BIYOS_TRM_TIMELIM != 202 || BIYOS_TRM_CPULIM != 203 || BIYOS_TRM_EVALLIM != 204 ||             \
+    BIYOS_TRM_STOP != 205 || BIYOS_TRM_INFEAS != 301 || BIYOS_TRM_LOCINFEAS != 302 ||              \
+    BIYOS_TRM_UNBND != 303 || BIYOS_TRM_SLOW != 401 || BIYOS_TRM_NUMERIC != 402
 #error "a public termination changed"
 #endif
-#if !defined(BIYOS_RES_NONE) || BIYOS_RES_NONE != 0 || BIYOS_RES_FEASIBLE != 1 ||                  \
-    BIYOS_RES_NEARLYFEASIBLE != 2 || BIYOS_RES_INFEASIBLE != 3 || BIYOS_RES_CERTIFICATE != 4 ||    \
-    BIYOS_RES_NEARLYCERTIFICATE != 5 || BIYOS_RES_UNKNOWN != 6
+#if !defined(BIYOS_RES_NONE) || BIYOS_RES_NONE != 0 || BIYOS_RES_FEAS != 1 ||                      \
+    BIYOS_RES_NEARFEAS != 2 || BIYOS_RES_INFEAS != 3 || BIYOS_RES_CER != 4 ||                      \
+    BIYOS_RES_NEARCER != 5 || BIYOS_RES_UNKNOWN != 6
 #error "a public result status changed"
 #endif
-#if !defined(BIYOS_CLAIM_NONE) || BIYOS_CLAIM_NONE != 0 || BIYOS_CLAIM_LOCAL != 1 ||               \
-    BIYOS_CLAIM_GLOBAL != 2
+#if !defined(BIYOS_CLM_NONE) || BIYOS_CLM_NONE != 0 || BIYOS_CLM_LOCAL != 1 || BIYOS_CLM_GLOBAL != 2
 #error "a public claim changed"
 #endif
 #if !defined(BIYOS_VAR_CONT) || BIYOS_VAR_CONT != 1 || BIYOS_VAR_BIN != 2 || BIYOS_VAR_INT != 3 || \
@@ -267,7 +264,7 @@ int main(void)
         status = BIYOS_ERR_INTERNAL;
     }
     if (BIYOS_addhook(env, count, &errors, BIYOS_EVT_MESSAGE, lowest, &id) != BIYOS_OK ||
-        BIYOS_setintopt(env, BIYOS_OPT_SEED, -1) != BIYOS_ERR_INVALIDARG ||
+        BIYOS_setintopt(env, BIYOS_OPT_SEED, -1) != BIYOS_ERR_BADARG ||
         BIYOS_delhook(env, id) != BIYOS_OK || errors != 1)
     {
         status = BIYOS_ERR_INTERNAL;

@@ -69,7 +69,7 @@ template <auto Body, typename... Args> BIYOS_status guarded(BIYOS_env *env, Args
 {
     if (env == nullptr)
     {
-        return BIYOS_ERR_INVALIDARG;
+        return BIYOS_ERR_BADARG;
     }
     return biyos::capi::guard(&env->core, [&] { Body(env->core, args...); });
 }
@@ -80,7 +80,7 @@ BIYOS_status guarded(Model *model, Args... args) noexcept
 {
     if (model == nullptr)
     {
-        return BIYOS_ERR_INVALIDARG;
+        return BIYOS_ERR_BADARG;
     }
     return biyos::capi::guard(&model->handle.env(), [&] { Body(*model, args...); });
 }

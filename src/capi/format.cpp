@@ -28,7 +28,7 @@ BIYOS_status formatted(const BIYOS_event *event,
 {
     if (event == nullptr || needed == nullptr || (buffer == nullptr && size > 0))
     {
-        return BIYOS_ERR_INVALIDARG;
+        return BIYOS_ERR_BADARG;
     }
     return biyos::capi::guard([&] { copy_line(Formatter(*event->core), buffer, size, needed); });
 }

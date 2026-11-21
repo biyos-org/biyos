@@ -169,7 +169,7 @@ TEST(CApiTest, FirstFunction)
     EXPECT_EQ(first, 5);
     const BIYOS_real infinite = kInfinity;
     EXPECT_EQ(BIYOS_addfuns(model.get(), 1, &infinite, nullptr, nullptr, nullptr, &first),
-              BIYOS_ERR_INVALIDARG);
+              BIYOS_ERR_BADARG);
     EXPECT_EQ(first, 5);
     EXPECT_EQ(function_count(model), 6);
 }
@@ -263,10 +263,9 @@ TEST(CApiTest, NullFunctions)
     const std::int64_t one[] = {0, 1};
     const BIYOS_index variable = 0;
     const BIYOS_real value = 1.0;
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, nullptr, &value, nullptr), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, nullptr, &value, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'varidx': is null");
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, &variable, nullptr, nullptr),
-              BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, &variable, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
     EXPECT_EQ(function_count(model), 4);
 }
@@ -290,10 +289,10 @@ TEST(CApiTest, NullTerms)
               BIYOS_OK);
     expect_compressed(read, kSorted);
     Compressed untouched = blank(3, 5);
-    EXPECT_EQ(fill(model, 0, 3, untouched, 5, nullptr), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(fill(model, 0, 3, untouched, 5, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
     expect_compressed(untouched, blank(3, 5));
-    EXPECT_EQ(BIYOS_getnfuns(held, nullptr), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_getnfuns(held, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
 
@@ -309,32 +308,29 @@ TEST(CApiTest, RefusedFunctions)
     const int variables[] = {0, 3};
     const double values[] = {1.0, 2.0};
     const BIYOS_real nan = std::numeric_limits<double>::quiet_NaN();
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, late, variables, values, nullptr),
-              BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, late, variables, values, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'off': begins at 1, not 0");
     EXPECT_EQ(BIYOS_addfuns(held, 2, nullptr, falling, variables, values, nullptr),
-              BIYOS_ERR_INVALIDARG);
+              BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 1 to 0 at entry 2");
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, negative, variables, values, nullptr),
-              BIYOS_ERR_INVALIDARG);
+              BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 0 to -1 at entry 1");
     const std::int64_t both[] = {0, 2};
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, both, variables, values, nullptr),
-              BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, both, variables, values, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: function 3: variable 3 is unknown");
-    EXPECT_EQ(BIYOS_addfuns(held, 1, &nan, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(BIYOS_addfuns(held, 1, &nan, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: function 3: constant is NaN");
     EXPECT_EQ(BIYOS_addfuns(held, -1, nullptr, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_ERR_INVALIDARG);
+              BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     BIYOS_offset needed = -1;
     Compressed untouched = blank(3, 5);
-    EXPECT_EQ(fill(model, 2, 2, untouched, 5, &needed), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(fill(model, 2, 2, untouched, 5, &needed), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: function 3: unknown");
-    EXPECT_EQ(fill(model, -1, 1, untouched, 5, &needed), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(fill(model, -1, 1, untouched, 5, &needed), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: function -1: unknown");
-    EXPECT_EQ(fill(model, 0, 1, untouched, -1, &needed), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(fill(model, 0, 1, untouched, -1, &needed), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'size': -1 is negative");
     EXPECT_EQ(needed, -1);
     expect_compressed(untouched, blank(3, 5));
@@ -354,8 +350,8 @@ TEST(CApiTest, LockedFunctions)
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_INVALIDARG);
-    const std::vector<BIYOS_status> statuses{BIYOS_ERR_INVALIDARG, BIYOS_OK, BIYOS_OK};
+    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    const std::vector<BIYOS_status> statuses{BIYOS_ERR_BADARG, BIYOS_OK, BIYOS_OK};
     EXPECT_EQ(attempt.statuses, statuses);
     EXPECT_EQ(attempt.messages[0],
               "invalid argument: model: is read-only while delivering an event");
