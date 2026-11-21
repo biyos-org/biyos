@@ -17,6 +17,22 @@ from biyos._integers import integer
 
 
 class VariableKind(IntEnum):
+    """The kinds of variables, as ``BIYOS_VAR_`` numbers them.
+
+    Attributes
+    ----------
+    CONTINUOUS
+        Any value between its bounds.
+    BINARY
+        0 or 1, between its bounds.
+    INTEGER
+        Any integer between its bounds.
+    SEMICONTINUOUS
+        0, or any value between its bounds.
+    SEMIINTEGER
+        0, or any integer between its bounds.
+    """
+
     CONTINUOUS = 1
     BINARY = 2
     INTEGER = 3
@@ -25,6 +41,17 @@ class VariableKind(IntEnum):
 
 
 class Sense(IntEnum):
+    """The senses of objectives, as ``BIYOS_MINIMIZE`` and ``BIYOS_MAXIMIZE``
+    number them.
+
+    Attributes
+    ----------
+    MINIMIZE
+        The function is minimized.
+    MAXIMIZE
+        The function is maximized.
+    """
+
     MINIMIZE = 1
     MAXIMIZE = 2
 
@@ -76,6 +103,10 @@ class Model:
     ----------
     env : Env
         The environment the model is made on.
+
+    See Also
+    --------
+    BIYOS_newmdl
     """
 
     def __init__(self, env):
@@ -97,6 +128,21 @@ class Model:
         return self.__copy__()
 
     def close(self):
+        """Free the model.
+
+        Using it afterwards raises ``ValueError``, and closing it again does
+        nothing.
+
+        Raises
+        ------
+        Error
+            While the environment delivers an event, outside the model's own
+            calls.
+
+        See Also
+        --------
+        BIYOS_freemdl
+        """
         with self._env._busy():
             self._close()
 
@@ -142,6 +188,10 @@ class Model:
             While ``env`` delivers an event.
         ValueError
             When the model or ``env`` is closed.
+
+        See Also
+        --------
+        BIYOS_copymdl
         """
         env = self._env if env is None else _environment(env)
         if not self._open():
@@ -169,6 +219,10 @@ class Model:
         -------
         Variables
             The new variables.
+
+        See Also
+        --------
+        BIYOS_addvars
         """
         n = integer("n", n)
         arrays = (
@@ -181,6 +235,21 @@ class Model:
         return Variables(self, first.value, n, self._gen)
 
     def setvarbnd(self, idx, lb=None, ub=None):
+        """Set the bounds of variables.
+
+        A variable may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The variables, as indices, views or blocks.
+        lb, ub
+            The new bounds of each; ``None`` leaves that side as it is.
+
+        See Also
+        --------
+        BIYOS_setvarbnd
+        """
         count = len(idx)
         arrays = (
             indices_of(self, Variables, "idx", idx, count),
@@ -190,6 +259,19 @@ class Model:
         self._call(lib.BIYOS_setvarbnd, count, *arrays)
 
     def setvarknd(self, idx, knd):
+        """Set the kinds of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables, as indices, views or blocks.
+        knd
+            The new kind of each, a ``VariableKind``.
+
+        See Also
+        --------
+        BIYOS_setvarknd
+        """
         count = len(idx)
         arrays = (
             indices_of(self, Variables, "idx", idx, count),
@@ -198,11 +280,45 @@ class Model:
         self._call(lib.BIYOS_setvarknd, count, *arrays)
 
     def getnvars(self):
+        """Return the number of variables.
+
+        Returns
+        -------
+        int
+            The number of variables.
+
+        See Also
+        --------
+        BIYOS_getnvars
+        """
         count = c_int()
         self._call(lib.BIYOS_getnvars, byref(count))
         return count.value
 
     def getvars(self, beg=0, n=None):
+        """Read the kinds and bounds of variables.
+
+        Parameters
+        ----------
+        beg
+            The first variable to read.
+        n
+            The number of variables to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        list of VariableKind
+            The kind of each variable.
+        list of float
+            The lower bound of each.
+        list of float
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getvars
+        """
         beg = index_of(self, Variables, "beg", beg)
         n, inside = _span(beg, n, self.getnvars)
         if not inside:
@@ -244,6 +360,10 @@ class Model:
         -------
         Functions
             The new functions.
+
+        See Also
+        --------
+        BIYOS_addfuns
         """
         n = integer("n", n)
         off = offsets("off", off, n + 1)
@@ -259,11 +379,48 @@ class Model:
         return Functions(self, first.value, n, self._gen)
 
     def getnfuns(self):
+        """Return the number of functions.
+
+        Returns
+        -------
+        int
+            The number of functions.
+
+        See Also
+        --------
+        BIYOS_getnfuns
+        """
         count = c_int()
         self._call(lib.BIYOS_getnfuns, byref(count))
         return count.value
 
     def getfuns(self, beg=0, n=None):
+        """Read the constants and linear terms of functions.
+
+        Parameters
+        ----------
+        beg
+            The first function to read.
+        n
+            The number of functions to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        list of float
+            The constant of each function.
+        list of int
+            The ``n + 1`` offsets of the functions' terms in the two lists
+            after it, from 0.
+        list of int
+            The variable of each term.
+        list of float
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_getfuns
+        """
         beg = index_of(self, Functions, "beg", beg)
         n, inside = _span(beg, n, self.getnfuns)
         needed = c_int64()
@@ -303,6 +460,10 @@ class Model:
             The two variables of each term, ``off[-1]`` of each.
         coef : sequence of float
             The coefficient of each term, ``off[-1]`` of them.
+
+        See Also
+        --------
+        BIYOS_addquadterms
         """
         count = len(funidx)
         off = offsets("off", off, count + 1)
@@ -317,6 +478,32 @@ class Model:
         self._call(lib.BIYOS_addquadterms, count, *arrays)
 
     def getquadterms(self, beg=0, n=None):
+        """Read the quadratic terms of functions.
+
+        Parameters
+        ----------
+        beg
+            The first function to read.
+        n
+            The number of functions to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        list of int
+            The ``n + 1`` offsets of the functions' terms in the three lists
+            after it, from 0.
+        list of int
+            The first variable of each term.
+        list of int
+            The second variable of each term.
+        list of float
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_getquadterms
+        """
         beg = index_of(self, Functions, "beg", beg)
         n, inside = _span(beg, n, self.getnfuns)
         needed = c_int64()
@@ -349,6 +536,10 @@ class Model:
         -------
         Constraints
             The new constraints.
+
+        See Also
+        --------
+        BIYOS_addcons
         """
         count = len(funidx)
         arrays = (
@@ -361,6 +552,19 @@ class Model:
         return Constraints(self, first.value, count, self._gen)
 
     def setconbnd(self, idx, lb=None, ub=None):
+        """Set the bounds of constraints and keep their functions.
+
+        Parameters
+        ----------
+        idx
+            The constraints, as indices, views or blocks.
+        lb, ub
+            The new bounds of each; ``None`` leaves that side as it is.
+
+        See Also
+        --------
+        BIYOS_setconbnd
+        """
         count = len(idx)
         arrays = (
             indices_of(self, Constraints, "idx", idx, count),
@@ -370,11 +574,45 @@ class Model:
         self._call(lib.BIYOS_setconbnd, count, *arrays)
 
     def getncons(self):
+        """Return the number of constraints.
+
+        Returns
+        -------
+        int
+            The number of constraints.
+
+        See Also
+        --------
+        BIYOS_getncons
+        """
         count = c_int()
         self._call(lib.BIYOS_getncons, byref(count))
         return count.value
 
     def getcons(self, beg=0, n=None):
+        """Read the functions and bounds of constraints.
+
+        Parameters
+        ----------
+        beg
+            The first constraint to read.
+        n
+            The number of constraints to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        list of int
+            The function each constraint bounds.
+        list of float
+            The lower bound of each.
+        list of float
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getcons
+        """
         beg = index_of(self, Constraints, "beg", beg)
         n, inside = _span(beg, n, self.getncons)
         if not inside:
@@ -427,6 +665,10 @@ class Model:
         -------
         Objectives
             The new objectives.
+
+        See Also
+        --------
+        BIYOS_addobjs
         """
         count = len(funidx)
         arrays = (
@@ -446,6 +688,27 @@ class Model:
         atol=None,
         rtol=None,
     ):
+        """Set the senses, priorities, weights and tolerances of objectives.
+
+        The functions are kept, and ``None`` leaves a field as it is.
+
+        Parameters
+        ----------
+        idx
+            The objectives, as indices, views or blocks.
+        sense
+            The new sense of each, a ``Sense``.
+        prio
+            The new priority of each.
+        coef
+            The new weight of each, finite and positive.
+        atol, rtol
+            The new absolute and relative tolerance of each.
+
+        See Also
+        --------
+        BIYOS_setobjs
+        """
         count = len(idx)
         arrays = (
             indices_of(self, Objectives, "idx", idx, count),
@@ -454,11 +717,51 @@ class Model:
         self._call(lib.BIYOS_setobjs, count, *arrays)
 
     def getnobjs(self):
+        """Return the number of objectives.
+
+        Returns
+        -------
+        int
+            The number of objectives.
+
+        See Also
+        --------
+        BIYOS_getnobjs
+        """
         count = c_int()
         self._call(lib.BIYOS_getnobjs, byref(count))
         return count.value
 
     def getobjs(self, beg=0, n=None):
+        """Read objectives.
+
+        Parameters
+        ----------
+        beg
+            The first objective to read.
+        n
+            The number of objectives to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        list of int
+            The function each objective optimizes.
+        list of Sense
+            The sense of each.
+        list of int
+            The priority of each.
+        list of float
+            The weight of each.
+        list of float
+            The absolute tolerance of each.
+        list of float
+            The relative tolerance of each.
+
+        See Also
+        --------
+        BIYOS_getobjs
+        """
         beg = index_of(self, Objectives, "beg", beg)
         n, inside = _span(beg, n, self.getnobjs)
         if not inside:

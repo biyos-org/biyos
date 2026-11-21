@@ -142,6 +142,17 @@ lib = _load()
 
 
 def version():
+    """Return the version of the library.
+
+    Returns
+    -------
+    str
+        The version, such as ``"0.1.0"``.
+
+    See Also
+    --------
+    BIYOS_version
+    """
     major = c_int()
     minor = c_int()
     patch = c_int()

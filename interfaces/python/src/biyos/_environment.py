@@ -86,6 +86,21 @@ def _release(models, handle):
 
 
 class Env:
+    """An environment: the options and the hooks every model made on it shares.
+
+    It is closed by ``close``, on leaving a ``with`` block, or when it is
+    collected, and closing it closes the models still open on it.
+
+    Raises
+    ------
+    Error
+        When the environment cannot be created.
+
+    See Also
+    --------
+    BIYOS_newenv, BIYOS_freeenv
+    """
+
     def __init__(self):
         handle = c_void_p()
         status = lib.BIYOS_newenv(byref(handle))
@@ -129,6 +144,10 @@ class Env:
             hook during the refusal is raised instead. The environment
             stays allocated, and only a later ``close`` or its collection
             tries again; the collection cannot raise and fails silently.
+
+        See Also
+        --------
+        BIYOS_freeenv
         """
         self._closing = True
         self._pending = True
@@ -136,11 +155,53 @@ class Env:
             self._run(self._dispose)
 
     def setopt(self, name, val):
+        """Set an option.
+
+        Parameters
+        ----------
+        name
+            The name of the option, such as ``"maxtime"``.
+        val
+            The new value: a bool, an int, a float or a str, as the
+            option's kind takes.
+
+        Raises
+        ------
+        TypeError
+            When ``val`` does not match the option's kind.
+        Error
+            When the name is unknown or the value is refused.
+
+        See Also
+        --------
+        BIYOS_setboolopt, BIYOS_setintopt, BIYOS_setdblopt, BIYOS_setstropt
+        """
         option, kind = self._lookup(name)
         setter, convert = _SETTERS[kind]
         self._call(setter, option, convert(name, val))
 
     def getopt(self, name):
+        """Read an option.
+
+        Parameters
+        ----------
+        name
+            The name of the option.
+
+        Returns
+        -------
+        bool | int | float | str
+            The value, of the type the option's kind gives.
+
+        Raises
+        ------
+        Error
+            When the name is unknown.
+
+        See Also
+        --------
+        BIYOS_getboolopt, BIYOS_getintopt, BIYOS_getdblopt, BIYOS_getstropt
+        """
         option, kind = self._lookup(name)
         getter, slot, convert = _GETTERS[kind]
         value = slot()
@@ -148,6 +209,28 @@ class Env:
         return convert(value.value)
 
     def getoptver(self, name):
+        """Read the versions that added, deprecated and retired an option.
+
+        Parameters
+        ----------
+        name
+            The name of the option.
+
+        Returns
+        -------
+        Versions
+            The three versions, each a string such as ``"0.1.0"``, or
+            ``None`` for never.
+
+        Raises
+        ------
+        Error
+            When the name is unknown.
+
+        See Also
+        --------
+        BIYOS_getoptver
+        """
         option = self._option(name)
         numbers = (c_int(), c_int(), c_int())
         pointers = (byref(number) for number in numbers)
@@ -155,6 +238,34 @@ class Env:
         return Versions(*(version_text(number.value) for number in numbers))
 
     def addhook(self, hk, knd, lvl):
+        """Add a hook on one kind of event at a lowest level.
+
+        Parameters
+        ----------
+        hk
+            A callable that takes one ``Event``. It runs on the thread that
+            sent the event, and the event is valid only during the call.
+        knd
+            The kind of events, an ``EventKind``.
+        lvl
+            The lowest level the hook receives, an ``EventLevel``.
+
+        Returns
+        -------
+        int
+            The id of the hook, for ``delhook``.
+
+        Raises
+        ------
+        TypeError
+            When ``hk`` is not callable.
+        Error
+            When the kind or the level is unknown.
+
+        See Also
+        --------
+        BIYOS_addhook
+        """
         hk = _callable(hk)
         knd = integer("knd", knd)
         lvl = integer("lvl", lvl)
@@ -164,6 +275,22 @@ class Env:
         return subscription.value
 
     def delhook(self, idx):
+        """Remove a hook.
+
+        Parameters
+        ----------
+        idx
+            The id ``addhook`` gave.
+
+        Raises
+        ------
+        Error
+            When the environment has no hook of that id.
+
+        See Also
+        --------
+        BIYOS_delhook
+        """
         idx = integer("idx", idx)
         with self._busy():
             self._delhook(idx)

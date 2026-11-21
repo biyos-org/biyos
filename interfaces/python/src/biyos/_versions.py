@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 Versions = namedtuple("Versions", ["since", "deprecated", "retired"])
+"""The versions that added, deprecated and retired an option."""
 
 
 def version_text(number):

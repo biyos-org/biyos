@@ -50,10 +50,34 @@ class Block:
         self._gen = gen
 
     def __len__(self):
+        """Return the number of items in the block.
+
+        Returns
+        -------
+        int
+            The number of items.
+
+        Raises
+        ------
+        ValueError
+            When the model has had a deletion since the block was made.
+        """
         self._check()
         return self._size
 
     def __iter__(self):
+        """Iterate over the items of the block, each as a view.
+
+        Returns
+        -------
+        iterator of view
+            The views of the items, in order.
+
+        Raises
+        ------
+        ValueError
+            When the model has had a deletion since the block was made.
+        """
         self._check()
         return map(self._view, self._range())
 
