@@ -1,6 +1,5 @@
 #pragma once
 
-#include "biyos/expr.h"
 #include "biyos/options.h"
 #include "biyos/status.h"
 
@@ -201,6 +200,36 @@ BIYOS_API BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
                                      BIYOS_real *coef,
                                      BIYOS_real *atol,
                                      BIYOS_real *rtol);
+
+#define BIYOS_OP_CONST 1
+#define BIYOS_OP_VAR 2
+#define BIYOS_OP_SUM 3
+#define BIYOS_OP_PROD 4
+#define BIYOS_OP_NEG 5
+#define BIYOS_OP_DIV 6
+#define BIYOS_OP_CPOW 7
+#define BIYOS_OP_POW 8
+#define BIYOS_OP_EXP 9
+#define BIYOS_OP_LOG 10
+#define BIYOS_OP_SQRT 11
+#define BIYOS_OP_SIN 12
+#define BIYOS_OP_COS 13
+#define BIYOS_OP_TAN 14
+#define BIYOS_OP_ABS 15
+#define BIYOS_OP_MAX 16
+#define BIYOS_OP_MIN 17
+#define BIYOS_OP_ASIN 18
+#define BIYOS_OP_ACOS 19
+#define BIYOS_OP_ATAN 20
+#define BIYOS_OP_SINH 21
+#define BIYOS_OP_COSH 22
+#define BIYOS_OP_TANH 23
+#define BIYOS_OP_ASINH 24
+#define BIYOS_OP_ACOSH 25
+#define BIYOS_OP_ATANH 26
+#define BIYOS_OP_ENT 27
+#define BIYOS_OP_SPOW 28
+#define BIYOS_OP_ERF 29
 
 #ifdef __cplusplus
 }

@@ -618,7 +618,7 @@ Writes to entry `j` of each array, for each `j` below `n`, the function, the sen
 
 ## Expressions
 
-`biyos/expr.h` numbers the operators of expressions, which form the nonlinear parts of functions. An expression is a node of the model's graph, an operator applied to its children, and a node that several parents share is stored once. No call takes the operators yet.
+The `BIYOS_OP_*` macros number the operators of expressions, which form the nonlinear parts of functions. An expression is a node of the model's graph, an operator applied to its children, and a node that several parents share is stored once. No call takes the operators yet.
 
 | Macro | Value | Node | Children |
 | --- | --- | --- | --- |
