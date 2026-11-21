@@ -19,13 +19,6 @@ namespace biyos
 namespace
 {
 
-template <typename Term> struct Insertion
-{
-    std::size_t function;
-    std::span<const Term> terms;
-    std::size_t added;
-};
-
 std::pair<Index, Index> key_of(const QuadraticTerm &term) noexcept
 {
     return pair_of(term);
@@ -131,17 +124,22 @@ void shift_ends(std::span<Offset> ends, std::size_t from, std::size_t upto, std:
     }
 }
 
-template <typename Term>
-void insert(std::vector<Offset> &ends,
-            std::vector<Term> &terms,
-            std::span<const Insertion<Term>> insertions)
+template <typename Term> std::size_t added_by(std::span<const Insertion<Term>> insertions) noexcept
 {
     std::size_t shift = 0;
     for (const Insertion<Term> &insertion : insertions)
     {
         shift += insertion.added;
     }
-    reserve_more(terms, shift);
+    return shift;
+}
+
+template <typename Term>
+void insert(std::vector<Offset> &ends,
+            std::vector<Term> &terms,
+            std::span<const Insertion<Term>> insertions) noexcept
+{
+    std::size_t shift = added_by(insertions);
     std::size_t tail = terms.size();
     terms.resize(tail + shift);
     std::size_t upto = ends.size();
@@ -164,41 +162,49 @@ template <typename Term> std::size_t function_of(const Insertion<Term> &insertio
     return insertion.function;
 }
 
+}
+
 template <typename Term>
-void merge(std::vector<Offset> &ends,
-           std::vector<Term> &terms,
-           std::span<const Addition<Term>> additions)
+Merge<Term>::Merge(std::vector<Offset> &ends,
+                   std::vector<Term> &terms,
+                   std::span<const Addition<Term>> additions)
+    : ends_(ends), terms_(terms)
 {
-    std::vector<Insertion<Term>> insertions;
-    insertions.reserve(additions.size());
+    insertions_.reserve(additions.size());
     for (const Addition<Term> &addition : additions)
     {
         const auto function = static_cast<std::size_t>(addition.function);
         const std::size_t added = new_terms(addition, held_by<Term>(ends, terms, function));
-        insertions.push_back(Insertion<Term>{
+        insertions_.push_back(Insertion<Term>{
             .function = function,
             .terms = addition.terms,
             .added = added,
         });
     }
-    std::ranges::sort(insertions, {}, function_of<Term>);
-    insert<Term>(ends, terms, insertions);
+    std::ranges::sort(insertions_, {}, function_of<Term>);
+    reserve_more(terms_, added_by<Term>(insertions_));
 }
 
+template <typename Term> void Merge<Term>::apply() noexcept
+{
+    insert<Term>(ends_, terms_, insertions_);
 }
+
+template class Merge<LinearTerm>;
+template class Merge<QuadraticTerm>;
 
 void merge_pairs(std::vector<Offset> &ends,
                  std::vector<QuadraticTerm> &terms,
                  std::span<const AddedPairs> additions)
 {
-    merge(ends, terms, additions);
+    Merge(ends, terms, additions).apply();
 }
 
 void merge_terms(std::vector<Offset> &ends,
                  std::vector<LinearTerm> &terms,
                  std::span<const AddedTerms> additions)
 {
-    merge(ends, terms, additions);
+    Merge(ends, terms, additions).apply();
 }
 
 }

@@ -3,6 +3,7 @@
 #include "core/index.hpp"
 #include "expr/terms.hpp"
 
+#include <cstddef>
 #include <span>
 #include <vector>
 
@@ -14,6 +15,31 @@ template <typename Term> struct Addition
     Index function;
     std::span<const Term> terms;
 };
+
+template <typename Term> struct Insertion
+{
+    std::size_t function;
+    std::span<const Term> terms;
+    std::size_t added;
+};
+
+template <typename Term> class Merge
+{
+  public:
+    Merge(std::vector<Offset> &ends,
+          std::vector<Term> &terms,
+          std::span<const Addition<Term>> additions);
+
+    void apply() noexcept;
+
+  private:
+    std::vector<Offset> &ends_;
+    std::vector<Term> &terms_;
+    std::vector<Insertion<Term>> insertions_;
+};
+
+extern template class Merge<LinearTerm>;
+extern template class Merge<QuadraticTerm>;
 
 using AddedPairs = Addition<QuadraticTerm>;
 using AddedTerms = Addition<LinearTerm>;
