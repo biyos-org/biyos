@@ -5,15 +5,14 @@ cones: core linalg
 model: core expr
 io: core expr model
 presolve: core linalg model
-lp: core linalg
-conic: core linalg cones
-nlp: core linalg cones
+simplex: core linalg
+ipm: core linalg cones
 relax: core model expr cones
-propagate: core model expr relax lp conic
+propagate: core model expr relax simplex ipm
 tree: core
 branch: core tree model relax
 cuts: core linalg model relax
-heur: core model relax lp conic nlp
+heur: core model relax simplex ipm
 callback: core tree
-solver: core linalg expr cones model io presolve lp conic nlp relax propagate tree branch cuts heur callback
+solver: core linalg expr cones model io presolve simplex ipm relax propagate tree branch cuts heur callback
 capi: core model io solver

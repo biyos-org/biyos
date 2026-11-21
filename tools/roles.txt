@@ -1,0 +1,17 @@
+core/stopping: core
+linalg/factor: linalg core
+linalg/order: linalg core
+linalg/scale: linalg core
+presolve/reduce: presolve core linalg model
+simplex/pricing: simplex core linalg
+simplex/ratio: simplex core linalg
+simplex/basis: simplex core linalg
+ipm/embed: ipm core linalg cones
+ipm/kkt: ipm core linalg cones
+ipm/correct: ipm core linalg cones
+ipm/hessian: ipm core linalg cones
+ipm/barrier: ipm core linalg cones
+ipm/step: ipm core linalg cones
+ipm/globalize: ipm core linalg cones
+ipm/restore: ipm core linalg cones
+ipm/start: ipm core linalg cones

@@ -25,7 +25,7 @@ class LayerTest(unittest.TestCase):
         path.write_text(text)
 
     def problems(self):
-        return check(self.root / "src", self.layers)
+        return check(self.root / "src", self.layers, {})
 
     def test_allowed(self):
         self.source("tree/node.hpp", '#include "core/error.hpp"\n')
@@ -34,6 +34,13 @@ class LayerTest(unittest.TestCase):
 
     def test_forbidden(self):
         self.source("core/error.cpp", '#include "tree/node.hpp"\n')
+        self.assertEqual(
+            self.problems(), ["src/core/error.cpp:1: core may not use tree"]
+        )
+
+    def test_relative(self):
+        self.source("tree/node.hpp", "")
+        self.source("core/error.cpp", '#include "../tree/node.hpp"\n')
         self.assertEqual(
             self.problems(), ["src/core/error.cpp:1: core may not use tree"]
         )
