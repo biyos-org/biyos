@@ -140,7 +140,7 @@ void note(Attempt &attempt, BIYOS_status status)
     attempt.messages.emplace_back(BIYOS_lasterror(attempt.env));
 }
 
-void change(const BIYOS_evt *, void *data)
+void change(const BIYOS_event *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;

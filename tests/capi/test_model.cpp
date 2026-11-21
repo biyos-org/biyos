@@ -66,7 +66,7 @@ void note(Attempt &attempt, BIYOS_status status)
     attempt.messages.emplace_back(BIYOS_lasterror(attempt.env));
 }
 
-void change(const BIYOS_evt *, void *data)
+void change(const BIYOS_event *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
@@ -83,7 +83,7 @@ void change(const BIYOS_evt *, void *data)
     note(attempt, BIYOS_getvars(model, 0, 1, nullptr, nullptr, nullptr));
 }
 
-void keep(const BIYOS_evt *event, void *data)
+void keep(const BIYOS_event *event, void *data)
 {
     static_cast<std::vector<std::string> *>(data)->emplace_back(BIYOS_getevttext(event));
 }

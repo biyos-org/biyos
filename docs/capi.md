@@ -27,9 +27,9 @@ Every number the headers define, such as an option id, an option kind or an erro
 | `BIYOS_offset` | an `int64_t`, an offset into or a number of terms |
 | `BIYOS_real` | a `double`, a value |
 | `BIYOS_env` | an opaque environment, holding the options, the subscriptions and the last error message |
-| `BIYOS_evt` | an opaque event, read with `BIYOS_getnevtfields` and the `BIYOS_getevt*` calls, and formatted with `BIYOS_fmttext` and `BIYOS_fmtjson` while a subscriber runs |
+| `BIYOS_event` | an opaque event, read with `BIYOS_getnevtfields` and the `BIYOS_getevt*` calls, and formatted with `BIYOS_fmttext` and `BIYOS_fmtjson` while a subscriber runs |
 | `BIYOS_model` | an opaque model, made on an environment and holding the variables, functions, constraints and objectives of a problem |
-| `BIYOS_hook` | `void (*)(const BIYOS_evt *evt, void *data)`, a function called with each event a subscription receives |
+| `BIYOS_hook` | `void (*)(const BIYOS_event *evt, void *data)`, a function called with each event a subscription receives |
 
 ## Linking
 
@@ -282,7 +282,7 @@ These calls read the event a subscriber is given. They cannot fail. A null `evt`
 ### `BIYOS_getevtkind`
 
 ```c
-BIYOS_int BIYOS_getevtkind(const BIYOS_evt *evt);
+BIYOS_int BIYOS_getevtkind(const BIYOS_event *evt);
 ```
 
 Returns the kind of the event, a `BIYOS_EVT_*` value.
@@ -290,7 +290,7 @@ Returns the kind of the event, a `BIYOS_EVT_*` value.
 ### `BIYOS_getevtlvl`
 
 ```c
-BIYOS_int BIYOS_getevtlvl(const BIYOS_evt *evt);
+BIYOS_int BIYOS_getevtlvl(const BIYOS_event *evt);
 ```
 
 Returns the level of the event, a `BIYOS_LVL_*` value.
@@ -298,7 +298,7 @@ Returns the level of the event, a `BIYOS_LVL_*` value.
 ### `BIYOS_getevtmodule`
 
 ```c
-const char *BIYOS_getevtmodule(const BIYOS_evt *evt);
+const char *BIYOS_getevtmodule(const BIYOS_event *evt);
 ```
 
 Returns the name of the module that sent the event, such as `capi`.
@@ -306,7 +306,7 @@ Returns the name of the module that sent the event, such as `capi`.
 ### `BIYOS_getevttext`
 
 ```c
-const char *BIYOS_getevttext(const BIYOS_evt *evt);
+const char *BIYOS_getevttext(const BIYOS_event *evt);
 ```
 
 Returns the text of the event.
@@ -314,7 +314,7 @@ Returns the text of the event.
 ### `BIYOS_getnevtfields`
 
 ```c
-BIYOS_index BIYOS_getnevtfields(const BIYOS_evt *evt);
+BIYOS_index BIYOS_getnevtfields(const BIYOS_event *evt);
 ```
 
 Returns the number of fields of the event. Fields are numbered from 0.
@@ -322,7 +322,7 @@ Returns the number of fields of the event. Fields are numbered from 0.
 ### `BIYOS_getevtfieldname`
 
 ```c
-const char *BIYOS_getevtfieldname(const BIYOS_evt *evt, BIYOS_index field);
+const char *BIYOS_getevtfieldname(const BIYOS_event *evt, BIYOS_index field);
 ```
 
 Returns the name of field number `field`.
@@ -330,7 +330,7 @@ Returns the name of field number `field`.
 ### `BIYOS_getevtfieldvalue`
 
 ```c
-const char *BIYOS_getevtfieldvalue(const BIYOS_evt *evt, BIYOS_index field);
+const char *BIYOS_getevtfieldvalue(const BIYOS_event *evt, BIYOS_index field);
 ```
 
 Returns the value of field number `field`.
@@ -349,7 +349,7 @@ These calls write an event as one line into a buffer the caller gives, in the ma
 ### `BIYOS_fmttext`
 
 ```c
-BIYOS_status BIYOS_fmttext(const BIYOS_evt *evt, char *buf, size_t size,
+BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, char *buf, size_t size,
                            size_t *needed);
 ```
 
@@ -362,7 +362,7 @@ Writes the event for people: its time, a space, the name of its level, a space, 
 ### `BIYOS_fmtjson`
 
 ```c
-BIYOS_status BIYOS_fmtjson(const BIYOS_evt *evt, char *buf, size_t size,
+BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, char *buf, size_t size,
                            size_t *needed);
 ```
 

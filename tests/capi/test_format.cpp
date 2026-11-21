@@ -14,7 +14,7 @@
 namespace
 {
 
-using Format = BIYOS_status (*)(const BIYOS_evt *, char *, size_t, size_t *);
+using Format = BIYOS_status (*)(const BIYOS_event *, char *, size_t, size_t *);
 
 constexpr std::string_view kText = "0.000000 warning presolve: removed rows rows=3";
 constexpr std::string_view kJson =
@@ -34,7 +34,7 @@ biyos::Event removed()
 
 std::string fill(Format format, const biyos::Event &event, std::size_t size, std::size_t &needed)
 {
-    const BIYOS_evt view{&event};
+    const BIYOS_event view{&event};
     std::vector<char> buffer(size, 'x');
     EXPECT_EQ(format(&view, buffer.data(), buffer.size(), &needed), BIYOS_OK);
     EXPECT_EQ(buffer.back(), '\0');
@@ -53,7 +53,7 @@ void expect_resize(Format format, std::string_view line)
     EXPECT_EQ(needed, length);
 }
 
-std::string line_of(Format format, const BIYOS_evt *event)
+std::string line_of(Format format, const BIYOS_event *event)
 {
     std::size_t needed = 0;
     if (format(event, nullptr, 0, &needed) != BIYOS_OK)
@@ -74,7 +74,7 @@ struct Lines
     std::string json;
 };
 
-void keep(const BIYOS_evt *event, void *data)
+void keep(const BIYOS_event *event, void *data)
 {
     Lines *lines = static_cast<Lines *>(data);
     lines->text = line_of(BIYOS_fmttext, event);
@@ -118,7 +118,7 @@ TEST(CApiTest, SplitCharacter)
 TEST(CApiTest, ZeroSize)
 {
     const biyos::Event event = removed();
-    const BIYOS_evt view{&event};
+    const BIYOS_event view{&event};
     std::size_t needed = 0;
     EXPECT_EQ(BIYOS_fmttext(&view, nullptr, 0, &needed), BIYOS_OK);
     EXPECT_EQ(needed, kText.size());
@@ -131,7 +131,7 @@ TEST(CApiTest, ZeroSize)
 TEST(CApiTest, BadFormat)
 {
     const biyos::Event event = removed();
-    const BIYOS_evt view{&event};
+    const BIYOS_event view{&event};
     std::array<char, 4> buffer{'a', 'b', 'c', '\0'};
     std::size_t needed = 7;
     for (const Format format : {BIYOS_fmttext, BIYOS_fmtjson})

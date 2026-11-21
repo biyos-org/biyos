@@ -114,7 +114,7 @@ void attempt(Delivery &delivery, const Held &source, const Held &target)
     EXPECT_EQ(BIYOS_freemodel(copy), BIYOS_OK);
 }
 
-void copy_inside(const BIYOS_evt *, void *data)
+void copy_inside(const BIYOS_event *, void *data)
 {
     Delivery &delivery = *static_cast<Delivery *>(data);
     attempt(delivery, delivery.busy, delivery.busy);
@@ -123,7 +123,7 @@ void copy_inside(const BIYOS_evt *, void *data)
     attempt(delivery, delivery.idle, delivery.idle);
 }
 
-void keep(const BIYOS_evt *event, void *data)
+void keep(const BIYOS_event *event, void *data)
 {
     static_cast<std::vector<std::string> *>(data)->emplace_back(BIYOS_getevttext(event));
 }

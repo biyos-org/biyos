@@ -24,7 +24,7 @@ struct Forwarder
     void operator()(const biyos::Event &event) const
     {
         const biyos::Environment::ErrorScope scope(*env);
-        const BIYOS_evt view{&event};
+        const BIYOS_event view{&event};
         subscriber(&view, data);
     }
 };
@@ -49,7 +49,7 @@ void unsubscribe(biyos::Environment &env, int subscription)
     writable(env).events().unsubscribe(subscription);
 }
 
-const biyos::Field *field_of(const BIYOS_evt *event, int field)
+const biyos::Field *field_of(const BIYOS_event *event, int field)
 {
     if (event == nullptr || field < 0)
     {
@@ -77,38 +77,38 @@ BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index id)
     return guarded<unsubscribe>(env, id);
 }
 
-BIYOS_int BIYOS_getevtkind(const BIYOS_evt *evt)
+BIYOS_int BIYOS_getevtkind(const BIYOS_event *evt)
 {
     return evt == nullptr ? 0 : static_cast<int>(evt->core->kind);
 }
 
-BIYOS_int BIYOS_getevtlvl(const BIYOS_evt *evt)
+BIYOS_int BIYOS_getevtlvl(const BIYOS_event *evt)
 {
     return evt == nullptr ? 0 : static_cast<int>(evt->core->level);
 }
 
-const char *BIYOS_getevtmodule(const BIYOS_evt *evt)
+const char *BIYOS_getevtmodule(const BIYOS_event *evt)
 {
     return evt == nullptr ? "" : evt->core->module.c_str();
 }
 
-const char *BIYOS_getevttext(const BIYOS_evt *evt)
+const char *BIYOS_getevttext(const BIYOS_event *evt)
 {
     return evt == nullptr ? "" : evt->core->text.c_str();
 }
 
-BIYOS_index BIYOS_getnevtfields(const BIYOS_evt *evt)
+BIYOS_index BIYOS_getnevtfields(const BIYOS_event *evt)
 {
     return evt == nullptr ? 0 : static_cast<int>(evt->core->fields.size());
 }
 
-const char *BIYOS_getevtfieldname(const BIYOS_evt *evt, BIYOS_index field)
+const char *BIYOS_getevtfieldname(const BIYOS_event *evt, BIYOS_index field)
 {
     const biyos::Field *found = field_of(evt, field);
     return found == nullptr ? "" : found->name.c_str();
 }
 
-const char *BIYOS_getevtfieldvalue(const BIYOS_evt *evt, BIYOS_index field)
+const char *BIYOS_getevtfieldvalue(const BIYOS_event *evt, BIYOS_index field)
 {
     const biyos::Field *found = field_of(evt, field);
     return found == nullptr ? "" : found->value.c_str();

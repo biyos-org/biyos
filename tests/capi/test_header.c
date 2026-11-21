@@ -78,7 +78,7 @@ extern char real_size[sizeof(BIYOS_real) == 8 ? 1 : -1];
 #error "a public operator changed"
 #endif
 
-static void count(const BIYOS_evt *event, void *data)
+static void count(const BIYOS_event *event, void *data)
 {
     int *errors = data;
     if (BIYOS_getevtlvl(event) == BIYOS_LVL_ERR)

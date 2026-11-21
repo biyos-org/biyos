@@ -45,7 +45,7 @@ struct Probe
     std::string message;
 };
 
-void receive(const BIYOS_evt *event, void *data)
+void receive(const BIYOS_event *event, void *data)
 {
     Inbox *inbox = static_cast<Inbox *>(data);
     ++inbox->calls;
@@ -58,7 +58,7 @@ void receive(const BIYOS_evt *event, void *data)
     inbox->value = BIYOS_getevtfieldvalue(event, 0);
 }
 
-void unsubscribe_unknown(const BIYOS_evt *, void *data)
+void unsubscribe_unknown(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
@@ -66,7 +66,7 @@ void unsubscribe_unknown(const BIYOS_evt *, void *data)
     probe->message = BIYOS_lasterror(probe->env);
 }
 
-void refuse(const BIYOS_evt *, void *data)
+void refuse(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
@@ -74,14 +74,14 @@ void refuse(const BIYOS_evt *, void *data)
     probe->message = BIYOS_lasterror(probe->env);
 }
 
-void read_error(const BIYOS_evt *, void *data)
+void read_error(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->message = BIYOS_lasterror(probe->env);
 }
 
-void free_inside(const BIYOS_evt *, void *data)
+void free_inside(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
@@ -113,7 +113,7 @@ void note(Attempt &attempt, BIYOS_status status)
     attempt.messages.emplace_back(BIYOS_lasterror(attempt.env));
 }
 
-void change(const BIYOS_evt *, void *data)
+void change(const BIYOS_event *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_env *env = attempt.env;
@@ -274,7 +274,7 @@ TEST(CApiTest, Accessors)
         .text = "removed rows",
         .fields = {{.name = "rows", .value = "3"}, {.name = "columns", .value = "1"}},
     };
-    const BIYOS_evt view{&event};
+    const BIYOS_event view{&event};
     EXPECT_EQ(BIYOS_getevtkind(&view), BIYOS_EVT_MESSAGE);
     EXPECT_EQ(BIYOS_getevtlvl(&view), BIYOS_LVL_WARN);
     EXPECT_STREQ(BIYOS_getevtmodule(&view), "presolve");
