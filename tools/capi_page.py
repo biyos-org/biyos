@@ -115,9 +115,8 @@ def listed(entry, values):
         label = name(key, key)
         shown = f"[{values.get(key)}]{{.value}}"
         rows.append((label, shown, text) if known else (label, text))
-    since = f"\n\n[Since {entry.since}]{{.since}}" if entry.since else ""
     caption = f"\n\n: {entry.summary or entry.name}"
-    return [table(header, rows, weights, aligns) + caption + since]
+    return [table(header, rows, weights, aligns) + caption, *meta(entry)]
 
 
 def index(group):

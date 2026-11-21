@@ -8,6 +8,8 @@ local kMarks = {
     ["dir-in"] = "\\biyosdirin",
     ["dir-out"] = "\\biyosdirout",
     ["dir-inout"] = "\\biyosdirinout",
+    see = "\\biyoslabel",
+    also = "\\biyosalso",
 }
 
 local function wrapped(span, macro)
