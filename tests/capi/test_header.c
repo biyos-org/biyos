@@ -156,8 +156,7 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     int priorities[2] = {-1, -1};
     BIYOS_index first = -1;
     BIYOS_index objectives = 0;
-    BIYOS_status status =
-        BIYOS_addobjs(model, 2, functions, senses, NULL, NULL, NULL, NULL, &first);
+    BIYOS_status status = BIYOS_addobjs(model, 2, functions, senses, NULL, NULL, &first);
     if (status == BIYOS_OK)
     {
         status = BIYOS_setobjcoef(model, 1, indices, weights);
@@ -180,7 +179,7 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     }
     if (status == BIYOS_OK)
     {
-        status = BIYOS_getobjs(model, 0, 2, NULL, found, priorities, NULL, NULL, NULL);
+        status = BIYOS_getobjs(model, 0, 2, NULL, found, priorities, NULL);
     }
     if (status != BIYOS_OK || first != 0 || objectives != 2 || found[0] != BIYOS_MAXIMIZE ||
         found[1] != BIYOS_MINIMIZE || priorities[1] != 1)
@@ -317,7 +316,7 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getcons(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getconbnd(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnobjs(model, &count) != BIYOS_OK ||
-        BIYOS_getobjs(model, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getobjs(model, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getobjsense(model, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getobjprio(model, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getobjcoef(model, 0, NULL, NULL) != BIYOS_OK ||

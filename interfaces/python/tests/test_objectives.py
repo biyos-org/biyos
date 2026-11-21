@@ -25,8 +25,9 @@ PRIORITIES = [2, -1, 2]
 WEIGHTS = [0.5, 1.0, 3.0]
 ABSOLUTE = [0.0, 1.5, INFINITY]
 RELATIVE = [0.25, 0.0, 0.0]
-SAMPLE = (FUNCTIONS, SENSES, PRIORITIES, WEIGHTS, ABSOLUTE, RELATIVE)
-NONE = ([], [], [], [], [], [])
+SAMPLE = (FUNCTIONS, SENSES, PRIORITIES, WEIGHTS)
+TOLERANCES = (ABSOLUTE, RELATIVE)
+NONE = ([], [], [], [])
 
 
 @pytest.fixture
@@ -43,7 +44,9 @@ def model(env):
 
 
 def add_sample(model):
-    return model.addobjs(*SAMPLE)
+    o = model.addobjs(*SAMPLE)
+    model.setobjtol(o, *TOLERANCES)
+    return o
 
 
 def read_lengths(handle, first, count, *arrays):
@@ -60,6 +63,7 @@ def test_add(model):
     assert model.getnobjs() == 3
     found = model.getobjs()
     assert found == SAMPLE
+    assert model.getobjtol(added) == TOLERANCES
     assert all(type(sense) is Sense for sense in found[1])
     assert type(added) is biyos.Objectives
     assert [index(objective) for objective in added] == [0, 1, 2]
@@ -87,22 +91,21 @@ def test_defaults(model):
     model.addobjs([0, 1])
     model.addobjs([1], prio=[-7])
     model.addobjs([0], sense=[MAX], coef=[2.0])
-    model.addobjs([1], atol=[0.5], rtol=[INFINITY])
+    model.addobjs([1])
     model.addobjs([0])
-    functions, senses, priorities, *values = model.getobjs()
+    functions, senses, priorities, weights = model.getobjs()
     assert functions == [0, 1, 1, 0, 1, 0]
     assert senses == [MIN, MIN, MIN, MAX, MIN, MIN]
     assert priorities == [0, 1, -7, 3, 4, 5]
-    assert values[0] == [1.0, 1.0, 1.0, 2.0, 1.0, 1.0]
-    assert values[1] == [0.0, 0.0, 0.0, 0.0, 0.5, 0.0]
-    assert values[2] == [0.0, 0.0, 0.0, 0.0, INFINITY, 0.0]
+    assert weights == [1.0, 1.0, 1.0, 2.0, 1.0, 1.0]
+    assert model.getobjtol(range(6)) == ([0.0] * 6, [0.0] * 6)
 
 
 def test_shared(model):
     model.addcons([1], [0.0], [1.0])
     model.addobjs([1, 1], [MIN, MAX])
     model.addobjs([1], coef=[2.0])
-    functions, senses, priorities, weights = model.getobjs()[:4]
+    functions, senses, priorities, weights = model.getobjs()
     assert (functions, senses) == ([1, 1, 1], [MIN, MAX, MIN])
     assert (priorities, weights) == ([0, 1, 2], [1.0, 1.0, 2.0])
     assert model.getcons() == ([1], [0.0], [1.0])
@@ -171,14 +174,17 @@ def test_values(model, monkeypatch):
     absolute = array.array("d", [3.0, 4.0])
     relative = array.array("d", [5.0, 6.0])
     seen = []
-    spy = partial(recorded, seen, lib.BIYOS_addobjs)
-    monkeypatch.setattr(lib, "BIYOS_addobjs", spy)
-    model.addobjs([0, 1], None, None, weights, absolute, relative)
-    assert len(seen) == 1
+    for name in ("BIYOS_addobjs", "BIYOS_setobjtol"):
+        spy = partial(recorded, seen, getattr(lib, name))
+        monkeypatch.setattr(lib, name, spy)
+    o = model.addobjs([0, 1], None, None, weights)
+    model.setobjtol(o, absolute, relative)
+    assert len(seen) == 2
     assert ctypes.addressof(seen[0][5]) == weights.buffer_info()[0]
-    assert ctypes.addressof(seen[0][6]) == absolute.buffer_info()[0]
-    assert ctypes.addressof(seen[0][7]) == relative.buffer_info()[0]
-    assert model.getobjs()[3:] == ([1.0, 2.0], [3.0, 4.0], [5.0, 6.0])
+    assert ctypes.addressof(seen[1][3]) == absolute.buffer_info()[0]
+    assert ctypes.addressof(seen[1][4]) == relative.buffer_info()[0]
+    assert model.getobjs()[3] == [1.0, 2.0]
+    assert model.getobjtol(o) == ([3.0, 4.0], [5.0, 6.0])
 
 
 def test_growing(model):
@@ -212,7 +218,7 @@ def test_sequences(model):
     read_only = memoryview(array.array("d", [4.0]).tobytes()).cast("d")
     model.addobjs((Number(1),), (Number(2),), (Number(-3),), read_only)
     found = model.getobjs()
-    assert found[:4] == ([1, 0, 1], [MAX, MIN, MAX], [0, 1, -3], [2, 3, 4])
+    assert found == ([1, 0, 1], [MAX, MIN, MAX], [0, 1, -3], [2, 3, 4])
 
 
 def test_set(model):
@@ -226,7 +232,8 @@ def test_set(model):
     assert found[0] == FUNCTIONS
     assert found[1:3] == ([MIN, MIN, MAX], [2, -1, -5])
     assert found[3] == [4.0, 1.0, 8.0]
-    assert found[4:] == ([0.0, INFINITY, INFINITY], [0.25, 0.5, 0.0])
+    tolerances = ([0.0, INFINITY, INFINITY], [0.25, 0.5, 0.0])
+    assert model.getobjtol(range(3)) == tolerances
     model.setobjsense([0, 0], [MAX, MIN])
     model.setobjprio([0, 0], [5, 6])
     assert model.getobjs(0, 1)[1:3] == ([MIN], [6])
@@ -266,8 +273,9 @@ def test_setters(model):
     model.setobjtol([2], atol=[0.5])
     model.setobjtol([1], rtol=[INFINITY])
     found = model.getobjs()
-    assert found[:4] == (FUNCTIONS, [MAX, MIN, MAX], [-3, -1, 7], [4, 1, 8])
-    assert found[4:] == ([INFINITY, 1.5, 0.5], [0.25, INFINITY, 0.0])
+    assert found == (FUNCTIONS, [MAX, MIN, MAX], [-3, -1, 7], [4, 1, 8])
+    tolerances = ([INFINITY, 1.5, 0.5], [0.25, INFINITY, 0.0])
+    assert model.getobjtol(range(3)) == tolerances
 
 
 def test_listed_refusals(env, model):
@@ -333,18 +341,18 @@ def test_refused(model):
     assert message == "invalid argument: objective 3: weight 0 is not positive"
     message = refusal(model.addobjs, [0], None, None, [NAN])
     assert message == "invalid argument: objective 3: weight is NaN"
-    message = refusal(model.addobjs, [0], None, None, None, [-1.0])
+    tolerances = partial(model.setobjtol, [2])
+    message = refusal(tolerances, [-1.0])
     assert message == (
-        "invalid argument: objective 3: absolute tolerance -1 is negative"
+        "invalid argument: objective 2: absolute tolerance -1 is negative"
     )
-    tolerances = partial(model.addobjs, [0], None, None, None)
     message = refusal(tolerances, [SIGNED_NAN])
     assert message == (
-        "invalid argument: objective 3: absolute tolerance is NaN"
+        "invalid argument: objective 2: absolute tolerance is NaN"
     )
     message = refusal(tolerances, None, [-INFINITY])
     assert message == (
-        "invalid argument: objective 3: relative tolerance is minus infinity"
+        "invalid argument: objective 2: relative tolerance is minus infinity"
     )
     message = refusal(model.setobjtol, [0], None, [NAN])
     assert message == (
@@ -357,6 +365,7 @@ def test_refused(model):
     message = refusal(model.getobjs, 0, -1)
     assert message == "invalid argument: argument 'n': -1 is negative"
     assert model.getobjs() == SAMPLE
+    assert model.getobjtol(range(3)) == TOLERANCES
 
 
 def test_lengths(model):
@@ -379,7 +388,7 @@ def test_numbers(model):
     with pytest.raises(TypeError, match="an entry of coef must be a"):
         model.addobjs([0], None, None, ["1"])
     with pytest.raises(TypeError, match="an entry of atol must be a"):
-        model.addobjs([0], None, None, None, [True])
+        model.setobjtol([0], [True])
     with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
         model.getobjs(2**32)
     assert model.getnobjs() == 0

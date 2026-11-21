@@ -78,16 +78,6 @@ def _total(starts, count):
     return starts[count]
 
 
-def _fields(count, sense, prio, coef, atol, rtol):
-    return (
-        ints("sense", sense, count),
-        ints("prio", prio, count),
-        doubles("coef", coef, count),
-        doubles("atol", atol, count),
-        doubles("rtol", rtol, count),
-    )
-
-
 class Model:
     """A model of a problem, made on an environment.
 
@@ -701,22 +691,15 @@ class Model:
         self._call(lib.BIYOS_getcons, beg, n, *arrays)
         return list(functions), list(lower), list(upper)
 
-    def addobjs(
-        self,
-        funidx,
-        sense=None,
-        prio=None,
-        coef=None,
-        atol=None,
-        rtol=None,
-    ):
+    def addobjs(self, funidx, sense=None, prio=None, coef=None):
         """Add objectives after the last one, one for each function given.
 
         The objectives are optimized in stages, one for each priority, the
         lowest first. A stage minimizes the weighted sum of its objectives,
         each counted negatively when it is maximized, and keeps every
         objective of an earlier stage within its tolerances of the optimum
-        found for it.
+        found for it. A new objective's tolerances are 0 until ``setobjtol``
+        sets them.
 
         Parameters
         ----------
@@ -731,11 +714,6 @@ class Model:
         coef : sequence of float, optional
             The weight of each in the sum of its stage, finite and
             positive, 1 by default.
-        atol, rtol : sequence of float, optional
-            How far each may move from its optimum in later stages, as a
-            value of its function and as a fraction of the size of that
-            optimum. Each is 0 or more, ``inf`` setting no limit, and 0 by
-            default.
 
         Returns
         -------
@@ -749,7 +727,9 @@ class Model:
         count = len(funidx)
         arrays = (
             indices_of(self, Functions, "funidx", funidx, count),
-            *_fields(count, sense, prio, coef, atol, rtol),
+            ints("sense", sense, count),
+            ints("prio", prio, count),
+            doubles("coef", coef, count),
         )
         first = c_int()
         self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
@@ -977,10 +957,6 @@ class Model:
             The priority of each.
         list of float
             The weight of each.
-        list of float
-            The absolute tolerance of each.
-        list of float
-            The relative tolerance of each.
 
         See Also
         --------
@@ -989,19 +965,16 @@ class Model:
         beg = index_of(self, Objectives, "beg", beg)
         n, inside = _span(beg, n, self.getnobjs)
         if not inside:
-            empty = (None,) * 6
+            empty = (None,) * 4
             self._call(lib.BIYOS_getobjs, beg, n, *empty)
         functions = (c_int * n)()
         codes = (c_int * n)()
         priorities = (c_int * n)()
         weights = (c_double * n)()
-        absolute = (c_double * n)()
-        relative = (c_double * n)()
-        found = (functions, codes, priorities, weights, absolute, relative)
+        found = (functions, codes, priorities, weights)
         self._call(lib.BIYOS_getobjs, beg, n, *found)
         senses = [Sense(code) for code in codes]
-        values = (list(weights), list(absolute), list(relative))
-        return (list(functions), senses, list(priorities), *values)
+        return list(functions), senses, list(priorities), list(weights)
 
     def setmdlname(self, name):
         """Name the model.

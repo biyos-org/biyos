@@ -41,10 +41,15 @@ static BIYOS_status objectives(BIYOS_model *mdl)
     const BIYOS_index funidx[] = {2, 0};
     const BIYOS_int sense[] = {BIYOS_MINIMIZE, BIYOS_MAXIMIZE};
     const BIYOS_int prio[] = {0, 1};
-    const BIYOS_real tol[] = {0.5, 0.0};
+    const BIYOS_real atol[] = {0.5};
+    BIYOS_index beg = 0;
     BIYOS_status status =
-        BIYOS_addobjs(mdl, 2, funidx, sense, prio, NULL, tol, NULL, NULL);
-    return status;
+        BIYOS_addobjs(mdl, 2, funidx, sense, prio, NULL, &beg);
+    if (status != BIYOS_OK)
+    {
+        return status;
+    }
+    return BIYOS_setobjtol(mdl, 1, &beg, atol, NULL);
 }
 
 static int build(BIYOS_model *mdl)

@@ -90,9 +90,7 @@ void add_items(const Model &mdl, BIYOS_index n)
     ASSERT_EQ(BIYOS_addvars(held, n, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfuns(held, n, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addcons(held, n, funs.data(), nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(
-        BIYOS_addobjs(held, n, funs.data(), nullptr, nullptr, nullptr, nullptr, nullptr, nullptr),
-        BIYOS_OK);
+    ASSERT_EQ(BIYOS_addobjs(held, n, funs.data(), nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
 BIYOS_status name(const Calls &family, const Model &mdl, const Indices &idx, const Texts &names)

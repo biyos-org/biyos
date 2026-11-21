@@ -53,13 +53,13 @@ void add_sample(BIYOS_model *mdl)
     const double weights[] = {0.5, 2.0};
     const double absolute[] = {0.25, 0.0};
     const double relative[] = {0.0, 0.125};
+    const BIYOS_index added[] = {0, 1};
     ASSERT_EQ(BIYOS_addvars(mdl, 3, knds, lower, upper, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfuns(mdl, 2, constants, starts, vars, values, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addquadterms(mdl, 2, owners, offsets, firsts, seconds, products), BIYOS_OK);
     ASSERT_EQ(BIYOS_addcons(mdl, 3, funs, lower, upper, nullptr), BIYOS_OK);
-    ASSERT_EQ(
-        BIYOS_addobjs(mdl, 2, targets, senses, priorities, weights, absolute, relative, nullptr),
-        BIYOS_OK);
+    ASSERT_EQ(BIYOS_addobjs(mdl, 2, targets, senses, priorities, weights, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtol(mdl, 2, added, absolute, relative), BIYOS_OK);
     const BIYOS_index named[] = {2, 0};
     const BIYOS_index first[] = {1};
     const char *names[] = {"z", "x"};

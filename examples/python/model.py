@@ -24,12 +24,12 @@ def build(model):
         coef=[1.0, 1.0],
     )
     model.addcons([f[0], f[1]], lb=[1.0, 0.0], ub=[5.0, 0.0])
-    model.addobjs(
+    o = model.addobjs(
         [f[2], f[0]],
         sense=[Sense.MINIMIZE, Sense.MAXIMIZE],
         prio=[0, 1],
-        atol=[0.5, 0.0],
     )
+    model.setobjtol([o[0]], atol=[0.5])
     return x, f
 
 

@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -34,8 +35,6 @@ struct Fields
     const int *senses = nullptr;
     const int *priorities = nullptr;
     const double *weights = nullptr;
-    const double *absolute = nullptr;
-    const double *relative = nullptr;
 };
 
 struct Outputs
@@ -44,8 +43,6 @@ struct Outputs
     int *senses = nullptr;
     int *priorities = nullptr;
     double *weights = nullptr;
-    double *absolute = nullptr;
-    double *relative = nullptr;
 };
 
 const Records kSample{
@@ -63,15 +60,7 @@ BIYOS_status add_with(BIYOS_model *mdl,
                       const Fields &fields,
                       BIYOS_index *beg = nullptr)
 {
-    return BIYOS_addobjs(mdl,
-                         n,
-                         funs,
-                         fields.senses,
-                         fields.priorities,
-                         fields.weights,
-                         fields.absolute,
-                         fields.relative,
-                         beg);
+    return BIYOS_addobjs(mdl, n, funs, fields.senses, fields.priorities, fields.weights, beg);
 }
 
 BIYOS_status get_with(BIYOS_model *mdl, int beg, int n, const Outputs &outputs)
@@ -82,9 +71,7 @@ BIYOS_status get_with(BIYOS_model *mdl, int beg, int n, const Outputs &outputs)
                          outputs.functions,
                          outputs.senses,
                          outputs.priorities,
-                         outputs.weights,
-                         outputs.absolute,
-                         outputs.relative);
+                         outputs.weights);
 }
 
 BIYOS_status add_records(const Model &mdl, const Records &records, BIYOS_index *beg = nullptr)
@@ -93,8 +80,6 @@ BIYOS_status add_records(const Model &mdl, const Records &records, BIYOS_index *
         .senses = records.senses.data(),
         .priorities = records.priorities.data(),
         .weights = records.weights.data(),
-        .absolute = records.absolute.data(),
-        .relative = records.relative.data(),
     };
     const auto n = static_cast<int>(records.functions.size());
     return add_with(mdl.get(), n, records.functions.data(), fields, beg);
@@ -109,6 +94,10 @@ void add_sample(const Model &mdl)
 {
     add_funs(mdl, 2);
     ASSERT_EQ(add_records(mdl, kSample), BIYOS_OK);
+    const BIYOS_index idx[] = {0, 1, 2};
+    const double *atol = kSample.absolute.data();
+    const double *rtol = kSample.relative.data();
+    ASSERT_EQ(BIYOS_setobjtol(mdl.get(), 3, idx, atol, rtol), BIYOS_OK);
 }
 
 int n_objs(const Model &mdl)
@@ -134,10 +123,13 @@ Records read_range(const Model &mdl, int beg, int n)
         .senses = read.senses.data(),
         .priorities = read.priorities.data(),
         .weights = read.weights.data(),
-        .absolute = read.absolute.data(),
-        .relative = read.relative.data(),
     };
     EXPECT_EQ(get_with(mdl.get(), beg, n, outputs), BIYOS_OK);
+    std::vector<BIYOS_index> idx(size);
+    std::iota(idx.begin(), idx.end(), beg);
+    const BIYOS_status status =
+        BIYOS_getobjtol(mdl.get(), n, idx.data(), read.absolute.data(), read.relative.data());
+    EXPECT_EQ(status, BIYOS_OK);
     return read;
 }
 
@@ -343,22 +335,16 @@ TEST(CApiTest, NullObjectives)
     ASSERT_EQ(add_with(held, 2, funs, {.senses = senses}), BIYOS_OK);
     ASSERT_EQ(add_with(held, 2, funs, {.priorities = priorities}), BIYOS_OK);
     ASSERT_EQ(add_with(held, 2, funs, {.weights = values}), BIYOS_OK);
-    ASSERT_EQ(add_with(held, 2, funs, {.absolute = values}), BIYOS_OK);
-    ASSERT_EQ(add_with(held, 2, funs, {.relative = values}), BIYOS_OK);
-    Records wanted = defaults(std::vector<int>(10, 0));
+    Records wanted = defaults(std::vector<int>(6, 0));
     wanted.senses[0] = BIYOS_MAXIMIZE;
     wanted.priorities[2] = 7;
     wanted.priorities[3] = 7;
     wanted.weights[4] = 0.5;
     wanted.weights[5] = 2.0;
-    wanted.absolute[6] = 0.5;
-    wanted.absolute[7] = 2.0;
-    wanted.relative[8] = 0.5;
-    wanted.relative[9] = 2.0;
     expect_records(read_all(mdl), wanted);
     EXPECT_EQ(add_with(held, 1, nullptr, {.senses = senses}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
-    EXPECT_EQ(n_objs(mdl), 10);
+    EXPECT_EQ(n_objs(mdl), 6);
 }
 
 TEST(CApiTest, NullSetters)
@@ -435,10 +421,10 @@ TEST(CApiTest, NullOutputs)
     BIYOS_model *held = mdl.get();
     EXPECT_EQ(get_with(held, 0, 3, {}), BIYOS_OK);
     int senses[] = {-1, -1};
-    double absolute[] = {9.0, 9.0};
-    EXPECT_EQ(get_with(held, 1, 2, {.senses = senses, .absolute = absolute}), BIYOS_OK);
+    double weights[] = {9.0, 9.0};
+    EXPECT_EQ(get_with(held, 1, 2, {.senses = senses, .weights = weights}), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({senses[0], senses[1]}), std::vector<int>(2, BIYOS_MINIMIZE));
-    EXPECT_EQ(bits_of({absolute[0], absolute[1]}), bits_of({1.5, kInfinity}));
+    EXPECT_EQ(bits_of({weights[0], weights[1]}), bits_of({1.0, 3.0}));
     EXPECT_EQ(BIYOS_getnobjs(held, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
@@ -458,8 +444,6 @@ TEST(CApiTest, RefusedObjectives)
     const double negative = -1.0;
     EXPECT_EQ(add_with(held, 1, funs, {.weights = &negative}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: weight -1 is not positive");
-    EXPECT_EQ(add_with(held, 1, funs, {.absolute = &kNan}), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: objective 3: absolute tolerance is NaN");
     EXPECT_EQ(add_with(held, -1, nullptr, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     const BIYOS_index unknown = 3;
@@ -629,4 +613,29 @@ TEST(CApiTest, ObjectiveRefusals)
     EXPECT_EQ(BIYOS_setobjtol(held, 2, idx, nullptr, rtol), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: relative tolerance is NaN");
     expect_records(read_all(mdl), kSample);
+}
+
+TEST(CApiTest, NewTolerances)
+{
+    const Env env;
+    const Model mdl(env);
+    add_funs(mdl, 1);
+    const BIYOS_index funidx[] = {0, 0};
+    BIYOS_index beg = -1;
+    ASSERT_EQ(BIYOS_addobjs(mdl.get(), 2, funidx, nullptr, nullptr, nullptr, &beg), BIYOS_OK);
+    EXPECT_EQ(beg, 0);
+    expect_records(read_all(mdl), defaults({0, 0}));
+    const BIYOS_index idx[] = {1, 0};
+    const double atol[] = {0.5, kInfinity};
+    const double rtol[] = {0.25, 0.0};
+    ASSERT_EQ(BIYOS_setobjtol(mdl.get(), 2, idx, atol, rtol), BIYOS_OK);
+    Records wanted = defaults({0, 0});
+    wanted.absolute = {kInfinity, 0.5};
+    wanted.relative = {0.0, 0.25};
+    expect_records(read_all(mdl), wanted);
+    int funs[] = {-1, -1};
+    double coef[] = {-9.0, -9.0};
+    EXPECT_EQ(BIYOS_getobjs(mdl.get(), 0, 2, funs, nullptr, nullptr, coef), BIYOS_OK);
+    EXPECT_EQ(std::vector<int>({funs[0], funs[1]}), std::vector<int>(2, 0));
+    EXPECT_EQ(bits_of({coef[0], coef[1]}), bits_of({1.0, 1.0}));
 }

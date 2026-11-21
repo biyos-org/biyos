@@ -51,7 +51,8 @@ def add_sample(model):
     model.addcons([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, INFINITY, 3.0])
     senses = [Sense.MAXIMIZE, Sense.MINIMIZE]
     tolerances = ([0.25, 0.0], [0.0, INFINITY])
-    model.addobjs([1, 0], senses, [3, -2], [0.5, 2.0], *tolerances)
+    o = model.addobjs([1, 0], senses, [3, -2], [0.5, 2.0])
+    model.setobjtol(o, *tolerances)
 
 
 def read(model):
@@ -61,6 +62,7 @@ def read(model):
         model.getquadterms(),
         model.getcons(),
         model.getobjs(),
+        model.getobjtol(range(model.getnobjs())),
     )
     return repr(found)
 

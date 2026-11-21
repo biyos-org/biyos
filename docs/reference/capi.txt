@@ -633,7 +633,7 @@ since 0.1.0
 
 group objectives Objectives
 text An objective is a function of the model to minimize or maximize, with a priority, a weight and an absolute and a relative tolerance. Several objectives may share a function, and an objective may use the function of a constraint.
-text The objectives are optimized in stages, one for each priority they hold, the lowest priority first. A stage minimizes the weighted sum $\sum_i w_i s_i f_i(x)$ of the objectives of its priority, where $w_i$ is the weight of objective $i$, $s_i$ is 1 when it minimizes and −1 when it maximizes, and $f_i$ is its function. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it, the absolute tolerance in the units of its function and the relative one as a fraction of the size of that optimum. A priority is any `BIYOS_int`. A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. No call optimizes the objectives yet.
+text The objectives are optimized in stages, one for each priority they hold, the lowest priority first. A stage minimizes the weighted sum $\sum_i w_i s_i f_i(x)$ of the objectives of its priority, where $w_i$ is the weight of objective $i$, $s_i$ is 1 when it minimizes and −1 when it maximizes, and $f_i$ is its function. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it, the absolute tolerance in the units of its function and the relative one as a fraction of the size of that optimum. A priority is any `BIYOS_int`. A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. `BIYOS_addobjs` takes what defines an objective, its function, sense, priority and weight, as `BIYOS_addcons` takes a function and its bounds; a new objective's tolerances are 0 until `BIYOS_setobjtol` sets them. No call optimizes the objectives yet.
 
 table Senses
 value BIYOS_MINIMIZE The function is minimized.
@@ -648,11 +648,9 @@ param funidx in The function of each; may be null only when `n` is 0.
 param sense in The sense of each, `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE`; null minimizes every new objective.
 param prio in The priority of each; null gives objective `p + j` the priority `p + j`, where `p` is the number of objectives before the call.
 param coef in The weight of each; null gives each the weight 1.
-param atol in The absolute tolerance of each; null gives each 0.
-param rtol in The relative tolerance of each; null gives each 0.
 param beg out Receives the index of the first new objective; skipped when null.
-return `BIYOS_OK` once the objectives are added.
-error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model, a sense is unknown, a weight is not finite and positive, or a tolerance is NaN or negative.
+return `BIYOS_OK` once the objectives are added, each with tolerances of 0.
+error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model, a sense is unknown or a weight is not finite and positive.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 objectives.
 note By default the objectives are optimized one after another in the order they are added, and objectives given one priority are blended.
 see BIYOS_setobjsense BIYOS_setobjtol BIYOS_getobjs
@@ -760,7 +758,7 @@ return `BIYOS_OK`, with the number in `*n`.
 since 0.1.0
 
 function BIYOS_getobjs
-summary Read the objectives.
+summary Read the functions, senses, priorities and weights of objectives.
 param mdl in The model.
 param beg in The first objective to read.
 param n in The number of objectives to read.
@@ -768,11 +766,10 @@ param funidx out Entry `j` receives the function of objective `beg + j`; skipped
 param sense out Entry `j` receives its sense; skipped when null.
 param prio out Entry `j` receives its priority; skipped when null.
 param coef out Entry `j` receives its weight; skipped when null.
-param atol out Entry `j` receives its absolute tolerance; skipped when null.
-param rtol out Entry `j` receives its relative tolerance; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `beg` or `n` is negative, or `beg + n` exceeds the number of objectives.
-see BIYOS_getnobjs
+note It reads back what `BIYOS_addobjs` takes. `BIYOS_getobjtol` reads the tolerances.
+see BIYOS_getnobjs BIYOS_getobjtol
 since 0.1.0
 
 group names Names

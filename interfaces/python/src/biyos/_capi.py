@@ -132,7 +132,7 @@ def _declare_constraints(lib, ints, doubles):
 
 
 def _declare_objectives(lib, ints, doubles):
-    fields = (ints, ints, doubles, doubles, doubles)
+    fields = (ints, ints, doubles)
     add = (c_void_p, c_int32, ints, *fields, ints)
     _declare(lib, "BIYOS_addobjs", c_int, *add)
     for name, values in (("sense", ints), ("prio", ints), ("coef", doubles)):

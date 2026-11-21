@@ -207,8 +207,6 @@ BIYOS_API BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
                                      const BIYOS_int *sense,
                                      const BIYOS_int *prio,
                                      const BIYOS_real *coef,
-                                     const BIYOS_real *atol,
-                                     const BIYOS_real *rtol,
                                      BIYOS_index *beg);
 BIYOS_API BIYOS_status BIYOS_setobjsense(BIYOS_model *mdl,
                                          BIYOS_index n,
@@ -251,9 +249,7 @@ BIYOS_API BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
                                      BIYOS_index *funidx,
                                      BIYOS_int *sense,
                                      BIYOS_int *prio,
-                                     BIYOS_real *coef,
-                                     BIYOS_real *atol,
-                                     BIYOS_real *rtol);
+                                     BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_setmdlname(BIYOS_model *mdl, const char *name);
 BIYOS_API BIYOS_status BIYOS_getmdlname(const BIYOS_model *mdl, const char **name);
 BIYOS_API BIYOS_status BIYOS_delmdlname(BIYOS_model *mdl);

@@ -33,11 +33,11 @@ The readers return lists, in the order of the C call's arrays:
 | `getfuns(beg, n)` | constants, offsets, variables, coefficients |
 | `getquadterms(beg, n)` | offsets, first and second variables, coefficients |
 | `getcons(beg, n)` | functions, lower bounds, upper bounds |
-| `getobjs(beg, n)` | functions, senses, priorities, weights, absolute and relative tolerances |
+| `getobjs(beg, n)` | functions, senses, priorities, weights |
 
 `beg` defaults to 0 and `n` to every item from `beg` on, so `model.getvars()` reads them all. The readers of terms size their arrays themselves.
 
-A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds.
+A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobjs` leaves out, as `addobjs` does.
 
 ## Constants {#sec-python-constants}
 

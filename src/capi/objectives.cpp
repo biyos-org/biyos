@@ -81,8 +81,6 @@ void add_objs(BIYOS_model &mdl,
               const int *senses,
               const int *priorities,
               const double *weights,
-              const double *absolute,
-              const double *relative,
               int *beg)
 {
     biyos::Model &core = writable(mdl);
@@ -92,8 +90,6 @@ void add_objs(BIYOS_model &mdl,
         .senses = senses,
         .priorities = priorities,
         .weights = weights,
-        .absolute = absolute,
-        .relative = relative,
     };
     const biyos::Index start = core.n_objs();
     core.add_objs(new_objs(owners, start, fields));
@@ -137,9 +133,7 @@ void get_objs(const BIYOS_model &mdl,
               int *funs,
               int *senses,
               int *priorities,
-              double *weights,
-              double *absolute,
-              double *relative)
+              double *weights)
 {
     const std::span<const biyos::Objective> found = mdl.core.objs(beg, n);
     const Outputs outputs{
@@ -147,8 +141,6 @@ void get_objs(const BIYOS_model &mdl,
         .senses = senses,
         .priorities = priorities,
         .weights = weights,
-        .absolute = absolute,
-        .relative = relative,
     };
     for (std::size_t k = 0; k < found.size(); ++k)
     {
@@ -174,11 +166,9 @@ BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
                            const BIYOS_int *sense,
                            const BIYOS_int *prio,
                            const BIYOS_real *coef,
-                           const BIYOS_real *atol,
-                           const BIYOS_real *rtol,
                            BIYOS_index *beg)
 {
-    return guarded<add_objs>(mdl, n, funidx, sense, prio, coef, atol, rtol, beg);
+    return guarded<add_objs>(mdl, n, funidx, sense, prio, coef, beg);
 }
 
 BIYOS_status BIYOS_setobjsense(BIYOS_model *mdl,
@@ -258,9 +248,7 @@ BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
                            BIYOS_index *funidx,
                            BIYOS_int *sense,
                            BIYOS_int *prio,
-                           BIYOS_real *coef,
-                           BIYOS_real *atol,
-                           BIYOS_real *rtol)
+                           BIYOS_real *coef)
 {
-    return guarded<get_objs>(mdl, beg, n, funidx, sense, prio, coef, atol, rtol);
+    return guarded<get_objs>(mdl, beg, n, funidx, sense, prio, coef);
 }
