@@ -47,6 +47,7 @@ add_library(biyos_internal STATIC
     expr/shape.cpp
     expr/tape.cpp
     expr/terms.cpp
+    expr/uses.cpp
     expr/value.cpp
     expr/waves.cpp
     model/checks.cpp
