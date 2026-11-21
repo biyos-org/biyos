@@ -1,4 +1,4 @@
-# Events, logging and timing {#sec-events}
+# Events and timing {#sec-events}
 
 biyos never prints. Whatever it has to say, a message, a failed check or the time a phase took, it sends as an event on the environment's stream, and a program decides what to do with each one by attaching a function to it, a hook. Logging, timing and debugging are this one mechanism. When nobody listens, an event is not even built. The code of this chapter is `examples/c/events.c` and `examples/python/events.py`.
 

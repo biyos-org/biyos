@@ -1,6 +1,6 @@
-# Copying and comparing models {#sec-copy}
+# Copying models {#sec-copy}
 
-A model is copied whole. The copy holds the same variables, functions, constraints and objectives under the same indices, and from then on each changes apart from the other. A copy can live on another environment, which is how a program hands a model to another thread (@sec-threads). The code of this chapter is `examples/c/copies.c` and `examples/python/copies.py`.
+A model is copied whole. The copy holds the same variables, functions, constraints and objectives under the same indices, and from then on each changes apart from the other. A copy can live on another environment, which is how a program hands a model to another thread (@sec-threads), and two models are compared by reading both back (@sec-copy-compare). The code of this chapter is `examples/c/copies.c` and `examples/python/copies.py`.
 
 ## Copying {#sec-copy-c}
 

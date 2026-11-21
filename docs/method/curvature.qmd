@@ -1,4 +1,4 @@
-# Curvature and monotonicity {#sec-curvature}
+# Curvature {#sec-curvature}
 
 A convex function lies above each of its tangents, and over a convex set its local minima are global. biyos proves convexity on the expression graph: in one pass up the ids, from the enclosures of @sec-intervals, it gives each node a curvature and, for each child, the direction in which the node moves with it. This chapter states what each class claims and the rules that compose them.
 

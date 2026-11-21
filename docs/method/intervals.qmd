@@ -1,4 +1,4 @@
-# Intervals and outward rounding {#sec-intervals}
+# Intervals {#sec-intervals}
 
 A global method needs to know, for a box of variables, a range that holds every value a function can take there. biyos computes such ranges by evaluating the graph over intervals, one forward pass up the node ids, and rounds every bound outward so that floating point never shrinks a range below the truth. This chapter states what an enclosure holds, how each bound is rounded, and the one assumption the rounding makes about the mathematical library.
 
