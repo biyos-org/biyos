@@ -511,6 +511,94 @@ class Model:
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
 
+    def addlinterms(
+        self,
+        funidx: Sequence[int | Function] | Functions,
+        off: Sequence[int],
+        varidx: Sequence[int | Variable] | Variables,
+        coef: Sequence[float],
+    ) -> None:
+        """Add linear terms to functions of the model.
+
+        Function ``funidx[j]`` gains the terms from ``off[j]`` to
+        ``off[j + 1] - 1``. Term ``k`` adds ``coef[k]`` times variable
+        ``varidx[k]``. A variable the function holds already adds its
+        coefficient to the one held.
+
+        Parameters
+        ----------
+        funidx
+            The functions that gain terms, each listed once.
+        off
+            The ``len(funidx) + 1`` offsets of the functions' terms in
+            ``varidx`` and ``coef``, from 0 and never decreasing.
+        varidx
+            The variable of each term, ``off[-1]`` of them, each once for
+            its function.
+        coef
+            The coefficient of each term, ``off[-1]`` of them.
+
+        See Also
+        --------
+        BIYOS_addlinterms
+        """
+        n = len(funidx)
+        starts = offsets("off", off, n + 1)
+        size = _total(starts, n)
+        arrays = (
+            indices_of(self, Functions, "funidx", funidx, n),
+            starts,
+            indices_of(self, Variables, "varidx", varidx, size),
+            doubles("coef", coef, size),
+        )
+        self._call(lib.BIYOS_addlinterms, n, *arrays)
+
+    def getvarterms(
+        self, beg: int | Variable = 0, n: int | None = None
+    ) -> tuple[list[int], list[int], list[float]]:
+        """Read the linear terms of variables, by variable.
+
+        For each variable from ``beg``, the functions whose linear terms
+        hold it, sorted by function, and its coefficient in each.
+
+        Parameters
+        ----------
+        beg
+            The first variable to read.
+        n
+            The number of variables to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        off
+            The ``n + 1`` offsets of the variables' terms in the two lists
+            after it, from 0.
+        funidx
+            The function of each term.
+        coef
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_getvarterms
+        """
+        beg = index_of(self, Variables, "beg", beg)
+        n, inside = _span(beg, n, self.getnvars)
+        nnz = c_int64()
+        if not inside:
+            empty = (0, None, byref(nnz), None, None)
+            self._call(lib.BIYOS_getvarterms, beg, n, *empty)
+        starts = (c_int64 * (n + 1))()
+        learn = (0, starts, byref(nnz), None, None)
+        self._call(lib.BIYOS_getvarterms, beg, n, *learn)
+        size = nnz.value
+        funs = (c_int * size)()
+        values = (c_double * size)()
+        fill = (size, None, byref(nnz), funs, values)
+        self._call(lib.BIYOS_getvarterms, beg, n, *fill)
+        return list(starts), list(funs), list(values)
+
     def addquadterms(
         self,
         funidx: Sequence[int | Function] | Functions,

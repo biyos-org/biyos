@@ -1,0 +1,348 @@
+import array
+import ctypes
+import random
+from functools import partial
+
+import pytest
+
+import biyos
+from biyos import EventKind, EventLevel, _model
+from biyos._capi import lib
+from number import Growing, Number
+from refusal import LOCKED, refusal
+from sized import Room, limit
+
+INFINITY = float("inf")
+LARGE = 1.0e308
+
+HELD = ([0, 3, 3, 5], [2, 0, 1, 1, 0], [3.0, 1.0, 0.0, 5.0, 4.0])
+SORTED = ([0, 3, 3, 5], [0, 1, 2, 0, 1], [1.0, 0.0, 3.0, 4.0, 5.0])
+FUNCTIONS = [2, 1]
+ADDED = ([0, 2, 4], [2, 0, 2, 0], [0.5, -1.0, 2.0, 0.0])
+MERGED = (
+    [0, 3, 5, 8],
+    [0, 1, 2, 0, 2, 0, 1, 2],
+    [1.0, 0.0, 3.0, 0.0, 2.0, 3.0, 5.0, 0.5],
+)
+HELD_VARS = ([0, 2, 4, 5], [0, 2, 0, 2, 0], [1.0, 4.0, 0.0, 5.0, 3.0])
+MERGED_VARS = (
+    [0, 3, 5, 8],
+    [0, 1, 2, 0, 2, 0, 1, 2],
+    [1.0, 0.0, 3.0, 0.0, 5.0, 3.0, 2.0, 0.5],
+)
+
+WRONG = [
+    ([0, 1.5], TypeError, "an entry of off must be an int, not float"),
+    ([0, True], TypeError, "an entry of off must be an int, not bool"),
+    ([0, 2**70], OverflowError, "1180591620717411303424 does not fit"),
+]
+
+STARTS_WRONG = [
+    ([0], [1, 2], "off begins at 1, not 0"),
+    ([0, 1], [0, 2, 1], "off decreases from 2 to 1 at entry 2"),
+]
+
+
+@pytest.fixture
+def env():
+    with biyos.Env() as env:
+        yield env
+
+
+@pytest.fixture
+def model(env):
+    with biyos.Model(env) as model:
+        model.addvars(3)
+        model.addfuns(3, None, *HELD)
+        yield model
+
+
+def terms(model):
+    return model.getfuns()[1:]
+
+
+def read_lengths(handle, beg, n, size, starts, nnz, funs, values):
+    return [(starts, n + 1), (funs, size), (values, size)]
+
+
+def recorded(seen, function, *arguments):
+    seen.append(arguments)
+    return function(*arguments)
+
+
+def transposed(by_function, beg, n):
+    starts, variables, values = by_function
+    found = [[] for _ in range(n)]
+    for fun in range(len(starts) - 1):
+        for k in range(starts[fun], starts[fun + 1]):
+            if beg <= variables[k] < beg + n:
+                found[variables[k] - beg].append((fun, values[k]))
+    off = [0]
+    for held in found:
+        off.append(off[-1] + len(held))
+    pairs = [pair for held in found for pair in held]
+    return off, [fun for fun, _ in pairs], [value for _, value in pairs]
+
+
+def random_terms(draw, n_vars, n_funs):
+    off, varidx, coef = [0], [], []
+    for _ in range(n_funs):
+        chosen = draw.sample(range(n_vars), draw.randint(0, n_vars))
+        varidx += chosen
+        coef += [float(draw.randint(-4, 4)) for _ in chosen]
+        off.append(len(varidx))
+    return off, varidx, coef
+
+
+def test_add(model):
+    assert model.addlinterms(FUNCTIONS, *ADDED) is None
+    assert terms(model) == MERGED
+    assert model.getfuns()[0] == [0.0, 0.0, 0.0]
+
+
+def test_sums(model):
+    model.addlinterms(FUNCTIONS, *ADDED)
+    model.addlinterms([2], [0, 2], [1, 2], [-5.0, 0.25])
+    found = terms(model)
+    assert found[:2] == MERGED[:2]
+    assert found[2] == [1.0, 0.0, 3.0, 0.0, 2.0, 3.0, 0.0, 0.75]
+
+
+def test_defaults(model):
+    model.addlinterms([0, 1], None, None, None)
+    model.addlinterms([2], [0, 0], [], [])
+    model.addlinterms([], [0], [], [])
+    assert terms(model) == SORTED
+
+
+def test_values(model, monkeypatch):
+    values = array.array("d", [1.0, 2.0])
+    seen = []
+    spy = partial(recorded, seen, lib.BIYOS_addlinterms)
+    monkeypatch.setattr(lib, "BIYOS_addlinterms", spy)
+    model.addlinterms([1], [0, 2], [2, 0], values)
+    assert len(seen) == 1
+    assert ctypes.addressof(seen[0][5]) == values.buffer_info()[0]
+    assert terms(model)[1] == [0, 1, 2, 0, 2, 0, 1]
+
+
+def test_sequences(model):
+    read_only = memoryview(array.array("q", [0, 1]).tobytes()).cast("q")
+    model.addlinterms((1,), read_only, (2,), array.array("d", [4]))
+    model.addlinterms(range(1), range(0, 4, 2), [1, 2], [1, 2])
+    model.addlinterms([Number(2)], (Number(0), Number(0)), [], [])
+    off, varidx, coef = terms(model)
+    assert off == [0, 3, 4, 6]
+    assert varidx == [0, 1, 2, 2, 0, 1]
+    assert coef == [1.0, 1.0, 5.0, 4.0, 4.0, 5.0]
+
+
+def test_views(env, model):
+    x = model.addvars(2)
+    f = model.addfuns(2)
+    model.addlinterms(f, [0, 1, 2], [x[1], 0], [1.0, 2.0])
+    model.addlinterms([f[0]], [0, 2], x, [3.0, 4.0])
+    found = ([0.0, 0.0], [0, 2, 3], [3, 4, 0], [3.0, 5.0, 2.0])
+    assert model.getfuns(f[0]) == found
+    assert model.getvarterms(x[1]) == ([0, 1], [3], [5.0])
+    other = biyos.Model(env)
+    y = other.addvars(1)
+    g = other.addfuns(1)
+    entry = "an entry of varidx is a variable of another model"
+    with pytest.raises(ValueError, match=entry):
+        model.addlinterms([0], [0, 1], [y[0]], [1.0])
+    with pytest.raises(ValueError, match="funidx is a block of another"):
+        model.addlinterms(g, [0, 1], [0], [1.0])
+    with pytest.raises(ValueError, match="beg is a variable of another"):
+        model.getvarterms(y[0])
+    with pytest.raises(ValueError, match="is a function, not a variable"):
+        model.addlinterms([0], [0, 1], [f[0]], [1.0])
+    with pytest.raises(ValueError, match="beg is a function, not a"):
+        model.getvarterms(f[0])
+
+
+def test_gone(model, monkeypatch):
+    x = model.addvars(1)
+    f = model.addfuns(1)
+    before = terms(model)
+    function, variable = f[0], x[0]
+    model._gen += 1
+    seen = []
+    for name in ("BIYOS_addlinterms", "BIYOS_getvarterms"):
+        spy = partial(recorded, seen, getattr(lib, name))
+        monkeypatch.setattr(lib, name, spy)
+    block = "the block predates a deletion"
+    view = "the function predates a deletion"
+    stale = "the variable predates a deletion"
+    add = model.addlinterms
+    cases = [
+        (block, partial(add, f, [0, 0], [], [])),
+        (view, partial(add, [function], [0, 0], [], [])),
+        (stale, partial(add, [0], [0, 1], [variable], [1.0])),
+        (stale, partial(model.getvarterms, variable)),
+    ]
+    for message, call in cases:
+        with pytest.raises(ValueError, match=message):
+            call()
+    assert seen == []
+    assert terms(model) == before
+
+
+def test_refused(model):
+    model.addfuns(1, None, [0, 1], [1], [LARGE])
+    before = terms(model)
+    message = refusal(model.addlinterms, [1, 1], [0, 0, 0], [], [])
+    assert message == (
+        "invalid argument: argument 'funidx': function 1 is repeated"
+    )
+    message = refusal(model.addlinterms, [4], [0, 0], [], [])
+    assert message == "invalid argument: function 4: unknown"
+    message = refusal(model.addlinterms, [1], [0, 1], [3], [1])
+    assert message == "invalid argument: function 1: variable 3 is unknown"
+    message = refusal(model.addlinterms, [1], [0, 2], [0, 0], [1, 2])
+    assert message == "invalid argument: function 1: variable 0 is repeated"
+    message = refusal(model.addlinterms, [1], [0, 1], [2], [INFINITY])
+    assert message == (
+        "invalid argument: function 1: coefficient of variable 2 is infinity"
+    )
+    message = refusal(
+        model.addlinterms, [0, 3], [0, 1, 2], [0, 1], [1.0, LARGE]
+    )
+    assert message == (
+        "invalid argument: function 3: sum of coefficients of variable 1"
+        " is infinity"
+    )
+    assert terms(model) == before
+
+
+@pytest.mark.parametrize("functions, starts, message", STARTS_WRONG)
+def test_starts(model, functions, starts, message):
+    with pytest.raises(ValueError, match=message):
+        model.addlinterms(functions, starts, [0], [1.0])
+    assert terms(model) == SORTED
+
+
+def test_lengths(model):
+    with pytest.raises(ValueError, match="off has length 1, not 2"):
+        model.addlinterms([0], [0], [], [])
+    with pytest.raises(ValueError, match="varidx has length 1, not 2"):
+        model.addlinterms([0], [0, 2], [0], [1.0, 2.0])
+    with pytest.raises(ValueError, match="coef has length 1, not 0"):
+        model.addlinterms([0], None, None, [1.0])
+    assert terms(model) == SORTED
+
+
+@pytest.mark.parametrize("starts, error, message", WRONG)
+def test_wrong(model, starts, error, message):
+    with pytest.raises(error, match=message):
+        model.addlinterms([0], starts, [0], [1.0])
+    assert terms(model) == SORTED
+
+
+def test_numbers(model):
+    with pytest.raises(TypeError, match="an entry of coef must be a number"):
+        model.addlinterms([0], [0, 1], [0], ["1"])
+    with pytest.raises(TypeError, match="an entry of varidx must be an"):
+        model.addlinterms([0], [0, 1], [0.0], [1.0])
+    with pytest.raises(TypeError, match="an entry of funidx must be an"):
+        model.addlinterms([0.0], [0, 0], [], [])
+    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
+        model.getvarterms(2**32)
+    assert terms(model) == SORTED
+
+
+def test_by_variable(model):
+    assert model.getvarterms() == HELD_VARS
+    model.addlinterms(FUNCTIONS, *ADDED)
+    assert model.getvarterms() == MERGED_VARS
+
+
+def test_range(model):
+    tail = ([0, 2, 3], [0, 2, 0], [0.0, 5.0, 3.0])
+    assert model.getvarterms(1, 2) == tail
+    assert model.getvarterms(2) == ([0, 1], [0], [3.0])
+    assert model.getvarterms(3) == ([0], [], [])
+
+
+def test_transpose(env):
+    draw = random.Random(20261121)
+    for _ in range(30):
+        with biyos.Model(env) as model:
+            n_vars = draw.randint(1, 7)
+            n_funs = draw.randint(0, 6)
+            model.addvars(n_vars)
+            model.addfuns(n_funs, None, *random_terms(draw, n_vars, n_funs))
+            for _ in range(3):
+                funidx = draw.sample(range(n_funs), draw.randint(0, n_funs))
+                added = random_terms(draw, n_vars, len(funidx))
+                model.addlinterms(funidx, *added)
+            by_function = terms(model)
+            whole = transposed(by_function, 0, n_vars)
+            assert model.getvarterms() == whole
+            beg = draw.randint(0, n_vars)
+            n = draw.randint(0, n_vars - beg)
+            assert model.getvarterms(beg, n) == transposed(by_function, beg, n)
+
+
+def test_growing(model):
+    grow = partial(model.addvars, 2)
+    expected = model.getvarterms()
+    assert model.getvarterms(0, Growing(3, grow)) == expected
+    assert model.getnvars() == 5
+
+
+def test_stale(model, monkeypatch):
+    monkeypatch.setattr(model, "getnvars", lambda: 0)
+    spy = Room(lib.BIYOS_getvarterms, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getvarterms", spy)
+    assert model.getvarterms(0, 3) == HELD_VARS
+    assert model.getvarterms(1) == ([0], [], [])
+
+
+def test_outside(model, monkeypatch):
+    limit(monkeypatch, _model, 1)
+    message = refusal(model.getvarterms, 0, 2**31 - 1)
+    assert message == "invalid argument: variable 3: unknown"
+    message = refusal(model.getvarterms, -1)
+    assert message == "invalid argument: variable -1: unknown"
+    message = refusal(model.getvarterms, 0, -1)
+    assert message == "invalid argument: argument 'n': -1 is negative"
+
+
+def test_locked(env, model):
+    seen = []
+
+    def change(event):
+        try:
+            model.addlinterms([0], [0, 1], [0], [1.0])
+        except biyos.Error as error:
+            seen.append(str(error))
+        seen.append(model.getvarterms(2))
+
+    env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
+    with pytest.raises(biyos.Error):
+        env.setopt("seed", -1)
+    assert seen == [LOCKED, ([0, 1], [0], [3.0])]
+    assert terms(model) == SORTED
+
+
+def test_closed(env):
+    model = biyos.Model(env)
+    model.close()
+    calls = (
+        partial(model.addlinterms, [], [0], [], []),
+        model.getvarterms,
+    )
+    for call in calls:
+        with pytest.raises(ValueError, match="the model is closed"):
+            call()
+
+
+def test_copy(model):
+    model.addlinterms(FUNCTIONS, *ADDED)
+    copy = model.copy()
+    assert terms(copy) == MERGED
+    copy.addlinterms([1], [0, 1], [0], [1.0])
+    assert terms(model) == MERGED
+    assert copy.getvarterms(0, 1) == ([0, 3], [0, 1, 2], [1.0, 1.0, 3.0])
+    copy.close()
