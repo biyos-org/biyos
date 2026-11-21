@@ -674,6 +674,100 @@ note An objective may appear more than once, as in `BIYOS_setvarbnd`.
 see BIYOS_addobjs BIYOS_getobjs
 since 0.1.0
 
+function BIYOS_setobjsense
+summary Set the senses of objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry; may be null when `n` is 0.
+param sense in The new sense of each, `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE`; null changes nothing.
+return `BIYOS_OK` once the senses are set.
+error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective or a sense is unknown.
+note An objective may appear more than once, as in `BIYOS_setvarbnd`.
+see BIYOS_getobjsense BIYOS_addobjs
+since 0.1.0
+
+function BIYOS_getobjsense
+summary Read the senses of objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param sense out Entry `j` receives the sense of objective `idx[j]`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+see BIYOS_setobjsense BIYOS_getobjs
+since 0.1.0
+
+function BIYOS_setobjprio
+summary Set the priorities of objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry; may be null when `n` is 0.
+param prio in The new priority of each; null changes nothing.
+return `BIYOS_OK` once the priorities are set.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+note An objective may appear more than once, as in `BIYOS_setvarbnd`.
+see BIYOS_getobjprio BIYOS_addobjs
+since 0.1.0
+
+function BIYOS_getobjprio
+summary Read the priorities of objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param prio out Entry `j` receives the priority of objective `idx[j]`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+see BIYOS_setobjprio BIYOS_getobjs
+since 0.1.0
+
+function BIYOS_setobjcoef
+summary Set the weights of objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry; may be null when `n` is 0.
+param coef in The new weight of each; null changes nothing.
+return `BIYOS_OK` once the weights are set.
+error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective or a weight is not finite and positive.
+note An objective may appear more than once, as in `BIYOS_setvarbnd`.
+see BIYOS_getobjcoef BIYOS_addobjs
+since 0.1.0
+
+function BIYOS_getobjcoef
+summary Read the weights of objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param coef out Entry `j` receives the weight of objective `idx[j]`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+see BIYOS_setobjcoef BIYOS_getobjs
+since 0.1.0
+
+function BIYOS_setobjtol
+summary Set the tolerances of objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry; may be null when `n` is 0.
+param atol in The new absolute tolerance of each; null leaves the absolute tolerances as they are.
+param rtol in The new relative tolerance of each; null leaves the relative tolerances as they are.
+return `BIYOS_OK` once the tolerances are set.
+error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective or a tolerance is NaN or negative.
+note An objective may appear more than once, as in `BIYOS_setvarbnd`.
+see BIYOS_getobjtol
+since 0.1.0
+
+function BIYOS_getobjtol
+summary Read the tolerances of objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param atol out Entry `j` receives the absolute tolerance of objective `idx[j]`; skipped when null.
+param rtol out Entry `j` receives its relative tolerance; skipped when null.
+return `BIYOS_OK` once the arrays are written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+see BIYOS_setobjtol
+since 0.1.0
+
 function BIYOS_getnobjs
 summary Give the number of objectives.
 param mdl in The model.

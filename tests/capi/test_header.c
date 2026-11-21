@@ -164,6 +164,18 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     }
     if (status == BIYOS_OK)
     {
+        status = BIYOS_setobjprio(model, 1, indices, indices);
+    }
+    if (status == BIYOS_OK)
+    {
+        status = BIYOS_getobjprio(model, 1, indices, priorities);
+    }
+    if (status == BIYOS_OK && priorities[0] != 1)
+    {
+        status = BIYOS_ERR_INTERNAL;
+    }
+    if (status == BIYOS_OK)
+    {
         status = BIYOS_getnobjs(model, &objectives);
     }
     if (status == BIYOS_OK)
@@ -306,6 +318,10 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getconbnd(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnobjs(model, &count) != BIYOS_OK ||
         BIYOS_getobjs(model, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getobjsense(model, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getobjprio(model, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getobjcoef(model, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getobjtol(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_copymdl(model, env, &copy) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;

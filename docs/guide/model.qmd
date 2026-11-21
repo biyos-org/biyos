@@ -108,6 +108,8 @@ where $P$ holds the objectives of that priority and $w_i$ is the weight of objec
 
 A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. A null `sense` minimizes every new objective, a null `coef` gives each the weight 1, a null tolerance array gives 0, and a null `prio` gives each objective its own index as its priority. So by default the objectives are optimized one after another in the order they are added, which is what this model asks for explicitly.
 
+`BIYOS_setobjsense`, `BIYOS_setobjprio`, `BIYOS_setobjcoef` and `BIYOS_setobjtol` change one attribute of a list of objectives each, and `BIYOS_getobjsense`, `BIYOS_getobjprio`, `BIYOS_getobjcoef` and `BIYOS_getobjtol` read it back with the same arguments.
+
 ::: {.callout-note}
 ## Stored, not yet solved
 biyos stores and checks the objectives but solves nothing yet. The stages above are what the model means, and what the solvers will do with it.

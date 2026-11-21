@@ -179,6 +179,66 @@ void expect_records(const Records &found, const Records &wanted)
     EXPECT_EQ(bits_of(found.relative), bits_of(wanted.relative));
 }
 
+Records read_listed(const Model &mdl, const std::vector<BIYOS_index> &idx)
+{
+    const auto n = static_cast<BIYOS_index>(idx.size());
+    const std::size_t size = idx.size();
+    Records read{
+        .functions = {},
+        .senses = std::vector<int>(size, -9),
+        .priorities = std::vector<int>(size, -9),
+        .weights = std::vector<double>(size, -9.0),
+        .absolute = std::vector<double>(size, -9.0),
+        .relative = std::vector<double>(size, -9.0),
+    };
+    const BIYOS_model *held = mdl.get();
+    const BIYOS_index *listed = idx.data();
+    EXPECT_EQ(BIYOS_getobjsense(held, n, listed, read.senses.data()), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjprio(held, n, listed, read.priorities.data()), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjcoef(held, n, listed, read.weights.data()), BIYOS_OK);
+    const BIYOS_status status =
+        BIYOS_getobjtol(held, n, listed, read.absolute.data(), read.relative.data());
+    EXPECT_EQ(status, BIYOS_OK);
+    return read;
+}
+
+Records picked(const Records &all, const std::vector<BIYOS_index> &idx)
+{
+    Records found;
+    for (const BIYOS_index i : idx)
+    {
+        const auto k = static_cast<std::size_t>(i);
+        found.senses.push_back(all.senses[k]);
+        found.priorities.push_back(all.priorities[k]);
+        found.weights.push_back(all.weights[k]);
+        found.absolute.push_back(all.absolute[k]);
+        found.relative.push_back(all.relative[k]);
+    }
+    return found;
+}
+
+void expect_refused(const Env &env,
+                    const BIYOS_model *mdl,
+                    BIYOS_index n,
+                    const BIYOS_index *idx,
+                    const std::string &msg)
+{
+    int ints[] = {-9, -9};
+    double reals[] = {-9.0, -9.0};
+    double others[] = {-9.0, -9.0};
+    EXPECT_EQ(BIYOS_getobjsense(mdl, n, idx, ints), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), msg);
+    EXPECT_EQ(BIYOS_getobjprio(mdl, n, idx, ints), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), msg);
+    EXPECT_EQ(BIYOS_getobjcoef(mdl, n, idx, reals), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), msg);
+    EXPECT_EQ(BIYOS_getobjtol(mdl, n, idx, reals, others), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), msg);
+    EXPECT_EQ(std::vector<int>({ints[0], ints[1]}), std::vector<int>(2, -9));
+    const std::vector<double> written{reals[0], reals[1], others[0], others[1]};
+    EXPECT_EQ(bits_of(written), bits_of(std::vector<double>(4, -9.0)));
+}
+
 Records defaults(const std::vector<int> &funs)
 {
     const std::size_t size = funs.size();
@@ -217,11 +277,20 @@ void change(const BIYOS_event *, void *data)
     BIYOS_model *mdl = attempt.model;
     const BIYOS_index idx = 0;
     const double weight = 2.0;
+    const BIYOS_int sense = BIYOS_MAXIMIZE;
     BIYOS_index n = 0;
     note(attempt, add_with(mdl, 1, &idx, {}));
     note(attempt, set_with(mdl, 1, &idx, {.weights = &weight}));
+    note(attempt, BIYOS_setobjsense(mdl, 1, &idx, &sense));
+    note(attempt, BIYOS_setobjprio(mdl, 1, &idx, &idx));
+    note(attempt, BIYOS_setobjcoef(mdl, 1, &idx, &weight));
+    note(attempt, BIYOS_setobjtol(mdl, 1, &idx, &weight, &weight));
     note(attempt, BIYOS_getnobjs(mdl, &n));
     note(attempt, get_with(mdl, 0, 1, {}));
+    note(attempt, BIYOS_getobjsense(mdl, 1, &idx, nullptr));
+    note(attempt, BIYOS_getobjprio(mdl, 1, &idx, nullptr));
+    note(attempt, BIYOS_getobjcoef(mdl, 1, &idx, nullptr));
+    note(attempt, BIYOS_getobjtol(mdl, 1, &idx, nullptr, nullptr));
 }
 
 }
@@ -436,12 +505,140 @@ TEST(CApiTest, LockedObjectives)
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    const BIYOS_status refused = BIYOS_ERR_BADARG;
-    const std::vector<BIYOS_status> statuses{refused, refused, BIYOS_OK, BIYOS_OK};
+    std::vector<BIYOS_status> statuses(6, BIYOS_ERR_BADARG);
+    statuses.resize(12, BIYOS_OK);
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
     EXPECT_EQ(attempt.statuses, statuses);
-    EXPECT_EQ(attempt.messages[0], locked);
-    EXPECT_EQ(attempt.messages[1], locked);
+    EXPECT_EQ(attempt.messages, std::vector<std::string>(12, locked));
     EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
     expect_records(read_all(mdl), defaults({0}));
+}
+
+TEST(CApiTest, ListedObjectives)
+{
+    const Env env;
+    const Model mdl(env);
+    add_sample(mdl);
+    const std::vector<BIYOS_index> idx{2, 0, 2, 1};
+    const Records wanted{
+        .functions = {},
+        .senses = {BIYOS_MINIMIZE, BIYOS_MAXIMIZE, BIYOS_MINIMIZE, BIYOS_MINIMIZE},
+        .priorities = {2, 2, 2, -1},
+        .weights = {3.0, 0.5, 3.0, 1.0},
+        .absolute = {kInfinity, 0.0, kInfinity, 1.5},
+        .relative = {0.0, 0.25, 0.0, 0.0},
+    };
+    expect_records(read_listed(mdl, idx), wanted);
+    expect_records(picked(read_all(mdl), idx), wanted);
+    expect_records(read_listed(mdl, {}), Records{});
+    EXPECT_EQ(env.message(), "");
+}
+
+TEST(CApiTest, ObjectiveSetters)
+{
+    const Env env;
+    const Model mdl(env);
+    add_sample(mdl);
+    BIYOS_model *held = mdl.get();
+    const BIYOS_index idx[] = {2, 0, 2};
+    const int sense[] = {BIYOS_MINIMIZE, BIYOS_MAXIMIZE, BIYOS_MAXIMIZE};
+    const int prio[] = {5, -3, 7};
+    const double coef[] = {2.0, 4.0, 8.0};
+    const double atol[] = {0.5, kInfinity, 1.0};
+    const double rtol[] = {0.125, 0.25, 0.0};
+    ASSERT_EQ(BIYOS_setobjsense(held, 3, idx, sense), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjprio(held, 3, idx, prio), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjcoef(held, 3, idx, coef), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtol(held, 3, idx, atol, rtol), BIYOS_OK);
+    const Records listed{
+        .functions = {},
+        .senses = {BIYOS_MAXIMIZE, BIYOS_MAXIMIZE, BIYOS_MAXIMIZE},
+        .priorities = {7, -3, 7},
+        .weights = {8.0, 4.0, 8.0},
+        .absolute = {1.0, kInfinity, 1.0},
+        .relative = {0.0, 0.25, 0.0},
+    };
+    expect_records(read_listed(mdl, {2, 0, 2}), listed);
+    ASSERT_EQ(BIYOS_setobjsense(held, 3, idx, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjprio(held, 3, idx, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjcoef(held, 3, idx, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtol(held, 3, idx, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtol(held, 1, idx, atol, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtol(held, 0, nullptr, atol, rtol), BIYOS_OK);
+    const Records wanted{
+        .functions = kSample.functions,
+        .senses = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE, BIYOS_MAXIMIZE},
+        .priorities = {-3, -1, 7},
+        .weights = {4.0, 1.0, 8.0},
+        .absolute = {kInfinity, 1.5, 0.5},
+        .relative = {0.25, 0.0, 0.0},
+    };
+    expect_records(read_all(mdl), wanted);
+    expect_records(read_listed(mdl, {0, 1, 2}), picked(wanted, {0, 1, 2}));
+}
+
+TEST(CApiTest, ObjectiveNulls)
+{
+    const Env env;
+    const Model mdl(env);
+    add_sample(mdl);
+    const BIYOS_model *held = mdl.get();
+    const BIYOS_index idx[] = {1, 2};
+    double atol[] = {-9.0, -9.0};
+    double rtol[] = {-9.0, -9.0};
+    int found[] = {-9, -9};
+    EXPECT_EQ(BIYOS_getobjsense(held, 2, idx, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjprio(held, 2, idx, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjcoef(held, 2, idx, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjtol(held, 2, idx, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjtol(held, 2, idx, atol, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjtol(held, 1, idx, nullptr, rtol), BIYOS_OK);
+    EXPECT_EQ(bits_of({atol[0], atol[1]}), bits_of({1.5, kInfinity}));
+    EXPECT_EQ(bits_of({rtol[0], rtol[1]}), bits_of({0.0, -9.0}));
+    EXPECT_EQ(BIYOS_getobjsense(held, 0, nullptr, found), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjprio(held, 0, nullptr, found), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjcoef(held, 0, nullptr, atol), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjtol(held, 0, nullptr, atol, rtol), BIYOS_OK);
+    EXPECT_EQ(std::vector<int>({found[0], found[1]}), std::vector<int>(2, -9));
+    EXPECT_EQ(bits_of({atol[0], rtol[0]}), bits_of({1.5, 0.0}));
+    EXPECT_EQ(env.message(), "");
+}
+
+TEST(CApiTest, ObjectiveRefusals)
+{
+    const Env env;
+    const Model mdl(env);
+    add_sample(mdl);
+    BIYOS_model *held = mdl.get();
+    const BIYOS_index beyond[] = {0, 3};
+    const BIYOS_index negative[] = {1, -1};
+    expect_refused(env, held, 2, beyond, "invalid argument: objective 3: unknown");
+    expect_refused(env, held, 2, negative, "invalid argument: objective -1: unknown");
+    expect_refused(env, held, -1, beyond, "invalid argument: argument 'n': -1 is negative");
+    expect_refused(env, held, 1, nullptr, "invalid argument: argument 'idx': is null");
+    const BIYOS_index idx[] = {1, 0};
+    const int sense[] = {BIYOS_MAXIMIZE, 0};
+    const int prio[] = {4, 5};
+    const double coef[] = {2.0, -1.0};
+    const double atol[] = {0.5, -1.0};
+    const double rtol[] = {0.5, kNan};
+    EXPECT_EQ(BIYOS_setobjsense(held, 2, beyond, sense), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
+    EXPECT_EQ(BIYOS_setobjprio(held, 2, negative, prio), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: objective -1: unknown");
+    EXPECT_EQ(BIYOS_setobjcoef(held, -1, idx, coef), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
+    EXPECT_EQ(BIYOS_setobjtol(held, 1, nullptr, atol, rtol), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(BIYOS_setobjsense(held, 2, idx, sense), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: objective 0: sense 0 is unknown");
+    EXPECT_EQ(BIYOS_setobjcoef(held, 2, idx, coef), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: objective 0: weight -1 is not positive");
+    EXPECT_EQ(BIYOS_setobjcoef(held, 1, idx, &kInfinity), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: objective 1: weight is infinity");
+    EXPECT_EQ(BIYOS_setobjtol(held, 2, idx, atol, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: objective 0: absolute tolerance -1 is negative");
+    EXPECT_EQ(BIYOS_setobjtol(held, 2, idx, nullptr, rtol), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: objective 0: relative tolerance is NaN");
+    expect_records(read_all(mdl), kSample);
 }

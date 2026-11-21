@@ -218,6 +218,40 @@ BIYOS_API BIYOS_status BIYOS_setobjs(BIYOS_model *mdl,
                                      const BIYOS_real *coef,
                                      const BIYOS_real *atol,
                                      const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_setobjsense(BIYOS_model *mdl,
+                                         BIYOS_index n,
+                                         const BIYOS_index *idx,
+                                         const BIYOS_int *sense);
+BIYOS_API BIYOS_status BIYOS_getobjsense(const BIYOS_model *mdl,
+                                         BIYOS_index n,
+                                         const BIYOS_index *idx,
+                                         BIYOS_int *sense);
+BIYOS_API BIYOS_status BIYOS_setobjprio(BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const BIYOS_int *prio);
+BIYOS_API BIYOS_status BIYOS_getobjprio(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        BIYOS_int *prio);
+BIYOS_API BIYOS_status BIYOS_setobjcoef(BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_getobjcoef(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_setobjtol(BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       const BIYOS_real *atol,
+                                       const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_getobjtol(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_real *atol,
+                                       BIYOS_real *rtol);
 BIYOS_API BIYOS_status BIYOS_getnobjs(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
                                      BIYOS_index beg,

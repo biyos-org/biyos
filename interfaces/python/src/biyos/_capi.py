@@ -137,6 +137,13 @@ def _declare_objectives(lib, ints, doubles):
     _declare(lib, "BIYOS_addobjs", c_int, *add)
     change = (c_void_p, c_int32, ints, *fields)
     _declare(lib, "BIYOS_setobjs", c_int, *change)
+    for name, values in (("sense", ints), ("prio", ints), ("coef", doubles)):
+        attribute = (c_void_p, c_int32, ints, values)
+        _declare(lib, f"BIYOS_setobj{name}", c_int, *attribute)
+        _declare(lib, f"BIYOS_getobj{name}", c_int, *attribute)
+    tolerances = (c_void_p, c_int32, ints, doubles, doubles)
+    _declare(lib, "BIYOS_setobjtol", c_int, *tolerances)
+    _declare(lib, "BIYOS_getobjtol", c_int, *tolerances)
     _declare(lib, "BIYOS_getnobjs", c_int, c_void_p, ints)
     read = (c_void_p, c_int32, c_int32, ints, *fields)
     _declare(lib, "BIYOS_getobjs", c_int, *read)
