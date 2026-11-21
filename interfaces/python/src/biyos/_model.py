@@ -57,7 +57,7 @@ class Sense(IntEnum):
     MAXIMIZE = 2
 
 
-def _environment(env):
+def _checked_env(env):
     if not isinstance(env, Env):
         found = type(env).__name__
         raise TypeError(f"env must be an Env, not {found}")
@@ -111,7 +111,7 @@ class Model:
     """
 
     def __init__(self, env):
-        self._start(_environment(env))
+        self._start(_checked_env(env))
         with self._env._busy():
             self._make(self._env._call, lib.BIYOS_newmdl)
         self._hold()
@@ -200,7 +200,7 @@ class Model:
         --------
         BIYOS_copymdl
         """
-        env = self._env if env is None else _environment(env)
+        env = self._env if env is None else _checked_env(env)
         if not self._open():
             raise ValueError("the model is closed")
         copy = Model.__new__(Model)

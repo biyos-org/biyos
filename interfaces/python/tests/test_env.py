@@ -286,7 +286,7 @@ def test_relayed(monkeypatch):
     assert not env._free.alive
 
 
-def test_subscribing(log, monkeypatch):
+def test_hooking(log, monkeypatch):
     env = biyos.Env()
     before_entry("BIYOS_addhook", [env.close], monkeypatch)
     with pytest.raises(biyos.Error, match="event kind 99: unknown"):
@@ -294,15 +294,15 @@ def test_subscribing(log, monkeypatch):
     assert log == ["call", "env"]
 
 
-def test_unsubscribing(log, monkeypatch):
+def test_unhooking(log, monkeypatch):
     env = biyos.Env()
-    subscription = env.addhook(print, EventKind.MESSAGE, EventLevel.ERROR)
+    idx = env.addhook(print, EventKind.MESSAGE, EventLevel.ERROR)
     before_entry("BIYOS_delhook", [env.close], monkeypatch)
-    env.delhook(subscription)
+    env.delhook(idx)
     assert log == ["call", "call", "env"]
 
 
-def test_closed_subscribe():
+def test_closed_hook():
     env = biyos.Env()
     env.close()
     with pytest.raises(ValueError, match="the environment is closed"):

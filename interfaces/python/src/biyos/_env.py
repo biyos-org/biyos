@@ -9,7 +9,7 @@ from biyos._error import Error, check
 from biyos._handles import Handles
 from biyos._integers import integer
 from biyos._relay import Relay
-from biyos._hooks import Subscribers
+from biyos._hooks import Hooks
 from biyos._text import encoded
 from biyos._versions import Versions, version_text
 
@@ -105,7 +105,7 @@ class Env:
         self._models = Handles()
         self._arm()
         self._relay = Relay()
-        self._subscribers = Subscribers(self._relay)
+        self._hooks = Hooks(self._relay)
         self._calls = 0
         self._closing = False
         self._pending = False
@@ -264,10 +264,10 @@ class Env:
         hk = _callable(hk)
         knd = integer("knd", knd)
         lvl = integer("lvl", lvl)
-        subscription = c_int()
+        idx = c_int()
         with self._busy():
-            self._addhook(hk, knd, lvl, subscription)
-        return subscription.value
+            self._addhook(hk, knd, lvl, idx)
+        return idx.value
 
     def delhook(self, idx):
         """Remove a hook.
@@ -290,18 +290,18 @@ class Env:
         with self._busy():
             self._delhook(idx)
 
-    def _addhook(self, function, kind, lowest, subscription):
-        callback = self._subscribers.callback
-        out = byref(subscription)
-        key = self._subscribers.add(function)
+    def _addhook(self, function, kind, lowest, idx):
+        callback = self._hooks.callback
+        out = byref(idx)
+        key = self._hooks.add(function)
         try:
             self._call(lib.BIYOS_addhook, callback, key, kind, lowest, out)
         finally:
-            self._subscribers.settle(key, subscription.value)
+            self._hooks.settle(key, idx.value)
 
-    def _delhook(self, subscription):
-        self._call(lib.BIYOS_delhook, subscription)
-        self._subscribers.remove(subscription)
+    def _delhook(self, idx):
+        self._call(lib.BIYOS_delhook, idx)
+        self._hooks.remove(idx)
 
     def _lookup(self, name):
         option = self._option(name)
@@ -369,7 +369,7 @@ class Env:
             return _capi.OK
         status = _release(self._models, self._handle)
         if status == _capi.OK:
-            self._subscribers.clear()
+            self._hooks.clear()
         else:
             self._arm()
         return status

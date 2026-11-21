@@ -22,7 +22,7 @@ KIND_DOUBLE = 3
 KIND_STRING = 4
 KIND_ENUM = 5
 
-SUBSCRIBER = CFUNCTYPE(None, c_void_p, c_void_p)
+HOOK = CFUNCTYPE(None, c_void_p, c_void_p)
 
 
 def _declare(lib, name, result, *arguments):
@@ -60,8 +60,8 @@ def _load():
 
 
 def _declare_events(lib, ints):
-    subscribe = (c_void_p, SUBSCRIBER, c_void_p, c_int32, c_int32, ints)
-    _declare(lib, "BIYOS_addhook", c_int, *subscribe)
+    arguments = (c_void_p, HOOK, c_void_p, c_int32, c_int32, ints)
+    _declare(lib, "BIYOS_addhook", c_int, *arguments)
     _declare(lib, "BIYOS_delhook", c_int, c_void_p, c_int32)
     _declare(lib, "BIYOS_getevtknd", c_int32, c_void_p)
     _declare(lib, "BIYOS_getevtlvl", c_int32, c_void_p)

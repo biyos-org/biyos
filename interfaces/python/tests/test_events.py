@@ -97,17 +97,17 @@ def test_kind():
     assert seen == []
 
 
-def test_unsubscribe():
+def test_delhook():
     seen = []
     with biyos.Env() as env:
         function = partial(record, seen)
-        subscription = env.addhook(
+        idx = env.addhook(
             function, EventKind.MESSAGE, EventLevel.DEBUG
         )
-        env.delhook(subscription)
+        env.delhook(idx)
         fail(env)
         with pytest.raises(biyos.Error) as caught:
-            env.delhook(subscription)
+            env.delhook(idx)
     assert seen == []
     assert caught.value.code == -100
 
@@ -142,17 +142,17 @@ def test_index():
     with biyos.Env() as env:
         kind = Number(int(EventKind.MESSAGE))
         lowest = Number(int(EventLevel.DEBUG))
-        subscription = env.addhook(partial(record, seen), kind, lowest)
+        idx = env.addhook(partial(record, seen), kind, lowest)
         fail(env)
-        env.delhook(Number(subscription))
+        env.delhook(Number(idx))
         fail(env)
     assert len(seen) == 1
 
 
-@pytest.mark.parametrize("subscription", NUMBERS)
-def test_number(subscription):
+@pytest.mark.parametrize("idx", NUMBERS)
+def test_number(idx):
     with biyos.Env() as env, pytest.raises(TypeError):
-        env.delhook(subscription)
+        env.delhook(idx)
 
 
 @pytest.mark.parametrize("read", READERS)
