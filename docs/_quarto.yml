@@ -32,6 +32,7 @@ book:
       chapters:
         - method/form.qmd
         - method/graph.qmd
+        - method/tapes.qmd
     - references.qmd
 
 number-sections: true

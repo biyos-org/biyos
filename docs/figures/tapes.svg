@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 312" font-family="Inter, sans-serif" font-size="14">
+  <defs>
+    <marker id="tapes-tip" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path class="tip-blue" d="M0 0L8 4L0 8Z" fill="#3C6BF0"/>
+    </marker>
+  </defs>
+  <g font-size="11" font-weight="600" letter-spacing="0.7" class="muted" fill="#5B6069">
+    <text x="0" y="22">PRE-PASS</text>
+    <text x="0" y="118">TAPE A</text>
+    <text x="400" y="118">TAPE B</text>
+  </g>
+  <rect class="soft" x="0.5" y="32.5" width="759" height="48" rx="4" fill="#E6ECFD" stroke="#3C6BF0"/>
+  <rect class="box" x="0.5" y="128.5" width="359" height="56" rx="4" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <rect class="box" x="400.5" y="128.5" width="359" height="100" rx="4" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <path class="rule" d="M401 178.5H759" stroke="#D9D9D2"/>
+  <g class="ink mono" fill="#16181D" font-family="JetBrains Mono, DejaVu Sans Mono, monospace" font-size="13">
+    <text x="18" y="62">p ← x₀ · x₁</text>
+    <text x="18" y="161">a₀ ← exp(p)</text>
+    <text x="418" y="161">b₀ ← sin(p)</text>
+    <text x="418" y="209">b₁ ← b₀ · x₂</text>
+  </g>
+  <g class="muted mono" fill="#5B6069" font-family="JetBrains Mono, DejaVu Sans Mono, monospace" font-size="12">
+    <text x="200" y="62">∂p/∂x₀ = x₁   ∂p/∂x₁ = x₀</text>
+    <text x="200" y="161">∂ = a₀</text>
+    <text x="600" y="161">∂ = cos(p)</text>
+    <text x="600" y="209">∂ = x₂, b₀</text>
+  </g>
+  <g class="accent" stroke="#3C6BF0" stroke-width="1.5" fill="none" marker-end="url(#tapes-tip)">
+    <path d="M90 81V125"/>
+    <path d="M490 81V125"/>
+  </g>
+  <g class="link" fill="#2A55D6" font-size="13" font-weight="600">
+    <text x="0" y="210">root f₀ = a₀</text>
+    <text x="400" y="254">root f₁ = b₁</text>
+  </g>
+  <g class="muted" fill="#5B6069" font-size="12">
+    <text x="0" y="290">Each instruction writes a slot and stores its partial derivatives as the forward sweep runs.</text>
+    <text x="0" y="306">Slots are local to a tape, and a slot is reused once the value it holds is no longer needed.</text>
+  </g>
+</svg>
