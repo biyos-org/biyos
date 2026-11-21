@@ -16,9 +16,13 @@ template <typename Term> struct Addition
 };
 
 using AddedPairs = Addition<QuadraticTerm>;
+using AddedTerms = Addition<LinearTerm>;
 
 void merge_pairs(std::vector<Offset> &ends,
                  std::vector<QuadraticTerm> &terms,
                  std::span<const AddedPairs> additions);
+void merge_terms(std::vector<Offset> &ends,
+                 std::vector<LinearTerm> &terms,
+                 std::span<const AddedTerms> additions);
 
 }

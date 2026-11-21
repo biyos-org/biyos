@@ -117,6 +117,9 @@ class Model
     void add_funs(std::span<const double> constants,
                   std::span<const Offset> starts,
                   std::vector<LinearTerm> terms);
+    void add_lin_terms(std::span<const Index> funs,
+                       std::span<const Offset> starts,
+                       std::vector<LinearTerm> terms);
 
     std::span<const QuadraticTerm> quad_terms(Index beg, Index n) const;
 

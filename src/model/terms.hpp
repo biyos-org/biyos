@@ -10,5 +10,6 @@ namespace biyos
 
 void check_terms(Index fun, std::span<const LinearTerm> terms, Index vars);
 void sort_terms(Index fun, std::span<LinearTerm> terms);
+void check_sum(Index fun, const LinearTerm &held, const LinearTerm &given);
 
 }

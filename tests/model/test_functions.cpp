@@ -1,11 +1,14 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "model/compare.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>
 
+#include <bit>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -15,6 +18,8 @@
 namespace
 {
 
+using biyos::difference;
+using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
@@ -24,10 +29,18 @@ using biyos::test::refusal;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr double kLarge = 1.0e308;
 
 struct Functions
 {
     std::vector<double> constants;
+    std::vector<Offset> starts;
+    std::vector<LinearTerm> terms;
+};
+
+struct Linear
+{
+    std::vector<Index> functions;
     std::vector<Offset> starts;
     std::vector<LinearTerm> terms;
 };
@@ -70,6 +83,22 @@ void expect_terms(std::span<const LinearTerm> found, const std::vector<LinearTer
     }
 }
 
+std::uint64_t bits_of(double value)
+{
+    return std::bit_cast<std::uint64_t>(value);
+}
+
+void expect_exact(std::span<const LinearTerm> found, const std::vector<LinearTerm> &wanted)
+{
+    ASSERT_EQ(found.size(), wanted.size());
+    for (std::size_t k = 0; k < found.size(); ++k)
+    {
+        const double coefficient = found[k].coefficient;
+        EXPECT_EQ(found[k].variable, wanted[k].variable) << "term " << k;
+        EXPECT_EQ(bits_of(coefficient), bits_of(wanted[k].coefficient)) << coefficient;
+    }
+}
+
 void expect_constants(std::span<const double> found, const std::vector<double> &wanted)
 {
     ASSERT_EQ(found.size(), wanted.size());
@@ -82,6 +111,34 @@ void expect_constants(std::span<const double> found, const std::vector<double> &
 template <typename Call> void expect_internal(Call call)
 {
     failure(call, biyos::ErrorKind::Internal);
+}
+
+void add_terms(Model &mdl, const Linear &lin)
+{
+    mdl.add_lin_terms(lin.functions, lin.starts, lin.terms);
+}
+
+Linear terms_of(Index fun, std::vector<LinearTerm> terms)
+{
+    const auto size = static_cast<Offset>(terms.size());
+    return Linear{.functions = {fun}, .starts = {0, size}, .terms = std::move(terms)};
+}
+
+std::string terms_refusal(Model &mdl, const Linear &lin)
+{
+    return refusal([&] { add_terms(mdl, lin); });
+}
+
+Model with_terms()
+{
+    Model mdl = with_vars(4);
+    const Functions funs{
+        .constants = {1.0, 2.0, 3.0},
+        .starts = {0, 2, 2, 3},
+        .terms = {{1, 1.0}, {3, 2.0}, {2, 3.0}},
+    };
+    add(mdl, funs);
+    return mdl;
 }
 
 }
@@ -268,4 +325,173 @@ TEST(FunctionTest, Moved)
     add(mdl, single(0.0, {}));
     EXPECT_EQ(mdl.n_funs(), 1);
     EXPECT_EQ(assigned.n_funs(), 1);
+}
+
+TEST(FunctionTest, LinearTerms)
+{
+    Model mdl = with_terms();
+    const Linear lin{
+        .functions = {2, 0},
+        .starts = {0, 2, 5},
+        .terms = {{0, -1.0}, {2, 0.5}, {3, 0.25}, {0, 4.0}, {2, 5.0}},
+    };
+    add_terms(mdl, lin);
+    expect_terms(mdl.terms(0, 1), {{0, 4.0}, {1, 1.0}, {2, 5.0}, {3, 2.25}});
+    expect_terms(mdl.terms(1, 1), {});
+    expect_terms(mdl.terms(2, 1), {{0, -1.0}, {2, 3.5}});
+    expect_constants(mdl.constants(0, 3), {1.0, 2.0, 3.0});
+}
+
+TEST(FunctionTest, LinearMerge)
+{
+    Model mdl = with_vars(5);
+    const Functions held{
+        .constants = {0.0, 0.0, 0.0, 0.0, 0.0},
+        .starts = {0, 1, 2, 4, 4, 5},
+        .terms = {{0, 1.0}, {1, 2.0}, {0, 3.0}, {2, 4.0}, {4, 5.0}},
+    };
+    add(mdl, held);
+    const Linear lin{
+        .functions = {3, 0, 4, 2},
+        .starts = {0, 3, 4, 6, 7},
+        .terms = {{3, 1.0}, {0, 1.0}, {1, 1.0}, {0, 1.0}, {4, 1.0}, {3, 1.0}, {1, 1.0}},
+    };
+    add_terms(mdl, lin);
+    Model whole = with_vars(5);
+    const Functions merged{
+        .constants = {0.0, 0.0, 0.0, 0.0, 0.0},
+        .starts = {0, 1, 2, 5, 8, 10},
+        .terms = {{0, 2.0},
+                  {1, 2.0},
+                  {0, 3.0},
+                  {1, 1.0},
+                  {2, 4.0},
+                  {0, 1.0},
+                  {1, 1.0},
+                  {3, 1.0},
+                  {3, 1.0},
+                  {4, 6.0}},
+    };
+    add(whole, merged);
+    EXPECT_EQ(difference(mdl, whole), "");
+}
+
+TEST(FunctionTest, LinearTwice)
+{
+    Model mdl = with_terms();
+    add_terms(mdl, terms_of(1, {{3, 1.0}, {1, 2.0}}));
+    add_terms(mdl, terms_of(1, {{2, 4.0}, {1, 0.5}, {0, 3.0}}));
+    expect_terms(mdl.terms(0, 1), {{1, 1.0}, {3, 2.0}});
+    expect_terms(mdl.terms(1, 1), {{0, 3.0}, {1, 2.5}, {2, 4.0}, {3, 1.0}});
+    expect_terms(mdl.terms(2, 1), {{2, 3.0}});
+}
+
+TEST(FunctionTest, LinearRefused)
+{
+    Model mdl = with_terms();
+    const std::string bad = "invalid argument: ";
+    const Linear twice{
+        .functions = {1, 0, 1},
+        .starts = {0, 1, 1, 2},
+        .terms = {{0, 1.0}, {1, 2.0}},
+    };
+    EXPECT_EQ(terms_refusal(mdl, twice), bad + "argument 'funidx': function 1 is repeated");
+    EXPECT_EQ(terms_refusal(mdl, terms_of(3, {})), bad + "function 3: unknown");
+    EXPECT_EQ(terms_refusal(mdl, terms_of(-1, {{0, 1.0}})), bad + "function -1: unknown");
+    EXPECT_EQ(terms_refusal(mdl, terms_of(0, {{0, 1.0}, {4, 1.0}})),
+              bad + "function 0: variable 4 is unknown");
+    EXPECT_EQ(terms_refusal(mdl, terms_of(0, {{-1, 1.0}})),
+              bad + "function 0: variable -1 is unknown");
+    EXPECT_EQ(terms_refusal(mdl, terms_of(0, {{1, 1.0}, {0, 1.0}, {1, 2.0}})),
+              bad + "function 0: variable 1 is repeated");
+    const std::string coefficient = bad + "function 2: coefficient of variable 2 ";
+    EXPECT_EQ(terms_refusal(mdl, terms_of(2, {{0, 1.0}, {2, kNan}})), coefficient + "is NaN");
+    EXPECT_EQ(terms_refusal(mdl, terms_of(2, {{2, kInfinity}})), coefficient + "is infinity");
+    EXPECT_EQ(terms_refusal(mdl, terms_of(2, {{2, -kInfinity}})),
+              coefficient + "is minus infinity");
+    EXPECT_EQ(difference(mdl, with_terms()), "");
+}
+
+TEST(FunctionTest, LinearSums)
+{
+    Model mdl = with_vars(2);
+    add(mdl, single(0.0, {{0, kLarge}, {1, -kLarge}}));
+    const std::string bad = "invalid argument: function 0: sum of coefficients of variable ";
+    EXPECT_EQ(terms_refusal(mdl, terms_of(0, {{0, kLarge}})), bad + "0 is infinity");
+    EXPECT_EQ(terms_refusal(mdl, terms_of(0, {{0, 1.0}, {1, -kLarge}})),
+              bad + "1 is minus infinity");
+    expect_terms(mdl.terms(0, 1), {{0, kLarge}, {1, -kLarge}});
+}
+
+TEST(FunctionTest, LinearAtomic)
+{
+    Model mdl = with_terms();
+    add_terms(mdl, terms_of(2, {{0, kLarge}}));
+    const Model before = mdl;
+    const Linear overflow{
+        .functions = {0, 2},
+        .starts = {0, 1, 2},
+        .terms = {{0, 1.0}, {0, kLarge}},
+    };
+    EXPECT_EQ(terms_refusal(mdl, overflow),
+              "invalid argument: function 2: sum of coefficients of variable 0 is infinity");
+    EXPECT_EQ(difference(mdl, before), "");
+    add(mdl, single(4.0, {{3, 1.0}}));
+    expect_terms(mdl.terms(2, 2), {{0, kLarge}, {2, 3.0}, {3, 1.0}});
+}
+
+TEST(FunctionTest, LinearZeros)
+{
+    Model mdl = with_terms();
+    add_terms(mdl, terms_of(0, {{1, -1.0}, {0, 0.0}, {2, -0.0}}));
+    expect_exact(mdl.terms(0, 1), {{0, 0.0}, {1, 0.0}, {2, -0.0}, {3, 2.0}});
+    add_terms(mdl, terms_of(1, {{2, 1.5}, {3, -0.0}}));
+    add_terms(mdl, terms_of(1, {{2, -1.5}, {3, -0.0}}));
+    expect_exact(mdl.terms(1, 1), {{2, 0.0}, {3, -0.0}});
+}
+
+TEST(FunctionTest, LinearEmpty)
+{
+    Model mdl = with_terms();
+    add_terms(mdl, Linear{.functions = {}, .starts = {0}, .terms = {}});
+    add_terms(mdl, Linear{.functions = {2, 0}, .starts = {0, 0, 0}, .terms = {}});
+    EXPECT_EQ(difference(mdl, with_terms()), "");
+}
+
+TEST(FunctionTest, LinearLater)
+{
+    Model mdl = with_terms();
+    add_terms(mdl, terms_of(1, {{0, 1.0}}));
+    add(mdl, single(4.0, {{2, 2.0}}));
+    expect_terms(mdl.terms(1, 1), {{0, 1.0}});
+    expect_terms(mdl.terms(3, 1), {{2, 2.0}});
+    add_terms(mdl, terms_of(3, {{0, 1.0}}));
+    expect_terms(mdl.terms(2, 2), {{2, 3.0}, {0, 1.0}, {2, 2.0}});
+    EXPECT_EQ(mdl.terms(0, 4).size(), 6U);
+}
+
+TEST(FunctionTest, LinearStarts)
+{
+    Model mdl = with_terms();
+    const Linear late{.functions = {0}, .starts = {1, 1}, .terms = {{0, 1.0}}};
+    EXPECT_EQ(terms_refusal(mdl, late), "invalid argument: argument 'off': begins at 1, not 0");
+    const Linear falling{.functions = {0, 1}, .starts = {0, 2, 1}, .terms = {{0, 1.0}}};
+    EXPECT_EQ(terms_refusal(mdl, falling),
+              "invalid argument: argument 'off': decreases from 2 to 1 at entry 2");
+    const Linear short_starts{.functions = {0}, .starts = {0}, .terms = {}};
+    expect_internal([&] { add_terms(mdl, short_starts); });
+    const Linear long_terms{.functions = {0}, .starts = {0, 2}, .terms = {{0, 1.0}}};
+    expect_internal([&] { add_terms(mdl, long_terms); });
+    EXPECT_EQ(difference(mdl, with_terms()), "");
+}
+
+TEST(FunctionTest, LinearCopy)
+{
+    Model mdl = with_terms();
+    add_terms(mdl, terms_of(1, {{2, 1.5}, {0, -0.0}}));
+    Model copy = mdl;
+    EXPECT_EQ(difference(mdl, copy), "");
+    add_terms(copy, terms_of(1, {{2, 1.0}}));
+    EXPECT_EQ(difference(mdl, copy), "function 1: term 1: coefficient 1.5 against 2.5");
+    expect_exact(mdl.terms(1, 1), {{0, -0.0}, {2, 1.5}});
 }

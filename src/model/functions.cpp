@@ -4,6 +4,7 @@
 #include "core/index.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
+#include "model/merge.hpp"
 #include "model/terms.hpp"
 
 #include <cstddef>
@@ -75,6 +76,25 @@ void Model::add_funs(std::span<const double> constants,
         sort_terms(fun, part);
     }
     append(constants, starts, terms);
+}
+
+void Model::add_lin_terms(std::span<const Index> funs,
+                          std::span<const Offset> starts,
+                          std::vector<LinearTerm> terms)
+{
+    check_room(0, static_cast<Offset>(terms.size()));
+    check_shape(funs.size(), starts, terms.size());
+    check_funs(funs, n_funs());
+    std::vector<AddedTerms> additions;
+    additions.reserve(funs.size());
+    for (std::size_t k = 0; k < funs.size(); ++k)
+    {
+        const std::span<LinearTerm> part = slice(std::span(terms), starts, k);
+        check_terms(funs[k], part, n_vars());
+        sort_terms(funs[k], part);
+        additions.push_back(AddedTerms{.function = funs[k], .terms = part});
+    }
+    merge_terms(ends_, terms_, additions);
 }
 
 Offset Model::begin_of(std::size_t fun) const noexcept

@@ -4,6 +4,7 @@
 #include "expr/terms.hpp"
 #include "model/compressed.hpp"
 #include "model/pairs.hpp"
+#include "model/terms.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -28,6 +29,11 @@ template <typename Term> struct Insertion
 std::pair<Index, Index> key_of(const QuadraticTerm &term) noexcept
 {
     return pair_of(term);
+}
+
+Index key_of(const LinearTerm &term) noexcept
+{
+    return term.variable;
 }
 
 template <typename Term> bool before(const Term &a, const Term &b) noexcept
@@ -184,6 +190,13 @@ void merge(std::vector<Offset> &ends,
 void merge_pairs(std::vector<Offset> &ends,
                  std::vector<QuadraticTerm> &terms,
                  std::span<const AddedPairs> additions)
+{
+    merge(ends, terms, additions);
+}
+
+void merge_terms(std::vector<Offset> &ends,
+                 std::vector<LinearTerm> &terms,
+                 std::span<const AddedTerms> additions)
 {
     merge(ends, terms, additions);
 }

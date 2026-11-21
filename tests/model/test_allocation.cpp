@@ -1,6 +1,7 @@
 #include "allocations.hpp"
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "model/compare.hpp"
 #include "model/model.hpp"
 
 #include <gtest/gtest.h>
@@ -10,6 +11,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace
@@ -17,7 +19,9 @@ namespace
 
 using biyos::Family;
 using biyos::Index;
+using biyos::LinearTerm;
 using biyos::Model;
+using biyos::Offset;
 using biyos::Variable;
 using biyos::VariableKind;
 
@@ -138,6 +142,33 @@ void expect_kept(Index n)
     ADD_FAILURE() << "the call never completed";
 }
 
+Model with_terms()
+{
+    Model mdl;
+    mdl.add_vars(std::vector<Variable>(4, biyos::widest(VariableKind::Continuous)));
+    const std::vector<double> constants(3, 0.0);
+    const std::vector<Offset> starts{0, 2, 2, 3};
+    mdl.add_funs(constants, starts, {{1, 1.0}, {3, 2.0}, {2, 3.0}});
+    return mdl;
+}
+
+bool runs_out_adding(Model &mdl, std::size_t successes)
+{
+    const std::vector<Index> funs{2, 0};
+    const std::vector<Offset> starts{0, 2, 4};
+    std::vector<LinearTerm> terms{{0, 1.0}, {2, 1.0}, {0, 1.0}, {2, 1.0}};
+    const PendingFailure failure(successes);
+    try
+    {
+        mdl.add_lin_terms(funs, starts, std::move(terms));
+    }
+    catch (const std::bad_alloc &)
+    {
+        return true;
+    }
+    return false;
+}
+
 std::size_t lookup_cost(const Model &mdl)
 {
     const std::size_t start = biyos::test::allocations();
@@ -180,4 +211,20 @@ TEST(AllocationTest, NameRelease)
     mdl.set_names(Family::Variable, idx, names);
     mdl.del_names(Family::Variable, idx);
     EXPECT_EQ(copy_cost(mdl), cost);
+}
+
+TEST(AllocationTest, LinearTerms)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        Model mdl = with_terms();
+        if (!runs_out_adding(mdl, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(mdl.terms(0, 3).size(), 6U);
+            return;
+        }
+        EXPECT_EQ(biyos::difference(mdl, with_terms()), "");
+    }
+    ADD_FAILURE() << "the call never completed";
 }

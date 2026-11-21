@@ -61,4 +61,14 @@ void sort_terms(Index fun, std::span<LinearTerm> terms)
     }
 }
 
+void check_sum(Index fun, const LinearTerm &held, const LinearTerm &given)
+{
+    const std::string_view fault = value_fault(held.coefficient + given.coefficient);
+    if (!fault.empty())
+    {
+        const std::string sum = "sum of coefficients of " + var_name(given.variable);
+        refuse(kOwner, fun, sum + " " + std::string(fault));
+    }
+}
+
 }
