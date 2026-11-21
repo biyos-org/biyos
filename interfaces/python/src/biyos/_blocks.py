@@ -1,12 +1,26 @@
+from collections.abc import Callable, Iterator
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Generic,
+    SupportsIndex,
+    TypeVar,
+    overload,
+)
+
 from biyos._integers import integer, whole
 
+if TYPE_CHECKING:
+    from biyos._model import Model
 
-def _current(mdl, gen, noun):
+
+def _current(mdl: "Model", gen: int, noun: str) -> None:
     if mdl._gen != gen:
         raise ValueError(f"the {noun} predates a deletion from its model")
 
 
-def _target(value):
+def _target(value: "Model") -> "Model":
     from biyos._model import Model
 
     if not isinstance(value, Model):
@@ -17,13 +31,14 @@ def _target(value):
 
 class View:
     __slots__ = ("_model", "_idx", "_gen")
+    _noun: ClassVar[str]
 
-    def __init__(self, mdl, idx, gen):
+    def __init__(self, mdl: "Model", idx: int, gen: int) -> None:
         self._model = mdl
         self._idx = idx
         self._gen = gen
 
-    def __index__(self):
+    def __index__(self) -> int:
         """Return the index of the item.
 
         Returns
@@ -40,16 +55,22 @@ class View:
         return self._idx
 
 
-class Block:
-    __slots__ = ("_model", "_begin", "_size", "_gen")
+Item = TypeVar("Item", bound=View)
+Self = TypeVar("Self", bound="Block[Any]")
 
-    def __init__(self, mdl, beg, n, gen):
+
+class Block(Generic[Item]):
+    __slots__ = ("_model", "_begin", "_size", "_gen")
+    _element: type[Item]
+    _held: Callable[["Model"], int]
+
+    def __init__(self, mdl: "Model", beg: int, n: int, gen: int) -> None:
         self._model = mdl
         self._begin = beg
         self._size = n
         self._gen = gen
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of items in the block.
 
         Returns
@@ -65,7 +86,7 @@ class Block:
         self._check()
         return self._size
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Item]:
         """Iterate over the items of the block, each as a view.
 
         Returns
@@ -81,7 +102,13 @@ class Block:
         self._check()
         return map(self._view, self._range())
 
-    def __getitem__(self, key):
+    @overload
+    def __getitem__(self, key: SupportsIndex) -> Item: ...
+
+    @overload
+    def __getitem__(self: Self, key: slice) -> Self: ...
+
+    def __getitem__(self, key: SupportsIndex | slice) -> "Item | Block[Item]":
         """Return one item of the block, or a block for a slice.
 
         Parameters
@@ -112,7 +139,7 @@ class Block:
             return self._slice(key)
         return self._view(self._begin + self._position(key))
 
-    def on(self, mdl):
+    def on(self: Self, mdl: "Model") -> Self:
         """Return the block's items in another model.
 
         The block keeps its first index and count, so it names the items
@@ -147,16 +174,16 @@ class Block:
             raise ValueError(f"mdl holds too few {noun}s: {needs}")
         return type(self)(mdl, self._begin, self._size, mdl._gen)
 
-    def _check(self):
+    def _check(self) -> None:
         _current(self._model, self._gen, "block")
 
-    def _range(self):
+    def _range(self) -> range:
         return range(self._begin, self._begin + self._size)
 
-    def _view(self, idx):
+    def _view(self, idx: int) -> Item:
         return self._element(self._model, idx, self._gen)
 
-    def _position(self, key):
+    def _position(self, key: SupportsIndex) -> int:
         number = whole("index", key)
         position = number + self._size if number < 0 else number
         if not 0 <= position < self._size:
@@ -164,7 +191,7 @@ class Block:
             raise IndexError(f"index {number} is outside a block of {n}")
         return position
 
-    def _slice(self, key):
+    def _slice(self: Self, key: slice) -> Self:
         start, stop, step = key.indices(self._size)
         if step != 1:
             raise ValueError(f"slice step must be 1, not {step}")
@@ -186,7 +213,7 @@ class Variable(View):
     _noun = "variable"
 
 
-class Variables(Block):
+class Variables(Block[Variable]):
     """Consecutive variables of a model, as ``Model.addvars`` returns.
 
     A block holds its model, its first index and its count, so it costs the
@@ -201,7 +228,7 @@ class Variables(Block):
     __slots__ = ()
     _element = Variable
 
-    def _held(self, model):
+    def _held(self, model: "Model") -> int:
         return model.getnvars()
 
 
@@ -218,7 +245,7 @@ class Function(View):
     _noun = "function"
 
 
-class Functions(Block):
+class Functions(Block[Function]):
     """Consecutive functions of a model, as ``Model.addfuns`` returns.
 
     A block holds its model, its first index and its count, so it costs the
@@ -233,7 +260,7 @@ class Functions(Block):
     __slots__ = ()
     _element = Function
 
-    def _held(self, model):
+    def _held(self, model: "Model") -> int:
         return model.getnfuns()
 
 
@@ -250,7 +277,7 @@ class Constraint(View):
     _noun = "constraint"
 
 
-class Constraints(Block):
+class Constraints(Block[Constraint]):
     """Consecutive constraints, as ``Model.addcons`` returns.
 
     A block holds its model, its first index and its count, so it costs the
@@ -265,7 +292,7 @@ class Constraints(Block):
     __slots__ = ()
     _element = Constraint
 
-    def _held(self, model):
+    def _held(self, model: "Model") -> int:
         return model.getncons()
 
 
@@ -282,7 +309,7 @@ class Objective(View):
     _noun = "objective"
 
 
-class Objectives(Block):
+class Objectives(Block[Objective]):
     """Consecutive objectives, as ``Model.addobjs`` returns.
 
     A block holds its model, its first index and its count, so it costs the
@@ -297,16 +324,18 @@ class Objectives(Block):
     __slots__ = ()
     _element = Objective
 
-    def _held(self, model):
+    def _held(self, model: "Model") -> int:
         return model.getnobjs()
 
 
-def _indefinite(noun):
+def _indefinite(noun: str) -> str:
     article = "an" if noun[0] in "aeiou" else "a"
     return f"{article} {noun}"
 
 
-def _member(model, family, name, view):
+def _member(
+    model: "Model", family: type[Block[Any]], name: str, view: View
+) -> None:
     noun = _indefinite(family._element._noun)
     if not isinstance(view, family._element):
         found = _indefinite(view._noun)
@@ -315,13 +344,17 @@ def _member(model, family, name, view):
         raise ValueError(f"{name} is {noun} of another model")
 
 
-def index_of(model, family, name, value):
+def index_of(
+    model: "Model", family: type[Block[Any]], name: str, value: SupportsIndex
+) -> int:
     if isinstance(value, View):
         _member(model, family, name, value)
     return integer(name, value)
 
 
-def range_of(model, family, name, block):
+def range_of(
+    model: "Model", family: type[Block[Any]], name: str, block: Block[Any]
+) -> range:
     if not isinstance(block, family):
         found = block._element._noun
         noun = family._element._noun
