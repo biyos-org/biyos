@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" font-family="Inter, sans-serif" font-size="15">
+  <defs>
+    <marker id="graph-tip" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path class="tip" d="M0 0L8 4L0 8Z" fill="#5B6069"/>
+    </marker>
+  </defs>
+  <g class="wire" stroke="#5B6069" stroke-width="1.25" fill="none" marker-end="url(#graph-tip)">
+    <path d="M240 238L280 189"/>
+    <path d="M342 238L314 189"/>
+    <path d="M276 146L228 107"/>
+    <path d="M320 146L372 107"/>
+    <path d="M436 74L474 58"/>
+    <path d="M538 238L512 59"/>
+  </g>
+  <rect class="box" x="186.5" y="238.5" width="72" height="40" rx="20" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <rect class="box" x="312.5" y="238.5" width="72" height="40" rx="20" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <rect class="box" x="504.5" y="238.5" width="72" height="40" rx="20" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <rect class="soft" x="256.5" y="146.5" width="84" height="40" rx="4" fill="#E6ECFD" stroke="#3C6BF0"/>
+  <rect class="box" x="164.5" y="64.5" width="84" height="40" rx="4" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <rect class="box" x="352.5" y="64.5" width="84" height="40" rx="4" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <rect class="box" x="458.5" y="16.5" width="84" height="40" rx="4" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <g class="ink" fill="#16181D" text-anchor="middle">
+    <text x="222" y="263">x₀</text>
+    <text x="348" y="263">x₁</text>
+    <text x="540" y="263">x₂</text>
+    <text x="298" y="171" font-weight="600">×</text>
+    <text x="206" y="89">exp</text>
+    <text x="394" y="89">sin</text>
+    <text x="500" y="41" font-weight="600">×</text>
+  </g>
+  <g class="link" fill="#2A55D6" font-weight="600" font-size="14">
+    <text x="146" y="89" text-anchor="end">f₀</text>
+    <text x="562" y="41">f₁</text>
+  </g>
+  <g class="muted" fill="#5B6069" font-size="12">
+    <text x="352" y="171">shared: stored once</text>
+    <text x="40" y="263">variables</text>
+    <text x="40" y="171">operators</text>
+    <text x="40" y="89">roots</text>
+  </g>
+  <g class="muted mono" fill="#5B6069" font-family="JetBrains Mono, DejaVu Sans Mono, monospace" font-size="11" text-anchor="middle">
+    <text x="222" y="294">0</text>
+    <text x="348" y="294">1</text>
+    <text x="540" y="294">2</text>
+    <text x="298" y="202">3</text>
+    <text x="206" y="120">4</text>
+    <text x="394" y="120">5</text>
+    <text x="500" y="72">6</text>
+  </g>
+</svg>
