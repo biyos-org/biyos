@@ -119,6 +119,11 @@ static BIYOS_status use_linear(BIYOS_model *model)
     {
         return BIYOS_ERR_INTERNAL;
     }
+    if (BIYOS_getvarterms(model, 1, 1, 2, offsets, &needed, held, NULL) != BIYOS_OK ||
+        needed != 2 || offsets[1] != 2 || held[0] != 0 || held[1] != 1)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
     return BIYOS_OK;
 }
 
@@ -329,6 +334,7 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getvarknd(model, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnfuns(model, &count) != BIYOS_OK ||
         BIYOS_getfuns(model, 0, 0, 0, NULL, NULL, &needed, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getvarterms(model, 0, 0, 0, NULL, &needed, NULL, NULL) != BIYOS_OK ||
         BIYOS_getquadterms(model, 0, 0, 0, NULL, &needed, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getncons(model, &count) != BIYOS_OK ||
         BIYOS_getcons(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||

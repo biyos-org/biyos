@@ -531,7 +531,7 @@ param varidx out Receives the variable of each term, each function's sorted by v
 param coef out Receives the coefficient of each term; skipped when null.
 return `BIYOS_OK` once the arrays are written. Function `beg + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `size`.
 error BIYOS_ERR_BADARG `beg`, `n` or `size` is negative, `beg + n` exceeds the number of functions, or `nnz` is null.
-see BIYOS_getnfuns BIYOS_getquadterms
+see BIYOS_getnfuns BIYOS_getvarterms BIYOS_getquadterms
 since 0.1.0
 
 function BIYOS_addlinterms
@@ -547,7 +547,23 @@ error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model or is
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
 note A variable the function already holds adds its coefficient to the one held, so every call adds $a_j x_j$ to its functions and never replaces a term. A term whose coefficient is 0, given or summed, is kept.
 note A call that adds new terms moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call.
-see BIYOS_addfuns BIYOS_getfuns
+see BIYOS_getvarterms BIYOS_addfuns BIYOS_getfuns
+since 0.1.0
+
+function BIYOS_getvarterms
+summary Read the linear terms of variables, by variable.
+param mdl in The model.
+param beg in The first variable to read.
+param n in The number of variables to read.
+param size in The number of terms `funidx` and `coef` hold.
+param off out Receives `n + 1` offsets from 0, whatever `size` is; skipped when null.
+param nnz out Receives the number of linear terms of the variables, whether they fit or not.
+param funidx out Receives the function of each term, each variable's sorted by function; skipped when null.
+param coef out Receives the coefficient of each term; skipped when null.
+return `BIYOS_OK` once the arrays are written. Variable `beg + j` is whole in `funidx` and `coef` when `off[j + 1]` is at most `size`.
+error BIYOS_ERR_BADARG `beg`, `n` or `size` is negative, `beg + n` exceeds the number of variables, or `nnz` is null.
+note The terms are those `BIYOS_getfuns` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function.
+see BIYOS_getfuns BIYOS_addlinterms
 since 0.1.0
 
 group quadratic Quadratic terms

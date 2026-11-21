@@ -113,6 +113,8 @@ def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_getfuns", c_int, *read)
     terms = (c_void_p, c_int32, ints, offsets, ints, doubles)
     _declare(lib, "BIYOS_addlinterms", c_int, *terms)
+    by_var = (c_void_p, c_int32, c_int32, c_int64, offsets, *sized)
+    _declare(lib, "BIYOS_getvarterms", c_int, *by_var)
 
 
 def _declare_quadratic(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
