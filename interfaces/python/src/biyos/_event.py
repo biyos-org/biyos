@@ -36,7 +36,7 @@ class Event:
 
     @property
     def module(self):
-        return _decoded(lib.BIYOS_getevtmodule(self._live()))
+        return _decoded(lib.BIYOS_getevtmod(self._live()))
 
     @property
     def text(self):
@@ -45,7 +45,7 @@ class Event:
     @property
     def fields(self):
         pointer = self._live()
-        count = lib.BIYOS_getnevtfields(pointer)
+        count = lib.BIYOS_getnevtflds(pointer)
         return tuple(_field(pointer, index) for index in range(count))
 
     def fmttext(self):
@@ -61,8 +61,8 @@ class Event:
 
 
 def _field(pointer, index):
-    name = lib.BIYOS_getevtfieldname(pointer, index)
-    value = lib.BIYOS_getevtfieldvalue(pointer, index)
+    name = lib.BIYOS_getevtfldname(pointer, index)
+    value = lib.BIYOS_getevtfldval(pointer, index)
     return _decoded(name), _decoded(value)
 
 

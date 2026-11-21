@@ -50,11 +50,11 @@ def _total(starts, count):
     return starts[count]
 
 
-def _fields(count, sense, prio, weight, atol, rtol):
+def _fields(count, sense, prio, coef, atol, rtol):
     return (
         ints("sense", sense, count),
         ints("prio", prio, count),
-        doubles("weight", weight, count),
+        doubles("coef", coef, count),
         doubles("atol", atol, count),
         doubles("rtol", rtol, count),
     )
@@ -392,7 +392,7 @@ class Model:
         funidx,
         sense=None,
         prio=None,
-        weight=None,
+        coef=None,
         atol=None,
         rtol=None,
     ):
@@ -414,7 +414,7 @@ class Model:
             The priority of each. By default each takes its own index, so
             the objectives are optimized one after another in the order
             they are added.
-        weight : sequence of float, optional
+        coef : sequence of float, optional
             The weight of each in the sum of its stage, finite and
             positive, 1 by default.
         atol, rtol : sequence of float, optional
@@ -431,7 +431,7 @@ class Model:
         count = len(funidx)
         arrays = (
             indices_of(self, Functions, "funidx", funidx, count),
-            *_fields(count, sense, prio, weight, atol, rtol),
+            *_fields(count, sense, prio, coef, atol, rtol),
         )
         first = c_int()
         self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
@@ -442,14 +442,14 @@ class Model:
         idx,
         sense=None,
         prio=None,
-        weight=None,
+        coef=None,
         atol=None,
         rtol=None,
     ):
         count = len(idx)
         arrays = (
             indices_of(self, Objectives, "idx", idx, count),
-            *_fields(count, sense, prio, weight, atol, rtol),
+            *_fields(count, sense, prio, coef, atol, rtol),
         )
         self._call(lib.BIYOS_setobjs, count, *arrays)
 

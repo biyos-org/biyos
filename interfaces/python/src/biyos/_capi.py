@@ -65,11 +65,11 @@ def _declare_events(lib, ints):
     _declare(lib, "BIYOS_delhook", c_int, c_void_p, c_int32)
     _declare(lib, "BIYOS_getevtknd", c_int32, c_void_p)
     _declare(lib, "BIYOS_getevtlvl", c_int32, c_void_p)
-    _declare(lib, "BIYOS_getevtmodule", c_char_p, c_void_p)
+    _declare(lib, "BIYOS_getevtmod", c_char_p, c_void_p)
     _declare(lib, "BIYOS_getevttext", c_char_p, c_void_p)
-    _declare(lib, "BIYOS_getnevtfields", c_int32, c_void_p)
-    _declare(lib, "BIYOS_getevtfieldname", c_char_p, c_void_p, c_int32)
-    _declare(lib, "BIYOS_getevtfieldvalue", c_char_p, c_void_p, c_int32)
+    _declare(lib, "BIYOS_getnevtflds", c_int32, c_void_p)
+    _declare(lib, "BIYOS_getevtfldname", c_char_p, c_void_p, c_int32)
+    _declare(lib, "BIYOS_getevtfldval", c_char_p, c_void_p, c_int32)
     _declare_formats(lib)
 
 

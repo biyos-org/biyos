@@ -87,7 +87,7 @@ BIYOS_int BIYOS_getevtlvl(const BIYOS_event *evt)
     return evt == nullptr ? 0 : static_cast<int>(evt->core->level);
 }
 
-const char *BIYOS_getevtmodule(const BIYOS_event *evt)
+const char *BIYOS_getevtmod(const BIYOS_event *evt)
 {
     return evt == nullptr ? "" : evt->core->module.c_str();
 }
@@ -97,19 +97,19 @@ const char *BIYOS_getevttext(const BIYOS_event *evt)
     return evt == nullptr ? "" : evt->core->text.c_str();
 }
 
-BIYOS_index BIYOS_getnevtfields(const BIYOS_event *evt)
+BIYOS_index BIYOS_getnevtflds(const BIYOS_event *evt)
 {
     return evt == nullptr ? 0 : static_cast<int>(evt->core->fields.size());
 }
 
-const char *BIYOS_getevtfieldname(const BIYOS_event *evt, BIYOS_index field)
+const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx)
 {
-    const biyos::Field *found = field_of(evt, field);
+    const biyos::Field *found = field_of(evt, idx);
     return found == nullptr ? "" : found->name.c_str();
 }
 
-const char *BIYOS_getevtfieldvalue(const BIYOS_event *evt, BIYOS_index field)
+const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx)
 {
-    const biyos::Field *found = field_of(evt, field);
+    const biyos::Field *found = field_of(evt, idx);
     return found == nullptr ? "" : found->value.c_str();
 }

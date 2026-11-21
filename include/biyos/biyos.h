@@ -73,11 +73,11 @@ BIYOS_API BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index idx);
 
 BIYOS_API BIYOS_int BIYOS_getevtknd(const BIYOS_event *evt);
 BIYOS_API BIYOS_int BIYOS_getevtlvl(const BIYOS_event *evt);
-BIYOS_API const char *BIYOS_getevtmodule(const BIYOS_event *evt);
+BIYOS_API const char *BIYOS_getevtmod(const BIYOS_event *evt);
 BIYOS_API const char *BIYOS_getevttext(const BIYOS_event *evt);
-BIYOS_API BIYOS_index BIYOS_getnevtfields(const BIYOS_event *evt);
-BIYOS_API const char *BIYOS_getevtfieldname(const BIYOS_event *evt, BIYOS_index field);
-BIYOS_API const char *BIYOS_getevtfieldvalue(const BIYOS_event *evt, BIYOS_index field);
+BIYOS_API BIYOS_index BIYOS_getnevtflds(const BIYOS_event *evt);
+BIYOS_API const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx);
+BIYOS_API const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx);
 
 BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, size_t size, char *buf, size_t *len);
 BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t size, char *buf, size_t *len);
@@ -163,7 +163,7 @@ BIYOS_API BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
                                      const BIYOS_index *funidx,
                                      const BIYOS_int *sense,
                                      const BIYOS_int *prio,
-                                     const BIYOS_real *weight,
+                                     const BIYOS_real *coef,
                                      const BIYOS_real *atol,
                                      const BIYOS_real *rtol,
                                      BIYOS_index *beg);
@@ -172,7 +172,7 @@ BIYOS_API BIYOS_status BIYOS_setobjs(BIYOS_model *mdl,
                                      const BIYOS_index *idx,
                                      const BIYOS_int *sense,
                                      const BIYOS_int *prio,
-                                     const BIYOS_real *weight,
+                                     const BIYOS_real *coef,
                                      const BIYOS_real *atol,
                                      const BIYOS_real *rtol);
 BIYOS_API BIYOS_status BIYOS_getnobjs(const BIYOS_model *mdl, BIYOS_index *n);
@@ -182,7 +182,7 @@ BIYOS_API BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
                                      BIYOS_index *funidx,
                                      BIYOS_int *sense,
                                      BIYOS_int *prio,
-                                     BIYOS_real *weight,
+                                     BIYOS_real *coef,
                                      BIYOS_real *atol,
                                      BIYOS_real *rtol);
 

@@ -86,7 +86,7 @@ def test_range(model):
 def test_defaults(model):
     model.addobjs([0, 1])
     model.addobjs([1], prio=[-7])
-    model.addobjs([0], sense=[MAX], weight=[2.0])
+    model.addobjs([0], sense=[MAX], coef=[2.0])
     model.addobjs([1], atol=[0.5], rtol=[INFINITY])
     model.addobjs([0])
     functions, senses, priorities, *values = model.getobjs()
@@ -101,7 +101,7 @@ def test_defaults(model):
 def test_shared(model):
     model.addcons([1], [0.0], [1.0])
     model.addobjs([1, 1], [MIN, MAX])
-    model.addobjs([1], weight=[2.0])
+    model.addobjs([1], coef=[2.0])
     functions, senses, priorities, weights = model.getobjs()[:4]
     assert (functions, senses) == ([1, 1, 1], [MIN, MAX, MIN])
     assert (priorities, weights) == ([0, 1, 2], [1.0, 1.0, 2.0])
@@ -111,7 +111,7 @@ def test_shared(model):
 
 def test_functions(model):
     f = model.addfuns(3)
-    o = model.addobjs(f, weight=[2.0] * 3)
+    o = model.addobjs(f, coef=[2.0] * 3)
     model.addobjs(f[1:])
     model.addobjs([f[0], 1])
     assert model.getobjs(o[0])[0] == [2, 3, 4, 3, 4, 2, 1]
@@ -146,7 +146,7 @@ def test_views(env, model):
     with pytest.raises(ValueError, match="is an objective, not a function"):
         model.addcons([o[0]])
     model.setobjs([o[2]], [MAX], [5])
-    model.setobjs(o[:2], weight=[7.0, 8.0])
+    model.setobjs(o[:2], coef=[7.0, 8.0])
     found = model.getobjs(o[1])
     assert found[1:4] == ([MIN, MAX], [-1, 5], [8.0, 3.0])
     assert model.getnobjs() == 3
@@ -218,7 +218,7 @@ def test_set(model):
     add_sample(model)
     model.setobjs([2, 0], sense=[MAX, MIN])
     model.setobjs([2], prio=[-5])
-    model.setobjs([0, 2], weight=[4.0, 8.0])
+    model.setobjs([0, 2], coef=[4.0, 8.0])
     model.setobjs([1], atol=[INFINITY], rtol=[0.5])
     model.setobjs([1, 2], None, None, None, None, None)
     found = model.getobjs()
@@ -283,7 +283,7 @@ def test_numbers(model):
         model.addobjs([0], [1.0])
     with pytest.raises(OverflowError, match="prio: 2147483648 does not"):
         model.addobjs([0], None, [2**31])
-    with pytest.raises(TypeError, match="an entry of weight must be a"):
+    with pytest.raises(TypeError, match="an entry of coef must be a"):
         model.addobjs([0], None, None, ["1"])
     with pytest.raises(TypeError, match="an entry of atol must be a"):
         model.addobjs([0], None, None, None, [True])

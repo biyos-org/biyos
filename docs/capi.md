@@ -27,7 +27,7 @@ Every number the headers define, such as an option id, an option kind or an erro
 | `BIYOS_offset` | an `int64_t`, an offset into or a number of terms |
 | `BIYOS_real` | a `double`, a value |
 | `BIYOS_env` | an opaque environment, holding the options, the subscriptions and the last error message |
-| `BIYOS_event` | an opaque event, read with `BIYOS_getnevtfields` and the `BIYOS_getevt*` calls, and formatted with `BIYOS_fmttext` and `BIYOS_fmtjson` while a subscriber runs |
+| `BIYOS_event` | an opaque event, read with `BIYOS_getnevtflds` and the `BIYOS_getevt*` calls, and formatted with `BIYOS_fmttext` and `BIYOS_fmtjson` while a subscriber runs |
 | `BIYOS_model` | an opaque model, made on an environment and holding the variables, functions, constraints and objectives of a problem |
 | `BIYOS_hook` | `void (*)(const BIYOS_event *evt, void *data)`, a function called with each event a subscription receives |
 
@@ -295,10 +295,10 @@ BIYOS_int BIYOS_getevtlvl(const BIYOS_event *evt);
 
 Returns the level of the event, a `BIYOS_LVL_*` value.
 
-### `BIYOS_getevtmodule`
+### `BIYOS_getevtmod`
 
 ```c
-const char *BIYOS_getevtmodule(const BIYOS_event *evt);
+const char *BIYOS_getevtmod(const BIYOS_event *evt);
 ```
 
 Returns the name of the module that sent the event, such as `capi`.
@@ -311,29 +311,29 @@ const char *BIYOS_getevttext(const BIYOS_event *evt);
 
 Returns the text of the event.
 
-### `BIYOS_getnevtfields`
+### `BIYOS_getnevtflds`
 
 ```c
-BIYOS_index BIYOS_getnevtfields(const BIYOS_event *evt);
+BIYOS_index BIYOS_getnevtflds(const BIYOS_event *evt);
 ```
 
 Returns the number of fields of the event. Fields are numbered from 0.
 
-### `BIYOS_getevtfieldname`
+### `BIYOS_getevtfldname`
 
 ```c
-const char *BIYOS_getevtfieldname(const BIYOS_event *evt, BIYOS_index field);
+const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx);
 ```
 
-Returns the name of field number `field`.
+Returns the name of field number `idx`.
 
-### `BIYOS_getevtfieldvalue`
+### `BIYOS_getevtfldval`
 
 ```c
-const char *BIYOS_getevtfieldvalue(const BIYOS_event *evt, BIYOS_index field);
+const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx);
 ```
 
-Returns the value of field number `field`.
+Returns the value of field number `idx`.
 
 ### Formatting an event
 
@@ -581,22 +581,22 @@ The objectives are optimized in stages, one for each priority they hold, the low
 ```c
 BIYOS_status BIYOS_addobjs(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *funidx,
                            const BIYOS_int *sense, const BIYOS_int *prio,
-                           const BIYOS_real *weight, const BIYOS_real *atol,
+                           const BIYOS_real *coef, const BIYOS_real *atol,
                            const BIYOS_real *rtol, BIYOS_index *beg);
 ```
 
-Adds `n` objectives after the last one. Entry `j` of each array gives objective `p + j`, where `p` is the number of objectives before the call: the index of its function, its sense, a `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE` value, its priority, its weight and its absolute and relative tolerances. `funidx` has no default, and may be null only when `n` is 0. A null `sense` makes every new objective minimize, a null `prio` gives objective `p + j` the priority `p + j`, a null `weight` gives each the weight 1, and a null `atol` or `rtol` gives each that tolerance 0. So by default the objectives are optimized one after another in the order they are added, and objectives given one priority are blended. `*beg` receives `p`, and a null `beg` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, a function is not one of the model, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 objectives.
+Adds `n` objectives after the last one. Entry `j` of each array gives objective `p + j`, where `p` is the number of objectives before the call: the index of its function, its sense, a `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE` value, its priority, its weight and its absolute and relative tolerances. `funidx` has no default, and may be null only when `n` is 0. A null `sense` makes every new objective minimize, a null `prio` gives objective `p + j` the priority `p + j`, a null `coef` gives each the weight 1, and a null `atol` or `rtol` gives each that tolerance 0. So by default the objectives are optimized one after another in the order they are added, and objectives given one priority are blended. `*beg` receives `p`, and a null `beg` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, a function is not one of the model, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative, and `BIYOS_ERR_NOMEMORY` when the model would hold more than 2147483647 objectives.
 
 ### `BIYOS_setobjs`
 
 ```c
 BIYOS_status BIYOS_setobjs(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx,
                            const BIYOS_int *sense, const BIYOS_int *prio,
-                           const BIYOS_real *weight, const BIYOS_real *atol,
+                           const BIYOS_real *coef, const BIYOS_real *atol,
                            const BIYOS_real *rtol);
 ```
 
-Sets the sense, the priority, the weight and the absolute and relative tolerances of objective `idx[j]` to `sense[j]`, `prio[j]`, `weight[j]`, `atol[j]` and `rtol[j]`, for each `j` below `n`, and keeps its function. A null `sense`, `prio`, `weight`, `atol` or `rtol` leaves those values as they are, and `idx` may be null when `n` is 0. An objective may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of an objective, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative.
+Sets the sense, the priority, the weight and the absolute and relative tolerances of objective `idx[j]` to `sense[j]`, `prio[j]`, `coef[j]`, `atol[j]` and `rtol[j]`, for each `j` below `n`, and keeps its function. A null `sense`, `prio`, `coef`, `atol` or `rtol` leaves those values as they are, and `idx` may be null when `n` is 0. An objective may appear more than once, as in `BIYOS_setvarbnd`. Returns `BIYOS_ERR_INVALIDARG` when `n` is negative, an index is not that of an objective, a sense is unknown, a weight is not finite and positive or a tolerance is NaN or negative.
 
 ### `BIYOS_getnobjs`
 
@@ -611,7 +611,7 @@ Writes the number of objectives of the model to `*n`.
 ```c
 BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n,
                            BIYOS_index *funidx, BIYOS_int *sense, BIYOS_int *prio,
-                           BIYOS_real *weight, BIYOS_real *atol, BIYOS_real *rtol);
+                           BIYOS_real *coef, BIYOS_real *atol, BIYOS_real *rtol);
 ```
 
 Writes to entry `j` of each array, for each `j` below `n`, the function, the sense, the priority, the weight and the absolute and relative tolerances of objective `beg + j`. A null array is skipped. Returns `BIYOS_ERR_INVALIDARG` when `beg` or `n` is negative or `beg + n` exceeds the number of objectives.

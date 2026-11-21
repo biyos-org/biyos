@@ -51,11 +51,11 @@ void receive(const BIYOS_event *event, void *data)
     ++inbox->calls;
     inbox->kind = BIYOS_getevtknd(event);
     inbox->level = BIYOS_getevtlvl(event);
-    inbox->module = BIYOS_getevtmodule(event);
+    inbox->module = BIYOS_getevtmod(event);
     inbox->text = BIYOS_getevttext(event);
-    inbox->fields = BIYOS_getnevtfields(event);
-    inbox->name = BIYOS_getevtfieldname(event, 0);
-    inbox->value = BIYOS_getevtfieldvalue(event, 0);
+    inbox->fields = BIYOS_getnevtflds(event);
+    inbox->name = BIYOS_getevtfldname(event, 0);
+    inbox->value = BIYOS_getevtfldval(event, 0);
 }
 
 void unsubscribe_unknown(const BIYOS_event *, void *data)
@@ -277,24 +277,24 @@ TEST(CApiTest, Accessors)
     const BIYOS_event view{&event};
     EXPECT_EQ(BIYOS_getevtknd(&view), BIYOS_EVT_MESSAGE);
     EXPECT_EQ(BIYOS_getevtlvl(&view), BIYOS_LVL_WARN);
-    EXPECT_STREQ(BIYOS_getevtmodule(&view), "presolve");
+    EXPECT_STREQ(BIYOS_getevtmod(&view), "presolve");
     EXPECT_STREQ(BIYOS_getevttext(&view), "removed rows");
-    EXPECT_EQ(BIYOS_getnevtfields(&view), 2);
-    EXPECT_STREQ(BIYOS_getevtfieldname(&view, 0), "rows");
-    EXPECT_STREQ(BIYOS_getevtfieldvalue(&view, 0), "3");
-    EXPECT_STREQ(BIYOS_getevtfieldname(&view, 1), "columns");
-    EXPECT_STREQ(BIYOS_getevtfieldvalue(&view, 1), "1");
-    EXPECT_STREQ(BIYOS_getevtfieldname(&view, 2), "");
-    EXPECT_STREQ(BIYOS_getevtfieldvalue(&view, -1), "");
+    EXPECT_EQ(BIYOS_getnevtflds(&view), 2);
+    EXPECT_STREQ(BIYOS_getevtfldname(&view, 0), "rows");
+    EXPECT_STREQ(BIYOS_getevtfldval(&view, 0), "3");
+    EXPECT_STREQ(BIYOS_getevtfldname(&view, 1), "columns");
+    EXPECT_STREQ(BIYOS_getevtfldval(&view, 1), "1");
+    EXPECT_STREQ(BIYOS_getevtfldname(&view, 2), "");
+    EXPECT_STREQ(BIYOS_getevtfldval(&view, -1), "");
 }
 
 TEST(CApiTest, NullEvent)
 {
     EXPECT_EQ(BIYOS_getevtknd(nullptr), 0);
     EXPECT_EQ(BIYOS_getevtlvl(nullptr), 0);
-    EXPECT_STREQ(BIYOS_getevtmodule(nullptr), "");
+    EXPECT_STREQ(BIYOS_getevtmod(nullptr), "");
     EXPECT_STREQ(BIYOS_getevttext(nullptr), "");
-    EXPECT_EQ(BIYOS_getnevtfields(nullptr), 0);
-    EXPECT_STREQ(BIYOS_getevtfieldname(nullptr, 0), "");
-    EXPECT_STREQ(BIYOS_getevtfieldvalue(nullptr, 0), "");
+    EXPECT_EQ(BIYOS_getnevtflds(nullptr), 0);
+    EXPECT_STREQ(BIYOS_getevtfldname(nullptr, 0), "");
+    EXPECT_STREQ(BIYOS_getevtfldval(nullptr, 0), "");
 }
