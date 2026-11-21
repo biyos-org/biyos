@@ -8,12 +8,12 @@
 namespace
 {
 
-std::atomic<std::size_t> count{0};
+std::atomic<std::size_t> n{0};
 std::atomic<std::size_t> remaining{0};
 
 void *counted(std::size_t size) noexcept
 {
-    ++count;
+    ++n;
     return std::malloc(size == 0 ? 1 : size);
 }
 
@@ -46,7 +46,7 @@ void *allocate(std::size_t size)
 
 std::size_t biyos::test::allocations() noexcept
 {
-    return count.load();
+    return n.load();
 }
 
 void biyos::test::fail_after(std::size_t successes) noexcept

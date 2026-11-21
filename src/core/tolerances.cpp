@@ -16,11 +16,11 @@ bool same_infinity(double a, double b)
 
 }
 
-Tolerances::Tolerances(const Options &options)
-    : feasibility_abs_(options.get_double(Option::FeasibilityAbs)),
-      feasibility_rel_(options.get_double(Option::FeasibilityRel)),
-      integrality_tol_(options.get_double(Option::IntegralityTol)),
-      zero_tol_(options.get_double(Option::ZeroTol))
+Tolerances::Tolerances(const Options &opts)
+    : feasibility_abs_(opts.get_dbl(Option::FeasibilityAbs)),
+      feasibility_rel_(opts.get_dbl(Option::FeasibilityRel)),
+      integrality_tol_(opts.get_dbl(Option::IntegralityTol)),
+      zero_tol_(opts.get_dbl(Option::ZeroTol))
 {
 }
 

@@ -86,7 +86,7 @@ TEST_F(ClockTest, SystemTime)
 
 TEST_F(ClockTest, WallLimit)
 {
-    options.set_double(Option::TimeLimit, 1.5);
+    options.set_dbl(Option::TimeLimit, 1.5);
     clock.advance_wall(4s);
     const biyos::Deadline deadline(options, clock);
     clock.advance_wall(1500ms - 1ns);
@@ -98,7 +98,7 @@ TEST_F(ClockTest, WallLimit)
 
 TEST_F(ClockTest, CpuLimit)
 {
-    options.set_double(Option::CpuTimeLimit, 0.25);
+    options.set_dbl(Option::CpuTimeLimit, 0.25);
     clock.advance_cpu(3s);
     const biyos::Deadline deadline(options, clock);
     clock.advance_cpu(250ms - 1ns);
@@ -110,10 +110,10 @@ TEST_F(ClockTest, CpuLimit)
 
 TEST_F(ClockTest, ZeroLimit)
 {
-    options.set_double(Option::TimeLimit, 0.0);
+    options.set_dbl(Option::TimeLimit, 0.0);
     EXPECT_TRUE(reached());
-    options.set_double(Option::TimeLimit, kInfinity);
-    options.set_double(Option::CpuTimeLimit, 0.0);
+    options.set_dbl(Option::TimeLimit, kInfinity);
+    options.set_dbl(Option::CpuTimeLimit, 0.0);
     EXPECT_TRUE(reached());
 }
 
@@ -127,8 +127,8 @@ TEST_F(ClockTest, InfiniteLimit)
 
 TEST_F(ClockTest, AboveBound)
 {
-    options.set_double(Option::TimeLimit, 1e10);
-    options.set_double(Option::CpuTimeLimit, 1e300);
+    options.set_dbl(Option::TimeLimit, 1e10);
+    options.set_dbl(Option::CpuTimeLimit, 1e300);
     const biyos::Deadline deadline(options, clock);
     clock.advance_wall(kForever);
     clock.advance_cpu(kForever);
@@ -137,8 +137,8 @@ TEST_F(ClockTest, AboveBound)
 
 TEST_F(ClockTest, AtBound)
 {
-    options.set_double(Option::TimeLimit, kEdgeSeconds);
-    options.set_double(Option::CpuTimeLimit, kEdgeSeconds);
+    options.set_dbl(Option::TimeLimit, kEdgeSeconds);
+    options.set_dbl(Option::CpuTimeLimit, kEdgeSeconds);
     const biyos::Deadline deadline(options, clock);
     clock.advance_wall(kForever);
     clock.advance_cpu(kForever);
@@ -147,7 +147,7 @@ TEST_F(ClockTest, AtBound)
 
 TEST_F(ClockTest, JustBelow)
 {
-    options.set_double(Option::TimeLimit, std::nextafter(kEdgeSeconds, 0.0));
+    options.set_dbl(Option::TimeLimit, std::nextafter(kEdgeSeconds, 0.0));
     const biyos::Deadline deadline(options, clock);
     clock.advance_wall(std::chrono::nanoseconds(9'223'372'036'854'774'784) - 1ns);
     EXPECT_FALSE(deadline.reached());
@@ -157,7 +157,7 @@ TEST_F(ClockTest, JustBelow)
 
 TEST_F(ClockTest, BelowBound)
 {
-    options.set_double(Option::TimeLimit, 9e9);
+    options.set_dbl(Option::TimeLimit, 9e9);
     const biyos::Deadline deadline(options, clock);
     clock.advance_wall(std::chrono::nanoseconds(9'000'000'000'000'000'000) - 1ns);
     EXPECT_FALSE(deadline.reached());
@@ -167,7 +167,7 @@ TEST_F(ClockTest, BelowBound)
 
 TEST_F(ClockTest, PartialTick)
 {
-    options.set_double(Option::CpuTimeLimit, 1.2e-9);
+    options.set_dbl(Option::CpuTimeLimit, 1.2e-9);
     const biyos::Deadline deadline(options, clock);
     clock.advance_cpu(1ns);
     EXPECT_FALSE(deadline.reached());
@@ -177,7 +177,7 @@ TEST_F(ClockTest, PartialTick)
 
 TEST_F(ClockTest, TinyLimit)
 {
-    options.set_double(Option::TimeLimit, std::numeric_limits<double>::denorm_min());
+    options.set_dbl(Option::TimeLimit, std::numeric_limits<double>::denorm_min());
     const biyos::Deadline deadline(options, clock);
     EXPECT_FALSE(deadline.reached());
     clock.advance_wall(1ns);
@@ -195,7 +195,7 @@ TEST_F(ClockTest, NoReads)
 
 TEST_F(ClockTest, WallReads)
 {
-    options.set_double(Option::TimeLimit, 1.0);
+    options.set_dbl(Option::TimeLimit, 1.0);
     const CountingClock counter;
     const biyos::Deadline deadline(options, counter);
     EXPECT_FALSE(deadline.reached());
@@ -205,7 +205,7 @@ TEST_F(ClockTest, WallReads)
 
 TEST_F(ClockTest, CpuReads)
 {
-    options.set_double(Option::CpuTimeLimit, 1.0);
+    options.set_dbl(Option::CpuTimeLimit, 1.0);
     const CountingClock counter;
     const biyos::Deadline deadline(options, counter);
     EXPECT_FALSE(deadline.reached());
@@ -215,10 +215,10 @@ TEST_F(ClockTest, CpuReads)
 
 TEST_F(ClockTest, ReadOnce)
 {
-    options.set_double(Option::TimeLimit, 1.0);
+    options.set_dbl(Option::TimeLimit, 1.0);
     const biyos::Deadline deadline(options, clock);
-    options.set_double(Option::TimeLimit, 0.0);
-    options.set_double(Option::CpuTimeLimit, 0.0);
+    options.set_dbl(Option::TimeLimit, 0.0);
+    options.set_dbl(Option::CpuTimeLimit, 0.0);
     EXPECT_FALSE(deadline.reached());
     clock.advance_wall(1s);
     EXPECT_TRUE(deadline.reached());
@@ -227,12 +227,12 @@ TEST_F(ClockTest, ReadOnce)
 TEST_F(ClockTest, UnwantedEvent)
 {
     const CountingClock counter;
-    biyos::Events events(counter);
-    events.emit(EventKind::Message, EventLevel::Error, blank);
-    events.subscribe(EventKind::Message, EventLevel::Error, [](const biyos::Event &) {});
-    events.emit(EventKind::Message, EventLevel::Warning, blank);
+    biyos::Events evts(counter);
+    evts.emit(EventKind::Message, EventLevel::Error, blank);
+    evts.subscribe(EventKind::Message, EventLevel::Error, [](const biyos::Event &) {});
+    evts.emit(EventKind::Message, EventLevel::Warning, blank);
     EXPECT_EQ(counter.wall_reads(), 1);
-    events.emit(EventKind::Message, EventLevel::Error, blank);
+    evts.emit(EventKind::Message, EventLevel::Error, blank);
     EXPECT_EQ(counter.wall_reads(), 2);
     EXPECT_EQ(counter.cpu_reads(), 0);
 }
@@ -244,7 +244,7 @@ TEST_F(ClockTest, EventTime)
     fake.advance_wall(7s);
     biyos::Env env(std::move(owned));
     Times times;
-    const auto keep = [&times](const biyos::Event &event) { times.push_back(event.time); };
+    const auto keep = [&times](const biyos::Event &evt) { times.push_back(evt.time); };
     env.events().subscribe(EventKind::Message, EventLevel::Debug, keep);
     env.events().emit(EventKind::Message, EventLevel::Info, blank);
     fake.advance_wall(250ns);

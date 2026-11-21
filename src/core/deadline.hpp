@@ -12,7 +12,7 @@ namespace biyos
 class Deadline
 {
   public:
-    Deadline(const Options &options, const Clock &clock);
+    Deadline(const Options &opts, const Clock &clock);
 
     bool reached() const;
 

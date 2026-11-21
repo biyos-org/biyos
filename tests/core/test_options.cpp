@@ -74,7 +74,7 @@ struct Stream
 {
     Stream()
     {
-        const auto record = [this](const biyos::Event &event) { heard.push_back(event); };
+        const auto record = [this](const biyos::Event &evt) { heard.push_back(evt); };
         events.subscribe(EventKind::Message, EventLevel::Debug, record);
     }
     Stream(const Stream &) = delete;
@@ -90,7 +90,7 @@ std::string built(const std::function<void(Rows &)> &change)
     Rows rows = kRows;
     change(rows);
     Stream stream;
-    return failure([&] { const biyos::Options options(rows, stream.events); });
+    return failure([&] { const biyos::Options opts(rows, stream.events); });
 }
 
 std::string listed(const std::vector<biyos::Field> &fields)
@@ -108,178 +108,178 @@ std::string listed(const std::vector<biyos::Field> &fields)
 TEST(OptionTest, Defaults)
 {
     Stream stream;
-    const biyos::Options options(stream.events);
-    EXPECT_EQ(options.get_int(Option::Seed), 0);
-    EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), kInfinity);
-    EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
-    EXPECT_TRUE(options.get_bool(Option::Presolve));
-    EXPECT_EQ(options.get_string(Option::Reproducer), "");
-    EXPECT_DOUBLE_EQ(options.get_double(Option::FeasibilityAbs), 1e-6);
-    EXPECT_DOUBLE_EQ(options.get_double(Option::FeasibilityRel), 1e-6);
-    EXPECT_DOUBLE_EQ(options.get_double(Option::IntegralityTol), 1e-5);
-    EXPECT_DOUBLE_EQ(options.get_double(Option::ZeroTol), 1e-9);
-    EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), kInfinity);
+    const biyos::Options opts(stream.events);
+    EXPECT_EQ(opts.get_int(Option::Seed), 0);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::TimeLimit), kInfinity);
+    EXPECT_EQ(opts.get_str(Option::CheckLevel), "cheap");
+    EXPECT_TRUE(opts.get_bool(Option::Presolve));
+    EXPECT_EQ(opts.get_str(Option::Reproducer), "");
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::FeasibilityAbs), 1e-6);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::FeasibilityRel), 1e-6);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::IntegralityTol), 1e-5);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::ZeroTol), 1e-9);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::CpuTimeLimit), kInfinity);
 }
 
 TEST(OptionTest, Bool)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    options.set_bool(Option::Presolve, false);
-    EXPECT_FALSE(options.get_bool(Option::Presolve));
+    biyos::Options opts(stream.events);
+    opts.set_bool(Option::Presolve, false);
+    EXPECT_FALSE(opts.get_bool(Option::Presolve));
 }
 
 TEST(OptionTest, Int)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    options.set_int(Option::Seed, 42);
-    EXPECT_EQ(options.get_int(Option::Seed), 42);
-    options.set_int(Option::Seed, (std::numeric_limits<int>::max)());
-    EXPECT_EQ(options.get_int(Option::Seed), (std::numeric_limits<int>::max)());
+    biyos::Options opts(stream.events);
+    opts.set_int(Option::Seed, 42);
+    EXPECT_EQ(opts.get_int(Option::Seed), 42);
+    opts.set_int(Option::Seed, (std::numeric_limits<int>::max)());
+    EXPECT_EQ(opts.get_int(Option::Seed), (std::numeric_limits<int>::max)());
 }
 
 TEST(OptionTest, IntRange)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    options.set_int(Option::Seed, 7);
-    EXPECT_EQ(failure([&] { options.set_int(Option::Seed, -1); }),
+    biyos::Options opts(stream.events);
+    opts.set_int(Option::Seed, 7);
+    EXPECT_EQ(failure([&] { opts.set_int(Option::Seed, -1); }),
               "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
-    EXPECT_EQ(options.get_int(Option::Seed), 7);
+    EXPECT_EQ(opts.get_int(Option::Seed), 7);
 }
 
 TEST(OptionTest, Double)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    options.set_double(Option::TimeLimit, 2.5);
-    EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), 2.5);
-    options.set_double(Option::TimeLimit, 0.0);
-    EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), 0.0);
-    options.set_double(Option::TimeLimit, kInfinity);
-    EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), kInfinity);
+    biyos::Options opts(stream.events);
+    opts.set_dbl(Option::TimeLimit, 2.5);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::TimeLimit), 2.5);
+    opts.set_dbl(Option::TimeLimit, 0.0);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::TimeLimit), 0.0);
+    opts.set_dbl(Option::TimeLimit, kInfinity);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::TimeLimit), kInfinity);
 }
 
 TEST(OptionTest, DoubleRange)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    options.set_double(Option::TimeLimit, 2.5);
-    EXPECT_EQ(failure([&] { options.set_double(Option::TimeLimit, -0.5); }),
+    biyos::Options opts(stream.events);
+    opts.set_dbl(Option::TimeLimit, 2.5);
+    EXPECT_EQ(failure([&] { opts.set_dbl(Option::TimeLimit, -0.5); }),
               "invalid argument: option 'maxtime': -0.5 is outside [0, inf]");
-    EXPECT_EQ(failure([&] { options.set_double(Option::TimeLimit, kNan); }),
+    EXPECT_EQ(failure([&] { opts.set_dbl(Option::TimeLimit, kNan); }),
               "invalid argument: option 'maxtime': nan is outside [0, inf]");
-    EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), 2.5);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::TimeLimit), 2.5);
 }
 
 TEST(OptionTest, CpuLimit)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    options.set_double(Option::CpuTimeLimit, 0.0);
-    EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), 0.0);
-    options.set_double(Option::CpuTimeLimit, 2.5);
-    EXPECT_EQ(failure([&] { options.set_double(Option::CpuTimeLimit, -0.5); }),
+    biyos::Options opts(stream.events);
+    opts.set_dbl(Option::CpuTimeLimit, 0.0);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::CpuTimeLimit), 0.0);
+    opts.set_dbl(Option::CpuTimeLimit, 2.5);
+    EXPECT_EQ(failure([&] { opts.set_dbl(Option::CpuTimeLimit, -0.5); }),
               "invalid argument: option 'maxcputime': -0.5 is outside [0, inf]");
-    EXPECT_EQ(failure([&] { options.set_double(Option::CpuTimeLimit, kNan); }),
+    EXPECT_EQ(failure([&] { opts.set_dbl(Option::CpuTimeLimit, kNan); }),
               "invalid argument: option 'maxcputime': nan is outside [0, inf]");
-    EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), 2.5);
+    EXPECT_DOUBLE_EQ(opts.get_dbl(Option::CpuTimeLimit), 2.5);
 }
 
 TEST(OptionTest, ToleranceRange)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    for (const Option option :
+    biyos::Options opts(stream.events);
+    for (const Option opt :
          {Option::FeasibilityAbs, Option::FeasibilityRel, Option::IntegralityTol, Option::ZeroTol})
     {
-        const std::string name(biyos::name_of(option));
-        options.set_double(option, 0.0);
-        EXPECT_DOUBLE_EQ(options.get_double(option), 0.0);
-        options.set_double(option, kInfinity);
-        EXPECT_DOUBLE_EQ(options.get_double(option), kInfinity);
-        options.set_double(option, 1e-3);
-        EXPECT_EQ(failure([&] { options.set_double(option, -1e-9); }),
+        const std::string name(biyos::name_of(opt));
+        opts.set_dbl(opt, 0.0);
+        EXPECT_DOUBLE_EQ(opts.get_dbl(opt), 0.0);
+        opts.set_dbl(opt, kInfinity);
+        EXPECT_DOUBLE_EQ(opts.get_dbl(opt), kInfinity);
+        opts.set_dbl(opt, 1e-3);
+        EXPECT_EQ(failure([&] { opts.set_dbl(opt, -1e-9); }),
                   "invalid argument: option '" + name + "': -1e-09 is outside [0, inf]");
-        EXPECT_EQ(failure([&] { options.set_double(option, kNan); }),
+        EXPECT_EQ(failure([&] { opts.set_dbl(opt, kNan); }),
                   "invalid argument: option '" + name + "': nan is outside [0, inf]");
-        EXPECT_DOUBLE_EQ(options.get_double(option), 1e-3);
+        EXPECT_DOUBLE_EQ(opts.get_dbl(opt), 1e-3);
     }
 }
 
 TEST(OptionTest, String)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    options.set_string(Option::Reproducer, "replay.txt");
-    EXPECT_EQ(options.get_string(Option::Reproducer), "replay.txt");
+    biyos::Options opts(stream.events);
+    opts.set_str(Option::Reproducer, "replay.txt");
+    EXPECT_EQ(opts.get_str(Option::Reproducer), "replay.txt");
 }
 
 TEST(OptionTest, Enum)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    options.set_string(Option::CheckLevel, "full");
-    EXPECT_EQ(options.get_string(Option::CheckLevel), "full");
-    options.set_string(Option::CheckLevel, "none");
-    EXPECT_EQ(options.get_string(Option::CheckLevel), "none");
+    biyos::Options opts(stream.events);
+    opts.set_str(Option::CheckLevel, "full");
+    EXPECT_EQ(opts.get_str(Option::CheckLevel), "full");
+    opts.set_str(Option::CheckLevel, "none");
+    EXPECT_EQ(opts.get_str(Option::CheckLevel), "none");
 }
 
 TEST(OptionTest, EnumValue)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    EXPECT_EQ(failure([&] { options.set_string(Option::CheckLevel, "most"); }),
+    biyos::Options opts(stream.events);
+    EXPECT_EQ(failure([&] { opts.set_str(Option::CheckLevel, "most"); }),
               "invalid argument: option 'check_lvl': 'most' is not one of none, cheap, full");
-    EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
+    EXPECT_EQ(opts.get_str(Option::CheckLevel), "cheap");
 }
 
 TEST(OptionTest, TypedEnum)
 {
     using biyos::CheckLevel;
     Stream stream;
-    biyos::Options options(stream.events);
-    EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Cheap);
-    options.set_string(Option::CheckLevel, "full");
-    EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Full);
-    options.set_string(Option::CheckLevel, "none");
-    EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::None);
-    EXPECT_EQ(failure([&] { static_cast<void>(options.get_enum<CheckLevel>(Option::Seed)); }),
+    biyos::Options opts(stream.events);
+    EXPECT_EQ(opts.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Cheap);
+    opts.set_str(Option::CheckLevel, "full");
+    EXPECT_EQ(opts.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Full);
+    opts.set_str(Option::CheckLevel, "none");
+    EXPECT_EQ(opts.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::None);
+    EXPECT_EQ(failure([&] { static_cast<void>(opts.get_enum<CheckLevel>(Option::Seed)); }),
               "invalid argument: option 'seed': is an int, not an enum");
 }
 
 TEST(OptionTest, WrongKind)
 {
     Stream stream;
-    biyos::Options options(stream.events);
-    EXPECT_EQ(failure([&] { options.set_double(Option::Seed, 1.0); }),
+    biyos::Options opts(stream.events);
+    EXPECT_EQ(failure([&] { opts.set_dbl(Option::Seed, 1.0); }),
               "invalid argument: option 'seed': is an int, not a double");
-    EXPECT_EQ(failure([&] { options.set_string(Option::Presolve, "yes"); }),
+    EXPECT_EQ(failure([&] { opts.set_str(Option::Presolve, "yes"); }),
               "invalid argument: option 'presolve': is a bool, not a string");
-    EXPECT_EQ(failure([&] { options.set_int(Option::CheckLevel, 2); }),
+    EXPECT_EQ(failure([&] { opts.set_int(Option::CheckLevel, 2); }),
               "invalid argument: option 'check_lvl': is an enum, not an int");
-    EXPECT_EQ(failure([&] { static_cast<void>(options.get_bool(Option::Reproducer)); }),
+    EXPECT_EQ(failure([&] { static_cast<void>(opts.get_bool(Option::Reproducer)); }),
               "invalid argument: option 'repro': is a string, not a bool");
-    EXPECT_EQ(failure([&] { static_cast<void>(options.get_int(Option::TimeLimit)); }),
+    EXPECT_EQ(failure([&] { static_cast<void>(opts.get_int(Option::TimeLimit)); }),
               "invalid argument: option 'maxtime': is a double, not an int");
 }
 
 TEST(OptionTest, Names)
 {
-    for (const Option option : {Option::Seed,
-                                Option::TimeLimit,
-                                Option::CheckLevel,
-                                Option::Presolve,
-                                Option::Reproducer,
-                                Option::FeasibilityAbs,
-                                Option::FeasibilityRel,
-                                Option::IntegralityTol,
-                                Option::ZeroTol,
-                                Option::CpuTimeLimit})
+    for (const Option opt : {Option::Seed,
+                             Option::TimeLimit,
+                             Option::CheckLevel,
+                             Option::Presolve,
+                             Option::Reproducer,
+                             Option::FeasibilityAbs,
+                             Option::FeasibilityRel,
+                             Option::IntegralityTol,
+                             Option::ZeroTol,
+                             Option::CpuTimeLimit})
     {
-        EXPECT_EQ(biyos::find_option(biyos::name_of(option)), option);
-        EXPECT_EQ(biyos::find_option(static_cast<int>(option)), option);
+        EXPECT_EQ(biyos::find_opt(biyos::name_of(opt)), opt);
+        EXPECT_EQ(biyos::find_opt(static_cast<int>(opt)), opt);
     }
     EXPECT_EQ(biyos::name_of(Option::TimeLimit), "maxtime");
 }
@@ -309,27 +309,27 @@ TEST(OptionTest, Versions)
 
 TEST(OptionTest, UnknownName)
 {
-    EXPECT_EQ(failure([] { biyos::find_option("seeds"); }),
+    EXPECT_EQ(failure([] { biyos::find_opt("seeds"); }),
               "invalid argument: option 'seeds': unknown");
-    EXPECT_EQ(failure([] { biyos::find_option(""); }), "invalid argument: option '': unknown");
+    EXPECT_EQ(failure([] { biyos::find_opt(""); }), "invalid argument: option '': unknown");
 }
 
 TEST(OptionTest, UnknownId)
 {
-    EXPECT_EQ(failure([] { biyos::find_option(0); }), "invalid argument: option 0: unknown");
-    EXPECT_EQ(failure([] { biyos::find_option(11); }), "invalid argument: option 11: unknown");
-    EXPECT_EQ(failure([] { biyos::find_option(-3); }), "invalid argument: option -3: unknown");
+    EXPECT_EQ(failure([] { biyos::find_opt(0); }), "invalid argument: option 0: unknown");
+    EXPECT_EQ(failure([] { biyos::find_opt(11); }), "invalid argument: option 11: unknown");
+    EXPECT_EQ(failure([] { biyos::find_opt(-3); }), "invalid argument: option -3: unknown");
 }
 
 TEST(OptionTest, MissingRow)
 {
     Stream stream;
-    biyos::Options options(stream.events);
+    biyos::Options opts(stream.events);
     const Option past = static_cast<Option>(11);
     const Option zero = static_cast<Option>(0);
-    EXPECT_EQ(failure([&] { options.set_int(past, 1); }),
+    EXPECT_EQ(failure([&] { opts.set_int(past, 1); }),
               "internal error: option 11: has no table row");
-    EXPECT_EQ(failure([&] { static_cast<void>(options.get_string(zero)); }),
+    EXPECT_EQ(failure([&] { static_cast<void>(opts.get_str(zero)); }),
               "internal error: option 0: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(biyos::name_of(past)); }),
               "internal error: option 11: has no table row");
@@ -342,13 +342,13 @@ TEST(OptionTest, MissingRow)
 TEST(OptionTest, Table)
 {
     Stream stream;
-    biyos::Options options(kRows, stream.events);
-    EXPECT_EQ(options.get_int(Option{1}), 1);
-    options.set_int(Option{1}, 5);
-    EXPECT_EQ(options.get_int(Option{1}), 5);
-    EXPECT_EQ(failure([&] { options.set_int(Option{1}, -1); }),
+    biyos::Options opts(kRows, stream.events);
+    EXPECT_EQ(opts.get_int(Option{1}), 1);
+    opts.set_int(Option{1}, 5);
+    EXPECT_EQ(opts.get_int(Option{1}), 5);
+    EXPECT_EQ(failure([&] { opts.set_int(Option{1}, -1); }),
               "invalid argument: option 'new': -1 is outside [0, 2147483647]");
-    EXPECT_EQ(failure([&] { static_cast<void>(options.get_int(Option{4})); }),
+    EXPECT_EQ(failure([&] { static_cast<void>(opts.get_int(Option{4})); }),
               "internal error: option 4: has no table row");
     EXPECT_TRUE(stream.heard.empty());
 }
@@ -392,29 +392,29 @@ TEST(OptionTest, Retired)
 {
     const std::string retired = "invalid argument: option 'gone': retired in 0.0.3, use 'new'";
     Stream stream;
-    biyos::Options options(kRows, stream.events);
-    EXPECT_EQ(failure([&] { options.set_int(Option{3}, 5); }), retired);
-    EXPECT_EQ(failure([&] { options.set_bool(Option{3}, true); }), retired);
-    EXPECT_EQ(failure([&] { options.set_double(Option{3}, 5.0); }), retired);
-    EXPECT_EQ(failure([&] { options.set_string(Option{3}, "5"); }), retired);
-    EXPECT_EQ(options.get_int(Option{3}), 1);
+    biyos::Options opts(kRows, stream.events);
+    EXPECT_EQ(failure([&] { opts.set_int(Option{3}, 5); }), retired);
+    EXPECT_EQ(failure([&] { opts.set_bool(Option{3}, true); }), retired);
+    EXPECT_EQ(failure([&] { opts.set_dbl(Option{3}, 5.0); }), retired);
+    EXPECT_EQ(failure([&] { opts.set_str(Option{3}, "5"); }), retired);
+    EXPECT_EQ(opts.get_int(Option{3}), 1);
     EXPECT_TRUE(stream.heard.empty());
 }
 
 TEST(OptionTest, Deprecated)
 {
     Stream stream;
-    biyos::Options options(kRows, stream.events);
-    options.set_int(Option{2}, 5);
-    EXPECT_EQ(options.get_int(Option{2}), 5);
+    biyos::Options opts(kRows, stream.events);
+    opts.set_int(Option{2}, 5);
+    EXPECT_EQ(opts.get_int(Option{2}), 5);
     ASSERT_EQ(stream.heard.size(), 1U);
-    const biyos::Event &event = stream.heard.front();
-    EXPECT_EQ(event.kind, EventKind::Message);
-    EXPECT_EQ(event.level, EventLevel::Warning);
-    EXPECT_EQ(event.module, "core");
-    EXPECT_EQ(event.text, "option 'old': deprecated in 0.0.2, use 'new'");
-    EXPECT_EQ(listed(event.fields), "option=old deprecated=0.0.2 replacement=new");
-    EXPECT_EQ(failure([&] { options.set_int(Option{2}, -1); }),
+    const biyos::Event &evt = stream.heard.front();
+    EXPECT_EQ(evt.kind, EventKind::Message);
+    EXPECT_EQ(evt.level, EventLevel::Warning);
+    EXPECT_EQ(evt.module, "core");
+    EXPECT_EQ(evt.text, "option 'old': deprecated in 0.0.2, use 'new'");
+    EXPECT_EQ(listed(evt.fields), "option=old deprecated=0.0.2 replacement=new");
+    EXPECT_EQ(failure([&] { opts.set_int(Option{2}, -1); }),
               "invalid argument: option 'old': -1 is outside [0, 2147483647]");
     EXPECT_EQ(stream.heard.size(), 1U);
 }

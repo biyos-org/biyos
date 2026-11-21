@@ -8,8 +8,8 @@
 namespace biyos
 {
 
-std::span<const OptionSpec> option_table();
-std::size_t index_of(Option option);
-const OptionSpec &row_of(std::span<const OptionSpec> table, Option option);
+std::span<const OptionSpec> opt_table();
+std::size_t idx_of(Option opt);
+const OptionSpec &row_of(std::span<const OptionSpec> table, Option opt);
 
 }

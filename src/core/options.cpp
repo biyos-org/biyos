@@ -92,9 +92,9 @@ std::span<const OptionSpec> checked(std::span<const OptionSpec> table)
     return table;
 }
 
-const OptionSpec &settable(std::span<const OptionSpec> table, Option option)
+const OptionSpec &settable(std::span<const OptionSpec> table, Option opt)
 {
-    const OptionSpec &spec = row_of(table, option);
+    const OptionSpec &spec = row_of(table, opt);
     if (!spec.versions.retired)
     {
         return spec;
@@ -106,13 +106,10 @@ const OptionSpec &settable(std::span<const OptionSpec> table, Option option)
 
 }
 
-Options::Options(Events &events)
-    : table_(option_table()), events_(events), values_(defaults(table_))
-{
-}
+Options::Options(Events &evts) : table_(opt_table()), events_(evts), values_(defaults(table_)) {}
 
-Options::Options(std::span<const OptionSpec> table, Events &events)
-    : table_(checked(table)), events_(events), values_(defaults(table_))
+Options::Options(std::span<const OptionSpec> table, Events &evts)
+    : table_(checked(table)), events_(evts), values_(defaults(table_))
 {
 }
 
@@ -128,30 +125,30 @@ std::vector<Options::Value> Options::defaults(std::span<const OptionSpec> table)
     return values;
 }
 
-void Options::set_bool(Option option, bool value)
+void Options::set_bool(Option opt, bool value)
 {
-    const OptionSpec &spec = settable(table_, option);
+    const OptionSpec &spec = settable(table_, opt);
     rule_of<BoolRule>(spec);
     store(spec, value);
 }
 
-void Options::set_int(Option option, int value)
+void Options::set_int(Option opt, int value)
 {
-    const OptionSpec &spec = settable(table_, option);
+    const OptionSpec &spec = settable(table_, opt);
     check_range(spec, rule_of<IntRule>(spec), value);
     store(spec, value);
 }
 
-void Options::set_double(Option option, double value)
+void Options::set_dbl(Option opt, double value)
 {
-    const OptionSpec &spec = settable(table_, option);
+    const OptionSpec &spec = settable(table_, opt);
     check_range(spec, rule_of<DoubleRule>(spec), value);
     store(spec, value);
 }
 
-void Options::set_string(Option option, std::string_view value)
+void Options::set_str(Option opt, std::string_view value)
 {
-    const OptionSpec &spec = settable(table_, option);
+    const OptionSpec &spec = settable(table_, opt);
     if (const EnumRule *rule = std::get_if<EnumRule>(&spec.rule))
     {
         check_value(spec, *rule, value);
@@ -165,42 +162,42 @@ void Options::set_string(Option option, std::string_view value)
 
 void Options::store(const OptionSpec &spec, Value value)
 {
-    values_[index_of(spec.id)] = std::move(value);
+    values_[idx_of(spec.id)] = std::move(value);
     warn_deprecated(events_, table_, spec);
 }
 
-bool Options::get_bool(Option option) const
+bool Options::get_bool(Option opt) const
 {
-    rule_of<BoolRule>(row_of(table_, option));
-    return std::get<bool>(values_[index_of(option)]);
+    rule_of<BoolRule>(row_of(table_, opt));
+    return std::get<bool>(values_[idx_of(opt)]);
 }
 
-int Options::get_int(Option option) const
+int Options::get_int(Option opt) const
 {
-    rule_of<IntRule>(row_of(table_, option));
-    return std::get<int>(values_[index_of(option)]);
+    rule_of<IntRule>(row_of(table_, opt));
+    return std::get<int>(values_[idx_of(opt)]);
 }
 
-double Options::get_double(Option option) const
+double Options::get_dbl(Option opt) const
 {
-    rule_of<DoubleRule>(row_of(table_, option));
-    return std::get<double>(values_[index_of(option)]);
+    rule_of<DoubleRule>(row_of(table_, opt));
+    return std::get<double>(values_[idx_of(opt)]);
 }
 
-const std::string &Options::get_string(Option option) const
+const std::string &Options::get_str(Option opt) const
 {
-    const OptionSpec &spec = row_of(table_, option);
+    const OptionSpec &spec = row_of(table_, opt);
     if (!std::holds_alternative<EnumRule>(spec.rule))
     {
         rule_of<StringRule>(spec);
     }
-    return std::get<std::string>(values_[index_of(option)]);
+    return std::get<std::string>(values_[idx_of(opt)]);
 }
 
-std::size_t Options::position_of(Option option) const
+std::size_t Options::position_of(Option opt) const
 {
-    const EnumRule &rule = rule_of<EnumRule>(row_of(table_, option));
-    const std::string &value = std::get<std::string>(values_[index_of(option)]);
+    const EnumRule &rule = rule_of<EnumRule>(row_of(table_, opt));
+    const std::string &value = std::get<std::string>(values_[idx_of(opt)]);
     const auto found = std::ranges::find(rule.values, value);
     return static_cast<std::size_t>(found - rule.values.begin());
 }

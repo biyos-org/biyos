@@ -50,12 +50,12 @@ void append_digits(std::string &line, long long value, std::size_t width)
     std::array<char, 24> digits{};
     const std::to_chars_result result =
         std::to_chars(digits.data(), digits.data() + digits.size(), value);
-    const auto count = static_cast<std::size_t>(result.ptr - digits.data());
-    if (count < width)
+    const auto n = static_cast<std::size_t>(result.ptr - digits.data());
+    if (n < width)
     {
-        line.append(width - count, '0');
+        line.append(width - n, '0');
     }
-    line.append(digits.data(), count);
+    line.append(digits.data(), n);
 }
 
 void append_seconds(std::string &line, std::chrono::nanoseconds time)
@@ -146,21 +146,21 @@ void append_fields(std::string &line, const std::vector<Field> &fields)
 
 }
 
-std::string format_text(const Event &event)
+std::string fmt_text(const Event &evt)
 {
     std::string line;
-    append_seconds(line, event.time);
+    append_seconds(line, evt.time);
     line += ' ';
-    line += name_of(event.level);
+    line += name_of(evt.level);
     line += ' ';
-    append_plain(line, event.module);
+    append_plain(line, evt.module);
     line += ':';
-    if (!event.text.empty())
+    if (!evt.text.empty())
     {
         line += ' ';
-        append_plain(line, event.text);
+        append_plain(line, evt.text);
     }
-    for (const Field &field : event.fields)
+    for (const Field &field : evt.fields)
     {
         line += ' ';
         append_plain(line, field.name);
@@ -170,16 +170,16 @@ std::string format_text(const Event &event)
     return line;
 }
 
-std::string format_json(const Event &event)
+std::string fmt_json(const Event &evt)
 {
     std::string line = "{";
     append_key(line, "time");
-    append_seconds(line, event.time);
-    append_member(line, "kind", name_of(event.kind));
-    append_member(line, "level", name_of(event.level));
-    append_member(line, "module", event.module);
-    append_member(line, "text", event.text);
-    append_fields(line, event.fields);
+    append_seconds(line, evt.time);
+    append_member(line, "kind", name_of(evt.kind));
+    append_member(line, "level", name_of(evt.level));
+    append_member(line, "module", evt.module);
+    append_member(line, "text", evt.text);
+    append_fields(line, evt.fields);
     line += '}';
     return line;
 }

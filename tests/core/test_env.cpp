@@ -163,7 +163,7 @@ TEST(EnvTest, Deprecated)
 {
     biyos::Env env(std::make_unique<biyos::FakeClock>(), kRows);
     std::vector<std::string> heard;
-    const auto record = [&heard](const biyos::Event &event) { heard.push_back(event.text); };
+    const auto record = [&heard](const biyos::Event &evt) { heard.push_back(evt.text); };
     env.events().subscribe(biyos::EventKind::Message, biyos::EventLevel::Warning, record);
     env.options().set_int(Option{2}, 5);
     EXPECT_EQ(env.options().get_int(Option{2}), 5);

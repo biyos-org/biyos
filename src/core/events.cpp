@@ -37,11 +37,11 @@ constexpr bool numbered()
 static_assert(numbered());
 static_assert(std::ranges::is_sorted(kLevels));
 
-void notify(const Subscriber &subscriber, const Event &event) noexcept
+void notify(const Subscriber &subscriber, const Event &evt) noexcept
 {
     try
     {
-        subscriber(event);
+        subscriber(evt);
     }
     catch (...)
     {
@@ -52,27 +52,27 @@ void notify(const Subscriber &subscriber, const Event &event) noexcept
 
 EventKind find_kind(int id)
 {
-    const auto kind = static_cast<EventKind>(id);
-    if (std::ranges::find(kEventKinds, kind) == kEventKinds.end())
+    const auto knd = static_cast<EventKind>(id);
+    if (std::ranges::find(kEventKinds, knd) == kEventKinds.end())
     {
         throw Error(ErrorKind::InvalidArgument, "event kind " + std::to_string(id), "unknown");
     }
-    return kind;
+    return knd;
 }
 
 EventLevel find_level(int id)
 {
-    const auto level = static_cast<EventLevel>(id);
-    if (std::ranges::find(kLevels, level) == kLevels.end())
+    const auto lvl = static_cast<EventLevel>(id);
+    if (std::ranges::find(kLevels, lvl) == kLevels.end())
     {
         throw Error(ErrorKind::InvalidArgument, "level " + std::to_string(id), "unknown");
     }
-    return level;
+    return lvl;
 }
 
-std::string_view name_of(EventKind kind) noexcept
+std::string_view name_of(EventKind knd) noexcept
 {
-    switch (kind)
+    switch (knd)
     {
     case EventKind::Message:
         return "message";
@@ -84,9 +84,9 @@ std::string_view name_of(EventKind kind) noexcept
     return "";
 }
 
-std::string_view name_of(EventLevel level) noexcept
+std::string_view name_of(EventLevel lvl) noexcept
 {
-    switch (level)
+    switch (lvl)
     {
     case EventLevel::Debug:
         return "debug";
@@ -105,7 +105,7 @@ Events::Events(const Clock &clock) : clock_(clock), origin_(clock.wall_time())
     lowest_.fill(kNobody);
 }
 
-int Events::subscribe(EventKind kind, EventLevel lowest, Subscriber subscriber)
+int Events::subscribe(EventKind knd, EventLevel lowest, Subscriber subscriber)
 {
     if (!subscriber)
     {
@@ -117,12 +117,12 @@ int Events::subscribe(EventKind kind, EventLevel lowest, Subscriber subscriber)
     }
     subscriptions_.push_back(Subscription{
         .id = next_id_,
-        .kind = kind,
+        .kind = knd,
         .lowest = lowest,
         .subscriber = std::make_unique<const Subscriber>(std::move(subscriber)),
         .active = true,
     });
-    const std::size_t at = slot(kind);
+    const std::size_t at = slot(knd);
     lowest_[at] = (std::min)(lowest_[at], lowest);
     return next_id_++;
 }
@@ -143,34 +143,34 @@ void Events::unsubscribe(int id)
     }
 }
 
-bool Events::accepts(const Subscription &subscription, EventKind kind, EventLevel level) noexcept
+bool Events::accepts(const Subscription &subscription, EventKind knd, EventLevel lvl) noexcept
 {
-    return subscription.active && subscription.kind == kind && subscription.lowest <= level;
+    return subscription.active && subscription.kind == knd && subscription.lowest <= lvl;
 }
 
-void Events::refresh(EventKind kind) noexcept
+void Events::refresh(EventKind knd) noexcept
 {
-    EventLevel lowest = kNobody;
+    EventLevel lvl = kNobody;
     for (const Subscription &subscription : subscriptions_)
     {
-        if (subscription.active && subscription.kind == kind)
+        if (subscription.active && subscription.kind == knd)
         {
-            lowest = (std::min)(lowest, subscription.lowest);
+            lvl = (std::min)(lvl, subscription.lowest);
         }
     }
-    lowest_[slot(kind)] = lowest;
+    lowest_[slot(knd)] = lvl;
 }
 
-void Events::deliver(const Event &event) noexcept
+void Events::deliver(const Event &evt) noexcept
 {
     const Depth delivery(depth_);
-    const std::size_t count = subscriptions_.size();
-    for (std::size_t i = 0; i < count; ++i)
+    const std::size_t n = subscriptions_.size();
+    for (std::size_t i = 0; i < n; ++i)
     {
         const Subscription &subscription = subscriptions_[i];
-        if (accepts(subscription, event.kind, event.level))
+        if (accepts(subscription, evt.kind, evt.level))
         {
-            notify(*subscription.subscriber, event);
+            notify(*subscription.subscriber, evt);
         }
     }
     if (depth_ == 1)

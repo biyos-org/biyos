@@ -74,22 +74,22 @@ Texts summary(const TimingTree &tree)
     return rows;
 }
 
-std::string line_of(const biyos::Event &event)
+std::string line_of(const biyos::Event &evt)
 {
-    std::string line = event.text;
-    for (const biyos::Field &field : event.fields)
+    std::string line = evt.text;
+    for (const biyos::Field &field : evt.fields)
     {
         line += " " + field.name + "=" + field.value;
     }
     return line;
 }
 
-Texts lines(const std::vector<biyos::Event> &events)
+Texts lines(const std::vector<biyos::Event> &evts)
 {
     Texts lines;
-    for (const biyos::Event &event : events)
+    for (const biyos::Event &evt : evts)
     {
-        lines.push_back(line_of(event));
+        lines.push_back(line_of(evt));
     }
     return lines;
 }
@@ -121,15 +121,15 @@ class TimerTest : public ::testing::Test
         clock.advance_cpu(cpu);
     }
 
-    void lag(const biyos::Event &event)
+    void lag(const biyos::Event &evt)
     {
-        kept.push_back(event);
+        kept.push_back(evt);
         advance(10ns, 10ns);
     }
 
     void listen(biyos::Env &target)
     {
-        const auto keep = [this](const biyos::Event &event) { kept.push_back(event); };
+        const auto keep = [this](const biyos::Event &evt) { kept.push_back(evt); };
         target.events().subscribe(EventKind::Phase, EventLevel::Debug, keep);
     }
 
@@ -222,18 +222,18 @@ TEST_F(TimerTest, PhaseEvents)
         "solve edge=end wall=12 cpu=6",
     };
     EXPECT_EQ(lines(kept), expected);
-    for (const biyos::Event &event : kept)
+    for (const biyos::Event &evt : kept)
     {
-        EXPECT_EQ(event.kind, EventKind::Phase);
-        EXPECT_EQ(event.level, EventLevel::Info);
-        EXPECT_EQ(event.module, "nlp");
+        EXPECT_EQ(evt.kind, EventKind::Phase);
+        EXPECT_EQ(evt.level, EventLevel::Info);
+        EXPECT_EQ(evt.module, "nlp");
     }
     EXPECT_EQ(kept.back().time, 12ns);
 }
 
 TEST_F(TimerTest, SlowSubscriber)
 {
-    const auto slow = [this](const biyos::Event &event) { lag(event); };
+    const auto slow = [this](const biyos::Event &evt) { lag(evt); };
     env.events().subscribe(EventKind::Phase, EventLevel::Debug, slow);
     {
         const Timer solve(env, tree, "nlp", "solve");

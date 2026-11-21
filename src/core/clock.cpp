@@ -32,8 +32,8 @@ using Ticks = std::chrono::duration<std::int64_t, std::ratio<100, 1'000'000'000>
 Ticks ticks_of(const FILETIME &value) noexcept
 {
     const std::uint64_t high = value.dwHighDateTime;
-    const std::uint64_t count = (high << 32U) | value.dwLowDateTime;
-    return Ticks(static_cast<std::int64_t>(count));
+    const std::uint64_t n = (high << 32U) | value.dwLowDateTime;
+    return Ticks(static_cast<std::int64_t>(n));
 }
 
 std::chrono::nanoseconds process_time()

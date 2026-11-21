@@ -102,25 +102,25 @@ static_assert(kTable.size() == static_cast<std::size_t>(Option::CpuTimeLimit));
 
 }
 
-std::span<const OptionSpec> option_table()
+std::span<const OptionSpec> opt_table()
 {
     return kTable;
 }
 
-std::size_t index_of(Option option)
+std::size_t idx_of(Option opt)
 {
-    return static_cast<std::size_t>(option) - 1;
+    return static_cast<std::size_t>(opt) - 1;
 }
 
-const OptionSpec &row_of(std::span<const OptionSpec> table, Option option)
+const OptionSpec &row_of(std::span<const OptionSpec> table, Option opt)
 {
-    const std::size_t index = index_of(option);
-    if (index >= table.size())
+    const std::size_t idx = idx_of(opt);
+    if (idx >= table.size())
     {
-        const std::string id = text_of(static_cast<int>(option));
+        const std::string id = text_of(static_cast<int>(opt));
         throw Error(ErrorKind::Internal, "option " + id, "has no table row");
     }
-    return table[index];
+    return table[idx];
 }
 
 }
