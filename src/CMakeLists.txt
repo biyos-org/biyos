@@ -2,7 +2,7 @@ add_library(biyos_internal STATIC
     core/check.cpp
     core/clock.cpp
     core/deadline.cpp
-    core/environment.cpp
+    core/env.cpp
     core/error.cpp
     core/events.cpp
     core/format.cpp
@@ -79,7 +79,7 @@ biyos_set_warnings(biyos_internal)
 add_library(biyos
     capi/arrays.cpp
     capi/constraints.cpp
-    capi/environment.cpp
+    capi/env.cpp
     capi/events.cpp
     capi/format.cpp
     capi/functions.cpp

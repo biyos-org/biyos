@@ -9,7 +9,7 @@ from biyos._blocks import (
     Variables,
 )
 from biyos._capi import version
-from biyos._environment import Env
+from biyos._env import Env
 from biyos._error import Error
 from biyos._event import Event, EventKind, EventLevel
 from biyos._model import Model, Sense, VariableKind

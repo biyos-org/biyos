@@ -11,7 +11,7 @@ from biyos._blocks import (
     index_of,
 )
 from biyos._capi import lib
-from biyos._environment import Env
+from biyos._env import Env
 from biyos._error import Error
 from biyos._integers import integer
 from biyos._text import decoded, text
