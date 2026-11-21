@@ -1,0 +1,70 @@
+# Options {#sec-options}
+
+Options are set on an environment and apply to every call made on it and on its models. Each option has a name, a number and a kind, and biyos checks every value as it is set, so a value that would mean nothing is refused at once rather than ignored. The code of this chapter is `examples/c/options.c` and `examples/python/options.py`.
+
+## Names, ids and kinds {#sec-options-kinds}
+
+An option is known by its name, such as `maxtime`, and by its id, a number that the macros `BIYOS_OPT_*` of `biyos/biyos.h` give, such as `BIYOS_OPT_MAXTIME`. An id keeps its number for good, and a new option takes the next free one. `BIYOS_getoptid` finds the id of a name at run time, which lets a program set options it reads from a file or a command line.
+
+The kind of an option decides which calls set and get it:
+
+| Kind | Set with | Get with |
+| --- | --- | --- |
+| `BIYOS_KND_BOOL` | `BIYOS_setboolopt` | `BIYOS_getboolopt` |
+| `BIYOS_KND_INT` | `BIYOS_setintopt` | `BIYOS_getintopt` |
+| `BIYOS_KND_DBL` | `BIYOS_setdblopt` | `BIYOS_getdblopt` |
+| `BIYOS_KND_STR` | `BIYOS_setstropt` | `BIYOS_getstropt` |
+| `BIYOS_KND_ENUM` | `BIYOS_setstropt`, by the name of a value | `BIYOS_getstropt` |
+
+A call of another kind is refused: nothing is converted, so an int option refuses `BIYOS_setdblopt`. `BIYOS_getoptknd` gives the kind of an id. The reference lists every option with its kind, default and range (@sec-option-table).
+
+## Setting and reading {#sec-options-set}
+
+This code sets a double option by its id, a bool option, and an enum option by its name:
+
+```{.c file="examples/c/options.c" item="set_options"}
+```
+
+A set is checked before it changes anything. An int or double value must lie in the option's range, ends included, compared exactly with no tolerance; NaN lies outside every range. An enum value must name one of the option's values exactly. A failed set leaves the option as it was and returns `BIYOS_ERR_BADARG`, with a message that says why (@sec-errors).
+
+Reading is the mirror image:
+
+```{.c file="examples/c/options.c" item="read_options"}
+```
+
+A string read with `BIYOS_getstropt` belongs to the environment. The pointer stays valid until the option is set again or the environment is freed; a failed set of the option and a set of another option leave it valid. A string set with `BIYOS_setstropt` is copied, so the caller's buffer may change afterwards.
+
+## Versions {#sec-options-versions}
+
+Each option records the version of biyos that added it and, once it is no longer wanted, the versions that deprecated and retired it. `BIYOS_getoptver` reads all three:
+
+```{.c file="examples/c/options.c" item="describe"}
+```
+
+A version comes back as one number, $10000 \cdot \text{major} + 100 \cdot \text{minor} + \text{patch}$, so 0.1.0 is 100, and 0 stands for never. Minor and patch numbers stay below 100, so two versions compare as their numbers do.
+
+A deprecated option still works. Setting it sets it and sends a warning on the event stream, from module `core`, whose text names the version that deprecated it and the option to use instead, such as `option 'old': deprecated in 0.2.0, use 'new'`. Setting a retired option, by any call, fails and changes nothing, and reading it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither. Every option today was added in 0.1.0, and none is deprecated or retired.
+
+## Tolerances {#sec-options-tolerances}
+
+Four options say when a value of a model, such as a variable or a constraint function at a point, meets a bound, equals another value, is zero or is integral: `feastol_abs`, `feastol_rel`, `zerotol` and `inttol`. A finite value $v$ meets a finite lower bound $l$ unless
+
+$$
+l - v > \texttt{feastol\_abs} \quad\text{and}\quad l - v > \texttt{feastol\_rel} \cdot \max(1, |l|),
+$$
+
+and an upper bound alike. Two finite values $a$ and $b$ are equal unless they differ by more than both `feastol_abs` and `feastol_rel` times $\max(1, |a|, |b|)$. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. An infinite value equals only itself and is not integral, and NaN is not zero, not integral, equal to no value and meets no bound.
+
+## Options in Python {#sec-options-python}
+
+Python reads and sets options by name, with `env.getopt` and `env.setopt`. The value's Python type must match the kind: a `bool` for a bool option, an `int` for an int option, a number for a double option and a `str` for a string or enum option. A mismatch raises `TypeError` before C is called.
+
+```{.python file="examples/python/options.py"}
+```
+
+`getoptver` returns the three versions as strings, `None` standing for never.
+
+::: {.callout-note}
+## Read, checked and stored
+Nothing acts on the options yet, since biyos solves nothing: they are checked, stored and read back. The time limits, the tolerances and `presolve` take effect with the solvers.
+:::
