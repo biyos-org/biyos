@@ -23,6 +23,7 @@ book:
         - guide/start.qmd
         - guide/model.qmd
         - guide/options.qmd
+        - guide/events.qmd
 
 number-sections: true
 
