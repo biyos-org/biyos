@@ -63,7 +63,8 @@ def code(text):
 
 
 def quiet(text):
-    return f"[{text}]{{.type}}" if text else ""
+    shown = str(text).replace("...", "\\.\\.\\.")
+    return f"[{shown}]{{.type}}" if text else ""
 
 
 def target(obj):
