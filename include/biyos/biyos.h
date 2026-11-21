@@ -560,6 +560,7 @@ BIYOS_API BIYOS_status BIYOS_delobjnamerg(BIYOS_model *mdl, BIYOS_index pos, BIY
 #define BIYOS_OP_ENT 27
 #define BIYOS_OP_SPOW 28
 #define BIYOS_OP_ERF 29
+#define BIYOS_OP_NODE 30
 
 #define BIYOS_TRM_NONE 0
 #define BIYOS_TRM_OPTIMAL 101

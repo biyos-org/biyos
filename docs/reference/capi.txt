@@ -1251,6 +1251,7 @@ value BIYOS_OP_ATANH $\operatorname{artanh} e$.
 value BIYOS_OP_ENT $e \log e$.
 value BIYOS_OP_SPOW $\operatorname{sign}(e)\, \lvert e \rvert^c$, with a constant exponent $c > 0$.
 value BIYOS_OP_ERF $\operatorname{erf} e$, the error function.
+value BIYOS_OP_NODE No operator: in postfix, a node the model already holds, named by its id.
 since 0.1.0
 
 group status Solve status
