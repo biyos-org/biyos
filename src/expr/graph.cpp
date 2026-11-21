@@ -126,6 +126,33 @@ Offset Graph::add_sum(double constant,
     return node;
 }
 
+Graph::Mark Graph::mark() const noexcept
+{
+    return {
+        .nodes = size(),
+        .coefficients = coefficients_.size(),
+        .variables = variable_nodes_.size(),
+    };
+}
+
+void Graph::truncate(const Mark &mark) noexcept
+{
+    for (Offset node = mark.nodes; node < size(); ++node)
+    {
+        if (op(node) == Operator::Variable)
+        {
+            variable_nodes_[at(variable(node))] = kNone;
+        }
+    }
+    const std::size_t nodes = at(mark.nodes);
+    operators_.resize(nodes);
+    payloads_.resize(nodes);
+    children_.resize(at(starts_[nodes]));
+    starts_.resize(nodes + 1);
+    coefficients_.resize(mark.coefficients);
+    variable_nodes_.resize(mark.variables);
+}
+
 void Graph::check(Operator op, Payload payload, std::span<const Offset> children) const
 {
     check_shape(op, payload, static_cast<Offset>(children.size()));

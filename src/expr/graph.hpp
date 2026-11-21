@@ -3,6 +3,7 @@
 #include "core/index.hpp"
 #include "expr/node.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
@@ -13,6 +14,15 @@ namespace biyos
 class Graph
 {
   public:
+    struct Mark
+    {
+        Offset nodes;
+        std::size_t coefficients;
+        std::size_t variables;
+
+        bool operator==(const Mark &) const = default;
+    };
+
     Graph();
 
     Offset size() const noexcept;
@@ -28,6 +38,9 @@ class Graph
     Offset add_sum(double constant,
                    std::span<const Offset> children,
                    std::span<const double> coefficients);
+
+    Mark mark() const noexcept;
+    void truncate(const Mark &mark) noexcept;
 
   private:
     void check(Operator op, Payload payload, std::span<const Offset> children) const;
