@@ -21,6 +21,7 @@ book:
     - part: User guide
       chapters:
         - guide/start.qmd
+        - guide/model.qmd
 
 number-sections: true
 

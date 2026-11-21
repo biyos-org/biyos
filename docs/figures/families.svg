@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 290" font-family="Inter, sans-serif" font-size="14">
+  <defs>
+    <marker id="families-tip" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto">
+      <path class="tip-blue" d="M0 0L8 4L0 8Z" fill="#3C6BF0"/>
+    </marker>
+  </defs>
+  <g font-size="11" font-weight="600" letter-spacing="0.7">
+    <text class="muted" x="0" y="34" fill="#5B6069">VARIABLES</text>
+    <text class="muted" x="226" y="34" fill="#5B6069">FUNCTIONS</text>
+    <text class="muted" x="566" y="34" fill="#5B6069">CONSTRAINTS</text>
+    <text class="muted" x="566" y="166" fill="#5B6069">OBJECTIVES</text>
+  </g>
+  <rect class="box" x="0.5" y="46.5" width="180" height="150" rx="4" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <rect class="soft" x="226.5" y="46.5" width="270" height="150" rx="4" fill="#E6ECFD" stroke="#3C6BF0"/>
+  <rect class="box" x="566.5" y="46.5" width="193" height="90" rx="4" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <rect class="box" x="566.5" y="178.5" width="193" height="96" rx="4" fill="#FFFFFF" stroke="#D9D9D2"/>
+  <g class="rule" stroke="#D9D9D2">
+    <path d="M1 100.5H180M1 144.5H180"/>
+    <path d="M567 91.5H759"/>
+    <path d="M567 226.5H759"/>
+  </g>
+  <path class="rule" d="M227 100.5H496M227 144.5H496" stroke="#3C6BF0" stroke-opacity="0.35"/>
+  <g class="ink" fill="#16181D">
+    <text x="16" y="78" font-weight="600">x₀</text>
+    <text x="16" y="122" font-weight="600">x₁</text>
+    <text x="16" y="166" font-weight="600">x₂</text>
+    <text x="242" y="78" font-weight="600">f₀</text>
+    <text x="242" y="122" font-weight="600">f₁</text>
+    <text x="242" y="166" font-weight="600">f₂</text>
+    <text x="276" y="78">x₀ + x₁ + x₂</text>
+    <text x="276" y="122">x₀ − 2x₁</text>
+    <text x="276" y="166">1 − 2x₀ + x₀² + x₁²</text>
+    <text x="582" y="74" font-weight="600">c₀</text>
+    <text x="582" y="118" font-weight="600">c₁</text>
+    <text x="612" y="74">1 ≤ f₀ ≤ 5</text>
+    <text x="612" y="118">f₁ = 0</text>
+    <text x="582" y="208" font-weight="600">o₀</text>
+    <text x="582" y="254" font-weight="600">o₁</text>
+    <text x="612" y="208">minimize f₂</text>
+    <text x="612" y="254">maximize f₀</text>
+  </g>
+  <g class="muted" fill="#5B6069" font-size="12">
+    <text x="44" y="78">continuous</text>
+    <text x="44" y="122">integer</text>
+    <text x="44" y="166">binary</text>
+    <text x="164" y="78" text-anchor="end">[0, 4]</text>
+    <text x="164" y="122" text-anchor="end">[0, 3]</text>
+    <text x="164" y="166" text-anchor="end">[0, 1]</text>
+    <text x="612" y="224" font-size="11">priority 0, absolute 0.5</text>
+    <text x="612" y="270" font-size="11">priority 1</text>
+  </g>
+  <g class="accent" stroke="#3C6BF0" stroke-width="1.5" fill="none" marker-end="url(#families-tip)">
+    <path d="M566 70H500"/>
+    <path d="M566 114H500"/>
+    <path d="M566 204C536 204 530 162 500 162"/>
+    <path d="M566 250C522 250 540 82 500 78"/>
+  </g>
+  <g class="muted" fill="#5B6069" font-size="11">
+    <text x="0" y="222">kinds and bounds</text>
+    <text x="226" y="222">a constant, linear and quadratic terms</text>
+  </g>
+</svg>
