@@ -34,6 +34,7 @@ book:
         - method/graph.qmd
         - method/tapes.qmd
         - method/derivatives.qmd
+        - method/intervals.qmd
     - references.qmd
 
 number-sections: true
