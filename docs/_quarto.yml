@@ -4,6 +4,7 @@ project:
   pre-render:
     - ../tools/capi_page.py
     - ../tools/options_page.py
+    - quartodoc build
 
 book:
   title: biyos
@@ -43,6 +44,7 @@ book:
         - reference/capi.qmd
         - reference/options.qmd
         - reference/codes.qmd
+        - reference/python.qmd
     - references.qmd
 
 number-sections: true
@@ -96,3 +98,46 @@ format:
     include-in-header: theme/preamble.tex
     highlight-style: theme/code-light.theme
     colorlinks: true
+
+quartodoc:
+  style: single-page
+  package: biyos
+  source_dir: ../interfaces/python/src
+  dir: reference/_python
+  parser: numpy
+  options:
+    include_empty: true
+    member_order: source
+  renderer:
+    style: markdown
+    header_level: 2
+    table_style: description-list
+  sections:
+    - title: Environments
+      desc: An environment holds the options and the hooks, and every model is made on one.
+      contents: [Env, Error, version, Versions]
+    - title: Models
+      desc: A model holds the variables, functions, constraints and objectives of a problem.
+      contents: [Model, VariableKind, Sense]
+    - title: Blocks and views
+      desc: The items an add call returns, which pass wherever the model takes indices.
+      contents:
+        - name: Variables
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - Variable
+        - name: Functions
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - Function
+        - name: Constraints
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - Constraint
+        - name: Objectives
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - Objective
+    - title: Events
+      desc: What a hook receives.
+      contents: [Event, EventKind, EventLevel]

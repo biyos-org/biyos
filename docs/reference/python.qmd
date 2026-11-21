@@ -1,0 +1,6 @@
+# The Python API {#sec-pyapi}
+
+Every public class, function and method of the package `biyos`, generated from its docstrings. @sec-python describes the package as a whole, and the C API of @sec-capi gives the rules each method follows.
+
+::: {source="reference/_python/index.qmd.qmd"}
+:::
