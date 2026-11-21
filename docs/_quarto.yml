@@ -1,0 +1,60 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: biyos
+  subtitle: An optimization solver built from parts
+  favicon: logo/favicon.svg
+  downloads: [pdf]
+  search: true
+  page-navigation: true
+  sidebar:
+    logo:
+      light: logo/lockup.svg
+      dark: logo/lockup-reversed.svg
+    logo-alt: biyos
+    title: false
+    style: floating
+  chapters:
+    - index.qmd
+
+number-sections: true
+
+format:
+  html:
+    theme:
+      light: [theme/biyos.scss, theme/light.scss]
+      dark: [theme/biyos.scss, theme/dark.scss]
+    respect-user-color-scheme: true
+    highlight-style:
+      light: theme/code-light.theme
+      dark: theme/code-dark.theme
+    include-in-header: theme/fonts.html
+    html-math-method: mathjax
+    toc: true
+    toc-depth: 3
+    toc-title: On this page
+    code-copy: hover
+    anchor-sections: true
+    smooth-scroll: true
+    reference-location: margin
+  pdf:
+    documentclass: scrbook
+    classoption: [oneside, open=any, parskip=half-]
+    papersize: a4
+    geometry: [top=26mm, bottom=30mm, left=30mm, right=30mm, headsep=10mm]
+    pdf-engine: lualatex
+    fontsize: 10pt
+    linestretch: 1.22
+    mainfont: Inter
+    mainfontoptions: [Numbers=Lining]
+    sansfont: Inter
+    monofont: JetBrains Mono
+    monofontoptions: [Scale=MatchLowercase]
+    mathfont: Fira Math
+    toc-depth: 1
+    toc-title: Contents
+    include-in-header: theme/preamble.tex
+    highlight-style: theme/code-light.theme
+    colorlinks: true
