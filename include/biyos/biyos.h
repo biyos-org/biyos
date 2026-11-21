@@ -1,7 +1,5 @@
 #pragma once
 
-#include "biyos/options.h"
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -42,6 +40,23 @@ BIYOS_API void BIYOS_version(BIYOS_int *major, BIYOS_int *minor, BIYOS_int *patc
 BIYOS_API BIYOS_status BIYOS_newenv(BIYOS_env **env);
 BIYOS_API BIYOS_status BIYOS_freeenv(BIYOS_env *env);
 BIYOS_API const char *BIYOS_lasterror(const BIYOS_env *env);
+
+#define BIYOS_OPT_SEED 1
+#define BIYOS_OPT_MAXTIME 2
+#define BIYOS_OPT_CHECKLVL 3
+#define BIYOS_OPT_PRESOLVE 4
+#define BIYOS_OPT_REPRO 5
+#define BIYOS_OPT_FEASTOLABS 6
+#define BIYOS_OPT_FEASTOLREL 7
+#define BIYOS_OPT_INTTOL 8
+#define BIYOS_OPT_ZEROTOL 9
+#define BIYOS_OPT_MAXCPUTIME 10
+
+#define BIYOS_KND_BOOL 1
+#define BIYOS_KND_INT 2
+#define BIYOS_KND_DBL 3
+#define BIYOS_KND_STR 4
+#define BIYOS_KND_ENUM 5
 
 BIYOS_API BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt);
 BIYOS_API BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *knd);

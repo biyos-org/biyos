@@ -31,9 +31,9 @@ def test_functions():
 
 
 def test_kinds():
-    found = macros("options.h")
+    found = macros("biyos.h")
     kinds = {name: value for name, value in found.items() if "_KND_" in name}
-    assert len(kinds) == lines("options.h", "#define BIYOS_KND_")
+    assert len(kinds) == lines("biyos.h", "#define BIYOS_KND_")
     names = [name for name in dir(_capi) if name.startswith("KIND_")]
     assert sorted(names) == sorted(KINDS.values())
     paired = {macro: getattr(_capi, name) for macro, name in KINDS.items()}

@@ -1,6 +1,6 @@
 # C API
 
-`biyos/biyos.h` is the binary interface of biyos. It is C99 and includes the other headers of `include/biyos/`, such as `biyos/options.h` for the option ids. Every function, type and macro in them has an entry below.
+`biyos/biyos.h` is the binary interface of biyos. It is C99 and the only header of `include/biyos/`. Every function, type and macro in it has an entry below.
 
 ## Conventions
 
@@ -112,7 +112,7 @@ An option has a name, an id and a kind. Its kind decides which calls set and get
 | `BIYOS_KND_STR` | 4 | string | `BIYOS_setstropt`, `BIYOS_getstropt` |
 | `BIYOS_KND_ENUM` | 5 | enum | `BIYOS_setstropt`, `BIYOS_getstropt`, by the name of the value |
 
-The ids are the `BIYOS_OPT_*` macros of `biyos/options.h` and count from 1. `BIYOS_getoptid` finds the id of a name at run time, and `BIYOS_getoptknd` the kind of an id.
+The ids are the `BIYOS_OPT_*` macros and count from 1. `BIYOS_getoptid` finds the id of a name at run time, and `BIYOS_getoptknd` the kind of an id.
 
 | Macro | Value | Name | Kind | Default | Accepts | Meaning |
 | --- | --- | --- | --- | --- | --- | --- |
