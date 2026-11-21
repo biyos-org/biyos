@@ -5,7 +5,8 @@ from biyos._error import Error, check
 
 
 class Relay:
-    def __init__(self) -> None:
+    def __init__(self, handle: c_void_p) -> None:
+        self._handle = handle
         self._raised: BaseException | None = None
         self._depth = 0
 
@@ -25,13 +26,13 @@ class Relay:
         if self._depth == 0:
             self._raised = None
 
-    def finish(self, handle: c_void_p, status: int) -> None:
+    def finish(self, status: int) -> None:
         raised = self._raised
         if self._depth > 0 or raised is None:
             return
         self._raised = None
         try:
-            check(handle, status)
+            check(self._handle, status)
         except Error:
             raise raised
         else:

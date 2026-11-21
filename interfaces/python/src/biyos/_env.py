@@ -113,7 +113,7 @@ class Env:
         self._handle = handle
         self._models = Handles()
         self._arm()
-        self._relay = Relay()
+        self._relay = Relay(handle)
         self._hooks = Hooks(self._relay)
         self._calls = 0
         self._closing = False
@@ -381,7 +381,7 @@ class Env:
         self._relay.start()
         status = function(*arguments)
         self._settle()
-        self._relay.finish(self._handle, status)
+        self._relay.finish(status)
         check(self._handle, status)
 
     def _open(self) -> bool:
