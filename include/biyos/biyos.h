@@ -80,12 +80,12 @@ BIYOS_API const char *BIYOS_getevtfieldname(const BIYOS_event *evt, BIYOS_index 
 BIYOS_API const char *BIYOS_getevtfieldvalue(const BIYOS_event *evt, BIYOS_index field);
 
 BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt,
-                                     char *buf,
                                      size_t size,
+                                     char *buf,
                                      size_t *needed);
 BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt,
-                                     char *buf,
                                      size_t size,
+                                     char *buf,
                                      size_t *needed);
 
 BIYOS_API BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **mdl);
@@ -124,9 +124,9 @@ BIYOS_API BIYOS_status BIYOS_getnfuns(BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getfuns(BIYOS_model *mdl,
                                      BIYOS_index beg,
                                      BIYOS_index n,
+                                     BIYOS_offset size,
                                      BIYOS_real *consts,
                                      BIYOS_offset *starts,
-                                     BIYOS_offset size,
                                      BIYOS_offset *needed,
                                      BIYOS_index *varidx,
                                      BIYOS_real *vals);
@@ -140,8 +140,8 @@ BIYOS_API BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_getquadterms(BIYOS_model *mdl,
                                           BIYOS_index beg,
                                           BIYOS_index n,
-                                          BIYOS_offset *starts,
                                           BIYOS_offset size,
+                                          BIYOS_offset *starts,
                                           BIYOS_offset *needed,
                                           BIYOS_index *vars1,
                                           BIYOS_index *vars2,

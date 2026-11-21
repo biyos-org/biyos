@@ -14,7 +14,7 @@
 namespace
 {
 
-using Format = BIYOS_status (*)(const BIYOS_event *, char *, size_t, size_t *);
+using Format = BIYOS_status (*)(const BIYOS_event *, size_t, char *, size_t *);
 
 constexpr std::string_view kText = "0.000000 warning presolve: removed rows rows=3";
 constexpr std::string_view kJson =
@@ -36,7 +36,7 @@ std::string fill(Format format, const biyos::Event &event, std::size_t size, std
 {
     const BIYOS_event view{&event};
     std::vector<char> buffer(size, 'x');
-    EXPECT_EQ(format(&view, buffer.data(), buffer.size(), &needed), BIYOS_OK);
+    EXPECT_EQ(format(&view, buffer.size(), buffer.data(), &needed), BIYOS_OK);
     EXPECT_EQ(buffer.back(), '\0');
     return buffer.data();
 }
@@ -56,12 +56,12 @@ void expect_resize(Format format, std::string_view line)
 std::string line_of(Format format, const BIYOS_event *event)
 {
     std::size_t needed = 0;
-    if (format(event, nullptr, 0, &needed) != BIYOS_OK)
+    if (format(event, 0, nullptr, &needed) != BIYOS_OK)
     {
         return "failed";
     }
     std::vector<char> buffer(needed + 1);
-    if (format(event, buffer.data(), buffer.size(), &needed) != BIYOS_OK)
+    if (format(event, buffer.size(), buffer.data(), &needed) != BIYOS_OK)
     {
         return "failed";
     }
@@ -120,10 +120,10 @@ TEST(CApiTest, ZeroSize)
     const biyos::Event event = removed();
     const BIYOS_event view{&event};
     std::size_t needed = 0;
-    EXPECT_EQ(BIYOS_fmttext(&view, nullptr, 0, &needed), BIYOS_OK);
+    EXPECT_EQ(BIYOS_fmttext(&view, 0, nullptr, &needed), BIYOS_OK);
     EXPECT_EQ(needed, kText.size());
     char kept = 'x';
-    EXPECT_EQ(BIYOS_fmtjson(&view, &kept, 0, &needed), BIYOS_OK);
+    EXPECT_EQ(BIYOS_fmtjson(&view, 0, &kept, &needed), BIYOS_OK);
     EXPECT_EQ(needed, kJson.size());
     EXPECT_EQ(kept, 'x');
 }
@@ -136,9 +136,9 @@ TEST(CApiTest, BadFormat)
     std::size_t needed = 7;
     for (const Format format : {BIYOS_fmttext, BIYOS_fmtjson})
     {
-        EXPECT_EQ(format(nullptr, buffer.data(), buffer.size(), &needed), BIYOS_ERR_INVALIDARG);
-        EXPECT_EQ(format(&view, buffer.data(), buffer.size(), nullptr), BIYOS_ERR_INVALIDARG);
-        EXPECT_EQ(format(&view, nullptr, 1, &needed), BIYOS_ERR_INVALIDARG);
+        EXPECT_EQ(format(nullptr, buffer.size(), buffer.data(), &needed), BIYOS_ERR_INVALIDARG);
+        EXPECT_EQ(format(&view, buffer.size(), buffer.data(), nullptr), BIYOS_ERR_INVALIDARG);
+        EXPECT_EQ(format(&view, 1, nullptr, &needed), BIYOS_ERR_INVALIDARG);
     }
     EXPECT_STREQ(buffer.data(), "abc");
     EXPECT_EQ(needed, 7U);

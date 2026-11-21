@@ -104,7 +104,7 @@ static BIYOS_status use_functions(BIYOS_model *model)
     {
         return BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_getfuns(model, 0, 2, NULL, offsets, 3, &needed, held, kept) != BIYOS_OK ||
+    if (BIYOS_getfuns(model, 0, 2, 3, NULL, offsets, &needed, held, kept) != BIYOS_OK ||
         needed != 3 || offsets[1] != 2 || held[0] != 0 || held[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
@@ -126,7 +126,7 @@ static BIYOS_status use_quadratic(BIYOS_model *model)
     BIYOS_status status = BIYOS_addquadterms(model, 1, functions, starts, firsts, seconds, values);
     if (status == BIYOS_OK)
     {
-        status = BIYOS_getquadterms(model, 0, 2, offsets, 2, &needed, held, paired, NULL);
+        status = BIYOS_getquadterms(model, 0, 2, 2, offsets, &needed, held, paired, NULL);
     }
     if (status != BIYOS_OK || needed != 2 || offsets[1] != 0 || offsets[2] != 2 || held[1] != 0 ||
         paired[1] != 1)

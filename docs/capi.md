@@ -349,8 +349,7 @@ These calls write an event as one line into a buffer the caller gives, in the ma
 ### `BIYOS_fmttext`
 
 ```c
-BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, char *buf, size_t size,
-                           size_t *needed);
+BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, size_t size, char *buf, size_t *needed);
 ```
 
 Writes the event for people: its time, a space, the name of its level, a space, its module and a colon, then a space and its text unless the text is empty, then for each field in order a space, its name, `=` and its value. Every byte from 0x20 up is written as it is, and nothing is quoted: for a line a program reads, use `BIYOS_fmtjson`. The error event of a failed `BIYOS_setintopt`, sent 41 microseconds after the environment was created, reads
@@ -362,8 +361,7 @@ Writes the event for people: its time, a space, the name of its level, a space, 
 ### `BIYOS_fmtjson`
 
 ```c
-BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, char *buf, size_t size,
-                           size_t *needed);
+BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t size, char *buf, size_t *needed);
 ```
 
 Writes the event for tools, as one JSON object with the members `time`, `kind`, `level`, `module`, `text` and `fields`, in that order. `time` is a JSON number, written as in text. `kind` is the name of the kind: `message` for `BIYOS_EVT_MESSAGE`, `check` for `BIYOS_EVT_CHECK` and `phase` for `BIYOS_EVT_PHASE`. `level` is the name of the level: `debug`, `info`, `warning` or `error`. `fields` is an object holding the event's fields in their order, each value a string. A quote and a backslash are written as `\"` and `\\`. Bytes that are not well-formed UTF-8 become U+FFFD, one for each maximal subpart as the Unicode Standard recommends, so the line is always valid JSON. Every other byte from 0x20 up is written as it is. The same error event reads
@@ -493,8 +491,8 @@ Writes the number of functions of the model to `*n`.
 ### `BIYOS_getfuns`
 
 ```c
-BIYOS_status BIYOS_getfuns(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n, BIYOS_real *consts,
-                           BIYOS_offset *starts, BIYOS_offset size, BIYOS_offset *needed,
+BIYOS_status BIYOS_getfuns(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n, BIYOS_offset size,
+                           BIYOS_real *consts, BIYOS_offset *starts, BIYOS_offset *needed,
                            BIYOS_index *varidx, BIYOS_real *vals);
 ```
 
@@ -521,9 +519,9 @@ Adds quadratic terms to `n` functions of the model. Function `funs[j]` gains the
 ### `BIYOS_getquadterms`
 
 ```c
-BIYOS_status BIYOS_getquadterms(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n,
-                                BIYOS_offset *starts, BIYOS_offset size, BIYOS_offset *needed,
-                                BIYOS_index *vars1, BIYOS_index *vars2, BIYOS_real *vals);
+BIYOS_status BIYOS_getquadterms(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index n, BIYOS_offset size,
+                                BIYOS_offset *starts, BIYOS_offset *needed, BIYOS_index *vars1,
+                                BIYOS_index *vars2, BIYOS_real *vals);
 ```
 
 Writes the quadratic terms of the `n` functions from `beg` in compressed form, each function's sorted by pair with `vars1[k] <= vars2[k]`, as `BIYOS_getfuns` writes linear terms. `starts` receives `n + 1` offsets from 0, whatever `size` is. `size` is the number of terms `vars1`, `vars2` and `vals` hold, and the call writes at most `size` terms to each. `*needed` receives the number of quadratic terms of the functions, whether they fit or not. A null `starts`, `vars1`, `vars2` or `vals` is skipped. Returns `BIYOS_ERR_INVALIDARG` when `beg`, `n` or `size` is negative, `beg + n` exceeds the number of functions, or `needed` is null.

@@ -60,7 +60,7 @@ def add_sample(model):
     return model.addfuns(3, CONSTANTS, STARTS, VARIABLES, VALUES)
 
 
-def read_lengths(handle, first, count, constants, starts, size, *rest):
+def read_lengths(handle, first, count, size, constants, starts, *rest):
     needed, variables, values = rest
     heads = [(constants, count), (starts, count + 1)]
     return heads + [(variables, size), (values, size)]

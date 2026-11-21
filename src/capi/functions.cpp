@@ -109,9 +109,9 @@ BIYOS_status BIYOS_getnfuns(BIYOS_model *mdl, BIYOS_index *n)
 BIYOS_status BIYOS_getfuns(BIYOS_model *mdl,
                            BIYOS_index beg,
                            BIYOS_index n,
+                           BIYOS_offset size,
                            BIYOS_real *consts,
                            BIYOS_offset *starts,
-                           BIYOS_offset size,
                            BIYOS_offset *needed,
                            BIYOS_index *varidx,
                            BIYOS_real *vals)

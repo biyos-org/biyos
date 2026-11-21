@@ -77,9 +77,9 @@ BIYOS_status fill(const Model &model,
     return BIYOS_getfuns(model.get(),
                          first,
                          count,
+                         size,
                          read.constants.data(),
                          read.starts.data(),
-                         size,
                          needed,
                          read.variables.data(),
                          read.values.data());
@@ -138,7 +138,7 @@ void change(const BIYOS_event *, void *data)
     BIYOS_offset needed = 0;
     note(attempt, BIYOS_addfuns(model, 1, nullptr, nullptr, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_getnfuns(model, &count));
-    note(attempt, BIYOS_getfuns(model, 0, 1, nullptr, nullptr, 0, &needed, nullptr, nullptr));
+    note(attempt, BIYOS_getfuns(model, 0, 1, 0, nullptr, nullptr, &needed, nullptr, nullptr));
 }
 
 }
@@ -180,7 +180,7 @@ TEST(CApiTest, SizeZero)
     const Model model(env);
     add_sample(model);
     BIYOS_offset needed = -1;
-    EXPECT_EQ(BIYOS_getfuns(model.get(), 0, 3, nullptr, nullptr, 0, &needed, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getfuns(model.get(), 0, 3, 0, nullptr, nullptr, &needed, nullptr, nullptr),
               BIYOS_OK);
     EXPECT_EQ(needed, 5);
     Compressed read = blank(3, 2);
@@ -283,10 +283,10 @@ TEST(CApiTest, NullTerms)
     std::int64_t *starts = read.starts.data();
     int *variables = read.variables.data();
     double *values = read.values.data();
-    EXPECT_EQ(BIYOS_getfuns(held, 0, 3, nullptr, nullptr, 5, &needed, variables, nullptr),
+    EXPECT_EQ(BIYOS_getfuns(held, 0, 3, 5, nullptr, nullptr, &needed, variables, nullptr),
               BIYOS_OK);
-    EXPECT_EQ(BIYOS_getfuns(held, 0, 3, nullptr, starts, 5, &needed, nullptr, values), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getfuns(held, 0, 3, constants, nullptr, 0, &needed, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getfuns(held, 0, 3, 5, nullptr, starts, &needed, nullptr, values), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getfuns(held, 0, 3, 0, constants, nullptr, &needed, nullptr, nullptr),
               BIYOS_OK);
     expect_compressed(read, kSorted);
     Compressed untouched = blank(3, 5);
