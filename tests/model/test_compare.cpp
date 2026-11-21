@@ -1,3 +1,4 @@
+#include "biyos/biyos.h"
 #include "expr/terms.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
@@ -20,6 +21,7 @@ using biyos::QuadraticTerm;
 using biyos::Sense;
 using biyos::VariableKind;
 using biyos::test::built;
+using biyos::test::Node;
 using biyos::test::Parts;
 using biyos::test::sample;
 
@@ -336,4 +338,77 @@ TEST(CompareTest, ObjectiveOrder)
     EXPECT_EQ(from_sample(changed), "objective 0: relative tolerance 0 against 1");
     objective.relative = 0.0;
     EXPECT_EQ(from_sample(changed), "");
+}
+
+TEST(CompareTest, ExpressionFields)
+{
+    Parts op = sample();
+    op.expressions.nodes[2].code = BIYOS_OP_LOG;
+    EXPECT_EQ(from_sample(op), "function 0: node 2 against 2: operator 9 against 10");
+    Parts coefficient = sample();
+    coefficient.expressions.nodes[3].values = {0.25};
+    EXPECT_EQ(from_sample(coefficient), "function 0: node 3 against 3: constant 0.5 against 0.25");
+    Parts variable = sample();
+    variable.expressions.nodes[1].variable = 1;
+    EXPECT_EQ(from_sample(variable), "function 0: node 1 against 1: variable 2 against 1");
+    Parts weight = sample();
+    weight.expressions.nodes[4].values = {0.0, 2.0, 4.0};
+    EXPECT_EQ(from_sample(weight), "function 0: node 4 against 4: child 1: weight 3 against 4");
+    Parts first = sample();
+    first.expressions.nodes[4].values = {0.0, -0.0, 3.0};
+    EXPECT_EQ(from_sample(first), "function 0: node 4 against 4: child 0: weight 2 against -0");
+    Parts exponent = sample();
+    exponent.expressions.nodes[5].values = {2.5};
+    EXPECT_EQ(from_sample(exponent), "function 1: node 5 against 5: constant 1.5 against 2.5");
+    Parts count = sample();
+    count.expressions.nodes[3].children = {2, 1, 1};
+    EXPECT_EQ(from_sample(count), "function 0: node 3 against 3: child count 2 against 3");
+    Parts root = sample();
+    root.expressions.functions = {0, 1};
+    root.expressions.roots = {4, 5};
+    EXPECT_EQ(from_sample(root), "function 2: root node 3 against none");
+    EXPECT_EQ(difference(built(root), built(sample())), "function 2: root none against node 3");
+}
+
+TEST(CompareTest, SumConstant)
+{
+    Parts a = sample();
+    a.expressions.nodes.push_back(
+        Node{.code = BIYOS_OP_SUM, .children = {2}, .values = {0.0, 1.0}});
+    a.expressions.nodes.push_back(Node{.code = BIYOS_OP_SIN, .children = {6}});
+    a.expressions.functions = {0};
+    a.expressions.roots = {7};
+    Parts b = a;
+    b.expressions.nodes[6].values = {-0.0, 1.0};
+    EXPECT_EQ(difference(built(a), built(b)),
+              "function 0: node 6 against 6: constant 0 against -0");
+}
+
+TEST(CompareTest, SharedNodes)
+{
+    Parts separate = sample();
+    std::vector<Node> &nodes = separate.expressions.nodes;
+    nodes.insert(nodes.begin() + 3, nodes[2]);
+    nodes[4].children = {3, 1};
+    nodes[5].children = {2, 4};
+    nodes[6].children = {5};
+    separate.expressions.roots = {5, 4, 6};
+    EXPECT_EQ(from_sample(separate), "function 0: node 2 against 3: shared as node 2 against 2");
+    EXPECT_EQ(difference(built(separate), built(sample())),
+              "function 0: node 3 against 2: shared as node 2 against 2");
+}
+
+TEST(CompareTest, Renumbered)
+{
+    Parts renumbered = sample();
+    std::vector<Node> &nodes = renumbered.expressions.nodes;
+    nodes[0].variable = 2;
+    nodes[1].variable = 0;
+    nodes[2].children = {1};
+    nodes[3].children = {2, 0};
+    EXPECT_EQ(from_sample(renumbered), "");
+    Parts across = sample();
+    across.expressions.functions = {1, 2, 0};
+    across.expressions.roots = {5, 3, 4};
+    EXPECT_EQ(from_sample(across), "");
 }

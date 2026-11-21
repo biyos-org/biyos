@@ -486,6 +486,23 @@ TEST(ExpressionTest, ClearRefused)
     expect_same(model, before);
 }
 
+TEST(ExpressionTest, Copied)
+{
+    Model model = with_functions(3);
+    const Sample made = sample(model);
+    attach(model, {2, 0}, {made.top, made.exponential});
+    const Model copy = model;
+    EXPECT_EQ(biyos::difference(copy, model), "");
+    EXPECT_EQ(copy.graph().mark(), model.graph().mark());
+    attach(model, {1}, {made.exponential});
+    EXPECT_EQ(biyos::difference(copy, model), "function 1: root none against node 2");
+    EXPECT_EQ(root_of(copy, 1), kNoRoot);
+    Model changed = copy;
+    add(changed, {BIYOS_OP_SIN, {made.x}, {}});
+    EXPECT_EQ(changed.graph().size(), copy.graph().size() + 1);
+    EXPECT_EQ(biyos::difference(changed, copy), "");
+}
+
 TEST(ExpressionTest, AttachRefused)
 {
     constexpr double kLarge = 1.0e308;

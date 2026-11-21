@@ -4,6 +4,7 @@
 #include "core/text.hpp"
 #include "expr/terms.hpp"
 #include "model/fields.hpp"
+#include "model/match.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
@@ -119,6 +120,25 @@ std::span<const QuadraticTerm> quadratic_of(const Model &model, Index function)
     return model.quadratic_terms(function, 1);
 }
 
+Offset root_of(const Model &model, Index function)
+{
+    return model.roots(function, 1).front();
+}
+
+std::string root_text(Offset root)
+{
+    return root == kNoRoot ? "none" : "node " + text_of(root);
+}
+
+std::string expression_difference(Matching &matching, Offset a, Offset b)
+{
+    if (a == kNoRoot || b == kNoRoot)
+    {
+        return a == b ? "" : "root " + root_text(a) + " against " + root_text(b);
+    }
+    return matching.difference(a, b);
+}
+
 std::string named(const Model &a, const Model &b, Family family, Index index)
 {
     return compared("name", a.name_of(family, index), b.name_of(family, index));
@@ -132,12 +152,13 @@ std::string variable_difference(const Model &a, const Model &b, Index variable)
     });
 }
 
-std::string function_difference(const Model &a, const Model &b, Index function)
+std::string function_difference(const Model &a, const Model &b, Index function, Matching &matching)
 {
     return first_of({
         compared("constant", constant_of(a, function), constant_of(b, function)),
         term_differences("term", a.linear_terms(function, 1), b.linear_terms(function, 1)),
         term_differences("quadratic term", quadratic_of(a, function), quadratic_of(b, function)),
+        expression_difference(matching, root_of(a, function), root_of(b, function)),
         named(a, b, Family::Function, function),
     });
 }
@@ -166,7 +187,8 @@ std::string variable_differences(const Model &a, const Model &b)
 
 std::string function_differences(const Model &a, const Model &b)
 {
-    const auto function = [&](Index k) { return function_difference(a, b, k); };
+    Matching matching(a.graph(), b.graph());
+    const auto function = [&](Index k) { return function_difference(a, b, k, matching); };
     return table_difference("function", a.n_functions(), b.n_functions(), function);
 }
 

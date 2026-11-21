@@ -1,9 +1,11 @@
 #pragma once
 
+#include "biyos/biyos.h"
 #include "core/index.hpp"
 #include "expr/terms.hpp"
 #include "model/model.hpp"
 
+#include <cstddef>
 #include <limits>
 #include <string>
 #include <string_view>
@@ -19,6 +21,21 @@ struct Quadratic
     std::vector<QuadraticTerm> terms;
 };
 
+struct Node
+{
+    int code;
+    std::vector<Offset> children = {};
+    std::vector<double> values = {};
+    Index variable = -1;
+};
+
+struct Expressions
+{
+    std::vector<Node> nodes;
+    std::vector<Index> functions;
+    std::vector<Offset> roots;
+};
+
 struct Naming
 {
     std::vector<Index> indices;
@@ -32,6 +49,7 @@ struct Parts
     std::vector<Offset> starts;
     std::vector<LinearTerm> terms;
     Quadratic quadratic;
+    Expressions expressions;
     std::vector<Constraint> constraints;
     std::vector<Objective> objectives;
     std::string name;
@@ -69,6 +87,20 @@ inline Parts sample()
                         {.row = 2, .column = 0, .coefficient = -1.5},
                         {.row = 0, .column = 0, .coefficient = 2.0},
                     },
+            },
+        .expressions =
+            {
+                .nodes =
+                    {
+                        {.code = BIYOS_OP_VAR, .variable = 0},
+                        {.code = BIYOS_OP_VAR, .variable = 2},
+                        {.code = BIYOS_OP_EXP, .children = {0}},
+                        {.code = BIYOS_OP_PROD, .children = {2, 1}, .values = {0.5}},
+                        {.code = BIYOS_OP_SUM, .children = {2, 3}, .values = {0.0, 2.0, 3.0}},
+                        {.code = BIYOS_OP_CPOW, .children = {4}, .values = {1.5}},
+                    },
+                .functions = {0, 2, 1},
+                .roots = {4, 3, 5},
             },
         .constraints =
             {
@@ -108,6 +140,36 @@ inline void name(Model &model, Family family, const Naming &naming)
     model.set_names(family, naming.indices, naming.names);
 }
 
+inline std::vector<Offset> mapped(const std::vector<Offset> &ids,
+                                  const std::vector<Offset> &positions)
+{
+    std::vector<Offset> found;
+    for (const Offset position : positions)
+    {
+        found.push_back(ids[static_cast<std::size_t>(position)]);
+    }
+    return found;
+}
+
+inline Offset added(Model &model, const std::vector<Offset> &ids, const Node &node)
+{
+    if (node.code == BIYOS_OP_VAR)
+    {
+        return model.add_variable_node(node.variable);
+    }
+    return model.add_node(node.code, mapped(ids, node.children), node.values);
+}
+
+inline void attach(Model &model, const Expressions &expressions)
+{
+    std::vector<Offset> ids;
+    for (const Node &node : expressions.nodes)
+    {
+        ids.push_back(added(model, ids, node));
+    }
+    model.attach_expressions(expressions.functions, mapped(ids, expressions.roots));
+}
+
 inline Model built(const Parts &parts)
 {
     Model model;
@@ -115,6 +177,7 @@ inline Model built(const Parts &parts)
     model.add_functions(parts.constants, parts.starts, parts.terms);
     const Quadratic &quadratic = parts.quadratic;
     model.add_quadratic_terms(quadratic.functions, quadratic.starts, quadratic.terms);
+    attach(model, parts.expressions);
     model.add_constraints(parts.constraints);
     model.add_objectives(parts.objectives);
     if (!parts.name.empty())

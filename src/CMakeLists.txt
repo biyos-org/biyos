@@ -58,6 +58,7 @@ add_library(biyos_internal STATIC
     model/expressions.cpp
     model/fields.cpp
     model/functions.cpp
+    model/match.cpp
     model/merge.cpp
     model/model.cpp
     model/names.cpp
