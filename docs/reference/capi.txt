@@ -1307,7 +1307,20 @@ error BIYOS_ERR_BADARG `pos` or `n` is negative, a function is not one of the mo
 note The function of entry `k`, `idx[k]` or `pos + k`, becomes $f + e$, where $e$ is node `node[k]`. The constant, linear and quadratic terms of $e$ join the function's, added as `BIYOS_addlintermsp` and `BIYOS_addquadtermsp` add terms, and the rest becomes the function's expression, or is summed in a new node with the expression it has. An expression that holds no constant leaves the function's as it was.
 note The expression is split at its top. Among the terms of its top sum, a constant, $a x_j$, $q x_i x_j$ and $q x_j^2$ move, with negations and constant factors pushed into that sum; any other term stays whole, so no product of sums is expanded. Below the top, a node that other nodes use is kept whole, so a subexpression shared by several functions is stored once.
 note A call whose expressions bring new linear or quadratic terms moves the terms and offsets of every function from its lowest such one on, as `BIYOS_addlintermsp` does, so the expressions of many functions are best attached in one call, or a function's right after it is added. An expression that brings no new term moves nothing.
-see BIYOS_addexpr BIYOS_addlintermsp BIYOS_addquadtermsp
+see BIYOS_addexpr BIYOS_clrfunsp BIYOS_addlintermsp BIYOS_addquadtermsp
+since 0.1.0
+
+function BIYOS_clrfunsp
+summary Empty functions of the model, so they can be built again.
+param mdl in The model.
+param n in The number of entries.
+param idx in The functions; may be null only when `n` is 0.
+return `BIYOS_OK` once each function listed has the constant 0, no linear or quadratic term and no expression. A function listed more than once is emptied once.
+error BIYOS_ERR_BADARG `n` is negative or a function is not one of the model.
+note The constraints and objectives that use a function keep using it. Its expression's nodes stay in the graph, and other functions that share them keep them.
+note An expression's linear and quadratic parts join the function's own, and nothing tells them apart afterwards, so no call takes an expression back from a function: the function is emptied and built again.
+note A call moves the terms of every function from the lowest one it lists on, so many functions are best emptied in one call.
+see BIYOS_attachexprsp BIYOS_addfun
 since 0.1.0
 
 group status Solve status

@@ -257,7 +257,9 @@ static BIYOS_status use_postfix(BIYOS_model *model)
     const BIYOS_index idx[1] = {1};
     if (BIYOS_addexpr(model, 2, off, code, arg, val, node) != BIYOS_OK || node[0] != 3 ||
         node[1] != 5 || BIYOS_attachexprsp(model, 1, idx, node) != BIYOS_OK ||
-        BIYOS_attachexprrg(model, 0, 1, node + 1) != BIYOS_OK)
+        BIYOS_attachexprrg(model, 0, 1, node + 1) != BIYOS_OK ||
+        BIYOS_clrfunsp(model, 1, idx) != BIYOS_OK ||
+        BIYOS_attachexprsp(model, 1, idx, node) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }

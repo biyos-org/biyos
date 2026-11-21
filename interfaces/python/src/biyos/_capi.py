@@ -199,6 +199,7 @@ def _declare_expressions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     postfix = (c_void_p, c_int32, offsets, ints, offsets, doubles, offsets)
     _declare(lib, "BIYOS_addexpr", c_int, *postfix)
     _declare_pair(lib, "BIYOS_attachexpr", offsets)
+    _declare(lib, "BIYOS_clrfunsp", c_int, c_void_p, c_int32, ints)
 
 
 lib = _load()
