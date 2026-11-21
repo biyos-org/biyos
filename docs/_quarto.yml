@@ -92,7 +92,7 @@ format:
     mainfontoptions: [Numbers=Lining]
     sansfont: Inter
     monofont: JetBrains Mono
-    monofontoptions: [Scale=MatchLowercase]
+    monofontoptions: [Scale=MatchLowercase, Contextuals=NoAlternate, Ligatures=NoCommon]
     mathfont: Fira Math
     toc-depth: 1
     toc-title: Contents
