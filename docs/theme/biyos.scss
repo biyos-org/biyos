@@ -1,0 +1,1004 @@
+/*-- scss:defaults --*/
+$font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+$font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+$body-bg: $bg;
+$body-color: $text;
+$body-secondary-color: $text-muted;
+$primary: $brand-blue;
+$secondary: $text-muted;
+$light: $bg;
+$link-color: $link;
+$link-decoration: none;
+$link-hover-decoration: none;
+$border-color: $line;
+$table-border-color: $line;
+$hr-border-color: $line;
+
+$font-family-sans-serif: $font-sans;
+$font-family-monospace: $font-mono;
+$headings-font-family: $font-sans;
+$font-size-root: 16px;
+$font-size-base: 1rem;
+$line-height-base: 1.625;
+$headings-font-weight: 700;
+$headings-color: $text;
+$h1-font-size: 2.25rem;
+$h2-font-size: 1.375rem;
+$h3-font-size: 1.0625rem;
+$h4-font-size: 1rem;
+$h1h2h3-font-weight: 700;
+
+$code-color: $text;
+$code-bg: rgba($text, 0.06);
+$code-block-bg: $surface;
+$code-block-border-left: false;
+$code-font-size: 0.875em;
+$code-block-font-size: 0.875rem;
+$code-inline-font-size: 0.875em;
+
+$sidebar-bg: $bg;
+$sidebar-fg: $text-muted;
+$sidebar-hl: $text;
+$sidebar-font-size: 0.875rem;
+$sidebar-font-size-section: 0.875rem;
+$toc-color: $text-muted;
+$toc-font-size: 0.8125rem;
+$toc-active-border: $brand-blue;
+$toc-inactive-border: $line;
+
+$callout-border-width: 3px;
+$callout-color-note: $brand-blue;
+$callout-color-tip: $brand-blue;
+$callout-color-important: $brand-blue;
+$callout-color-warning: $text-muted;
+$callout-color-caution: $text-muted;
+
+$footer-bg: $bg;
+$footer-fg: $text-muted;
+$popover-bg: $surface;
+$input-bg: $surface;
+
+$grid-sidebar-width: 264px;
+$grid-body-width: 760px;
+$grid-margin-width: 224px;
+$grid-column-gutter-width: 2.5rem;
+
+/*-- scss:rules --*/
+:root {
+  --bg: #{$bg};
+  --surface: #{$surface};
+  --text: #{$text};
+  --text-muted: #{$text-muted};
+  --line: #{$line};
+  --link: #{$link};
+  --accent-soft: #{$accent-soft};
+  --brand-ink: #{$brand-ink};
+  --brand-blue: #{$brand-blue};
+  --brand-paper: #{$brand-paper};
+  --edge: #{mix($text, $surface, 24%)};
+}
+
+@mixin label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: $text-muted;
+}
+
+body {
+  background-color: $bg;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba($brand-blue, 0.22);
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3 {
+  font-family: $font-sans;
+  color: $text;
+}
+
+h1, .h1 {
+  font-weight: 700;
+  line-height: 2.75rem;
+  letter-spacing: -0.015em;
+}
+
+h2, .h2 {
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  line-height: 1.875rem;
+  letter-spacing: -0.01em;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+h3, .h3 {
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  line-height: 1.625rem;
+}
+
+h4, .h4 {
+  margin-top: 1.5rem;
+  font-weight: 600;
+}
+
+#title-block-header {
+  margin-bottom: 2.5rem;
+}
+
+#title-block-header h1.title {
+  margin-bottom: 0;
+}
+
+.header-section-number,
+.chapter-number {
+  color: $brand-blue;
+  font-weight: 600;
+  margin-right: 0.35em;
+}
+
+h1 .chapter-number {
+  font-weight: 700;
+}
+
+h2 .header-section-number,
+h3 .header-section-number {
+  font-variant-numeric: tabular-nums;
+}
+
+p, li, dd {
+  hyphens: manual;
+}
+
+main a,
+.content a {
+  text-decoration: underline;
+  text-decoration-color: rgba($link, 0.35);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color 120ms ease;
+}
+
+main a:hover,
+.content a:hover {
+  text-decoration-color: $link;
+}
+
+main a code,
+main a:has(code) {
+  text-decoration: none;
+}
+
+main a code {
+  color: $link;
+}
+
+a.anchorjs-link,
+.anchored a.anchorjs-link {
+  text-decoration: none;
+  color: $text-muted;
+}
+
+code {
+  font-family: $font-mono;
+  font-feature-settings: "calt" 0, "liga" 0;
+}
+
+p code:not(.sourceCode),
+li code:not(.sourceCode),
+td code:not(.sourceCode),
+dt code:not(.sourceCode),
+dd code:not(.sourceCode),
+.callout code:not(.sourceCode) {
+  color: $text;
+  background-color: rgba($text, 0.06);
+  border-radius: 2px;
+  padding: 0.1em 0.3em;
+  font-size: 0.875em;
+  white-space: nowrap;
+}
+
+div.sourceCode {
+  background-color: $surface;
+  border: 1px solid $line;
+  border-radius: 2px;
+  margin: 1.25rem 0 1.5rem;
+}
+
+div.sourceCode pre.sourceCode {
+  padding: 1rem 1.125rem;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+
+div.sourceCode pre.sourceCode code {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+:is(main, section) > pre:not(.sourceCode) {
+  background-color: $surface;
+  color: $text;
+  border: 1px solid $line;
+  border-radius: 2px;
+  margin: 1rem 0 1.25rem;
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+
+:is(main, section) > pre:not(.sourceCode) code {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+pre > code.sourceCode > span > a:first-child::before {
+  text-decoration: none;
+}
+
+.code-with-filename {
+  margin: 1.25rem 0 1.5rem;
+}
+
+div.code-with-filename .code-with-filename-file {
+  background-color: $surface !important;
+  border: 1px solid $line;
+  border-bottom: 1px solid $line;
+  border-radius: 2px 2px 0 0;
+  padding: 0.5rem 1.125rem;
+  margin: 0;
+}
+
+div.code-with-filename .code-with-filename-file pre {
+  @include label;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-family: $font-mono;
+  font-weight: 500;
+  background: transparent;
+  padding: 0;
+}
+
+.code-with-filename div.sourceCode {
+  margin-top: 0;
+  border-top: none;
+  border-radius: 0 0 2px 2px;
+}
+
+.code-copy-button {
+  color: $text-muted;
+}
+
+table,
+.table {
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  color: $text;
+  margin: 1.5rem 0 2rem;
+  border-collapse: collapse;
+  --bs-table-bg: transparent;
+  --bs-table-color: #{$text};
+  --bs-table-striped-bg: transparent;
+}
+
+.table > :not(caption) > * > * {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid $line;
+}
+
+.table > thead > tr > th,
+table thead th {
+  @include label;
+  border-bottom: 1px solid rgba($text, 0.45);
+  vertical-align: bottom;
+}
+
+.table > :not(:first-child) {
+  border-top: none;
+}
+
+.table > tbody > tr:last-child > * {
+  border-bottom: 1px solid rgba($text, 0.25);
+}
+
+main table colgroup col {
+  width: auto !important;
+}
+
+.table td:first-child,
+.table th:first-child {
+  padding-left: 0;
+}
+
+.table td:last-child,
+.table th:last-child {
+  padding-right: 0;
+}
+
+.table td code {
+  white-space: nowrap;
+}
+
+.table caption,
+table caption {
+  @include label;
+  text-align: left;
+  padding: 0 0 0.5rem;
+}
+
+caption,
+figcaption,
+.figure-caption,
+.quarto-float-caption {
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  color: $text-muted;
+  caption-side: top;
+}
+
+.callout {
+  border: none;
+  border-left: 3px solid $brand-blue;
+  border-radius: 0 4px 4px 0;
+  background-color: $accent-soft;
+  margin: 1.5rem 0;
+}
+
+.callout.callout-style-default .callout-header {
+  background-color: transparent;
+  border-bottom: none;
+  padding-top: 0.75rem;
+}
+
+.callout .callout-title-container {
+  @include label;
+  color: $text;
+}
+
+.callout.callout-style-default .callout-body,
+.callout .callout-body-container {
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  padding-top: 0.25rem;
+}
+
+.callout.callout-style-default.callout-titled .callout-body {
+  padding-bottom: 0.75rem;
+}
+
+.callout .callout-icon::before {
+  opacity: 0.8;
+}
+
+.callout-warning,
+.callout-caution {
+  border-left-color: $text-muted;
+  background-color: rgba($text, 0.045);
+}
+
+blockquote {
+  border-left: 3px solid $line;
+  color: $text-muted;
+  padding-left: 1.25rem;
+}
+
+hr {
+  opacity: 1;
+  border-top: 1px solid $line;
+}
+
+dl dt {
+  font-weight: 600;
+}
+
+dl dd {
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.sidebar {
+  background-color: $bg;
+}
+
+#quarto-sidebar {
+  border-right: 1px solid $line;
+}
+
+.sidebar-header {
+  padding-top: 1.75rem;
+  padding-bottom: 0.5rem;
+}
+
+.sidebar-header .sidebar-logo {
+  width: 124px;
+  max-width: none;
+  height: auto;
+  margin: 0 auto 0 0;
+  padding: 0;
+}
+
+.sidebar-header .sidebar-logo-link {
+  display: block;
+  padding: 0 0 0 0.125rem;
+}
+
+.sidebar-tools-main,
+.sidebar-tools-collapse {
+  margin-left: 0;
+}
+
+.sidebar nav[role="doc-toc"] ul > li > a,
+.sidebar-navigation .sidebar-item {
+  font-size: 0.875rem;
+}
+
+.sidebar-navigation .sidebar-item .sidebar-link {
+  color: $text-muted;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  border-left: 2px solid transparent;
+  margin-left: -0.75rem;
+  border-radius: 0;
+}
+
+.sidebar-navigation .sidebar-item .sidebar-link:hover {
+  color: $text;
+}
+
+.sidebar-navigation .sidebar-item .sidebar-link.active,
+.sidebar-navigation .sidebar-item .sidebar-link.active .menu-text {
+  color: $text;
+  font-weight: 600;
+}
+
+.sidebar-navigation .sidebar-item .sidebar-link.active {
+  border-left-color: $brand-blue;
+}
+
+.sidebar-navigation .sidebar-item-section > .sidebar-item-container .sidebar-item-text,
+.sidebar-navigation .sidebar-item-section > .sidebar-item-container a {
+  @include label;
+}
+
+.sidebar-navigation .sidebar-item-section {
+  margin-top: 1.25rem;
+}
+
+.sidebar-navigation .chapter-number {
+  color: inherit;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+  margin-right: 0.25em;
+}
+
+.sidebar-navigation .sidebar-link.active .chapter-number {
+  color: $brand-blue;
+  opacity: 1;
+}
+
+#quarto-search .aa-DetachedSearchButton,
+#quarto-search .aa-Autocomplete {
+  background-color: $surface;
+  border: 1px solid $line;
+  border-radius: 4px;
+}
+
+.quarto-color-scheme-toggle,
+.sidebar-tools-main a {
+  color: $text-muted;
+}
+
+#TOC,
+nav#TOC[role="doc-toc"] {
+  padding-top: 0.25rem;
+}
+
+#toc-title,
+nav[role="doc-toc"] > h2 {
+  @include label;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+nav[role="doc-toc"] ul li a {
+  line-height: 1.25rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  color: $text-muted;
+}
+
+nav[role="doc-toc"] ul li a.active {
+  color: $text;
+}
+
+nav[role="doc-toc"] .header-section-number {
+  color: inherit;
+  margin-right: 0.15em;
+}
+
+.nav-page {
+  border: 1px solid $line;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  text-decoration: none !important;
+  background: $surface;
+  transition: border-color 120ms ease;
+}
+
+.nav-page:hover {
+  border-color: $brand-blue;
+}
+
+.page-navigation {
+  margin-top: 4rem;
+  padding-top: 0;
+  border-top: none;
+  gap: 1rem;
+}
+
+.nav-page .nav-page-text {
+  color: $text;
+  font-weight: 600;
+}
+
+.nav-page i.bi {
+  color: $brand-blue;
+}
+
+.nav-footer {
+  border-top: 1px solid $line;
+  color: $text-muted;
+  font-size: 0.8125rem;
+}
+
+.quarto-figure,
+div[id^="fig-"] {
+  margin: 2rem 0 2.25rem;
+}
+
+figure.figure {
+  margin: 0;
+}
+
+svg.diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto 0.75rem;
+  font-family: $font-sans;
+}
+
+@media (max-width: 575.98px) {
+  div:has(> svg.diagram) {
+    overflow-x: auto;
+  }
+
+  svg.diagram {
+    min-width: 560px;
+  }
+}
+
+svg.diagram .ink {
+  fill: var(--text);
+}
+
+svg.diagram .muted {
+  fill: var(--text-muted);
+}
+
+svg.diagram .blue {
+  fill: var(--brand-blue);
+}
+
+svg.diagram .link {
+  fill: var(--link);
+}
+
+svg.diagram .box {
+  fill: var(--surface);
+  stroke: var(--edge);
+}
+
+svg.diagram .soft {
+  fill: var(--accent-soft);
+  stroke: var(--brand-blue);
+}
+
+svg.diagram .wire {
+  stroke: var(--text-muted);
+  fill: none;
+}
+
+svg.diagram .accent {
+  stroke: var(--brand-blue);
+  fill: none;
+}
+
+svg.diagram .rule {
+  stroke: var(--edge);
+  fill: none;
+}
+
+svg.diagram .tip {
+  fill: var(--text-muted);
+}
+
+svg.diagram .tip-blue {
+  fill: var(--brand-blue);
+}
+
+svg.diagram .mono {
+  font-family: $font-mono;
+}
+
+.math.display {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+mjx-container[display="true"] {
+  margin: 1.25rem 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+
+.citation a,
+a.footnote-ref {
+  text-decoration: none;
+}
+
+#refs.hanging-indent {
+  margin-left: 0;
+  text-indent: 0;
+}
+
+#refs .csl-entry {
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  margin-left: 0;
+  margin-bottom: 0.75rem;
+  padding-left: 1.5em;
+  text-indent: -1.5em;
+}
+
+.lead {
+  font-size: 1.1875rem;
+  line-height: 1.875rem;
+  color: $text;
+  font-weight: 400;
+}
+
+.label {
+  @include label;
+}
+
+.landing #title-block-header,
+.landing main > section > h1.unnumbered,
+.landing main h1.unnumbered:first-of-type {
+  display: none;
+}
+
+.sidebar-header.sidebar-header-stacked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sidebar-title {
+  margin: 0 0 0 auto;
+}
+
+.sidebar-title > a {
+  display: none;
+}
+
+.sidebar-title .sidebar-tools-main {
+  margin: 0;
+}
+
+.landing .sidebar-header .sidebar-logo-link {
+  visibility: hidden;
+}
+
+.hero {
+  margin: 1rem 0 3rem;
+}
+
+.hero-logo {
+  width: 220px;
+  max-width: 60%;
+  height: auto;
+  margin: 0 0 2.75rem;
+}
+
+.hero p {
+  margin: 0;
+}
+
+.hero .display {
+  display: block;
+  font-size: 3rem;
+  line-height: 3.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  font-variation-settings: "opsz" 32;
+  color: $text;
+  margin-bottom: 1.5rem;
+}
+
+.hero .lead {
+  max-width: 36rem;
+  color: $text-muted;
+}
+
+.hero .lead strong {
+  color: $text;
+  font-weight: 600;
+}
+
+.form {
+  background: $surface;
+  border: 1px solid $line;
+  border-radius: 4px;
+  padding: 0.25rem 1.5rem;
+  margin: 1.5rem 0 1.75rem;
+  overflow-x: auto;
+}
+
+.form p {
+  margin: 0;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 2rem 0 3rem;
+}
+
+.cards > div {
+  background: $surface;
+  border: 1px solid $line;
+  border-radius: 4px;
+  padding: 1.25rem 1.25rem 1.125rem;
+  transition: border-color 120ms ease;
+  position: relative;
+}
+
+.cards > div:hover {
+  border-color: $brand-blue;
+}
+
+.cards p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  color: $text-muted;
+}
+
+.cards p:nth-child(2) {
+  margin: 0.5rem 0 0.375rem;
+  font-size: 1.0625rem;
+  line-height: 1.625rem;
+  font-weight: 600;
+  color: $text;
+}
+
+.cards p:nth-child(2) a {
+  color: $text;
+  text-decoration: none;
+}
+
+.cards p:nth-child(2) a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.cards .label {
+  color: $link;
+}
+
+@media (max-width: 767.98px) {
+  .cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero .display {
+    font-size: 2.25rem;
+    line-height: 2.625rem;
+  }
+
+  .hero .display br {
+    display: none;
+  }
+
+  .form mjx-container {
+    font-size: 88% !important;
+  }
+
+  h1, .h1 {
+    font-size: 1.875rem;
+    line-height: 2.375rem;
+  }
+}
+
+main a > code:not(.sourceCode),
+main a code:not(.sourceCode) {
+  color: $link;
+  background-color: rgba($link, 0.08);
+}
+
+main a:hover > code:not(.sourceCode) {
+  background-color: rgba($link, 0.16);
+}
+
+h2.api,
+h3.api,
+.api > h2,
+.api > h3 {
+  font-family: $font-mono;
+  font-size: 1.1875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 3.25rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid $line;
+}
+
+h2.api {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+}
+
+h2.api code,
+h3.api code,
+.api > h2 code,
+.api > h3 code {
+  font-weight: inherit;
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: $text;
+}
+
+.entry > p:first-child {
+  font-size: 1.0625rem;
+  color: $text;
+  margin-bottom: 1rem;
+}
+
+.entry div.sourceCode {
+  background-color: $accent-soft;
+  border-color: rgba($brand-blue, 0.28);
+}
+
+.entry > p > strong:first-child {
+  @include label;
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+.entry > p:has(> strong:only-child) {
+  margin: 1.5rem 0 0;
+}
+
+.entry table {
+  margin-top: 0.5rem;
+}
+
+.entry table td:first-child {
+  white-space: nowrap;
+  width: 1%;
+  padding-right: 1.25rem;
+}
+
+.entry table td:nth-child(2):not(:last-child) {
+  color: $text-muted;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  width: 1%;
+  padding-right: 1.25rem;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.meta p {
+  display: contents;
+}
+
+.since {
+  @include label;
+  color: $link;
+  background: rgba($link, 0.1);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+}
+
+.see {
+  @include label;
+  margin-left: 0.25rem;
+}
+
+.facts dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1.5rem;
+  margin: 1rem 0 0;
+  font-size: 0.9375rem;
+}
+
+.facts dt {
+  @include label;
+  padding-top: 0.2rem;
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.doc-section > h4,
+.doc-section > h5,
+.doc-section > h6 {
+  @include label;
+  margin-top: 1.5rem;
+}
+
+main h5,
+main h6 {
+  font-size: 0.9375rem;
+}
+
+section[id^="biyos."] > h3 {
+  font-family: $font-mono;
+  font-size: 1.1875rem;
+  font-weight: 600;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid $line;
+}
+
+section[id^="biyos."] > h4,
+section[id^="biyos."] > h5 {
+  font-family: $font-mono;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 2.25rem;
+}
+
+.parameter-name {
+  font-weight: 600;
+  color: $text;
+}
+
+.parameter-annotation,
+.parameter-annotation-sep,
+.parameter-default-sep,
+.parameter-default {
+  color: $text-muted;
+}
+
+main dl dd {
+  margin-left: 1.25rem;
+}

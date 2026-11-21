@@ -1,0 +1,60 @@
+\definecolor{brandink}{HTML}{16181D}
+\definecolor{brandblue}{HTML}{3C6BF0}
+\definecolor{muted}{HTML}{5B6069}
+\definecolor{line}{HTML}{D9D9D2}
+\definecolor{link}{HTML}{2A55D6}
+\definecolor{soft}{HTML}{E6ECFD}
+\definecolor{shadecolor}{HTML}{F4F4F0}
+\AtBeginDocument{\hypersetup{linkcolor=link, urlcolor=link, citecolor=link, filecolor=link}}
+
+\newfontfamily\displayfont{Inter Display}[Numbers=Lining]
+
+\setkomafont{disposition}{\displayfont\bfseries\color{brandink}}
+\setkomafont{chapter}{\fontsize{26}{31}\selectfont}
+\setkomafont{section}{\fontsize{14.5}{19}\selectfont}
+\setkomafont{subsection}{\fontsize{11.5}{15}\selectfont}
+\setkomafont{subsubsection}{\normalsize}
+\setkomafont{part}{\fontsize{34}{40}\selectfont}
+\setkomafont{partnumber}{}
+\setkomafont{chapterentry}{\displayfont\bfseries}
+\setkomafont{pageheadfoot}{\footnotesize\color{muted}}
+\setkomafont{pagenumber}{\footnotesize\color{muted}}
+\setkomafont{caption}{\small\color{muted}}
+\setkomafont{captionlabel}{\small\bfseries\color{brandink}}
+\setkomafont{descriptionlabel}{\bfseries}
+
+\renewcommand*{\chapterformat}{\textcolor{brandblue}{\thechapter}\hspace{0.45em}}
+\renewcommand*{\sectionformat}{\textcolor{brandblue}{\thesection}\hspace{0.6em}}
+\renewcommand*{\subsectionformat}{\textcolor{brandblue}{\thesubsection}\hspace{0.6em}}
+\renewcommand*{\partformat}{{\normalsize\mdseries\color{brandblue}\addfontfeature{LetterSpace=8}\MakeUppercase{\partname~\thepart}}}
+\RedeclareSectionCommand[beforeskip=0pt, afterskip=28pt]{chapter}
+\RedeclareSectionCommand[beforeskip=-26pt plus -4pt, afterskip=10pt]{section}
+\RedeclareSectionCommand[beforeskip=-18pt plus -3pt, afterskip=6pt]{subsection}
+
+\usepackage{scrlayer-scrpage}
+\clearpairofpagestyles
+\automark[chapter]{chapter}
+\ohead{\pagemark}
+\ihead{\headmark}
+\setlength{\footheight}{14pt}
+
+\usepackage{framed}
+\makeatletter
+\renewenvironment{Shaded}{\setlength{\FrameSep}{7pt}\begin{snugshade}\small}{\end{snugshade}}
+\renewcommand{\maketitle}{%
+  \begin{titlepage}
+    \vspace*{38mm}
+    \includegraphics[width=68mm]{logo/lockup.pdf}\par
+    \vspace{20mm}
+    {\displayfont\bfseries\fontsize{22}{28}\selectfont\color{brandink}\@subtitle\par}
+    \vspace{6mm}
+    {\large\color{muted}User guide, method and reference\par}
+    \vfill
+    {\color{brandblue}\rule{18mm}{2.5pt}}\par
+  \end{titlepage}}
+\makeatother
+
+\renewcommand{\arraystretch}{1.25}
+\AtBeginDocument{\urlstyle{same}}
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{\fill}
