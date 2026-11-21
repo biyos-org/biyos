@@ -40,7 +40,7 @@ inline void announce(Env &env, ErrorKind kind, std::string_view text) noexcept
 {
     const BIYOS_status status = status_of(kind);
     const auto fill = [status, text](Event &event) { describe_failure(event, status, text); };
-    env.events().emit(EventKind::Message, Level::Error, fill);
+    env.events().emit(EventKind::Message, EventLevel::Error, fill);
 }
 
 inline void report(Env *env, ErrorKind kind, std::string_view text) noexcept

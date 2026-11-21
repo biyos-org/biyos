@@ -17,7 +17,7 @@ namespace
 using biyos::CheckLevel;
 using biyos::ErrorKind;
 using biyos::EventKind;
-using biyos::Level;
+using biyos::EventLevel;
 using Texts = std::vector<std::string>;
 
 biyos::Error caught(const std::function<void()> &body)
@@ -93,7 +93,7 @@ class CheckTest : public ::testing::Test
     void keep(EventKind kind)
     {
         const auto store = [this](const biyos::Event &event) { kept.push_back(event); };
-        env.events().subscribe(kind, Level::Debug, store);
+        env.events().subscribe(kind, EventLevel::Debug, store);
     }
 
     void reenter(const biyos::Checker &checker)
@@ -169,7 +169,7 @@ TEST_F(CheckTest, OneEvent)
     ASSERT_EQ(kept.size(), 1U);
     const biyos::Event &event = kept.front();
     EXPECT_EQ(event.kind, EventKind::Check);
-    EXPECT_EQ(event.level, Level::Error);
+    EXPECT_EQ(event.level, EventLevel::Error);
     EXPECT_EQ(event.module, "model");
     EXPECT_EQ(event.text, error.what());
     EXPECT_EQ(pairs(event), (Texts{"invariant=sorted", "object=row 3", "values=3 > 2"}));
@@ -179,7 +179,7 @@ TEST_F(CheckTest, LastError)
 {
     std::string seen;
     const auto read = [this, &seen](const biyos::Event &) { seen = env.last_error(); };
-    env.events().subscribe(EventKind::Check, Level::Error, read);
+    env.events().subscribe(EventKind::Check, EventLevel::Error, read);
     env.record_error("earlier");
     const biyos::Error error = caught([this] { check(at("cheap"), CheckLevel::Cheap, false); });
     EXPECT_EQ(seen, error.what());
@@ -206,7 +206,7 @@ TEST_F(CheckTest, Delivering)
 {
     const biyos::Checker checker = at("cheap");
     const auto inner = [this, &checker](const biyos::Event &) { reenter(checker); };
-    env.events().subscribe(EventKind::Check, Level::Debug, inner);
+    env.events().subscribe(EventKind::Check, EventLevel::Debug, inner);
     EXPECT_EQ(caught([&] { check(checker, CheckLevel::Cheap, false); }).kind(),
               ErrorKind::InvalidArgument);
     EXPECT_EQ(received, 1);
@@ -220,7 +220,7 @@ TEST_F(CheckTest, Filling)
     keep(EventKind::Check);
     keep(EventKind::Message);
     env.record_error("earlier");
-    env.events().emit(EventKind::Message, Level::Info, fill);
+    env.events().emit(EventKind::Message, EventLevel::Info, fill);
     EXPECT_EQ(evaluated, 1);
     EXPECT_TRUE(kept.empty());
     EXPECT_EQ(env.last_error(), "earlier");

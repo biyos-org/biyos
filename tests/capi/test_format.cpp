@@ -25,7 +25,7 @@ biyos::Event removed()
 {
     biyos::Event event{};
     event.kind = biyos::EventKind::Message;
-    event.level = biyos::Level::Warning;
+    event.level = biyos::EventLevel::Warning;
     event.module = "presolve";
     event.text = "removed rows";
     event.fields.push_back(biyos::Field{.name = "rows", .value = "3"});

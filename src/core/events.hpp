@@ -24,7 +24,7 @@ enum class EventKind
     Phase = BIYOS_EVT_PHASE,
 };
 
-enum class Level
+enum class EventLevel
 {
     Debug = BIYOS_LVL_DBG,
     Info = BIYOS_LVL_INFO,
@@ -35,9 +35,9 @@ enum class Level
 inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Check, EventKind::Phase};
 
 EventKind find_kind(int id);
-Level find_level(int id);
+EventLevel find_level(int id);
 std::string_view name_of(EventKind kind) noexcept;
-std::string_view name_of(Level level) noexcept;
+std::string_view name_of(EventLevel level) noexcept;
 
 struct Field
 {
@@ -48,7 +48,7 @@ struct Field
 struct Event
 {
     EventKind kind;
-    Level level;
+    EventLevel level;
     std::chrono::nanoseconds time;
     std::string module;
     std::string text;
@@ -62,16 +62,19 @@ class Events
   public:
     explicit Events(const Clock &clock);
 
-    int subscribe(EventKind kind, Level lowest, Subscriber subscriber);
+    int subscribe(EventKind kind, EventLevel lowest, Subscriber subscriber);
     void unsubscribe(int id);
 
-    bool wanted(EventKind kind, Level level) const noexcept { return lowest_[slot(kind)] <= level; }
+    bool wanted(EventKind kind, EventLevel level) const noexcept
+    {
+        return lowest_[slot(kind)] <= level;
+    }
     bool delivering() const noexcept { return depth_ > 0; }
     bool filling() const noexcept { return fills_ > 0; }
     std::chrono::nanoseconds origin() const noexcept { return origin_; }
 
     template <std::invocable<Event &> Fill>
-    void emit(EventKind kind, Level level, Fill &&fill) noexcept
+    void emit(EventKind kind, EventLevel level, Fill &&fill) noexcept
     {
         if (!wanted(kind, level))
         {
@@ -116,16 +119,18 @@ class Events
     {
         int id;
         EventKind kind;
-        Level lowest;
+        EventLevel lowest;
         std::unique_ptr<const Subscriber> subscriber;
         bool active;
     };
 
-    static constexpr Level kNobody = static_cast<Level>(BIYOS_LVL_ERR + 1);
+    static constexpr EventLevel kNobody = static_cast<EventLevel>(BIYOS_LVL_ERR + 1);
 
     static std::size_t slot(EventKind kind) noexcept { return static_cast<std::size_t>(kind) - 1; }
 
-    static bool accepts(const Subscription &subscription, EventKind kind, Level level) noexcept;
+    static bool accepts(const Subscription &subscription,
+                        EventKind kind,
+                        EventLevel level) noexcept;
 
     void refresh(EventKind kind) noexcept;
     void deliver(const Event &event) noexcept;
@@ -134,7 +139,7 @@ class Events
     const Clock &clock_;
     std::chrono::nanoseconds origin_;
     std::deque<Subscription> subscriptions_;
-    std::array<Level, kEventKinds.size()> lowest_;
+    std::array<EventLevel, kEventKinds.size()> lowest_;
     int next_id_ = 1;
     int depth_ = 0;
     int fills_ = 0;

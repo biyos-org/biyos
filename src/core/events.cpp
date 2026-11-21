@@ -17,7 +17,10 @@ namespace biyos
 namespace
 {
 
-constexpr std::array kLevels{Level::Debug, Level::Info, Level::Warning, Level::Error};
+constexpr std::array kLevels{EventLevel::Debug,
+                             EventLevel::Info,
+                             EventLevel::Warning,
+                             EventLevel::Error};
 
 constexpr bool numbered()
 {
@@ -57,9 +60,9 @@ EventKind find_kind(int id)
     return kind;
 }
 
-Level find_level(int id)
+EventLevel find_level(int id)
 {
-    const auto level = static_cast<Level>(id);
+    const auto level = static_cast<EventLevel>(id);
     if (std::ranges::find(kLevels, level) == kLevels.end())
     {
         throw Error(ErrorKind::InvalidArgument, "level " + std::to_string(id), "unknown");
@@ -81,17 +84,17 @@ std::string_view name_of(EventKind kind) noexcept
     return "";
 }
 
-std::string_view name_of(Level level) noexcept
+std::string_view name_of(EventLevel level) noexcept
 {
     switch (level)
     {
-    case Level::Debug:
+    case EventLevel::Debug:
         return "debug";
-    case Level::Info:
+    case EventLevel::Info:
         return "info";
-    case Level::Warning:
+    case EventLevel::Warning:
         return "warning";
-    case Level::Error:
+    case EventLevel::Error:
         return "error";
     }
     return "";
@@ -102,7 +105,7 @@ Events::Events(const Clock &clock) : clock_(clock), origin_(clock.wall_time())
     lowest_.fill(kNobody);
 }
 
-int Events::subscribe(EventKind kind, Level lowest, Subscriber subscriber)
+int Events::subscribe(EventKind kind, EventLevel lowest, Subscriber subscriber)
 {
     if (!subscriber)
     {
@@ -140,14 +143,14 @@ void Events::unsubscribe(int id)
     }
 }
 
-bool Events::accepts(const Subscription &subscription, EventKind kind, Level level) noexcept
+bool Events::accepts(const Subscription &subscription, EventKind kind, EventLevel level) noexcept
 {
     return subscription.active && subscription.kind == kind && subscription.lowest <= level;
 }
 
 void Events::refresh(EventKind kind) noexcept
 {
-    Level lowest = kNobody;
+    EventLevel lowest = kNobody;
     for (const Subscription &subscription : subscriptions_)
     {
         if (subscription.active && subscription.kind == kind)

@@ -36,7 +36,7 @@ void warn_deprecated(Events &events,
         return;
     }
     const auto fill = [&](Event &event) { describe(event, table, spec); };
-    events.emit(EventKind::Message, Level::Warning, fill);
+    events.emit(EventKind::Message, EventLevel::Warning, fill);
 }
 
 }

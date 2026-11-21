@@ -267,7 +267,7 @@ TEST(CApiTest, Accessors)
 {
     const biyos::Event event{
         .kind = biyos::EventKind::Message,
-        .level = biyos::Level::Warning,
+        .level = biyos::EventLevel::Warning,
         .time = {},
         .module = "presolve",
         .text = "removed rows",

@@ -39,7 +39,7 @@ void subscribe(biyos::Env &env,
     biyos::Events &events = writable(env).events();
     const Forwarder forwarder{&env, require(subscriber, "hk"), data};
     const biyos::EventKind found = biyos::find_kind(kind);
-    const biyos::Level level = biyos::find_level(lowest);
+    const biyos::EventLevel level = biyos::find_level(lowest);
     int *id = require(subscription, "idx");
     *id = events.subscribe(found, level, forwarder);
 }

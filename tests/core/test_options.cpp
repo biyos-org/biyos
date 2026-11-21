@@ -17,8 +17,8 @@ namespace
 {
 
 using biyos::EventKind;
+using biyos::EventLevel;
 using biyos::IntRule;
-using biyos::Level;
 using biyos::Option;
 using biyos::OptionSpec;
 using biyos::Version;
@@ -75,7 +75,7 @@ struct Stream
     Stream()
     {
         const auto record = [this](const biyos::Event &event) { heard.push_back(event); };
-        events.subscribe(EventKind::Message, Level::Debug, record);
+        events.subscribe(EventKind::Message, EventLevel::Debug, record);
     }
     Stream(const Stream &) = delete;
     Stream &operator=(const Stream &) = delete;
@@ -410,7 +410,7 @@ TEST(OptionTest, Deprecated)
     ASSERT_EQ(stream.heard.size(), 1U);
     const biyos::Event &event = stream.heard.front();
     EXPECT_EQ(event.kind, EventKind::Message);
-    EXPECT_EQ(event.level, Level::Warning);
+    EXPECT_EQ(event.level, EventLevel::Warning);
     EXPECT_EQ(event.module, "core");
     EXPECT_EQ(event.text, "option 'old': deprecated in 0.0.2, use 'new'");
     EXPECT_EQ(listed(event.fields), "option=old deprecated=0.0.2 replacement=new");

@@ -11,10 +11,10 @@
 namespace
 {
 
-using biyos::Level;
+using biyos::EventLevel;
 using namespace std::chrono_literals;
 
-biyos::Event message(Level level, std::string text)
+biyos::Event message(EventLevel level, std::string text)
 {
     biyos::Event event{};
     event.kind = biyos::EventKind::Message;
@@ -26,7 +26,7 @@ biyos::Event message(Level level, std::string text)
 
 biyos::Event removed()
 {
-    biyos::Event event = message(Level::Info, "removed rows");
+    biyos::Event event = message(EventLevel::Info, "removed rows");
     event.fields.push_back(biyos::Field{.name = "rows", .value = "3"});
     event.fields.push_back(biyos::Field{.name = "columns", .value = "1"});
     return event;
@@ -34,12 +34,12 @@ biyos::Event removed()
 
 std::string text_of(std::string text)
 {
-    return biyos::format_text(message(Level::Info, std::move(text)));
+    return biyos::format_text(message(EventLevel::Info, std::move(text)));
 }
 
 biyos::Event stamped(std::chrono::nanoseconds time)
 {
-    biyos::Event event = message(Level::Info, "a");
+    biyos::Event event = message(EventLevel::Info, "a");
     event.time = time;
     return event;
 }
@@ -56,7 +56,7 @@ std::string json_at(std::chrono::nanoseconds time)
 
 std::string json_of(std::string text)
 {
-    return biyos::format_json(message(Level::Info, std::move(text)));
+    return biyos::format_json(message(EventLevel::Info, std::move(text)));
 }
 
 std::string json_line(std::string_view quoted)
@@ -75,10 +75,10 @@ TEST(FormatTest, Text)
 
 TEST(FormatTest, TextLevels)
 {
-    EXPECT_EQ(biyos::format_text(message(Level::Debug, "a")), "0.000000 debug core: a");
-    EXPECT_EQ(biyos::format_text(message(Level::Info, "a")), "0.000000 info core: a");
-    EXPECT_EQ(biyos::format_text(message(Level::Warning, "a")), "0.000000 warning core: a");
-    EXPECT_EQ(biyos::format_text(message(Level::Error, "a")), "0.000000 error core: a");
+    EXPECT_EQ(biyos::format_text(message(EventLevel::Debug, "a")), "0.000000 debug core: a");
+    EXPECT_EQ(biyos::format_text(message(EventLevel::Info, "a")), "0.000000 info core: a");
+    EXPECT_EQ(biyos::format_text(message(EventLevel::Warning, "a")), "0.000000 warning core: a");
+    EXPECT_EQ(biyos::format_text(message(EventLevel::Error, "a")), "0.000000 error core: a");
 }
 
 TEST(FormatTest, EmptyText)
@@ -103,7 +103,7 @@ TEST(FormatTest, TextEscapes)
 
 TEST(FormatTest, TextFields)
 {
-    biyos::Event event = message(Level::Info, "");
+    biyos::Event event = message(EventLevel::Info, "");
     event.module = "a\nb";
     event.fields.push_back(biyos::Field{.name = "x\ty", .value = "1\n2"});
     event.fields.push_back(biyos::Field{.name = "", .value = ""});
@@ -144,10 +144,10 @@ TEST(FormatTest, JsonLevels)
 {
     const std::string tail = R"(","module":"core","text":"","fields":{}})";
     const std::string head = R"({"time":0.000000,"kind":"message","level":")";
-    EXPECT_EQ(biyos::format_json(message(Level::Debug, "")), head + "debug" + tail);
-    EXPECT_EQ(biyos::format_json(message(Level::Info, "")), head + "info" + tail);
-    EXPECT_EQ(biyos::format_json(message(Level::Warning, "")), head + "warning" + tail);
-    EXPECT_EQ(biyos::format_json(message(Level::Error, "")), head + "error" + tail);
+    EXPECT_EQ(biyos::format_json(message(EventLevel::Debug, "")), head + "debug" + tail);
+    EXPECT_EQ(biyos::format_json(message(EventLevel::Info, "")), head + "info" + tail);
+    EXPECT_EQ(biyos::format_json(message(EventLevel::Warning, "")), head + "warning" + tail);
+    EXPECT_EQ(biyos::format_json(message(EventLevel::Error, "")), head + "error" + tail);
 }
 
 TEST(FormatTest, JsonEscapes)
@@ -183,7 +183,7 @@ TEST(FormatTest, Malformed)
 
 TEST(FormatTest, JsonFields)
 {
-    biyos::Event event = message(Level::Info, "");
+    biyos::Event event = message(EventLevel::Info, "");
     event.module = "a\"b";
     event.fields.push_back(biyos::Field{.name = "x\ny", .value = "\\"});
     event.fields.push_back(biyos::Field{.name = "", .value = ""});

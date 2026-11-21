@@ -20,7 +20,7 @@ namespace
 
 using namespace std::chrono_literals;
 using biyos::EventKind;
-using biyos::Level;
+using biyos::EventLevel;
 using biyos::Timer;
 using biyos::TimingTree;
 using Texts = std::vector<std::string>;
@@ -130,7 +130,7 @@ class TimerTest : public ::testing::Test
     void listen(biyos::Env &target)
     {
         const auto keep = [this](const biyos::Event &event) { kept.push_back(event); };
-        target.events().subscribe(EventKind::Phase, Level::Debug, keep);
+        target.events().subscribe(EventKind::Phase, EventLevel::Debug, keep);
     }
 
     biyos::FakeClock &clock;
@@ -225,7 +225,7 @@ TEST_F(TimerTest, PhaseEvents)
     for (const biyos::Event &event : kept)
     {
         EXPECT_EQ(event.kind, EventKind::Phase);
-        EXPECT_EQ(event.level, Level::Info);
+        EXPECT_EQ(event.level, EventLevel::Info);
         EXPECT_EQ(event.module, "nlp");
     }
     EXPECT_EQ(kept.back().time, 12ns);
@@ -234,7 +234,7 @@ TEST_F(TimerTest, PhaseEvents)
 TEST_F(TimerTest, SlowSubscriber)
 {
     const auto slow = [this](const biyos::Event &event) { lag(event); };
-    env.events().subscribe(EventKind::Phase, Level::Debug, slow);
+    env.events().subscribe(EventKind::Phase, EventLevel::Debug, slow);
     {
         const Timer solve(env, tree, "nlp", "solve");
         advance(1ns, 1ns);
@@ -318,7 +318,7 @@ TEST_F(TimerTest, FailedLeave)
     biyos::Env local(std::move(owned));
     listen(local);
     const auto drift = [&flaky](const biyos::Event &) { flaky.cpu += 10ns; };
-    local.events().subscribe(EventKind::Phase, Level::Debug, drift);
+    local.events().subscribe(EventKind::Phase, EventLevel::Debug, drift);
     {
         const Timer solve(local, tree, "nlp", "solve");
         flaky.wall += 5ns;
