@@ -7,10 +7,8 @@
 #include "model/merge.hpp"
 #include "model/pairs.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <span>
-#include <string>
 #include <string_view>
 #include <vector>
 
@@ -21,22 +19,6 @@ namespace
 {
 
 constexpr std::string_view kNoun = "function";
-
-void check_funs(std::span<const Index> funs, Index held)
-{
-    for (const Index fun : funs)
-    {
-        check_idx(kNoun, fun, held);
-    }
-    std::vector<Index> sorted(funs.begin(), funs.end());
-    std::ranges::sort(sorted);
-    const auto repeat = std::ranges::adjacent_find(sorted);
-    if (repeat != sorted.end())
-    {
-        const std::string reason = item(kNoun, *repeat) + " is repeated";
-        throw Error(ErrorKind::InvalidArgument, "argument 'funidx'", reason);
-    }
-}
 
 }
 

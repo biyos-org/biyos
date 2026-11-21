@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <limits>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -20,6 +21,7 @@ std::string_view value_fault(double value) noexcept;
 void check_idx(std::string_view noun, Index idx, Index size);
 void check_span(std::string_view noun, Index beg, Index n, Index size);
 void check_fun(std::string_view noun, Index idx, Index fun, Index funs);
+void check_funs(std::span<const Index> funs, Index held);
 
 inline constexpr auto kRoom = static_cast<std::size_t>((std::numeric_limits<Index>::max)());
 

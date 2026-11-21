@@ -4,9 +4,12 @@
 #include "core/index.hpp"
 #include "core/text.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace biyos
 {
@@ -95,6 +98,22 @@ void check_fun(std::string_view noun, Index idx, Index fun, Index funs)
     if (fun < 0 || fun >= funs)
     {
         refuse(noun, idx, item("function", fun) + " is unknown");
+    }
+}
+
+void check_funs(std::span<const Index> funs, Index held)
+{
+    for (const Index fun : funs)
+    {
+        check_idx("function", fun, held);
+    }
+    std::vector<Index> sorted(funs.begin(), funs.end());
+    std::ranges::sort(sorted);
+    const auto repeat = std::ranges::adjacent_find(sorted);
+    if (repeat != sorted.end())
+    {
+        const std::string reason = item("function", *repeat) + " is repeated";
+        throw Error(ErrorKind::InvalidArgument, "argument 'funidx'", reason);
     }
 }
 
