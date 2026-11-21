@@ -339,7 +339,7 @@ def test_on(env, model):
     smaller = biyos.Model(env)
     smaller.addfuns(1)
     smaller.addobjs([0, 0])
-    few = "model holds too few objectives: 2, the block needs 3"
+    few = "mdl holds too few objectives: 2, the block needs 3"
     with pytest.raises(ValueError, match=few):
         o.on(smaller)
     assert len(o[:2].on(smaller)) == 2

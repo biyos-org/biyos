@@ -312,7 +312,7 @@ def test_on(env, model):
         model.addcons(g)
     smaller = biyos.Model(env)
     smaller.addfuns(2)
-    few = "model holds too few functions: 2, the block needs 3"
+    few = "mdl holds too few functions: 2, the block needs 3"
     with pytest.raises(ValueError, match=few):
         f.on(smaller)
     assert [index(function) for function in f[:2].on(smaller)] == [0, 1]

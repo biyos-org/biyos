@@ -290,12 +290,12 @@ class Env:
         with self._busy():
             self._delhook(idx)
 
-    def _addhook(self, function, kind, lowest, idx):
+    def _addhook(self, hk, knd, lvl, idx):
         callback = self._hooks.callback
         out = byref(idx)
-        key = self._hooks.add(function)
+        key = self._hooks.add(hk)
         try:
-            self._call(lib.BIYOS_addhook, callback, key, kind, lowest, out)
+            self._call(lib.BIYOS_addhook, callback, key, knd, lvl, out)
         finally:
             self._hooks.settle(key, idx.value)
 

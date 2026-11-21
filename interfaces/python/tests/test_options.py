@@ -56,7 +56,7 @@ def env():
         yield env
 
 
-def option_count(env):
+def n_opts(env):
     count = 0
     kind = c_int()
     while lib.BIYOS_getoptknd(env._handle, count + 1, byref(kind)) == OK:
@@ -65,7 +65,7 @@ def option_count(env):
 
 
 def test_complete(env):
-    assert option_count(env) == len(DEFAULTS)
+    assert n_opts(env) == len(DEFAULTS)
 
 
 @pytest.mark.parametrize("name, default", DEFAULTS.items())

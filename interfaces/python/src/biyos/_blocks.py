@@ -11,7 +11,7 @@ def _target(value):
 
     if not isinstance(value, Model):
         found = type(value).__name__
-        raise TypeError(f"model must be a Model, not {found}")
+        raise TypeError(f"mdl must be a Model, not {found}")
     return value
 
 
@@ -112,40 +112,40 @@ class Block:
             return self._slice(key)
         return self._view(self._begin + self._position(key))
 
-    def on(self, model):
+    def on(self, mdl):
         """Return the block's items in another model.
 
         The block keeps its first index and count, so it names the items
-        under the same indices in ``model``, such as those of a copy.
+        under the same indices in ``mdl``, such as those of a copy.
 
         Parameters
         ----------
-        model : Model
+        mdl : Model
             The model the new block belongs to.
 
         Returns
         -------
         block
-            A block of the same family on ``model``.
+            A block of the same family on ``mdl``.
 
         Raises
         ------
         TypeError
-            When ``model`` is not a ``Model``.
+            When ``mdl`` is not a ``Model``.
         ValueError
-            When ``model`` is closed or holds too few items of the family, or
+            When ``mdl`` is closed or holds too few items of the family, or
             when the block's own model has had a deletion since the block was
             made.
         """
         self._check()
-        model = _target(model)
-        held = self._held(model)
+        mdl = _target(mdl)
+        held = self._held(mdl)
         end = self._begin + self._size
         if held < end:
             noun = self._element._noun
             needs = f"{held}, the block needs {end}"
-            raise ValueError(f"model holds too few {noun}s: {needs}")
-        return type(self)(model, self._begin, self._size, model._gen)
+            raise ValueError(f"mdl holds too few {noun}s: {needs}")
+        return type(self)(mdl, self._begin, self._size, mdl._gen)
 
     def _check(self):
         _current(self._model, self._gen, "block")
@@ -160,8 +160,8 @@ class Block:
         number = whole("index", key)
         position = number + self._size if number < 0 else number
         if not 0 <= position < self._size:
-            count = self._size
-            raise IndexError(f"index {number} is outside a block of {count}")
+            n = self._size
+            raise IndexError(f"index {number} is outside a block of {n}")
         return position
 
     def _slice(self, key):

@@ -205,7 +205,7 @@ def test_smaller(env, model):
     x = model.addvars(3)
     other = biyos.Model(env)
     other.addvars(2)
-    few = "model holds too few variables: 2, the block needs 3"
+    few = "mdl holds too few variables: 2, the block needs 3"
     with pytest.raises(ValueError, match=few):
         x.on(other)
     with pytest.raises(ValueError, match=few):
@@ -218,7 +218,7 @@ def test_smaller(env, model):
 
 def test_target(env, model):
     x = model.addvars(3)
-    with pytest.raises(TypeError, match="model must be a Model, not int"):
+    with pytest.raises(TypeError, match="mdl must be a Model, not int"):
         x.on(1)
     other = biyos.Model(env)
     other.close()

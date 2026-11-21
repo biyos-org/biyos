@@ -285,7 +285,7 @@ def test_on(env, model):
     smaller = biyos.Model(env)
     smaller.addfuns(1)
     smaller.addcons([0, 0])
-    few = "model holds too few constraints: 2, the block needs 3"
+    few = "mdl holds too few constraints: 2, the block needs 3"
     with pytest.raises(ValueError, match=few):
         c.on(smaller)
     assert len(c[:2].on(smaller)) == 2

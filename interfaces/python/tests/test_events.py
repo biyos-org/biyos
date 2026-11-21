@@ -140,9 +140,9 @@ def test_overflow():
 def test_index():
     seen = []
     with biyos.Env() as env:
-        kind = Number(int(EventKind.MESSAGE))
-        lowest = Number(int(EventLevel.DEBUG))
-        idx = env.addhook(partial(record, seen), kind, lowest)
+        knd = Number(int(EventKind.MESSAGE))
+        lvl = Number(int(EventLevel.DEBUG))
+        idx = env.addhook(partial(record, seen), knd, lvl)
         fail(env)
         env.delhook(Number(idx))
         fail(env)
