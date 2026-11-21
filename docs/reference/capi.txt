@@ -33,7 +33,7 @@ since 0.1.0
 
 type BIYOS_env
 summary An environment.
-note It holds the options, the hooks and the message of the last call that failed. Environments share no state, so separate threads may use separate environments at the same time; one environment is used by one thread at a time, together with the models made on it.
+note It holds the options, the hooks and the message of the last call that failed. Environments share no state, so separate threads may use separate environments at the same time; one environment is used by one thread at a time, together with the models made on it, except that any thread may call `BIYOS_interrupt` on it.
 see BIYOS_newenv BIYOS_freeenv
 since 0.1.0
 
@@ -114,6 +114,16 @@ return The message of the last call on `env` that failed, or an empty string if 
 note The message starts with the kind of failure, `invalid argument`, `out of memory` or `internal error`, and is written for people: branch on the status, not on the text. Successful calls leave it in place, and it is empty after a failure if memory ran out while keeping the message.
 note The pointer stays valid until the next failed call on `env` or until `env` is freed. A call that fails inside a hook is the last failure only until that hook returns, and a message read inside a hook stays valid only until the hook returns.
 see BIYOS_status
+since 0.1.0
+
+function BIYOS_interrupt
+summary Ask the call running on an environment to stop.
+param env in The environment.
+return `BIYOS_OK` once the request is made.
+error BIYOS_ERR_BADARG `env` is null.
+note This is the one call that may run while another thread is inside a call on `env`, and the one call a signal handler may make. It sets a flag on `env` and returns: it takes no lock, allocates nothing, sends no event and keeps no message. `env` must not be freed while it runs.
+note A long call reads the flag where it checks its time limits and stops with the termination `BIYOS_TRM_STOP`, an outcome rather than an error code. No call is long enough to read it yet.
+see BIYOS_TRM_STOP
 since 0.1.0
 
 group options Options

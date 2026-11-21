@@ -40,6 +40,7 @@ BIYOS_API void BIYOS_version(BIYOS_int *major, BIYOS_int *minor, BIYOS_int *patc
 BIYOS_API BIYOS_status BIYOS_newenv(BIYOS_env **env);
 BIYOS_API BIYOS_status BIYOS_freeenv(BIYOS_env *env);
 BIYOS_API const char *BIYOS_lasterror(const BIYOS_env *env);
+BIYOS_API BIYOS_status BIYOS_interrupt(BIYOS_env *env);
 
 #define BIYOS_OPT_SEED 1
 #define BIYOS_OPT_MAXTIME 2

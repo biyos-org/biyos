@@ -44,6 +44,7 @@ def _load() -> ctypes.CDLL:
     _declare(lib, "BIYOS_newenv", c_int, POINTER(c_void_p))
     _declare(lib, "BIYOS_freeenv", c_int, c_void_p)
     _declare(lib, "BIYOS_lasterror", c_char_p, c_void_p)
+    _declare(lib, "BIYOS_interrupt", c_int, c_void_p)
     _declare(lib, "BIYOS_getoptid", c_int, c_void_p, c_char_p, ints)
     _declare(lib, "BIYOS_getoptknd", c_int, c_void_p, c_int32, ints)
     versions = (c_void_p, c_int32, ints, ints, ints)

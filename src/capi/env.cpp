@@ -52,3 +52,13 @@ const char *BIYOS_lasterror(const BIYOS_env *env)
 {
     return env == nullptr ? "" : env->core.last_error().c_str();
 }
+
+BIYOS_status BIYOS_interrupt(BIYOS_env *env)
+{
+    if (env == nullptr)
+    {
+        return BIYOS_ERR_BADARG;
+    }
+    env->core.interrupt().set();
+    return BIYOS_OK;
+}
