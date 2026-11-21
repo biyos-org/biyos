@@ -38,9 +38,12 @@
 \ihead{\headmark}
 \setlength{\footheight}{14pt}
 
-\usepackage{framed}
+\usepackage[skins,breakable]{tcolorbox}
+\usepackage{fvextra}
+\fvset{breaklines=true, breakanywhere=true, breaknonspaceingroup=true, breaksymbolleft={\color{muted}\tiny\ensuremath{\hookrightarrow}}}
+\RecustomVerbatimEnvironment{verbatim}{Verbatim}{}
+\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, enhanced, frame hidden, sharp corners, colback=shadecolor, boxsep=0pt, left=6pt, right=6pt, top=5pt, bottom=5pt, before skip=6pt, after skip=8pt]\small}{\end{tcolorbox}}
 \makeatletter
-\renewenvironment{Shaded}{\setlength{\FrameSep}{7pt}\begin{snugshade}\small}{\end{snugshade}}
 \renewcommand{\maketitle}{%
   \begin{titlepage}
     \vspace*{38mm}
