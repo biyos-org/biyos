@@ -131,6 +131,13 @@ def public(cls):
     return bool(documented) or not [p for p in taken if p.name != "self"]
 
 
+def returned(given, count):
+    if not getattr(given, "is_tuple", False):
+        return [given] * count
+    elements = getattr(given.slice, "elements", [given.slice])
+    return elements if len(elements) == count else [given] * count
+
+
 def is_enum(obj):
     bases = getattr(target(obj), "bases", [])
     return any(str(base).split(".")[-1] in ENUMS for base in bases)
@@ -182,10 +189,10 @@ class Renderer(MdRenderer):
         notes = described(found, DocstringSectionReturns)
         rows = [
             (
-                quiet(self.render_annotation(given or r.annotation)),
+                quiet(self.render_annotation(part or r.annotation)),
                 r.description,
             )
-            for r in notes
+            for part, r in zip(returned(given, len(notes)), notes)
         ]
         if given and not rows:
             rows = [(quiet(self.render_annotation(given)), "")]
