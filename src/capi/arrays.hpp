@@ -27,6 +27,20 @@ void unpack(std::span<const QuadraticTerm> terms,
             int *seconds,
             double *values);
 
+template <typename Record>
+std::vector<Record> picked(const Model &mdl,
+                           const Record &(Model::*read)(Index) const,
+                           std::span<const Index> idx)
+{
+    std::vector<Record> found;
+    found.reserve(idx.size());
+    for (const Index i : idx)
+    {
+        found.push_back((mdl.*read)(i));
+    }
+    return found;
+}
+
 template <typename Read> void write_starts(std::size_t n, std::int64_t *starts, Read read)
 {
     if (starts == nullptr)

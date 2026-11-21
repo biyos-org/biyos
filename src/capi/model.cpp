@@ -14,6 +14,7 @@ using biyos::capi::guarded;
 using biyos::capi::idle;
 using biyos::capi::length;
 using biyos::capi::listed;
+using biyos::capi::picked;
 using biyos::capi::require;
 using biyos::capi::writable;
 
@@ -147,6 +148,26 @@ void get_vars(const BIYOS_model &mdl, int beg, int n, int *knds, double *lower, 
     }
 }
 
+void get_bnds(const BIYOS_model &mdl, int n, const int *idx, double *lower, double *upper)
+{
+    const std::vector<biyos::Variable> vars =
+        picked(mdl.core, &biyos::Model::variable, listed(n, idx));
+    for (std::size_t k = 0; k < vars.size(); ++k)
+    {
+        copy_out(vars[k], k, nullptr, lower, upper);
+    }
+}
+
+void get_kinds(const BIYOS_model &mdl, int n, const int *idx, int *knds)
+{
+    const std::vector<biyos::Variable> vars =
+        picked(mdl.core, &biyos::Model::variable, listed(n, idx));
+    for (std::size_t k = 0; k < vars.size(); ++k)
+    {
+        copy_out(vars[k], k, knds, nullptr, nullptr);
+    }
+}
+
 }
 
 BIYOS_status BIYOS_newmdl(BIYOS_env *env, BIYOS_model **mdl)
@@ -200,12 +221,29 @@ BIYOS_status BIYOS_setvarbnd(BIYOS_model *mdl,
     return guarded<set_bnds>(mdl, n, idx, lb, ub);
 }
 
+BIYOS_status BIYOS_getvarbnd(const BIYOS_model *mdl,
+                             BIYOS_index n,
+                             const BIYOS_index *idx,
+                             BIYOS_real *lb,
+                             BIYOS_real *ub)
+{
+    return guarded<get_bnds>(mdl, n, idx, lb, ub);
+}
+
 BIYOS_status BIYOS_setvarknd(BIYOS_model *mdl,
                              BIYOS_index n,
                              const BIYOS_index *idx,
                              const BIYOS_int *knd)
 {
     return guarded<set_kinds>(mdl, n, idx, knd);
+}
+
+BIYOS_status BIYOS_getvarknd(const BIYOS_model *mdl,
+                             BIYOS_index n,
+                             const BIYOS_index *idx,
+                             BIYOS_int *knd)
+{
+    return guarded<get_kinds>(mdl, n, idx, knd);
 }
 
 BIYOS_status BIYOS_getnvars(const BIYOS_model *mdl, BIYOS_index *n)

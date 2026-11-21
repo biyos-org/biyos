@@ -125,10 +125,19 @@ BIYOS_API BIYOS_status BIYOS_setvarbnd(BIYOS_model *mdl,
                                        const BIYOS_index *idx,
                                        const BIYOS_real *lb,
                                        const BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_getvarbnd(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_real *lb,
+                                       BIYOS_real *ub);
 BIYOS_API BIYOS_status BIYOS_setvarknd(BIYOS_model *mdl,
                                        BIYOS_index n,
                                        const BIYOS_index *idx,
                                        const BIYOS_int *knd);
+BIYOS_API BIYOS_status BIYOS_getvarknd(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_int *knd);
 BIYOS_API BIYOS_status BIYOS_getnvars(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getvars(const BIYOS_model *mdl,
                                      BIYOS_index beg,
@@ -180,6 +189,11 @@ BIYOS_API BIYOS_status BIYOS_setconbnd(BIYOS_model *mdl,
                                        const BIYOS_index *idx,
                                        const BIYOS_real *lb,
                                        const BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_getconbnd(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_real *lb,
+                                       BIYOS_real *ub);
 BIYOS_API BIYOS_status BIYOS_getncons(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getcons(const BIYOS_model *mdl,
                                      BIYOS_index beg,

@@ -296,11 +296,14 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
     BIYOS_status status = BIYOS_OK;
     if (BIYOS_getnvars(model, &count) != BIYOS_OK ||
         BIYOS_getvars(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getvarbnd(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getvarknd(model, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnfuns(model, &count) != BIYOS_OK ||
         BIYOS_getfuns(model, 0, 0, 0, NULL, NULL, &needed, NULL, NULL) != BIYOS_OK ||
         BIYOS_getquadterms(model, 0, 0, 0, NULL, &needed, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getncons(model, &count) != BIYOS_OK ||
         BIYOS_getcons(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getconbnd(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnobjs(model, &count) != BIYOS_OK ||
         BIYOS_getobjs(model, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_copymdl(model, env, &copy) != BIYOS_OK)
@@ -362,6 +365,7 @@ int main(void)
         BIYOS_addvars(model, 2, kinds, lower, upper, &first) != BIYOS_OK || first != 0 ||
         BIYOS_setvarbnd(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
         BIYOS_setvarknd(model, 1, indices, kinds + 1) != BIYOS_OK ||
+        BIYOS_getvarknd(model, 1, indices, found + 1) != BIYOS_OK || found[1] != BIYOS_VAR_BIN ||
         BIYOS_getnvars(model, &variables) != BIYOS_OK || variables != 2 ||
         BIYOS_getvars(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[0] != BIYOS_VAR_BIN ||
         found[1] != BIYOS_VAR_BIN)

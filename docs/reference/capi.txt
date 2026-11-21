@@ -368,6 +368,7 @@ group model Model
 text A model is made on an environment and reports there: a call on the model that fails keeps its message on that environment and sends its error event there, and while the environment delivers an event the model is read-only. The environment cannot be freed while a model made on it is not, so a model never outlives its environment.
 text The calls on variables, functions, constraints and objectives take many items at once: a count and arrays of that many entries, or, for the terms of functions, arrays in compressed form. biyos reads them during the call and keeps none of them. A call that fails changes nothing. Items are numbered from 0 in the order they are added, each family on its own, and a count or an index of items is a `BIYOS_index`.
 text A call that adds items takes `BIYOS_index *beg` as its last argument. When the call succeeds and `beg` is not null, it receives the index of the first new item, which is the number of items held before the call; the new items follow it in order.
+text A call that sets an attribute of a list of items, such as `BIYOS_setvarbnd`, has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items is read in one call. A family reader, such as `BIYOS_getvars`, reads a range of items instead.
 
 function BIYOS_newmdl
 summary Create an empty model.
@@ -432,7 +433,19 @@ param ub in The new upper bound of each; null leaves the upper bounds as they ar
 return `BIYOS_OK` once the bounds are set.
 error BIYOS_ERR_BADARG `n` is negative, an index is not that of a variable or a bound is refused.
 note A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted.
-see BIYOS_addvars BIYOS_getvars
+see BIYOS_getvarbnd BIYOS_addvars BIYOS_getvars
+since 0.1.0
+
+function BIYOS_getvarbnd
+summary Read the bounds of variables.
+param mdl in The model.
+param n in The number of entries.
+param idx in The variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param lb out Entry `j` receives the lower bound of variable `idx[j]`; skipped when null.
+param ub out Entry `j` receives its upper bound; skipped when null.
+return `BIYOS_OK` once the arrays are written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+see BIYOS_setvarbnd BIYOS_getvars
 since 0.1.0
 
 function BIYOS_setvarknd
@@ -444,7 +457,18 @@ param knd in The new kind of each; null changes nothing.
 return `BIYOS_OK` once the kinds are set. The bounds are kept.
 error BIYOS_ERR_BADARG `n` is negative, an index is not that of a variable, a kind is unknown, or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
 note A variable may appear more than once, as in `BIYOS_setvarbnd`.
-see BIYOS_addvars BIYOS_setvarbnd
+see BIYOS_getvarknd BIYOS_addvars BIYOS_setvarbnd
+since 0.1.0
+
+function BIYOS_getvarknd
+summary Read the kinds of variables.
+param mdl in The model.
+param n in The number of entries.
+param idx in The variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param knd out Entry `j` receives the kind of variable `idx[j]`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+see BIYOS_setvarknd BIYOS_getvars
 since 0.1.0
 
 function BIYOS_getnvars
@@ -572,7 +596,19 @@ param ub in The new upper bound of each; null leaves the upper bounds as they ar
 return `BIYOS_OK` once the bounds are set. The functions are kept.
 error BIYOS_ERR_BADARG `n` is negative, an index is not that of a constraint or a bound is refused.
 note A constraint may appear more than once, as in `BIYOS_setvarbnd`.
-see BIYOS_addcons BIYOS_getcons
+see BIYOS_getconbnd BIYOS_addcons BIYOS_getcons
+since 0.1.0
+
+function BIYOS_getconbnd
+summary Read the bounds of constraints.
+param mdl in The model.
+param n in The number of entries.
+param idx in The constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param lb out Entry `j` receives the lower bound of constraint `idx[j]`; skipped when null.
+param ub out Entry `j` receives its upper bound; skipped when null.
+return `BIYOS_OK` once the arrays are written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of a constraint.
+see BIYOS_setconbnd BIYOS_getcons
 since 0.1.0
 
 function BIYOS_getncons

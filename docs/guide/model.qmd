@@ -52,7 +52,7 @@ A bound may be `INFINITY` or `-INFINITY` from `<math.h>`, which leaves that side
 
 A null `knd` makes every new variable continuous, and a null `lb` or `ub` gives each the widest bound of its kind. The last argument, here `NULL`, can receive the index of the first new variable, which is the number of variables held before the call; the new variables follow it in order. Every call that adds items ends with this argument.
 
-`BIYOS_setvarbnd` and `BIYOS_setvarknd` change variables already added. They take a list of indices, in which a variable may appear more than once: its entries apply in order and the last one wins. A variable that becomes binary must already have bounds inside $[0, 1]$, so set such bounds first.
+`BIYOS_setvarbnd` and `BIYOS_setvarknd` change variables already added. They take a list of indices, in which a variable may appear more than once: its entries apply in order and the last one wins. A variable that becomes binary must already have bounds inside $[0, 1]$, so set such bounds first. `BIYOS_getvarbnd` and `BIYOS_getvarknd` read them back (@sec-model-reading).
 
 ## Functions {#sec-model-functions}
 
@@ -89,7 +89,7 @@ A constraint $l \le f(x) \le u$ bounds one function of the table. `BIYOS_addcons
 ```{.c file="examples/c/model.c" item="constraints"}
 ```
 
-Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A constraint whose bounds are both infinite is free. The bounds follow the rule of a continuous variable's: an infinite bound leaves its side open, and a lower bound of `INFINITY`, an upper bound of `-INFINITY` and NaN are refused. A null `lb` or `ub` leaves that side of every new constraint unbounded. `BIYOS_setconbnd` changes the bounds and keeps the function.
+Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A constraint whose bounds are both infinite is free. The bounds follow the rule of a continuous variable's: an infinite bound leaves its side open, and a lower bound of `INFINITY`, an upper bound of `-INFINITY` and NaN are refused. A null `lb` or `ub` leaves that side of every new constraint unbounded. `BIYOS_setconbnd` changes the bounds and keeps the function, and `BIYOS_getconbnd` reads the bounds of a list of constraints.
 
 ## Objectives {#sec-model-objectives}
 
@@ -121,6 +121,8 @@ Every family has a count and a reader: `BIYOS_getnvars` and `BIYOS_getvars`, `BI
 ```
 
 Called with a size of 0 and null arrays, such a reader only reports `nnz`, so a caller can learn the size, allocate, and call again.
+
+A family reader reads a range. Every setter of an attribute has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items, such as `{0, 4, 10, 12}`, is read in one call: `BIYOS_getvarbnd` reads what `BIYOS_setvarbnd` sets. An item may appear in the list more than once, and a null output is skipped.
 
 ## Names {#sec-model-names}
 

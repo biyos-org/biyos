@@ -47,6 +47,35 @@ void expect_columns(const Columns &found, const Columns &wanted)
     expect_dbls(found.upper, wanted.upper);
 }
 
+const Columns kColumns{
+    .kinds = {BIYOS_VAR_CONT, BIYOS_VAR_BIN, BIYOS_VAR_INT, BIYOS_VAR_SEMICONT, BIYOS_VAR_SEMIINT},
+    .lower = {-kInfinity, 0.0, -3.0, 2.0, 1.0},
+    .upper = {kInfinity, 1.0, 7.0, 10.0, 4.0},
+};
+
+void add_columns(const Model &mdl)
+{
+    const BIYOS_int *knds = kColumns.kinds.data();
+    const double *lower = kColumns.lower.data();
+    const double *upper = kColumns.upper.data();
+    ASSERT_EQ(BIYOS_addvars(mdl.get(), 5, knds, lower, upper, nullptr), BIYOS_OK);
+}
+
+Columns read_listed(const Model &mdl, const std::vector<BIYOS_index> &idx)
+{
+    const auto n = static_cast<BIYOS_index>(idx.size());
+    Columns read{
+        .kinds = std::vector<int>(idx.size(), -1),
+        .lower = std::vector<double>(idx.size(), 9.0),
+        .upper = std::vector<double>(idx.size(), 9.0),
+    };
+    const BIYOS_status status =
+        BIYOS_getvarbnd(mdl.get(), n, idx.data(), read.lower.data(), read.upper.data());
+    EXPECT_EQ(status, BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarknd(mdl.get(), n, idx.data(), read.kinds.data()), BIYOS_OK);
+    return read;
+}
+
 struct Attempt
 {
     BIYOS_env *env = nullptr;
@@ -75,6 +104,8 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_addvars(mdl, 1, nullptr, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_setvarbnd(mdl, 1, &idx, &bound, &bound));
     note(attempt, BIYOS_setvarknd(mdl, 1, &idx, &knd));
+    note(attempt, BIYOS_getvarbnd(mdl, 1, &idx, nullptr, nullptr));
+    note(attempt, BIYOS_getvarknd(mdl, 1, &idx, nullptr));
     note(attempt, BIYOS_getnvars(mdl, &attempt.count));
     note(attempt, BIYOS_getvars(mdl, 0, 1, nullptr, nullptr, nullptr));
 }
@@ -116,7 +147,9 @@ TEST(CApiTest, NullModel)
     BIYOS_index n = 0;
     EXPECT_EQ(BIYOS_addvars(nullptr, 1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setvarbnd(nullptr, 1, &idx, &bound, &bound), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getvarbnd(nullptr, 1, &idx, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setvarknd(nullptr, 1, &idx, &idx), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getvarknd(nullptr, 1, &idx, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getnvars(nullptr, &n), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getvars(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     BIYOS_offset needed = 0;
@@ -131,6 +164,7 @@ TEST(CApiTest, NullModel)
               BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addcons(nullptr, 1, &idx, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setconbnd(nullptr, 1, &idx, &bound, &bound), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconbnd(nullptr, 1, &idx, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getncons(nullptr, &n), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getcons(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addobjs(nullptr, 1, &idx, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr),
@@ -173,12 +207,23 @@ TEST(CApiTest, LockedModel)
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
-    const std::vector<BIYOS_status>
-        statuses{refused, refused, refused, refused, refused, BIYOS_OK, BIYOS_OK};
+    const std::vector<BIYOS_status> statuses{
+        refused,
+        refused,
+        refused,
+        refused,
+        refused,
+        BIYOS_OK,
+        BIYOS_OK,
+        BIYOS_OK,
+        BIYOS_OK,
+    };
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
     const std::string failure = "invalid argument: option 'seed': -1 is outside [0, 2147483647]";
     const std::vector<std::string> msgs{
         "invalid argument: environment: is read-only while delivering an event",
+        locked,
+        locked,
         locked,
         locked,
         locked,
@@ -372,6 +417,101 @@ TEST(CApiTest, NullGet)
     EXPECT_DOUBLE_EQ(high[1], 9.0);
     EXPECT_EQ(BIYOS_getnvars(mdl.get(), nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
+}
+
+TEST(CApiTest, ListedVariables)
+{
+    const Env env;
+    const Model mdl(env);
+    add_columns(mdl);
+    const Columns wanted{
+        .kinds = {BIYOS_VAR_SEMIINT, BIYOS_VAR_CONT, BIYOS_VAR_SEMIINT, BIYOS_VAR_INT},
+        .lower = {1.0, -kInfinity, 1.0, -3.0},
+        .upper = {4.0, kInfinity, 4.0, 7.0},
+    };
+    expect_columns(read_listed(mdl, {4, 0, 4, 2}), wanted);
+    expect_columns(read_listed(mdl, {}), Columns{});
+    EXPECT_EQ(env.message(), "");
+}
+
+TEST(CApiTest, VariableSetters)
+{
+    const Env env;
+    const Model mdl(env);
+    ASSERT_EQ(BIYOS_addvars(mdl.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    const BIYOS_index idx[] = {2, 0, 2};
+    const double lower[] = {0.0, -1.0, 0.5};
+    const double upper[] = {1.0, 2.0, 1.0};
+    const BIYOS_int knd[] = {BIYOS_VAR_INT, BIYOS_VAR_SEMICONT, BIYOS_VAR_BIN};
+    ASSERT_EQ(BIYOS_setvarbnd(mdl.get(), 3, idx, lower, upper), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setvarknd(mdl.get(), 3, idx, knd), BIYOS_OK);
+    std::vector<double> lb(3, 9.0);
+    std::vector<double> ub(3, 9.0);
+    std::vector<BIYOS_int> found(3, -1);
+    ASSERT_EQ(BIYOS_getvarbnd(mdl.get(), 3, idx, lb.data(), ub.data()), BIYOS_OK);
+    ASSERT_EQ(BIYOS_getvarknd(mdl.get(), 3, idx, found.data()), BIYOS_OK);
+    const Columns wanted{
+        .kinds = {BIYOS_VAR_BIN, BIYOS_VAR_SEMICONT, BIYOS_VAR_BIN},
+        .lower = {0.5, -1.0, 0.5},
+        .upper = {1.0, 2.0, 1.0},
+    };
+    expect_columns(Columns{.kinds = found, .lower = lb, .upper = ub}, wanted);
+    const Columns untouched{.kinds = {BIYOS_VAR_CONT}, .lower = {-kInfinity}, .upper = {kInfinity}};
+    expect_columns(read_listed(mdl, {1}), untouched);
+}
+
+TEST(CApiTest, VariableNulls)
+{
+    const Env env;
+    const Model mdl(env);
+    add_columns(mdl);
+    const BIYOS_index idx[] = {3, 1};
+    double lower[] = {9.0, 9.0};
+    double upper[] = {9.0, 9.0};
+    BIYOS_int knd[] = {-1, -1};
+    const BIYOS_model *held = mdl.get();
+    EXPECT_EQ(BIYOS_getvarbnd(held, 2, idx, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarknd(held, 2, idx, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarbnd(held, 2, idx, lower, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarbnd(held, 1, idx, nullptr, upper), BIYOS_OK);
+    expect_dbls({lower[0], lower[1]}, {2.0, 0.0});
+    expect_dbls({upper[0], upper[1]}, {10.0, 9.0});
+    EXPECT_EQ(BIYOS_getvarbnd(held, 0, nullptr, lower, upper), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarknd(held, 0, nullptr, knd), BIYOS_OK);
+    EXPECT_EQ(std::vector<BIYOS_int>({knd[0], knd[1]}), std::vector<BIYOS_int>({-1, -1}));
+    EXPECT_EQ(env.message(), "");
+}
+
+TEST(CApiTest, VariableRefusals)
+{
+    const Env env;
+    const Model mdl(env);
+    add_columns(mdl);
+    const BIYOS_model *held = mdl.get();
+    const BIYOS_index beyond[] = {0, 5};
+    const BIYOS_index negative[] = {1, -1};
+    double lower[] = {9.0, 9.0};
+    double upper[] = {9.0, 9.0};
+    BIYOS_int knd[] = {-1, -1};
+    EXPECT_EQ(BIYOS_getvarbnd(held, 2, beyond, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: variable 5: unknown");
+    EXPECT_EQ(BIYOS_getvarknd(held, 2, beyond, knd), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: variable 5: unknown");
+    EXPECT_EQ(BIYOS_getvarbnd(held, 2, negative, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: variable -1: unknown");
+    EXPECT_EQ(BIYOS_getvarknd(held, 2, negative, knd), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: variable -1: unknown");
+    EXPECT_EQ(BIYOS_getvarbnd(held, -1, beyond, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
+    EXPECT_EQ(BIYOS_getvarknd(held, -1, beyond, knd), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
+    EXPECT_EQ(BIYOS_getvarbnd(held, 1, nullptr, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(BIYOS_getvarknd(held, 1, nullptr, knd), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    expect_dbls({lower[0], lower[1]}, {9.0, 9.0});
+    expect_dbls({upper[0], upper[1]}, {9.0, 9.0});
+    EXPECT_EQ(std::vector<BIYOS_int>({knd[0], knd[1]}), std::vector<BIYOS_int>({-1, -1}));
 }
 
 TEST(CApiTest, ModelEvent)

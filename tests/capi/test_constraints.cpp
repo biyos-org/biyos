@@ -77,6 +77,20 @@ void expect_records(const Records &found, const Records &wanted)
     expect_dbls(found.upper, wanted.upper);
 }
 
+Records read_bounds(const Model &mdl, const std::vector<BIYOS_index> &idx)
+{
+    const auto n = static_cast<BIYOS_index>(idx.size());
+    Records read{
+        .functions = {},
+        .lower = std::vector<double>(idx.size(), 9.0),
+        .upper = std::vector<double>(idx.size(), 9.0),
+    };
+    const BIYOS_status status =
+        BIYOS_getconbnd(mdl.get(), n, idx.data(), read.lower.data(), read.upper.data());
+    EXPECT_EQ(status, BIYOS_OK);
+    return read;
+}
+
 struct Attempt
 {
     BIYOS_env *env = nullptr;
@@ -100,6 +114,7 @@ void change(const BIYOS_event *, void *data)
     BIYOS_index n = 0;
     note(attempt, BIYOS_addcons(mdl, 1, &idx, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_setconbnd(mdl, 1, &idx, &bound, &bound));
+    note(attempt, BIYOS_getconbnd(mdl, 1, &idx, nullptr, nullptr));
     note(attempt, BIYOS_getncons(mdl, &n));
     note(attempt, BIYOS_getcons(mdl, 0, 1, nullptr, nullptr, nullptr));
 }
@@ -275,11 +290,84 @@ TEST(CApiTest, LockedConstraints)
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
-    const std::vector<BIYOS_status> statuses{refused, refused, BIYOS_OK, BIYOS_OK};
+    const std::vector<BIYOS_status> statuses{refused, refused, BIYOS_OK, BIYOS_OK, BIYOS_OK};
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
     EXPECT_EQ(attempt.statuses, statuses);
     EXPECT_EQ(attempt.messages[0], locked);
     EXPECT_EQ(attempt.messages[1], locked);
     EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
     EXPECT_EQ(n_cons(mdl), 1);
+}
+
+TEST(CApiTest, ListedConstraints)
+{
+    const Env env;
+    const Model mdl(env);
+    add_sample(mdl);
+    const Records wanted{
+        .functions = {},
+        .lower = {2.0, -1.0, 2.0, -kInfinity},
+        .upper = {2.0, 1.0, 2.0, kInfinity},
+    };
+    expect_records(read_bounds(mdl, {2, 0, 2, 1}), wanted);
+    expect_records(read_bounds(mdl, {}), Records{});
+    EXPECT_EQ(env.message(), "");
+}
+
+TEST(CApiTest, ConstraintNulls)
+{
+    const Env env;
+    const Model mdl(env);
+    add_sample(mdl);
+    const BIYOS_index idx[] = {1, 2};
+    double lower[] = {9.0, 9.0};
+    double upper[] = {9.0, 9.0};
+    const BIYOS_model *held = mdl.get();
+    EXPECT_EQ(BIYOS_getconbnd(held, 2, idx, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconbnd(held, 2, idx, lower, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconbnd(held, 1, idx, nullptr, upper), BIYOS_OK);
+    expect_dbls({lower[0], lower[1]}, {-kInfinity, 2.0});
+    expect_dbls({upper[0], upper[1]}, {kInfinity, 9.0});
+    EXPECT_EQ(BIYOS_getconbnd(held, 0, nullptr, lower, upper), BIYOS_OK);
+    EXPECT_EQ(env.message(), "");
+}
+
+TEST(CApiTest, ConstraintSetters)
+{
+    const Env env;
+    const Model mdl(env);
+    add_sample(mdl);
+    const BIYOS_index idx[] = {1, 0, 1};
+    const double lower[] = {-2.0, 0.0, -3.0};
+    const double upper[] = {2.0, 0.5, 3.0};
+    ASSERT_EQ(BIYOS_setconbnd(mdl.get(), 3, idx, lower, upper), BIYOS_OK);
+    std::vector<double> lb(3, 9.0);
+    std::vector<double> ub(3, 9.0);
+    ASSERT_EQ(BIYOS_getconbnd(mdl.get(), 3, idx, lb.data(), ub.data()), BIYOS_OK);
+    expect_dbls(lb, {-3.0, 0.0, -3.0});
+    expect_dbls(ub, {3.0, 0.5, 3.0});
+    const Records untouched{.functions = {}, .lower = {2.0}, .upper = {2.0}};
+    expect_records(read_bounds(mdl, {2}), untouched);
+}
+
+TEST(CApiTest, ConstraintRefusals)
+{
+    const Env env;
+    const Model mdl(env);
+    add_sample(mdl);
+    const BIYOS_model *held = mdl.get();
+    const BIYOS_index beyond[] = {0, 3};
+    const BIYOS_index negative[] = {1, -1};
+    double lower[] = {9.0, 9.0};
+    double upper[] = {9.0, 9.0};
+    EXPECT_EQ(BIYOS_getconbnd(held, 2, beyond, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
+    EXPECT_EQ(BIYOS_getconbnd(held, 2, negative, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: constraint -1: unknown");
+    EXPECT_EQ(BIYOS_getconbnd(held, -1, beyond, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
+    EXPECT_EQ(BIYOS_getconbnd(held, 1, nullptr, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    expect_dbls({lower[0], lower[1]}, {9.0, 9.0});
+    expect_dbls({upper[0], upper[1]}, {9.0, 9.0});
 }

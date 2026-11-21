@@ -13,6 +13,7 @@
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::listed;
+using biyos::capi::picked;
 using biyos::capi::require;
 using biyos::capi::writable;
 
@@ -112,6 +113,16 @@ void get_cons(const BIYOS_model &mdl, int beg, int n, int *funs, double *lower, 
     }
 }
 
+void get_bnds(const BIYOS_model &mdl, int n, const int *idx, double *lower, double *upper)
+{
+    const std::vector<biyos::Constraint> cons =
+        picked(mdl.core, &biyos::Model::constraint, listed(n, idx));
+    for (std::size_t k = 0; k < cons.size(); ++k)
+    {
+        copy_out(cons[k], k, nullptr, lower, upper);
+    }
+}
+
 }
 
 BIYOS_status BIYOS_addcons(BIYOS_model *mdl,
@@ -131,6 +142,15 @@ BIYOS_status BIYOS_setconbnd(BIYOS_model *mdl,
                              const BIYOS_real *ub)
 {
     return guarded<set_bnds>(mdl, n, idx, lb, ub);
+}
+
+BIYOS_status BIYOS_getconbnd(const BIYOS_model *mdl,
+                             BIYOS_index n,
+                             const BIYOS_index *idx,
+                             BIYOS_real *lb,
+                             BIYOS_real *ub)
+{
+    return guarded<get_bnds>(mdl, n, idx, lb, ub);
 }
 
 BIYOS_status BIYOS_getncons(const BIYOS_model *mdl, BIYOS_index *n)
