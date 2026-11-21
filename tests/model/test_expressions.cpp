@@ -6,6 +6,7 @@
 #include "model/compare.hpp"
 #include "model/model.hpp"
 #include "model/nodes.hpp"
+#include "model/postfix.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>
@@ -16,6 +17,7 @@
 #include <limits>
 #include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace
@@ -30,6 +32,7 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::QuadraticTerm;
 using biyos::Variable;
+using biyos::test::failure;
 using biyos::test::refusal;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
@@ -151,6 +154,45 @@ void expect_same(const Model &found, const Model &wanted)
     EXPECT_EQ(found.graph().mark(), wanted.graph().mark());
     const Index n = wanted.n_functions();
     EXPECT_EQ(ids(found.roots(0, n)), ids(wanted.roots(0, n)));
+}
+
+struct Program
+{
+    std::vector<Offset> starts;
+    std::vector<int> codes;
+    std::vector<Offset> arguments;
+    std::vector<double> values;
+};
+
+biyos::Postfix postfix_of(const Program &program)
+{
+    return biyos::Postfix{
+        .starts = program.starts,
+        .codes = program.codes,
+        .arguments = program.arguments,
+        .values = program.values,
+    };
+}
+
+std::vector<Offset> decoded(Model &model, const Program &program)
+{
+    return model.add_expressions(postfix_of(program));
+}
+
+std::string decode_refusal(Model &model, const Program &program)
+{
+    return refusal([&] { decoded(model, program); });
+}
+
+Program single(std::vector<int> codes, std::vector<Offset> arguments, std::vector<double> values)
+{
+    const auto n = static_cast<Offset>(codes.size());
+    return Program{
+        .starts = {0, n},
+        .codes = std::move(codes),
+        .arguments = std::move(arguments),
+        .values = std::move(values),
+    };
 }
 
 std::vector<Offset> children_of(const Model &model, Offset node)
@@ -568,4 +610,242 @@ TEST(ExpressionTest, SignedZero)
     EXPECT_EQ(bits(constant_of(model, 1)), bits(-0.0));
     EXPECT_EQ(bits(constant_of(model, 2)), bits(0.0));
     EXPECT_EQ(root_of(model, 1), exponential);
+}
+
+TEST(ExpressionTest, Postfix)
+{
+    Model nodes = with_functions(1);
+    const Offset x = nodes.add_variable_node(0);
+    const Offset exponential = add(nodes, {BIYOS_OP_EXP, {x}, {}});
+    const Offset y = nodes.add_variable_node(1);
+    const Offset two = add(nodes, {BIYOS_OP_CONST, {}, {2.0}});
+    const Offset shifted = add(nodes, {BIYOS_OP_SUM, {y, two}, {-0.5, 1.0, 3.0}});
+    const Offset sine = add(nodes, {BIYOS_OP_SIN, {shifted}, {}});
+    const Offset product = add(nodes, {BIYOS_OP_PROD, {exponential, sine}, {4.0}});
+    const Offset power = add(nodes, {BIYOS_OP_CPOW, {product}, {1.5}});
+    const Offset top = add(nodes, {BIYOS_OP_SPOW, {power}, {0.5}});
+    Model postfix = with_functions(1);
+    const Program program = single(
+        {
+            BIYOS_OP_VAR,
+            BIYOS_OP_EXP,
+            BIYOS_OP_VAR,
+            BIYOS_OP_CONST,
+            BIYOS_OP_SUM,
+            BIYOS_OP_SIN,
+            BIYOS_OP_PROD,
+            BIYOS_OP_CPOW,
+            BIYOS_OP_SPOW,
+        },
+        {0, 1, 1, 0, 2, 1, 2, 1, 1},
+        {2.0, -0.5, 1.0, 3.0, 4.0, 1.5, 0.5});
+    EXPECT_EQ(decoded(postfix, program), std::vector<Offset>{top});
+    EXPECT_EQ(postfix.graph().mark(), nodes.graph().mark());
+    attach(nodes, {0}, {top});
+    attach(postfix, {0}, {top});
+    EXPECT_EQ(biyos::difference(postfix, nodes), "");
+    EXPECT_EQ(root_of(postfix, 0), top);
+}
+
+TEST(ExpressionTest, PostfixOrder)
+{
+    Model nodes = with_functions(1);
+    const Offset x = nodes.add_variable_node(0);
+    const Offset y = nodes.add_variable_node(1);
+    const Offset sum = add(nodes, {BIYOS_OP_SUM, {x, y}, {0.0, 1.0, 1.0}});
+    const Offset z = nodes.add_variable_node(2);
+    const Offset product = add(nodes, {BIYOS_OP_PROD, {sum, z}, {1.0}});
+    const Offset top = add(nodes, {BIYOS_OP_LOG, {product}, {}});
+    Model postfix = with_functions(1);
+    const Program program = single(
+        {BIYOS_OP_VAR, BIYOS_OP_VAR, BIYOS_OP_SUM, BIYOS_OP_VAR, BIYOS_OP_PROD, BIYOS_OP_LOG},
+        {0, 1, 2, 2, 2, 1},
+        {0.0, 1.0, 1.0, 1.0});
+    const std::vector<Offset> tops = decoded(postfix, program);
+    EXPECT_EQ(tops, std::vector<Offset>{5});
+    EXPECT_EQ(children_of(postfix, 4), (std::vector<Offset>{3, 2}));
+    attach(nodes, {0}, {top});
+    attach(postfix, {0}, tops);
+    EXPECT_EQ(biyos::difference(postfix, nodes), "");
+}
+
+TEST(ExpressionTest, PostfixShared)
+{
+    Model model = with_functions(2);
+    const Offset x = model.add_variable_node(0);
+    const Offset sine = add(model, {BIYOS_OP_SIN, {x}, {}});
+    const Program program{
+        .starts = {0, 3, 5},
+        .codes = {BIYOS_OP_NODE, BIYOS_OP_NODE, BIYOS_OP_DIV, BIYOS_OP_NODE, BIYOS_OP_EXP},
+        .arguments = {sine, sine, 2, sine, 1},
+        .values = {},
+    };
+    const std::vector<Offset> tops = decoded(model, program);
+    EXPECT_EQ(tops, (std::vector<Offset>{2, 3}));
+    EXPECT_EQ(children_of(model, 2), (std::vector<Offset>{sine, sine}));
+    EXPECT_EQ(children_of(model, 3), std::vector<Offset>{sine});
+    EXPECT_EQ(model.graph().size(), 4);
+    attach(model, {0, 1}, tops);
+    EXPECT_EQ(children_of(model, root_of(model, 0))[0], children_of(model, root_of(model, 1))[0]);
+}
+
+TEST(ExpressionTest, PostfixMerged)
+{
+    Model model = with_functions(1);
+    const Offset exponential = add(model, {BIYOS_OP_EXP, {model.add_variable_node(0)}, {}});
+    const Program program =
+        single({BIYOS_OP_VAR, BIYOS_OP_VAR, BIYOS_OP_SUM, BIYOS_OP_NODE, BIYOS_OP_SUM},
+               {1, 2, 2, exponential, 2},
+               {1.0, 2.0, 3.0, 0.5, 4.0, 5.0});
+    const std::vector<Offset> tops = decoded(model, program);
+    EXPECT_EQ(tops, std::vector<Offset>{4});
+    EXPECT_EQ(children_of(model, 4), (std::vector<Offset>{2, 3, exponential}));
+    EXPECT_EQ(bits(model.graph().constant(4)), bits(4.5));
+    EXPECT_EQ(bits(model.graph().coefficients(4)[0]), bits(8.0));
+    EXPECT_EQ(bits(model.graph().coefficients(4)[1]), bits(12.0));
+    EXPECT_EQ(bits(model.graph().coefficients(4)[2]), bits(5.0));
+}
+
+TEST(ExpressionTest, PostfixValues)
+{
+    Model model = with_functions(1);
+    const Program program{
+        .starts = {0, 1, 3, 4},
+        .codes = {BIYOS_OP_CONST, BIYOS_OP_VAR, BIYOS_OP_CPOW, BIYOS_OP_CONST},
+        .arguments = {0, 0, 1, 0},
+        .values = {1.25, 3.0, -2.5},
+    };
+    const std::vector<Offset> tops = decoded(model, program);
+    ASSERT_EQ(tops.size(), 3U);
+    EXPECT_EQ(bits(model.graph().constant(tops[0])), bits(1.25));
+    EXPECT_EQ(bits(model.graph().constant(tops[1])), bits(3.0));
+    EXPECT_EQ(bits(model.graph().constant(tops[2])), bits(-2.5));
+    EXPECT_EQ(decoded(model, Program{.starts = {0}, .codes = {}, .arguments = {}, .values = {}}),
+              std::vector<Offset>{});
+}
+
+TEST(ExpressionTest, PostfixErrors)
+{
+    Model model = with_functions(1);
+    const Offset x = model.add_variable_node(0);
+    const Model before = model;
+    const std::string bad = "invalid argument: expression 0: ";
+    const std::string entry = bad + "entry ";
+    const double nan = kNan;
+    const Offset far = Offset{1} << 40;
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, 0}, {1, 1}, {})),
+              entry + "1: operator 0 is unknown");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, -5}, {1, 1}, {})),
+              entry + "1: operator -5 is unknown");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_NODE}, {9}, {})),
+              entry + "0: node 9 is unknown");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_NODE}, {-1}, {})),
+              entry + "0: node -1 is unknown");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_DIV}, {1, 2}, {})),
+              entry + "1: 2 operands taken, 1 given");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_EXP}, {1, 2}, {})),
+              entry + "1: operator 9 takes 1 child, not 2");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_VAR}, {1, 2}, {})),
+              bad + "2 operands left, not 1");
+    EXPECT_EQ(decode_refusal(model, single({}, {}, {})), bad + "0 operands left, not 1");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR}, {3}, {})),
+              entry + "0: variable 3 is unknown");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR}, {-1}, {})),
+              entry + "0: variable -1 is unknown");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR}, {far}, {})),
+              entry + "0: variable 1099511627776 is unknown");
+    const Offset wraps = 1 - (Offset{1} << 32);
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR}, {wraps}, {})),
+              entry + "0: variable -4294967295 is unknown");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_CONST}, {1}, {1.0})),
+              entry + "0: operator 1 takes 0 children, not 1");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_SUM}, {0, 0}, {0.0})),
+              entry + "1: operator 3 takes 1 child or more, not 0");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_SUM}, {0, far}, {})),
+              entry + "1: 1099511627776 operands taken, 1 given");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_CONST}, {0}, {nan})),
+              entry + "0: constant is NaN");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_SPOW}, {0, 1}, {-1.0})),
+              entry + "1: operator 28 takes a positive constant, not -1");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_SUM}, {0, 1}, {0.0, nan})),
+              entry + "1: coefficient 0 is NaN");
+    expect_same(model, before);
+    EXPECT_EQ(model.graph().size(), x + 1);
+}
+
+TEST(ExpressionTest, PostfixRollback)
+{
+    Model model = with_functions(1);
+    const Offset x = model.add_variable_node(0);
+    const Model before = model;
+    const Program program{
+        .starts = {0, 3, 5},
+        .codes = {BIYOS_OP_VAR, BIYOS_OP_VAR, BIYOS_OP_DIV, BIYOS_OP_NODE, BIYOS_OP_EXP},
+        .arguments = {2, 0, 2, 2, 1},
+        .values = {},
+    };
+    EXPECT_EQ(decode_refusal(model, program),
+              "invalid argument: expression 1: entry 3: node 2 is unknown");
+    expect_same(model, before);
+    const Offset constant = add(model, {BIYOS_OP_CONST, {}, {1.0}});
+    EXPECT_EQ(constant, x + 1);
+    EXPECT_EQ(model.add_variable_node(2), x + 2);
+    EXPECT_EQ(model.add_variable_node(0), x);
+}
+
+TEST(ExpressionTest, ValuesRun)
+{
+    Model model = with_functions(1);
+    const Model before = model;
+    const Program program = single({BIYOS_OP_VAR, BIYOS_OP_SUM}, {0, 1}, {0.0});
+    EXPECT_EQ(failure([&] { decoded(model, program); }, biyos::ErrorKind::Internal),
+              "internal error: postfix: values run out");
+    expect_same(model, before);
+}
+
+TEST(ExpressionTest, PostfixShape)
+{
+    Model model = with_functions(1);
+    const Model before = model;
+    const std::vector<Offset> starts{0, 2};
+    const std::vector<int> codes{BIYOS_OP_VAR, BIYOS_OP_EXP};
+    const std::vector<Offset> one{0};
+    const std::vector<Offset> two{0, 1};
+    const biyos::Postfix shorter{.starts = starts, .codes = codes, .arguments = one, .values = {}};
+    const biyos::Postfix empty{.starts = {}, .codes = {}, .arguments = {}, .values = {}};
+    const biyos::Postfix longer{
+        .starts = std::span(starts).first(1),
+        .codes = codes,
+        .arguments = two,
+        .values = {},
+    };
+    const std::string differ = "internal error: model: postfix arrays differ in length";
+    const auto internal = biyos::ErrorKind::Internal;
+    EXPECT_EQ(failure([&] { model.add_expressions(shorter); }, internal), differ);
+    EXPECT_EQ(failure([&] { model.add_expressions(empty); }, internal), differ);
+    EXPECT_EQ(failure([&] { model.add_expressions(longer); }, internal),
+              "internal error: model: starts and terms differ in number");
+    expect_same(model, before);
+}
+
+TEST(ExpressionTest, PostfixCount)
+{
+    const std::vector<int> codes{
+        BIYOS_OP_VAR,
+        BIYOS_OP_CONST,
+        BIYOS_OP_SUM,
+        BIYOS_OP_NODE,
+        BIYOS_OP_PROD,
+        BIYOS_OP_EXP,
+    };
+    EXPECT_EQ(biyos::n_values(codes, std::vector<Offset>{0, 0, 2, 0, 2, 1}), 5);
+    EXPECT_EQ(biyos::n_values(codes, std::vector<Offset>{0, 0, -3, 0, 2, 1}), 3);
+    EXPECT_EQ(biyos::n_values(codes, std::vector<Offset>{0, 0, 3, 0, 2, 1}), 6);
+    const Offset most = (std::numeric_limits<Offset>::max)();
+    EXPECT_EQ(biyos::n_values(codes, std::vector<Offset>{0, 0, most, 0, 2, 1}), 9);
+    const std::vector<int> sums(3, BIYOS_OP_SUM);
+    EXPECT_EQ(biyos::n_values(sums, std::vector<Offset>{3, 3, 3}), 6);
+    EXPECT_EQ(biyos::n_values(sums, std::vector<Offset>{1, 1, 1}), 6);
+    EXPECT_EQ(biyos::n_values(sums, std::vector<Offset>{0, 1, 0}), 4);
+    EXPECT_EQ(biyos::n_values({}, {}), 0);
 }

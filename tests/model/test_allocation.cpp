@@ -5,6 +5,7 @@
 #include "expr/graph.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
+#include "model/postfix.hpp"
 
 #include <gtest/gtest.h>
 
@@ -232,6 +233,26 @@ void attach_all(Model &model)
     model.attach_expressions(functions, nodes);
 }
 
+void decode_two(Model &model)
+{
+    const std::vector<Offset> starts{0, 6, 9};
+    const std::vector<int> codes{
+        BIYOS_OP_VAR,
+        BIYOS_OP_VAR,
+        BIYOS_OP_SUM,
+        BIYOS_OP_NODE,
+        BIYOS_OP_PROD,
+        BIYOS_OP_SIN,
+        BIYOS_OP_VAR,
+        BIYOS_OP_CONST,
+        BIYOS_OP_DIV,
+    };
+    const std::vector<Offset> arguments{2, 3, 2, 1, 2, 1, 1, 0, 2};
+    const std::vector<double> values{0.0, 1.0, 2.0, 3.0, 4.0};
+    model.add_expressions(
+        biyos::Postfix{.starts = starts, .codes = codes, .arguments = arguments, .values = values});
+}
+
 void clear_two(Model &model)
 {
     const std::vector<Index> functions{2, 0, 2};
@@ -258,7 +279,7 @@ bool runs_out_with(Model &model, void (*change)(Model &), std::size_t successes)
     return false;
 }
 
-void expect_graph(void (*change)(Model &))
+void expect_graph(void (*change)(Model &), Offset added)
 {
     for (std::size_t successes = 0; successes < kAttempts; ++successes)
     {
@@ -267,7 +288,7 @@ void expect_graph(void (*change)(Model &))
         if (!runs_out_with(model, change, successes))
         {
             EXPECT_GT(successes, 0U);
-            EXPECT_EQ(model.graph().size(), before.nodes + 1);
+            EXPECT_EQ(model.graph().size(), before.nodes + added);
             return;
         }
         EXPECT_EQ(model.graph().mark(), before);
@@ -355,12 +376,12 @@ TEST(AllocationTest, Functions)
 
 TEST(AllocationTest, VariableNode)
 {
-    expect_graph(add_variable);
+    expect_graph(add_variable, 1);
 }
 
 TEST(AllocationTest, SumNode)
 {
-    expect_graph(add_sum);
+    expect_graph(add_sum, 1);
 }
 
 TEST(AllocationTest, Attach)
@@ -402,4 +423,9 @@ TEST(AllocationTest, Clear)
         EXPECT_EQ(roots_of(model), roots_of(before));
     }
     ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, Postfix)
+{
+    expect_graph(decode_two, 8);
 }
