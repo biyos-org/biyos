@@ -56,6 +56,7 @@ add_library(biyos_internal STATIC
     model/compressed.cpp
     model/constraints.cpp
     model/expressions.cpp
+    model/fields.cpp
     model/functions.cpp
     model/merge.cpp
     model/model.cpp
