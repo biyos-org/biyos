@@ -133,7 +133,7 @@ quartodoc:
       contents: [Env, CheckLevel, Error, version, Versions]
     - title: Models
       desc: A model holds the variables, functions, constraints and objectives of a problem.
-      contents: [Model, VariableKind, Sense]
+      contents: [Model, VariableKind, Sense, Operator]
     - title: Blocks and views
       desc: The items an add call returns, which pass wherever the model takes indices.
       contents:
