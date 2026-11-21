@@ -24,6 +24,7 @@ book:
         - guide/model.qmd
         - guide/options.qmd
         - guide/events.qmd
+        - guide/copy.qmd
 
 number-sections: true
 
