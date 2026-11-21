@@ -154,19 +154,19 @@ class Env:
         self._call(lib.BIYOS_getoptversions, option, *pointers)
         return Versions(*(version_text(number.value) for number in numbers))
 
-    def addhook(self, hook, kind, lowest):
-        hook = _callable(hook)
-        kind = integer("kind", kind)
-        lowest = integer("lowest", lowest)
+    def addhook(self, hk, knd, lvl):
+        hk = _callable(hk)
+        knd = integer("knd", knd)
+        lvl = integer("lvl", lvl)
         subscription = c_int()
         with self._busy():
-            self._addhook(hook, kind, lowest, subscription)
+            self._addhook(hk, knd, lvl, subscription)
         return subscription.value
 
-    def delhook(self, hookid):
-        hookid = integer("hookid", hookid)
+    def delhook(self, idx):
+        idx = integer("idx", idx)
         with self._busy():
-            self._delhook(hookid)
+            self._delhook(idx)
 
     def _addhook(self, function, kind, lowest, subscription):
         callback = self._subscribers.callback

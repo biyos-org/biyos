@@ -80,7 +80,7 @@ void get_functions(const BIYOS_model &model,
     const std::span<const double> held = model.core.constants(first, count);
     const std::span<const biyos::LinearTerm> found = model.core.terms(first, count);
     const std::size_t room = length(size, "size");
-    require(needed, "needed");
+    require(needed, "nnz");
     write_constants(held, constants);
     const auto before = [&](biyos::Index j) { return model.core.terms(first, j); };
     write_starts(held.size(), starts, before);
@@ -92,13 +92,13 @@ void get_functions(const BIYOS_model &model,
 
 BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
                            BIYOS_index n,
-                           const BIYOS_real *consts,
-                           const BIYOS_offset *starts,
+                           const BIYOS_real *cst,
+                           const BIYOS_offset *off,
                            const BIYOS_index *varidx,
-                           const BIYOS_real *vals,
+                           const BIYOS_real *coef,
                            BIYOS_index *beg)
 {
-    return guarded<add_functions>(mdl, n, consts, starts, varidx, vals, beg);
+    return guarded<add_functions>(mdl, n, cst, off, varidx, coef, beg);
 }
 
 BIYOS_status BIYOS_getnfuns(const BIYOS_model *mdl, BIYOS_index *n)
@@ -110,11 +110,11 @@ BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
                            BIYOS_index beg,
                            BIYOS_index n,
                            BIYOS_offset size,
-                           BIYOS_real *consts,
-                           BIYOS_offset *starts,
-                           BIYOS_offset *needed,
+                           BIYOS_real *cst,
+                           BIYOS_offset *off,
+                           BIYOS_offset *nnz,
                            BIYOS_index *varidx,
-                           BIYOS_real *vals)
+                           BIYOS_real *coef)
 {
-    return guarded<get_functions>(mdl, beg, n, consts, starts, size, needed, varidx, vals);
+    return guarded<get_functions>(mdl, beg, n, cst, off, size, nnz, varidx, coef);
 }

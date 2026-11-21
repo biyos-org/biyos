@@ -267,7 +267,7 @@ TEST(CApiTest, NullFunctions)
     EXPECT_EQ(env.message(), "invalid argument: argument 'varidx': is null");
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, &variable, nullptr, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'vals': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
     EXPECT_EQ(function_count(model), 4);
 }
 
@@ -291,7 +291,7 @@ TEST(CApiTest, NullTerms)
     expect_compressed(read, kSorted);
     Compressed untouched = blank(3, 5);
     EXPECT_EQ(fill(model, 0, 3, untouched, 5, nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'needed': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
     expect_compressed(untouched, blank(3, 5));
     EXPECT_EQ(BIYOS_getnfuns(held, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
@@ -311,15 +311,13 @@ TEST(CApiTest, RefusedFunctions)
     const BIYOS_real nan = std::numeric_limits<double>::quiet_NaN();
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, late, variables, values, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'starts': begins at 1, not 0");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'off': begins at 1, not 0");
     EXPECT_EQ(BIYOS_addfuns(held, 2, nullptr, falling, variables, values, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(),
-              "invalid argument: argument 'starts': decreases from 1 to 0 at entry 2");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 1 to 0 at entry 2");
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, negative, variables, values, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(),
-              "invalid argument: argument 'starts': decreases from 0 to -1 at entry 1");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 0 to -1 at entry 1");
     const std::int64_t both[] = {0, 2};
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, both, variables, values, nullptr),
               BIYOS_ERR_INVALIDARG);

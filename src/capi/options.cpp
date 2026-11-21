@@ -24,7 +24,7 @@ void option_id(biyos::Environment &, const char *name, int *option)
 void option_kind(biyos::Environment &, int option, int *kind)
 {
     const biyos::OptionKind found = biyos::kind_of(biyos::find_option(option));
-    *require(kind, "kind") = static_cast<int>(found);
+    *require(kind, "knd") = static_cast<int>(found);
 }
 
 int optional_number(std::optional<biyos::Version> version)
@@ -96,9 +96,9 @@ BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt)
     return guarded<option_id>(env, name, opt);
 }
 
-BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *kind)
+BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *knd)
 {
-    return guarded<option_kind>(env, opt, kind);
+    return guarded<option_kind>(env, opt, knd);
 }
 
 BIYOS_status BIYOS_getoptversions(BIYOS_env *env,

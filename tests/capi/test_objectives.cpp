@@ -305,7 +305,7 @@ TEST(CApiTest, NullObjectives)
     wanted.relative[9] = 2.0;
     expect_records(read_all(model), wanted);
     EXPECT_EQ(add_with(held, 1, nullptr, {.senses = senses}), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funs': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
     EXPECT_EQ(objective_count(model), 10);
 }
 

@@ -16,7 +16,7 @@ namespace
 
 [[noreturn]] void refuse_starts(const std::string &reason)
 {
-    throw Error(ErrorKind::InvalidArgument, "argument 'starts'", reason);
+    throw Error(ErrorKind::InvalidArgument, "argument 'off'", reason);
 }
 
 }

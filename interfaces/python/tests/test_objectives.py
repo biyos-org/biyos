@@ -85,9 +85,9 @@ def test_range(model):
 
 def test_defaults(model):
     model.addobjs([0, 1])
-    model.addobjs([1], prios=[-7])
-    model.addobjs([0], senses=[MAX], weights=[2.0])
-    model.addobjs([1], abstol=[0.5], reltol=[INFINITY])
+    model.addobjs([1], prio=[-7])
+    model.addobjs([0], sense=[MAX], weight=[2.0])
+    model.addobjs([1], atol=[0.5], rtol=[INFINITY])
     model.addobjs([0])
     functions, senses, priorities, *values = model.getobjs()
     assert functions == [0, 1, 1, 0, 1, 0]
@@ -101,7 +101,7 @@ def test_defaults(model):
 def test_shared(model):
     model.addcons([1], [0.0], [1.0])
     model.addobjs([1, 1], [MIN, MAX])
-    model.addobjs([1], weights=[2.0])
+    model.addobjs([1], weight=[2.0])
     functions, senses, priorities, weights = model.getobjs()[:4]
     assert (functions, senses) == ([1, 1, 1], [MIN, MAX, MIN])
     assert (priorities, weights) == ([0, 1, 2], [1.0, 1.0, 2.0])
@@ -111,7 +111,7 @@ def test_shared(model):
 
 def test_functions(model):
     f = model.addfuns(3)
-    o = model.addobjs(f, weights=[2.0] * 3)
+    o = model.addobjs(f, weight=[2.0] * 3)
     model.addobjs(f[1:])
     model.addobjs([f[0], 1])
     assert model.getobjs(o[0])[0] == [2, 3, 4, 3, 4, 2, 1]
@@ -123,10 +123,10 @@ def test_views(env, model):
     other = biyos.Model(env)
     g = other.addfuns(2)
     p = other.addobjs(g)
-    entry = "an entry of funs is a function of another model"
+    entry = "an entry of funidx is a function of another model"
     with pytest.raises(ValueError, match=entry):
         model.addobjs([0, g[1]])
-    with pytest.raises(ValueError, match="funs is a block of another"):
+    with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addobjs(g)
     with pytest.raises(ValueError, match="is a variable, not a function"):
         model.addobjs([x[0]])
@@ -146,7 +146,7 @@ def test_views(env, model):
     with pytest.raises(ValueError, match="is an objective, not a function"):
         model.addcons([o[0]])
     model.setobjs([o[2]], [MAX], [5])
-    model.setobjs(o[:2], weights=[7.0, 8.0])
+    model.setobjs(o[:2], weight=[7.0, 8.0])
     found = model.getobjs(o[1])
     assert found[1:4] == ([MIN, MAX], [-1, 5], [8.0, 3.0])
     assert model.getnobjs() == 3
@@ -216,10 +216,10 @@ def test_sequences(model):
 
 def test_set(model):
     add_sample(model)
-    model.setobjs([2, 0], senses=[MAX, MIN])
-    model.setobjs([2], prios=[-5])
-    model.setobjs([0, 2], weights=[4.0, 8.0])
-    model.setobjs([1], abstol=[INFINITY], reltol=[0.5])
+    model.setobjs([2, 0], sense=[MAX, MIN])
+    model.setobjs([2], prio=[-5])
+    model.setobjs([0, 2], weight=[4.0, 8.0])
+    model.setobjs([1], atol=[INFINITY], rtol=[0.5])
     model.setobjs([1, 2], None, None, None, None, None)
     found = model.getobjs()
     assert found[0] == FUNCTIONS
@@ -267,25 +267,25 @@ def test_refused(model):
 
 
 def test_lengths(model):
-    with pytest.raises(ValueError, match="senses has length 1, not 2"):
+    with pytest.raises(ValueError, match="sense has length 1, not 2"):
         model.addobjs([0, 1], [MIN])
-    with pytest.raises(ValueError, match="prios has length 3, not 2"):
+    with pytest.raises(ValueError, match="prio has length 3, not 2"):
         model.addobjs([0, 1], None, [0, 1, 2])
-    with pytest.raises(ValueError, match="reltol has length 1, not 2"):
-        model.setobjs([0, 1], reltol=[1.0])
+    with pytest.raises(ValueError, match="rtol has length 1, not 2"):
+        model.setobjs([0, 1], rtol=[1.0])
     assert model.getnobjs() == 0
 
 
 def test_numbers(model):
-    with pytest.raises(TypeError, match="an entry of funs must be an"):
+    with pytest.raises(TypeError, match="an entry of funidx must be an"):
         model.addobjs([0.0])
-    with pytest.raises(TypeError, match="an entry of senses must be an int"):
+    with pytest.raises(TypeError, match="an entry of sense must be an int"):
         model.addobjs([0], [1.0])
-    with pytest.raises(OverflowError, match="prios: 2147483648 does not"):
+    with pytest.raises(OverflowError, match="prio: 2147483648 does not"):
         model.addobjs([0], None, [2**31])
-    with pytest.raises(TypeError, match="an entry of weights must be a"):
+    with pytest.raises(TypeError, match="an entry of weight must be a"):
         model.addobjs([0], None, None, ["1"])
-    with pytest.raises(TypeError, match="an entry of abstol must be a"):
+    with pytest.raises(TypeError, match="an entry of atol must be a"):
         model.addobjs([0], None, None, None, [True])
     with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
         model.getobjs(2**32)

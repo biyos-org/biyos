@@ -85,7 +85,7 @@ void add_objectives(BIYOS_model &model,
                     int *first)
 {
     biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> owners = listed(count, functions, "funs");
+    const std::span<const biyos::Index> owners = listed(count, functions, "funidx");
     core.check_objective_room(owners.size());
     const Fields fields{
         .senses = senses,
@@ -173,27 +173,27 @@ void get_objectives(const BIYOS_model &model,
 
 BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
                            BIYOS_index n,
-                           const BIYOS_index *funs,
-                           const BIYOS_int *senses,
-                           const BIYOS_int *prios,
-                           const BIYOS_real *weights,
-                           const BIYOS_real *abstol,
-                           const BIYOS_real *reltol,
+                           const BIYOS_index *funidx,
+                           const BIYOS_int *sense,
+                           const BIYOS_int *prio,
+                           const BIYOS_real *weight,
+                           const BIYOS_real *atol,
+                           const BIYOS_real *rtol,
                            BIYOS_index *beg)
 {
-    return guarded<add_objectives>(mdl, n, funs, senses, prios, weights, abstol, reltol, beg);
+    return guarded<add_objectives>(mdl, n, funidx, sense, prio, weight, atol, rtol, beg);
 }
 
 BIYOS_status BIYOS_setobjs(BIYOS_model *mdl,
                            BIYOS_index n,
                            const BIYOS_index *idx,
-                           const BIYOS_int *senses,
-                           const BIYOS_int *prios,
-                           const BIYOS_real *weights,
-                           const BIYOS_real *abstol,
-                           const BIYOS_real *reltol)
+                           const BIYOS_int *sense,
+                           const BIYOS_int *prio,
+                           const BIYOS_real *weight,
+                           const BIYOS_real *atol,
+                           const BIYOS_real *rtol)
 {
-    return guarded<set_objectives>(mdl, n, idx, senses, prios, weights, abstol, reltol);
+    return guarded<set_objectives>(mdl, n, idx, sense, prio, weight, atol, rtol);
 }
 
 BIYOS_status BIYOS_getnobjs(const BIYOS_model *mdl, BIYOS_index *n)
@@ -204,12 +204,12 @@ BIYOS_status BIYOS_getnobjs(const BIYOS_model *mdl, BIYOS_index *n)
 BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
                            BIYOS_index beg,
                            BIYOS_index n,
-                           BIYOS_index *funs,
-                           BIYOS_int *senses,
-                           BIYOS_int *prios,
-                           BIYOS_real *weights,
-                           BIYOS_real *abstol,
-                           BIYOS_real *reltol)
+                           BIYOS_index *funidx,
+                           BIYOS_int *sense,
+                           BIYOS_int *prio,
+                           BIYOS_real *weight,
+                           BIYOS_real *atol,
+                           BIYOS_real *rtol)
 {
-    return guarded<get_objectives>(mdl, beg, n, funs, senses, prios, weights, abstol, reltol);
+    return guarded<get_objectives>(mdl, beg, n, funidx, sense, prio, weight, atol, rtol);
 }

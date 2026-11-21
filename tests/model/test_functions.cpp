@@ -163,10 +163,10 @@ TEST(FunctionTest, BadStarts)
 {
     Model model = with_variables(2);
     const Functions late{.constants = {0.0}, .starts = {1, 1}, .terms = {{0, 1.0}}};
-    EXPECT_EQ(add_refusal(model, late), "invalid argument: argument 'starts': begins at 1, not 0");
+    EXPECT_EQ(add_refusal(model, late), "invalid argument: argument 'off': begins at 1, not 0");
     const Functions falling{.constants = {0.0, 0.0}, .starts = {0, 2, 1}, .terms = {{0, 1.0}}};
     EXPECT_EQ(add_refusal(model, falling),
-              "invalid argument: argument 'starts': decreases from 2 to 1 at entry 2");
+              "invalid argument: argument 'off': decreases from 2 to 1 at entry 2");
     EXPECT_EQ(model.function_count(), 0);
 }
 

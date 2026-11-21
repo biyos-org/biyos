@@ -104,10 +104,10 @@ def test_views(env, model):
     other = biyos.Model(env)
     g = other.addfuns(2)
     d = other.addcons(g)
-    entry = "an entry of funs is a function of another model"
+    entry = "an entry of funidx is a function of another model"
     with pytest.raises(ValueError, match=entry):
         model.addcons([0, g[1]])
-    with pytest.raises(ValueError, match="funs is a block of another"):
+    with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addcons(g)
     with pytest.raises(ValueError, match="is a variable, not a function"):
         model.addcons([x[0]])
@@ -229,7 +229,7 @@ def test_lengths(model):
 
 
 def test_numbers(model):
-    with pytest.raises(TypeError, match="an entry of funs must be an"):
+    with pytest.raises(TypeError, match="an entry of funidx must be an"):
         model.addcons([0.0])
     with pytest.raises(TypeError, match="an entry of lb must be a number"):
         model.addcons([0], ["1"])

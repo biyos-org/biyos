@@ -37,10 +37,10 @@ void subscribe(biyos::Environment &env,
                int *subscription)
 {
     biyos::Events &events = writable(env).events();
-    const Forwarder forwarder{&env, require(subscriber, "hook"), data};
+    const Forwarder forwarder{&env, require(subscriber, "hk"), data};
     const biyos::EventKind found = biyos::find_kind(kind);
     const biyos::Level level = biyos::find_level(lowest);
-    int *id = require(subscription, "hookid");
+    int *id = require(subscription, "idx");
     *id = events.subscribe(found, level, forwarder);
 }
 
@@ -63,18 +63,18 @@ const biyos::Field *field_of(const BIYOS_event *event, int field)
 }
 
 BIYOS_status BIYOS_addhook(BIYOS_env *env,
-                           BIYOS_hook hook,
+                           BIYOS_hook hk,
                            void *data,
-                           BIYOS_int kind,
-                           BIYOS_int lowest,
-                           BIYOS_index *hookid)
+                           BIYOS_int knd,
+                           BIYOS_int lvl,
+                           BIYOS_index *idx)
 {
-    return guarded<subscribe>(env, hook, data, kind, lowest, hookid);
+    return guarded<subscribe>(env, hk, data, knd, lvl, idx);
 }
 
-BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index hookid)
+BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index idx)
 {
-    return guarded<unsubscribe>(env, hookid);
+    return guarded<unsubscribe>(env, idx);
 }
 
 BIYOS_int BIYOS_getevtknd(const BIYOS_event *evt)

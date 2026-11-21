@@ -50,13 +50,13 @@ def _total(starts, count):
     return starts[count]
 
 
-def _fields(count, senses, prios, weights, abstol, reltol):
+def _fields(count, sense, prio, weight, atol, rtol):
     return (
-        ints("senses", senses, count),
-        ints("prios", prios, count),
-        doubles("weights", weights, count),
-        doubles("abstol", abstol, count),
-        doubles("reltol", reltol, count),
+        ints("sense", sense, count),
+        ints("prio", prio, count),
+        doubles("weight", weight, count),
+        doubles("atol", atol, count),
+        doubles("rtol", rtol, count),
     )
 
 
@@ -153,14 +153,14 @@ class Model:
         copy._hold()
         return copy
 
-    def addvars(self, n, kinds=None, lb=None, ub=None):
+    def addvars(self, n, knd=None, lb=None, ub=None):
         """Add variables after the last one.
 
         Parameters
         ----------
         n : int
             The number of variables to add.
-        kinds : sequence of VariableKind, optional
+        knd : sequence of VariableKind, optional
             The kind of each, continuous by default.
         lb, ub : sequence of float, optional
             The bounds of each, the widest of its kind by default.
@@ -172,7 +172,7 @@ class Model:
         """
         n = integer("n", n)
         arrays = (
-            ints("kinds", kinds, n),
+            ints("knd", knd, n),
             doubles("lb", lb, n),
             doubles("ub", ub, n),
         )
@@ -189,11 +189,11 @@ class Model:
         )
         self._call(lib.BIYOS_setvarbnd, count, *arrays)
 
-    def setvarknd(self, idx, kinds):
+    def setvarknd(self, idx, knd):
         count = len(idx)
         arrays = (
             indices_of(self, Variables, "idx", idx, count),
-            ints("kinds", kinds, count),
+            ints("knd", knd, count),
         )
         self._call(lib.BIYOS_setvarknd, count, *arrays)
 
@@ -217,10 +217,10 @@ class Model:
     def addfuns(
         self,
         n,
-        consts=None,
-        starts=None,
+        cst=None,
+        off=None,
         varidx=None,
-        vals=None,
+        coef=None,
     ):
         """Add functions after the last one.
 
@@ -228,17 +228,17 @@ class Model:
         ----------
         n : int
             The number of functions to add.
-        consts : sequence of float, optional
+        cst : sequence of float, optional
             The constant of each, 0 by default.
-        starts : sequence of int, optional
+        off : sequence of int, optional
             The ``n + 1`` offsets of the functions' linear terms in
-            ``varidx`` and ``vals``, from 0 and never decreasing.
-            Function ``j`` has the terms from ``starts[j]`` to
-            ``starts[j + 1] - 1``. By default the functions have no terms.
+            ``varidx`` and ``coef``, from 0 and never decreasing.
+            Function ``j`` has the terms from ``off[j]`` to
+            ``off[j + 1] - 1``. By default the functions have no terms.
         varidx : sequence of int, optional
-            The variable of each term, ``starts[n]`` of them.
-        vals : sequence of float, optional
-            The coefficient of each term, ``starts[n]`` of them.
+            The variable of each term, ``off[n]`` of them.
+        coef : sequence of float, optional
+            The coefficient of each term, ``off[n]`` of them.
 
         Returns
         -------
@@ -246,13 +246,13 @@ class Model:
             The new functions.
         """
         n = integer("n", n)
-        starts = offsets("starts", starts, n + 1)
-        size = _total(starts, n)
+        off = offsets("off", off, n + 1)
+        size = _total(off, n)
         arrays = (
-            doubles("consts", consts, n),
-            starts,
+            doubles("cst", cst, n),
+            off,
             indices_of(self, Variables, "varidx", varidx, size),
-            doubles("vals", vals, size),
+            doubles("coef", coef, size),
         )
         first = c_int()
         self._call(lib.BIYOS_addfuns, n, *arrays, byref(first))
@@ -282,37 +282,37 @@ class Model:
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
 
-    def addquadterms(self, funs, starts, vars1, vars2, vals):
+    def addquadterms(self, funidx, off, varidx1, varidx2, coef):
         """Add quadratic terms to functions of the model.
 
-        Function ``funs[j]`` gains the terms from ``starts[j]`` to
-        ``starts[j + 1] - 1``. Term ``k`` adds ``vals[k]`` times the
-        product of variables ``vars1[k]`` and ``vars2[k]``, with no factor
+        Function ``funidx[j]`` gains the terms from ``off[j]`` to
+        ``off[j + 1] - 1``. Term ``k`` adds ``coef[k]`` times the
+        product of variables ``varidx1[k]`` and ``varidx2[k]``, with no factor
         1/2. The two variables of a pair may come in either order. A pair
         the function holds already adds its coefficient to the one held.
 
         Parameters
         ----------
-        funs : sequence of int
+        funidx : sequence of int
             The functions that gain terms, each listed once.
-        starts : sequence of int
-            The ``len(funs) + 1`` offsets of the functions' terms in
-            ``vars1``, ``vars2`` and ``vals``, from 0 and never
+        off : sequence of int
+            The ``len(funidx) + 1`` offsets of the functions' terms in
+            ``varidx1``, ``varidx2`` and ``coef``, from 0 and never
             decreasing.
-        vars1, vars2 : sequence of int
-            The two variables of each term, ``starts[-1]`` of each.
-        vals : sequence of float
-            The coefficient of each term, ``starts[-1]`` of them.
+        varidx1, varidx2 : sequence of int
+            The two variables of each term, ``off[-1]`` of each.
+        coef : sequence of float
+            The coefficient of each term, ``off[-1]`` of them.
         """
-        count = len(funs)
-        starts = offsets("starts", starts, count + 1)
-        size = _total(starts, count)
+        count = len(funidx)
+        off = offsets("off", off, count + 1)
+        size = _total(off, count)
         arrays = (
-            indices_of(self, Functions, "funs", funs, count),
-            starts,
-            indices_of(self, Variables, "vars1", vars1, size),
-            indices_of(self, Variables, "vars2", vars2, size),
-            doubles("vals", vals, size),
+            indices_of(self, Functions, "funidx", funidx, count),
+            off,
+            indices_of(self, Variables, "varidx1", varidx1, size),
+            indices_of(self, Variables, "varidx2", varidx2, size),
+            doubles("coef", coef, size),
         )
         self._call(lib.BIYOS_addquadterms, count, *arrays)
 
@@ -335,12 +335,12 @@ class Model:
         terms = (list(firsts), list(seconds), list(values))
         return (list(starts), *terms)
 
-    def addcons(self, funs, lb=None, ub=None):
+    def addcons(self, funidx, lb=None, ub=None):
         """Add constraints after the last one, one for each function given.
 
         Parameters
         ----------
-        funs : sequence of int
+        funidx : sequence of int
             The function each new constraint bounds.
         lb, ub : sequence of float, optional
             The bounds of each, unbounded by default.
@@ -350,9 +350,9 @@ class Model:
         Constraints
             The new constraints.
         """
-        count = len(funs)
+        count = len(funidx)
         arrays = (
-            indices_of(self, Functions, "funs", funs, count),
+            indices_of(self, Functions, "funidx", funidx, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
@@ -389,12 +389,12 @@ class Model:
 
     def addobjs(
         self,
-        funs,
-        senses=None,
-        prios=None,
-        weights=None,
-        abstol=None,
-        reltol=None,
+        funidx,
+        sense=None,
+        prio=None,
+        weight=None,
+        atol=None,
+        rtol=None,
     ):
         """Add objectives after the last one, one for each function given.
 
@@ -406,18 +406,18 @@ class Model:
 
         Parameters
         ----------
-        funs : sequence of int
+        funidx : sequence of int
             The function each new objective optimizes.
-        senses : sequence of Sense, optional
+        sense : sequence of Sense, optional
             Whether each is minimized or maximized, minimized by default.
-        prios : sequence of int, optional
+        prio : sequence of int, optional
             The priority of each. By default each takes its own index, so
             the objectives are optimized one after another in the order
             they are added.
-        weights : sequence of float, optional
+        weight : sequence of float, optional
             The weight of each in the sum of its stage, finite and
             positive, 1 by default.
-        abstol, reltol : sequence of float, optional
+        atol, rtol : sequence of float, optional
             How far each may move from its optimum in later stages, as a
             value of its function and as a fraction of the size of that
             optimum. Each is 0 or more, ``inf`` setting no limit, and 0 by
@@ -428,10 +428,10 @@ class Model:
         Objectives
             The new objectives.
         """
-        count = len(funs)
+        count = len(funidx)
         arrays = (
-            indices_of(self, Functions, "funs", funs, count),
-            *_fields(count, senses, prios, weights, abstol, reltol),
+            indices_of(self, Functions, "funidx", funidx, count),
+            *_fields(count, sense, prio, weight, atol, rtol),
         )
         first = c_int()
         self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
@@ -440,16 +440,16 @@ class Model:
     def setobjs(
         self,
         idx,
-        senses=None,
-        prios=None,
-        weights=None,
-        abstol=None,
-        reltol=None,
+        sense=None,
+        prio=None,
+        weight=None,
+        atol=None,
+        rtol=None,
     ):
         count = len(idx)
         arrays = (
             indices_of(self, Objectives, "idx", idx, count),
-            *_fields(count, senses, prios, weights, abstol, reltol),
+            *_fields(count, sense, prio, weight, atol, rtol),
         )
         self._call(lib.BIYOS_setobjs, count, *arrays)
 

@@ -21,16 +21,16 @@ VALUES = [3.0, 1.0, 0.0, 5.0, 4.0]
 SORTED = (CONSTANTS, [0, 3, 3, 5], [0, 1, 2, 0, 1], [1.0, 0.0, 3.0, 4.0, 5.0])
 
 WRONG = [
-    ([0, 1.5], TypeError, "an entry of starts must be an int, not float"),
-    ([0, "1"], TypeError, "an entry of starts must be an int, not str"),
-    ([0, True], TypeError, "an entry of starts must be an int, not bool"),
+    ([0, 1.5], TypeError, "an entry of off must be an int, not float"),
+    ([0, "1"], TypeError, "an entry of off must be an int, not str"),
+    ([0, True], TypeError, "an entry of off must be an int, not bool"),
     ([0, 2**70], OverflowError, "1180591620717411303424 does not fit"),
 ]
 
 STARTS_WRONG = [
-    (1, [1, 2], "starts begins at 1, not 0"),
-    (1, [0, -1], "starts decreases from 0 to -1 at entry 1"),
-    (2, [0, 2, 1], "starts decreases from 2 to 1 at entry 2"),
+    (1, [1, 2], "off begins at 1, not 0"),
+    (1, [0, -1], "off decreases from 0 to -1 at entry 1"),
+    (2, [0, 2, 1], "off decreases from 2 to 1 at entry 2"),
 ]
 
 
@@ -100,8 +100,8 @@ def test_range(model):
 
 def test_defaults(model):
     model.addfuns(2)
-    model.addfuns(1, consts=[0.5])
-    model.addfuns(1, starts=[0, 0])
+    model.addfuns(1, cst=[0.5])
+    model.addfuns(1, off=[0, 0])
     model.addfuns(0)
     constants = [0.0, 0.0, 0.5, 0.0]
     assert model.getfuns() == (constants, [0, 0, 0, 0, 0], [], [])
@@ -242,13 +242,13 @@ def test_refused(model):
 
 
 def test_lengths(model):
-    with pytest.raises(ValueError, match="starts has length 1, not 2"):
-        model.addfuns(1, starts=[0])
+    with pytest.raises(ValueError, match="off has length 1, not 2"):
+        model.addfuns(1, off=[0])
     with pytest.raises(ValueError, match="varidx has length 1, not 2"):
         model.addfuns(1, None, [0, 2], [0], [1.0, 2.0])
-    with pytest.raises(ValueError, match="vals has length 1, not 0"):
-        model.addfuns(1, vals=[1.0])
-    with pytest.raises(ValueError, match="consts has length 2, not 1"):
+    with pytest.raises(ValueError, match="coef has length 1, not 0"):
+        model.addfuns(1, coef=[1.0])
+    with pytest.raises(ValueError, match="cst has length 2, not 1"):
         model.addfuns(1, [1.0, 2.0])
     assert model.getnfuns() == 0
 
@@ -256,12 +256,12 @@ def test_lengths(model):
 @pytest.mark.parametrize("starts, error, message", WRONG)
 def test_wrong(model, starts, error, message):
     with pytest.raises(error, match=message):
-        model.addfuns(1, starts=starts)
+        model.addfuns(1, off=starts)
     assert model.getnfuns() == 0
 
 
 def test_numbers(model):
-    with pytest.raises(TypeError, match="an entry of vals must be a number"):
+    with pytest.raises(TypeError, match="an entry of coef must be a number"):
         model.addfuns(1, None, [0, 1], [0], ["1"])
     with pytest.raises(TypeError, match="an entry of varidx must be an"):
         model.addfuns(1, None, [0, 1], [0.0], [1.0])
@@ -308,7 +308,7 @@ def test_on(env, model):
     assert type(g) is biyos.Functions
     copy.addcons(g)
     assert copy.getcons()[0] == [0, 1, 2]
-    with pytest.raises(ValueError, match="funs is a block of another"):
+    with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addcons(g)
     smaller = biyos.Model(env)
     smaller.addfuns(2)

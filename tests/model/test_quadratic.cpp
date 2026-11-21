@@ -133,7 +133,7 @@ TEST(QuadraticTest, RepeatedFunction)
         .terms = {{0, 1, 1.0}, {1, 1, 2.0}},
     };
     EXPECT_EQ(add_refusal(model, twice),
-              "invalid argument: argument 'funs': function 1 is repeated");
+              "invalid argument: argument 'funidx': function 1 is repeated");
     EXPECT_TRUE(held(model).empty());
 }
 
@@ -375,10 +375,10 @@ TEST(QuadraticTest, BadStarts)
 {
     Model model = with_functions(2, 2);
     const Quadratic late{.functions = {0}, .starts = {1, 1}, .terms = {{0, 0, 1.0}}};
-    EXPECT_EQ(add_refusal(model, late), "invalid argument: argument 'starts': begins at 1, not 0");
+    EXPECT_EQ(add_refusal(model, late), "invalid argument: argument 'off': begins at 1, not 0");
     const Quadratic falling{.functions = {0, 1}, .starts = {0, 2, 1}, .terms = {{0, 0, 1.0}}};
     EXPECT_EQ(add_refusal(model, falling),
-              "invalid argument: argument 'starts': decreases from 2 to 1 at entry 2");
+              "invalid argument: argument 'off': decreases from 2 to 1 at entry 2");
     EXPECT_TRUE(held(model).empty());
 }
 

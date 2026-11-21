@@ -2,8 +2,8 @@ from biyos._capi import OK, lib
 
 
 class Error(Exception):
-    def __init__(self, message, code):
-        super().__init__(message, code)
+    def __init__(self, msg, code):
+        super().__init__(msg, code)
         self.code = code
 
     def __str__(self):

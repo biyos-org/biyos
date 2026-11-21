@@ -24,10 +24,10 @@ KINDS = [
 ]
 
 WRONG = [
-    ([1.5], TypeError, "an entry of kinds must be an int, not float"),
-    (["1"], TypeError, "an entry of kinds must be an int, not str"),
-    ([True], TypeError, "an entry of kinds must be an int, not bool"),
-    ([2**40], OverflowError, "an entry of kinds: 1099511627776 does not fit"),
+    ([1.5], TypeError, "an entry of knd must be an int, not float"),
+    (["1"], TypeError, "an entry of knd must be an int, not str"),
+    ([True], TypeError, "an entry of knd must be an int, not bool"),
+    ([2**40], OverflowError, "an entry of knd: 1099511627776 does not fit"),
 ]
 
 REALS = [("0", "str"), (True, "bool"), (None, "NoneType")]
@@ -585,7 +585,7 @@ def test_stale(model, monkeypatch):
 def test_lengths(model):
     with pytest.raises(ValueError, match="lb has length 1, not 2"):
         model.addvars(2, lb=[0.0])
-    with pytest.raises(ValueError, match="kinds has length 2, not 1"):
+    with pytest.raises(ValueError, match="knd has length 2, not 1"):
         model.setvarknd([0], [1, 2])
     assert model.getnvars() == 0
 
@@ -594,7 +594,7 @@ def test_lengths(model):
 def test_wrong(model, kinds, error, message):
     with pytest.raises(error, match=message):
         model.addvars(1, kinds)
-    with pytest.raises(error, match=message.replace("kinds", "idx")):
+    with pytest.raises(error, match=message.replace("knd", "idx")):
         model.setvarbnd(kinds, [0.0])
     assert model.getnvars() == 0
 

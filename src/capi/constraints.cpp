@@ -48,7 +48,7 @@ void add_constraints(BIYOS_model &model,
     const std::size_t size = length(count);
     if (size > 0)
     {
-        require(functions, "funs");
+        require(functions, "funidx");
     }
     std::vector<biyos::Constraint> added;
     added.reserve(size);
@@ -129,12 +129,12 @@ void get_constraints(const BIYOS_model &model,
 
 BIYOS_status BIYOS_addcons(BIYOS_model *mdl,
                            BIYOS_index n,
-                           const BIYOS_index *funs,
+                           const BIYOS_index *funidx,
                            const BIYOS_real *lb,
                            const BIYOS_real *ub,
                            BIYOS_index *beg)
 {
-    return guarded<add_constraints>(mdl, n, funs, lb, ub, beg);
+    return guarded<add_constraints>(mdl, n, funidx, lb, ub, beg);
 }
 
 BIYOS_status BIYOS_setconbnd(BIYOS_model *mdl,
@@ -154,9 +154,9 @@ BIYOS_status BIYOS_getncons(const BIYOS_model *mdl, BIYOS_index *n)
 BIYOS_status BIYOS_getcons(const BIYOS_model *mdl,
                            BIYOS_index beg,
                            BIYOS_index n,
-                           BIYOS_index *funs,
+                           BIYOS_index *funidx,
                            BIYOS_real *lb,
                            BIYOS_real *ub)
 {
-    return guarded<get_constraints>(mdl, beg, n, funs, lb, ub);
+    return guarded<get_constraints>(mdl, beg, n, funidx, lb, ub);
 }

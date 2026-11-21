@@ -263,7 +263,7 @@ TEST(CApiTest, NullArguments)
     EXPECT_EQ(BIYOS_getoptid(env.get(), "seed", nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'opt': is null");
     EXPECT_EQ(BIYOS_getoptknd(env.get(), BIYOS_OPT_SEED, nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'kind': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'knd': is null");
     EXPECT_EQ(BIYOS_setstropt(env.get(), BIYOS_OPT_REPRO, nullptr), BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'val': is null");
     EXPECT_EQ(BIYOS_getintopt(env.get(), BIYOS_OPT_SEED, nullptr), BIYOS_ERR_INVALIDARG);
