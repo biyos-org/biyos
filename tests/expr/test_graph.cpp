@@ -1,3 +1,4 @@
+#include "biyos/biyos.h"
 #include "core/index.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
@@ -8,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <limits>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -349,4 +351,28 @@ TEST(GraphTest, Truncated)
     EXPECT_EQ(ids(graph.children(sum)), std::vector<Offset>{x});
     EXPECT_DOUBLE_EQ(graph.constant(sum), 1.0);
     expect_values(graph.coefficients(sum), {2.0});
+}
+
+TEST(GraphTest, Codes)
+{
+    for (int code = BIYOS_OP_CONST; code <= BIYOS_OP_ERF; ++code)
+    {
+        const std::optional<Operator> op = biyos::operator_of(code);
+        ASSERT_TRUE(op.has_value()) << code;
+        EXPECT_EQ(static_cast<int>(*op), code);
+    }
+    const std::array unknown{
+        0,
+        BIYOS_OP_ERF + 1,
+        -1,
+        256,
+        256 + BIYOS_OP_EXP,
+        BIYOS_OP_EXP - 256,
+        (std::numeric_limits<int>::max)(),
+        (std::numeric_limits<int>::min)(),
+    };
+    for (const int code : unknown)
+    {
+        EXPECT_FALSE(biyos::operator_of(code).has_value()) << code;
+    }
 }
