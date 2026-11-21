@@ -175,7 +175,7 @@ def test_unicode(env):
 
 @pytest.mark.parametrize("name", DEFAULTS)
 def test_versions(env, name):
-    versions = env.getoptversions(name)
+    versions = env.getoptver(name)
     assert versions == biyos.Versions("0.1.0", None, None)
     assert versions.since == "0.1.0"
 
@@ -187,10 +187,10 @@ def test_version_text(number, text):
 
 def test_unknown_versions(env):
     with pytest.raises(biyos.Error) as caught:
-        env.getoptversions("seeds")
+        env.getoptver("seeds")
     assert caught.value.code == INVALID_ARGUMENT
 
 
 def test_name_versions(env):
     with pytest.raises(TypeError):
-        env.getoptversions(1)
+        env.getoptver(1)

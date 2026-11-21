@@ -45,7 +45,7 @@ def _load():
     _declare(lib, "BIYOS_getoptid", c_int, c_void_p, c_char_p, ints)
     _declare(lib, "BIYOS_getoptknd", c_int, c_void_p, c_int32, ints)
     versions = (c_void_p, c_int32, ints, ints, ints)
-    _declare(lib, "BIYOS_getoptversions", c_int, *versions)
+    _declare(lib, "BIYOS_getoptver", c_int, *versions)
     _declare(lib, "BIYOS_setboolopt", c_int, c_void_p, c_int32, c_int32)
     _declare(lib, "BIYOS_setintopt", c_int, c_void_p, c_int32, c_int32)
     _declare(lib, "BIYOS_setdblopt", c_int, c_void_p, c_int32, c_double)

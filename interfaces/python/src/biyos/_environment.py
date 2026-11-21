@@ -147,11 +147,11 @@ class Env:
         self._call(getter, option, byref(value))
         return convert(value.value)
 
-    def getoptversions(self, name):
+    def getoptver(self, name):
         option = self._option(name)
         numbers = (c_int(), c_int(), c_int())
         pointers = (byref(number) for number in numbers)
-        self._call(lib.BIYOS_getoptversions, option, *pointers)
+        self._call(lib.BIYOS_getoptver, option, *pointers)
         return Versions(*(version_text(number.value) for number in numbers))
 
     def addhook(self, hk, knd, lvl):

@@ -13,7 +13,7 @@ from spies import followed, interrupted, preceded, spied
 REFUSED = -100
 
 CALLS = [
-    "BIYOS_getoptversions",
+    "BIYOS_getoptver",
     "BIYOS_addhook",
     "BIYOS_delhook",
     "BIYOS_getnvars",
@@ -122,8 +122,8 @@ def test_deferred(log):
 def test_gap(log, monkeypatch):
     env = biyos.Env()
     model = biyos.Model(env)
-    before_entry("BIYOS_getoptversions", [env.close], monkeypatch)
-    assert env.getoptversions("seed").since == "0.1.0"
+    before_entry("BIYOS_getoptver", [env.close], monkeypatch)
+    assert env.getoptver("seed").since == "0.1.0"
     assert log == ["call", "mdl", "env"]
     with pytest.raises(ValueError, match="the model is closed"):
         model.getnvars()

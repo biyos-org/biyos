@@ -101,11 +101,11 @@ BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *knd)
     return guarded<option_kind>(env, opt, knd);
 }
 
-BIYOS_status BIYOS_getoptversions(BIYOS_env *env,
-                                  BIYOS_int opt,
-                                  BIYOS_int *since,
-                                  BIYOS_int *deprecated,
-                                  BIYOS_int *retired)
+BIYOS_status BIYOS_getoptver(BIYOS_env *env,
+                             BIYOS_int opt,
+                             BIYOS_int *since,
+                             BIYOS_int *deprecated,
+                             BIYOS_int *retired)
 {
     return guarded<option_versions>(env, opt, since, deprecated, retired);
 }

@@ -49,11 +49,11 @@ BIYOS_API const char *BIYOS_lasterror(const BIYOS_env *env);
 
 BIYOS_API BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt);
 BIYOS_API BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *knd);
-BIYOS_API BIYOS_status BIYOS_getoptversions(BIYOS_env *env,
-                                            BIYOS_int opt,
-                                            BIYOS_int *since,
-                                            BIYOS_int *deprecated,
-                                            BIYOS_int *retired);
+BIYOS_API BIYOS_status BIYOS_getoptver(BIYOS_env *env,
+                                       BIYOS_int opt,
+                                       BIYOS_int *since,
+                                       BIYOS_int *deprecated,
+                                       BIYOS_int *retired);
 BIYOS_API BIYOS_status BIYOS_setboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
 BIYOS_API BIYOS_status BIYOS_setintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
 BIYOS_API BIYOS_status BIYOS_setdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val);

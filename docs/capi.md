@@ -131,7 +131,7 @@ The ranges in the Accepts column include their ends and are checked exactly, wit
 
 The tolerance options say when a value of a model, such as a variable or a constraint function at a point, meets a lower or upper bound the model puts on it, equals another such value, is zero or is integral. A finite value meets a finite bound unless it lies beyond it by more than both `feastol_abs` and `feastol_rel` times the larger of 1 and the magnitude of the bound. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. Two finite values are equal unless they differ by more than both `feastol_abs` and `feastol_rel` times the larger of 1 and their magnitudes. An infinite value equals only itself and is not integral. NaN is not zero, not integral, equal to no value and meets no bound.
 
-Each option records the version of biyos that added it and, once it is no longer wanted, the version that deprecated it and the version that retired it, read with `BIYOS_getoptversions`. A deprecated option still works: setting it sets it and sends a message event at level `BIYOS_LVL_WARN`, from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. Setting a retired option, by any call, returns `BIYOS_ERR_BADARG` with a message such as `invalid argument: option 'old': retired in 0.3.0, use 'new'` and changes nothing, and getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither. Every option above was added in 0.1.0, and none is deprecated or retired.
+Each option records the version of biyos that added it and, once it is no longer wanted, the version that deprecated it and the version that retired it, read with `BIYOS_getoptver`. A deprecated option still works: setting it sets it and sends a message event at level `BIYOS_LVL_WARN`, from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. Setting a retired option, by any call, returns `BIYOS_ERR_BADARG` with a message such as `invalid argument: option 'old': retired in 0.3.0, use 'new'` and changes nothing, and getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither. Every option above was added in 0.1.0, and none is deprecated or retired.
 
 ### `BIYOS_getoptid`
 
@@ -149,11 +149,11 @@ BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *knd);
 
 Writes to `*knd` the kind of the option, one of the `BIYOS_KND_*` values.
 
-### `BIYOS_getoptversions`
+### `BIYOS_getoptver`
 
 ```c
-BIYOS_status BIYOS_getoptversions(BIYOS_env *env, BIYOS_int opt, BIYOS_int *since,
-                                  BIYOS_int *deprecated, BIYOS_int *retired);
+BIYOS_status BIYOS_getoptver(BIYOS_env *env, BIYOS_int opt, BIYOS_int *since,
+                             BIYOS_int *deprecated, BIYOS_int *retired);
 ```
 
 Writes three versions of biyos: to `*since` the one that added the option, to `*deprecated` the one that deprecated it and to `*retired` the one that retired it. Each is written as `10000 * major + 100 * minor + patch`, such as 100 for 0.1.0, or as 0 when the option is not deprecated or not retired. A minor or patch number stays below 100, so two versions compare as their numbers do.
