@@ -5,6 +5,7 @@ DEFINE = re.compile(r"^#define (BIYOS_\w+) \(?(-?\d+)\)?$", re.M)
 STATEMENT = re.compile(r"^(?:BIYOS_API|typedef) [^;]*;", re.M)
 NAME = re.compile(r"\(?\*?(BIYOS_\w+)\)?\s*(?:\(|;)")
 PREFIX = "BIYOS_API "
+WIDTH = 76
 
 
 def _dedent(line):
@@ -12,11 +13,19 @@ def _dedent(line):
     return line[len(PREFIX) :] if line.startswith(indent) else line
 
 
+def _wrapped(line):
+    if "\n" in line or len(line) <= WIDTH or "(" not in line:
+        return line
+    head, _, tail = line.partition("(")
+    joint = ",\n" + " " * (len(head) + 1)
+    return head + "(" + joint.join(tail.split(", "))
+
+
 def _shown(statement):
     if not statement.startswith(PREFIX):
         return statement
     first, *rest = statement[len(PREFIX) :].split("\n")
-    return "\n".join([first, *map(_dedent, rest)])
+    return _wrapped("\n".join([first, *map(_dedent, rest)]))
 
 
 def _named(statement):
