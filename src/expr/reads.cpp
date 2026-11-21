@@ -87,7 +87,7 @@ void read_routes(const Reach &reach, Block &block)
     block.read_starts.push_back(0);
     for (std::size_t k = 0; k < block.outputs.size(); ++k)
     {
-        for (const Range run : route_of(reach, block.first + count_of(k)))
+        for (const Range run : route_of(reach, block.begin + count_of(k)))
         {
             const std::uint32_t begin = slot_of(block.loads, run.begin);
             const std::uint32_t end = slot_of(block.loads, run.end);

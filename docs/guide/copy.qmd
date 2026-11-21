@@ -1,0 +1,32 @@
+# Copying models {#sec-copy}
+
+A model is copied whole. The copy holds the same variables, functions, constraints and objectives under the same indices, and from then on each changes apart from the other. A copy can live on another environment, which is how a program hands a model to another thread (@sec-threads), and two models are compared by reading both back (@sec-copy-compare). The code of this chapter is `examples/c/copies.c` and `examples/python/copies.py`.
+
+## Copying {#sec-copy-c}
+
+`BIYOS_copymdl` takes the model, the environment the copy is made on and the place to write the copy:
+
+```{.c file="examples/c/copies.c" item="copy_and_change"}
+```
+
+The copy is a model of the environment it was made on: it reports there, and that environment cannot be freed while the copy lives. Either the model or its copy may be freed first. A failure keeps its message on the environment of the source, as every call on a model does.
+
+The call reads the source and changes the target environment, so no other thread may use either environment while it runs. It may run while the source's environment delivers an event, since it only reads the source, and is refused while the target environment does.
+
+## Comparing {#sec-copy-compare}
+
+Two models are the same when they hold the same tables in the same order: the same variables with the same kinds and bounds, the same functions with the same constants and terms, the same constraints and objectives naming the same functions. Every reader gives back exactly what the model holds, terms in their stored order, so a program compares two models by reading both. The example compares the bounds of the copy with those of the source:
+
+```{.c file="examples/c/copies.c" item="same_bounds"}
+```
+
+biyos compares stored numbers bit for bit when it checks its own copies and round trips: a copy must hold the very same doubles, so `-0.0` and `0.0` differ and so do two values one unit in the last place apart. A comparison through `<` and `>`, as above, treats `-0.0` and `0.0` as equal; compare the bytes with `memcmp` where that difference matters. Constraints and objectives compare by the index of their function, so two constraints that share a function differ from two constraints on two functions with the same terms.
+
+## In Python {#sec-copy-python}
+
+`Model.copy` copies a model onto its own environment or onto another. A block from the source, such as the variables an `addvars` call returned, names items of the source only; `on` gives the block of the same indices in another model, such as the copy:
+
+```{.python file="examples/python/copies.py"}
+```
+
+`on` refuses a model that holds too few items of the block's family. A block's items keep their indices in a copy, since the copy numbers every family as the source does.

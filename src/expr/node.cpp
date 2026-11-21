@@ -99,9 +99,9 @@ std::string_view payload_name(Payload payload) noexcept
     return "an unknown payload";
 }
 
-std::string children_text(Offset count)
+std::string children_text(Offset n)
 {
-    return count_text(count, "child", "children");
+    return n_text(n, "child", "children");
 }
 
 std::string arity_text(const Shape &shape)
@@ -153,11 +153,11 @@ void check_child(Offset child, Offset size)
     }
 }
 
-void check_variable(Index variable)
+void check_var(Index var)
 {
-    if (variable < 0)
+    if (var < 0)
     {
-        refuse("variable " + text_of(variable) + " is unknown");
+        refuse("variable " + text_of(var) + " is unknown");
     }
 }
 
@@ -180,10 +180,10 @@ void check_constant(Operator op, double value)
 
 void check_coefficients(std::span<const double> coefficients, Offset children)
 {
-    const auto count = static_cast<Offset>(coefficients.size());
-    if (count != children)
+    const auto n = static_cast<Offset>(coefficients.size());
+    if (n != children)
     {
-        const std::string given = count_text(count, "coefficient", "coefficients");
+        const std::string given = n_text(n, "coefficient", "coefficients");
         refuse(children_text(children) + " and " + given);
     }
     for (std::size_t k = 0; k < coefficients.size(); ++k)
@@ -195,9 +195,9 @@ void check_coefficients(std::span<const double> coefficients, Offset children)
     }
 }
 
-std::string count_text(Offset count, std::string_view one, std::string_view many)
+std::string n_text(Offset n, std::string_view one, std::string_view many)
 {
-    return text_of(count) + " " + std::string(count == 1 ? one : many);
+    return text_of(n) + " " + std::string(n == 1 ? one : many);
 }
 
 }

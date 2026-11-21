@@ -8,23 +8,26 @@ from operator import attrgetter, methodcaller
 import pytest
 
 import biyos
-from biyos import EventKind, Level
+from biyos import EventKind, EventLevel
 from header import lines, macros
 from number import Number
+from spies import followed, preceded
 
 CODE = (("code", "-100"),)
 
+EVENTS = ("BIYOS_EVT_", "BIYOS_LVL_")
+
 LEVELS = {
-    "BIYOS_LVL_DBG": Level.DEBUG,
-    "BIYOS_LVL_INFO": Level.INFO,
-    "BIYOS_LVL_WARN": Level.WARNING,
-    "BIYOS_LVL_ERR": Level.ERROR,
+    "BIYOS_LVL_DBG": EventLevel.DEBUG,
+    "BIYOS_LVL_INFO": EventLevel.INFO,
+    "BIYOS_LVL_WARN": EventLevel.WARNING,
+    "BIYOS_LVL_ERR": EventLevel.ERROR,
 }
 
 WRONG = [
-    ("record", EventKind.MESSAGE, Level.DEBUG),
-    (print, True, Level.DEBUG),
-    (print, "message", Level.DEBUG),
+    ("record", EventKind.MESSAGE, EventLevel.DEBUG),
+    (print, True, EventLevel.DEBUG),
+    (print, "message", EventLevel.DEBUG),
     (print, EventKind.MESSAGE, 1.0),
     (print, EventKind.MESSAGE, None),
 ]
@@ -33,7 +36,7 @@ NUMBERS = [True, "1", 1.0, None]
 
 READERS = [
     attrgetter("kind"),
-    attrgetter("lvl"),
+    attrgetter("level"),
     attrgetter("module"),
     attrgetter("text"),
     attrgetter("fields"),
@@ -48,7 +51,7 @@ class Sink:
 
 
 def snapshot(event):
-    return event.kind, event.lvl, event.module, event.text, event.fields
+    return event.kind, event.level, event.module, event.text, event.fields
 
 
 def record(seen, event):
@@ -67,40 +70,44 @@ def fail(env):
 
 def test_constants():
     kinds = {f"BIYOS_EVT_{kind.name}": kind for kind in biyos.EventKind}
-    found = macros("events.h")
-    assert len(found) == lines("events.h", "#define BIYOS_")
-    assert set(LEVELS.values()) == set(Level)
-    assert found == kinds | LEVELS
+    found = macros("biyos.h")
+    events = {name: found[name] for name in found if name.startswith(EVENTS)}
+    defined = sum(lines("biyos.h", f"#define {start}") for start in EVENTS)
+    assert len(events) == defined
+    assert set(LEVELS.values()) == set(EventLevel)
+    assert events == kinds | LEVELS
 
 
 def test_error():
     seen = []
     with biyos.Env() as env:
-        env.addhook(partial(record, seen), EventKind.MESSAGE, Level.ERROR)
+        env.addhook(partial(record, seen), EventKind.MESSAGE, EventLevel.ERROR)
         error = fail(env)
-    message = (EventKind.MESSAGE, Level.ERROR, "capi", str(error), CODE)
+    message = (EventKind.MESSAGE, EventLevel.ERROR, "capi", str(error), CODE)
     assert seen == [message]
     assert type(seen[0][0]) is EventKind
-    assert type(seen[0][1]) is Level
+    assert type(seen[0][1]) is EventLevel
 
 
 def test_kind():
     seen = []
     with biyos.Env() as env:
-        env.addhook(partial(record, seen), EventKind.CHECK, Level.DEBUG)
+        env.addhook(partial(record, seen), EventKind.CHECK, EventLevel.DEBUG)
         fail(env)
     assert seen == []
 
 
-def test_unsubscribe():
+def test_delhook():
     seen = []
     with biyos.Env() as env:
         function = partial(record, seen)
-        subscription = env.addhook(function, EventKind.MESSAGE, Level.DEBUG)
-        env.delhook(subscription)
+        idx = env.addhook(
+            function, EventKind.MESSAGE, EventLevel.DEBUG
+        )
+        env.delhook(idx)
         fail(env)
         with pytest.raises(biyos.Error) as caught:
-            env.delhook(subscription)
+            env.delhook(idx)
     assert seen == []
     assert caught.value.code == -100
 
@@ -113,7 +120,7 @@ def test_wrong(arguments):
 
 def test_unknown():
     with biyos.Env() as env, pytest.raises(biyos.Error) as caught:
-        env.addhook(print, 9, Level.DEBUG)
+        env.addhook(print, 9, EventLevel.DEBUG)
     assert caught.value.code == -100
 
 
@@ -121,9 +128,9 @@ def test_overflow():
     seen = []
     with biyos.Env() as env:
         function = partial(record, seen)
-        first = env.addhook(function, EventKind.MESSAGE, Level.DEBUG)
+        first = env.addhook(function, EventKind.MESSAGE, EventLevel.DEBUG)
         with pytest.raises(OverflowError):
-            env.addhook(print, 2**32 + EventKind.MESSAGE, Level.DEBUG)
+            env.addhook(print, 2**32 + EventKind.MESSAGE, EventLevel.DEBUG)
         with pytest.raises(OverflowError):
             env.delhook(2**32 + first)
         fail(env)
@@ -133,26 +140,26 @@ def test_overflow():
 def test_index():
     seen = []
     with biyos.Env() as env:
-        kind = Number(int(EventKind.MESSAGE))
-        lowest = Number(int(Level.DEBUG))
-        subscription = env.addhook(partial(record, seen), kind, lowest)
+        knd = Number(int(EventKind.MESSAGE))
+        lvl = Number(int(EventLevel.DEBUG))
+        idx = env.addhook(partial(record, seen), knd, lvl)
         fail(env)
-        env.delhook(Number(subscription))
+        env.delhook(Number(idx))
         fail(env)
     assert len(seen) == 1
 
 
-@pytest.mark.parametrize("subscription", NUMBERS)
-def test_number(subscription):
+@pytest.mark.parametrize("idx", NUMBERS)
+def test_number(idx):
     with biyos.Env() as env, pytest.raises(TypeError):
-        env.delhook(subscription)
+        env.delhook(idx)
 
 
 @pytest.mark.parametrize("read", READERS)
 def test_expired(read):
     kept = []
     with biyos.Env() as env:
-        env.addhook(kept.append, EventKind.MESSAGE, Level.DEBUG)
+        env.addhook(kept.append, EventKind.MESSAGE, EventLevel.DEBUG)
         fail(env)
     with pytest.raises(ValueError, match="the event is no longer valid"):
         read(kept[0])
@@ -162,7 +169,7 @@ def test_formats():
     lines = []
     with biyos.Env() as env:
         function = partial(keep_lines, lines)
-        env.addhook(function, EventKind.MESSAGE, Level.ERROR)
+        env.addhook(function, EventKind.MESSAGE, EventLevel.ERROR)
         error = fail(env)
     text, line = lines[0]
     stamp, rest = text.split(" ", 1)
@@ -182,7 +189,7 @@ def test_formats():
 def test_kept():
     seen = []
     with biyos.Env() as env:
-        env.addhook(partial(record, seen), EventKind.MESSAGE, Level.DEBUG)
+        env.addhook(partial(record, seen), EventKind.MESSAGE, EventLevel.DEBUG)
         gc.collect()
         fail(env)
     assert len(seen) == 1
@@ -192,7 +199,7 @@ def test_cleared():
     sink = Sink()
     alive = weakref.ref(sink)
     env = biyos.Env()
-    env.addhook(sink, EventKind.MESSAGE, Level.DEBUG)
+    env.addhook(sink, EventKind.MESSAGE, EventLevel.DEBUG)
     del sink
     env.close()
     assert alive() is None
@@ -202,7 +209,7 @@ def test_freed():
     gc.disable()
     try:
         env = biyos.Env()
-        env.addhook(Sink(), EventKind.MESSAGE, Level.DEBUG)
+        env.addhook(Sink(), EventKind.MESSAGE, EventLevel.DEBUG)
         free = env._free
         del env
         assert not free.alive
@@ -215,11 +222,11 @@ class Stop(BaseException):
 
 
 def explode(event):
-    raise RuntimeError("subscriber failed")
+    raise RuntimeError("hook failed")
 
 
 def refuse(event):
-    raise ValueError("second subscriber failed")
+    raise ValueError("second hook failed")
 
 
 def stop(event):
@@ -240,8 +247,8 @@ def raised(env):
 
 def test_raised():
     with biyos.Env() as env:
-        env.addhook(explode, EventKind.MESSAGE, Level.DEBUG)
-        with pytest.raises(RuntimeError, match="subscriber failed") as caught:
+        env.addhook(explode, EventKind.MESSAGE, EventLevel.DEBUG)
+        with pytest.raises(RuntimeError, match="hook failed") as caught:
             env.setopt("seed", -1)
         env.setopt("seed", 3)
         seed = env.getopt("seed")
@@ -254,9 +261,9 @@ def test_raised():
 def test_later():
     seen = []
     with biyos.Env() as env:
-        env.addhook(explode, EventKind.MESSAGE, Level.DEBUG)
-        env.addhook(refuse, EventKind.MESSAGE, Level.DEBUG)
-        env.addhook(partial(record, seen), EventKind.MESSAGE, Level.DEBUG)
+        env.addhook(explode, EventKind.MESSAGE, EventLevel.DEBUG)
+        env.addhook(refuse, EventKind.MESSAGE, EventLevel.DEBUG)
+        env.addhook(partial(record, seen), EventKind.MESSAGE, EventLevel.DEBUG)
         with pytest.raises(RuntimeError):
             env.setopt("seed", -1)
     assert len(seen) == 1
@@ -266,8 +273,8 @@ def test_nested():
     seeds = []
     with biyos.Env() as env:
         function = partial(read_seed, env, seeds)
-        env.addhook(explode, EventKind.MESSAGE, Level.DEBUG)
-        env.addhook(function, EventKind.MESSAGE, Level.DEBUG)
+        env.addhook(explode, EventKind.MESSAGE, EventLevel.DEBUG)
+        env.addhook(function, EventKind.MESSAGE, EventLevel.DEBUG)
         with pytest.raises(RuntimeError):
             env.setopt("seed", -1)
     assert seeds == [0]
@@ -275,7 +282,7 @@ def test_nested():
 
 def test_base():
     with biyos.Env() as env:
-        env.addhook(stop, EventKind.MESSAGE, Level.DEBUG)
+        env.addhook(stop, EventKind.MESSAGE, EventLevel.DEBUG)
         with pytest.raises(Stop):
             env.setopt("seed", -1)
 
@@ -284,7 +291,7 @@ def test_cycle():
     gc.disable()
     try:
         env = biyos.Env()
-        env.addhook(explode, EventKind.MESSAGE, Level.DEBUG)
+        env.addhook(explode, EventKind.MESSAGE, EventLevel.DEBUG)
         assert raised(env)
         free = env._free
         del env
@@ -297,3 +304,30 @@ def test_stale():
     with biyos.Env() as env:
         env._relay.run(explode, None)
         assert env.getopt("seed") == 0
+
+
+def test_finish(monkeypatch):
+    with biyos.Env() as env:
+        nested = partial(env.getopt, "seed")
+        check = partial(preceded, [nested], biyos._relay.check)
+        monkeypatch.setattr(biyos._relay, "check", check)
+        env.addhook(explode, EventKind.MESSAGE, EventLevel.DEBUG)
+        with pytest.raises(RuntimeError, match="hook failed") as caught:
+            env.setopt("seed", -1)
+        assert env.getopt("seed") == 0
+    assert type(caught.value.__context__) is biyos.Error
+
+
+def test_succeeded(monkeypatch):
+    with biyos.Env() as env:
+        relay = env._relay
+        relayed = partial(relay.run, explode, None)
+        start = partial(followed, [relayed], relay.start)
+        monkeypatch.setattr(relay, "start", start)
+        nested = partial(env.getopt, "seed")
+        check = partial(preceded, [nested], biyos._relay.check)
+        monkeypatch.setattr(biyos._relay, "check", check)
+        with pytest.raises(RuntimeError, match="hook failed") as caught:
+            env.getopt("seed")
+        assert env.getopt("seed") == 0
+    assert caught.value.__context__ is None

@@ -1,5 +1,5 @@
 #include "core/clock.hpp"
-#include "core/environment.hpp"
+#include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
 #include "core/timer.hpp"
@@ -20,7 +20,7 @@ namespace
 
 using namespace std::chrono_literals;
 using biyos::EventKind;
-using biyos::Level;
+using biyos::EventLevel;
 using biyos::Timer;
 using biyos::TimingTree;
 using Texts = std::vector<std::string>;
@@ -74,27 +74,27 @@ Texts summary(const TimingTree &tree)
     return rows;
 }
 
-std::string line_of(const biyos::Event &event)
+std::string line_of(const biyos::Event &evt)
 {
-    std::string line = event.text;
-    for (const biyos::Field &field : event.fields)
+    std::string line = evt.text;
+    for (const biyos::Field &field : evt.fields)
     {
         line += " " + field.name + "=" + field.value;
     }
     return line;
 }
 
-Texts lines(const std::vector<biyos::Event> &events)
+Texts lines(const std::vector<biyos::Event> &evts)
 {
     Texts lines;
-    for (const biyos::Event &event : events)
+    for (const biyos::Event &evt : evts)
     {
-        lines.push_back(line_of(event));
+        lines.push_back(line_of(evt));
     }
     return lines;
 }
 
-void run(biyos::Environment &env, TimingTree &tree)
+void run(biyos::Env &env, TimingTree &tree)
 {
     const Timer solve(env, tree, "nlp", "solve");
     for (int step = 0; step < 3; ++step)
@@ -103,7 +103,7 @@ void run(biyos::Environment &env, TimingTree &tree)
     }
 }
 
-void abandon(biyos::Environment &env, TimingTree &tree, biyos::FakeClock &clock)
+void abandon(biyos::Env &env, TimingTree &tree, biyos::FakeClock &clock)
 {
     const Timer solve(env, tree, "nlp", "solve");
     clock.advance_wall(3ns);
@@ -121,20 +121,20 @@ class TimerTest : public ::testing::Test
         clock.advance_cpu(cpu);
     }
 
-    void lag(const biyos::Event &event)
+    void lag(const biyos::Event &evt)
     {
-        kept.push_back(event);
+        kept.push_back(evt);
         advance(10ns, 10ns);
     }
 
-    void listen(biyos::Environment &target)
+    void listen(biyos::Env &target)
     {
-        const auto keep = [this](const biyos::Event &event) { kept.push_back(event); };
-        target.events().subscribe(EventKind::Phase, Level::Debug, keep);
+        const auto keep = [this](const biyos::Event &evt) { kept.push_back(evt); };
+        target.events().add_hook(EventKind::Phase, EventLevel::Debug, keep);
     }
 
     biyos::FakeClock &clock;
-    biyos::Environment env;
+    biyos::Env env;
     TimingTree tree;
     std::vector<biyos::Event> kept;
 
@@ -204,7 +204,7 @@ TEST_F(TimerTest, PhaseEvents)
     biyos::FakeClock &fake = *owned;
     fake.advance_wall(7s);
     fake.advance_cpu(3ns);
-    biyos::Environment local(std::move(owned));
+    biyos::Env local(std::move(owned));
     listen(local);
     {
         fake.advance_wall(5ns);
@@ -222,19 +222,19 @@ TEST_F(TimerTest, PhaseEvents)
         "solve edge=end wall=12 cpu=6",
     };
     EXPECT_EQ(lines(kept), expected);
-    for (const biyos::Event &event : kept)
+    for (const biyos::Event &evt : kept)
     {
-        EXPECT_EQ(event.kind, EventKind::Phase);
-        EXPECT_EQ(event.level, Level::Info);
-        EXPECT_EQ(event.module, "nlp");
+        EXPECT_EQ(evt.kind, EventKind::Phase);
+        EXPECT_EQ(evt.level, EventLevel::Info);
+        EXPECT_EQ(evt.module, "nlp");
     }
     EXPECT_EQ(kept.back().time, 12ns);
 }
 
-TEST_F(TimerTest, SlowSubscriber)
+TEST_F(TimerTest, SlowHook)
 {
-    const auto slow = [this](const biyos::Event &event) { lag(event); };
-    env.events().subscribe(EventKind::Phase, Level::Debug, slow);
+    const auto slow = [this](const biyos::Event &evt) { lag(evt); };
+    env.events().add_hook(EventKind::Phase, EventLevel::Debug, slow);
     {
         const Timer solve(env, tree, "nlp", "solve");
         advance(1ns, 1ns);
@@ -295,7 +295,7 @@ TEST_F(TimerTest, FailedEntry)
 {
     auto owned = std::make_unique<FlakyClock>();
     FlakyClock &flaky = *owned;
-    biyos::Environment local(std::move(owned));
+    biyos::Env local(std::move(owned));
     listen(local);
     flaky.broken = true;
     EXPECT_THROW(run(local, tree), biyos::Error);
@@ -315,10 +315,10 @@ TEST_F(TimerTest, FailedLeave)
     static_assert(std::is_nothrow_destructible_v<Timer>);
     auto owned = std::make_unique<FlakyClock>();
     FlakyClock &flaky = *owned;
-    biyos::Environment local(std::move(owned));
+    biyos::Env local(std::move(owned));
     listen(local);
     const auto drift = [&flaky](const biyos::Event &) { flaky.cpu += 10ns; };
-    local.events().subscribe(EventKind::Phase, Level::Debug, drift);
+    local.events().add_hook(EventKind::Phase, EventLevel::Debug, drift);
     {
         const Timer solve(local, tree, "nlp", "solve");
         flaky.wall += 5ns;

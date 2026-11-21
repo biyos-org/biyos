@@ -19,3 +19,10 @@ def functions(name):
 def lines(name, start):
     text = (INCLUDE / name).read_text()
     return sum(line.startswith(start) for line in text.splitlines())
+
+
+def group(name, first):
+    text = (INCLUDE / name).read_text()
+    block = next(part for part in text.split("\n\n") if first in part)
+    found = {match[1]: int(match[2]) for match in MACRO.finditer(block)}
+    return found, len(block.splitlines())

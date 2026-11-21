@@ -42,7 +42,7 @@ struct Monomial
     std::array<Index, kDegree> variables;
     std::size_t degree;
     Offset compound;
-    std::size_t compound_count;
+    std::size_t n_compounds;
 };
 
 void check_parents(const Parents &parents, Offset node)
@@ -96,7 +96,7 @@ void add_factor(const Graph &graph, Offset factor, Monomial &monomial)
     if (op != Operator::Variable)
     {
         monomial.compound = factor;
-        ++monomial.compound_count;
+        ++monomial.n_compounds;
         return;
     }
     if (monomial.degree < kDegree)
@@ -113,7 +113,7 @@ Monomial monomial_of(const Graph &graph, Offset node, double factor)
         .variables = {},
         .degree = 0,
         .compound = kNoFactor,
-        .compound_count = 0,
+        .n_compounds = 0,
     };
     for (const Offset child : graph.children(node))
     {
@@ -148,8 +148,8 @@ class Walk
     void push(Offset node, double factor);
     void add_monomial(const Monomial &monomial);
     void add_constant(double value);
-    void add_linear(Index variable, double coefficient);
-    void add_quadratic(Index first, Index second, double coefficient);
+    void add_linear(Index var, double coefficient);
+    void add_quad(Index first, Index second, double coefficient);
     void keep(const Item &item);
     void close(const Item &item);
     Offset remainder(Graph &graph) const;
@@ -302,12 +302,12 @@ void Walk::open_product(const Item &item)
         close(item);
         return;
     }
-    if (monomial.compound_count == 0 && monomial.degree <= kDegree)
+    if (monomial.n_compounds == 0 && monomial.degree <= kDegree)
     {
         add_monomial(monomial);
         return;
     }
-    if (monomial.compound_count != 1 || monomial.degree != 0)
+    if (monomial.n_compounds != 1 || monomial.degree != 0)
     {
         keep(item);
         return;
@@ -328,8 +328,8 @@ void Walk::open_power(const Item &item)
         keep(item);
         return;
     }
-    const Index variable = graph_.variable(base);
-    add_quadratic(variable, variable, item.factor);
+    const Index var = graph_.variable(base);
+    add_quad(var, var, item.factor);
 }
 
 bool Walk::shared(const Item &item) const noexcept
@@ -354,7 +354,7 @@ void Walk::add_monomial(const Monomial &monomial)
         add_linear(monomial.variables[0], monomial.coefficient);
         return;
     }
-    add_quadratic(monomial.variables[0], monomial.variables[1], monomial.coefficient);
+    add_quad(monomial.variables[0], monomial.variables[1], monomial.coefficient);
 }
 
 void Walk::add_constant(double value)
@@ -363,13 +363,13 @@ void Walk::add_constant(double value)
     moved_ = true;
 }
 
-void Walk::add_linear(Index variable, double coefficient)
+void Walk::add_linear(Index var, double coefficient)
 {
-    linear_.push_back({.variable = variable, .coefficient = coefficient});
+    linear_.push_back({.variable = var, .coefficient = coefficient});
     moved_ = true;
 }
 
-void Walk::add_quadratic(Index first, Index second, double coefficient)
+void Walk::add_quad(Index first, Index second, double coefficient)
 {
     quadratic_.push_back({.first = first, .second = second, .coefficient = coefficient});
     moved_ = true;

@@ -61,9 +61,9 @@ Offset Parents::size() const noexcept
 
 std::span<const Offset> Parents::of(Offset node) const noexcept
 {
-    const Offset first = starts_[at(node)];
-    const Offset count = starts_[at(node) + 1] - first;
-    return std::span(parents_).subspan(at(first), at(count));
+    const Offset beg = starts_[at(node)];
+    const Offset n = starts_[at(node) + 1] - beg;
+    return std::span(parents_).subspan(at(beg), at(n));
 }
 
 }

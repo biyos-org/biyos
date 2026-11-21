@@ -1,6 +1,6 @@
 #pragma once
 
-#include "biyos/status.h"
+#include "biyos/biyos.h"
 
 #include <string_view>
 
@@ -9,38 +9,38 @@ namespace biyos
 
 enum class TerminationStatus
 {
-    NotSolved = BIYOS_TERM_NOTSOLVED,
-    Optimal = BIYOS_TERM_OPTIMAL,
-    LocallySolved = BIYOS_TERM_LOCALLYSOLVED,
-    AlmostLocallySolved = BIYOS_TERM_ALMOSTLOCALLYSOLVED,
-    IterationLimit = BIYOS_TERM_ITERLIMIT,
-    TimeLimit = BIYOS_TERM_TIMELIMIT,
-    CpuTimeLimit = BIYOS_TERM_CPUTIMELIMIT,
-    EvaluationLimit = BIYOS_TERM_EVALLIMIT,
-    UserStop = BIYOS_TERM_USERSTOP,
-    Infeasible = BIYOS_TERM_INFEASIBLE,
-    LocallyInfeasible = BIYOS_TERM_LOCALLYINFEASIBLE,
-    Unbounded = BIYOS_TERM_UNBOUNDED,
-    SlowProgress = BIYOS_TERM_SLOWPROGRESS,
-    NumericalTrouble = BIYOS_TERM_NUMERICALTROUBLE,
+    NotSolved = BIYOS_TRM_NONE,
+    Optimal = BIYOS_TRM_OPTIMAL,
+    LocallySolved = BIYOS_TRM_LOCAL,
+    AlmostLocallySolved = BIYOS_TRM_NEARLOCAL,
+    IterationLimit = BIYOS_TRM_ITERLIM,
+    TimeLimit = BIYOS_TRM_TIMELIM,
+    CpuTimeLimit = BIYOS_TRM_CPULIM,
+    EvaluationLimit = BIYOS_TRM_EVALLIM,
+    UserStop = BIYOS_TRM_STOP,
+    Infeasible = BIYOS_TRM_INFEAS,
+    LocallyInfeasible = BIYOS_TRM_LOCINFEAS,
+    Unbounded = BIYOS_TRM_UNBND,
+    SlowProgress = BIYOS_TRM_SLOW,
+    NumericalTrouble = BIYOS_TRM_NUMERIC,
 };
 
 enum class ResultStatus
 {
     None = BIYOS_RES_NONE,
-    Feasible = BIYOS_RES_FEASIBLE,
-    NearlyFeasible = BIYOS_RES_NEARLYFEASIBLE,
-    Infeasible = BIYOS_RES_INFEASIBLE,
-    Certificate = BIYOS_RES_CERTIFICATE,
-    NearlyCertificate = BIYOS_RES_NEARLYCERTIFICATE,
+    Feasible = BIYOS_RES_FEAS,
+    NearlyFeasible = BIYOS_RES_NEARFEAS,
+    Infeasible = BIYOS_RES_INFEAS,
+    Certificate = BIYOS_RES_CER,
+    NearlyCertificate = BIYOS_RES_NEARCER,
     Unknown = BIYOS_RES_UNKNOWN,
 };
 
 enum class Claim
 {
-    None = BIYOS_CLAIM_NONE,
-    Local = BIYOS_CLAIM_LOCAL,
-    Global = BIYOS_CLAIM_GLOBAL,
+    None = BIYOS_CLM_NONE,
+    Local = BIYOS_CLM_LOCAL,
+    Global = BIYOS_CLM_GLOBAL,
 };
 
 std::string_view name_of(TerminationStatus status) noexcept;

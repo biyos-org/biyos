@@ -22,41 +22,41 @@ using biyos::capi::write_starts;
 namespace
 {
 
-std::vector<double> constants_of(std::size_t count, const double *constants)
+std::vector<double> constants_of(std::size_t n, const double *constants)
 {
     if (constants == nullptr)
     {
-        return std::vector<double>(count, 0.0);
+        return std::vector<double>(n, 0.0);
     }
-    return std::vector<double>(constants, constants + count);
+    return std::vector<double>(constants, constants + n);
 }
 
-void add_functions(BIYOS_model &model,
-                   int count,
-                   const double *constants,
-                   const std::int64_t *starts,
-                   const int *variables,
-                   const double *values,
-                   int *first)
+void add_funs(BIYOS_model &mdl,
+              int n,
+              const double *constants,
+              const std::int64_t *starts,
+              const int *vars,
+              const double *values,
+              int *beg)
 {
-    biyos::Model &core = writable(model);
-    const std::size_t size = length(count);
+    biyos::Model &core = writable(mdl);
+    const std::size_t size = length(n);
     const std::vector<double> added = constants_of(size, constants);
     const std::vector<biyos::Offset> begins = offsets(size, starts);
     biyos::check_starts(begins);
     core.check_room(size, begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
-    const biyos::Index start = core.function_count();
-    core.add_functions(added, begins, biyos::capi::packed(total, variables, values));
-    if (first != nullptr)
+    const biyos::Index start = core.n_funs();
+    core.add_funs(added, begins, biyos::capi::packed(total, vars, values));
+    if (beg != nullptr)
     {
-        *first = start;
+        *beg = start;
     }
 }
 
-void function_count(const BIYOS_model &model, int *count)
+void n_funs(const BIYOS_model &mdl, int *n)
 {
-    *require(count, "n") = model.core.function_count();
+    *require(n, "n") = mdl.core.n_funs();
 }
 
 void write_constants(std::span<const double> found, double *constants)
@@ -67,24 +67,24 @@ void write_constants(std::span<const double> found, double *constants)
     }
 }
 
-void get_functions(const BIYOS_model &model,
-                   int first,
-                   int count,
-                   double *constants,
-                   std::int64_t *starts,
-                   std::int64_t size,
-                   std::int64_t *needed,
-                   int *variables,
-                   double *values)
+void get_funs(const BIYOS_model &mdl,
+              int beg,
+              int n,
+              double *constants,
+              std::int64_t *starts,
+              std::int64_t size,
+              std::int64_t *needed,
+              int *vars,
+              double *values)
 {
-    const std::span<const double> held = model.core.constants(first, count);
-    const std::span<const biyos::LinearTerm> found = model.core.terms(first, count);
+    const std::span<const double> held = mdl.core.constants(beg, n);
+    const std::span<const biyos::LinearTerm> found = mdl.core.terms(beg, n);
     const std::size_t room = length(size, "size");
-    require(needed, "needed");
+    require(needed, "nnz");
     write_constants(held, constants);
-    const auto before = [&](biyos::Index j) { return model.core.terms(first, j); };
+    const auto before = [&](biyos::Index j) { return mdl.core.terms(beg, j); };
     write_starts(held.size(), starts, before);
-    biyos::capi::unpack(found, room, variables, values);
+    biyos::capi::unpack(found, room, vars, values);
     *needed = static_cast<std::int64_t>(found.size());
 }
 
@@ -92,29 +92,29 @@ void get_functions(const BIYOS_model &model,
 
 BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
                            BIYOS_index n,
-                           const BIYOS_real *consts,
-                           const BIYOS_offset *starts,
+                           const BIYOS_real *cst,
+                           const BIYOS_offset *off,
                            const BIYOS_index *varidx,
-                           const BIYOS_real *vals,
+                           const BIYOS_real *coef,
                            BIYOS_index *beg)
 {
-    return guarded<add_functions>(mdl, n, consts, starts, varidx, vals, beg);
+    return guarded<add_funs>(mdl, n, cst, off, varidx, coef, beg);
 }
 
 BIYOS_status BIYOS_getnfuns(const BIYOS_model *mdl, BIYOS_index *n)
 {
-    return guarded<function_count>(mdl, n);
+    return guarded<n_funs>(mdl, n);
 }
 
 BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
                            BIYOS_index beg,
                            BIYOS_index n,
                            BIYOS_offset size,
-                           BIYOS_real *consts,
-                           BIYOS_offset *starts,
-                           BIYOS_offset *needed,
+                           BIYOS_real *cst,
+                           BIYOS_offset *off,
+                           BIYOS_offset *nnz,
                            BIYOS_index *varidx,
-                           BIYOS_real *vals)
+                           BIYOS_real *coef)
 {
-    return guarded<get_functions>(mdl, beg, n, consts, starts, size, needed, varidx, vals);
+    return guarded<get_funs>(mdl, beg, n, cst, off, size, nnz, varidx, coef);
 }

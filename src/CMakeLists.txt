@@ -2,7 +2,7 @@ add_library(biyos_internal STATIC
     core/check.cpp
     core/clock.cpp
     core/deadline.cpp
-    core/environment.cpp
+    core/env.cpp
     core/error.cpp
     core/events.cpp
     core/format.cpp
@@ -54,10 +54,13 @@ add_library(biyos_internal STATIC
     model/functions.cpp
     model/merge.cpp
     model/model.cpp
+    model/names.cpp
+    model/naming.cpp
     model/objectives.cpp
     model/pairs.cpp
     model/quadratic.cpp
-    model/terms.cpp)
+    model/terms.cpp
+    model/transpose.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -77,11 +80,13 @@ biyos_set_warnings(biyos_internal)
 add_library(biyos
     capi/arrays.cpp
     capi/constraints.cpp
-    capi/environment.cpp
+    capi/env.cpp
     capi/events.cpp
     capi/format.cpp
     capi/functions.cpp
+    capi/linear.cpp
     capi/model.cpp
+    capi/names.cpp
     capi/objectives.cpp
     capi/options.cpp
     capi/quadratic.cpp

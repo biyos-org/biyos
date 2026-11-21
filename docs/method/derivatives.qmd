@@ -1,0 +1,36 @@
+# Derivatives {#sec-derivatives}
+
+The methods of biyos need the gradient of every function and weighted sums of them. On a tape they come from the reverse mode of algorithmic differentiation [@griewank2008]: one backward pass over the instructions, reading the partial derivatives that the forward sweep stored (@sec-tapes-forward). This chapter states the sweeps and the two rules that decide what a derivative is at the edges of the operators' domains.
+
+## The reverse sweep {#sec-derivatives-reverse}
+
+Given the stored partials $\partial \phi_k / \partial v_j$ of a straight-line program, the reverse sweep assigns each value $v_k$ an adjoint $\bar v_k$. It starts from a seed on the outputs and visits the instructions in reverse order, adding each adjoint into the adjoints of the operands:
+
+$$
+\bar v_j \mathrel{+}= \bar v_k\, \frac{\partial \phi_k}{\partial v_j}
+$$ {#eq-adjoint}
+
+for $k$ from $N$ down to 1 and every operand $j \in \mathcal{C}(k)$.
+
+When the sweep ends, the adjoint of each variable is the derivative of the seeded combination of outputs with respect to that variable. Two seeds serve the methods:
+
+- Seeding one root $r$ with $\bar v_r = 1$ gives its gradient $\nabla f_r(x)$, which is one row of the Jacobian. The sweep visits only the root's own runs of instructions and the pinned nodes it reaches, so its cost follows the size of that root's expression and not the size of the tape.
+- Seeding every root $r$ with a weight $w_r$ gives $\sum_r w_r \nabla f_r(x)$ in one sweep over the whole tape. With the objective weighted by 1 and each constraint by its multiplier, this is the gradient of the Lagrangian.
+
+The pattern of each root, the variables its gradient can depend on, is found once from the graph when the tape is compiled, so a gradient is written into a fixed sparse pattern.
+
+For example, take $f_0 = \exp(x_0 x_1)$ of @fig-graph at $x_0 = 1$, $x_1 = 0$. The forward sweep computes $p = x_0 x_1 = 0$ with partials $x_1 = 0$ and $x_0 = 1$, then $a_0 = \exp p = 1$ with partial $a_0 = 1$. The reverse sweep seeds $\bar a_0 = 1$, gives $\bar p = 1 \cdot 1 = 1$, then $\bar x_0 = 1 \cdot 0 = 0$ and $\bar x_1 = 1 \cdot 1 = 1$, so $\nabla f_0 = (0, 1, 0)$.
+
+## A zero adjoint contributes nothing {#sec-derivatives-zero}
+
+In floating point, @eq-adjoint can turn an exact zero into NaN: when $\bar v_k = 0$ and a partial is infinite or NaN, their product is NaN, and that NaN then spreads to every variable below. This happens in ordinary situations. A constraint whose multiplier is zero contributes nothing to the Lagrangian, yet its function may have an infinite slope at the point, as $\sqrt{x}$ does at $x = 0$. A product with a factor that is zero at the point gives the other factors a zero adjoint, and those factors may have no finite derivative there.
+
+biyos therefore skips an adjoint that is exactly zero, $+0$ or $-0$: such an instruction adds nothing to its operands, whatever their partials. So a zero weight, or a zero partial upstream, never turns an undefined partial into NaN. For $x_0 \sqrt{x_1}$ at $x_0 = x_1 = 0$, the square root receives the adjoint $x_0 = 0$, and the derivative with respect to $x_1$ comes out as 0, its true value, rather than $0 \cdot \infty$.
+
+The same reasoning fixes two partials of the power. The derivative of $x^c$ with respect to $x$ is $c\, x^{c-1}$, except that for an exponent that is exactly zero it is 0, even at $x = 0$ where $c\, x^{c-1}$ would be $0 \cdot \infty$. The derivative of $x^y$ with respect to $y$ is $x^y \log x$, except that it is 0 where $x^y$ is zero, where $\log x$ would be $-\infty$.
+
+## No derivative off the domain {#sec-derivatives-domain}
+
+Outside an operator's domain its value is NaN or, at a pole, infinite (@sec-graph-operators). Wherever the value is NaN, every partial of that operator is NaN as well. The textbook formula would often give a finite number: the derivative of $\log x$ is $1/x$, which is $-1$ at $x = -1$, where $\log x$ has no value. A slope means nothing where the function has no value, so biyos makes the derivative as undefined as the value.
+
+The two rules work together. A NaN partial reaches a variable only through a nonzero adjoint, that is, only when the undefined operator actually takes part in the combination being differentiated.

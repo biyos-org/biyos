@@ -1,9 +1,15 @@
-from collections import namedtuple
-
-Versions = namedtuple("Versions", ["since", "deprecated", "retired"])
+from typing import NamedTuple
 
 
-def version_text(number):
+class Versions(NamedTuple):
+    """The versions that added, deprecated and retired an option."""
+
+    since: str | None
+    deprecated: str | None
+    retired: str | None
+
+
+def version_text(number: int) -> str | None:
     if number == 0:
         return None
     major, rest = divmod(number, 10000)

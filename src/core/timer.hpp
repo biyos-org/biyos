@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/clock.hpp"
-#include "core/environment.hpp"
+#include "core/env.hpp"
 #include "core/events.hpp"
 #include "core/name.hpp"
 
@@ -53,7 +53,7 @@ class TimingTree
 class Timer
 {
   public:
-    Timer(Environment &env, TimingTree &tree, FixedName module, FixedName name);
+    Timer(Env &env, TimingTree &tree, FixedName module, FixedName name);
     ~Timer();
 
     Timer(const Timer &) = delete;

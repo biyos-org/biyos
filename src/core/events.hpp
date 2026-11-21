@@ -1,6 +1,6 @@
 #pragma once
 
-#include "biyos/events.h"
+#include "biyos/biyos.h"
 #include "core/clock.hpp"
 
 #include <array>
@@ -24,7 +24,7 @@ enum class EventKind
     Phase = BIYOS_EVT_PHASE,
 };
 
-enum class Level
+enum class EventLevel
 {
     Debug = BIYOS_LVL_DBG,
     Info = BIYOS_LVL_INFO,
@@ -35,9 +35,9 @@ enum class Level
 inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Check, EventKind::Phase};
 
 EventKind find_kind(int id);
-Level find_level(int id);
-std::string_view name_of(EventKind kind) noexcept;
-std::string_view name_of(Level level) noexcept;
+EventLevel find_level(int id);
+std::string_view name_of(EventKind knd) noexcept;
+std::string_view name_of(EventLevel lvl) noexcept;
 
 struct Field
 {
@@ -48,38 +48,38 @@ struct Field
 struct Event
 {
     EventKind kind;
-    Level level;
+    EventLevel level;
     std::chrono::nanoseconds time;
     std::string module;
     std::string text;
     std::vector<Field> fields;
 };
 
-using Subscriber = std::function<void(const Event &)>;
+using Hook = std::function<void(const Event &)>;
 
 class Events
 {
   public:
     explicit Events(const Clock &clock);
 
-    int subscribe(EventKind kind, Level lowest, Subscriber subscriber);
-    void unsubscribe(int id);
+    int add_hook(EventKind knd, EventLevel lvl, Hook hk);
+    void del_hook(int id);
 
-    bool wanted(EventKind kind, Level level) const noexcept { return lowest_[slot(kind)] <= level; }
+    bool wanted(EventKind knd, EventLevel lvl) const noexcept { return lowest_[slot(knd)] <= lvl; }
     bool delivering() const noexcept { return depth_ > 0; }
     bool filling() const noexcept { return fills_ > 0; }
     std::chrono::nanoseconds origin() const noexcept { return origin_; }
 
     template <std::invocable<Event &> Fill>
-    void emit(EventKind kind, Level level, Fill &&fill) noexcept
+    void emit(EventKind knd, EventLevel lvl, Fill &&fill) noexcept
     {
-        if (!wanted(kind, level))
+        if (!wanted(knd, lvl))
         {
             return;
         }
-        Event event{
-            .kind = kind,
-            .level = level,
+        Event evt{
+            .kind = knd,
+            .level = lvl,
             .time = clock_.wall_time() - origin_,
             .module = {},
             .text = {},
@@ -88,20 +88,20 @@ class Events
         try
         {
             const Depth inside(fills_);
-            fill(event);
+            fill(evt);
         }
         catch (...)
         {
             return;
         }
-        deliver(event);
+        deliver(evt);
     }
 
   private:
     class Depth
     {
       public:
-        explicit Depth(int &count) noexcept : count_(count) { ++count_; }
+        explicit Depth(int &n) noexcept : count_(n) { ++count_; }
 
         ~Depth() { --count_; }
 
@@ -112,29 +112,29 @@ class Events
         int &count_;
     };
 
-    struct Subscription
+    struct Entry
     {
         int id;
         EventKind kind;
-        Level lowest;
-        std::unique_ptr<const Subscriber> subscriber;
+        EventLevel lowest;
+        std::unique_ptr<const Hook> hook;
         bool active;
     };
 
-    static constexpr Level kNobody = static_cast<Level>(BIYOS_LVL_ERR + 1);
+    static constexpr EventLevel kNobody = static_cast<EventLevel>(BIYOS_LVL_ERR + 1);
 
-    static std::size_t slot(EventKind kind) noexcept { return static_cast<std::size_t>(kind) - 1; }
+    static std::size_t slot(EventKind knd) noexcept { return static_cast<std::size_t>(knd) - 1; }
 
-    static bool accepts(const Subscription &subscription, EventKind kind, Level level) noexcept;
+    static bool accepts(const Entry &entry, EventKind knd, EventLevel lvl) noexcept;
 
-    void refresh(EventKind kind) noexcept;
-    void deliver(const Event &event) noexcept;
+    void refresh(EventKind knd) noexcept;
+    void deliver(const Event &evt) noexcept;
     void prune() noexcept;
 
     const Clock &clock_;
     std::chrono::nanoseconds origin_;
-    std::deque<Subscription> subscriptions_;
-    std::array<Level, kEventKinds.size()> lowest_;
+    std::deque<Entry> hooks_;
+    std::array<EventLevel, kEventKinds.size()> lowest_;
     int next_id_ = 1;
     int depth_ = 0;
     int fills_ = 0;

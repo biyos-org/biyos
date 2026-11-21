@@ -1,5 +1,5 @@
 #include "capi/firewall.hpp"
-#include "core/environment.hpp"
+#include "core/env.hpp"
 #include "core/events.hpp"
 
 #include <gtest/gtest.h>
@@ -15,27 +15,27 @@ namespace
 {
 
 using biyos::EventKind;
-using biyos::Level;
+using biyos::EventLevel;
 
 BIYOS_status status_after(const std::function<void()> &body)
 {
     return biyos::capi::guard(body);
 }
 
-BIYOS_status status_after(biyos::Environment &env, const std::function<void()> &body)
+BIYOS_status status_after(biyos::Env &env, const std::function<void()> &body)
 {
     return biyos::capi::guard(&env, body);
 }
 
-void say(biyos::Environment &env, const std::string &text)
+void say(biyos::Env &env, const std::string &text)
 {
-    const auto fill = [&text](biyos::Event &event) { event.text = text; };
-    env.events().emit(EventKind::Message, Level::Info, fill);
+    const auto fill = [&text](biyos::Event &evt) { evt.text = text; };
+    env.events().emit(EventKind::Message, EventLevel::Info, fill);
 }
 
-void fail_inside(biyos::Environment &env, int &calls)
+void fail_inside(biyos::Env &env, int &calls)
 {
-    const biyos::Environment::ErrorScope scope(env);
+    const biyos::Env::ErrorScope scope(env);
     ++calls;
     status_after(env, [] { throw std::runtime_error("inner"); });
 }
@@ -53,7 +53,7 @@ TEST(FirewallTest, InvalidArgument)
 {
     const BIYOS_status status = status_after(
         [] { throw biyos::Error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative"); });
-    EXPECT_EQ(status, BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(status, BIYOS_ERR_BADARG);
 }
 
 TEST(FirewallTest, NoMemory)
@@ -87,36 +87,36 @@ TEST(FirewallTest, UnknownException)
 
 TEST(FirewallTest, ErrorMessage)
 {
-    biyos::Environment env;
+    biyos::Env env;
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
-    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.last_error(), "invalid argument: argument 'n': negative");
 }
 
 TEST(FirewallTest, MemoryMessage)
 {
-    biyos::Environment env;
+    biyos::Env env;
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error(), "out of memory");
 }
 
 TEST(FirewallTest, ForeignMessage)
 {
-    biyos::Environment env;
+    biyos::Env env;
     EXPECT_EQ(status_after(env, [] { throw std::runtime_error("foreign"); }), BIYOS_ERR_INTERNAL);
     EXPECT_EQ(env.last_error(), "internal error: foreign");
 }
 
 TEST(FirewallTest, UnknownMessage)
 {
-    biyos::Environment env;
+    biyos::Env env;
     EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
     EXPECT_EQ(env.last_error(), "internal error: unknown exception");
 }
 
 TEST(FirewallTest, KeptMessage)
 {
-    biyos::Environment env;
+    biyos::Env env;
     env.record_error("earlier");
     EXPECT_EQ(status_after(env, [] {}), BIYOS_OK);
     EXPECT_EQ(env.last_error(), "earlier");
@@ -124,18 +124,18 @@ TEST(FirewallTest, KeptMessage)
 
 TEST(FirewallTest, ErrorEvent)
 {
-    biyos::Environment env;
+    biyos::Env env;
     std::vector<biyos::Event> kept;
-    const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
-    env.events().subscribe(EventKind::Message, Level::Error, keep);
+    const auto keep = [&kept](const biyos::Event &evt) { kept.push_back(evt); };
+    env.events().add_hook(EventKind::Message, EventLevel::Error, keep);
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
     EXPECT_EQ(status_after(env, [] {}), BIYOS_OK);
-    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_BADARG);
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
     ASSERT_EQ(kept.size(), 3U);
     EXPECT_EQ(kept[0].kind, EventKind::Message);
-    EXPECT_EQ(kept[0].level, Level::Error);
+    EXPECT_EQ(kept[0].level, EventLevel::Error);
     EXPECT_EQ(kept[0].module, "capi");
     EXPECT_EQ(kept[0].text, "invalid argument: argument 'n': negative");
     EXPECT_EQ(kept[1].text, "out of memory");
@@ -144,12 +144,12 @@ TEST(FirewallTest, ErrorEvent)
 
 TEST(FirewallTest, ErrorCode)
 {
-    biyos::Environment env;
+    biyos::Env env;
     std::vector<biyos::Event> kept;
-    const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
-    env.events().subscribe(EventKind::Message, Level::Error, keep);
+    const auto keep = [&kept](const biyos::Event &evt) { kept.push_back(evt); };
+    env.events().add_hook(EventKind::Message, EventLevel::Error, keep);
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
-    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_INVALIDARG);
+    EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_BADARG);
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
     ASSERT_EQ(kept.size(), 3U);
@@ -162,11 +162,11 @@ TEST(FirewallTest, ErrorCode)
     }
 }
 
-TEST(FirewallTest, ThrowingSubscriber)
+TEST(FirewallTest, ThrowingHook)
 {
-    biyos::Environment env;
-    const auto fail = [](const biyos::Event &) { throw std::runtime_error("subscriber"); };
-    env.events().subscribe(EventKind::Message, Level::Debug, fail);
+    biyos::Env env;
+    const auto fail = [](const biyos::Event &) { throw std::runtime_error("hook"); };
+    env.events().add_hook(EventKind::Message, EventLevel::Debug, fail);
     EXPECT_EQ(status_after(env, [&] { say(env, "info"); }), BIYOS_OK);
     EXPECT_EQ(env.last_error(), "");
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
@@ -175,12 +175,12 @@ TEST(FirewallTest, ThrowingSubscriber)
 
 TEST(FirewallTest, ThrowingFill)
 {
-    biyos::Environment env;
+    biyos::Env env;
     std::vector<biyos::Event> kept;
-    const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
-    env.events().subscribe(EventKind::Message, Level::Debug, keep);
+    const auto keep = [&kept](const biyos::Event &evt) { kept.push_back(evt); };
+    env.events().add_hook(EventKind::Message, EventLevel::Debug, keep);
     const auto fill = [](biyos::Event &) { throw std::bad_alloc(); };
-    const auto body = [&] { env.events().emit(EventKind::Message, Level::Info, fill); };
+    const auto body = [&] { env.events().emit(EventKind::Message, EventLevel::Info, fill); };
     EXPECT_EQ(status_after(env, body), BIYOS_OK);
     EXPECT_EQ(env.last_error(), "");
     EXPECT_TRUE(kept.empty());
@@ -188,21 +188,21 @@ TEST(FirewallTest, ThrowingFill)
 
 TEST(FirewallTest, CurrentMessage)
 {
-    biyos::Environment env;
+    biyos::Env env;
     env.record_error("earlier");
     std::string seen;
     const auto read = [&](const biyos::Event &) { seen = env.last_error(); };
-    env.events().subscribe(EventKind::Message, Level::Error, read);
+    env.events().add_hook(EventKind::Message, EventLevel::Error, read);
     EXPECT_EQ(status_after(env, [] { throw std::runtime_error("now"); }), BIYOS_ERR_INTERNAL);
     EXPECT_EQ(seen, "internal error: now");
 }
 
 TEST(FirewallTest, NestedFailure)
 {
-    biyos::Environment env;
+    biyos::Env env;
     int calls = 0;
     const auto nest = [&](const biyos::Event &) { fail_inside(env, calls); };
-    env.events().subscribe(EventKind::Message, Level::Error, nest);
+    env.events().add_hook(EventKind::Message, EventLevel::Error, nest);
     EXPECT_EQ(status_after(env, [] { throw std::runtime_error("outer"); }), BIYOS_ERR_INTERNAL);
     EXPECT_EQ(calls, 1);
     EXPECT_EQ(env.last_error(), "internal error: outer");
@@ -210,11 +210,11 @@ TEST(FirewallTest, NestedFailure)
 
 TEST(FirewallTest, QuietSuccess)
 {
-    biyos::Environment env;
+    biyos::Env env;
     env.record_error("earlier");
     int calls = 0;
     const auto nest = [&](const biyos::Event &) { fail_inside(env, calls); };
-    env.events().subscribe(EventKind::Message, Level::Info, nest);
+    env.events().add_hook(EventKind::Message, EventLevel::Info, nest);
     EXPECT_EQ(status_after(env, [&] { say(env, "info"); }), BIYOS_OK);
     EXPECT_EQ(calls, 1);
     EXPECT_EQ(env.last_error(), "earlier");

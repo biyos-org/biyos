@@ -5,6 +5,8 @@
 #include "model/model.hpp"
 
 #include <limits>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace biyos::test
@@ -17,6 +19,12 @@ struct Quadratic
     std::vector<QuadraticTerm> terms;
 };
 
+struct Naming
+{
+    std::vector<Index> indices;
+    std::vector<std::string_view> names;
+};
+
 struct Parts
 {
     std::vector<Variable> variables;
@@ -26,6 +34,11 @@ struct Parts
     Quadratic quadratic;
     std::vector<Constraint> constraints;
     std::vector<Objective> objectives;
+    std::string name;
+    Naming variable_names;
+    Naming function_names;
+    Naming constraint_names;
+    Naming objective_names;
 };
 
 inline Parts sample()
@@ -82,19 +95,37 @@ inline Parts sample()
                     .relative = kInfinity,
                 },
             },
+        .name = "sample",
+        .variable_names = {.indices = {2, 0}, .names = {"z", "x"}},
+        .function_names = {.indices = {1}, .names = {"f"}},
+        .constraint_names = {.indices = {1}, .names = {"c"}},
+        .objective_names = {.indices = {0}, .names = {"cost"}},
     };
+}
+
+inline void name(Model &mdl, Family family, const Naming &naming)
+{
+    mdl.set_names(family, naming.indices, naming.names);
 }
 
 inline Model built(const Parts &parts)
 {
-    Model model;
-    model.add_variables(parts.variables);
-    model.add_functions(parts.constants, parts.starts, parts.terms);
-    const Quadratic &quadratic = parts.quadratic;
-    model.add_quadratic_terms(quadratic.functions, quadratic.starts, quadratic.terms);
-    model.add_constraints(parts.constraints);
-    model.add_objectives(parts.objectives);
-    return model;
+    Model mdl;
+    mdl.add_vars(parts.variables);
+    mdl.add_funs(parts.constants, parts.starts, parts.terms);
+    const Quadratic &quad = parts.quadratic;
+    mdl.add_quad_terms(quad.functions, quad.starts, quad.terms);
+    mdl.add_cons(parts.constraints);
+    mdl.add_objs(parts.objectives);
+    if (!parts.name.empty())
+    {
+        mdl.set_name(parts.name);
+    }
+    name(mdl, Family::Variable, parts.variable_names);
+    name(mdl, Family::Function, parts.function_names);
+    name(mdl, Family::Constraint, parts.constraint_names);
+    name(mdl, Family::Objective, parts.objective_names);
+    return mdl;
 }
 
 }

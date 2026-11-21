@@ -16,7 +16,7 @@ namespace
 
 [[noreturn]] void refuse_starts(const std::string &reason)
 {
-    throw Error(ErrorKind::InvalidArgument, "argument 'starts'", reason);
+    throw Error(ErrorKind::InvalidArgument, "argument 'off'", reason);
 }
 
 }
@@ -37,9 +37,9 @@ void check_starts(std::span<const Offset> starts)
     }
 }
 
-void check_shape(std::size_t functions, std::span<const Offset> starts, std::size_t terms)
+void check_shape(std::size_t funs, std::span<const Offset> starts, std::size_t terms)
 {
-    if (starts.size() != functions + 1)
+    if (starts.size() != funs + 1)
     {
         throw Error(ErrorKind::Internal, "model", "functions and starts differ in number");
     }

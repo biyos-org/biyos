@@ -48,8 +48,8 @@ class ChainRule
         }
     }
 
-    double entry(std::size_t variable) const { return row_[variable]; }
-    double scale(std::size_t variable) const { return scale_[variable]; }
+    double entry(std::size_t var) const { return row_[var]; }
+    double scale(std::size_t var) const { return scale_[var]; }
 
   private:
     using Wide = long double;

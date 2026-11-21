@@ -23,9 +23,9 @@ template <typename Item> class Memos
     struct Memo
     {
         Offset item_start;
-        Offset item_count;
+        Offset n_items;
         Offset link_start;
-        Offset link_count;
+        Offset n_links;
         bool flat;
     };
 

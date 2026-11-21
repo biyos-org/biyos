@@ -35,8 +35,8 @@ struct Check
     int &reported;
 };
 
-Parameters parameters_of(Operator op, Engine &engine);
-Graph operator_graph(Operator op, const Parameters &parameters);
+Parameters params_of(Operator op, Engine &engine);
+Graph operator_graph(Operator op, const Parameters &params);
 Box box_of(Engine &engine);
 std::vector<Interval> enclosures(const Graph &graph, std::span<const Interval> box);
 void expect_sampled(const Check &check, Engine &engine);

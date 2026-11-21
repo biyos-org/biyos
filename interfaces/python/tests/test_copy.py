@@ -6,7 +6,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import EventKind, Level, Sense, VariableKind
+from biyos import EventKind, EventLevel, Sense, VariableKind
 from biyos._capi import lib
 from spies import interrupted, preceded
 
@@ -51,7 +51,8 @@ def add_sample(model):
     model.addcons([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, INFINITY, 3.0])
     senses = [Sense.MAXIMIZE, Sense.MINIMIZE]
     tolerances = ([0.25, 0.0], [0.0, INFINITY])
-    model.addobjs([1, 0], senses, [3, -2], [0.5, 2.0], *tolerances)
+    o = model.addobjs([1, 0], senses, [3, -2], [0.5, 2.0])
+    model.setobjtol(o, *tolerances)
 
 
 def read(model):
@@ -61,6 +62,7 @@ def read(model):
         model.getquadterms(),
         model.getcons(),
         model.getobjs(),
+        model.getobjtol(range(model.getnobjs())),
     )
     return repr(found)
 
@@ -84,9 +86,9 @@ def reached(log, function, *arguments):
 def before_copy(log, actions, monkeypatch):
     env_free = partial(logged, log, "env", lib.BIYOS_freeenv)
     monkeypatch.setattr(lib, "BIYOS_freeenv", env_free)
-    copy = partial(reached, log, lib.BIYOS_copymodel)
+    copy = partial(reached, log, lib.BIYOS_copymdl)
     spy = partial(preceded, actions, copy)
-    monkeypatch.setattr(lib, "BIYOS_copymodel", spy)
+    monkeypatch.setattr(lib, "BIYOS_copymdl", spy)
 
 
 @pytest.fixture(params=["env", "other"])
@@ -116,10 +118,10 @@ def test_apart(place, model):
     before = read(model)
     copy = model.copy(place)
     copy.addvars(1)
-    copy.setvarbounds([0], [1.0])
+    copy.setvarbnd([0], [1.0])
     copy.addcons([1])
     copy.addquadterms([0], [0, 1], [0], [0], [1.0])
-    copy.setobjs([1], [Sense.MAXIMIZE])
+    copy.setobjsense([1], [Sense.MAXIMIZE])
     assert read(model) == before
     assert copy.getnvars() == 4
     model.addfuns(1)
@@ -164,8 +166,8 @@ def test_envs(env, model):
 
 def test_collected(env, other, model, monkeypatch):
     log = []
-    spy = partial(freed, log, lib.BIYOS_freemodel)
-    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
+    spy = partial(freed, log, lib.BIYOS_freemdl)
+    monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
     copy = model.copy(other)
     handle = copy._handle.value
     del copy
@@ -178,10 +180,10 @@ def test_collected(env, other, model, monkeypatch):
 
 def test_interrupted(other, model, monkeypatch):
     log = []
-    interrupt = partial(interrupted, lib.BIYOS_copymodel)
-    monkeypatch.setattr(lib, "BIYOS_copymodel", interrupt)
-    spy = partial(freed, log, lib.BIYOS_freemodel)
-    monkeypatch.setattr(lib, "BIYOS_freemodel", spy)
+    interrupt = partial(interrupted, lib.BIYOS_copymdl)
+    monkeypatch.setattr(lib, "BIYOS_copymdl", interrupt)
+    spy = partial(freed, log, lib.BIYOS_freemdl)
+    monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
     with pytest.raises(KeyboardInterrupt):
         model.copy(other)
     [handle] = other._models._live
@@ -192,7 +194,7 @@ def test_interrupted(other, model, monkeypatch):
 
 def test_closed(other, model, monkeypatch):
     calls = []
-    monkeypatch.setattr(lib, "BIYOS_copymodel", calls.append)
+    monkeypatch.setattr(lib, "BIYOS_copymdl", calls.append)
     other.close()
     with pytest.raises(ValueError, match="the environment is closed"):
         model.copy(other)
@@ -235,7 +237,7 @@ def test_locked(env, other, model):
             seen.append(copy.getnvars())
             copy.close()
 
-    env.addhook(copy_inside, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(copy_inside, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
     assert seen == [BUSY, BUSY, 3, 0]

@@ -1,8 +1,9 @@
 from ctypes import c_int, c_int64
 from operator import index
+from typing import SupportsIndex
 
 
-def whole(name, value):
+def whole(name: str, value: SupportsIndex) -> int:
     if isinstance(value, bool):
         raise TypeError(f"{name} must be an int, not bool")
     try:
@@ -12,14 +13,14 @@ def whole(name, value):
         raise TypeError(f"{name} must be an int, not {found}") from None
 
 
-def integer(name, value):
+def integer(name: str, value: SupportsIndex) -> int:
     number = whole(name, value)
     if c_int(number).value != number:
         raise OverflowError(f"{name}: {number} does not fit in a C int")
     return number
 
 
-def offset(name, value):
+def offset(name: str, value: SupportsIndex) -> int:
     number = whole(name, value)
     if c_int64(number).value != number:
         raise OverflowError(f"{name}: {number} does not fit in an int64_t")

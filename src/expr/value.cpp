@@ -228,16 +228,16 @@ void linearize(const Block &block, std::span<const double> point, Workspace &wor
     {
         const Instruction &instruction = block.instructions[k];
         const double result = value(instruction, frame);
-        const std::uint32_t first = block.places[k];
-        const std::uint32_t count = block.places[k + 1] - first;
-        partials_of(instruction, frame, result, partials.subspan(first, count));
+        const std::uint32_t beg = block.places[k];
+        const std::uint32_t n = block.places[k + 1] - beg;
+        partials_of(instruction, frame, result, partials.subspan(beg, n));
         frame.slots[instruction.target] = result;
     }
 }
 
 void store(const Block &block, std::span<const double> slots, std::span<double> outputs) noexcept
 {
-    const std::span<double> mine = outputs.subspan(at(block.first), block.outputs.size());
+    const std::span<double> mine = outputs.subspan(at(block.begin), block.outputs.size());
     for (std::size_t k = 0; k < mine.size(); ++k)
     {
         mine[k] = slots[block.outputs[k]];

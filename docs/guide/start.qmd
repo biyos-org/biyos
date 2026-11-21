@@ -1,0 +1,84 @@
+# Getting started {#sec-start}
+
+biyos is a C library with a C++ core. It builds with CMake, links into a program through one C header, and comes with a Python package that calls the same library. This chapter builds it, links a first program and runs it from Python.
+
+## Building {#sec-start-build}
+
+biyos needs CMake 3.25 or later and a compiler for C99 and C++20. Continuous integration builds it with GCC on Ubuntu 24.04, Clang on macOS 15 and MSVC on Windows Server 2022. From a clone of the repository:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+```
+
+The configure step downloads GoogleTest for the tests. Three options change the build:
+
+| Option | Default | Effect |
+| ------------------------ | -------- | ---------------------------------------- |
+| `BUILD_SHARED_LIBS` | `ON` | build `biyos` as a shared library; `OFF` builds a static one |
+| `BIYOS_BUILD_TESTS` | `ON` | build the tests and the examples, and register them with CTest |
+| `BIYOS_WARNINGS_AS_ERRORS` | `OFF` | treat every compiler warning as an error |
+
+The library lands in `build/lib`, as `libbiyos.so` on Linux and `libbiyos.dylib` on macOS. On Windows `biyos.dll` lands in `build/bin` and its import library in `build/lib`, each in a folder named for the configuration when the generator is Visual Studio. The header stays in `include/biyos`. There is no install step yet: a program links the library from the build tree, or builds biyos as part of its own CMake project.
+
+## The library and its header {#sec-start-layers}
+
+A program sees one header, `biyos/biyos.h`, which includes only `<stddef.h>` and `<stdint.h>`. The shared library exports the functions of that header and nothing else: the C++ code behind them is compiled into the library with hidden symbols, so no C++ type or exception ever reaches the caller. The Python package loads the same library and calls the same functions.
+
+![The layers of biyos. Each arrow points from a part to one it uses. Only `biyos.h` crosses the library's boundary.](../figures/layers.svg){#fig-layers}
+
+Inside, each module may use only the modules below it, as @fig-layers shows. The repository's `tools/layers.txt` holds this order as data, and a check run by continuous integration refuses any include that breaks it.
+
+## A first program {#sec-start-program}
+
+This program prints the version of the library, then creates an environment and frees it:
+
+```{.c file="examples/c/start.c"}
+```
+
+An environment holds the options, the event stream and the last error message, and every model is made on one. Every call that acts returns a status, `BIYOS_OK` on success, and @sec-errors explains the others.
+
+### With CMake
+
+A CMake project can build biyos alongside its own code. With the repository cloned into a folder `biyos` next to the program:
+
+```cmake
+cmake_minimum_required(VERSION 3.25)
+project(app LANGUAGES C)
+
+set(BIYOS_BUILD_TESTS OFF)
+add_subdirectory(biyos)
+
+add_executable(app app.c)
+target_link_libraries(app PRIVATE biyos::biyos)
+```
+
+The target `biyos::biyos` carries the include directory, so `#include <biyos/biyos.h>` works as written. Built as a static library, with `BUILD_SHARED_LIBS` set to `OFF`, it also carries the definition `BIYOS_STATIC`, which a program on Windows needs so that it does not look for the functions in a DLL.
+
+### Without CMake
+
+On Linux, a program compiles against the header and links the library from the build tree:
+
+```sh
+cc -std=c99 start.c -I biyos/include -L biyos/build/lib -lbiyos \
+   -Wl,-rpath,"$PWD/biyos/build/lib" -o start
+./start
+```
+
+which prints `biyos 0.1.0`.
+
+## From Python {#sec-start-python}
+
+The Python package lives in `interfaces/python`. Installing it builds the library with the same CMake files and places it inside the package, so it needs the same compilers:
+
+```sh
+python -m pip install ./interfaces/python
+```
+
+It needs Python 3.10 or later and no other package at run time. Each call goes through `ctypes` to the C API, so Python and C share every rule of this book. The first program becomes
+
+```{.python file="examples/python/start.py"}
+```
+
+The `with` block frees the environment when it ends. @sec-python covers the package.

@@ -62,9 +62,9 @@ double unit(Engine &engine)
     return static_cast<double>(engine() >> 11) * 0x1p-53;
 }
 
-std::size_t pick(Engine &engine, std::size_t count)
+std::size_t pick(Engine &engine, std::size_t n)
 {
-    return static_cast<std::size_t>(engine() % count);
+    return static_cast<std::size_t>(engine() % n);
 }
 
 double finite_lower(Interval box)
@@ -233,12 +233,12 @@ using biyos::test::name_of;
 
 std::string points_text(const Values &point)
 {
-    std::string message;
+    std::string msg;
     for (const double value : point)
     {
-        message += " " + text(value);
+        msg += " " + text(value);
     }
-    return message;
+    return msg;
 }
 
 void expect_chord(const Claims &claims, Offset node, Runs runs, double theta, const Values &z)
@@ -337,13 +337,13 @@ void biyos::test::expect_monotonicities(const Monotonicities &claims, Engine &en
         const Values base = point_of(claims.box, engine);
         for (std::size_t k = 0; k < claims.monotonicities.size(); ++k)
         {
-            const auto variable = static_cast<std::size_t>(graph.variable(children[k]));
-            const double first = coordinate(claims.box[variable], engine);
-            const double second = coordinate(claims.box[variable], engine);
+            const auto var = static_cast<std::size_t>(graph.variable(children[k]));
+            const double first = coordinate(claims.box[var], engine);
+            const double second = coordinate(claims.box[var], engine);
             Values low = base;
             Values high = base;
-            low[variable] = (std::min)(first, second);
-            high[variable] = (std::max)(first, second);
+            low[var] = (std::min)(first, second);
+            high[var] = (std::max)(first, second);
             expect_pair(claims, k, low, high);
         }
     }

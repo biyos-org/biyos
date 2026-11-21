@@ -1,0 +1,7 @@
+/.quarto/
+/_book/
+**/*.quarto_ipynb
+/reference/_capi/
+/reference/_options/
+/objects.json
+/reference/_python/

@@ -8,7 +8,7 @@ namespace biyos
 class Tolerances
 {
   public:
-    explicit Tolerances(const Options &options);
+    explicit Tolerances(const Options &opts);
 
     bool is_zero(double x) const noexcept;
     bool approx_equal(double a, double b) const noexcept;

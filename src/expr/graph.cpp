@@ -48,9 +48,9 @@ Operator Graph::op(Offset node) const noexcept
 
 std::span<const Offset> Graph::children(Offset node) const noexcept
 {
-    const Offset first = starts_[at(node)];
-    const Offset count = starts_[at(node) + 1] - first;
-    return std::span(children_).subspan(at(first), at(count));
+    const Offset beg = starts_[at(node)];
+    const Offset n = starts_[at(node) + 1] - beg;
+    return std::span(children_).subspan(at(beg), at(n));
 }
 
 double Graph::constant(Offset node) const noexcept
@@ -74,8 +74,8 @@ std::span<const double> Graph::coefficients(Offset node) const noexcept
     {
         return {};
     }
-    const std::size_t first = payloads_[at(node)] + 1;
-    return std::span(coefficients_).subspan(first, children(node).size());
+    const std::size_t beg = payloads_[at(node)] + 1;
+    return std::span(coefficients_).subspan(beg, children(node).size());
 }
 
 Offset Graph::add(Operator op, std::span<const Offset> children)
@@ -91,20 +91,20 @@ Offset Graph::add(Operator op, double constant, std::span<const Offset> children
     return append(op, std::bit_cast<std::uint64_t>(constant), children);
 }
 
-Offset Graph::add_variable(Index variable)
+Offset Graph::add_var(Index var)
 {
-    check_variable(variable);
-    const auto index = static_cast<std::size_t>(variable);
-    if (index >= variable_nodes_.size())
+    check_var(var);
+    const auto idx = static_cast<std::size_t>(var);
+    if (idx >= variable_nodes_.size())
     {
-        variable_nodes_.resize(index + 1, kNone);
+        variable_nodes_.resize(idx + 1, kNone);
     }
-    if (variable_nodes_[index] == kNone)
+    if (variable_nodes_[idx] == kNone)
     {
-        const auto payload = static_cast<std::uint64_t>(variable);
-        variable_nodes_[index] = append(Operator::Variable, payload, {});
+        const auto payload = static_cast<std::uint64_t>(var);
+        variable_nodes_[idx] = append(Operator::Variable, payload, {});
     }
-    return variable_nodes_[index];
+    return variable_nodes_[idx];
 }
 
 Offset Graph::add_sum(double constant,

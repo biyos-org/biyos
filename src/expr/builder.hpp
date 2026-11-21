@@ -17,13 +17,13 @@ class Builder
     explicit Builder(Graph &graph);
 
     void constant(double value);
-    void variable(Index variable);
+    void var(Index var);
     void node(Offset id);
     void sum(double constant, std::span<const double> coefficients);
-    void product(double coefficient, Offset count);
+    void product(double coefficient, Offset n);
     void power(double exponent);
     void sign_power(double exponent);
-    void apply(Operator op, Offset count);
+    void apply(Operator op, Offset n);
     Offset finish();
 
   private:
@@ -38,7 +38,7 @@ class Builder
 
     void raise(Operator op, double exponent);
     void push(Offset node);
-    std::size_t take(Offset count) const;
+    std::size_t take(Offset n) const;
     Offset resolve(std::size_t position);
     Offset append(const Operand &operand);
     void collect(std::size_t base);

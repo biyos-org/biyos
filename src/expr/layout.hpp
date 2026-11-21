@@ -55,6 +55,6 @@ class Layout
     std::uint32_t width_ = 0;
 };
 
-std::uint32_t narrow(std::size_t count);
+std::uint32_t narrow(std::size_t n);
 
 }

@@ -159,9 +159,8 @@ void sweep(const Block &block, Run run, const Trail &trail) noexcept
 {
     for (std::uint32_t k = run.end; k > run.begin; --k)
     {
-        const std::uint32_t first = trail.places[k - 1];
-        const std::span<const double> partials =
-            trail.partials.subspan(first, trail.places[k] - first);
+        const std::uint32_t beg = trail.places[k - 1];
+        const std::span<const double> partials = trail.partials.subspan(beg, trail.places[k] - beg);
         step(block.instructions[k - 1], partials, trail);
     }
 }
@@ -203,8 +202,8 @@ void reverse(const Block &block,
              std::span<double> gradient) noexcept
 {
     const Trail trail = trail_of(block, workspace, adjoints, gradient);
-    const auto count = static_cast<std::uint32_t>(block.instructions.size());
-    sweep(block, {.begin = 0, .end = count}, trail);
+    const auto n = static_cast<std::uint32_t>(block.instructions.size());
+    sweep(block, {.begin = 0, .end = n}, trail);
     const auto loads = static_cast<std::uint32_t>(block.loads.size());
     release(block, {.begin = 0, .end = loads}, adjoints);
 }

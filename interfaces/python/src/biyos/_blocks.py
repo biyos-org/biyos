@@ -1,34 +1,49 @@
+from collections.abc import Callable, Iterator
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Generic,
+    SupportsIndex,
+    TypeVar,
+    overload,
+)
+
 from biyos._integers import integer, whole
 
+if TYPE_CHECKING:
+    from biyos._model import Model
 
-def _current(model, version, noun):
-    if model._version != version:
+
+def _current(mdl: "Model", gen: int, noun: str) -> None:
+    if mdl._gen != gen:
         raise ValueError(f"the {noun} predates a deletion from its model")
 
 
-def _target(value):
+def _target(value: "Model") -> "Model":
     from biyos._model import Model
 
     if not isinstance(value, Model):
         found = type(value).__name__
-        raise TypeError(f"model must be a Model, not {found}")
+        raise TypeError(f"mdl must be a Model, not {found}")
     return value
 
 
 class View:
-    __slots__ = ("_model", "_index", "_version")
+    __slots__ = ("_model", "_idx", "_gen")
+    _noun: ClassVar[str]
 
-    def __init__(self, model, index, version):
-        self._model = model
-        self._index = index
-        self._version = version
+    def __init__(self, mdl: "Model", idx: int, gen: int) -> None:
+        self._model = mdl
+        self._idx = idx
+        self._gen = gen
 
-    def __index__(self):
+    def __index__(self) -> int:
         """Return the index of the item.
 
         Returns
         -------
-        int
+        idx
             The index of the item in its model.
 
         Raises
@@ -36,39 +51,75 @@ class View:
         ValueError
             When the model has had a deletion since the view was made.
         """
-        _current(self._model, self._version, self._noun)
-        return self._index
+        _current(self._model, self._gen, self._noun)
+        return self._idx
 
 
-class Block:
-    __slots__ = ("_model", "_first", "_count", "_version")
+Item = TypeVar("Item", bound=View)
+Self = TypeVar("Self", bound="Block[Any]")
 
-    def __init__(self, model, first, count, version):
-        self._model = model
-        self._first = first
-        self._count = count
-        self._version = version
 
-    def __len__(self):
+class Block(Generic[Item]):
+    __slots__ = ("_model", "_begin", "_size", "_gen")
+    _element: type[Item]
+    _held: Callable[["Model"], int]
+
+    def __init__(self, mdl: "Model", beg: int, n: int, gen: int) -> None:
+        self._model = mdl
+        self._begin = beg
+        self._size = n
+        self._gen = gen
+
+    def __len__(self) -> int:
+        """Return the number of items in the block.
+
+        Returns
+        -------
+        n
+            The number of items.
+
+        Raises
+        ------
+        ValueError
+            When the model has had a deletion since the block was made.
+        """
         self._check()
-        return self._count
+        return self._size
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Item]:
+        """Iterate over the items of the block, each as a view.
+
+        Returns
+        -------
+        views
+            The views of the items, in order.
+
+        Raises
+        ------
+        ValueError
+            When the model has had a deletion since the block was made.
+        """
         self._check()
         return map(self._view, self._range())
 
-    def __getitem__(self, key):
+    @overload
+    def __getitem__(self, key: SupportsIndex) -> Item: ...
+
+    @overload
+    def __getitem__(self: Self, key: slice) -> Self: ...
+
+    def __getitem__(self, key: SupportsIndex | slice) -> "Item | Block[Item]":
         """Return one item of the block, or a block for a slice.
 
         Parameters
         ----------
-        key : int or slice
+        key
             A position in the block, a negative one counting from the end,
             or a slice with step 1.
 
         Returns
         -------
-        view or block
+        item
             The item at the position, such as a ``Variable`` of a
             ``Variables`` block, or the items of the slice, as a block of
             the same family.
@@ -86,67 +137,67 @@ class Block:
         self._check()
         if isinstance(key, slice):
             return self._slice(key)
-        return self._view(self._first + self._position(key))
+        return self._view(self._begin + self._position(key))
 
-    def on(self, model):
+    def on(self: Self, mdl: "Model") -> Self:
         """Return the block's items in another model.
 
         The block keeps its first index and count, so it names the items
-        under the same indices in ``model``, such as those of a copy.
+        under the same indices in ``mdl``, such as those of a copy.
 
         Parameters
         ----------
-        model : Model
+        mdl
             The model the new block belongs to.
 
         Returns
         -------
         block
-            A block of the same family on ``model``.
+            A block of the same family on ``mdl``.
 
         Raises
         ------
         TypeError
-            When ``model`` is not a ``Model``.
+            When ``mdl`` is not a ``Model``.
         ValueError
-            When ``model`` is closed or holds too few items of the family, or
+            When ``mdl`` is closed or holds too few items of the family, or
             when the block's own model has had a deletion since the block was
             made.
         """
         self._check()
-        model = _target(model)
-        held = self._held(model)
-        end = self._first + self._count
+        mdl = _target(mdl)
+        held = self._held(mdl)
+        end = self._begin + self._size
         if held < end:
             noun = self._element._noun
             needs = f"{held}, the block needs {end}"
-            raise ValueError(f"model holds too few {noun}s: {needs}")
-        return type(self)(model, self._first, self._count, model._version)
+            raise ValueError(f"mdl holds too few {noun}s: {needs}")
+        return type(self)(mdl, self._begin, self._size, mdl._gen)
 
-    def _check(self):
-        _current(self._model, self._version, "block")
+    def _check(self) -> None:
+        _current(self._model, self._gen, "block")
 
-    def _range(self):
-        return range(self._first, self._first + self._count)
+    def _range(self) -> range:
+        return range(self._begin, self._begin + self._size)
 
-    def _view(self, index):
-        return self._element(self._model, index, self._version)
+    def _view(self, idx: int) -> Item:
+        return self._element(self._model, idx, self._gen)
 
-    def _position(self, key):
+    def _position(self, key: SupportsIndex) -> int:
         number = whole("index", key)
-        position = number + self._count if number < 0 else number
-        if not 0 <= position < self._count:
-            count = self._count
-            raise IndexError(f"index {number} is outside a block of {count}")
+        position = number + self._size if number < 0 else number
+        if not 0 <= position < self._size:
+            n = self._size
+            raise IndexError(f"index {number} is outside a block of {n}")
         return position
 
-    def _slice(self, key):
-        start, stop, step = key.indices(self._count)
+    def _slice(self: Self, key: slice) -> Self:
+        start, stop, step = key.indices(self._size)
         if step != 1:
             raise ValueError(f"slice step must be 1, not {step}")
-        first = self._first + start
-        count = max(stop - start, 0)
-        return type(self)(self._model, first, count, self._version)
+        beg = self._begin + start
+        n = max(stop - start, 0)
+        return type(self)(self._model, beg, n, self._gen)
 
 
 class Variable(View):
@@ -162,7 +213,7 @@ class Variable(View):
     _noun = "variable"
 
 
-class Variables(Block):
+class Variables(Block[Variable]):
     """Consecutive variables of a model, as ``Model.addvars`` returns.
 
     A block holds its model, its first index and its count, so it costs the
@@ -177,7 +228,7 @@ class Variables(Block):
     __slots__ = ()
     _element = Variable
 
-    def _held(self, model):
+    def _held(self, model: "Model") -> int:
         return model.getnvars()
 
 
@@ -194,7 +245,7 @@ class Function(View):
     _noun = "function"
 
 
-class Functions(Block):
+class Functions(Block[Function]):
     """Consecutive functions of a model, as ``Model.addfuns`` returns.
 
     A block holds its model, its first index and its count, so it costs the
@@ -209,7 +260,7 @@ class Functions(Block):
     __slots__ = ()
     _element = Function
 
-    def _held(self, model):
+    def _held(self, model: "Model") -> int:
         return model.getnfuns()
 
 
@@ -226,7 +277,7 @@ class Constraint(View):
     _noun = "constraint"
 
 
-class Constraints(Block):
+class Constraints(Block[Constraint]):
     """Consecutive constraints, as ``Model.addcons`` returns.
 
     A block holds its model, its first index and its count, so it costs the
@@ -241,7 +292,7 @@ class Constraints(Block):
     __slots__ = ()
     _element = Constraint
 
-    def _held(self, model):
+    def _held(self, model: "Model") -> int:
         return model.getncons()
 
 
@@ -258,7 +309,7 @@ class Objective(View):
     _noun = "objective"
 
 
-class Objectives(Block):
+class Objectives(Block[Objective]):
     """Consecutive objectives, as ``Model.addobjs`` returns.
 
     A block holds its model, its first index and its count, so it costs the
@@ -273,16 +324,18 @@ class Objectives(Block):
     __slots__ = ()
     _element = Objective
 
-    def _held(self, model):
+    def _held(self, model: "Model") -> int:
         return model.getnobjs()
 
 
-def _indefinite(noun):
+def _indefinite(noun: str) -> str:
     article = "an" if noun[0] in "aeiou" else "a"
     return f"{article} {noun}"
 
 
-def _member(model, family, name, view):
+def _member(
+    model: "Model", family: type[Block[Any]], name: str, view: View
+) -> None:
     noun = _indefinite(family._element._noun)
     if not isinstance(view, family._element):
         found = _indefinite(view._noun)
@@ -291,13 +344,17 @@ def _member(model, family, name, view):
         raise ValueError(f"{name} is {noun} of another model")
 
 
-def index_of(model, family, name, value):
+def index_of(
+    model: "Model", family: type[Block[Any]], name: str, value: SupportsIndex
+) -> int:
     if isinstance(value, View):
         _member(model, family, name, value)
     return integer(name, value)
 
 
-def range_of(model, family, name, block):
+def range_of(
+    model: "Model", family: type[Block[Any]], name: str, block: Block[Any]
+) -> range:
     if not isinstance(block, family):
         found = block._element._noun
         noun = family._element._noun

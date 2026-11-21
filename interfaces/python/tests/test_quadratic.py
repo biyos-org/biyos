@@ -5,7 +5,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import EventKind, Level, _model
+from biyos import EventKind, EventLevel, _model
 from biyos._capi import lib
 from number import Growing, Number
 from refusal import LOCKED, refusal
@@ -28,16 +28,16 @@ SORTED = (
 NONE = ([0, 0, 0, 0], [], [], [])
 
 WRONG = [
-    ([0, 1.5], TypeError, "an entry of starts must be an int, not float"),
-    ([0, "1"], TypeError, "an entry of starts must be an int, not str"),
-    ([0, True], TypeError, "an entry of starts must be an int, not bool"),
+    ([0, 1.5], TypeError, "an entry of off must be an int, not float"),
+    ([0, "1"], TypeError, "an entry of off must be an int, not str"),
+    ([0, True], TypeError, "an entry of off must be an int, not bool"),
     ([0, 2**70], OverflowError, "1180591620717411303424 does not fit"),
 ]
 
 STARTS_WRONG = [
-    ([0], [1, 2], "starts begins at 1, not 0"),
-    ([0], [0, -1], "starts decreases from 0 to -1 at entry 1"),
-    ([0, 1], [0, 2, 1], "starts decreases from 2 to 1 at entry 2"),
+    ([0], [1, 2], "off begins at 1, not 0"),
+    ([0], [0, -1], "off decreases from 0 to -1 at entry 1"),
+    ([0, 1], [0, 2, 1], "off decreases from 2 to 1 at entry 2"),
 ]
 
 
@@ -199,18 +199,18 @@ def test_views(env, model):
     other = biyos.Model(env)
     y = other.addvars(1)
     g = other.addfuns(1)
-    entry = "an entry of vars1 is a variable of another model"
+    entry = "an entry of varidx1 is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.addquadterms([0], [0, 1], [y[0]], [0], [1.0])
-    with pytest.raises(ValueError, match="vars2 is a block of another"):
+    with pytest.raises(ValueError, match="varidx2 is a block of another"):
         model.addquadterms([0], [0, 1], [0], y, [1.0])
-    with pytest.raises(ValueError, match="funs is a block of another"):
+    with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addquadterms(g, [0, 1], [0], [0], [1.0])
     with pytest.raises(ValueError, match="beg is a function of another"):
         model.getquadterms(g[0])
     with pytest.raises(ValueError, match="is a function, not a variable"):
         model.addquadterms([0], [0, 1], [f[0]], [0], [1.0])
-    with pytest.raises(ValueError, match="funs is a block of variables"):
+    with pytest.raises(ValueError, match="funidx is a block of variables"):
         model.addquadterms(x, [0, 1, 1], [0], [0], [1.0])
     with pytest.raises(ValueError, match="beg is a variable, not a"):
         model.getquadterms(x[0])
@@ -223,7 +223,7 @@ def test_gone(model, monkeypatch):
     model.addquadterms(f, [0, 1, 2], [0, 1], x, [1.0, 2.0])
     before = model.getquadterms()
     function, other, variable = f[0], f[1], x[1]
-    model._version += 1
+    model._gen += 1
     seen = []
     for name in ("BIYOS_addquadterms", "BIYOS_getquadterms"):
         spy = partial(recorded, seen, getattr(lib, name))
@@ -250,7 +250,7 @@ def test_refused(model):
     add_sample(model)
     message = refusal(model.addquadterms, [1, 1], [0, 0, 0], [], [], [])
     assert message == (
-        "invalid argument: argument 'funs': function 1 is repeated"
+        "invalid argument: argument 'funidx': function 1 is repeated"
     )
     message = refusal(model.addquadterms, [3], [0, 0], [], [], [])
     assert message == "invalid argument: function 3: unknown"
@@ -283,13 +283,13 @@ def test_refused(model):
 
 
 def test_lengths(model):
-    with pytest.raises(ValueError, match="starts has length 1, not 2"):
+    with pytest.raises(ValueError, match="off has length 1, not 2"):
         model.addquadterms([0], [0], [], [], [])
-    with pytest.raises(ValueError, match="vars1 has length 1, not 2"):
+    with pytest.raises(ValueError, match="varidx1 has length 1, not 2"):
         model.addquadterms([0], [0, 2], [0], [0, 1], [1.0, 2.0])
-    with pytest.raises(ValueError, match="vars2 has length 1, not 2"):
+    with pytest.raises(ValueError, match="varidx2 has length 1, not 2"):
         model.addquadterms([0], [0, 2], [0, 1], [0], [1.0, 2.0])
-    with pytest.raises(ValueError, match="vals has length 1, not 0"):
+    with pytest.raises(ValueError, match="coef has length 1, not 0"):
         model.addquadterms([0], None, None, None, [1.0])
     assert model.getquadterms() == NONE
 
@@ -302,13 +302,13 @@ def test_wrong(model, starts, error, message):
 
 
 def test_numbers(model):
-    with pytest.raises(TypeError, match="an entry of vals must be a number"):
+    with pytest.raises(TypeError, match="an entry of coef must be a number"):
         model.addquadterms([0], [0, 1], [0], [0], ["1"])
-    with pytest.raises(TypeError, match="an entry of vars1 must be an"):
+    with pytest.raises(TypeError, match="an entry of varidx1 must be an"):
         model.addquadterms([0], [0, 1], [0.0], [0], [1.0])
-    with pytest.raises(TypeError, match="an entry of vars2 must be an"):
+    with pytest.raises(TypeError, match="an entry of varidx2 must be an"):
         model.addquadterms([0], [0, 1], [0], [0.0], [1.0])
-    with pytest.raises(TypeError, match="an entry of funs must be an"):
+    with pytest.raises(TypeError, match="an entry of funidx must be an"):
         model.addquadterms([0.0], [0, 0], [], [], [])
     with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
         model.getquadterms(2**32)
@@ -326,7 +326,7 @@ def test_locked(env, model):
         seen.append(model.getquadterms())
 
     add_sample(model)
-    env.addhook(change, EventKind.MESSAGE, Level.ERROR)
+    env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
     assert seen == [LOCKED, SORTED]

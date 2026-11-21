@@ -38,7 +38,7 @@ Offset binary(Graph &graph, Operator op, Offset left, Offset right)
 TEST(ParentTest, SharedNode)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     const Offset shared = unary(graph, Operator::Exp, x);
     const Offset sine = unary(graph, Operator::Sin, shared);
     const Offset cosine = unary(graph, Operator::Cos, shared);
@@ -51,8 +51,8 @@ TEST(ParentTest, SharedNode)
 TEST(ParentTest, Roots)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
-    const Offset y = graph.add_variable(1);
+    const Offset x = graph.add_var(0);
+    const Offset y = graph.add_var(1);
     const Offset ratio = binary(graph, Operator::Division, x, y);
     const Offset lone = graph.add(Operator::Constant, 2.0, {});
     const Parents parents(graph);
@@ -64,7 +64,7 @@ TEST(ParentTest, Roots)
 TEST(ParentTest, RepeatedChild)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     const Offset ratio = binary(graph, Operator::Division, x, x);
     const Parents parents(graph);
     EXPECT_EQ(ids(parents.of(x)), (std::vector<Offset>{ratio, ratio}));
@@ -80,7 +80,7 @@ TEST(ParentTest, EmptyGraph)
 TEST(ParentTest, LaterNodes)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     const Parents parents(graph);
     unary(graph, Operator::Exp, x);
     EXPECT_EQ(parents.size(), 1);

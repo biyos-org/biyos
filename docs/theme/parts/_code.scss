@@ -1,0 +1,108 @@
+code,
+pre,
+kbd,
+samp {
+  font-family: $font-mono;
+  font-variant-ligatures: none;
+  font-feature-settings: "calt" 0, "liga" 0;
+}
+
+code .run {
+  white-space: nowrap;
+}
+
+p code:not(.sourceCode),
+li code:not(.sourceCode),
+td code:not(.sourceCode),
+dt code:not(.sourceCode),
+dd code:not(.sourceCode),
+.callout code:not(.sourceCode) {
+  color: $text;
+  background-color: rgba($text, 0.06);
+  border-radius: 2px;
+  padding: 0.1em 0.3em;
+  font-size: 0.875em;
+}
+
+div.sourceCode {
+  background-color: $surface;
+  border: 1px solid $line;
+  border-radius: 2px;
+  margin: 1rem 0 1.25rem;
+}
+
+div.sourceCode pre.sourceCode {
+  padding: 0.875rem 1rem;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+
+div.sourceCode pre.sourceCode code {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+:is(main, section) > pre:not(.sourceCode) {
+  background-color: $surface;
+  color: $text;
+  border: 1px solid $line;
+  border-radius: 2px;
+  margin: 1rem 0 1.25rem;
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+
+:is(main, section) > pre:not(.sourceCode) code {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+pre > code.sourceCode > span > a:first-child::before {
+  text-decoration: none;
+}
+
+.code-with-filename {
+  margin: 1rem 0 1.25rem;
+}
+
+div.code-with-filename .code-with-filename-file {
+  background-color: $surface !important;
+  border: 1px solid $line;
+  border-bottom: 1px solid $line;
+  border-radius: 2px 2px 0 0;
+  padding: 0.4rem 1rem;
+  margin: 0;
+}
+
+div.code-with-filename .code-with-filename-file pre {
+  @include label;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-family: $font-mono;
+  font-weight: 500;
+  background: transparent;
+  padding: 0;
+}
+
+.code-with-filename div.sourceCode {
+  margin-top: 0;
+  border-top: none;
+  border-radius: 0 0 2px 2px;
+}
+
+.code-copy-button {
+  color: $text-muted;
+}
+
+main a > code:not(.sourceCode),
+main a code:not(.sourceCode) {
+  color: $link;
+  background-color: rgba($link, 0.08);
+}
+
+main a:hover > code:not(.sourceCode) {
+  background-color: rgba($link, 0.16);
+}

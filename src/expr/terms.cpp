@@ -32,17 +32,17 @@ void order_pair(QuadraticTerm &term) noexcept
 template <typename Term, typename Order> void add_by(std::vector<Term> &terms, Order order)
 {
     std::stable_sort(terms.begin(), terms.end(), order);
-    std::size_t count = 0;
+    std::size_t n = 0;
     for (const Term &term : terms)
     {
-        if (count > 0 && !order(terms[count - 1], term))
+        if (n > 0 && !order(terms[n - 1], term))
         {
-            terms[count - 1].coefficient += term.coefficient;
+            terms[n - 1].coefficient += term.coefficient;
             continue;
         }
-        terms[count++] = term;
+        terms[n++] = term;
     }
-    terms.resize(count);
+    terms.resize(n);
 }
 
 }

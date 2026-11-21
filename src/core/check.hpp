@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/environment.hpp"
+#include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/options.hpp"
 
@@ -15,36 +15,33 @@ namespace biyos
 class Checker
 {
   public:
-    Checker(Environment &env, std::string_view module);
+    Checker(Env &env, std::string_view module);
 
-    bool active(CheckLevel level) const noexcept
-    {
-        return level != CheckLevel::None && level <= level_;
-    }
+    bool active(CheckLevel lvl) const noexcept { return lvl != CheckLevel::None && lvl <= level_; }
 
     template <typename Holds, typename Values>
         requires std::predicate<Holds &> && std::invocable<Values &> &&
                  std::convertible_to<std::invoke_result_t<Values &>, std::string_view>
-    void require(CheckLevel level,
-                 ErrorKind kind,
+    void require(CheckLevel lvl,
+                 ErrorKind knd,
                  std::string_view invariant,
                  std::string_view object,
                  Holds &&holds,
                  Values &&values) const
     {
-        if (active(level) && !holds())
+        if (active(lvl) && !holds())
         {
-            fail(kind, invariant, object, values());
+            fail(knd, invariant, object, values());
         }
     }
 
   private:
-    [[noreturn]] void fail(ErrorKind kind,
+    [[noreturn]] void fail(ErrorKind knd,
                            std::string_view invariant,
                            std::string_view object,
                            std::string_view values) const;
 
-    Environment &env_;
+    Env &env_;
     std::string module_;
     CheckLevel level_;
 };

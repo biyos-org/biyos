@@ -27,8 +27,8 @@ class Env
 class Model
 {
   public:
-    explicit Model(const Env &env) { EXPECT_EQ(BIYOS_newmodel(env.get(), &ptr_), BIYOS_OK); }
-    ~Model() { BIYOS_freemodel(ptr_); }
+    explicit Model(const Env &env) { EXPECT_EQ(BIYOS_newmdl(env.get(), &ptr_), BIYOS_OK); }
+    ~Model() { BIYOS_freemdl(ptr_); }
     Model(const Model &) = delete;
     Model &operator=(const Model &) = delete;
 

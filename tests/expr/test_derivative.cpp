@@ -69,7 +69,7 @@ std::vector<Index> reached(const Graph &graph, Offset root)
 {
     std::vector<bool> seen(at(graph.size()), false);
     std::vector<Offset> stack{root};
-    std::vector<Index> variables;
+    std::vector<Index> vars;
     while (!stack.empty())
     {
         const Offset node = stack.back();
@@ -81,31 +81,31 @@ std::vector<Index> reached(const Graph &graph, Offset root)
         seen[at(node)] = true;
         if (graph.op(node) == Operator::Variable)
         {
-            variables.push_back(graph.variable(node));
+            vars.push_back(graph.variable(node));
         }
         const auto children = graph.children(node);
         stack.insert(stack.end(), children.begin(), children.end());
     }
-    std::ranges::sort(variables);
-    return variables;
+    std::ranges::sort(vars);
+    return vars;
 }
 
-std::vector<Index> pattern_of(const Tape &tape, std::size_t root)
+std::vector<Index> pat_of(const Tape &tape, std::size_t root)
 {
-    const biyos::Pattern &pattern = tape.pattern();
-    const auto first = pattern.variables.begin();
-    return {first + pattern.starts[root], first + pattern.starts[root + 1]};
+    const biyos::Pattern &pat = tape.pattern();
+    const auto first = pat.variables.begin();
+    return {first + pat.starts[root], first + pat.starts[root + 1]};
 }
 
 Rows dense(const Tape &tape, const std::vector<double> &gradients, std::size_t width)
 {
-    const biyos::Pattern &pattern = tape.pattern();
+    const biyos::Pattern &pat = tape.pattern();
     Rows rows(at(tape.roots()), std::vector<double>(width, 0.0));
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
-        for (Offset k = pattern.starts[r]; k < pattern.starts[r + 1]; ++k)
+        for (Offset k = pat.starts[r]; k < pat.starts[r + 1]; ++k)
         {
-            rows[r][at(pattern.variables[at(k)])] = gradients[at(k)];
+            rows[r][at(pat.variables[at(k)])] = gradients[at(k)];
         }
     }
     return rows;
@@ -113,16 +113,16 @@ Rows dense(const Tape &tape, const std::vector<double> &gradients, std::size_t w
 
 std::vector<double> differences(const Tape &tape,
                                 std::vector<double> point,
-                                std::size_t variable,
+                                std::size_t var,
                                 double step)
 {
-    const double middle = point[variable];
+    const double middle = point[var];
     const double size = step * (std::max)(1.0, std::fabs(middle));
-    point[variable] = middle + size;
-    const double up = point[variable];
+    point[var] = middle + size;
+    const double up = point[var];
     std::vector<double> slopes = values_of(tape, point);
-    point[variable] = middle - size;
-    const double down = point[variable];
+    point[var] = middle - size;
+    const double down = point[var];
     const std::vector<double> below = values_of(tape, point);
     for (std::size_t k = 0; k < slopes.size(); ++k)
     {
@@ -311,10 +311,10 @@ void expect_weighted(const Tape &tape,
     }
 }
 
-std::vector<double> random_weights(Random &random, std::size_t count)
+std::vector<double> random_weights(Random &random, std::size_t n)
 {
     std::vector<double> weights;
-    for (std::size_t k = 0; k < count; ++k)
+    for (std::size_t k = 0; k < n; ++k)
     {
         weights.push_back(random.uniform(-2.0, 2.0));
     }
@@ -333,11 +333,11 @@ std::vector<double> interior_point(Random &random)
 
 std::vector<Offset> ladder(Graph &graph, Index size)
 {
-    Offset sum = graph.add_variable(0);
+    Offset sum = graph.add_var(0);
     std::vector<Offset> waves;
     for (Index k = 1; k <= size; ++k)
     {
-        const std::array terms{sum, graph.add_variable(k)};
+        const std::array terms{sum, graph.add_var(k)};
         sum = graph.add_sum(0.0, terms, std::array{1.0, 1.0});
         waves.push_back(unary(graph, Operator::Sin, sum));
     }
@@ -347,12 +347,12 @@ std::vector<Offset> ladder(Graph &graph, Index size)
 
 std::vector<Offset> recurrence(Graph &graph, Index size)
 {
-    Offset state = graph.add_variable(0);
+    Offset state = graph.add_var(0);
     for (Index k = 1; k <= size; ++k)
     {
         const std::array pair{unary(graph, Operator::Sin, state),
                               unary(graph, Operator::Cos, state)};
-        const std::array terms{graph.add(Operator::Product, 1.0, pair), graph.add_variable(k)};
+        const std::array terms{graph.add(Operator::Product, 1.0, pair), graph.add_var(k)};
         state = graph.add_sum(0.0, terms, std::array{1.0, 1.0});
     }
     return {state};
@@ -360,12 +360,12 @@ std::vector<Offset> recurrence(Graph &graph, Index size)
 
 std::vector<Offset> prefixes(Graph &graph, Index size)
 {
-    Offset link = graph.add_variable(0);
+    Offset link = graph.add_var(0);
     std::vector<Offset> roots;
     for (Index k = 1; k <= size; ++k)
     {
         link = unary(graph, Operator::Sin, link);
-        const std::array pair{link, graph.add_variable(k)};
+        const std::array pair{link, graph.add_var(k)};
         roots.push_back(graph.add(Operator::Product, 1.0, pair));
     }
     roots.push_back(link);
@@ -374,11 +374,11 @@ std::vector<Offset> prefixes(Graph &graph, Index size)
 
 std::vector<Offset> products(Graph &graph, Index size)
 {
-    Offset total = graph.add_variable(0);
+    Offset total = graph.add_var(0);
     std::vector<Offset> terms;
     for (Index k = 1; k <= size; ++k)
     {
-        const std::array pair{total, graph.add_variable(k)};
+        const std::array pair{total, graph.add_var(k)};
         total = graph.add(Operator::Product, 1.0, pair);
         terms.push_back(unary(graph, Operator::Exp, total));
     }
@@ -386,12 +386,12 @@ std::vector<Offset> products(Graph &graph, Index size)
     return {graph.add_sum(0.0, terms, ones), total, terms[2]};
 }
 
-Offset sum_of(Graph &graph, Index first, Index count)
+Offset sum_of(Graph &graph, Index beg, Index n)
 {
     std::vector<Offset> terms;
-    for (Index k = first; k < first + count; ++k)
+    for (Index k = beg; k < beg + n; ++k)
     {
-        terms.push_back(graph.add_variable(k));
+        terms.push_back(graph.add_var(k));
     }
     const std::vector<double> ones(terms.size(), 1.0);
     return graph.add_sum(0.0, terms, ones);
@@ -406,7 +406,7 @@ std::vector<Offset> powers(Graph &graph, Index size)
     {
         const Offset product = graph.add(Operator::Product, 1.0 / size, std::array{power, sum});
         power = unary(graph, Operator::Sin, product);
-        const std::array pair{power, graph.add_variable(size + k)};
+        const std::array pair{power, graph.add_var(size + k)};
         roots.push_back(graph.add(Operator::Product, 1.0, pair));
     }
     return roots;
@@ -415,10 +415,10 @@ std::vector<Offset> powers(Graph &graph, Index size)
 std::vector<Offset> lattice(Graph &graph, Index size)
 {
     const std::array sums{sum_of(graph, 0, size), sum_of(graph, size, size)};
-    std::vector<Offset> level;
+    std::vector<Offset> lvl;
     for (Index j = 0; j < size; ++j)
     {
-        level.push_back(unary(graph, Operator::Sin, sums[at(j % 2)]));
+        lvl.push_back(unary(graph, Operator::Sin, sums[at(j % 2)]));
     }
     std::vector<Offset> next;
     for (Index i = 0; i < size; ++i)
@@ -426,13 +426,13 @@ std::vector<Offset> lattice(Graph &graph, Index size)
         next.clear();
         for (Index j = 0; j < size; ++j)
         {
-            const std::array pair{level[at(j)], level[at((j + 1) % size)]};
+            const std::array pair{lvl[at(j)], lvl[at((j + 1) % size)]};
             next.push_back(graph.add_sum(0.0, pair, std::array{0.5, 0.5}));
         }
-        level.swap(next);
+        lvl.swap(next);
     }
     std::vector<Offset> roots;
-    for (const Offset top : level)
+    for (const Offset top : lvl)
     {
         roots.push_back(unary(graph, Operator::Sin, top));
     }
@@ -444,7 +444,7 @@ std::vector<Offset> inherited(Graph &graph, Index size)
     std::vector<Offset> terms;
     for (Index k = 0; k < size; ++k)
     {
-        terms.push_back(graph.add_variable(k));
+        terms.push_back(graph.add_var(k));
     }
     const std::vector<double> ones(terms.size(), 1.0);
     Offset link = graph.add_sum(0.0, terms, ones);
@@ -452,7 +452,7 @@ std::vector<Offset> inherited(Graph &graph, Index size)
     for (Index k = 0; k < size; ++k)
     {
         link = unary(graph, Operator::Sin, link);
-        const std::array pair{link, graph.add_variable(size + k)};
+        const std::array pair{link, graph.add_var(size + k)};
         roots.push_back(graph.add(Operator::Product, 1.0, pair));
     }
     return roots;
@@ -460,9 +460,9 @@ std::vector<Offset> inherited(Graph &graph, Index size)
 
 std::vector<Offset> shared_roots(Graph &graph)
 {
-    const Offset x = graph.add_variable(0);
-    const Offset y = graph.add_variable(1);
-    const Offset z = graph.add_variable(2);
+    const Offset x = graph.add_var(0);
+    const Offset y = graph.add_var(1);
+    const Offset z = graph.add_var(2);
     const Offset product = graph.add(Operator::Product, 1.5, std::array{x, y});
     const Offset sine = unary(graph, Operator::Sin, product);
     const Offset sum = graph.add_sum(0.5, std::array{sine, product}, std::array{2.0, -1.0});
@@ -553,7 +553,7 @@ TEST(DerivativeTest, Patterns)
         for (std::size_t r = 0; r < roots.size(); ++r)
         {
             SCOPED_TRACE(r);
-            EXPECT_EQ(pattern_of(tape, r), reached(graph, roots[r]));
+            EXPECT_EQ(pat_of(tape, r), reached(graph, roots[r]));
         }
     }
 }
@@ -575,7 +575,7 @@ TEST(DerivativeTest, Chains)
                 for (std::size_t r = 0; r < roots.size(); ++r)
                 {
                     SCOPED_TRACE(r);
-                    EXPECT_EQ(pattern_of(tape, r), reached(graph, roots[r]));
+                    EXPECT_EQ(pat_of(tape, r), reached(graph, roots[r]));
                 }
                 const std::vector<double> point(at(tape.variables()), 0.5);
                 const Rows rows = dense(tape, jacobian_of(tape, point), point.size());
@@ -613,9 +613,9 @@ TEST(DerivativeTest, Shared)
 TEST(DerivativeTest, Kinks)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
-    const Offset y = graph.add_variable(1);
-    const Offset z = graph.add_variable(2);
+    const Offset x = graph.add_var(0);
+    const Offset y = graph.add_var(1);
+    const Offset z = graph.add_var(2);
     const Offset gap = graph.add_sum(0.0, std::array{x, y}, std::array{1.0, -1.0});
     const std::vector<Offset> roots{
         unary(graph, Operator::Abs, x),
@@ -658,7 +658,7 @@ TEST(DerivativeTest, Kinks)
 TEST(DerivativeTest, Routing)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     const Offset zero = constant(graph, 0.0);
     const Offset one = constant(graph, 1.0);
     const Offset flip = unary(graph, Operator::Negation, x);
@@ -675,8 +675,8 @@ TEST(DerivativeTest, Routing)
 TEST(DerivativeTest, ZeroAdjoint)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
-    const Offset y = graph.add_variable(1);
+    const Offset x = graph.add_var(0);
+    const Offset y = graph.add_var(1);
     const Offset root = unary(graph, Operator::Sqrt, x);
     const std::vector<Offset> roots{
         listed(graph, Operator::Max, {root, constant(graph, 1.0)}),
@@ -695,8 +695,8 @@ TEST(DerivativeTest, ZeroAdjoint)
 TEST(DerivativeTest, NanValues)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
-    const Offset y = graph.add_variable(1);
+    const Offset x = graph.add_var(0);
+    const Offset y = graph.add_var(1);
     const std::vector<Offset> roots{
         graph.add_sum(0.0, std::array{x, y}, std::array{1.0, -1.0}),
         graph.add(Operator::Product, 1.0, std::array{x, y}),
@@ -753,8 +753,8 @@ TEST(DerivativeTest, Weighted)
 TEST(DerivativeTest, ZeroWeight)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
-    const Offset y = graph.add_variable(1);
+    const Offset x = graph.add_var(0);
+    const Offset y = graph.add_var(1);
     const std::array roots{unary(graph, Operator::Sqrt, x), unary(graph, Operator::Sin, y)};
     const Tape tape(graph, roots);
     const std::array point{0.0, 1.0};
@@ -765,7 +765,7 @@ TEST(DerivativeTest, ZeroWeight)
 TEST(DerivativeTest, Sizes)
 {
     Graph graph;
-    const Offset shared = unary(graph, Operator::Exp, graph.add_variable(1));
+    const Offset shared = unary(graph, Operator::Exp, graph.add_var(1));
     const std::array roots{
         unary(graph, Operator::Sin, shared),
         unary(graph, Operator::Cos, shared),
@@ -820,7 +820,7 @@ TEST(DerivativeTest, Sizes)
 TEST(DerivativeTest, WeightSizes)
 {
     Graph graph;
-    const Offset shared = unary(graph, Operator::Exp, graph.add_variable(1));
+    const Offset shared = unary(graph, Operator::Exp, graph.add_var(1));
     const std::array roots{
         unary(graph, Operator::Sin, shared),
         unary(graph, Operator::Cos, shared),

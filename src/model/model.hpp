@@ -1,12 +1,15 @@
 #pragma once
 
-#include "biyos/model.h"
+#include "biyos/biyos.h"
 #include "core/index.hpp"
 #include "expr/terms.hpp"
+#include "model/names.hpp"
 
 #include <array>
 #include <cstddef>
 #include <span>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace biyos
@@ -14,11 +17,11 @@ namespace biyos
 
 enum class VariableKind
 {
-    Continuous = BIYOS_VAR_CONTINUOUS,
-    Binary = BIYOS_VAR_BINARY,
-    Integer = BIYOS_VAR_INTEGER,
-    SemiContinuous = BIYOS_VAR_SEMICONTINUOUS,
-    SemiInteger = BIYOS_VAR_SEMIINTEGER,
+    Continuous = BIYOS_VAR_CONT,
+    Binary = BIYOS_VAR_BIN,
+    Integer = BIYOS_VAR_INT,
+    SemiContinuous = BIYOS_VAR_SEMICONT,
+    SemiInteger = BIYOS_VAR_SEMIINT,
 };
 
 inline constexpr std::array kVariableKinds{
@@ -36,7 +39,7 @@ struct Variable
     double upper;
 };
 
-Variable widest(VariableKind kind) noexcept;
+Variable widest(VariableKind knd) noexcept;
 
 enum class Sense
 {
@@ -66,56 +69,89 @@ struct Objective
     double relative;
 };
 
-Objective default_objective(Index function, Index index) noexcept;
+Objective default_obj(Index fun, Index idx) noexcept;
+
+enum class Family
+{
+    Variable,
+    Function,
+    Constraint,
+    Objective,
+};
+
+inline constexpr std::array kFamilies{
+    Family::Variable,
+    Family::Function,
+    Family::Constraint,
+    Family::Objective,
+};
+
+std::string_view noun_of(Family family) noexcept;
 
 class Model
 {
   public:
-    Index variable_count() const noexcept;
-    const Variable &variable(Index index) const;
-    std::span<const Variable> variables(Index first, Index count) const;
+    const std::string *name() const noexcept;
+    void set_name(std::string_view name);
+    void del_name() noexcept;
 
-    void add_variables(std::span<const Variable> added);
-    void set_variables(std::span<const Index> indices, std::span<const Variable> changed);
+    const std::string *name_of(Family family, Index idx) const;
+    Index idx_of(Family family, std::string_view name) const;
+    void set_names(Family family,
+                   std::span<const Index> idx,
+                   std::span<const std::string_view> names);
+    void del_names(Family family, std::span<const Index> idx);
 
-    Index function_count() const noexcept;
-    std::span<const double> constants(Index first, Index count) const;
-    std::span<const LinearTerm> terms(Index first, Index count) const;
+    Index n_vars() const noexcept;
+    const Variable &variable(Index idx) const;
+    std::span<const Variable> vars(Index beg, Index n) const;
 
-    void check_room(std::size_t functions, Offset terms) const;
-    void add_functions(std::span<const double> constants,
+    void add_vars(std::span<const Variable> added);
+    void set_vars(std::span<const Index> idx, std::span<const Variable> changed);
+
+    Index n_funs() const noexcept;
+    std::span<const double> constants(Index beg, Index n) const;
+    std::span<const LinearTerm> terms(Index beg, Index n) const;
+
+    void check_room(std::size_t funs, Offset terms) const;
+    void add_funs(std::span<const double> constants,
+                  std::span<const Offset> starts,
+                  std::vector<LinearTerm> terms);
+    void add_lin_terms(std::span<const Index> funs,
                        std::span<const Offset> starts,
                        std::vector<LinearTerm> terms);
 
-    std::span<const QuadraticTerm> quadratic_terms(Index first, Index count) const;
+    std::span<const QuadraticTerm> quad_terms(Index beg, Index n) const;
 
-    void check_quadratic_room(Offset terms) const;
-    void add_quadratic_terms(std::span<const Index> functions,
-                             std::span<const Offset> starts,
-                             std::vector<QuadraticTerm> terms);
+    void check_quad_room(Offset terms) const;
+    void add_quad_terms(std::span<const Index> funs,
+                        std::span<const Offset> starts,
+                        std::vector<QuadraticTerm> terms);
 
-    Index constraint_count() const noexcept;
-    const Constraint &constraint(Index index) const;
-    std::span<const Constraint> constraints(Index first, Index count) const;
+    Index n_cons() const noexcept;
+    const Constraint &constraint(Index idx) const;
+    std::span<const Constraint> cons(Index beg, Index n) const;
 
-    void add_constraints(std::span<const Constraint> added);
-    void set_constraints(std::span<const Index> indices, std::span<const Constraint> changed);
+    void add_cons(std::span<const Constraint> added);
+    void set_cons(std::span<const Index> idx, std::span<const Constraint> changed);
 
-    Index objective_count() const noexcept;
-    const Objective &objective(Index index) const;
-    std::span<const Objective> objectives(Index first, Index count) const;
+    Index n_objs() const noexcept;
+    const Objective &objective(Index idx) const;
+    std::span<const Objective> objs(Index beg, Index n) const;
 
-    void check_objective_room(std::size_t added) const;
-    void add_objectives(std::span<const Objective> added);
-    void set_objectives(std::span<const Index> indices, std::span<const Objective> changed);
+    void check_obj_room(std::size_t added) const;
+    void add_objs(std::span<const Objective> added);
+    void set_objs(std::span<const Index> idx, std::span<const Objective> changed);
 
   private:
-    Offset begin_of(std::size_t function) const noexcept;
+    Index n_of(Family family) const noexcept;
+    Offset begin_of(std::size_t fun) const noexcept;
     void append(std::span<const double> constants,
                 std::span<const Offset> starts,
                 std::span<const LinearTerm> terms);
-    Offset quadratic_begin(std::size_t function) const noexcept;
+    Offset quad_begin(std::size_t fun) const noexcept;
 
+    std::string name_;
     std::vector<Variable> variables_;
     std::vector<double> constants_;
     std::vector<Offset> ends_;
@@ -124,6 +160,7 @@ class Model
     std::vector<QuadraticTerm> quadratic_terms_;
     std::vector<Constraint> constraints_;
     std::vector<Objective> objectives_;
+    std::array<Names, kFamilies.size()> names_;
 };
 
 }

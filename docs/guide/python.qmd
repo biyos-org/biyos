@@ -1,0 +1,48 @@
+# The Python package {#sec-python}
+
+The package `biyos` calls the C library through `ctypes` and needs no compiled extension of its own, so one build serves every Python version from 3.10. A method takes the name of the C call it wraps, without the prefix: `BIYOS_addvars` is `model.addvars`, `BIYOS_setdblopt` and its kin are `env.setopt`, and the parameters keep their C names, such as `lb` and `ub`. Classes keep full names, except `Env` for the environment. Each follows the same rules as its C call, so the chapters before this one hold for Python as they do for C. This chapter covers what Python adds. @sec-pyapi lists every class and method.
+
+## Environments and models {#sec-python-handles}
+
+`Env()` creates an environment and `Model(env)` a model on it. Both are context managers, so a `with` block frees them when it ends, and both have a `close` method that does the same. Closing an environment closes every model made on it first. Using a closed environment or model raises `ValueError`, and closing one twice does nothing.
+
+A model keeps its environment alive, so an environment the program no longer references stays allocated while one of its models is open. An environment or a model closed from inside one of its own calls, by a hook for instance, reads as closed at once and is freed when that call returns. A model closed by a hook during any other call reads as closed at once too, and is freed when the outermost call returns, where `BIYOS_freemdl` would fail (@sec-events-inside).
+
+## Blocks and views {#sec-python-blocks}
+
+`addvars`, `addfuns`, `addcons` and `addobjs` return a block: `Variables`, `Functions`, `Constraints` or `Objectives`. A block holds its model, the index of its first item and its count, so it costs the same whether it holds three items or three million. It supports `len`, iteration, indexing from either end and slicing with step 1:
+
+```python
+x = model.addvars(4)
+len(x)        # 4
+x[-1]         # the view of variable 3
+x[1:3]        # a block of variables 1 and 2
+```
+
+Indexing a block gives a view, such as a `Variable`, which passes as its index wherever the model takes one: `int(x[2])` is 2. A whole block passes wherever the model takes a list of indices. The model checks the family and the owner of each view and block, so passing a function where a variable is due, or a variable of another model, raises `ValueError` instead of naming the wrong item. `on` gives the block of the same indices in another model, such as a copy (@sec-copy-python).
+
+## Arrays {#sec-python-arrays}
+
+A method that takes an array accepts any sequence of the right length: a list, a tuple, a block where indices are due. A sequence of the wrong length raises `ValueError`, an entry of the wrong type `TypeError`, and an integer too large for 32 bits, or an offset too large for 64, `OverflowError`. A writable, contiguous buffer of doubles, such as an `array.array("d")`, passes to C without a copy where doubles are due; everything else is copied into a C array for the call. The annotations name sequences, so a type checker refuses a NumPy or a ctypes array, though both work at run time: a contiguous NumPy array of float64 is such a buffer and passes without a copy, while a ctypes array of doubles is copied. `None` stands for a null array and takes the default the C call gives it.
+
+The readers return lists, in the order of the C call's arrays:
+
+| Method | Returns |
+| ------------------ | ------------------------------------ |
+| `getvars(beg, n)` | kinds, lower bounds, upper bounds |
+| `getfuns(beg, n)` | constants, offsets, variables, coefficients |
+| `getquadterms(beg, n)` | offsets, first and second variables, coefficients |
+| `getcons(beg, n)` | functions, lower bounds, upper bounds |
+| `getobjs(beg, n)` | functions, senses, priorities, weights |
+
+`beg` defaults to 0 and `n` to every item from `beg` on, so `model.getvars()` reads them all. The readers of terms size their arrays themselves.
+
+A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobjs` leaves out, as `addobjs` does.
+
+## Constants {#sec-python-constants}
+
+The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind` and `Sense` for models, `EventKind` and `EventLevel` for events, so `BIYOS_LVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvars()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name (@sec-options-python).
+
+## Failures {#sec-python-errors}
+
+A failed C call raises `biyos.Error`, carrying the status as `code` and the message as its text. Mistakes the package catches before calling C raise Python's own exceptions, as @sec-errors-python lists, and an exception raised in a hook is raised in the program once the call returns (@sec-events-python).

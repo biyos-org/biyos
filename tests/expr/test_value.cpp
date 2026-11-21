@@ -308,8 +308,8 @@ TEST(ValueTest, Operators)
 TEST(ValueTest, Domain)
 {
     Graph graph;
-    const Offset negative = graph.add_variable(0);
-    const Offset zero = graph.add_variable(1);
+    const Offset negative = graph.add_var(0);
+    const Offset zero = graph.add_var(1);
     const Offset one = constant(graph, 1.0);
     const Offset half = constant(graph, 0.5);
     const Offset large = constant(graph, 1000.0);
@@ -396,9 +396,9 @@ TEST(ValueTest, Domain)
 TEST(ValueTest, Extrema)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
-    const Offset y = graph.add_variable(1);
-    const Offset z = graph.add_variable(2);
+    const Offset x = graph.add_var(0);
+    const Offset y = graph.add_var(1);
+    const Offset z = graph.add_var(2);
     const Offset nan = unary(graph, Operator::Log, y);
     const Offset minus = constant(graph, -0.0);
     const Offset plus = constant(graph, 0.0);
@@ -449,7 +449,7 @@ TEST(ValueTest, Seeded)
 TEST(ValueTest, Sizes)
 {
     Graph graph;
-    const Offset y = graph.add_variable(1);
+    const Offset y = graph.add_var(1);
     const Offset shared = unary(graph, Operator::Exp, y);
     const Offset sine = unary(graph, Operator::Sin, shared);
     const Offset cosine = unary(graph, Operator::Cos, shared);

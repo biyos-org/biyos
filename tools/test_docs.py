@@ -15,24 +15,23 @@ HEADER = """#pragma once
 BIYOS_API int BIYOS_run(int *steps);
 """
 
-DOC = """# C API
+SPEC = """group main Main
 
-| Macro | Use |
-| --- | --- |
-| `BIYOS_API` | export |
-| `BIYOS_STATIC` | static |
-| `BIYOS_OK` | success |
+table Linking
+value BIYOS_API Export.
+value BIYOS_STATIC Static.
+value BIYOS_OK Success.
 
-### `BIYOS_run`
-
-```c
-int BIYOS_run(int *steps);
-```
+function BIYOS_run
+summary Run.
+param steps out The steps.
 """
 
+DOC = "docs/reference/capi.txt"
 
-def missing(where, symbol, what="entry"):
-    return [f"include/biyos/{where}: {symbol} has no {what} in docs/capi.md"]
+
+def missing(where, symbol):
+    return [f"include/biyos/{where}: {symbol} has no entry in {DOC}"]
 
 
 class DocTest(unittest.TestCase):
@@ -40,7 +39,7 @@ class DocTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
         self.header("biyos.h", HEADER)
-        self.doc(DOC)
+        self.doc(SPEC)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -51,7 +50,7 @@ class DocTest(unittest.TestCase):
         path.write_text(text)
 
     def doc(self, text):
-        path = self.root / "docs" / "capi.md"
+        path = self.root / DOC
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
@@ -114,7 +113,11 @@ class DocTest(unittest.TestCase):
     def test_continued(self):
         text = "#define BIYOS_EXPORT(name) \\\n    BIYOS_API void name(void)\n"
         self.header("biyos.h", HEADER + text)
-        self.doc(DOC + "| `BIYOS_EXPORT` | export |\n")
+        self.doc(
+            SPEC.replace(
+                "value BIYOS_OK", "value BIYOS_EXPORT Export.\nvalue BIYOS_OK"
+            )
+        )
         self.assertEqual(self.problems(), [])
 
     def test_comment(self):
@@ -133,7 +136,10 @@ class DocTest(unittest.TestCase):
         text += "BIYOS_API void BIYOS_stop(void);\n"
         text += '#define BIYOS_NOTE "BIYOS_FAKE */ // BIYOS_fake"\n'
         self.header("biyos.h", HEADER + text)
-        self.doc(DOC + "| `BIYOS_GLOB` | glob |\n| `BIYOS_NOTE` | note |\n")
+        values = (
+            "value BIYOS_GLOB Glob.\nvalue BIYOS_NOTE Note.\nvalue BIYOS_OK"
+        )
+        self.doc(SPEC.replace("value BIYOS_OK", values))
         self.assertEqual(self.problems(), missing("biyos.h:11", "BIYOS_stop"))
 
     def test_once(self):
@@ -148,55 +154,45 @@ class DocTest(unittest.TestCase):
             self.problems(), missing("detail/extra.h:1", "BIYOS_DEEP")
         )
 
-    def test_levels(self):
-        self.header("biyos.h", HEADER + "#define BIYOS_NEW 1\n")
-        self.doc(DOC.replace("### ", "## ") + "#### `BIYOS_NEW`\n")
-        self.assertEqual(self.problems(), [])
-
-    def test_indented(self):
-        self.doc(DOC.replace("| `BIYOS_OK` |", "  | `BIYOS_OK` |"))
-        self.assertEqual(self.problems(), [])
-
     def test_stale(self):
-        text = "| `BIYOS_GONE` | gone |\n| `seed` | seed |\n"
-        text += "### `BIYOS_old`\n### `BIYOS_old`\n"
-        self.doc(DOC + text)
+        text = "\ntable Gone\nvalue BIYOS_GONE Gone.\n"
+        text += "\nfunction BIYOS_old\nsummary Old.\n"
+        self.doc(SPEC + text)
         stale = "has an entry but no header declares it"
         expected = [
-            f"docs/capi.md:14: BIYOS_GONE {stale}",
-            f"docs/capi.md:16: BIYOS_old {stale}",
+            f"{DOC}:13: BIYOS_GONE {stale}",
+            f"{DOC}:15: BIYOS_old {stale}",
         ]
         self.assertEqual(self.problems(), expected)
 
-    def test_prototype(self):
-        self.doc(DOC.replace("(int *steps)", "(int steps)"))
+    def test_parameters(self):
+        self.doc(SPEC.replace("param steps out", "param count out"))
         where = "include/biyos/biyos.h:9"
-        problem = f"docs/capi.md:12: BIYOS_run differs from {where}"
+        problem = f"{DOC}:8: BIYOS_run parameters differ from {where}"
         self.assertEqual(self.problems(), [problem])
 
     def test_bare(self):
-        self.doc(DOC.replace("```c\nint BIYOS_run(int *steps);\n```\n", ""))
-        expected = missing("biyos.h:9", "BIYOS_run", "prototype")
-        self.assertEqual(self.problems(), expected)
+        self.doc(SPEC.replace("param steps out The steps.\n", ""))
+        where = "include/biyos/biyos.h:9"
+        problem = f"{DOC}:8: BIYOS_run parameters differ from {where}"
+        self.assertEqual(self.problems(), [problem])
 
-    def test_spacing(self):
-        shown = "BIYOS_API int\nBIYOS_run( int * steps );"
-        self.doc(DOC.replace("int BIYOS_run(int *steps);", shown))
+    def test_void(self):
+        text = HEADER + "BIYOS_API void BIYOS_stop(void);\n"
+        self.header("biyos.h", text)
+        self.doc(SPEC + "\nfunction BIYOS_stop\nsummary Stop.\n")
         self.assertEqual(self.problems(), [])
 
-    def test_example(self):
-        calls = "BIYOS_run(&steps);\nstatus = BIYOS_run(&steps);\n"
-        calls += "if (BIYOS_run(&steps) != 0)\n"
-        self.doc(DOC + "\n```c\n" + calls + "```\n")
+    def test_spacing(self):
+        text = HEADER.replace(
+            "BIYOS_run(int *steps);", "BIYOS_run( int * steps );"
+        )
+        self.header("biyos.h", text)
         self.assertEqual(self.problems(), [])
 
     def test_mention(self):
-        prose = "Call `BIYOS_run` first.\n"
-        code = "```c\n# `BIYOS_run`\n```\n"
-        cell = "| Step | Call |\n| 1 | `BIYOS_run` |\n"
-        self.doc(DOC.replace("### `BIYOS_run`\n", prose + code + cell))
-        self.assertEqual(self.problems(), missing("biyos.h:9", "BIYOS_run"))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        self.doc(SPEC.replace("function BIYOS_run\n", "function BIYOS_walk\n"))
+        stale = "has an entry but no header declares it"
+        expected = missing("biyos.h:9", "BIYOS_run")
+        expected.append(f"{DOC}:8: BIYOS_walk {stale}")
+        self.assertEqual(self.problems(), expected)

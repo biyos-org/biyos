@@ -50,31 +50,31 @@ Offset unary(Graph &graph, Operator op, Offset child)
     return build.finish();
 }
 
-Offset sum_of(Graph &graph, Offset first, Offset count, double constant)
+Offset sum_of(Graph &graph, Offset beg, Offset n, double constant)
 {
     Builder build(graph);
     std::vector<double> coefficients;
-    for (Offset k = 0; k < count; ++k)
+    for (Offset k = 0; k < n; ++k)
     {
-        build.node(first + k);
+        build.node(beg + k);
         coefficients.push_back(1.0);
     }
     build.sum(constant, coefficients);
     return build.finish();
 }
 
-void add_variables(Builder &build, int count)
+void add_vars(Builder &build, int n)
 {
-    for (int k = 0; k < count; ++k)
+    for (int k = 0; k < n; ++k)
     {
-        build.variable(k);
+        build.var(k);
     }
 }
 
 Offset nested_sum(Graph &graph, double constant, double weight, double outer, double scale)
 {
     Builder build(graph);
-    build.variable(0);
+    build.var(0);
     build.sum(constant, std::span(&weight, 1));
     build.sum(outer, std::span(&scale, 1));
     return build.finish();
@@ -83,7 +83,7 @@ Offset nested_sum(Graph &graph, double constant, double weight, double outer, do
 Offset nested_product(Graph &graph, double inner, double outer)
 {
     Builder build(graph);
-    build.variable(0);
+    build.var(0);
     build.product(inner, 1);
     build.product(outer, 1);
     return build.finish();
@@ -95,10 +95,10 @@ TEST(GraphTest, BuiltOrder)
 {
     Graph graph;
     Builder build(graph);
-    add_variables(build, 2);
+    add_vars(build, 2);
     build.product(2.0, 2);
     build.apply(Operator::Exp, 1);
-    build.variable(2);
+    build.var(2);
     const std::array weights{3.0, 4.0};
     build.sum(1.0, weights);
     build.apply(Operator::Sin, 1);
@@ -119,7 +119,7 @@ TEST(GraphTest, SharedNode)
 {
     Graph graph;
     Builder build(graph);
-    build.variable(0);
+    build.var(0);
     build.apply(Operator::Exp, 1);
     const Offset shared = build.finish();
     const Offset sine = unary(graph, Operator::Sin, shared);
@@ -138,10 +138,10 @@ TEST(GraphTest, SumMerged)
 {
     Graph graph;
     Builder build(graph);
-    add_variables(build, 2);
+    add_vars(build, 2);
     const std::array inner{2.0, 3.0};
     build.sum(1.0, inner);
-    build.variable(2);
+    build.var(2);
     const std::array outer{4.0, 5.0};
     build.sum(0.5, outer);
     const Offset root = build.finish();
@@ -156,9 +156,9 @@ TEST(GraphTest, ProductMerged)
 {
     Graph graph;
     Builder build(graph);
-    add_variables(build, 2);
+    add_vars(build, 2);
     build.product(2.0, 2);
-    build.variable(2);
+    build.var(2);
     build.product(3.0, 2);
     const Offset root = build.finish();
     ASSERT_EQ(graph.size(), 4);
@@ -171,10 +171,10 @@ TEST(GraphTest, MixedKept)
 {
     Graph graph;
     Builder build(graph);
-    add_variables(build, 2);
+    add_vars(build, 2);
     const std::array weights{1.0, 1.0};
     build.sum(0.0, weights);
-    build.variable(2);
+    build.var(2);
     build.product(1.0, 2);
     const Offset root = build.finish();
     ASSERT_EQ(graph.size(), 5);
@@ -185,12 +185,12 @@ TEST(GraphTest, MixedKept)
 TEST(GraphTest, NodeKept)
 {
     Graph graph;
-    graph.add_variable(0);
-    graph.add_variable(1);
+    graph.add_var(0);
+    graph.add_var(1);
     const Offset inner = sum_of(graph, 0, 2, 1.0);
     Builder build(graph);
     build.node(inner);
-    build.variable(2);
+    build.var(2);
     const std::array weights{2.0, 3.0};
     build.sum(0.0, weights);
     const Offset root = build.finish();
@@ -198,11 +198,11 @@ TEST(GraphTest, NodeKept)
     EXPECT_EQ(ids(graph.children(root)), (std::vector<Offset>{inner, 3}));
     expect_values(graph.coefficients(root), {2.0, 3.0});
     EXPECT_DOUBLE_EQ(graph.constant(root), 0.0);
-    add_variables(build, 2);
+    add_vars(build, 2);
     build.product(2.0, 2);
     const Offset factors = build.finish();
     build.node(factors);
-    build.variable(2);
+    build.var(2);
     build.product(3.0, 2);
     const Offset outer = build.finish();
     ASSERT_EQ(graph.size(), 7);
@@ -214,11 +214,11 @@ TEST(GraphTest, RepeatedVariable)
 {
     Graph graph;
     Builder build(graph);
-    build.variable(0);
-    build.variable(0);
+    build.var(0);
+    build.var(0);
     build.product(1.0, 2);
     const Offset square = build.finish();
-    build.variable(0);
+    build.var(0);
     build.apply(Operator::Exp, 1);
     build.finish();
     EXPECT_EQ(graph.size(), 3);
@@ -261,7 +261,7 @@ TEST(GraphTest, SignPower)
     Builder build(graph);
     EXPECT_EQ(refusal([&] { build.sign_power(1.5); }),
               "invalid argument: expression: 1 operand taken, 0 given");
-    add_variables(build, 2);
+    add_vars(build, 2);
     const std::array weights{1.0, 1.0};
     build.sum(0.0, weights);
     EXPECT_EQ(refusal([&] { build.sign_power(kNan); }),
@@ -294,7 +294,7 @@ TEST(GraphTest, UnaryCall)
 {
     Graph graph;
     Builder build(graph);
-    build.variable(0);
+    build.var(0);
     build.apply(Operator::Entropy, 1);
     build.apply(Operator::Erf, 1);
     const Offset root = build.finish();
@@ -310,7 +310,7 @@ TEST(GraphTest, MissingNode)
     Graph graph;
     Builder build(graph);
     EXPECT_EQ(refusal([&] { build.node(0); }), "invalid argument: expression: node 0 is unknown");
-    graph.add_variable(0);
+    graph.add_var(0);
     EXPECT_EQ(refusal([&] { build.node(-1); }), "invalid argument: expression: node -1 is unknown");
     build.node(0);
     EXPECT_EQ(build.finish(), 0);
@@ -323,13 +323,13 @@ TEST(GraphTest, FewOperands)
     Builder build(graph);
     EXPECT_EQ(refusal([&] { build.finish(); }),
               "invalid argument: expression: 0 operands left, not 1");
-    build.variable(0);
+    build.var(0);
     const std::array weights{1.0, 1.0};
     EXPECT_EQ(refusal([&] { build.sum(0.0, weights); }),
               "invalid argument: expression: 2 operands taken, 1 given");
     EXPECT_EQ(refusal([&] { build.apply(Operator::Power, 2); }),
               "invalid argument: expression: 2 operands taken, 1 given");
-    build.variable(1);
+    build.var(1);
     EXPECT_EQ(refusal([&] { build.finish(); }),
               "invalid argument: expression: 2 operands left, not 1");
     build.apply(Operator::Max, 2);
@@ -340,7 +340,7 @@ TEST(GraphTest, RefusedCall)
 {
     Graph graph;
     Builder build(graph);
-    add_variables(build, 2);
+    add_vars(build, 2);
     const std::array weights{1.0, 1.0};
     build.sum(0.0, weights);
     EXPECT_EQ(refusal([&] { build.sum(kNan, std::span(weights.data(), 1)); }),
@@ -354,7 +354,7 @@ TEST(GraphTest, RefusedCall)
               "invalid argument: expression: operator 4 takes 1 child or more, not -1");
     EXPECT_EQ(graph.size(), 2);
     const std::array bad{1.0, kInfinity};
-    build.variable(2);
+    build.var(2);
     EXPECT_EQ(refusal([&] { build.sum(0.0, bad); }),
               "invalid argument: expression: coefficient 1 is infinity");
     EXPECT_EQ(refusal([&] { build.product(-kInfinity, 2); }),
@@ -364,7 +364,7 @@ TEST(GraphTest, RefusedCall)
               "invalid argument: expression: operator 9 takes 1 child, not 2");
     EXPECT_EQ(refusal([&] { build.apply(Operator::Sum, 2); }),
               "invalid argument: expression: operator 3 takes coefficients");
-    EXPECT_EQ(refusal([&] { build.variable(-1); }),
+    EXPECT_EQ(refusal([&] { build.var(-1); }),
               "invalid argument: expression: variable -1 is unknown");
     EXPECT_EQ(graph.size(), 3);
     build.sum(0.0, weights);

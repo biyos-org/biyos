@@ -7,7 +7,7 @@
 namespace biyos
 {
 
-std::string format_text(const Event &event);
-std::string format_json(const Event &event);
+std::string fmt_text(const Event &evt);
+std::string fmt_json(const Event &evt);
 
 }

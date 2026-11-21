@@ -56,16 +56,16 @@ def env():
         yield env
 
 
-def option_count(env):
+def n_opts(env):
     count = 0
     kind = c_int()
-    while lib.BIYOS_getoptkind(env._handle, count + 1, byref(kind)) == OK:
+    while lib.BIYOS_getoptknd(env._handle, count + 1, byref(kind)) == OK:
         count += 1
     return count
 
 
 def test_complete(env):
-    assert option_count(env) == len(DEFAULTS)
+    assert n_opts(env) == len(DEFAULTS)
 
 
 @pytest.mark.parametrize("name, default", DEFAULTS.items())
@@ -175,7 +175,7 @@ def test_unicode(env):
 
 @pytest.mark.parametrize("name", DEFAULTS)
 def test_versions(env, name):
-    versions = env.getoptversions(name)
+    versions = env.getoptver(name)
     assert versions == biyos.Versions("0.1.0", None, None)
     assert versions.since == "0.1.0"
 
@@ -187,10 +187,10 @@ def test_version_text(number, text):
 
 def test_unknown_versions(env):
     with pytest.raises(biyos.Error) as caught:
-        env.getoptversions("seeds")
+        env.getoptver("seeds")
     assert caught.value.code == INVALID_ARGUMENT
 
 
 def test_name_versions(env):
     with pytest.raises(TypeError):
-        env.getoptversions(1)
+        env.getoptver(1)

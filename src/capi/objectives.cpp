@@ -11,6 +11,7 @@
 
 using biyos::capi::guarded;
 using biyos::capi::listed;
+using biyos::capi::picked;
 using biyos::capi::require;
 using biyos::capi::writable;
 
@@ -19,21 +20,21 @@ namespace
 
 struct Fields
 {
-    const int *senses;
-    const int *priorities;
-    const double *weights;
-    const double *absolute;
-    const double *relative;
+    const int *senses = nullptr;
+    const int *priorities = nullptr;
+    const double *weights = nullptr;
+    const double *absolute = nullptr;
+    const double *relative = nullptr;
 };
 
 struct Outputs
 {
-    int *functions;
-    int *senses;
-    int *priorities;
-    double *weights;
-    double *absolute;
-    double *relative;
+    int *functions = nullptr;
+    int *senses = nullptr;
+    int *priorities = nullptr;
+    double *weights = nullptr;
+    double *absolute = nullptr;
+    double *relative = nullptr;
 };
 
 template <typename T> T entry_or(const T *values, std::size_t k, T held)
@@ -49,119 +50,97 @@ template <typename T> void put(T *values, std::size_t k, T value)
     }
 }
 
-biyos::Objective given(biyos::Objective objective, std::size_t k, const Fields &fields)
+biyos::Objective given(biyos::Objective obj, std::size_t k, const Fields &fields)
 {
-    const int sense = entry_or(fields.senses, k, static_cast<int>(objective.sense));
-    objective.sense = static_cast<biyos::Sense>(sense);
-    objective.priority = entry_or(fields.priorities, k, objective.priority);
-    objective.weight = entry_or(fields.weights, k, objective.weight);
-    objective.absolute = entry_or(fields.absolute, k, objective.absolute);
-    objective.relative = entry_or(fields.relative, k, objective.relative);
-    return objective;
+    const int sense = entry_or(fields.senses, k, static_cast<int>(obj.sense));
+    obj.sense = static_cast<biyos::Sense>(sense);
+    obj.priority = entry_or(fields.priorities, k, obj.priority);
+    obj.weight = entry_or(fields.weights, k, obj.weight);
+    obj.absolute = entry_or(fields.absolute, k, obj.absolute);
+    obj.relative = entry_or(fields.relative, k, obj.relative);
+    return obj;
 }
 
-std::vector<biyos::Objective> new_objectives(std::span<const biyos::Index> functions,
-                                             biyos::Index start,
-                                             const Fields &fields)
+std::vector<biyos::Objective> new_objs(std::span<const biyos::Index> funs,
+                                       biyos::Index start,
+                                       const Fields &fields)
 {
     std::vector<biyos::Objective> added;
-    added.reserve(functions.size());
-    for (std::size_t k = 0; k < functions.size(); ++k)
+    added.reserve(funs.size());
+    for (std::size_t k = 0; k < funs.size(); ++k)
     {
-        const biyos::Index index = start + static_cast<biyos::Index>(k);
-        added.push_back(given(biyos::default_objective(functions[k], index), k, fields));
+        const biyos::Index idx = start + static_cast<biyos::Index>(k);
+        added.push_back(given(biyos::default_obj(funs[k], idx), k, fields));
     }
     return added;
 }
 
-void add_objectives(BIYOS_model &model,
-                    int count,
-                    const int *functions,
-                    const int *senses,
-                    const int *priorities,
-                    const double *weights,
-                    const double *absolute,
-                    const double *relative,
-                    int *first)
+void add_objs(BIYOS_model &mdl,
+              int n,
+              const int *funs,
+              const int *senses,
+              const int *priorities,
+              const double *weights,
+              int *beg)
 {
-    biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> owners = listed(count, functions, "funs");
-    core.check_objective_room(owners.size());
+    biyos::Model &core = writable(mdl);
+    const std::span<const biyos::Index> owners = listed(n, funs, "funidx");
+    core.check_obj_room(owners.size());
     const Fields fields{
         .senses = senses,
         .priorities = priorities,
         .weights = weights,
-        .absolute = absolute,
-        .relative = relative,
     };
-    const biyos::Index start = core.objective_count();
-    core.add_objectives(new_objectives(owners, start, fields));
-    if (first != nullptr)
+    const biyos::Index start = core.n_objs();
+    core.add_objs(new_objs(owners, start, fields));
+    if (beg != nullptr)
     {
-        *first = start;
+        *beg = start;
     }
 }
 
-void set_objectives(BIYOS_model &model,
-                    int count,
-                    const int *indices,
-                    const int *senses,
-                    const int *priorities,
-                    const double *weights,
-                    const double *absolute,
-                    const double *relative)
+void set_objs(BIYOS_model &mdl, int n, const int *idx, const Fields &fields)
 {
-    biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> changed = listed(count, indices);
-    const Fields fields{
-        .senses = senses,
-        .priorities = priorities,
-        .weights = weights,
-        .absolute = absolute,
-        .relative = relative,
-    };
-    std::vector<biyos::Objective> objectives;
-    objectives.reserve(changed.size());
+    biyos::Model &core = writable(mdl);
+    const std::span<const biyos::Index> changed = listed(n, idx);
+    std::vector<biyos::Objective> objs;
+    objs.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
-        objectives.push_back(given(core.objective(changed[k]), k, fields));
+        objs.push_back(given(core.objective(changed[k]), k, fields));
     }
-    core.set_objectives(changed, objectives);
+    core.set_objs(changed, objs);
 }
 
-void objective_count(const BIYOS_model &model, int *count)
+void n_objs(const BIYOS_model &mdl, int *n)
 {
-    *require(count, "n") = model.core.objective_count();
+    *require(n, "n") = mdl.core.n_objs();
 }
 
-void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &outputs)
+void copy_out(const biyos::Objective &obj, std::size_t k, const Outputs &outputs)
 {
-    put(outputs.functions, k, objective.function);
-    put(outputs.senses, k, static_cast<int>(objective.sense));
-    put(outputs.priorities, k, objective.priority);
-    put(outputs.weights, k, objective.weight);
-    put(outputs.absolute, k, objective.absolute);
-    put(outputs.relative, k, objective.relative);
+    put(outputs.functions, k, obj.function);
+    put(outputs.senses, k, static_cast<int>(obj.sense));
+    put(outputs.priorities, k, obj.priority);
+    put(outputs.weights, k, obj.weight);
+    put(outputs.absolute, k, obj.absolute);
+    put(outputs.relative, k, obj.relative);
 }
 
-void get_objectives(const BIYOS_model &model,
-                    int first,
-                    int count,
-                    int *functions,
-                    int *senses,
-                    int *priorities,
-                    double *weights,
-                    double *absolute,
-                    double *relative)
+void get_objs(const BIYOS_model &mdl,
+              int beg,
+              int n,
+              int *funs,
+              int *senses,
+              int *priorities,
+              double *weights)
 {
-    const std::span<const biyos::Objective> found = model.core.objectives(first, count);
+    const std::span<const biyos::Objective> found = mdl.core.objs(beg, n);
     const Outputs outputs{
-        .functions = functions,
+        .functions = funs,
         .senses = senses,
         .priorities = priorities,
         .weights = weights,
-        .absolute = absolute,
-        .relative = relative,
     };
     for (std::size_t k = 0; k < found.size(); ++k)
     {
@@ -169,47 +148,107 @@ void get_objectives(const BIYOS_model &model,
     }
 }
 
+void get_listed(const BIYOS_model &mdl, int n, const int *idx, const Outputs &outputs)
+{
+    const std::vector<biyos::Objective> objs =
+        picked(mdl.core, &biyos::Model::objective, listed(n, idx));
+    for (std::size_t k = 0; k < objs.size(); ++k)
+    {
+        copy_out(objs[k], k, outputs);
+    }
+}
+
 }
 
 BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
                            BIYOS_index n,
-                           const BIYOS_index *funs,
-                           const BIYOS_int *senses,
-                           const BIYOS_int *prios,
-                           const BIYOS_real *weights,
-                           const BIYOS_real *abstol,
-                           const BIYOS_real *reltol,
+                           const BIYOS_index *funidx,
+                           const BIYOS_int *sense,
+                           const BIYOS_int *prio,
+                           const BIYOS_real *coef,
                            BIYOS_index *beg)
 {
-    return guarded<add_objectives>(mdl, n, funs, senses, prios, weights, abstol, reltol, beg);
+    return guarded<add_objs>(mdl, n, funidx, sense, prio, coef, beg);
 }
 
-BIYOS_status BIYOS_setobjs(BIYOS_model *mdl,
-                           BIYOS_index n,
-                           const BIYOS_index *idx,
-                           const BIYOS_int *senses,
-                           const BIYOS_int *prios,
-                           const BIYOS_real *weights,
-                           const BIYOS_real *abstol,
-                           const BIYOS_real *reltol)
+BIYOS_status BIYOS_setobjsense(BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               const BIYOS_int *sense)
 {
-    return guarded<set_objectives>(mdl, n, idx, senses, prios, weights, abstol, reltol);
+    return guarded<set_objs>(mdl, n, idx, Fields{.senses = sense});
+}
+
+BIYOS_status BIYOS_getobjsense(const BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               BIYOS_int *sense)
+{
+    return guarded<get_listed>(mdl, n, idx, Outputs{.senses = sense});
+}
+
+BIYOS_status BIYOS_setobjprio(BIYOS_model *mdl,
+                              BIYOS_index n,
+                              const BIYOS_index *idx,
+                              const BIYOS_int *prio)
+{
+    return guarded<set_objs>(mdl, n, idx, Fields{.priorities = prio});
+}
+
+BIYOS_status BIYOS_getobjprio(const BIYOS_model *mdl,
+                              BIYOS_index n,
+                              const BIYOS_index *idx,
+                              BIYOS_int *prio)
+{
+    return guarded<get_listed>(mdl, n, idx, Outputs{.priorities = prio});
+}
+
+BIYOS_status BIYOS_setobjcoef(BIYOS_model *mdl,
+                              BIYOS_index n,
+                              const BIYOS_index *idx,
+                              const BIYOS_real *coef)
+{
+    return guarded<set_objs>(mdl, n, idx, Fields{.weights = coef});
+}
+
+BIYOS_status BIYOS_getobjcoef(const BIYOS_model *mdl,
+                              BIYOS_index n,
+                              const BIYOS_index *idx,
+                              BIYOS_real *coef)
+{
+    return guarded<get_listed>(mdl, n, idx, Outputs{.weights = coef});
+}
+
+BIYOS_status BIYOS_setobjtol(BIYOS_model *mdl,
+                             BIYOS_index n,
+                             const BIYOS_index *idx,
+                             const BIYOS_real *atol,
+                             const BIYOS_real *rtol)
+{
+    return guarded<set_objs>(mdl, n, idx, Fields{.absolute = atol, .relative = rtol});
+}
+
+BIYOS_status BIYOS_getobjtol(const BIYOS_model *mdl,
+                             BIYOS_index n,
+                             const BIYOS_index *idx,
+                             BIYOS_real *atol,
+                             BIYOS_real *rtol)
+{
+    return guarded<get_listed>(mdl, n, idx, Outputs{.absolute = atol, .relative = rtol});
 }
 
 BIYOS_status BIYOS_getnobjs(const BIYOS_model *mdl, BIYOS_index *n)
 {
-    return guarded<objective_count>(mdl, n);
+    return guarded<n_objs>(mdl, n);
 }
 
 BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
                            BIYOS_index beg,
                            BIYOS_index n,
-                           BIYOS_index *funs,
-                           BIYOS_int *senses,
-                           BIYOS_int *prios,
-                           BIYOS_real *weights,
-                           BIYOS_real *abstol,
-                           BIYOS_real *reltol)
+                           BIYOS_index *funidx,
+                           BIYOS_int *sense,
+                           BIYOS_int *prio,
+                           BIYOS_real *coef)
 {
-    return guarded<get_objectives>(mdl, beg, n, funs, senses, prios, weights, abstol, reltol);
+    return guarded<get_objs>(mdl, beg, n, funidx, sense, prio, coef);
 }

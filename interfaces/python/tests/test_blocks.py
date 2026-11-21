@@ -80,9 +80,9 @@ def test_outside(model):
 
 def test_view(model):
     x = model.addvars(3)
-    model.setvarbounds([x[1]], [0.0], [1.0])
-    model.setvarbounds(x[1:], ub=[5.0, 6.0])
-    model.setvarbounds([0, x[2]], lb=[-1.0, -2.0])
+    model.setvarbnd([x[1]], [0.0], [1.0])
+    model.setvarbnd(x[1:], ub=[5.0, 6.0])
+    model.setvarbnd([0, x[2]], lb=[-1.0, -2.0])
     found = model.getvars()[1:]
     assert found == ([-1.0, 0.0, -2.0], [INFINITY, 5.0, 6.0])
     assert model.getvars(x[2])[1] == [-2.0]
@@ -94,9 +94,9 @@ def test_foreign_view(env, model):
     model.addvars(3)
     entry = "an entry of idx is a variable of another model"
     with pytest.raises(ValueError, match=entry):
-        model.setvarbounds([0, x[1]], [0.0, 0.0], [1.0, 1.0])
+        model.setvarbnd([0, x[1]], [0.0, 0.0], [1.0, 1.0])
     with pytest.raises(ValueError, match=entry):
-        model.setvarkinds([x[0]], [biyos.VariableKind.INTEGER])
+        model.setvarknd([x[0]], [biyos.VariableKind.INTEGER])
     with pytest.raises(ValueError, match="beg is a variable of another"):
         model.getvars(x[1], 1)
     assert model.getvars() == other.getvars()
@@ -108,9 +108,9 @@ def test_foreign_block(env, model):
     model.addvars(3)
     block = "idx is a block of another model"
     with pytest.raises(ValueError, match=block):
-        model.setvarbounds(x, None, [1.0] * 3)
+        model.setvarbnd(x, None, [1.0] * 3)
     with pytest.raises(ValueError, match=block):
-        model.setvarkinds(x[1:], [biyos.VariableKind.INTEGER] * 2)
+        model.setvarknd(x[1:], [biyos.VariableKind.INTEGER] * 2)
     assert model.getvars() == other.getvars()
 
 
@@ -120,13 +120,13 @@ def test_closed_block(env, model):
     other.close()
     model.addvars(3)
     with pytest.raises(ValueError, match="idx is a block of another"):
-        model.setvarbounds(x, None, [1.0] * 3)
+        model.setvarbnd(x, None, [1.0] * 3)
     assert model.getvars()[2] == [INFINITY] * 3
 
 
 def test_stale(model):
     x = model.addvars(3)
-    model._version += 1
+    model._gen += 1
     for use in (len, iter, itemgetter(0), itemgetter(slice(1))):
         with pytest.raises(ValueError, match=STALE):
             use(x)
@@ -136,23 +136,23 @@ def test_gone(model):
     x = model.addvars(3)
     view = x[1]
     views = iter(x)
-    model._version += 1
+    model._gen += 1
     with pytest.raises(ValueError, match=GONE):
         index(view)
     with pytest.raises(ValueError, match=GONE):
         index(next(views))
     with pytest.raises(ValueError, match=GONE):
-        model.setvarbounds([view], [0.0], [1.0])
+        model.setvarbnd([view], [0.0], [1.0])
     assert model.getvars()[1] == [-INFINITY] * 3
 
 
 def test_fresh(model):
     model.addvars(1)
-    model._version += 1
+    model._gen += 1
     x = model.addvars(3)
     assert len(x) == 3
     assert indices(x[1:]) == [2, 3]
-    model.setvarbounds(x[1:], [0.0, 0.0])
+    model.setvarbnd(x[1:], [0.0, 0.0])
     assert model.getvars()[1] == [-INFINITY, -INFINITY, 0.0, 0.0]
 
 
@@ -180,8 +180,8 @@ def test_subclass(model):
         __slots__ = ()
 
     model.addvars(3)
-    model.setvarbounds([Mine(model, 1, model._version)], [3.0])
-    model.setvarbounds(Ours(model, 2, 1, model._version), [4.0])
+    model.setvarbnd([Mine(model, 1, model._gen)], [3.0])
+    model.setvarbnd(Ours(model, 2, 1, model._gen), [4.0])
     assert model.getvars()[1] == [-INFINITY, 3.0, 4.0]
 
 
@@ -192,10 +192,10 @@ def test_on(model):
     y = x.on(copy)
     assert type(y) is biyos.Variables
     assert indices(y) == [1, 2, 3]
-    copy.setvarbounds(y[1:], None, [5.0, 6.0])
+    copy.setvarbnd(y[1:], None, [5.0, 6.0])
     assert copy.getvars()[2] == [INFINITY, INFINITY, 5.0, 6.0]
     with pytest.raises(ValueError, match="idx is a block of another"):
-        model.setvarbounds(y, None, [1.0] * 3)
+        model.setvarbnd(y, None, [1.0] * 3)
     assert model.getvars()[2] == [INFINITY] * 4
     assert indices(x) == [1, 2, 3]
     copy.close()
@@ -205,7 +205,7 @@ def test_smaller(env, model):
     x = model.addvars(3)
     other = biyos.Model(env)
     other.addvars(2)
-    few = "model holds too few variables: 2, the block needs 3"
+    few = "mdl holds too few variables: 2, the block needs 3"
     with pytest.raises(ValueError, match=few):
         x.on(other)
     with pytest.raises(ValueError, match=few):
@@ -218,13 +218,13 @@ def test_smaller(env, model):
 
 def test_target(env, model):
     x = model.addvars(3)
-    with pytest.raises(TypeError, match="model must be a Model, not int"):
+    with pytest.raises(TypeError, match="mdl must be a Model, not int"):
         x.on(1)
     other = biyos.Model(env)
     other.close()
     with pytest.raises(ValueError, match="the model is closed"):
         x.on(other)
-    model._version += 1
+    model._gen += 1
     with pytest.raises(ValueError, match=STALE):
         x.on(model)
 
@@ -232,10 +232,10 @@ def test_target(env, model):
 def test_rebound(model):
     x = model.addvars(3)
     copy = model.copy()
-    copy._version += 2
+    copy._gen += 2
     y = x.on(copy)
     assert len(y) == 3
-    copy._version += 1
+    copy._gen += 1
     with pytest.raises(ValueError, match=STALE):
         len(y)
     assert len(x) == 3

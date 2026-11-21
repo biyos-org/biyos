@@ -22,26 +22,26 @@ using biyos::capi::write_starts;
 namespace
 {
 
-void add_terms(BIYOS_model &model,
-               int count,
-               const int *functions,
+void add_terms(BIYOS_model &mdl,
+               int n,
+               const int *funs,
                const std::int64_t *starts,
                const int *firsts,
                const int *seconds,
                const double *values)
 {
-    biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> owners = listed(count, functions, "funs");
+    biyos::Model &core = writable(mdl);
+    const std::span<const biyos::Index> owners = listed(n, funs, "funidx");
     const std::vector<biyos::Offset> begins = offsets(owners.size(), starts);
     biyos::check_starts(begins);
-    core.check_quadratic_room(begins.back());
+    core.check_quad_room(begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
-    core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, firsts, seconds, values));
+    core.add_quad_terms(owners, begins, biyos::capi::packed(total, firsts, seconds, values));
 }
 
-void get_terms(const BIYOS_model &model,
-               int first,
-               int count,
+void get_terms(const BIYOS_model &mdl,
+               int beg,
+               int n,
                std::int64_t *starts,
                std::int64_t size,
                std::int64_t *needed,
@@ -49,11 +49,11 @@ void get_terms(const BIYOS_model &model,
                int *seconds,
                double *values)
 {
-    const std::span<const biyos::QuadraticTerm> found = model.core.quadratic_terms(first, count);
+    const std::span<const biyos::QuadraticTerm> found = mdl.core.quad_terms(beg, n);
     const std::size_t room = length(size, "size");
-    require(needed, "needed");
-    const auto before = [&](biyos::Index j) { return model.core.quadratic_terms(first, j); };
-    write_starts(static_cast<std::size_t>(count), starts, before);
+    require(needed, "nnz");
+    const auto before = [&](biyos::Index j) { return mdl.core.quad_terms(beg, j); };
+    write_starts(static_cast<std::size_t>(n), starts, before);
     biyos::capi::unpack(found, room, firsts, seconds, values);
     *needed = static_cast<std::int64_t>(found.size());
 }
@@ -62,24 +62,24 @@ void get_terms(const BIYOS_model &model,
 
 BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *funs,
-                                const BIYOS_offset *starts,
-                                const BIYOS_index *vars1,
-                                const BIYOS_index *vars2,
-                                const BIYOS_real *vals)
+                                const BIYOS_index *funidx,
+                                const BIYOS_offset *off,
+                                const BIYOS_index *varidx1,
+                                const BIYOS_index *varidx2,
+                                const BIYOS_real *coef)
 {
-    return guarded<add_terms>(mdl, n, funs, starts, vars1, vars2, vals);
+    return guarded<add_terms>(mdl, n, funidx, off, varidx1, varidx2, coef);
 }
 
 BIYOS_status BIYOS_getquadterms(const BIYOS_model *mdl,
                                 BIYOS_index beg,
                                 BIYOS_index n,
                                 BIYOS_offset size,
-                                BIYOS_offset *starts,
-                                BIYOS_offset *needed,
-                                BIYOS_index *vars1,
-                                BIYOS_index *vars2,
-                                BIYOS_real *vals)
+                                BIYOS_offset *off,
+                                BIYOS_offset *nnz,
+                                BIYOS_index *varidx1,
+                                BIYOS_index *varidx2,
+                                BIYOS_real *coef)
 {
-    return guarded<get_terms>(mdl, beg, n, starts, size, needed, vars1, vars2, vals);
+    return guarded<get_terms>(mdl, beg, n, off, size, nnz, varidx1, varidx2, coef);
 }

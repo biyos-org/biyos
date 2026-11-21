@@ -1,0 +1,305 @@
+/*-- scss:defaults --*/
+$font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+$font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+$body-bg: $bg;
+$body-color: $text;
+$body-secondary-color: $text-muted;
+$primary: $brand-blue;
+$secondary: $text-muted;
+$light: $bg;
+$link-color: $link;
+$link-decoration: none;
+$link-hover-decoration: none;
+$border-color: $line;
+$table-border-color: $line;
+$hr-border-color: $line;
+
+$font-family-sans-serif: $font-sans;
+$font-family-monospace: $font-mono;
+$headings-font-family: $font-sans;
+$font-size-root: null;
+$font-size-base: 1rem;
+$line-height-base: 1.6;
+$paragraph-margin-bottom: 0.875rem;
+$headings-font-weight: 700;
+$headings-color: $text;
+$h1-font-size: 2.25rem;
+$h2-font-size: 1.375rem;
+$h3-font-size: 1.0625rem;
+$h4-font-size: 1rem;
+$h1h2h3-font-weight: 700;
+
+$code-color: $text;
+$code-bg: rgba($text, 0.06);
+$code-block-bg: $surface;
+$code-block-border-left: false;
+$code-font-size: 0.875em;
+$code-block-font-size: 0.875rem;
+$code-inline-font-size: 0.875em;
+
+$sidebar-bg: $bg;
+$sidebar-fg: $text-muted;
+$sidebar-hl: $text;
+$sidebar-font-size: 0.875rem;
+$sidebar-font-size-section: 0.875rem;
+$toc-color: $text-muted;
+$toc-font-size: 0.8125rem;
+$toc-active-border: $brand-blue;
+$toc-inactive-border: $line;
+
+$callout-border-width: 3px;
+$callout-color-note: $brand-blue;
+$callout-color-tip: $brand-blue;
+$callout-color-important: $brand-blue;
+$callout-color-warning: $text-muted;
+$callout-color-caution: $text-muted;
+
+$footer-bg: $bg;
+$footer-fg: $text-muted;
+$popover-bg: $surface;
+$input-bg: $surface;
+
+$grid-sidebar-width: 300px;
+$grid-body-width: 856px;
+$grid-margin-width: 240px;
+$grid-column-gutter-width: 1.75rem;
+
+/*-- scss:mixins --*/
+@mixin label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: $text-muted;
+}
+
+/*-- scss:rules --*/
+:root {
+  --bg: #{$bg};
+  --surface: #{$surface};
+  --text: #{$text};
+  --text-muted: #{$text-muted};
+  --line: #{$line};
+  --link: #{$link};
+  --accent-soft: #{$accent-soft};
+  --brand-ink: #{$brand-ink};
+  --brand-blue: #{$brand-blue};
+  --brand-paper: #{$brand-paper};
+  --edge: #{mix($text, $surface, 24%)};
+}
+
+body {
+  background-color: $bg;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba($brand-blue, 0.22);
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3 {
+  font-family: $font-sans;
+  color: $text;
+}
+
+h1, .h1 {
+  font-weight: 700;
+  line-height: 2.75rem;
+  letter-spacing: -0.015em;
+}
+
+h2, .h2 {
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.875rem;
+  letter-spacing: -0.01em;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+h3, .h3 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  line-height: 1.625rem;
+}
+
+h4, .h4 {
+  margin-top: 1.5rem;
+  font-weight: 600;
+}
+
+#title-block-header,
+body.nav-sidebar #title-block-header {
+  margin-bottom: 1.75rem;
+}
+
+#title-block-header h1.title {
+  margin-bottom: 0;
+}
+
+.header-section-number,
+.chapter-number {
+  color: $brand-blue;
+  font-weight: 600;
+  margin-right: 0.35em;
+}
+
+h1 .chapter-number {
+  font-weight: 700;
+}
+
+h2 .header-section-number,
+h3 .header-section-number {
+  font-variant-numeric: tabular-nums;
+}
+
+p, li, dd {
+  hyphens: manual;
+}
+
+main a,
+.content a {
+  text-decoration: underline;
+  text-decoration-color: rgba($link, 0.35);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color 120ms ease;
+}
+
+main a:hover,
+.content a:hover {
+  text-decoration-color: $link;
+}
+
+main a code,
+main a:has(code) {
+  text-decoration: none;
+}
+
+main a code {
+  color: $link;
+}
+
+a.anchorjs-link,
+.anchored a.anchorjs-link {
+  text-decoration: none;
+  color: $text-muted;
+}
+
+@import "parts/code";
+
+.csl-entry {
+  overflow-wrap: anywhere;
+}
+
+@import "parts/tables";
+
+@import "parts/callouts";
+
+blockquote {
+  border-left: 3px solid $line;
+  color: $text-muted;
+  padding-left: 1.25rem;
+}
+
+hr {
+  opacity: 1;
+  border-top: 1px solid $line;
+}
+
+dl dt {
+  font-weight: 600;
+}
+
+dl dd {
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+@import "parts/navigation";
+
+@import "parts/figures";
+
+.math.display {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+mjx-container[display="true"] {
+  margin: 1.25rem 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  min-width: 0 !important;
+}
+
+@media (max-width: 575.98px) {
+  mjx-container[display="true"] {
+    font-size: 85% !important;
+  }
+}
+
+.citation a,
+a.footnote-ref {
+  text-decoration: none;
+}
+
+#refs.hanging-indent {
+  margin-left: 0;
+  text-indent: 0;
+}
+
+#refs .csl-entry {
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  margin-left: 0;
+  margin-bottom: 0.75rem;
+  padding-left: 1.5em;
+  text-indent: -1.5em;
+}
+
+@import "parts/landing";
+
+@import "parts/reference";
+
+main h5,
+main h6 {
+  font-size: 0.9375rem;
+}
+
+main dl dd {
+  margin-left: 1.25rem;
+}
+
+main li {
+  margin-bottom: 0.25rem;
+}
+
+main li > p {
+  margin-bottom: 0.25rem;
+}
+
+main ul,
+main ol {
+  margin-bottom: 0.875rem;
+}
+
+mjx-container[jax="CHTML"]:not([display="true"]) {
+  display: inline-block;
+  height: 1em;
+  line-height: 1;
+  margin: 0 !important;
+  vertical-align: baseline;
+}
+
+@media (min-width: 1800px) {
+  html {
+    font-size: 17px;
+  }
+}

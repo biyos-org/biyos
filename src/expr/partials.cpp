@@ -243,7 +243,7 @@ void slopes_of(const Instruction &instruction,
 
 }
 
-std::uint32_t partial_count(const Instruction &instruction) noexcept
+std::uint32_t n_partials(const Instruction &instruction) noexcept
 {
     switch (instruction.op)
     {

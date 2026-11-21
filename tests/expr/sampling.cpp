@@ -89,9 +89,9 @@ double unit(Engine &engine)
     return static_cast<double>(engine() >> 11) * 0x1p-53;
 }
 
-std::size_t pick(Engine &engine, std::size_t count)
+std::size_t pick(Engine &engine, std::size_t n)
 {
-    return static_cast<std::size_t>(engine() % count);
+    return static_cast<std::size_t>(engine() % n);
 }
 
 double endpoint(Engine &engine)
@@ -173,13 +173,12 @@ bool encloses(Interval interval, double value)
 
 std::string report(std::span<const Interval> box, const Point &point, Offset node)
 {
-    std::string message = "node " + std::to_string(node) + " at";
+    std::string msg = "node " + std::to_string(node) + " at";
     for (std::size_t k = 0; k < kVariables; ++k)
     {
-        message +=
-            " x" + std::to_string(k) + " = " + text(point[k]) + " in " + interval_text(box[k]);
+        msg += " x" + std::to_string(k) + " = " + text(point[k]) + " in " + interval_text(box[k]);
     }
-    return message;
+    return msg;
 }
 
 void expect_point(const Check &check, const Point &point)
@@ -199,46 +198,46 @@ void expect_point(const Check &check, const Point &point)
 
 }
 
-biyos::test::Parameters biyos::test::parameters_of(Operator op, Engine &engine)
+biyos::test::Parameters biyos::test::params_of(Operator op, Engine &engine)
 {
-    Parameters parameters{};
-    parameters.constant = finite_endpoint(engine);
-    for (double &weight : parameters.weights)
+    Parameters params{};
+    params.constant = finite_endpoint(engine);
+    for (double &weight : params.weights)
     {
         weight = pick(engine, 4) == 0 ? 0.0 : finite_endpoint(engine);
     }
     const bool sign = op == Operator::SignPower;
     const std::size_t choice = pick(engine, sign ? kPositive.size() : kExponents.size());
-    parameters.exponent = sign ? kPositive[choice] : kExponents[choice];
-    return parameters;
+    params.exponent = sign ? kPositive[choice] : kExponents[choice];
+    return params;
 }
 
-Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
+Graph biyos::test::operator_graph(Operator op, const Parameters &params)
 {
     Graph graph;
     std::array<Offset, kVariables> x{};
     for (std::size_t k = 0; k < kVariables; ++k)
     {
-        x[k] = graph.add_variable(static_cast<biyos::Index>(k));
+        x[k] = graph.add_var(static_cast<biyos::Index>(k));
     }
     const std::span<const Offset> one(x.data(), 1);
     const std::span<const Offset> two(x.data(), 2);
     switch (op)
     {
     case Operator::Constant:
-        graph.add(op, parameters.constant, {});
+        graph.add(op, params.constant, {});
         break;
     case Operator::Variable:
         break;
     case Operator::Sum:
-        graph.add_sum(parameters.constant, x, parameters.weights);
+        graph.add_sum(params.constant, x, params.weights);
         break;
     case Operator::Product:
-        graph.add(op, parameters.constant, x);
+        graph.add(op, params.constant, x);
         break;
     case Operator::ConstantPower:
     case Operator::SignPower:
-        graph.add(op, parameters.exponent, one);
+        graph.add(op, params.exponent, one);
         break;
     case Operator::Division:
     case Operator::Power:
@@ -306,8 +305,8 @@ void biyos::test::expect_sampled(const Check &check, Engine &engine)
         for (std::size_t k = 0; k < kVariables; ++k)
         {
             const std::vector<double> &mine = candidates[k];
-            const std::size_t index = round < largest ? round : pick(engine, largest);
-            point[k] = mine[index % mine.size()];
+            const std::size_t idx = round < largest ? round : pick(engine, largest);
+            point[k] = mine[idx % mine.size()];
         }
         expect_point(check, point);
     }

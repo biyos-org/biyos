@@ -1,0 +1,25 @@
+# Threads {#sec-threads}
+
+biyos keeps no global state. Everything a call reads or changes belongs to an environment or to a model made on it, so environments are independent of each other. The rule follows:
+
+- Separate threads may use separate environments at the same time, each with its own models.
+- One environment is used by one thread at a time, together with every model made on it, except for `BIYOS_interrupt` (@sec-threads-interrupt).
+
+A program that wants to work on one model from several threads copies it onto an environment per thread (@sec-copy). `BIYOS_copymdl` reads the source and changes the target environment, so while it runs no other thread may use either environment. Afterwards the two are apart.
+
+biyos starts no thread of its own yet. `BIYOS_version` reads no state and may be called from any thread. A hook runs on the thread whose call sent the event, so the calls that read or format an event run there too.
+
+## Interrupting a call {#sec-threads-interrupt}
+
+`BIYOS_interrupt` asks the call running on an environment to stop. Any thread may call it while another thread is inside a call on that environment or on one of its models, and so may a signal handler, since it only sets a flag and returns. A long call reads the flag where it checks its time limits and stops with the termination `BIYOS_TRM_STOP`, an outcome rather than an error code. The flag clears when the next call on the environment or on one of its models starts, so a request that arrives after a call has returned does not stop the one that follows. A call made by a hook leaves it set, so a hook may stop the call that sent its event. No call is long enough to read the flag yet.
+
+## In Python {#sec-threads-python}
+
+The package calls the library through `ctypes`, which releases the global interpreter lock for the length of each C call, so threads that work on separate environments run their C code side by side. The rule is the same as in C: one environment, and its models, per thread at a time.
+
+```{.python file="examples/python/threads.py"}
+```
+
+Each thread builds its own model on its own environment, and the results come back in the order the work was given, whatever order the threads finished in. A hook written in Python takes the interpreter lock while it runs.
+
+`Env.interrupt` makes the request of @sec-threads-interrupt, and another thread may call it while a call runs. A `KeyboardInterrupt` raised in a hook makes it too, and is raised once the call returns.

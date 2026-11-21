@@ -80,7 +80,7 @@ TEST(GraphTest, Payloads)
 {
     Graph graph;
     const Offset two = graph.add(Operator::Constant, 2.5, {});
-    const Offset x = graph.add_variable(3);
+    const Offset x = graph.add_var(3);
     const std::array terms{two, x};
     const std::array weights{2.0, -1.0};
     const Offset sum = graph.add_sum(1.5, terms, weights);
@@ -104,8 +104,8 @@ TEST(GraphTest, Payloads)
 TEST(GraphTest, Order)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
-    const Offset y = graph.add_variable(1);
+    const Offset x = graph.add_var(0);
+    const Offset y = graph.add_var(1);
     const std::array pair{y, x};
     const Offset ratio = graph.add(Operator::Division, pair);
     const Offset top = unary(graph, Operator::Exp, ratio);
@@ -122,12 +122,12 @@ TEST(GraphTest, Order)
 TEST(GraphTest, SharedVariable)
 {
     Graph graph;
-    const Offset x = graph.add_variable(4);
-    const Offset y = graph.add_variable(1);
+    const Offset x = graph.add_var(4);
+    const Offset y = graph.add_var(1);
     unary(graph, Operator::Exp, x);
-    EXPECT_EQ(graph.add_variable(4), x);
-    EXPECT_EQ(graph.add_variable(1), y);
-    EXPECT_EQ(graph.add_variable(0), 3);
+    EXPECT_EQ(graph.add_var(4), x);
+    EXPECT_EQ(graph.add_var(1), y);
+    EXPECT_EQ(graph.add_var(0), 3);
     EXPECT_EQ(graph.size(), 4);
     EXPECT_EQ(graph.variable(x), 4);
     EXPECT_EQ(graph.variable(y), 1);
@@ -136,7 +136,7 @@ TEST(GraphTest, SharedVariable)
 TEST(GraphTest, OwnSpans)
 {
     Graph graph;
-    const std::array terms{graph.add_variable(0), graph.add_variable(1)};
+    const std::array terms{graph.add_var(0), graph.add_var(1)};
     const std::array weights{2.0, 3.0};
     Offset sum = graph.add_sum(1.0, terms, weights);
     Offset product = graph.add(Operator::Product, 2.0, terms);
@@ -156,7 +156,7 @@ TEST(GraphTest, OwnSpans)
 TEST(GraphTest, MissingChild)
 {
     Graph graph;
-    graph.add_variable(0);
+    graph.add_var(0);
     const Offset ahead = 1;
     const Offset negative = -1;
     EXPECT_EQ(refusal([&] { graph.add(Operator::Exp, std::span(&ahead, 1)); }),
@@ -175,7 +175,7 @@ TEST(GraphTest, NonfiniteConstant)
               "invalid argument: expression: constant is infinity");
     EXPECT_EQ(constant_refusal(graph, -kInfinity),
               "invalid argument: expression: constant is minus infinity");
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     EXPECT_EQ(sum_refusal(graph, kNan, 1.0), "invalid argument: expression: constant is NaN");
     EXPECT_EQ(refusal([&] { graph.add(Operator::Product, kInfinity, std::span(&x, 1)); }),
               "invalid argument: expression: constant is infinity");
@@ -187,7 +187,7 @@ TEST(GraphTest, NonfiniteConstant)
 TEST(GraphTest, NonfiniteCoefficient)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     const std::array terms{x, x};
     const std::array weights{1.0, -kInfinity};
     EXPECT_EQ(refusal([&] { graph.add_sum(0.0, terms, weights); }),
@@ -199,7 +199,7 @@ TEST(GraphTest, NonfiniteCoefficient)
 TEST(GraphTest, Arity)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     const std::array two{x, x};
     EXPECT_EQ(refusal([&] { graph.add(Operator::Exp, two); }),
               "invalid argument: expression: operator 9 takes 1 child, not 2");
@@ -217,7 +217,7 @@ TEST(GraphTest, Arity)
 TEST(GraphTest, UnaryShape)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     const std::array two{x, x};
     for (const Operator op : kUnary)
     {
@@ -234,7 +234,7 @@ TEST(GraphTest, UnaryShape)
 TEST(GraphTest, ExponentShape)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     const std::span child(&x, 1);
     const std::array two{x, x};
     for (const Operator op : kExponents)
@@ -273,7 +273,7 @@ TEST(GraphTest, ExponentShape)
 TEST(GraphTest, Form)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     EXPECT_EQ(refusal([&] { graph.add(Operator::Sum, std::span(&x, 1)); }),
               "invalid argument: expression: operator 3 takes coefficients");
     EXPECT_EQ(refusal([&] { graph.add(Operator::Exp, 2.0, std::span(&x, 1)); }),
@@ -288,12 +288,12 @@ TEST(GraphTest, Form)
 TEST(GraphTest, Counts)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     const std::array terms{x, x};
     const double weight = 1.0;
     EXPECT_EQ(refusal([&] { graph.add_sum(0.0, terms, std::span(&weight, 1)); }),
               "invalid argument: expression: 2 children and 1 coefficient");
-    EXPECT_EQ(refusal([&] { graph.add_variable(-1); }),
+    EXPECT_EQ(refusal([&] { graph.add_var(-1); }),
               "invalid argument: expression: variable -1 is unknown");
     EXPECT_EQ(graph.size(), 1);
 }

@@ -35,7 +35,7 @@ std::size_t at(Offset value) noexcept
     throw Error(ErrorKind::InvalidArgument, std::move(object), std::move(reason));
 }
 
-Offset child_count(const Graph &graph, Offset node) noexcept
+Offset n_children(const Graph &graph, Offset node) noexcept
 {
     return static_cast<Offset>(graph.children(node).size());
 }
@@ -45,7 +45,7 @@ std::vector<Offset> starts_of(const Graph &graph)
     std::vector<Offset> starts(at(graph.size()) + 1, 0);
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        starts[at(node) + 1] = starts[at(node)] + child_count(graph, node);
+        starts[at(node) + 1] = starts[at(node)] + n_children(graph, node);
     }
     return starts;
 }
@@ -178,11 +178,11 @@ void Shapes::check(const Graph &graph, std::span<const Interval> nodes) const
     }
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        const Offset count = child_count(graph, node);
+        const Offset n = n_children(graph, node);
         const Offset kept = starts_[at(node) + 1] - starts_[at(node)];
-        if (count != kept)
+        if (n != kept)
         {
-            const std::string children = count_text(count, "child", "children");
+            const std::string children = n_text(n, "child", "children");
             refuse("graph",
                    "node " + text_of(node) + " has " + children + ", not " + text_of(kept));
         }
@@ -190,16 +190,16 @@ void Shapes::check(const Graph &graph, std::span<const Interval> nodes) const
     const auto entries = static_cast<Offset>(nodes.size());
     if (entries != graph.size())
     {
-        const std::string count = text_of(graph.size());
-        refuse("nodes", "size " + text_of(entries) + ", not the node count " + count);
+        const std::string n = text_of(graph.size());
+        refuse("nodes", "size " + text_of(entries) + ", not the node count " + n);
     }
 }
 
 std::span<Argument> Shapes::arguments_of(Offset node) noexcept
 {
-    const Offset first = starts_[at(node)];
-    const Offset count = starts_[at(node) + 1] - first;
-    return std::span(arguments_).subspan(at(first), at(count));
+    const Offset beg = starts_[at(node)];
+    const Offset n = starts_[at(node) + 1] - beg;
+    return std::span(arguments_).subspan(at(beg), at(n));
 }
 
 Curvature Shapes::shape_of(const Graph &graph,

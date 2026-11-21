@@ -12,7 +12,7 @@ namespace biyos
 {
 
 void check_starts(std::span<const Offset> starts);
-void check_shape(std::size_t functions, std::span<const Offset> starts, std::size_t terms);
+void check_shape(std::size_t funs, std::span<const Offset> starts, std::size_t terms);
 
 template <typename T>
 std::span<T> slice(std::span<T> terms, std::span<const Offset> starts, std::size_t k)

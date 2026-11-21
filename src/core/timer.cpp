@@ -26,18 +26,18 @@ std::optional<nanoseconds> cpu_of(const Clock &clock) noexcept
     }
 }
 
-void describe(Event &event,
+void describe(Event &evt,
               std::string_view module,
               std::string_view name,
               std::string_view edge,
               nanoseconds wall,
               nanoseconds cpu)
 {
-    event.module.assign(module);
-    event.text.assign(name);
-    event.fields.push_back(Field{.name = "edge", .value = std::string(edge)});
-    event.fields.push_back(Field{.name = "wall", .value = std::to_string(wall.count())});
-    event.fields.push_back(Field{.name = "cpu", .value = std::to_string(cpu.count())});
+    evt.module.assign(module);
+    evt.text.assign(name);
+    evt.fields.push_back(Field{.name = "edge", .value = std::string(edge)});
+    evt.fields.push_back(Field{.name = "wall", .value = std::to_string(wall.count())});
+    evt.fields.push_back(Field{.name = "cpu", .value = std::to_string(cpu.count())});
 }
 
 }
@@ -102,7 +102,7 @@ void TimingTree::leave(std::size_t node, nanoseconds wall, nanoseconds cpu) noex
     }
 }
 
-Timer::Timer(Environment &env, TimingTree &tree, FixedName module, FixedName name)
+Timer::Timer(Env &env, TimingTree &tree, FixedName module, FixedName name)
     : clock_(env.clock()), events_(env.events()), tree_(tree), module_(module.text()),
       wall_(clock_.wall_time()), cpu_(clock_.cpu_time()), observed_wall_(tree.observed_wall_),
       observed_cpu_(tree.observed_cpu_), node_(tree.enter(name.text()))
@@ -123,14 +123,14 @@ Timer::~Timer()
 
 void Timer::announce(std::string_view edge, nanoseconds wall, nanoseconds cpu) noexcept
 {
-    if (!events_.wanted(EventKind::Phase, Level::Info))
+    if (!events_.wanted(EventKind::Phase, EventLevel::Info))
     {
         return;
     }
     const std::string_view name = tree_.nodes()[node_].name;
     const nanoseconds since = wall - events_.origin();
-    const auto fill = [&](Event &event) { describe(event, module_, name, edge, since, cpu); };
-    events_.emit(EventKind::Phase, Level::Info, fill);
+    const auto fill = [&](Event &evt) { describe(evt, module_, name, edge, since, cpu); };
+    events_.emit(EventKind::Phase, EventLevel::Info, fill);
     tree_.observed_wall_ += clock_.wall_time() - wall;
     tree_.observed_cpu_ += cpu_of(clock_).value_or(cpu) - cpu;
 }

@@ -1,0 +1,157 @@
+project:
+  type: book
+  output-dir: _book
+  pre-render:
+    - ../tools/capi_page.py
+    - ../tools/options_page.py
+    - quartodoc build
+
+book:
+  title: biyos
+  subtitle: An optimization solver built from parts
+  favicon: logo/favicon.svg
+  downloads: [pdf]
+  search: true
+  page-navigation: true
+  sidebar:
+    logo:
+      light: logo/lockup.svg
+      dark: logo/lockup-reversed.svg
+    logo-alt: biyos
+    title: false
+    style: floating
+  chapters:
+    - index.qmd
+    - part: User guide
+      chapters:
+        - guide/start.qmd
+        - guide/model.qmd
+        - guide/options.qmd
+        - guide/events.qmd
+        - guide/copy.qmd
+        - guide/errors.qmd
+        - guide/threads.qmd
+        - guide/python.qmd
+    - part: Method
+      chapters:
+        - method/form.qmd
+        - method/graph.qmd
+        - method/tapes.qmd
+        - method/derivatives.qmd
+        - method/intervals.qmd
+        - method/curvature.qmd
+    - part: Reference
+      chapters:
+        - reference/capi.qmd
+        - reference/options.qmd
+        - reference/codes.qmd
+        - reference/python.qmd
+    - references.qmd
+
+number-sections: true
+tbl-colwidths: true
+
+bibliography: references.bib
+link-citations: true
+filters:
+  - path: filters/generated.lua
+    at: pre-ast
+  - path: filters/include.lua
+    at: pre-ast
+  - path: filters/figures.lua
+    at: pre-ast
+  - path: filters/names.lua
+    at: pre-ast
+  - path: filters/callouts.lua
+    at: pre-ast
+  - path: filters/signatures.lua
+    at: pre-ast
+  - path: filters/meta.lua
+    at: pre-ast
+  - path: filters/tables.lua
+    at: post-render
+  - path: filters/breaks.lua
+    at: post-render
+
+format:
+  html:
+    theme:
+      light: [theme/biyos.scss, theme/light.scss]
+      dark: [theme/biyos.scss, theme/dark.scss]
+    respect-user-color-scheme: true
+    highlight-style:
+      light: theme/code-light.theme
+      dark: theme/code-dark.theme
+    include-in-header: theme/fonts.html
+    include-after-body: theme/toc.html
+    html-math-method: mathjax
+    toc: true
+    toc-location: right-body
+    toc-depth: 3
+    toc-title: On this page
+    code-copy: hover
+    anchor-sections: true
+    smooth-scroll: true
+    reference-location: margin
+  pdf:
+    documentclass: scrbook
+    classoption: [oneside, open=any, parskip=half-, numbers=noendperiod]
+    papersize: a4
+    geometry: [top=26mm, bottom=30mm, left=30mm, right=30mm, headsep=10mm]
+    pdf-engine: lualatex
+    fontsize: 10pt
+    linestretch: 1.22
+    mainfont: Inter
+    mainfontoptions: [Numbers=Lining]
+    sansfont: Inter
+    monofont: JetBrains Mono
+    monofontoptions: [Scale=MatchLowercase, Contextuals=NoAlternate, Ligatures=NoCommon]
+    fig-pos: H
+    mathfont: Fira Math
+    toc-depth: 1
+    toc-title: Contents
+    include-in-header: theme/preamble.tex
+    highlight-style: theme/code-light.theme
+    colorlinks: true
+
+quartodoc:
+  style: single-page
+  package: biyos
+  source_dir: ../interfaces/python/src
+  dir: reference/_python
+  parser: numpy
+  options:
+    include_empty: true
+    member_order: source
+  renderer:
+    style: filters.renderer.py
+    header_level: 2
+  sections:
+    - title: Environments
+      desc: An environment holds the options and the hooks, and every model is made on one.
+      contents: [Env, Error, version, Versions]
+    - title: Models
+      desc: A model holds the variables, functions, constraints and objectives of a problem.
+      contents: [Model, VariableKind, Sense]
+    - title: Blocks and views
+      desc: The items an add call returns, which pass wherever the model takes indices.
+      contents:
+        - name: Variables
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - Variable
+        - name: Functions
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - Function
+        - name: Constraints
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - Constraint
+        - name: Objectives
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - Objective
+    - title: Events
+      desc: What a hook receives.
+      contents: [Event, EventKind, EventLevel]

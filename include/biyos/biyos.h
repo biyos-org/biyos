@@ -1,11 +1,5 @@
 #pragma once
 
-#include "biyos/events.h"
-#include "biyos/expr.h"
-#include "biyos/model.h"
-#include "biyos/options.h"
-#include "biyos/status.h"
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -37,7 +31,7 @@ typedef struct BIYOS_model BIYOS_model;
 typedef void (*BIYOS_hook)(const BIYOS_event *evt, void *data);
 
 #define BIYOS_OK 0
-#define BIYOS_ERR_INVALIDARG (-100)
+#define BIYOS_ERR_BADARG (-100)
 #define BIYOS_ERR_NOMEMORY (-400)
 #define BIYOS_ERR_INTERNAL (-500)
 
@@ -46,14 +40,32 @@ BIYOS_API void BIYOS_version(BIYOS_int *major, BIYOS_int *minor, BIYOS_int *patc
 BIYOS_API BIYOS_status BIYOS_newenv(BIYOS_env **env);
 BIYOS_API BIYOS_status BIYOS_freeenv(BIYOS_env *env);
 BIYOS_API const char *BIYOS_lasterror(const BIYOS_env *env);
+BIYOS_API BIYOS_status BIYOS_interrupt(BIYOS_env *env);
+
+#define BIYOS_OPT_SEED 1
+#define BIYOS_OPT_MAXTIME 2
+#define BIYOS_OPT_CHECKLVL 3
+#define BIYOS_OPT_PRESOLVE 4
+#define BIYOS_OPT_REPRO 5
+#define BIYOS_OPT_FEASTOLABS 6
+#define BIYOS_OPT_FEASTOLREL 7
+#define BIYOS_OPT_INTTOL 8
+#define BIYOS_OPT_ZEROTOL 9
+#define BIYOS_OPT_MAXCPUTIME 10
+
+#define BIYOS_KND_BOOL 1
+#define BIYOS_KND_INT 2
+#define BIYOS_KND_DBL 3
+#define BIYOS_KND_STR 4
+#define BIYOS_KND_ENUM 5
 
 BIYOS_API BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt);
-BIYOS_API BIYOS_status BIYOS_getoptkind(BIYOS_env *env, BIYOS_int opt, BIYOS_int *kind);
-BIYOS_API BIYOS_status BIYOS_getoptversions(BIYOS_env *env,
-                                            BIYOS_int opt,
-                                            BIYOS_int *since,
-                                            BIYOS_int *deprecated,
-                                            BIYOS_int *retired);
+BIYOS_API BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *knd);
+BIYOS_API BIYOS_status BIYOS_getoptver(BIYOS_env *env,
+                                       BIYOS_int opt,
+                                       BIYOS_int *since,
+                                       BIYOS_int *deprecated,
+                                       BIYOS_int *retired);
 BIYOS_API BIYOS_status BIYOS_setboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
 BIYOS_API BIYOS_status BIYOS_setintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
 BIYOS_API BIYOS_status BIYOS_setdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val);
@@ -63,134 +75,308 @@ BIYOS_API BIYOS_status BIYOS_getintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int 
 BIYOS_API BIYOS_status BIYOS_getdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real *val);
 BIYOS_API BIYOS_status BIYOS_getstropt(BIYOS_env *env, BIYOS_int opt, const char **val);
 
+#define BIYOS_EVT_MESSAGE 1
+#define BIYOS_EVT_CHECK 2
+#define BIYOS_EVT_PHASE 3
+
+#define BIYOS_LVL_DBG 1
+#define BIYOS_LVL_INFO 2
+#define BIYOS_LVL_WARN 3
+#define BIYOS_LVL_ERR 4
+
 BIYOS_API BIYOS_status BIYOS_addhook(BIYOS_env *env,
-                                     BIYOS_hook hook,
+                                     BIYOS_hook hk,
                                      void *data,
-                                     BIYOS_int kind,
-                                     BIYOS_int lowest,
-                                     BIYOS_index *hookid);
-BIYOS_API BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index hookid);
+                                     BIYOS_int knd,
+                                     BIYOS_int lvl,
+                                     BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index idx);
 
-BIYOS_API BIYOS_int BIYOS_getevtkind(const BIYOS_event *evt);
+BIYOS_API BIYOS_int BIYOS_getevtknd(const BIYOS_event *evt);
 BIYOS_API BIYOS_int BIYOS_getevtlvl(const BIYOS_event *evt);
-BIYOS_API const char *BIYOS_getevtmodule(const BIYOS_event *evt);
+BIYOS_API const char *BIYOS_getevtmod(const BIYOS_event *evt);
 BIYOS_API const char *BIYOS_getevttext(const BIYOS_event *evt);
-BIYOS_API BIYOS_index BIYOS_getnevtfields(const BIYOS_event *evt);
-BIYOS_API const char *BIYOS_getevtfieldname(const BIYOS_event *evt, BIYOS_index field);
-BIYOS_API const char *BIYOS_getevtfieldvalue(const BIYOS_event *evt, BIYOS_index field);
+BIYOS_API BIYOS_index BIYOS_getnevtflds(const BIYOS_event *evt);
+BIYOS_API const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx);
+BIYOS_API const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx);
 
-BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt,
-                                     size_t size,
-                                     char *buf,
-                                     size_t *needed);
-BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt,
-                                     size_t size,
-                                     char *buf,
-                                     size_t *needed);
+BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, size_t size, char *buf, size_t *len);
+BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t size, char *buf, size_t *len);
 
-BIYOS_API BIYOS_status BIYOS_newmodel(BIYOS_env *env, BIYOS_model **mdl);
-BIYOS_API BIYOS_status BIYOS_copymodel(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
-BIYOS_API BIYOS_status BIYOS_freemodel(BIYOS_model *mdl);
+#define BIYOS_VAR_CONT 1
+#define BIYOS_VAR_BIN 2
+#define BIYOS_VAR_INT 3
+#define BIYOS_VAR_SEMICONT 4
+#define BIYOS_VAR_SEMIINT 5
+
+#define BIYOS_MINIMIZE 1
+#define BIYOS_MAXIMIZE 2
+
+BIYOS_API BIYOS_status BIYOS_newmdl(BIYOS_env *env, BIYOS_model **mdl);
+BIYOS_API BIYOS_status BIYOS_copymdl(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
+BIYOS_API BIYOS_status BIYOS_freemdl(BIYOS_model *mdl);
 BIYOS_API BIYOS_status BIYOS_addvars(BIYOS_model *mdl,
                                      BIYOS_index n,
-                                     const BIYOS_int *kinds,
+                                     const BIYOS_int *knd,
                                      const BIYOS_real *lb,
                                      const BIYOS_real *ub,
                                      BIYOS_index *beg);
-BIYOS_API BIYOS_status BIYOS_setvarbounds(BIYOS_model *mdl,
-                                          BIYOS_index n,
-                                          const BIYOS_index *idx,
-                                          const BIYOS_real *lb,
-                                          const BIYOS_real *ub);
-BIYOS_API BIYOS_status BIYOS_setvarkinds(BIYOS_model *mdl,
-                                         BIYOS_index n,
-                                         const BIYOS_index *idx,
-                                         const BIYOS_int *kinds);
+BIYOS_API BIYOS_status BIYOS_setvarbnd(BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       const BIYOS_real *lb,
+                                       const BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_getvarbnd(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_real *lb,
+                                       BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_setvarknd(BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       const BIYOS_int *knd);
+BIYOS_API BIYOS_status BIYOS_getvarknd(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_int *knd);
 BIYOS_API BIYOS_status BIYOS_getnvars(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getvars(const BIYOS_model *mdl,
                                      BIYOS_index beg,
                                      BIYOS_index n,
-                                     BIYOS_int *kinds,
+                                     BIYOS_int *knd,
                                      BIYOS_real *lb,
                                      BIYOS_real *ub);
 BIYOS_API BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
                                      BIYOS_index n,
-                                     const BIYOS_real *consts,
-                                     const BIYOS_offset *starts,
+                                     const BIYOS_real *cst,
+                                     const BIYOS_offset *off,
                                      const BIYOS_index *varidx,
-                                     const BIYOS_real *vals,
+                                     const BIYOS_real *coef,
                                      BIYOS_index *beg);
 BIYOS_API BIYOS_status BIYOS_getnfuns(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
                                      BIYOS_index beg,
                                      BIYOS_index n,
                                      BIYOS_offset size,
-                                     BIYOS_real *consts,
-                                     BIYOS_offset *starts,
-                                     BIYOS_offset *needed,
+                                     BIYOS_real *cst,
+                                     BIYOS_offset *off,
+                                     BIYOS_offset *nnz,
                                      BIYOS_index *varidx,
-                                     BIYOS_real *vals);
+                                     BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_addlinterms(BIYOS_model *mdl,
+                                         BIYOS_index n,
+                                         const BIYOS_index *funidx,
+                                         const BIYOS_offset *off,
+                                         const BIYOS_index *varidx,
+                                         const BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_getvarterms(const BIYOS_model *mdl,
+                                         BIYOS_index beg,
+                                         BIYOS_index n,
+                                         BIYOS_offset size,
+                                         BIYOS_offset *off,
+                                         BIYOS_offset *nnz,
+                                         BIYOS_index *funidx,
+                                         BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl,
                                           BIYOS_index n,
-                                          const BIYOS_index *funs,
-                                          const BIYOS_offset *starts,
-                                          const BIYOS_index *vars1,
-                                          const BIYOS_index *vars2,
-                                          const BIYOS_real *vals);
+                                          const BIYOS_index *funidx,
+                                          const BIYOS_offset *off,
+                                          const BIYOS_index *varidx1,
+                                          const BIYOS_index *varidx2,
+                                          const BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_getquadterms(const BIYOS_model *mdl,
                                           BIYOS_index beg,
                                           BIYOS_index n,
                                           BIYOS_offset size,
-                                          BIYOS_offset *starts,
-                                          BIYOS_offset *needed,
-                                          BIYOS_index *vars1,
-                                          BIYOS_index *vars2,
-                                          BIYOS_real *vals);
+                                          BIYOS_offset *off,
+                                          BIYOS_offset *nnz,
+                                          BIYOS_index *varidx1,
+                                          BIYOS_index *varidx2,
+                                          BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_addcons(BIYOS_model *mdl,
                                      BIYOS_index n,
-                                     const BIYOS_index *funs,
+                                     const BIYOS_index *funidx,
                                      const BIYOS_real *lb,
                                      const BIYOS_real *ub,
                                      BIYOS_index *beg);
-BIYOS_API BIYOS_status BIYOS_setconbounds(BIYOS_model *mdl,
-                                          BIYOS_index n,
-                                          const BIYOS_index *idx,
-                                          const BIYOS_real *lb,
-                                          const BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_setconbnd(BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       const BIYOS_real *lb,
+                                       const BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_getconbnd(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_real *lb,
+                                       BIYOS_real *ub);
 BIYOS_API BIYOS_status BIYOS_getncons(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getcons(const BIYOS_model *mdl,
                                      BIYOS_index beg,
                                      BIYOS_index n,
-                                     BIYOS_index *funs,
+                                     BIYOS_index *funidx,
                                      BIYOS_real *lb,
                                      BIYOS_real *ub);
 BIYOS_API BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
                                      BIYOS_index n,
-                                     const BIYOS_index *funs,
-                                     const BIYOS_int *senses,
-                                     const BIYOS_int *prios,
-                                     const BIYOS_real *weights,
-                                     const BIYOS_real *abstol,
-                                     const BIYOS_real *reltol,
+                                     const BIYOS_index *funidx,
+                                     const BIYOS_int *sense,
+                                     const BIYOS_int *prio,
+                                     const BIYOS_real *coef,
                                      BIYOS_index *beg);
-BIYOS_API BIYOS_status BIYOS_setobjs(BIYOS_model *mdl,
-                                     BIYOS_index n,
-                                     const BIYOS_index *idx,
-                                     const BIYOS_int *senses,
-                                     const BIYOS_int *prios,
-                                     const BIYOS_real *weights,
-                                     const BIYOS_real *abstol,
-                                     const BIYOS_real *reltol);
+BIYOS_API BIYOS_status BIYOS_setobjsense(BIYOS_model *mdl,
+                                         BIYOS_index n,
+                                         const BIYOS_index *idx,
+                                         const BIYOS_int *sense);
+BIYOS_API BIYOS_status BIYOS_getobjsense(const BIYOS_model *mdl,
+                                         BIYOS_index n,
+                                         const BIYOS_index *idx,
+                                         BIYOS_int *sense);
+BIYOS_API BIYOS_status BIYOS_setobjprio(BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const BIYOS_int *prio);
+BIYOS_API BIYOS_status BIYOS_getobjprio(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        BIYOS_int *prio);
+BIYOS_API BIYOS_status BIYOS_setobjcoef(BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_getobjcoef(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_setobjtol(BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       const BIYOS_real *atol,
+                                       const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_getobjtol(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_real *atol,
+                                       BIYOS_real *rtol);
 BIYOS_API BIYOS_status BIYOS_getnobjs(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
                                      BIYOS_index beg,
                                      BIYOS_index n,
-                                     BIYOS_index *funs,
-                                     BIYOS_int *senses,
-                                     BIYOS_int *prios,
-                                     BIYOS_real *weights,
-                                     BIYOS_real *abstol,
-                                     BIYOS_real *reltol);
+                                     BIYOS_index *funidx,
+                                     BIYOS_int *sense,
+                                     BIYOS_int *prio,
+                                     BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_setmdlname(BIYOS_model *mdl, const char *name);
+BIYOS_API BIYOS_status BIYOS_getmdlname(const BIYOS_model *mdl, const char **name);
+BIYOS_API BIYOS_status BIYOS_delmdlname(BIYOS_model *mdl);
+BIYOS_API BIYOS_status BIYOS_setvarname(BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const char *const *name);
+BIYOS_API BIYOS_status BIYOS_getvarname(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const char **name);
+BIYOS_API BIYOS_status BIYOS_getvaridx(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const char *const *name,
+                                       BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delvarname(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_setfunname(BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const char *const *name);
+BIYOS_API BIYOS_status BIYOS_getfunname(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const char **name);
+BIYOS_API BIYOS_status BIYOS_getfunidx(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const char *const *name,
+                                       BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delfunname(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_setconname(BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const char *const *name);
+BIYOS_API BIYOS_status BIYOS_getconname(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const char **name);
+BIYOS_API BIYOS_status BIYOS_getconidx(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const char *const *name,
+                                       BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delconname(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_setobjname(BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const char *const *name);
+BIYOS_API BIYOS_status BIYOS_getobjname(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        const char **name);
+BIYOS_API BIYOS_status BIYOS_getobjidx(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const char *const *name,
+                                       BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delobjname(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+
+#define BIYOS_OP_CONST 1
+#define BIYOS_OP_VAR 2
+#define BIYOS_OP_SUM 3
+#define BIYOS_OP_PROD 4
+#define BIYOS_OP_NEG 5
+#define BIYOS_OP_DIV 6
+#define BIYOS_OP_CPOW 7
+#define BIYOS_OP_POW 8
+#define BIYOS_OP_EXP 9
+#define BIYOS_OP_LOG 10
+#define BIYOS_OP_SQRT 11
+#define BIYOS_OP_SIN 12
+#define BIYOS_OP_COS 13
+#define BIYOS_OP_TAN 14
+#define BIYOS_OP_ABS 15
+#define BIYOS_OP_MAX 16
+#define BIYOS_OP_MIN 17
+#define BIYOS_OP_ASIN 18
+#define BIYOS_OP_ACOS 19
+#define BIYOS_OP_ATAN 20
+#define BIYOS_OP_SINH 21
+#define BIYOS_OP_COSH 22
+#define BIYOS_OP_TANH 23
+#define BIYOS_OP_ASINH 24
+#define BIYOS_OP_ACOSH 25
+#define BIYOS_OP_ATANH 26
+#define BIYOS_OP_ENT 27
+#define BIYOS_OP_SPOW 28
+#define BIYOS_OP_ERF 29
+
+#define BIYOS_TRM_NONE 0
+#define BIYOS_TRM_OPTIMAL 101
+#define BIYOS_TRM_LOCAL 102
+#define BIYOS_TRM_NEARLOCAL 103
+#define BIYOS_TRM_ITERLIM 201
+#define BIYOS_TRM_TIMELIM 202
+#define BIYOS_TRM_CPULIM 203
+#define BIYOS_TRM_EVALLIM 204
+#define BIYOS_TRM_STOP 205
+#define BIYOS_TRM_INFEAS 301
+#define BIYOS_TRM_LOCINFEAS 302
+#define BIYOS_TRM_UNBND 303
+#define BIYOS_TRM_SLOW 401
+#define BIYOS_TRM_NUMERIC 402
+
+#define BIYOS_RES_NONE 0
+#define BIYOS_RES_FEAS 1
+#define BIYOS_RES_NEARFEAS 2
+#define BIYOS_RES_INFEAS 3
+#define BIYOS_RES_CER 4
+#define BIYOS_RES_NEARCER 5
+#define BIYOS_RES_UNKNOWN 6
+
+#define BIYOS_CLM_NONE 0
+#define BIYOS_CLM_LOCAL 1
+#define BIYOS_CLM_GLOBAL 2
 
 #ifdef __cplusplus
 }

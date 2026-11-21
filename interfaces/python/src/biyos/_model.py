@@ -1,22 +1,46 @@
 import weakref
-from ctypes import byref, c_double, c_int, c_int64, c_void_p
+from collections.abc import Callable, Sequence
+from ctypes import Array, byref, c_char_p, c_double, c_int, c_int64, c_void_p
 from enum import IntEnum
+from typing import Any, NoReturn, SupportsIndex
 
-from biyos._arrays import doubles, indices_of, ints, offsets
+from biyos._arrays import doubles, indices_of, ints, listed, offsets, strings
 from biyos._blocks import (
+    Block,
+    Constraint,
     Constraints,
+    Function,
     Functions,
+    Objective,
     Objectives,
+    Variable,
     Variables,
     index_of,
 )
 from biyos._capi import lib
-from biyos._environment import Env
+from biyos._env import Env
 from biyos._error import Error
 from biyos._integers import integer
+from biyos._text import decoded, text
 
 
 class VariableKind(IntEnum):
+    """The kinds of variables, as ``BIYOS_VAR_`` numbers them.
+
+    Attributes
+    ----------
+    CONTINUOUS
+        Any value between its bounds.
+    BINARY
+        0 or 1, between its bounds.
+    INTEGER
+        Any integer between its bounds.
+    SEMICONTINUOUS
+        0, or any value between its bounds.
+    SEMIINTEGER
+        0, or any integer between its bounds.
+    """
+
     CONTINUOUS = 1
     BINARY = 2
     INTEGER = 3
@@ -25,18 +49,31 @@ class VariableKind(IntEnum):
 
 
 class Sense(IntEnum):
+    """The senses of objectives, as ``BIYOS_MINIMIZE`` and ``BIYOS_MAXIMIZE``
+    number them.
+
+    Attributes
+    ----------
+    MINIMIZE
+        The function is minimized.
+    MAXIMIZE
+        The function is maximized.
+    """
+
     MINIMIZE = 1
     MAXIMIZE = 2
 
 
-def _environment(env):
+def _checked_env(env: Env) -> Env:
     if not isinstance(env, Env):
         found = type(env).__name__
         raise TypeError(f"env must be an Env, not {found}")
     return env
 
 
-def _span(beg, n, size):
+def _span(
+    beg: int, n: int | None, size: Callable[[], int]
+) -> tuple[int, bool]:
     given = None if n is None else integer("n", n)
     total = size()
     n = max(total - beg, 0) if given is None else given
@@ -44,20 +81,10 @@ def _span(beg, n, size):
     return n, inside
 
 
-def _total(starts, count):
+def _total(starts: Array[c_int64] | None, count: int) -> int:
     if starts is None or count < 0:
         return 0
     return starts[count]
-
-
-def _fields(count, senses, prios, weights, abstol, reltol):
-    return (
-        ints("senses", senses, count),
-        ints("prios", prios, count),
-        doubles("weights", weights, count),
-        doubles("abstol", abstol, count),
-        doubles("reltol", reltol, count),
-    )
 
 
 class Model:
@@ -67,71 +94,96 @@ class Model:
     It is closed by ``close``, on leaving a ``with`` block, or when its
     environment is closed. Using it once closed raises ``ValueError``, and
     closing it again does nothing. Closed during one of its own calls, by a
-    subscriber or a finalizer, it reads as closed at once and is freed when
+    hook or a finalizer, it reads as closed at once and is freed when
     the call returns, or when the outermost call returns if the call was
-    made from a subscriber. Otherwise ``close`` raises ``biyos.Error`` while
-    the environment delivers an event, and the model stays open.
+    made from a hook. Closed while its environment delivers an event, it
+    reads as closed at once and is freed when the outermost call returns.
 
     Parameters
     ----------
-    env : Env
+    env
         The environment the model is made on.
+
+    See Also
+    --------
+    BIYOS_newmdl
     """
 
-    def __init__(self, env):
-        self._start(_environment(env))
+    def __init__(self, env: Env) -> None:
+        self._start(_checked_env(env))
         with self._env._busy():
-            self._make(self._env._call, lib.BIYOS_newmodel)
+            self._make(self._env._call, lib.BIYOS_newmdl)
         self._hold()
 
-    def __enter__(self):
+    def __enter__(self) -> "Model":
         return self
 
-    def __exit__(self, *exc_info):
+    def __exit__(self, *exc_info: object) -> None:
         self.close()
 
-    def __copy__(self):
+    def __copy__(self) -> NoReturn:
         raise TypeError("copy a model with Model.copy")
 
-    def __deepcopy__(self, memo):
-        return self.__copy__()
+    def __deepcopy__(self, memo: dict[int, object]) -> NoReturn:
+        self.__copy__()
 
-    def close(self):
+    def close(self) -> None:
+        """Free the model.
+
+        Using it afterwards raises ``ValueError``, and closing it again does
+        nothing. Closed during one of its own calls or while its environment
+        delivers an event, by a hook or a finalizer, it reads as closed at
+        once and is freed when the outermost call returns. Such a deferred
+        close never raises.
+
+        Raises
+        ------
+        Error
+            When the free is refused. The model then stays open.
+
+        See Also
+        --------
+        BIYOS_freemdl
+        """
         with self._env._busy():
             self._close()
 
-    def _close(self):
+    def _close(self) -> None:
         if not self._open():
             return
         if self._calls > 0:
             self._closing = True
+            return
+        if not self._env._relay.idle():
+            self._free()
             return
         models = self._env._models
         models.take(self._handle.value)
         if self._free.detach() is None:
             return
         try:
-            self._env._run(lib.BIYOS_freemodel, self._handle)
+            self._env._run(lib.BIYOS_freemdl, self._handle)
         except Error:
             models.add(self._handle.value)
             self._hold()
             raise
 
-    def copy(self, env=None):
+    def copy(self, env: Env | None = None) -> "Model":
         """Return a copy of the model, made on an environment.
 
         The copy holds the same variables, functions, constraints and
-        objectives under the same indices, and changes apart from the model.
-        It reports on its own environment, like any model made there.
+        objectives under the same indices and names, and changes apart from
+        the model. It reports on its own environment, like any model made
+        there.
 
         Parameters
         ----------
-        env : Env, optional
+        env
             The environment the copy is made on, the model's own by default.
 
         Returns
         -------
-        Model
+        copy
             The copy.
 
         Raises
@@ -142,8 +194,12 @@ class Model:
             While ``env`` delivers an event.
         ValueError
             When the model or ``env`` is closed.
+
+        See Also
+        --------
+        BIYOS_copymdl
         """
-        env = self._env if env is None else _environment(env)
+        env = self._env if env is None else _checked_env(env)
         if not self._open():
             raise ValueError("the model is closed")
         copy = Model.__new__(Model)
@@ -153,56 +209,186 @@ class Model:
         copy._hold()
         return copy
 
-    def addvars(self, n, kinds=None, lb=None, ub=None):
+    def addvars(
+        self,
+        n: int,
+        knd: Sequence[VariableKind] | None = None,
+        lb: Sequence[float] | None = None,
+        ub: Sequence[float] | None = None,
+    ) -> Variables:
         """Add variables after the last one.
 
         Parameters
         ----------
-        n : int
+        n
             The number of variables to add.
-        kinds : sequence of VariableKind, optional
+        knd
             The kind of each, continuous by default.
-        lb, ub : sequence of float, optional
+        lb, ub
             The bounds of each, the widest of its kind by default.
 
         Returns
         -------
-        Variables
+        vars
             The new variables.
+
+        See Also
+        --------
+        BIYOS_addvars
         """
         n = integer("n", n)
         arrays = (
-            ints("kinds", kinds, n),
+            ints("knd", knd, n),
             doubles("lb", lb, n),
             doubles("ub", ub, n),
         )
         first = c_int()
         self._call(lib.BIYOS_addvars, n, *arrays, byref(first))
-        return Variables(self, first.value, n, self._version)
+        return Variables(self, first.value, n, self._gen)
 
-    def setvarbounds(self, idx, lb=None, ub=None):
+    def setvarbnd(
+        self,
+        idx: Sequence[int | Variable] | Variables,
+        lb: Sequence[float] | None = None,
+        ub: Sequence[float] | None = None,
+    ) -> None:
+        """Set the bounds of variables.
+
+        A variable may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The variables.
+        lb, ub
+            The new bounds of each; ``None`` leaves that side as it is.
+
+        See Also
+        --------
+        BIYOS_setvarbnd
+        """
         count = len(idx)
         arrays = (
             indices_of(self, Variables, "idx", idx, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
-        self._call(lib.BIYOS_setvarbounds, count, *arrays)
+        self._call(lib.BIYOS_setvarbnd, count, *arrays)
 
-    def setvarkinds(self, idx, kinds):
+    def getvarbnd(
+        self, idx: Sequence[int | Variable] | Variables
+    ) -> tuple[list[float], list[float]]:
+        """Read the bounds of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables, in any order, any of them more than once.
+
+        Returns
+        -------
+        lb
+            The lower bound of each.
+        ub
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getvarbnd
+        """
+        bounds = (c_double, c_double)
+        lb, ub = self._getlist(lib.BIYOS_getvarbnd, Variables, idx, *bounds)
+        return lb, ub
+
+    def setvarknd(
+        self,
+        idx: Sequence[int | Variable] | Variables,
+        knd: Sequence[VariableKind] | None,
+    ) -> None:
+        """Set the kinds of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables.
+        knd
+            The new kind of each.
+
+        See Also
+        --------
+        BIYOS_setvarknd
+        """
         count = len(idx)
         arrays = (
             indices_of(self, Variables, "idx", idx, count),
-            ints("kinds", kinds, count),
+            ints("knd", knd, count),
         )
-        self._call(lib.BIYOS_setvarkinds, count, *arrays)
+        self._call(lib.BIYOS_setvarknd, count, *arrays)
 
-    def getnvars(self):
+    def getvarknd(
+        self, idx: Sequence[int | Variable] | Variables
+    ) -> list[VariableKind]:
+        """Read the kinds of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables, in any order, any of them more than once.
+
+        Returns
+        -------
+        knd
+            The kind of each.
+
+        See Also
+        --------
+        BIYOS_getvarknd
+        """
+        found = self._getlist(lib.BIYOS_getvarknd, Variables, idx, c_int)
+        return [VariableKind(value) for value in found[0]]
+
+    def getnvars(self) -> int:
+        """Return the number of variables.
+
+        Returns
+        -------
+        n
+            The number of variables.
+
+        See Also
+        --------
+        BIYOS_getnvars
+        """
         count = c_int()
         self._call(lib.BIYOS_getnvars, byref(count))
         return count.value
 
-    def getvars(self, beg=0, n=None):
+    def getvars(
+        self, beg: int | Variable = 0, n: int | None = None
+    ) -> tuple[list[VariableKind], list[float], list[float]]:
+        """Read the kinds and bounds of variables.
+
+        Parameters
+        ----------
+        beg
+            The first variable to read.
+        n
+            The number of variables to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        knd
+            The kind of each variable.
+        lb
+            The lower bound of each.
+        ub
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getvars
+        """
         beg = index_of(self, Variables, "beg", beg)
         n, inside = _span(beg, n, self.getnvars)
         if not inside:
@@ -216,54 +402,97 @@ class Model:
 
     def addfuns(
         self,
-        n,
-        consts=None,
-        starts=None,
-        varidx=None,
-        vals=None,
-    ):
+        n: int,
+        cst: Sequence[float] | None = None,
+        off: Sequence[int] | None = None,
+        varidx: Sequence[int | Variable] | Variables | None = None,
+        coef: Sequence[float] | None = None,
+    ) -> Functions:
         """Add functions after the last one.
 
         Parameters
         ----------
-        n : int
+        n
             The number of functions to add.
-        consts : sequence of float, optional
+        cst
             The constant of each, 0 by default.
-        starts : sequence of int, optional
+        off
             The ``n + 1`` offsets of the functions' linear terms in
-            ``varidx`` and ``vals``, from 0 and never decreasing.
-            Function ``j`` has the terms from ``starts[j]`` to
-            ``starts[j + 1] - 1``. By default the functions have no terms.
-        varidx : sequence of int, optional
-            The variable of each term, ``starts[n]`` of them.
-        vals : sequence of float, optional
-            The coefficient of each term, ``starts[n]`` of them.
+            ``varidx`` and ``coef``, from 0 and never decreasing.
+            Function ``j`` has the terms from ``off[j]`` to
+            ``off[j + 1] - 1``. By default the functions have no terms.
+        varidx
+            The variable of each term, ``off[n]`` of them.
+        coef
+            The coefficient of each term, ``off[n]`` of them.
 
         Returns
         -------
-        Functions
+        funs
             The new functions.
+
+        See Also
+        --------
+        BIYOS_addfuns
         """
         n = integer("n", n)
-        starts = offsets("starts", starts, n + 1)
+        starts = offsets("off", off, n + 1)
         size = _total(starts, n)
         arrays = (
-            doubles("consts", consts, n),
+            doubles("cst", cst, n),
             starts,
             indices_of(self, Variables, "varidx", varidx, size),
-            doubles("vals", vals, size),
+            doubles("coef", coef, size),
         )
         first = c_int()
         self._call(lib.BIYOS_addfuns, n, *arrays, byref(first))
-        return Functions(self, first.value, n, self._version)
+        return Functions(self, first.value, n, self._gen)
 
-    def getnfuns(self):
+    def getnfuns(self) -> int:
+        """Return the number of functions.
+
+        Returns
+        -------
+        n
+            The number of functions.
+
+        See Also
+        --------
+        BIYOS_getnfuns
+        """
         count = c_int()
         self._call(lib.BIYOS_getnfuns, byref(count))
         return count.value
 
-    def getfuns(self, beg=0, n=None):
+    def getfuns(
+        self, beg: int | Function = 0, n: int | None = None
+    ) -> tuple[list[float], list[int], list[int], list[float]]:
+        """Read the constants and linear terms of functions.
+
+        Parameters
+        ----------
+        beg
+            The first function to read.
+        n
+            The number of functions to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        cst
+            The constant of each function.
+        off
+            The ``n + 1`` offsets of the functions' terms in the two lists
+            after it, from 0.
+        varidx
+            The variable of each term.
+        coef
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_getfuns
+        """
         beg = index_of(self, Functions, "beg", beg)
         n, inside = _span(beg, n, self.getnfuns)
         needed = c_int64()
@@ -282,41 +511,168 @@ class Model:
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
 
-    def addquadterms(self, funs, starts, vars1, vars2, vals):
+    def addlinterms(
+        self,
+        funidx: Sequence[int | Function] | Functions,
+        off: Sequence[int],
+        varidx: Sequence[int | Variable] | Variables,
+        coef: Sequence[float],
+    ) -> None:
+        """Add linear terms to functions of the model.
+
+        Function ``funidx[j]`` gains the terms from ``off[j]`` to
+        ``off[j + 1] - 1``. Term ``k`` adds ``coef[k]`` times variable
+        ``varidx[k]``. A variable the function holds already adds its
+        coefficient to the one held.
+
+        Parameters
+        ----------
+        funidx
+            The functions that gain terms, each listed once.
+        off
+            The ``len(funidx) + 1`` offsets of the functions' terms in
+            ``varidx`` and ``coef``, from 0 and never decreasing.
+        varidx
+            The variable of each term, ``off[-1]`` of them, each once for
+            its function.
+        coef
+            The coefficient of each term, ``off[-1]`` of them.
+
+        See Also
+        --------
+        BIYOS_addlinterms
+        """
+        n = len(funidx)
+        starts = offsets("off", off, n + 1)
+        size = _total(starts, n)
+        arrays = (
+            indices_of(self, Functions, "funidx", funidx, n),
+            starts,
+            indices_of(self, Variables, "varidx", varidx, size),
+            doubles("coef", coef, size),
+        )
+        self._call(lib.BIYOS_addlinterms, n, *arrays)
+
+    def getvarterms(
+        self, beg: int | Variable = 0, n: int | None = None
+    ) -> tuple[list[int], list[int], list[float]]:
+        """Read the linear terms of variables, by variable.
+
+        For each variable from ``beg``, the functions whose linear terms
+        hold it, sorted by function, and its coefficient in each.
+
+        Parameters
+        ----------
+        beg
+            The first variable to read.
+        n
+            The number of variables to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        off
+            The ``n + 1`` offsets of the variables' terms in the two lists
+            after it, from 0.
+        funidx
+            The function of each term.
+        coef
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_getvarterms
+        """
+        beg = index_of(self, Variables, "beg", beg)
+        n, inside = _span(beg, n, self.getnvars)
+        nnz = c_int64()
+        if not inside:
+            empty = (0, None, byref(nnz), None, None)
+            self._call(lib.BIYOS_getvarterms, beg, n, *empty)
+        starts = (c_int64 * (n + 1))()
+        learn = (0, starts, byref(nnz), None, None)
+        self._call(lib.BIYOS_getvarterms, beg, n, *learn)
+        size = nnz.value
+        funs = (c_int * size)()
+        values = (c_double * size)()
+        fill = (size, None, byref(nnz), funs, values)
+        self._call(lib.BIYOS_getvarterms, beg, n, *fill)
+        return list(starts), list(funs), list(values)
+
+    def addquadterms(
+        self,
+        funidx: Sequence[int | Function] | Functions,
+        off: Sequence[int],
+        varidx1: Sequence[int | Variable] | Variables,
+        varidx2: Sequence[int | Variable] | Variables,
+        coef: Sequence[float],
+    ) -> None:
         """Add quadratic terms to functions of the model.
 
-        Function ``funs[j]`` gains the terms from ``starts[j]`` to
-        ``starts[j + 1] - 1``. Term ``k`` adds ``vals[k]`` times the
-        product of variables ``vars1[k]`` and ``vars2[k]``, with no factor
+        Function ``funidx[j]`` gains the terms from ``off[j]`` to
+        ``off[j + 1] - 1``. Term ``k`` adds ``coef[k]`` times the
+        product of variables ``varidx1[k]`` and ``varidx2[k]``, with no factor
         1/2. The two variables of a pair may come in either order. A pair
         the function holds already adds its coefficient to the one held.
 
         Parameters
         ----------
-        funs : sequence of int
+        funidx
             The functions that gain terms, each listed once.
-        starts : sequence of int
-            The ``len(funs) + 1`` offsets of the functions' terms in
-            ``vars1``, ``vars2`` and ``vals``, from 0 and never
+        off
+            The ``len(funidx) + 1`` offsets of the functions' terms in
+            ``varidx1``, ``varidx2`` and ``coef``, from 0 and never
             decreasing.
-        vars1, vars2 : sequence of int
-            The two variables of each term, ``starts[-1]`` of each.
-        vals : sequence of float
-            The coefficient of each term, ``starts[-1]`` of them.
+        varidx1, varidx2
+            The two variables of each term, ``off[-1]`` of each.
+        coef
+            The coefficient of each term, ``off[-1]`` of them.
+
+        See Also
+        --------
+        BIYOS_addquadterms
         """
-        count = len(funs)
-        starts = offsets("starts", starts, count + 1)
+        count = len(funidx)
+        starts = offsets("off", off, count + 1)
         size = _total(starts, count)
         arrays = (
-            indices_of(self, Functions, "funs", funs, count),
+            indices_of(self, Functions, "funidx", funidx, count),
             starts,
-            indices_of(self, Variables, "vars1", vars1, size),
-            indices_of(self, Variables, "vars2", vars2, size),
-            doubles("vals", vals, size),
+            indices_of(self, Variables, "varidx1", varidx1, size),
+            indices_of(self, Variables, "varidx2", varidx2, size),
+            doubles("coef", coef, size),
         )
         self._call(lib.BIYOS_addquadterms, count, *arrays)
 
-    def getquadterms(self, beg=0, n=None):
+    def getquadterms(
+        self, beg: int | Function = 0, n: int | None = None
+    ) -> tuple[list[int], list[int], list[int], list[float]]:
+        """Read the quadratic terms of functions.
+
+        Parameters
+        ----------
+        beg
+            The first function to read.
+        n
+            The number of functions to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        off
+            The ``n + 1`` offsets of the functions' terms in the three lists
+            after it, from 0.
+        varidx1
+            The first variable of each term.
+        varidx2
+            The second variable of each term.
+        coef
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_getquadterms
+        """
         beg = index_of(self, Functions, "beg", beg)
         n, inside = _span(beg, n, self.getnfuns)
         needed = c_int64()
@@ -335,46 +691,134 @@ class Model:
         terms = (list(firsts), list(seconds), list(values))
         return (list(starts), *terms)
 
-    def addcons(self, funs, lb=None, ub=None):
+    def addcons(
+        self,
+        funidx: Sequence[int | Function] | Functions,
+        lb: Sequence[float] | None = None,
+        ub: Sequence[float] | None = None,
+    ) -> Constraints:
         """Add constraints after the last one, one for each function given.
 
         Parameters
         ----------
-        funs : sequence of int
+        funidx
             The function each new constraint bounds.
-        lb, ub : sequence of float, optional
+        lb, ub
             The bounds of each, unbounded by default.
 
         Returns
         -------
-        Constraints
+        cons
             The new constraints.
+
+        See Also
+        --------
+        BIYOS_addcons
         """
-        count = len(funs)
+        count = len(funidx)
         arrays = (
-            indices_of(self, Functions, "funs", funs, count),
+            indices_of(self, Functions, "funidx", funidx, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
         first = c_int()
         self._call(lib.BIYOS_addcons, count, *arrays, byref(first))
-        return Constraints(self, first.value, count, self._version)
+        return Constraints(self, first.value, count, self._gen)
 
-    def setconbounds(self, idx, lb=None, ub=None):
+    def setconbnd(
+        self,
+        idx: Sequence[int | Constraint] | Constraints,
+        lb: Sequence[float] | None = None,
+        ub: Sequence[float] | None = None,
+    ) -> None:
+        """Set the bounds of constraints and keep their functions.
+
+        Parameters
+        ----------
+        idx
+            The constraints.
+        lb, ub
+            The new bounds of each; ``None`` leaves that side as it is.
+
+        See Also
+        --------
+        BIYOS_setconbnd
+        """
         count = len(idx)
         arrays = (
             indices_of(self, Constraints, "idx", idx, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
-        self._call(lib.BIYOS_setconbounds, count, *arrays)
+        self._call(lib.BIYOS_setconbnd, count, *arrays)
 
-    def getncons(self):
+    def getconbnd(
+        self, idx: Sequence[int | Constraint] | Constraints
+    ) -> tuple[list[float], list[float]]:
+        """Read the bounds of constraints.
+
+        Parameters
+        ----------
+        idx
+            The constraints, in any order, any of them more than once.
+
+        Returns
+        -------
+        lb
+            The lower bound of each.
+        ub
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getconbnd
+        """
+        bounds = (c_double, c_double)
+        lb, ub = self._getlist(lib.BIYOS_getconbnd, Constraints, idx, *bounds)
+        return lb, ub
+
+    def getncons(self) -> int:
+        """Return the number of constraints.
+
+        Returns
+        -------
+        n
+            The number of constraints.
+
+        See Also
+        --------
+        BIYOS_getncons
+        """
         count = c_int()
         self._call(lib.BIYOS_getncons, byref(count))
         return count.value
 
-    def getcons(self, beg=0, n=None):
+    def getcons(
+        self, beg: int | Constraint = 0, n: int | None = None
+    ) -> tuple[list[int], list[float], list[float]]:
+        """Read the functions and bounds of constraints.
+
+        Parameters
+        ----------
+        beg
+            The first constraint to read.
+        n
+            The number of constraints to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        funidx
+            The function each constraint bounds.
+        lb
+            The lower bound of each.
+        ub
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getcons
+        """
         beg = index_of(self, Constraints, "beg", beg)
         n, inside = _span(beg, n, self.getncons)
         if not inside:
@@ -389,101 +833,706 @@ class Model:
 
     def addobjs(
         self,
-        funs,
-        senses=None,
-        prios=None,
-        weights=None,
-        abstol=None,
-        reltol=None,
-    ):
+        funidx: Sequence[int | Function] | Functions,
+        sense: Sequence[Sense] | None = None,
+        prio: Sequence[int] | None = None,
+        coef: Sequence[float] | None = None,
+    ) -> Objectives:
         """Add objectives after the last one, one for each function given.
 
         The objectives are optimized in stages, one for each priority, the
         lowest first. A stage minimizes the weighted sum of its objectives,
         each counted negatively when it is maximized, and keeps every
         objective of an earlier stage within its tolerances of the optimum
-        found for it.
+        found for it. A new objective's tolerances are 0 until ``setobjtol``
+        sets them.
 
         Parameters
         ----------
-        funs : sequence of int
+        funidx
             The function each new objective optimizes.
-        senses : sequence of Sense, optional
+        sense
             Whether each is minimized or maximized, minimized by default.
-        prios : sequence of int, optional
+        prio
             The priority of each. By default each takes its own index, so
             the objectives are optimized one after another in the order
             they are added.
-        weights : sequence of float, optional
+        coef
             The weight of each in the sum of its stage, finite and
             positive, 1 by default.
-        abstol, reltol : sequence of float, optional
-            How far each may move from its optimum in later stages, as a
-            value of its function and as a fraction of the size of that
-            optimum. Each is 0 or more, ``inf`` setting no limit, and 0 by
-            default.
 
         Returns
         -------
-        Objectives
+        objs
             The new objectives.
+
+        See Also
+        --------
+        BIYOS_addobjs
         """
-        count = len(funs)
+        count = len(funidx)
         arrays = (
-            indices_of(self, Functions, "funs", funs, count),
-            *_fields(count, senses, prios, weights, abstol, reltol),
+            indices_of(self, Functions, "funidx", funidx, count),
+            ints("sense", sense, count),
+            ints("prio", prio, count),
+            doubles("coef", coef, count),
         )
         first = c_int()
         self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
-        return Objectives(self, first.value, count, self._version)
+        return Objectives(self, first.value, count, self._gen)
 
-    def setobjs(
+    def setobjsense(
         self,
-        idx,
-        senses=None,
-        prios=None,
-        weights=None,
-        abstol=None,
-        reltol=None,
-    ):
-        count = len(idx)
-        arrays = (
-            indices_of(self, Objectives, "idx", idx, count),
-            *_fields(count, senses, prios, weights, abstol, reltol),
-        )
-        self._call(lib.BIYOS_setobjs, count, *arrays)
+        idx: Sequence[int | Objective] | Objectives,
+        sense: Sequence[Sense] | None,
+    ) -> None:
+        """Set the senses of objectives.
 
-    def getnobjs(self):
+        An objective may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The objectives.
+        sense
+            The new sense of each; ``None`` changes nothing.
+
+        See Also
+        --------
+        BIYOS_setobjsense
+        """
+        n = len(idx)
+        arrays = (
+            indices_of(self, Objectives, "idx", idx, n),
+            ints("sense", sense, n),
+        )
+        self._call(lib.BIYOS_setobjsense, n, *arrays)
+
+    def getobjsense(
+        self, idx: Sequence[int | Objective] | Objectives
+    ) -> list[Sense]:
+        """Read the senses of objectives.
+
+        Parameters
+        ----------
+        idx
+            The objectives, in any order, any of them more than once.
+
+        Returns
+        -------
+        sense
+            The sense of each.
+
+        See Also
+        --------
+        BIYOS_getobjsense
+        """
+        found = self._getlist(lib.BIYOS_getobjsense, Objectives, idx, c_int)
+        return [Sense(value) for value in found[0]]
+
+    def setobjprio(
+        self,
+        idx: Sequence[int | Objective] | Objectives,
+        prio: Sequence[int] | None,
+    ) -> None:
+        """Set the priorities of objectives.
+
+        An objective may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The objectives.
+        prio
+            The new priority of each; ``None`` changes nothing.
+
+        See Also
+        --------
+        BIYOS_setobjprio
+        """
+        n = len(idx)
+        arrays = (
+            indices_of(self, Objectives, "idx", idx, n),
+            ints("prio", prio, n),
+        )
+        self._call(lib.BIYOS_setobjprio, n, *arrays)
+
+    def getobjprio(
+        self, idx: Sequence[int | Objective] | Objectives
+    ) -> list[int]:
+        """Read the priorities of objectives.
+
+        Parameters
+        ----------
+        idx
+            The objectives, in any order, any of them more than once.
+
+        Returns
+        -------
+        prio
+            The priority of each.
+
+        See Also
+        --------
+        BIYOS_getobjprio
+        """
+        found = self._getlist(lib.BIYOS_getobjprio, Objectives, idx, c_int)
+        return found[0]
+
+    def setobjcoef(
+        self,
+        idx: Sequence[int | Objective] | Objectives,
+        coef: Sequence[float] | None,
+    ) -> None:
+        """Set the weights of objectives.
+
+        An objective may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The objectives.
+        coef
+            The new weight of each, finite and positive; ``None`` changes
+            nothing.
+
+        See Also
+        --------
+        BIYOS_setobjcoef
+        """
+        n = len(idx)
+        arrays = (
+            indices_of(self, Objectives, "idx", idx, n),
+            doubles("coef", coef, n),
+        )
+        self._call(lib.BIYOS_setobjcoef, n, *arrays)
+
+    def getobjcoef(
+        self, idx: Sequence[int | Objective] | Objectives
+    ) -> list[float]:
+        """Read the weights of objectives.
+
+        Parameters
+        ----------
+        idx
+            The objectives, in any order, any of them more than once.
+
+        Returns
+        -------
+        coef
+            The weight of each.
+
+        See Also
+        --------
+        BIYOS_getobjcoef
+        """
+        found = self._getlist(lib.BIYOS_getobjcoef, Objectives, idx, c_double)
+        return found[0]
+
+    def setobjtol(
+        self,
+        idx: Sequence[int | Objective] | Objectives,
+        atol: Sequence[float] | None = None,
+        rtol: Sequence[float] | None = None,
+    ) -> None:
+        """Set the tolerances of objectives.
+
+        A tolerance is how far an objective may move from its optimum in
+        later stages, as a value of its function and as a fraction of the
+        size of that optimum: 0 or more, ``inf`` setting no limit. An
+        objective may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The objectives.
+        atol, rtol
+            The new absolute and relative tolerance of each; ``None``
+            leaves that tolerance as it is.
+
+        See Also
+        --------
+        BIYOS_setobjtol
+        """
+        n = len(idx)
+        arrays = (
+            indices_of(self, Objectives, "idx", idx, n),
+            doubles("atol", atol, n),
+            doubles("rtol", rtol, n),
+        )
+        self._call(lib.BIYOS_setobjtol, n, *arrays)
+
+    def getobjtol(
+        self, idx: Sequence[int | Objective] | Objectives
+    ) -> tuple[list[float], list[float]]:
+        """Read the tolerances of objectives.
+
+        Parameters
+        ----------
+        idx
+            The objectives, in any order, any of them more than once.
+
+        Returns
+        -------
+        atol
+            The absolute tolerance of each.
+        rtol
+            The relative tolerance of each.
+
+        See Also
+        --------
+        BIYOS_getobjtol
+        """
+        pair = (c_double, c_double)
+        atol, rtol = self._getlist(lib.BIYOS_getobjtol, Objectives, idx, *pair)
+        return atol, rtol
+
+    def getnobjs(self) -> int:
+        """Return the number of objectives.
+
+        Returns
+        -------
+        n
+            The number of objectives.
+
+        See Also
+        --------
+        BIYOS_getnobjs
+        """
         count = c_int()
         self._call(lib.BIYOS_getnobjs, byref(count))
         return count.value
 
-    def getobjs(self, beg=0, n=None):
+    def getobjs(
+        self, beg: int | Objective = 0, n: int | None = None
+    ) -> tuple[list[int], list[Sense], list[int], list[float]]:
+        """Read objectives.
+
+        Parameters
+        ----------
+        beg
+            The first objective to read.
+        n
+            The number of objectives to read, every one from ``beg`` on by
+            default.
+
+        Returns
+        -------
+        funidx
+            The function each objective optimizes.
+        sense
+            The sense of each.
+        prio
+            The priority of each.
+        coef
+            The weight of each.
+
+        See Also
+        --------
+        BIYOS_getobjs
+        """
         beg = index_of(self, Objectives, "beg", beg)
         n, inside = _span(beg, n, self.getnobjs)
         if not inside:
-            empty = (None,) * 6
+            empty = (None,) * 4
             self._call(lib.BIYOS_getobjs, beg, n, *empty)
         functions = (c_int * n)()
         codes = (c_int * n)()
         priorities = (c_int * n)()
         weights = (c_double * n)()
-        absolute = (c_double * n)()
-        relative = (c_double * n)()
-        found = (functions, codes, priorities, weights, absolute, relative)
+        found = (functions, codes, priorities, weights)
         self._call(lib.BIYOS_getobjs, beg, n, *found)
         senses = [Sense(code) for code in codes]
-        values = (list(weights), list(absolute), list(relative))
-        return (list(functions), senses, list(priorities), *values)
+        return list(functions), senses, list(priorities), list(weights)
 
-    def _start(self, env):
+    def setmdlname(self, name: str) -> None:
+        """Name the model.
+
+        A name is a nonempty str. It may hold any character but the null
+        character, and it is kept as UTF-8.
+
+        Parameters
+        ----------
+        name
+            The new name, which replaces the one the model has.
+
+        Raises
+        ------
+        TypeError
+            When ``name`` is not a str.
+        ValueError
+            When ``name`` holds a null character or cannot be encoded as
+            UTF-8, such as a lone surrogate.
+        Error
+            When ``name`` is empty.
+
+        See Also
+        --------
+        BIYOS_setmdlname
+        """
+        self._call(lib.BIYOS_setmdlname, text("name", name))
+
+    def getmdlname(self) -> str | None:
+        """Return the name of the model.
+
+        Returns
+        -------
+        name
+            The name, or None when the model has none.
+
+        See Also
+        --------
+        BIYOS_getmdlname
+        """
+        name = c_char_p()
+        self._call(lib.BIYOS_getmdlname, byref(name))
+        return decoded(name.value)
+
+    def delmdlname(self) -> None:
+        """Remove the name of the model, which then has none.
+
+        See Also
+        --------
+        BIYOS_delmdlname
+        """
+        self._call(lib.BIYOS_delmdlname)
+
+    def setvarname(
+        self, idx: Sequence[int | Variable] | Variables, name: Sequence[str]
+    ) -> None:
+        """Name variables of the model.
+
+        Variable ``idx[j]`` takes the name ``name[j]``, under the rules of
+        ``setmdlname``. A variable listed more than once takes the last of
+        its names. Names may repeat: several variables may hold one name,
+        and ``getvaridx`` then refuses to choose among them. Functions,
+        constraints and objectives are named the same way, each family
+        apart.
+
+        Parameters
+        ----------
+        idx
+            The variables to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        Raises
+        ------
+        TypeError
+            When ``name`` is a str rather than a sequence of them, or a
+            name is not a str.
+        ValueError
+            When a name holds a null character or cannot be encoded as
+            UTF-8, or when ``name`` and ``idx`` differ in length.
+        Error
+            When an index is not that of a variable or a name is empty.
+
+        See Also
+        --------
+        BIYOS_setvarname
+        """
+        self._setname(lib.BIYOS_setvarname, Variables, idx, name)
+
+    def getvarname(
+        self, idx: Sequence[int | Variable] | Variables
+    ) -> list[str | None]:
+        """Return the names of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables to read, in any order, any of them more than once.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getvarname
+        """
+        return self._getname(lib.BIYOS_getvarname, Variables, idx)
+
+    def getvaridx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of the variables with names.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the variable that alone holds each name.
+
+        Raises
+        ------
+        TypeError
+            When ``name`` is None, or a str rather than a sequence of them,
+            or a name is not a str.
+        ValueError
+            When a name holds a null character or cannot be encoded as
+            UTF-8.
+        Error
+            When no variable holds a name, or when several do.
+
+        See Also
+        --------
+        BIYOS_getvaridx
+        """
+        return self._getidx(lib.BIYOS_getvaridx, name)
+
+    def delvarname(self, idx: Sequence[int | Variable] | Variables) -> None:
+        """Remove the names of variables, which then have none.
+
+        Parameters
+        ----------
+        idx
+            The variables that lose their names. One without a name, or
+            listed more than once, is left without one.
+
+        Raises
+        ------
+        Error
+            When an index is not that of a variable, and then no name is
+            removed.
+
+        See Also
+        --------
+        BIYOS_delvarname
+        """
+        self._delname(lib.BIYOS_delvarname, Variables, idx)
+
+    def setfunname(
+        self, idx: Sequence[int | Function] | Functions, name: Sequence[str]
+    ) -> None:
+        """Name functions of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The functions to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setfunname
+        """
+        self._setname(lib.BIYOS_setfunname, Functions, idx, name)
+
+    def getfunname(
+        self, idx: Sequence[int | Function] | Functions
+    ) -> list[str | None]:
+        """Return the names of functions, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The functions to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getfunname
+        """
+        return self._getname(lib.BIYOS_getfunname, Functions, idx)
+
+    def getfunidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named functions, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the function that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getfunidx
+        """
+        return self._getidx(lib.BIYOS_getfunidx, name)
+
+    def delfunname(self, idx: Sequence[int | Function] | Functions) -> None:
+        """Remove the names of functions, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The functions that lose their names.
+
+        See Also
+        --------
+        BIYOS_delfunname
+        """
+        self._delname(lib.BIYOS_delfunname, Functions, idx)
+
+    def setconname(
+        self,
+        idx: Sequence[int | Constraint] | Constraints,
+        name: Sequence[str],
+    ) -> None:
+        """Name constraints of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The constraints to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setconname
+        """
+        self._setname(lib.BIYOS_setconname, Constraints, idx, name)
+
+    def getconname(
+        self, idx: Sequence[int | Constraint] | Constraints
+    ) -> list[str | None]:
+        """Return the names of constraints, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The constraints to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getconname
+        """
+        return self._getname(lib.BIYOS_getconname, Constraints, idx)
+
+    def getconidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named constraints, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the constraint that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getconidx
+        """
+        return self._getidx(lib.BIYOS_getconidx, name)
+
+    def delconname(
+        self, idx: Sequence[int | Constraint] | Constraints
+    ) -> None:
+        """Remove the names of constraints, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The constraints that lose their names.
+
+        See Also
+        --------
+        BIYOS_delconname
+        """
+        self._delname(lib.BIYOS_delconname, Constraints, idx)
+
+    def setobjname(
+        self, idx: Sequence[int | Objective] | Objectives, name: Sequence[str]
+    ) -> None:
+        """Name objectives of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The objectives to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setobjname
+        """
+        self._setname(lib.BIYOS_setobjname, Objectives, idx, name)
+
+    def getobjname(
+        self, idx: Sequence[int | Objective] | Objectives
+    ) -> list[str | None]:
+        """Return the names of objectives, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The objectives to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getobjname
+        """
+        return self._getname(lib.BIYOS_getobjname, Objectives, idx)
+
+    def getobjidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named objectives, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the objective that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getobjidx
+        """
+        return self._getidx(lib.BIYOS_getobjidx, name)
+
+    def delobjname(self, idx: Sequence[int | Objective] | Objectives) -> None:
+        """Remove the names of objectives, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The objectives that lose their names.
+
+        See Also
+        --------
+        BIYOS_delobjname
+        """
+        self._delname(lib.BIYOS_delobjname, Objectives, idx)
+
+    def _start(self, env: Env) -> None:
         self._env = env
         self._handle = c_void_p()
         self._calls = 0
         self._closing = False
-        self._version = 0
+        self._gen = 0
 
-    def _make(self, call, *arguments):
+    def _make(self, call: Callable[..., None], *arguments: object) -> None:
         handle = self._handle
         try:
             call(*arguments, byref(handle))
@@ -491,26 +1540,84 @@ class Model:
             if handle.value is not None:
                 self._env._models.add(handle.value)
 
-    def _copy(self, source):
+    def _copy(self, source: "Model") -> None:
         if not self._env._open():
             raise ValueError("the environment is closed")
         target = self._env._handle
-        self._make(source._call, lib.BIYOS_copymodel, target)
+        self._make(source._call, lib.BIYOS_copymdl, target)
 
-    def _hold(self):
+    def _hold(self) -> None:
         park = self._env._models.park
         self._free = weakref.finalize(self, park, self._handle.value)
 
-    def _open(self):
+    def _open(self) -> bool:
         if self._closing:
             return False
         return self._free.alive and self._env._open()
 
-    def _call(self, function, *arguments):
+    def _setname(
+        self,
+        function: Callable[..., int],
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+        name: Sequence[str],
+    ) -> None:
+        count = len(idx)
+        arrays = (
+            indices_of(self, family, "idx", idx, count),
+            strings("name", name, count),
+        )
+        self._call(function, count, *arrays)
+
+    def _delname(
+        self,
+        function: Callable[..., int],
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+    ) -> None:
+        count = len(idx)
+        indices = indices_of(self, family, "idx", idx, count)
+        self._call(function, count, indices)
+
+    def _getname(
+        self,
+        function: Callable[..., int],
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+    ) -> list[str | None]:
+        count = len(idx)
+        indices = indices_of(self, family, "idx", idx, count)
+        found = (c_char_p * count)()
+        self._call(function, count, indices, found)
+        return [decoded(value) for value in found]
+
+    def _getlist(
+        self,
+        function: Callable[..., int],
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+        *types: type[c_int | c_double],
+    ) -> list[list[Any]]:
+        n = len(idx)
+        given = indices_of(self, family, "idx", idx, n)
+        found = [(element * n)() for element in types]
+        self._call(function, n, given, *found)
+        return [list(values) for values in found]
+
+    def _getidx(
+        self, function: Callable[..., int], name: Sequence[str]
+    ) -> list[int]:
+        count = len(listed("name", name))
+        names = strings("name", name, count)
+        found = (c_int * count)()
+        self._call(function, count, names, found)
+        return list(found)
+
+    def _call(self, function: Callable[..., int], *arguments: object) -> None:
         with self._env._busy():
             self._run(function, *arguments)
 
-    def _run(self, function, *arguments):
+    def _run(self, function: Callable[..., int], *arguments: object) -> None:
         self._calls += 1
         try:
             if not self._open():
@@ -520,6 +1627,6 @@ class Model:
             self._calls -= 1
             self._settle()
 
-    def _settle(self):
+    def _settle(self) -> None:
         if self._calls == 0 and self._closing:
             self._free()

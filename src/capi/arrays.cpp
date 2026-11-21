@@ -16,60 +16,60 @@
 namespace biyos::capi
 {
 
-std::size_t length(std::int64_t count, std::string_view name)
+std::size_t length(std::int64_t n, std::string_view name)
 {
-    if (count < 0)
+    if (n < 0)
     {
-        const std::string reason = std::to_string(count) + " is negative";
+        const std::string reason = std::to_string(n) + " is negative";
         const std::string argument = "argument '" + std::string(name) + "'";
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, argument, reason);
     }
-    return static_cast<std::size_t>(count);
+    return static_cast<std::size_t>(n);
 }
 
-std::span<const Index> listed(int count, const int *indices, std::string_view name)
+std::span<const Index> listed(int n, const int *idx, std::string_view name)
 {
-    const std::size_t size = length(count);
+    const std::size_t size = length(n);
     if (size > 0)
     {
-        require(indices, name);
+        require(idx, name);
     }
-    return {indices, size};
+    return {idx, size};
 }
 
-std::vector<Offset> offsets(std::size_t count, const std::int64_t *starts)
+std::vector<Offset> offsets(std::size_t n, const std::int64_t *starts)
 {
     if (starts == nullptr)
     {
-        return std::vector<Offset>(count + 1, 0);
+        return std::vector<Offset>(n + 1, 0);
     }
-    return std::vector<Offset>(starts, starts + count + 1);
+    return std::vector<Offset>(starts, starts + n + 1);
 }
 
-std::vector<LinearTerm> packed(std::size_t size, const int *variables, const double *values)
+std::vector<LinearTerm> packed(std::size_t size, const int *vars, const double *values)
 {
     if (size > 0)
     {
-        require(variables, "varidx");
-        require(values, "vals");
+        require(vars, "varidx");
+        require(values, "coef");
     }
     std::vector<LinearTerm> terms;
     terms.reserve(size);
     for (std::size_t k = 0; k < size; ++k)
     {
-        terms.push_back(LinearTerm{.variable = variables[k], .coefficient = values[k]});
+        terms.push_back(LinearTerm{.variable = vars[k], .coefficient = values[k]});
     }
     return terms;
 }
 
-void unpack(std::span<const LinearTerm> terms, std::size_t size, int *variables, double *values)
+void unpack(std::span<const LinearTerm> terms, std::size_t size, int *vars, double *values)
 {
     const std::size_t written = (std::min)(size, terms.size());
     for (std::size_t k = 0; k < written; ++k)
     {
-        if (variables != nullptr)
+        if (vars != nullptr)
         {
-            variables[k] = terms[k].variable;
+            vars[k] = terms[k].variable;
         }
         if (values != nullptr)
         {
@@ -85,9 +85,9 @@ std::vector<QuadraticTerm> packed(std::size_t size,
 {
     if (size > 0)
     {
-        require(firsts, "vars1");
-        require(seconds, "vars2");
-        require(values, "vals");
+        require(firsts, "varidx1");
+        require(seconds, "varidx2");
+        require(values, "coef");
     }
     std::vector<QuadraticTerm> terms;
     terms.reserve(size);
