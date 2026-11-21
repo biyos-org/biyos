@@ -25,13 +25,15 @@ KIND_ENUM = 5
 HOOK = CFUNCTYPE(None, c_void_p, c_void_p)
 
 
-def _declare(lib, name, result, *arguments):
+def _declare(
+    lib: ctypes.CDLL, name: str, result: type | None, *arguments: type
+) -> None:
     function = getattr(lib, name)
     function.restype = result
     function.argtypes = arguments
 
 
-def _load():
+def _load() -> ctypes.CDLL:
     package = files("biyos")
     name = (package / "library.txt").read_text()
     lib = ctypes.CDLL(str(package / name))
@@ -59,7 +61,7 @@ def _load():
     return lib
 
 
-def _declare_events(lib, ints):
+def _declare_events(lib: ctypes.CDLL, ints: type) -> None:
     arguments = (c_void_p, HOOK, c_void_p, c_int32, c_int32, ints)
     _declare(lib, "BIYOS_addhook", c_int, *arguments)
     _declare(lib, "BIYOS_delhook", c_int, c_void_p, c_int32)
@@ -73,13 +75,13 @@ def _declare_events(lib, ints):
     _declare_formats(lib)
 
 
-def _declare_formats(lib):
+def _declare_formats(lib: ctypes.CDLL) -> None:
     arguments = (c_void_p, c_size_t, POINTER(c_char), POINTER(c_size_t))
     _declare(lib, "BIYOS_fmttext", c_int, *arguments)
     _declare(lib, "BIYOS_fmtjson", c_int, *arguments)
 
 
-def _declare_model(lib, ints, doubles):
+def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_newmdl", c_int, c_void_p, POINTER(c_void_p))
     copy = (c_void_p, c_void_p, POINTER(c_void_p))
     _declare(lib, "BIYOS_copymdl", c_int, *copy)
@@ -101,7 +103,7 @@ def _declare_model(lib, ints, doubles):
     _declare_names(lib, ints)
 
 
-def _declare_functions(lib, ints, doubles):
+def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     offsets = POINTER(c_int64)
     add = (c_void_p, c_int32, doubles, offsets, ints, doubles, ints)
     _declare(lib, "BIYOS_addfuns", c_int, *add)
@@ -111,7 +113,7 @@ def _declare_functions(lib, ints, doubles):
     _declare(lib, "BIYOS_getfuns", c_int, *read)
 
 
-def _declare_quadratic(lib, ints, doubles):
+def _declare_quadratic(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     offsets = POINTER(c_int64)
     add = (c_void_p, c_int32, ints, offsets, ints, ints, doubles)
     _declare(lib, "BIYOS_addquadterms", c_int, *add)
@@ -120,7 +122,7 @@ def _declare_quadratic(lib, ints, doubles):
     _declare(lib, "BIYOS_getquadterms", c_int, *read)
 
 
-def _declare_constraints(lib, ints, doubles):
+def _declare_constraints(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     add = (c_void_p, c_int32, ints, doubles, doubles, ints)
     _declare(lib, "BIYOS_addcons", c_int, *add)
     bounds = (c_void_p, c_int32, ints, doubles, doubles)
@@ -131,7 +133,7 @@ def _declare_constraints(lib, ints, doubles):
     _declare(lib, "BIYOS_getcons", c_int, *read)
 
 
-def _declare_objectives(lib, ints, doubles):
+def _declare_objectives(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     fields = (ints, ints, doubles)
     add = (c_void_p, c_int32, ints, *fields, ints)
     _declare(lib, "BIYOS_addobjs", c_int, *add)
@@ -147,7 +149,7 @@ def _declare_objectives(lib, ints, doubles):
     _declare(lib, "BIYOS_getobjs", c_int, *read)
 
 
-def _declare_names(lib, ints):
+def _declare_names(lib: ctypes.CDLL, ints: type) -> None:
     strings = POINTER(c_char_p)
     _declare(lib, "BIYOS_setmdlname", c_int, c_void_p, c_char_p)
     _declare(lib, "BIYOS_getmdlname", c_int, c_void_p, strings)
@@ -165,7 +167,7 @@ def _declare_names(lib, ints):
 lib = _load()
 
 
-def version():
+def version() -> str:
     """Return the version of the library.
 
     Returns
