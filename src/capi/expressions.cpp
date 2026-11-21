@@ -3,16 +3,21 @@
 #include "capi/arrays.hpp"
 #include "capi/entry.hpp"
 #include "core/index.hpp"
+#include "model/compressed.hpp"
 #include "model/model.hpp"
 #include "model/nodes.hpp"
+#include "model/postfix.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string_view>
+#include <vector>
 
 using biyos::capi::guarded;
 using biyos::capi::length;
+using biyos::capi::offsets;
 using biyos::capi::require;
 using biyos::capi::writable;
 
@@ -55,6 +60,48 @@ void add_node(BIYOS_model &model,
     write_node(node, core.add_node(op, children, input(values, needed, "val")));
 }
 
+std::vector<biyos::Offset> starts_of(std::size_t n, const std::int64_t *starts)
+{
+    if (n > 0)
+    {
+        require(starts, "off");
+    }
+    std::vector<biyos::Offset> begins = offsets(n, starts);
+    biyos::check_starts(begins);
+    return begins;
+}
+
+void write_nodes(std::span<const biyos::Offset> tops, std::int64_t *node)
+{
+    if (node != nullptr)
+    {
+        std::ranges::copy(tops, node);
+    }
+}
+
+void add_expressions(BIYOS_model &model,
+                     int n,
+                     const std::int64_t *starts,
+                     const int *code,
+                     const std::int64_t *argument,
+                     const double *values,
+                     std::int64_t *node)
+{
+    biyos::Model &core = writable(model);
+    const std::vector<biyos::Offset> begins = starts_of(length(n), starts);
+    const auto total = static_cast<std::size_t>(begins.back());
+    const std::span<const int> codes = input(code, total, "code");
+    const std::span<const biyos::Offset> arguments = input(argument, total, "arg");
+    const auto needed = static_cast<std::size_t>(biyos::n_values(codes, arguments));
+    const biyos::Postfix postfix{
+        .starts = begins,
+        .codes = codes,
+        .arguments = arguments,
+        .values = input(values, needed, "val"),
+    };
+    write_nodes(core.add_expressions(postfix), node);
+}
+
 }
 
 BIYOS_status BIYOS_addvarnode(BIYOS_model *mdl, BIYOS_index var, BIYOS_offset *node)
@@ -70,4 +117,15 @@ BIYOS_status BIYOS_addnode(BIYOS_model *mdl,
                            BIYOS_offset *node)
 {
     return guarded<add_node>(mdl, op, n, arg, val, node);
+}
+
+BIYOS_status BIYOS_addexpr(BIYOS_model *mdl,
+                           BIYOS_index n,
+                           const BIYOS_offset *off,
+                           const BIYOS_int *code,
+                           const BIYOS_offset *arg,
+                           const BIYOS_real *val,
+                           BIYOS_offset *node)
+{
+    return guarded<add_expressions>(mdl, n, off, code, arg, val, node);
 }

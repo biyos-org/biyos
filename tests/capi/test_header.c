@@ -247,6 +247,21 @@ static BIYOS_status use_nodes(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status use_postfix(BIYOS_model *model)
+{
+    const BIYOS_offset off[3] = {0, 2, 4};
+    const BIYOS_int code[4] = {BIYOS_OP_NODE, BIYOS_OP_SIN, BIYOS_OP_VAR, BIYOS_OP_CPOW};
+    const BIYOS_offset arg[4] = {2, 1, 0, 1};
+    const BIYOS_real val[1] = {3.0};
+    BIYOS_offset node[2] = {-1, -1};
+    if (BIYOS_addexpr(model, 2, off, code, arg, val, node) != BIYOS_OK || node[0] != 3 ||
+        node[1] != 5)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static int matches(const char *found, const char *wanted)
 {
     return found != NULL && strcmp(found, wanted) == 0;
@@ -462,9 +477,9 @@ int main(void)
     }
     if (use_functions(model) != BIYOS_OK || use_linear(model) != BIYOS_OK ||
         use_quadratic(model) != BIYOS_OK || use_nodes(model) != BIYOS_OK ||
-        use_constraints(model) != BIYOS_OK || use_objectives(model) != BIYOS_OK ||
-        use_names(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK ||
-        use_readers(env, model) != BIYOS_OK)
+        use_postfix(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK ||
+        use_objectives(model) != BIYOS_OK || use_names(model) != BIYOS_OK ||
+        use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

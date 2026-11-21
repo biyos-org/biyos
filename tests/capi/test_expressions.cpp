@@ -3,9 +3,11 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace
@@ -63,6 +65,56 @@ BIYOS_offset next_id(const Model &model)
     return node_of(model, BIYOS_OP_CONST, {}, one);
 }
 
+struct Program
+{
+    std::vector<std::int64_t> starts;
+    std::vector<int> codes;
+    std::vector<std::int64_t> arguments;
+    std::vector<double> values;
+};
+
+BIYOS_status add_expressions(const Model &model,
+                             const Program &program,
+                             std::vector<BIYOS_offset> &nodes)
+{
+    const auto n = static_cast<int>(program.starts.size()) - 1;
+    nodes.assign(static_cast<std::size_t>(n), kNoNode);
+    const double *values = program.values.empty() ? nullptr : program.values.data();
+    return BIYOS_addexpr(model.get(),
+                         n,
+                         program.starts.data(),
+                         program.codes.data(),
+                         program.arguments.data(),
+                         values,
+                         nodes.data());
+}
+
+std::vector<BIYOS_offset> expressions_of(const Model &model, const Program &program)
+{
+    std::vector<BIYOS_offset> nodes;
+    EXPECT_EQ(add_expressions(model, program, nodes), BIYOS_OK);
+    return nodes;
+}
+
+Program single(std::vector<int> code,
+               std::vector<std::int64_t> argument,
+               std::vector<double> values)
+{
+    const auto n = static_cast<std::int64_t>(code.size());
+    return Program{.starts = {0, n},
+                   .codes = std::move(code),
+                   .arguments = std::move(argument),
+                   .values = std::move(values)};
+}
+
+std::string refused(const Env &env, const Model &model, const Program &program)
+{
+    std::vector<BIYOS_offset> nodes;
+    EXPECT_EQ(add_expressions(model, program, nodes), BIYOS_ERR_BADARG);
+    EXPECT_EQ(nodes, std::vector<BIYOS_offset>(nodes.size(), kNoNode));
+    return env.message();
+}
+
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
@@ -76,6 +128,7 @@ void change(const BIYOS_event *, void *data)
     BIYOS_offset node = kNoNode;
     note(attempt, BIYOS_addvarnode(attempt.model, 0, &node));
     note(attempt, BIYOS_addnode(attempt.model, BIYOS_OP_EXP, 1, &child, nullptr, &node));
+    note(attempt, BIYOS_addexpr(attempt.model, 0, nullptr, nullptr, nullptr, nullptr, nullptr));
 }
 
 }
@@ -170,10 +223,130 @@ TEST(CApiTest, LockedExpressions)
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    const std::vector<BIYOS_status> statuses(2, BIYOS_ERR_BADARG);
+    const std::vector<BIYOS_status> statuses(3, BIYOS_ERR_BADARG);
     EXPECT_EQ(attempt.statuses, statuses);
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
-    EXPECT_EQ(attempt.messages, std::vector<std::string>(2, locked));
+    EXPECT_EQ(attempt.messages, std::vector<std::string>(3, locked));
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     EXPECT_EQ(variable_node(model, 0), 0);
+}
+
+TEST(CApiTest, Postfix)
+{
+    const Env env;
+    const Model model(env);
+    add_variables(model, 2);
+    const Program program{
+        .starts = {0, 4, 9},
+        .codes =
+            {
+                BIYOS_OP_VAR,
+                BIYOS_OP_EXP,
+                BIYOS_OP_VAR,
+                BIYOS_OP_DIV,
+                BIYOS_OP_CONST,
+                BIYOS_OP_VAR,
+                BIYOS_OP_VAR,
+                BIYOS_OP_PROD,
+                BIYOS_OP_SUM,
+            },
+        .arguments = {0, 1, 1, 2, 0, 0, 1, 2, 2},
+        .values = {2.0, 3.0, 0.0, 1.0, 1.0},
+    };
+    EXPECT_EQ(expressions_of(model, program), (std::vector<BIYOS_offset>{3, 6}));
+    EXPECT_EQ(variable_node(model, 1), 2);
+    EXPECT_EQ(next_id(model), 7);
+    const std::int64_t none = 0;
+    EXPECT_EQ(BIYOS_addexpr(model.get(), 0, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addexpr(model.get(), 0, &none, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    const Program shared = single({BIYOS_OP_NODE, BIYOS_OP_NODE, BIYOS_OP_MAX}, {3, 6, 2}, {});
+    EXPECT_EQ(BIYOS_addexpr(model.get(),
+                            1,
+                            shared.starts.data(),
+                            shared.codes.data(),
+                            shared.arguments.data(),
+                            nullptr,
+                            nullptr),
+              BIYOS_OK);
+    EXPECT_EQ(next_id(model), 9);
+    EXPECT_EQ(env.message(), "");
+}
+
+TEST(CApiTest, PostfixErrors)
+{
+    const Env env;
+    const Model model(env);
+    add_variables(model, 2);
+    const BIYOS_offset x = variable_node(model, 0);
+    const std::string bad = "invalid argument: expression 0: ";
+    const Program few{
+        .starts = {0, 3, 5},
+        .codes = {BIYOS_OP_VAR, BIYOS_OP_VAR, BIYOS_OP_DIV, BIYOS_OP_VAR, BIYOS_OP_DIV},
+        .arguments = {0, 1, 2, 0, 2},
+        .values = {},
+    };
+    EXPECT_EQ(refused(env, model, few),
+              "invalid argument: expression 1: entry 4: 2 operands taken, 1 given");
+    EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_VAR}, {0, 1}, {})),
+              bad + "2 operands left, not 1");
+    EXPECT_EQ(refused(env, model, single({}, {}, {})), bad + "0 operands left, not 1");
+    EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, 31}, {0, 1}, {})),
+              bad + "entry 1: operator 31 is unknown");
+    EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR}, {2}, {})),
+              bad + "entry 0: variable 2 is unknown");
+    EXPECT_EQ(refused(env, model, single({BIYOS_OP_NODE}, {x + 1}, {})),
+              bad + "entry 0: node 1 is unknown");
+    EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_LOG}, {1, 0}, {})),
+              bad + "entry 1: operator 10 takes 1 child, not 0");
+    const double infinity = std::numeric_limits<double>::infinity();
+    EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_PROD}, {1, 1}, {infinity})),
+              bad + "entry 1: constant is infinity");
+    const Program made{
+        .starts = {0, 1, 2},
+        .codes = {BIYOS_OP_VAR, BIYOS_OP_NODE},
+        .arguments = {1, 1},
+        .values = {},
+    };
+    EXPECT_EQ(refused(env, model, made),
+              "invalid argument: expression 1: entry 1: node 1 is unknown");
+    EXPECT_EQ(variable_node(model, 1), 1);
+    EXPECT_EQ(next_id(model), 2);
+}
+
+TEST(CApiTest, NullPostfix)
+{
+    const Env env;
+    const Model model(env);
+    add_variables(model, 1);
+    BIYOS_model *held = model.get();
+    const std::int64_t one[] = {0, 1};
+    const std::int64_t two[] = {0, 2};
+    const int variable = BIYOS_OP_VAR;
+    const int variables[] = {BIYOS_OP_VAR, BIYOS_OP_CPOW};
+    const std::int64_t argument[] = {0, 1};
+    const double exponent = 2.0;
+    const std::string bad = "invalid argument: ";
+    EXPECT_EQ(BIYOS_addexpr(held, 1, nullptr, &variable, argument, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'off': is null");
+    EXPECT_EQ(BIYOS_addexpr(held, 1, one, nullptr, argument, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'code': is null");
+    EXPECT_EQ(BIYOS_addexpr(held, 1, one, &variable, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'arg': is null");
+    EXPECT_EQ(BIYOS_addexpr(held, 1, two, variables, argument, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'val': is null");
+    EXPECT_EQ(BIYOS_addexpr(held, -1, nullptr, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
+    const std::int64_t late[] = {1, 1};
+    EXPECT_EQ(BIYOS_addexpr(held, 1, late, &variable, argument, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'off': begins at 1, not 0");
+    const std::int64_t falling[] = {0, 1, 0};
+    EXPECT_EQ(BIYOS_addexpr(held, 2, falling, &variable, argument, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'off': decreases from 1 to 0 at entry 2");
+    BIYOS_offset node = kNoNode;
+    EXPECT_EQ(BIYOS_addexpr(held, 1, two, variables, argument, &exponent, &node), BIYOS_OK);
+    EXPECT_EQ(node, 1);
 }

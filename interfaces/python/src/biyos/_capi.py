@@ -196,6 +196,8 @@ def _declare_expressions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_addvarnode", c_int, c_void_p, c_int32, offsets)
     node = (c_void_p, c_int32, c_int64, offsets, doubles, offsets)
     _declare(lib, "BIYOS_addnode", c_int, *node)
+    postfix = (c_void_p, c_int32, offsets, ints, offsets, doubles, offsets)
+    _declare(lib, "BIYOS_addexpr", c_int, *postfix)
 
 
 lib = _load()
