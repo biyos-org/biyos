@@ -67,9 +67,9 @@ class Model:
     It is closed by ``close``, on leaving a ``with`` block, or when its
     environment is closed. Using it once closed raises ``ValueError``, and
     closing it again does nothing. Closed during one of its own calls, by a
-    subscriber or a finalizer, it reads as closed at once and is freed when
+    hook or a finalizer, it reads as closed at once and is freed when
     the call returns, or when the outermost call returns if the call was
-    made from a subscriber. Otherwise ``close`` raises ``biyos.Error`` while
+    made from a hook. Otherwise ``close`` raises ``biyos.Error`` while
     the environment delivers an event, and the model stays open.
 
     Parameters

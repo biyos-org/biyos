@@ -117,8 +117,8 @@ class Env:
 
         The models still open are closed first, so using one afterwards
         raises ``ValueError``. Closing a freed environment does nothing.
-        Closed during a call on it or on one of its models, by a subscriber
-        or a finalizer, it reads as closed at once and is freed when the
+        Closed during a call on it or on one of its models, by a hook or
+        a finalizer, it reads as closed at once and is freed when the
         outermost call returns. Such a deferred close never raises.
 
         Raises
@@ -126,7 +126,7 @@ class Env:
         Error
             When the free is refused because a model is still allocated, as
             after an interrupted ``Model.close``. An exception raised by a
-            subscriber during the refusal is raised instead. The environment
+            hook during the refusal is raised instead. The environment
             stays allocated, and only a later ``close`` or its collection
             tries again; the collection cannot raise and fails silently.
         """
