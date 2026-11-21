@@ -9,7 +9,7 @@ from biyos._error import Error, check
 from biyos._handles import Handles
 from biyos._integers import integer
 from biyos._relay import Relay
-from biyos._subscribers import Subscribers
+from biyos._hooks import Subscribers
 from biyos._text import encoded
 from biyos._versions import Versions, version_text
 
