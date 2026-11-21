@@ -199,6 +199,14 @@ samp {
   font-feature-settings: "calt" 0, "liga" 0;
 }
 
+code .run {
+  white-space: nowrap;
+}
+
+.csl-entry {
+  overflow-wrap: anywhere;
+}
+
 p code:not(.sourceCode),
 li code:not(.sourceCode),
 td code:not(.sourceCode),
