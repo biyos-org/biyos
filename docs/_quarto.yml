@@ -56,6 +56,8 @@ filters:
     at: pre-ast
   - path: filters/figures.lua
     at: pre-ast
+  - path: filters/names.lua
+    at: pre-ast
 
 format:
   html:
