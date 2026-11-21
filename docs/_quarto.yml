@@ -95,6 +95,7 @@ format:
     sansfont: Inter
     monofont: JetBrains Mono
     monofontoptions: [Scale=MatchLowercase, Contextuals=NoAlternate, Ligatures=NoCommon]
+    fig-pos: H
     mathfont: Fira Math
     toc-depth: 1
     toc-title: Contents
