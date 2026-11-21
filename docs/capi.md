@@ -656,7 +656,7 @@ Every constant, coefficient and exponent of an expression is finite.
 
 ## Solve status
 
-`biyos/status.h` holds the numbers that describe how a solve ended. The termination says why the solve stopped, a result status says what a returned point is, the primal point and the dual point each having one, and the claim says what was proved. They are kept apart, so a result never says more than its method proved. None of them is an error code: a limit reached or an infeasible model is an outcome, not a failed call. No call returns them yet, since biyos solves nothing.
+The `BIYOS_TRM_*`, `BIYOS_RES_*` and `BIYOS_CLM_*` macros describe how a solve ended. The termination says why the solve stopped, a result status says what a returned point is, the primal point and the dual point each having one, and the claim says what was proved. They are kept apart, so a result never says more than its method proved. None of them is an error code: a limit reached or an infeasible model is an outcome, not a failed call. No call returns them yet, since biyos solves nothing.
 
 | Macro | Value | Meaning |
 | --- | --- | --- |

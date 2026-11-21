@@ -1,7 +1,6 @@
 #pragma once
 
 #include "biyos/options.h"
-#include "biyos/status.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -230,6 +229,33 @@ BIYOS_API BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
 #define BIYOS_OP_ENT 27
 #define BIYOS_OP_SPOW 28
 #define BIYOS_OP_ERF 29
+
+#define BIYOS_TRM_NONE 0
+#define BIYOS_TRM_OPTIMAL 101
+#define BIYOS_TRM_LOCAL 102
+#define BIYOS_TRM_NEARLOCAL 103
+#define BIYOS_TRM_ITERLIM 201
+#define BIYOS_TRM_TIMELIM 202
+#define BIYOS_TRM_CPULIM 203
+#define BIYOS_TRM_EVALLIM 204
+#define BIYOS_TRM_STOP 205
+#define BIYOS_TRM_INFEAS 301
+#define BIYOS_TRM_LOCINFEAS 302
+#define BIYOS_TRM_UNBND 303
+#define BIYOS_TRM_SLOW 401
+#define BIYOS_TRM_NUMERIC 402
+
+#define BIYOS_RES_NONE 0
+#define BIYOS_RES_FEAS 1
+#define BIYOS_RES_NEARFEAS 2
+#define BIYOS_RES_INFEAS 3
+#define BIYOS_RES_CER 4
+#define BIYOS_RES_NEARCER 5
+#define BIYOS_RES_UNKNOWN 6
+
+#define BIYOS_CLM_NONE 0
+#define BIYOS_CLM_LOCAL 1
+#define BIYOS_CLM_GLOBAL 2
 
 #ifdef __cplusplus
 }
