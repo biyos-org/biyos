@@ -1,12 +1,15 @@
+from collections.abc import Callable
+from ctypes import c_void_p
+
 from biyos._error import Error, check
 
 
 class Relay:
-    def __init__(self):
-        self._raised = None
+    def __init__(self) -> None:
+        self._raised: BaseException | None = None
         self._depth = 0
 
-    def run(self, function, *arguments):
+    def run(self, function: Callable[..., object], *arguments: object) -> None:
         self._depth += 1
         try:
             function(*arguments)
@@ -15,14 +18,14 @@ class Relay:
         finally:
             self._depth -= 1
 
-    def idle(self):
+    def idle(self) -> bool:
         return self._depth == 0
 
-    def start(self):
+    def start(self) -> None:
         if self._depth == 0:
             self._raised = None
 
-    def finish(self, handle, status):
+    def finish(self, handle: c_void_p, status: int) -> None:
         raised = self._raised
         if self._depth > 0 or raised is None:
             return
@@ -36,6 +39,6 @@ class Relay:
         finally:
             del raised
 
-    def _keep(self, error):
+    def _keep(self, error: BaseException) -> None:
         if self._raised is None:
             self._raised = error
