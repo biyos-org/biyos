@@ -172,7 +172,7 @@ def version() -> str:
 
     Returns
     -------
-    str
+    ver
         The version, such as ``"0.1.0"``.
 
     See Also

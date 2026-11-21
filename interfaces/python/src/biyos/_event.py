@@ -62,7 +62,7 @@ class Event:
 
     @property
     def kind(self) -> EventKind:
-        """The kind of the event, an ``EventKind``.
+        """The kind of the event.
 
         See Also
         --------
@@ -72,7 +72,7 @@ class Event:
 
     @property
     def level(self) -> EventLevel:
-        """The level of the event, an ``EventLevel``.
+        """The level of the event.
 
         See Also
         --------
@@ -117,7 +117,7 @@ class Event:
 
         Returns
         -------
-        str
+        buf
             The line, with no line break.
 
         See Also
@@ -131,7 +131,7 @@ class Event:
 
         Returns
         -------
-        str
+        buf
             The object, on one line.
 
         See Also

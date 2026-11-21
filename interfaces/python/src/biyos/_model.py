@@ -101,7 +101,7 @@ class Model:
 
     Parameters
     ----------
-    env : Env
+    env
         The environment the model is made on.
 
     See Also
@@ -178,12 +178,12 @@ class Model:
 
         Parameters
         ----------
-        env : Env, optional
+        env
             The environment the copy is made on, the model's own by default.
 
         Returns
         -------
-        Model
+        copy
             The copy.
 
         Raises
@@ -220,16 +220,16 @@ class Model:
 
         Parameters
         ----------
-        n : int
+        n
             The number of variables to add.
-        knd : sequence of VariableKind, optional
+        knd
             The kind of each, continuous by default.
-        lb, ub : sequence of float, optional
+        lb, ub
             The bounds of each, the widest of its kind by default.
 
         Returns
         -------
-        Variables
+        vars
             The new variables.
 
         See Also
@@ -259,7 +259,7 @@ class Model:
         Parameters
         ----------
         idx
-            The variables, as indices, views or blocks.
+            The variables.
         lb, ub
             The new bounds of each; ``None`` leaves that side as it is.
 
@@ -283,14 +283,13 @@ class Model:
         Parameters
         ----------
         idx
-            The variables, as indices, views or blocks, in any order and
-            any of them more than once.
+            The variables, in any order, any of them more than once.
 
         Returns
         -------
-        list of float
+        lb
             The lower bound of each.
-        list of float
+        ub
             The upper bound of each.
 
         See Also
@@ -311,9 +310,9 @@ class Model:
         Parameters
         ----------
         idx
-            The variables, as indices, views or blocks.
+            The variables.
         knd
-            The new kind of each, a ``VariableKind``.
+            The new kind of each.
 
         See Also
         --------
@@ -334,12 +333,11 @@ class Model:
         Parameters
         ----------
         idx
-            The variables, as indices, views or blocks, in any order and
-            any of them more than once.
+            The variables, in any order, any of them more than once.
 
         Returns
         -------
-        list of VariableKind
+        knd
             The kind of each.
 
         See Also
@@ -354,7 +352,7 @@ class Model:
 
         Returns
         -------
-        int
+        n
             The number of variables.
 
         See Also
@@ -380,11 +378,11 @@ class Model:
 
         Returns
         -------
-        list of VariableKind
+        knd
             The kind of each variable.
-        list of float
+        lb
             The lower bound of each.
-        list of float
+        ub
             The upper bound of each.
 
         See Also
@@ -414,23 +412,23 @@ class Model:
 
         Parameters
         ----------
-        n : int
+        n
             The number of functions to add.
-        cst : sequence of float, optional
+        cst
             The constant of each, 0 by default.
-        off : sequence of int, optional
+        off
             The ``n + 1`` offsets of the functions' linear terms in
             ``varidx`` and ``coef``, from 0 and never decreasing.
             Function ``j`` has the terms from ``off[j]`` to
             ``off[j + 1] - 1``. By default the functions have no terms.
-        varidx : sequence of int, optional
+        varidx
             The variable of each term, ``off[n]`` of them.
-        coef : sequence of float, optional
+        coef
             The coefficient of each term, ``off[n]`` of them.
 
         Returns
         -------
-        Functions
+        funs
             The new functions.
 
         See Also
@@ -455,7 +453,7 @@ class Model:
 
         Returns
         -------
-        int
+        n
             The number of functions.
 
         See Also
@@ -481,14 +479,14 @@ class Model:
 
         Returns
         -------
-        list of float
+        cst
             The constant of each function.
-        list of int
+        off
             The ``n + 1`` offsets of the functions' terms in the two lists
             after it, from 0.
-        list of int
+        varidx
             The variable of each term.
-        list of float
+        coef
             The coefficient of each term.
 
         See Also
@@ -531,15 +529,15 @@ class Model:
 
         Parameters
         ----------
-        funidx : sequence of int
+        funidx
             The functions that gain terms, each listed once.
-        off : sequence of int
+        off
             The ``len(funidx) + 1`` offsets of the functions' terms in
             ``varidx1``, ``varidx2`` and ``coef``, from 0 and never
             decreasing.
-        varidx1, varidx2 : sequence of int
+        varidx1, varidx2
             The two variables of each term, ``off[-1]`` of each.
-        coef : sequence of float
+        coef
             The coefficient of each term, ``off[-1]`` of them.
 
         See Also
@@ -573,14 +571,14 @@ class Model:
 
         Returns
         -------
-        list of int
+        off
             The ``n + 1`` offsets of the functions' terms in the three lists
             after it, from 0.
-        list of int
+        varidx1
             The first variable of each term.
-        list of int
+        varidx2
             The second variable of each term.
-        list of float
+        coef
             The coefficient of each term.
 
         See Also
@@ -615,14 +613,14 @@ class Model:
 
         Parameters
         ----------
-        funidx : sequence of int
+        funidx
             The function each new constraint bounds.
-        lb, ub : sequence of float, optional
+        lb, ub
             The bounds of each, unbounded by default.
 
         Returns
         -------
-        Constraints
+        cons
             The new constraints.
 
         See Also
@@ -650,7 +648,7 @@ class Model:
         Parameters
         ----------
         idx
-            The constraints, as indices, views or blocks.
+            The constraints.
         lb, ub
             The new bounds of each; ``None`` leaves that side as it is.
 
@@ -674,14 +672,13 @@ class Model:
         Parameters
         ----------
         idx
-            The constraints, as indices, views or blocks, in any order and
-            any of them more than once.
+            The constraints, in any order, any of them more than once.
 
         Returns
         -------
-        list of float
+        lb
             The lower bound of each.
-        list of float
+        ub
             The upper bound of each.
 
         See Also
@@ -697,7 +694,7 @@ class Model:
 
         Returns
         -------
-        int
+        n
             The number of constraints.
 
         See Also
@@ -723,11 +720,11 @@ class Model:
 
         Returns
         -------
-        list of int
+        funidx
             The function each constraint bounds.
-        list of float
+        lb
             The lower bound of each.
-        list of float
+        ub
             The upper bound of each.
 
         See Also
@@ -764,21 +761,21 @@ class Model:
 
         Parameters
         ----------
-        funidx : sequence of int
+        funidx
             The function each new objective optimizes.
-        sense : sequence of Sense, optional
+        sense
             Whether each is minimized or maximized, minimized by default.
-        prio : sequence of int, optional
+        prio
             The priority of each. By default each takes its own index, so
             the objectives are optimized one after another in the order
             they are added.
-        coef : sequence of float, optional
+        coef
             The weight of each in the sum of its stage, finite and
             positive, 1 by default.
 
         Returns
         -------
-        Objectives
+        objs
             The new objectives.
 
         See Also
@@ -808,9 +805,9 @@ class Model:
         Parameters
         ----------
         idx
-            The objectives, as indices, views or blocks.
+            The objectives.
         sense
-            The new sense of each, a ``Sense``; ``None`` changes nothing.
+            The new sense of each; ``None`` changes nothing.
 
         See Also
         --------
@@ -831,12 +828,11 @@ class Model:
         Parameters
         ----------
         idx
-            The objectives, as indices, views or blocks, in any order and
-            any of them more than once.
+            The objectives, in any order, any of them more than once.
 
         Returns
         -------
-        list of Sense
+        sense
             The sense of each.
 
         See Also
@@ -858,7 +854,7 @@ class Model:
         Parameters
         ----------
         idx
-            The objectives, as indices, views or blocks.
+            The objectives.
         prio
             The new priority of each; ``None`` changes nothing.
 
@@ -881,12 +877,11 @@ class Model:
         Parameters
         ----------
         idx
-            The objectives, as indices, views or blocks, in any order and
-            any of them more than once.
+            The objectives, in any order, any of them more than once.
 
         Returns
         -------
-        list of int
+        prio
             The priority of each.
 
         See Also
@@ -908,7 +903,7 @@ class Model:
         Parameters
         ----------
         idx
-            The objectives, as indices, views or blocks.
+            The objectives.
         coef
             The new weight of each, finite and positive; ``None`` changes
             nothing.
@@ -932,12 +927,11 @@ class Model:
         Parameters
         ----------
         idx
-            The objectives, as indices, views or blocks, in any order and
-            any of them more than once.
+            The objectives, in any order, any of them more than once.
 
         Returns
         -------
-        list of float
+        coef
             The weight of each.
 
         See Also
@@ -963,7 +957,7 @@ class Model:
         Parameters
         ----------
         idx
-            The objectives, as indices, views or blocks.
+            The objectives.
         atol, rtol
             The new absolute and relative tolerance of each; ``None``
             leaves that tolerance as it is.
@@ -988,14 +982,13 @@ class Model:
         Parameters
         ----------
         idx
-            The objectives, as indices, views or blocks, in any order and
-            any of them more than once.
+            The objectives, in any order, any of them more than once.
 
         Returns
         -------
-        list of float
+        atol
             The absolute tolerance of each.
-        list of float
+        rtol
             The relative tolerance of each.
 
         See Also
@@ -1011,7 +1004,7 @@ class Model:
 
         Returns
         -------
-        int
+        n
             The number of objectives.
 
         See Also
@@ -1037,13 +1030,13 @@ class Model:
 
         Returns
         -------
-        list of int
+        funidx
             The function each objective optimizes.
-        list of Sense
+        sense
             The sense of each.
-        list of int
+        prio
             The priority of each.
-        list of float
+        coef
             The weight of each.
 
         See Also
@@ -1072,7 +1065,7 @@ class Model:
 
         Parameters
         ----------
-        name : str
+        name
             The new name, which replaces the one the model has.
 
         Raises
@@ -1096,7 +1089,7 @@ class Model:
 
         Returns
         -------
-        str or None
+        name
             The name, or None when the model has none.
 
         See Also
@@ -1130,9 +1123,9 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The variables to name.
-        name : sequence of str
+        name
             The new name of each, as many as ``idx``.
 
         Raises
@@ -1159,12 +1152,12 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The variables to read, in any order, any of them more than once.
 
         Returns
         -------
-        list of str or None
+        name
             The name of each, or None for one that has none.
 
         See Also
@@ -1178,12 +1171,12 @@ class Model:
 
         Parameters
         ----------
-        name : sequence of str
+        name
             The names, each matched exactly.
 
         Returns
         -------
-        list of int
+        idx
             The index of the variable that alone holds each name.
 
         Raises
@@ -1208,7 +1201,7 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The variables that lose their names. One without a name, or
             listed more than once, is left without one.
 
@@ -1231,9 +1224,9 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The functions to name.
-        name : sequence of str
+        name
             The new name of each, as many as ``idx``.
 
         See Also
@@ -1249,12 +1242,12 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The functions to read.
 
         Returns
         -------
-        list of str or None
+        name
             The name of each, or None for one that has none.
 
         See Also
@@ -1268,12 +1261,12 @@ class Model:
 
         Parameters
         ----------
-        name : sequence of str
+        name
             The names, each matched exactly.
 
         Returns
         -------
-        list of int
+        idx
             The index of the function that alone holds each name.
 
         See Also
@@ -1287,7 +1280,7 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The functions that lose their names.
 
         See Also
@@ -1305,9 +1298,9 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The constraints to name.
-        name : sequence of str
+        name
             The new name of each, as many as ``idx``.
 
         See Also
@@ -1323,12 +1316,12 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The constraints to read.
 
         Returns
         -------
-        list of str or None
+        name
             The name of each, or None for one that has none.
 
         See Also
@@ -1342,12 +1335,12 @@ class Model:
 
         Parameters
         ----------
-        name : sequence of str
+        name
             The names, each matched exactly.
 
         Returns
         -------
-        list of int
+        idx
             The index of the constraint that alone holds each name.
 
         See Also
@@ -1363,7 +1356,7 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The constraints that lose their names.
 
         See Also
@@ -1379,9 +1372,9 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The objectives to name.
-        name : sequence of str
+        name
             The new name of each, as many as ``idx``.
 
         See Also
@@ -1397,12 +1390,12 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The objectives to read.
 
         Returns
         -------
-        list of str or None
+        name
             The name of each, or None for one that has none.
 
         See Also
@@ -1416,12 +1409,12 @@ class Model:
 
         Parameters
         ----------
-        name : sequence of str
+        name
             The names, each matched exactly.
 
         Returns
         -------
-        list of int
+        idx
             The index of the objective that alone holds each name.
 
         See Also
@@ -1435,7 +1428,7 @@ class Model:
 
         Parameters
         ----------
-        idx : sequence of int
+        idx
             The objectives that lose their names.
 
         See Also

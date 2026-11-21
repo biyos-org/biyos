@@ -43,7 +43,7 @@ class View:
 
         Returns
         -------
-        int
+        idx
             The index of the item in its model.
 
         Raises
@@ -75,7 +75,7 @@ class Block(Generic[Item]):
 
         Returns
         -------
-        int
+        n
             The number of items.
 
         Raises
@@ -91,7 +91,7 @@ class Block(Generic[Item]):
 
         Returns
         -------
-        iterator of view
+        views
             The views of the items, in order.
 
         Raises
@@ -113,13 +113,13 @@ class Block(Generic[Item]):
 
         Parameters
         ----------
-        key : int or slice
+        key
             A position in the block, a negative one counting from the end,
             or a slice with step 1.
 
         Returns
         -------
-        view or block
+        item
             The item at the position, such as a ``Variable`` of a
             ``Variables`` block, or the items of the slice, as a block of
             the same family.
@@ -147,7 +147,7 @@ class Block(Generic[Item]):
 
         Parameters
         ----------
-        mdl : Model
+        mdl
             The model the new block belongs to.
 
         Returns

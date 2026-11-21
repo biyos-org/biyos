@@ -166,8 +166,7 @@ class Env:
         name
             The name of the option, such as ``"maxtime"``.
         val
-            The new value: a bool, an int, a float or a str, as the
-            option's kind takes.
+            The new value, of the type the option's kind takes.
 
         Raises
         ------
@@ -194,7 +193,7 @@ class Env:
 
         Returns
         -------
-        bool | int | float | str
+        val
             The value, of the type the option's kind gives.
 
         Raises
@@ -222,7 +221,7 @@ class Env:
 
         Returns
         -------
-        Versions
+        ver
             The three versions, each a string such as ``"0.1.0"``, or
             ``None`` for never.
 
@@ -255,13 +254,13 @@ class Env:
             A callable that takes one ``Event``. It runs on the thread that
             sent the event, and the event is valid only during the call.
         knd
-            The kind of events, an ``EventKind``.
+            The kind of events.
         lvl
-            The lowest level the hook receives, an ``EventLevel``.
+            The lowest level the hook receives.
 
         Returns
         -------
-        int
+        idx
             The id of the hook, for ``delhook``.
 
         Raises
