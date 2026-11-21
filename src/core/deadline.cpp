@@ -26,8 +26,8 @@ std::optional<nanoseconds> limit_of(const Options &opts, Option opt)
 
 }
 
-Deadline::Deadline(const Options &opts, const Clock &clock)
-    : clock_(clock), wall_limit_(limit_of(opts, Option::TimeLimit)),
+Deadline::Deadline(const Options &opts, const Clock &clock, const Interrupt &interrupt)
+    : clock_(clock), interrupt_(interrupt), wall_limit_(limit_of(opts, Option::TimeLimit)),
       cpu_limit_(limit_of(opts, Option::CpuTimeLimit)),
       wall_start_(wall_limit_ ? clock.wall_time() : nanoseconds::zero()),
       cpu_start_(cpu_limit_ ? clock.cpu_time() : nanoseconds::zero())
@@ -41,6 +41,10 @@ bool Deadline::reached() const
 
 TerminationStatus Deadline::termination() const
 {
+    if (interrupt_.is_set())
+    {
+        return TerminationStatus::UserStop;
+    }
     if (wall_reached())
     {
         return TerminationStatus::TimeLimit;

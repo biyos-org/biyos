@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/clock.hpp"
+#include "core/interrupt.hpp"
 #include "core/options.hpp"
 #include "core/status.hpp"
 
@@ -13,7 +14,7 @@ namespace biyos
 class Deadline
 {
   public:
-    Deadline(const Options &opts, const Clock &clock);
+    Deadline(const Options &opts, const Clock &clock, const Interrupt &interrupt);
 
     bool reached() const;
     TerminationStatus termination() const;
@@ -23,6 +24,7 @@ class Deadline
     bool cpu_reached() const;
 
     const Clock &clock_;
+    const Interrupt &interrupt_;
     std::optional<std::chrono::nanoseconds> wall_limit_;
     std::optional<std::chrono::nanoseconds> cpu_limit_;
     std::chrono::nanoseconds wall_start_;
