@@ -1,4 +1,5 @@
-from ctypes import byref, c_size_t, create_string_buffer
+from collections.abc import Callable
+from ctypes import Array, byref, c_char, c_size_t, create_string_buffer
 from enum import IntEnum
 
 from biyos._capi import OK, lib
@@ -45,7 +46,7 @@ class EventLevel(IntEnum):
     ERROR = 4
 
 
-def _decoded(raw):
+def _decoded(raw: bytes) -> str:
     return raw.decode(errors="replace")
 
 
@@ -56,11 +57,11 @@ class Event:
     raises ``ValueError``.
     """
 
-    def __init__(self, pointer):
-        self._pointer = pointer
+    def __init__(self, pointer: int) -> None:
+        self._pointer: int | None = pointer
 
     @property
-    def kind(self):
+    def kind(self) -> EventKind:
         """The kind of the event, an ``EventKind``.
 
         See Also
@@ -70,7 +71,7 @@ class Event:
         return EventKind(lib.BIYOS_getevtknd(self._live()))
 
     @property
-    def level(self):
+    def level(self) -> EventLevel:
         """The level of the event, an ``EventLevel``.
 
         See Also
@@ -80,7 +81,7 @@ class Event:
         return EventLevel(lib.BIYOS_getevtlvl(self._live()))
 
     @property
-    def module(self):
+    def module(self) -> str:
         """The name of the module that sent the event, such as ``"capi"``.
 
         See Also
@@ -90,7 +91,7 @@ class Event:
         return _decoded(lib.BIYOS_getevtmod(self._live()))
 
     @property
-    def text(self):
+    def text(self) -> str:
         """The text of the event.
 
         See Also
@@ -100,7 +101,7 @@ class Event:
         return _decoded(lib.BIYOS_getevttext(self._live()))
 
     @property
-    def fields(self):
+    def fields(self) -> tuple[tuple[str, str], ...]:
         """The fields of the event, as pairs of name and value.
 
         See Also
@@ -111,7 +112,7 @@ class Event:
         count = lib.BIYOS_getnevtflds(pointer)
         return tuple(_field(pointer, index) for index in range(count))
 
-    def fmttext(self):
+    def fmttext(self) -> str:
         """Return the event as one line of text.
 
         Returns
@@ -125,7 +126,7 @@ class Event:
         """
         return _formatted(lib.BIYOS_fmttext, self._live())
 
-    def fmtjson(self):
+    def fmtjson(self) -> str:
         """Return the event as one JSON object.
 
         Returns
@@ -139,19 +140,19 @@ class Event:
         """
         return _formatted(lib.BIYOS_fmtjson, self._live())
 
-    def _live(self):
+    def _live(self) -> int:
         if self._pointer is None:
             raise ValueError("the event is no longer valid")
         return self._pointer
 
 
-def _field(pointer, index):
+def _field(pointer: int, index: int) -> tuple[str, str]:
     name = lib.BIYOS_getevtfldname(pointer, index)
     value = lib.BIYOS_getevtfldval(pointer, index)
     return _decoded(name), _decoded(value)
 
 
-def _formatted(function, pointer):
+def _formatted(function: Callable[..., int], pointer: int) -> str:
     needed = c_size_t()
     _format(function, pointer, None, 0, needed)
     buffer = create_string_buffer(needed.value + 1)
@@ -159,13 +160,19 @@ def _formatted(function, pointer):
     return _decoded(buffer.value)
 
 
-def _format(function, pointer, buffer, size, needed):
+def _format(
+    function: Callable[..., int],
+    pointer: int,
+    buffer: Array[c_char] | None,
+    size: int,
+    needed: c_size_t,
+) -> None:
     status = function(pointer, size, buffer, byref(needed))
     if status != OK:
         raise Error("cannot format the event", status)
 
 
-def deliver(function, pointer):
+def deliver(function: Callable[[Event], object], pointer: int) -> None:
     event = Event(pointer)
     try:
         function(event)
