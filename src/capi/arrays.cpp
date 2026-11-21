@@ -50,7 +50,7 @@ std::vector<LinearTerm> packed(std::size_t size, const int *variables, const dou
 {
     if (size > 0)
     {
-        require(variables, "vars");
+        require(variables, "varidx");
         require(values, "vals");
     }
     std::vector<LinearTerm> terms;

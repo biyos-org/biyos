@@ -94,11 +94,11 @@ BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
                            BIYOS_index n,
                            const BIYOS_real *consts,
                            const BIYOS_offset *starts,
-                           const BIYOS_index *vars,
+                           const BIYOS_index *varidx,
                            const BIYOS_real *vals,
                            BIYOS_index *beg)
 {
-    return guarded<add_functions>(mdl, n, consts, starts, vars, vals, beg);
+    return guarded<add_functions>(mdl, n, consts, starts, varidx, vals, beg);
 }
 
 BIYOS_status BIYOS_getnfuns(BIYOS_model *mdl, BIYOS_index *n)
@@ -113,8 +113,8 @@ BIYOS_status BIYOS_getfuns(BIYOS_model *mdl,
                            BIYOS_offset *starts,
                            BIYOS_offset size,
                            BIYOS_offset *needed,
-                           BIYOS_index *vars,
+                           BIYOS_index *varidx,
                            BIYOS_real *vals)
 {
-    return guarded<get_functions>(mdl, beg, n, consts, starts, size, needed, vars, vals);
+    return guarded<get_functions>(mdl, beg, n, consts, starts, size, needed, varidx, vals);
 }

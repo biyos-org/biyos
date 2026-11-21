@@ -252,7 +252,7 @@ TEST(CApiTest, BadSubscribe)
     EXPECT_EQ(env.message(), "invalid argument: level 9: unknown");
     EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, debug, nullptr),
               BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'id': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'hookid': is null");
     EXPECT_EQ(inbox.calls, 0);
     EXPECT_EQ(id, 0);
 }

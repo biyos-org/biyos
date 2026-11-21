@@ -264,7 +264,7 @@ TEST(CApiTest, NullFunctions)
     const BIYOS_index variable = 0;
     const BIYOS_real value = 1.0;
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, nullptr, &value, nullptr), BIYOS_ERR_INVALIDARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'vars': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx': is null");
     EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, &variable, nullptr, nullptr),
               BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'vals': is null");
