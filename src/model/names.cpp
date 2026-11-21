@@ -1,11 +1,19 @@
 #include "model/names.hpp"
 
+#include "core/error.hpp"
+#include "core/index.hpp"
 #include "core/text.hpp"
 #include "core/utf8.hpp"
+#include "model/checks.hpp"
 
+#include <algorithm>
 #include <cstddef>
+#include <functional>
+#include <numeric>
+#include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace biyos
 {
@@ -13,9 +21,52 @@ namespace biyos
 namespace
 {
 
+std::size_t slot(Index index) noexcept
+{
+    return static_cast<std::size_t>(index);
+}
+
 std::string at_byte(std::string_view fault, std::size_t at)
 {
     return "name " + std::string(fault) + " at byte " + text_of(at);
+}
+
+void check_text(std::string_view noun, Index index, std::string_view name)
+{
+    const std::string fault = name_fault(name);
+    if (!fault.empty())
+    {
+        refuse(noun, index, fault);
+    }
+}
+
+void check_entries(std::string_view noun,
+                   Index size,
+                   std::span<const Index> indices,
+                   std::span<const std::string_view> names)
+{
+    for (std::size_t k = 0; k < indices.size(); ++k)
+    {
+        check_index(noun, indices[k], size);
+        check_text(noun, indices[k], names[k]);
+    }
+}
+
+std::vector<std::size_t> last_entries(std::span<const Index> indices)
+{
+    std::vector<std::size_t> order(indices.size());
+    std::iota(order.begin(), order.end(), std::size_t{0});
+    const auto index_at = [indices](std::size_t k) { return indices[k]; };
+    std::ranges::stable_sort(order, std::ranges::less{}, index_at);
+    std::vector<std::size_t> entries;
+    for (std::size_t j = 0; j < order.size(); ++j)
+    {
+        if (j + 1 == order.size() || index_at(order[j + 1]) != index_at(order[j]))
+        {
+            entries.push_back(order[j]);
+        }
+    }
+    return entries;
 }
 
 }
@@ -41,6 +92,138 @@ std::string name_fault(std::string_view name)
         at += sequence.size;
     }
     return "";
+}
+
+std::size_t Names::Hash::operator()(std::string_view text) const noexcept
+{
+    return std::hash<std::string_view>{}(text);
+}
+
+Names::Names(const Names &other) : holders_(other.holders_), names_(other.names_.size(), nullptr)
+{
+    for (std::size_t k = 0; k < other.names_.size(); ++k)
+    {
+        if (other.names_[k] != nullptr)
+        {
+            names_[k] = &holders_.find(*other.names_[k])->first;
+        }
+    }
+}
+
+Names &Names::operator=(const Names &other)
+{
+    *this = Names(other);
+    return *this;
+}
+
+const std::string *Names::name(Index index) const noexcept
+{
+    return slot(index) < names_.size() ? names_[slot(index)] : nullptr;
+}
+
+Holders Names::find(std::string_view name) const
+{
+    const auto found = holders_.find(name);
+    if (found == holders_.end())
+    {
+        return Holders{.count = 0, .index = -1};
+    }
+    const Tally &tally = found->second;
+    const Index lone = tally.count == 1 ? static_cast<Index>(tally.index_sum) : -1;
+    return Holders{.count = tally.count, .index = lone};
+}
+
+void Names::set(std::string_view noun,
+                Index size,
+                std::span<const Index> indices,
+                std::span<const std::string_view> names)
+{
+    if (indices.size() != names.size())
+    {
+        throw Error(ErrorKind::Internal, "model", "indices and names differ in number");
+    }
+    if (indices.empty())
+    {
+        return;
+    }
+    check_entries(noun, size, indices, names);
+    const std::vector<std::size_t> entries = last_entries(indices);
+    Table fresh = missing(names, entries);
+    std::vector<const std::string *> given(entries.size(), nullptr);
+    grow(indices[entries.back()]);
+    holders_.reserve(holders_.size() + fresh.size());
+    for (std::size_t j = 0; j < entries.size(); ++j)
+    {
+        const Index index = indices[entries[j]];
+        given[j] = names_[slot(index)];
+        acquire(index, names[entries[j]], fresh);
+    }
+    for (std::size_t j = 0; j < entries.size(); ++j)
+    {
+        release(indices[entries[j]], given[j]);
+    }
+}
+
+void Names::remove(std::string_view noun, Index size, std::span<const Index> indices)
+{
+    for (const Index index : indices)
+    {
+        check_index(noun, index, size);
+    }
+    for (const Index index : indices)
+    {
+        if (slot(index) < names_.size())
+        {
+            release(index, names_[slot(index)]);
+            names_[slot(index)] = nullptr;
+        }
+    }
+}
+
+Names::Table Names::missing(std::span<const std::string_view> names,
+                            std::span<const std::size_t> entries) const
+{
+    Table fresh;
+    for (const std::size_t k : entries)
+    {
+        if (!holders_.contains(names[k]))
+        {
+            fresh.try_emplace(std::string(names[k]), Tally{.count = 0, .index_sum = 0});
+        }
+    }
+    return fresh;
+}
+
+void Names::grow(Index index)
+{
+    names_.resize((std::max)(names_.size(), slot(index) + 1));
+}
+
+void Names::acquire(Index index, std::string_view name, Table &fresh)
+{
+    auto found = holders_.find(name);
+    if (found == holders_.end())
+    {
+        found = holders_.insert(fresh.extract(fresh.find(name))).position;
+    }
+    found->second.count += 1;
+    found->second.index_sum += index;
+    names_[slot(index)] = &found->first;
+}
+
+void Names::release(Index index, const std::string *name) noexcept
+{
+    if (name == nullptr)
+    {
+        return;
+    }
+    const auto found = holders_.find(*name);
+    found->second.count -= 1;
+    found->second.index_sum -= index;
+    if (found->second.count == 0)
+    {
+        holders_.erase(found);
+    }
 }
 
 }

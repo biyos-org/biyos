@@ -3,6 +3,7 @@
 #include "biyos/biyos.h"
 #include "core/index.hpp"
 #include "expr/terms.hpp"
+#include "model/names.hpp"
 
 #include <array>
 #include <cstddef>
@@ -70,12 +71,36 @@ struct Objective
 
 Objective default_objective(Index function, Index index) noexcept;
 
+enum class Family
+{
+    Variable,
+    Function,
+    Constraint,
+    Objective,
+};
+
+inline constexpr std::array kFamilies{
+    Family::Variable,
+    Family::Function,
+    Family::Constraint,
+    Family::Objective,
+};
+
+std::string_view noun_of(Family family) noexcept;
+
 class Model
 {
   public:
     const std::string *name() const noexcept;
     void set_name(std::string_view name);
     void del_name() noexcept;
+
+    const std::string *name_of(Family family, Index index) const;
+    Index index_of(Family family, std::string_view name) const;
+    void set_names(Family family,
+                   std::span<const Index> indices,
+                   std::span<const std::string_view> names);
+    void del_names(Family family, std::span<const Index> indices);
 
     Index variable_count() const noexcept;
     const Variable &variable(Index index) const;
@@ -116,6 +141,7 @@ class Model
     void set_objectives(std::span<const Index> indices, std::span<const Objective> changed);
 
   private:
+    Index count_of(Family family) const noexcept;
     Offset begin_of(std::size_t function) const noexcept;
     void append(std::span<const double> constants,
                 std::span<const Offset> starts,
@@ -131,6 +157,7 @@ class Model
     std::vector<QuadraticTerm> quadratic_terms_;
     std::vector<Constraint> constraints_;
     std::vector<Objective> objectives_;
+    std::array<Names, kFamilies.size()> names_;
 };
 
 }

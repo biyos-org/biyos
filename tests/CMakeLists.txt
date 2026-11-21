@@ -24,7 +24,7 @@ endfunction()
 biyos_add_test(test_core core/test_check.cpp core/test_clock.cpp core/test_environment.cpp core/test_error.cpp core/test_events.cpp core/test_format.cpp core/test_name.cpp core/test_options.cpp core/test_status.cpp core/test_timer.cpp core/test_tolerances.cpp core/test_utf8.cpp core/test_version.cpp)
 target_link_libraries(test_core PRIVATE biyos_internal)
 
-biyos_add_test(test_allocation core/allocations.cpp core/test_allocation.cpp expr/test_allocation.cpp)
+biyos_add_test(test_allocation core/allocations.cpp core/test_allocation.cpp expr/test_allocation.cpp model/test_allocation.cpp)
 target_include_directories(test_allocation PRIVATE core)
 target_link_libraries(test_allocation PRIVATE biyos_internal)
 
