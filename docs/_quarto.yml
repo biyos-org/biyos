@@ -118,9 +118,8 @@ quartodoc:
     include_empty: true
     member_order: source
   renderer:
-    style: markdown
+    style: filters.renderer.py
     header_level: 2
-    table_style: description-list
   sections:
     - title: Environments
       desc: An environment holds the options and the hooks, and every model is made on one.
