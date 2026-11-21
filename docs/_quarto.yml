@@ -3,6 +3,7 @@ project:
   output-dir: _book
   pre-render:
     - ../tools/capi_page.py
+    - ../tools/options_page.py
 
 book:
   title: biyos
@@ -40,6 +41,7 @@ book:
     - part: Reference
       chapters:
         - reference/capi.qmd
+        - reference/options.qmd
         - reference/codes.qmd
     - references.qmd
 

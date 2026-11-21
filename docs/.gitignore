@@ -2,3 +2,4 @@
 /_book/
 **/*.quarto_ipynb
 /reference/_capi/
+/reference/_options/
