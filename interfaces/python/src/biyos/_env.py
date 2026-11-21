@@ -1,11 +1,14 @@
 import weakref
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from ctypes import byref, c_char_p, c_double, c_int, c_void_p
 from numbers import Real
+from typing import NoReturn, SupportsIndex
 
 from biyos import _capi
 from biyos._capi import lib
 from biyos._error import Error, check
+from biyos._event import Event, EventKind, EventLevel
 from biyos._handles import Handles
 from biyos._integers import integer
 from biyos._relay import Relay
@@ -14,51 +17,53 @@ from biyos._text import encoded
 from biyos._versions import Versions, version_text
 
 
-def _name(name):
+def _name(name: str) -> bytes:
     if not isinstance(name, str):
         found = type(name).__name__
         raise TypeError(f"option name must be a str, not {found}")
     return encoded(name)
 
 
-def _rejected(name, noun, value):
+def _rejected(name: str, noun: str, value: object) -> TypeError:
     found = type(value).__name__
     return TypeError(f"option '{name}' takes {noun}, not {found}")
 
 
-def _callable(function):
+def _callable(
+    function: Callable[[Event], object],
+) -> Callable[[Event], object]:
     if not callable(function):
         found = type(function).__name__
         raise TypeError(f"hook must be callable, not {found}")
     return function
 
 
-def _bool(name, value):
+def _bool(name: str, value: bool) -> int:
     if not isinstance(value, bool):
         raise _rejected(name, "a bool", value)
     return int(value)
 
 
-def _int(name, value):
+def _int(name: str, value: SupportsIndex) -> int:
     try:
         return integer(f"option '{name}'", value)
     except TypeError:
         raise _rejected(name, "an int", value) from None
 
 
-def _double(name, value):
+def _double(name: str, value: float) -> float:
     if isinstance(value, bool) or not isinstance(value, Real):
         raise _rejected(name, "a number", value)
     return float(value)
 
 
-def _string(name, value):
+def _string(name: str, value: str) -> bytes:
     if not isinstance(value, str):
         raise _rejected(name, "a str", value)
     return encoded(value)
 
 
-_SETTERS = {
+_SETTERS: dict[int, tuple[Callable[..., int], Callable[..., object]]] = {
     _capi.KIND_BOOL: (lib.BIYOS_setboolopt, _bool),
     _capi.KIND_INT: (lib.BIYOS_setintopt, _int),
     _capi.KIND_DOUBLE: (lib.BIYOS_setdblopt, _double),
@@ -66,7 +71,10 @@ _SETTERS = {
     _capi.KIND_ENUM: (lib.BIYOS_setstropt, _string),
 }
 
-_GETTERS = {
+_GETTERS: dict[
+    int,
+    tuple[Callable[..., int], type, Callable[..., bool | int | float | str]],
+] = {
     _capi.KIND_BOOL: (lib.BIYOS_getboolopt, c_int, bool),
     _capi.KIND_INT: (lib.BIYOS_getintopt, c_int, int),
     _capi.KIND_DOUBLE: (lib.BIYOS_getdblopt, c_double, float),
@@ -75,9 +83,10 @@ _GETTERS = {
 }
 
 
-def _release(models, handle):
+def _release(models: Handles, handle: c_void_p) -> int:
     models.release()
-    return lib.BIYOS_freeenv(handle)
+    status: int = lib.BIYOS_freeenv(handle)
+    return status
 
 
 class Env:
@@ -96,7 +105,7 @@ class Env:
     BIYOS_newenv, BIYOS_freeenv
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         handle = c_void_p()
         status = lib.BIYOS_newenv(byref(handle))
         if status != _capi.OK:
@@ -110,19 +119,19 @@ class Env:
         self._closing = False
         self._pending = False
 
-    def __enter__(self):
+    def __enter__(self) -> "Env":
         return self
 
-    def __exit__(self, *exc_info):
+    def __exit__(self, *exc_info: object) -> None:
         self.close()
 
-    def __copy__(self):
+    def __copy__(self) -> NoReturn:
         raise TypeError("an environment cannot be copied")
 
-    def __deepcopy__(self, memo):
-        return self.__copy__()
+    def __deepcopy__(self, memo: dict[int, object]) -> NoReturn:
+        self.__copy__()
 
-    def close(self):
+    def close(self) -> None:
         """Free the environment and every model made on it.
 
         The models still open are closed first, so using one afterwards
@@ -149,7 +158,7 @@ class Env:
         if self._calls == 0:
             self._run(self._dispose)
 
-    def setopt(self, name, val):
+    def setopt(self, name: str, val: bool | int | float | str) -> None:
         """Set an option.
 
         Parameters
@@ -175,7 +184,7 @@ class Env:
         setter, convert = _SETTERS[kind]
         self._call(setter, option, convert(name, val))
 
-    def getopt(self, name):
+    def getopt(self, name: str) -> bool | int | float | str:
         """Read an option.
 
         Parameters
@@ -203,7 +212,7 @@ class Env:
         self._call(getter, option, byref(value))
         return convert(value.value)
 
-    def getoptver(self, name):
+    def getoptver(self, name: str) -> Versions:
         """Read the versions that added, deprecated and retired an option.
 
         Parameters
@@ -232,7 +241,12 @@ class Env:
         self._call(lib.BIYOS_getoptver, option, *pointers)
         return Versions(*(version_text(number.value) for number in numbers))
 
-    def addhook(self, hk, knd, lvl):
+    def addhook(
+        self,
+        hk: Callable[[Event], object],
+        knd: EventKind,
+        lvl: EventLevel,
+    ) -> int:
         """Add a hook on one kind of event at a lowest level.
 
         Parameters
@@ -262,14 +276,14 @@ class Env:
         BIYOS_addhook
         """
         hk = _callable(hk)
-        knd = integer("knd", knd)
-        lvl = integer("lvl", lvl)
+        kind = integer("knd", knd)
+        level = integer("lvl", lvl)
         idx = c_int()
         with self._busy():
-            self._addhook(hk, knd, lvl, idx)
+            self._addhook(hk, kind, level, idx)
         return idx.value
 
-    def delhook(self, idx):
+    def delhook(self, idx: int) -> None:
         """Remove a hook.
 
         Parameters
@@ -290,7 +304,13 @@ class Env:
         with self._busy():
             self._delhook(idx)
 
-    def _addhook(self, hk, knd, lvl, idx):
+    def _addhook(
+        self,
+        hk: Callable[[Event], object],
+        knd: int,
+        lvl: int,
+        idx: c_int,
+    ) -> None:
         callback = self._hooks.callback
         out = byref(idx)
         key = self._hooks.add(hk)
@@ -299,29 +319,29 @@ class Env:
         finally:
             self._hooks.settle(key, idx.value)
 
-    def _delhook(self, idx):
+    def _delhook(self, idx: int) -> None:
         self._call(lib.BIYOS_delhook, idx)
         self._hooks.remove(idx)
 
-    def _lookup(self, name):
+    def _lookup(self, name: str) -> tuple[int, int]:
         option = self._option(name)
         kind = c_int()
         self._call(lib.BIYOS_getoptknd, option, byref(kind))
         return option, kind.value
 
-    def _option(self, name):
+    def _option(self, name: str) -> int:
         option = c_int()
         self._call(lib.BIYOS_getoptid, _name(name), byref(option))
         return option.value
 
-    def _call(self, function, *arguments):
+    def _call(self, function: Callable[..., int], *arguments: object) -> None:
         with self._busy():
             if not self._open():
                 raise ValueError("the environment is closed")
             self._run(function, self._handle, *arguments)
 
     @contextmanager
-    def _busy(self):
+    def _busy(self) -> Iterator[None]:
         """Keep the environment allocated while the block runs.
 
         A close during the block reads as closed at once and frees when the
@@ -336,34 +356,34 @@ class Env:
             self._calls -= 1
             self._settle()
 
-    def _run(self, function, *arguments):
+    def _run(self, function: Callable[..., int], *arguments: object) -> None:
         self._relay.start()
         status = function(*arguments)
         self._settle()
         self._relay.finish(self._handle, status)
         check(self._handle, status)
 
-    def _open(self):
+    def _open(self) -> bool:
         return self._free.alive and not self._closing
 
-    def _arm(self):
+    def _arm(self) -> None:
         arguments = (self._models, self._handle)
         self._free = weakref.finalize(self, _release, *arguments)
 
-    def _settle(self):
+    def _settle(self) -> None:
         if self._relay.idle():
             self._drain()
         if self._calls == 0 and self._pending:
             self._dispose()
 
-    def _drain(self):
+    def _drain(self) -> None:
         self._calls += 1
         try:
             self._models.drain()
         finally:
             self._calls -= 1
 
-    def _dispose(self):
+    def _dispose(self) -> int:
         self._pending = False
         if self._free.detach() is None:
             return _capi.OK
