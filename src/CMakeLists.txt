@@ -83,6 +83,7 @@ add_library(biyos
     capi/events.cpp
     capi/format.cpp
     capi/functions.cpp
+    capi/linear.cpp
     capi/model.cpp
     capi/names.cpp
     capi/objectives.cpp

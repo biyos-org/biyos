@@ -104,6 +104,24 @@ static BIYOS_status use_functions(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status use_linear(BIYOS_model *model)
+{
+    const int functions[1] = {1};
+    const int64_t starts[2] = {0, 1};
+    const int variables[1] = {0};
+    const double values[1] = {4.0};
+    int64_t offsets[3] = {-1, -1, -1};
+    BIYOS_offset needed = -1;
+    int held[4] = {-1, -1, -1, -1};
+    if (BIYOS_addlinterms(model, 1, functions, starts, variables, values) != BIYOS_OK ||
+        BIYOS_getfuns(model, 0, 2, 4, NULL, offsets, &needed, held, NULL) != BIYOS_OK ||
+        needed != 4 || offsets[2] != 4 || held[2] != 0 || held[3] != 1)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static BIYOS_status use_quadratic(BIYOS_model *model)
 {
     const int functions[1] = {1};
@@ -387,10 +405,10 @@ int main(void)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (use_functions(model) != BIYOS_OK || use_quadratic(model) != BIYOS_OK ||
-        use_constraints(model) != BIYOS_OK || use_objectives(model) != BIYOS_OK ||
-        use_names(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK ||
-        use_readers(env, model) != BIYOS_OK)
+    if (use_functions(model) != BIYOS_OK || use_linear(model) != BIYOS_OK ||
+        use_quadratic(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK ||
+        use_objectives(model) != BIYOS_OK || use_names(model) != BIYOS_OK ||
+        use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

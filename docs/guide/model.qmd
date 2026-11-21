@@ -71,6 +71,8 @@ Here `off` is `{0, 3, 5, 6}`: function 0 owns terms 0 to 2, $x_0 + x_1 + x_2$; f
 
 The terms of a function may come in any order, and biyos keeps them sorted by variable. Each must name a variable of the model, appear once in its function and have a finite coefficient. A term whose coefficient is 0 is kept, so a model reads back as it was given. A null `cst` gives every new function the constant 0, and a null `off` adds functions with no terms.
 
+`BIYOS_addlinterms` adds linear terms to functions the model already holds, in the same compressed form with a list of functions in front: function `funidx[k]` gains the terms from `off[k]` to `off[k + 1] - 1`. A variable the function already holds adds its coefficient to the one held, so a function can be built in several calls, and a variable added late enters the functions of existing constraints in one call that lists them, each with one term.
+
 ## Quadratic terms {#sec-model-quadratic}
 
 Functions are added with no quadratic terms. `BIYOS_addquadterms` adds them to functions the model already holds, in the same compressed form, with two arrays for the two variables of each pair:

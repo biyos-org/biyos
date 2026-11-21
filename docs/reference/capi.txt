@@ -508,7 +508,7 @@ param beg out Receives the index of the first new function; skipped when null.
 return `BIYOS_OK` once the functions are added.
 error BIYOS_ERR_BADARG `n` is negative, `off` does not begin at 0 or decreases, a constant is not finite, a variable is not one of the model or appears twice in a function, or a coefficient is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 functions, or more terms than any allocation can hold.
-see BIYOS_addquadterms BIYOS_getfuns
+see BIYOS_addlinterms BIYOS_addquadterms BIYOS_getfuns
 since 0.1.0
 
 function BIYOS_getnfuns
@@ -532,6 +532,22 @@ param coef out Receives the coefficient of each term; skipped when null.
 return `BIYOS_OK` once the arrays are written. Function `beg + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `size`.
 error BIYOS_ERR_BADARG `beg`, `n` or `size` is negative, `beg + n` exceeds the number of functions, or `nnz` is null.
 see BIYOS_getnfuns BIYOS_getquadterms
+since 0.1.0
+
+function BIYOS_addlinterms
+summary Add linear terms to functions of the model.
+param mdl in The model.
+param n in The number of functions that gain terms.
+param funidx in The functions, each listed at most once; may be null only when `n` is 0.
+param off in The `n + 1` offsets of the functions' terms; null adds no terms.
+param varidx in The variable of each term; not read when there are no terms.
+param coef in The coefficient of each term; not read when there are no terms.
+return `BIYOS_OK` once the terms are added.
+error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model or is listed twice, `off` does not begin at 0 or decreases, a variable is not one of the model or appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
+note A variable the function already holds adds its coefficient to the one held, so every call adds $a_j x_j$ to its functions and never replaces a term. A term whose coefficient is 0, given or summed, is kept.
+note A call that adds new terms moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call.
+see BIYOS_addfuns BIYOS_getfuns
 since 0.1.0
 
 group quadratic Quadratic terms
