@@ -2,6 +2,7 @@
 
 #include "core/clock.hpp"
 #include "core/options.hpp"
+#include "core/status.hpp"
 
 #include <chrono>
 #include <optional>
@@ -15,6 +16,7 @@ class Deadline
     Deadline(const Options &opts, const Clock &clock);
 
     bool reached() const;
+    TerminationStatus termination() const;
 
   private:
     bool wall_reached() const;

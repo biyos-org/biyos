@@ -36,7 +36,20 @@ Deadline::Deadline(const Options &opts, const Clock &clock)
 
 bool Deadline::reached() const
 {
-    return wall_reached() || cpu_reached();
+    return termination() != TerminationStatus::NotSolved;
+}
+
+TerminationStatus Deadline::termination() const
+{
+    if (wall_reached())
+    {
+        return TerminationStatus::TimeLimit;
+    }
+    if (cpu_reached())
+    {
+        return TerminationStatus::CpuTimeLimit;
+    }
+    return TerminationStatus::NotSolved;
 }
 
 bool Deadline::wall_reached() const

@@ -3,6 +3,7 @@
 #include "core/env.hpp"
 #include "core/events.hpp"
 #include "core/options.hpp"
+#include "core/status.hpp"
 
 #include <gtest/gtest.h>
 
@@ -20,6 +21,7 @@ using namespace std::chrono_literals;
 using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::Option;
+using biyos::TerminationStatus;
 using Times = std::vector<std::chrono::nanoseconds>;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
@@ -222,6 +224,18 @@ TEST_F(ClockTest, ReadOnce)
     EXPECT_FALSE(deadline.reached());
     clock.advance_wall(1s);
     EXPECT_TRUE(deadline.reached());
+}
+
+TEST_F(ClockTest, Terminations)
+{
+    options.set_dbl(Option::TimeLimit, 2.0);
+    options.set_dbl(Option::CpuTimeLimit, 1.0);
+    const biyos::Deadline deadline(options, clock);
+    EXPECT_EQ(deadline.termination(), TerminationStatus::NotSolved);
+    clock.advance_cpu(1s);
+    EXPECT_EQ(deadline.termination(), TerminationStatus::CpuTimeLimit);
+    clock.advance_wall(2s);
+    EXPECT_EQ(deadline.termination(), TerminationStatus::TimeLimit);
 }
 
 TEST_F(ClockTest, UnwantedEvent)
