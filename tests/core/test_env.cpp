@@ -71,6 +71,19 @@ TEST(EnvTest, OwnsEvents)
     EXPECT_TRUE(view.events().wanted(biyos::EventKind::Message, biyos::EventLevel::Info));
 }
 
+TEST(EnvTest, InterruptFlag)
+{
+    biyos::Env env;
+    const biyos::Env &view = env;
+    EXPECT_FALSE(view.interrupt().is_set());
+    env.interrupt().set();
+    EXPECT_TRUE(view.interrupt().is_set());
+    env.interrupt().set();
+    EXPECT_TRUE(view.interrupt().is_set());
+    env.interrupt().clear();
+    EXPECT_FALSE(view.interrupt().is_set());
+}
+
 TEST(EnvTest, ScopedError)
 {
     biyos::Env env;

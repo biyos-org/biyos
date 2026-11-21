@@ -60,6 +60,16 @@ const Events &Env::events() const noexcept
     return events_;
 }
 
+Interrupt &Env::interrupt() noexcept
+{
+    return interrupt_;
+}
+
+const Interrupt &Env::interrupt() const noexcept
+{
+    return interrupt_;
+}
+
 const std::string &Env::last_error() const noexcept
 {
     return last_error_;
