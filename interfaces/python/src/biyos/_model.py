@@ -11,7 +11,7 @@ from biyos._blocks import (
     index_of,
 )
 from biyos._capi import lib
-from biyos._environment import Environment
+from biyos._environment import Env
 from biyos._error import Error
 from biyos._integers import integer
 
@@ -30,18 +30,18 @@ class Sense(IntEnum):
 
 
 def _environment(env):
-    if not isinstance(env, Environment):
+    if not isinstance(env, Env):
         found = type(env).__name__
-        raise TypeError(f"env must be an Environment, not {found}")
+        raise TypeError(f"env must be an Env, not {found}")
     return env
 
 
-def _span(first, count, size):
-    given = None if count is None else integer("count", count)
+def _span(beg, n, size):
+    given = None if n is None else integer("n", n)
     total = size()
-    count = max(total - first, 0) if given is None else given
-    inside = 0 <= first <= total and 0 <= count <= total - first
-    return count, inside
+    n = max(total - beg, 0) if given is None else given
+    inside = 0 <= beg <= total and 0 <= n <= total - beg
+    return n, inside
 
 
 def _total(starts, count):
@@ -50,13 +50,13 @@ def _total(starts, count):
     return starts[count]
 
 
-def _fields(count, senses, priorities, weights, absolute, relative):
+def _fields(count, senses, prios, weights, abs, rel):
     return (
         ints("senses", senses, count),
-        ints("priorities", priorities, count),
+        ints("prios", prios, count),
         doubles("weights", weights, count),
-        doubles("absolute", absolute, count),
-        doubles("relative", relative, count),
+        doubles("abs", abs, count),
+        doubles("rel", rel, count),
     )
 
 
@@ -74,7 +74,7 @@ class Model:
 
     Parameters
     ----------
-    env : Environment
+    env : Env
         The environment the model is made on.
     """
 
@@ -126,7 +126,7 @@ class Model:
 
         Parameters
         ----------
-        env : Environment, optional
+        env : Env, optional
             The environment the copy is made on, the model's own by default.
 
         Returns
@@ -137,7 +137,7 @@ class Model:
         Raises
         ------
         TypeError
-            When ``env`` is not an ``Environment``.
+            When ``env`` is not an ``Env``.
         Error
             While ``env`` delivers an event.
         ValueError
@@ -153,16 +153,16 @@ class Model:
         copy._hold()
         return copy
 
-    def add_variables(self, count, kinds=None, lower=None, upper=None):
+    def addvars(self, n, kinds=None, lb=None, ub=None):
         """Add variables after the last one.
 
         Parameters
         ----------
-        count : int
+        n : int
             The number of variables to add.
         kinds : sequence of VariableKind, optional
             The kind of each, continuous by default.
-        lower, upper : sequence of float, optional
+        lb, ub : sequence of float, optional
             The bounds of each, the widest of its kind by default.
 
         Returns
@@ -170,179 +170,179 @@ class Model:
         Variables
             The new variables.
         """
-        count = integer("count", count)
+        n = integer("n", n)
         arrays = (
-            ints("kinds", kinds, count),
-            doubles("lower", lower, count),
-            doubles("upper", upper, count),
+            ints("kinds", kinds, n),
+            doubles("lb", lb, n),
+            doubles("ub", ub, n),
         )
         first = c_int()
-        self._call(lib.BIYOS_addvars, count, *arrays, byref(first))
-        return Variables(self, first.value, count, self._version)
+        self._call(lib.BIYOS_addvars, n, *arrays, byref(first))
+        return Variables(self, first.value, n, self._version)
 
-    def set_variable_bounds(self, indices, lower=None, upper=None):
-        count = len(indices)
+    def setvarbounds(self, idx, lb=None, ub=None):
+        count = len(idx)
         arrays = (
-            indices_of(self, Variables, "indices", indices, count),
-            doubles("lower", lower, count),
-            doubles("upper", upper, count),
+            indices_of(self, Variables, "idx", idx, count),
+            doubles("lb", lb, count),
+            doubles("ub", ub, count),
         )
         self._call(lib.BIYOS_setvarbounds, count, *arrays)
 
-    def set_variable_kinds(self, indices, kinds):
-        count = len(indices)
+    def setvarkinds(self, idx, kinds):
+        count = len(idx)
         arrays = (
-            indices_of(self, Variables, "indices", indices, count),
+            indices_of(self, Variables, "idx", idx, count),
             ints("kinds", kinds, count),
         )
         self._call(lib.BIYOS_setvarkinds, count, *arrays)
 
-    def variable_count(self):
+    def getnvars(self):
         count = c_int()
         self._call(lib.BIYOS_getnvars, byref(count))
         return count.value
 
-    def get_variables(self, first=0, count=None):
-        first = index_of(self, Variables, "first", first)
-        count, inside = _span(first, count, self.variable_count)
+    def getvars(self, beg=0, n=None):
+        beg = index_of(self, Variables, "beg", beg)
+        n, inside = _span(beg, n, self.getnvars)
         if not inside:
-            self._call(lib.BIYOS_getvars, first, count, None, None, None)
-        kinds = (c_int * count)()
-        lower = (c_double * count)()
-        upper = (c_double * count)()
+            self._call(lib.BIYOS_getvars, beg, n, None, None, None)
+        kinds = (c_int * n)()
+        lower = (c_double * n)()
+        upper = (c_double * n)()
         arrays = (kinds, lower, upper)
-        self._call(lib.BIYOS_getvars, first, count, *arrays)
+        self._call(lib.BIYOS_getvars, beg, n, *arrays)
         return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
 
-    def add_functions(
+    def addfuns(
         self,
-        count,
-        constants=None,
+        n,
+        consts=None,
         starts=None,
-        variables=None,
-        values=None,
+        vars=None,
+        vals=None,
     ):
         """Add functions after the last one.
 
         Parameters
         ----------
-        count : int
+        n : int
             The number of functions to add.
-        constants : sequence of float, optional
+        consts : sequence of float, optional
             The constant of each, 0 by default.
         starts : sequence of int, optional
-            The ``count + 1`` offsets of the functions' linear terms in
-            ``variables`` and ``values``, from 0 and never decreasing.
+            The ``n + 1`` offsets of the functions' linear terms in
+            ``vars`` and ``vals``, from 0 and never decreasing.
             Function ``j`` has the terms from ``starts[j]`` to
             ``starts[j + 1] - 1``. By default the functions have no terms.
-        variables : sequence of int, optional
-            The variable of each term, ``starts[count]`` of them.
-        values : sequence of float, optional
-            The coefficient of each term, ``starts[count]`` of them.
+        vars : sequence of int, optional
+            The variable of each term, ``starts[n]`` of them.
+        vals : sequence of float, optional
+            The coefficient of each term, ``starts[n]`` of them.
 
         Returns
         -------
         Functions
             The new functions.
         """
-        count = integer("count", count)
-        starts = offsets("starts", starts, count + 1)
-        size = _total(starts, count)
+        n = integer("n", n)
+        starts = offsets("starts", starts, n + 1)
+        size = _total(starts, n)
         arrays = (
-            doubles("constants", constants, count),
+            doubles("consts", consts, n),
             starts,
-            indices_of(self, Variables, "variables", variables, size),
-            doubles("values", values, size),
+            indices_of(self, Variables, "vars", vars, size),
+            doubles("vals", vals, size),
         )
         first = c_int()
-        self._call(lib.BIYOS_addfuns, count, *arrays, byref(first))
-        return Functions(self, first.value, count, self._version)
+        self._call(lib.BIYOS_addfuns, n, *arrays, byref(first))
+        return Functions(self, first.value, n, self._version)
 
-    def function_count(self):
+    def getnfuns(self):
         count = c_int()
         self._call(lib.BIYOS_getnfuns, byref(count))
         return count.value
 
-    def get_functions(self, first=0, count=None):
-        first = index_of(self, Functions, "first", first)
-        count, inside = _span(first, count, self.function_count)
+    def getfuns(self, beg=0, n=None):
+        beg = index_of(self, Functions, "beg", beg)
+        n, inside = _span(beg, n, self.getnfuns)
         needed = c_int64()
         if not inside:
             empty = (None, None, 0, byref(needed), None, None)
-            self._call(lib.BIYOS_getfuns, first, count, *empty)
-        constants = (c_double * count)()
-        starts = (c_int64 * (count + 1))()
+            self._call(lib.BIYOS_getfuns, beg, n, *empty)
+        constants = (c_double * n)()
+        starts = (c_int64 * (n + 1))()
         learn = (constants, starts, 0, byref(needed), None, None)
-        self._call(lib.BIYOS_getfuns, first, count, *learn)
+        self._call(lib.BIYOS_getfuns, beg, n, *learn)
         size = needed.value
         variables = (c_int * size)()
         values = (c_double * size)()
         fill = (None, None, size, byref(needed), variables, values)
-        self._call(lib.BIYOS_getfuns, first, count, *fill)
+        self._call(lib.BIYOS_getfuns, beg, n, *fill)
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
 
-    def add_quadratic_terms(self, functions, starts, firsts, seconds, values):
+    def addquadterms(self, funs, starts, vars1, vars2, vals):
         """Add quadratic terms to functions of the model.
 
-        Function ``functions[j]`` gains the terms from ``starts[j]`` to
-        ``starts[j + 1] - 1``. Term ``k`` adds ``values[k]`` times the
-        product of variables ``firsts[k]`` and ``seconds[k]``, with no factor
+        Function ``funs[j]`` gains the terms from ``starts[j]`` to
+        ``starts[j + 1] - 1``. Term ``k`` adds ``vals[k]`` times the
+        product of variables ``vars1[k]`` and ``vars2[k]``, with no factor
         1/2. The two variables of a pair may come in either order. A pair
         the function holds already adds its coefficient to the one held.
 
         Parameters
         ----------
-        functions : sequence of int
+        funs : sequence of int
             The functions that gain terms, each listed once.
         starts : sequence of int
-            The ``len(functions) + 1`` offsets of the functions' terms in
-            ``firsts``, ``seconds`` and ``values``, from 0 and never
+            The ``len(funs) + 1`` offsets of the functions' terms in
+            ``vars1``, ``vars2`` and ``vals``, from 0 and never
             decreasing.
-        firsts, seconds : sequence of int
+        vars1, vars2 : sequence of int
             The two variables of each term, ``starts[-1]`` of each.
-        values : sequence of float
+        vals : sequence of float
             The coefficient of each term, ``starts[-1]`` of them.
         """
-        count = len(functions)
+        count = len(funs)
         starts = offsets("starts", starts, count + 1)
         size = _total(starts, count)
         arrays = (
-            indices_of(self, Functions, "functions", functions, count),
+            indices_of(self, Functions, "funs", funs, count),
             starts,
-            indices_of(self, Variables, "firsts", firsts, size),
-            indices_of(self, Variables, "seconds", seconds, size),
-            doubles("values", values, size),
+            indices_of(self, Variables, "vars1", vars1, size),
+            indices_of(self, Variables, "vars2", vars2, size),
+            doubles("vals", vals, size),
         )
         self._call(lib.BIYOS_addquadterms, count, *arrays)
 
-    def get_quadratic_terms(self, first=0, count=None):
-        first = index_of(self, Functions, "first", first)
-        count, inside = _span(first, count, self.function_count)
+    def getquadterms(self, beg=0, n=None):
+        beg = index_of(self, Functions, "beg", beg)
+        n, inside = _span(beg, n, self.getnfuns)
         needed = c_int64()
         if not inside:
             empty = (None, 0, byref(needed), None, None, None)
-            self._call(lib.BIYOS_getquadterms, first, count, *empty)
-        starts = (c_int64 * (count + 1))()
+            self._call(lib.BIYOS_getquadterms, beg, n, *empty)
+        starts = (c_int64 * (n + 1))()
         learn = (starts, 0, byref(needed), None, None, None)
-        self._call(lib.BIYOS_getquadterms, first, count, *learn)
+        self._call(lib.BIYOS_getquadterms, beg, n, *learn)
         size = needed.value
         firsts = (c_int * size)()
         seconds = (c_int * size)()
         values = (c_double * size)()
         fill = (None, size, byref(needed), firsts, seconds, values)
-        self._call(lib.BIYOS_getquadterms, first, count, *fill)
+        self._call(lib.BIYOS_getquadterms, beg, n, *fill)
         terms = (list(firsts), list(seconds), list(values))
         return (list(starts), *terms)
 
-    def add_constraints(self, functions, lower=None, upper=None):
+    def addcons(self, funs, lb=None, ub=None):
         """Add constraints after the last one, one for each function given.
 
         Parameters
         ----------
-        functions : sequence of int
+        funs : sequence of int
             The function each new constraint bounds.
-        lower, upper : sequence of float, optional
+        lb, ub : sequence of float, optional
             The bounds of each, unbounded by default.
 
         Returns
@@ -350,51 +350,51 @@ class Model:
         Constraints
             The new constraints.
         """
-        count = len(functions)
+        count = len(funs)
         arrays = (
-            indices_of(self, Functions, "functions", functions, count),
-            doubles("lower", lower, count),
-            doubles("upper", upper, count),
+            indices_of(self, Functions, "funs", funs, count),
+            doubles("lb", lb, count),
+            doubles("ub", ub, count),
         )
         first = c_int()
         self._call(lib.BIYOS_addcons, count, *arrays, byref(first))
         return Constraints(self, first.value, count, self._version)
 
-    def set_constraint_bounds(self, indices, lower=None, upper=None):
-        count = len(indices)
+    def setconbounds(self, idx, lb=None, ub=None):
+        count = len(idx)
         arrays = (
-            indices_of(self, Constraints, "indices", indices, count),
-            doubles("lower", lower, count),
-            doubles("upper", upper, count),
+            indices_of(self, Constraints, "idx", idx, count),
+            doubles("lb", lb, count),
+            doubles("ub", ub, count),
         )
         self._call(lib.BIYOS_setconbounds, count, *arrays)
 
-    def constraint_count(self):
+    def getncons(self):
         count = c_int()
         self._call(lib.BIYOS_getncons, byref(count))
         return count.value
 
-    def get_constraints(self, first=0, count=None):
-        first = index_of(self, Constraints, "first", first)
-        count, inside = _span(first, count, self.constraint_count)
+    def getcons(self, beg=0, n=None):
+        beg = index_of(self, Constraints, "beg", beg)
+        n, inside = _span(beg, n, self.getncons)
         if not inside:
             empty = (None, None, None)
-            self._call(lib.BIYOS_getcons, first, count, *empty)
-        functions = (c_int * count)()
-        lower = (c_double * count)()
-        upper = (c_double * count)()
+            self._call(lib.BIYOS_getcons, beg, n, *empty)
+        functions = (c_int * n)()
+        lower = (c_double * n)()
+        upper = (c_double * n)()
         arrays = (functions, lower, upper)
-        self._call(lib.BIYOS_getcons, first, count, *arrays)
+        self._call(lib.BIYOS_getcons, beg, n, *arrays)
         return list(functions), list(lower), list(upper)
 
-    def add_objectives(
+    def addobjs(
         self,
-        functions,
+        funs,
         senses=None,
-        priorities=None,
+        prios=None,
         weights=None,
-        absolute=None,
-        relative=None,
+        abs=None,
+        rel=None,
     ):
         """Add objectives after the last one, one for each function given.
 
@@ -406,18 +406,18 @@ class Model:
 
         Parameters
         ----------
-        functions : sequence of int
+        funs : sequence of int
             The function each new objective optimizes.
         senses : sequence of Sense, optional
             Whether each is minimized or maximized, minimized by default.
-        priorities : sequence of int, optional
+        prios : sequence of int, optional
             The priority of each. By default each takes its own index, so
             the objectives are optimized one after another in the order
             they are added.
         weights : sequence of float, optional
             The weight of each in the sum of its stage, finite and
             positive, 1 by default.
-        absolute, relative : sequence of float, optional
+        abs, rel : sequence of float, optional
             How far each may move from its optimum in later stages, as a
             value of its function and as a fraction of the size of that
             optimum. Each is 0 or more, ``inf`` setting no limit, and 0 by
@@ -428,50 +428,50 @@ class Model:
         Objectives
             The new objectives.
         """
-        count = len(functions)
+        count = len(funs)
         arrays = (
-            indices_of(self, Functions, "functions", functions, count),
-            *_fields(count, senses, priorities, weights, absolute, relative),
+            indices_of(self, Functions, "funs", funs, count),
+            *_fields(count, senses, prios, weights, abs, rel),
         )
         first = c_int()
         self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
         return Objectives(self, first.value, count, self._version)
 
-    def set_objectives(
+    def setobjs(
         self,
-        indices,
+        idx,
         senses=None,
-        priorities=None,
+        prios=None,
         weights=None,
-        absolute=None,
-        relative=None,
+        abs=None,
+        rel=None,
     ):
-        count = len(indices)
+        count = len(idx)
         arrays = (
-            indices_of(self, Objectives, "indices", indices, count),
-            *_fields(count, senses, priorities, weights, absolute, relative),
+            indices_of(self, Objectives, "idx", idx, count),
+            *_fields(count, senses, prios, weights, abs, rel),
         )
         self._call(lib.BIYOS_setobjs, count, *arrays)
 
-    def objective_count(self):
+    def getnobjs(self):
         count = c_int()
         self._call(lib.BIYOS_getnobjs, byref(count))
         return count.value
 
-    def get_objectives(self, first=0, count=None):
-        first = index_of(self, Objectives, "first", first)
-        count, inside = _span(first, count, self.objective_count)
+    def getobjs(self, beg=0, n=None):
+        beg = index_of(self, Objectives, "beg", beg)
+        n, inside = _span(beg, n, self.getnobjs)
         if not inside:
             empty = (None,) * 6
-            self._call(lib.BIYOS_getobjs, first, count, *empty)
-        functions = (c_int * count)()
-        codes = (c_int * count)()
-        priorities = (c_int * count)()
-        weights = (c_double * count)()
-        absolute = (c_double * count)()
-        relative = (c_double * count)()
+            self._call(lib.BIYOS_getobjs, beg, n, *empty)
+        functions = (c_int * n)()
+        codes = (c_int * n)()
+        priorities = (c_int * n)()
+        weights = (c_double * n)()
+        absolute = (c_double * n)()
+        relative = (c_double * n)()
         found = (functions, codes, priorities, weights, absolute, relative)
-        self._call(lib.BIYOS_getobjs, first, count, *found)
+        self._call(lib.BIYOS_getobjs, beg, n, *found)
         senses = [Sense(code) for code in codes]
         values = (list(weights), list(absolute), list(relative))
         return (list(functions), senses, list(priorities), *values)

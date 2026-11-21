@@ -34,7 +34,7 @@ def _rejected(name, noun, value):
 def _callable(function):
     if not callable(function):
         found = type(function).__name__
-        raise TypeError(f"subscriber must be callable, not {found}")
+        raise TypeError(f"hook must be callable, not {found}")
     return function
 
 
@@ -85,7 +85,7 @@ def _release(models, handle):
     return lib.BIYOS_freeenv(handle)
 
 
-class Environment:
+class Env:
     def __init__(self):
         handle = c_void_p()
         status = lib.BIYOS_newenv(byref(handle))
@@ -135,40 +135,40 @@ class Environment:
         if self._calls == 0:
             self._run(self._dispose)
 
-    def set_option(self, name, value):
+    def setopt(self, name, val):
         option, kind = self._lookup(name)
         setter, convert = _SETTERS[kind]
-        self._call(setter, option, convert(name, value))
+        self._call(setter, option, convert(name, val))
 
-    def get_option(self, name):
+    def getopt(self, name):
         option, kind = self._lookup(name)
         getter, slot, convert = _GETTERS[kind]
         value = slot()
         self._call(getter, option, byref(value))
         return convert(value.value)
 
-    def option_versions(self, name):
+    def getoptversions(self, name):
         option = self._option(name)
         numbers = (c_int(), c_int(), c_int())
         pointers = (byref(number) for number in numbers)
         self._call(lib.BIYOS_getoptversions, option, *pointers)
         return Versions(*(version_text(number.value) for number in numbers))
 
-    def subscribe(self, function, kind, lowest):
-        function = _callable(function)
+    def addhook(self, hook, kind, lowest):
+        hook = _callable(hook)
         kind = integer("kind", kind)
         lowest = integer("lowest", lowest)
         subscription = c_int()
         with self._busy():
-            self._subscribe(function, kind, lowest, subscription)
+            self._addhook(hook, kind, lowest, subscription)
         return subscription.value
 
-    def unsubscribe(self, subscription):
-        subscription = integer("subscription", subscription)
+    def delhook(self, id):
+        id = integer("id", id)
         with self._busy():
-            self._unsubscribe(subscription)
+            self._delhook(id)
 
-    def _subscribe(self, function, kind, lowest, subscription):
+    def _addhook(self, function, kind, lowest, subscription):
         callback = self._subscribers.callback
         out = byref(subscription)
         key = self._subscribers.add(function)
@@ -177,7 +177,7 @@ class Environment:
         finally:
             self._subscribers.settle(key, subscription.value)
 
-    def _unsubscribe(self, subscription):
+    def _delhook(self, subscription):
         self._call(lib.BIYOS_delhook, subscription)
         self._subscribers.remove(subscription)
 

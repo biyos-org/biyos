@@ -31,7 +31,7 @@ class Event:
         return EventKind(lib.BIYOS_getevtkind(self._live()))
 
     @property
-    def level(self):
+    def lvl(self):
         return Level(lib.BIYOS_getevtlvl(self._live()))
 
     @property
@@ -48,10 +48,10 @@ class Event:
         count = lib.BIYOS_getnevtfields(pointer)
         return tuple(_field(pointer, index) for index in range(count))
 
-    def format_text(self):
+    def fmttext(self):
         return _formatted(lib.BIYOS_fmttext, self._live())
 
-    def format_json(self):
+    def fmtjson(self):
         return _formatted(lib.BIYOS_fmtjson, self._live())
 
     def _live(self):
