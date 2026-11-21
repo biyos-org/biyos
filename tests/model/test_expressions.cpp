@@ -409,6 +409,83 @@ TEST(ExpressionTest, Remainder)
     expect_linear(model.linear_terms(0, 1), {{0, 1.0}});
 }
 
+TEST(ExpressionTest, Cleared)
+{
+    Model model = with_functions(3);
+    const Sample made = sample(model);
+    attach(model, {0, 1, 2}, {made.top, made.top, made.exponential});
+    const std::vector<Index> held{1};
+    const std::vector<Offset> one{0, 1};
+    model.add_quadratic_terms(held, one, {{2, 2, 1.0}});
+    const std::vector<Index> cleared{1, 0, 1};
+    model.clear_functions(cleared);
+    for (Index function = 0; function < 2; ++function)
+    {
+        EXPECT_EQ(bits(constant_of(model, function)), bits(0.0));
+        EXPECT_TRUE(model.linear_terms(function, 1).empty());
+        EXPECT_TRUE(model.quadratic_terms(function, 1).empty());
+        EXPECT_EQ(root_of(model, function), kNoRoot);
+    }
+    EXPECT_EQ(root_of(model, 2), made.exponential);
+    EXPECT_EQ(model.graph().size(), 6);
+    attach(model, {1}, {made.top});
+    Model fresh = with_functions(3);
+    const Sample again = sample(fresh);
+    attach(fresh, {1, 2}, {again.top, again.exponential});
+    EXPECT_EQ(biyos::difference(model, fresh), "");
+    EXPECT_EQ(root_of(model, 1), root_of(fresh, 1));
+}
+
+TEST(ExpressionTest, ClearedTerms)
+{
+    Model model = with_variables(3);
+    const std::vector<double> constants{1.0, 2.0, 3.0, 4.0};
+    const std::vector<Offset> starts{0, 1, 3, 4, 6};
+    const std::vector<LinearTerm> terms{{0, 1.0}, {0, 2.0}, {1, 3.0}, {2, 4.0}, {0, 5.0}, {1, 6.0}};
+    model.add_functions(constants, starts, terms);
+    const std::vector<Index> functions{3, 1, 0};
+    const std::vector<Offset> pairs{0, 1, 2, 3};
+    model.add_quadratic_terms(functions, pairs, {{0, 0, 1.0}, {1, 1, 2.0}, {2, 2, 3.0}});
+    const std::vector<Index> cleared{1};
+    model.clear_functions(cleared);
+    expect_linear(model.linear_terms(0, 1), {{0, 1.0}});
+    EXPECT_TRUE(model.linear_terms(1, 1).empty());
+    expect_linear(model.linear_terms(2, 1), {{2, 4.0}});
+    expect_linear(model.linear_terms(3, 1), {{0, 5.0}, {1, 6.0}});
+    expect_pairs(model.quadratic_terms(0, 1), {{2, 2, 3.0}});
+    EXPECT_TRUE(model.quadratic_terms(1, 1).empty());
+    expect_pairs(model.quadratic_terms(3, 1), {{0, 0, 1.0}});
+    EXPECT_EQ(bits(constant_of(model, 2)), bits(3.0));
+    const std::vector<Index> first{3, 0, 0};
+    model.clear_functions(first);
+    EXPECT_EQ(model.linear_terms(0, 4).size(), 1U);
+    expect_linear(model.linear_terms(2, 1), {{2, 4.0}});
+    EXPECT_TRUE(model.quadratic_terms(0, 4).empty());
+    model.clear_functions({});
+    EXPECT_EQ(model.linear_terms(0, 4).size(), 1U);
+    model.add_functions(std::vector<double>{0.0}, std::vector<Offset>{0, 1}, {{1, 9.0}});
+    const std::vector<Index> added{4};
+    model.add_quadratic_terms(added, std::vector<Offset>{0, 1}, {{0, 1, 2.0}});
+    expect_linear(model.linear_terms(4, 1), {{1, 9.0}});
+    expect_pairs(model.quadratic_terms(4, 1), {{0, 1, 2.0}});
+    EXPECT_EQ(model.linear_terms(0, 5).size(), 2U);
+}
+
+TEST(ExpressionTest, ClearRefused)
+{
+    Model model = with_functions(2);
+    const Sample made = sample(model);
+    attach(model, {0}, {made.top});
+    const Model before = model;
+    const std::vector<Index> unknown{0, 2};
+    EXPECT_EQ(refusal([&] { model.clear_functions(unknown); }),
+              "invalid argument: function 2: unknown");
+    const std::vector<Index> negative{-1};
+    EXPECT_EQ(refusal([&] { model.clear_functions(negative); }),
+              "invalid argument: function -1: unknown");
+    expect_same(model, before);
+}
+
 TEST(ExpressionTest, AttachRefused)
 {
     constexpr double kLarge = 1.0e308;

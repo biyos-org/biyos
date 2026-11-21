@@ -8,9 +8,11 @@
 #include "expr/terms.hpp"
 #include "expr/uses.hpp"
 #include "model/checks.hpp"
+#include "model/compressed.hpp"
 #include "model/merge.hpp"
 #include "model/rollback.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -126,6 +128,19 @@ std::vector<Addition<Term>> additions_of(std::span<const Index> functions,
     return additions;
 }
 
+std::vector<Index> distinct(std::span<const Index> functions, Index held)
+{
+    for (const Index function : functions)
+    {
+        check_index(kNoun, function, held);
+    }
+    std::vector<Index> sorted(functions.begin(), functions.end());
+    std::ranges::sort(sorted);
+    const auto repeated = std::ranges::unique(sorted);
+    sorted.erase(repeated.begin(), repeated.end());
+    return sorted;
+}
+
 }
 
 void Model::attach_expressions(std::span<const Index> functions, std::span<const Offset> nodes)
@@ -149,6 +164,18 @@ void Model::attach_expressions(std::span<const Index> functions, std::span<const
         roots_[at(functions[k])] = roots[k];
     }
     rollback.keep();
+}
+
+void Model::clear_functions(std::span<const Index> functions)
+{
+    const std::vector<Index> cleared = distinct(functions, n_functions());
+    clear_parts(ends_, terms_, cleared);
+    clear_parts(quadratic_ends_, quadratic_terms_, cleared);
+    for (const Index function : cleared)
+    {
+        constants_[at(function)] = 0.0;
+        roots_[at(function)] = kNoRoot;
+    }
 }
 
 }

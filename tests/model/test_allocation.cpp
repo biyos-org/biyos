@@ -232,6 +232,12 @@ void attach_all(Model &model)
     model.attach_expressions(functions, nodes);
 }
 
+void clear_two(Model &model)
+{
+    const std::vector<Index> functions{2, 0, 2};
+    model.clear_functions(functions);
+}
+
 std::vector<Offset> roots_of(const Model &model)
 {
     const std::span<const Offset> roots = model.roots(0, model.n_functions());
@@ -373,6 +379,26 @@ TEST(AllocationTest, Attach)
         }
         EXPECT_EQ(biyos::difference(model, before), "");
         EXPECT_EQ(model.graph().mark(), before.graph().mark());
+        EXPECT_EQ(roots_of(model), roots_of(before));
+    }
+    ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, Clear)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        Model model = with_roots();
+        const Model before = model;
+        if (!runs_out_with(model, clear_two, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(model.linear_terms(0, 3).size(), 0U);
+            EXPECT_EQ(model.quadratic_terms(0, 3).size(), 0U);
+            EXPECT_EQ(roots_of(model), (std::vector<Offset>{biyos::kNoRoot, 1, biyos::kNoRoot}));
+            return;
+        }
+        EXPECT_EQ(biyos::difference(model, before), "");
         EXPECT_EQ(roots_of(model), roots_of(before));
     }
     ADD_FAILURE() << "the call never completed";

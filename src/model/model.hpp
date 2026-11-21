@@ -142,6 +142,7 @@ class Model
     Offset add_variable_node(Index variable);
     Offset add_node(int op, std::span<const Offset> children, std::span<const double> values);
     void attach_expressions(std::span<const Index> functions, std::span<const Offset> nodes);
+    void clear_functions(std::span<const Index> functions);
 
     Index n_constraints() const noexcept;
     const Constraint &constraint(Index index) const;
