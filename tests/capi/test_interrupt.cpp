@@ -12,6 +12,7 @@
 #include <csignal>
 #include <functional>
 #include <future>
+#include <limits>
 #include <string>
 
 namespace
@@ -19,10 +20,16 @@ namespace
 
 using biyos::TerminationStatus;
 using biyos::test::Env;
+using biyos::test::Model;
+
+constexpr long kPolls = 100;
+
+void idle(biyos::Env &) {}
 
 struct Loop
 {
-    std::function<void(biyos::Env &)> start;
+    std::function<void(biyos::Env &)> start = idle;
+    long limit = (std::numeric_limits<long>::max)();
     long polls = 0;
     TerminationStatus outcome = TerminationStatus::NotSolved;
 };
@@ -40,7 +47,7 @@ void spin(biyos::Env &env, Loop *loop)
 {
     const biyos::Deadline deadline(env.options(), env.clock(), env.interrupt());
     loop->start(env);
-    while (!deadline.reached())
+    while (loop->polls < loop->limit && !deadline.reached())
     {
         ++loop->polls;
     }
@@ -113,7 +120,7 @@ TEST(InterruptTest, SignalHandler)
     signalled = env.get();
     const auto previous = std::signal(SIGINT, on_signal);
     ASSERT_NE(previous, SIG_ERR);
-    Loop loop{.start = raise_signal};
+    Loop loop{.start = raise_signal, .limit = kPolls};
     const BIYOS_status status = run(env, loop);
     std::signal(SIGINT, previous);
     EXPECT_EQ(status, BIYOS_OK);
@@ -126,12 +133,41 @@ TEST(InterruptTest, HookStop)
     const Env env;
     Stopper stopper{.env = env.get()};
     ASSERT_EQ(listen(env, stop_call, &stopper), BIYOS_OK);
-    Loop loop{.start = announce};
+    Loop loop{.start = announce, .limit = kPolls};
     EXPECT_EQ(run(env, loop), BIYOS_OK);
     EXPECT_EQ(stopper.interrupted, BIYOS_OK);
     EXPECT_EQ(stopper.read, BIYOS_OK);
     EXPECT_EQ(loop.outcome, TerminationStatus::UserStop);
     EXPECT_EQ(loop.polls, 0);
+}
+
+TEST(InterruptTest, NextCall)
+{
+    const Env env;
+    const Model mdl(env);
+    const biyos::Interrupt &flag = env.get()->core.interrupt();
+    BIYOS_real val = 0.0;
+    BIYOS_index n = 0;
+    ASSERT_EQ(BIYOS_interrupt(env.get()), BIYOS_OK);
+    EXPECT_TRUE(flag.is_set());
+    EXPECT_EQ(BIYOS_getdblopt(env.get(), BIYOS_OPT_MAXTIME, &val), BIYOS_OK);
+    EXPECT_FALSE(flag.is_set());
+    ASSERT_EQ(BIYOS_interrupt(env.get()), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnvars(mdl.get(), &n), BIYOS_OK);
+    EXPECT_FALSE(flag.is_set());
+}
+
+TEST(InterruptTest, LateInterrupt)
+{
+    const Env env;
+    Loop stopped{.start = [&env](biyos::Env &) { BIYOS_interrupt(env.get()); }, .limit = kPolls};
+    ASSERT_EQ(run(env, stopped), BIYOS_OK);
+    ASSERT_EQ(stopped.outcome, TerminationStatus::UserStop);
+    ASSERT_EQ(BIYOS_interrupt(env.get()), BIYOS_OK);
+    Loop next{.limit = kPolls};
+    EXPECT_EQ(run(env, next), BIYOS_OK);
+    EXPECT_EQ(next.polls, kPolls);
+    EXPECT_EQ(next.outcome, TerminationStatus::NotSolved);
 }
 
 TEST(InterruptTest, Silent)

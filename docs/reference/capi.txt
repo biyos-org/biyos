@@ -123,6 +123,7 @@ return `BIYOS_OK` once the request is made.
 error BIYOS_ERR_BADARG `env` is null.
 note This is the one call that may run while another thread is inside a call on `env`, and the one call a signal handler may make. It sets a flag on `env` and returns: it takes no lock, allocates nothing, sends no event and keeps no message. `env` must not be freed while it runs.
 note A long call reads the flag where it checks its time limits and stops with the termination `BIYOS_TRM_STOP`, an outcome rather than an error code. No call is long enough to read it yet.
+note The flag clears when the next call on `env` or on one of its models starts, so a request made between two calls stops neither. A call made by a hook leaves it set, so a hook may stop the call that sent its event.
 see BIYOS_TRM_STOP
 since 0.1.0
 

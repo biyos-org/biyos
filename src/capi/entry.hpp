@@ -65,12 +65,21 @@ inline biyos::Model &writable(BIYOS_model &mdl)
     return mdl.core;
 }
 
+inline void start(biyos::Env &env) noexcept
+{
+    if (!env.events().delivering())
+    {
+        env.interrupt().clear();
+    }
+}
+
 template <auto Body, typename... Args> BIYOS_status guarded(BIYOS_env *env, Args... args) noexcept
 {
     if (env == nullptr)
     {
         return BIYOS_ERR_BADARG;
     }
+    start(env->core);
     return biyos::capi::guard(&env->core, [&] { Body(env->core, args...); });
 }
 
@@ -82,6 +91,7 @@ BIYOS_status guarded(Model *mdl, Args... args) noexcept
     {
         return BIYOS_ERR_BADARG;
     }
+    start(mdl->handle.env());
     return biyos::capi::guard(&mdl->handle.env(), [&] { Body(*mdl, args...); });
 }
 
