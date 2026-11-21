@@ -2,7 +2,9 @@
 
 #include "biyos/biyos.h"
 #include "core/index.hpp"
+#include "expr/graph.hpp"
 #include "expr/terms.hpp"
+#include "expr/uses.hpp"
 #include "model/names.hpp"
 
 #include <array>
@@ -88,6 +90,8 @@ inline constexpr std::array kFamilies{
 
 std::string_view noun_of(Family family) noexcept;
 
+inline constexpr Offset kNoRoot = -1;
+
 class Model
 {
   public:
@@ -132,6 +136,12 @@ class Model
                              std::span<const Offset> starts,
                              std::vector<QuadraticTerm> terms);
 
+    const Graph &graph() const noexcept;
+    std::span<const Offset> roots(Index start, Index size) const;
+
+    Offset add_variable_node(Index variable);
+    Offset add_node(int op, std::span<const Offset> children, std::span<const double> values);
+
     Index n_constraints() const noexcept;
     const Constraint &constraint(Index index) const;
     std::span<const Constraint> constraints(Index start, Index size) const;
@@ -161,6 +171,9 @@ class Model
     std::vector<LinearTerm> terms_;
     std::vector<Offset> quadratic_ends_;
     std::vector<QuadraticTerm> quadratic_terms_;
+    Graph graph_;
+    Uses uses_;
+    std::vector<Offset> roots_;
     std::vector<Constraint> constraints_;
     std::vector<Objective> objectives_;
     std::array<Names, kFamilies.size()> names_;

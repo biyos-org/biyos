@@ -37,7 +37,7 @@ set_tests_properties(NameTest.LocalBuffer PROPERTIES PASS_REGULAR_EXPRESSION "co
 biyos_add_test(test_expr expr/chords.cpp expr/draws.cpp expr/reference.cpp expr/sampling.cpp expr/test_arithmetic.cpp expr/test_bends.cpp expr/test_builder.cpp expr/test_canonical.cpp expr/test_compact.cpp expr/test_curvature.cpp expr/test_derivative.cpp expr/test_elementary.cpp expr/test_enclosure.cpp expr/test_exponents.cpp expr/test_graph.cpp expr/test_interval.cpp expr/test_parents.cpp expr/test_partials.cpp expr/test_periodic.cpp expr/test_powers.cpp expr/test_tape.cpp expr/test_terms.cpp expr/test_uses.cpp expr/test_value.cpp expr/test_waves.cpp)
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
-biyos_add_test(test_model model/test_compare.cpp model/test_constraints.cpp model/test_copy.cpp model/test_functions.cpp model/test_names.cpp model/test_objectives.cpp model/test_quadratic.cpp model/test_variables.cpp)
+biyos_add_test(test_model model/test_compare.cpp model/test_constraints.cpp model/test_copy.cpp model/test_expressions.cpp model/test_functions.cpp model/test_names.cpp model/test_objectives.cpp model/test_quadratic.cpp model/test_variables.cpp)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_capi capi/sample.cpp capi/test_adders.cpp capi/test_constants.cpp capi/test_constraints.cpp capi/test_copy.cpp capi/test_env.cpp capi/test_events.cpp capi/test_firewall.cpp capi/test_format.cpp capi/test_functions.cpp capi/test_interrupt.cpp capi/test_linear.cpp capi/test_model.cpp capi/test_names.cpp capi/test_objectives.cpp capi/test_options.cpp capi/test_pairs.cpp capi/test_products.cpp capi/test_quadratic.cpp capi/test_ranges.cpp capi/test_terms.cpp capi/test_version.cpp)

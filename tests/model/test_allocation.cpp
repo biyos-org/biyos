@@ -1,6 +1,8 @@
 #include "allocations.hpp"
+#include "biyos/biyos.h"
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "expr/graph.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
 
@@ -18,6 +20,7 @@ namespace
 {
 
 using biyos::Family;
+using biyos::Graph;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
@@ -171,6 +174,65 @@ bool runs_out_adding(Model &model, std::size_t successes)
     return false;
 }
 
+Model with_nodes()
+{
+    Model model;
+    model.add_variables(std::vector<Variable>(4, biyos::widest(VariableKind::Continuous)));
+    const std::vector<Offset> x{model.add_variable_node(0)};
+    model.add_node(BIYOS_OP_EXP, x, {});
+    return model;
+}
+
+void add_variable(Model &model)
+{
+    model.add_variable_node(3);
+}
+
+void add_two(Model &model)
+{
+    const std::vector<double> constants{1.0, 2.0};
+    const std::vector<Offset> starts{0, 1, 1};
+    model.add_functions(constants, starts, {{0, 1.0}});
+}
+
+void add_sum(Model &model)
+{
+    const std::vector<Offset> children{0, 1};
+    const std::vector<double> values{0.0, 1.0, 2.0};
+    model.add_node(BIYOS_OP_SUM, children, values);
+}
+
+bool runs_out_with(Model &model, void (*change)(Model &), std::size_t successes)
+{
+    const PendingFailure failure(successes);
+    try
+    {
+        change(model);
+    }
+    catch (const std::bad_alloc &)
+    {
+        return true;
+    }
+    return false;
+}
+
+void expect_graph(void (*change)(Model &))
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        Model model = with_nodes();
+        const Graph::Mark before = model.graph().mark();
+        if (!runs_out_with(model, change, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(model.graph().size(), before.nodes + 1);
+            return;
+        }
+        EXPECT_EQ(model.graph().mark(), before);
+    }
+    ADD_FAILURE() << "the call never completed";
+}
+
 std::size_t lookup_cost(const Model &model)
 {
     const std::size_t start = biyos::test::allocations();
@@ -229,4 +291,32 @@ TEST(AllocationTest, LinearTerms)
         EXPECT_EQ(biyos::difference(model, with_terms()), "");
     }
     ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, Functions)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        const Model before = with_nodes();
+        Model model = before;
+        if (!runs_out_with(model, add_two, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(model.roots(0, 2).size(), 2U);
+            EXPECT_EQ(model.roots(0, 2)[1], biyos::kNoRoot);
+            return;
+        }
+        EXPECT_EQ(biyos::difference(model, before), "");
+    }
+    ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, VariableNode)
+{
+    expect_graph(add_variable);
+}
+
+TEST(AllocationTest, SumNode)
+{
+    expect_graph(add_sum);
 }

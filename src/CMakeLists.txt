@@ -54,11 +54,13 @@ add_library(biyos_internal STATIC
     model/compare.cpp
     model/compressed.cpp
     model/constraints.cpp
+    model/expressions.cpp
     model/functions.cpp
     model/merge.cpp
     model/model.cpp
     model/names.cpp
     model/naming.cpp
+    model/nodes.cpp
     model/objectives.cpp
     model/pairs.cpp
     model/quadratic.cpp

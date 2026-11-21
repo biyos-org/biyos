@@ -166,6 +166,7 @@ void Model::append(std::span<const double> constants,
     reserve_more(ends_, constants.size());
     reserve_more(terms_, terms.size());
     reserve_more(quadratic_ends_, constants.size());
+    reserve_more(roots_, constants.size());
     const auto base = static_cast<Offset>(terms_.size());
     constants_.insert(constants_.end(), constants.begin(), constants.end());
     for (const Offset end : starts.subspan(1))
@@ -175,6 +176,7 @@ void Model::append(std::span<const double> constants,
     terms_.insert(terms_.end(), terms.begin(), terms.end());
     const auto held = static_cast<Offset>(quadratic_terms_.size());
     quadratic_ends_.insert(quadratic_ends_.end(), constants.size(), held);
+    roots_.insert(roots_.end(), constants.size(), kNoRoot);
 }
 
 }
