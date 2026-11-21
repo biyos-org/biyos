@@ -202,6 +202,7 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_addnode(nullptr, BIYOS_OP_EXP, 1, &node, nullptr, &node), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addexpr(nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_attachexprsp(nullptr, 0, nullptr, nullptr), BIYOS_ERR_BADARG);
 }
 
 TEST(CApiTest, HeldFree)

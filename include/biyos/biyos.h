@@ -576,6 +576,10 @@ BIYOS_API BIYOS_status BIYOS_addexpr(BIYOS_model *mdl,
                                      const BIYOS_offset *arg,
                                      const BIYOS_real *val,
                                      BIYOS_offset *node);
+BIYOS_API BIYOS_status BIYOS_attachexprsp(BIYOS_model *mdl,
+                                          BIYOS_index n,
+                                          const BIYOS_index *idx,
+                                          const BIYOS_offset *node);
 
 #define BIYOS_TRM_NONE 0
 #define BIYOS_TRM_OPTIMAL 101

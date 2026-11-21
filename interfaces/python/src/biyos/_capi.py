@@ -198,6 +198,8 @@ def _declare_expressions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_addnode", c_int, *node)
     postfix = (c_void_p, c_int32, offsets, ints, offsets, doubles, offsets)
     _declare(lib, "BIYOS_addexpr", c_int, *postfix)
+    attach = (c_void_p, c_int32, ints, offsets)
+    _declare(lib, "BIYOS_attachexprsp", c_int, *attach)
 
 
 lib = _load()

@@ -1,4 +1,5 @@
 #include "biyos/biyos.h"
+#include "capi/entry.hpp"
 #include "handles.hpp"
 
 #include <gtest/gtest.h>
@@ -6,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -115,6 +117,91 @@ std::string refused(const Env &env, const Model &model, const Program &program)
     return env.message();
 }
 
+BIYOS_status attach(const Model &model,
+                    const std::vector<int> &functions,
+                    const std::vector<BIYOS_offset> &nodes)
+{
+    const auto n = static_cast<int>(functions.size());
+    return BIYOS_attachexprsp(model.get(), n, functions.data(), nodes.data());
+}
+
+struct Read
+{
+    std::vector<double> constants;
+    std::vector<std::int64_t> starts;
+    std::vector<int> variables;
+    std::vector<double> coefficients;
+};
+
+Read read_functions(const Model &model, int n)
+{
+    BIYOS_offset nnz = -1;
+    BIYOS_model *held = model.get();
+    EXPECT_EQ(BIYOS_getnrlintermrg(held, 0, n, &nnz), BIYOS_OK);
+    const auto size = static_cast<std::size_t>(nnz);
+    Read read{
+        .constants = std::vector<double>(static_cast<std::size_t>(n)),
+        .starts = std::vector<std::int64_t>(static_cast<std::size_t>(n) + 1),
+        .variables = std::vector<int>(size),
+        .coefficients = std::vector<double>(size),
+    };
+    EXPECT_EQ(BIYOS_getcstrg(held, 0, n, read.constants.data()), BIYOS_OK);
+    const BIYOS_status status = BIYOS_getrlintermrg(held,
+                                                    0,
+                                                    n,
+                                                    nnz,
+                                                    read.starts.data(),
+                                                    read.variables.data(),
+                                                    read.coefficients.data());
+    EXPECT_EQ(status, BIYOS_OK);
+    return read;
+}
+
+struct Pairs
+{
+    std::vector<std::int64_t> starts;
+    std::vector<int> firsts;
+    std::vector<int> seconds;
+    std::vector<double> coefficients;
+};
+
+Pairs read_pairs(const Model &model, int n)
+{
+    BIYOS_offset nnz = -1;
+    BIYOS_model *held = model.get();
+    EXPECT_EQ(BIYOS_getnquadtermrg(held, 0, n, &nnz), BIYOS_OK);
+    const auto size = static_cast<std::size_t>(nnz);
+    Pairs read{
+        .starts = std::vector<std::int64_t>(static_cast<std::size_t>(n) + 1),
+        .firsts = std::vector<int>(size),
+        .seconds = std::vector<int>(size),
+        .coefficients = std::vector<double>(size),
+    };
+    const BIYOS_status status = BIYOS_getquadtermrg(held,
+                                                    0,
+                                                    n,
+                                                    nnz,
+                                                    read.starts.data(),
+                                                    read.firsts.data(),
+                                                    read.seconds.data(),
+                                                    read.coefficients.data());
+    EXPECT_EQ(status, BIYOS_OK);
+    return read;
+}
+
+void add_functions(const Model &model, int n)
+{
+    const std::vector<double> constants(static_cast<std::size_t>(n), 0.5);
+    ASSERT_EQ(BIYOS_addfun(model.get(), n, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcstrg(model.get(), 0, n, constants.data()), BIYOS_OK);
+}
+
+std::vector<BIYOS_offset> roots_of(const Model &model, int n)
+{
+    const std::span<const biyos::Offset> roots = model.get()->core.roots(0, n);
+    return {roots.begin(), roots.end()};
+}
+
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
@@ -129,6 +216,7 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_addvarnode(attempt.model, 0, &node));
     note(attempt, BIYOS_addnode(attempt.model, BIYOS_OP_EXP, 1, &child, nullptr, &node));
     note(attempt, BIYOS_addexpr(attempt.model, 0, nullptr, nullptr, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_attachexprsp(attempt.model, 0, nullptr, nullptr));
 }
 
 }
@@ -223,10 +311,10 @@ TEST(CApiTest, LockedExpressions)
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    const std::vector<BIYOS_status> statuses(3, BIYOS_ERR_BADARG);
+    const std::vector<BIYOS_status> statuses(4, BIYOS_ERR_BADARG);
     EXPECT_EQ(attempt.statuses, statuses);
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
-    EXPECT_EQ(attempt.messages, std::vector<std::string>(3, locked));
+    EXPECT_EQ(attempt.messages, std::vector<std::string>(4, locked));
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     EXPECT_EQ(variable_node(model, 0), 0);
 }
@@ -349,4 +437,127 @@ TEST(CApiTest, NullPostfix)
     BIYOS_offset node = kNoNode;
     EXPECT_EQ(BIYOS_addexpr(held, 1, two, variables, argument, &exponent, &node), BIYOS_OK);
     EXPECT_EQ(node, 1);
+}
+
+TEST(CApiTest, Attach)
+{
+    const Env env;
+    const Model model(env);
+    add_variables(model, 3);
+    add_functions(model, 2);
+    const int owners[] = {1, 1};
+    const int variables[] = {2, 0};
+    const double coefficients[] = {1.0, -1.0};
+    ASSERT_EQ(BIYOS_addlintermsp(model.get(), 2, owners, variables, coefficients), BIYOS_OK);
+    const Program program = single(
+        {
+            BIYOS_OP_CONST,
+            BIYOS_OP_VAR,
+            BIYOS_OP_VAR,
+            BIYOS_OP_VAR,
+            BIYOS_OP_PROD,
+            BIYOS_OP_VAR,
+            BIYOS_OP_EXP,
+            BIYOS_OP_SUM,
+        },
+        {0, 0, 0, 1, 2, 1, 1, 4},
+        {3.0, 1.0, 0.0, 1.0, 2.0, 1.0, 1.0});
+    const std::vector<BIYOS_offset> tops = expressions_of(model, program);
+    ASSERT_EQ(attach(model, {1}, tops), BIYOS_OK);
+    const Read functions = read_functions(model, 2);
+    EXPECT_EQ(functions.constants, (std::vector<double>{0.5, 3.5}));
+    EXPECT_EQ(functions.starts, (std::vector<std::int64_t>{0, 0, 2}));
+    EXPECT_EQ(functions.variables, (std::vector<int>{0, 2}));
+    EXPECT_EQ(functions.coefficients, (std::vector<double>{1.0, 1.0}));
+    const Pairs pairs = read_pairs(model, 2);
+    EXPECT_EQ(pairs.starts, (std::vector<std::int64_t>{0, 0, 1}));
+    EXPECT_EQ(pairs.firsts, std::vector<int>{0});
+    EXPECT_EQ(pairs.seconds, std::vector<int>{1});
+    EXPECT_EQ(pairs.coefficients, std::vector<double>{1.0});
+    EXPECT_EQ(tops, std::vector<BIYOS_offset>{5});
+    EXPECT_EQ(roots_of(model, 2), (std::vector<BIYOS_offset>{biyos::kNoRoot, 3}));
+    EXPECT_EQ(next_id(model), 6);
+    EXPECT_EQ(env.message(), "");
+}
+
+TEST(CApiTest, SharedExpression)
+{
+    const Env env;
+    const Model model(env);
+    add_variables(model, 2);
+    add_functions(model, 2);
+    const BIYOS_offset x = variable_node(model, 0);
+    const BIYOS_offset sine = node_of(model, BIYOS_OP_SIN, {x}, {});
+    const Program program{
+        .starts = {0, 3, 5},
+        .codes = {BIYOS_OP_NODE, BIYOS_OP_VAR, BIYOS_OP_SUM, BIYOS_OP_NODE, BIYOS_OP_SQRT},
+        .arguments = {sine, 1, 2, sine, 1},
+        .values = {0.0, 1.0, 1.0},
+    };
+    const std::vector<BIYOS_offset> tops = expressions_of(model, program);
+    ASSERT_EQ(attach(model, {0, 1}, tops), BIYOS_OK);
+    const std::vector<BIYOS_offset> roots = roots_of(model, 2);
+    EXPECT_EQ(roots[0], sine);
+    const biyos::Graph &graph = model.get()->core.graph();
+    ASSERT_EQ(graph.children(roots[1]).size(), 1U);
+    EXPECT_EQ(graph.children(roots[1]).front(), sine);
+    EXPECT_EQ(next_id(model), 5);
+    EXPECT_EQ(read_functions(model, 2).variables, std::vector<int>{1});
+}
+
+TEST(CApiTest, AttachTwice)
+{
+    const Env env;
+    const Model model(env);
+    add_variables(model, 1);
+    add_functions(model, 1);
+    const Program program = single({BIYOS_OP_VAR, BIYOS_OP_EXP, BIYOS_OP_VAR, BIYOS_OP_SUM},
+                                   {0, 1, 0, 2},
+                                   {1.0, 1.0, 2.0});
+    const std::vector<BIYOS_offset> tops = expressions_of(model, program);
+    ASSERT_EQ(attach(model, {0}, tops), BIYOS_OK);
+    ASSERT_EQ(attach(model, {0}, tops), BIYOS_OK);
+    const Read functions = read_functions(model, 1);
+    EXPECT_EQ(functions.constants, std::vector<double>{2.5});
+    EXPECT_EQ(functions.coefficients, std::vector<double>{4.0});
+    const biyos::Graph &graph = model.get()->core.graph();
+    const BIYOS_offset root = roots_of(model, 1).front();
+    EXPECT_EQ(root, 3);
+    EXPECT_EQ(graph.children(root)[0], 1);
+    EXPECT_EQ(graph.children(root)[1], 1);
+}
+
+TEST(CApiTest, RefusedAttach)
+{
+    const Env env;
+    const Model model(env);
+    add_variables(model, 1);
+    add_functions(model, 2);
+    const BIYOS_offset x = variable_node(model, 0);
+    const double large = 1.0e308;
+    const BIYOS_offset big = node_of(model, BIYOS_OP_SUM, {x}, {large, 1.0});
+    ASSERT_EQ(attach(model, {0}, {big}), BIYOS_OK);
+    const Read before = read_functions(model, 2);
+    const std::string bad = "invalid argument: ";
+    EXPECT_EQ(attach(model, {2}, {x}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "function 2: unknown");
+    EXPECT_EQ(attach(model, {1, 1}, {x, x}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'idx': function 1 is repeated");
+    EXPECT_EQ(attach(model, {1}, {big + 1}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "function 1: node 2 is unknown");
+    EXPECT_EQ(attach(model, {1, 0}, {x, big}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "function 0: sum of constants is infinity");
+    EXPECT_EQ(BIYOS_attachexprsp(model.get(), 1, nullptr, &x), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'idx': is null");
+    const int function = 0;
+    EXPECT_EQ(BIYOS_attachexprsp(model.get(), 1, &function, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'node': is null");
+    EXPECT_EQ(BIYOS_attachexprsp(model.get(), -1, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
+    EXPECT_EQ(BIYOS_attachexprsp(model.get(), 0, nullptr, nullptr), BIYOS_OK);
+    const Read after = read_functions(model, 2);
+    EXPECT_EQ(after.constants, before.constants);
+    EXPECT_EQ(after.coefficients, before.coefficients);
+    EXPECT_EQ(roots_of(model, 2), (std::vector<BIYOS_offset>(2, biyos::kNoRoot)));
+    EXPECT_EQ(next_id(model), 2);
 }
