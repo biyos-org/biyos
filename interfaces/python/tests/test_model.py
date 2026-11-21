@@ -95,6 +95,10 @@ def test_context(env):
         assert model.getnvars() == 0
     with pytest.raises(ValueError, match="the model is closed"):
         model.getnvars()
+    with pytest.raises(ValueError, match="the model is closed"):
+        model.getvarbnd([])
+    with pytest.raises(ValueError, match="the model is closed"):
+        model.getvarknd([])
 
 
 def test_close(env):
@@ -553,6 +557,60 @@ def test_kinds(model):
     ]
 
 
+def test_listed(model):
+    lower = [-INFINITY, 0.0, -3.0, 2.0, 1.0]
+    upper = [INFINITY, 1.0, 7.0, 10.0, 4.0]
+    x = model.addvars(5, KINDS, lower, upper)
+    idx = [4, 0, 4, 2]
+    found = model.getvarbnd(idx)
+    assert found == ([1.0, -INFINITY, 1.0, -3.0], [4.0, INFINITY, 4.0, 7.0])
+    knd = model.getvarknd(idx)
+    assert knd == [KINDS[4], KINDS[0], KINDS[4], KINDS[2]]
+    assert all(type(kind) is VariableKind for kind in knd)
+    assert model.getvarbnd(x[3:]) == (lower[3:], upper[3:])
+    assert model.getvarknd([x[1], Number(3)]) == [KINDS[1], KINDS[3]]
+    assert model.getvarbnd([]) == ([], [])
+    assert model.getvarknd([]) == []
+
+
+def test_setters(model):
+    model.addvars(3)
+    idx = [2, 0, 2]
+    knd = [
+        VariableKind.INTEGER,
+        VariableKind.SEMICONTINUOUS,
+        VariableKind.BINARY,
+    ]
+    model.setvarbnd(idx, [0.0, -1.0, 0.5], [1.0, 2.0, 1.0])
+    model.setvarknd(idx, knd)
+    assert model.getvarbnd(idx) == ([0.5, -1.0, 0.5], [1.0, 2.0, 1.0])
+    assert model.getvarknd(idx) == [knd[2], knd[1], knd[2]]
+    assert model.getvarknd([1]) == [VariableKind.CONTINUOUS]
+
+
+def test_listed_refusals(env, model):
+    x = model.addvars(2)
+    message = refusal(model.getvarbnd, [0, 2])
+    assert message == "invalid argument: variable 2: unknown"
+    message = refusal(model.getvarknd, [1, -1])
+    assert message == "invalid argument: variable -1: unknown"
+    other = biyos.Model(env)
+    y = other.addvars(1)
+    with pytest.raises(ValueError, match="idx is a variable of another"):
+        model.getvarbnd([y[0]])
+    with pytest.raises(ValueError, match="idx is a block of another"):
+        model.getvarknd(y)
+    f = model.addfuns(1)
+    with pytest.raises(ValueError, match="is a function, not a variable"):
+        model.getvarbnd([f[0]])
+    with pytest.raises(TypeError, match="an entry of idx must be an int"):
+        model.getvarknd([0.0])
+    model._gen += 1
+    with pytest.raises(ValueError, match="the block predates a deletion"):
+        model.getvarbnd(x)
+    other.close()
+
+
 def test_refused(model):
     model.addvars(1)
     binary = [VariableKind.BINARY]
@@ -674,10 +732,13 @@ def test_locked(env, model):
         except biyos.Error as error:
             seen.append(str(error))
         seen.append(model.getnvars())
+        seen.append(model.getvarbnd([0]))
+        seen.append(model.getvarknd([0]))
 
     model.addvars(1)
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [LOCKED, 1]
+    bounds = ([-INFINITY], [INFINITY])
+    assert seen == [LOCKED, 1, bounds, [VariableKind.CONTINUOUS]]
     assert model.getnvars() == 1

@@ -199,6 +199,30 @@ def test_bounds(model):
     assert model.getcons(0, 1) == ([0], [6.0], [8.0])
 
 
+def test_listed(env, model):
+    c = add_sample(model)
+    found = model.getconbnd([2, 0, 2, 1])
+    assert found == ([2.0, -1.0, 2.0, -INFINITY], [2.0, 1.0, 2.0, INFINITY])
+    assert model.getconbnd(c[1:]) == (LOWER[1:], UPPER[1:])
+    assert model.getconbnd([]) == ([], [])
+    idx = [1, 0, 1]
+    model.setconbnd(idx, [-2.0, 0.0, -3.0], [2.0, 0.5, 3.0])
+    assert model.getconbnd(idx) == ([-3.0, 0.0, -3.0], [3.0, 0.5, 3.0])
+    assert model.getconbnd([c[2]]) == ([2.0], [2.0])
+    message = refusal(model.getconbnd, [0, 3])
+    assert message == "invalid argument: constraint 3: unknown"
+    message = refusal(model.getconbnd, [-1])
+    assert message == "invalid argument: constraint -1: unknown"
+    other = biyos.Model(env)
+    other.addfuns(1)
+    d = other.addcons([0])
+    with pytest.raises(ValueError, match="is a constraint of another model"):
+        model.getconbnd([d[0]])
+    with pytest.raises(ValueError, match="of functions, not constraints"):
+        model.getconbnd(model.addfuns(1))
+    other.close()
+
+
 def test_refused(model):
     add_sample(model)
     message = refusal(model.addcons, [0, 9])
@@ -251,12 +275,13 @@ def test_locked(env, model):
             except biyos.Error as error:
                 seen.append(str(error))
         seen.append(model.getcons())
+        seen.append(model.getconbnd([1]))
 
     add_sample(model)
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [LOCKED, LOCKED, SAMPLE]
+    assert seen == [LOCKED, LOCKED, SAMPLE, ([-INFINITY], [INFINITY])]
     assert model.getncons() == 3
 
 
@@ -266,6 +291,7 @@ def test_closed(env):
     calls = (
         partial(model.addcons, [0]),
         partial(model.setconbnd, []),
+        partial(model.getconbnd, []),
         model.getncons,
         model.getcons,
     )

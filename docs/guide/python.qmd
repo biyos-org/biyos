@@ -37,6 +37,8 @@ The readers return lists, in the order of the C call's arrays:
 
 `beg` defaults to 0 and `n` to every item from `beg` on, so `model.getvars()` reads them all. The readers of terms size their arrays themselves.
 
+A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds.
+
 ## Constants {#sec-python-constants}
 
 The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind` and `Sense` for models, `EventKind` and `EventLevel` for events, so `BIYOS_LVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvars()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name (@sec-options-python).

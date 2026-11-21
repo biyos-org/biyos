@@ -265,6 +265,30 @@ class Model:
         )
         self._call(lib.BIYOS_setvarbnd, count, *arrays)
 
+    def getvarbnd(self, idx):
+        """Read the bounds of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables, as indices, views or blocks, in any order and
+            any of them more than once.
+
+        Returns
+        -------
+        list of float
+            The lower bound of each.
+        list of float
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getvarbnd
+        """
+        bounds = (c_double, c_double)
+        lb, ub = self._getlist(lib.BIYOS_getvarbnd, Variables, idx, *bounds)
+        return lb, ub
+
     def setvarknd(self, idx, knd):
         """Set the kinds of variables.
 
@@ -285,6 +309,27 @@ class Model:
             ints("knd", knd, count),
         )
         self._call(lib.BIYOS_setvarknd, count, *arrays)
+
+    def getvarknd(self, idx):
+        """Read the kinds of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables, as indices, views or blocks, in any order and
+            any of them more than once.
+
+        Returns
+        -------
+        list of VariableKind
+            The kind of each.
+
+        See Also
+        --------
+        BIYOS_getvarknd
+        """
+        found = self._getlist(lib.BIYOS_getvarknd, Variables, idx, c_int)
+        return [VariableKind(value) for value in found[0]]
 
     def getnvars(self):
         """Return the number of variables.
@@ -579,6 +624,30 @@ class Model:
             doubles("ub", ub, count),
         )
         self._call(lib.BIYOS_setconbnd, count, *arrays)
+
+    def getconbnd(self, idx):
+        """Read the bounds of constraints.
+
+        Parameters
+        ----------
+        idx
+            The constraints, as indices, views or blocks, in any order and
+            any of them more than once.
+
+        Returns
+        -------
+        list of float
+            The lower bound of each.
+        list of float
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getconbnd
+        """
+        bounds = (c_double, c_double)
+        lb, ub = self._getlist(lib.BIYOS_getconbnd, Constraints, idx, *bounds)
+        return lb, ub
 
     def getncons(self):
         """Return the number of constraints.
@@ -1195,6 +1264,13 @@ class Model:
         found = (c_char_p * count)()
         self._call(function, count, indices, found)
         return [decoded(value) for value in found]
+
+    def _getlist(self, function, family, idx, *types):
+        n = len(idx)
+        given = indices_of(self, family, "idx", idx, n)
+        found = [(element * n)() for element in types]
+        self._call(function, n, given, *found)
+        return [list(values) for values in found]
 
     def _getidx(self, function, name):
         count = len(listed("name", name))
