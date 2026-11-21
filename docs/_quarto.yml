@@ -83,8 +83,10 @@ format:
       light: theme/code-light.theme
       dark: theme/code-dark.theme
     include-in-header: theme/fonts.html
+    include-after-body: theme/toc.html
     html-math-method: mathjax
     toc: true
+    toc-location: right-body
     toc-depth: 3
     toc-title: On this page
     code-copy: hover

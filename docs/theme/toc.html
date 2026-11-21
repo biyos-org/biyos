@@ -1,0 +1,18 @@
+<script>
+(function () {
+  var nav = document.getElementById("TOC-body");
+  if (!nav) {
+    return;
+  }
+  var details = document.createElement("details");
+  var summary = document.createElement("summary");
+  var title = nav.querySelector("h2");
+  summary.textContent = title.textContent;
+  title.remove();
+  nav.querySelectorAll("[id]").forEach(function (element) {
+    element.removeAttribute("id");
+  });
+  details.append(summary, ...nav.childNodes);
+  nav.append(details);
+})();
+</script>

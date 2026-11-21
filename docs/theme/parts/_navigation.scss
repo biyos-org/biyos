@@ -234,3 +234,86 @@ nav[role="doc-toc"] .header-section-number {
       0fr [screen-end-inset] 1.25rem [screen-end];
   }
 }
+
+#TOC-body {
+  display: none;
+  margin: 0 0 2rem;
+  background-color: $surface;
+  border: 1px solid $line;
+  border-radius: 4px;
+}
+
+@media (max-width: 1299.98px) {
+  #TOC-body {
+    display: block;
+  }
+
+  .landing #TOC-body {
+    display: none;
+  }
+}
+
+#TOC-body details {
+  margin: 0;
+}
+
+#TOC-body summary {
+  @include label;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+#TOC-body summary::-webkit-details-marker {
+  display: none;
+}
+
+#TOC-body summary::after {
+  content: "";
+  width: 0.4375rem;
+  height: 0.4375rem;
+  margin: -0.25rem 0.125rem 0 0;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+
+#TOC-body details[open] summary::after {
+  margin-top: 0.25rem;
+  transform: rotate(-135deg);
+}
+
+#TOC-body ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1rem;
+}
+
+#TOC-body details > ul {
+  padding: 0 1rem 0.75rem;
+}
+
+#TOC-body li {
+  margin: 0;
+}
+
+#TOC-body a {
+  display: block;
+  padding: 0.1875rem 0;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: $text-muted;
+  text-decoration: none;
+}
+
+#TOC-body a:hover {
+  color: $text;
+}
+
+#TOC-body .header-section-number {
+  color: inherit;
+  margin-right: 0.15em;
+}
