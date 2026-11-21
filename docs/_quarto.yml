@@ -33,6 +33,7 @@ book:
         - method/form.qmd
         - method/graph.qmd
         - method/tapes.qmd
+        - method/derivatives.qmd
     - references.qmd
 
 number-sections: true
