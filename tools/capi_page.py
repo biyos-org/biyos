@@ -61,7 +61,7 @@ def signature(entry, declarations):
         warn(entry, "no declaration")
         return []
     checked(entry, shown)
-    return ["```c\n" + shown + "\n```"]
+    return ["```{.c .signature}\n" + shown + "\n```"]
 
 
 def name(text, anchor=""):

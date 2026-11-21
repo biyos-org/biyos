@@ -991,10 +991,18 @@ h3.api code,
   margin-bottom: 1rem;
 }
 
-.entry div.sourceCode {
-  background-color: $accent-soft;
-  border-color: rgba($brand-blue, 0.28);
+.entry div.sourceCode.signature {
+  background-color: rgba($brand-blue, 0.05);
+  border: 1px solid rgba($brand-blue, 0.2);
+  border-left: 3px solid $brand-blue;
+  border-radius: 2px;
 }
+
+.signature code span.fu {
+  font-weight: 700;
+  color: $text;
+}
+
 
 .entry > p > strong:first-child {
   @include label;

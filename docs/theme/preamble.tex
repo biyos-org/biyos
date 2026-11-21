@@ -43,6 +43,8 @@
 \fvset{breaklines=true, breakanywhere=true, breaknonspaceingroup=true, breaksymbolleft={\color{muted}\tiny\ensuremath{\hookrightarrow}}}
 \RecustomVerbatimEnvironment{verbatim}{Verbatim}{}
 \renewenvironment{Shaded}{\begin{tcolorbox}[breakable, enhanced, frame hidden, sharp corners, colback=shadecolor, boxsep=0pt, left=6pt, right=6pt, top=5pt, bottom=5pt, before skip=6pt, after skip=8pt]\small}{\end{tcolorbox}}
+\definecolor{sigtint}{HTML}{EEF2FD}
+\newenvironment{biyossignature}{\begin{tcolorbox}[breakable, enhanced, frame hidden, sharp corners, colback=sigtint, borderline west={2pt}{0pt}{brandblue}, boxsep=0pt, left=8pt, right=6pt, top=5pt, bottom=5pt, before skip=6pt, after skip=8pt]\small}{\end{tcolorbox}}
 \newtcolorbox{biyosnote}[1]{enhanced, unbreakable, frame hidden, sharp corners, colback=soft, borderline west={2pt}{0pt}{brandblue}, left=10pt, right=10pt, top=6pt, bottom=6pt, before skip=10pt, after skip=10pt, fonttitle=\small\bfseries\color{brandink}, coltitle=brandink, colbacktitle=soft, title={#1}, attach title to upper, after title={\par\smallskip}}
 \makeatletter
 \renewcommand{\maketitle}{%

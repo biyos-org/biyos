@@ -39,7 +39,9 @@ class PageTest(unittest.TestCase):
         self.assertIn("## Environment {#sec-capi-env}", text)
         self.assertIn("### `BIYOS_freeenv` {#BIYOS_freeenv .api", text)
         self.assertIn(
-            "```c\nBIYOS_status BIYOS_freeenv(BIYOS_env *env);\n```", text
+            "```{.c .signature}\n"
+            "BIYOS_status BIYOS_freeenv(BIYOS_env *env);\n```",
+            text,
         )
         self.assertIn(
             "| [`env`]{.name} | [in]{.dir .dir-in} | The environment. |", text
@@ -72,7 +74,7 @@ class PageTest(unittest.TestCase):
         entry.name = "BIYOS_gone"
         with redirect_stderr(io.StringIO()) as err:
             text = self.render(entry)
-        self.assertNotIn("```c", text)
+        self.assertNotIn("```{.c", text)
         self.assertIn("BIYOS_gone: no declaration", err.getvalue())
 
     def test_parameters(self):

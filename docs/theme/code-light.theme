@@ -19,70 +19,70 @@
       "underline": false
     },
     "DataType": {
-      "text-color": "#7342B8",
+      "text-color": "#1F3A93",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "DecVal": {
-      "text-color": "#A34E1E",
+      "text-color": "#16181D",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "BaseN": {
-      "text-color": "#A34E1E",
+      "text-color": "#16181D",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "Float": {
-      "text-color": "#A34E1E",
+      "text-color": "#16181D",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "Constant": {
-      "text-color": "#8A3E76",
+      "text-color": "#16181D",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "Char": {
-      "text-color": "#2D7A55",
+      "text-color": "#4E5D7E",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "SpecialChar": {
-      "text-color": "#2D7A55",
+      "text-color": "#4E5D7E",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "String": {
-      "text-color": "#2D7A55",
+      "text-color": "#4E5D7E",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "VerbatimString": {
-      "text-color": "#2D7A55",
+      "text-color": "#4E5D7E",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "SpecialString": {
-      "text-color": "#2D7A55",
+      "text-color": "#4E5D7E",
       "background-color": null,
       "bold": false,
       "italic": false,
@@ -152,28 +152,28 @@
       "underline": false
     },
     "BuiltIn": {
-      "text-color": "#8A3E76",
+      "text-color": "#1F3A93",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "Extension": {
-      "text-color": "#7342B8",
+      "text-color": "#1F3A93",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "Preprocessor": {
-      "text-color": "#8A3E76",
+      "text-color": "#2A55D6",
       "background-color": null,
       "bold": false,
       "italic": false,
       "underline": false
     },
     "Attribute": {
-      "text-color": "#7342B8",
+      "text-color": "#1F3A93",
       "background-color": null,
       "bold": false,
       "italic": false,
