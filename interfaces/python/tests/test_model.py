@@ -656,11 +656,11 @@ def test_event(env, model):
 
 def test_raising(env):
     def explode(event):
-        raise RuntimeError("subscriber")
+        raise RuntimeError("hook")
 
     model = biyos.Model(env)
     env.addhook(explode, EventKind.MESSAGE, EventLevel.ERROR)
-    with pytest.raises(RuntimeError, match="subscriber"):
+    with pytest.raises(RuntimeError, match="hook"):
         model.addvars(1, None, [INFINITY])
     model.close()
 

@@ -109,11 +109,11 @@ int Events::add_hook(EventKind knd, EventLevel lvl, Hook hk)
 {
     if (!hk)
     {
-        throw Error(ErrorKind::InvalidArgument, "subscriber", "is empty");
+        throw Error(ErrorKind::InvalidArgument, "hook", "is empty");
     }
     if (next_id_ == (std::numeric_limits<int>::max)())
     {
-        throw Error(ErrorKind::NoMemory, "subscription", "no id left");
+        throw Error(ErrorKind::NoMemory, "hook", "no id left");
     }
     hooks_.push_back(Entry{
         .id = next_id_,
@@ -132,7 +132,7 @@ void Events::del_hook(int id)
     const auto found = std::ranges::find(hooks_, id, &Entry::id);
     if (found == hooks_.end() || !found->active)
     {
-        throw Error(ErrorKind::InvalidArgument, "subscription " + std::to_string(id), "unknown");
+        throw Error(ErrorKind::InvalidArgument, "hook " + std::to_string(id), "unknown");
     }
     found->active = false;
     refresh(found->kind);

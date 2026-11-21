@@ -222,11 +222,11 @@ class Stop(BaseException):
 
 
 def explode(event):
-    raise RuntimeError("subscriber failed")
+    raise RuntimeError("hook failed")
 
 
 def refuse(event):
-    raise ValueError("second subscriber failed")
+    raise ValueError("second hook failed")
 
 
 def stop(event):
@@ -248,7 +248,7 @@ def raised(env):
 def test_raised():
     with biyos.Env() as env:
         env.addhook(explode, EventKind.MESSAGE, EventLevel.DEBUG)
-        with pytest.raises(RuntimeError, match="subscriber failed") as caught:
+        with pytest.raises(RuntimeError, match="hook failed") as caught:
             env.setopt("seed", -1)
         env.setopt("seed", 3)
         seed = env.getopt("seed")
@@ -312,7 +312,7 @@ def test_finish(monkeypatch):
         check = partial(preceded, [nested], biyos._relay.check)
         monkeypatch.setattr(biyos._relay, "check", check)
         env.addhook(explode, EventKind.MESSAGE, EventLevel.DEBUG)
-        with pytest.raises(RuntimeError, match="subscriber failed") as caught:
+        with pytest.raises(RuntimeError, match="hook failed") as caught:
             env.setopt("seed", -1)
         assert env.getopt("seed") == 0
     assert type(caught.value.__context__) is biyos.Error
@@ -327,7 +327,7 @@ def test_succeeded(monkeypatch):
         nested = partial(env.getopt, "seed")
         check = partial(preceded, [nested], biyos._relay.check)
         monkeypatch.setattr(biyos._relay, "check", check)
-        with pytest.raises(RuntimeError, match="subscriber failed") as caught:
+        with pytest.raises(RuntimeError, match="hook failed") as caught:
             env.getopt("seed")
         assert env.getopt("seed") == 0
     assert caught.value.__context__ is None

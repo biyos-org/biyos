@@ -165,7 +165,7 @@ TEST(FirewallTest, ErrorCode)
 TEST(FirewallTest, ThrowingHook)
 {
     biyos::Env env;
-    const auto fail = [](const biyos::Event &) { throw std::runtime_error("subscriber"); };
+    const auto fail = [](const biyos::Event &) { throw std::runtime_error("hook"); };
     env.events().add_hook(EventKind::Message, EventLevel::Debug, fail);
     EXPECT_EQ(status_after(env, [&] { say(env, "info"); }), BIYOS_OK);
     EXPECT_EQ(env.last_error(), "");

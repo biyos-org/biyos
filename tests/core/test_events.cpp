@@ -256,7 +256,7 @@ TEST_F(EventTest, Ids)
 TEST_F(EventTest, EmptyHook)
 {
     EXPECT_EQ(failure([&] { listen(EventLevel::Debug, nullptr); }),
-              "invalid argument: subscriber: is empty");
+              "invalid argument: hook: is empty");
     EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Error));
     EXPECT_EQ(listen(EventLevel::Debug, ignore), 1);
 }
@@ -265,8 +265,8 @@ TEST_F(EventTest, UnknownId)
 {
     const int id = listen(EventLevel::Debug, ignore);
     events.del_hook(id);
-    EXPECT_EQ(failure([&] { events.del_hook(id); }), "invalid argument: subscription 1: unknown");
-    EXPECT_EQ(failure([&] { events.del_hook(7); }), "invalid argument: subscription 7: unknown");
+    EXPECT_EQ(failure([&] { events.del_hook(id); }), "invalid argument: hook 1: unknown");
+    EXPECT_EQ(failure([&] { events.del_hook(7); }), "invalid argument: hook 7: unknown");
 }
 
 TEST_F(EventTest, SelfRemoval)
@@ -285,7 +285,7 @@ TEST_F(EventTest, PeerRemoval)
     peer = listen(EventLevel::Debug, recorder(""));
     say(EventLevel::Info, "one");
     EXPECT_TRUE(texts.empty());
-    EXPECT_EQ(failure([&] { events.del_hook(peer); }), "invalid argument: subscription 2: unknown");
+    EXPECT_EQ(failure([&] { events.del_hook(peer); }), "invalid argument: hook 2: unknown");
 }
 
 TEST_F(EventTest, NestedRemoval)
@@ -327,7 +327,7 @@ TEST_F(EventTest, LateHook)
 
 TEST_F(EventTest, HookThrows)
 {
-    const auto fail = [](const biyos::Event &) { throw std::runtime_error("subscriber"); };
+    const auto fail = [](const biyos::Event &) { throw std::runtime_error("hook"); };
     listen(EventLevel::Debug, fail);
     listen(EventLevel::Debug, recorder(""));
     EXPECT_NO_THROW(say(EventLevel::Info, "one"));

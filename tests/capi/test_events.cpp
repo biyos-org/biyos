@@ -158,7 +158,7 @@ TEST(CApiTest, DelHook)
     fail(env);
     EXPECT_EQ(inbox.calls, 0);
     EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: subscription 1: unknown");
+    EXPECT_EQ(env.message(), "invalid argument: hook 1: unknown");
 }
 
 TEST(CApiTest, ReadOnly)

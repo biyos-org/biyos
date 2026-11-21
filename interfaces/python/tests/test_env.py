@@ -49,7 +49,7 @@ def halted(*arguments):
 
 
 def raising(event):
-    raise RuntimeError("subscriber failed")
+    raise RuntimeError("hook failed")
 
 
 def stranded(env, monkeypatch):
@@ -277,7 +277,7 @@ def test_relayed(monkeypatch):
     env = biyos.Env()
     handle = stranded(env, monkeypatch)
     env.addhook(raising, EventKind.MESSAGE, EventLevel.ERROR)
-    with pytest.raises(RuntimeError, match="subscriber failed"):
+    with pytest.raises(RuntimeError, match="hook failed"):
         env.close()
     assert env._relay._raised is None
     assert env._free.alive
