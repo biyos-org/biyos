@@ -25,7 +25,12 @@ def _real(name, value):
     if isinstance(value, bool) or not isinstance(value, Real):
         found = type(value).__name__
         raise TypeError(f"{name} must be a number, not {found}")
-    return value
+    return float(value)
+
+
+def _array(element, name, items, count):
+    _sized(name, items, count)
+    return (element * count)(*items)
 
 
 def doubles(name, values, count):
@@ -35,7 +40,8 @@ def doubles(name, values, count):
     if _shared(values):
         return (c_double * count).from_buffer(values)
     entry = f"an entry of {name}"
-    return (c_double * count)(*(_real(entry, value) for value in values))
+    items = [_real(entry, value) for value in values]
+    return _array(c_double, name, items, count)
 
 
 def ints(name, values, count):
@@ -43,7 +49,8 @@ def ints(name, values, count):
         return None
     _sized(name, values, count)
     entry = f"an entry of {name}"
-    return (c_int * count)(*(integer(entry, value) for value in values))
+    items = [integer(entry, value) for value in values]
+    return _array(c_int, name, items, count)
 
 
 def listed(name, values):
@@ -58,18 +65,23 @@ def strings(name, values, count):
         return None
     _sized(name, listed(name, values), count)
     entry = f"an entry of {name}"
-    return (c_char_p * count)(*(text(entry, value) for value in values))
+    items = [text(entry, value) for value in values]
+    return _array(c_char_p, name, items, count)
+
+
+def _indices(model, family, name, values):
+    if isinstance(values, Block):
+        return range_of(model, family, name, values)
+    entry = f"an entry of {name}"
+    return [index_of(model, family, entry, value) for value in values]
 
 
 def indices_of(model, family, name, values, count):
     if values is None:
         return None
     _sized(name, values, count)
-    if isinstance(values, Block):
-        return (c_int * count)(*range_of(model, family, name, values))
-    entry = f"an entry of {name}"
-    found = (index_of(model, family, entry, value) for value in values)
-    return (c_int * count)(*found)
+    items = _indices(model, family, name, values)
+    return _array(c_int, name, items, count)
 
 
 def _ordered(name, starts):
