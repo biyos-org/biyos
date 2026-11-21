@@ -32,46 +32,44 @@ struct PendingFailure
     ~PendingFailure() { biyos::test::stop_failing(); }
 };
 
-std::vector<std::string> numbered(Index count)
+std::vector<std::string> numbered(Index n)
 {
     std::vector<std::string> texts;
-    for (Index k = 0; k < count; ++k)
+    for (Index k = 0; k < n; ++k)
     {
         texts.push_back("v" + std::to_string(k));
     }
     return texts;
 }
 
-Model named(Index count)
+Model named(Index n)
 {
-    Model model;
-    const auto size = static_cast<std::size_t>(count) + 2;
-    model.add_variables(std::vector<Variable>(size, biyos::widest(VariableKind::Continuous)));
-    std::vector<Index> indices;
-    for (Index k = 0; k < count; ++k)
+    Model mdl;
+    const auto size = static_cast<std::size_t>(n) + 2;
+    mdl.add_vars(std::vector<Variable>(size, biyos::widest(VariableKind::Continuous)));
+    std::vector<Index> idx;
+    for (Index k = 0; k < n; ++k)
     {
-        indices.push_back(k);
+        idx.push_back(k);
     }
-    const std::vector<std::string> texts = numbered(count);
-    model.set_names(Family::Variable,
-                    indices,
-                    std::vector<std::string_view>(texts.begin(), texts.end()));
-    return model;
+    const std::vector<std::string> texts = numbered(n);
+    mdl.set_names(Family::Variable, idx, std::vector<std::string_view>(texts.begin(), texts.end()));
+    return mdl;
 }
 
-void rename(Model &model, Index count)
+void rename(Model &mdl, Index n)
 {
-    const std::vector<Index> indices{0, 1, 2, count, count, count + 1};
+    const std::vector<Index> idx{0, 1, 2, n, n, n + 1};
     const std::vector<std::string_view> names{"v1", "v0", kLong, "e", "f", "g"};
-    model.set_names(Family::Variable, indices, names);
+    mdl.set_names(Family::Variable, idx, names);
 }
 
-bool runs_out(Model &model, Index count, std::size_t successes)
+bool runs_out(Model &mdl, Index n, std::size_t successes)
 {
     const PendingFailure failure(successes);
     try
     {
-        rename(model, count);
+        rename(mdl, n);
     }
     catch (const std::bad_alloc &)
     {
@@ -80,22 +78,22 @@ bool runs_out(Model &model, Index count, std::size_t successes)
     return false;
 }
 
-std::vector<std::string> names_of(const Model &model)
+std::vector<std::string> names_of(const Model &mdl)
 {
     std::vector<std::string> found;
-    for (Index k = 0; k < model.variable_count(); ++k)
+    for (Index k = 0; k < mdl.n_vars(); ++k)
     {
-        const std::string *name = model.name_of(Family::Variable, k);
+        const std::string *name = mdl.name_of(Family::Variable, k);
         found.push_back(name == nullptr ? "none" : *name);
     }
     return found;
 }
 
-std::optional<Index> lookup(const Model &model, const std::string &name)
+std::optional<Index> lookup(const Model &mdl, const std::string &name)
 {
     try
     {
-        return model.index_of(Family::Variable, name);
+        return mdl.idx_of(Family::Variable, name);
     }
     catch (const biyos::Error &)
     {
@@ -103,55 +101,55 @@ std::optional<Index> lookup(const Model &model, const std::string &name)
     }
 }
 
-std::vector<std::optional<Index>> lookups(const Model &model, Index count)
+std::vector<std::optional<Index>> lookups(const Model &mdl, Index n)
 {
-    std::vector<std::string> names = numbered(count);
+    std::vector<std::string> names = numbered(n);
     names.insert(names.end(), {"e", "f", "g", std::string(kLong)});
     std::vector<std::optional<Index>> found;
     for (const std::string &name : names)
     {
-        found.push_back(lookup(model, name));
+        found.push_back(lookup(mdl, name));
     }
     return found;
 }
 
-void expect_kept(Index count)
+void expect_kept(Index n)
 {
-    Model wanted = named(count);
-    rename(wanted, count);
+    Model wanted = named(n);
+    rename(wanted, n);
     for (std::size_t successes = 0; successes < kAttempts; ++successes)
     {
-        Model model = named(count);
-        const Model before = model;
-        const std::string *kept = model.name_of(Family::Variable, count - 1);
-        if (!runs_out(model, count, successes))
+        Model mdl = named(n);
+        const Model before = mdl;
+        const std::string *kept = mdl.name_of(Family::Variable, n - 1);
+        if (!runs_out(mdl, n, successes))
         {
             EXPECT_GT(successes, 0U);
-            EXPECT_EQ(names_of(model), names_of(wanted));
-            EXPECT_EQ(lookups(model, count), lookups(wanted, count));
+            EXPECT_EQ(names_of(mdl), names_of(wanted));
+            EXPECT_EQ(lookups(mdl, n), lookups(wanted, n));
             return;
         }
-        EXPECT_EQ(names_of(model), names_of(before));
-        EXPECT_EQ(lookups(model, count), lookups(before, count));
-        EXPECT_EQ(model.name_of(Family::Variable, count - 1), kept);
-        rename(model, count);
-        EXPECT_EQ(names_of(model), names_of(wanted));
+        EXPECT_EQ(names_of(mdl), names_of(before));
+        EXPECT_EQ(lookups(mdl, n), lookups(before, n));
+        EXPECT_EQ(mdl.name_of(Family::Variable, n - 1), kept);
+        rename(mdl, n);
+        EXPECT_EQ(names_of(mdl), names_of(wanted));
     }
     ADD_FAILURE() << "the call never completed";
 }
 
-std::size_t lookup_cost(const Model &model)
+std::size_t lookup_cost(const Model &mdl)
 {
     const std::size_t start = biyos::test::allocations();
-    EXPECT_EQ(model.index_of(Family::Variable, kLong), 2);
-    EXPECT_NE(model.name_of(Family::Variable, 2), nullptr);
+    EXPECT_EQ(mdl.idx_of(Family::Variable, kLong), 2);
+    EXPECT_NE(mdl.name_of(Family::Variable, 2), nullptr);
     return biyos::test::allocations() - start;
 }
 
-std::size_t copy_cost(const Model &model)
+std::size_t copy_cost(const Model &mdl)
 {
     const std::size_t start = biyos::test::allocations();
-    const Model copy = model;
+    const Model copy = mdl;
     return biyos::test::allocations() - start;
 }
 
@@ -159,27 +157,27 @@ std::size_t copy_cost(const Model &model)
 
 TEST(AllocationTest, Renaming)
 {
-    for (Index count = 4; count <= 48; ++count)
+    for (Index n = 4; n <= 48; ++n)
     {
-        SCOPED_TRACE(count);
-        expect_kept(count);
+        SCOPED_TRACE(n);
+        expect_kept(n);
     }
 }
 
 TEST(AllocationTest, NameLookup)
 {
-    Model model = named(4);
-    rename(model, 4);
-    EXPECT_EQ(lookup_cost(model), 0U);
+    Model mdl = named(4);
+    rename(mdl, 4);
+    EXPECT_EQ(lookup_cost(mdl), 0U);
 }
 
 TEST(AllocationTest, NameRelease)
 {
-    Model model = named(1);
-    const std::size_t cost = copy_cost(model);
-    const std::vector<Index> indices{1};
+    Model mdl = named(1);
+    const std::size_t cost = copy_cost(mdl);
+    const std::vector<Index> idx{1};
     const std::vector<std::string_view> names{kLong};
-    model.set_names(Family::Variable, indices, names);
-    model.del_names(Family::Variable, indices);
-    EXPECT_EQ(copy_cost(model), cost);
+    mdl.set_names(Family::Variable, idx, names);
+    mdl.del_names(Family::Variable, idx);
+    EXPECT_EQ(copy_cost(mdl), cost);
 }

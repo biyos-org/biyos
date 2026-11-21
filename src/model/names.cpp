@@ -21,9 +21,9 @@ namespace biyos
 namespace
 {
 
-std::size_t slot(Index index) noexcept
+std::size_t slot(Index idx) noexcept
 {
-    return static_cast<std::size_t>(index);
+    return static_cast<std::size_t>(idx);
 }
 
 std::string at_byte(std::string_view fault, std::size_t at)
@@ -31,37 +31,37 @@ std::string at_byte(std::string_view fault, std::size_t at)
     return "name " + std::string(fault) + " at byte " + text_of(at);
 }
 
-void check_text(std::string_view noun, Index index, std::string_view name)
+void check_text(std::string_view noun, Index idx, std::string_view name)
 {
     const std::string fault = name_fault(name);
     if (!fault.empty())
     {
-        refuse(noun, index, fault);
+        refuse(noun, idx, fault);
     }
 }
 
 void check_entries(std::string_view noun,
                    Index size,
-                   std::span<const Index> indices,
+                   std::span<const Index> idx,
                    std::span<const std::string_view> names)
 {
-    for (std::size_t k = 0; k < indices.size(); ++k)
+    for (std::size_t k = 0; k < idx.size(); ++k)
     {
-        check_index(noun, indices[k], size);
-        check_text(noun, indices[k], names[k]);
+        check_idx(noun, idx[k], size);
+        check_text(noun, idx[k], names[k]);
     }
 }
 
-std::vector<std::size_t> last_entries(std::span<const Index> indices)
+std::vector<std::size_t> last_entries(std::span<const Index> idx)
 {
-    std::vector<std::size_t> order(indices.size());
+    std::vector<std::size_t> order(idx.size());
     std::iota(order.begin(), order.end(), std::size_t{0});
-    const auto index_at = [indices](std::size_t k) { return indices[k]; };
-    std::ranges::stable_sort(order, std::ranges::less{}, index_at);
+    const auto idx_at = [idx](std::size_t k) { return idx[k]; };
+    std::ranges::stable_sort(order, std::ranges::less{}, idx_at);
     std::vector<std::size_t> entries;
     for (std::size_t j = 0; j < order.size(); ++j)
     {
-        if (j + 1 == order.size() || index_at(order[j + 1]) != index_at(order[j]))
+        if (j + 1 == order.size() || idx_at(order[j + 1]) != idx_at(order[j]))
         {
             entries.push_back(order[j]);
         }
@@ -116,9 +116,9 @@ Names &Names::operator=(const Names &other)
     return *this;
 }
 
-const std::string *Names::name(Index index) const noexcept
+const std::string *Names::name(Index idx) const noexcept
 {
-    return slot(index) < names_.size() ? names_[slot(index)] : nullptr;
+    return slot(idx) < names_.size() ? names_[slot(idx)] : nullptr;
 }
 
 Holders Names::find(std::string_view name) const
@@ -135,47 +135,47 @@ Holders Names::find(std::string_view name) const
 
 void Names::set(std::string_view noun,
                 Index size,
-                std::span<const Index> indices,
+                std::span<const Index> idx,
                 std::span<const std::string_view> names)
 {
-    if (indices.size() != names.size())
+    if (idx.size() != names.size())
     {
         throw Error(ErrorKind::Internal, "model", "indices and names differ in number");
     }
-    if (indices.empty())
+    if (idx.empty())
     {
         return;
     }
-    check_entries(noun, size, indices, names);
-    const std::vector<std::size_t> entries = last_entries(indices);
+    check_entries(noun, size, idx, names);
+    const std::vector<std::size_t> entries = last_entries(idx);
     Table fresh = missing(names, entries);
     std::vector<const std::string *> given(entries.size(), nullptr);
-    grow(indices[entries.back()]);
+    grow(idx[entries.back()]);
     holders_.reserve(holders_.size() + fresh.size());
     for (std::size_t j = 0; j < entries.size(); ++j)
     {
-        const Index index = indices[entries[j]];
-        given[j] = names_[slot(index)];
-        acquire(index, names[entries[j]], fresh);
+        const Index target = idx[entries[j]];
+        given[j] = names_[slot(target)];
+        acquire(target, names[entries[j]], fresh);
     }
     for (std::size_t j = 0; j < entries.size(); ++j)
     {
-        release(indices[entries[j]], given[j]);
+        release(idx[entries[j]], given[j]);
     }
 }
 
-void Names::remove(std::string_view noun, Index size, std::span<const Index> indices)
+void Names::remove(std::string_view noun, Index size, std::span<const Index> idx)
 {
-    for (const Index index : indices)
+    for (const Index i : idx)
     {
-        check_index(noun, index, size);
+        check_idx(noun, i, size);
     }
-    for (const Index index : indices)
+    for (const Index i : idx)
     {
-        if (slot(index) < names_.size())
+        if (slot(i) < names_.size())
         {
-            release(index, names_[slot(index)]);
-            names_[slot(index)] = nullptr;
+            release(i, names_[slot(i)]);
+            names_[slot(i)] = nullptr;
         }
     }
 }
@@ -194,12 +194,12 @@ Names::Table Names::missing(std::span<const std::string_view> names,
     return fresh;
 }
 
-void Names::grow(Index index)
+void Names::grow(Index idx)
 {
-    names_.resize((std::max)(names_.size(), slot(index) + 1));
+    names_.resize((std::max)(names_.size(), slot(idx) + 1));
 }
 
-void Names::acquire(Index index, std::string_view name, Table &fresh)
+void Names::acquire(Index idx, std::string_view name, Table &fresh)
 {
     auto found = holders_.find(name);
     if (found == holders_.end())
@@ -207,11 +207,11 @@ void Names::acquire(Index index, std::string_view name, Table &fresh)
         found = holders_.insert(fresh.extract(fresh.find(name))).position;
     }
     found->second.count += 1;
-    found->second.index_sum += index;
-    names_[slot(index)] = &found->first;
+    found->second.index_sum += idx;
+    names_[slot(idx)] = &found->first;
 }
 
-void Names::release(Index index, const std::string *name) noexcept
+void Names::release(Index idx, const std::string *name) noexcept
 {
     if (name == nullptr)
     {
@@ -219,7 +219,7 @@ void Names::release(Index index, const std::string *name) noexcept
     }
     const auto found = holders_.find(*name);
     found->second.count -= 1;
-    found->second.index_sum -= index;
+    found->second.index_sum -= idx;
     if (found->second.count == 0)
     {
         holders_.erase(found);

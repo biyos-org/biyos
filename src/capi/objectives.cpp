@@ -69,7 +69,7 @@ std::vector<biyos::Objective> new_objectives(std::span<const biyos::Index> funct
     for (std::size_t k = 0; k < functions.size(); ++k)
     {
         const biyos::Index index = start + static_cast<biyos::Index>(k);
-        added.push_back(given(biyos::default_objective(functions[k], index), k, fields));
+        added.push_back(given(biyos::default_obj(functions[k], index), k, fields));
     }
     return added;
 }
@@ -86,7 +86,7 @@ void add_objectives(BIYOS_model &model,
 {
     biyos::Model &core = writable(model);
     const std::span<const biyos::Index> owners = listed(count, functions, "funidx");
-    core.check_objective_room(owners.size());
+    core.check_obj_room(owners.size());
     const Fields fields{
         .senses = senses,
         .priorities = priorities,
@@ -94,8 +94,8 @@ void add_objectives(BIYOS_model &model,
         .absolute = absolute,
         .relative = relative,
     };
-    const biyos::Index start = core.objective_count();
-    core.add_objectives(new_objectives(owners, start, fields));
+    const biyos::Index start = core.n_objs();
+    core.add_objs(new_objectives(owners, start, fields));
     if (first != nullptr)
     {
         *first = start;
@@ -126,12 +126,12 @@ void set_objectives(BIYOS_model &model,
     {
         objectives.push_back(given(core.objective(changed[k]), k, fields));
     }
-    core.set_objectives(changed, objectives);
+    core.set_objs(changed, objectives);
 }
 
 void objective_count(const BIYOS_model &model, int *count)
 {
-    *require(count, "n") = model.core.objective_count();
+    *require(count, "n") = model.core.n_objs();
 }
 
 void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &outputs)
@@ -154,7 +154,7 @@ void get_objectives(const BIYOS_model &model,
                     double *absolute,
                     double *relative)
 {
-    const std::span<const biyos::Objective> found = model.core.objectives(first, count);
+    const std::span<const biyos::Objective> found = model.core.objs(first, count);
     const Outputs outputs{
         .functions = functions,
         .senses = senses,

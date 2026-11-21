@@ -32,13 +32,13 @@ class Names
     Names &operator=(Names &&other) = default;
     ~Names() = default;
 
-    const std::string *name(Index index) const noexcept;
+    const std::string *name(Index idx) const noexcept;
     Holders find(std::string_view name) const;
     void set(std::string_view noun,
              Index size,
-             std::span<const Index> indices,
+             std::span<const Index> idx,
              std::span<const std::string_view> names);
-    void remove(std::string_view noun, Index size, std::span<const Index> indices);
+    void remove(std::string_view noun, Index size, std::span<const Index> idx);
 
   private:
     struct Tally
@@ -55,9 +55,9 @@ class Names
 
     Table missing(std::span<const std::string_view> names,
                   std::span<const std::size_t> entries) const;
-    void grow(Index index);
-    void acquire(Index index, std::string_view name, Table &fresh);
-    void release(Index index, const std::string *name) noexcept;
+    void grow(Index idx);
+    void acquire(Index idx, std::string_view name, Table &fresh);
+    void release(Index idx, const std::string *name) noexcept;
 
     Table holders_;
     std::vector<const std::string *> names_;

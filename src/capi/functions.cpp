@@ -46,8 +46,8 @@ void add_functions(BIYOS_model &model,
     biyos::check_starts(begins);
     core.check_room(size, begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
-    const biyos::Index start = core.function_count();
-    core.add_functions(added, begins, biyos::capi::packed(total, variables, values));
+    const biyos::Index start = core.n_funs();
+    core.add_funs(added, begins, biyos::capi::packed(total, variables, values));
     if (first != nullptr)
     {
         *first = start;
@@ -56,7 +56,7 @@ void add_functions(BIYOS_model &model,
 
 void function_count(const BIYOS_model &model, int *count)
 {
-    *require(count, "n") = model.core.function_count();
+    *require(count, "n") = model.core.n_funs();
 }
 
 void write_constants(std::span<const double> found, double *constants)

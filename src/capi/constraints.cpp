@@ -61,8 +61,8 @@ void add_constraints(BIYOS_model &model,
         };
         added.push_back(bounded(free, k, lower, upper));
     }
-    const biyos::Index start = core.constraint_count();
-    core.add_constraints(added);
+    const biyos::Index start = core.n_cons();
+    core.add_cons(added);
     if (first != nullptr)
     {
         *first = start;
@@ -83,12 +83,12 @@ void set_bounds(BIYOS_model &model,
     {
         constraints.push_back(bounded(core.constraint(changed[k]), k, lower, upper));
     }
-    core.set_constraints(changed, constraints);
+    core.set_cons(changed, constraints);
 }
 
 void constraint_count(const BIYOS_model &model, int *count)
 {
-    *require(count, "n") = model.core.constraint_count();
+    *require(count, "n") = model.core.n_cons();
 }
 
 void copy_out(const biyos::Constraint &constraint,
@@ -118,7 +118,7 @@ void get_constraints(const BIYOS_model &model,
                      double *lower,
                      double *upper)
 {
-    const std::span<const biyos::Constraint> found = model.core.constraints(first, count);
+    const std::span<const biyos::Constraint> found = model.core.cons(first, count);
     for (std::size_t k = 0; k < found.size(); ++k)
     {
         copy_out(found[k], k, functions, lower, upper);

@@ -14,21 +14,21 @@ namespace biyos
 namespace
 {
 
-[[noreturn]] void unknown(std::string_view noun, Index index)
+[[noreturn]] void unknown(std::string_view noun, Index idx)
 {
-    refuse(noun, index, "unknown");
+    refuse(noun, idx, "unknown");
 }
 
 }
 
-std::string item(std::string_view noun, Index index)
+std::string item(std::string_view noun, Index idx)
 {
-    return std::string(noun) + " " + text_of(index);
+    return std::string(noun) + " " + text_of(idx);
 }
 
-void refuse(std::string_view noun, Index index, const std::string &reason)
+void refuse(std::string_view noun, Index idx, const std::string &reason)
 {
-    throw Error(ErrorKind::InvalidArgument, item(noun, index), reason);
+    throw Error(ErrorKind::InvalidArgument, item(noun, idx), reason);
 }
 
 std::string_view bound_fault(double lower, double upper) noexcept
@@ -65,36 +65,36 @@ std::string_view value_fault(double value) noexcept
     return "";
 }
 
-void check_index(std::string_view noun, Index index, Index size)
+void check_idx(std::string_view noun, Index idx, Index size)
 {
-    if (index < 0 || index >= size)
+    if (idx < 0 || idx >= size)
     {
-        unknown(noun, index);
+        unknown(noun, idx);
     }
 }
 
-void check_span(std::string_view noun, Index first, Index count, Index size)
+void check_span(std::string_view noun, Index beg, Index n, Index size)
 {
-    if (count < 0)
+    if (n < 0)
     {
-        const std::string reason = text_of(count) + " is negative";
+        const std::string reason = text_of(n) + " is negative";
         throw Error(ErrorKind::InvalidArgument, "argument 'n'", reason);
     }
-    if (first < 0 || first > size)
+    if (beg < 0 || beg > size)
     {
-        unknown(noun, first);
+        unknown(noun, beg);
     }
-    if (count > size - first)
+    if (n > size - beg)
     {
         unknown(noun, size);
     }
 }
 
-void check_function(std::string_view noun, Index index, Index function, Index functions)
+void check_fun(std::string_view noun, Index idx, Index fun, Index funs)
 {
-    if (function < 0 || function >= functions)
+    if (fun < 0 || fun >= funs)
     {
-        refuse(noun, index, item("function", function) + " is unknown");
+        refuse(noun, idx, item("function", fun) + " is unknown");
     }
 }
 

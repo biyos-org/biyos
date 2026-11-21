@@ -9,7 +9,7 @@
 namespace biyos::test
 {
 
-template <typename Call> std::string failure(Call call, biyos::ErrorKind kind)
+template <typename Call> std::string failure(Call call, biyos::ErrorKind knd)
 {
     try
     {
@@ -17,7 +17,7 @@ template <typename Call> std::string failure(Call call, biyos::ErrorKind kind)
     }
     catch (const biyos::Error &error)
     {
-        EXPECT_EQ(error.kind(), kind);
+        EXPECT_EQ(error.kind(), knd);
         return error.what();
     }
     ADD_FAILURE() << "no error";

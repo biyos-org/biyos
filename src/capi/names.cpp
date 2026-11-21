@@ -101,7 +101,7 @@ void get_indices(const BIYOS_model &model, int count, const char *const *names, 
     found.reserve(wanted.size());
     for (const std::string_view name : wanted)
     {
-        found.push_back(model.core.index_of(Target, name));
+        found.push_back(model.core.idx_of(Target, name));
     }
     if (indices != nullptr)
     {

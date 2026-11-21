@@ -24,17 +24,17 @@ struct Insertion
     std::size_t added;
 };
 
-std::size_t start_of(std::span<const Offset> ends, std::size_t function)
+std::size_t start_of(std::span<const Offset> ends, std::size_t fun)
 {
-    return function == 0 ? 0 : static_cast<std::size_t>(ends[function - 1]);
+    return fun == 0 ? 0 : static_cast<std::size_t>(ends[fun - 1]);
 }
 
 std::span<const QuadraticTerm> held_by(std::span<const Offset> ends,
                                        std::span<const QuadraticTerm> terms,
-                                       std::size_t function)
+                                       std::size_t fun)
 {
-    const std::size_t begin = start_of(ends, function);
-    const auto end = static_cast<std::size_t>(ends[function]);
+    const std::size_t begin = start_of(ends, fun);
+    const auto end = static_cast<std::size_t>(ends[fun]);
     return terms.subspan(begin, end - begin);
 }
 
@@ -109,9 +109,9 @@ void shift_ends(std::span<Offset> ends, std::size_t from, std::size_t upto, std:
     {
         return;
     }
-    for (std::size_t function = from; function < upto; ++function)
+    for (std::size_t fun = from; fun < upto; ++fun)
     {
-        ends[function] += static_cast<Offset>(shift);
+        ends[fun] += static_cast<Offset>(shift);
     }
 }
 
@@ -142,7 +142,7 @@ void insert(std::vector<Offset> &ends,
     }
 }
 
-std::size_t function_of(const Insertion &insertion) noexcept
+std::size_t fun_of(const Insertion &insertion) noexcept
 {
     return insertion.function;
 }
@@ -157,15 +157,15 @@ void merge_pairs(std::vector<Offset> &ends,
     insertions.reserve(additions.size());
     for (const AddedPairs &addition : additions)
     {
-        const auto function = static_cast<std::size_t>(addition.function);
-        const std::size_t added = new_pairs(addition, held_by(ends, terms, function));
+        const auto fun = static_cast<std::size_t>(addition.function);
+        const std::size_t added = new_pairs(addition, held_by(ends, terms, fun));
         insertions.push_back(Insertion{
-            .function = function,
+            .function = fun,
             .terms = addition.terms,
             .added = added,
         });
     }
-    std::ranges::sort(insertions, {}, function_of);
+    std::ranges::sort(insertions, {}, fun_of);
     insert(ends, terms, insertions);
 }
 

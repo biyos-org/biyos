@@ -19,20 +19,20 @@ namespace
 
 constexpr std::string_view kOwner = "function";
 
-void check_variable(Index function, Index variable, Index variables)
+void check_var(Index fun, Index var, Index vars)
 {
-    if (variable < 0 || variable >= variables)
+    if (var < 0 || var >= vars)
     {
-        refuse(kOwner, function, item("variable", variable) + " is unknown");
+        refuse(kOwner, fun, item("variable", var) + " is unknown");
     }
 }
 
-void check_coefficient(Index function, const QuadraticTerm &term)
+void check_coefficient(Index fun, const QuadraticTerm &term)
 {
     const std::string_view fault = value_fault(term.coefficient);
     if (!fault.empty())
     {
-        refuse(kOwner, function, "coefficient of " + pair_name(term) + " " + std::string(fault));
+        refuse(kOwner, fun, "coefficient of " + pair_name(term) + " " + std::string(fault));
     }
 }
 
@@ -51,34 +51,34 @@ std::string pair_name(const QuadraticTerm &term)
     return "pair (" + text_of(term.first) + ", " + text_of(term.second) + ")";
 }
 
-void check_pairs(Index function, std::span<const QuadraticTerm> terms, Index variables)
+void check_pairs(Index fun, std::span<const QuadraticTerm> terms, Index vars)
 {
     for (const QuadraticTerm &term : terms)
     {
-        check_variable(function, term.first, variables);
-        check_variable(function, term.second, variables);
-        check_coefficient(function, term);
+        check_var(fun, term.first, vars);
+        check_var(fun, term.second, vars);
+        check_coefficient(fun, term);
     }
 }
 
-void sort_pairs(Index function, std::span<QuadraticTerm> terms)
+void sort_pairs(Index fun, std::span<QuadraticTerm> terms)
 {
     std::ranges::for_each(terms, order_pair);
     std::ranges::sort(terms, {}, pair_of);
     const auto repeat = std::ranges::adjacent_find(terms, {}, pair_of);
     if (repeat != terms.end())
     {
-        refuse(kOwner, function, pair_name(*repeat) + " is repeated");
+        refuse(kOwner, fun, pair_name(*repeat) + " is repeated");
     }
 }
 
-void check_sum(Index function, const QuadraticTerm &held, const QuadraticTerm &given)
+void check_sum(Index fun, const QuadraticTerm &held, const QuadraticTerm &given)
 {
     const std::string_view fault = value_fault(held.coefficient + given.coefficient);
     if (!fault.empty())
     {
         const std::string sum = "sum of coefficients of " + pair_name(given);
-        refuse(kOwner, function, sum + " " + std::string(fault));
+        refuse(kOwner, fun, sum + " " + std::string(fault));
     }
 }
 

@@ -79,7 +79,7 @@ void set_each(biyos::Model &core, std::span<const biyos::Index> indices, Arrays.
     {
         changed.push_back(Change(core.variable(indices[k]), k, arrays...));
     }
-    core.set_variables(indices, changed);
+    core.set_vars(indices, changed);
 }
 
 void add_variables(BIYOS_model &model,
@@ -97,8 +97,8 @@ void add_variables(BIYOS_model &model,
     {
         added.push_back(bounded(biyos::widest(kind_at(kinds, k)), k, lower, upper));
     }
-    const biyos::Index start = core.variable_count();
-    core.add_variables(added);
+    const biyos::Index start = core.n_vars();
+    core.add_vars(added);
     if (first != nullptr)
     {
         *first = start;
@@ -123,7 +123,7 @@ void set_kinds(BIYOS_model &model, int count, const int *indices, const int *kin
 
 void variable_count(const BIYOS_model &model, int *count)
 {
-    *require(count, "n") = model.core.variable_count();
+    *require(count, "n") = model.core.n_vars();
 }
 
 void copy_out(const biyos::Variable &variable,
@@ -153,7 +153,7 @@ void get_variables(const BIYOS_model &model,
                    double *lower,
                    double *upper)
 {
-    const std::span<const biyos::Variable> found = model.core.variables(first, count);
+    const std::span<const biyos::Variable> found = model.core.vars(first, count);
     for (std::size_t k = 0; k < found.size(); ++k)
     {
         copy_out(found[k], k, kinds, lower, upper);
