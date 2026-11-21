@@ -1,6 +1,6 @@
 #pragma once
 
-#include "biyos/options.h"
+#include "biyos/biyos.h"
 #include "core/version.hpp"
 
 #include <cstddef>

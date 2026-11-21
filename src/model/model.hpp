@@ -1,6 +1,6 @@
 #pragma once
 
-#include "biyos/model.h"
+#include "biyos/biyos.h"
 #include "core/index.hpp"
 #include "expr/terms.hpp"
 

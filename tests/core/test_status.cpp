@@ -1,4 +1,4 @@
-#include "biyos/status.h"
+#include "biyos/biyos.h"
 #include "core/status.hpp"
 
 #include <gtest/gtest.h>

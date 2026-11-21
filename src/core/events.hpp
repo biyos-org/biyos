@@ -1,6 +1,6 @@
 #pragma once
 
-#include "biyos/events.h"
+#include "biyos/biyos.h"
 #include "core/clock.hpp"
 
 #include <array>
