@@ -655,23 +655,7 @@ return `BIYOS_OK` once the objectives are added.
 error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model, a sense is unknown, a weight is not finite and positive, or a tolerance is NaN or negative.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 objectives.
 note By default the objectives are optimized one after another in the order they are added, and objectives given one priority are blended.
-see BIYOS_setobjs BIYOS_getobjs
-since 0.1.0
-
-function BIYOS_setobjs
-summary Set the senses, priorities, weights and tolerances of objectives.
-param mdl in The model.
-param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
-param sense in The new sense of each; null leaves the senses as they are.
-param prio in The new priority of each; null leaves the priorities as they are.
-param coef in The new weight of each; null leaves the weights as they are.
-param atol in The new absolute tolerance of each; null leaves them as they are.
-param rtol in The new relative tolerance of each; null leaves them as they are.
-return `BIYOS_OK` once the objectives are changed. The functions are kept.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective, a sense is unknown, a weight is not finite and positive, or a tolerance is NaN or negative.
-note An objective may appear more than once, as in `BIYOS_setvarbnd`.
-see BIYOS_addobjs BIYOS_getobjs
+see BIYOS_setobjsense BIYOS_setobjtol BIYOS_getobjs
 since 0.1.0
 
 function BIYOS_setobjsense

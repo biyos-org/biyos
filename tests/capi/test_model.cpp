@@ -169,8 +169,6 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_getcons(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addobjs(nullptr, 1, &idx, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_setobjs(nullptr, 1, &idx, nullptr, nullptr, &bound, nullptr, nullptr),
-              BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setobjsense(nullptr, 1, &idx, &idx), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getobjsense(nullptr, 1, &idx, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setobjprio(nullptr, 1, &idx, &idx), BIYOS_ERR_BADARG);

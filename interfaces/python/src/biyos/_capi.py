@@ -135,8 +135,6 @@ def _declare_objectives(lib, ints, doubles):
     fields = (ints, ints, doubles, doubles, doubles)
     add = (c_void_p, c_int32, ints, *fields, ints)
     _declare(lib, "BIYOS_addobjs", c_int, *add)
-    change = (c_void_p, c_int32, ints, *fields)
-    _declare(lib, "BIYOS_setobjs", c_int, *change)
     for name, values in (("sense", ints), ("prio", ints), ("coef", doubles)):
         attribute = (c_void_p, c_int32, ints, values)
         _declare(lib, f"BIYOS_setobj{name}", c_int, *attribute)

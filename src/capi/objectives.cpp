@@ -181,25 +181,6 @@ BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
     return guarded<add_objs>(mdl, n, funidx, sense, prio, coef, atol, rtol, beg);
 }
 
-BIYOS_status BIYOS_setobjs(BIYOS_model *mdl,
-                           BIYOS_index n,
-                           const BIYOS_index *idx,
-                           const BIYOS_int *sense,
-                           const BIYOS_int *prio,
-                           const BIYOS_real *coef,
-                           const BIYOS_real *atol,
-                           const BIYOS_real *rtol)
-{
-    const Fields fields{
-        .senses = sense,
-        .priorities = prio,
-        .weights = coef,
-        .absolute = atol,
-        .relative = rtol,
-    };
-    return guarded<set_objs>(mdl, n, idx, fields);
-}
-
 BIYOS_status BIYOS_setobjsense(BIYOS_model *mdl,
                                BIYOS_index n,
                                const BIYOS_index *idx,

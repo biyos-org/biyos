@@ -755,43 +755,6 @@ class Model:
         self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
         return Objectives(self, first.value, count, self._gen)
 
-    def setobjs(
-        self,
-        idx,
-        sense=None,
-        prio=None,
-        coef=None,
-        atol=None,
-        rtol=None,
-    ):
-        """Set the senses, priorities, weights and tolerances of objectives.
-
-        The functions are kept, and ``None`` leaves a field as it is.
-
-        Parameters
-        ----------
-        idx
-            The objectives, as indices, views or blocks.
-        sense
-            The new sense of each, a ``Sense``.
-        prio
-            The new priority of each.
-        coef
-            The new weight of each, finite and positive.
-        atol, rtol
-            The new absolute and relative tolerance of each.
-
-        See Also
-        --------
-        BIYOS_setobjs
-        """
-        count = len(idx)
-        arrays = (
-            indices_of(self, Objectives, "idx", idx, count),
-            *_fields(count, sense, prio, coef, atol, rtol),
-        )
-        self._call(lib.BIYOS_setobjs, count, *arrays)
-
     def setobjsense(self, idx, sense):
         """Set the senses of objectives.
 

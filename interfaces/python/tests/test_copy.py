@@ -119,7 +119,7 @@ def test_apart(place, model):
     copy.setvarbnd([0], [1.0])
     copy.addcons([1])
     copy.addquadterms([0], [0, 1], [0], [0], [1.0])
-    copy.setobjs([1], [Sense.MAXIMIZE])
+    copy.setobjsense([1], [Sense.MAXIMIZE])
     assert read(model) == before
     assert copy.getnvars() == 4
     model.addfuns(1)

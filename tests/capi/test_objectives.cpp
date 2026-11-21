@@ -74,18 +74,6 @@ BIYOS_status add_with(BIYOS_model *mdl,
                          beg);
 }
 
-BIYOS_status set_with(BIYOS_model *mdl, int n, const BIYOS_index *idx, const Fields &fields)
-{
-    return BIYOS_setobjs(mdl,
-                         n,
-                         idx,
-                         fields.senses,
-                         fields.priorities,
-                         fields.weights,
-                         fields.absolute,
-                         fields.relative);
-}
-
 BIYOS_status get_with(BIYOS_model *mdl, int beg, int n, const Outputs &outputs)
 {
     return BIYOS_getobjs(mdl,
@@ -280,7 +268,6 @@ void change(const BIYOS_event *, void *data)
     const BIYOS_int sense = BIYOS_MAXIMIZE;
     BIYOS_index n = 0;
     note(attempt, add_with(mdl, 1, &idx, {}));
-    note(attempt, set_with(mdl, 1, &idx, {.weights = &weight}));
     note(attempt, BIYOS_setobjsense(mdl, 1, &idx, &sense));
     note(attempt, BIYOS_setobjprio(mdl, 1, &idx, &idx));
     note(attempt, BIYOS_setobjcoef(mdl, 1, &idx, &weight));
@@ -386,12 +373,12 @@ TEST(CApiTest, NullSetters)
     const double weights[] = {4.0, 8.0};
     const double absolute[] = {kInfinity, 0.125};
     const double relative[] = {1.0, 0.75};
-    EXPECT_EQ(set_with(held, 2, idx, {.senses = senses}), BIYOS_OK);
-    EXPECT_EQ(set_with(held, 2, idx, {.priorities = priorities}), BIYOS_OK);
-    EXPECT_EQ(set_with(held, 1, idx, {.weights = weights}), BIYOS_OK);
-    EXPECT_EQ(set_with(held, 2, idx, {.absolute = absolute}), BIYOS_OK);
-    EXPECT_EQ(set_with(held, 1, idx, {.relative = relative}), BIYOS_OK);
-    EXPECT_EQ(set_with(held, 2, idx, {}), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjsense(held, 2, idx, senses), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjprio(held, 2, idx, priorities), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjcoef(held, 1, idx, weights), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjtol(held, 2, idx, absolute, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjtol(held, 1, idx, nullptr, relative), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjtol(held, 2, idx, nullptr, nullptr), BIYOS_OK);
     const Records wanted{
         .functions = kSample.functions,
         .senses = {BIYOS_MINIMIZE, BIYOS_MINIMIZE, BIYOS_MAXIMIZE},
@@ -401,9 +388,9 @@ TEST(CApiTest, NullSetters)
         .relative = {0.25, 0.0, 1.0},
     };
     expect_records(read_all(mdl), wanted);
-    EXPECT_EQ(set_with(held, 2, nullptr, {.senses = senses}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjsense(held, 2, nullptr, senses), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
-    EXPECT_EQ(set_with(held, 0, nullptr, {}), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjprio(held, 0, nullptr, nullptr), BIYOS_OK);
     expect_records(read_all(mdl), wanted);
 }
 
@@ -415,7 +402,8 @@ TEST(CApiTest, RepeatedObjective)
     const int idx[] = {1, 1};
     const int senses[] = {BIYOS_MINIMIZE, BIYOS_MAXIMIZE};
     const double weights[] = {2.0, 3.0};
-    ASSERT_EQ(set_with(mdl.get(), 2, idx, {.senses = senses, .weights = weights}), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjsense(mdl.get(), 2, idx, senses), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjcoef(mdl.get(), 2, idx, weights), BIYOS_OK);
     Records wanted = kSample;
     wanted.senses[1] = BIYOS_MAXIMIZE;
     wanted.weights[1] = 3.0;
@@ -475,14 +463,14 @@ TEST(CApiTest, RefusedObjectives)
     EXPECT_EQ(add_with(held, -1, nullptr, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     const BIYOS_index unknown = 3;
-    EXPECT_EQ(set_with(held, 1, &unknown, {}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjcoef(held, 1, &unknown, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
     const BIYOS_index zero = 0;
-    EXPECT_EQ(set_with(held, 1, &zero, {.senses = &zero}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjsense(held, 1, &zero, &zero), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: sense 0 is unknown");
-    EXPECT_EQ(set_with(held, 1, &zero, {.relative = &negative}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjtol(held, 1, &zero, nullptr, &negative), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: relative tolerance -1 is negative");
-    EXPECT_EQ(set_with(held, 1, &zero, {.weights = &kInfinity}), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjcoef(held, 1, &zero, &kInfinity), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: weight is infinity");
     EXPECT_EQ(get_with(held, 2, 2, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
@@ -505,11 +493,11 @@ TEST(CApiTest, LockedObjectives)
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    std::vector<BIYOS_status> statuses(6, BIYOS_ERR_BADARG);
-    statuses.resize(12, BIYOS_OK);
+    std::vector<BIYOS_status> statuses(5, BIYOS_ERR_BADARG);
+    statuses.resize(11, BIYOS_OK);
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
     EXPECT_EQ(attempt.statuses, statuses);
-    EXPECT_EQ(attempt.messages, std::vector<std::string>(12, locked));
+    EXPECT_EQ(attempt.messages, std::vector<std::string>(11, locked));
     EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
     expect_records(read_all(mdl), defaults({0}));
 }

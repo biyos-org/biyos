@@ -160,7 +160,7 @@ static BIYOS_status use_objectives(BIYOS_model *model)
         BIYOS_addobjs(model, 2, functions, senses, NULL, NULL, NULL, NULL, &first);
     if (status == BIYOS_OK)
     {
-        status = BIYOS_setobjs(model, 1, indices, NULL, NULL, weights, NULL, NULL);
+        status = BIYOS_setobjcoef(model, 1, indices, weights);
     }
     if (status == BIYOS_OK)
     {
