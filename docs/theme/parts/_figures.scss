@@ -1,0 +1,79 @@
+.quarto-figure,
+div[id^="fig-"] {
+  margin: 1.5rem 0 1.75rem;
+}
+
+figure.figure {
+  margin: 0;
+}
+
+svg.diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto 0.75rem;
+  font-family: $font-sans;
+}
+
+@media (max-width: 575.98px) {
+  div:has(> svg.diagram) {
+    overflow-x: auto;
+  }
+
+  svg.diagram {
+    min-width: 560px;
+  }
+}
+
+svg.diagram .ink {
+  fill: var(--text);
+}
+
+svg.diagram .muted {
+  fill: var(--text-muted);
+}
+
+svg.diagram .blue {
+  fill: var(--brand-blue);
+}
+
+svg.diagram .link {
+  fill: var(--link);
+}
+
+svg.diagram .box {
+  fill: var(--surface);
+  stroke: var(--edge);
+}
+
+svg.diagram .soft {
+  fill: var(--accent-soft);
+  stroke: var(--brand-blue);
+}
+
+svg.diagram .wire {
+  stroke: var(--text-muted);
+  fill: none;
+}
+
+svg.diagram .accent {
+  stroke: var(--brand-blue);
+  fill: none;
+}
+
+svg.diagram .rule {
+  stroke: var(--edge);
+  fill: none;
+}
+
+svg.diagram .tip {
+  fill: var(--text-muted);
+}
+
+svg.diagram .tip-blue {
+  fill: var(--brand-blue);
+}
+
+svg.diagram .mono {
+  font-family: $font-mono;
+}
