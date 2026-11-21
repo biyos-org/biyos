@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <span>
+#include <string_view>
 #include <vector>
 
 namespace
@@ -14,6 +15,7 @@ namespace
 
 using biyos::Constraint;
 using biyos::difference;
+using biyos::Family;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
@@ -50,6 +52,12 @@ void change(Model &model)
     };
     model.set_objectives(std::span(&index, 1), std::span(&objective, 1));
     model.add_objectives(std::span(&objective, 1));
+    const std::vector<Index> renamed{0, 1};
+    const std::vector<std::string_view> names{"y", "w"};
+    for (const Family family : biyos::kFamilies)
+    {
+        model.set_names(family, renamed, names);
+    }
 }
 
 }

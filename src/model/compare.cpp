@@ -35,6 +35,17 @@ std::string compared(std::string_view field, double a, double b)
     return same ? std::string() : against(field, a, b);
 }
 
+std::string quoted(const std::string *name)
+{
+    return name == nullptr ? "none" : "'" + *name + "'";
+}
+
+std::string compared(std::string_view field, const std::string *a, const std::string *b)
+{
+    const bool same = a == nullptr || b == nullptr ? a == b : *a == *b;
+    return same ? std::string() : std::string(field) + " " + quoted(a) + " against " + quoted(b);
+}
+
 std::string first_of(std::initializer_list<std::string> found)
 {
     for (const std::string &text : found)
@@ -149,18 +160,48 @@ std::span<const QuadraticTerm> quadratic_of(const Model &model, Index function)
     return model.quadratic_terms(function, 1);
 }
 
+std::string named(const Model &a, const Model &b, Family family, Index index)
+{
+    return compared("name", a.name_of(family, index), b.name_of(family, index));
+}
+
+std::string variable_difference(const Model &a, const Model &b, Index variable)
+{
+    return first_of({
+        differ(a.variable(variable), b.variable(variable)),
+        named(a, b, Family::Variable, variable),
+    });
+}
+
 std::string function_difference(const Model &a, const Model &b, Index function)
 {
     return first_of({
         compared("constant", constant_of(a, function), constant_of(b, function)),
         terms_difference("term", a.terms(function, 1), b.terms(function, 1)),
         terms_difference("quadratic term", quadratic_of(a, function), quadratic_of(b, function)),
+        named(a, b, Family::Function, function),
+    });
+}
+
+std::string constraint_difference(const Model &a, const Model &b, Index constraint)
+{
+    return first_of({
+        differ(a.constraint(constraint), b.constraint(constraint)),
+        named(a, b, Family::Constraint, constraint),
+    });
+}
+
+std::string objective_difference(const Model &a, const Model &b, Index objective)
+{
+    return first_of({
+        differ(a.objective(objective), b.objective(objective)),
+        named(a, b, Family::Objective, objective),
     });
 }
 
 std::string variables_difference(const Model &a, const Model &b)
 {
-    const auto variable = [&](Index k) { return differ(a.variable(k), b.variable(k)); };
+    const auto variable = [&](Index k) { return variable_difference(a, b, k); };
     return table_difference("variable", a.variable_count(), b.variable_count(), variable);
 }
 
@@ -172,13 +213,13 @@ std::string functions_difference(const Model &a, const Model &b)
 
 std::string constraints_difference(const Model &a, const Model &b)
 {
-    const auto constraint = [&](Index k) { return differ(a.constraint(k), b.constraint(k)); };
+    const auto constraint = [&](Index k) { return constraint_difference(a, b, k); };
     return table_difference("constraint", a.constraint_count(), b.constraint_count(), constraint);
 }
 
 std::string objectives_difference(const Model &a, const Model &b)
 {
-    const auto objective = [&](Index k) { return differ(a.objective(k), b.objective(k)); };
+    const auto objective = [&](Index k) { return objective_difference(a, b, k); };
     return table_difference("objective", a.objective_count(), b.objective_count(), objective);
 }
 
@@ -186,7 +227,11 @@ std::string objectives_difference(const Model &a, const Model &b)
 
 std::string difference(const Model &a, const Model &b)
 {
-    std::string found = variables_difference(a, b);
+    std::string found = compared("model name", a.name(), b.name());
+    if (found.empty())
+    {
+        found = variables_difference(a, b);
+    }
     if (found.empty())
     {
         found = functions_difference(a, b);

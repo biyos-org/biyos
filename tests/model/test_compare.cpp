@@ -145,6 +145,41 @@ TEST(CompareTest, Counts)
     EXPECT_EQ(from_sample(objectives), "objective count 2 against 1");
 }
 
+TEST(CompareTest, Names)
+{
+    Parts renamed = sample();
+    renamed.name = "other";
+    EXPECT_EQ(from_sample(renamed), "model name 'sample' against 'other'");
+    Parts unnamed = sample();
+    unnamed.name.clear();
+    EXPECT_EQ(from_sample(unnamed), "model name 'sample' against none");
+    EXPECT_EQ(difference(built(unnamed), built(sample())), "model name none against 'sample'");
+    Parts variable = sample();
+    variable.variable_names.names[0] = "y";
+    EXPECT_EQ(from_sample(variable), "variable 2: name 'z' against 'y'");
+    Parts more = sample();
+    more.variable_names = {.indices = {2, 1, 0}, .names = {"z", "y", "x"}};
+    EXPECT_EQ(from_sample(more), "variable 1: name none against 'y'");
+    Parts fewer = sample();
+    fewer.variable_names = {.indices = {2}, .names = {"z"}};
+    EXPECT_EQ(from_sample(fewer), "variable 0: name 'x' against none");
+    Parts function = sample();
+    function.function_names.names[0] = "g";
+    EXPECT_EQ(from_sample(function), "function 1: name 'f' against 'g'");
+    Parts first = sample();
+    first.function_names = {.indices = {0, 1}, .names = {"e", "f"}};
+    EXPECT_EQ(from_sample(first), "function 0: name none against 'e'");
+    Parts constraint = sample();
+    constraint.constraint_names.names[0] = "d";
+    EXPECT_EQ(from_sample(constraint), "constraint 1: name 'c' against 'd'");
+    Parts row = sample();
+    row.constraint_names = {.indices = {0, 1}, .names = {"b", "c"}};
+    EXPECT_EQ(from_sample(row), "constraint 0: name none against 'b'");
+    Parts objective = sample();
+    objective.objective_names = {.indices = {1}, .names = {"cost"}};
+    EXPECT_EQ(from_sample(objective), "objective 0: name 'cost' against none");
+}
+
 TEST(CompareTest, OneUlp)
 {
     Parts bound = sample();
@@ -218,6 +253,14 @@ TEST(CompareTest, Order)
     objective.constraints[2].upper = 4.0;
     objective.objectives[0].weight = 3.0;
     EXPECT_EQ(from_sample(objective), "constraint 2: upper bound 3 against 4");
+    Parts first = sample();
+    first.name = "other";
+    first.variables.push_back(first.variables[0]);
+    EXPECT_EQ(from_sample(first), "model name 'sample' against 'other'");
+    Parts later = sample();
+    later.variable_names.names[1] = "y";
+    later.constants[0] = 2.0;
+    EXPECT_EQ(from_sample(later), "variable 0: name 'x' against 'y'");
 }
 
 TEST(CompareTest, FieldOrder)
@@ -250,6 +293,22 @@ TEST(CompareTest, FieldOrder)
     Parts both = sample();
     both.quadratic.terms[1] = QuadraticTerm{.first = 1, .second = 1, .coefficient = -1.5};
     EXPECT_EQ(from_sample(both), "function 0: quadratic term 1: first variable 0 against 1");
+    Parts named = sample();
+    named.variables[2].upper = 4.0;
+    named.variable_names.names[0] = "y";
+    EXPECT_EQ(from_sample(named), "variable 2: upper bound 3 against 4");
+    Parts terms = sample();
+    terms.quadratic.terms[2].coefficient = 2.5;
+    terms.function_names = {.indices = {1, 0}, .names = {"f", "e"}};
+    EXPECT_EQ(from_sample(terms), "function 0: quadratic term 0: coefficient 2 against 2.5");
+    Parts row = sample();
+    row.constraints[1].upper = 5.0;
+    row.constraint_names.names[0] = "d";
+    EXPECT_EQ(from_sample(row), "constraint 1: upper bound inf against 5");
+    Parts goal = sample();
+    goal.objectives[0].relative = 1.0;
+    goal.objective_names.names[0] = "profit";
+    EXPECT_EQ(from_sample(goal), "objective 0: relative tolerance 0 against 1");
 }
 
 TEST(CompareTest, ObjectiveOrder)

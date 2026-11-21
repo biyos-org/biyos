@@ -5,6 +5,8 @@
 #include "model/model.hpp"
 
 #include <limits>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace biyos::test
@@ -17,6 +19,12 @@ struct Quadratic
     std::vector<QuadraticTerm> terms;
 };
 
+struct Naming
+{
+    std::vector<Index> indices;
+    std::vector<std::string_view> names;
+};
+
 struct Parts
 {
     std::vector<Variable> variables;
@@ -26,6 +34,11 @@ struct Parts
     Quadratic quadratic;
     std::vector<Constraint> constraints;
     std::vector<Objective> objectives;
+    std::string name;
+    Naming variable_names;
+    Naming function_names;
+    Naming constraint_names;
+    Naming objective_names;
 };
 
 inline Parts sample()
@@ -82,7 +95,17 @@ inline Parts sample()
                     .relative = kInfinity,
                 },
             },
+        .name = "sample",
+        .variable_names = {.indices = {2, 0}, .names = {"z", "x"}},
+        .function_names = {.indices = {1}, .names = {"f"}},
+        .constraint_names = {.indices = {1}, .names = {"c"}},
+        .objective_names = {.indices = {0}, .names = {"cost"}},
     };
+}
+
+inline void name(Model &model, Family family, const Naming &naming)
+{
+    model.set_names(family, naming.indices, naming.names);
 }
 
 inline Model built(const Parts &parts)
@@ -94,6 +117,14 @@ inline Model built(const Parts &parts)
     model.add_quadratic_terms(quadratic.functions, quadratic.starts, quadratic.terms);
     model.add_constraints(parts.constraints);
     model.add_objectives(parts.objectives);
+    if (!parts.name.empty())
+    {
+        model.set_name(parts.name);
+    }
+    name(model, Family::Variable, parts.variable_names);
+    name(model, Family::Function, parts.function_names);
+    name(model, Family::Constraint, parts.constraint_names);
+    name(model, Family::Objective, parts.objective_names);
     return model;
 }
 
