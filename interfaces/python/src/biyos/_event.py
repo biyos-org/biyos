@@ -75,7 +75,7 @@ def _formatted(function, pointer):
 
 
 def _format(function, pointer, buffer, size, needed):
-    status = function(pointer, buffer, size, byref(needed))
+    status = function(pointer, size, buffer, byref(needed))
     if status != OK:
         raise Error("cannot format the event", status)
 

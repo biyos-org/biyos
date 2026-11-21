@@ -69,7 +69,7 @@ def add_sample(model):
     model.addquadterms(FUNCTIONS, *terms)
 
 
-def read_lengths(handle, first, count, starts, size, *rest):
+def read_lengths(handle, first, count, size, starts, *rest):
     needed, firsts, seconds, values = rest
     terms = [(firsts, size), (seconds, size), (values, size)]
     return [(starts, count + 1)] + terms

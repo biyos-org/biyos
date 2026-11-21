@@ -104,7 +104,7 @@ static BIYOS_status use_functions(BIYOS_model *model)
     {
         return BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_getfuns(model, 0, 2, NULL, offsets, 3, &needed, held, kept) != BIYOS_OK ||
+    if (BIYOS_getfuns(model, 0, 2, 3, NULL, offsets, &needed, held, kept) != BIYOS_OK ||
         needed != 3 || offsets[1] != 2 || held[0] != 0 || held[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
@@ -126,7 +126,7 @@ static BIYOS_status use_quadratic(BIYOS_model *model)
     BIYOS_status status = BIYOS_addquadterms(model, 1, functions, starts, firsts, seconds, values);
     if (status == BIYOS_OK)
     {
-        status = BIYOS_getquadterms(model, 0, 2, offsets, 2, &needed, held, paired, NULL);
+        status = BIYOS_getquadterms(model, 0, 2, 2, offsets, &needed, held, paired, NULL);
     }
     if (status != BIYOS_OK || needed != 2 || offsets[1] != 0 || offsets[2] != 2 || held[1] != 0 ||
         paired[1] != 1)
@@ -202,6 +202,32 @@ static BIYOS_status use_copy(BIYOS_env *env, BIYOS_model *model)
     return status;
 }
 
+static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
+{
+    BIYOS_model *copy = NULL;
+    BIYOS_index count = -1;
+    BIYOS_offset needed = -1;
+    BIYOS_status status = BIYOS_OK;
+    if (BIYOS_getnvars(model, &count) != BIYOS_OK ||
+        BIYOS_getvars(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getnfuns(model, &count) != BIYOS_OK ||
+        BIYOS_getfuns(model, 0, 0, 0, NULL, NULL, &needed, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getquadterms(model, 0, 0, 0, NULL, &needed, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getncons(model, &count) != BIYOS_OK ||
+        BIYOS_getcons(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getnobjs(model, &count) != BIYOS_OK ||
+        BIYOS_getobjs(model, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_copymodel(model, env, &copy) != BIYOS_OK)
+    {
+        status = BIYOS_ERR_INTERNAL;
+    }
+    if (BIYOS_freemodel(copy) != BIYOS_OK)
+    {
+        status = BIYOS_ERR_INTERNAL;
+    }
+    return status;
+}
+
 int main(void)
 {
     BIYOS_status status = BIYOS_OK;
@@ -258,7 +284,7 @@ int main(void)
     }
     if (use_functions(model) != BIYOS_OK || use_quadratic(model) != BIYOS_OK ||
         use_constraints(model) != BIYOS_OK || use_objectives(model) != BIYOS_OK ||
-        use_copy(env, model) != BIYOS_OK)
+        use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

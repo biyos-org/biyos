@@ -86,7 +86,7 @@ void set_bounds(BIYOS_model &model,
     core.set_constraints(changed, constraints);
 }
 
-void constraint_count(BIYOS_model &model, int *count)
+void constraint_count(const BIYOS_model &model, int *count)
 {
     *require(count, "n") = model.core.constraint_count();
 }
@@ -111,7 +111,7 @@ void copy_out(const biyos::Constraint &constraint,
     }
 }
 
-void get_constraints(BIYOS_model &model,
+void get_constraints(const BIYOS_model &model,
                      int first,
                      int count,
                      int *functions,
@@ -146,12 +146,12 @@ BIYOS_status BIYOS_setconbounds(BIYOS_model *mdl,
     return guarded<set_bounds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_getncons(BIYOS_model *mdl, BIYOS_index *n)
+BIYOS_status BIYOS_getncons(const BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<constraint_count>(mdl, n);
 }
 
-BIYOS_status BIYOS_getcons(BIYOS_model *mdl,
+BIYOS_status BIYOS_getcons(const BIYOS_model *mdl,
                            BIYOS_index beg,
                            BIYOS_index n,
                            BIYOS_index *funs,

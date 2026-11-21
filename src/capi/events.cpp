@@ -40,7 +40,7 @@ void subscribe(biyos::Environment &env,
     const Forwarder forwarder{&env, require(subscriber, "hook"), data};
     const biyos::EventKind found = biyos::find_kind(kind);
     const biyos::Level level = biyos::find_level(lowest);
-    int *id = require(subscription, "id");
+    int *id = require(subscription, "hookid");
     *id = events.subscribe(found, level, forwarder);
 }
 
@@ -67,14 +67,14 @@ BIYOS_status BIYOS_addhook(BIYOS_env *env,
                            void *data,
                            BIYOS_int kind,
                            BIYOS_int lowest,
-                           BIYOS_index *id)
+                           BIYOS_index *hookid)
 {
-    return guarded<subscribe>(env, hook, data, kind, lowest, id);
+    return guarded<subscribe>(env, hook, data, kind, lowest, hookid);
 }
 
-BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index id)
+BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index hookid)
 {
-    return guarded<unsubscribe>(env, id);
+    return guarded<unsubscribe>(env, hookid);
 }
 
 BIYOS_int BIYOS_getevtkind(const BIYOS_event *evt)

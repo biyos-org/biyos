@@ -85,8 +85,8 @@ std::int64_t read_with(const Model &model,
     const BIYOS_status status = BIYOS_getquadterms(model.get(),
                                                    first,
                                                    count,
-                                                   read.starts.data(),
                                                    size,
+                                                   read.starts.data(),
                                                    &needed,
                                                    read.firsts.data(),
                                                    read.seconds.data(),
@@ -147,7 +147,7 @@ void change(const BIYOS_event *, void *data)
     const BIYOS_index function = 0;
     BIYOS_offset needed = 0;
     note(attempt, BIYOS_addquadterms(model, 1, &function, nullptr, nullptr, nullptr, nullptr));
-    note(attempt, BIYOS_getquadterms(model, 0, 1, nullptr, 0, &needed, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_getquadterms(model, 0, 1, 0, nullptr, &needed, nullptr, nullptr, nullptr));
 }
 
 }
@@ -191,7 +191,7 @@ TEST(CApiTest, QuadraticSizes)
     add_sample(model);
     BIYOS_offset needed = -1;
     BIYOS_model *held = model.get();
-    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, nullptr, 0, &needed, nullptr, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, 0, nullptr, &needed, nullptr, nullptr, nullptr),
               BIYOS_OK);
     EXPECT_EQ(needed, 5);
     Compressed none = blank(3, 2);
@@ -277,17 +277,17 @@ TEST(CApiTest, NullPairs)
     int *firsts = read.firsts.data();
     int *seconds = read.seconds.data();
     double *values = read.values.data();
-    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, nullptr, 5, &needed, firsts, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, 5, nullptr, &needed, firsts, nullptr, nullptr),
               BIYOS_OK);
-    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, nullptr, 5, &needed, nullptr, seconds, nullptr),
+    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, 5, nullptr, &needed, nullptr, seconds, nullptr),
               BIYOS_OK);
-    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, starts, 5, &needed, nullptr, nullptr, values),
+    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, 5, starts, &needed, nullptr, nullptr, values),
               BIYOS_OK);
     expect_compressed(read, kSorted);
     Compressed kept = blank(3, 5);
     starts = kept.starts.data();
     firsts = kept.firsts.data();
-    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, starts, 5, nullptr, firsts, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, 5, starts, nullptr, firsts, nullptr, nullptr),
               BIYOS_ERR_INVALIDARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'needed': is null");
     expect_compressed(kept, blank(3, 5));
@@ -367,8 +367,8 @@ TEST(CApiTest, RefusedPairs)
         EXPECT_EQ(BIYOS_getquadterms(model.get(),
                                      first,
                                      count,
-                                     read.starts.data(),
                                      5,
+                                     read.starts.data(),
                                      &needed,
                                      read.firsts.data(),
                                      read.seconds.data(),
@@ -383,8 +383,8 @@ TEST(CApiTest, RefusedPairs)
     EXPECT_EQ(BIYOS_getquadterms(model.get(),
                                  0,
                                  3,
-                                 read.starts.data(),
                                  -1,
+                                 read.starts.data(),
                                  &needed,
                                  read.firsts.data(),
                                  read.seconds.data(),

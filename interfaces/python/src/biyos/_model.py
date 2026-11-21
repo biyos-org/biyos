@@ -50,13 +50,13 @@ def _total(starts, count):
     return starts[count]
 
 
-def _fields(count, senses, prios, weights, abs, rel):
+def _fields(count, senses, prios, weights, abstol, reltol):
     return (
         ints("senses", senses, count),
         ints("prios", prios, count),
         doubles("weights", weights, count),
-        doubles("abs", abs, count),
-        doubles("rel", rel, count),
+        doubles("abstol", abstol, count),
+        doubles("reltol", reltol, count),
     )
 
 
@@ -219,7 +219,7 @@ class Model:
         n,
         consts=None,
         starts=None,
-        vars=None,
+        varidx=None,
         vals=None,
     ):
         """Add functions after the last one.
@@ -232,10 +232,10 @@ class Model:
             The constant of each, 0 by default.
         starts : sequence of int, optional
             The ``n + 1`` offsets of the functions' linear terms in
-            ``vars`` and ``vals``, from 0 and never decreasing.
+            ``varidx`` and ``vals``, from 0 and never decreasing.
             Function ``j`` has the terms from ``starts[j]`` to
             ``starts[j + 1] - 1``. By default the functions have no terms.
-        vars : sequence of int, optional
+        varidx : sequence of int, optional
             The variable of each term, ``starts[n]`` of them.
         vals : sequence of float, optional
             The coefficient of each term, ``starts[n]`` of them.
@@ -251,7 +251,7 @@ class Model:
         arrays = (
             doubles("consts", consts, n),
             starts,
-            indices_of(self, Variables, "vars", vars, size),
+            indices_of(self, Variables, "varidx", varidx, size),
             doubles("vals", vals, size),
         )
         first = c_int()
@@ -268,16 +268,16 @@ class Model:
         n, inside = _span(beg, n, self.getnfuns)
         needed = c_int64()
         if not inside:
-            empty = (None, None, 0, byref(needed), None, None)
+            empty = (0, None, None, byref(needed), None, None)
             self._call(lib.BIYOS_getfuns, beg, n, *empty)
         constants = (c_double * n)()
         starts = (c_int64 * (n + 1))()
-        learn = (constants, starts, 0, byref(needed), None, None)
+        learn = (0, constants, starts, byref(needed), None, None)
         self._call(lib.BIYOS_getfuns, beg, n, *learn)
         size = needed.value
         variables = (c_int * size)()
         values = (c_double * size)()
-        fill = (None, None, size, byref(needed), variables, values)
+        fill = (size, None, None, byref(needed), variables, values)
         self._call(lib.BIYOS_getfuns, beg, n, *fill)
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
@@ -321,16 +321,16 @@ class Model:
         n, inside = _span(beg, n, self.getnfuns)
         needed = c_int64()
         if not inside:
-            empty = (None, 0, byref(needed), None, None, None)
+            empty = (0, None, byref(needed), None, None, None)
             self._call(lib.BIYOS_getquadterms, beg, n, *empty)
         starts = (c_int64 * (n + 1))()
-        learn = (starts, 0, byref(needed), None, None, None)
+        learn = (0, starts, byref(needed), None, None, None)
         self._call(lib.BIYOS_getquadterms, beg, n, *learn)
         size = needed.value
         firsts = (c_int * size)()
         seconds = (c_int * size)()
         values = (c_double * size)()
-        fill = (None, size, byref(needed), firsts, seconds, values)
+        fill = (size, None, byref(needed), firsts, seconds, values)
         self._call(lib.BIYOS_getquadterms, beg, n, *fill)
         terms = (list(firsts), list(seconds), list(values))
         return (list(starts), *terms)
@@ -393,8 +393,8 @@ class Model:
         senses=None,
         prios=None,
         weights=None,
-        abs=None,
-        rel=None,
+        abstol=None,
+        reltol=None,
     ):
         """Add objectives after the last one, one for each function given.
 
@@ -417,7 +417,7 @@ class Model:
         weights : sequence of float, optional
             The weight of each in the sum of its stage, finite and
             positive, 1 by default.
-        abs, rel : sequence of float, optional
+        abstol, reltol : sequence of float, optional
             How far each may move from its optimum in later stages, as a
             value of its function and as a fraction of the size of that
             optimum. Each is 0 or more, ``inf`` setting no limit, and 0 by
@@ -431,7 +431,7 @@ class Model:
         count = len(funs)
         arrays = (
             indices_of(self, Functions, "funs", funs, count),
-            *_fields(count, senses, prios, weights, abs, rel),
+            *_fields(count, senses, prios, weights, abstol, reltol),
         )
         first = c_int()
         self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
@@ -443,13 +443,13 @@ class Model:
         senses=None,
         prios=None,
         weights=None,
-        abs=None,
-        rel=None,
+        abstol=None,
+        reltol=None,
     ):
         count = len(idx)
         arrays = (
             indices_of(self, Objectives, "idx", idx, count),
-            *_fields(count, senses, prios, weights, abs, rel),
+            *_fields(count, senses, prios, weights, abstol, reltol),
         )
         self._call(lib.BIYOS_setobjs, count, *arrays)
 

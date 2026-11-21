@@ -163,10 +163,10 @@ class Env:
             self._addhook(hook, kind, lowest, subscription)
         return subscription.value
 
-    def delhook(self, id):
-        id = integer("id", id)
+    def delhook(self, hookid):
+        hookid = integer("hookid", hookid)
         with self._busy():
-            self._delhook(id)
+            self._delhook(hookid)
 
     def _addhook(self, function, kind, lowest, subscription):
         callback = self._subscribers.callback

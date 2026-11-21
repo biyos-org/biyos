@@ -7,8 +7,10 @@
 #include "core/events.hpp"
 #include "model/model.hpp"
 
+#include <concepts>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 struct BIYOS_env
 {
@@ -72,8 +74,9 @@ template <auto Body, typename... Args> BIYOS_status guarded(BIYOS_env *env, Args
     return biyos::capi::guard(&env->core, [&] { Body(env->core, args...); });
 }
 
-template <auto Body, typename... Args>
-BIYOS_status guarded(BIYOS_model *model, Args... args) noexcept
+template <auto Body, typename Model, typename... Args>
+    requires std::same_as<std::remove_const_t<Model>, BIYOS_model>
+BIYOS_status guarded(Model *model, Args... args) noexcept
 {
     if (model == nullptr)
     {

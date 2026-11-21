@@ -87,7 +87,7 @@ def test_defaults(model):
     model.addobjs([0, 1])
     model.addobjs([1], prios=[-7])
     model.addobjs([0], senses=[MAX], weights=[2.0])
-    model.addobjs([1], abs=[0.5], rel=[INFINITY])
+    model.addobjs([1], abstol=[0.5], reltol=[INFINITY])
     model.addobjs([0])
     functions, senses, priorities, *values = model.getobjs()
     assert functions == [0, 1, 1, 0, 1, 0]
@@ -219,7 +219,7 @@ def test_set(model):
     model.setobjs([2, 0], senses=[MAX, MIN])
     model.setobjs([2], prios=[-5])
     model.setobjs([0, 2], weights=[4.0, 8.0])
-    model.setobjs([1], abs=[INFINITY], rel=[0.5])
+    model.setobjs([1], abstol=[INFINITY], reltol=[0.5])
     model.setobjs([1, 2], None, None, None, None, None)
     found = model.getobjs()
     assert found[0] == FUNCTIONS
@@ -271,8 +271,8 @@ def test_lengths(model):
         model.addobjs([0, 1], [MIN])
     with pytest.raises(ValueError, match="prios has length 3, not 2"):
         model.addobjs([0, 1], None, [0, 1, 2])
-    with pytest.raises(ValueError, match="rel has length 1, not 2"):
-        model.setobjs([0, 1], rel=[1.0])
+    with pytest.raises(ValueError, match="reltol has length 1, not 2"):
+        model.setobjs([0, 1], reltol=[1.0])
     assert model.getnobjs() == 0
 
 
@@ -285,7 +285,7 @@ def test_numbers(model):
         model.addobjs([0], None, [2**31])
     with pytest.raises(TypeError, match="an entry of weights must be a"):
         model.addobjs([0], None, None, ["1"])
-    with pytest.raises(TypeError, match="an entry of abs must be a"):
+    with pytest.raises(TypeError, match="an entry of abstol must be a"):
         model.addobjs([0], None, None, None, [True])
     with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
         model.getobjs(2**32)

@@ -74,7 +74,7 @@ def _declare_events(lib, ints):
 
 
 def _declare_formats(lib):
-    arguments = (c_void_p, POINTER(c_char), c_size_t, POINTER(c_size_t))
+    arguments = (c_void_p, c_size_t, POINTER(c_char), POINTER(c_size_t))
     _declare(lib, "BIYOS_fmttext", c_int, *arguments)
     _declare(lib, "BIYOS_fmtjson", c_int, *arguments)
 
@@ -103,8 +103,8 @@ def _declare_functions(lib, ints, doubles):
     add = (c_void_p, c_int32, doubles, offsets, ints, doubles, ints)
     _declare(lib, "BIYOS_addfuns", c_int, *add)
     _declare(lib, "BIYOS_getnfuns", c_int, c_void_p, ints)
-    sized = (c_int64, offsets, ints, doubles)
-    read = (c_void_p, c_int32, c_int32, doubles, offsets, *sized)
+    sized = (offsets, ints, doubles)
+    read = (c_void_p, c_int32, c_int32, c_int64, doubles, offsets, *sized)
     _declare(lib, "BIYOS_getfuns", c_int, *read)
 
 
@@ -112,8 +112,8 @@ def _declare_quadratic(lib, ints, doubles):
     offsets = POINTER(c_int64)
     add = (c_void_p, c_int32, ints, offsets, ints, ints, doubles)
     _declare(lib, "BIYOS_addquadterms", c_int, *add)
-    sized = (c_int64, offsets, ints, ints, doubles)
-    read = (c_void_p, c_int32, c_int32, offsets, *sized)
+    sized = (offsets, ints, ints, doubles)
+    read = (c_void_p, c_int32, c_int32, c_int64, offsets, *sized)
     _declare(lib, "BIYOS_getquadterms", c_int, *read)
 
 

@@ -60,7 +60,7 @@ def add_sample(model):
     return model.addfuns(3, CONSTANTS, STARTS, VARIABLES, VALUES)
 
 
-def read_lengths(handle, first, count, constants, starts, size, *rest):
+def read_lengths(handle, first, count, size, constants, starts, *rest):
     needed, variables, values = rest
     heads = [(constants, count), (starts, count + 1)]
     return heads + [(variables, size), (values, size)]
@@ -192,10 +192,10 @@ def test_views(env, model):
     other = biyos.Model(env)
     y = other.addvars(1)
     g = other.addfuns(1)
-    entry = "an entry of vars is a variable of another model"
+    entry = "an entry of varidx is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.addfuns(1, None, [0, 1], [y[0]], [1.0])
-    with pytest.raises(ValueError, match="vars is a block of another"):
+    with pytest.raises(ValueError, match="varidx is a block of another"):
         model.addfuns(1, None, [0, 1], y, [1.0])
     with pytest.raises(ValueError, match="beg is a function of another"):
         model.getfuns(g[0])
@@ -203,7 +203,7 @@ def test_views(env, model):
         model.addfuns(1, None, [0, 1], [f[0]], [1.0])
     with pytest.raises(ValueError, match="beg is a variable, not a"):
         model.getfuns(x[0])
-    with pytest.raises(ValueError, match="vars has length 2, not 1"):
+    with pytest.raises(ValueError, match="varidx has length 2, not 1"):
         model.addfuns(1, None, [0, 1], x, [1.0])
     assert model.getnfuns() == 2
 
@@ -244,7 +244,7 @@ def test_refused(model):
 def test_lengths(model):
     with pytest.raises(ValueError, match="starts has length 1, not 2"):
         model.addfuns(1, starts=[0])
-    with pytest.raises(ValueError, match="vars has length 1, not 2"):
+    with pytest.raises(ValueError, match="varidx has length 1, not 2"):
         model.addfuns(1, None, [0, 2], [0], [1.0, 2.0])
     with pytest.raises(ValueError, match="vals has length 1, not 0"):
         model.addfuns(1, vals=[1.0])
@@ -263,7 +263,7 @@ def test_wrong(model, starts, error, message):
 def test_numbers(model):
     with pytest.raises(TypeError, match="an entry of vals must be a number"):
         model.addfuns(1, None, [0, 1], [0], ["1"])
-    with pytest.raises(TypeError, match="an entry of vars must be an"):
+    with pytest.raises(TypeError, match="an entry of varidx must be an"):
         model.addfuns(1, None, [0, 1], [0.0], [1.0])
     with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
         model.getfuns(2**32)

@@ -39,7 +39,7 @@ void add_terms(BIYOS_model &model,
     core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, firsts, seconds, values));
 }
 
-void get_terms(BIYOS_model &model,
+void get_terms(const BIYOS_model &model,
                int first,
                int count,
                std::int64_t *starts,
@@ -71,11 +71,11 @@ BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl,
     return guarded<add_terms>(mdl, n, funs, starts, vars1, vars2, vals);
 }
 
-BIYOS_status BIYOS_getquadterms(BIYOS_model *mdl,
+BIYOS_status BIYOS_getquadterms(const BIYOS_model *mdl,
                                 BIYOS_index beg,
                                 BIYOS_index n,
-                                BIYOS_offset *starts,
                                 BIYOS_offset size,
+                                BIYOS_offset *starts,
                                 BIYOS_offset *needed,
                                 BIYOS_index *vars1,
                                 BIYOS_index *vars2,
