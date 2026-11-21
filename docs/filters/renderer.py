@@ -194,7 +194,7 @@ class Renderer(MdRenderer):
             )
             for part, r in zip(returned(given, len(notes)), notes)
         ]
-        if given and not rows:
+        if given and not rows and str(given) != "None":
             rows = [(quiet(self.render_annotation(given)), "")]
         return [table(("Returns", "Meaning"), rows)] if rows else []
 
