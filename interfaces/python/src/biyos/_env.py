@@ -310,7 +310,9 @@ class Env:
         the environment or on one of its models. No thread may close the
         environment while it runs. A long call stops where it checks its
         time limits. The request clears when the next call starts, so one
-        made between two calls stops neither.
+        made between two calls stops neither. A ``KeyboardInterrupt`` raised
+        in a hook makes the same request, and is raised once the call
+        returns.
 
         Raises
         ------

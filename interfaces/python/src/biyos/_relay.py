@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from ctypes import c_void_p
 
+from biyos._capi import lib
 from biyos._error import Error, check
 
 
@@ -14,6 +15,9 @@ class Relay:
         self._depth += 1
         try:
             function(*arguments)
+        except KeyboardInterrupt as error:
+            self._keep(error)
+            lib.BIYOS_interrupt(self._handle)
         except BaseException as error:
             self._keep(error)
         finally:
