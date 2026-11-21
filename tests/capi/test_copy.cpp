@@ -60,6 +60,14 @@ void add_sample(BIYOS_model *model)
     ASSERT_EQ(
         BIYOS_addobjs(model, 2, targets, senses, priorities, weights, absolute, relative, nullptr),
         BIYOS_OK);
+    const BIYOS_index named[] = {2, 0};
+    const BIYOS_index first[] = {1};
+    const char *names[] = {"z", "x"};
+    ASSERT_EQ(BIYOS_setmdlname(model, "sample"), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setvarname(model, 2, named, names), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setfunname(model, 1, first, names), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setconname(model, 2, named, names), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjname(model, 1, first, names + 1), BIYOS_OK);
 }
 
 BIYOS_env *created()

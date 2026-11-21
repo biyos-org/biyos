@@ -1,6 +1,7 @@
 #include "biyos/biyos.h"
 
 #include <stddef.h>
+#include <string.h>
 
 extern char index_size[sizeof(BIYOS_index) == 4 ? 1 : -1];
 extern char int_size[sizeof(BIYOS_int) == 4 ? 1 : -1];
@@ -177,6 +178,100 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static int matches(const char *found, const char *wanted)
+{
+    return found != NULL && strcmp(found, wanted) == 0;
+}
+
+static BIYOS_status set_names(BIYOS_model *model)
+{
+    const BIYOS_index idx[2] = {1, 0};
+    const char *name[2] = {"y", "x"};
+    if (BIYOS_setmdlname(model, "header") != BIYOS_OK ||
+        BIYOS_setvarname(model, 2, idx, name) != BIYOS_OK ||
+        BIYOS_setfunname(model, 1, idx, name) != BIYOS_OK ||
+        BIYOS_setconname(model, 2, idx, name) != BIYOS_OK ||
+        BIYOS_setobjname(model, 1, idx + 1, name + 1) != BIYOS_OK)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
+static BIYOS_status get_names(const BIYOS_model *model)
+{
+    const BIYOS_index first[1] = {0};
+    const BIYOS_index both[2] = {1, 0};
+    const char *title = NULL;
+    const char *variables[2] = {NULL, NULL};
+    const char *function = NULL;
+    const char *constraint = NULL;
+    const char *objective = NULL;
+    if (BIYOS_getmdlname(model, &title) != BIYOS_OK ||
+        BIYOS_getvarname(model, 2, both, variables) != BIYOS_OK ||
+        BIYOS_getfunname(model, 1, both, &function) != BIYOS_OK ||
+        BIYOS_getconname(model, 1, both, &constraint) != BIYOS_OK ||
+        BIYOS_getobjname(model, 1, first, &objective) != BIYOS_OK)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    if (!matches(title, "header") || !matches(variables[0], "y") || !matches(variables[1], "x") ||
+        !matches(function, "y") || !matches(constraint, "y") || !matches(objective, "x"))
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
+static BIYOS_status find_names(const BIYOS_model *model)
+{
+    const char *names[2] = {"y", "x"};
+    BIYOS_index variables[2] = {-1, -1};
+    BIYOS_index found[3] = {-1, -1, -1};
+    if (BIYOS_getvaridx(model, 2, names, variables) != BIYOS_OK ||
+        BIYOS_getfunidx(model, 1, names, &found[0]) != BIYOS_OK ||
+        BIYOS_getconidx(model, 1, names + 1, &found[1]) != BIYOS_OK ||
+        BIYOS_getobjidx(model, 1, names + 1, &found[2]) != BIYOS_OK)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    if (variables[0] != 1 || variables[1] != 0 || found[0] != 1 || found[1] != 0 || found[2] != 0)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
+static BIYOS_status del_names(BIYOS_model *model)
+{
+    const BIYOS_index idx[1] = {1};
+    const char *variable = NULL;
+    const char *title = NULL;
+    if (BIYOS_delvarname(model, 1, idx) != BIYOS_OK ||
+        BIYOS_delfunname(model, 1, idx) != BIYOS_OK ||
+        BIYOS_delconname(model, 1, idx) != BIYOS_OK ||
+        BIYOS_delobjname(model, 0, NULL) != BIYOS_OK || BIYOS_delmdlname(model) != BIYOS_OK)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    if (BIYOS_getvarname(model, 1, idx, &variable) != BIYOS_OK || !matches(variable, "") ||
+        BIYOS_getmdlname(model, &title) != BIYOS_OK || !matches(title, ""))
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
+static BIYOS_status use_names(BIYOS_model *model)
+{
+    if (set_names(model) != BIYOS_OK || get_names(model) != BIYOS_OK ||
+        find_names(model) != BIYOS_OK || del_names(model) != BIYOS_OK)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static BIYOS_status use_copy(BIYOS_env *env, BIYOS_model *model)
 {
     BIYOS_model *copy = NULL;
@@ -275,7 +370,8 @@ int main(void)
     }
     if (use_functions(model) != BIYOS_OK || use_quadratic(model) != BIYOS_OK ||
         use_constraints(model) != BIYOS_OK || use_objectives(model) != BIYOS_OK ||
-        use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
+        use_names(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK ||
+        use_readers(env, model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

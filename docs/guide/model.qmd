@@ -122,6 +122,18 @@ Every family has a count and a reader: `BIYOS_getnvars` and `BIYOS_getvars`, `BI
 
 Called with a size of 0 and null arrays, such a reader only reports `nnz`, so a caller can learn the size, allocate, and call again.
 
+## Names {#sec-model-names}
+
+The model and each variable, function, constraint and objective may have a name, which a message or a file can show in place of an index. A name is not empty, is well-formed UTF-8 and holds no NUL character. A C string ends at its first NUL, so a name passed in C never holds one, and Python refuses a `str` that holds one with `ValueError`.
+
+Names match byte for byte, so two names that differ only in case or in Unicode normalization are different names. An item has no name until one is set, and while it has none it reads as an empty string in C and as `None` in Python. A copy of the model holds the same names.
+
+`BIYOS_setmdlname`, `BIYOS_getmdlname` and `BIYOS_delmdlname` set, read and remove the name of the model. Each family takes four calls, named after its short form, `var`, `fun`, `con` or `obj`: `BIYOS_setvarname` names a list of variables, `BIYOS_getvarname` reads the names of a list, `BIYOS_getvaridx` looks up a list of names, and `BIYOS_delvarname` leaves the variables of a list without a name. The setter and the reader take the same arguments, so any list of items is named or read in one call. As in the other setters, an item listed more than once takes its last entry.
+
+Names may repeat. Setting a name checks no uniqueness, so several items of a family may hold the same name, while each family keeps its names apart from the others. A lookup never chooses among the holders of a name: `BIYOS_getvaridx` gives the index of the variable that alone holds a name, and refuses a name that no variable holds or that several hold, counting them, as in `invalid argument: variable 'x': names 3 variables`. So a lookup never returns an item the caller did not mean, and it succeeds again once the other holders are renamed or lose their names.
+
+A name read in C belongs to the model. The pointer stays valid until a call that sets or removes the name of that item succeeds, or the model is freed; adding items, naming other items, a call that fails and a copy of the model leave it valid.
+
 ## The same model in Python {#sec-model-python}
 
 The Python package wraps the same calls under the same names, without the prefix. Each method that adds variables, functions, constraints or objectives returns a block, a light object holding the first index and the count of the new items, and indexing a block gives a view of one item. A block or a view passes wherever the model takes indices, so the code reads as the mathematics does:

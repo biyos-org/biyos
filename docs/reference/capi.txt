@@ -384,7 +384,7 @@ param env in The environment the copy is made on.
 param copy out Receives the copy; set to null on failure.
 return `BIYOS_OK`, with the copy in `*copy`.
 error BIYOS_ERR_BADARG `env` delivers an event.
-note The copy holds the same variables, functions, constraints and objectives as `mdl`, under the same indices, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of the two may be freed first.
+note The copy holds the same variables, functions, constraints and objectives as `mdl`, under the same indices and the same names, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of the two may be freed first.
 note The call reads `mdl` and changes `env`, so no other thread may use either environment while it runs. It may run while the environment of `mdl` delivers an event. A failure keeps its message on the environment of `mdl`.
 see BIYOS_newmdl
 since 0.1.0
@@ -659,6 +659,226 @@ param rtol out Entry `j` receives its relative tolerance; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `beg` or `n` is negative, or `beg + n` exceeds the number of objectives.
 see BIYOS_getnobjs
+since 0.1.0
+
+group names Names
+text The model and each variable, function, constraint and objective may have a name, as @sec-model-names describes. A name is not empty, is well-formed UTF-8 and holds no NUL. A C string ends at its first NUL, so a name passed in C never holds one. Names match byte for byte. An item has no name until one is set, and reads as an empty string while it has none.
+text Names may repeat: setting a name checks no uniqueness, and several items of a family may hold one name. A lookup never chooses among them: it finds an item only when that item alone holds the name. Every family takes the same four calls, named after its short form, `var`, `fun`, `con` or `obj`, and keeps its names apart from those of the other families.
+
+function BIYOS_setmdlname
+summary Name the model.
+param mdl in The model.
+param name in The new name, which the model copies and which replaces the one it has.
+return `BIYOS_OK` once the name is set.
+error BIYOS_ERR_BADARG `name` is empty or not well-formed UTF-8, with a message such as `invalid argument: model: name is not valid UTF-8 at byte 3`.
+note Once the call succeeds, a pointer read earlier with `BIYOS_getmdlname` is no longer valid.
+see BIYOS_getmdlname BIYOS_delmdlname
+since 0.1.0
+
+function BIYOS_getmdlname
+summary Read the name of the model.
+param mdl in The model.
+param name out Receives the name, or an empty string when the model has none.
+return `BIYOS_OK`, with the name in `*name`.
+note The pointer stays valid until the name of the model is set or removed, or the model is freed. A failed set leaves it valid.
+see BIYOS_setmdlname BIYOS_delmdlname
+since 0.1.0
+
+function BIYOS_delmdlname
+summary Remove the name of the model.
+param mdl in The model.
+return `BIYOS_OK` once the model has no name. A model without one is left as it is.
+note Once the call succeeds, a pointer read earlier with `BIYOS_getmdlname` is no longer valid.
+see BIYOS_setmdlname
+since 0.1.0
+
+function BIYOS_setvarname
+summary Name variables.
+param mdl in The model.
+param n in The number of entries.
+param idx in The variable of each entry; may be null when `n` is 0.
+param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
+return `BIYOS_OK` once the names are set.
+error BIYOS_ERR_BADARG `n` is negative, an index is not that of a variable, an entry of `name` is null, or a name is empty or not well-formed UTF-8, with a message such as `invalid argument: variable 3: name is empty`.
+note A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted. No name is checked against the others, so several variables may hold one name.
+note Once the call succeeds, a pointer read earlier with `BIYOS_getvarname` for a variable it lists is no longer valid.
+see BIYOS_getvarname BIYOS_getvaridx BIYOS_delvarname
+since 0.1.0
+
+function BIYOS_getvarname
+summary Read the names of variables.
+param mdl in The model.
+param n in The number of entries.
+param idx in The variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of variable `idx[j]`, or an empty string when it has none; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+note Each pointer stays valid until a call that sets or removes names of variables and lists that variable succeeds, or the model is freed. Adding items, naming other variables, a failed call and a copy of the model leave it valid.
+see BIYOS_setvarname BIYOS_getvaridx
+since 0.1.0
+
+function BIYOS_getvaridx
+summary Look up variables by name.
+param mdl in The model.
+param n in The number of names.
+param name in The names, each matched byte for byte; may be null only when `n` is 0, and no entry may be null.
+param idx out Entry `j` receives the index of the variable that alone holds `name[j]`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no variable, with a message such as `invalid argument: variable 'x': unknown`, or by several, with a message that counts them, such as `invalid argument: variable 'x': names 3 variables`. The call fails at the first such name.
+note The lookup succeeds again once the other variables holding the name are renamed or lose their names. The names of a family are kept in a hash table, so a lookup does not search the items one by one.
+see BIYOS_setvarname BIYOS_getvarname
+since 0.1.0
+
+function BIYOS_delvarname
+summary Remove the names of variables.
+param mdl in The model.
+param n in The number of entries.
+param idx in The variable of each entry; may be null when `n` is 0.
+return `BIYOS_OK` once the variables listed have no name. One without a name, or listed more than once, is left without one.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+note Once the call succeeds, a pointer read earlier with `BIYOS_getvarname` for a variable it lists is no longer valid.
+see BIYOS_setvarname
+since 0.1.0
+
+function BIYOS_setfunname
+summary Name functions.
+param mdl in The model.
+param n in The number of entries.
+param idx in The function of each entry; may be null when `n` is 0.
+param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
+return `BIYOS_OK` once the names are set.
+error BIYOS_ERR_BADARG `n` is negative, an index is not that of a function, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
+note A function may appear more than once and several functions may hold one name, as in `BIYOS_setvarname`. Once the call succeeds, a pointer read earlier with `BIYOS_getfunname` for a function it lists is no longer valid.
+see BIYOS_getfunname BIYOS_getfunidx BIYOS_delfunname
+since 0.1.0
+
+function BIYOS_getfunname
+summary Read the names of functions.
+param mdl in The model.
+param n in The number of entries.
+param idx in The function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of function `idx[j]`, or an empty string when it has none; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of a function.
+note Each pointer stays valid as in `BIYOS_getvarname`: until a call that sets or removes names of functions and lists that function succeeds, or the model is freed.
+see BIYOS_setfunname BIYOS_getfunidx
+since 0.1.0
+
+function BIYOS_getfunidx
+summary Look up functions by name.
+param mdl in The model.
+param n in The number of names.
+param name in The names, each matched byte for byte; may be null only when `n` is 0, and no entry may be null.
+param idx out Entry `j` receives the index of the function that alone holds `name[j]`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no function, with a message such as `invalid argument: function 'f': unknown`, or by several, with a message that counts them, such as `invalid argument: function 'f': names 2 functions`. The call fails at the first such name.
+note A lookup works as in `BIYOS_getvaridx`, among the functions alone.
+see BIYOS_setfunname BIYOS_getfunname
+since 0.1.0
+
+function BIYOS_delfunname
+summary Remove the names of functions.
+param mdl in The model.
+param n in The number of entries.
+param idx in The function of each entry; may be null when `n` is 0.
+return `BIYOS_OK` once the functions listed have no name. One without a name, or listed more than once, is left without one.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of a function.
+note Once the call succeeds, a pointer read earlier with `BIYOS_getfunname` for a function it lists is no longer valid.
+see BIYOS_setfunname
+since 0.1.0
+
+function BIYOS_setconname
+summary Name constraints.
+param mdl in The model.
+param n in The number of entries.
+param idx in The constraint of each entry; may be null when `n` is 0.
+param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
+return `BIYOS_OK` once the names are set.
+error BIYOS_ERR_BADARG `n` is negative, an index is not that of a constraint, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
+note A constraint may appear more than once and several constraints may hold one name, as in `BIYOS_setvarname`. Once the call succeeds, a pointer read earlier with `BIYOS_getconname` for a constraint it lists is no longer valid.
+see BIYOS_getconname BIYOS_getconidx BIYOS_delconname
+since 0.1.0
+
+function BIYOS_getconname
+summary Read the names of constraints.
+param mdl in The model.
+param n in The number of entries.
+param idx in The constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of constraint `idx[j]`, or an empty string when it has none; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of a constraint.
+note Each pointer stays valid as in `BIYOS_getvarname`: until a call that sets or removes names of constraints and lists that constraint succeeds, or the model is freed.
+see BIYOS_setconname BIYOS_getconidx
+since 0.1.0
+
+function BIYOS_getconidx
+summary Look up constraints by name.
+param mdl in The model.
+param n in The number of names.
+param name in The names, each matched byte for byte; may be null only when `n` is 0, and no entry may be null.
+param idx out Entry `j` receives the index of the constraint that alone holds `name[j]`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no constraint, with a message such as `invalid argument: constraint 'c': unknown`, or by several, with a message that counts them, such as `invalid argument: constraint 'c': names 3 constraints`. The call fails at the first such name.
+note A lookup works as in `BIYOS_getvaridx`, among the constraints alone.
+see BIYOS_setconname BIYOS_getconname
+since 0.1.0
+
+function BIYOS_delconname
+summary Remove the names of constraints.
+param mdl in The model.
+param n in The number of entries.
+param idx in The constraint of each entry; may be null when `n` is 0.
+return `BIYOS_OK` once the constraints listed have no name. One without a name, or listed more than once, is left without one.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of a constraint.
+note Once the call succeeds, a pointer read earlier with `BIYOS_getconname` for a constraint it lists is no longer valid.
+see BIYOS_setconname
+since 0.1.0
+
+function BIYOS_setobjname
+summary Name objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry; may be null when `n` is 0.
+param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
+return `BIYOS_OK` once the names are set.
+error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
+note An objective may appear more than once and several objectives may hold one name, as in `BIYOS_setvarname`. Once the call succeeds, a pointer read earlier with `BIYOS_getobjname` for an objective it lists is no longer valid.
+see BIYOS_getobjname BIYOS_getobjidx BIYOS_delobjname
+since 0.1.0
+
+function BIYOS_getobjname
+summary Read the names of objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of objective `idx[j]`, or an empty string when it has none; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+note Each pointer stays valid as in `BIYOS_getvarname`: until a call that sets or removes names of objectives and lists that objective succeeds, or the model is freed.
+see BIYOS_setobjname BIYOS_getobjidx
+since 0.1.0
+
+function BIYOS_getobjidx
+summary Look up objectives by name.
+param mdl in The model.
+param n in The number of names.
+param name in The names, each matched byte for byte; may be null only when `n` is 0, and no entry may be null.
+param idx out Entry `j` receives the index of the objective that alone holds `name[j]`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no objective, with a message such as `invalid argument: objective 'o': unknown`, or by several, with a message that counts them, such as `invalid argument: objective 'o': names 2 objectives`. The call fails at the first such name.
+note A lookup works as in `BIYOS_getvaridx`, among the objectives alone.
+see BIYOS_setobjname BIYOS_getobjname
+since 0.1.0
+
+function BIYOS_delobjname
+summary Remove the names of objectives.
+param mdl in The model.
+param n in The number of entries.
+param idx in The objective of each entry; may be null when `n` is 0.
+return `BIYOS_OK` once the objectives listed have no name. One without a name, or listed more than once, is left without one.
+error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+note Once the call succeeds, a pointer read earlier with `BIYOS_getobjname` for an objective it lists is no longer valid.
+see BIYOS_setobjname
 since 0.1.0
 
 group expressions Expressions

@@ -96,6 +96,7 @@ def _declare_model(lib, ints, doubles):
     _declare_quadratic(lib, ints, doubles)
     _declare_constraints(lib, ints, doubles)
     _declare_objectives(lib, ints, doubles)
+    _declare_names(lib, ints)
 
 
 def _declare_functions(lib, ints, doubles):
@@ -136,6 +137,21 @@ def _declare_objectives(lib, ints, doubles):
     _declare(lib, "BIYOS_getnobjs", c_int, c_void_p, ints)
     read = (c_void_p, c_int32, c_int32, ints, *fields)
     _declare(lib, "BIYOS_getobjs", c_int, *read)
+
+
+def _declare_names(lib, ints):
+    strings = POINTER(c_char_p)
+    _declare(lib, "BIYOS_setmdlname", c_int, c_void_p, c_char_p)
+    _declare(lib, "BIYOS_getmdlname", c_int, c_void_p, strings)
+    _declare(lib, "BIYOS_delmdlname", c_int, c_void_p)
+    names = (c_void_p, c_int32, ints, strings)
+    find = (c_void_p, c_int32, strings, ints)
+    remove = (c_void_p, c_int32, ints)
+    for noun in ("var", "fun", "con", "obj"):
+        _declare(lib, f"BIYOS_set{noun}name", c_int, *names)
+        _declare(lib, f"BIYOS_get{noun}name", c_int, *names)
+        _declare(lib, f"BIYOS_get{noun}idx", c_int, *find)
+        _declare(lib, f"BIYOS_del{noun}name", c_int, *remove)
 
 
 lib = _load()
