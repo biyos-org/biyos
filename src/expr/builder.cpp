@@ -37,9 +37,9 @@ bool product_fits(double left, double right) noexcept
     return zero || std::isnormal(left * right);
 }
 
-std::string operands_text(Offset count)
+std::string operands_text(Offset n)
 {
-    return count_text(count, "operand", "operands");
+    return n_text(n, "operand", "operands");
 }
 
 }
@@ -51,9 +51,9 @@ void Builder::constant(double value)
     push(graph_.add(Operator::Constant, value, {}));
 }
 
-void Builder::variable(Index variable)
+void Builder::var(Index var)
 {
-    push(graph_.add_variable(variable));
+    push(graph_.add_var(var));
 }
 
 void Builder::node(Offset id)
@@ -64,11 +64,11 @@ void Builder::node(Offset id)
 
 void Builder::sum(double constant, std::span<const double> coefficients)
 {
-    const auto count = static_cast<Offset>(coefficients.size());
-    check_shape(Operator::Sum, Payload::Coefficients, count);
+    const auto n = static_cast<Offset>(coefficients.size());
+    check_shape(Operator::Sum, Payload::Coefficients, n);
     check_constant(constant);
-    check_coefficients(coefficients, count);
-    const std::size_t base = take(count);
+    check_coefficients(coefficients, n);
+    const std::size_t base = take(n);
     double merged = constant;
     next_terms_.clear();
     next_weights_.clear();
@@ -79,11 +79,11 @@ void Builder::sum(double constant, std::span<const double> coefficients)
     replace(base, Operator::Sum, merged);
 }
 
-void Builder::product(double coefficient, Offset count)
+void Builder::product(double coefficient, Offset n)
 {
-    check_shape(Operator::Product, Payload::Constant, count);
+    check_shape(Operator::Product, Payload::Constant, n);
     check_constant(coefficient);
-    const std::size_t base = take(count);
+    const std::size_t base = take(n);
     double merged = coefficient;
     next_terms_.clear();
     next_weights_.clear();
@@ -104,10 +104,10 @@ void Builder::sign_power(double exponent)
     raise(Operator::SignPower, exponent);
 }
 
-void Builder::apply(Operator op, Offset count)
+void Builder::apply(Operator op, Offset n)
 {
-    check_shape(op, Payload::None, count);
-    const std::size_t base = take(count);
+    check_shape(op, Payload::None, n);
+    const std::size_t base = take(n);
     collect(base);
     const Offset node = graph_.add(op, next_terms_);
     pop(base);
@@ -146,14 +146,14 @@ void Builder::push(Offset node)
     });
 }
 
-std::size_t Builder::take(Offset count) const
+std::size_t Builder::take(Offset n) const
 {
     const auto given = static_cast<Offset>(stack_.size());
-    if (count > given)
+    if (n > given)
     {
-        refuse(operands_text(count) + " taken, " + text_of(given) + " given");
+        refuse(operands_text(n) + " taken, " + text_of(given) + " given");
     }
-    return at(given - count);
+    return at(given - n);
 }
 
 Offset Builder::resolve(std::size_t position)
@@ -247,10 +247,10 @@ void Builder::add_factor(std::size_t position, double &coefficient)
 
 void Builder::pop(std::size_t base)
 {
-    const std::size_t first = at(stack_[base].first);
+    const std::size_t beg = at(stack_[base].first);
     stack_.resize(base);
-    terms_.resize(first);
-    weights_.resize(first);
+    terms_.resize(beg);
+    weights_.resize(beg);
 }
 
 void Builder::replace(std::size_t base, Operator op, double constant)
@@ -259,16 +259,16 @@ void Builder::replace(std::size_t base, Operator op, double constant)
     make_room(terms_, needed);
     make_room(weights_, needed);
     pop(base);
-    const auto first = static_cast<Offset>(terms_.size());
-    const auto count = static_cast<Offset>(next_terms_.size());
+    const auto beg = static_cast<Offset>(terms_.size());
+    const auto n = static_cast<Offset>(next_terms_.size());
     terms_.insert(terms_.end(), next_terms_.begin(), next_terms_.end());
     weights_.insert(weights_.end(), next_weights_.begin(), next_weights_.end());
     stack_.push_back(Operand{
         .node = kPending,
         .op = op,
         .constant = constant,
-        .first = first,
-        .count = count,
+        .first = beg,
+        .count = n,
     });
 }
 

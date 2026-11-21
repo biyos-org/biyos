@@ -33,13 +33,13 @@ Offset count_of(std::size_t value) noexcept
 
 }
 
-std::uint32_t narrow(std::size_t count)
+std::uint32_t narrow(std::size_t n)
 {
-    if (count > kLimit)
+    if (n > kLimit)
     {
         throw Error(ErrorKind::NoMemory, "tape", "a block is too large for 32-bit slots");
     }
-    return static_cast<std::uint32_t>(count);
+    return static_cast<std::uint32_t>(n);
 }
 
 Layout::Layout(const Graph &graph, const Plan &plan)

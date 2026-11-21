@@ -89,7 +89,7 @@ Offset copy(const Graph &source, Offset node, std::span<const Offset> children, 
         return target.add(op, source.constant(node), children);
     case Payload::Variable:
         check_shape(op, Payload::Variable, static_cast<Offset>(children.size()));
-        return target.add_variable(source.variable(node));
+        return target.add_var(source.variable(node));
     case Payload::Coefficients:
         return target.add_sum(source.constant(node), children, source.coefficients(node));
     }

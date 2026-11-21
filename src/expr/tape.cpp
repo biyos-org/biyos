@@ -91,30 +91,30 @@ std::span<const Offset> part(std::span<const Offset> items,
     return items.subspan(at(firsts[k]), at(firsts[k + 1] - firsts[k]));
 }
 
-Offset variables_of(const Block &block) noexcept
+Offset vars_of(const Block &block) noexcept
 {
-    Offset count = 0;
+    Offset n = 0;
     for (const Instruction &instruction : block.instructions)
     {
         if (instruction.op == Operator::Variable)
         {
-            count = (std::max)(count, static_cast<Offset>(instruction.payload) + 1);
+            n = (std::max)(n, static_cast<Offset>(instruction.payload) + 1);
         }
     }
-    return count;
+    return n;
 }
 
 std::vector<std::uint32_t> places_of(std::span<const Instruction> instructions)
 {
     std::vector<std::uint32_t> places;
     places.reserve(instructions.size() + 1);
-    std::size_t count = 0;
+    std::size_t n = 0;
     for (const Instruction &instruction : instructions)
     {
-        places.push_back(narrow(count));
-        count += partial_count(instruction);
+        places.push_back(narrow(n));
+        n += n_partials(instruction);
     }
-    places.push_back(narrow(count));
+    places.push_back(narrow(n));
     return places;
 }
 
@@ -143,7 +143,7 @@ class Compiler
     std::vector<Block> blocks(std::span<const Offset> roots, const Reach &reach);
 
   private:
-    Block compile(Offset index, std::span<const Offset> outputs, Offset first);
+    Block compile(Offset idx, std::span<const Offset> outputs, Offset beg);
     Instruction instruction(Offset node, Block &block) const;
     std::uint64_t payload(Offset node, Block &block) const;
     std::uint64_t weights(Offset node, Block &block) const;
@@ -182,11 +182,11 @@ std::vector<Block> Compiler::blocks(std::span<const Offset> roots, const Reach &
     return blocks;
 }
 
-Block Compiler::compile(Offset index, std::span<const Offset> outputs, Offset first)
+Block Compiler::compile(Offset idx, std::span<const Offset> outputs, Offset beg)
 {
-    layout_.build(index, outputs);
+    layout_.build(idx, outputs);
     Block block{
-        .first = first,
+        .begin = beg,
         .width = layout_.width(),
         .instructions = {},
         .operands = {},
@@ -290,7 +290,7 @@ Tape::Tape(const Graph &graph, std::span<const Offset> roots, Offset budget)
     partials_ = set_origins(blocks_, prepass_);
     for (const Block &block : blocks_)
     {
-        variables_ = (std::max)(variables_, variables_of(block));
+        variables_ = (std::max)(variables_, vars_of(block));
         width_ = (std::max)(width_, block.width);
     }
 }
@@ -332,9 +332,9 @@ std::span<const Run> Tape::runs(Offset root) const
         throw Error(ErrorKind::InvalidArgument, "tape", "root " + text_of(root) + " is unknown");
     }
     const std::span<const Block> partitions = std::span(blocks_).subspan(at(prepass_));
-    const auto after = std::ranges::upper_bound(partitions, root, {}, &Block::first);
+    const auto after = std::ranges::upper_bound(partitions, root, {}, &Block::begin);
     const Block &block = *(after - 1);
-    const std::size_t output = at(root - block.first);
+    const std::size_t output = at(root - block.begin);
     const Offset begin = block.starts[output];
     const Offset end = block.starts[output + 1];
     return std::span(block.runs).subspan(at(begin), at(end - begin));

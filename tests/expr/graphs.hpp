@@ -73,10 +73,10 @@ inline Offset listed(Graph &graph, Operator op, const std::vector<Offset> &child
 
 inline std::vector<Offset> every_operator(Graph &graph)
 {
-    const Offset x = graph.add_variable(0);
-    const Offset y = graph.add_variable(1);
-    const Offset z = graph.add_variable(2);
-    const Offset w = graph.add_variable(3);
+    const Offset x = graph.add_var(0);
+    const Offset y = graph.add_var(1);
+    const Offset z = graph.add_var(2);
+    const Offset w = graph.add_var(3);
     const std::array xy{x, y};
     const std::array xyz{x, y, z};
     return {
@@ -117,7 +117,7 @@ class Random
   public:
     explicit Random(std::uint64_t seed) : engine_(seed) {}
 
-    std::size_t below(std::size_t count) { return static_cast<std::size_t>(engine_() % count); }
+    std::size_t below(std::size_t n) { return static_cast<std::size_t>(engine_() % n); }
 
     double uniform(double low, double high)
     {
@@ -129,10 +129,10 @@ class Random
     std::mt19937_64 engine_;
 };
 
-inline std::vector<Offset> picks(Random &random, const Graph &graph, std::size_t count)
+inline std::vector<Offset> picks(Random &random, const Graph &graph, std::size_t n)
 {
     std::vector<Offset> nodes;
-    for (std::size_t k = 0; k < count; ++k)
+    for (std::size_t k = 0; k < n; ++k)
     {
         nodes.push_back(static_cast<Offset>(random.below(static_cast<std::size_t>(graph.size()))));
     }
@@ -160,9 +160,9 @@ inline Offset powered(Graph &graph, Random &random, Offset base)
 inline Offset grow(Graph &graph, Random &random)
 {
     const std::vector<Offset> children = picks(random, graph, 1 + random.below(4));
-    const std::size_t kind = random.below(7);
+    const std::size_t knd = random.below(7);
     const double number = random.uniform(-2.0, 2.0);
-    switch (kind)
+    switch (knd)
     {
     case 0:
         return constant(graph, number);
@@ -186,7 +186,7 @@ inline Graph random_graph(Random &random)
     Graph graph;
     for (Index k = 0; k < kVariables; ++k)
     {
-        graph.add_variable(k);
+        graph.add_var(k);
     }
     while (graph.size() < kNodes)
     {

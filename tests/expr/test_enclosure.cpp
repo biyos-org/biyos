@@ -64,12 +64,12 @@ Offset rational(Graph &graph)
 {
     Builder build(graph);
     const std::array one{1.0};
-    build.variable(0);
+    build.var(0);
     build.apply(Operator::Sin, 1);
-    build.variable(1);
+    build.var(1);
     build.product(1.0, 2);
     build.apply(Operator::Exp, 1);
-    build.variable(0);
+    build.var(0);
     build.power(2.0);
     build.sum(1.0, one);
     build.apply(Operator::Division, 2);
@@ -82,14 +82,14 @@ Offset distance(Graph &graph)
     const std::array difference{1.0, -1.0};
     const std::array one{1.0};
     const std::array both{1.0, 1.0};
-    build.variable(0);
-    build.variable(1);
+    build.var(0);
+    build.var(1);
     build.sum(0.0, difference);
     build.apply(Operator::Abs, 1);
     build.sum(1.0, one);
     build.apply(Operator::Log, 1);
-    build.variable(0);
-    build.variable(1);
+    build.var(0);
+    build.var(1);
     build.constant(0.0);
     build.apply(Operator::Max, 3);
     build.apply(Operator::Sqrt, 1);
@@ -101,16 +101,16 @@ Offset smooth(Graph &graph)
 {
     Builder build(graph);
     const std::array weights{1.0, -1.0, 1.0};
-    build.variable(0);
+    build.var(0);
     build.power(2.0);
     build.apply(Operator::Entropy, 1);
-    build.variable(0);
-    build.variable(1);
+    build.var(0);
+    build.var(1);
     build.product(1.0, 2);
     build.apply(Operator::Tanh, 1);
-    build.variable(2);
+    build.var(2);
     build.apply(Operator::Erf, 1);
-    build.variable(0);
+    build.var(0);
     build.apply(Operator::Cosh, 1);
     build.apply(Operator::Division, 2);
     build.sum(0.0, weights);
@@ -121,14 +121,14 @@ Offset tower(Graph &graph)
 {
     Builder build(graph);
     const std::array one{1.0};
-    build.variable(0);
+    build.var(0);
     build.apply(Operator::Abs, 1);
     build.sum(1.0, one);
-    build.variable(1);
+    build.var(1);
     build.apply(Operator::Sin, 1);
     build.apply(Operator::Power, 2);
-    build.variable(0);
-    build.variable(1);
+    build.var(0);
+    build.var(1);
     build.apply(Operator::Division, 2);
     build.apply(Operator::Atan, 1);
     build.product(1.0, 2);
@@ -141,17 +141,17 @@ Offset inverse(Graph &graph)
     const std::array difference{1.0, -1.0};
     const std::array one{1.0};
     const std::array weights{1.0, -1.0, 1.0, 1.0};
-    build.variable(0);
-    build.variable(1);
+    build.var(0);
+    build.var(1);
     build.sum(0.0, difference);
     build.sign_power(1.5);
-    build.variable(2);
+    build.var(2);
     build.apply(Operator::Asinh, 1);
-    build.variable(0);
+    build.var(0);
     build.power(2.0);
     build.sum(1.0, one);
     build.apply(Operator::Acosh, 1);
-    build.variable(1);
+    build.var(1);
     build.apply(Operator::Tanh, 1);
     build.apply(Operator::Atanh, 1);
     build.sum(0.0, weights);
@@ -163,18 +163,18 @@ Offset circle(Graph &graph)
     Builder build(graph);
     const std::array tenth{0.1};
     const std::array weights{1.0, 1.0, 1.0, 1.0};
-    build.variable(0);
+    build.var(0);
     build.apply(Operator::Sin, 1);
     build.apply(Operator::Asin, 1);
-    build.variable(1);
+    build.var(1);
     build.apply(Operator::Cos, 1);
     build.apply(Operator::Acos, 1);
-    build.variable(0);
+    build.var(0);
     build.sum(0.0, tenth);
     build.apply(Operator::Tan, 1);
-    build.variable(0);
-    build.variable(1);
-    build.variable(2);
+    build.var(0);
+    build.var(1);
+    build.var(2);
     build.apply(Operator::Min, 3);
     build.sum(0.0, weights);
     return build.finish();
@@ -186,9 +186,9 @@ Offset shared(Graph &graph)
     const std::array both{1.0, 1.0};
     const std::array one{1.0};
     const std::array weights{1.0, 1.0, -1.0};
-    inner.variable(0);
+    inner.var(0);
     inner.apply(Operator::Sin, 1);
-    inner.variable(1);
+    inner.var(1);
     inner.sum(0.0, both);
     const Offset common = inner.finish();
     Builder build(graph);
@@ -254,7 +254,7 @@ TEST(IntervalTest, Sampled)
         int reported = 0;
         for (int round = 0; round < kBoxes; ++round)
         {
-            const Graph graph = operator_graph(op, biyos::test::parameters_of(op, engine));
+            const Graph graph = operator_graph(op, biyos::test::params_of(op, engine));
             const Box box = box_of(engine);
             const std::vector<Interval> nodes = enclosures(graph, box);
             const Check check{.graph = graph, .box = box, .nodes = nodes, .reported = reported};
@@ -336,7 +336,7 @@ TEST(IntervalTest, Margin)
 TEST(IntervalTest, Propagated)
 {
     Graph graph;
-    const Offset x = graph.add_variable(0);
+    const Offset x = graph.add_var(0);
     const Offset root = graph.add(Operator::Log, std::span(&x, 1));
     const Offset grown = graph.add(Operator::Exp, std::span(&root, 1));
     const std::array terms{grown, x};
@@ -353,7 +353,7 @@ TEST(IntervalTest, Propagated)
 TEST(IntervalTest, ZeroWeights)
 {
     Graph graph;
-    const std::array x{graph.add_variable(0), graph.add_variable(1)};
+    const std::array x{graph.add_var(0), graph.add_var(1)};
     const std::array weights{1.0, 0.0};
     const Offset sum = graph.add_sum(3.0, x, weights);
     const Offset product = graph.add(Operator::Product, 2.0, x);
@@ -371,9 +371,9 @@ TEST(IntervalTest, ZeroWeights)
 TEST(IntervalTest, Shared)
 {
     Graph graph;
-    Offset node = graph.add_variable(0);
+    Offset node = graph.add_var(0);
     const std::array weights{1.0, 1.0};
-    for (int level = 0; level < kLevels; ++level)
+    for (int lvl = 0; lvl < kLevels; ++lvl)
     {
         const std::array terms{node, node};
         node = graph.add_sum(0.0, terms, weights);
@@ -381,22 +381,21 @@ TEST(IntervalTest, Shared)
     ASSERT_EQ(graph.size(), kLevels + 1);
     const std::array box{Interval(1.0, 2.0)};
     const std::vector<Interval> nodes = enclosures(graph, box);
-    for (int level = 0; level <= kLevels; ++level)
+    for (int lvl = 0; lvl <= kLevels; ++lvl)
     {
-        const double low = std::ldexp(1.0, level);
+        const double low = std::ldexp(1.0, lvl);
         const double high = 2 * low;
-        const Interval found = nodes[static_cast<std::size_t>(level)];
-        const int steps = kLevelSteps * level;
-        EXPECT_TRUE(holds(found, low, high)) << level;
-        EXPECT_TRUE(within(found, biyos::shifted(low, -steps), biyos::shifted(high, steps)))
-            << level;
+        const Interval found = nodes[static_cast<std::size_t>(lvl)];
+        const int steps = kLevelSteps * lvl;
+        EXPECT_TRUE(holds(found, low, high)) << lvl;
+        EXPECT_TRUE(within(found, biyos::shifted(low, -steps), biyos::shifted(high, steps))) << lvl;
     }
 }
 
 TEST(IntervalTest, Sizes)
 {
     Graph graph;
-    const Offset x = graph.add_variable(3);
+    const Offset x = graph.add_var(3);
     graph.add(Operator::Exp, std::span(&x, 1));
     const std::vector<Interval> box(4, Interval(0.0, 1.0));
     std::vector<Interval> small(1, Interval::empty());

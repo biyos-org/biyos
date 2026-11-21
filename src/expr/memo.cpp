@@ -49,10 +49,10 @@ void settle(std::vector<Range> &items, std::vector<Range> &into)
 
 void join(std::span<const Range> items, std::vector<Range> &into)
 {
-    const std::size_t first = into.size();
+    const std::size_t beg = into.size();
     for (const Range &item : items)
     {
-        if (into.size() > first && item.begin <= into.back().end)
+        if (into.size() > beg && item.begin <= into.back().end)
         {
             into.back().end = (std::max)(into.back().end, item.end);
             continue;
@@ -105,7 +105,7 @@ bool Memos<Item>::small(std::span<const Item> own, std::span<const Offset> links
         {
             return false;
         }
-        size += at(memo.item_count);
+        size += at(memo.n_items);
     }
     return size <= kFlat;
 }
@@ -118,13 +118,13 @@ Offset Memos<Item>::flatten(std::span<const Item> own, std::span<const Offset> l
     {
         append(pieces_, items_of(memos_[at(link)]));
     }
-    const std::size_t first = items_.size();
+    const std::size_t beg = items_.size();
     settle(pieces_, items_);
     return add({
-        .item_start = count_of(first),
-        .item_count = count_of(items_.size() - first),
+        .item_start = count_of(beg),
+        .n_items = count_of(items_.size() - beg),
         .link_start = 0,
-        .link_count = 0,
+        .n_links = 0,
         .flat = true,
     });
 }
@@ -134,9 +134,9 @@ Offset Memos<Item>::store(std::span<const Item> own, std::span<const Offset> lin
 {
     const Memo memo{
         .item_start = count_of(items_.size()),
-        .item_count = count_of(own.size()),
+        .n_items = count_of(own.size()),
         .link_start = count_of(links_.size()),
-        .link_count = count_of(links.size()),
+        .n_links = count_of(links.size()),
         .flat = false,
     };
     append(items_, own);
@@ -154,13 +154,13 @@ template <typename Item> Offset Memos<Item>::add(Memo memo)
 template <typename Item>
 std::span<const Item> Memos<Item>::items_of(const Memo &memo) const noexcept
 {
-    return std::span(items_).subspan(at(memo.item_start), at(memo.item_count));
+    return std::span(items_).subspan(at(memo.item_start), at(memo.n_items));
 }
 
 template <typename Item>
 std::span<const Offset> Memos<Item>::links_of(const Memo &memo) const noexcept
 {
-    return std::span(links_).subspan(at(memo.link_start), at(memo.link_count));
+    return std::span(links_).subspan(at(memo.link_start), at(memo.n_links));
 }
 
 template class Memos<Index>;

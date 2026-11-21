@@ -69,8 +69,8 @@ std::vector<double> exact_values()
         values.push_back(std::nextafter(power, 0.0));
         values.push_back(std::nextafter(power, kInfinity));
     }
-    const std::size_t count = values.size();
-    for (std::size_t k = 0; k < count; ++k)
+    const std::size_t n = values.size();
+    for (std::size_t k = 0; k < n; ++k)
     {
         values.push_back(-values[k]);
     }

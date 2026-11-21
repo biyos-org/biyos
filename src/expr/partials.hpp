@@ -11,7 +11,7 @@
 namespace biyos
 {
 
-std::uint32_t partial_count(const Instruction &instruction) noexcept;
+std::uint32_t n_partials(const Instruction &instruction) noexcept;
 void partials_of(const Instruction &instruction,
                  const Frame &frame,
                  double result,

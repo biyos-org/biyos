@@ -24,7 +24,7 @@ class Graph
 
     Offset add(Operator op, std::span<const Offset> children);
     Offset add(Operator op, double constant, std::span<const Offset> children);
-    Offset add_variable(Index variable);
+    Offset add_var(Index var);
     Offset add_sum(double constant,
                    std::span<const Offset> children,
                    std::span<const double> coefficients);

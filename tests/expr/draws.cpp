@@ -33,9 +33,9 @@ constexpr std::array kConstants{0.0, 1.0, -1.0, 2.0, 0.5};
 constexpr std::array kExponents{2.0, 3.0, 0.5, 1.5, -1.0, -2.0, -0.5, 1.0, 0.0, 4.0};
 constexpr std::array kSignExponents{0.5, 1.5, 3.0, 1.0};
 
-std::size_t pick(Engine &engine, std::size_t count)
+std::size_t pick(Engine &engine, std::size_t n)
 {
-    return static_cast<std::size_t>(engine() % count);
+    return static_cast<std::size_t>(engine() % n);
 }
 
 double unit(Engine &engine)
@@ -113,7 +113,7 @@ void grow(Graph &graph, Engine &engine)
         graph.add(op, children);
         break;
     case biyos::Payload::Variable:
-        graph.add_variable(static_cast<biyos::Index>(pick(engine, biyos::test::kVariables)));
+        graph.add_var(static_cast<biyos::Index>(pick(engine, biyos::test::kVariables)));
         break;
     case biyos::Payload::Coefficients:
     {
@@ -176,7 +176,7 @@ Graph biyos::test::draw_graph(Engine &engine, std::size_t size)
     Graph graph;
     for (std::size_t k = 0; k < kVariables; ++k)
     {
-        graph.add_variable(static_cast<Index>(k));
+        graph.add_var(static_cast<Index>(k));
     }
     while (static_cast<std::size_t>(graph.size()) < kVariables + size)
     {

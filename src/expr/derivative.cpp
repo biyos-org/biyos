@@ -78,7 +78,7 @@ void rise(const Block &block,
           const Workspace &workspace,
           Adjoints &adjoints) noexcept
 {
-    const std::size_t output = at(position - block.first);
+    const std::size_t output = at(position - block.begin);
     const double adjoint = std::exchange(adjoints.shared[at(position)], 0.0);
     adjoints.slots[block.outputs[output]] += adjoint;
     retrace(block, output, workspace, adjoints, adjoints.gradient);
@@ -89,10 +89,10 @@ void descend(std::span<const Block> prepass,
              const Workspace &workspace,
              Adjoints &adjoints) noexcept
 {
-    auto block = std::ranges::upper_bound(prepass, run.end - 1, {}, &Block::first) - 1;
+    auto block = std::ranges::upper_bound(prepass, run.end - 1, {}, &Block::begin) - 1;
     for (Offset position = run.end - 1; position >= run.begin; --position)
     {
-        while (position < block->first)
+        while (position < block->begin)
         {
             --block;
         }
@@ -109,15 +109,15 @@ void climb(const Tape &tape, Offset root, const Workspace &workspace, Adjoints &
     }
 }
 
-void gather(const Pattern &pattern,
+void gather(const Pattern &pat,
             Offset root,
             std::span<double> gradient,
             std::span<double> gradients) noexcept
 {
-    for (Offset k = pattern.starts[at(root)]; k < pattern.starts[at(root) + 1]; ++k)
+    for (Offset k = pat.starts[at(root)]; k < pat.starts[at(root) + 1]; ++k)
     {
-        const auto variable = static_cast<std::size_t>(pattern.variables[at(k)]);
-        gradients[at(k)] = std::exchange(gradient[variable], 0.0);
+        const auto var = static_cast<std::size_t>(pat.variables[at(k)]);
+        gradients[at(k)] = std::exchange(gradient[var], 0.0);
     }
 }
 
@@ -129,7 +129,7 @@ void differentiate(const Tape &tape,
 {
     for (std::size_t k = 0; k < block.outputs.size(); ++k)
     {
-        const Offset root = block.first + count_of(k);
+        const Offset root = block.begin + count_of(k);
         adjoints.slots[block.outputs[k]] = 1.0;
         retrace(block, k, workspace, adjoints, adjoints.gradient);
         climb(tape, root, workspace, adjoints);
@@ -139,7 +139,7 @@ void differentiate(const Tape &tape,
 
 void seed(const Block &block, std::span<const double> weights, std::span<double> slots) noexcept
 {
-    const std::span<const double> mine = weights.subspan(at(block.first), block.outputs.size());
+    const std::span<const double> mine = weights.subspan(at(block.begin), block.outputs.size());
     for (std::size_t k = 0; k < mine.size(); ++k)
     {
         slots[block.outputs[k]] += mine[k];
@@ -149,7 +149,7 @@ void seed(const Block &block, std::span<const double> weights, std::span<double>
 void pull(const Block &block, Adjoints &adjoints) noexcept
 {
     const std::span<double> shared = std::span(adjoints.shared);
-    const std::span<double> mine = shared.subspan(at(block.first), block.outputs.size());
+    const std::span<double> mine = shared.subspan(at(block.begin), block.outputs.size());
     for (std::size_t k = 0; k < mine.size(); ++k)
     {
         adjoints.slots[block.outputs[k]] += std::exchange(mine[k], 0.0);

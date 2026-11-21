@@ -35,7 +35,7 @@ struct Run
 
 struct Block
 {
-    Offset first;
+    Offset begin;
     std::uint32_t width;
     std::vector<Instruction> instructions;
     std::vector<std::uint32_t> operands;

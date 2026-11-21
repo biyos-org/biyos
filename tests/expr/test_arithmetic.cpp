@@ -115,12 +115,12 @@ constexpr std::array kQuotients{
 
 std::string box_text(std::span<const Interval> box)
 {
-    std::string message = "box";
+    std::string msg = "box";
     for (const Interval interval : box)
     {
-        message += " [" + text(interval.lower()) + ", " + text(interval.upper()) + "]";
+        msg += " [" + text(interval.lower()) + ", " + text(interval.upper()) + "]";
     }
-    return message;
+    return msg;
 }
 
 Parameters with(double coefficient)
