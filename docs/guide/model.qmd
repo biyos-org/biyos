@@ -114,7 +114,7 @@ biyos stores and checks the objectives but solves nothing yet. The stages above 
 
 ## Reading a model back {#sec-model-reading}
 
-Every family has a count and a reader: `BIYOS_getnvars` and `BIYOS_getvars`, `BIYOS_getnfuns` and `BIYOS_getfuns`, and so on. A reader takes the first index and the count of items to read, and fills the arrays it is given; a null array is skipped. Terms come back in compressed form, and since the caller cannot know their number in advance, the readers of terms take the size of the arrays and write the number of terms to `nnz`, whether they fit or not:
+Every family has a count and a reader: `BIYOS_getnvars` and `BIYOS_getvars`, `BIYOS_getnfuns` and `BIYOS_getfuns`, and so on. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the first index and the count of items to read, and fills the arrays it is given; a null array is skipped. Terms come back in compressed form, and since the caller cannot know their number in advance, the readers of terms take the size of the arrays and write the number of terms to `nnz`, whether they fit or not:
 
 ```{.c file="examples/c/model.c" item="read_squares"}
 ```
