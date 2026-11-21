@@ -792,6 +792,191 @@ class Model:
         )
         self._call(lib.BIYOS_setobjs, count, *arrays)
 
+    def setobjsense(self, idx, sense):
+        """Set the senses of objectives.
+
+        An objective may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The objectives, as indices, views or blocks.
+        sense
+            The new sense of each, a ``Sense``; ``None`` changes nothing.
+
+        See Also
+        --------
+        BIYOS_setobjsense
+        """
+        n = len(idx)
+        arrays = (
+            indices_of(self, Objectives, "idx", idx, n),
+            ints("sense", sense, n),
+        )
+        self._call(lib.BIYOS_setobjsense, n, *arrays)
+
+    def getobjsense(self, idx):
+        """Read the senses of objectives.
+
+        Parameters
+        ----------
+        idx
+            The objectives, as indices, views or blocks, in any order and
+            any of them more than once.
+
+        Returns
+        -------
+        list of Sense
+            The sense of each.
+
+        See Also
+        --------
+        BIYOS_getobjsense
+        """
+        found = self._getlist(lib.BIYOS_getobjsense, Objectives, idx, c_int)
+        return [Sense(value) for value in found[0]]
+
+    def setobjprio(self, idx, prio):
+        """Set the priorities of objectives.
+
+        An objective may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The objectives, as indices, views or blocks.
+        prio
+            The new priority of each; ``None`` changes nothing.
+
+        See Also
+        --------
+        BIYOS_setobjprio
+        """
+        n = len(idx)
+        arrays = (
+            indices_of(self, Objectives, "idx", idx, n),
+            ints("prio", prio, n),
+        )
+        self._call(lib.BIYOS_setobjprio, n, *arrays)
+
+    def getobjprio(self, idx):
+        """Read the priorities of objectives.
+
+        Parameters
+        ----------
+        idx
+            The objectives, as indices, views or blocks, in any order and
+            any of them more than once.
+
+        Returns
+        -------
+        list of int
+            The priority of each.
+
+        See Also
+        --------
+        BIYOS_getobjprio
+        """
+        found = self._getlist(lib.BIYOS_getobjprio, Objectives, idx, c_int)
+        return found[0]
+
+    def setobjcoef(self, idx, coef):
+        """Set the weights of objectives.
+
+        An objective may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The objectives, as indices, views or blocks.
+        coef
+            The new weight of each, finite and positive; ``None`` changes
+            nothing.
+
+        See Also
+        --------
+        BIYOS_setobjcoef
+        """
+        n = len(idx)
+        arrays = (
+            indices_of(self, Objectives, "idx", idx, n),
+            doubles("coef", coef, n),
+        )
+        self._call(lib.BIYOS_setobjcoef, n, *arrays)
+
+    def getobjcoef(self, idx):
+        """Read the weights of objectives.
+
+        Parameters
+        ----------
+        idx
+            The objectives, as indices, views or blocks, in any order and
+            any of them more than once.
+
+        Returns
+        -------
+        list of float
+            The weight of each.
+
+        See Also
+        --------
+        BIYOS_getobjcoef
+        """
+        found = self._getlist(lib.BIYOS_getobjcoef, Objectives, idx, c_double)
+        return found[0]
+
+    def setobjtol(self, idx, atol=None, rtol=None):
+        """Set the tolerances of objectives.
+
+        A tolerance is how far an objective may move from its optimum in
+        later stages, as a value of its function and as a fraction of the
+        size of that optimum: 0 or more, ``inf`` setting no limit. An
+        objective may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The objectives, as indices, views or blocks.
+        atol, rtol
+            The new absolute and relative tolerance of each; ``None``
+            leaves that tolerance as it is.
+
+        See Also
+        --------
+        BIYOS_setobjtol
+        """
+        n = len(idx)
+        arrays = (
+            indices_of(self, Objectives, "idx", idx, n),
+            doubles("atol", atol, n),
+            doubles("rtol", rtol, n),
+        )
+        self._call(lib.BIYOS_setobjtol, n, *arrays)
+
+    def getobjtol(self, idx):
+        """Read the tolerances of objectives.
+
+        Parameters
+        ----------
+        idx
+            The objectives, as indices, views or blocks, in any order and
+            any of them more than once.
+
+        Returns
+        -------
+        list of float
+            The absolute tolerance of each.
+        list of float
+            The relative tolerance of each.
+
+        See Also
+        --------
+        BIYOS_getobjtol
+        """
+        pair = (c_double, c_double)
+        atol, rtol = self._getlist(lib.BIYOS_getobjtol, Objectives, idx, *pair)
+        return atol, rtol
+
     def getnobjs(self):
         """Return the number of objectives.
 
