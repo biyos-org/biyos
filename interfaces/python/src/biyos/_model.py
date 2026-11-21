@@ -7,8 +7,10 @@ from typing import Any, NoReturn, SupportsIndex
 from biyos._arrays import (
     doubles,
     indices_of,
+    int64s,
     ints,
     listed,
+    offsets,
     span_of,
     strings,
 )
@@ -22,11 +24,13 @@ from biyos._blocks import (
     Objectives,
     Variable,
     Variables,
+    index_of,
 )
 from biyos._capi import lib
 from biyos._env import Env
 from biyos._error import Error
 from biyos._integers import integer
+from biyos._operators import Operator, node_values, postfix_values
 from biyos._text import decoded, text
 
 
@@ -89,6 +93,12 @@ def _expanded(starts: Array[c_int64], first: int) -> list[int]:
     spans = zip(starts[:-1], starts[1:])
     counts = [end - start for start, end in spans]
     return [first + j for j, count in enumerate(counts) for _ in range(count)]
+
+
+def _total(starts: Array[c_int64] | None, count: int) -> int:
+    if starts is None:
+        return 0
+    return starts[count]
 
 
 class Model:
@@ -752,6 +762,172 @@ class Model:
         found, values = self._terms("quadterm", Functions, every, 0, 3)
         functions, firsts, seconds = found
         return functions, firsts, seconds, values
+
+    def addvarnode(self, var: int | Variable) -> int:
+        """Return the node of a variable, added the first time.
+
+        Parameters
+        ----------
+        var
+            The variable.
+
+        Returns
+        -------
+        node
+            The id of the variable's node, the same at every call.
+
+        See Also
+        --------
+        BIYOS_addvarnode
+        """
+        var = index_of(self, Variables, "var", var)
+        node = c_int64()
+        self._call(lib.BIYOS_addvarnode, var, byref(node))
+        return node.value
+
+    def addnode(
+        self,
+        op: Operator,
+        arg: Sequence[int] | None = None,
+        val: Sequence[float] | None = None,
+    ) -> int:
+        """Add a node, an operator applied to nodes the model holds.
+
+        The node is added as given: a sum among the children of a sum stays
+        a child, and so does a product among those of a product. A node is
+        shared by passing its id again.
+
+        Parameters
+        ----------
+        op
+            The operator, any but ``Operator.VARIABLE`` and
+            ``Operator.NODE``.
+        arg
+            The ids of the children, in order, none by default.
+        val
+            The values the operator takes, None when it takes none: the
+            value of a constant, the coefficient of a product, the exponent
+            of a constant power or a sign power, or the constant of a sum
+            followed by the weight of each child.
+
+        Returns
+        -------
+        node
+            The id of the new node.
+
+        See Also
+        --------
+        BIYOS_addnode
+        """
+        code = integer("op", op)
+        n = 0 if arg is None else len(arg)
+        arrays = (
+            int64s("arg", arg, n),
+            doubles("val", val, node_values(code, n)),
+        )
+        node = c_int64()
+        self._call(lib.BIYOS_addnode, code, n, *arrays, byref(node))
+        return node.value
+
+    def addexpr(
+        self,
+        off: Sequence[int],
+        code: Sequence[Operator],
+        arg: Sequence[int],
+        val: Sequence[float] | None = None,
+    ) -> list[int]:
+        """Add expressions given in postfix.
+
+        Expression ``k`` is the entries from ``off[k]`` to
+        ``off[k + 1] - 1`` of ``code`` and ``arg``, each operand before the
+        operator that takes it. A sum that is an operand of a sum built in
+        the same expression is merged into it, and so is a product that is
+        an operand of a product. A call that fails adds no node.
+
+        Parameters
+        ----------
+        off
+            The offsets of the expressions' entries, one more than there are
+            expressions, from 0 and never decreasing.
+        code
+            The code of each entry, ``off[-1]`` of them: an operator, or
+            ``Operator.NODE``.
+        arg
+            The argument of each entry, ``off[-1]`` of them: the variable of
+            ``Operator.VARIABLE``, the id of a node the model held before
+            the call for ``Operator.NODE``, and the number of operands of
+            any other operator, 0 for ``Operator.CONSTANT``.
+        val
+            The values the operators take, as ``addnode`` takes them, one
+            after another in the order of the entries. None when they take
+            none.
+
+        Returns
+        -------
+        node
+            The id of the top node of each expression.
+
+        See Also
+        --------
+        BIYOS_addexpr
+        """
+        n = len(off) - 1
+        if n < 0:
+            raise ValueError("off has length 0, not at least 1")
+        starts = offsets("off", off, n + 1)
+        size = _total(starts, n)
+        codes = ints("code", code, size)
+        args = int64s("arg", arg, size)
+        values = doubles("val", val, postfix_values(codes, args))
+        nodes = (c_int64 * n)()
+        self._call(lib.BIYOS_addexpr, n, starts, codes, args, values, nodes)
+        return list(nodes)
+
+    def attachexpr(
+        self,
+        idx: Sequence[int | Function] | Functions,
+        node: Sequence[int],
+    ) -> None:
+        """Add expressions to functions of the model.
+
+        Function ``idx[k]`` becomes ``f + e``, where ``e`` is node
+        ``node[k]``. The constant, linear and quadratic terms of the
+        expression's top sum join the function's, and the rest becomes its
+        expression, or is summed with the expression it has.
+
+        Parameters
+        ----------
+        idx
+            The functions that gain an expression, each listed once.
+        node
+            The node each function gains, by id.
+
+        See Also
+        --------
+        BIYOS_attachexprsp
+        BIYOS_attachexprrg
+        """
+        n = len(idx)
+        chosen = self._chosen("BIYOS_attachexpr", Functions, idx)
+        self._call(*chosen, int64s("node", node, n))
+
+    def clrfun(self, idx: Sequence[int | Function] | Functions) -> None:
+        """Empty functions of the model, so they can be built again.
+
+        Each function given has the constant 0, no term and no expression
+        once the call returns. Its expression's nodes stay in the graph.
+
+        Parameters
+        ----------
+        idx
+            The functions, any of them more than once.
+
+        See Also
+        --------
+        BIYOS_clrfunsp
+        BIYOS_clrfunrg
+        """
+        self._call(*self._chosen("BIYOS_clrfun", Functions, idx))
 
     def addcon(
         self,

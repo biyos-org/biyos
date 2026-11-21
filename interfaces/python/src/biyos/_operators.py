@@ -1,3 +1,4 @@
+from ctypes import Array, c_int, c_int64
 from enum import IntEnum
 
 
@@ -44,3 +45,33 @@ class Operator(IntEnum):
     ERF = 29
     NODE = 30
 
+
+_ONE_VALUE = frozenset(
+    (
+        Operator.CONSTANT,
+        Operator.PRODUCT,
+        Operator.CONSTANT_POWER,
+        Operator.SIGN_POWER,
+    )
+)
+
+
+def node_values(code: int, arity: int) -> int:
+    if code == Operator.SUM:
+        return 1 + max(arity, 0)
+    return 1 if code in _ONE_VALUE else 0
+
+
+def postfix_values(
+    code: Array[c_int] | None, arg: Array[c_int64] | None
+) -> int:
+    if code is None or arg is None:
+        return 0
+    entries = len(code)
+    most = 2 * entries
+    total = 0
+    for k in range(entries):
+        if total >= most:
+            break
+        total += node_values(code[k], min(max(arg[k], 0), entries))
+    return min(total, most)
