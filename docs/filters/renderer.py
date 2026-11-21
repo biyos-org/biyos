@@ -13,6 +13,7 @@ from quartodoc import MdRenderer, layout
 from quartodoc import ast as qast
 
 ENUMS = {"Enum", "IntEnum", "Flag", "IntFlag"}
+RECORDS = {"NamedTuple"}
 SPLATS = {"var_positional": "*", "var_keyword": "**"}
 HANDLED = (
     DocstringSectionText,
@@ -135,6 +136,11 @@ def is_enum(obj):
     return any(str(base).split(".")[-1] in ENUMS for base in bases)
 
 
+def is_record(obj):
+    bases = getattr(target(obj), "bases", [])
+    return any(str(base).split(".")[-1] in RECORDS for base in bases)
+
+
 class Renderer(MdRenderer):
     style = "biyos"
 
@@ -222,13 +228,19 @@ class Renderer(MdRenderer):
         rows = [
             (
                 f"[`{d.obj.name}`]{{#{d.obj.path} .name}}",
+                quiet(self.render_annotation(target(d.obj).annotation)),
                 f"[{target(d.obj).value}]{{.value}}" if enum else "",
                 (notes.get(d.obj.name) or summary_of(d.obj))
                 + see_inline(d.obj),
             )
             for d in docs
         ]
-        header = ("Member" if enum else "Attribute", "Value", "Meaning")
+        header = (
+            "Member" if enum else "Attribute",
+            "Type",
+            "Value",
+            "Meaning",
+        )
         return [table(header, rows)] if rows else []
 
     def index(self, docs):
@@ -254,7 +266,8 @@ class Renderer(MdRenderer):
         members = [m for m in el.members if isinstance(m, layout.Doc)]
         attrs = [m for m in members if m.obj.is_attribute]
         methods = [m for m in members if m.obj.is_function]
-        signature = [self.shown(el)] if public(el.obj) and not enum else []
+        visible = public(el.obj) and not enum and not is_record(el.obj)
+        signature = [self.shown(el)] if visible else []
         listed = self.attributes(el.obj, attrs, enum) + self.index(methods)
         parts = [self.heading(el, f"`{el.name}`", " .class")]
         parts.append(self.entry(el, signature, listed))
