@@ -1,8 +1,8 @@
 import weakref
-from ctypes import byref, c_double, c_int, c_int64, c_void_p
+from ctypes import byref, c_char_p, c_double, c_int, c_int64, c_void_p
 from enum import IntEnum
 
-from biyos._arrays import doubles, indices_of, ints, offsets
+from biyos._arrays import doubles, indices_of, ints, listed, offsets, strings
 from biyos._blocks import (
     Constraints,
     Functions,
@@ -14,6 +14,7 @@ from biyos._capi import lib
 from biyos._environment import Env
 from biyos._error import Error
 from biyos._integers import integer
+from biyos._text import decoded, text
 
 
 class VariableKind(IntEnum):
@@ -167,8 +168,9 @@ class Model:
         """Return a copy of the model, made on an environment.
 
         The copy holds the same variables, functions, constraints and
-        objectives under the same indices, and changes apart from the model.
-        It reports on its own environment, like any model made there.
+        objectives under the same indices and names, and changes apart from
+        the model. It reports on its own environment, like any model made
+        there.
 
         Parameters
         ----------
@@ -779,6 +781,366 @@ class Model:
         values = (list(weights), list(absolute), list(relative))
         return (list(functions), senses, list(priorities), *values)
 
+    def setmdlname(self, name):
+        """Name the model.
+
+        A name is a nonempty str. It may hold any character but the null
+        character, and it is kept as UTF-8.
+
+        Parameters
+        ----------
+        name : str
+            The new name, which replaces the one the model has.
+
+        Raises
+        ------
+        TypeError
+            When ``name`` is not a str.
+        ValueError
+            When ``name`` holds a null character or cannot be encoded as
+            UTF-8, such as a lone surrogate.
+        Error
+            When ``name`` is empty.
+
+        See Also
+        --------
+        BIYOS_setmdlname
+        """
+        self._call(lib.BIYOS_setmdlname, text("name", name))
+
+    def getmdlname(self):
+        """Return the name of the model.
+
+        Returns
+        -------
+        str or None
+            The name, or None when the model has none.
+
+        See Also
+        --------
+        BIYOS_getmdlname
+        """
+        name = c_char_p()
+        self._call(lib.BIYOS_getmdlname, byref(name))
+        return decoded(name.value)
+
+    def delmdlname(self):
+        """Remove the name of the model, which then has none.
+
+        See Also
+        --------
+        BIYOS_delmdlname
+        """
+        self._call(lib.BIYOS_delmdlname)
+
+    def setvarname(self, idx, name):
+        """Name variables of the model.
+
+        Variable ``idx[j]`` takes the name ``name[j]``, under the rules of
+        ``setmdlname``. A variable listed more than once takes the last of
+        its names. Names may repeat: several variables may hold one name,
+        and ``getvaridx`` then refuses to choose among them. Functions,
+        constraints and objectives are named the same way, each family
+        apart.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The variables to name.
+        name : sequence of str
+            The new name of each, as many as ``idx``.
+
+        Raises
+        ------
+        TypeError
+            When ``name`` is a str rather than a sequence of them, or a
+            name is not a str.
+        ValueError
+            When a name holds a null character or cannot be encoded as
+            UTF-8, or when ``name`` and ``idx`` differ in length.
+        Error
+            When an index is not that of a variable or a name is empty.
+
+        See Also
+        --------
+        BIYOS_setvarname
+        """
+        self._setname(lib.BIYOS_setvarname, Variables, idx, name)
+
+    def getvarname(self, idx):
+        """Return the names of variables.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The variables to read, in any order, any of them more than once.
+
+        Returns
+        -------
+        list of str or None
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getvarname
+        """
+        return self._getname(lib.BIYOS_getvarname, Variables, idx)
+
+    def getvaridx(self, name):
+        """Return the indices of the variables with names.
+
+        Parameters
+        ----------
+        name : sequence of str
+            The names, each matched exactly.
+
+        Returns
+        -------
+        list of int
+            The index of the variable that alone holds each name.
+
+        Raises
+        ------
+        TypeError
+            When ``name`` is None, or a str rather than a sequence of them,
+            or a name is not a str.
+        ValueError
+            When a name holds a null character or cannot be encoded as
+            UTF-8.
+        Error
+            When no variable holds a name, or when several do.
+
+        See Also
+        --------
+        BIYOS_getvaridx
+        """
+        return self._getidx(lib.BIYOS_getvaridx, name)
+
+    def delvarname(self, idx):
+        """Remove the names of variables, which then have none.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The variables that lose their names. One without a name, or
+            listed more than once, is left without one.
+
+        Raises
+        ------
+        Error
+            When an index is not that of a variable, and then no name is
+            removed.
+
+        See Also
+        --------
+        BIYOS_delvarname
+        """
+        self._delname(lib.BIYOS_delvarname, Variables, idx)
+
+    def setfunname(self, idx, name):
+        """Name functions of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The functions to name.
+        name : sequence of str
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setfunname
+        """
+        self._setname(lib.BIYOS_setfunname, Functions, idx, name)
+
+    def getfunname(self, idx):
+        """Return the names of functions, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The functions to read.
+
+        Returns
+        -------
+        list of str or None
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getfunname
+        """
+        return self._getname(lib.BIYOS_getfunname, Functions, idx)
+
+    def getfunidx(self, name):
+        """Return the indices of named functions, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name : sequence of str
+            The names, each matched exactly.
+
+        Returns
+        -------
+        list of int
+            The index of the function that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getfunidx
+        """
+        return self._getidx(lib.BIYOS_getfunidx, name)
+
+    def delfunname(self, idx):
+        """Remove the names of functions, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The functions that lose their names.
+
+        See Also
+        --------
+        BIYOS_delfunname
+        """
+        self._delname(lib.BIYOS_delfunname, Functions, idx)
+
+    def setconname(self, idx, name):
+        """Name constraints of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The constraints to name.
+        name : sequence of str
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setconname
+        """
+        self._setname(lib.BIYOS_setconname, Constraints, idx, name)
+
+    def getconname(self, idx):
+        """Return the names of constraints, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The constraints to read.
+
+        Returns
+        -------
+        list of str or None
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getconname
+        """
+        return self._getname(lib.BIYOS_getconname, Constraints, idx)
+
+    def getconidx(self, name):
+        """Return the indices of named constraints, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name : sequence of str
+            The names, each matched exactly.
+
+        Returns
+        -------
+        list of int
+            The index of the constraint that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getconidx
+        """
+        return self._getidx(lib.BIYOS_getconidx, name)
+
+    def delconname(self, idx):
+        """Remove the names of constraints, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The constraints that lose their names.
+
+        See Also
+        --------
+        BIYOS_delconname
+        """
+        self._delname(lib.BIYOS_delconname, Constraints, idx)
+
+    def setobjname(self, idx, name):
+        """Name objectives of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The objectives to name.
+        name : sequence of str
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setobjname
+        """
+        self._setname(lib.BIYOS_setobjname, Objectives, idx, name)
+
+    def getobjname(self, idx):
+        """Return the names of objectives, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The objectives to read.
+
+        Returns
+        -------
+        list of str or None
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getobjname
+        """
+        return self._getname(lib.BIYOS_getobjname, Objectives, idx)
+
+    def getobjidx(self, name):
+        """Return the indices of named objectives, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name : sequence of str
+            The names, each matched exactly.
+
+        Returns
+        -------
+        list of int
+            The index of the objective that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getobjidx
+        """
+        return self._getidx(lib.BIYOS_getobjidx, name)
+
+    def delobjname(self, idx):
+        """Remove the names of objectives, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx : sequence of int
+            The objectives that lose their names.
+
+        See Also
+        --------
+        BIYOS_delobjname
+        """
+        self._delname(lib.BIYOS_delobjname, Objectives, idx)
+
     def _start(self, env):
         self._env = env
         self._handle = c_void_p()
@@ -808,6 +1170,33 @@ class Model:
         if self._closing:
             return False
         return self._free.alive and self._env._open()
+
+    def _setname(self, function, family, idx, name):
+        count = len(idx)
+        arrays = (
+            indices_of(self, family, "idx", idx, count),
+            strings("name", name, count),
+        )
+        self._call(function, count, *arrays)
+
+    def _delname(self, function, family, idx):
+        count = len(idx)
+        indices = indices_of(self, family, "idx", idx, count)
+        self._call(function, count, indices)
+
+    def _getname(self, function, family, idx):
+        count = len(idx)
+        indices = indices_of(self, family, "idx", idx, count)
+        found = (c_char_p * count)()
+        self._call(function, count, indices, found)
+        return [decoded(value) for value in found]
+
+    def _getidx(self, function, name):
+        count = len(listed("name", name))
+        names = strings("name", name, count)
+        found = (c_int * count)()
+        self._call(function, count, names, found)
+        return list(found)
 
     def _call(self, function, *arguments):
         with self._env._busy():

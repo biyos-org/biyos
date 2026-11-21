@@ -1,8 +1,9 @@
-from ctypes import c_double, c_int, c_int64
+from ctypes import c_char_p, c_double, c_int, c_int64
 from numbers import Real
 
 from biyos._blocks import Block, index_of, range_of
 from biyos._integers import integer, offset
+from biyos._text import text
 
 
 def _sized(name, values, count):
@@ -43,6 +44,21 @@ def ints(name, values, count):
     _sized(name, values, count)
     entry = f"an entry of {name}"
     return (c_int * count)(*(integer(entry, value) for value in values))
+
+
+def listed(name, values):
+    if values is None or isinstance(values, str):
+        found = type(values).__name__
+        raise TypeError(f"{name} must be a sequence of str, not {found}")
+    return values
+
+
+def strings(name, values, count):
+    if values is None:
+        return None
+    _sized(name, listed(name, values), count)
+    entry = f"an entry of {name}"
+    return (c_char_p * count)(*(text(entry, value) for value in values))
 
 
 def indices_of(model, family, name, values, count):
