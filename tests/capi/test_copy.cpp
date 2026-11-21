@@ -136,7 +136,7 @@ void keep(const BIYOS_event *event, void *data)
     static_cast<std::vector<std::string> *>(data)->emplace_back(BIYOS_getevttext(event));
 }
 
-int subscribe(const Env &env, std::vector<std::string> &texts)
+int add_hook(const Env &env, std::vector<std::string> &texts)
 {
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
@@ -199,7 +199,7 @@ TEST(CApiTest, LockedCopy)
     delivery.busy = Held{.env = busy.get(), .model = on_busy.get()};
     delivery.idle = Held{.env = idle.get(), .model = on_idle.get()};
     std::vector<std::string> texts;
-    const int kept = subscribe(idle, texts);
+    const int kept = add_hook(idle, texts);
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(busy.get(), copy_inside, &delivery, message, BIYOS_LVL_ERR, &id),
@@ -238,8 +238,8 @@ TEST(CApiTest, CopyReports)
     const Env to;
     std::vector<std::string> sent;
     std::vector<std::string> received;
-    const int first = subscribe(from, sent);
-    const int second = subscribe(to, received);
+    const int first = add_hook(from, sent);
+    const int second = add_hook(to, received);
     const Held source = made_on(from.get());
     const Held copy = copied(source, to.get());
     const BIYOS_index index = 7;

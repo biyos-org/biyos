@@ -76,9 +76,9 @@ class Parting
 class EventTest : public ::testing::Test
 {
   protected:
-    int listen(EventLevel lowest, biyos::Subscriber subscriber)
+    int listen(EventLevel lvl, biyos::Hook hk)
     {
-        return events.subscribe(EventKind::Message, lowest, std::move(subscriber));
+        return events.add_hook(EventKind::Message, lvl, std::move(hk));
     }
 
     void say(EventLevel lvl, const std::string &text)
@@ -86,7 +86,7 @@ class EventTest : public ::testing::Test
         events.emit(EventKind::Message, lvl, [&](biyos::Event &evt) { evt.text = text; });
     }
 
-    biyos::Subscriber recorder(const std::string &name)
+    biyos::Hook recorder(const std::string &name)
     {
         return [this, name](const biyos::Event &evt) { texts.push_back(name + evt.text); };
     }
@@ -95,7 +95,7 @@ class EventTest : public ::testing::Test
     {
         if (evt.level == EventLevel::Debug)
         {
-            events.unsubscribe(removed);
+            events.del_hook(removed);
             listen(EventLevel::Info, recorder("e "));
         }
     }
@@ -142,7 +142,7 @@ TEST_F(EventTest, NoRecord)
     int built = 0;
     const auto count = [&built](biyos::Event &) { ++built; };
     events.emit(EventKind::Message, EventLevel::Error, count);
-    events.unsubscribe(listen(EventLevel::Debug, ignore));
+    events.del_hook(listen(EventLevel::Debug, ignore));
     events.emit(EventKind::Message, EventLevel::Error, count);
     listen(EventLevel::Error, ignore);
     events.emit(EventKind::Message, EventLevel::Warning, count);
@@ -167,7 +167,7 @@ TEST_F(EventTest, KindFilter)
 {
     const auto two = [](biyos::Event &evt) { evt.text = "two"; };
     listen(EventLevel::Debug, recorder("m "));
-    events.subscribe(EventKind::Check, EventLevel::Error, recorder("c "));
+    events.add_hook(EventKind::Check, EventLevel::Error, recorder("c "));
     EXPECT_TRUE(events.wanted(EventKind::Message, EventLevel::Debug));
     EXPECT_FALSE(events.wanted(EventKind::Check, EventLevel::Warning));
     say(EventLevel::Error, "one");
@@ -182,10 +182,10 @@ TEST_F(EventTest, LowestLevel)
     const int error = listen(EventLevel::Error, ignore);
     EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Debug));
     EXPECT_TRUE(events.wanted(EventKind::Message, EventLevel::Info));
-    events.unsubscribe(info);
+    events.del_hook(info);
     EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Warning));
     EXPECT_TRUE(events.wanted(EventKind::Message, EventLevel::Error));
-    events.unsubscribe(error);
+    events.del_hook(error);
     EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Error));
 }
 
@@ -220,7 +220,7 @@ TEST_F(EventTest, Order)
     const int b = listen(EventLevel::Debug, recorder("b "));
     listen(EventLevel::Debug, recorder("c "));
     say(EventLevel::Info, "one");
-    events.unsubscribe(b);
+    events.del_hook(b);
     listen(EventLevel::Debug, recorder("b "));
     say(EventLevel::Info, "two");
     EXPECT_EQ(texts, (Texts{"a one", "b one", "c one", "a two", "c two", "b two"}));
@@ -246,14 +246,14 @@ TEST_F(EventTest, Ids)
 {
     const int first = listen(EventLevel::Debug, ignore);
     const int second = listen(EventLevel::Debug, ignore);
-    events.unsubscribe(second);
+    events.del_hook(second);
     const int third = listen(EventLevel::Debug, ignore);
     EXPECT_EQ(first, 1);
     EXPECT_EQ(second, 2);
     EXPECT_EQ(third, 3);
 }
 
-TEST_F(EventTest, EmptySubscriber)
+TEST_F(EventTest, EmptyHook)
 {
     EXPECT_EQ(failure([&] { listen(EventLevel::Debug, nullptr); }),
               "invalid argument: subscriber: is empty");
@@ -264,16 +264,15 @@ TEST_F(EventTest, EmptySubscriber)
 TEST_F(EventTest, UnknownId)
 {
     const int id = listen(EventLevel::Debug, ignore);
-    events.unsubscribe(id);
-    EXPECT_EQ(failure([&] { events.unsubscribe(id); }),
-              "invalid argument: subscription 1: unknown");
-    EXPECT_EQ(failure([&] { events.unsubscribe(7); }), "invalid argument: subscription 7: unknown");
+    events.del_hook(id);
+    EXPECT_EQ(failure([&] { events.del_hook(id); }), "invalid argument: subscription 1: unknown");
+    EXPECT_EQ(failure([&] { events.del_hook(7); }), "invalid argument: subscription 7: unknown");
 }
 
 TEST_F(EventTest, SelfRemoval)
 {
     int id = 0;
-    id = listen(EventLevel::Debug, [&](const biyos::Event &) { events.unsubscribe(id); });
+    id = listen(EventLevel::Debug, [&](const biyos::Event &) { events.del_hook(id); });
     say(EventLevel::Info, "one");
     EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Error));
     EXPECT_NO_THROW(say(EventLevel::Info, "two"));
@@ -282,12 +281,11 @@ TEST_F(EventTest, SelfRemoval)
 TEST_F(EventTest, PeerRemoval)
 {
     int peer = 0;
-    listen(EventLevel::Debug, [&](const biyos::Event &) { events.unsubscribe(peer); });
+    listen(EventLevel::Debug, [&](const biyos::Event &) { events.del_hook(peer); });
     peer = listen(EventLevel::Debug, recorder(""));
     say(EventLevel::Info, "one");
     EXPECT_TRUE(texts.empty());
-    EXPECT_EQ(failure([&] { events.unsubscribe(peer); }),
-              "invalid argument: subscription 2: unknown");
+    EXPECT_EQ(failure([&] { events.del_hook(peer); }), "invalid argument: subscription 2: unknown");
 }
 
 TEST_F(EventTest, NestedRemoval)
@@ -305,7 +303,7 @@ TEST_F(EventTest, ErasedFarewell)
 {
     const int id = listen(EventLevel::Debug, Parting(events, texts));
     listen(EventLevel::Debug, recorder("r "));
-    events.unsubscribe(id);
+    events.del_hook(id);
     EXPECT_EQ(texts, Texts{"r farewell"});
 }
 
@@ -313,12 +311,12 @@ TEST_F(EventTest, PrunedFarewell)
 {
     const int id = listen(EventLevel::Debug, Parting(events, texts));
     listen(EventLevel::Debug, recorder("r "));
-    listen(EventLevel::Info, [this, id](const biyos::Event &) { events.unsubscribe(id); });
+    listen(EventLevel::Info, [this, id](const biyos::Event &) { events.del_hook(id); });
     say(EventLevel::Info, "one");
     EXPECT_EQ(texts, (Texts{"p one", "r one", "r farewell"}));
 }
 
-TEST_F(EventTest, LateSubscriber)
+TEST_F(EventTest, LateHook)
 {
     listen(EventLevel::Debug,
            [this](const biyos::Event &) { listen(EventLevel::Debug, recorder("")); });
@@ -327,7 +325,7 @@ TEST_F(EventTest, LateSubscriber)
     EXPECT_EQ(texts, Texts{"two"});
 }
 
-TEST_F(EventTest, SubscriberThrows)
+TEST_F(EventTest, HookThrows)
 {
     const auto fail = [](const biyos::Event &) { throw std::runtime_error("subscriber"); };
     listen(EventLevel::Debug, fail);

@@ -229,7 +229,7 @@ TEST_F(ClockTest, UnwantedEvent)
     const CountingClock counter;
     biyos::Events evts(counter);
     evts.emit(EventKind::Message, EventLevel::Error, blank);
-    evts.subscribe(EventKind::Message, EventLevel::Error, [](const biyos::Event &) {});
+    evts.add_hook(EventKind::Message, EventLevel::Error, [](const biyos::Event &) {});
     evts.emit(EventKind::Message, EventLevel::Warning, blank);
     EXPECT_EQ(counter.wall_reads(), 1);
     evts.emit(EventKind::Message, EventLevel::Error, blank);
@@ -245,7 +245,7 @@ TEST_F(ClockTest, EventTime)
     biyos::Env env(std::move(owned));
     Times times;
     const auto keep = [&times](const biyos::Event &evt) { times.push_back(evt.time); };
-    env.events().subscribe(EventKind::Message, EventLevel::Debug, keep);
+    env.events().add_hook(EventKind::Message, EventLevel::Debug, keep);
     env.events().emit(EventKind::Message, EventLevel::Info, blank);
     fake.advance_wall(250ns);
     fake.advance_cpu(1s);

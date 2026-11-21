@@ -64,9 +64,9 @@ TEST(EnvTest, NullClock)
 TEST(EnvTest, OwnsEvents)
 {
     biyos::Env env;
-    env.events().subscribe(biyos::EventKind::Message,
-                           biyos::EventLevel::Info,
-                           [](const biyos::Event &) {});
+    env.events().add_hook(biyos::EventKind::Message,
+                          biyos::EventLevel::Info,
+                          [](const biyos::Event &) {});
     const biyos::Env &view = env;
     EXPECT_TRUE(view.events().wanted(biyos::EventKind::Message, biyos::EventLevel::Info));
 }
@@ -164,7 +164,7 @@ TEST(EnvTest, Deprecated)
     biyos::Env env(std::make_unique<biyos::FakeClock>(), kRows);
     std::vector<std::string> heard;
     const auto record = [&heard](const biyos::Event &evt) { heard.push_back(evt.text); };
-    env.events().subscribe(biyos::EventKind::Message, biyos::EventLevel::Warning, record);
+    env.events().add_hook(biyos::EventKind::Message, biyos::EventLevel::Warning, record);
     env.options().set_int(Option{2}, 5);
     EXPECT_EQ(env.options().get_int(Option{2}), 5);
     EXPECT_EQ(heard, std::vector<std::string>{"option 'old': deprecated in 0.0.2, use 'new'"});

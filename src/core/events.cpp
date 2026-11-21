@@ -37,11 +37,11 @@ constexpr bool numbered()
 static_assert(numbered());
 static_assert(std::ranges::is_sorted(kLevels));
 
-void notify(const Subscriber &subscriber, const Event &evt) noexcept
+void notify(const Hook &hk, const Event &evt) noexcept
 {
     try
     {
-        subscriber(evt);
+        hk(evt);
     }
     catch (...)
     {
@@ -105,9 +105,9 @@ Events::Events(const Clock &clock) : clock_(clock), origin_(clock.wall_time())
     lowest_.fill(kNobody);
 }
 
-int Events::subscribe(EventKind knd, EventLevel lowest, Subscriber subscriber)
+int Events::add_hook(EventKind knd, EventLevel lvl, Hook hk)
 {
-    if (!subscriber)
+    if (!hk)
     {
         throw Error(ErrorKind::InvalidArgument, "subscriber", "is empty");
     }
@@ -115,22 +115,22 @@ int Events::subscribe(EventKind knd, EventLevel lowest, Subscriber subscriber)
     {
         throw Error(ErrorKind::NoMemory, "subscription", "no id left");
     }
-    subscriptions_.push_back(Subscription{
+    hooks_.push_back(Entry{
         .id = next_id_,
         .kind = knd,
-        .lowest = lowest,
-        .subscriber = std::make_unique<const Subscriber>(std::move(subscriber)),
+        .lowest = lvl,
+        .hook = std::make_unique<const Hook>(std::move(hk)),
         .active = true,
     });
     const std::size_t at = slot(knd);
-    lowest_[at] = (std::min)(lowest_[at], lowest);
+    lowest_[at] = (std::min)(lowest_[at], lvl);
     return next_id_++;
 }
 
-void Events::unsubscribe(int id)
+void Events::del_hook(int id)
 {
-    const auto found = std::ranges::find(subscriptions_, id, &Subscription::id);
-    if (found == subscriptions_.end() || !found->active)
+    const auto found = std::ranges::find(hooks_, id, &Entry::id);
+    if (found == hooks_.end() || !found->active)
     {
         throw Error(ErrorKind::InvalidArgument, "subscription " + std::to_string(id), "unknown");
     }
@@ -138,24 +138,24 @@ void Events::unsubscribe(int id)
     refresh(found->kind);
     if (depth_ == 0)
     {
-        const std::unique_ptr<const Subscriber> removed = std::move(found->subscriber);
-        subscriptions_.erase(found);
+        const std::unique_ptr<const Hook> removed = std::move(found->hook);
+        hooks_.erase(found);
     }
 }
 
-bool Events::accepts(const Subscription &subscription, EventKind knd, EventLevel lvl) noexcept
+bool Events::accepts(const Entry &entry, EventKind knd, EventLevel lvl) noexcept
 {
-    return subscription.active && subscription.kind == knd && subscription.lowest <= lvl;
+    return entry.active && entry.kind == knd && entry.lowest <= lvl;
 }
 
 void Events::refresh(EventKind knd) noexcept
 {
     EventLevel lvl = kNobody;
-    for (const Subscription &subscription : subscriptions_)
+    for (const Entry &entry : hooks_)
     {
-        if (subscription.active && subscription.kind == knd)
+        if (entry.active && entry.kind == knd)
         {
-            lvl = (std::min)(lvl, subscription.lowest);
+            lvl = (std::min)(lvl, entry.lowest);
         }
     }
     lowest_[slot(knd)] = lvl;
@@ -164,13 +164,13 @@ void Events::refresh(EventKind knd) noexcept
 void Events::deliver(const Event &evt) noexcept
 {
     const Depth delivery(depth_);
-    const std::size_t n = subscriptions_.size();
+    const std::size_t n = hooks_.size();
     for (std::size_t i = 0; i < n; ++i)
     {
-        const Subscription &subscription = subscriptions_[i];
-        if (accepts(subscription, evt.kind, evt.level))
+        const Entry &entry = hooks_[i];
+        if (accepts(entry, evt.kind, evt.level))
         {
-            notify(*subscription.subscriber, evt);
+            notify(*entry.hook, evt);
         }
     }
     if (depth_ == 1)
@@ -182,19 +182,18 @@ void Events::deliver(const Event &evt) noexcept
 void Events::prune() noexcept
 {
     std::size_t kept = 0;
-    for (std::size_t i = 0; i < subscriptions_.size(); ++i)
+    for (std::size_t i = 0; i < hooks_.size(); ++i)
     {
-        if (subscriptions_[i].active)
+        if (hooks_[i].active)
         {
-            std::swap(subscriptions_[kept], subscriptions_[i]);
+            std::swap(hooks_[kept], hooks_[i]);
             ++kept;
         }
     }
-    while (!subscriptions_.empty() && !subscriptions_.back().active)
+    while (!hooks_.empty() && !hooks_.back().active)
     {
-        const std::unique_ptr<const Subscriber> removed =
-            std::move(subscriptions_.back().subscriber);
-        subscriptions_.pop_back();
+        const std::unique_ptr<const Hook> removed = std::move(hooks_.back().hook);
+        hooks_.pop_back();
     }
 }
 

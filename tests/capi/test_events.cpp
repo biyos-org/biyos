@@ -58,7 +58,7 @@ void receive(const BIYOS_event *event, void *data)
     inbox->value = BIYOS_getevtfldval(event, 0);
 }
 
-void unsubscribe_unknown(const BIYOS_event *, void *data)
+void del_unknown(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
@@ -89,9 +89,9 @@ void free_inside(const BIYOS_event *, void *data)
     probe->message = BIYOS_lasterror(probe->env);
 }
 
-BIYOS_status listen(BIYOS_env *env, BIYOS_hook subscriber, void *data, int lowest, BIYOS_index *id)
+BIYOS_status listen(BIYOS_env *env, BIYOS_hook hk, void *data, int lvl, BIYOS_index *id)
 {
-    return BIYOS_addhook(env, subscriber, data, BIYOS_EVT_MESSAGE, lowest, id);
+    return BIYOS_addhook(env, hk, data, BIYOS_EVT_MESSAGE, lvl, id);
 }
 
 void fail(const Env &env)
@@ -129,7 +129,7 @@ void change(const BIYOS_event *, void *data)
 
 }
 
-TEST(CApiTest, Subscribe)
+TEST(CApiTest, AddHook)
 {
     const Env env;
     Inbox inbox;
@@ -148,7 +148,7 @@ TEST(CApiTest, Subscribe)
     EXPECT_EQ(inbox.value, "-100");
 }
 
-TEST(CApiTest, Unsubscribe)
+TEST(CApiTest, DelHook)
 {
     const Env env;
     Inbox inbox;
@@ -190,7 +190,7 @@ TEST(CApiTest, NestedFailure)
     Probe probe;
     probe.env = env.get();
     BIYOS_index id = 0;
-    ASSERT_EQ(listen(env.get(), unsubscribe_unknown, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), del_unknown, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(probe.calls, 1);
     EXPECT_EQ(probe.status, BIYOS_ERR_BADARG);
@@ -199,7 +199,7 @@ TEST(CApiTest, NestedFailure)
     EXPECT_EQ(env.message(), "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
 }
 
-TEST(CApiTest, TwoSubscribers)
+TEST(CApiTest, TwoHooks)
 {
     const Env env;
     Probe first;
@@ -237,7 +237,7 @@ TEST(CApiTest, BusyFree)
     EXPECT_EQ(seed, 5);
 }
 
-TEST(CApiTest, BadSubscribe)
+TEST(CApiTest, BadHook)
 {
     const Env env;
     Inbox inbox;
@@ -256,7 +256,7 @@ TEST(CApiTest, BadSubscribe)
     EXPECT_EQ(id, 0);
 }
 
-TEST(CApiTest, NullSubscribe)
+TEST(CApiTest, NullHook)
 {
     BIYOS_index id = 0;
     EXPECT_EQ(listen(nullptr, receive, nullptr, BIYOS_LVL_DBG, &id), BIYOS_ERR_BADARG);

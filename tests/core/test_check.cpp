@@ -93,7 +93,7 @@ class CheckTest : public ::testing::Test
     void keep(EventKind knd)
     {
         const auto store = [this](const biyos::Event &evt) { kept.push_back(evt); };
-        env.events().subscribe(knd, EventLevel::Debug, store);
+        env.events().add_hook(knd, EventLevel::Debug, store);
     }
 
     void reenter(const biyos::Checker &checker)
@@ -179,7 +179,7 @@ TEST_F(CheckTest, LastError)
 {
     std::string seen;
     const auto read = [this, &seen](const biyos::Event &) { seen = env.last_error(); };
-    env.events().subscribe(EventKind::Check, EventLevel::Error, read);
+    env.events().add_hook(EventKind::Check, EventLevel::Error, read);
     env.record_error("earlier");
     const biyos::Error error = caught([this] { check(at("cheap"), CheckLevel::Cheap, false); });
     EXPECT_EQ(seen, error.what());
@@ -206,7 +206,7 @@ TEST_F(CheckTest, Delivering)
 {
     const biyos::Checker checker = at("cheap");
     const auto inner = [this, &checker](const biyos::Event &) { reenter(checker); };
-    env.events().subscribe(EventKind::Check, EventLevel::Debug, inner);
+    env.events().add_hook(EventKind::Check, EventLevel::Debug, inner);
     EXPECT_EQ(caught([&] { check(checker, CheckLevel::Cheap, false); }).kind(),
               ErrorKind::InvalidArgument);
     EXPECT_EQ(received, 1);

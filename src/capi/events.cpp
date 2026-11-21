@@ -18,35 +18,30 @@ namespace
 struct Forwarder
 {
     biyos::Env *env;
-    BIYOS_hook subscriber;
+    BIYOS_hook hook;
     void *data;
 
     void operator()(const biyos::Event &event) const
     {
         const biyos::Env::ErrorScope scope(*env);
         const BIYOS_event view{&event};
-        subscriber(&view, data);
+        hook(&view, data);
     }
 };
 
-void subscribe(biyos::Env &env,
-               BIYOS_hook subscriber,
-               void *data,
-               int kind,
-               int lowest,
-               int *subscription)
+void add_hook(biyos::Env &env, BIYOS_hook hk, void *data, int kind, int lvl, int *idx)
 {
     biyos::Events &events = writable(env).events();
-    const Forwarder forwarder{&env, require(subscriber, "hk"), data};
+    const Forwarder forwarder{&env, require(hk, "hk"), data};
     const biyos::EventKind found = biyos::find_kind(kind);
-    const biyos::EventLevel level = biyos::find_level(lowest);
-    int *id = require(subscription, "idx");
-    *id = events.subscribe(found, level, forwarder);
+    const biyos::EventLevel level = biyos::find_level(lvl);
+    int *id = require(idx, "idx");
+    *id = events.add_hook(found, level, forwarder);
 }
 
-void unsubscribe(biyos::Env &env, int subscription)
+void del_hook(biyos::Env &env, int idx)
 {
-    writable(env).events().unsubscribe(subscription);
+    writable(env).events().del_hook(idx);
 }
 
 const biyos::Field *field_of(const BIYOS_event *event, int field)
@@ -69,12 +64,12 @@ BIYOS_status BIYOS_addhook(BIYOS_env *env,
                            BIYOS_int lvl,
                            BIYOS_index *idx)
 {
-    return guarded<subscribe>(env, hk, data, knd, lvl, idx);
+    return guarded<add_hook>(env, hk, data, knd, lvl, idx);
 }
 
 BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index idx)
 {
-    return guarded<unsubscribe>(env, idx);
+    return guarded<del_hook>(env, idx);
 }
 
 BIYOS_int BIYOS_getevtknd(const BIYOS_event *evt)

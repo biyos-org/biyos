@@ -130,7 +130,7 @@ class TimerTest : public ::testing::Test
     void listen(biyos::Env &target)
     {
         const auto keep = [this](const biyos::Event &evt) { kept.push_back(evt); };
-        target.events().subscribe(EventKind::Phase, EventLevel::Debug, keep);
+        target.events().add_hook(EventKind::Phase, EventLevel::Debug, keep);
     }
 
     biyos::FakeClock &clock;
@@ -231,10 +231,10 @@ TEST_F(TimerTest, PhaseEvents)
     EXPECT_EQ(kept.back().time, 12ns);
 }
 
-TEST_F(TimerTest, SlowSubscriber)
+TEST_F(TimerTest, SlowHook)
 {
     const auto slow = [this](const biyos::Event &evt) { lag(evt); };
-    env.events().subscribe(EventKind::Phase, EventLevel::Debug, slow);
+    env.events().add_hook(EventKind::Phase, EventLevel::Debug, slow);
     {
         const Timer solve(env, tree, "nlp", "solve");
         advance(1ns, 1ns);
@@ -318,7 +318,7 @@ TEST_F(TimerTest, FailedLeave)
     biyos::Env local(std::move(owned));
     listen(local);
     const auto drift = [&flaky](const biyos::Event &) { flaky.cpu += 10ns; };
-    local.events().subscribe(EventKind::Phase, EventLevel::Debug, drift);
+    local.events().add_hook(EventKind::Phase, EventLevel::Debug, drift);
     {
         const Timer solve(local, tree, "nlp", "solve");
         flaky.wall += 5ns;

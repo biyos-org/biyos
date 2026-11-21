@@ -28,7 +28,7 @@ void run(biyos::Env &env, biyos::TimingTree &tree)
 TEST(AllocationTest, SecondEntry)
 {
     biyos::Env env(std::make_unique<biyos::FakeClock>());
-    env.events().subscribe(biyos::EventKind::Phase, biyos::EventLevel::Warning, ignore);
+    env.events().add_hook(biyos::EventKind::Phase, biyos::EventLevel::Warning, ignore);
     biyos::TimingTree tree;
     const std::size_t start = biyos::test::allocations();
     run(env, tree);

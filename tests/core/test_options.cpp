@@ -75,7 +75,7 @@ struct Stream
     Stream()
     {
         const auto record = [this](const biyos::Event &evt) { heard.push_back(evt); };
-        events.subscribe(EventKind::Message, EventLevel::Debug, record);
+        events.add_hook(EventKind::Message, EventLevel::Debug, record);
     }
     Stream(const Stream &) = delete;
     Stream &operator=(const Stream &) = delete;

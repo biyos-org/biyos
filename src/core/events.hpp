@@ -55,15 +55,15 @@ struct Event
     std::vector<Field> fields;
 };
 
-using Subscriber = std::function<void(const Event &)>;
+using Hook = std::function<void(const Event &)>;
 
 class Events
 {
   public:
     explicit Events(const Clock &clock);
 
-    int subscribe(EventKind knd, EventLevel lowest, Subscriber subscriber);
-    void unsubscribe(int id);
+    int add_hook(EventKind knd, EventLevel lvl, Hook hk);
+    void del_hook(int id);
 
     bool wanted(EventKind knd, EventLevel lvl) const noexcept { return lowest_[slot(knd)] <= lvl; }
     bool delivering() const noexcept { return depth_ > 0; }
@@ -112,12 +112,12 @@ class Events
         int &count_;
     };
 
-    struct Subscription
+    struct Entry
     {
         int id;
         EventKind kind;
         EventLevel lowest;
-        std::unique_ptr<const Subscriber> subscriber;
+        std::unique_ptr<const Hook> hook;
         bool active;
     };
 
@@ -125,7 +125,7 @@ class Events
 
     static std::size_t slot(EventKind knd) noexcept { return static_cast<std::size_t>(knd) - 1; }
 
-    static bool accepts(const Subscription &subscription, EventKind knd, EventLevel lvl) noexcept;
+    static bool accepts(const Entry &entry, EventKind knd, EventLevel lvl) noexcept;
 
     void refresh(EventKind knd) noexcept;
     void deliver(const Event &evt) noexcept;
@@ -133,7 +133,7 @@ class Events
 
     const Clock &clock_;
     std::chrono::nanoseconds origin_;
-    std::deque<Subscription> subscriptions_;
+    std::deque<Entry> hooks_;
     std::array<EventLevel, kEventKinds.size()> lowest_;
     int next_id_ = 1;
     int depth_ = 0;
