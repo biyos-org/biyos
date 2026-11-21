@@ -1,7 +1,12 @@
-from collections import namedtuple
+from typing import NamedTuple
 
-Versions = namedtuple("Versions", ["since", "deprecated", "retired"])
-"""The versions that added, deprecated and retired an option."""
+
+class Versions(NamedTuple):
+    """The versions that added, deprecated and retired an option."""
+
+    since: str | None
+    deprecated: str | None
+    retired: str | None
 
 
 def version_text(number: int) -> str | None:
