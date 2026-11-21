@@ -1,5 +1,6 @@
 local kWidths = {"A", "B", "C", "D", "E", "F"}
 local kNatural = 36
+local kShort = 12
 local kAligns = {AlignRight = "\\raggedleft", AlignCenter = "\\centering"}
 local kMarks = {
     name = "\\biyosname",
@@ -148,6 +149,33 @@ local function header(tbl, head, caption)
     return lines
 end
 
+local function body(rows)
+    local lines = {}
+    for k, cells in ipairs(rows) do
+        lines[#lines + 1] = (k > 1 and "\\biyosrule " or "") .. line(cells, body_cell)
+    end
+    return lines
+end
+
+local function append(lines, more)
+    table.move(more, 1, #more, #lines + 1, lines)
+end
+
+local function long(tbl, head, caption)
+    local lines = {"\\begin{longtable}[l]{" .. columns(tbl) .. "}"}
+    append(lines, header(tbl, head, caption))
+    lines[#lines + 1] = "\\endfirsthead"
+    append(lines, header(tbl, head, ""))
+    lines[#lines + 1] = "\\endhead\n\\biyosbottomrule\\endfoot\n\\biyosbottomrule\\endlastfoot"
+    return "biyostable", lines, "\\end{longtable}"
+end
+
+local function short(tbl, head, caption)
+    local lines = {"\\noindent\\begin{tabular}{" .. columns(tbl) .. "}"}
+    append(lines, header(tbl, head, caption))
+    return "biyoskept", lines, "\\biyosbottomrule\n\\end{tabular}"
+end
+
 local function render(tbl)
     if #tbl.colspecs > #kWidths then
         return nil
@@ -155,20 +183,12 @@ local function render(tbl)
     local rows = rows_of(tbl)
     local head = tbl.head.rows[1] and tbl.head.rows[1].cells
     local caption = latex(tbl.caption.long)
-    local lines = {"\\begin{biyostable}", sizes(tbl, rows, head)}
-    lines[#lines + 1] = "\\begin{longtable}[l]{" .. columns(tbl) .. "}"
-    for _, text in ipairs(header(tbl, head, caption)) do
-        lines[#lines + 1] = text
-    end
-    lines[#lines + 1] = "\\endfirsthead"
-    for _, text in ipairs(header(tbl, head, "")) do
-        lines[#lines + 1] = text
-    end
-    lines[#lines + 1] = "\\endhead\n\\biyosbottomrule\\endfoot\n\\biyosbottomrule\\endlastfoot"
-    for k, cells in ipairs(rows) do
-        lines[#lines + 1] = (k > 1 and "\\biyosrule " or "") .. line(cells, body_cell)
-    end
-    lines[#lines + 1] = "\\end{longtable}\n\\end{biyostable}"
+    local build = #rows <= kShort and short or long
+    local environment, opening, closing = build(tbl, head, caption)
+    local lines = {"\\begin{" .. environment .. "}", sizes(tbl, rows, head)}
+    append(lines, opening)
+    append(lines, body(rows))
+    lines[#lines + 1] = closing .. "\n\\end{" .. environment .. "}"
     return pandoc.RawBlock("latex", table.concat(lines, "\n"))
 end
 
