@@ -59,7 +59,8 @@ add_library(biyos_internal STATIC
     model/objectives.cpp
     model/pairs.cpp
     model/quadratic.cpp
-    model/terms.cpp)
+    model/terms.cpp
+    model/transpose.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

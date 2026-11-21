@@ -2,6 +2,7 @@
 #include "core/index.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
+#include "model/transpose.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>
@@ -43,6 +44,13 @@ struct Linear
     std::vector<Index> functions;
     std::vector<Offset> starts;
     std::vector<LinearTerm> terms;
+};
+
+struct ByVariable
+{
+    std::vector<Offset> starts;
+    std::vector<Index> functions;
+    std::vector<double> values;
 };
 
 Model with_vars(std::size_t n)
@@ -127,6 +135,27 @@ Linear terms_of(Index fun, std::vector<LinearTerm> terms)
 std::string terms_refusal(Model &mdl, const Linear &lin)
 {
     return refusal([&] { add_terms(mdl, lin); });
+}
+
+ByVariable read_vars(const Model &mdl, Index beg, Index n)
+{
+    ByVariable read{.starts = biyos::var_starts(mdl, beg, n), .functions = {}, .values = {}};
+    const auto size = static_cast<std::size_t>(read.starts.back());
+    read.functions.assign(size, -1);
+    read.values.assign(size, kNan);
+    biyos::var_terms(mdl, beg, read.starts, read.functions, read.values);
+    return read;
+}
+
+void expect_vars(const ByVariable &found, const ByVariable &wanted)
+{
+    EXPECT_EQ(found.starts, wanted.starts);
+    EXPECT_EQ(found.functions, wanted.functions);
+    ASSERT_EQ(found.values.size(), wanted.values.size());
+    for (std::size_t k = 0; k < found.values.size(); ++k)
+    {
+        EXPECT_DOUBLE_EQ(found.values[k], wanted.values[k]) << "term " << k;
+    }
 }
 
 Model with_terms()
@@ -494,4 +523,62 @@ TEST(FunctionTest, LinearCopy)
     add_terms(copy, terms_of(1, {{2, 1.0}}));
     EXPECT_EQ(difference(mdl, copy), "function 1: term 1: coefficient 1.5 against 2.5");
     expect_exact(mdl.terms(1, 1), {{0, -0.0}, {2, 1.5}});
+}
+
+TEST(FunctionTest, VarTerms)
+{
+    Model mdl = with_terms();
+    add_terms(mdl, terms_of(1, {{3, 4.0}, {1, -1.0}}));
+    const ByVariable wanted{
+        .starts = {0, 0, 2, 3, 5},
+        .functions = {0, 1, 2, 0, 1},
+        .values = {1.0, -1.0, 3.0, 2.0, 4.0},
+    };
+    expect_vars(read_vars(mdl, 0, 4), wanted);
+}
+
+TEST(FunctionTest, VarRange)
+{
+    Model mdl = with_terms();
+    add_terms(mdl, terms_of(1, {{3, 4.0}, {1, -1.0}}));
+    const ByVariable middle{.starts = {0, 2, 3},
+                            .functions = {0, 1, 2},
+                            .values = {1.0, -1.0, 3.0}};
+    expect_vars(read_vars(mdl, 1, 2), middle);
+    const ByVariable last{.starts = {0, 2}, .functions = {0, 1}, .values = {2.0, 4.0}};
+    expect_vars(read_vars(mdl, 3, 1), last);
+    expect_vars(read_vars(mdl, 0, 1), ByVariable{.starts = {0, 0}, .functions = {}, .values = {}});
+    expect_vars(read_vars(mdl, 4, 0), ByVariable{.starts = {0}, .functions = {}, .values = {}});
+    expect_vars(read_vars(with_vars(0), 0, 0),
+                ByVariable{.starts = {0}, .functions = {}, .values = {}});
+}
+
+TEST(FunctionTest, VarRefused)
+{
+    const Model mdl = with_terms();
+    EXPECT_EQ(refusal([&] { biyos::var_starts(mdl, -1, 1); }),
+              "invalid argument: variable -1: unknown");
+    EXPECT_EQ(refusal([&] { biyos::var_starts(mdl, 2, 3); }),
+              "invalid argument: variable 4: unknown");
+    EXPECT_EQ(refusal([&] { biyos::var_starts(mdl, 5, 0); }),
+              "invalid argument: variable 5: unknown");
+    EXPECT_EQ(refusal([&] { biyos::var_starts(mdl, 0, -1); }),
+              "invalid argument: argument 'n': -1 is negative");
+}
+
+TEST(FunctionTest, VarSized)
+{
+    const Model mdl = with_terms();
+    const std::vector<Offset> starts = biyos::var_starts(mdl, 0, 4);
+    EXPECT_EQ(starts, (std::vector<Offset>{0, 0, 1, 2, 3}));
+    std::vector<Index> funs(2, -1);
+    std::vector<double> values(3, kInfinity);
+    biyos::var_terms(mdl, 0, starts, funs, {});
+    EXPECT_EQ(funs, (std::vector<Index>{0, 2}));
+    biyos::var_terms(mdl, 0, starts, {}, values);
+    expect_constants(values, {1.0, 3.0, 2.0});
+    funs.assign(2, -1);
+    biyos::var_terms(mdl, 0, starts, std::span(funs).first(1), {});
+    EXPECT_EQ(funs, (std::vector<Index>{0, -1}));
+    biyos::var_terms(mdl, 0, starts, {}, {});
 }
