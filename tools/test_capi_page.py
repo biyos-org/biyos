@@ -41,7 +41,9 @@ class PageTest(unittest.TestCase):
         self.assertIn(
             "```c\nBIYOS_status BIYOS_freeenv(BIYOS_env *env);\n```", text
         )
-        self.assertIn("| `env` | in | The environment. |", text)
+        self.assertIn(
+            "| [`env`]{.name} | [in]{.dir .dir-in} | The environment. |", text
+        )
         self.assertIn("**Returns** `BIYOS_OK`.", text)
         self.assertIn(
             "| `BIYOS_ERR_BADARG` | It delivers an event. |", text
@@ -51,9 +53,19 @@ class PageTest(unittest.TestCase):
     def test_table(self):
         text = self.render(table())
         self.assertIn(
-            "| [`BIYOS_ERR_X`]{#BIYOS_ERR_X} | -100 | Bad \\| worse. |", text
+            "| [`BIYOS_ERR_X`]{#BIYOS_ERR_X .name} | [-100]{.value} "
+            "| Bad \\| worse. |",
+            text,
         )
+        self.assertRegex(text, r"\| -{20,} \| -+: \|")
         self.assertIn(": Codes", text)
+
+    def test_widths(self):
+        text = self.render(function(), table())
+        rules = [line for line in text.split("\n") if line.startswith("| -")]
+        self.assertEqual(len(rules), 3)
+        for line in rules:
+            self.assertGreater(len(line), 80)
 
     def test_missing(self):
         entry = function()

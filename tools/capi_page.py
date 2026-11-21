@@ -11,7 +11,7 @@ SPEC = ROOT / "docs" / "reference" / "capi.txt"
 INCLUDE = ROOT / "include" / "biyos"
 OUT = ROOT / "docs" / "reference" / "_capi"
 PAGES = {"codes": "codes", "sent": "codes"}
-DIRECTIONS = {"in": "in", "out": "out", "inout": "in, out"}
+DIRECTIONS = {"in": "in", "out": "out", "inout": "in/out"}
 ARGUMENT = re.compile(r"(\w+)\s*[,)]")
 
 
@@ -23,10 +23,21 @@ def cell(text):
     return text.replace("|", "\\|")
 
 
-def table(header, rows, weights=None):
+COLUMNS = 80
+
+
+def rule(dashes, align):
+    return f" {dashes[:-1]}: |" if align == "r" else f" {dashes} |"
+
+
+def table(header, rows, weights=None, aligns=None):
     weights = weights or [1] * len(header)
-    lines = ["| " + " | ".join(header) + " |"]
-    lines.append("|" + "".join(f" {'-' * 3 * w} |" for w in weights))
+    aligns = aligns or "l" * len(header)
+    unit = COLUMNS // sum(weights) + 1
+    dashes = ["-" * unit * weight for weight in weights]
+    cells = [name.ljust(len(rule)) for name, rule in zip(header, dashes)]
+    lines = ["| " + " | ".join(cells) + " |"]
+    lines.append("|" + "".join(map(rule, dashes, aligns)))
     lines += ["| " + " | ".join(map(cell, row)) + " |" for row in rows]
     return "\n".join(lines)
 
@@ -53,10 +64,19 @@ def signature(entry, declarations):
     return ["```c\n" + shown + "\n```"]
 
 
+def name(text, anchor=""):
+    label = f"#{anchor} " if anchor else ""
+    return f"[`{text}`]{{{label}.name}}"
+
+
+def direction(key):
+    return f"[{DIRECTIONS[key]}]{{.dir .dir-{key}}}"
+
+
 def parameters(entry):
     if not entry.params:
         return []
-    rows = [(f"`{n}`", DIRECTIONS[d], t) for n, d, t in entry.params]
+    rows = [(name(n), direction(d), t) for n, d, t in entry.params]
     return [table(("Parameter", "", "Meaning"), rows, (2, 1, 9))]
 
 
@@ -89,15 +109,15 @@ def listed(entry, values):
     known = all(name in values for name, *_ in entry.values)
     header = ("Name", "Value", "Meaning") if known else ("Name", "Meaning")
     weights = (4, 1, 8) if known else (3, 8)
+    aligns = "lrl" if known else "ll"
     rows = []
-    for name, text, _ in entry.values:
-        label = f"[`{name}`]{{#{name}}}"
-        rows.append(
-            (label, str(values[name]), text) if known else (label, text)
-        )
+    for key, text, _ in entry.values:
+        label = name(key, key)
+        shown = f"[{values.get(key)}]{{.value}}"
+        rows.append((label, shown, text) if known else (label, text))
     since = f"\n\n[Since {entry.since}]{{.since}}" if entry.since else ""
     caption = f"\n\n: {entry.summary or entry.name}"
-    return [table(header, rows, weights) + caption + since]
+    return [table(header, rows, weights, aligns) + caption + since]
 
 
 def index(group):

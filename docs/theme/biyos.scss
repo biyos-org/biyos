@@ -287,26 +287,44 @@ div.code-with-filename .code-with-filename-file pre {
 
 table,
 .table {
+  width: 100%;
   font-size: 0.875rem;
   line-height: 1.375rem;
   color: $text;
   margin: 1.25rem 0 1.5rem;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid $line;
+  border-radius: 4px;
+  background-color: $surface;
   --bs-table-bg: transparent;
   --bs-table-color: #{$text};
   --bs-table-striped-bg: transparent;
 }
 
 .table > :not(caption) > * > * {
-  padding: 0.45rem 0.75rem;
-  border-bottom: 1px solid $line;
+  padding: 0.4375rem 0.875rem;
+  border-bottom: 1px solid $row-rule;
+  vertical-align: top;
 }
 
 .table > thead > tr > th,
 table thead th {
   @include label;
-  border-bottom: 1px solid rgba($text, 0.45);
+  font-size: 0.6875rem;
+  background-color: $head-tint;
+  border-bottom: 1px solid $line;
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
   vertical-align: bottom;
+}
+
+.table > thead > tr > th:first-child {
+  border-top-left-radius: 3px;
+}
+
+.table > thead > tr > th:last-child {
+  border-top-right-radius: 3px;
 }
 
 .table > :not(:first-child) {
@@ -314,27 +332,102 @@ table thead th {
 }
 
 .table > tbody > tr:last-child > * {
-  border-bottom: 1px solid rgba($text, 0.25);
+  border-bottom: none;
 }
 
-main table colgroup col {
-  width: auto !important;
+main table:has(> colgroup) {
+  table-layout: fixed;
 }
 
-.table td:first-child,
-.table th:first-child {
-  padding-left: 0;
-}
+@media (max-width: 575.98px) {
+  main table:has(> colgroup) {
+    table-layout: auto;
+  }
 
-.table td:last-child,
-.table th:last-child {
-  padding-right: 0;
+  main table colgroup col {
+    width: auto !important;
+  }
 }
 
 @media (min-width: 1100px) {
   .table td:first-child code {
     white-space: nowrap;
   }
+}
+
+.name {
+  font-family: $font-mono;
+  font-weight: 600;
+  color: $link;
+}
+
+.name code:not(.sourceCode),
+td .name code:not(.sourceCode),
+.name a > code:not(.sourceCode) {
+  color: inherit;
+  background: none;
+  padding: 0;
+  font-weight: inherit;
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 575.98px) {
+  .table {
+    font-size: 0.8125rem;
+  }
+
+  .table > :not(caption) > * > * {
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
+  }
+
+  .table > thead > tr > th {
+    letter-spacing: 0.02em;
+  }
+
+  .type {
+    font-size: 0.75rem;
+  }
+}
+
+.type,
+.value {
+  font-family: $font-mono;
+  font-size: 0.8125rem;
+  color: $text-muted;
+  font-variant-numeric: tabular-nums;
+}
+
+.dir {
+  display: inline-block;
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.dir-in {
+  color: $link;
+  background-color: rgba($link, 0.12);
+}
+
+.dir-out {
+  color: $text;
+  background-color: rgba($text, 0.08);
+}
+
+.dir-inout {
+  color: $link;
+  box-shadow: inset 0 0 0 1px rgba($link, 0.55);
+}
+
+td:has(> .dir) {
+  width: 1%;
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
 }
 
 .table caption,
@@ -919,21 +1012,12 @@ h3.api code,
 
 .entry table td:first-child {
   width: 1%;
-  padding-right: 1.25rem;
 }
 
 @media (min-width: 1100px) {
   .entry table td:first-child {
     white-space: nowrap;
   }
-}
-
-.entry table td:nth-child(2):not(:last-child) {
-  color: $text-muted;
-  font-size: 0.8125rem;
-  white-space: nowrap;
-  width: 1%;
-  padding-right: 1.25rem;
 }
 
 .meta {

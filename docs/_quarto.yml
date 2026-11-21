@@ -49,6 +49,7 @@ book:
     - references.qmd
 
 number-sections: true
+tbl-colwidths: true
 
 bibliography: references.bib
 link-citations: true
@@ -63,6 +64,8 @@ filters:
     at: pre-ast
   - path: filters/callouts.lua
     at: pre-ast
+  - path: filters/tables.lua
+    at: post-render
 
 format:
   html:

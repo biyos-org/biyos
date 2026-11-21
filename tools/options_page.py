@@ -6,6 +6,8 @@ import option_table
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "reference" / "_options"
 INFINITE = {"infinity": "∞", "-infinity": "−∞"}
+HEADER = ("Macro", "Id", "Kind", "Default", "Accepts")
+RULE = ("-" * 34, "-" * 4 + ":", "-" * 9, "-" * 12, "-" * 32)
 
 
 def number(raw):
@@ -40,19 +42,26 @@ def history(option):
 
 
 def facts(option):
-    rows = [
-        ("Id", f"`{option.macro}`, {option.id}"),
-        ("Kind", option.kind),
-        ("Default", shown(option)),
-        ("Accepts", accepted(option)),
-    ]
-    return "\n\n".join(f"{key}\n: {value}" for key, value in rows)
+    cells = (
+        f"[`{option.macro}`]{{.name}}",
+        f"[{option.id}]{{.value}}",
+        option.kind,
+        shown(option),
+        accepted(option),
+    )
+    return "\n".join(
+        [
+            "| " + " | ".join(map(str.ljust, HEADER, map(len, RULE))) + " |",
+            "| " + " | ".join(RULE) + " |",
+            "| " + " | ".join(cells) + " |",
+        ]
+    )
 
 
 def entry(option):
     title = f"## `{option.name}` {{#opt-{option.name} .api .unnumbered}}"
     meta = " · ".join(history(option))
-    body = [option.doc, "::: {.facts}\n" + facts(option) + "\n:::"]
+    body = [option.doc, facts(option)]
     body.append("::: {.meta}\n" + meta + "\n:::")
     return title + "\n\n::: {.entry}\n\n" + "\n\n".join(body) + "\n\n:::"
 

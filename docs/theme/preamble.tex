@@ -75,3 +75,34 @@
 \AtBeginDocument{\urlstyle{same}}
 \setlength{\LTleft}{0pt}
 \setlength{\LTright}{\fill}
+\usepackage{colortbl}
+\definecolor{rowrule}{HTML}{E4E4DE}
+\definecolor{headrule}{HTML}{C9CCD4}
+\definecolor{headtint}{HTML}{EEF2FD}
+\definecolor{inktint}{HTML}{E9E9E5}
+\newlength{\biyostmp}
+\newlength{\biyosrest}
+\newlength{\biyoswA}
+\newlength{\biyoswB}
+\newlength{\biyoswC}
+\newlength{\biyoswD}
+\newlength{\biyoswE}
+\newlength{\biyoswF}
+\newcommand{\biyosreset}{\setlength{\biyoswA}{0pt}\setlength{\biyoswB}{0pt}\setlength{\biyoswC}{0pt}\setlength{\biyoswD}{0pt}\setlength{\biyoswE}{0pt}\setlength{\biyoswF}{0pt}}
+\newcommand{\biyoswiden}[2]{\settowidth{\biyostmp}{#2}\ifdim\biyostmp>#1\setlength{#1}{\biyostmp}\fi}
+\newcommand{\biyoscap}[1]{\ifdim#1>0.42\linewidth\setlength{#1}{0.42\linewidth}\fi}
+\newenvironment{biyostable}{\par\begingroup\small\setlength{\tabcolsep}{6pt}\renewcommand{\arraystretch}{1.3}\setlength{\LTpre}{6pt}\setlength{\LTpost}{10pt}}{\endgroup\par}
+\newcommand{\biyoslabel}[1]{{\scriptsize\bfseries\color{muted}\addfontfeatures{LetterSpace=6}\MakeUppercase{#1}}}
+\newcommand{\biyoshead}[1]{\biyoslabel{#1}}
+\newcommand{\biyoscaption}[1]{\biyoslabel{#1}\rule[-6pt]{0pt}{6pt}}
+\newcommand{\biyosheadrow}{\biyosheadrule\rowcolor{headtint}}
+\newcommand{\biyosheadrule}{\arrayrulecolor{headrule}\specialrule{0.6pt}{0pt}{0pt}}
+\newcommand{\biyosrule}{\arrayrulecolor{rowrule}\specialrule{0.4pt}{0pt}{0pt}}
+\newcommand{\biyosbottomrule}{\arrayrulecolor{headrule}\specialrule{0.6pt}{0pt}{0pt}}
+\newcommand{\biyosname}[1]{{\color{link}\bfseries #1}}
+\newcommand{\biyostype}[1]{{\color{muted}\ttfamily\footnotesize #1}}
+\newcommand{\biyosvalue}[1]{{\color{muted}\ttfamily #1}}
+\tcbset{biyospill/.style={enhanced, on line, frame hidden, arc=2.5pt, boxsep=0pt, left=3pt, right=3pt, top=0.8pt, bottom=0.8pt, fontupper=\scriptsize\bfseries}}
+\newtcbox{\biyosdirin}{biyospill, colback=headtint, colupper=link}
+\newtcbox{\biyosdirout}{biyospill, colback=inktint, colupper=brandink}
+\newtcbox{\biyosdirinout}{biyospill, colback=white, colframe=link, colupper=link, borderline={0.5pt}{0pt}{link}}

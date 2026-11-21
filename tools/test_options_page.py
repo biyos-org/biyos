@@ -23,9 +23,11 @@ class OptionsPageTest(unittest.TestCase):
     def test_double(self):
         text = options_page.entry(option())
         self.assertIn("## `maxtime` {#opt-maxtime .api .unnumbered}", text)
-        self.assertIn("Id\n: `BIYOS_OPT_MAXTIME`, 2", text)
-        self.assertIn("Default\n: `∞`", text)
-        self.assertIn("Accepts\n: [0, ∞]", text)
+        self.assertIn(
+            "| [`BIYOS_OPT_MAXTIME`]{.name} | [2]{.value} | double "
+            "| `∞` | [0, ∞] |",
+            text,
+        )
         self.assertIn("[Since 0.1.0]{.since}", text)
 
     def test_enum(self):
