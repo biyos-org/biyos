@@ -303,6 +303,28 @@ class Env:
         with self._busy():
             self._delhook(idx)
 
+    def interrupt(self) -> None:
+        """Ask the call running on the environment to stop.
+
+        This is the one method another thread may call while a call runs on
+        the environment or on one of its models. No thread may close the
+        environment while it runs. A long call stops where it checks its
+        time limits. The request clears when the next call starts, so one
+        made between two calls stops neither.
+
+        Raises
+        ------
+        ValueError
+            When the environment is closed.
+
+        See Also
+        --------
+        BIYOS_interrupt
+        """
+        if not self._open():
+            raise ValueError("the environment is closed")
+        check(self._handle, lib.BIYOS_interrupt(self._handle))
+
     def _addhook(
         self,
         hk: Callable[[Event], object],
