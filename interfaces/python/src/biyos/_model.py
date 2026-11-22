@@ -834,6 +834,44 @@ class Model:
         )
         self._call(lib.BIYOS_addquadterms, count, *arrays)
 
+    def addquadterm(
+        self,
+        funidx: Sequence[int | Function] | Functions,
+        varidx1: Sequence[int | Variable] | Variables,
+        varidx2: Sequence[int | Variable] | Variables,
+        coef: Sequence[float],
+    ) -> None:
+        """Add quadratic terms to functions, as coordinates.
+
+        Term ``k`` adds ``coef[k]`` times the product of variables
+        ``varidx1[k]`` and ``varidx2[k]`` to function ``funidx[k]``, with
+        no factor 1/2, in any order. The two variables of a pair may come
+        in either order. A pair the function holds already adds its
+        coefficient to the one held.
+
+        Parameters
+        ----------
+        funidx
+            The function of each term.
+        varidx1, varidx2
+            The two variables of each term, each pair once for its
+            function.
+        coef
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_addquadtermsp
+        """
+        size = len(funidx)
+        arrays = (
+            indices_of(self, Functions, "funidx", funidx, size),
+            indices_of(self, Variables, "varidx1", varidx1, size),
+            indices_of(self, Variables, "varidx2", varidx2, size),
+            doubles("coef", coef, size),
+        )
+        self._call(lib.BIYOS_addquadtermsp, size, *arrays)
+
     def getnquadterm(
         self, idx: Sequence[int | Function] | Functions | None = None
     ) -> int:

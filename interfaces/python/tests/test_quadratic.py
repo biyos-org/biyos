@@ -105,6 +105,65 @@ def test_sums(model):
     assert found[3] == [2.0, 0.0, -1.0, 5.0, 4.0, 4.0, 1.0]
 
 
+def test_coordinates(model):
+    funidx = [0, 2, 0, 2, 0]
+    firsts = [1, 2, 0, 1, 2]
+    seconds = [1, 2, 0, 0, 1]
+    model.addquadterm(funidx, firsts, seconds, [0.0, 1.0, 2.0, 3.0, -1.0])
+    assert model.getquadterm() == spread(SORTED)
+    model.addquadterm([], [], [], [])
+    assert model.getquadterm() == spread(SORTED)
+
+
+def test_shuffled(env):
+    draw = Random(20261122)
+    for _ in range(20):
+        n_vars = draw.randint(1, 5)
+        n_funs = draw.randint(0, 5)
+        with biyos.Model(env) as source, biyos.Model(env) as target:
+            for model in (source, target):
+                model.addvar(n_vars)
+                model.addfuns(n_funs)
+            add_random(draw, source, n_vars, n_funs)
+            found = source.getquadterm()
+            order = list(range(len(found[3])))
+            draw.shuffle(order)
+            shuffled = ([column[k] for k in order] for column in found)
+            target.addquadterm(*shuffled)
+            assert target.getquadterm() == found
+
+
+def add_random(draw, model, n_vars, n_funs):
+    every = [(i, j) for i in range(n_vars) for j in range(i, n_vars)]
+    for f in range(n_funs):
+        pairs = draw.sample(every, draw.randint(0, len(every)))
+        firsts = [j for _, j in pairs]
+        seconds = [i for i, _ in pairs]
+        values = [float(draw.randint(-4, 4)) for _ in pairs]
+        off = [0, len(pairs)]
+        model.addquadterms([f], off, firsts, seconds, values)
+
+
+def test_misplaced(model):
+    add_sample(model)
+    before = model.getquadterm()
+    terms = ([0, 1, 0], [0, 1, 1], [1, 1, 0], [1, 2, 3])
+    message = refusal(model.addquadterm, *terms)
+    assert message == "invalid argument: function 0: pair (0, 1) is repeated"
+    message = refusal(model.addquadterm, [0, 3], [1, 1], [1, 1], [1, 2])
+    assert message == "invalid argument: function 3: unknown"
+    terms = ([1, 2], [0, 2], [0, 2], [1, LARGE * 2])
+    message = refusal(model.addquadterm, *terms)
+    assert message == (
+        "invalid argument: function 2: coefficient of pair (2, 2) is infinity"
+    )
+    with pytest.raises(ValueError, match="varidx2 has length 1, not 2"):
+        model.addquadterm([0, 1], [0, 1], [0], [1.0, 2.0])
+    with pytest.raises(ValueError, match="coef has length 1, not 2"):
+        model.addquadterm([0, 1], [0, 1], [0, 1], [1.0])
+    assert model.getquadterm() == before
+
+
 def test_range(model):
     add_sample(model)
     tail = ([2, 2], [0, 2], [1, 2], [3.0, 1.0])
