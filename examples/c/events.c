@@ -34,7 +34,7 @@ static void print_json(const BIYOS_event *event, void *data)
 
 static int code_of(const BIYOS_event *event)
 {
-    for (BIYOS_index field = 0; field < BIYOS_getnevtflds(event); ++field)
+    for (BIYOS_index field = 0; field < BIYOS_getnevtfld(event); ++field)
     {
         if (strcmp(BIYOS_getevtfldname(event, field), "code") == 0)
         {

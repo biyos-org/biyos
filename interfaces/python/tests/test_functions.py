@@ -52,7 +52,7 @@ def env():
 @pytest.fixture
 def model(env):
     with biyos.Model(env) as model:
-        model.addvars(3)
+        model.addvar(3)
         yield model
 
 
@@ -73,7 +73,7 @@ def recorded(seen, function, *arguments):
 
 def test_add(model):
     added = add_sample(model)
-    assert model.getnfuns() == 3
+    assert model.getnfun() == 3
     assert model.getfuns() == SORTED
     assert type(added) is biyos.Functions
     assert [index(function) for function in added] == [0, 1, 2]
@@ -135,12 +135,12 @@ def test_growing(model):
     grow = partial(add_sample, model)
     assert model.getfuns(0, Growing(3, grow)) == SORTED
     assert model.getfuns(3, Growing(3, grow)) == SORTED
-    assert model.getnfuns() == 6
+    assert model.getnfun() == 6
 
 
 def test_stale(model, monkeypatch):
     add_sample(model)
-    monkeypatch.setattr(model, "getnfuns", lambda: 0)
+    monkeypatch.setattr(model, "getnfun", lambda: 0)
     spy = Room(lib.BIYOS_getfuns, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getfuns", spy)
     assert model.getfuns(0, 3) == SORTED
@@ -158,7 +158,7 @@ def test_copied(model):
 def test_starts(model, count, starts, message):
     with pytest.raises(ValueError, match=message):
         model.addfuns(count, None, starts, [0], [1.0])
-    assert model.getnfuns() == 0
+    assert model.getnfun() == 0
 
 
 def test_outside(model, monkeypatch):
@@ -183,29 +183,29 @@ def test_sequences(model):
 
 
 def test_views(env, model):
-    x = model.addvars(2)
+    x = model.addvar(2)
     f = model.addfuns(1, None, [0, 2], [x[1], 0], [1.0, 2.0])
     model.addfuns(1, None, [0, 2], x, [3.0, 4.0])
     found = model.getfuns(f[0], 1)
     assert found == ([0.0], [0, 2], [0, 4], [2.0, 1.0])
     assert model.getfuns(1)[2] == [3, 4]
     other = biyos.Model(env)
-    y = other.addvars(1)
+    y = other.addvar(1)
     g = other.addfuns(1)
     entry = "an entry of varidx is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.addfuns(1, None, [0, 1], [y[0]], [1.0])
     with pytest.raises(ValueError, match="varidx is a block of another"):
         model.addfuns(1, None, [0, 1], y, [1.0])
-    with pytest.raises(ValueError, match="beg is a function of another"):
+    with pytest.raises(ValueError, match="pos is a function of another"):
         model.getfuns(g[0])
     with pytest.raises(ValueError, match="is a function, not a variable"):
         model.addfuns(1, None, [0, 1], [f[0]], [1.0])
-    with pytest.raises(ValueError, match="beg is a variable, not a"):
+    with pytest.raises(ValueError, match="pos is a variable, not a"):
         model.getfuns(x[0])
     with pytest.raises(ValueError, match="varidx has length 2, not 1"):
         model.addfuns(1, None, [0, 1], x, [1.0])
-    assert model.getnfuns() == 2
+    assert model.getnfun() == 2
 
 
 def test_gone(model):
@@ -250,14 +250,14 @@ def test_lengths(model):
         model.addfuns(1, coef=[1.0])
     with pytest.raises(ValueError, match="cst has length 2, not 1"):
         model.addfuns(1, [1.0, 2.0])
-    assert model.getnfuns() == 0
+    assert model.getnfun() == 0
 
 
 @pytest.mark.parametrize("starts, error, message", WRONG)
 def test_wrong(model, starts, error, message):
     with pytest.raises(error, match=message):
         model.addfuns(1, off=starts)
-    assert model.getnfuns() == 0
+    assert model.getnfun() == 0
 
 
 def test_numbers(model):
@@ -265,9 +265,9 @@ def test_numbers(model):
         model.addfuns(1, None, [0, 1], [0], ["1"])
     with pytest.raises(TypeError, match="an entry of varidx must be an"):
         model.addfuns(1, None, [0, 1], [0.0], [1.0])
-    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
         model.getfuns(2**32)
-    assert model.getnfuns() == 0
+    assert model.getnfun() == 0
 
 
 def test_locked(env, model):
@@ -285,7 +285,7 @@ def test_locked(env, model):
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
     assert seen == [LOCKED, SORTED]
-    assert model.getnfuns() == 3
+    assert model.getnfun() == 3
 
 
 def test_closed(env):
@@ -293,7 +293,7 @@ def test_closed(env):
     model.close()
     calls = (
         partial(model.addfuns, 1),
-        model.getnfuns,
+        model.getnfun,
         model.getfuns,
     )
     for call in calls:
@@ -306,10 +306,10 @@ def test_on(env, model):
     copy = model.copy()
     g = f.on(copy)
     assert type(g) is biyos.Functions
-    copy.addcons(g)
-    assert copy.getcons()[0] == [0, 1, 2]
+    copy.addcon(g)
+    assert copy.getcon()[0] == [0, 1, 2]
     with pytest.raises(ValueError, match="funidx is a block of another"):
-        model.addcons(g)
+        model.addcon(g)
     smaller = biyos.Model(env)
     smaller.addfuns(2)
     few = "mdl holds too few functions: 2, the block needs 3"

@@ -53,7 +53,7 @@ void receive(const BIYOS_event *evt, void *data)
     inbox->level = BIYOS_getevtlvl(evt);
     inbox->module = BIYOS_getevtmod(evt);
     inbox->text = BIYOS_getevttext(evt);
-    inbox->fields = BIYOS_getnevtflds(evt);
+    inbox->fields = BIYOS_getnevtfld(evt);
     inbox->name = BIYOS_getevtfldname(evt, 0);
     inbox->value = BIYOS_getevtfldval(evt, 0);
 }
@@ -278,7 +278,7 @@ TEST(CApiTest, Accessors)
     EXPECT_EQ(BIYOS_getevtlvl(&view), BIYOS_LVL_WARN);
     EXPECT_STREQ(BIYOS_getevtmod(&view), "presolve");
     EXPECT_STREQ(BIYOS_getevttext(&view), "removed rows");
-    EXPECT_EQ(BIYOS_getnevtflds(&view), 2);
+    EXPECT_EQ(BIYOS_getnevtfld(&view), 2);
     EXPECT_STREQ(BIYOS_getevtfldname(&view, 0), "rows");
     EXPECT_STREQ(BIYOS_getevtfldval(&view, 0), "3");
     EXPECT_STREQ(BIYOS_getevtfldname(&view, 1), "columns");
@@ -293,7 +293,7 @@ TEST(CApiTest, NullEvent)
     EXPECT_EQ(BIYOS_getevtlvl(nullptr), 0);
     EXPECT_STREQ(BIYOS_getevtmod(nullptr), "");
     EXPECT_STREQ(BIYOS_getevttext(nullptr), "");
-    EXPECT_EQ(BIYOS_getnevtflds(nullptr), 0);
+    EXPECT_EQ(BIYOS_getnevtfld(nullptr), 0);
     EXPECT_STREQ(BIYOS_getevtfldname(nullptr, 0), "");
     EXPECT_STREQ(BIYOS_getevtfldval(nullptr, 0), "");
 }

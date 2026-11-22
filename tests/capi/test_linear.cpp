@@ -78,14 +78,14 @@ BIYOS_status add_terms(const Model &mdl, const std::vector<int> &funs, const Ter
 
 void add_sample(const Model &mdl)
 {
-    ASSERT_EQ(BIYOS_addvars(mdl.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(mdl.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(add_funs(mdl, 3, kFunctions), BIYOS_OK);
 }
 
 int n_funs(const Model &mdl)
 {
     BIYOS_index n = -1;
-    EXPECT_EQ(BIYOS_getnfuns(mdl.get(), &n), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnfun(mdl.get(), &n), BIYOS_OK);
     return n;
 }
 
@@ -126,14 +126,14 @@ Terms blank(std::size_t n, std::size_t nnz)
 std::int64_t read_with(const Model &mdl, int beg, int n, Terms &read, std::int64_t size)
 {
     BIYOS_offset nnz = -1;
-    const BIYOS_status status = BIYOS_getvarterms(mdl.get(),
-                                                  beg,
-                                                  n,
-                                                  size,
-                                                  read.starts.data(),
-                                                  &nnz,
-                                                  read.indices.data(),
-                                                  read.values.data());
+    const BIYOS_status status = BIYOS_getclintermrg(mdl.get(),
+                                                    beg,
+                                                    n,
+                                                    size,
+                                                    read.starts.data(),
+                                                    &nnz,
+                                                    read.indices.data(),
+                                                    read.values.data());
     EXPECT_EQ(status, BIYOS_OK);
     return nnz;
 }
@@ -142,7 +142,7 @@ Terms read_vars(const Model &mdl, int beg, int n)
 {
     BIYOS_offset nnz = -1;
     BIYOS_model *held = mdl.get();
-    EXPECT_EQ(BIYOS_getvarterms(held, beg, n, 0, nullptr, &nnz, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getclintermrg(held, beg, n, 0, nullptr, &nnz, nullptr, nullptr), BIYOS_OK);
     Terms read = blank(static_cast<std::size_t>(n), static_cast<std::size_t>(nnz));
     EXPECT_EQ(read_with(mdl, beg, n, read, nnz), nnz);
     return read;
@@ -186,7 +186,7 @@ void change(const BIYOS_event *, void *data)
     const BIYOS_index fun = 0;
     BIYOS_offset nnz = 0;
     note(attempt, BIYOS_addlinterms(attempt.mdl, 1, &fun, nullptr, nullptr, nullptr));
-    note(attempt, BIYOS_getvarterms(attempt.mdl, 0, 1, 0, nullptr, &nnz, nullptr, nullptr));
+    note(attempt, BIYOS_getclintermrg(attempt.mdl, 0, 1, 0, nullptr, &nnz, nullptr, nullptr));
 }
 
 using Engine = std::mt19937;
@@ -234,7 +234,7 @@ std::vector<int> random_funs(Engine &engine, int n_funs)
 
 void build_random(Engine &engine, const Model &mdl, int n_vars, int n_funs)
 {
-    ASSERT_EQ(BIYOS_addvars(mdl.get(), n_vars, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(mdl.get(), n_vars, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const auto all = static_cast<std::size_t>(n_funs);
     ASSERT_EQ(add_funs(mdl, n_funs, random_terms(engine, all, n_vars)), BIYOS_OK);
     for (int round = 0; round < 3; ++round)
@@ -480,14 +480,14 @@ TEST(CApiTest, VarNulls)
     std::int64_t *starts = read.starts.data();
     int *funs = read.indices.data();
     double *values = read.values.data();
-    EXPECT_EQ(BIYOS_getvarterms(held, 0, 3, 5, nullptr, &nnz, funs, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getvarterms(held, 0, 3, 5, starts, &nnz, nullptr, values), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, nullptr, &nnz, funs, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, starts, &nnz, nullptr, values), BIYOS_OK);
     EXPECT_EQ(nnz, 5);
     expect_terms(read, read_vars(mdl, 0, 3));
     Terms kept = blank(3, 5);
     starts = kept.starts.data();
     funs = kept.indices.data();
-    EXPECT_EQ(BIYOS_getvarterms(held, 0, 3, 5, starts, nullptr, funs, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, starts, nullptr, funs, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
     expect_terms(kept, blank(3, 5));
 }
@@ -512,14 +512,14 @@ TEST(CApiTest, VarRefused)
         Terms read = blank(3, 5);
         BIYOS_offset nnz = -1;
         const auto [beg, n] = ranges[k];
-        EXPECT_EQ(BIYOS_getvarterms(mdl.get(),
-                                    beg,
-                                    n,
-                                    sizes[k],
-                                    read.starts.data(),
-                                    &nnz,
-                                    read.indices.data(),
-                                    read.values.data()),
+        EXPECT_EQ(BIYOS_getclintermrg(mdl.get(),
+                                      beg,
+                                      n,
+                                      sizes[k],
+                                      read.starts.data(),
+                                      &nnz,
+                                      read.indices.data(),
+                                      read.values.data()),
                   BIYOS_ERR_BADARG);
         EXPECT_EQ(env.message(), messages[k]);
         EXPECT_EQ(nnz, -1);
@@ -530,9 +530,9 @@ TEST(CApiTest, VarRefused)
     std::int64_t *starts = read.starts.data();
     int *funs = read.indices.data();
     double *values = read.values.data();
-    EXPECT_EQ(BIYOS_getvarterms(held, 0, 5, -1, starts, nullptr, funs, values), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 5, -1, starts, nullptr, funs, values), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 3: unknown");
-    EXPECT_EQ(BIYOS_getvarterms(held, 0, 3, -1, starts, nullptr, funs, values), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, -1, starts, nullptr, funs, values), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), size);
     expect_terms(read, blank(3, 5));
 }

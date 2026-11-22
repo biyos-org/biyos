@@ -106,10 +106,10 @@ class Event:
 
         See Also
         --------
-        BIYOS_getnevtflds, BIYOS_getevtfldname, BIYOS_getevtfldval
+        BIYOS_getnevtfld, BIYOS_getevtfldname, BIYOS_getevtfldval
         """
         pointer = self._live()
-        count = lib.BIYOS_getnevtflds(pointer)
+        count = lib.BIYOS_getnevtfld(pointer)
         return tuple(_field(pointer, index) for index in range(count))
 
     def fmttext(self) -> str:

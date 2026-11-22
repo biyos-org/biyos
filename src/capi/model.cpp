@@ -202,61 +202,61 @@ BIYOS_status BIYOS_freemdl(BIYOS_model *mdl)
     return status;
 }
 
-BIYOS_status BIYOS_addvars(BIYOS_model *mdl,
-                           BIYOS_index n,
-                           const BIYOS_int *knd,
-                           const BIYOS_real *lb,
-                           const BIYOS_real *ub,
-                           BIYOS_index *beg)
+BIYOS_status BIYOS_addvar(BIYOS_model *mdl,
+                          BIYOS_index n,
+                          const BIYOS_int *knd,
+                          const BIYOS_real *lb,
+                          const BIYOS_real *ub,
+                          BIYOS_index *pos)
 {
-    return guarded<add_vars>(mdl, n, knd, lb, ub, beg);
+    return guarded<add_vars>(mdl, n, knd, lb, ub, pos);
 }
 
-BIYOS_status BIYOS_setvarbnd(BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             const BIYOS_real *lb,
-                             const BIYOS_real *ub)
+BIYOS_status BIYOS_setvarbndsp(BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               const BIYOS_real *lb,
+                               const BIYOS_real *ub)
 {
     return guarded<set_bnds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_getvarbnd(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             BIYOS_real *lb,
-                             BIYOS_real *ub)
+BIYOS_status BIYOS_getvarbndsp(const BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               BIYOS_real *lb,
+                               BIYOS_real *ub)
 {
     return guarded<get_bnds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_setvarknd(BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             const BIYOS_int *knd)
+BIYOS_status BIYOS_setvarkndsp(BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               const BIYOS_int *knd)
 {
     return guarded<set_kinds>(mdl, n, idx, knd);
 }
 
-BIYOS_status BIYOS_getvarknd(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             BIYOS_int *knd)
+BIYOS_status BIYOS_getvarkndsp(const BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               BIYOS_int *knd)
 {
     return guarded<get_kinds>(mdl, n, idx, knd);
 }
 
-BIYOS_status BIYOS_getnvars(const BIYOS_model *mdl, BIYOS_index *n)
+BIYOS_status BIYOS_getnvar(const BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<n_vars>(mdl, n);
 }
 
-BIYOS_status BIYOS_getvars(const BIYOS_model *mdl,
-                           BIYOS_index beg,
-                           BIYOS_index n,
-                           BIYOS_int *knd,
-                           BIYOS_real *lb,
-                           BIYOS_real *ub)
+BIYOS_status BIYOS_getvarrg(const BIYOS_model *mdl,
+                            BIYOS_index pos,
+                            BIYOS_index n,
+                            BIYOS_int *knd,
+                            BIYOS_real *lb,
+                            BIYOS_real *ub)
 {
-    return guarded<get_vars>(mdl, beg, n, knd, lb, ub);
+    return guarded<get_vars>(mdl, pos, n, knd, lb, ub);
 }

@@ -60,13 +60,13 @@ Self = TypeVar("Self", bound="Block[Any]")
 
 
 class Block(Generic[Item]):
-    __slots__ = ("_model", "_begin", "_size", "_gen")
+    __slots__ = ("_model", "_start", "_size", "_gen")
     _element: type[Item]
     _held: Callable[["Model"], int]
 
-    def __init__(self, mdl: "Model", beg: int, n: int, gen: int) -> None:
+    def __init__(self, mdl: "Model", pos: int, n: int, gen: int) -> None:
         self._model = mdl
-        self._begin = beg
+        self._start = pos
         self._size = n
         self._gen = gen
 
@@ -137,7 +137,7 @@ class Block(Generic[Item]):
         self._check()
         if isinstance(key, slice):
             return self._slice(key)
-        return self._view(self._begin + self._position(key))
+        return self._view(self._start + self._position(key))
 
     def on(self: Self, mdl: "Model") -> Self:
         """Return the block's items in another model.
@@ -167,18 +167,18 @@ class Block(Generic[Item]):
         self._check()
         mdl = _target(mdl)
         held = self._held(mdl)
-        end = self._begin + self._size
+        end = self._start + self._size
         if held < end:
             noun = self._element._noun
             needs = f"{held}, the block needs {end}"
             raise ValueError(f"mdl holds too few {noun}s: {needs}")
-        return type(self)(mdl, self._begin, self._size, mdl._gen)
+        return type(self)(mdl, self._start, self._size, mdl._gen)
 
     def _check(self) -> None:
         _current(self._model, self._gen, "block")
 
     def _range(self) -> range:
-        return range(self._begin, self._begin + self._size)
+        return range(self._start, self._start + self._size)
 
     def _view(self, idx: int) -> Item:
         return self._element(self._model, idx, self._gen)
@@ -195,9 +195,9 @@ class Block(Generic[Item]):
         start, stop, step = key.indices(self._size)
         if step != 1:
             raise ValueError(f"slice step must be 1, not {step}")
-        beg = self._begin + start
+        pos = self._start + start
         n = max(stop - start, 0)
-        return type(self)(self._model, beg, n, self._gen)
+        return type(self)(self._model, pos, n, self._gen)
 
 
 class Variable(View):
@@ -214,7 +214,7 @@ class Variable(View):
 
 
 class Variables(Block[Variable]):
-    """Consecutive variables of a model, as ``Model.addvars`` returns.
+    """Consecutive variables of a model, as ``Model.addvar`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
@@ -229,7 +229,7 @@ class Variables(Block[Variable]):
     _element = Variable
 
     def _held(self, model: "Model") -> int:
-        return model.getnvars()
+        return model.getnvar()
 
 
 class Function(View):
@@ -261,7 +261,7 @@ class Functions(Block[Function]):
     _element = Function
 
     def _held(self, model: "Model") -> int:
-        return model.getnfuns()
+        return model.getnfun()
 
 
 class Constraint(View):
@@ -278,7 +278,7 @@ class Constraint(View):
 
 
 class Constraints(Block[Constraint]):
-    """Consecutive constraints, as ``Model.addcons`` returns.
+    """Consecutive constraints, as ``Model.addcon`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
@@ -293,7 +293,7 @@ class Constraints(Block[Constraint]):
     _element = Constraint
 
     def _held(self, model: "Model") -> int:
-        return model.getncons()
+        return model.getncon()
 
 
 class Objective(View):
@@ -310,7 +310,7 @@ class Objective(View):
 
 
 class Objectives(Block[Objective]):
-    """Consecutive objectives, as ``Model.addobjs`` returns.
+    """Consecutive objectives, as ``Model.addobj`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
@@ -325,7 +325,7 @@ class Objectives(Block[Objective]):
     _element = Objective
 
     def _held(self, model: "Model") -> int:
-        return model.getnobjs()
+        return model.getnobj()
 
 
 def _indefinite(noun: str) -> str:

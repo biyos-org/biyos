@@ -5,18 +5,18 @@ static int fill(BIYOS_model *mdl)
 {
     const BIYOS_real ub[] = {1.0, 2.0};
     const BIYOS_index funidx[] = {0};
-    if (BIYOS_addvars(mdl, 2, NULL, NULL, ub, NULL) != BIYOS_OK ||
+    if (BIYOS_addvar(mdl, 2, NULL, NULL, ub, NULL) != BIYOS_OK ||
         BIYOS_addfuns(mdl, 1, NULL, NULL, NULL, NULL, NULL) != BIYOS_OK)
     {
         return 0;
     }
-    return BIYOS_addcons(mdl, 1, funidx, NULL, NULL, NULL) == BIYOS_OK;
+    return BIYOS_addcon(mdl, 1, funidx, NULL, NULL, NULL) == BIYOS_OK;
 }
 
 static int count_vars(BIYOS_model *mdl)
 {
     BIYOS_index count = -1;
-    BIYOS_getnvars(mdl, &count);
+    BIYOS_getnvar(mdl, &count);
     return count;
 }
 
@@ -24,8 +24,8 @@ static int same_bounds(BIYOS_model *a, BIYOS_model *b)
 {
     BIYOS_real ub_a[2];
     BIYOS_real ub_b[2];
-    if (BIYOS_getvars(a, 0, 2, NULL, NULL, ub_a) != BIYOS_OK ||
-        BIYOS_getvars(b, 0, 2, NULL, NULL, ub_b) != BIYOS_OK)
+    if (BIYOS_getvarrg(a, 0, 2, NULL, NULL, ub_a) != BIYOS_OK ||
+        BIYOS_getvarrg(b, 0, 2, NULL, NULL, ub_b) != BIYOS_OK)
     {
         return 0;
     }
@@ -41,7 +41,7 @@ static int copy_and_change(BIYOS_model *mdl, BIYOS_env *other)
         return 0;
     }
     int same = same_bounds(mdl, copy);
-    int grown = BIYOS_addvars(copy, 1, NULL, NULL, NULL, NULL) == BIYOS_OK;
+    int grown = BIYOS_addvar(copy, 1, NULL, NULL, NULL, NULL) == BIYOS_OK;
     printf("model %d variables, copy %d variables\n",
            count_vars(mdl),
            count_vars(copy));

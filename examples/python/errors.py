@@ -10,7 +10,7 @@ def at_fault(code):
 
 with biyos.Env() as env, biyos.Model(env) as model:
     try:
-        model.addvars(1, [VariableKind.BINARY], ub=[2.0])
+        model.addvar(1, [VariableKind.BINARY], ub=[2.0])
     except biyos.Error as error:
         print(error.code, at_fault(error.code), error)
         assert error.code == -100

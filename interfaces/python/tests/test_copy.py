@@ -44,25 +44,25 @@ def add_sample(model):
         VariableKind.BINARY,
         VariableKind.INTEGER,
     ]
-    model.addvars(3, kinds, [-0.0, 0.0, -INFINITY], [2.5, 1.0, 3.0])
+    model.addvar(3, kinds, [-0.0, 0.0, -INFINITY], [2.5, 1.0, 3.0])
     model.addfuns(2, [1.5, 0.1], [0, 2, 3], [2, 0, 1], [-1.0, 2.0, 0.1])
     pairs = ([0, 1, 3], [2, 0, 1], [2, 1, 1], [0.5, -1.0, 3.0])
     model.addquadterms([1, 0], *pairs)
-    model.addcons([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, INFINITY, 3.0])
+    model.addcon([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, INFINITY, 3.0])
     senses = [Sense.MAXIMIZE, Sense.MINIMIZE]
     tolerances = ([0.25, 0.0], [0.0, INFINITY])
-    o = model.addobjs([1, 0], senses, [3, -2], [0.5, 2.0])
+    o = model.addobj([1, 0], senses, [3, -2], [0.5, 2.0])
     model.setobjtol(o, *tolerances)
 
 
 def read(model):
     found = (
-        model.getvars(),
+        model.getvar(),
         model.getfuns(),
-        model.getquadterms(),
-        model.getcons(),
-        model.getobjs(),
-        model.getobjtol(range(model.getnobjs())),
+        model.getquadterm(),
+        model.getcon(),
+        model.getobj(),
+        model.getobjtol(range(model.getnobj())),
     )
     return repr(found)
 
@@ -117,15 +117,15 @@ def test_other(env, other, model):
 def test_apart(place, model):
     before = read(model)
     copy = model.copy(place)
-    copy.addvars(1)
+    copy.addvar(1)
     copy.setvarbnd([0], [1.0])
-    copy.addcons([1])
+    copy.addcon([1])
     copy.addquadterms([0], [0, 1], [0], [0], [1.0])
     copy.setobjsense([1], [Sense.MAXIMIZE])
     assert read(model) == before
-    assert copy.getnvars() == 4
+    assert copy.getnvar() == 4
     model.addfuns(1)
-    assert copy.getnfuns() == 2
+    assert copy.getnfun() == 2
     copy.close()
 
 
@@ -134,8 +134,8 @@ def test_source_closed(place, model):
     copy = model.copy(place)
     model.close()
     assert read(copy) == before
-    copy.addvars(1)
-    assert copy.getnvars() == 4
+    copy.addvar(1)
+    assert copy.getnvar() == 4
     copy.close()
 
 
@@ -144,7 +144,7 @@ def test_copy_closed(place, model):
     copy = model.copy(place)
     copy.close()
     with pytest.raises(ValueError, match=CLOSED):
-        copy.getnvars()
+        copy.getnvar()
     assert read(model) == before
 
 
@@ -155,11 +155,11 @@ def test_envs(env, model):
     kept = model.copy(second)
     env.close()
     with pytest.raises(ValueError, match=CLOSED):
-        model.getnvars()
+        model.getnvar()
     first.close()
     with pytest.raises(ValueError, match=CLOSED):
-        copy.getnvars()
-    assert kept.getnvars() == 3
+        copy.getnvar()
+    assert kept.getnvar() == 3
     second.close()
     assert not second._free.alive
 
@@ -214,7 +214,7 @@ def test_module(model):
     for copier in (shallow, deepcopy):
         with pytest.raises(TypeError, match="copy a model with Model.copy"):
             copier(model)
-    assert model.getnvars() == 3
+    assert model.getnvar() == 3
 
 
 def test_wrong_env(model):
@@ -234,7 +234,7 @@ def test_locked(env, other, model):
                 seen.append(str(error))
         for source, place in ((model, other), (outside, other)):
             copy = source.copy(place)
-            seen.append(copy.getnvars())
+            seen.append(copy.getnvar())
             copy.close()
 
     env.addhook(copy_inside, EventKind.MESSAGE, EventLevel.ERROR)
@@ -254,8 +254,8 @@ def test_gap(model, monkeypatch):
     assert log == ["copy", "env"]
     assert not other._free.alive
     with pytest.raises(ValueError, match=CLOSED):
-        copy.getnvars()
-    assert model.getnvars() == 3
+        copy.getnvar()
+    assert model.getnvar() == 3
 
 
 def test_source_gap(other, monkeypatch):
@@ -267,5 +267,5 @@ def test_source_gap(other, monkeypatch):
     copy = model.copy(other)
     assert log == ["copy", "env"]
     with pytest.raises(ValueError, match=CLOSED):
-        model.getnvars()
-    assert copy.getnvars() == 3
+        model.getnvar()
+    assert copy.getnvar() == 3

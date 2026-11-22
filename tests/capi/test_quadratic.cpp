@@ -58,7 +58,7 @@ BIYOS_status add_terms(const Model &mdl, const std::vector<int> &funs, const Com
 void add_sample(const Model &mdl)
 {
     BIYOS_model *held = mdl.get();
-    ASSERT_EQ(BIYOS_addvars(held, 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(held, 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfuns(held, 3, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(add_terms(mdl, kFunctions, kSample), BIYOS_OK);
 }
@@ -76,15 +76,15 @@ Compressed blank(std::size_t funs, std::size_t terms)
 std::int64_t read_with(const Model &mdl, int beg, int n, Compressed &read, std::int64_t size)
 {
     BIYOS_offset needed = -1;
-    const BIYOS_status status = BIYOS_getquadterms(mdl.get(),
-                                                   beg,
-                                                   n,
-                                                   size,
-                                                   read.starts.data(),
-                                                   &needed,
-                                                   read.firsts.data(),
-                                                   read.seconds.data(),
-                                                   read.values.data());
+    const BIYOS_status status = BIYOS_getquadtermrg(mdl.get(),
+                                                    beg,
+                                                    n,
+                                                    size,
+                                                    read.starts.data(),
+                                                    &needed,
+                                                    read.firsts.data(),
+                                                    read.seconds.data(),
+                                                    read.values.data());
     EXPECT_EQ(status, BIYOS_OK);
     return needed;
 }
@@ -141,7 +141,7 @@ void change(const BIYOS_event *, void *data)
     const BIYOS_index fun = 0;
     BIYOS_offset needed = 0;
     note(attempt, BIYOS_addquadterms(mdl, 1, &fun, nullptr, nullptr, nullptr, nullptr));
-    note(attempt, BIYOS_getquadterms(mdl, 0, 1, 0, nullptr, &needed, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_getquadtermrg(mdl, 0, 1, 0, nullptr, &needed, nullptr, nullptr, nullptr));
 }
 
 }
@@ -185,7 +185,7 @@ TEST(CApiTest, QuadraticSizes)
     add_sample(mdl);
     BIYOS_offset needed = -1;
     BIYOS_model *held = mdl.get();
-    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, 0, nullptr, &needed, nullptr, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 0, nullptr, &needed, nullptr, nullptr, nullptr),
               BIYOS_OK);
     EXPECT_EQ(needed, 5);
     Compressed none = blank(3, 2);
@@ -267,17 +267,17 @@ TEST(CApiTest, NullPairs)
     int *firsts = read.firsts.data();
     int *seconds = read.seconds.data();
     double *values = read.values.data();
-    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, 5, nullptr, &needed, firsts, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, nullptr, &needed, firsts, nullptr, nullptr),
               BIYOS_OK);
-    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, 5, nullptr, &needed, nullptr, seconds, nullptr),
+    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, nullptr, &needed, nullptr, seconds, nullptr),
               BIYOS_OK);
-    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, 5, starts, &needed, nullptr, nullptr, values),
+    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, starts, &needed, nullptr, nullptr, values),
               BIYOS_OK);
     expect_compressed(read, kSorted);
     Compressed kept = blank(3, 5);
     starts = kept.starts.data();
     firsts = kept.firsts.data();
-    EXPECT_EQ(BIYOS_getquadterms(held, 0, 3, 5, starts, nullptr, firsts, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, starts, nullptr, firsts, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
     expect_compressed(kept, blank(3, 5));
@@ -347,15 +347,15 @@ TEST(CApiTest, RefusedPairs)
         Compressed read = blank(3, 5);
         BIYOS_offset needed = -1;
         const auto [beg, n] = ranges[k];
-        EXPECT_EQ(BIYOS_getquadterms(mdl.get(),
-                                     beg,
-                                     n,
-                                     5,
-                                     read.starts.data(),
-                                     &needed,
-                                     read.firsts.data(),
-                                     read.seconds.data(),
-                                     read.values.data()),
+        EXPECT_EQ(BIYOS_getquadtermrg(mdl.get(),
+                                      beg,
+                                      n,
+                                      5,
+                                      read.starts.data(),
+                                      &needed,
+                                      read.firsts.data(),
+                                      read.seconds.data(),
+                                      read.values.data()),
                   BIYOS_ERR_BADARG);
         EXPECT_EQ(env.message(), msgs[k]);
         EXPECT_EQ(needed, -1);
@@ -363,15 +363,15 @@ TEST(CApiTest, RefusedPairs)
     }
     Compressed read = blank(3, 5);
     BIYOS_offset needed = -1;
-    EXPECT_EQ(BIYOS_getquadterms(mdl.get(),
-                                 0,
-                                 3,
-                                 -1,
-                                 read.starts.data(),
-                                 &needed,
-                                 read.firsts.data(),
-                                 read.seconds.data(),
-                                 read.values.data()),
+    EXPECT_EQ(BIYOS_getquadtermrg(mdl.get(),
+                                  0,
+                                  3,
+                                  -1,
+                                  read.starts.data(),
+                                  &needed,
+                                  read.firsts.data(),
+                                  read.seconds.data(),
+                                  read.values.data()),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'size': -1 is negative");
     EXPECT_EQ(needed, -1);

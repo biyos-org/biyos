@@ -77,14 +77,14 @@ BIYOS_status BIYOS_addlinterms(BIYOS_model *mdl,
     return guarded<add_lin_terms>(mdl, n, funidx, off, varidx, coef);
 }
 
-BIYOS_status BIYOS_getvarterms(const BIYOS_model *mdl,
-                               BIYOS_index beg,
-                               BIYOS_index n,
-                               BIYOS_offset size,
-                               BIYOS_offset *off,
-                               BIYOS_offset *nnz,
-                               BIYOS_index *funidx,
-                               BIYOS_real *coef)
+BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,
+                                 BIYOS_index pos,
+                                 BIYOS_index n,
+                                 BIYOS_offset cap,
+                                 BIYOS_offset *off,
+                                 BIYOS_offset *nnz,
+                                 BIYOS_index *funidx,
+                                 BIYOS_real *coef)
 {
-    return guarded<get_var_terms>(mdl, beg, n, size, off, nnz, funidx, coef);
+    return guarded<get_var_terms>(mdl, pos, n, cap, off, nnz, funidx, coef);
 }
