@@ -98,6 +98,19 @@ def _indices(
     return [index_of(model, family, entry, value) for value in values]
 
 
+def span_of(
+    model: "Model",
+    family: type[Block[Any]],
+    name: str,
+    values: Sequence[SupportsIndex] | Block[Any],
+) -> range | None:
+    if isinstance(values, Block):
+        return range_of(model, family, name, values)
+    if isinstance(values, range) and values.step == 1:
+        return values
+    return None
+
+
 def indices_of(
     model: "Model",
     family: type[Block[Any]],

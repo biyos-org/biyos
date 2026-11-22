@@ -2,6 +2,7 @@
 
 #include "capi/arrays.hpp"
 #include "capi/entry.hpp"
+#include "capi/selection.hpp"
 #include "core/index.hpp"
 #include "model/model.hpp"
 
@@ -9,10 +10,14 @@
 #include <span>
 #include <vector>
 
+using biyos::Family;
 using biyos::capi::guarded;
+using biyos::capi::List;
 using biyos::capi::listed;
 using biyos::capi::picked;
+using biyos::capi::Range;
 using biyos::capi::require;
+using biyos::capi::selected;
 using biyos::capi::writable;
 
 namespace
@@ -99,10 +104,11 @@ void add_objectives(BIYOS_model &model,
     }
 }
 
-void set_objectives(BIYOS_model &model, int n, const int *indices, const Fields &fields)
+template <typename Selection>
+void set_objectives(BIYOS_model &model, Selection selection, const Fields &fields)
 {
     biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> changed = listed(n, indices);
+    const auto changed = selected(core, Family::Objective, selection);
     std::vector<biyos::Objective> objectives;
     objectives.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
@@ -148,10 +154,12 @@ void get_objectives(const BIYOS_model &model,
     }
 }
 
-void get_listed(const BIYOS_model &model, int n, const int *indices, const Outputs &outputs)
+template <typename Selection>
+void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &outputs)
 {
+    const auto chosen = selected(model.core, Family::Objective, selection);
     const std::vector<biyos::Objective> objectives =
-        picked(model.core, &biyos::Model::objective, listed(n, indices));
+        picked(model.core, &biyos::Model::objective, chosen);
     for (std::size_t k = 0; k < objectives.size(); ++k)
     {
         copy_out(objectives[k], k, outputs);
@@ -176,7 +184,15 @@ BIYOS_status BIYOS_setobjsensesp(BIYOS_model *mdl,
                                  const BIYOS_index *idx,
                                  const BIYOS_int *sense)
 {
-    return guarded<set_objectives>(mdl, n, idx, Fields{.senses = sense});
+    return guarded<set_objectives<List>>(mdl, List{n, idx}, Fields{.senses = sense});
+}
+
+BIYOS_status BIYOS_setobjsenserg(BIYOS_model *mdl,
+                                 BIYOS_index pos,
+                                 BIYOS_index n,
+                                 const BIYOS_int *sense)
+{
+    return guarded<set_objectives<Range>>(mdl, Range{pos, n}, Fields{.senses = sense});
 }
 
 BIYOS_status BIYOS_getobjsensesp(const BIYOS_model *mdl,
@@ -184,7 +200,15 @@ BIYOS_status BIYOS_getobjsensesp(const BIYOS_model *mdl,
                                  const BIYOS_index *idx,
                                  BIYOS_int *sense)
 {
-    return guarded<get_listed>(mdl, n, idx, Outputs{.senses = sense});
+    return guarded<get_chosen<List>>(mdl, List{n, idx}, Outputs{.senses = sense});
+}
+
+BIYOS_status BIYOS_getobjsenserg(const BIYOS_model *mdl,
+                                 BIYOS_index pos,
+                                 BIYOS_index n,
+                                 BIYOS_int *sense)
+{
+    return guarded<get_chosen<Range>>(mdl, Range{pos, n}, Outputs{.senses = sense});
 }
 
 BIYOS_status BIYOS_setobjpriosp(BIYOS_model *mdl,
@@ -192,7 +216,15 @@ BIYOS_status BIYOS_setobjpriosp(BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const BIYOS_int *prio)
 {
-    return guarded<set_objectives>(mdl, n, idx, Fields{.priorities = prio});
+    return guarded<set_objectives<List>>(mdl, List{n, idx}, Fields{.priorities = prio});
+}
+
+BIYOS_status BIYOS_setobjpriorg(BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const BIYOS_int *prio)
+{
+    return guarded<set_objectives<Range>>(mdl, Range{pos, n}, Fields{.priorities = prio});
 }
 
 BIYOS_status BIYOS_getobjpriosp(const BIYOS_model *mdl,
@@ -200,7 +232,15 @@ BIYOS_status BIYOS_getobjpriosp(const BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 BIYOS_int *prio)
 {
-    return guarded<get_listed>(mdl, n, idx, Outputs{.priorities = prio});
+    return guarded<get_chosen<List>>(mdl, List{n, idx}, Outputs{.priorities = prio});
+}
+
+BIYOS_status BIYOS_getobjpriorg(const BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                BIYOS_int *prio)
+{
+    return guarded<get_chosen<Range>>(mdl, Range{pos, n}, Outputs{.priorities = prio});
 }
 
 BIYOS_status BIYOS_setobjcoefsp(BIYOS_model *mdl,
@@ -208,7 +248,15 @@ BIYOS_status BIYOS_setobjcoefsp(BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const BIYOS_real *coef)
 {
-    return guarded<set_objectives>(mdl, n, idx, Fields{.weights = coef});
+    return guarded<set_objectives<List>>(mdl, List{n, idx}, Fields{.weights = coef});
+}
+
+BIYOS_status BIYOS_setobjcoefrg(BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const BIYOS_real *coef)
+{
+    return guarded<set_objectives<Range>>(mdl, Range{pos, n}, Fields{.weights = coef});
 }
 
 BIYOS_status BIYOS_getobjcoefsp(const BIYOS_model *mdl,
@@ -216,7 +264,15 @@ BIYOS_status BIYOS_getobjcoefsp(const BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 BIYOS_real *coef)
 {
-    return guarded<get_listed>(mdl, n, idx, Outputs{.weights = coef});
+    return guarded<get_chosen<List>>(mdl, List{n, idx}, Outputs{.weights = coef});
+}
+
+BIYOS_status BIYOS_getobjcoefrg(const BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                BIYOS_real *coef)
+{
+    return guarded<get_chosen<Range>>(mdl, Range{pos, n}, Outputs{.weights = coef});
 }
 
 BIYOS_status BIYOS_setobjtolsp(BIYOS_model *mdl,
@@ -225,7 +281,20 @@ BIYOS_status BIYOS_setobjtolsp(BIYOS_model *mdl,
                                const BIYOS_real *atol,
                                const BIYOS_real *rtol)
 {
-    return guarded<set_objectives>(mdl, n, idx, Fields{.absolute = atol, .relative = rtol});
+    return guarded<set_objectives<List>>(mdl,
+                                         List{n, idx},
+                                         Fields{.absolute = atol, .relative = rtol});
+}
+
+BIYOS_status BIYOS_setobjtolrg(BIYOS_model *mdl,
+                               BIYOS_index pos,
+                               BIYOS_index n,
+                               const BIYOS_real *atol,
+                               const BIYOS_real *rtol)
+{
+    return guarded<set_objectives<Range>>(mdl,
+                                          Range{pos, n},
+                                          Fields{.absolute = atol, .relative = rtol});
 }
 
 BIYOS_status BIYOS_getobjtolsp(const BIYOS_model *mdl,
@@ -234,7 +303,20 @@ BIYOS_status BIYOS_getobjtolsp(const BIYOS_model *mdl,
                                BIYOS_real *atol,
                                BIYOS_real *rtol)
 {
-    return guarded<get_listed>(mdl, n, idx, Outputs{.absolute = atol, .relative = rtol});
+    return guarded<get_chosen<List>>(mdl,
+                                     List{n, idx},
+                                     Outputs{.absolute = atol, .relative = rtol});
+}
+
+BIYOS_status BIYOS_getobjtolrg(const BIYOS_model *mdl,
+                               BIYOS_index pos,
+                               BIYOS_index n,
+                               BIYOS_real *atol,
+                               BIYOS_real *rtol)
+{
+    return guarded<get_chosen<Range>>(mdl,
+                                      Range{pos, n},
+                                      Outputs{.absolute = atol, .relative = rtol});
 }
 
 BIYOS_status BIYOS_getnobj(const BIYOS_model *mdl, BIYOS_index *n)

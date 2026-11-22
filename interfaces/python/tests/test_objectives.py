@@ -174,7 +174,7 @@ def test_values(model, monkeypatch):
     absolute = array.array("d", [3.0, 4.0])
     relative = array.array("d", [5.0, 6.0])
     seen = []
-    for name in ("BIYOS_addobj", "BIYOS_setobjtolsp"):
+    for name in ("BIYOS_addobj", "BIYOS_setobjtolrg"):
         spy = partial(recorded, seen, getattr(lib, name))
         monkeypatch.setattr(lib, name, spy)
     o = model.addobj([0, 1], None, None, weights)

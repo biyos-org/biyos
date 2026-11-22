@@ -90,6 +90,7 @@ add_library(biyos
     capi/objectives.cpp
     capi/options.cpp
     capi/quadratic.cpp
+    capi/selection.cpp
     capi/version.cpp)
 add_library(biyos::biyos ALIAS biyos)
 

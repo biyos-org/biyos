@@ -434,51 +434,55 @@ error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 variables.
 see BIYOS_setvarbndsp BIYOS_setvarkndsp BIYOS_getvarrg
 since 0.1.0
 
-function BIYOS_setvarbndsp
+function BIYOS_setvarbndsp BIYOS_setvarbndrg
 summary Set the bounds of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param lb in The new lower bound of each; null leaves the lower bounds as they are.
 param ub in The new upper bound of each; null leaves the upper bounds as they are.
 return `BIYOS_OK` once the bounds are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a variable or a bound is refused.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable or a bound is refused.
 note A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted.
 see BIYOS_getvarbndsp BIYOS_addvar BIYOS_getvarrg
 since 0.1.0
 
-function BIYOS_getvarbndsp
+function BIYOS_getvarbndsp BIYOS_getvarbndrg
 summary Read the bounds of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param lb out Entry `j` receives the lower bound of variable `idx[j]`; skipped when null.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param lb out Entry `j` receives the lower bound of variable `idx[j]` or `pos + j`; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 see BIYOS_setvarbndsp BIYOS_getvarrg
 since 0.1.0
 
-function BIYOS_setvarkndsp
+function BIYOS_setvarkndsp BIYOS_setvarkndrg
 summary Set the kinds of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param knd in The new kind of each; null changes nothing.
 return `BIYOS_OK` once the kinds are set. The bounds are kept.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a variable, a kind is unknown, or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable, a kind is unknown, or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
 note A variable may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getvarkndsp BIYOS_addvar BIYOS_setvarbndsp
 since 0.1.0
 
-function BIYOS_getvarkndsp
+function BIYOS_getvarkndsp BIYOS_getvarkndrg
 summary Read the kinds of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param knd out Entry `j` receives the kind of variable `idx[j]`; skipped when null.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param knd out Entry `j` receives the kind of variable `idx[j]` or `pos + j`; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 see BIYOS_setvarkndsp BIYOS_getvarrg
 since 0.1.0
 
@@ -629,28 +633,30 @@ error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 constraints.
 see BIYOS_setconbndsp BIYOS_getconrg
 since 0.1.0
 
-function BIYOS_setconbndsp
+function BIYOS_setconbndsp BIYOS_setconbndrg
 summary Set the bounds of constraints.
 param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
 param n in The number of entries.
-param idx in The constraint of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the constraint of each entry; may be null when `n` is 0.
 param lb in The new lower bound of each; null leaves the lower bounds as they are.
 param ub in The new upper bound of each; null leaves the upper bounds as they are.
 return `BIYOS_OK` once the bounds are set. The functions are kept.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a constraint or a bound is refused.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint, the range ends past the last constraint or a bound is refused.
 note A constraint may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getconbndsp BIYOS_addcon BIYOS_getconrg
 since 0.1.0
 
-function BIYOS_getconbndsp
+function BIYOS_getconbndsp BIYOS_getconbndrg
 summary Read the bounds of constraints.
 param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
 param n in The number of entries.
-param idx in The constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param lb out Entry `j` receives the lower bound of constraint `idx[j]`; skipped when null.
+param idx in In the `sp` form, the constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param lb out Entry `j` receives the lower bound of constraint `idx[j]` or `pos + j`; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a constraint.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
 see BIYOS_setconbndsp BIYOS_getconrg
 since 0.1.0
 
@@ -699,97 +705,105 @@ note By default the objectives are optimized one after another in the order they
 see BIYOS_setobjsensesp BIYOS_setobjtolsp BIYOS_getobjrg
 since 0.1.0
 
-function BIYOS_setobjsensesp
+function BIYOS_setobjsensesp BIYOS_setobjsenserg
 summary Set the senses of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 param sense in The new sense of each, `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE`; null changes nothing.
 return `BIYOS_OK` once the senses are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective or a sense is unknown.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective, the range ends past the last objective or a sense is unknown.
 note An objective may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getobjsensesp BIYOS_addobj
 since 0.1.0
 
-function BIYOS_getobjsensesp
+function BIYOS_getobjsensesp BIYOS_getobjsenserg
 summary Read the senses of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param sense out Entry `j` receives the sense of objective `idx[j]`; skipped when null.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param sense out Entry `j` receives the sense of objective `idx[j]` or `pos + j`; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 see BIYOS_setobjsensesp BIYOS_getobjrg
 since 0.1.0
 
-function BIYOS_setobjpriosp
+function BIYOS_setobjpriosp BIYOS_setobjpriorg
 summary Set the priorities of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 param prio in The new priority of each; null changes nothing.
 return `BIYOS_OK` once the priorities are set.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 note An objective may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getobjpriosp BIYOS_addobj
 since 0.1.0
 
-function BIYOS_getobjpriosp
+function BIYOS_getobjpriosp BIYOS_getobjpriorg
 summary Read the priorities of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param prio out Entry `j` receives the priority of objective `idx[j]`; skipped when null.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param prio out Entry `j` receives the priority of objective `idx[j]` or `pos + j`; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 see BIYOS_setobjpriosp BIYOS_getobjrg
 since 0.1.0
 
-function BIYOS_setobjcoefsp
+function BIYOS_setobjcoefsp BIYOS_setobjcoefrg
 summary Set the weights of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 param coef in The new weight of each; null changes nothing.
 return `BIYOS_OK` once the weights are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective or a weight is not finite and positive.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective, the range ends past the last objective or a weight is not finite and positive.
 note An objective may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getobjcoefsp BIYOS_addobj
 since 0.1.0
 
-function BIYOS_getobjcoefsp
+function BIYOS_getobjcoefsp BIYOS_getobjcoefrg
 summary Read the weights of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param coef out Entry `j` receives the weight of objective `idx[j]`; skipped when null.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param coef out Entry `j` receives the weight of objective `idx[j]` or `pos + j`; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 see BIYOS_setobjcoefsp BIYOS_getobjrg
 since 0.1.0
 
-function BIYOS_setobjtolsp
+function BIYOS_setobjtolsp BIYOS_setobjtolrg
 summary Set the tolerances of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 param atol in The new absolute tolerance of each; null leaves the absolute tolerances as they are.
 param rtol in The new relative tolerance of each; null leaves the relative tolerances as they are.
 return `BIYOS_OK` once the tolerances are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective or a tolerance is NaN or negative.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective, the range ends past the last objective or a tolerance is NaN or negative.
 note An objective may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getobjtolsp
 since 0.1.0
 
-function BIYOS_getobjtolsp
+function BIYOS_getobjtolsp BIYOS_getobjtolrg
 summary Read the tolerances of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param atol out Entry `j` receives the absolute tolerance of objective `idx[j]`; skipped when null.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param atol out Entry `j` receives the absolute tolerance of objective `idx[j]` or `pos + j`; skipped when null.
 param rtol out Entry `j` receives its relative tolerance; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 see BIYOS_setobjtolsp
 since 0.1.0
 
@@ -846,27 +860,29 @@ note Once the call succeeds, a pointer read earlier with `BIYOS_getmdlname` is n
 see BIYOS_setmdlname
 since 0.1.0
 
-function BIYOS_setvarnamesp
+function BIYOS_setvarnamesp BIYOS_setvarnamerg
 summary Name variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
 return `BIYOS_OK` once the names are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a variable, an entry of `name` is null, or a name is empty or not well-formed UTF-8, with a message such as `invalid argument: variable 3: name is empty`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable, an entry of `name` is null, or a name is empty or not well-formed UTF-8, with a message such as `invalid argument: variable 3: name is empty`.
 note A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted. No name is checked against the others, so several variables may hold one name.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` for a variable it lists is no longer valid.
 see BIYOS_getvarnamesp BIYOS_getvaridx BIYOS_delvarnamesp
 since 0.1.0
 
-function BIYOS_getvarnamesp
+function BIYOS_getvarnamesp BIYOS_getvarnamerg
 summary Read the names of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of variable `idx[j]`, or an empty string when it has none; skipped when null.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of variable `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 note Each pointer stays valid until a call that sets or removes names of variables and lists that variable succeeds, or the model is freed. Adding items, naming other variables, a failed call and a copy of the model leave it valid.
 see BIYOS_setvarnamesp BIYOS_getvaridx
 since 0.1.0
@@ -883,37 +899,40 @@ note The lookup succeeds again once the other variables holding the name are ren
 see BIYOS_setvarnamesp BIYOS_getvarnamesp
 since 0.1.0
 
-function BIYOS_delvarnamesp
+function BIYOS_delvarnamesp BIYOS_delvarnamerg
 summary Remove the names of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the variables listed have no name. One without a name, or listed more than once, is left without one.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` for a variable it lists is no longer valid.
 see BIYOS_setvarnamesp
 since 0.1.0
 
-function BIYOS_setfunnamesp
+function BIYOS_setfunnamesp BIYOS_setfunnamerg
 summary Name functions.
 param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
 param n in The number of entries.
-param idx in The function of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the function of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
 return `BIYOS_OK` once the names are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a function, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note A function may appear more than once and several functions may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getfunnamesp` for a function it lists is no longer valid.
 see BIYOS_getfunnamesp BIYOS_getfunidx BIYOS_delfunnamesp
 since 0.1.0
 
-function BIYOS_getfunnamesp
+function BIYOS_getfunnamesp BIYOS_getfunnamerg
 summary Read the names of functions.
 param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
 param n in The number of entries.
-param idx in The function of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of function `idx[j]`, or an empty string when it has none; skipped when null.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of function `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a function.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function or the range ends past the last function.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of functions and lists that function succeeds, or the model is freed.
 see BIYOS_setfunnamesp BIYOS_getfunidx
 since 0.1.0
@@ -930,37 +949,40 @@ note A lookup works as in `BIYOS_getvaridx`, among the functions alone.
 see BIYOS_setfunnamesp BIYOS_getfunnamesp
 since 0.1.0
 
-function BIYOS_delfunnamesp
+function BIYOS_delfunnamesp BIYOS_delfunnamerg
 summary Remove the names of functions.
 param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
 param n in The number of entries.
-param idx in The function of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the function of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the functions listed have no name. One without a name, or listed more than once, is left without one.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a function.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function or the range ends past the last function.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getfunnamesp` for a function it lists is no longer valid.
 see BIYOS_setfunnamesp
 since 0.1.0
 
-function BIYOS_setconnamesp
+function BIYOS_setconnamesp BIYOS_setconnamerg
 summary Name constraints.
 param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
 param n in The number of entries.
-param idx in The constraint of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the constraint of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
 return `BIYOS_OK` once the names are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a constraint, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint, the range ends past the last constraint, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note A constraint may appear more than once and several constraints may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getconnamesp` for a constraint it lists is no longer valid.
 see BIYOS_getconnamesp BIYOS_getconidx BIYOS_delconnamesp
 since 0.1.0
 
-function BIYOS_getconnamesp
+function BIYOS_getconnamesp BIYOS_getconnamerg
 summary Read the names of constraints.
 param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
 param n in The number of entries.
-param idx in The constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of constraint `idx[j]`, or an empty string when it has none; skipped when null.
+param idx in In the `sp` form, the constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of constraint `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a constraint.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of constraints and lists that constraint succeeds, or the model is freed.
 see BIYOS_setconnamesp BIYOS_getconidx
 since 0.1.0
@@ -977,37 +999,40 @@ note A lookup works as in `BIYOS_getvaridx`, among the constraints alone.
 see BIYOS_setconnamesp BIYOS_getconnamesp
 since 0.1.0
 
-function BIYOS_delconnamesp
+function BIYOS_delconnamesp BIYOS_delconnamerg
 summary Remove the names of constraints.
 param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
 param n in The number of entries.
-param idx in The constraint of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the constraint of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the constraints listed have no name. One without a name, or listed more than once, is left without one.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a constraint.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getconnamesp` for a constraint it lists is no longer valid.
 see BIYOS_setconnamesp
 since 0.1.0
 
-function BIYOS_setobjnamesp
+function BIYOS_setobjnamesp BIYOS_setobjnamerg
 summary Name objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
 return `BIYOS_OK` once the names are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective, the range ends past the last objective, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note An objective may appear more than once and several objectives may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getobjnamesp` for an objective it lists is no longer valid.
 see BIYOS_getobjnamesp BIYOS_getobjidx BIYOS_delobjnamesp
 since 0.1.0
 
-function BIYOS_getobjnamesp
+function BIYOS_getobjnamesp BIYOS_getobjnamerg
 summary Read the names of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of objective `idx[j]`, or an empty string when it has none; skipped when null.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of objective `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of objectives and lists that objective succeeds, or the model is freed.
 see BIYOS_setobjnamesp BIYOS_getobjidx
 since 0.1.0
@@ -1024,13 +1049,14 @@ note A lookup works as in `BIYOS_getvaridx`, among the objectives alone.
 see BIYOS_setobjnamesp BIYOS_getobjnamesp
 since 0.1.0
 
-function BIYOS_delobjnamesp
+function BIYOS_delobjnamesp BIYOS_delobjnamerg
 summary Remove the names of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the objectives listed have no name. One without a name, or listed more than once, is left without one.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getobjnamesp` for an objective it lists is no longer valid.
 see BIYOS_setobjnamesp
 since 0.1.0
