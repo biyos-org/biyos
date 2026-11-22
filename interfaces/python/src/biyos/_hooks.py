@@ -1,26 +1,33 @@
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from functools import partial
+from typing import TYPE_CHECKING
 
 from biyos._capi import HOOK
 from biyos._event import Event, deliver
 from biyos._relay import Relay
 
+if TYPE_CHECKING:
+    from biyos._model import Model
+
 
 def _deliver(
     relay: Relay,
+    owners: Mapping[int, "Model"],
     functions: dict[int, Callable[[Event], object]],
     pointer: int,
     key: int,
 ) -> None:
-    relay.run(deliver, functions[key], pointer)
+    relay.run(deliver, functions[key], pointer, owners)
 
 
 class Hooks:
-    def __init__(self, relay: Relay) -> None:
+    def __init__(
+        self, relay: Relay, owners: Mapping[int, "Model"]
+    ) -> None:
         self._functions: dict[int, Callable[[Event], object]] = {}
         self._keys: dict[int, int] = {}
         self._count = 0
-        function = partial(_deliver, relay, self._functions)
+        function = partial(_deliver, relay, owners, self._functions)
         self.callback = HOOK(function)
 
     def add(self, function: Callable[[Event], object]) -> int:

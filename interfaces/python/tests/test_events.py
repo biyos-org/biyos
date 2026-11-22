@@ -42,6 +42,7 @@ READERS = [
     attrgetter("fields"),
     methodcaller("fmttext"),
     methodcaller("fmtjson"),
+    attrgetter("model"),
 ]
 
 
@@ -66,6 +67,10 @@ def fail(env):
     with pytest.raises(biyos.Error) as caught:
         env.setopt("seed", -1)
     return caught.value
+
+
+def keep_model(seen, event):
+    seen.append(event.model)
 
 
 def test_constants():
@@ -331,3 +336,16 @@ def test_succeeded(monkeypatch):
             env.getopt("seed")
         assert env.getopt("seed") == 0
     assert caught.value.__context__ is None
+
+
+def test_model():
+    seen = []
+    with biyos.Env() as env, biyos.Model(env) as model:
+        hook = partial(keep_model, seen)
+        env.addhook(hook, EventKind.MESSAGE, EventLevel.ERROR)
+        with pytest.raises(biyos.Error):
+            model.addvar(1, [biyos.VariableKind.BINARY], ub=[2.0])
+        fail(env)
+        assert len(seen) == 2
+        assert seen[0] is model
+        assert seen[1] is None

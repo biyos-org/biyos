@@ -14,6 +14,7 @@ with biyos.Env() as env, biyos.Model(env) as model:
     except biyos.Error as error:
         print(error.code, at_fault(error.code), error)
         assert error.code == -100
+        assert error.model is model
 
     try:
         env.setopt("seed", 1.5)

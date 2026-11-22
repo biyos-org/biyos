@@ -1541,6 +1541,7 @@ class Model:
         finally:
             if handle.value is not None:
                 self._env._models.add(handle.value)
+                self._env._owners[handle.value] = self
 
     def _copy(self, source: "Model") -> None:
         if not self._env._open():
