@@ -6,11 +6,13 @@ add_library(biyos_internal STATIC
     core/error.cpp
     core/events.cpp
     core/format.cpp
+    core/lookup.cpp
     core/option_lookup.cpp
     core/option_table.cpp
     core/option_text.cpp
-    core/option_warning.cpp
+    core/option_value.cpp
     core/options.cpp
+    core/settings.cpp
     core/status.cpp
     core/timer.cpp
     core/tolerances.cpp

@@ -1,6 +1,8 @@
 #include "core/clock.hpp"
 #include "core/events.hpp"
+#include "core/lookup.hpp"
 #include "core/options.hpp"
+#include "core/settings.hpp"
 #include "core/tolerances.hpp"
 
 #include <gtest/gtest.h>
@@ -21,7 +23,7 @@ biyos::Tolerances defaults()
 {
     biyos::FakeClock clock;
     biyos::Events events(clock);
-    return biyos::Tolerances(biyos::Options(events));
+    return biyos::Tolerances(biyos::Lookup(biyos::Options(events)));
 }
 
 biyos::Tolerances relative(double rel)
@@ -31,7 +33,7 @@ biyos::Tolerances relative(double rel)
     biyos::Options options(events);
     options.set_double(Option::FeasAbs, 0.0);
     options.set_double(Option::FeasRel, rel);
-    return biyos::Tolerances(options);
+    return biyos::Tolerances(biyos::Lookup(options));
 }
 
 biyos::Tolerances uniform(double value)
@@ -43,7 +45,7 @@ biyos::Tolerances uniform(double value)
     {
         options.set_double(option, value);
     }
-    return biyos::Tolerances(options);
+    return biyos::Tolerances(biyos::Lookup(options));
 }
 
 }
@@ -180,7 +182,7 @@ TEST(ToleranceTest, ReadsOptions)
     options.set_double(Option::FeasRel, 1e-4);
     options.set_double(Option::IntTol, 0.1);
     options.set_double(Option::ZeroTol, 1e-3);
-    const biyos::Tolerances tolerances(options);
+    const biyos::Tolerances tolerances{biyos::Lookup(options)};
 
     EXPECT_TRUE(tolerances.is_zero(5e-4));
     EXPECT_FALSE(tolerances.is_zero(2e-3));
@@ -259,11 +261,35 @@ TEST(ToleranceTest, Immutable)
     biyos::FakeClock clock;
     biyos::Events events(clock);
     biyos::Options options(events);
-    const biyos::Tolerances tolerances(options);
+    const biyos::Tolerances tolerances{biyos::Lookup(options)};
     options.set_double(Option::ZeroTol, 1.0);
     options.set_double(Option::FeasAbs, 1.0);
     options.set_double(Option::IntTol, 0.5);
     EXPECT_FALSE(tolerances.is_zero(0.5));
     EXPECT_FALSE(tolerances.approx_equal(0.0, 0.5));
     EXPECT_FALSE(tolerances.is_integral(0.25));
+}
+
+TEST(ToleranceTest, Model)
+{
+    biyos::FakeClock clock;
+    biyos::Events events(clock);
+    biyos::Options options(events);
+    biyos::Settings settings;
+    settings.set(Option::ZeroTol, 1e-3, events);
+    settings.set(Option::IntTol, 0.0, events);
+    settings.set(Option::FeasAbs, 0.5, events);
+    settings.set(Option::FeasRel, 0.0, events);
+    const biyos::Tolerances model(biyos::Lookup(settings, options));
+    const biyos::Tolerances shared{biyos::Lookup(options)};
+    EXPECT_TRUE(model.is_zero(5e-4));
+    EXPECT_FALSE(shared.is_zero(5e-4));
+    EXPECT_FALSE(model.is_integral(1.0 + 1e-6));
+    EXPECT_TRUE(shared.is_integral(1.0 + 1e-6));
+    EXPECT_TRUE(model.satisfies_lower(1.6, 2.0));
+    EXPECT_FALSE(shared.satisfies_lower(1.6, 2.0));
+    EXPECT_TRUE(model.approx_equal(1e8, 1e8 + 0.25));
+    EXPECT_TRUE(shared.approx_equal(1e8, 1e8 + 0.25));
+    EXPECT_FALSE(model.approx_equal(1e8, 1e8 + 1.0));
+    EXPECT_TRUE(shared.approx_equal(1e8, 1e8 + 1.0));
 }

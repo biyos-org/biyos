@@ -1,6 +1,7 @@
 #include "core/clock.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
+#include "core/option_table.hpp"
 #include "core/options.hpp"
 #include "core/version.hpp"
 
@@ -11,6 +12,7 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace
@@ -21,6 +23,7 @@ using biyos::EventLevel;
 using biyos::IntRule;
 using biyos::Option;
 using biyos::OptionSpec;
+using biyos::Scope;
 using biyos::Version;
 using Rows = std::array<OptionSpec, 3>;
 
@@ -35,6 +38,7 @@ constexpr Rows kRows{
     OptionSpec{
         .id = Option{1},
         .name = "new",
+        .scope = Scope::Model,
         .rule = IntRule{.default_value = 1, .lower = 0},
         .doc = "Current.",
         .versions = {.since = kFirst},
@@ -42,6 +46,7 @@ constexpr Rows kRows{
     OptionSpec{
         .id = Option{2},
         .name = "old",
+        .scope = Scope::Model,
         .rule = IntRule{.default_value = 1, .lower = 0},
         .doc = "Deprecated.",
         .versions = {.since = kFirst, .deprecated = kSecond},
@@ -50,6 +55,7 @@ constexpr Rows kRows{
     OptionSpec{
         .id = Option{3},
         .name = "gone",
+        .scope = Scope::Model,
         .rule = IntRule{.default_value = 1, .lower = 0},
         .doc = "Retired.",
         .versions = {.since = kFirst, .deprecated = kSecond, .retired = kThird},
@@ -338,6 +344,24 @@ TEST(OptionTest, MissingRow)
               "internal error: option 11: has no table row");
 }
 
+TEST(OptionTest, Sources)
+{
+    using biyos::Source;
+    Stream stream;
+    biyos::Options options(stream.events);
+    EXPECT_EQ(options.source_of(Option::Seed), Source::Default);
+    options.set_int(Option::Seed, 3);
+    EXPECT_EQ(options.source_of(Option::Seed), Source::Environment);
+    EXPECT_EQ(options.source_of(Option::TimeLimit), Source::Default);
+    static_cast<void>(failure([&] { options.set_double(Option::TimeLimit, -1.0); }));
+    EXPECT_EQ(options.source_of(Option::TimeLimit), Source::Default);
+    EXPECT_EQ(std::get<int>(options.value_of(Option::Seed)), 3);
+    EXPECT_EQ(failure([&] { static_cast<void>(options.source_of(Option{11})); }),
+              "internal error: option 11: has no table row");
+    EXPECT_EQ(failure([&] { static_cast<void>(options.value_of(Option{0})); }),
+              "internal error: option 0: has no table row");
+}
+
 TEST(OptionTest, Table)
 {
     Stream stream;
@@ -359,6 +383,17 @@ TEST(OptionTest, BadTable)
     EXPECT_EQ(built([](Rows &rows) { rows[1].name = "new"; }), kMalformed);
     const IntRule below{.default_value = -1, .lower = 0};
     EXPECT_EQ(built([&below](Rows &rows) { rows[1].rule = below; }), kMalformed);
+}
+
+TEST(OptionTest, Scopes)
+{
+    EXPECT_EQ(built([](Rows &rows) { rows[0].scope = Scope::Environment; }), "no error");
+    EXPECT_EQ(built([](Rows &rows) { rows[0].scope = Scope{}; }), kMalformed);
+    EXPECT_EQ(built([](Rows &rows) { rows[2].scope = Scope{3}; }), kMalformed);
+    for (const OptionSpec &spec : biyos::option_table())
+    {
+        EXPECT_EQ(spec.scope, Scope::Model) << spec.name;
+    }
 }
 
 TEST(OptionTest, Dates)

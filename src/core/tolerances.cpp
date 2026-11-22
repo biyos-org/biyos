@@ -16,9 +16,9 @@ bool same_infinity(double a, double b)
 
 }
 
-Tolerances::Tolerances(const Options &options)
-    : feasabs_(options.get_double(Option::FeasAbs)), feasrel_(options.get_double(Option::FeasRel)),
-      inttol_(options.get_double(Option::IntTol)), zerotol_(options.get_double(Option::ZeroTol))
+Tolerances::Tolerances(const Lookup &lookup)
+    : feasabs_(lookup.get_double(Option::FeasAbs)), feasrel_(lookup.get_double(Option::FeasRel)),
+      inttol_(lookup.get_double(Option::IntTol)), zerotol_(lookup.get_double(Option::ZeroTol))
 {
 }
 

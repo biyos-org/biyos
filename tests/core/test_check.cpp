@@ -2,7 +2,9 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
+#include "core/lookup.hpp"
 #include "core/options.hpp"
+#include "core/settings.hpp"
 
 #include <gtest/gtest.h>
 
@@ -65,7 +67,7 @@ class CheckTest : public ::testing::Test
     biyos::Checker at(const std::string &level)
     {
         env.options().set_string(biyos::Option::CheckLevel, level);
-        return biyos::Checker(env, "model");
+        return biyos::Checker(env, biyos::Lookup(env.options()), "model");
     }
 
     bool evaluate(bool result)
@@ -117,7 +119,7 @@ class CheckTest : public ::testing::Test
 
 TEST_F(CheckTest, DefaultLevel)
 {
-    const biyos::Checker checker(env, "model");
+    const biyos::Checker checker(env, biyos::Lookup(env.options()), "model");
     EXPECT_TRUE(checker.active(CheckLevel::Cheap));
     EXPECT_FALSE(checker.active(CheckLevel::Full));
 }
@@ -224,4 +226,21 @@ TEST_F(CheckTest, Filling)
     EXPECT_EQ(evaluated, 1);
     EXPECT_TRUE(kept.empty());
     EXPECT_EQ(env.last_error(), "earlier");
+}
+
+TEST_F(CheckTest, Models)
+{
+    biyos::Settings first;
+    const biyos::Settings second;
+    first.set(biyos::Option::CheckLevel, std::string("full"), env.events());
+    const biyos::Checker own(env, biyos::Lookup(first, env.options()), "model");
+    const biyos::Checker other(env, biyos::Lookup(second, env.options()), "model");
+    const biyos::Checker shared(env, biyos::Lookup(env.options()), "model");
+    EXPECT_TRUE(own.active(CheckLevel::Full));
+    EXPECT_FALSE(other.active(CheckLevel::Full));
+    EXPECT_FALSE(shared.active(CheckLevel::Full));
+    EXPECT_THROW(check(own, CheckLevel::Full, false), biyos::Error);
+    EXPECT_NO_THROW(check(other, CheckLevel::Full, false));
+    EXPECT_NO_THROW(check(shared, CheckLevel::Full, false));
+    EXPECT_TRUE(other.active(CheckLevel::Cheap));
 }

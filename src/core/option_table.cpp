@@ -28,6 +28,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::Seed,
         .name = "seed",
+        .scope = Scope::Model,
         .rule = IntRule{.default_value = 0, .lower = 0},
         .doc = "Seed of every random choice.",
         .versions = {.since = {0, 1, 0}},
@@ -35,6 +36,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::TimeLimit,
         .name = "maxtime",
+        .scope = Scope::Model,
         .rule = DoubleRule{.default_value = kInfinity, .lower = 0.0},
         .doc = "Wall time limit in seconds.",
         .versions = {.since = {0, 1, 0}},
@@ -42,6 +44,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::CheckLevel,
         .name = "check_lvl",
+        .scope = Scope::Model,
         .rule = EnumRule{.default_value = "cheap", .values = kCheckLevels},
         .doc = "Invariant checks to run.",
         .versions = {.since = {0, 1, 0}},
@@ -49,6 +52,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::Presolve,
         .name = "presolve",
+        .scope = Scope::Model,
         .rule = BoolRule{.default_value = true},
         .doc = "Simplify the model before solving it.",
         .versions = {.since = {0, 1, 0}},
@@ -56,6 +60,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::Reproducer,
         .name = "repro",
+        .scope = Scope::Model,
         .rule = StringRule{.default_value = ""},
         .doc = "File the solve writes its model, options, seed and version to. Empty for none.",
         .versions = {.since = {0, 1, 0}},
@@ -63,6 +68,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::FeasAbs,
         .name = "feastol_abs",
+        .scope = Scope::Model,
         .rule = DoubleRule{.default_value = 1e-6, .lower = 0.0},
         .doc = "Absolute tolerance of a bound or an equality.",
         .versions = {.since = {0, 1, 0}},
@@ -70,6 +76,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::FeasRel,
         .name = "feastol_rel",
+        .scope = Scope::Model,
         .rule = DoubleRule{.default_value = 1e-6, .lower = 0.0},
         .doc = "Relative tolerance of a bound or an equality.",
         .versions = {.since = {0, 1, 0}},
@@ -77,6 +84,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::IntTol,
         .name = "inttol",
+        .scope = Scope::Model,
         .rule = DoubleRule{.default_value = 1e-5, .lower = 0.0},
         .doc = "Largest distance to the nearest integer of a value taken as integral.",
         .versions = {.since = {0, 1, 0}},
@@ -84,6 +92,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::ZeroTol,
         .name = "zerotol",
+        .scope = Scope::Model,
         .rule = DoubleRule{.default_value = 1e-9, .lower = 0.0},
         .doc = "Largest magnitude of a value taken as zero.",
         .versions = {.since = {0, 1, 0}},
@@ -91,6 +100,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::CpuTimeLimit,
         .name = "maxcputime",
+        .scope = Scope::Model,
         .rule = DoubleRule{.default_value = kInfinity, .lower = 0.0},
         .doc = "CPU time limit in seconds, counting every thread of the process.",
         .versions = {.since = {0, 1, 0}},

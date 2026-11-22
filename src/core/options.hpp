@@ -41,6 +41,19 @@ enum class OptionKind
     Enum = BIYOS_KND_ENUM,
 };
 
+enum class Scope
+{
+    Model = 1,
+    Environment,
+};
+
+enum class Source
+{
+    Model,
+    Environment,
+    Default,
+};
+
 enum class CheckLevel
 {
     None,
@@ -89,11 +102,14 @@ struct OptionSpec
 {
     Option id;
     std::string_view name;
+    Scope scope{};
     std::variant<BoolRule, IntRule, DoubleRule, StringRule, EnumRule> rule;
     std::string_view doc;
     Versions versions;
     std::optional<Option> replacement = std::nullopt;
 };
+
+using OptionValue = std::variant<bool, int, double, std::string>;
 
 Option find_option(std::string_view name);
 Option find_option(int id);
@@ -117,25 +133,28 @@ class Options
     double get_double(Option option) const;
     const std::string &get_string(Option option) const;
 
+    const OptionValue &value_of(Option option) const;
+    Source source_of(Option option) const;
+    std::span<const OptionSpec> table() const noexcept;
+
     template <typename E>
         requires std::is_enum_v<E>
     E get_enum(Option option) const
     {
-        return static_cast<E>(position_of(option));
+        return static_cast<E>(position(option));
     }
 
   private:
-    using Value = std::variant<bool, int, double, std::string>;
+    static std::vector<OptionValue> defaults(std::span<const OptionSpec> table);
 
-    static std::vector<Value> defaults(std::span<const OptionSpec> table);
+    void store(Option option, OptionValue value);
 
-    void store(const OptionSpec &spec, Value value);
-
-    std::size_t position_of(Option option) const;
+    std::size_t position(Option option) const;
 
     std::span<const OptionSpec> table_;
     Events &events_;
-    std::vector<Value> values_;
+    std::vector<OptionValue> values_;
+    std::vector<Source> sources_;
 };
 
 }
