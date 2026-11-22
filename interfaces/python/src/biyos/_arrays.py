@@ -1,10 +1,10 @@
 from collections.abc import Sequence, Sized
-from ctypes import Array, c_char_p, c_double, c_int, c_int64
+from ctypes import Array, c_char_p, c_double, c_int
 from numbers import Real
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeGuard, TypeVar
 
 from biyos._blocks import Block, index_of, range_of
-from biyos._integers import integer, offset
+from biyos._integers import integer
 from biyos._text import text
 
 if TYPE_CHECKING:
@@ -123,24 +123,3 @@ def indices_of(
     _sized(name, values, count)
     items = _indices(model, family, name, values)
     return _array(c_int, name, items, count)
-
-
-def _ordered(name: str, starts: Array[c_int64]) -> None:
-    if len(starts) > 0 and starts[0] != 0:
-        raise ValueError(f"{name} begins at {starts[0]}, not 0")
-    for k in range(1, len(starts)):
-        if starts[k] < starts[k - 1]:
-            fall = f"{starts[k - 1]} to {starts[k]}"
-            raise ValueError(f"{name} decreases from {fall} at entry {k}")
-
-
-def offsets(
-    name: str, values: Sequence[SupportsIndex] | None, count: int
-) -> Array[c_int64] | None:
-    if values is None:
-        return None
-    _sized(name, values, count)
-    entry = f"an entry of {name}"
-    copied = (c_int64 * count)(*(offset(entry, value) for value in values))
-    _ordered(name, copied)
-    return copied

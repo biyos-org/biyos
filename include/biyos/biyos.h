@@ -170,24 +170,8 @@ BIYOS_API BIYOS_status BIYOS_getvarrg(const BIYOS_model *mdl,
                                       BIYOS_int *knd,
                                       BIYOS_real *lb,
                                       BIYOS_real *ub);
-BIYOS_API BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
-                                     BIYOS_index n,
-                                     const BIYOS_real *cst,
-                                     const BIYOS_offset *off,
-                                     const BIYOS_index *varidx,
-                                     const BIYOS_real *coef,
-                                     BIYOS_index *pos);
 BIYOS_API BIYOS_status BIYOS_addfun(BIYOS_model *mdl, BIYOS_index n, BIYOS_index *pos);
 BIYOS_API BIYOS_status BIYOS_getnfun(const BIYOS_model *mdl, BIYOS_index *n);
-BIYOS_API BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
-                                     BIYOS_index pos,
-                                     BIYOS_index n,
-                                     BIYOS_offset cap,
-                                     BIYOS_real *cst,
-                                     BIYOS_offset *off,
-                                     BIYOS_offset *nnz,
-                                     BIYOS_index *varidx,
-                                     BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_addcstsp(BIYOS_model *mdl,
                                       BIYOS_index n,
                                       const BIYOS_index *idx,

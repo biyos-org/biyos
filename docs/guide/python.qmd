@@ -10,7 +10,7 @@ A model keeps its environment alive, so an environment the program no longer ref
 
 ## Blocks and views {#sec-python-blocks}
 
-`addvar`, `addfun`, `addfuns`, `addcon` and `addobj` return a block: `Variables`, `Functions`, `Constraints` or `Objectives`. A block holds its model, the index of its first item and its count, so it costs the same whether it holds three items or three million. It supports `len`, iteration, indexing from either end and slicing with step 1:
+`addvar`, `addfun`, `addcon` and `addobj` return a block: `Variables`, `Functions`, `Constraints` or `Objectives`. A block holds its model, the index of its first item and its count, so it costs the same whether it holds three items or three million. It supports `len`, iteration, indexing from either end and slicing with step 1:
 
 ```python
 x = model.addvar(4)
@@ -23,21 +23,20 @@ Indexing a block gives a view, such as a `Variable`, which passes as its index w
 
 ## Arrays {#sec-python-arrays}
 
-A method that takes an array accepts any sequence of the right length: a list, a tuple, a block where indices are due. A sequence of the wrong length raises `ValueError`, an entry of the wrong type `TypeError`, and an integer too large for 32 bits, or an offset too large for 64, `OverflowError`. A writable, contiguous buffer of doubles, such as an `array.array("d")`, passes to C without a copy where doubles are due; everything else is copied into a C array for the call. The annotations name sequences, so a type checker refuses a NumPy or a ctypes array, though both work at run time: a contiguous NumPy array of float64 is such a buffer and passes without a copy, while a ctypes array of doubles is copied. `None` stands for a null array and takes the default the C call gives it.
+A method that takes an array accepts any sequence of the right length: a list, a tuple, a block where indices are due. A sequence of the wrong length raises `ValueError`, an entry of the wrong type `TypeError`, and an integer too large for 32 bits `OverflowError`. A writable, contiguous buffer of doubles, such as an `array.array("d")`, passes to C without a copy where doubles are due; everything else is copied into a C array for the call. The annotations name sequences, so a type checker refuses a NumPy or a ctypes array, though both work at run time: a contiguous NumPy array of float64 is such a buffer and passes without a copy, while a ctypes array of doubles is copied. `None` stands for a null array and takes the default the C call gives it.
 
 The readers return lists, in the order of the C call's arrays:
 
 | Method | Returns |
 | ------------------ | ------------------------------------ |
 | `getvar(idx)` | kinds, lower bounds, upper bounds |
-| `getfuns(pos, n)` | constants, offsets, variables, coefficients |
 | `getquadterm(idx)` | functions, first and second variables, coefficients |
 | `getrlinterm(idx)` | functions, variables, coefficients |
 | `getclinterm(idx)` | functions, variables, coefficients |
 | `getcon(idx)` | functions, lower bounds, upper bounds |
 | `getobj(idx)` | functions, senses, priorities, weights |
 
-`idx` lists the items to read, or is a block or a range of them, and defaults to every item, so `model.getvar()` reads them all. `getfuns` takes the first function `pos` and the count `n`, which default to 0 and to every function from `pos` on. The readers of terms size their arrays themselves. `getrlinterm` reads the linear terms of functions and `getclinterm` those of variables, each term as its function, its variable and its coefficient, and `getnrlinterm` and `getnclinterm` count them. `getquadterm` reads the quadratic terms of functions in the same shape, with two variables, and `getnquadterm` counts them. `addlinterm(funidx, varidx, coef)` adds terms in that same shape, so `target.addlinterm(*source.getrlinterm())` copies the linear terms of one model into another with the same functions and variables. `addquadterm(funidx, varidx1, varidx2, coef)` does the same for quadratic terms, from `getquadterm`.
+`idx` lists the items to read, or is a block or a range of them, and defaults to every item, so `model.getvar()` reads them all. The readers of terms size their arrays themselves. `getrlinterm` reads the linear terms of functions and `getclinterm` those of variables, each term as its function, its variable and its coefficient, and `getnrlinterm` and `getnclinterm` count them. `getquadterm` reads the quadratic terms of functions in the same shape, with two variables, and `getnquadterm` counts them. `addlinterm(funidx, varidx, coef)` adds terms in that same shape, so `target.addlinterm(*source.getrlinterm())` copies the linear terms of one model into another with the same functions and variables. `addquadterm(funidx, varidx1, varidx2, coef)` does the same for quadratic terms, from `getquadterm`.
 
 A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobj` leaves out, as `addobj` does. `getcst(idx)` returns the constants of functions, which `setcst` sets and `addcst` adds to.
 

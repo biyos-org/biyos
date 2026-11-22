@@ -4,8 +4,6 @@
 
 #include <gtest/gtest.h>
 
-#include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>
@@ -17,97 +15,7 @@ using biyos::test::Env;
 using biyos::test::expect_doubles;
 using biyos::test::Model;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kNoConstant = -9.5;
-constexpr int kNoVariable = -7;
-constexpr double kNoValue = -7.5;
-
-struct Compressed
-{
-    std::vector<double> constants;
-    std::vector<std::int64_t> starts;
-    std::vector<int> variables;
-    std::vector<double> values;
-};
-
-const Compressed kSample{
-    .constants = {1.5, 0.0, -2.0},
-    .starts = {0, 3, 3, 5},
-    .variables = {2, 0, 1, 1, 0},
-    .values = {3.0, 1.0, 0.0, 5.0, 4.0},
-};
-
-const Compressed kSorted{
-    .constants = {1.5, 0.0, -2.0},
-    .starts = {0, 3, 3, 5},
-    .variables = {0, 1, 2, 0, 1},
-    .values = {1.0, 0.0, 3.0, 4.0, 5.0},
-};
-
-void add_sample(const Model &model)
-{
-    ASSERT_EQ(BIYOS_addvar(model.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    const BIYOS_status status = BIYOS_addfuns(model.get(),
-                                              3,
-                                              kSample.constants.data(),
-                                              kSample.starts.data(),
-                                              kSample.variables.data(),
-                                              kSample.values.data(),
-                                              nullptr);
-    ASSERT_EQ(status, BIYOS_OK);
-}
-
-Compressed blank(std::size_t functions, std::size_t terms)
-{
-    return Compressed{
-        .constants = std::vector<double>(functions, kNoConstant),
-        .starts = std::vector<std::int64_t>(functions + 1, -1),
-        .variables = std::vector<int>(terms, kNoVariable),
-        .values = std::vector<double>(terms, kNoValue),
-    };
-}
-
-BIYOS_status fill(const Model &model,
-                  int start,
-                  int size,
-                  Compressed &read,
-                  std::int64_t capacity,
-                  BIYOS_offset *needed)
-{
-    return BIYOS_getfuns(model.get(),
-                         start,
-                         size,
-                         capacity,
-                         read.constants.data(),
-                         read.starts.data(),
-                         needed,
-                         read.variables.data(),
-                         read.values.data());
-}
-
-std::int64_t read_with(const Model &model,
-                       int start,
-                       int size,
-                       Compressed &read,
-                       std::int64_t capacity)
-{
-    BIYOS_offset needed = -1;
-    EXPECT_EQ(fill(model, start, size, read, capacity, &needed), BIYOS_OK);
-    return needed;
-}
-
-std::int64_t read_functions(const Model &model, int start, int size, Compressed &read)
-{
-    return read_with(model, start, size, read, static_cast<std::int64_t>(read.variables.size()));
-}
-
-void expect_compressed(const Compressed &found, const Compressed &wanted)
-{
-    expect_doubles(found.constants, wanted.constants);
-    EXPECT_EQ(found.starts, wanted.starts);
-    EXPECT_EQ(found.variables, wanted.variables);
-    expect_doubles(found.values, wanted.values);
-}
 
 int n_functions(const Model &model)
 {
@@ -135,254 +43,10 @@ void change(const BIYOS_event *, void *data)
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
     BIYOS_index n = 0;
-    BIYOS_offset needed = 0;
-    note(attempt, BIYOS_addfuns(model, 1, nullptr, nullptr, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_addfun(model, 1, nullptr));
     note(attempt, BIYOS_getnfun(model, &n));
-    note(attempt, BIYOS_getfuns(model, 0, 1, 0, nullptr, nullptr, &needed, nullptr, nullptr));
 }
 
-}
-
-TEST(CApiTest, CompressedFunctions)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    EXPECT_EQ(n_functions(model), 3);
-    Compressed read = blank(3, 5);
-    EXPECT_EQ(read_functions(model, 0, 3, read), 5);
-    expect_compressed(read, kSorted);
-    EXPECT_EQ(env.message(), "");
-}
-
-TEST(CApiTest, FirstFunction)
-{
-    const Env env;
-    const Model model(env);
-    BIYOS_index start = -1;
-    ASSERT_EQ(BIYOS_addfuns(model.get(), 0, nullptr, nullptr, nullptr, nullptr, &start), BIYOS_OK);
-    EXPECT_EQ(start, 0);
-    ASSERT_EQ(BIYOS_addfuns(model.get(), 2, nullptr, nullptr, nullptr, nullptr, &start), BIYOS_OK);
-    EXPECT_EQ(start, 0);
-    ASSERT_EQ(BIYOS_addfuns(model.get(), 3, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addfuns(model.get(), 1, nullptr, nullptr, nullptr, nullptr, &start), BIYOS_OK);
-    EXPECT_EQ(start, 5);
-    const BIYOS_real infinite = kInfinity;
-    EXPECT_EQ(BIYOS_addfuns(model.get(), 1, &infinite, nullptr, nullptr, nullptr, &start),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(start, 5);
-    EXPECT_EQ(n_functions(model), 6);
-}
-
-TEST(CApiTest, SizeZero)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    BIYOS_offset needed = -1;
-    EXPECT_EQ(BIYOS_getfuns(model.get(), 0, 3, 0, nullptr, nullptr, &needed, nullptr, nullptr),
-              BIYOS_OK);
-    EXPECT_EQ(needed, 5);
-    Compressed read = blank(3, 2);
-    EXPECT_EQ(read_with(model, 0, 3, read, 0), 5);
-    const Compressed wanted{
-        .constants = kSorted.constants,
-        .starts = kSorted.starts,
-        .variables = {kNoVariable, kNoVariable},
-        .values = {kNoValue, kNoValue},
-    };
-    expect_compressed(read, wanted);
-}
-
-TEST(CApiTest, SmallSize)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    Compressed read = blank(3, 4);
-    EXPECT_EQ(read_with(model, 0, 3, read, 2), 5);
-    const Compressed wanted{
-        .constants = kSorted.constants,
-        .starts = kSorted.starts,
-        .variables = {0, 1, kNoVariable, kNoVariable},
-        .values = {1.0, 0.0, kNoValue, kNoValue},
-    };
-    expect_compressed(read, wanted);
-}
-
-TEST(CApiTest, LargeSize)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    Compressed read = blank(3, 7);
-    EXPECT_EQ(read_functions(model, 0, 3, read), 5);
-    const Compressed wanted{
-        .constants = kSorted.constants,
-        .starts = kSorted.starts,
-        .variables = {0, 1, 2, 0, 1, kNoVariable, kNoVariable},
-        .values = {1.0, 0.0, 3.0, 4.0, 5.0, kNoValue, kNoValue},
-    };
-    expect_compressed(read, wanted);
-}
-
-TEST(CApiTest, FunctionRange)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    Compressed read = blank(2, 2);
-    EXPECT_EQ(read_functions(model, 1, 2, read), 2);
-    const Compressed wanted{
-        .constants = {0.0, -2.0},
-        .starts = {0, 0, 2},
-        .variables = {0, 1},
-        .values = {4.0, 5.0},
-    };
-    expect_compressed(read, wanted);
-    Compressed none = blank(0, 0);
-    EXPECT_EQ(read_functions(model, 3, 0, none), 0);
-    EXPECT_EQ(none.starts, std::vector<std::int64_t>{0});
-}
-
-TEST(CApiTest, NullFunctions)
-{
-    const Env env;
-    const Model model(env);
-    ASSERT_EQ(BIYOS_addvar(model.get(), 2, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    const double constants[] = {0.5, 0.75};
-    const std::int64_t empty[] = {0, 0, 0};
-    BIYOS_model *held = model.get();
-    ASSERT_EQ(BIYOS_addfuns(held, 2, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addfuns(held, 2, constants, empty, nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addfuns(held, 0, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    Compressed read = blank(4, 0);
-    EXPECT_EQ(read_functions(model, 0, 4, read), 0);
-    expect_doubles(read.constants, {0.0, 0.0, 0.5, 0.75});
-    EXPECT_EQ(read.starts, (std::vector<std::int64_t>{0, 0, 0, 0, 0}));
-    const std::int64_t one[] = {0, 1};
-    const BIYOS_index variable = 0;
-    const BIYOS_real value = 1.0;
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, nullptr, &value, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx': is null");
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, one, &variable, nullptr, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
-    EXPECT_EQ(n_functions(model), 4);
-}
-
-TEST(CApiTest, NullTerms)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    Compressed read = blank(3, 5);
-    BIYOS_offset needed = -1;
-    BIYOS_model *held = model.get();
-    double *constants = read.constants.data();
-    std::int64_t *starts = read.starts.data();
-    int *variables = read.variables.data();
-    double *values = read.values.data();
-    EXPECT_EQ(BIYOS_getfuns(held, 0, 3, 5, nullptr, nullptr, &needed, variables, nullptr),
-              BIYOS_OK);
-    EXPECT_EQ(BIYOS_getfuns(held, 0, 3, 5, nullptr, starts, &needed, nullptr, values), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getfuns(held, 0, 3, 0, constants, nullptr, &needed, nullptr, nullptr),
-              BIYOS_OK);
-    expect_compressed(read, kSorted);
-    Compressed untouched = blank(3, 5);
-    EXPECT_EQ(fill(model, 0, 3, untouched, 5, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
-    expect_compressed(untouched, blank(3, 5));
-    EXPECT_EQ(BIYOS_getnfun(held, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
-}
-
-TEST(CApiTest, RefusedFunctions)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    BIYOS_model *held = model.get();
-    const std::int64_t late[] = {1, 1};
-    const std::int64_t falling[] = {0, 1, 0};
-    const std::int64_t negative[] = {0, -1};
-    const int variables[] = {0, 3};
-    const double values[] = {1.0, 2.0};
-    const BIYOS_real nan = std::numeric_limits<double>::quiet_NaN();
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, late, variables, values, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': begins at 1, not 0");
-    EXPECT_EQ(BIYOS_addfuns(held, 2, nullptr, falling, variables, values, nullptr),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 1 to 0 at entry 2");
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, negative, variables, values, nullptr),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 0 to -1 at entry 1");
-    const std::int64_t both[] = {0, 2};
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, both, variables, values, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: function 3: variable 3 is unknown");
-    EXPECT_EQ(BIYOS_addfuns(held, 1, &nan, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: function 3: constant is NaN");
-    EXPECT_EQ(BIYOS_addfuns(held, -1, nullptr, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
-    BIYOS_offset needed = -1;
-    Compressed untouched = blank(3, 5);
-    EXPECT_EQ(fill(model, 2, 2, untouched, 5, &needed), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: function 3: unknown");
-    EXPECT_EQ(fill(model, -1, 1, untouched, 5, &needed), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: function -1: unknown");
-    EXPECT_EQ(fill(model, 0, 1, untouched, -1, &needed), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'size': -1 is negative");
-    EXPECT_EQ(needed, -1);
-    expect_compressed(untouched, blank(3, 5));
-    Compressed read = blank(3, 5);
-    EXPECT_EQ(read_functions(model, 0, 3, read), 5);
-    expect_compressed(read, kSorted);
-}
-
-TEST(CApiTest, LockedFunctions)
-{
-    const Env env;
-    const Model model(env);
-    Attempt attempt;
-    attempt.env = env.get();
-    attempt.model = model.get();
-    ASSERT_EQ(BIYOS_addfuns(model.get(), 1, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    const std::vector<BIYOS_status> statuses{BIYOS_ERR_BADARG,
-                                             BIYOS_ERR_BADARG,
-                                             BIYOS_OK,
-                                             BIYOS_OK};
-    EXPECT_EQ(attempt.statuses, statuses);
-    EXPECT_EQ(attempt.messages[0],
-              "invalid argument: model: is read-only while delivering an event");
-    EXPECT_EQ(attempt.messages[1], attempt.messages[0]);
-    EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
-    EXPECT_EQ(n_functions(model), 1);
-}
-
-TEST(CApiTest, HugeFunctions)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    BIYOS_model *held = model.get();
-    const std::int64_t most[] = {0, (std::numeric_limits<std::int64_t>::max)()};
-    const std::int64_t large[] = {0, std::int64_t{1} << 59};
-    const int variables[] = {0, 1};
-    const double values[] = {1.0, 2.0};
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, most, variables, values, nullptr),
-              BIYOS_ERR_NOMEMORY);
-    EXPECT_EQ(env.message(), "out of memory: model: no term offset left");
-    EXPECT_EQ(BIYOS_addfuns(held, 1, nullptr, large, variables, values, nullptr),
-              BIYOS_ERR_NOMEMORY);
-    EXPECT_EQ(env.message(), "out of memory: model: no term offset left");
-    Compressed read = blank(3, 5);
-    EXPECT_EQ(read_functions(model, 0, 3, read), 5);
-    expect_compressed(read, kSorted);
 }
 
 TEST(FunctionTest, Empty)
@@ -421,5 +85,27 @@ TEST(FunctionTest, Refusals)
     EXPECT_EQ(BIYOS_addfun(model.get(), most, &start), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), "out of memory: model: no function index left");
     EXPECT_EQ(start, 0);
+    EXPECT_EQ(n_functions(model), 1);
+    EXPECT_EQ(BIYOS_getnfun(model.get(), nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
+}
+
+TEST(FunctionTest, Locked)
+{
+    const Env env;
+    const Model model(env);
+    Attempt attempt;
+    attempt.env = env.get();
+    attempt.model = model.get();
+    ASSERT_EQ(BIYOS_addfun(model.get(), 1, nullptr), BIYOS_OK);
+    BIYOS_index id = 0;
+    const int message = BIYOS_EVT_MESSAGE;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    const std::vector<BIYOS_status> statuses{BIYOS_ERR_BADARG, BIYOS_OK};
+    EXPECT_EQ(attempt.statuses, statuses);
+    EXPECT_EQ(attempt.messages[0],
+              "invalid argument: model: is read-only while delivering an event");
+    EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     EXPECT_EQ(n_functions(model), 1);
 }

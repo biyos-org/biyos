@@ -56,13 +56,18 @@ const Terms kMerged{
 
 BIYOS_status add_functions(const Model &model, int n, const Terms &terms)
 {
-    return BIYOS_addfuns(model.get(),
-                         n,
-                         nullptr,
-                         terms.starts.data(),
-                         terms.indices.data(),
-                         terms.values.data(),
-                         nullptr);
+    BIYOS_index start = -1;
+    const BIYOS_status status = BIYOS_addfun(model.get(), n, &start);
+    if (status != BIYOS_OK)
+    {
+        return status;
+    }
+    return BIYOS_addrlintermrg(model.get(),
+                               start,
+                               n,
+                               terms.starts.data(),
+                               terms.indices.data(),
+                               terms.values.data());
 }
 
 std::vector<int> owners_of(const std::vector<int> &functions, const Terms &terms)
@@ -104,22 +109,20 @@ Terms read_functions(const Model &model)
     const int n = n_functions(model);
     BIYOS_offset nnz = -1;
     BIYOS_model *held = model.get();
-    EXPECT_EQ(BIYOS_getfuns(held, 0, n, 0, nullptr, nullptr, &nnz, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnrlintermrg(held, 0, n, &nnz), BIYOS_OK);
     const auto size = static_cast<std::size_t>(nnz);
     Terms read{
         .starts = std::vector<std::int64_t>(static_cast<std::size_t>(n) + 1),
         .indices = std::vector<int>(size),
         .values = std::vector<double>(size),
     };
-    const BIYOS_status status = BIYOS_getfuns(held,
-                                              0,
-                                              n,
-                                              nnz,
-                                              nullptr,
-                                              read.starts.data(),
-                                              &nnz,
-                                              read.indices.data(),
-                                              read.values.data());
+    const BIYOS_status status = BIYOS_getrlintermrg(held,
+                                                    0,
+                                                    n,
+                                                    nnz,
+                                                    read.starts.data(),
+                                                    read.indices.data(),
+                                                    read.values.data());
     EXPECT_EQ(status, BIYOS_OK);
     return read;
 }

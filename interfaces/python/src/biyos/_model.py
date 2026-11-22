@@ -9,7 +9,6 @@ from biyos._arrays import (
     indices_of,
     ints,
     listed,
-    offsets,
     span_of,
     strings,
 )
@@ -23,7 +22,6 @@ from biyos._blocks import (
     Objectives,
     Variable,
     Variables,
-    index_of,
 )
 from biyos._capi import lib
 from biyos._env import Env
@@ -87,26 +85,10 @@ def _checked_env(env: Env) -> Env:
     return env
 
 
-def _span(
-    pos: int, n: int | None, size: Callable[[], int]
-) -> tuple[int, bool]:
-    given = None if n is None else integer("n", n)
-    total = size()
-    n = max(total - pos, 0) if given is None else given
-    inside = 0 <= pos <= total and 0 <= n <= total - pos
-    return n, inside
-
-
 def _expanded(starts: Array[c_int64], first: int) -> list[int]:
     spans = zip(starts[:-1], starts[1:])
     counts = [end - start for start, end in spans]
     return [first + j for j, count in enumerate(counts) for _ in range(count)]
-
-
-def _total(starts: Array[c_int64] | None, count: int) -> int:
-    if starts is None or count < 0:
-        return 0
-    return starts[count]
 
 
 class Model:
@@ -443,54 +425,6 @@ class Model:
         self._call(lib.BIYOS_addfun, n, byref(first))
         return Functions(self, first.value, n, self._gen)
 
-    def addfuns(
-        self,
-        n: int,
-        cst: Sequence[float] | None = None,
-        off: Sequence[int] | None = None,
-        varidx: Sequence[int | Variable] | Variables | None = None,
-        coef: Sequence[float] | None = None,
-    ) -> Functions:
-        """Add functions after the last one.
-
-        Parameters
-        ----------
-        n
-            The number of functions to add.
-        cst
-            The constant of each, 0 by default.
-        off
-            The ``n + 1`` offsets of the functions' linear terms in
-            ``varidx`` and ``coef``, from 0 and never decreasing.
-            Function ``j`` has the terms from ``off[j]`` to
-            ``off[j + 1] - 1``. By default the functions have no terms.
-        varidx
-            The variable of each term, ``off[n]`` of them.
-        coef
-            The coefficient of each term, ``off[n]`` of them.
-
-        Returns
-        -------
-        funs
-            The new functions.
-
-        See Also
-        --------
-        BIYOS_addfuns
-        """
-        n = integer("n", n)
-        starts = offsets("off", off, n + 1)
-        size = _total(starts, n)
-        arrays = (
-            doubles("cst", cst, n),
-            starts,
-            indices_of(self, Variables, "varidx", varidx, size),
-            doubles("coef", coef, size),
-        )
-        first = c_int()
-        self._call(lib.BIYOS_addfuns, n, *arrays, byref(first))
-        return Functions(self, first.value, n, self._gen)
-
     def getnfun(self) -> int:
         """Return the number of functions.
 
@@ -506,53 +440,6 @@ class Model:
         count = c_int()
         self._call(lib.BIYOS_getnfun, byref(count))
         return count.value
-
-    def getfuns(
-        self, pos: int | Function = 0, n: int | None = None
-    ) -> tuple[list[float], list[int], list[int], list[float]]:
-        """Read the constants and linear terms of functions.
-
-        Parameters
-        ----------
-        pos
-            The first function to read.
-        n
-            The number of functions to read, every one from ``pos`` on by
-            default.
-
-        Returns
-        -------
-        cst
-            The constant of each function.
-        off
-            The ``n + 1`` offsets of the functions' terms in the two lists
-            after it, from 0.
-        varidx
-            The variable of each term.
-        coef
-            The coefficient of each term.
-
-        See Also
-        --------
-        BIYOS_getfuns
-        """
-        pos = index_of(self, Functions, "pos", pos)
-        n, inside = _span(pos, n, self.getnfun)
-        needed = c_int64()
-        if not inside:
-            empty = (0, None, None, byref(needed), None, None)
-            self._call(lib.BIYOS_getfuns, pos, n, *empty)
-        constants = (c_double * n)()
-        starts = (c_int64 * (n + 1))()
-        learn = (0, constants, starts, byref(needed), None, None)
-        self._call(lib.BIYOS_getfuns, pos, n, *learn)
-        size = needed.value
-        variables = (c_int * size)()
-        values = (c_double * size)()
-        fill = (size, None, None, byref(needed), variables, values)
-        self._call(lib.BIYOS_getfuns, pos, n, *fill)
-        terms = (list(starts), list(variables), list(values))
-        return (list(constants), *terms)
 
     def addcst(
         self,

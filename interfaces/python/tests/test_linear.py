@@ -1,6 +1,7 @@
 import array
 import ctypes
 import random
+from bisect import bisect_left
 from functools import partial
 
 import pytest
@@ -39,12 +40,15 @@ def env():
 def model(env):
     with biyos.Model(env) as model:
         model.addvar(3)
-        model.addfuns(3, None, *HELD)
+        model.addfun(3)
+        model.addlinterm(*spread(HELD, 0, 0))
         yield model
 
 
 def terms(model):
-    return model.getfuns()[1:]
+    funidx, varidx, coef = model.getrlinterm()
+    ends = range(model.getnfun() + 1)
+    return [bisect_left(funidx, j) for j in ends], varidx, coef
 
 
 def read_lengths(handle, pos, n, size, starts, funs, values):
@@ -104,7 +108,7 @@ def test_copied(env):
         with biyos.Model(env) as source, biyos.Model(env) as target:
             for model in (source, target):
                 model.addvar(n_vars)
-                model.addfuns(n_funs)
+                model.addfun(n_funs)
             drawn = random_terms(draw, n_vars, n_funs)
             source.addlinterm(*spread(drawn, 0, 0))
             funidx, varidx, coef = source.getrlinterm()
@@ -166,16 +170,16 @@ def test_sequences(model):
 
 def test_views(env, model):
     x = model.addvar(2)
-    f = model.addfuns(2)
+    f = model.addfun(2)
     model.addlinterm(f, [x[1], 0], [1.0, 2.0])
     model.addlinterm([f[0], f[0]], x, [3.0, 4.0])
-    found = ([0.0, 0.0], [0, 2, 3], [3, 4, 0], [3.0, 5.0, 2.0])
-    assert model.getfuns(f[0]) == found
+    found = ([3, 3, 4], [3, 4, 0], [3.0, 5.0, 2.0])
+    assert model.getrlinterm(f) == found
     assert model.getclinterm(x[1:]) == ([3], [4], [5.0])
     assert model.getrlinterm([f[0]]) == ([3, 3], [3, 4], [3.0, 5.0])
     other = biyos.Model(env)
     y = other.addvar(1)
-    g = other.addfuns(1)
+    g = other.addfun(1)
     entry = "an entry of varidx is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.addlinterm([0], [y[0]], [1.0])
@@ -191,7 +195,7 @@ def test_views(env, model):
 
 def test_gone(model, monkeypatch):
     x = model.addvar(1)
-    f = model.addfuns(1)
+    f = model.addfun(1)
     before = terms(model)
     function, variable = f[0], x[0]
     model._gen += 1
@@ -270,7 +274,9 @@ def test_transpose(env):
             n_vars = draw.randint(1, 7)
             n_funs = draw.randint(0, 6)
             model.addvar(n_vars)
-            model.addfuns(n_funs, None, *random_terms(draw, n_vars, n_funs))
+            model.addfun(n_funs)
+            drawn = random_terms(draw, n_vars, n_funs)
+            model.addlinterm(*spread(drawn, 0, 0))
             for _ in range(3):
                 funidx = draw.sample(range(n_funs), draw.randint(0, n_funs))
                 added = random_terms(draw, n_vars, len(funidx))

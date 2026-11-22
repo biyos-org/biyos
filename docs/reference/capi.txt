@@ -510,22 +510,7 @@ since 0.1.0
 group functions Functions
 text A function of the variables $x$ is $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j$: a constant, linear terms and quadratic terms. Constraints and objectives refer to functions by index, so one function may serve several of them. A function's constant must be finite. Its linear terms may come in any order and are kept sorted by variable; each must name a variable of the model, appear once in the function and have a finite coefficient. A term whose coefficient is 0 is kept.
 text The terms of many functions travel in compressed form, as three arrays. Function `j` of them has the terms from `off[j]` to `off[j + 1] - 1` of `varidx` and `coef`, which hold a variable and its coefficient each. So `off` holds one more offset than there are functions: the first is 0, none is below the one before it, and the last is the number of terms. An offset or a number of terms is a `BIYOS_offset`.
-text A reader of terms writes into arrays the caller gives, in the manner of the formatting calls: `cap` is the number of terms the arrays hold, the call writes at most that many, and `nnz` receives the number of terms whether they fit or not. A null array is skipped, so a `cap` of 0 with null arrays learns `nnz` alone.
-
-function BIYOS_addfuns
-summary Add functions after the last one, with their constants and linear terms.
-param mdl in The model.
-param n in The number of functions to add.
-param cst in The constant of each; null gives every new function the constant 0.
-param off in The `n + 1` offsets of the functions' terms; null adds functions without terms.
-param varidx in The variable of each term; not read when there are no terms.
-param coef in The coefficient of each term; not read when there are no terms.
-param pos out Receives the index of the first new function; skipped when null.
-return `BIYOS_OK` once the functions are added.
-error BIYOS_ERR_BADARG `n` is negative, `off` does not begin at 0 or decreases, a constant is not finite, a variable is not one of the model or appears twice in a function, or a coefficient is not finite.
-error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 functions, or more terms than any allocation can hold.
-see BIYOS_addquadtermsp BIYOS_getfuns
-since 0.1.0
+text A reader of terms writes into arrays the caller gives: `cap` is the number of terms the arrays hold, and a call whose terms do not fit is refused. Each reader has a count reader that gives the number of terms first. A null array is skipped.
 
 function BIYOS_addfun
 summary Add functions after the last one, each with the constant 0 and no terms.
@@ -544,22 +529,6 @@ summary Give the number of functions.
 param mdl in The model.
 param n out Receives the number of functions.
 return `BIYOS_OK`, with the number in `*n`.
-since 0.1.0
-
-function BIYOS_getfuns
-summary Read the constants and linear terms of functions.
-param mdl in The model.
-param pos in The first function to read.
-param n in The number of functions to read.
-param cap in The number of terms `varidx` and `coef` hold.
-param cst out Entry `j` receives the constant of function `pos + j`; skipped when null.
-param off out Receives `n + 1` offsets from 0, whatever `cap` is; skipped when null.
-param nnz out Receives the number of terms of the functions, whether they fit or not.
-param varidx out Receives the variable of each term, each function's sorted by variable; skipped when null.
-param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written. Function `pos + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `cap`.
-error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
-see BIYOS_getnfun BIYOS_getrlintermsp BIYOS_getquadtermsp
 since 0.1.0
 
 function BIYOS_addcstsp BIYOS_addcstrg
@@ -673,7 +642,7 @@ param coef out Receives the coefficient of each term; skipped when null.
 return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of function `pos + j` from `off[j]`.
 error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnrlintermsp` gives.
 note A refused call writes nothing.
-see BIYOS_getnrlintermsp BIYOS_getclintermsp BIYOS_getfuns
+see BIYOS_getnrlintermsp BIYOS_getclintermsp
 since 0.1.0
 
 function BIYOS_getnclintermsp BIYOS_getnclintermrg
@@ -771,7 +740,7 @@ param coef out Receives the coefficient of each pair; skipped when null.
 return `BIYOS_OK` once the arrays are written, each function's pairs sorted: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of function `pos + j` from `off[j]`.
 error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnquadtermsp` gives.
 note A refused call writes nothing.
-see BIYOS_getnquadtermsp BIYOS_addquadtermsp BIYOS_getfuns
+see BIYOS_getnquadtermsp BIYOS_addquadtermsp
 since 0.1.0
 
 group constraints Constraints

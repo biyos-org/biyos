@@ -338,8 +338,7 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getvarrg(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getvarbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getvarkndsp(model, 0, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getnfun(model, &count) != BIYOS_OK ||
-        BIYOS_getfuns(model, 0, 0, 0, NULL, NULL, &needed, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getnfun(model, &count) != BIYOS_OK || BIYOS_getcstrg(model, 0, 0, NULL) != BIYOS_OK ||
         BIYOS_getnrlintermrg(model, 0, 0, &needed) != BIYOS_OK ||
         BIYOS_getrlintermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getrlintermrg(model, 0, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||

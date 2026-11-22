@@ -39,7 +39,7 @@ def env():
 def model(env):
     with biyos.Model(env) as model:
         model.addvar(3)
-        model.addfuns(3)
+        model.addfun(3)
         yield model
 
 
@@ -98,7 +98,7 @@ def test_shuffled(env):
         with biyos.Model(env) as source, biyos.Model(env) as target:
             for model in (source, target):
                 model.addvar(n_vars)
-                model.addfuns(n_funs)
+                model.addfun(n_funs)
             add_random(draw, source, n_vars, n_funs)
             found = source.getquadterm()
             order = list(range(len(found[3])))
@@ -172,7 +172,7 @@ def test_forms(env):
             n_vars = draw.randint(1, 4)
             model.addvar(n_vars)
             count = draw.randint(1, 4)
-            model.addfuns(count)
+            model.addfun(count)
             every = [(i, j) for i in range(n_vars) for j in range(i, n_vars)]
             for f in range(count):
                 size = draw.randint(0, min(len(every), 3))
@@ -213,7 +213,7 @@ def test_values(model, monkeypatch):
 
 def test_growing(model):
     add_sample(model)
-    grow = partial(model.addfuns, 3)
+    grow = partial(model.addfun, 3)
     expected = model.getquadterm()
     assert model.getquadterm([0, Growing(1, grow), 2]) == expected
     assert model.getnfun() == 9
@@ -255,14 +255,14 @@ def test_sequences(model):
 
 def test_views(env, model):
     x = model.addvar(2)
-    f = model.addfuns(2)
+    f = model.addfun(2)
     model.addquadterm(f, [x[1], 0], x, [1.0, 2.0])
     model.addquadterm([f[0]], [x[0]], [x[1]], [3.0])
     found = model.getquadterm(f)
     assert found == ([3, 4], [3, 0], [4, 4], [4.0, 2.0])
     other = biyos.Model(env)
     y = other.addvar(1)
-    g = other.addfuns(1)
+    g = other.addfun(1)
     entry = "an entry of varidx1 is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.addquadterm([0], [y[0]], [0], [1.0])
@@ -283,7 +283,7 @@ def test_views(env, model):
 
 def test_gone(model, monkeypatch):
     x = model.addvar(2)
-    f = model.addfuns(2)
+    f = model.addfun(2)
     model.addquadterm(f, [0, 1], x, [1.0, 2.0])
     before = model.getquadterm()
     function, other, variable = f[0], f[1], x[1]

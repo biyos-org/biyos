@@ -72,7 +72,7 @@ void add_sample(const Model &model)
 {
     BIYOS_model *held = model.get();
     ASSERT_EQ(BIYOS_addvar(held, 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addfuns(held, 3, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(held, 3, nullptr), BIYOS_OK);
     ASSERT_EQ(add_terms(model, kFunctions, kSample), BIYOS_OK);
 }
 
