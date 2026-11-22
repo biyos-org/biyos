@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <string>
 
 namespace
 {
@@ -36,4 +37,45 @@ TEST(AllocationTest, SecondEntry)
     run(env, tree);
     EXPECT_GT(first, start);
     EXPECT_EQ(biyos::test::allocations(), first);
+}
+
+TEST(AllocationTest, FirstError)
+{
+    biyos::Env env;
+    biyos::test::fail_after(0);
+    env.record_error(biyos::ErrorKind::Internal, "first");
+    biyos::test::stop_failing();
+    EXPECT_EQ(env.last_error().status, BIYOS_OK);
+    EXPECT_EQ(env.last_error().text, "");
+}
+
+TEST(AllocationTest, EmptyScope)
+{
+    biyos::Env env;
+    {
+        const biyos::Env::ErrorScope scope(env);
+        biyos::test::fail_after(0);
+        env.record_error(biyos::ErrorKind::Internal, "inner");
+        biyos::test::stop_failing();
+    }
+    EXPECT_EQ(env.last_error().status, BIYOS_OK);
+    EXPECT_EQ(env.last_error().text, "");
+    env.record_error(biyos::ErrorKind::Internal, "later");
+    EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
+    EXPECT_EQ(env.last_error().text, "later");
+}
+
+TEST(AllocationTest, ScopedError)
+{
+    const std::string outer(64, 'o');
+    biyos::Env env;
+    env.record_error(biyos::ErrorKind::NoMemory, outer);
+    {
+        const biyos::Env::ErrorScope scope(env);
+        biyos::test::fail_after(0);
+        env.record_error(biyos::ErrorKind::Internal, "inner");
+        biyos::test::stop_failing();
+    }
+    EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.last_error().text, outer);
 }

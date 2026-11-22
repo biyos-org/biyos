@@ -180,12 +180,12 @@ TEST_F(CheckTest, OneEvent)
 TEST_F(CheckTest, LastError)
 {
     std::string seen;
-    const auto read = [this, &seen](const biyos::Event &) { seen = env.last_error(); };
+    const auto read = [this, &seen](const biyos::Event &) { seen = env.last_error().text; };
     env.events().add_hook(EventKind::Check, EventLevel::Error, read);
-    env.record_error("earlier");
+    env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
     const biyos::Error error = caught([this] { check(at("cheap"), CheckLevel::Cheap, false); });
     EXPECT_EQ(seen, error.what());
-    EXPECT_EQ(env.last_error(), error.what());
+    EXPECT_EQ(env.last_error().text, error.what());
 }
 
 TEST_F(CheckTest, CallerKind)
@@ -221,11 +221,11 @@ TEST_F(CheckTest, Filling)
     const auto fill = [&](biyos::Event &) { check(checker, CheckLevel::Cheap, false); };
     keep(EventKind::Check);
     keep(EventKind::Message);
-    env.record_error("earlier");
+    env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
     env.events().emit(EventKind::Message, EventLevel::Info, fill);
     EXPECT_EQ(evaluated, 1);
     EXPECT_TRUE(kept.empty());
-    EXPECT_EQ(env.last_error(), "earlier");
+    EXPECT_EQ(env.last_error().text, "earlier");
 }
 
 TEST_F(CheckTest, Models)

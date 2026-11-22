@@ -35,7 +35,7 @@ inline void report(Env *env, ErrorKind kind, std::string_view text) noexcept
     {
         return;
     }
-    env->record_error(text);
+    env->record_error(kind, text);
     if (!env->events().delivering())
     {
         announce(*env, kind, text);

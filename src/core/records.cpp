@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <mutex>
+#include <utility>
 
 namespace biyos
 {
@@ -43,6 +44,16 @@ const Record &Records::get() const noexcept
     const std::lock_guard held(lock_);
     const auto found = std::ranges::find(entries_, this_thread(), &Entry::thread);
     return found == entries_.end() ? none_ : found->record;
+}
+
+void Records::swap(Record &record) noexcept
+{
+    const std::lock_guard held(lock_);
+    const auto found = std::ranges::find(entries_, this_thread(), &Entry::thread);
+    if (found != entries_.end())
+    {
+        std::swap(found->record, record);
+    }
 }
 
 Record &Records::slot(ThreadId thread)

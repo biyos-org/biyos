@@ -26,6 +26,7 @@ class Records
   public:
     void put(BIYOS_status status, const BIYOS_model *model, std::string_view text) noexcept;
     const Record &get() const noexcept;
+    void swap(Record &record) noexcept;
 
   private:
     struct Entry

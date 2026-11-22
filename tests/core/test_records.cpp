@@ -133,3 +133,28 @@ TEST(RecordTest, Refreshed)
     EXPECT_EQ(std::ranges::count(seen, std::string()), 1);
     EXPECT_EQ(second.leave(), std::vector<std::string>{"0"});
 }
+
+TEST(RecordTest, Swapped)
+{
+    const int address = 0;
+    biyos::Records records;
+    records.put(BIYOS_ERR_BADARG, fake_model(address), "kept");
+    biyos::Record held;
+    records.swap(held);
+    EXPECT_EQ(held.status, BIYOS_ERR_BADARG);
+    EXPECT_EQ(held.model, fake_model(address));
+    EXPECT_EQ(held.text, "kept");
+    EXPECT_EQ(records.get().status, BIYOS_OK);
+    records.swap(held);
+    EXPECT_EQ(records.get().text, "kept");
+    EXPECT_EQ(held.text, "");
+}
+
+TEST(RecordTest, SwapEmpty)
+{
+    biyos::Records records;
+    biyos::Record held{.status = BIYOS_ERR_BADARG, .model = nullptr, .text = "held"};
+    records.swap(held);
+    EXPECT_EQ(held.text, "held");
+    EXPECT_EQ(records.get().status, BIYOS_OK);
+}

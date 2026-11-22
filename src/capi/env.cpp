@@ -50,7 +50,7 @@ BIYOS_status BIYOS_freeenv(BIYOS_env *env)
 
 const char *BIYOS_lasterror(const BIYOS_env *env)
 {
-    return env == nullptr ? "" : env->core.last_error().c_str();
+    return env == nullptr ? "" : env->core.last_error().text.c_str();
 }
 
 BIYOS_status BIYOS_interrupt(BIYOS_env *env)
