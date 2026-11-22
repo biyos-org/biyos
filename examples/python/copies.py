@@ -3,7 +3,7 @@ import biyos
 with biyos.Env() as env, biyos.Env() as other:
     with biyos.Model(env) as model:
         x = model.addvar(2, ub=[1.0, 2.0])
-        f = model.addfuns(1)
+        f = model.addfun(1)
         model.addcon(f)
 
         copy = model.copy(other)

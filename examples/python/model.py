@@ -9,20 +9,14 @@ def build(model):
         VariableKind.BINARY,
     ]
     x = model.addvar(3, knd, [0.0, 0.0, 0.0], [4.0, 3.0, 1.0])
-    f = model.addfuns(
-        3,
-        cst=[0.0, 0.0, 1.0],
-        off=[0, 3, 5, 6],
-        varidx=[x[0], x[1], x[2], x[0], x[1], x[0]],
-        coef=[1.0, 1.0, 1.0, 1.0, -2.0, -2.0],
+    f = model.addfun(3)
+    model.setcst(f, [0.0, 0.0, 1.0])
+    model.addlinterm(
+        [f[0], f[0], f[0], f[1], f[1], f[2]],
+        [x[0], x[1], x[2], x[0], x[1], x[0]],
+        [1.0, 1.0, 1.0, 1.0, -2.0, -2.0],
     )
-    model.addquadterms(
-        [f[2]],
-        off=[0, 2],
-        varidx1=[x[0], x[1]],
-        varidx2=[x[0], x[1]],
-        coef=[1.0, 1.0],
-    )
+    model.addquadterm([f[2], f[2]], [x[0], x[1]], [x[0], x[1]], [1.0, 1.0])
     model.addcon([f[0], f[1]], lb=[1.0, 0.0], ub=[5.0, 0.0])
     o = model.addobj(
         [f[2], f[0]],

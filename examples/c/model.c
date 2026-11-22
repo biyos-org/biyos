@@ -15,17 +15,27 @@ static BIYOS_status functions(BIYOS_model *mdl)
     const BIYOS_offset off[] = {0, 3, 5, 6};
     const BIYOS_index varidx[] = {0, 1, 2, 0, 1, 0};
     const BIYOS_real coef[] = {1.0, 1.0, 1.0, 1.0, -2.0, -2.0};
-    return BIYOS_addfuns(mdl, 3, cst, off, varidx, coef, NULL);
+    BIYOS_index pos = 0;
+    BIYOS_status status = BIYOS_addfun(mdl, 3, &pos);
+    if (status != BIYOS_OK)
+    {
+        return status;
+    }
+    status = BIYOS_setcstrg(mdl, pos, 3, cst);
+    if (status != BIYOS_OK)
+    {
+        return status;
+    }
+    return BIYOS_addrlintermrg(mdl, pos, 3, off, varidx, coef);
 }
 
 static BIYOS_status squares(BIYOS_model *mdl)
 {
-    const BIYOS_index funidx[] = {2};
-    const BIYOS_offset off[] = {0, 2};
+    const BIYOS_index funidx[] = {2, 2};
     const BIYOS_index varidx1[] = {0, 1};
     const BIYOS_index varidx2[] = {0, 1};
     const BIYOS_real coef[] = {1.0, 1.0};
-    return BIYOS_addquadterms(mdl, 1, funidx, off, varidx1, varidx2, coef);
+    return BIYOS_addquadtermsp(mdl, 2, funidx, varidx1, varidx2, coef);
 }
 
 static BIYOS_status constraints(BIYOS_model *mdl)
