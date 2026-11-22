@@ -29,7 +29,7 @@ def cell(text):
 
 
 WEIGHTS = {
-    "Parameter": 3,
+    "Parameter": 7,
     "Type": 4,
     "Default": 2,
     "Meaning": 9,
@@ -63,9 +63,9 @@ def code(text):
     return f"`{text}`" if text else ""
 
 
-def quiet(text):
+def quiet(text, classes=".type"):
     shown = str(text).replace("...", "\\.\\.\\.")
-    return f"[{shown}]{{.type}}" if text else ""
+    return f"[{shown}]{{{classes}}}" if text else ""
 
 
 def target(obj):
@@ -89,6 +89,11 @@ def summary_of(obj):
 
 def described(found, kind):
     return [item for s in found if isinstance(s, kind) for item in s.value]
+
+
+def stacked(row):
+    name, kind, default, meaning = row
+    return (f"{name} {kind}" if kind else name, default, meaning)
 
 
 def merged(rows):
@@ -175,13 +180,16 @@ class Renderer(MdRenderer):
             rows.append(
                 (
                     f"[`{splat}{par.name}`]{{.name}}",
-                    quiet(self.render_annotation(anno) if anno else ""),
+                    quiet(
+                        self.render_annotation(anno) if anno else "",
+                        ".type .under",
+                    ),
                     code(default),
                     note.description if note else "",
                 )
             )
-        header = ("Parameter", "Type", "Default", "Meaning")
-        shown = table(header, merged(rows))
+        header = ("Parameter", "Default", "Meaning")
+        shown = table(header, [stacked(row) for row in merged(rows)])
         return [f"::: {{.params}}\n{shown}\n:::"] if rows else []
 
     def returns(self, obj, found):
