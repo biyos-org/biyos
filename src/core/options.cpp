@@ -144,6 +144,11 @@ Source Options::source_of(Option option) const
     return sources_[index_of(option)];
 }
 
+std::span<const OptionSpec> Options::table() const noexcept
+{
+    return table_;
+}
+
 std::size_t Options::position(Option option) const
 {
     const OptionSpec &spec = row_of(table_, option);

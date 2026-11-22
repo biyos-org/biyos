@@ -135,6 +135,7 @@ class Options
 
     const OptionValue &value_of(Option option) const;
     Source source_of(Option option) const;
+    std::span<const OptionSpec> table() const noexcept;
 
     template <typename E>
         requires std::is_enum_v<E>
