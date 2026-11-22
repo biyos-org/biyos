@@ -527,6 +527,18 @@ error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 functions, or
 see BIYOS_addlinterms BIYOS_addquadterms BIYOS_getfuns
 since 0.1.0
 
+function BIYOS_addfun
+summary Add functions after the last one, each with the constant 0 and no terms.
+param mdl in The model.
+param n in The number of functions to add.
+param pos out Receives the index of the first new function; skipped when null.
+return `BIYOS_OK` once the functions are added.
+error BIYOS_ERR_BADARG `n` is negative.
+error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 functions.
+note The constants and terms follow through `BIYOS_setcstrg`, `BIYOS_addrlintermrg` and `BIYOS_addquadtermrg`, or their list forms.
+see BIYOS_setcstsp BIYOS_addlintermsp BIYOS_addquadtermsp
+since 0.1.0
+
 function BIYOS_getnfun
 summary Give the number of functions.
 param mdl in The model.

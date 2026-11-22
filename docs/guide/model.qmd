@@ -62,7 +62,7 @@ $$
 f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j ,
 $$
 
-a constant $c$, linear terms $a_j x_j$ and quadratic terms $q_{ij} x_i x_j$. `BIYOS_addfuns` adds functions with their constants and linear terms. The terms of many functions travel in compressed form, as three arrays: function $k$ owns the terms from `off[k]` to `off[k + 1] - 1` of `varidx` and `coef`, which hold the index of a variable and its coefficient. So `off` holds one more entry than there are functions, begins at 0 and never decreases, and its last entry is the number of terms.
+a constant $c$, linear terms $a_j x_j$ and quadratic terms $q_{ij} x_i x_j$. `BIYOS_addfun` adds functions with the constant 0 and no terms, which later calls fill. `BIYOS_addfuns` adds functions with their constants and linear terms. The terms of many functions travel in compressed form, as three arrays: function $k$ owns the terms from `off[k]` to `off[k + 1] - 1` of `varidx` and `coef`, which hold the index of a variable and its coefficient. So `off` holds one more entry than there are functions, begins at 0 and never decreases, and its last entry is the number of terms.
 
 ```{.c file="examples/c/model.c" item="functions"}
 ```

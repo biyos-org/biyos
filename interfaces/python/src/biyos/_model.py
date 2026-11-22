@@ -420,6 +420,29 @@ class Model:
         kinds, lower, upper = found
         return [VariableKind(kind) for kind in kinds], lower, upper
 
+    def addfun(self, n: int) -> Functions:
+        """Add functions after the last one, each with the constant 0 and
+        no terms.
+
+        Parameters
+        ----------
+        n
+            The number of functions to add.
+
+        Returns
+        -------
+        funs
+            The new functions.
+
+        See Also
+        --------
+        BIYOS_addfun
+        """
+        n = integer("n", n)
+        first = c_int()
+        self._call(lib.BIYOS_addfun, n, byref(first))
+        return Functions(self, first.value, n, self._gen)
+
     def addfuns(
         self,
         n: int,

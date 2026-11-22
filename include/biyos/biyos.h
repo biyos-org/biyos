@@ -177,6 +177,7 @@ BIYOS_API BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
                                      const BIYOS_index *varidx,
                                      const BIYOS_real *coef,
                                      BIYOS_index *pos);
+BIYOS_API BIYOS_status BIYOS_addfun(BIYOS_model *mdl, BIYOS_index n, BIYOS_index *pos);
 BIYOS_API BIYOS_status BIYOS_getnfun(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
                                      BIYOS_index pos,

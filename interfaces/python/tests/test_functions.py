@@ -90,6 +90,23 @@ def test_block(model):
     assert len(model.addfuns(0)) == 0
 
 
+def test_empty(model):
+    model.addfun(2)
+    f = model.addfun(3)
+    assert type(f) is biyos.Functions
+    assert [index(function) for function in f] == [2, 3, 4]
+    assert len(model.addfun(0)) == 0
+    assert model.getnfun() == 5
+    assert model.getcst(range(5)) == [0.0] * 5
+    assert model.getnrlinterm() == 0
+    assert model.getnquadterm() == 0
+    message = refusal(model.addfun, -1)
+    assert message == "invalid argument: argument 'n': -1 is negative"
+    with pytest.raises(TypeError, match="n must be an int, not float"):
+        model.addfun(1.0)
+    assert model.getnfun() == 5
+
+
 def test_range(model):
     add_sample(model)
     tail = ([0.0, -2.0], [0, 0, 2], [0, 1], [4.0, 5.0])
@@ -274,17 +291,18 @@ def test_locked(env, model):
     seen = []
 
     def change(event):
-        try:
-            model.addfuns(1)
-        except biyos.Error as error:
-            seen.append(str(error))
+        for add in (model.addfun, model.addfuns):
+            try:
+                add(1)
+            except biyos.Error as error:
+                seen.append(str(error))
         seen.append(model.getfuns())
 
     add_sample(model)
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [LOCKED, SORTED]
+    assert seen == [LOCKED, LOCKED, SORTED]
     assert model.getnfun() == 3
 
 
@@ -292,6 +310,7 @@ def test_closed(env):
     model = biyos.Model(env)
     model.close()
     calls = (
+        partial(model.addfun, 1),
         partial(model.addfuns, 1),
         model.getnfun,
         model.getfuns,

@@ -61,6 +61,20 @@ void add_functions(BIYOS_model &model,
     }
 }
 
+void add_empty(BIYOS_model &model, int n, int *start)
+{
+    biyos::Model &core = writable(model);
+    const std::size_t size = length(n);
+    core.check_room(size, 0);
+    const biyos::Index index = core.n_functions();
+    const std::vector<biyos::Offset> starts(size + 1, 0);
+    core.add_functions(std::vector<double>(size, 0.0), starts, {});
+    if (start != nullptr)
+    {
+        *start = index;
+    }
+}
+
 void n_functions(const BIYOS_model &model, int *n)
 {
     *require(n, "n") = model.core.n_functions();
@@ -145,6 +159,11 @@ BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
                            BIYOS_index *pos)
 {
     return guarded<add_functions>(mdl, n, cst, off, varidx, coef, pos);
+}
+
+BIYOS_status BIYOS_addfun(BIYOS_model *mdl, BIYOS_index n, BIYOS_index *pos)
+{
+    return guarded<add_empty>(mdl, n, pos);
 }
 
 BIYOS_status BIYOS_getnfun(const BIYOS_model *mdl, BIYOS_index *n)

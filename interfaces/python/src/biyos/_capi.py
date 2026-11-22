@@ -112,6 +112,7 @@ def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     offsets = POINTER(c_int64)
     add = (c_void_p, c_int32, doubles, offsets, ints, doubles, ints)
     _declare(lib, "BIYOS_addfuns", c_int, *add)
+    _declare(lib, "BIYOS_addfun", c_int, c_void_p, c_int32, ints)
     _declare(lib, "BIYOS_getnfun", c_int, c_void_p, ints)
     sized = (offsets, ints, doubles)
     read = (c_void_p, c_int32, c_int32, c_int64, doubles, offsets, *sized)

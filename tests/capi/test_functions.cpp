@@ -137,6 +137,7 @@ void change(const BIYOS_event *, void *data)
     BIYOS_index n = 0;
     BIYOS_offset needed = 0;
     note(attempt, BIYOS_addfuns(model, 1, nullptr, nullptr, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_addfun(model, 1, nullptr));
     note(attempt, BIYOS_getnfun(model, &n));
     note(attempt, BIYOS_getfuns(model, 0, 1, 0, nullptr, nullptr, &needed, nullptr, nullptr));
 }
@@ -351,10 +352,14 @@ TEST(CApiTest, LockedFunctions)
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    const std::vector<BIYOS_status> statuses{BIYOS_ERR_BADARG, BIYOS_OK, BIYOS_OK};
+    const std::vector<BIYOS_status> statuses{BIYOS_ERR_BADARG,
+                                             BIYOS_ERR_BADARG,
+                                             BIYOS_OK,
+                                             BIYOS_OK};
     EXPECT_EQ(attempt.statuses, statuses);
     EXPECT_EQ(attempt.messages[0],
               "invalid argument: model: is read-only while delivering an event");
+    EXPECT_EQ(attempt.messages[1], attempt.messages[0]);
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     EXPECT_EQ(n_functions(model), 1);
 }
@@ -378,4 +383,43 @@ TEST(CApiTest, HugeFunctions)
     Compressed read = blank(3, 5);
     EXPECT_EQ(read_functions(model, 0, 3, read), 5);
     expect_compressed(read, kSorted);
+}
+
+TEST(FunctionTest, Empty)
+{
+    const Env env;
+    const Model model(env);
+    ASSERT_EQ(BIYOS_addvar(model.get(), 2, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    BIYOS_index start = -1;
+    ASSERT_EQ(BIYOS_addfun(model.get(), 0, &start), BIYOS_OK);
+    EXPECT_EQ(start, 0);
+    ASSERT_EQ(BIYOS_addfun(model.get(), 2, &start), BIYOS_OK);
+    EXPECT_EQ(start, 0);
+    ASSERT_EQ(BIYOS_addfun(model.get(), 3, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(model.get(), 1, &start), BIYOS_OK);
+    EXPECT_EQ(start, 5);
+    EXPECT_EQ(n_functions(model), 6);
+    std::vector<double> constants(6, kNoConstant);
+    ASSERT_EQ(BIYOS_getcstrg(model.get(), 0, 6, constants.data()), BIYOS_OK);
+    expect_doubles(constants, std::vector<double>(6, 0.0));
+    BIYOS_offset nnz = -1;
+    ASSERT_EQ(BIYOS_getnrlintermrg(model.get(), 0, 6, &nnz), BIYOS_OK);
+    EXPECT_EQ(nnz, 0);
+    ASSERT_EQ(BIYOS_getnquadtermrg(model.get(), 0, 6, &nnz), BIYOS_OK);
+    EXPECT_EQ(nnz, 0);
+}
+
+TEST(FunctionTest, Refusals)
+{
+    const Env env;
+    const Model model(env);
+    BIYOS_index start = -1;
+    ASSERT_EQ(BIYOS_addfun(model.get(), 1, &start), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addfun(model.get(), -1, &start), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
+    const BIYOS_index most = (std::numeric_limits<BIYOS_index>::max)();
+    EXPECT_EQ(BIYOS_addfun(model.get(), most, &start), BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.message(), "out of memory: model: no function index left");
+    EXPECT_EQ(start, 0);
+    EXPECT_EQ(n_functions(model), 1);
 }
