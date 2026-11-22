@@ -197,8 +197,8 @@ def test_growing(model):
 def test_stale(model, monkeypatch):
     add_sample(model)
     monkeypatch.setattr(model, "getnobjs", lambda: 0)
-    spy = Room(lib.BIYOS_getobjs, read_lengths)
-    monkeypatch.setattr(lib, "BIYOS_getobjs", spy)
+    spy = Room(lib.BIYOS_getobjrg, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getobjrg", spy)
     assert model.getobjs(0, 3) == SAMPLE
     assert model.getobjs(1) == NONE
 

@@ -65,13 +65,13 @@ BIYOS_status add_with(BIYOS_model *mdl,
 
 BIYOS_status get_with(BIYOS_model *mdl, int beg, int n, const Outputs &outputs)
 {
-    return BIYOS_getobjs(mdl,
-                         beg,
-                         n,
-                         outputs.functions,
-                         outputs.senses,
-                         outputs.priorities,
-                         outputs.weights);
+    return BIYOS_getobjrg(mdl,
+                          beg,
+                          n,
+                          outputs.functions,
+                          outputs.senses,
+                          outputs.priorities,
+                          outputs.weights);
 }
 
 BIYOS_status add_records(const Model &mdl, const Records &records, BIYOS_index *beg = nullptr)
@@ -635,7 +635,7 @@ TEST(CApiTest, NewTolerances)
     expect_records(read_all(mdl), wanted);
     int funs[] = {-1, -1};
     double coef[] = {-9.0, -9.0};
-    EXPECT_EQ(BIYOS_getobjs(mdl.get(), 0, 2, funs, nullptr, nullptr, coef), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjrg(mdl.get(), 0, 2, funs, nullptr, nullptr, coef), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({funs[0], funs[1]}), std::vector<int>(2, 0));
     EXPECT_EQ(bits_of({coef[0], coef[1]}), bits_of({1.0, 1.0}));
 }

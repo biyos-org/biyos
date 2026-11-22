@@ -387,17 +387,17 @@ class Model:
 
         See Also
         --------
-        BIYOS_getvars
+        BIYOS_getvarrg
         """
         beg = index_of(self, Variables, "beg", beg)
         n, inside = _span(beg, n, self.getnvars)
         if not inside:
-            self._call(lib.BIYOS_getvars, beg, n, None, None, None)
+            self._call(lib.BIYOS_getvarrg, beg, n, None, None, None)
         kinds = (c_int * n)()
         lower = (c_double * n)()
         upper = (c_double * n)()
         arrays = (kinds, lower, upper)
-        self._call(lib.BIYOS_getvars, beg, n, *arrays)
+        self._call(lib.BIYOS_getvarrg, beg, n, *arrays)
         return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
 
     def addfuns(
@@ -581,22 +581,22 @@ class Model:
 
         See Also
         --------
-        BIYOS_getvarterms
+        BIYOS_getclintermrg
         """
         beg = index_of(self, Variables, "beg", beg)
         n, inside = _span(beg, n, self.getnvars)
         nnz = c_int64()
         if not inside:
             empty = (0, None, byref(nnz), None, None)
-            self._call(lib.BIYOS_getvarterms, beg, n, *empty)
+            self._call(lib.BIYOS_getclintermrg, beg, n, *empty)
         starts = (c_int64 * (n + 1))()
         learn = (0, starts, byref(nnz), None, None)
-        self._call(lib.BIYOS_getvarterms, beg, n, *learn)
+        self._call(lib.BIYOS_getclintermrg, beg, n, *learn)
         size = nnz.value
         funs = (c_int * size)()
         values = (c_double * size)()
         fill = (size, None, byref(nnz), funs, values)
-        self._call(lib.BIYOS_getvarterms, beg, n, *fill)
+        self._call(lib.BIYOS_getclintermrg, beg, n, *fill)
         return list(starts), list(funs), list(values)
 
     def addquadterms(
@@ -671,23 +671,23 @@ class Model:
 
         See Also
         --------
-        BIYOS_getquadterms
+        BIYOS_getquadtermrg
         """
         beg = index_of(self, Functions, "beg", beg)
         n, inside = _span(beg, n, self.getnfuns)
         needed = c_int64()
         if not inside:
             empty = (0, None, byref(needed), None, None, None)
-            self._call(lib.BIYOS_getquadterms, beg, n, *empty)
+            self._call(lib.BIYOS_getquadtermrg, beg, n, *empty)
         starts = (c_int64 * (n + 1))()
         learn = (0, starts, byref(needed), None, None, None)
-        self._call(lib.BIYOS_getquadterms, beg, n, *learn)
+        self._call(lib.BIYOS_getquadtermrg, beg, n, *learn)
         size = needed.value
         firsts = (c_int * size)()
         seconds = (c_int * size)()
         values = (c_double * size)()
         fill = (size, None, byref(needed), firsts, seconds, values)
-        self._call(lib.BIYOS_getquadterms, beg, n, *fill)
+        self._call(lib.BIYOS_getquadtermrg, beg, n, *fill)
         terms = (list(firsts), list(seconds), list(values))
         return (list(starts), *terms)
 
@@ -817,18 +817,18 @@ class Model:
 
         See Also
         --------
-        BIYOS_getcons
+        BIYOS_getconrg
         """
         beg = index_of(self, Constraints, "beg", beg)
         n, inside = _span(beg, n, self.getncons)
         if not inside:
             empty = (None, None, None)
-            self._call(lib.BIYOS_getcons, beg, n, *empty)
+            self._call(lib.BIYOS_getconrg, beg, n, *empty)
         functions = (c_int * n)()
         lower = (c_double * n)()
         upper = (c_double * n)()
         arrays = (functions, lower, upper)
-        self._call(lib.BIYOS_getcons, beg, n, *arrays)
+        self._call(lib.BIYOS_getconrg, beg, n, *arrays)
         return list(functions), list(lower), list(upper)
 
     def addobjs(
@@ -1131,19 +1131,19 @@ class Model:
 
         See Also
         --------
-        BIYOS_getobjs
+        BIYOS_getobjrg
         """
         beg = index_of(self, Objectives, "beg", beg)
         n, inside = _span(beg, n, self.getnobjs)
         if not inside:
             empty = (None,) * 4
-            self._call(lib.BIYOS_getobjs, beg, n, *empty)
+            self._call(lib.BIYOS_getobjrg, beg, n, *empty)
         functions = (c_int * n)()
         codes = (c_int * n)()
         priorities = (c_int * n)()
         weights = (c_double * n)()
         found = (functions, codes, priorities, weights)
-        self._call(lib.BIYOS_getobjs, beg, n, *found)
+        self._call(lib.BIYOS_getobjrg, beg, n, *found)
         senses = [Sense(code) for code in codes]
         return list(functions), senses, list(priorities), list(weights)
 

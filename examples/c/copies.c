@@ -24,8 +24,8 @@ static int same_bounds(BIYOS_model *a, BIYOS_model *b)
 {
     BIYOS_real ub_a[2];
     BIYOS_real ub_b[2];
-    if (BIYOS_getvars(a, 0, 2, NULL, NULL, ub_a) != BIYOS_OK ||
-        BIYOS_getvars(b, 0, 2, NULL, NULL, ub_b) != BIYOS_OK)
+    if (BIYOS_getvarrg(a, 0, 2, NULL, NULL, ub_a) != BIYOS_OK ||
+        BIYOS_getvarrg(b, 0, 2, NULL, NULL, ub_b) != BIYOS_OK)
     {
         return 0;
     }

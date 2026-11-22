@@ -651,8 +651,8 @@ def test_growing(model):
 def test_stale(model, monkeypatch):
     model.addvars(2, None, [1.0, 2.0])
     monkeypatch.setattr(model, "getnvars", lambda: 0)
-    spy = Room(lib.BIYOS_getvars, read_lengths)
-    monkeypatch.setattr(lib, "BIYOS_getvars", spy)
+    spy = Room(lib.BIYOS_getvarrg, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getvarrg", spy)
     assert model.getvars(0, 2)[1] == [1.0, 2.0]
     assert model.getvars(1)[1] == []
 

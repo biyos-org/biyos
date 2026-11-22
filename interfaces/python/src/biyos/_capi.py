@@ -96,7 +96,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_getvarkndsp", c_int, *kinds)
     _declare(lib, "BIYOS_getnvar", c_int, c_void_p, ints)
     read = (c_void_p, c_int32, c_int32, ints, doubles, doubles)
-    _declare(lib, "BIYOS_getvars", c_int, *read)
+    _declare(lib, "BIYOS_getvarrg", c_int, *read)
     _declare_functions(lib, ints, doubles)
     _declare_quadratic(lib, ints, doubles)
     _declare_constraints(lib, ints, doubles)
@@ -115,7 +115,7 @@ def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     terms = (c_void_p, c_int32, ints, offsets, ints, doubles)
     _declare(lib, "BIYOS_addlinterms", c_int, *terms)
     by_var = (c_void_p, c_int32, c_int32, c_int64, offsets, *sized)
-    _declare(lib, "BIYOS_getvarterms", c_int, *by_var)
+    _declare(lib, "BIYOS_getclintermrg", c_int, *by_var)
 
 
 def _declare_quadratic(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -124,7 +124,7 @@ def _declare_quadratic(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_addquadterms", c_int, *add)
     sized = (offsets, ints, ints, doubles)
     read = (c_void_p, c_int32, c_int32, c_int64, offsets, *sized)
-    _declare(lib, "BIYOS_getquadterms", c_int, *read)
+    _declare(lib, "BIYOS_getquadtermrg", c_int, *read)
 
 
 def _declare_constraints(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -135,7 +135,7 @@ def _declare_constraints(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_getconbndsp", c_int, *bounds)
     _declare(lib, "BIYOS_getncon", c_int, c_void_p, ints)
     read = (c_void_p, c_int32, c_int32, ints, doubles, doubles)
-    _declare(lib, "BIYOS_getcons", c_int, *read)
+    _declare(lib, "BIYOS_getconrg", c_int, *read)
 
 
 def _declare_objectives(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -151,7 +151,7 @@ def _declare_objectives(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_getobjtolsp", c_int, *tolerances)
     _declare(lib, "BIYOS_getnobj", c_int, c_void_p, ints)
     read = (c_void_p, c_int32, c_int32, ints, *fields)
-    _declare(lib, "BIYOS_getobjs", c_int, *read)
+    _declare(lib, "BIYOS_getobjrg", c_int, *read)
 
 
 def _declare_names(lib: ctypes.CDLL, ints: type) -> None:

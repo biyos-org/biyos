@@ -35,7 +35,7 @@ Columns read_all(const Model &mdl)
                  .lower = std::vector<double>(size),
                  .upper = std::vector<double>(size)};
     const BIYOS_status status =
-        BIYOS_getvars(mdl.get(), 0, n, read.kinds.data(), read.lower.data(), read.upper.data());
+        BIYOS_getvarrg(mdl.get(), 0, n, read.kinds.data(), read.lower.data(), read.upper.data());
     EXPECT_EQ(status, BIYOS_OK);
     return read;
 }
@@ -107,7 +107,7 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_getvarbndsp(mdl, 1, &idx, nullptr, nullptr));
     note(attempt, BIYOS_getvarkndsp(mdl, 1, &idx, nullptr));
     note(attempt, BIYOS_getnvar(mdl, &attempt.count));
-    note(attempt, BIYOS_getvars(mdl, 0, 1, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_getvarrg(mdl, 0, 1, nullptr, nullptr, nullptr));
 }
 
 void keep(const BIYOS_event *evt, void *data)
@@ -151,7 +151,7 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_setvarkndsp(nullptr, 1, &idx, &idx), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getvarkndsp(nullptr, 1, &idx, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getnvar(nullptr, &n), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_getvars(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getvarrg(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     BIYOS_offset needed = 0;
     EXPECT_EQ(BIYOS_addfuns(nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
@@ -159,17 +159,17 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_getfuns(nullptr, 0, 0, 0, nullptr, nullptr, &needed, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addlinterms(nullptr, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_getvarterms(nullptr, 0, 0, 0, nullptr, &needed, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getclintermrg(nullptr, 0, 0, 0, nullptr, &needed, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addquadterms(nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_getquadterms(nullptr, 0, 0, 0, nullptr, &needed, nullptr, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getquadtermrg(nullptr, 0, 0, 0, nullptr, &needed, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addcon(nullptr, 1, &idx, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setconbndsp(nullptr, 1, &idx, &bound, &bound), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getconbndsp(nullptr, 1, &idx, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getncon(nullptr, &n), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_getcons(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconrg(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addobj(nullptr, 1, &idx, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setobjsensesp(nullptr, 1, &idx, &idx), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getobjsensesp(nullptr, 1, &idx, nullptr), BIYOS_ERR_BADARG);
@@ -180,7 +180,7 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_setobjtolsp(nullptr, 1, &idx, &bound, &bound), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getobjtolsp(nullptr, 1, &idx, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getnobj(nullptr, &n), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_getobjs(nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getobjrg(nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
 }
 
 TEST(CApiTest, HeldFree)
@@ -264,11 +264,11 @@ TEST(CApiTest, BulkAdd)
     BIYOS_int knd = 0;
     BIYOS_real lower = 0.0;
     BIYOS_real upper = 0.0;
-    EXPECT_EQ(BIYOS_getvars(mdl.get(), 2, 1, &knd, &lower, &upper), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarrg(mdl.get(), 2, 1, &knd, &lower, &upper), BIYOS_OK);
     EXPECT_EQ(knd, BIYOS_VAR_INT);
     EXPECT_DOUBLE_EQ(lower, -3.0);
     EXPECT_DOUBLE_EQ(upper, 7.0);
-    EXPECT_EQ(BIYOS_getvars(mdl.get(), 5, 0, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarrg(mdl.get(), 5, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(env.message(), "");
 }
 
@@ -344,11 +344,11 @@ TEST(CApiTest, BadIndex)
     EXPECT_EQ(env.message(), "invalid argument: variable -1: unknown");
     expect_columns(read_all(mdl), before);
     int found[] = {0, 0};
-    EXPECT_EQ(BIYOS_getvars(mdl.get(), 2, 2, found, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getvarrg(mdl.get(), 2, 2, found, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 3: unknown");
-    EXPECT_EQ(BIYOS_getvars(mdl.get(), -1, 1, found, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getvarrg(mdl.get(), -1, 1, found, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable -1: unknown");
-    EXPECT_EQ(BIYOS_getvars(mdl.get(), 0, -1, found, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getvarrg(mdl.get(), 0, -1, found, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     EXPECT_EQ(found[0], 0);
     EXPECT_EQ(found[1], 0);
@@ -411,13 +411,13 @@ TEST(CApiTest, NullGet)
     const double lower[] = {-1.0, 0.0};
     const double upper[] = {1.0, 0.5};
     ASSERT_EQ(BIYOS_addvar(mdl.get(), 2, knds, lower, upper, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getvars(mdl.get(), 0, 2, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarrg(mdl.get(), 0, 2, nullptr, nullptr, nullptr), BIYOS_OK);
     int found[] = {0, 0};
     double low[] = {9.0, 9.0};
     double high[] = {9.0, 9.0};
-    EXPECT_EQ(BIYOS_getvars(mdl.get(), 0, 2, found, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getvars(mdl.get(), 0, 2, nullptr, low, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getvars(mdl.get(), 1, 1, nullptr, nullptr, high), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarrg(mdl.get(), 0, 2, found, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarrg(mdl.get(), 0, 2, nullptr, low, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarrg(mdl.get(), 1, 1, nullptr, nullptr, high), BIYOS_OK);
     EXPECT_EQ(found[1], BIYOS_VAR_BIN);
     EXPECT_DOUBLE_EQ(low[0], -1.0);
     EXPECT_DOUBLE_EQ(high[0], 0.5);

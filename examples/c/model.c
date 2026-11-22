@@ -66,8 +66,15 @@ static int read_squares(BIYOS_model *mdl)
     BIYOS_index varidx1[2];
     BIYOS_index varidx2[2];
     BIYOS_real coef[2];
-    BIYOS_status status =
-        BIYOS_getquadterms(mdl, 2, 1, 2, off, &nnz, varidx1, varidx2, coef);
+    BIYOS_status status = BIYOS_getquadtermrg(mdl,
+                                              2,
+                                              1,
+                                              2,
+                                              off,
+                                              &nnz,
+                                              varidx1,
+                                              varidx2,
+                                              coef);
     if (status != BIYOS_OK)
     {
         return 0;

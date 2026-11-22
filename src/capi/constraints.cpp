@@ -158,12 +158,12 @@ BIYOS_status BIYOS_getncon(const BIYOS_model *mdl, BIYOS_index *n)
     return guarded<n_cons>(mdl, n);
 }
 
-BIYOS_status BIYOS_getcons(const BIYOS_model *mdl,
-                           BIYOS_index beg,
-                           BIYOS_index n,
-                           BIYOS_index *funidx,
-                           BIYOS_real *lb,
-                           BIYOS_real *ub)
+BIYOS_status BIYOS_getconrg(const BIYOS_model *mdl,
+                            BIYOS_index beg,
+                            BIYOS_index n,
+                            BIYOS_index *funidx,
+                            BIYOS_real *lb,
+                            BIYOS_real *ub)
 {
     return guarded<get_cons>(mdl, beg, n, funidx, lb, ub);
 }

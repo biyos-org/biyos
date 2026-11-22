@@ -242,13 +242,13 @@ BIYOS_status BIYOS_getnobj(const BIYOS_model *mdl, BIYOS_index *n)
     return guarded<n_objs>(mdl, n);
 }
 
-BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
-                           BIYOS_index beg,
-                           BIYOS_index n,
-                           BIYOS_index *funidx,
-                           BIYOS_int *sense,
-                           BIYOS_int *prio,
-                           BIYOS_real *coef)
+BIYOS_status BIYOS_getobjrg(const BIYOS_model *mdl,
+                            BIYOS_index beg,
+                            BIYOS_index n,
+                            BIYOS_index *funidx,
+                            BIYOS_int *sense,
+                            BIYOS_int *prio,
+                            BIYOS_real *coef)
 {
     return guarded<get_objs>(mdl, beg, n, funidx, sense, prio, coef);
 }

@@ -119,7 +119,7 @@ static BIYOS_status use_linear(BIYOS_model *model)
     {
         return BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_getvarterms(model, 1, 1, 2, offsets, &needed, held, NULL) != BIYOS_OK ||
+    if (BIYOS_getclintermrg(model, 1, 1, 2, offsets, &needed, held, NULL) != BIYOS_OK ||
         needed != 2 || offsets[1] != 2 || held[0] != 0 || held[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
@@ -141,7 +141,7 @@ static BIYOS_status use_quadratic(BIYOS_model *model)
     BIYOS_status status = BIYOS_addquadterms(model, 1, functions, starts, firsts, seconds, values);
     if (status == BIYOS_OK)
     {
-        status = BIYOS_getquadterms(model, 0, 2, 2, offsets, &needed, held, paired, NULL);
+        status = BIYOS_getquadtermrg(model, 0, 2, 2, offsets, &needed, held, paired, NULL);
     }
     if (status != BIYOS_OK || needed != 2 || offsets[1] != 0 || offsets[2] != 2 || held[1] != 0 ||
         paired[1] != 1)
@@ -162,7 +162,7 @@ static BIYOS_status use_constraints(BIYOS_model *model)
     if (BIYOS_addcon(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
         BIYOS_setconbndsp(model, 1, indices, NULL, lower) != BIYOS_OK ||
         BIYOS_getncon(model, &constraints) != BIYOS_OK || constraints != 2 ||
-        BIYOS_getcons(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1)
+        BIYOS_getconrg(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -202,7 +202,7 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     }
     if (status == BIYOS_OK)
     {
-        status = BIYOS_getobjs(model, 0, 2, NULL, found, priorities, NULL);
+        status = BIYOS_getobjrg(model, 0, 2, NULL, found, priorities, NULL);
     }
     if (status != BIYOS_OK || first != 0 || objectives != 2 || found[0] != BIYOS_MAXIMIZE ||
         found[1] != BIYOS_MINIMIZE || priorities[1] != 1)
@@ -329,18 +329,18 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
     BIYOS_offset needed = -1;
     BIYOS_status status = BIYOS_OK;
     if (BIYOS_getnvar(model, &count) != BIYOS_OK ||
-        BIYOS_getvars(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getvarrg(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getvarbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getvarkndsp(model, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnfun(model, &count) != BIYOS_OK ||
         BIYOS_getfuns(model, 0, 0, 0, NULL, NULL, &needed, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getvarterms(model, 0, 0, 0, NULL, &needed, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getquadterms(model, 0, 0, 0, NULL, &needed, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getclintermrg(model, 0, 0, 0, NULL, &needed, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getquadtermrg(model, 0, 0, 0, NULL, &needed, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getncon(model, &count) != BIYOS_OK ||
-        BIYOS_getcons(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getconrg(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getconbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnobj(model, &count) != BIYOS_OK ||
-        BIYOS_getobjs(model, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getobjrg(model, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getobjsensesp(model, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getobjpriosp(model, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getobjcoefsp(model, 0, NULL, NULL) != BIYOS_OK ||
@@ -406,7 +406,7 @@ int main(void)
         BIYOS_setvarkndsp(model, 1, indices, kinds + 1) != BIYOS_OK ||
         BIYOS_getvarkndsp(model, 1, indices, found + 1) != BIYOS_OK || found[1] != BIYOS_VAR_BIN ||
         BIYOS_getnvar(model, &variables) != BIYOS_OK || variables != 2 ||
-        BIYOS_getvars(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[0] != BIYOS_VAR_BIN ||
+        BIYOS_getvarrg(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[0] != BIYOS_VAR_BIN ||
         found[1] != BIYOS_VAR_BIN)
     {
         status = BIYOS_ERR_INTERNAL;

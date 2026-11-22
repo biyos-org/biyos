@@ -251,12 +251,12 @@ BIYOS_status BIYOS_getnvar(const BIYOS_model *mdl, BIYOS_index *n)
     return guarded<n_vars>(mdl, n);
 }
 
-BIYOS_status BIYOS_getvars(const BIYOS_model *mdl,
-                           BIYOS_index beg,
-                           BIYOS_index n,
-                           BIYOS_int *knd,
-                           BIYOS_real *lb,
-                           BIYOS_real *ub)
+BIYOS_status BIYOS_getvarrg(const BIYOS_model *mdl,
+                            BIYOS_index beg,
+                            BIYOS_index n,
+                            BIYOS_int *knd,
+                            BIYOS_real *lb,
+                            BIYOS_real *ub)
 {
     return guarded<get_vars>(mdl, beg, n, knd, lb, ub);
 }

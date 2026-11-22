@@ -71,7 +71,7 @@ Here `off` is `{0, 3, 5, 6}`: function 0 owns terms 0 to 2, $x_0 + x_1 + x_2$; f
 
 The terms of a function may come in any order, and biyos keeps them sorted by variable. Each must name a variable of the model, appear once in its function and have a finite coefficient. A term whose coefficient is 0 is kept, so a model reads back as it was given. A null `cst` gives every new function the constant 0, and a null `off` adds functions with no terms.
 
-`BIYOS_addlinterms` adds linear terms to functions the model already holds, in the same compressed form with a list of functions in front: function `funidx[k]` gains the terms from `off[k]` to `off[k + 1] - 1`. A variable the function already holds adds its coefficient to the one held, so a function can be built in several calls, and a variable added late enters the functions of existing constraints in one call that lists them, each with one term. `BIYOS_getvarterms` reads the linear terms the other way round: for each variable of a range, the functions that hold it, sorted by function, with their coefficients, sized as `BIYOS_getfuns` is (@sec-model-reading).
+`BIYOS_addlinterms` adds linear terms to functions the model already holds, in the same compressed form with a list of functions in front: function `funidx[k]` gains the terms from `off[k]` to `off[k + 1] - 1`. A variable the function already holds adds its coefficient to the one held, so a function can be built in several calls, and a variable added late enters the functions of existing constraints in one call that lists them, each with one term. `BIYOS_getclintermrg` reads the linear terms the other way round: for each variable of a range, the functions that hold it, sorted by function, with their coefficients, sized as `BIYOS_getfuns` is (@sec-model-reading).
 
 ## Quadratic terms {#sec-model-quadratic}
 
@@ -110,7 +110,7 @@ where $P$ holds the objectives of that priority and $w_i$ is the weight of objec
 
 A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. A null `sense` minimizes every new objective, a null `coef` gives each the weight 1, and a null `prio` gives each objective its own index as its priority. So by default the objectives are optimized one after another in the order they are added, which is what this model asks for explicitly.
 
-`BIYOS_setobjsensesp`, `BIYOS_setobjpriosp`, `BIYOS_setobjcoefsp` and `BIYOS_setobjtolsp` change one attribute of a list of objectives each, and `BIYOS_getobjsensesp`, `BIYOS_getobjpriosp`, `BIYOS_getobjcoefsp` and `BIYOS_getobjtolsp` read it back with the same arguments. `BIYOS_getobjs` reads back what `BIYOS_addobj` takes, so a model is read whole with it and `BIYOS_getobjtolsp`.
+`BIYOS_setobjsensesp`, `BIYOS_setobjpriosp`, `BIYOS_setobjcoefsp` and `BIYOS_setobjtolsp` change one attribute of a list of objectives each, and `BIYOS_getobjsensesp`, `BIYOS_getobjpriosp`, `BIYOS_getobjcoefsp` and `BIYOS_getobjtolsp` read it back with the same arguments. `BIYOS_getobjrg` reads back what `BIYOS_addobj` takes, so a model is read whole with it and `BIYOS_getobjtolsp`.
 
 ::: {.callout-note}
 ## Stored, not yet solved
@@ -119,7 +119,7 @@ biyos stores and checks the objectives but solves nothing yet. The stages above 
 
 ## Reading a model back {#sec-model-reading}
 
-Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvars`, `BIYOS_getnfun` and `BIYOS_getfuns`, and so on. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the first index and the count of items to read, and fills the arrays it is given; a null array is skipped. Terms come back in compressed form, and since the caller cannot know their number in advance, the readers of terms take the size of the arrays and write the number of terms to `nnz`, whether they fit or not:
+Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvarrg`, `BIYOS_getnfun` and `BIYOS_getfuns`, and so on. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the first index and the count of items to read, and fills the arrays it is given; a null array is skipped. Terms come back in compressed form, and since the caller cannot know their number in advance, the readers of terms take the size of the arrays and write the number of terms to `nnz`, whether they fit or not:
 
 ```{.c file="examples/c/model.c" item="read_squares"}
 ```

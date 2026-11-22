@@ -167,8 +167,8 @@ def test_growing(model):
 def test_stale(model, monkeypatch):
     add_sample(model)
     monkeypatch.setattr(model, "getncons", lambda: 0)
-    spy = Room(lib.BIYOS_getcons, read_lengths)
-    monkeypatch.setattr(lib, "BIYOS_getcons", spy)
+    spy = Room(lib.BIYOS_getconrg, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getconrg", spy)
     assert model.getcons(0, 3) == SAMPLE
     assert model.getcons(1) == ([], [], [])
 

@@ -147,8 +147,8 @@ def test_growing(model):
 def test_stale(model, monkeypatch):
     add_sample(model)
     monkeypatch.setattr(model, "getnfuns", lambda: 0)
-    spy = Room(lib.BIYOS_getquadterms, read_lengths)
-    monkeypatch.setattr(lib, "BIYOS_getquadterms", spy)
+    spy = Room(lib.BIYOS_getquadtermrg, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getquadtermrg", spy)
     assert model.getquadterms(0, 3) == SORTED
     assert model.getquadterms(1) == ([0], [], [], [])
 
@@ -225,7 +225,7 @@ def test_gone(model, monkeypatch):
     function, other, variable = f[0], f[1], x[1]
     model._gen += 1
     seen = []
-    for name in ("BIYOS_addquadterms", "BIYOS_getquadterms"):
+    for name in ("BIYOS_addquadterms", "BIYOS_getquadtermrg"):
         spy = partial(recorded, seen, getattr(lib, name))
         monkeypatch.setattr(lib, name, spy)
     block = "the block predates a deletion"

@@ -64,8 +64,12 @@ Records read_all(const Model &mdl)
         .lower = std::vector<double>(size),
         .upper = std::vector<double>(size),
     };
-    const BIYOS_status status =
-        BIYOS_getcons(mdl.get(), 0, n, read.functions.data(), read.lower.data(), read.upper.data());
+    const BIYOS_status status = BIYOS_getconrg(mdl.get(),
+                                               0,
+                                               n,
+                                               read.functions.data(),
+                                               read.lower.data(),
+                                               read.upper.data());
     EXPECT_EQ(status, BIYOS_OK);
     return read;
 }
@@ -116,7 +120,7 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_setconbndsp(mdl, 1, &idx, &bound, &bound));
     note(attempt, BIYOS_getconbndsp(mdl, 1, &idx, nullptr, nullptr));
     note(attempt, BIYOS_getncon(mdl, &n));
-    note(attempt, BIYOS_getcons(mdl, 0, 1, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_getconrg(mdl, 0, 1, nullptr, nullptr, nullptr));
 }
 
 }
@@ -172,7 +176,7 @@ TEST(CApiTest, ConstraintRange)
     int funs[] = {-1, -1};
     double lower[] = {0.0, 0.0};
     double upper[] = {0.0, 0.0};
-    EXPECT_EQ(BIYOS_getcons(mdl.get(), 1, 2, funs, lower, upper), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconrg(mdl.get(), 1, 2, funs, lower, upper), BIYOS_OK);
     const Records found{
         .functions = {funs[0], funs[1]},
         .lower = {lower[0], lower[1]},
@@ -184,7 +188,7 @@ TEST(CApiTest, ConstraintRange)
         .upper = {kInfinity, 2.0},
     };
     expect_records(found, wanted);
-    EXPECT_EQ(BIYOS_getcons(mdl.get(), 3, 0, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconrg(mdl.get(), 3, 0, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
 TEST(CApiTest, NullConstraints)
@@ -236,10 +240,10 @@ TEST(CApiTest, NullReads)
     const Env env;
     const Model mdl(env);
     add_sample(mdl);
-    EXPECT_EQ(BIYOS_getcons(mdl.get(), 0, 3, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconrg(mdl.get(), 0, 3, nullptr, nullptr, nullptr), BIYOS_OK);
     int funs[] = {-1, -1};
     double high[] = {9.0, 9.0};
-    EXPECT_EQ(BIYOS_getcons(mdl.get(), 1, 2, funs, nullptr, high), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconrg(mdl.get(), 1, 2, funs, nullptr, high), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({funs[0], funs[1]}), std::vector<int>({0, 1}));
     expect_dbls({high[0], high[1]}, {kInfinity, 2.0});
     EXPECT_EQ(BIYOS_getncon(mdl.get(), nullptr), BIYOS_ERR_BADARG);
@@ -268,9 +272,9 @@ TEST(CApiTest, RefusedConstraints)
     const BIYOS_real infinite = kInfinity;
     EXPECT_EQ(BIYOS_setconbndsp(held, 1, &first, &infinite, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 0: lower bound is infinity");
-    EXPECT_EQ(BIYOS_getcons(held, 2, 2, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconrg(held, 2, 2, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
-    EXPECT_EQ(BIYOS_getcons(held, -1, 1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconrg(held, -1, 1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint -1: unknown");
     expect_records(read_all(mdl), kSample);
 }

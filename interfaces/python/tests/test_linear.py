@@ -168,7 +168,7 @@ def test_gone(model, monkeypatch):
     function, variable = f[0], x[0]
     model._gen += 1
     seen = []
-    for name in ("BIYOS_addlinterms", "BIYOS_getvarterms"):
+    for name in ("BIYOS_addlinterms", "BIYOS_getclintermrg"):
         spy = partial(recorded, seen, getattr(lib, name))
         monkeypatch.setattr(lib, name, spy)
     block = "the block predates a deletion"
@@ -293,8 +293,8 @@ def test_growing(model):
 
 def test_stale(model, monkeypatch):
     monkeypatch.setattr(model, "getnvars", lambda: 0)
-    spy = Room(lib.BIYOS_getvarterms, read_lengths)
-    monkeypatch.setattr(lib, "BIYOS_getvarterms", spy)
+    spy = Room(lib.BIYOS_getclintermrg, read_lengths)
+    monkeypatch.setattr(lib, "BIYOS_getclintermrg", spy)
     assert model.getvarterms(0, 3) == HELD_VARS
     assert model.getvarterms(1) == ([0], [], [])
 
