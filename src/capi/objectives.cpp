@@ -133,27 +133,6 @@ void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &o
     put(outputs.relative, k, objective.relative);
 }
 
-void get_objectives(const BIYOS_model &model,
-                    int start,
-                    int size,
-                    int *functions,
-                    int *senses,
-                    int *priorities,
-                    double *weights)
-{
-    const std::span<const biyos::Objective> found = model.core.objectives(start, size);
-    const Outputs outputs{
-        .functions = functions,
-        .senses = senses,
-        .priorities = priorities,
-        .weights = weights,
-    };
-    for (std::size_t k = 0; k < found.size(); ++k)
-    {
-        copy_out(found[k], k, outputs);
-    }
-}
-
 template <typename Selection>
 void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &outputs)
 {
@@ -324,6 +303,21 @@ BIYOS_status BIYOS_getnobj(const BIYOS_model *mdl, BIYOS_index *n)
     return guarded<n_objectives>(mdl, n);
 }
 
+BIYOS_status BIYOS_getobjsp(const BIYOS_model *mdl,
+                            BIYOS_index n,
+                            const BIYOS_index *idx,
+                            BIYOS_index *funidx,
+                            BIYOS_int *sense,
+                            BIYOS_int *prio,
+                            BIYOS_real *coef)
+{
+    const Outputs outputs{.functions = funidx,
+                          .senses = sense,
+                          .priorities = prio,
+                          .weights = coef};
+    return guarded<get_chosen<List>>(mdl, List{n, idx}, outputs);
+}
+
 BIYOS_status BIYOS_getobjrg(const BIYOS_model *mdl,
                             BIYOS_index pos,
                             BIYOS_index n,
@@ -332,5 +326,9 @@ BIYOS_status BIYOS_getobjrg(const BIYOS_model *mdl,
                             BIYOS_int *prio,
                             BIYOS_real *coef)
 {
-    return guarded<get_objectives>(mdl, pos, n, funidx, sense, prio, coef);
+    const Outputs outputs{.functions = funidx,
+                          .senses = sense,
+                          .priorities = prio,
+                          .weights = coef};
+    return guarded<get_chosen<Range>>(mdl, Range{pos, n}, outputs);
 }

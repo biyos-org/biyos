@@ -151,44 +151,32 @@ void copy_out(const biyos::Variable &variable,
     }
 }
 
+template <typename Selection>
 void get_variables(const BIYOS_model &model,
-                   int start,
-                   int size,
+                   Selection selection,
                    int *kinds,
                    double *lower,
                    double *upper)
 {
-    const std::span<const biyos::Variable> found = model.core.variables(start, size);
-    for (std::size_t k = 0; k < found.size(); ++k)
+    const auto chosen = selected(model.core, Family::Variable, selection);
+    const std::vector<biyos::Variable> variables =
+        picked(model.core, &biyos::Model::variable, chosen);
+    for (std::size_t k = 0; k < variables.size(); ++k)
     {
-        copy_out(found[k], k, kinds, lower, upper);
+        copy_out(variables[k], k, kinds, lower, upper);
     }
-}
-
-template <typename Selection>
-std::vector<biyos::Variable> chosen_variables(const biyos::Model &core, Selection selection)
-{
-    return picked(core, &biyos::Model::variable, selected(core, Family::Variable, selection));
 }
 
 template <typename Selection>
 void get_bounds(const BIYOS_model &model, Selection selection, double *lower, double *upper)
 {
-    const std::vector<biyos::Variable> variables = chosen_variables(model.core, selection);
-    for (std::size_t k = 0; k < variables.size(); ++k)
-    {
-        copy_out(variables[k], k, nullptr, lower, upper);
-    }
+    get_variables(model, selection, nullptr, lower, upper);
 }
 
 template <typename Selection>
 void get_kinds(const BIYOS_model &model, Selection selection, int *kinds)
 {
-    const std::vector<biyos::Variable> variables = chosen_variables(model.core, selection);
-    for (std::size_t k = 0; k < variables.size(); ++k)
-    {
-        copy_out(variables[k], k, kinds, nullptr, nullptr);
-    }
+    get_variables(model, selection, kinds, nullptr, nullptr);
 }
 
 }
@@ -308,6 +296,16 @@ BIYOS_status BIYOS_getnvar(const BIYOS_model *mdl, BIYOS_index *n)
     return guarded<n_variables>(mdl, n);
 }
 
+BIYOS_status BIYOS_getvarsp(const BIYOS_model *mdl,
+                            BIYOS_index n,
+                            const BIYOS_index *idx,
+                            BIYOS_int *knd,
+                            BIYOS_real *lb,
+                            BIYOS_real *ub)
+{
+    return guarded<get_variables<List>>(mdl, List{n, idx}, knd, lb, ub);
+}
+
 BIYOS_status BIYOS_getvarrg(const BIYOS_model *mdl,
                             BIYOS_index pos,
                             BIYOS_index n,
@@ -315,5 +313,5 @@ BIYOS_status BIYOS_getvarrg(const BIYOS_model *mdl,
                             BIYOS_real *lb,
                             BIYOS_real *ub)
 {
-    return guarded<get_variables>(mdl, pos, n, knd, lb, ub);
+    return guarded<get_variables<Range>>(mdl, Range{pos, n}, knd, lb, ub);
 }

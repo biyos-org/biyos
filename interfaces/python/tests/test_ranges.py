@@ -21,6 +21,12 @@ PAIRS = [
     ("obj", "objname", (["g", "h"],)),
 ]
 
+SPREAD = {
+    "var": ("setvarbnd", [-1.0, -2.0, -3.0, -4.0], [1.0, 2.0, 3.0, 4.0]),
+    "con": ("setconbnd", [-5.0, -6.0, -7.0, -8.0], [5.0, 6.0, 7.0, 8.0]),
+    "obj": ("setobjprio", [5, 6, 7, 8]),
+}
+
 FORMS = {
     "block": "rg",
     "range": "rg",
@@ -103,6 +109,21 @@ def test_delete(blocks, monkeypatch, family, kind):
     left = getattr(model, f"get{family}name")(range(4))
     assert left.count(None) == 2
     assert [left[k] for k in records(kind)] == [None, None]
+    assert seen == [FORMS[kind]]
+
+
+@pytest.mark.parametrize("family", SPREAD)
+@pytest.mark.parametrize("kind", FORMS)
+def test_readers(blocks, monkeypatch, family, kind):
+    model, found = blocks
+    setter, *values = SPREAD[family]
+    getattr(model, setter)(range(4), *values)
+    every = getattr(model, f"get{family}")()
+    seen = []
+    trace(monkeypatch, seen, f"get{family}")
+    got = getattr(model, f"get{family}")(selection(found[family], kind))
+    picked = tuple([column[k] for k in records(kind)] for column in every)
+    assert got == picked
     assert seen == [FORMS[kind]]
 
 

@@ -82,9 +82,9 @@ def test_block(model):
 def test_range(model):
     add_sample(model)
     tail = tuple(values[1:] for values in SAMPLE)
-    assert model.getobj(1, 2) == tail
-    assert model.getobj(1) == tail
-    assert model.getobj(3) == NONE
+    assert model.getobj(range(1, 3)) == tail
+    assert model.getobj([1, 2]) == tail
+    assert model.getobj(range(3, 3)) == NONE
 
 
 def test_defaults(model):
@@ -117,7 +117,7 @@ def test_functions(model):
     o = model.addobj(f, coef=[2.0] * 3)
     model.addobj(f[1:])
     model.addobj([f[0], 1])
-    assert model.getobj(o[0])[0] == [2, 3, 4, 3, 4, 2, 1]
+    assert model.getobj()[0] == [2, 3, 4, 3, 4, 2, 1]
 
 
 def test_views(env, model):
@@ -139,8 +139,8 @@ def test_views(env, model):
         model.setobjsense([p[0]], [MAX])
     with pytest.raises(ValueError, match="is a block of another model"):
         model.setobjsense(p, [MAX, MAX])
-    with pytest.raises(ValueError, match="pos is an objective of another"):
-        model.getobj(p[0])
+    with pytest.raises(ValueError, match="idx is a block of another model"):
+        model.getobj(p)
     c = model.addcon([0])
     with pytest.raises(ValueError, match="is a constraint, not an objective"):
         model.setobjsense([c[0]], [MAX])
@@ -151,7 +151,7 @@ def test_views(env, model):
     model.setobjsense([o[2]], [MAX])
     model.setobjprio([o[2]], [5])
     model.setobjcoef(o[:2], [7.0, 8.0])
-    found = model.getobj(o[1])
+    found = model.getobj(o[1:])
     assert found[1:4] == ([MIN, MAX], [-1, 5], [8.0, 3.0])
     assert model.getnobj() == 3
 
@@ -187,27 +187,20 @@ def test_values(model, monkeypatch):
     assert model.getobjtol(o) == ([3.0, 4.0], [5.0, 6.0])
 
 
-def test_growing(model):
-    grow = partial(add_sample, model)
-    assert model.getobj(0, Growing(3, grow)) == SAMPLE
-    assert model.getobj(3, Growing(3, grow)) == SAMPLE
-    assert model.getnobj() == 6
-
-
 def test_stale(model, monkeypatch):
     add_sample(model)
     monkeypatch.setattr(model, "getnobj", lambda: 0)
     spy = Room(lib.BIYOS_getobjrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getobjrg", spy)
-    assert model.getobj(0, 3) == SAMPLE
-    assert model.getobj(1) == NONE
+    assert model.getobj(range(3)) == SAMPLE
+    assert model.getobj(range(1, 1)) == NONE
 
 
 def test_outside(model, monkeypatch):
     limit(monkeypatch, _model, 1)
-    message = refusal(model.getobj, 0, 2**31 - 1)
+    message = refusal(model.getobj, range(2**31 - 1))
     assert message == "invalid argument: objective 0: unknown"
-    message = refusal(model.getobj, 1, 2**31 - 2)
+    message = refusal(model.getobj, range(1, 2**31 - 1))
     assert message == "invalid argument: objective 1: unknown"
 
 
@@ -236,7 +229,7 @@ def test_set(model):
     assert model.getobjtol(range(3)) == tolerances
     model.setobjsense([0, 0], [MAX, MIN])
     model.setobjprio([0, 0], [5, 6])
-    assert model.getobj(0, 1)[1:3] == ([MIN], [6])
+    assert model.getobj([0])[1:3] == ([MIN], [6])
 
 
 def test_listed(model):
@@ -360,10 +353,10 @@ def test_refused(model):
     )
     message = refusal(model.setobjsense, [3], [MIN])
     assert message == "invalid argument: objective 3: unknown"
-    message = refusal(model.getobj, 4)
+    message = refusal(model.getobj, range(4, 5))
     assert message == "invalid argument: objective 4: unknown"
-    message = refusal(model.getobj, 0, -1)
-    assert message == "invalid argument: argument 'n': -1 is negative"
+    message = refusal(model.getobj, [-1])
+    assert message == "invalid argument: objective -1: unknown"
     assert model.getobj() == SAMPLE
     assert model.getobjtol(range(3)) == TOLERANCES
 
@@ -389,8 +382,8 @@ def test_numbers(model):
         model.addobj([0], None, None, ["1"])
     with pytest.raises(TypeError, match="an entry of atol must be a"):
         model.setobjtol([0], [True])
-    with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
-        model.getobj(2**32)
+    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+        model.getobj(range(2**32, 2**32 + 1))
     assert model.getnobj() == 0
 
 

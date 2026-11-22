@@ -72,6 +72,14 @@ class Sense(IntEnum):
     MAXIMIZE = 2
 
 
+_COUNTS: dict[type[Block[Any]], str] = {
+    Variables: "getnvar",
+    Functions: "getnfun",
+    Constraints: "getncon",
+    Objectives: "getnobj",
+}
+
+
 def _checked_env(env: Env) -> Env:
     if not isinstance(env, Env):
         found = type(env).__name__
@@ -376,17 +384,15 @@ class Model:
         return count.value
 
     def getvar(
-        self, pos: int | Variable = 0, n: int | None = None
+        self, idx: Sequence[int | Variable] | Variables | None = None
     ) -> tuple[list[VariableKind], list[float], list[float]]:
         """Read the kinds and bounds of variables.
 
         Parameters
         ----------
-        pos
-            The first variable to read.
-        n
-            The number of variables to read, every one from ``pos`` on by
-            default.
+        idx
+            The variables, in any order, any of them more than once; every
+            variable by default.
 
         Returns
         -------
@@ -399,18 +405,14 @@ class Model:
 
         See Also
         --------
+        BIYOS_getvarsp
         BIYOS_getvarrg
         """
-        pos = index_of(self, Variables, "pos", pos)
-        n, inside = _span(pos, n, self.getnvar)
-        if not inside:
-            self._call(lib.BIYOS_getvarrg, pos, n, None, None, None)
-        kinds = (c_int * n)()
-        lower = (c_double * n)()
-        upper = (c_double * n)()
-        arrays = (kinds, lower, upper)
-        self._call(lib.BIYOS_getvarrg, pos, n, *arrays)
-        return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
+        every = range(self.getnvar()) if idx is None else idx
+        types = (c_int, c_double, c_double)
+        found = self._getlist("BIYOS_getvar", Variables, every, *types)
+        kinds, lower, upper = found
+        return [VariableKind(kind) for kind in kinds], lower, upper
 
     def addfuns(
         self,
@@ -808,17 +810,15 @@ class Model:
         return count.value
 
     def getcon(
-        self, pos: int | Constraint = 0, n: int | None = None
+        self, idx: Sequence[int | Constraint] | Constraints | None = None
     ) -> tuple[list[int], list[float], list[float]]:
         """Read the functions and bounds of constraints.
 
         Parameters
         ----------
-        pos
-            The first constraint to read.
-        n
-            The number of constraints to read, every one from ``pos`` on by
-            default.
+        idx
+            The constraints, in any order, any of them more than once; every
+            constraint by default.
 
         Returns
         -------
@@ -831,19 +831,14 @@ class Model:
 
         See Also
         --------
+        BIYOS_getconsp
         BIYOS_getconrg
         """
-        pos = index_of(self, Constraints, "pos", pos)
-        n, inside = _span(pos, n, self.getncon)
-        if not inside:
-            empty = (None, None, None)
-            self._call(lib.BIYOS_getconrg, pos, n, *empty)
-        functions = (c_int * n)()
-        lower = (c_double * n)()
-        upper = (c_double * n)()
-        arrays = (functions, lower, upper)
-        self._call(lib.BIYOS_getconrg, pos, n, *arrays)
-        return list(functions), list(lower), list(upper)
+        every = range(self.getncon()) if idx is None else idx
+        types = (c_int, c_double, c_double)
+        found = self._getlist("BIYOS_getcon", Constraints, every, *types)
+        functions, lower, upper = found
+        return functions, lower, upper
 
     def addobj(
         self,
@@ -1126,17 +1121,15 @@ class Model:
         return count.value
 
     def getobj(
-        self, pos: int | Objective = 0, n: int | None = None
+        self, idx: Sequence[int | Objective] | Objectives | None = None
     ) -> tuple[list[int], list[Sense], list[int], list[float]]:
         """Read objectives.
 
         Parameters
         ----------
-        pos
-            The first objective to read.
-        n
-            The number of objectives to read, every one from ``pos`` on by
-            default.
+        idx
+            The objectives, in any order, any of them more than once; every
+            objective by default.
 
         Returns
         -------
@@ -1151,21 +1144,15 @@ class Model:
 
         See Also
         --------
+        BIYOS_getobjsp
         BIYOS_getobjrg
         """
-        pos = index_of(self, Objectives, "pos", pos)
-        n, inside = _span(pos, n, self.getnobj)
-        if not inside:
-            empty = (None,) * 4
-            self._call(lib.BIYOS_getobjrg, pos, n, *empty)
-        functions = (c_int * n)()
-        codes = (c_int * n)()
-        priorities = (c_int * n)()
-        weights = (c_double * n)()
-        found = (functions, codes, priorities, weights)
-        self._call(lib.BIYOS_getobjrg, pos, n, *found)
+        every = range(self.getnobj()) if idx is None else idx
+        types = (c_int, c_int, c_int, c_double)
+        found = self._getlist("BIYOS_getobj", Objectives, every, *types)
+        functions, codes, priorities, weights = found
         senses = [Sense(code) for code in codes]
-        return list(functions), senses, list(priorities), list(weights)
+        return functions, senses, priorities, weights
 
     def setmdlname(self, name: str) -> None:
         """Name the model.
@@ -1594,6 +1581,7 @@ class Model:
         call: str,
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
+        outputs: int = 0,
     ) -> tuple[Callable[..., int], int, object]:
         span = span_of(self, family, "idx", idx)
         if span is None:
@@ -1601,7 +1589,15 @@ class Model:
             indices = indices_of(self, family, "idx", idx, n)
             return getattr(lib, f"{call}sp"), n, indices
         pos = integer("the start of idx", span.start)
-        return getattr(lib, f"{call}rg"), pos, integer("idx", len(span))
+        n = integer("idx", len(span))
+        function = getattr(lib, f"{call}rg")
+        if outputs > 0 and not self._inside(family, span):
+            self._call(function, pos, n, *([None] * outputs))
+        return function, pos, n
+
+    def _inside(self, family: type[Block[Any]], span: range) -> bool:
+        total: int = getattr(self, _COUNTS[family])()
+        return 0 <= span.start <= total and len(span) <= total - span.start
 
     def _setname(
         self,
@@ -1628,7 +1624,7 @@ class Model:
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
     ) -> list[str | None]:
-        chosen = self._chosen(call, family, idx)
+        chosen = self._chosen(call, family, idx, 1)
         found = (c_char_p * len(idx))()
         self._call(*chosen, found)
         return [decoded(value) for value in found]
@@ -1640,7 +1636,7 @@ class Model:
         idx: Sequence[SupportsIndex] | Block[Any],
         *types: type[c_int | c_double],
     ) -> list[list[Any]]:
-        chosen = self._chosen(call, family, idx)
+        chosen = self._chosen(call, family, idx, len(types))
         found = [(element * len(idx))() for element in types]
         self._call(*chosen, *found)
         return [list(values) for values in found]

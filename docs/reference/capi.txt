@@ -493,16 +493,17 @@ param n out Receives the number of variables.
 return `BIYOS_OK`, with the number in `*n`.
 since 0.1.0
 
-function BIYOS_getvarrg
+function BIYOS_getvarsp BIYOS_getvarrg
 summary Read the kinds and bounds of variables.
 param mdl in The model.
-param pos in The first variable to read.
-param n in The number of variables to read.
-param knd out Entry `j` receives the kind of variable `pos + j`; skipped when null.
+param pos in In the `rg` form, the first variable to read.
+param n in The number of entries.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param knd out Entry `j` receives the kind of variable `idx[j]` or `pos + j`; skipped when null.
 param lb out Entry `j` receives its lower bound; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `pos` or `n` is negative, or `pos + n` exceeds the number of variables.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 see BIYOS_getnvar
 since 0.1.0
 
@@ -667,16 +668,17 @@ param n out Receives the number of constraints.
 return `BIYOS_OK`, with the number in `*n`.
 since 0.1.0
 
-function BIYOS_getconrg
+function BIYOS_getconsp BIYOS_getconrg
 summary Read the functions and bounds of constraints.
 param mdl in The model.
-param pos in The first constraint to read.
-param n in The number of constraints to read.
-param funidx out Entry `j` receives the function of constraint `pos + j`; skipped when null.
+param pos in In the `rg` form, the first constraint to read.
+param n in The number of entries.
+param idx in In the `sp` form, the constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param funidx out Entry `j` receives the function of constraint `idx[j]` or `pos + j`; skipped when null.
 param lb out Entry `j` receives its lower bound; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `pos` or `n` is negative, or `pos + n` exceeds the number of constraints.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
 see BIYOS_getncon
 since 0.1.0
 
@@ -814,17 +816,18 @@ param n out Receives the number of objectives.
 return `BIYOS_OK`, with the number in `*n`.
 since 0.1.0
 
-function BIYOS_getobjrg
+function BIYOS_getobjsp BIYOS_getobjrg
 summary Read the functions, senses, priorities and weights of objectives.
 param mdl in The model.
-param pos in The first objective to read.
-param n in The number of objectives to read.
-param funidx out Entry `j` receives the function of objective `pos + j`; skipped when null.
+param pos in In the `rg` form, the first objective to read.
+param n in The number of entries.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param funidx out Entry `j` receives the function of objective `idx[j]` or `pos + j`; skipped when null.
 param sense out Entry `j` receives its sense; skipped when null.
 param prio out Entry `j` receives its priority; skipped when null.
 param coef out Entry `j` receives its weight; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `pos` or `n` is negative, or `pos + n` exceeds the number of objectives.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 note It reads back what `BIYOS_addobj` takes. `BIYOS_getobjtolsp` reads the tolerances.
 see BIYOS_getnobj BIYOS_getobjtolsp
 since 0.1.0

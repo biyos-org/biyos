@@ -29,13 +29,13 @@ The readers return lists, in the order of the C call's arrays:
 
 | Method | Returns |
 | ------------------ | ------------------------------------ |
-| `getvar(pos, n)` | kinds, lower bounds, upper bounds |
+| `getvar(idx)` | kinds, lower bounds, upper bounds |
 | `getfuns(pos, n)` | constants, offsets, variables, coefficients |
 | `getquadterm(pos, n)` | offsets, first and second variables, coefficients |
-| `getcon(pos, n)` | functions, lower bounds, upper bounds |
-| `getobj(pos, n)` | functions, senses, priorities, weights |
+| `getcon(idx)` | functions, lower bounds, upper bounds |
+| `getobj(idx)` | functions, senses, priorities, weights |
 
-`pos` defaults to 0 and `n` to every item from `pos` on, so `model.getvar()` reads them all. The readers of terms size their arrays themselves.
+`idx` lists the items to read, or is a block or a range of them, and defaults to every item, so `model.getvar()` reads them all. `getfuns` and `getquadterm` take the first function `pos` and the count `n`, which default to 0 and to every function from `pos` on. The readers of terms size their arrays themselves.
 
 A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobj` leaves out, as `addobj` does.
 

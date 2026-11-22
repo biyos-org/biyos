@@ -119,14 +119,14 @@ biyos stores and checks the objectives but solves nothing yet. The stages above 
 
 ## Reading a model back {#sec-model-reading}
 
-Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvarrg`, `BIYOS_getnfun` and `BIYOS_getfuns`, and so on. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the first index and the count of items to read, and fills the arrays it is given; a null array is skipped. Terms come back in compressed form, and since the caller cannot know their number in advance, the readers of terms take the size of the arrays and write the number of terms to `nnz`, whether they fit or not:
+Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvarrg`, `BIYOS_getnfun` and `BIYOS_getfuns`, and so on. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the items to read and fills the arrays it is given; a null array is skipped. Terms come back in compressed form, and since the caller cannot know their number in advance, the readers of terms take the size of the arrays and write the number of terms to `nnz`, whether they fit or not:
 
 ```{.c file="examples/c/model.c" item="read_squares"}
 ```
 
 Called with a size of 0 and null arrays, such a reader only reports `nnz`, so a caller can learn the size, allocate, and call again.
 
-A family reader reads a range. Every setter of an attribute has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items, such as `{0, 4, 10, 12}`, is read in one call: `BIYOS_getvarbndsp` reads what `BIYOS_setvarbndsp` sets, and `BIYOS_getvarbndrg` what `BIYOS_setvarbndrg` sets. An item may appear in the list more than once, and a null output is skipped.
+A family reader reads a list or a range: `BIYOS_getvarsp` reads the variables a list names, in its order and as often as it names them, and `BIYOS_getvarrg` a range of them. Every setter of an attribute has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items, such as `{0, 4, 10, 12}`, is read in one call: `BIYOS_getvarbndsp` reads what `BIYOS_setvarbndsp` sets, and `BIYOS_getvarbndrg` what `BIYOS_setvarbndrg` sets. An item may appear in the list more than once, and a null output is skipped.
 
 ## Names {#sec-model-names}
 

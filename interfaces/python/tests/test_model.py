@@ -492,9 +492,10 @@ def test_add(model):
     found = model.getvar()
     assert found == (KINDS, lower, upper)
     assert all(type(kind) is VariableKind for kind in found[0])
-    assert model.getvar(2, 1) == ([VariableKind.INTEGER], [-3.0], [7.0])
-    assert model.getvar(3) == (KINDS[3:], lower[3:], upper[3:])
-    assert model.getvar(5) == ([], [], [])
+    found = model.getvar([2])
+    assert found == ([VariableKind.INTEGER], [-3.0], [7.0])
+    assert model.getvar(range(3, 5)) == (KINDS[3:], lower[3:], upper[3:])
+    assert model.getvar(range(5, 5)) == ([], [], [])
 
 
 def test_defaults(model):
@@ -544,7 +545,7 @@ def test_bounds(model):
     model.setvarbnd([1], ub=[3.0])
     assert model.getvar()[1:] == ([2.0, 1.0], [INFINITY, 3.0])
     model.setvarbnd([0, 0], [5.0, 6.0], [7.0, 8.0])
-    assert model.getvar(0, 1)[1:] == ([6.0], [8.0])
+    assert model.getvar([0])[1:] == ([6.0], [8.0])
 
 
 def test_kinds(model):
@@ -623,10 +624,10 @@ def test_refused(model):
     assert message == "invalid argument: variable 3: unknown"
     message = refusal(model.addvar, 1, None, [INFINITY])
     assert message == "invalid argument: variable 1: lower bound is infinity"
-    message = refusal(model.getvar, 2)
+    message = refusal(model.getvar, range(2, 3))
     assert message == "invalid argument: variable 2: unknown"
-    message = refusal(model.getvar, 0, -1)
-    assert message == "invalid argument: argument 'n': -1 is negative"
+    message = refusal(model.getvar, [-1])
+    assert message == "invalid argument: variable -1: unknown"
     continuous = [VariableKind.CONTINUOUS]
     assert model.getvar() == (continuous, [-INFINITY], [INFINITY])
 
@@ -634,18 +635,10 @@ def test_refused(model):
 def test_outside(model, monkeypatch):
     model.addvar(1)
     limit(monkeypatch, _model, 1)
-    message = refusal(model.getvar, 0, 2**31 - 1)
+    message = refusal(model.getvar, range(2**31 - 1))
     assert message == "invalid argument: variable 1: unknown"
-    message = refusal(model.getvar, 2, 2**31 - 3)
+    message = refusal(model.getvar, range(2, 2**31 - 1))
     assert message == "invalid argument: variable 2: unknown"
-
-
-def test_growing(model):
-    grow = partial(model.addvar, 3, None, [1.0, 2.0, 3.0])
-    kinds, lower, upper = model.getvar(0, Growing(3, grow))
-    assert kinds == [VariableKind.CONTINUOUS] * 3
-    assert lower == [1.0, 2.0, 3.0]
-    assert upper == [INFINITY] * 3
 
 
 def test_stale(model, monkeypatch):
@@ -653,8 +646,8 @@ def test_stale(model, monkeypatch):
     monkeypatch.setattr(model, "getnvar", lambda: 0)
     spy = Room(lib.BIYOS_getvarrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getvarrg", spy)
-    assert model.getvar(0, 2)[1] == [1.0, 2.0]
-    assert model.getvar(1)[1] == []
+    assert model.getvar(range(2))[1] == [1.0, 2.0]
+    assert model.getvar(range(1, 1))[1] == []
 
 
 def test_lengths(model):
@@ -688,7 +681,7 @@ def test_index(model):
     model.addvar(Number(2), [Number(2), Number(3)])
     model.setvarbnd([Number(1)], [-1], [5])
     model.setvarknd([Number(0)], [Number(1)])
-    found = model.getvar(Number(0), Number(2))
+    found = model.getvar([Number(0), Number(1)])
     kinds = [VariableKind.CONTINUOUS, VariableKind.INTEGER]
     assert found == (kinds, [0.0, -1.0], [1.0, 5.0])
 
@@ -696,8 +689,8 @@ def test_index(model):
 def test_numbers(model):
     with pytest.raises(TypeError, match="n must be an int, not str"):
         model.addvar("1")
-    with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
-        model.getvar(2**32)
+    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+        model.getvar(range(2**32, 2**32 + 1))
     assert model.getnvar() == 0
 
 

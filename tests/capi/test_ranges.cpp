@@ -300,13 +300,16 @@ void read_variables(const Model &model, Engine &engine)
     const std::vector<int> whole = zeros<int>(span);
     expect_reads(model, span, BIYOS_getvarbndsp, BIYOS_getvarbndrg, reals, reals);
     expect_reads(model, span, BIYOS_getvarkndsp, BIYOS_getvarkndrg, whole);
+    expect_reads(model, span, BIYOS_getvarsp, BIYOS_getvarrg, whole, reals, reals);
 }
 
 void read_constraints(const Model &model, Engine &engine)
 {
     const Span span = random_span(engine, count_of(model, BIYOS_getncon));
     const std::vector<double> reals = zeros<double>(span);
+    const std::vector<int> whole = zeros<int>(span);
     expect_reads(model, span, BIYOS_getconbndsp, BIYOS_getconbndrg, reals, reals);
+    expect_reads(model, span, BIYOS_getconsp, BIYOS_getconrg, whole, reals, reals);
 }
 
 void read_objectives(const Model &model, Engine &engine)
@@ -318,6 +321,7 @@ void read_objectives(const Model &model, Engine &engine)
     expect_reads(model, span, BIYOS_getobjpriosp, BIYOS_getobjpriorg, whole);
     expect_reads(model, span, BIYOS_getobjcoefsp, BIYOS_getobjcoefrg, reals);
     expect_reads(model, span, BIYOS_getobjtolsp, BIYOS_getobjtolrg, reals, reals);
+    expect_reads(model, span, BIYOS_getobjsp, BIYOS_getobjrg, whole, whole, whole, reals);
 }
 
 void read_all(const Model &model, Engine &engine)
@@ -347,14 +351,17 @@ void keep_variables(const Held &held, Span span, BIYOS_status wanted)
     expect_kept(held, span, wanted, BIYOS_getvarbndrg, bounds, bounds);
     expect_kept(held, span, wanted, BIYOS_setvarkndrg, kinds);
     expect_kept(held, span, wanted, BIYOS_getvarkndrg, kinds);
+    expect_kept(held, span, wanted, BIYOS_getvarrg, kinds, bounds, bounds);
 }
 
 void keep_constraints(const Held &held, Span span, BIYOS_status wanted)
 {
     const auto n = static_cast<std::size_t>(count_of(held.model, BIYOS_getncon) + 1);
     const std::vector<double> bounds(n, 0.5);
+    const std::vector<int> functions(n, 0);
     expect_kept(held, span, wanted, BIYOS_setconbndrg, bounds, bounds);
     expect_kept(held, span, wanted, BIYOS_getconbndrg, bounds, bounds);
+    expect_kept(held, span, wanted, BIYOS_getconrg, functions, bounds, bounds);
 }
 
 void keep_objectives(const Held &held, Span span, BIYOS_status wanted)
@@ -370,6 +377,7 @@ void keep_objectives(const Held &held, Span span, BIYOS_status wanted)
     expect_kept(held, span, wanted, BIYOS_getobjcoefrg, values);
     expect_kept(held, span, wanted, BIYOS_setobjtolrg, values, values);
     expect_kept(held, span, wanted, BIYOS_getobjtolrg, values, values);
+    expect_kept(held, span, wanted, BIYOS_getobjrg, senses, senses, senses, values);
 }
 
 void keep_names(const Held &held, Span span, BIYOS_status wanted, const NameCalls &calls)

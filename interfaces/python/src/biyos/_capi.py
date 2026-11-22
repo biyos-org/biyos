@@ -100,8 +100,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_setvarknd", ints)
     _declare_pair(lib, "BIYOS_getvarknd", ints)
     _declare(lib, "BIYOS_getnvar", c_int, c_void_p, ints)
-    read = (c_void_p, c_int32, c_int32, ints, doubles, doubles)
-    _declare(lib, "BIYOS_getvarrg", c_int, *read)
+    _declare_pair(lib, "BIYOS_getvar", ints, doubles, doubles)
     _declare_functions(lib, ints, doubles)
     _declare_quadratic(lib, ints, doubles)
     _declare_constraints(lib, ints, doubles)
@@ -138,8 +137,7 @@ def _declare_constraints(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_setconbnd", doubles, doubles)
     _declare_pair(lib, "BIYOS_getconbnd", doubles, doubles)
     _declare(lib, "BIYOS_getncon", c_int, c_void_p, ints)
-    read = (c_void_p, c_int32, c_int32, ints, doubles, doubles)
-    _declare(lib, "BIYOS_getconrg", c_int, *read)
+    _declare_pair(lib, "BIYOS_getcon", ints, doubles, doubles)
 
 
 def _declare_objectives(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -152,8 +150,7 @@ def _declare_objectives(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_setobjtol", doubles, doubles)
     _declare_pair(lib, "BIYOS_getobjtol", doubles, doubles)
     _declare(lib, "BIYOS_getnobj", c_int, c_void_p, ints)
-    read = (c_void_p, c_int32, c_int32, ints, *fields)
-    _declare(lib, "BIYOS_getobjrg", c_int, *read)
+    _declare_pair(lib, "BIYOS_getobj", ints, *fields)
 
 
 def _declare_names(lib: ctypes.CDLL, ints: type) -> None:
