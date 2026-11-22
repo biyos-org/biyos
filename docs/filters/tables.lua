@@ -24,7 +24,38 @@ local function wrapped(span, macro)
     return out
 end
 
+local function bracket(str)
+    if str.text:find("[", 1, true) then
+        local out = pandoc.Inlines({})
+        for piece in str.text:gmatch("[^%[]*%[?") do
+            if piece ~= "" then
+                out:insert(pandoc.Str(piece))
+                if piece:sub(-1) == "[" then
+                    out:insert(pandoc.RawInline("latex", "\\allowbreak{}"))
+                end
+            end
+        end
+        return out
+    end
+end
+
+local function tied(inlines)
+    for k = 2, #inlines do
+        if inlines[k].t == "Space" and inlines[k - 1].t == "Str" and inlines[k - 1].text == "|" then
+            inlines[k] = pandoc.RawInline("latex", "~")
+        end
+    end
+    return inlines
+end
+
+local function breakable(span)
+    return span:walk({Str = bracket, Inlines = tied})
+end
+
 local function mark(span)
+    if span.classes:includes("type") then
+        span = breakable(span)
+    end
     for class, macro in pairs(kMarks) do
         if span.classes:includes(class) then
             return wrapped(span, macro)
