@@ -202,12 +202,12 @@ BIYOS_status BIYOS_freemdl(BIYOS_model *mdl)
     return status;
 }
 
-BIYOS_status BIYOS_addvars(BIYOS_model *mdl,
-                           BIYOS_index n,
-                           const BIYOS_int *knd,
-                           const BIYOS_real *lb,
-                           const BIYOS_real *ub,
-                           BIYOS_index *beg)
+BIYOS_status BIYOS_addvar(BIYOS_model *mdl,
+                          BIYOS_index n,
+                          const BIYOS_int *knd,
+                          const BIYOS_real *lb,
+                          const BIYOS_real *ub,
+                          BIYOS_index *beg)
 {
     return guarded<add_vars>(mdl, n, knd, lb, ub, beg);
 }
@@ -246,7 +246,7 @@ BIYOS_status BIYOS_getvarknd(const BIYOS_model *mdl,
     return guarded<get_kinds>(mdl, n, idx, knd);
 }
 
-BIYOS_status BIYOS_getnvars(const BIYOS_model *mdl, BIYOS_index *n)
+BIYOS_status BIYOS_getnvar(const BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<n_vars>(mdl, n);
 }

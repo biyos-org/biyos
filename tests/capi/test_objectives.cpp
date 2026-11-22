@@ -60,7 +60,7 @@ BIYOS_status add_with(BIYOS_model *mdl,
                       const Fields &fields,
                       BIYOS_index *beg = nullptr)
 {
-    return BIYOS_addobjs(mdl, n, funs, fields.senses, fields.priorities, fields.weights, beg);
+    return BIYOS_addobj(mdl, n, funs, fields.senses, fields.priorities, fields.weights, beg);
 }
 
 BIYOS_status get_with(BIYOS_model *mdl, int beg, int n, const Outputs &outputs)
@@ -103,7 +103,7 @@ void add_sample(const Model &mdl)
 int n_objs(const Model &mdl)
 {
     BIYOS_index n = -1;
-    EXPECT_EQ(BIYOS_getnobjs(mdl.get(), &n), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnobj(mdl.get(), &n), BIYOS_OK);
     return n;
 }
 
@@ -264,7 +264,7 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_setobjprio(mdl, 1, &idx, &idx));
     note(attempt, BIYOS_setobjcoef(mdl, 1, &idx, &weight));
     note(attempt, BIYOS_setobjtol(mdl, 1, &idx, &weight, &weight));
-    note(attempt, BIYOS_getnobjs(mdl, &n));
+    note(attempt, BIYOS_getnobj(mdl, &n));
     note(attempt, get_with(mdl, 0, 1, {}));
     note(attempt, BIYOS_getobjsense(mdl, 1, &idx, nullptr));
     note(attempt, BIYOS_getobjprio(mdl, 1, &idx, nullptr));
@@ -425,7 +425,7 @@ TEST(CApiTest, NullOutputs)
     EXPECT_EQ(get_with(held, 1, 2, {.senses = senses, .weights = weights}), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({senses[0], senses[1]}), std::vector<int>(2, BIYOS_MINIMIZE));
     EXPECT_EQ(bits_of({weights[0], weights[1]}), bits_of({1.0, 3.0}));
-    EXPECT_EQ(BIYOS_getnobjs(held, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getnobj(held, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
 
@@ -622,7 +622,7 @@ TEST(CApiTest, NewTolerances)
     add_funs(mdl, 1);
     const BIYOS_index funidx[] = {0, 0};
     BIYOS_index beg = -1;
-    ASSERT_EQ(BIYOS_addobjs(mdl.get(), 2, funidx, nullptr, nullptr, nullptr, &beg), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addobj(mdl.get(), 2, funidx, nullptr, nullptr, nullptr, &beg), BIYOS_OK);
     EXPECT_EQ(beg, 0);
     expect_records(read_all(mdl), defaults({0, 0}));
     const BIYOS_index idx[] = {1, 0};

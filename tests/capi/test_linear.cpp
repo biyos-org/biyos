@@ -78,14 +78,14 @@ BIYOS_status add_terms(const Model &mdl, const std::vector<int> &funs, const Ter
 
 void add_sample(const Model &mdl)
 {
-    ASSERT_EQ(BIYOS_addvars(mdl.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(mdl.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(add_funs(mdl, 3, kFunctions), BIYOS_OK);
 }
 
 int n_funs(const Model &mdl)
 {
     BIYOS_index n = -1;
-    EXPECT_EQ(BIYOS_getnfuns(mdl.get(), &n), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnfun(mdl.get(), &n), BIYOS_OK);
     return n;
 }
 
@@ -234,7 +234,7 @@ std::vector<int> random_funs(Engine &engine, int n_funs)
 
 void build_random(Engine &engine, const Model &mdl, int n_vars, int n_funs)
 {
-    ASSERT_EQ(BIYOS_addvars(mdl.get(), n_vars, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(mdl.get(), n_vars, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const auto all = static_cast<std::size_t>(n_funs);
     ASSERT_EQ(add_funs(mdl, n_funs, random_terms(engine, all, n_vars)), BIYOS_OK);
     for (int round = 0; round < 3; ++round)

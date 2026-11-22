@@ -16,7 +16,7 @@ CALLS = [
     "BIYOS_getoptver",
     "BIYOS_addhook",
     "BIYOS_delhook",
-    "BIYOS_getnvars",
+    "BIYOS_getnvar",
 ]
 
 
@@ -153,8 +153,8 @@ def test_nested(log, monkeypatch):
 def test_interrupted(log, monkeypatch):
     env = biyos.Env()
     model = biyos.Model(env)
-    count = partial(interrupted, lib.BIYOS_getnvars)
-    monkeypatch.setattr(lib, "BIYOS_getnvars", count)
+    count = partial(interrupted, lib.BIYOS_getnvar)
+    monkeypatch.setattr(lib, "BIYOS_getnvar", count)
     before_start(env, [env.close], monkeypatch)
     with pytest.raises(KeyboardInterrupt):
         model.getnvars()

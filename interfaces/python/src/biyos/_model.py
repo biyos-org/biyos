@@ -234,7 +234,7 @@ class Model:
 
         See Also
         --------
-        BIYOS_addvars
+        BIYOS_addvar
         """
         n = integer("n", n)
         arrays = (
@@ -243,7 +243,7 @@ class Model:
             doubles("ub", ub, n),
         )
         first = c_int()
-        self._call(lib.BIYOS_addvars, n, *arrays, byref(first))
+        self._call(lib.BIYOS_addvar, n, *arrays, byref(first))
         return Variables(self, first.value, n, self._gen)
 
     def setvarbnd(
@@ -357,10 +357,10 @@ class Model:
 
         See Also
         --------
-        BIYOS_getnvars
+        BIYOS_getnvar
         """
         count = c_int()
-        self._call(lib.BIYOS_getnvars, byref(count))
+        self._call(lib.BIYOS_getnvar, byref(count))
         return count.value
 
     def getvars(
@@ -458,10 +458,10 @@ class Model:
 
         See Also
         --------
-        BIYOS_getnfuns
+        BIYOS_getnfun
         """
         count = c_int()
-        self._call(lib.BIYOS_getnfuns, byref(count))
+        self._call(lib.BIYOS_getnfun, byref(count))
         return count.value
 
     def getfuns(
@@ -713,7 +713,7 @@ class Model:
 
         See Also
         --------
-        BIYOS_addcons
+        BIYOS_addcon
         """
         count = len(funidx)
         arrays = (
@@ -722,7 +722,7 @@ class Model:
             doubles("ub", ub, count),
         )
         first = c_int()
-        self._call(lib.BIYOS_addcons, count, *arrays, byref(first))
+        self._call(lib.BIYOS_addcon, count, *arrays, byref(first))
         return Constraints(self, first.value, count, self._gen)
 
     def setconbnd(
@@ -787,10 +787,10 @@ class Model:
 
         See Also
         --------
-        BIYOS_getncons
+        BIYOS_getncon
         """
         count = c_int()
-        self._call(lib.BIYOS_getncons, byref(count))
+        self._call(lib.BIYOS_getncon, byref(count))
         return count.value
 
     def getcons(
@@ -868,7 +868,7 @@ class Model:
 
         See Also
         --------
-        BIYOS_addobjs
+        BIYOS_addobj
         """
         count = len(funidx)
         arrays = (
@@ -878,7 +878,7 @@ class Model:
             doubles("coef", coef, count),
         )
         first = c_int()
-        self._call(lib.BIYOS_addobjs, count, *arrays, byref(first))
+        self._call(lib.BIYOS_addobj, count, *arrays, byref(first))
         return Objectives(self, first.value, count, self._gen)
 
     def setobjsense(
@@ -1097,10 +1097,10 @@ class Model:
 
         See Also
         --------
-        BIYOS_getnobjs
+        BIYOS_getnobj
         """
         count = c_int()
-        self._call(lib.BIYOS_getnobjs, byref(count))
+        self._call(lib.BIYOS_getnobj, byref(count))
         return count.value
 
     def getobjs(

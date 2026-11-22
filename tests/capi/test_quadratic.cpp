@@ -58,7 +58,7 @@ BIYOS_status add_terms(const Model &mdl, const std::vector<int> &funs, const Com
 void add_sample(const Model &mdl)
 {
     BIYOS_model *held = mdl.get();
-    ASSERT_EQ(BIYOS_addvars(held, 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(held, 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfuns(held, 3, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(add_terms(mdl, kFunctions, kSample), BIYOS_OK);
 }

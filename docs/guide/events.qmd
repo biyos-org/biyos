@@ -46,7 +46,7 @@ The time is the wall time since the environment was created, in seconds with six
 
 ## Reading an event {#sec-events-read}
 
-A hook can also read the parts of an event one by one, with `BIYOS_getevtknd`, `BIYOS_getevtlvl`, `BIYOS_getevtmod`, `BIYOS_getevttext`, `BIYOS_getnevtflds` and the field readers. These calls cannot fail: a null event or a field number out of range gives 0 or an empty string. This function finds the status code an error message carries:
+A hook can also read the parts of an event one by one, with `BIYOS_getevtknd`, `BIYOS_getevtlvl`, `BIYOS_getevtmod`, `BIYOS_getevttext`, `BIYOS_getnevtfld` and the field readers. These calls cannot fail: a null event or a field number out of range gives 0 or an empty string. This function finds the status code an error message carries:
 
 ```{.c file="examples/c/events.c" item="code_of"}
 ```

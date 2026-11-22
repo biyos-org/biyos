@@ -43,7 +43,7 @@ Each variable has a kind and a lower and an upper bound. The kind says which val
 | `BIYOS_VAR_SEMICONT` | 0, or any value between its bounds |
 | `BIYOS_VAR_SEMIINT` | 0, or any integer between its bounds |
 
-Every kind but continuous is discrete. `BIYOS_addvars` adds variables after the last one:
+Every kind but continuous is discrete. `BIYOS_addvar` adds variables after the last one:
 
 ```{.c file="examples/c/model.c" item="variables"}
 ```
@@ -86,7 +86,7 @@ A call that adds new pairs moves the terms of every function from the lowest one
 
 ## Constraints {#sec-model-constraints}
 
-A constraint $l \le f(x) \le u$ bounds one function of the table. `BIYOS_addcons` takes the index of each constraint's function and its two bounds:
+A constraint $l \le f(x) \le u$ bounds one function of the table. `BIYOS_addcon` takes the index of each constraint's function and its two bounds:
 
 ```{.c file="examples/c/model.c" item="constraints"}
 ```
@@ -95,7 +95,7 @@ Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A const
 
 ## Objectives {#sec-model-objectives}
 
-An objective names a function to minimize or maximize, with a priority, a weight and two tolerances. `BIYOS_addobjs` takes what defines it, the function, sense, priority and weight, as `BIYOS_addcons` takes a function and its bounds. Its tolerances are 0 until `BIYOS_setobjtol` sets them, as here for objective 0:
+An objective names a function to minimize or maximize, with a priority, a weight and two tolerances. `BIYOS_addobj` takes what defines it, the function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds. Its tolerances are 0 until `BIYOS_setobjtol` sets them, as here for objective 0:
 
 ```{.c file="examples/c/model.c" item="objectives"}
 ```
@@ -110,7 +110,7 @@ where $P$ holds the objectives of that priority and $w_i$ is the weight of objec
 
 A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. A null `sense` minimizes every new objective, a null `coef` gives each the weight 1, and a null `prio` gives each objective its own index as its priority. So by default the objectives are optimized one after another in the order they are added, which is what this model asks for explicitly.
 
-`BIYOS_setobjsense`, `BIYOS_setobjprio`, `BIYOS_setobjcoef` and `BIYOS_setobjtol` change one attribute of a list of objectives each, and `BIYOS_getobjsense`, `BIYOS_getobjprio`, `BIYOS_getobjcoef` and `BIYOS_getobjtol` read it back with the same arguments. `BIYOS_getobjs` reads back what `BIYOS_addobjs` takes, so a model is read whole with it and `BIYOS_getobjtol`.
+`BIYOS_setobjsense`, `BIYOS_setobjprio`, `BIYOS_setobjcoef` and `BIYOS_setobjtol` change one attribute of a list of objectives each, and `BIYOS_getobjsense`, `BIYOS_getobjprio`, `BIYOS_getobjcoef` and `BIYOS_getobjtol` read it back with the same arguments. `BIYOS_getobjs` reads back what `BIYOS_addobj` takes, so a model is read whole with it and `BIYOS_getobjtol`.
 
 ::: {.callout-note}
 ## Stored, not yet solved
@@ -119,7 +119,7 @@ biyos stores and checks the objectives but solves nothing yet. The stages above 
 
 ## Reading a model back {#sec-model-reading}
 
-Every family has a count and a reader: `BIYOS_getnvars` and `BIYOS_getvars`, `BIYOS_getnfuns` and `BIYOS_getfuns`, and so on. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the first index and the count of items to read, and fills the arrays it is given; a null array is skipped. Terms come back in compressed form, and since the caller cannot know their number in advance, the readers of terms take the size of the arrays and write the number of terms to `nnz`, whether they fit or not:
+Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvars`, `BIYOS_getnfun` and `BIYOS_getfuns`, and so on. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the first index and the count of items to read, and fills the arrays it is given; a null array is skipped. Terms come back in compressed form, and since the caller cannot know their number in advance, the readers of terms take the size of the arrays and write the number of terms to `nnz`, whether they fit or not:
 
 ```{.c file="examples/c/model.c" item="read_squares"}
 ```

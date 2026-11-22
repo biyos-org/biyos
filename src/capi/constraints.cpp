@@ -125,12 +125,12 @@ void get_bnds(const BIYOS_model &mdl, int n, const int *idx, double *lower, doub
 
 }
 
-BIYOS_status BIYOS_addcons(BIYOS_model *mdl,
-                           BIYOS_index n,
-                           const BIYOS_index *funidx,
-                           const BIYOS_real *lb,
-                           const BIYOS_real *ub,
-                           BIYOS_index *beg)
+BIYOS_status BIYOS_addcon(BIYOS_model *mdl,
+                          BIYOS_index n,
+                          const BIYOS_index *funidx,
+                          const BIYOS_real *lb,
+                          const BIYOS_real *ub,
+                          BIYOS_index *beg)
 {
     return guarded<add_cons>(mdl, n, funidx, lb, ub, beg);
 }
@@ -153,7 +153,7 @@ BIYOS_status BIYOS_getconbnd(const BIYOS_model *mdl,
     return guarded<get_bnds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_getncons(const BIYOS_model *mdl, BIYOS_index *n)
+BIYOS_status BIYOS_getncon(const BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<n_cons>(mdl, n);
 }

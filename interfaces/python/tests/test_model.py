@@ -49,9 +49,9 @@ def model(env):
 def log(monkeypatch):
     log = []
     free = partial(freed, log, lib.BIYOS_freemdl)
-    count = partial(reached, log, lib.BIYOS_getnvars)
+    count = partial(reached, log, lib.BIYOS_getnvar)
     monkeypatch.setattr(lib, "BIYOS_freemdl", free)
-    monkeypatch.setattr(lib, "BIYOS_getnvars", count)
+    monkeypatch.setattr(lib, "BIYOS_getnvar", count)
     return log
 
 
@@ -402,8 +402,8 @@ def test_drained(log, monkeypatch):
 def test_interrupted_call(log, monkeypatch):
     env = biyos.Env()
     model = biyos.Model(env)
-    count = partial(interrupted, lib.BIYOS_getnvars)
-    monkeypatch.setattr(lib, "BIYOS_getnvars", count)
+    count = partial(interrupted, lib.BIYOS_getnvar)
+    monkeypatch.setattr(lib, "BIYOS_getnvar", count)
     start = partial(preceded, [model.close], env._relay.start)
     monkeypatch.setattr(env._relay, "start", start)
     with pytest.raises(KeyboardInterrupt):
@@ -526,13 +526,13 @@ def test_buffer(model, monkeypatch):
     lower = array.array("d", [0.0, 1.0])
     upper = array.array("d", [2.0, 3.0])
     seen = []
-    original = lib.BIYOS_addvars
+    original = lib.BIYOS_addvar
 
     def spy(handle, count, kinds, low, high, first):
         seen.append((ctypes.addressof(low), ctypes.addressof(high)))
         return original(handle, count, kinds, low, high, first)
 
-    monkeypatch.setattr(lib, "BIYOS_addvars", spy)
+    monkeypatch.setattr(lib, "BIYOS_addvar", spy)
     model.addvars(2, None, lower, upper)
     assert seen == [(lower.buffer_info()[0], upper.buffer_info()[0])]
     assert model.getvars()[1:] == ([0.0, 1.0], [2.0, 3.0])

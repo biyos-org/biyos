@@ -39,19 +39,19 @@ void add_funs(const Model &mdl, int n)
 void add_sample(const Model &mdl)
 {
     add_funs(mdl, 2);
-    const BIYOS_status status = BIYOS_addcons(mdl.get(),
-                                              3,
-                                              kSample.functions.data(),
-                                              kSample.lower.data(),
-                                              kSample.upper.data(),
-                                              nullptr);
+    const BIYOS_status status = BIYOS_addcon(mdl.get(),
+                                             3,
+                                             kSample.functions.data(),
+                                             kSample.lower.data(),
+                                             kSample.upper.data(),
+                                             nullptr);
     ASSERT_EQ(status, BIYOS_OK);
 }
 
 int n_cons(const Model &mdl)
 {
     BIYOS_index n = -1;
-    EXPECT_EQ(BIYOS_getncons(mdl.get(), &n), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getncon(mdl.get(), &n), BIYOS_OK);
     return n;
 }
 
@@ -112,10 +112,10 @@ void change(const BIYOS_event *, void *data)
     const BIYOS_index idx = 0;
     const BIYOS_real bound = 0.0;
     BIYOS_index n = 0;
-    note(attempt, BIYOS_addcons(mdl, 1, &idx, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_addcon(mdl, 1, &idx, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_setconbnd(mdl, 1, &idx, &bound, &bound));
     note(attempt, BIYOS_getconbnd(mdl, 1, &idx, nullptr, nullptr));
-    note(attempt, BIYOS_getncons(mdl, &n));
+    note(attempt, BIYOS_getncon(mdl, &n));
     note(attempt, BIYOS_getcons(mdl, 0, 1, nullptr, nullptr, nullptr));
 }
 
@@ -138,15 +138,15 @@ TEST(CApiTest, FirstConstraint)
     add_funs(mdl, 1);
     const int funs[] = {0, 0, 0};
     BIYOS_index beg = -1;
-    ASSERT_EQ(BIYOS_addcons(mdl.get(), 0, nullptr, nullptr, nullptr, &beg), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(mdl.get(), 0, nullptr, nullptr, nullptr, &beg), BIYOS_OK);
     EXPECT_EQ(beg, 0);
-    ASSERT_EQ(BIYOS_addcons(mdl.get(), 2, funs, nullptr, nullptr, &beg), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(mdl.get(), 2, funs, nullptr, nullptr, &beg), BIYOS_OK);
     EXPECT_EQ(beg, 0);
-    ASSERT_EQ(BIYOS_addcons(mdl.get(), 3, funs, nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addcons(mdl.get(), 1, funs, nullptr, nullptr, &beg), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(mdl.get(), 3, funs, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(mdl.get(), 1, funs, nullptr, nullptr, &beg), BIYOS_OK);
     EXPECT_EQ(beg, 5);
     const BIYOS_index unknown = 1;
-    EXPECT_EQ(BIYOS_addcons(mdl.get(), 1, &unknown, nullptr, nullptr, &beg), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addcon(mdl.get(), 1, &unknown, nullptr, nullptr, &beg), BIYOS_ERR_BADARG);
     EXPECT_EQ(beg, 5);
     EXPECT_EQ(n_cons(mdl), 6);
 }
@@ -159,7 +159,7 @@ TEST(CApiTest, SharedFunction)
     const int funs[] = {0, 0};
     const double lower[] = {0.0, -kInfinity};
     const double upper[] = {1.0, 3.0};
-    ASSERT_EQ(BIYOS_addcons(mdl.get(), 2, funs, lower, upper, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(mdl.get(), 2, funs, lower, upper, nullptr), BIYOS_OK);
     const Records wanted{.functions = {0, 0}, .lower = {0.0, -kInfinity}, .upper = {1.0, 3.0}};
     expect_records(read_all(mdl), wanted);
 }
@@ -195,17 +195,17 @@ TEST(CApiTest, NullConstraints)
     const int funs[] = {0, 0};
     const double bnds[] = {0.5, 0.75};
     BIYOS_model *held = mdl.get();
-    ASSERT_EQ(BIYOS_addcons(held, 2, funs, nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addcons(held, 2, funs, bnds, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addcons(held, 2, funs, nullptr, bnds, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addcons(held, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(held, 2, funs, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(held, 2, funs, bnds, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(held, 2, funs, nullptr, bnds, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(held, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const Records wanted{
         .functions = {0, 0, 0, 0, 0, 0},
         .lower = {-kInfinity, -kInfinity, 0.5, 0.75, -kInfinity, -kInfinity},
         .upper = {kInfinity, kInfinity, kInfinity, kInfinity, 0.5, 0.75},
     };
     expect_records(read_all(mdl), wanted);
-    EXPECT_EQ(BIYOS_addcons(held, 1, nullptr, bnds, bnds, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addcon(held, 1, nullptr, bnds, bnds, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
     EXPECT_EQ(n_cons(mdl), 6);
 }
@@ -216,7 +216,7 @@ TEST(CApiTest, NullBounds)
     const Model mdl(env);
     add_funs(mdl, 1);
     const int funs[] = {0, 0};
-    ASSERT_EQ(BIYOS_addcons(mdl.get(), 2, funs, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(mdl.get(), 2, funs, nullptr, nullptr, nullptr), BIYOS_OK);
     const int idx[] = {1, 0};
     const double lower[] = {1.0, 2.0};
     const double upper[] = {3.0, 4.0};
@@ -242,7 +242,7 @@ TEST(CApiTest, NullReads)
     EXPECT_EQ(BIYOS_getcons(mdl.get(), 1, 2, funs, nullptr, high), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({funs[0], funs[1]}), std::vector<int>({0, 1}));
     expect_dbls({high[0], high[1]}, {kInfinity, 2.0});
-    EXPECT_EQ(BIYOS_getncons(mdl.get(), nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getncon(mdl.get(), nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
 
@@ -254,11 +254,11 @@ TEST(CApiTest, RefusedConstraints)
     BIYOS_model *held = mdl.get();
     const int funs[] = {0, 2};
     const BIYOS_real nan = std::numeric_limits<double>::quiet_NaN();
-    EXPECT_EQ(BIYOS_addcons(held, 2, funs, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addcon(held, 2, funs, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 4: function 2 is unknown");
-    EXPECT_EQ(BIYOS_addcons(held, 1, funs, &nan, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addcon(held, 1, funs, &nan, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: lower bound is NaN");
-    EXPECT_EQ(BIYOS_addcons(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addcon(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     const BIYOS_index idx = 3;
     const BIYOS_real bound = 0.0;
@@ -284,7 +284,7 @@ TEST(CApiTest, LockedConstraints)
     attempt.model = mdl.get();
     add_funs(mdl, 1);
     const BIYOS_index fun = 0;
-    ASSERT_EQ(BIYOS_addcons(mdl.get(), 1, &fun, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(mdl.get(), 1, &fun, nullptr, nullptr, nullptr), BIYOS_OK);
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);

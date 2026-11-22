@@ -153,7 +153,7 @@ TEST(InterruptTest, NextCall)
     EXPECT_EQ(BIYOS_getdblopt(env.get(), BIYOS_OPT_MAXTIME, &val), BIYOS_OK);
     EXPECT_FALSE(flag.is_set());
     ASSERT_EQ(BIYOS_interrupt(env.get()), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getnvars(mdl.get(), &n), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnvar(mdl.get(), &n), BIYOS_OK);
     EXPECT_FALSE(flag.is_set());
 }
 

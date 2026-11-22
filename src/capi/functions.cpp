@@ -101,7 +101,7 @@ BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
     return guarded<add_funs>(mdl, n, cst, off, varidx, coef, beg);
 }
 
-BIYOS_status BIYOS_getnfuns(const BIYOS_model *mdl, BIYOS_index *n)
+BIYOS_status BIYOS_getnfun(const BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<n_funs>(mdl, n);
 }

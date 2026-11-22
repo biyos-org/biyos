@@ -92,7 +92,7 @@ static BIYOS_status use_functions(BIYOS_model *model)
     BIYOS_index first = -1;
     BIYOS_index functions = 0;
     if (BIYOS_addfuns(model, 2, constants, starts, variables, values, &first) != BIYOS_OK ||
-        first != 0 || BIYOS_getnfuns(model, &functions) != BIYOS_OK || functions != 2)
+        first != 0 || BIYOS_getnfun(model, &functions) != BIYOS_OK || functions != 2)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -159,9 +159,9 @@ static BIYOS_status use_constraints(BIYOS_model *model)
     int found[2] = {-1, -1};
     BIYOS_index first = -1;
     BIYOS_index constraints = 0;
-    if (BIYOS_addcons(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
+    if (BIYOS_addcon(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
         BIYOS_setconbnd(model, 1, indices, NULL, lower) != BIYOS_OK ||
-        BIYOS_getncons(model, &constraints) != BIYOS_OK || constraints != 2 ||
+        BIYOS_getncon(model, &constraints) != BIYOS_OK || constraints != 2 ||
         BIYOS_getcons(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
@@ -179,7 +179,7 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     int priorities[2] = {-1, -1};
     BIYOS_index first = -1;
     BIYOS_index objectives = 0;
-    BIYOS_status status = BIYOS_addobjs(model, 2, functions, senses, NULL, NULL, &first);
+    BIYOS_status status = BIYOS_addobj(model, 2, functions, senses, NULL, NULL, &first);
     if (status == BIYOS_OK)
     {
         status = BIYOS_setobjcoef(model, 1, indices, weights);
@@ -198,7 +198,7 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     }
     if (status == BIYOS_OK)
     {
-        status = BIYOS_getnobjs(model, &objectives);
+        status = BIYOS_getnobj(model, &objectives);
     }
     if (status == BIYOS_OK)
     {
@@ -311,7 +311,7 @@ static BIYOS_status use_copy(BIYOS_env *env, BIYOS_model *model)
     BIYOS_model *copy = NULL;
     BIYOS_index constraints = 0;
     BIYOS_status status = BIYOS_copymdl(model, env, &copy);
-    if (status == BIYOS_OK && (BIYOS_getncons(copy, &constraints) != BIYOS_OK || constraints != 2))
+    if (status == BIYOS_OK && (BIYOS_getncon(copy, &constraints) != BIYOS_OK || constraints != 2))
     {
         status = BIYOS_ERR_INTERNAL;
     }
@@ -328,18 +328,18 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
     BIYOS_index count = -1;
     BIYOS_offset needed = -1;
     BIYOS_status status = BIYOS_OK;
-    if (BIYOS_getnvars(model, &count) != BIYOS_OK ||
+    if (BIYOS_getnvar(model, &count) != BIYOS_OK ||
         BIYOS_getvars(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getvarbnd(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getvarknd(model, 0, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getnfuns(model, &count) != BIYOS_OK ||
+        BIYOS_getnfun(model, &count) != BIYOS_OK ||
         BIYOS_getfuns(model, 0, 0, 0, NULL, NULL, &needed, NULL, NULL) != BIYOS_OK ||
         BIYOS_getvarterms(model, 0, 0, 0, NULL, &needed, NULL, NULL) != BIYOS_OK ||
         BIYOS_getquadterms(model, 0, 0, 0, NULL, &needed, NULL, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getncons(model, &count) != BIYOS_OK ||
+        BIYOS_getncon(model, &count) != BIYOS_OK ||
         BIYOS_getcons(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getconbnd(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getnobjs(model, &count) != BIYOS_OK ||
+        BIYOS_getnobj(model, &count) != BIYOS_OK ||
         BIYOS_getobjs(model, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getobjsense(model, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getobjprio(model, 0, NULL, NULL) != BIYOS_OK ||
@@ -401,11 +401,11 @@ int main(void)
         status = BIYOS_ERR_INTERNAL;
     }
     if (BIYOS_newmdl(env, &model) != BIYOS_OK ||
-        BIYOS_addvars(model, 2, kinds, lower, upper, &first) != BIYOS_OK || first != 0 ||
+        BIYOS_addvar(model, 2, kinds, lower, upper, &first) != BIYOS_OK || first != 0 ||
         BIYOS_setvarbnd(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
         BIYOS_setvarknd(model, 1, indices, kinds + 1) != BIYOS_OK ||
         BIYOS_getvarknd(model, 1, indices, found + 1) != BIYOS_OK || found[1] != BIYOS_VAR_BIN ||
-        BIYOS_getnvars(model, &variables) != BIYOS_OK || variables != 2 ||
+        BIYOS_getnvar(model, &variables) != BIYOS_OK || variables != 2 ||
         BIYOS_getvars(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[0] != BIYOS_VAR_BIN ||
         found[1] != BIYOS_VAR_BIN)
     {

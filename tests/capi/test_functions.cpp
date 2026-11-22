@@ -46,7 +46,7 @@ const Compressed kSorted{
 
 void add_sample(const Model &mdl)
 {
-    ASSERT_EQ(BIYOS_addvars(mdl.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(mdl.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const BIYOS_status status = BIYOS_addfuns(mdl.get(),
                                               3,
                                               kSample.constants.data(),
@@ -108,7 +108,7 @@ void expect_compressed(const Compressed &found, const Compressed &wanted)
 int n_funs(const Model &mdl)
 {
     BIYOS_index n = -1;
-    EXPECT_EQ(BIYOS_getnfuns(mdl.get(), &n), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnfun(mdl.get(), &n), BIYOS_OK);
     return n;
 }
 
@@ -133,7 +133,7 @@ void change(const BIYOS_event *, void *data)
     BIYOS_index n = 0;
     BIYOS_offset needed = 0;
     note(attempt, BIYOS_addfuns(mdl, 1, nullptr, nullptr, nullptr, nullptr, nullptr));
-    note(attempt, BIYOS_getnfuns(mdl, &n));
+    note(attempt, BIYOS_getnfun(mdl, &n));
     note(attempt, BIYOS_getfuns(mdl, 0, 1, 0, nullptr, nullptr, &needed, nullptr, nullptr));
 }
 
@@ -245,7 +245,7 @@ TEST(CApiTest, NullFunctions)
 {
     const Env env;
     const Model mdl(env);
-    ASSERT_EQ(BIYOS_addvars(mdl.get(), 2, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(mdl.get(), 2, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const double constants[] = {0.5, 0.75};
     const std::int64_t empty[] = {0, 0, 0};
     BIYOS_model *held = mdl.get();
@@ -287,7 +287,7 @@ TEST(CApiTest, NullTerms)
     EXPECT_EQ(fill(mdl, 0, 3, untouched, 5, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
     expect_compressed(untouched, blank(3, 5));
-    EXPECT_EQ(BIYOS_getnfuns(held, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getnfun(held, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
 

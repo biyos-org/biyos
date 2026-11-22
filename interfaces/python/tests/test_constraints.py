@@ -148,8 +148,8 @@ def test_values(model, monkeypatch):
     lower = array.array("d", [0.0, 1.0])
     upper = array.array("d", [2.0, 3.0])
     seen = []
-    spy = partial(recorded, seen, lib.BIYOS_addcons)
-    monkeypatch.setattr(lib, "BIYOS_addcons", spy)
+    spy = partial(recorded, seen, lib.BIYOS_addcon)
+    monkeypatch.setattr(lib, "BIYOS_addcon", spy)
     model.addcons([0, 1], lower, upper)
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][3]) == lower.buffer_info()[0]

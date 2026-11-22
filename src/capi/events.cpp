@@ -92,7 +92,7 @@ const char *BIYOS_getevttext(const BIYOS_event *evt)
     return evt == nullptr ? "" : evt->core->text.c_str();
 }
 
-BIYOS_index BIYOS_getnevtflds(const BIYOS_event *evt)
+BIYOS_index BIYOS_getnevtfld(const BIYOS_event *evt)
 {
     return evt == nullptr ? 0 : static_cast<int>(evt->core->fields.size());
 }

@@ -87,10 +87,10 @@ void add_items(const Model &mdl, BIYOS_index n)
 {
     BIYOS_model *held = mdl.get();
     const Indices funs(static_cast<std::size_t>(n), 0);
-    ASSERT_EQ(BIYOS_addvars(held, n, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(held, n, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfuns(held, n, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addcons(held, n, funs.data(), nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addobjs(held, n, funs.data(), nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(held, n, funs.data(), nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addobj(held, n, funs.data(), nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
 BIYOS_status name(const Calls &family, const Model &mdl, const Indices &idx, const Texts &names)
@@ -255,7 +255,7 @@ TEST(CApiTest, NameLifetime)
     }
     const char *title = nullptr;
     ASSERT_EQ(BIYOS_getmdlname(mdl.get(), &title), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addvars(mdl.get(), 499, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(mdl.get(), 499, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     std::vector<std::string> texts;
     Indices idx;
     for (BIYOS_index k = 1; k <= 500; ++k)
@@ -302,7 +302,7 @@ TEST(CApiTest, CopiedName)
     const Env env;
     BIYOS_model *source = nullptr;
     ASSERT_EQ(BIYOS_newmdl(env.get(), &source), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addvars(source, 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addvar(source, 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const BIYOS_index idx = 0;
     const char *name = "x";
     ASSERT_EQ(BIYOS_setvarname(source, 1, &idx, &name), BIYOS_OK);

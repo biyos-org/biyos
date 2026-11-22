@@ -96,7 +96,7 @@ BIYOS_API BIYOS_int BIYOS_getevtknd(const BIYOS_event *evt);
 BIYOS_API BIYOS_int BIYOS_getevtlvl(const BIYOS_event *evt);
 BIYOS_API const char *BIYOS_getevtmod(const BIYOS_event *evt);
 BIYOS_API const char *BIYOS_getevttext(const BIYOS_event *evt);
-BIYOS_API BIYOS_index BIYOS_getnevtflds(const BIYOS_event *evt);
+BIYOS_API BIYOS_index BIYOS_getnevtfld(const BIYOS_event *evt);
 BIYOS_API const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx);
 BIYOS_API const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx);
 
@@ -115,12 +115,12 @@ BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t size, char *
 BIYOS_API BIYOS_status BIYOS_newmdl(BIYOS_env *env, BIYOS_model **mdl);
 BIYOS_API BIYOS_status BIYOS_copymdl(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
 BIYOS_API BIYOS_status BIYOS_freemdl(BIYOS_model *mdl);
-BIYOS_API BIYOS_status BIYOS_addvars(BIYOS_model *mdl,
-                                     BIYOS_index n,
-                                     const BIYOS_int *knd,
-                                     const BIYOS_real *lb,
-                                     const BIYOS_real *ub,
-                                     BIYOS_index *beg);
+BIYOS_API BIYOS_status BIYOS_addvar(BIYOS_model *mdl,
+                                    BIYOS_index n,
+                                    const BIYOS_int *knd,
+                                    const BIYOS_real *lb,
+                                    const BIYOS_real *ub,
+                                    BIYOS_index *beg);
 BIYOS_API BIYOS_status BIYOS_setvarbnd(BIYOS_model *mdl,
                                        BIYOS_index n,
                                        const BIYOS_index *idx,
@@ -139,7 +139,7 @@ BIYOS_API BIYOS_status BIYOS_getvarknd(const BIYOS_model *mdl,
                                        BIYOS_index n,
                                        const BIYOS_index *idx,
                                        BIYOS_int *knd);
-BIYOS_API BIYOS_status BIYOS_getnvars(const BIYOS_model *mdl, BIYOS_index *n);
+BIYOS_API BIYOS_status BIYOS_getnvar(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getvars(const BIYOS_model *mdl,
                                      BIYOS_index beg,
                                      BIYOS_index n,
@@ -153,7 +153,7 @@ BIYOS_API BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
                                      const BIYOS_index *varidx,
                                      const BIYOS_real *coef,
                                      BIYOS_index *beg);
-BIYOS_API BIYOS_status BIYOS_getnfuns(const BIYOS_model *mdl, BIYOS_index *n);
+BIYOS_API BIYOS_status BIYOS_getnfun(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
                                      BIYOS_index beg,
                                      BIYOS_index n,
@@ -193,12 +193,12 @@ BIYOS_API BIYOS_status BIYOS_getquadterms(const BIYOS_model *mdl,
                                           BIYOS_index *varidx1,
                                           BIYOS_index *varidx2,
                                           BIYOS_real *coef);
-BIYOS_API BIYOS_status BIYOS_addcons(BIYOS_model *mdl,
-                                     BIYOS_index n,
-                                     const BIYOS_index *funidx,
-                                     const BIYOS_real *lb,
-                                     const BIYOS_real *ub,
-                                     BIYOS_index *beg);
+BIYOS_API BIYOS_status BIYOS_addcon(BIYOS_model *mdl,
+                                    BIYOS_index n,
+                                    const BIYOS_index *funidx,
+                                    const BIYOS_real *lb,
+                                    const BIYOS_real *ub,
+                                    BIYOS_index *beg);
 BIYOS_API BIYOS_status BIYOS_setconbnd(BIYOS_model *mdl,
                                        BIYOS_index n,
                                        const BIYOS_index *idx,
@@ -209,20 +209,20 @@ BIYOS_API BIYOS_status BIYOS_getconbnd(const BIYOS_model *mdl,
                                        const BIYOS_index *idx,
                                        BIYOS_real *lb,
                                        BIYOS_real *ub);
-BIYOS_API BIYOS_status BIYOS_getncons(const BIYOS_model *mdl, BIYOS_index *n);
+BIYOS_API BIYOS_status BIYOS_getncon(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getcons(const BIYOS_model *mdl,
                                      BIYOS_index beg,
                                      BIYOS_index n,
                                      BIYOS_index *funidx,
                                      BIYOS_real *lb,
                                      BIYOS_real *ub);
-BIYOS_API BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
-                                     BIYOS_index n,
-                                     const BIYOS_index *funidx,
-                                     const BIYOS_int *sense,
-                                     const BIYOS_int *prio,
-                                     const BIYOS_real *coef,
-                                     BIYOS_index *beg);
+BIYOS_API BIYOS_status BIYOS_addobj(BIYOS_model *mdl,
+                                    BIYOS_index n,
+                                    const BIYOS_index *funidx,
+                                    const BIYOS_int *sense,
+                                    const BIYOS_int *prio,
+                                    const BIYOS_real *coef,
+                                    BIYOS_index *beg);
 BIYOS_API BIYOS_status BIYOS_setobjsense(BIYOS_model *mdl,
                                          BIYOS_index n,
                                          const BIYOS_index *idx,
@@ -257,7 +257,7 @@ BIYOS_API BIYOS_status BIYOS_getobjtol(const BIYOS_model *mdl,
                                        const BIYOS_index *idx,
                                        BIYOS_real *atol,
                                        BIYOS_real *rtol);
-BIYOS_API BIYOS_status BIYOS_getnobjs(const BIYOS_model *mdl, BIYOS_index *n);
+BIYOS_API BIYOS_status BIYOS_getnobj(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getobjs(const BIYOS_model *mdl,
                                      BIYOS_index beg,
                                      BIYOS_index n,

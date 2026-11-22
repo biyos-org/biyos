@@ -23,7 +23,7 @@ HEADER = """#pragma once
 typedef int BIYOS_status;
 typedef void (*BIYOS_hook)(const BIYOS_event *evt, void *data);
 
-BIYOS_API BIYOS_status BIYOS_addvars(BIYOS_model *mdl,
+BIYOS_API BIYOS_status BIYOS_addvar(BIYOS_model *mdl,
                                      BIYOS_index n,
                                      BIYOS_index *beg);
 """ + LONG
@@ -50,11 +50,11 @@ class HeaderTest(unittest.TestCase):
         self.assertIn("(*BIYOS_hook)", self.declared["BIYOS_hook"])
 
     def test_function(self):
-        shown = self.declared["BIYOS_addvars"]
+        shown = self.declared["BIYOS_addvar"]
         self.assertEqual(
             shown.split("\n"),
             [
-                "BIYOS_status BIYOS_addvars(BIYOS_model *mdl,",
+                "BIYOS_status BIYOS_addvar(BIYOS_model *mdl,",
                 "                           BIYOS_index n,",
                 "                           BIYOS_index *beg);",
             ],

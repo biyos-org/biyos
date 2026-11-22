@@ -160,13 +160,13 @@ void get_listed(const BIYOS_model &mdl, int n, const int *idx, const Outputs &ou
 
 }
 
-BIYOS_status BIYOS_addobjs(BIYOS_model *mdl,
-                           BIYOS_index n,
-                           const BIYOS_index *funidx,
-                           const BIYOS_int *sense,
-                           const BIYOS_int *prio,
-                           const BIYOS_real *coef,
-                           BIYOS_index *beg)
+BIYOS_status BIYOS_addobj(BIYOS_model *mdl,
+                          BIYOS_index n,
+                          const BIYOS_index *funidx,
+                          const BIYOS_int *sense,
+                          const BIYOS_int *prio,
+                          const BIYOS_real *coef,
+                          BIYOS_index *beg)
 {
     return guarded<add_objs>(mdl, n, funidx, sense, prio, coef, beg);
 }
@@ -237,7 +237,7 @@ BIYOS_status BIYOS_getobjtol(const BIYOS_model *mdl,
     return guarded<get_listed>(mdl, n, idx, Outputs{.absolute = atol, .relative = rtol});
 }
 
-BIYOS_status BIYOS_getnobjs(const BIYOS_model *mdl, BIYOS_index *n)
+BIYOS_status BIYOS_getnobj(const BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<n_objs>(mdl, n);
 }
