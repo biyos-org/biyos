@@ -35,6 +35,10 @@ extern char error_end[sizeof(BIYOS_error) == 4 * sizeof(void *) ? 1 : -1];
     BIYOS_KND_ENUM != 5
 #error "a public option kind changed"
 #endif
+#if !defined(BIYOS_CHECKLVL_NONE) || BIYOS_CHECKLVL_NONE != 1 || BIYOS_CHECKLVL_CHEAP != 2 ||      \
+    BIYOS_CHECKLVL_FULL != 3
+#error "a public check level changed"
+#endif
 #if BIYOS_EVT_MESSAGE != 1 || BIYOS_EVT_CHECK != 2 || BIYOS_EVT_PHASE != 3
 #error "a public event kind changed"
 #endif

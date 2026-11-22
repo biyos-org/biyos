@@ -165,6 +165,12 @@ value BIYOS_OPT_ZEROTOL The id of `zerotol`.
 value BIYOS_OPT_MAXCPUTIME The id of `maxcputime`.
 since 0.1.0
 
+table Check levels
+value BIYOS_CHECKLVL_NONE No invariant check runs.
+value BIYOS_CHECKLVL_CHEAP The checks that cost little run, such as finite values and dimensions. The default of `check_lvl`.
+value BIYOS_CHECKLVL_FULL Every check runs, the costly ones included.
+since 0.1.0
+
 function BIYOS_getoptid
 summary Find the id of an option by its name.
 param env in The environment.
