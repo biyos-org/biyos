@@ -15,20 +15,6 @@
 namespace biyos::capi
 {
 
-inline BIYOS_status status_of(ErrorKind kind) noexcept
-{
-    switch (kind)
-    {
-    case ErrorKind::InvalidArgument:
-        return BIYOS_ERR_BADARG;
-    case ErrorKind::NoMemory:
-        return BIYOS_ERR_NOMEMORY;
-    case ErrorKind::Internal:
-        return BIYOS_ERR_INTERNAL;
-    }
-    return BIYOS_ERR_INTERNAL;
-}
-
 inline void describe_failure(Event &event, BIYOS_status status, std::string_view text)
 {
     event.module = "capi";

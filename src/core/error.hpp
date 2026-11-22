@@ -1,5 +1,7 @@
 #pragma once
 
+#include "biyos/biyos.h"
+
 #include <exception>
 #include <memory>
 #include <string>
@@ -16,6 +18,7 @@ enum class ErrorKind
 };
 
 std::string_view kind_name(ErrorKind kind) noexcept;
+BIYOS_status status_of(ErrorKind kind) noexcept;
 
 class Error : public std::exception
 {
