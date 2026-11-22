@@ -7,6 +7,8 @@ biyos keeps no global state. Everything a call reads or changes belongs to an en
 
 A program that wants to work on one model from several threads copies it onto an environment per thread (@sec-copy). `BIYOS_copymdl` reads the source and changes the target environment, so while it runs no other thread may use either environment. Afterwards the two are apart.
 
+An environment keeps a last error per thread (@sec-errors-message), so a thread that takes its turn on an environment reads the failure of its own last failed call, never one another thread left.
+
 biyos starts no thread of its own yet. `BIYOS_version` reads no state and may be called from any thread. A hook runs on the thread whose call sent the event, so the calls that read or format an event run there too.
 
 ## Interrupting a call {#sec-threads-interrupt}

@@ -7,8 +7,8 @@
 Every call that returns `BIYOS_status` follows these rules:
 
 - It returns `BIYOS_OK` or a negative error code.
-- On failure it keeps its message on the environment, read with `BIYOS_lasterror`, which for a call on a model is the environment the model was made on. It keeps none when given a null environment or model or when it takes none, as the formatting calls do, and `BIYOS_newenv` keeps none since it has no environment yet. If memory runs out while the message is kept, the message is left empty.
-- On success it leaves the message as it was.
+- On failure it keeps its error, the status, the model and the message, on the environment for the calling thread, read with `BIYOS_lasterror`, which for a call on a model is the environment the model was made on. It keeps none when given a null environment or model or when it takes none, as the formatting calls do, and `BIYOS_newenv` keeps none since it has no environment yet. If memory runs out while the message is kept, the message is left empty.
+- On success it leaves the error as it was.
 - A null pointer argument, the environment or the model included, gives `BIYOS_ERR_BADARG`, unless its entry says otherwise.
 - On failure it changes nothing and leaves its output arguments as they were, unless its entry says otherwise.
 - Besides the codes its entry names, it can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos.

@@ -37,7 +37,7 @@ This program prints the version of the library, then creates an environment and 
 ```{.c file="examples/c/start.c"}
 ```
 
-An environment holds the options, the event stream and the last error message, and every model is made on one. Every call that acts returns a status, `BIYOS_OK` on success, and @sec-errors explains the others.
+An environment holds the options, the event stream and the last error of each thread, and every model is made on one. Every call that acts returns a status, `BIYOS_OK` on success, and @sec-errors explains the others.
 
 ### With CMake
 
