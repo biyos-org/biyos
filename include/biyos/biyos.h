@@ -217,6 +217,23 @@ BIYOS_API BIYOS_status BIYOS_addlinterms(BIYOS_model *mdl,
                                          const BIYOS_offset *off,
                                          const BIYOS_index *varidx,
                                          const BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_addlintermsp(BIYOS_model *mdl,
+                                          BIYOS_offset nnz,
+                                          const BIYOS_index *funidx,
+                                          const BIYOS_index *varidx,
+                                          const BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_addrlintermrg(BIYOS_model *mdl,
+                                           BIYOS_index pos,
+                                           BIYOS_index n,
+                                           const BIYOS_offset *off,
+                                           const BIYOS_index *varidx,
+                                           const BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_addclintermrg(BIYOS_model *mdl,
+                                           BIYOS_index pos,
+                                           BIYOS_index n,
+                                           const BIYOS_offset *off,
+                                           const BIYOS_index *funidx,
+                                           const BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_getnrlintermsp(const BIYOS_model *mdl,
                                             BIYOS_index n,
                                             const BIYOS_index *idx,

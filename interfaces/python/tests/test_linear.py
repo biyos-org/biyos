@@ -108,6 +108,54 @@ def test_add(model):
     assert model.getfuns()[0] == [0.0, 0.0, 0.0]
 
 
+def test_coordinates(model):
+    funidx = [1, 2, 1, 2]
+    model.addlinterm(funidx, [0, 2, 2, 0], [0.0, 0.5, 2.0, -1.0])
+    assert terms(model) == MERGED
+    model.addlinterm([], [], [])
+    assert terms(model) == MERGED
+
+
+def test_copied(env):
+    draw = random.Random(20261122)
+    for _ in range(20):
+        n_vars = draw.randint(1, 7)
+        n_funs = draw.randint(0, 6)
+        with biyos.Model(env) as source, biyos.Model(env) as target:
+            for model in (source, target):
+                model.addvar(n_vars)
+                model.addfuns(n_funs)
+            source.addlinterms(
+                range(n_funs), *random_terms(draw, n_vars, n_funs)
+            )
+            funidx, varidx, coef = source.getrlinterm()
+            order = list(range(len(coef)))
+            draw.shuffle(order)
+            target.addlinterm(
+                [funidx[k] for k in order],
+                [varidx[k] for k in order],
+                [coef[k] for k in order],
+            )
+            assert terms(target) == terms(source)
+
+
+def test_misplaced(model):
+    before = terms(model)
+    message = refusal(model.addlinterm, [0, 1, 0], [1, 1, 1], [1, 2, 3])
+    assert message == "invalid argument: function 0: variable 1 is repeated"
+    message = refusal(model.addlinterm, [0, 3], [1, 1], [1, 2])
+    assert message == "invalid argument: function 3: unknown"
+    message = refusal(model.addlinterm, [0, 2], [1, 2], [1, LARGE * 2])
+    assert message == (
+        "invalid argument: function 2: coefficient of variable 2 is infinity"
+    )
+    with pytest.raises(ValueError, match="varidx has length 1, not 2"):
+        model.addlinterm([0, 1], [0], [1.0, 2.0])
+    with pytest.raises(ValueError, match="coef has length 1, not 2"):
+        model.addlinterm([0, 1], [0, 1], [1.0])
+    assert terms(model) == before
+
+
 def test_sums(model):
     model.addlinterms(FUNCTIONS, *ADDED)
     model.addlinterms([2], [0, 2], [1, 2], [-5.0, 0.25])

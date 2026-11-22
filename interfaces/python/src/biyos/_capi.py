@@ -120,6 +120,11 @@ def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
         _declare_pair(lib, f"BIYOS_{verb}cst", doubles)
     terms = (c_void_p, c_int32, ints, offsets, ints, doubles)
     _declare(lib, "BIYOS_addlinterms", c_int, *terms)
+    coordinates = (c_void_p, c_int64, ints, ints, doubles)
+    _declare(lib, "BIYOS_addlintermsp", c_int, *coordinates)
+    ranged = (c_void_p, c_int32, c_int32, offsets, ints, doubles)
+    _declare(lib, "BIYOS_addrlintermrg", c_int, *ranged)
+    _declare(lib, "BIYOS_addclintermrg", c_int, *ranged)
     for name in ("rlinterm", "clinterm"):
         _declare_terms(lib, name, ints, doubles)
 

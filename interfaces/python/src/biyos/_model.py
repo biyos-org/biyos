@@ -648,6 +648,39 @@ class Model:
         )
         self._call(lib.BIYOS_addlinterms, n, *arrays)
 
+    def addlinterm(
+        self,
+        funidx: Sequence[int | Function] | Functions,
+        varidx: Sequence[int | Variable] | Variables,
+        coef: Sequence[float],
+    ) -> None:
+        """Add linear terms to functions, as coordinates.
+
+        Term ``k`` adds ``coef[k]`` times variable ``varidx[k]`` to
+        function ``funidx[k]``, in any order. A variable the function holds
+        already adds its coefficient to the one held.
+
+        Parameters
+        ----------
+        funidx
+            The function of each term.
+        varidx
+            The variable of each term, each once for its function.
+        coef
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_addlintermsp
+        """
+        size = len(funidx)
+        arrays = (
+            indices_of(self, Functions, "funidx", funidx, size),
+            indices_of(self, Variables, "varidx", varidx, size),
+            doubles("coef", coef, size),
+        )
+        self._call(lib.BIYOS_addlintermsp, size, *arrays)
+
     def getnrlinterm(
         self, idx: Sequence[int | Function] | Functions | None = None
     ) -> int:
