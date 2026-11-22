@@ -143,7 +143,7 @@ class Options
   private:
     static std::vector<OptionValue> defaults(std::span<const OptionSpec> table);
 
-    void store(const OptionSpec &spec, OptionValue value);
+    void store(Option option, OptionValue value);
 
     std::size_t position(Option option) const;
 

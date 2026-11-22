@@ -80,42 +80,28 @@ std::vector<OptionValue> Options::defaults(std::span<const OptionSpec> table)
 
 void Options::set_bool(Option option, bool value)
 {
-    const OptionSpec &spec = settable(table_, option);
-    rule_of<BoolRule>(spec);
-    store(spec, value);
+    store(option, value);
 }
 
 void Options::set_int(Option option, int value)
 {
-    const OptionSpec &spec = settable(table_, option);
-    check_range(spec, rule_of<IntRule>(spec), value);
-    store(spec, value);
+    store(option, value);
 }
 
 void Options::set_double(Option option, double value)
 {
-    const OptionSpec &spec = settable(table_, option);
-    check_range(spec, rule_of<DoubleRule>(spec), value);
-    store(spec, value);
+    store(option, value);
 }
 
 void Options::set_string(Option option, std::string_view value)
 {
-    const OptionSpec &spec = settable(table_, option);
-    if (const EnumRule *rule = std::get_if<EnumRule>(&spec.rule))
-    {
-        check_value(spec, *rule, value);
-    }
-    else
-    {
-        rule_of<StringRule>(spec);
-    }
-    store(spec, std::string(value));
+    store(option, std::string(value));
 }
 
-void Options::store(const OptionSpec &spec, OptionValue value)
+void Options::store(Option option, OptionValue value)
 {
-    values_[index_of(spec.id)] = std::move(value);
+    const OptionSpec &spec = checked_row(table_, option, value);
+    values_[index_of(option)] = std::move(value);
     warn_deprecated(events_, table_, spec);
 }
 
