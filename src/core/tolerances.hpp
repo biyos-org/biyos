@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/options.hpp"
+#include "core/lookup.hpp"
 
 namespace biyos
 {
@@ -8,7 +8,7 @@ namespace biyos
 class Tolerances
 {
   public:
-    explicit Tolerances(const Options &options);
+    explicit Tolerances(const Lookup &lookup);
 
     bool is_zero(double x) const noexcept;
     bool approx_equal(double a, double b) const noexcept;

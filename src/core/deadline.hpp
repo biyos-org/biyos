@@ -2,7 +2,7 @@
 
 #include "core/clock.hpp"
 #include "core/interrupt.hpp"
-#include "core/options.hpp"
+#include "core/lookup.hpp"
 #include "core/status.hpp"
 
 #include <chrono>
@@ -14,7 +14,7 @@ namespace biyos
 class Deadline
 {
   public:
-    Deadline(const Options &options, const Clock &clock, const Interrupt &interrupt);
+    Deadline(const Lookup &lookup, const Clock &clock, const Interrupt &interrupt);
 
     bool reached() const;
     TerminationStatus termination() const;

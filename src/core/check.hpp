@@ -2,6 +2,7 @@
 
 #include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/lookup.hpp"
 #include "core/options.hpp"
 
 #include <concepts>
@@ -15,7 +16,7 @@ namespace biyos
 class Checker
 {
   public:
-    Checker(Env &env, std::string_view module);
+    Checker(Env &env, const Lookup &lookup, std::string_view module);
 
     bool active(CheckLevel level) const noexcept
     {

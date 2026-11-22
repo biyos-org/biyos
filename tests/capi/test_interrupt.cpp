@@ -3,6 +3,7 @@
 #include "core/deadline.hpp"
 #include "core/env.hpp"
 #include "core/events.hpp"
+#include "core/lookup.hpp"
 #include "core/status.hpp"
 #include "handles.hpp"
 
@@ -45,7 +46,8 @@ std::atomic<BIYOS_env *> signalled = nullptr;
 
 void spin(biyos::Env &env, Loop *loop)
 {
-    const biyos::Deadline deadline(env.options(), env.clock(), env.interrupt());
+    const biyos::Lookup lookup(env.options());
+    const biyos::Deadline deadline(lookup, env.clock(), env.interrupt());
     loop->start(env);
     while (loop->polls < loop->limit && !deadline.reached())
     {
