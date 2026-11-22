@@ -212,12 +212,6 @@ BIYOS_API BIYOS_status BIYOS_getcstrg(const BIYOS_model *mdl,
                                       BIYOS_index pos,
                                       BIYOS_index n,
                                       BIYOS_real *cst);
-BIYOS_API BIYOS_status BIYOS_addlinterms(BIYOS_model *mdl,
-                                         BIYOS_index n,
-                                         const BIYOS_index *funidx,
-                                         const BIYOS_offset *off,
-                                         const BIYOS_index *varidx,
-                                         const BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_addlintermsp(BIYOS_model *mdl,
                                           BIYOS_offset nnz,
                                           const BIYOS_index *funidx,

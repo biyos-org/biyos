@@ -18,7 +18,6 @@ namespace
 using biyos::test::Env;
 using biyos::test::Model;
 
-constexpr double kLarge = 1.0e308;
 constexpr int kNoFunction = -7;
 constexpr double kNoValue = -7.5;
 
@@ -66,14 +65,25 @@ BIYOS_status add_functions(const Model &model, int n, const Terms &terms)
                          nullptr);
 }
 
+std::vector<int> owners_of(const std::vector<int> &functions, const Terms &terms)
+{
+    std::vector<int> owners;
+    for (std::size_t j = 0; j < functions.size(); ++j)
+    {
+        const auto count = static_cast<std::size_t>(terms.starts[j + 1] - terms.starts[j]);
+        owners.insert(owners.end(), count, functions[j]);
+    }
+    return owners;
+}
+
 BIYOS_status add_terms(const Model &model, const std::vector<int> &functions, const Terms &terms)
 {
-    return BIYOS_addlinterms(model.get(),
-                             static_cast<int>(functions.size()),
-                             functions.data(),
-                             terms.starts.data(),
-                             terms.indices.data(),
-                             terms.values.data());
+    const std::vector<int> owners = owners_of(functions, terms);
+    return BIYOS_addlintermsp(model.get(),
+                              static_cast<BIYOS_offset>(owners.size()),
+                              owners.data(),
+                              terms.indices.data(),
+                              terms.values.data());
 }
 
 void add_sample(const Model &model)
@@ -178,9 +188,10 @@ void note(Attempt &attempt, BIYOS_status status)
 void change(const BIYOS_event *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
-    const BIYOS_index function = 0;
     BIYOS_offset nnz = 0;
-    note(attempt, BIYOS_addlinterms(attempt.model, 1, &function, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_addlintermsp(attempt.model, 0, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_addrlintermrg(attempt.model, 0, 1, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_addclintermrg(attempt.model, 0, 1, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_getnclintermrg(attempt.model, 0, 1, &nnz));
 }
 
@@ -297,72 +308,6 @@ TEST(CApiTest, LinearSums)
     expect_terms(read_functions(model), wanted);
 }
 
-TEST(CApiTest, NullLinear)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    BIYOS_model *held = model.get();
-    const int functions[] = {1, 2};
-    const std::int64_t one[] = {0, 1};
-    const BIYOS_index variable = 0;
-    const BIYOS_real value = 1.0;
-    EXPECT_EQ(BIYOS_addlinterms(held, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_addlinterms(held, 2, functions, nullptr, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_addlinterms(held, 1, nullptr, one, &variable, &value), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
-    EXPECT_EQ(BIYOS_addlinterms(held, 1, functions, one, nullptr, &value), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx': is null");
-    EXPECT_EQ(BIYOS_addlinterms(held, 1, functions, one, &variable, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
-    expect_terms(read_functions(model), kHeld);
-}
-
-TEST(CApiTest, RefusedLinear)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    ASSERT_EQ(add_functions(model, 1, Terms{.starts = {0, 1}, .indices = {1}, .values = {kLarge}}),
-              BIYOS_OK);
-    const Terms before = read_functions(model);
-    const Terms one{.starts = {0, 1}, .indices = {0}, .values = {1.0}};
-    const Terms none{.starts = {0, 0, 0}, .indices = {}, .values = {}};
-    const std::string bad = "invalid argument: ";
-    EXPECT_EQ(add_terms(model, {4}, one), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "function 4: unknown");
-    EXPECT_EQ(add_terms(model, {-1}, one), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "function -1: unknown");
-    EXPECT_EQ(add_terms(model, {2, 2}, none), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'funidx': function 2 is repeated");
-    const Terms late{.starts = {1, 1}, .indices = {0}, .values = {1.0}};
-    EXPECT_EQ(add_terms(model, {0}, late), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'off': begins at 1, not 0");
-    const Terms falling{.starts = {0, 1, 0}, .indices = {0}, .values = {1.0}};
-    EXPECT_EQ(add_terms(model, {0, 1}, falling), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'off': decreases from 1 to 0 at entry 2");
-    const Terms negative{.starts = {0, -1}, .indices = {0}, .values = {1.0}};
-    EXPECT_EQ(add_terms(model, {0}, negative), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'off': decreases from 0 to -1 at entry 1");
-    const Terms unknown{.starts = {0, 1, 2}, .indices = {0, 3}, .values = {1.0, 1.0}};
-    EXPECT_EQ(add_terms(model, {1, 0}, unknown), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "function 0: variable 3 is unknown");
-    const Terms twice{.starts = {0, 2}, .indices = {2, 2}, .values = {1.0, 2.0}};
-    EXPECT_EQ(add_terms(model, {1}, twice), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "function 1: variable 2 is repeated");
-    const double nan = std::numeric_limits<double>::quiet_NaN();
-    const Terms invalid{.starts = {0, 1}, .indices = {1}, .values = {nan}};
-    EXPECT_EQ(add_terms(model, {0}, invalid), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "function 0: coefficient of variable 1 is NaN");
-    const Terms large{.starts = {0, 1, 2}, .indices = {0, 1}, .values = {1.0, kLarge}};
-    EXPECT_EQ(add_terms(model, {0, 3}, large), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "function 3: sum of coefficients of variable 1 is infinity");
-    EXPECT_EQ(BIYOS_addlinterms(model.get(), -1, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
-    expect_terms(read_functions(model), before);
-}
-
 TEST(CApiTest, LockedLinear)
 {
     const Env env;
@@ -375,10 +320,15 @@ TEST(CApiTest, LockedLinear)
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    const std::vector<BIYOS_status> statuses{BIYOS_ERR_BADARG, BIYOS_OK};
+    const std::vector<BIYOS_status> statuses{BIYOS_ERR_BADARG,
+                                             BIYOS_ERR_BADARG,
+                                             BIYOS_ERR_BADARG,
+                                             BIYOS_OK};
     EXPECT_EQ(attempt.statuses, statuses);
     EXPECT_EQ(attempt.messages[0],
               "invalid argument: model: is read-only while delivering an event");
+    EXPECT_EQ(attempt.messages[1], attempt.messages[0]);
+    EXPECT_EQ(attempt.messages[2], attempt.messages[0]);
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     expect_terms(read_functions(model), kHeld);
 }
@@ -396,9 +346,14 @@ TEST(CApiTest, HugeLinear)
     Terms large = most;
     large.starts = {0, std::int64_t{1} << 59};
     const std::string message = "out of memory: model: no term offset left";
-    EXPECT_EQ(add_terms(model, {1}, most), BIYOS_ERR_NOMEMORY);
+    BIYOS_model *held = model.get();
+    const int *variables = most.indices.data();
+    const double *values = most.values.data();
+    EXPECT_EQ(BIYOS_addrlintermrg(held, 1, 1, most.starts.data(), variables, values),
+              BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
-    EXPECT_EQ(add_terms(model, {1}, large), BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(BIYOS_addclintermrg(held, 1, 1, large.starts.data(), variables, values),
+              BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
     expect_terms(read_functions(model), kHeld);
 }

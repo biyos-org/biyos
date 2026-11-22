@@ -629,48 +629,6 @@ class Model:
         found = self._getlist("BIYOS_getcst", Functions, idx, c_double)
         return found[0]
 
-    def addlinterms(
-        self,
-        funidx: Sequence[int | Function] | Functions,
-        off: Sequence[int],
-        varidx: Sequence[int | Variable] | Variables,
-        coef: Sequence[float],
-    ) -> None:
-        """Add linear terms to functions of the model.
-
-        Function ``funidx[j]`` gains the terms from ``off[j]`` to
-        ``off[j + 1] - 1``. Term ``k`` adds ``coef[k]`` times variable
-        ``varidx[k]``. A variable the function holds already adds its
-        coefficient to the one held.
-
-        Parameters
-        ----------
-        funidx
-            The functions that gain terms, each listed once.
-        off
-            The ``len(funidx) + 1`` offsets of the functions' terms in
-            ``varidx`` and ``coef``, from 0 and never decreasing.
-        varidx
-            The variable of each term, ``off[-1]`` of them, each once for
-            its function.
-        coef
-            The coefficient of each term, ``off[-1]`` of them.
-
-        See Also
-        --------
-        BIYOS_addlinterms
-        """
-        n = len(funidx)
-        starts = offsets("off", off, n + 1)
-        size = _total(starts, n)
-        arrays = (
-            indices_of(self, Functions, "funidx", funidx, n),
-            starts,
-            indices_of(self, Variables, "varidx", varidx, size),
-            doubles("coef", coef, size),
-        )
-        self._call(lib.BIYOS_addlinterms, n, *arrays)
-
     def addlinterm(
         self,
         funidx: Sequence[int | Function] | Functions,

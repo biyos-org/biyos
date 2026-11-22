@@ -119,8 +119,6 @@ def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_getfuns", c_int, *read)
     for verb in ("add", "set", "get"):
         _declare_pair(lib, f"BIYOS_{verb}cst", doubles)
-    terms = (c_void_p, c_int32, ints, offsets, ints, doubles)
-    _declare(lib, "BIYOS_addlinterms", c_int, *terms)
     coordinates = (c_void_p, c_int64, ints, ints, doubles)
     _declare(lib, "BIYOS_addlintermsp", c_int, *coordinates)
     ranged = (c_void_p, c_int32, c_int32, offsets, ints, doubles)

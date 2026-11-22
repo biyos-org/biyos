@@ -524,7 +524,7 @@ param pos out Receives the index of the first new function; skipped when null.
 return `BIYOS_OK` once the functions are added.
 error BIYOS_ERR_BADARG `n` is negative, `off` does not begin at 0 or decreases, a constant is not finite, a variable is not one of the model or appears twice in a function, or a coefficient is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 functions, or more terms than any allocation can hold.
-see BIYOS_addlinterms BIYOS_addquadterms BIYOS_getfuns
+see BIYOS_addquadterms BIYOS_getfuns
 since 0.1.0
 
 function BIYOS_addfun
@@ -600,22 +600,6 @@ error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a funct
 see BIYOS_setcstsp BIYOS_addcstsp
 since 0.1.0
 
-function BIYOS_addlinterms
-summary Add linear terms to functions of the model.
-param mdl in The model.
-param n in The number of functions that gain terms.
-param funidx in The functions, each listed at most once; may be null only when `n` is 0.
-param off in The `n + 1` offsets of the functions' terms; null adds no terms.
-param varidx in The variable of each term; not read when there are no terms.
-param coef in The coefficient of each term; not read when there are no terms.
-return `BIYOS_OK` once the terms are added.
-error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model or is listed twice, `off` does not begin at 0 or decreases, a variable is not one of the model or appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite.
-error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
-note A variable the function already holds adds its coefficient to the one held, so every call adds $a_j x_j$ to its functions and never replaces a term. A term whose coefficient is 0, given or summed, is kept.
-note A call that adds new terms moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call.
-see BIYOS_getrlintermsp BIYOS_getclintermsp BIYOS_addfuns
-since 0.1.0
-
 function BIYOS_addlintermsp
 summary Add linear terms to functions, as coordinates.
 param mdl in The model.
@@ -626,7 +610,8 @@ param coef in The coefficient of each term; may be null when `nnz` is 0.
 return `BIYOS_OK` once the terms are added.
 error BIYOS_ERR_BADARG `nnz` is negative, a function or a variable is not one of the model, a function and a variable appear together twice, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
-note Term `k` adds `coef[k]` times variable `varidx[k]` to function `funidx[k]`, and the terms may come in any order. A variable the function already holds adds its coefficient to the one held, as in `BIYOS_addlinterms`. A refused call changes nothing.
+note Term `k` adds `coef[k]` times variable `varidx[k]` to function `funidx[k]`, and the terms may come in any order. A variable the function already holds adds its coefficient to the one held, so every call adds $a_j x_j$ to its functions and never replaces a term. A term whose coefficient is 0, given or summed, is kept. A refused call changes nothing.
+note A call that adds new terms moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call.
 see BIYOS_addrlintermrg BIYOS_addclintermrg BIYOS_getrlintermsp
 since 0.1.0
 
@@ -641,7 +626,7 @@ param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, the range ends past the last function, `off` does not begin at 0 or decreases, a variable is not one of the model or appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
-note Function `pos + j` gains the terms from `off[j]` to `off[j + 1] - 1`. A variable the function already holds adds its coefficient to the one held, as in `BIYOS_addlinterms`. A refused call changes nothing.
+note Function `pos + j` gains the terms from `off[j]` to `off[j + 1] - 1`. A variable the function already holds adds its coefficient to the one held, as in `BIYOS_addlintermsp`. A refused call changes nothing.
 see BIYOS_addlintermsp BIYOS_getrlintermrg
 since 0.1.0
 
@@ -719,7 +704,7 @@ param coef out Receives the coefficient of each term; skipped when null.
 return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of variable `pos + j` from `off[j]`.
 error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a variable, the range ends past the last variable, or `cap` is less than the number of terms `BIYOS_getnclintermsp` gives.
 note The terms are those `BIYOS_getrlintermsp` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function. A refused call writes nothing.
-see BIYOS_getnclintermsp BIYOS_getrlintermsp BIYOS_addlinterms
+see BIYOS_getnclintermsp BIYOS_getrlintermsp BIYOS_addclintermrg
 since 0.1.0
 
 group quadratic Quadratic terms

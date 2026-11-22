@@ -271,6 +271,8 @@ TEST(AdderTest, Refusals)
     const Added stranger{.functions = {0, functions}, .variables = {0, 0}, .values = {1.0, 1.0}};
     expect_kept(env, model, add_listed, stranger, unknown + ": unknown");
     expect_kept(env, model, add_columns, stranger, unknown + ": unknown");
+    const Added negative{.functions = {-1}, .variables = {0}, .values = {1.0}};
+    expect_kept(env, model, add_listed, negative, "invalid argument: function -1: unknown");
     const Added outside{.functions = {0}, .variables = {variables}, .values = {1.0}};
     const std::string missing =
         "invalid argument: function 0: variable " + std::to_string(variables) + " is unknown";
@@ -304,10 +306,15 @@ TEST(AdderTest, Arguments)
     const std::array<BIYOS_index, 1> zero{0};
     const std::array<double, 1> one{1.0};
     const std::array<BIYOS_offset, 3> backwards{0, 1, 0};
+    const std::array<BIYOS_offset, 2> late{1, 1};
     EXPECT_EQ(BIYOS_addlintermsp(held, -1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': -1 is negative");
     EXPECT_EQ(BIYOS_addlintermsp(held, 1, nullptr, zero.data(), one.data()), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
+    EXPECT_EQ(BIYOS_addlintermsp(held, 1, zero.data(), nullptr, one.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx': is null");
+    EXPECT_EQ(BIYOS_addlintermsp(held, 1, zero.data(), zero.data(), nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
     EXPECT_EQ(BIYOS_addrlintermrg(held, 0, functions + 1, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(),
@@ -318,6 +325,9 @@ TEST(AdderTest, Arguments)
     EXPECT_EQ(BIYOS_addclintermrg(held, 0, 2, backwards.data(), zero.data(), one.data()),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 1 to 0 at entry 2");
+    EXPECT_EQ(BIYOS_addrlintermrg(held, 0, 1, late.data(), zero.data(), one.data()),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'off': begins at 1, not 0");
     EXPECT_EQ(BIYOS_addclintermrg(held, 0, 1, backwards.data(), nullptr, one.data()),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");

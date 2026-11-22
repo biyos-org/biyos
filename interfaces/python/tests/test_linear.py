@@ -12,13 +12,11 @@ from number import Growing, Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
 
-INFINITY = float("inf")
 LARGE = 1.0e308
 
 HELD = ([0, 3, 3, 5], [2, 0, 1, 1, 0], [3.0, 1.0, 0.0, 5.0, 4.0])
 SORTED = ([0, 3, 3, 5], [0, 1, 2, 0, 1], [1.0, 0.0, 3.0, 4.0, 5.0])
-FUNCTIONS = [2, 1]
-ADDED = ([0, 2, 4], [2, 0, 2, 0], [0.5, -1.0, 2.0, 0.0])
+ADDED = ([2, 2, 1, 1], [2, 0, 2, 0], [0.5, -1.0, 2.0, 0.0])
 MERGED = (
     [0, 3, 5, 8],
     [0, 1, 2, 0, 2, 0, 1, 2],
@@ -30,18 +28,6 @@ MERGED_VARS = (
     [0, 1, 2, 0, 2, 0, 1, 2],
     [1.0, 0.0, 3.0, 0.0, 5.0, 3.0, 2.0, 0.5],
 )
-
-WRONG = [
-    ([0, 1.5], TypeError, "an entry of off must be an int, not float"),
-    ([0, True], TypeError, "an entry of off must be an int, not bool"),
-    ([0, 2**70], OverflowError, "1180591620717411303424 does not fit"),
-]
-
-STARTS_WRONG = [
-    ([0], [1, 2], "off begins at 1, not 0"),
-    ([0, 1], [0, 2, 1], "off decreases from 2 to 1 at entry 2"),
-]
-
 
 @pytest.fixture
 def env():
@@ -102,12 +88,6 @@ def random_terms(draw, n_vars, n_funs):
     return off, varidx, coef
 
 
-def test_add(model):
-    assert model.addlinterms(FUNCTIONS, *ADDED) is None
-    assert terms(model) == MERGED
-    assert model.getfuns()[0] == [0.0, 0.0, 0.0]
-
-
 def test_coordinates(model):
     funidx = [1, 2, 1, 2]
     model.addlinterm(funidx, [0, 2, 2, 0], [0.0, 0.5, 2.0, -1.0])
@@ -125,9 +105,8 @@ def test_copied(env):
             for model in (source, target):
                 model.addvar(n_vars)
                 model.addfuns(n_funs)
-            source.addlinterms(
-                range(n_funs), *random_terms(draw, n_vars, n_funs)
-            )
+            drawn = random_terms(draw, n_vars, n_funs)
+            source.addlinterm(*spread(drawn, 0, 0))
             funidx, varidx, coef = source.getrlinterm()
             order = list(range(len(coef)))
             draw.shuffle(order)
@@ -157,36 +136,28 @@ def test_misplaced(model):
 
 
 def test_sums(model):
-    model.addlinterms(FUNCTIONS, *ADDED)
-    model.addlinterms([2], [0, 2], [1, 2], [-5.0, 0.25])
+    model.addlinterm(*ADDED)
+    model.addlinterm([2, 2], [1, 2], [-5.0, 0.25])
     found = terms(model)
     assert found[:2] == MERGED[:2]
     assert found[2] == [1.0, 0.0, 3.0, 0.0, 2.0, 3.0, 0.0, 0.75]
 
 
-def test_defaults(model):
-    model.addlinterms([0, 1], None, None, None)
-    model.addlinterms([2], [0, 0], [], [])
-    model.addlinterms([], [0], [], [])
-    assert terms(model) == SORTED
-
-
 def test_values(model, monkeypatch):
     values = array.array("d", [1.0, 2.0])
     seen = []
-    spy = partial(recorded, seen, lib.BIYOS_addlinterms)
-    monkeypatch.setattr(lib, "BIYOS_addlinterms", spy)
-    model.addlinterms([1], [0, 2], [2, 0], values)
+    spy = partial(recorded, seen, lib.BIYOS_addlintermsp)
+    monkeypatch.setattr(lib, "BIYOS_addlintermsp", spy)
+    model.addlinterm([1, 1], [2, 0], values)
     assert len(seen) == 1
-    assert ctypes.addressof(seen[0][5]) == values.buffer_info()[0]
+    assert ctypes.addressof(seen[0][4]) == values.buffer_info()[0]
     assert terms(model)[1] == [0, 1, 2, 0, 2, 0, 1]
 
 
 def test_sequences(model):
-    read_only = memoryview(array.array("q", [0, 1]).tobytes()).cast("q")
-    model.addlinterms((1,), read_only, (2,), array.array("d", [4]))
-    model.addlinterms(range(1), range(0, 4, 2), [1, 2], [1, 2])
-    model.addlinterms([Number(2)], (Number(0), Number(0)), [], [])
+    read_only = memoryview(array.array("i", [1]).tobytes()).cast("i")
+    model.addlinterm(read_only, (2,), array.array("d", [4]))
+    model.addlinterm((Number(0), Number(0)), range(1, 3), [1, 2])
     off, varidx, coef = terms(model)
     assert off == [0, 3, 4, 6]
     assert varidx == [0, 1, 2, 2, 0, 1]
@@ -196,8 +167,8 @@ def test_sequences(model):
 def test_views(env, model):
     x = model.addvar(2)
     f = model.addfuns(2)
-    model.addlinterms(f, [0, 1, 2], [x[1], 0], [1.0, 2.0])
-    model.addlinterms([f[0]], [0, 2], x, [3.0, 4.0])
+    model.addlinterm(f, [x[1], 0], [1.0, 2.0])
+    model.addlinterm([f[0], f[0]], x, [3.0, 4.0])
     found = ([0.0, 0.0], [0, 2, 3], [3, 4, 0], [3.0, 5.0, 2.0])
     assert model.getfuns(f[0]) == found
     assert model.getclinterm(x[1:]) == ([3], [4], [5.0])
@@ -207,13 +178,13 @@ def test_views(env, model):
     g = other.addfuns(1)
     entry = "an entry of varidx is a variable of another model"
     with pytest.raises(ValueError, match=entry):
-        model.addlinterms([0], [0, 1], [y[0]], [1.0])
+        model.addlinterm([0], [y[0]], [1.0])
     with pytest.raises(ValueError, match="funidx is a block of another"):
-        model.addlinterms(g, [0, 1], [0], [1.0])
+        model.addlinterm(g, [0], [1.0])
     with pytest.raises(ValueError, match="idx is a variable of another"):
         model.getclinterm([y[0]])
     with pytest.raises(ValueError, match="is a function, not a variable"):
-        model.addlinterms([0], [0, 1], [f[0]], [1.0])
+        model.addlinterm([0], [f[0]], [1.0])
     with pytest.raises(ValueError, match="idx is a function, not a"):
         model.getclinterm([f[0]])
 
@@ -225,7 +196,7 @@ def test_gone(model, monkeypatch):
     function, variable = f[0], x[0]
     model._gen += 1
     seen = []
-    names = ["BIYOS_addlinterms"]
+    names = ["BIYOS_addlintermsp"]
     for form in ("sp", "rg"):
         names += [f"BIYOS_getnclinterm{form}", f"BIYOS_getclinterm{form}"]
     for name in names:
@@ -234,11 +205,11 @@ def test_gone(model, monkeypatch):
     block = "the block predates a deletion"
     view = "the function predates a deletion"
     stale = "the variable predates a deletion"
-    add = model.addlinterms
+    add = model.addlinterm
     cases = [
-        (block, partial(add, f, [0, 0], [], [])),
-        (view, partial(add, [function], [0, 0], [], [])),
-        (stale, partial(add, [0], [0, 1], [variable], [1.0])),
+        (block, partial(add, f, [0], [1.0])),
+        (view, partial(add, [function], [0], [1.0])),
+        (stale, partial(add, [0], [variable], [1.0])),
         (stale, partial(model.getclinterm, [variable])),
         (stale, partial(model.getnclinterm, [variable])),
     ]
@@ -249,64 +220,13 @@ def test_gone(model, monkeypatch):
     assert terms(model) == before
 
 
-def test_refused(model):
-    model.addfuns(1, None, [0, 1], [1], [LARGE])
-    before = terms(model)
-    message = refusal(model.addlinterms, [1, 1], [0, 0, 0], [], [])
-    assert message == (
-        "invalid argument: argument 'funidx': function 1 is repeated"
-    )
-    message = refusal(model.addlinterms, [4], [0, 0], [], [])
-    assert message == "invalid argument: function 4: unknown"
-    message = refusal(model.addlinterms, [1], [0, 1], [3], [1])
-    assert message == "invalid argument: function 1: variable 3 is unknown"
-    message = refusal(model.addlinterms, [1], [0, 2], [0, 0], [1, 2])
-    assert message == "invalid argument: function 1: variable 0 is repeated"
-    message = refusal(model.addlinterms, [1], [0, 1], [2], [INFINITY])
-    assert message == (
-        "invalid argument: function 1: coefficient of variable 2 is infinity"
-    )
-    message = refusal(
-        model.addlinterms, [0, 3], [0, 1, 2], [0, 1], [1.0, LARGE]
-    )
-    assert message == (
-        "invalid argument: function 3: sum of coefficients of variable 1"
-        " is infinity"
-    )
-    assert terms(model) == before
-
-
-@pytest.mark.parametrize("functions, starts, message", STARTS_WRONG)
-def test_starts(model, functions, starts, message):
-    with pytest.raises(ValueError, match=message):
-        model.addlinterms(functions, starts, [0], [1.0])
-    assert terms(model) == SORTED
-
-
-def test_lengths(model):
-    with pytest.raises(ValueError, match="off has length 1, not 2"):
-        model.addlinterms([0], [0], [], [])
-    with pytest.raises(ValueError, match="varidx has length 1, not 2"):
-        model.addlinterms([0], [0, 2], [0], [1.0, 2.0])
-    with pytest.raises(ValueError, match="coef has length 1, not 0"):
-        model.addlinterms([0], None, None, [1.0])
-    assert terms(model) == SORTED
-
-
-@pytest.mark.parametrize("starts, error, message", WRONG)
-def test_wrong(model, starts, error, message):
-    with pytest.raises(error, match=message):
-        model.addlinterms([0], starts, [0], [1.0])
-    assert terms(model) == SORTED
-
-
 def test_numbers(model):
     with pytest.raises(TypeError, match="an entry of coef must be a number"):
-        model.addlinterms([0], [0, 1], [0], ["1"])
+        model.addlinterm([0], [0], ["1"])
     with pytest.raises(TypeError, match="an entry of varidx must be an"):
-        model.addlinterms([0], [0, 1], [0.0], [1.0])
+        model.addlinterm([0], [0.0], [1.0])
     with pytest.raises(TypeError, match="an entry of funidx must be an"):
-        model.addlinterms([0.0], [0, 0], [], [])
+        model.addlinterm([0.0], [0], [1.0])
     with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
         model.getclinterm(range(2**32, 2**32 + 1))
     assert terms(model) == SORTED
@@ -314,7 +234,7 @@ def test_numbers(model):
 
 def test_by_variable(model):
     assert model.getclinterm() == spread(HELD_VARS)
-    model.addlinterms(FUNCTIONS, *ADDED)
+    model.addlinterm(*ADDED)
     assert model.getclinterm() == spread(MERGED_VARS)
 
 
@@ -354,7 +274,8 @@ def test_transpose(env):
             for _ in range(3):
                 funidx = draw.sample(range(n_funs), draw.randint(0, n_funs))
                 added = random_terms(draw, n_vars, len(funidx))
-                model.addlinterms(funidx, *added)
+                owners, varidx, coef = spread(added, 0, 0)
+                model.addlinterm([funidx[j] for j in owners], varidx, coef)
             by_function = terms(model)
             whole = transposed(by_function, 0, n_vars)
             assert model.getclinterm() == spread(whole)
@@ -412,7 +333,7 @@ def test_locked(env, model):
 
     def change(event):
         try:
-            model.addlinterms([0], [0, 1], [0], [1.0])
+            model.addlinterm([0], [0], [1.0])
         except biyos.Error as error:
             seen.append(str(error))
         seen.append(model.getclinterm([2]))
@@ -428,7 +349,7 @@ def test_closed(env):
     model = biyos.Model(env)
     model.close()
     calls = (
-        partial(model.addlinterms, [], [0], [], []),
+        partial(model.addlinterm, [], [], []),
         model.getclinterm,
         model.getrlinterm,
         model.getnclinterm,
@@ -439,10 +360,10 @@ def test_closed(env):
 
 
 def test_copy(model):
-    model.addlinterms(FUNCTIONS, *ADDED)
+    model.addlinterm(*ADDED)
     copy = model.copy()
     assert terms(copy) == MERGED
-    copy.addlinterms([1], [0, 1], [0], [1.0])
+    copy.addlinterm([1], [0], [1.0])
     assert terms(model) == MERGED
     assert copy.getclinterm([0]) == ([0, 1, 2], [0, 0, 0], [1.0, 1.0, 3.0])
     copy.close()

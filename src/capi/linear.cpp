@@ -18,7 +18,6 @@ using biyos::Family;
 using biyos::LinearTerm;
 using biyos::capi::guarded;
 using biyos::capi::length;
-using biyos::capi::listed;
 using biyos::capi::offsets;
 using biyos::capi::Range;
 using biyos::capi::require;
@@ -65,16 +64,6 @@ std::vector<LinearTerm> column_terms(std::span<const biyos::Index> variables,
         }
     }
     return terms;
-}
-
-void add_linear_terms(BIYOS_model &model,
-                      int n,
-                      const int *functions,
-                      const std::int64_t *starts,
-                      const int *variables,
-                      const double *values)
-{
-    add_sliced(writable(model), listed(n, functions, "funidx"), starts, variables, values);
 }
 
 void add_listed(BIYOS_model &model,
@@ -125,16 +114,6 @@ void add_columns(BIYOS_model &model,
     add_grouped(core, owners, column_terms(variables, begins, values));
 }
 
-}
-
-BIYOS_status BIYOS_addlinterms(BIYOS_model *mdl,
-                               BIYOS_index n,
-                               const BIYOS_index *funidx,
-                               const BIYOS_offset *off,
-                               const BIYOS_index *varidx,
-                               const BIYOS_real *coef)
-{
-    return guarded<add_linear_terms>(mdl, n, funidx, off, varidx, coef);
 }
 
 BIYOS_status BIYOS_addlintermsp(BIYOS_model *mdl,
