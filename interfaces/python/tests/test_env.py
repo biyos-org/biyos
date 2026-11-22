@@ -14,8 +14,8 @@ REFUSED = -100
 
 CALLS = [
     "BIYOS_getoptver",
-    "BIYOS_addhook",
-    "BIYOS_delhook",
+    "BIYOS_addenvhook",
+    "BIYOS_delenvhook",
     "BIYOS_getnvar",
 ]
 
@@ -288,7 +288,7 @@ def test_relayed(monkeypatch):
 
 def test_hooking(log, monkeypatch):
     env = biyos.Env()
-    before_entry("BIYOS_addhook", [env.close], monkeypatch)
+    before_entry("BIYOS_addenvhook", [env.close], monkeypatch)
     with pytest.raises(biyos.Error, match="event kind 99: unknown"):
         env.addhook(print, 99, EventLevel.ERROR)
     assert log == ["call", "env"]
@@ -297,7 +297,7 @@ def test_hooking(log, monkeypatch):
 def test_unhooking(log, monkeypatch):
     env = biyos.Env()
     idx = env.addhook(print, EventKind.MESSAGE, EventLevel.ERROR)
-    before_entry("BIYOS_delhook", [env.close], monkeypatch)
+    before_entry("BIYOS_delenvhook", [env.close], monkeypatch)
     env.delhook(idx)
     assert log == ["call", "call", "env"]
 

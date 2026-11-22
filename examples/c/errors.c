@@ -48,8 +48,8 @@ int main(void)
     const BIYOS_real ub[] = {2.0};
     int failed = report(env, BIYOS_addvar(mdl, 1, knd, NULL, ub, NULL));
     BIYOS_int seed = -1;
-    failed += report(env, BIYOS_setintopt(env, BIYOS_OPT_SEED, -1));
-    int kept = BIYOS_getintopt(env, BIYOS_OPT_SEED, &seed) == BIYOS_OK &&
+    failed += report(env, BIYOS_setenvintopt(env, BIYOS_OPT_SEED, -1));
+    int kept = BIYOS_getenvintopt(env, BIYOS_OPT_SEED, &seed) == BIYOS_OK &&
                seed == 0;
     BIYOS_freemdl(mdl);
     BIYOS_freeenv(env);

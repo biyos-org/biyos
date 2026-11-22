@@ -5,10 +5,10 @@
 static int set_options(BIYOS_env *env)
 {
     BIYOS_int option = 0;
-    return BIYOS_setdblopt(env, BIYOS_OPT_MAXTIME, 60.0) == BIYOS_OK &&
-           BIYOS_setboolopt(env, BIYOS_OPT_PRESOLVE, 0) == BIYOS_OK &&
+    return BIYOS_setenvdblopt(env, BIYOS_OPT_MAXTIME, 60.0) == BIYOS_OK &&
+           BIYOS_setenvboolopt(env, BIYOS_OPT_PRESOLVE, 0) == BIYOS_OK &&
            BIYOS_getoptid(env, "check_lvl", &option) == BIYOS_OK &&
-           BIYOS_setstropt(env, option, "full") == BIYOS_OK;
+           BIYOS_setenvstropt(env, option, "full") == BIYOS_OK;
 }
 
 static int read_options(BIYOS_env *env)
@@ -16,9 +16,10 @@ static int read_options(BIYOS_env *env)
     BIYOS_real limit = 0.0;
     BIYOS_int presolve = 1;
     const char *lvl = NULL;
-    if (BIYOS_getdblopt(env, BIYOS_OPT_MAXTIME, &limit) != BIYOS_OK ||
-        BIYOS_getboolopt(env, BIYOS_OPT_PRESOLVE, &presolve) != BIYOS_OK ||
-        BIYOS_getstropt(env, BIYOS_OPT_CHECKLVL, &lvl) != BIYOS_OK)
+    if (BIYOS_getenvdblopt(env, BIYOS_OPT_MAXTIME, &limit) != BIYOS_OK ||
+        BIYOS_getenvboolopt(env, BIYOS_OPT_PRESOLVE, &presolve) !=
+            BIYOS_OK ||
+        BIYOS_getenvstropt(env, BIYOS_OPT_CHECKLVL, &lvl) != BIYOS_OK)
     {
         return 0;
     }

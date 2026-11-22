@@ -54,7 +54,7 @@ static int hook(BIYOS_env *env, BIYOS_hook fn, void *data, int lvl)
 {
     const BIYOS_int knd = BIYOS_EVT_MESSAGE;
     BIYOS_index idx = 0;
-    return BIYOS_addhook(env, fn, data, knd, lvl, &idx) == BIYOS_OK;
+    return BIYOS_addenvhook(env, fn, data, knd, lvl, &idx) == BIYOS_OK;
 }
 
 int main(void)
@@ -69,7 +69,7 @@ int main(void)
     int hooked = hook(env, print_text, &count, BIYOS_LVL_INFO) &&
                  hook(env, print_json, NULL, BIYOS_LVL_ERR) &&
                  hook(env, keep_code, &code, BIYOS_LVL_ERR);
-    BIYOS_status status = BIYOS_setintopt(env, BIYOS_OPT_SEED, -1);
+    BIYOS_status status = BIYOS_setenvintopt(env, BIYOS_OPT_SEED, -1);
     BIYOS_freeenv(env);
     int seen = count == 1 && code == BIYOS_ERR_BADARG;
     return hooked && status == BIYOS_ERR_BADARG && seen ? 0 : 1;

@@ -52,9 +52,9 @@ since 0.1.0
 type BIYOS_hook
 summary A function that receives events.
 param evt in The event, valid until the hook returns.
-param data in The pointer given to `BIYOS_addhook`, as given.
+param data in The pointer given to `BIYOS_addenvhook`, as given.
 note While the hook runs, its environment and the models made on it are read-only (@sec-capi-events).
-see BIYOS_addhook BIYOS_delhook
+see BIYOS_addenvhook BIYOS_delenvhook
 since 0.1.0
 
 group linking Linking
@@ -128,15 +128,15 @@ see BIYOS_TRM_STOP
 since 0.1.0
 
 group options Options
-text An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_ERR_BADARG`: nothing is converted, so an int option refuses `BIYOS_setdblopt`. Every call that takes an option id returns `BIYOS_ERR_BADARG` for an id it does not know, and a failed set leaves the option as it was. @sec-option-table lists every option.
+text An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_ERR_BADARG`: nothing is converted, so an int option refuses `BIYOS_setenvdblopt`. Every call that takes an option id returns `BIYOS_ERR_BADARG` for an id it does not know, and a failed set leaves the option as it was. @sec-option-table lists every option.
 text Ranges include their ends and are checked exactly, with no tolerance, and NaN lies outside every range. Setting a deprecated option sets it and sends a warning event; setting a retired option, by any call, returns `BIYOS_ERR_BADARG` with a message that names the option to use instead, and changes nothing, while getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither.
 
 table Option kinds
-value BIYOS_KND_BOOL A bool, set with `BIYOS_setboolopt` and read with `BIYOS_getboolopt`.
-value BIYOS_KND_INT An int, set with `BIYOS_setintopt` and read with `BIYOS_getintopt`.
-value BIYOS_KND_DBL A double, set with `BIYOS_setdblopt` and read with `BIYOS_getdblopt`.
-value BIYOS_KND_STR A string, set with `BIYOS_setstropt` and read with `BIYOS_getstropt`.
-value BIYOS_KND_ENUM One of a list of names, set with `BIYOS_setstropt` and read with `BIYOS_getstropt`, by the name of the value.
+value BIYOS_KND_BOOL A bool, set with `BIYOS_setenvboolopt` and read with `BIYOS_getenvboolopt`.
+value BIYOS_KND_INT An int, set with `BIYOS_setenvintopt` and read with `BIYOS_getenvintopt`.
+value BIYOS_KND_DBL A double, set with `BIYOS_setenvdblopt` and read with `BIYOS_getenvdblopt`.
+value BIYOS_KND_STR A string, set with `BIYOS_setenvstropt` and read with `BIYOS_getenvstropt`.
+value BIYOS_KND_ENUM One of a list of names, set with `BIYOS_setenvstropt` and read with `BIYOS_getenvstropt`, by the name of the value.
 since 0.1.0
 
 table Option ids
@@ -182,80 +182,80 @@ return `BIYOS_OK`, with the three versions written.
 note Each version is written as `10000 * major + 100 * minor + patch`, such as 100 for 0.1.0. A minor or patch number stays below 100, so two versions compare as their numbers do.
 since 0.1.0
 
-function BIYOS_setboolopt
+function BIYOS_setenvboolopt
 summary Set a bool option.
 param env in The environment.
 param opt in The id of a bool option.
 param val in Nonzero for true, zero for false.
 return `BIYOS_OK` once the option is set.
-see BIYOS_getboolopt
+see BIYOS_getenvboolopt
 since 0.1.0
 
-function BIYOS_setintopt
+function BIYOS_setenvintopt
 summary Set an int option.
 param env in The environment.
 param opt in The id of an int option.
 param val in The value, inside the option's range.
 return `BIYOS_OK` once the option is set.
 error BIYOS_ERR_BADARG `val` is outside the option's range.
-see BIYOS_getintopt
+see BIYOS_getenvintopt
 since 0.1.0
 
-function BIYOS_setdblopt
+function BIYOS_setenvdblopt
 summary Set a double option.
 param env in The environment.
 param opt in The id of a double option.
 param val in The value, inside the option's range.
 return `BIYOS_OK` once the option is set.
 error BIYOS_ERR_BADARG `val` is outside the option's range or is NaN.
-see BIYOS_getdblopt
+see BIYOS_getenvdblopt
 since 0.1.0
 
-function BIYOS_setstropt
+function BIYOS_setenvstropt
 summary Set a string or enum option.
 param env in The environment.
 param opt in The id of a string or enum option.
 param val in The value, copied by the call. For an enum option, the name of one of its values, matched exactly.
 return `BIYOS_OK` once the option is set. Pointers read earlier from this option are then no longer valid.
 error BIYOS_ERR_BADARG `val` names none of the values of an enum option.
-see BIYOS_getstropt
+see BIYOS_getenvstropt
 since 0.1.0
 
-function BIYOS_getboolopt
+function BIYOS_getenvboolopt
 summary Read a bool option.
 param env in The environment.
 param opt in The id of a bool option.
 param val out Receives 1 when the option is true and 0 when it is false.
 return `BIYOS_OK`, with the value in `*val`.
-see BIYOS_setboolopt
+see BIYOS_setenvboolopt
 since 0.1.0
 
-function BIYOS_getintopt
+function BIYOS_getenvintopt
 summary Read an int option.
 param env in The environment.
 param opt in The id of an int option.
 param val out Receives the value.
 return `BIYOS_OK`, with the value in `*val`.
-see BIYOS_setintopt
+see BIYOS_setenvintopt
 since 0.1.0
 
-function BIYOS_getdblopt
+function BIYOS_getenvdblopt
 summary Read a double option.
 param env in The environment.
 param opt in The id of a double option.
 param val out Receives the value.
 return `BIYOS_OK`, with the value in `*val`.
-see BIYOS_setdblopt
+see BIYOS_setenvdblopt
 since 0.1.0
 
-function BIYOS_getstropt
+function BIYOS_getenvstropt
 summary Read a string or enum option.
 param env in The environment.
 param opt in The id of a string or enum option.
 param val out Receives the value of a string option, or the name of the value of an enum option.
 return `BIYOS_OK`, with the value in `*val`.
 note The string belongs to the environment. It stays valid until the option is set again or `env` is freed; a failed set of the option and a set of another option leave it valid.
-see BIYOS_setstropt
+see BIYOS_setenvstropt
 since 0.1.0
 
 group events Events
@@ -275,7 +275,7 @@ value BIYOS_LVL_WARN Warning.
 value BIYOS_LVL_ERR Error, the most severe.
 since 0.1.0
 
-function BIYOS_addhook
+function BIYOS_addenvhook
 summary Add a hook on one kind of event.
 param env in The environment.
 param hk in The hook, kept until it is removed or `env` is freed.
@@ -287,16 +287,16 @@ return `BIYOS_OK`, with the id in `*idx`. Ids count from 1 in each environment a
 error BIYOS_ERR_BADARG `knd` or `lvl` is unknown.
 error BIYOS_ERR_NOMEMORY The environment has given out 2147483646 ids.
 note A failed call adds nothing.
-see BIYOS_delhook BIYOS_hook
+see BIYOS_delenvhook BIYOS_hook
 since 0.1.0
 
-function BIYOS_delhook
+function BIYOS_delenvhook
 summary Remove a hook.
 param env in The environment.
-param idx in The id `BIYOS_addhook` gave.
+param idx in The id `BIYOS_addenvhook` gave.
 return `BIYOS_OK` once the hook is removed. It is not called again.
 error BIYOS_ERR_BADARG `env` has no hook with that id, as for one already removed.
-see BIYOS_addhook
+see BIYOS_addenvhook
 since 0.1.0
 
 group reading Reading an event

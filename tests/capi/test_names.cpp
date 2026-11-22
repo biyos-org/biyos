@@ -536,9 +536,9 @@ TEST(CApiTest, LockedNames)
     attempt.model = model.get();
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(env.get(), rename, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), rename, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     const BIYOS_status locked = BIYOS_ERR_BADARG;
     const std::array calls{locked, BIYOS_OK, BIYOS_OK, locked};
     std::vector<BIYOS_status> statuses{locked, locked, BIYOS_OK};

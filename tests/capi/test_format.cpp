@@ -154,8 +154,8 @@ TEST(CApiTest, ErrorLine)
     Lines lines;
     BIYOS_index id = 0;
     const int kind = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(env, keep, &lines, kind, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(env, BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    ASSERT_EQ(BIYOS_addenvhook(env, keep, &lines, kind, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setenvintopt(env, BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     const std::string text = "invalid argument: option 'seed': -1 is outside [0, 2147483647]";
     const std::string head = R"(,"kind":"message","level":"error","module":"capi","text":")";
     const std::string tail = R"(","fields":{"code":"-100"}})";
