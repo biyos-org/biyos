@@ -8,7 +8,7 @@ namespace biyos
 class Tolerances
 {
   public:
-    explicit Tolerances(const Options &opts);
+    explicit Tolerances(const Options &options);
 
     bool is_zero(double x) const noexcept;
     bool approx_equal(double a, double b) const noexcept;
@@ -19,10 +19,10 @@ class Tolerances
   private:
     bool within(double gap, double scaled_gap) const noexcept;
 
-    double feasibility_abs_;
-    double feasibility_rel_;
-    double integrality_tol_;
-    double zero_tol_;
+    double feasabs_;
+    double feasrel_;
+    double inttol_;
+    double zerotol_;
 };
 
 }

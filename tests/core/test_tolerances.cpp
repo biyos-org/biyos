@@ -20,31 +20,30 @@ constexpr double kLargest = (std::numeric_limits<double>::max)();
 biyos::Tolerances defaults()
 {
     biyos::FakeClock clock;
-    biyos::Events evts(clock);
-    return biyos::Tolerances(biyos::Options(evts));
+    biyos::Events events(clock);
+    return biyos::Tolerances(biyos::Options(events));
 }
 
 biyos::Tolerances relative(double rel)
 {
     biyos::FakeClock clock;
-    biyos::Events evts(clock);
-    biyos::Options opts(evts);
-    opts.set_dbl(Option::FeasibilityAbs, 0.0);
-    opts.set_dbl(Option::FeasibilityRel, rel);
-    return biyos::Tolerances(opts);
+    biyos::Events events(clock);
+    biyos::Options options(events);
+    options.set_double(Option::FeasAbs, 0.0);
+    options.set_double(Option::FeasRel, rel);
+    return biyos::Tolerances(options);
 }
 
 biyos::Tolerances uniform(double value)
 {
     biyos::FakeClock clock;
-    biyos::Events evts(clock);
-    biyos::Options opts(evts);
-    for (const Option opt :
-         {Option::FeasibilityAbs, Option::FeasibilityRel, Option::IntegralityTol, Option::ZeroTol})
+    biyos::Events events(clock);
+    biyos::Options options(events);
+    for (const Option option : {Option::FeasAbs, Option::FeasRel, Option::IntTol, Option::ZeroTol})
     {
-        opts.set_dbl(opt, value);
+        options.set_double(option, value);
     }
-    return biyos::Tolerances(opts);
+    return biyos::Tolerances(options);
 }
 
 }
@@ -175,13 +174,13 @@ TEST(ToleranceTest, NanFails)
 TEST(ToleranceTest, ReadsOptions)
 {
     biyos::FakeClock clock;
-    biyos::Events evts(clock);
-    biyos::Options opts(evts);
-    opts.set_dbl(Option::FeasibilityAbs, 1e-2);
-    opts.set_dbl(Option::FeasibilityRel, 1e-4);
-    opts.set_dbl(Option::IntegralityTol, 0.1);
-    opts.set_dbl(Option::ZeroTol, 1e-3);
-    const biyos::Tolerances tolerances(opts);
+    biyos::Events events(clock);
+    biyos::Options options(events);
+    options.set_double(Option::FeasAbs, 1e-2);
+    options.set_double(Option::FeasRel, 1e-4);
+    options.set_double(Option::IntTol, 0.1);
+    options.set_double(Option::ZeroTol, 1e-3);
+    const biyos::Tolerances tolerances(options);
 
     EXPECT_TRUE(tolerances.is_zero(5e-4));
     EXPECT_FALSE(tolerances.is_zero(2e-3));
@@ -258,12 +257,12 @@ TEST(ToleranceTest, Exact)
 TEST(ToleranceTest, Immutable)
 {
     biyos::FakeClock clock;
-    biyos::Events evts(clock);
-    biyos::Options opts(evts);
-    const biyos::Tolerances tolerances(opts);
-    opts.set_dbl(Option::ZeroTol, 1.0);
-    opts.set_dbl(Option::FeasibilityAbs, 1.0);
-    opts.set_dbl(Option::IntegralityTol, 0.5);
+    biyos::Events events(clock);
+    biyos::Options options(events);
+    const biyos::Tolerances tolerances(options);
+    options.set_double(Option::ZeroTol, 1.0);
+    options.set_double(Option::FeasAbs, 1.0);
+    options.set_double(Option::IntTol, 0.5);
     EXPECT_FALSE(tolerances.is_zero(0.5));
     EXPECT_FALSE(tolerances.approx_equal(0.0, 0.5));
     EXPECT_FALSE(tolerances.is_integral(0.25));

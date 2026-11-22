@@ -146,21 +146,21 @@ void append_fields(std::string &line, const std::vector<Field> &fields)
 
 }
 
-std::string fmt_text(const Event &evt)
+std::string format_text(const Event &event)
 {
     std::string line;
-    append_seconds(line, evt.time);
+    append_seconds(line, event.time);
     line += ' ';
-    line += name_of(evt.level);
+    line += name_of(event.level);
     line += ' ';
-    append_plain(line, evt.module);
+    append_plain(line, event.module);
     line += ':';
-    if (!evt.text.empty())
+    if (!event.text.empty())
     {
         line += ' ';
-        append_plain(line, evt.text);
+        append_plain(line, event.text);
     }
-    for (const Field &field : evt.fields)
+    for (const Field &field : event.fields)
     {
         line += ' ';
         append_plain(line, field.name);
@@ -170,16 +170,16 @@ std::string fmt_text(const Event &evt)
     return line;
 }
 
-std::string fmt_json(const Event &evt)
+std::string format_json(const Event &event)
 {
     std::string line = "{";
     append_key(line, "time");
-    append_seconds(line, evt.time);
-    append_member(line, "kind", name_of(evt.kind));
-    append_member(line, "level", name_of(evt.level));
-    append_member(line, "module", evt.module);
-    append_member(line, "text", evt.text);
-    append_fields(line, evt.fields);
+    append_seconds(line, event.time);
+    append_member(line, "kind", name_of(event.kind));
+    append_member(line, "level", name_of(event.level));
+    append_member(line, "module", event.module);
+    append_member(line, "text", event.text);
+    append_fields(line, event.fields);
     line += '}';
     return line;
 }

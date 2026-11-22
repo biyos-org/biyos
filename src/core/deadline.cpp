@@ -14,9 +14,9 @@ using std::chrono::nanoseconds;
 
 constexpr std::chrono::duration<double, std::nano> kLongest = (nanoseconds::max)();
 
-std::optional<nanoseconds> limit_of(const Options &opts, Option opt)
+std::optional<nanoseconds> limit_of(const Options &options, Option option)
 {
-    const std::chrono::duration<double> limit(opts.get_dbl(opt));
+    const std::chrono::duration<double> limit(options.get_double(option));
     if (limit < kLongest)
     {
         return std::chrono::ceil<nanoseconds>(limit);
@@ -26,9 +26,9 @@ std::optional<nanoseconds> limit_of(const Options &opts, Option opt)
 
 }
 
-Deadline::Deadline(const Options &opts, const Clock &clock, const Interrupt &interrupt)
-    : clock_(clock), interrupt_(interrupt), wall_limit_(limit_of(opts, Option::TimeLimit)),
-      cpu_limit_(limit_of(opts, Option::CpuTimeLimit)),
+Deadline::Deadline(const Options &options, const Clock &clock, const Interrupt &interrupt)
+    : clock_(clock), interrupt_(interrupt), wall_limit_(limit_of(options, Option::TimeLimit)),
+      cpu_limit_(limit_of(options, Option::CpuTimeLimit)),
       wall_start_(wall_limit_ ? clock.wall_time() : nanoseconds::zero()),
       cpu_start_(cpu_limit_ ? clock.cpu_time() : nanoseconds::zero())
 {

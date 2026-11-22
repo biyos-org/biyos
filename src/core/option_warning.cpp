@@ -14,20 +14,20 @@ namespace biyos
 namespace
 {
 
-void describe(Event &evt, std::span<const OptionSpec> table, const OptionSpec &spec)
+void describe(Event &event, std::span<const OptionSpec> table, const OptionSpec &spec)
 {
     const Version deprecated = *spec.versions.deprecated;
     const std::string_view replacement = row_of(table, *spec.replacement).name;
-    evt.module = "core";
-    evt.text = subject(spec.name) + ": " + notice("deprecated", deprecated, replacement);
-    evt.fields.push_back(Field{.name = "option", .value = std::string(spec.name)});
-    evt.fields.push_back(Field{.name = "deprecated", .value = dotted(deprecated)});
-    evt.fields.push_back(Field{.name = "replacement", .value = std::string(replacement)});
+    event.module = "core";
+    event.text = subject(spec.name) + ": " + notice("deprecated", deprecated, replacement);
+    event.fields.push_back(Field{.name = "option", .value = std::string(spec.name)});
+    event.fields.push_back(Field{.name = "deprecated", .value = dotted(deprecated)});
+    event.fields.push_back(Field{.name = "replacement", .value = std::string(replacement)});
 }
 
 }
 
-void warn_deprecated(Events &evts,
+void warn_deprecated(Events &events,
                      std::span<const OptionSpec> table,
                      const OptionSpec &spec) noexcept
 {
@@ -35,8 +35,8 @@ void warn_deprecated(Events &evts,
     {
         return;
     }
-    const auto fill = [&](Event &evt) { describe(evt, table, spec); };
-    evts.emit(EventKind::Message, EventLevel::Warning, fill);
+    const auto fill = [&](Event &event) { describe(event, table, spec); };
+    events.emit(EventKind::Message, EventLevel::Warning, fill);
 }
 
 }

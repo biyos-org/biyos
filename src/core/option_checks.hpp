@@ -68,8 +68,8 @@ constexpr bool valid_replacement(std::span<const OptionSpec> table, const Option
     {
         return !deprecated && !spec.replacement;
     }
-    const std::size_t idx = static_cast<std::size_t>(*spec.replacement) - 1;
-    return idx < table.size() && !table[idx].versions.deprecated;
+    const std::size_t index = static_cast<std::size_t>(*spec.replacement) - 1;
+    return index < table.size() && !table[index].versions.deprecated;
 }
 
 constexpr bool well_formed(std::span<const OptionSpec> table, Version project)

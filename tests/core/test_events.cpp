@@ -34,22 +34,22 @@ std::string failure(const std::function<void()> &body)
 
 void ignore(const biyos::Event &) {}
 
-void describe(biyos::Event &evt)
+void describe(biyos::Event &event)
 {
-    evt.module = "presolve";
-    evt.text = "removed rows";
-    evt.fields.push_back(biyos::Field{.name = "rows", .value = "3"});
+    event.module = "presolve";
+    event.text = "removed rows";
+    event.fields.push_back(biyos::Field{.name = "rows", .value = "3"});
 }
 
-void farewell(biyos::Event &evt)
+void farewell(biyos::Event &event)
 {
-    evt.text = "farewell";
+    event.text = "farewell";
 }
 
 class Farewell
 {
   public:
-    explicit Farewell(biyos::Events &evts) : events_(evts) {}
+    explicit Farewell(biyos::Events &events) : events_(events) {}
     ~Farewell() { events_.emit(EventKind::Message, EventLevel::Debug, farewell); }
     Farewell(const Farewell &) = delete;
     Farewell &operator=(const Farewell &) = delete;
@@ -61,12 +61,12 @@ class Farewell
 class Parting
 {
   public:
-    Parting(biyos::Events &evts, Texts &texts)
-        : farewell_(std::make_shared<Farewell>(evts)), texts_(&texts)
+    Parting(biyos::Events &events, Texts &texts)
+        : farewell_(std::make_shared<Farewell>(events)), texts_(&texts)
     {
     }
 
-    void operator()(const biyos::Event &evt) const { texts_->push_back("p " + evt.text); }
+    void operator()(const biyos::Event &event) const { texts_->push_back("p " + event.text); }
 
   private:
     std::shared_ptr<Farewell> farewell_;
@@ -76,26 +76,26 @@ class Parting
 class EventTest : public ::testing::Test
 {
   protected:
-    int listen(EventLevel lvl, biyos::Hook hk)
+    int listen(EventLevel level, biyos::Hook hook)
     {
-        return events.add_hook(EventKind::Message, lvl, std::move(hk));
+        return events.add_hook(EventKind::Message, level, std::move(hook));
     }
 
-    void say(EventLevel lvl, const std::string &text)
+    void say(EventLevel level, const std::string &text)
     {
-        events.emit(EventKind::Message, lvl, [&](biyos::Event &evt) { evt.text = text; });
+        events.emit(EventKind::Message, level, [&](biyos::Event &event) { event.text = text; });
     }
 
     biyos::Hook recorder(const std::string &name)
     {
-        return [this, name](const biyos::Event &evt) { texts.push_back(name + evt.text); };
+        return [this, name](const biyos::Event &event) { texts.push_back(name + event.text); };
     }
 
-    void rewire(int removed, const biyos::Event &evt)
+    void rewire(int removed, const biyos::Event &event)
     {
-        if (evt.level == EventLevel::Debug)
+        if (event.level == EventLevel::Debug)
         {
-            events.del_hook(removed);
+            events.delete_hook(removed);
             listen(EventLevel::Info, recorder("e "));
         }
     }
@@ -142,7 +142,7 @@ TEST_F(EventTest, NoRecord)
     int built = 0;
     const auto count = [&built](biyos::Event &) { ++built; };
     events.emit(EventKind::Message, EventLevel::Error, count);
-    events.del_hook(listen(EventLevel::Debug, ignore));
+    events.delete_hook(listen(EventLevel::Debug, ignore));
     events.emit(EventKind::Message, EventLevel::Error, count);
     listen(EventLevel::Error, ignore);
     events.emit(EventKind::Message, EventLevel::Warning, count);
@@ -165,7 +165,7 @@ TEST_F(EventTest, LevelFilter)
 
 TEST_F(EventTest, KindFilter)
 {
-    const auto two = [](biyos::Event &evt) { evt.text = "two"; };
+    const auto two = [](biyos::Event &event) { event.text = "two"; };
     listen(EventLevel::Debug, recorder("m "));
     events.add_hook(EventKind::Check, EventLevel::Error, recorder("c "));
     EXPECT_TRUE(events.wanted(EventKind::Message, EventLevel::Debug));
@@ -182,10 +182,10 @@ TEST_F(EventTest, LowestLevel)
     const int error = listen(EventLevel::Error, ignore);
     EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Debug));
     EXPECT_TRUE(events.wanted(EventKind::Message, EventLevel::Info));
-    events.del_hook(info);
+    events.delete_hook(info);
     EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Warning));
     EXPECT_TRUE(events.wanted(EventKind::Message, EventLevel::Error));
-    events.del_hook(error);
+    events.delete_hook(error);
     EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Error));
 }
 
@@ -220,7 +220,7 @@ TEST_F(EventTest, Order)
     const int b = listen(EventLevel::Debug, recorder("b "));
     listen(EventLevel::Debug, recorder("c "));
     say(EventLevel::Info, "one");
-    events.del_hook(b);
+    events.delete_hook(b);
     listen(EventLevel::Debug, recorder("b "));
     say(EventLevel::Info, "two");
     EXPECT_EQ(texts, (Texts{"a one", "b one", "c one", "a two", "c two", "b two"}));
@@ -229,24 +229,24 @@ TEST_F(EventTest, Order)
 TEST_F(EventTest, Contents)
 {
     std::vector<biyos::Event> kept;
-    listen(EventLevel::Debug, [&kept](const biyos::Event &evt) { kept.push_back(evt); });
+    listen(EventLevel::Debug, [&kept](const biyos::Event &event) { kept.push_back(event); });
     events.emit(EventKind::Message, EventLevel::Warning, describe);
     ASSERT_EQ(kept.size(), 1U);
-    const biyos::Event &evt = kept.front();
-    EXPECT_EQ(evt.kind, EventKind::Message);
-    EXPECT_EQ(evt.level, EventLevel::Warning);
-    EXPECT_EQ(evt.module, "presolve");
-    EXPECT_EQ(evt.text, "removed rows");
-    ASSERT_EQ(evt.fields.size(), 1U);
-    EXPECT_EQ(evt.fields.front().name, "rows");
-    EXPECT_EQ(evt.fields.front().value, "3");
+    const biyos::Event &event = kept.front();
+    EXPECT_EQ(event.kind, EventKind::Message);
+    EXPECT_EQ(event.level, EventLevel::Warning);
+    EXPECT_EQ(event.module, "presolve");
+    EXPECT_EQ(event.text, "removed rows");
+    ASSERT_EQ(event.fields.size(), 1U);
+    EXPECT_EQ(event.fields.front().name, "rows");
+    EXPECT_EQ(event.fields.front().value, "3");
 }
 
 TEST_F(EventTest, Ids)
 {
     const int first = listen(EventLevel::Debug, ignore);
     const int second = listen(EventLevel::Debug, ignore);
-    events.del_hook(second);
+    events.delete_hook(second);
     const int third = listen(EventLevel::Debug, ignore);
     EXPECT_EQ(first, 1);
     EXPECT_EQ(second, 2);
@@ -264,15 +264,15 @@ TEST_F(EventTest, EmptyHook)
 TEST_F(EventTest, UnknownId)
 {
     const int id = listen(EventLevel::Debug, ignore);
-    events.del_hook(id);
-    EXPECT_EQ(failure([&] { events.del_hook(id); }), "invalid argument: hook 1: unknown");
-    EXPECT_EQ(failure([&] { events.del_hook(7); }), "invalid argument: hook 7: unknown");
+    events.delete_hook(id);
+    EXPECT_EQ(failure([&] { events.delete_hook(id); }), "invalid argument: hook 1: unknown");
+    EXPECT_EQ(failure([&] { events.delete_hook(7); }), "invalid argument: hook 7: unknown");
 }
 
 TEST_F(EventTest, SelfRemoval)
 {
     int id = 0;
-    id = listen(EventLevel::Debug, [&](const biyos::Event &) { events.del_hook(id); });
+    id = listen(EventLevel::Debug, [&](const biyos::Event &) { events.delete_hook(id); });
     say(EventLevel::Info, "one");
     EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Error));
     EXPECT_NO_THROW(say(EventLevel::Info, "two"));
@@ -281,11 +281,11 @@ TEST_F(EventTest, SelfRemoval)
 TEST_F(EventTest, PeerRemoval)
 {
     int peer = 0;
-    listen(EventLevel::Debug, [&](const biyos::Event &) { events.del_hook(peer); });
+    listen(EventLevel::Debug, [&](const biyos::Event &) { events.delete_hook(peer); });
     peer = listen(EventLevel::Debug, recorder(""));
     say(EventLevel::Info, "one");
     EXPECT_TRUE(texts.empty());
-    EXPECT_EQ(failure([&] { events.del_hook(peer); }), "invalid argument: hook 2: unknown");
+    EXPECT_EQ(failure([&] { events.delete_hook(peer); }), "invalid argument: hook 2: unknown");
 }
 
 TEST_F(EventTest, NestedRemoval)
@@ -294,7 +294,7 @@ TEST_F(EventTest, NestedRemoval)
     listen(EventLevel::Info, [this](const biyos::Event &) { say(EventLevel::Debug, "inner"); });
     listen(EventLevel::Info, recorder("c "));
     listen(EventLevel::Info, recorder("d "));
-    listen(EventLevel::Debug, [this, x](const biyos::Event &evt) { rewire(x, evt); });
+    listen(EventLevel::Debug, [this, x](const biyos::Event &event) { rewire(x, event); });
     say(EventLevel::Info, "outer");
     EXPECT_EQ(texts, (Texts{"x outer", "c outer", "d outer"}));
 }
@@ -303,7 +303,7 @@ TEST_F(EventTest, ErasedFarewell)
 {
     const int id = listen(EventLevel::Debug, Parting(events, texts));
     listen(EventLevel::Debug, recorder("r "));
-    events.del_hook(id);
+    events.delete_hook(id);
     EXPECT_EQ(texts, Texts{"r farewell"});
 }
 
@@ -311,7 +311,7 @@ TEST_F(EventTest, PrunedFarewell)
 {
     const int id = listen(EventLevel::Debug, Parting(events, texts));
     listen(EventLevel::Debug, recorder("r "));
-    listen(EventLevel::Info, [this, id](const biyos::Event &) { events.del_hook(id); });
+    listen(EventLevel::Info, [this, id](const biyos::Event &) { events.delete_hook(id); });
     say(EventLevel::Info, "one");
     EXPECT_EQ(texts, (Texts{"p one", "r one", "r farewell"}));
 }

@@ -36,8 +36,8 @@ inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Check, Ev
 
 EventKind find_kind(int id);
 EventLevel find_level(int id);
-std::string_view name_of(EventKind knd) noexcept;
-std::string_view name_of(EventLevel lvl) noexcept;
+std::string_view name_of(EventKind kind) noexcept;
+std::string_view name_of(EventLevel level) noexcept;
 
 struct Field
 {
@@ -62,24 +62,27 @@ class Events
   public:
     explicit Events(const Clock &clock);
 
-    int add_hook(EventKind knd, EventLevel lvl, Hook hk);
-    void del_hook(int id);
+    int add_hook(EventKind kind, EventLevel level, Hook hook);
+    void delete_hook(int id);
 
-    bool wanted(EventKind knd, EventLevel lvl) const noexcept { return lowest_[slot(knd)] <= lvl; }
+    bool wanted(EventKind kind, EventLevel level) const noexcept
+    {
+        return lowest_[slot(kind)] <= level;
+    }
     bool delivering() const noexcept { return depth_ > 0; }
     bool filling() const noexcept { return fills_ > 0; }
     std::chrono::nanoseconds origin() const noexcept { return origin_; }
 
     template <std::invocable<Event &> Fill>
-    void emit(EventKind knd, EventLevel lvl, Fill &&fill) noexcept
+    void emit(EventKind kind, EventLevel level, Fill &&fill) noexcept
     {
-        if (!wanted(knd, lvl))
+        if (!wanted(kind, level))
         {
             return;
         }
-        Event evt{
-            .kind = knd,
-            .level = lvl,
+        Event event{
+            .kind = kind,
+            .level = level,
             .time = clock_.wall_time() - origin_,
             .module = {},
             .text = {},
@@ -88,13 +91,13 @@ class Events
         try
         {
             const Depth inside(fills_);
-            fill(evt);
+            fill(event);
         }
         catch (...)
         {
             return;
         }
-        deliver(evt);
+        deliver(event);
     }
 
   private:
@@ -123,12 +126,12 @@ class Events
 
     static constexpr EventLevel kNobody = static_cast<EventLevel>(BIYOS_LVL_ERR + 1);
 
-    static std::size_t slot(EventKind knd) noexcept { return static_cast<std::size_t>(knd) - 1; }
+    static std::size_t slot(EventKind kind) noexcept { return static_cast<std::size_t>(kind) - 1; }
 
-    static bool accepts(const Entry &entry, EventKind knd, EventLevel lvl) noexcept;
+    static bool accepts(const Entry &entry, EventKind kind, EventLevel level) noexcept;
 
-    void refresh(EventKind knd) noexcept;
-    void deliver(const Event &evt) noexcept;
+    void refresh(EventKind kind) noexcept;
+    void deliver(const Event &event) noexcept;
     void prune() noexcept;
 
     const Clock &clock_;

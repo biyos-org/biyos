@@ -16,17 +16,15 @@ bool same_infinity(double a, double b)
 
 }
 
-Tolerances::Tolerances(const Options &opts)
-    : feasibility_abs_(opts.get_dbl(Option::FeasibilityAbs)),
-      feasibility_rel_(opts.get_dbl(Option::FeasibilityRel)),
-      integrality_tol_(opts.get_dbl(Option::IntegralityTol)),
-      zero_tol_(opts.get_dbl(Option::ZeroTol))
+Tolerances::Tolerances(const Options &options)
+    : feasabs_(options.get_double(Option::FeasAbs)), feasrel_(options.get_double(Option::FeasRel)),
+      inttol_(options.get_double(Option::IntTol)), zerotol_(options.get_double(Option::ZeroTol))
 {
 }
 
 bool Tolerances::is_zero(double x) const noexcept
 {
-    return std::abs(x) <= zero_tol_;
+    return std::abs(x) <= zerotol_;
 }
 
 bool Tolerances::approx_equal(double a, double b) const noexcept
@@ -61,12 +59,12 @@ bool Tolerances::satisfies_upper(double x, double upper) const noexcept
 
 bool Tolerances::is_integral(double x) const noexcept
 {
-    return std::abs(x - std::round(x)) <= integrality_tol_;
+    return std::abs(x - std::round(x)) <= inttol_;
 }
 
 bool Tolerances::within(double gap, double scaled_gap) const noexcept
 {
-    return gap <= feasibility_abs_ || scaled_gap <= feasibility_rel_;
+    return gap <= feasabs_ || scaled_gap <= feasrel_;
 }
 
 }

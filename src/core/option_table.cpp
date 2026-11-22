@@ -61,21 +61,21 @@ constexpr std::array kTable{
         .versions = {.since = {0, 1, 0}},
     },
     OptionSpec{
-        .id = Option::FeasibilityAbs,
+        .id = Option::FeasAbs,
         .name = "feastol_abs",
         .rule = DoubleRule{.default_value = 1e-6, .lower = 0.0},
         .doc = "Absolute tolerance of a bound or an equality.",
         .versions = {.since = {0, 1, 0}},
     },
     OptionSpec{
-        .id = Option::FeasibilityRel,
+        .id = Option::FeasRel,
         .name = "feastol_rel",
         .rule = DoubleRule{.default_value = 1e-6, .lower = 0.0},
         .doc = "Relative tolerance of a bound or an equality.",
         .versions = {.since = {0, 1, 0}},
     },
     OptionSpec{
-        .id = Option::IntegralityTol,
+        .id = Option::IntTol,
         .name = "inttol",
         .rule = DoubleRule{.default_value = 1e-5, .lower = 0.0},
         .doc = "Largest distance to the nearest integer of a value taken as integral.",
@@ -102,25 +102,25 @@ static_assert(kTable.size() == static_cast<std::size_t>(Option::CpuTimeLimit));
 
 }
 
-std::span<const OptionSpec> opt_table()
+std::span<const OptionSpec> option_table()
 {
     return kTable;
 }
 
-std::size_t idx_of(Option opt)
+std::size_t index_of(Option option)
 {
-    return static_cast<std::size_t>(opt) - 1;
+    return static_cast<std::size_t>(option) - 1;
 }
 
-const OptionSpec &row_of(std::span<const OptionSpec> table, Option opt)
+const OptionSpec &row_of(std::span<const OptionSpec> table, Option option)
 {
-    const std::size_t idx = idx_of(opt);
-    if (idx >= table.size())
+    const std::size_t index = index_of(option);
+    if (index >= table.size())
     {
-        const std::string id = text_of(static_cast<int>(opt));
+        const std::string id = text_of(static_cast<int>(option));
         throw Error(ErrorKind::Internal, "option " + id, "has no table row");
     }
-    return table[idx];
+    return table[index];
 }
 
 }

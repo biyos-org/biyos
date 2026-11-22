@@ -17,13 +17,13 @@ namespace
 
 void opt_id(biyos::Env &, const char *name, int *opt)
 {
-    const biyos::Option found = biyos::find_opt(std::string_view(require(name, "name")));
+    const biyos::Option found = biyos::find_option(std::string_view(require(name, "name")));
     *require(opt, "opt") = static_cast<int>(found);
 }
 
 void option_kind(biyos::Env &, int opt, int *knd)
 {
-    const biyos::OptionKind found = biyos::kind_of(biyos::find_opt(opt));
+    const biyos::OptionKind found = biyos::kind_of(biyos::find_option(opt));
     *require(knd, "knd") = static_cast<int>(found);
 }
 
@@ -34,7 +34,7 @@ int optional_number(std::optional<biyos::Version> version)
 
 void opt_versions(biyos::Env &, int opt, int *since, int *deprecated, int *retired)
 {
-    const biyos::Versions versions = biyos::versions_of(biyos::find_opt(opt));
+    const biyos::Versions versions = biyos::versions_of(biyos::find_option(opt));
     require(since, "since");
     require(deprecated, "deprecated");
     require(retired, "retired");
@@ -45,47 +45,47 @@ void opt_versions(biyos::Env &, int opt, int *since, int *deprecated, int *retir
 
 void set_bool(biyos::Env &env, int opt, int value)
 {
-    writable(env).options().set_bool(biyos::find_opt(opt), value != 0);
+    writable(env).options().set_bool(biyos::find_option(opt), value != 0);
 }
 
 void set_int(biyos::Env &env, int opt, int value)
 {
-    writable(env).options().set_int(biyos::find_opt(opt), value);
+    writable(env).options().set_int(biyos::find_option(opt), value);
 }
 
 void set_dbl(biyos::Env &env, int opt, double value)
 {
-    writable(env).options().set_dbl(biyos::find_opt(opt), value);
+    writable(env).options().set_double(biyos::find_option(opt), value);
 }
 
 void set_str(biyos::Env &env, int opt, const char *value)
 {
     biyos::Options &opts = writable(env).options();
-    const biyos::Option found = biyos::find_opt(opt);
-    opts.set_str(found, require(value, "val"));
+    const biyos::Option found = biyos::find_option(opt);
+    opts.set_string(found, require(value, "val"));
 }
 
 void get_bool(biyos::Env &env, int opt, int *value)
 {
-    const bool found = env.options().get_bool(biyos::find_opt(opt));
+    const bool found = env.options().get_bool(biyos::find_option(opt));
     *require(value, "val") = found ? 1 : 0;
 }
 
 void get_int(biyos::Env &env, int opt, int *value)
 {
-    const int found = env.options().get_int(biyos::find_opt(opt));
+    const int found = env.options().get_int(biyos::find_option(opt));
     *require(value, "val") = found;
 }
 
 void get_dbl(biyos::Env &env, int opt, double *value)
 {
-    const double found = env.options().get_dbl(biyos::find_opt(opt));
+    const double found = env.options().get_double(biyos::find_option(opt));
     *require(value, "val") = found;
 }
 
 void get_str(biyos::Env &env, int opt, const char **value)
 {
-    const char *found = env.options().get_str(biyos::find_opt(opt)).c_str();
+    const char *found = env.options().get_string(biyos::find_option(opt)).c_str();
     *require(value, "val") = found;
 }
 

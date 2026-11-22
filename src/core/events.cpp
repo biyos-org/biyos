@@ -37,11 +37,11 @@ constexpr bool numbered()
 static_assert(numbered());
 static_assert(std::ranges::is_sorted(kLevels));
 
-void notify(const Hook &hk, const Event &evt) noexcept
+void notify(const Hook &hook, const Event &event) noexcept
 {
     try
     {
-        hk(evt);
+        hook(event);
     }
     catch (...)
     {
@@ -52,27 +52,27 @@ void notify(const Hook &hk, const Event &evt) noexcept
 
 EventKind find_kind(int id)
 {
-    const auto knd = static_cast<EventKind>(id);
-    if (std::ranges::find(kEventKinds, knd) == kEventKinds.end())
+    const auto kind = static_cast<EventKind>(id);
+    if (std::ranges::find(kEventKinds, kind) == kEventKinds.end())
     {
         throw Error(ErrorKind::InvalidArgument, "event kind " + std::to_string(id), "unknown");
     }
-    return knd;
+    return kind;
 }
 
 EventLevel find_level(int id)
 {
-    const auto lvl = static_cast<EventLevel>(id);
-    if (std::ranges::find(kLevels, lvl) == kLevels.end())
+    const auto level = static_cast<EventLevel>(id);
+    if (std::ranges::find(kLevels, level) == kLevels.end())
     {
         throw Error(ErrorKind::InvalidArgument, "level " + std::to_string(id), "unknown");
     }
-    return lvl;
+    return level;
 }
 
-std::string_view name_of(EventKind knd) noexcept
+std::string_view name_of(EventKind kind) noexcept
 {
-    switch (knd)
+    switch (kind)
     {
     case EventKind::Message:
         return "message";
@@ -84,9 +84,9 @@ std::string_view name_of(EventKind knd) noexcept
     return "";
 }
 
-std::string_view name_of(EventLevel lvl) noexcept
+std::string_view name_of(EventLevel level) noexcept
 {
-    switch (lvl)
+    switch (level)
     {
     case EventLevel::Debug:
         return "debug";
@@ -105,9 +105,9 @@ Events::Events(const Clock &clock) : clock_(clock), origin_(clock.wall_time())
     lowest_.fill(kNobody);
 }
 
-int Events::add_hook(EventKind knd, EventLevel lvl, Hook hk)
+int Events::add_hook(EventKind kind, EventLevel level, Hook hook)
 {
-    if (!hk)
+    if (!hook)
     {
         throw Error(ErrorKind::InvalidArgument, "hook", "is empty");
     }
@@ -117,17 +117,17 @@ int Events::add_hook(EventKind knd, EventLevel lvl, Hook hk)
     }
     hooks_.push_back(Entry{
         .id = next_id_,
-        .kind = knd,
-        .lowest = lvl,
-        .hook = std::make_unique<const Hook>(std::move(hk)),
+        .kind = kind,
+        .lowest = level,
+        .hook = std::make_unique<const Hook>(std::move(hook)),
         .active = true,
     });
-    const std::size_t at = slot(knd);
-    lowest_[at] = (std::min)(lowest_[at], lvl);
+    const std::size_t at = slot(kind);
+    lowest_[at] = (std::min)(lowest_[at], level);
     return next_id_++;
 }
 
-void Events::del_hook(int id)
+void Events::delete_hook(int id)
 {
     const auto found = std::ranges::find(hooks_, id, &Entry::id);
     if (found == hooks_.end() || !found->active)
@@ -143,34 +143,34 @@ void Events::del_hook(int id)
     }
 }
 
-bool Events::accepts(const Entry &entry, EventKind knd, EventLevel lvl) noexcept
+bool Events::accepts(const Entry &entry, EventKind kind, EventLevel level) noexcept
 {
-    return entry.active && entry.kind == knd && entry.lowest <= lvl;
+    return entry.active && entry.kind == kind && entry.lowest <= level;
 }
 
-void Events::refresh(EventKind knd) noexcept
+void Events::refresh(EventKind kind) noexcept
 {
-    EventLevel lvl = kNobody;
+    EventLevel level = kNobody;
     for (const Entry &entry : hooks_)
     {
-        if (entry.active && entry.kind == knd)
+        if (entry.active && entry.kind == kind)
         {
-            lvl = (std::min)(lvl, entry.lowest);
+            level = (std::min)(level, entry.lowest);
         }
     }
-    lowest_[slot(knd)] = lvl;
+    lowest_[slot(kind)] = level;
 }
 
-void Events::deliver(const Event &evt) noexcept
+void Events::deliver(const Event &event) noexcept
 {
     const Depth delivery(depth_);
     const std::size_t n = hooks_.size();
     for (std::size_t i = 0; i < n; ++i)
     {
         const Entry &entry = hooks_[i];
-        if (accepts(entry, evt.kind, evt.level))
+        if (accepts(entry, event.kind, event.level))
         {
-            notify(*entry.hook, evt);
+            notify(*entry.hook, event);
         }
     }
     if (depth_ == 1)

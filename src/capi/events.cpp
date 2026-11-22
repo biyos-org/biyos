@@ -41,7 +41,7 @@ void add_hook(biyos::Env &env, BIYOS_hook hk, void *data, int knd, int lvl, int 
 
 void del_hook(biyos::Env &env, int idx)
 {
-    writable(env).events().del_hook(idx);
+    writable(env).events().delete_hook(idx);
 }
 
 const biyos::Field *field_of(const BIYOS_event *evt, int field)

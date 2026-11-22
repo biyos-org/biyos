@@ -8,7 +8,7 @@
 namespace biyos
 {
 
-void warn_deprecated(Events &evts,
+void warn_deprecated(Events &events,
                      std::span<const OptionSpec> table,
                      const OptionSpec &spec) noexcept;
 
