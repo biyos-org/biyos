@@ -62,7 +62,7 @@ void delete_unknown(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
-    probe->status = BIYOS_delhook(probe->env, 999);
+    probe->status = BIYOS_delenvhook(probe->env, 999);
     probe->message = BIYOS_lasterror(probe->env);
 }
 
@@ -70,7 +70,7 @@ void refuse(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
-    probe->status = BIYOS_setintopt(probe->env, BIYOS_OPT_SEED, 42);
+    probe->status = BIYOS_setenvintopt(probe->env, BIYOS_OPT_SEED, 42);
     probe->message = BIYOS_lasterror(probe->env);
 }
 
@@ -91,12 +91,12 @@ void free_inside(const BIYOS_event *, void *data)
 
 BIYOS_status listen(BIYOS_env *env, BIYOS_hook hook, void *data, int level, BIYOS_index *id)
 {
-    return BIYOS_addhook(env, hook, data, BIYOS_EVT_MESSAGE, level, id);
+    return BIYOS_addenvhook(env, hook, data, BIYOS_EVT_MESSAGE, level, id);
 }
 
 void fail(const Env &env)
 {
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
 }
 
 struct Attempt
@@ -118,13 +118,13 @@ void change(const BIYOS_event *, void *data)
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_env *env = attempt.env;
     BIYOS_index id = 0;
-    note(attempt, BIYOS_setboolopt(env, BIYOS_OPT_PRESOLVE, 0));
-    note(attempt, BIYOS_setintopt(env, BIYOS_OPT_SEED, 42));
-    note(attempt, BIYOS_setdblopt(env, BIYOS_OPT_MAXTIME, 1.0));
-    note(attempt, BIYOS_setstropt(env, BIYOS_OPT_REPRO, "replay.txt"));
+    note(attempt, BIYOS_setenvboolopt(env, BIYOS_OPT_PRESOLVE, 0));
+    note(attempt, BIYOS_setenvintopt(env, BIYOS_OPT_SEED, 42));
+    note(attempt, BIYOS_setenvdblopt(env, BIYOS_OPT_MAXTIME, 1.0));
+    note(attempt, BIYOS_setenvstropt(env, BIYOS_OPT_REPRO, "replay.txt"));
     note(attempt, listen(env, receive, nullptr, BIYOS_LVL_DBG, &id));
-    note(attempt, BIYOS_delhook(env, 1));
-    note(attempt, BIYOS_getintopt(env, BIYOS_OPT_SEED, &attempt.seed));
+    note(attempt, BIYOS_delenvhook(env, 1));
+    note(attempt, BIYOS_getenvintopt(env, BIYOS_OPT_SEED, &attempt.seed));
 }
 
 }
@@ -154,10 +154,10 @@ TEST(CApiTest, DeleteHook)
     Inbox inbox;
     BIYOS_index id = 0;
     ASSERT_EQ(listen(env.get(), receive, &inbox, BIYOS_LVL_DBG, &id), BIYOS_OK);
-    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(inbox.calls, 0);
-    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: hook 1: unknown");
 }
 
@@ -178,10 +178,10 @@ TEST(CApiTest, ReadOnly)
     EXPECT_EQ(attempt.messages, std::vector<std::string>(7, reason));
     EXPECT_EQ(attempt.seed, 0);
     BIYOS_int seed = -1;
-    EXPECT_EQ(BIYOS_getintopt(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_OK);
     EXPECT_EQ(seed, 0);
     EXPECT_EQ(env.message(), "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
-    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
 }
 
 TEST(CApiTest, NestedFailure)
@@ -232,8 +232,8 @@ TEST(CApiTest, BusyFree)
     EXPECT_EQ(probe.message,
               "invalid argument: environment: is read-only while delivering an event");
     BIYOS_int seed = -1;
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, 5), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getintopt(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 5), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_OK);
     EXPECT_EQ(seed, 5);
 }
 
@@ -244,13 +244,14 @@ TEST(CApiTest, BadHook)
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
     const int debug = BIYOS_LVL_DBG;
-    EXPECT_EQ(BIYOS_addhook(env.get(), nullptr, &inbox, message, debug, &id), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addenvhook(env.get(), nullptr, &inbox, message, debug, &id), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'hk': is null");
-    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, 0, debug, &id), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addenvhook(env.get(), receive, &inbox, 0, debug, &id), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: event kind 0: unknown");
-    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, 9, &id), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addenvhook(env.get(), receive, &inbox, message, 9, &id), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: level 9: unknown");
-    EXPECT_EQ(BIYOS_addhook(env.get(), receive, &inbox, message, debug, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addenvhook(env.get(), receive, &inbox, message, debug, nullptr),
+              BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
     EXPECT_EQ(inbox.calls, 0);
     EXPECT_EQ(id, 0);
@@ -260,7 +261,7 @@ TEST(CApiTest, NullHook)
 {
     BIYOS_index id = 0;
     EXPECT_EQ(listen(nullptr, receive, nullptr, BIYOS_LVL_DBG, &id), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_delhook(nullptr, 1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delenvhook(nullptr, 1), BIYOS_ERR_BADARG);
 }
 
 TEST(CApiTest, Accessors)

@@ -10,13 +10,13 @@ The kind of an option decides which calls set and get it:
 
 | Kind | Set with | Get with |
 | --- | --- | --- |
-| `BIYOS_KND_BOOL` | `BIYOS_setboolopt` | `BIYOS_getboolopt` |
-| `BIYOS_KND_INT` | `BIYOS_setintopt` | `BIYOS_getintopt` |
-| `BIYOS_KND_DBL` | `BIYOS_setdblopt` | `BIYOS_getdblopt` |
-| `BIYOS_KND_STR` | `BIYOS_setstropt` | `BIYOS_getstropt` |
-| `BIYOS_KND_ENUM` | `BIYOS_setstropt`, by the name of a value | `BIYOS_getstropt` |
+| `BIYOS_KND_BOOL` | `BIYOS_setenvboolopt` | `BIYOS_getenvboolopt` |
+| `BIYOS_KND_INT` | `BIYOS_setenvintopt` | `BIYOS_getenvintopt` |
+| `BIYOS_KND_DBL` | `BIYOS_setenvdblopt` | `BIYOS_getenvdblopt` |
+| `BIYOS_KND_STR` | `BIYOS_setenvstropt` | `BIYOS_getenvstropt` |
+| `BIYOS_KND_ENUM` | `BIYOS_setenvstropt`, by the name of a value | `BIYOS_getenvstropt` |
 
-A call of another kind is refused: nothing is converted, so an int option refuses `BIYOS_setdblopt`. `BIYOS_getoptknd` gives the kind of an id. The reference lists every option with its kind, default and range (@sec-option-table).
+A call of another kind is refused: nothing is converted, so an int option refuses `BIYOS_setenvdblopt`. `BIYOS_getoptknd` gives the kind of an id. The reference lists every option with its kind, default and range (@sec-option-table).
 
 ## Setting and reading {#sec-options-set}
 
@@ -32,7 +32,7 @@ Reading is the mirror image:
 ```{.c file="examples/c/options.c" item="read_options"}
 ```
 
-A string read with `BIYOS_getstropt` belongs to the environment. The pointer stays valid until the option is set again or the environment is freed; a failed set of the option and a set of another option leave it valid. A string set with `BIYOS_setstropt` is copied, so the caller's buffer may change afterwards.
+A string read with `BIYOS_getenvstropt` belongs to the environment. The pointer stays valid until the option is set again or the environment is freed; a failed set of the option and a set of another option leave it valid. A string set with `BIYOS_setenvstropt` is copied, so the caller's buffer may change afterwards.
 
 ## Versions {#sec-options-versions}
 

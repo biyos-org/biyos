@@ -291,15 +291,15 @@ TEST(CApiTest, LockedConstraints)
     ASSERT_EQ(BIYOS_addcon(model.get(), 1, &function, nullptr, nullptr, nullptr), BIYOS_OK);
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
     const std::vector<BIYOS_status> statuses{refused, refused, BIYOS_OK, BIYOS_OK, BIYOS_OK};
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
     EXPECT_EQ(attempt.statuses, statuses);
     EXPECT_EQ(attempt.messages[0], locked);
     EXPECT_EQ(attempt.messages[1], locked);
-    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     EXPECT_EQ(n_constraints(model), 1);
 }
 

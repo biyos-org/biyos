@@ -64,22 +64,22 @@ def _string(name: str, value: str) -> bytes:
 
 
 _SETTERS: dict[int, tuple[Callable[..., int], Callable[..., object]]] = {
-    _capi.KIND_BOOL: (lib.BIYOS_setboolopt, _bool),
-    _capi.KIND_INT: (lib.BIYOS_setintopt, _int),
-    _capi.KIND_DOUBLE: (lib.BIYOS_setdblopt, _double),
-    _capi.KIND_STRING: (lib.BIYOS_setstropt, _string),
-    _capi.KIND_ENUM: (lib.BIYOS_setstropt, _string),
+    _capi.KIND_BOOL: (lib.BIYOS_setenvboolopt, _bool),
+    _capi.KIND_INT: (lib.BIYOS_setenvintopt, _int),
+    _capi.KIND_DOUBLE: (lib.BIYOS_setenvdblopt, _double),
+    _capi.KIND_STRING: (lib.BIYOS_setenvstropt, _string),
+    _capi.KIND_ENUM: (lib.BIYOS_setenvstropt, _string),
 }
 
 _GETTERS: dict[
     int,
     tuple[Callable[..., int], type, Callable[..., bool | int | float | str]],
 ] = {
-    _capi.KIND_BOOL: (lib.BIYOS_getboolopt, c_int, bool),
-    _capi.KIND_INT: (lib.BIYOS_getintopt, c_int, int),
-    _capi.KIND_DOUBLE: (lib.BIYOS_getdblopt, c_double, float),
-    _capi.KIND_STRING: (lib.BIYOS_getstropt, c_char_p, bytes.decode),
-    _capi.KIND_ENUM: (lib.BIYOS_getstropt, c_char_p, bytes.decode),
+    _capi.KIND_BOOL: (lib.BIYOS_getenvboolopt, c_int, bool),
+    _capi.KIND_INT: (lib.BIYOS_getenvintopt, c_int, int),
+    _capi.KIND_DOUBLE: (lib.BIYOS_getenvdblopt, c_double, float),
+    _capi.KIND_STRING: (lib.BIYOS_getenvstropt, c_char_p, bytes.decode),
+    _capi.KIND_ENUM: (lib.BIYOS_getenvstropt, c_char_p, bytes.decode),
 }
 
 
@@ -177,7 +177,8 @@ class Env:
 
         See Also
         --------
-        BIYOS_setboolopt, BIYOS_setintopt, BIYOS_setdblopt, BIYOS_setstropt
+        BIYOS_setenvboolopt, BIYOS_setenvintopt,
+        BIYOS_setenvdblopt, BIYOS_setenvstropt
         """
         option, kind = self._lookup(name)
         setter, convert = _SETTERS[kind]
@@ -203,7 +204,8 @@ class Env:
 
         See Also
         --------
-        BIYOS_getboolopt, BIYOS_getintopt, BIYOS_getdblopt, BIYOS_getstropt
+        BIYOS_getenvboolopt, BIYOS_getenvintopt,
+        BIYOS_getenvdblopt, BIYOS_getenvstropt
         """
         option, kind = self._lookup(name)
         getter, slot, convert = _GETTERS[kind]
@@ -272,7 +274,7 @@ class Env:
 
         See Also
         --------
-        BIYOS_addhook
+        BIYOS_addenvhook
         """
         hk = _callable(hk)
         kind = integer("knd", knd)
@@ -297,7 +299,7 @@ class Env:
 
         See Also
         --------
-        BIYOS_delhook
+        BIYOS_delenvhook
         """
         idx = integer("idx", idx)
         with self._busy():
@@ -338,12 +340,12 @@ class Env:
         out = byref(idx)
         key = self._hooks.add(hk)
         try:
-            self._call(lib.BIYOS_addhook, callback, key, knd, lvl, out)
+            self._call(lib.BIYOS_addenvhook, callback, key, knd, lvl, out)
         finally:
             self._hooks.settle(key, idx.value)
 
     def _delhook(self, idx: int) -> None:
-        self._call(lib.BIYOS_delhook, idx)
+        self._call(lib.BIYOS_delenvhook, idx)
         self._hooks.remove(idx)
 
     def _lookup(self, name: str) -> tuple[int, int]:

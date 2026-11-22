@@ -117,7 +117,7 @@ void keep(const BIYOS_event *event, void *data)
 
 void fail(const Env &env)
 {
-    EXPECT_EQ(BIYOS_setintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
 }
 
 }
@@ -197,7 +197,7 @@ TEST(CApiTest, HeldFree)
                  "invalid argument: environment: has a model that is not freed");
     EXPECT_EQ(BIYOS_freemdl(first), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(env), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_setintopt(env, BIYOS_OPT_SEED, 5), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setenvintopt(env, BIYOS_OPT_SEED, 5), BIYOS_OK);
     EXPECT_EQ(BIYOS_freemdl(second), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(env), BIYOS_OK);
 }
@@ -212,7 +212,7 @@ TEST(CApiTest, LockedModel)
     ASSERT_EQ(BIYOS_addvar(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
     const std::vector<BIYOS_status> statuses{
@@ -243,7 +243,7 @@ TEST(CApiTest, LockedModel)
     EXPECT_EQ(attempt.messages, messages);
     EXPECT_EQ(attempt.count, 1);
     EXPECT_EQ(env.message(), failure);
-    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
 }
 
 TEST(CApiTest, BulkAdd)
@@ -531,10 +531,10 @@ TEST(CApiTest, ModelEvent)
     std::vector<std::string> texts;
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(env.get(), keep, &texts, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), keep, &texts, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     const BIYOS_index index = 0;
     const BIYOS_real bound = 0.0;
     EXPECT_EQ(BIYOS_setvarbndsp(model.get(), 1, &index, &bound, &bound), BIYOS_ERR_BADARG);
     EXPECT_EQ(texts, std::vector<std::string>{"invalid argument: variable 0: unknown"});
-    EXPECT_EQ(BIYOS_delhook(env.get(), id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
 }

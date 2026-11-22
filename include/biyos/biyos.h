@@ -66,14 +66,14 @@ BIYOS_API BIYOS_status BIYOS_getoptver(BIYOS_env *env,
                                        BIYOS_int *since,
                                        BIYOS_int *deprecated,
                                        BIYOS_int *retired);
-BIYOS_API BIYOS_status BIYOS_setboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
-BIYOS_API BIYOS_status BIYOS_setintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
-BIYOS_API BIYOS_status BIYOS_setdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val);
-BIYOS_API BIYOS_status BIYOS_setstropt(BIYOS_env *env, BIYOS_int opt, const char *val);
-BIYOS_API BIYOS_status BIYOS_getboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val);
-BIYOS_API BIYOS_status BIYOS_getintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val);
-BIYOS_API BIYOS_status BIYOS_getdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real *val);
-BIYOS_API BIYOS_status BIYOS_getstropt(BIYOS_env *env, BIYOS_int opt, const char **val);
+BIYOS_API BIYOS_status BIYOS_setenvboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
+BIYOS_API BIYOS_status BIYOS_setenvintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
+BIYOS_API BIYOS_status BIYOS_setenvdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val);
+BIYOS_API BIYOS_status BIYOS_setenvstropt(BIYOS_env *env, BIYOS_int opt, const char *val);
+BIYOS_API BIYOS_status BIYOS_getenvboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val);
+BIYOS_API BIYOS_status BIYOS_getenvintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val);
+BIYOS_API BIYOS_status BIYOS_getenvdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real *val);
+BIYOS_API BIYOS_status BIYOS_getenvstropt(BIYOS_env *env, BIYOS_int opt, const char **val);
 
 #define BIYOS_EVT_MESSAGE 1
 #define BIYOS_EVT_CHECK 2
@@ -84,13 +84,13 @@ BIYOS_API BIYOS_status BIYOS_getstropt(BIYOS_env *env, BIYOS_int opt, const char
 #define BIYOS_LVL_WARN 3
 #define BIYOS_LVL_ERR 4
 
-BIYOS_API BIYOS_status BIYOS_addhook(BIYOS_env *env,
-                                     BIYOS_hook hk,
-                                     void *data,
-                                     BIYOS_int knd,
-                                     BIYOS_int lvl,
-                                     BIYOS_index *idx);
-BIYOS_API BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index idx);
+BIYOS_API BIYOS_status BIYOS_addenvhook(BIYOS_env *env,
+                                        BIYOS_hook hk,
+                                        void *data,
+                                        BIYOS_int knd,
+                                        BIYOS_int lvl,
+                                        BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delenvhook(BIYOS_env *env, BIYOS_index idx);
 
 BIYOS_API BIYOS_int BIYOS_getevtknd(const BIYOS_event *evt);
 BIYOS_API BIYOS_int BIYOS_getevtlvl(const BIYOS_event *evt);

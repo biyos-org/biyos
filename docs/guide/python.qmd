@@ -1,6 +1,6 @@
 # The Python package {#sec-python}
 
-The package `biyos` calls the C library through `ctypes` and needs no compiled extension of its own, so one build serves every Python version from 3.10. A method takes the name of the C call it wraps, without the prefix: `BIYOS_addvar` is `model.addvar`, `BIYOS_setdblopt` and its kin are `env.setopt`, and the parameters keep their C names, such as `lb` and `ub`. Classes keep full names, except `Env` for the environment. Each follows the same rules as its C call, so the chapters before this one hold for Python as they do for C. This chapter covers what Python adds. @sec-pyapi lists every class and method.
+The package `biyos` calls the C library through `ctypes` and needs no compiled extension of its own, so one build serves every Python version from 3.10. A method takes the name of the C call it wraps, without the prefix: `BIYOS_addvar` is `model.addvar`, `BIYOS_setenvdblopt` and its kin are `env.setopt`, and the parameters keep their C names, such as `lb` and `ub`. Classes keep full names, except `Env` for the environment. Each follows the same rules as its C call, so the chapters before this one hold for Python as they do for C. This chapter covers what Python adds. @sec-pyapi lists every class and method.
 
 ## Environments and models {#sec-python-handles}
 

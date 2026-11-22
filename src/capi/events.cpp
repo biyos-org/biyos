@@ -57,17 +57,17 @@ const biyos::Field *field_of(const BIYOS_event *event, int field)
 
 }
 
-BIYOS_status BIYOS_addhook(BIYOS_env *env,
-                           BIYOS_hook hk,
-                           void *data,
-                           BIYOS_int knd,
-                           BIYOS_int lvl,
-                           BIYOS_index *idx)
+BIYOS_status BIYOS_addenvhook(BIYOS_env *env,
+                              BIYOS_hook hk,
+                              void *data,
+                              BIYOS_int knd,
+                              BIYOS_int lvl,
+                              BIYOS_index *idx)
 {
     return guarded<add_hook>(env, hk, data, knd, lvl, idx);
 }
 
-BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index idx)
+BIYOS_status BIYOS_delenvhook(BIYOS_env *env, BIYOS_index idx)
 {
     return guarded<delete_hook>(env, idx);
 }

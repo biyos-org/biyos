@@ -385,8 +385,8 @@ int main(void)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_setintopt(env, BIYOS_OPT_SEED, 3) != BIYOS_OK ||
-        BIYOS_getintopt(env, BIYOS_OPT_SEED, &seed) != BIYOS_OK || seed != 3)
+    if (BIYOS_setenvintopt(env, BIYOS_OPT_SEED, 3) != BIYOS_OK ||
+        BIYOS_getenvintopt(env, BIYOS_OPT_SEED, &seed) != BIYOS_OK || seed != 3)
     {
         status = BIYOS_ERR_INTERNAL;
     }
@@ -394,9 +394,9 @@ int main(void)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_addhook(env, count, &errors, BIYOS_EVT_MESSAGE, lowest, &id) != BIYOS_OK ||
-        BIYOS_setintopt(env, BIYOS_OPT_SEED, -1) != BIYOS_ERR_BADARG ||
-        BIYOS_delhook(env, id) != BIYOS_OK || errors != 1)
+    if (BIYOS_addenvhook(env, count, &errors, BIYOS_EVT_MESSAGE, lowest, &id) != BIYOS_OK ||
+        BIYOS_setenvintopt(env, BIYOS_OPT_SEED, -1) != BIYOS_ERR_BADARG ||
+        BIYOS_delenvhook(env, id) != BIYOS_OK || errors != 1)
     {
         status = BIYOS_ERR_INTERNAL;
     }

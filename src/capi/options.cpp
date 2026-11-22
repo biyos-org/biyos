@@ -110,42 +110,42 @@ BIYOS_status BIYOS_getoptver(BIYOS_env *env,
     return guarded<option_versions>(env, opt, since, deprecated, retired);
 }
 
-BIYOS_status BIYOS_setboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val)
+BIYOS_status BIYOS_setenvboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val)
 {
     return guarded<set_bool>(env, opt, val);
 }
 
-BIYOS_status BIYOS_setintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val)
+BIYOS_status BIYOS_setenvintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val)
 {
     return guarded<set_int>(env, opt, val);
 }
 
-BIYOS_status BIYOS_setdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val)
+BIYOS_status BIYOS_setenvdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val)
 {
     return guarded<set_double>(env, opt, val);
 }
 
-BIYOS_status BIYOS_setstropt(BIYOS_env *env, BIYOS_int opt, const char *val)
+BIYOS_status BIYOS_setenvstropt(BIYOS_env *env, BIYOS_int opt, const char *val)
 {
     return guarded<set_string>(env, opt, val);
 }
 
-BIYOS_status BIYOS_getboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val)
+BIYOS_status BIYOS_getenvboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val)
 {
     return guarded<get_bool>(env, opt, val);
 }
 
-BIYOS_status BIYOS_getintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val)
+BIYOS_status BIYOS_getenvintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val)
 {
     return guarded<get_int>(env, opt, val);
 }
 
-BIYOS_status BIYOS_getdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real *val)
+BIYOS_status BIYOS_getenvdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real *val)
 {
     return guarded<get_double>(env, opt, val);
 }
 
-BIYOS_status BIYOS_getstropt(BIYOS_env *env, BIYOS_int opt, const char **val)
+BIYOS_status BIYOS_getenvstropt(BIYOS_env *env, BIYOS_int opt, const char **val)
 {
     return guarded<get_string>(env, opt, val);
 }

@@ -140,7 +140,7 @@ int add_hook(const Env &env, std::vector<std::string> &texts)
 {
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
-    EXPECT_EQ(BIYOS_addhook(env.get(), keep, &texts, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addenvhook(env.get(), keep, &texts, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     return id;
 }
 
@@ -202,9 +202,9 @@ TEST(CApiTest, LockedCopy)
     const int kept = add_hook(idle, texts);
     BIYOS_index id = 0;
     const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addhook(busy.get(), copy_inside, &delivery, message, BIYOS_LVL_ERR, &id),
+    ASSERT_EQ(BIYOS_addenvhook(busy.get(), copy_inside, &delivery, message, BIYOS_LVL_ERR, &id),
               BIYOS_OK);
-    EXPECT_EQ(BIYOS_setintopt(busy.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setenvintopt(busy.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
     const std::vector<BIYOS_status> statuses{refused, BIYOS_OK, refused, BIYOS_OK};
     EXPECT_EQ(delivery.statuses, statuses);
@@ -212,8 +212,8 @@ TEST(CApiTest, LockedCopy)
     EXPECT_EQ(idle.message(), kLocked);
     EXPECT_EQ(texts, std::vector<std::string>{kLocked});
     EXPECT_EQ(busy.message(), "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
-    EXPECT_EQ(BIYOS_delhook(busy.get(), id), BIYOS_OK);
-    EXPECT_EQ(BIYOS_delhook(idle.get(), kept), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvhook(busy.get(), id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvhook(idle.get(), kept), BIYOS_OK);
 }
 
 TEST(CApiTest, NullCopy)
@@ -252,6 +252,6 @@ TEST(CApiTest, CopyReports)
     EXPECT_EQ(sent, std::vector<std::string>{});
     EXPECT_EQ(BIYOS_freemdl(copy.model), BIYOS_OK);
     EXPECT_EQ(BIYOS_freemdl(source.model), BIYOS_OK);
-    EXPECT_EQ(BIYOS_delhook(from.get(), first), BIYOS_OK);
-    EXPECT_EQ(BIYOS_delhook(to.get(), second), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvhook(from.get(), first), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvhook(to.get(), second), BIYOS_OK);
 }
