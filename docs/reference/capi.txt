@@ -259,7 +259,7 @@ see BIYOS_setenvstropt
 since 0.1.0
 
 group events Events
-text biyos never prints. It reports through events, and a caller reads them by adding a hook on one kind of event at a lowest level. The hook then receives every event of that kind at that level or a more severe one. The hooks of an environment receive an event in the order they were added, and an event no hook wants is not built. @sec-capi-sent describes the events biyos sends.
+text biyos writes nothing to standard output or standard error. It reports through events, and a caller reads them by adding a hook on one kind of event at a lowest level. The hook then receives every event of that kind at that level or a more severe one. The hooks of an environment receive an event in the order they were added, and an event no hook wants is not built. @sec-capi-sent describes the events biyos sends.
 text While a hook runs, its environment delivers an event and is read-only. The hook may read options, the last error message, the event and the models made on the environment. Every call that would change the environment, setting an option, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change or free a model made on it fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error message is again what it was before the hook ran.
 
 table Event kinds
