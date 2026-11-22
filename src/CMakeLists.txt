@@ -62,7 +62,8 @@ add_library(biyos_internal STATIC
     model/pairs.cpp
     model/quadratic.cpp
     model/terms.cpp
-    model/transpose.cpp)
+    model/transpose.cpp
+    core/thread.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -110,3 +111,6 @@ set_target_properties(biyos PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR})
 biyos_set_warnings(biyos)
+
+find_package(Threads REQUIRED)
+target_link_libraries(biyos_internal PUBLIC Threads::Threads)
