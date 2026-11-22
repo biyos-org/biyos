@@ -46,22 +46,30 @@ def warn(entry, text):
     print(f"WARNING: {entry.name}: {text}", file=sys.stderr)
 
 
-def checked(entry, shown):
-    arguments = ARGUMENT.findall(shown.split("(", 1)[-1])
+def shown_arguments(entry, shown):
     if entry.kind == "type":
-        arguments = ARGUMENT.findall(shown.rsplit("(", 1)[-1])
+        return ARGUMENT.findall(shown.rsplit("(", 1)[-1])
+    return ARGUMENT.findall(shown.split("(", 1)[-1])
+
+
+def checked(entry, declarations):
+    shown = [declarations[name] for name in entry.names]
+    found = [shown_arguments(entry, text) for text in shown]
     named = [name for name, _, _ in entry.params]
-    if named and named != arguments:
-        warn(entry, f"parameters {named} against {arguments}")
+    for arguments in found:
+        if named and spec.differs(named, arguments, found):
+            warn(entry, f"parameters {named} against {arguments}")
 
 
 def signature(entry, declarations):
-    shown = declarations.get(entry.name)
-    if shown is None:
+    if not all(name in declarations for name in entry.names):
         warn(entry, "no declaration")
         return []
-    checked(entry, shown)
-    return ["```{.c .signature}\n" + shown + "\n```"]
+    checked(entry, declarations)
+    return [
+        "```{.c .signature}\n" + declarations[name] + "\n```"
+        for name in entry.names
+    ]
 
 
 def name(text, anchor=""):
@@ -95,14 +103,22 @@ def meta(entry):
     return ["::: {.meta}\n" + "\n".join(parts) + "\n:::"] if parts else []
 
 
+def title(entry):
+    shown = ", ".join(f"`{name}`" for name in entry.names)
+    return f"### {shown} {{#{entry.name} .api .unnumbered .unlisted}}"
+
+
+def anchors(entry):
+    return [f"[]{{#{name}}}" for name in entry.names[1:]]
+
+
 def declared(entry, declarations):
-    title = f"### `{entry.name}` {{#{entry.name} .api .unnumbered .unlisted}}"
-    body = [entry.summary, *signature(entry, declarations)]
+    body = [*anchors(entry), entry.summary, *signature(entry, declarations)]
     body += parameters(entry)
     if entry.returns:
         body.append(f"**Returns** {entry.returns}")
     body += errors(entry) + entry.notes + meta(entry)
-    return [title, "::: {.entry}\n\n" + "\n\n".join(body) + "\n\n:::"]
+    return [title(entry), "::: {.entry}\n\n" + "\n\n".join(body) + "\n\n:::"]
 
 
 def listed(entry, values):
@@ -121,7 +137,9 @@ def listed(entry, values):
 
 def index(group):
     rows = [
-        (f"`{e.name}`", e.summary) for e in group.entries if e.kind != "table"
+        (", ".join(f"`{name}`" for name in e.names), e.summary)
+        for e in group.entries
+        if e.kind != "table"
     ]
     return [table(("Name", "Summary"), rows, (1, 2))] if len(rows) > 1 else []
 

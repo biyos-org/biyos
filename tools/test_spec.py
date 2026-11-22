@@ -77,6 +77,21 @@ class SpecTest(unittest.TestCase):
             sorted(found), ["BIYOS_OK", "BIYOS_env", "BIYOS_newenv"]
         )
 
+    def test_pair(self):
+        pair = "function BIYOS_a BIYOS_b"
+        text = SPEC.replace("function BIYOS_newenv", pair)
+        entry = self.read(text)[0].entries[1]
+        self.assertEqual(entry.names, ["BIYOS_a", "BIYOS_b"])
+        self.assertIn("BIYOS_b", spec.names(self.read(text)))
+
+    def test_differs(self):
+        named = ["mdl", "pos", "n", "idx"]
+        partners = [["mdl", "n", "idx"], ["mdl", "pos", "n"]]
+        self.assertFalse(spec.differs(named, partners[0], partners))
+        self.assertFalse(spec.differs(named, partners[1], partners))
+        self.assertTrue(spec.differs(named, ["mdl", "idx", "n"], partners))
+        self.assertTrue(spec.differs(named, partners[0], partners[:1]))
+
     def test_direction(self):
         text = SPEC.replace("param env out", "param env sideways")
         with self.assertRaisesRegex(ValueError, "capi.txt:10: direction"):
