@@ -119,8 +119,9 @@ static BIYOS_status use_linear(BIYOS_model *model)
     {
         return BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_getclintermrg(model, 1, 1, 2, offsets, &needed, held, NULL) != BIYOS_OK ||
-        needed != 2 || offsets[1] != 2 || held[0] != 0 || held[1] != 1)
+    if (BIYOS_getnclintermrg(model, 1, 1, &needed) != BIYOS_OK || needed != 2 ||
+        BIYOS_getclintermrg(model, 1, 1, 2, offsets, held, NULL) != BIYOS_OK || offsets[1] != 2 ||
+        held[0] != 0 || held[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -334,7 +335,12 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getvarkndsp(model, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnfun(model, &count) != BIYOS_OK ||
         BIYOS_getfuns(model, 0, 0, 0, NULL, NULL, &needed, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getclintermrg(model, 0, 0, 0, NULL, &needed, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getnrlintermrg(model, 0, 0, &needed) != BIYOS_OK ||
+        BIYOS_getrlintermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getrlintermrg(model, 0, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getnclintermsp(model, 0, NULL, &needed) != BIYOS_OK ||
+        BIYOS_getclintermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getclintermrg(model, 0, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getquadtermrg(model, 0, 0, 0, NULL, &needed, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getncon(model, &count) != BIYOS_OK ||
         BIYOS_getconrg(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||

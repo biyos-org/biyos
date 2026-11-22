@@ -97,6 +97,12 @@ def _span(
     return n, inside
 
 
+def _expanded(starts: Array[c_int64], first: int) -> list[int]:
+    spans = zip(starts[:-1], starts[1:])
+    counts = [end - start for start, end in spans]
+    return [first + j for j, count in enumerate(counts) for _ in range(count)]
+
+
 def _total(starts: Array[c_int64] | None, count: int) -> int:
     if starts is None or count < 0:
         return 0
@@ -642,51 +648,111 @@ class Model:
         )
         self._call(lib.BIYOS_addlinterms, n, *arrays)
 
-    def getclinterm(
-        self, pos: int | Variable = 0, n: int | None = None
-    ) -> tuple[list[int], list[int], list[float]]:
-        """Read the linear terms of variables, by variable.
-
-        For each variable from ``pos``, the functions whose linear terms
-        hold it, sorted by function, and its coefficient in each.
+    def getnrlinterm(
+        self, idx: Sequence[int | Function] | Functions | None = None
+    ) -> int:
+        """Count the linear terms of functions.
 
         Parameters
         ----------
-        pos
-            The first variable to read.
-        n
-            The number of variables to read, every one from ``pos`` on by
-            default.
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
 
         Returns
         -------
-        off
-            The ``n + 1`` offsets of the variables' terms in the two lists
-            after it, from 0.
+        nnz
+            The number of linear terms they hold, a function counted each
+            time it appears.
+
+        See Also
+        --------
+        BIYOS_getnrlintermsp
+        BIYOS_getnrlintermrg
+        """
+        every = range(self.getnfun()) if idx is None else idx
+        return self._count("BIYOS_getnrlinterm", Functions, every)
+
+    def getrlinterm(
+        self, idx: Sequence[int | Function] | Functions | None = None
+    ) -> tuple[list[int], list[int], list[float]]:
+        """Read the linear terms of functions, by function.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
+
+        Returns
+        -------
         funidx
-            The function of each term.
+            The function of each term, the terms of ``idx[0]`` first.
+        varidx
+            The variable of each term, each function's sorted by variable.
         coef
             The coefficient of each term.
 
         See Also
         --------
+        BIYOS_getrlintermsp
+        BIYOS_getrlintermrg
+        """
+        every = range(self.getnfun()) if idx is None else idx
+        return self._terms("rlinterm", Functions, every, 0)
+
+    def getnclinterm(
+        self, idx: Sequence[int | Variable] | Variables | None = None
+    ) -> int:
+        """Count the linear terms of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables, in any order, any of them more than once; every
+            variable by default.
+
+        Returns
+        -------
+        nnz
+            The number of linear terms that hold them, a variable counted
+            each time it appears.
+
+        See Also
+        --------
+        BIYOS_getnclintermsp
+        BIYOS_getnclintermrg
+        """
+        every = range(self.getnvar()) if idx is None else idx
+        return self._count("BIYOS_getnclinterm", Variables, every)
+
+    def getclinterm(
+        self, idx: Sequence[int | Variable] | Variables | None = None
+    ) -> tuple[list[int], list[int], list[float]]:
+        """Read the linear terms of variables, by variable.
+
+        Parameters
+        ----------
+        idx
+            The variables, in any order, any of them more than once; every
+            variable by default.
+
+        Returns
+        -------
+        funidx
+            The function of each term, each variable's sorted by function.
+        varidx
+            The variable of each term, the terms of ``idx[0]`` first.
+        coef
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_getclintermsp
         BIYOS_getclintermrg
         """
-        pos = index_of(self, Variables, "pos", pos)
-        n, inside = _span(pos, n, self.getnvar)
-        nnz = c_int64()
-        if not inside:
-            empty = (0, None, byref(nnz), None, None)
-            self._call(lib.BIYOS_getclintermrg, pos, n, *empty)
-        starts = (c_int64 * (n + 1))()
-        learn = (0, starts, byref(nnz), None, None)
-        self._call(lib.BIYOS_getclintermrg, pos, n, *learn)
-        size = nnz.value
-        funs = (c_int * size)()
-        values = (c_double * size)()
-        fill = (size, None, byref(nnz), funs, values)
-        self._call(lib.BIYOS_getclintermrg, pos, n, *fill)
-        return list(starts), list(funs), list(values)
+        every = range(self.getnvar()) if idx is None else idx
+        return self._terms("clinterm", Variables, every, 1)
 
     def addquadterms(
         self,
@@ -1715,6 +1781,36 @@ class Model:
         found = [(element * len(idx))() for element in types]
         self._call(*chosen, *found)
         return [list(values) for values in found]
+
+    def _count(
+        self,
+        call: str,
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+    ) -> int:
+        nnz = c_int64()
+        self._call(*self._chosen(call, family, idx), byref(nnz))
+        return nnz.value
+
+    def _terms(
+        self,
+        name: str,
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+        place: int,
+    ) -> tuple[list[int], list[int], list[float]]:
+        size = self._count(f"BIYOS_getn{name}", family, idx)
+        span = span_of(self, family, "idx", idx)
+        chosen = self._chosen(f"BIYOS_get{name}", family, idx)
+        found = [(c_int * size)(), (c_int * size)()]
+        values = (c_double * size)()
+        if span is None:
+            self._call(*chosen, size, None, *found, values)
+            return list(found[0]), list(found[1]), list(values)
+        starts = (c_int64 * (len(span) + 1))()
+        self._call(*chosen, size, starts, found[0], values)
+        pair = [_expanded(starts, span.start), list(found[0])]
+        return pair[place], pair[1 - place], list(values)
 
     def _getidx(
         self, function: Callable[..., int], name: Sequence[str]

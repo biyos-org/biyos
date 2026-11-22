@@ -120,8 +120,19 @@ def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
         _declare_pair(lib, f"BIYOS_{verb}cst", doubles)
     terms = (c_void_p, c_int32, ints, offsets, ints, doubles)
     _declare(lib, "BIYOS_addlinterms", c_int, *terms)
-    by_var = (c_void_p, c_int32, c_int32, c_int64, offsets, *sized)
-    _declare(lib, "BIYOS_getclintermrg", c_int, *by_var)
+    for name in ("rlinterm", "clinterm"):
+        _declare_terms(lib, name, ints, doubles)
+
+
+def _declare_terms(
+    lib: ctypes.CDLL, name: str, ints: type, doubles: type
+) -> None:
+    offsets = POINTER(c_int64)
+    _declare_pair(lib, f"BIYOS_getn{name}", offsets)
+    listed = (c_void_p, c_int32, ints, c_int64, offsets, ints, ints, doubles)
+    _declare(lib, f"BIYOS_get{name}sp", c_int, *listed)
+    ranged = (c_void_p, c_int32, c_int32, c_int64, offsets, ints, doubles)
+    _declare(lib, f"BIYOS_get{name}rg", c_int, *ranged)
 
 
 def _declare_quadratic(lib: ctypes.CDLL, ints: type, doubles: type) -> None:

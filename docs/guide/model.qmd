@@ -73,7 +73,7 @@ The terms of a function may come in any order, and biyos keeps them sorted by va
 
 `BIYOS_setcstsp` sets the constants of a list of functions, and `BIYOS_addcstsp` adds to them: a function listed twice in one call gains both entries, in order. Each constant stays finite, and a sum that would leave the finite range refuses the call, which then changes nothing. `BIYOS_getcstsp` reads the constants back, and each of the three has its range form, ending in `rg`.
 
-`BIYOS_addlinterms` adds linear terms to functions the model already holds, in the same compressed form with a list of functions in front: function `funidx[k]` gains the terms from `off[k]` to `off[k + 1] - 1`. A variable the function already holds adds its coefficient to the one held, so a function can be built in several calls, and a variable added late enters the functions of existing constraints in one call that lists them, each with one term. `BIYOS_getclintermrg` reads the linear terms the other way round: for each variable of a range, the functions that hold it, sorted by function, with their coefficients, sized as `BIYOS_getfuns` is (@sec-model-reading).
+`BIYOS_addlinterms` adds linear terms to functions the model already holds, in the same compressed form with a list of functions in front: function `funidx[k]` gains the terms from `off[k]` to `off[k + 1] - 1`. A variable the function already holds adds its coefficient to the one held, so a function can be built in several calls, and a variable added late enters the functions of existing constraints in one call that lists them, each with one term. `BIYOS_getrlintermsp` reads the linear terms of a list of functions as coordinates, the function, the variable and the coefficient of each term, and `BIYOS_getrlintermrg` those of a range in compressed form. `BIYOS_getclintermsp` and `BIYOS_getclintermrg` read them the other way round: for each variable, the functions that hold it, sorted by function, with their coefficients (@sec-model-reading).
 
 ## Quadratic terms {#sec-model-quadratic}
 
@@ -127,6 +127,8 @@ Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvarrg`, `BI
 ```
 
 Called with a size of 0 and null arrays, such a reader only reports `nnz`, so a caller can learn the size, allocate, and call again.
+
+The readers of linear terms have a count reader instead: `BIYOS_getnrlintermsp` gives the number of terms `BIYOS_getrlintermsp` writes for the same list, and `BIYOS_getnclintermrg` the number `BIYOS_getclintermrg` writes for the same range. Such a reader refuses arrays that hold fewer terms and then writes nothing, so a caller counts, allocates, and reads.
 
 A family reader reads a list or a range: `BIYOS_getvarsp` reads the variables a list names, in its order and as often as it names them, and `BIYOS_getvarrg` a range of them. Every setter of an attribute has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items, such as `{0, 4, 10, 12}`, is read in one call: `BIYOS_getvarbndsp` reads what `BIYOS_setvarbndsp` sets, and `BIYOS_getvarbndrg` what `BIYOS_setvarbndrg` sets. An item may appear in the list more than once, and a null output is skipped.
 

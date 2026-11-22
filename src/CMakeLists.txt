@@ -79,6 +79,7 @@ biyos_set_warnings(biyos_internal)
 
 add_library(biyos
     capi/arrays.cpp
+    capi/columns.cpp
     capi/constraints.cpp
     capi/env.cpp
     capi/events.cpp
@@ -90,6 +91,7 @@ add_library(biyos
     capi/objectives.cpp
     capi/options.cpp
     capi/quadratic.cpp
+    capi/rows.cpp
     capi/selection.cpp
     capi/version.cpp)
 add_library(biyos::biyos ALIAS biyos)

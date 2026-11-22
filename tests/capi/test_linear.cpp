@@ -123,28 +123,23 @@ Terms blank(std::size_t n, std::size_t nnz)
     };
 }
 
-std::int64_t read_with(const Model &model, int start, int size, Terms &read, std::int64_t capacity)
+BIYOS_status read_with(const Model &model, int start, int size, Terms &read, std::int64_t capacity)
 {
-    BIYOS_offset nnz = -1;
-    const BIYOS_status status = BIYOS_getclintermrg(model.get(),
-                                                    start,
-                                                    size,
-                                                    capacity,
-                                                    read.starts.data(),
-                                                    &nnz,
-                                                    read.indices.data(),
-                                                    read.values.data());
-    EXPECT_EQ(status, BIYOS_OK);
-    return nnz;
+    return BIYOS_getclintermrg(model.get(),
+                               start,
+                               size,
+                               capacity,
+                               read.starts.data(),
+                               read.indices.data(),
+                               read.values.data());
 }
 
 Terms read_variables(const Model &model, int start, int size)
 {
     BIYOS_offset nnz = -1;
-    BIYOS_model *held = model.get();
-    EXPECT_EQ(BIYOS_getclintermrg(held, start, size, 0, nullptr, &nnz, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnclintermrg(model.get(), start, size, &nnz), BIYOS_OK);
     Terms read = blank(static_cast<std::size_t>(size), static_cast<std::size_t>(nnz));
-    EXPECT_EQ(read_with(model, start, size, read, nnz), nnz);
+    EXPECT_EQ(read_with(model, start, size, read, nnz), BIYOS_OK);
     return read;
 }
 
@@ -186,7 +181,7 @@ void change(const BIYOS_event *, void *data)
     const BIYOS_index function = 0;
     BIYOS_offset nnz = 0;
     note(attempt, BIYOS_addlinterms(attempt.model, 1, &function, nullptr, nullptr, nullptr));
-    note(attempt, BIYOS_getclintermrg(attempt.model, 0, 1, 0, nullptr, &nnz, nullptr, nullptr));
+    note(attempt, BIYOS_getnclintermrg(attempt.model, 0, 1, &nnz));
 }
 
 using Engine = std::mt19937;
@@ -435,21 +430,12 @@ TEST(CApiTest, ColumnSizes)
     const Model model(env);
     add_sample(model);
     const std::vector<std::int64_t> starts{0, 2, 4, 5};
-    Terms none = blank(3, 2);
-    EXPECT_EQ(read_with(model, 0, 3, none, 0), 5);
-    Terms unread = blank(3, 2);
-    unread.starts = starts;
-    expect_terms(none, unread);
     Terms small = blank(3, 4);
-    EXPECT_EQ(read_with(model, 0, 3, small, 3), 5);
-    const Terms cut{
-        .starts = starts,
-        .indices = {0, 2, 0, kNoFunction},
-        .values = {1.0, 4.0, 0.0, kNoValue},
-    };
-    expect_terms(small, cut);
+    EXPECT_EQ(read_with(model, 0, 3, small, 4), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cap': holds 4 of the 5 terms");
+    expect_terms(small, blank(3, 4));
     Terms large = blank(3, 6);
-    EXPECT_EQ(read_with(model, 0, 3, large, 6), 5);
+    EXPECT_EQ(read_with(model, 0, 3, large, 6), BIYOS_OK);
     const Terms whole{
         .starts = starts,
         .indices = {0, 2, 0, 2, 0, kNoFunction},
@@ -466,7 +452,7 @@ TEST(CApiTest, ColumnRange)
     const Terms tail{.starts = {0, 2, 3}, .indices = {0, 2, 0}, .values = {0.0, 5.0, 3.0}};
     expect_terms(read_variables(model, 1, 2), tail);
     Terms none = blank(0, 0);
-    EXPECT_EQ(read_with(model, 3, 0, none, 0), 0);
+    EXPECT_EQ(read_with(model, 3, 0, none, 0), BIYOS_OK);
     EXPECT_EQ(none.starts, std::vector<std::int64_t>{0});
 }
 
@@ -476,22 +462,18 @@ TEST(CApiTest, ColumnNulls)
     const Model model(env);
     add_sample(model);
     Terms read = blank(3, 5);
-    BIYOS_offset nnz = -1;
     BIYOS_model *held = model.get();
     std::int64_t *starts = read.starts.data();
     int *functions = read.indices.data();
     double *values = read.values.data();
-    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, nullptr, &nnz, functions, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, starts, &nnz, nullptr, values), BIYOS_OK);
-    EXPECT_EQ(nnz, 5);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, nullptr, functions, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, starts, nullptr, values), BIYOS_OK);
     expect_terms(read, read_variables(model, 0, 3));
-    Terms kept = blank(3, 5);
-    starts = kept.starts.data();
-    functions = kept.indices.data();
-    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, starts, nullptr, functions, nullptr),
-              BIYOS_ERR_BADARG);
+    BIYOS_offset nnz = -1;
+    EXPECT_EQ(BIYOS_getnclintermrg(held, 0, 3, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
-    expect_terms(kept, blank(3, 5));
+    EXPECT_EQ(BIYOS_getnclintermrg(held, 0, 3, &nnz), BIYOS_OK);
+    EXPECT_EQ(nnz, 5);
 }
 
 TEST(CApiTest, ColumnRefused)
@@ -501,7 +483,7 @@ TEST(CApiTest, ColumnRefused)
     add_sample(model);
     const std::vector<std::pair<int, int>> ranges{{2, 2}, {-1, 1}, {0, -1}, {4, 0}, {0, 3}};
     const std::vector<std::int64_t> sizes{5, 5, 5, 5, -1};
-    const std::string size = "invalid argument: argument 'size': -1 is negative";
+    const std::string size = "invalid argument: argument 'cap': -1 is negative";
     const std::vector<std::string> messages{
         "invalid argument: variable 3: unknown",
         "invalid argument: variable -1: unknown",
@@ -512,19 +494,9 @@ TEST(CApiTest, ColumnRefused)
     for (std::size_t k = 0; k < ranges.size(); ++k)
     {
         Terms read = blank(3, 5);
-        BIYOS_offset nnz = -1;
         const auto [start, n] = ranges[k];
-        EXPECT_EQ(BIYOS_getclintermrg(model.get(),
-                                      start,
-                                      n,
-                                      sizes[k],
-                                      read.starts.data(),
-                                      &nnz,
-                                      read.indices.data(),
-                                      read.values.data()),
-                  BIYOS_ERR_BADARG);
+        EXPECT_EQ(read_with(model, start, n, read, sizes[k]), BIYOS_ERR_BADARG);
         EXPECT_EQ(env.message(), messages[k]);
-        EXPECT_EQ(nnz, -1);
         expect_terms(read, blank(3, 5));
     }
     Terms read = blank(3, 5);
@@ -532,11 +504,9 @@ TEST(CApiTest, ColumnRefused)
     std::int64_t *starts = read.starts.data();
     int *functions = read.indices.data();
     double *values = read.values.data();
-    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 5, -1, starts, nullptr, functions, values),
-              BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 5, -1, starts, functions, values), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 3: unknown");
-    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, -1, starts, nullptr, functions, values),
-              BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, -1, starts, functions, values), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), size);
     expect_terms(read, blank(3, 5));
 }

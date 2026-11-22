@@ -13,6 +13,7 @@ namespace biyos::capi
 {
 
 std::size_t length(std::int64_t n, std::string_view name = "n");
+void check_capacity(std::int64_t capacity, std::size_t needed);
 std::span<const Index> listed(int n, const int *indices, std::string_view name = "idx");
 std::vector<Offset> offsets(std::size_t n, const std::int64_t *starts);
 std::vector<LinearTerm> packed(std::size_t size, const int *variables, const double *values);
@@ -29,6 +30,20 @@ void unpack(std::span<const QuadraticTerm> terms,
             int *rows,
             int *columns,
             double *values);
+
+struct Coordinates
+{
+    int *functions;
+    int *variables;
+    double *values;
+};
+
+void put_term(const Coordinates &out, std::size_t k, Index function, const LinearTerm &term);
+
+template <typename T> std::span<T> given(T *array, std::size_t size)
+{
+    return array == nullptr ? std::span<T>() : std::span<T>(array, size);
+}
 
 template <typename Record>
 std::vector<Record> picked(const Model &model,

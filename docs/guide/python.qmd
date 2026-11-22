@@ -32,10 +32,12 @@ The readers return lists, in the order of the C call's arrays:
 | `getvar(idx)` | kinds, lower bounds, upper bounds |
 | `getfuns(pos, n)` | constants, offsets, variables, coefficients |
 | `getquadterm(pos, n)` | offsets, first and second variables, coefficients |
+| `getrlinterm(idx)` | functions, variables, coefficients |
+| `getclinterm(idx)` | functions, variables, coefficients |
 | `getcon(idx)` | functions, lower bounds, upper bounds |
 | `getobj(idx)` | functions, senses, priorities, weights |
 
-`idx` lists the items to read, or is a block or a range of them, and defaults to every item, so `model.getvar()` reads them all. `getfuns` and `getquadterm` take the first function `pos` and the count `n`, which default to 0 and to every function from `pos` on. The readers of terms size their arrays themselves.
+`idx` lists the items to read, or is a block or a range of them, and defaults to every item, so `model.getvar()` reads them all. `getfuns` and `getquadterm` take the first function `pos` and the count `n`, which default to 0 and to every function from `pos` on. The readers of terms size their arrays themselves. `getrlinterm` reads the linear terms of functions and `getclinterm` those of variables, each term as its function, its variable and its coefficient, and `getnrlinterm` and `getnclinterm` count them.
 
 A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobj` leaves out, as `addobj` does. `getcst(idx)` returns the constants of functions, which `setcst` sets and `addcst` adds to.
 

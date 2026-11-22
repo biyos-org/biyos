@@ -61,8 +61,16 @@ def terms(model):
     return model.getfuns()[1:]
 
 
-def read_lengths(handle, pos, n, size, starts, nnz, funs, values):
+def read_lengths(handle, pos, n, size, starts, funs, values):
     return [(starts, n + 1), (funs, size), (values, size)]
+
+
+def spread(found, first=0, place=1):
+    off, other, coef = found
+    counts = [off[j + 1] - off[j] for j in range(len(off) - 1)]
+    records = [first + j for j, n in enumerate(counts) for _ in range(n)]
+    pair = [records, other]
+    return pair[place], pair[1 - place], coef
 
 
 def recorded(seen, function, *arguments):
@@ -144,7 +152,8 @@ def test_views(env, model):
     model.addlinterms([f[0]], [0, 2], x, [3.0, 4.0])
     found = ([0.0, 0.0], [0, 2, 3], [3, 4, 0], [3.0, 5.0, 2.0])
     assert model.getfuns(f[0]) == found
-    assert model.getclinterm(x[1]) == ([0, 1], [3], [5.0])
+    assert model.getclinterm(x[1:]) == ([3], [4], [5.0])
+    assert model.getrlinterm([f[0]]) == ([3, 3], [3, 4], [3.0, 5.0])
     other = biyos.Model(env)
     y = other.addvar(1)
     g = other.addfuns(1)
@@ -153,12 +162,12 @@ def test_views(env, model):
         model.addlinterms([0], [0, 1], [y[0]], [1.0])
     with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addlinterms(g, [0, 1], [0], [1.0])
-    with pytest.raises(ValueError, match="pos is a variable of another"):
-        model.getclinterm(y[0])
+    with pytest.raises(ValueError, match="idx is a variable of another"):
+        model.getclinterm([y[0]])
     with pytest.raises(ValueError, match="is a function, not a variable"):
         model.addlinterms([0], [0, 1], [f[0]], [1.0])
-    with pytest.raises(ValueError, match="pos is a function, not a"):
-        model.getclinterm(f[0])
+    with pytest.raises(ValueError, match="idx is a function, not a"):
+        model.getclinterm([f[0]])
 
 
 def test_gone(model, monkeypatch):
@@ -168,7 +177,10 @@ def test_gone(model, monkeypatch):
     function, variable = f[0], x[0]
     model._gen += 1
     seen = []
-    for name in ("BIYOS_addlinterms", "BIYOS_getclintermrg"):
+    names = ["BIYOS_addlinterms"]
+    for form in ("sp", "rg"):
+        names += [f"BIYOS_getnclinterm{form}", f"BIYOS_getclinterm{form}"]
+    for name in names:
         spy = partial(recorded, seen, getattr(lib, name))
         monkeypatch.setattr(lib, name, spy)
     block = "the block predates a deletion"
@@ -179,7 +191,8 @@ def test_gone(model, monkeypatch):
         (block, partial(add, f, [0, 0], [], [])),
         (view, partial(add, [function], [0, 0], [], [])),
         (stale, partial(add, [0], [0, 1], [variable], [1.0])),
-        (stale, partial(model.getclinterm, variable)),
+        (stale, partial(model.getclinterm, [variable])),
+        (stale, partial(model.getnclinterm, [variable])),
     ]
     for message, call in cases:
         with pytest.raises(ValueError, match=message):
@@ -246,22 +259,40 @@ def test_numbers(model):
         model.addlinterms([0], [0, 1], [0.0], [1.0])
     with pytest.raises(TypeError, match="an entry of funidx must be an"):
         model.addlinterms([0.0], [0, 0], [], [])
-    with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
-        model.getclinterm(2**32)
+    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+        model.getclinterm(range(2**32, 2**32 + 1))
     assert terms(model) == SORTED
 
 
 def test_by_variable(model):
-    assert model.getclinterm() == HELD_VARS
+    assert model.getclinterm() == spread(HELD_VARS)
     model.addlinterms(FUNCTIONS, *ADDED)
-    assert model.getclinterm() == MERGED_VARS
+    assert model.getclinterm() == spread(MERGED_VARS)
+
+
+def test_by_function(model):
+    assert model.getrlinterm() == spread(SORTED, 0, 0)
+    assert model.getrlinterm([2, 0, 2]) == (
+        [2, 2, 0, 0, 0, 2, 2],
+        [0, 1, 0, 1, 2, 0, 1],
+        [4.0, 5.0, 1.0, 0.0, 3.0, 4.0, 5.0],
+    )
+    assert model.getrlinterm(range(1, 2)) == ([], [], [])
 
 
 def test_range(model):
     tail = ([0, 2, 3], [0, 2, 0], [0.0, 5.0, 3.0])
-    assert model.getclinterm(1, 2) == tail
-    assert model.getclinterm(2) == ([0, 1], [0], [3.0])
-    assert model.getclinterm(3) == ([0], [], [])
+    assert model.getclinterm(range(1, 3)) == spread(tail, 1)
+    assert model.getclinterm(range(2, 3)) == ([0], [2], [3.0])
+    assert model.getclinterm(range(3, 3)) == ([], [], [])
+
+
+def test_counts(model):
+    assert model.getnrlinterm() == 5
+    assert model.getnclinterm() == 5
+    assert model.getnrlinterm([2, 2, 1]) == 4
+    assert model.getnclinterm(range(1, 3)) == 3
+    assert model.getnclinterm([]) == 0
 
 
 def test_transpose(env):
@@ -278,35 +309,54 @@ def test_transpose(env):
                 model.addlinterms(funidx, *added)
             by_function = terms(model)
             whole = transposed(by_function, 0, n_vars)
-            assert model.getclinterm() == whole
+            assert model.getclinterm() == spread(whole)
+            assert model.getrlinterm() == spread(by_function, 0, 0)
             pos = draw.randint(0, n_vars)
             n = draw.randint(0, n_vars - pos)
-            assert model.getclinterm(pos, n) == transposed(by_function, pos, n)
+            part = transposed(by_function, pos, n)
+            assert model.getclinterm(range(pos, pos + n)) == spread(part, pos)
+            expect_lists(draw, model, "rlinterm", n_funs)
+            expect_lists(draw, model, "clinterm", n_vars)
+
+
+def expect_lists(draw, model, name, count):
+    size = draw.randint(0, 8) if count > 0 else 0
+    listed = [draw.randrange(count) for _ in range(size)]
+    read = getattr(model, f"get{name}")
+    found = read(listed)
+    wanted = ([], [], [])
+    for index in listed:
+        for column, more in zip(wanted, read(range(index, index + 1))):
+            column += more
+    assert found == wanted
+    assert getattr(model, f"getn{name}")(listed) == len(found[2])
 
 
 def test_growing(model):
     grow = partial(model.addvar, 2)
     expected = model.getclinterm()
-    assert model.getclinterm(0, Growing(3, grow)) == expected
-    assert model.getnvar() == 5
+    assert model.getclinterm([0, Growing(1, grow), 2]) == expected
+    assert model.getnvar() == 7
 
 
 def test_stale(model, monkeypatch):
     monkeypatch.setattr(model, "getnvar", lambda: 0)
     spy = Room(lib.BIYOS_getclintermrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getclintermrg", spy)
-    assert model.getclinterm(0, 3) == HELD_VARS
-    assert model.getclinterm(1) == ([0], [], [])
+    assert model.getclinterm(range(3)) == spread(HELD_VARS)
+    assert model.getclinterm() == ([], [], [])
 
 
 def test_outside(model, monkeypatch):
     limit(monkeypatch, _model, 1)
-    message = refusal(model.getclinterm, 0, 2**31 - 1)
+    message = refusal(model.getclinterm, range(2**31 - 1))
     assert message == "invalid argument: variable 3: unknown"
-    message = refusal(model.getclinterm, -1)
+    message = refusal(model.getclinterm, range(-1, 3))
     assert message == "invalid argument: variable -1: unknown"
-    message = refusal(model.getclinterm, 0, -1)
-    assert message == "invalid argument: argument 'n': -1 is negative"
+    message = refusal(model.getrlinterm, [0, 3])
+    assert message == "invalid argument: function 3: unknown"
+    message = refusal(model.getnrlinterm, range(4, 4))
+    assert message == "invalid argument: function 4: unknown"
 
 
 def test_locked(env, model):
@@ -317,12 +367,12 @@ def test_locked(env, model):
             model.addlinterms([0], [0, 1], [0], [1.0])
         except biyos.Error as error:
             seen.append(str(error))
-        seen.append(model.getclinterm(2))
+        seen.append(model.getclinterm([2]))
 
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [LOCKED, ([0, 1], [0], [3.0])]
+    assert seen == [LOCKED, ([0], [2], [3.0])]
     assert terms(model) == SORTED
 
 
@@ -332,6 +382,8 @@ def test_closed(env):
     calls = (
         partial(model.addlinterms, [], [0], [], []),
         model.getclinterm,
+        model.getrlinterm,
+        model.getnclinterm,
     )
     for call in calls:
         with pytest.raises(ValueError, match="the model is closed"):
@@ -344,5 +396,5 @@ def test_copy(model):
     assert terms(copy) == MERGED
     copy.addlinterms([1], [0, 1], [0], [1.0])
     assert terms(model) == MERGED
-    assert copy.getclinterm(0, 1) == ([0, 3], [0, 1, 2], [1.0, 1.0, 3.0])
+    assert copy.getclinterm([0]) == ([0, 1, 2], [0, 0, 0], [1.0, 1.0, 3.0])
     copy.close()

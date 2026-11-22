@@ -27,6 +27,32 @@ std::size_t length(std::int64_t n, std::string_view name)
     return static_cast<std::size_t>(n);
 }
 
+void check_capacity(std::int64_t capacity, std::size_t needed)
+{
+    if (length(capacity, "cap") < needed)
+    {
+        const std::string held = std::to_string(capacity);
+        const std::string reason = "holds " + held + " of the " + std::to_string(needed) + " terms";
+        throw biyos::Error(biyos::ErrorKind::InvalidArgument, "argument 'cap'", reason);
+    }
+}
+
+void put_term(const Coordinates &out, std::size_t k, Index function, const LinearTerm &term)
+{
+    if (out.functions != nullptr)
+    {
+        out.functions[k] = function;
+    }
+    if (out.variables != nullptr)
+    {
+        out.variables[k] = term.variable;
+    }
+    if (out.values != nullptr)
+    {
+        out.values[k] = term.coefficient;
+    }
+}
+
 std::span<const Index> listed(int n, const int *indices, std::string_view name)
 {
     const std::size_t size = length(n);

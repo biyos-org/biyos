@@ -547,7 +547,7 @@ param varidx out Receives the variable of each term, each function's sorted by v
 param coef out Receives the coefficient of each term; skipped when null.
 return `BIYOS_OK` once the arrays are written. Function `pos + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `cap`.
 error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
-see BIYOS_getnfun BIYOS_getclintermrg BIYOS_getquadtermrg
+see BIYOS_getnfun BIYOS_getrlintermsp BIYOS_getquadtermrg
 since 0.1.0
 
 function BIYOS_addcstsp BIYOS_addcstrg
@@ -601,23 +601,69 @@ error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model or is
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
 note A variable the function already holds adds its coefficient to the one held, so every call adds $a_j x_j$ to its functions and never replaces a term. A term whose coefficient is 0, given or summed, is kept.
 note A call that adds new terms moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call.
-see BIYOS_getclintermrg BIYOS_addfuns BIYOS_getfuns
+see BIYOS_getrlintermsp BIYOS_getclintermsp BIYOS_addfuns
 since 0.1.0
 
-function BIYOS_getclintermrg
+function BIYOS_getnrlintermsp BIYOS_getnrlintermrg
+summary Count the linear terms of functions.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of linear terms of the entries, a function counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getrlintermsp` and `BIYOS_getrlintermrg` need for the same entries.
+see BIYOS_getrlintermsp BIYOS_getnclintermsp
+since 0.1.0
+
+function BIYOS_getrlintermsp BIYOS_getrlintermrg
+summary Read the linear terms of functions, by function.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of terms the output arrays hold.
+param off out In the `rg` form, receives `n + 1` offsets from 0; skipped when null.
+param nnz out In the `sp` form, receives the number of terms written; skipped when null.
+param funidx out In the `sp` form, receives the function of each term; skipped when null.
+param varidx out Receives the variable of each term, each function's sorted by variable; skipped when null.
+param coef out Receives the coefficient of each term; skipped when null.
+return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of function `pos + j` from `off[j]`.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnrlintermsp` gives.
+note A refused call writes nothing.
+see BIYOS_getnrlintermsp BIYOS_getclintermsp BIYOS_getfuns
+since 0.1.0
+
+function BIYOS_getnclintermsp BIYOS_getnclintermrg
+summary Count the linear terms of variables.
+param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of linear terms of the entries, a variable counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getclintermsp` and `BIYOS_getclintermrg` need for the same entries.
+see BIYOS_getclintermsp BIYOS_getnrlintermsp
+since 0.1.0
+
+function BIYOS_getclintermsp BIYOS_getclintermrg
 summary Read the linear terms of variables, by variable.
 param mdl in The model.
-param pos in The first variable to read.
-param n in The number of variables to read.
-param cap in The number of terms `funidx` and `coef` hold.
-param off out Receives `n + 1` offsets from 0, whatever `cap` is; skipped when null.
-param nnz out Receives the number of linear terms of the variables, whether they fit or not.
+param pos in In the `rg` form, the first variable of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of terms the output arrays hold.
+param off out In the `rg` form, receives `n + 1` offsets from 0; skipped when null.
+param nnz out In the `sp` form, receives the number of terms written; skipped when null.
 param funidx out Receives the function of each term, each variable's sorted by function; skipped when null.
+param varidx out In the `sp` form, receives the variable of each term; skipped when null.
 param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written. Variable `pos + j` is whole in `funidx` and `coef` when `off[j + 1]` is at most `cap`.
-error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of variables, or `nnz` is null.
-note The terms are those `BIYOS_getfuns` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function.
-see BIYOS_getfuns BIYOS_addlinterms
+return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of variable `pos + j` from `off[j]`.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a variable, the range ends past the last variable, or `cap` is less than the number of terms `BIYOS_getnclintermsp` gives.
+note The terms are those `BIYOS_getrlintermsp` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function. A refused call writes nothing.
+see BIYOS_getnclintermsp BIYOS_getrlintermsp BIYOS_addlinterms
 since 0.1.0
 
 group quadratic Quadratic terms
