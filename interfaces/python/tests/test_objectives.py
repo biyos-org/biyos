@@ -39,7 +39,7 @@ def env():
 @pytest.fixture
 def model(env):
     with biyos.Model(env) as model:
-        model.addfuns(2)
+        model.addfun(2)
         yield model
 
 
@@ -113,7 +113,7 @@ def test_shared(model):
 
 
 def test_functions(model):
-    f = model.addfuns(3)
+    f = model.addfun(3)
     o = model.addobj(f, coef=[2.0] * 3)
     model.addobj(f[1:])
     model.addobj([f[0], 1])
@@ -124,7 +124,7 @@ def test_views(env, model):
     x = model.addvar(2)
     o = add_sample(model)
     other = biyos.Model(env)
-    g = other.addfuns(2)
+    g = other.addfun(2)
     p = other.addobj(g)
     entry = "an entry of funidx is a function of another model"
     with pytest.raises(ValueError, match=entry):
@@ -304,7 +304,7 @@ def test_listed_refusals(env, model):
     with pytest.raises(ValueError, match="of constraints, not objectives"):
         model.setobjtol(c, [0.0])
     other = biyos.Model(env)
-    other.addfuns(1)
+    other.addfun(1)
     p = other.addobj([0])
     with pytest.raises(ValueError, match="is an objective of another model"):
         model.setobjprio([p[0]], [1])
@@ -447,7 +447,7 @@ def test_on(env, model):
     assert copy.getobj()[1] == [MAX, MAX, MAX]
     assert model.getobj() == SAMPLE
     smaller = biyos.Model(env)
-    smaller.addfuns(1)
+    smaller.addfun(1)
     smaller.addobj([0, 0])
     few = "mdl holds too few objectives: 2, the block needs 3"
     with pytest.raises(ValueError, match=few):

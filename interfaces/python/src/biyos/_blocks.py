@@ -246,7 +246,7 @@ class Function(View):
 
 
 class Functions(Block[Function]):
-    """Consecutive functions of a model, as ``Model.addfuns`` returns.
+    """Consecutive functions of a model, as ``Model.addfun`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each

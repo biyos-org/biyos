@@ -31,7 +31,7 @@ def model(env):
 
 def add_items(model, count):
     model.addvar(count)
-    model.addfuns(count)
+    model.addfun(count)
     model.addcon([0] * count)
     model.addobj([0] * count)
 
@@ -90,7 +90,7 @@ def test_shared(model):
 def test_views(env, model):
     x = model.addvar(2)
     c = model.addcon([0])
-    f = model.addfuns(1)
+    f = model.addfun(1)
     o = model.addobj([0])
     model.setvarname(x, ["a", "b"])
     model.setconname([c[0]], ["c"])

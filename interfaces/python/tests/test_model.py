@@ -601,7 +601,7 @@ def test_listed_refusals(env, model):
         model.getvarbnd([y[0]])
     with pytest.raises(ValueError, match="idx is a block of another"):
         model.getvarknd(y)
-    f = model.addfuns(1)
+    f = model.addfun(1)
     with pytest.raises(ValueError, match="is a function, not a variable"):
         model.getvarbnd([f[0]])
     with pytest.raises(TypeError, match="an entry of idx must be an int"):

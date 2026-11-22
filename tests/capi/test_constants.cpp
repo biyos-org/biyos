@@ -118,7 +118,7 @@ TEST(ConstantTest, LastWins)
 {
     const Env env;
     const Model model(env);
-    ASSERT_EQ(BIYOS_addfuns(model.get(), 2, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(model.get(), 2, nullptr), BIYOS_OK);
     ASSERT_EQ(set(model, {.functions = {0, 1, 0}, .values = {1.0, 2.0, 3.0}}), BIYOS_OK);
     EXPECT_EQ(bits(constants_of(model)), bits({3.0, 2.0}));
     ASSERT_EQ(add(model, {.functions = {1, 1}, .values = {0.5, 0.25}}), BIYOS_OK);
@@ -130,8 +130,8 @@ TEST(ConstantTest, Refusals)
     const Env env;
     const Model model(env);
     const std::vector<double> held{kLargest, -1.0};
-    ASSERT_EQ(BIYOS_addfuns(model.get(), 2, held.data(), nullptr, nullptr, nullptr, nullptr),
-              BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(model.get(), 2, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcstrg(model.get(), 0, 2, held.data()), BIYOS_OK);
     const double nan = std::numeric_limits<double>::quiet_NaN();
     expect_refused(env, model, {.functions = {1, 0}, .values = {1.0, nan}});
     EXPECT_EQ(env.message(), "invalid argument: function 0: constant is NaN");
@@ -149,8 +149,8 @@ TEST(ConstantTest, NullValues)
     const Env env;
     const Model model(env);
     const std::vector<double> held{1.5, -1.0};
-    ASSERT_EQ(BIYOS_addfuns(model.get(), 2, held.data(), nullptr, nullptr, nullptr, nullptr),
-              BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(model.get(), 2, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcstrg(model.get(), 0, 2, held.data()), BIYOS_OK);
     const std::array<BIYOS_index, 2> listed{1, 0};
     EXPECT_EQ(BIYOS_addcstsp(model.get(), 2, listed.data(), nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_setcstrg(model.get(), 0, 2, nullptr), BIYOS_OK);

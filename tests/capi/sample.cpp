@@ -4,10 +4,8 @@
 
 #include <gtest/gtest.h>
 
-#include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <numeric>
 #include <string>
 #include <vector>
 
@@ -70,13 +68,15 @@ void add_functions(BIYOS_model *model, Engine &engine, int n, int n_variables)
         constants.push_back(small(engine));
         add_row(engine, n_variables, terms);
     }
-    const BIYOS_status status = BIYOS_addfuns(model,
-                                              n,
-                                              constants.data(),
-                                              terms.starts.data(),
-                                              terms.columns.data(),
-                                              terms.values.data(),
-                                              nullptr);
+    BIYOS_index start = -1;
+    ASSERT_EQ(BIYOS_addfun(model, n, &start), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcstrg(model, start, n, constants.data()), BIYOS_OK);
+    const BIYOS_status status = BIYOS_addrlintermrg(model,
+                                                    start,
+                                                    n,
+                                                    terms.starts.data(),
+                                                    terms.columns.data(),
+                                                    terms.values.data());
     ASSERT_EQ(status, BIYOS_OK);
 }
 
@@ -100,19 +100,17 @@ void add_pairs(Engine &engine, int n_variables, Terms &terms)
 void add_squares(BIYOS_model *model, Engine &engine, int n_functions, int n_variables)
 {
     Terms terms;
-    std::vector<BIYOS_index> functions(static_cast<std::size_t>(n_functions));
-    std::iota(functions.begin(), functions.end(), 0);
     for (int k = 0; k < n_functions; ++k)
     {
         add_pairs(engine, n_variables, terms);
     }
-    const BIYOS_status status = BIYOS_addquadterms(model,
-                                                   n_functions,
-                                                   functions.data(),
-                                                   terms.starts.data(),
-                                                   terms.rows.data(),
-                                                   terms.columns.data(),
-                                                   terms.values.data());
+    const BIYOS_status status = BIYOS_addquadtermrg(model,
+                                                    0,
+                                                    n_functions,
+                                                    terms.starts.data(),
+                                                    terms.rows.data(),
+                                                    terms.columns.data(),
+                                                    terms.values.data());
     ASSERT_EQ(status, BIYOS_OK);
 }
 

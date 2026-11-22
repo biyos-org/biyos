@@ -33,7 +33,7 @@ const Records kSample{
 
 void add_functions(const Model &model, int n)
 {
-    ASSERT_EQ(BIYOS_addfuns(model.get(), n, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(model.get(), n, nullptr), BIYOS_OK);
 }
 
 void add_sample(const Model &model)

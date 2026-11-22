@@ -30,7 +30,7 @@ def env():
 @pytest.fixture
 def model(env):
     with biyos.Model(env) as model:
-        model.addfuns(2)
+        model.addfun(2)
         yield model
 
 
@@ -91,7 +91,7 @@ def test_shared(model):
 
 
 def test_functions(model):
-    f = model.addfuns(3)
+    f = model.addfun(3)
     c = model.addcon(f, [0.0] * 3)
     model.addcon(f[1:])
     model.addcon([f[0], 1])
@@ -102,7 +102,7 @@ def test_views(env, model):
     x = model.addvar(2)
     c = add_sample(model)
     other = biyos.Model(env)
-    g = other.addfuns(2)
+    g = other.addfun(2)
     d = other.addcon(g)
     entry = "an entry of funidx is a function of another model"
     with pytest.raises(ValueError, match=entry):
@@ -119,7 +119,7 @@ def test_views(env, model):
         model.setconbnd(d, [0.0, 0.0])
     with pytest.raises(ValueError, match="idx is a block of another model"):
         model.getcon(d)
-    f = model.addfuns(1)
+    f = model.addfun(1)
     with pytest.raises(ValueError, match="is a function, not a constraint"):
         model.setconbnd([f[0]], [0.0])
     with pytest.raises(ValueError, match="of functions, not constraints"):
@@ -207,12 +207,12 @@ def test_listed(env, model):
     message = refusal(model.getconbnd, [-1])
     assert message == "invalid argument: constraint -1: unknown"
     other = biyos.Model(env)
-    other.addfuns(1)
+    other.addfun(1)
     d = other.addcon([0])
     with pytest.raises(ValueError, match="is a constraint of another model"):
         model.getconbnd([d[0]])
     with pytest.raises(ValueError, match="of functions, not constraints"):
-        model.getconbnd(model.addfuns(1))
+        model.getconbnd(model.addfun(1))
     other.close()
 
 
@@ -302,7 +302,7 @@ def test_on(env, model):
     assert copy.getcon()[1] == [-1.0, 0.0, 0.0]
     assert model.getcon() == SAMPLE
     smaller = biyos.Model(env)
-    smaller.addfuns(1)
+    smaller.addfun(1)
     smaller.addcon([0, 0])
     few = "mdl holds too few constraints: 2, the block needs 3"
     with pytest.raises(ValueError, match=few):

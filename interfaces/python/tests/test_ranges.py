@@ -47,7 +47,7 @@ def blocks(env):
     with biyos.Model(env) as model:
         found = {
             "var": model.addvar(4),
-            "fun": model.addfuns(4),
+            "fun": model.addfun(4),
             "con": model.addcon([0] * 4),
             "obj": model.addobj([0] * 4),
         }

@@ -45,9 +45,11 @@ def add_sample(model):
         VariableKind.INTEGER,
     ]
     model.addvar(3, kinds, [-0.0, 0.0, -INFINITY], [2.5, 1.0, 3.0])
-    model.addfuns(2, [1.5, 0.1], [0, 2, 3], [2, 0, 1], [-1.0, 2.0, 0.1])
-    pairs = ([0, 1, 3], [2, 0, 1], [2, 1, 1], [0.5, -1.0, 3.0])
-    model.addquadterms([1, 0], *pairs)
+    f = model.addfun(2)
+    model.setcst(f, [1.5, 0.1])
+    model.addlinterm([0, 0, 1], [2, 0, 1], [-1.0, 2.0, 0.1])
+    pairs = ([1, 0, 0], [2, 0, 1], [2, 1, 1], [0.5, -1.0, 3.0])
+    model.addquadterm(*pairs)
     model.addcon([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, INFINITY, 3.0])
     senses = [Sense.MAXIMIZE, Sense.MINIMIZE]
     tolerances = ([0.25, 0.0], [0.0, INFINITY])
@@ -58,7 +60,8 @@ def add_sample(model):
 def read(model):
     found = (
         model.getvar(),
-        model.getfuns(),
+        model.getcst(range(model.getnfun())),
+        model.getrlinterm(),
         model.getquadterm(),
         model.getcon(),
         model.getobj(),
@@ -120,11 +123,11 @@ def test_apart(place, model):
     copy.addvar(1)
     copy.setvarbnd([0], [1.0])
     copy.addcon([1])
-    copy.addquadterms([0], [0, 1], [0], [0], [1.0])
+    copy.addquadterm([0], [0], [0], [1.0])
     copy.setobjsense([1], [Sense.MAXIMIZE])
     assert read(model) == before
     assert copy.getnvar() == 4
-    model.addfuns(1)
+    model.addfun(1)
     assert copy.getnfun() == 2
     copy.close()
 
