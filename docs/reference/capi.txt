@@ -547,7 +547,7 @@ param varidx out Receives the variable of each term, each function's sorted by v
 param coef out Receives the coefficient of each term; skipped when null.
 return `BIYOS_OK` once the arrays are written. Function `pos + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `cap`.
 error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
-see BIYOS_getnfun BIYOS_getrlintermsp BIYOS_getquadtermrg
+see BIYOS_getnfun BIYOS_getrlintermsp BIYOS_getquadtermsp
 since 0.1.0
 
 function BIYOS_addcstsp BIYOS_addcstrg
@@ -726,23 +726,39 @@ return `BIYOS_OK` once the terms are added.
 error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model or is listed twice, `off` does not begin at 0 or decreases, a variable is not one of the model, a pair appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more quadratic terms than any allocation can hold.
 note A call that adds new pairs moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call, or those of a function right after it is added.
-see BIYOS_getquadtermrg BIYOS_addfuns
+see BIYOS_getquadtermsp BIYOS_addfuns
 since 0.1.0
 
-function BIYOS_getquadtermrg
+function BIYOS_getnquadtermsp BIYOS_getnquadtermrg
+summary Count the quadratic terms of functions.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of quadratic terms of the entries, a function counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getquadtermsp` and `BIYOS_getquadtermrg` need for the same entries.
+see BIYOS_getquadtermsp BIYOS_getnrlintermsp
+since 0.1.0
+
+function BIYOS_getquadtermsp BIYOS_getquadtermrg
 summary Read the quadratic terms of functions.
 param mdl in The model.
-param pos in The first function to read.
-param n in The number of functions to read.
-param cap in The number of terms `varidx1`, `varidx2` and `coef` hold.
-param off out Receives `n + 1` offsets from 0, whatever `cap` is; skipped when null.
-param nnz out Receives the number of quadratic terms of the functions, whether they fit or not.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of terms the output arrays hold.
+param off out In the `rg` form, receives `n + 1` offsets from 0; skipped when null.
+param nnz out In the `sp` form, receives the number of terms written; skipped when null.
+param funidx out In the `sp` form, receives the function of each term; skipped when null.
 param varidx1 out Receives the first variable of each pair; skipped when null.
 param varidx2 out Receives the second variable of each pair, never below the first; skipped when null.
 param coef out Receives the coefficient of each pair; skipped when null.
-return `BIYOS_OK` once the arrays are written, each function's pairs sorted.
-error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
-see BIYOS_addquadterms BIYOS_getfuns
+return `BIYOS_OK` once the arrays are written, each function's pairs sorted: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of function `pos + j` from `off[j]`.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnquadtermsp` gives.
+note A refused call writes nothing.
+see BIYOS_getnquadtermsp BIYOS_addquadterms BIYOS_getfuns
 since 0.1.0
 
 group constraints Constraints

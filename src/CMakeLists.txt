@@ -90,6 +90,7 @@ add_library(biyos
     capi/names.cpp
     capi/objectives.cpp
     capi/options.cpp
+    capi/pairs.cpp
     capi/quadratic.cpp
     capi/rows.cpp
     capi/selection.cpp

@@ -137,15 +137,20 @@ static BIYOS_status use_quadratic(BIYOS_model *model)
     const double values[2] = {2.0, 1.0};
     int64_t offsets[3] = {-1, -1, -1};
     BIYOS_offset needed = -1;
+    int owners[2] = {-1, -1};
     int held[2] = {-1, -1};
     int paired[2] = {-1, -1};
     BIYOS_status status = BIYOS_addquadterms(model, 1, functions, starts, firsts, seconds, values);
     if (status == BIYOS_OK)
     {
-        status = BIYOS_getquadtermrg(model, 0, 2, 2, offsets, &needed, held, paired, NULL);
+        status = BIYOS_getquadtermrg(model, 0, 2, 2, offsets, held, paired, NULL);
+    }
+    if (status == BIYOS_OK)
+    {
+        status = BIYOS_getquadtermsp(model, 1, functions, 2, &needed, owners, NULL, NULL, NULL);
     }
     if (status != BIYOS_OK || needed != 2 || offsets[1] != 0 || offsets[2] != 2 || held[1] != 0 ||
-        paired[1] != 1)
+        paired[1] != 1 || owners[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -341,7 +346,10 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getnclintermsp(model, 0, NULL, &needed) != BIYOS_OK ||
         BIYOS_getclintermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getclintermrg(model, 0, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getquadtermrg(model, 0, 0, 0, NULL, &needed, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getnquadtermsp(model, 0, NULL, &needed) != BIYOS_OK ||
+        BIYOS_getnquadtermrg(model, 0, 0, &needed) != BIYOS_OK ||
+        BIYOS_getquadtermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getquadtermrg(model, 0, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getncon(model, &count) != BIYOS_OK ||
         BIYOS_getconrg(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getconbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||

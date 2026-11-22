@@ -732,7 +732,8 @@ class Model:
         BIYOS_getrlintermrg
         """
         every = range(self.getnfun()) if idx is None else idx
-        return self._terms("rlinterm", Functions, every, 0)
+        found, values = self._terms("rlinterm", Functions, every, 0)
+        return found[0], found[1], values
 
     def getnclinterm(
         self, idx: Sequence[int | Variable] | Variables | None = None
@@ -785,7 +786,8 @@ class Model:
         BIYOS_getclintermrg
         """
         every = range(self.getnvar()) if idx is None else idx
-        return self._terms("clinterm", Variables, every, 1)
+        found, values = self._terms("clinterm", Variables, every, 1)
+        return found[0], found[1], values
 
     def addquadterms(
         self,
@@ -832,26 +834,49 @@ class Model:
         )
         self._call(lib.BIYOS_addquadterms, count, *arrays)
 
+    def getnquadterm(
+        self, idx: Sequence[int | Function] | Functions | None = None
+    ) -> int:
+        """Count the quadratic terms of functions.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
+
+        Returns
+        -------
+        nnz
+            The number of quadratic terms they hold, a function counted each
+            time it appears.
+
+        See Also
+        --------
+        BIYOS_getnquadtermsp
+        BIYOS_getnquadtermrg
+        """
+        every = range(self.getnfun()) if idx is None else idx
+        return self._count("BIYOS_getnquadterm", Functions, every)
+
     def getquadterm(
-        self, pos: int | Function = 0, n: int | None = None
+        self, idx: Sequence[int | Function] | Functions | None = None
     ) -> tuple[list[int], list[int], list[int], list[float]]:
         """Read the quadratic terms of functions.
 
         Parameters
         ----------
-        pos
-            The first function to read.
-        n
-            The number of functions to read, every one from ``pos`` on by
-            default.
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
 
         Returns
         -------
-        off
-            The ``n + 1`` offsets of the functions' terms in the three lists
-            after it, from 0.
+        funidx
+            The function of each term, the terms of ``idx[0]`` first.
         varidx1
-            The first variable of each term.
+            The first variable of each term, never above the second, each
+            function's terms sorted by pair.
         varidx2
             The second variable of each term.
         coef
@@ -859,25 +884,13 @@ class Model:
 
         See Also
         --------
+        BIYOS_getquadtermsp
         BIYOS_getquadtermrg
         """
-        pos = index_of(self, Functions, "pos", pos)
-        n, inside = _span(pos, n, self.getnfun)
-        needed = c_int64()
-        if not inside:
-            empty = (0, None, byref(needed), None, None, None)
-            self._call(lib.BIYOS_getquadtermrg, pos, n, *empty)
-        starts = (c_int64 * (n + 1))()
-        learn = (0, starts, byref(needed), None, None, None)
-        self._call(lib.BIYOS_getquadtermrg, pos, n, *learn)
-        size = needed.value
-        firsts = (c_int * size)()
-        seconds = (c_int * size)()
-        values = (c_double * size)()
-        fill = (size, None, byref(needed), firsts, seconds, values)
-        self._call(lib.BIYOS_getquadtermrg, pos, n, *fill)
-        terms = (list(firsts), list(seconds), list(values))
-        return (list(starts), *terms)
+        every = range(self.getnfun()) if idx is None else idx
+        found, values = self._terms("quadterm", Functions, every, 0, 3)
+        functions, firsts, seconds = found
+        return functions, firsts, seconds, values
 
     def addcon(
         self,
@@ -1831,19 +1844,22 @@ class Model:
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
         place: int,
-    ) -> tuple[list[int], list[int], list[float]]:
+        width: int = 2,
+    ) -> tuple[list[list[int]], list[float]]:
         size = self._count(f"BIYOS_getn{name}", family, idx)
         span = span_of(self, family, "idx", idx)
         chosen = self._chosen(f"BIYOS_get{name}", family, idx)
-        found = [(c_int * size)(), (c_int * size)()]
+        found = [(c_int * size)() for _ in range(width)]
         values = (c_double * size)()
         if span is None:
             self._call(*chosen, size, None, *found, values)
-            return list(found[0]), list(found[1]), list(values)
+            return [list(column) for column in found], list(values)
         starts = (c_int64 * (len(span) + 1))()
-        self._call(*chosen, size, starts, found[0], values)
-        pair = [_expanded(starts, span.start), list(found[0])]
-        return pair[place], pair[1 - place], list(values)
+        others = found[:place] + found[place + 1 :]
+        self._call(*chosen, size, starts, *others, values)
+        columns = [list(column) for column in found]
+        columns[place] = _expanded(starts, span.start)
+        return columns, list(values)
 
     def _getidx(
         self, function: Callable[..., int], name: Sequence[str]

@@ -130,23 +130,22 @@ def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
 
 
 def _declare_terms(
-    lib: ctypes.CDLL, name: str, ints: type, doubles: type
+    lib: ctypes.CDLL, name: str, ints: type, doubles: type, others: int = 1
 ) -> None:
     offsets = POINTER(c_int64)
     _declare_pair(lib, f"BIYOS_getn{name}", offsets)
-    listed = (c_void_p, c_int32, ints, c_int64, offsets, ints, ints, doubles)
+    values = (*[ints] * others, doubles)
+    listed = (c_void_p, c_int32, ints, c_int64, offsets, ints, *values)
     _declare(lib, f"BIYOS_get{name}sp", c_int, *listed)
-    ranged = (c_void_p, c_int32, c_int32, c_int64, offsets, ints, doubles)
-    _declare(lib, f"BIYOS_get{name}rg", c_int, *ranged)
+    ranged = (c_void_p, c_int32, c_int32, c_int64, offsets)
+    _declare(lib, f"BIYOS_get{name}rg", c_int, *ranged, *values)
 
 
 def _declare_quadratic(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     offsets = POINTER(c_int64)
     add = (c_void_p, c_int32, ints, offsets, ints, ints, doubles)
     _declare(lib, "BIYOS_addquadterms", c_int, *add)
-    sized = (offsets, ints, ints, doubles)
-    read = (c_void_p, c_int32, c_int32, c_int64, offsets, *sized)
-    _declare(lib, "BIYOS_getquadtermrg", c_int, *read)
+    _declare_terms(lib, "quadterm", ints, doubles, 2)
 
 
 def _declare_constraints(lib: ctypes.CDLL, ints: type, doubles: type) -> None:

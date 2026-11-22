@@ -82,7 +82,7 @@ Functions are added with no quadratic terms. `BIYOS_addquadterms` adds them to f
 ```{.c file="examples/c/model.c" item="squares"}
 ```
 
-A coefficient is taken as written, with no factor $\tfrac12$: $x_0^2$ is the pair $(0, 0)$ with the coefficient 1, and $x_0 x_1$ the pair $(0, 1)$ with the coefficient 1. A pair may be given in either order and is kept as $(i, j)$ with $i \le j$. A pair the function already holds adds its coefficient to the one held, so every call adds $q_{ij} x_i x_j$ to its functions and never replaces a term.
+A coefficient is taken as written, with no factor $\tfrac12$: $x_0^2$ is the pair $(0, 0)$ with the coefficient 1, and $x_0 x_1$ the pair $(0, 1)$ with the coefficient 1. A pair may be given in either order and is kept as $(i, j)$ with $i \le j$. A pair the function already holds adds its coefficient to the one held, so every call adds $q_{ij} x_i x_j$ to its functions and never replaces a term. `BIYOS_getquadtermsp` reads the quadratic terms of a list of functions as coordinates, the function, the two variables and the coefficient of each term, and `BIYOS_getquadtermrg` those of a range in compressed form.
 
 A call that adds new pairs moves the terms of every function from the lowest one it touches, so add the quadratic terms of many functions in one call, or those of a function right after the function itself.
 
@@ -121,14 +121,12 @@ biyos stores and checks the objectives but solves nothing yet. The stages above 
 
 ## Reading a model back {#sec-model-reading}
 
-Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvarrg`, `BIYOS_getnfun` and `BIYOS_getfuns`, and so on. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the items to read and fills the arrays it is given; a null array is skipped. Terms come back in compressed form, and since the caller cannot know their number in advance, the readers of terms take the size of the arrays and write the number of terms to `nnz`, whether they fit or not:
+Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvarrg`, `BIYOS_getnfun` and `BIYOS_getfuns`, and so on. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the items to read and fills the arrays it is given; a null array is skipped. Since the caller cannot know the number of terms in advance, each reader of terms has a count reader: `BIYOS_getnquadtermrg` gives the number of terms `BIYOS_getquadtermrg` writes for the same range, `BIYOS_getnrlintermsp` the number `BIYOS_getrlintermsp` writes for the same list, and so on. A reader of terms refuses arrays that hold fewer and then writes nothing, so a caller counts, allocates, and reads:
 
 ```{.c file="examples/c/model.c" item="read_squares"}
 ```
 
-Called with a size of 0 and null arrays, such a reader only reports `nnz`, so a caller can learn the size, allocate, and call again.
-
-The readers of linear terms have a count reader instead: `BIYOS_getnrlintermsp` gives the number of terms `BIYOS_getrlintermsp` writes for the same list, and `BIYOS_getnclintermrg` the number `BIYOS_getclintermrg` writes for the same range. Such a reader refuses arrays that hold fewer terms and then writes nothing, so a caller counts, allocates, and reads.
+`BIYOS_getfuns` instead takes the size of its arrays and writes the number of terms to `nnz`, whether they fit or not. Called with a size of 0 and null arrays, it only reports `nnz`, so a caller can learn the size, allocate, and call again.
 
 A family reader reads a list or a range: `BIYOS_getvarsp` reads the variables a list names, in its order and as often as it names them, and `BIYOS_getvarrg` a range of them. Every setter of an attribute has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items, such as `{0, 4, 10, 12}`, is read in one call: `BIYOS_getvarbndsp` reads what `BIYOS_setvarbndsp` sets, and `BIYOS_getvarbndrg` what `BIYOS_setvarbndrg` sets. An item may appear in the list more than once, and a null output is skipped.
 
