@@ -44,7 +44,7 @@ def model(env):
 
 
 def add_sample(model):
-    o = model.addobjs(*SAMPLE)
+    o = model.addobj(*SAMPLE)
     model.setobjtol(o, *TOLERANCES)
     return o
 
@@ -60,8 +60,8 @@ def recorded(seen, function, *arguments):
 
 def test_add(model):
     added = add_sample(model)
-    assert model.getnobjs() == 3
-    found = model.getobjs()
+    assert model.getnobj() == 3
+    found = model.getobj()
     assert found == SAMPLE
     assert model.getobjtol(added) == TOLERANCES
     assert all(type(sense) is Sense for sense in found[1])
@@ -70,30 +70,30 @@ def test_add(model):
 
 
 def test_block(model):
-    model.addobjs([0, 0])
-    o = model.addobjs([1, 1, 1])
+    model.addobj([0, 0])
+    o = model.addobj([1, 1, 1])
     assert len(o) == 3
     assert all(type(objective) is biyos.Objective for objective in o)
     assert type(o[1:]) is biyos.Objectives
     assert [index(objective) for objective in o[1:]] == [3, 4]
-    assert len(model.addobjs([])) == 0
+    assert len(model.addobj([])) == 0
 
 
 def test_range(model):
     add_sample(model)
     tail = tuple(values[1:] for values in SAMPLE)
-    assert model.getobjs(1, 2) == tail
-    assert model.getobjs(1) == tail
-    assert model.getobjs(3) == NONE
+    assert model.getobj(1, 2) == tail
+    assert model.getobj(1) == tail
+    assert model.getobj(3) == NONE
 
 
 def test_defaults(model):
-    model.addobjs([0, 1])
-    model.addobjs([1], prio=[-7])
-    model.addobjs([0], sense=[MAX], coef=[2.0])
-    model.addobjs([1])
-    model.addobjs([0])
-    functions, senses, priorities, weights = model.getobjs()
+    model.addobj([0, 1])
+    model.addobj([1], prio=[-7])
+    model.addobj([0], sense=[MAX], coef=[2.0])
+    model.addobj([1])
+    model.addobj([0])
+    functions, senses, priorities, weights = model.getobj()
     assert functions == [0, 1, 1, 0, 1, 0]
     assert senses == [MIN, MIN, MIN, MAX, MIN, MIN]
     assert priorities == [0, 1, -7, 3, 4, 5]
@@ -102,58 +102,58 @@ def test_defaults(model):
 
 
 def test_shared(model):
-    model.addcons([1], [0.0], [1.0])
-    model.addobjs([1, 1], [MIN, MAX])
-    model.addobjs([1], coef=[2.0])
-    functions, senses, priorities, weights = model.getobjs()
+    model.addcon([1], [0.0], [1.0])
+    model.addobj([1, 1], [MIN, MAX])
+    model.addobj([1], coef=[2.0])
+    functions, senses, priorities, weights = model.getobj()
     assert (functions, senses) == ([1, 1, 1], [MIN, MAX, MIN])
     assert (priorities, weights) == ([0, 1, 2], [1.0, 1.0, 2.0])
-    assert model.getcons() == ([1], [0.0], [1.0])
-    assert model.getnfuns() == 2
+    assert model.getcon() == ([1], [0.0], [1.0])
+    assert model.getnfun() == 2
 
 
 def test_functions(model):
     f = model.addfuns(3)
-    o = model.addobjs(f, coef=[2.0] * 3)
-    model.addobjs(f[1:])
-    model.addobjs([f[0], 1])
-    assert model.getobjs(o[0])[0] == [2, 3, 4, 3, 4, 2, 1]
+    o = model.addobj(f, coef=[2.0] * 3)
+    model.addobj(f[1:])
+    model.addobj([f[0], 1])
+    assert model.getobj(o[0])[0] == [2, 3, 4, 3, 4, 2, 1]
 
 
 def test_views(env, model):
-    x = model.addvars(2)
+    x = model.addvar(2)
     o = add_sample(model)
     other = biyos.Model(env)
     g = other.addfuns(2)
-    p = other.addobjs(g)
+    p = other.addobj(g)
     entry = "an entry of funidx is a function of another model"
     with pytest.raises(ValueError, match=entry):
-        model.addobjs([0, g[1]])
+        model.addobj([0, g[1]])
     with pytest.raises(ValueError, match="funidx is a block of another"):
-        model.addobjs(g)
+        model.addobj(g)
     with pytest.raises(ValueError, match="is a variable, not a function"):
-        model.addobjs([x[0]])
+        model.addobj([x[0]])
     with pytest.raises(ValueError, match="of variables, not functions"):
-        model.addobjs(x)
+        model.addobj(x)
     with pytest.raises(ValueError, match="is an objective of another model"):
         model.setobjsense([p[0]], [MAX])
     with pytest.raises(ValueError, match="is a block of another model"):
         model.setobjsense(p, [MAX, MAX])
     with pytest.raises(ValueError, match="pos is an objective of another"):
-        model.getobjs(p[0])
-    c = model.addcons([0])
+        model.getobj(p[0])
+    c = model.addcon([0])
     with pytest.raises(ValueError, match="is a constraint, not an objective"):
         model.setobjsense([c[0]], [MAX])
     with pytest.raises(ValueError, match="of constraints, not objectives"):
         model.setobjsense(c, [MAX])
     with pytest.raises(ValueError, match="is an objective, not a function"):
-        model.addcons([o[0]])
+        model.addcon([o[0]])
     model.setobjsense([o[2]], [MAX])
     model.setobjprio([o[2]], [5])
     model.setobjcoef(o[:2], [7.0, 8.0])
-    found = model.getobjs(o[1])
+    found = model.getobj(o[1])
     assert found[1:4] == ([MIN, MAX], [-1, 5], [8.0, 3.0])
-    assert model.getnobjs() == 3
+    assert model.getnobj() == 3
 
 
 def test_gone(model):
@@ -166,7 +166,7 @@ def test_gone(model):
         model.setobjsense([view], [MIN])
     with pytest.raises(ValueError, match="the block predates a deletion"):
         model.setobjsense(o, [MIN] * 3)
-    assert model.getobjs() == SAMPLE
+    assert model.getobj() == SAMPLE
 
 
 def test_values(model, monkeypatch):
@@ -177,47 +177,47 @@ def test_values(model, monkeypatch):
     for name in ("BIYOS_addobj", "BIYOS_setobjtolsp"):
         spy = partial(recorded, seen, getattr(lib, name))
         monkeypatch.setattr(lib, name, spy)
-    o = model.addobjs([0, 1], None, None, weights)
+    o = model.addobj([0, 1], None, None, weights)
     model.setobjtol(o, absolute, relative)
     assert len(seen) == 2
     assert ctypes.addressof(seen[0][5]) == weights.buffer_info()[0]
     assert ctypes.addressof(seen[1][3]) == absolute.buffer_info()[0]
     assert ctypes.addressof(seen[1][4]) == relative.buffer_info()[0]
-    assert model.getobjs()[3] == [1.0, 2.0]
+    assert model.getobj()[3] == [1.0, 2.0]
     assert model.getobjtol(o) == ([3.0, 4.0], [5.0, 6.0])
 
 
 def test_growing(model):
     grow = partial(add_sample, model)
-    assert model.getobjs(0, Growing(3, grow)) == SAMPLE
-    assert model.getobjs(3, Growing(3, grow)) == SAMPLE
-    assert model.getnobjs() == 6
+    assert model.getobj(0, Growing(3, grow)) == SAMPLE
+    assert model.getobj(3, Growing(3, grow)) == SAMPLE
+    assert model.getnobj() == 6
 
 
 def test_stale(model, monkeypatch):
     add_sample(model)
-    monkeypatch.setattr(model, "getnobjs", lambda: 0)
+    monkeypatch.setattr(model, "getnobj", lambda: 0)
     spy = Room(lib.BIYOS_getobjrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getobjrg", spy)
-    assert model.getobjs(0, 3) == SAMPLE
-    assert model.getobjs(1) == NONE
+    assert model.getobj(0, 3) == SAMPLE
+    assert model.getobj(1) == NONE
 
 
 def test_outside(model, monkeypatch):
     limit(monkeypatch, _model, 1)
-    message = refusal(model.getobjs, 0, 2**31 - 1)
+    message = refusal(model.getobj, 0, 2**31 - 1)
     assert message == "invalid argument: objective 0: unknown"
-    message = refusal(model.getobjs, 1, 2**31 - 2)
+    message = refusal(model.getobj, 1, 2**31 - 2)
     assert message == "invalid argument: objective 1: unknown"
 
 
 def test_sequences(model):
     functions = array.array("i", [1, 0])
     senses = array.array("i", [2, 1])
-    model.addobjs(functions, senses, range(2), [2, 3])
+    model.addobj(functions, senses, range(2), [2, 3])
     read_only = memoryview(array.array("d", [4.0]).tobytes()).cast("d")
-    model.addobjs((Number(1),), (Number(2),), (Number(-3),), read_only)
-    found = model.getobjs()
+    model.addobj((Number(1),), (Number(2),), (Number(-3),), read_only)
+    found = model.getobj()
     assert found == ([1, 0, 1], [MAX, MIN, MAX], [0, 1, -3], [2, 3, 4])
 
 
@@ -228,7 +228,7 @@ def test_set(model):
     model.setobjcoef([0, 2], [4.0, 8.0])
     model.setobjtol([1], atol=[INFINITY], rtol=[0.5])
     model.setobjtol([1, 2], None, None)
-    found = model.getobjs()
+    found = model.getobj()
     assert found[0] == FUNCTIONS
     assert found[1:3] == ([MIN, MIN, MAX], [2, -1, -5])
     assert found[3] == [4.0, 1.0, 8.0]
@@ -236,7 +236,7 @@ def test_set(model):
     assert model.getobjtol(range(3)) == tolerances
     model.setobjsense([0, 0], [MAX, MIN])
     model.setobjprio([0, 0], [5, 6])
-    assert model.getobjs(0, 1)[1:3] == ([MIN], [6])
+    assert model.getobj(0, 1)[1:3] == ([MIN], [6])
 
 
 def test_listed(model):
@@ -272,7 +272,7 @@ def test_setters(model):
     model.setobjtol(idx)
     model.setobjtol([2], atol=[0.5])
     model.setobjtol([1], rtol=[INFINITY])
-    found = model.getobjs()
+    found = model.getobj()
     assert found == (FUNCTIONS, [MAX, MIN, MAX], [-3, -1, 7], [4, 1, 8])
     tolerances = ([INFINITY, 1.5, 0.5], [0.25, INFINITY, 0.0])
     assert model.getobjtol(range(3)) == tolerances
@@ -304,15 +304,15 @@ def test_listed_refusals(env, model):
     assert message == (
         "invalid argument: objective 0: relative tolerance is NaN"
     )
-    assert model.getobjs() == SAMPLE
-    c = model.addcons([0])
+    assert model.getobj() == SAMPLE
+    c = model.addcon([0])
     with pytest.raises(ValueError, match="is a constraint, not an objective"):
         model.getobjsense([c[0]])
     with pytest.raises(ValueError, match="of constraints, not objectives"):
         model.setobjtol(c, [0.0])
     other = biyos.Model(env)
     other.addfuns(1)
-    p = other.addobjs([0])
+    p = other.addobj([0])
     with pytest.raises(ValueError, match="is an objective of another model"):
         model.setobjprio([p[0]], [1])
     with pytest.raises(ValueError, match="is a block of another model"):
@@ -333,13 +333,13 @@ def test_listed_refusals(env, model):
 
 def test_refused(model):
     add_sample(model)
-    message = refusal(model.addobjs, [0, 9])
+    message = refusal(model.addobj, [0, 9])
     assert message == "invalid argument: objective 4: function 9 is unknown"
-    message = refusal(model.addobjs, [0], [3])
+    message = refusal(model.addobj, [0], [3])
     assert message == "invalid argument: objective 3: sense 3 is unknown"
-    message = refusal(model.addobjs, [0], None, None, [0.0])
+    message = refusal(model.addobj, [0], None, None, [0.0])
     assert message == "invalid argument: objective 3: weight 0 is not positive"
-    message = refusal(model.addobjs, [0], None, None, [NAN])
+    message = refusal(model.addobj, [0], None, None, [NAN])
     assert message == "invalid argument: objective 3: weight is NaN"
     tolerances = partial(model.setobjtol, [2])
     message = refusal(tolerances, [-1.0])
@@ -360,38 +360,38 @@ def test_refused(model):
     )
     message = refusal(model.setobjsense, [3], [MIN])
     assert message == "invalid argument: objective 3: unknown"
-    message = refusal(model.getobjs, 4)
+    message = refusal(model.getobj, 4)
     assert message == "invalid argument: objective 4: unknown"
-    message = refusal(model.getobjs, 0, -1)
+    message = refusal(model.getobj, 0, -1)
     assert message == "invalid argument: argument 'n': -1 is negative"
-    assert model.getobjs() == SAMPLE
+    assert model.getobj() == SAMPLE
     assert model.getobjtol(range(3)) == TOLERANCES
 
 
 def test_lengths(model):
     with pytest.raises(ValueError, match="sense has length 1, not 2"):
-        model.addobjs([0, 1], [MIN])
+        model.addobj([0, 1], [MIN])
     with pytest.raises(ValueError, match="prio has length 3, not 2"):
-        model.addobjs([0, 1], None, [0, 1, 2])
+        model.addobj([0, 1], None, [0, 1, 2])
     with pytest.raises(ValueError, match="rtol has length 1, not 2"):
         model.setobjtol([0, 1], rtol=[1.0])
-    assert model.getnobjs() == 0
+    assert model.getnobj() == 0
 
 
 def test_numbers(model):
     with pytest.raises(TypeError, match="an entry of funidx must be an"):
-        model.addobjs([0.0])
+        model.addobj([0.0])
     with pytest.raises(TypeError, match="an entry of sense must be an int"):
-        model.addobjs([0], [1.0])
+        model.addobj([0], [1.0])
     with pytest.raises(OverflowError, match="prio: 2147483648 does not"):
-        model.addobjs([0], None, [2**31])
+        model.addobj([0], None, [2**31])
     with pytest.raises(TypeError, match="an entry of coef must be a"):
-        model.addobjs([0], None, None, ["1"])
+        model.addobj([0], None, None, ["1"])
     with pytest.raises(TypeError, match="an entry of atol must be a"):
         model.setobjtol([0], [True])
     with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
-        model.getobjs(2**32)
-    assert model.getnobjs() == 0
+        model.getobj(2**32)
+    assert model.getnobj() == 0
 
 
 def test_locked(env, model):
@@ -399,7 +399,7 @@ def test_locked(env, model):
 
     def change(event):
         for call in (
-            partial(model.addobjs, [0]),
+            partial(model.addobj, [0]),
             partial(model.setobjsense, [0], [MAX]),
             partial(model.setobjprio, [0], [0]),
             partial(model.setobjcoef, [0], [1.0]),
@@ -409,7 +409,7 @@ def test_locked(env, model):
                 call()
             except biyos.Error as error:
                 seen.append(str(error))
-        seen.append(model.getobjs())
+        seen.append(model.getobj())
         seen.append(model.getobjsense([0]))
         seen.append(model.getobjprio([0]))
         seen.append(model.getobjcoef([0]))
@@ -421,14 +421,14 @@ def test_locked(env, model):
         env.setopt("seed", -1)
     read = [[MAX], [2], [0.5], ([0.0], [0.25])]
     assert seen == [LOCKED] * 5 + [SAMPLE] + read
-    assert model.getnobjs() == 3
+    assert model.getnobj() == 3
 
 
 def test_closed(env):
     model = biyos.Model(env)
     model.close()
     calls = (
-        partial(model.addobjs, [0]),
+        partial(model.addobj, [0]),
         partial(model.setobjsense, [], []),
         partial(model.getobjsense, []),
         partial(model.setobjprio, [], []),
@@ -437,8 +437,8 @@ def test_closed(env):
         partial(model.getobjcoef, []),
         partial(model.setobjtol, []),
         partial(model.getobjtol, []),
-        model.getnobjs,
-        model.getobjs,
+        model.getnobj,
+        model.getobj,
     )
     for call in calls:
         with pytest.raises(ValueError, match="the model is closed"):
@@ -451,11 +451,11 @@ def test_on(env, model):
     p = o[1:].on(copy)
     assert type(p) is biyos.Objectives
     copy.setobjsense(p, [MAX, MAX])
-    assert copy.getobjs()[1] == [MAX, MAX, MAX]
-    assert model.getobjs() == SAMPLE
+    assert copy.getobj()[1] == [MAX, MAX, MAX]
+    assert model.getobj() == SAMPLE
     smaller = biyos.Model(env)
     smaller.addfuns(1)
-    smaller.addobjs([0, 0])
+    smaller.addobj([0, 0])
     few = "mdl holds too few objectives: 2, the block needs 3"
     with pytest.raises(ValueError, match=few):
         o.on(smaller)

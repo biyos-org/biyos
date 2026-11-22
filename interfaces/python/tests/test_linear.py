@@ -52,7 +52,7 @@ def env():
 @pytest.fixture
 def model(env):
     with biyos.Model(env) as model:
-        model.addvars(3)
+        model.addvar(3)
         model.addfuns(3, None, *HELD)
         yield model
 
@@ -138,15 +138,15 @@ def test_sequences(model):
 
 
 def test_views(env, model):
-    x = model.addvars(2)
+    x = model.addvar(2)
     f = model.addfuns(2)
     model.addlinterms(f, [0, 1, 2], [x[1], 0], [1.0, 2.0])
     model.addlinterms([f[0]], [0, 2], x, [3.0, 4.0])
     found = ([0.0, 0.0], [0, 2, 3], [3, 4, 0], [3.0, 5.0, 2.0])
     assert model.getfuns(f[0]) == found
-    assert model.getvarterms(x[1]) == ([0, 1], [3], [5.0])
+    assert model.getclinterm(x[1]) == ([0, 1], [3], [5.0])
     other = biyos.Model(env)
-    y = other.addvars(1)
+    y = other.addvar(1)
     g = other.addfuns(1)
     entry = "an entry of varidx is a variable of another model"
     with pytest.raises(ValueError, match=entry):
@@ -154,15 +154,15 @@ def test_views(env, model):
     with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addlinterms(g, [0, 1], [0], [1.0])
     with pytest.raises(ValueError, match="pos is a variable of another"):
-        model.getvarterms(y[0])
+        model.getclinterm(y[0])
     with pytest.raises(ValueError, match="is a function, not a variable"):
         model.addlinterms([0], [0, 1], [f[0]], [1.0])
     with pytest.raises(ValueError, match="pos is a function, not a"):
-        model.getvarterms(f[0])
+        model.getclinterm(f[0])
 
 
 def test_gone(model, monkeypatch):
-    x = model.addvars(1)
+    x = model.addvar(1)
     f = model.addfuns(1)
     before = terms(model)
     function, variable = f[0], x[0]
@@ -179,7 +179,7 @@ def test_gone(model, monkeypatch):
         (block, partial(add, f, [0, 0], [], [])),
         (view, partial(add, [function], [0, 0], [], [])),
         (stale, partial(add, [0], [0, 1], [variable], [1.0])),
-        (stale, partial(model.getvarterms, variable)),
+        (stale, partial(model.getclinterm, variable)),
     ]
     for message, call in cases:
         with pytest.raises(ValueError, match=message):
@@ -247,21 +247,21 @@ def test_numbers(model):
     with pytest.raises(TypeError, match="an entry of funidx must be an"):
         model.addlinterms([0.0], [0, 0], [], [])
     with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
-        model.getvarterms(2**32)
+        model.getclinterm(2**32)
     assert terms(model) == SORTED
 
 
 def test_by_variable(model):
-    assert model.getvarterms() == HELD_VARS
+    assert model.getclinterm() == HELD_VARS
     model.addlinterms(FUNCTIONS, *ADDED)
-    assert model.getvarterms() == MERGED_VARS
+    assert model.getclinterm() == MERGED_VARS
 
 
 def test_range(model):
     tail = ([0, 2, 3], [0, 2, 0], [0.0, 5.0, 3.0])
-    assert model.getvarterms(1, 2) == tail
-    assert model.getvarterms(2) == ([0, 1], [0], [3.0])
-    assert model.getvarterms(3) == ([0], [], [])
+    assert model.getclinterm(1, 2) == tail
+    assert model.getclinterm(2) == ([0, 1], [0], [3.0])
+    assert model.getclinterm(3) == ([0], [], [])
 
 
 def test_transpose(env):
@@ -270,7 +270,7 @@ def test_transpose(env):
         with biyos.Model(env) as model:
             n_vars = draw.randint(1, 7)
             n_funs = draw.randint(0, 6)
-            model.addvars(n_vars)
+            model.addvar(n_vars)
             model.addfuns(n_funs, None, *random_terms(draw, n_vars, n_funs))
             for _ in range(3):
                 funidx = draw.sample(range(n_funs), draw.randint(0, n_funs))
@@ -278,34 +278,34 @@ def test_transpose(env):
                 model.addlinterms(funidx, *added)
             by_function = terms(model)
             whole = transposed(by_function, 0, n_vars)
-            assert model.getvarterms() == whole
+            assert model.getclinterm() == whole
             pos = draw.randint(0, n_vars)
             n = draw.randint(0, n_vars - pos)
-            assert model.getvarterms(pos, n) == transposed(by_function, pos, n)
+            assert model.getclinterm(pos, n) == transposed(by_function, pos, n)
 
 
 def test_growing(model):
-    grow = partial(model.addvars, 2)
-    expected = model.getvarterms()
-    assert model.getvarterms(0, Growing(3, grow)) == expected
-    assert model.getnvars() == 5
+    grow = partial(model.addvar, 2)
+    expected = model.getclinterm()
+    assert model.getclinterm(0, Growing(3, grow)) == expected
+    assert model.getnvar() == 5
 
 
 def test_stale(model, monkeypatch):
-    monkeypatch.setattr(model, "getnvars", lambda: 0)
+    monkeypatch.setattr(model, "getnvar", lambda: 0)
     spy = Room(lib.BIYOS_getclintermrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getclintermrg", spy)
-    assert model.getvarterms(0, 3) == HELD_VARS
-    assert model.getvarterms(1) == ([0], [], [])
+    assert model.getclinterm(0, 3) == HELD_VARS
+    assert model.getclinterm(1) == ([0], [], [])
 
 
 def test_outside(model, monkeypatch):
     limit(monkeypatch, _model, 1)
-    message = refusal(model.getvarterms, 0, 2**31 - 1)
+    message = refusal(model.getclinterm, 0, 2**31 - 1)
     assert message == "invalid argument: variable 3: unknown"
-    message = refusal(model.getvarterms, -1)
+    message = refusal(model.getclinterm, -1)
     assert message == "invalid argument: variable -1: unknown"
-    message = refusal(model.getvarterms, 0, -1)
+    message = refusal(model.getclinterm, 0, -1)
     assert message == "invalid argument: argument 'n': -1 is negative"
 
 
@@ -317,7 +317,7 @@ def test_locked(env, model):
             model.addlinterms([0], [0, 1], [0], [1.0])
         except biyos.Error as error:
             seen.append(str(error))
-        seen.append(model.getvarterms(2))
+        seen.append(model.getclinterm(2))
 
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
@@ -331,7 +331,7 @@ def test_closed(env):
     model.close()
     calls = (
         partial(model.addlinterms, [], [0], [], []),
-        model.getvarterms,
+        model.getclinterm,
     )
     for call in calls:
         with pytest.raises(ValueError, match="the model is closed"):
@@ -344,5 +344,5 @@ def test_copy(model):
     assert terms(copy) == MERGED
     copy.addlinterms([1], [0, 1], [0], [1.0])
     assert terms(model) == MERGED
-    assert copy.getvarterms(0, 1) == ([0, 3], [0, 1, 2], [1.0, 1.0, 3.0])
+    assert copy.getclinterm(0, 1) == ([0, 3], [0, 1, 2], [1.0, 1.0, 3.0])
     copy.close()

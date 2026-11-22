@@ -30,10 +30,10 @@ def model(env):
 
 
 def add_items(model, count):
-    model.addvars(count)
+    model.addvar(count)
     model.addfuns(count)
-    model.addcons([0] * count)
-    model.addobjs([0] * count)
+    model.addcon([0] * count)
+    model.addobj([0] * count)
 
 
 def calls(model, family):
@@ -46,7 +46,7 @@ def calls(model, family):
 
 
 def names_of(model, family):
-    count = getattr(model, f"getn{family}s")()
+    count = getattr(model, f"getn{family}")()
     return calls(model, family)[1](range(count))
 
 
@@ -88,10 +88,10 @@ def test_shared(model):
 
 
 def test_views(env, model):
-    x = model.addvars(2)
-    c = model.addcons([0])
+    x = model.addvar(2)
+    c = model.addcon([0])
     f = model.addfuns(1)
-    o = model.addobjs([0])
+    o = model.addobj([0])
     model.setvarname(x, ["a", "b"])
     model.setconname([c[0]], ["c"])
     model.setfunname(f, ["f"])
@@ -103,7 +103,7 @@ def test_views(env, model):
     assert model.getobjname(o) == ["o"]
     assert names_of(model, "var")[3:] == ["a", "b"]
     other = biyos.Model(env)
-    y = other.addvars(1)
+    y = other.addvar(1)
     with pytest.raises(ValueError, match="idx is a variable of another"):
         model.getvarname([y[0]])
     with pytest.raises(ValueError, match="idx is a block of another"):

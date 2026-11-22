@@ -8,7 +8,7 @@ def build(model):
         VariableKind.INTEGER,
         VariableKind.BINARY,
     ]
-    x = model.addvars(3, knd, [0.0, 0.0, 0.0], [4.0, 3.0, 1.0])
+    x = model.addvar(3, knd, [0.0, 0.0, 0.0], [4.0, 3.0, 1.0])
     f = model.addfuns(
         3,
         cst=[0.0, 0.0, 1.0],
@@ -23,8 +23,8 @@ def build(model):
         varidx2=[x[0], x[1]],
         coef=[1.0, 1.0],
     )
-    model.addcons([f[0], f[1]], lb=[1.0, 0.0], ub=[5.0, 0.0])
-    o = model.addobjs(
+    model.addcon([f[0], f[1]], lb=[1.0, 0.0], ub=[5.0, 0.0])
+    o = model.addobj(
         [f[2], f[0]],
         sense=[Sense.MINIMIZE, Sense.MAXIMIZE],
         prio=[0, 1],
@@ -35,7 +35,7 @@ def build(model):
 
 with biyos.Env() as env, biyos.Model(env) as model:
     x, f = build(model)
-    off, varidx1, varidx2, coef = model.getquadterms(f[2], 1)
+    off, varidx1, varidx2, coef = model.getquadterm(f[2], 1)
     print(f"function 2 has {off[1]} quadratic terms")
     assert (varidx1, varidx2) == ([0, 1], [0, 1])
-    assert len(x) == model.getnvars() == 3
+    assert len(x) == model.getnvar() == 3

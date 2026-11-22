@@ -214,7 +214,7 @@ class Variable(View):
 
 
 class Variables(Block[Variable]):
-    """Consecutive variables of a model, as ``Model.addvars`` returns.
+    """Consecutive variables of a model, as ``Model.addvar`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
@@ -229,7 +229,7 @@ class Variables(Block[Variable]):
     _element = Variable
 
     def _held(self, model: "Model") -> int:
-        return model.getnvars()
+        return model.getnvar()
 
 
 class Function(View):
@@ -261,7 +261,7 @@ class Functions(Block[Function]):
     _element = Function
 
     def _held(self, model: "Model") -> int:
-        return model.getnfuns()
+        return model.getnfun()
 
 
 class Constraint(View):
@@ -278,7 +278,7 @@ class Constraint(View):
 
 
 class Constraints(Block[Constraint]):
-    """Consecutive constraints, as ``Model.addcons`` returns.
+    """Consecutive constraints, as ``Model.addcon`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
@@ -293,7 +293,7 @@ class Constraints(Block[Constraint]):
     _element = Constraint
 
     def _held(self, model: "Model") -> int:
-        return model.getncons()
+        return model.getncon()
 
 
 class Objective(View):
@@ -310,7 +310,7 @@ class Objective(View):
 
 
 class Objectives(Block[Objective]):
-    """Consecutive objectives, as ``Model.addobjs`` returns.
+    """Consecutive objectives, as ``Model.addobj`` returns.
 
     A block holds its model, its first index and its count, so it costs the
     same at any size. ``len`` gives the count, and iterating gives each
@@ -325,7 +325,7 @@ class Objectives(Block[Objective]):
     _element = Objective
 
     def _held(self, model: "Model") -> int:
-        return model.getnobjs()
+        return model.getnobj()
 
 
 def _indefinite(noun: str) -> str:

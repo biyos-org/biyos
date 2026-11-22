@@ -1,6 +1,6 @@
 # The Python package {#sec-python}
 
-The package `biyos` calls the C library through `ctypes` and needs no compiled extension of its own, so one build serves every Python version from 3.10. A method takes the name of the C call it wraps, without the prefix: `BIYOS_addvar` is `model.addvars`, `BIYOS_setdblopt` and its kin are `env.setopt`, and the parameters keep their C names, such as `lb` and `ub`. Classes keep full names, except `Env` for the environment. Each follows the same rules as its C call, so the chapters before this one hold for Python as they do for C. This chapter covers what Python adds. @sec-pyapi lists every class and method.
+The package `biyos` calls the C library through `ctypes` and needs no compiled extension of its own, so one build serves every Python version from 3.10. A method takes the name of the C call it wraps, without the prefix: `BIYOS_addvar` is `model.addvar`, `BIYOS_setdblopt` and its kin are `env.setopt`, and the parameters keep their C names, such as `lb` and `ub`. Classes keep full names, except `Env` for the environment. Each follows the same rules as its C call, so the chapters before this one hold for Python as they do for C. This chapter covers what Python adds. @sec-pyapi lists every class and method.
 
 ## Environments and models {#sec-python-handles}
 
@@ -10,10 +10,10 @@ A model keeps its environment alive, so an environment the program no longer ref
 
 ## Blocks and views {#sec-python-blocks}
 
-`addvars`, `addfuns`, `addcons` and `addobjs` return a block: `Variables`, `Functions`, `Constraints` or `Objectives`. A block holds its model, the index of its first item and its count, so it costs the same whether it holds three items or three million. It supports `len`, iteration, indexing from either end and slicing with step 1:
+`addvar`, `addfuns`, `addcon` and `addobj` return a block: `Variables`, `Functions`, `Constraints` or `Objectives`. A block holds its model, the index of its first item and its count, so it costs the same whether it holds three items or three million. It supports `len`, iteration, indexing from either end and slicing with step 1:
 
 ```python
-x = model.addvars(4)
+x = model.addvar(4)
 len(x)        # 4
 x[-1]         # the view of variable 3
 x[1:3]        # a block of variables 1 and 2
@@ -29,19 +29,19 @@ The readers return lists, in the order of the C call's arrays:
 
 | Method | Returns |
 | ------------------ | ------------------------------------ |
-| `getvars(pos, n)` | kinds, lower bounds, upper bounds |
+| `getvar(pos, n)` | kinds, lower bounds, upper bounds |
 | `getfuns(pos, n)` | constants, offsets, variables, coefficients |
-| `getquadterms(pos, n)` | offsets, first and second variables, coefficients |
-| `getcons(pos, n)` | functions, lower bounds, upper bounds |
-| `getobjs(pos, n)` | functions, senses, priorities, weights |
+| `getquadterm(pos, n)` | offsets, first and second variables, coefficients |
+| `getcon(pos, n)` | functions, lower bounds, upper bounds |
+| `getobj(pos, n)` | functions, senses, priorities, weights |
 
-`pos` defaults to 0 and `n` to every item from `pos` on, so `model.getvars()` reads them all. The readers of terms size their arrays themselves.
+`pos` defaults to 0 and `n` to every item from `pos` on, so `model.getvar()` reads them all. The readers of terms size their arrays themselves.
 
-A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobjs` leaves out, as `addobjs` does.
+A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobj` leaves out, as `addobj` does.
 
 ## Constants {#sec-python-constants}
 
-The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind` and `Sense` for models, `EventKind` and `EventLevel` for events, so `BIYOS_LVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvars()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name (@sec-options-python).
+The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind` and `Sense` for models, `EventKind` and `EventLevel` for events, so `BIYOS_LVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvar()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name (@sec-options-python).
 
 ## Failures {#sec-python-errors}
 

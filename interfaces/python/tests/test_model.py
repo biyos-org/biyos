@@ -92,9 +92,9 @@ def read_lengths(handle, first, count, *arrays):
 
 def test_context(env):
     with biyos.Model(env) as model:
-        assert model.getnvars() == 0
+        assert model.getnvar() == 0
     with pytest.raises(ValueError, match="the model is closed"):
-        model.getnvars()
+        model.getnvar()
     with pytest.raises(ValueError, match="the model is closed"):
         model.getvarbnd([])
     with pytest.raises(ValueError, match="the model is closed"):
@@ -194,7 +194,7 @@ def test_parked(env, monkeypatch):
         models[0].close()
         seen.append(list(statuses))
         try:
-            models[0].getnvars()
+            models[0].getnvar()
         except ValueError as error:
             seen.append(str(error))
 
@@ -217,7 +217,7 @@ def test_put_back(env, monkeypatch):
         patch.setattr(lib, "BIYOS_freemdl", refused)
         with pytest.raises(biyos.Error):
             models[0].close()
-    assert models[0].getnvars() == 0
+    assert models[0].getnvar() == 0
     models.clear()
     env.getopt("seed")
     assert statuses == [OK]
@@ -293,9 +293,9 @@ def test_closes(monkeypatch):
     assert statuses == [OK, OK]
     assert not env._free.alive
     with pytest.raises(ValueError, match="the model is closed"):
-        first.getnvars()
+        first.getnvar()
     with pytest.raises(ValueError, match="the model is closed"):
-        first.addvars(1)
+        first.addvar(1)
     first.close()
     second.close()
     assert statuses == [OK, OK]
@@ -304,17 +304,17 @@ def test_closes(monkeypatch):
 def test_with():
     with biyos.Env() as env:
         model = biyos.Model(env)
-        model.addvars(1)
+        model.addvar(1)
     assert not env._free.alive
     with pytest.raises(ValueError, match="the model is closed"):
-        model.getvars()
+        model.getvar()
 
 
 def test_unmasked():
     with pytest.raises(KeyError, match="inside"):
         with biyos.Env() as env:
             model = biyos.Model(env)
-            model.addvars(1)
+            model.addvar(1)
             raise KeyError("inside")
     assert not env._free.alive
 
@@ -327,7 +327,7 @@ def test_busy_close(log):
     def close_inside(event):
         env.close()
         try:
-            model.getnvars()
+            model.getnvar()
         except ValueError as error:
             seen.append(str(error))
 
@@ -344,10 +344,10 @@ def test_gap(log, monkeypatch):
     model = biyos.Model(env)
     start = partial(preceded, [model.close], env._relay.start)
     monkeypatch.setattr(env._relay, "start", start)
-    assert model.getnvars() == 0
+    assert model.getnvar() == 0
     assert log == ["call", "free"]
     with pytest.raises(ValueError, match="the model is closed"):
-        model.getnvars()
+        model.getnvar()
     env.close()
     assert log == ["call", "free"]
 
@@ -358,7 +358,7 @@ def test_early(log, monkeypatch):
     opened = partial(preceded, [model.close], model._open)
     monkeypatch.setattr(model, "_open", opened)
     with pytest.raises(ValueError, match="the model is closed"):
-        model.getnvars()
+        model.getnvar()
     assert log == ["free"]
     env.close()
     assert log == ["free"]
@@ -369,7 +369,7 @@ def test_checked(log, monkeypatch):
     model = biyos.Model(env)
     opened = partial(followed, [model.close], model._open)
     monkeypatch.setattr(model, "_open", opened)
-    assert model.getnvars() == 0
+    assert model.getnvar() == 0
     assert log == ["call", "free"]
     env.close()
     assert log == ["call", "free"]
@@ -378,10 +378,10 @@ def test_checked(log, monkeypatch):
 def test_nested(log, monkeypatch):
     env = biyos.Env()
     model = biyos.Model(env)
-    actions = [model.getnvars, model.close]
+    actions = [model.getnvar, model.close]
     start = partial(preceded, actions, env._relay.start)
     monkeypatch.setattr(env._relay, "start", start)
-    assert model.getnvars() == 0
+    assert model.getnvar() == 0
     assert log == ["call", "call", "free"]
     env.close()
     assert log == ["call", "call", "free"]
@@ -393,7 +393,7 @@ def test_drained(log, monkeypatch):
     actions = [model.close, partial(env.getopt, "seed")]
     start = partial(preceded, actions, env._relay.start)
     monkeypatch.setattr(env._relay, "start", start)
-    assert model.getnvars() == 0
+    assert model.getnvar() == 0
     assert log == ["call", "free"]
     env.close()
     assert log == ["call", "free"]
@@ -407,7 +407,7 @@ def test_interrupted_call(log, monkeypatch):
     start = partial(preceded, [model.close], env._relay.start)
     monkeypatch.setattr(env._relay, "start", start)
     with pytest.raises(KeyboardInterrupt):
-        model.getnvars()
+        model.getnvar()
     assert log == ["call", "free"]
     env.close()
     assert log == ["call", "free"]
@@ -425,7 +425,7 @@ def test_deferred(log):
     assert message == "invalid argument: variable 0: unknown"
     assert log == ["free"]
     with pytest.raises(ValueError, match="the model is closed"):
-        model.getnvars()
+        model.getnvar()
     env.close()
     assert log == ["free"]
 
@@ -465,8 +465,8 @@ def test_interrupted_take(monkeypatch):
 def test_holds_env():
     model = biyos.Model(biyos.Env())
     gc.collect()
-    model.addvars(1)
-    assert model.getnvars() == 1
+    model.addvar(1)
+    assert model.getnvar() == 1
     model.close()
 
 
@@ -485,25 +485,25 @@ def test_closed_env():
 def test_add(model):
     lower = [-INFINITY, 0.0, -3.0, 2.0, 1.0]
     upper = [INFINITY, 1.0, 7.0, 10.0, 4.0]
-    added = model.addvars(5, KINDS, lower, upper)
+    added = model.addvar(5, KINDS, lower, upper)
     assert type(added) is biyos.Variables
     assert len(added) == 5
-    assert model.getnvars() == 5
-    found = model.getvars()
+    assert model.getnvar() == 5
+    found = model.getvar()
     assert found == (KINDS, lower, upper)
     assert all(type(kind) is VariableKind for kind in found[0])
-    assert model.getvars(2, 1) == ([VariableKind.INTEGER], [-3.0], [7.0])
-    assert model.getvars(3) == (KINDS[3:], lower[3:], upper[3:])
-    assert model.getvars(5) == ([], [], [])
+    assert model.getvar(2, 1) == ([VariableKind.INTEGER], [-3.0], [7.0])
+    assert model.getvar(3) == (KINDS[3:], lower[3:], upper[3:])
+    assert model.getvar(5) == ([], [], [])
 
 
 def test_defaults(model):
     kinds = [VariableKind.BINARY, VariableKind.INTEGER]
-    model.addvars(2)
-    model.addvars(2, kinds)
-    model.addvars(2, kinds, lb=[0.5, 0.75])
-    model.addvars(2, kinds, ub=[0.5, 0.75])
-    found = model.getvars()
+    model.addvar(2)
+    model.addvar(2, kinds)
+    model.addvar(2, kinds, lb=[0.5, 0.75])
+    model.addvar(2, kinds, ub=[0.5, 0.75])
+    found = model.getvar()
     low, high = -INFINITY, INFINITY
     assert found[0] == [VariableKind.CONTINUOUS] * 2 + kinds * 3
     assert found[1] == [low, low, 0.0, low, 0.5, 0.75, 0.0, low]
@@ -512,10 +512,10 @@ def test_defaults(model):
 
 def test_sequences(model):
     read_only = memoryview(array.array("d", [4.0, 5.0]).tobytes()).cast("d")
-    model.addvars(2, (1, 3), range(2), array.array("d", [2.0, 3.0]))
-    model.addvars(2, array.array("i", [4, 5]), read_only, None)
+    model.addvar(2, (1, 3), range(2), array.array("d", [2.0, 3.0]))
+    model.addvar(2, array.array("i", [4, 5]), read_only, None)
     kinds = [VariableKind(kind) for kind in (1, 3, 4, 5)]
-    assert model.getvars() == (
+    assert model.getvar() == (
         kinds,
         [0.0, 1.0, 4.0, 5.0],
         [2.0, 3.0, INFINITY, INFINITY],
@@ -533,25 +533,25 @@ def test_buffer(model, monkeypatch):
         return original(handle, count, kinds, low, high, first)
 
     monkeypatch.setattr(lib, "BIYOS_addvar", spy)
-    model.addvars(2, None, lower, upper)
+    model.addvar(2, None, lower, upper)
     assert seen == [(lower.buffer_info()[0], upper.buffer_info()[0])]
-    assert model.getvars()[1:] == ([0.0, 1.0], [2.0, 3.0])
+    assert model.getvar()[1:] == ([0.0, 1.0], [2.0, 3.0])
 
 
 def test_bounds(model):
-    model.addvars(2)
+    model.addvar(2)
     model.setvarbnd([1, 0], lb=[1.0, 2.0])
     model.setvarbnd([1], ub=[3.0])
-    assert model.getvars()[1:] == ([2.0, 1.0], [INFINITY, 3.0])
+    assert model.getvar()[1:] == ([2.0, 1.0], [INFINITY, 3.0])
     model.setvarbnd([0, 0], [5.0, 6.0], [7.0, 8.0])
-    assert model.getvars(0, 1)[1:] == ([6.0], [8.0])
+    assert model.getvar(0, 1)[1:] == ([6.0], [8.0])
 
 
 def test_kinds(model):
-    model.addvars(2, lb=[0.0, 0.0], ub=[1.0, 1.0])
+    model.addvar(2, lb=[0.0, 0.0], ub=[1.0, 1.0])
     model.setvarknd([1], [VariableKind.BINARY])
     model.setvarknd([0, 1], None)
-    assert model.getvars()[0] == [
+    assert model.getvar()[0] == [
         VariableKind.CONTINUOUS,
         VariableKind.BINARY,
     ]
@@ -560,7 +560,7 @@ def test_kinds(model):
 def test_listed(model):
     lower = [-INFINITY, 0.0, -3.0, 2.0, 1.0]
     upper = [INFINITY, 1.0, 7.0, 10.0, 4.0]
-    x = model.addvars(5, KINDS, lower, upper)
+    x = model.addvar(5, KINDS, lower, upper)
     idx = [4, 0, 4, 2]
     found = model.getvarbnd(idx)
     assert found == ([1.0, -INFINITY, 1.0, -3.0], [4.0, INFINITY, 4.0, 7.0])
@@ -574,7 +574,7 @@ def test_listed(model):
 
 
 def test_setters(model):
-    model.addvars(3)
+    model.addvar(3)
     idx = [2, 0, 2]
     knd = [
         VariableKind.INTEGER,
@@ -589,13 +589,13 @@ def test_setters(model):
 
 
 def test_listed_refusals(env, model):
-    x = model.addvars(2)
+    x = model.addvar(2)
     message = refusal(model.getvarbnd, [0, 2])
     assert message == "invalid argument: variable 2: unknown"
     message = refusal(model.getvarknd, [1, -1])
     assert message == "invalid argument: variable -1: unknown"
     other = biyos.Model(env)
-    y = other.addvars(1)
+    y = other.addvar(1)
     with pytest.raises(ValueError, match="idx is a variable of another"):
         model.getvarbnd([y[0]])
     with pytest.raises(ValueError, match="idx is a block of another"):
@@ -612,7 +612,7 @@ def test_listed_refusals(env, model):
 
 
 def test_refused(model):
-    model.addvars(1)
+    model.addvar(1)
     binary = [VariableKind.BINARY]
     message = refusal(model.setvarknd, [0], binary)
     assert message == (
@@ -621,84 +621,84 @@ def test_refused(model):
     )
     message = refusal(model.setvarbnd, [3], [0.0], [1.0])
     assert message == "invalid argument: variable 3: unknown"
-    message = refusal(model.addvars, 1, None, [INFINITY])
+    message = refusal(model.addvar, 1, None, [INFINITY])
     assert message == "invalid argument: variable 1: lower bound is infinity"
-    message = refusal(model.getvars, 2)
+    message = refusal(model.getvar, 2)
     assert message == "invalid argument: variable 2: unknown"
-    message = refusal(model.getvars, 0, -1)
+    message = refusal(model.getvar, 0, -1)
     assert message == "invalid argument: argument 'n': -1 is negative"
     continuous = [VariableKind.CONTINUOUS]
-    assert model.getvars() == (continuous, [-INFINITY], [INFINITY])
+    assert model.getvar() == (continuous, [-INFINITY], [INFINITY])
 
 
 def test_outside(model, monkeypatch):
-    model.addvars(1)
+    model.addvar(1)
     limit(monkeypatch, _model, 1)
-    message = refusal(model.getvars, 0, 2**31 - 1)
+    message = refusal(model.getvar, 0, 2**31 - 1)
     assert message == "invalid argument: variable 1: unknown"
-    message = refusal(model.getvars, 2, 2**31 - 3)
+    message = refusal(model.getvar, 2, 2**31 - 3)
     assert message == "invalid argument: variable 2: unknown"
 
 
 def test_growing(model):
-    grow = partial(model.addvars, 3, None, [1.0, 2.0, 3.0])
-    kinds, lower, upper = model.getvars(0, Growing(3, grow))
+    grow = partial(model.addvar, 3, None, [1.0, 2.0, 3.0])
+    kinds, lower, upper = model.getvar(0, Growing(3, grow))
     assert kinds == [VariableKind.CONTINUOUS] * 3
     assert lower == [1.0, 2.0, 3.0]
     assert upper == [INFINITY] * 3
 
 
 def test_stale(model, monkeypatch):
-    model.addvars(2, None, [1.0, 2.0])
-    monkeypatch.setattr(model, "getnvars", lambda: 0)
+    model.addvar(2, None, [1.0, 2.0])
+    monkeypatch.setattr(model, "getnvar", lambda: 0)
     spy = Room(lib.BIYOS_getvarrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getvarrg", spy)
-    assert model.getvars(0, 2)[1] == [1.0, 2.0]
-    assert model.getvars(1)[1] == []
+    assert model.getvar(0, 2)[1] == [1.0, 2.0]
+    assert model.getvar(1)[1] == []
 
 
 def test_lengths(model):
     with pytest.raises(ValueError, match="lb has length 1, not 2"):
-        model.addvars(2, lb=[0.0])
+        model.addvar(2, lb=[0.0])
     with pytest.raises(ValueError, match="knd has length 2, not 1"):
         model.setvarknd([0], [1, 2])
-    assert model.getnvars() == 0
+    assert model.getnvar() == 0
 
 
 @pytest.mark.parametrize("kinds, error, message", WRONG)
 def test_wrong(model, kinds, error, message):
     with pytest.raises(error, match=message):
-        model.addvars(1, kinds)
+        model.addvar(1, kinds)
     with pytest.raises(error, match=message.replace("knd", "idx")):
         model.setvarbnd(kinds, [0.0])
-    assert model.getnvars() == 0
+    assert model.getnvar() == 0
 
 
 @pytest.mark.parametrize("value, found", REALS)
 def test_reals(model, value, found):
     message = f"an entry of lb must be a number, not {found}"
     with pytest.raises(TypeError, match=message):
-        model.addvars(1, None, [value])
+        model.addvar(1, None, [value])
     with pytest.raises(TypeError, match=message):
         model.setvarbnd([0], [value])
-    assert model.getnvars() == 0
+    assert model.getnvar() == 0
 
 
 def test_index(model):
-    model.addvars(Number(2), [Number(2), Number(3)])
+    model.addvar(Number(2), [Number(2), Number(3)])
     model.setvarbnd([Number(1)], [-1], [5])
     model.setvarknd([Number(0)], [Number(1)])
-    found = model.getvars(Number(0), Number(2))
+    found = model.getvar(Number(0), Number(2))
     kinds = [VariableKind.CONTINUOUS, VariableKind.INTEGER]
     assert found == (kinds, [0.0, -1.0], [1.0, 5.0])
 
 
 def test_numbers(model):
     with pytest.raises(TypeError, match="n must be an int, not str"):
-        model.addvars("1")
+        model.addvar("1")
     with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
-        model.getvars(2**32)
-    assert model.getnvars() == 0
+        model.getvar(2**32)
+    assert model.getnvar() == 0
 
 
 def test_event(env, model):
@@ -719,7 +719,7 @@ def test_raising(env):
     model = biyos.Model(env)
     env.addhook(explode, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(RuntimeError, match="hook"):
-        model.addvars(1, None, [INFINITY])
+        model.addvar(1, None, [INFINITY])
     model.close()
 
 
@@ -728,17 +728,17 @@ def test_locked(env, model):
 
     def change(event):
         try:
-            model.addvars(1)
+            model.addvar(1)
         except biyos.Error as error:
             seen.append(str(error))
-        seen.append(model.getnvars())
+        seen.append(model.getnvar())
         seen.append(model.getvarbnd([0]))
         seen.append(model.getvarknd([0]))
 
-    model.addvars(1)
+    model.addvar(1)
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
     bounds = ([-INFINITY], [INFINITY])
     assert seen == [LOCKED, 1, bounds, [VariableKind.CONTINUOUS]]
-    assert model.getnvars() == 1
+    assert model.getnvar() == 1

@@ -209,7 +209,7 @@ class Model:
         copy._hold()
         return copy
 
-    def addvars(
+    def addvar(
         self,
         n: int,
         knd: Sequence[VariableKind] | None = None,
@@ -347,7 +347,7 @@ class Model:
         found = self._getlist(lib.BIYOS_getvarkndsp, Variables, idx, c_int)
         return [VariableKind(value) for value in found[0]]
 
-    def getnvars(self) -> int:
+    def getnvar(self) -> int:
         """Return the number of variables.
 
         Returns
@@ -363,7 +363,7 @@ class Model:
         self._call(lib.BIYOS_getnvar, byref(count))
         return count.value
 
-    def getvars(
+    def getvar(
         self, pos: int | Variable = 0, n: int | None = None
     ) -> tuple[list[VariableKind], list[float], list[float]]:
         """Read the kinds and bounds of variables.
@@ -390,7 +390,7 @@ class Model:
         BIYOS_getvarrg
         """
         pos = index_of(self, Variables, "pos", pos)
-        n, inside = _span(pos, n, self.getnvars)
+        n, inside = _span(pos, n, self.getnvar)
         if not inside:
             self._call(lib.BIYOS_getvarrg, pos, n, None, None, None)
         kinds = (c_int * n)()
@@ -448,7 +448,7 @@ class Model:
         self._call(lib.BIYOS_addfuns, n, *arrays, byref(first))
         return Functions(self, first.value, n, self._gen)
 
-    def getnfuns(self) -> int:
+    def getnfun(self) -> int:
         """Return the number of functions.
 
         Returns
@@ -494,7 +494,7 @@ class Model:
         BIYOS_getfuns
         """
         pos = index_of(self, Functions, "pos", pos)
-        n, inside = _span(pos, n, self.getnfuns)
+        n, inside = _span(pos, n, self.getnfun)
         needed = c_int64()
         if not inside:
             empty = (0, None, None, byref(needed), None, None)
@@ -553,7 +553,7 @@ class Model:
         )
         self._call(lib.BIYOS_addlinterms, n, *arrays)
 
-    def getvarterms(
+    def getclinterm(
         self, pos: int | Variable = 0, n: int | None = None
     ) -> tuple[list[int], list[int], list[float]]:
         """Read the linear terms of variables, by variable.
@@ -584,7 +584,7 @@ class Model:
         BIYOS_getclintermrg
         """
         pos = index_of(self, Variables, "pos", pos)
-        n, inside = _span(pos, n, self.getnvars)
+        n, inside = _span(pos, n, self.getnvar)
         nnz = c_int64()
         if not inside:
             empty = (0, None, byref(nnz), None, None)
@@ -644,7 +644,7 @@ class Model:
         )
         self._call(lib.BIYOS_addquadterms, count, *arrays)
 
-    def getquadterms(
+    def getquadterm(
         self, pos: int | Function = 0, n: int | None = None
     ) -> tuple[list[int], list[int], list[int], list[float]]:
         """Read the quadratic terms of functions.
@@ -674,7 +674,7 @@ class Model:
         BIYOS_getquadtermrg
         """
         pos = index_of(self, Functions, "pos", pos)
-        n, inside = _span(pos, n, self.getnfuns)
+        n, inside = _span(pos, n, self.getnfun)
         needed = c_int64()
         if not inside:
             empty = (0, None, byref(needed), None, None, None)
@@ -691,7 +691,7 @@ class Model:
         terms = (list(firsts), list(seconds), list(values))
         return (list(starts), *terms)
 
-    def addcons(
+    def addcon(
         self,
         funidx: Sequence[int | Function] | Functions,
         lb: Sequence[float] | None = None,
@@ -777,7 +777,7 @@ class Model:
         lb, ub = self._getlist(lib.BIYOS_getconbndsp, Constraints, idx, *bounds)
         return lb, ub
 
-    def getncons(self) -> int:
+    def getncon(self) -> int:
         """Return the number of constraints.
 
         Returns
@@ -793,7 +793,7 @@ class Model:
         self._call(lib.BIYOS_getncon, byref(count))
         return count.value
 
-    def getcons(
+    def getcon(
         self, pos: int | Constraint = 0, n: int | None = None
     ) -> tuple[list[int], list[float], list[float]]:
         """Read the functions and bounds of constraints.
@@ -820,7 +820,7 @@ class Model:
         BIYOS_getconrg
         """
         pos = index_of(self, Constraints, "pos", pos)
-        n, inside = _span(pos, n, self.getncons)
+        n, inside = _span(pos, n, self.getncon)
         if not inside:
             empty = (None, None, None)
             self._call(lib.BIYOS_getconrg, pos, n, *empty)
@@ -831,7 +831,7 @@ class Model:
         self._call(lib.BIYOS_getconrg, pos, n, *arrays)
         return list(functions), list(lower), list(upper)
 
-    def addobjs(
+    def addobj(
         self,
         funidx: Sequence[int | Function] | Functions,
         sense: Sequence[Sense] | None = None,
@@ -1089,7 +1089,7 @@ class Model:
         )
         return atol, rtol
 
-    def getnobjs(self) -> int:
+    def getnobj(self) -> int:
         """Return the number of objectives.
 
         Returns
@@ -1105,7 +1105,7 @@ class Model:
         self._call(lib.BIYOS_getnobj, byref(count))
         return count.value
 
-    def getobjs(
+    def getobj(
         self, pos: int | Objective = 0, n: int | None = None
     ) -> tuple[list[int], list[Sense], list[int], list[float]]:
         """Read objectives.
@@ -1134,7 +1134,7 @@ class Model:
         BIYOS_getobjrg
         """
         pos = index_of(self, Objectives, "pos", pos)
-        n, inside = _span(pos, n, self.getnobjs)
+        n, inside = _span(pos, n, self.getnobj)
         if not inside:
             empty = (None,) * 4
             self._call(lib.BIYOS_getobjrg, pos, n, *empty)

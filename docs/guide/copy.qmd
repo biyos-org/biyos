@@ -24,7 +24,7 @@ biyos compares stored numbers bit for bit when it checks its own copies and roun
 
 ## In Python {#sec-copy-python}
 
-`Model.copy` copies a model onto its own environment or onto another. A block from the source, such as the variables an `addvars` call returned, names items of the source only; `on` gives the block of the same indices in another model, such as the copy:
+`Model.copy` copies a model onto its own environment or onto another. A block from the source, such as the variables an `addvar` call returned, names items of the source only; `on` gives the block of the same indices in another model, such as the copy:
 
 ```{.python file="examples/python/copies.py"}
 ```

@@ -49,7 +49,7 @@ def test_marker():
 
 def test_annotated():
     found = {name: missing(*entry) for name, entry in api().items()}
-    assert "Model.addvars" in found
+    assert "Model.addvar" in found
     assert "Block.__getitem__" in found
     assert "Event.kind" in found
     assert {name: names for name, names in found.items() if names} == {}

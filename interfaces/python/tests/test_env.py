@@ -116,7 +116,7 @@ def test_deferred(log):
     with pytest.raises(ValueError, match="the environment is closed"):
         env.getopt("seed")
     with pytest.raises(ValueError, match="the model is closed"):
-        model.getnvars()
+        model.getnvar()
 
 
 def test_gap(log, monkeypatch):
@@ -126,17 +126,17 @@ def test_gap(log, monkeypatch):
     assert env.getoptver("seed").since == "0.1.0"
     assert log == ["call", "mdl", "env"]
     with pytest.raises(ValueError, match="the model is closed"):
-        model.getnvars()
+        model.getnvar()
 
 
 def test_model_gap(log, monkeypatch):
     env = biyos.Env()
     model = biyos.Model(env)
     before_start(env, [env.close], monkeypatch)
-    assert model.getnvars() == 0
+    assert model.getnvar() == 0
     assert log == ["call", "mdl", "env"]
     with pytest.raises(ValueError, match="the model is closed"):
-        model.getnvars()
+        model.getnvar()
     env.close()
     model.close()
     assert log == ["call", "mdl", "env"]
@@ -145,8 +145,8 @@ def test_model_gap(log, monkeypatch):
 def test_nested(log, monkeypatch):
     env = biyos.Env()
     model = biyos.Model(env)
-    before_start(env, [model.getnvars, env.close], monkeypatch)
-    assert model.getnvars() == 0
+    before_start(env, [model.getnvar, env.close], monkeypatch)
+    assert model.getnvar() == 0
     assert log == ["call", "call", "mdl", "env"]
 
 
@@ -157,7 +157,7 @@ def test_interrupted(log, monkeypatch):
     monkeypatch.setattr(lib, "BIYOS_getnvar", count)
     before_start(env, [env.close], monkeypatch)
     with pytest.raises(KeyboardInterrupt):
-        model.getnvars()
+        model.getnvar()
     assert log == ["call", "mdl", "env"]
 
 
@@ -178,7 +178,7 @@ def test_created(log, monkeypatch):
     model = biyos.Model(env)
     assert log == ["mdl", "env"]
     with pytest.raises(ValueError, match="the model is closed"):
-        model.getnvars()
+        model.getnvar()
 
 
 def test_reentered(log, monkeypatch):
@@ -216,7 +216,7 @@ def test_draining(monkeypatch):
     models = env._models
     take = partial(followed, [env.close], models.take)
     monkeypatch.setattr(models, "take", take)
-    assert model.getnvars() == 0
+    assert model.getnvar() == 0
     assert statuses == [OK]
     assert not env._free.alive
 
