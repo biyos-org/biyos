@@ -95,6 +95,7 @@ class Model
     void set_name(std::string_view name);
     void delete_name() noexcept;
 
+    Index n_of(Family family) const noexcept;
     const std::string *name_of(Family family, Index index) const;
     Index index_of(Family family, std::string_view name) const;
     void set_names(Family family,
@@ -111,6 +112,9 @@ class Model
 
     Index n_functions() const noexcept;
     std::span<const double> constants(Index start, Index size) const;
+    const double &constant(Index index) const;
+    void set_constants(std::span<const Index> indices, std::span<const double> values);
+    void add_constants(std::span<const Index> indices, std::span<const double> values);
     std::span<const LinearTerm> linear_terms(Index start, Index size) const;
 
     void check_room(std::size_t functions, Offset terms) const;
@@ -144,7 +148,6 @@ class Model
     void set_objectives(std::span<const Index> indices, std::span<const Objective> changed);
 
   private:
-    Index n_of(Family family) const noexcept;
     Offset begin_of(std::size_t function) const noexcept;
     void append(std::span<const double> constants,
                 std::span<const Offset> starts,

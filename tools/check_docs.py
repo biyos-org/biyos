@@ -89,12 +89,26 @@ def documented(path):
     for group in spec.read(path):
         for entry in group.entries:
             if entry.kind != "table":
-                names.setdefault(entry.name, entry.line)
                 named_params = [name for name, _, _ in entry.params]
-                params[entry.name] = (entry.line, named_params)
+                for name in entry.names:
+                    names.setdefault(name, entry.line)
+                    params[name] = (entry.line, named_params, entry.names)
             for name, _, line in entry.values:
                 names.setdefault(name, line)
     return names, params
+
+
+def mismatched(params, calls):
+    found = []
+    for name, (header, number, words) in calls.items():
+        if name not in params:
+            continue
+        line, named, pair = params[name]
+        partners = [calls[other][2] for other in pair if other in calls]
+        if spec.differs(named, words, partners):
+            text = f"{name} parameters differ from {header}:{number}"
+            found.append((line, text))
+    return found
 
 
 def check(root):
@@ -102,6 +116,7 @@ def check(root):
     problems = []
     doc_problems = []
     declared = set()
+    calls = {}
     for path in sorted((root / "include" / "biyos").rglob("*.h")):
         header = path.relative_to(root).as_posix()
         found_names, functions, unnamed = scan(path)
@@ -111,10 +126,9 @@ def check(root):
                 found.append((number, f"{name} has no entry in {DOC}"))
             declared.add(name)
         for name, (number, words) in functions.items():
-            if name in params and params[name][1] != arguments(words):
-                text = f"{name} parameters differ from {header}:{number}"
-                doc_problems.append((params[name][0], text))
+            calls[name] = (header, number, arguments(words))
         problems += [f"{header}:{n}: {text}" for n, text in sorted(found)]
+    doc_problems += mismatched(params, calls)
     for name, number in names.items():
         if name not in declared:
             text = f"{name} has an entry but no header declares it"

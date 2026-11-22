@@ -33,6 +33,12 @@ def _declare(
     function.argtypes = arguments
 
 
+def _declare_pair(lib: ctypes.CDLL, name: str, *values: type) -> None:
+    listed = (c_void_p, c_int32, POINTER(c_int32))
+    _declare(lib, f"{name}sp", c_int, *listed, *values)
+    _declare(lib, f"{name}rg", c_int, c_void_p, c_int32, c_int32, *values)
+
+
 def _load() -> ctypes.CDLL:
     package = files("biyos")
     name = (package / "library.txt").read_text()
@@ -89,14 +95,12 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_freemdl", c_int, c_void_p)
     variables = (c_void_p, c_int32, ints, doubles, doubles)
     _declare(lib, "BIYOS_addvar", c_int, *variables, ints)
-    _declare(lib, "BIYOS_setvarbndsp", c_int, *variables)
-    _declare(lib, "BIYOS_getvarbndsp", c_int, *variables)
-    kinds = (c_void_p, c_int32, ints, ints)
-    _declare(lib, "BIYOS_setvarkndsp", c_int, *kinds)
-    _declare(lib, "BIYOS_getvarkndsp", c_int, *kinds)
+    _declare_pair(lib, "BIYOS_setvarbnd", doubles, doubles)
+    _declare_pair(lib, "BIYOS_getvarbnd", doubles, doubles)
+    _declare_pair(lib, "BIYOS_setvarknd", ints)
+    _declare_pair(lib, "BIYOS_getvarknd", ints)
     _declare(lib, "BIYOS_getnvar", c_int, c_void_p, ints)
-    read = (c_void_p, c_int32, c_int32, ints, doubles, doubles)
-    _declare(lib, "BIYOS_getvarrg", c_int, *read)
+    _declare_pair(lib, "BIYOS_getvar", ints, doubles, doubles)
     _declare_functions(lib, ints, doubles)
     _declare_quadratic(lib, ints, doubles)
     _declare_constraints(lib, ints, doubles)
@@ -106,36 +110,47 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
 
 def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     offsets = POINTER(c_int64)
-    add = (c_void_p, c_int32, doubles, offsets, ints, doubles, ints)
-    _declare(lib, "BIYOS_addfuns", c_int, *add)
+    _declare(lib, "BIYOS_addfun", c_int, c_void_p, c_int32, ints)
     _declare(lib, "BIYOS_getnfun", c_int, c_void_p, ints)
-    sized = (offsets, ints, doubles)
-    read = (c_void_p, c_int32, c_int32, c_int64, doubles, offsets, *sized)
-    _declare(lib, "BIYOS_getfuns", c_int, *read)
-    terms = (c_void_p, c_int32, ints, offsets, ints, doubles)
-    _declare(lib, "BIYOS_addlinterms", c_int, *terms)
-    by_var = (c_void_p, c_int32, c_int32, c_int64, offsets, *sized)
-    _declare(lib, "BIYOS_getclintermrg", c_int, *by_var)
+    for verb in ("add", "set", "get"):
+        _declare_pair(lib, f"BIYOS_{verb}cst", doubles)
+    coordinates = (c_void_p, c_int64, ints, ints, doubles)
+    _declare(lib, "BIYOS_addlintermsp", c_int, *coordinates)
+    ranged = (c_void_p, c_int32, c_int32, offsets, ints, doubles)
+    _declare(lib, "BIYOS_addrlintermrg", c_int, *ranged)
+    _declare(lib, "BIYOS_addclintermrg", c_int, *ranged)
+    for name in ("rlinterm", "clinterm"):
+        _declare_terms(lib, name, ints, doubles)
+
+
+def _declare_terms(
+    lib: ctypes.CDLL, name: str, ints: type, doubles: type, others: int = 1
+) -> None:
+    offsets = POINTER(c_int64)
+    _declare_pair(lib, f"BIYOS_getn{name}", offsets)
+    values = (*[ints] * others, doubles)
+    listed = (c_void_p, c_int32, ints, c_int64, offsets, ints, *values)
+    _declare(lib, f"BIYOS_get{name}sp", c_int, *listed)
+    ranged = (c_void_p, c_int32, c_int32, c_int64, offsets)
+    _declare(lib, f"BIYOS_get{name}rg", c_int, *ranged, *values)
 
 
 def _declare_quadratic(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     offsets = POINTER(c_int64)
-    add = (c_void_p, c_int32, ints, offsets, ints, ints, doubles)
-    _declare(lib, "BIYOS_addquadterms", c_int, *add)
-    sized = (offsets, ints, ints, doubles)
-    read = (c_void_p, c_int32, c_int32, c_int64, offsets, *sized)
-    _declare(lib, "BIYOS_getquadtermrg", c_int, *read)
+    coordinates = (c_void_p, c_int64, ints, ints, ints, doubles)
+    _declare(lib, "BIYOS_addquadtermsp", c_int, *coordinates)
+    ranged = (c_void_p, c_int32, c_int32, offsets, ints, ints, doubles)
+    _declare(lib, "BIYOS_addquadtermrg", c_int, *ranged)
+    _declare_terms(lib, "quadterm", ints, doubles, 2)
 
 
 def _declare_constraints(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     add = (c_void_p, c_int32, ints, doubles, doubles, ints)
     _declare(lib, "BIYOS_addcon", c_int, *add)
-    bounds = (c_void_p, c_int32, ints, doubles, doubles)
-    _declare(lib, "BIYOS_setconbndsp", c_int, *bounds)
-    _declare(lib, "BIYOS_getconbndsp", c_int, *bounds)
+    _declare_pair(lib, "BIYOS_setconbnd", doubles, doubles)
+    _declare_pair(lib, "BIYOS_getconbnd", doubles, doubles)
     _declare(lib, "BIYOS_getncon", c_int, c_void_p, ints)
-    read = (c_void_p, c_int32, c_int32, ints, doubles, doubles)
-    _declare(lib, "BIYOS_getconrg", c_int, *read)
+    _declare_pair(lib, "BIYOS_getcon", ints, doubles, doubles)
 
 
 def _declare_objectives(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -143,15 +158,12 @@ def _declare_objectives(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     add = (c_void_p, c_int32, ints, *fields, ints)
     _declare(lib, "BIYOS_addobj", c_int, *add)
     for name, values in (("sense", ints), ("prio", ints), ("coef", doubles)):
-        attribute = (c_void_p, c_int32, ints, values)
-        _declare(lib, f"BIYOS_setobj{name}sp", c_int, *attribute)
-        _declare(lib, f"BIYOS_getobj{name}sp", c_int, *attribute)
-    tolerances = (c_void_p, c_int32, ints, doubles, doubles)
-    _declare(lib, "BIYOS_setobjtolsp", c_int, *tolerances)
-    _declare(lib, "BIYOS_getobjtolsp", c_int, *tolerances)
+        _declare_pair(lib, f"BIYOS_setobj{name}", values)
+        _declare_pair(lib, f"BIYOS_getobj{name}", values)
+    _declare_pair(lib, "BIYOS_setobjtol", doubles, doubles)
+    _declare_pair(lib, "BIYOS_getobjtol", doubles, doubles)
     _declare(lib, "BIYOS_getnobj", c_int, c_void_p, ints)
-    read = (c_void_p, c_int32, c_int32, ints, *fields)
-    _declare(lib, "BIYOS_getobjrg", c_int, *read)
+    _declare_pair(lib, "BIYOS_getobj", ints, *fields)
 
 
 def _declare_names(lib: ctypes.CDLL, ints: type) -> None:
@@ -159,14 +171,12 @@ def _declare_names(lib: ctypes.CDLL, ints: type) -> None:
     _declare(lib, "BIYOS_setmdlname", c_int, c_void_p, c_char_p)
     _declare(lib, "BIYOS_getmdlname", c_int, c_void_p, strings)
     _declare(lib, "BIYOS_delmdlname", c_int, c_void_p)
-    names = (c_void_p, c_int32, ints, strings)
     find = (c_void_p, c_int32, strings, ints)
-    remove = (c_void_p, c_int32, ints)
     for noun in ("var", "fun", "con", "obj"):
-        _declare(lib, f"BIYOS_set{noun}namesp", c_int, *names)
-        _declare(lib, f"BIYOS_get{noun}namesp", c_int, *names)
+        _declare_pair(lib, f"BIYOS_set{noun}name", strings)
+        _declare_pair(lib, f"BIYOS_get{noun}name", strings)
         _declare(lib, f"BIYOS_get{noun}idx", c_int, *find)
-        _declare(lib, f"BIYOS_del{noun}namesp", c_int, *remove)
+        _declare_pair(lib, f"BIYOS_del{noun}name")
 
 
 lib = _load()

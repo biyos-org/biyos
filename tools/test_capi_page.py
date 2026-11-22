@@ -52,6 +52,21 @@ class PageTest(unittest.TestCase):
         )
         self.assertIn("[See also]{.see} [`BIYOS_newenv`]{.names}", text)
 
+    def test_pair(self):
+        entry = function()
+        entry.pair = "BIYOS_freeenvrg"
+        declared = dict(DECLARED)
+        declared["BIYOS_freeenvrg"] = "BIYOS_status BIYOS_freeenvrg(int at);"
+        entry.params.append(("at", "in", "The first."))
+        group = Group("env", "Environment", [], [entry, table()])
+        with redirect_stderr(io.StringIO()) as err:
+            text = capi_page.render(group, VALUES, declared)
+        self.assertEqual(err.getvalue(), "")
+        heading = "### `BIYOS_freeenv`, `BIYOS_freeenvrg` {#BIYOS_freeenv "
+        self.assertIn(heading, text)
+        self.assertIn("[]{#BIYOS_freeenvrg}", text)
+        self.assertIn("BIYOS_freeenvrg(int at);\n```", text)
+
     def test_table(self):
         text = self.render(table())
         self.assertIn(

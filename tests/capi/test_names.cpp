@@ -88,7 +88,7 @@ void add_items(const Model &model, BIYOS_index n)
     BIYOS_model *held = model.get();
     const Indices functions(static_cast<std::size_t>(n), 0);
     ASSERT_EQ(BIYOS_addvar(held, n, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addfuns(held, n, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(held, n, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addcon(held, n, functions.data(), nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addobj(held, n, functions.data(), nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);

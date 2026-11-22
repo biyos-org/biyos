@@ -171,6 +171,37 @@ class DocTest(unittest.TestCase):
         problem = f"{DOC}:8: BIYOS_run parameters differ from {where}"
         self.assertEqual(self.problems(), [problem])
 
+    def test_pair(self):
+        self.pair("param at in The first.\nparam steps out The steps.\n")
+        self.assertEqual(self.problems(), [])
+
+    def test_pair_order(self):
+        self.pair("param steps out The steps.\nparam at in The first.\n")
+        where = "include/biyos/biyos.h:10"
+        problem = f"{DOC}:8: BIYOS_runrg parameters differ from {where}"
+        self.assertEqual(self.problems(), [problem])
+
+    def test_pair_extra(self):
+        self.pair(
+            "param at in The first.\n"
+            "param steps out The steps.\n"
+            "param to in Nowhere.\n"
+        )
+        expected = [
+            f"{DOC}:8: BIYOS_run parameters differ from "
+            "include/biyos/biyos.h:9",
+            f"{DOC}:8: BIYOS_runrg parameters differ from "
+            "include/biyos/biyos.h:10",
+        ]
+        self.assertEqual(self.problems(), expected)
+
+    def pair(self, params):
+        text = HEADER + "BIYOS_API int BIYOS_runrg(int at, int *steps);\n"
+        self.header("biyos.h", text)
+        single = SPEC[SPEC.index("function") :]
+        entry = "function BIYOS_run BIYOS_runrg\nsummary Run.\n" + params
+        self.doc(SPEC.replace(single, entry))
+
     def test_bare(self):
         self.doc(SPEC.replace("param steps out The steps.\n", ""))
         where = "include/biyos/biyos.h:9"

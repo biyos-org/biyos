@@ -17,6 +17,11 @@ class Entry:
     values: list = field(default_factory=list)
     see: list = field(default_factory=list)
     since: str = ""
+    pair: str = ""
+
+    @property
+    def names(self):
+        return [self.name, self.pair] if self.pair else [self.name]
 
 
 @dataclass
@@ -74,6 +79,9 @@ def _add(groups, number, keyword, rest):
     group = groups[-1]
     if keyword == "text":
         group.texts.append(rest)
+    elif keyword == "function":
+        name, _, pair = rest.partition(" ")
+        group.entries.append(Entry(keyword, name, number, pair=pair))
     elif keyword in ENTRIES:
         group.entries.append(Entry(keyword, rest, number))
     elif keyword == "value" and group.entries:
@@ -103,7 +111,13 @@ def names(groups):
     for group in groups:
         for entry in group.entries:
             if entry.kind != "table":
-                found[entry.name] = (group, entry)
+                found.update((name, (group, entry)) for name in entry.names)
             for name, *_ in entry.values:
                 found[name] = (group, entry)
     return found
+
+
+def differs(named, arguments, partners):
+    if [name for name in named if name in arguments] != arguments:
+        return True
+    return not set(named) <= set().union(*partners)

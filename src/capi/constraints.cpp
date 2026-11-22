@@ -2,19 +2,22 @@
 
 #include "capi/arrays.hpp"
 #include "capi/entry.hpp"
+#include "capi/selection.hpp"
 #include "core/index.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
 #include <limits>
-#include <span>
 #include <vector>
 
+using biyos::Family;
 using biyos::capi::guarded;
 using biyos::capi::length;
-using biyos::capi::listed;
+using biyos::capi::List;
 using biyos::capi::picked;
+using biyos::capi::Range;
 using biyos::capi::require;
+using biyos::capi::selected;
 using biyos::capi::writable;
 
 namespace
@@ -70,14 +73,11 @@ void add_constraints(BIYOS_model &model,
     }
 }
 
-void set_bounds(BIYOS_model &model,
-                int n,
-                const int *indices,
-                const double *lower,
-                const double *upper)
+template <typename Selection>
+void set_bounds(BIYOS_model &model, Selection selection, const double *lower, const double *upper)
 {
     biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> changed = listed(n, indices);
+    const auto changed = selected(core, Family::Constraint, selection);
     std::vector<biyos::Constraint> constraints;
     constraints.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
@@ -112,28 +112,26 @@ void copy_out(const biyos::Constraint &constraint,
     }
 }
 
+template <typename Selection>
 void get_constraints(const BIYOS_model &model,
-                     int start,
-                     int size,
+                     Selection selection,
                      int *functions,
                      double *lower,
                      double *upper)
 {
-    const std::span<const biyos::Constraint> found = model.core.constraints(start, size);
-    for (std::size_t k = 0; k < found.size(); ++k)
+    const auto chosen = selected(model.core, Family::Constraint, selection);
+    const std::vector<biyos::Constraint> constraints =
+        picked(model.core, &biyos::Model::constraint, chosen);
+    for (std::size_t k = 0; k < constraints.size(); ++k)
     {
-        copy_out(found[k], k, functions, lower, upper);
+        copy_out(constraints[k], k, functions, lower, upper);
     }
 }
 
-void get_bounds(const BIYOS_model &model, int n, const int *indices, double *lower, double *upper)
+template <typename Selection>
+void get_bounds(const BIYOS_model &model, Selection selection, double *lower, double *upper)
 {
-    const std::vector<biyos::Constraint> constraints =
-        picked(model.core, &biyos::Model::constraint, listed(n, indices));
-    for (std::size_t k = 0; k < constraints.size(); ++k)
-    {
-        copy_out(constraints[k], k, nullptr, lower, upper);
-    }
+    get_constraints(model, selection, nullptr, lower, upper);
 }
 
 }
@@ -154,7 +152,16 @@ BIYOS_status BIYOS_setconbndsp(BIYOS_model *mdl,
                                const BIYOS_real *lb,
                                const BIYOS_real *ub)
 {
-    return guarded<set_bounds>(mdl, n, idx, lb, ub);
+    return guarded<set_bounds<List>>(mdl, List{n, idx}, lb, ub);
+}
+
+BIYOS_status BIYOS_setconbndrg(BIYOS_model *mdl,
+                               BIYOS_index pos,
+                               BIYOS_index n,
+                               const BIYOS_real *lb,
+                               const BIYOS_real *ub)
+{
+    return guarded<set_bounds<Range>>(mdl, Range{pos, n}, lb, ub);
 }
 
 BIYOS_status BIYOS_getconbndsp(const BIYOS_model *mdl,
@@ -163,12 +170,31 @@ BIYOS_status BIYOS_getconbndsp(const BIYOS_model *mdl,
                                BIYOS_real *lb,
                                BIYOS_real *ub)
 {
-    return guarded<get_bounds>(mdl, n, idx, lb, ub);
+    return guarded<get_bounds<List>>(mdl, List{n, idx}, lb, ub);
+}
+
+BIYOS_status BIYOS_getconbndrg(const BIYOS_model *mdl,
+                               BIYOS_index pos,
+                               BIYOS_index n,
+                               BIYOS_real *lb,
+                               BIYOS_real *ub)
+{
+    return guarded<get_bounds<Range>>(mdl, Range{pos, n}, lb, ub);
 }
 
 BIYOS_status BIYOS_getncon(const BIYOS_model *mdl, BIYOS_index *n)
 {
     return guarded<n_constraints>(mdl, n);
+}
+
+BIYOS_status BIYOS_getconsp(const BIYOS_model *mdl,
+                            BIYOS_index n,
+                            const BIYOS_index *idx,
+                            BIYOS_index *funidx,
+                            BIYOS_real *lb,
+                            BIYOS_real *ub)
+{
+    return guarded<get_constraints<List>>(mdl, List{n, idx}, funidx, lb, ub);
 }
 
 BIYOS_status BIYOS_getconrg(const BIYOS_model *mdl,
@@ -178,5 +204,5 @@ BIYOS_status BIYOS_getconrg(const BIYOS_model *mdl,
                             BIYOS_real *lb,
                             BIYOS_real *ub)
 {
-    return guarded<get_constraints>(mdl, pos, n, funidx, lb, ub);
+    return guarded<get_constraints<Range>>(mdl, Range{pos, n}, funidx, lb, ub);
 }

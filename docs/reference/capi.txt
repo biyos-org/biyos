@@ -434,51 +434,55 @@ error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 variables.
 see BIYOS_setvarbndsp BIYOS_setvarkndsp BIYOS_getvarrg
 since 0.1.0
 
-function BIYOS_setvarbndsp
+function BIYOS_setvarbndsp BIYOS_setvarbndrg
 summary Set the bounds of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param lb in The new lower bound of each; null leaves the lower bounds as they are.
 param ub in The new upper bound of each; null leaves the upper bounds as they are.
 return `BIYOS_OK` once the bounds are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a variable or a bound is refused.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable or a bound is refused.
 note A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted.
 see BIYOS_getvarbndsp BIYOS_addvar BIYOS_getvarrg
 since 0.1.0
 
-function BIYOS_getvarbndsp
+function BIYOS_getvarbndsp BIYOS_getvarbndrg
 summary Read the bounds of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param lb out Entry `j` receives the lower bound of variable `idx[j]`; skipped when null.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param lb out Entry `j` receives the lower bound of variable `idx[j]` or `pos + j`; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 see BIYOS_setvarbndsp BIYOS_getvarrg
 since 0.1.0
 
-function BIYOS_setvarkndsp
+function BIYOS_setvarkndsp BIYOS_setvarkndrg
 summary Set the kinds of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param knd in The new kind of each; null changes nothing.
 return `BIYOS_OK` once the kinds are set. The bounds are kept.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a variable, a kind is unknown, or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable, a kind is unknown, or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
 note A variable may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getvarkndsp BIYOS_addvar BIYOS_setvarbndsp
 since 0.1.0
 
-function BIYOS_getvarkndsp
+function BIYOS_getvarkndsp BIYOS_getvarkndrg
 summary Read the kinds of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param knd out Entry `j` receives the kind of variable `idx[j]`; skipped when null.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param knd out Entry `j` receives the kind of variable `idx[j]` or `pos + j`; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 see BIYOS_setvarkndsp BIYOS_getvarrg
 since 0.1.0
 
@@ -489,37 +493,35 @@ param n out Receives the number of variables.
 return `BIYOS_OK`, with the number in `*n`.
 since 0.1.0
 
-function BIYOS_getvarrg
+function BIYOS_getvarsp BIYOS_getvarrg
 summary Read the kinds and bounds of variables.
 param mdl in The model.
-param pos in The first variable to read.
-param n in The number of variables to read.
-param knd out Entry `j` receives the kind of variable `pos + j`; skipped when null.
+param pos in In the `rg` form, the first variable to read.
+param n in The number of entries.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param knd out Entry `j` receives the kind of variable `idx[j]` or `pos + j`; skipped when null.
 param lb out Entry `j` receives its lower bound; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `pos` or `n` is negative, or `pos + n` exceeds the number of variables.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 see BIYOS_getnvar
 since 0.1.0
 
 group functions Functions
 text A function of the variables $x$ is $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j$: a constant, linear terms and quadratic terms. Constraints and objectives refer to functions by index, so one function may serve several of them. A function's constant must be finite. Its linear terms may come in any order and are kept sorted by variable; each must name a variable of the model, appear once in the function and have a finite coefficient. A term whose coefficient is 0 is kept.
 text The terms of many functions travel in compressed form, as three arrays. Function `j` of them has the terms from `off[j]` to `off[j + 1] - 1` of `varidx` and `coef`, which hold a variable and its coefficient each. So `off` holds one more offset than there are functions: the first is 0, none is below the one before it, and the last is the number of terms. An offset or a number of terms is a `BIYOS_offset`.
-text A reader of terms writes into arrays the caller gives, in the manner of the formatting calls: `cap` is the number of terms the arrays hold, the call writes at most that many, and `nnz` receives the number of terms whether they fit or not. A null array is skipped, so a `cap` of 0 with null arrays learns `nnz` alone.
+text A reader of terms writes into arrays the caller gives: `cap` is the number of terms the arrays hold, and a call whose terms do not fit is refused. Each reader has a count reader that gives the number of terms first. A null array is skipped.
 
-function BIYOS_addfuns
-summary Add functions after the last one, with their constants and linear terms.
+function BIYOS_addfun
+summary Add functions after the last one, each with the constant 0 and no terms.
 param mdl in The model.
 param n in The number of functions to add.
-param cst in The constant of each; null gives every new function the constant 0.
-param off in The `n + 1` offsets of the functions' terms; null adds functions without terms.
-param varidx in The variable of each term; not read when there are no terms.
-param coef in The coefficient of each term; not read when there are no terms.
 param pos out Receives the index of the first new function; skipped when null.
 return `BIYOS_OK` once the functions are added.
-error BIYOS_ERR_BADARG `n` is negative, `off` does not begin at 0 or decreases, a constant is not finite, a variable is not one of the model or appears twice in a function, or a coefficient is not finite.
-error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 functions, or more terms than any allocation can hold.
-see BIYOS_addlinterms BIYOS_addquadterms BIYOS_getfuns
+error BIYOS_ERR_BADARG `n` is negative.
+error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 functions.
+note The constants and terms follow through `BIYOS_setcstrg`, `BIYOS_addrlintermrg` and `BIYOS_addquadtermrg`, or their list forms.
+see BIYOS_setcstsp BIYOS_addlintermsp BIYOS_addquadtermsp
 since 0.1.0
 
 function BIYOS_getnfun
@@ -529,87 +531,216 @@ param n out Receives the number of functions.
 return `BIYOS_OK`, with the number in `*n`.
 since 0.1.0
 
-function BIYOS_getfuns
-summary Read the constants and linear terms of functions.
+function BIYOS_addcstsp BIYOS_addcstrg
+summary Add to the constants of functions.
 param mdl in The model.
-param pos in The first function to read.
-param n in The number of functions to read.
-param cap in The number of terms `varidx` and `coef` hold.
-param cst out Entry `j` receives the constant of function `pos + j`; skipped when null.
-param off out Receives `n + 1` offsets from 0, whatever `cap` is; skipped when null.
-param nnz out Receives the number of terms of the functions, whether they fit or not.
-param varidx out Receives the variable of each term, each function's sorted by variable; skipped when null.
-param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written. Function `pos + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `cap`.
-error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
-see BIYOS_getnfun BIYOS_getclintermrg BIYOS_getquadtermrg
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry; may be null when `n` is 0.
+param cst in The value each entry adds to its function's constant; null changes nothing.
+return `BIYOS_OK` once the constants are added to.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function, a value is not finite or a constant would leave the finite range.
+note A function may appear more than once: its entries add up, in order.
+see BIYOS_setcstsp BIYOS_getcstsp
 since 0.1.0
 
-function BIYOS_addlinterms
-summary Add linear terms to functions of the model.
+function BIYOS_setcstsp BIYOS_setcstrg
+summary Set the constants of functions.
 param mdl in The model.
-param n in The number of functions that gain terms.
-param funidx in The functions, each listed at most once; may be null only when `n` is 0.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry; may be null when `n` is 0.
+param cst in The new constant of each; null changes nothing.
+return `BIYOS_OK` once the constants are set.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function or a constant is not finite.
+note A function may appear more than once, as in `BIYOS_setvarbndsp`.
+see BIYOS_addcstsp BIYOS_getcstsp
+since 0.1.0
+
+function BIYOS_getcstsp BIYOS_getcstrg
+summary Read the constants of functions.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cst out Entry `j` receives the constant of function `idx[j]` or `pos + j`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function or the range ends past the last function.
+see BIYOS_setcstsp BIYOS_addcstsp
+since 0.1.0
+
+function BIYOS_addlintermsp
+summary Add linear terms to functions, as coordinates.
+param mdl in The model.
+param nnz in The number of terms.
+param funidx in The function of each term; may be null when `nnz` is 0.
+param varidx in The variable of each term; may be null when `nnz` is 0.
+param coef in The coefficient of each term; may be null when `nnz` is 0.
+return `BIYOS_OK` once the terms are added.
+error BIYOS_ERR_BADARG `nnz` is negative, a function or a variable is not one of the model, a function and a variable appear together twice, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
+note Term `k` adds `coef[k]` times variable `varidx[k]` to function `funidx[k]`, and the terms may come in any order. A variable the function already holds adds its coefficient to the one held, so every call adds $a_j x_j$ to its functions and never replaces a term. A term whose coefficient is 0, given or summed, is kept. A refused call changes nothing.
+note A call that adds new terms moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call.
+see BIYOS_addrlintermrg BIYOS_addclintermrg BIYOS_getrlintermsp
+since 0.1.0
+
+function BIYOS_addrlintermrg
+summary Add linear terms to a range of functions, by function.
+param mdl in The model.
+param pos in The first function of the range.
+param n in The number of functions.
 param off in The `n + 1` offsets of the functions' terms; null adds no terms.
 param varidx in The variable of each term; not read when there are no terms.
 param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
-error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model or is listed twice, `off` does not begin at 0 or decreases, a variable is not one of the model or appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, the range ends past the last function, `off` does not begin at 0 or decreases, a variable is not one of the model or appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
-note A variable the function already holds adds its coefficient to the one held, so every call adds $a_j x_j$ to its functions and never replaces a term. A term whose coefficient is 0, given or summed, is kept.
-note A call that adds new terms moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call.
-see BIYOS_getclintermrg BIYOS_addfuns BIYOS_getfuns
+note Function `pos + j` gains the terms from `off[j]` to `off[j + 1] - 1`. A variable the function already holds adds its coefficient to the one held, as in `BIYOS_addlintermsp`. A refused call changes nothing.
+see BIYOS_addlintermsp BIYOS_getrlintermrg
 since 0.1.0
 
-function BIYOS_getclintermrg
+function BIYOS_addclintermrg
+summary Add linear terms to functions, by variable.
+param mdl in The model.
+param pos in The first variable of the range.
+param n in The number of variables.
+param off in The `n + 1` offsets of the variables' terms; null adds no terms.
+param funidx in The function of each term; not read when there are no terms.
+param coef in The coefficient of each term; not read when there are no terms.
+return `BIYOS_OK` once the terms are added.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, the range ends past the last variable, `off` does not begin at 0 or decreases, a function is not one of the model or appears twice for a variable, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
+note Variable `pos + j` enters the functions from `funidx[off[j]]` to `funidx[off[j + 1] - 1]`, so a variable added late joins the functions of existing constraints in one call. A variable a function already holds adds its coefficient to the one held. A refused call changes nothing.
+see BIYOS_addlintermsp BIYOS_getclintermrg
+since 0.1.0
+
+function BIYOS_getnrlintermsp BIYOS_getnrlintermrg
+summary Count the linear terms of functions.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of linear terms of the entries, a function counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getrlintermsp` and `BIYOS_getrlintermrg` need for the same entries.
+see BIYOS_getrlintermsp BIYOS_getnclintermsp
+since 0.1.0
+
+function BIYOS_getrlintermsp BIYOS_getrlintermrg
+summary Read the linear terms of functions, by function.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of terms the output arrays hold.
+param off out In the `rg` form, receives `n + 1` offsets from 0; skipped when null.
+param nnz out In the `sp` form, receives the number of terms written; skipped when null.
+param funidx out In the `sp` form, receives the function of each term; skipped when null.
+param varidx out Receives the variable of each term, each function's sorted by variable; skipped when null.
+param coef out Receives the coefficient of each term; skipped when null.
+return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of function `pos + j` from `off[j]`.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnrlintermsp` gives.
+note A refused call writes nothing.
+see BIYOS_getnrlintermsp BIYOS_getclintermsp
+since 0.1.0
+
+function BIYOS_getnclintermsp BIYOS_getnclintermrg
+summary Count the linear terms of variables.
+param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of linear terms of the entries, a variable counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getclintermsp` and `BIYOS_getclintermrg` need for the same entries.
+see BIYOS_getclintermsp BIYOS_getnrlintermsp
+since 0.1.0
+
+function BIYOS_getclintermsp BIYOS_getclintermrg
 summary Read the linear terms of variables, by variable.
 param mdl in The model.
-param pos in The first variable to read.
-param n in The number of variables to read.
-param cap in The number of terms `funidx` and `coef` hold.
-param off out Receives `n + 1` offsets from 0, whatever `cap` is; skipped when null.
-param nnz out Receives the number of linear terms of the variables, whether they fit or not.
+param pos in In the `rg` form, the first variable of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of terms the output arrays hold.
+param off out In the `rg` form, receives `n + 1` offsets from 0; skipped when null.
+param nnz out In the `sp` form, receives the number of terms written; skipped when null.
 param funidx out Receives the function of each term, each variable's sorted by function; skipped when null.
+param varidx out In the `sp` form, receives the variable of each term; skipped when null.
 param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written. Variable `pos + j` is whole in `funidx` and `coef` when `off[j + 1]` is at most `cap`.
-error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of variables, or `nnz` is null.
-note The terms are those `BIYOS_getfuns` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function.
-see BIYOS_getfuns BIYOS_addlinterms
+return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of variable `pos + j` from `off[j]`.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a variable, the range ends past the last variable, or `cap` is less than the number of terms `BIYOS_getnclintermsp` gives.
+note The terms are those `BIYOS_getrlintermsp` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function. A refused call writes nothing.
+see BIYOS_getnclintermsp BIYOS_getrlintermsp BIYOS_addclintermrg
 since 0.1.0
 
 group quadratic Quadratic terms
-text A function is added with no quadratic terms, and `BIYOS_addquadterms` adds them. Each term is a pair of variables `i` and `j` and its coefficient, taken as written, with no factor ½: $x_0^2$ is the pair (0, 0) with the coefficient 1, and $x_0 x_1$ the pair (0, 1) with the coefficient 1. A pair may be given in either order and is kept as `(i, j)` with `i <= j`, a function's pairs sorted by `i`, then by `j`. Each must name variables of the model, appear once for its function in a call and have a finite coefficient. A pair the function already holds adds its coefficient to the one held, which must stay finite, so every call adds $q_{ij} x_i x_j$ to its functions. A term whose coefficient is 0, given or summed, is kept.
+text A function is added with no quadratic terms, and `BIYOS_addquadtermsp` and `BIYOS_addquadtermrg` add them. Each term is a pair of variables `i` and `j` and its coefficient, taken as written, with no factor ½: $x_0^2$ is the pair (0, 0) with the coefficient 1, and $x_0 x_1$ the pair (0, 1) with the coefficient 1. A pair may be given in either order and is kept as `(i, j)` with `i <= j`, a function's pairs sorted by `i`, then by `j`. Each must name variables of the model, appear once for its function in a call and have a finite coefficient. A pair the function already holds adds its coefficient to the one held, which must stay finite, so every call adds $q_{ij} x_i x_j$ to its functions. A term whose coefficient is 0, given or summed, is kept.
 
-function BIYOS_addquadterms
-summary Add quadratic terms to functions of the model.
+function BIYOS_addquadtermsp
+summary Add quadratic terms to functions, as coordinates.
 param mdl in The model.
-param n in The number of functions that gain terms.
-param funidx in The functions, each listed at most once; may be null only when `n` is 0.
+param nnz in The number of terms.
+param funidx in The function of each term; may be null when `nnz` is 0.
+param varidx1 in The first variable of each term; may be null when `nnz` is 0.
+param varidx2 in The second variable of each term; may be null when `nnz` is 0.
+param coef in The coefficient of each term; may be null when `nnz` is 0.
+return `BIYOS_OK` once the terms are added.
+error BIYOS_ERR_BADARG `nnz` is negative, a function or a variable is not one of the model, a pair appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_NOMEMORY The model would hold more quadratic terms than any allocation can hold.
+note Term `k` adds `coef[k]` times the product of variables `varidx1[k]` and `varidx2[k]` to function `funidx[k]`, and the terms may come in any order. A pair may be given in either order, and a pair the function already holds adds its coefficient to the one held. A refused call changes nothing.
+note A call that adds new pairs moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call, or those of a function right after it is added.
+see BIYOS_addquadtermrg BIYOS_getquadtermsp
+since 0.1.0
+
+function BIYOS_addquadtermrg
+summary Add quadratic terms to a range of functions.
+param mdl in The model.
+param pos in The first function of the range.
+param n in The number of functions.
 param off in The `n + 1` offsets of the functions' terms; null adds no terms.
 param varidx1 in The first variable of each term; not read when there are no terms.
 param varidx2 in The second variable of each term; not read when there are no terms.
 param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
-error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model or is listed twice, `off` does not begin at 0 or decreases, a variable is not one of the model, a pair appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, the range ends past the last function, `off` does not begin at 0 or decreases, a variable is not one of the model, a pair appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more quadratic terms than any allocation can hold.
-note A call that adds new pairs moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call, or those of a function right after it is added.
-see BIYOS_getquadtermrg BIYOS_addfuns
+note Function `pos + j` gains the terms from `off[j]` to `off[j + 1] - 1`. A pair the function already holds adds its coefficient to the one held, as in `BIYOS_addquadtermsp`. A refused call changes nothing.
+see BIYOS_addquadtermsp BIYOS_getquadtermrg
 since 0.1.0
 
-function BIYOS_getquadtermrg
+function BIYOS_getnquadtermsp BIYOS_getnquadtermrg
+summary Count the quadratic terms of functions.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of quadratic terms of the entries, a function counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getquadtermsp` and `BIYOS_getquadtermrg` need for the same entries.
+see BIYOS_getquadtermsp BIYOS_getnrlintermsp
+since 0.1.0
+
+function BIYOS_getquadtermsp BIYOS_getquadtermrg
 summary Read the quadratic terms of functions.
 param mdl in The model.
-param pos in The first function to read.
-param n in The number of functions to read.
-param cap in The number of terms `varidx1`, `varidx2` and `coef` hold.
-param off out Receives `n + 1` offsets from 0, whatever `cap` is; skipped when null.
-param nnz out Receives the number of quadratic terms of the functions, whether they fit or not.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of terms the output arrays hold.
+param off out In the `rg` form, receives `n + 1` offsets from 0; skipped when null.
+param nnz out In the `sp` form, receives the number of terms written; skipped when null.
+param funidx out In the `sp` form, receives the function of each term; skipped when null.
 param varidx1 out Receives the first variable of each pair; skipped when null.
 param varidx2 out Receives the second variable of each pair, never below the first; skipped when null.
 param coef out Receives the coefficient of each pair; skipped when null.
-return `BIYOS_OK` once the arrays are written, each function's pairs sorted.
-error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
-see BIYOS_addquadterms BIYOS_getfuns
+return `BIYOS_OK` once the arrays are written, each function's pairs sorted: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of function `pos + j` from `off[j]`.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnquadtermsp` gives.
+note A refused call writes nothing.
+see BIYOS_getnquadtermsp BIYOS_addquadtermsp
 since 0.1.0
 
 group constraints Constraints
@@ -629,28 +760,30 @@ error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 constraints.
 see BIYOS_setconbndsp BIYOS_getconrg
 since 0.1.0
 
-function BIYOS_setconbndsp
+function BIYOS_setconbndsp BIYOS_setconbndrg
 summary Set the bounds of constraints.
 param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
 param n in The number of entries.
-param idx in The constraint of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the constraint of each entry; may be null when `n` is 0.
 param lb in The new lower bound of each; null leaves the lower bounds as they are.
 param ub in The new upper bound of each; null leaves the upper bounds as they are.
 return `BIYOS_OK` once the bounds are set. The functions are kept.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a constraint or a bound is refused.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint, the range ends past the last constraint or a bound is refused.
 note A constraint may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getconbndsp BIYOS_addcon BIYOS_getconrg
 since 0.1.0
 
-function BIYOS_getconbndsp
+function BIYOS_getconbndsp BIYOS_getconbndrg
 summary Read the bounds of constraints.
 param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
 param n in The number of entries.
-param idx in The constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param lb out Entry `j` receives the lower bound of constraint `idx[j]`; skipped when null.
+param idx in In the `sp` form, the constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param lb out Entry `j` receives the lower bound of constraint `idx[j]` or `pos + j`; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a constraint.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
 see BIYOS_setconbndsp BIYOS_getconrg
 since 0.1.0
 
@@ -661,16 +794,17 @@ param n out Receives the number of constraints.
 return `BIYOS_OK`, with the number in `*n`.
 since 0.1.0
 
-function BIYOS_getconrg
+function BIYOS_getconsp BIYOS_getconrg
 summary Read the functions and bounds of constraints.
 param mdl in The model.
-param pos in The first constraint to read.
-param n in The number of constraints to read.
-param funidx out Entry `j` receives the function of constraint `pos + j`; skipped when null.
+param pos in In the `rg` form, the first constraint to read.
+param n in The number of entries.
+param idx in In the `sp` form, the constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param funidx out Entry `j` receives the function of constraint `idx[j]` or `pos + j`; skipped when null.
 param lb out Entry `j` receives its lower bound; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `pos` or `n` is negative, or `pos + n` exceeds the number of constraints.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
 see BIYOS_getncon
 since 0.1.0
 
@@ -699,97 +833,105 @@ note By default the objectives are optimized one after another in the order they
 see BIYOS_setobjsensesp BIYOS_setobjtolsp BIYOS_getobjrg
 since 0.1.0
 
-function BIYOS_setobjsensesp
+function BIYOS_setobjsensesp BIYOS_setobjsenserg
 summary Set the senses of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 param sense in The new sense of each, `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE`; null changes nothing.
 return `BIYOS_OK` once the senses are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective or a sense is unknown.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective, the range ends past the last objective or a sense is unknown.
 note An objective may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getobjsensesp BIYOS_addobj
 since 0.1.0
 
-function BIYOS_getobjsensesp
+function BIYOS_getobjsensesp BIYOS_getobjsenserg
 summary Read the senses of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param sense out Entry `j` receives the sense of objective `idx[j]`; skipped when null.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param sense out Entry `j` receives the sense of objective `idx[j]` or `pos + j`; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 see BIYOS_setobjsensesp BIYOS_getobjrg
 since 0.1.0
 
-function BIYOS_setobjpriosp
+function BIYOS_setobjpriosp BIYOS_setobjpriorg
 summary Set the priorities of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 param prio in The new priority of each; null changes nothing.
 return `BIYOS_OK` once the priorities are set.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 note An objective may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getobjpriosp BIYOS_addobj
 since 0.1.0
 
-function BIYOS_getobjpriosp
+function BIYOS_getobjpriosp BIYOS_getobjpriorg
 summary Read the priorities of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param prio out Entry `j` receives the priority of objective `idx[j]`; skipped when null.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param prio out Entry `j` receives the priority of objective `idx[j]` or `pos + j`; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 see BIYOS_setobjpriosp BIYOS_getobjrg
 since 0.1.0
 
-function BIYOS_setobjcoefsp
+function BIYOS_setobjcoefsp BIYOS_setobjcoefrg
 summary Set the weights of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 param coef in The new weight of each; null changes nothing.
 return `BIYOS_OK` once the weights are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective or a weight is not finite and positive.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective, the range ends past the last objective or a weight is not finite and positive.
 note An objective may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getobjcoefsp BIYOS_addobj
 since 0.1.0
 
-function BIYOS_getobjcoefsp
+function BIYOS_getobjcoefsp BIYOS_getobjcoefrg
 summary Read the weights of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param coef out Entry `j` receives the weight of objective `idx[j]`; skipped when null.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param coef out Entry `j` receives the weight of objective `idx[j]` or `pos + j`; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 see BIYOS_setobjcoefsp BIYOS_getobjrg
 since 0.1.0
 
-function BIYOS_setobjtolsp
+function BIYOS_setobjtolsp BIYOS_setobjtolrg
 summary Set the tolerances of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 param atol in The new absolute tolerance of each; null leaves the absolute tolerances as they are.
 param rtol in The new relative tolerance of each; null leaves the relative tolerances as they are.
 return `BIYOS_OK` once the tolerances are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective or a tolerance is NaN or negative.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective, the range ends past the last objective or a tolerance is NaN or negative.
 note An objective may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getobjtolsp
 since 0.1.0
 
-function BIYOS_getobjtolsp
+function BIYOS_getobjtolsp BIYOS_getobjtolrg
 summary Read the tolerances of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param atol out Entry `j` receives the absolute tolerance of objective `idx[j]`; skipped when null.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param atol out Entry `j` receives the absolute tolerance of objective `idx[j]` or `pos + j`; skipped when null.
 param rtol out Entry `j` receives its relative tolerance; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 see BIYOS_setobjtolsp
 since 0.1.0
 
@@ -800,17 +942,18 @@ param n out Receives the number of objectives.
 return `BIYOS_OK`, with the number in `*n`.
 since 0.1.0
 
-function BIYOS_getobjrg
+function BIYOS_getobjsp BIYOS_getobjrg
 summary Read the functions, senses, priorities and weights of objectives.
 param mdl in The model.
-param pos in The first objective to read.
-param n in The number of objectives to read.
-param funidx out Entry `j` receives the function of objective `pos + j`; skipped when null.
+param pos in In the `rg` form, the first objective to read.
+param n in The number of entries.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param funidx out Entry `j` receives the function of objective `idx[j]` or `pos + j`; skipped when null.
 param sense out Entry `j` receives its sense; skipped when null.
 param prio out Entry `j` receives its priority; skipped when null.
 param coef out Entry `j` receives its weight; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `pos` or `n` is negative, or `pos + n` exceeds the number of objectives.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 note It reads back what `BIYOS_addobj` takes. `BIYOS_getobjtolsp` reads the tolerances.
 see BIYOS_getnobj BIYOS_getobjtolsp
 since 0.1.0
@@ -846,27 +989,29 @@ note Once the call succeeds, a pointer read earlier with `BIYOS_getmdlname` is n
 see BIYOS_setmdlname
 since 0.1.0
 
-function BIYOS_setvarnamesp
+function BIYOS_setvarnamesp BIYOS_setvarnamerg
 summary Name variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
 return `BIYOS_OK` once the names are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a variable, an entry of `name` is null, or a name is empty or not well-formed UTF-8, with a message such as `invalid argument: variable 3: name is empty`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable, an entry of `name` is null, or a name is empty or not well-formed UTF-8, with a message such as `invalid argument: variable 3: name is empty`.
 note A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted. No name is checked against the others, so several variables may hold one name.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` for a variable it lists is no longer valid.
 see BIYOS_getvarnamesp BIYOS_getvaridx BIYOS_delvarnamesp
 since 0.1.0
 
-function BIYOS_getvarnamesp
+function BIYOS_getvarnamesp BIYOS_getvarnamerg
 summary Read the names of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of variable `idx[j]`, or an empty string when it has none; skipped when null.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of variable `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 note Each pointer stays valid until a call that sets or removes names of variables and lists that variable succeeds, or the model is freed. Adding items, naming other variables, a failed call and a copy of the model leave it valid.
 see BIYOS_setvarnamesp BIYOS_getvaridx
 since 0.1.0
@@ -883,37 +1028,40 @@ note The lookup succeeds again once the other variables holding the name are ren
 see BIYOS_setvarnamesp BIYOS_getvarnamesp
 since 0.1.0
 
-function BIYOS_delvarnamesp
+function BIYOS_delvarnamesp BIYOS_delvarnamerg
 summary Remove the names of variables.
 param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
-param idx in The variable of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the variables listed have no name. One without a name, or listed more than once, is left without one.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a variable.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` for a variable it lists is no longer valid.
 see BIYOS_setvarnamesp
 since 0.1.0
 
-function BIYOS_setfunnamesp
+function BIYOS_setfunnamesp BIYOS_setfunnamerg
 summary Name functions.
 param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
 param n in The number of entries.
-param idx in The function of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the function of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
 return `BIYOS_OK` once the names are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a function, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note A function may appear more than once and several functions may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getfunnamesp` for a function it lists is no longer valid.
 see BIYOS_getfunnamesp BIYOS_getfunidx BIYOS_delfunnamesp
 since 0.1.0
 
-function BIYOS_getfunnamesp
+function BIYOS_getfunnamesp BIYOS_getfunnamerg
 summary Read the names of functions.
 param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
 param n in The number of entries.
-param idx in The function of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of function `idx[j]`, or an empty string when it has none; skipped when null.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of function `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a function.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function or the range ends past the last function.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of functions and lists that function succeeds, or the model is freed.
 see BIYOS_setfunnamesp BIYOS_getfunidx
 since 0.1.0
@@ -930,37 +1078,40 @@ note A lookup works as in `BIYOS_getvaridx`, among the functions alone.
 see BIYOS_setfunnamesp BIYOS_getfunnamesp
 since 0.1.0
 
-function BIYOS_delfunnamesp
+function BIYOS_delfunnamesp BIYOS_delfunnamerg
 summary Remove the names of functions.
 param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
 param n in The number of entries.
-param idx in The function of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the function of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the functions listed have no name. One without a name, or listed more than once, is left without one.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a function.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function or the range ends past the last function.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getfunnamesp` for a function it lists is no longer valid.
 see BIYOS_setfunnamesp
 since 0.1.0
 
-function BIYOS_setconnamesp
+function BIYOS_setconnamesp BIYOS_setconnamerg
 summary Name constraints.
 param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
 param n in The number of entries.
-param idx in The constraint of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the constraint of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
 return `BIYOS_OK` once the names are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of a constraint, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint, the range ends past the last constraint, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note A constraint may appear more than once and several constraints may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getconnamesp` for a constraint it lists is no longer valid.
 see BIYOS_getconnamesp BIYOS_getconidx BIYOS_delconnamesp
 since 0.1.0
 
-function BIYOS_getconnamesp
+function BIYOS_getconnamesp BIYOS_getconnamerg
 summary Read the names of constraints.
 param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
 param n in The number of entries.
-param idx in The constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of constraint `idx[j]`, or an empty string when it has none; skipped when null.
+param idx in In the `sp` form, the constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of constraint `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a constraint.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of constraints and lists that constraint succeeds, or the model is freed.
 see BIYOS_setconnamesp BIYOS_getconidx
 since 0.1.0
@@ -977,37 +1128,40 @@ note A lookup works as in `BIYOS_getvaridx`, among the constraints alone.
 see BIYOS_setconnamesp BIYOS_getconnamesp
 since 0.1.0
 
-function BIYOS_delconnamesp
+function BIYOS_delconnamesp BIYOS_delconnamerg
 summary Remove the names of constraints.
 param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
 param n in The number of entries.
-param idx in The constraint of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the constraint of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the constraints listed have no name. One without a name, or listed more than once, is left without one.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of a constraint.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getconnamesp` for a constraint it lists is no longer valid.
 see BIYOS_setconnamesp
 since 0.1.0
 
-function BIYOS_setobjnamesp
+function BIYOS_setobjnamesp BIYOS_setobjnamerg
 summary Name objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
 return `BIYOS_OK` once the names are set.
-error BIYOS_ERR_BADARG `n` is negative, an index is not that of an objective, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective, the range ends past the last objective, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note An objective may appear more than once and several objectives may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getobjnamesp` for an objective it lists is no longer valid.
 see BIYOS_getobjnamesp BIYOS_getobjidx BIYOS_delobjnamesp
 since 0.1.0
 
-function BIYOS_getobjnamesp
+function BIYOS_getobjnamesp BIYOS_getobjnamerg
 summary Read the names of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of objective `idx[j]`, or an empty string when it has none; skipped when null.
+param idx in In the `sp` form, the objective of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of objective `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of objectives and lists that objective succeeds, or the model is freed.
 see BIYOS_setobjnamesp BIYOS_getobjidx
 since 0.1.0
@@ -1024,13 +1178,14 @@ note A lookup works as in `BIYOS_getvaridx`, among the objectives alone.
 see BIYOS_setobjnamesp BIYOS_getobjnamesp
 since 0.1.0
 
-function BIYOS_delobjnamesp
+function BIYOS_delobjnamesp BIYOS_delobjnamerg
 summary Remove the names of objectives.
 param mdl in The model.
+param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
-param idx in The objective of each entry; may be null when `n` is 0.
+param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the objectives listed have no name. One without a name, or listed more than once, is left without one.
-error BIYOS_ERR_BADARG `n` is negative or an index is not that of an objective.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getobjnamesp` for an objective it lists is no longer valid.
 see BIYOS_setobjnamesp
 since 0.1.0

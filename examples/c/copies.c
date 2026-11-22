@@ -6,7 +6,7 @@ static int fill(BIYOS_model *mdl)
     const BIYOS_real ub[] = {1.0, 2.0};
     const BIYOS_index funidx[] = {0};
     if (BIYOS_addvar(mdl, 2, NULL, NULL, ub, NULL) != BIYOS_OK ||
-        BIYOS_addfuns(mdl, 1, NULL, NULL, NULL, NULL, NULL) != BIYOS_OK)
+        BIYOS_addfun(mdl, 1, NULL) != BIYOS_OK)
     {
         return 0;
     }

@@ -28,6 +28,10 @@ class Model
 {
   public:
     explicit Model(const Env &env) { EXPECT_EQ(BIYOS_newmdl(env.get(), &pointer_), BIYOS_OK); }
+    Model(const Env &env, const Model &source)
+    {
+        EXPECT_EQ(BIYOS_copymdl(source.get(), env.get(), &pointer_), BIYOS_OK);
+    }
     ~Model() { BIYOS_freemdl(pointer_); }
     Model(const Model &) = delete;
     Model &operator=(const Model &) = delete;

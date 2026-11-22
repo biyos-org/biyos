@@ -4,7 +4,14 @@ from ctypes import Array, byref, c_char_p, c_double, c_int, c_int64, c_void_p
 from enum import IntEnum
 from typing import Any, NoReturn, SupportsIndex
 
-from biyos._arrays import doubles, indices_of, ints, listed, offsets, strings
+from biyos._arrays import (
+    doubles,
+    indices_of,
+    ints,
+    listed,
+    span_of,
+    strings,
+)
 from biyos._blocks import (
     Block,
     Constraint,
@@ -15,7 +22,6 @@ from biyos._blocks import (
     Objectives,
     Variable,
     Variables,
-    index_of,
 )
 from biyos._capi import lib
 from biyos._env import Env
@@ -64,6 +70,14 @@ class Sense(IntEnum):
     MAXIMIZE = 2
 
 
+_COUNTS: dict[type[Block[Any]], str] = {
+    Variables: "getnvar",
+    Functions: "getnfun",
+    Constraints: "getncon",
+    Objectives: "getnobj",
+}
+
+
 def _checked_env(env: Env) -> Env:
     if not isinstance(env, Env):
         found = type(env).__name__
@@ -71,20 +85,10 @@ def _checked_env(env: Env) -> Env:
     return env
 
 
-def _span(
-    pos: int, n: int | None, size: Callable[[], int]
-) -> tuple[int, bool]:
-    given = None if n is None else integer("n", n)
-    total = size()
-    n = max(total - pos, 0) if given is None else given
-    inside = 0 <= pos <= total and 0 <= n <= total - pos
-    return n, inside
-
-
-def _total(starts: Array[c_int64] | None, count: int) -> int:
-    if starts is None or count < 0:
-        return 0
-    return starts[count]
+def _expanded(starts: Array[c_int64], first: int) -> list[int]:
+    spans = zip(starts[:-1], starts[1:])
+    counts = [end - start for start, end in spans]
+    return [first + j for j, count in enumerate(counts) for _ in range(count)]
 
 
 class Model:
@@ -266,14 +270,15 @@ class Model:
         See Also
         --------
         BIYOS_setvarbndsp
+        BIYOS_setvarbndrg
         """
         count = len(idx)
+        chosen = self._chosen("BIYOS_setvarbnd", Variables, idx)
         arrays = (
-            indices_of(self, Variables, "idx", idx, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
-        self._call(lib.BIYOS_setvarbndsp, count, *arrays)
+        self._call(*chosen, *arrays)
 
     def getvarbnd(
         self, idx: Sequence[int | Variable] | Variables
@@ -295,9 +300,10 @@ class Model:
         See Also
         --------
         BIYOS_getvarbndsp
+        BIYOS_getvarbndrg
         """
         bounds = (c_double, c_double)
-        lb, ub = self._getlist(lib.BIYOS_getvarbndsp, Variables, idx, *bounds)
+        lb, ub = self._getlist("BIYOS_getvarbnd", Variables, idx, *bounds)
         return lb, ub
 
     def setvarknd(
@@ -317,13 +323,14 @@ class Model:
         See Also
         --------
         BIYOS_setvarkndsp
+        BIYOS_setvarkndrg
         """
         count = len(idx)
+        chosen = self._chosen("BIYOS_setvarknd", Variables, idx)
         arrays = (
-            indices_of(self, Variables, "idx", idx, count),
             ints("knd", knd, count),
         )
-        self._call(lib.BIYOS_setvarkndsp, count, *arrays)
+        self._call(*chosen, *arrays)
 
     def getvarknd(
         self, idx: Sequence[int | Variable] | Variables
@@ -343,8 +350,9 @@ class Model:
         See Also
         --------
         BIYOS_getvarkndsp
+        BIYOS_getvarkndrg
         """
-        found = self._getlist(lib.BIYOS_getvarkndsp, Variables, idx, c_int)
+        found = self._getlist("BIYOS_getvarknd", Variables, idx, c_int)
         return [VariableKind(value) for value in found[0]]
 
     def getnvar(self) -> int:
@@ -364,17 +372,15 @@ class Model:
         return count.value
 
     def getvar(
-        self, pos: int | Variable = 0, n: int | None = None
+        self, idx: Sequence[int | Variable] | Variables | None = None
     ) -> tuple[list[VariableKind], list[float], list[float]]:
         """Read the kinds and bounds of variables.
 
         Parameters
         ----------
-        pos
-            The first variable to read.
-        n
-            The number of variables to read, every one from ``pos`` on by
-            default.
+        idx
+            The variables, in any order, any of them more than once; every
+            variable by default.
 
         Returns
         -------
@@ -387,44 +393,23 @@ class Model:
 
         See Also
         --------
+        BIYOS_getvarsp
         BIYOS_getvarrg
         """
-        pos = index_of(self, Variables, "pos", pos)
-        n, inside = _span(pos, n, self.getnvar)
-        if not inside:
-            self._call(lib.BIYOS_getvarrg, pos, n, None, None, None)
-        kinds = (c_int * n)()
-        lower = (c_double * n)()
-        upper = (c_double * n)()
-        arrays = (kinds, lower, upper)
-        self._call(lib.BIYOS_getvarrg, pos, n, *arrays)
-        return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
+        every = range(self.getnvar()) if idx is None else idx
+        types = (c_int, c_double, c_double)
+        found = self._getlist("BIYOS_getvar", Variables, every, *types)
+        kinds, lower, upper = found
+        return [VariableKind(kind) for kind in kinds], lower, upper
 
-    def addfuns(
-        self,
-        n: int,
-        cst: Sequence[float] | None = None,
-        off: Sequence[int] | None = None,
-        varidx: Sequence[int | Variable] | Variables | None = None,
-        coef: Sequence[float] | None = None,
-    ) -> Functions:
-        """Add functions after the last one.
+    def addfun(self, n: int) -> Functions:
+        """Add functions after the last one, each with the constant 0 and
+        no terms.
 
         Parameters
         ----------
         n
             The number of functions to add.
-        cst
-            The constant of each, 0 by default.
-        off
-            The ``n + 1`` offsets of the functions' linear terms in
-            ``varidx`` and ``coef``, from 0 and never decreasing.
-            Function ``j`` has the terms from ``off[j]`` to
-            ``off[j + 1] - 1``. By default the functions have no terms.
-        varidx
-            The variable of each term, ``off[n]`` of them.
-        coef
-            The coefficient of each term, ``off[n]`` of them.
 
         Returns
         -------
@@ -433,19 +418,11 @@ class Model:
 
         See Also
         --------
-        BIYOS_addfuns
+        BIYOS_addfun
         """
         n = integer("n", n)
-        starts = offsets("off", off, n + 1)
-        size = _total(starts, n)
-        arrays = (
-            doubles("cst", cst, n),
-            starts,
-            indices_of(self, Variables, "varidx", varidx, size),
-            doubles("coef", coef, size),
-        )
         first = c_int()
-        self._call(lib.BIYOS_addfuns, n, *arrays, byref(first))
+        self._call(lib.BIYOS_addfun, n, byref(first))
         return Functions(self, first.value, n, self._gen)
 
     def getnfun(self) -> int:
@@ -464,206 +441,303 @@ class Model:
         self._call(lib.BIYOS_getnfun, byref(count))
         return count.value
 
-    def getfuns(
-        self, pos: int | Function = 0, n: int | None = None
-    ) -> tuple[list[float], list[int], list[int], list[float]]:
-        """Read the constants and linear terms of functions.
+    def addcst(
+        self,
+        idx: Sequence[int | Function] | Functions,
+        cst: Sequence[float] | None,
+    ) -> None:
+        """Add to the constants of functions.
+
+        A function may appear more than once; its entries add up, in order.
 
         Parameters
         ----------
-        pos
-            The first function to read.
-        n
-            The number of functions to read, every one from ``pos`` on by
-            default.
+        idx
+            The functions.
+        cst
+            The value each entry adds to its function's constant, finite;
+            ``None`` changes nothing. A constant that would leave the finite
+            range refuses the call.
+
+        See Also
+        --------
+        BIYOS_addcstsp
+        BIYOS_addcstrg
+        """
+        n = len(idx)
+        chosen = self._chosen("BIYOS_addcst", Functions, idx)
+        self._call(*chosen, doubles("cst", cst, n))
+
+    def setcst(
+        self,
+        idx: Sequence[int | Function] | Functions,
+        cst: Sequence[float] | None,
+    ) -> None:
+        """Set the constants of functions.
+
+        A function may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The functions.
+        cst
+            The new constant of each, finite; ``None`` changes nothing.
+
+        See Also
+        --------
+        BIYOS_setcstsp
+        BIYOS_setcstrg
+        """
+        n = len(idx)
+        chosen = self._chosen("BIYOS_setcst", Functions, idx)
+        self._call(*chosen, doubles("cst", cst, n))
+
+    def getcst(
+        self, idx: Sequence[int | Function] | Functions
+    ) -> list[float]:
+        """Read the constants of functions.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once.
 
         Returns
         -------
         cst
-            The constant of each function.
-        off
-            The ``n + 1`` offsets of the functions' terms in the two lists
-            after it, from 0.
+            The constant of each.
+
+        See Also
+        --------
+        BIYOS_getcstsp
+        BIYOS_getcstrg
+        """
+        found = self._getlist("BIYOS_getcst", Functions, idx, c_double)
+        return found[0]
+
+    def addlinterm(
+        self,
+        funidx: Sequence[int | Function] | Functions,
+        varidx: Sequence[int | Variable] | Variables,
+        coef: Sequence[float],
+    ) -> None:
+        """Add linear terms to functions, as coordinates.
+
+        Term ``k`` adds ``coef[k]`` times variable ``varidx[k]`` to
+        function ``funidx[k]``, in any order. A variable the function holds
+        already adds its coefficient to the one held.
+
+        Parameters
+        ----------
+        funidx
+            The function of each term.
         varidx
-            The variable of each term.
+            The variable of each term, each once for its function.
         coef
             The coefficient of each term.
 
         See Also
         --------
-        BIYOS_getfuns
+        BIYOS_addlintermsp
         """
-        pos = index_of(self, Functions, "pos", pos)
-        n, inside = _span(pos, n, self.getnfun)
-        needed = c_int64()
-        if not inside:
-            empty = (0, None, None, byref(needed), None, None)
-            self._call(lib.BIYOS_getfuns, pos, n, *empty)
-        constants = (c_double * n)()
-        starts = (c_int64 * (n + 1))()
-        learn = (0, constants, starts, byref(needed), None, None)
-        self._call(lib.BIYOS_getfuns, pos, n, *learn)
-        size = needed.value
-        variables = (c_int * size)()
-        values = (c_double * size)()
-        fill = (size, None, None, byref(needed), variables, values)
-        self._call(lib.BIYOS_getfuns, pos, n, *fill)
-        terms = (list(starts), list(variables), list(values))
-        return (list(constants), *terms)
+        size = len(funidx)
+        arrays = (
+            indices_of(self, Functions, "funidx", funidx, size),
+            indices_of(self, Variables, "varidx", varidx, size),
+            doubles("coef", coef, size),
+        )
+        self._call(lib.BIYOS_addlintermsp, size, *arrays)
 
-    def addlinterms(
+    def getnrlinterm(
+        self, idx: Sequence[int | Function] | Functions | None = None
+    ) -> int:
+        """Count the linear terms of functions.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
+
+        Returns
+        -------
+        nnz
+            The number of linear terms they hold, a function counted each
+            time it appears.
+
+        See Also
+        --------
+        BIYOS_getnrlintermsp
+        BIYOS_getnrlintermrg
+        """
+        every = range(self.getnfun()) if idx is None else idx
+        return self._count("BIYOS_getnrlinterm", Functions, every)
+
+    def getrlinterm(
+        self, idx: Sequence[int | Function] | Functions | None = None
+    ) -> tuple[list[int], list[int], list[float]]:
+        """Read the linear terms of functions, by function.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
+
+        Returns
+        -------
+        funidx
+            The function of each term, the terms of ``idx[0]`` first.
+        varidx
+            The variable of each term, each function's sorted by variable.
+        coef
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_getrlintermsp
+        BIYOS_getrlintermrg
+        """
+        every = range(self.getnfun()) if idx is None else idx
+        found, values = self._terms("rlinterm", Functions, every, 0)
+        return found[0], found[1], values
+
+    def getnclinterm(
+        self, idx: Sequence[int | Variable] | Variables | None = None
+    ) -> int:
+        """Count the linear terms of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables, in any order, any of them more than once; every
+            variable by default.
+
+        Returns
+        -------
+        nnz
+            The number of linear terms that hold them, a variable counted
+            each time it appears.
+
+        See Also
+        --------
+        BIYOS_getnclintermsp
+        BIYOS_getnclintermrg
+        """
+        every = range(self.getnvar()) if idx is None else idx
+        return self._count("BIYOS_getnclinterm", Variables, every)
+
+    def getclinterm(
+        self, idx: Sequence[int | Variable] | Variables | None = None
+    ) -> tuple[list[int], list[int], list[float]]:
+        """Read the linear terms of variables, by variable.
+
+        Parameters
+        ----------
+        idx
+            The variables, in any order, any of them more than once; every
+            variable by default.
+
+        Returns
+        -------
+        funidx
+            The function of each term, each variable's sorted by function.
+        varidx
+            The variable of each term, the terms of ``idx[0]`` first.
+        coef
+            The coefficient of each term.
+
+        See Also
+        --------
+        BIYOS_getclintermsp
+        BIYOS_getclintermrg
+        """
+        every = range(self.getnvar()) if idx is None else idx
+        found, values = self._terms("clinterm", Variables, every, 1)
+        return found[0], found[1], values
+
+    def addquadterm(
         self,
         funidx: Sequence[int | Function] | Functions,
-        off: Sequence[int],
-        varidx: Sequence[int | Variable] | Variables,
+        varidx1: Sequence[int | Variable] | Variables,
+        varidx2: Sequence[int | Variable] | Variables,
         coef: Sequence[float],
     ) -> None:
-        """Add linear terms to functions of the model.
+        """Add quadratic terms to functions, as coordinates.
 
-        Function ``funidx[j]`` gains the terms from ``off[j]`` to
-        ``off[j + 1] - 1``. Term ``k`` adds ``coef[k]`` times variable
-        ``varidx[k]``. A variable the function holds already adds its
+        Term ``k`` adds ``coef[k]`` times the product of variables
+        ``varidx1[k]`` and ``varidx2[k]`` to function ``funidx[k]``, with
+        no factor 1/2, in any order. The two variables of a pair may come
+        in either order. A pair the function holds already adds its
         coefficient to the one held.
 
         Parameters
         ----------
         funidx
-            The functions that gain terms, each listed once.
-        off
-            The ``len(funidx) + 1`` offsets of the functions' terms in
-            ``varidx`` and ``coef``, from 0 and never decreasing.
-        varidx
-            The variable of each term, ``off[-1]`` of them, each once for
-            its function.
-        coef
-            The coefficient of each term, ``off[-1]`` of them.
-
-        See Also
-        --------
-        BIYOS_addlinterms
-        """
-        n = len(funidx)
-        starts = offsets("off", off, n + 1)
-        size = _total(starts, n)
-        arrays = (
-            indices_of(self, Functions, "funidx", funidx, n),
-            starts,
-            indices_of(self, Variables, "varidx", varidx, size),
-            doubles("coef", coef, size),
-        )
-        self._call(lib.BIYOS_addlinterms, n, *arrays)
-
-    def getclinterm(
-        self, pos: int | Variable = 0, n: int | None = None
-    ) -> tuple[list[int], list[int], list[float]]:
-        """Read the linear terms of variables, by variable.
-
-        For each variable from ``pos``, the functions whose linear terms
-        hold it, sorted by function, and its coefficient in each.
-
-        Parameters
-        ----------
-        pos
-            The first variable to read.
-        n
-            The number of variables to read, every one from ``pos`` on by
-            default.
-
-        Returns
-        -------
-        off
-            The ``n + 1`` offsets of the variables' terms in the two lists
-            after it, from 0.
-        funidx
             The function of each term.
+        varidx1, varidx2
+            The two variables of each term, each pair once for its
+            function.
         coef
             The coefficient of each term.
 
         See Also
         --------
-        BIYOS_getclintermrg
+        BIYOS_addquadtermsp
         """
-        pos = index_of(self, Variables, "pos", pos)
-        n, inside = _span(pos, n, self.getnvar)
-        nnz = c_int64()
-        if not inside:
-            empty = (0, None, byref(nnz), None, None)
-            self._call(lib.BIYOS_getclintermrg, pos, n, *empty)
-        starts = (c_int64 * (n + 1))()
-        learn = (0, starts, byref(nnz), None, None)
-        self._call(lib.BIYOS_getclintermrg, pos, n, *learn)
-        size = nnz.value
-        funs = (c_int * size)()
-        values = (c_double * size)()
-        fill = (size, None, byref(nnz), funs, values)
-        self._call(lib.BIYOS_getclintermrg, pos, n, *fill)
-        return list(starts), list(funs), list(values)
-
-    def addquadterms(
-        self,
-        funidx: Sequence[int | Function] | Functions,
-        off: Sequence[int],
-        varidx1: Sequence[int | Variable] | Variables,
-        varidx2: Sequence[int | Variable] | Variables,
-        coef: Sequence[float],
-    ) -> None:
-        """Add quadratic terms to functions of the model.
-
-        Function ``funidx[j]`` gains the terms from ``off[j]`` to
-        ``off[j + 1] - 1``. Term ``k`` adds ``coef[k]`` times the
-        product of variables ``varidx1[k]`` and ``varidx2[k]``, with no factor
-        1/2. The two variables of a pair may come in either order. A pair
-        the function holds already adds its coefficient to the one held.
-
-        Parameters
-        ----------
-        funidx
-            The functions that gain terms, each listed once.
-        off
-            The ``len(funidx) + 1`` offsets of the functions' terms in
-            ``varidx1``, ``varidx2`` and ``coef``, from 0 and never
-            decreasing.
-        varidx1, varidx2
-            The two variables of each term, ``off[-1]`` of each.
-        coef
-            The coefficient of each term, ``off[-1]`` of them.
-
-        See Also
-        --------
-        BIYOS_addquadterms
-        """
-        count = len(funidx)
-        starts = offsets("off", off, count + 1)
-        size = _total(starts, count)
+        size = len(funidx)
         arrays = (
-            indices_of(self, Functions, "funidx", funidx, count),
-            starts,
+            indices_of(self, Functions, "funidx", funidx, size),
             indices_of(self, Variables, "varidx1", varidx1, size),
             indices_of(self, Variables, "varidx2", varidx2, size),
             doubles("coef", coef, size),
         )
-        self._call(lib.BIYOS_addquadterms, count, *arrays)
+        self._call(lib.BIYOS_addquadtermsp, size, *arrays)
+
+    def getnquadterm(
+        self, idx: Sequence[int | Function] | Functions | None = None
+    ) -> int:
+        """Count the quadratic terms of functions.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
+
+        Returns
+        -------
+        nnz
+            The number of quadratic terms they hold, a function counted each
+            time it appears.
+
+        See Also
+        --------
+        BIYOS_getnquadtermsp
+        BIYOS_getnquadtermrg
+        """
+        every = range(self.getnfun()) if idx is None else idx
+        return self._count("BIYOS_getnquadterm", Functions, every)
 
     def getquadterm(
-        self, pos: int | Function = 0, n: int | None = None
+        self, idx: Sequence[int | Function] | Functions | None = None
     ) -> tuple[list[int], list[int], list[int], list[float]]:
         """Read the quadratic terms of functions.
 
         Parameters
         ----------
-        pos
-            The first function to read.
-        n
-            The number of functions to read, every one from ``pos`` on by
-            default.
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
 
         Returns
         -------
-        off
-            The ``n + 1`` offsets of the functions' terms in the three lists
-            after it, from 0.
+        funidx
+            The function of each term, the terms of ``idx[0]`` first.
         varidx1
-            The first variable of each term.
+            The first variable of each term, never above the second, each
+            function's terms sorted by pair.
         varidx2
             The second variable of each term.
         coef
@@ -671,25 +745,13 @@ class Model:
 
         See Also
         --------
+        BIYOS_getquadtermsp
         BIYOS_getquadtermrg
         """
-        pos = index_of(self, Functions, "pos", pos)
-        n, inside = _span(pos, n, self.getnfun)
-        needed = c_int64()
-        if not inside:
-            empty = (0, None, byref(needed), None, None, None)
-            self._call(lib.BIYOS_getquadtermrg, pos, n, *empty)
-        starts = (c_int64 * (n + 1))()
-        learn = (0, starts, byref(needed), None, None, None)
-        self._call(lib.BIYOS_getquadtermrg, pos, n, *learn)
-        size = needed.value
-        firsts = (c_int * size)()
-        seconds = (c_int * size)()
-        values = (c_double * size)()
-        fill = (size, None, byref(needed), firsts, seconds, values)
-        self._call(lib.BIYOS_getquadtermrg, pos, n, *fill)
-        terms = (list(firsts), list(seconds), list(values))
-        return (list(starts), *terms)
+        every = range(self.getnfun()) if idx is None else idx
+        found, values = self._terms("quadterm", Functions, every, 0, 3)
+        functions, firsts, seconds = found
+        return functions, firsts, seconds, values
 
     def addcon(
         self,
@@ -743,14 +805,15 @@ class Model:
         See Also
         --------
         BIYOS_setconbndsp
+        BIYOS_setconbndrg
         """
         count = len(idx)
+        chosen = self._chosen("BIYOS_setconbnd", Constraints, idx)
         arrays = (
-            indices_of(self, Constraints, "idx", idx, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
-        self._call(lib.BIYOS_setconbndsp, count, *arrays)
+        self._call(*chosen, *arrays)
 
     def getconbnd(
         self, idx: Sequence[int | Constraint] | Constraints
@@ -772,9 +835,10 @@ class Model:
         See Also
         --------
         BIYOS_getconbndsp
+        BIYOS_getconbndrg
         """
         bounds = (c_double, c_double)
-        lb, ub = self._getlist(lib.BIYOS_getconbndsp, Constraints, idx, *bounds)
+        lb, ub = self._getlist("BIYOS_getconbnd", Constraints, idx, *bounds)
         return lb, ub
 
     def getncon(self) -> int:
@@ -794,17 +858,15 @@ class Model:
         return count.value
 
     def getcon(
-        self, pos: int | Constraint = 0, n: int | None = None
+        self, idx: Sequence[int | Constraint] | Constraints | None = None
     ) -> tuple[list[int], list[float], list[float]]:
         """Read the functions and bounds of constraints.
 
         Parameters
         ----------
-        pos
-            The first constraint to read.
-        n
-            The number of constraints to read, every one from ``pos`` on by
-            default.
+        idx
+            The constraints, in any order, any of them more than once; every
+            constraint by default.
 
         Returns
         -------
@@ -817,19 +879,14 @@ class Model:
 
         See Also
         --------
+        BIYOS_getconsp
         BIYOS_getconrg
         """
-        pos = index_of(self, Constraints, "pos", pos)
-        n, inside = _span(pos, n, self.getncon)
-        if not inside:
-            empty = (None, None, None)
-            self._call(lib.BIYOS_getconrg, pos, n, *empty)
-        functions = (c_int * n)()
-        lower = (c_double * n)()
-        upper = (c_double * n)()
-        arrays = (functions, lower, upper)
-        self._call(lib.BIYOS_getconrg, pos, n, *arrays)
-        return list(functions), list(lower), list(upper)
+        every = range(self.getncon()) if idx is None else idx
+        types = (c_int, c_double, c_double)
+        found = self._getlist("BIYOS_getcon", Constraints, every, *types)
+        functions, lower, upper = found
+        return functions, lower, upper
 
     def addobj(
         self,
@@ -900,13 +957,14 @@ class Model:
         See Also
         --------
         BIYOS_setobjsensesp
+        BIYOS_setobjsenserg
         """
         n = len(idx)
+        chosen = self._chosen("BIYOS_setobjsense", Objectives, idx)
         arrays = (
-            indices_of(self, Objectives, "idx", idx, n),
             ints("sense", sense, n),
         )
-        self._call(lib.BIYOS_setobjsensesp, n, *arrays)
+        self._call(*chosen, *arrays)
 
     def getobjsense(
         self, idx: Sequence[int | Objective] | Objectives
@@ -926,8 +984,9 @@ class Model:
         See Also
         --------
         BIYOS_getobjsensesp
+        BIYOS_getobjsenserg
         """
-        found = self._getlist(lib.BIYOS_getobjsensesp, Objectives, idx, c_int)
+        found = self._getlist("BIYOS_getobjsense", Objectives, idx, c_int)
         return [Sense(value) for value in found[0]]
 
     def setobjprio(
@@ -949,13 +1008,14 @@ class Model:
         See Also
         --------
         BIYOS_setobjpriosp
+        BIYOS_setobjpriorg
         """
         n = len(idx)
+        chosen = self._chosen("BIYOS_setobjprio", Objectives, idx)
         arrays = (
-            indices_of(self, Objectives, "idx", idx, n),
             ints("prio", prio, n),
         )
-        self._call(lib.BIYOS_setobjpriosp, n, *arrays)
+        self._call(*chosen, *arrays)
 
     def getobjprio(
         self, idx: Sequence[int | Objective] | Objectives
@@ -975,8 +1035,9 @@ class Model:
         See Also
         --------
         BIYOS_getobjpriosp
+        BIYOS_getobjpriorg
         """
-        found = self._getlist(lib.BIYOS_getobjpriosp, Objectives, idx, c_int)
+        found = self._getlist("BIYOS_getobjprio", Objectives, idx, c_int)
         return found[0]
 
     def setobjcoef(
@@ -999,13 +1060,14 @@ class Model:
         See Also
         --------
         BIYOS_setobjcoefsp
+        BIYOS_setobjcoefrg
         """
         n = len(idx)
+        chosen = self._chosen("BIYOS_setobjcoef", Objectives, idx)
         arrays = (
-            indices_of(self, Objectives, "idx", idx, n),
             doubles("coef", coef, n),
         )
-        self._call(lib.BIYOS_setobjcoefsp, n, *arrays)
+        self._call(*chosen, *arrays)
 
     def getobjcoef(
         self, idx: Sequence[int | Objective] | Objectives
@@ -1025,8 +1087,9 @@ class Model:
         See Also
         --------
         BIYOS_getobjcoefsp
+        BIYOS_getobjcoefrg
         """
-        found = self._getlist(lib.BIYOS_getobjcoefsp, Objectives, idx, c_double)
+        found = self._getlist("BIYOS_getobjcoef", Objectives, idx, c_double)
         return found[0]
 
     def setobjtol(
@@ -1053,14 +1116,15 @@ class Model:
         See Also
         --------
         BIYOS_setobjtolsp
+        BIYOS_setobjtolrg
         """
         n = len(idx)
+        chosen = self._chosen("BIYOS_setobjtol", Objectives, idx)
         arrays = (
-            indices_of(self, Objectives, "idx", idx, n),
             doubles("atol", atol, n),
             doubles("rtol", rtol, n),
         )
-        self._call(lib.BIYOS_setobjtolsp, n, *arrays)
+        self._call(*chosen, *arrays)
 
     def getobjtol(
         self, idx: Sequence[int | Objective] | Objectives
@@ -1082,11 +1146,10 @@ class Model:
         See Also
         --------
         BIYOS_getobjtolsp
+        BIYOS_getobjtolrg
         """
         pair = (c_double, c_double)
-        atol, rtol = self._getlist(
-            lib.BIYOS_getobjtolsp, Objectives, idx, *pair
-        )
+        atol, rtol = self._getlist("BIYOS_getobjtol", Objectives, idx, *pair)
         return atol, rtol
 
     def getnobj(self) -> int:
@@ -1106,17 +1169,15 @@ class Model:
         return count.value
 
     def getobj(
-        self, pos: int | Objective = 0, n: int | None = None
+        self, idx: Sequence[int | Objective] | Objectives | None = None
     ) -> tuple[list[int], list[Sense], list[int], list[float]]:
         """Read objectives.
 
         Parameters
         ----------
-        pos
-            The first objective to read.
-        n
-            The number of objectives to read, every one from ``pos`` on by
-            default.
+        idx
+            The objectives, in any order, any of them more than once; every
+            objective by default.
 
         Returns
         -------
@@ -1131,21 +1192,15 @@ class Model:
 
         See Also
         --------
+        BIYOS_getobjsp
         BIYOS_getobjrg
         """
-        pos = index_of(self, Objectives, "pos", pos)
-        n, inside = _span(pos, n, self.getnobj)
-        if not inside:
-            empty = (None,) * 4
-            self._call(lib.BIYOS_getobjrg, pos, n, *empty)
-        functions = (c_int * n)()
-        codes = (c_int * n)()
-        priorities = (c_int * n)()
-        weights = (c_double * n)()
-        found = (functions, codes, priorities, weights)
-        self._call(lib.BIYOS_getobjrg, pos, n, *found)
+        every = range(self.getnobj()) if idx is None else idx
+        types = (c_int, c_int, c_int, c_double)
+        found = self._getlist("BIYOS_getobj", Objectives, every, *types)
+        functions, codes, priorities, weights = found
         senses = [Sense(code) for code in codes]
-        return list(functions), senses, list(priorities), list(weights)
+        return functions, senses, priorities, weights
 
     def setmdlname(self, name: str) -> None:
         """Name the model.
@@ -1232,8 +1287,9 @@ class Model:
         See Also
         --------
         BIYOS_setvarnamesp
+        BIYOS_setvarnamerg
         """
-        self._setname(lib.BIYOS_setvarnamesp, Variables, idx, name)
+        self._setname("BIYOS_setvarname", Variables, idx, name)
 
     def getvarname(
         self, idx: Sequence[int | Variable] | Variables
@@ -1253,8 +1309,9 @@ class Model:
         See Also
         --------
         BIYOS_getvarnamesp
+        BIYOS_getvarnamerg
         """
-        return self._getname(lib.BIYOS_getvarnamesp, Variables, idx)
+        return self._getname("BIYOS_getvarname", Variables, idx)
 
     def getvaridx(self, name: Sequence[str]) -> list[int]:
         """Return the indices of the variables with names.
@@ -1304,8 +1361,9 @@ class Model:
         See Also
         --------
         BIYOS_delvarnamesp
+        BIYOS_delvarnamerg
         """
-        self._delname(lib.BIYOS_delvarnamesp, Variables, idx)
+        self._delname("BIYOS_delvarname", Variables, idx)
 
     def setfunname(
         self, idx: Sequence[int | Function] | Functions, name: Sequence[str]
@@ -1322,8 +1380,9 @@ class Model:
         See Also
         --------
         BIYOS_setfunnamesp
+        BIYOS_setfunnamerg
         """
-        self._setname(lib.BIYOS_setfunnamesp, Functions, idx, name)
+        self._setname("BIYOS_setfunname", Functions, idx, name)
 
     def getfunname(
         self, idx: Sequence[int | Function] | Functions
@@ -1343,8 +1402,9 @@ class Model:
         See Also
         --------
         BIYOS_getfunnamesp
+        BIYOS_getfunnamerg
         """
-        return self._getname(lib.BIYOS_getfunnamesp, Functions, idx)
+        return self._getname("BIYOS_getfunname", Functions, idx)
 
     def getfunidx(self, name: Sequence[str]) -> list[int]:
         """Return the indices of named functions, as ``getvaridx`` does.
@@ -1376,8 +1436,9 @@ class Model:
         See Also
         --------
         BIYOS_delfunnamesp
+        BIYOS_delfunnamerg
         """
-        self._delname(lib.BIYOS_delfunnamesp, Functions, idx)
+        self._delname("BIYOS_delfunname", Functions, idx)
 
     def setconname(
         self,
@@ -1396,8 +1457,9 @@ class Model:
         See Also
         --------
         BIYOS_setconnamesp
+        BIYOS_setconnamerg
         """
-        self._setname(lib.BIYOS_setconnamesp, Constraints, idx, name)
+        self._setname("BIYOS_setconname", Constraints, idx, name)
 
     def getconname(
         self, idx: Sequence[int | Constraint] | Constraints
@@ -1417,8 +1479,9 @@ class Model:
         See Also
         --------
         BIYOS_getconnamesp
+        BIYOS_getconnamerg
         """
-        return self._getname(lib.BIYOS_getconnamesp, Constraints, idx)
+        return self._getname("BIYOS_getconname", Constraints, idx)
 
     def getconidx(self, name: Sequence[str]) -> list[int]:
         """Return the indices of named constraints, as ``getvaridx`` does.
@@ -1452,8 +1515,9 @@ class Model:
         See Also
         --------
         BIYOS_delconnamesp
+        BIYOS_delconnamerg
         """
-        self._delname(lib.BIYOS_delconnamesp, Constraints, idx)
+        self._delname("BIYOS_delconname", Constraints, idx)
 
     def setobjname(
         self, idx: Sequence[int | Objective] | Objectives, name: Sequence[str]
@@ -1470,8 +1534,9 @@ class Model:
         See Also
         --------
         BIYOS_setobjnamesp
+        BIYOS_setobjnamerg
         """
-        self._setname(lib.BIYOS_setobjnamesp, Objectives, idx, name)
+        self._setname("BIYOS_setobjname", Objectives, idx, name)
 
     def getobjname(
         self, idx: Sequence[int | Objective] | Objectives
@@ -1491,8 +1556,9 @@ class Model:
         See Also
         --------
         BIYOS_getobjnamesp
+        BIYOS_getobjnamerg
         """
-        return self._getname(lib.BIYOS_getobjnamesp, Objectives, idx)
+        return self._getname("BIYOS_getobjname", Objectives, idx)
 
     def getobjidx(self, name: Sequence[str]) -> list[int]:
         """Return the indices of named objectives, as ``getvaridx`` does.
@@ -1524,8 +1590,9 @@ class Model:
         See Also
         --------
         BIYOS_delobjnamesp
+        BIYOS_delobjnamerg
         """
-        self._delname(lib.BIYOS_delobjnamesp, Objectives, idx)
+        self._delname("BIYOS_delobjname", Objectives, idx)
 
     def _start(self, env: Env) -> None:
         self._env = env
@@ -1557,54 +1624,103 @@ class Model:
             return False
         return self._free.alive and self._env._open()
 
+    def _chosen(
+        self,
+        call: str,
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+        outputs: int = 0,
+    ) -> tuple[Callable[..., int], int, object]:
+        span = span_of(self, family, "idx", idx)
+        if span is None:
+            n = len(idx)
+            indices = indices_of(self, family, "idx", idx, n)
+            return getattr(lib, f"{call}sp"), n, indices
+        pos = integer("the start of idx", span.start)
+        n = integer("idx", len(span))
+        function = getattr(lib, f"{call}rg")
+        if outputs > 0 and not self._inside(family, span):
+            self._call(function, pos, n, *([None] * outputs))
+        return function, pos, n
+
+    def _inside(self, family: type[Block[Any]], span: range) -> bool:
+        total: int = getattr(self, _COUNTS[family])()
+        return 0 <= span.start <= total and len(span) <= total - span.start
+
     def _setname(
         self,
-        function: Callable[..., int],
+        call: str,
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
         name: Sequence[str],
     ) -> None:
-        count = len(idx)
-        arrays = (
-            indices_of(self, family, "idx", idx, count),
-            strings("name", name, count),
-        )
-        self._call(function, count, *arrays)
+        chosen = self._chosen(call, family, idx)
+        names = strings("name", name, len(idx))
+        self._call(*chosen, names)
 
     def _delname(
         self,
-        function: Callable[..., int],
+        call: str,
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
     ) -> None:
-        count = len(idx)
-        indices = indices_of(self, family, "idx", idx, count)
-        self._call(function, count, indices)
+        self._call(*self._chosen(call, family, idx))
 
     def _getname(
         self,
-        function: Callable[..., int],
+        call: str,
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
     ) -> list[str | None]:
-        count = len(idx)
-        indices = indices_of(self, family, "idx", idx, count)
-        found = (c_char_p * count)()
-        self._call(function, count, indices, found)
+        chosen = self._chosen(call, family, idx, 1)
+        found = (c_char_p * len(idx))()
+        self._call(*chosen, found)
         return [decoded(value) for value in found]
 
     def _getlist(
         self,
-        function: Callable[..., int],
+        call: str,
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
         *types: type[c_int | c_double],
     ) -> list[list[Any]]:
-        n = len(idx)
-        given = indices_of(self, family, "idx", idx, n)
-        found = [(element * n)() for element in types]
-        self._call(function, n, given, *found)
+        chosen = self._chosen(call, family, idx, len(types))
+        found = [(element * len(idx))() for element in types]
+        self._call(*chosen, *found)
         return [list(values) for values in found]
+
+    def _count(
+        self,
+        call: str,
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+    ) -> int:
+        nnz = c_int64()
+        self._call(*self._chosen(call, family, idx), byref(nnz))
+        return nnz.value
+
+    def _terms(
+        self,
+        name: str,
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+        place: int,
+        width: int = 2,
+    ) -> tuple[list[list[int]], list[float]]:
+        size = self._count(f"BIYOS_getn{name}", family, idx)
+        span = span_of(self, family, "idx", idx)
+        chosen = self._chosen(f"BIYOS_get{name}", family, idx)
+        found = [(c_int * size)() for _ in range(width)]
+        values = (c_double * size)()
+        if span is None:
+            self._call(*chosen, size, None, *found, values)
+            return [list(column) for column in found], list(values)
+        starts = (c_int64 * (len(span) + 1))()
+        others = found[:place] + found[place + 1 :]
+        self._call(*chosen, size, starts, *others, values)
+        columns = [list(column) for column in found]
+        columns[place] = _expanded(starts, span.start)
+        return columns, list(values)
 
     def _getidx(
         self, function: Callable[..., int], name: Sequence[str]

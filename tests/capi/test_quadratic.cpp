@@ -44,24 +44,35 @@ const Compressed kSorted{
     .values = {2.0, -0.0, -1.0, 3.0, 1.0},
 };
 
+std::vector<int> owners_of(const std::vector<int> &functions, const Compressed &terms)
+{
+    std::vector<int> owners;
+    for (std::size_t j = 0; j < functions.size(); ++j)
+    {
+        const auto count = static_cast<std::size_t>(terms.starts[j + 1] - terms.starts[j]);
+        owners.insert(owners.end(), count, functions[j]);
+    }
+    return owners;
+}
+
 BIYOS_status add_terms(const Model &model,
                        const std::vector<int> &functions,
                        const Compressed &terms)
 {
-    return BIYOS_addquadterms(model.get(),
-                              static_cast<int>(functions.size()),
-                              functions.data(),
-                              terms.starts.data(),
-                              terms.rows.data(),
-                              terms.columns.data(),
-                              terms.values.data());
+    const std::vector<int> owners = owners_of(functions, terms);
+    return BIYOS_addquadtermsp(model.get(),
+                               static_cast<BIYOS_offset>(owners.size()),
+                               owners.data(),
+                               terms.rows.data(),
+                               terms.columns.data(),
+                               terms.values.data());
 }
 
 void add_sample(const Model &model)
 {
     BIYOS_model *held = model.get();
     ASSERT_EQ(BIYOS_addvar(held, 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addfuns(held, 3, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(held, 3, nullptr), BIYOS_OK);
     ASSERT_EQ(add_terms(model, kFunctions, kSample), BIYOS_OK);
 }
 
@@ -75,29 +86,34 @@ Compressed blank(std::size_t functions, std::size_t terms)
     };
 }
 
-std::int64_t read_with(const Model &model,
+BIYOS_status read_with(const Model &model,
                        int start,
                        int size,
                        Compressed &read,
                        std::int64_t capacity)
 {
-    BIYOS_offset needed = -1;
-    const BIYOS_status status = BIYOS_getquadtermrg(model.get(),
-                                                    start,
-                                                    size,
-                                                    capacity,
-                                                    read.starts.data(),
-                                                    &needed,
-                                                    read.rows.data(),
-                                                    read.columns.data(),
-                                                    read.values.data());
-    EXPECT_EQ(status, BIYOS_OK);
-    return needed;
+    return BIYOS_getquadtermrg(model.get(),
+                               start,
+                               size,
+                               capacity,
+                               read.starts.data(),
+                               read.rows.data(),
+                               read.columns.data(),
+                               read.values.data());
+}
+
+std::int64_t count_of(const Model &model, int start, int size)
+{
+    BIYOS_offset nnz = -1;
+    EXPECT_EQ(BIYOS_getnquadtermrg(model.get(), start, size, &nnz), BIYOS_OK);
+    return nnz;
 }
 
 std::int64_t read_terms(const Model &model, int start, int size, Compressed &read)
 {
-    return read_with(model, start, size, read, static_cast<std::int64_t>(read.rows.size()));
+    const auto capacity = static_cast<std::int64_t>(read.rows.size());
+    EXPECT_EQ(read_with(model, start, size, read, capacity), BIYOS_OK);
+    return count_of(model, start, size);
 }
 
 std::vector<std::uint64_t> bits_of(const std::vector<double> &values)
@@ -144,10 +160,10 @@ void change(const BIYOS_event *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
-    const BIYOS_index function = 0;
     BIYOS_offset needed = 0;
-    note(attempt, BIYOS_addquadterms(model, 1, &function, nullptr, nullptr, nullptr, nullptr));
-    note(attempt, BIYOS_getquadtermrg(model, 0, 1, 0, nullptr, &needed, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_addquadtermsp(model, 0, nullptr, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_addquadtermrg(model, 0, 1, nullptr, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_getnquadtermrg(model, 0, 1, &needed));
 }
 
 }
@@ -189,25 +205,18 @@ TEST(CApiTest, QuadraticSizes)
     const Env env;
     const Model model(env);
     add_sample(model);
-    BIYOS_offset needed = -1;
-    BIYOS_model *held = model.get();
-    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 0, nullptr, &needed, nullptr, nullptr, nullptr),
-              BIYOS_OK);
-    EXPECT_EQ(needed, 5);
+    EXPECT_EQ(count_of(model, 0, 3), 5);
     Compressed none = blank(3, 2);
-    EXPECT_EQ(read_with(model, 0, 3, none, 0), 5);
-    Compressed unread = blank(3, 2);
-    unread.starts = kSorted.starts;
-    expect_compressed(none, unread);
+    EXPECT_EQ(read_with(model, 0, 3, none, 0), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cap': holds 0 of the 5 terms");
+    expect_compressed(none, blank(3, 2));
     Compressed small = blank(3, 4);
-    EXPECT_EQ(read_with(model, 0, 3, small, 2), 5);
-    const Compressed cut{
-        .starts = kSorted.starts,
-        .rows = {0, 1, kNoVariable, kNoVariable},
-        .columns = {0, 1, kNoVariable, kNoVariable},
-        .values = {2.0, -0.0, kNoValue, kNoValue},
-    };
-    expect_compressed(small, cut);
+    EXPECT_EQ(read_with(model, 0, 3, small, 4), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cap': holds 4 of the 5 terms");
+    expect_compressed(small, blank(3, 4));
+    Compressed empty = blank(1, 0);
+    EXPECT_EQ(read_with(model, 1, 1, empty, 0), BIYOS_OK);
+    EXPECT_EQ(empty.starts, (std::vector<std::int64_t>{0, 0}));
     Compressed large = blank(3, 6);
     EXPECT_EQ(read_terms(model, 0, 3, large), 5);
     const Compressed whole{
@@ -238,110 +247,23 @@ TEST(CApiTest, QuadraticRange)
     EXPECT_EQ(none.starts, std::vector<std::int64_t>{0});
 }
 
-TEST(CApiTest, NullQuadratic)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    BIYOS_model *held = model.get();
-    const int functions[] = {1, 2};
-    const std::int64_t one[] = {0, 1};
-    const BIYOS_index variable = 0;
-    const BIYOS_real value = 1.0;
-    EXPECT_EQ(BIYOS_addquadterms(held, 0, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_addquadterms(held, 2, functions, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, nullptr, one, &variable, &variable, &value),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, nullptr, &variable, &value),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx1': is null");
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, &variable, nullptr, &value),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx2': is null");
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, &variable, &variable, nullptr),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
-    expect_sample(model);
-}
-
 TEST(CApiTest, NullPairs)
 {
     const Env env;
     const Model model(env);
     add_sample(model);
     Compressed read = blank(3, 5);
-    BIYOS_offset needed = -1;
     BIYOS_model *held = model.get();
     std::int64_t *starts = read.starts.data();
     int *rows = read.rows.data();
     int *columns = read.columns.data();
     double *values = read.values.data();
-    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, nullptr, &needed, rows, nullptr, nullptr),
-              BIYOS_OK);
-    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, nullptr, &needed, nullptr, columns, nullptr),
-              BIYOS_OK);
-    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, starts, &needed, nullptr, nullptr, values),
-              BIYOS_OK);
+    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, nullptr, rows, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, nullptr, nullptr, columns, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, starts, nullptr, nullptr, values), BIYOS_OK);
     expect_compressed(read, kSorted);
-    Compressed kept = blank(3, 5);
-    starts = kept.starts.data();
-    rows = kept.rows.data();
-    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, starts, nullptr, rows, nullptr, nullptr),
-              BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getnquadtermrg(held, 0, 3, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
-    expect_compressed(kept, blank(3, 5));
-}
-
-TEST(CApiTest, RefusedQuadratic)
-{
-    const Env env;
-    const Model model(env);
-    add_sample(model);
-    BIYOS_model *held = model.get();
-    const int functions[] = {0, 1};
-    const int repeated[] = {1, 1};
-    const int unknown[] = {3};
-    const std::int64_t late[] = {1, 1};
-    const std::int64_t falling[] = {0, 1, 0};
-    const std::int64_t negative[] = {0, -1};
-    const std::int64_t one[] = {0, 1};
-    const std::int64_t both[] = {0, 2};
-    const int rows[] = {1, 3};
-    const int columns[] = {0, 1};
-    const int crossed[] = {1, 0};
-    const double values[] = {1.0, 2.0};
-    const BIYOS_real nan = std::numeric_limits<double>::quiet_NaN();
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, late, rows, columns, values),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': begins at 1, not 0");
-    EXPECT_EQ(BIYOS_addquadterms(held, 2, functions, falling, rows, columns, values),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 1 to 0 at entry 2");
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, negative, rows, columns, values),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 0 to -1 at entry 1");
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, unknown, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: function 3: unknown");
-    EXPECT_EQ(BIYOS_addquadterms(held, 2, repeated, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': function 1 is repeated");
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, both, rows, columns, values),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: function 0: variable 3 is unknown");
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, both, columns, rows, values),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: function 0: variable 3 is unknown");
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, one, rows, columns, &nan), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: function 0: coefficient of pair (1, 0) is NaN");
-    EXPECT_EQ(BIYOS_addquadterms(held, 1, functions, both, crossed, columns, values),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: function 0: pair (0, 1) is repeated");
-    EXPECT_EQ(BIYOS_addquadterms(held, -1, nullptr, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
-    expect_sample(model);
 }
 
 TEST(CApiTest, RefusedPairs)
@@ -359,36 +281,14 @@ TEST(CApiTest, RefusedPairs)
     for (std::size_t k = 0; k < ranges.size(); ++k)
     {
         Compressed read = blank(3, 5);
-        BIYOS_offset needed = -1;
         const auto [start, n] = ranges[k];
-        EXPECT_EQ(BIYOS_getquadtermrg(model.get(),
-                                      start,
-                                      n,
-                                      5,
-                                      read.starts.data(),
-                                      &needed,
-                                      read.rows.data(),
-                                      read.columns.data(),
-                                      read.values.data()),
-                  BIYOS_ERR_BADARG);
+        EXPECT_EQ(read_with(model, start, n, read, 5), BIYOS_ERR_BADARG);
         EXPECT_EQ(env.message(), messages[k]);
-        EXPECT_EQ(needed, -1);
         expect_compressed(read, blank(3, 5));
     }
     Compressed read = blank(3, 5);
-    BIYOS_offset needed = -1;
-    EXPECT_EQ(BIYOS_getquadtermrg(model.get(),
-                                  0,
-                                  3,
-                                  -1,
-                                  read.starts.data(),
-                                  &needed,
-                                  read.rows.data(),
-                                  read.columns.data(),
-                                  read.values.data()),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'size': -1 is negative");
-    EXPECT_EQ(needed, -1);
+    EXPECT_EQ(read_with(model, 0, 3, read, -1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cap': -1 is negative");
     expect_compressed(read, blank(3, 5));
 }
 
@@ -404,10 +304,11 @@ TEST(CApiTest, LockedQuadratic)
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    const std::vector<BIYOS_status> statuses{BIYOS_ERR_BADARG, BIYOS_OK};
+    const std::vector<BIYOS_status> statuses{BIYOS_ERR_BADARG, BIYOS_ERR_BADARG, BIYOS_OK};
     EXPECT_EQ(attempt.statuses, statuses);
     EXPECT_EQ(attempt.messages[0],
               "invalid argument: model: is read-only while delivering an event");
+    EXPECT_EQ(attempt.messages[1], attempt.messages[0]);
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     expect_sample(model);
 }
@@ -417,7 +318,6 @@ TEST(CApiTest, HugeQuadratic)
     const Env env;
     const Model model(env);
     add_sample(model);
-    const std::vector<int> function{1};
     const Compressed most{
         .starts = {0, (std::numeric_limits<std::int64_t>::max)()},
         .rows = {0, 1},
@@ -427,9 +327,15 @@ TEST(CApiTest, HugeQuadratic)
     Compressed large = most;
     large.starts = {0, std::int64_t{1} << 59};
     const std::string message = "out of memory: model: no quadratic term offset left";
-    EXPECT_EQ(add_terms(model, function, most), BIYOS_ERR_NOMEMORY);
+    BIYOS_model *held = model.get();
+    const int *rows = most.rows.data();
+    const int *columns = most.columns.data();
+    const double *values = most.values.data();
+    EXPECT_EQ(BIYOS_addquadtermrg(held, 1, 1, most.starts.data(), rows, columns, values),
+              BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
-    EXPECT_EQ(add_terms(model, function, large), BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(BIYOS_addquadtermrg(held, 1, 1, large.starts.data(), rows, columns, values),
+              BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
     expect_sample(model);
 }

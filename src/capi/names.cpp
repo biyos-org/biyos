@@ -2,13 +2,13 @@
 
 #include "capi/arrays.hpp"
 #include "capi/entry.hpp"
+#include "capi/selection.hpp"
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "model/model.hpp"
 
 #include <algorithm>
 #include <cstddef>
-#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -16,8 +16,10 @@
 using biyos::Family;
 using biyos::capi::guarded;
 using biyos::capi::length;
-using biyos::capi::listed;
+using biyos::capi::List;
+using biyos::capi::Range;
 using biyos::capi::require;
+using biyos::capi::selected;
 using biyos::capi::writable;
 
 namespace
@@ -69,18 +71,18 @@ void delete_model_name(BIYOS_model &model)
     writable(model).delete_name();
 }
 
-template <Family Target>
-void set_names(BIYOS_model &model, int n, const int *indices, const char *const *names)
+template <Family Target, typename Selection>
+void set_names(BIYOS_model &model, Selection selection, const char *const *names)
 {
     biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> changed = listed(n, indices);
+    const auto changed = selected(core, Target, selection);
     core.set_names(Target, changed, texts(changed.size(), names));
 }
 
-template <Family Target>
-void get_names(const BIYOS_model &model, int n, const int *indices, const char **names)
+template <Family Target, typename Selection>
+void get_names(const BIYOS_model &model, Selection selection, const char **names)
 {
-    const std::span<const biyos::Index> wanted = listed(n, indices);
+    const auto wanted = selected(model.core, Target, selection);
     std::vector<const char *> found;
     found.reserve(wanted.size());
     for (const biyos::Index i : wanted)
@@ -109,10 +111,11 @@ void get_indices(const BIYOS_model &model, int n, const char *const *names, int 
     }
 }
 
-template <Family Target> void delete_names(BIYOS_model &model, int n, const int *indices)
+template <Family Target, typename Selection>
+void delete_names(BIYOS_model &model, Selection selection)
 {
     biyos::Model &core = writable(model);
-    core.delete_names(Target, listed(n, indices));
+    core.delete_names(Target, selected(core, Target, selection));
 }
 
 }
@@ -137,7 +140,15 @@ BIYOS_status BIYOS_setvarnamesp(BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const char *const *name)
 {
-    return guarded<set_names<Family::Variable>>(mdl, n, idx, name);
+    return guarded<set_names<Family::Variable, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_setvarnamerg(BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const char *const *name)
+{
+    return guarded<set_names<Family::Variable, Range>>(mdl, Range{pos, n}, name);
 }
 
 BIYOS_status BIYOS_getvarnamesp(const BIYOS_model *mdl,
@@ -145,7 +156,15 @@ BIYOS_status BIYOS_getvarnamesp(const BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const char **name)
 {
-    return guarded<get_names<Family::Variable>>(mdl, n, idx, name);
+    return guarded<get_names<Family::Variable, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_getvarnamerg(const BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const char **name)
+{
+    return guarded<get_names<Family::Variable, Range>>(mdl, Range{pos, n}, name);
 }
 
 BIYOS_status BIYOS_getvaridx(const BIYOS_model *mdl,
@@ -158,7 +177,12 @@ BIYOS_status BIYOS_getvaridx(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_delvarnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<delete_names<Family::Variable>>(mdl, n, idx);
+    return guarded<delete_names<Family::Variable, List>>(mdl, List{n, idx});
+}
+
+BIYOS_status BIYOS_delvarnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+{
+    return guarded<delete_names<Family::Variable, Range>>(mdl, Range{pos, n});
 }
 
 BIYOS_status BIYOS_setfunnamesp(BIYOS_model *mdl,
@@ -166,7 +190,15 @@ BIYOS_status BIYOS_setfunnamesp(BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const char *const *name)
 {
-    return guarded<set_names<Family::Function>>(mdl, n, idx, name);
+    return guarded<set_names<Family::Function, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_setfunnamerg(BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const char *const *name)
+{
+    return guarded<set_names<Family::Function, Range>>(mdl, Range{pos, n}, name);
 }
 
 BIYOS_status BIYOS_getfunnamesp(const BIYOS_model *mdl,
@@ -174,7 +206,15 @@ BIYOS_status BIYOS_getfunnamesp(const BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const char **name)
 {
-    return guarded<get_names<Family::Function>>(mdl, n, idx, name);
+    return guarded<get_names<Family::Function, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_getfunnamerg(const BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const char **name)
+{
+    return guarded<get_names<Family::Function, Range>>(mdl, Range{pos, n}, name);
 }
 
 BIYOS_status BIYOS_getfunidx(const BIYOS_model *mdl,
@@ -187,7 +227,12 @@ BIYOS_status BIYOS_getfunidx(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_delfunnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<delete_names<Family::Function>>(mdl, n, idx);
+    return guarded<delete_names<Family::Function, List>>(mdl, List{n, idx});
+}
+
+BIYOS_status BIYOS_delfunnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+{
+    return guarded<delete_names<Family::Function, Range>>(mdl, Range{pos, n});
 }
 
 BIYOS_status BIYOS_setconnamesp(BIYOS_model *mdl,
@@ -195,7 +240,15 @@ BIYOS_status BIYOS_setconnamesp(BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const char *const *name)
 {
-    return guarded<set_names<Family::Constraint>>(mdl, n, idx, name);
+    return guarded<set_names<Family::Constraint, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_setconnamerg(BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const char *const *name)
+{
+    return guarded<set_names<Family::Constraint, Range>>(mdl, Range{pos, n}, name);
 }
 
 BIYOS_status BIYOS_getconnamesp(const BIYOS_model *mdl,
@@ -203,7 +256,15 @@ BIYOS_status BIYOS_getconnamesp(const BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const char **name)
 {
-    return guarded<get_names<Family::Constraint>>(mdl, n, idx, name);
+    return guarded<get_names<Family::Constraint, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_getconnamerg(const BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const char **name)
+{
+    return guarded<get_names<Family::Constraint, Range>>(mdl, Range{pos, n}, name);
 }
 
 BIYOS_status BIYOS_getconidx(const BIYOS_model *mdl,
@@ -216,7 +277,12 @@ BIYOS_status BIYOS_getconidx(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_delconnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<delete_names<Family::Constraint>>(mdl, n, idx);
+    return guarded<delete_names<Family::Constraint, List>>(mdl, List{n, idx});
+}
+
+BIYOS_status BIYOS_delconnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+{
+    return guarded<delete_names<Family::Constraint, Range>>(mdl, Range{pos, n});
 }
 
 BIYOS_status BIYOS_setobjnamesp(BIYOS_model *mdl,
@@ -224,7 +290,15 @@ BIYOS_status BIYOS_setobjnamesp(BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const char *const *name)
 {
-    return guarded<set_names<Family::Objective>>(mdl, n, idx, name);
+    return guarded<set_names<Family::Objective, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_setobjnamerg(BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const char *const *name)
+{
+    return guarded<set_names<Family::Objective, Range>>(mdl, Range{pos, n}, name);
 }
 
 BIYOS_status BIYOS_getobjnamesp(const BIYOS_model *mdl,
@@ -232,7 +306,15 @@ BIYOS_status BIYOS_getobjnamesp(const BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const char **name)
 {
-    return guarded<get_names<Family::Objective>>(mdl, n, idx, name);
+    return guarded<get_names<Family::Objective, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_getobjnamerg(const BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const char **name)
+{
+    return guarded<get_names<Family::Objective, Range>>(mdl, Range{pos, n}, name);
 }
 
 BIYOS_status BIYOS_getobjidx(const BIYOS_model *mdl,
@@ -245,5 +327,10 @@ BIYOS_status BIYOS_getobjidx(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_delobjnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<delete_names<Family::Objective>>(mdl, n, idx);
+    return guarded<delete_names<Family::Objective, List>>(mdl, List{n, idx});
+}
+
+BIYOS_status BIYOS_delobjnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+{
+    return guarded<delete_names<Family::Objective, Range>>(mdl, Range{pos, n});
 }

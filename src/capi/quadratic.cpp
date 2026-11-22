@@ -2,6 +2,8 @@
 
 #include "capi/arrays.hpp"
 #include "capi/entry.hpp"
+#include "capi/grouped.hpp"
+#include "capi/selection.hpp"
 #include "core/index.hpp"
 #include "model/compressed.hpp"
 #include "model/model.hpp"
@@ -9,29 +11,30 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <utility>
 #include <vector>
 
+using biyos::Family;
+using biyos::QuadraticTerm;
+using biyos::capi::Grouped;
 using biyos::capi::guarded;
 using biyos::capi::length;
-using biyos::capi::listed;
 using biyos::capi::offsets;
+using biyos::capi::Range;
 using biyos::capi::require;
+using biyos::capi::selected;
 using biyos::capi::writable;
-using biyos::capi::write_starts;
 
 namespace
 {
 
-void add_terms(BIYOS_model &model,
-               int n,
-               const int *functions,
-               const std::int64_t *starts,
-               const int *rows,
-               const int *columns,
-               const double *values)
+void add_sliced(biyos::Model &core,
+                std::span<const biyos::Index> owners,
+                const std::int64_t *starts,
+                const int *rows,
+                const int *columns,
+                const double *values)
 {
-    biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> owners = listed(n, functions, "funidx");
     const std::vector<biyos::Offset> begins = offsets(owners.size(), starts);
     biyos::check_starts(begins);
     core.check_quadratic_room(begins.back());
@@ -39,47 +42,57 @@ void add_terms(BIYOS_model &model,
     core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, rows, columns, values));
 }
 
-void get_terms(const BIYOS_model &model,
-               int start,
-               int size,
-               std::int64_t *starts,
-               std::int64_t capacity,
-               std::int64_t *needed,
-               int *rows,
-               int *columns,
-               double *values)
+void add_listed(BIYOS_model &model,
+                std::int64_t nnz,
+                const int *functions,
+                const int *rows,
+                const int *columns,
+                const double *values)
 {
-    const std::span<const biyos::QuadraticTerm> found = model.core.quadratic_terms(start, size);
-    const std::size_t room = length(capacity, "size");
-    require(needed, "nnz");
-    const auto before = [&](biyos::Index j) { return model.core.quadratic_terms(start, j); };
-    write_starts(static_cast<std::size_t>(size), starts, before);
-    biyos::capi::unpack(found, room, rows, columns, values);
-    *needed = static_cast<std::int64_t>(found.size());
+    biyos::Model &core = writable(model);
+    const std::size_t size = length(nnz, "nnz");
+    if (size > 0)
+    {
+        require(functions, "funidx");
+    }
+    core.check_quadratic_room(nnz);
+    const std::vector<QuadraticTerm> terms = biyos::capi::packed(size, rows, columns, values);
+    const std::span<const biyos::Index> owners(functions, size);
+    Grouped<QuadraticTerm> groups =
+        biyos::capi::grouped(owners, std::span<const QuadraticTerm>(terms));
+    core.add_quadratic_terms(groups.functions, groups.starts, std::move(groups.terms));
 }
 
-}
-
-BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl,
-                                BIYOS_index n,
-                                const BIYOS_index *funidx,
-                                const BIYOS_offset *off,
-                                const BIYOS_index *varidx1,
-                                const BIYOS_index *varidx2,
-                                const BIYOS_real *coef)
+void add_ranged(BIYOS_model &model,
+                Range range,
+                const std::int64_t *starts,
+                const int *rows,
+                const int *columns,
+                const double *values)
 {
-    return guarded<add_terms>(mdl, n, funidx, off, varidx1, varidx2, coef);
+    biyos::Model &core = writable(model);
+    add_sliced(core, selected(core, Family::Function, range), starts, rows, columns, values);
 }
 
-BIYOS_status BIYOS_getquadtermrg(const BIYOS_model *mdl,
+}
+
+BIYOS_status BIYOS_addquadtermsp(BIYOS_model *mdl,
+                                 BIYOS_offset nnz,
+                                 const BIYOS_index *funidx,
+                                 const BIYOS_index *varidx1,
+                                 const BIYOS_index *varidx2,
+                                 const BIYOS_real *coef)
+{
+    return guarded<add_listed>(mdl, nnz, funidx, varidx1, varidx2, coef);
+}
+
+BIYOS_status BIYOS_addquadtermrg(BIYOS_model *mdl,
                                  BIYOS_index pos,
                                  BIYOS_index n,
-                                 BIYOS_offset cap,
-                                 BIYOS_offset *off,
-                                 BIYOS_offset *nnz,
-                                 BIYOS_index *varidx1,
-                                 BIYOS_index *varidx2,
-                                 BIYOS_real *coef)
+                                 const BIYOS_offset *off,
+                                 const BIYOS_index *varidx1,
+                                 const BIYOS_index *varidx2,
+                                 const BIYOS_real *coef)
 {
-    return guarded<get_terms>(mdl, pos, n, off, cap, nnz, varidx1, varidx2, coef);
+    return guarded<add_ranged>(mdl, Range{pos, n}, off, varidx1, varidx2, coef);
 }

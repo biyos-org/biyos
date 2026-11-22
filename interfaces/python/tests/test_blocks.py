@@ -85,7 +85,7 @@ def test_view(model):
     model.setvarbnd([0, x[2]], lb=[-1.0, -2.0])
     found = model.getvar()[1:]
     assert found == ([-1.0, 0.0, -2.0], [INFINITY, 5.0, 6.0])
-    assert model.getvar(x[2])[1] == [-2.0]
+    assert model.getvar(x[2:])[1] == [-2.0]
 
 
 def test_foreign_view(env, model):
@@ -97,8 +97,8 @@ def test_foreign_view(env, model):
         model.setvarbnd([0, x[1]], [0.0, 0.0], [1.0, 1.0])
     with pytest.raises(ValueError, match=entry):
         model.setvarknd([x[0]], [biyos.VariableKind.INTEGER])
-    with pytest.raises(ValueError, match="pos is a variable of another"):
-        model.getvar(x[1], 1)
+    with pytest.raises(ValueError, match=entry):
+        model.getvar([x[1]])
     assert model.getvar() == other.getvar()
 
 

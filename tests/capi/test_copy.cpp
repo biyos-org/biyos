@@ -41,8 +41,7 @@ void add_sample(BIYOS_model *model)
     const std::int64_t starts[] = {0, 2, 3};
     const int variables[] = {2, 0, 1};
     const double values[] = {-1.0, 2.0, 0.1};
-    const int owners[] = {1, 0};
-    const std::int64_t offsets[] = {0, 1, 3};
+    const int owners[] = {1, 0, 0};
     const int rows[] = {2, 0, 1};
     const int columns[] = {2, 1, 1};
     const double products[] = {0.5, -1.0, 3.0};
@@ -55,8 +54,10 @@ void add_sample(BIYOS_model *model)
     const double relative[] = {0.0, 0.125};
     const BIYOS_index added[] = {0, 1};
     ASSERT_EQ(BIYOS_addvar(model, 3, kinds, lower, upper, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addfuns(model, 2, constants, starts, variables, values, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addquadterms(model, 2, owners, offsets, rows, columns, products), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(model, 2, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcstrg(model, 0, 2, constants), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addrlintermrg(model, 0, 2, starts, variables, values), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addquadtermsp(model, 3, owners, rows, columns, products), BIYOS_OK);
     ASSERT_EQ(BIYOS_addcon(model, 3, functions, lower, upper, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addobj(model, 2, targets, senses, priorities, weights, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setobjtolsp(model, 2, added, absolute, relative), BIYOS_OK);

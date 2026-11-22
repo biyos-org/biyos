@@ -30,7 +30,7 @@ def env():
 @pytest.fixture
 def model(env):
     with biyos.Model(env) as model:
-        model.addfuns(2)
+        model.addfun(2)
         yield model
 
 
@@ -67,9 +67,9 @@ def test_block(model):
 
 def test_range(model):
     add_sample(model)
-    assert model.getcon(1, 2) == ([0, 1], LOWER[1:], UPPER[1:])
-    assert model.getcon(1) == ([0, 1], LOWER[1:], UPPER[1:])
-    assert model.getcon(3) == ([], [], [])
+    assert model.getcon(range(1, 3)) == ([0, 1], LOWER[1:], UPPER[1:])
+    assert model.getcon([2, 1]) == ([1, 0], LOWER[:0:-1], UPPER[:0:-1])
+    assert model.getcon(range(3, 3)) == ([], [], [])
 
 
 def test_defaults(model):
@@ -91,18 +91,18 @@ def test_shared(model):
 
 
 def test_functions(model):
-    f = model.addfuns(3)
+    f = model.addfun(3)
     c = model.addcon(f, [0.0] * 3)
     model.addcon(f[1:])
     model.addcon([f[0], 1])
-    assert model.getcon(c[0])[0] == [2, 3, 4, 3, 4, 2, 1]
+    assert model.getcon()[0] == [2, 3, 4, 3, 4, 2, 1]
 
 
 def test_views(env, model):
     x = model.addvar(2)
     c = add_sample(model)
     other = biyos.Model(env)
-    g = other.addfuns(2)
+    g = other.addfun(2)
     d = other.addcon(g)
     entry = "an entry of funidx is a function of another model"
     with pytest.raises(ValueError, match=entry):
@@ -117,16 +117,16 @@ def test_views(env, model):
         model.setconbnd([d[0]], [0.0])
     with pytest.raises(ValueError, match="is a block of another model"):
         model.setconbnd(d, [0.0, 0.0])
-    with pytest.raises(ValueError, match="pos is a constraint of another"):
-        model.getcon(d[0])
-    f = model.addfuns(1)
+    with pytest.raises(ValueError, match="idx is a block of another model"):
+        model.getcon(d)
+    f = model.addfun(1)
     with pytest.raises(ValueError, match="is a function, not a constraint"):
         model.setconbnd([f[0]], [0.0])
     with pytest.raises(ValueError, match="of functions, not constraints"):
         model.setconbnd(f, [0.0])
     model.setconbnd([c[2]], [5.0], [6.0])
     model.setconbnd(c[:2], ub=[7.0, 8.0])
-    found = model.getcon(c[1])
+    found = model.getcon(c[1:])
     assert found == ([0, 1], [-INFINITY, 5.0], [8.0, 6.0])
     assert model.getncon() == 3
 
@@ -157,27 +157,20 @@ def test_values(model, monkeypatch):
     assert model.getcon() == ([0, 1], [0.0, 1.0], [2.0, 3.0])
 
 
-def test_growing(model):
-    grow = partial(add_sample, model)
-    assert model.getcon(0, Growing(3, grow)) == SAMPLE
-    assert model.getcon(3, Growing(3, grow)) == SAMPLE
-    assert model.getncon() == 6
-
-
 def test_stale(model, monkeypatch):
     add_sample(model)
     monkeypatch.setattr(model, "getncon", lambda: 0)
     spy = Room(lib.BIYOS_getconrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getconrg", spy)
-    assert model.getcon(0, 3) == SAMPLE
-    assert model.getcon(1) == ([], [], [])
+    assert model.getcon(range(3)) == SAMPLE
+    assert model.getcon(range(1, 1)) == ([], [], [])
 
 
 def test_outside(model, monkeypatch):
     limit(monkeypatch, _model, 1)
-    message = refusal(model.getcon, 0, 2**31 - 1)
+    message = refusal(model.getcon, range(2**31 - 1))
     assert message == "invalid argument: constraint 0: unknown"
-    message = refusal(model.getcon, 1, 2**31 - 2)
+    message = refusal(model.getcon, range(1, 2**31 - 1))
     assert message == "invalid argument: constraint 1: unknown"
 
 
@@ -196,7 +189,7 @@ def test_bounds(model):
     model.setconbnd([1], ub=[3.0])
     assert model.getcon() == ([0, 1], [2.0, 1.0], [INFINITY, 3.0])
     model.setconbnd([0, 0], [5.0, 6.0], [7.0, 8.0])
-    assert model.getcon(0, 1) == ([0], [6.0], [8.0])
+    assert model.getcon([0]) == ([0], [6.0], [8.0])
 
 
 def test_listed(env, model):
@@ -214,12 +207,12 @@ def test_listed(env, model):
     message = refusal(model.getconbnd, [-1])
     assert message == "invalid argument: constraint -1: unknown"
     other = biyos.Model(env)
-    other.addfuns(1)
+    other.addfun(1)
     d = other.addcon([0])
     with pytest.raises(ValueError, match="is a constraint of another model"):
         model.getconbnd([d[0]])
     with pytest.raises(ValueError, match="of functions, not constraints"):
-        model.getconbnd(model.addfuns(1))
+        model.getconbnd(model.addfun(1))
     other.close()
 
 
@@ -237,10 +230,10 @@ def test_refused(model):
     assert message == "invalid argument: constraint 3: unknown"
     message = refusal(model.setconbnd, [0], [INFINITY])
     assert message == "invalid argument: constraint 0: lower bound is infinity"
-    message = refusal(model.getcon, 4)
+    message = refusal(model.getcon, range(4, 5))
     assert message == "invalid argument: constraint 4: unknown"
-    message = refusal(model.getcon, 0, -1)
-    assert message == "invalid argument: argument 'n': -1 is negative"
+    message = refusal(model.getcon, [-1])
+    assert message == "invalid argument: constraint -1: unknown"
     assert model.getcon() == SAMPLE
 
 
@@ -257,8 +250,8 @@ def test_numbers(model):
         model.addcon([0.0])
     with pytest.raises(TypeError, match="an entry of lb must be a number"):
         model.addcon([0], ["1"])
-    with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
-        model.getcon(2**32)
+    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+        model.getcon(range(2**32, 2**32 + 1))
     assert model.getncon() == 0
 
 
@@ -309,7 +302,7 @@ def test_on(env, model):
     assert copy.getcon()[1] == [-1.0, 0.0, 0.0]
     assert model.getcon() == SAMPLE
     smaller = biyos.Model(env)
-    smaller.addfuns(1)
+    smaller.addfun(1)
     smaller.addcon([0, 0])
     few = "mdl holds too few constraints: 2, the block needs 3"
     with pytest.raises(ValueError, match=few):

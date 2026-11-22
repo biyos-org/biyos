@@ -11,6 +11,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace biyos
@@ -30,6 +31,30 @@ void check_constant(Index function, double constant)
     }
 }
 
+void check_constants(std::span<const Index> indices,
+                     std::span<const double> values,
+                     Index functions)
+{
+    if (indices.size() != values.size())
+    {
+        throw Error(ErrorKind::Internal, "model", "indices and constants differ in number");
+    }
+    for (std::size_t k = 0; k < indices.size(); ++k)
+    {
+        check_index(kNoun, indices[k], functions);
+        check_constant(indices[k], values[k]);
+    }
+}
+
+void check_sum(Index function, double sum)
+{
+    const std::string_view fault = value_fault(sum);
+    if (!fault.empty())
+    {
+        refuse(kNoun, function, "constant sum " + std::string(fault));
+    }
+}
+
 }
 
 Index Model::n_functions() const noexcept
@@ -42,6 +67,37 @@ std::span<const double> Model::constants(Index start, Index size) const
     check_span(kNoun, start, size, n_functions());
     const auto offset = static_cast<std::size_t>(start);
     return std::span(constants_).subspan(offset, static_cast<std::size_t>(size));
+}
+
+const double &Model::constant(Index index) const
+{
+    check_index(kNoun, index, n_functions());
+    return constants_[static_cast<std::size_t>(index)];
+}
+
+void Model::set_constants(std::span<const Index> indices, std::span<const double> values)
+{
+    check_constants(indices, values, n_functions());
+    for (std::size_t k = 0; k < indices.size(); ++k)
+    {
+        constants_[static_cast<std::size_t>(indices[k])] = values[k];
+    }
+}
+
+void Model::add_constants(std::span<const Index> indices, std::span<const double> values)
+{
+    check_constants(indices, values, n_functions());
+    std::unordered_map<Index, double> sums;
+    for (std::size_t k = 0; k < indices.size(); ++k)
+    {
+        const auto held = sums.try_emplace(indices[k], constant(indices[k])).first;
+        held->second += values[k];
+        check_sum(indices[k], held->second);
+    }
+    for (const auto &[function, sum] : sums)
+    {
+        constants_[static_cast<std::size_t>(function)] = sum;
+    }
 }
 
 std::span<const LinearTerm> Model::linear_terms(Index start, Index size) const
