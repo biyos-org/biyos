@@ -226,3 +226,23 @@ TEST(EnvTest, ScopedStatus)
     }
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
 }
+
+TEST(EnvTest, ErrorModel)
+{
+    const int address = 0;
+    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    biyos::Env env;
+    {
+        const biyos::Events::Caller caller(env.events(), model);
+        env.record_error(biyos::ErrorKind::InvalidArgument, "model");
+        EXPECT_EQ(env.last_error().model, model);
+        {
+            const biyos::Env::ErrorScope scope(env);
+            const biyos::Events::Caller none(env.events(), nullptr);
+            env.record_error(biyos::ErrorKind::InvalidArgument, "env");
+            EXPECT_EQ(env.last_error().model, nullptr);
+        }
+    }
+    EXPECT_EQ(env.last_error().model, model);
+    EXPECT_EQ(env.last_error().text, "model");
+}

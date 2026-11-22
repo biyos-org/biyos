@@ -60,6 +60,19 @@ using Hook = std::function<void(const Event &)>;
 class Events
 {
   public:
+    class Caller
+    {
+      public:
+        Caller(Events &events, const BIYOS_model *model) noexcept;
+        ~Caller();
+        Caller(const Caller &) = delete;
+        Caller &operator=(const Caller &) = delete;
+
+      private:
+        Events &events_;
+        const BIYOS_model *outer_;
+    };
+
     explicit Events(const Clock &clock);
 
     int add_hook(EventKind kind, EventLevel level, Hook hook);
@@ -72,6 +85,7 @@ class Events
     bool delivering() const noexcept { return depth_ > 0; }
     bool filling() const noexcept { return fills_ > 0; }
     std::chrono::nanoseconds origin() const noexcept { return origin_; }
+    const BIYOS_model *model() const noexcept { return model_; }
 
     template <std::invocable<Event &> Fill>
     void emit(EventKind kind, EventLevel level, Fill &&fill) noexcept
@@ -141,6 +155,7 @@ class Events
     int next_id_ = 1;
     int depth_ = 0;
     int fills_ = 0;
+    const BIYOS_model *model_ = nullptr;
 };
 
 }

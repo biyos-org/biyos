@@ -67,9 +67,14 @@ TEST(AllocationTest, EmptyScope)
 
 TEST(AllocationTest, ScopedError)
 {
+    const int address = 0;
+    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
     const std::string outer(64, 'o');
     biyos::Env env;
-    env.record_error(biyos::ErrorKind::NoMemory, outer);
+    {
+        const biyos::Events::Caller caller(env.events(), model);
+        env.record_error(biyos::ErrorKind::NoMemory, outer);
+    }
     {
         const biyos::Env::ErrorScope scope(env);
         biyos::test::fail_after(0);
@@ -77,5 +82,6 @@ TEST(AllocationTest, ScopedError)
         biyos::test::stop_failing();
     }
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.last_error().model, model);
     EXPECT_EQ(env.last_error().text, outer);
 }

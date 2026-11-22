@@ -342,3 +342,24 @@ TEST_F(EventTest, ThrowingFill)
     say(EventLevel::Info, "after");
     EXPECT_EQ(texts, Texts{"after"});
 }
+
+TEST_F(EventTest, Caller)
+{
+    const int first = 0;
+    const int second = 0;
+    const auto *outer = reinterpret_cast<const BIYOS_model *>(&first);
+    const auto *inner = reinterpret_cast<const BIYOS_model *>(&second);
+    EXPECT_EQ(events.model(), nullptr);
+    {
+        const biyos::Events::Caller call(events, outer);
+        EXPECT_EQ(events.model(), outer);
+        {
+            const biyos::Events::Caller nested(events, inner);
+            EXPECT_EQ(events.model(), inner);
+            const biyos::Events::Caller none(events, nullptr);
+            EXPECT_EQ(events.model(), nullptr);
+        }
+        EXPECT_EQ(events.model(), outer);
+    }
+    EXPECT_EQ(events.model(), nullptr);
+}

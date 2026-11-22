@@ -96,7 +96,7 @@ void Env::record_error(ErrorKind kind, std::string_view text) noexcept
         scope_->swapped_ = true;
         records_.swap(scope_->kept_);
     }
-    records_.put(status_of(kind), nullptr, text);
+    records_.put(status_of(kind), events_.model(), text);
 }
 
 std::size_t Env::handles() const noexcept

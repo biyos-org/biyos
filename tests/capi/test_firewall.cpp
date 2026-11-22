@@ -93,6 +93,17 @@ TEST(FirewallTest, ErrorMessage)
     EXPECT_EQ(env.last_error().text, "invalid argument: argument 'n': negative");
 }
 
+TEST(FirewallTest, CallerModel)
+{
+    const int address = 0;
+    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    biyos::Env env;
+    const biyos::Events::Caller caller(env.events(), model);
+    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.last_error().model, model);
+    EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
+}
+
 TEST(FirewallTest, MemoryMessage)
 {
     biyos::Env env;
