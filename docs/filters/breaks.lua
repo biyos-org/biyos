@@ -22,7 +22,19 @@ local function code(element)
     return pandoc.RawInline("html", "<code>" .. pieces(element.text) .. "</code>")
 end
 
+local function bracket(element)
+    if element.text:find("[", 1, true) then
+        return pandoc.RawInline("html", (escaped(element.text):gsub("%[", "[<wbr>")))
+    end
+end
+
+local function span(element)
+    if element.classes:includes("type") then
+        return element:walk({Str = bracket})
+    end
+end
+
 if quarto.doc.is_format("html") then
-    return {{Code = code}}
+    return {{Code = code, Span = span}}
 end
 return {}
