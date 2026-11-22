@@ -58,7 +58,11 @@ local function mark(span)
     end
     for class, macro in pairs(kMarks) do
         if span.classes:includes(class) then
-            return wrapped(span, macro)
+            local out = wrapped(span, macro)
+            if span.classes:includes("under") then
+                out:insert(1, pandoc.RawInline("latex", "\\newline"))
+            end
+            return out
         end
     end
 end
@@ -88,14 +92,28 @@ local function fixed(tbl)
     return true
 end
 
+local function split(cell)
+    local parts = {}
+    local function take(span)
+        if span.classes:includes("under") then
+            local plain = pandoc.Span(span.content, pandoc.Attr("", {"type"}))
+            parts[#parts + 1] = {pandoc.Plain({plain})}
+            return {}
+        end
+    end
+    table.insert(parts, 1, pandoc.Blocks(cell.contents):walk({Span = take}))
+    return parts
+end
+
 local function natural(tbl, rows, column, count)
     if column == count or fixed(tbl) then
         return false
     end
     for _, cells in ipairs(rows) do
-        local text = pandoc.utils.stringify(cells[column].contents)
-        if utf8.len(text) > kNatural then
-            return false
+        for _, part in ipairs(split(cells[column])) do
+            if utf8.len(pandoc.utils.stringify(part)) > kNatural then
+                return false
+            end
         end
     end
     return true
@@ -117,9 +135,17 @@ local function head_cell(cell)
     return "\\leavevmode\\biyoshead{" .. latex(cell.contents) .. "}"
 end
 
-local function body_cell(cell)
-    local text = latex(cell.contents)
+local function body_text(blocks)
+    local text = latex(blocks)
     return text == "" and "" or ("\\leavevmode " .. text)
+end
+
+local function body_cell(cell)
+    return body_text(cell.contents)
+end
+
+local function widen(width, text)
+    return "\\biyoswiden" .. width .. "{" .. text .. "}"
 end
 
 local function line(cells, format)
@@ -137,9 +163,13 @@ local function sizes(tbl, rows, head)
         local width = "\\biyosw" .. kWidths[column]
         if natural(tbl, rows, column, count) then
             used[#used + 1] = width
-            for _, cells in ipairs(head and {head, table.unpack(rows)} or rows) do
-                local format = cells == head and head_cell or body_cell
-                lines[#lines + 1] = "\\biyoswiden" .. width .. "{" .. format(cells[column]) .. "}"
+            if head then
+                lines[#lines + 1] = widen(width, head_cell(head[column]))
+            end
+            for _, cells in ipairs(rows) do
+                for _, part in ipairs(split(cells[column])) do
+                    lines[#lines + 1] = widen(width, body_text(part))
+                end
             end
             lines[#lines + 1] = "\\biyoscap" .. width
         else
