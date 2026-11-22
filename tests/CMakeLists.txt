@@ -21,7 +21,7 @@ function(biyos_add_test name)
     gtest_discover_tests(${name} PROPERTIES TIMEOUT 120)
 endfunction()
 
-biyos_add_test(test_core core/test_check.cpp core/test_clock.cpp core/test_env.cpp core/test_error.cpp core/test_events.cpp core/test_format.cpp core/test_name.cpp core/test_options.cpp core/test_status.cpp core/test_timer.cpp core/test_tolerances.cpp core/test_utf8.cpp core/test_version.cpp)
+biyos_add_test(test_core core/test_check.cpp core/test_clock.cpp core/test_env.cpp core/test_error.cpp core/test_events.cpp core/test_format.cpp core/test_name.cpp core/test_options.cpp core/test_settings.cpp core/test_status.cpp core/test_timer.cpp core/test_tolerances.cpp core/test_utf8.cpp core/test_version.cpp)
 target_link_libraries(test_core PRIVATE biyos_internal)
 
 biyos_add_test(test_allocation core/allocations.cpp core/test_allocation.cpp expr/test_allocation.cpp model/test_allocation.cpp)

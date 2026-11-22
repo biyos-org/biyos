@@ -133,6 +133,9 @@ class Options
     double get_double(Option option) const;
     const std::string &get_string(Option option) const;
 
+    const OptionValue &value_of(Option option) const;
+    Source source_of(Option option) const;
+
     template <typename E>
         requires std::is_enum_v<E>
     E get_enum(Option option) const
@@ -150,6 +153,7 @@ class Options
     std::span<const OptionSpec> table_;
     Events &events_;
     std::vector<OptionValue> values_;
+    std::vector<Source> sources_;
 };
 
 }

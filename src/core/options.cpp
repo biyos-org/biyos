@@ -57,12 +57,14 @@ std::span<const OptionSpec> checked(std::span<const OptionSpec> table)
 }
 
 Options::Options(Events &events)
-    : table_(option_table()), events_(events), values_(defaults(table_))
+    : table_(option_table()), events_(events), values_(defaults(table_)),
+      sources_(table_.size(), Source::Default)
 {
 }
 
 Options::Options(std::span<const OptionSpec> table, Events &events)
-    : table_(checked(table)), events_(events), values_(defaults(table_))
+    : table_(checked(table)), events_(events), values_(defaults(table_)),
+      sources_(table_.size(), Source::Default)
 {
 }
 
@@ -102,6 +104,7 @@ void Options::store(Option option, OptionValue value)
 {
     const OptionSpec &spec = checked_row(table_, option, value);
     values_[index_of(option)] = std::move(value);
+    sources_[index_of(option)] = Source::Environment;
     warn_deprecated(events_, table_, spec);
 }
 
@@ -127,6 +130,18 @@ const std::string &Options::get_string(Option option) const
 {
     const OptionSpec &spec = row_of(table_, option);
     return string_of(spec, values_[index_of(option)]);
+}
+
+const OptionValue &Options::value_of(Option option) const
+{
+    row_of(table_, option);
+    return values_[index_of(option)];
+}
+
+Source Options::source_of(Option option) const
+{
+    row_of(table_, option);
+    return sources_[index_of(option)];
 }
 
 std::size_t Options::position(Option option) const

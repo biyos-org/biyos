@@ -11,6 +11,7 @@ add_library(biyos_internal STATIC
     core/option_text.cpp
     core/option_value.cpp
     core/options.cpp
+    core/settings.cpp
     core/status.cpp
     core/timer.cpp
     core/tolerances.cpp
