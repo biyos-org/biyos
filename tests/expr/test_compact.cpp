@@ -116,13 +116,13 @@ Offset binary(Graph &graph, Operator op, Offset left, Offset right)
 TEST(CompactTest, Marks)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
-    const Offset y = graph.add_var(1);
+    const Offset x = graph.add_variable(0);
+    const Offset y = graph.add_variable(1);
     const Offset shared = unary(graph, Operator::Exp, x);
     const Offset sine = unary(graph, Operator::Sin, y);
     const Offset root = unary(graph, Operator::Cos, shared);
     unary(graph, Operator::Cos, sine);
-    const Offset z = graph.add_var(2);
+    const Offset z = graph.add_variable(2);
     const std::array roots{z, root, z};
     const std::vector<bool> wanted{true, false, true, false, true, false, true};
     EXPECT_EQ(live(graph, roots), wanted);
@@ -131,7 +131,7 @@ TEST(CompactTest, Marks)
 TEST(CompactTest, MissingRoot)
 {
     Graph graph;
-    graph.add_var(0);
+    graph.add_variable(0);
     const Offset ahead = 1;
     const Offset negative = -1;
     EXPECT_EQ(refusal([&] { live(graph, std::span(&ahead, 1)); }),
@@ -143,9 +143,9 @@ TEST(CompactTest, MissingRoot)
 TEST(CompactTest, DeadNodes)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
-    const Offset y = graph.add_var(1);
-    const Offset z = graph.add_var(2);
+    const Offset x = graph.add_variable(0);
+    const Offset y = graph.add_variable(1);
+    const Offset z = graph.add_variable(2);
     const double four = 4.0;
     const Offset unused = graph.add_sum(5.0, std::span(&z, 1), std::span(&four, 1));
     const Offset exponential = unary(graph, Operator::Exp, x);
@@ -171,9 +171,9 @@ TEST(CompactTest, DeadNodes)
 TEST(CompactTest, Order)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Offset exponential = unary(graph, Operator::Exp, x);
-    const Offset y = graph.add_var(1);
+    const Offset y = graph.add_variable(1);
     unary(graph, Operator::Sin, y);
     const Offset ratio = binary(graph, Operator::Division, y, exponential);
     const std::array roots{ratio, exponential};
@@ -185,7 +185,7 @@ TEST(CompactTest, Order)
 TEST(CompactTest, SharedNode)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Offset shared = unary(graph, Operator::Exp, x);
     unary(graph, Operator::Tan, shared);
     const Offset sine = unary(graph, Operator::Sin, shared);
@@ -202,9 +202,9 @@ TEST(CompactTest, Map)
 {
     Graph graph;
     const Offset two = graph.add(Operator::Constant, 2.0, {});
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Offset dead = unary(graph, Operator::Exp, two);
-    const Offset y = graph.add_var(1);
+    const Offset y = graph.add_variable(1);
     const Offset ratio = binary(graph, Operator::Division, x, y);
     unary(graph, Operator::Cos, dead);
     const Compaction result = compact(graph, std::span(&ratio, 1));
@@ -216,7 +216,7 @@ TEST(CompactTest, Unchanged)
 {
     Graph graph;
     const Offset two = graph.add(Operator::Constant, 2.5, {});
-    const Offset x = graph.add_var(3);
+    const Offset x = graph.add_variable(3);
     const std::array terms{two, x};
     const std::array weights{2.0, -0.0};
     const Offset sum = graph.add_sum(1.5, terms, weights);
@@ -238,7 +238,7 @@ TEST(CompactTest, Unchanged)
 TEST(CompactTest, NoRoots)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     unary(graph, Operator::Exp, x);
     const Compaction result = compact(graph, {});
     EXPECT_EQ(result.graph.size(), 0);
@@ -251,7 +251,7 @@ TEST(CompactTest, NoRoots)
 TEST(CompactTest, SameGraph)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const double one = 1.0;
     const Offset sum = graph.add_sum(0.0, std::span(&x, 1), std::span(&one, 1));
     EXPECT_EQ(refusal([&] { biyos::copy(graph, sum, std::span(&x, 1), graph); }),
@@ -262,9 +262,9 @@ TEST(CompactTest, SameGraph)
 TEST(CompactTest, VariableArity)
 {
     Graph source;
-    const Offset x = source.add_var(0);
+    const Offset x = source.add_variable(0);
     Graph target;
-    const Offset y = target.add_var(1);
+    const Offset y = target.add_variable(1);
     EXPECT_EQ(refusal([&] { biyos::copy(source, x, std::span(&y, 1), target); }),
               "invalid argument: expression: operator 2 takes 0 children, not 1");
     EXPECT_EQ(target.size(), 1);

@@ -12,7 +12,7 @@ namespace biyos
 
 inline std::pair<Index, Index> pair_of(const QuadraticTerm &term) noexcept
 {
-    return {term.first, term.second};
+    return {term.row, term.column};
 }
 
 std::string pair_name(const QuadraticTerm &term);

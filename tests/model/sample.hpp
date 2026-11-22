@@ -65,9 +65,9 @@ inline Parts sample()
                 .starts = {0, 1, 3},
                 .terms =
                     {
-                        {.first = 1, .second = 1, .coefficient = 0.5},
-                        {.first = 2, .second = 0, .coefficient = -1.5},
-                        {.first = 0, .second = 0, .coefficient = 2.0},
+                        {.row = 1, .column = 1, .coefficient = 0.5},
+                        {.row = 2, .column = 0, .coefficient = -1.5},
+                        {.row = 0, .column = 0, .coefficient = 2.0},
                     },
             },
         .constraints =

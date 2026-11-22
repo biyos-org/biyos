@@ -49,10 +49,10 @@ void settle(std::vector<Range> &items, std::vector<Range> &into)
 
 void join(std::span<const Range> items, std::vector<Range> &into)
 {
-    const std::size_t beg = into.size();
+    const std::size_t start = into.size();
     for (const Range &item : items)
     {
-        if (into.size() > beg && item.begin <= into.back().end)
+        if (into.size() > start && item.begin <= into.back().end)
         {
             into.back().end = (std::max)(into.back().end, item.end);
             continue;
@@ -118,11 +118,11 @@ Offset Memos<Item>::flatten(std::span<const Item> own, std::span<const Offset> l
     {
         append(pieces_, items_of(memos_[at(link)]));
     }
-    const std::size_t beg = items_.size();
+    const std::size_t start = items_.size();
     settle(pieces_, items_);
     return add({
-        .item_start = count_of(beg),
-        .n_items = count_of(items_.size() - beg),
+        .item_start = count_of(start),
+        .n_items = count_of(items_.size() - start),
         .link_start = 0,
         .n_links = 0,
         .flat = true,

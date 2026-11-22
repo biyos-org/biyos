@@ -109,15 +109,15 @@ void climb(const Tape &tape, Offset root, const Workspace &workspace, Adjoints &
     }
 }
 
-void gather(const Pattern &pat,
+void gather(const Pattern &pattern,
             Offset root,
             std::span<double> gradient,
             std::span<double> gradients) noexcept
 {
-    for (Offset k = pat.starts[at(root)]; k < pat.starts[at(root) + 1]; ++k)
+    for (Offset k = pattern.starts[at(root)]; k < pattern.starts[at(root) + 1]; ++k)
     {
-        const auto var = static_cast<std::size_t>(pat.variables[at(k)]);
-        gradients[at(k)] = std::exchange(gradient[var], 0.0);
+        const auto variable = static_cast<std::size_t>(pattern.variables[at(k)]);
+        gradients[at(k)] = std::exchange(gradient[variable], 0.0);
     }
 }
 

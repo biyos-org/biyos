@@ -159,8 +159,9 @@ void sweep(const Block &block, Run run, const Trail &trail) noexcept
 {
     for (std::uint32_t k = run.end; k > run.begin; --k)
     {
-        const std::uint32_t beg = trail.places[k - 1];
-        const std::span<const double> partials = trail.partials.subspan(beg, trail.places[k] - beg);
+        const std::uint32_t start = trail.places[k - 1];
+        const std::span<const double> partials =
+            trail.partials.subspan(start, trail.places[k] - start);
         step(block.instructions[k - 1], partials, trail);
     }
 }

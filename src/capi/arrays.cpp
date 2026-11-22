@@ -94,8 +94,8 @@ std::vector<QuadraticTerm> packed(std::size_t size,
     for (std::size_t k = 0; k < size; ++k)
     {
         terms.push_back(QuadraticTerm{
-            .first = firsts[k],
-            .second = seconds[k],
+            .row = firsts[k],
+            .column = seconds[k],
             .coefficient = values[k],
         });
     }
@@ -113,11 +113,11 @@ void unpack(std::span<const QuadraticTerm> terms,
     {
         if (firsts != nullptr)
         {
-            firsts[k] = terms[k].first;
+            firsts[k] = terms[k].row;
         }
         if (seconds != nullptr)
         {
-            seconds[k] = terms[k].second;
+            seconds[k] = terms[k].column;
         }
         if (values != nullptr)
         {

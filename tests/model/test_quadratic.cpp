@@ -76,8 +76,8 @@ void expect_pairs(std::span<const QuadraticTerm> found, const std::vector<Quadra
     for (std::size_t k = 0; k < found.size(); ++k)
     {
         const double coefficient = found[k].coefficient;
-        EXPECT_EQ(found[k].first, wanted[k].first) << "term " << k;
-        EXPECT_EQ(found[k].second, wanted[k].second) << "term " << k;
+        EXPECT_EQ(found[k].row, wanted[k].row) << "term " << k;
+        EXPECT_EQ(found[k].column, wanted[k].column) << "term " << k;
         EXPECT_EQ(bits_of(coefficient), bits_of(wanted[k].coefficient)) << coefficient;
     }
 }

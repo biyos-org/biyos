@@ -82,10 +82,10 @@ TEST(CompareTest, FunctionFields)
 TEST(CompareTest, QuadraticFields)
 {
     Parts first = sample();
-    first.quadratic.terms[0].first = 0;
+    first.quadratic.terms[0].row = 0;
     EXPECT_EQ(from_sample(first), "function 2: quadratic term 0: first variable 1 against 0");
     Parts second = sample();
-    second.quadratic.terms[1].first = 1;
+    second.quadratic.terms[1].row = 1;
     EXPECT_EQ(from_sample(second), "function 0: quadratic term 1: second variable 2 against 1");
     Parts coefficient = sample();
     coefficient.quadratic.terms[2].coefficient = 2.5;
@@ -285,13 +285,13 @@ TEST(CompareTest, FieldOrder)
     range.constraints[1].upper = 5.0;
     EXPECT_EQ(from_sample(range), "constraint 1: lower bound 0 against -1");
     Parts pair = sample();
-    pair.quadratic.terms[1] = QuadraticTerm{.first = 1, .second = 2, .coefficient = 3.0};
+    pair.quadratic.terms[1] = QuadraticTerm{.row = 1, .column = 2, .coefficient = 3.0};
     EXPECT_EQ(from_sample(pair), "function 0: quadratic term 1: first variable 0 against 1");
     Parts later = sample();
-    later.quadratic.terms[1] = QuadraticTerm{.first = 1, .second = 0, .coefficient = 3.0};
+    later.quadratic.terms[1] = QuadraticTerm{.row = 1, .column = 0, .coefficient = 3.0};
     EXPECT_EQ(from_sample(later), "function 0: quadratic term 1: second variable 2 against 1");
     Parts both = sample();
-    both.quadratic.terms[1] = QuadraticTerm{.first = 1, .second = 1, .coefficient = -1.5};
+    both.quadratic.terms[1] = QuadraticTerm{.row = 1, .column = 1, .coefficient = -1.5};
     EXPECT_EQ(from_sample(both), "function 0: quadratic term 1: first variable 0 against 1");
     Parts named = sample();
     named.variables[2].upper = 4.0;

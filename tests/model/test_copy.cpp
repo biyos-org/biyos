@@ -38,7 +38,7 @@ void change(Model &mdl)
     mdl.set_vars(std::span(&idx, 1), std::span(&var, 1));
     mdl.add_vars(std::span(&var, 1));
     mdl.add_funs(constants, starts, {LinearTerm{.variable = 3, .coefficient = 1.0}});
-    const QuadraticTerm pair{.first = 3, .second = 1, .coefficient = 2.0};
+    const QuadraticTerm pair{.row = 3, .column = 1, .coefficient = 2.0};
     mdl.add_quad_terms(std::span(&idx, 1), starts, {pair});
     mdl.set_cons(std::span(&idx, 1), std::span(&con, 1));
     mdl.add_cons(std::span(&con, 1));

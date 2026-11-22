@@ -70,19 +70,19 @@ void expect_same(const Graph &found, Offset node, const Graph &wanted, Offset ro
 
 void pending_sum(Builder &build)
 {
-    build.var(0);
-    build.var(1);
+    build.variable(0);
+    build.variable(1);
     const std::array weights{1.0, 1.0};
     build.sum(0.0, weights);
-    build.var(2);
+    build.variable(2);
 }
 
 void pending_product(Builder &build)
 {
-    build.var(0);
-    build.var(1);
+    build.variable(0);
+    build.variable(1);
     build.product(1.0, 2);
-    build.var(2);
+    build.variable(2);
 }
 
 void merge_sum(Builder &build)
@@ -144,7 +144,7 @@ void expect_kept(void (*prepare)(Builder &), void (*call)(Builder &))
 std::size_t compaction_cost(std::size_t width)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const std::vector<Offset> terms(width, x);
     const std::vector<double> weights(width, 1.0);
     const Offset root = graph.add_sum(0.0, terms, weights);
@@ -155,7 +155,7 @@ std::size_t compaction_cost(std::size_t width)
 
 std::vector<Offset> products(Graph &graph)
 {
-    const std::array pair{graph.add_var(0), graph.add_var(1)};
+    const std::array pair{graph.add_variable(0), graph.add_variable(1)};
     const Offset shared = graph.add_sum(1.0, pair, std::array{2.0, 3.0});
     std::vector<Offset> roots;
     for (std::size_t k = 0; k < 8; ++k)
@@ -205,7 +205,7 @@ std::size_t sweep_cost(const Tape &tape)
 Graph every_operator()
 {
     Graph graph;
-    const std::array x{graph.add_var(0), graph.add_var(1)};
+    const std::array x{graph.add_variable(0), graph.add_variable(1)};
     const std::span<const Offset> one(x.data(), 1);
     const std::array weights{2.0, -1.0};
     graph.add(Operator::Constant, 1.5, {});

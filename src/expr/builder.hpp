@@ -17,7 +17,7 @@ class Builder
     explicit Builder(Graph &graph);
 
     void constant(double value);
-    void var(Index var);
+    void variable(Index variable);
     void node(Offset id);
     void sum(double constant, std::span<const double> coefficients);
     void product(double coefficient, Offset n);

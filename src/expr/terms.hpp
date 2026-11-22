@@ -15,8 +15,8 @@ struct LinearTerm
 
 struct QuadraticTerm
 {
-    Index first;
-    Index second;
+    Index row;
+    Index column;
     double coefficient;
 };
 

@@ -24,7 +24,7 @@ class Graph
 
     Offset add(Operator op, std::span<const Offset> children);
     Offset add(Operator op, double constant, std::span<const Offset> children);
-    Offset add_var(Index var);
+    Offset add_variable(Index variable);
     Offset add_sum(double constant,
                    std::span<const Offset> children,
                    std::span<const double> coefficients);
@@ -33,7 +33,7 @@ class Graph
     void check(Operator op, Payload payload, std::span<const Offset> children) const;
     Offset append(Operator op, std::uint64_t payload, std::span<const Offset> children);
 
-    std::vector<Operator> ops_;
+    std::vector<Operator> operators_;
     std::vector<std::uint64_t> payloads_;
     std::vector<Offset> starts_;
     std::vector<Offset> children_;

@@ -38,19 +38,19 @@ Graph::Graph() : starts_(1, 0) {}
 
 Offset Graph::size() const noexcept
 {
-    return static_cast<Offset>(ops_.size());
+    return static_cast<Offset>(operators_.size());
 }
 
 Operator Graph::op(Offset node) const noexcept
 {
-    return ops_[at(node)];
+    return operators_[at(node)];
 }
 
 std::span<const Offset> Graph::children(Offset node) const noexcept
 {
-    const Offset beg = starts_[at(node)];
-    const Offset n = starts_[at(node) + 1] - beg;
-    return std::span(children_).subspan(at(beg), at(n));
+    const Offset start = starts_[at(node)];
+    const Offset n = starts_[at(node) + 1] - start;
+    return std::span(children_).subspan(at(start), at(n));
 }
 
 double Graph::constant(Offset node) const noexcept
@@ -74,8 +74,8 @@ std::span<const double> Graph::coefficients(Offset node) const noexcept
     {
         return {};
     }
-    const std::size_t beg = payloads_[at(node)] + 1;
-    return std::span(coefficients_).subspan(beg, children(node).size());
+    const std::size_t start = payloads_[at(node)] + 1;
+    return std::span(coefficients_).subspan(start, children(node).size());
 }
 
 Offset Graph::add(Operator op, std::span<const Offset> children)
@@ -91,20 +91,20 @@ Offset Graph::add(Operator op, double constant, std::span<const Offset> children
     return append(op, std::bit_cast<std::uint64_t>(constant), children);
 }
 
-Offset Graph::add_var(Index var)
+Offset Graph::add_variable(Index variable)
 {
-    check_var(var);
-    const auto idx = static_cast<std::size_t>(var);
-    if (idx >= variable_nodes_.size())
+    check_variable(variable);
+    const auto index = static_cast<std::size_t>(variable);
+    if (index >= variable_nodes_.size())
     {
-        variable_nodes_.resize(idx + 1, kNone);
+        variable_nodes_.resize(index + 1, kNone);
     }
-    if (variable_nodes_[idx] == kNone)
+    if (variable_nodes_[index] == kNone)
     {
-        const auto payload = static_cast<std::uint64_t>(var);
-        variable_nodes_[idx] = append(Operator::Variable, payload, {});
+        const auto payload = static_cast<std::uint64_t>(variable);
+        variable_nodes_[index] = append(Operator::Variable, payload, {});
     }
-    return variable_nodes_[idx];
+    return variable_nodes_[index];
 }
 
 Offset Graph::add_sum(double constant,
@@ -142,12 +142,12 @@ Offset Graph::append(Operator op, std::uint64_t payload, std::span<const Offset>
         const std::vector<Offset> copy(children.begin(), children.end());
         return append(op, payload, copy);
     }
-    make_room(ops_, ops_.size() + 1);
+    make_room(operators_, operators_.size() + 1);
     make_room(payloads_, payloads_.size() + 1);
     make_room(starts_, starts_.size() + 1);
     make_room(children_, children_.size() + children.size());
     const Offset node = size();
-    ops_.push_back(op);
+    operators_.push_back(op);
     payloads_.push_back(payload);
     children_.insert(children_.end(), children.begin(), children.end());
     starts_.push_back(static_cast<Offset>(children_.size()));

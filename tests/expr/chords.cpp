@@ -231,14 +231,14 @@ namespace
 
 using biyos::test::name_of;
 
-std::string points_text(const Values &point)
+std::string point_text(const Values &point)
 {
-    std::string msg;
+    std::string message;
     for (const double value : point)
     {
-        msg += " " + text(value);
+        message += " " + text(value);
     }
-    return msg;
+    return message;
 }
 
 void expect_chord(const Claims &claims, Offset node, Runs runs, double theta, const Values &z)
@@ -265,7 +265,7 @@ void expect_chord(const Claims &claims, Offset node, Runs runs, double theta, co
         ADD_FAILURE() << "node " << node << " claimed " << name_of(claim) << ": f(z) = " << text(fz)
                       << " against the chord " << text(chord) << " at theta " << text(theta)
                       << ", f(x) = " << text(fx) << ", f(y) = " << text(fy) << ", z at"
-                      << points_text(z);
+                      << point_text(z);
     }
 }
 
@@ -294,8 +294,8 @@ void expect_pair(const Monotonicities &claims,
     if (claims.reported++ < kReported)
     {
         ADD_FAILURE() << "child " << position << " claimed " << name_of(claim) << ": "
-                      << text(first) << " at" << points_text(low) << ", " << text(last) << " at"
-                      << points_text(high);
+                      << text(first) << " at" << point_text(low) << ", " << text(last) << " at"
+                      << point_text(high);
     }
 }
 
@@ -337,13 +337,13 @@ void biyos::test::expect_monotonicities(const Monotonicities &claims, Engine &en
         const Values base = point_of(claims.box, engine);
         for (std::size_t k = 0; k < claims.monotonicities.size(); ++k)
         {
-            const auto var = static_cast<std::size_t>(graph.variable(children[k]));
-            const double first = coordinate(claims.box[var], engine);
-            const double second = coordinate(claims.box[var], engine);
+            const auto variable = static_cast<std::size_t>(graph.variable(children[k]));
+            const double first = coordinate(claims.box[variable], engine);
+            const double second = coordinate(claims.box[variable], engine);
             Values low = base;
             Values high = base;
-            low[var] = (std::min)(first, second);
-            high[var] = (std::max)(first, second);
+            low[variable] = (std::min)(first, second);
+            high[variable] = (std::max)(first, second);
             expect_pair(claims, k, low, high);
         }
     }

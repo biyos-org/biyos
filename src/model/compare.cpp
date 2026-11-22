@@ -101,8 +101,8 @@ std::string differ(const LinearTerm &a, const LinearTerm &b)
 std::string differ(const QuadraticTerm &a, const QuadraticTerm &b)
 {
     return first_of({
-        compared("first variable", a.first, b.first),
-        compared("second variable", a.second, b.second),
+        compared("first variable", a.row, b.row),
+        compared("second variable", a.column, b.column),
         compared("coefficient", a.coefficient, b.coefficient),
     });
 }

@@ -38,9 +38,9 @@ void check_coefficient(Index fun, const QuadraticTerm &term)
 
 void order_pair(QuadraticTerm &term) noexcept
 {
-    if (term.second < term.first)
+    if (term.column < term.row)
     {
-        std::swap(term.first, term.second);
+        std::swap(term.row, term.column);
     }
 }
 
@@ -48,15 +48,15 @@ void order_pair(QuadraticTerm &term) noexcept
 
 std::string pair_name(const QuadraticTerm &term)
 {
-    return "pair (" + text_of(term.first) + ", " + text_of(term.second) + ")";
+    return "pair (" + text_of(term.row) + ", " + text_of(term.column) + ")";
 }
 
 void check_pairs(Index fun, std::span<const QuadraticTerm> terms, Index vars)
 {
     for (const QuadraticTerm &term : terms)
     {
-        check_var(fun, term.first, vars);
-        check_var(fun, term.second, vars);
+        check_var(fun, term.row, vars);
+        check_var(fun, term.column, vars);
         check_coefficient(fun, term);
     }
 }
