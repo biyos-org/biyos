@@ -300,7 +300,7 @@ see BIYOS_addenvhook
 since 0.1.0
 
 group reading Reading an event
-text These calls read the event a hook is given. They cannot fail: a null event gives 0 or an empty string, as does a field number outside the event's fields. A string they return is valid until the hook returns.
+text These calls read the event a hook is given. They cannot fail: a null event gives 0, null or an empty string, as does a field number outside the event's fields. A string they return is valid until the hook returns.
 
 function BIYOS_getevtknd
 summary Give the kind of an event.
@@ -345,6 +345,13 @@ summary Give the value of a field of an event.
 param evt in The event.
 param idx in The number of the field.
 return The value of the field, as text.
+since 0.1.0
+
+function BIYOS_getevtmdl
+summary Give the model an event came from.
+param evt in The event.
+return The model of the call that sent the event, or null when the call was on the environment itself.
+note For `BIYOS_copymdl` it is the model copied.
 since 0.1.0
 
 group formatting Formatting an event

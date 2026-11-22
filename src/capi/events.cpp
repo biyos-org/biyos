@@ -108,3 +108,8 @@ const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx)
     const biyos::Field *found = field_of(evt, idx);
     return found == nullptr ? "" : found->value.c_str();
 }
+
+const BIYOS_model *BIYOS_getevtmdl(const BIYOS_event *evt)
+{
+    return evt == nullptr ? nullptr : evt->core->model;
+}

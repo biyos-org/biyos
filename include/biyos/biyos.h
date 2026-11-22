@@ -99,6 +99,7 @@ BIYOS_API const char *BIYOS_getevttext(const BIYOS_event *evt);
 BIYOS_API BIYOS_index BIYOS_getnevtfld(const BIYOS_event *evt);
 BIYOS_API const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx);
 BIYOS_API const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx);
+BIYOS_API const BIYOS_model *BIYOS_getevtmdl(const BIYOS_event *evt);
 
 BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, size_t cap, char *buf, size_t *len);
 BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *buf, size_t *len);

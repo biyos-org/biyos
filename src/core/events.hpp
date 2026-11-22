@@ -53,6 +53,7 @@ struct Event
     std::string module;
     std::string text;
     std::vector<Field> fields;
+    const BIYOS_model *model = nullptr;
 };
 
 using Hook = std::function<void(const Event &)>;
@@ -101,6 +102,7 @@ class Events
             .module = {},
             .text = {},
             .fields = {},
+            .model = model_,
         };
         try
         {

@@ -363,3 +363,19 @@ TEST_F(EventTest, Caller)
     }
     EXPECT_EQ(events.model(), nullptr);
 }
+
+TEST_F(EventTest, CallerModel)
+{
+    const int address = 0;
+    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    std::vector<const BIYOS_model *> seen;
+    const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
+    events.add_hook(EventKind::Message, EventLevel::Info, keep);
+    events.emit(EventKind::Message, EventLevel::Info, describe);
+    {
+        const biyos::Events::Caller caller(events, model);
+        events.emit(EventKind::Message, EventLevel::Info, describe);
+    }
+    const std::vector<const BIYOS_model *> expected{nullptr, model};
+    EXPECT_EQ(seen, expected);
+}

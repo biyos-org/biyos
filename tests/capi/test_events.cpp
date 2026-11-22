@@ -1,6 +1,7 @@
 #include "biyos/biyos.h"
 #include "capi/event.hpp"
 #include "core/events.hpp"
+#include "handles.hpp"
 
 #include <gtest/gtest.h>
 
@@ -56,6 +57,11 @@ void receive(const BIYOS_event *event, void *data)
     inbox->fields = BIYOS_getnevtfld(event);
     inbox->name = BIYOS_getevtfldname(event, 0);
     inbox->value = BIYOS_getevtfldval(event, 0);
+}
+
+void source(const BIYOS_event *event, void *data)
+{
+    static_cast<std::vector<const BIYOS_model *> *>(data)->push_back(BIYOS_getevtmdl(event));
 }
 
 void delete_unknown(const BIYOS_event *, void *data)
@@ -286,6 +292,7 @@ TEST(CApiTest, Accessors)
     EXPECT_STREQ(BIYOS_getevtfldval(&view, 1), "1");
     EXPECT_STREQ(BIYOS_getevtfldname(&view, 2), "");
     EXPECT_STREQ(BIYOS_getevtfldval(&view, -1), "");
+    EXPECT_EQ(BIYOS_getevtmdl(&view), nullptr);
 }
 
 TEST(CApiTest, NullEvent)
@@ -297,4 +304,18 @@ TEST(CApiTest, NullEvent)
     EXPECT_EQ(BIYOS_getnevtfld(nullptr), 0);
     EXPECT_STREQ(BIYOS_getevtfldname(nullptr, 0), "");
     EXPECT_STREQ(BIYOS_getevtfldval(nullptr, 0), "");
+    EXPECT_EQ(BIYOS_getevtmdl(nullptr), nullptr);
+}
+
+TEST(CApiTest, EventModel)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    std::vector<const BIYOS_model *> seen;
+    BIYOS_index id = 0;
+    ASSERT_EQ(listen(env.get(), source, &seen, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnvar(model.get(), nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    const std::vector<const BIYOS_model *> expected{model.get(), nullptr};
+    EXPECT_EQ(seen, expected);
 }

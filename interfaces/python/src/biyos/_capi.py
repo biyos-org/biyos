@@ -73,6 +73,7 @@ def _declare_events(lib: ctypes.CDLL, ints: type) -> None:
     _declare(lib, "BIYOS_getnevtfld", c_int32, c_void_p)
     _declare(lib, "BIYOS_getevtfldname", c_char_p, c_void_p, c_int32)
     _declare(lib, "BIYOS_getevtfldval", c_char_p, c_void_p, c_int32)
+    _declare(lib, "BIYOS_getevtmdl", c_void_p, c_void_p)
     _declare_formats(lib)
 
 
