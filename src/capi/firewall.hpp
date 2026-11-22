@@ -15,9 +15,9 @@
 namespace biyos::capi
 {
 
-inline BIYOS_status status_of(ErrorKind knd) noexcept
+inline BIYOS_status status_of(ErrorKind kind) noexcept
 {
-    switch (knd)
+    switch (kind)
     {
     case ErrorKind::InvalidArgument:
         return BIYOS_ERR_BADARG;
@@ -29,21 +29,21 @@ inline BIYOS_status status_of(ErrorKind knd) noexcept
     return BIYOS_ERR_INTERNAL;
 }
 
-inline void describe_failure(Event &evt, BIYOS_status status, std::string_view text)
+inline void describe_failure(Event &event, BIYOS_status status, std::string_view text)
 {
-    evt.module = "capi";
-    evt.text.assign(text);
-    evt.fields.push_back(Field{.name = "code", .value = std::to_string(status)});
+    event.module = "capi";
+    event.text.assign(text);
+    event.fields.push_back(Field{.name = "code", .value = std::to_string(status)});
 }
 
-inline void announce(Env &env, ErrorKind knd, std::string_view text) noexcept
+inline void announce(Env &env, ErrorKind kind, std::string_view text) noexcept
 {
-    const BIYOS_status status = status_of(knd);
-    const auto fill = [status, text](Event &evt) { describe_failure(evt, status, text); };
+    const BIYOS_status status = status_of(kind);
+    const auto fill = [status, text](Event &event) { describe_failure(event, status, text); };
     env.events().emit(EventKind::Message, EventLevel::Error, fill);
 }
 
-inline void report(Env *env, ErrorKind knd, std::string_view text) noexcept
+inline void report(Env *env, ErrorKind kind, std::string_view text) noexcept
 {
     if (env == nullptr)
     {
@@ -52,24 +52,24 @@ inline void report(Env *env, ErrorKind knd, std::string_view text) noexcept
     env->record_error(text);
     if (!env->events().delivering())
     {
-        announce(*env, knd, text);
+        announce(*env, kind, text);
     }
 }
 
-inline BIYOS_status fail(Env *env, ErrorKind knd, std::string_view msg) noexcept
+inline BIYOS_status fail(Env *env, ErrorKind kind, std::string_view message) noexcept
 {
     if (env != nullptr)
     {
         try
         {
-            report(env, knd, Error(knd, "", std::string(msg)).what());
+            report(env, kind, Error(kind, "", std::string(message)).what());
         }
         catch (...)
         {
-            report(env, knd, kind_name(knd));
+            report(env, kind, kind_name(kind));
         }
     }
-    return status_of(knd);
+    return status_of(kind);
 }
 
 template <std::invocable Body> BIYOS_status guard(Env *env, Body &&body) noexcept

@@ -53,39 +53,39 @@ std::vector<std::string_view> texts(std::size_t n, const char *const *names)
     return found;
 }
 
-void set_mdl_name(BIYOS_model &mdl, const char *name)
+void set_model_name(BIYOS_model &model, const char *name)
 {
-    writable(mdl).set_name(require(name, "name"));
+    writable(model).set_name(require(name, "name"));
 }
 
-void get_mdl_name(const BIYOS_model &mdl, const char **name)
+void get_model_name(const BIYOS_model &model, const char **name)
 {
-    const char *found = text(mdl.core.name());
+    const char *found = text(model.core.name());
     *require(name, "name") = found;
 }
 
-void del_mdl_name(BIYOS_model &mdl)
+void delete_model_name(BIYOS_model &model)
 {
-    writable(mdl).delete_name();
+    writable(model).delete_name();
 }
 
 template <Family Target>
-void set_names(BIYOS_model &mdl, int n, const int *idx, const char *const *names)
+void set_names(BIYOS_model &model, int n, const int *indices, const char *const *names)
 {
-    biyos::Model &core = writable(mdl);
-    const std::span<const biyos::Index> changed = listed(n, idx);
+    biyos::Model &core = writable(model);
+    const std::span<const biyos::Index> changed = listed(n, indices);
     core.set_names(Target, changed, texts(changed.size(), names));
 }
 
 template <Family Target>
-void get_names(const BIYOS_model &mdl, int n, const int *idx, const char **names)
+void get_names(const BIYOS_model &model, int n, const int *indices, const char **names)
 {
-    const std::span<const biyos::Index> wanted = listed(n, idx);
+    const std::span<const biyos::Index> wanted = listed(n, indices);
     std::vector<const char *> found;
     found.reserve(wanted.size());
     for (const biyos::Index i : wanted)
     {
-        found.push_back(text(mdl.core.name_of(Target, i)));
+        found.push_back(text(model.core.name_of(Target, i)));
     }
     if (names != nullptr)
     {
@@ -94,42 +94,42 @@ void get_names(const BIYOS_model &mdl, int n, const int *idx, const char **names
 }
 
 template <Family Target>
-void get_idx(const BIYOS_model &mdl, int n, const char *const *names, int *idx)
+void get_indices(const BIYOS_model &model, int n, const char *const *names, int *indices)
 {
     const std::vector<std::string_view> wanted = texts(length(n), names);
     std::vector<biyos::Index> found;
     found.reserve(wanted.size());
     for (const std::string_view name : wanted)
     {
-        found.push_back(mdl.core.index_of(Target, name));
+        found.push_back(model.core.index_of(Target, name));
     }
-    if (idx != nullptr)
+    if (indices != nullptr)
     {
-        std::ranges::copy(found, idx);
+        std::ranges::copy(found, indices);
     }
 }
 
-template <Family Target> void del_names(BIYOS_model &mdl, int n, const int *idx)
+template <Family Target> void delete_names(BIYOS_model &model, int n, const int *indices)
 {
-    biyos::Model &core = writable(mdl);
-    core.delete_names(Target, listed(n, idx));
+    biyos::Model &core = writable(model);
+    core.delete_names(Target, listed(n, indices));
 }
 
 }
 
 BIYOS_status BIYOS_setmdlname(BIYOS_model *mdl, const char *name)
 {
-    return guarded<set_mdl_name>(mdl, name);
+    return guarded<set_model_name>(mdl, name);
 }
 
 BIYOS_status BIYOS_getmdlname(const BIYOS_model *mdl, const char **name)
 {
-    return guarded<get_mdl_name>(mdl, name);
+    return guarded<get_model_name>(mdl, name);
 }
 
 BIYOS_status BIYOS_delmdlname(BIYOS_model *mdl)
 {
-    return guarded<del_mdl_name>(mdl);
+    return guarded<delete_model_name>(mdl);
 }
 
 BIYOS_status BIYOS_setvarnamesp(BIYOS_model *mdl,
@@ -153,12 +153,12 @@ BIYOS_status BIYOS_getvaridx(const BIYOS_model *mdl,
                              const char *const *name,
                              BIYOS_index *idx)
 {
-    return guarded<get_idx<Family::Variable>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::Variable>>(mdl, n, name, idx);
 }
 
 BIYOS_status BIYOS_delvarnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<del_names<Family::Variable>>(mdl, n, idx);
+    return guarded<delete_names<Family::Variable>>(mdl, n, idx);
 }
 
 BIYOS_status BIYOS_setfunnamesp(BIYOS_model *mdl,
@@ -182,12 +182,12 @@ BIYOS_status BIYOS_getfunidx(const BIYOS_model *mdl,
                              const char *const *name,
                              BIYOS_index *idx)
 {
-    return guarded<get_idx<Family::Function>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::Function>>(mdl, n, name, idx);
 }
 
 BIYOS_status BIYOS_delfunnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<del_names<Family::Function>>(mdl, n, idx);
+    return guarded<delete_names<Family::Function>>(mdl, n, idx);
 }
 
 BIYOS_status BIYOS_setconnamesp(BIYOS_model *mdl,
@@ -211,12 +211,12 @@ BIYOS_status BIYOS_getconidx(const BIYOS_model *mdl,
                              const char *const *name,
                              BIYOS_index *idx)
 {
-    return guarded<get_idx<Family::Constraint>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::Constraint>>(mdl, n, name, idx);
 }
 
 BIYOS_status BIYOS_delconnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<del_names<Family::Constraint>>(mdl, n, idx);
+    return guarded<delete_names<Family::Constraint>>(mdl, n, idx);
 }
 
 BIYOS_status BIYOS_setobjnamesp(BIYOS_model *mdl,
@@ -240,10 +240,10 @@ BIYOS_status BIYOS_getobjidx(const BIYOS_model *mdl,
                              const char *const *name,
                              BIYOS_index *idx)
 {
-    return guarded<get_idx<Family::Objective>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::Objective>>(mdl, n, name, idx);
 }
 
 BIYOS_status BIYOS_delobjnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<del_names<Family::Objective>>(mdl, n, idx);
+    return guarded<delete_names<Family::Objective>>(mdl, n, idx);
 }

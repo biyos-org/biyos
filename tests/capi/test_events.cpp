@@ -13,16 +13,16 @@ namespace
 class Env
 {
   public:
-    Env() { EXPECT_EQ(BIYOS_newenv(&ptr_), BIYOS_OK); }
-    ~Env() { BIYOS_freeenv(ptr_); }
+    Env() { EXPECT_EQ(BIYOS_newenv(&pointer_), BIYOS_OK); }
+    ~Env() { BIYOS_freeenv(pointer_); }
     Env(const Env &) = delete;
     Env &operator=(const Env &) = delete;
 
-    BIYOS_env *get() const { return ptr_; }
-    std::string message() const { return BIYOS_lasterror(ptr_); }
+    BIYOS_env *get() const { return pointer_; }
+    std::string message() const { return BIYOS_lasterror(pointer_); }
 
   private:
-    BIYOS_env *ptr_ = nullptr;
+    BIYOS_env *pointer_ = nullptr;
 };
 
 struct Inbox
@@ -45,20 +45,20 @@ struct Probe
     std::string message;
 };
 
-void receive(const BIYOS_event *evt, void *data)
+void receive(const BIYOS_event *event, void *data)
 {
     Inbox *inbox = static_cast<Inbox *>(data);
     ++inbox->calls;
-    inbox->kind = BIYOS_getevtknd(evt);
-    inbox->level = BIYOS_getevtlvl(evt);
-    inbox->module = BIYOS_getevtmod(evt);
-    inbox->text = BIYOS_getevttext(evt);
-    inbox->fields = BIYOS_getnevtfld(evt);
-    inbox->name = BIYOS_getevtfldname(evt, 0);
-    inbox->value = BIYOS_getevtfldval(evt, 0);
+    inbox->kind = BIYOS_getevtknd(event);
+    inbox->level = BIYOS_getevtlvl(event);
+    inbox->module = BIYOS_getevtmod(event);
+    inbox->text = BIYOS_getevttext(event);
+    inbox->fields = BIYOS_getnevtfld(event);
+    inbox->name = BIYOS_getevtfldname(event, 0);
+    inbox->value = BIYOS_getevtfldval(event, 0);
 }
 
-void del_unknown(const BIYOS_event *, void *data)
+void delete_unknown(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
@@ -89,9 +89,9 @@ void free_inside(const BIYOS_event *, void *data)
     probe->message = BIYOS_lasterror(probe->env);
 }
 
-BIYOS_status listen(BIYOS_env *env, BIYOS_hook hk, void *data, int lvl, BIYOS_index *id)
+BIYOS_status listen(BIYOS_env *env, BIYOS_hook hook, void *data, int level, BIYOS_index *id)
 {
-    return BIYOS_addhook(env, hk, data, BIYOS_EVT_MESSAGE, lvl, id);
+    return BIYOS_addhook(env, hook, data, BIYOS_EVT_MESSAGE, level, id);
 }
 
 void fail(const Env &env)
@@ -148,7 +148,7 @@ TEST(CApiTest, AddHook)
     EXPECT_EQ(inbox.value, "-100");
 }
 
-TEST(CApiTest, DelHook)
+TEST(CApiTest, DeleteHook)
 {
     const Env env;
     Inbox inbox;
@@ -190,7 +190,7 @@ TEST(CApiTest, NestedFailure)
     Probe probe;
     probe.env = env.get();
     BIYOS_index id = 0;
-    ASSERT_EQ(listen(env.get(), del_unknown, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), delete_unknown, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(probe.calls, 1);
     EXPECT_EQ(probe.status, BIYOS_ERR_BADARG);
@@ -265,7 +265,7 @@ TEST(CApiTest, NullHook)
 
 TEST(CApiTest, Accessors)
 {
-    const biyos::Event evt{
+    const biyos::Event event{
         .kind = biyos::EventKind::Message,
         .level = biyos::EventLevel::Warning,
         .time = {},
@@ -273,7 +273,7 @@ TEST(CApiTest, Accessors)
         .text = "removed rows",
         .fields = {{.name = "rows", .value = "3"}, {.name = "columns", .value = "1"}},
     };
-    const BIYOS_event view{&evt};
+    const BIYOS_event view{&event};
     EXPECT_EQ(BIYOS_getevtknd(&view), BIYOS_EVT_MESSAGE);
     EXPECT_EQ(BIYOS_getevtlvl(&view), BIYOS_LVL_WARN);
     EXPECT_STREQ(BIYOS_getevtmod(&view), "presolve");

@@ -85,9 +85,9 @@ void announce(biyos::Env &env)
 void stop_call(const BIYOS_event *, void *data)
 {
     auto *stopper = static_cast<Stopper *>(data);
-    BIYOS_real val = 0.0;
+    BIYOS_real value = 0.0;
     stopper->interrupted = BIYOS_interrupt(stopper->env);
-    stopper->read = BIYOS_getdblopt(stopper->env, BIYOS_OPT_MAXTIME, &val);
+    stopper->read = BIYOS_getdblopt(stopper->env, BIYOS_OPT_MAXTIME, &value);
 }
 
 void count(const BIYOS_event *, void *data)
@@ -95,10 +95,10 @@ void count(const BIYOS_event *, void *data)
     ++*static_cast<int *>(data);
 }
 
-BIYOS_status listen(const Env &env, BIYOS_hook hk, void *data)
+BIYOS_status listen(const Env &env, BIYOS_hook hook, void *data)
 {
     BIYOS_index id = 0;
-    return BIYOS_addhook(env.get(), hk, data, BIYOS_EVT_MESSAGE, BIYOS_LVL_DBG, &id);
+    return BIYOS_addhook(env.get(), hook, data, BIYOS_EVT_MESSAGE, BIYOS_LVL_DBG, &id);
 }
 
 }
@@ -144,16 +144,16 @@ TEST(InterruptTest, HookStop)
 TEST(InterruptTest, NextCall)
 {
     const Env env;
-    const Model mdl(env);
+    const Model model(env);
     const biyos::Interrupt &flag = env.get()->core.interrupt();
-    BIYOS_real val = 0.0;
+    BIYOS_real value = 0.0;
     BIYOS_index n = 0;
     ASSERT_EQ(BIYOS_interrupt(env.get()), BIYOS_OK);
     EXPECT_TRUE(flag.is_set());
-    EXPECT_EQ(BIYOS_getdblopt(env.get(), BIYOS_OPT_MAXTIME, &val), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getdblopt(env.get(), BIYOS_OPT_MAXTIME, &value), BIYOS_OK);
     EXPECT_FALSE(flag.is_set());
     ASSERT_EQ(BIYOS_interrupt(env.get()), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getnvar(mdl.get(), &n), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_OK);
     EXPECT_FALSE(flag.is_set());
 }
 

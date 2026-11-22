@@ -23,20 +23,20 @@ using biyos::capi::writable;
 namespace
 {
 
-void add_lin_terms(BIYOS_model &mdl,
-                   int n,
-                   const int *funs,
-                   const std::int64_t *starts,
-                   const int *vars,
-                   const double *values)
+void add_linear_terms(BIYOS_model &model,
+                      int n,
+                      const int *functions,
+                      const std::int64_t *starts,
+                      const int *variables,
+                      const double *values)
 {
-    biyos::Model &core = writable(mdl);
-    const std::span<const biyos::Index> owners = listed(n, funs, "funidx");
+    biyos::Model &core = writable(model);
+    const std::span<const biyos::Index> owners = listed(n, functions, "funidx");
     const std::vector<biyos::Offset> begins = offsets(owners.size(), starts);
     biyos::check_starts(begins);
     core.check_room(0, begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
-    core.add_linear_terms(owners, begins, biyos::capi::packed(total, vars, values));
+    core.add_linear_terms(owners, begins, biyos::capi::packed(total, variables, values));
 }
 
 template <typename T> std::span<T> given(T *array, std::size_t size)
@@ -44,20 +44,24 @@ template <typename T> std::span<T> given(T *array, std::size_t size)
     return array == nullptr ? std::span<T>() : std::span<T>(array, size);
 }
 
-void get_var_terms(const BIYOS_model &mdl,
-                   int beg,
-                   int n,
-                   std::int64_t size,
-                   std::int64_t *starts,
-                   std::int64_t *needed,
-                   int *funs,
-                   double *values)
+void get_variable_terms(const BIYOS_model &model,
+                        int start,
+                        int size,
+                        std::int64_t capacity,
+                        std::int64_t *starts,
+                        std::int64_t *needed,
+                        int *functions,
+                        double *values)
 {
-    const std::vector<biyos::Offset> found = biyos::variable_starts(mdl.core, beg, n);
-    const std::size_t room = length(size, "size");
+    const std::vector<biyos::Offset> found = biyos::variable_starts(model.core, start, size);
+    const std::size_t room = length(capacity, "size");
     require(needed, "nnz");
     const std::size_t written = (std::min)(room, static_cast<std::size_t>(found.back()));
-    biyos::variable_terms(mdl.core, beg, found, given(funs, written), given(values, written));
+    biyos::variable_terms(model.core,
+                          start,
+                          found,
+                          given(functions, written),
+                          given(values, written));
     if (starts != nullptr)
     {
         std::ranges::copy(found, starts);
@@ -74,7 +78,7 @@ BIYOS_status BIYOS_addlinterms(BIYOS_model *mdl,
                                const BIYOS_index *varidx,
                                const BIYOS_real *coef)
 {
-    return guarded<add_lin_terms>(mdl, n, funidx, off, varidx, coef);
+    return guarded<add_linear_terms>(mdl, n, funidx, off, varidx, coef);
 }
 
 BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,
@@ -86,5 +90,5 @@ BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,
                                  BIYOS_index *funidx,
                                  BIYOS_real *coef)
 {
-    return guarded<get_var_terms>(mdl, pos, n, cap, off, nnz, funidx, coef);
+    return guarded<get_variable_terms>(mdl, pos, n, cap, off, nnz, funidx, coef);
 }

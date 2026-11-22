@@ -22,39 +22,39 @@ using biyos::capi::write_starts;
 namespace
 {
 
-void add_terms(BIYOS_model &mdl,
+void add_terms(BIYOS_model &model,
                int n,
-               const int *funs,
+               const int *functions,
                const std::int64_t *starts,
-               const int *firsts,
-               const int *seconds,
+               const int *rows,
+               const int *columns,
                const double *values)
 {
-    biyos::Model &core = writable(mdl);
-    const std::span<const biyos::Index> owners = listed(n, funs, "funidx");
+    biyos::Model &core = writable(model);
+    const std::span<const biyos::Index> owners = listed(n, functions, "funidx");
     const std::vector<biyos::Offset> begins = offsets(owners.size(), starts);
     biyos::check_starts(begins);
     core.check_quadratic_room(begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
-    core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, firsts, seconds, values));
+    core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, rows, columns, values));
 }
 
-void get_terms(const BIYOS_model &mdl,
-               int beg,
-               int n,
+void get_terms(const BIYOS_model &model,
+               int start,
+               int size,
                std::int64_t *starts,
-               std::int64_t size,
+               std::int64_t capacity,
                std::int64_t *needed,
-               int *firsts,
-               int *seconds,
+               int *rows,
+               int *columns,
                double *values)
 {
-    const std::span<const biyos::QuadraticTerm> found = mdl.core.quadratic_terms(beg, n);
-    const std::size_t room = length(size, "size");
+    const std::span<const biyos::QuadraticTerm> found = model.core.quadratic_terms(start, size);
+    const std::size_t room = length(capacity, "size");
     require(needed, "nnz");
-    const auto before = [&](biyos::Index j) { return mdl.core.quadratic_terms(beg, j); };
-    write_starts(static_cast<std::size_t>(n), starts, before);
-    biyos::capi::unpack(found, room, firsts, seconds, values);
+    const auto before = [&](biyos::Index j) { return model.core.quadratic_terms(start, j); };
+    write_starts(static_cast<std::size_t>(size), starts, before);
+    biyos::capi::unpack(found, room, rows, columns, values);
     *needed = static_cast<std::int64_t>(found.size());
 }
 

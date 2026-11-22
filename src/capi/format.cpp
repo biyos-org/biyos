@@ -10,27 +10,28 @@
 namespace
 {
 
-void copy_line(const std::string &line, char *buffer, std::size_t size, std::size_t *needed)
+void copy_line(const std::string &line, char *buffer, std::size_t capacity, std::size_t *needed)
 {
-    if (size > 0)
+    if (capacity > 0)
     {
-        const std::size_t written = line.copy(buffer, size - 1);
+        const std::size_t written = line.copy(buffer, capacity - 1);
         buffer[written] = '\0';
     }
     *needed = line.size();
 }
 
 template <auto Formatter>
-BIYOS_status formatted(const BIYOS_event *evt,
+BIYOS_status formatted(const BIYOS_event *event,
                        char *buffer,
-                       std::size_t size,
+                       std::size_t capacity,
                        std::size_t *needed) noexcept
 {
-    if (evt == nullptr || needed == nullptr || (buffer == nullptr && size > 0))
+    if (event == nullptr || needed == nullptr || (buffer == nullptr && capacity > 0))
     {
         return BIYOS_ERR_BADARG;
     }
-    return biyos::capi::guard([&] { copy_line(Formatter(*evt->core), buffer, size, needed); });
+    return biyos::capi::guard([&]
+                              { copy_line(Formatter(*event->core), buffer, capacity, needed); });
 }
 
 }

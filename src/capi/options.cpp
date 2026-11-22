@@ -15,16 +15,16 @@ using biyos::capi::writable;
 namespace
 {
 
-void opt_id(biyos::Env &, const char *name, int *opt)
+void option_id(biyos::Env &, const char *name, int *option)
 {
     const biyos::Option found = biyos::find_option(std::string_view(require(name, "name")));
-    *require(opt, "opt") = static_cast<int>(found);
+    *require(option, "opt") = static_cast<int>(found);
 }
 
-void option_kind(biyos::Env &, int opt, int *knd)
+void option_kind(biyos::Env &, int option, int *kind)
 {
-    const biyos::OptionKind found = biyos::kind_of(biyos::find_option(opt));
-    *require(knd, "knd") = static_cast<int>(found);
+    const biyos::OptionKind found = biyos::kind_of(biyos::find_option(option));
+    *require(kind, "knd") = static_cast<int>(found);
 }
 
 int optional_number(std::optional<biyos::Version> version)
@@ -32,9 +32,9 @@ int optional_number(std::optional<biyos::Version> version)
     return version ? biyos::number_of(*version) : 0;
 }
 
-void opt_versions(biyos::Env &, int opt, int *since, int *deprecated, int *retired)
+void option_versions(biyos::Env &, int option, int *since, int *deprecated, int *retired)
 {
-    const biyos::Versions versions = biyos::versions_of(biyos::find_option(opt));
+    const biyos::Versions versions = biyos::versions_of(biyos::find_option(option));
     require(since, "since");
     require(deprecated, "deprecated");
     require(retired, "retired");
@@ -43,49 +43,49 @@ void opt_versions(biyos::Env &, int opt, int *since, int *deprecated, int *retir
     *retired = optional_number(versions.retired);
 }
 
-void set_bool(biyos::Env &env, int opt, int value)
+void set_bool(biyos::Env &env, int option, int value)
 {
-    writable(env).options().set_bool(biyos::find_option(opt), value != 0);
+    writable(env).options().set_bool(biyos::find_option(option), value != 0);
 }
 
-void set_int(biyos::Env &env, int opt, int value)
+void set_int(biyos::Env &env, int option, int value)
 {
-    writable(env).options().set_int(biyos::find_option(opt), value);
+    writable(env).options().set_int(biyos::find_option(option), value);
 }
 
-void set_dbl(biyos::Env &env, int opt, double value)
+void set_double(biyos::Env &env, int option, double value)
 {
-    writable(env).options().set_double(biyos::find_option(opt), value);
+    writable(env).options().set_double(biyos::find_option(option), value);
 }
 
-void set_str(biyos::Env &env, int opt, const char *value)
+void set_string(biyos::Env &env, int option, const char *value)
 {
-    biyos::Options &opts = writable(env).options();
-    const biyos::Option found = biyos::find_option(opt);
-    opts.set_string(found, require(value, "val"));
+    biyos::Options &options = writable(env).options();
+    const biyos::Option found = biyos::find_option(option);
+    options.set_string(found, require(value, "val"));
 }
 
-void get_bool(biyos::Env &env, int opt, int *value)
+void get_bool(biyos::Env &env, int option, int *value)
 {
-    const bool found = env.options().get_bool(biyos::find_option(opt));
+    const bool found = env.options().get_bool(biyos::find_option(option));
     *require(value, "val") = found ? 1 : 0;
 }
 
-void get_int(biyos::Env &env, int opt, int *value)
+void get_int(biyos::Env &env, int option, int *value)
 {
-    const int found = env.options().get_int(biyos::find_option(opt));
+    const int found = env.options().get_int(biyos::find_option(option));
     *require(value, "val") = found;
 }
 
-void get_dbl(biyos::Env &env, int opt, double *value)
+void get_double(biyos::Env &env, int option, double *value)
 {
-    const double found = env.options().get_double(biyos::find_option(opt));
+    const double found = env.options().get_double(biyos::find_option(option));
     *require(value, "val") = found;
 }
 
-void get_str(biyos::Env &env, int opt, const char **value)
+void get_string(biyos::Env &env, int option, const char **value)
 {
-    const char *found = env.options().get_string(biyos::find_option(opt)).c_str();
+    const char *found = env.options().get_string(biyos::find_option(option)).c_str();
     *require(value, "val") = found;
 }
 
@@ -93,7 +93,7 @@ void get_str(biyos::Env &env, int opt, const char **value)
 
 BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt)
 {
-    return guarded<opt_id>(env, name, opt);
+    return guarded<option_id>(env, name, opt);
 }
 
 BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *knd)
@@ -107,7 +107,7 @@ BIYOS_status BIYOS_getoptver(BIYOS_env *env,
                              BIYOS_int *deprecated,
                              BIYOS_int *retired)
 {
-    return guarded<opt_versions>(env, opt, since, deprecated, retired);
+    return guarded<option_versions>(env, opt, since, deprecated, retired);
 }
 
 BIYOS_status BIYOS_setboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val)
@@ -122,12 +122,12 @@ BIYOS_status BIYOS_setintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val)
 
 BIYOS_status BIYOS_setdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val)
 {
-    return guarded<set_dbl>(env, opt, val);
+    return guarded<set_double>(env, opt, val);
 }
 
 BIYOS_status BIYOS_setstropt(BIYOS_env *env, BIYOS_int opt, const char *val)
 {
-    return guarded<set_str>(env, opt, val);
+    return guarded<set_string>(env, opt, val);
 }
 
 BIYOS_status BIYOS_getboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val)
@@ -142,10 +142,10 @@ BIYOS_status BIYOS_getintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val)
 
 BIYOS_status BIYOS_getdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real *val)
 {
-    return guarded<get_dbl>(env, opt, val);
+    return guarded<get_double>(env, opt, val);
 }
 
 BIYOS_status BIYOS_getstropt(BIYOS_env *env, BIYOS_int opt, const char **val)
 {
-    return guarded<get_str>(env, opt, val);
+    return guarded<get_string>(env, opt, val);
 }
