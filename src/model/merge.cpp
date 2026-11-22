@@ -41,18 +41,18 @@ template <typename Term> bool before(const Term &a, const Term &b) noexcept
     return key_of(a) < key_of(b);
 }
 
-std::size_t start_of(std::span<const Offset> ends, std::size_t fun)
+std::size_t start_of(std::span<const Offset> ends, std::size_t function)
 {
-    return fun == 0 ? 0 : static_cast<std::size_t>(ends[fun - 1]);
+    return function == 0 ? 0 : static_cast<std::size_t>(ends[function - 1]);
 }
 
 template <typename Term>
 std::span<const Term> held_by(std::span<const Offset> ends,
                               std::span<const Term> terms,
-                              std::size_t fun)
+                              std::size_t function)
 {
-    const std::size_t begin = start_of(ends, fun);
-    const auto end = static_cast<std::size_t>(ends[fun]);
+    const std::size_t begin = start_of(ends, function);
+    const auto end = static_cast<std::size_t>(ends[function]);
     return terms.subspan(begin, end - begin);
 }
 
@@ -125,9 +125,9 @@ void shift_ends(std::span<Offset> ends, std::size_t from, std::size_t upto, std:
     {
         return;
     }
-    for (std::size_t fun = from; fun < upto; ++fun)
+    for (std::size_t function = from; function < upto; ++function)
     {
-        ends[fun] += static_cast<Offset>(shift);
+        ends[function] += static_cast<Offset>(shift);
     }
 }
 
@@ -159,7 +159,7 @@ void insert(std::vector<Offset> &ends,
     }
 }
 
-template <typename Term> std::size_t fun_of(const Insertion<Term> &insertion) noexcept
+template <typename Term> std::size_t function_of(const Insertion<Term> &insertion) noexcept
 {
     return insertion.function;
 }
@@ -173,15 +173,15 @@ void merge(std::vector<Offset> &ends,
     insertions.reserve(additions.size());
     for (const Addition<Term> &addition : additions)
     {
-        const auto fun = static_cast<std::size_t>(addition.function);
-        const std::size_t added = new_terms(addition, held_by<Term>(ends, terms, fun));
+        const auto function = static_cast<std::size_t>(addition.function);
+        const std::size_t added = new_terms(addition, held_by<Term>(ends, terms, function));
         insertions.push_back(Insertion<Term>{
-            .function = fun,
+            .function = function,
             .terms = addition.terms,
             .added = added,
         });
     }
-    std::ranges::sort(insertions, {}, fun_of<Term>);
+    std::ranges::sort(insertions, {}, function_of<Term>);
     insert<Term>(ends, terms, insertions);
 }
 

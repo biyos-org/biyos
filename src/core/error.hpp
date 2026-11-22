@@ -15,12 +15,12 @@ enum class ErrorKind
     Internal,
 };
 
-std::string_view kind_name(ErrorKind knd) noexcept;
+std::string_view kind_name(ErrorKind kind) noexcept;
 
 class Error : public std::exception
 {
   public:
-    Error(ErrorKind knd, std::string object, std::string msg);
+    Error(ErrorKind kind, std::string object, std::string message);
 
     ErrorKind kind() const noexcept;
     const std::string &object() const noexcept;

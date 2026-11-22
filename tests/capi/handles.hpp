@@ -12,30 +12,30 @@ namespace biyos::test
 class Env
 {
   public:
-    Env() { EXPECT_EQ(BIYOS_newenv(&ptr_), BIYOS_OK); }
-    ~Env() { BIYOS_freeenv(ptr_); }
+    Env() { EXPECT_EQ(BIYOS_newenv(&pointer_), BIYOS_OK); }
+    ~Env() { BIYOS_freeenv(pointer_); }
     Env(const Env &) = delete;
     Env &operator=(const Env &) = delete;
 
-    BIYOS_env *get() const { return ptr_; }
-    std::string message() const { return BIYOS_lasterror(ptr_); }
+    BIYOS_env *get() const { return pointer_; }
+    std::string message() const { return BIYOS_lasterror(pointer_); }
 
   private:
-    BIYOS_env *ptr_ = nullptr;
+    BIYOS_env *pointer_ = nullptr;
 };
 
 class Model
 {
   public:
-    explicit Model(const Env &env) { EXPECT_EQ(BIYOS_newmdl(env.get(), &ptr_), BIYOS_OK); }
-    ~Model() { BIYOS_freemdl(ptr_); }
+    explicit Model(const Env &env) { EXPECT_EQ(BIYOS_newmdl(env.get(), &pointer_), BIYOS_OK); }
+    ~Model() { BIYOS_freemdl(pointer_); }
     Model(const Model &) = delete;
     Model &operator=(const Model &) = delete;
 
-    BIYOS_model *get() const { return ptr_; }
+    BIYOS_model *get() const { return pointer_; }
 
   private:
-    BIYOS_model *ptr_ = nullptr;
+    BIYOS_model *pointer_ = nullptr;
 };
 
 }

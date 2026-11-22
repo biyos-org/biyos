@@ -20,7 +20,7 @@ struct BIYOS_env
 struct BIYOS_model
 {
     explicit BIYOS_model(biyos::Env &env) : handle(env) {}
-    BIYOS_model(biyos::Env &env, const biyos::Model &mdl) : handle(env), core(mdl) {}
+    BIYOS_model(biyos::Env &env, const biyos::Model &model) : handle(env), core(model) {}
 
     biyos::Env::Handle handle;
     biyos::Model core;
@@ -55,14 +55,14 @@ inline biyos::Env &writable(biyos::Env &env)
     return idle(env, "environment");
 }
 
-inline biyos::Model &writable(BIYOS_model &mdl)
+inline biyos::Model &writable(BIYOS_model &model)
 {
-    if (mdl.handle.env().events().delivering())
+    if (model.handle.env().events().delivering())
     {
         const std::string reason = "is read-only while delivering an event";
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "model", reason);
     }
-    return mdl.core;
+    return model.core;
 }
 
 inline void start(biyos::Env &env) noexcept
@@ -73,26 +73,27 @@ inline void start(biyos::Env &env) noexcept
     }
 }
 
-template <auto Body, typename... Args> BIYOS_status guarded(BIYOS_env *env, Args... args) noexcept
+template <auto Body, typename... Args>
+BIYOS_status guarded(BIYOS_env *env, Args... arguments) noexcept
 {
     if (env == nullptr)
     {
         return BIYOS_ERR_BADARG;
     }
     start(env->core);
-    return biyos::capi::guard(&env->core, [&] { Body(env->core, args...); });
+    return biyos::capi::guard(&env->core, [&] { Body(env->core, arguments...); });
 }
 
 template <auto Body, typename Model, typename... Args>
     requires std::same_as<std::remove_const_t<Model>, BIYOS_model>
-BIYOS_status guarded(Model *mdl, Args... args) noexcept
+BIYOS_status guarded(Model *model, Args... arguments) noexcept
 {
-    if (mdl == nullptr)
+    if (model == nullptr)
     {
         return BIYOS_ERR_BADARG;
     }
-    start(mdl->handle.env());
-    return biyos::capi::guard(&mdl->handle.env(), [&] { Body(*mdl, args...); });
+    start(model->handle.env());
+    return biyos::capi::guard(&model->handle.env(), [&] { Body(*model, arguments...); });
 }
 
 }

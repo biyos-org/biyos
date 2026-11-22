@@ -14,7 +14,7 @@ namespace biyos
 class Deadline
 {
   public:
-    Deadline(const Options &opts, const Clock &clock, const Interrupt &interrupt);
+    Deadline(const Options &options, const Clock &clock, const Interrupt &interrupt);
 
     bool reached() const;
     TerminationStatus termination() const;

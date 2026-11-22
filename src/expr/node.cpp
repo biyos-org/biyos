@@ -153,11 +153,11 @@ void check_child(Offset child, Offset size)
     }
 }
 
-void check_var(Index var)
+void check_variable(Index variable)
 {
-    if (var < 0)
+    if (variable < 0)
     {
-        refuse("variable " + text_of(var) + " is unknown");
+        refuse("variable " + text_of(variable) + " is unknown");
     }
 }
 

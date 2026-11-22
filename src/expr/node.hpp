@@ -55,7 +55,7 @@ enum class Payload
 Payload payload_of(Operator op);
 void check_shape(Operator op, Payload payload, Offset children);
 void check_child(Offset child, Offset size);
-void check_var(Index var);
+void check_variable(Index variable);
 void check_constant(double value);
 void check_constant(Operator op, double value);
 void check_coefficients(std::span<const double> coefficients, Offset children);

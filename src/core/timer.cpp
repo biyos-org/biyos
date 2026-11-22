@@ -26,18 +26,18 @@ std::optional<nanoseconds> cpu_of(const Clock &clock) noexcept
     }
 }
 
-void describe(Event &evt,
+void describe(Event &event,
               std::string_view module,
               std::string_view name,
               std::string_view edge,
               nanoseconds wall,
               nanoseconds cpu)
 {
-    evt.module.assign(module);
-    evt.text.assign(name);
-    evt.fields.push_back(Field{.name = "edge", .value = std::string(edge)});
-    evt.fields.push_back(Field{.name = "wall", .value = std::to_string(wall.count())});
-    evt.fields.push_back(Field{.name = "cpu", .value = std::to_string(cpu.count())});
+    event.module.assign(module);
+    event.text.assign(name);
+    event.fields.push_back(Field{.name = "edge", .value = std::string(edge)});
+    event.fields.push_back(Field{.name = "wall", .value = std::to_string(wall.count())});
+    event.fields.push_back(Field{.name = "cpu", .value = std::to_string(cpu.count())});
 }
 
 }
@@ -129,7 +129,7 @@ void Timer::announce(std::string_view edge, nanoseconds wall, nanoseconds cpu) n
     }
     const std::string_view name = tree_.nodes()[node_].name;
     const nanoseconds since = wall - events_.origin();
-    const auto fill = [&](Event &evt) { describe(evt, module_, name, edge, since, cpu); };
+    const auto fill = [&](Event &event) { describe(event, module_, name, edge, since, cpu); };
     events_.emit(EventKind::Phase, EventLevel::Info, fill);
     tree_.observed_wall_ += clock_.wall_time() - wall;
     tree_.observed_cpu_ += cpu_of(clock_).value_or(cpu) - cpu;

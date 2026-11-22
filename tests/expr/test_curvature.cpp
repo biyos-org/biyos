@@ -138,7 +138,7 @@ Offset affine(Graph &graph, double constant, Offset child, double weight)
 Graph composed(Operator op, Offset (*inner)(Graph &, Offset))
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     unary(graph, op, inner(graph, x));
     return graph;
 }
@@ -193,18 +193,18 @@ TEST(CurvatureTest, Composed)
 TEST(CurvatureTest, Domains)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Offset quarter = affine(graph, -0.25, square(graph, x), 1.0);
     graph.add(Operator::ConstantPower, 1.5, one(quarter));
     EXPECT_EQ(over(graph, {-1.0, 1.0}), kNeither);
     EXPECT_EQ(over(graph, {0.6, 1.0}), kConvex);
     Graph ratio;
-    const Offset y = ratio.add_var(0);
+    const Offset y = ratio.add_variable(0);
     const std::array terms{ratio.add(Operator::Constant, 1.0, {}), unary(ratio, Operator::Sqrt, y)};
     ratio.add(Operator::Division, terms);
     EXPECT_EQ(over(ratio, {0.0, 4.0}), kConvex);
     Graph zero;
-    const Offset z = zero.add_var(0);
+    const Offset z = zero.add_variable(0);
     const Offset nothing = zero.add(Operator::Constant, 0.0, {});
     const std::array parts{nothing, z};
     zero.add(Operator::Division, parts);
@@ -216,13 +216,13 @@ TEST(CurvatureTest, Domains)
     zero.add(Operator::Division, peaked);
     EXPECT_EQ(over(zero, {-1.0, 2.0}), kNeither);
     Graph weighted;
-    const Offset w = weighted.add_var(0);
+    const Offset w = weighted.add_variable(0);
     const std::array masked{w, unary(weighted, Operator::Sqrt, ring(weighted, w))};
     const std::array weights{1.0, 0.0};
     weighted.add_sum(0.0, masked, weights);
     EXPECT_EQ(over(weighted, {-2.0, 2.0}), kNeither);
     Graph rim;
-    const Offset r = rim.add_var(0);
+    const Offset r = rim.add_variable(0);
     unary(rim, Operator::Acosh, unary(rim, Operator::Abs, r));
     EXPECT_EQ(over(rim, {-1.0, 1.0}), kNeither);
 }
@@ -230,7 +230,7 @@ TEST(CurvatureTest, Domains)
 TEST(CurvatureTest, Coefficients)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const std::array terms{square(graph, x), unary(graph, Operator::Log, x)};
     const std::array convex{1.0, -1.0};
     const Offset first = graph.add_sum(0.0, terms, convex);
@@ -249,7 +249,7 @@ TEST(CurvatureTest, Coefficients)
 TEST(CurvatureTest, Factors)
 {
     Graph graph;
-    const std::array x{graph.add_var(0), graph.add_var(1)};
+    const std::array x{graph.add_variable(0), graph.add_variable(1)};
     const std::array factors{square(graph, x[0]), x[1]};
     graph.add(Operator::Product, 1.0, factors);
     const auto with = [](Interval y) { return Box{Interval(-1.0, 2.0), y, kZero}; };
@@ -258,11 +258,11 @@ TEST(CurvatureTest, Factors)
     EXPECT_EQ(root_of(graph, with({0.0, 0.0})), kAffine);
     EXPECT_EQ(root_of(graph, with({1.0, 2.0})), kNeither);
     Graph scaled;
-    const Offset z = scaled.add_var(0);
+    const Offset z = scaled.add_variable(0);
     scaled.add(Operator::Product, -3.0, one(square(scaled, z)));
     EXPECT_EQ(over(scaled, {-1.0, 2.0}), kConcave);
     Graph pair;
-    const std::array y{pair.add_var(0), pair.add_var(1)};
+    const std::array y{pair.add_variable(0), pair.add_variable(1)};
     pair.add(Operator::Product, 1.0, y);
     EXPECT_EQ(root_of(pair, Box{Interval(1.0, 2.0), Interval(1.0, 2.0), kZero}), kNeither);
     EXPECT_EQ(root_of(pair, Box{Interval(1.0, 2.0), Interval(3.0, 3.0), kZero}), kAffine);
@@ -271,21 +271,21 @@ TEST(CurvatureTest, Factors)
 TEST(CurvatureTest, Shared)
 {
     Graph graph;
-    Offset node = graph.add_var(0);
+    Offset node = graph.add_variable(0);
     const std::array weights{1.0, 1.0};
-    for (int lvl = 0; lvl < kLevels; ++lvl)
+    for (int level = 0; level < kLevels; ++level)
     {
         const std::array terms{node, node};
         node = graph.add_sum(0.0, terms, weights);
     }
     const std::array box{Interval(1.0, 2.0)};
     const Shapes shapes = classified(graph, box);
-    for (Offset lvl = 0; lvl <= kLevels; ++lvl)
+    for (Offset level = 0; level <= kLevels; ++level)
     {
-        EXPECT_EQ(shapes.curvature(lvl), kAffine) << lvl;
+        EXPECT_EQ(shapes.curvature(level), kAffine) << level;
     }
     Graph twice;
-    const Offset x = twice.add_var(0);
+    const Offset x = twice.add_variable(0);
     const Offset common = square(twice, x);
     const std::array terms{common, common};
     const std::array same{1.0, 1.0};
@@ -307,7 +307,7 @@ TEST(CurvatureTest, Unbounded)
     EXPECT_EQ(over(composed(Operator::Sin, squared), all), kNeither);
     EXPECT_EQ(over(composed(Operator::Exp, lifted), {0.0, kInfinity}), kConvex);
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     unary(graph, Operator::Sqrt, x);
     EXPECT_EQ(over(graph, all), kConcave);
 }
@@ -315,7 +315,7 @@ TEST(CurvatureTest, Unbounded)
 TEST(CurvatureTest, Empty)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Offset logarithm = unary(graph, Operator::Log, x);
     const Offset grown = unary(graph, Operator::Exp, logarithm);
     const std::array terms{grown, x, graph.add(Operator::Constant, 2.0, {})};
@@ -334,7 +334,7 @@ TEST(CurvatureTest, Empty)
         EXPECT_EQ(none.curvature(node), constant ? kAffine : kNeither) << node;
     }
     Graph ratio;
-    const std::array parts{ratio.add_var(0), ratio.add(Operator::Constant, 0.0, {})};
+    const std::array parts{ratio.add_variable(0), ratio.add(Operator::Constant, 0.0, {})};
     const Offset quotient = ratio.add(Operator::Division, parts);
     EXPECT_EQ(classified(ratio, std::array{Interval(1.0, 2.0)}).curvature(quotient), kNeither);
 }
@@ -342,7 +342,7 @@ TEST(CurvatureTest, Empty)
 TEST(CurvatureTest, EmptyChild)
 {
     Graph graph;
-    const std::array x{graph.add_var(0), graph.add_var(1)};
+    const std::array x{graph.add_variable(0), graph.add_variable(1)};
     const std::array weights{1.0, 2.0};
     graph.add_sum(0.0, x, weights);
     graph.add(Operator::Product, 1.0, x);
@@ -367,7 +367,7 @@ TEST(CurvatureTest, EmptyChild)
 TEST(CurvatureTest, Points)
 {
     Graph graph;
-    const std::array x{graph.add_var(0), graph.add_var(1)};
+    const std::array x{graph.add_variable(0), graph.add_variable(1)};
     const std::array weights{1.0, 2.0};
     const Offset sum = graph.add_sum(0.0, x, weights);
     const Offset sine = unary(graph, Operator::Sin, x[1]);
@@ -382,7 +382,7 @@ TEST(CurvatureTest, Points)
 TEST(CurvatureTest, Sizes)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     unary(graph, Operator::Exp, x);
     Shapes shapes(graph);
     const std::vector<Interval> small(1, Interval(0.0, 1.0));
@@ -394,11 +394,11 @@ TEST(CurvatureTest, Sizes)
     EXPECT_EQ(biyos::test::refusal([&] { shapes.classify(grown, three); }),
               "invalid argument: graph: size 3, not 2");
     Graph other;
-    const std::array pair{other.add_var(0), other.add_var(1)};
+    const std::array pair{other.add_variable(0), other.add_variable(1)};
     other.add(Operator::Max, pair);
     Graph single;
-    single.add_var(0);
-    single.add_var(1);
+    single.add_variable(0);
+    single.add_variable(1);
     single.add(Operator::Exp, one(pair[0]));
     Shapes small_shapes(single);
     EXPECT_EQ(biyos::test::refusal([&] { small_shapes.classify(other, three); }),
@@ -415,7 +415,8 @@ TEST(CurvatureTest, Sampled)
         int reported = 0;
         for (int round = 0; round < kBoxes; ++round)
         {
-            const Graph graph = biyos::test::operator_graph(op, biyos::test::params_of(op, engine));
+            const Graph graph =
+                biyos::test::operator_graph(op, biyos::test::parameters_of(op, engine));
             const bool tame = round % 2 == 0;
             const Box box = tame ? biyos::test::draw_box(engine) : biyos::test::box_of(engine);
             expect_operator(graph, box, engine, reported);

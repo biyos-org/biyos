@@ -73,13 +73,13 @@ void expect_linear(const Parts &parts, const std::vector<LinearTerm> &wanted)
     }
 }
 
-void expect_quad(const Parts &parts, const std::vector<QuadraticTerm> &wanted)
+void expect_quadratic(const Parts &parts, const std::vector<QuadraticTerm> &wanted)
 {
     ASSERT_EQ(parts.quadratic.size(), wanted.size());
     for (std::size_t k = 0; k < wanted.size(); ++k)
     {
-        EXPECT_EQ(parts.quadratic[k].first, wanted[k].first);
-        EXPECT_EQ(parts.quadratic[k].second, wanted[k].second);
+        EXPECT_EQ(parts.quadratic[k].row, wanted[k].row);
+        EXPECT_EQ(parts.quadratic[k].column, wanted[k].column);
         EXPECT_DOUBLE_EQ(parts.quadratic[k].coefficient, wanted[k].coefficient);
     }
 }
@@ -126,12 +126,12 @@ Offset sum(Graph &graph,
     return graph.add_sum(constant, terms, weights);
 }
 
-std::vector<Offset> vars(Graph &graph, Index n)
+std::vector<Offset> variables(Graph &graph, Index n)
 {
     std::vector<Offset> nodes;
     for (Index k = 0; k < n; ++k)
     {
-        nodes.push_back(graph.add_var(k));
+        nodes.push_back(graph.add_variable(k));
     }
     return nodes;
 }
@@ -158,7 +158,7 @@ TEST(CanonicalTest, Constant)
     const Parts single = parts_of(graph, lone);
     EXPECT_DOUBLE_EQ(single.constant, 2.5);
     EXPECT_EQ(single.remainder, kNoRemainder);
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Offset three = constant(graph, 3.0);
     const Offset root = sum(graph, 4.0, {three, x}, {2.0, 1.0});
     const Parts parts = parts_of(graph, root);
@@ -169,7 +169,7 @@ TEST(CanonicalTest, Constant)
 TEST(CanonicalTest, Linear)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 3);
+    const std::vector<Offset> x = variables(graph, 3);
     const Offset scaled = product(graph, 2.0, {x[1]});
     const Offset four = constant(graph, 4.0);
     const Offset factored = product(graph, 1.0, {four, x[2]});
@@ -190,7 +190,7 @@ TEST(CanonicalTest, Linear)
 TEST(CanonicalTest, Quadratic)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 4);
+    const std::vector<Offset> x = variables(graph, 4);
     const Offset itself = product(graph, 1.0, {x[0], x[0]});
     const Offset pair = product(graph, 2.0, {x[0], x[1]});
     const Offset three = constant(graph, 3.0);
@@ -198,13 +198,13 @@ TEST(CanonicalTest, Quadratic)
     const Offset square = power(graph, x[2], 2.0);
     const Offset root = sum(graph, 0.0, {itself, pair, reversed, square}, {-1.0, 1.0, 1.0, 5.0});
     const Parts parts = parts_of(graph, root);
-    expect_quad(parts,
-                {
-                    {.first = 0, .second = 0, .coefficient = -1.0},
-                    {.first = 0, .second = 1, .coefficient = 2.0},
-                    {.first = 0, .second = 3, .coefficient = 3.0},
-                    {.first = 2, .second = 2, .coefficient = 5.0},
-                });
+    expect_quadratic(parts,
+                     {
+                         {.row = 0, .column = 0, .coefficient = -1.0},
+                         {.row = 0, .column = 1, .coefficient = 2.0},
+                         {.row = 0, .column = 3, .coefficient = 3.0},
+                         {.row = 2, .column = 2, .coefficient = 5.0},
+                     });
     EXPECT_TRUE(parts.linear.empty());
     EXPECT_EQ(parts.remainder, kNoRemainder);
 }
@@ -212,7 +212,7 @@ TEST(CanonicalTest, Quadratic)
 TEST(CanonicalTest, Remainder)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Offset exponential = unary(graph, Operator::Exp, x);
     const Offset root = sum(graph, 0.0, {exponential, x}, {1.0, 3.0});
     const Offset size = graph.size();
@@ -225,7 +225,7 @@ TEST(CanonicalTest, Remainder)
 TEST(CanonicalTest, SquareKept)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset inner = sum(graph, 0.0, {x[0], x[1]}, {1.0, 1.0});
     const Offset square = power(graph, inner, 2.0);
     const Offset cube = power(graph, x[0], 3.0);
@@ -241,12 +241,12 @@ TEST(CanonicalTest, WideSquare)
 {
     Graph graph;
     const Index n = 100;
-    const std::vector<Offset> x = vars(graph, n);
+    const std::vector<Offset> x = variables(graph, n);
     const std::vector<double> weights(x.size(), 0.5);
     const Offset inner = sum(graph, 1.0, x, weights);
     const Offset square = power(graph, inner, 2.0);
     const Offset twice = product(graph, 1.0, {inner, inner});
-    const Offset y = graph.add_var(n);
+    const Offset y = graph.add_variable(n);
     const Offset root = sum(graph, 0.0, {square, twice, y}, {1.0, 1.0, 1.0});
     const Offset size = graph.size();
     const Parts parts = parts_of(graph, root);
@@ -259,7 +259,7 @@ TEST(CanonicalTest, WideSquare)
 TEST(CanonicalTest, ProductKept)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 4);
+    const std::vector<Offset> x = variables(graph, 4);
     const Offset cubic = product(graph, 1.0, {x[0], x[1], x[2]});
     const Offset exponential = unary(graph, Operator::Exp, x[1]);
     const Offset mixed = product(graph, 2.0, {x[0], exponential});
@@ -281,8 +281,8 @@ TEST(CanonicalTest, ProductKept)
 TEST(CanonicalTest, UnaryKept)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
-    const std::vector<Operator> unary_ops{
+    const std::vector<Offset> x = variables(graph, 2);
+    const std::vector<Operator> unary_operators{
         Operator::Exp,
         Operator::Log,
         Operator::Sqrt,
@@ -302,7 +302,7 @@ TEST(CanonicalTest, UnaryKept)
         Operator::Entropy,
         Operator::Erf,
     };
-    for (const Operator op : unary_ops)
+    for (const Operator op : unary_operators)
     {
         const Offset node = unary(graph, op, x[0]);
         const Offset root = sum(graph, 0.0, {node, x[1]}, {1.0, 1.0});
@@ -315,14 +315,14 @@ TEST(CanonicalTest, UnaryKept)
 TEST(CanonicalTest, NoRemainder)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 3);
+    const std::vector<Offset> x = variables(graph, 3);
     const Offset pair = product(graph, 2.0, {x[1], x[2]});
     const Offset root = sum(graph, 3.0, {x[0], pair}, {1.0, 1.0});
     const Offset size = graph.size();
     const Parts parts = parts_of(graph, root);
     EXPECT_DOUBLE_EQ(parts.constant, 3.0);
     expect_linear(parts, {{.variable = 0, .coefficient = 1.0}});
-    expect_quad(parts, {{.first = 1, .second = 2, .coefficient = 2.0}});
+    expect_quadratic(parts, {{.row = 1, .column = 2, .coefficient = 2.0}});
     EXPECT_EQ(parts.remainder, kNoRemainder);
     EXPECT_EQ(graph.size(), size);
 }
@@ -330,7 +330,7 @@ TEST(CanonicalTest, NoRemainder)
 TEST(CanonicalTest, NodeReturned)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset exponential = unary(graph, Operator::Exp, x[0]);
     const Offset sine = unary(graph, Operator::Sin, x[1]);
     const Offset root = sum(graph, 0.0, {exponential, sine}, {2.0, 1.0});
@@ -343,7 +343,7 @@ TEST(CanonicalTest, NodeReturned)
 TEST(CanonicalTest, SplitAgain)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 3);
+    const std::vector<Offset> x = variables(graph, 3);
     const Offset exponential = unary(graph, Operator::Exp, x[1]);
     const Offset sine = unary(graph, Operator::Sin, x[2]);
     const Offset root = sum(graph, 5.0, {x[0], exponential, sine}, {1.0, 2.0, -1.0});
@@ -360,7 +360,7 @@ TEST(CanonicalTest, SplitAgain)
 TEST(CanonicalTest, SharedAlone)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 3);
+    const std::vector<Offset> x = variables(graph, 3);
     const Offset exponential = unary(graph, Operator::Exp, x[2]);
     const Offset shared = sum(graph, 0.0, {x[1], exponential}, {1.0, 1.0});
     const Offset negated_sum = sum(graph, 0.0, {x[1], exponential}, {1.0, 1.0});
@@ -377,7 +377,7 @@ TEST(CanonicalTest, SharedAlone)
 TEST(CanonicalTest, NearSquare)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset near = power(graph, x[0], kNearTwo);
     const Offset root = sum(graph, 0.0, {near, x[1]}, {1.0, 1.0});
     const Parts parts = parts_of(graph, root);
@@ -389,7 +389,7 @@ TEST(CanonicalTest, NearSquare)
 TEST(CanonicalTest, NearUnit)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset exponential = unary(graph, Operator::Exp, x[0]);
     const Offset root = sum(graph, 0.0, {exponential, x[1]}, {kNearOne, 1.0});
     const Parts parts = parts_of(graph, root);
@@ -402,7 +402,7 @@ TEST(CanonicalTest, NearUnit)
 TEST(CanonicalTest, Overflow)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset huge = constant(graph, kHuge);
     const Offset scaled = product(graph, kHuge, {x[0]});
     const Offset pair = product(graph, kHuge, {x[0], x[1]});
@@ -428,7 +428,7 @@ TEST(CanonicalTest, Overflow)
 TEST(CanonicalTest, MissingNode)
 {
     Graph graph;
-    graph.add_var(0);
+    graph.add_variable(0);
     EXPECT_EQ(refusal([&] { parts_of(graph, -1); }),
               "invalid argument: expression: node -1 is unknown");
     EXPECT_EQ(refusal([&] { parts_of(graph, 1); }),
@@ -439,7 +439,7 @@ TEST(CanonicalTest, MissingNode)
 TEST(CanonicalTest, Negation)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 3);
+    const std::vector<Offset> x = variables(graph, 3);
     const Offset exponential = unary(graph, Operator::Exp, x[1]);
     const Offset inner = sum(graph, 0.0, {x[0], exponential}, {1.0, 1.0});
     const Offset negated = unary(graph, Operator::Negation, inner);
@@ -462,7 +462,7 @@ TEST(CanonicalTest, Negation)
 TEST(CanonicalTest, ScaledSum)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset exponential = unary(graph, Operator::Exp, x[1]);
     const Offset inner = sum(graph, 1.0, {x[0], exponential}, {1.0, 1.0});
     const Offset two = constant(graph, 2.0);
@@ -478,7 +478,7 @@ TEST(CanonicalTest, ScaledSum)
 TEST(CanonicalTest, InnerSum)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 3);
+    const std::vector<Offset> x = variables(graph, 3);
     const Offset exponential = unary(graph, Operator::Exp, x[2]);
     const Offset inner = sum(graph, 2.0, {x[1], exponential}, {4.0, 1.0});
     const Offset root = sum(graph, 1.0, {x[0], inner}, {1.0, 0.5});
@@ -497,7 +497,7 @@ TEST(CanonicalTest, InnerSum)
 TEST(CanonicalTest, SharedSum)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 3);
+    const std::vector<Offset> x = variables(graph, 3);
     const Offset exponential = unary(graph, Operator::Exp, x[2]);
     const Offset shared = sum(graph, 1.0, {x[1], exponential}, {1.0, 1.0});
     unary(graph, Operator::Sin, shared);
@@ -525,7 +525,7 @@ TEST(CanonicalTest, SharedSum)
 TEST(CanonicalTest, PushedAgain)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 3);
+    const std::vector<Offset> x = variables(graph, 3);
     const Offset exponential = unary(graph, Operator::Exp, x[1]);
     const Offset shared = sum(graph, 0.0, {x[2], exponential}, {1.0, 1.0});
     unary(graph, Operator::Sin, shared);
@@ -542,7 +542,7 @@ TEST(CanonicalTest, PushedAgain)
 TEST(CanonicalTest, ScaledOverflow)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 3);
+    const std::vector<Offset> x = variables(graph, 3);
     const Offset exponential = unary(graph, Operator::Exp, x[0]);
     const Offset inner = sum(graph, 0.0, {x[0], exponential}, {1.0, 1.0});
     const Offset scaled = product(graph, kHuge, {inner});
@@ -567,7 +567,7 @@ TEST(CanonicalTest, ScaledOverflow)
 TEST(CanonicalTest, SharedRoot)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset shared = sum(graph, -1.0, {x[0], x[1]}, {1.0, 1.0});
     unary(graph, Operator::Sin, shared);
     unary(graph, Operator::Cos, shared);
@@ -582,14 +582,14 @@ TEST(CanonicalTest, SharedRoot)
     const Offset pair = product(graph, 2.0, {x[0], x[1]});
     unary(graph, Operator::Cos, pair);
     const Parts square = parts_of(graph, pair);
-    expect_quad(square, {{.first = 0, .second = 1, .coefficient = 2.0}});
+    expect_quadratic(square, {{.row = 0, .column = 1, .coefficient = 2.0}});
     EXPECT_EQ(square.remainder, kNoRemainder);
 }
 
 TEST(CanonicalTest, CallOrder)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset exponential = unary(graph, Operator::Exp, x[1]);
     const Offset root = sum(graph, -1.0, {x[0], exponential}, {2.0, 1.0});
     const Parts before = parts_of(graph, root);
@@ -605,7 +605,7 @@ TEST(CanonicalTest, CallOrder)
 TEST(CanonicalTest, OldParents)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Parents parents(graph);
     const Offset exponential = unary(graph, Operator::Exp, x);
     EXPECT_EQ(refusal([&] { biyos::split(graph, parents, exponential); }),
@@ -616,7 +616,7 @@ TEST(CanonicalTest, OldParents)
 TEST(CanonicalTest, Sorted)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 3);
+    const std::vector<Offset> x = variables(graph, 3);
     const Offset pair = product(graph, 1.0, {x[2], x[1]});
     const Offset square = power(graph, x[0], 2.0);
     const Offset root =
@@ -628,34 +628,34 @@ TEST(CanonicalTest, Sorted)
                       {.variable = 1, .coefficient = 5.0},
                       {.variable = 2, .coefficient = 1.0},
                   });
-    expect_quad(parts,
-                {
-                    {.first = 0, .second = 0, .coefficient = 4.0},
-                    {.first = 1, .second = 2, .coefficient = 2.0},
-                });
+    expect_quadratic(parts,
+                     {
+                         {.row = 0, .column = 0, .coefficient = 4.0},
+                         {.row = 1, .column = 2, .coefficient = 2.0},
+                     });
 }
 
 TEST(CanonicalTest, PairAdded)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset pair = product(graph, 2.0, {x[0], x[1]});
     const Offset reversed = product(graph, 3.0, {x[1], x[0]});
     const Offset square = power(graph, x[0], 2.0);
     const Offset itself = product(graph, 1.0, {x[0], x[0]});
     const Offset root = sum(graph, 0.0, {pair, square, reversed, itself}, {1.0, 1.0, 1.0, -0.5});
     const Parts parts = parts_of(graph, root);
-    expect_quad(parts,
-                {
-                    {.first = 0, .second = 0, .coefficient = 0.5},
-                    {.first = 0, .second = 1, .coefficient = 5.0},
-                });
+    expect_quadratic(parts,
+                     {
+                         {.row = 0, .column = 0, .coefficient = 0.5},
+                         {.row = 0, .column = 1, .coefficient = 5.0},
+                     });
 }
 
 TEST(CanonicalTest, VariableAdded)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset scaled = product(graph, 4.0, {x[0]});
     const Offset root = sum(graph, 0.0, {x[0], x[1], scaled, x[0]}, {1.0, 2.0, 1.0, -5.0});
     const Parts parts = parts_of(graph, root);
@@ -669,21 +669,21 @@ TEST(CanonicalTest, VariableAdded)
 TEST(CanonicalTest, AddedOverflow)
 {
     Graph graph;
-    const std::vector<Offset> x = vars(graph, 2);
+    const std::vector<Offset> x = variables(graph, 2);
     const Offset exponential = unary(graph, Operator::Exp, x[0]);
     const Offset linear = sum(graph, 0.0, {x[0], exponential, x[0]}, {kLargest, 1.0, kLargest});
     expect_whole(parts_of(graph, linear), linear);
     const Offset pair = product(graph, kLargest, {x[0], x[1]});
     const Offset again = product(graph, kLargest, {x[1], x[0]});
-    const Offset quad = sum(graph, 0.0, {pair, exponential, again}, {1.0, 1.0, 1.0});
-    expect_whole(parts_of(graph, quad), quad);
+    const Offset quadratic = sum(graph, 0.0, {pair, exponential, again}, {1.0, 1.0, 1.0});
+    expect_whole(parts_of(graph, quadratic), quadratic);
 }
 
 TEST(CanonicalTest, StableOrder)
 {
     Graph graph;
     const Index n = 16;
-    const std::vector<Offset> x = vars(graph, n);
+    const std::vector<Offset> x = variables(graph, n);
     const std::array<double, 5> absorbed{kAbsorber, 1.0, 1.0, 1.0, -kAbsorber};
     std::vector<Offset> terms;
     std::vector<double> weights;

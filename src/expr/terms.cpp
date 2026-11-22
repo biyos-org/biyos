@@ -18,14 +18,14 @@ bool linear_order(const LinearTerm &a, const LinearTerm &b) noexcept
 
 bool pair_order(const QuadraticTerm &a, const QuadraticTerm &b) noexcept
 {
-    return a.first < b.first || (a.first == b.first && a.second < b.second);
+    return a.row < b.row || (a.row == b.row && a.column < b.column);
 }
 
 void order_pair(QuadraticTerm &term) noexcept
 {
-    if (term.first > term.second)
+    if (term.row > term.column)
     {
-        std::swap(term.first, term.second);
+        std::swap(term.row, term.column);
     }
 }
 

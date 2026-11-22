@@ -168,21 +168,21 @@ std::vector<Offset> loads(const Block &block)
 TEST(TapeTest, Reuse)
 {
     Graph line;
-    const Offset end = chain(line, line.add_var(0), 100);
+    const Offset end = chain(line, line.add_variable(0), 100);
     const Tape long_chain(line, std::span(&end, 1));
     EXPECT_EQ(long_chain.width(), 1U);
     EXPECT_EQ(long_chain.blocks()[0].instructions.size(), 101U);
 
     Graph pair;
-    const Offset left = chain(pair, pair.add_var(0), 3);
-    const Offset right = chain(pair, pair.add_var(1), 3);
+    const Offset left = chain(pair, pair.add_variable(0), 3);
+    const Offset right = chain(pair, pair.add_variable(1), 3);
     const Offset ratio = binary(pair, Operator::Division, left, right);
     const Tape two(pair, std::span(&ratio, 1));
     EXPECT_EQ(two.width(), 2U);
     EXPECT_EQ(targets(two.blocks()[0]), (std::vector<std::uint32_t>{0, 0, 0, 0, 1, 1, 1, 1, 1}));
 
     Graph graph;
-    const Offset shared = unary(graph, Operator::Exp, graph.add_var(0));
+    const Offset shared = unary(graph, Operator::Exp, graph.add_variable(0));
     const Offset sine = unary(graph, Operator::Sin, shared);
     const Offset cosine = unary(graph, Operator::Cos, shared);
     const std::array terms{sine, cosine};
@@ -195,7 +195,7 @@ TEST(TapeTest, Reuse)
 TEST(TapeTest, Pinned)
 {
     Graph graph;
-    const std::array leaves{graph.add_var(0), graph.add_var(1)};
+    const std::array leaves{graph.add_variable(0), graph.add_variable(1)};
     const Offset inner = graph.add_sum(0.0, leaves, std::array{1.0, 1.0});
     const Offset shared = unary(graph, Operator::Exp, inner);
     const Offset sine = unary(graph, Operator::Sin, shared);
@@ -223,7 +223,7 @@ TEST(TapeTest, Pinned)
 TEST(TapeTest, SharedVariable)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     std::vector<Offset> roots;
     for (int k = 0; k < 4; ++k)
     {
@@ -247,41 +247,41 @@ TEST(TapeTest, Budget)
     const std::array steps{3, 3, 3, 10, 1, 7};
     for (std::size_t k = 0; k < steps.size(); ++k)
     {
-        chains.push_back(chain(own, own.add_var(static_cast<Index>(k)), steps[k]));
+        chains.push_back(chain(own, own.add_variable(static_cast<Index>(k)), steps[k]));
     }
     const Tape cut(own, chains, 10);
     EXPECT_EQ(sizes(cut), (Counts{2, 1, 1, 2}));
     EXPECT_EQ(lengths(cut), (Counts{8, 4, 11, 10}));
 
     Graph common;
-    const Offset x = common.add_var(0);
-    std::vector<Offset> exps;
+    const Offset x = common.add_variable(0);
+    std::vector<Offset> exponentials;
     for (int k = 0; k < 7; ++k)
     {
-        exps.push_back(unary(common, Operator::Exp, x));
+        exponentials.push_back(unary(common, Operator::Exp, x));
     }
-    const Tape leaves(common, exps, 4);
+    const Tape leaves(common, exponentials, 4);
     EXPECT_EQ(sizes(leaves), (Counts{3, 3, 1}));
     EXPECT_EQ(lengths(leaves), (Counts{4, 4, 2}));
 
     Graph moved;
-    const std::array pair{moved.add_var(0), moved.add_var(1)};
+    const std::array pair{moved.add_variable(0), moved.add_variable(1)};
     const std::array recounted{
         moved.add(Operator::Product, 1.0, pair),
         chain(moved, pair[0], 2),
-        chain(moved, moved.add_var(2), 1),
+        chain(moved, moved.add_variable(2), 1),
     };
     const Tape fresh(moved, recounted, 4);
     EXPECT_EQ(sizes(fresh), (Counts{1, 1, 1}));
     EXPECT_EQ(lengths(fresh), (Counts{3, 3, 2}));
 
     Graph heavy;
-    const Offset first = chain(heavy, heavy.add_var(0), 12);
-    const Offset second = chain(heavy, heavy.add_var(1), 1);
+    const Offset first = chain(heavy, heavy.add_variable(0), 12);
+    const Offset second = chain(heavy, heavy.add_variable(1), 1);
     EXPECT_EQ(sizes(Tape(heavy, std::array{first, second}, 10)), (Counts{1, 1}));
 
     Graph leaf;
-    const Offset lone = leaf.add_var(0);
+    const Offset lone = leaf.add_variable(0);
     const Tape repeated(leaf, std::array{lone, lone, lone, lone}, 2);
     EXPECT_EQ(sizes(repeated), (Counts{4}));
     EXPECT_EQ(lengths(repeated), (Counts{1}));
@@ -290,7 +290,7 @@ TEST(TapeTest, Budget)
     std::vector<Offset> halves;
     for (Index k = 0; k < 3; ++k)
     {
-        halves.push_back(chain(large, large.add_var(k), kBudget / 2 - 1));
+        halves.push_back(chain(large, large.add_variable(k), kBudget / 2 - 1));
     }
     EXPECT_EQ(sizes(Tape(large, halves)), (Counts{2, 1}));
 }
@@ -298,8 +298,8 @@ TEST(TapeTest, Budget)
 TEST(TapeTest, Runs)
 {
     Graph graph;
-    const Offset shared = unary(graph, Operator::Exp, graph.add_var(0));
-    const Offset sine = unary(graph, Operator::Sin, graph.add_var(1));
+    const Offset shared = unary(graph, Operator::Exp, graph.add_variable(0));
+    const Offset sine = unary(graph, Operator::Sin, graph.add_variable(1));
     const Offset ratio = binary(graph, Operator::Division, shared, sine);
     const Offset negation = unary(graph, Operator::Negation, shared);
     const std::array roots{ratio, negation, shared};
@@ -312,8 +312,8 @@ TEST(TapeTest, Runs)
     EXPECT_EQ(spans(inner, 1), (Spans{{2, 4}}));
 
     Graph nested;
-    const Offset x = nested.add_var(0);
-    const Offset rise = unary(nested, Operator::Exp, nested.add_var(1));
+    const Offset x = nested.add_variable(0);
+    const Offset rise = unary(nested, Operator::Exp, nested.add_variable(1));
     const Offset total = nested.add_sum(0.0, std::array{x, rise}, std::array{1.0, 1.0});
     const Offset wave = unary(nested, Operator::Sin, total);
     const Offset quotient = binary(nested, Operator::Division, wave, rise);
@@ -330,7 +330,7 @@ TEST(TapeTest, Runs)
     EXPECT_EQ(refusal([&] { split.runs(-1); }), "invalid argument: tape: root -1 is unknown");
 
     Graph lattice;
-    Offset top = lattice.add_var(0);
+    Offset top = lattice.add_variable(0);
     for (int k = 0; k < 64; ++k)
     {
         const std::array twice{top, top};
@@ -343,7 +343,7 @@ TEST(TapeTest, Runs)
 TEST(TapeTest, Reads)
 {
     Graph graph;
-    const std::array leaves{graph.add_var(0), graph.add_var(1)};
+    const std::array leaves{graph.add_variable(0), graph.add_variable(1)};
     const Offset inner = graph.add_sum(0.0, leaves, std::array{1.0, 1.0});
     const Offset shared = unary(graph, Operator::Exp, inner);
     const std::array roots{
@@ -376,7 +376,7 @@ TEST(TapeTest, Reads)
     std::vector<Offset> waves;
     for (Index k = 0; k < 6; ++k)
     {
-        waves.push_back(unary(wide, Operator::Sin, wide.add_var(k)));
+        waves.push_back(unary(wide, Operator::Sin, wide.add_variable(k)));
     }
     const std::vector<double> ones(waves.size(), 1.0);
     const Offset total = wide.add_sum(0.0, waves, ones);
@@ -389,8 +389,8 @@ TEST(TapeTest, Reads)
     }
 
     Graph pair;
-    const Offset wave = unary(pair, Operator::Sin, pair.add_var(0));
-    const Offset swell = unary(pair, Operator::Cos, pair.add_var(1));
+    const Offset wave = unary(pair, Operator::Sin, pair.add_variable(0));
+    const Offset swell = unary(pair, Operator::Cos, pair.add_variable(1));
     const Offset joint = pair.add(Operator::Product, 1.0, std::array{wave, swell});
     const std::array ends{unary(pair, Operator::Exp, joint), unary(pair, Operator::Log, joint)};
     const Tape apart(pair, ends, 1);
@@ -401,11 +401,11 @@ TEST(TapeTest, Reads)
 TEST(TapeTest, Route)
 {
     Graph graph;
-    const std::array leaves{graph.add_var(0), graph.add_var(1)};
+    const std::array leaves{graph.add_variable(0), graph.add_variable(1)};
     const Offset inner = graph.add_sum(0.0, leaves, std::array{1.0, 1.0});
     const Offset shared = unary(graph, Operator::Exp, inner);
     const Offset sine = unary(graph, Operator::Sin, shared);
-    const Offset other = unary(graph, Operator::Cos, graph.add_var(2));
+    const Offset other = unary(graph, Operator::Cos, graph.add_variable(2));
     const std::array roots{sine, other, shared};
 
     const Tape split(graph, roots, 5);
@@ -413,23 +413,23 @@ TEST(TapeTest, Route)
     EXPECT_EQ(route(split, 0), (Ranges{{0, 2}}));
     EXPECT_TRUE(route(split, 1).empty());
     EXPECT_EQ(route(split, 2), (Ranges{{0, 2}}));
-    const biyos::Pattern &pat = split.pattern();
-    EXPECT_EQ(pat.variables, (std::vector<Index>{0, 1, 2, 0, 1}));
-    EXPECT_EQ(pat.starts, (std::vector<Offset>{0, 2, 3, 5}));
+    const biyos::Pattern &pattern = split.pattern();
+    EXPECT_EQ(pattern.variables, (std::vector<Index>{0, 1, 2, 0, 1}));
+    EXPECT_EQ(pattern.starts, (std::vector<Offset>{0, 2, 3, 5}));
 
     const Tape whole(graph, roots);
     for (Offset root = 0; root < 3; ++root)
     {
         EXPECT_TRUE(route(whole, root).empty());
     }
-    EXPECT_EQ(whole.pattern().variables, pat.variables);
+    EXPECT_EQ(whole.pattern().variables, pattern.variables);
 
     Graph line;
-    const Offset end = chain(line, line.add_var(0), 20);
+    const Offset end = chain(line, line.add_variable(0), 20);
     std::vector<Offset> rows;
     for (Index k = 1; k <= 3; ++k)
     {
-        const std::array pair{end, line.add_var(k)};
+        const std::array pair{end, line.add_variable(k)};
         rows.push_back(line.add(Operator::Product, 1.0, pair));
     }
     const Tape long_route(line, rows, 3);
@@ -444,9 +444,9 @@ TEST(TapeTest, Route)
 TEST(TapeTest, Places)
 {
     Graph line;
-    const Offset x = line.add_var(0);
-    const Offset y = line.add_var(1);
-    const Offset z = line.add_var(2);
+    const Offset x = line.add_variable(0);
+    const Offset y = line.add_variable(1);
+    const Offset z = line.add_variable(2);
     const Offset product = line.add(Operator::Product, 2.0, std::array{x, y, z});
     const Offset ratio = binary(line, Operator::Division, unary(line, Operator::Sin, product), y);
     const Offset sum = line.add_sum(1.0, std::array{ratio, x}, std::array{1.0, 2.0});
@@ -458,7 +458,7 @@ TEST(TapeTest, Places)
     EXPECT_EQ(whole.partials(), 9);
 
     Graph graph;
-    const std::array pair{graph.add_var(0), graph.add_var(1)};
+    const std::array pair{graph.add_variable(0), graph.add_variable(1)};
     const Offset shared = unary(graph, Operator::Exp, graph.add(Operator::Product, 1.0, pair));
     const std::array roots{unary(graph, Operator::Sin, shared),
                            unary(graph, Operator::Cos, shared)};
@@ -476,7 +476,7 @@ TEST(TapeTest, Places)
 TEST(TapeTest, Recompile)
 {
     Graph graph;
-    const Offset first = unary(graph, Operator::Exp, graph.add_var(0));
+    const Offset first = unary(graph, Operator::Exp, graph.add_variable(0));
     const Tape before(graph, std::span(&first, 1));
     Offset second = first;
     for (int k = 0; k < 1000; ++k)
@@ -505,7 +505,7 @@ TEST(TapeTest, Recompile)
 TEST(TapeTest, MissingRoot)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const std::array roots{x, x + 1};
     EXPECT_EQ(refusal([&] { const Tape tape(graph, roots); }),
               "invalid argument: expression: node 1 is unknown");
@@ -522,7 +522,7 @@ TEST(TapeTest, Bound)
 TEST(TapeTest, NoRoots)
 {
     Graph graph;
-    graph.add_var(0);
+    graph.add_variable(0);
     const Tape tape(graph, {});
     EXPECT_TRUE(tape.blocks().empty());
     EXPECT_EQ(tape.roots(), 0);

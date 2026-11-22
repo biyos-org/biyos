@@ -31,32 +31,32 @@ std::vector<double> constants_of(std::size_t n, const double *constants)
     return std::vector<double>(constants, constants + n);
 }
 
-void add_funs(BIYOS_model &mdl,
-              int n,
-              const double *constants,
-              const std::int64_t *starts,
-              const int *vars,
-              const double *values,
-              int *beg)
+void add_functions(BIYOS_model &model,
+                   int n,
+                   const double *constants,
+                   const std::int64_t *starts,
+                   const int *variables,
+                   const double *values,
+                   int *start)
 {
-    biyos::Model &core = writable(mdl);
+    biyos::Model &core = writable(model);
     const std::size_t size = length(n);
     const std::vector<double> added = constants_of(size, constants);
     const std::vector<biyos::Offset> begins = offsets(size, starts);
     biyos::check_starts(begins);
     core.check_room(size, begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
-    const biyos::Index start = core.n_funs();
-    core.add_funs(added, begins, biyos::capi::packed(total, vars, values));
-    if (beg != nullptr)
+    const biyos::Index index = core.n_functions();
+    core.add_functions(added, begins, biyos::capi::packed(total, variables, values));
+    if (start != nullptr)
     {
-        *beg = start;
+        *start = index;
     }
 }
 
-void n_funs(const BIYOS_model &mdl, int *n)
+void n_functions(const BIYOS_model &model, int *n)
 {
-    *require(n, "n") = mdl.core.n_funs();
+    *require(n, "n") = model.core.n_functions();
 }
 
 void write_constants(std::span<const double> found, double *constants)
@@ -67,24 +67,24 @@ void write_constants(std::span<const double> found, double *constants)
     }
 }
 
-void get_funs(const BIYOS_model &mdl,
-              int beg,
-              int n,
-              double *constants,
-              std::int64_t *starts,
-              std::int64_t size,
-              std::int64_t *needed,
-              int *vars,
-              double *values)
+void get_functions(const BIYOS_model &model,
+                   int start,
+                   int size,
+                   double *constants,
+                   std::int64_t *starts,
+                   std::int64_t capacity,
+                   std::int64_t *needed,
+                   int *variables,
+                   double *values)
 {
-    const std::span<const double> held = mdl.core.constants(beg, n);
-    const std::span<const biyos::LinearTerm> found = mdl.core.terms(beg, n);
-    const std::size_t room = length(size, "size");
+    const std::span<const double> held = model.core.constants(start, size);
+    const std::span<const biyos::LinearTerm> found = model.core.linear_terms(start, size);
+    const std::size_t room = length(capacity, "size");
     require(needed, "nnz");
     write_constants(held, constants);
-    const auto before = [&](biyos::Index j) { return mdl.core.terms(beg, j); };
+    const auto before = [&](biyos::Index j) { return model.core.linear_terms(start, j); };
     write_starts(held.size(), starts, before);
-    biyos::capi::unpack(found, room, vars, values);
+    biyos::capi::unpack(found, room, variables, values);
     *needed = static_cast<std::int64_t>(found.size());
 }
 
@@ -98,12 +98,12 @@ BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
                            const BIYOS_real *coef,
                            BIYOS_index *pos)
 {
-    return guarded<add_funs>(mdl, n, cst, off, varidx, coef, pos);
+    return guarded<add_functions>(mdl, n, cst, off, varidx, coef, pos);
 }
 
 BIYOS_status BIYOS_getnfun(const BIYOS_model *mdl, BIYOS_index *n)
 {
-    return guarded<n_funs>(mdl, n);
+    return guarded<n_functions>(mdl, n);
 }
 
 BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
@@ -116,5 +116,5 @@ BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
                            BIYOS_index *varidx,
                            BIYOS_real *coef)
 {
-    return guarded<get_funs>(mdl, pos, n, cst, off, cap, nnz, varidx, coef);
+    return guarded<get_functions>(mdl, pos, n, cst, off, cap, nnz, varidx, coef);
 }

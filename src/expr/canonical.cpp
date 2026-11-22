@@ -148,8 +148,8 @@ class Walk
     void push(Offset node, double factor);
     void add_monomial(const Monomial &monomial);
     void add_constant(double value);
-    void add_linear(Index var, double coefficient);
-    void add_quad(Index first, Index second, double coefficient);
+    void add_linear(Index variable, double coefficient);
+    void add_quadratic(Index first, Index second, double coefficient);
     void keep(const Item &item);
     void close(const Item &item);
     Offset remainder(Graph &graph) const;
@@ -328,8 +328,8 @@ void Walk::open_power(const Item &item)
         keep(item);
         return;
     }
-    const Index var = graph_.variable(base);
-    add_quad(var, var, item.factor);
+    const Index variable = graph_.variable(base);
+    add_quadratic(variable, variable, item.factor);
 }
 
 bool Walk::shared(const Item &item) const noexcept
@@ -354,7 +354,7 @@ void Walk::add_monomial(const Monomial &monomial)
         add_linear(monomial.variables[0], monomial.coefficient);
         return;
     }
-    add_quad(monomial.variables[0], monomial.variables[1], monomial.coefficient);
+    add_quadratic(monomial.variables[0], monomial.variables[1], monomial.coefficient);
 }
 
 void Walk::add_constant(double value)
@@ -363,15 +363,15 @@ void Walk::add_constant(double value)
     moved_ = true;
 }
 
-void Walk::add_linear(Index var, double coefficient)
+void Walk::add_linear(Index variable, double coefficient)
 {
-    linear_.push_back({.variable = var, .coefficient = coefficient});
+    linear_.push_back({.variable = variable, .coefficient = coefficient});
     moved_ = true;
 }
 
-void Walk::add_quad(Index first, Index second, double coefficient)
+void Walk::add_quadratic(Index first, Index second, double coefficient)
 {
-    quadratic_.push_back({.first = first, .second = second, .coefficient = coefficient});
+    quadratic_.push_back({.row = first, .column = second, .coefficient = coefficient});
     moved_ = true;
 }
 

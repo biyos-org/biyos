@@ -228,9 +228,9 @@ void linearize(const Block &block, std::span<const double> point, Workspace &wor
     {
         const Instruction &instruction = block.instructions[k];
         const double result = value(instruction, frame);
-        const std::uint32_t beg = block.places[k];
-        const std::uint32_t n = block.places[k + 1] - beg;
-        partials_of(instruction, frame, result, partials.subspan(beg, n));
+        const std::uint32_t start = block.places[k];
+        const std::uint32_t n = block.places[k + 1] - start;
+        partials_of(instruction, frame, result, partials.subspan(start, n));
         frame.slots[instruction.target] = result;
     }
 }

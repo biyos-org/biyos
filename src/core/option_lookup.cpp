@@ -44,9 +44,9 @@ constexpr OptionKind kind_of(const EnumRule &)
 
 }
 
-Option find_opt(std::string_view name)
+Option find_option(std::string_view name)
 {
-    const std::span<const OptionSpec> table = opt_table();
+    const std::span<const OptionSpec> table = option_table();
     const auto spec = std::ranges::find(table, name, &OptionSpec::name);
     if (spec == table.end())
     {
@@ -55,29 +55,29 @@ Option find_opt(std::string_view name)
     return spec->id;
 }
 
-Option find_opt(int id)
+Option find_option(int id)
 {
-    if (id < 1 || static_cast<std::size_t>(id) > opt_table().size())
+    if (id < 1 || static_cast<std::size_t>(id) > option_table().size())
     {
         throw Error(ErrorKind::InvalidArgument, "option " + text_of(id), "unknown");
     }
     return static_cast<Option>(id);
 }
 
-std::string_view name_of(Option opt)
+std::string_view name_of(Option option)
 {
-    return row_of(opt_table(), opt).name;
+    return row_of(option_table(), option).name;
 }
 
-OptionKind kind_of(Option opt)
+OptionKind kind_of(Option option)
 {
-    const OptionSpec &spec = row_of(opt_table(), opt);
+    const OptionSpec &spec = row_of(option_table(), option);
     return std::visit([](const auto &rule) { return kind_of(rule); }, spec.rule);
 }
 
-Versions versions_of(Option opt)
+Versions versions_of(Option option)
 {
-    return row_of(opt_table(), opt).versions;
+    return row_of(option_table(), option).versions;
 }
 
 }

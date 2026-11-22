@@ -34,13 +34,14 @@ void expect_linear(const std::vector<LinearTerm> &found, const std::vector<Linea
     }
 }
 
-void expect_quad(const std::vector<QuadraticTerm> &found, const std::vector<QuadraticTerm> &wanted)
+void expect_quadratic(const std::vector<QuadraticTerm> &found,
+                      const std::vector<QuadraticTerm> &wanted)
 {
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < wanted.size(); ++k)
     {
-        EXPECT_EQ(found[k].first, wanted[k].first);
-        EXPECT_EQ(found[k].second, wanted[k].second);
+        EXPECT_EQ(found[k].row, wanted[k].row);
+        EXPECT_EQ(found[k].column, wanted[k].column);
         EXPECT_EQ(bits(found[k].coefficient), bits(wanted[k].coefficient));
     }
 }
@@ -66,18 +67,18 @@ TEST(TermTest, LinearOrder)
 TEST(TermTest, PairOrder)
 {
     std::vector<QuadraticTerm> terms{
-        {.first = 1, .second = 0, .coefficient = 2.0},
-        {.first = 2, .second = 1, .coefficient = 1.0},
-        {.first = 0, .second = 1, .coefficient = 3.0},
-        {.first = 0, .second = 0, .coefficient = 4.0},
+        {.row = 1, .column = 0, .coefficient = 2.0},
+        {.row = 2, .column = 1, .coefficient = 1.0},
+        {.row = 0, .column = 1, .coefficient = 3.0},
+        {.row = 0, .column = 0, .coefficient = 4.0},
     };
     add_alike(terms);
-    expect_quad(terms,
-                {
-                    {.first = 0, .second = 0, .coefficient = 4.0},
-                    {.first = 0, .second = 1, .coefficient = 5.0},
-                    {.first = 1, .second = 2, .coefficient = 1.0},
-                });
+    expect_quadratic(terms,
+                     {
+                         {.row = 0, .column = 0, .coefficient = 4.0},
+                         {.row = 0, .column = 1, .coefficient = 5.0},
+                         {.row = 1, .column = 2, .coefficient = 1.0},
+                     });
 }
 
 TEST(TermTest, StableAdding)
@@ -113,20 +114,20 @@ TEST(TermTest, ZeroKept)
                       {.variable = 0, .coefficient = 0.0},
                       {.variable = 1, .coefficient = 0.0},
                   });
-    std::vector<QuadraticTerm> quad{
-        {.first = 0, .second = 1, .coefficient = 2.0},
-        {.first = 1, .second = 0, .coefficient = -2.0},
+    std::vector<QuadraticTerm> quadratic{
+        {.row = 0, .column = 1, .coefficient = 2.0},
+        {.row = 1, .column = 0, .coefficient = -2.0},
     };
-    add_alike(quad);
-    expect_quad(quad, {{.first = 0, .second = 1, .coefficient = 0.0}});
+    add_alike(quadratic);
+    expect_quadratic(quadratic, {{.row = 0, .column = 1, .coefficient = 0.0}});
 }
 
 TEST(TermTest, NoTerms)
 {
     std::vector<LinearTerm> linear;
-    std::vector<QuadraticTerm> quad;
+    std::vector<QuadraticTerm> quadratic;
     add_alike(linear);
-    add_alike(quad);
+    add_alike(quadratic);
     EXPECT_TRUE(linear.empty());
-    EXPECT_TRUE(quad.empty());
+    EXPECT_TRUE(quadratic.empty());
 }

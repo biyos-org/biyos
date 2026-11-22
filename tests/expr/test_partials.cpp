@@ -46,8 +46,8 @@ Partials partials_at(const Graph &graph, Offset root, std::span<const double> po
     biyos::linearize(block, point, workspace);
     const std::span<const double> all = biyos::region(block, std::span(workspace.partials));
     const std::size_t last = block.instructions.size() - 1;
-    const std::uint32_t beg = block.places[last];
-    const std::span<const double> mine = all.subspan(beg, block.places[last + 1] - beg);
+    const std::uint32_t start = block.places[last];
+    const std::span<const double> mine = all.subspan(start, block.places[last + 1] - start);
     return {mine.begin(), mine.end()};
 }
 
@@ -129,7 +129,7 @@ TEST(PartialTest, Operators)
 TEST(PartialTest, Zeros)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Offset two = constant(graph, 2.0);
     const Offset minus_two = constant(graph, -2.0);
     const Offset zero = constant(graph, 0.0);
@@ -176,7 +176,7 @@ TEST(PartialTest, Zeros)
 TEST(PartialTest, Domain)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Offset two = constant(graph, 2.0);
     const Offset zero = constant(graph, 0.0);
     const std::vector<Offset> roots{
@@ -227,7 +227,7 @@ TEST(PartialTest, Domain)
 TEST(PartialTest, Undefined)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const Offset one = constant(graph, 1.0);
     const std::vector<Offset> roots{
         unary(graph, Operator::Abs, x),
@@ -246,7 +246,7 @@ TEST(PartialTest, Undefined)
 TEST(PartialTest, Accuracy)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
+    const Offset x = graph.add_variable(0);
     const std::array waves{unary(graph, Operator::Tanh, x)};
     for (const double far : {15.0, 19.0, 20.0, -20.0})
     {
@@ -265,9 +265,9 @@ TEST(PartialTest, Accuracy)
 TEST(PartialTest, Extrema)
 {
     Graph graph;
-    const Offset x = graph.add_var(0);
-    const Offset y = graph.add_var(1);
-    const Offset z = graph.add_var(2);
+    const Offset x = graph.add_variable(0);
+    const Offset y = graph.add_variable(1);
+    const Offset z = graph.add_variable(2);
     const Offset nan = unary(graph, Operator::Log, y);
     const std::vector<Offset> roots{
         listed(graph, Operator::Max, {x, y, z}),

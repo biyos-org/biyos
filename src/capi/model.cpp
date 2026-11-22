@@ -21,150 +21,163 @@ using biyos::capi::writable;
 namespace
 {
 
-void create(biyos::Env &env, BIYOS_model **mdl)
+void create(biyos::Env &env, BIYOS_model **model)
 {
-    BIYOS_model **made = require(mdl, "mdl");
+    BIYOS_model **made = require(model, "mdl");
     writable(env);
     *made = new BIYOS_model(env);
 }
 
-void make_copy(const BIYOS_model &mdl, BIYOS_env *env, BIYOS_model **copy)
+void make_copy(const BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
 {
     BIYOS_model **made = require(copy, "copy");
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
-    *made = new BIYOS_model(target, mdl.core);
+    *made = new BIYOS_model(target, model.core);
 }
 
-void freeable(BIYOS_model &mdl)
+void freeable(BIYOS_model &model)
 {
-    writable(mdl);
+    writable(model);
 }
 
-biyos::VariableKind kind_at(const int *knds, std::size_t k)
+biyos::VariableKind kind_at(const int *kinds, std::size_t k)
 {
-    return knds == nullptr ? biyos::VariableKind::Continuous
-                           : static_cast<biyos::VariableKind>(knds[k]);
+    return kinds == nullptr ? biyos::VariableKind::Continuous
+                            : static_cast<biyos::VariableKind>(kinds[k]);
 }
 
-biyos::Variable bounded(biyos::Variable var,
+biyos::Variable bounded(biyos::Variable variable,
                         std::size_t k,
                         const double *lower,
                         const double *upper)
 {
     if (lower != nullptr)
     {
-        var.lower = lower[k];
+        variable.lower = lower[k];
     }
     if (upper != nullptr)
     {
-        var.upper = upper[k];
+        variable.upper = upper[k];
     }
-    return var;
+    return variable;
 }
 
-biyos::Variable kinded(biyos::Variable var, std::size_t k, const int *knds)
+biyos::Variable kinded(biyos::Variable variable, std::size_t k, const int *kinds)
 {
-    if (knds != nullptr)
+    if (kinds != nullptr)
     {
-        var.kind = static_cast<biyos::VariableKind>(knds[k]);
+        variable.kind = static_cast<biyos::VariableKind>(kinds[k]);
     }
-    return var;
+    return variable;
 }
 
 template <auto Change, typename... Arrays>
-void set_each(biyos::Model &core, std::span<const biyos::Index> idx, Arrays... arrays)
+void set_each(biyos::Model &core, std::span<const biyos::Index> indices, Arrays... arrays)
 {
     std::vector<biyos::Variable> changed;
-    changed.reserve(idx.size());
-    for (std::size_t k = 0; k < idx.size(); ++k)
+    changed.reserve(indices.size());
+    for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        changed.push_back(Change(core.variable(idx[k]), k, arrays...));
+        changed.push_back(Change(core.variable(indices[k]), k, arrays...));
     }
-    core.set_vars(idx, changed);
+    core.set_variables(indices, changed);
 }
 
-void add_vars(BIYOS_model &mdl,
-              int n,
-              const int *knds,
-              const double *lower,
-              const double *upper,
-              int *beg)
+void add_variables(BIYOS_model &model,
+                   int n,
+                   const int *kinds,
+                   const double *lower,
+                   const double *upper,
+                   int *start)
 {
-    biyos::Model &core = writable(mdl);
+    biyos::Model &core = writable(model);
     const std::size_t size = length(n);
     std::vector<biyos::Variable> added;
     added.reserve(size);
     for (std::size_t k = 0; k < size; ++k)
     {
-        added.push_back(bounded(biyos::widest(kind_at(knds, k)), k, lower, upper));
+        added.push_back(bounded(biyos::widest(kind_at(kinds, k)), k, lower, upper));
     }
-    const biyos::Index start = core.n_vars();
-    core.add_vars(added);
-    if (beg != nullptr)
+    const biyos::Index index = core.n_variables();
+    core.add_variables(added);
+    if (start != nullptr)
     {
-        *beg = start;
+        *start = index;
     }
 }
 
-void set_bnds(BIYOS_model &mdl, int n, const int *idx, const double *lower, const double *upper)
+void set_bounds(BIYOS_model &model,
+                int n,
+                const int *indices,
+                const double *lower,
+                const double *upper)
 {
-    biyos::Model &core = writable(mdl);
-    set_each<bounded>(core, listed(n, idx), lower, upper);
+    biyos::Model &core = writable(model);
+    set_each<bounded>(core, listed(n, indices), lower, upper);
 }
 
-void set_kinds(BIYOS_model &mdl, int n, const int *idx, const int *knds)
+void set_kinds(BIYOS_model &model, int n, const int *indices, const int *kinds)
 {
-    biyos::Model &core = writable(mdl);
-    set_each<kinded>(core, listed(n, idx), knds);
+    biyos::Model &core = writable(model);
+    set_each<kinded>(core, listed(n, indices), kinds);
 }
 
-void n_vars(const BIYOS_model &mdl, int *n)
+void n_variables(const BIYOS_model &model, int *n)
 {
-    *require(n, "n") = mdl.core.n_vars();
+    *require(n, "n") = model.core.n_variables();
 }
 
-void copy_out(const biyos::Variable &var, std::size_t k, int *knds, double *lower, double *upper)
+void copy_out(const biyos::Variable &variable,
+              std::size_t k,
+              int *kinds,
+              double *lower,
+              double *upper)
 {
-    if (knds != nullptr)
+    if (kinds != nullptr)
     {
-        knds[k] = static_cast<int>(var.kind);
+        kinds[k] = static_cast<int>(variable.kind);
     }
     if (lower != nullptr)
     {
-        lower[k] = var.lower;
+        lower[k] = variable.lower;
     }
     if (upper != nullptr)
     {
-        upper[k] = var.upper;
+        upper[k] = variable.upper;
     }
 }
 
-void get_vars(const BIYOS_model &mdl, int beg, int n, int *knds, double *lower, double *upper)
+void get_variables(const BIYOS_model &model,
+                   int start,
+                   int size,
+                   int *kinds,
+                   double *lower,
+                   double *upper)
 {
-    const std::span<const biyos::Variable> found = mdl.core.vars(beg, n);
+    const std::span<const biyos::Variable> found = model.core.variables(start, size);
     for (std::size_t k = 0; k < found.size(); ++k)
     {
-        copy_out(found[k], k, knds, lower, upper);
+        copy_out(found[k], k, kinds, lower, upper);
     }
 }
 
-void get_bnds(const BIYOS_model &mdl, int n, const int *idx, double *lower, double *upper)
+void get_bounds(const BIYOS_model &model, int n, const int *indices, double *lower, double *upper)
 {
-    const std::vector<biyos::Variable> vars =
-        picked(mdl.core, &biyos::Model::variable, listed(n, idx));
-    for (std::size_t k = 0; k < vars.size(); ++k)
+    const std::vector<biyos::Variable> variables =
+        picked(model.core, &biyos::Model::variable, listed(n, indices));
+    for (std::size_t k = 0; k < variables.size(); ++k)
     {
-        copy_out(vars[k], k, nullptr, lower, upper);
+        copy_out(variables[k], k, nullptr, lower, upper);
     }
 }
 
-void get_kinds(const BIYOS_model &mdl, int n, const int *idx, int *knds)
+void get_kinds(const BIYOS_model &model, int n, const int *indices, int *kinds)
 {
-    const std::vector<biyos::Variable> vars =
-        picked(mdl.core, &biyos::Model::variable, listed(n, idx));
-    for (std::size_t k = 0; k < vars.size(); ++k)
+    const std::vector<biyos::Variable> variables =
+        picked(model.core, &biyos::Model::variable, listed(n, indices));
+    for (std::size_t k = 0; k < variables.size(); ++k)
     {
-        copy_out(vars[k], k, knds, nullptr, nullptr);
+        copy_out(variables[k], k, kinds, nullptr, nullptr);
     }
 }
 
@@ -209,7 +222,7 @@ BIYOS_status BIYOS_addvar(BIYOS_model *mdl,
                           const BIYOS_real *ub,
                           BIYOS_index *pos)
 {
-    return guarded<add_vars>(mdl, n, knd, lb, ub, pos);
+    return guarded<add_variables>(mdl, n, knd, lb, ub, pos);
 }
 
 BIYOS_status BIYOS_setvarbndsp(BIYOS_model *mdl,
@@ -218,7 +231,7 @@ BIYOS_status BIYOS_setvarbndsp(BIYOS_model *mdl,
                                const BIYOS_real *lb,
                                const BIYOS_real *ub)
 {
-    return guarded<set_bnds>(mdl, n, idx, lb, ub);
+    return guarded<set_bounds>(mdl, n, idx, lb, ub);
 }
 
 BIYOS_status BIYOS_getvarbndsp(const BIYOS_model *mdl,
@@ -227,7 +240,7 @@ BIYOS_status BIYOS_getvarbndsp(const BIYOS_model *mdl,
                                BIYOS_real *lb,
                                BIYOS_real *ub)
 {
-    return guarded<get_bnds>(mdl, n, idx, lb, ub);
+    return guarded<get_bounds>(mdl, n, idx, lb, ub);
 }
 
 BIYOS_status BIYOS_setvarkndsp(BIYOS_model *mdl,
@@ -248,7 +261,7 @@ BIYOS_status BIYOS_getvarkndsp(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getnvar(const BIYOS_model *mdl, BIYOS_index *n)
 {
-    return guarded<n_vars>(mdl, n);
+    return guarded<n_variables>(mdl, n);
 }
 
 BIYOS_status BIYOS_getvarrg(const BIYOS_model *mdl,
@@ -258,5 +271,5 @@ BIYOS_status BIYOS_getvarrg(const BIYOS_model *mdl,
                             BIYOS_real *lb,
                             BIYOS_real *ub)
 {
-    return guarded<get_vars>(mdl, pos, n, knd, lb, ub);
+    return guarded<get_variables>(mdl, pos, n, knd, lb, ub);
 }

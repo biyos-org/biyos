@@ -197,9 +197,9 @@ void Shapes::check(const Graph &graph, std::span<const Interval> nodes) const
 
 std::span<Argument> Shapes::arguments_of(Offset node) noexcept
 {
-    const Offset beg = starts_[at(node)];
-    const Offset n = starts_[at(node) + 1] - beg;
-    return std::span(arguments_).subspan(at(beg), at(n));
+    const Offset start = starts_[at(node)];
+    const Offset n = starts_[at(node) + 1] - start;
+    return std::span(arguments_).subspan(at(start), at(n));
 }
 
 Curvature Shapes::shape_of(const Graph &graph,

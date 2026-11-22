@@ -26,79 +26,79 @@ std::string interval(double lower, double upper)
     return "[" + text_of(lower) + ", " + text_of(upper) + "]";
 }
 
-void check_kind(Index idx, VariableKind knd)
+void check_kind(Index index, VariableKind kind)
 {
-    if (std::ranges::find(kVariableKinds, knd) == kVariableKinds.end())
+    if (std::ranges::find(kVariableKinds, kind) == kVariableKinds.end())
     {
-        refuse(kNoun, idx, "kind " + text_of(static_cast<int>(knd)) + " is unknown");
+        refuse(kNoun, index, "kind " + text_of(static_cast<int>(kind)) + " is unknown");
     }
 }
 
-void check_values(Index idx, const Variable &var)
+void check_values(Index index, const Variable &variable)
 {
-    const std::string_view fault = bound_fault(var.lower, var.upper);
+    const std::string_view fault = bound_fault(variable.lower, variable.upper);
     if (!fault.empty())
     {
-        refuse(kNoun, idx, std::string(fault));
+        refuse(kNoun, index, std::string(fault));
     }
 }
 
-void check_range(Index idx, const Variable &var)
+void check_range(Index index, const Variable &variable)
 {
-    const Variable range = widest(var.kind);
-    if (range.lower <= var.lower && var.upper <= range.upper)
+    const Variable range = widest(variable.kind);
+    if (range.lower <= variable.lower && variable.upper <= range.upper)
     {
         return;
     }
-    const std::string bnds = interval(var.lower, var.upper);
+    const std::string bounds = interval(variable.lower, variable.upper);
     const std::string allowed = interval(range.lower, range.upper);
-    const std::string reason = "bounds " + bnds + " are outside " + allowed;
-    refuse(kNoun, idx, reason + ", the widest of its kind");
+    const std::string reason = "bounds " + bounds + " are outside " + allowed;
+    refuse(kNoun, index, reason + ", the widest of its kind");
 }
 
-void check(Index idx, const Variable &var)
+void check(Index index, const Variable &variable)
 {
-    check_kind(idx, var.kind);
-    check_values(idx, var);
-    check_range(idx, var);
+    check_kind(index, variable.kind);
+    check_values(index, variable);
+    check_range(index, variable);
 }
 
 }
 
-Variable widest(VariableKind knd) noexcept
+Variable widest(VariableKind kind) noexcept
 {
-    switch (knd)
+    switch (kind)
     {
     case VariableKind::Binary:
-        return Variable{.kind = knd, .lower = 0.0, .upper = 1.0};
+        return Variable{.kind = kind, .lower = 0.0, .upper = 1.0};
     case VariableKind::Continuous:
     case VariableKind::Integer:
     case VariableKind::SemiContinuous:
     case VariableKind::SemiInteger:
         break;
     }
-    return Variable{.kind = knd, .lower = -kInfinity, .upper = kInfinity};
+    return Variable{.kind = kind, .lower = -kInfinity, .upper = kInfinity};
 }
 
-Index Model::n_vars() const noexcept
+Index Model::n_variables() const noexcept
 {
     return static_cast<Index>(variables_.size());
 }
 
-const Variable &Model::variable(Index idx) const
+const Variable &Model::variable(Index index) const
 {
-    check_idx(kNoun, idx, n_vars());
-    return variables_[static_cast<std::size_t>(idx)];
+    check_index(kNoun, index, n_variables());
+    return variables_[static_cast<std::size_t>(index)];
 }
 
-std::span<const Variable> Model::vars(Index beg, Index n) const
+std::span<const Variable> Model::variables(Index start, Index size) const
 {
-    check_span(kNoun, beg, n, n_vars());
-    const auto start = static_cast<std::size_t>(beg);
-    return std::span(variables_).subspan(start, static_cast<std::size_t>(n));
+    check_span(kNoun, start, size, n_variables());
+    const auto offset = static_cast<std::size_t>(start);
+    return std::span(variables_).subspan(offset, static_cast<std::size_t>(size));
 }
 
-void Model::add_vars(std::span<const Variable> added)
+void Model::add_variables(std::span<const Variable> added)
 {
     check_n(kNoun, variables_, added.size());
     for (std::size_t k = 0; k < added.size(); ++k)
@@ -108,20 +108,20 @@ void Model::add_vars(std::span<const Variable> added)
     variables_.insert(variables_.end(), added.begin(), added.end());
 }
 
-void Model::set_vars(std::span<const Index> idx, std::span<const Variable> changed)
+void Model::set_variables(std::span<const Index> indices, std::span<const Variable> changed)
 {
-    if (idx.size() != changed.size())
+    if (indices.size() != changed.size())
     {
         throw Error(ErrorKind::Internal, "model", "indices and variables differ in number");
     }
-    for (std::size_t k = 0; k < idx.size(); ++k)
+    for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        check_idx(kNoun, idx[k], n_vars());
-        check(idx[k], changed[k]);
+        check_index(kNoun, indices[k], n_variables());
+        check(indices[k], changed[k]);
     }
-    for (std::size_t k = 0; k < idx.size(); ++k)
+    for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        variables_[static_cast<std::size_t>(idx[k])] = changed[k];
+        variables_[static_cast<std::size_t>(indices[k])] = changed[k];
     }
 }
 

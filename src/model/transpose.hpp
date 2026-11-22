@@ -9,11 +9,11 @@
 namespace biyos
 {
 
-std::vector<Offset> var_starts(const Model &mdl, Index beg, Index n);
-void var_terms(const Model &mdl,
-               Index beg,
-               std::span<const Offset> starts,
-               std::span<Index> funs,
-               std::span<double> values);
+std::vector<Offset> variable_starts(const Model &model, Index start, Index size);
+void variable_terms(const Model &model,
+                    Index start,
+                    std::span<const Offset> starts,
+                    std::span<Index> functions,
+                    std::span<double> values);
 
 }

@@ -37,7 +37,7 @@ bool product_fits(double left, double right) noexcept
     return zero || std::isnormal(left * right);
 }
 
-std::string operands_text(Offset n)
+std::string operand_text(Offset n)
 {
     return n_text(n, "operand", "operands");
 }
@@ -51,9 +51,9 @@ void Builder::constant(double value)
     push(graph_.add(Operator::Constant, value, {}));
 }
 
-void Builder::var(Index var)
+void Builder::variable(Index variable)
 {
-    push(graph_.add_var(var));
+    push(graph_.add_variable(variable));
 }
 
 void Builder::node(Offset id)
@@ -118,7 +118,7 @@ Offset Builder::finish()
 {
     if (stack_.size() != 1)
     {
-        refuse(operands_text(static_cast<Offset>(stack_.size())) + " left, not 1");
+        refuse(operand_text(static_cast<Offset>(stack_.size())) + " left, not 1");
     }
     const Offset node = resolve(0);
     pop(0);
@@ -151,7 +151,7 @@ std::size_t Builder::take(Offset n) const
     const auto given = static_cast<Offset>(stack_.size());
     if (n > given)
     {
-        refuse(operands_text(n) + " taken, " + text_of(given) + " given");
+        refuse(operand_text(n) + " taken, " + text_of(given) + " given");
     }
     return at(given - n);
 }
@@ -247,10 +247,10 @@ void Builder::add_factor(std::size_t position, double &coefficient)
 
 void Builder::pop(std::size_t base)
 {
-    const std::size_t beg = at(stack_[base].first);
+    const std::size_t start = at(stack_[base].first);
     stack_.resize(base);
-    terms_.resize(beg);
-    weights_.resize(beg);
+    terms_.resize(start);
+    weights_.resize(start);
 }
 
 void Builder::replace(std::size_t base, Operator op, double constant)
@@ -259,7 +259,7 @@ void Builder::replace(std::size_t base, Operator op, double constant)
     make_room(terms_, needed);
     make_room(weights_, needed);
     pop(base);
-    const auto beg = static_cast<Offset>(terms_.size());
+    const auto start = static_cast<Offset>(terms_.size());
     const auto n = static_cast<Offset>(next_terms_.size());
     terms_.insert(terms_.end(), next_terms_.begin(), next_terms_.end());
     weights_.insert(weights_.end(), next_weights_.begin(), next_weights_.end());
@@ -267,7 +267,7 @@ void Builder::replace(std::size_t base, Operator op, double constant)
         .node = kPending,
         .op = op,
         .constant = constant,
-        .first = beg,
+        .first = start,
         .count = n,
     });
 }

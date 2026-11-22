@@ -113,7 +113,7 @@ void grow(Graph &graph, Engine &engine)
         graph.add(op, children);
         break;
     case biyos::Payload::Variable:
-        graph.add_var(static_cast<biyos::Index>(pick(engine, biyos::test::kVariables)));
+        graph.add_variable(static_cast<biyos::Index>(pick(engine, biyos::test::kVariables)));
         break;
     case biyos::Payload::Coefficients:
     {
@@ -176,7 +176,7 @@ Graph biyos::test::draw_graph(Engine &engine, std::size_t size)
     Graph graph;
     for (std::size_t k = 0; k < kVariables; ++k)
     {
-        graph.add_var(static_cast<Index>(k));
+        graph.add_variable(static_cast<Index>(k));
     }
     while (static_cast<std::size_t>(graph.size()) < kVariables + size)
     {

@@ -79,7 +79,7 @@ class Reacher
     Radix radix_;
     std::vector<Index> variables_;
     std::vector<Range> pieces_;
-    std::vector<Offset> heads_met_;
+    std::vector<Offset> met_heads_;
     std::vector<Offset> links_;
     std::vector<Index> own_names_;
     std::vector<Range> own_runs_;
@@ -182,7 +182,7 @@ Offset Reacher::keep(Memos<Item> &memos,
 void Reacher::link(const std::vector<Offset> &memo_of)
 {
     links_.clear();
-    for (const Offset head : heads_met_)
+    for (const Offset head : met_heads_)
     {
         links_.push_back(memo_of[at(head)]);
     }
@@ -196,7 +196,7 @@ void Reacher::trace(Offset root, Reach &reach)
     {
         variables_.clear();
         pieces_.clear();
-        heads_met_.assign(1, root);
+        met_heads_.assign(1, root);
     }
     else
     {
@@ -218,7 +218,7 @@ void Reacher::collect(Offset start)
     ++walk_;
     variables_.clear();
     pieces_.clear();
-    heads_met_.clear();
+    met_heads_.clear();
     take(start);
     stack_.push_back(start);
     while (!stack_.empty())
@@ -259,7 +259,7 @@ void Reacher::choose(Offset head)
     if (chosen_[at(head)] != walk_)
     {
         chosen_[at(head)] = walk_;
-        heads_met_.push_back(head);
+        met_heads_.push_back(head);
     }
 }
 

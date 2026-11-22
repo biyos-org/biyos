@@ -65,9 +65,9 @@ inline Parts sample()
                 .starts = {0, 1, 3},
                 .terms =
                     {
-                        {.first = 1, .second = 1, .coefficient = 0.5},
-                        {.first = 2, .second = 0, .coefficient = -1.5},
-                        {.first = 0, .second = 0, .coefficient = 2.0},
+                        {.row = 1, .column = 1, .coefficient = 0.5},
+                        {.row = 2, .column = 0, .coefficient = -1.5},
+                        {.row = 0, .column = 0, .coefficient = 2.0},
                     },
             },
         .constraints =
@@ -103,29 +103,29 @@ inline Parts sample()
     };
 }
 
-inline void name(Model &mdl, Family family, const Naming &naming)
+inline void name(Model &model, Family family, const Naming &naming)
 {
-    mdl.set_names(family, naming.indices, naming.names);
+    model.set_names(family, naming.indices, naming.names);
 }
 
 inline Model built(const Parts &parts)
 {
-    Model mdl;
-    mdl.add_vars(parts.variables);
-    mdl.add_funs(parts.constants, parts.starts, parts.terms);
-    const Quadratic &quad = parts.quadratic;
-    mdl.add_quad_terms(quad.functions, quad.starts, quad.terms);
-    mdl.add_cons(parts.constraints);
-    mdl.add_objs(parts.objectives);
+    Model model;
+    model.add_variables(parts.variables);
+    model.add_functions(parts.constants, parts.starts, parts.terms);
+    const Quadratic &quadratic = parts.quadratic;
+    model.add_quadratic_terms(quadratic.functions, quadratic.starts, quadratic.terms);
+    model.add_constraints(parts.constraints);
+    model.add_objectives(parts.objectives);
     if (!parts.name.empty())
     {
-        mdl.set_name(parts.name);
+        model.set_name(parts.name);
     }
-    name(mdl, Family::Variable, parts.variable_names);
-    name(mdl, Family::Function, parts.function_names);
-    name(mdl, Family::Constraint, parts.constraint_names);
-    name(mdl, Family::Objective, parts.objective_names);
-    return mdl;
+    name(model, Family::Variable, parts.variable_names);
+    name(model, Family::Function, parts.function_names);
+    name(model, Family::Constraint, parts.constraint_names);
+    name(model, Family::Objective, parts.objective_names);
+    return model;
 }
 
 }

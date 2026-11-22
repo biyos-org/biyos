@@ -29,7 +29,7 @@ BIYOS_status status_after(biyos::Env &env, const std::function<void()> &body)
 
 void say(biyos::Env &env, const std::string &text)
 {
-    const auto fill = [&text](biyos::Event &evt) { evt.text = text; };
+    const auto fill = [&text](biyos::Event &event) { event.text = text; };
     env.events().emit(EventKind::Message, EventLevel::Info, fill);
 }
 
@@ -126,7 +126,7 @@ TEST(FirewallTest, ErrorEvent)
 {
     biyos::Env env;
     std::vector<biyos::Event> kept;
-    const auto keep = [&kept](const biyos::Event &evt) { kept.push_back(evt); };
+    const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
     env.events().add_hook(EventKind::Message, EventLevel::Error, keep);
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
     EXPECT_EQ(status_after(env, [] {}), BIYOS_OK);
@@ -146,7 +146,7 @@ TEST(FirewallTest, ErrorCode)
 {
     biyos::Env env;
     std::vector<biyos::Event> kept;
-    const auto keep = [&kept](const biyos::Event &evt) { kept.push_back(evt); };
+    const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
     env.events().add_hook(EventKind::Message, EventLevel::Error, keep);
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
     EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_BADARG);
@@ -177,7 +177,7 @@ TEST(FirewallTest, ThrowingFill)
 {
     biyos::Env env;
     std::vector<biyos::Event> kept;
-    const auto keep = [&kept](const biyos::Event &evt) { kept.push_back(evt); };
+    const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
     env.events().add_hook(EventKind::Message, EventLevel::Debug, keep);
     const auto fill = [](biyos::Event &) { throw std::bad_alloc(); };
     const auto body = [&] { env.events().emit(EventKind::Message, EventLevel::Info, fill); };

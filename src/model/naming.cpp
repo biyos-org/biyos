@@ -64,18 +64,18 @@ void Model::set_name(std::string_view name)
     name_.assign(name);
 }
 
-void Model::del_name() noexcept
+void Model::delete_name() noexcept
 {
     name_.clear();
 }
 
-const std::string *Model::name_of(Family family, Index idx) const
+const std::string *Model::name_of(Family family, Index index) const
 {
-    check_idx(noun_of(family), idx, n_of(family));
-    return names_[slot(family)].name(idx);
+    check_index(noun_of(family), index, n_of(family));
+    return names_[slot(family)].name(index);
 }
 
-Index Model::idx_of(Family family, std::string_view name) const
+Index Model::index_of(Family family, std::string_view name) const
 {
     const Holders found = names_[slot(family)].find(name);
     if (found.count != 1)
@@ -86,15 +86,15 @@ Index Model::idx_of(Family family, std::string_view name) const
 }
 
 void Model::set_names(Family family,
-                      std::span<const Index> idx,
+                      std::span<const Index> indices,
                       std::span<const std::string_view> names)
 {
-    names_[slot(family)].set(noun_of(family), n_of(family), idx, names);
+    names_[slot(family)].set(noun_of(family), n_of(family), indices, names);
 }
 
-void Model::del_names(Family family, std::span<const Index> idx)
+void Model::delete_names(Family family, std::span<const Index> indices)
 {
-    names_[slot(family)].remove(noun_of(family), n_of(family), idx);
+    names_[slot(family)].remove(noun_of(family), n_of(family), indices);
 }
 
 Index Model::n_of(Family family) const noexcept
@@ -102,13 +102,13 @@ Index Model::n_of(Family family) const noexcept
     switch (family)
     {
     case Family::Variable:
-        return n_vars();
+        return n_variables();
     case Family::Function:
-        return n_funs();
+        return n_functions();
     case Family::Constraint:
-        return n_cons();
+        return n_constraints();
     case Family::Objective:
-        return n_objs();
+        return n_objectives();
     }
     return 0;
 }

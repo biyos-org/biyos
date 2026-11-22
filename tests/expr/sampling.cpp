@@ -173,12 +173,13 @@ bool encloses(Interval interval, double value)
 
 std::string report(std::span<const Interval> box, const Point &point, Offset node)
 {
-    std::string msg = "node " + std::to_string(node) + " at";
+    std::string message = "node " + std::to_string(node) + " at";
     for (std::size_t k = 0; k < kVariables; ++k)
     {
-        msg += " x" + std::to_string(k) + " = " + text(point[k]) + " in " + interval_text(box[k]);
+        message +=
+            " x" + std::to_string(k) + " = " + text(point[k]) + " in " + interval_text(box[k]);
     }
-    return msg;
+    return message;
 }
 
 void expect_point(const Check &check, const Point &point)
@@ -198,46 +199,46 @@ void expect_point(const Check &check, const Point &point)
 
 }
 
-biyos::test::Parameters biyos::test::params_of(Operator op, Engine &engine)
+biyos::test::Parameters biyos::test::parameters_of(Operator op, Engine &engine)
 {
-    Parameters params{};
-    params.constant = finite_endpoint(engine);
-    for (double &weight : params.weights)
+    Parameters parameters{};
+    parameters.constant = finite_endpoint(engine);
+    for (double &weight : parameters.weights)
     {
         weight = pick(engine, 4) == 0 ? 0.0 : finite_endpoint(engine);
     }
     const bool sign = op == Operator::SignPower;
     const std::size_t choice = pick(engine, sign ? kPositive.size() : kExponents.size());
-    params.exponent = sign ? kPositive[choice] : kExponents[choice];
-    return params;
+    parameters.exponent = sign ? kPositive[choice] : kExponents[choice];
+    return parameters;
 }
 
-Graph biyos::test::operator_graph(Operator op, const Parameters &params)
+Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
 {
     Graph graph;
     std::array<Offset, kVariables> x{};
     for (std::size_t k = 0; k < kVariables; ++k)
     {
-        x[k] = graph.add_var(static_cast<biyos::Index>(k));
+        x[k] = graph.add_variable(static_cast<biyos::Index>(k));
     }
     const std::span<const Offset> one(x.data(), 1);
     const std::span<const Offset> two(x.data(), 2);
     switch (op)
     {
     case Operator::Constant:
-        graph.add(op, params.constant, {});
+        graph.add(op, parameters.constant, {});
         break;
     case Operator::Variable:
         break;
     case Operator::Sum:
-        graph.add_sum(params.constant, x, params.weights);
+        graph.add_sum(parameters.constant, x, parameters.weights);
         break;
     case Operator::Product:
-        graph.add(op, params.constant, x);
+        graph.add(op, parameters.constant, x);
         break;
     case Operator::ConstantPower:
     case Operator::SignPower:
-        graph.add(op, params.exponent, one);
+        graph.add(op, parameters.exponent, one);
         break;
     case Operator::Division:
     case Operator::Power:
@@ -305,8 +306,8 @@ void biyos::test::expect_sampled(const Check &check, Engine &engine)
         for (std::size_t k = 0; k < kVariables; ++k)
         {
             const std::vector<double> &mine = candidates[k];
-            const std::size_t idx = round < largest ? round : pick(engine, largest);
-            point[k] = mine[idx % mine.size()];
+            const std::size_t index = round < largest ? round : pick(engine, largest);
+            point[k] = mine[index % mine.size()];
         }
         expect_point(check, point);
     }

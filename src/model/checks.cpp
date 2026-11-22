@@ -17,21 +17,21 @@ namespace biyos
 namespace
 {
 
-[[noreturn]] void unknown(std::string_view noun, Index idx)
+[[noreturn]] void unknown(std::string_view noun, Index index)
 {
-    refuse(noun, idx, "unknown");
+    refuse(noun, index, "unknown");
 }
 
 }
 
-std::string item(std::string_view noun, Index idx)
+std::string item(std::string_view noun, Index index)
 {
-    return std::string(noun) + " " + text_of(idx);
+    return std::string(noun) + " " + text_of(index);
 }
 
-void refuse(std::string_view noun, Index idx, const std::string &reason)
+void refuse(std::string_view noun, Index index, const std::string &reason)
 {
-    throw Error(ErrorKind::InvalidArgument, item(noun, idx), reason);
+    throw Error(ErrorKind::InvalidArgument, item(noun, index), reason);
 }
 
 std::string_view bound_fault(double lower, double upper) noexcept
@@ -68,46 +68,46 @@ std::string_view value_fault(double value) noexcept
     return "";
 }
 
-void check_idx(std::string_view noun, Index idx, Index size)
+void check_index(std::string_view noun, Index index, Index total)
 {
-    if (idx < 0 || idx >= size)
+    if (index < 0 || index >= total)
     {
-        unknown(noun, idx);
+        unknown(noun, index);
     }
 }
 
-void check_span(std::string_view noun, Index beg, Index n, Index size)
+void check_span(std::string_view noun, Index start, Index size, Index total)
 {
-    if (n < 0)
+    if (size < 0)
     {
-        const std::string reason = text_of(n) + " is negative";
+        const std::string reason = text_of(size) + " is negative";
         throw Error(ErrorKind::InvalidArgument, "argument 'n'", reason);
     }
-    if (beg < 0 || beg > size)
+    if (start < 0 || start > total)
     {
-        unknown(noun, beg);
+        unknown(noun, start);
     }
-    if (n > size - beg)
+    if (size > total - start)
     {
-        unknown(noun, size);
-    }
-}
-
-void check_fun(std::string_view noun, Index idx, Index fun, Index funs)
-{
-    if (fun < 0 || fun >= funs)
-    {
-        refuse(noun, idx, item("function", fun) + " is unknown");
+        unknown(noun, total);
     }
 }
 
-void check_funs(std::span<const Index> funs, Index held)
+void check_function(std::string_view noun, Index index, Index function, Index functions)
 {
-    for (const Index fun : funs)
+    if (function < 0 || function >= functions)
     {
-        check_idx("function", fun, held);
+        refuse(noun, index, item("function", function) + " is unknown");
     }
-    std::vector<Index> sorted(funs.begin(), funs.end());
+}
+
+void check_functions(std::span<const Index> functions, Index held)
+{
+    for (const Index function : functions)
+    {
+        check_index("function", function, held);
+    }
+    std::vector<Index> sorted(functions.begin(), functions.end());
     std::ranges::sort(sorted);
     const auto repeat = std::ranges::adjacent_find(sorted);
     if (repeat != sorted.end())

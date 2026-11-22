@@ -21,38 +21,38 @@ struct Forwarder
     BIYOS_hook hook;
     void *data;
 
-    void operator()(const biyos::Event &evt) const
+    void operator()(const biyos::Event &event) const
     {
         const biyos::Env::ErrorScope scope(*env);
-        const BIYOS_event view{&evt};
+        const BIYOS_event view{&event};
         hook(&view, data);
     }
 };
 
-void add_hook(biyos::Env &env, BIYOS_hook hk, void *data, int knd, int lvl, int *idx)
+void add_hook(biyos::Env &env, BIYOS_hook hook, void *data, int kind, int level, int *index)
 {
-    biyos::Events &evts = writable(env).events();
-    const Forwarder forwarder{&env, require(hk, "hk"), data};
-    const biyos::EventKind found = biyos::find_kind(knd);
-    const biyos::EventLevel level = biyos::find_level(lvl);
-    int *id = require(idx, "idx");
-    *id = evts.add_hook(found, level, forwarder);
+    biyos::Events &events = writable(env).events();
+    const Forwarder forwarder{&env, require(hook, "hk"), data};
+    const biyos::EventKind found = biyos::find_kind(kind);
+    const biyos::EventLevel lowest = biyos::find_level(level);
+    int *id = require(index, "idx");
+    *id = events.add_hook(found, lowest, forwarder);
 }
 
-void del_hook(biyos::Env &env, int idx)
+void delete_hook(biyos::Env &env, int index)
 {
-    writable(env).events().del_hook(idx);
+    writable(env).events().delete_hook(index);
 }
 
-const biyos::Field *field_of(const BIYOS_event *evt, int field)
+const biyos::Field *field_of(const BIYOS_event *event, int field)
 {
-    if (evt == nullptr || field < 0)
+    if (event == nullptr || field < 0)
     {
         return nullptr;
     }
-    const std::vector<biyos::Field> &fields = evt->core->fields;
-    const auto idx = static_cast<std::size_t>(field);
-    return idx < fields.size() ? &fields[idx] : nullptr;
+    const std::vector<biyos::Field> &fields = event->core->fields;
+    const auto index = static_cast<std::size_t>(field);
+    return index < fields.size() ? &fields[index] : nullptr;
 }
 
 }
@@ -69,7 +69,7 @@ BIYOS_status BIYOS_addhook(BIYOS_env *env,
 
 BIYOS_status BIYOS_delhook(BIYOS_env *env, BIYOS_index idx)
 {
-    return guarded<del_hook>(env, idx);
+    return guarded<delete_hook>(env, idx);
 }
 
 BIYOS_int BIYOS_getevtknd(const BIYOS_event *evt)

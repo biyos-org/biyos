@@ -51,8 +51,8 @@ void check_pass(const Graph &graph, std::span<const Interval> box, std::span<con
     {
         if (graph.op(node) == Operator::Variable && graph.variable(node) >= covered)
         {
-            const std::string var = text_of(graph.variable(node));
-            refuse("box", "size " + text_of(covered) + " does not cover variable " + var);
+            const std::string variable = text_of(graph.variable(node));
+            refuse("box", "size " + text_of(covered) + " does not cover variable " + variable);
         }
     }
 }
@@ -72,7 +72,7 @@ Interval second(const Pass &pass, Offset node) noexcept
     return pass.nodes[at(pass.graph.children(node)[1])];
 }
 
-Interval var_of(const Pass &pass, Offset node) noexcept
+Interval variable_of(const Pass &pass, Offset node) noexcept
 {
     return pass.box[static_cast<std::size_t>(pass.graph.variable(node))];
 }
@@ -128,7 +128,7 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
     case Operator::Constant:
         return point(pass.graph.constant(node));
     case Operator::Variable:
-        return var_of(pass, node);
+        return variable_of(pass, node);
     case Operator::Sum:
         return sum_of(pass, node);
     case Operator::Product:

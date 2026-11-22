@@ -13,30 +13,33 @@ namespace biyos::capi
 {
 
 std::size_t length(std::int64_t n, std::string_view name = "n");
-std::span<const Index> listed(int n, const int *idx, std::string_view name = "idx");
+std::span<const Index> listed(int n, const int *indices, std::string_view name = "idx");
 std::vector<Offset> offsets(std::size_t n, const std::int64_t *starts);
-std::vector<LinearTerm> packed(std::size_t size, const int *vars, const double *values);
-void unpack(std::span<const LinearTerm> terms, std::size_t size, int *vars, double *values);
+std::vector<LinearTerm> packed(std::size_t size, const int *variables, const double *values);
+void unpack(std::span<const LinearTerm> terms,
+            std::size_t capacity,
+            int *variables,
+            double *values);
 std::vector<QuadraticTerm> packed(std::size_t size,
-                                  const int *firsts,
-                                  const int *seconds,
+                                  const int *rows,
+                                  const int *columns,
                                   const double *values);
 void unpack(std::span<const QuadraticTerm> terms,
-            std::size_t size,
-            int *firsts,
-            int *seconds,
+            std::size_t capacity,
+            int *rows,
+            int *columns,
             double *values);
 
 template <typename Record>
-std::vector<Record> picked(const Model &mdl,
+std::vector<Record> picked(const Model &model,
                            const Record &(Model::*read)(Index) const,
-                           std::span<const Index> idx)
+                           std::span<const Index> indices)
 {
     std::vector<Record> found;
-    found.reserve(idx.size());
-    for (const Index i : idx)
+    found.reserve(indices.size());
+    for (const Index i : indices)
     {
-        found.push_back((mdl.*read)(i));
+        found.push_back((model.*read)(i));
     }
     return found;
 }

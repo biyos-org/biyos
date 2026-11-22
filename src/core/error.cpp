@@ -12,9 +12,9 @@ struct Error::Detail
     std::string what;
 };
 
-std::string_view kind_name(ErrorKind knd) noexcept
+std::string_view kind_name(ErrorKind kind) noexcept
 {
-    switch (knd)
+    switch (kind)
     {
     case ErrorKind::InvalidArgument:
         return "invalid argument";
@@ -26,18 +26,18 @@ std::string_view kind_name(ErrorKind knd) noexcept
     return "unknown error";
 }
 
-Error::Error(ErrorKind knd, std::string object, std::string msg) : kind_(knd)
+Error::Error(ErrorKind kind, std::string object, std::string message) : kind_(kind)
 {
-    std::string text(kind_name(knd));
+    std::string text(kind_name(kind));
     if (!object.empty())
     {
         text += ": ";
         text += object;
     }
     text += ": ";
-    text += msg;
-    detail_ =
-        std::make_shared<const Detail>(Detail{std::move(object), std::move(msg), std::move(text)});
+    text += message;
+    detail_ = std::make_shared<const Detail>(
+        Detail{std::move(object), std::move(message), std::move(text)});
 }
 
 ErrorKind Error::kind() const noexcept

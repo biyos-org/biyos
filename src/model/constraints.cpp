@@ -17,65 +17,65 @@ namespace
 
 constexpr std::string_view kNoun = "constraint";
 
-void check_bnds(Index idx, const Constraint &con)
+void check_bounds(Index index, const Constraint &constraint)
 {
-    const std::string_view fault = bound_fault(con.lower, con.upper);
+    const std::string_view fault = bound_fault(constraint.lower, constraint.upper);
     if (!fault.empty())
     {
-        refuse(kNoun, idx, std::string(fault));
+        refuse(kNoun, index, std::string(fault));
     }
 }
 
-void check(Index idx, const Constraint &con, Index funs)
+void check(Index index, const Constraint &constraint, Index functions)
 {
-    check_fun(kNoun, idx, con.function, funs);
-    check_bnds(idx, con);
+    check_function(kNoun, index, constraint.function, functions);
+    check_bounds(index, constraint);
 }
 
 }
 
-Index Model::n_cons() const noexcept
+Index Model::n_constraints() const noexcept
 {
     return static_cast<Index>(constraints_.size());
 }
 
-const Constraint &Model::constraint(Index idx) const
+const Constraint &Model::constraint(Index index) const
 {
-    check_idx(kNoun, idx, n_cons());
-    return constraints_[static_cast<std::size_t>(idx)];
+    check_index(kNoun, index, n_constraints());
+    return constraints_[static_cast<std::size_t>(index)];
 }
 
-std::span<const Constraint> Model::cons(Index beg, Index n) const
+std::span<const Constraint> Model::constraints(Index start, Index size) const
 {
-    check_span(kNoun, beg, n, n_cons());
-    const auto start = static_cast<std::size_t>(beg);
-    return std::span(constraints_).subspan(start, static_cast<std::size_t>(n));
+    check_span(kNoun, start, size, n_constraints());
+    const auto offset = static_cast<std::size_t>(start);
+    return std::span(constraints_).subspan(offset, static_cast<std::size_t>(size));
 }
 
-void Model::add_cons(std::span<const Constraint> added)
+void Model::add_constraints(std::span<const Constraint> added)
 {
     check_n(kNoun, constraints_, added.size());
     for (std::size_t k = 0; k < added.size(); ++k)
     {
-        check(static_cast<Index>(constraints_.size() + k), added[k], n_funs());
+        check(static_cast<Index>(constraints_.size() + k), added[k], n_functions());
     }
     constraints_.insert(constraints_.end(), added.begin(), added.end());
 }
 
-void Model::set_cons(std::span<const Index> idx, std::span<const Constraint> changed)
+void Model::set_constraints(std::span<const Index> indices, std::span<const Constraint> changed)
 {
-    if (idx.size() != changed.size())
+    if (indices.size() != changed.size())
     {
         throw Error(ErrorKind::Internal, "model", "indices and constraints differ in number");
     }
-    for (std::size_t k = 0; k < idx.size(); ++k)
+    for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        check_idx(kNoun, idx[k], n_cons());
-        check(idx[k], changed[k], n_funs());
+        check_index(kNoun, indices[k], n_constraints());
+        check(indices[k], changed[k], n_functions());
     }
-    for (std::size_t k = 0; k < idx.size(); ++k)
+    for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        constraints_[static_cast<std::size_t>(idx[k])] = changed[k];
+        constraints_[static_cast<std::size_t>(indices[k])] = changed[k];
     }
 }
 

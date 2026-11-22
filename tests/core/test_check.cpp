@@ -34,10 +34,10 @@ biyos::Error caught(const std::function<void()> &body)
     return {ErrorKind::Internal, "", "no error"};
 }
 
-Texts pairs(const biyos::Event &evt)
+Texts pairs(const biyos::Event &event)
 {
     Texts pairs;
-    for (const biyos::Field &field : evt.fields)
+    for (const biyos::Field &field : event.fields)
     {
         pairs.push_back(field.name + "=" + field.value);
     }
@@ -62,9 +62,9 @@ void finite(const biyos::Checker &checker)
 class CheckTest : public ::testing::Test
 {
   protected:
-    biyos::Checker at(const std::string &lvl)
+    biyos::Checker at(const std::string &level)
     {
-        env.options().set_str(biyos::Option::CheckLevel, lvl);
+        env.options().set_string(biyos::Option::CheckLevel, level);
         return biyos::Checker(env, "model");
     }
 
@@ -81,19 +81,19 @@ class CheckTest : public ::testing::Test
     }
 
     void check(const biyos::Checker &checker,
-               CheckLevel lvl,
+               CheckLevel level,
                bool result,
-               ErrorKind knd = ErrorKind::InvalidArgument)
+               ErrorKind kind = ErrorKind::InvalidArgument)
     {
         const auto holds = [this, result] { return evaluate(result); };
         const auto values = [this] { return describe(); };
-        checker.require(lvl, knd, "sorted", "row 3", holds, values);
+        checker.require(level, kind, "sorted", "row 3", holds, values);
     }
 
-    void keep(EventKind knd)
+    void keep(EventKind kind)
     {
-        const auto store = [this](const biyos::Event &evt) { kept.push_back(evt); };
-        env.events().add_hook(knd, EventLevel::Debug, store);
+        const auto store = [this](const biyos::Event &event) { kept.push_back(event); };
+        env.events().add_hook(kind, EventLevel::Debug, store);
     }
 
     void reenter(const biyos::Checker &checker)
@@ -145,7 +145,7 @@ TEST_F(CheckTest, NoneLevel)
 TEST_F(CheckTest, ReadOnce)
 {
     const biyos::Checker checker = at("none");
-    env.options().set_str(biyos::Option::CheckLevel, "full");
+    env.options().set_string(biyos::Option::CheckLevel, "full");
     EXPECT_NO_THROW(check(checker, CheckLevel::Cheap, false));
     EXPECT_EQ(evaluated, 0);
 }
@@ -167,12 +167,12 @@ TEST_F(CheckTest, OneEvent)
     EXPECT_STREQ(error.what(), "invalid argument: row 3: check 'sorted' failed: 3 > 2");
     EXPECT_EQ(described, 1);
     ASSERT_EQ(kept.size(), 1U);
-    const biyos::Event &evt = kept.front();
-    EXPECT_EQ(evt.kind, EventKind::Check);
-    EXPECT_EQ(evt.level, EventLevel::Error);
-    EXPECT_EQ(evt.module, "model");
-    EXPECT_EQ(evt.text, error.what());
-    EXPECT_EQ(pairs(evt), (Texts{"invariant=sorted", "object=row 3", "values=3 > 2"}));
+    const biyos::Event &event = kept.front();
+    EXPECT_EQ(event.kind, EventKind::Check);
+    EXPECT_EQ(event.level, EventLevel::Error);
+    EXPECT_EQ(event.module, "model");
+    EXPECT_EQ(event.text, error.what());
+    EXPECT_EQ(pairs(event), (Texts{"invariant=sorted", "object=row 3", "values=3 > 2"}));
 }
 
 TEST_F(CheckTest, LastError)
@@ -189,9 +189,9 @@ TEST_F(CheckTest, LastError)
 TEST_F(CheckTest, CallerKind)
 {
     const biyos::Checker checker = at("cheap");
-    for (const ErrorKind knd : {ErrorKind::NoMemory, ErrorKind::Internal})
+    for (const ErrorKind kind : {ErrorKind::NoMemory, ErrorKind::Internal})
     {
-        EXPECT_EQ(caught([&] { check(checker, CheckLevel::Cheap, false, knd); }).kind(), knd);
+        EXPECT_EQ(caught([&] { check(checker, CheckLevel::Cheap, false, kind); }).kind(), kind);
     }
 }
 
