@@ -21,85 +21,85 @@ namespace
 
 constexpr std::string_view kNoun = "function";
 
-void check_constant(Index fun, double constant)
+void check_constant(Index function, double constant)
 {
     const std::string_view fault = value_fault(constant);
     if (!fault.empty())
     {
-        refuse(kNoun, fun, "constant " + std::string(fault));
+        refuse(kNoun, function, "constant " + std::string(fault));
     }
 }
 
 }
 
-Index Model::n_funs() const noexcept
+Index Model::n_functions() const noexcept
 {
     return static_cast<Index>(constants_.size());
 }
 
-std::span<const double> Model::constants(Index beg, Index n) const
+std::span<const double> Model::constants(Index start, Index size) const
 {
-    check_span(kNoun, beg, n, n_funs());
-    const auto start = static_cast<std::size_t>(beg);
-    return std::span(constants_).subspan(start, static_cast<std::size_t>(n));
+    check_span(kNoun, start, size, n_functions());
+    const auto offset = static_cast<std::size_t>(start);
+    return std::span(constants_).subspan(offset, static_cast<std::size_t>(size));
 }
 
-std::span<const LinearTerm> Model::terms(Index beg, Index n) const
+std::span<const LinearTerm> Model::linear_terms(Index start, Index size) const
 {
-    check_span(kNoun, beg, n, n_funs());
-    const auto begin = static_cast<std::size_t>(begin_of(static_cast<std::size_t>(beg)));
-    const auto end = static_cast<std::size_t>(begin_of(static_cast<std::size_t>(beg + n)));
+    check_span(kNoun, start, size, n_functions());
+    const auto begin = static_cast<std::size_t>(begin_of(static_cast<std::size_t>(start)));
+    const auto end = static_cast<std::size_t>(begin_of(static_cast<std::size_t>(start + size)));
     return std::span(terms_).subspan(begin, end - begin);
 }
 
-void Model::check_room(std::size_t funs, Offset terms) const
+void Model::check_room(std::size_t functions, Offset terms) const
 {
-    check_n(kNoun, constants_, funs);
+    check_n(kNoun, constants_, functions);
     if (terms > static_cast<Offset>(room(terms_)))
     {
         throw Error(ErrorKind::NoMemory, "model", "no term offset left");
     }
 }
 
-void Model::add_funs(std::span<const double> constants,
-                     std::span<const Offset> starts,
-                     std::vector<LinearTerm> terms)
+void Model::add_functions(std::span<const double> constants,
+                          std::span<const Offset> starts,
+                          std::vector<LinearTerm> terms)
 {
     check_room(constants.size(), static_cast<Offset>(terms.size()));
     check_shape(constants.size(), starts, terms.size());
     for (std::size_t k = 0; k < constants.size(); ++k)
     {
-        const auto fun = static_cast<Index>(constants_.size() + k);
+        const auto function = static_cast<Index>(constants_.size() + k);
         const std::span<LinearTerm> part = slice(std::span(terms), starts, k);
-        check_constant(fun, constants[k]);
-        check_terms(fun, part, n_vars());
-        sort_terms(fun, part);
+        check_constant(function, constants[k]);
+        check_terms(function, part, n_variables());
+        sort_terms(function, part);
     }
     append(constants, starts, terms);
 }
 
-void Model::add_lin_terms(std::span<const Index> funs,
-                          std::span<const Offset> starts,
-                          std::vector<LinearTerm> terms)
+void Model::add_linear_terms(std::span<const Index> functions,
+                             std::span<const Offset> starts,
+                             std::vector<LinearTerm> terms)
 {
     check_room(0, static_cast<Offset>(terms.size()));
-    check_shape(funs.size(), starts, terms.size());
-    check_funs(funs, n_funs());
+    check_shape(functions.size(), starts, terms.size());
+    check_functions(functions, n_functions());
     std::vector<AddedTerms> additions;
-    additions.reserve(funs.size());
-    for (std::size_t k = 0; k < funs.size(); ++k)
+    additions.reserve(functions.size());
+    for (std::size_t k = 0; k < functions.size(); ++k)
     {
         const std::span<LinearTerm> part = slice(std::span(terms), starts, k);
-        check_terms(funs[k], part, n_vars());
-        sort_terms(funs[k], part);
-        additions.push_back(AddedTerms{.function = funs[k], .terms = part});
+        check_terms(functions[k], part, n_variables());
+        sort_terms(functions[k], part);
+        additions.push_back(AddedTerms{.function = functions[k], .terms = part});
     }
     merge_terms(ends_, terms_, additions);
 }
 
-Offset Model::begin_of(std::size_t fun) const noexcept
+Offset Model::begin_of(std::size_t function) const noexcept
 {
-    return fun == 0 ? 0 : ends_[fun - 1];
+    return function == 0 ? 0 : ends_[function - 1];
 }
 
 void Model::append(std::span<const double> constants,

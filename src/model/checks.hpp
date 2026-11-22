@@ -14,14 +14,14 @@
 namespace biyos
 {
 
-std::string item(std::string_view noun, Index idx);
-[[noreturn]] void refuse(std::string_view noun, Index idx, const std::string &reason);
+std::string item(std::string_view noun, Index index);
+[[noreturn]] void refuse(std::string_view noun, Index index, const std::string &reason);
 std::string_view bound_fault(double lower, double upper) noexcept;
 std::string_view value_fault(double value) noexcept;
-void check_idx(std::string_view noun, Index idx, Index size);
-void check_span(std::string_view noun, Index beg, Index n, Index size);
-void check_fun(std::string_view noun, Index idx, Index fun, Index funs);
-void check_funs(std::span<const Index> funs, Index held);
+void check_index(std::string_view noun, Index index, Index total);
+void check_span(std::string_view noun, Index start, Index size, Index total);
+void check_function(std::string_view noun, Index index, Index function, Index functions);
+void check_functions(std::span<const Index> functions, Index held);
 
 inline constexpr auto kRoom = static_cast<std::size_t>((std::numeric_limits<Index>::max)());
 

@@ -22,16 +22,16 @@ constexpr std::string_view kNoun = "function";
 
 }
 
-std::span<const QuadraticTerm> Model::quad_terms(Index beg, Index n) const
+std::span<const QuadraticTerm> Model::quadratic_terms(Index start, Index size) const
 {
-    check_span(kNoun, beg, n, n_funs());
-    const auto begin = static_cast<std::size_t>(quad_begin(static_cast<std::size_t>(beg)));
-    const auto last = static_cast<std::size_t>(beg + n);
-    const auto end = static_cast<std::size_t>(quad_begin(last));
+    check_span(kNoun, start, size, n_functions());
+    const auto begin = static_cast<std::size_t>(quadratic_begin(static_cast<std::size_t>(start)));
+    const auto last = static_cast<std::size_t>(start + size);
+    const auto end = static_cast<std::size_t>(quadratic_begin(last));
     return std::span(quadratic_terms_).subspan(begin, end - begin);
 }
 
-void Model::check_quad_room(Offset terms) const
+void Model::check_quadratic_room(Offset terms) const
 {
     if (terms > static_cast<Offset>(room(quadratic_terms_)))
     {
@@ -39,28 +39,28 @@ void Model::check_quad_room(Offset terms) const
     }
 }
 
-void Model::add_quad_terms(std::span<const Index> funs,
-                           std::span<const Offset> starts,
-                           std::vector<QuadraticTerm> terms)
+void Model::add_quadratic_terms(std::span<const Index> functions,
+                                std::span<const Offset> starts,
+                                std::vector<QuadraticTerm> terms)
 {
-    check_quad_room(static_cast<Offset>(terms.size()));
-    check_shape(funs.size(), starts, terms.size());
-    check_funs(funs, n_funs());
+    check_quadratic_room(static_cast<Offset>(terms.size()));
+    check_shape(functions.size(), starts, terms.size());
+    check_functions(functions, n_functions());
     std::vector<AddedPairs> additions;
-    additions.reserve(funs.size());
-    for (std::size_t k = 0; k < funs.size(); ++k)
+    additions.reserve(functions.size());
+    for (std::size_t k = 0; k < functions.size(); ++k)
     {
         const std::span<QuadraticTerm> part = slice(std::span(terms), starts, k);
-        check_pairs(funs[k], part, n_vars());
-        sort_pairs(funs[k], part);
-        additions.push_back(AddedPairs{.function = funs[k], .terms = part});
+        check_pairs(functions[k], part, n_variables());
+        sort_pairs(functions[k], part);
+        additions.push_back(AddedPairs{.function = functions[k], .terms = part});
     }
     merge_pairs(quadratic_ends_, quadratic_terms_, additions);
 }
 
-Offset Model::quad_begin(std::size_t fun) const noexcept
+Offset Model::quadratic_begin(std::size_t function) const noexcept
 {
-    return fun == 0 ? 0 : quadratic_ends_[fun - 1];
+    return function == 0 ? 0 : quadratic_ends_[function - 1];
 }
 
 }

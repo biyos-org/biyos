@@ -76,9 +76,9 @@ std::string table_difference(std::string_view noun, Count a, Count b, Compare co
     return "";
 }
 
-int kind_of(const Variable &var)
+int kind_of(const Variable &variable)
 {
-    return static_cast<int>(var.kind);
+    return static_cast<int>(variable.kind);
 }
 
 std::string differ(const Variable &a, const Variable &b)
@@ -116,9 +116,9 @@ std::string differ(const Constraint &a, const Constraint &b)
     });
 }
 
-int sense_of(const Objective &obj)
+int sense_of(const Objective &objective)
 {
-    return static_cast<int>(obj.sense);
+    return static_cast<int>(objective.sense);
 }
 
 std::string differ(const Objective &a, const Objective &b)
@@ -144,83 +144,83 @@ template <typename T> const T &at(std::span<const T> terms, Offset k)
 }
 
 template <typename T>
-std::string terms_difference(std::string_view noun, std::span<const T> a, std::span<const T> b)
+std::string term_differences(std::string_view noun, std::span<const T> a, std::span<const T> b)
 {
     const auto term = [&](Offset k) { return differ(at(a, k), at(b, k)); };
     return table_difference(noun, size_of(a), size_of(b), term);
 }
 
-double constant_of(const Model &mdl, Index fun)
+double constant_of(const Model &model, Index function)
 {
-    return mdl.constants(fun, 1).front();
+    return model.constants(function, 1).front();
 }
 
-std::span<const QuadraticTerm> quad_of(const Model &mdl, Index fun)
+std::span<const QuadraticTerm> quadratic_of(const Model &model, Index function)
 {
-    return mdl.quad_terms(fun, 1);
+    return model.quadratic_terms(function, 1);
 }
 
-std::string named(const Model &a, const Model &b, Family family, Index idx)
+std::string named(const Model &a, const Model &b, Family family, Index index)
 {
-    return compared("name", a.name_of(family, idx), b.name_of(family, idx));
+    return compared("name", a.name_of(family, index), b.name_of(family, index));
 }
 
-std::string var_difference(const Model &a, const Model &b, Index var)
+std::string variable_difference(const Model &a, const Model &b, Index variable)
 {
     return first_of({
-        differ(a.variable(var), b.variable(var)),
-        named(a, b, Family::Variable, var),
+        differ(a.variable(variable), b.variable(variable)),
+        named(a, b, Family::Variable, variable),
     });
 }
 
-std::string fun_difference(const Model &a, const Model &b, Index fun)
+std::string function_difference(const Model &a, const Model &b, Index function)
 {
     return first_of({
-        compared("constant", constant_of(a, fun), constant_of(b, fun)),
-        terms_difference("term", a.terms(fun, 1), b.terms(fun, 1)),
-        terms_difference("quadratic term", quad_of(a, fun), quad_of(b, fun)),
-        named(a, b, Family::Function, fun),
+        compared("constant", constant_of(a, function), constant_of(b, function)),
+        term_differences("term", a.linear_terms(function, 1), b.linear_terms(function, 1)),
+        term_differences("quadratic term", quadratic_of(a, function), quadratic_of(b, function)),
+        named(a, b, Family::Function, function),
     });
 }
 
-std::string con_difference(const Model &a, const Model &b, Index con)
+std::string constraint_difference(const Model &a, const Model &b, Index constraint)
 {
     return first_of({
-        differ(a.constraint(con), b.constraint(con)),
-        named(a, b, Family::Constraint, con),
+        differ(a.constraint(constraint), b.constraint(constraint)),
+        named(a, b, Family::Constraint, constraint),
     });
 }
 
-std::string obj_difference(const Model &a, const Model &b, Index obj)
+std::string objective_difference(const Model &a, const Model &b, Index objective)
 {
     return first_of({
-        differ(a.objective(obj), b.objective(obj)),
-        named(a, b, Family::Objective, obj),
+        differ(a.objective(objective), b.objective(objective)),
+        named(a, b, Family::Objective, objective),
     });
 }
 
-std::string vars_difference(const Model &a, const Model &b)
+std::string variable_differences(const Model &a, const Model &b)
 {
-    const auto var = [&](Index k) { return var_difference(a, b, k); };
-    return table_difference("variable", a.n_vars(), b.n_vars(), var);
+    const auto variable = [&](Index k) { return variable_difference(a, b, k); };
+    return table_difference("variable", a.n_variables(), b.n_variables(), variable);
 }
 
-std::string funs_difference(const Model &a, const Model &b)
+std::string function_differences(const Model &a, const Model &b)
 {
-    const auto fun = [&](Index k) { return fun_difference(a, b, k); };
-    return table_difference("function", a.n_funs(), b.n_funs(), fun);
+    const auto function = [&](Index k) { return function_difference(a, b, k); };
+    return table_difference("function", a.n_functions(), b.n_functions(), function);
 }
 
-std::string cons_difference(const Model &a, const Model &b)
+std::string constraint_differences(const Model &a, const Model &b)
 {
-    const auto con = [&](Index k) { return con_difference(a, b, k); };
-    return table_difference("constraint", a.n_cons(), b.n_cons(), con);
+    const auto constraint = [&](Index k) { return constraint_difference(a, b, k); };
+    return table_difference("constraint", a.n_constraints(), b.n_constraints(), constraint);
 }
 
-std::string objs_difference(const Model &a, const Model &b)
+std::string objective_differences(const Model &a, const Model &b)
 {
-    const auto obj = [&](Index k) { return obj_difference(a, b, k); };
-    return table_difference("objective", a.n_objs(), b.n_objs(), obj);
+    const auto objective = [&](Index k) { return objective_difference(a, b, k); };
+    return table_difference("objective", a.n_objectives(), b.n_objectives(), objective);
 }
 
 }
@@ -230,19 +230,19 @@ std::string difference(const Model &a, const Model &b)
     std::string found = compared("model name", a.name(), b.name());
     if (found.empty())
     {
-        found = vars_difference(a, b);
+        found = variable_differences(a, b);
     }
     if (found.empty())
     {
-        found = funs_difference(a, b);
+        found = function_differences(a, b);
     }
     if (found.empty())
     {
-        found = cons_difference(a, b);
+        found = constraint_differences(a, b);
     }
     if (found.empty())
     {
-        found = objs_difference(a, b);
+        found = objective_differences(a, b);
     }
     return found;
 }

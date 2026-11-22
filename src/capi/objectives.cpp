@@ -70,7 +70,7 @@ std::vector<biyos::Objective> new_objs(std::span<const biyos::Index> funs,
     for (std::size_t k = 0; k < funs.size(); ++k)
     {
         const biyos::Index idx = start + static_cast<biyos::Index>(k);
-        added.push_back(given(biyos::default_obj(funs[k], idx), k, fields));
+        added.push_back(given(biyos::default_objective(funs[k], idx), k, fields));
     }
     return added;
 }
@@ -85,14 +85,14 @@ void add_objs(BIYOS_model &mdl,
 {
     biyos::Model &core = writable(mdl);
     const std::span<const biyos::Index> owners = listed(n, funs, "funidx");
-    core.check_obj_room(owners.size());
+    core.check_objective_room(owners.size());
     const Fields fields{
         .senses = senses,
         .priorities = priorities,
         .weights = weights,
     };
-    const biyos::Index start = core.n_objs();
-    core.add_objs(new_objs(owners, start, fields));
+    const biyos::Index start = core.n_objectives();
+    core.add_objectives(new_objs(owners, start, fields));
     if (beg != nullptr)
     {
         *beg = start;
@@ -109,12 +109,12 @@ void set_objs(BIYOS_model &mdl, int n, const int *idx, const Fields &fields)
     {
         objs.push_back(given(core.objective(changed[k]), k, fields));
     }
-    core.set_objs(changed, objs);
+    core.set_objectives(changed, objs);
 }
 
 void n_objs(const BIYOS_model &mdl, int *n)
 {
-    *require(n, "n") = mdl.core.n_objs();
+    *require(n, "n") = mdl.core.n_objectives();
 }
 
 void copy_out(const biyos::Objective &obj, std::size_t k, const Outputs &outputs)
@@ -135,7 +135,7 @@ void get_objs(const BIYOS_model &mdl,
               int *priorities,
               double *weights)
 {
-    const std::span<const biyos::Objective> found = mdl.core.objs(beg, n);
+    const std::span<const biyos::Objective> found = mdl.core.objectives(beg, n);
     const Outputs outputs{
         .functions = funs,
         .senses = senses,

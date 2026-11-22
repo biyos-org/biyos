@@ -62,8 +62,8 @@ void add_cons(BIYOS_model &mdl,
         };
         added.push_back(bounded(free, k, lower, upper));
     }
-    const biyos::Index start = core.n_cons();
-    core.add_cons(added);
+    const biyos::Index start = core.n_constraints();
+    core.add_constraints(added);
     if (beg != nullptr)
     {
         *beg = start;
@@ -80,12 +80,12 @@ void set_bnds(BIYOS_model &mdl, int n, const int *idx, const double *lower, cons
     {
         cons.push_back(bounded(core.constraint(changed[k]), k, lower, upper));
     }
-    core.set_cons(changed, cons);
+    core.set_constraints(changed, cons);
 }
 
 void n_cons(const BIYOS_model &mdl, int *n)
 {
-    *require(n, "n") = mdl.core.n_cons();
+    *require(n, "n") = mdl.core.n_constraints();
 }
 
 void copy_out(const biyos::Constraint &con, std::size_t k, int *funs, double *lower, double *upper)
@@ -106,7 +106,7 @@ void copy_out(const biyos::Constraint &con, std::size_t k, int *funs, double *lo
 
 void get_cons(const BIYOS_model &mdl, int beg, int n, int *funs, double *lower, double *upper)
 {
-    const std::span<const biyos::Constraint> found = mdl.core.cons(beg, n);
+    const std::span<const biyos::Constraint> found = mdl.core.constraints(beg, n);
     for (std::size_t k = 0; k < found.size(); ++k)
     {
         copy_out(found[k], k, funs, lower, upper);

@@ -80,7 +80,7 @@ void set_each(biyos::Model &core, std::span<const biyos::Index> idx, Arrays... a
     {
         changed.push_back(Change(core.variable(idx[k]), k, arrays...));
     }
-    core.set_vars(idx, changed);
+    core.set_variables(idx, changed);
 }
 
 void add_vars(BIYOS_model &mdl,
@@ -98,8 +98,8 @@ void add_vars(BIYOS_model &mdl,
     {
         added.push_back(bounded(biyos::widest(kind_at(knds, k)), k, lower, upper));
     }
-    const biyos::Index start = core.n_vars();
-    core.add_vars(added);
+    const biyos::Index start = core.n_variables();
+    core.add_variables(added);
     if (beg != nullptr)
     {
         *beg = start;
@@ -120,7 +120,7 @@ void set_kinds(BIYOS_model &mdl, int n, const int *idx, const int *knds)
 
 void n_vars(const BIYOS_model &mdl, int *n)
 {
-    *require(n, "n") = mdl.core.n_vars();
+    *require(n, "n") = mdl.core.n_variables();
 }
 
 void copy_out(const biyos::Variable &var, std::size_t k, int *knds, double *lower, double *upper)
@@ -141,7 +141,7 @@ void copy_out(const biyos::Variable &var, std::size_t k, int *knds, double *lowe
 
 void get_vars(const BIYOS_model &mdl, int beg, int n, int *knds, double *lower, double *upper)
 {
-    const std::span<const biyos::Variable> found = mdl.core.vars(beg, n);
+    const std::span<const biyos::Variable> found = mdl.core.variables(beg, n);
     for (std::size_t k = 0; k < found.size(); ++k)
     {
         copy_out(found[k], k, knds, lower, upper);

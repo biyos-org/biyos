@@ -21,7 +21,7 @@ namespace
 {
 
 using biyos::Constraint;
-using biyos::default_obj;
+using biyos::default_objective;
 using biyos::difference;
 using biyos::Index;
 using biyos::Model;
@@ -46,43 +46,43 @@ const Objective kMaximize{
     .relative = kInfinity,
 };
 
-Model with_funs(std::size_t n)
+Model with_functions(std::size_t n)
 {
-    Model mdl;
+    Model model;
     const std::vector<double> constants(n, 0.0);
     const std::vector<Offset> starts(n + 1, 0);
-    mdl.add_funs(constants, starts, {});
-    return mdl;
+    model.add_functions(constants, starts, {});
+    return model;
 }
 
 Objective weighted(double weight)
 {
-    Objective obj = default_obj(0, 0);
-    obj.weight = weight;
-    return obj;
+    Objective objective = default_objective(0, 0);
+    objective.weight = weight;
+    return objective;
 }
 
 Objective tolerant(double absolute, double relative)
 {
-    Objective obj = default_obj(0, 0);
-    obj.absolute = absolute;
-    obj.relative = relative;
-    return obj;
+    Objective objective = default_objective(0, 0);
+    objective.absolute = absolute;
+    objective.relative = relative;
+    return objective;
 }
 
-void add(Model &mdl, const Objective &obj)
+void add(Model &model, const Objective &objective)
 {
-    mdl.add_objs(std::span(&obj, 1));
+    model.add_objectives(std::span(&objective, 1));
 }
 
-std::string add_refusal(Model &mdl, const Objective &obj)
+std::string add_refusal(Model &model, const Objective &objective)
 {
-    return refusal([&] { add(mdl, obj); });
+    return refusal([&] { add(model, objective); });
 }
 
-std::string set_refusal(Model &mdl, Index idx, const Objective &obj)
+std::string set_refusal(Model &model, Index index, const Objective &objective)
 {
-    return refusal([&] { mdl.set_objs(std::span(&idx, 1), std::span(&obj, 1)); });
+    return refusal([&] { model.set_objectives(std::span(&index, 1), std::span(&objective, 1)); });
 }
 
 std::uint64_t bits_of(double value)
@@ -90,7 +90,7 @@ std::uint64_t bits_of(double value)
     return std::bit_cast<std::uint64_t>(value);
 }
 
-void expect_obj(const Objective &found, const Objective &wanted)
+void expect_objective(const Objective &found, const Objective &wanted)
 {
     EXPECT_EQ(found.function, wanted.function);
     EXPECT_EQ(found.sense, wanted.sense);
@@ -112,141 +112,142 @@ TEST(ObjectiveTest, Defaults)
         .absolute = 0.0,
         .relative = 0.0,
     };
-    expect_obj(default_obj(2, 5), wanted);
-    Model mdl = with_funs(3);
-    add(mdl, default_obj(2, 0));
-    expect_obj(mdl.objective(0), default_obj(2, 0));
+    expect_objective(default_objective(2, 5), wanted);
+    Model model = with_functions(3);
+    add(model, default_objective(2, 0));
+    expect_objective(model.objective(0), default_objective(2, 0));
 }
 
 TEST(ObjectiveTest, Added)
 {
-    Model mdl = with_funs(2);
-    const std::vector<Objective> added{default_obj(0, 0), kMaximize};
-    mdl.add_objs(added);
-    ASSERT_EQ(mdl.n_objs(), 2);
-    expect_obj(mdl.objective(0), added[0]);
-    expect_obj(mdl.objective(1), kMaximize);
-    mdl.add_objs({});
-    EXPECT_EQ(mdl.n_objs(), 2);
+    Model model = with_functions(2);
+    const std::vector<Objective> added{default_objective(0, 0), kMaximize};
+    model.add_objectives(added);
+    ASSERT_EQ(model.n_objectives(), 2);
+    expect_objective(model.objective(0), added[0]);
+    expect_objective(model.objective(1), kMaximize);
+    model.add_objectives({});
+    EXPECT_EQ(model.n_objectives(), 2);
 }
 
 TEST(ObjectiveTest, Shared)
 {
-    Model mdl = with_funs(2);
+    Model model = with_functions(2);
     Objective other = kMaximize;
     other.sense = Sense::Minimize;
-    mdl.add_objs(std::vector<Objective>{kMaximize, other});
-    ASSERT_EQ(mdl.n_objs(), 2);
-    expect_obj(mdl.objective(0), kMaximize);
-    expect_obj(mdl.objective(1), other);
-    EXPECT_EQ(mdl.n_funs(), 2);
+    model.add_objectives(std::vector<Objective>{kMaximize, other});
+    ASSERT_EQ(model.n_objectives(), 2);
+    expect_objective(model.objective(0), kMaximize);
+    expect_objective(model.objective(1), other);
+    EXPECT_EQ(model.n_functions(), 2);
 }
 
 TEST(ObjectiveTest, ConstraintFunction)
 {
-    Model mdl = with_funs(2);
-    const Constraint con{.function = 1, .lower = 0.0, .upper = 1.0};
-    mdl.add_cons(std::span(&con, 1));
-    add(mdl, kMaximize);
-    expect_obj(mdl.objective(0), kMaximize);
-    EXPECT_EQ(mdl.constraint(0).function, 1);
-    EXPECT_EQ(mdl.n_funs(), 2);
+    Model model = with_functions(2);
+    const Constraint constraint{.function = 1, .lower = 0.0, .upper = 1.0};
+    model.add_constraints(std::span(&constraint, 1));
+    add(model, kMaximize);
+    expect_objective(model.objective(0), kMaximize);
+    EXPECT_EQ(model.constraint(0).function, 1);
+    EXPECT_EQ(model.n_functions(), 2);
 }
 
 TEST(ObjectiveTest, Priorities)
 {
-    Model mdl = with_funs(1);
+    Model model = with_functions(1);
     std::vector<Objective> added;
     for (const int priority : {kLeast, -1, 0, 0, 7, kMost})
     {
-        added.push_back(default_obj(0, priority));
+        added.push_back(default_objective(0, priority));
     }
-    mdl.add_objs(added);
-    ASSERT_EQ(mdl.n_objs(), 6);
+    model.add_objectives(added);
+    ASSERT_EQ(model.n_objectives(), 6);
     for (std::size_t k = 0; k < added.size(); ++k)
     {
-        expect_obj(mdl.objective(static_cast<Index>(k)), added[k]);
+        expect_objective(model.objective(static_cast<Index>(k)), added[k]);
     }
 }
 
 TEST(ObjectiveTest, UnknownFunction)
 {
-    Model mdl = with_funs(2);
-    add(mdl, kMaximize);
-    EXPECT_EQ(add_refusal(mdl, default_obj(2, 0)),
+    Model model = with_functions(2);
+    add(model, kMaximize);
+    EXPECT_EQ(add_refusal(model, default_objective(2, 0)),
               "invalid argument: objective 1: function 2 is unknown");
-    EXPECT_EQ(add_refusal(mdl, default_obj(-1, 0)),
+    EXPECT_EQ(add_refusal(model, default_objective(-1, 0)),
               "invalid argument: objective 1: function -1 is unknown");
-    EXPECT_EQ(set_refusal(mdl, 0, default_obj(9, 0)),
+    EXPECT_EQ(set_refusal(model, 0, default_objective(9, 0)),
               "invalid argument: objective 0: function 9 is unknown");
-    EXPECT_EQ(mdl.n_objs(), 1);
-    expect_obj(mdl.objective(0), kMaximize);
+    EXPECT_EQ(model.n_objectives(), 1);
+    expect_objective(model.objective(0), kMaximize);
     Model empty;
-    EXPECT_EQ(add_refusal(empty, default_obj(0, 0)),
+    EXPECT_EQ(add_refusal(empty, default_objective(0, 0)),
               "invalid argument: objective 0: function 0 is unknown");
 }
 
 TEST(ObjectiveTest, UnknownSense)
 {
-    Model mdl = with_funs(1);
-    Objective none = default_obj(0, 0);
+    Model model = with_functions(1);
+    Objective none = default_objective(0, 0);
     none.sense = Sense{0};
-    Objective third = default_obj(0, 0);
+    Objective third = default_objective(0, 0);
     third.sense = Sense{3};
-    EXPECT_EQ(add_refusal(mdl, none), "invalid argument: objective 0: sense 0 is unknown");
-    EXPECT_EQ(add_refusal(mdl, third), "invalid argument: objective 0: sense 3 is unknown");
-    EXPECT_EQ(mdl.n_objs(), 0);
+    EXPECT_EQ(add_refusal(model, none), "invalid argument: objective 0: sense 0 is unknown");
+    EXPECT_EQ(add_refusal(model, third), "invalid argument: objective 0: sense 3 is unknown");
+    EXPECT_EQ(model.n_objectives(), 0);
 }
 
 TEST(ObjectiveTest, Weights)
 {
-    Model mdl = with_funs(1);
+    Model model = with_functions(1);
     const std::string refused = "invalid argument: objective 0: weight ";
-    EXPECT_EQ(add_refusal(mdl, weighted(kNan)), refused + "is NaN");
-    EXPECT_EQ(add_refusal(mdl, weighted(kSignedNan)), refused + "is NaN");
-    EXPECT_EQ(add_refusal(mdl, weighted(kInfinity)), refused + "is infinity");
-    EXPECT_EQ(add_refusal(mdl, weighted(-kInfinity)), refused + "is minus infinity");
-    EXPECT_EQ(add_refusal(mdl, weighted(0.0)), refused + "0 is not positive");
-    EXPECT_EQ(add_refusal(mdl, weighted(-0.0)), refused + "-0 is not positive");
-    EXPECT_EQ(add_refusal(mdl, weighted(-2.0)), refused + "-2 is not positive");
-    EXPECT_EQ(mdl.n_objs(), 0);
+    EXPECT_EQ(add_refusal(model, weighted(kNan)), refused + "is NaN");
+    EXPECT_EQ(add_refusal(model, weighted(kSignedNan)), refused + "is NaN");
+    EXPECT_EQ(add_refusal(model, weighted(kInfinity)), refused + "is infinity");
+    EXPECT_EQ(add_refusal(model, weighted(-kInfinity)), refused + "is minus infinity");
+    EXPECT_EQ(add_refusal(model, weighted(0.0)), refused + "0 is not positive");
+    EXPECT_EQ(add_refusal(model, weighted(-0.0)), refused + "-0 is not positive");
+    EXPECT_EQ(add_refusal(model, weighted(-2.0)), refused + "-2 is not positive");
+    EXPECT_EQ(model.n_objectives(), 0);
     const double least = std::numeric_limits<double>::denorm_min();
     const double most = (std::numeric_limits<double>::max)();
-    mdl.add_objs(std::vector<Objective>{weighted(least), weighted(most)});
-    expect_obj(mdl.objective(0), weighted(least));
-    expect_obj(mdl.objective(1), weighted(most));
+    model.add_objectives(std::vector<Objective>{weighted(least), weighted(most)});
+    expect_objective(model.objective(0), weighted(least));
+    expect_objective(model.objective(1), weighted(most));
 }
 
 TEST(ObjectiveTest, Tolerances)
 {
-    Model mdl = with_funs(1);
+    Model model = with_functions(1);
     const std::string refused = "invalid argument: objective 0: ";
-    EXPECT_EQ(add_refusal(mdl, tolerant(kNan, 0.0)), refused + "absolute tolerance is NaN");
-    EXPECT_EQ(add_refusal(mdl, tolerant(0.0, kNan)), refused + "relative tolerance is NaN");
-    EXPECT_EQ(add_refusal(mdl, tolerant(kSignedNan, 0.0)), refused + "absolute tolerance is NaN");
-    EXPECT_EQ(add_refusal(mdl, tolerant(-1.0, 0.0)), refused + "absolute tolerance -1 is negative");
-    EXPECT_EQ(add_refusal(mdl, tolerant(0.0, -kInfinity)),
+    EXPECT_EQ(add_refusal(model, tolerant(kNan, 0.0)), refused + "absolute tolerance is NaN");
+    EXPECT_EQ(add_refusal(model, tolerant(0.0, kNan)), refused + "relative tolerance is NaN");
+    EXPECT_EQ(add_refusal(model, tolerant(kSignedNan, 0.0)), refused + "absolute tolerance is NaN");
+    EXPECT_EQ(add_refusal(model, tolerant(-1.0, 0.0)),
+              refused + "absolute tolerance -1 is negative");
+    EXPECT_EQ(add_refusal(model, tolerant(0.0, -kInfinity)),
               refused + "relative tolerance is minus infinity");
     const double least = std::numeric_limits<double>::denorm_min();
-    EXPECT_EQ(add_refusal(mdl, tolerant(0.0, -least)),
+    EXPECT_EQ(add_refusal(model, tolerant(0.0, -least)),
               refused + "relative tolerance -5e-324 is negative");
-    EXPECT_EQ(mdl.n_objs(), 0);
+    EXPECT_EQ(model.n_objectives(), 0);
     const std::vector<Objective> kept{
         tolerant(kInfinity, kInfinity),
         tolerant(-0.0, -0.0),
         tolerant(least, 0.25),
     };
-    mdl.add_objs(kept);
-    ASSERT_EQ(mdl.n_objs(), 3);
+    model.add_objectives(kept);
+    ASSERT_EQ(model.n_objectives(), 3);
     for (std::size_t k = 0; k < kept.size(); ++k)
     {
-        expect_obj(mdl.objective(static_cast<Index>(k)), kept[k]);
+        expect_objective(model.objective(static_cast<Index>(k)), kept[k]);
     }
 }
 
 TEST(ObjectiveTest, Order)
 {
-    Model mdl = with_funs(1);
+    Model model = with_functions(1);
     const Objective bad{
         .function = 1,
         .sense = Sense{0},
@@ -257,116 +258,119 @@ TEST(ObjectiveTest, Order)
     };
     const std::string refused = "invalid argument: objective 0: ";
     Objective found = bad;
-    EXPECT_EQ(add_refusal(mdl, found), refused + "function 1 is unknown");
+    EXPECT_EQ(add_refusal(model, found), refused + "function 1 is unknown");
     found.function = 0;
-    EXPECT_EQ(add_refusal(mdl, found), refused + "sense 0 is unknown");
+    EXPECT_EQ(add_refusal(model, found), refused + "sense 0 is unknown");
     found.sense = Sense::Maximize;
-    EXPECT_EQ(add_refusal(mdl, found), refused + "weight 0 is not positive");
+    EXPECT_EQ(add_refusal(model, found), refused + "weight 0 is not positive");
     found.weight = 1.0;
-    EXPECT_EQ(add_refusal(mdl, found), refused + "absolute tolerance is NaN");
+    EXPECT_EQ(add_refusal(model, found), refused + "absolute tolerance is NaN");
     found.absolute = 0.0;
-    EXPECT_EQ(add_refusal(mdl, found), refused + "relative tolerance is NaN");
+    EXPECT_EQ(add_refusal(model, found), refused + "relative tolerance is NaN");
     const std::vector<Objective> both{weighted(-1.0), bad};
-    EXPECT_EQ(refusal([&] { mdl.add_objs(both); }), refused + "weight -1 is not positive");
-    EXPECT_EQ(mdl.n_objs(), 0);
+    EXPECT_EQ(refusal([&] { model.add_objectives(both); }), refused + "weight -1 is not positive");
+    EXPECT_EQ(model.n_objectives(), 0);
 }
 
 TEST(ObjectiveTest, Unchanged)
 {
-    Model mdl = with_funs(2);
-    add(mdl, kMaximize);
-    const std::vector<Objective> refused{default_obj(0, 1), weighted(kNan)};
-    EXPECT_NE(refusal([&] { mdl.add_objs(refused); }), "");
-    const std::vector<Index> idx{0, 1};
-    const std::vector<Objective> changed{default_obj(0, 4), kMaximize};
-    EXPECT_NE(refusal([&] { mdl.set_objs(idx, changed); }), "");
+    Model model = with_functions(2);
+    add(model, kMaximize);
+    const std::vector<Objective> refused{default_objective(0, 1), weighted(kNan)};
+    EXPECT_NE(refusal([&] { model.add_objectives(refused); }), "");
+    const std::vector<Index> indices{0, 1};
+    const std::vector<Objective> changed{default_objective(0, 4), kMaximize};
+    EXPECT_NE(refusal([&] { model.set_objectives(indices, changed); }), "");
     const std::vector<Index> again{0, 0};
-    const std::vector<Objective> nan{default_obj(0, 4), tolerant(kNan, 0.0)};
-    EXPECT_NE(refusal([&] { mdl.set_objs(again, nan); }), "");
-    ASSERT_EQ(mdl.n_objs(), 1);
-    expect_obj(mdl.objective(0), kMaximize);
+    const std::vector<Objective> nan{default_objective(0, 4), tolerant(kNan, 0.0)};
+    EXPECT_NE(refusal([&] { model.set_objectives(again, nan); }), "");
+    ASSERT_EQ(model.n_objectives(), 1);
+    expect_objective(model.objective(0), kMaximize);
 }
 
 TEST(ObjectiveTest, LastWins)
 {
-    Model mdl = with_funs(2);
-    mdl.add_objs(std::vector<Objective>{default_obj(0, 0), default_obj(0, 1)});
-    const std::vector<Index> idx{1, 0, 1};
-    const std::vector<Objective> changed{kMaximize, tolerant(1.0, 2.0), default_obj(1, 9)};
-    mdl.set_objs(idx, changed);
-    expect_obj(mdl.objective(0), changed[1]);
-    expect_obj(mdl.objective(1), changed[2]);
+    Model model = with_functions(2);
+    model.add_objectives(std::vector<Objective>{default_objective(0, 0), default_objective(0, 1)});
+    const std::vector<Index> indices{1, 0, 1};
+    const std::vector<Objective> changed{kMaximize, tolerant(1.0, 2.0), default_objective(1, 9)};
+    model.set_objectives(indices, changed);
+    expect_objective(model.objective(0), changed[1]);
+    expect_objective(model.objective(1), changed[2]);
 }
 
 TEST(ObjectiveTest, BadIndex)
 {
-    Model mdl = with_funs(1);
-    add(mdl, default_obj(0, 0));
-    EXPECT_EQ(refusal([&] { mdl.objective(-1); }), "invalid argument: objective -1: unknown");
-    EXPECT_EQ(refusal([&] { mdl.objective(1); }), "invalid argument: objective 1: unknown");
-    EXPECT_EQ(set_refusal(mdl, 1, default_obj(0, 0)), "invalid argument: objective 1: unknown");
-    EXPECT_EQ(set_refusal(mdl, 0, weighted(0.0)),
+    Model model = with_functions(1);
+    add(model, default_objective(0, 0));
+    EXPECT_EQ(refusal([&] { model.objective(-1); }), "invalid argument: objective -1: unknown");
+    EXPECT_EQ(refusal([&] { model.objective(1); }), "invalid argument: objective 1: unknown");
+    EXPECT_EQ(set_refusal(model, 1, default_objective(0, 0)),
+              "invalid argument: objective 1: unknown");
+    EXPECT_EQ(set_refusal(model, 0, weighted(0.0)),
               "invalid argument: objective 0: weight 0 is not positive");
 }
 
 TEST(ObjectiveTest, ReadRange)
 {
-    Model mdl = with_funs(3);
-    const std::vector<Objective> added{default_obj(2, 0), kMaximize, default_obj(0, 2)};
-    mdl.add_objs(added);
-    const std::span<const Objective> middle = mdl.objs(1, 2);
+    Model model = with_functions(3);
+    const std::vector<Objective> added{default_objective(2, 0), kMaximize, default_objective(0, 2)};
+    model.add_objectives(added);
+    const std::span<const Objective> middle = model.objectives(1, 2);
     ASSERT_EQ(middle.size(), 2U);
-    expect_obj(middle[0], added[1]);
-    expect_obj(middle[1], added[2]);
-    EXPECT_TRUE(mdl.objs(3, 0).empty());
-    EXPECT_EQ(refusal([&] { mdl.objs(-1, 1); }), "invalid argument: objective -1: unknown");
-    EXPECT_EQ(refusal([&] { mdl.objs(1, 3); }), "invalid argument: objective 3: unknown");
-    EXPECT_EQ(refusal([&] { mdl.objs(4, 0); }), "invalid argument: objective 4: unknown");
-    EXPECT_EQ(refusal([&] { mdl.objs(0, -1); }), "invalid argument: argument 'n': -1 is negative");
+    expect_objective(middle[0], added[1]);
+    expect_objective(middle[1], added[2]);
+    EXPECT_TRUE(model.objectives(3, 0).empty());
+    EXPECT_EQ(refusal([&] { model.objectives(-1, 1); }), "invalid argument: objective -1: unknown");
+    EXPECT_EQ(refusal([&] { model.objectives(1, 3); }), "invalid argument: objective 3: unknown");
+    EXPECT_EQ(refusal([&] { model.objectives(4, 0); }), "invalid argument: objective 4: unknown");
+    EXPECT_EQ(refusal([&] { model.objectives(0, -1); }),
+              "invalid argument: argument 'n': -1 is negative");
 }
 
 TEST(ObjectiveTest, Mismatch)
 {
-    Model mdl = with_funs(1);
-    add(mdl, default_obj(0, 0));
-    const std::vector<Index> idx{0};
-    failure([&] { mdl.set_objs(idx, {}); }, biyos::ErrorKind::Internal);
-    expect_obj(mdl.objective(0), default_obj(0, 0));
+    Model model = with_functions(1);
+    add(model, default_objective(0, 0));
+    const std::vector<Index> indices{0};
+    failure([&] { model.set_objectives(indices, {}); }, biyos::ErrorKind::Internal);
+    expect_objective(model.objective(0), default_objective(0, 0));
 }
 
 TEST(ObjectiveTest, Room)
 {
-    Model mdl = with_funs(1);
-    mdl.check_obj_room(biyos::kRoom);
-    const auto beyond = [&] { mdl.check_obj_room(biyos::kRoom + 1); };
+    Model model = with_functions(1);
+    model.check_objective_room(biyos::kRoom);
+    const auto beyond = [&] { model.check_objective_room(biyos::kRoom + 1); };
     EXPECT_EQ(failure(beyond, biyos::ErrorKind::NoMemory),
               "out of memory: model: no objective index left");
-    add(mdl, default_obj(0, 0));
-    const auto full = [&] { mdl.check_obj_room(biyos::kRoom); };
+    add(model, default_objective(0, 0));
+    const auto full = [&] { model.check_objective_room(biyos::kRoom); };
     EXPECT_EQ(failure(full, biyos::ErrorKind::NoMemory),
               "out of memory: model: no objective index left");
-    mdl.check_obj_room(biyos::kRoom - 1);
+    model.check_objective_room(biyos::kRoom - 1);
 }
 
 TEST(ObjectiveTest, Moved)
 {
-    Model mdl = with_funs(2);
-    add(mdl, kMaximize);
-    const Model taken = std::move(mdl);
-    expect_obj(taken.objective(0), kMaximize);
-    EXPECT_EQ(mdl.n_objs(), 0);
-    EXPECT_TRUE(mdl.objs(0, 0).empty());
-    EXPECT_EQ(add_refusal(mdl, kMaximize), "invalid argument: objective 0: function 1 is unknown");
+    Model model = with_functions(2);
+    add(model, kMaximize);
+    const Model taken = std::move(model);
+    expect_objective(taken.objective(0), kMaximize);
+    EXPECT_EQ(model.n_objectives(), 0);
+    EXPECT_TRUE(model.objectives(0, 0).empty());
+    EXPECT_EQ(add_refusal(model, kMaximize),
+              "invalid argument: objective 0: function 1 is unknown");
 }
 
 TEST(ObjectiveTest, Copied)
 {
-    Model mdl = with_funs(2);
-    mdl.add_objs(std::vector<Objective>{kMaximize, default_obj(0, 1)});
-    Model copy = mdl;
-    EXPECT_EQ(difference(mdl, copy), "");
-    const Index idx = 1;
-    copy.set_objs(std::span(&idx, 1), std::span(&kMaximize, 1));
-    EXPECT_EQ(difference(mdl, copy), "objective 1: function 0 against 1");
-    expect_obj(mdl.objective(1), default_obj(0, 1));
+    Model model = with_functions(2);
+    model.add_objectives(std::vector<Objective>{kMaximize, default_objective(0, 1)});
+    Model copy = model;
+    EXPECT_EQ(difference(model, copy), "");
+    const Index index = 1;
+    copy.set_objectives(std::span(&index, 1), std::span(&kMaximize, 1));
+    EXPECT_EQ(difference(model, copy), "objective 1: function 0 against 1");
+    expect_objective(model.objective(1), default_objective(0, 1));
 }

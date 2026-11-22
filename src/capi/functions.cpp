@@ -46,8 +46,8 @@ void add_funs(BIYOS_model &mdl,
     biyos::check_starts(begins);
     core.check_room(size, begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
-    const biyos::Index start = core.n_funs();
-    core.add_funs(added, begins, biyos::capi::packed(total, vars, values));
+    const biyos::Index start = core.n_functions();
+    core.add_functions(added, begins, biyos::capi::packed(total, vars, values));
     if (beg != nullptr)
     {
         *beg = start;
@@ -56,7 +56,7 @@ void add_funs(BIYOS_model &mdl,
 
 void n_funs(const BIYOS_model &mdl, int *n)
 {
-    *require(n, "n") = mdl.core.n_funs();
+    *require(n, "n") = mdl.core.n_functions();
 }
 
 void write_constants(std::span<const double> found, double *constants)
@@ -78,11 +78,11 @@ void get_funs(const BIYOS_model &mdl,
               double *values)
 {
     const std::span<const double> held = mdl.core.constants(beg, n);
-    const std::span<const biyos::LinearTerm> found = mdl.core.terms(beg, n);
+    const std::span<const biyos::LinearTerm> found = mdl.core.linear_terms(beg, n);
     const std::size_t room = length(size, "size");
     require(needed, "nnz");
     write_constants(held, constants);
-    const auto before = [&](biyos::Index j) { return mdl.core.terms(beg, j); };
+    const auto before = [&](biyos::Index j) { return mdl.core.linear_terms(beg, j); };
     write_starts(held.size(), starts, before);
     biyos::capi::unpack(found, room, vars, values);
     *needed = static_cast<std::int64_t>(found.size());

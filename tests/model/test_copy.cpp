@@ -28,21 +28,21 @@ using biyos::VariableKind;
 using biyos::test::built;
 using biyos::test::sample;
 
-void change(Model &mdl)
+void change(Model &model)
 {
-    const Index idx = 1;
-    const Variable var{.kind = VariableKind::Integer, .lower = 0.0, .upper = 1.0};
-    const Constraint con{.function = 2, .lower = -5.0, .upper = 5.0};
+    const Index index = 1;
+    const Variable variable{.kind = VariableKind::Integer, .lower = 0.0, .upper = 1.0};
+    const Constraint constraint{.function = 2, .lower = -5.0, .upper = 5.0};
     const std::vector<double> constants{4.0};
     const std::vector<Offset> starts{0, 1};
-    mdl.set_vars(std::span(&idx, 1), std::span(&var, 1));
-    mdl.add_vars(std::span(&var, 1));
-    mdl.add_funs(constants, starts, {LinearTerm{.variable = 3, .coefficient = 1.0}});
+    model.set_variables(std::span(&index, 1), std::span(&variable, 1));
+    model.add_variables(std::span(&variable, 1));
+    model.add_functions(constants, starts, {LinearTerm{.variable = 3, .coefficient = 1.0}});
     const QuadraticTerm pair{.row = 3, .column = 1, .coefficient = 2.0};
-    mdl.add_quad_terms(std::span(&idx, 1), starts, {pair});
-    mdl.set_cons(std::span(&idx, 1), std::span(&con, 1));
-    mdl.add_cons(std::span(&con, 1));
-    const Objective obj{
+    model.add_quadratic_terms(std::span(&index, 1), starts, {pair});
+    model.set_constraints(std::span(&index, 1), std::span(&constraint, 1));
+    model.add_constraints(std::span(&constraint, 1));
+    const Objective objective{
         .function = 3,
         .sense = Sense::Maximize,
         .priority = 2,
@@ -50,13 +50,13 @@ void change(Model &mdl)
         .absolute = 1.0,
         .relative = 0.0,
     };
-    mdl.set_objs(std::span(&idx, 1), std::span(&obj, 1));
-    mdl.add_objs(std::span(&obj, 1));
+    model.set_objectives(std::span(&index, 1), std::span(&objective, 1));
+    model.add_objectives(std::span(&objective, 1));
     const std::vector<Index> renamed{0, 1};
     const std::vector<std::string_view> names{"y", "w"};
     for (const Family family : biyos::kFamilies)
     {
-        mdl.set_names(family, renamed, names);
+        model.set_names(family, renamed, names);
     }
 }
 

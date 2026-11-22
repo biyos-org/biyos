@@ -34,9 +34,9 @@ void add_terms(BIYOS_model &mdl,
     const std::span<const biyos::Index> owners = listed(n, funs, "funidx");
     const std::vector<biyos::Offset> begins = offsets(owners.size(), starts);
     biyos::check_starts(begins);
-    core.check_quad_room(begins.back());
+    core.check_quadratic_room(begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
-    core.add_quad_terms(owners, begins, biyos::capi::packed(total, firsts, seconds, values));
+    core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, firsts, seconds, values));
 }
 
 void get_terms(const BIYOS_model &mdl,
@@ -49,10 +49,10 @@ void get_terms(const BIYOS_model &mdl,
                int *seconds,
                double *values)
 {
-    const std::span<const biyos::QuadraticTerm> found = mdl.core.quad_terms(beg, n);
+    const std::span<const biyos::QuadraticTerm> found = mdl.core.quadratic_terms(beg, n);
     const std::size_t room = length(size, "size");
     require(needed, "nnz");
-    const auto before = [&](biyos::Index j) { return mdl.core.quad_terms(beg, j); };
+    const auto before = [&](biyos::Index j) { return mdl.core.quadratic_terms(beg, j); };
     write_starts(static_cast<std::size_t>(n), starts, before);
     biyos::capi::unpack(found, room, firsts, seconds, values);
     *needed = static_cast<std::int64_t>(found.size());

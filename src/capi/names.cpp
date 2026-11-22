@@ -66,7 +66,7 @@ void get_mdl_name(const BIYOS_model &mdl, const char **name)
 
 void del_mdl_name(BIYOS_model &mdl)
 {
-    writable(mdl).del_name();
+    writable(mdl).delete_name();
 }
 
 template <Family Target>
@@ -101,7 +101,7 @@ void get_idx(const BIYOS_model &mdl, int n, const char *const *names, int *idx)
     found.reserve(wanted.size());
     for (const std::string_view name : wanted)
     {
-        found.push_back(mdl.core.idx_of(Target, name));
+        found.push_back(mdl.core.index_of(Target, name));
     }
     if (idx != nullptr)
     {
@@ -112,7 +112,7 @@ void get_idx(const BIYOS_model &mdl, int n, const char *const *names, int *idx)
 template <Family Target> void del_names(BIYOS_model &mdl, int n, const int *idx)
 {
     biyos::Model &core = writable(mdl);
-    core.del_names(Target, listed(n, idx));
+    core.delete_names(Target, listed(n, idx));
 }
 
 }

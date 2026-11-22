@@ -17,57 +17,57 @@ namespace
 
 constexpr std::string_view kOwner = "function";
 
-std::string var_name(Index var)
+std::string variable_name(Index variable)
 {
-    return item("variable", var);
+    return item("variable", variable);
 }
 
-void check_var(Index fun, Index var, Index vars)
+void check_variable(Index function, Index variable, Index variables)
 {
-    if (var < 0 || var >= vars)
+    if (variable < 0 || variable >= variables)
     {
-        refuse(kOwner, fun, var_name(var) + " is unknown");
+        refuse(kOwner, function, variable_name(variable) + " is unknown");
     }
 }
 
-void check_coefficient(Index fun, const LinearTerm &term)
+void check_coefficient(Index function, const LinearTerm &term)
 {
     const std::string_view fault = value_fault(term.coefficient);
     if (!fault.empty())
     {
-        const std::string named = "coefficient of " + var_name(term.variable);
-        refuse(kOwner, fun, named + " " + std::string(fault));
+        const std::string named = "coefficient of " + variable_name(term.variable);
+        refuse(kOwner, function, named + " " + std::string(fault));
     }
 }
 
 }
 
-void check_terms(Index fun, std::span<const LinearTerm> terms, Index vars)
+void check_terms(Index function, std::span<const LinearTerm> terms, Index variables)
 {
     for (const LinearTerm &term : terms)
     {
-        check_var(fun, term.variable, vars);
-        check_coefficient(fun, term);
+        check_variable(function, term.variable, variables);
+        check_coefficient(function, term);
     }
 }
 
-void sort_terms(Index fun, std::span<LinearTerm> terms)
+void sort_terms(Index function, std::span<LinearTerm> terms)
 {
     std::ranges::sort(terms, {}, &LinearTerm::variable);
     const auto repeat = std::ranges::adjacent_find(terms, {}, &LinearTerm::variable);
     if (repeat != terms.end())
     {
-        refuse(kOwner, fun, var_name(repeat->variable) + " is repeated");
+        refuse(kOwner, function, variable_name(repeat->variable) + " is repeated");
     }
 }
 
-void check_sum(Index fun, const LinearTerm &held, const LinearTerm &given)
+void check_sum(Index function, const LinearTerm &held, const LinearTerm &given)
 {
     const std::string_view fault = value_fault(held.coefficient + given.coefficient);
     if (!fault.empty())
     {
-        const std::string sum = "sum of coefficients of " + var_name(given.variable);
-        refuse(kOwner, fun, sum + " " + std::string(fault));
+        const std::string sum = "sum of coefficients of " + variable_name(given.variable);
+        refuse(kOwner, function, sum + " " + std::string(fault));
     }
 }
 

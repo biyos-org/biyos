@@ -36,7 +36,7 @@ void add_lin_terms(BIYOS_model &mdl,
     biyos::check_starts(begins);
     core.check_room(0, begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
-    core.add_lin_terms(owners, begins, biyos::capi::packed(total, vars, values));
+    core.add_linear_terms(owners, begins, biyos::capi::packed(total, vars, values));
 }
 
 template <typename T> std::span<T> given(T *array, std::size_t size)
@@ -53,11 +53,11 @@ void get_var_terms(const BIYOS_model &mdl,
                    int *funs,
                    double *values)
 {
-    const std::vector<biyos::Offset> found = biyos::var_starts(mdl.core, beg, n);
+    const std::vector<biyos::Offset> found = biyos::variable_starts(mdl.core, beg, n);
     const std::size_t room = length(size, "size");
     require(needed, "nnz");
     const std::size_t written = (std::min)(room, static_cast<std::size_t>(found.back()));
-    biyos::var_terms(mdl.core, beg, found, given(funs, written), given(values, written));
+    biyos::variable_terms(mdl.core, beg, found, given(funs, written), given(values, written));
     if (starts != nullptr)
     {
         std::ranges::copy(found, starts);

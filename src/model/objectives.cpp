@@ -25,112 +25,112 @@ bool zero(double value) noexcept
     return std::fpclassify(value) == FP_ZERO;
 }
 
-void check_sense(Index idx, Sense sense)
+void check_sense(Index index, Sense sense)
 {
     if (std::ranges::find(kSenses, sense) == kSenses.end())
     {
-        refuse(kNoun, idx, "sense " + text_of(static_cast<int>(sense)) + " is unknown");
+        refuse(kNoun, index, "sense " + text_of(static_cast<int>(sense)) + " is unknown");
     }
 }
 
-void check_weight(Index idx, double weight)
+void check_weight(Index index, double weight)
 {
     const std::string_view fault = value_fault(weight);
     if (!fault.empty())
     {
-        refuse(kNoun, idx, "weight " + std::string(fault));
+        refuse(kNoun, index, "weight " + std::string(fault));
     }
     if (std::signbit(weight) || zero(weight))
     {
-        refuse(kNoun, idx, "weight " + text_of(weight) + " is not positive");
+        refuse(kNoun, index, "weight " + text_of(weight) + " is not positive");
     }
 }
 
-void check_tolerance(Index idx, std::string_view name, double tolerance)
+void check_tolerance(Index index, std::string_view name, double tolerance)
 {
     const bool unlimited = std::isinf(tolerance) && !std::signbit(tolerance);
     const std::string_view fault = unlimited ? std::string_view() : value_fault(tolerance);
     if (!fault.empty())
     {
-        refuse(kNoun, idx, std::string(name) + " tolerance " + std::string(fault));
+        refuse(kNoun, index, std::string(name) + " tolerance " + std::string(fault));
     }
     if (std::signbit(tolerance) && !zero(tolerance))
     {
         const std::string value = text_of(tolerance);
-        refuse(kNoun, idx, std::string(name) + " tolerance " + value + " is negative");
+        refuse(kNoun, index, std::string(name) + " tolerance " + value + " is negative");
     }
 }
 
-void check(Index idx, const Objective &obj, Index funs)
+void check(Index index, const Objective &objective, Index functions)
 {
-    check_fun(kNoun, idx, obj.function, funs);
-    check_sense(idx, obj.sense);
-    check_weight(idx, obj.weight);
-    check_tolerance(idx, "absolute", obj.absolute);
-    check_tolerance(idx, "relative", obj.relative);
+    check_function(kNoun, index, objective.function, functions);
+    check_sense(index, objective.sense);
+    check_weight(index, objective.weight);
+    check_tolerance(index, "absolute", objective.absolute);
+    check_tolerance(index, "relative", objective.relative);
 }
 
 }
 
-Objective default_obj(Index fun, Index idx) noexcept
+Objective default_objective(Index function, Index index) noexcept
 {
     return Objective{
-        .function = fun,
+        .function = function,
         .sense = Sense::Minimize,
-        .priority = idx,
+        .priority = index,
         .weight = 1.0,
         .absolute = 0.0,
         .relative = 0.0,
     };
 }
 
-Index Model::n_objs() const noexcept
+Index Model::n_objectives() const noexcept
 {
     return static_cast<Index>(objectives_.size());
 }
 
-const Objective &Model::objective(Index idx) const
+const Objective &Model::objective(Index index) const
 {
-    check_idx(kNoun, idx, n_objs());
-    return objectives_[static_cast<std::size_t>(idx)];
+    check_index(kNoun, index, n_objectives());
+    return objectives_[static_cast<std::size_t>(index)];
 }
 
-std::span<const Objective> Model::objs(Index beg, Index n) const
+std::span<const Objective> Model::objectives(Index start, Index size) const
 {
-    check_span(kNoun, beg, n, n_objs());
-    const auto start = static_cast<std::size_t>(beg);
-    return std::span(objectives_).subspan(start, static_cast<std::size_t>(n));
+    check_span(kNoun, start, size, n_objectives());
+    const auto offset = static_cast<std::size_t>(start);
+    return std::span(objectives_).subspan(offset, static_cast<std::size_t>(size));
 }
 
-void Model::check_obj_room(std::size_t added) const
+void Model::check_objective_room(std::size_t added) const
 {
     check_n(kNoun, objectives_, added);
 }
 
-void Model::add_objs(std::span<const Objective> added)
+void Model::add_objectives(std::span<const Objective> added)
 {
-    check_obj_room(added.size());
+    check_objective_room(added.size());
     for (std::size_t k = 0; k < added.size(); ++k)
     {
-        check(static_cast<Index>(objectives_.size() + k), added[k], n_funs());
+        check(static_cast<Index>(objectives_.size() + k), added[k], n_functions());
     }
     objectives_.insert(objectives_.end(), added.begin(), added.end());
 }
 
-void Model::set_objs(std::span<const Index> idx, std::span<const Objective> changed)
+void Model::set_objectives(std::span<const Index> indices, std::span<const Objective> changed)
 {
-    if (idx.size() != changed.size())
+    if (indices.size() != changed.size())
     {
         throw Error(ErrorKind::Internal, "model", "indices and objectives differ in number");
     }
-    for (std::size_t k = 0; k < idx.size(); ++k)
+    for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        check_idx(kNoun, idx[k], n_objs());
-        check(idx[k], changed[k], n_funs());
+        check_index(kNoun, indices[k], n_objectives());
+        check(indices[k], changed[k], n_functions());
     }
-    for (std::size_t k = 0; k < idx.size(); ++k)
+    for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        objectives_[static_cast<std::size_t>(idx[k])] = changed[k];
+        objectives_[static_cast<std::size_t>(indices[k])] = changed[k];
     }
 }
 

@@ -44,17 +44,17 @@ Parts with_copy(const Parts &parts)
 
 TEST(CompareTest, Equal)
 {
-    const Model mdl = built(sample());
-    EXPECT_EQ(difference(mdl, mdl), "");
-    EXPECT_EQ(difference(mdl, built(sample())), "");
+    const Model model = built(sample());
+    EXPECT_EQ(difference(model, model), "");
+    EXPECT_EQ(difference(model, built(sample())), "");
     EXPECT_EQ(difference(Model(), Model()), "");
 }
 
 TEST(CompareTest, VariableFields)
 {
-    Parts knd = sample();
-    knd.variables[1].kind = VariableKind::Integer;
-    EXPECT_EQ(from_sample(knd), "variable 1: kind 2 against 3");
+    Parts kind = sample();
+    kind.variables[1].kind = VariableKind::Integer;
+    EXPECT_EQ(from_sample(kind), "variable 1: kind 2 against 3");
     Parts lower = sample();
     lower.variables[2].lower = -4.0;
     EXPECT_EQ(from_sample(lower), "variable 2: lower bound -inf against -4");
@@ -68,9 +68,9 @@ TEST(CompareTest, FunctionFields)
     Parts constant = sample();
     constant.constants[2] = 0.2;
     EXPECT_EQ(from_sample(constant), "function 2: constant 0.1 against 0.2");
-    Parts var = sample();
-    var.terms[1].variable = 1;
-    EXPECT_EQ(from_sample(var), "function 0: term 1: variable 2 against 1");
+    Parts variable = sample();
+    variable.terms[1].variable = 1;
+    EXPECT_EQ(from_sample(variable), "function 0: term 1: variable 2 against 1");
     Parts coefficient = sample();
     coefficient.terms[2].coefficient = 0.2;
     EXPECT_EQ(from_sample(coefficient), "function 1: term 0: coefficient 0.1 against 0.2");
@@ -98,9 +98,9 @@ TEST(CompareTest, QuadraticFields)
 
 TEST(CompareTest, ConstraintFields)
 {
-    Parts fun = sample();
-    fun.constraints[2].function = 1;
-    EXPECT_EQ(from_sample(fun), "constraint 2: function 0 against 1");
+    Parts function = sample();
+    function.constraints[2].function = 1;
+    EXPECT_EQ(from_sample(function), "constraint 2: function 0 against 1");
     Parts lower = sample();
     lower.constraints[0].lower = -kInfinity;
     EXPECT_EQ(from_sample(lower), "constraint 0: lower bound -1 against -inf");
@@ -111,9 +111,9 @@ TEST(CompareTest, ConstraintFields)
 
 TEST(CompareTest, ObjectiveFields)
 {
-    Parts fun = sample();
-    fun.objectives[1].function = 1;
-    EXPECT_EQ(from_sample(fun), "objective 1: function 0 against 1");
+    Parts function = sample();
+    function.objectives[1].function = 1;
+    EXPECT_EQ(from_sample(function), "objective 1: function 0 against 1");
     Parts sense = sample();
     sense.objectives[0].sense = Sense::Minimize;
     EXPECT_EQ(from_sample(sense), "objective 0: sense 2 against 1");
@@ -133,16 +133,16 @@ TEST(CompareTest, ObjectiveFields)
 
 TEST(CompareTest, Counts)
 {
-    Parts vars = sample();
-    vars.variables.push_back(vars.variables[0]);
-    EXPECT_EQ(from_sample(vars), "variable count 3 against 4");
+    Parts variables = sample();
+    variables.variables.push_back(variables.variables[0]);
+    EXPECT_EQ(from_sample(variables), "variable count 3 against 4");
     EXPECT_EQ(from_sample(with_copy(sample())), "function count 3 against 4");
-    Parts cons = sample();
-    cons.constraints.pop_back();
-    EXPECT_EQ(from_sample(cons), "constraint count 3 against 2");
-    Parts objs = sample();
-    objs.objectives.pop_back();
-    EXPECT_EQ(from_sample(objs), "objective count 2 against 1");
+    Parts constraints = sample();
+    constraints.constraints.pop_back();
+    EXPECT_EQ(from_sample(constraints), "constraint count 3 against 2");
+    Parts objectives = sample();
+    objectives.objectives.pop_back();
+    EXPECT_EQ(from_sample(objectives), "objective count 2 against 1");
 }
 
 TEST(CompareTest, Names)
@@ -154,30 +154,30 @@ TEST(CompareTest, Names)
     unnamed.name.clear();
     EXPECT_EQ(from_sample(unnamed), "model name 'sample' against none");
     EXPECT_EQ(difference(built(unnamed), built(sample())), "model name none against 'sample'");
-    Parts var = sample();
-    var.variable_names.names[0] = "y";
-    EXPECT_EQ(from_sample(var), "variable 2: name 'z' against 'y'");
+    Parts variable = sample();
+    variable.variable_names.names[0] = "y";
+    EXPECT_EQ(from_sample(variable), "variable 2: name 'z' against 'y'");
     Parts more = sample();
     more.variable_names = {.indices = {2, 1, 0}, .names = {"z", "y", "x"}};
     EXPECT_EQ(from_sample(more), "variable 1: name none against 'y'");
     Parts fewer = sample();
     fewer.variable_names = {.indices = {2}, .names = {"z"}};
     EXPECT_EQ(from_sample(fewer), "variable 0: name 'x' against none");
-    Parts fun = sample();
-    fun.function_names.names[0] = "g";
-    EXPECT_EQ(from_sample(fun), "function 1: name 'f' against 'g'");
+    Parts function = sample();
+    function.function_names.names[0] = "g";
+    EXPECT_EQ(from_sample(function), "function 1: name 'f' against 'g'");
     Parts first = sample();
     first.function_names = {.indices = {0, 1}, .names = {"e", "f"}};
     EXPECT_EQ(from_sample(first), "function 0: name none against 'e'");
-    Parts con = sample();
-    con.constraint_names.names[0] = "d";
-    EXPECT_EQ(from_sample(con), "constraint 1: name 'c' against 'd'");
+    Parts constraint = sample();
+    constraint.constraint_names.names[0] = "d";
+    EXPECT_EQ(from_sample(constraint), "constraint 1: name 'c' against 'd'");
     Parts row = sample();
     row.constraint_names = {.indices = {0, 1}, .names = {"b", "c"}};
     EXPECT_EQ(from_sample(row), "constraint 0: name none against 'b'");
-    Parts obj = sample();
-    obj.objective_names = {.indices = {1}, .names = {"cost"}};
-    EXPECT_EQ(from_sample(obj), "objective 0: name 'cost' against none");
+    Parts objective = sample();
+    objective.objective_names = {.indices = {1}, .names = {"cost"}};
+    EXPECT_EQ(from_sample(objective), "objective 0: name 'cost' against none");
 }
 
 TEST(CompareTest, OneUlp)
@@ -189,9 +189,9 @@ TEST(CompareTest, OneUlp)
     coefficient.terms[0].coefficient = std::nextafter(2.0, 0.0);
     EXPECT_EQ(from_sample(coefficient),
               "function 0: term 0: coefficient 2 against 1.9999999999999998");
-    Parts quad = sample();
-    quad.quadratic.terms[0].coefficient = std::nextafter(0.5, kInfinity);
-    EXPECT_EQ(from_sample(quad),
+    Parts quadratic = sample();
+    quadratic.quadratic.terms[0].coefficient = std::nextafter(0.5, kInfinity);
+    EXPECT_EQ(from_sample(quadratic),
               "function 2: quadratic term 0: coefficient 0.5 against 0.5000000000000001");
     Parts weight = sample();
     weight.objectives[0].weight = std::nextafter(2.0, kInfinity);
@@ -236,23 +236,23 @@ TEST(CompareTest, Order)
     n.variables[0].upper = 1.0;
     n.variables.push_back(n.variables[0]);
     EXPECT_EQ(from_sample(n), "variable count 3 against 4");
-    Parts fun = sample();
-    fun.constants[0] = 2.0;
-    fun.terms[0] = LinearTerm{.variable = 1, .coefficient = 2.0};
-    EXPECT_EQ(from_sample(fun), "function 0: constant 1.5 against 2");
-    EXPECT_EQ(difference(built(fun), built(sample())), "function 0: constant 2 against 1.5");
+    Parts function = sample();
+    function.constants[0] = 2.0;
+    function.terms[0] = LinearTerm{.variable = 1, .coefficient = 2.0};
+    EXPECT_EQ(from_sample(function), "function 0: constant 1.5 against 2");
+    EXPECT_EQ(difference(built(function), built(sample())), "function 0: constant 2 against 1.5");
     Parts linear = sample();
     linear.terms[1].coefficient = -2.0;
     linear.quadratic.terms[2].coefficient = 2.5;
     EXPECT_EQ(from_sample(linear), "function 0: term 1: coefficient -1 against -2");
-    Parts quad = sample();
-    quad.constants[2] = 0.2;
-    quad.quadratic.terms[0].coefficient = 1.0;
-    EXPECT_EQ(from_sample(quad), "function 2: constant 0.1 against 0.2");
-    Parts obj = sample();
-    obj.constraints[2].upper = 4.0;
-    obj.objectives[0].weight = 3.0;
-    EXPECT_EQ(from_sample(obj), "constraint 2: upper bound 3 against 4");
+    Parts quadratic = sample();
+    quadratic.constants[2] = 0.2;
+    quadratic.quadratic.terms[0].coefficient = 1.0;
+    EXPECT_EQ(from_sample(quadratic), "function 2: constant 0.1 against 0.2");
+    Parts objective = sample();
+    objective.constraints[2].upper = 4.0;
+    objective.objectives[0].weight = 3.0;
+    EXPECT_EQ(from_sample(objective), "constraint 2: upper bound 3 against 4");
     Parts first = sample();
     first.name = "other";
     first.variables.push_back(first.variables[0]);
@@ -265,21 +265,21 @@ TEST(CompareTest, Order)
 
 TEST(CompareTest, FieldOrder)
 {
-    Parts knd = sample();
-    knd.variables[1].kind = VariableKind::Integer;
-    knd.variables[1].lower = 0.5;
-    EXPECT_EQ(from_sample(knd), "variable 1: kind 2 against 3");
-    Parts bnds = sample();
-    bnds.variables[0].lower = -1.0;
-    bnds.variables[0].upper = 3.0;
-    EXPECT_EQ(from_sample(bnds), "variable 0: lower bound -0 against -1");
+    Parts kind = sample();
+    kind.variables[1].kind = VariableKind::Integer;
+    kind.variables[1].lower = 0.5;
+    EXPECT_EQ(from_sample(kind), "variable 1: kind 2 against 3");
+    Parts bounds = sample();
+    bounds.variables[0].lower = -1.0;
+    bounds.variables[0].upper = 3.0;
+    EXPECT_EQ(from_sample(bounds), "variable 0: lower bound -0 against -1");
     Parts term = sample();
     term.terms[0] = LinearTerm{.variable = 1, .coefficient = 3.0};
     EXPECT_EQ(from_sample(term), "function 0: term 0: variable 0 against 1");
-    Parts fun = sample();
-    fun.constraints[0].function = 1;
-    fun.constraints[0].lower = -2.0;
-    EXPECT_EQ(from_sample(fun), "constraint 0: function 0 against 1");
+    Parts function = sample();
+    function.constraints[0].function = 1;
+    function.constraints[0].lower = -2.0;
+    EXPECT_EQ(from_sample(function), "constraint 0: function 0 against 1");
     Parts range = sample();
     range.constraints[1].lower = -1.0;
     range.constraints[1].upper = 5.0;
@@ -314,8 +314,8 @@ TEST(CompareTest, FieldOrder)
 TEST(CompareTest, ObjectiveOrder)
 {
     Parts changed = sample();
-    Objective &obj = changed.objectives[0];
-    obj = Objective{
+    Objective &objective = changed.objectives[0];
+    objective = Objective{
         .function = 1,
         .sense = Sense::Minimize,
         .priority = 5,
@@ -324,16 +324,16 @@ TEST(CompareTest, ObjectiveOrder)
         .relative = 1.0,
     };
     EXPECT_EQ(from_sample(changed), "objective 0: function 2 against 1");
-    obj.function = 2;
+    objective.function = 2;
     EXPECT_EQ(from_sample(changed), "objective 0: sense 2 against 1");
-    obj.sense = Sense::Maximize;
+    objective.sense = Sense::Maximize;
     EXPECT_EQ(from_sample(changed), "objective 0: priority 1 against 5");
-    obj.priority = 1;
+    objective.priority = 1;
     EXPECT_EQ(from_sample(changed), "objective 0: weight 2 against 3");
-    obj.weight = 2.0;
+    objective.weight = 2.0;
     EXPECT_EQ(from_sample(changed), "objective 0: absolute tolerance 0.5 against 1");
-    obj.absolute = 0.5;
+    objective.absolute = 0.5;
     EXPECT_EQ(from_sample(changed), "objective 0: relative tolerance 0 against 1");
-    obj.relative = 0.0;
+    objective.relative = 0.0;
     EXPECT_EQ(from_sample(changed), "");
 }
