@@ -275,13 +275,6 @@ BIYOS_API BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,
                                            BIYOS_offset *off,
                                            BIYOS_index *funidx,
                                            BIYOS_real *coef);
-BIYOS_API BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl,
-                                          BIYOS_index n,
-                                          const BIYOS_index *funidx,
-                                          const BIYOS_offset *off,
-                                          const BIYOS_index *varidx1,
-                                          const BIYOS_index *varidx2,
-                                          const BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_addquadtermsp(BIYOS_model *mdl,
                                            BIYOS_offset nnz,
                                            const BIYOS_index *funidx,

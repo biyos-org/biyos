@@ -770,51 +770,6 @@ class Model:
         found, values = self._terms("clinterm", Variables, every, 1)
         return found[0], found[1], values
 
-    def addquadterms(
-        self,
-        funidx: Sequence[int | Function] | Functions,
-        off: Sequence[int],
-        varidx1: Sequence[int | Variable] | Variables,
-        varidx2: Sequence[int | Variable] | Variables,
-        coef: Sequence[float],
-    ) -> None:
-        """Add quadratic terms to functions of the model.
-
-        Function ``funidx[j]`` gains the terms from ``off[j]`` to
-        ``off[j + 1] - 1``. Term ``k`` adds ``coef[k]`` times the
-        product of variables ``varidx1[k]`` and ``varidx2[k]``, with no factor
-        1/2. The two variables of a pair may come in either order. A pair
-        the function holds already adds its coefficient to the one held.
-
-        Parameters
-        ----------
-        funidx
-            The functions that gain terms, each listed once.
-        off
-            The ``len(funidx) + 1`` offsets of the functions' terms in
-            ``varidx1``, ``varidx2`` and ``coef``, from 0 and never
-            decreasing.
-        varidx1, varidx2
-            The two variables of each term, ``off[-1]`` of each.
-        coef
-            The coefficient of each term, ``off[-1]`` of them.
-
-        See Also
-        --------
-        BIYOS_addquadterms
-        """
-        count = len(funidx)
-        starts = offsets("off", off, count + 1)
-        size = _total(starts, count)
-        arrays = (
-            indices_of(self, Functions, "funidx", funidx, count),
-            starts,
-            indices_of(self, Variables, "varidx1", varidx1, size),
-            indices_of(self, Variables, "varidx2", varidx2, size),
-            doubles("coef", coef, size),
-        )
-        self._call(lib.BIYOS_addquadterms, count, *arrays)
-
     def addquadterm(
         self,
         funidx: Sequence[int | Function] | Functions,

@@ -142,8 +142,6 @@ def _declare_terms(
 
 def _declare_quadratic(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     offsets = POINTER(c_int64)
-    add = (c_void_p, c_int32, ints, offsets, ints, ints, doubles)
-    _declare(lib, "BIYOS_addquadterms", c_int, *add)
     coordinates = (c_void_p, c_int64, ints, ints, ints, doubles)
     _declare(lib, "BIYOS_addquadtermsp", c_int, *coordinates)
     ranged = (c_void_p, c_int32, c_int32, offsets, ints, ints, doubles)

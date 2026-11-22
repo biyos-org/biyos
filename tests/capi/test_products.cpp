@@ -290,6 +290,10 @@ TEST(ProductTest, Refusals)
         "invalid argument: function 0: variable " + std::to_string(variables) + " is unknown";
     expect_kept(env, model, add_listed, outside, missing);
     expect_kept(env, model, add_ranged, outside, missing);
+    const Added swapped{.functions = {0}, .rows = {variables}, .columns = {0}, .values = {1.0}};
+    expect_kept(env, model, add_listed, swapped, missing);
+    const Added negative{.functions = {-1}, .rows = {0}, .columns = {0}, .values = {1.0}};
+    expect_kept(env, model, add_listed, negative, "invalid argument: function -1: unknown");
     const Added wrong{.functions = {0}, .rows = {0}, .columns = {0}, .values = {nan}};
     expect_kept(env,
                 model,
@@ -317,6 +321,8 @@ TEST(ProductTest, Arguments)
     const std::array<BIYOS_index, 1> zero{0};
     const std::array<double, 1> one{1.0};
     const std::array<BIYOS_offset, 3> backwards{0, 1, 0};
+    const std::array<BIYOS_offset, 2> late{1, 1};
+    const std::array<BIYOS_offset, 2> negative{0, -1};
     EXPECT_EQ(BIYOS_addquadtermsp(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': -1 is negative");
     EXPECT_EQ(BIYOS_addquadtermsp(held, 1, nullptr, zero.data(), zero.data(), one.data()),
@@ -325,6 +331,15 @@ TEST(ProductTest, Arguments)
     EXPECT_EQ(BIYOS_addquadtermsp(held, 1, zero.data(), zero.data(), nullptr, one.data()),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'varidx2': is null");
+    EXPECT_EQ(BIYOS_addquadtermsp(held, 1, zero.data(), nullptr, zero.data(), one.data()),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx1': is null");
+    EXPECT_EQ(BIYOS_addquadtermsp(held, 1, zero.data(), zero.data(), zero.data(), nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
+    EXPECT_EQ(BIYOS_addquadtermrg(held, 0, -1, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     EXPECT_EQ(BIYOS_addquadtermrg(held, 0, functions + 1, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(),
@@ -333,6 +348,13 @@ TEST(ProductTest, Arguments)
         BIYOS_addquadtermrg(held, 0, 2, backwards.data(), zero.data(), zero.data(), one.data()),
         BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 1 to 0 at entry 2");
+    EXPECT_EQ(BIYOS_addquadtermrg(held, 0, 1, late.data(), zero.data(), zero.data(), one.data()),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'off': begins at 1, not 0");
+    EXPECT_EQ(
+        BIYOS_addquadtermrg(held, 0, 1, negative.data(), zero.data(), zero.data(), one.data()),
+        BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 0 to -1 at entry 1");
     EXPECT_EQ(BIYOS_addquadtermsp(held, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addquadtermrg(held, 0, functions, nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);
