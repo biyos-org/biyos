@@ -3,6 +3,7 @@ from pathlib import Path
 
 DEFINE = re.compile(r"^#define (BIYOS_\w+) \(?(-?\d+)\)?$", re.M)
 STATEMENT = re.compile(r"^(?:BIYOS_API|typedef) [^;]*;", re.M)
+STRUCT = re.compile(r"^typedef struct (BIYOS_\w+)\n\{[^}]*\} \1;", re.M)
 NAME = re.compile(r"\(?\*?(BIYOS_\w+)\)?\s*(?:\(|;)")
 PREFIX = "BIYOS_API "
 WIDTH = 76
@@ -45,4 +46,6 @@ def read(include):
             name = _named(match.group())
             if name:
                 declarations[name] = _shown(match.group())
+        for match in STRUCT.finditer(text):
+            declarations[match.group(1)] = match.group()
     return values, declarations
