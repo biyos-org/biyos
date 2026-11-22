@@ -135,20 +135,20 @@ BIYOS_status BIYOS_addcon(BIYOS_model *mdl,
     return guarded<add_cons>(mdl, n, funidx, lb, ub, beg);
 }
 
-BIYOS_status BIYOS_setconbnd(BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             const BIYOS_real *lb,
-                             const BIYOS_real *ub)
+BIYOS_status BIYOS_setconbndsp(BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               const BIYOS_real *lb,
+                               const BIYOS_real *ub)
 {
     return guarded<set_bnds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_getconbnd(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             BIYOS_real *lb,
-                             BIYOS_real *ub)
+BIYOS_status BIYOS_getconbndsp(const BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               BIYOS_real *lb,
+                               BIYOS_real *ub)
 {
     return guarded<get_bnds>(mdl, n, idx, lb, ub);
 }

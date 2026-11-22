@@ -212,36 +212,36 @@ BIYOS_status BIYOS_addvar(BIYOS_model *mdl,
     return guarded<add_vars>(mdl, n, knd, lb, ub, beg);
 }
 
-BIYOS_status BIYOS_setvarbnd(BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             const BIYOS_real *lb,
-                             const BIYOS_real *ub)
+BIYOS_status BIYOS_setvarbndsp(BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               const BIYOS_real *lb,
+                               const BIYOS_real *ub)
 {
     return guarded<set_bnds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_getvarbnd(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             BIYOS_real *lb,
-                             BIYOS_real *ub)
+BIYOS_status BIYOS_getvarbndsp(const BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               BIYOS_real *lb,
+                               BIYOS_real *ub)
 {
     return guarded<get_bnds>(mdl, n, idx, lb, ub);
 }
 
-BIYOS_status BIYOS_setvarknd(BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             const BIYOS_int *knd)
+BIYOS_status BIYOS_setvarkndsp(BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               const BIYOS_int *knd)
 {
     return guarded<set_kinds>(mdl, n, idx, knd);
 }
 
-BIYOS_status BIYOS_getvarknd(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             BIYOS_int *knd)
+BIYOS_status BIYOS_getvarkndsp(const BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               BIYOS_int *knd)
 {
     return guarded<get_kinds>(mdl, n, idx, knd);
 }

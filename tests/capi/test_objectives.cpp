@@ -97,7 +97,7 @@ void add_sample(const Model &mdl)
     const BIYOS_index idx[] = {0, 1, 2};
     const double *atol = kSample.absolute.data();
     const double *rtol = kSample.relative.data();
-    ASSERT_EQ(BIYOS_setobjtol(mdl.get(), 3, idx, atol, rtol), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtolsp(mdl.get(), 3, idx, atol, rtol), BIYOS_OK);
 }
 
 int n_objs(const Model &mdl)
@@ -128,7 +128,7 @@ Records read_range(const Model &mdl, int beg, int n)
     std::vector<BIYOS_index> idx(size);
     std::iota(idx.begin(), idx.end(), beg);
     const BIYOS_status status =
-        BIYOS_getobjtol(mdl.get(), n, idx.data(), read.absolute.data(), read.relative.data());
+        BIYOS_getobjtolsp(mdl.get(), n, idx.data(), read.absolute.data(), read.relative.data());
     EXPECT_EQ(status, BIYOS_OK);
     return read;
 }
@@ -173,11 +173,11 @@ Records read_listed(const Model &mdl, const std::vector<BIYOS_index> &idx)
     };
     const BIYOS_model *held = mdl.get();
     const BIYOS_index *listed = idx.data();
-    EXPECT_EQ(BIYOS_getobjsense(held, n, listed, read.senses.data()), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getobjprio(held, n, listed, read.priorities.data()), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getobjcoef(held, n, listed, read.weights.data()), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjsensesp(held, n, listed, read.senses.data()), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjpriosp(held, n, listed, read.priorities.data()), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjcoefsp(held, n, listed, read.weights.data()), BIYOS_OK);
     const BIYOS_status status =
-        BIYOS_getobjtol(held, n, listed, read.absolute.data(), read.relative.data());
+        BIYOS_getobjtolsp(held, n, listed, read.absolute.data(), read.relative.data());
     EXPECT_EQ(status, BIYOS_OK);
     return read;
 }
@@ -206,13 +206,13 @@ void expect_refused(const Env &env,
     int ints[] = {-9, -9};
     double reals[] = {-9.0, -9.0};
     double others[] = {-9.0, -9.0};
-    EXPECT_EQ(BIYOS_getobjsense(mdl, n, idx, ints), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getobjsensesp(mdl, n, idx, ints), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), msg);
-    EXPECT_EQ(BIYOS_getobjprio(mdl, n, idx, ints), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getobjpriosp(mdl, n, idx, ints), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), msg);
-    EXPECT_EQ(BIYOS_getobjcoef(mdl, n, idx, reals), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getobjcoefsp(mdl, n, idx, reals), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), msg);
-    EXPECT_EQ(BIYOS_getobjtol(mdl, n, idx, reals, others), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getobjtolsp(mdl, n, idx, reals, others), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), msg);
     EXPECT_EQ(std::vector<int>({ints[0], ints[1]}), std::vector<int>(2, -9));
     const std::vector<double> written{reals[0], reals[1], others[0], others[1]};
@@ -260,16 +260,16 @@ void change(const BIYOS_event *, void *data)
     const BIYOS_int sense = BIYOS_MAXIMIZE;
     BIYOS_index n = 0;
     note(attempt, add_with(mdl, 1, &idx, {}));
-    note(attempt, BIYOS_setobjsense(mdl, 1, &idx, &sense));
-    note(attempt, BIYOS_setobjprio(mdl, 1, &idx, &idx));
-    note(attempt, BIYOS_setobjcoef(mdl, 1, &idx, &weight));
-    note(attempt, BIYOS_setobjtol(mdl, 1, &idx, &weight, &weight));
+    note(attempt, BIYOS_setobjsensesp(mdl, 1, &idx, &sense));
+    note(attempt, BIYOS_setobjpriosp(mdl, 1, &idx, &idx));
+    note(attempt, BIYOS_setobjcoefsp(mdl, 1, &idx, &weight));
+    note(attempt, BIYOS_setobjtolsp(mdl, 1, &idx, &weight, &weight));
     note(attempt, BIYOS_getnobj(mdl, &n));
     note(attempt, get_with(mdl, 0, 1, {}));
-    note(attempt, BIYOS_getobjsense(mdl, 1, &idx, nullptr));
-    note(attempt, BIYOS_getobjprio(mdl, 1, &idx, nullptr));
-    note(attempt, BIYOS_getobjcoef(mdl, 1, &idx, nullptr));
-    note(attempt, BIYOS_getobjtol(mdl, 1, &idx, nullptr, nullptr));
+    note(attempt, BIYOS_getobjsensesp(mdl, 1, &idx, nullptr));
+    note(attempt, BIYOS_getobjpriosp(mdl, 1, &idx, nullptr));
+    note(attempt, BIYOS_getobjcoefsp(mdl, 1, &idx, nullptr));
+    note(attempt, BIYOS_getobjtolsp(mdl, 1, &idx, nullptr, nullptr));
 }
 
 }
@@ -359,12 +359,12 @@ TEST(CApiTest, NullSetters)
     const double weights[] = {4.0, 8.0};
     const double absolute[] = {kInfinity, 0.125};
     const double relative[] = {1.0, 0.75};
-    EXPECT_EQ(BIYOS_setobjsense(held, 2, idx, senses), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setobjprio(held, 2, idx, priorities), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setobjcoef(held, 1, idx, weights), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setobjtol(held, 2, idx, absolute, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setobjtol(held, 1, idx, nullptr, relative), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setobjtol(held, 2, idx, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjsensesp(held, 2, idx, senses), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjpriosp(held, 2, idx, priorities), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjcoefsp(held, 1, idx, weights), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjtolsp(held, 2, idx, absolute, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjtolsp(held, 1, idx, nullptr, relative), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjtolsp(held, 2, idx, nullptr, nullptr), BIYOS_OK);
     const Records wanted{
         .functions = kSample.functions,
         .senses = {BIYOS_MINIMIZE, BIYOS_MINIMIZE, BIYOS_MAXIMIZE},
@@ -374,9 +374,9 @@ TEST(CApiTest, NullSetters)
         .relative = {0.25, 0.0, 1.0},
     };
     expect_records(read_all(mdl), wanted);
-    EXPECT_EQ(BIYOS_setobjsense(held, 2, nullptr, senses), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjsensesp(held, 2, nullptr, senses), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
-    EXPECT_EQ(BIYOS_setobjprio(held, 0, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setobjpriosp(held, 0, nullptr, nullptr), BIYOS_OK);
     expect_records(read_all(mdl), wanted);
 }
 
@@ -388,8 +388,8 @@ TEST(CApiTest, RepeatedObjective)
     const int idx[] = {1, 1};
     const int senses[] = {BIYOS_MINIMIZE, BIYOS_MAXIMIZE};
     const double weights[] = {2.0, 3.0};
-    ASSERT_EQ(BIYOS_setobjsense(mdl.get(), 2, idx, senses), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjcoef(mdl.get(), 2, idx, weights), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjsensesp(mdl.get(), 2, idx, senses), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjcoefsp(mdl.get(), 2, idx, weights), BIYOS_OK);
     Records wanted = kSample;
     wanted.senses[1] = BIYOS_MAXIMIZE;
     wanted.weights[1] = 3.0;
@@ -447,14 +447,14 @@ TEST(CApiTest, RefusedObjectives)
     EXPECT_EQ(add_with(held, -1, nullptr, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     const BIYOS_index unknown = 3;
-    EXPECT_EQ(BIYOS_setobjcoef(held, 1, &unknown, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjcoefsp(held, 1, &unknown, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
     const BIYOS_index zero = 0;
-    EXPECT_EQ(BIYOS_setobjsense(held, 1, &zero, &zero), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjsensesp(held, 1, &zero, &zero), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: sense 0 is unknown");
-    EXPECT_EQ(BIYOS_setobjtol(held, 1, &zero, nullptr, &negative), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjtolsp(held, 1, &zero, nullptr, &negative), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: relative tolerance -1 is negative");
-    EXPECT_EQ(BIYOS_setobjcoef(held, 1, &zero, &kInfinity), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjcoefsp(held, 1, &zero, &kInfinity), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: weight is infinity");
     EXPECT_EQ(get_with(held, 2, 2, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
@@ -518,10 +518,10 @@ TEST(CApiTest, ObjectiveSetters)
     const double coef[] = {2.0, 4.0, 8.0};
     const double atol[] = {0.5, kInfinity, 1.0};
     const double rtol[] = {0.125, 0.25, 0.0};
-    ASSERT_EQ(BIYOS_setobjsense(held, 3, idx, sense), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjprio(held, 3, idx, prio), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjcoef(held, 3, idx, coef), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjtol(held, 3, idx, atol, rtol), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjsensesp(held, 3, idx, sense), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjpriosp(held, 3, idx, prio), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjcoefsp(held, 3, idx, coef), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtolsp(held, 3, idx, atol, rtol), BIYOS_OK);
     const Records listed{
         .functions = {},
         .senses = {BIYOS_MAXIMIZE, BIYOS_MAXIMIZE, BIYOS_MAXIMIZE},
@@ -531,12 +531,12 @@ TEST(CApiTest, ObjectiveSetters)
         .relative = {0.0, 0.25, 0.0},
     };
     expect_records(read_listed(mdl, {2, 0, 2}), listed);
-    ASSERT_EQ(BIYOS_setobjsense(held, 3, idx, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjprio(held, 3, idx, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjcoef(held, 3, idx, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjtol(held, 3, idx, nullptr, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjtol(held, 1, idx, atol, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjtol(held, 0, nullptr, atol, rtol), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjsensesp(held, 3, idx, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjpriosp(held, 3, idx, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjcoefsp(held, 3, idx, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtolsp(held, 3, idx, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtolsp(held, 1, idx, atol, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtolsp(held, 0, nullptr, atol, rtol), BIYOS_OK);
     const Records wanted{
         .functions = kSample.functions,
         .senses = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE, BIYOS_MAXIMIZE},
@@ -559,18 +559,18 @@ TEST(CApiTest, ObjectiveNulls)
     double atol[] = {-9.0, -9.0};
     double rtol[] = {-9.0, -9.0};
     int found[] = {-9, -9};
-    EXPECT_EQ(BIYOS_getobjsense(held, 2, idx, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getobjprio(held, 2, idx, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getobjcoef(held, 2, idx, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getobjtol(held, 2, idx, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getobjtol(held, 2, idx, atol, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getobjtol(held, 1, idx, nullptr, rtol), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjsensesp(held, 2, idx, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjpriosp(held, 2, idx, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjcoefsp(held, 2, idx, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjtolsp(held, 2, idx, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjtolsp(held, 2, idx, atol, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjtolsp(held, 1, idx, nullptr, rtol), BIYOS_OK);
     EXPECT_EQ(bits_of({atol[0], atol[1]}), bits_of({1.5, kInfinity}));
     EXPECT_EQ(bits_of({rtol[0], rtol[1]}), bits_of({0.0, -9.0}));
-    EXPECT_EQ(BIYOS_getobjsense(held, 0, nullptr, found), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getobjprio(held, 0, nullptr, found), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getobjcoef(held, 0, nullptr, atol), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getobjtol(held, 0, nullptr, atol, rtol), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjsensesp(held, 0, nullptr, found), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjpriosp(held, 0, nullptr, found), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjcoefsp(held, 0, nullptr, atol), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getobjtolsp(held, 0, nullptr, atol, rtol), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({found[0], found[1]}), std::vector<int>(2, -9));
     EXPECT_EQ(bits_of({atol[0], rtol[0]}), bits_of({1.5, 0.0}));
     EXPECT_EQ(env.message(), "");
@@ -594,23 +594,23 @@ TEST(CApiTest, ObjectiveRefusals)
     const double coef[] = {2.0, -1.0};
     const double atol[] = {0.5, -1.0};
     const double rtol[] = {0.5, kNan};
-    EXPECT_EQ(BIYOS_setobjsense(held, 2, beyond, sense), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjsensesp(held, 2, beyond, sense), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
-    EXPECT_EQ(BIYOS_setobjprio(held, 2, negative, prio), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjpriosp(held, 2, negative, prio), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective -1: unknown");
-    EXPECT_EQ(BIYOS_setobjcoef(held, -1, idx, coef), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjcoefsp(held, -1, idx, coef), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
-    EXPECT_EQ(BIYOS_setobjtol(held, 1, nullptr, atol, rtol), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjtolsp(held, 1, nullptr, atol, rtol), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
-    EXPECT_EQ(BIYOS_setobjsense(held, 2, idx, sense), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjsensesp(held, 2, idx, sense), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: sense 0 is unknown");
-    EXPECT_EQ(BIYOS_setobjcoef(held, 2, idx, coef), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjcoefsp(held, 2, idx, coef), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: weight -1 is not positive");
-    EXPECT_EQ(BIYOS_setobjcoef(held, 1, idx, &kInfinity), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjcoefsp(held, 1, idx, &kInfinity), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 1: weight is infinity");
-    EXPECT_EQ(BIYOS_setobjtol(held, 2, idx, atol, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjtolsp(held, 2, idx, atol, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: absolute tolerance -1 is negative");
-    EXPECT_EQ(BIYOS_setobjtol(held, 2, idx, nullptr, rtol), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setobjtolsp(held, 2, idx, nullptr, rtol), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: relative tolerance is NaN");
     expect_records(read_all(mdl), kSample);
 }
@@ -628,7 +628,7 @@ TEST(CApiTest, NewTolerances)
     const BIYOS_index idx[] = {1, 0};
     const double atol[] = {0.5, kInfinity};
     const double rtol[] = {0.25, 0.0};
-    ASSERT_EQ(BIYOS_setobjtol(mdl.get(), 2, idx, atol, rtol), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtolsp(mdl.get(), 2, idx, atol, rtol), BIYOS_OK);
     Records wanted = defaults({0, 0});
     wanted.absolute = {kInfinity, 0.5};
     wanted.relative = {0.0, 0.25};

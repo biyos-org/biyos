@@ -52,7 +52,7 @@ A bound may be `INFINITY` or `-INFINITY` from `<math.h>`, which leaves that side
 
 A null `knd` makes every new variable continuous, and a null `lb` or `ub` gives each the widest bound of its kind. The last argument, here `NULL`, can receive the index of the first new variable, which is the number of variables held before the call; the new variables follow it in order. Every call that adds items ends with this argument.
 
-`BIYOS_setvarbnd` and `BIYOS_setvarknd` change variables already added. They take a list of indices, in which a variable may appear more than once: its entries apply in order and the last one wins. A variable that becomes binary must already have bounds inside $[0, 1]$, so set such bounds first. `BIYOS_getvarbnd` and `BIYOS_getvarknd` read them back (@sec-model-reading).
+`BIYOS_setvarbndsp` and `BIYOS_setvarkndsp` change variables already added. They take a list of indices, in which a variable may appear more than once: its entries apply in order and the last one wins. A variable that becomes binary must already have bounds inside $[0, 1]$, so set such bounds first. `BIYOS_getvarbndsp` and `BIYOS_getvarkndsp` read them back (@sec-model-reading).
 
 ## Functions {#sec-model-functions}
 
@@ -91,11 +91,11 @@ A constraint $l \le f(x) \le u$ bounds one function of the table. `BIYOS_addcon`
 ```{.c file="examples/c/model.c" item="constraints"}
 ```
 
-Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A constraint whose bounds are both infinite is free. The bounds follow the rule of a continuous variable's: an infinite bound leaves its side open, and a lower bound of `INFINITY`, an upper bound of `-INFINITY` and NaN are refused. A null `lb` or `ub` leaves that side of every new constraint unbounded. `BIYOS_setconbnd` changes the bounds and keeps the function, and `BIYOS_getconbnd` reads the bounds of a list of constraints.
+Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A constraint whose bounds are both infinite is free. The bounds follow the rule of a continuous variable's: an infinite bound leaves its side open, and a lower bound of `INFINITY`, an upper bound of `-INFINITY` and NaN are refused. A null `lb` or `ub` leaves that side of every new constraint unbounded. `BIYOS_setconbndsp` changes the bounds and keeps the function, and `BIYOS_getconbndsp` reads the bounds of a list of constraints.
 
 ## Objectives {#sec-model-objectives}
 
-An objective names a function to minimize or maximize, with a priority, a weight and two tolerances. `BIYOS_addobj` takes what defines it, the function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds. Its tolerances are 0 until `BIYOS_setobjtol` sets them, as here for objective 0:
+An objective names a function to minimize or maximize, with a priority, a weight and two tolerances. `BIYOS_addobj` takes what defines it, the function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds. Its tolerances are 0 until `BIYOS_setobjtolsp` sets them, as here for objective 0:
 
 ```{.c file="examples/c/model.c" item="objectives"}
 ```
@@ -110,7 +110,7 @@ where $P$ holds the objectives of that priority and $w_i$ is the weight of objec
 
 A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. A null `sense` minimizes every new objective, a null `coef` gives each the weight 1, and a null `prio` gives each objective its own index as its priority. So by default the objectives are optimized one after another in the order they are added, which is what this model asks for explicitly.
 
-`BIYOS_setobjsense`, `BIYOS_setobjprio`, `BIYOS_setobjcoef` and `BIYOS_setobjtol` change one attribute of a list of objectives each, and `BIYOS_getobjsense`, `BIYOS_getobjprio`, `BIYOS_getobjcoef` and `BIYOS_getobjtol` read it back with the same arguments. `BIYOS_getobjs` reads back what `BIYOS_addobj` takes, so a model is read whole with it and `BIYOS_getobjtol`.
+`BIYOS_setobjsensesp`, `BIYOS_setobjpriosp`, `BIYOS_setobjcoefsp` and `BIYOS_setobjtolsp` change one attribute of a list of objectives each, and `BIYOS_getobjsensesp`, `BIYOS_getobjpriosp`, `BIYOS_getobjcoefsp` and `BIYOS_getobjtolsp` read it back with the same arguments. `BIYOS_getobjs` reads back what `BIYOS_addobj` takes, so a model is read whole with it and `BIYOS_getobjtolsp`.
 
 ::: {.callout-note}
 ## Stored, not yet solved
@@ -126,7 +126,7 @@ Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvars`, `BIY
 
 Called with a size of 0 and null arrays, such a reader only reports `nnz`, so a caller can learn the size, allocate, and call again.
 
-A family reader reads a range. Every setter of an attribute has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items, such as `{0, 4, 10, 12}`, is read in one call: `BIYOS_getvarbnd` reads what `BIYOS_setvarbnd` sets. An item may appear in the list more than once, and a null output is skipped.
+A family reader reads a range. Every setter of an attribute has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items, such as `{0, 4, 10, 12}`, is read in one call: `BIYOS_getvarbndsp` reads what `BIYOS_setvarbndsp` sets. An item may appear in the list more than once, and a null output is skipped.
 
 ## Names {#sec-model-names}
 
@@ -134,7 +134,7 @@ The model and each variable, function, constraint and objective may have a name,
 
 Names match byte for byte, so two names that differ only in case or in Unicode normalization are different names. An item has no name until one is set, and while it has none it reads as an empty string in C and as `None` in Python. A copy of the model holds the same names.
 
-`BIYOS_setmdlname`, `BIYOS_getmdlname` and `BIYOS_delmdlname` set, read and remove the name of the model. Each family takes four calls, named after its short form, `var`, `fun`, `con` or `obj`: `BIYOS_setvarname` names a list of variables, `BIYOS_getvarname` reads the names of a list, `BIYOS_getvaridx` looks up a list of names, and `BIYOS_delvarname` leaves the variables of a list without a name. The setter and the reader take the same arguments, so any list of items is named or read in one call. As in the other setters, an item listed more than once takes its last entry.
+`BIYOS_setmdlname`, `BIYOS_getmdlname` and `BIYOS_delmdlname` set, read and remove the name of the model. Each family takes four calls, named after its short form, `var`, `fun`, `con` or `obj`: `BIYOS_setvarnamesp` names a list of variables, `BIYOS_getvarnamesp` reads the names of a list, `BIYOS_getvaridx` looks up a list of names, and `BIYOS_delvarnamesp` leaves the variables of a list without a name. The setter and the reader take the same arguments, so any list of items is named or read in one call. As in the other setters, an item listed more than once takes its last entry.
 
 Names may repeat. Setting a name checks no uniqueness, so several items of a family may hold the same name, while each family keeps its names apart from the others. A lookup never chooses among the holders of a name: `BIYOS_getvaridx` gives the index of the variable that alone holds a name, and refuses a name that no variable holds or that several hold, counting them, as in `invalid argument: variable 'x': names 3 variables`. So a lookup never returns an item the caller did not mean, and it succeeds again once the other holders are renamed or lose their names.
 

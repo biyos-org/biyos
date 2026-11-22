@@ -160,7 +160,7 @@ static BIYOS_status use_constraints(BIYOS_model *model)
     BIYOS_index first = -1;
     BIYOS_index constraints = 0;
     if (BIYOS_addcon(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
-        BIYOS_setconbnd(model, 1, indices, NULL, lower) != BIYOS_OK ||
+        BIYOS_setconbndsp(model, 1, indices, NULL, lower) != BIYOS_OK ||
         BIYOS_getncon(model, &constraints) != BIYOS_OK || constraints != 2 ||
         BIYOS_getcons(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1)
     {
@@ -182,15 +182,15 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     BIYOS_status status = BIYOS_addobj(model, 2, functions, senses, NULL, NULL, &first);
     if (status == BIYOS_OK)
     {
-        status = BIYOS_setobjcoef(model, 1, indices, weights);
+        status = BIYOS_setobjcoefsp(model, 1, indices, weights);
     }
     if (status == BIYOS_OK)
     {
-        status = BIYOS_setobjprio(model, 1, indices, indices);
+        status = BIYOS_setobjpriosp(model, 1, indices, indices);
     }
     if (status == BIYOS_OK)
     {
-        status = BIYOS_getobjprio(model, 1, indices, priorities);
+        status = BIYOS_getobjpriosp(model, 1, indices, priorities);
     }
     if (status == BIYOS_OK && priorities[0] != 1)
     {
@@ -222,10 +222,10 @@ static BIYOS_status set_names(BIYOS_model *model)
     const BIYOS_index idx[2] = {1, 0};
     const char *name[2] = {"y", "x"};
     if (BIYOS_setmdlname(model, "header") != BIYOS_OK ||
-        BIYOS_setvarname(model, 2, idx, name) != BIYOS_OK ||
-        BIYOS_setfunname(model, 1, idx, name) != BIYOS_OK ||
-        BIYOS_setconname(model, 2, idx, name) != BIYOS_OK ||
-        BIYOS_setobjname(model, 1, idx + 1, name + 1) != BIYOS_OK)
+        BIYOS_setvarnamesp(model, 2, idx, name) != BIYOS_OK ||
+        BIYOS_setfunnamesp(model, 1, idx, name) != BIYOS_OK ||
+        BIYOS_setconnamesp(model, 2, idx, name) != BIYOS_OK ||
+        BIYOS_setobjnamesp(model, 1, idx + 1, name + 1) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -242,10 +242,10 @@ static BIYOS_status get_names(const BIYOS_model *model)
     const char *constraint = NULL;
     const char *objective = NULL;
     if (BIYOS_getmdlname(model, &title) != BIYOS_OK ||
-        BIYOS_getvarname(model, 2, both, variables) != BIYOS_OK ||
-        BIYOS_getfunname(model, 1, both, &function) != BIYOS_OK ||
-        BIYOS_getconname(model, 1, both, &constraint) != BIYOS_OK ||
-        BIYOS_getobjname(model, 1, first, &objective) != BIYOS_OK)
+        BIYOS_getvarnamesp(model, 2, both, variables) != BIYOS_OK ||
+        BIYOS_getfunnamesp(model, 1, both, &function) != BIYOS_OK ||
+        BIYOS_getconnamesp(model, 1, both, &constraint) != BIYOS_OK ||
+        BIYOS_getobjnamesp(model, 1, first, &objective) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -281,14 +281,14 @@ static BIYOS_status del_names(BIYOS_model *model)
     const BIYOS_index idx[1] = {1};
     const char *variable = NULL;
     const char *title = NULL;
-    if (BIYOS_delvarname(model, 1, idx) != BIYOS_OK ||
-        BIYOS_delfunname(model, 1, idx) != BIYOS_OK ||
-        BIYOS_delconname(model, 1, idx) != BIYOS_OK ||
-        BIYOS_delobjname(model, 0, NULL) != BIYOS_OK || BIYOS_delmdlname(model) != BIYOS_OK)
+    if (BIYOS_delvarnamesp(model, 1, idx) != BIYOS_OK ||
+        BIYOS_delfunnamesp(model, 1, idx) != BIYOS_OK ||
+        BIYOS_delconnamesp(model, 1, idx) != BIYOS_OK ||
+        BIYOS_delobjnamesp(model, 0, NULL) != BIYOS_OK || BIYOS_delmdlname(model) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_getvarname(model, 1, idx, &variable) != BIYOS_OK || !matches(variable, "") ||
+    if (BIYOS_getvarnamesp(model, 1, idx, &variable) != BIYOS_OK || !matches(variable, "") ||
         BIYOS_getmdlname(model, &title) != BIYOS_OK || !matches(title, ""))
     {
         return BIYOS_ERR_INTERNAL;
@@ -330,21 +330,21 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
     BIYOS_status status = BIYOS_OK;
     if (BIYOS_getnvar(model, &count) != BIYOS_OK ||
         BIYOS_getvars(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getvarbnd(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getvarknd(model, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getvarbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getvarkndsp(model, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnfun(model, &count) != BIYOS_OK ||
         BIYOS_getfuns(model, 0, 0, 0, NULL, NULL, &needed, NULL, NULL) != BIYOS_OK ||
         BIYOS_getvarterms(model, 0, 0, 0, NULL, &needed, NULL, NULL) != BIYOS_OK ||
         BIYOS_getquadterms(model, 0, 0, 0, NULL, &needed, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getncon(model, &count) != BIYOS_OK ||
         BIYOS_getcons(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getconbnd(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getconbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnobj(model, &count) != BIYOS_OK ||
         BIYOS_getobjs(model, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getobjsense(model, 0, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getobjprio(model, 0, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getobjcoef(model, 0, NULL, NULL) != BIYOS_OK ||
-        BIYOS_getobjtol(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getobjsensesp(model, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getobjpriosp(model, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getobjcoefsp(model, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getobjtolsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_copymdl(model, env, &copy) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
@@ -402,9 +402,9 @@ int main(void)
     }
     if (BIYOS_newmdl(env, &model) != BIYOS_OK ||
         BIYOS_addvar(model, 2, kinds, lower, upper, &first) != BIYOS_OK || first != 0 ||
-        BIYOS_setvarbnd(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
-        BIYOS_setvarknd(model, 1, indices, kinds + 1) != BIYOS_OK ||
-        BIYOS_getvarknd(model, 1, indices, found + 1) != BIYOS_OK || found[1] != BIYOS_VAR_BIN ||
+        BIYOS_setvarbndsp(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
+        BIYOS_setvarkndsp(model, 1, indices, kinds + 1) != BIYOS_OK ||
+        BIYOS_getvarkndsp(model, 1, indices, found + 1) != BIYOS_OK || found[1] != BIYOS_VAR_BIN ||
         BIYOS_getnvar(model, &variables) != BIYOS_OK || variables != 2 ||
         BIYOS_getvars(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[0] != BIYOS_VAR_BIN ||
         found[1] != BIYOS_VAR_BIN)

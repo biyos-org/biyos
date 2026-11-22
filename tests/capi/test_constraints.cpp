@@ -86,7 +86,7 @@ Records read_bounds(const Model &mdl, const std::vector<BIYOS_index> &idx)
         .upper = std::vector<double>(idx.size(), 9.0),
     };
     const BIYOS_status status =
-        BIYOS_getconbnd(mdl.get(), n, idx.data(), read.lower.data(), read.upper.data());
+        BIYOS_getconbndsp(mdl.get(), n, idx.data(), read.lower.data(), read.upper.data());
     EXPECT_EQ(status, BIYOS_OK);
     return read;
 }
@@ -113,8 +113,8 @@ void change(const BIYOS_event *, void *data)
     const BIYOS_real bound = 0.0;
     BIYOS_index n = 0;
     note(attempt, BIYOS_addcon(mdl, 1, &idx, nullptr, nullptr, nullptr));
-    note(attempt, BIYOS_setconbnd(mdl, 1, &idx, &bound, &bound));
-    note(attempt, BIYOS_getconbnd(mdl, 1, &idx, nullptr, nullptr));
+    note(attempt, BIYOS_setconbndsp(mdl, 1, &idx, &bound, &bound));
+    note(attempt, BIYOS_getconbndsp(mdl, 1, &idx, nullptr, nullptr));
     note(attempt, BIYOS_getncon(mdl, &n));
     note(attempt, BIYOS_getcons(mdl, 0, 1, nullptr, nullptr, nullptr));
 }
@@ -221,14 +221,14 @@ TEST(CApiTest, NullBounds)
     const double lower[] = {1.0, 2.0};
     const double upper[] = {3.0, 4.0};
     BIYOS_model *held = mdl.get();
-    ASSERT_EQ(BIYOS_setconbnd(held, 2, idx, lower, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setconbnd(held, 1, idx, nullptr, upper), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setconbnd(held, 2, idx, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setconbndsp(held, 2, idx, lower, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setconbndsp(held, 1, idx, nullptr, upper), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setconbndsp(held, 2, idx, nullptr, nullptr), BIYOS_OK);
     const Records wanted{.functions = {0, 0}, .lower = {2.0, 1.0}, .upper = {kInfinity, 3.0}};
     expect_records(read_all(mdl), wanted);
-    EXPECT_EQ(BIYOS_setconbnd(held, 2, nullptr, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setconbndsp(held, 2, nullptr, lower, upper), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
-    EXPECT_EQ(BIYOS_setconbnd(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setconbndsp(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
 TEST(CApiTest, NullReads)
@@ -262,11 +262,11 @@ TEST(CApiTest, RefusedConstraints)
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     const BIYOS_index idx = 3;
     const BIYOS_real bound = 0.0;
-    EXPECT_EQ(BIYOS_setconbnd(held, 1, &idx, &bound, &bound), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setconbndsp(held, 1, &idx, &bound, &bound), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
     const BIYOS_index first = 0;
     const BIYOS_real infinite = kInfinity;
-    EXPECT_EQ(BIYOS_setconbnd(held, 1, &first, &infinite, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setconbndsp(held, 1, &first, &infinite, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 0: lower bound is infinity");
     EXPECT_EQ(BIYOS_getcons(held, 2, 2, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
@@ -323,12 +323,12 @@ TEST(CApiTest, ConstraintNulls)
     double lower[] = {9.0, 9.0};
     double upper[] = {9.0, 9.0};
     const BIYOS_model *held = mdl.get();
-    EXPECT_EQ(BIYOS_getconbnd(held, 2, idx, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getconbnd(held, 2, idx, lower, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getconbnd(held, 1, idx, nullptr, upper), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconbndsp(held, 2, idx, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconbndsp(held, 2, idx, lower, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconbndsp(held, 1, idx, nullptr, upper), BIYOS_OK);
     expect_dbls({lower[0], lower[1]}, {-kInfinity, 2.0});
     expect_dbls({upper[0], upper[1]}, {kInfinity, 9.0});
-    EXPECT_EQ(BIYOS_getconbnd(held, 0, nullptr, lower, upper), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconbndsp(held, 0, nullptr, lower, upper), BIYOS_OK);
     EXPECT_EQ(env.message(), "");
 }
 
@@ -340,10 +340,10 @@ TEST(CApiTest, ConstraintSetters)
     const BIYOS_index idx[] = {1, 0, 1};
     const double lower[] = {-2.0, 0.0, -3.0};
     const double upper[] = {2.0, 0.5, 3.0};
-    ASSERT_EQ(BIYOS_setconbnd(mdl.get(), 3, idx, lower, upper), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setconbndsp(mdl.get(), 3, idx, lower, upper), BIYOS_OK);
     std::vector<double> lb(3, 9.0);
     std::vector<double> ub(3, 9.0);
-    ASSERT_EQ(BIYOS_getconbnd(mdl.get(), 3, idx, lb.data(), ub.data()), BIYOS_OK);
+    ASSERT_EQ(BIYOS_getconbndsp(mdl.get(), 3, idx, lb.data(), ub.data()), BIYOS_OK);
     expect_dbls(lb, {-3.0, 0.0, -3.0});
     expect_dbls(ub, {3.0, 0.5, 3.0});
     const Records untouched{.functions = {}, .lower = {2.0}, .upper = {2.0}};
@@ -360,13 +360,13 @@ TEST(CApiTest, ConstraintRefusals)
     const BIYOS_index negative[] = {1, -1};
     double lower[] = {9.0, 9.0};
     double upper[] = {9.0, 9.0};
-    EXPECT_EQ(BIYOS_getconbnd(held, 2, beyond, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconbndsp(held, 2, beyond, lower, upper), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
-    EXPECT_EQ(BIYOS_getconbnd(held, 2, negative, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconbndsp(held, 2, negative, lower, upper), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint -1: unknown");
-    EXPECT_EQ(BIYOS_getconbnd(held, -1, beyond, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconbndsp(held, -1, beyond, lower, upper), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
-    EXPECT_EQ(BIYOS_getconbnd(held, 1, nullptr, lower, upper), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconbndsp(held, 1, nullptr, lower, upper), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
     expect_dbls({lower[0], lower[1]}, {9.0, 9.0});
     expect_dbls({upper[0], upper[1]}, {9.0, 9.0});

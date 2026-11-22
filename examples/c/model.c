@@ -49,7 +49,7 @@ static BIYOS_status objectives(BIYOS_model *mdl)
     {
         return status;
     }
-    return BIYOS_setobjtol(mdl, 1, &beg, atol, NULL);
+    return BIYOS_setobjtolsp(mdl, 1, &beg, atol, NULL);
 }
 
 static int build(BIYOS_model *mdl)

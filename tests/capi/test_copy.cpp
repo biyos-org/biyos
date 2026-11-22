@@ -59,15 +59,15 @@ void add_sample(BIYOS_model *mdl)
     ASSERT_EQ(BIYOS_addquadterms(mdl, 2, owners, offsets, firsts, seconds, products), BIYOS_OK);
     ASSERT_EQ(BIYOS_addcon(mdl, 3, funs, lower, upper, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addobj(mdl, 2, targets, senses, priorities, weights, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjtol(mdl, 2, added, absolute, relative), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjtolsp(mdl, 2, added, absolute, relative), BIYOS_OK);
     const BIYOS_index named[] = {2, 0};
     const BIYOS_index first[] = {1};
     const char *names[] = {"z", "x"};
     ASSERT_EQ(BIYOS_setmdlname(mdl, "sample"), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setvarname(mdl, 2, named, names), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setfunname(mdl, 1, first, names), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setconname(mdl, 2, named, names), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setobjname(mdl, 1, first, names + 1), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setvarnamesp(mdl, 2, named, names), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setfunnamesp(mdl, 1, first, names), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setconnamesp(mdl, 2, named, names), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setobjnamesp(mdl, 1, first, names + 1), BIYOS_OK);
 }
 
 BIYOS_env *created()
@@ -245,7 +245,7 @@ TEST(CApiTest, CopyReports)
     const BIYOS_index idx = 7;
     const BIYOS_real bound = 0.0;
     const std::string unknown = "invalid argument: variable 7: unknown";
-    EXPECT_EQ(BIYOS_setvarbnd(copy.model, 1, &idx, &bound, &bound), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setvarbndsp(copy.model, 1, &idx, &bound, &bound), BIYOS_ERR_BADARG);
     EXPECT_EQ(to.message(), unknown);
     EXPECT_EQ(received, std::vector<std::string>{unknown});
     EXPECT_EQ(from.message(), "");

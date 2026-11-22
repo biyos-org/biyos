@@ -171,68 +171,68 @@ BIYOS_status BIYOS_addobj(BIYOS_model *mdl,
     return guarded<add_objs>(mdl, n, funidx, sense, prio, coef, beg);
 }
 
-BIYOS_status BIYOS_setobjsense(BIYOS_model *mdl,
-                               BIYOS_index n,
-                               const BIYOS_index *idx,
-                               const BIYOS_int *sense)
+BIYOS_status BIYOS_setobjsensesp(BIYOS_model *mdl,
+                                 BIYOS_index n,
+                                 const BIYOS_index *idx,
+                                 const BIYOS_int *sense)
 {
     return guarded<set_objs>(mdl, n, idx, Fields{.senses = sense});
 }
 
-BIYOS_status BIYOS_getobjsense(const BIYOS_model *mdl,
-                               BIYOS_index n,
-                               const BIYOS_index *idx,
-                               BIYOS_int *sense)
+BIYOS_status BIYOS_getobjsensesp(const BIYOS_model *mdl,
+                                 BIYOS_index n,
+                                 const BIYOS_index *idx,
+                                 BIYOS_int *sense)
 {
     return guarded<get_listed>(mdl, n, idx, Outputs{.senses = sense});
 }
 
-BIYOS_status BIYOS_setobjprio(BIYOS_model *mdl,
-                              BIYOS_index n,
-                              const BIYOS_index *idx,
-                              const BIYOS_int *prio)
+BIYOS_status BIYOS_setobjpriosp(BIYOS_model *mdl,
+                                BIYOS_index n,
+                                const BIYOS_index *idx,
+                                const BIYOS_int *prio)
 {
     return guarded<set_objs>(mdl, n, idx, Fields{.priorities = prio});
 }
 
-BIYOS_status BIYOS_getobjprio(const BIYOS_model *mdl,
-                              BIYOS_index n,
-                              const BIYOS_index *idx,
-                              BIYOS_int *prio)
+BIYOS_status BIYOS_getobjpriosp(const BIYOS_model *mdl,
+                                BIYOS_index n,
+                                const BIYOS_index *idx,
+                                BIYOS_int *prio)
 {
     return guarded<get_listed>(mdl, n, idx, Outputs{.priorities = prio});
 }
 
-BIYOS_status BIYOS_setobjcoef(BIYOS_model *mdl,
-                              BIYOS_index n,
-                              const BIYOS_index *idx,
-                              const BIYOS_real *coef)
+BIYOS_status BIYOS_setobjcoefsp(BIYOS_model *mdl,
+                                BIYOS_index n,
+                                const BIYOS_index *idx,
+                                const BIYOS_real *coef)
 {
     return guarded<set_objs>(mdl, n, idx, Fields{.weights = coef});
 }
 
-BIYOS_status BIYOS_getobjcoef(const BIYOS_model *mdl,
-                              BIYOS_index n,
-                              const BIYOS_index *idx,
-                              BIYOS_real *coef)
+BIYOS_status BIYOS_getobjcoefsp(const BIYOS_model *mdl,
+                                BIYOS_index n,
+                                const BIYOS_index *idx,
+                                BIYOS_real *coef)
 {
     return guarded<get_listed>(mdl, n, idx, Outputs{.weights = coef});
 }
 
-BIYOS_status BIYOS_setobjtol(BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             const BIYOS_real *atol,
-                             const BIYOS_real *rtol)
+BIYOS_status BIYOS_setobjtolsp(BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               const BIYOS_real *atol,
+                               const BIYOS_real *rtol)
 {
     return guarded<set_objs>(mdl, n, idx, Fields{.absolute = atol, .relative = rtol});
 }
 
-BIYOS_status BIYOS_getobjtol(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const BIYOS_index *idx,
-                             BIYOS_real *atol,
-                             BIYOS_real *rtol)
+BIYOS_status BIYOS_getobjtolsp(const BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               BIYOS_real *atol,
+                               BIYOS_real *rtol)
 {
     return guarded<get_listed>(mdl, n, idx, Outputs{.absolute = atol, .relative = rtol});
 }

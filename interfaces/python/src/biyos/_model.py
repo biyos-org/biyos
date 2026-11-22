@@ -265,7 +265,7 @@ class Model:
 
         See Also
         --------
-        BIYOS_setvarbnd
+        BIYOS_setvarbndsp
         """
         count = len(idx)
         arrays = (
@@ -273,7 +273,7 @@ class Model:
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
-        self._call(lib.BIYOS_setvarbnd, count, *arrays)
+        self._call(lib.BIYOS_setvarbndsp, count, *arrays)
 
     def getvarbnd(
         self, idx: Sequence[int | Variable] | Variables
@@ -294,10 +294,10 @@ class Model:
 
         See Also
         --------
-        BIYOS_getvarbnd
+        BIYOS_getvarbndsp
         """
         bounds = (c_double, c_double)
-        lb, ub = self._getlist(lib.BIYOS_getvarbnd, Variables, idx, *bounds)
+        lb, ub = self._getlist(lib.BIYOS_getvarbndsp, Variables, idx, *bounds)
         return lb, ub
 
     def setvarknd(
@@ -316,14 +316,14 @@ class Model:
 
         See Also
         --------
-        BIYOS_setvarknd
+        BIYOS_setvarkndsp
         """
         count = len(idx)
         arrays = (
             indices_of(self, Variables, "idx", idx, count),
             ints("knd", knd, count),
         )
-        self._call(lib.BIYOS_setvarknd, count, *arrays)
+        self._call(lib.BIYOS_setvarkndsp, count, *arrays)
 
     def getvarknd(
         self, idx: Sequence[int | Variable] | Variables
@@ -342,9 +342,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getvarknd
+        BIYOS_getvarkndsp
         """
-        found = self._getlist(lib.BIYOS_getvarknd, Variables, idx, c_int)
+        found = self._getlist(lib.BIYOS_getvarkndsp, Variables, idx, c_int)
         return [VariableKind(value) for value in found[0]]
 
     def getnvars(self) -> int:
@@ -742,7 +742,7 @@ class Model:
 
         See Also
         --------
-        BIYOS_setconbnd
+        BIYOS_setconbndsp
         """
         count = len(idx)
         arrays = (
@@ -750,7 +750,7 @@ class Model:
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
-        self._call(lib.BIYOS_setconbnd, count, *arrays)
+        self._call(lib.BIYOS_setconbndsp, count, *arrays)
 
     def getconbnd(
         self, idx: Sequence[int | Constraint] | Constraints
@@ -771,10 +771,10 @@ class Model:
 
         See Also
         --------
-        BIYOS_getconbnd
+        BIYOS_getconbndsp
         """
         bounds = (c_double, c_double)
-        lb, ub = self._getlist(lib.BIYOS_getconbnd, Constraints, idx, *bounds)
+        lb, ub = self._getlist(lib.BIYOS_getconbndsp, Constraints, idx, *bounds)
         return lb, ub
 
     def getncons(self) -> int:
@@ -899,14 +899,14 @@ class Model:
 
         See Also
         --------
-        BIYOS_setobjsense
+        BIYOS_setobjsensesp
         """
         n = len(idx)
         arrays = (
             indices_of(self, Objectives, "idx", idx, n),
             ints("sense", sense, n),
         )
-        self._call(lib.BIYOS_setobjsense, n, *arrays)
+        self._call(lib.BIYOS_setobjsensesp, n, *arrays)
 
     def getobjsense(
         self, idx: Sequence[int | Objective] | Objectives
@@ -925,9 +925,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getobjsense
+        BIYOS_getobjsensesp
         """
-        found = self._getlist(lib.BIYOS_getobjsense, Objectives, idx, c_int)
+        found = self._getlist(lib.BIYOS_getobjsensesp, Objectives, idx, c_int)
         return [Sense(value) for value in found[0]]
 
     def setobjprio(
@@ -948,14 +948,14 @@ class Model:
 
         See Also
         --------
-        BIYOS_setobjprio
+        BIYOS_setobjpriosp
         """
         n = len(idx)
         arrays = (
             indices_of(self, Objectives, "idx", idx, n),
             ints("prio", prio, n),
         )
-        self._call(lib.BIYOS_setobjprio, n, *arrays)
+        self._call(lib.BIYOS_setobjpriosp, n, *arrays)
 
     def getobjprio(
         self, idx: Sequence[int | Objective] | Objectives
@@ -974,9 +974,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getobjprio
+        BIYOS_getobjpriosp
         """
-        found = self._getlist(lib.BIYOS_getobjprio, Objectives, idx, c_int)
+        found = self._getlist(lib.BIYOS_getobjpriosp, Objectives, idx, c_int)
         return found[0]
 
     def setobjcoef(
@@ -998,14 +998,14 @@ class Model:
 
         See Also
         --------
-        BIYOS_setobjcoef
+        BIYOS_setobjcoefsp
         """
         n = len(idx)
         arrays = (
             indices_of(self, Objectives, "idx", idx, n),
             doubles("coef", coef, n),
         )
-        self._call(lib.BIYOS_setobjcoef, n, *arrays)
+        self._call(lib.BIYOS_setobjcoefsp, n, *arrays)
 
     def getobjcoef(
         self, idx: Sequence[int | Objective] | Objectives
@@ -1024,9 +1024,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getobjcoef
+        BIYOS_getobjcoefsp
         """
-        found = self._getlist(lib.BIYOS_getobjcoef, Objectives, idx, c_double)
+        found = self._getlist(lib.BIYOS_getobjcoefsp, Objectives, idx, c_double)
         return found[0]
 
     def setobjtol(
@@ -1052,7 +1052,7 @@ class Model:
 
         See Also
         --------
-        BIYOS_setobjtol
+        BIYOS_setobjtolsp
         """
         n = len(idx)
         arrays = (
@@ -1060,7 +1060,7 @@ class Model:
             doubles("atol", atol, n),
             doubles("rtol", rtol, n),
         )
-        self._call(lib.BIYOS_setobjtol, n, *arrays)
+        self._call(lib.BIYOS_setobjtolsp, n, *arrays)
 
     def getobjtol(
         self, idx: Sequence[int | Objective] | Objectives
@@ -1081,10 +1081,12 @@ class Model:
 
         See Also
         --------
-        BIYOS_getobjtol
+        BIYOS_getobjtolsp
         """
         pair = (c_double, c_double)
-        atol, rtol = self._getlist(lib.BIYOS_getobjtol, Objectives, idx, *pair)
+        atol, rtol = self._getlist(
+            lib.BIYOS_getobjtolsp, Objectives, idx, *pair
+        )
         return atol, rtol
 
     def getnobjs(self) -> int:
@@ -1229,9 +1231,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_setvarname
+        BIYOS_setvarnamesp
         """
-        self._setname(lib.BIYOS_setvarname, Variables, idx, name)
+        self._setname(lib.BIYOS_setvarnamesp, Variables, idx, name)
 
     def getvarname(
         self, idx: Sequence[int | Variable] | Variables
@@ -1250,9 +1252,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getvarname
+        BIYOS_getvarnamesp
         """
-        return self._getname(lib.BIYOS_getvarname, Variables, idx)
+        return self._getname(lib.BIYOS_getvarnamesp, Variables, idx)
 
     def getvaridx(self, name: Sequence[str]) -> list[int]:
         """Return the indices of the variables with names.
@@ -1301,9 +1303,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_delvarname
+        BIYOS_delvarnamesp
         """
-        self._delname(lib.BIYOS_delvarname, Variables, idx)
+        self._delname(lib.BIYOS_delvarnamesp, Variables, idx)
 
     def setfunname(
         self, idx: Sequence[int | Function] | Functions, name: Sequence[str]
@@ -1319,9 +1321,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_setfunname
+        BIYOS_setfunnamesp
         """
-        self._setname(lib.BIYOS_setfunname, Functions, idx, name)
+        self._setname(lib.BIYOS_setfunnamesp, Functions, idx, name)
 
     def getfunname(
         self, idx: Sequence[int | Function] | Functions
@@ -1340,9 +1342,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getfunname
+        BIYOS_getfunnamesp
         """
-        return self._getname(lib.BIYOS_getfunname, Functions, idx)
+        return self._getname(lib.BIYOS_getfunnamesp, Functions, idx)
 
     def getfunidx(self, name: Sequence[str]) -> list[int]:
         """Return the indices of named functions, as ``getvaridx`` does.
@@ -1373,9 +1375,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_delfunname
+        BIYOS_delfunnamesp
         """
-        self._delname(lib.BIYOS_delfunname, Functions, idx)
+        self._delname(lib.BIYOS_delfunnamesp, Functions, idx)
 
     def setconname(
         self,
@@ -1393,9 +1395,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_setconname
+        BIYOS_setconnamesp
         """
-        self._setname(lib.BIYOS_setconname, Constraints, idx, name)
+        self._setname(lib.BIYOS_setconnamesp, Constraints, idx, name)
 
     def getconname(
         self, idx: Sequence[int | Constraint] | Constraints
@@ -1414,9 +1416,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getconname
+        BIYOS_getconnamesp
         """
-        return self._getname(lib.BIYOS_getconname, Constraints, idx)
+        return self._getname(lib.BIYOS_getconnamesp, Constraints, idx)
 
     def getconidx(self, name: Sequence[str]) -> list[int]:
         """Return the indices of named constraints, as ``getvaridx`` does.
@@ -1449,9 +1451,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_delconname
+        BIYOS_delconnamesp
         """
-        self._delname(lib.BIYOS_delconname, Constraints, idx)
+        self._delname(lib.BIYOS_delconnamesp, Constraints, idx)
 
     def setobjname(
         self, idx: Sequence[int | Objective] | Objectives, name: Sequence[str]
@@ -1467,9 +1469,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_setobjname
+        BIYOS_setobjnamesp
         """
-        self._setname(lib.BIYOS_setobjname, Objectives, idx, name)
+        self._setname(lib.BIYOS_setobjnamesp, Objectives, idx, name)
 
     def getobjname(
         self, idx: Sequence[int | Objective] | Objectives
@@ -1488,9 +1490,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getobjname
+        BIYOS_getobjnamesp
         """
-        return self._getname(lib.BIYOS_getobjname, Objectives, idx)
+        return self._getname(lib.BIYOS_getobjnamesp, Objectives, idx)
 
     def getobjidx(self, name: Sequence[str]) -> list[int]:
         """Return the indices of named objectives, as ``getvaridx`` does.
@@ -1521,9 +1523,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_delobjname
+        BIYOS_delobjnamesp
         """
-        self._delname(lib.BIYOS_delobjname, Objectives, idx)
+        self._delname(lib.BIYOS_delobjnamesp, Objectives, idx)
 
     def _start(self, env: Env) -> None:
         self._env = env
