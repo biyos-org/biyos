@@ -2,7 +2,9 @@
 
 #include "capi/arrays.hpp"
 #include "capi/entry.hpp"
+#include "capi/selection.hpp"
 #include "core/index.hpp"
+#include "model/checks.hpp"
 #include "model/compressed.hpp"
 #include "model/model.hpp"
 
@@ -12,10 +14,15 @@
 #include <span>
 #include <vector>
 
+using biyos::Family;
 using biyos::capi::guarded;
 using biyos::capi::length;
+using biyos::capi::List;
 using biyos::capi::offsets;
+using biyos::capi::picked;
+using biyos::capi::Range;
 using biyos::capi::require;
+using biyos::capi::selected;
 using biyos::capi::writable;
 using biyos::capi::write_starts;
 
@@ -88,6 +95,45 @@ void get_functions(const BIYOS_model &model,
     *needed = static_cast<std::int64_t>(found.size());
 }
 
+void check_chosen(const biyos::Model &core, std::span<const biyos::Index> chosen)
+{
+    for (const biyos::Index function : chosen)
+    {
+        biyos::check_index("function", function, core.n_functions());
+    }
+}
+
+template <typename Selection>
+void add_constants(BIYOS_model &model, Selection selection, const double *constants)
+{
+    biyos::Model &core = writable(model);
+    const auto chosen = selected(core, Family::Function, selection);
+    check_chosen(core, chosen);
+    if (constants != nullptr)
+    {
+        core.add_constants(chosen, std::span(constants, chosen.size()));
+    }
+}
+
+template <typename Selection>
+void set_constants(BIYOS_model &model, Selection selection, const double *constants)
+{
+    biyos::Model &core = writable(model);
+    const auto chosen = selected(core, Family::Function, selection);
+    check_chosen(core, chosen);
+    if (constants != nullptr)
+    {
+        core.set_constants(chosen, std::span(constants, chosen.size()));
+    }
+}
+
+template <typename Selection>
+void get_constants(const BIYOS_model &model, Selection selection, double *constants)
+{
+    const auto chosen = selected(model.core, Family::Function, selection);
+    write_constants(picked(model.core, &biyos::Model::constant, chosen), constants);
+}
+
 }
 
 BIYOS_status BIYOS_addfuns(BIYOS_model *mdl,
@@ -117,4 +163,43 @@ BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
                            BIYOS_real *coef)
 {
     return guarded<get_functions>(mdl, pos, n, cst, off, cap, nnz, varidx, coef);
+}
+
+BIYOS_status BIYOS_addcstsp(BIYOS_model *mdl,
+                            BIYOS_index n,
+                            const BIYOS_index *idx,
+                            const BIYOS_real *cst)
+{
+    return guarded<add_constants<List>>(mdl, List{n, idx}, cst);
+}
+
+BIYOS_status BIYOS_addcstrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n, const BIYOS_real *cst)
+{
+    return guarded<add_constants<Range>>(mdl, Range{pos, n}, cst);
+}
+
+BIYOS_status BIYOS_setcstsp(BIYOS_model *mdl,
+                            BIYOS_index n,
+                            const BIYOS_index *idx,
+                            const BIYOS_real *cst)
+{
+    return guarded<set_constants<List>>(mdl, List{n, idx}, cst);
+}
+
+BIYOS_status BIYOS_setcstrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n, const BIYOS_real *cst)
+{
+    return guarded<set_constants<Range>>(mdl, Range{pos, n}, cst);
+}
+
+BIYOS_status BIYOS_getcstsp(const BIYOS_model *mdl,
+                            BIYOS_index n,
+                            const BIYOS_index *idx,
+                            BIYOS_real *cst)
+{
+    return guarded<get_constants<List>>(mdl, List{n, idx}, cst);
+}
+
+BIYOS_status BIYOS_getcstrg(const BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n, BIYOS_real *cst)
+{
+    return guarded<get_constants<Range>>(mdl, Range{pos, n}, cst);
 }

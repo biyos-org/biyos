@@ -256,6 +256,15 @@ void write_variables(const Held &held, Engine &engine)
     expect_writes(held, span, BIYOS_setvarkndsp, BIYOS_setvarkndrg, kinds);
 }
 
+void write_functions(const Held &held, Engine &engine)
+{
+    const Span span = random_span(engine, count_of(held.model, BIYOS_getnfun));
+    const std::vector<double> constants =
+        drawn(engine, static_cast<std::size_t>(span.size), weight);
+    expect_writes(held, span, BIYOS_setcstsp, BIYOS_setcstrg, constants);
+    expect_writes(held, span, BIYOS_addcstsp, BIYOS_addcstrg, constants);
+}
+
 void write_constraints(const Held &held, Engine &engine)
 {
     const Span span = random_span(engine, count_of(held.model, BIYOS_getncon));
@@ -303,6 +312,13 @@ void read_variables(const Model &model, Engine &engine)
     expect_reads(model, span, BIYOS_getvarsp, BIYOS_getvarrg, whole, reals, reals);
 }
 
+void read_functions(const Model &model, Engine &engine)
+{
+    const Span span = random_span(engine, count_of(model, BIYOS_getnfun));
+    const std::vector<double> reals = zeros<double>(span);
+    expect_reads(model, span, BIYOS_getcstsp, BIYOS_getcstrg, reals);
+}
+
 void read_constraints(const Model &model, Engine &engine)
 {
     const Span span = random_span(engine, count_of(model, BIYOS_getncon));
@@ -327,6 +343,7 @@ void read_objectives(const Model &model, Engine &engine)
 void read_all(const Model &model, Engine &engine)
 {
     read_variables(model, engine);
+    read_functions(model, engine);
     read_constraints(model, engine);
     read_objectives(model, engine);
     for (const NameCalls &calls : kNameCalls)
@@ -352,6 +369,15 @@ void keep_variables(const Held &held, Span span, BIYOS_status wanted)
     expect_kept(held, span, wanted, BIYOS_setvarkndrg, kinds);
     expect_kept(held, span, wanted, BIYOS_getvarkndrg, kinds);
     expect_kept(held, span, wanted, BIYOS_getvarrg, kinds, bounds, bounds);
+}
+
+void keep_functions(const Held &held, Span span, BIYOS_status wanted)
+{
+    const auto n = static_cast<std::size_t>(count_of(held.model, BIYOS_getnfun) + 1);
+    const std::vector<double> constants(n, 0.5);
+    expect_kept(held, span, wanted, BIYOS_setcstrg, constants);
+    expect_kept(held, span, wanted, BIYOS_addcstrg, constants);
+    expect_kept(held, span, wanted, BIYOS_getcstrg, constants);
 }
 
 void keep_constraints(const Held &held, Span span, BIYOS_status wanted)
@@ -395,6 +421,10 @@ void keep_all(const Held &held, Counter count, Span span, BIYOS_status wanted)
     {
         keep_variables(held, span, wanted);
     }
+    if (count == BIYOS_getnfun)
+    {
+        keep_functions(held, span, wanted);
+    }
     if (count == BIYOS_getncon)
     {
         keep_constraints(held, span, wanted);
@@ -424,6 +454,7 @@ TEST(RangeTest, Writes)
         build_sample(model.get(), engine);
         const Held held{.env = env, .model = model};
         write_variables(held, engine);
+        write_functions(held, engine);
         write_constraints(held, engine);
         write_objectives(held, engine);
         for (const NameCalls &calls : kNameCalls)

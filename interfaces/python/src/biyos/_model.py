@@ -525,6 +525,81 @@ class Model:
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
 
+    def addcst(
+        self,
+        idx: Sequence[int | Function] | Functions,
+        cst: Sequence[float] | None,
+    ) -> None:
+        """Add to the constants of functions.
+
+        A function may appear more than once; its entries add up, in order.
+
+        Parameters
+        ----------
+        idx
+            The functions.
+        cst
+            The value each entry adds to its function's constant, finite;
+            ``None`` changes nothing. A constant that would leave the finite
+            range refuses the call.
+
+        See Also
+        --------
+        BIYOS_addcstsp
+        BIYOS_addcstrg
+        """
+        n = len(idx)
+        chosen = self._chosen("BIYOS_addcst", Functions, idx)
+        self._call(*chosen, doubles("cst", cst, n))
+
+    def setcst(
+        self,
+        idx: Sequence[int | Function] | Functions,
+        cst: Sequence[float] | None,
+    ) -> None:
+        """Set the constants of functions.
+
+        A function may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The functions.
+        cst
+            The new constant of each, finite; ``None`` changes nothing.
+
+        See Also
+        --------
+        BIYOS_setcstsp
+        BIYOS_setcstrg
+        """
+        n = len(idx)
+        chosen = self._chosen("BIYOS_setcst", Functions, idx)
+        self._call(*chosen, doubles("cst", cst, n))
+
+    def getcst(
+        self, idx: Sequence[int | Function] | Functions
+    ) -> list[float]:
+        """Read the constants of functions.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once.
+
+        Returns
+        -------
+        cst
+            The constant of each.
+
+        See Also
+        --------
+        BIYOS_getcstsp
+        BIYOS_getcstrg
+        """
+        found = self._getlist("BIYOS_getcst", Functions, idx, c_double)
+        return found[0]
+
     def addlinterms(
         self,
         funidx: Sequence[int | Function] | Functions,

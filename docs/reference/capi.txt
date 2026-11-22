@@ -550,6 +550,44 @@ error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the nu
 see BIYOS_getnfun BIYOS_getclintermrg BIYOS_getquadtermrg
 since 0.1.0
 
+function BIYOS_addcstsp BIYOS_addcstrg
+summary Add to the constants of functions.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry; may be null when `n` is 0.
+param cst in The value each entry adds to its function's constant; null changes nothing.
+return `BIYOS_OK` once the constants are added to.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function, a value is not finite or a constant would leave the finite range.
+note A function may appear more than once: its entries add up, in order.
+see BIYOS_setcstsp BIYOS_getcstsp
+since 0.1.0
+
+function BIYOS_setcstsp BIYOS_setcstrg
+summary Set the constants of functions.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry; may be null when `n` is 0.
+param cst in The new constant of each; null changes nothing.
+return `BIYOS_OK` once the constants are set.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function or a constant is not finite.
+note A function may appear more than once, as in `BIYOS_setvarbndsp`.
+see BIYOS_addcstsp BIYOS_getcstsp
+since 0.1.0
+
+function BIYOS_getcstsp BIYOS_getcstrg
+summary Read the constants of functions.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cst out Entry `j` receives the constant of function `idx[j]` or `pos + j`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function or the range ends past the last function.
+see BIYOS_setcstsp BIYOS_addcstsp
+since 0.1.0
+
 function BIYOS_addlinterms
 summary Add linear terms to functions of the model.
 param mdl in The model.

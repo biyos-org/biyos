@@ -112,6 +112,9 @@ class Model
 
     Index n_functions() const noexcept;
     std::span<const double> constants(Index start, Index size) const;
+    const double &constant(Index index) const;
+    void set_constants(std::span<const Index> indices, std::span<const double> values);
+    void add_constants(std::span<const Index> indices, std::span<const double> values);
     std::span<const LinearTerm> linear_terms(Index start, Index size) const;
 
     void check_room(std::size_t functions, Offset terms) const;

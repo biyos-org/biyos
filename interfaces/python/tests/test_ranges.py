@@ -10,6 +10,7 @@ from refusal import refusal
 PAIRS = [
     ("var", "varbnd", ([-1.0, -2.0], [1.0, 2.0])),
     ("var", "varknd", ([VariableKind.INTEGER, VariableKind.SEMIINTEGER],)),
+    ("fun", "cst", ([1.5, -2.5],)),
     ("con", "conbnd", ([-3.0, -4.0], [3.0, 4.0])),
     ("obj", "objsense", ([Sense.MAXIMIZE, Sense.MINIMIZE],)),
     ("obj", "objprio", ([3, 4],)),
