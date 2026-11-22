@@ -42,6 +42,11 @@ constexpr bool admits(const OptionSpec &spec)
     return std::visit([](const auto &rule) { return admits(rule); }, spec.rule);
 }
 
+constexpr bool scoped(Scope scope)
+{
+    return scope == Scope::Model || scope == Scope::Environment;
+}
+
 constexpr bool released(Version version, Version project)
 {
     return numbered(version) && Version{} < version && version <= project;
@@ -80,7 +85,7 @@ constexpr bool well_formed(std::span<const OptionSpec> table, Version project)
         const bool in_order = static_cast<std::size_t>(spec.id) == i + 1;
         const bool unique = std::ranges::count(table, spec.name, &OptionSpec::name) == 1;
         const bool versioned = dated(spec.versions, project) && valid_replacement(table, spec);
-        if (!in_order || !unique || !admits(spec) || !versioned)
+        if (!in_order || !unique || !scoped(spec.scope) || !admits(spec) || !versioned)
         {
             return false;
         }

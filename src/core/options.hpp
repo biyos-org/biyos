@@ -41,6 +41,19 @@ enum class OptionKind
     Enum = BIYOS_KND_ENUM,
 };
 
+enum class Scope
+{
+    Model = 1,
+    Environment,
+};
+
+enum class Source
+{
+    Model,
+    Environment,
+    Default,
+};
+
 enum class CheckLevel
 {
     None,
@@ -89,6 +102,7 @@ struct OptionSpec
 {
     Option id;
     std::string_view name;
+    Scope scope{};
     std::variant<BoolRule, IntRule, DoubleRule, StringRule, EnumRule> rule;
     std::string_view doc;
     Versions versions;

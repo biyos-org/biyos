@@ -156,6 +156,7 @@ constexpr std::array kRows{
     OptionSpec{
         .id = Option{1},
         .name = "new",
+        .scope = biyos::Scope::Model,
         .rule = biyos::IntRule{.default_value = 1},
         .doc = "Current.",
         .versions = {.since = {0, 0, 1}},
@@ -163,6 +164,7 @@ constexpr std::array kRows{
     OptionSpec{
         .id = Option{2},
         .name = "old",
+        .scope = biyos::Scope::Model,
         .rule = biyos::IntRule{.default_value = 1},
         .doc = "Deprecated.",
         .versions = {.since = {0, 0, 1}, .deprecated = biyos::Version{0, 0, 2}},
