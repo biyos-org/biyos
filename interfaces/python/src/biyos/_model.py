@@ -72,12 +72,12 @@ def _checked_env(env: Env) -> Env:
 
 
 def _span(
-    beg: int, n: int | None, size: Callable[[], int]
+    pos: int, n: int | None, size: Callable[[], int]
 ) -> tuple[int, bool]:
     given = None if n is None else integer("n", n)
     total = size()
-    n = max(total - beg, 0) if given is None else given
-    inside = 0 <= beg <= total and 0 <= n <= total - beg
+    n = max(total - pos, 0) if given is None else given
+    inside = 0 <= pos <= total and 0 <= n <= total - pos
     return n, inside
 
 
@@ -364,16 +364,16 @@ class Model:
         return count.value
 
     def getvars(
-        self, beg: int | Variable = 0, n: int | None = None
+        self, pos: int | Variable = 0, n: int | None = None
     ) -> tuple[list[VariableKind], list[float], list[float]]:
         """Read the kinds and bounds of variables.
 
         Parameters
         ----------
-        beg
+        pos
             The first variable to read.
         n
-            The number of variables to read, every one from ``beg`` on by
+            The number of variables to read, every one from ``pos`` on by
             default.
 
         Returns
@@ -389,15 +389,15 @@ class Model:
         --------
         BIYOS_getvarrg
         """
-        beg = index_of(self, Variables, "beg", beg)
-        n, inside = _span(beg, n, self.getnvars)
+        pos = index_of(self, Variables, "pos", pos)
+        n, inside = _span(pos, n, self.getnvars)
         if not inside:
-            self._call(lib.BIYOS_getvarrg, beg, n, None, None, None)
+            self._call(lib.BIYOS_getvarrg, pos, n, None, None, None)
         kinds = (c_int * n)()
         lower = (c_double * n)()
         upper = (c_double * n)()
         arrays = (kinds, lower, upper)
-        self._call(lib.BIYOS_getvarrg, beg, n, *arrays)
+        self._call(lib.BIYOS_getvarrg, pos, n, *arrays)
         return [VariableKind(kind) for kind in kinds], list(lower), list(upper)
 
     def addfuns(
@@ -465,16 +465,16 @@ class Model:
         return count.value
 
     def getfuns(
-        self, beg: int | Function = 0, n: int | None = None
+        self, pos: int | Function = 0, n: int | None = None
     ) -> tuple[list[float], list[int], list[int], list[float]]:
         """Read the constants and linear terms of functions.
 
         Parameters
         ----------
-        beg
+        pos
             The first function to read.
         n
-            The number of functions to read, every one from ``beg`` on by
+            The number of functions to read, every one from ``pos`` on by
             default.
 
         Returns
@@ -493,21 +493,21 @@ class Model:
         --------
         BIYOS_getfuns
         """
-        beg = index_of(self, Functions, "beg", beg)
-        n, inside = _span(beg, n, self.getnfuns)
+        pos = index_of(self, Functions, "pos", pos)
+        n, inside = _span(pos, n, self.getnfuns)
         needed = c_int64()
         if not inside:
             empty = (0, None, None, byref(needed), None, None)
-            self._call(lib.BIYOS_getfuns, beg, n, *empty)
+            self._call(lib.BIYOS_getfuns, pos, n, *empty)
         constants = (c_double * n)()
         starts = (c_int64 * (n + 1))()
         learn = (0, constants, starts, byref(needed), None, None)
-        self._call(lib.BIYOS_getfuns, beg, n, *learn)
+        self._call(lib.BIYOS_getfuns, pos, n, *learn)
         size = needed.value
         variables = (c_int * size)()
         values = (c_double * size)()
         fill = (size, None, None, byref(needed), variables, values)
-        self._call(lib.BIYOS_getfuns, beg, n, *fill)
+        self._call(lib.BIYOS_getfuns, pos, n, *fill)
         terms = (list(starts), list(variables), list(values))
         return (list(constants), *terms)
 
@@ -554,19 +554,19 @@ class Model:
         self._call(lib.BIYOS_addlinterms, n, *arrays)
 
     def getvarterms(
-        self, beg: int | Variable = 0, n: int | None = None
+        self, pos: int | Variable = 0, n: int | None = None
     ) -> tuple[list[int], list[int], list[float]]:
         """Read the linear terms of variables, by variable.
 
-        For each variable from ``beg``, the functions whose linear terms
+        For each variable from ``pos``, the functions whose linear terms
         hold it, sorted by function, and its coefficient in each.
 
         Parameters
         ----------
-        beg
+        pos
             The first variable to read.
         n
-            The number of variables to read, every one from ``beg`` on by
+            The number of variables to read, every one from ``pos`` on by
             default.
 
         Returns
@@ -583,20 +583,20 @@ class Model:
         --------
         BIYOS_getclintermrg
         """
-        beg = index_of(self, Variables, "beg", beg)
-        n, inside = _span(beg, n, self.getnvars)
+        pos = index_of(self, Variables, "pos", pos)
+        n, inside = _span(pos, n, self.getnvars)
         nnz = c_int64()
         if not inside:
             empty = (0, None, byref(nnz), None, None)
-            self._call(lib.BIYOS_getclintermrg, beg, n, *empty)
+            self._call(lib.BIYOS_getclintermrg, pos, n, *empty)
         starts = (c_int64 * (n + 1))()
         learn = (0, starts, byref(nnz), None, None)
-        self._call(lib.BIYOS_getclintermrg, beg, n, *learn)
+        self._call(lib.BIYOS_getclintermrg, pos, n, *learn)
         size = nnz.value
         funs = (c_int * size)()
         values = (c_double * size)()
         fill = (size, None, byref(nnz), funs, values)
-        self._call(lib.BIYOS_getclintermrg, beg, n, *fill)
+        self._call(lib.BIYOS_getclintermrg, pos, n, *fill)
         return list(starts), list(funs), list(values)
 
     def addquadterms(
@@ -645,16 +645,16 @@ class Model:
         self._call(lib.BIYOS_addquadterms, count, *arrays)
 
     def getquadterms(
-        self, beg: int | Function = 0, n: int | None = None
+        self, pos: int | Function = 0, n: int | None = None
     ) -> tuple[list[int], list[int], list[int], list[float]]:
         """Read the quadratic terms of functions.
 
         Parameters
         ----------
-        beg
+        pos
             The first function to read.
         n
-            The number of functions to read, every one from ``beg`` on by
+            The number of functions to read, every one from ``pos`` on by
             default.
 
         Returns
@@ -673,21 +673,21 @@ class Model:
         --------
         BIYOS_getquadtermrg
         """
-        beg = index_of(self, Functions, "beg", beg)
-        n, inside = _span(beg, n, self.getnfuns)
+        pos = index_of(self, Functions, "pos", pos)
+        n, inside = _span(pos, n, self.getnfuns)
         needed = c_int64()
         if not inside:
             empty = (0, None, byref(needed), None, None, None)
-            self._call(lib.BIYOS_getquadtermrg, beg, n, *empty)
+            self._call(lib.BIYOS_getquadtermrg, pos, n, *empty)
         starts = (c_int64 * (n + 1))()
         learn = (0, starts, byref(needed), None, None, None)
-        self._call(lib.BIYOS_getquadtermrg, beg, n, *learn)
+        self._call(lib.BIYOS_getquadtermrg, pos, n, *learn)
         size = needed.value
         firsts = (c_int * size)()
         seconds = (c_int * size)()
         values = (c_double * size)()
         fill = (size, None, byref(needed), firsts, seconds, values)
-        self._call(lib.BIYOS_getquadtermrg, beg, n, *fill)
+        self._call(lib.BIYOS_getquadtermrg, pos, n, *fill)
         terms = (list(firsts), list(seconds), list(values))
         return (list(starts), *terms)
 
@@ -794,16 +794,16 @@ class Model:
         return count.value
 
     def getcons(
-        self, beg: int | Constraint = 0, n: int | None = None
+        self, pos: int | Constraint = 0, n: int | None = None
     ) -> tuple[list[int], list[float], list[float]]:
         """Read the functions and bounds of constraints.
 
         Parameters
         ----------
-        beg
+        pos
             The first constraint to read.
         n
-            The number of constraints to read, every one from ``beg`` on by
+            The number of constraints to read, every one from ``pos`` on by
             default.
 
         Returns
@@ -819,16 +819,16 @@ class Model:
         --------
         BIYOS_getconrg
         """
-        beg = index_of(self, Constraints, "beg", beg)
-        n, inside = _span(beg, n, self.getncons)
+        pos = index_of(self, Constraints, "pos", pos)
+        n, inside = _span(pos, n, self.getncons)
         if not inside:
             empty = (None, None, None)
-            self._call(lib.BIYOS_getconrg, beg, n, *empty)
+            self._call(lib.BIYOS_getconrg, pos, n, *empty)
         functions = (c_int * n)()
         lower = (c_double * n)()
         upper = (c_double * n)()
         arrays = (functions, lower, upper)
-        self._call(lib.BIYOS_getconrg, beg, n, *arrays)
+        self._call(lib.BIYOS_getconrg, pos, n, *arrays)
         return list(functions), list(lower), list(upper)
 
     def addobjs(
@@ -1106,16 +1106,16 @@ class Model:
         return count.value
 
     def getobjs(
-        self, beg: int | Objective = 0, n: int | None = None
+        self, pos: int | Objective = 0, n: int | None = None
     ) -> tuple[list[int], list[Sense], list[int], list[float]]:
         """Read objectives.
 
         Parameters
         ----------
-        beg
+        pos
             The first objective to read.
         n
-            The number of objectives to read, every one from ``beg`` on by
+            The number of objectives to read, every one from ``pos`` on by
             default.
 
         Returns
@@ -1133,17 +1133,17 @@ class Model:
         --------
         BIYOS_getobjrg
         """
-        beg = index_of(self, Objectives, "beg", beg)
-        n, inside = _span(beg, n, self.getnobjs)
+        pos = index_of(self, Objectives, "pos", pos)
+        n, inside = _span(pos, n, self.getnobjs)
         if not inside:
             empty = (None,) * 4
-            self._call(lib.BIYOS_getobjrg, beg, n, *empty)
+            self._call(lib.BIYOS_getobjrg, pos, n, *empty)
         functions = (c_int * n)()
         codes = (c_int * n)()
         priorities = (c_int * n)()
         weights = (c_double * n)()
         found = (functions, codes, priorities, weights)
-        self._call(lib.BIYOS_getobjrg, beg, n, *found)
+        self._call(lib.BIYOS_getobjrg, pos, n, *found)
         senses = [Sense(code) for code in codes]
         return list(functions), senses, list(priorities), list(weights)
 

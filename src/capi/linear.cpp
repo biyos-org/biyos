@@ -78,7 +78,7 @@ BIYOS_status BIYOS_addlinterms(BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,
-                                 BIYOS_index beg,
+                                 BIYOS_index pos,
                                  BIYOS_index n,
                                  BIYOS_offset size,
                                  BIYOS_offset *off,
@@ -86,5 +86,5 @@ BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,
                                  BIYOS_index *funidx,
                                  BIYOS_real *coef)
 {
-    return guarded<get_var_terms>(mdl, beg, n, size, off, nnz, funidx, coef);
+    return guarded<get_var_terms>(mdl, pos, n, size, off, nnz, funidx, coef);
 }

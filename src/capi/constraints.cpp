@@ -130,9 +130,9 @@ BIYOS_status BIYOS_addcon(BIYOS_model *mdl,
                           const BIYOS_index *funidx,
                           const BIYOS_real *lb,
                           const BIYOS_real *ub,
-                          BIYOS_index *beg)
+                          BIYOS_index *pos)
 {
-    return guarded<add_cons>(mdl, n, funidx, lb, ub, beg);
+    return guarded<add_cons>(mdl, n, funidx, lb, ub, pos);
 }
 
 BIYOS_status BIYOS_setconbndsp(BIYOS_model *mdl,
@@ -159,11 +159,11 @@ BIYOS_status BIYOS_getncon(const BIYOS_model *mdl, BIYOS_index *n)
 }
 
 BIYOS_status BIYOS_getconrg(const BIYOS_model *mdl,
-                            BIYOS_index beg,
+                            BIYOS_index pos,
                             BIYOS_index n,
                             BIYOS_index *funidx,
                             BIYOS_real *lb,
                             BIYOS_real *ub)
 {
-    return guarded<get_cons>(mdl, beg, n, funidx, lb, ub);
+    return guarded<get_cons>(mdl, pos, n, funidx, lb, ub);
 }

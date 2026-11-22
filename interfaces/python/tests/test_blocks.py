@@ -97,7 +97,7 @@ def test_foreign_view(env, model):
         model.setvarbnd([0, x[1]], [0.0, 0.0], [1.0, 1.0])
     with pytest.raises(ValueError, match=entry):
         model.setvarknd([x[0]], [biyos.VariableKind.INTEGER])
-    with pytest.raises(ValueError, match="beg is a variable of another"):
+    with pytest.raises(ValueError, match="pos is a variable of another"):
         model.getvars(x[1], 1)
     assert model.getvars() == other.getvars()
 

@@ -117,7 +117,7 @@ def test_views(env, model):
         model.setconbnd([d[0]], [0.0])
     with pytest.raises(ValueError, match="is a block of another model"):
         model.setconbnd(d, [0.0, 0.0])
-    with pytest.raises(ValueError, match="beg is a constraint of another"):
+    with pytest.raises(ValueError, match="pos is a constraint of another"):
         model.getcons(d[0])
     f = model.addfuns(1)
     with pytest.raises(ValueError, match="is a function, not a constraint"):
@@ -257,7 +257,7 @@ def test_numbers(model):
         model.addcons([0.0])
     with pytest.raises(TypeError, match="an entry of lb must be a number"):
         model.addcons([0], ["1"])
-    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
         model.getcons(2**32)
     assert model.getncons() == 0
 

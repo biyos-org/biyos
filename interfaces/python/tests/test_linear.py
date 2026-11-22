@@ -61,7 +61,7 @@ def terms(model):
     return model.getfuns()[1:]
 
 
-def read_lengths(handle, beg, n, size, starts, nnz, funs, values):
+def read_lengths(handle, pos, n, size, starts, nnz, funs, values):
     return [(starts, n + 1), (funs, size), (values, size)]
 
 
@@ -70,13 +70,13 @@ def recorded(seen, function, *arguments):
     return function(*arguments)
 
 
-def transposed(by_function, beg, n):
+def transposed(by_function, pos, n):
     starts, variables, values = by_function
     found = [[] for _ in range(n)]
     for fun in range(len(starts) - 1):
         for k in range(starts[fun], starts[fun + 1]):
-            if beg <= variables[k] < beg + n:
-                found[variables[k] - beg].append((fun, values[k]))
+            if pos <= variables[k] < pos + n:
+                found[variables[k] - pos].append((fun, values[k]))
     off = [0]
     for held in found:
         off.append(off[-1] + len(held))
@@ -153,11 +153,11 @@ def test_views(env, model):
         model.addlinterms([0], [0, 1], [y[0]], [1.0])
     with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addlinterms(g, [0, 1], [0], [1.0])
-    with pytest.raises(ValueError, match="beg is a variable of another"):
+    with pytest.raises(ValueError, match="pos is a variable of another"):
         model.getvarterms(y[0])
     with pytest.raises(ValueError, match="is a function, not a variable"):
         model.addlinterms([0], [0, 1], [f[0]], [1.0])
-    with pytest.raises(ValueError, match="beg is a function, not a"):
+    with pytest.raises(ValueError, match="pos is a function, not a"):
         model.getvarterms(f[0])
 
 
@@ -246,7 +246,7 @@ def test_numbers(model):
         model.addlinterms([0], [0, 1], [0.0], [1.0])
     with pytest.raises(TypeError, match="an entry of funidx must be an"):
         model.addlinterms([0.0], [0, 0], [], [])
-    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
         model.getvarterms(2**32)
     assert terms(model) == SORTED
 
@@ -279,9 +279,9 @@ def test_transpose(env):
             by_function = terms(model)
             whole = transposed(by_function, 0, n_vars)
             assert model.getvarterms() == whole
-            beg = draw.randint(0, n_vars)
-            n = draw.randint(0, n_vars - beg)
-            assert model.getvarterms(beg, n) == transposed(by_function, beg, n)
+            pos = draw.randint(0, n_vars)
+            n = draw.randint(0, n_vars - pos)
+            assert model.getvarterms(pos, n) == transposed(by_function, pos, n)
 
 
 def test_growing(model):

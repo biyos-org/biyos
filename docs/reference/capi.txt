@@ -378,7 +378,7 @@ since 0.1.0
 group model Model
 text A model is made on an environment and reports there: a call on the model that fails keeps its message on that environment and sends its error event there, and while the environment delivers an event the model is read-only. The environment cannot be freed while a model made on it is not, so a model never outlives its environment.
 text The calls on variables, functions, constraints and objectives take many items at once: a count and arrays of that many entries, or, for the terms of functions, arrays in compressed form. biyos reads them during the call and keeps none of them. A call that fails changes nothing. Items are numbered from 0 in the order they are added, each family on its own, and a count or an index of items is a `BIYOS_index`.
-text A call that adds items takes `BIYOS_index *beg` as its last argument. When the call succeeds and `beg` is not null, it receives the index of the first new item, which is the number of items held before the call; the new items follow it in order.
+text A call that adds items takes `BIYOS_index *pos` as its last argument. When the call succeeds and `pos` is not null, it receives the index of the first new item, which is the number of items held before the call; the new items follow it in order.
 text A call that sets an attribute of a list of items, such as `BIYOS_setvarbndsp`, has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items is read in one call. A family reader, such as `BIYOS_getvarrg`, reads a range of items instead.
 
 function BIYOS_newmdl
@@ -427,7 +427,7 @@ param n in The number of variables to add.
 param knd in The kind of each, a `BIYOS_VAR_` value; null makes every new variable continuous.
 param lb in The lower bound of each; null gives each the widest lower bound of its kind.
 param ub in The upper bound of each; null gives each the widest upper bound of its kind.
-param beg out Receives the index of the first new variable; skipped when null.
+param pos out Receives the index of the first new variable; skipped when null.
 return `BIYOS_OK` once the variables are added.
 error BIYOS_ERR_BADARG `n` is negative, a kind is unknown or a bound is refused.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 variables.
@@ -492,13 +492,13 @@ since 0.1.0
 function BIYOS_getvarrg
 summary Read the kinds and bounds of variables.
 param mdl in The model.
-param beg in The first variable to read.
+param pos in The first variable to read.
 param n in The number of variables to read.
-param knd out Entry `j` receives the kind of variable `beg + j`; skipped when null.
+param knd out Entry `j` receives the kind of variable `pos + j`; skipped when null.
 param lb out Entry `j` receives its lower bound; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `beg` or `n` is negative, or `beg + n` exceeds the number of variables.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, or `pos + n` exceeds the number of variables.
 see BIYOS_getnvar
 since 0.1.0
 
@@ -515,7 +515,7 @@ param cst in The constant of each; null gives every new function the constant 0.
 param off in The `n + 1` offsets of the functions' terms; null adds functions without terms.
 param varidx in The variable of each term; not read when there are no terms.
 param coef in The coefficient of each term; not read when there are no terms.
-param beg out Receives the index of the first new function; skipped when null.
+param pos out Receives the index of the first new function; skipped when null.
 return `BIYOS_OK` once the functions are added.
 error BIYOS_ERR_BADARG `n` is negative, `off` does not begin at 0 or decreases, a constant is not finite, a variable is not one of the model or appears twice in a function, or a coefficient is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 functions, or more terms than any allocation can hold.
@@ -532,16 +532,16 @@ since 0.1.0
 function BIYOS_getfuns
 summary Read the constants and linear terms of functions.
 param mdl in The model.
-param beg in The first function to read.
+param pos in The first function to read.
 param n in The number of functions to read.
 param size in The number of terms `varidx` and `coef` hold.
-param cst out Entry `j` receives the constant of function `beg + j`; skipped when null.
+param cst out Entry `j` receives the constant of function `pos + j`; skipped when null.
 param off out Receives `n + 1` offsets from 0, whatever `size` is; skipped when null.
 param nnz out Receives the number of terms of the functions, whether they fit or not.
 param varidx out Receives the variable of each term, each function's sorted by variable; skipped when null.
 param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written. Function `beg + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `size`.
-error BIYOS_ERR_BADARG `beg`, `n` or `size` is negative, `beg + n` exceeds the number of functions, or `nnz` is null.
+return `BIYOS_OK` once the arrays are written. Function `pos + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `size`.
+error BIYOS_ERR_BADARG `pos`, `n` or `size` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
 see BIYOS_getnfun BIYOS_getclintermrg BIYOS_getquadtermrg
 since 0.1.0
 
@@ -564,15 +564,15 @@ since 0.1.0
 function BIYOS_getclintermrg
 summary Read the linear terms of variables, by variable.
 param mdl in The model.
-param beg in The first variable to read.
+param pos in The first variable to read.
 param n in The number of variables to read.
 param size in The number of terms `funidx` and `coef` hold.
 param off out Receives `n + 1` offsets from 0, whatever `size` is; skipped when null.
 param nnz out Receives the number of linear terms of the variables, whether they fit or not.
 param funidx out Receives the function of each term, each variable's sorted by function; skipped when null.
 param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written. Variable `beg + j` is whole in `funidx` and `coef` when `off[j + 1]` is at most `size`.
-error BIYOS_ERR_BADARG `beg`, `n` or `size` is negative, `beg + n` exceeds the number of variables, or `nnz` is null.
+return `BIYOS_OK` once the arrays are written. Variable `pos + j` is whole in `funidx` and `coef` when `off[j + 1]` is at most `size`.
+error BIYOS_ERR_BADARG `pos`, `n` or `size` is negative, `pos + n` exceeds the number of variables, or `nnz` is null.
 note The terms are those `BIYOS_getfuns` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function.
 see BIYOS_getfuns BIYOS_addlinterms
 since 0.1.0
@@ -599,7 +599,7 @@ since 0.1.0
 function BIYOS_getquadtermrg
 summary Read the quadratic terms of functions.
 param mdl in The model.
-param beg in The first function to read.
+param pos in The first function to read.
 param n in The number of functions to read.
 param size in The number of terms `varidx1`, `varidx2` and `coef` hold.
 param off out Receives `n + 1` offsets from 0, whatever `size` is; skipped when null.
@@ -608,7 +608,7 @@ param varidx1 out Receives the first variable of each pair; skipped when null.
 param varidx2 out Receives the second variable of each pair, never below the first; skipped when null.
 param coef out Receives the coefficient of each pair; skipped when null.
 return `BIYOS_OK` once the arrays are written, each function's pairs sorted.
-error BIYOS_ERR_BADARG `beg`, `n` or `size` is negative, `beg + n` exceeds the number of functions, or `nnz` is null.
+error BIYOS_ERR_BADARG `pos`, `n` or `size` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
 see BIYOS_addquadterms BIYOS_getfuns
 since 0.1.0
 
@@ -622,7 +622,7 @@ param n in The number of constraints to add.
 param funidx in The function each constraint bounds; may be null only when `n` is 0.
 param lb in The lower bound of each; null leaves that side of every new constraint unbounded.
 param ub in The upper bound of each; null leaves that side of every new constraint unbounded.
-param beg out Receives the index of the first new constraint; skipped when null.
+param pos out Receives the index of the first new constraint; skipped when null.
 return `BIYOS_OK` once the constraints are added.
 error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model or a bound is refused.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 constraints.
@@ -664,13 +664,13 @@ since 0.1.0
 function BIYOS_getconrg
 summary Read the functions and bounds of constraints.
 param mdl in The model.
-param beg in The first constraint to read.
+param pos in The first constraint to read.
 param n in The number of constraints to read.
-param funidx out Entry `j` receives the function of constraint `beg + j`; skipped when null.
+param funidx out Entry `j` receives the function of constraint `pos + j`; skipped when null.
 param lb out Entry `j` receives its lower bound; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `beg` or `n` is negative, or `beg + n` exceeds the number of constraints.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, or `pos + n` exceeds the number of constraints.
 see BIYOS_getncon
 since 0.1.0
 
@@ -691,7 +691,7 @@ param funidx in The function of each; may be null only when `n` is 0.
 param sense in The sense of each, `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE`; null minimizes every new objective.
 param prio in The priority of each; null gives objective `p + j` the priority `p + j`, where `p` is the number of objectives before the call.
 param coef in The weight of each; null gives each the weight 1.
-param beg out Receives the index of the first new objective; skipped when null.
+param pos out Receives the index of the first new objective; skipped when null.
 return `BIYOS_OK` once the objectives are added, each with tolerances of 0.
 error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model, a sense is unknown or a weight is not finite and positive.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 objectives.
@@ -803,14 +803,14 @@ since 0.1.0
 function BIYOS_getobjrg
 summary Read the functions, senses, priorities and weights of objectives.
 param mdl in The model.
-param beg in The first objective to read.
+param pos in The first objective to read.
 param n in The number of objectives to read.
-param funidx out Entry `j` receives the function of objective `beg + j`; skipped when null.
+param funidx out Entry `j` receives the function of objective `pos + j`; skipped when null.
 param sense out Entry `j` receives its sense; skipped when null.
 param prio out Entry `j` receives its priority; skipped when null.
 param coef out Entry `j` receives its weight; skipped when null.
 return `BIYOS_OK` once the arrays are written.
-error BIYOS_ERR_BADARG `beg` or `n` is negative, or `beg + n` exceeds the number of objectives.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, or `pos + n` exceeds the number of objectives.
 note It reads back what `BIYOS_addobj` takes. `BIYOS_getobjtolsp` reads the tolerances.
 see BIYOS_getnobj BIYOS_getobjtolsp
 since 0.1.0

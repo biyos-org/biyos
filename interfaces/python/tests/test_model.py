@@ -696,7 +696,7 @@ def test_index(model):
 def test_numbers(model):
     with pytest.raises(TypeError, match="n must be an int, not str"):
         model.addvars("1")
-    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
         model.getvars(2**32)
     assert model.getnvars() == 0
 

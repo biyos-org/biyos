@@ -206,13 +206,13 @@ def test_views(env, model):
         model.addquadterms([0], [0, 1], [0], y, [1.0])
     with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addquadterms(g, [0, 1], [0], [0], [1.0])
-    with pytest.raises(ValueError, match="beg is a function of another"):
+    with pytest.raises(ValueError, match="pos is a function of another"):
         model.getquadterms(g[0])
     with pytest.raises(ValueError, match="is a function, not a variable"):
         model.addquadterms([0], [0, 1], [f[0]], [0], [1.0])
     with pytest.raises(ValueError, match="funidx is a block of variables"):
         model.addquadterms(x, [0, 1, 1], [0], [0], [1.0])
-    with pytest.raises(ValueError, match="beg is a variable, not a"):
+    with pytest.raises(ValueError, match="pos is a variable, not a"):
         model.getquadterms(x[0])
     assert model.getquadterms(f[0]) == found
 
@@ -310,7 +310,7 @@ def test_numbers(model):
         model.addquadterms([0], [0, 1], [0], [0.0], [1.0])
     with pytest.raises(TypeError, match="an entry of funidx must be an"):
         model.addquadterms([0.0], [0, 0], [], [], [])
-    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
         model.getquadterms(2**32)
     assert model.getquadterms() == NONE
 

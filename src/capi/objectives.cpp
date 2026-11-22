@@ -166,9 +166,9 @@ BIYOS_status BIYOS_addobj(BIYOS_model *mdl,
                           const BIYOS_int *sense,
                           const BIYOS_int *prio,
                           const BIYOS_real *coef,
-                          BIYOS_index *beg)
+                          BIYOS_index *pos)
 {
-    return guarded<add_objs>(mdl, n, funidx, sense, prio, coef, beg);
+    return guarded<add_objs>(mdl, n, funidx, sense, prio, coef, pos);
 }
 
 BIYOS_status BIYOS_setobjsensesp(BIYOS_model *mdl,
@@ -243,12 +243,12 @@ BIYOS_status BIYOS_getnobj(const BIYOS_model *mdl, BIYOS_index *n)
 }
 
 BIYOS_status BIYOS_getobjrg(const BIYOS_model *mdl,
-                            BIYOS_index beg,
+                            BIYOS_index pos,
                             BIYOS_index n,
                             BIYOS_index *funidx,
                             BIYOS_int *sense,
                             BIYOS_int *prio,
                             BIYOS_real *coef)
 {
-    return guarded<get_objs>(mdl, beg, n, funidx, sense, prio, coef);
+    return guarded<get_objs>(mdl, pos, n, funidx, sense, prio, coef);
 }

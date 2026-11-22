@@ -197,11 +197,11 @@ def test_views(env, model):
         model.addfuns(1, None, [0, 1], [y[0]], [1.0])
     with pytest.raises(ValueError, match="varidx is a block of another"):
         model.addfuns(1, None, [0, 1], y, [1.0])
-    with pytest.raises(ValueError, match="beg is a function of another"):
+    with pytest.raises(ValueError, match="pos is a function of another"):
         model.getfuns(g[0])
     with pytest.raises(ValueError, match="is a function, not a variable"):
         model.addfuns(1, None, [0, 1], [f[0]], [1.0])
-    with pytest.raises(ValueError, match="beg is a variable, not a"):
+    with pytest.raises(ValueError, match="pos is a variable, not a"):
         model.getfuns(x[0])
     with pytest.raises(ValueError, match="varidx has length 2, not 1"):
         model.addfuns(1, None, [0, 1], x, [1.0])
@@ -265,7 +265,7 @@ def test_numbers(model):
         model.addfuns(1, None, [0, 1], [0], ["1"])
     with pytest.raises(TypeError, match="an entry of varidx must be an"):
         model.addfuns(1, None, [0, 1], [0.0], [1.0])
-    with pytest.raises(OverflowError, match="beg: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="pos: 4294967296 does not fit"):
         model.getfuns(2**32)
     assert model.getnfuns() == 0
 
