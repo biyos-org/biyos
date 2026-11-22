@@ -1,9 +1,13 @@
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from ctypes import Array, byref, c_char, c_size_t, create_string_buffer
 from enum import IntEnum
+from typing import TYPE_CHECKING
 
 from biyos._capi import OK, lib
 from biyos._error import Error
+
+if TYPE_CHECKING:
+    from biyos._model import Model
 
 
 class EventKind(IntEnum):
@@ -57,8 +61,9 @@ class Event:
     raises ``ValueError``.
     """
 
-    def __init__(self, pointer: int) -> None:
+    def __init__(self, pointer: int, owners: Mapping[int, "Model"]) -> None:
         self._pointer: int | None = pointer
+        self._owners = owners
 
     @property
     def kind(self) -> EventKind:
@@ -111,6 +116,18 @@ class Event:
         pointer = self._live()
         count = lib.BIYOS_getnevtfld(pointer)
         return tuple(_field(pointer, index) for index in range(count))
+
+    @property
+    def model(self) -> "Model | None":
+        """The model of the call that sent the event, or ``None`` for a call
+        on the environment.
+
+        See Also
+        --------
+        BIYOS_getevtmdl
+        """
+        found = lib.BIYOS_getevtmdl(self._live())
+        return None if found is None else self._owners.get(found)
 
     def fmttext(self) -> str:
         """Return the event as one line of text.
@@ -172,8 +189,12 @@ def _format(
         raise Error("cannot format the event", status)
 
 
-def deliver(function: Callable[[Event], object], pointer: int) -> None:
-    event = Event(pointer)
+def deliver(
+    function: Callable[[Event], object],
+    pointer: int,
+    owners: Mapping[int, "Model"],
+) -> None:
+    event = Event(pointer, owners)
     try:
         function(event)
     finally:

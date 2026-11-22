@@ -21,9 +21,9 @@ A new code joins its group and keeps its number for good, so test a group by ran
 
 Besides the codes the reference names for a call, any call can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos. No call returns a positive status. A solve outcome, such as an infeasible model or a time limit reached, is never an error code: it is a result, and a call that finds it succeeds.
 
-## The message {#sec-errors-message}
+## The last error {#sec-errors-message}
 
-`BIYOS_lasterror` returns the message of the last call on an environment that failed. A call on a model keeps its message on the environment the model was made on.
+`BIYOS_lasterror` reads the last error of the calling thread into a `BIYOS_error`: the status the failed call returned, its model, or null for a call on the environment, and its message. The caller sets `size` first, so the struct can grow at the end without breaking a program built against an older header. A call on a model keeps its error on the environment the model was made on.
 
 ```{.c file="examples/c/errors.c" item="report"}
 ```
@@ -31,11 +31,13 @@ Besides the codes the reference names for a call, any call can return `BIYOS_ERR
 The message starts with the kind of failure, `invalid argument`, `out of memory` or `internal error`, then says what was wrong:
 
 ```text
--100, at fault the caller: invalid argument: variable 0: bounds [0, 2] are outside [0, 1], the widest of its kind
--100, at fault the caller: invalid argument: option 'seed': -1 is outside [0, 2147483647]
+-100, at fault the caller, on a model: invalid argument: variable 0: bounds [0, 2] are outside [0, 1], the widest of its kind
+-100, at fault the caller, on the environment: invalid argument: option 'seed': -1 is outside [0, 2147483647]
 ```
 
-It is written for people: branch on the status, not on the text. The pointer is never null. It stays valid until the next failed call on the environment or until the environment is freed, and a successful call leaves the message in place. A call given a null environment or model keeps no message, since it has nowhere to keep one, and neither does `BIYOS_newenv`, nor the formatting calls, which take no environment.
+It is written for people: branch on the status, not on the text. `msg` is never null. It stays valid until the thread's next failed call on the environment or until the environment is freed, and a successful call leaves the error in place. A call given a null environment or model keeps no error, since it has nowhere to keep one, and neither does `BIYOS_newenv`, nor the formatting calls, which take no environment, nor `BIYOS_lasterror` itself, so a null `err` or a short `size` leaves the error as it was.
+
+Each thread has its own last error: a failure on one thread never replaces what another reads. An environment keeps the errors of the 256 threads that failed most recently, and dropping the oldest ends the life of its message. `mdl` is an address to compare with the models the program holds, not one to call: the model may have been freed since, and a model made later may have taken its address.
 
 ## What a failure leaves {#sec-errors-state}
 
@@ -48,7 +50,7 @@ A failed call also sends an error message on the event stream (@sec-events-sent)
 
 ## Errors in Python {#sec-errors-python}
 
-The Python package turns a failed status into a `biyos.Error`, whose `code` holds the status and whose text is the message. Mistakes Python can see by itself raise Python's own exceptions before C is called: `TypeError` for a value of the wrong type, `ValueError` for an array of the wrong length or a closed model, `OverflowError` for an integer that does not fit in 32 bits, `IndexError` for a position outside a block.
+The Python package turns a failed status into a `biyos.Error`, whose `code` holds the status, whose `model` is the `Model` of the failed call, or `None` for a call on the environment, and whose text is the message. `model` is found from the address C keeps, so it is `None` once the program no longer holds the model, and it would name a newer model that took the address of a freed one. A pickled error has no model. Mistakes Python can see by itself raise Python's own exceptions before C is called: `TypeError` for a value of the wrong type, `ValueError` for an array of the wrong length or a closed model, `OverflowError` for an integer that does not fit in 32 bits, `IndexError` for a position outside a block.
 
 ```{.python file="examples/python/errors.py"}
 ```

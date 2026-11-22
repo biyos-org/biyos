@@ -103,7 +103,9 @@ int main(void)
                 read_squares(mdl);
     if (!built)
     {
-        fprintf(stderr, "%s\n", BIYOS_lasterror(env));
+        BIYOS_error error = {.size = sizeof error};
+        BIYOS_lasterror(env, &error);
+        fprintf(stderr, "%s\n", error.msg);
     }
     BIYOS_freemdl(mdl);
     BIYOS_freeenv(env);

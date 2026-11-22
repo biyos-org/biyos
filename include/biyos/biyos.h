@@ -30,6 +30,14 @@ typedef struct BIYOS_event BIYOS_event;
 typedef struct BIYOS_model BIYOS_model;
 typedef void (*BIYOS_hook)(const BIYOS_event *evt, void *data);
 
+typedef struct BIYOS_error
+{
+    size_t size;
+    BIYOS_status status;
+    const BIYOS_model *mdl;
+    const char *msg;
+} BIYOS_error;
+
 #define BIYOS_OK 0
 #define BIYOS_ERR_BADARG (-100)
 #define BIYOS_ERR_NOMEMORY (-400)
@@ -39,7 +47,7 @@ BIYOS_API void BIYOS_version(BIYOS_int *major, BIYOS_int *minor, BIYOS_int *patc
 
 BIYOS_API BIYOS_status BIYOS_newenv(BIYOS_env **env);
 BIYOS_API BIYOS_status BIYOS_freeenv(BIYOS_env *env);
-BIYOS_API const char *BIYOS_lasterror(const BIYOS_env *env);
+BIYOS_API BIYOS_status BIYOS_lasterror(const BIYOS_env *env, BIYOS_error *err);
 BIYOS_API BIYOS_status BIYOS_interrupt(BIYOS_env *env);
 
 #define BIYOS_OPT_SEED 1
@@ -99,6 +107,7 @@ BIYOS_API const char *BIYOS_getevttext(const BIYOS_event *evt);
 BIYOS_API BIYOS_index BIYOS_getnevtfld(const BIYOS_event *evt);
 BIYOS_API const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx);
 BIYOS_API const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx);
+BIYOS_API const BIYOS_model *BIYOS_getevtmdl(const BIYOS_event *evt);
 
 BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, size_t cap, char *buf, size_t *len);
 BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *buf, size_t *len);

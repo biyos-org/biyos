@@ -1,13 +1,20 @@
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from ctypes import c_void_p
+from typing import TYPE_CHECKING
 
 from biyos._capi import lib
 from biyos._error import Error, check
 
+if TYPE_CHECKING:
+    from biyos._model import Model
+
 
 class Relay:
-    def __init__(self, handle: c_void_p) -> None:
+    def __init__(
+        self, handle: c_void_p, owners: Mapping[int, "Model"]
+    ) -> None:
         self._handle = handle
+        self._owners = owners
         self._raised: BaseException | None = None
         self._depth = 0
 
@@ -36,7 +43,7 @@ class Relay:
             return
         self._raised = None
         try:
-            check(self._handle, status)
+            check(self._handle, status, self._owners)
         except Error:
             raise raised
         else:

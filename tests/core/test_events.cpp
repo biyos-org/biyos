@@ -342,3 +342,40 @@ TEST_F(EventTest, ThrowingFill)
     say(EventLevel::Info, "after");
     EXPECT_EQ(texts, Texts{"after"});
 }
+
+TEST_F(EventTest, Caller)
+{
+    const int first = 0;
+    const int second = 0;
+    const auto *outer = reinterpret_cast<const BIYOS_model *>(&first);
+    const auto *inner = reinterpret_cast<const BIYOS_model *>(&second);
+    EXPECT_EQ(events.model(), nullptr);
+    {
+        const biyos::Events::Caller call(events, outer);
+        EXPECT_EQ(events.model(), outer);
+        {
+            const biyos::Events::Caller nested(events, inner);
+            EXPECT_EQ(events.model(), inner);
+            const biyos::Events::Caller none(events, nullptr);
+            EXPECT_EQ(events.model(), nullptr);
+        }
+        EXPECT_EQ(events.model(), outer);
+    }
+    EXPECT_EQ(events.model(), nullptr);
+}
+
+TEST_F(EventTest, CallerModel)
+{
+    const int address = 0;
+    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    std::vector<const BIYOS_model *> seen;
+    const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
+    events.add_hook(EventKind::Message, EventLevel::Info, keep);
+    events.emit(EventKind::Message, EventLevel::Info, describe);
+    {
+        const biyos::Events::Caller caller(events, model);
+        events.emit(EventKind::Message, EventLevel::Info, describe);
+    }
+    const std::vector<const BIYOS_model *> expected{nullptr, model};
+    EXPECT_EQ(seen, expected);
+}

@@ -28,12 +28,12 @@ since 0.1.0
 type BIYOS_status
 summary The status a call returns.
 note An `int`: `BIYOS_OK`, which is 0, or a negative error code of @sec-codes. No call returns a positive status.
-see BIYOS_OK BIYOS_lasterror
+see BIYOS_OK BIYOS_lasterror BIYOS_error
 since 0.1.0
 
 type BIYOS_env
 summary An environment.
-note It holds the options, the hooks and the message of the last call that failed. Environments share no state, so separate threads may use separate environments at the same time; one environment is used by one thread at a time, together with the models made on it, except that any thread may call `BIYOS_interrupt` on it.
+note It holds the options, the hooks and the last error of each thread that calls it. Environments share no state, so separate threads may use separate environments at the same time; one environment is used by one thread at a time, together with the models made on it, except that any thread may call `BIYOS_interrupt` on it.
 see BIYOS_newenv BIYOS_freeenv
 since 0.1.0
 
@@ -55,6 +55,15 @@ param evt in The event, valid until the hook returns.
 param data in The pointer given to `BIYOS_addenvhook`, as given.
 note While the hook runs, its environment and the models made on it are read-only (@sec-capi-events).
 see BIYOS_addenvhook BIYOS_delenvhook
+since 0.1.0
+
+type BIYOS_error
+summary The last error of a thread on an environment, as `BIYOS_lasterror` reads it.
+note `size` is set by the caller to `sizeof(BIYOS_error)` before the call. New members are added at the end, so a caller built against an older header keeps working.
+note `status` is the status the failed call returned, or `BIYOS_OK` if no call has failed.
+note `mdl` is the model of the failed call, or null for a call on the environment. It is only an address to compare: the model may since have been freed.
+note `msg` is the message of the failed call, or an empty string. It is never null and belongs to the environment.
+see BIYOS_lasterror BIYOS_status
 since 0.1.0
 
 group linking Linking
@@ -88,7 +97,7 @@ return Nothing. The call cannot fail.
 since 0.1.0
 
 group env Environment
-text An environment holds the options, the hooks and the message of the last call that failed, and every model is made on one. Environments share no state.
+text An environment holds the options, the hooks and the last error of each thread that calls it, and every model is made on one. Environments share no state.
 
 function BIYOS_newenv
 summary Create an environment.
@@ -108,12 +117,16 @@ see BIYOS_newenv BIYOS_freemdl
 since 0.1.0
 
 function BIYOS_lasterror
-summary Give the message of the last call that failed.
-param env in The environment; null gives an empty string that is always valid.
-return The message of the last call on `env` that failed, or an empty string if none has. The pointer is never null.
+summary Read the last error of the calling thread on an environment.
+param env in The environment.
+param err out Receives the status, the model and the message of the last call on `env` that this thread made and that failed; `err->size` must be set first.
+return `BIYOS_OK`, with the error in `*err`. If no call has failed, `err->status` is `BIYOS_OK`, `err->mdl` null and `err->msg` empty.
+error BIYOS_ERR_BADARG `env` or `err` is null, or `err->size` is smaller than `offsetof(BIYOS_error, msg) + sizeof err->msg`, the size of `BIYOS_error` in 0.1.0. The call then writes nothing.
+note The call never keeps an error of its own, so a failed read leaves the last error as it was.
+note Each thread reads its own last error: a failure on one thread never replaces another's. The environment keeps the errors of the 256 threads that failed most recently, and dropping one ends the life of its message. If memory runs out on a failure when `env` keeps no error for the thread, no error may be kept for that thread and the read gives `BIYOS_OK`. The failed call's return value still carries its status.
 note The message starts with the kind of failure, `invalid argument`, `out of memory` or `internal error`, and is written for people: branch on the status, not on the text. Successful calls leave it in place, and it is empty after a failure if memory ran out while keeping the message.
-note The pointer stays valid until the next failed call on `env` or until `env` is freed. A call that fails inside a hook is the last failure only until that hook returns, and a message read inside a hook stays valid only until the hook returns.
-see BIYOS_status
+note `err->msg` stays valid until the next failed call on `env` from the same thread, until the error is dropped or until `env` is freed. A call that fails inside a hook is the last failure only until that hook returns, and a message read inside a hook stays valid only until the hook returns.
+see BIYOS_error BIYOS_status
 since 0.1.0
 
 function BIYOS_interrupt
@@ -260,7 +273,7 @@ since 0.1.0
 
 group events Events
 text biyos writes nothing to standard output or standard error. It reports through events, and a caller reads them by adding a hook on one kind of event at a lowest level. The hook then receives every event of that kind at that level or a more severe one. The hooks of an environment receive an event in the order they were added, and an event no hook wants is not built. @sec-capi-sent describes the events biyos sends.
-text While a hook runs, its environment delivers an event and is read-only. The hook may read options, the last error message, the event and the models made on the environment. Every call that would change the environment, setting an option, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change or free a model made on it fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error message is again what it was before the hook ran.
+text While a hook runs, its environment delivers an event and is read-only. The hook may read options, the last error, the event and the models made on the environment. Every call that would change the environment, setting an option, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change or free a model made on it fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error is again what it was before the hook ran.
 
 table Event kinds
 value BIYOS_EVT_MESSAGE A message: a level, the module that sent it, a text and fields.
@@ -300,7 +313,7 @@ see BIYOS_addenvhook
 since 0.1.0
 
 group reading Reading an event
-text These calls read the event a hook is given. They cannot fail: a null event gives 0 or an empty string, as does a field number outside the event's fields. A string they return is valid until the hook returns.
+text These calls read the event a hook is given. They cannot fail: a null event gives 0, null or an empty string, as does a field number outside the event's fields. A string they return is valid until the hook returns.
 
 function BIYOS_getevtknd
 summary Give the kind of an event.
@@ -345,6 +358,13 @@ summary Give the value of a field of an event.
 param evt in The event.
 param idx in The number of the field.
 return The value of the field, as text.
+since 0.1.0
+
+function BIYOS_getevtmdl
+summary Give the model an event came from.
+param evt in The event.
+return The model of the call that sent the event, or null when the call was on the environment itself.
+note For `BIYOS_copymdl` it is the model copied.
 since 0.1.0
 
 group formatting Formatting an event
@@ -1264,8 +1284,8 @@ since 0.1.0
 
 group sent Events biyos sends
 text A field is a name and a value, both text. Two messages exist so far: an error when a call fails and a warning when a deprecated option is set.
-text A call on an environment that fails sends an error message, unless the environment is delivering an event. Its level is `BIYOS_LVL_ERR`, its module `capi`, its text the message `BIYOS_lasterror` returns for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a hook can tell the group from the range.
+text A call on an environment that fails sends an error message, unless the environment is delivering an event. Its level is `BIYOS_LVL_ERR`, its module `capi`, its text the message `BIYOS_lasterror` reads for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a hook can tell the group from the range.
 text Setting a deprecated option sends a warning message at level `BIYOS_LVL_WARN` from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. No option is deprecated yet.
-text A check event reports an invariant that does not hold, found by a check the `check_lvl` option runs, and the call then fails. Its level is `BIYOS_LVL_ERR`, its module the module that ran the check, its text the message `BIYOS_lasterror` returns for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. A check that fails while biyos is building an event sends no check event and does not fail the call: the event being built is not sent, the check's error is dropped, and the last error message is left as it was. No call runs a check yet.
+text A check event reports an invariant that does not hold, found by a check the `check_lvl` option runs, and the call then fails. Its level is `BIYOS_LVL_ERR`, its module the module that ran the check, its text the message `BIYOS_lasterror` reads for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. A check that fails while biyos is building an event sends no check event and does not fail the call: the event being built is not sent, the check's error is dropped, and the last error is left as it was. No call runs a check yet.
 text A phase event marks a phase of a solve, such as presolve, beginning or ending. Phases nest: a phase begun inside another ends before it. Its level is `BIYOS_LVL_INFO`, its module the module that timed the phase, its text the name of the phase, and its fields are `edge`, `wall` and `cpu`, in that order. `edge` is `begin` or `end`. `wall` is the wall time since the environment was created and `cpu` the CPU time the process has used, every thread included, both read as the phase begins or ends and written in nanoseconds as decimal text.
 text biyos adds up the time of each phase in a timing tree, nested as phases nest, which no call reads yet. The tree leaves out the time spent delivering phase events, so a hook never changes it, but the stamps do not: a phase's time in the tree is its end's `wall` and `cpu` less its begin's, less, for each phase event sent between the two, the time from that event's stamps until its hooks return. Those events are the phase's own begin event and the events of the phases inside it. Should the CPU time be unreadable as a phase begins, the call fails with `BIYOS_ERR_INTERNAL`, and the phase neither begins nor sends an event. Should it be unreadable as a phase ends, `cpu` repeats its begin value and the phase counts as using no CPU time. No call times a phase yet.

@@ -3,7 +3,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from ctypes import byref, c_char_p, c_double, c_int, c_void_p
 from numbers import Real
-from typing import NoReturn, SupportsIndex
+from typing import TYPE_CHECKING, NoReturn, SupportsIndex
 
 from biyos import _capi
 from biyos._capi import lib
@@ -15,6 +15,9 @@ from biyos._relay import Relay
 from biyos._hooks import Hooks
 from biyos._text import encoded
 from biyos._versions import Versions, version_text
+
+if TYPE_CHECKING:
+    from biyos._model import Model
 
 
 def _name(name: str) -> bytes:
@@ -112,9 +115,12 @@ class Env:
             raise Error("cannot create the environment", status)
         self._handle = handle
         self._models = Handles()
+        self._owners: weakref.WeakValueDictionary[int, Model] = (
+            weakref.WeakValueDictionary()
+        )
         self._arm()
-        self._relay = Relay(handle)
-        self._hooks = Hooks(self._relay)
+        self._relay = Relay(handle, self._owners)
+        self._hooks = Hooks(self._relay, self._owners)
         self._calls = 0
         self._closing = False
         self._pending = False
@@ -327,7 +333,8 @@ class Env:
         """
         if not self._open():
             raise ValueError("the environment is closed")
-        check(self._handle, lib.BIYOS_interrupt(self._handle))
+        status = lib.BIYOS_interrupt(self._handle)
+        check(self._handle, status, self._owners)
 
     def _addhook(
         self,
@@ -386,7 +393,7 @@ class Env:
         status = function(*arguments)
         self._settle()
         self._relay.finish(status)
-        check(self._handle, status)
+        check(self._handle, status, self._owners)
 
     def _open(self) -> bool:
         return self._free.alive and not self._closing

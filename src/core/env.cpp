@@ -70,9 +70,9 @@ const Interrupt &Env::interrupt() const noexcept
     return interrupt_;
 }
 
-const std::string &Env::last_error() const noexcept
+const Record &Env::last_error() const noexcept
 {
-    return last_error_;
+    return records_.get();
 }
 
 Env::ErrorScope::ErrorScope(Env &env) noexcept : env_(env), outer_(env.scope_)
@@ -84,26 +84,19 @@ Env::ErrorScope::~ErrorScope()
 {
     if (swapped_)
     {
-        env_.last_error_.swap(kept_);
+        env_.records_.swap(kept_);
     }
     env_.scope_ = outer_;
 }
 
-void Env::record_error(std::string_view text) noexcept
+void Env::record_error(ErrorKind kind, std::string_view text) noexcept
 {
     if (scope_ != nullptr && !scope_->swapped_)
     {
-        last_error_.swap(scope_->kept_);
         scope_->swapped_ = true;
+        records_.swap(scope_->kept_);
     }
-    try
-    {
-        last_error_.assign(text);
-    }
-    catch (...)
-    {
-        last_error_.clear();
-    }
+    records_.put(status_of(kind), events_.model(), text);
 }
 
 std::size_t Env::handles() const noexcept

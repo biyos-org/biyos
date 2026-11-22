@@ -24,7 +24,7 @@ Items of each family are numbered from 0 in the order they are added, each famil
 
 ## An environment and a model {#sec-model-handles}
 
-A model is made on an environment, which holds the options and the event stream (@sec-events) and keeps the message of the last call that failed (@sec-errors). A call on the model reports there. The environment cannot be freed while a model made on it is not, so free the models first.
+A model is made on an environment, which holds the options and the event stream (@sec-events) and keeps the last error of each thread (@sec-errors). A call on the model reports there. The environment cannot be freed while a model made on it is not, so free the models first.
 
 ```{.c file="examples/c/model.c" item="main"}
 ```

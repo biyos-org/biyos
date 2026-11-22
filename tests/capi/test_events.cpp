@@ -1,6 +1,7 @@
 #include "biyos/biyos.h"
 #include "capi/event.hpp"
 #include "core/events.hpp"
+#include "handles.hpp"
 
 #include <gtest/gtest.h>
 
@@ -19,7 +20,7 @@ class Env
     Env &operator=(const Env &) = delete;
 
     BIYOS_env *get() const { return pointer_; }
-    std::string message() const { return BIYOS_lasterror(pointer_); }
+    std::string message() const { return biyos::test::last_message(pointer_); }
 
   private:
     BIYOS_env *pointer_ = nullptr;
@@ -58,12 +59,17 @@ void receive(const BIYOS_event *event, void *data)
     inbox->value = BIYOS_getevtfldval(event, 0);
 }
 
+void source(const BIYOS_event *event, void *data)
+{
+    static_cast<std::vector<const BIYOS_model *> *>(data)->push_back(BIYOS_getevtmdl(event));
+}
+
 void delete_unknown(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->status = BIYOS_delenvhook(probe->env, 999);
-    probe->message = BIYOS_lasterror(probe->env);
+    probe->message = biyos::test::last_message(probe->env);
 }
 
 void refuse(const BIYOS_event *, void *data)
@@ -71,14 +77,14 @@ void refuse(const BIYOS_event *, void *data)
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->status = BIYOS_setenvintopt(probe->env, BIYOS_OPT_SEED, 42);
-    probe->message = BIYOS_lasterror(probe->env);
+    probe->message = biyos::test::last_message(probe->env);
 }
 
 void read_error(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
-    probe->message = BIYOS_lasterror(probe->env);
+    probe->message = biyos::test::last_message(probe->env);
 }
 
 void free_inside(const BIYOS_event *, void *data)
@@ -86,7 +92,7 @@ void free_inside(const BIYOS_event *, void *data)
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->status = BIYOS_freeenv(probe->env);
-    probe->message = BIYOS_lasterror(probe->env);
+    probe->message = biyos::test::last_message(probe->env);
 }
 
 BIYOS_status listen(BIYOS_env *env, BIYOS_hook hook, void *data, int level, BIYOS_index *id)
@@ -110,7 +116,7 @@ struct Attempt
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(BIYOS_lasterror(attempt.env));
+    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)
@@ -286,6 +292,7 @@ TEST(CApiTest, Accessors)
     EXPECT_STREQ(BIYOS_getevtfldval(&view, 1), "1");
     EXPECT_STREQ(BIYOS_getevtfldname(&view, 2), "");
     EXPECT_STREQ(BIYOS_getevtfldval(&view, -1), "");
+    EXPECT_EQ(BIYOS_getevtmdl(&view), nullptr);
 }
 
 TEST(CApiTest, NullEvent)
@@ -297,4 +304,18 @@ TEST(CApiTest, NullEvent)
     EXPECT_EQ(BIYOS_getnevtfld(nullptr), 0);
     EXPECT_STREQ(BIYOS_getevtfldname(nullptr, 0), "");
     EXPECT_STREQ(BIYOS_getevtfldval(nullptr, 0), "");
+    EXPECT_EQ(BIYOS_getevtmdl(nullptr), nullptr);
+}
+
+TEST(CApiTest, EventModel)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    std::vector<const BIYOS_model *> seen;
+    BIYOS_index id = 0;
+    ASSERT_EQ(listen(env.get(), source, &seen, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnvar(model.get(), nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    const std::vector<const BIYOS_model *> expected{model.get(), nullptr};
+    EXPECT_EQ(seen, expected);
 }

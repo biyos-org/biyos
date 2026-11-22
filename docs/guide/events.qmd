@@ -46,7 +46,7 @@ The time is the wall time since the environment was created, in seconds with six
 
 ## Reading an event {#sec-events-read}
 
-A hook can also read the parts of an event one by one, with `BIYOS_getevtknd`, `BIYOS_getevtlvl`, `BIYOS_getevtmod`, `BIYOS_getevttext`, `BIYOS_getnevtfld` and the field readers. These calls cannot fail: a null event or a field number out of range gives 0 or an empty string. This function finds the status code an error message carries:
+A hook can also read the parts of an event one by one, with `BIYOS_getevtknd`, `BIYOS_getevtlvl`, `BIYOS_getevtmod`, `BIYOS_getevttext`, `BIYOS_getnevtfld` and the field readers, and `BIYOS_getevtmdl` gives the model of the call that sent it, or null for a call on the environment. These calls cannot fail: a null event or a field number out of range gives 0, null or an empty string. This function finds the status code an error message carries:
 
 ```{.c file="examples/c/events.c" item="code_of"}
 ```
@@ -64,11 +64,11 @@ No call runs a check or times a phase yet: these events arrive with the solvers.
 
 ## Inside a hook {#sec-events-inside}
 
-While a hook runs, its environment is delivering an event and is read-only, together with the models made on it. The hook may read options, the last error message, the event and the models. A call that would change the environment or one of its models, setting an option, adding or removing a hook, creating, changing or freeing a model, fails with `BIYOS_ERR_BADARG` and changes nothing. Such a failure keeps its message, so `BIYOS_lasterror` explains it, but sends no event, and when the hook returns the last error is again what it was before. The event and every string read from it are valid only until the hook returns.
+While a hook runs, its environment is delivering an event and is read-only, together with the models made on it. The hook may read options, the last error, the event and the models. A call that would change the environment or one of its models, setting an option, adding or removing a hook, creating, changing or freeing a model, fails with `BIYOS_ERR_BADARG` and changes nothing. Such a failure keeps its message, so `BIYOS_lasterror` explains it, but sends no event, and when the hook returns the last error is again what it was before. The event and every string read from it are valid only until the hook returns.
 
 ## Events in Python {#sec-events-python}
 
-In Python, `env.addhook` attaches any callable that takes one `Event` and returns an id for `env.delhook`. The event's properties, such as `kind`, `level` and `text`, read its parts, and `fmttext` and `fmtjson` give its lines. Forwarding events to Python's `logging` module takes a few lines:
+In Python, `env.addhook` attaches any callable that takes one `Event` and returns an id for `env.delhook`. The event's properties, such as `kind`, `level`, `text` and `model`, read its parts, and `fmttext` and `fmtjson` give its lines. Forwarding events to Python's `logging` module takes a few lines:
 
 ```{.python file="examples/python/events.py"}
 ```

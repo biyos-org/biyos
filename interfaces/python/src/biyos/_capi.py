@@ -25,6 +25,15 @@ KIND_ENUM = 5
 HOOK = CFUNCTYPE(None, c_void_p, c_void_p)
 
 
+class ErrorRecord(ctypes.Structure):
+    _fields_ = [
+        ("size", c_size_t),
+        ("status", c_int),
+        ("mdl", c_void_p),
+        ("msg", c_char_p),
+    ]
+
+
 def _declare(
     lib: ctypes.CDLL, name: str, result: type | None, *arguments: type
 ) -> None:
@@ -49,7 +58,8 @@ def _load() -> ctypes.CDLL:
     _declare(lib, "BIYOS_version", None, ints, ints, ints)
     _declare(lib, "BIYOS_newenv", c_int, POINTER(c_void_p))
     _declare(lib, "BIYOS_freeenv", c_int, c_void_p)
-    _declare(lib, "BIYOS_lasterror", c_char_p, c_void_p)
+    record = POINTER(ErrorRecord)
+    _declare(lib, "BIYOS_lasterror", c_int, c_void_p, record)
     _declare(lib, "BIYOS_interrupt", c_int, c_void_p)
     _declare(lib, "BIYOS_getoptid", c_int, c_void_p, c_char_p, ints)
     _declare(lib, "BIYOS_getoptknd", c_int, c_void_p, c_int32, ints)
@@ -79,6 +89,7 @@ def _declare_events(lib: ctypes.CDLL, ints: type) -> None:
     _declare(lib, "BIYOS_getnevtfld", c_int32, c_void_p)
     _declare(lib, "BIYOS_getevtfldname", c_char_p, c_void_p, c_int32)
     _declare(lib, "BIYOS_getevtfldval", c_char_p, c_void_p, c_int32)
+    _declare(lib, "BIYOS_getevtmdl", c_void_p, c_void_p)
     _declare_formats(lib)
 
 

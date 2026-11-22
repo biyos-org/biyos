@@ -22,6 +22,11 @@ HEADER = """#pragma once
 
 typedef int BIYOS_status;
 typedef void (*BIYOS_hook)(const BIYOS_event *evt, void *data);
+typedef struct BIYOS_error
+{
+    size_t size;
+    const char *msg;
+} BIYOS_error;
 
 BIYOS_API BIYOS_status BIYOS_addvar(BIYOS_model *mdl,
                                      BIYOS_index n,
@@ -48,6 +53,19 @@ class HeaderTest(unittest.TestCase):
             self.declared["BIYOS_status"], "typedef int BIYOS_status;"
         )
         self.assertIn("(*BIYOS_hook)", self.declared["BIYOS_hook"])
+
+    def test_struct(self):
+        shown = self.declared["BIYOS_error"]
+        self.assertEqual(
+            shown.split("\n"),
+            [
+                "typedef struct BIYOS_error",
+                "{",
+                "    size_t size;",
+                "    const char *msg;",
+                "} BIYOS_error;",
+            ],
+        )
 
     def test_function(self):
         shown = self.declared["BIYOS_addvar"]

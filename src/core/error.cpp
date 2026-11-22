@@ -26,6 +26,20 @@ std::string_view kind_name(ErrorKind kind) noexcept
     return "unknown error";
 }
 
+BIYOS_status status_of(ErrorKind kind) noexcept
+{
+    switch (kind)
+    {
+    case ErrorKind::InvalidArgument:
+        return BIYOS_ERR_BADARG;
+    case ErrorKind::NoMemory:
+        return BIYOS_ERR_NOMEMORY;
+    case ErrorKind::Internal:
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_ERR_INTERNAL;
+}
+
 Error::Error(ErrorKind kind, std::string object, std::string message) : kind_(kind)
 {
     std::string text(kind_name(kind));

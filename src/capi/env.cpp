@@ -5,6 +5,7 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 
+#include <cstddef>
 #include <string>
 
 using biyos::capi::guarded;
@@ -12,6 +13,8 @@ using biyos::capi::writable;
 
 namespace
 {
+
+constexpr std::size_t kErrorSize = offsetof(BIYOS_error, msg) + sizeof(BIYOS_error::msg);
 
 void freeable(biyos::Env &env)
 {
@@ -48,9 +51,17 @@ BIYOS_status BIYOS_freeenv(BIYOS_env *env)
     return status;
 }
 
-const char *BIYOS_lasterror(const BIYOS_env *env)
+BIYOS_status BIYOS_lasterror(const BIYOS_env *env, BIYOS_error *err)
 {
-    return env == nullptr ? "" : env->core.last_error().c_str();
+    if (env == nullptr || err == nullptr || err->size < kErrorSize)
+    {
+        return BIYOS_ERR_BADARG;
+    }
+    const biyos::Record &record = env->core.last_error();
+    err->status = record.status;
+    err->mdl = record.model;
+    err->msg = record.text.c_str();
+    return BIYOS_OK;
 }
 
 BIYOS_status BIYOS_interrupt(BIYOS_env *env)
