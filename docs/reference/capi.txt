@@ -28,12 +28,12 @@ since 0.1.0
 type BIYOS_status
 summary The status a call returns.
 note An `int`: `BIYOS_OK`, which is 0, or a negative error code of @sec-codes. No call returns a positive status.
-see BIYOS_OK BIYOS_lasterror
+see BIYOS_OK BIYOS_lasterror BIYOS_error
 since 0.1.0
 
 type BIYOS_env
 summary An environment.
-note It holds the options, the hooks and the message of the last call that failed. Environments share no state, so separate threads may use separate environments at the same time; one environment is used by one thread at a time, together with the models made on it, except that any thread may call `BIYOS_interrupt` on it.
+note It holds the options, the hooks and the last error of each thread that calls it. Environments share no state, so separate threads may use separate environments at the same time; one environment is used by one thread at a time, together with the models made on it, except that any thread may call `BIYOS_interrupt` on it.
 see BIYOS_newenv BIYOS_freeenv
 since 0.1.0
 
@@ -55,6 +55,15 @@ param evt in The event, valid until the hook returns.
 param data in The pointer given to `BIYOS_addenvhook`, as given.
 note While the hook runs, its environment and the models made on it are read-only (@sec-capi-events).
 see BIYOS_addenvhook BIYOS_delenvhook
+since 0.1.0
+
+type BIYOS_error
+summary The last error of a thread on an environment, as `BIYOS_lasterror` reads it.
+note `size` is set by the caller to `sizeof(BIYOS_error)` before the call. New members are added at the end, so a caller built against an older header keeps working.
+note `status` is the status the failed call returned, or `BIYOS_OK` if no call has failed.
+note `mdl` is the model of the failed call, or null for a call on the environment. It is only an address to compare: the model may since have been freed.
+note `msg` is the message of the failed call, or an empty string. It is never null and belongs to the environment.
+see BIYOS_lasterror BIYOS_status
 since 0.1.0
 
 group linking Linking
@@ -88,7 +97,7 @@ return Nothing. The call cannot fail.
 since 0.1.0
 
 group env Environment
-text An environment holds the options, the hooks and the message of the last call that failed, and every model is made on one. Environments share no state.
+text An environment holds the options, the hooks and the last error of each thread that calls it, and every model is made on one. Environments share no state.
 
 function BIYOS_newenv
 summary Create an environment.
@@ -108,12 +117,16 @@ see BIYOS_newenv BIYOS_freemdl
 since 0.1.0
 
 function BIYOS_lasterror
-summary Give the message of the last call that failed.
-param env in The environment; null gives an empty string that is always valid.
-return The message of the last call on `env` that failed, or an empty string if none has. The pointer is never null.
+summary Read the last error of the calling thread on an environment.
+param env in The environment.
+param err out Receives the status, the model and the message of the last call on `env` that this thread made and that failed; `err->size` must be set first.
+return `BIYOS_OK`, with the error in `*err`. If no call has failed, `err->status` is `BIYOS_OK`, `err->mdl` null and `err->msg` empty.
+error BIYOS_ERR_BADARG `env` or `err` is null, or `err->size` is smaller than `offsetof(BIYOS_error, msg) + sizeof err->msg`, the size of `BIYOS_error` in 0.1.0. The call then writes nothing.
+note The call never keeps an error of its own, so a failed read leaves the last error as it was.
+note Each thread reads its own last error: a failure on one thread never replaces another's. The environment keeps the errors of the 256 threads that failed most recently, and dropping one ends the life of its message. If memory runs out on a failure when `env` keeps no error for the thread, no error may be kept for that thread and the read gives `BIYOS_OK`. The failed call's return value still carries its status.
 note The message starts with the kind of failure, `invalid argument`, `out of memory` or `internal error`, and is written for people: branch on the status, not on the text. Successful calls leave it in place, and it is empty after a failure if memory ran out while keeping the message.
-note The pointer stays valid until the next failed call on `env` or until `env` is freed. A call that fails inside a hook is the last failure only until that hook returns, and a message read inside a hook stays valid only until the hook returns.
-see BIYOS_status
+note `err->msg` stays valid until the next failed call on `env` from the same thread, until the error is dropped or until `env` is freed. A call that fails inside a hook is the last failure only until that hook returns, and a message read inside a hook stays valid only until the hook returns.
+see BIYOS_error BIYOS_status
 since 0.1.0
 
 function BIYOS_interrupt

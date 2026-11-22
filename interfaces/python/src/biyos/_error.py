@@ -1,6 +1,6 @@
-from ctypes import c_void_p
+from ctypes import byref, c_void_p, sizeof
 
-from biyos._capi import OK, lib
+from biyos._capi import OK, ErrorRecord, lib
 
 
 class Error(Exception):
@@ -23,7 +23,13 @@ class Error(Exception):
         return msg
 
 
+def last_error(handle: c_void_p) -> ErrorRecord:
+    record = ErrorRecord(size=sizeof(ErrorRecord))
+    lib.BIYOS_lasterror(handle, byref(record))
+    return record
+
+
 def check(handle: c_void_p, status: int) -> None:
     if status != OK:
-        message = lib.BIYOS_lasterror(handle).decode(errors="replace")
-        raise Error(message, status)
+        text = last_error(handle).msg or b""
+        raise Error(text.decode(errors="replace"), status)

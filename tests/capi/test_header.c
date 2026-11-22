@@ -7,6 +7,11 @@ extern char index_size[sizeof(BIYOS_index) == 4 ? 1 : -1];
 extern char int_size[sizeof(BIYOS_int) == 4 ? 1 : -1];
 extern char offset_size[sizeof(BIYOS_offset) == 8 ? 1 : -1];
 extern char real_size[sizeof(BIYOS_real) == 8 ? 1 : -1];
+extern char error_size[offsetof(BIYOS_error, size) == 0 ? 1 : -1];
+extern char error_status[offsetof(BIYOS_error, status) == sizeof(size_t) ? 1 : -1];
+extern char error_mdl[offsetof(BIYOS_error, mdl) == 2 * sizeof(void *) ? 1 : -1];
+extern char error_msg[offsetof(BIYOS_error, msg) == 3 * sizeof(void *) ? 1 : -1];
+extern char error_end[sizeof(BIYOS_error) == 4 * sizeof(void *) ? 1 : -1];
 
 #if !defined(BIYOS_OK) || BIYOS_OK != 0
 #error "BIYOS_OK must be zero"
@@ -356,6 +361,13 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
     return status;
 }
 
+static int no_error(const BIYOS_env *env)
+{
+    BIYOS_error error = {.size = sizeof error};
+    return BIYOS_lasterror(env, &error) == BIYOS_OK && error.status == BIYOS_OK &&
+           error.mdl == NULL && error.msg[0] == '\0';
+}
+
 int main(void)
 {
     BIYOS_status status = BIYOS_OK;
@@ -381,7 +393,7 @@ int main(void)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_newenv(&env) != BIYOS_OK || BIYOS_lasterror(env)[0] != '\0')
+    if (BIYOS_newenv(&env) != BIYOS_OK || !no_error(env))
     {
         status = BIYOS_ERR_INTERNAL;
     }

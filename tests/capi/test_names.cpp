@@ -139,7 +139,7 @@ std::string refused(const Calls &family, BIYOS_index index, const std::string &r
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(BIYOS_lasterror(attempt.env));
+    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
 }
 
 void rename(const BIYOS_event *, void *data)

@@ -1,4 +1,5 @@
 #include "biyos/biyos.h"
+#include "handles.hpp"
 
 #include <gtest/gtest.h>
 
@@ -16,7 +17,7 @@ class Env
     Env &operator=(const Env &) = delete;
 
     BIYOS_env *get() const { return pointer_; }
-    std::string message() const { return BIYOS_lasterror(pointer_); }
+    std::string message() const { return biyos::test::last_message(pointer_); }
 
   private:
     BIYOS_env *pointer_ = nullptr;

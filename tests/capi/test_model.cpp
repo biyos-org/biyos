@@ -88,7 +88,7 @@ struct Attempt
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(BIYOS_lasterror(attempt.env));
+    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)
@@ -193,7 +193,7 @@ TEST(CApiTest, HeldFree)
     ASSERT_EQ(BIYOS_newmdl(env, &first), BIYOS_OK);
     ASSERT_EQ(BIYOS_newmdl(env, &second), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(env), BIYOS_ERR_BADARG);
-    EXPECT_STREQ(BIYOS_lasterror(env),
+    EXPECT_STREQ(biyos::test::last_message(env),
                  "invalid argument: environment: has a model that is not freed");
     EXPECT_EQ(BIYOS_freemdl(first), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(env), BIYOS_ERR_BADARG);

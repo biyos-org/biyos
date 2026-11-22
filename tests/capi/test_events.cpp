@@ -20,7 +20,7 @@ class Env
     Env &operator=(const Env &) = delete;
 
     BIYOS_env *get() const { return pointer_; }
-    std::string message() const { return BIYOS_lasterror(pointer_); }
+    std::string message() const { return biyos::test::last_message(pointer_); }
 
   private:
     BIYOS_env *pointer_ = nullptr;
@@ -69,7 +69,7 @@ void delete_unknown(const BIYOS_event *, void *data)
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->status = BIYOS_delenvhook(probe->env, 999);
-    probe->message = BIYOS_lasterror(probe->env);
+    probe->message = biyos::test::last_message(probe->env);
 }
 
 void refuse(const BIYOS_event *, void *data)
@@ -77,14 +77,14 @@ void refuse(const BIYOS_event *, void *data)
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->status = BIYOS_setenvintopt(probe->env, BIYOS_OPT_SEED, 42);
-    probe->message = BIYOS_lasterror(probe->env);
+    probe->message = biyos::test::last_message(probe->env);
 }
 
 void read_error(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
-    probe->message = BIYOS_lasterror(probe->env);
+    probe->message = biyos::test::last_message(probe->env);
 }
 
 void free_inside(const BIYOS_event *, void *data)
@@ -92,7 +92,7 @@ void free_inside(const BIYOS_event *, void *data)
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->status = BIYOS_freeenv(probe->env);
-    probe->message = BIYOS_lasterror(probe->env);
+    probe->message = biyos::test::last_message(probe->env);
 }
 
 BIYOS_status listen(BIYOS_env *env, BIYOS_hook hook, void *data, int level, BIYOS_index *id)
@@ -116,7 +116,7 @@ struct Attempt
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(BIYOS_lasterror(attempt.env));
+    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)

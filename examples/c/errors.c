@@ -28,10 +28,16 @@ static int report(BIYOS_env *env, BIYOS_status status)
     {
         return 0;
     }
-    printf("%d, at fault %s: %s\n",
-           status,
-           at_fault(status),
-           BIYOS_lasterror(env));
+    BIYOS_error error = {.size = sizeof error};
+    if (BIYOS_lasterror(env, &error) != BIYOS_OK)
+    {
+        return 1;
+    }
+    printf("%d, at fault %s, on %s: %s\n",
+           error.status,
+           at_fault(error.status),
+           error.mdl == NULL ? "the environment" : "a model",
+           error.msg);
     return 1;
 }
 

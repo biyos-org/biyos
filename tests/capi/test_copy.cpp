@@ -154,7 +154,7 @@ TEST(CApiTest, SameCopy)
         BIYOS_env *env = created();
         const Held source = made_on(env);
         const Held copy = copied(source, env);
-        EXPECT_STREQ(BIYOS_lasterror(env), "");
+        EXPECT_STREQ(biyos::test::last_message(env), "");
         free_both(copy_first ? copy : source, copy_first ? source : copy);
     }
 }
@@ -166,8 +166,8 @@ TEST(CApiTest, OtherCopy)
         SCOPED_TRACE(copy_first ? "copy first" : "source first");
         const Held source = made_on(created());
         const Held copy = copied(source, created());
-        EXPECT_STREQ(BIYOS_lasterror(source.env), "");
-        EXPECT_STREQ(BIYOS_lasterror(copy.env), "");
+        EXPECT_STREQ(biyos::test::last_message(source.env), "");
+        EXPECT_STREQ(biyos::test::last_message(copy.env), "");
         free_both(copy_first ? copy : source, copy_first ? source : copy);
     }
 }
@@ -180,11 +180,11 @@ TEST(CApiTest, HeldCopy)
     const Held other = copied(source, created());
     EXPECT_EQ(BIYOS_freemdl(source.model), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(source.env), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_lasterror(source.env), held);
+    EXPECT_EQ(biyos::test::last_message(source.env), held);
     EXPECT_EQ(BIYOS_freemdl(same.model), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(source.env), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(other.env), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_lasterror(other.env), held);
+    EXPECT_EQ(biyos::test::last_message(other.env), held);
     EXPECT_EQ(BIYOS_freemdl(other.model), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(other.env), BIYOS_OK);
 }

@@ -23,7 +23,7 @@ Besides the codes the reference names for a call, any call can return `BIYOS_ERR
 
 ## The message {#sec-errors-message}
 
-`BIYOS_lasterror` returns the message of the last call on an environment that failed. A call on a model keeps its message on the environment the model was made on.
+`BIYOS_lasterror` reads the status, the model and the message of the last call on an environment that failed. A call on a model keeps its message on the environment the model was made on.
 
 ```{.c file="examples/c/errors.c" item="report"}
 ```
@@ -31,8 +31,8 @@ Besides the codes the reference names for a call, any call can return `BIYOS_ERR
 The message starts with the kind of failure, `invalid argument`, `out of memory` or `internal error`, then says what was wrong:
 
 ```text
--100, at fault the caller: invalid argument: variable 0: bounds [0, 2] are outside [0, 1], the widest of its kind
--100, at fault the caller: invalid argument: option 'seed': -1 is outside [0, 2147483647]
+-100, at fault the caller, on a model: invalid argument: variable 0: bounds [0, 2] are outside [0, 1], the widest of its kind
+-100, at fault the caller, on the environment: invalid argument: option 'seed': -1 is outside [0, 2147483647]
 ```
 
 It is written for people: branch on the status, not on the text. The pointer is never null. It stays valid until the next failed call on the environment or until the environment is freed, and a successful call leaves the message in place. A call given a null environment or model keeps no message, since it has nowhere to keep one, and neither does `BIYOS_newenv`, nor the formatting calls, which take no environment.

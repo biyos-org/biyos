@@ -60,7 +60,9 @@ int main(void)
         set_options(env) && read_options(env) && describe(env, "check_lvl");
     if (!done)
     {
-        fprintf(stderr, "%s\n", BIYOS_lasterror(env));
+        BIYOS_error error = {.size = sizeof error};
+        BIYOS_lasterror(env, &error);
+        fprintf(stderr, "%s\n", error.msg);
     }
     BIYOS_freeenv(env);
     return done ? 0 : 1;
