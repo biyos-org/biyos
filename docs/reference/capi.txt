@@ -348,17 +348,17 @@ return The value of the field, as text.
 since 0.1.0
 
 group formatting Formatting an event
-text These calls write an event as one line into a buffer the caller gives, as `snprintf` does but with the size before the buffer, and nowhere else. They read only the event, so a hook may call them. When `size` is at least 1 the call writes at most `size - 1` bytes of the line, then a NUL; a buffer that is too small receives the start of the line, cut at a byte, which may fall inside a UTF-8 character. When `size` is 0 the call writes nothing, and `buf` may be null, to learn the length alone.
+text These calls write an event as one line into a buffer the caller gives, as `snprintf` does but with the size before the buffer, and nowhere else. They read only the event, so a hook may call them. When `cap` is at least 1 the call writes at most `cap - 1` bytes of the line, then a NUL; a buffer that is too small receives the start of the line, cut at a byte, which may fall inside a UTF-8 character. When `cap` is 0 the call writes nothing, and `buf` may be null, to learn the length alone.
 text The line has no trailing newline. A byte below 0x20 is written as `\n` for a newline, `\t` for a tab and `\u00XX` with lowercase hex digits for any other, so the line never breaks. The time of an event is the wall time since its environment was created, in seconds with six decimals, cut to the microsecond, such as `0.001234` for 1234567 nanoseconds; the decimal point is `.` whatever the locale. These calls take no environment, so a failure keeps no message and sends no event, and a failed call writes nothing.
 
 function BIYOS_fmttext
 summary Write an event as a line for people.
 param evt in The event.
-param size in The size of `buf` in bytes.
-param buf out Receives the line; may be null when `size` is 0.
+param cap in The size of `buf` in bytes.
+param buf out Receives the line; may be null when `cap` is 0.
 param len out Receives the length of the whole line in bytes, without the NUL, whether it fits or not.
-return `BIYOS_OK`. The line fits when `*len` is less than `size`.
-error BIYOS_ERR_BADARG `evt` or `len` is null, or `buf` is null while `size` is not 0.
+return `BIYOS_OK`. The line fits when `*len` is less than `cap`.
+error BIYOS_ERR_BADARG `evt` or `len` is null, or `buf` is null while `cap` is not 0.
 note The line holds the time, a space, the name of the level, a space, the module and a colon, then a space and the text unless the text is empty, then for each field a space, its name, `=` and its value. Every byte from 0x20 up is written as it is, and nothing is quoted: for a line a program reads, use `BIYOS_fmtjson`.
 see BIYOS_fmtjson
 since 0.1.0
@@ -366,11 +366,11 @@ since 0.1.0
 function BIYOS_fmtjson
 summary Write an event as a line of JSON.
 param evt in The event.
-param size in The size of `buf` in bytes.
-param buf out Receives the line; may be null when `size` is 0.
+param cap in The size of `buf` in bytes.
+param buf out Receives the line; may be null when `cap` is 0.
 param len out Receives the length of the whole line in bytes, without the NUL, whether it fits or not.
-return `BIYOS_OK`. The line fits when `*len` is less than `size`.
-error BIYOS_ERR_BADARG `evt` or `len` is null, or `buf` is null while `size` is not 0.
+return `BIYOS_OK`. The line fits when `*len` is less than `cap`.
+error BIYOS_ERR_BADARG `evt` or `len` is null, or `buf` is null while `cap` is not 0.
 note The line is one JSON object with the members `time`, `kind`, `level`, `module`, `text` and `fields`, in that order. `time` is a number, written as in text. `kind` is `message`, `check` or `phase`, and `level` is `debug`, `info`, `warning` or `error`. `fields` is an object holding the fields in their order, each value a string. A quote and a backslash are written as `\"` and `\\`. Bytes that are not well-formed UTF-8 become U+FFFD, one for each maximal subpart, so the line is always valid JSON.
 see BIYOS_fmttext
 since 0.1.0
@@ -505,7 +505,7 @@ since 0.1.0
 group functions Functions
 text A function of the variables $x$ is $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j$: a constant, linear terms and quadratic terms. Constraints and objectives refer to functions by index, so one function may serve several of them. A function's constant must be finite. Its linear terms may come in any order and are kept sorted by variable; each must name a variable of the model, appear once in the function and have a finite coefficient. A term whose coefficient is 0 is kept.
 text The terms of many functions travel in compressed form, as three arrays. Function `j` of them has the terms from `off[j]` to `off[j + 1] - 1` of `varidx` and `coef`, which hold a variable and its coefficient each. So `off` holds one more offset than there are functions: the first is 0, none is below the one before it, and the last is the number of terms. An offset or a number of terms is a `BIYOS_offset`.
-text A reader of terms writes into arrays the caller gives, in the manner of the formatting calls: `size` is the number of terms the arrays hold, the call writes at most that many, and `nnz` receives the number of terms whether they fit or not. A null array is skipped, so a `size` of 0 with null arrays learns `nnz` alone.
+text A reader of terms writes into arrays the caller gives, in the manner of the formatting calls: `cap` is the number of terms the arrays hold, the call writes at most that many, and `nnz` receives the number of terms whether they fit or not. A null array is skipped, so a `cap` of 0 with null arrays learns `nnz` alone.
 
 function BIYOS_addfuns
 summary Add functions after the last one, with their constants and linear terms.
@@ -534,14 +534,14 @@ summary Read the constants and linear terms of functions.
 param mdl in The model.
 param pos in The first function to read.
 param n in The number of functions to read.
-param size in The number of terms `varidx` and `coef` hold.
+param cap in The number of terms `varidx` and `coef` hold.
 param cst out Entry `j` receives the constant of function `pos + j`; skipped when null.
-param off out Receives `n + 1` offsets from 0, whatever `size` is; skipped when null.
+param off out Receives `n + 1` offsets from 0, whatever `cap` is; skipped when null.
 param nnz out Receives the number of terms of the functions, whether they fit or not.
 param varidx out Receives the variable of each term, each function's sorted by variable; skipped when null.
 param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written. Function `pos + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `size`.
-error BIYOS_ERR_BADARG `pos`, `n` or `size` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
+return `BIYOS_OK` once the arrays are written. Function `pos + j` is whole in `varidx` and `coef` when `off[j + 1]` is at most `cap`.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
 see BIYOS_getnfun BIYOS_getclintermrg BIYOS_getquadtermrg
 since 0.1.0
 
@@ -566,13 +566,13 @@ summary Read the linear terms of variables, by variable.
 param mdl in The model.
 param pos in The first variable to read.
 param n in The number of variables to read.
-param size in The number of terms `funidx` and `coef` hold.
-param off out Receives `n + 1` offsets from 0, whatever `size` is; skipped when null.
+param cap in The number of terms `funidx` and `coef` hold.
+param off out Receives `n + 1` offsets from 0, whatever `cap` is; skipped when null.
 param nnz out Receives the number of linear terms of the variables, whether they fit or not.
 param funidx out Receives the function of each term, each variable's sorted by function; skipped when null.
 param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written. Variable `pos + j` is whole in `funidx` and `coef` when `off[j + 1]` is at most `size`.
-error BIYOS_ERR_BADARG `pos`, `n` or `size` is negative, `pos + n` exceeds the number of variables, or `nnz` is null.
+return `BIYOS_OK` once the arrays are written. Variable `pos + j` is whole in `funidx` and `coef` when `off[j + 1]` is at most `cap`.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of variables, or `nnz` is null.
 note The terms are those `BIYOS_getfuns` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function.
 see BIYOS_getfuns BIYOS_addlinterms
 since 0.1.0
@@ -601,14 +601,14 @@ summary Read the quadratic terms of functions.
 param mdl in The model.
 param pos in The first function to read.
 param n in The number of functions to read.
-param size in The number of terms `varidx1`, `varidx2` and `coef` hold.
-param off out Receives `n + 1` offsets from 0, whatever `size` is; skipped when null.
+param cap in The number of terms `varidx1`, `varidx2` and `coef` hold.
+param off out Receives `n + 1` offsets from 0, whatever `cap` is; skipped when null.
 param nnz out Receives the number of quadratic terms of the functions, whether they fit or not.
 param varidx1 out Receives the first variable of each pair; skipped when null.
 param varidx2 out Receives the second variable of each pair, never below the first; skipped when null.
 param coef out Receives the coefficient of each pair; skipped when null.
 return `BIYOS_OK` once the arrays are written, each function's pairs sorted.
-error BIYOS_ERR_BADARG `pos`, `n` or `size` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, `pos + n` exceeds the number of functions, or `nnz` is null.
 see BIYOS_addquadterms BIYOS_getfuns
 since 0.1.0
 

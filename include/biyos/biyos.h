@@ -100,8 +100,8 @@ BIYOS_API BIYOS_index BIYOS_getnevtfld(const BIYOS_event *evt);
 BIYOS_API const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx);
 BIYOS_API const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx);
 
-BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, size_t size, char *buf, size_t *len);
-BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t size, char *buf, size_t *len);
+BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, size_t cap, char *buf, size_t *len);
+BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *buf, size_t *len);
 
 #define BIYOS_VAR_CONT 1
 #define BIYOS_VAR_BIN 2
@@ -157,7 +157,7 @@ BIYOS_API BIYOS_status BIYOS_getnfun(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
                                      BIYOS_index pos,
                                      BIYOS_index n,
-                                     BIYOS_offset size,
+                                     BIYOS_offset cap,
                                      BIYOS_real *cst,
                                      BIYOS_offset *off,
                                      BIYOS_offset *nnz,
@@ -172,7 +172,7 @@ BIYOS_API BIYOS_status BIYOS_addlinterms(BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,
                                            BIYOS_index pos,
                                            BIYOS_index n,
-                                           BIYOS_offset size,
+                                           BIYOS_offset cap,
                                            BIYOS_offset *off,
                                            BIYOS_offset *nnz,
                                            BIYOS_index *funidx,
@@ -187,7 +187,7 @@ BIYOS_API BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_getquadtermrg(const BIYOS_model *mdl,
                                            BIYOS_index pos,
                                            BIYOS_index n,
-                                           BIYOS_offset size,
+                                           BIYOS_offset cap,
                                            BIYOS_offset *off,
                                            BIYOS_offset *nnz,
                                            BIYOS_index *varidx1,

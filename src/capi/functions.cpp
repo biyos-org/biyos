@@ -109,12 +109,12 @@ BIYOS_status BIYOS_getnfun(const BIYOS_model *mdl, BIYOS_index *n)
 BIYOS_status BIYOS_getfuns(const BIYOS_model *mdl,
                            BIYOS_index pos,
                            BIYOS_index n,
-                           BIYOS_offset size,
+                           BIYOS_offset cap,
                            BIYOS_real *cst,
                            BIYOS_offset *off,
                            BIYOS_offset *nnz,
                            BIYOS_index *varidx,
                            BIYOS_real *coef)
 {
-    return guarded<get_funs>(mdl, pos, n, cst, off, size, nnz, varidx, coef);
+    return guarded<get_funs>(mdl, pos, n, cst, off, cap, nnz, varidx, coef);
 }

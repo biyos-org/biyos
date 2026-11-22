@@ -74,12 +74,12 @@ BIYOS_status BIYOS_addquadterms(BIYOS_model *mdl,
 BIYOS_status BIYOS_getquadtermrg(const BIYOS_model *mdl,
                                  BIYOS_index pos,
                                  BIYOS_index n,
-                                 BIYOS_offset size,
+                                 BIYOS_offset cap,
                                  BIYOS_offset *off,
                                  BIYOS_offset *nnz,
                                  BIYOS_index *varidx1,
                                  BIYOS_index *varidx2,
                                  BIYOS_real *coef)
 {
-    return guarded<get_terms>(mdl, pos, n, off, size, nnz, varidx1, varidx2, coef);
+    return guarded<get_terms>(mdl, pos, n, off, cap, nnz, varidx1, varidx2, coef);
 }
