@@ -635,6 +635,7 @@ since 0.1.0
 
 group variables Variables
 text Each variable has a kind and a lower and an upper bound. A bound may be `INFINITY` or `-INFINITY` of `<math.h>`, and no finite bound is taken as infinite, however large. A lower bound of minus infinity or an upper bound of infinity leaves that side unbounded. A lower bound of infinity, an upper bound of minus infinity and NaN are refused, and so is a bound outside the widest bounds of the variable's kind: 0 and 1 for a binary, minus infinity and infinity for any other kind. Any other pair is kept as given, a lower bound above the upper one included.
+text A variable may hold its own absolute and relative tolerance, each finite and at least 0, which stand for the options `feastol_abs` and `feastol_rel` for that variable alone. It holds none until `BIYOS_setvartolsp` sets them, and `BIYOS_delvartolsp` returns it to the options. No call solves a model yet.
 
 table Variable kinds
 value BIYOS_VAR_CONT Continuous: any value between its bounds.
@@ -652,10 +653,10 @@ param knd in The kind of each, a `BIYOS_VAR_` value; null makes every new variab
 param lb in The lower bound of each; null gives each the widest lower bound of its kind.
 param ub in The upper bound of each; null gives each the widest upper bound of its kind.
 param pos out Receives the index of the first new variable; skipped when null.
-return `BIYOS_OK` once the variables are added.
+return `BIYOS_OK` once the variables are added, each without a tolerance of its own.
 error BIYOS_ERR_BADARG `n` is negative, a kind is unknown or a bound is refused.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 variables.
-see BIYOS_setvarbndsp BIYOS_setvarkndsp BIYOS_getvarrg
+see BIYOS_setvarbndsp BIYOS_setvarkndsp BIYOS_setvartolsp BIYOS_getvarrg
 since 0.1.0
 
 function BIYOS_setvarbndsp BIYOS_setvarbndrg
@@ -692,7 +693,7 @@ param pos in In the `rg` form, the first variable of the range.
 param n in The number of entries.
 param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param knd in The new kind of each; null changes nothing.
-return `BIYOS_OK` once the kinds are set. The bounds are kept.
+return `BIYOS_OK` once the kinds are set. The bounds and tolerances are kept.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable, a kind is unknown, or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
 error BIYOS_ERR_INUSE An indicator uses a variable whose new kind is not binary, with a message such as `in use: variable 2: indicator 0 needs it binary`.
 note A variable may appear more than once, as in `BIYOS_setvarbndsp`.
@@ -709,6 +710,45 @@ param knd out Entry `j` receives the kind of variable `idx[j]` or `pos + j`; ski
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
 see BIYOS_setvarkndsp BIYOS_getvarrg
+since 0.1.0
+
+function BIYOS_setvartolsp BIYOS_setvartolrg
+summary Set the tolerances of variables.
+param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
+param atol in The new absolute tolerance of each; null leaves the absolute tolerances as they are.
+param rtol in The new relative tolerance of each; null leaves the relative tolerances as they are.
+return `BIYOS_OK` once the tolerances are set. A variable that held none keeps the options for the part not given.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable or a tolerance is NaN, infinite or negative.
+note A variable may appear more than once, as in `BIYOS_setvarbndsp`.
+see BIYOS_getvartolsp BIYOS_delvartolsp
+since 0.1.0
+
+function BIYOS_getvartolsp BIYOS_getvartolrg
+summary Read the tolerances of variables.
+param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param atol out Entry `j` receives the absolute tolerance of variable `idx[j]` or `pos + j`, or NaN when it holds none; skipped when null.
+param rtol out Entry `j` receives its relative tolerance, or NaN when it holds none; skipped when null.
+return `BIYOS_OK` once the arrays are written.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
+note It reads what the model holds. A NaN stands for the option, whose value the environment holds.
+see BIYOS_setvartolsp
+since 0.1.0
+
+function BIYOS_delvartolsp BIYOS_delvartolrg
+summary Return variables to the tolerances of the options.
+param mdl in The model.
+param pos in In the `rg` form, the first variable of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
+return `BIYOS_OK` once the variables listed hold no tolerance of their own. One that held none, or listed more than once, is left without one.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
+see BIYOS_setvartolsp
 since 0.1.0
 
 function BIYOS_getnvar
@@ -729,7 +769,8 @@ param lb out Entry `j` receives its lower bound; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
-see BIYOS_getnvar
+note `BIYOS_getvartolsp` reads the tolerances.
+see BIYOS_getnvar BIYOS_getvartolsp
 since 0.1.0
 
 function BIYOS_setvarnamesp BIYOS_setvarnamerg
@@ -1088,6 +1129,7 @@ since 0.1.0
 
 group constraints Constraints
 text A constraint `lb <= f(x) <= ub` bounds a function of the model. It holds the index of the function and two bounds, and several constraints may share a function. A constraint's bounds follow the rule of a continuous variable's: `INFINITY` or `-INFINITY` leaves that side unbounded, a lower bound of infinity, an upper bound of minus infinity and NaN are refused, and any other pair is kept as given, a lower bound above the upper one included. A constraint whose bounds are equal is an equality, and one whose bounds are both infinite is free.
+text A constraint may hold its own absolute and relative tolerance, each finite and at least 0, which stand for the options `feastol_abs` and `feastol_rel` for that constraint alone. It holds none until `BIYOS_setcontolsp` sets them, and `BIYOS_delcontolsp` returns it to the options. No call solves a model yet.
 
 function BIYOS_addcon
 summary Add constraints after the last one.
@@ -1097,10 +1139,10 @@ param funidx in The function each constraint bounds; may be null only when `n` i
 param lb in The lower bound of each; null leaves that side of every new constraint unbounded.
 param ub in The upper bound of each; null leaves that side of every new constraint unbounded.
 param pos out Receives the index of the first new constraint; skipped when null.
-return `BIYOS_OK` once the constraints are added.
+return `BIYOS_OK` once the constraints are added, each without a tolerance of its own.
 error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model or a bound is refused.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 constraints.
-see BIYOS_setconbndsp BIYOS_getconrg
+see BIYOS_setconbndsp BIYOS_setcontolsp BIYOS_getconrg
 since 0.1.0
 
 function BIYOS_setconbndsp BIYOS_setconbndrg
@@ -1111,7 +1153,7 @@ param n in The number of entries.
 param idx in In the `sp` form, the constraint of each entry; may be null when `n` is 0.
 param lb in The new lower bound of each; null leaves the lower bounds as they are.
 param ub in The new upper bound of each; null leaves the upper bounds as they are.
-return `BIYOS_OK` once the bounds are set. The functions are kept.
+return `BIYOS_OK` once the bounds are set. The functions and tolerances are kept.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint, the range ends past the last constraint or a bound is refused.
 note A constraint may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getconbndsp BIYOS_addcon BIYOS_getconrg
@@ -1128,6 +1170,45 @@ param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
 see BIYOS_setconbndsp BIYOS_getconrg
+since 0.1.0
+
+function BIYOS_setcontolsp BIYOS_setcontolrg
+summary Set the tolerances of constraints.
+param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the constraint of each entry; may be null when `n` is 0.
+param atol in The new absolute tolerance of each; null leaves the absolute tolerances as they are.
+param rtol in The new relative tolerance of each; null leaves the relative tolerances as they are.
+return `BIYOS_OK` once the tolerances are set. A constraint that held none keeps the options for the part not given.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint, the range ends past the last constraint or a tolerance is NaN, infinite or negative.
+note A constraint may appear more than once, as in `BIYOS_setvarbndsp`.
+see BIYOS_getcontolsp BIYOS_delcontolsp
+since 0.1.0
+
+function BIYOS_getcontolsp BIYOS_getcontolrg
+summary Read the tolerances of constraints.
+param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the constraint of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param atol out Entry `j` receives the absolute tolerance of constraint `idx[j]` or `pos + j`, or NaN when it holds none; skipped when null.
+param rtol out Entry `j` receives its relative tolerance, or NaN when it holds none; skipped when null.
+return `BIYOS_OK` once the arrays are written.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
+note It reads what the model holds. A NaN stands for the option, whose value the environment holds.
+see BIYOS_setcontolsp
+since 0.1.0
+
+function BIYOS_delcontolsp BIYOS_delcontolrg
+summary Return constraints to the tolerances of the options.
+param mdl in The model.
+param pos in In the `rg` form, the first constraint of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the constraint of each entry; may be null when `n` is 0.
+return `BIYOS_OK` once the constraints listed hold no tolerance of their own. One that held none, or listed more than once, is left without one.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
+see BIYOS_setcontolsp
 since 0.1.0
 
 function BIYOS_getncon
@@ -1148,7 +1229,8 @@ param lb out Entry `j` receives its lower bound; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint or the range ends past the last constraint.
-see BIYOS_getncon
+note `BIYOS_getcontolsp` reads the tolerances.
+see BIYOS_getncon BIYOS_getcontolsp
 since 0.1.0
 
 function BIYOS_delconsp BIYOS_delconrg
@@ -1160,7 +1242,7 @@ param idx in In the `sp` form, the constraints to delete, in any order; may be n
 param map out Receives one entry for each constraint the model held before the call: entry `i` is the new index of constraint `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the constraints are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint, a constraint is listed more than once, with a message such as `invalid argument: argument 'idx': constraint 1 is repeated`, or the range ends past the last constraint.
-note A deleted constraint's name goes with it. The functions the deleted constraints bounded stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getconnamesp` is no longer valid.
+note A deleted constraint's name and tolerances go with it. The functions the deleted constraints bounded stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getconnamesp` is no longer valid.
 see BIYOS_getncon BIYOS_delconnamesp
 since 0.1.0
 
@@ -1713,6 +1795,7 @@ since 0.1.0
 
 group cones Cones
 text A cone places functions of the model, taken in order, in a set of a given kind: $(f_1(x), \dots, f_k(x)) \in K$. The functions are its members and their number $k$ its dimension. A cone holds its kind, its parameters and its members, kept as given, and cones are numbered from 0 in the order they are added. A function may be a member of several cones, and of constraints and objectives as well, but appears once in a cone. The kinds, their member order and their dimensions follow the Conic Benchmark Format, version 3, so a cone of a kind the two share maps member for member.
+text A cone may hold its own absolute and relative tolerance, each finite and at least 0, which stand for the options `feastol_abs` and `feastol_rel` for that cone alone. It holds none until `BIYOS_setconetolsp` sets them, and `BIYOS_delconetolsp` returns it to the options. No call solves a model yet.
 text Each kind fixes the dimensions its cones may take. The two power cones take one parameter for each of their first $m$ members, a weight $\alpha_j$ that is finite and positive, with $\sigma = \sum_j \alpha_j$; the weights are kept as given and need not sum to 1. Every other kind takes no parameter. In the table, $t$ names the first members and $x$ the rest, and $\lVert x \rVert$ is the Euclidean norm.
 
 table Cone kinds
@@ -1736,11 +1819,50 @@ param funidx in The members of each cone, in order; not read when there are none
 param prmoff in The `n + 1` offsets of the cones' parameters; null gives no cone a parameter.
 param prm in The parameters of each cone, in order; not read when there are none.
 param pos out Receives the index of the first new cone; skipped when null.
-return `BIYOS_OK` once the cones are added.
+return `BIYOS_OK` once the cones are added, each without a tolerance of its own.
 error BIYOS_ERR_BADARG `n` is negative, `off` or `prmoff` does not begin at 0 or decreases, a kind is unknown, a cone has no member, a member is not a function of the model or appears twice in a cone, a dimension does not suit the kind, a cone is given parameters its kind does not take or none when it takes some, or a parameter is not finite and positive.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 cones, or more members or parameters than any allocation can hold.
 note Cone `p + j`, where `p` is the number of cones before the call, takes the kind `knd[j]`, the members from `funidx[off[j]]` to `funidx[off[j + 1] - 1]` and the parameters from `prm[prmoff[j]]` to `prm[prmoff[j + 1] - 1]`. A refused call changes nothing.
-see BIYOS_getconerg BIYOS_getconeprmrg
+see BIYOS_getconerg BIYOS_getconeprmrg BIYOS_setconetolsp
+since 0.1.0
+
+function BIYOS_setconetolsp BIYOS_setconetolrg
+summary Set the tolerances of cones.
+param mdl in The model.
+param pos in In the `rg` form, the first cone of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the cone of each entry; may be null when `n` is 0.
+param atol in The new absolute tolerance of each; null leaves the absolute tolerances as they are.
+param rtol in The new relative tolerance of each; null leaves the relative tolerances as they are.
+return `BIYOS_OK` once the tolerances are set. A cone that held none keeps the options for the part not given.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a cone, the range ends past the last cone or a tolerance is NaN, infinite or negative.
+note A cone may appear more than once, as in `BIYOS_setvarbndsp`.
+see BIYOS_getconetolsp BIYOS_delconetolsp
+since 0.1.0
+
+function BIYOS_getconetolsp BIYOS_getconetolrg
+summary Read the tolerances of cones.
+param mdl in The model.
+param pos in In the `rg` form, the first cone of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param atol out Entry `j` receives the absolute tolerance of cone `idx[j]` or `pos + j`, or NaN when it holds none; skipped when null.
+param rtol out Entry `j` receives its relative tolerance, or NaN when it holds none; skipped when null.
+return `BIYOS_OK` once the arrays are written.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a cone or the range ends past the last cone.
+note It reads what the model holds. A NaN stands for the option, whose value the environment holds.
+see BIYOS_setconetolsp
+since 0.1.0
+
+function BIYOS_delconetolsp BIYOS_delconetolrg
+summary Return cones to the tolerances of the options.
+param mdl in The model.
+param pos in In the `rg` form, the first cone of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the cone of each entry; may be null when `n` is 0.
+return `BIYOS_OK` once the cones listed hold no tolerance of their own. One that held none, or listed more than once, is left without one.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a cone or the range ends past the last cone.
+see BIYOS_setconetolsp
 since 0.1.0
 
 function BIYOS_getncone
@@ -1775,8 +1897,8 @@ param off out Receives `n + 1` offsets from 0; skipped when null.
 param funidx out Receives the members of each entry, in order; skipped when null.
 return `BIYOS_OK` once the arrays are written, the members of entry `j` from `funidx[off[j]]` to `funidx[off[j + 1] - 1]`.
 error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a cone, the range ends past the last cone, or `cap` is less than the number of members `BIYOS_getnconefunsp` gives.
-note With `BIYOS_getconeprmsp`, it reads back what `BIYOS_addcone` takes. A refused call writes nothing.
-see BIYOS_getnconefunsp BIYOS_getconeprmsp BIYOS_addcone
+note With `BIYOS_getconeprmsp`, it reads back what `BIYOS_addcone` takes. `BIYOS_getconetolsp` reads the tolerances. A refused call writes nothing.
+see BIYOS_getnconefunsp BIYOS_getconeprmsp BIYOS_getconetolsp BIYOS_addcone
 since 0.1.0
 
 function BIYOS_getnconeprmsp BIYOS_getnconeprmrg
@@ -1816,7 +1938,7 @@ param idx in In the `sp` form, the cones to delete, in any order; may be null wh
 param map out Receives one entry for each cone the model held before the call: entry `i` is the new index of cone `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the cones are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a cone, a cone is listed more than once, with a message such as `invalid argument: argument 'idx': cone 1 is repeated`, or the range ends past the last cone.
-note A deleted cone's name, members and parameters go with it; the functions stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getconenamesp` is no longer valid.
+note A deleted cone's name, members, parameters and tolerances go with it; the functions stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getconenamesp` is no longer valid.
 see BIYOS_getncone BIYOS_delconenamesp
 since 0.1.0
 
