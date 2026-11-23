@@ -190,6 +190,7 @@ def _declare_constraints(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_getconbnd", doubles, doubles)
     _declare(lib, "BIYOS_getncon", c_int, c_void_p, ints)
     _declare_pair(lib, "BIYOS_getcon", ints, doubles, doubles)
+    _declare_pair(lib, "BIYOS_delcon", ints)
 
 
 def _declare_objectives(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -203,6 +204,7 @@ def _declare_objectives(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_getobjtol", doubles, doubles)
     _declare(lib, "BIYOS_getnobj", c_int, c_void_p, ints)
     _declare_pair(lib, "BIYOS_getobj", ints, *fields)
+    _declare_pair(lib, "BIYOS_delobj", ints)
 
 
 def _declare_indicators(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -214,6 +216,7 @@ def _declare_indicators(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_getindvar", ints, ints)
     _declare(lib, "BIYOS_getnind", c_int, c_void_p, ints)
     _declare_pair(lib, "BIYOS_getind", *fields)
+    _declare_pair(lib, "BIYOS_delind", ints)
 
 
 def _declare_sos(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -223,6 +226,7 @@ def _declare_sos(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_getnsos", c_int, c_void_p, ints)
     _declare_pair(lib, "BIYOS_getnsosvar", offsets)
     _declare_pair(lib, "BIYOS_getsos", c_int64, ints, offsets, ints, doubles)
+    _declare_pair(lib, "BIYOS_delsos", ints)
 
 
 def _declare_cones(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -234,6 +238,7 @@ def _declare_cones(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_getnconeprm", offsets)
     _declare_pair(lib, "BIYOS_getcone", c_int64, ints, offsets, ints)
     _declare_pair(lib, "BIYOS_getconeprm", c_int64, offsets, doubles)
+    _declare_pair(lib, "BIYOS_delcone", ints)
 
 
 def _declare_complements(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -245,6 +250,7 @@ def _declare_complements(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_delccontol")
     _declare(lib, "BIYOS_getnccon", c_int, c_void_p, ints)
     _declare_pair(lib, "BIYOS_getccon", ints, ints, doubles, doubles)
+    _declare_pair(lib, "BIYOS_delccon", ints)
 
 
 def _declare_names(lib: ctypes.CDLL, ints: type) -> None:
