@@ -75,7 +75,7 @@ RecordView Env::last_error() const noexcept
     return records_.get();
 }
 
-Env::ErrorScope::ErrorScope(Env &env) noexcept
+ErrorScope::ErrorScope(Env &env) noexcept
     : env_(env), linked_(env.events_.delivering()), outer_(env.scope())
 {
     if (linked_)
@@ -84,7 +84,7 @@ Env::ErrorScope::ErrorScope(Env &env) noexcept
     }
 }
 
-Env::ErrorScope::~ErrorScope()
+ErrorScope::~ErrorScope()
 {
     if (swapped_)
     {
@@ -96,7 +96,7 @@ Env::ErrorScope::~ErrorScope()
     }
 }
 
-Env::ErrorScope *Env::scope() const noexcept
+ErrorScope *Env::scope() const noexcept
 {
     return events_.delivering() ? scope_ : nullptr;
 }

@@ -17,6 +17,26 @@
 namespace biyos
 {
 
+class Env;
+
+class ErrorScope
+{
+  public:
+    explicit ErrorScope(Env &env) noexcept;
+    ~ErrorScope();
+    ErrorScope(const ErrorScope &) = delete;
+    ErrorScope &operator=(const ErrorScope &) = delete;
+
+  private:
+    friend class Env;
+
+    Env &env_;
+    bool linked_;
+    ErrorScope *outer_;
+    Record kept_;
+    bool swapped_ = false;
+};
+
 class Env
 {
   public:
@@ -25,24 +45,6 @@ class Env
     Env(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table);
     Env(const Env &) = delete;
     Env &operator=(const Env &) = delete;
-
-    class ErrorScope
-    {
-      public:
-        explicit ErrorScope(Env &env) noexcept;
-        ~ErrorScope();
-        ErrorScope(const ErrorScope &) = delete;
-        ErrorScope &operator=(const ErrorScope &) = delete;
-
-      private:
-        friend class Env;
-
-        Env &env_;
-        bool linked_;
-        ErrorScope *outer_;
-        Record kept_;
-        bool swapped_ = false;
-    };
 
     class Handle
     {
@@ -79,6 +81,8 @@ class Env
     Usage &usage() noexcept;
 
   private:
+    friend class ErrorScope;
+
     ErrorScope *scope() const noexcept;
 
     std::unique_ptr<Clock> clock_;

@@ -23,7 +23,7 @@ struct Forwarder
 
     void operator()(const biyos::Event &event) const
     {
-        const biyos::Env::ErrorScope scope(*env);
+        const biyos::ErrorScope scope(*env);
         const BIYOS_event view{&event};
         hook(&view, data);
     }

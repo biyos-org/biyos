@@ -35,7 +35,7 @@ void say(biyos::Env &env, const std::string &text)
 
 void fail_inside(biyos::Env &env, int &calls)
 {
-    const biyos::Env::ErrorScope scope(env);
+    const biyos::ErrorScope scope(env);
     ++calls;
     status_after(env, [] { throw std::runtime_error("inner"); });
 }
