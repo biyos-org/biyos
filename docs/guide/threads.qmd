@@ -1,15 +1,17 @@
 # Threads {#sec-threads}
 
-biyos keeps no global state. Everything a call reads or changes belongs to an environment or to a model made on it, so environments are independent of each other. The rule follows:
+biyos keeps no global state. Everything a call reads or changes belongs to an environment or to a model made on it, so environments are independent of each other and separate threads may use separate environments at the same time. Threads may also share one environment:
 
-- Separate threads may use separate environments at the same time, each with its own models.
-- One environment is used by one thread at a time, together with every model made on it, except for `BIYOS_interrupt` ([Interrupting a call](#sec-threads-interrupt)).
+- Calls on different models of the environment may run at the same time, from any threads, and so may calls that only read the same model.
+- A call that changes or frees a model runs alone on it: no other thread is in a call on that model meanwhile.
+- A call that changes the environment itself, setting an option, adding or removing a hook or freeing it, overlaps no other call on the environment or on its models. Creating a model on it is not such a change.
+- `BIYOS_interrupt` may overlap any call ([Interrupting a call](#sec-threads-interrupt)).
 
-A program that wants to work on one model from several threads copies it onto an environment per thread (@sec-copy). `BIYOS_copymdl` reads the source and changes the target environment, so while it runs no other thread may use either environment. Afterwards the two are apart.
+A program that wants to change one model from several threads gives each thread a copy (@sec-copy), on the same environment or on another. `BIYOS_copymdl` only reads the source, so other threads may read it meanwhile. Afterwards the two are apart.
 
-An environment keeps a last error per thread ([The last error](#sec-errors-message)), so a thread that takes its turn on an environment reads the failure of its own last failed call, never one another thread left.
+An environment keeps a last error per thread ([The last error](#sec-errors-message)), so a thread reads the failure of its own last failed call, never one another thread left, together with the model that call was on.
 
-biyos starts no thread of its own yet. `BIYOS_version` reads no state and may be called from any thread. A hook runs on the thread whose call sent the event, so the calls that read or format an event run there too.
+biyos starts no thread of its own yet. `BIYOS_version` reads no state and may be called from any thread. A hook runs on the thread whose call sent the event, so the calls that read or format an event run there too. The hooks of an environment run one at a time: an event sent from one thread waits while a hook runs for another, so a hook needs no lock of its own, and `BIYOS_getevtmdl` tells which model each event came from. A hook must not wait for a call on another thread that sends an event on the same environment, since that event waits for the hook.
 
 ## Interrupting a call {#sec-threads-interrupt}
 
@@ -17,7 +19,7 @@ biyos starts no thread of its own yet. `BIYOS_version` reads no state and may be
 
 ## In Python {#sec-threads-python}
 
-The package calls the library through `ctypes`, which releases the global interpreter lock for the length of each C call, so threads that work on separate environments run their C code side by side. The rule is the same as in C: one environment, and its models, per thread at a time.
+The package calls the library through `ctypes`, which releases the global interpreter lock for the length of each C call, so threads that work on separate environments run their C code side by side. In Python, one environment and its models are used by one thread at a time.
 
 ```{.python file="examples/python/threads.py"}
 ```
