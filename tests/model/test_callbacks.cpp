@@ -131,9 +131,9 @@ int calls_of(const UserFunction &function)
         .model = nullptr,
         .callback = 0,
         .thread = 0,
-        .point = {},
-        .weights = {},
-        .direction = {},
+        .x = {},
+        .w = {},
+        .v = {},
     };
     function(request, {}, &calls);
     return calls;
@@ -244,9 +244,9 @@ TEST(CallbackTest, Values)
         .model = nullptr,
         .callback = 0,
         .thread = 0,
-        .point = {},
-        .weights = {},
-        .direction = {},
+        .x = {},
+        .w = {},
+        .v = {},
     };
     EXPECT_EQ(held.function(request, out, held.data), 0);
     EXPECT_EQ(calls, 1);
@@ -359,9 +359,9 @@ TEST(CallbackTest, Copied)
         .model = nullptr,
         .callback = 0,
         .thread = 0,
-        .point = {},
-        .weights = {},
-        .direction = {},
+        .x = {},
+        .w = {},
+        .v = {},
     };
     EXPECT_EQ(held.function(request, out, held.data), 0);
     EXPECT_EQ(calls, 1);

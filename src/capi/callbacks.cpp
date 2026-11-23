@@ -36,9 +36,9 @@ struct Caller
             .mdl = request.model,
             .cb = request.callback,
             .thread = request.thread,
-            .x = start_of(request.point),
-            .w = start_of(request.weights),
-            .v = start_of(request.direction),
+            .x = start_of(request.x),
+            .w = start_of(request.w),
+            .v = start_of(request.v),
         };
         return function(&view, out.data(), data);
     }

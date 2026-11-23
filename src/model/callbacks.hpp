@@ -18,9 +18,9 @@ struct Request
     const BIYOS_model *model;
     Index callback;
     Index thread;
-    std::span<const double> point;
-    std::span<const double> weights;
-    std::span<const double> direction;
+    std::span<const double> x;
+    std::span<const double> w;
+    std::span<const double> v;
 };
 
 using UserFunction = std::function<int(const Request &request, std::span<double> out, void *data)>;

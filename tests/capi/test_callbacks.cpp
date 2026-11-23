@@ -353,9 +353,9 @@ TEST(CallbackTest, Weights)
         .model = model.get(),
         .callback = 0,
         .thread = 2,
-        .point = point,
-        .weights = weights,
-        .direction = {},
+        .x = point,
+        .w = weights,
+        .v = {},
     };
     const Callback &stored = held(model, 0);
     EXPECT_EQ(stored.hessian(request, out, stored.data), 0);
@@ -386,9 +386,9 @@ TEST(CallbackTest, Direction)
         .model = model.get(),
         .callback = 0,
         .thread = 0,
-        .point = point,
-        .weights = weights,
-        .direction = direction,
+        .x = point,
+        .w = weights,
+        .v = direction,
     };
     const Callback &stored = held(model, 0);
     EXPECT_EQ(stored.hessian_product(request, out, stored.data), 0);
@@ -410,9 +410,9 @@ TEST(CallbackTest, Returned)
         .model = model.get(),
         .callback = 0,
         .thread = 0,
-        .point = point,
-        .weights = {},
-        .direction = point,
+        .x = point,
+        .w = {},
+        .v = point,
     };
     const Callback &stored = held(model, 0);
     EXPECT_EQ(stored.function(request, out, stored.data), 1);
@@ -439,9 +439,9 @@ TEST(CallbackTest, CopyShared)
         .model = copy.get(),
         .callback = 0,
         .thread = 0,
-        .point = point,
-        .weights = {},
-        .direction = {},
+        .x = point,
+        .w = {},
+        .v = {},
     };
     const Callback &stored = held(copy, 0);
     EXPECT_EQ(stored.function(request, out, stored.data), 0);
