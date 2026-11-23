@@ -71,10 +71,7 @@ TEST(AllocationTest, ScopedError)
     const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
     const std::string outer(64, 'o');
     biyos::Env env;
-    {
-        const biyos::Events::Caller caller(env.events(), model);
-        env.record_error(biyos::ErrorKind::NoMemory, outer);
-    }
+    env.record_error(biyos::ErrorKind::NoMemory, outer, model);
     {
         const biyos::Env::ErrorScope scope(env);
         biyos::test::fail_after(0);

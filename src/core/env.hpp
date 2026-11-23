@@ -67,7 +67,9 @@ class Env
     const Interrupt &interrupt() const noexcept;
 
     RecordView last_error() const noexcept;
-    void record_error(ErrorKind kind, std::string_view text) noexcept;
+    void record_error(ErrorKind kind,
+                      std::string_view text,
+                      const BIYOS_model *model = nullptr) noexcept;
 
     std::size_t handles() const noexcept;
 

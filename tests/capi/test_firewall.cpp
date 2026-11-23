@@ -24,7 +24,7 @@ BIYOS_status status_after(const std::function<void()> &body)
 
 BIYOS_status status_after(biyos::Env &env, const std::function<void()> &body)
 {
-    return biyos::capi::guard(&env, body);
+    return biyos::capi::guard(&env, nullptr, body);
 }
 
 void say(biyos::Env &env, const std::string &text)
@@ -93,15 +93,20 @@ TEST(FirewallTest, ErrorMessage)
     EXPECT_STREQ(env.last_error().text, "invalid argument: argument 'n': negative");
 }
 
-TEST(FirewallTest, CallerModel)
+TEST(FirewallTest, FailureModel)
 {
     const int address = 0;
     const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
     biyos::Env env;
-    const biyos::Events::Caller caller(env.events(), model);
-    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
+    std::vector<const BIYOS_model *> seen;
+    const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
+    env.events().add_hook(EventKind::Message, EventLevel::Error, keep);
+    EXPECT_EQ(biyos::capi::guard(&env, model, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, model);
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.last_error().model, nullptr);
+    EXPECT_EQ(seen, (std::vector<const BIYOS_model *>{model, nullptr}));
 }
 
 TEST(FirewallTest, MemoryMessage)

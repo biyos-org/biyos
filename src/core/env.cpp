@@ -89,14 +89,14 @@ Env::ErrorScope::~ErrorScope()
     env_.scope_ = outer_;
 }
 
-void Env::record_error(ErrorKind kind, std::string_view text) noexcept
+void Env::record_error(ErrorKind kind, std::string_view text, const BIYOS_model *model) noexcept
 {
     if (scope_ != nullptr && !scope_->swapped_)
     {
         scope_->swapped_ = true;
         records_.swap(scope_->kept_);
     }
-    records_.put(status_of(kind), events_.model(), text);
+    records_.put(status_of(kind), model, text);
 }
 
 std::size_t Env::handles() const noexcept

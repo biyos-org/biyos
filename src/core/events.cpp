@@ -100,23 +100,6 @@ std::string_view name_of(EventLevel level) noexcept
     return "";
 }
 
-Events::Caller::Caller(Events &events, const BIYOS_model *model) noexcept
-    : events_(events), outer_(events.model_)
-{
-    if (outer_ != model)
-    {
-        events_.model_ = model;
-    }
-}
-
-Events::Caller::~Caller()
-{
-    if (events_.model_ != outer_)
-    {
-        events_.model_ = outer_;
-    }
-}
-
 Events::Events(const Clock &clock) : clock_(clock), origin_(clock.wall_time())
 {
     lowest_.fill(kNobody);
