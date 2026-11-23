@@ -135,7 +135,7 @@ def test_senses():
 def test_formats():
     formats, defined = group("biyos.h", "BIYOS_FMT_MPS")
     assert len(formats) == defined
-    names = {f"BIYOS_FMT_{fmt.name}": fmt for fmt in biyos.Format}
+    names = {f"BIYOS_FMT_{fmt.name}": fmt for fmt in biyos.FileFormat}
     assert formats == names
 
 

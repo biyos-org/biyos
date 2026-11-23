@@ -18,7 +18,7 @@ void load(biyos::Env &env, const char *path, BIYOS_int fmt, BIYOS_model **model)
 {
     const char *file = require(path, "path");
     BIYOS_model **made = require(model, "mdl");
-    const biyos::Format format = biyos::find_format(fmt);
+    const biyos::FileFormat format = biyos::find_format(fmt);
     idle(env, "environment");
     auto fresh = std::make_unique<BIYOS_model>(env);
     fresh->core = biyos::read_file(env, std::string_view(file), format);

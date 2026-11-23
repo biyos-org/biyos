@@ -31,9 +31,9 @@ std::filesystem::path path_of(std::string_view path)
 
 }
 
-Format find_format(int id)
+FileFormat find_format(int id)
 {
-    for (const Format format : kFormats)
+    for (const FileFormat format : kFormats)
     {
         if (static_cast<int>(format) == id)
         {
@@ -43,7 +43,7 @@ Format find_format(int id)
     throw Error(ErrorKind::InvalidArgument, "format " + std::to_string(id), "unknown");
 }
 
-Model read_file(Env &env, std::string_view path, Format format)
+Model read_file(Env &env, std::string_view path, FileFormat format)
 {
     TimingTree tree;
     const Timer timer(env, tree, "io", "read");
@@ -61,7 +61,7 @@ Model read_file(Env &env, std::string_view path, Format format)
     }
     switch (format)
     {
-    case Format::Mps:
+    case FileFormat::Mps:
         break;
     }
     return read_mps(env, input, file);
