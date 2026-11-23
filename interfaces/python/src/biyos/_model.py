@@ -1523,18 +1523,19 @@ class Model:
         funidx: Sequence[int | Function] | Functions,
         data: object = None,
     ) -> int:
-        """Add a callback that computes the nonlinear part of functions.
+        """Add a callback that covers functions of the model.
 
-        The callback has no function yet and an empty pattern for each
-        derivative; ``setcbf``, ``setcbg``, ``setcbh`` and
-        ``setcbhv`` give them.
+        A function's nonlinear part is its expression plus the part of every
+        callback that covers it, so a function may be in any number of
+        callbacks and hold an expression beside them. The callback has no
+        function yet and an empty pattern for each derivative; ``setcbf``,
+        ``setcbg``, ``setcbh`` and ``setcbhv`` give them.
 
         Parameters
         ----------
         funidx
-            The functions, each listed once, none with an expression or
-            another callback. Their order is the order of the callback's
-            values.
+            The functions, each listed once. Their order is the order of the
+            callback's values.
         data
             The object passed to each of the callback's functions, None by
             default.
@@ -1577,7 +1578,7 @@ class Model:
         cb
             The callback.
         f
-            The function, as ``addcb`` describes. It writes the nonlinear
+            The function, as ``addcb`` describes. It writes the callback's
             part of each covered function at the point, in the order given
             to ``addcb``.
 
@@ -1608,7 +1609,8 @@ class Model:
 
         The entries of the ``k``-th covered function are those from
         ``off[k]`` to ``off[k + 1] - 1`` of ``varidx``. A variable left out
-        of a function's entries has a zero derivative.
+        of a function's entries has a zero derivative in the callback's part
+        of that function.
 
         Parameters
         ----------
@@ -1659,8 +1661,8 @@ class Model:
 
         The pairs are sorted by their first variable, then by their second,
         as the model lists quadratic terms. They cover every pair of
-        variables ``i <= j`` where a second derivative of some covered
-        function may be nonzero.
+        variables ``i <= j`` where a second derivative of the callback's part
+        of some covered function may be nonzero.
 
         Parameters
         ----------
@@ -1672,8 +1674,8 @@ class Model:
             The second variable of each pair, no less than the first.
         h
             The function, as ``addcb`` describes. It writes, for each pair,
-            the entry of the sum of the covered functions' Hessians, each
-            weighted by ``req.w``, at the point.
+            the entry of the sum of the Hessians of the callback's parts,
+            each weighted by ``req.w``, at the point.
 
         Raises
         ------
@@ -1704,8 +1706,8 @@ class Model:
         hv
             The function, as ``addcb`` describes. It writes, for every
             variable, the entry of the product of ``req.v`` with the sum
-            of the covered functions' Hessians, each weighted by ``req.w``,
-            at the point.
+            of the Hessians of the callback's parts, each weighted by
+            ``req.w``, at the point.
 
         Raises
         ------
