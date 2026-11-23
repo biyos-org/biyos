@@ -41,9 +41,12 @@ typedef struct BIYOS_error
 
 #define BIYOS_OK 0
 #define BIYOS_ERR_BADARG (-100)
+#define BIYOS_ERR_BADFILE (-200)
+#define BIYOS_ERR_UNSUPPORTED (-201)
 #define BIYOS_ERR_BUSY (-202)
 #define BIYOS_ERR_INUSE (-203)
 #define BIYOS_ERR_NOMEMORY (-400)
+#define BIYOS_ERR_FILEIO (-401)
 #define BIYOS_ERR_INTERNAL (-500)
 
 BIYOS_API void BIYOS_version(BIYOS_int *major, BIYOS_int *minor, BIYOS_int *patch);

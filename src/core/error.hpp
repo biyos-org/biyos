@@ -13,9 +13,12 @@ namespace biyos
 enum class ErrorKind
 {
     InvalidArgument,
+    BadFile,
+    Unsupported,
     Busy,
     InUse,
     NoMemory,
+    FileAccess,
     Internal,
 };
 
