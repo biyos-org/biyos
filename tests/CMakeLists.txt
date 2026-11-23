@@ -120,6 +120,7 @@ biyos_add_test(test_capi
     capi/test_quadratic.cpp
     capi/test_ranges.cpp
     capi/test_terms.cpp
+    capi/test_threads.cpp
     capi/test_version.cpp)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
