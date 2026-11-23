@@ -1762,6 +1762,49 @@ class Model:
         self._call(lib.BIYOS_getcbdata, integer("cb", cb), byref(found))
         return data_at(found.value)
 
+    def getncbfun(self, cb: int) -> int:
+        """Return the number of functions a callback covers.
+
+        Parameters
+        ----------
+        cb
+            The callback.
+
+        Returns
+        -------
+        n
+            The number of functions.
+
+        See Also
+        --------
+        BIYOS_getncbfun
+        """
+        count = c_int()
+        self._call(lib.BIYOS_getncbfun, integer("cb", cb), byref(count))
+        return count.value
+
+    def getcbfun(self, cb: int) -> list[int]:
+        """Read the functions a callback covers, as ``addcb`` takes them.
+
+        Parameters
+        ----------
+        cb
+            The callback.
+
+        Returns
+        -------
+        funidx
+            The functions, in the order given to ``addcb``.
+
+        See Also
+        --------
+        BIYOS_getcbfun
+        """
+        n = self.getncbfun(cb)
+        found = (c_int * n)()
+        self._call(lib.BIYOS_getcbfun, integer("cb", cb), n, found)
+        return list(found)
+
     def addcon(
         self,
         funidx: Sequence[int | Function] | Functions,
