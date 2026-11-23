@@ -57,6 +57,8 @@ Model sized(Index n)
         .upper = 1.0,
     };
     model.add_indicators(std::vector<Indicator>(size, indicator));
+    const std::vector<biyos::SosKind> kinds(size, biyos::SosKind::Sos1);
+    model.add_sos(kinds, starts, {});
     return model;
 }
 
@@ -79,6 +81,8 @@ Index n_of(const Model &model, Family family)
         return model.n_objectives();
     case Family::Indicator:
         return model.n_indicators();
+    case Family::Sos:
+        return model.n_sos();
     }
     return 0;
 }
@@ -180,6 +184,7 @@ TEST(NameTest, Nouns)
     EXPECT_EQ(biyos::noun_of(Family::Constraint), "constraint");
     EXPECT_EQ(biyos::noun_of(Family::Objective), "objective");
     EXPECT_EQ(biyos::noun_of(Family::Indicator), "indicator");
+    EXPECT_EQ(biyos::noun_of(Family::Sos), "set");
 }
 
 TEST(NameTest, Unnamed)

@@ -159,6 +159,39 @@ void add_objectives(BIYOS_model *model, Engine &engine, int n, int n_functions)
     ASSERT_EQ(BIYOS_setobjtolrg(model, 0, n, absolute.data(), relative.data()), BIYOS_OK);
 }
 
+void add_members(Engine &engine, int n_variables, Terms &terms)
+{
+    for (int variable = 0; variable < n_variables; ++variable)
+    {
+        if (below(engine, 4) == 0)
+        {
+            const auto position = static_cast<double>(terms.columns.size());
+            terms.columns.push_back(variable);
+            terms.values.push_back(position + below(engine, 4) / 8.0);
+        }
+    }
+    terms.starts.push_back(static_cast<BIYOS_offset>(terms.columns.size()));
+}
+
+void add_sos(BIYOS_model *model, Engine &engine, int n, int n_variables)
+{
+    Terms terms;
+    std::vector<BIYOS_int> kinds;
+    for (int k = 0; k < n; ++k)
+    {
+        kinds.push_back(1 + below(engine, 2));
+        add_members(engine, n_variables, terms);
+    }
+    const BIYOS_status status = BIYOS_addsos(model,
+                                             n,
+                                             kinds.data(),
+                                             terms.starts.data(),
+                                             terms.columns.data(),
+                                             terms.values.data(),
+                                             nullptr);
+    ASSERT_EQ(status, BIYOS_OK);
+}
+
 using Namer = BIYOS_status (*)(BIYOS_model *,
                                BIYOS_index,
                                const BIYOS_index *,
@@ -207,6 +240,9 @@ void build_sample(BIYOS_model *model, Engine &engine)
     add_names(model, engine, functions, BIYOS_setfunnamesp);
     add_names(model, engine, constraints, BIYOS_setconnamesp);
     add_names(model, engine, objectives, BIYOS_setobjnamesp);
+    const int sos = 1 + below(engine, 4);
+    add_sos(model, engine, sos, variables);
+    add_names(model, engine, sos, BIYOS_setsosnamesp);
 }
 
 }

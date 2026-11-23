@@ -104,6 +104,14 @@ std::string differ(const Indicator &a, const Indicator &b)
     });
 }
 
+std::string differ(const Member &a, const Member &b)
+{
+    return first_of({
+        compared("variable", a.variable, b.variable),
+        compared("weight", a.weight, b.weight),
+    });
+}
+
 template <typename T> Offset size_of(std::span<const T> terms)
 {
     return static_cast<Offset>(terms.size());
@@ -198,6 +206,20 @@ std::string indicator_difference(const Model &a, const Model &b, Index indicator
     });
 }
 
+int kind_of(const Model &model, Index sos)
+{
+    return static_cast<int>(model.kind_of_sos(sos));
+}
+
+std::string sos_difference(const Model &a, const Model &b, Index sos)
+{
+    return first_of({
+        compared("kind", kind_of(a, sos), kind_of(b, sos)),
+        term_differences("member", a.members(sos, 1), b.members(sos, 1)),
+        named(a, b, Family::Sos, sos),
+    });
+}
+
 std::string variable_differences(const Model &a, const Model &b)
 {
     const auto variable = [&](Index k) { return variable_difference(a, b, k); };
@@ -229,6 +251,12 @@ std::string indicator_differences(const Model &a, const Model &b)
     return table_difference("indicator", a.n_indicators(), b.n_indicators(), indicator);
 }
 
+std::string sos_differences(const Model &a, const Model &b)
+{
+    const auto sos = [&](Index k) { return sos_difference(a, b, k); };
+    return table_difference("set", a.n_sos(), b.n_sos(), sos);
+}
+
 }
 
 std::string difference(const Model &a, const Model &b)
@@ -253,6 +281,10 @@ std::string difference(const Model &a, const Model &b)
     if (found.empty())
     {
         found = indicator_differences(a, b);
+    }
+    if (found.empty())
+    {
+        found = sos_differences(a, b);
     }
     return found;
 }

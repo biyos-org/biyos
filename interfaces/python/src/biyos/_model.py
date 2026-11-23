@@ -24,6 +24,8 @@ from biyos._blocks import (
     Indicators,
     Objective,
     Objectives,
+    SOS,
+    SOSs,
     Variable,
     Variables,
     index_of,
@@ -79,12 +81,30 @@ class Sense(IntEnum):
     MAXIMIZE = 2
 
 
+class SOSKind(IntEnum):
+    """The kinds of special ordered sets, as ``BIYOS_SOSKND_SOS1`` and
+    ``BIYOS_SOSKND_SOS2`` number them.
+
+    Attributes
+    ----------
+    SOS1
+        At most one member is nonzero.
+    SOS2
+        At most two members are nonzero, adjacent in the order of their
+        weights.
+    """
+
+    SOS1 = 1
+    SOS2 = 2
+
+
 _COUNTS: dict[type[Block[Any]], str] = {
     Variables: "getnvar",
     Functions: "getnfun",
     Constraints: "getncon",
     Objectives: "getnobj",
     Indicators: "getnind",
+    SOSs: "getnsos",
 }
 
 
@@ -1740,6 +1760,138 @@ class Model:
         variables, values, functions, lower, upper = found
         return variables, values, functions, lower, upper
 
+    def addsos(
+        self,
+        knd: Sequence[SOSKind],
+        off: Sequence[int],
+        varidx: Sequence[int | Variable] | Variables,
+        coef: Sequence[float] | None = None,
+    ) -> SOSs:
+        """Add special ordered sets after the last one.
+
+        The set ``k`` holds the members from ``off[k]`` to ``off[k + 1] - 1``,
+        kept in that order whatever their weights. In a set of kind
+        ``SOS1`` at most one member is nonzero; in a set of kind ``SOS2`` at
+        most two are, adjacent in the order of their weights. A variable is
+        a member of a set at most once and may belong to several sets.
+
+        Parameters
+        ----------
+        knd
+            The kind of each new set.
+        off
+            The offsets of the sets' members, one more than there are sets,
+            from 0 and never decreasing.
+        varidx
+            The variable of each member, ``off[-1]`` of them.
+        coef
+            The weight of each member, finite and distinct within a set. By
+            default the members of each set weigh 1, 2, 3 and so on, in the
+            order given.
+
+        Returns
+        -------
+        sets
+            The new sets.
+
+        See Also
+        --------
+        BIYOS_addsos
+        """
+        if off is None:
+            raise TypeError("off must be a sequence of int, not NoneType")
+        count = len(knd)
+        starts = offsets("off", off, count + 1)
+        size = _total(starts, count)
+        arrays = (
+            ints("knd", knd, count),
+            starts,
+            indices_of(self, Variables, "varidx", varidx, size),
+            doubles("coef", coef, size),
+        )
+        first = c_int()
+        self._call(lib.BIYOS_addsos, count, *arrays, byref(first))
+        return SOSs(self, first.value, count, self._gen)
+
+    def getnsos(self) -> int:
+        """Return the number of special ordered sets.
+
+        Returns
+        -------
+        n
+            The number of sets.
+
+        See Also
+        --------
+        BIYOS_getnsos
+        """
+        count = c_int()
+        self._call(lib.BIYOS_getnsos, byref(count))
+        return count.value
+
+    def getnsosvar(self, idx: Sequence[int | SOS] | SOSs | None = None) -> int:
+        """Count the members of special ordered sets.
+
+        Parameters
+        ----------
+        idx
+            The sets, in any order, any of them more than once; every set by
+            default.
+
+        Returns
+        -------
+        nnz
+            The number of members they hold, a set counted each time it
+            appears.
+
+        See Also
+        --------
+        BIYOS_getnsosvarsp
+        BIYOS_getnsosvarrg
+        """
+        every = range(self.getnsos()) if idx is None else idx
+        return self._count("BIYOS_getnsosvar", SOSs, every)
+
+    def getsos(
+        self, idx: Sequence[int | SOS] | SOSs | None = None
+    ) -> tuple[list[SOSKind], list[int], list[int], list[float]]:
+        """Read special ordered sets, as ``addsos`` takes them.
+
+        Parameters
+        ----------
+        idx
+            The sets, in any order, any of them more than once; every set by
+            default.
+
+        Returns
+        -------
+        knd
+            The kind of each set.
+        off
+            The offsets of their members, one more than there are sets, from
+            0.
+        varidx
+            The variable of each member, each set's in the order added.
+        coef
+            The weight of each member.
+
+        See Also
+        --------
+        BIYOS_getsossp
+        BIYOS_getsosrg
+        """
+        every = range(self.getnsos()) if idx is None else idx
+        size = self.getnsosvar(every)
+        count = len(every)
+        kinds = (c_int * count)()
+        starts = (c_int64 * (count + 1))()
+        members = (c_int * size)()
+        weights = (c_double * size)()
+        chosen = self._chosen("BIYOS_getsos", SOSs, every)
+        self._call(*chosen, size, kinds, starts, members, weights)
+        found = [SOSKind(code) for code in kinds]
+        return found, list(starts), list(members), list(weights)
+
     def setmdlname(self, name: str) -> None:
         """Name the model.
 
@@ -2206,6 +2358,81 @@ class Model:
         BIYOS_delindnamerg
         """
         self._delname("BIYOS_delindname", Indicators, idx)
+
+    def setsosname(
+        self, idx: Sequence[int | SOS] | SOSs, name: Sequence[str]
+    ) -> None:
+        """Name special ordered sets, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The sets to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setsosnamesp
+        BIYOS_setsosnamerg
+        """
+        self._setname("BIYOS_setsosname", SOSs, idx, name)
+
+    def getsosname(self, idx: Sequence[int | SOS] | SOSs) -> list[str | None]:
+        """Return the names of special ordered sets, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The sets to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getsosnamesp
+        BIYOS_getsosnamerg
+        """
+        return self._getname("BIYOS_getsosname", SOSs, idx)
+
+    def getsosidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named special ordered sets, as
+        ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the set that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getsosidx
+        """
+        return self._getidx(lib.BIYOS_getsosidx, name)
+
+    def delsosname(self, idx: Sequence[int | SOS] | SOSs) -> None:
+        """Remove the names of special ordered sets, as ``delvarname``
+        does.
+
+        Parameters
+        ----------
+        idx
+            The sets that lose their names.
+
+        See Also
+        --------
+        BIYOS_delsosnamesp
+        BIYOS_delsosnamerg
+        """
+        self._delname("BIYOS_delsosname", SOSs, idx)
 
     def _start(self, env: Env) -> None:
         self._env = env

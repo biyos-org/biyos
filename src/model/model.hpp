@@ -82,6 +82,23 @@ struct Indicator
     double upper;
 };
 
+enum class SosKind
+{
+    Sos1 = BIYOS_SOSKND_SOS1,
+    Sos2 = BIYOS_SOSKND_SOS2,
+};
+
+inline constexpr std::array kSosKinds{
+    SosKind::Sos1,
+    SosKind::Sos2,
+};
+
+struct Member
+{
+    Index variable;
+    double weight;
+};
+
 enum class Family
 {
     Variable,
@@ -89,6 +106,7 @@ enum class Family
     Constraint,
     Objective,
     Indicator,
+    Sos,
 };
 
 inline constexpr std::array kFamilies{
@@ -97,6 +115,7 @@ inline constexpr std::array kFamilies{
     Family::Constraint,
     Family::Objective,
     Family::Indicator,
+    Family::Sos,
 };
 
 std::string_view noun_of(Family family) noexcept;
@@ -179,6 +198,14 @@ class Model
 
     void add_indicators(std::span<const Indicator> added);
     void set_indicators(std::span<const Index> indices, std::span<const Indicator> changed);
+    Index n_sos() const noexcept;
+    SosKind kind_of_sos(Index index) const;
+    std::span<const Member> members(Index start, Index size) const;
+
+    void check_sos_room(std::size_t sos, Offset members) const;
+    void add_sos(std::span<const SosKind> kinds,
+                 std::span<const Offset> starts,
+                 std::span<const Member> members);
 
   private:
     Offset begin_of(std::size_t function) const noexcept;
@@ -187,6 +214,7 @@ class Model
                 std::span<const LinearTerm> terms);
     Offset quadratic_begin(std::size_t function) const noexcept;
     void check_kinds(std::span<const Index> indices, std::span<const Variable> changed) const;
+    Offset member_begin(std::size_t sos) const noexcept;
 
     std::string name_;
     std::vector<Variable> variables_;
@@ -201,6 +229,9 @@ class Model
     std::vector<Constraint> constraints_;
     std::vector<Objective> objectives_;
     std::vector<Indicator> indicators_;
+    std::vector<SosKind> sos_kinds_;
+    std::vector<Offset> sos_ends_;
+    std::vector<Member> members_;
     std::array<Names, kFamilies.size()> names_;
 };
 

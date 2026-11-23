@@ -7,13 +7,14 @@ from biyos import EventKind, EventLevel
 from refusal import LOCKED, refusal
 
 ETE = "été \U0001f600"
-FAMILIES = ("var", "fun", "con", "obj", "ind")
+FAMILIES = ("var", "fun", "con", "obj", "ind", "sos")
 NOUNS = {
     "var": "variable",
     "fun": "function",
     "con": "constraint",
     "obj": "objective",
     "ind": "indicator",
+    "sos": "set",
 }
 
 
@@ -36,6 +37,7 @@ def add_items(model, count):
     model.addcon([0] * count)
     model.addobj([0] * count)
     model.addind(x, [1] * count, [0] * count)
+    model.addsos([biyos.SOSKind.SOS1] * count, [0] * (count + 1), [])
 
 
 def calls(model, family):
@@ -271,7 +273,8 @@ def test_locked(env, model):
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [LOCKED] * 12 + ["plant"] + [["x"], [0]] * 5
+    refused = [LOCKED] * (2 + 2 * len(FAMILIES))
+    assert seen == refused + ["plant"] + [["x"], [0]] * len(FAMILIES)
     assert model.getmdlname() == "plant"
 
 

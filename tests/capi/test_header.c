@@ -80,6 +80,9 @@ extern char error_end[sizeof(BIYOS_error) == 4 * sizeof(void *) ? 1 : -1];
 #if !defined(BIYOS_MINIMIZE) || BIYOS_MINIMIZE != 1 || BIYOS_MAXIMIZE != 2
 #error "a public objective sense changed"
 #endif
+#if !defined(BIYOS_SOSKND_SOS1) || BIYOS_SOSKND_SOS1 != 1 || BIYOS_SOSKND_SOS2 != 2
+#error "a public set kind changed"
+#endif
 #if !defined(BIYOS_OP_CONST) || BIYOS_OP_CONST != 1 || BIYOS_OP_VAR != 2 || BIYOS_OP_SUM != 3 ||   \
     BIYOS_OP_PROD != 4 || BIYOS_OP_NEG != 5 || BIYOS_OP_DIV != 6 || BIYOS_OP_CPOW != 7 ||          \
     BIYOS_OP_POW != 8 || BIYOS_OP_EXP != 9 || BIYOS_OP_LOG != 10 || BIYOS_OP_SQRT != 11 ||         \
@@ -262,6 +265,36 @@ static BIYOS_status use_indicators(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status use_sos(BIYOS_model *model)
+{
+    const int kinds[2] = {BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2};
+    const BIYOS_offset starts[3] = {0, 2, 3};
+    const int variables[3] = {1, 0, 1};
+    const int indices[1] = {1};
+    int found[2] = {-1, -1};
+    BIYOS_offset offsets[3] = {-1, -1, -1};
+    int members[3] = {-1, -1, -1};
+    double weights[3] = {0.0, 0.0, 0.0};
+    BIYOS_offset needed = -1;
+    BIYOS_index first = -1;
+    BIYOS_index sos = 0;
+    if (BIYOS_addsos(model, 2, kinds, starts, variables, NULL, &first) != BIYOS_OK || first != 0 ||
+        BIYOS_getnsos(model, &sos) != BIYOS_OK || sos != 2 ||
+        BIYOS_getnsosvarsp(model, 1, indices, &needed) != BIYOS_OK || needed != 1 ||
+        BIYOS_getnsosvarrg(model, 0, 2, &needed) != BIYOS_OK || needed != 3)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    if (BIYOS_getsosrg(model, 0, 2, 3, found, offsets, members, weights) != BIYOS_OK ||
+        found[1] != BIYOS_SOSKND_SOS2 || offsets[2] != 3 || members[1] != 0 ||
+        BIYOS_getsossp(model, 1, indices, 1, found, offsets, members, NULL) != BIYOS_OK ||
+        found[0] != BIYOS_SOSKND_SOS2 || offsets[1] != 1 || members[0] != 1)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static BIYOS_status use_nodes(BIYOS_model *model)
 {
     BIYOS_offset x = -1;
@@ -317,7 +350,8 @@ static BIYOS_status set_names(BIYOS_model *model)
         BIYOS_setfunnamesp(model, 1, idx, name) != BIYOS_OK ||
         BIYOS_setconnamesp(model, 2, idx, name) != BIYOS_OK ||
         BIYOS_setobjnamesp(model, 1, idx + 1, name + 1) != BIYOS_OK ||
-        BIYOS_setindnamesp(model, 1, idx, name) != BIYOS_OK)
+        BIYOS_setindnamesp(model, 1, idx, name) != BIYOS_OK ||
+        BIYOS_setsosnamesp(model, 1, idx, name) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -334,18 +368,20 @@ static BIYOS_status get_names(const BIYOS_model *model)
     const char *constraint = NULL;
     const char *objective = NULL;
     const char *indicator = NULL;
+    const char *sos = NULL;
     if (BIYOS_getmdlname(model, &title) != BIYOS_OK ||
         BIYOS_getvarnamesp(model, 2, both, variables) != BIYOS_OK ||
         BIYOS_getfunnamesp(model, 1, both, &function) != BIYOS_OK ||
         BIYOS_getconnamesp(model, 1, both, &constraint) != BIYOS_OK ||
         BIYOS_getobjnamesp(model, 1, first, &objective) != BIYOS_OK ||
-        BIYOS_getindnamesp(model, 1, both, &indicator) != BIYOS_OK)
+        BIYOS_getindnamesp(model, 1, both, &indicator) != BIYOS_OK ||
+        BIYOS_getsosnamesp(model, 1, both, &sos) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
     if (!matches(title, "header") || !matches(variables[0], "y") || !matches(variables[1], "x") ||
         !matches(function, "y") || !matches(constraint, "y") || !matches(objective, "x") ||
-        !matches(indicator, "y"))
+        !matches(indicator, "y") || !matches(sos, "y"))
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -356,17 +392,18 @@ static BIYOS_status find_names(const BIYOS_model *model)
 {
     const char *names[2] = {"y", "x"};
     BIYOS_index variables[2] = {-1, -1};
-    BIYOS_index found[4] = {-1, -1, -1, -1};
+    BIYOS_index found[5] = {-1, -1, -1, -1, -1};
     if (BIYOS_getvaridx(model, 2, names, variables) != BIYOS_OK ||
         BIYOS_getfunidx(model, 1, names, &found[0]) != BIYOS_OK ||
         BIYOS_getconidx(model, 1, names + 1, &found[1]) != BIYOS_OK ||
         BIYOS_getobjidx(model, 1, names + 1, &found[2]) != BIYOS_OK ||
-        BIYOS_getindidx(model, 1, names, &found[3]) != BIYOS_OK)
+        BIYOS_getindidx(model, 1, names, &found[3]) != BIYOS_OK ||
+        BIYOS_getsosidx(model, 1, names, &found[4]) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
     if (variables[0] != 1 || variables[1] != 0 || found[0] != 1 || found[1] != 0 || found[2] != 0 ||
-        found[3] != 1)
+        found[3] != 1 || found[4] != 1)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -382,7 +419,8 @@ static BIYOS_status del_names(BIYOS_model *model)
         BIYOS_delfunnamesp(model, 1, idx) != BIYOS_OK ||
         BIYOS_delconnamesp(model, 1, idx) != BIYOS_OK ||
         BIYOS_delobjnamesp(model, 0, NULL) != BIYOS_OK ||
-        BIYOS_delindnamesp(model, 1, idx) != BIYOS_OK || BIYOS_delmdlname(model) != BIYOS_OK)
+        BIYOS_delindnamesp(model, 1, idx) != BIYOS_OK ||
+        BIYOS_delsosnamesp(model, 1, idx) != BIYOS_OK || BIYOS_delmdlname(model) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -563,8 +601,9 @@ int main(void)
         use_quadratic(model) != BIYOS_OK || use_nodes(model) != BIYOS_OK ||
         use_postfix(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK ||
         use_objectives(model) != BIYOS_OK || use_indicators(model) != BIYOS_OK ||
-        use_names(model) != BIYOS_OK || use_options(model) != BIYOS_OK ||
-        use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
+        use_sos(model) != BIYOS_OK || use_names(model) != BIYOS_OK ||
+        use_options(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK ||
+        use_readers(env, model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

@@ -98,6 +98,7 @@ biyos_add_test(test_model
     model/test_names.cpp
     model/test_objectives.cpp
     model/test_quadratic.cpp
+    model/test_sos.cpp
     model/test_variables.cpp)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
@@ -124,6 +125,7 @@ biyos_add_test(test_capi
     capi/test_products.cpp
     capi/test_quadratic.cpp
     capi/test_ranges.cpp
+    capi/test_sos.cpp
     capi/test_terms.cpp
     capi/test_threads.cpp
     capi/test_version.cpp)
