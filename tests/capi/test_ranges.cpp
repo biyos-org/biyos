@@ -539,6 +539,27 @@ void keep_objectives(const Held &held, Span span, BIYOS_status wanted)
     expect_kept(held, span, wanted, BIYOS_getobjrg, senses, senses, senses, values);
 }
 
+BIYOS_status read_sos(const BIYOS_model *model,
+                      BIYOS_index pos,
+                      BIYOS_index n,
+                      int *kinds,
+                      BIYOS_offset *starts,
+                      BIYOS_index *variables,
+                      double *weights)
+{
+    return BIYOS_getsosrg(model, pos, n, 0, kinds, starts, variables, weights);
+}
+
+void keep_sos(const Held &held, Span span, BIYOS_status wanted)
+{
+    const auto n = static_cast<std::size_t>(count_of(held.model, BIYOS_getnsos) + 1);
+    const std::vector<int> kinds(n, BIYOS_SOSKND_SOS1);
+    const std::vector<BIYOS_offset> starts(n, 0);
+    const std::vector<double> weights(n, 0.5);
+    expect_kept(held, span, wanted, BIYOS_getnsosvarrg, starts);
+    expect_kept(held, span, wanted, read_sos, kinds, starts, kinds, weights);
+}
+
 void keep_names(const Held &held, Span span, BIYOS_status wanted, const NameCalls &calls)
 {
     const auto n = static_cast<std::size_t>(count_of(held.model, calls.count) + 1);
@@ -579,6 +600,10 @@ void keep_all(const Held &held, Counter count, Span span, BIYOS_status wanted)
     if (count == BIYOS_getnobj)
     {
         keep_objectives(held, span, wanted);
+    }
+    if (count == BIYOS_getnsos)
+    {
+        keep_sos(held, span, wanted);
     }
     for (const NameCalls &calls : kNameCalls)
     {
