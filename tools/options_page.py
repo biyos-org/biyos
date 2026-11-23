@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "reference" / "_options"
 INFINITE = {"infinity": "∞", "-infinity": "−∞"}
 HEADER = ("Macro", "Id", "Kind", "Default", "Accepts")
-RULE = ("-" * 24, "-" * 4 + ":", "-" * 9, "-" * 24, "-" * 30)
+RULE = ("-" * 37, "-" * 3 + ":", "-" * 11, "-" * 37, "-" * 37)
 
 
 def number(raw):
@@ -71,7 +71,7 @@ def facts(option):
 def entry(option):
     title = f"## `{option.name}` {{#opt-{option.name} .api .unnumbered}}"
     meta = " · ".join(history(option))
-    body = [option.doc, facts(option)]
+    body = [option.doc, f"::: {{.facts}}\n{facts(option)}\n:::"]
     body.append("::: {.meta}\n" + meta + "\n:::")
     return title + "\n\n::: {.entry}\n\n" + "\n\n".join(body) + "\n\n:::"
 
