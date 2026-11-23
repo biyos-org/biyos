@@ -4,6 +4,7 @@
 #include "capi/entry.hpp"
 #include "capi/selection.hpp"
 #include "core/index.hpp"
+#include "core/timer.hpp"
 #include "model/checks.hpp"
 #include "model/model.hpp"
 #include "model/transpose.hpp"
@@ -86,6 +87,7 @@ template <typename Selection>
 void n_column_terms(const BIYOS_model &model, Selection selection, std::int64_t *nnz)
 {
     const auto chosen = selected(model.core, Family::Variable, selection);
+    const biyos::EntryTimer timer(model.handle.env(), "model", "columns");
     const std::size_t count = count_of(every_start(model.core), chosen);
     *require(nnz, "nnz") = static_cast<std::int64_t>(count);
 }
@@ -97,6 +99,7 @@ void get_listed(const BIYOS_model &model,
                 const Coordinates &out)
 {
     const auto chosen = selected(model.core, Family::Variable, list);
+    const biyos::EntryTimer timer(model.handle.env(), "model", "columns");
     std::vector<biyos::Offset> starts = every_start(model.core);
     const std::size_t count = count_of(starts, chosen);
     check_capacity(capacity, count);
@@ -114,6 +117,7 @@ void get_ranged(const BIYOS_model &model,
                 int *functions,
                 double *values)
 {
+    const biyos::EntryTimer timer(model.handle.env(), "model", "columns");
     const std::vector<biyos::Offset> found =
         biyos::variable_starts(model.core, range.start, range.size);
     const auto count = static_cast<std::size_t>(found.back());

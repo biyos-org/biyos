@@ -88,3 +88,29 @@ TEST(CApiTest, DeleteSpan)
     EXPECT_EQ(BIYOS_delvarrg(recorder.model, 0, 9, nullptr), BIYOS_ERR_BADARG);
     EXPECT_TRUE(recorder.spans.empty());
 }
+
+TEST(CApiTest, ColumnSpan)
+{
+    Recorder recorder;
+    BIYOS_model *model = recorder.model;
+    ASSERT_EQ(BIYOS_addvar(model, 2, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    const BIYOS_index both[] = {1, 0};
+    BIYOS_offset nnz = -1;
+    ASSERT_EQ(BIYOS_getnclintermsp(model, 2, both, &nnz), BIYOS_OK);
+    ASSERT_EQ(BIYOS_getnclintermrg(model, 0, 2, &nnz), BIYOS_OK);
+    ASSERT_EQ(BIYOS_getclintermsp(model, 2, both, 0, &nnz, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_getclintermrg(model, 0, 2, 0, nullptr, nullptr, nullptr), BIYOS_OK);
+    const Texts span = span_of("model/columns");
+    Texts expected;
+    for (int call = 0; call < 4; ++call)
+    {
+        expected.insert(expected.end(), span.begin(), span.end());
+    }
+    EXPECT_EQ(recorder.spans, expected);
+    recorder.spans.clear();
+    EXPECT_EQ(BIYOS_getnclintermsp(model, 1, nullptr, &nnz), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getnclintermrg(model, 0, 3, &nnz), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getclintermsp(model, 1, nullptr, 0, &nnz, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_TRUE(recorder.spans.empty());
+}
