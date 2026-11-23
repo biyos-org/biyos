@@ -95,6 +95,15 @@ class PageTest(unittest.TestCase):
         self.assertRegex(text, r"\| -{20,} \| -+: \|")
         self.assertIn(": Codes", text)
         self.assertIn("::: {.meta}\n[since 0.1.0]{.since}\n:::", text)
+        self.assertNotIn("Takes", text)
+
+    def test_takes(self):
+        entry = table()
+        entry.takes = {"BIYOS_OK": "$c$"}
+        text = self.render(entry)
+        self.assertRegex(text, r"\| Meaning +\| Takes +\|")
+        self.assertIn("| [0]{.value} | Done. | $c$ |", text)
+        self.assertIn("| Bad \\| worse. |  |", text)
 
     def test_widths(self):
         text = self.render(function(), table())

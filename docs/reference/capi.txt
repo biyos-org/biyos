@@ -1956,12 +1956,16 @@ text `BIYOS_addexpr` takes many expressions in one call, in postfix, where each 
 
 table Operators
 value BIYOS_OP_CONST A constant $c$, with no child.
+takes $c$
 value BIYOS_OP_VAR A variable $x_j$, with no child.
 value BIYOS_OP_SUM $c + a_1 e_1 + \dots + a_n e_n$, with a constant $c$ and a coefficient for each of one or more children.
+takes $c$, then $a_1, \dots, a_n$
 value BIYOS_OP_PROD $c\, e_1 \cdots e_n$, with a coefficient $c$ and one or more children.
+takes $c$
 value BIYOS_OP_NEG $-e$.
 value BIYOS_OP_DIV $e_1 / e_2$.
 value BIYOS_OP_CPOW $e^c$, with a constant exponent $c$.
+takes $c$
 value BIYOS_OP_POW $e_1^{e_2}$.
 value BIYOS_OP_EXP $\exp e$.
 value BIYOS_OP_LOG $\log e$, the natural logarithm.
@@ -1983,6 +1987,7 @@ value BIYOS_OP_ACOSH $\operatorname{arcosh} e$.
 value BIYOS_OP_ATANH $\operatorname{artanh} e$.
 value BIYOS_OP_ENT $e \log e$.
 value BIYOS_OP_SPOW $\operatorname{sign}(e)\, \lvert e \rvert^c$, with a constant exponent $c > 0$.
+takes $c$
 value BIYOS_OP_ERF $\operatorname{erf} e$, the error function.
 value BIYOS_OP_NODE No operator: in postfix, a node the model already holds, named by its id.
 since 0.1.0

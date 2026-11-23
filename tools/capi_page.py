@@ -137,16 +137,31 @@ def declared(entry, declarations):
     return [title(entry), "::: {.entry}\n\n" + "\n\n".join(body) + "\n\n:::"]
 
 
+def columns(entry, known):
+    header = ["Name", "Value", "Meaning"] if known else ["Name", "Meaning"]
+    weights = [4, 1, 8] if known else [3, 8]
+    if entry.takes:
+        header.append("Takes")
+        weights[-1] -= 3
+        weights.append(3)
+    return header, weights
+
+
+def row(entry, key, text, values, known):
+    cells = [name(key, key)]
+    if known:
+        cells.append(f"[{values.get(key)}]{{.value}}")
+    cells.append(text)
+    if entry.takes:
+        cells.append(entry.takes.get(key, ""))
+    return cells
+
+
 def listed(entry, values):
     known = all(name in values for name, *_ in entry.values)
-    header = ("Name", "Value", "Meaning") if known else ("Name", "Meaning")
-    weights = (4, 1, 8) if known else (3, 8)
-    aligns = "lrl" if known else "ll"
-    rows = []
-    for key, text, _ in entry.values:
-        label = name(key, key)
-        shown = f"[{values.get(key)}]{{.value}}"
-        rows.append((label, shown, text) if known else (label, text))
+    header, weights = columns(entry, known)
+    aligns = "".join("r" if h == "Value" else "l" for h in header)
+    rows = [row(entry, k, t, values, known) for k, t, _ in entry.values]
     caption = f"\n\n: {entry.summary or entry.name}"
     shown = table(header, rows, weights, aligns) + caption
     return [shown, *meta(seen(entry) + dated(entry))]
