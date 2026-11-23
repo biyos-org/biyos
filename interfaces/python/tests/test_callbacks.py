@@ -13,9 +13,9 @@ from refusal import LOCKED, refusal
 
 SETTERS = (
     "BIYOS_setcbf",
-    "BIYOS_setcbjac",
-    "BIYOS_setcbhess",
-    "BIYOS_setcbhessvec",
+    "BIYOS_setcbg",
+    "BIYOS_setcbh",
+    "BIYOS_setcbhv",
 )
 
 
@@ -73,10 +73,10 @@ def caller_of(model):
 
 
 def describe(found, req, out, data):
-    found.append((req.callback, req.thread, list(req.point), data))
-    found.append((req.weights, req.direction, req.point.readonly, len(out)))
+    found.append((req.callback, req.thread, list(req.x), data))
+    found.append((req.w, req.v, req.x.readonly, len(out)))
     for k in range(len(out)):
-        out[k] = req.point[k] + 0.5
+        out[k] = req.x[k] + 0.5
 
 
 def test_added(model):
@@ -104,7 +104,7 @@ def test_collected(model, seen):
     cb = model.addcb([0])
 
     def values(req, out, data):
-        out[0] = 2.0 * req.point[1]
+        out[0] = 2.0 * req.x[1]
 
     alive = weakref.ref(values)
     model.setcbf(cb, values)
@@ -159,17 +159,17 @@ def keep(found, req, out, data):
 def test_released(model, seen):
     cb = model.addcb([0])
     found = []
-    model.setcbhessvec(cb, partial(keep, found))
+    model.setcbhv(cb, partial(keep, found))
     x = [1.0, 2.0, 3.0]
     assert evaluate(model, seen[-1], cb, 3, x, [1.0], x)[0] == 0
     req, out = found
-    for view in (req.point, req.weights, req.direction, out):
+    for view in (req.x, req.w, req.v, out):
         with pytest.raises(ValueError, match="released memoryview"):
             view[0]
 
 
 def derivatives(found, req, out, data):
-    found.append((list(req.weights or []), list(req.direction or [])))
+    found.append((list(req.w or []), list(req.v or [])))
     for k in range(len(out)):
         out[k] = k + 1.0
 
@@ -178,14 +178,14 @@ def test_patterns(model, seen):
     cb = model.addcb([0, 1])
     found = []
     function = partial(derivatives, found)
-    model.setcbjac(cb, [0, 2, 3], [0, 2, 1], function)
+    model.setcbg(cb, [0, 2, 3], [0, 2, 1], function)
     x = [0.0] * 3
     assert evaluate(model, seen[-1], cb, 3, x) == (0, [1.0, 2.0, 3.0])
-    model.setcbjac(cb, [0, 0, 0], [], function)
+    model.setcbg(cb, [0, 0, 0], [], function)
     assert evaluate(model, seen[-1], cb, 0, x) == (0, [])
-    model.setcbhess(cb, [0, 0], [0, 2], function)
+    model.setcbh(cb, [0, 0], [0, 2], function)
     assert evaluate(model, seen[-1], cb, 2, x, [2.0, 3.0]) == (0, [1.0, 2.0])
-    model.setcbhessvec(cb, function)
+    model.setcbhv(cb, function)
     v = [4.0, 5.0, 6.0]
     assert evaluate(model, seen[-1], cb, 3, x, [2.0, 3.0], v)[0] == 0
     assert found == [([], []), ([], []), ([2.0, 3.0], []), ([2.0, 3.0], v)]
@@ -203,34 +203,34 @@ def test_refused(model):
         (model.addcb, ([3],), "function 3: unknown"),
         (model.attachexpr, ([0], node), "function 0: is in callback 0"),
         (model.setcbf, (1, answer), "callback 1: unknown"),
-        (model.setcbjac, (-1, [0, 1], [0], answer), "callback -1: unknown"),
-        (model.setcbhess, (2, [], [], answer), "callback 2: unknown"),
-        (model.setcbhessvec, (1, answer), "callback 1: unknown"),
+        (model.setcbg, (-1, [0, 1], [0], answer), "callback -1: unknown"),
+        (model.setcbh, (2, [], [], answer), "callback 2: unknown"),
+        (model.setcbhv, (1, answer), "callback 1: unknown"),
         (model.setcbdata, (1, None), "callback 1: unknown"),
         (model.getcbdata, (1,), "callback 1: unknown"),
     ]
     for call, arguments, message in cases:
         assert refusal(call, *arguments) == bad + message
     jacobian = "callback 0: Jacobian of function 0: variable 1 is listed"
-    message = refusal(model.setcbjac, cb, [0, 2], [2, 1], answer)
+    message = refusal(model.setcbg, cb, [0, 2], [2, 1], answer)
     assert message == bad + jacobian + " after variable 2"
     pair = "callback 0: Hessian pair (1, 0) has its second variable below"
-    message = refusal(model.setcbhess, cb, [1], [0], answer)
+    message = refusal(model.setcbh, cb, [1], [0], answer)
     assert message == bad + pair + " its first"
 
 
 def test_lengths(model):
     cb = model.addcb([0, 1])
     with pytest.raises(ValueError, match="off has length 2, not 3"):
-        model.setcbjac(cb, [0, 1], [0], answer)
+        model.setcbg(cb, [0, 1], [0], answer)
     with pytest.raises(ValueError, match="varidx has length 1, not 2"):
-        model.setcbjac(cb, [0, 1, 2], [0], answer)
+        model.setcbg(cb, [0, 1, 2], [0], answer)
     with pytest.raises(ValueError, match="varidx2 has length 1, not 2"):
-        model.setcbhess(cb, [0, 1], [1], answer)
+        model.setcbh(cb, [0, 1], [1], answer)
     with pytest.raises(TypeError, match="f must be callable, not int"):
         model.setcbf(cb, 3)
-    with pytest.raises(TypeError, match="jac must be callable, not None"):
-        model.setcbjac(cb, [0, 0, 0], [], None)
+    with pytest.raises(TypeError, match="g must be callable, not None"):
+        model.setcbg(cb, [0, 0, 0], [], None)
     with pytest.raises(TypeError, match="cb must be an int, not float"):
         model.setcbdata(0.0, None)
 
@@ -239,9 +239,9 @@ def changes(model):
     return (
         partial(model.addcb, [1]),
         partial(model.setcbf, 0, answer),
-        partial(model.setcbjac, 0, [0, 0], [], answer),
-        partial(model.setcbhess, 0, [], [], answer),
-        partial(model.setcbhessvec, 0, answer),
+        partial(model.setcbg, 0, [0, 0], [], answer),
+        partial(model.setcbh, 0, [], [], answer),
+        partial(model.setcbhv, 0, answer),
         partial(model.setcbdata, 0, None),
     )
 

@@ -20,6 +20,7 @@ namespace
 using biyos::Callback;
 using biyos::difference;
 using biyos::Index;
+using biyos::IndexPair;
 using biyos::kNoCallback;
 using biyos::kNoRoot;
 using biyos::Model;
@@ -27,7 +28,6 @@ using biyos::Offset;
 using biyos::Request;
 using biyos::UserFunction;
 using biyos::Variable;
-using biyos::VariablePair;
 using biyos::test::refusal;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
@@ -66,7 +66,7 @@ void set_jacobian(Model &model,
                   const std::vector<Offset> &starts,
                   const std::vector<Index> &variables)
 {
-    model.set_jacobian(callback, starts, variables, succeed);
+    model.set_callback_jacobian(callback, starts, variables, succeed);
 }
 
 std::string jacobian_refusal(Model &model,
@@ -78,7 +78,7 @@ std::string jacobian_refusal(Model &model,
 
 void set_hessian(Model &model, const std::vector<Index> &first, const std::vector<Index> &second)
 {
-    model.set_hessian(0, first, second, succeed);
+    model.set_callback_hessian(0, first, second, succeed);
 }
 
 std::string hessian_refusal(Model &model,
@@ -91,9 +91,9 @@ std::string hessian_refusal(Model &model,
 std::vector<Index> firsts(const Callback &callback)
 {
     std::vector<Index> found;
-    for (const VariablePair &pair : callback.hessian_pairs)
+    for (const IndexPair &pair : callback.hessian_pairs)
     {
-        found.push_back(pair.first);
+        found.push_back(pair.row);
     }
     return found;
 }
@@ -101,9 +101,9 @@ std::vector<Index> firsts(const Callback &callback)
 std::vector<Index> seconds(const Callback &callback)
 {
     std::vector<Index> found;
-    for (const VariablePair &pair : callback.hessian_pairs)
+    for (const IndexPair &pair : callback.hessian_pairs)
     {
-        found.push_back(pair.second);
+        found.push_back(pair.column);
     }
     return found;
 }
@@ -131,9 +131,9 @@ int calls_of(const UserFunction &function)
         .model = nullptr,
         .callback = 0,
         .thread = 0,
-        .point = {},
-        .weights = {},
-        .direction = {},
+        .x = {},
+        .w = {},
+        .v = {},
     };
     function(request, {}, &calls);
     return calls;
@@ -150,15 +150,15 @@ TEST(CallbackTest, Added)
     EXPECT_EQ(model.add_callback(std::vector<Index>{3}, nullptr), 1);
     EXPECT_EQ(model.n_callbacks(), 2);
     const Callback &first = model.callback(0);
-    EXPECT_EQ(first.functions, (std::vector<Index>{2, 0}));
+    EXPECT_EQ(first.covered, (std::vector<Index>{2, 0}));
     EXPECT_EQ(first.data, &data);
     EXPECT_EQ(first.jacobian_starts, (std::vector<Offset>{0, 0, 0}));
     EXPECT_TRUE(first.jacobian_variables.empty());
     EXPECT_TRUE(first.hessian_pairs.empty());
-    EXPECT_FALSE(first.values);
+    EXPECT_FALSE(first.function);
     EXPECT_FALSE(first.jacobian);
     EXPECT_FALSE(first.hessian);
-    EXPECT_FALSE(first.product);
+    EXPECT_FALSE(first.hessian_product);
     EXPECT_EQ(model.callback_of(0), 0);
     EXPECT_EQ(model.callback_of(1), kNoCallback);
     EXPECT_EQ(model.callback_of(2), 0);
@@ -237,21 +237,23 @@ TEST(CallbackTest, Values)
     Model model = with_functions(1);
     int calls = 0;
     model.add_callback(std::vector<Index>{0}, &calls);
-    model.set_values(0, counted);
+    model.set_callback_function(0, counted);
     const Callback &held = model.callback(0);
     std::vector<double> out(1);
     const Request request{
         .model = nullptr,
         .callback = 0,
         .thread = 0,
-        .point = {},
-        .weights = {},
-        .direction = {},
+        .x = {},
+        .w = {},
+        .v = {},
     };
-    EXPECT_EQ(held.values(request, out, held.data), 0);
+    EXPECT_EQ(held.function(request, out, held.data), 0);
     EXPECT_EQ(calls, 1);
-    EXPECT_EQ(refusal([&] { model.set_values(1, succeed); }), kBad + "callback 1: unknown");
-    EXPECT_EQ(refusal([&] { model.set_product(-1, succeed); }), kBad + "callback -1: unknown");
+    EXPECT_EQ(refusal([&] { model.set_callback_function(1, succeed); }),
+              kBad + "callback 1: unknown");
+    EXPECT_EQ(refusal([&] { model.set_callback_hessian_product(-1, succeed); }),
+              kBad + "callback -1: unknown");
 }
 
 TEST(CallbackTest, Data)
@@ -260,11 +262,11 @@ TEST(CallbackTest, Data)
     int first = 0;
     int second = 0;
     model.add_callback(std::vector<Index>{0}, &first);
-    model.set_data(0, &second);
+    model.set_callback_data(0, &second);
     EXPECT_EQ(model.callback(0).data, &second);
-    model.set_data(0, nullptr);
+    model.set_callback_data(0, nullptr);
     EXPECT_EQ(model.callback(0).data, nullptr);
-    EXPECT_EQ(refusal([&] { model.set_data(1, &first); }), kBad + "callback 1: unknown");
+    EXPECT_EQ(refusal([&] { model.set_callback_data(1, &first); }), kBad + "callback 1: unknown");
     EXPECT_EQ(refusal([&] { model.callback(1); }), kBad + "callback 1: unknown");
 }
 
@@ -286,7 +288,7 @@ TEST(CallbackTest, JacobianRefused)
 {
     Model model = with_functions(3);
     add(model, {2, 0});
-    model.set_jacobian(0, std::vector<Offset>{0, 1, 1}, std::vector<Index>{1}, counted);
+    model.set_callback_jacobian(0, std::vector<Offset>{0, 1, 1}, std::vector<Index>{1}, counted);
     const std::string row = kBad + "callback 0: Jacobian of function ";
     EXPECT_EQ(jacobian_refusal(model, {0, 1, 2}, {0, 3}), row + "0: variable 3 is unknown");
     EXPECT_EQ(jacobian_refusal(model, {0, 1, 2}, {-1, 0}), row + "2: variable -1 is unknown");
@@ -322,7 +324,7 @@ TEST(CallbackTest, HessianRefused)
 {
     Model model = with_functions(1);
     add(model, {0});
-    model.set_hessian(0, std::vector<Index>{1}, std::vector<Index>{2}, counted);
+    model.set_callback_hessian(0, std::vector<Index>{1}, std::vector<Index>{2}, counted);
     const std::string bad = kBad + "callback 0: Hessian ";
     EXPECT_EQ(hessian_refusal(model, {0, 3}, {0, 0}), bad + "variable 3 is unknown");
     EXPECT_EQ(hessian_refusal(model, {0}, {-1}), bad + "variable -1 is unknown");
@@ -333,7 +335,7 @@ TEST(CallbackTest, HessianRefused)
     EXPECT_EQ(hessian_refusal(model, {0, 0}, {2, 1}),
               bad + "pair (0, 1) is listed after pair (0, 2)");
     EXPECT_EQ(hessian_refusal(model, {0, 1, 1}, {1, 2, 2}), bad + "pair (1, 2) is repeated");
-    EXPECT_EQ(refusal([&] { model.set_hessian(1, {}, {}, succeed); }),
+    EXPECT_EQ(refusal([&] { model.set_callback_hessian(1, {}, {}, succeed); }),
               kBad + "callback 1: unknown");
     EXPECT_EQ(firsts(model.callback(0)), (std::vector<Index>{1}));
     EXPECT_EQ(seconds(model.callback(0)), (std::vector<Index>{2}));
@@ -345,7 +347,7 @@ TEST(CallbackTest, Copied)
     Model model = with_functions(2);
     int calls = 0;
     model.add_callback(std::vector<Index>{1}, &calls);
-    model.set_values(0, counted);
+    model.set_callback_function(0, counted);
     set_jacobian(model, 0, {0, 2}, {0, 1});
     const Model copy = model;
     const Callback &held = copy.callback(0);
@@ -357,13 +359,13 @@ TEST(CallbackTest, Copied)
         .model = nullptr,
         .callback = 0,
         .thread = 0,
-        .point = {},
-        .weights = {},
-        .direction = {},
+        .x = {},
+        .w = {},
+        .v = {},
     };
-    EXPECT_EQ(held.values(request, out, held.data), 0);
+    EXPECT_EQ(held.function(request, out, held.data), 0);
     EXPECT_EQ(calls, 1);
-    model.set_data(0, nullptr);
+    model.set_callback_data(0, nullptr);
     EXPECT_EQ(copy.callback(0).data, &calls);
 }
 
@@ -383,10 +385,10 @@ TEST(CallbackTest, Difference)
     other.add_callback(std::vector<Index>{1, 0}, &data);
     EXPECT_EQ(difference(model, other), "callback 0: covered function 0: index 2 against 1");
     Model moved = copy;
-    moved.set_data(0, nullptr);
+    moved.set_callback_data(0, nullptr);
     EXPECT_EQ(difference(model, moved), "callback 0: data differs");
     Model valued = copy;
-    valued.set_values(0, succeed);
+    valued.set_callback_function(0, succeed);
     EXPECT_EQ(difference(model, valued), "callback 0: value function none against given");
     Model row = copy;
     set_jacobian(row, 0, {0, 1, 2}, {1, 0});
@@ -401,6 +403,6 @@ TEST(CallbackTest, Difference)
     set_hessian(fewer, {0}, {1});
     EXPECT_EQ(difference(model, fewer), "callback 0: Hessian entry count 2 against 1");
     Model product = copy;
-    product.set_product(0, succeed);
+    product.set_callback_hessian_product(0, succeed);
     EXPECT_EQ(difference(product, model), "callback 0: Hessian product given against none");
 }

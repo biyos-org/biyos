@@ -36,9 +36,9 @@ struct Caller
             .mdl = request.model,
             .cb = request.callback,
             .thread = request.thread,
-            .x = start_of(request.point),
-            .w = start_of(request.weights),
-            .v = start_of(request.direction),
+            .x = start_of(request.x),
+            .w = start_of(request.w),
+            .v = start_of(request.v),
         };
         return function(&view, out.data(), data);
     }
@@ -57,18 +57,18 @@ void add_callback(BIYOS_model &model, int n, const int *functions, void *data, i
 void set_values(BIYOS_model &model, int cb, BIYOS_cbf f)
 {
     biyos::Model &core = writable(model);
-    core.set_values(cb, Caller{require(f, "f")});
+    core.set_callback_function(cb, Caller{require(f, "f")});
 }
 
 void set_jacobian(BIYOS_model &model,
                   int cb,
                   const std::int64_t *off,
                   const int *variables,
-                  BIYOS_cbjac jac)
+                  BIYOS_cbg g)
 {
     biyos::Model &core = writable(model);
-    const Caller caller{require(jac, "jac")};
-    const std::size_t n = core.callback(cb).functions.size();
+    const Caller caller{require(g, "g")};
+    const std::size_t n = core.callback(cb).covered.size();
     const std::vector<biyos::Offset> starts = biyos::capi::offsets(n, off);
     biyos::check_starts(starts);
     const auto total = static_cast<std::size_t>(starts.back());
@@ -76,7 +76,7 @@ void set_jacobian(BIYOS_model &model,
     {
         require(variables, "varidx");
     }
-    core.set_jacobian(cb, starts, {variables, total}, caller);
+    core.set_callback_jacobian(cb, starts, {variables, total}, caller);
 }
 
 void set_hessian(BIYOS_model &model,
@@ -84,28 +84,28 @@ void set_hessian(BIYOS_model &model,
                  std::int64_t nnz,
                  const int *first,
                  const int *second,
-                 BIYOS_cbhess hess)
+                 BIYOS_cbh h)
 {
     biyos::Model &core = writable(model);
-    const Caller caller{require(hess, "hess")};
+    const Caller caller{require(h, "h")};
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
     {
         require(first, "varidx1");
         require(second, "varidx2");
     }
-    core.set_hessian(cb, {first, size}, {second, size}, caller);
+    core.set_callback_hessian(cb, {first, size}, {second, size}, caller);
 }
 
-void set_product(BIYOS_model &model, int cb, BIYOS_cbhessvec hessvec)
+void set_product(BIYOS_model &model, int cb, BIYOS_cbhv hv)
 {
     biyos::Model &core = writable(model);
-    core.set_product(cb, Caller{require(hessvec, "hessvec")});
+    core.set_callback_hessian_product(cb, Caller{require(hv, "hv")});
 }
 
 void set_data(BIYOS_model &model, int cb, void *data)
 {
-    writable(model).set_data(cb, data);
+    writable(model).set_callback_data(cb, data);
 }
 
 void get_data(const BIYOS_model &model, int cb, void **data)
@@ -130,28 +130,28 @@ BIYOS_status BIYOS_setcbf(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbf f)
     return guarded<set_values>(mdl, cb, f);
 }
 
-BIYOS_status BIYOS_setcbjac(BIYOS_model *mdl,
-                            BIYOS_index cb,
-                            const BIYOS_offset *off,
-                            const BIYOS_index *varidx,
-                            BIYOS_cbjac jac)
+BIYOS_status BIYOS_setcbg(BIYOS_model *mdl,
+                          BIYOS_index cb,
+                          const BIYOS_offset *off,
+                          const BIYOS_index *varidx,
+                          BIYOS_cbg g)
 {
-    return guarded<set_jacobian>(mdl, cb, off, varidx, jac);
+    return guarded<set_jacobian>(mdl, cb, off, varidx, g);
 }
 
-BIYOS_status BIYOS_setcbhess(BIYOS_model *mdl,
-                             BIYOS_index cb,
-                             BIYOS_offset nnz,
-                             const BIYOS_index *varidx1,
-                             const BIYOS_index *varidx2,
-                             BIYOS_cbhess hess)
+BIYOS_status BIYOS_setcbh(BIYOS_model *mdl,
+                          BIYOS_index cb,
+                          BIYOS_offset nnz,
+                          const BIYOS_index *varidx1,
+                          const BIYOS_index *varidx2,
+                          BIYOS_cbh h)
 {
-    return guarded<set_hessian>(mdl, cb, nnz, varidx1, varidx2, hess);
+    return guarded<set_hessian>(mdl, cb, nnz, varidx1, varidx2, h);
 }
 
-BIYOS_status BIYOS_setcbhessvec(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbhessvec hessvec)
+BIYOS_status BIYOS_setcbhv(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbhv hv)
 {
-    return guarded<set_product>(mdl, cb, hessvec);
+    return guarded<set_product>(mdl, cb, hv);
 }
 
 BIYOS_status BIYOS_setcbdata(BIYOS_model *mdl, BIYOS_index cb, void *data)

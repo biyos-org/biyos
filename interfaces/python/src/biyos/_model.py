@@ -1492,8 +1492,8 @@ class Model:
         """Add a callback that computes the nonlinear part of functions.
 
         The callback has no function yet and an empty pattern for each
-        derivative; ``setcbf``, ``setcbjac``, ``setcbhess`` and
-        ``setcbhessvec`` give them.
+        derivative; ``setcbf``, ``setcbg``, ``setcbh`` and
+        ``setcbhv`` give them.
 
         Parameters
         ----------
@@ -1562,12 +1562,12 @@ class Model:
         self._callbacks.keep(caller)
         self._call(lib.BIYOS_setcbf, cb, caller.pointer)
 
-    def setcbjac(
+    def setcbg(
         self,
         cb: int,
         off: Sequence[int],
         varidx: Sequence[int | Variable] | Variables,
-        jac: Callable[..., object],
+        g: Callable[..., object],
     ) -> None:
         """Give a callback its Jacobian pattern and the function that
         evaluates it.
@@ -1586,39 +1586,39 @@ class Model:
         varidx
             The variable of each entry, ``off[-1]`` of them, in increasing
             order within a function.
-        jac
+        g
             The function, as ``addcb`` describes. It writes the derivative
             of each entry at the point, in the order of the pattern.
 
         Raises
         ------
         TypeError
-            When ``jac`` is not callable.
+            When ``g`` is not callable.
 
         See Also
         --------
-        BIYOS_setcbjac
+        BIYOS_setcbg
         """
         cb = integer("cb", cb)
-        jac = checked("jac", jac)
+        g = checked("g", g)
         if not self._callbacks.known(cb):
-            refused = Caller(jac, 0, 0)
+            refused = Caller(g, 0, 0)
             self._callbacks.keep(refused)
-            self._call(lib.BIYOS_setcbjac, cb, None, None, refused.pointer)
+            self._call(lib.BIYOS_setcbg, cb, None, None, refused.pointer)
         n = self._callbacks.count(cb)
         starts = offsets("off", off, n + 1)
         size = _total(starts, n)
         variables = indices_of(self, Variables, "varidx", varidx, size)
-        caller = Caller(jac, n, size)
+        caller = Caller(g, n, size)
         self._callbacks.keep(caller)
-        self._call(lib.BIYOS_setcbjac, cb, starts, variables, caller.pointer)
+        self._call(lib.BIYOS_setcbg, cb, starts, variables, caller.pointer)
 
-    def setcbhess(
+    def setcbh(
         self,
         cb: int,
         varidx1: Sequence[int | Variable] | Variables,
         varidx2: Sequence[int | Variable] | Variables,
-        hess: Callable[..., object],
+        h: Callable[..., object],
     ) -> None:
         """Give a callback its Hessian pattern and the function that
         evaluates it.
@@ -1636,30 +1636,30 @@ class Model:
             The first variable of each pair.
         varidx2
             The second variable of each pair, no less than the first.
-        hess
+        h
             The function, as ``addcb`` describes. It writes, for each pair,
             the entry of the sum of the covered functions' Hessians, each
-            weighted by ``req.weights``, at the point.
+            weighted by ``req.w``, at the point.
 
         Raises
         ------
         TypeError
-            When ``hess`` is not callable.
+            When ``h`` is not callable.
 
         See Also
         --------
-        BIYOS_setcbhess
+        BIYOS_setcbh
         """
         cb = integer("cb", cb)
         nnz = len(varidx1)
         first = indices_of(self, Variables, "varidx1", varidx1, nnz)
         second = indices_of(self, Variables, "varidx2", varidx2, nnz)
-        caller = Caller(checked("hess", hess), self._callbacks.count(cb), nnz)
+        caller = Caller(checked("h", h), self._callbacks.count(cb), nnz)
         pairs = (nnz, first, second, caller.pointer)
         self._callbacks.keep(caller)
-        self._call(lib.BIYOS_setcbhess, cb, *pairs)
+        self._call(lib.BIYOS_setcbh, cb, *pairs)
 
-    def setcbhessvec(self, cb: int, hessvec: Callable[..., object]) -> None:
+    def setcbhv(self, cb: int, hv: Callable[..., object]) -> None:
         """Give a callback the function that multiplies its Hessian by a
         vector.
 
@@ -1667,26 +1667,26 @@ class Model:
         ----------
         cb
             The callback.
-        hessvec
+        hv
             The function, as ``addcb`` describes. It writes, for every
-            variable, the entry of the product of ``req.direction`` with the
-            sum of the covered functions' Hessians, each weighted by
-            ``req.weights``, at the point.
+            variable, the entry of the product of ``req.v`` with the sum
+            of the covered functions' Hessians, each weighted by ``req.w``,
+            at the point.
 
         Raises
         ------
         TypeError
-            When ``hessvec`` is not callable.
+            When ``hv`` is not callable.
 
         See Also
         --------
-        BIYOS_setcbhessvec
+        BIYOS_setcbhv
         """
         cb = integer("cb", cb)
-        function = checked("hessvec", hessvec)
+        function = checked("hv", hv)
         caller = Caller(function, self._callbacks.count(cb), None)
         self._callbacks.keep(caller)
-        self._call(lib.BIYOS_setcbhessvec, cb, caller.pointer)
+        self._call(lib.BIYOS_setcbhv, cb, caller.pointer)
 
     def setcbdata(self, cb: int, data: object) -> None:
         """Replace the object a callback's functions receive.

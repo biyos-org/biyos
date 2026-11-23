@@ -64,9 +64,9 @@ class CallbackRequest:
     def __init__(self, record: RequestRecord, count: int, nvar: int) -> None:
         self._callback: int = record.cb
         self._thread: int = record.thread
-        self._point = _input(record.x, nvar)
-        self._weights = _optional(record.w, count)
-        self._direction = _optional(record.v, nvar)
+        self._x = _input(record.x, nvar)
+        self._w = _optional(record.w, count)
+        self._v = _optional(record.v, nvar)
 
     @property
     def callback(self) -> int:
@@ -80,25 +80,25 @@ class CallbackRequest:
         return self._thread
 
     @property
-    def point(self) -> "memoryview[float]":
+    def x(self) -> "memoryview[float]":
         """The value of every variable, read-only."""
-        return self._point
+        return self._x
 
     @property
-    def weights(self) -> "memoryview[float] | None":
+    def w(self) -> "memoryview[float] | None":
         """A weight for each covered function, read-only, in a call of the
         Hessian or of the Hessian-vector product, and ``None`` otherwise."""
-        return self._weights
+        return self._w
 
     @property
-    def direction(self) -> "memoryview[float] | None":
+    def v(self) -> "memoryview[float] | None":
         """A value for every variable, read-only, the vector the Hessian
         multiplies in a call of the Hessian-vector product, and ``None``
         otherwise."""
-        return self._direction
+        return self._v
 
     def _release(self) -> None:
-        for view in (self._point, self._weights, self._direction):
+        for view in (self._x, self._w, self._v):
             if view is not None:
                 view.release()
 

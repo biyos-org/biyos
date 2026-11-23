@@ -2181,7 +2181,7 @@ see BIYOS_getnexprsp BIYOS_addexpr BIYOS_attachexprsp
 since 0.1.0
 
 group callbacks Callbacks
-text A callback computes the nonlinear part $e(x)$ of some functions in user code, in place of an expression. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbjac`, `BIYOS_setcbhess` and `BIYOS_setcbhessvec` give it the code for their values, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
+text A callback computes the nonlinear part $e(x)$ of some functions in user code, in place of an expression. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for their values, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
 text A function's nonlinear part is an expression or one callback, never both: `BIYOS_addcb` refuses a function that has an expression or another callback, and `BIYOS_attachexprsp` refuses to give a covered function an expression that leaves a nonlinear part once its constant, linear and quadratic terms are split off. A function emptied by `BIYOS_clrfunsp` stays covered.
 text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. No call evaluates a callback yet.
 text The model keeps the function pointers and `data` as given and never frees `data`. A copy made by `BIYOS_copymdl` shares them with its source, so both call the same code with the same `data`.
@@ -2195,7 +2195,7 @@ note `x` holds a value for every variable of the model.
 note `w` holds a weight for each function the callback covers, in the order given to `BIYOS_addcb`, in a call of the Hessian or of the Hessian-vector product, and is null otherwise.
 note `v` holds a value for every variable, the vector the Hessian multiplies, in a call of the Hessian-vector product, and is null otherwise.
 note The request and its arrays are valid only while the callback runs.
-see BIYOS_cbf BIYOS_cbjac BIYOS_cbhess BIYOS_cbhessvec
+see BIYOS_cbf BIYOS_cbg BIYOS_cbh BIYOS_cbhv
 since 0.1.0
 
 type BIYOS_cbf
@@ -2207,31 +2207,31 @@ note It returns 0 on success, a positive value when a function is not defined at
 see BIYOS_setcbf BIYOS_cbreq
 since 0.1.0
 
-type BIYOS_cbjac
+type BIYOS_cbg
 summary A function that evaluates the first derivatives of a callback's nonlinear parts.
 param req in The request, with the point `x`.
-param jac out Receives $\partial e_k / \partial x_j$ for each entry of the pattern given to `BIYOS_setcbjac`, in its order.
+param g out Receives $\partial e_k / \partial x_j$ for each entry of the pattern given to `BIYOS_setcbg`, in its order.
 param data in The callback's pointer, as given.
 note It returns 0 on success, a positive value when a function is not defined at `x` and a negative value to stop.
-see BIYOS_setcbjac BIYOS_cbreq
+see BIYOS_setcbg BIYOS_cbreq
 since 0.1.0
 
-type BIYOS_cbhess
+type BIYOS_cbh
 summary A function that evaluates the second derivatives of a weighted sum of a callback's nonlinear parts.
 param req in The request, with the point `x` and the weights `w`.
-param hess out Receives the entry $(i, j)$ of $\sum_k w_k \nabla^2 e_k(x)$ for each pair of the pattern given to `BIYOS_setcbhess`, in its order.
+param h out Receives the entry $(i, j)$ of $\sum_k w_k \nabla^2 e_k(x)$ for each pair of the pattern given to `BIYOS_setcbh`, in its order.
 param data in The callback's pointer, as given.
 note It returns 0 on success, a positive value when a function is not defined at `x` and a negative value to stop.
-see BIYOS_setcbhess BIYOS_cbreq
+see BIYOS_setcbh BIYOS_cbreq
 since 0.1.0
 
-type BIYOS_cbhessvec
+type BIYOS_cbhv
 summary A function that multiplies the second derivatives of a weighted sum of a callback's nonlinear parts by a vector.
 param req in The request, with the point `x`, the weights `w` and the vector `v`.
 param hv out Receives $\left(\sum_k w_k \nabla^2 e_k(x)\right) v$, a value for every variable.
 param data in The callback's pointer, as given.
 note It returns 0 on success, a positive value when a function is not defined at `x` and a negative value to stop.
-see BIYOS_setcbhessvec BIYOS_cbreq
+see BIYOS_setcbhv BIYOS_cbreq
 since 0.1.0
 
 function BIYOS_addcb
@@ -2245,7 +2245,7 @@ return `BIYOS_OK` once the callback is added.
 error BIYOS_ERR_BADARG `n` is not positive, `funidx` is null, a function is not one of the model or is listed twice, or a function has an expression or another callback.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 callbacks.
 note The callback has no function yet and an empty pattern for each derivative. The calls below give them.
-see BIYOS_setcbf BIYOS_setcbjac BIYOS_setcbhess BIYOS_setcbhessvec BIYOS_setcbdata
+see BIYOS_setcbf BIYOS_setcbg BIYOS_setcbh BIYOS_setcbhv BIYOS_setcbdata
 since 0.1.0
 
 function BIYOS_setcbf
@@ -2258,43 +2258,43 @@ error BIYOS_ERR_BADARG `cb` is not a callback of the model, or `f` is null.
 see BIYOS_cbf BIYOS_addcb
 since 0.1.0
 
-function BIYOS_setcbjac
+function BIYOS_setcbg
 summary Give a callback its Jacobian pattern and the function that evaluates it.
 param mdl in The model.
 param cb in The callback.
 param off in The offsets of each covered function's entries in `varidx`, one more than the functions the callback covers; null for an empty pattern.
 param varidx in The variables of each function's entries, in increasing order within a function; may be null only when the pattern is empty.
-param jac in The function; the model keeps it.
+param g in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
-error BIYOS_ERR_BADARG `cb` is not a callback of the model, `jac` is null, `off` does not begin at 0 or decreases, `varidx` is null while the pattern is not empty, or a function's variables are not ones of the model in increasing order.
+error BIYOS_ERR_BADARG `cb` is not a callback of the model, `g` is null, `off` does not begin at 0 or decreases, `varidx` is null while the pattern is not empty, or a function's variables are not ones of the model in increasing order.
 error BIYOS_ERR_NOMEMORY The pattern would hold more entries than any allocation can hold.
 note The entries of the `k`-th covered function are those from `off[k]` to `off[k + 1] - 1`, as `BIYOS_addrlintermrg` takes terms. A variable left out of a function's entries has a zero derivative.
-see BIYOS_cbjac BIYOS_addcb
+see BIYOS_cbg BIYOS_addcb
 since 0.1.0
 
-function BIYOS_setcbhess
+function BIYOS_setcbh
 summary Give a callback its Hessian pattern and the function that evaluates it.
 param mdl in The model.
 param cb in The callback.
 param nnz in The number of pairs.
 param varidx1 in The first variable of each pair; may be null only when `nnz` is 0.
 param varidx2 in The second variable of each pair, no less than the first; may be null only when `nnz` is 0.
-param hess in The function; the model keeps it.
+param h in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
-error BIYOS_ERR_BADARG `cb` is not a callback of the model, `hess` is null, `nnz` is negative, `varidx1` or `varidx2` is null while `nnz` is not 0, a variable is not one of the model, a pair has its second variable below its first, or the pairs are repeated or out of order.
+error BIYOS_ERR_BADARG `cb` is not a callback of the model, `h` is null, `nnz` is negative, `varidx1` or `varidx2` is null while `nnz` is not 0, a variable is not one of the model, a pair has its second variable below its first, or the pairs are repeated or out of order.
 error BIYOS_ERR_NOMEMORY The pattern would hold more pairs than any allocation can hold.
 note The pairs are sorted by their first variable, then by their second, as the model lists quadratic terms, so they are the lower triangle of the Hessian compressed by column. They cover every pair $(i, j)$, $i \le j$, where a second derivative of some covered function may be nonzero.
-see BIYOS_cbhess BIYOS_addcb
+see BIYOS_cbh BIYOS_addcb
 since 0.1.0
 
-function BIYOS_setcbhessvec
+function BIYOS_setcbhv
 summary Give a callback the function that multiplies its Hessian by a vector.
 param mdl in The model.
 param cb in The callback.
-param hessvec in The function; the model keeps it.
+param hv in The function; the model keeps it.
 return `BIYOS_OK` once the function is kept, in place of any the callback had.
-error BIYOS_ERR_BADARG `cb` is not a callback of the model, or `hessvec` is null.
-see BIYOS_cbhessvec BIYOS_addcb
+error BIYOS_ERR_BADARG `cb` is not a callback of the model, or `hv` is null.
+see BIYOS_cbhv BIYOS_addcb
 since 0.1.0
 
 function BIYOS_setcbdata

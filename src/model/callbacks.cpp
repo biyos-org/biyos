@@ -76,15 +76,15 @@ Index Model::add_callback(std::span<const Index> functions, void *data)
     }
     const Index index = n_callbacks();
     Callback added{
-        .functions = std::vector<Index>(functions.begin(), functions.end()),
+        .covered = std::vector<Index>(functions.begin(), functions.end()),
         .data = data,
-        .values = {},
+        .function = {},
         .jacobian_starts = std::vector<Offset>(functions.size() + 1, 0),
         .jacobian_variables = {},
         .jacobian = {},
         .hessian_pairs = {},
         .hessian = {},
-        .product = {},
+        .hessian_product = {},
     };
     if (covering_.size() < constants_.size())
     {
@@ -98,18 +98,18 @@ Index Model::add_callback(std::span<const Index> functions, void *data)
     return index;
 }
 
-void Model::set_values(Index callback, UserFunction values)
+void Model::set_callback_function(Index callback, UserFunction function)
 {
-    changed(callback).values = std::move(values);
+    changed(callback).function = std::move(function);
 }
 
-void Model::set_jacobian(Index callback,
-                         std::span<const Offset> starts,
-                         std::span<const Index> variables,
-                         UserFunction jacobian)
+void Model::set_callback_jacobian(Index callback,
+                                  std::span<const Offset> starts,
+                                  std::span<const Index> variables,
+                                  UserFunction jacobian)
 {
     Callback &held = changed(callback);
-    check_jacobian(callback, held.functions, starts, variables, n_variables());
+    check_jacobian(callback, held.covered, starts, variables, n_variables());
     std::vector<Offset> begins(starts.begin(), starts.end());
     std::vector<Index> pattern(variables.begin(), variables.end());
     held.jacobian_starts = std::move(begins);
@@ -117,22 +117,22 @@ void Model::set_jacobian(Index callback,
     held.jacobian = std::move(jacobian);
 }
 
-void Model::set_hessian(Index callback,
-                        std::span<const Index> first,
-                        std::span<const Index> second,
-                        UserFunction hessian)
+void Model::set_callback_hessian(Index callback,
+                                 std::span<const Index> first,
+                                 std::span<const Index> second,
+                                 UserFunction hessian)
 {
     Callback &held = changed(callback);
     held.hessian_pairs = hessian_pairs(callback, first, second, n_variables());
     held.hessian = std::move(hessian);
 }
 
-void Model::set_product(Index callback, UserFunction product)
+void Model::set_callback_hessian_product(Index callback, UserFunction hessian_product)
 {
-    changed(callback).product = std::move(product);
+    changed(callback).hessian_product = std::move(hessian_product);
 }
 
-void Model::set_data(Index callback, void *data)
+void Model::set_callback_data(Index callback, void *data)
 {
     changed(callback).data = data;
 }

@@ -18,32 +18,32 @@ struct Request
     const BIYOS_model *model;
     Index callback;
     Index thread;
-    std::span<const double> point;
-    std::span<const double> weights;
-    std::span<const double> direction;
+    std::span<const double> x;
+    std::span<const double> w;
+    std::span<const double> v;
 };
 
 using UserFunction = std::function<int(const Request &request, std::span<double> out, void *data)>;
 
-struct VariablePair
+struct IndexPair
 {
-    Index first;
-    Index second;
+    Index row;
+    Index column;
 
-    auto operator<=>(const VariablePair &) const = default;
+    auto operator<=>(const IndexPair &) const = default;
 };
 
 struct Callback
 {
-    std::vector<Index> functions;
+    std::vector<Index> covered;
     void *data;
-    UserFunction values;
+    UserFunction function;
     std::vector<Offset> jacobian_starts;
     std::vector<Index> jacobian_variables;
     UserFunction jacobian;
-    std::vector<VariablePair> hessian_pairs;
+    std::vector<IndexPair> hessian_pairs;
     UserFunction hessian;
-    UserFunction product;
+    UserFunction hessian_product;
 };
 
 }

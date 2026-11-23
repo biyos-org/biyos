@@ -447,9 +447,9 @@ static BIYOS_status use_callbacks(BIYOS_model *model)
     if (BIYOS_addfun(model, 1, &function) != BIYOS_OK ||
         BIYOS_addcb(model, 1, &function, &tag, &cb) != BIYOS_OK || cb != 0 ||
         BIYOS_setcbf(model, cb, evaluate) != BIYOS_OK ||
-        BIYOS_setcbjac(model, cb, off, variables, evaluate) != BIYOS_OK ||
-        BIYOS_setcbhess(model, cb, 1, variables, variables, evaluate) != BIYOS_OK ||
-        BIYOS_setcbhessvec(model, cb, evaluate) != BIYOS_OK ||
+        BIYOS_setcbg(model, cb, off, variables, evaluate) != BIYOS_OK ||
+        BIYOS_setcbh(model, cb, 1, variables, variables, evaluate) != BIYOS_OK ||
+        BIYOS_setcbhv(model, cb, evaluate) != BIYOS_OK ||
         BIYOS_getcbdata(model, cb, &data) != BIYOS_OK || data != &tag ||
         BIYOS_setcbdata(model, cb, NULL) != BIYOS_OK)
     {
