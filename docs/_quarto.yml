@@ -53,6 +53,7 @@ number-depth: 1
 tbl-colwidths: true
 
 bibliography: references.bib
+csl: theme/references.csl
 link-citations: true
 filters:
   - path: filters/generated.lua
