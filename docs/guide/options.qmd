@@ -1,6 +1,6 @@
 # Options {#sec-options}
 
-Options are set on an environment and apply to every call made on it and on its models. Each option has a name, a number and a kind, and biyos checks every value as it is set, so a value that would mean nothing is refused at once rather than ignored. The code of this chapter is `examples/c/options.c` and `examples/python/options.py`.
+Options are set on an environment and shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each option has a name, a number and a kind, and biyos checks every value as it is set, so a value that would mean nothing is refused at once rather than ignored. The code of this chapter is `examples/c/options.c` and `examples/python/options.py`.
 
 ## Names, ids and kinds {#sec-options-kinds}
 
@@ -33,7 +33,18 @@ Reading is the mirror image:
 ```{.c file="examples/c/options.c" item="read_options"}
 ```
 
-A string read with `BIYOS_getenvstropt` belongs to the environment. The pointer stays valid until the option is set again or the environment is freed; a failed set of the option and a set of another option leave it valid. A string set with `BIYOS_setenvstropt` is copied, so the caller's buffer may change afterwards.
+A string read with `BIYOS_getenvstropt` stays valid until the environment is freed, one read with `BIYOS_getmdlstropt` until the model is freed. Setting the option again, at either level, leaves it valid. A string set with `BIYOS_setenvstropt` is copied, so the caller's buffer may change afterwards.
+
+## Two levels {#sec-options-levels}
+
+An option set on an environment is shared by every model made on it, and a model may hold its own value instead. Each call that sets or reads an option on the environment has a twin on a model, named with `mdl` in place of `env`, such as `BIYOS_setmdldblopt` beside `BIYOS_setenvdblopt`. A model's value is checked as the environment's is, and a failed set leaves the model as it was. A model reads its own value when it holds one, else the environment's, else the default, so a change on the environment reaches every model that holds no value of its own. `BIYOS_delmdlopt` drops the model's value, and the model shares the environment's again; on an option the model holds no value of, it changes nothing and succeeds. `BIYOS_getmdloptsrc` tells where the value a model reads comes from: `BIYOS_OPTSRC_MDL`, `BIYOS_OPTSRC_ENV` or `BIYOS_OPTSRC_DEFAULT`.
+
+```{.c file="examples/c/options.c" item="model_options"}
+```
+
+A model's value of a flags option replaces the environment's pair of masks whole, so a part in neither of the model's masks keeps its default, whatever the environment forces. Setting or dropping a model's value is a change to that model: it may run beside calls on the other models of the environment (@sec-threads), and is refused while the environment delivers an event. A copy keeps the model's own values (@sec-copy).
+
+An option of environment scope belongs to the environment as a whole and is set there only: every model call on it, reading included, fails with `BIYOS_ERR_BADARG` and a message such as `invalid argument: option 'host': has environment scope`. No option of this release has environment scope.
 
 ## Flags {#sec-options-flags}
 
