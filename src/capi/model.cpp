@@ -7,6 +7,7 @@
 #include "capi/tolerances.hpp"
 #include "core/env.hpp"
 #include "core/index.hpp"
+#include "core/timer.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
@@ -44,6 +45,7 @@ void make_copy(const BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
     const EnvGuard busy(target);
     busy.check();
+    const biyos::EntryTimer timer(model.handle.env(), "model", "copy");
     *made = new BIYOS_model(target, model);
 }
 
