@@ -105,6 +105,13 @@ void *data_of(const Model &model, BIYOS_index cb)
     return data;
 }
 
+BIYOS_index count_of(const Model &model, BIYOS_index cb)
+{
+    BIYOS_index n = -1;
+    EXPECT_EQ(BIYOS_getncbfun(model.get(), cb, &n), BIYOS_OK);
+    return n;
+}
+
 std::uint64_t bits(double value)
 {
     return std::bit_cast<std::uint64_t>(value);
@@ -182,6 +189,8 @@ TEST(CallbackTest, Nulls)
               null + "h': is null");
     EXPECT_EQ(failed(env, BIYOS_setcbhv(mdl, 0, nullptr)), null + "hv': is null");
     EXPECT_EQ(failed(env, BIYOS_getcbdata(mdl, 0, nullptr)), null + "data': is null");
+    EXPECT_EQ(failed(env, BIYOS_getncbfun(mdl, 0, nullptr)), null + "n': is null");
+    EXPECT_EQ(BIYOS_getcbfun(mdl, 0, 2, nullptr), BIYOS_OK);
     EXPECT_EQ(failed(env, BIYOS_addcb(mdl, 1, nullptr, nullptr, nullptr)),
               null + "funidx': is null");
     EXPECT_EQ(failed(env, BIYOS_addcb(mdl, -1, nullptr, nullptr, nullptr)),
@@ -200,6 +209,10 @@ TEST(CallbackTest, Nulls)
               null + "nnz': -1 is negative");
     EXPECT_EQ(BIYOS_addcb(nullptr, 1, &variable, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getcbdata(nullptr, 0, nullptr), BIYOS_ERR_BADARG);
+    BIYOS_index n = -1;
+    EXPECT_EQ(BIYOS_getncbfun(nullptr, 0, &n), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getcbfun(nullptr, 0, 1, &n), BIYOS_ERR_BADARG);
+    EXPECT_EQ(n, -1);
     EXPECT_EQ(BIYOS_setcbg(mdl, 0, nullptr, nullptr, record), BIYOS_OK);
     EXPECT_EQ(BIYOS_setcbh(mdl, 0, 0, nullptr, nullptr, record), BIYOS_OK);
     EXPECT_EQ(mdl->core.n_callbacks(), 1);
@@ -225,10 +238,60 @@ TEST(CallbackTest, Unknown)
     EXPECT_EQ(failed(env, BIYOS_setcbhv(mdl, 1, record)), unknown);
     EXPECT_EQ(failed(env, BIYOS_setcbdata(mdl, 1, nullptr)), unknown);
     EXPECT_EQ(failed(env, BIYOS_getcbdata(mdl, 1, &data)), unknown);
+    BIYOS_index n = -1;
+    EXPECT_EQ(failed(env, BIYOS_getncbfun(mdl, 1, &n)), unknown);
+    EXPECT_EQ(failed(env, BIYOS_getcbfun(mdl, 1, 1, &n)), unknown);
+    EXPECT_EQ(failed(env, BIYOS_getcbfun(mdl, -1, 1, &n)), kBad + "callback -1: unknown");
+    EXPECT_EQ(n, -1);
     EXPECT_EQ(failed(env, BIYOS_setcbf(mdl, -1, record)), kBad + "callback -1: unknown");
     const BIYOS_index function = 3;
     EXPECT_EQ(failed(env, BIYOS_addcb(mdl, 1, &function, nullptr, nullptr)),
               kBad + "function 3: unknown");
+}
+
+TEST(CallbackTest, Covered)
+{
+    const Env env;
+    const Model model(env);
+    build(model, 1, 4);
+    add(model, {2, 0, 3}, nullptr);
+    add(model, {1}, nullptr);
+    EXPECT_EQ(count_of(model, 0), 3);
+    EXPECT_EQ(count_of(model, 1), 1);
+    std::vector<BIYOS_index> funidx(4, -1);
+    EXPECT_EQ(BIYOS_getcbfun(model.get(), 0, 4, funidx.data()), BIYOS_OK);
+    EXPECT_EQ(funidx, (std::vector<BIYOS_index>{2, 0, 3, -1}));
+    EXPECT_EQ(BIYOS_getcbfun(model.get(), 1, 1, funidx.data()), BIYOS_OK);
+    EXPECT_EQ(funidx, (std::vector<BIYOS_index>{1, 0, 3, -1}));
+}
+
+TEST(CallbackTest, Capacity)
+{
+    const Env env;
+    const Model model(env);
+    build(model, 1, 3);
+    add(model, {2, 0, 1}, nullptr);
+    BIYOS_model *mdl = model.get();
+    std::vector<BIYOS_index> funidx(3, -1);
+    EXPECT_EQ(failed(env, BIYOS_getcbfun(mdl, 0, 2, funidx.data())),
+              kBad + "argument 'cap': holds 2 of the 3 functions");
+    EXPECT_EQ(failed(env, BIYOS_getcbfun(mdl, 0, 0, nullptr)),
+              kBad + "argument 'cap': holds 0 of the 3 functions");
+    EXPECT_EQ(failed(env, BIYOS_getcbfun(mdl, 0, -1, funidx.data())),
+              kBad + "argument 'cap': -1 is negative");
+    EXPECT_EQ(funidx, std::vector<BIYOS_index>(3, -1));
+}
+
+TEST(CallbackTest, Empty)
+{
+    const Env env;
+    const Model model(env);
+    build(model, 1, 1);
+    BIYOS_index n = -1;
+    EXPECT_EQ(failed(env, BIYOS_getncbfun(model.get(), 0, &n)), kBad + "callback 0: unknown");
+    EXPECT_EQ(failed(env, BIYOS_getcbfun(model.get(), 0, 0, nullptr)),
+              kBad + "callback 0: unknown");
+    EXPECT_EQ(n, -1);
 }
 
 TEST(CallbackTest, Patterns)

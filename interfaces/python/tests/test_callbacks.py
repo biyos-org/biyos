@@ -91,6 +91,16 @@ def test_added(model):
     assert model.getcbdata(1) is other
 
 
+def test_covered(model):
+    unknown = "invalid argument: callback 0: unknown"
+    assert refusal(model.getcbfun, 0) == unknown
+    model.addcb([2, 0])
+    model.addcb(model.addfun(2))
+    assert [model.getncbfun(cb) for cb in (0, 1)] == [2, 2]
+    assert model.getcbfun(0) == [2, 0]
+    assert model.getcbfun(1) == [3, 4]
+
+
 def test_values(model, seen):
     cb = model.addcb([2, 0], "data")
     found = []
@@ -208,6 +218,8 @@ def test_refused(model):
         (model.setcbhv, (1, answer), "callback 1: unknown"),
         (model.setcbdata, (1, None), "callback 1: unknown"),
         (model.getcbdata, (1,), "callback 1: unknown"),
+        (model.getncbfun, (1,), "callback 1: unknown"),
+        (model.getcbfun, (-1,), "callback -1: unknown"),
     ]
     for call, arguments, message in cases:
         assert refusal(call, *arguments) == bad + message
@@ -257,16 +269,23 @@ def test_locked(env, model):
             except biyos.Error as error:
                 found.append(str(error))
         found.append(model.getcbdata(0))
+        found.append(model.getcbfun(0))
 
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert found == [LOCKED] * 6 + ["kept"]
+    assert found == [LOCKED] * 6 + ["kept", [0]]
 
 
 def test_closed(env):
     model = biyos.Model(env)
     model.close()
-    for call in (*changes(model), partial(model.getcbdata, 0)):
+    calls = (
+        *changes(model),
+        partial(model.getcbdata, 0),
+        partial(model.getncbfun, 0),
+        partial(model.getcbfun, 0),
+    )
+    for call in calls:
         with pytest.raises(ValueError, match="the model is closed"):
             call()

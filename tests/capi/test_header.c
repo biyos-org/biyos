@@ -445,6 +445,8 @@ static BIYOS_status use_callbacks(BIYOS_model *model)
     const BIYOS_index variables[1] = {0};
     BIYOS_index function = -1;
     BIYOS_index cb = -1;
+    BIYOS_index n = -1;
+    BIYOS_index covered = -1;
     int tag = 0;
     void *data = NULL;
     if (BIYOS_addfun(model, 1, &function) != BIYOS_OK ||
@@ -454,6 +456,8 @@ static BIYOS_status use_callbacks(BIYOS_model *model)
         BIYOS_setcbh(model, cb, 1, variables, variables, evaluate) != BIYOS_OK ||
         BIYOS_setcbhv(model, cb, evaluate) != BIYOS_OK ||
         BIYOS_getcbdata(model, cb, &data) != BIYOS_OK || data != &tag ||
+        BIYOS_getncbfun(model, cb, &n) != BIYOS_OK || n != 1 ||
+        BIYOS_getcbfun(model, cb, n, &covered) != BIYOS_OK || covered != function ||
         BIYOS_setcbdata(model, cb, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;

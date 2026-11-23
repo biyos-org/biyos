@@ -230,6 +230,8 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_setcbdata(nullptr, 0, nullptr), BIYOS_ERR_BADARG);
     void *data = nullptr;
     EXPECT_EQ(BIYOS_getcbdata(nullptr, 0, &data), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getncbfun(nullptr, 0, &n), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getcbfun(nullptr, 0, 1, &n), BIYOS_ERR_BADARG);
 }
 
 TEST(CApiTest, HeldFree)

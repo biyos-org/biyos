@@ -311,6 +311,9 @@ def _declare_callbacks(lib: ctypes.CDLL, ints: type) -> None:
     _declare(lib, "BIYOS_setcbdata", c_int, c_void_p, c_int32, c_void_p)
     data = (c_void_p, c_int32, POINTER(c_void_p))
     _declare(lib, "BIYOS_getcbdata", c_int, *data)
+    _declare(lib, "BIYOS_getncbfun", c_int, c_void_p, c_int32, ints)
+    covered = (c_void_p, c_int32, c_int32, ints)
+    _declare(lib, "BIYOS_getcbfun", c_int, *covered)
 
 
 lib = _load()
