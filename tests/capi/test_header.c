@@ -348,7 +348,7 @@ static BIYOS_status use_cones(BIYOS_model *model)
 static BIYOS_status use_complements(BIYOS_model *model)
 {
     const int functions[2] = {0, 1};
-    const int partners[2] = {1, 1};
+    const int multipliers[2] = {1, 1};
     const double lower[1] = {-1.0};
     const double tolerance[1] = {0.5};
     const int indices[1] = {1};
@@ -356,7 +356,7 @@ static BIYOS_status use_complements(BIYOS_model *model)
     int read[2] = {-1, -1};
     BIYOS_index first = -1;
     BIYOS_index complements = 0;
-    if (BIYOS_addccon(model, 2, functions, partners, NULL, NULL, &first) != BIYOS_OK ||
+    if (BIYOS_addccon(model, 2, functions, multipliers, NULL, NULL, &first) != BIYOS_OK ||
         first != 0 || BIYOS_setcconbndsp(model, 1, indices, lower, NULL) != BIYOS_OK ||
         BIYOS_getnccon(model, &complements) != BIYOS_OK || complements != 2 ||
         BIYOS_getcconbndrg(model, 0, 2, found, NULL) != BIYOS_OK ||

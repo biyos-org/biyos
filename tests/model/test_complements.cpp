@@ -42,9 +42,12 @@ Model with_functions(std::size_t n)
     return model;
 }
 
-Complement pair(Index function, Index partner, double lower, double upper)
+Complement pair(Index function, Index multiplier, double lower, double upper)
 {
-    return Complement{.function = function, .partner = partner, .lower = lower, .upper = upper};
+    return Complement{.function = function,
+                      .lower = lower,
+                      .upper = upper,
+                      .multiplier = multiplier};
 }
 
 void add(Model &model, const Complement &complement)
@@ -65,7 +68,7 @@ std::string set_refusal(Model &model, Index index, const Complement &complement)
 void expect_complement(const Complement &found, const Complement &wanted)
 {
     EXPECT_EQ(found.function, wanted.function);
-    EXPECT_EQ(found.partner, wanted.partner);
+    EXPECT_EQ(found.multiplier, wanted.multiplier);
     EXPECT_DOUBLE_EQ(found.lower, wanted.lower);
     EXPECT_DOUBLE_EQ(found.upper, wanted.upper);
 }
@@ -167,7 +170,7 @@ TEST(ComplementTest, Copy)
     const Index index = 1;
     const Complement other = pair(1, 0, -1.0, 1.0);
     changed.set_complements(std::span(&index, 1), std::span(&other, 1));
-    EXPECT_EQ(biyos::difference(model, changed), "complement 1: partner 1 against 0");
+    EXPECT_EQ(biyos::difference(model, changed), "complement 1: multiplier 1 against 0");
     EXPECT_EQ(biyos::difference(model, copy), "");
 }
 

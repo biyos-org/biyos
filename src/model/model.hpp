@@ -127,9 +127,9 @@ inline constexpr std::array kConeKinds{
 struct Complement
 {
     Index function;
-    Index partner;
     double lower;
     double upper;
+    Index multiplier;
 };
 
 enum class Family

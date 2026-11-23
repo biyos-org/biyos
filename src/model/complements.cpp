@@ -29,7 +29,7 @@ void check_bounds(Index index, const Complement &complement)
 void check(Index index, const Complement &complement, Index functions)
 {
     check_function(kNoun, index, complement.function, functions);
-    check_function(kNoun, index, complement.partner, functions);
+    check_function(kNoun, index, complement.multiplier, functions);
     check_bounds(index, complement);
 }
 

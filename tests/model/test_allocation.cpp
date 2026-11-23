@@ -344,7 +344,7 @@ Model with_complements()
 {
     Model model;
     model.add_functions(std::vector<double>{0.0}, std::vector<Offset>{0, 0}, {});
-    const Complement held{.function = 0, .partner = 0, .lower = 0.0, .upper = 1.0};
+    const Complement held{.function = 0, .lower = 0.0, .upper = 1.0, .multiplier = 0};
     model.add_complements(std::vector<Complement>(4, held));
     return model;
 }

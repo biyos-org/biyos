@@ -24,14 +24,14 @@ constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
 struct Records
 {
     std::vector<int> functions;
-    std::vector<int> partners;
+    std::vector<int> multipliers;
     std::vector<double> lower;
     std::vector<double> upper;
 };
 
 const Records kSample{
     .functions = {1, 0, 1},
-    .partners = {0, 0, 2},
+    .multipliers = {0, 0, 2},
     .lower = {0.0, -kInfinity, -1.0},
     .upper = {kInfinity, kInfinity, 1.0},
 };
@@ -47,7 +47,7 @@ void add_sample(const Model &model)
     const BIYOS_status status = BIYOS_addccon(model.get(),
                                               3,
                                               kSample.functions.data(),
-                                              kSample.partners.data(),
+                                              kSample.multipliers.data(),
                                               kSample.lower.data(),
                                               kSample.upper.data(),
                                               nullptr);
@@ -65,7 +65,7 @@ Records sized(std::size_t size)
 {
     return Records{
         .functions = std::vector<int>(size, -1),
-        .partners = std::vector<int>(size, -1),
+        .multipliers = std::vector<int>(size, -1),
         .lower = std::vector<double>(size, 9.0),
         .upper = std::vector<double>(size, 9.0),
     };
@@ -78,7 +78,7 @@ Records read_range(const Model &model, int start, int n)
                                                 start,
                                                 n,
                                                 read.functions.data(),
-                                                read.partners.data(),
+                                                read.multipliers.data(),
                                                 read.lower.data(),
                                                 read.upper.data());
     EXPECT_EQ(status, BIYOS_OK);
@@ -98,7 +98,7 @@ Records read_listed(const Model &model, const std::vector<BIYOS_index> &indices)
                                                 n,
                                                 indices.data(),
                                                 read.functions.data(),
-                                                read.partners.data(),
+                                                read.multipliers.data(),
                                                 read.lower.data(),
                                                 read.upper.data());
     EXPECT_EQ(status, BIYOS_OK);
@@ -108,7 +108,7 @@ Records read_listed(const Model &model, const std::vector<BIYOS_index> &indices)
 void expect_records(const Records &found, const Records &wanted)
 {
     EXPECT_EQ(found.functions, wanted.functions);
-    EXPECT_EQ(found.partners, wanted.partners);
+    EXPECT_EQ(found.multipliers, wanted.multipliers);
     expect_doubles(found.lower, wanted.lower);
     expect_doubles(found.upper, wanted.upper);
 }
@@ -235,7 +235,7 @@ TEST(CApiTest, NullComplements)
     ASSERT_EQ(BIYOS_addccon(held, 0, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const Records wanted{
         .functions = {0, 1, 0, 1, 0, 1},
-        .partners = {0, 1, 0, 1, 0, 1},
+        .multipliers = {0, 1, 0, 1, 0, 1},
         .lower = {0.0, 0.0, -0.5, 0.75, 0.0, 0.0},
         .upper = {kInfinity, kInfinity, kInfinity, kInfinity, -0.5, 0.75},
     };
@@ -256,7 +256,7 @@ TEST(CApiTest, ComplementRange)
     add_sample(model);
     const Records ranged{
         .functions = {0, 1},
-        .partners = {0, 2},
+        .multipliers = {0, 2},
         .lower = {-kInfinity, -1.0},
         .upper = {kInfinity, 1.0},
     };
@@ -264,7 +264,7 @@ TEST(CApiTest, ComplementRange)
     EXPECT_EQ(BIYOS_getcconrg(model.get(), 3, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const Records listed{
         .functions = {1, 1, 0},
-        .partners = {2, 0, 0},
+        .multipliers = {2, 0, 0},
         .lower = {-1.0, 0.0, -kInfinity},
         .upper = {1.0, kInfinity, kInfinity},
     };
@@ -279,11 +279,11 @@ TEST(CApiTest, ComplementOutputs)
     add_sample(model);
     const BIYOS_model *held = model.get();
     EXPECT_EQ(BIYOS_getcconrg(held, 0, 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    std::vector<int> partners(2, -1);
+    std::vector<int> multipliers(2, -1);
     std::vector<double> upper(2, 9.0);
-    EXPECT_EQ(BIYOS_getcconrg(held, 1, 2, nullptr, partners.data(), nullptr, upper.data()),
+    EXPECT_EQ(BIYOS_getcconrg(held, 1, 2, nullptr, multipliers.data(), nullptr, upper.data()),
               BIYOS_OK);
-    EXPECT_EQ(partners, std::vector<int>({0, 2}));
+    EXPECT_EQ(multipliers, std::vector<int>({0, 2}));
     expect_doubles(upper, {kInfinity, 1.0});
     const BIYOS_index indices[] = {2};
     std::vector<int> functions(1, -1);
@@ -316,7 +316,7 @@ TEST(CApiTest, ComplementBounds)
     const BIYOS_index repeated[] = {2, 0, 2};
     ASSERT_EQ(BIYOS_getcconbndsp(held, 3, repeated, nullptr, listed.data()), BIYOS_OK);
     expect_doubles(listed, {1.0, kInfinity, 1.0});
-    EXPECT_EQ(read_all(model).partners, kSample.partners);
+    EXPECT_EQ(read_all(model).multipliers, kSample.multipliers);
     EXPECT_EQ(BIYOS_setcconbndsp(held, 2, nullptr, lower, upper), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
 }
