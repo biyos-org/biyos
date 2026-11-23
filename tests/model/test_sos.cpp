@@ -1,6 +1,7 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "model/checks.hpp"
+#include "model/compare.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 
@@ -19,6 +20,7 @@
 namespace
 {
 
+using biyos::difference;
 using biyos::Index;
 using biyos::Member;
 using biyos::Model;
@@ -294,7 +296,9 @@ TEST(SosTest, Copied)
     Model model = with_variables(4);
     add(model, kBoth);
     Model copy = model;
+    EXPECT_EQ(difference(model, copy), "");
     add(copy, one(SosKind::Sos2, kSecond));
+    EXPECT_EQ(difference(model, copy), "set count 2 against 3");
     EXPECT_EQ(model.n_sos(), 2);
     EXPECT_EQ(copy.n_sos(), 3);
     EXPECT_EQ(copy.kind_of_sos(1), model.kind_of_sos(1));
