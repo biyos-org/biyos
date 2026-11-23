@@ -7,7 +7,7 @@ from operator import index
 import pytest
 
 import biyos
-from biyos import EventKind, EventLevel, Sense, _model
+from biyos import EventKind, EventLevel, ObjectiveSense, _model
 from biyos._capi import lib
 from number import Growing, Number
 from refusal import LOCKED, refusal
@@ -16,8 +16,8 @@ from sized import Room, limit
 INFINITY = float("inf")
 NAN = float("nan")
 SIGNED_NAN = math.copysign(NAN, -1.0)
-MAX = Sense.MAXIMIZE
-MIN = Sense.MINIMIZE
+MAX = ObjectiveSense.MAXIMIZE
+MIN = ObjectiveSense.MINIMIZE
 
 FUNCTIONS = [1, 0, 1]
 SENSES = [MAX, MIN, MIN]
@@ -64,7 +64,7 @@ def test_add(model):
     found = model.getobj()
     assert found == SAMPLE
     assert model.getobjtol(added) == TOLERANCES
-    assert all(type(sense) is Sense for sense in found[1])
+    assert all(type(sense) is ObjectiveSense for sense in found[1])
     assert type(added) is biyos.Objectives
     assert [index(objective) for objective in added] == [0, 1, 2]
 
@@ -237,7 +237,7 @@ def test_listed(model):
     idx = [2, 0, 2, 1]
     sense = model.getobjsense(idx)
     assert sense == [MIN, MAX, MIN, MIN]
-    assert all(type(value) is Sense for value in sense)
+    assert all(type(value) is ObjectiveSense for value in sense)
     assert model.getobjprio(idx) == [2, 2, 2, -1]
     assert model.getobjcoef(idx) == [3.0, 0.5, 3.0, 1.0]
     tolerances = ([INFINITY, 0.0, INFINITY, 1.5], [0.0, 0.25, 0.0, 0.0])

@@ -21,7 +21,7 @@ from biyos._capi import version
 from biyos._env import Env
 from biyos._error import Error
 from biyos._event import Event, EventKind, EventLevel
-from biyos._model import ConeKind, Model, Sense, SOSKind, VariableKind
+from biyos._model import ConeKind, Model, ObjectiveSense, SOSKind, VariableKind
 from biyos._operators import Operator
 from biyos._options import CheckLevel, Masks, OptionSource
 from biyos._versions import Versions
@@ -51,7 +51,7 @@ __all__ = [
     "Objectives",
     "Operator",
     "OptionSource",
-    "Sense",
+    "ObjectiveSense",
     "SOS",
     "SOSKind",
     "SOSs",

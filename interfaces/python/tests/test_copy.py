@@ -6,7 +6,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import EventKind, EventLevel, Sense, VariableKind
+from biyos import EventKind, EventLevel, ObjectiveSense, VariableKind
 from biyos._capi import lib
 from spies import Trap, followed, interrupted, preceded, traced
 
@@ -53,7 +53,7 @@ def add_sample(model):
     model.addquadterm(*pairs)
     model.addcon([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, INFINITY, 3.0])
     model.setcontol([1], None, [0.125])
-    senses = [Sense.MAXIMIZE, Sense.MINIMIZE]
+    senses = [ObjectiveSense.MAXIMIZE, ObjectiveSense.MINIMIZE]
     tolerances = ([0.25, 0.0], [0.0, INFINITY])
     o = model.addobj([1, 0], senses, [3, -2], [0.5, 2.0])
     model.setobjtol(o, *tolerances)
@@ -134,7 +134,7 @@ def test_apart(place, model):
     copy.setvarbnd([0], [1.0])
     copy.addcon([1])
     copy.addquadterm([0], [0], [0], [1.0])
-    copy.setobjsense([1], [Sense.MAXIMIZE])
+    copy.setobjsense([1], [ObjectiveSense.MAXIMIZE])
     assert read(model) == before
     assert copy.getnvar() == 4
     model.addfun(1)

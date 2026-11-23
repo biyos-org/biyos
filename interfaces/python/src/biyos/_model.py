@@ -83,7 +83,7 @@ class VariableKind(IntEnum):
     SEMIINTEGER = 5
 
 
-class Sense(IntEnum):
+class ObjectiveSense(IntEnum):
     """The senses of objectives, as ``BIYOS_OBJSENSE_MIN`` and
     ``BIYOS_OBJSENSE_MAX`` number them.
 
@@ -2312,7 +2312,7 @@ class Model:
     def addobj(
         self,
         funidx: Sequence[int | Function] | Functions,
-        sense: Sequence[Sense] | None = None,
+        sense: Sequence[ObjectiveSense] | None = None,
         prio: Sequence[int] | None = None,
         coef: Sequence[float] | None = None,
     ) -> Objectives:
@@ -2363,7 +2363,7 @@ class Model:
     def setobjsense(
         self,
         idx: Sequence[int | Objective] | Objectives,
-        sense: Sequence[Sense] | None,
+        sense: Sequence[ObjectiveSense] | None,
     ) -> None:
         """Set the senses of objectives.
 
@@ -2390,7 +2390,7 @@ class Model:
 
     def getobjsense(
         self, idx: Sequence[int | Objective] | Objectives
-    ) -> list[Sense]:
+    ) -> list[ObjectiveSense]:
         """Read the senses of objectives.
 
         Parameters
@@ -2409,7 +2409,7 @@ class Model:
         BIYOS_getobjsenserg
         """
         found = self._getlist("BIYOS_getobjsense", Objectives, idx, c_int)
-        return [Sense(value) for value in found[0]]
+        return [ObjectiveSense(value) for value in found[0]]
 
     def setobjprio(
         self,
@@ -2592,7 +2592,7 @@ class Model:
 
     def getobj(
         self, idx: Sequence[int | Objective] | Objectives | None = None
-    ) -> tuple[list[int], list[Sense], list[int], list[float]]:
+    ) -> tuple[list[int], list[ObjectiveSense], list[int], list[float]]:
         """Read objectives.
 
         Parameters
@@ -2621,7 +2621,7 @@ class Model:
         types = (c_int, c_int, c_int, c_double)
         found = self._getlist("BIYOS_getobj", Objectives, every, *types)
         functions, codes, priorities, weights = found
-        senses = [Sense(code) for code in codes]
+        senses = [ObjectiveSense(code) for code in codes]
         return functions, senses, priorities, weights
 
     def setobjname(

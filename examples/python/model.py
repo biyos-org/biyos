@@ -1,5 +1,5 @@
 import biyos
-from biyos import Sense, VariableKind
+from biyos import ObjectiveSense, VariableKind
 
 
 def build(model):
@@ -20,7 +20,7 @@ def build(model):
     model.addcon([f[0], f[1]], lb=[1.0, 0.0], ub=[5.0, 0.0])
     o = model.addobj(
         [f[2], f[0]],
-        sense=[Sense.MINIMIZE, Sense.MAXIMIZE],
+        sense=[ObjectiveSense.MINIMIZE, ObjectiveSense.MAXIMIZE],
         prio=[0, 1],
     )
     model.setobjtol([o[0]], atol=[0.5])

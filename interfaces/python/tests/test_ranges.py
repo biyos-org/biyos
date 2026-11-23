@@ -3,7 +3,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import ConeKind, Sense, VariableKind
+from biyos import ConeKind, ObjectiveSense, VariableKind
 from biyos._capi import lib
 from refusal import refusal
 
@@ -14,7 +14,7 @@ PAIRS = [
     ("fun", "cst", ([1.5, -2.5],)),
     ("con", "conbnd", ([-3.0, -4.0], [3.0, 4.0])),
     ("con", "contol", ([0.1, 0.2], [0.3, 0.4])),
-    ("obj", "objsense", ([Sense.MAXIMIZE, Sense.MINIMIZE],)),
+    ("obj", "objsense", ([ObjectiveSense.MAXIMIZE, ObjectiveSense.MINIMIZE],)),
     ("obj", "objprio", ([3, 4],)),
     ("obj", "objcoef", ([2.0, 3.0],)),
     ("obj", "objtol", ([0.1, 0.2], [0.3, 0.4])),

@@ -65,8 +65,8 @@ OPERATORS = {
 }
 
 SENSES = {
-    "BIYOS_OBJSENSE_MIN": biyos.Sense.MINIMIZE,
-    "BIYOS_OBJSENSE_MAX": biyos.Sense.MAXIMIZE,
+    "BIYOS_OBJSENSE_MIN": biyos.ObjectiveSense.MINIMIZE,
+    "BIYOS_OBJSENSE_MAX": biyos.ObjectiveSense.MAXIMIZE,
 }
 
 CONES = {
@@ -128,7 +128,7 @@ def test_cone_kinds():
 def test_senses():
     senses, defined = group("biyos.h", "BIYOS_OBJSENSE_MIN")
     assert len(senses) == defined
-    assert set(SENSES.values()) == set(biyos.Sense)
+    assert set(SENSES.values()) == set(biyos.ObjectiveSense)
     assert senses == SENSES
 
 
