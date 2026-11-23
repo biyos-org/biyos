@@ -19,6 +19,7 @@ namespace
 {
 
 using namespace std::chrono_literals;
+using biyos::EntryTimer;
 using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::Timer;
@@ -331,4 +332,30 @@ TEST_F(TimerTest, FailedLeave)
         "solve edge=end wall=5 cpu=0",
     };
     EXPECT_EQ(lines(kept), expected);
+}
+
+TEST_F(TimerTest, Entry)
+{
+    listen(env);
+    {
+        const Timer solve(env, tree, "nlp", "solve");
+        advance(1ns, 1ns);
+        const EntryTimer read(env, "io", "read");
+        advance(2ns, 1ns);
+    }
+    {
+        const EntryTimer read(env, "io", "read");
+        advance(4ns, 2ns);
+    }
+    EXPECT_EQ(summary(tree), (Texts{"solve count=1 wall=3 cpu=2"}));
+    const Texts expected{
+        "solve edge=begin wall=0 cpu=0",
+        "read edge=begin wall=1 cpu=1",
+        "read edge=end wall=3 cpu=2",
+        "solve edge=end wall=3 cpu=2",
+        "read edge=begin wall=3 cpu=2",
+        "read edge=end wall=7 cpu=4",
+    };
+    EXPECT_EQ(lines(kept), expected);
+    EXPECT_EQ(kept[1].module, "io");
 }

@@ -45,8 +45,7 @@ FileFormat find_format(int id)
 
 Model read_file(Env &env, std::string_view path, FileFormat format)
 {
-    TimingTree tree;
-    const Timer timer(env, tree, "io", "read");
+    const EntryTimer timer(env, "io", "read");
     const std::string file(path);
     const std::filesystem::path location = path_of(path);
     std::error_code code;
