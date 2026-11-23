@@ -1,8 +1,8 @@
 #include "expr/graph.hpp"
 
 #include "core/index.hpp"
+#include "core/room.hpp"
 #include "expr/node.hpp"
-#include "expr/room.hpp"
 
 #include <bit>
 #include <cstddef>
@@ -125,7 +125,7 @@ Offset Graph::add_sum(double constant,
     check(Operator::Sum, Payload::Coefficients, children);
     check_constant(constant);
     check_coefficients(coefficients, static_cast<Offset>(children.size()));
-    make_room(coefficients_, coefficients_.size() + coefficients.size() + 1);
+    reserve_more(coefficients_, coefficients.size() + 1);
     const Offset node = append(Operator::Sum, coefficients_.size(), children);
     coefficients_.push_back(constant);
     coefficients_.insert(coefficients_.end(), coefficients.begin(), coefficients.end());
@@ -195,10 +195,10 @@ Offset Graph::append(Operator op, std::uint64_t payload, std::span<const Offset>
         const std::vector<Offset> copy(children.begin(), children.end());
         return append(op, payload, copy);
     }
-    make_room(operators_, operators_.size() + 1);
-    make_room(payloads_, payloads_.size() + 1);
-    make_room(starts_, starts_.size() + 1);
-    make_room(children_, children_.size() + children.size());
+    reserve_more(operators_, 1);
+    reserve_more(payloads_, 1);
+    reserve_more(starts_, 1);
+    reserve_more(children_, children.size());
     const Offset node = size();
     operators_.push_back(op);
     payloads_.push_back(payload);
