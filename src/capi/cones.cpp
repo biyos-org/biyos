@@ -31,18 +31,10 @@ using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::set_tolerances;
-using biyos::capi::ToleranceCalls;
 using biyos::capi::writable;
 
 namespace
 {
-
-constexpr ToleranceCalls kTolerances{
-    .family = Family::Cone,
-    .read = &Model::cone_tolerance,
-    .set = &Model::set_cone_tolerances,
-    .remove = &Model::delete_cone_tolerances,
-};
 
 struct Given
 {
@@ -222,7 +214,7 @@ BIYOS_status BIYOS_setconetolsp(BIYOS_model *mdl,
                                 const BIYOS_real *atol,
                                 const BIYOS_real *rtol)
 {
-    return guarded<set_tolerances<List>>(mdl, kTolerances, List{n, idx}, atol, rtol);
+    return guarded<set_tolerances<List>>(mdl, Family::Cone, List{n, idx}, atol, rtol);
 }
 
 BIYOS_status BIYOS_setconetolrg(BIYOS_model *mdl,
@@ -231,7 +223,7 @@ BIYOS_status BIYOS_setconetolrg(BIYOS_model *mdl,
                                 const BIYOS_real *atol,
                                 const BIYOS_real *rtol)
 {
-    return guarded<set_tolerances<Range>>(mdl, kTolerances, Range{pos, n}, atol, rtol);
+    return guarded<set_tolerances<Range>>(mdl, Family::Cone, Range{pos, n}, atol, rtol);
 }
 
 BIYOS_status BIYOS_getconetolsp(const BIYOS_model *mdl,
@@ -240,7 +232,7 @@ BIYOS_status BIYOS_getconetolsp(const BIYOS_model *mdl,
                                 BIYOS_real *atol,
                                 BIYOS_real *rtol)
 {
-    return guarded<get_tolerances<List>>(mdl, kTolerances, List{n, idx}, atol, rtol);
+    return guarded<get_tolerances<List>>(mdl, Family::Cone, List{n, idx}, atol, rtol);
 }
 
 BIYOS_status BIYOS_getconetolrg(const BIYOS_model *mdl,
@@ -249,17 +241,17 @@ BIYOS_status BIYOS_getconetolrg(const BIYOS_model *mdl,
                                 BIYOS_real *atol,
                                 BIYOS_real *rtol)
 {
-    return guarded<get_tolerances<Range>>(mdl, kTolerances, Range{pos, n}, atol, rtol);
+    return guarded<get_tolerances<Range>>(mdl, Family::Cone, Range{pos, n}, atol, rtol);
 }
 
 BIYOS_status BIYOS_delconetolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<delete_tolerances<List>>(mdl, kTolerances, List{n, idx});
+    return guarded<delete_tolerances<List>>(mdl, Family::Cone, List{n, idx});
 }
 
 BIYOS_status BIYOS_delconetolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
 {
-    return guarded<delete_tolerances<Range>>(mdl, kTolerances, Range{pos, n});
+    return guarded<delete_tolerances<Range>>(mdl, Family::Cone, Range{pos, n});
 }
 
 BIYOS_status BIYOS_getncone(const BIYOS_model *mdl, BIYOS_index *n)

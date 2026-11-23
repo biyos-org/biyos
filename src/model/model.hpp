@@ -176,6 +176,13 @@ class Model
                    std::span<const std::string_view> names);
     void delete_names(Family family, std::span<const Index> indices);
 
+    Override tolerance_of(Family family, Index index) const;
+    void set_tolerances(Family family,
+                        std::span<const Index> indices,
+                        std::span<const double> absolute,
+                        std::span<const double> relative);
+    void delete_tolerances(Family family, std::span<const Index> indices);
+
     Index n_variables() const noexcept;
     const Variable &variable(Index index) const;
     std::span<const Variable> variables(Index start, Index size) const;
@@ -183,12 +190,6 @@ class Model
     void add_variables(std::span<const Variable> added);
     void set_variables(std::span<const Index> indices, std::span<const Variable> changed);
     std::vector<Index> delete_variables(std::span<const Index> indices);
-
-    Override variable_tolerance(Index index) const;
-    void set_variable_tolerances(std::span<const Index> indices,
-                                 std::span<const double> absolute,
-                                 std::span<const double> relative);
-    void delete_variable_tolerances(std::span<const Index> indices);
 
     Index n_functions() const noexcept;
     const double &constant(Index index) const;
@@ -220,12 +221,6 @@ class Model
     void add_constraints(std::span<const Constraint> added);
     void set_constraints(std::span<const Index> indices, std::span<const Constraint> changed);
     std::vector<Index> delete_constraints(std::span<const Index> indices);
-
-    Override constraint_tolerance(Index index) const;
-    void set_constraint_tolerances(std::span<const Index> indices,
-                                   std::span<const double> absolute,
-                                   std::span<const double> relative);
-    void delete_constraint_tolerances(std::span<const Index> indices);
 
     Index n_objectives() const noexcept;
     const Objective &objective(Index index) const;
@@ -267,12 +262,6 @@ class Model
                    std::span<const double> parameters);
     std::vector<Index> delete_cones(std::span<const Index> indices);
 
-    Override cone_tolerance(Index index) const;
-    void set_cone_tolerances(std::span<const Index> indices,
-                             std::span<const double> absolute,
-                             std::span<const double> relative);
-    void delete_cone_tolerances(std::span<const Index> indices);
-
     Index n_complements() const noexcept;
     const Complement &complement(Index index) const;
     std::span<const Complement> complements(Index start, Index size) const;
@@ -280,12 +269,6 @@ class Model
     void add_complements(std::span<const Complement> added);
     void set_complements(std::span<const Index> indices, std::span<const Complement> changed);
     std::vector<Index> delete_complements(std::span<const Index> indices);
-
-    Override complement_tolerance(Index index) const;
-    void set_complement_tolerances(std::span<const Index> indices,
-                                   std::span<const double> absolute,
-                                   std::span<const double> relative);
-    void delete_complement_tolerances(std::span<const Index> indices);
 
     const Graph &graph() const noexcept;
     std::span<const Offset> roots(Index start, Index size) const;
@@ -313,6 +296,7 @@ class Model
 
   private:
     void renumber_names(Family family, std::span<const Index> map) noexcept;
+    void renumber_tolerances(Family family, std::span<const Index> map) noexcept;
     void check_kinds(std::span<const Index> indices, std::span<const Variable> changed) const;
     void check_unused(std::span<const Index> map) const;
     void renumber_functions(std::span<const Index> map) noexcept;
@@ -327,15 +311,14 @@ class Model
 
     std::string name_;
     std::array<Names, kFamilies.size()> names_;
+    std::array<Overrides, kFamilies.size()> tolerances_;
     std::vector<Variable> variables_;
-    Overrides variable_tolerances_;
     std::vector<double> constants_;
     std::vector<Offset> linear_ends_;
     std::vector<LinearTerm> linear_terms_;
     std::vector<Offset> quadratic_ends_;
     std::vector<QuadraticTerm> quadratic_terms_;
     std::vector<Constraint> constraints_;
-    Overrides constraint_tolerances_;
     std::vector<Objective> objectives_;
     std::vector<Indicator> indicators_;
     std::vector<SosKind> sos_kinds_;
@@ -346,9 +329,7 @@ class Model
     std::vector<Index> cone_functions_;
     std::vector<Offset> parameter_ends_;
     std::vector<double> cone_parameters_;
-    Overrides cone_tolerances_;
     std::vector<Complement> complements_;
-    Overrides complement_tolerances_;
     Graph graph_;
     Uses uses_;
     std::vector<Offset> roots_;

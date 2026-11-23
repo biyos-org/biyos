@@ -132,13 +132,6 @@ Model with_cones(std::size_t n)
     return model;
 }
 
-constexpr biyos::test::ToleranceCalls kTolerances{
-    .noun = "cone",
-    .read = &Model::cone_tolerance,
-    .set = &Model::set_cone_tolerances,
-    .remove = &Model::delete_cone_tolerances,
-};
-
 std::vector<Index> members_of(const Model &model, Index start, Index size)
 {
     const std::span<const Index> found = model.cone_functions(start, size);
@@ -327,20 +320,20 @@ TEST(ConeTest, Ranges)
 
 TEST(ConeTest, OwnTolerance)
 {
-    biyos::test::expect_own(with_cones(3), kTolerances);
+    biyos::test::expect_own(with_cones(3), biyos::Family::Cone);
 }
 
 TEST(ConeTest, ToleranceRefusal)
 {
-    biyos::test::expect_refused(with_cones(2), kTolerances);
+    biyos::test::expect_refused(with_cones(2), biyos::Family::Cone);
 }
 
 TEST(ConeTest, DeletedTolerance)
 {
-    biyos::test::expect_deleted(with_cones(2), kTolerances);
+    biyos::test::expect_deleted(with_cones(2), biyos::Family::Cone);
 }
 
 TEST(ConeTest, ToleranceCopy)
 {
-    biyos::test::expect_copied(with_cones(2), kTolerances);
+    biyos::test::expect_copied(with_cones(2), biyos::Family::Cone);
 }

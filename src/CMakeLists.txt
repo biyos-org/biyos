@@ -82,6 +82,7 @@ add_library(biyos_internal STATIC
     model/renumber.cpp
     model/sos.cpp
     model/terms.cpp
+    model/tolerances.cpp
     model/transpose.cpp
     model/users.cpp
     model/variables.cpp

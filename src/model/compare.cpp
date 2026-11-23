@@ -207,7 +207,8 @@ std::string variable_difference(const Model &a, const Model &b, Index variable)
 {
     return first_of({
         differ(a.variable(variable), b.variable(variable)),
-        differ(a.variable_tolerance(variable), b.variable_tolerance(variable)),
+        differ(a.tolerance_of(Family::Variable, variable),
+               b.tolerance_of(Family::Variable, variable)),
         named(a, b, Family::Variable, variable),
     });
 }
@@ -227,7 +228,8 @@ std::string constraint_difference(const Model &a, const Model &b, Index constrai
 {
     return first_of({
         differ(a.constraint(constraint), b.constraint(constraint)),
-        differ(a.constraint_tolerance(constraint), b.constraint_tolerance(constraint)),
+        differ(a.tolerance_of(Family::Constraint, constraint),
+               b.tolerance_of(Family::Constraint, constraint)),
         named(a, b, Family::Constraint, constraint),
     });
 }
@@ -273,7 +275,7 @@ std::string cone_difference(const Model &a, const Model &b, Index cone)
         compared("kind", cone_kind(a, cone), cone_kind(b, cone)),
         term_differences("member", a.cone_functions(cone, 1), b.cone_functions(cone, 1)),
         term_differences("parameter", a.cone_parameters(cone, 1), b.cone_parameters(cone, 1)),
-        differ(a.cone_tolerance(cone), b.cone_tolerance(cone)),
+        differ(a.tolerance_of(Family::Cone, cone), b.tolerance_of(Family::Cone, cone)),
         named(a, b, Family::Cone, cone),
     });
 }
@@ -282,7 +284,8 @@ std::string complement_difference(const Model &a, const Model &b, Index compleme
 {
     return first_of({
         differ(a.complement(complement), b.complement(complement)),
-        differ(a.complement_tolerance(complement), b.complement_tolerance(complement)),
+        differ(a.tolerance_of(Family::Complement, complement),
+               b.tolerance_of(Family::Complement, complement)),
         named(a, b, Family::Complement, complement),
     });
 }

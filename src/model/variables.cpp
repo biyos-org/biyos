@@ -130,7 +130,7 @@ std::vector<Index> Model::delete_variables(std::span<const Index> indices)
     check_indicators(indicators_, map);
     check_callbacks(n_callbacks() > 0, map);
     keep(variables_, map);
-    variable_tolerances_.renumber(map);
+    renumber_tolerances(Family::Variable, map);
     renumber_terms(linear_ends_, linear_terms_, map);
     renumber_terms(quadratic_ends_, quadratic_terms_, map);
     renumber_variables(map);

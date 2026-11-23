@@ -22,20 +22,12 @@ using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::set_tolerances;
-using biyos::capi::ToleranceCalls;
 using biyos::capi::writable;
 
 namespace
 {
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
-constexpr ToleranceCalls kTolerances{
-    .family = Family::Complement,
-    .read = &biyos::Model::complement_tolerance,
-    .set = &biyos::Model::set_complement_tolerances,
-    .remove = &biyos::Model::delete_complement_tolerances,
-};
 
 struct Fields
 {
@@ -204,7 +196,7 @@ BIYOS_status BIYOS_setccontolsp(BIYOS_model *mdl,
                                 const BIYOS_real *atol,
                                 const BIYOS_real *rtol)
 {
-    return guarded<set_tolerances<List>>(mdl, kTolerances, List{n, idx}, atol, rtol);
+    return guarded<set_tolerances<List>>(mdl, Family::Complement, List{n, idx}, atol, rtol);
 }
 
 BIYOS_status BIYOS_setccontolrg(BIYOS_model *mdl,
@@ -213,7 +205,7 @@ BIYOS_status BIYOS_setccontolrg(BIYOS_model *mdl,
                                 const BIYOS_real *atol,
                                 const BIYOS_real *rtol)
 {
-    return guarded<set_tolerances<Range>>(mdl, kTolerances, Range{pos, n}, atol, rtol);
+    return guarded<set_tolerances<Range>>(mdl, Family::Complement, Range{pos, n}, atol, rtol);
 }
 
 BIYOS_status BIYOS_getccontolsp(const BIYOS_model *mdl,
@@ -222,7 +214,7 @@ BIYOS_status BIYOS_getccontolsp(const BIYOS_model *mdl,
                                 BIYOS_real *atol,
                                 BIYOS_real *rtol)
 {
-    return guarded<get_tolerances<List>>(mdl, kTolerances, List{n, idx}, atol, rtol);
+    return guarded<get_tolerances<List>>(mdl, Family::Complement, List{n, idx}, atol, rtol);
 }
 
 BIYOS_status BIYOS_getccontolrg(const BIYOS_model *mdl,
@@ -231,17 +223,17 @@ BIYOS_status BIYOS_getccontolrg(const BIYOS_model *mdl,
                                 BIYOS_real *atol,
                                 BIYOS_real *rtol)
 {
-    return guarded<get_tolerances<Range>>(mdl, kTolerances, Range{pos, n}, atol, rtol);
+    return guarded<get_tolerances<Range>>(mdl, Family::Complement, Range{pos, n}, atol, rtol);
 }
 
 BIYOS_status BIYOS_delccontolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<delete_tolerances<List>>(mdl, kTolerances, List{n, idx});
+    return guarded<delete_tolerances<List>>(mdl, Family::Complement, List{n, idx});
 }
 
 BIYOS_status BIYOS_delccontolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
 {
-    return guarded<delete_tolerances<Range>>(mdl, kTolerances, Range{pos, n});
+    return guarded<delete_tolerances<Range>>(mdl, Family::Complement, Range{pos, n});
 }
 
 BIYOS_status BIYOS_getnccon(const BIYOS_model *mdl, BIYOS_index *n)

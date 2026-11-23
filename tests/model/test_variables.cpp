@@ -63,13 +63,6 @@ Model with_variables(std::size_t n)
     return model;
 }
 
-constexpr biyos::test::ToleranceCalls kTolerances{
-    .noun = "variable",
-    .read = &Model::variable_tolerance,
-    .set = &Model::set_variable_tolerances,
-    .remove = &Model::delete_variable_tolerances,
-};
-
 }
 
 TEST(VariableTest, EachKind)
@@ -265,20 +258,20 @@ TEST(VariableTest, Mismatch)
 
 TEST(VariableTest, OwnTolerance)
 {
-    biyos::test::expect_own(with_variables(3), kTolerances);
+    biyos::test::expect_own(with_variables(3), biyos::Family::Variable);
 }
 
 TEST(VariableTest, ToleranceRefusal)
 {
-    biyos::test::expect_refused(with_variables(2), kTolerances);
+    biyos::test::expect_refused(with_variables(2), biyos::Family::Variable);
 }
 
 TEST(VariableTest, DeletedTolerance)
 {
-    biyos::test::expect_deleted(with_variables(2), kTolerances);
+    biyos::test::expect_deleted(with_variables(2), biyos::Family::Variable);
 }
 
 TEST(VariableTest, ToleranceCopy)
 {
-    biyos::test::expect_copied(with_variables(2), kTolerances);
+    biyos::test::expect_copied(with_variables(2), biyos::Family::Variable);
 }

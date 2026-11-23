@@ -69,13 +69,6 @@ Model with_constraints(std::size_t n)
     return model;
 }
 
-constexpr biyos::test::ToleranceCalls kTolerances{
-    .noun = "constraint",
-    .read = &Model::constraint_tolerance,
-    .set = &Model::set_constraint_tolerances,
-    .remove = &Model::delete_constraint_tolerances,
-};
-
 }
 
 TEST(ConstraintTest, Ranged)
@@ -248,20 +241,20 @@ TEST(ConstraintTest, Moved)
 
 TEST(ConstraintTest, OwnTolerance)
 {
-    biyos::test::expect_own(with_constraints(3), kTolerances);
+    biyos::test::expect_own(with_constraints(3), biyos::Family::Constraint);
 }
 
 TEST(ConstraintTest, ToleranceRefusal)
 {
-    biyos::test::expect_refused(with_constraints(2), kTolerances);
+    biyos::test::expect_refused(with_constraints(2), biyos::Family::Constraint);
 }
 
 TEST(ConstraintTest, DeletedTolerance)
 {
-    biyos::test::expect_deleted(with_constraints(2), kTolerances);
+    biyos::test::expect_deleted(with_constraints(2), biyos::Family::Constraint);
 }
 
 TEST(ConstraintTest, ToleranceCopy)
 {
-    biyos::test::expect_copied(with_constraints(2), kTolerances);
+    biyos::test::expect_copied(with_constraints(2), biyos::Family::Constraint);
 }
