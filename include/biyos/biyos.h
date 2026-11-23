@@ -907,6 +907,8 @@ BIYOS_API BIYOS_status BIYOS_delcconnamerg(BIYOS_model *mdl, BIYOS_index pos, BI
 #define BIYOS_OP_SPOW 28
 #define BIYOS_OP_ERF 29
 #define BIYOS_OP_NODE 30
+#define BIYOS_OP_KEEP 32
+#define BIYOS_OP_REF 33
 
 BIYOS_API BIYOS_status BIYOS_addvarnode(BIYOS_model *mdl, BIYOS_index var, BIYOS_offset *node);
 BIYOS_API BIYOS_status BIYOS_addnode(BIYOS_model *mdl,

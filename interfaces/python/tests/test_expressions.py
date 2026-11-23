@@ -105,6 +105,16 @@ def test_postfix(model):
     assert next_id(model) == 9
 
 
+def test_kept(model):
+    code = [Operator.VARIABLE, Operator.VARIABLE, Operator.SUM, Operator.KEEP]
+    code += [Operator.REFERENCE, Operator.SUM]
+    code += [Operator.REFERENCE, Operator.SQRT]
+    arg = [0, 1, 2, 1, 3, 2, 3, 1]
+    val = [0.0, 1.0, 1.0, 0.5, 2.0, 3.0]
+    assert model.addexpr([0, 6, 8], code, arg, val) == [3, 4]
+    assert next_id(model) == 5
+
+
 def test_same_graph(env):
     with biyos.Model(env) as nodes, biyos.Model(env) as postfix:
         for model in (nodes, postfix):
@@ -198,6 +208,10 @@ def test_refused(model):
         (([0, 1], [Operator.VARIABLE], [3]), "entry 0: variable 3 is unknown"),
         (([0, 1], [Operator.NODE], [1]), "entry 0: node 1 is unknown"),
         (
+            ([0, 2], [Operator.VARIABLE, Operator.REFERENCE], [0, 0]),
+            "entry 1: entry 0 is no earlier keep",
+        ),
+        (
             ([0, 2], [Operator.VARIABLE, Operator.DIVISION], [0, 2]),
             "entry 1: 2 operands taken, 1 given",
         ),
@@ -219,6 +233,8 @@ def test_refused(model):
     )
     message = refusal(model.addnode, Operator.NODE, [x])
     assert message == "invalid argument: expression: operator 30 is unknown"
+    message = refusal(model.addnode, Operator.KEEP, [x])
+    assert message == "invalid argument: expression: operator 32 is unknown"
     message = refusal(model.addnode, Operator.PRODUCT, [x])
     assert message == "invalid argument: argument 'val': is null"
     message = refusal(model.addvarnode, 3)

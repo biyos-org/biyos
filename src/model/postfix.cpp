@@ -42,6 +42,12 @@ Offset arity_of(Operator op, Offset argument) noexcept
     return op == Operator::Variable ? 0 : argument;
 }
 
+struct Kept
+{
+    Offset entry;
+    Offset node;
+};
+
 class Decoder
 {
   public:
@@ -51,9 +57,12 @@ class Decoder
 
   private:
     void read(std::size_t k, std::size_t e);
-    void step(int code, Offset argument);
+    void step(std::size_t e, int code, Offset argument);
     void take(Operator op, Offset arity);
+    void pop(Offset arity);
     void build(Operator op, Offset argument);
+    void keep(std::size_t e, Offset arity);
+    void reference(Offset entry);
     void node(Offset id);
     void variable(Offset variable);
     std::span<const double> values(Offset n);
@@ -62,6 +71,7 @@ class Decoder
     Index n_variables_;
     Offset n_nodes_;
     const Postfix &postfix_;
+    std::vector<Kept> kept_;
     std::size_t next_ = 0;
     Offset depth_ = 0;
 };
@@ -91,7 +101,7 @@ void Decoder::read(std::size_t k, std::size_t e)
 {
     try
     {
-        step(postfix_.codes[e], postfix_.arguments[e]);
+        step(e, postfix_.codes[e], postfix_.arguments[e]);
     }
     catch (const Error &error)
     {
@@ -104,11 +114,21 @@ void Decoder::read(std::size_t k, std::size_t e)
     }
 }
 
-void Decoder::step(int code, Offset argument)
+void Decoder::step(std::size_t e, int code, Offset argument)
 {
     if (code == BIYOS_OP_NODE)
     {
         node(argument);
+        return;
+    }
+    if (code == BIYOS_OP_KEEP)
+    {
+        keep(e, argument);
+        return;
+    }
+    if (code == BIYOS_OP_REF)
+    {
+        reference(argument);
         return;
     }
     const Operator op = to_operator(code);
@@ -119,6 +139,11 @@ void Decoder::step(int code, Offset argument)
 void Decoder::take(Operator op, Offset arity)
 {
     check_shape(op, payload_of(op), arity);
+    pop(arity);
+}
+
+void Decoder::pop(Offset arity)
+{
     if (arity > depth_)
     {
         refuse_entry(operand_text(arity) + " taken, " + text_of(depth_) + " given");
@@ -177,6 +202,31 @@ void Decoder::build(Operator op, Offset argument)
         builder_.apply(op, argument);
         return;
     }
+}
+
+void Decoder::keep(std::size_t e, Offset arity)
+{
+    if (arity != 1)
+    {
+        const std::string wanted = "operator " + text_of(BIYOS_OP_KEEP) + " takes 1 child";
+        refuse_entry(wanted + ", not " + text_of(arity));
+    }
+    pop(arity);
+    kept_.push_back(Kept{
+        .entry = static_cast<Offset>(e),
+        .node = builder_.keep(),
+    });
+}
+
+void Decoder::reference(Offset entry)
+{
+    const auto found = std::ranges::lower_bound(kept_, entry, {}, &Kept::entry);
+    if (found == kept_.end() || found->entry != entry)
+    {
+        refuse_entry("entry " + text_of(entry) + " is no earlier keep");
+    }
+    builder_.node(found->node);
+    ++depth_;
 }
 
 void Decoder::node(Offset id)

@@ -60,6 +60,8 @@ OPERATORS = {
     "BIYOS_OP_SPOW": biyos.Operator.SIGN_POWER,
     "BIYOS_OP_ERF": biyos.Operator.ERF,
     "BIYOS_OP_NODE": biyos.Operator.NODE,
+    "BIYOS_OP_KEEP": biyos.Operator.KEEP,
+    "BIYOS_OP_REF": biyos.Operator.REFERENCE,
 }
 
 CONES = {
