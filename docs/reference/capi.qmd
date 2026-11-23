@@ -73,6 +73,9 @@ Each entry gives the declaration, then each parameter with its direction, `in` w
 ::: {source="reference/_capi/cones.md"}
 :::
 
+::: {source="reference/_capi/complements.md"}
+:::
+
 ::: {source="reference/_capi/names.md"}
 :::
 

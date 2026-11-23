@@ -1,6 +1,6 @@
 # Building a model {#sec-model}
 
-A model holds the data of one problem: its variables, the functions of those variables, the constraints that bound functions, the objectives to optimize and the indicators that switch constraints on. This chapter builds one small model in C, step by step, then the same model in Python. The C code is `examples/c/model.c`, the Python code `examples/python/model.py`.
+A model holds the data of one problem: its variables, the functions of those variables, the constraints that bound functions, the objectives to optimize, the indicators that switch constraints on and the complements that pair functions. This chapter builds one small model in C, step by step, then the same model in Python. The C code is `examples/c/model.c`, the Python code `examples/python/model.py`.
 
 ## Variables, functions and the records that use them {#sec-model-parts}
 
@@ -154,6 +154,24 @@ An indicator $x_v = a \Rightarrow l \le f(x) \le u$ switches a constraint on: wh
 
 The bounds follow the rule of a constraint's, and the function stays shared, so one function may carry several indicators beside its constraints. The variable must be binary when the indicator is added or changed, and while an indicator uses a variable, changing its kind to another fails with `BIYOS_ERR_INUSE`. `BIYOS_setindbndsp` changes the bounds and `BIYOS_setindvarsp` the variable and the value, each keeping the rest, and `BIYOS_getindrg` reads back what `BIYOS_addind` takes.
 
+## Complements {#sec-model-complements}
+
+A complement $l \le f_1(x) \le u \perp f_2(x)$ pairs two functions of the table: the first is held within its bounds, and the sign of the second follows where the first lies. One of three cases holds:
+
+$$
+\begin{aligned}
+f_1(x) = l &\quad\text{and}\quad f_2(x) \ge 0, \\
+f_1(x) = u &\quad\text{and}\quad f_2(x) \le 0, \\
+l < f_1(x) < u &\quad\text{and}\quad f_2(x) = 0.
+\end{aligned}
+$$
+
+`BIYOS_addccon` takes the two functions and the two bounds of each complement, and complements are numbered from 0 in a table of their own. A null `lb` gives the lower bound 0 and a null `ub` leaves the upper side open, so with both null a complement is the classical $0 \le f_1(x) \perp f_2(x) \ge 0$. When $f_1$ is one variable, the complements state the mixed complementarity of GAMS and PATH. Bounds that are both infinite state $f_2(x) = 0$.
+
+The bounds follow the rule of a constraint's. The functions stay shared, so a function may appear in any number of complements, even as both functions of one, beside its constraints and objectives, and the bounds of a variable inside $f_1$ hold beside the complement. `BIYOS_setcconbndsp` changes the bounds and keeps the functions, and `BIYOS_getcconrg` reads back what `BIYOS_addccon` takes.
+
+A complement may also hold its own absolute and relative tolerance, which stand for the options `feastol_abs` and `feastol_rel` for that complement alone. `BIYOS_setccontolsp` sets them, each finite and at least 0, `BIYOS_getccontolsp` reads them, NaN where a complement holds none, and `BIYOS_delccontolsp` returns a complement to the options.
+
 ## Reading a model back {#sec-model-reading}
 
 Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvarrg`, `BIYOS_getncon` and `BIYOS_getconrg`, and so on. Functions have a count, `BIYOS_getnfun`, and are read through their constants and terms. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the items to read and fills the arrays it is given; a null array is skipped. Since the caller cannot know the number of terms in advance, each reader of terms has a count reader: `BIYOS_getnquadtermrg` gives the number of terms `BIYOS_getquadtermrg` writes for the same range, `BIYOS_getnrlintermsp` the number `BIYOS_getrlintermsp` writes for the same list, and so on. A reader of terms refuses arrays that hold fewer and then writes nothing, so a caller counts, allocates, and reads:
@@ -165,11 +183,11 @@ A family reader reads a list or a range: `BIYOS_getvarsp` reads the variables a 
 
 ## Names {#sec-model-names}
 
-The model and each variable, function, constraint, objective, indicator and special ordered set may have a name, which a message or a file can show in place of an index. A name is not empty, is well-formed UTF-8 and holds no NUL character. A C string ends at its first NUL, so a name passed in C never holds one, and Python refuses a `str` that holds one with `ValueError`.
+The model and each variable, function, constraint, objective, indicator, special ordered set and complement may have a name, which a message or a file can show in place of an index. A name is not empty, is well-formed UTF-8 and holds no NUL character. A C string ends at its first NUL, so a name passed in C never holds one, and Python refuses a `str` that holds one with `ValueError`.
 
 Names match byte for byte, so two names that differ only in case or in Unicode normalization are different names. An item has no name until one is set, and while it has none it reads as an empty string in C and as `None` in Python. A copy of the model holds the same names.
 
-`BIYOS_setmdlname`, `BIYOS_getmdlname` and `BIYOS_delmdlname` set, read and remove the name of the model. Each family takes four calls, named after its short form, `var`, `fun`, `con`, `obj`, `ind` or `sos`: `BIYOS_setvarnamesp` names a list of variables, `BIYOS_getvarnamesp` reads the names of a list, `BIYOS_getvaridx` looks up a list of names, and `BIYOS_delvarnamesp` leaves the variables of a list without a name. The setter and the reader take the same arguments, so any list of items is named or read in one call. Each of `BIYOS_setvarnamesp`, `BIYOS_getvarnamesp` and `BIYOS_delvarnamesp` has its range form, ending in `rg`. As in the other setters, an item listed more than once takes its last entry.
+`BIYOS_setmdlname`, `BIYOS_getmdlname` and `BIYOS_delmdlname` set, read and remove the name of the model. Each family takes four calls, named after its short form, `var`, `fun`, `con`, `obj`, `ind`, `sos` or `ccon`: `BIYOS_setvarnamesp` names a list of variables, `BIYOS_getvarnamesp` reads the names of a list, `BIYOS_getvaridx` looks up a list of names, and `BIYOS_delvarnamesp` leaves the variables of a list without a name. The setter and the reader take the same arguments, so any list of items is named or read in one call. Each of `BIYOS_setvarnamesp`, `BIYOS_getvarnamesp` and `BIYOS_delvarnamesp` has its range form, ending in `rg`. As in the other setters, an item listed more than once takes its last entry.
 
 Names may repeat. Setting a name checks no uniqueness, so several items of a family may hold the same name, while each family keeps its names apart from the others. A lookup never chooses among the holders of a name: `BIYOS_getvaridx` gives the index of the variable that alone holds a name, and refuses a name that no variable holds or that several hold, counting them, as in `invalid argument: variable 'x': names 3 variables`. So a lookup never returns an item the caller did not mean, and it succeeds again once the other holders are renamed or lose their names.
 
