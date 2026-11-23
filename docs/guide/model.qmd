@@ -54,6 +54,8 @@ A null `knd` makes every new variable continuous, and a null `lb` or `ub` gives 
 
 `BIYOS_setvarbndsp` and `BIYOS_setvarkndsp` change variables already added. They take a list of indices, in which a variable may appear more than once: its entries apply in order and the last one wins. Every call that acts on items already added has such a list form, ending in `sp`, and a range form, ending in `rg`, which takes the first index `pos` and the count `n` in place of the list: `BIYOS_setvarbndrg(mdl, pos, n, lb, ub)` does what `BIYOS_setvarbndsp` does for the indices `pos` to `pos + n - 1`. A range that starts or ends past the last item is refused, even when it is empty. A variable that becomes binary must already have bounds inside $[0, 1]$, so set such bounds first. `BIYOS_getvarbndsp` and `BIYOS_getvarkndsp` read them back ([Reading a model back](#sec-model-reading)).
 
+`BIYOS_setvarnamesp` names variables, and `BIYOS_getvaridx` finds them by name (@sec-model-names).
+
 ## Functions {#sec-model-functions}
 
 A function of the variables $x$ is
@@ -74,6 +76,8 @@ The terms of a function may come in any order, and biyos keeps them sorted by va
 `BIYOS_setcstsp` sets the constants of a list of functions, and `BIYOS_addcstsp` adds to them: a function listed twice in one call gains both entries, in order. Each constant stays finite, and a sum that would leave the finite range refuses the call, which then changes nothing. `BIYOS_getcstsp` reads the constants back, and each of the three has its range form, ending in `rg`.
 
 A variable the function already holds adds its coefficient to the one held, so a function can be built in several calls. `BIYOS_addlintermsp` takes terms as coordinates, the function, the variable and the coefficient of each, in any order. `BIYOS_addclintermrg` takes the terms of a range of variables, each variable with the functions it enters, so a variable added late joins the functions of existing constraints in one call. Every adder follows the same rules, and a refused call changes nothing. `BIYOS_getrlintermsp` reads the linear terms of a list of functions as coordinates, the function, the variable and the coefficient of each term, and `BIYOS_getrlintermrg` those of a range in compressed form. `BIYOS_getclintermsp` and `BIYOS_getclintermrg` read them the other way round: for each variable, the functions that hold it, sorted by function, with their coefficients ([Reading a model back](#sec-model-reading)).
+
+`BIYOS_setfunnamesp` names functions, and `BIYOS_getfunidx` finds them by name (@sec-model-names).
 
 ## Quadratic terms {#sec-model-quadratic}
 
@@ -124,6 +128,8 @@ A constraint $l \le f(x) \le u$ bounds one function of the table. `BIYOS_addcon`
 
 Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A constraint whose bounds are both infinite is free. The bounds follow the rule of a continuous variable's: an infinite bound leaves its side open, and a lower bound of `INFINITY`, an upper bound of `-INFINITY` and NaN are refused. A null `lb` or `ub` leaves that side of every new constraint unbounded. `BIYOS_setconbndsp` changes the bounds and keeps the function, and `BIYOS_getconbndsp` reads the bounds of a list of constraints.
 
+`BIYOS_setconnamesp` names constraints, and `BIYOS_getconidx` finds them by name (@sec-model-names).
+
 ## Objectives {#sec-model-objectives}
 
 An objective names a function to minimize or maximize, with a priority, a weight and two tolerances. `BIYOS_addobj` takes what defines it, the function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds. Its tolerances are 0 until `BIYOS_setobjtolsp` sets them, as here for objective 0:
@@ -143,6 +149,8 @@ A weight is finite and positive, so the sense alone gives the direction. A toler
 
 `BIYOS_setobjsensesp`, `BIYOS_setobjpriosp`, `BIYOS_setobjcoefsp` and `BIYOS_setobjtolsp` change one attribute of a list of objectives each, and `BIYOS_getobjsensesp`, `BIYOS_getobjpriosp`, `BIYOS_getobjcoefsp` and `BIYOS_getobjtolsp` read it back with the same arguments. `BIYOS_getobjrg` reads back what `BIYOS_addobj` takes, so a model is read whole with it and `BIYOS_getobjtolsp`.
 
+`BIYOS_setobjnamesp` names objectives, and `BIYOS_getobjidx` finds them by name (@sec-model-names).
+
 ::: {.callout-note}
 ## Stored, not yet solved
 biyos stores and checks the objectives but solves nothing yet. The stages above are what the model means, and what the solvers will do with it.
@@ -153,6 +161,8 @@ biyos stores and checks the objectives but solves nothing yet. The stages above 
 An indicator $x_v = a \Rightarrow l \le f(x) \le u$ switches a constraint on: when the binary variable $x_v$ takes the value $a$, 0 or 1, the function must lie within its bounds, and otherwise it is free. `BIYOS_addind` takes the variable, the value, the function and the two bounds of each indicator, and indicators are numbered from 0 in a table of their own. The model keeps the implication as given and adds no constraint in its place.
 
 The bounds follow the rule of a constraint's, and the function stays shared, so one function may carry several indicators beside its constraints. The variable must be binary when the indicator is added or changed, and while an indicator uses a variable, changing its kind to another fails with `BIYOS_ERR_INUSE`. `BIYOS_setindbndsp` changes the bounds and `BIYOS_setindvarsp` the variable and the value, each keeping the rest, and `BIYOS_getindrg` reads back what `BIYOS_addind` takes.
+
+`BIYOS_setindnamesp` names indicators, and `BIYOS_getindidx` finds them by name (@sec-model-names).
 
 ## Complements {#sec-model-complements}
 
@@ -171,6 +181,8 @@ $$
 The bounds follow the rule of a constraint's. The functions stay shared, so a function may appear in any number of complements, even as both functions of one, beside its constraints and objectives, and the bounds of a variable inside $f_1$ hold beside the complement. `BIYOS_setcconbndsp` changes the bounds and keeps the functions, and `BIYOS_getcconrg` reads back what `BIYOS_addccon` takes.
 
 A complement may also hold its own absolute and relative tolerance, which stand for the options `feastol_abs` and `feastol_rel` for that complement alone. `BIYOS_setccontolsp` sets them, each finite and at least 0, `BIYOS_getccontolsp` reads them, NaN where a complement holds none, and `BIYOS_delccontolsp` returns a complement to the options.
+
+`BIYOS_setcconnamesp` names complements, and `BIYOS_getcconidx` finds them by name (@sec-model-names).
 
 ## Reading a model back {#sec-model-reading}
 
