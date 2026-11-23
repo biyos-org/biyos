@@ -132,6 +132,10 @@ h4.api {
   .entry td .unbroken code {
     white-space: nowrap;
   }
+
+  .entry td .unbroken wbr {
+    display: none;
+  }
 }
 
 .under {
