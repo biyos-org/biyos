@@ -52,7 +52,9 @@ class CallbackRequest:
 
     Its arrays, and the one the callback fills, are views of memory biyos
     owns. They are released when the callback returns, and reading one
-    afterwards raises ``ValueError``.
+    afterwards raises ``ValueError``. Nothing derived from them, such as a
+    NumPy array or another ``memoryview``, may outlive the call: it would
+    still point at that memory.
 
     See Also
     --------

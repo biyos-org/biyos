@@ -1191,9 +1191,10 @@ class Model:
         ``data``. It returns None or 0 once the array is filled, a positive
         int when its functions are not defined at the point, and a negative
         int to stop the call that asked for it. An exception it raises
-        counts as a negative int. The model keeps the functions and
-        ``data`` alive, and a copy shares them. No call evaluates a
-        callback yet.
+        counts as a negative int. The request's arrays and the array to
+        fill are valid only during the call, and nothing derived from them
+        may outlive it. The model keeps the functions and ``data`` alive,
+        and a copy shares them. No call evaluates a callback yet.
 
         See Also
         --------
