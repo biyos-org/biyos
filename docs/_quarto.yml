@@ -132,8 +132,8 @@ quartodoc:
       desc: An environment holds the options and the hooks, and every model is made on one.
       contents: [Env, CheckLevel, Masks, OptionSource, Error, version, Versions]
     - title: Models
-      desc: A model holds the variables, functions, constraints and objectives of a problem.
-      contents: [Model, VariableKind, Sense, SOSKind, Operator]
+      desc: A model holds the variables, functions, constraints, objectives and cones of a problem.
+      contents: [Model, VariableKind, Sense, SOSKind, ConeKind, Operator]
     - title: Blocks and views
       desc: The items an add call returns, which pass wherever the model takes indices.
       contents:
@@ -161,6 +161,10 @@ quartodoc:
           include_inherited: true
           members: [__len__, __iter__, __getitem__, "on"]
         - SOS
+        - name: Cones
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - Cone
     - title: Events
       desc: What a hook receives.
       contents: [Event, EventKind, EventLevel]
