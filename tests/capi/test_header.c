@@ -80,6 +80,9 @@ extern char error_end[sizeof(BIYOS_error) == 4 * sizeof(void *) ? 1 : -1];
 #if !defined(BIYOS_MINIMIZE) || BIYOS_MINIMIZE != 1 || BIYOS_MAXIMIZE != 2
 #error "a public objective sense changed"
 #endif
+#if !defined(BIYOS_SOSKND_SOS1) || BIYOS_SOSKND_SOS1 != 1 || BIYOS_SOSKND_SOS2 != 2
+#error "a public set kind changed"
+#endif
 #if !defined(BIYOS_OP_CONST) || BIYOS_OP_CONST != 1 || BIYOS_OP_VAR != 2 || BIYOS_OP_SUM != 3 ||   \
     BIYOS_OP_PROD != 4 || BIYOS_OP_NEG != 5 || BIYOS_OP_DIV != 6 || BIYOS_OP_CPOW != 7 ||          \
     BIYOS_OP_POW != 8 || BIYOS_OP_EXP != 9 || BIYOS_OP_LOG != 10 || BIYOS_OP_SQRT != 11 ||         \

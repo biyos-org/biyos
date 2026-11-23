@@ -1254,6 +1254,14 @@ note It reads back what `BIYOS_addind` takes.
 see BIYOS_getnind
 since 0.1.0
 
+group sets Special ordered sets
+text A special ordered set holds variables of the model, its members, each with a weight. In a set of type 1 at most one member is nonzero; in a set of type 2 at most two are, and two nonzero members are adjacent in the order of their weights. The weights of a set are finite and distinct, and the members are kept in the order given, whatever their weights. A variable is a member of a set at most once and may belong to several sets.
+
+table Special ordered set kinds
+value BIYOS_SOSKND_SOS1 Type 1: at most one member is nonzero.
+value BIYOS_SOSKND_SOS2 Type 2: at most two members are nonzero, adjacent in the order of their weights.
+since 0.1.0
+
 group names Names
 text The model and each variable, function, constraint, objective and indicator may have a name, as [Names](#sec-model-names) describes. A name is not empty, is well-formed UTF-8 and holds no NUL. A C string ends at its first NUL, so a name passed in C never holds one. Names match byte for byte. An item has no name until one is set, and reads as an empty string while it has none.
 text Names may repeat: setting a name checks no uniqueness, and several items of a family may hold one name. A lookup never chooses among them: it finds an item only when that item alone holds the name. Every family takes the same four calls, named after its short form, `var`, `fun`, `con`, `obj` or `ind`, and keeps its names apart from those of the other families.
