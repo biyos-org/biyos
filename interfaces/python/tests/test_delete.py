@@ -7,6 +7,7 @@ import biyos
 from biyos._capi import lib
 from refusal import refusal
 
+IN_USE = -203
 STALE = "the block predates a deletion from its model"
 NAMES = ["r0", "r1", "r2"]
 NOUNS = {
@@ -129,3 +130,37 @@ def test_unmapped(model, monkeypatch, short):
     assert delete(model, short, [2]) == [0, 1, -1]
     assert delete(model, short, range(1)) == [-1, 0]
     assert maps == [None, None]
+
+
+def functions(model):
+    f = model.addfun(4)
+    model.setfunname(f[:3], NAMES)
+    model.addcst(f, [0.0, 1.0, 2.0, 3.0])
+    model.addcon(f[3:])
+    return f
+
+
+def test_functions(model):
+    f = functions(model)
+    assert model.delfun([2, 0]) == [-1, 0, -1, 1]
+    assert model.getfunname(range(2)) == ["r1", None]
+    assert model.getcst(range(2)) == [1.0, 3.0]
+    assert model.getcon()[0] == [1]
+    with pytest.raises(ValueError, match=STALE):
+        model.getfunname(f)
+    assert model.delfun(range(1)) == [-1, 0]
+    assert model.getcon()[0] == [0]
+
+
+def test_used(model):
+    f = functions(model)
+    for idx in ([3], [1, 3], f[2:]):
+        with pytest.raises(biyos.Error) as caught:
+            model.delfun(idx)
+        assert caught.value.code == IN_USE
+        message = "in use: function 3: used by constraint 0"
+        assert str(caught.value) == message
+    assert model.delfun([]) == [0, 1, 2, 3]
+    assert model.getfunname(f) == NAMES + [None]
+    assert model.getcst(f) == [0.0, 1.0, 2.0, 3.0]
+    assert model.getcon()[0] == [3]

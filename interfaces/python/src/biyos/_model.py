@@ -1004,6 +1004,40 @@ class Model:
         """
         self._delname("BIYOS_delfunname", Functions, idx)
 
+    def delfun(self, idx: Sequence[int | Function] | Functions) -> list[int]:
+        """Delete functions that nothing uses.
+
+        The functions left keep their order and are numbered from 0 again, and
+        each record and callback refers to them by their new indices. A deleted
+        function's name, constant, terms and expression go with it, and the
+        nodes of the expression stay. Once any function is deleted, the model
+        refuses every block and view it gave before.
+
+        Parameters
+        ----------
+        idx
+            The functions to delete, in any order, none of them twice.
+
+        Returns
+        -------
+        map
+            For each function the model held, its new index, or -1 when it is
+            deleted.
+
+        Raises
+        ------
+        Error
+            When a constraint, an objective, an indicator, a cone, a complement
+            or a callback uses a function to delete. The model is then left as
+            it was.
+
+        See Also
+        --------
+        BIYOS_delfunsp
+        BIYOS_delfunrg
+        """
+        return self._delete("BIYOS_delfun", Functions, idx)
+
     def addlinterm(
         self,
         funidx: Sequence[int | Function] | Functions,

@@ -21,7 +21,7 @@ x[1:3]        # a block of variables 1 and 2
 
 Indexing a block gives a view, such as a `Variable`, which passes as its index wherever the model takes one: `int(x[2])` is 2. A whole block passes wherever the model takes a list of indices. A block or a `range` with step 1 goes to the `rg` form of the C call, two integers whatever its size, and any other sequence to the `sp` form; both give the same result, except that a range past the last item is refused even when it is empty. The model checks the family and the owner of each view and block, so passing a function where a variable is due, or a variable of another model, raises `ValueError` instead of naming the wrong item. `on` gives the block of the same indices in another model, such as a copy ([Copying in Python](#sec-copy-python)).
 
-`delcon`, `delobj`, `delind`, `delsos`, `delcone` and `delccon` take a list, a range or a block, delete those items and return the map of @sec-model-deleting as a list. Once a call deletes an item, the indices of every block and view the model gave before may name other items, so the model refuses them with `ValueError`, whatever their family. A call that deletes nothing leaves them valid.
+`delfun`, `delcon`, `delobj`, `delind`, `delsos`, `delcone` and `delccon` take a list, a range or a block, delete those items and return the map of @sec-model-deleting as a list. Once a call deletes an item, the indices of every block and view the model gave before may name other items, so the model refuses them with `ValueError`, whatever their family. A call that deletes nothing leaves them valid.
 
 ## Arrays {#sec-python-arrays}
 
