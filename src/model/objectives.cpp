@@ -3,6 +3,7 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text.hpp"
+#include "core/zero.hpp"
 #include "model/checks.hpp"
 #include "model/renumber.hpp"
 
@@ -22,11 +23,6 @@ namespace
 
 constexpr std::string_view kNoun = "objective";
 
-bool zero(double value) noexcept
-{
-    return std::fpclassify(value) == FP_ZERO;
-}
-
 void check_sense(Index index, Sense sense)
 {
     if (std::ranges::find(kSenses, sense) == kSenses.end())
@@ -42,7 +38,7 @@ void check_weight(Index index, double weight)
     {
         refuse(kNoun, index, "weight " + std::string(fault));
     }
-    if (std::signbit(weight) || zero(weight))
+    if (std::signbit(weight) || is_zero(weight))
     {
         refuse(kNoun, index, "weight " + text_of(weight) + " is not positive");
     }
@@ -56,7 +52,7 @@ void check_tolerance(Index index, std::string_view name, double tolerance)
     {
         refuse(kNoun, index, std::string(name) + " tolerance " + std::string(fault));
     }
-    if (std::signbit(tolerance) && !zero(tolerance))
+    if (std::signbit(tolerance) && !is_zero(tolerance))
     {
         const std::string value = text_of(tolerance);
         refuse(kNoun, index, std::string(name) + " tolerance " + value + " is negative");

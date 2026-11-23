@@ -3,11 +3,11 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text.hpp"
+#include "core/zero.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
 #include "expr/terms.hpp"
 #include "expr/uses.hpp"
-#include "expr/zero.hpp"
 
 #include <algorithm>
 #include <array>

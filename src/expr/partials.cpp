@@ -1,9 +1,9 @@
 #include "expr/partials.hpp"
 
+#include "core/zero.hpp"
 #include "expr/frame.hpp"
 #include "expr/node.hpp"
 #include "expr/tape.hpp"
-#include "expr/zero.hpp"
 
 #include <algorithm>
 #include <cmath>
