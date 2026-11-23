@@ -1204,9 +1204,9 @@ class Model:
         indices = indices_of(self, Functions, "funidx", funidx, n)
         cell = py_object(data)
         cb = c_int()
+        self._callbacks.keep(cell)
         self._call(lib.BIYOS_addcb, n, indices, addressof(cell), byref(cb))
         self._callbacks.added(n)
-        self._callbacks.keep(cell)
         return cb.value
 
     def setcbf(self, cb: int, f: Callable[..., object]) -> None:
@@ -1233,8 +1233,8 @@ class Model:
         cb = integer("cb", cb)
         count = self._callbacks.count(cb)
         caller = Caller(checked("f", f), count, count)
-        self._call(lib.BIYOS_setcbf, cb, caller.pointer)
         self._callbacks.keep(caller)
+        self._call(lib.BIYOS_setcbf, cb, caller.pointer)
 
     def setcbjac(
         self,
@@ -1283,8 +1283,8 @@ class Model:
         size = _total(starts, n)
         variables = indices_of(self, Variables, "varidx", varidx, size)
         caller = Caller(jac, n, size)
-        self._call(lib.BIYOS_setcbjac, cb, starts, variables, caller.pointer)
         self._callbacks.keep(caller)
+        self._call(lib.BIYOS_setcbjac, cb, starts, variables, caller.pointer)
 
     def setcbhess(
         self,
@@ -1329,8 +1329,8 @@ class Model:
         second = indices_of(self, Variables, "varidx2", varidx2, nnz)
         caller = Caller(checked("hess", hess), self._callbacks.count(cb), nnz)
         pairs = (nnz, first, second, caller.pointer)
-        self._call(lib.BIYOS_setcbhess, cb, *pairs)
         self._callbacks.keep(caller)
+        self._call(lib.BIYOS_setcbhess, cb, *pairs)
 
     def setcbhessvec(self, cb: int, hessvec: Callable[..., object]) -> None:
         """Give a callback the function that multiplies its Hessian by a
@@ -1358,8 +1358,8 @@ class Model:
         cb = integer("cb", cb)
         function = checked("hessvec", hessvec)
         caller = Caller(function, self._callbacks.count(cb), None)
-        self._call(lib.BIYOS_setcbhessvec, cb, caller.pointer)
         self._callbacks.keep(caller)
+        self._call(lib.BIYOS_setcbhessvec, cb, caller.pointer)
 
     def setcbdata(self, cb: int, data: object) -> None:
         """Replace the object a callback's functions receive.
@@ -1377,8 +1377,8 @@ class Model:
         BIYOS_setcbdata
         """
         cell = py_object(data)
-        self._call(lib.BIYOS_setcbdata, integer("cb", cb), addressof(cell))
         self._callbacks.keep(cell)
+        self._call(lib.BIYOS_setcbdata, integer("cb", cb), addressof(cell))
 
     def getcbdata(self, cb: int) -> object:
         """Return the object a callback's functions receive.
