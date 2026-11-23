@@ -110,6 +110,10 @@ biyos_add_test(test_model
     model/test_variables.cpp)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
+biyos_add_test(test_io
+    io/test_lines.cpp)
+target_link_libraries(test_io PRIVATE biyos_internal)
+
 biyos_add_test(test_capi
     capi/sample.cpp
     capi/test_adders.cpp
