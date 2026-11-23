@@ -28,7 +28,7 @@ struct Calls
     BIYOS_status (*remove)(BIYOS_model *, BIYOS_index, const BIYOS_index *);
 };
 
-const std::array<Calls, 5> kFamilies{{
+const std::array<Calls, 6> kFamilies{{
     {
         .noun = "variable",
         .set = BIYOS_setvarnamesp,
@@ -64,6 +64,13 @@ const std::array<Calls, 5> kFamilies{{
         .find = BIYOS_getindidx,
         .remove = BIYOS_delindnamesp,
     },
+    {
+        .noun = "set",
+        .set = BIYOS_setsosnamesp,
+        .get = BIYOS_getsosnamesp,
+        .find = BIYOS_getsosidx,
+        .remove = BIYOS_delsosnamesp,
+    },
 }};
 
 struct Attempt
@@ -97,6 +104,7 @@ void add_items(const Model &model, BIYOS_index n)
     const std::vector<BIYOS_int> kinds(static_cast<std::size_t>(n), BIYOS_VAR_BIN);
     const std::vector<BIYOS_int> values(static_cast<std::size_t>(n), 1);
     const Indices variables(static_cast<std::size_t>(n), 0);
+    const std::vector<BIYOS_int> sos_kinds(static_cast<std::size_t>(n), BIYOS_SOSKND_SOS1);
     ASSERT_EQ(BIYOS_addvar(held, n, kinds.data(), nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(held, n, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addcon(held, n, functions.data(), nullptr, nullptr, nullptr), BIYOS_OK);
@@ -111,6 +119,8 @@ void add_items(const Model &model, BIYOS_index n)
                                              nullptr,
                                              nullptr);
     ASSERT_EQ(status, BIYOS_OK);
+    ASSERT_EQ(BIYOS_addsos(held, n, sos_kinds.data(), nullptr, nullptr, nullptr, nullptr),
+              BIYOS_OK);
 }
 
 BIYOS_status name(const Calls &family, const Model &model, const Indices &index, const Texts &names)

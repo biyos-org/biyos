@@ -59,7 +59,7 @@ struct NameCalls
     decltype(&BIYOS_delvarnamerg) delete_ranged;
 };
 
-const std::array<NameCalls, 4> kNameCalls{{
+const std::array<NameCalls, 5> kNameCalls{{
     {BIYOS_getnvar,
      BIYOS_setvarnamesp,
      BIYOS_setvarnamerg,
@@ -88,6 +88,13 @@ const std::array<NameCalls, 4> kNameCalls{{
      BIYOS_getobjnamerg,
      BIYOS_delobjnamesp,
      BIYOS_delobjnamerg},
+    {BIYOS_getnsos,
+     BIYOS_setsosnamesp,
+     BIYOS_setsosnamerg,
+     BIYOS_getsosnamesp,
+     BIYOS_getsosnamerg,
+     BIYOS_delsosnamesp,
+     BIYOS_delsosnamerg},
 }};
 
 const NameCalls kIndicatorNames{BIYOS_getnind,
