@@ -55,7 +55,19 @@ add_library(biyos_internal STATIC
     expr/uses.cpp
     expr/value.cpp
     expr/waves.cpp
+    io/bounds.cpp
+    io/columns.cpp
+    io/directory.cpp
+    io/draft.cpp
+    io/files.cpp
     io/lines.cpp
+    io/mps.cpp
+    io/records.cpp
+    io/report.cpp
+    io/rows.cpp
+    io/sections.cpp
+    io/values.cpp
+    io/vectors.cpp
     model/attach.cpp
     model/callbacks.cpp
     model/checks.cpp
