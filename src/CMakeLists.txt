@@ -16,6 +16,7 @@ add_library(biyos_internal STATIC
     core/status.cpp
     core/timer.cpp
     core/tolerances.cpp
+    core/usage.cpp
     core/utf8.cpp
     core/version.cpp
     expr/arithmetic.cpp
