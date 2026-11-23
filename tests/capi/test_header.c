@@ -259,7 +259,9 @@ static BIYOS_status use_postfix(BIYOS_model *model)
         node[1] != 5 || BIYOS_attachexprsp(model, 1, idx, node) != BIYOS_OK ||
         BIYOS_attachexprrg(model, 0, 1, node + 1) != BIYOS_OK ||
         BIYOS_clrfunsp(model, 1, idx) != BIYOS_OK ||
-        BIYOS_attachexprsp(model, 1, idx, node) != BIYOS_OK)
+        BIYOS_attachexprsp(model, 1, idx, node) != BIYOS_OK ||
+        BIYOS_clrfunrg(model, 0, 1) != BIYOS_OK ||
+        BIYOS_attachexprrg(model, 0, 1, node + 1) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }

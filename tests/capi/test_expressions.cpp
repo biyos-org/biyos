@@ -219,6 +219,7 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_attachexprsp(attempt.model, 0, nullptr, nullptr));
     note(attempt, BIYOS_attachexprrg(attempt.model, 0, 0, nullptr));
     note(attempt, BIYOS_clrfunsp(attempt.model, 0, nullptr));
+    note(attempt, BIYOS_clrfunrg(attempt.model, 0, 0));
 }
 
 }
@@ -313,10 +314,10 @@ TEST(CApiTest, LockedExpressions)
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    const std::vector<BIYOS_status> statuses(6, BIYOS_ERR_BADARG);
+    const std::vector<BIYOS_status> statuses(7, BIYOS_ERR_BADARG);
     EXPECT_EQ(attempt.statuses, statuses);
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
-    EXPECT_EQ(attempt.messages, std::vector<std::string>(6, locked));
+    EXPECT_EQ(attempt.messages, std::vector<std::string>(7, locked));
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     EXPECT_EQ(variable_node(model, 0), 0);
 }
@@ -639,4 +640,31 @@ TEST(CApiTest, RefusedClear)
     EXPECT_EQ(BIYOS_clrfunsp(model.get(), -1, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
     EXPECT_EQ(read_functions(model, 2).constants, (std::vector<double>{0.5, 0.5}));
+}
+
+TEST(CApiTest, ClearRange)
+{
+    const Env env;
+    const Model model(env);
+    add_variables(model, 1);
+    add_functions(model, 3);
+    const BIYOS_offset x = variable_node(model, 0);
+    const BIYOS_offset sine = node_of(model, BIYOS_OP_SIN, {x}, {});
+    const BIYOS_offset sum = node_of(model, BIYOS_OP_SUM, {x, sine}, {0.0, 1.0, 1.0});
+    ASSERT_EQ(attach(model, {0, 1, 2}, {sum, sum, sum}), BIYOS_OK);
+    ASSERT_EQ(BIYOS_clrfunrg(model.get(), 1, 2), BIYOS_OK);
+    const Read functions = read_functions(model, 3);
+    EXPECT_EQ(functions.constants, (std::vector<double>{0.5, 0.0, 0.0}));
+    EXPECT_EQ(functions.starts, (std::vector<std::int64_t>{0, 1, 1, 1}));
+    const std::vector<BIYOS_offset> roots{sine, biyos::kNoRoot, biyos::kNoRoot};
+    EXPECT_EQ(roots_of(model, 3), roots);
+    const std::string bad = "invalid argument: ";
+    EXPECT_EQ(BIYOS_clrfunrg(model.get(), 2, 2), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "function 3: unknown");
+    EXPECT_EQ(BIYOS_clrfunrg(model.get(), -1, 1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "function -1: unknown");
+    EXPECT_EQ(BIYOS_clrfunrg(model.get(), 0, -1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
+    EXPECT_EQ(BIYOS_clrfunrg(model.get(), 3, 0), BIYOS_OK);
+    EXPECT_EQ(roots_of(model, 3), roots);
 }

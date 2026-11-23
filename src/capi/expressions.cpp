@@ -20,7 +20,6 @@ using biyos::Family;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::listed;
 using biyos::capi::offsets;
 using biyos::capi::Range;
 using biyos::capi::require;
@@ -116,10 +115,10 @@ void attach_expressions(BIYOS_model &model, Selection selection, const std::int6
     core.attach_expressions(owners, input(node, owners.size(), "node"));
 }
 
-void clear_functions(BIYOS_model &model, int n, const int *functions)
+template <typename Selection> void clear_functions(BIYOS_model &model, Selection selection)
 {
     biyos::Model &core = writable(model);
-    core.clear_functions(listed(n, functions));
+    core.clear_functions(selected(core, Family::Function, selection));
 }
 
 }
@@ -168,5 +167,10 @@ BIYOS_status BIYOS_attachexprrg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<clear_functions>(mdl, n, idx);
+    return guarded<clear_functions<List>>(mdl, List{n, idx});
+}
+
+BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+{
+    return guarded<clear_functions<Range>>(mdl, Range{pos, n});
 }

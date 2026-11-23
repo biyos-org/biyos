@@ -268,6 +268,7 @@ void write_functions(const Held &held, Engine &engine)
         drawn(engine, static_cast<std::size_t>(span.size), weight);
     expect_writes(held, span, BIYOS_setcstsp, BIYOS_setcstrg, constants);
     expect_writes(held, span, BIYOS_addcstsp, BIYOS_addcstrg, constants);
+    expect_writes(held, span, BIYOS_clrfunsp, BIYOS_clrfunrg);
 }
 
 BIYOS_offset add_expression(const Model &model)
@@ -409,6 +410,7 @@ void keep_functions(const Held &held, Span span, BIYOS_status wanted)
     expect_kept(held, span, wanted, BIYOS_getcstrg, constants);
     const std::vector<BIYOS_offset> nodes(n, 0);
     expect_kept(held, span, wanted, BIYOS_attachexprrg, nodes);
+    expect_kept(held, span, wanted, BIYOS_clrfunrg);
 }
 
 void keep_constraints(const Held &held, Span span, BIYOS_status wanted)
