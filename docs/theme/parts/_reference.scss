@@ -115,11 +115,17 @@ h4.api {
 }
 
 .since {
-  @include label;
-  color: $link;
-  background: rgba($link, 0.1);
-  border-radius: 999px;
-  padding: 0.2rem 0.6rem;
+  font-family: $font-sans;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: $text-muted;
+  margin-left: auto;
+}
+
+.api .since {
+  float: right;
+  margin-top: 0.25rem;
 }
 
 .see {

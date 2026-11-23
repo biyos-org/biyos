@@ -16,6 +16,8 @@ class Entry:
     notes: list = field(default_factory=list)
     values: list = field(default_factory=list)
     see: list = field(default_factory=list)
+    example: list = field(default_factory=list)
+    takes: dict = field(default_factory=dict)
     since: str = ""
     pair: str = ""
 
@@ -44,6 +46,12 @@ def _pair(rest):
     return name, text
 
 
+def _takes(entry, rest):
+    if not entry.values:
+        raise ValueError("takes comes before any value")
+    entry.takes[entry.values[-1][0]] = rest
+
+
 def _set(name):
     def store(entry, rest):
         setattr(entry, name, rest)
@@ -59,6 +67,8 @@ FIELDS = {
     "error": lambda entry, rest: entry.errors.append(_pair(rest)),
     "note": lambda entry, rest: entry.notes.append(rest),
     "see": lambda entry, rest: entry.see.extend(rest.split()),
+    "example": lambda entry, rest: entry.example.append(rest),
+    "takes": _takes,
 }
 
 

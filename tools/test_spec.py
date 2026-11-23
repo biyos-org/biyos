@@ -71,6 +71,22 @@ class SpecTest(unittest.TestCase):
             entry.values, [("BIYOS_OK", "The call succeeded.", 18)]
         )
 
+    def test_example(self):
+        lines = "example int x;\nexample f(&x);\nnote It"
+        text = SPEC.replace("note It", lines)
+        entry = self.read(text)[0].entries[1]
+        self.assertEqual(entry.example, ["int x;", "f(&x);"])
+
+    def test_takes(self):
+        text = SPEC.replace("succeeded.\n", "succeeded.\ntakes $c$\n")
+        entry = self.read(text)[0].entries[2]
+        self.assertEqual(entry.takes, {"BIYOS_OK": "$c$"})
+
+    def test_untaken(self):
+        text = SPEC.replace("value BIYOS_OK The call succeeded.", "takes $c$")
+        with self.assertRaisesRegex(ValueError, "capi.txt:18: takes comes"):
+            self.read(text)
+
     def test_names(self):
         found = spec.names(self.read(SPEC))
         self.assertEqual(
