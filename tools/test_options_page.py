@@ -39,6 +39,21 @@ class OptionsPageTest(unittest.TestCase):
             "`BIYOS_LVL_LOW` (low), `BIYOS_LVL_HIGH` (high)",
         )
 
+    def test_flags(self):
+        values = [
+            ("BIYOS_STEPS_DUAL", "dual", 0, "on"),
+            ("BIYOS_STEPS_PROBE", "probe", 1, "off"),
+            ("BIYOS_STEPS_SCALE", "scale", 2, "automatic"),
+        ]
+        steps = option(kind="flags", default="", values=values)
+        self.assertEqual(options_page.shown(steps), "`(0, 0)`")
+        self.assertEqual(
+            options_page.accepted(steps),
+            "`BIYOS_STEPS_DUAL` (dual, bit 0, on), "
+            "`BIYOS_STEPS_PROBE` (probe, bit 1, off), "
+            "`BIYOS_STEPS_SCALE` (scale, bit 2, automatic)",
+        )
+
     def test_string(self):
         repro = option(kind="string", default='""')
         self.assertEqual(options_page.shown(repro), "empty")

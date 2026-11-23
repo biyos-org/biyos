@@ -20,8 +20,15 @@ def number(raw):
 def shown(option):
     if option.kind in ("int", "double"):
         return f"`{number(option.default)}`"
+    if option.kind == "flags":
+        return "`(0, 0)`"
     text = option.default.strip('"')
     return f"`{text}`" if text else "empty"
+
+
+def part(item):
+    macro, name, bit, default = item
+    return f"`{macro}` ({name}, bit {bit}, {default})"
 
 
 def accepted(option):
@@ -30,6 +37,8 @@ def accepted(option):
     if option.kind == "enum":
         values = option.values
         return ", ".join(f"`{macro}` ({name})" for macro, name in values)
+    if option.kind == "flags":
+        return ", ".join(map(part, option.values))
     return {"bool": "`true`, `false`", "string": "any string"}[option.kind]
 
 

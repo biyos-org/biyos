@@ -11,10 +11,11 @@ LIMITS = {
 RULE = re.compile(r"struct (\w+)Rule\s*\{(.*?)\};", re.S)
 MEMBER = re.compile(r"\b(lower|upper) = ([^;]+);")
 CONSTANT = re.compile(r"constexpr \w+ (k\w+) = ([^;]+);")
-ARRAY = re.compile(r"(k\w+)\{((?:\s*EnumValue\{[^}]*\},?)+)\s*\}")
-VALUE = re.compile(r"\.number = (\w+), \.name = \"([^\"]*)\"")
+ARRAY = re.compile(r"(k\w+)\{((?:\s*(?:EnumValue|FlagPart)\{[^}]*\},?)+)\s*\}")
+ITEM = re.compile(r"(?:EnumValue|FlagPart)\{([^}]*)\}")
 ENUMERATOR = re.compile(r"(\w+) = (BIYOS_OPT_\w+),")
 DEFINE = re.compile(r"^#define (BIYOS_OPT_\w+) (\d+)$", re.M)
+BIT = re.compile(r"^#define (BIYOS_\w+) \(\(BIYOS_mask\)1 << (\d+)\)$", re.M)
 FIELD = re.compile(r"\.(\w+) = ")
 STRING = re.compile(r"\"([^\"]*)\"")
 VERSION = re.compile(r"\.(since|deprecated|retired) = \{(\d+), (\d+), (\d+)\}")
@@ -64,6 +65,19 @@ def fields(block):
     }
 
 
+def item_of(block, bits):
+    found = fields(block)
+    name = STRING.findall(found["name"])[0]
+    if "bit" not in found:
+        return found["number"], name
+    default = found["default_value"].split("::")[-1].lower()
+    return found["bit"], name, bits[found["bit"]], default
+
+
+def items_of(array, bits):
+    return [item_of(block, bits) for block in ITEM.findall(array)]
+
+
 def rule_limits(header):
     found = {}
     for kind, body in RULE.findall(header):
@@ -84,7 +98,7 @@ def constant(text, constants):
 def rule_of(text, limits, constants, arrays):
     kind, _, body = text.partition("Rule{")
     args = fields(body.rstrip("}"))
-    values = arrays.get(args.get("values", ""), [])
+    values = arrays.get(args.get("values", args.get("parts", "")), [])
     bounds = {**limits.get(kind, {}), **args}
     default = constant(args.get("default_value", ""), constants)
     lower = constant(bounds.get("lower", ""), constants)
@@ -126,7 +140,8 @@ def read(root):
         n: LIMITS.get(v.strip(), v.strip())
         for n, v in CONSTANT.findall(source)
     }
-    arrays = {n: VALUE.findall(v) for n, v in ARRAY.findall(source)}
+    bits = {name: int(bit) for name, bit in BIT.findall(public)}
+    arrays = {n: items_of(v, bits) for n, v in ARRAY.findall(source)}
     macros = dict(ENUMERATOR.findall(header))
     ids = {name: int(value) for name, value in DEFINE.findall(public)}
     context = (rule_limits(header), constants, arrays, macros, ids)
