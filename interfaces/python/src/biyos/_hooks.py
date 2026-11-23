@@ -1,3 +1,4 @@
+import weakref
 from collections.abc import Callable, Mapping
 from functools import partial
 from typing import TYPE_CHECKING
@@ -13,11 +14,13 @@ if TYPE_CHECKING:
 def _deliver(
     relay: Relay,
     owners: Mapping[int, "Model"],
-    functions: dict[int, Callable[[Event], object]],
+    hooks: "weakref.ref[Hooks]",
     pointer: int,
     key: int,
 ) -> None:
-    relay.run(deliver, functions[key], pointer, owners)
+    found = hooks()
+    if found is not None:
+        relay.run(deliver, found._functions[key], pointer, owners)
 
 
 def checked_hook(
@@ -36,7 +39,7 @@ class Hooks:
         self._functions: dict[int, Callable[[Event], object]] = {}
         self._keys: dict[int, int] = {}
         self._count = 0
-        function = partial(_deliver, relay, owners, self._functions)
+        function = partial(_deliver, relay, owners, weakref.ref(self))
         self.callback = HOOK(function)
 
     def add(self, function: Callable[[Event], object]) -> int:
