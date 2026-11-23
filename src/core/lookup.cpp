@@ -20,7 +20,7 @@ Found Lookup::find(Option option) const
     const OptionValue *own = settings_ != nullptr ? settings_->find(option) : nullptr;
     if (own != nullptr)
     {
-        return Found{.value = *own, .source = Source::Model};
+        return Found{.value = *own, .source = OptionSource::Model};
     }
     return Found{.value = options_.value_of(option), .source = options_.source_of(option)};
 }

@@ -12,7 +12,7 @@ namespace biyos
 struct Found
 {
     const OptionValue &value;
-    Source source;
+    OptionSource source;
 };
 
 class Lookup

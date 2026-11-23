@@ -26,10 +26,10 @@ using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::IntRule;
 using biyos::Option;
+using biyos::OptionSource;
 using biyos::OptionSpec;
 using biyos::OptionValue;
 using biyos::Scope;
-using biyos::Source;
 using biyos::StringRule;
 using biyos::Version;
 
@@ -132,7 +132,7 @@ class LookupTest : public SettingTest
   protected:
     int found(Option option) const { return std::get<int>(lookup.find(option).value); }
 
-    Source source(Option option) const { return lookup.find(option).source; }
+    OptionSource source(Option option) const { return lookup.find(option).source; }
 
     biyos::Lookup lookup{settings, options};
 };
@@ -279,15 +279,15 @@ TEST_F(SettingTest, ModelHooks)
 TEST_F(LookupTest, Sources)
 {
     EXPECT_EQ(found(kNew), 1);
-    EXPECT_EQ(source(kNew), Source::Default);
+    EXPECT_EQ(source(kNew), OptionSource::Default);
     options.set_int(kNew, 3);
     EXPECT_EQ(found(kNew), 3);
-    EXPECT_EQ(source(kNew), Source::Environment);
+    EXPECT_EQ(source(kNew), OptionSource::Environment);
     settings.set_int(kNew, 5, events);
     EXPECT_EQ(found(kNew), 5);
-    EXPECT_EQ(source(kNew), Source::Model);
+    EXPECT_EQ(source(kNew), OptionSource::Model);
     EXPECT_EQ(lookup.get_int(kNew), 5);
-    EXPECT_EQ(source(kOld), Source::Default);
+    EXPECT_EQ(source(kOld), OptionSource::Default);
 }
 
 TEST_F(LookupTest, Erase)
@@ -296,7 +296,7 @@ TEST_F(LookupTest, Erase)
     settings.set_int(kNew, 5, events);
     settings.erase(kNew);
     EXPECT_EQ(found(kNew), 3);
-    EXPECT_EQ(source(kNew), Source::Environment);
+    EXPECT_EQ(source(kNew), OptionSource::Environment);
 }
 
 TEST_F(LookupTest, Shared)
@@ -305,7 +305,7 @@ TEST_F(LookupTest, Shared)
     EXPECT_EQ(lookup.get_int(kNew), 3);
     options.set_int(kNew, 4);
     EXPECT_EQ(lookup.get_int(kNew), 4);
-    EXPECT_EQ(source(kNew), Source::Environment);
+    EXPECT_EQ(source(kNew), OptionSource::Environment);
 }
 
 TEST_F(LookupTest, Scope)
@@ -317,7 +317,7 @@ TEST_F(LookupTest, Scope)
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_double(kHost)); }), scope);
     const biyos::Lookup shared(options);
     EXPECT_EQ(shared.get_int(kHost), 6);
-    EXPECT_EQ(shared.find(kHost).source, Source::Environment);
+    EXPECT_EQ(shared.find(kHost).source, OptionSource::Environment);
 }
 
 TEST_F(LookupTest, Models)
@@ -330,7 +330,7 @@ TEST_F(LookupTest, Models)
     EXPECT_EQ(lookup.get_int(kNew), 5);
     EXPECT_EQ(second.get_int(kNew), 3);
     EXPECT_EQ(shared.get_int(kNew), 3);
-    EXPECT_EQ(shared.find(kNew).source, Source::Environment);
+    EXPECT_EQ(shared.find(kNew).source, OptionSource::Environment);
 }
 
 TEST_F(LookupTest, MissingRow)

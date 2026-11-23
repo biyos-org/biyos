@@ -26,8 +26,8 @@ using biyos::difference;
 using biyos::Index;
 using biyos::Model;
 using biyos::Objective;
+using biyos::ObjectiveSense;
 using biyos::Offset;
-using biyos::Sense;
 using biyos::test::failure;
 using biyos::test::refusal;
 
@@ -39,7 +39,7 @@ constexpr int kMost = (std::numeric_limits<int>::max)();
 
 const Objective kMaximize{
     .function = 1,
-    .sense = Sense::Maximize,
+    .sense = ObjectiveSense::Maximize,
     .priority = -3,
     .weight = 2.5,
     .absolute = 0.5,
@@ -106,7 +106,7 @@ TEST(ObjectiveTest, Defaults)
 {
     const Objective wanted{
         .function = 2,
-        .sense = Sense::Minimize,
+        .sense = ObjectiveSense::Minimize,
         .priority = 5,
         .weight = 1.0,
         .absolute = 0.0,
@@ -134,7 +134,7 @@ TEST(ObjectiveTest, Shared)
 {
     Model model = with_functions(2);
     Objective other = kMaximize;
-    other.sense = Sense::Minimize;
+    other.sense = ObjectiveSense::Minimize;
     model.add_objectives(std::vector<Objective>{kMaximize, other});
     ASSERT_EQ(model.n_objectives(), 2);
     expect_objective(model.objective(0), kMaximize);
@@ -190,9 +190,9 @@ TEST(ObjectiveTest, UnknownSense)
 {
     Model model = with_functions(1);
     Objective none = default_objective(0, 0);
-    none.sense = Sense{0};
+    none.sense = ObjectiveSense{0};
     Objective third = default_objective(0, 0);
-    third.sense = Sense{3};
+    third.sense = ObjectiveSense{3};
     EXPECT_EQ(add_refusal(model, none), "invalid argument: objective 0: sense 0 is unknown");
     EXPECT_EQ(add_refusal(model, third), "invalid argument: objective 0: sense 3 is unknown");
     EXPECT_EQ(model.n_objectives(), 0);
@@ -250,7 +250,7 @@ TEST(ObjectiveTest, Order)
     Model model = with_functions(1);
     const Objective bad{
         .function = 1,
-        .sense = Sense{0},
+        .sense = ObjectiveSense{0},
         .priority = 0,
         .weight = 0.0,
         .absolute = kNan,
@@ -261,7 +261,7 @@ TEST(ObjectiveTest, Order)
     EXPECT_EQ(add_refusal(model, found), refused + "function 1 is unknown");
     found.function = 0;
     EXPECT_EQ(add_refusal(model, found), refused + "sense 0 is unknown");
-    found.sense = Sense::Maximize;
+    found.sense = ObjectiveSense::Maximize;
     EXPECT_EQ(add_refusal(model, found), refused + "weight 0 is not positive");
     found.weight = 1.0;
     EXPECT_EQ(add_refusal(model, found), refused + "absolute tolerance is NaN");

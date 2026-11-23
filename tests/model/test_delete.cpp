@@ -36,9 +36,9 @@ using biyos::kDeleted;
 using biyos::Member;
 using biyos::Model;
 using biyos::Objective;
+using biyos::ObjectiveSense;
 using biyos::Offset;
 using biyos::Operator;
-using biyos::Sense;
 using biyos::SosKind;
 using biyos::Variable;
 using biyos::VariableKind;
@@ -65,7 +65,7 @@ void add_records(Parts &parts)
 {
     parts.objectives.push_back({
         .function = 1,
-        .sense = Sense::Minimize,
+        .sense = ObjectiveSense::Minimize,
         .priority = 2,
         .weight = 0.5,
         .absolute = 0.0,

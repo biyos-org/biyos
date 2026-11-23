@@ -49,7 +49,7 @@ enum class Scope
     Environment,
 };
 
-enum class Source
+enum class OptionSource
 {
     Model = BIYOS_OPTSRC_MDL,
     Environment = BIYOS_OPTSRC_ENV,
@@ -180,7 +180,7 @@ class Options
     Masks get_flags(Option option) const;
 
     const OptionValue &value_of(Option option) const;
-    Source source_of(Option option) const;
+    OptionSource source_of(Option option) const;
     std::span<const OptionSpec> table() const noexcept;
 
     template <typename E>
@@ -201,7 +201,7 @@ class Options
     Events &events_;
     Strings strings_;
     std::vector<OptionValue> values_;
-    std::vector<Source> sources_;
+    std::vector<OptionSource> sources_;
 };
 
 }

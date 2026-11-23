@@ -401,15 +401,15 @@ TEST(OptionTest, MissingRow)
 
 TEST(OptionTest, Sources)
 {
-    using biyos::Source;
+    using biyos::OptionSource;
     Stream stream;
     biyos::Options options(stream.events);
-    EXPECT_EQ(options.source_of(Option::Seed), Source::Default);
+    EXPECT_EQ(options.source_of(Option::Seed), OptionSource::Default);
     options.set_int(Option::Seed, 3);
-    EXPECT_EQ(options.source_of(Option::Seed), Source::Environment);
-    EXPECT_EQ(options.source_of(Option::TimeLimit), Source::Default);
+    EXPECT_EQ(options.source_of(Option::Seed), OptionSource::Environment);
+    EXPECT_EQ(options.source_of(Option::TimeLimit), OptionSource::Default);
     static_cast<void>(failure([&] { options.set_double(Option::TimeLimit, -1.0); }));
-    EXPECT_EQ(options.source_of(Option::TimeLimit), Source::Default);
+    EXPECT_EQ(options.source_of(Option::TimeLimit), OptionSource::Default);
     EXPECT_EQ(std::get<int>(options.value_of(Option::Seed)), 3);
     EXPECT_EQ(failure([&] { static_cast<void>(options.source_of(Option{11})); }),
               "internal error: option 11: has no table row");

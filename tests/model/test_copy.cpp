@@ -25,9 +25,9 @@ using biyos::LinearTerm;
 using biyos::Member;
 using biyos::Model;
 using biyos::Objective;
+using biyos::ObjectiveSense;
 using biyos::Offset;
 using biyos::QuadraticTerm;
-using biyos::Sense;
 using biyos::SosKind;
 using biyos::Variable;
 using biyos::VariableKind;
@@ -54,7 +54,7 @@ void change(Model &model)
     model.add_constraints(std::span(&constraint, 1));
     const Objective objective{
         .function = 3,
-        .sense = Sense::Maximize,
+        .sense = ObjectiveSense::Maximize,
         .priority = 2,
         .weight = 4.0,
         .absolute = 1.0,

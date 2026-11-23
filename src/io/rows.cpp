@@ -66,15 +66,15 @@ void read_row(const Lines &lines, Draft &draft)
     draft.rows.push_back(DraftRow{.sense = *sense, .rhs = std::nullopt, .range = std::nullopt});
 }
 
-Sense sense_of(const Lines &lines, std::string_view word)
+ObjectiveSense sense_of(const Lines &lines, std::string_view word)
 {
     if (word == "MIN")
     {
-        return Sense::Minimize;
+        return ObjectiveSense::Minimize;
     }
     if (word == "MAX")
     {
-        return Sense::Maximize;
+        return ObjectiveSense::Maximize;
     }
     bad_file(lines, "unknown objective sense " + quote(word));
 }

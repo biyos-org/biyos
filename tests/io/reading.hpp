@@ -105,7 +105,7 @@ inline void add_named(Model &model,
     model.set_names(Family::Constraint, indices(names.size()), names);
 }
 
-inline void add_goal(Model &model, Index function, Sense sense, std::string_view name)
+inline void add_goal(Model &model, Index function, ObjectiveSense sense, std::string_view name)
 {
     Objective objective = default_objective(function, 0);
     objective.sense = sense;
