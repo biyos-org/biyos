@@ -16,6 +16,8 @@ from biyos._arrays import (
 )
 from biyos._blocks import (
     Block,
+    Cone,
+    Cones,
     Constraint,
     Constraints,
     Function,
@@ -98,6 +100,42 @@ class SOSKind(IntEnum):
     SOS2 = 2
 
 
+class ConeKind(IntEnum):
+    """The kinds of cones, as ``BIYOS_CONE_`` numbers them.
+
+    The C API reference defines each kind, its member order, its dimensions
+    and its parameters.
+
+    Attributes
+    ----------
+    NONNEGATIVE
+        The nonnegative orthant.
+    SECOND_ORDER
+        The second-order cone.
+    ROTATED
+        The rotated second-order cone.
+    EXPONENTIAL
+        The exponential cone.
+    DUAL_EXPONENTIAL
+        The dual exponential cone.
+    POWER
+        The power cone, with a weight for each of its first members.
+    DUAL_POWER
+        The dual power cone, with a weight for each of its first members.
+    SEMIDEFINITE
+        The semidefinite cone, of a matrix's lower triangle.
+    """
+
+    NONNEGATIVE = 1
+    SECOND_ORDER = 2
+    ROTATED = 3
+    EXPONENTIAL = 4
+    DUAL_EXPONENTIAL = 5
+    POWER = 6
+    DUAL_POWER = 7
+    SEMIDEFINITE = 8
+
+
 _COUNTS: dict[type[Block[Any]], str] = {
     Variables: "getnvar",
     Functions: "getnfun",
@@ -105,6 +143,7 @@ _COUNTS: dict[type[Block[Any]], str] = {
     Objectives: "getnobj",
     Indicators: "getnind",
     SOSs: "getnsos",
+    Cones: "getncone",
 }
 
 
@@ -1892,6 +1931,197 @@ class Model:
         found = [SOSKind(code) for code in kinds]
         return found, list(starts), list(members), list(weights)
 
+    def addcone(
+        self,
+        knd: Sequence[ConeKind],
+        off: Sequence[int],
+        funidx: Sequence[int | Function] | Functions,
+        prmoff: Sequence[int] | None = None,
+        prm: Sequence[float] | None = None,
+    ) -> Cones:
+        """Add cones after the last one.
+
+        Cone ``k`` places the functions from ``funidx[off[k]]`` to
+        ``funidx[off[k + 1] - 1]``, in that order, in a cone of kind
+        ``knd[k]`` whose parameters are those from ``prm[prmoff[k]]`` to
+        ``prm[prmoff[k + 1] - 1]``. A call that fails adds no cone.
+
+        Parameters
+        ----------
+        knd
+            The kind of each cone.
+        off
+            The offsets of the cones' members, one more than there are
+            cones, from 0 and never decreasing.
+        funidx
+            The members of each cone, ``off[-1]`` of them, a function at
+            most once in a cone.
+        prmoff
+            The offsets of the cones' parameters, as ``off`` gives the
+            members'. None when no cone takes one.
+        prm
+            The parameters of each cone, ``prmoff[-1]`` of them: the
+            weights of a power cone, each finite and positive.
+
+        Returns
+        -------
+        cones
+            The new cones.
+
+        See Also
+        --------
+        BIYOS_addcone
+        """
+        n = len(knd)
+        starts = offsets("off", off, n + 1)
+        weights = offsets("prmoff", prmoff, n + 1)
+        arrays = (
+            ints("knd", knd, n),
+            starts,
+            indices_of(self, Functions, "funidx", funidx, _total(starts, n)),
+            weights,
+            doubles("prm", prm, _total(weights, n)),
+        )
+        first = c_int()
+        self._call(lib.BIYOS_addcone, n, *arrays, byref(first))
+        return Cones(self, first.value, n, self._gen)
+
+    def getncone(self) -> int:
+        """Return the number of cones.
+
+        Returns
+        -------
+        n
+            The number of cones.
+
+        See Also
+        --------
+        BIYOS_getncone
+        """
+        count = c_int()
+        self._call(lib.BIYOS_getncone, byref(count))
+        return count.value
+
+    def getnconefun(
+        self, idx: Sequence[int | Cone] | Cones | None = None
+    ) -> int:
+        """Count the members of cones.
+
+        Parameters
+        ----------
+        idx
+            The cones, in any order, any of them more than once; every cone
+            by default.
+
+        Returns
+        -------
+        nnz
+            The number of members they hold, a cone counted each time it
+            appears.
+
+        See Also
+        --------
+        BIYOS_getnconefunsp
+        BIYOS_getnconefunrg
+        """
+        every = range(self.getncone()) if idx is None else idx
+        return self._count("BIYOS_getnconefun", Cones, every)
+
+    def getcone(
+        self, idx: Sequence[int | Cone] | Cones | None = None
+    ) -> tuple[list[ConeKind], list[int], list[int]]:
+        """Read the kinds and members of cones.
+
+        Parameters
+        ----------
+        idx
+            The cones, in any order, any of them more than once; every cone
+            by default.
+
+        Returns
+        -------
+        knd
+            The kind of each cone.
+        off
+            The offsets of their members, one more than there are cones,
+            from 0.
+        funidx
+            The members of each cone in order, those of entry ``j`` from
+            ``funidx[off[j]]`` to ``funidx[off[j + 1] - 1]``.
+
+        See Also
+        --------
+        BIYOS_getconesp
+        BIYOS_getconerg
+        """
+        every = range(self.getncone()) if idx is None else idx
+        size = self._count("BIYOS_getnconefun", Cones, every)
+        chosen = self._chosen("BIYOS_getcone", Cones, every)
+        kinds = (c_int * len(every))()
+        starts = (c_int64 * (len(every) + 1))()
+        members = (c_int * size)()
+        self._call(*chosen, size, kinds, starts, members)
+        found = [ConeKind(kind) for kind in kinds]
+        return found, list(starts), list(members)
+
+    def getnconeprm(
+        self, idx: Sequence[int | Cone] | Cones | None = None
+    ) -> int:
+        """Count the parameters of cones.
+
+        Parameters
+        ----------
+        idx
+            The cones, in any order, any of them more than once; every cone
+            by default.
+
+        Returns
+        -------
+        nnz
+            The number of parameters they hold, a cone counted each time it
+            appears.
+
+        See Also
+        --------
+        BIYOS_getnconeprmsp
+        BIYOS_getnconeprmrg
+        """
+        every = range(self.getncone()) if idx is None else idx
+        return self._count("BIYOS_getnconeprm", Cones, every)
+
+    def getconeprm(
+        self, idx: Sequence[int | Cone] | Cones | None = None
+    ) -> tuple[list[int], list[float]]:
+        """Read the parameters of cones.
+
+        Parameters
+        ----------
+        idx
+            The cones, in any order, any of them more than once; every cone
+            by default.
+
+        Returns
+        -------
+        prmoff
+            The offsets of their parameters, one more than there are cones,
+            from 0.
+        prm
+            The parameters of each cone in order, those of entry ``j`` from
+            ``prm[prmoff[j]]`` to ``prm[prmoff[j + 1] - 1]``.
+
+        See Also
+        --------
+        BIYOS_getconeprmsp
+        BIYOS_getconeprmrg
+        """
+        every = range(self.getncone()) if idx is None else idx
+        size = self._count("BIYOS_getnconeprm", Cones, every)
+        chosen = self._chosen("BIYOS_getconeprm", Cones, every)
+        starts = (c_int64 * (len(every) + 1))()
+        values = (c_double * size)()
+        self._call(*chosen, size, starts, values)
+        return list(starts), list(values)
+
     def setmdlname(self, name: str) -> None:
         """Name the model.
 
@@ -2433,6 +2663,81 @@ class Model:
         BIYOS_delsosnamerg
         """
         self._delname("BIYOS_delsosname", SOSs, idx)
+
+    def setconename(
+        self, idx: Sequence[int | Cone] | Cones, name: Sequence[str]
+    ) -> None:
+        """Name cones of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The cones to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setconenamesp
+        BIYOS_setconenamerg
+        """
+        self._setname("BIYOS_setconename", Cones, idx, name)
+
+    def getconename(
+        self, idx: Sequence[int | Cone] | Cones
+    ) -> list[str | None]:
+        """Return the names of cones, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The cones to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getconenamesp
+        BIYOS_getconenamerg
+        """
+        return self._getname("BIYOS_getconename", Cones, idx)
+
+    def getconeidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named cones, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the cone that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getconeidx
+        """
+        return self._getidx(lib.BIYOS_getconeidx, name)
+
+    def delconename(self, idx: Sequence[int | Cone] | Cones) -> None:
+        """Remove the names of cones, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The cones that lose their names.
+
+        See Also
+        --------
+        BIYOS_delconenamesp
+        BIYOS_delconenamerg
+        """
+        self._delname("BIYOS_delconename", Cones, idx)
 
     def _start(self, env: Env) -> None:
         self._env = env

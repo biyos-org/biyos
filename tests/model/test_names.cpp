@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <numeric>
 #include <span>
 #include <string>
 #include <string_view>
@@ -13,6 +14,7 @@
 namespace
 {
 
+using biyos::ConeKind;
 using biyos::Constraint;
 using biyos::Family;
 using biyos::Index;
@@ -33,6 +35,15 @@ std::vector<Variable> continuous(Index n)
 {
     const Variable free = biyos::widest(VariableKind::Continuous);
     return std::vector<Variable>(static_cast<std::size_t>(n), free);
+}
+
+void add_cones(Model &model, std::size_t size)
+{
+    std::vector<Offset> starts(size + 1);
+    std::iota(starts.begin(), starts.end(), Offset{0});
+    const std::vector<ConeKind> kinds(size, ConeKind::Nonnegative);
+    const std::vector<Offset> none(size + 1, 0);
+    model.add_cones(kinds, starts, std::vector<Index>(size, 0), none, {});
 }
 
 Model sized(Index n)
@@ -59,6 +70,7 @@ Model sized(Index n)
     model.add_indicators(std::vector<Indicator>(size, indicator));
     const std::vector<biyos::SosKind> kinds(size, biyos::SosKind::Sos1);
     model.add_sos(kinds, starts, {});
+    add_cones(model, size);
     return model;
 }
 
@@ -83,6 +95,8 @@ Index n_of(const Model &model, Family family)
         return model.n_indicators();
     case Family::Sos:
         return model.n_sos();
+    case Family::Cone:
+        return model.n_cones();
     }
     return 0;
 }
@@ -185,6 +199,7 @@ TEST(NameTest, Nouns)
     EXPECT_EQ(biyos::noun_of(Family::Objective), "objective");
     EXPECT_EQ(biyos::noun_of(Family::Indicator), "indicator");
     EXPECT_EQ(biyos::noun_of(Family::Sos), "set");
+    EXPECT_EQ(biyos::noun_of(Family::Cone), "cone");
 }
 
 TEST(NameTest, Unnamed)

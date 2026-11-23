@@ -62,6 +62,17 @@ OPERATORS = {
     "BIYOS_OP_NODE": biyos.Operator.NODE,
 }
 
+CONES = {
+    "BIYOS_CONE_NONNEG": biyos.ConeKind.NONNEGATIVE,
+    "BIYOS_CONE_SOC": biyos.ConeKind.SECOND_ORDER,
+    "BIYOS_CONE_RSOC": biyos.ConeKind.ROTATED,
+    "BIYOS_CONE_EXP": biyos.ConeKind.EXPONENTIAL,
+    "BIYOS_CONE_DEXP": biyos.ConeKind.DUAL_EXPONENTIAL,
+    "BIYOS_CONE_POW": biyos.ConeKind.POWER,
+    "BIYOS_CONE_DPOW": biyos.ConeKind.DUAL_POWER,
+    "BIYOS_CONE_PSD": biyos.ConeKind.SEMIDEFINITE,
+}
+
 
 def declared(name):
     return getattr(lib, name).argtypes is not None
@@ -97,6 +108,14 @@ def test_operators():
     assert len(codes) == lines("biyos.h", "#define BIYOS_OP_")
     assert set(OPERATORS.values()) == set(biyos.Operator)
     assert codes == OPERATORS
+
+
+def test_cone_kinds():
+    found = macros("biyos.h")
+    kinds = {name: value for name, value in found.items() if "_CONE_" in name}
+    assert len(kinds) == lines("biyos.h", "#define BIYOS_CONE_")
+    assert set(CONES.values()) == set(biyos.ConeKind)
+    assert kinds == CONES
 
 
 def test_senses():

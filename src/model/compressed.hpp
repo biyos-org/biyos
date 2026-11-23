@@ -6,13 +6,17 @@
 #include <algorithm>
 #include <cstddef>
 #include <span>
+#include <string_view>
 #include <vector>
 
 namespace biyos
 {
 
-void check_starts(std::span<const Offset> starts);
-void check_shape(std::size_t functions, std::span<const Offset> starts, std::size_t terms);
+void check_starts(std::span<const Offset> starts, std::string_view argument = "off");
+void check_shape(std::size_t functions,
+                 std::span<const Offset> starts,
+                 std::size_t terms,
+                 std::string_view argument = "off");
 
 template <typename T>
 std::span<T> slice(std::span<T> terms, std::span<const Offset> starts, std::size_t k)

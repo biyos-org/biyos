@@ -56,6 +56,7 @@ add_library(biyos_internal STATIC
     model/checks.cpp
     model/compare.cpp
     model/compressed.cpp
+    model/cones.cpp
     model/constraints.cpp
     model/expressions.cpp
     model/fields.cpp
@@ -95,6 +96,7 @@ biyos_set_warnings(biyos_internal)
 add_library(biyos
     capi/arrays.cpp
     capi/columns.cpp
+    capi/cones.cpp
     capi/constraints.cpp
     capi/env.cpp
     capi/events.cpp

@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstddef>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -28,7 +29,7 @@ struct Calls
     BIYOS_status (*remove)(BIYOS_model *, BIYOS_index, const BIYOS_index *);
 };
 
-const std::array<Calls, 6> kFamilies{{
+const std::array<Calls, 7> kFamilies{{
     {
         .noun = "variable",
         .set = BIYOS_setvarnamesp,
@@ -71,6 +72,13 @@ const std::array<Calls, 6> kFamilies{{
         .find = BIYOS_getsosidx,
         .remove = BIYOS_delsosnamesp,
     },
+    {
+        .noun = "cone",
+        .set = BIYOS_setconenamesp,
+        .get = BIYOS_getconenamesp,
+        .find = BIYOS_getconeidx,
+        .remove = BIYOS_delconenamesp,
+    },
 }};
 
 struct Attempt
@@ -97,6 +105,23 @@ BIYOS_status find_one(const Calls &family,
     return family.find(model, 1, &name, indices);
 }
 
+void add_cones(BIYOS_model *model, BIYOS_index n)
+{
+    const std::vector<BIYOS_int> kinds(static_cast<std::size_t>(n), BIYOS_CONE_NONNEG);
+    std::vector<BIYOS_offset> starts(static_cast<std::size_t>(n) + 1);
+    std::iota(starts.begin(), starts.end(), 0);
+    const Indices functions(static_cast<std::size_t>(n), 0);
+    const BIYOS_status status = BIYOS_addcone(model,
+                                              n,
+                                              kinds.data(),
+                                              starts.data(),
+                                              functions.data(),
+                                              nullptr,
+                                              nullptr,
+                                              nullptr);
+    ASSERT_EQ(status, BIYOS_OK);
+}
+
 void add_items(const Model &model, BIYOS_index n)
 {
     BIYOS_model *held = model.get();
@@ -121,6 +146,7 @@ void add_items(const Model &model, BIYOS_index n)
     ASSERT_EQ(status, BIYOS_OK);
     ASSERT_EQ(BIYOS_addsos(held, n, sos_kinds.data(), nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);
+    add_cones(held, n);
 }
 
 BIYOS_status name(const Calls &family, const Model &model, const Indices &index, const Texts &names)

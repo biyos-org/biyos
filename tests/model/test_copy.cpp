@@ -14,6 +14,7 @@
 namespace
 {
 
+using biyos::ConeKind;
 using biyos::Constraint;
 using biyos::difference;
 using biyos::Family;
@@ -73,6 +74,10 @@ void change(Model &model)
     const std::vector<Offset> members{0, 2};
     const std::vector<Member> sos{{.variable = 3, .weight = 1.0}, {.variable = 1, .weight = 2.0}};
     model.add_sos(std::span(&kind, 1), members, sos);
+    const ConeKind cone = ConeKind::Exponential;
+    const std::vector<Offset> ends{0, 3};
+    const std::vector<Index> functions{3, 1, 0};
+    model.add_cones(std::span(&cone, 1), ends, functions, std::vector<Offset>{0, 0}, {});
     const std::vector<Index> renamed{0, 1};
     const std::vector<std::string_view> names{"y", "w"};
     for (const Family family : biyos::kFamilies)

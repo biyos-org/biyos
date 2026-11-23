@@ -4,6 +4,8 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -192,6 +194,54 @@ void add_sos(BIYOS_model *model, Engine &engine, int n, int n_variables)
     ASSERT_EQ(status, BIYOS_OK);
 }
 
+struct Cones
+{
+    std::vector<BIYOS_int> kinds;
+    std::vector<BIYOS_offset> starts{0};
+    std::vector<BIYOS_index> functions;
+    std::vector<BIYOS_offset> parameter_starts{0};
+    std::vector<BIYOS_real> parameters;
+};
+
+constexpr std::array<BIYOS_int, 3> kConeKinds{BIYOS_CONE_NONNEG, BIYOS_CONE_SOC, BIYOS_CONE_POW};
+
+void add_cone(Engine &engine, int n_functions, Cones &cones)
+{
+    const BIYOS_int kind = kConeKinds[static_cast<std::size_t>(below(engine, 3))];
+    const int dimension = 1 + below(engine, n_functions);
+    const int first = below(engine, n_functions);
+    for (int j = 0; j < dimension; ++j)
+    {
+        cones.functions.push_back((first + j) % n_functions);
+    }
+    const int weights = kind == BIYOS_CONE_POW ? 1 + below(engine, dimension) : 0;
+    for (int j = 0; j < weights; ++j)
+    {
+        cones.parameters.push_back((1 + below(engine, 4)) / 4.0);
+    }
+    cones.kinds.push_back(kind);
+    cones.starts.push_back(static_cast<BIYOS_offset>(cones.functions.size()));
+    cones.parameter_starts.push_back(static_cast<BIYOS_offset>(cones.parameters.size()));
+}
+
+void add_cones(BIYOS_model *model, Engine &engine, int n, int n_functions)
+{
+    Cones cones;
+    for (int k = 0; k < n; ++k)
+    {
+        add_cone(engine, n_functions, cones);
+    }
+    const BIYOS_status status = BIYOS_addcone(model,
+                                              n,
+                                              cones.kinds.data(),
+                                              cones.starts.data(),
+                                              cones.functions.data(),
+                                              cones.parameter_starts.data(),
+                                              cones.parameters.data(),
+                                              nullptr);
+    ASSERT_EQ(status, BIYOS_OK);
+}
+
 using Namer = BIYOS_status (*)(BIYOS_model *,
                                BIYOS_index,
                                const BIYOS_index *,
@@ -243,6 +293,9 @@ void build_sample(BIYOS_model *model, Engine &engine)
     const int sos = 1 + below(engine, 4);
     add_sos(model, engine, sos, variables);
     add_names(model, engine, sos, BIYOS_setsosnamesp);
+    const int cones = 1 + below(engine, 3);
+    add_cones(model, engine, cones, functions);
+    add_names(model, engine, cones, BIYOS_setconenamesp);
 }
 
 }
