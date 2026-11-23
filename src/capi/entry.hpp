@@ -6,6 +6,7 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
+#include "core/hooks.hpp"
 #include "core/settings.hpp"
 #include "core/usage.hpp"
 #include "model/model.hpp"
@@ -32,6 +33,7 @@ struct BIYOS_model
     biyos::Model core;
     biyos::Settings settings;
     mutable biyos::Usage usage;
+    mutable biyos::Hooks hooks;
 };
 
 namespace biyos::capi
@@ -100,7 +102,10 @@ BIYOS_status guarded(BIYOS_env *env, Args... arguments) noexcept
     biyos::Env &core = env->core;
     start(core);
     const EnvGuard busy(core);
-    return biyos::capi::guard(&core, nullptr, [&] { admitted<Body>(busy, core, arguments...); });
+    return biyos::capi::guard(&core,
+                              nullptr,
+                              nullptr,
+                              [&] { admitted<Body>(busy, core, arguments...); });
 }
 
 template <auto Body, typename Model, typename... Args>
@@ -114,7 +119,10 @@ BIYOS_status guarded(Model *model, Args... arguments) noexcept
     biyos::Env &env = model->handle.env();
     start(env);
     const ModelGuard busy(env, model->usage);
-    return biyos::capi::guard(&env, model, [&] { admitted<Body>(busy, *model, arguments...); });
+    return biyos::capi::guard(&env,
+                              model,
+                              &model->hooks,
+                              [&] { admitted<Body>(busy, *model, arguments...); });
 }
 
 }
