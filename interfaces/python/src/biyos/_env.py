@@ -370,8 +370,12 @@ class Env:
 
     def _run(self, function: Callable[..., int], *arguments: object) -> None:
         outer = self._relay.start()
-        status = function(*arguments)
-        self._settle()
+        try:
+            status = function(*arguments)
+            self._settle()
+        except BaseException:
+            self._relay.restore(outer)
+            raise
         self._relay.finish(status, outer)
         check(self._handle, status, self._owners)
 

@@ -260,6 +260,17 @@ def trapped(errors, function, event):
         errors.append(error)
 
 
+def interrupt():
+    raise KeyboardInterrupt
+
+
+def swallowed(function, *arguments):
+    try:
+        function(*arguments)
+    except KeyboardInterrupt:
+        pass
+
+
 def raised(env):
     try:
         env.setopt("seed", -1)
@@ -379,6 +390,19 @@ def test_inner():
         with pytest.raises(biyos.Error):
             env.setopt("seed", -1)
     assert [str(error) for error in errors] == ["second hook failed"]
+
+
+def test_aborted(monkeypatch):
+    actions = []
+    with biyos.Env() as env:
+        settle = partial(preceded, actions, env._settle)
+        monkeypatch.setattr(env, "_settle", settle)
+        nested = partial(swallowed, env.getopt, "seed")
+        hook = partial(arm, actions, [nested, interrupt])
+        env.addhook(hook, EventKind.MESSAGE, EventLevel.DEBUG)
+        with pytest.raises(RuntimeError, match="hook failed"):
+            env.setopt("seed", -1)
+        assert env.getopt("seed") == 0
 
 
 def test_model():

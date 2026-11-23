@@ -38,6 +38,9 @@ class Relay:
         self._raised = None
         return outer
 
+    def restore(self, outer: BaseException | None) -> None:
+        self._raised = outer
+
     def finish(self, status: int, outer: BaseException | None) -> None:
         raised = self._raised
         self._raised = outer
