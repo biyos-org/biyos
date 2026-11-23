@@ -33,6 +33,10 @@ using biyos::Tape;
 using biyos::test::refusal;
 
 constexpr std::size_t kAttempts = 100;
+constexpr biyos::Index kSteps = 1000;
+constexpr std::size_t kGrowth = 8;
+constexpr biyos::Index kTerms = 1000;
+constexpr Offset kWhole = Offset{1} << 40;
 
 constexpr std::array kUnary{
     Operator::Negation, Operator::Exp,   Operator::Log,     Operator::Sqrt, Operator::Sin,
@@ -192,6 +196,48 @@ std::size_t gradient_cost(const Tape &tape)
     return biyos::test::allocations() - start;
 }
 
+std::size_t compile_bytes(biyos::Index steps)
+{
+    Graph graph;
+    Offset total = graph.add_variable(0);
+    std::vector<Offset> terms;
+    for (biyos::Index k = 1; k <= steps; ++k)
+    {
+        total = graph.add(Operator::Product, 1.0, std::array{total, graph.add_variable(k)});
+        terms.push_back(graph.add(Operator::Exp, std::span(&total, 1)));
+    }
+    const std::vector<double> ones(terms.size(), 1.0);
+    const Offset root = graph.add_sum(0.0, terms, ones);
+    const std::size_t start = biyos::test::allocated_bytes();
+    const Tape tape(graph, std::span(&root, 1));
+    return biyos::test::allocated_bytes() - start;
+}
+
+std::size_t shared_bytes(biyos::Index terms)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    std::vector<Offset> parts;
+    for (biyos::Index j = 0; j < terms; ++j)
+    {
+        const Offset turn = graph.add(Operator::Cos, std::span(&x, 1));
+        const Offset inner = graph.add(Operator::Sin, std::span(&turn, 1));
+        parts.push_back(graph.add(Operator::Product, 0.5, std::array{inner, inner}));
+        parts.push_back(graph.add(Operator::Cos, std::span(&inner, 1)));
+    }
+    const std::vector<double> ones(parts.size(), 1.0);
+    const Offset total = graph.add_sum(0.0, parts, ones);
+    std::vector<Offset> roots;
+    for (biyos::Index j = 1; j <= terms; ++j)
+    {
+        roots.push_back(
+            graph.add(Operator::Product, 1.0, std::array{total, graph.add_variable(j)}));
+    }
+    const std::size_t start = biyos::test::allocated_bytes();
+    const Tape tape(graph, roots, kWhole);
+    return biyos::test::allocated_bytes() - start;
+}
+
 std::size_t sweep_cost(const Tape &tape)
 {
     biyos::Workspace workspace(tape);
@@ -291,4 +337,14 @@ TEST(AllocationTest, Curvature)
     EXPECT_EQ(biyos::test::allocations(), before);
     EXPECT_EQ(shapes.curvature(0), biyos::Curvature::Affine);
     EXPECT_EQ(shapes.curvature(graph.size() - 1), biyos::Curvature::Unknown);
+}
+
+TEST(AllocationTest, RunningProduct)
+{
+    EXPECT_LT(compile_bytes(4 * kSteps), kGrowth * compile_bytes(kSteps));
+}
+
+TEST(AllocationTest, SharedSum)
+{
+    EXPECT_LT(shared_bytes(4 * kTerms), kGrowth * shared_bytes(kTerms));
 }
