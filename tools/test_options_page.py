@@ -25,7 +25,7 @@ class OptionsPageTest(unittest.TestCase):
         self.assertIn("## `maxtime` {#opt-maxtime .api .unnumbered}", text)
         self.assertIn(
             "| [`BIYOS_OPT_MAXTIME`]{.name} | [2]{.value} | double "
-            "| `∞` | [0, ∞] |",
+            "| [`∞`]{.unbroken} | [0, ∞] |",
             text,
         )
         self.assertIn("[Since 0.1.0]{.since}", text)
