@@ -1627,7 +1627,7 @@ class Model:
         hess
             The function, as ``addcb`` describes. It writes, for each pair,
             the entry of the sum of the covered functions' Hessians, each
-            weighted by ``req.weights``, at the point.
+            weighted by ``req.w``, at the point.
 
         Raises
         ------
@@ -1657,9 +1657,9 @@ class Model:
             The callback.
         hessvec
             The function, as ``addcb`` describes. It writes, for every
-            variable, the entry of the product of ``req.direction`` with the
-            sum of the covered functions' Hessians, each weighted by
-            ``req.weights``, at the point.
+            variable, the entry of the product of ``req.v`` with the sum
+            of the covered functions' Hessians, each weighted by ``req.w``,
+            at the point.
 
         Raises
         ------

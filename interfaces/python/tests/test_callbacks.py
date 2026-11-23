@@ -73,10 +73,10 @@ def caller_of(model):
 
 
 def describe(found, req, out, data):
-    found.append((req.callback, req.thread, list(req.point), data))
-    found.append((req.weights, req.direction, req.point.readonly, len(out)))
+    found.append((req.callback, req.thread, list(req.x), data))
+    found.append((req.w, req.v, req.x.readonly, len(out)))
     for k in range(len(out)):
-        out[k] = req.point[k] + 0.5
+        out[k] = req.x[k] + 0.5
 
 
 def test_added(model):
@@ -104,7 +104,7 @@ def test_collected(model, seen):
     cb = model.addcb([0])
 
     def values(req, out, data):
-        out[0] = 2.0 * req.point[1]
+        out[0] = 2.0 * req.x[1]
 
     alive = weakref.ref(values)
     model.setcbf(cb, values)
@@ -163,13 +163,13 @@ def test_released(model, seen):
     x = [1.0, 2.0, 3.0]
     assert evaluate(model, seen[-1], cb, 3, x, [1.0], x)[0] == 0
     req, out = found
-    for view in (req.point, req.weights, req.direction, out):
+    for view in (req.x, req.w, req.v, out):
         with pytest.raises(ValueError, match="released memoryview"):
             view[0]
 
 
 def derivatives(found, req, out, data):
-    found.append((list(req.weights or []), list(req.direction or [])))
+    found.append((list(req.w or []), list(req.v or [])))
     for k in range(len(out)):
         out[k] = k + 1.0
 
