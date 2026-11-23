@@ -2138,7 +2138,7 @@ param n in The number of functions that gain an expression.
 param idx in In the `sp` form, the functions, each listed at most once; may be null only when `n` is 0.
 param node in The node each function gains, by id; may be null only when `n` is 0.
 return `BIYOS_OK` once the expressions are added.
-error BIYOS_ERR_BADARG `pos` or `n` is negative, a function is not one of the model or is listed twice, the range ends past the last function, a node is not one of the model, a function covered by a callback would gain a nonlinear part, or a function's constant, or a coefficient summed with one the function holds, would not be finite.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, a function is not one of the model or is listed twice, the range ends past the last function, a node is not one of the model, or a function's constant, or a coefficient summed with one the function holds, would not be finite.
 note The function of entry `k`, `idx[k]` or `pos + k`, becomes $f + e$, where $e$ is node `node[k]`. The constant, linear and quadratic terms of $e$ join the function's, added as `BIYOS_addlintermsp` and `BIYOS_addquadtermsp` add terms, and the rest becomes the function's expression, or is summed in a new node with the expression it has. An expression that holds no constant leaves the function's as it was.
 note The expression is split at its top. Among the terms of its top sum, a constant, $a x_j$, $q x_i x_j$ and $q x_j^2$ move, with negations and constant factors pushed into that sum; any other term stays whole, so no product of sums is expanded. Below the top, a node that other nodes use is kept whole, so a subexpression shared by several functions is stored once.
 note A call whose expressions bring new linear or quadratic terms moves the terms and offsets of every function from its lowest such one on, as `BIYOS_addlintermsp` does, so the expressions of many functions are best attached in one call, or a function's right after it is added. An expression that brings no new term moves nothing.
@@ -2195,8 +2195,8 @@ see BIYOS_getnexprsp BIYOS_addexpr BIYOS_attachexprsp
 since 0.1.0
 
 group callbacks Callbacks
-text A callback computes the nonlinear part $e(x)$ of some functions in user code, in place of an expression. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for their values, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
-text A function's nonlinear part is an expression or one callback, never both: `BIYOS_addcb` refuses a function that has an expression or another callback, and `BIYOS_attachexprsp` refuses to give a covered function an expression that leaves a nonlinear part once its constant, linear and quadratic terms are split off. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function.
+text A callback computes in user code its part $e_k(x)$ of the nonlinear part of each function $k$ it covers. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for the values of those parts, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
+text A function's nonlinear part is its expression plus the part of every callback that covers it. A function may be in any number of callbacks and hold an expression beside them, and a callback lists a function at most once. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function.
 text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. No call evaluates a callback yet.
 text The model keeps the function pointers and `data` as given and never frees `data`. A copy made by `BIYOS_copymdl` shares them with its source, so both call the same code with the same `data`.
 
@@ -2213,7 +2213,7 @@ see BIYOS_cbf BIYOS_cbg BIYOS_cbh BIYOS_cbhv
 since 0.1.0
 
 type BIYOS_cbf
-summary A function that evaluates the nonlinear parts of a callback's functions.
+summary A function that evaluates a callback's nonlinear parts.
 param req in The request, with the point `x`.
 param f out Receives $e_k(x)$ for each covered function $k$, in the order given to `BIYOS_addcb`.
 param data in The callback's pointer, as given.
@@ -2256,7 +2256,7 @@ param funidx in The functions, each listed once; their order is the order of the
 param data in A pointer passed to each of the callback's functions; the model keeps it and never frees it.
 param cb out Receives the index of the new callback; skipped when null.
 return `BIYOS_OK` once the callback is added.
-error BIYOS_ERR_BADARG `n` is not positive, `funidx` is null, a function is not one of the model or is listed twice, or a function has an expression or another callback.
+error BIYOS_ERR_BADARG `n` is not positive, `funidx` is null, or a function is not one of the model or is listed twice.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 callbacks.
 note The callback has no function yet and an empty pattern for each derivative. The calls below give them.
 see BIYOS_setcbf BIYOS_setcbg BIYOS_setcbh BIYOS_setcbhv BIYOS_setcbdata
@@ -2282,7 +2282,7 @@ param g in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
 error BIYOS_ERR_BADARG `cb` is not a callback of the model, `g` is null, `off` does not begin at 0 or decreases, `varidx` is null while the pattern is not empty, or a function's variables are not ones of the model in increasing order.
 error BIYOS_ERR_NOMEMORY The pattern would hold more entries than any allocation can hold.
-note The entries of the `k`-th covered function are those from `off[k]` to `off[k + 1] - 1`, as `BIYOS_addrlintermrg` takes terms. A variable left out of a function's entries has a zero derivative.
+note The entries of the `k`-th covered function are those from `off[k]` to `off[k + 1] - 1`, as `BIYOS_addrlintermrg` takes terms. A variable left out of the entries of function $k$ has a zero derivative of $e_k$.
 see BIYOS_cbg BIYOS_addcb
 since 0.1.0
 
@@ -2297,7 +2297,7 @@ param h in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
 error BIYOS_ERR_BADARG `cb` is not a callback of the model, `h` is null, `nnz` is negative, `varidx1` or `varidx2` is null while `nnz` is not 0, a variable is not one of the model, a pair has its second variable below its first, or the pairs are repeated or out of order.
 error BIYOS_ERR_NOMEMORY The pattern would hold more pairs than any allocation can hold.
-note The pairs are sorted by their first variable, then by their second, as the model lists quadratic terms, so they are the lower triangle of the Hessian compressed by column. They cover every pair $(i, j)$, $i \le j$, where a second derivative of some covered function may be nonzero.
+note The pairs are sorted by their first variable, then by their second, as the model lists quadratic terms, so they are the lower triangle of the Hessian compressed by column. They cover every pair $(i, j)$, $i \le j$, where a second derivative of some $e_k$ may be nonzero.
 see BIYOS_cbh BIYOS_addcb
 since 0.1.0
 
