@@ -126,22 +126,4 @@ void Model::set_variables(std::span<const Index> indices, std::span<const Variab
     }
 }
 
-Override Model::variable_tolerance(Index index) const
-{
-    check_index(kNoun, index, n_variables());
-    return variable_tolerances_.at(index);
-}
-
-void Model::set_variable_tolerances(std::span<const Index> indices,
-                                    std::span<const double> absolute,
-                                    std::span<const double> relative)
-{
-    variable_tolerances_.set(kNoun, n_variables(), indices, absolute, relative);
-}
-
-void Model::delete_variable_tolerances(std::span<const Index> indices)
-{
-    variable_tolerances_.remove(kNoun, n_variables(), indices);
-}
-
 }

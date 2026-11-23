@@ -354,7 +354,7 @@ void set_tolerances(Model &model)
 {
     const std::vector<Index> indices{3, 0, 2};
     const std::vector<double> absolute{1e-6, 1e-7, 1e-8};
-    model.set_complement_tolerances(indices, absolute, {});
+    model.set_tolerances(Family::Complement, indices, absolute, {});
 }
 
 void delete_two(Model &model)

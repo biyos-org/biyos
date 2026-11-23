@@ -50,9 +50,6 @@ using biyos::test::Parts;
 using biyos::test::refusal;
 using Map = std::vector<Index>;
 using Indices = std::vector<Index>;
-using Setter = void (Model::*)(std::span<const Index>,
-                               std::span<const double>,
-                               std::span<const double>);
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 
@@ -481,29 +478,32 @@ void expect_used(const Use &use)
     EXPECT_EQ(in_use(model, {1, 2}), wanted);
 }
 
-void set_tolerances(Model &model, Setter set, const Indices &indices)
+void set_tolerances(Model &model, Family family, const Indices &indices)
 {
     const std::vector<double> absolute{1e-6, 1e-7};
     const std::vector<double> relative{1e-3, 1e-4};
     const std::size_t n = indices.size();
-    (model.*set)(indices, std::span(absolute).first(n), std::span(relative).first(n));
+    model.set_tolerances(family,
+                         indices,
+                         std::span(absolute).first(n),
+                         std::span(relative).first(n));
 }
 
-void expect_tolerances(const Case &family, Setter set)
+void expect_tolerances(const Case &family)
 {
     SCOPED_TRACE(biyos::noun_of(family.family));
     Model model = built(three());
-    set_tolerances(model, set, {2, 0});
+    set_tolerances(model, family.family, {2, 0});
     EXPECT_EQ((model.*family.call)(Indices{1}), (Map{0, kDeleted, 1}));
     Parts parts = three();
     family.keep(parts, {0, kDeleted, 1});
     Model wanted = built(parts);
-    set_tolerances(wanted, set, {1, 0});
+    set_tolerances(wanted, family.family, {1, 0});
     EXPECT_EQ(biyos::difference(model, wanted), "");
     EXPECT_EQ((model.*family.call)(Indices{0}), (Map{kDeleted, 0}));
     family.keep(parts, {kDeleted, 0});
     wanted = built(parts);
-    set_tolerances(wanted, set, {0});
+    set_tolerances(wanted, family.family, {0});
     EXPECT_EQ(biyos::difference(model, wanted), "");
 }
 
@@ -718,9 +718,9 @@ TEST(DeleteTest, Empty)
 
 TEST(DeleteTest, Tolerances)
 {
-    expect_tolerances(kConstraints, &Model::set_constraint_tolerances);
-    expect_tolerances(kCones, &Model::set_cone_tolerances);
-    expect_tolerances(kComplements, &Model::set_complement_tolerances);
+    expect_tolerances(kConstraints);
+    expect_tolerances(kCones);
+    expect_tolerances(kComplements);
 }
 
 TEST(DeleteTest, Functions)
@@ -768,10 +768,10 @@ TEST(DeleteTest, Checks)
 TEST(DeleteTest, Variables)
 {
     Model model = built(spaced());
-    set_tolerances(model, &Model::set_variable_tolerances, {4, 3});
+    set_tolerances(model, Family::Variable, {4, 3});
     EXPECT_EQ(model.delete_variables(Indices{3, 1}), kDropped);
     Model wanted = built(compacted());
-    set_tolerances(wanted, &Model::set_variable_tolerances, {2});
+    set_tolerances(wanted, Family::Variable, {2});
     EXPECT_EQ(biyos::difference(model, wanted), "");
     for (const std::string_view name : spaced().variable_names.names)
     {

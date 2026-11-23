@@ -18,6 +18,7 @@ namespace
 {
 
 using biyos::Complement;
+using biyos::Family;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
@@ -83,7 +84,7 @@ std::string tolerance_refusal(Model &model,
                               const Reals &absolute,
                               const Reals &relative)
 {
-    return refusal([&] { model.set_complement_tolerances(indices, absolute, relative); });
+    return refusal([&] { model.set_tolerances(Family::Complement, indices, absolute, relative); });
 }
 
 }
@@ -290,29 +291,29 @@ TEST(ComplementTest, NoTolerance)
 {
     Model model = with_functions(1);
     add(model, pair(0, 0, 0.0, kInfinity));
-    expect_tolerance(model.complement_tolerance(0), kNan, kNan);
-    EXPECT_EQ(refusal([&] { model.complement_tolerance(1); }),
+    expect_tolerance(model.tolerance_of(Family::Complement, 0), kNan, kNan);
+    EXPECT_EQ(refusal([&] { model.tolerance_of(Family::Complement, 1); }),
               "invalid argument: complement 1: unknown");
 }
 
 TEST(ComplementTest, OwnTolerance)
 {
     Model model = with_complements(3);
-    model.set_complement_tolerances(Indices{2, 0}, Reals{1e-6, 0.0}, Reals{1e-3, 2.0});
-    expect_tolerance(model.complement_tolerance(0), 0.0, 2.0);
-    expect_tolerance(model.complement_tolerance(1), kNan, kNan);
-    expect_tolerance(model.complement_tolerance(2), 1e-6, 1e-3);
+    model.set_tolerances(Family::Complement, Indices{2, 0}, Reals{1e-6, 0.0}, Reals{1e-3, 2.0});
+    expect_tolerance(model.tolerance_of(Family::Complement, 0), 0.0, 2.0);
+    expect_tolerance(model.tolerance_of(Family::Complement, 1), kNan, kNan);
+    expect_tolerance(model.tolerance_of(Family::Complement, 2), 1e-6, 1e-3);
 }
 
 TEST(ComplementTest, PartTolerance)
 {
     Model model = with_complements(1);
-    model.set_complement_tolerances(Indices{0}, Reals{0.5}, {});
-    expect_tolerance(model.complement_tolerance(0), 0.5, kNan);
-    model.set_complement_tolerances(Indices{0}, {}, Reals{0.25});
-    expect_tolerance(model.complement_tolerance(0), 0.5, 0.25);
-    model.set_complement_tolerances(Indices{0}, {}, {});
-    expect_tolerance(model.complement_tolerance(0), 0.5, 0.25);
+    model.set_tolerances(Family::Complement, Indices{0}, Reals{0.5}, {});
+    expect_tolerance(model.tolerance_of(Family::Complement, 0), 0.5, kNan);
+    model.set_tolerances(Family::Complement, Indices{0}, {}, Reals{0.25});
+    expect_tolerance(model.tolerance_of(Family::Complement, 0), 0.5, 0.25);
+    model.set_tolerances(Family::Complement, Indices{0}, {}, {});
+    expect_tolerance(model.tolerance_of(Family::Complement, 0), 0.5, 0.25);
 }
 
 TEST(ComplementTest, ToleranceRefusal)
@@ -328,59 +329,59 @@ TEST(ComplementTest, ToleranceRefusal)
               refused + "relative tolerance -0.5 is negative");
     EXPECT_EQ(tolerance_refusal(model, {2}, {1.0}, {}), "invalid argument: complement 2: unknown");
     EXPECT_EQ(tolerance_refusal(model, {-1}, {}, {}), "invalid argument: complement -1: unknown");
-    expect_tolerance(model.complement_tolerance(1), kNan, kNan);
-    model.set_complement_tolerances(Indices{1}, Reals{-0.0}, {});
-    expect_tolerance(model.complement_tolerance(1), -0.0, kNan);
+    expect_tolerance(model.tolerance_of(Family::Complement, 1), kNan, kNan);
+    model.set_tolerances(Family::Complement, Indices{1}, Reals{-0.0}, {});
+    expect_tolerance(model.tolerance_of(Family::Complement, 1), -0.0, kNan);
 }
 
 TEST(ComplementTest, ToleranceAtomic)
 {
     Model model = with_complements(2);
-    model.set_complement_tolerances(Indices{0}, Reals{1.0}, Reals{2.0});
+    model.set_tolerances(Family::Complement, Indices{0}, Reals{1.0}, Reals{2.0});
     EXPECT_NE(tolerance_refusal(model, {1, 0}, {3.0, 4.0}, {5.0, kNan}), "");
-    expect_tolerance(model.complement_tolerance(0), 1.0, 2.0);
-    expect_tolerance(model.complement_tolerance(1), kNan, kNan);
+    expect_tolerance(model.tolerance_of(Family::Complement, 0), 1.0, 2.0);
+    expect_tolerance(model.tolerance_of(Family::Complement, 1), kNan, kNan);
     const Indices indices{1, 0};
     const Reals short_list{3.0};
-    failure([&] { model.set_complement_tolerances(indices, short_list, {}); },
+    failure([&] { model.set_tolerances(Family::Complement, indices, short_list, {}); },
             biyos::ErrorKind::Internal);
-    expect_tolerance(model.complement_tolerance(1), kNan, kNan);
+    expect_tolerance(model.tolerance_of(Family::Complement, 1), kNan, kNan);
 }
 
 TEST(ComplementTest, ToleranceLast)
 {
     Model model = with_complements(1);
-    model.set_complement_tolerances(Indices{0, 0}, Reals{1.0, 2.0}, {});
-    expect_tolerance(model.complement_tolerance(0), 2.0, kNan);
+    model.set_tolerances(Family::Complement, Indices{0, 0}, Reals{1.0, 2.0}, {});
+    expect_tolerance(model.tolerance_of(Family::Complement, 0), 2.0, kNan);
 }
 
 TEST(ComplementTest, DeletedTolerance)
 {
     Model model = with_complements(2);
-    model.set_complement_tolerances(Indices{0, 1}, Reals{1.0, 2.0}, Reals{3.0, 4.0});
+    model.set_tolerances(Family::Complement, Indices{0, 1}, Reals{1.0, 2.0}, Reals{3.0, 4.0});
     const Indices beyond{1, 2};
-    EXPECT_EQ(refusal([&] { model.delete_complement_tolerances(beyond); }),
+    EXPECT_EQ(refusal([&] { model.delete_tolerances(Family::Complement, beyond); }),
               "invalid argument: complement 2: unknown");
-    expect_tolerance(model.complement_tolerance(1), 2.0, 4.0);
-    model.delete_complement_tolerances(Indices{1, 1});
-    expect_tolerance(model.complement_tolerance(0), 1.0, 3.0);
-    expect_tolerance(model.complement_tolerance(1), kNan, kNan);
-    model.delete_complement_tolerances(Indices{0, 1});
-    expect_tolerance(model.complement_tolerance(0), kNan, kNan);
+    expect_tolerance(model.tolerance_of(Family::Complement, 1), 2.0, 4.0);
+    model.delete_tolerances(Family::Complement, Indices{1, 1});
+    expect_tolerance(model.tolerance_of(Family::Complement, 0), 1.0, 3.0);
+    expect_tolerance(model.tolerance_of(Family::Complement, 1), kNan, kNan);
+    model.delete_tolerances(Family::Complement, Indices{0, 1});
+    expect_tolerance(model.tolerance_of(Family::Complement, 0), kNan, kNan);
 }
 
 TEST(ComplementTest, ToleranceCopy)
 {
     Model model = with_complements(2);
-    model.set_complement_tolerances(Indices{1}, Reals{0.5}, {});
+    model.set_tolerances(Family::Complement, Indices{1}, Reals{0.5}, {});
     const Model copy = model;
     EXPECT_EQ(biyos::difference(model, copy), "");
-    expect_tolerance(copy.complement_tolerance(1), 0.5, kNan);
+    expect_tolerance(copy.tolerance_of(Family::Complement, 1), 0.5, kNan);
     Model changed = model;
-    changed.set_complement_tolerances(Indices{1}, {}, Reals{0.25});
+    changed.set_tolerances(Family::Complement, Indices{1}, {}, Reals{0.25});
     EXPECT_EQ(biyos::difference(model, changed),
               "complement 1: relative tolerance nan against 0.25");
-    changed.delete_complement_tolerances(Indices{1});
+    changed.delete_tolerances(Family::Complement, Indices{1});
     EXPECT_EQ(biyos::difference(model, changed),
               "complement 1: absolute tolerance 0.5 against nan");
     EXPECT_EQ(biyos::difference(model, copy), "");

@@ -22,18 +22,10 @@ using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::set_tolerances;
-using biyos::capi::ToleranceCalls;
 using biyos::capi::writable;
 
 namespace
 {
-
-constexpr ToleranceCalls kTolerances{
-    .family = Family::Constraint,
-    .read = &biyos::Model::constraint_tolerance,
-    .set = &biyos::Model::set_constraint_tolerances,
-    .remove = &biyos::Model::delete_constraint_tolerances,
-};
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 
@@ -200,7 +192,7 @@ BIYOS_status BIYOS_setcontolsp(BIYOS_model *mdl,
                                const BIYOS_real *atol,
                                const BIYOS_real *rtol)
 {
-    return guarded<set_tolerances<List>>(mdl, kTolerances, List{n, idx}, atol, rtol);
+    return guarded<set_tolerances<List>>(mdl, Family::Constraint, List{n, idx}, atol, rtol);
 }
 
 BIYOS_status BIYOS_setcontolrg(BIYOS_model *mdl,
@@ -209,7 +201,7 @@ BIYOS_status BIYOS_setcontolrg(BIYOS_model *mdl,
                                const BIYOS_real *atol,
                                const BIYOS_real *rtol)
 {
-    return guarded<set_tolerances<Range>>(mdl, kTolerances, Range{pos, n}, atol, rtol);
+    return guarded<set_tolerances<Range>>(mdl, Family::Constraint, Range{pos, n}, atol, rtol);
 }
 
 BIYOS_status BIYOS_getcontolsp(const BIYOS_model *mdl,
@@ -218,7 +210,7 @@ BIYOS_status BIYOS_getcontolsp(const BIYOS_model *mdl,
                                BIYOS_real *atol,
                                BIYOS_real *rtol)
 {
-    return guarded<get_tolerances<List>>(mdl, kTolerances, List{n, idx}, atol, rtol);
+    return guarded<get_tolerances<List>>(mdl, Family::Constraint, List{n, idx}, atol, rtol);
 }
 
 BIYOS_status BIYOS_getcontolrg(const BIYOS_model *mdl,
@@ -227,17 +219,17 @@ BIYOS_status BIYOS_getcontolrg(const BIYOS_model *mdl,
                                BIYOS_real *atol,
                                BIYOS_real *rtol)
 {
-    return guarded<get_tolerances<Range>>(mdl, kTolerances, Range{pos, n}, atol, rtol);
+    return guarded<get_tolerances<Range>>(mdl, Family::Constraint, Range{pos, n}, atol, rtol);
 }
 
 BIYOS_status BIYOS_delcontolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<delete_tolerances<List>>(mdl, kTolerances, List{n, idx});
+    return guarded<delete_tolerances<List>>(mdl, Family::Constraint, List{n, idx});
 }
 
 BIYOS_status BIYOS_delcontolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
 {
-    return guarded<delete_tolerances<Range>>(mdl, kTolerances, Range{pos, n});
+    return guarded<delete_tolerances<Range>>(mdl, Family::Constraint, Range{pos, n});
 }
 
 BIYOS_status BIYOS_getncon(const BIYOS_model *mdl, BIYOS_index *n)

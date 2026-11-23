@@ -267,31 +267,13 @@ void Model::add_cones(std::span<const ConeKind> kinds,
     extend(parameter_ends_, cone_parameters_, parameter_starts, parameters);
 }
 
-Override Model::cone_tolerance(Index index) const
-{
-    check_index(kNoun, index, n_cones());
-    return cone_tolerances_.at(index);
-}
-
-void Model::set_cone_tolerances(std::span<const Index> indices,
-                                std::span<const double> absolute,
-                                std::span<const double> relative)
-{
-    cone_tolerances_.set(kNoun, n_cones(), indices, absolute, relative);
-}
-
-void Model::delete_cone_tolerances(std::span<const Index> indices)
-{
-    cone_tolerances_.remove(kNoun, n_cones(), indices);
-}
-
 std::vector<Index> Model::delete_cones(std::span<const Index> indices)
 {
     std::vector<Index> map = renumbering(kNoun, n_cones(), indices);
     keep(cone_kinds_, map);
     keep_parts(cone_ends_, cone_functions_, map);
     keep_parts(parameter_ends_, cone_parameters_, map);
-    cone_tolerances_.renumber(map);
+    renumber_tolerances(Family::Cone, map);
     renumber_names(Family::Cone, map);
     return map;
 }
