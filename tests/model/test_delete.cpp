@@ -1,5 +1,6 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "model/callbacks.hpp"
 #include "model/compare.hpp"
 #include "model/compressed.hpp"
 #include "model/model.hpp"
@@ -20,15 +21,21 @@
 namespace
 {
 
+using biyos::Complement;
 using biyos::ConeKind;
+using biyos::Constraint;
+using biyos::ErrorKind;
 using biyos::Family;
 using biyos::Index;
+using biyos::Indicator;
 using biyos::kDeleted;
 using biyos::Model;
+using biyos::Objective;
 using biyos::Offset;
 using biyos::Sense;
 using biyos::SosKind;
 using biyos::test::built;
+using biyos::test::failure;
 using biyos::test::Naming;
 using biyos::test::Parts;
 using biyos::test::refusal;
@@ -301,6 +308,167 @@ void expect_empty(const Case &family)
     expect_lookups(model, before, family);
 }
 
+constexpr std::array<Index, 3> kSpread{0, 2, 4};
+
+template <typename Record> void spread(std::vector<Record> &records, Index Record::*field)
+{
+    for (Record &record : records)
+    {
+        record.*field = kSpread[static_cast<std::size_t>(record.*field)];
+    }
+}
+
+void spread_records(Parts &parts)
+{
+    spread(parts.constraints, &Constraint::function);
+    spread(parts.objectives, &Objective::function);
+    spread(parts.indicators, &Indicator::function);
+    spread(parts.complements, &Complement::function);
+    spread(parts.complements, &Complement::multiplier);
+    for (Index &function : parts.cones.functions)
+    {
+        function = kSpread[static_cast<std::size_t>(function)];
+    }
+}
+
+Parts five()
+{
+    Parts parts = three();
+    parts.constants = {1.5, 4.0, 0.0, -2.0, 0.1};
+    parts.starts = {0, 2, 3, 4, 5, 5};
+    parts.terms = {
+        {.variable = 0, .coefficient = 2.0},
+        {.variable = 2, .coefficient = -1.0},
+        {.variable = 2, .coefficient = 5.0},
+        {.variable = 1, .coefficient = 0.1},
+        {.variable = 0, .coefficient = -3.0},
+    };
+    parts.quadratic.functions = {4, 0, 3};
+    parts.quadratic.starts = {0, 1, 3, 4};
+    parts.quadratic.terms.push_back({.row = 1, .column = 0, .coefficient = 4.0});
+    parts.expressions.functions = {0, 4, 2, 1};
+    parts.expressions.roots.push_back(2);
+    parts.function_names = {.indices = {2, 1, 3}, .names = {"f", "u", "v"}};
+    spread_records(parts);
+    return parts;
+}
+
+void expect_unused(const Indices &indices)
+{
+    SCOPED_TRACE(testing::PrintToString(indices));
+    Model model = built(five());
+    const Offset nodes = model.graph().size();
+    EXPECT_EQ(model.delete_functions(indices), (Map{0, kDeleted, 1, kDeleted, 2}));
+    const Model wanted = built(three());
+    EXPECT_EQ(biyos::difference(model, wanted), "");
+    EXPECT_EQ(model.graph().size(), nodes);
+    for (const std::string_view name : five().function_names.names)
+    {
+        SCOPED_TRACE(name);
+        EXPECT_EQ(lookup(model, Family::Function, name), lookup(wanted, Family::Function, name));
+    }
+}
+
+Model covered()
+{
+    Model model;
+    model.add_functions(std::array{0.0, 1.0, 2.0}, std::array<Offset, 4>{}, {});
+    model.add_callback(std::array<Index, 1>{2}, nullptr);
+    model.add_callback(std::array<Index, 1>{1}, nullptr);
+    model.add_functions(std::array{3.0}, std::array<Offset, 2>{}, {});
+    return model;
+}
+
+struct Use
+{
+    void (*add)(Model &, Index);
+    std::string_view user;
+};
+
+void add_constraint(Model &model, Index function)
+{
+    model.add_constraints(std::array{Constraint{.function = function, .lower = 0.0, .upper = 1.0}});
+}
+
+void add_objective(Model &model, Index function)
+{
+    model.add_objectives(std::array{biyos::default_objective(function, 0)});
+}
+
+void add_indicator(Model &model, Index function)
+{
+    const Indicator indicator{
+        .variable = 0,
+        .value = 1,
+        .function = function,
+        .lower = 0.0,
+        .upper = 1.0,
+    };
+    model.add_indicators(std::array{indicator});
+}
+
+void add_cone(Model &model, Index function)
+{
+    const std::array<Offset, 2> starts{0, 2};
+    const std::array<Index, 2> functions{3, function};
+    const std::array<Offset, 2> parameter_starts{0, 0};
+    model.add_cones(std::array{ConeKind::Nonnegative}, starts, functions, parameter_starts, {});
+}
+
+void add_complement(Model &model, Index function)
+{
+    const Complement complement{.function = function, .lower = 0.0, .upper = 1.0, .multiplier = 3};
+    model.add_complements(std::array{complement});
+}
+
+void add_multiplier(Model &model, Index function)
+{
+    const Complement complement{.function = 3, .lower = 0.0, .upper = 1.0, .multiplier = function};
+    model.add_complements(std::array{complement});
+}
+
+void add_callback(Model &model, Index function)
+{
+    model.add_callback(std::array{function}, nullptr);
+}
+
+const std::array kUses{
+    Use{.add = add_constraint, .user = "constraint"},
+    Use{.add = add_objective, .user = "objective"},
+    Use{.add = add_indicator, .user = "indicator"},
+    Use{.add = add_cone, .user = "cone"},
+    Use{.add = add_complement, .user = "complement"},
+    Use{.add = add_multiplier, .user = "complement"},
+    Use{.add = add_callback, .user = "callback"},
+};
+
+Model used(const Use &use)
+{
+    Model model;
+    model.add_variables(std::array{biyos::widest(biyos::VariableKind::Binary)});
+    model.add_functions(std::array{0.0, 1.0, 2.0, 3.0}, std::array<Offset, 5>{}, {});
+    use.add(model, 0);
+    use.add(model, 2);
+    return model;
+}
+
+std::string in_use(Model &model, const Indices &indices)
+{
+    const Model before = model;
+    const std::string message = failure([&] { model.delete_functions(indices); }, ErrorKind::InUse);
+    EXPECT_EQ(biyos::difference(model, before), "");
+    return message;
+}
+
+void expect_used(const Use &use)
+{
+    SCOPED_TRACE(use.user);
+    Model model = used(use);
+    const std::string wanted = "in use: function 2: used by " + std::string(use.user) + " 1";
+    EXPECT_EQ(in_use(model, {2}), wanted);
+    EXPECT_EQ(in_use(model, {1, 2}), wanted);
+}
+
 void set_tolerances(Model &model, const Indices &indices)
 {
     const std::vector<double> absolute{1e-6, 1e-7};
@@ -376,4 +544,40 @@ TEST(DeleteTest, Tolerances)
     wanted = built(parts);
     set_tolerances(wanted, {0});
     EXPECT_EQ(biyos::difference(model, wanted), "");
+}
+
+TEST(DeleteTest, Functions)
+{
+    expect_unused({3, 1});
+    expect_unused({1, 3});
+}
+
+TEST(DeleteTest, Callbacks)
+{
+    Model model = covered();
+    EXPECT_EQ(model.delete_functions(Indices{0}), (Map{kDeleted, 0, 1, 2}));
+    EXPECT_EQ(model.callback(0).covered, (Indices{1}));
+    EXPECT_EQ(model.callback(1).covered, (Indices{0}));
+    EXPECT_EQ(model.callback_of(0), 1);
+    EXPECT_EQ(model.callback_of(1), 0);
+    EXPECT_EQ(model.callback_of(2), biyos::kNoCallback);
+}
+
+TEST(DeleteTest, Uses)
+{
+    for (const Use &use : kUses)
+    {
+        expect_used(use);
+    }
+}
+
+TEST(DeleteTest, Checks)
+{
+    Model model = used(kUses.front());
+    const Model before = model;
+    EXPECT_EQ(refusal([&] { model.delete_functions(Indices{2, 4}); }),
+              "invalid argument: function 4: unknown");
+    EXPECT_EQ(refusal([&] { model.delete_functions(Indices{2, 2}); }),
+              "invalid argument: argument 'idx': function 2 is repeated");
+    EXPECT_EQ(biyos::difference(model, before), "");
 }

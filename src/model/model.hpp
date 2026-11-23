@@ -197,6 +197,7 @@ class Model
     void add_linear_terms(std::span<const Index> functions,
                           std::span<const Offset> starts,
                           std::vector<LinearTerm> terms);
+    std::vector<Index> delete_functions(std::span<const Index> indices);
 
     std::span<const QuadraticTerm> quadratic_terms(Index start, Index size) const;
 
@@ -295,6 +296,8 @@ class Model
   private:
     void renumber_names(Family family, std::span<const Index> map) noexcept;
     void check_kinds(std::span<const Index> indices, std::span<const Variable> changed) const;
+    void check_unused(std::span<const Index> map) const;
+    void renumber_functions(std::span<const Index> map) noexcept;
     Offset begin_of(std::size_t function) const noexcept;
     void append(std::span<const double> constants,
                 std::span<const Offset> starts,
