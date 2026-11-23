@@ -1,5 +1,6 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "model/compare.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 
@@ -120,6 +121,21 @@ TEST(ComplementTest, Reversed)
     const Complement reversed = pair(0, 0, 5.0, 1.0);
     add(model, reversed);
     expect_complement(model.complement(0), reversed);
+}
+
+TEST(ComplementTest, Copy)
+{
+    Model model = with_functions(2);
+    model.add_complements(
+        std::vector<Complement>{pair(0, 1, 0.0, kInfinity), pair(1, 1, -1.0, 1.0)});
+    const Model copy = model;
+    EXPECT_EQ(biyos::difference(model, copy), "");
+    Model changed = model;
+    const Index index = 1;
+    const Complement other = pair(1, 0, -1.0, 1.0);
+    changed.set_complements(std::span(&index, 1), std::span(&other, 1));
+    EXPECT_EQ(biyos::difference(model, changed), "complement 1: partner 1 against 0");
+    EXPECT_EQ(biyos::difference(model, copy), "");
 }
 
 TEST(ComplementTest, UnknownFunction)
