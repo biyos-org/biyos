@@ -1,6 +1,7 @@
 #include "biyos/biyos.h"
 #include "doubles.hpp"
 #include "handles.hpp"
+#include "tolerance.hpp"
 
 #include <gtest/gtest.h>
 
@@ -375,4 +376,9 @@ TEST(CApiTest, ConstraintRefusals)
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
     expect_doubles({lower[0], lower[1]}, {9.0, 9.0});
     expect_doubles({upper[0], upper[1]}, {9.0, 9.0});
+}
+
+TEST(CApiTest, ConstraintTolerances)
+{
+    biyos::test::check_tolerances(biyos::test::kConstraintTolerances, add_sample);
 }

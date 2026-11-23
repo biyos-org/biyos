@@ -4,6 +4,7 @@
 #include "capi/busy.hpp"
 #include "capi/entry.hpp"
 #include "capi/selection.hpp"
+#include "capi/tolerances.hpp"
 #include "core/env.hpp"
 #include "core/index.hpp"
 #include "model/model.hpp"
@@ -13,7 +14,9 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::capi::delete_tolerances;
 using biyos::capi::EnvGuard;
+using biyos::capi::get_tolerances;
 using biyos::capi::guarded;
 using biyos::capi::idle;
 using biyos::capi::length;
@@ -22,10 +25,19 @@ using biyos::capi::picked;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
+using biyos::capi::set_tolerances;
+using biyos::capi::ToleranceCalls;
 using biyos::capi::writable;
 
 namespace
 {
+
+constexpr ToleranceCalls kTolerances{
+    .family = Family::Variable,
+    .read = &biyos::Model::variable_tolerance,
+    .set = &biyos::Model::set_variable_tolerances,
+    .remove = &biyos::Model::delete_variable_tolerances,
+};
 
 void create(biyos::Env &env, BIYOS_model **model)
 {
@@ -293,6 +305,52 @@ BIYOS_status BIYOS_getvarkndrg(const BIYOS_model *mdl,
                                BIYOS_int *knd)
 {
     return guarded<get_kinds<Range>>(mdl, Range{pos, n}, knd);
+}
+
+BIYOS_status BIYOS_setvartolsp(BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               const BIYOS_real *atol,
+                               const BIYOS_real *rtol)
+{
+    return guarded<set_tolerances<List>>(mdl, kTolerances, List{n, idx}, atol, rtol);
+}
+
+BIYOS_status BIYOS_setvartolrg(BIYOS_model *mdl,
+                               BIYOS_index pos,
+                               BIYOS_index n,
+                               const BIYOS_real *atol,
+                               const BIYOS_real *rtol)
+{
+    return guarded<set_tolerances<Range>>(mdl, kTolerances, Range{pos, n}, atol, rtol);
+}
+
+BIYOS_status BIYOS_getvartolsp(const BIYOS_model *mdl,
+                               BIYOS_index n,
+                               const BIYOS_index *idx,
+                               BIYOS_real *atol,
+                               BIYOS_real *rtol)
+{
+    return guarded<get_tolerances<List>>(mdl, kTolerances, List{n, idx}, atol, rtol);
+}
+
+BIYOS_status BIYOS_getvartolrg(const BIYOS_model *mdl,
+                               BIYOS_index pos,
+                               BIYOS_index n,
+                               BIYOS_real *atol,
+                               BIYOS_real *rtol)
+{
+    return guarded<get_tolerances<Range>>(mdl, kTolerances, Range{pos, n}, atol, rtol);
+}
+
+BIYOS_status BIYOS_delvartolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+{
+    return guarded<delete_tolerances<List>>(mdl, kTolerances, List{n, idx});
+}
+
+BIYOS_status BIYOS_delvartolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+{
+    return guarded<delete_tolerances<Range>>(mdl, kTolerances, Range{pos, n});
 }
 
 BIYOS_status BIYOS_getnvar(const BIYOS_model *mdl, BIYOS_index *n)

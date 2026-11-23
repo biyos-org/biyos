@@ -1,5 +1,6 @@
 #include "biyos/biyos.h"
 #include "handles.hpp"
+#include "tolerance.hpp"
 
 #include <gtest/gtest.h>
 
@@ -365,4 +366,9 @@ TEST(CApiTest, LockedCones)
     EXPECT_EQ(attempt.messages, std::vector<std::string>(6, locked));
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     EXPECT_EQ(n_cones(model), 3);
+}
+
+TEST(CApiTest, ConeTolerances)
+{
+    biyos::test::check_tolerances(biyos::test::kConeTolerances, add_sample);
 }

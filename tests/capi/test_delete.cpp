@@ -2,6 +2,7 @@
 #include "capi/entry.hpp"
 #include "handles.hpp"
 #include "model/compare.hpp"
+#include "tolerance.hpp"
 
 #include <gtest/gtest.h>
 
@@ -14,6 +15,7 @@ namespace
 
 using biyos::test::Env;
 using biyos::test::Model;
+using biyos::test::ToleranceCalls;
 using Map = std::vector<BIYOS_index>;
 using Indices = std::vector<BIYOS_index>;
 using Counter = BIYOS_status (*)(const BIYOS_model *, BIYOS_index *);
@@ -289,6 +291,26 @@ std::string in_use(const Env &env, const Model &model, Indices indices)
     return env.message();
 }
 
+void expect_moved(const ToleranceCalls &tolerances, Listed listed)
+{
+    SCOPED_TRACE(tolerances.noun);
+    const Env env;
+    const Model model(env);
+    build(model);
+    const std::array<double, 3> absolute{0.5, 0.25, 0.125};
+    const BIYOS_index last = 2;
+    const double relative = 0.75;
+    ASSERT_EQ(tolerances.set_ranged(model.get(), 0, 3, absolute.data(), nullptr), BIYOS_OK);
+    ASSERT_EQ(tolerances.set_listed(model.get(), 1, &last, nullptr, &relative), BIYOS_OK);
+    const BIYOS_index first = 0;
+    ASSERT_EQ(listed(model.get(), 1, &first, nullptr), BIYOS_OK);
+    const biyos::test::Tolerances wanted{
+        .absolute = {0.25, 0.125},
+        .relative = {biyos::test::kUnknown, 0.75},
+    };
+    biyos::test::expect_tolerances(biyos::test::read_tolerances(model, tolerances), wanted);
+}
+
 }
 
 TEST(CApiTest, DeleteListed)
@@ -362,4 +384,10 @@ TEST(CApiTest, UsedFunction)
     expect_unchanged(tried, model);
     EXPECT_EQ(BIYOS_delfunrg(tried.get(), 3, 2, map.data()), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refused(kFunctions, "4: unknown"));
+}
+
+TEST(CApiTest, MovedTolerances)
+{
+    expect_moved(biyos::test::kConstraintTolerances, BIYOS_delconsp);
+    expect_moved(biyos::test::kConeTolerances, BIYOS_delconesp);
 }

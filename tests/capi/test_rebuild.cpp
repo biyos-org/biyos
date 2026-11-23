@@ -3,11 +3,13 @@
 #include "handles.hpp"
 #include "model/compare.hpp"
 #include "sample.hpp"
+#include "tolerance.hpp"
 
 #include <gtest/gtest.h>
 
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -22,6 +24,7 @@ using biyos::test::build_sample;
 using biyos::test::Engine;
 using biyos::test::Env;
 using biyos::test::Model;
+using biyos::test::ToleranceCalls;
 
 using Counter = BIYOS_status (*)(const BIYOS_model *, BIYOS_index *);
 using Getter = decltype(&BIYOS_getvarnamerg);
@@ -541,6 +544,57 @@ void copy_tolerances(const Model &from, const Model &to)
     ASSERT_EQ(BIYOS_setobjtolrg(to.get(), 0, n, absolute.data(), relative.data()), BIYOS_OK);
 }
 
+struct Known
+{
+    std::vector<BIYOS_index> indices;
+    std::vector<BIYOS_real> values;
+};
+
+Known known_of(const std::vector<BIYOS_real> &values)
+{
+    Known known;
+    for (std::size_t k = 0; k < values.size(); ++k)
+    {
+        if (!std::isnan(values[k]))
+        {
+            known.indices.push_back(static_cast<BIYOS_index>(k));
+            known.values.push_back(values[k]);
+        }
+    }
+    return known;
+}
+
+void set_known(const Model &to,
+               const ToleranceCalls &calls,
+               const Known &absolute,
+               const Known &relative)
+{
+    BIYOS_model *model = to.get();
+    const auto n_absolute = static_cast<BIYOS_index>(absolute.indices.size());
+    const auto n_relative = static_cast<BIYOS_index>(relative.indices.size());
+    const BIYOS_status first = calls.set_listed(model,
+                                                n_absolute,
+                                                absolute.indices.data(),
+                                                absolute.values.data(),
+                                                nullptr);
+    ASSERT_EQ(first, BIYOS_OK);
+    const BIYOS_status second = calls.set_listed(model,
+                                                 n_relative,
+                                                 relative.indices.data(),
+                                                 nullptr,
+                                                 relative.values.data());
+    ASSERT_EQ(second, BIYOS_OK);
+}
+
+void copy_family(const Model &from, const Model &to, const ToleranceCalls &calls)
+{
+    const BIYOS_index n = count_of(from, calls.count);
+    std::vector<BIYOS_real> absolute(at(n));
+    std::vector<BIYOS_real> relative(at(n));
+    ASSERT_EQ(calls.get_ranged(from.get(), 0, n, absolute.data(), relative.data()), BIYOS_OK);
+    set_known(to, calls, known_of(absolute), known_of(relative));
+}
+
 void copy_names(const Model &from, const Model &to, const NameCalls &calls)
 {
     const BIYOS_index n = count_of(from, calls.count);
@@ -582,6 +636,9 @@ void copy_model(const Model &from, const Model &to)
     copy_tolerances(from, to);
     copy_sos(from, to);
     copy_cones(from, to);
+    copy_family(from, to, biyos::test::kVariableTolerances);
+    copy_family(from, to, biyos::test::kConstraintTolerances);
+    copy_family(from, to, biyos::test::kConeTolerances);
     copy_title(from, to);
     for (const NameCalls &calls : kNameCalls)
     {
