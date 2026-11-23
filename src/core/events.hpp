@@ -5,12 +5,9 @@
 #include "core/depth.hpp"
 #include "core/event.hpp"
 #include "core/hooks.hpp"
-#include "core/thread.hpp"
 
-#include <atomic>
 #include <chrono>
 #include <concepts>
-#include <mutex>
 
 namespace biyos
 {
@@ -40,7 +37,6 @@ class Events
             return;
         }
         const Deliveries::Entry entry(deliveries_);
-        const Turn turn(*this);
         Event event{
             .kind = kind,
             .level = level,
@@ -64,27 +60,10 @@ class Events
     }
 
   private:
-    class Turn
-    {
-      public:
-        explicit Turn(Events &events) noexcept;
-        ~Turn();
-        Turn(const Turn &) = delete;
-        Turn &operator=(const Turn &) = delete;
-
-      private:
-        Events &events_;
-        bool nested_;
-    };
-
-    bool mine() const noexcept { return owner_.load() == this_thread(); }
-
     const Clock &clock_;
     std::chrono::nanoseconds origin_;
     Hooks hooks_;
     Deliveries deliveries_;
-    std::mutex turn_;
-    std::atomic<ThreadId> owner_;
 };
 
 }

@@ -2,12 +2,14 @@
 
 #include "biyos/biyos.h"
 #include "core/event.hpp"
+#include "core/thread.hpp"
 
 #include <array>
 #include <atomic>
 #include <cstddef>
 #include <deque>
 #include <memory>
+#include <mutex>
 
 namespace biyos
 {
@@ -16,6 +18,8 @@ class Hooks
 {
   public:
     Hooks();
+    Hooks(const Hooks &) = delete;
+    Hooks &operator=(const Hooks &) = delete;
 
     int add_hook(EventKind kind, EventLevel level, Hook hook);
     void delete_hook(int id);
@@ -24,11 +28,24 @@ class Hooks
     {
         return lowest_[slot(kind)].load() <= level;
     }
-    bool delivering() const noexcept { return depth_ > 0; }
+    bool delivering() const noexcept { return mine() && depth_ > 0; }
 
     void deliver(const Event &event) noexcept;
 
   private:
+    class Turn
+    {
+      public:
+        explicit Turn(Hooks &hooks) noexcept;
+        ~Turn();
+        Turn(const Turn &) = delete;
+        Turn &operator=(const Turn &) = delete;
+
+      private:
+        Hooks &hooks_;
+        bool nested_;
+    };
+
     struct Entry
     {
         int id;
@@ -42,6 +59,8 @@ class Hooks
 
     static std::size_t slot(EventKind kind) noexcept { return static_cast<std::size_t>(kind) - 1; }
 
+    bool mine() const noexcept { return owner_.load() == this_thread(); }
+
     static bool accepts(const Entry &entry, EventKind kind, EventLevel level) noexcept;
 
     void refresh(EventKind kind) noexcept;
@@ -51,6 +70,8 @@ class Hooks
     std::array<std::atomic<EventLevel>, kEventKinds.size()> lowest_;
     int next_id_ = 1;
     int depth_ = 0;
+    std::mutex turn_;
+    std::atomic<ThreadId> owner_;
 };
 
 }

@@ -4,10 +4,13 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
 #include <functional>
+#include <latch>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -17,6 +20,9 @@ namespace
 using biyos::EventKind;
 using biyos::EventLevel;
 using Texts = std::vector<std::string>;
+
+constexpr int kThreads = 4;
+constexpr int kRounds = 200;
 
 std::string failure(const std::function<void()> &body)
 {
@@ -45,6 +51,68 @@ struct Holder
     void operator()(const biyos::Event &) const {}
 };
 
+class Watch
+{
+  public:
+    void operator()(const biyos::Event &)
+    {
+        if (inside_.exchange(true))
+        {
+            ++overlaps_;
+        }
+        std::this_thread::yield();
+        ++seen_;
+        inside_.store(false);
+    }
+
+    int overlaps() const { return overlaps_.load(); }
+    int seen() const { return seen_; }
+
+  private:
+    std::atomic<bool> inside_{false};
+    std::atomic<int> overlaps_{0};
+    int seen_ = 0;
+};
+
+biyos::Event message(EventLevel level, const std::string &text)
+{
+    return biyos::Event{
+        .kind = EventKind::Message,
+        .level = level,
+        .time = {},
+        .module = {},
+        .text = text,
+        .fields = {},
+        .model = nullptr,
+    };
+}
+
+void chatter(biyos::Hooks &hooks, std::latch &start)
+{
+    const biyos::Event event = message(EventLevel::Info, "chatter");
+    start.arrive_and_wait();
+    for (int i = 0; i < kRounds; ++i)
+    {
+        hooks.deliver(event);
+    }
+}
+
+void churn(biyos::Hooks &hooks, std::latch &start)
+{
+    start.arrive_and_wait();
+    for (int i = 0; i < kRounds; ++i)
+    {
+        hooks.delete_hook(hooks.add_hook(EventKind::Message, EventLevel::Debug, ignore));
+    }
+}
+
+bool elsewhere(const biyos::Hooks &hooks)
+{
+    bool seen = true;
+    std::thread([&] { seen = hooks.delivering(); }).join();
+    return seen;
+}
+
 class HookTest : public ::testing::Test
 {
   protected:
@@ -55,15 +123,8 @@ class HookTest : public ::testing::Test
 
     void say(EventKind kind, EventLevel level, const std::string &text)
     {
-        const biyos::Event event{
-            .kind = kind,
-            .level = level,
-            .time = {},
-            .module = {},
-            .text = text,
-            .fields = {},
-            .model = nullptr,
-        };
+        biyos::Event event = message(level, text);
+        event.kind = kind;
         hooks.deliver(event);
     }
 
@@ -170,4 +231,32 @@ TEST_F(HookTest, Refusals)
               "invalid argument: hook: is empty");
     EXPECT_EQ(failure([&] { hooks.delete_hook(1); }), "invalid argument: hook 1: unknown");
     EXPECT_EQ(listen(EventLevel::Debug, ignore), 1);
+}
+
+TEST_F(HookTest, OtherThread)
+{
+    bool seen = true;
+    listen(EventLevel::Debug, [&](const biyos::Event &) { seen = elsewhere(hooks); });
+    say(EventLevel::Info, "one");
+    EXPECT_FALSE(seen);
+}
+
+TEST_F(HookTest, Turns)
+{
+    Watch watch;
+    std::latch start(kThreads + 1);
+    std::vector<std::thread> threads;
+    listen(EventLevel::Info, std::ref(watch));
+    threads.emplace_back(churn, std::ref(hooks), std::ref(start));
+    for (int i = 0; i < kThreads; ++i)
+    {
+        threads.emplace_back(chatter, std::ref(hooks), std::ref(start));
+    }
+    for (std::thread &thread : threads)
+    {
+        thread.join();
+    }
+    EXPECT_EQ(watch.overlaps(), 0);
+    EXPECT_EQ(watch.seen(), kThreads * kRounds);
+    EXPECT_FALSE(hooks.wanted(EventKind::Message, EventLevel::Debug));
 }

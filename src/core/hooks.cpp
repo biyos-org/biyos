@@ -2,6 +2,7 @@
 
 #include "core/depth.hpp"
 #include "core/error.hpp"
+#include "core/thread.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -30,6 +31,24 @@ void notify(const Hook &hook, const Event &event) noexcept
 
 }
 
+Hooks::Turn::Turn(Hooks &hooks) noexcept : hooks_(hooks), nested_(hooks.mine())
+{
+    if (!nested_)
+    {
+        hooks_.turn_.lock();
+        hooks_.owner_.store(this_thread());
+    }
+}
+
+Hooks::Turn::~Turn()
+{
+    if (!nested_)
+    {
+        hooks_.owner_.store(ThreadId{});
+        hooks_.turn_.unlock();
+    }
+}
+
 Hooks::Hooks()
 {
     for (std::atomic<EventLevel> &lowest : lowest_)
@@ -40,6 +59,7 @@ Hooks::Hooks()
 
 int Hooks::add_hook(EventKind kind, EventLevel level, Hook hook)
 {
+    const Turn turn(*this);
     if (!hook)
     {
         throw Error(ErrorKind::InvalidArgument, "hook", "is empty");
@@ -62,6 +82,7 @@ int Hooks::add_hook(EventKind kind, EventLevel level, Hook hook)
 
 void Hooks::delete_hook(int id)
 {
+    const Turn turn(*this);
     const auto found = std::ranges::find(entries_, id, &Entry::id);
     if (found == entries_.end() || !found->active)
     {
@@ -96,6 +117,7 @@ void Hooks::refresh(EventKind kind) noexcept
 
 void Hooks::deliver(const Event &event) noexcept
 {
+    const Turn turn(*this);
     const Depth delivery(depth_);
     const std::size_t n = entries_.size();
     for (std::size_t i = 0; i < n; ++i)
