@@ -2,6 +2,7 @@
 
 #include "expr/interval.hpp"
 #include "expr/shape.hpp"
+#include "expr/zero.hpp"
 
 #include <algorithm>
 #include <array>
@@ -25,11 +26,6 @@ enum class Sign : std::uint8_t
 };
 
 using Counts = std::array<std::size_t, 4>;
-
-bool is_zero(double value) noexcept
-{
-    return std::fpclassify(value) == FP_ZERO;
-}
 
 Sign sign_of(Interval factor) noexcept
 {

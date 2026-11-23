@@ -1,6 +1,7 @@
 #include "expr/interval.hpp"
 
 #include "expr/rounding.hpp"
+#include "expr/zero.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -15,11 +16,6 @@ namespace
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 
 using Bound = double (*)(double, double) noexcept;
-
-bool is_zero(double value) noexcept
-{
-    return std::fpclassify(value) == FP_ZERO;
-}
 
 double sum_down(double left, double right) noexcept
 {

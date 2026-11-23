@@ -1,5 +1,7 @@
 #include "expr/rounding.hpp"
 
+#include "expr/zero.hpp"
+
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -20,11 +22,6 @@ constexpr int kHundredths = 100;
 constexpr int kHundredthStepsPerUlp = 1608;
 
 static_assert(kLibmSteps * kHundredths >= kHundredthStepsPerUlp * kBoundUlps);
-
-bool is_zero(double value) noexcept
-{
-    return std::fpclassify(value) == FP_ZERO;
-}
 
 std::int64_t order_of(double value) noexcept
 {

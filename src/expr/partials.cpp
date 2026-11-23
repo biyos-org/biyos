@@ -3,6 +3,7 @@
 #include "expr/frame.hpp"
 #include "expr/node.hpp"
 #include "expr/tape.hpp"
+#include "expr/zero.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -65,11 +66,6 @@ void extreme(const Instruction &instruction,
 double unsigned_zero(double value) noexcept
 {
     return value + 0.0;
-}
-
-bool is_zero(double value) noexcept
-{
-    return std::fpclassify(value) == FP_ZERO;
 }
 
 double power_slope(double exponent, double base) noexcept
