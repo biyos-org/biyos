@@ -14,6 +14,7 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -30,6 +31,7 @@ using Times = std::vector<std::chrono::nanoseconds>;
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr std::chrono::nanoseconds kForever = (std::chrono::nanoseconds::max)();
 constexpr double kEdgeSeconds = 0x1.12e0be826d695p+33;
+constexpr std::chrono::nanoseconds kSpin = 50ms;
 
 class ClockTest : public ::testing::Test
 {
@@ -68,6 +70,14 @@ class CountingClock final : public biyos::Clock
 
 void blank(biyos::Event &) {}
 
+void spin(const biyos::Clock &clock)
+{
+    const std::chrono::nanoseconds start = clock.cpu_time();
+    while (clock.cpu_time() - start < kSpin)
+    {
+    }
+}
+
 }
 
 TEST_F(ClockTest, FakeTime)
@@ -89,6 +99,14 @@ TEST_F(ClockTest, SystemTime)
     EXPECT_GE(system.wall_time(), wall);
     EXPECT_GE(system.cpu_time(), cpu);
     EXPECT_GE(cpu, 0ns);
+}
+
+TEST_F(ClockTest, OtherThread)
+{
+    const biyos::SystemClock system;
+    const std::chrono::nanoseconds before = system.cpu_time();
+    std::thread([&system] { spin(system); }).join();
+    EXPECT_LT(system.cpu_time() - before, kSpin);
 }
 
 TEST_F(ClockTest, WallLimit)

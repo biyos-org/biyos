@@ -106,7 +106,7 @@ constexpr std::array kTable{
         .name = "maxcputime",
         .scope = Scope::Model,
         .rule = DoubleRule{.default_value = kInfinity, .lower = 0.0},
-        .doc = "CPU time limit in seconds, counting every thread of the process.",
+        .doc = "CPU time limit in seconds, counting the thread that makes the call.",
         .versions = {.since = {0, 1, 0}},
     },
 };
