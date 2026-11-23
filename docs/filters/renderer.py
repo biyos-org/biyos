@@ -91,6 +91,11 @@ def described(found, kind):
     return [item for s in found if isinstance(s, kind) for item in s.value]
 
 
+def above(kind, meaning):
+    below = f"[{meaning}]{{.under}}" if meaning else ""
+    return " ".join(part for part in (kind, below) if part)
+
+
 def stacked(row):
     name, kind, default, meaning = row
     return (f"{name} {kind}" if kind else name, default, meaning)
@@ -204,7 +209,8 @@ class Renderer(MdRenderer):
         ]
         if given and not rows and str(given) != "None":
             rows = [(quiet(self.render_annotation(given)), "")]
-        return [table(("Returns", "Meaning"), rows)] if rows else []
+        shown = table(("Returns",), [(above(*row),) for row in rows])
+        return [f"::: {{.returns}}\n{shown}\n:::"] if rows else []
 
     def raises(self, found):
         rows = [

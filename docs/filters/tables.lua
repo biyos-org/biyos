@@ -67,7 +67,7 @@ local function mark(span)
     local out = marked(span)
     if span.classes:includes("under") then
         out = out or pandoc.Inlines(span.content)
-        out:insert(1, pandoc.RawInline("latex", "\\newline"))
+        out:insert(1, pandoc.RawInline("latex", "\\newline{}"))
     end
     return out
 end
