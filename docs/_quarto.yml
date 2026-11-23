@@ -49,6 +49,7 @@ book:
     - references.qmd
 
 number-sections: true
+number-depth: 1
 tbl-colwidths: true
 
 bibliography: references.bib

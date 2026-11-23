@@ -6,7 +6,7 @@ The package `biyos` calls the C library through `ctypes` and needs no compiled e
 
 `Env()` creates an environment and `Model(env)` a model on it. Both are context managers, so a `with` block frees them when it ends, and both have a `close` method that does the same. Closing an environment closes every model made on it first. Using a closed environment or model raises `ValueError`, and closing one twice does nothing.
 
-A model keeps its environment alive, so an environment the program no longer references stays allocated while one of its models is open. An environment or a model closed from inside one of its own calls, by a hook for instance, reads as closed at once and is freed when that call returns. A model closed by a hook during any other call reads as closed at once too, and is freed when the outermost call returns, where `BIYOS_freemdl` would fail (@sec-events-inside).
+A model keeps its environment alive, so an environment the program no longer references stays allocated while one of its models is open. An environment or a model closed from inside one of its own calls, by a hook for instance, reads as closed at once and is freed when that call returns. A model closed by a hook during any other call reads as closed at once too, and is freed when the outermost call returns, where `BIYOS_freemdl` would fail ([Inside a hook](#sec-events-inside)).
 
 ## Blocks and views {#sec-python-blocks}
 
@@ -19,7 +19,7 @@ x[-1]         # the view of variable 3
 x[1:3]        # a block of variables 1 and 2
 ```
 
-Indexing a block gives a view, such as a `Variable`, which passes as its index wherever the model takes one: `int(x[2])` is 2. A whole block passes wherever the model takes a list of indices. A block or a `range` with step 1 goes to the `rg` form of the C call, two integers whatever its size, and any other sequence to the `sp` form; both give the same result, except that a range past the last item is refused even when it is empty. The model checks the family and the owner of each view and block, so passing a function where a variable is due, or a variable of another model, raises `ValueError` instead of naming the wrong item. `on` gives the block of the same indices in another model, such as a copy (@sec-copy-python).
+Indexing a block gives a view, such as a `Variable`, which passes as its index wherever the model takes one: `int(x[2])` is 2. A whole block passes wherever the model takes a list of indices. A block or a `range` with step 1 goes to the `rg` form of the C call, two integers whatever its size, and any other sequence to the `sp` form; both give the same result, except that a range past the last item is refused even when it is empty. The model checks the family and the owner of each view and block, so passing a function where a variable is due, or a variable of another model, raises `ValueError` instead of naming the wrong item. `on` gives the block of the same indices in another model, such as a copy ([Copying in Python](#sec-copy-python)).
 
 ## Arrays {#sec-python-arrays}
 
@@ -42,8 +42,8 @@ A getter of an attribute takes the list of indices its setter takes and returns 
 
 ## Constants {#sec-python-constants}
 
-The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind` and `Sense` for models, `EventKind` and `EventLevel` for events, so `BIYOS_LVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvar()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name (@sec-options-python).
+The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind` and `Sense` for models, `EventKind` and `EventLevel` for events, so `BIYOS_LVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvar()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name ([Options in Python](#sec-options-python)).
 
 ## Failures {#sec-python-errors}
 
-A failed C call raises `biyos.Error`, carrying the status as `code` and the message as its text. Mistakes the package catches before calling C raise Python's own exceptions, as @sec-errors-python lists, and an exception raised in a hook is raised in the program once the call returns (@sec-events-python).
+A failed C call raises `biyos.Error`, carrying the status as `code` and the message as its text. Mistakes the package catches before calling C raise Python's own exceptions, as [Errors in Python](#sec-errors-python) lists, and an exception raised in a hook is raised in the program once the call returns ([Events in Python](#sec-events-python)).

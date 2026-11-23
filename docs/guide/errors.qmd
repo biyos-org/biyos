@@ -46,7 +46,7 @@ A call that fails changes nothing: no variable is half added, no option half set
 ```{.c file="examples/c/errors.c" item="main"}
 ```
 
-A failed call also sends an error message on the event stream (@sec-events-sent), so a program can log every failure in one place.
+A failed call also sends an error message on the event stream ([The events biyos sends](#sec-events-sent)), so a program can log every failure in one place.
 
 ## Errors in Python {#sec-errors-python}
 
