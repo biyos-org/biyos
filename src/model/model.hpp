@@ -191,8 +191,8 @@ class Model
     std::string name_;
     std::vector<Variable> variables_;
     std::vector<double> constants_;
-    std::vector<Offset> ends_;
-    std::vector<LinearTerm> terms_;
+    std::vector<Offset> linear_ends_;
+    std::vector<LinearTerm> linear_terms_;
     std::vector<Offset> quadratic_ends_;
     std::vector<QuadraticTerm> quadratic_terms_;
     Graph graph_;

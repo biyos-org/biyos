@@ -153,7 +153,7 @@ void Model::attach_expressions(std::span<const Index> functions, std::span<const
     const std::vector<Offset> roots = roots_of(graph_, functions, parts, roots_);
     const std::vector<AddedTerms> linear = additions_of(functions, parts, &Parts::linear);
     const std::vector<AddedPairs> pairs = additions_of(functions, parts, &Parts::quadratic);
-    Merge<LinearTerm> linear_merge(ends_, terms_, linear);
+    Merge<LinearTerm> linear_merge(linear_ends_, linear_terms_, linear);
     Merge<QuadraticTerm> pair_merge(quadratic_ends_, quadratic_terms_, pairs);
     uses_.extend(graph_);
     linear_merge.apply();
@@ -169,7 +169,7 @@ void Model::attach_expressions(std::span<const Index> functions, std::span<const
 void Model::clear_functions(std::span<const Index> functions)
 {
     const std::vector<Index> cleared = distinct(functions, n_functions());
-    clear_parts(ends_, terms_, cleared);
+    clear_parts(linear_ends_, linear_terms_, cleared);
     clear_parts(quadratic_ends_, quadratic_terms_, cleared);
     for (const Index function : cleared)
     {
