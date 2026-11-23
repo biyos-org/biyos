@@ -105,6 +105,7 @@ add_library(biyos
     capi/complements.cpp
     capi/cones.cpp
     capi/constraints.cpp
+    capi/deletion.cpp
     capi/env.cpp
     capi/events.cpp
     capi/expressions.cpp

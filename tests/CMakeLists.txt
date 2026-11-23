@@ -116,6 +116,7 @@ biyos_add_test(test_capi
     capi/test_constants.cpp
     capi/test_constraints.cpp
     capi/test_copy.cpp
+    capi/test_delete.cpp
     capi/test_env.cpp
     capi/test_events.cpp
     capi/test_expressions.cpp
