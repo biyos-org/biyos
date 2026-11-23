@@ -5,7 +5,7 @@
 namespace biyos
 {
 
-using Index = int;
+using Index = std::int32_t;
 using Offset = std::int64_t;
 
 }
