@@ -24,13 +24,19 @@ ENV_LOCKED = (
     "invalid argument: environment: is read-only while delivering an event"
 )
 
-EVENTS = ("BIYOS_EVT_", "BIYOS_LVL_")
+EVENTS = ("BIYOS_EVTKND_", "BIYOS_EVTLVL_")
+
+KINDS = {
+    "BIYOS_EVTKND_MSG": EventKind.MESSAGE,
+    "BIYOS_EVTKND_INV": EventKind.CHECK,
+    "BIYOS_EVTKND_SPAN": EventKind.PHASE,
+}
 
 LEVELS = {
-    "BIYOS_LVL_DBG": EventLevel.DEBUG,
-    "BIYOS_LVL_INFO": EventLevel.INFO,
-    "BIYOS_LVL_WARN": EventLevel.WARNING,
-    "BIYOS_LVL_ERR": EventLevel.ERROR,
+    "BIYOS_EVTLVL_DBG": EventLevel.DEBUG,
+    "BIYOS_EVTLVL_INFO": EventLevel.INFO,
+    "BIYOS_EVTLVL_WARN": EventLevel.WARNING,
+    "BIYOS_EVTLVL_ERR": EventLevel.ERROR,
 }
 
 WRONG = [
@@ -124,13 +130,13 @@ def change_model(model, other, env, seen, event):
 
 
 def test_constants():
-    kinds = {f"BIYOS_EVT_{kind.name}": kind for kind in biyos.EventKind}
+    assert set(KINDS.values()) == set(EventKind)
     found = macros("biyos.h")
     events = {name: found[name] for name in found if name.startswith(EVENTS)}
     defined = sum(lines("biyos.h", f"#define {start}") for start in EVENTS)
     assert len(events) == defined
     assert set(LEVELS.values()) == set(EventLevel)
-    assert events == kinds | LEVELS
+    assert events == KINDS | LEVELS
 
 
 def test_error():

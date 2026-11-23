@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class EventKind(IntEnum):
-    """The kinds of events, as ``BIYOS_EVT_`` numbers them.
+    """The kinds of events, as ``BIYOS_EVTKND_`` numbers them.
 
     Attributes
     ----------
@@ -29,7 +29,7 @@ class EventKind(IntEnum):
 
 
 class EventLevel(IntEnum):
-    """The levels of events, from least to most severe, as ``BIYOS_LVL_``
+    """The levels of events, from least to most severe, as ``BIYOS_EVTLVL_``
     numbers them.
 
     Attributes

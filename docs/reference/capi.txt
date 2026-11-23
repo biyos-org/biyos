@@ -28,7 +28,7 @@ since 0.1.0
 type BIYOS_mask
 summary A set of parts of a flags option, one bit per part.
 note A 64-bit unsigned integer, `uint64_t` of `<stdint.h>`. Each part is a macro written as a shift, such as `((BIYOS_mask)1 << 0)`, so an option holds at most 64 parts.
-see BIYOS_KND_FLG BIYOS_setenvflgopt
+see BIYOS_OPTKND_FLG BIYOS_setenvflgopt
 since 0.1.0
 
 type BIYOS_status
@@ -155,12 +155,12 @@ text Ranges include their ends and are checked exactly, with no tolerance, and N
 text Options have two levels. An option set on an environment is shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each call that sets or reads an option on the environment has a twin on the model, such as `BIYOS_setmdlintopt` beside `BIYOS_setenvintopt`, which checks the value in the same way. `BIYOS_delmdlopt` drops the model's own value, and `BIYOS_getmdloptsrc` tells where the value a model reads comes from. An option of environment scope is set on the environment only, and every model call on it returns `BIYOS_ERR_BADARG` with a message such as `invalid argument: option 'host': has environment scope`. No option of this release has environment scope.
 
 table Option kinds
-value BIYOS_KND_BOOL A bool, set with `BIYOS_setenvboolopt` and read with `BIYOS_getenvboolopt`.
-value BIYOS_KND_INT An int, set with `BIYOS_setenvintopt` and read with `BIYOS_getenvintopt`.
-value BIYOS_KND_DBL A double, set with `BIYOS_setenvdblopt` and read with `BIYOS_getenvdblopt`.
-value BIYOS_KND_STR A string, set with `BIYOS_setenvstropt` and read with `BIYOS_getenvstropt`.
-value BIYOS_KND_ENUM One of a list of values, set with `BIYOS_setenvintopt` and read with `BIYOS_getenvintopt`, each value a macro of the option's group.
-value BIYOS_KND_FLG A pair of masks, set with `BIYOS_setenvflgopt` and read with `BIYOS_getenvflgopt`: one forces parts on, the other forces parts off, each part a bit macro of the option's group.
+value BIYOS_OPTKND_BOOL A bool, set with `BIYOS_setenvboolopt` and read with `BIYOS_getenvboolopt`.
+value BIYOS_OPTKND_INT An int, set with `BIYOS_setenvintopt` and read with `BIYOS_getenvintopt`.
+value BIYOS_OPTKND_DBL A double, set with `BIYOS_setenvdblopt` and read with `BIYOS_getenvdblopt`.
+value BIYOS_OPTKND_STR A string, set with `BIYOS_setenvstropt` and read with `BIYOS_getenvstropt`.
+value BIYOS_OPTKND_ENUM One of a list of values, set with `BIYOS_setenvintopt` and read with `BIYOS_getenvintopt`, each value a macro of the option's group.
+value BIYOS_OPTKND_FLG A pair of masks, set with `BIYOS_setenvflgopt` and read with `BIYOS_getenvflgopt`: one forces parts on, the other forces parts off, each part a bit macro of the option's group.
 since 0.1.0
 
 table Option sources
@@ -202,7 +202,7 @@ function BIYOS_getoptknd
 summary Give the kind of an option.
 param env in The environment.
 param opt in The id of the option.
-param knd out Receives the kind, one of the `BIYOS_KND_` values.
+param knd out Receives the kind, one of the `BIYOS_OPTKND_` values.
 return `BIYOS_OK`, with the kind in `*knd`.
 see BIYOS_getoptid
 since 0.1.0
@@ -449,16 +449,16 @@ text biyos writes nothing to standard output or standard error. It reports throu
 text While a hook runs, whether it belongs to the environment or to one of its models, the environment delivers an event and is read-only to the hook's thread. The hook may read options, the last error, the event and the models made on the environment. Every call that would change the environment, setting one of its options, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change or free a model made on it fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error is again what it was before the hook ran.
 
 table Event kinds
-value BIYOS_EVT_MESSAGE A message: a level, the module that sent it, a text and fields.
-value BIYOS_EVT_CHECK A failed check: the invariant that does not hold, the object it was checked on and the values involved.
-value BIYOS_EVT_PHASE A phase of a solve beginning or ending: its name and the wall and CPU time.
+value BIYOS_EVTKND_MSG A message: a level, the module that sent it, a text and fields.
+value BIYOS_EVTKND_INV A failed check: the invariant that does not hold, the object it was checked on and the values involved.
+value BIYOS_EVTKND_SPAN A phase of a solve beginning or ending: its name and the wall and CPU time.
 since 0.1.0
 
 table Event levels
-value BIYOS_LVL_DBG Debug, the least severe.
-value BIYOS_LVL_INFO Info.
-value BIYOS_LVL_WARN Warning.
-value BIYOS_LVL_ERR Error, the most severe.
+value BIYOS_EVTLVL_DBG Debug, the least severe.
+value BIYOS_EVTLVL_INFO Info.
+value BIYOS_EVTLVL_WARN Warning.
+value BIYOS_EVTLVL_ERR Error, the most severe.
 since 0.1.0
 
 function BIYOS_addenvhook
@@ -466,8 +466,8 @@ summary Add a hook on one kind of event.
 param env in The environment.
 param hk in The hook, kept until it is removed or `env` is freed.
 param data in Passed back to the hook as given; may be null.
-param knd in The kind of events, a `BIYOS_EVT_` value.
-param lvl in The lowest level the hook receives, a `BIYOS_LVL_` value.
+param knd in The kind of events, a `BIYOS_EVTKND_` value.
+param lvl in The lowest level the hook receives, a `BIYOS_EVTLVL_` value.
 param idx out Receives the id of the hook.
 return `BIYOS_OK`, with the id in `*idx`. Ids count from 1 in each environment and are never reused.
 error BIYOS_ERR_BADARG `knd` or `lvl` is unknown.
@@ -490,8 +490,8 @@ summary Add a hook on one kind of event of one model.
 param mdl in The model.
 param hk in The hook, kept until it is removed or `mdl` is freed.
 param data in Passed back to the hook as given; may be null.
-param knd in The kind of events, a `BIYOS_EVT_` value.
-param lvl in The lowest level the hook receives, a `BIYOS_LVL_` value.
+param knd in The kind of events, a `BIYOS_EVTKND_` value.
+param lvl in The lowest level the hook receives, a `BIYOS_EVTLVL_` value.
 param idx out Receives the id of the hook.
 return `BIYOS_OK`, with the id in `*idx`. Ids count from 1 in each model and are never reused.
 error BIYOS_ERR_BADARG `knd` or `lvl` is unknown.
@@ -516,13 +516,13 @@ text These calls read the event a hook is given. They cannot fail: a null event 
 function BIYOS_getevtknd
 summary Give the kind of an event.
 param evt in The event.
-return Its kind, a `BIYOS_EVT_` value.
+return Its kind, a `BIYOS_EVTKND_` value.
 since 0.1.0
 
 function BIYOS_getevtlvl
 summary Give the level of an event.
 param evt in The event.
-return Its level, a `BIYOS_LVL_` value.
+return Its level, a `BIYOS_EVTLVL_` value.
 since 0.1.0
 
 function BIYOS_getevtmod
@@ -663,18 +663,18 @@ text Each variable has a kind and a lower and an upper bound. A bound may be `IN
 text A variable may hold its own absolute and relative tolerance, each finite and at least 0, which stand for the options `feastol_abs` and `feastol_rel` for that variable alone. It holds none until `BIYOS_setvartolsp` sets them, and `BIYOS_delvartolsp` returns it to the options. No call solves a model yet.
 
 table Variable kinds
-value BIYOS_VAR_CONT Continuous: any value between its bounds.
-value BIYOS_VAR_BIN Binary: 0 or 1, between its bounds.
-value BIYOS_VAR_INT Integer: any integer between its bounds.
-value BIYOS_VAR_SEMICONT Semi-continuous: 0, or any value between its bounds.
-value BIYOS_VAR_SEMIINT Semi-integer: 0, or any integer between its bounds.
+value BIYOS_VARKND_CONT Continuous: any value between its bounds.
+value BIYOS_VARKND_BIN Binary: 0 or 1, between its bounds.
+value BIYOS_VARKND_INT Integer: any integer between its bounds.
+value BIYOS_VARKND_SEMICONT Semi-continuous: 0, or any value between its bounds.
+value BIYOS_VARKND_SEMIINT Semi-integer: 0, or any integer between its bounds.
 since 0.1.0
 
 function BIYOS_addvar
 summary Add variables after the last one.
 param mdl in The model.
 param n in The number of variables to add.
-param knd in The kind of each, a `BIYOS_VAR_` value; null makes every new variable continuous.
+param knd in The kind of each, a `BIYOS_VARKND_` value; null makes every new variable continuous.
 param lb in The lower bound of each; null gives each the widest lower bound of its kind.
 param ub in The upper bound of each; null gives each the widest upper bound of its kind.
 param pos out Receives the index of the first new variable; skipped when null.
@@ -1340,8 +1340,8 @@ text An objective is a function of the model to minimize or maximize, with a pri
 text The objectives are optimized in stages, one for each priority they hold, the lowest priority first. A stage minimizes the weighted sum $\sum_i w_i s_i f_i(x)$ of the objectives of its priority, where $w_i$ is the weight of objective $i$, $s_i$ is 1 when it minimizes and −1 when it maximizes, and $f_i$ is its function. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it, the absolute tolerance in the units of its function and the relative one as a fraction of the size of that optimum. A priority is any `BIYOS_int`. A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. `BIYOS_addobj` takes what defines an objective, its function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds; a new objective's tolerances are 0 until `BIYOS_setobjtolsp` sets them. No call optimizes the objectives yet.
 
 table Senses
-value BIYOS_MINIMIZE The function is minimized.
-value BIYOS_MAXIMIZE The function is maximized.
+value BIYOS_OBJSENSE_MIN The function is minimized.
+value BIYOS_OBJSENSE_MAX The function is maximized.
 since 0.1.0
 
 function BIYOS_addobj
@@ -1349,7 +1349,7 @@ summary Add objectives after the last one.
 param mdl in The model.
 param n in The number of objectives to add.
 param funidx in The function of each; may be null only when `n` is 0.
-param sense in The sense of each, `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE`; null minimizes every new objective.
+param sense in The sense of each, `BIYOS_OBJSENSE_MIN` or `BIYOS_OBJSENSE_MAX`; null minimizes every new objective.
 param prio in The priority of each; null gives objective `p + j` the priority `p + j`, where `p` is the number of objectives before the call.
 param coef in The weight of each; null gives each the weight 1.
 param pos out Receives the index of the first new objective; skipped when null.
@@ -1366,7 +1366,7 @@ param mdl in The model.
 param pos in In the `rg` form, the first objective of the range.
 param n in The number of entries.
 param idx in In the `sp` form, the objective of each entry; may be null when `n` is 0.
-param sense in The new sense of each, `BIYOS_MINIMIZE` or `BIYOS_MAXIMIZE`; null changes nothing.
+param sense in The new sense of each, `BIYOS_OBJSENSE_MIN` or `BIYOS_OBJSENSE_MAX`; null changes nothing.
 return `BIYOS_OK` once the senses are set.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective, the range ends past the last objective or a sense is unknown.
 note An objective may appear more than once, as in `BIYOS_setvarbndsp`.
@@ -2555,8 +2555,8 @@ since 0.1.0
 
 group sent Events biyos sends
 text A field is a name and a value, both text. Two messages exist so far: an error when a call fails and a warning when a deprecated option is set.
-text A call on an environment that fails sends an error message, unless the environment is delivering an event. Its level is `BIYOS_LVL_ERR`, its module `capi`, its text the message `BIYOS_lasterror` reads for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a hook can tell the group from the range.
-text Setting a deprecated option sends a warning message at level `BIYOS_LVL_WARN` from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. No option is deprecated yet.
-text A check event reports an invariant that does not hold, found by a check the `check_lvl` option runs, and the call then fails. Its level is `BIYOS_LVL_ERR`, its module the module that ran the check, its text the message `BIYOS_lasterror` reads for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. A check that fails while biyos is building an event sends no check event and does not fail the call: the event being built is not sent, the check's error is dropped, and the last error is left as it was. No call runs a check yet.
-text A phase event marks a phase of a solve, such as presolve, beginning or ending. Phases nest: a phase begun inside another ends before it. Its level is `BIYOS_LVL_INFO`, its module the module that timed the phase, its text the name of the phase, and its fields are `edge`, `wall` and `cpu`, in that order. `edge` is `begin` or `end`. `wall` is the wall time since the environment was created and `cpu` the CPU time the thread sending the event has used, both read as the phase begins or ends and written in nanoseconds as decimal text.
+text A call on an environment that fails sends an error message, unless the environment is delivering an event. Its level is `BIYOS_EVTLVL_ERR`, its module `capi`, its text the message `BIYOS_lasterror` reads for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a hook can tell the group from the range.
+text Setting a deprecated option sends a warning message at level `BIYOS_EVTLVL_WARN` from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. No option is deprecated yet.
+text A check event reports an invariant that does not hold, found by a check the `check_lvl` option runs, and the call then fails. Its level is `BIYOS_EVTLVL_ERR`, its module the module that ran the check, its text the message `BIYOS_lasterror` reads for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. A check that fails while biyos is building an event sends no check event and does not fail the call: the event being built is not sent, the check's error is dropped, and the last error is left as it was. No call runs a check yet.
+text A phase event marks a phase of a solve, such as presolve, beginning or ending. Phases nest: a phase begun inside another ends before it. Its level is `BIYOS_EVTLVL_INFO`, its module the module that timed the phase, its text the name of the phase, and its fields are `edge`, `wall` and `cpu`, in that order. `edge` is `begin` or `end`. `wall` is the wall time since the environment was created and `cpu` the CPU time the thread sending the event has used, both read as the phase begins or ends and written in nanoseconds as decimal text.
 text biyos adds up the time of each phase in a timing tree, nested as phases nest, which no call reads yet. The tree leaves out the time spent delivering phase events, so a hook never changes it, but the stamps do not: a phase's time in the tree is its end's `wall` and `cpu` less its begin's, less, for each phase event sent between the two, the time from that event's stamps until its hooks return. Those events are the phase's own begin event and the events of the phases inside it. Should the CPU time be unreadable as a phase begins, the call fails with `BIYOS_ERR_INTERNAL`, and the phase neither begins nor sends an event. Should it be unreadable as a phase ends, `cpu` repeats its begin value and the phase counts as using no CPU time. No call times a phase yet.

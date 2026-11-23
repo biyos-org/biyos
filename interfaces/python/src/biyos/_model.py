@@ -60,7 +60,7 @@ from biyos._values import Value
 
 
 class VariableKind(IntEnum):
-    """The kinds of variables, as ``BIYOS_VAR_`` numbers them.
+    """The kinds of variables, as ``BIYOS_VARKND_`` numbers them.
 
     Attributes
     ----------
@@ -84,8 +84,8 @@ class VariableKind(IntEnum):
 
 
 class Sense(IntEnum):
-    """The senses of objectives, as ``BIYOS_MINIMIZE`` and ``BIYOS_MAXIMIZE``
-    number them.
+    """The senses of objectives, as ``BIYOS_OBJSENSE_MIN`` and
+    ``BIYOS_OBJSENSE_MAX`` number them.
 
     Attributes
     ----------

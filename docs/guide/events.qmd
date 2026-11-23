@@ -8,11 +8,11 @@ Every event has a kind and a level:
 
 | Kind | Carries |
 | ------------ | ------------------------------------ |
-| `BIYOS_EVT_MESSAGE` | a message: a level, the module that sent it, a text and fields |
-| `BIYOS_EVT_CHECK` | a failed check: the invariant that does not hold, the object it was checked on and the values involved |
-| `BIYOS_EVT_PHASE` | a phase beginning or ending, with the wall and CPU time |
+| `BIYOS_EVTKND_MSG` | a message: a level, the module that sent it, a text and fields |
+| `BIYOS_EVTKND_INV` | a failed check: the invariant that does not hold, the object it was checked on and the values involved |
+| `BIYOS_EVTKND_SPAN` | a phase beginning or ending, with the wall and CPU time |
 
-The levels, from least to most severe, are `BIYOS_LVL_DBG`, `BIYOS_LVL_INFO`, `BIYOS_LVL_WARN` and `BIYOS_LVL_ERR`; a larger value is more severe. An event also has the name of the module that sent it, such as `capi` or `core`, a text and a list of fields, each a name and a value, both text.
+The levels, from least to most severe, are `BIYOS_EVTLVL_DBG`, `BIYOS_EVTLVL_INFO`, `BIYOS_EVTLVL_WARN` and `BIYOS_EVTLVL_ERR`; a larger value is more severe. An event also has the name of the module that sent it, such as `capi` or `core`, a text and a list of fields, each a name and a value, both text.
 
 ## Hooks {#sec-events-hooks}
 

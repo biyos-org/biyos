@@ -6,20 +6,20 @@ from biyos._capi import lib
 from header import functions, group, lines, macros
 
 KINDS = {
-    "BIYOS_KND_BOOL": "KIND_BOOL",
-    "BIYOS_KND_INT": "KIND_INT",
-    "BIYOS_KND_DBL": "KIND_DOUBLE",
-    "BIYOS_KND_STR": "KIND_STRING",
-    "BIYOS_KND_ENUM": "KIND_ENUM",
-    "BIYOS_KND_FLG": "KIND_FLAGS",
+    "BIYOS_OPTKND_BOOL": "KIND_BOOL",
+    "BIYOS_OPTKND_INT": "KIND_INT",
+    "BIYOS_OPTKND_DBL": "KIND_DOUBLE",
+    "BIYOS_OPTKND_STR": "KIND_STRING",
+    "BIYOS_OPTKND_ENUM": "KIND_ENUM",
+    "BIYOS_OPTKND_FLG": "KIND_FLAGS",
 }
 
 VARIABLES = {
-    "BIYOS_VAR_CONT": biyos.VariableKind.CONTINUOUS,
-    "BIYOS_VAR_BIN": biyos.VariableKind.BINARY,
-    "BIYOS_VAR_INT": biyos.VariableKind.INTEGER,
-    "BIYOS_VAR_SEMICONT": biyos.VariableKind.SEMICONTINUOUS,
-    "BIYOS_VAR_SEMIINT": biyos.VariableKind.SEMIINTEGER,
+    "BIYOS_VARKND_CONT": biyos.VariableKind.CONTINUOUS,
+    "BIYOS_VARKND_BIN": biyos.VariableKind.BINARY,
+    "BIYOS_VARKND_INT": biyos.VariableKind.INTEGER,
+    "BIYOS_VARKND_SEMICONT": biyos.VariableKind.SEMICONTINUOUS,
+    "BIYOS_VARKND_SEMIINT": biyos.VariableKind.SEMIINTEGER,
 }
 
 SOURCES = {
@@ -64,6 +64,11 @@ OPERATORS = {
     "BIYOS_OP_REF": biyos.Operator.REFERENCE,
 }
 
+SENSES = {
+    "BIYOS_OBJSENSE_MIN": biyos.Sense.MINIMIZE,
+    "BIYOS_OBJSENSE_MAX": biyos.Sense.MAXIMIZE,
+}
+
 CONES = {
     "BIYOS_CONE_NONNEG": biyos.ConeKind.NONNEGATIVE,
     "BIYOS_CONE_SOC": biyos.ConeKind.SECOND_ORDER,
@@ -88,8 +93,8 @@ def test_functions():
 
 def test_kinds():
     found = macros("biyos.h")
-    kinds = {name: value for name, value in found.items() if "_KND_" in name}
-    assert len(kinds) == lines("biyos.h", "#define BIYOS_KND_")
+    kinds = {name: value for name, value in found.items() if "_OPTKND_" in name}
+    assert len(kinds) == lines("biyos.h", "#define BIYOS_OPTKND_")
     names = [name for name in dir(_capi) if name.startswith("KIND_")]
     assert sorted(names) == sorted(KINDS.values())
     paired = {macro: getattr(_capi, name) for macro, name in KINDS.items()}
@@ -98,8 +103,8 @@ def test_kinds():
 
 def test_variable_kinds():
     found = macros("biyos.h")
-    kinds = {name: value for name, value in found.items() if "_VAR_" in name}
-    assert len(kinds) == lines("biyos.h", "#define BIYOS_VAR_")
+    kinds = {name: value for name, value in found.items() if "_VARKND_" in name}
+    assert len(kinds) == lines("biyos.h", "#define BIYOS_VARKND_")
     assert set(VARIABLES.values()) == set(biyos.VariableKind)
     assert kinds == VARIABLES
 
@@ -121,10 +126,10 @@ def test_cone_kinds():
 
 
 def test_senses():
-    senses, defined = group("biyos.h", "BIYOS_MINIMIZE")
+    senses, defined = group("biyos.h", "BIYOS_OBJSENSE_MIN")
     assert len(senses) == defined
-    names = {f"BIYOS_{sense.name}": sense for sense in biyos.Sense}
-    assert senses == names
+    assert set(SENSES.values()) == set(biyos.Sense)
+    assert senses == SENSES
 
 
 def test_sos_kinds():

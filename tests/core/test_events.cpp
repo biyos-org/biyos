@@ -209,19 +209,19 @@ class EventTest : public ::testing::Test
 
 TEST_F(EventTest, KindIds)
 {
-    EXPECT_EQ(biyos::find_kind(BIYOS_EVT_MESSAGE), EventKind::Message);
-    EXPECT_EQ(biyos::find_kind(BIYOS_EVT_CHECK), EventKind::Check);
-    EXPECT_EQ(biyos::find_kind(BIYOS_EVT_PHASE), EventKind::Phase);
+    EXPECT_EQ(biyos::find_kind(BIYOS_EVTKND_MSG), EventKind::Message);
+    EXPECT_EQ(biyos::find_kind(BIYOS_EVTKND_INV), EventKind::Check);
+    EXPECT_EQ(biyos::find_kind(BIYOS_EVTKND_SPAN), EventKind::Phase);
     EXPECT_EQ(failure([] { biyos::find_kind(0); }), "invalid argument: event kind 0: unknown");
     EXPECT_EQ(failure([] { biyos::find_kind(4); }), "invalid argument: event kind 4: unknown");
 }
 
 TEST_F(EventTest, LevelIds)
 {
-    EXPECT_EQ(biyos::find_level(BIYOS_LVL_DBG), EventLevel::Debug);
-    EXPECT_EQ(biyos::find_level(BIYOS_LVL_INFO), EventLevel::Info);
-    EXPECT_EQ(biyos::find_level(BIYOS_LVL_WARN), EventLevel::Warning);
-    EXPECT_EQ(biyos::find_level(BIYOS_LVL_ERR), EventLevel::Error);
+    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_DBG), EventLevel::Debug);
+    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_INFO), EventLevel::Info);
+    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_WARN), EventLevel::Warning);
+    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_ERR), EventLevel::Error);
     EXPECT_EQ(failure([] { biyos::find_level(0); }), "invalid argument: level 0: unknown");
     EXPECT_EQ(failure([] { biyos::find_level(5); }), "invalid argument: level 5: unknown");
 }

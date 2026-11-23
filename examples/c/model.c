@@ -3,7 +3,9 @@
 
 static BIYOS_status variables(BIYOS_model *mdl)
 {
-    const BIYOS_int knd[] = {BIYOS_VAR_CONT, BIYOS_VAR_INT, BIYOS_VAR_BIN};
+    const BIYOS_int knd[] = {BIYOS_VARKND_CONT,
+                             BIYOS_VARKND_INT,
+                             BIYOS_VARKND_BIN};
     const BIYOS_real lb[] = {0.0, 0.0, 0.0};
     const BIYOS_real ub[] = {4.0, 3.0, 1.0};
     return BIYOS_addvar(mdl, 3, knd, lb, ub, NULL);
@@ -49,7 +51,7 @@ static BIYOS_status constraints(BIYOS_model *mdl)
 static BIYOS_status objectives(BIYOS_model *mdl)
 {
     const BIYOS_index funidx[] = {2, 0};
-    const BIYOS_int sense[] = {BIYOS_MINIMIZE, BIYOS_MAXIMIZE};
+    const BIYOS_int sense[] = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX};
     const BIYOS_int prio[] = {0, 1};
     const BIYOS_real atol[] = {0.5};
     BIYOS_index pos = 0;

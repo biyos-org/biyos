@@ -127,7 +127,7 @@ void count(const BIYOS_event *, void *data)
 BIYOS_status listen(const Env &env, BIYOS_hook hook, void *data)
 {
     BIYOS_index id = 0;
-    return BIYOS_addenvhook(env.get(), hook, data, BIYOS_EVT_MESSAGE, BIYOS_LVL_DBG, &id);
+    return BIYOS_addenvhook(env.get(), hook, data, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_DBG, &id);
 }
 
 }
@@ -176,9 +176,13 @@ TEST(InterruptTest, ModelStop)
     const Model model(env);
     Stopper stopper{.env = env.get(), .model = model.get()};
     BIYOS_index id = 0;
-    ASSERT_EQ(
-        BIYOS_addmdlhook(model.get(), stop_model, &stopper, BIYOS_EVT_MESSAGE, BIYOS_LVL_DBG, &id),
-        BIYOS_OK);
+    ASSERT_EQ(BIYOS_addmdlhook(model.get(),
+                               stop_model,
+                               &stopper,
+                               BIYOS_EVTKND_MSG,
+                               BIYOS_EVTLVL_DBG,
+                               &id),
+              BIYOS_OK);
     Loop loop{.start = [&model](biyos::Env &) { tell(model.get()); }, .limit = kPolls};
     EXPECT_EQ(run(model, loop), BIYOS_OK);
     EXPECT_EQ(stopper.interrupted, BIYOS_OK);

@@ -47,7 +47,7 @@ struct Outputs
 
 const Records kSample{
     .functions = {1, 0, 1},
-    .senses = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE, BIYOS_MINIMIZE},
+    .senses = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MIN},
     .priorities = {2, -1, 2},
     .weights = {0.5, 1.0, 3.0},
     .absolute = {0.0, 1.5, kInfinity},
@@ -233,7 +233,7 @@ Records defaults(const std::vector<int> &functions)
     const std::size_t size = functions.size();
     Records records{
         .functions = functions,
-        .senses = std::vector<int>(size, BIYOS_MINIMIZE),
+        .senses = std::vector<int>(size, BIYOS_OBJSENSE_MIN),
         .priorities = std::vector<int>(size),
         .weights = std::vector<double>(size, 1.0),
         .absolute = std::vector<double>(size, 0.0),
@@ -266,7 +266,7 @@ void change(const BIYOS_event *, void *data)
     BIYOS_model *model = attempt.model;
     const BIYOS_index index = 0;
     const double weight = 2.0;
-    const BIYOS_int sense = BIYOS_MAXIMIZE;
+    const BIYOS_int sense = BIYOS_OBJSENSE_MAX;
     BIYOS_index n = 0;
     note(attempt, add_with(model, 1, &index, {}));
     note(attempt, BIYOS_setobjsensesp(model, 1, &index, &sense));
@@ -337,7 +337,7 @@ TEST(CApiTest, NullObjectives)
     const Model model(env);
     add_functions(model, 1);
     const int functions[] = {0, 0};
-    const int senses[] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
+    const int senses[] = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN};
     const int priorities[] = {7, 7};
     const double values[] = {0.5, 2.0};
     BIYOS_model *held = model.get();
@@ -345,7 +345,7 @@ TEST(CApiTest, NullObjectives)
     ASSERT_EQ(add_with(held, 2, functions, {.priorities = priorities}), BIYOS_OK);
     ASSERT_EQ(add_with(held, 2, functions, {.weights = values}), BIYOS_OK);
     Records wanted = defaults(std::vector<int>(6, 0));
-    wanted.senses[0] = BIYOS_MAXIMIZE;
+    wanted.senses[0] = BIYOS_OBJSENSE_MAX;
     wanted.priorities[2] = 7;
     wanted.priorities[3] = 7;
     wanted.weights[4] = 0.5;
@@ -363,7 +363,7 @@ TEST(CApiTest, NullSetters)
     add_sample(model);
     BIYOS_model *held = model.get();
     const int indices[] = {2, 0};
-    const int senses[] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
+    const int senses[] = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN};
     const int priorities[] = {-5, 6};
     const double weights[] = {4.0, 8.0};
     const double absolute[] = {kInfinity, 0.125};
@@ -376,7 +376,7 @@ TEST(CApiTest, NullSetters)
     EXPECT_EQ(BIYOS_setobjtolsp(held, 2, indices, nullptr, nullptr), BIYOS_OK);
     const Records wanted{
         .functions = kSample.functions,
-        .senses = {BIYOS_MINIMIZE, BIYOS_MINIMIZE, BIYOS_MAXIMIZE},
+        .senses = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX},
         .priorities = {6, -1, -5},
         .weights = {0.5, 1.0, 4.0},
         .absolute = {0.125, 1.5, kInfinity},
@@ -395,12 +395,12 @@ TEST(CApiTest, RepeatedObjective)
     const Model model(env);
     add_sample(model);
     const int indices[] = {1, 1};
-    const int senses[] = {BIYOS_MINIMIZE, BIYOS_MAXIMIZE};
+    const int senses[] = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX};
     const double weights[] = {2.0, 3.0};
     ASSERT_EQ(BIYOS_setobjsensesp(model.get(), 2, indices, senses), BIYOS_OK);
     ASSERT_EQ(BIYOS_setobjcoefsp(model.get(), 2, indices, weights), BIYOS_OK);
     Records wanted = kSample;
-    wanted.senses[1] = BIYOS_MAXIMIZE;
+    wanted.senses[1] = BIYOS_OBJSENSE_MAX;
     wanted.weights[1] = 3.0;
     expect_records(read_all(model), wanted);
 }
@@ -412,7 +412,7 @@ TEST(CApiTest, ObjectiveRange)
     add_sample(model);
     const Records wanted{
         .functions = {0, 1},
-        .senses = {BIYOS_MINIMIZE, BIYOS_MINIMIZE},
+        .senses = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MIN},
         .priorities = {-1, 2},
         .weights = {1.0, 3.0},
         .absolute = {1.5, kInfinity},
@@ -432,7 +432,7 @@ TEST(CApiTest, NullOutputs)
     int senses[] = {-1, -1};
     double weights[] = {9.0, 9.0};
     EXPECT_EQ(get_with(held, 1, 2, {.senses = senses, .weights = weights}), BIYOS_OK);
-    EXPECT_EQ(std::vector<int>({senses[0], senses[1]}), std::vector<int>(2, BIYOS_MINIMIZE));
+    EXPECT_EQ(std::vector<int>({senses[0], senses[1]}), std::vector<int>(2, BIYOS_OBJSENSE_MIN));
     EXPECT_EQ(bits_of({weights[0], weights[1]}), bits_of({1.0, 3.0}));
     EXPECT_EQ(BIYOS_getnobj(held, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
@@ -483,8 +483,9 @@ TEST(CApiTest, LockedObjectives)
     const BIYOS_index function = 0;
     ASSERT_EQ(add_with(model.get(), 1, &function, {}), BIYOS_OK);
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    const int message = BIYOS_EVTKND_MSG;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_EVTLVL_ERR, &id),
+              BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     std::vector<BIYOS_status> statuses(5, BIYOS_ERR_BADARG);
     statuses.resize(11, BIYOS_OK);
@@ -503,7 +504,7 @@ TEST(CApiTest, ListedObjectives)
     const std::vector<BIYOS_index> indices{2, 0, 2, 1};
     const Records wanted{
         .functions = {},
-        .senses = {BIYOS_MINIMIZE, BIYOS_MAXIMIZE, BIYOS_MINIMIZE, BIYOS_MINIMIZE},
+        .senses = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MIN},
         .priorities = {2, 2, 2, -1},
         .weights = {3.0, 0.5, 3.0, 1.0},
         .absolute = {kInfinity, 0.0, kInfinity, 1.5},
@@ -522,7 +523,7 @@ TEST(CApiTest, ObjectiveSetters)
     add_sample(model);
     BIYOS_model *held = model.get();
     const BIYOS_index indices[] = {2, 0, 2};
-    const int sense[] = {BIYOS_MINIMIZE, BIYOS_MAXIMIZE, BIYOS_MAXIMIZE};
+    const int sense[] = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MAX};
     const int priorities[] = {5, -3, 7};
     const double coefficients[] = {2.0, 4.0, 8.0};
     const double atol[] = {0.5, kInfinity, 1.0};
@@ -533,7 +534,7 @@ TEST(CApiTest, ObjectiveSetters)
     ASSERT_EQ(BIYOS_setobjtolsp(held, 3, indices, atol, rtol), BIYOS_OK);
     const Records listed{
         .functions = {},
-        .senses = {BIYOS_MAXIMIZE, BIYOS_MAXIMIZE, BIYOS_MAXIMIZE},
+        .senses = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MAX},
         .priorities = {7, -3, 7},
         .weights = {8.0, 4.0, 8.0},
         .absolute = {1.0, kInfinity, 1.0},
@@ -548,7 +549,7 @@ TEST(CApiTest, ObjectiveSetters)
     ASSERT_EQ(BIYOS_setobjtolsp(held, 0, nullptr, atol, rtol), BIYOS_OK);
     const Records wanted{
         .functions = kSample.functions,
-        .senses = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE, BIYOS_MAXIMIZE},
+        .senses = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX},
         .priorities = {-3, -1, 7},
         .weights = {4.0, 1.0, 8.0},
         .absolute = {kInfinity, 1.5, 0.5},
@@ -598,7 +599,7 @@ TEST(CApiTest, ObjectiveRefusals)
     expect_refused(env, held, -1, beyond, "invalid argument: argument 'n': -1 is negative");
     expect_refused(env, held, 1, nullptr, "invalid argument: argument 'idx': is null");
     const BIYOS_index indices[] = {1, 0};
-    const int sense[] = {BIYOS_MAXIMIZE, 0};
+    const int sense[] = {BIYOS_OBJSENSE_MAX, 0};
     const int priorities[] = {4, 5};
     const double coefficients[] = {2.0, -1.0};
     const double atol[] = {0.5, -1.0};

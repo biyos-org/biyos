@@ -216,16 +216,16 @@ TEST(CApiTest, OptionKinds)
                        BIYOS_OPT_INTTOL,
                        BIYOS_OPT_ZEROTOL,
                        BIYOS_OPT_MAXCPUTIME};
-    const int kinds[] = {BIYOS_KND_INT,
-                         BIYOS_KND_DBL,
-                         BIYOS_KND_ENUM,
-                         BIYOS_KND_BOOL,
-                         BIYOS_KND_STR,
-                         BIYOS_KND_DBL,
-                         BIYOS_KND_DBL,
-                         BIYOS_KND_DBL,
-                         BIYOS_KND_DBL,
-                         BIYOS_KND_DBL};
+    const int kinds[] = {BIYOS_OPTKND_INT,
+                         BIYOS_OPTKND_DBL,
+                         BIYOS_OPTKND_ENUM,
+                         BIYOS_OPTKND_BOOL,
+                         BIYOS_OPTKND_STR,
+                         BIYOS_OPTKND_DBL,
+                         BIYOS_OPTKND_DBL,
+                         BIYOS_OPTKND_DBL,
+                         BIYOS_OPTKND_DBL,
+                         BIYOS_OPTKND_DBL};
     for (int i = 0; i < 10; ++i)
     {
         BIYOS_int kind = 0;
@@ -737,8 +737,9 @@ TEST(CApiTest, LockedOptions)
     attempt.env = env.get();
     attempt.model = model.get();
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    const int message = BIYOS_EVTKND_MSG;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_EVTLVL_ERR, &id),
+              BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
@@ -799,7 +800,7 @@ TEST(CApiTest, DeprecatedModel)
     const Model model(env.get());
     BIYOS_index id = 0;
     const BIYOS_status added =
-        BIYOS_addenvhook(env.get(), hear, &heard, BIYOS_EVT_MESSAGE, BIYOS_LVL_WARN, &id);
+        BIYOS_addenvhook(env.get(), hear, &heard, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_WARN, &id);
     ASSERT_EQ(added, BIYOS_OK);
     EXPECT_EQ(BIYOS_setmdlflgopt(model.get(), kMask, kDual, 0), BIYOS_OK);
     EXPECT_EQ(heard.count, 1);

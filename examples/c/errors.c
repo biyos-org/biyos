@@ -50,7 +50,7 @@ int main(void)
     {
         return 1;
     }
-    const BIYOS_int knd[] = {BIYOS_VAR_BIN};
+    const BIYOS_int knd[] = {BIYOS_VARKND_BIN};
     const BIYOS_real ub[] = {2.0};
     int failed = report(env, BIYOS_addvar(mdl, 1, knd, NULL, ub, NULL));
     BIYOS_int seed = -1;

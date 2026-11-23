@@ -21,11 +21,11 @@ namespace biyos
 
 enum class VariableKind
 {
-    Continuous = BIYOS_VAR_CONT,
-    Binary = BIYOS_VAR_BIN,
-    Integer = BIYOS_VAR_INT,
-    SemiContinuous = BIYOS_VAR_SEMICONT,
-    SemiInteger = BIYOS_VAR_SEMIINT,
+    Continuous = BIYOS_VARKND_CONT,
+    Binary = BIYOS_VARKND_BIN,
+    Integer = BIYOS_VARKND_INT,
+    SemiContinuous = BIYOS_VARKND_SEMICONT,
+    SemiInteger = BIYOS_VARKND_SEMIINT,
 };
 
 inline constexpr std::array kVariableKinds{
@@ -54,8 +54,8 @@ struct Constraint
 
 enum class Sense
 {
-    Minimize = BIYOS_MINIMIZE,
-    Maximize = BIYOS_MAXIMIZE,
+    Minimize = BIYOS_OBJSENSE_MIN,
+    Maximize = BIYOS_OBJSENSE_MAX,
 };
 
 inline constexpr std::array kSenses{

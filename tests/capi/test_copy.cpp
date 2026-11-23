@@ -50,7 +50,7 @@ void add_expressions(BIYOS_model *model, const BIYOS_index *functions)
 
 void add_sample(BIYOS_model *model)
 {
-    const int kinds[] = {BIYOS_VAR_CONT, BIYOS_VAR_BIN, BIYOS_VAR_INT};
+    const int kinds[] = {BIYOS_VARKND_CONT, BIYOS_VARKND_BIN, BIYOS_VARKND_INT};
     const double lower[] = {-0.0, 0.0, -1.0};
     const double upper[] = {2.5, 1.0, 3.0};
     const double constants[] = {1.5, 0.1};
@@ -63,7 +63,7 @@ void add_sample(BIYOS_model *model)
     const double products[] = {0.5, -1.0, 3.0};
     const int functions[] = {0, 1, 0};
     const int targets[] = {1, 0};
-    const int senses[] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
+    const int senses[] = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN};
     const int priorities[] = {3, -2};
     const double weights[] = {0.5, 2.0};
     const double absolute[] = {0.25, 0.0};
@@ -167,8 +167,8 @@ void keep(const BIYOS_event *event, void *data)
 int add_hook(const Env &env, std::vector<std::string> &texts)
 {
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    EXPECT_EQ(BIYOS_addenvhook(env.get(), keep, &texts, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    const int message = BIYOS_EVTKND_MSG;
+    EXPECT_EQ(BIYOS_addenvhook(env.get(), keep, &texts, message, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     return id;
 }
 
@@ -229,8 +229,8 @@ TEST(CApiTest, LockedCopy)
     std::vector<std::string> texts;
     const int kept = add_hook(idle, texts);
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addenvhook(busy.get(), copy_inside, &delivery, message, BIYOS_LVL_ERR, &id),
+    const int message = BIYOS_EVTKND_MSG;
+    ASSERT_EQ(BIYOS_addenvhook(busy.get(), copy_inside, &delivery, message, BIYOS_EVTLVL_ERR, &id),
               BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(busy.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     const BIYOS_status refused = BIYOS_ERR_BADARG;

@@ -404,8 +404,9 @@ TEST(CApiTest, LockedSos)
     const int kind = BIYOS_SOSKND_SOS2;
     ASSERT_EQ(BIYOS_addsos(model.get(), 1, &kind, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    const int message = BIYOS_EVTKND_MSG;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_EVTLVL_ERR, &id),
+              BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
     const std::vector<BIYOS_status> statuses{refused, BIYOS_OK, BIYOS_OK, BIYOS_OK};
