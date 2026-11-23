@@ -18,6 +18,7 @@ namespace
 {
 
 using biyos::Graph;
+using biyos::Index;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Payload;
@@ -133,6 +134,38 @@ TEST(GraphTest, SharedVariable)
     EXPECT_EQ(graph.size(), 4);
     EXPECT_EQ(graph.variable(x), 4);
     EXPECT_EQ(graph.variable(y), 1);
+}
+
+TEST(GraphTest, Lookup)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(4);
+    const Offset y = graph.add_variable(1);
+    EXPECT_EQ(graph.node_of(4), x);
+    EXPECT_EQ(graph.node_of(1), y);
+    EXPECT_EQ(graph.node_of(0), -1);
+    EXPECT_EQ(graph.node_of(5), -1);
+}
+
+TEST(GraphTest, Renumbered)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(4);
+    const Offset y = graph.add_variable(1);
+    const Offset exponential = unary(graph, Operator::Exp, x);
+    const std::vector<Index> map{-1, 0, 1, -1, 2, 3};
+    graph.renumber_variables(map);
+    EXPECT_EQ(graph.variable(x), 2);
+    EXPECT_EQ(graph.variable(y), 0);
+    EXPECT_EQ(graph.node_of(2), x);
+    EXPECT_EQ(graph.node_of(0), y);
+    EXPECT_EQ(graph.node_of(1), -1);
+    EXPECT_EQ(graph.node_of(4), -1);
+    EXPECT_EQ(ids(graph.children(exponential)), std::vector<Offset>{x});
+    EXPECT_EQ(graph.add_variable(2), x);
+    const Offset z = graph.add_variable(3);
+    EXPECT_EQ(z, 3);
+    EXPECT_EQ(graph.variable(z), 3);
 }
 
 TEST(GraphTest, OwnSpans)

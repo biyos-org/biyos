@@ -890,6 +890,41 @@ class Model:
         """
         self._delname("BIYOS_delvarname", Variables, idx)
 
+    def delvar(self, idx: Sequence[int | Variable] | Variables) -> list[int]:
+        """Delete variables, with their terms in every function.
+
+        The variables left keep their order and are numbered from 0 again, and
+        each term, set, indicator and node refers to them by their new indices.
+        A deleted variable's kind, bounds, tolerances, name and terms go with
+        it, and a function left with no term keeps its constant. Once any
+        variable is deleted, the model refuses every block and view it gave
+        before.
+
+        Parameters
+        ----------
+        idx
+            The variables to delete, in any order, none of them twice.
+
+        Returns
+        -------
+        map
+            For each variable the model held, its new index, or -1 when it is
+            deleted.
+
+        Raises
+        ------
+        Error
+            When a variable to delete has a node, is a member of a set or is
+            the binary of an indicator, or when the model has a callback and
+            a variable is to be deleted. The model is then left as it was.
+
+        See Also
+        --------
+        BIYOS_delvarsp
+        BIYOS_delvarrg
+        """
+        return self._delete("BIYOS_delvar", Variables, idx)
+
     def addfun(self, n: int) -> Functions:
         """Add functions after the last one, each with the constant 0 and
         no terms.

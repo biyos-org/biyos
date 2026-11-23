@@ -195,3 +195,54 @@ def test_covered(model):
     assert in_use(model, [0]) == used.format(0, 1)
     assert in_use(model, [1]) == used.format(1, 0)
     assert in_use(model, [2]) == used.format(2, 2)
+
+
+def variables(model):
+    x = model.addvar(4, None, [0.0, 1.0, 2.0, 3.0])
+    model.setvarname(x[:3], NAMES)
+    model.setvartol(x, [0.5, 0.25, 0.125, 0.0625])
+    f = model.addfun(2)
+    model.addcst(f, [1.0, 2.0])
+    model.addlinterm([0, 0, 0, 1], [3, 2, 0, 2], [4.0, 3.0, 1.0, 5.0])
+    model.addquadterm([0, 0, 1], [0, 1, 2], [3, 3, 2], [6.0, 7.0, 8.0])
+    return x
+
+
+def test_variables(model):
+    x = variables(model)
+    assert model.delvar([2, 0]) == [-1, 0, -1, 1]
+    assert model.getvarname(range(2)) == ["r1", None]
+    assert model.getvar()[1] == [1.0, 3.0]
+    assert model.getvartol(range(2)) == ([0.25, 0.0625], [None, None])
+    assert model.getrlinterm() == ([0], [1], [4.0])
+    assert model.getquadterm() == ([0], [0], [1], [7.0])
+    assert model.getcst(range(2)) == [1.0, 2.0]
+    with pytest.raises(ValueError, match=STALE):
+        model.getvar(x)
+    assert model.delvar(range(1, 2)) == [0, -1]
+    assert model.getvarname(range(1)) == ["r1"]
+    assert model.getquadterm() == ([], [], [], [])
+
+
+def variable_in_use(model, idx):
+    with pytest.raises(biyos.Error) as caught:
+        model.delvar(idx)
+    assert caught.value.code == IN_USE
+    return str(caught.value)
+
+
+def test_used_variable(model):
+    x = model.addvar(4, [biyos.VariableKind.BINARY] * 4)
+    f = model.addfun(1)
+    model.addsos([biyos.SOSKind.SOS1], [0, 1], x[3:])
+    model.addind(x[2:3], [1], f)
+    model.addvarnode(x[1])
+    used = "in use: variable {}: used by {}"
+    assert variable_in_use(model, [3]) == used.format(3, "set 0")
+    assert variable_in_use(model, [2]) == used.format(2, "indicator 0")
+    assert variable_in_use(model, [0, 1]) == used.format(1, "node 0")
+    model.addcb(f)
+    assert variable_in_use(model, [0]) == used.format(0, "callback 0")
+    assert model.delvar([]) == [0, 1, 2, 3]
+    assert model.getnvar() == 4
+    assert model.getvar(x)[0] == [biyos.VariableKind.BINARY] * 4

@@ -31,6 +31,12 @@ void delete_records(BIYOS_model &model, Selection selection, int *map)
 }
 
 template <typename Selection>
+void delete_variables(BIYOS_model &model, Selection selection, int *map)
+{
+    delete_records<Family::Variable, &Model::delete_variables>(model, selection, map);
+}
+
+template <typename Selection>
 void delete_functions(BIYOS_model &model, Selection selection, int *map)
 {
     delete_records<Family::Function, &Model::delete_functions>(model, selection, map);
@@ -70,6 +76,19 @@ void delete_complements(BIYOS_model &model, Selection selection, int *map)
     delete_records<Family::Complement, &Model::delete_complements>(model, selection, map);
 }
 
+}
+
+BIYOS_status BIYOS_delvarsp(BIYOS_model *mdl,
+                            BIYOS_index n,
+                            const BIYOS_index *idx,
+                            BIYOS_index *map)
+{
+    return guarded<delete_variables<List>>(mdl, List{n, idx}, map);
+}
+
+BIYOS_status BIYOS_delvarrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n, BIYOS_index *map)
+{
+    return guarded<delete_variables<Range>>(mdl, Range{pos, n}, map);
 }
 
 BIYOS_status BIYOS_delfunsp(BIYOS_model *mdl,

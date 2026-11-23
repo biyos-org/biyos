@@ -276,6 +276,14 @@ BIYOS_API BIYOS_status BIYOS_getvaridx(const BIYOS_model *mdl,
                                        BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delvarnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delvarnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
+BIYOS_API BIYOS_status BIYOS_delvarsp(BIYOS_model *mdl,
+                                      BIYOS_index n,
+                                      const BIYOS_index *idx,
+                                      BIYOS_index *map);
+BIYOS_API BIYOS_status BIYOS_delvarrg(BIYOS_model *mdl,
+                                      BIYOS_index pos,
+                                      BIYOS_index n,
+                                      BIYOS_index *map);
 BIYOS_API BIYOS_status BIYOS_addfun(BIYOS_model *mdl, BIYOS_index n, BIYOS_index *pos);
 BIYOS_API BIYOS_status BIYOS_getnfun(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_addcstsp(BIYOS_model *mdl,

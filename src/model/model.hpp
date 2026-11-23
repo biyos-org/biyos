@@ -182,6 +182,7 @@ class Model
 
     void add_variables(std::span<const Variable> added);
     void set_variables(std::span<const Index> indices, std::span<const Variable> changed);
+    std::vector<Index> delete_variables(std::span<const Index> indices);
 
     Override variable_tolerance(Index index) const;
     void set_variable_tolerances(std::span<const Index> indices,
@@ -315,6 +316,7 @@ class Model
     void check_kinds(std::span<const Index> indices, std::span<const Variable> changed) const;
     void check_unused(std::span<const Index> map) const;
     void renumber_functions(std::span<const Index> map) noexcept;
+    void renumber_variables(std::span<const Index> map) noexcept;
     Offset begin_of(std::size_t function) const noexcept;
     void append(std::span<const double> constants,
                 std::span<const Offset> starts,

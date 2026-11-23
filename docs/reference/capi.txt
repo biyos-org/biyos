@@ -89,7 +89,7 @@ table Status codes
 value BIYOS_OK The call succeeded.
 value BIYOS_ERR_BADARG The caller passed something the call does not accept: a null pointer, an unknown name, id or index, a value out of range, a call of the wrong kind for its option, or a change to an environment while it delivers an event. The entry of each call says which.
 value BIYOS_ERR_BUSY The environment or the model is in a call on another thread that this call may not overlap (@sec-threads).
-value BIYOS_ERR_INUSE An item that another record or a callback uses, so this change of it is refused.
+value BIYOS_ERR_INUSE An item that another record, a node or a callback uses, so this change of it is refused.
 value BIYOS_ERR_NOMEMORY An allocation failed, or a count would pass the largest the model can hold.
 value BIYOS_ERR_INTERNAL A fault in biyos.
 since 0.1.0
@@ -773,6 +773,20 @@ note `BIYOS_getvartolsp` reads the tolerances.
 see BIYOS_getnvar BIYOS_getvartolsp
 since 0.1.0
 
+function BIYOS_delvarsp BIYOS_delvarrg
+summary Delete variables.
+param mdl in The model.
+param pos in In the `rg` form, the first variable to delete.
+param n in The number of variables to delete.
+param idx in In the `sp` form, the variables to delete, in any order; may be null when `n` is 0.
+param map out Receives one entry for each variable the model held before the call: entry `i` is the new index of variable `i`, or -1 when it is deleted; skipped when null.
+return `BIYOS_OK` once the variables are deleted. The others keep their order, their data and their names, and are numbered from 0 again; each term, set, indicator and node that uses one refers to it by its new index.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, a variable is listed more than once, with a message such as `invalid argument: argument 'idx': variable 1 is repeated`, or the range ends past the last variable.
+error BIYOS_ERR_INUSE A variable to delete has a node, is a member of a set or is the binary of an indicator, or the model has a callback and a variable is to be deleted, with a message that names one use, such as `in use: variable 3: used by set 1`.
+note A deleted variable's kind, bounds, tolerances and name go with it, and so do its linear and quadratic terms; a function left with no term keeps its constant. A variable keeps its node once `BIYOS_addvarnode` or an expression gives it one, even after the function that used the node is deleted. Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` is no longer valid.
+see BIYOS_getnvar BIYOS_delvarnamesp
+since 0.1.0
+
 function BIYOS_setvarnamesp BIYOS_setvarnamerg
 summary Name variables.
 param mdl in The model.
@@ -796,7 +810,7 @@ param idx in In the `sp` form, the variable of each entry, in any order and any 
 param name out Entry `j` receives the name of variable `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable or the range ends past the last variable.
-note Each pointer stays valid until a call that sets or removes names of variables and lists that variable succeeds, or the model is freed. Adding items, naming other variables, a failed call and a copy of the model leave it valid.
+note Each pointer stays valid until a call that sets or removes names of variables and lists that variable succeeds, a call that deletes variables succeeds, or the model is freed. Adding items, naming other variables, a failed call and a copy of the model leave it valid.
 see BIYOS_setvarnamesp BIYOS_getvaridx
 since 0.1.0
 
@@ -2215,7 +2229,7 @@ param var in The variable.
 param node out Receives the id of the variable's node; skipped when null.
 return `BIYOS_OK` once the node exists.
 error BIYOS_ERR_BADARG `var` is not a variable of the model.
-note A variable has one node: the first call adds it, and every later call gives the same id.
+note A variable has one node: the first call adds it, and every later call gives the same id. The variable can then no longer be deleted.
 see BIYOS_addnode
 since 0.1.0
 
@@ -2318,7 +2332,7 @@ since 0.1.0
 
 group callbacks Callbacks
 text A callback computes in user code its part $e_k(x)$ of the nonlinear part of each function $k$ it covers. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for the values of those parts, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
-text A function's nonlinear part is its expression plus the part of every callback that covers it. A function may be in any number of callbacks and hold an expression beside them, and a callback lists a function at most once. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function.
+text A function's nonlinear part is its expression plus the part of every callback that covers it. A function may be in any number of callbacks and hold an expression beside them, and a callback lists a function at most once. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function. A callback reads `x` in the numbering it was written for, so `BIYOS_delvarsp` deletes no variable of a model that has a callback.
 text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. No call evaluates a callback yet.
 text The model keeps the function pointers and `data` as given and never frees `data`. A copy made by `BIYOS_copymdl` shares them with its source, so both call the same code with the same `data`.
 

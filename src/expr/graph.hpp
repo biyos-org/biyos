@@ -31,6 +31,7 @@ class Graph
     double constant(Offset node) const noexcept;
     Index variable(Offset node) const noexcept;
     std::span<const double> coefficients(Offset node) const noexcept;
+    Offset node_of(Index variable) const noexcept;
 
     Offset add(Operator op, std::span<const Offset> children);
     Offset add(Operator op, double constant, std::span<const Offset> children);
@@ -38,6 +39,8 @@ class Graph
     Offset add_sum(double constant,
                    std::span<const Offset> children,
                    std::span<const double> coefficients);
+
+    void renumber_variables(std::span<const Index> map) noexcept;
 
     Mark mark() const noexcept;
     void truncate(const Mark &mark) noexcept;

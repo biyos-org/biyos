@@ -78,6 +78,12 @@ std::span<const double> Graph::coefficients(Offset node) const noexcept
     return std::span(coefficients_).subspan(start, children(node).size());
 }
 
+Offset Graph::node_of(Index variable) const noexcept
+{
+    const auto index = static_cast<std::size_t>(variable);
+    return index < variable_nodes_.size() ? variable_nodes_[index] : kNone;
+}
+
 Offset Graph::add(Operator op, std::span<const Offset> children)
 {
     check(op, Payload::None, children);
@@ -124,6 +130,26 @@ Offset Graph::add_sum(double constant,
     coefficients_.push_back(constant);
     coefficients_.insert(coefficients_.end(), coefficients.begin(), coefficients.end());
     return node;
+}
+
+void Graph::renumber_variables(std::span<const Index> map) noexcept
+{
+    std::size_t kept = 0;
+    for (std::size_t index = 0; index < variable_nodes_.size(); ++index)
+    {
+        if (map[index] < 0)
+        {
+            continue;
+        }
+        const Offset node = variable_nodes_[index];
+        if (node != kNone)
+        {
+            payloads_[at(node)] = static_cast<std::uint64_t>(map[index]);
+        }
+        variable_nodes_[kept] = node;
+        ++kept;
+    }
+    variable_nodes_.resize(kept);
 }
 
 Graph::Mark Graph::mark() const noexcept

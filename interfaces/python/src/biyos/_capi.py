@@ -140,6 +140,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_tolerances(lib, "var", doubles)
     _declare(lib, "BIYOS_getnvar", c_int, c_void_p, ints)
     _declare_pair(lib, "BIYOS_getvar", ints, doubles, doubles)
+    _declare_pair(lib, "BIYOS_delvar", ints)
     _declare_functions(lib, ints, doubles)
     _declare_quadratic(lib, ints, doubles)
     _declare_constraints(lib, ints, doubles)

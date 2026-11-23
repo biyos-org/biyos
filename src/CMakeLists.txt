@@ -81,6 +81,7 @@ add_library(biyos_internal STATIC
     model/terms.cpp
     model/transpose.cpp
     model/users.cpp
+    model/variables.cpp
     core/thread.cpp
     core/records.cpp)
 
