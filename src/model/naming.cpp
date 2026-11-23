@@ -49,6 +49,8 @@ std::string_view noun_of(Family family) noexcept
         return "indicator";
     case Family::Sos:
         return "set";
+    case Family::Cone:
+        return "cone";
     }
     return "record";
 }
@@ -117,6 +119,8 @@ Index Model::n_of(Family family) const noexcept
         return n_indicators();
     case Family::Sos:
         return n_sos();
+    case Family::Cone:
+        return n_cones();
     }
     return 0;
 }

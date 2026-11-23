@@ -43,6 +43,15 @@ struct Sos
     std::vector<Member> members;
 };
 
+struct Cones
+{
+    std::vector<ConeKind> kinds;
+    std::vector<Offset> starts;
+    std::vector<Index> functions;
+    std::vector<Offset> parameter_starts;
+    std::vector<double> parameters;
+};
+
 struct Naming
 {
     std::vector<Index> indices;
@@ -61,6 +70,7 @@ struct Parts
     std::vector<Objective> objectives;
     std::vector<Indicator> indicators;
     Sos sos;
+    Cones cones;
     std::string name;
     Naming variable_names;
     Naming function_names;
@@ -68,6 +78,7 @@ struct Parts
     Naming objective_names;
     Naming indicator_names;
     Naming sos_names;
+    Naming cone_names;
 };
 
 inline Parts sample()
@@ -156,6 +167,14 @@ inline Parts sample()
                         {.variable = 1, .weight = 0.5},
                     },
             },
+        .cones =
+            {
+                .kinds = {ConeKind::SecondOrder, ConeKind::Power},
+                .starts = {0, 2, 5},
+                .functions = {2, 0, 0, 1, 2},
+                .parameter_starts = {0, 0, 2},
+                .parameters = {0.25, 0.75},
+            },
         .name = "sample",
         .variable_names = {.indices = {2, 0}, .names = {"z", "x"}},
         .function_names = {.indices = {1}, .names = {"f"}},
@@ -163,6 +182,7 @@ inline Parts sample()
         .objective_names = {.indices = {0}, .names = {"cost"}},
         .indicator_names = {.indices = {1}, .names = {"off"}},
         .sos_names = {.indices = {1}, .names = {"s"}},
+        .cone_names = {.indices = {1}, .names = {"k"}},
     };
 }
 
@@ -213,6 +233,12 @@ inline Model built(const Parts &parts)
     model.add_objectives(parts.objectives);
     model.add_indicators(parts.indicators);
     model.add_sos(parts.sos.kinds, parts.sos.starts, parts.sos.members);
+    const Cones &cones = parts.cones;
+    model.add_cones(cones.kinds,
+                    cones.starts,
+                    cones.functions,
+                    cones.parameter_starts,
+                    cones.parameters);
     if (!parts.name.empty())
     {
         model.set_name(parts.name);
@@ -223,6 +249,7 @@ inline Model built(const Parts &parts)
     name(model, Family::Objective, parts.objective_names);
     name(model, Family::Indicator, parts.indicator_names);
     name(model, Family::Sos, parts.sos_names);
+    name(model, Family::Cone, parts.cone_names);
     return model;
 }
 

@@ -90,6 +90,7 @@ target_link_libraries(test_expr PRIVATE biyos_internal)
 
 biyos_add_test(test_model
     model/test_compare.cpp
+    model/test_cones.cpp
     model/test_constraints.cpp
     model/test_copy.cpp
     model/test_expressions.cpp

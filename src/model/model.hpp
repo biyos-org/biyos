@@ -99,6 +99,29 @@ struct Member
     double weight;
 };
 
+enum class ConeKind
+{
+    Nonnegative = BIYOS_CONE_NONNEG,
+    SecondOrder = BIYOS_CONE_SOC,
+    Rotated = BIYOS_CONE_RSOC,
+    Exponential = BIYOS_CONE_EXP,
+    DualExponential = BIYOS_CONE_DEXP,
+    Power = BIYOS_CONE_POW,
+    DualPower = BIYOS_CONE_DPOW,
+    Semidefinite = BIYOS_CONE_PSD,
+};
+
+inline constexpr std::array kConeKinds{
+    ConeKind::Nonnegative,
+    ConeKind::SecondOrder,
+    ConeKind::Rotated,
+    ConeKind::Exponential,
+    ConeKind::DualExponential,
+    ConeKind::Power,
+    ConeKind::DualPower,
+    ConeKind::Semidefinite,
+};
+
 enum class Family
 {
     Variable,
@@ -107,6 +130,7 @@ enum class Family
     Objective,
     Indicator,
     Sos,
+    Cone,
 };
 
 inline constexpr std::array kFamilies{
@@ -116,6 +140,7 @@ inline constexpr std::array kFamilies{
     Family::Objective,
     Family::Indicator,
     Family::Sos,
+    Family::Cone,
 };
 
 std::string_view noun_of(Family family) noexcept;
@@ -206,6 +231,17 @@ class Model
     void add_sos(std::span<const SosKind> kinds,
                  std::span<const Offset> starts,
                  std::span<const Member> members);
+    Index n_cones() const noexcept;
+    std::span<const ConeKind> cone_kinds(Index start, Index size) const;
+    std::span<const Index> cone_functions(Index start, Index size) const;
+    std::span<const double> cone_parameters(Index start, Index size) const;
+
+    void check_cone_room(std::size_t cones, Offset members, Offset parameters) const;
+    void add_cones(std::span<const ConeKind> kinds,
+                   std::span<const Offset> starts,
+                   std::span<const Index> functions,
+                   std::span<const Offset> parameter_starts,
+                   std::span<const double> parameters);
 
   private:
     Offset begin_of(std::size_t function) const noexcept;
@@ -232,6 +268,11 @@ class Model
     std::vector<SosKind> sos_kinds_;
     std::vector<Offset> sos_ends_;
     std::vector<Member> members_;
+    std::vector<ConeKind> cone_kinds_;
+    std::vector<Offset> cone_ends_;
+    std::vector<Index> cone_functions_;
+    std::vector<Offset> parameter_ends_;
+    std::vector<double> cone_parameters_;
     std::array<Names, kFamilies.size()> names_;
 };
 

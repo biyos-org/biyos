@@ -56,6 +56,7 @@ add_library(biyos_internal STATIC
     model/checks.cpp
     model/compare.cpp
     model/compressed.cpp
+    model/cones.cpp
     model/constraints.cpp
     model/expressions.cpp
     model/fields.cpp
