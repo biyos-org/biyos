@@ -2,6 +2,7 @@
 #include "core/index.hpp"
 #include "expr/terms.hpp"
 #include "model/callbacks.hpp"
+#include "model/compare.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 
@@ -17,6 +18,7 @@ namespace
 {
 
 using biyos::Callback;
+using biyos::difference;
 using biyos::Index;
 using biyos::kNoCallback;
 using biyos::kNoRoot;
@@ -346,4 +348,42 @@ TEST(CallbackTest, Copied)
     EXPECT_EQ(calls, 1);
     model.set_data(0, nullptr);
     EXPECT_EQ(copy.callback(0).data, &calls);
+}
+
+TEST(CallbackTest, Difference)
+{
+    Model model = with_functions(3);
+    int data = 0;
+    model.add_callback(std::vector<Index>{2, 0}, &data);
+    set_jacobian(model, 0, {0, 1, 2}, {1, 2});
+    set_hessian(model, {0, 1}, {1, 1});
+    const Model copy = model;
+    EXPECT_EQ(difference(model, copy), "");
+    Model more = copy;
+    add(more, {1});
+    EXPECT_EQ(difference(model, more), "callback count 1 against 2");
+    Model other = with_functions(3);
+    other.add_callback(std::vector<Index>{1, 0}, &data);
+    EXPECT_EQ(difference(model, other), "callback 0: covered function 0: index 2 against 1");
+    Model moved = copy;
+    moved.set_data(0, nullptr);
+    EXPECT_EQ(difference(model, moved), "callback 0: data differs");
+    Model valued = copy;
+    valued.set_values(0, succeed);
+    EXPECT_EQ(difference(model, valued), "callback 0: value function none against given");
+    Model row = copy;
+    set_jacobian(row, 0, {0, 1, 2}, {1, 0});
+    EXPECT_EQ(difference(model, row), "callback 0: Jacobian row 1: entry 0: variable 2 against 0");
+    Model wider = copy;
+    set_jacobian(wider, 0, {0, 2, 3}, {1, 2, 2});
+    EXPECT_EQ(difference(model, wider), "callback 0: Jacobian row 0: entry count 1 against 2");
+    Model pairs = copy;
+    set_hessian(pairs, {0, 1}, {1, 2});
+    EXPECT_EQ(difference(model, pairs), "callback 0: Hessian entry 1: second variable 1 against 2");
+    Model fewer = copy;
+    set_hessian(fewer, {0}, {1});
+    EXPECT_EQ(difference(model, fewer), "callback 0: Hessian entry count 2 against 1");
+    Model product = copy;
+    product.set_product(0, succeed);
+    EXPECT_EQ(difference(product, model), "callback 0: Hessian product given against none");
 }
