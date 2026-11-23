@@ -113,6 +113,7 @@ biyos_add_test(test_capi
     capi/test_firewall.cpp
     capi/test_format.cpp
     capi/test_functions.cpp
+    capi/test_indicators.cpp
     capi/test_interrupt.cpp
     capi/test_linear.cpp
     capi/test_model.cpp

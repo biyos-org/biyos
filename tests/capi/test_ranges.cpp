@@ -327,6 +327,76 @@ void write_names(const Held &held, Engine &engine, const NameCalls &calls)
     expect_writes(held, span, calls.delete_listed, calls.delete_ranged);
 }
 
+struct Switches
+{
+    int start;
+    int size;
+};
+
+Switches add_switches(const Model &model, Engine &engine)
+{
+    const Switches switches{.start = count_of(model, BIYOS_getnvar), .size = 1 + below(engine, 4)};
+    const std::vector<int> kinds(static_cast<std::size_t>(switches.size), BIYOS_VAR_BIN);
+    EXPECT_EQ(BIYOS_addvar(model.get(), switches.size, kinds.data(), nullptr, nullptr, nullptr),
+              BIYOS_OK);
+    return switches;
+}
+
+std::vector<int> drawn_switches(Engine &engine, std::size_t n, Switches switches)
+{
+    std::vector<int> variables;
+    for (std::size_t k = 0; k < n; ++k)
+    {
+        variables.push_back(switches.start + below(engine, switches.size));
+    }
+    return variables;
+}
+
+int value(Engine &engine)
+{
+    return below(engine, 2);
+}
+
+void add_indicators(const Model &model, Engine &engine, Switches switches)
+{
+    const int functions = count_of(model, BIYOS_getnfun);
+    const auto n = static_cast<std::size_t>(1 + below(engine, 6));
+    const std::vector<int> variables = drawn_switches(engine, n, switches);
+    const std::vector<int> values = drawn(engine, n, value);
+    std::vector<int> owners;
+    for (std::size_t k = 0; k < n; ++k)
+    {
+        owners.push_back(below(engine, functions));
+    }
+    const std::vector<double> lower = drawn(engine, n, low);
+    const std::vector<double> upper = drawn(engine, n, high);
+    const BIYOS_status status = BIYOS_addind(model.get(),
+                                             static_cast<BIYOS_index>(n),
+                                             variables.data(),
+                                             values.data(),
+                                             owners.data(),
+                                             lower.data(),
+                                             upper.data(),
+                                             nullptr);
+    EXPECT_EQ(status, BIYOS_OK);
+}
+
+void write_indicators(const Held &held, Engine &engine)
+{
+    const Model switched(held.env, held.model);
+    const Switches switches = add_switches(switched, engine);
+    add_indicators(switched, engine, switches);
+    const Held changed{.env = held.env, .model = switched};
+    const Span span = random_span(engine, count_of(switched, BIYOS_getnind));
+    const auto n = static_cast<std::size_t>(span.size);
+    const std::vector<double> lower = drawn(engine, n, low);
+    const std::vector<double> upper = drawn(engine, n, high);
+    const std::vector<int> variables = drawn_switches(engine, n, switches);
+    const std::vector<int> values = drawn(engine, n, value);
+    expect_writes(changed, span, BIYOS_setindbndsp, BIYOS_setindbndrg, lower, upper);
+    expect_writes(changed, span, BIYOS_setindvarsp, BIYOS_setindvarrg, variables, values);
+}
+
 template <typename Value> std::vector<Value> zeros(Span span)
 {
     return std::vector<Value>(static_cast<std::size_t>(span.size));
@@ -368,6 +438,18 @@ void read_objectives(const Model &model, Engine &engine)
     expect_reads(model, span, BIYOS_getobjcoefsp, BIYOS_getobjcoefrg, reals);
     expect_reads(model, span, BIYOS_getobjtolsp, BIYOS_getobjtolrg, reals, reals);
     expect_reads(model, span, BIYOS_getobjsp, BIYOS_getobjrg, whole, whole, whole, reals);
+}
+
+void read_indicators(const Held &held, Engine &engine)
+{
+    const Model switched(held.env, held.model);
+    add_indicators(switched, engine, add_switches(switched, engine));
+    const Span span = random_span(engine, count_of(switched, BIYOS_getnind));
+    const std::vector<double> reals = zeros<double>(span);
+    const std::vector<int> whole = zeros<int>(span);
+    expect_reads(switched, span, BIYOS_getindbndsp, BIYOS_getindbndrg, reals, reals);
+    expect_reads(switched, span, BIYOS_getindvarsp, BIYOS_getindvarrg, whole, whole);
+    expect_reads(switched, span, BIYOS_getindsp, BIYOS_getindrg, whole, whole, whole, reals, reals);
 }
 
 void read_all(const Model &model, Engine &engine)
@@ -448,6 +530,19 @@ void keep_names(const Held &held, Span span, BIYOS_status wanted, const NameCall
     expect_kept(held, span, wanted, calls.delete_ranged);
 }
 
+void keep_indicators(const Held &held, Span span, BIYOS_status wanted, Switches switches)
+{
+    const auto n = static_cast<std::size_t>(count_of(held.model, BIYOS_getnind) + 1);
+    const std::vector<double> bounds(n, 0.5);
+    const std::vector<int> variables(n, switches.start);
+    const std::vector<int> values(n, 1);
+    expect_kept(held, span, wanted, BIYOS_setindbndrg, bounds, bounds);
+    expect_kept(held, span, wanted, BIYOS_getindbndrg, bounds, bounds);
+    expect_kept(held, span, wanted, BIYOS_setindvarrg, variables, values);
+    expect_kept(held, span, wanted, BIYOS_getindvarrg, variables, values);
+    expect_kept(held, span, wanted, BIYOS_getindrg, variables, values, variables, bounds, bounds);
+}
+
 void keep_all(const Held &held, Counter count, Span span, BIYOS_status wanted)
 {
     if (count == BIYOS_getnvar)
@@ -495,6 +590,7 @@ TEST(RangeTest, Writes)
         {
             write_names(held, engine, calls);
         }
+        write_indicators(held, engine);
     }
 }
 
@@ -507,6 +603,7 @@ TEST(RangeTest, Reads)
         const Model model(env);
         build_sample(model.get(), engine);
         read_all(model, engine);
+        read_indicators(Held{.env = env, .model = model}, engine);
     }
 }
 
@@ -526,6 +623,23 @@ TEST(RangeTest, Refusals)
         }
         keep_all(held, calls.count, {count, 0}, BIYOS_OK);
     }
+}
+
+TEST(RangeTest, IndicatorRefusals)
+{
+    Engine engine(kSeeds[0]);
+    const Env env;
+    const Model model(env);
+    build_sample(model.get(), engine);
+    const Switches switches = add_switches(model, engine);
+    add_indicators(model, engine, switches);
+    const Held held{.env = env, .model = model};
+    const int count = count_of(model, BIYOS_getnind);
+    for (const Span span : bad_spans(count))
+    {
+        keep_indicators(held, span, BIYOS_ERR_BADARG, switches);
+    }
+    keep_indicators(held, {count, 0}, BIYOS_OK, switches);
 }
 
 TEST(RangeTest, Atomic)

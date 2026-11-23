@@ -100,6 +100,7 @@ add_library(biyos
     capi/expressions.cpp
     capi/format.cpp
     capi/functions.cpp
+    capi/indicators.cpp
     capi/linear.cpp
     capi/model.cpp
     capi/names.cpp
