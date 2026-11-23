@@ -629,6 +629,28 @@ BIYOS_API BIYOS_status BIYOS_getobjidx(const BIYOS_model *mdl,
                                        BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delobjnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delobjnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
+BIYOS_API BIYOS_status BIYOS_setindnamesp(BIYOS_model *mdl,
+                                          BIYOS_index n,
+                                          const BIYOS_index *idx,
+                                          const char *const *name);
+BIYOS_API BIYOS_status BIYOS_setindnamerg(BIYOS_model *mdl,
+                                          BIYOS_index pos,
+                                          BIYOS_index n,
+                                          const char *const *name);
+BIYOS_API BIYOS_status BIYOS_getindnamesp(const BIYOS_model *mdl,
+                                          BIYOS_index n,
+                                          const BIYOS_index *idx,
+                                          const char **name);
+BIYOS_API BIYOS_status BIYOS_getindnamerg(const BIYOS_model *mdl,
+                                          BIYOS_index pos,
+                                          BIYOS_index n,
+                                          const char **name);
+BIYOS_API BIYOS_status BIYOS_getindidx(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const char *const *name,
+                                       BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delindnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delindnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
 
 #define BIYOS_OP_CONST 1
 #define BIYOS_OP_VAR 2

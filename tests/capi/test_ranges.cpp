@@ -90,6 +90,14 @@ const std::array<NameCalls, 4> kNameCalls{{
      BIYOS_delobjnamerg},
 }};
 
+const NameCalls kIndicatorNames{BIYOS_getnind,
+                                BIYOS_setindnamesp,
+                                BIYOS_setindnamerg,
+                                BIYOS_getindnamesp,
+                                BIYOS_getindnamerg,
+                                BIYOS_delindnamesp,
+                                BIYOS_delindnamerg};
+
 std::uint64_t key(double value)
 {
     return std::bit_cast<std::uint64_t>(value);
@@ -395,6 +403,7 @@ void write_indicators(const Held &held, Engine &engine)
     const std::vector<int> values = drawn(engine, n, value);
     expect_writes(changed, span, BIYOS_setindbndsp, BIYOS_setindbndrg, lower, upper);
     expect_writes(changed, span, BIYOS_setindvarsp, BIYOS_setindvarrg, variables, values);
+    write_names(changed, engine, kIndicatorNames);
 }
 
 template <typename Value> std::vector<Value> zeros(Span span)
@@ -447,9 +456,11 @@ void read_indicators(const Held &held, Engine &engine)
     const Span span = random_span(engine, count_of(switched, BIYOS_getnind));
     const std::vector<double> reals = zeros<double>(span);
     const std::vector<int> whole = zeros<int>(span);
+    const std::vector<const char *> names = zeros<const char *>(span);
     expect_reads(switched, span, BIYOS_getindbndsp, BIYOS_getindbndrg, reals, reals);
     expect_reads(switched, span, BIYOS_getindvarsp, BIYOS_getindvarrg, whole, whole);
     expect_reads(switched, span, BIYOS_getindsp, BIYOS_getindrg, whole, whole, whole, reals, reals);
+    expect_reads(switched, span, kIndicatorNames.get_listed, kIndicatorNames.get_ranged, names);
 }
 
 void read_all(const Model &model, Engine &engine)
@@ -541,6 +552,7 @@ void keep_indicators(const Held &held, Span span, BIYOS_status wanted, Switches 
     expect_kept(held, span, wanted, BIYOS_setindvarrg, variables, values);
     expect_kept(held, span, wanted, BIYOS_getindvarrg, variables, values);
     expect_kept(held, span, wanted, BIYOS_getindrg, variables, values, variables, bounds, bounds);
+    keep_names(held, span, wanted, kIndicatorNames);
 }
 
 void keep_all(const Held &held, Counter count, Span span, BIYOS_status wanted)

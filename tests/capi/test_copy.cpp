@@ -89,6 +89,7 @@ void add_sample(BIYOS_model *model)
     ASSERT_EQ(BIYOS_setfunnamesp(model, 1, first, names), BIYOS_OK);
     ASSERT_EQ(BIYOS_setconnamesp(model, 2, named, names), BIYOS_OK);
     ASSERT_EQ(BIYOS_setobjnamesp(model, 1, first, names + 1), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setindnamesp(model, 1, first, names), BIYOS_OK);
 }
 
 BIYOS_env *created()

@@ -334,3 +334,53 @@ BIYOS_status BIYOS_delobjnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n
 {
     return guarded<delete_names<Family::Objective, Range>>(mdl, Range{pos, n});
 }
+
+BIYOS_status BIYOS_setindnamesp(BIYOS_model *mdl,
+                                BIYOS_index n,
+                                const BIYOS_index *idx,
+                                const char *const *name)
+{
+    return guarded<set_names<Family::Indicator, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_setindnamerg(BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const char *const *name)
+{
+    return guarded<set_names<Family::Indicator, Range>>(mdl, Range{pos, n}, name);
+}
+
+BIYOS_status BIYOS_getindnamesp(const BIYOS_model *mdl,
+                                BIYOS_index n,
+                                const BIYOS_index *idx,
+                                const char **name)
+{
+    return guarded<get_names<Family::Indicator, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_getindnamerg(const BIYOS_model *mdl,
+                                BIYOS_index pos,
+                                BIYOS_index n,
+                                const char **name)
+{
+    return guarded<get_names<Family::Indicator, Range>>(mdl, Range{pos, n}, name);
+}
+
+BIYOS_status BIYOS_getindidx(const BIYOS_model *mdl,
+                             BIYOS_index n,
+                             const char *const *name,
+                             BIYOS_index *idx)
+{
+    return guarded<get_indices<Family::Indicator>>(mdl, n, name, idx);
+}
+
+BIYOS_status BIYOS_delindnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+{
+    return guarded<delete_names<Family::Indicator, List>>(mdl, List{n, idx});
+}
+
+BIYOS_status BIYOS_delindnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+{
+    return guarded<delete_names<Family::Indicator, Range>>(mdl, Range{pos, n});
+}
