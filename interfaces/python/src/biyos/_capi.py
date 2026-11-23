@@ -21,6 +21,7 @@ KIND_INT = 2
 KIND_DOUBLE = 3
 KIND_STRING = 4
 KIND_ENUM = 5
+KIND_FLAGS = 6
 
 HOOK = CFUNCTYPE(None, c_void_p, c_void_p)
 

@@ -1,5 +1,5 @@
 group types Types
-text Four types name the numbers the calls take, so a number means the same in every language: an index, a count or a hook id is a `BIYOS_index`, any other integer a `BIYOS_int`, an offset or a total of terms a `BIYOS_offset`, and a value a `BIYOS_real`. Every handle is an opaque pointer, made and freed by the calls named below, and a program never looks inside it.
+text Five types name the numbers the calls take, so a number means the same in every language: an index, a count or a hook id is a `BIYOS_index`, any other integer a `BIYOS_int`, an offset or a total of terms a `BIYOS_offset`, a value a `BIYOS_real`, and a set of parts of a flags option a `BIYOS_mask`. Every handle is an opaque pointer, made and freed by the calls named below, and a program never looks inside it.
 
 type BIYOS_index
 summary An index or a count of items: variables, functions, constraints, objectives, fields, and the id of a hook.
@@ -23,6 +23,12 @@ type BIYOS_real
 summary A value: a bound, a constant, a coefficient or an option.
 note A `double`. An infinite bound is `INFINITY` or `-INFINITY` of `<math.h>`.
 see BIYOS_index
+since 0.1.0
+
+type BIYOS_mask
+summary A set of parts of a flags option, one bit per part.
+note A 64-bit unsigned integer, `uint64_t` of `<stdint.h>`. Each part is a macro written as a shift, such as `((BIYOS_mask)1 << 0)`, so an option holds at most 64 parts.
+see BIYOS_KND_FLG
 since 0.1.0
 
 type BIYOS_status
@@ -150,6 +156,7 @@ value BIYOS_KND_INT An int, set with `BIYOS_setenvintopt` and read with `BIYOS_g
 value BIYOS_KND_DBL A double, set with `BIYOS_setenvdblopt` and read with `BIYOS_getenvdblopt`.
 value BIYOS_KND_STR A string, set with `BIYOS_setenvstropt` and read with `BIYOS_getenvstropt`.
 value BIYOS_KND_ENUM One of a list of values, set with `BIYOS_setenvintopt` and read with `BIYOS_getenvintopt`, each value a macro of the option's group.
+value BIYOS_KND_FLG A pair of masks of `BIYOS_mask`, one forcing parts on and one forcing parts off, each part a bit macro of the option's group.
 since 0.1.0
 
 table Option ids

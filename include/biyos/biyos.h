@@ -25,6 +25,7 @@ typedef int32_t BIYOS_index;
 typedef int32_t BIYOS_int;
 typedef int64_t BIYOS_offset;
 typedef double BIYOS_real;
+typedef uint64_t BIYOS_mask;
 typedef struct BIYOS_env BIYOS_env;
 typedef struct BIYOS_event BIYOS_event;
 typedef struct BIYOS_model BIYOS_model;
@@ -70,6 +71,7 @@ BIYOS_API BIYOS_status BIYOS_interrupt(BIYOS_env *env);
 #define BIYOS_KND_DBL 3
 #define BIYOS_KND_STR 4
 #define BIYOS_KND_ENUM 5
+#define BIYOS_KND_FLG 6
 
 BIYOS_API BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt);
 BIYOS_API BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *knd);
