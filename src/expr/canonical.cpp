@@ -7,6 +7,7 @@
 #include "expr/node.hpp"
 #include "expr/terms.hpp"
 #include "expr/uses.hpp"
+#include "expr/zero.hpp"
 
 #include <algorithm>
 #include <array>
@@ -57,11 +58,6 @@ void check_uses(const Uses &uses, Offset node)
 bool same(double a, double b) noexcept
 {
     return std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b);
-}
-
-bool is_zero(double value) noexcept
-{
-    return std::fpclassify(value) == FP_ZERO;
 }
 
 bool is_finite(double value) noexcept

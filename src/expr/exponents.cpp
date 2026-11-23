@@ -3,6 +3,7 @@
 #include "expr/bends.hpp"
 #include "expr/interval.hpp"
 #include "expr/shape.hpp"
+#include "expr/zero.hpp"
 
 #include <cmath>
 #include <span>
@@ -79,11 +80,6 @@ constexpr Bend kOddReciprocal{
     .curvature = everywhere(Curvature::Concave),
     .monotonicity = everywhere(Monotonicity::Nonincreasing),
 };
-
-bool is_zero(double value) noexcept
-{
-    return std::fpclassify(value) == FP_ZERO;
-}
 
 bool is_whole(double value) noexcept
 {
