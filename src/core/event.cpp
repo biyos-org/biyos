@@ -62,9 +62,9 @@ std::string_view name_of(EventKind kind) noexcept
     {
     case EventKind::Message:
         return "message";
-    case EventKind::Check:
+    case EventKind::Invariant:
         return "check";
-    case EventKind::Phase:
+    case EventKind::Span:
         return "phase";
     }
     return "";

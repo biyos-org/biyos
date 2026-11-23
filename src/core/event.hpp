@@ -15,8 +15,8 @@ namespace biyos
 enum class EventKind
 {
     Message = BIYOS_EVTKND_MSG,
-    Check = BIYOS_EVTKND_INV,
-    Phase = BIYOS_EVTKND_SPAN,
+    Invariant = BIYOS_EVTKND_INV,
+    Span = BIYOS_EVTKND_SPAN,
 };
 
 enum class EventLevel
@@ -27,7 +27,7 @@ enum class EventLevel
     Error = BIYOS_EVTLVL_ERR,
 };
 
-inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Check, EventKind::Phase};
+inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Invariant, EventKind::Span};
 
 EventKind find_kind(int id);
 EventLevel find_level(int id);

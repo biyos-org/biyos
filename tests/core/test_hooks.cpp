@@ -154,11 +154,11 @@ TEST_F(HookTest, Wanted)
 {
     EXPECT_FALSE(hooks.wanted(EventKind::Message, EventLevel::Error));
     const int info = listen(EventLevel::Info, ignore);
-    hooks.add_hook(EventKind::Check, EventLevel::Error, ignore);
+    hooks.add_hook(EventKind::Invariant, EventLevel::Error, ignore);
     EXPECT_FALSE(hooks.wanted(EventKind::Message, EventLevel::Debug));
     EXPECT_TRUE(hooks.wanted(EventKind::Message, EventLevel::Info));
-    EXPECT_FALSE(hooks.wanted(EventKind::Check, EventLevel::Warning));
-    EXPECT_TRUE(hooks.wanted(EventKind::Check, EventLevel::Error));
+    EXPECT_FALSE(hooks.wanted(EventKind::Invariant, EventLevel::Warning));
+    EXPECT_TRUE(hooks.wanted(EventKind::Invariant, EventLevel::Error));
     hooks.delete_hook(info);
     EXPECT_FALSE(hooks.wanted(EventKind::Message, EventLevel::Error));
 }
@@ -167,11 +167,11 @@ TEST_F(HookTest, Order)
 {
     listen(EventLevel::Debug, recorder("a "));
     listen(EventLevel::Warning, recorder("w "));
-    hooks.add_hook(EventKind::Check, EventLevel::Debug, recorder("c "));
+    hooks.add_hook(EventKind::Invariant, EventLevel::Debug, recorder("c "));
     listen(EventLevel::Debug, recorder("b "));
     say(EventLevel::Info, "one");
     say(EventLevel::Error, "two");
-    say(EventKind::Check, EventLevel::Info, "three");
+    say(EventKind::Invariant, EventLevel::Info, "three");
     EXPECT_EQ(texts, (Texts{"a one", "b one", "a two", "w two", "b two", "c three"}));
 }
 

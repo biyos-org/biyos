@@ -162,7 +162,7 @@ TEST_F(CheckTest, LazyValues)
 
 TEST_F(CheckTest, OneEvent)
 {
-    keep(EventKind::Check);
+    keep(EventKind::Invariant);
     keep(EventKind::Message);
     const biyos::Error error =
         caught([this] { check(at(CheckLevel::Cheap), CheckLevel::Cheap, false); });
@@ -171,7 +171,7 @@ TEST_F(CheckTest, OneEvent)
     EXPECT_EQ(described, 1);
     ASSERT_EQ(kept.size(), 1U);
     const biyos::Event &event = kept.front();
-    EXPECT_EQ(event.kind, EventKind::Check);
+    EXPECT_EQ(event.kind, EventKind::Invariant);
     EXPECT_EQ(event.level, EventLevel::Error);
     EXPECT_EQ(event.module, "model");
     EXPECT_EQ(event.text, error.what());
@@ -182,7 +182,7 @@ TEST_F(CheckTest, LastError)
 {
     std::string seen;
     const auto read = [this, &seen](const biyos::Event &) { seen = env.last_error().text; };
-    env.events().add_hook(EventKind::Check, EventLevel::Error, read);
+    env.events().add_hook(EventKind::Invariant, EventLevel::Error, read);
     env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
     const biyos::Error error =
         caught([this] { check(at(CheckLevel::Cheap), CheckLevel::Cheap, false); });
@@ -210,7 +210,7 @@ TEST_F(CheckTest, Delivering)
 {
     const biyos::Checker checker = at(CheckLevel::Cheap);
     const auto inner = [this, &checker](const biyos::Event &) { reenter(checker); };
-    env.events().add_hook(EventKind::Check, EventLevel::Debug, inner);
+    env.events().add_hook(EventKind::Invariant, EventLevel::Debug, inner);
     EXPECT_EQ(caught([&] { check(checker, CheckLevel::Cheap, false); }).kind(),
               ErrorKind::InvalidArgument);
     EXPECT_EQ(received, 1);
@@ -221,7 +221,7 @@ TEST_F(CheckTest, Filling)
 {
     const biyos::Checker checker = at(CheckLevel::Cheap);
     const auto fill = [&](biyos::Event &) { check(checker, CheckLevel::Cheap, false); };
-    keep(EventKind::Check);
+    keep(EventKind::Invariant);
     keep(EventKind::Message);
     env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
     env.events().emit(EventKind::Message, EventLevel::Info, fill);
