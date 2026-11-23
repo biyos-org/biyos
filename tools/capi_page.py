@@ -135,9 +135,14 @@ def listed(entry, values):
     return [table(header, rows, weights, aligns) + caption, *meta(entry)]
 
 
+def stacked(names):
+    first, *rest = names
+    return " ".join([f"`{first}`", *(f"[`{n}`]{{.under}}" for n in rest)])
+
+
 def index(group):
     rows = [
-        (", ".join(f"`{name}`" for name in e.names), e.summary)
+        (stacked(e.names), e.summary)
         for e in group.entries
         if e.kind != "table"
     ]

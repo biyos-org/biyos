@@ -52,19 +52,24 @@ local function breakable(span)
     return span:walk({Str = bracket, Inlines = tied})
 end
 
+local function marked(span)
+    for class, macro in pairs(kMarks) do
+        if span.classes:includes(class) then
+            return wrapped(span, macro)
+        end
+    end
+end
+
 local function mark(span)
     if span.classes:includes("type") then
         span = breakable(span)
     end
-    for class, macro in pairs(kMarks) do
-        if span.classes:includes(class) then
-            local out = wrapped(span, macro)
-            if span.classes:includes("under") then
-                out:insert(1, pandoc.RawInline("latex", "\\newline"))
-            end
-            return out
-        end
+    local out = marked(span)
+    if span.classes:includes("under") then
+        out = out or pandoc.Inlines(span.content)
+        out:insert(1, pandoc.RawInline("latex", "\\newline"))
     end
+    return out
 end
 
 local function latex(blocks)
