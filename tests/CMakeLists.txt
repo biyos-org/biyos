@@ -25,6 +25,7 @@ endfunction()
 biyos_add_test(test_core
     core/test_check.cpp
     core/test_clock.cpp
+    core/test_deliveries.cpp
     core/test_env.cpp
     core/test_error.cpp
     core/test_events.cpp

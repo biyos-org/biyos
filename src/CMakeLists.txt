@@ -2,6 +2,7 @@ add_library(biyos_internal STATIC
     core/check.cpp
     core/clock.cpp
     core/deadline.cpp
+    core/deliveries.cpp
     core/env.cpp
     core/error.cpp
     core/event.cpp
