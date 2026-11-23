@@ -84,10 +84,18 @@ BIYOS_API BIYOS_status BIYOS_setenvboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_
 BIYOS_API BIYOS_status BIYOS_setenvintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
 BIYOS_API BIYOS_status BIYOS_setenvdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val);
 BIYOS_API BIYOS_status BIYOS_setenvstropt(BIYOS_env *env, BIYOS_int opt, const char *val);
+BIYOS_API BIYOS_status BIYOS_setenvflgopt(BIYOS_env *env,
+                                          BIYOS_int opt,
+                                          BIYOS_mask on,
+                                          BIYOS_mask off);
 BIYOS_API BIYOS_status BIYOS_getenvboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val);
 BIYOS_API BIYOS_status BIYOS_getenvintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val);
 BIYOS_API BIYOS_status BIYOS_getenvdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real *val);
 BIYOS_API BIYOS_status BIYOS_getenvstropt(BIYOS_env *env, BIYOS_int opt, const char **val);
+BIYOS_API BIYOS_status BIYOS_getenvflgopt(BIYOS_env *env,
+                                          BIYOS_int opt,
+                                          BIYOS_mask *on,
+                                          BIYOS_mask *off);
 
 #define BIYOS_EVT_MESSAGE 1
 #define BIYOS_EVT_CHECK 2

@@ -10,6 +10,7 @@ from ctypes import (
     c_int32,
     c_int64,
     c_size_t,
+    c_uint64,
     c_void_p,
 )
 from importlib.resources import files
@@ -70,10 +71,14 @@ def _load() -> ctypes.CDLL:
     _declare(lib, "BIYOS_setenvintopt", c_int, c_void_p, c_int32, c_int32)
     _declare(lib, "BIYOS_setenvdblopt", c_int, c_void_p, c_int32, c_double)
     _declare(lib, "BIYOS_setenvstropt", c_int, c_void_p, c_int32, c_char_p)
+    masks = (c_uint64, c_uint64)
+    _declare(lib, "BIYOS_setenvflgopt", c_int, c_void_p, c_int32, *masks)
     _declare(lib, "BIYOS_getenvboolopt", c_int, c_void_p, c_int32, ints)
     _declare(lib, "BIYOS_getenvintopt", c_int, c_void_p, c_int32, ints)
     _declare(lib, "BIYOS_getenvdblopt", c_int, c_void_p, c_int32, doubles)
     _declare(lib, "BIYOS_getenvstropt", c_int, c_void_p, c_int32, strings)
+    pointers = (POINTER(c_uint64), POINTER(c_uint64))
+    _declare(lib, "BIYOS_getenvflgopt", c_int, c_void_p, c_int32, *pointers)
     _declare_events(lib, ints)
     _declare_model(lib, ints, doubles)
     return lib
