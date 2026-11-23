@@ -1276,8 +1276,9 @@ class Model:
         cb = integer("cb", cb)
         jac = checked("jac", jac)
         if not self._callbacks.known(cb):
-            refused = Caller(jac, 0, 0).pointer
-            self._call(lib.BIYOS_setcbjac, cb, None, None, refused)
+            refused = Caller(jac, 0, 0)
+            self._callbacks.keep(refused)
+            self._call(lib.BIYOS_setcbjac, cb, None, None, refused.pointer)
         n = self._callbacks.count(cb)
         starts = offsets("off", off, n + 1)
         size = _total(starts, n)
