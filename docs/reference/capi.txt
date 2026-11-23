@@ -773,6 +773,20 @@ note `BIYOS_getvartolsp` reads the tolerances.
 see BIYOS_getnvar BIYOS_getvartolsp
 since 0.1.0
 
+function BIYOS_delvarsp BIYOS_delvarrg
+summary Delete variables.
+param mdl in The model.
+param pos in In the `rg` form, the first variable to delete.
+param n in The number of variables to delete.
+param idx in In the `sp` form, the variables to delete, in any order; may be null when `n` is 0.
+param map out Receives one entry for each variable the model held before the call: entry `i` is the new index of variable `i`, or -1 when it is deleted; skipped when null.
+return `BIYOS_OK` once the variables are deleted. The others keep their order, their data and their names, and are numbered from 0 again; each term, set, indicator and node that uses one refers to it by its new index.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, a variable is listed more than once, with a message such as `invalid argument: argument 'idx': variable 1 is repeated`, or the range ends past the last variable.
+error BIYOS_ERR_INUSE A variable to delete has a node, is a member of a set or is the binary of an indicator, or the model has a callback and a variable is to be deleted, with a message that names one use, such as `in use: variable 3: used by set 1`.
+note A deleted variable's kind, bounds, tolerances and name go with it, and so do its linear and quadratic terms; a function left with no term keeps its constant. A variable keeps its node once `BIYOS_addvarnode` or an expression gives it one, even after the function that used the node is deleted. Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` is no longer valid.
+see BIYOS_getnvar BIYOS_delvarnamesp
+since 0.1.0
+
 function BIYOS_setvarnamesp BIYOS_setvarnamerg
 summary Name variables.
 param mdl in The model.

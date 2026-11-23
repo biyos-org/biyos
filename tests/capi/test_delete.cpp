@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -280,15 +281,76 @@ BIYOS_index function_of(const Model &model)
     return function;
 }
 
-std::string in_use(const Env &env, const Model &model, Indices indices)
+std::string in_use(const Env &env, const Model &model, Listed listed, Indices indices)
 {
     const Model tried(env, model);
     Map map(4, 9);
     const auto n = static_cast<BIYOS_index>(indices.size());
-    EXPECT_EQ(BIYOS_delfunsp(tried.get(), n, indices.data(), map.data()), BIYOS_ERR_INUSE);
+    EXPECT_EQ(listed(tried.get(), n, indices.data(), map.data()), BIYOS_ERR_INUSE);
     EXPECT_EQ(map, Map(4, 9));
     expect_unchanged(tried, model);
     return env.message();
+}
+
+struct Spread
+{
+    std::vector<BIYOS_real> lower;
+    std::vector<BIYOS_real> absolute;
+    std::vector<BIYOS_real> coefficients;
+    std::vector<const char *> names;
+    BIYOS_index member;
+};
+
+const Spread kFour{
+    .lower = {0.0, 1.0, 2.0, 3.0},
+    .absolute = {0.5, 0.25, 0.125, 0.0625},
+    .coefficients = {1.0, 2.0, 3.0, 4.0},
+    .names = {"r0", "r1", "r2"},
+    .member = 3,
+};
+
+const Spread kTwo{
+    .lower = {1.0, 3.0},
+    .absolute = {0.25, 0.0625},
+    .coefficients = {2.0, 4.0},
+    .names = {"r1"},
+    .member = 1,
+};
+
+const Spread kOne{
+    .lower = {3.0},
+    .absolute = {0.0625},
+    .coefficients = {4.0},
+    .names = {},
+    .member = 0,
+};
+
+void build_variables(const Model &model, const Spread &spread)
+{
+    BIYOS_model *held = model.get();
+    const auto n = static_cast<BIYOS_index>(spread.lower.size());
+    const auto named = static_cast<BIYOS_index>(spread.names.size());
+    const std::vector<BIYOS_index> functions(spread.lower.size(), 0);
+    std::vector<BIYOS_index> variables(spread.lower.size());
+    std::iota(variables.begin(), variables.end(), 0);
+    const BIYOS_int kind = BIYOS_SOSKND_SOS1;
+    const std::array<BIYOS_offset, 2> starts{0, 1};
+    const BIYOS_real *coefficients = spread.coefficients.data();
+    ASSERT_EQ(BIYOS_addvar(held, n, nullptr, spread.lower.data(), nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setvarnamerg(held, 0, named, spread.names.data()), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setvartolrg(held, 0, n, spread.absolute.data(), nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(held, 1, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addlintermsp(held, n, functions.data(), variables.data(), coefficients),
+              BIYOS_OK);
+    ASSERT_EQ(BIYOS_addsos(held, 1, &kind, starts.data(), &spread.member, nullptr, nullptr),
+              BIYOS_OK);
+}
+
+void expect_built(const Env &env, const Model &model, const Spread &spread)
+{
+    const Model wanted(env);
+    build_variables(wanted, spread);
+    EXPECT_EQ(biyos::difference(model.get()->core, wanted.get()->core), "");
 }
 
 void expect_moved(const ToleranceCalls &tolerances, Listed listed)
@@ -374,8 +436,8 @@ TEST(CApiTest, UsedFunction)
     const Model model(env);
     build_functions(model);
     const std::string used = "in use: function 3: used by constraint 0";
-    EXPECT_EQ(in_use(env, model, {3}), used);
-    EXPECT_EQ(in_use(env, model, {1, 3}), used);
+    EXPECT_EQ(in_use(env, model, BIYOS_delfunsp, {3}), used);
+    EXPECT_EQ(in_use(env, model, BIYOS_delfunsp, {1, 3}), used);
     const Model tried(env, model);
     Map map(4, 9);
     EXPECT_EQ(BIYOS_delfunrg(tried.get(), 2, 2, map.data()), BIYOS_ERR_INUSE);
@@ -384,6 +446,49 @@ TEST(CApiTest, UsedFunction)
     expect_unchanged(tried, model);
     EXPECT_EQ(BIYOS_delfunrg(tried.get(), 3, 2, map.data()), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refused(kFunctions, "4: unknown"));
+}
+
+TEST(CApiTest, DeleteVariables)
+{
+    const Env env;
+    const Model model(env);
+    build_variables(model, kFour);
+    const Indices indices{2, 0};
+    Map map(4, 9);
+    EXPECT_EQ(BIYOS_delvarsp(model.get(), 2, indices.data(), map.data()), BIYOS_OK);
+    EXPECT_EQ(map, (Map{-1, 0, -1, 1}));
+    expect_built(env, model, kTwo);
+    EXPECT_EQ(BIYOS_delvarrg(model.get(), 0, 1, nullptr), BIYOS_OK);
+    expect_built(env, model, kOne);
+}
+
+TEST(CApiTest, UsedVariable)
+{
+    const Env env;
+    const Model model(env);
+    build_variables(model, kFour);
+    const std::string used = "in use: variable 3: used by set 0";
+    EXPECT_EQ(in_use(env, model, BIYOS_delvarsp, {3}), used);
+    EXPECT_EQ(in_use(env, model, BIYOS_delvarsp, {1, 3}), used);
+    const Model tried(env, model);
+    Map map(4, 9);
+    EXPECT_EQ(BIYOS_delvarrg(tried.get(), 2, 2, map.data()), BIYOS_ERR_INUSE);
+    EXPECT_EQ(env.message(), used);
+    EXPECT_EQ(map, Map(4, 9));
+    expect_unchanged(tried, model);
+    EXPECT_EQ(BIYOS_delvarrg(tried.get(), 3, 2, map.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: variable 4: unknown");
+    EXPECT_EQ(BIYOS_delvarsp(tried.get(), 1, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delvarsp(tried.get(), -1, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delvarrg(nullptr, 0, 1, nullptr), BIYOS_ERR_BADARG);
+    const BIYOS_index unknown = -1;
+    EXPECT_EQ(BIYOS_delvarsp(tried.get(), 1, &unknown, nullptr), BIYOS_ERR_BADARG);
+    expect_unchanged(tried, model);
+    ASSERT_EQ(BIYOS_addvarnode(model.get(), 1, nullptr), BIYOS_OK);
+    EXPECT_EQ(in_use(env, model, BIYOS_delvarsp, {1}), "in use: variable 1: used by node 0");
+    const BIYOS_index function = 0;
+    ASSERT_EQ(BIYOS_addcb(model.get(), 1, &function, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(in_use(env, model, BIYOS_delvarsp, {0}), "in use: variable 0: used by callback 0");
 }
 
 TEST(CApiTest, MovedTolerances)

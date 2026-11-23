@@ -785,7 +785,9 @@ int main(void)
         BIYOS_getvartolsp(model, 1, indices, tolerances, NULL) != BIYOS_OK ||
         BIYOS_getvartolrg(model, 0, 2, NULL, tolerances) != BIYOS_OK ||
         BIYOS_delvartolsp(model, 1, indices) != BIYOS_OK ||
-        BIYOS_delvartolrg(model, 0, 2) != BIYOS_OK)
+        BIYOS_delvartolrg(model, 0, 2) != BIYOS_OK ||
+        BIYOS_delvarsp(model, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_delvarrg(model, 2, 0, NULL) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }
