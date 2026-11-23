@@ -192,22 +192,23 @@ TEST(CallbackTest, RootFirst)
 {
     Model model = with_functions(2);
     attach_sine(model, 1);
-    EXPECT_EQ(add_refusal(model, {0, 1}), kBad + "function 1: has an expression");
-    EXPECT_EQ(model.n_callbacks(), 0);
-    model.clear_functions(std::vector<Index>{1});
+    const Offset root = model.roots(1, 1).front();
     EXPECT_EQ(add(model, {0, 1}), 0);
+    EXPECT_EQ(model.callback(0).covered, (std::vector<Index>{0, 1}));
+    EXPECT_EQ(model.roots(1, 1).front(), root);
 }
 
 TEST(CallbackTest, RootAfter)
 {
     Model model = with_functions(2);
+    Model plain = model;
     add(model, {1});
-    const Offset size = model.graph().size();
-    EXPECT_EQ(refusal([&] { attach_sine(model, 1); }), kBad + "function 1: is in callback 0");
-    EXPECT_EQ(model.roots(1, 1).front(), kNoRoot);
-    EXPECT_EQ(model.graph().size(), size + 2);
-    attach_sine(model, 0);
-    EXPECT_NE(model.roots(0, 1).front(), kNoRoot);
+    attach_sine(model, 1);
+    attach_sine(model, 1);
+    attach_sine(plain, 1);
+    attach_sine(plain, 1);
+    EXPECT_NE(model.roots(1, 1).front(), kNoRoot);
+    EXPECT_EQ(difference(model, plain), "callback count 1 against 0");
 }
 
 TEST(CallbackTest, LinearAttach)

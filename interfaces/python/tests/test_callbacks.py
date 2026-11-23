@@ -201,17 +201,31 @@ def test_patterns(model, seen):
     assert found == [([], []), ([], []), ([2.0, 3.0], []), ([2.0, 3.0], v)]
 
 
+def attach_exp(model, idx):
+    node = model.addexpr([0, 2], [Operator.VARIABLE, Operator.EXP], [1, 1])
+    model.attachexpr(idx, node * len(idx))
+
+
+def test_expression(env, model):
+    with biyos.Model(env) as plain:
+        plain.addvar(3)
+        plain.addfun(3)
+        for built in (model, plain):
+            attach_exp(built, [1])
+        assert model.addcb([1, 0]) == 0
+        for built in (model, plain):
+            attach_exp(built, [0, 1])
+        assert model.getnexpr([1]) == (5, 3)
+        assert model.getexpr() == plain.getexpr()
+
+
 def test_refused(model):
     cb = model.addcb([0])
     bad = "invalid argument: "
-    node = model.addexpr([0, 2], [Operator.VARIABLE, Operator.EXP], [1, 1])
-    model.attachexpr([1], node)
     cases = [
         (model.addcb, ([],), "argument 'n': 0 is not positive"),
         (model.addcb, ([0],), "function 0: is in callback 0"),
-        (model.addcb, ([1],), "function 1: has an expression"),
         (model.addcb, ([3],), "function 3: unknown"),
-        (model.attachexpr, ([0], node), "function 0: is in callback 0"),
         (model.setcbf, (1, answer), "callback 1: unknown"),
         (model.setcbg, (-1, [0, 1], [0], answer), "callback -1: unknown"),
         (model.setcbh, (2, [], [], answer), "callback 2: unknown"),

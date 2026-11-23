@@ -112,6 +112,16 @@ BIYOS_index count_of(const Model &model, BIYOS_index cb)
     return n;
 }
 
+void attach_exp(const Model &model, BIYOS_index function)
+{
+    BIYOS_model *mdl = model.get();
+    BIYOS_offset x = -1;
+    BIYOS_offset node = -1;
+    ASSERT_EQ(BIYOS_addvarnode(mdl, 0, &x), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addnode(mdl, BIYOS_OP_EXP, 1, &x, nullptr, &node), BIYOS_OK);
+    ASSERT_EQ(BIYOS_attachexprsp(mdl, 1, &function, &node), BIYOS_OK);
+}
+
 std::uint64_t bits(double value)
 {
     return std::bit_cast<std::uint64_t>(value);
@@ -322,20 +332,20 @@ TEST(CallbackTest, Expression)
 {
     const Env env;
     const Model model(env);
+    const Model plain(env);
     build(model, 1, 2);
-    BIYOS_model *mdl = model.get();
-    BIYOS_offset x = -1;
-    BIYOS_offset node = -1;
-    ASSERT_EQ(BIYOS_addvarnode(mdl, 0, &x), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addnode(mdl, BIYOS_OP_EXP, 1, &x, nullptr, &node), BIYOS_OK);
-    const BIYOS_index first = 0;
-    const BIYOS_index second = 1;
-    ASSERT_EQ(BIYOS_attachexprsp(mdl, 1, &first, &node), BIYOS_OK);
-    EXPECT_EQ(failed(env, BIYOS_addcb(mdl, 1, &first, nullptr, nullptr)),
-              kBad + "function 0: has an expression");
-    EXPECT_EQ(add(model, {1}, nullptr), 0);
-    EXPECT_EQ(failed(env, BIYOS_attachexprsp(mdl, 1, &second, &node)),
-              kBad + "function 1: is in callback 0");
+    build(plain, 1, 2);
+    attach_exp(model, 0);
+    attach_exp(plain, 0);
+    EXPECT_EQ(add(model, {0}, nullptr), 0);
+    EXPECT_EQ(add(model, {1}, nullptr), 1);
+    attach_exp(model, 1);
+    attach_exp(model, 0);
+    attach_exp(plain, 1);
+    attach_exp(plain, 0);
+    EXPECT_EQ(env.message(), "");
+    EXPECT_EQ(biyos::difference(model.get()->core, plain.get()->core),
+              "callback count 2 against 0");
 }
 
 TEST(CallbackTest, DataPointer)

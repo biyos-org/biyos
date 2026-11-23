@@ -65,10 +65,6 @@ Index Model::add_callback(std::span<const Index> functions, void *data)
     check_functions(functions, n_functions(), "funidx");
     for (const Index function : functions)
     {
-        if (roots_[at(function)] != kNoRoot)
-        {
-            refuse("function", function, "has an expression");
-        }
         if (callback_of(function) != kNoCallback)
         {
             refuse("function", function, "is in " + item(kNoun, callback_of(function)));
