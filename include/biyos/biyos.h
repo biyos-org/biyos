@@ -975,9 +975,9 @@ typedef struct BIYOS_cbreq
 } BIYOS_cbreq;
 
 typedef int (*BIYOS_cbf)(const BIYOS_cbreq *req, BIYOS_real *f, void *data);
-typedef int (*BIYOS_cbjac)(const BIYOS_cbreq *req, BIYOS_real *jac, void *data);
-typedef int (*BIYOS_cbhess)(const BIYOS_cbreq *req, BIYOS_real *hess, void *data);
-typedef int (*BIYOS_cbhessvec)(const BIYOS_cbreq *req, BIYOS_real *hv, void *data);
+typedef int (*BIYOS_cbg)(const BIYOS_cbreq *req, BIYOS_real *g, void *data);
+typedef int (*BIYOS_cbh)(const BIYOS_cbreq *req, BIYOS_real *h, void *data);
+typedef int (*BIYOS_cbhv)(const BIYOS_cbreq *req, BIYOS_real *hv, void *data);
 
 BIYOS_API BIYOS_status BIYOS_addcb(BIYOS_model *mdl,
                                    BIYOS_index n,
@@ -985,20 +985,18 @@ BIYOS_API BIYOS_status BIYOS_addcb(BIYOS_model *mdl,
                                    void *data,
                                    BIYOS_index *cb);
 BIYOS_API BIYOS_status BIYOS_setcbf(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbf f);
-BIYOS_API BIYOS_status BIYOS_setcbjac(BIYOS_model *mdl,
-                                      BIYOS_index cb,
-                                      const BIYOS_offset *off,
-                                      const BIYOS_index *varidx,
-                                      BIYOS_cbjac jac);
-BIYOS_API BIYOS_status BIYOS_setcbhess(BIYOS_model *mdl,
-                                       BIYOS_index cb,
-                                       BIYOS_offset nnz,
-                                       const BIYOS_index *varidx1,
-                                       const BIYOS_index *varidx2,
-                                       BIYOS_cbhess hess);
-BIYOS_API BIYOS_status BIYOS_setcbhessvec(BIYOS_model *mdl,
-                                          BIYOS_index cb,
-                                          BIYOS_cbhessvec hessvec);
+BIYOS_API BIYOS_status BIYOS_setcbg(BIYOS_model *mdl,
+                                    BIYOS_index cb,
+                                    const BIYOS_offset *off,
+                                    const BIYOS_index *varidx,
+                                    BIYOS_cbg g);
+BIYOS_API BIYOS_status BIYOS_setcbh(BIYOS_model *mdl,
+                                    BIYOS_index cb,
+                                    BIYOS_offset nnz,
+                                    const BIYOS_index *varidx1,
+                                    const BIYOS_index *varidx2,
+                                    BIYOS_cbh h);
+BIYOS_API BIYOS_status BIYOS_setcbhv(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbhv hv);
 BIYOS_API BIYOS_status BIYOS_setcbdata(BIYOS_model *mdl, BIYOS_index cb, void *data);
 BIYOS_API BIYOS_status BIYOS_getcbdata(const BIYOS_model *mdl, BIYOS_index cb, void **data);
 

@@ -1585,21 +1585,21 @@ class Model:
 
         See Also
         --------
-        BIYOS_setcbjac
+        BIYOS_setcbg
         """
         cb = integer("cb", cb)
         jac = checked("jac", jac)
         if not self._callbacks.known(cb):
             refused = Caller(jac, 0, 0)
             self._callbacks.keep(refused)
-            self._call(lib.BIYOS_setcbjac, cb, None, None, refused.pointer)
+            self._call(lib.BIYOS_setcbg, cb, None, None, refused.pointer)
         n = self._callbacks.count(cb)
         starts = offsets("off", off, n + 1)
         size = _total(starts, n)
         variables = indices_of(self, Variables, "varidx", varidx, size)
         caller = Caller(jac, n, size)
         self._callbacks.keep(caller)
-        self._call(lib.BIYOS_setcbjac, cb, starts, variables, caller.pointer)
+        self._call(lib.BIYOS_setcbg, cb, starts, variables, caller.pointer)
 
     def setcbhess(
         self,
@@ -1636,7 +1636,7 @@ class Model:
 
         See Also
         --------
-        BIYOS_setcbhess
+        BIYOS_setcbh
         """
         cb = integer("cb", cb)
         nnz = len(varidx1)
@@ -1645,7 +1645,7 @@ class Model:
         caller = Caller(checked("hess", hess), self._callbacks.count(cb), nnz)
         pairs = (nnz, first, second, caller.pointer)
         self._callbacks.keep(caller)
-        self._call(lib.BIYOS_setcbhess, cb, *pairs)
+        self._call(lib.BIYOS_setcbh, cb, *pairs)
 
     def setcbhessvec(self, cb: int, hessvec: Callable[..., object]) -> None:
         """Give a callback the function that multiplies its Hessian by a
@@ -1668,13 +1668,13 @@ class Model:
 
         See Also
         --------
-        BIYOS_setcbhessvec
+        BIYOS_setcbhv
         """
         cb = integer("cb", cb)
         function = checked("hessvec", hessvec)
         caller = Caller(function, self._callbacks.count(cb), None)
         self._callbacks.keep(caller)
-        self._call(lib.BIYOS_setcbhessvec, cb, caller.pointer)
+        self._call(lib.BIYOS_setcbhv, cb, caller.pointer)
 
     def setcbdata(self, cb: int, data: object) -> None:
         """Replace the object a callback's functions receive.

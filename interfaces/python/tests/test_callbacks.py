@@ -13,9 +13,9 @@ from refusal import LOCKED, refusal
 
 SETTERS = (
     "BIYOS_setcbf",
-    "BIYOS_setcbjac",
-    "BIYOS_setcbhess",
-    "BIYOS_setcbhessvec",
+    "BIYOS_setcbg",
+    "BIYOS_setcbh",
+    "BIYOS_setcbhv",
 )
 
 
