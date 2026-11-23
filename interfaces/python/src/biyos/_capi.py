@@ -269,6 +269,9 @@ def _declare_expressions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_addexpr", c_int, *postfix)
     _declare_pair(lib, "BIYOS_attachexpr", offsets)
     _declare_pair(lib, "BIYOS_clrfun")
+    _declare_pair(lib, "BIYOS_getnexpr", offsets, offsets)
+    read = (c_int64, c_int64, offsets, ints, offsets, doubles)
+    _declare_pair(lib, "BIYOS_getexpr", *read)
 
 
 def _declare_settings(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
