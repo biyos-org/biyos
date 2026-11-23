@@ -21,7 +21,6 @@ using biyos::Callback;
 using biyos::difference;
 using biyos::Index;
 using biyos::IndexPair;
-using biyos::kNoCallback;
 using biyos::kNoRoot;
 using biyos::Model;
 using biyos::Offset;
@@ -159,20 +158,7 @@ TEST(CallbackTest, Added)
     EXPECT_FALSE(first.jacobian);
     EXPECT_FALSE(first.hessian);
     EXPECT_FALSE(first.hessian_product);
-    EXPECT_EQ(model.callback_of(0), 0);
-    EXPECT_EQ(model.callback_of(1), kNoCallback);
-    EXPECT_EQ(model.callback_of(2), 0);
-    EXPECT_EQ(model.callback_of(3), 1);
-}
-
-TEST(CallbackTest, LaterFunction)
-{
-    Model model = with_functions(1);
-    add(model, {0});
-    model.add_functions(std::vector<double>{0.0}, std::vector<Offset>{0, 0}, {});
-    EXPECT_EQ(model.callback_of(1), kNoCallback);
-    EXPECT_EQ(add(model, {1}), 1);
-    EXPECT_EQ(model.callback_of(1), 1);
+    EXPECT_EQ(model.callback(1).covered, (std::vector<Index>{3}));
 }
 
 TEST(CallbackTest, AddRefused)
@@ -183,9 +169,22 @@ TEST(CallbackTest, AddRefused)
     EXPECT_EQ(add_refusal(model, {0, 3}), kBad + "function 3: unknown");
     EXPECT_EQ(add_refusal(model, {-1}), kBad + "function -1: unknown");
     EXPECT_EQ(add_refusal(model, {2, 0, 2}), kBad + "argument 'funidx': function 2 is repeated");
-    EXPECT_EQ(add_refusal(model, {0, 1}), kBad + "function 1: is in callback 0");
+    EXPECT_EQ(add_refusal(model, {1, 1}), kBad + "argument 'funidx': function 1 is repeated");
     EXPECT_EQ(model.n_callbacks(), 1);
-    EXPECT_EQ(model.callback_of(0), kNoCallback);
+}
+
+TEST(CallbackTest, Shared)
+{
+    Model model = with_functions(3);
+    attach_sine(model, 1);
+    EXPECT_EQ(add(model, {1, 0}), 0);
+    EXPECT_EQ(add(model, {2, 1}), 1);
+    attach_sine(model, 1);
+    EXPECT_NE(model.roots(1, 1).front(), kNoRoot);
+    const Model copy = model;
+    EXPECT_EQ(difference(model, copy), "");
+    EXPECT_EQ(copy.callback(0).covered, (std::vector<Index>{1, 0}));
+    EXPECT_EQ(copy.callback(1).covered, (std::vector<Index>{2, 1}));
 }
 
 TEST(CallbackTest, RootFirst)
@@ -229,8 +228,7 @@ TEST(CallbackTest, Cleared)
     Model model = with_functions(2);
     add(model, {1, 0});
     model.clear_functions(std::vector<Index>{0, 1});
-    EXPECT_EQ(model.callback_of(0), 0);
-    EXPECT_EQ(model.callback_of(1), 0);
+    EXPECT_EQ(model.callback(0).covered, (std::vector<Index>{1, 0}));
 }
 
 TEST(CallbackTest, Values)
@@ -354,7 +352,7 @@ TEST(CallbackTest, Copied)
     const Callback &held = copy.callback(0);
     EXPECT_EQ(held.data, &calls);
     EXPECT_EQ(held.jacobian_variables, (std::vector<Index>{0, 1}));
-    EXPECT_EQ(copy.callback_of(1), 0);
+    EXPECT_EQ(held.covered, (std::vector<Index>{1}));
     std::vector<double> out(1);
     const Request request{
         .model = nullptr,
@@ -385,6 +383,11 @@ TEST(CallbackTest, Difference)
     Model other = with_functions(3);
     other.add_callback(std::vector<Index>{1, 0}, &data);
     EXPECT_EQ(difference(model, other), "callback 0: covered function 0: index 2 against 1");
+    Model second = copy;
+    add(second, {0, 1});
+    Model swapped = copy;
+    add(swapped, {0, 2});
+    EXPECT_EQ(difference(second, swapped), "callback 1: covered function 1: index 1 against 2");
     Model moved = copy;
     moved.set_callback_data(0, nullptr);
     EXPECT_EQ(difference(model, moved), "callback 0: data differs");

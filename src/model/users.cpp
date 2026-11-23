@@ -126,7 +126,6 @@ void Model::renumber_functions(std::span<const Index> map) noexcept
     {
         renumber_all(callback.covered, map);
     }
-    keep(covering_, map.first(covering_.size()));
 }
 
 }

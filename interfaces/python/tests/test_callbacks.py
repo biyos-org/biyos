@@ -219,12 +219,21 @@ def test_expression(env, model):
         assert model.getexpr() == plain.getexpr()
 
 
+def test_shared(model):
+    attach_exp(model, [1])
+    assert model.addcb([1, 0]) == 0
+    assert model.addcb([2, 1]) == 1
+    attach_exp(model, [1])
+    assert model.getnexpr([1]) == (5, 3)
+
+
 def test_refused(model):
     cb = model.addcb([0])
     bad = "invalid argument: "
+    repeated = "argument 'funidx': function 1 is repeated"
     cases = [
         (model.addcb, ([],), "argument 'n': 0 is not positive"),
-        (model.addcb, ([0],), "function 0: is in callback 0"),
+        (model.addcb, ([1, 2, 1],), repeated),
         (model.addcb, ([3],), "function 3: unknown"),
         (model.setcbf, (1, answer), "callback 1: unknown"),
         (model.setcbg, (-1, [0, 1], [0], answer), "callback -1: unknown"),

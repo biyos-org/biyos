@@ -93,6 +93,12 @@ std::string failed(const Env &env, BIYOS_status status)
     return env.message();
 }
 
+std::string in_use(const Env &env, BIYOS_status status)
+{
+    EXPECT_EQ(status, BIYOS_ERR_INUSE);
+    return env.message();
+}
+
 const Callback &held(const Model &model, BIYOS_index cb)
 {
     return model.get()->core.callback(cb);
@@ -120,6 +126,22 @@ void attach_exp(const Model &model, BIYOS_index function)
     ASSERT_EQ(BIYOS_addvarnode(mdl, 0, &x), BIYOS_OK);
     ASSERT_EQ(BIYOS_addnode(mdl, BIYOS_OP_EXP, 1, &x, nullptr, &node), BIYOS_OK);
     ASSERT_EQ(BIYOS_attachexprsp(mdl, 1, &function, &node), BIYOS_OK);
+}
+
+void cover(const Model &model)
+{
+    build(model, 1, 4);
+    add(model, {2}, nullptr);
+    add(model, {1, 2}, nullptr);
+    add(model, {3, 1}, nullptr);
+}
+
+std::string deleted(const Env &env, const Model &model, BIYOS_index function)
+{
+    std::vector<BIYOS_index> map(4, 9);
+    const BIYOS_status status = BIYOS_delfunsp(model.get(), 1, &function, map.data());
+    EXPECT_EQ(map, std::vector<BIYOS_index>(4, 9));
+    return in_use(env, status);
 }
 
 std::uint64_t bits(double value)
@@ -173,7 +195,7 @@ TEST(CallbackTest, Registered)
     EXPECT_EQ(BIYOS_setcbhv(mdl, 0, record), BIYOS_OK);
     EXPECT_EQ(env.message(), "");
     EXPECT_EQ(mdl->core.n_callbacks(), 2);
-    EXPECT_EQ(mdl->core.callback_of(1), 1);
+    EXPECT_EQ(held(model, 1).covered, (std::vector<biyos::Index>{1}));
     const Callback &first = held(model, 0);
     EXPECT_EQ(first.covered, (std::vector<biyos::Index>{2, 0}));
     EXPECT_EQ(first.jacobian_starts, (std::vector<biyos::Offset>{0, 1, 3}));
@@ -346,6 +368,58 @@ TEST(CallbackTest, Expression)
     EXPECT_EQ(env.message(), "");
     EXPECT_EQ(biyos::difference(model.get()->core, plain.get()->core),
               "callback count 2 against 0");
+}
+
+TEST(CallbackTest, Shared)
+{
+    const Env env;
+    const Model model(env);
+    build(model, 1, 3);
+    attach_exp(model, 1);
+    EXPECT_EQ(add(model, {1, 0}, nullptr), 0);
+    EXPECT_EQ(add(model, {2, 1}, nullptr), 1);
+    attach_exp(model, 1);
+    EXPECT_EQ(env.message(), "");
+    EXPECT_EQ(held(model, 0).covered, (std::vector<biyos::Index>{1, 0}));
+    EXPECT_EQ(held(model, 1).covered, (std::vector<biyos::Index>{2, 1}));
+    const std::vector<BIYOS_index> twice{2, 1, 2};
+    EXPECT_EQ(failed(env, BIYOS_addcb(model.get(), 3, twice.data(), nullptr, nullptr)),
+              kBad + "argument 'funidx': function 2 is repeated");
+    EXPECT_EQ(model.get()->core.n_callbacks(), 2);
+}
+
+TEST(CallbackTest, CopyLists)
+{
+    const Env env;
+    const Model source(env);
+    cover(source);
+    const Model copy(env, source);
+    EXPECT_EQ(biyos::difference(source.get()->core, copy.get()->core), "");
+    EXPECT_EQ(held(copy, 1).covered, (std::vector<biyos::Index>{1, 2}));
+    EXPECT_EQ(held(copy, 2).covered, (std::vector<biyos::Index>{3, 1}));
+    const Model other(env);
+    build(other, 1, 4);
+    add(other, {2}, nullptr);
+    add(other, {1, 2}, nullptr);
+    add(other, {3, 2}, nullptr);
+    EXPECT_EQ(biyos::difference(copy.get()->core, other.get()->core),
+              "callback 2: covered function 1: index 1 against 2");
+}
+
+TEST(CallbackTest, Deleted)
+{
+    const Env env;
+    const Model model(env);
+    cover(model);
+    EXPECT_EQ(deleted(env, model, 1), "in use: function 1: used by callback 1");
+    EXPECT_EQ(deleted(env, model, 2), "in use: function 2: used by callback 0");
+    EXPECT_EQ(deleted(env, model, 3), "in use: function 3: used by callback 2");
+    std::vector<BIYOS_index> map(4, 9);
+    EXPECT_EQ(BIYOS_delfunrg(model.get(), 0, 1, map.data()), BIYOS_OK);
+    EXPECT_EQ(map, (std::vector<BIYOS_index>{-1, 0, 1, 2}));
+    EXPECT_EQ(held(model, 0).covered, (std::vector<biyos::Index>{1}));
+    EXPECT_EQ(held(model, 1).covered, (std::vector<biyos::Index>{0, 1}));
+    EXPECT_EQ(held(model, 2).covered, (std::vector<biyos::Index>{2, 0}));
 }
 
 TEST(CallbackTest, DataPointer)

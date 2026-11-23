@@ -279,7 +279,6 @@ class Model
 
     Index n_callbacks() const noexcept;
     const Callback &callback(Index index) const;
-    Index callback_of(Index function) const noexcept;
     Index add_callback(std::span<const Index> functions, void *data);
     void set_callback_function(Index callback, UserFunction function);
     void set_callback_jacobian(Index callback,
@@ -331,7 +330,6 @@ class Model
     Uses uses_;
     std::vector<Offset> roots_;
     std::vector<Callback> callbacks_;
-    std::vector<Index> covering_;
 };
 
 }

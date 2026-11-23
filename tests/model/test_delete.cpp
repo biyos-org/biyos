@@ -372,10 +372,10 @@ void expect_unused(const Indices &indices)
 Model covered()
 {
     Model model;
-    model.add_functions(std::array{0.0, 1.0, 2.0}, std::array<Offset, 4>{}, {});
+    model.add_functions(std::array{0.0, 1.0, 2.0, 3.0}, std::array<Offset, 5>{}, {});
     model.add_callback(std::array<Index, 1>{2}, nullptr);
-    model.add_callback(std::array<Index, 1>{1}, nullptr);
-    model.add_functions(std::array{3.0}, std::array<Offset, 2>{}, {});
+    model.add_callback(std::array<Index, 2>{1, 2}, nullptr);
+    model.add_callback(std::array<Index, 2>{3, 1}, nullptr);
     return model;
 }
 
@@ -557,10 +557,16 @@ TEST(DeleteTest, Callbacks)
     Model model = covered();
     EXPECT_EQ(model.delete_functions(Indices{0}), (Map{kDeleted, 0, 1, 2}));
     EXPECT_EQ(model.callback(0).covered, (Indices{1}));
-    EXPECT_EQ(model.callback(1).covered, (Indices{0}));
-    EXPECT_EQ(model.callback_of(0), 1);
-    EXPECT_EQ(model.callback_of(1), 0);
-    EXPECT_EQ(model.callback_of(2), biyos::kNoCallback);
+    EXPECT_EQ(model.callback(1).covered, (Indices{0, 1}));
+    EXPECT_EQ(model.callback(2).covered, (Indices{2, 0}));
+}
+
+TEST(DeleteTest, Covered)
+{
+    Model model = covered();
+    EXPECT_EQ(in_use(model, {1}), "in use: function 1: used by callback 1");
+    EXPECT_EQ(in_use(model, {2}), "in use: function 2: used by callback 0");
+    EXPECT_EQ(in_use(model, {3, 0}), "in use: function 3: used by callback 2");
 }
 
 TEST(DeleteTest, Uses)
