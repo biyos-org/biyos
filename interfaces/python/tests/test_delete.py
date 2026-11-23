@@ -132,6 +132,16 @@ def test_unmapped(model, monkeypatch, short):
     assert maps == [None, None]
 
 
+@pytest.mark.parametrize("short", ["con", "cone", "ccon"])
+def test_tolerances(model, short):
+    build(model)
+    getattr(model, f"set{short}tol")(range(3), [0.5, 0.25, 0.125])
+    getattr(model, f"set{short}tol")([2], None, [0.75])
+    delete(model, short, [0])
+    found = getattr(model, f"get{short}tol")(range(2))
+    assert found == ([0.25, 0.125], [None, 0.75])
+
+
 def functions(model):
     f = model.addfun(4)
     model.setfunname(f[:3], NAMES)

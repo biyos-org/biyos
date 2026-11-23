@@ -12,6 +12,7 @@ from number import Growing, Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
 from spies import Trap, followed, interrupted, preceded, spied, traced
+from tolerance import CHECKS
 
 INFINITY = float("inf")
 
@@ -750,3 +751,9 @@ def test_locked(env, model):
     bounds = ([-INFINITY], [INFINITY])
     assert seen == [LOCKED, 1, bounds, [VariableKind.CONTINUOUS]]
     assert model.getnvar() == 1
+
+
+@pytest.mark.parametrize("check", CHECKS)
+def test_tolerances(env, model, check):
+    model.addvar(3)
+    check(env, model, "var", "variable")

@@ -658,6 +658,81 @@ class Model:
         found = self._getlist("BIYOS_getvarknd", Variables, idx, c_int)
         return [VariableKind(value) for value in found[0]]
 
+    def setvartol(
+        self,
+        idx: Sequence[int | Variable] | Variables,
+        atol: Sequence[float] | None = None,
+        rtol: Sequence[float] | None = None,
+    ) -> None:
+        """Set the tolerances of variables.
+
+        A variable's tolerances stand for the options ``feastol_abs`` and
+        ``feastol_rel`` for that variable alone: each finite and at least 0. A
+        variable that held none keeps the options for the tolerance not given. A
+        variable may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The variables.
+        atol, rtol
+            The new absolute and relative tolerance of each; ``None``
+            leaves that tolerance as it is.
+
+        See Also
+        --------
+        BIYOS_setvartolsp
+        BIYOS_setvartolrg
+        """
+        n = len(idx)
+        chosen = self._chosen("BIYOS_setvartol", Variables, idx)
+        arrays = (
+            doubles("atol", atol, n),
+            doubles("rtol", rtol, n),
+        )
+        self._call(*chosen, *arrays)
+
+    def getvartol(
+        self, idx: Sequence[int | Variable] | Variables
+    ) -> tuple[list[float | None], list[float | None]]:
+        """Read the tolerances of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables, in any order, any of them more than once.
+
+        Returns
+        -------
+        atol
+            The absolute tolerance of each, None where it holds none.
+        rtol
+            The relative tolerance of each, None where it holds none.
+
+        See Also
+        --------
+        BIYOS_getvartolsp
+        BIYOS_getvartolrg
+        """
+        pair = (c_double, c_double)
+        atol, rtol = self._getlist("BIYOS_getvartol", Variables, idx, *pair)
+        return _or_none(atol), _or_none(rtol)
+
+    def delvartol(self, idx: Sequence[int | Variable] | Variables) -> None:
+        """Return variables to ``feastol_abs`` and ``feastol_rel``.
+
+        Parameters
+        ----------
+        idx
+            The variables that lose their tolerances.
+
+        See Also
+        --------
+        BIYOS_delvartolsp
+        BIYOS_delvartolrg
+        """
+        self._call(*self._chosen("BIYOS_delvartol", Variables, idx))
+
     def getnvar(self) -> int:
         """Return the number of variables.
 
@@ -1895,6 +1970,81 @@ class Model:
         lb, ub = self._getlist("BIYOS_getconbnd", Constraints, idx, *bounds)
         return lb, ub
 
+    def setcontol(
+        self,
+        idx: Sequence[int | Constraint] | Constraints,
+        atol: Sequence[float] | None = None,
+        rtol: Sequence[float] | None = None,
+    ) -> None:
+        """Set the tolerances of constraints.
+
+        A constraint's tolerances stand for the options ``feastol_abs`` and
+        ``feastol_rel`` for that constraint alone: each finite and at least 0. A
+        constraint that held none keeps the options for the tolerance not given.
+        A constraint may appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The constraints.
+        atol, rtol
+            The new absolute and relative tolerance of each; ``None``
+            leaves that tolerance as it is.
+
+        See Also
+        --------
+        BIYOS_setcontolsp
+        BIYOS_setcontolrg
+        """
+        n = len(idx)
+        chosen = self._chosen("BIYOS_setcontol", Constraints, idx)
+        arrays = (
+            doubles("atol", atol, n),
+            doubles("rtol", rtol, n),
+        )
+        self._call(*chosen, *arrays)
+
+    def getcontol(
+        self, idx: Sequence[int | Constraint] | Constraints
+    ) -> tuple[list[float | None], list[float | None]]:
+        """Read the tolerances of constraints.
+
+        Parameters
+        ----------
+        idx
+            The constraints, in any order, any of them more than once.
+
+        Returns
+        -------
+        atol
+            The absolute tolerance of each, None where it holds none.
+        rtol
+            The relative tolerance of each, None where it holds none.
+
+        See Also
+        --------
+        BIYOS_getcontolsp
+        BIYOS_getcontolrg
+        """
+        pair = (c_double, c_double)
+        atol, rtol = self._getlist("BIYOS_getcontol", Constraints, idx, *pair)
+        return _or_none(atol), _or_none(rtol)
+
+    def delcontol(self, idx: Sequence[int | Constraint] | Constraints) -> None:
+        """Return constraints to ``feastol_abs`` and ``feastol_rel``.
+
+        Parameters
+        ----------
+        idx
+            The constraints that lose their tolerances.
+
+        See Also
+        --------
+        BIYOS_delcontolsp
+        BIYOS_delcontolrg
+        """
+        self._call(*self._chosen("BIYOS_delcontol", Constraints, idx))
+
     def getncon(self) -> int:
         """Return the number of constraints.
 
@@ -2027,9 +2177,9 @@ class Model:
         """Delete constraints.
 
         The constraints left keep their order and are numbered from 0 again. A
-        deleted constraint's name goes with it, and its function stays. Once
-        any constraint is deleted, the model refuses every block and view it
-        gave before.
+        deleted constraint's tolerances and name go with it, and its function
+        stays. Once any constraint is deleted, the model refuses every block
+        and view it gave before.
 
         Parameters
         ----------
@@ -3065,6 +3215,81 @@ class Model:
         self._call(lib.BIYOS_addcone, n, *arrays, byref(first))
         return Cones(self, first.value, n, self._gen)
 
+    def setconetol(
+        self,
+        idx: Sequence[int | Cone] | Cones,
+        atol: Sequence[float] | None = None,
+        rtol: Sequence[float] | None = None,
+    ) -> None:
+        """Set the tolerances of cones.
+
+        A cone's tolerances stand for the options ``feastol_abs`` and
+        ``feastol_rel`` for that cone alone: each finite and at least 0. A cone
+        that held none keeps the options for the tolerance not given. A cone may
+        appear more than once; its entries apply in order.
+
+        Parameters
+        ----------
+        idx
+            The cones.
+        atol, rtol
+            The new absolute and relative tolerance of each; ``None``
+            leaves that tolerance as it is.
+
+        See Also
+        --------
+        BIYOS_setconetolsp
+        BIYOS_setconetolrg
+        """
+        n = len(idx)
+        chosen = self._chosen("BIYOS_setconetol", Cones, idx)
+        arrays = (
+            doubles("atol", atol, n),
+            doubles("rtol", rtol, n),
+        )
+        self._call(*chosen, *arrays)
+
+    def getconetol(
+        self, idx: Sequence[int | Cone] | Cones
+    ) -> tuple[list[float | None], list[float | None]]:
+        """Read the tolerances of cones.
+
+        Parameters
+        ----------
+        idx
+            The cones, in any order, any of them more than once.
+
+        Returns
+        -------
+        atol
+            The absolute tolerance of each, None where it holds none.
+        rtol
+            The relative tolerance of each, None where it holds none.
+
+        See Also
+        --------
+        BIYOS_getconetolsp
+        BIYOS_getconetolrg
+        """
+        pair = (c_double, c_double)
+        atol, rtol = self._getlist("BIYOS_getconetol", Cones, idx, *pair)
+        return _or_none(atol), _or_none(rtol)
+
+    def delconetol(self, idx: Sequence[int | Cone] | Cones) -> None:
+        """Return cones to ``feastol_abs`` and ``feastol_rel``.
+
+        Parameters
+        ----------
+        idx
+            The cones that lose their tolerances.
+
+        See Also
+        --------
+        BIYOS_delconetolsp
+        BIYOS_delconetolrg
+        """
+        self._call(*self._chosen("BIYOS_delconetol", Cones, idx))
+
     def getncone(self) -> int:
         """Return the number of cones.
 
@@ -3280,9 +3505,9 @@ class Model:
         """Delete cones.
 
         The cones left keep their order and are numbered from 0 again. A
-        deleted cone's members, parameters and name go with it, and its
-        functions stay. Once any cone is deleted, the model refuses every block
-        and view it gave before.
+        deleted cone's members, parameters, tolerances and name go with it, and
+        its functions stay. Once any cone is deleted, the model refuses every
+        block and view it gave before.
 
         Parameters
         ----------
