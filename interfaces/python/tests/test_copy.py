@@ -8,7 +8,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel, Sense, VariableKind
 from biyos._capi import lib
-from spies import interrupted, preceded
+from spies import Trap, followed, interrupted, preceded, traced
 
 INFINITY = float("inf")
 BUSY = (
@@ -188,6 +188,21 @@ def test_interrupted(other, model, monkeypatch):
     spy = partial(freed, log, lib.BIYOS_freemdl)
     monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
     with pytest.raises(KeyboardInterrupt):
+        model.copy(other)
+    [handle] = other._models._live.values()
+    other.close()
+    assert log == [handle.value]
+    assert not other._free.alive
+
+
+def test_interrupted_make(other, model, monkeypatch):
+    log = []
+    trap = Trap(biyos.Model._make)
+    copy = partial(followed, [trap.arm], lib.BIYOS_copymdl)
+    monkeypatch.setattr(lib, "BIYOS_copymdl", copy)
+    spy = partial(freed, log, lib.BIYOS_freemdl)
+    monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
+    with traced(trap), pytest.raises(KeyboardInterrupt):
         model.copy(other)
     [handle] = other._models._live.values()
     other.close()

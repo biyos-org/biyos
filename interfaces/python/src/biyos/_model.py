@@ -1925,12 +1925,15 @@ class Model:
         self._gen = 0
 
     def _make(self, call: Callable[..., None], *arguments: object) -> None:
+        models = self._env._models
         handle = self._handle
+        models.add(handle)
         try:
             call(*arguments, byref(handle))
         finally:
-            if handle.value is not None:
-                self._env._models.add(handle)
+            if handle.value is None:
+                models.take(handle)
+            else:
                 self._env._owners[handle.value] = self
 
     def _copy(self, source: "Model") -> None:

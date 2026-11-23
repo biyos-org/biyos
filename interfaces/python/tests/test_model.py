@@ -11,7 +11,7 @@ from biyos._capi import OK, lib
 from number import Growing, Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
-from spies import followed, interrupted, preceded, spied
+from spies import Trap, followed, interrupted, preceded, spied, traced
 
 INFINITY = float("inf")
 
@@ -160,6 +160,21 @@ def test_interrupted_create(monkeypatch):
     monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
     env = biyos.Env()
     with pytest.raises(KeyboardInterrupt):
+        biyos.Model(env)
+    env.close()
+    assert statuses == [OK]
+    assert not env._free.alive
+
+
+def test_interrupted_make(monkeypatch):
+    statuses = []
+    trap = Trap(biyos.Model._make)
+    create = partial(followed, [trap.arm], lib.BIYOS_newmdl)
+    monkeypatch.setattr(lib, "BIYOS_newmdl", create)
+    spy = partial(spied, lib.BIYOS_freemdl, statuses)
+    monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
+    env = biyos.Env()
+    with traced(trap), pytest.raises(KeyboardInterrupt):
         biyos.Model(env)
     env.close()
     assert statuses == [OK]
