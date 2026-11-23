@@ -2,14 +2,12 @@
 #include "core/index.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
-#include "model/overrides.hpp"
 #include "refusal.hpp"
+#include "tolerance.hpp"
 
 #include <gtest/gtest.h>
 
-#include <bit>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -23,7 +21,7 @@ using biyos::Complement;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
-using biyos::Override;
+using biyos::test::expect_tolerance;
 using biyos::test::failure;
 using biyos::test::refusal;
 
@@ -86,17 +84,6 @@ std::string tolerance_refusal(Model &model,
                               const Reals &relative)
 {
     return refusal([&] { model.set_complement_tolerances(indices, absolute, relative); });
-}
-
-void expect_part(double found, double wanted)
-{
-    EXPECT_EQ(std::bit_cast<std::uint64_t>(found), std::bit_cast<std::uint64_t>(wanted));
-}
-
-void expect_tolerance(const Override &found, double absolute, double relative)
-{
-    expect_part(found.absolute, absolute);
-    expect_part(found.relative, relative);
 }
 
 }
