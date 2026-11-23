@@ -124,6 +124,21 @@ int counted(const Request &, std::span<double>, void *data)
     return 0;
 }
 
+int calls_of(const UserFunction &function)
+{
+    int calls = 0;
+    const Request request{
+        .model = nullptr,
+        .callback = 0,
+        .thread = 0,
+        .point = {},
+        .weights = {},
+        .direction = {},
+    };
+    function(request, {}, &calls);
+    return calls;
+}
+
 }
 
 TEST(CallbackTest, Added)
@@ -271,7 +286,7 @@ TEST(CallbackTest, JacobianRefused)
 {
     Model model = with_functions(3);
     add(model, {2, 0});
-    set_jacobian(model, 0, {0, 1, 1}, {1});
+    model.set_jacobian(0, std::vector<Offset>{0, 1, 1}, std::vector<Index>{1}, counted);
     const std::string row = kBad + "callback 0: Jacobian of function ";
     EXPECT_EQ(jacobian_refusal(model, {0, 1, 2}, {0, 3}), row + "0: variable 3 is unknown");
     EXPECT_EQ(jacobian_refusal(model, {0, 1, 2}, {-1, 0}), row + "2: variable -1 is unknown");
@@ -287,6 +302,7 @@ TEST(CallbackTest, JacobianRefused)
     const Callback &held = model.callback(0);
     EXPECT_EQ(held.jacobian_starts, (std::vector<Offset>{0, 1, 1}));
     EXPECT_EQ(held.jacobian_variables, (std::vector<Index>{1}));
+    EXPECT_EQ(calls_of(held.jacobian), 1);
 }
 
 TEST(CallbackTest, Hessian)
@@ -306,7 +322,7 @@ TEST(CallbackTest, HessianRefused)
 {
     Model model = with_functions(1);
     add(model, {0});
-    set_hessian(model, {1}, {2});
+    model.set_hessian(0, std::vector<Index>{1}, std::vector<Index>{2}, counted);
     const std::string bad = kBad + "callback 0: Hessian ";
     EXPECT_EQ(hessian_refusal(model, {0, 3}, {0, 0}), bad + "variable 3 is unknown");
     EXPECT_EQ(hessian_refusal(model, {0}, {-1}), bad + "variable -1 is unknown");
@@ -321,6 +337,7 @@ TEST(CallbackTest, HessianRefused)
               kBad + "callback 1: unknown");
     EXPECT_EQ(firsts(model.callback(0)), (std::vector<Index>{1}));
     EXPECT_EQ(seconds(model.callback(0)), (std::vector<Index>{2}));
+    EXPECT_EQ(calls_of(model.callback(0).hessian), 1);
 }
 
 TEST(CallbackTest, Copied)
