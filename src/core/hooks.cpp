@@ -117,6 +117,10 @@ void Hooks::refresh(EventKind kind) noexcept
 
 void Hooks::deliver(const Event &event) noexcept
 {
+    if (!wanted(event.kind, event.level))
+    {
+        return;
+    }
     const Turn turn(*this);
     const Depth delivery(depth_);
     const std::size_t n = entries_.size();

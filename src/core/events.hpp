@@ -30,9 +30,10 @@ class Events
     std::chrono::nanoseconds origin() const noexcept { return origin_; }
 
     template <std::invocable<Event &> Fill>
-    void emit(EventKind kind, EventLevel level, Fill &&fill) noexcept
+    void emit(EventKind kind, EventLevel level, Fill &&fill, Hooks *model_hooks = nullptr) noexcept
     {
-        if (!wanted(kind, level))
+        const bool local = model_hooks != nullptr && model_hooks->wanted(kind, level);
+        if (!local && !wanted(kind, level))
         {
             return;
         }
@@ -56,6 +57,10 @@ class Events
             return;
         }
         const Depth delivery(entry.state().depth);
+        if (model_hooks != nullptr)
+        {
+            model_hooks->deliver(event);
+        }
         hooks_.deliver(event);
     }
 
