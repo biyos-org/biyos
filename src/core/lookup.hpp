@@ -28,6 +28,8 @@ class Lookup
     int get_int(Option option) const;
     double get_double(Option option) const;
     const std::string &get_string(Option option) const;
+    Masks get_flags(Option option) const;
+    PartState part_state(Option option, Mask part) const;
 
     template <typename E>
         requires std::is_enum_v<E>

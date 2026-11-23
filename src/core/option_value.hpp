@@ -22,5 +22,7 @@ int int_of(const OptionSpec &spec, const OptionValue &value);
 double double_of(const OptionSpec &spec, const OptionValue &value);
 const std::string &string_of(const OptionSpec &spec, const OptionValue &value);
 int enum_of(const OptionSpec &spec, const OptionValue &value);
+Masks flags_of(const OptionSpec &spec, const OptionValue &value);
+PartState state_of(const OptionSpec &spec, const OptionValue &value, Mask part);
 
 }

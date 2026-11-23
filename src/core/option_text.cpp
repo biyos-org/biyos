@@ -2,6 +2,7 @@
 
 #include "core/text.hpp"
 
+#include <bit>
 #include <span>
 #include <string>
 #include <string_view>
@@ -29,6 +30,34 @@ std::string joined(std::span<const EnumValue> values)
     return text;
 }
 
+std::string joined(std::span<const FlagPart> parts)
+{
+    std::string text;
+    for (const FlagPart &part : parts)
+    {
+        if (!text.empty())
+        {
+            text += ", ";
+        }
+        text += text_of(std::countr_zero(part.bit)) + " (" + std::string(part.name) + ")";
+    }
+    return text;
+}
+
+std::string bits(Mask mask)
+{
+    std::string text = std::has_single_bit(mask) ? "bit " : "bits ";
+    for (Mask rest = mask; rest != 0; rest &= rest - 1)
+    {
+        if (rest != mask)
+        {
+            text += ", ";
+        }
+        text += text_of(std::countr_zero(rest));
+    }
+    return text;
+}
+
 std::string_view noun(const BoolRule &)
 {
     return "a bool";
@@ -52,6 +81,11 @@ std::string_view noun(const StringRule &)
 std::string_view noun(const EnumRule &)
 {
     return "an enum";
+}
+
+std::string_view noun(const FlagsRule &)
+{
+    return "flags";
 }
 
 std::string_view noun(const OptionSpec &spec)

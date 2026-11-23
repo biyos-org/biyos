@@ -59,6 +59,18 @@ const std::string &Lookup::get_string(Option option) const
     return string_of(spec, find(option).value);
 }
 
+Masks Lookup::get_flags(Option option) const
+{
+    const OptionSpec &spec = row_of(options_.table(), option);
+    return flags_of(spec, find(option).value);
+}
+
+PartState Lookup::part_state(Option option, Mask part) const
+{
+    const OptionSpec &spec = row_of(options_.table(), option);
+    return state_of(spec, find(option).value, part);
+}
+
 int Lookup::enum_value(Option option) const
 {
     const OptionSpec &spec = row_of(options_.table(), option);

@@ -53,6 +53,25 @@ void check_value(const OptionSpec &spec, const EnumRule &rule, int value)
                 text_of(value) + " is not one of " + joined(rule.values));
 }
 
+void check_value(const OptionSpec &spec, const FlagsRule &rule, const Masks &value)
+{
+    Mask listed = 0;
+    for (const FlagPart &part : rule.parts)
+    {
+        listed |= part.bit;
+    }
+    if (const Mask outside = (value.on | value.off) & ~listed; outside != 0)
+    {
+        const std::string reason = "sets " + bits(outside) + " outside its parts ";
+        throw Error(ErrorKind::InvalidArgument, subject(spec.name), reason + joined(rule.parts));
+    }
+    if (const Mask both = value.on & value.off; both != 0)
+    {
+        const std::string reason = "sets " + bits(both) + " both on and off";
+        throw Error(ErrorKind::InvalidArgument, subject(spec.name), reason);
+    }
+}
+
 const OptionSpec &settable(std::span<const OptionSpec> table, Option option)
 {
     const OptionSpec &spec = row_of(table, option);
@@ -90,6 +109,11 @@ void admit(const OptionSpec &spec, double value)
 void admit(const OptionSpec &spec, const std::string &)
 {
     rule_of<StringRule>(spec);
+}
+
+void admit(const OptionSpec &spec, const Masks &value)
+{
+    check_value(spec, rule_of<FlagsRule>(spec), value);
 }
 
 void describe(Event &event, std::span<const OptionSpec> table, const OptionSpec &spec)
@@ -157,6 +181,31 @@ int enum_of(const OptionSpec &spec, const OptionValue &value)
 {
     rule_of<EnumRule>(spec);
     return std::get<int>(value);
+}
+
+Masks flags_of(const OptionSpec &spec, const OptionValue &value)
+{
+    rule_of<FlagsRule>(spec);
+    return std::get<Masks>(value);
+}
+
+PartState state_of(const OptionSpec &spec, const OptionValue &value, Mask part)
+{
+    const FlagsRule &rule = rule_of<FlagsRule>(spec);
+    if (std::ranges::find(rule.parts, part, &FlagPart::bit) == rule.parts.end())
+    {
+        throw Error(ErrorKind::Internal, subject(spec.name), "has no part " + text_of(part));
+    }
+    const Masks &masks = std::get<Masks>(value);
+    if ((masks.on & part) != 0)
+    {
+        return PartState::On;
+    }
+    if ((masks.off & part) != 0)
+    {
+        return PartState::Off;
+    }
+    return PartState::Default;
 }
 
 }
