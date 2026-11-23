@@ -116,7 +116,10 @@ void admit(const OptionSpec &spec, const Masks &value)
     check_value(spec, rule_of<FlagsRule>(spec), value);
 }
 
-void describe(Event &event, std::span<const OptionSpec> table, const OptionSpec &spec)
+void describe(Event &event,
+              std::span<const OptionSpec> table,
+              const OptionSpec &spec,
+              const BIYOS_model *model)
 {
     const Version deprecated = *spec.versions.deprecated;
     const std::string_view replacement = row_of(table, *spec.replacement).name;
@@ -125,6 +128,7 @@ void describe(Event &event, std::span<const OptionSpec> table, const OptionSpec 
     event.fields.push_back(Field{.name = "option", .value = std::string(spec.name)});
     event.fields.push_back(Field{.name = "deprecated", .value = dotted(deprecated)});
     event.fields.push_back(Field{.name = "replacement", .value = std::string(replacement)});
+    event.model = model;
 }
 
 }
@@ -140,13 +144,14 @@ const OptionSpec &checked_row(std::span<const OptionSpec> table,
 
 void warn_deprecated(Events &events,
                      std::span<const OptionSpec> table,
-                     const OptionSpec &spec) noexcept
+                     const OptionSpec &spec,
+                     const BIYOS_model *model) noexcept
 {
     if (!spec.versions.deprecated)
     {
         return;
     }
-    const auto fill = [&](Event &event) { describe(event, table, spec); };
+    const auto fill = [&](Event &event) { describe(event, table, spec, model); };
     events.emit(EventKind::Message, EventLevel::Warning, fill);
 }
 

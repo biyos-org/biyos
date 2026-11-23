@@ -234,7 +234,7 @@ TEST_F(CheckTest, Models)
 {
     biyos::Settings first;
     const biyos::Settings second;
-    first.set(biyos::Option::CheckLevel, BIYOS_CHECKLVL_FULL, env.events());
+    first.set_int(biyos::Option::CheckLevel, BIYOS_CHECKLVL_FULL, env.events());
     const biyos::Checker own(env, biyos::Lookup(first, env.options()), "model");
     const biyos::Checker other(env, biyos::Lookup(second, env.options()), "model");
     const biyos::Checker shared(env, biyos::Lookup(env.options()), "model");

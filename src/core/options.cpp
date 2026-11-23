@@ -115,7 +115,7 @@ void Options::store(Option option, OptionValue value)
     const OptionSpec &spec = checked_row(table_, option, value);
     values_[index_of(option)] = std::move(value);
     sources_[index_of(option)] = Source::Environment;
-    warn_deprecated(events_, table_, spec);
+    warn_deprecated(events_, table_, spec, nullptr);
 }
 
 bool Options::get_bool(Option option) const

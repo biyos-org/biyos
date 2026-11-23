@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <span>
+#include <string>
+#include <string_view>
 #include <utility>
 
 namespace biyos
@@ -30,7 +32,35 @@ Settings::Settings() : table_(option_table()) {}
 
 Settings::Settings(std::span<const OptionSpec> table) : table_(table) {}
 
-void Settings::set(Option option, OptionValue value, Events &events)
+void Settings::set_bool(Option option, bool value, Events &events, const BIYOS_model *model)
+{
+    store(option, value, events, model);
+}
+
+void Settings::set_int(Option option, int value, Events &events, const BIYOS_model *model)
+{
+    store(option, value, events, model);
+}
+
+void Settings::set_double(Option option, double value, Events &events, const BIYOS_model *model)
+{
+    store(option, value, events, model);
+}
+
+void Settings::set_string(Option option,
+                          std::string_view value,
+                          Events &events,
+                          const BIYOS_model *model)
+{
+    store(option, std::string(value), events, model);
+}
+
+void Settings::set_flags(Option option, Masks value, Events &events, const BIYOS_model *model)
+{
+    store(option, value, events, model);
+}
+
+void Settings::store(Option option, OptionValue value, Events &events, const BIYOS_model *model)
 {
     check_scope(row_of(table_, option));
     const OptionSpec &spec = checked_row(table_, option, value);
@@ -43,7 +73,7 @@ void Settings::set(Option option, OptionValue value, Events &events)
     {
         entries_.push_back(Entry{.option = option, .value = std::move(value)});
     }
-    warn_deprecated(events, table_, spec);
+    warn_deprecated(events, table_, spec, model);
 }
 
 const OptionValue *Settings::find(Option option) const noexcept

@@ -135,9 +135,9 @@ TEST_F(SettingTest, Empty)
 
 TEST_F(SettingTest, Set)
 {
-    settings.set(kNew, 5, events);
+    settings.set_int(kNew, 5, events);
     EXPECT_EQ(held(settings, kNew), 5);
-    settings.set(kNew, 7, events);
+    settings.set_int(kNew, 7, events);
     EXPECT_EQ(held(settings, kNew), 7);
     EXPECT_EQ(settings.find(kOld), nullptr);
     EXPECT_EQ(options.get_int(kNew), 1);
@@ -146,8 +146,8 @@ TEST_F(SettingTest, Set)
 
 TEST_F(SettingTest, Erase)
 {
-    settings.set(kNew, 5, events);
-    settings.set(kOld, 6, events);
+    settings.set_int(kNew, 5, events);
+    settings.set_int(kOld, 6, events);
     settings.erase(kNew);
     EXPECT_EQ(settings.find(kNew), nullptr);
     EXPECT_EQ(held(settings, kOld), 6);
@@ -158,9 +158,9 @@ TEST_F(SettingTest, Erase)
 
 TEST_F(SettingTest, Copy)
 {
-    settings.set(kNew, 5, events);
+    settings.set_int(kNew, 5, events);
     biyos::Settings copy = settings;
-    copy.set(kNew, 8, events);
+    copy.set_int(kNew, 8, events);
     copy.erase(kOld);
     EXPECT_EQ(held(settings, kNew), 5);
     EXPECT_EQ(held(copy, kNew), 8);
@@ -171,9 +171,9 @@ TEST_F(SettingTest, Copy)
 TEST_F(SettingTest, Scope)
 {
     const std::string scope = "invalid argument: option 'host': has environment scope";
-    EXPECT_EQ(failure([&] { settings.set(kHost, 3, events); }), scope);
-    EXPECT_EQ(failure([&] { settings.set(kHost, -1, events); }), scope);
-    EXPECT_EQ(failure([&] { settings.set(kHost, 2.0, events); }), scope);
+    EXPECT_EQ(failure([&] { settings.set_int(kHost, 3, events); }), scope);
+    EXPECT_EQ(failure([&] { settings.set_int(kHost, -1, events); }), scope);
+    EXPECT_EQ(failure([&] { settings.set_double(kHost, 2.0, events); }), scope);
     EXPECT_EQ(settings.find(kHost), nullptr);
     options.set_int(kHost, 3);
     EXPECT_EQ(options.get_int(kHost), 3);
@@ -181,15 +181,15 @@ TEST_F(SettingTest, Scope)
 
 TEST_F(SettingTest, Refusal)
 {
-    settings.set(kNew, 5, events);
+    settings.set_int(kNew, 5, events);
     const std::string range = "invalid argument: option 'new': -1 is outside [0, 2147483647]";
-    EXPECT_EQ(failure([&] { settings.set(kNew, -1, events); }), range);
+    EXPECT_EQ(failure([&] { settings.set_int(kNew, -1, events); }), range);
     EXPECT_EQ(failure([&] { options.set_int(kNew, -1); }), range);
     const std::string kind = "invalid argument: option 'new': is an int, not a double";
-    EXPECT_EQ(failure([&] { settings.set(kNew, 2.0, events); }), kind);
+    EXPECT_EQ(failure([&] { settings.set_double(kNew, 2.0, events); }), kind);
     EXPECT_EQ(failure([&] { options.set_double(kNew, 2.0); }), kind);
     const std::string retired = "invalid argument: option 'gone': retired in 0.0.3, use 'new'";
-    EXPECT_EQ(failure([&] { settings.set(kGone, 2, events); }), retired);
+    EXPECT_EQ(failure([&] { settings.set_int(kGone, 2, events); }), retired);
     EXPECT_EQ(failure([&] { options.set_int(kGone, 2); }), retired);
     EXPECT_EQ(held(settings, kNew), 5);
     EXPECT_EQ(settings.find(kGone), nullptr);
@@ -198,10 +198,14 @@ TEST_F(SettingTest, Refusal)
 
 TEST_F(SettingTest, Deprecated)
 {
-    settings.set(kOld, 5, events);
+    const int address = 0;
+    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    settings.set_int(kOld, 5, events, model);
     options.set_int(kOld, 6);
     EXPECT_EQ(held(settings, kOld), 5);
     ASSERT_EQ(heard.size(), 2U);
+    EXPECT_EQ(heard[0].model, model);
+    EXPECT_EQ(heard[1].model, nullptr);
     for (const biyos::Event &event : heard)
     {
         EXPECT_EQ(event.kind, EventKind::Message);
@@ -219,7 +223,7 @@ TEST_F(LookupTest, Sources)
     options.set_int(kNew, 3);
     EXPECT_EQ(found(kNew), 3);
     EXPECT_EQ(source(kNew), Source::Environment);
-    settings.set(kNew, 5, events);
+    settings.set_int(kNew, 5, events);
     EXPECT_EQ(found(kNew), 5);
     EXPECT_EQ(source(kNew), Source::Model);
     EXPECT_EQ(lookup.get_int(kNew), 5);
@@ -229,7 +233,7 @@ TEST_F(LookupTest, Sources)
 TEST_F(LookupTest, Erase)
 {
     options.set_int(kNew, 3);
-    settings.set(kNew, 5, events);
+    settings.set_int(kNew, 5, events);
     settings.erase(kNew);
     EXPECT_EQ(found(kNew), 3);
     EXPECT_EQ(source(kNew), Source::Environment);
@@ -252,7 +256,7 @@ TEST_F(LookupTest, Models)
     const biyos::Lookup second(other, options);
     const biyos::Lookup shared(options);
     options.set_int(kNew, 3);
-    settings.set(kNew, 5, events);
+    settings.set_int(kNew, 5, events);
     EXPECT_EQ(lookup.get_int(kNew), 5);
     EXPECT_EQ(second.get_int(kNew), 3);
     EXPECT_EQ(shared.get_int(kNew), 3);
@@ -275,11 +279,11 @@ TEST(GetterTest, Kinds)
     biyos::Options options(events);
     biyos::Settings settings;
     const biyos::Lookup lookup(settings, options);
-    settings.set(Option::Presolve, false, events);
-    settings.set(Option::Seed, 4, events);
-    settings.set(Option::TimeLimit, 2.5, events);
-    settings.set(Option::Reproducer, std::string("replay.txt"), events);
-    settings.set(Option::CheckLevel, BIYOS_CHECKLVL_FULL, events);
+    settings.set_bool(Option::Presolve, false, events);
+    settings.set_int(Option::Seed, 4, events);
+    settings.set_double(Option::TimeLimit, 2.5, events);
+    settings.set_string(Option::Reproducer, "replay.txt", events);
+    settings.set_int(Option::CheckLevel, BIYOS_CHECKLVL_FULL, events);
     EXPECT_FALSE(lookup.get_bool(Option::Presolve));
     EXPECT_EQ(lookup.get_int(Option::Seed), 4);
     EXPECT_DOUBLE_EQ(lookup.get_double(Option::TimeLimit), 2.5);
@@ -309,11 +313,11 @@ TEST(GetterTest, Enum)
     biyos::Options options(events);
     biyos::Settings settings;
     const biyos::Lookup lookup(settings, options);
-    settings.set(Option::CheckLevel, BIYOS_CHECKLVL_NONE, events);
+    settings.set_int(Option::CheckLevel, BIYOS_CHECKLVL_NONE, events);
     EXPECT_EQ(
-        failure([&] { settings.set(Option::CheckLevel, 4, events); }),
+        failure([&] { settings.set_int(Option::CheckLevel, 4, events); }),
         "invalid argument: option 'check_lvl': 4 is not one of 1 (none), 2 (cheap), 3 (full)");
-    EXPECT_EQ(failure([&] { settings.set(Option::CheckLevel, std::string("full"), events); }),
+    EXPECT_EQ(failure([&] { settings.set_string(Option::CheckLevel, "full", events); }),
               "invalid argument: option 'check_lvl': is an enum, not a string");
     EXPECT_EQ(lookup.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::None);
 }

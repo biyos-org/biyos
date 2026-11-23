@@ -15,7 +15,8 @@ const OptionSpec &checked_row(std::span<const OptionSpec> table,
 
 void warn_deprecated(Events &events,
                      std::span<const OptionSpec> table,
-                     const OptionSpec &spec) noexcept;
+                     const OptionSpec &spec,
+                     const BIYOS_model *model) noexcept;
 
 bool bool_of(const OptionSpec &spec, const OptionValue &value);
 int int_of(const OptionSpec &spec, const OptionValue &value);

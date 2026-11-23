@@ -276,10 +276,10 @@ TEST(ToleranceTest, Model)
     biyos::Events events(clock);
     biyos::Options options(events);
     biyos::Settings settings;
-    settings.set(Option::ZeroTol, 1e-3, events);
-    settings.set(Option::IntTol, 0.0, events);
-    settings.set(Option::FeasAbs, 0.5, events);
-    settings.set(Option::FeasRel, 0.0, events);
+    settings.set_double(Option::ZeroTol, 1e-3, events);
+    settings.set_double(Option::IntTol, 0.0, events);
+    settings.set_double(Option::FeasAbs, 0.5, events);
+    settings.set_double(Option::FeasRel, 0.0, events);
     const biyos::Tolerances model(biyos::Lookup(settings, options));
     const biyos::Tolerances shared{biyos::Lookup(options)};
     EXPECT_TRUE(model.is_zero(5e-4));

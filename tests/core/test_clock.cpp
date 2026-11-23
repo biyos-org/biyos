@@ -302,8 +302,8 @@ TEST_F(ClockTest, EventTime)
 TEST_F(ClockTest, ModelLimit)
 {
     biyos::Settings settings;
-    settings.set(Option::TimeLimit, 1.0, stream);
-    settings.set(Option::CpuTimeLimit, 0.5, stream);
+    settings.set_double(Option::TimeLimit, 1.0, stream);
+    settings.set_double(Option::CpuTimeLimit, 0.5, stream);
     const biyos::Lookup model(settings, options);
     const biyos::Deadline own(model, clock, interrupt);
     const biyos::Deadline shared(lookup, clock, interrupt);
