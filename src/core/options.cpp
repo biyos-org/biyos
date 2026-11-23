@@ -45,6 +45,11 @@ int default_of(const EnumRule &rule)
     return rule.default_value;
 }
 
+Masks default_of(const FlagsRule &)
+{
+    return Masks{};
+}
+
 std::span<const OptionSpec> checked(std::span<const OptionSpec> table)
 {
     if (!well_formed(table, version()))
@@ -100,6 +105,11 @@ void Options::set_string(Option option, std::string_view value)
     store(option, std::string(value));
 }
 
+void Options::set_flags(Option option, Masks value)
+{
+    store(option, value);
+}
+
 void Options::store(Option option, OptionValue value)
 {
     const OptionSpec &spec = checked_row(table_, option, value);
@@ -130,6 +140,12 @@ const std::string &Options::get_string(Option option) const
 {
     const OptionSpec &spec = row_of(table_, option);
     return string_of(spec, values_[index_of(option)]);
+}
+
+Masks Options::get_flags(Option option) const
+{
+    const OptionSpec &spec = row_of(table_, option);
+    return flags_of(spec, values_[index_of(option)]);
 }
 
 const OptionValue &Options::value_of(Option option) const

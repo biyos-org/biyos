@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <optional>
 #include <span>
 #include <variant>
@@ -49,6 +50,29 @@ constexpr bool admits(const EnumRule &rule)
 {
     const auto found = std::ranges::find(rule.values, rule.default_value, &EnumValue::number);
     return found != rule.values.end() && sequential(rule.values);
+}
+
+constexpr bool sequential(std::span<const FlagPart> parts)
+{
+    const auto width = static_cast<std::size_t>(std::numeric_limits<Mask>::digits);
+    if (parts.size() > width)
+    {
+        return false;
+    }
+    for (std::size_t i = 0; i < parts.size(); ++i)
+    {
+        const bool unique = std::ranges::count(parts, parts[i].name, &FlagPart::name) == 1;
+        if (parts[i].bit != Mask{1} << i || !unique)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+constexpr bool admits(const FlagsRule &rule)
+{
+    return !rule.parts.empty() && sequential(rule.parts);
 }
 
 constexpr bool admits(const OptionSpec &spec)

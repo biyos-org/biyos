@@ -25,6 +25,7 @@ typedef int32_t BIYOS_index;
 typedef int32_t BIYOS_int;
 typedef int64_t BIYOS_offset;
 typedef double BIYOS_real;
+typedef uint64_t BIYOS_mask;
 typedef struct BIYOS_env BIYOS_env;
 typedef struct BIYOS_event BIYOS_event;
 typedef struct BIYOS_model BIYOS_model;
@@ -70,6 +71,7 @@ BIYOS_API BIYOS_status BIYOS_interrupt(BIYOS_env *env);
 #define BIYOS_KND_DBL 3
 #define BIYOS_KND_STR 4
 #define BIYOS_KND_ENUM 5
+#define BIYOS_KND_FLG 6
 
 BIYOS_API BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt);
 BIYOS_API BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *knd);
@@ -82,10 +84,18 @@ BIYOS_API BIYOS_status BIYOS_setenvboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_
 BIYOS_API BIYOS_status BIYOS_setenvintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int val);
 BIYOS_API BIYOS_status BIYOS_setenvdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real val);
 BIYOS_API BIYOS_status BIYOS_setenvstropt(BIYOS_env *env, BIYOS_int opt, const char *val);
+BIYOS_API BIYOS_status BIYOS_setenvflgopt(BIYOS_env *env,
+                                          BIYOS_int opt,
+                                          BIYOS_mask on,
+                                          BIYOS_mask off);
 BIYOS_API BIYOS_status BIYOS_getenvboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val);
 BIYOS_API BIYOS_status BIYOS_getenvintopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val);
 BIYOS_API BIYOS_status BIYOS_getenvdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real *val);
 BIYOS_API BIYOS_status BIYOS_getenvstropt(BIYOS_env *env, BIYOS_int opt, const char **val);
+BIYOS_API BIYOS_status BIYOS_getenvflgopt(BIYOS_env *env,
+                                          BIYOS_int opt,
+                                          BIYOS_mask *on,
+                                          BIYOS_mask *off);
 
 #define BIYOS_EVT_MESSAGE 1
 #define BIYOS_EVT_CHECK 2

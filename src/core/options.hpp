@@ -3,6 +3,7 @@
 #include "biyos/biyos.h"
 #include "core/version.hpp"
 
+#include <cstdint>
 #include <limits>
 #include <optional>
 #include <span>
@@ -38,6 +39,7 @@ enum class OptionKind
     Double = BIYOS_KND_DBL,
     String = BIYOS_KND_STR,
     Enum = BIYOS_KND_ENUM,
+    Flags = BIYOS_KND_FLG,
 };
 
 enum class Scope
@@ -96,6 +98,42 @@ struct EnumRule
     std::span<const EnumValue> values;
 };
 
+using Mask = std::uint64_t;
+
+enum class PartDefault
+{
+    On,
+    Off,
+    Automatic,
+};
+
+enum class PartState
+{
+    On,
+    Off,
+    Default,
+};
+
+struct FlagPart
+{
+    Mask bit;
+    std::string_view name;
+    PartDefault default_value;
+};
+
+struct FlagsRule
+{
+    std::span<const FlagPart> parts;
+};
+
+struct Masks
+{
+    Mask on = 0;
+    Mask off = 0;
+
+    bool operator==(const Masks &) const = default;
+};
+
 struct Versions
 {
     Version since;
@@ -108,13 +146,13 @@ struct OptionSpec
     Option id;
     std::string_view name;
     Scope scope{};
-    std::variant<BoolRule, IntRule, DoubleRule, StringRule, EnumRule> rule;
+    std::variant<BoolRule, IntRule, DoubleRule, StringRule, EnumRule, FlagsRule> rule;
     std::string_view doc;
     Versions versions;
     std::optional<Option> replacement = std::nullopt;
 };
 
-using OptionValue = std::variant<bool, int, double, std::string>;
+using OptionValue = std::variant<bool, int, double, std::string, Masks>;
 
 Option find_option(std::string_view name);
 Option find_option(int id);
@@ -132,11 +170,13 @@ class Options
     void set_int(Option option, int value);
     void set_double(Option option, double value);
     void set_string(Option option, std::string_view value);
+    void set_flags(Option option, Masks value);
 
     bool get_bool(Option option) const;
     int get_int(Option option) const;
     double get_double(Option option) const;
     const std::string &get_string(Option option) const;
+    Masks get_flags(Option option) const;
 
     const OptionValue &value_of(Option option) const;
     Source source_of(Option option) const;

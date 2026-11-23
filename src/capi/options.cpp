@@ -65,6 +65,12 @@ void set_string(biyos::Env &env, int option, const char *value)
     options.set_string(found, require(value, "val"));
 }
 
+void set_flags(biyos::Env &env, int option, BIYOS_mask on, BIYOS_mask off)
+{
+    biyos::Options &options = writable(env).options();
+    options.set_flags(biyos::find_option(option), biyos::Masks{.on = on, .off = off});
+}
+
 void get_bool(biyos::Env &env, int option, int *value)
 {
     const bool found = env.options().get_bool(biyos::find_option(option));
@@ -87,6 +93,15 @@ void get_string(biyos::Env &env, int option, const char **value)
 {
     const char *found = env.options().get_string(biyos::find_option(option)).c_str();
     *require(value, "val") = found;
+}
+
+void get_flags(biyos::Env &env, int option, BIYOS_mask *on, BIYOS_mask *off)
+{
+    const biyos::Masks found = env.options().get_flags(biyos::find_option(option));
+    require(on, "on");
+    require(off, "off");
+    *on = found.on;
+    *off = found.off;
 }
 
 }
@@ -130,6 +145,11 @@ BIYOS_status BIYOS_setenvstropt(BIYOS_env *env, BIYOS_int opt, const char *val)
     return guarded<set_string>(env, opt, val);
 }
 
+BIYOS_status BIYOS_setenvflgopt(BIYOS_env *env, BIYOS_int opt, BIYOS_mask on, BIYOS_mask off)
+{
+    return guarded<set_flags>(env, opt, on, off);
+}
+
 BIYOS_status BIYOS_getenvboolopt(BIYOS_env *env, BIYOS_int opt, BIYOS_int *val)
 {
     return guarded<get_bool>(env, opt, val);
@@ -148,4 +168,9 @@ BIYOS_status BIYOS_getenvdblopt(BIYOS_env *env, BIYOS_int opt, BIYOS_real *val)
 BIYOS_status BIYOS_getenvstropt(BIYOS_env *env, BIYOS_int opt, const char **val)
 {
     return guarded<get_string>(env, opt, val);
+}
+
+BIYOS_status BIYOS_getenvflgopt(BIYOS_env *env, BIYOS_int opt, BIYOS_mask *on, BIYOS_mask *off)
+{
+    return guarded<get_flags>(env, opt, on, off);
 }

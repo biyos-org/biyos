@@ -14,7 +14,7 @@ from biyos._error import Error
 from biyos._event import Event, EventKind, EventLevel
 from biyos._model import Model, Sense, VariableKind
 from biyos._operators import Operator
-from biyos._options import CheckLevel
+from biyos._options import CheckLevel, Masks
 from biyos._versions import Versions
 
 __all__ = [
@@ -28,6 +28,7 @@ __all__ = [
     "Function",
     "Functions",
     "EventLevel",
+    "Masks",
     "Model",
     "Objective",
     "Objectives",

@@ -42,6 +42,11 @@ constexpr OptionKind kind_of(const EnumRule &)
     return OptionKind::Enum;
 }
 
+constexpr OptionKind kind_of(const FlagsRule &)
+{
+    return OptionKind::Flags;
+}
+
 }
 
 Option find_option(std::string_view name)

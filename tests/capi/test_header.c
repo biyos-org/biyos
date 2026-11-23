@@ -7,6 +7,8 @@ extern char index_size[sizeof(BIYOS_index) == 4 ? 1 : -1];
 extern char int_size[sizeof(BIYOS_int) == 4 ? 1 : -1];
 extern char offset_size[sizeof(BIYOS_offset) == 8 ? 1 : -1];
 extern char real_size[sizeof(BIYOS_real) == 8 ? 1 : -1];
+extern char mask_size[sizeof(BIYOS_mask) == 8 ? 1 : -1];
+extern char mask_sign[(BIYOS_mask)-1 > 0 ? 1 : -1];
 extern char error_size[offsetof(BIYOS_error, size) == 0 ? 1 : -1];
 extern char error_status[offsetof(BIYOS_error, status) == sizeof(size_t) ? 1 : -1];
 extern char error_mdl[offsetof(BIYOS_error, mdl) == 2 * sizeof(void *) ? 1 : -1];
@@ -32,7 +34,7 @@ extern char error_end[sizeof(BIYOS_error) == 4 * sizeof(void *) ? 1 : -1];
 #error "a public option id changed"
 #endif
 #if BIYOS_KND_BOOL != 1 || BIYOS_KND_INT != 2 || BIYOS_KND_DBL != 3 || BIYOS_KND_STR != 4 ||       \
-    BIYOS_KND_ENUM != 5
+    BIYOS_KND_ENUM != 5 || BIYOS_KND_FLG != 6
 #error "a public option kind changed"
 #endif
 #if !defined(BIYOS_CHECKLVL_NONE) || BIYOS_CHECKLVL_NONE != 1 || BIYOS_CHECKLVL_CHEAP != 2 ||      \

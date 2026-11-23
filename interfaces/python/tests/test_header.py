@@ -1,3 +1,5 @@
+from ctypes import POINTER, c_uint64
+
 import biyos
 from biyos import _capi
 from biyos._capi import lib
@@ -9,6 +11,7 @@ KINDS = {
     "BIYOS_KND_DBL": "KIND_DOUBLE",
     "BIYOS_KND_STR": "KIND_STRING",
     "BIYOS_KND_ENUM": "KIND_ENUM",
+    "BIYOS_KND_FLG": "KIND_FLAGS",
 }
 
 VARIABLES = {
@@ -108,3 +111,10 @@ def test_levels():
 
 def test_ok():
     assert macros("biyos.h")["BIYOS_OK"] == _capi.OK
+
+
+def test_masks():
+    masks = [c_uint64, c_uint64]
+    assert list(lib.BIYOS_setenvflgopt.argtypes[2:]) == masks
+    pointers = [POINTER(c_uint64), POINTER(c_uint64)]
+    assert list(lib.BIYOS_getenvflgopt.argtypes[2:]) == pointers

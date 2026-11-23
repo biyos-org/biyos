@@ -1,7 +1,7 @@
 import weakref
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from ctypes import byref, c_char_p, c_double, c_int, c_void_p
+from ctypes import byref, c_char_p, c_double, c_int, c_uint64, c_void_p
 from numbers import Real
 from typing import TYPE_CHECKING, NoReturn, SupportsIndex
 
@@ -10,8 +10,8 @@ from biyos._capi import lib
 from biyos._error import Error, check
 from biyos._event import Event, EventKind, EventLevel
 from biyos._handles import Handles
-from biyos._integers import integer
-from biyos._options import ENUMS
+from biyos._integers import integer, mask
+from biyos._options import ENUMS, Masks
 from biyos._relay import Relay
 from biyos._hooks import Hooks
 from biyos._text import encoded
@@ -65,6 +65,13 @@ def _string(name: str, value: str) -> bytes:
     if not isinstance(value, str):
         raise _rejected(name, "a str", value)
     return encoded(value)
+
+
+def _masks(name: str, value: object) -> tuple[int, int]:
+    if not isinstance(value, tuple) or len(value) != 2:
+        raise _rejected(name, "a pair (on, off)", value)
+    on, off = value
+    return mask(f"option '{name}' on", on), mask(f"option '{name}' off", off)
 
 
 _SETTERS: dict[int, tuple[Callable[..., int], Callable[..., object]]] = {
@@ -165,7 +172,7 @@ class Env:
         if self._calls == 0:
             self._run(self._dispose)
 
-    def setopt(self, name: str, val: bool | int | float | str) -> None:
+    def setopt(self, name: str, val: bool | int | float | str | Masks) -> None:
         """Set an option.
 
         Parameters
@@ -175,25 +182,34 @@ class Env:
         val
             The new value, of the type the option's kind takes. An enum
             option takes a member of its class, such as
-            ``CheckLevel.FULL``, or its number.
+            ``CheckLevel.FULL``, or its number. A flags option takes a
+            ``Masks`` or a pair of ``int``: the parts forced on, then the
+            parts forced off.
 
         Raises
         ------
         TypeError
             When ``val`` does not match the option's kind.
+        OverflowError
+            When a mask of a flags option is negative or wider than 64 bits.
         Error
             When the name is unknown or the value is refused.
 
         See Also
         --------
         BIYOS_setenvboolopt, BIYOS_setenvintopt,
-        BIYOS_setenvdblopt, BIYOS_setenvstropt
+        BIYOS_setenvdblopt, BIYOS_setenvstropt,
+        BIYOS_setenvflgopt
         """
         option, kind = self._lookup(name)
+        if kind == _capi.KIND_FLAGS:
+            on, off = _masks(name, val)
+            self._call(lib.BIYOS_setenvflgopt, option, on, off)
+            return
         setter, convert = _SETTERS[kind]
         self._call(setter, option, convert(name, val))
 
-    def getopt(self, name: str) -> bool | int | float | str:
+    def getopt(self, name: str) -> bool | int | float | str | Masks:
         """Read an option.
 
         Parameters
@@ -206,7 +222,7 @@ class Env:
         val
             The value, of the type the option's kind gives. An enum
             option gives a member of its class, such as
-            ``CheckLevel.CHEAP``.
+            ``CheckLevel.CHEAP``, and a flags option its ``Masks`` as set.
 
         Raises
         ------
@@ -216,9 +232,12 @@ class Env:
         See Also
         --------
         BIYOS_getenvboolopt, BIYOS_getenvintopt,
-        BIYOS_getenvdblopt, BIYOS_getenvstropt
+        BIYOS_getenvdblopt, BIYOS_getenvstropt,
+        BIYOS_getenvflgopt
         """
         option, kind = self._lookup(name)
+        if kind == _capi.KIND_FLAGS:
+            return self._flags(option)
         getter, slot, convert = _GETTERS[kind]
         value = slot()
         self._call(getter, option, byref(value))
@@ -367,6 +386,11 @@ class Env:
         kind = c_int()
         self._call(lib.BIYOS_getoptknd, option, byref(kind))
         return option, kind.value
+
+    def _flags(self, option: int) -> Masks:
+        on, off = c_uint64(), c_uint64()
+        self._call(lib.BIYOS_getenvflgopt, option, byref(on), byref(off))
+        return Masks(on.value, off.value)
 
     def _option(self, name: str) -> int:
         option = c_int()

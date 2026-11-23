@@ -15,6 +15,7 @@ The kind of an option decides which calls set and get it:
 | `BIYOS_KND_DBL` | `BIYOS_setenvdblopt` | `BIYOS_getenvdblopt` |
 | `BIYOS_KND_STR` | `BIYOS_setenvstropt` | `BIYOS_getenvstropt` |
 | `BIYOS_KND_ENUM` | `BIYOS_setenvintopt`, with a macro of the option's group | `BIYOS_getenvintopt` |
+| `BIYOS_KND_FLG` | `BIYOS_setenvflgopt`, with two masks of the option's parts | `BIYOS_getenvflgopt` |
 
 A call of another kind is refused: nothing is converted, so an int option refuses `BIYOS_setenvdblopt` and an enum option refuses `BIYOS_setenvstropt`. The values of an enum option are macros of a group named after it, numbered from 1, so `check_lvl` takes `BIYOS_CHECKLVL_NONE`, `BIYOS_CHECKLVL_CHEAP` or `BIYOS_CHECKLVL_FULL`, and a mistyped value fails to compile. A value keeps its number for good, as an id does. `BIYOS_getoptknd` gives the kind of an id. The reference lists every option with its kind, default and range (@sec-option-table).
 
@@ -33,6 +34,12 @@ Reading is the mirror image:
 ```
 
 A string read with `BIYOS_getenvstropt` belongs to the environment. The pointer stays valid until the option is set again or the environment is freed; a failed set of the option and a set of another option leave it valid. A string set with `BIYOS_setenvstropt` is copied, so the caller's buffer may change afterwards.
+
+## Flags {#sec-options-flags}
+
+A flags option switches the parts of an algorithm. Each part is a bit macro of a group named after the option, written as a shift such as `((BIYOS_mask)1 << 0)`, and the option holds a pair of masks of `BIYOS_mask`. `BIYOS_setenvflgopt(env, opt, on, off)` forces the parts in `on` on and the parts in `off` off. A part in neither keeps its default, which the reference states for each part: on, off, or automatic, decided per problem. The default value is `(0, 0)`, every part at its default. A bit that is none of the option's parts, or a bit in both masks, is refused with `BIYOS_ERR_BADARG`. `BIYOS_getenvflgopt` gives back the masks as set, never what a solve ran.
+
+Two masks, because one bit holds two states and a part has three. With one mask, a program that sets it fixes every part: a part that a later release adds would change state under it, and a part decided per problem could not be handed back to biyos. With the pair a program names only the parts it forces, so a part added later is in neither mask and keeps its default. A part keeps its bit for good, as an id keeps its number, and an option holds at most 64 parts. No option of this release is a flags option.
 
 ## Versions {#sec-options-versions}
 
@@ -60,7 +67,7 @@ and an upper bound alike. Two finite values $a$ and $b$ are equal unless they di
 
 ## Options in Python {#sec-options-python}
 
-Python reads and sets options by name, with `env.getopt` and `env.setopt`. The value's Python type must match the kind: a `bool` for a bool option, an `int` for an int option, a number for a double option, a `str` for a string option, and for an enum option a member of its class, such as `CheckLevel.FULL`, or its number. A mismatch raises `TypeError` before C is called. `getopt` returns the value of an enum option as a member of its class.
+Python reads and sets options by name, with `env.getopt` and `env.setopt`. The value's Python type must match the kind: a `bool` for a bool option, an `int` for an int option, a number for a double option, a `str` for a string option, and for an enum option a member of its class, such as `CheckLevel.FULL`, or its number. A flags option takes a `Masks(on, off)` or any pair of `int`, and a mask that is negative or wider than 64 bits raises `OverflowError`. A mismatch raises `TypeError` before C is called. `getopt` returns the value of an enum option as a member of its class, and that of a flags option as a `Masks`.
 
 ```{.python file="examples/python/options.py"}
 ```

@@ -1,12 +1,54 @@
 #include "biyos/biyos.h"
+#include "capi/entry.hpp"
+#include "core/clock.hpp"
+#include "core/env.hpp"
+#include "core/options.hpp"
+#include "core/version.hpp"
 #include "handles.hpp"
 
 #include <gtest/gtest.h>
 
+#include <array>
+#include <memory>
 #include <string>
+#include <string_view>
 
 namespace
 {
+
+constexpr BIYOS_int kFlags = 1;
+constexpr BIYOS_mask kDual = BIYOS_mask{1} << 0;
+constexpr BIYOS_mask kProbe = BIYOS_mask{1} << 1;
+constexpr BIYOS_mask kScale = BIYOS_mask{1} << 2;
+
+constexpr std::array kParts{
+    biyos::FlagPart{
+        .bit = kDual,
+        .name = "dual",
+        .default_value = biyos::PartDefault::On,
+    },
+    biyos::FlagPart{
+        .bit = kProbe,
+        .name = "probe",
+        .default_value = biyos::PartDefault::Off,
+    },
+    biyos::FlagPart{
+        .bit = kScale,
+        .name = "scale",
+        .default_value = biyos::PartDefault::Automatic,
+    },
+};
+
+constexpr std::array kRows{
+    biyos::OptionSpec{
+        .id = biyos::Option{kFlags},
+        .name = "parts",
+        .scope = biyos::Scope::Environment,
+        .rule = biyos::FlagsRule{.parts = kParts},
+        .doc = "Parts.",
+        .versions = {.since = biyos::Version{0, 0, 1}},
+    },
+};
 
 class Env
 {
@@ -21,6 +63,16 @@ class Env
 
   private:
     BIYOS_env *pointer_ = nullptr;
+};
+
+class Flagged
+{
+  public:
+    BIYOS_env *get() { return &env_; }
+    std::string message() const { return biyos::test::last_message(&env_); }
+
+  private:
+    BIYOS_env env_{.core = biyos::Env(std::make_unique<biyos::FakeClock>(), kRows)};
 };
 
 }
@@ -300,4 +352,107 @@ TEST(CApiTest, NullEnv)
     EXPECT_EQ(BIYOS_getoptknd(nullptr, BIYOS_OPT_SEED, &value), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setenvintopt(nullptr, BIYOS_OPT_SEED, 1), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getenvintopt(nullptr, BIYOS_OPT_SEED, &value), BIYOS_ERR_BADARG);
+}
+
+TEST(CApiTest, Flags)
+{
+    Flagged env;
+    BIYOS_mask on = kDual;
+    BIYOS_mask off = kDual;
+    EXPECT_EQ(BIYOS_getenvflgopt(env.get(), kFlags, &on, &off), BIYOS_OK);
+    EXPECT_EQ(on, 0U);
+    EXPECT_EQ(off, 0U);
+    EXPECT_EQ(BIYOS_setenvflgopt(env.get(), kFlags, kDual | kScale, kProbe), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getenvflgopt(env.get(), kFlags, &on, &off), BIYOS_OK);
+    EXPECT_EQ(on, kDual | kScale);
+    EXPECT_EQ(off, kProbe);
+    EXPECT_EQ(BIYOS_setenvflgopt(env.get(), kFlags, 0, kDual), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getenvflgopt(env.get(), kFlags, &on, &off), BIYOS_OK);
+    EXPECT_EQ(on, 0U);
+    EXPECT_EQ(off, kDual);
+}
+
+TEST(CApiTest, BadFlags)
+{
+    Flagged env;
+    const std::string option = "invalid argument: option 'parts': ";
+    const std::string parts = " outside its parts 0 (dual), 1 (probe), 2 (scale)";
+    const BIYOS_mask last = BIYOS_mask{1} << 63;
+    EXPECT_EQ(BIYOS_setenvflgopt(env.get(), kFlags, kDual, kProbe), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setenvflgopt(env.get(), kFlags, BIYOS_mask{1} << 3, 0), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), option + "sets bit 3" + parts);
+    EXPECT_EQ(BIYOS_setenvflgopt(env.get(), kFlags, 0, last), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), option + "sets bit 63" + parts);
+    EXPECT_EQ(BIYOS_setenvflgopt(env.get(), kFlags, kScale, kScale), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), option + "sets bit 2 both on and off");
+    BIYOS_mask on = 0;
+    BIYOS_mask off = 0;
+    EXPECT_EQ(BIYOS_getenvflgopt(env.get(), kFlags, &on, &off), BIYOS_OK);
+    EXPECT_EQ(on, kDual);
+    EXPECT_EQ(off, kProbe);
+}
+
+TEST(CApiTest, FlagsKind)
+{
+    Flagged env;
+    const std::string refused = "invalid argument: option 'parts': is flags, not ";
+    BIYOS_int value = 0;
+    BIYOS_real real = 0.0;
+    const char *text = nullptr;
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), kFlags, 1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused + "an int");
+    EXPECT_EQ(BIYOS_setenvboolopt(env.get(), kFlags, 1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused + "a bool");
+    EXPECT_EQ(BIYOS_setenvdblopt(env.get(), kFlags, 1.0), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused + "a double");
+    EXPECT_EQ(BIYOS_setenvstropt(env.get(), kFlags, "dual"), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused + "a string");
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), kFlags, &value), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused + "an int");
+    EXPECT_EQ(BIYOS_getenvboolopt(env.get(), kFlags, &value), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused + "a bool");
+    EXPECT_EQ(BIYOS_getenvdblopt(env.get(), kFlags, &real), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused + "a double");
+    EXPECT_EQ(BIYOS_getenvstropt(env.get(), kFlags, &text), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused + "a string");
+}
+
+TEST(CApiTest, OtherKinds)
+{
+    const Env env;
+    const int ids[] = {BIYOS_OPT_SEED,
+                       BIYOS_OPT_MAXTIME,
+                       BIYOS_OPT_CHECKLVL,
+                       BIYOS_OPT_PRESOLVE,
+                       BIYOS_OPT_REPRO};
+    const char *names[] = {"seed", "maxtime", "check_lvl", "presolve", "repro"};
+    const char *nouns[] = {"an int", "a double", "an enum", "a bool", "a string"};
+    for (int i = 0; i < 5; ++i)
+    {
+        const std::string option = "invalid argument: option '" + std::string(names[i]) + "': ";
+        const std::string refused = option + "is " + nouns[i] + ", not flags";
+        BIYOS_mask on = kDual;
+        BIYOS_mask off = kProbe;
+        EXPECT_EQ(BIYOS_setenvflgopt(env.get(), ids[i], 0, 0), BIYOS_ERR_BADARG);
+        EXPECT_EQ(env.message(), refused);
+        EXPECT_EQ(BIYOS_getenvflgopt(env.get(), ids[i], &on, &off), BIYOS_ERR_BADARG);
+        EXPECT_EQ(env.message(), refused);
+        EXPECT_EQ(on, kDual);
+        EXPECT_EQ(off, kProbe);
+    }
+}
+
+TEST(CApiTest, NullFlags)
+{
+    Flagged env;
+    BIYOS_mask mask = kScale;
+    EXPECT_EQ(BIYOS_getenvflgopt(env.get(), kFlags, nullptr, &mask), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'on': is null");
+    EXPECT_EQ(BIYOS_getenvflgopt(env.get(), kFlags, &mask, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'off': is null");
+    EXPECT_EQ(mask, kScale);
+    EXPECT_EQ(BIYOS_setenvflgopt(nullptr, kFlags, 0, 0), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getenvflgopt(nullptr, kFlags, &mask, &mask), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setenvflgopt(env.get(), 99, 0, 0), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: option 99: unknown");
 }
