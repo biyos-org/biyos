@@ -105,13 +105,13 @@ std::span<const LinearTerm> Model::linear_terms(Index start, Index size) const
     check_span(kNoun, start, size, n_functions());
     const auto begin = static_cast<std::size_t>(begin_of(static_cast<std::size_t>(start)));
     const auto end = static_cast<std::size_t>(begin_of(static_cast<std::size_t>(start + size)));
-    return std::span(terms_).subspan(begin, end - begin);
+    return std::span(linear_terms_).subspan(begin, end - begin);
 }
 
 void Model::check_room(std::size_t functions, Offset terms) const
 {
     check_n(kNoun, constants_, functions);
-    if (terms > static_cast<Offset>(room(terms_)))
+    if (terms > static_cast<Offset>(room(linear_terms_)))
     {
         throw Error(ErrorKind::NoMemory, "model", "no term offset left");
     }
@@ -150,12 +150,12 @@ void Model::add_linear_terms(std::span<const Index> functions,
         sort_terms(functions[k], part);
         additions.push_back(AddedTerms{.function = functions[k], .terms = part});
     }
-    merge_terms(ends_, terms_, additions);
+    merge_terms(linear_ends_, linear_terms_, additions);
 }
 
 Offset Model::begin_of(std::size_t function) const noexcept
 {
-    return function == 0 ? 0 : ends_[function - 1];
+    return function == 0 ? 0 : linear_ends_[function - 1];
 }
 
 void Model::append(std::span<const double> constants,
@@ -163,17 +163,17 @@ void Model::append(std::span<const double> constants,
                    std::span<const LinearTerm> terms)
 {
     reserve_more(constants_, constants.size());
-    reserve_more(ends_, constants.size());
-    reserve_more(terms_, terms.size());
+    reserve_more(linear_ends_, constants.size());
+    reserve_more(linear_terms_, terms.size());
     reserve_more(quadratic_ends_, constants.size());
     reserve_more(roots_, constants.size());
-    const auto base = static_cast<Offset>(terms_.size());
+    const auto base = static_cast<Offset>(linear_terms_.size());
     constants_.insert(constants_.end(), constants.begin(), constants.end());
     for (const Offset end : starts.subspan(1))
     {
-        ends_.push_back(base + end);
+        linear_ends_.push_back(base + end);
     }
-    terms_.insert(terms_.end(), terms.begin(), terms.end());
+    linear_terms_.insert(linear_terms_.end(), terms.begin(), terms.end());
     const auto held = static_cast<Offset>(quadratic_terms_.size());
     quadratic_ends_.insert(quadratic_ends_.end(), constants.size(), held);
     roots_.insert(roots_.end(), constants.size(), kNoRoot);
