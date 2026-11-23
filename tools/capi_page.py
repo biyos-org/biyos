@@ -81,18 +81,26 @@ def direction(key):
     return f"[{DIRECTIONS[key]}]{{.dir .dir-{key}}}"
 
 
+def above(head, text):
+    return f"{head} [{text}]{{.under}}"
+
+
+def stack(header, rows):
+    shown = table((header,), [(above(*row),) for row in rows])
+    return f"::: {{.stack}}\n{shown}\n:::"
+
+
 def parameters(entry):
     if not entry.params:
         return []
-    rows = [(name(n), direction(d), t) for n, d, t in entry.params]
-    return [table(("Parameter", "", "Meaning"), rows, (2, 1, 9))]
+    rows = [(f"{name(n)} {direction(d)}", t) for n, d, t in entry.params]
+    return [stack("Parameter", rows)]
 
 
 def errors(entry):
     if not entry.errors:
         return []
-    rows = [(f"`{code}`", text) for code, text in entry.errors]
-    return [table(("Error", "When"), rows, (4, 8))]
+    return [stack("Error", [(f"`{c}`", t) for c, t in entry.errors])]
 
 
 def meta(entry):

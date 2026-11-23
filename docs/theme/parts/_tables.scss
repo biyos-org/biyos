@@ -137,12 +137,6 @@ td .name code:not(.sourceCode),
   box-shadow: inset 0 0 0 1px rgba($link, 0.55);
 }
 
-td:has(> .dir) {
-  width: 1%;
-  padding-left: 0.25rem !important;
-  padding-right: 0.25rem !important;
-}
-
 .table caption,
 table caption {
   @include label;

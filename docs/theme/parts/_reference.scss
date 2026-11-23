@@ -94,7 +94,8 @@ h4.api {
     white-space: nowrap;
   }
 
-  .entry .returns td:first-child {
+  .entry .stack td:first-child,
+  .entry .stack .under code {
     white-space: normal;
   }
 }
@@ -146,54 +147,14 @@ h4.api {
   display: block;
 }
 
-.also .see {
-  margin: 0 0.375rem 0 0;
+.entry .stack td:first-child {
+  width: auto;
 }
 
-@media (max-width: 575.98px) {
-  .params :is(table, thead, tbody) {
-    display: block;
-  }
+.stack .under {
+  margin-top: 0.125rem;
+}
 
-  .params thead {
-    border-bottom: none;
-  }
-
-  .params colgroup,
-  .params th:not(:first-child) {
-    display: none;
-  }
-
-  .params tr {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.125rem 0.5rem;
-    padding: 0.4375rem 0.5rem;
-    border-bottom: 1px solid $row-rule;
-  }
-
-  .params thead tr {
-    background-color: $head-tint;
-    border-bottom-color: $line;
-    border-radius: 3px 3px 0 0;
-  }
-
-  .params tbody tr:last-child {
-    border-bottom: none;
-  }
-
-  .params .table > :not(caption) > * > * {
-    padding: 0;
-    border-bottom: none;
-    background: none;
-  }
-
-  .entry .params td:first-child {
-    width: auto;
-  }
-
-  .params td:last-child {
-    flex-basis: 100%;
-  }
+.also .see {
+  margin: 0 0.375rem 0 0;
 }

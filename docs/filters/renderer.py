@@ -96,9 +96,14 @@ def above(kind, meaning):
     return " ".join(part for part in (kind, below) if part)
 
 
-def stacked(row):
-    name, kind, default, meaning = row
-    return (f"{name} {kind}" if kind else name, default, meaning)
+def stack(header, rows):
+    shown = table((header,), [(above(*row),) for row in rows])
+    return f"::: {{.stack}}\n{shown}\n:::"
+
+
+def headed(name, kind, default):
+    given = f"[=]{{.type}} {code(default)}" if default else ""
+    return " ".join(part for part in (name, kind, given) if part)
 
 
 def merged(rows):
@@ -185,17 +190,13 @@ class Renderer(MdRenderer):
             rows.append(
                 (
                     f"[`{splat}{par.name}`]{{.name}}",
-                    quiet(
-                        self.render_annotation(anno) if anno else "",
-                        ".type .under",
-                    ),
-                    code(default),
+                    quiet(self.render_annotation(anno) if anno else ""),
+                    default,
                     note.description if note else "",
                 )
             )
-        header = ("Parameter", "Default", "Meaning")
-        shown = table(header, [stacked(row) for row in merged(rows)])
-        return [f"::: {{.params}}\n{shown}\n:::"] if rows else []
+        shown = [(headed(*row[:3]), row[3]) for row in merged(rows)]
+        return [stack("Parameter", shown)] if rows else []
 
     def returns(self, obj, found):
         given = getattr(target(obj), "returns", None)
@@ -209,15 +210,14 @@ class Renderer(MdRenderer):
         ]
         if given and not rows and str(given) != "None":
             rows = [(quiet(self.render_annotation(given)), "")]
-        shown = table(("Returns",), [(above(*row),) for row in rows])
-        return [f"::: {{.returns}}\n{shown}\n:::"] if rows else []
+        return [stack("Returns", rows)] if rows else []
 
     def raises(self, found):
         rows = [
             (code(self.render_annotation(r.annotation)), r.description)
             for r in described(found, DocstringSectionRaises)
         ]
-        return [table(("Raises", "Condition"), rows)] if rows else []
+        return [stack("Raises", rows)] if rows else []
 
     def others(self, found):
         parts = []
@@ -256,13 +256,12 @@ class Renderer(MdRenderer):
             )
             for d in docs
         ]
-        header = (
-            "Member" if enum else "Attribute",
-            "Type",
-            "Value",
-            "Meaning",
-        )
-        return [table(header, rows)] if rows else []
+        if not rows:
+            return []
+        if not enum:
+            shown = [(headed(*row[:2], ""), row[3]) for row in rows]
+            return [stack("Attribute", shown)]
+        return [table(("Member", "Type", "Value", "Meaning"), rows)]
 
     def index(self, docs):
         rows = [

@@ -44,12 +44,15 @@ class PageTest(unittest.TestCase):
             text,
         )
         self.assertIn(
-            "| [`env`]{.name} | [in]{.dir .dir-in} | The environment. |", text
+            "| [`env`]{.name} [in]{.dir .dir-in} "
+            "[The environment.]{.under} |",
+            text,
         )
         self.assertIn("**Returns** `BIYOS_OK`.", text)
         self.assertIn(
-            "| `BIYOS_ERR_BADARG` | It delivers an event. |", text
+            "| `BIYOS_ERR_BADARG` [It delivers an event.]{.under} |", text
         )
+        self.assertIn("::: {.stack}\n| Error", text)
         self.assertIn("[See also]{.see} [`BIYOS_newenv`]{.names}", text)
 
     def test_pair(self):
