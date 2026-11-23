@@ -186,6 +186,10 @@ BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *b
 BIYOS_API BIYOS_status BIYOS_newmdl(BIYOS_env *env, BIYOS_model **mdl);
 BIYOS_API BIYOS_status BIYOS_copymdl(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
 BIYOS_API BIYOS_status BIYOS_freemdl(BIYOS_model *mdl);
+BIYOS_API BIYOS_status BIYOS_readmdl(BIYOS_env *env,
+                                     const char *path,
+                                     BIYOS_int fmt,
+                                     BIYOS_model **mdl);
 BIYOS_API BIYOS_status BIYOS_setmdlname(BIYOS_model *mdl, const char *name);
 BIYOS_API BIYOS_status BIYOS_getmdlname(const BIYOS_model *mdl, const char **name);
 BIYOS_API BIYOS_status BIYOS_delmdlname(BIYOS_model *mdl);

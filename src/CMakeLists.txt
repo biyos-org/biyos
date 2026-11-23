@@ -128,6 +128,7 @@ add_library(biyos
     capi/env.cpp
     capi/events.cpp
     capi/expressions.cpp
+    capi/files.cpp
     capi/format.cpp
     capi/functions.cpp
     capi/indicators.cpp

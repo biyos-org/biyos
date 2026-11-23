@@ -1,0 +1,129 @@
+#include "biyos/biyos.h"
+#include "capi/entry.hpp"
+#include "core/clock.hpp"
+#include "core/env.hpp"
+#include "handles.hpp"
+
+#include <gtest/gtest.h>
+
+#include <fstream>
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace
+{
+
+using biyos::test::Env;
+using biyos::test::Model;
+
+const std::string kData = MPS_DATA;
+
+struct Read
+{
+    BIYOS_status status;
+    BIYOS_model *model;
+};
+
+Read read(const Env &env, const char *path, BIYOS_int fmt)
+{
+    const Model kept(env);
+    BIYOS_model *model = kept.get();
+    const BIYOS_status status = BIYOS_readmdl(env.get(), path, fmt, &model);
+    return Read{.status = status, .model = model};
+}
+
+BIYOS_index count_of(BIYOS_status (*count)(const BIYOS_model *, BIYOS_index *),
+                     const BIYOS_model *model)
+{
+    BIYOS_index n = -1;
+    EXPECT_EQ(count(model, &n), BIYOS_OK);
+    return n;
+}
+
+std::string line_of(const BIYOS_event *event)
+{
+    std::string line = std::string(BIYOS_getevtmod(event)) + "/" + BIYOS_getevttext(event);
+    for (BIYOS_index field = 0; field < BIYOS_getnevtfld(event); ++field)
+    {
+        line += std::string(" ") + BIYOS_getevtfldname(event, field) + "=";
+        line += BIYOS_getevtfldval(event, field);
+    }
+    return line;
+}
+
+void keep(const BIYOS_event *event, void *data)
+{
+    static_cast<std::vector<std::string> *>(data)->push_back(line_of(event));
+}
+
+}
+
+TEST(CApiTest, ReadFile)
+{
+    const Env env;
+    const std::string path = kData + "/lp.mps";
+    const Read made = read(env, path.c_str(), BIYOS_FMT_MPS);
+    ASSERT_EQ(made.status, BIYOS_OK);
+    EXPECT_EQ(count_of(BIYOS_getnvar, made.model), 2);
+    EXPECT_EQ(count_of(BIYOS_getncon, made.model), 3);
+    EXPECT_EQ(count_of(BIYOS_getnobj, made.model), 1);
+    const char *name = nullptr;
+    EXPECT_EQ(BIYOS_getmdlname(made.model, &name), BIYOS_OK);
+    EXPECT_STREQ(name, "small");
+    EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
+}
+
+TEST(CApiTest, MissingFile)
+{
+    const Env env;
+    const std::string path = kData + "/absent.mps";
+    const Read made = read(env, path.c_str(), BIYOS_FMT_MPS);
+    EXPECT_EQ(made.status, BIYOS_ERR_FILEIO);
+    EXPECT_EQ(made.model, nullptr);
+    EXPECT_EQ(env.message(), "file access: file '" + path + "': cannot be opened");
+}
+
+TEST(CApiTest, BadFile)
+{
+    const Env env;
+    const std::string path = testing::TempDir() + "biyos_bad.mps";
+    std::ofstream(path) << "NAME t\nROWS\n N f\nCOLUMNS\n x g 1\nENDATA\n";
+    const Read made = read(env, path.c_str(), BIYOS_FMT_MPS);
+    EXPECT_EQ(made.status, BIYOS_ERR_BADFILE);
+    EXPECT_EQ(made.model, nullptr);
+    EXPECT_EQ(env.message(), "bad file: file '" + path + "' line 5: unknown row 'g'");
+}
+
+TEST(CApiTest, ReadRefused)
+{
+    const Env env;
+    const std::string path = kData + "/lp.mps";
+    EXPECT_EQ(read(env, nullptr, BIYOS_FMT_MPS).status, BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'path': is null");
+    EXPECT_EQ(read(env, path.c_str(), 7).status, BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: format 7: unknown");
+    EXPECT_EQ(BIYOS_readmdl(env.get(), path.c_str(), BIYOS_FMT_MPS, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_readmdl(nullptr, path.c_str(), BIYOS_FMT_MPS, nullptr), BIYOS_ERR_BADARG);
+}
+
+TEST(CApiTest, ReadSpan)
+{
+    BIYOS_env env{.core = biyos::Env(std::make_unique<biyos::FakeClock>())};
+    std::vector<std::string> spans;
+    BIYOS_index hook = -1;
+    ASSERT_EQ(BIYOS_addenvhook(&env, keep, &spans, BIYOS_EVTKND_SPAN, BIYOS_EVTLVL_DBG, &hook),
+              BIYOS_OK);
+    const std::string path = kData + "/lp.mps";
+    BIYOS_model *model = nullptr;
+    ASSERT_EQ(BIYOS_readmdl(&env, path.c_str(), BIYOS_FMT_MPS, &model), BIYOS_OK);
+    const std::vector<std::string> expected{
+        "io/read edge=begin wall=0 cpu=0",
+        "io/read edge=end wall=0 cpu=0",
+    };
+    EXPECT_EQ(spans, expected);
+    EXPECT_EQ(BIYOS_freemdl(model), BIYOS_OK);
+    spans.clear();
+    EXPECT_EQ(BIYOS_readmdl(&env, nullptr, BIYOS_FMT_MPS, &model), BIYOS_ERR_BADARG);
+    EXPECT_TRUE(spans.empty());
+}

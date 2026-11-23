@@ -31,6 +31,18 @@ std::filesystem::path path_of(std::string_view path)
 
 }
 
+Format find_format(int id)
+{
+    for (const Format format : kFormats)
+    {
+        if (static_cast<int>(format) == id)
+        {
+            return format;
+        }
+    }
+    throw Error(ErrorKind::InvalidArgument, "format " + std::to_string(id), "unknown");
+}
+
 Model read_file(Env &env, std::string_view path, Format format)
 {
     TimingTree tree;

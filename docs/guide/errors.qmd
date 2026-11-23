@@ -41,7 +41,7 @@ Each thread has its own last error: a failure on one thread never replaces what 
 
 ## What a failure leaves {#sec-errors-state}
 
-A call that fails changes nothing: no variable is half added, no option half set. It leaves its output arguments as they were, except where its entry in the reference says otherwise; `BIYOS_newenv`, `BIYOS_newmdl` and `BIYOS_copymdl` set their output to null. A null pointer argument gives `BIYOS_ERR_BADARG`, unless the reference says a null is allowed. The example checks that the refused seed left the option at its default:
+A call that fails changes nothing: no variable is half added, no option half set. It leaves its output arguments as they were, except where its entry in the reference says otherwise; `BIYOS_newenv`, `BIYOS_newmdl`, `BIYOS_copymdl` and `BIYOS_readmdl` set their output to null. A null pointer argument gives `BIYOS_ERR_BADARG`, unless the reference says a null is allowed. The example checks that the refused seed left the option at its default:
 
 ```{.c file="examples/c/errors.c" item="main"}
 ```
