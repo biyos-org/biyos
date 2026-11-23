@@ -126,10 +126,13 @@ static BIYOS_status use_functions(BIYOS_model *model)
     int64_t offsets[3] = {-1, -1, -1};
     int held[3] = {-1, -1, -1};
     double kept[3] = {0.0, 0.0, 0.0};
+    int map[2] = {-1, -1};
     BIYOS_index first = -1;
     BIYOS_index functions = 0;
     if (BIYOS_addfun(model, 2, &first) != BIYOS_OK || first != 0 ||
         BIYOS_getnfun(model, &functions) != BIYOS_OK || functions != 2 ||
+        BIYOS_delfunsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
+        BIYOS_delfunrg(model, 2, 0, NULL) != BIYOS_OK ||
         BIYOS_setcstrg(model, 0, 2, constants) != BIYOS_OK ||
         BIYOS_addrlintermrg(model, 0, 2, starts, variables, values) != BIYOS_OK)
     {

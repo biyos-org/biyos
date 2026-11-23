@@ -302,6 +302,14 @@ BIYOS_API BIYOS_status BIYOS_getfunidx(const BIYOS_model *mdl,
                                        BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delfunnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delfunnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
+BIYOS_API BIYOS_status BIYOS_delfunsp(BIYOS_model *mdl,
+                                      BIYOS_index n,
+                                      const BIYOS_index *idx,
+                                      BIYOS_index *map);
+BIYOS_API BIYOS_status BIYOS_delfunrg(BIYOS_model *mdl,
+                                      BIYOS_index pos,
+                                      BIYOS_index n,
+                                      BIYOS_index *map);
 BIYOS_API BIYOS_status BIYOS_addlintermsp(BIYOS_model *mdl,
                                           BIYOS_offset nnz,
                                           const BIYOS_index *funidx,

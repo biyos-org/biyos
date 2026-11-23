@@ -254,6 +254,41 @@ void expect_refused(const Calls &calls)
     expect_unchanged(tried, model);
 }
 
+const Calls kFunctions{
+    .noun = "function",
+    .count = BIYOS_getnfun,
+    .listed = BIYOS_delfunsp,
+    .ranged = BIYOS_delfunrg,
+    .name = BIYOS_setfunnamerg,
+    .find = BIYOS_getfunidx,
+};
+
+void build_functions(const Model &model)
+{
+    const BIYOS_index used = 3;
+    ASSERT_EQ(BIYOS_addfun(model.get(), 4, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setfunnamerg(model.get(), 0, 3, kNames.data()), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcon(model.get(), 1, &used, nullptr, nullptr, nullptr), BIYOS_OK);
+}
+
+BIYOS_index function_of(const Model &model)
+{
+    BIYOS_index function = -1;
+    EXPECT_EQ(BIYOS_getconrg(model.get(), 0, 1, &function, nullptr, nullptr), BIYOS_OK);
+    return function;
+}
+
+std::string in_use(const Env &env, const Model &model, Indices indices)
+{
+    const Model tried(env, model);
+    Map map(4, 9);
+    const auto n = static_cast<BIYOS_index>(indices.size());
+    EXPECT_EQ(BIYOS_delfunsp(tried.get(), n, indices.data(), map.data()), BIYOS_ERR_INUSE);
+    EXPECT_EQ(map, Map(4, 9));
+    expect_unchanged(tried, model);
+    return env.message();
+}
+
 }
 
 TEST(CApiTest, DeleteListed)
@@ -290,4 +325,41 @@ TEST(CApiTest, DeleteRefused)
         SCOPED_TRACE(calls.noun);
         expect_refused(calls);
     }
+}
+
+TEST(CApiTest, DeleteFunctions)
+{
+    const Env env;
+    const Model model(env);
+    build_functions(model);
+    const Indices indices{2, 0};
+    Map map(4, 9);
+    EXPECT_EQ(BIYOS_delfunsp(model.get(), 2, indices.data(), map.data()), BIYOS_OK);
+    EXPECT_EQ(map, (Map{-1, 0, -1, 1}));
+    EXPECT_EQ(count_of(model, kFunctions), 2);
+    EXPECT_EQ(function_of(model), 1);
+    EXPECT_EQ(find(env, model, kFunctions, "r1"), "0");
+    EXPECT_EQ(find(env, model, kFunctions, "r2"), unknown(kFunctions, "r2"));
+    EXPECT_EQ(BIYOS_delfunrg(model.get(), 0, 1, nullptr), BIYOS_OK);
+    EXPECT_EQ(count_of(model, kFunctions), 1);
+    EXPECT_EQ(function_of(model), 0);
+    EXPECT_EQ(find(env, model, kFunctions, "r1"), unknown(kFunctions, "r1"));
+}
+
+TEST(CApiTest, UsedFunction)
+{
+    const Env env;
+    const Model model(env);
+    build_functions(model);
+    const std::string used = "in use: function 3: used by constraint 0";
+    EXPECT_EQ(in_use(env, model, {3}), used);
+    EXPECT_EQ(in_use(env, model, {1, 3}), used);
+    const Model tried(env, model);
+    Map map(4, 9);
+    EXPECT_EQ(BIYOS_delfunrg(tried.get(), 2, 2, map.data()), BIYOS_ERR_INUSE);
+    EXPECT_EQ(env.message(), used);
+    EXPECT_EQ(map, Map(4, 9));
+    expect_unchanged(tried, model);
+    EXPECT_EQ(BIYOS_delfunrg(tried.get(), 3, 2, map.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused(kFunctions, "4: unknown"));
 }
