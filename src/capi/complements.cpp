@@ -166,6 +166,12 @@ void get_tolerances(const BIYOS_model &model,
     }
 }
 
+template <typename Selection> void delete_tolerances(BIYOS_model &model, Selection selection)
+{
+    biyos::Model &core = writable(model);
+    core.delete_complement_tolerances(selected(core, Family::Complement, selection));
+}
+
 }
 
 BIYOS_status BIYOS_addccon(BIYOS_model *mdl,
@@ -255,6 +261,16 @@ BIYOS_status BIYOS_getccontolrg(const BIYOS_model *mdl,
                                 BIYOS_real *rtol)
 {
     return guarded<get_tolerances<Range>>(mdl, Range{pos, n}, atol, rtol);
+}
+
+BIYOS_status BIYOS_delccontolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+{
+    return guarded<delete_tolerances<List>>(mdl, List{n, idx});
+}
+
+BIYOS_status BIYOS_delccontolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+{
+    return guarded<delete_tolerances<Range>>(mdl, Range{pos, n});
 }
 
 BIYOS_status BIYOS_getnccon(const BIYOS_model *mdl, BIYOS_index *n)

@@ -680,6 +680,8 @@ BIYOS_API BIYOS_status BIYOS_getccontolrg(const BIYOS_model *mdl,
                                           BIYOS_index n,
                                           BIYOS_real *atol,
                                           BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_delccontolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delccontolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
 BIYOS_API BIYOS_status BIYOS_getnccon(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getcconsp(const BIYOS_model *mdl,
                                        BIYOS_index n,

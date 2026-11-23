@@ -183,6 +183,7 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_getcconrg(model, 0, 1, nullptr, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_setccontolsp(model, 1, &index, &bound, &bound));
     note(attempt, BIYOS_getccontolsp(model, 1, &index, nullptr, nullptr));
+    note(attempt, BIYOS_delccontolsp(model, 1, &index));
 }
 
 }
@@ -380,12 +381,14 @@ TEST(CApiTest, LockedComplements)
         BIYOS_OK,
         refused,
         BIYOS_OK,
+        refused,
     };
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
     EXPECT_EQ(attempt.statuses, statuses);
     EXPECT_EQ(attempt.messages[0], locked);
     EXPECT_EQ(attempt.messages[1], locked);
     EXPECT_EQ(attempt.messages[5], locked);
+    EXPECT_EQ(attempt.messages[7], locked);
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     EXPECT_EQ(n_complements(model), 1);
 }
@@ -448,4 +451,46 @@ TEST(CApiTest, RefusedTolerances)
     EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
     EXPECT_EQ(bits_of(kept), bits_of({9.0, 9.0}));
     expect_tolerances(read_tolerances(model), kUnset);
+}
+
+TEST(CApiTest, DeletedTolerances)
+{
+    const Env env;
+    const Model model(env);
+    add_sample(model);
+    BIYOS_model *held = model.get();
+    const double absolute[] = {0.5, 0.25, 0.125};
+    const double relative[] = {0.75, 0.375, 0.0};
+    ASSERT_EQ(BIYOS_setccontolrg(held, 0, 3, absolute, relative), BIYOS_OK);
+    const BIYOS_index indices[] = {2, 2};
+    ASSERT_EQ(BIYOS_delccontolsp(held, 2, indices), BIYOS_OK);
+    ASSERT_EQ(BIYOS_delccontolsp(held, 0, nullptr), BIYOS_OK);
+    const Tolerances wanted{
+        .absolute = {0.5, 0.25, kNan},
+        .relative = {0.75, 0.375, kNan},
+    };
+    expect_tolerances(read_tolerances(model), wanted);
+    ASSERT_EQ(BIYOS_delccontolrg(held, 0, 2), BIYOS_OK);
+    ASSERT_EQ(BIYOS_delccontolrg(held, 1, 2), BIYOS_OK);
+    expect_tolerances(read_tolerances(model), kUnset);
+    expect_records(read_all(model), kSample);
+}
+
+TEST(CApiTest, RefusedDeletion)
+{
+    const Env env;
+    const Model model(env);
+    add_sample(model);
+    BIYOS_model *held = model.get();
+    const double absolute[] = {0.5, 0.25, 0.125};
+    ASSERT_EQ(BIYOS_setccontolrg(held, 0, 3, absolute, nullptr), BIYOS_OK);
+    const Tolerances before = read_tolerances(model);
+    const BIYOS_index indices[] = {0, 3};
+    EXPECT_EQ(BIYOS_delccontolsp(held, 2, indices), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
+    EXPECT_EQ(BIYOS_delccontolsp(held, 1, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(BIYOS_delccontolrg(held, 2, 2), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
+    expect_tolerances(read_tolerances(model), before);
 }

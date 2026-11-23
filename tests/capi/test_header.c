@@ -353,7 +353,9 @@ static BIYOS_status use_complements(BIYOS_model *model)
         BIYOS_getcconbndrg(model, 0, 2, found, NULL) != BIYOS_OK ||
         BIYOS_getcconrg(model, 0, 2, read, NULL, NULL, NULL) != BIYOS_OK || read[0] != 0 ||
         read[1] != 1 || BIYOS_setccontolrg(model, 1, 1, tolerance, NULL) != BIYOS_OK ||
-        BIYOS_getccontolsp(model, 1, indices, found, found + 1) != BIYOS_OK)
+        BIYOS_getccontolsp(model, 1, indices, found, found + 1) != BIYOS_OK ||
+        BIYOS_delccontolsp(model, 1, indices) != BIYOS_OK ||
+        BIYOS_delccontolrg(model, 0, 2) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }

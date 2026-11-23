@@ -457,6 +457,7 @@ void write_complements(const Held &held, Engine &engine)
     const std::vector<double> upper = drawn(engine, n, high);
     expect_writes(changed, span, BIYOS_setcconbndsp, BIYOS_setcconbndrg, lower, upper);
     expect_writes(changed, span, BIYOS_setccontolsp, BIYOS_setccontolrg, lower, upper);
+    expect_writes(changed, span, BIYOS_delccontolsp, BIYOS_delccontolrg);
 }
 
 template <typename Value> std::vector<Value> zeros(Span span)
@@ -651,6 +652,7 @@ void keep_complements(const Held &held, Span span, BIYOS_status wanted)
     expect_kept(held, span, wanted, BIYOS_getcconrg, functions, functions, bounds, bounds);
     expect_kept(held, span, wanted, BIYOS_setccontolrg, bounds, bounds);
     expect_kept(held, span, wanted, BIYOS_getccontolrg, bounds, bounds);
+    expect_kept(held, span, wanted, BIYOS_delccontolrg);
 }
 
 void keep_all(const Held &held, Counter count, Span span, BIYOS_status wanted)

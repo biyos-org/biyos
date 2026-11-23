@@ -203,6 +203,7 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_getcconbndsp(nullptr, 1, &index, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setccontolsp(nullptr, 1, &index, &bound, &bound), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getccontolsp(nullptr, 1, &index, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delccontolsp(nullptr, 1, &index), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getnccon(nullptr, &n), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getcconrg(nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     BIYOS_offset node = 0;
