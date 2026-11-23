@@ -7,6 +7,7 @@
 #include "core/options.hpp"
 #include "core/records.hpp"
 
+#include <atomic>
 #include <cstddef>
 #include <memory>
 #include <span>
@@ -36,6 +37,7 @@ class Env
         friend class Env;
 
         Env &env_;
+        bool linked_;
         ErrorScope *outer_;
         Record kept_;
         bool swapped_ = false;
@@ -66,19 +68,23 @@ class Env
     Interrupt &interrupt() noexcept;
     const Interrupt &interrupt() const noexcept;
 
-    const Record &last_error() const noexcept;
-    void record_error(ErrorKind kind, std::string_view text) noexcept;
+    RecordView last_error() const noexcept;
+    void record_error(ErrorKind kind,
+                      std::string_view text,
+                      const BIYOS_model *model = nullptr) noexcept;
 
     std::size_t handles() const noexcept;
 
   private:
+    ErrorScope *scope() const noexcept;
+
     std::unique_ptr<Clock> clock_;
     Events events_;
     Options options_;
     Interrupt interrupt_;
     Records records_;
     ErrorScope *scope_ = nullptr;
-    std::size_t handles_ = 0;
+    std::atomic<std::size_t> handles_{0};
 };
 
 }

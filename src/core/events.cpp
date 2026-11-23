@@ -100,20 +100,21 @@ std::string_view name_of(EventLevel level) noexcept
     return "";
 }
 
-Events::Caller::Caller(Events &events, const BIYOS_model *model) noexcept
-    : events_(events), outer_(events.model_)
+Events::Turn::Turn(Events &events) noexcept : events_(events), nested_(events.mine())
 {
-    if (outer_ != model)
+    if (!nested_)
     {
-        events_.model_ = model;
+        events_.turn_.lock();
+        events_.owner_.store(this_thread());
     }
 }
 
-Events::Caller::~Caller()
+Events::Turn::~Turn()
 {
-    if (events_.model_ != outer_)
+    if (!nested_)
     {
-        events_.model_ = outer_;
+        events_.owner_.store(ThreadId{});
+        events_.turn_.unlock();
     }
 }
 
@@ -153,7 +154,7 @@ void Events::delete_hook(int id)
     }
     found->active = false;
     refresh(found->kind);
-    if (depth_ == 0)
+    if (!delivering())
     {
         const std::unique_ptr<const Hook> removed = std::move(found->hook);
         hooks_.erase(found);

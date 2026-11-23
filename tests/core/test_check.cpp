@@ -187,7 +187,7 @@ TEST_F(CheckTest, LastError)
     const biyos::Error error =
         caught([this] { check(at(CheckLevel::Cheap), CheckLevel::Cheap, false); });
     EXPECT_EQ(seen, error.what());
-    EXPECT_EQ(env.last_error().text, error.what());
+    EXPECT_STREQ(env.last_error().text, error.what());
 }
 
 TEST_F(CheckTest, CallerKind)
@@ -227,7 +227,7 @@ TEST_F(CheckTest, Filling)
     env.events().emit(EventKind::Message, EventLevel::Info, fill);
     EXPECT_EQ(evaluated, 1);
     EXPECT_TRUE(kept.empty());
-    EXPECT_EQ(env.last_error().text, "earlier");
+    EXPECT_STREQ(env.last_error().text, "earlier");
 }
 
 TEST_F(CheckTest, Models)

@@ -69,10 +69,10 @@ const BIYOS_model *fake_model(const int &address)
 TEST(RecordTest, Empty)
 {
     const biyos::Records records;
-    const biyos::Record &record = records.get();
+    const biyos::RecordView record = records.get();
     EXPECT_EQ(record.status, BIYOS_OK);
     EXPECT_EQ(record.model, nullptr);
-    EXPECT_EQ(record.text, "");
+    EXPECT_STREQ(record.text, "");
 }
 
 TEST(RecordTest, Kept)
@@ -81,10 +81,10 @@ TEST(RecordTest, Kept)
     biyos::Records records;
     records.put(BIYOS_ERR_BADARG, fake_model(address), "first");
     records.put(BIYOS_ERR_NOMEMORY, nullptr, "second");
-    const biyos::Record &record = records.get();
+    const biyos::RecordView record = records.get();
     EXPECT_EQ(record.status, BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(record.model, nullptr);
-    EXPECT_EQ(record.text, "second");
+    EXPECT_STREQ(record.text, "second");
     records.put(BIYOS_ERR_BADARG, fake_model(address), "third");
     EXPECT_EQ(records.get().model, fake_model(address));
 }
@@ -105,7 +105,7 @@ TEST(RecordTest, PerThread)
     first.join();
     second.join();
     EXPECT_EQ(seen, (std::vector<std::string>{"0", "1"}));
-    EXPECT_EQ(records.get().text, "");
+    EXPECT_STREQ(records.get().text, "");
 }
 
 TEST(RecordTest, DropsOldest)
@@ -114,11 +114,22 @@ TEST(RecordTest, DropsOldest)
     records.put(BIYOS_ERR_BADARG, nullptr, "main");
     Crowd crowd(records, biyos::kRecords);
     EXPECT_EQ(records.get().status, BIYOS_OK);
-    EXPECT_EQ(records.get().text, "");
+    EXPECT_STREQ(records.get().text, "");
     const std::vector<std::string> seen = crowd.leave();
     EXPECT_EQ(seen.front(), "0");
     EXPECT_EQ(seen.back(), std::to_string(biyos::kRecords - 1));
     EXPECT_EQ(std::ranges::count(seen, std::string()), 0);
+}
+
+TEST(RecordTest, ReadDropped)
+{
+    const int address = 0;
+    biyos::Records records;
+    records.put(BIYOS_ERR_BADARG, fake_model(address), "main");
+    const auto &read = records.get();
+    const Crowd crowd(records, biyos::kRecords);
+    EXPECT_EQ(read.status, BIYOS_ERR_BADARG);
+    EXPECT_EQ(read.model, fake_model(address));
 }
 
 TEST(RecordTest, Refreshed)
@@ -128,7 +139,7 @@ TEST(RecordTest, Refreshed)
     Crowd first(records, biyos::kRecords - 1);
     records.put(BIYOS_ERR_BADARG, nullptr, "again");
     Crowd second(records, 1);
-    EXPECT_EQ(records.get().text, "again");
+    EXPECT_STREQ(records.get().text, "again");
     const std::vector<std::string> seen = first.leave();
     EXPECT_EQ(std::ranges::count(seen, std::string()), 1);
     EXPECT_EQ(second.leave(), std::vector<std::string>{"0"});
@@ -146,7 +157,7 @@ TEST(RecordTest, Swapped)
     EXPECT_EQ(held.text, "kept");
     EXPECT_EQ(records.get().status, BIYOS_OK);
     records.swap(held);
-    EXPECT_EQ(records.get().text, "kept");
+    EXPECT_STREQ(records.get().text, "kept");
     EXPECT_EQ(held.text, "");
 }
 
@@ -155,6 +166,21 @@ TEST(RecordTest, SwapEmpty)
     biyos::Records records;
     biyos::Record held{.status = BIYOS_ERR_BADARG, .model = nullptr, .text = "held"};
     records.swap(held);
-    EXPECT_EQ(held.text, "held");
-    EXPECT_EQ(records.get().status, BIYOS_OK);
+    EXPECT_EQ(held.status, BIYOS_OK);
+    EXPECT_EQ(held.text, "");
+    EXPECT_EQ(records.get().status, BIYOS_ERR_BADARG);
+    EXPECT_STREQ(records.get().text, "held");
+}
+
+TEST(RecordTest, SwapDropped)
+{
+    biyos::Records records;
+    records.put(BIYOS_ERR_BADARG, nullptr, "outer");
+    biyos::Record held;
+    records.swap(held);
+    records.put(BIYOS_ERR_INTERNAL, nullptr, "inner");
+    const Crowd crowd(records, biyos::kRecords);
+    records.swap(held);
+    EXPECT_EQ(records.get().status, BIYOS_ERR_BADARG);
+    EXPECT_STREQ(records.get().text, "outer");
 }

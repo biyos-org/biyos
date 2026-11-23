@@ -70,14 +70,18 @@ const Interrupt &Env::interrupt() const noexcept
     return interrupt_;
 }
 
-const Record &Env::last_error() const noexcept
+RecordView Env::last_error() const noexcept
 {
     return records_.get();
 }
 
-Env::ErrorScope::ErrorScope(Env &env) noexcept : env_(env), outer_(env.scope_)
+Env::ErrorScope::ErrorScope(Env &env) noexcept
+    : env_(env), linked_(env.events_.delivering()), outer_(env.scope())
 {
-    env_.scope_ = this;
+    if (linked_)
+    {
+        env_.scope_ = this;
+    }
 }
 
 Env::ErrorScope::~ErrorScope()
@@ -86,22 +90,31 @@ Env::ErrorScope::~ErrorScope()
     {
         env_.records_.swap(kept_);
     }
-    env_.scope_ = outer_;
+    if (linked_)
+    {
+        env_.scope_ = outer_;
+    }
 }
 
-void Env::record_error(ErrorKind kind, std::string_view text) noexcept
+Env::ErrorScope *Env::scope() const noexcept
 {
-    if (scope_ != nullptr && !scope_->swapped_)
+    return events_.delivering() ? scope_ : nullptr;
+}
+
+void Env::record_error(ErrorKind kind, std::string_view text, const BIYOS_model *model) noexcept
+{
+    ErrorScope *const open = scope();
+    if (open != nullptr && !open->swapped_)
     {
-        scope_->swapped_ = true;
-        records_.swap(scope_->kept_);
+        open->swapped_ = true;
+        records_.swap(open->kept_);
     }
-    records_.put(status_of(kind), events_.model(), text);
+    records_.put(status_of(kind), model, text);
 }
 
 std::size_t Env::handles() const noexcept
 {
-    return handles_;
+    return handles_.load();
 }
 
 Env::Handle::Handle(Env &env) noexcept : env_(env)

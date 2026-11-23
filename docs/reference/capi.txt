@@ -39,7 +39,7 @@ since 0.1.0
 
 type BIYOS_env
 summary An environment.
-note It holds the options, the hooks and the last error of each thread that calls it. Environments share no state, so separate threads may use separate environments at the same time; one environment is used by one thread at a time, together with the models made on it, except that any thread may call `BIYOS_interrupt` on it.
+note It holds the options, the hooks and the last error of each thread that calls it. Environments share no state, so separate threads may use separate environments at the same time. Threads may share one too: calls on different models of it may run at the same time, a call that changes or frees a model runs alone on that model, and a call that changes the environment overlaps no other call on it or on its models. Any thread may call `BIYOS_interrupt` on it at any time. @sec-threads gives the rule.
 see BIYOS_newenv BIYOS_freeenv
 since 0.1.0
 
@@ -140,7 +140,7 @@ summary Ask the call running on an environment to stop.
 param env in The environment.
 return `BIYOS_OK` once the request is made.
 error BIYOS_ERR_BADARG `env` is null.
-note This is the one call that may run while another thread is inside a call on `env`, and the one call a signal handler may make. It sets a flag on `env` and returns: it takes no lock, allocates nothing, sends no event and keeps no message. `env` must not be freed while it runs.
+note It may run while another thread is inside any call on `env`, even one that changes it, and is the one call a signal handler may make. It sets a flag on `env` and returns: it takes no lock, allocates nothing, sends no event and keeps no message. `env` must not be freed while it runs.
 note A long call reads the flag where it checks its time limits and stops with the termination `BIYOS_TRM_STOP`, an outcome rather than an error code. No call is long enough to read it yet.
 note The flag clears when the next call on `env` or on one of its models starts, so a request made between two calls stops neither. A call made by a hook leaves it set, so a hook may stop the call that sent its event.
 see BIYOS_TRM_STOP
@@ -307,8 +307,8 @@ see BIYOS_setenvflgopt
 since 0.1.0
 
 group events Events
-text biyos writes nothing to standard output or standard error. It reports through events, and a caller reads them by adding a hook on one kind of event at a lowest level. The hook then receives every event of that kind at that level or a more severe one. The hooks of an environment receive an event in the order they were added, and an event no hook wants is not built. Each event biyos sends is listed in [Events biyos sends](#sec-capi-sent).
-text While a hook runs, its environment delivers an event and is read-only. The hook may read options, the last error, the event and the models made on the environment. Every call that would change the environment, setting an option, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change or free a model made on it fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error is again what it was before the hook ran.
+text biyos writes nothing to standard output or standard error. It reports through events, and a caller reads them by adding a hook on one kind of event at a lowest level. The hook then receives every event of that kind at that level or a more severe one. The hooks of an environment receive an event in the order they were added, and an event no hook wants is not built. They run one at a time: an event sent from one thread waits while a hook runs for another. Each event biyos sends is listed in [Events biyos sends](#sec-capi-sent).
+text While a hook runs, its environment delivers an event and is read-only to the hook's thread. The hook may read options, the last error, the event and the models made on the environment. Every call that would change the environment, setting an option, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change or free a model made on it fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error is again what it was before the hook ran.
 
 table Event kinds
 value BIYOS_EVT_MESSAGE A message: a level, the module that sent it, a text and fields.
@@ -452,7 +452,7 @@ param copy out Receives the copy; set to null on failure.
 return `BIYOS_OK`, with the copy in `*copy`.
 error BIYOS_ERR_BADARG `env` delivers an event.
 note The copy holds the same variables, functions, constraints and objectives as `mdl`, under the same indices and the same names, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of the two may be freed first.
-note The call reads `mdl` and changes `env`, so no other thread may use either environment while it runs. It may run while the environment of `mdl` delivers an event. A failure keeps its message on the environment of `mdl`.
+note The call only reads `mdl`, so other threads may read it meanwhile but not change it. It may run while the environment of `mdl` delivers an event. A failure keeps its message on the environment of `mdl`.
 see BIYOS_newmdl
 since 0.1.0
 

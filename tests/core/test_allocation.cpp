@@ -3,6 +3,7 @@
 #include "core/env.hpp"
 #include "core/events.hpp"
 #include "core/timer.hpp"
+#include "delivery.hpp"
 
 #include <gtest/gtest.h>
 
@@ -22,6 +23,14 @@ void run(biyos::Env &env, biyos::TimingTree &tree)
     {
         const biyos::Timer iterate(env, tree, "nlp", "iterate");
     }
+}
+
+void failed_scope(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope scope(env);
+    biyos::test::fail_after(0);
+    env.record_error(biyos::ErrorKind::Internal, "inner");
+    biyos::test::stop_failing();
 }
 
 }
@@ -46,23 +55,18 @@ TEST(AllocationTest, FirstError)
     env.record_error(biyos::ErrorKind::Internal, "first");
     biyos::test::stop_failing();
     EXPECT_EQ(env.last_error().status, BIYOS_OK);
-    EXPECT_EQ(env.last_error().text, "");
+    EXPECT_STREQ(env.last_error().text, "");
 }
 
 TEST(AllocationTest, EmptyScope)
 {
     biyos::Env env;
-    {
-        const biyos::Env::ErrorScope scope(env);
-        biyos::test::fail_after(0);
-        env.record_error(biyos::ErrorKind::Internal, "inner");
-        biyos::test::stop_failing();
-    }
+    biyos::test::in_delivery(env, failed_scope);
     EXPECT_EQ(env.last_error().status, BIYOS_OK);
-    EXPECT_EQ(env.last_error().text, "");
+    EXPECT_STREQ(env.last_error().text, "");
     env.record_error(biyos::ErrorKind::Internal, "later");
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
-    EXPECT_EQ(env.last_error().text, "later");
+    EXPECT_STREQ(env.last_error().text, "later");
 }
 
 TEST(AllocationTest, ScopedError)
@@ -71,17 +75,9 @@ TEST(AllocationTest, ScopedError)
     const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
     const std::string outer(64, 'o');
     biyos::Env env;
-    {
-        const biyos::Events::Caller caller(env.events(), model);
-        env.record_error(biyos::ErrorKind::NoMemory, outer);
-    }
-    {
-        const biyos::Env::ErrorScope scope(env);
-        biyos::test::fail_after(0);
-        env.record_error(biyos::ErrorKind::Internal, "inner");
-        biyos::test::stop_failing();
-    }
+    env.record_error(biyos::ErrorKind::NoMemory, outer, model);
+    biyos::test::in_delivery(env, failed_scope);
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, model);
-    EXPECT_EQ(env.last_error().text, outer);
+    EXPECT_STREQ(env.last_error().text, outer.c_str());
 }

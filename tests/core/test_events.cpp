@@ -4,11 +4,14 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
 #include <functional>
+#include <latch>
 #include <memory>
 #include <new>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -18,6 +21,9 @@ namespace
 using biyos::EventKind;
 using biyos::EventLevel;
 using Texts = std::vector<std::string>;
+
+constexpr int kThreads = 4;
+constexpr int kRounds = 200;
 
 std::string failure(const std::function<void()> &body)
 {
@@ -71,6 +77,62 @@ class Parting
   private:
     std::shared_ptr<Farewell> farewell_;
     Texts *texts_;
+};
+
+class Watch
+{
+  public:
+    void operator()(const biyos::Event &)
+    {
+        if (inside_.exchange(true))
+        {
+            ++overlaps_;
+        }
+        std::this_thread::yield();
+        ++seen_;
+        inside_.store(false);
+    }
+
+    int overlaps() const { return overlaps_.load(); }
+    int seen() const { return seen_; }
+
+  private:
+    std::atomic<bool> inside_{false};
+    std::atomic<int> overlaps_{0};
+    int seen_ = 0;
+};
+
+void chatter(biyos::Events &events, std::latch &start)
+{
+    start.arrive_and_wait();
+    for (int i = 0; i < kRounds; ++i)
+    {
+        events.emit(EventKind::Message, EventLevel::Info, describe);
+    }
+}
+
+using Read = bool (biyos::Events::*)() const noexcept;
+
+bool elsewhere(const biyos::Events &events, Read read)
+{
+    bool seen = true;
+    std::thread([&] { seen = (events.*read)(); }).join();
+    return seen;
+}
+
+class Peek
+{
+  public:
+    explicit Peek(const biyos::Events &events) : events_(events) {}
+
+    void hook(const biyos::Event &) { delivering = elsewhere(events_, &biyos::Events::delivering); }
+    void fill(biyos::Event &) { filling = elsewhere(events_, &biyos::Events::filling); }
+
+    bool delivering = true;
+    bool filling = true;
+
+  private:
+    const biyos::Events &events_;
 };
 
 class EventTest : public ::testing::Test
@@ -343,39 +405,45 @@ TEST_F(EventTest, ThrowingFill)
     EXPECT_EQ(texts, Texts{"after"});
 }
 
-TEST_F(EventTest, Caller)
-{
-    const int first = 0;
-    const int second = 0;
-    const auto *outer = reinterpret_cast<const BIYOS_model *>(&first);
-    const auto *inner = reinterpret_cast<const BIYOS_model *>(&second);
-    EXPECT_EQ(events.model(), nullptr);
-    {
-        const biyos::Events::Caller call(events, outer);
-        EXPECT_EQ(events.model(), outer);
-        {
-            const biyos::Events::Caller nested(events, inner);
-            EXPECT_EQ(events.model(), inner);
-            const biyos::Events::Caller none(events, nullptr);
-            EXPECT_EQ(events.model(), nullptr);
-        }
-        EXPECT_EQ(events.model(), outer);
-    }
-    EXPECT_EQ(events.model(), nullptr);
-}
-
-TEST_F(EventTest, CallerModel)
+TEST_F(EventTest, Model)
 {
     const int address = 0;
     const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
     std::vector<const BIYOS_model *> seen;
     const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
+    const auto named = [model](biyos::Event &event) { event.model = model; };
     events.add_hook(EventKind::Message, EventLevel::Info, keep);
     events.emit(EventKind::Message, EventLevel::Info, describe);
-    {
-        const biyos::Events::Caller caller(events, model);
-        events.emit(EventKind::Message, EventLevel::Info, describe);
-    }
+    events.emit(EventKind::Message, EventLevel::Info, named);
     const std::vector<const BIYOS_model *> expected{nullptr, model};
     EXPECT_EQ(seen, expected);
+}
+
+TEST_F(EventTest, Turns)
+{
+    Watch watch;
+    std::latch start(kThreads);
+    std::vector<std::thread> threads;
+    events.add_hook(EventKind::Message, EventLevel::Info, std::ref(watch));
+    for (int i = 0; i < kThreads; ++i)
+    {
+        threads.emplace_back(chatter, std::ref(events), std::ref(start));
+    }
+    for (std::thread &thread : threads)
+    {
+        thread.join();
+    }
+    EXPECT_EQ(watch.overlaps(), 0);
+    EXPECT_EQ(watch.seen(), kThreads * kRounds);
+}
+
+TEST_F(EventTest, OtherThread)
+{
+    Peek peek(events);
+    listen(EventLevel::Debug, [&peek](const biyos::Event &event) { peek.hook(event); });
+    events.emit(EventKind::Message,
+                EventLevel::Info,
+                [&peek](biyos::Event &event) { peek.fill(event); });
+    EXPECT_FALSE(peek.delivering);
+    EXPECT_FALSE(peek.filling);
 }

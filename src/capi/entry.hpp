@@ -80,9 +80,8 @@ BIYOS_status guarded(BIYOS_env *env, Args... arguments) noexcept
     {
         return BIYOS_ERR_BADARG;
     }
-    const biyos::Events::Caller caller(env->core.events(), nullptr);
     start(env->core);
-    return biyos::capi::guard(&env->core, [&] { Body(env->core, arguments...); });
+    return biyos::capi::guard(&env->core, nullptr, [&] { Body(env->core, arguments...); });
 }
 
 template <auto Body, typename Model, typename... Args>
@@ -94,9 +93,8 @@ BIYOS_status guarded(Model *model, Args... arguments) noexcept
         return BIYOS_ERR_BADARG;
     }
     biyos::Env &env = model->handle.env();
-    const biyos::Events::Caller caller(env.events(), model);
     start(env);
-    return biyos::capi::guard(&env, [&] { Body(*model, arguments...); });
+    return biyos::capi::guard(&env, model, [&] { Body(*model, arguments...); });
 }
 
 }

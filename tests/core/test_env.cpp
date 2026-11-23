@@ -1,10 +1,15 @@
 #include "core/clock.hpp"
 #include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/records.hpp"
+#include "delivery.hpp"
 
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cstddef>
+#include <functional>
+#include <latch>
 #include <memory>
 #include <string>
 #include <thread>
@@ -12,10 +17,101 @@
 #include <utility>
 #include <vector>
 
+namespace
+{
+
+void two_errors(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope scope(env);
+    env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
+    env.record_error(biyos::ErrorKind::InvalidArgument, "later");
+    EXPECT_STREQ(env.last_error().text, "later");
+}
+
+void inner_scope(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope inner(env);
+    env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
+    EXPECT_STREQ(env.last_error().text, "inner");
+}
+
+void middle_scope(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope scope(env);
+    env.record_error(biyos::ErrorKind::InvalidArgument, "middle");
+    inner_scope(env);
+    EXPECT_STREQ(env.last_error().text, "middle");
+}
+
+void clean_scope(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope scope(env);
+    EXPECT_STREQ(env.last_error().text, "outer");
+}
+
+void internal_scope(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope scope(env);
+    env.record_error(biyos::ErrorKind::Internal, "inner");
+    EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
+}
+
+void env_scope(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope scope(env);
+    env.record_error(biyos::ErrorKind::InvalidArgument, "env");
+    EXPECT_EQ(env.last_error().model, nullptr);
+}
+
+void fail_worker(biyos::Env &env)
+{
+    env.record_error(biyos::ErrorKind::Internal, "worker");
+}
+
+void fail_together(biyos::Env &env, std::latch &all)
+{
+    env.record_error(biyos::ErrorKind::Internal, "crowd");
+    all.arrive_and_wait();
+}
+
+void crowded_scope(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope scope(env);
+    env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
+    std::latch all(biyos::kRecords);
+    std::vector<std::thread> threads;
+    for (std::size_t i = 0; i < biyos::kRecords; ++i)
+    {
+        threads.emplace_back(fail_together, std::ref(env), std::ref(all));
+    }
+    for (std::thread &thread : threads)
+    {
+        thread.join();
+    }
+    EXPECT_EQ(env.last_error().status, BIYOS_OK);
+}
+
+void hold(biyos::Env &env, std::latch &held, std::latch &release)
+{
+    const biyos::Env::Handle handle(env);
+    held.count_down();
+    release.wait();
+}
+
+void shared_scope(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope scope(env);
+    std::thread(fail_worker, std::ref(env)).join();
+    env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
+    EXPECT_STREQ(env.last_error().text, "inner");
+}
+
+}
+
 TEST(EnvTest, NoError)
 {
     const biyos::Env env;
-    EXPECT_EQ(env.last_error().text, "");
+    EXPECT_STREQ(env.last_error().text, "");
 }
 
 TEST(EnvTest, LastError)
@@ -23,7 +119,7 @@ TEST(EnvTest, LastError)
     biyos::Env env;
     env.record_error(biyos::ErrorKind::InvalidArgument, "first");
     env.record_error(biyos::ErrorKind::InvalidArgument, "second");
-    EXPECT_EQ(env.last_error().text, "second");
+    EXPECT_STREQ(env.last_error().text, "second");
 }
 
 TEST(EnvTest, OwnsOptions)
@@ -89,41 +185,49 @@ TEST(EnvTest, ScopedError)
 {
     biyos::Env env;
     env.record_error(biyos::ErrorKind::InvalidArgument, "outer");
-    {
-        const biyos::Env::ErrorScope scope(env);
-        env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
-        env.record_error(biyos::ErrorKind::InvalidArgument, "later");
-        EXPECT_EQ(env.last_error().text, "later");
-    }
-    EXPECT_EQ(env.last_error().text, "outer");
+    biyos::test::in_delivery(env, two_errors);
+    EXPECT_STREQ(env.last_error().text, "outer");
 }
 
 TEST(EnvTest, NestedScope)
 {
     biyos::Env env;
     env.record_error(biyos::ErrorKind::InvalidArgument, "outer");
-    {
-        const biyos::Env::ErrorScope scope(env);
-        env.record_error(biyos::ErrorKind::InvalidArgument, "middle");
-        {
-            const biyos::Env::ErrorScope inner(env);
-            env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
-            EXPECT_EQ(env.last_error().text, "inner");
-        }
-        EXPECT_EQ(env.last_error().text, "middle");
-    }
-    EXPECT_EQ(env.last_error().text, "outer");
+    biyos::test::in_delivery(env, middle_scope);
+    EXPECT_STREQ(env.last_error().text, "outer");
 }
 
 TEST(EnvTest, CleanScope)
 {
     biyos::Env env;
     env.record_error(biyos::ErrorKind::InvalidArgument, "outer");
-    {
-        const biyos::Env::ErrorScope scope(env);
-        EXPECT_EQ(env.last_error().text, "outer");
-    }
-    EXPECT_EQ(env.last_error().text, "outer");
+    biyos::test::in_delivery(env, clean_scope);
+    EXPECT_STREQ(env.last_error().text, "outer");
+}
+
+TEST(EnvTest, IdleScope)
+{
+    biyos::Env env;
+    env.record_error(biyos::ErrorKind::InvalidArgument, "outer");
+    two_errors(env);
+    EXPECT_STREQ(env.last_error().text, "later");
+}
+
+TEST(EnvTest, CrowdedScope)
+{
+    biyos::Env env;
+    env.record_error(biyos::ErrorKind::InvalidArgument, "outer");
+    biyos::test::in_delivery(env, crowded_scope);
+    EXPECT_EQ(env.last_error().status, BIYOS_ERR_BADARG);
+    EXPECT_STREQ(env.last_error().text, "outer");
+}
+
+TEST(EnvTest, ThreadScope)
+{
+    biyos::Env env;
+    env.record_error(biyos::ErrorKind::InvalidArgument, "outer");
+    biyos::test::in_delivery(env, shared_scope);
+    EXPECT_STREQ(env.last_error().text, "outer");
 }
 
 TEST(EnvTest, Handles)
@@ -135,6 +239,27 @@ TEST(EnvTest, Handles)
         const biyos::Env::Handle second(env);
         EXPECT_EQ(env.handles(), 2U);
         EXPECT_EQ(&first.env(), &env);
+    }
+    EXPECT_EQ(env.handles(), 0U);
+}
+
+TEST(EnvTest, HandleThreads)
+{
+    constexpr std::size_t kThreads = 8;
+    biyos::Env env;
+    std::latch held(kThreads);
+    std::latch release(1);
+    std::vector<std::thread> threads;
+    for (std::size_t i = 0; i < kThreads; ++i)
+    {
+        threads.emplace_back(hold, std::ref(env), std::ref(held), std::ref(release));
+    }
+    held.wait();
+    EXPECT_EQ(env.handles(), kThreads);
+    release.count_down();
+    for (std::thread &thread : threads)
+    {
+        thread.join();
     }
     EXPECT_EQ(env.handles(), 0U);
 }
@@ -211,7 +336,7 @@ TEST(EnvTest, ThreadError)
     worker.join();
     EXPECT_EQ(before, "");
     EXPECT_EQ(after, "worker");
-    EXPECT_EQ(env.last_error().text, "main");
+    EXPECT_STREQ(env.last_error().text, "main");
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_BADARG);
 }
 
@@ -219,11 +344,7 @@ TEST(EnvTest, ScopedStatus)
 {
     biyos::Env env;
     env.record_error(biyos::ErrorKind::NoMemory, "outer");
-    {
-        const biyos::Env::ErrorScope scope(env);
-        env.record_error(biyos::ErrorKind::Internal, "inner");
-        EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
-    }
+    biyos::test::in_delivery(env, internal_scope);
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
 }
 
@@ -232,17 +353,9 @@ TEST(EnvTest, ErrorModel)
     const int address = 0;
     const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
     biyos::Env env;
-    {
-        const biyos::Events::Caller caller(env.events(), model);
-        env.record_error(biyos::ErrorKind::InvalidArgument, "model");
-        EXPECT_EQ(env.last_error().model, model);
-        {
-            const biyos::Env::ErrorScope scope(env);
-            const biyos::Events::Caller none(env.events(), nullptr);
-            env.record_error(biyos::ErrorKind::InvalidArgument, "env");
-            EXPECT_EQ(env.last_error().model, nullptr);
-        }
-    }
+    env.record_error(biyos::ErrorKind::InvalidArgument, "model", model);
     EXPECT_EQ(env.last_error().model, model);
-    EXPECT_EQ(env.last_error().text, "model");
+    biyos::test::in_delivery(env, env_scope);
+    EXPECT_EQ(env.last_error().model, model);
+    EXPECT_STREQ(env.last_error().text, "model");
 }
