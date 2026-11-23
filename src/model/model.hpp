@@ -52,21 +52,21 @@ struct Constraint
     double upper;
 };
 
-enum class Sense
+enum class ObjectiveSense
 {
     Minimize = BIYOS_OBJSENSE_MIN,
     Maximize = BIYOS_OBJSENSE_MAX,
 };
 
 inline constexpr std::array kSenses{
-    Sense::Minimize,
-    Sense::Maximize,
+    ObjectiveSense::Minimize,
+    ObjectiveSense::Maximize,
 };
 
 struct Objective
 {
     Index function;
-    Sense sense;
+    ObjectiveSense sense;
     int priority;
     double weight;
     double absolute;

@@ -136,7 +136,7 @@ inline Parts sample()
             {
                 {
                     .function = 2,
-                    .sense = Sense::Maximize,
+                    .sense = ObjectiveSense::Maximize,
                     .priority = 1,
                     .weight = 2.0,
                     .absolute = 0.5,
@@ -144,7 +144,7 @@ inline Parts sample()
                 },
                 {
                     .function = 0,
-                    .sense = Sense::Minimize,
+                    .sense = ObjectiveSense::Minimize,
                     .priority = 0,
                     .weight = 1.0,
                     .absolute = 0.0,

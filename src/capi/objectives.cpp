@@ -58,7 +58,7 @@ template <typename T> void put(T *values, std::size_t k, T value)
 biyos::Objective given(biyos::Objective objective, std::size_t k, const Fields &fields)
 {
     const int sense = entry_or(fields.senses, k, static_cast<int>(objective.sense));
-    objective.sense = static_cast<biyos::Sense>(sense);
+    objective.sense = static_cast<biyos::ObjectiveSense>(sense);
     objective.priority = entry_or(fields.priorities, k, objective.priority);
     objective.weight = entry_or(fields.weights, k, objective.weight);
     objective.absolute = entry_or(fields.absolute, k, objective.absolute);

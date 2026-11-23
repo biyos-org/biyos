@@ -48,7 +48,7 @@ struct Entry
 struct Draft
 {
     std::optional<std::string> name;
-    Sense sense = Sense::Minimize;
+    ObjectiveSense sense = ObjectiveSense::Minimize;
     std::vector<DraftRow> rows;
     Directory row_names;
     std::vector<DraftColumn> columns;

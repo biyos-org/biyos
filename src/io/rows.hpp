@@ -10,6 +10,6 @@ namespace biyos
 {
 
 void read_row(const Lines &lines, Draft &draft);
-Sense sense_of(const Lines &lines, std::string_view word);
+ObjectiveSense sense_of(const Lines &lines, std::string_view word);
 
 }

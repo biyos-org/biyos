@@ -25,8 +25,8 @@ using biyos::LinearTerm;
 using biyos::Member;
 using biyos::Model;
 using biyos::Objective;
+using biyos::ObjectiveSense;
 using biyos::QuadraticTerm;
-using biyos::Sense;
 using biyos::SosKind;
 using biyos::VariableKind;
 using biyos::test::built;
@@ -135,7 +135,7 @@ TEST(CompareTest, ObjectiveFields)
     function.objectives[1].function = 1;
     EXPECT_EQ(from_sample(function), "objective 1: function 0 against 1");
     Parts sense = sample();
-    sense.objectives[0].sense = Sense::Minimize;
+    sense.objectives[0].sense = ObjectiveSense::Minimize;
     EXPECT_EQ(from_sample(sense), "objective 0: sense 2 against 1");
     Parts priority = sample();
     priority.objectives[1].priority = -4;
@@ -470,7 +470,7 @@ TEST(CompareTest, ObjectiveOrder)
     Objective &objective = changed.objectives[0];
     objective = Objective{
         .function = 1,
-        .sense = Sense::Minimize,
+        .sense = ObjectiveSense::Minimize,
         .priority = 5,
         .weight = 3.0,
         .absolute = 1.0,
@@ -479,7 +479,7 @@ TEST(CompareTest, ObjectiveOrder)
     EXPECT_EQ(from_sample(changed), "objective 0: function 2 against 1");
     objective.function = 2;
     EXPECT_EQ(from_sample(changed), "objective 0: sense 2 against 1");
-    objective.sense = Sense::Maximize;
+    objective.sense = ObjectiveSense::Maximize;
     EXPECT_EQ(from_sample(changed), "objective 0: priority 1 against 5");
     objective.priority = 1;
     EXPECT_EQ(from_sample(changed), "objective 0: weight 2 against 3");

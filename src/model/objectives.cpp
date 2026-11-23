@@ -23,7 +23,7 @@ namespace
 
 constexpr std::string_view kNoun = "objective";
 
-void check_sense(Index index, Sense sense)
+void check_sense(Index index, ObjectiveSense sense)
 {
     if (std::ranges::find(kSenses, sense) == kSenses.end())
     {
@@ -74,7 +74,7 @@ Objective default_objective(Index function, Index index) noexcept
 {
     return Objective{
         .function = function,
-        .sense = Sense::Minimize,
+        .sense = ObjectiveSense::Minimize,
         .priority = index,
         .weight = 1.0,
         .absolute = 0.0,

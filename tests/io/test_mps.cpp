@@ -14,7 +14,7 @@
 using biyos::Constraint;
 using biyos::LinearTerm;
 using biyos::Model;
-using biyos::Sense;
+using biyos::ObjectiveSense;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::continuous;
@@ -57,7 +57,7 @@ TEST(MpsTest, Linear)
     biyos::test::add_named(wanted,
                            {row(1, -kInfinity, 10.0), row(2, 2.0, kInfinity), row(3, 0.0, 0.0)},
                            {"limit", "floor", "balance"});
-    biyos::test::add_goal(wanted, 0, Sense::Minimize, "cost");
+    biyos::test::add_goal(wanted, 0, ObjectiveSense::Minimize, "cost");
     EXPECT_EQ(biyos::difference(biyos::test::read_data("lp.mps"), wanted), "");
 }
 
@@ -71,7 +71,7 @@ TEST(MpsTest, Ranges)
     biyos::test::add_named(wanted,
                            {row(1, 2.5, 4.0), row(2, 1.0, 3.0), row(3, 2.0, 2.5), row(4, 2.5, 3.0)},
                            {"less", "more", "upward", "downward"});
-    biyos::test::add_goal(wanted, 0, Sense::Minimize, "obj");
+    biyos::test::add_goal(wanted, 0, ObjectiveSense::Minimize, "obj");
     EXPECT_EQ(biyos::difference(biyos::test::read_data("ranges.mps"), wanted), "");
 }
 
@@ -103,7 +103,7 @@ TEST(MpsTest, Bounds)
         terms.push_back(LinearTerm{.variable = k, .coefficient = 1.0});
     }
     biyos::test::add_rows(wanted, {0.0}, {0, 13}, terms);
-    biyos::test::add_goal(wanted, 0, Sense::Minimize, "obj");
+    biyos::test::add_goal(wanted, 0, ObjectiveSense::Minimize, "obj");
     EXPECT_EQ(biyos::difference(biyos::test::read_data("bounds.mps"), wanted), "");
 }
 
@@ -131,7 +131,7 @@ TEST(MpsTest, Markers)
     }
     biyos::test::add_rows(wanted, {0.0, 0.0}, {0, 4, 8}, terms);
     biyos::test::add_named(wanted, {row(1, -kInfinity, 5.0)}, {"cap"});
-    biyos::test::add_goal(wanted, 0, Sense::Minimize, "obj");
+    biyos::test::add_goal(wanted, 0, ObjectiveSense::Minimize, "obj");
     EXPECT_EQ(biyos::difference(biyos::test::read_data("markers.mps"), wanted), "");
 }
 
@@ -148,7 +148,7 @@ TEST(MpsTest, Maximize)
                               LinearTerm{.variable = 0, .coefficient = 1.0},
                           });
     biyos::test::add_named(wanted, {row(1, -kInfinity, 3.0)}, {"cap"});
-    biyos::test::add_goal(wanted, 0, Sense::Maximize, "profit");
+    biyos::test::add_goal(wanted, 0, ObjectiveSense::Maximize, "profit");
     EXPECT_EQ(biyos::difference(biyos::test::read_data("maximize.mps"), wanted), "");
 }
 
@@ -188,7 +188,7 @@ TEST(MpsTest, FreeRows)
         wanted,
         {row(1, -kInfinity, 1.0), row(2, -kInfinity, kInfinity), row(3, -kInfinity, kInfinity)},
         {"cap", "second", "third"});
-    biyos::test::add_goal(wanted, 0, Sense::Minimize, "first");
+    biyos::test::add_goal(wanted, 0, ObjectiveSense::Minimize, "first");
     EXPECT_EQ(biyos::difference(biyos::test::read_data("rows.mps"), wanted), "");
 }
 
@@ -198,7 +198,7 @@ TEST(MpsTest, SenseLine)
     const Model model =
         biyos::test::read_text(env,
                                "NAME t\nOBJSENSE MAX\nROWS\n N f\nCOLUMNS\n x f 1\nRHS\nENDATA\n");
-    EXPECT_EQ(model.objective(0).sense, Sense::Maximize);
+    EXPECT_EQ(model.objective(0).sense, ObjectiveSense::Maximize);
 }
 
 TEST(MpsTest, ShortSense)
@@ -207,7 +207,7 @@ TEST(MpsTest, ShortSense)
     const Model model =
         biyos::test::read_text(env,
                                "NAME t\nOBJSEN\n MIN\nROWS\n N f\nCOLUMNS\n x f 1\nRHS\nENDATA\n");
-    EXPECT_EQ(model.objective(0).sense, Sense::Minimize);
+    EXPECT_EQ(model.objective(0).sense, ObjectiveSense::Minimize);
 }
 
 TEST(MpsTest, Missing)
