@@ -6,10 +6,11 @@
 namespace biyos
 {
 
-class FixedName
+class StaticName
 {
   public:
-    template <std::size_t Size> consteval FixedName(const char (&text)[Size]) noexcept : text_(text)
+    template <std::size_t Size>
+    consteval StaticName(const char (&text)[Size]) noexcept : text_(text)
     {
     }
 
