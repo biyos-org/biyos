@@ -5,6 +5,8 @@ project:
     - ../tools/capi_page.py
     - ../tools/options_page.py
     - quartodoc build
+  post-render:
+    - ../tools/references_page.py
 
 book:
   title: biyos
