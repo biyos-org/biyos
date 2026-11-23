@@ -58,9 +58,9 @@ since 0.1.0
 type BIYOS_hook
 summary A function that receives events.
 param evt in The event, valid until the hook returns.
-param data in The pointer given to `BIYOS_addenvhook`, as given.
+param data in The pointer given to `BIYOS_addenvhook` or `BIYOS_addmdlhook`, as given.
 note While the hook runs, its environment and the models made on it are read-only ([Events](#sec-capi-events)).
-see BIYOS_addenvhook BIYOS_delenvhook
+see BIYOS_addenvhook BIYOS_delenvhook BIYOS_addmdlhook BIYOS_delmdlhook
 since 0.1.0
 
 type BIYOS_error
@@ -483,6 +483,31 @@ param idx in The id `BIYOS_addenvhook` gave.
 return `BIYOS_OK` once the hook is removed. It is not called again.
 error BIYOS_ERR_BADARG `env` has no hook with that id, as for one already removed.
 see BIYOS_addenvhook
+since 0.1.0
+
+function BIYOS_addmdlhook
+summary Add a hook on one kind of event of one model.
+param mdl in The model.
+param hk in The hook, kept until it is removed or `mdl` is freed.
+param data in Passed back to the hook as given; may be null.
+param knd in The kind of events, a `BIYOS_EVT_` value.
+param lvl in The lowest level the hook receives, a `BIYOS_LVL_` value.
+param idx out Receives the id of the hook.
+return `BIYOS_OK`, with the id in `*idx`. Ids count from 1 in each model and are never reused.
+error BIYOS_ERR_BADARG `knd` or `lvl` is unknown.
+error BIYOS_ERR_NOMEMORY The model has given out 2147483646 ids.
+note The hook receives the events of calls on `mdl` alone, before the hooks of its environment receive them. A copy made by `BIYOS_copymdl` has none of the hooks of its source.
+note A failed call adds nothing.
+see BIYOS_delmdlhook BIYOS_addenvhook BIYOS_hook
+since 0.1.0
+
+function BIYOS_delmdlhook
+summary Remove a hook of a model.
+param mdl in The model.
+param idx in The id `BIYOS_addmdlhook` gave.
+return `BIYOS_OK` once the hook is removed. It is not called again.
+error BIYOS_ERR_BADARG `mdl` has no hook with that id, as for one already removed.
+see BIYOS_addmdlhook
 since 0.1.0
 
 group reading Reading an event
