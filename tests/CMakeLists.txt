@@ -94,6 +94,7 @@ biyos_add_test(test_model
     model/test_copy.cpp
     model/test_expressions.cpp
     model/test_functions.cpp
+    model/test_indicators.cpp
     model/test_names.cpp
     model/test_objectives.cpp
     model/test_quadratic.cpp

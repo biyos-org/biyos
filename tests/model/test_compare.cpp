@@ -56,6 +56,8 @@ TEST(CompareTest, VariableFields)
 {
     Parts kind = sample();
     kind.variables[1].kind = VariableKind::Integer;
+    kind.indicators.clear();
+    kind.indicator_names = {};
     EXPECT_EQ(from_sample(kind), "variable 1: kind 2 against 3");
     Parts lower = sample();
     lower.variables[2].lower = -4.0;
@@ -269,6 +271,8 @@ TEST(CompareTest, FieldOrder)
 {
     Parts kind = sample();
     kind.variables[1].kind = VariableKind::Integer;
+    kind.indicators.clear();
+    kind.indicator_names = {};
     kind.variables[1].lower = 0.5;
     EXPECT_EQ(from_sample(kind), "variable 1: kind 2 against 3");
     Parts bounds = sample();
