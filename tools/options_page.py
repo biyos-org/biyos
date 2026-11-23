@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "reference" / "_options"
 INFINITE = {"infinity": "∞", "-infinity": "−∞"}
 HEADER = ("Macro", "Id", "Kind", "Default", "Accepts")
-RULE = ("-" * 24, "-" * 4 + ":", "-" * 9, "-" * 24, "-" * 30)
+RULE = ("-" * 37, "-" * 3 + ":", "-" * 11, "-" * 37, "-" * 37)
 
 
 def number(raw):
@@ -26,9 +26,13 @@ def shown(option):
     return f"`{text}`" if text else "empty"
 
 
+def whole(macro):
+    return f"[`{macro}`]{{.unbroken}}"
+
+
 def part(item):
     macro, name, bit, default = item
-    return f"`{macro}` ({name}, bit {bit}, {default})"
+    return f"{whole(macro)} ({name}, bit {bit}, {default})"
 
 
 def accepted(option):
@@ -36,7 +40,7 @@ def accepted(option):
         return f"[{number(option.lower)}, {number(option.upper)}]"
     if option.kind == "enum":
         values = option.values
-        return ", ".join(f"`{macro}` ({name})" for macro, name in values)
+        return ", ".join(f"{whole(macro)} ({name})" for macro, name in values)
     if option.kind == "flags":
         return ", ".join(map(part, option.values))
     return {"bool": "`true`, `false`", "string": "any string"}[option.kind]
@@ -71,7 +75,7 @@ def facts(option):
 def entry(option):
     title = f"## `{option.name}` {{#opt-{option.name} .api .unnumbered}}"
     meta = " · ".join(history(option))
-    body = [option.doc, facts(option)]
+    body = [option.doc, f"::: {{.facts}}\n{facts(option)}\n:::"]
     body.append("::: {.meta}\n" + meta + "\n:::")
     return title + "\n\n::: {.entry}\n\n" + "\n\n".join(body) + "\n\n:::"
 
