@@ -622,6 +622,7 @@ error BIYOS_ERR_BADARG `env` delivers an event.
 note The copy holds the same variables, functions, constraints, objectives, indicators, special ordered sets, cones and complements as `mdl`, under the same indices and the same names, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of the two may be freed first. The copy has none of the hooks of `mdl`.
 note The copy keeps the options set on `mdl` itself and reads every other option from `env`.
 note The call only reads `mdl`, so other threads may read it meanwhile. A change of `mdl`, of its environment or of `env` that would overlap it on another thread refuses one of the two calls with `BIYOS_ERR_BUSY`. It may run while the environment of `mdl` delivers an event. A failure keeps its message on the environment of `mdl`.
+note The call sends the span `copy` from module `model` on the environment of `mdl` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_newmdl
 since 0.1.0
 
@@ -812,6 +813,7 @@ return `BIYOS_OK` once the variables are deleted. The others keep their order, t
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, a variable is listed more than once, with a message such as `invalid argument: argument 'idx': variable 1 is repeated`, or the range ends past the last variable.
 error BIYOS_ERR_INUSE A variable to delete has a node, is a member of a set or is the binary of an indicator, or the model has a callback and a variable is to be deleted, with a message that names one use, such as `in use: variable 3: used by set 1`.
 note A deleted variable's kind, bounds, tolerances and name go with it, and so do its linear and quadratic terms; a function left with no term keeps its constant. A variable keeps its node once `BIYOS_addvarnode` or an expression gives it one, even after the function that used the node is deleted. Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` is no longer valid.
+note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnvar BIYOS_delvarnamesp
 since 0.1.0
 
@@ -939,6 +941,7 @@ return `BIYOS_OK` once the functions are deleted. The others keep their order, t
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, a function is listed more than once, with a message such as `invalid argument: argument 'idx': function 1 is repeated`, or the range ends past the last function.
 error BIYOS_ERR_INUSE A function to delete is used by a constraint, an objective, an indicator, a cone, a complement or a callback, with a message that names one use, such as `in use: function 4: used by constraint 2`.
 note A deleted function's name, constant, terms and expression go with it; the nodes of the expression stay in the model with their ids. Once the call succeeds, a pointer read earlier with `BIYOS_getfunnamesp` is no longer valid.
+note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnfun BIYOS_delfunnamesp
 since 0.1.0
 
@@ -1081,6 +1084,7 @@ param nnz out Receives the number of linear terms of the entries, a variable cou
 return `BIYOS_OK`, with the number in `*nnz`.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable, or `nnz` is null.
 note The number is the `cap` that `BIYOS_getclintermsp` and `BIYOS_getclintermrg` need for the same entries.
+note The call sends the span `columns` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getclintermsp BIYOS_getnrlintermsp
 since 0.1.0
 
@@ -1099,6 +1103,7 @@ param coef out Receives the coefficient of each term; skipped when null.
 return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of variable `pos + j` from `off[j]`.
 error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a variable, the range ends past the last variable, or `cap` is less than the number of terms `BIYOS_getnclintermsp` gives.
 note The terms are those `BIYOS_getrlintermsp` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function. A refused call writes nothing.
+note The call sends the span `columns` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnclintermsp BIYOS_getrlintermsp BIYOS_addclintermrg
 since 0.1.0
 
@@ -1285,6 +1290,7 @@ param map out Receives one entry for each constraint the model held before the c
 return `BIYOS_OK` once the constraints are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a constraint, a constraint is listed more than once, with a message such as `invalid argument: argument 'idx': constraint 1 is repeated`, or the range ends past the last constraint.
 note A deleted constraint's name and tolerances go with it. The functions the deleted constraints bounded stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getconnamesp` is no longer valid.
+note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getncon BIYOS_delconnamesp
 since 0.1.0
 
@@ -1498,6 +1504,7 @@ param map out Receives one entry for each objective the model held before the ca
 return `BIYOS_OK` once the objectives are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective, an objective is listed more than once, with a message such as `invalid argument: argument 'idx': objective 1 is repeated`, or the range ends past the last objective.
 note A deleted objective's name goes with it. The functions the deleted objectives used stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getobjnamesp` is no longer valid.
+note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnobj BIYOS_delobjnamesp
 since 0.1.0
 
@@ -1658,6 +1665,7 @@ param map out Receives one entry for each indicator the model held before the ca
 return `BIYOS_OK` once the indicators are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an indicator, an indicator is listed more than once, with a message such as `invalid argument: argument 'idx': indicator 1 is repeated`, or the range ends past the last indicator.
 note A deleted indicator's name goes with it. The variables and functions the deleted indicators used stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getindnamesp` is no longer valid.
+note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnind BIYOS_delindnamesp
 since 0.1.0
 
@@ -1782,6 +1790,7 @@ param map out Receives one entry for each set the model held before the call: en
 return `BIYOS_OK` once the sets are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a set, a set is listed more than once, with a message such as `invalid argument: argument 'idx': set 1 is repeated`, or the range ends past the last set.
 note A deleted set's name, members and weights go with it; the variables stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getsosnamesp` is no longer valid.
+note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnsos BIYOS_delsosnamesp
 since 0.1.0
 
@@ -1981,6 +1990,7 @@ param map out Receives one entry for each cone the model held before the call: e
 return `BIYOS_OK` once the cones are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a cone, a cone is listed more than once, with a message such as `invalid argument: argument 'idx': cone 1 is repeated`, or the range ends past the last cone.
 note A deleted cone's name, members, parameters and tolerances go with it; the functions stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getconenamesp` is no longer valid.
+note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getncone BIYOS_delconenamesp
 since 0.1.0
 
@@ -2153,6 +2163,7 @@ param map out Receives one entry for each complement the model held before the c
 return `BIYOS_OK` once the complements are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a complement, a complement is listed more than once, with a message such as `invalid argument: argument 'idx': complement 1 is repeated`, or the range ends past the last complement.
 note A deleted complement's name and tolerances go with it; the functions stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getcconnamesp` is no longer valid.
+note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnccon BIYOS_delcconnamesp
 since 0.1.0
 
@@ -2538,6 +2549,7 @@ error BIYOS_ERR_FILEIO The file cannot be opened or read.
 error BIYOS_ERR_BADFILE The file breaks a rule of its format. The message names the file and the line.
 error BIYOS_ERR_UNSUPPORTED The file holds a part the reader does not handle. The message names the part and its line.
 note Each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`. @sec-formats gives the rules of each format.
+note The call sends the span `read` from module `io` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_newmdl BIYOS_freemdl
 since 0.1.0
 
@@ -2583,5 +2595,5 @@ text A field is a name and a value, both text. Two messages exist so far: an err
 text A call on an environment that fails sends an error message, unless the environment is delivering an event. Its level is `BIYOS_EVTLVL_ERR`, its module `capi`, its text the message `BIYOS_lasterror` reads for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a hook can tell the group from the range.
 text Setting a deprecated option sends a warning message at level `BIYOS_EVTLVL_WARN` from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. No option is deprecated yet.
 text An invariant event reports an invariant that does not hold, found by a check the `check_lvl` option runs, and the call then fails. Its level is `BIYOS_EVTLVL_ERR`, its module the module that ran the check, its text the message `BIYOS_lasterror` reads for the failure, and its fields are `invariant`, `object` and `values`, in that order. It is not sent while the environment is delivering an event. A check that fails while biyos is building an event sends no invariant event and does not fail the call: the event being built is not sent, the check's error is dropped, and the last error is left as it was. No call runs a check yet.
-text A span event marks a phase of a solve, such as presolve, beginning or ending. Phases nest: a phase begun inside another ends before it. Its level is `BIYOS_EVTLVL_INFO`, its module the module that timed the phase, its text the name of the phase, and its fields are `edge`, `wall` and `cpu`, in that order. `edge` is `begin` or `end`. `wall` is the wall time since the environment was created and `cpu` the CPU time the thread sending the event has used, both read as the phase begins or ends and written in nanoseconds as decimal text.
-text biyos adds up the time of each phase in a timing tree, nested as phases nest, which no call reads yet. The tree leaves out the time spent delivering span events, so a hook never changes it, but the stamps do not: a phase's time in the tree is its end's `wall` and `cpu` less its begin's, less, for each span event sent between the two, the time from that event's stamps until its hooks return. Those events are the phase's own begin event and the events of the phases inside it. Should the CPU time be unreadable as a phase begins, the call fails with `BIYOS_ERR_INTERNAL`, and the phase neither begins nor sends an event. Should it be unreadable as a phase ends, `cpu` repeats its begin value and the phase counts as using no CPU time. No call times a phase yet.
+text A span event marks a phase beginning or ending: a phase of a solve, such as presolve, or a call whose entry names its span. Phases nest: a phase begun inside another ends before it. Its level is `BIYOS_EVTLVL_INFO`, its module the module that timed the phase, its text the name of the phase, and its fields are `edge`, `wall` and `cpu`, in that order. `edge` is `begin` or `end`. `wall` is the wall time since the environment was created and `cpu` the CPU time the thread sending the event has used, both read as the phase begins or ends and written in nanoseconds as decimal text.
+text biyos adds up the time of each phase in a timing tree, nested as phases nest, which no call reads yet. The tree leaves out the time spent delivering span events, so a hook never changes it, but the stamps do not: a phase's time in the tree is its end's `wall` and `cpu` less its begin's, less, for each span event sent between the two, the time from that event's stamps until its hooks return. Those events are the phase's own begin event and the events of the phases inside it. Should the CPU time be unreadable as a phase begins, the call fails with `BIYOS_ERR_INTERNAL`, and the phase neither begins nor sends an event. Should it be unreadable as a phase ends, `cpu` repeats its begin value and the phase counts as using no CPU time. A call whose entry names its span times itself as one phase, in a timing tree of its own that lasts for the call.
