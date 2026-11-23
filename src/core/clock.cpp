@@ -36,7 +36,7 @@ Ticks ticks_of(const FILETIME &value) noexcept
     return Ticks(static_cast<std::int64_t>(n));
 }
 
-std::chrono::nanoseconds process_time()
+std::chrono::nanoseconds thread_time()
 {
     FILETIME created{};
     FILETIME exited{};
@@ -51,7 +51,7 @@ std::chrono::nanoseconds process_time()
 
 #else
 
-std::chrono::nanoseconds process_time()
+std::chrono::nanoseconds thread_time()
 {
     timespec now{};
     if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now) != 0)
@@ -73,7 +73,7 @@ std::chrono::nanoseconds SystemClock::wall_time() const noexcept
 
 std::chrono::nanoseconds SystemClock::cpu_time() const
 {
-    return process_time();
+    return thread_time();
 }
 
 }
