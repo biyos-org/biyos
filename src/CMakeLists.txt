@@ -71,6 +71,7 @@ add_library(biyos_internal STATIC
     model/pairs.cpp
     model/postfix.cpp
     model/quadratic.cpp
+    model/sos.cpp
     model/terms.cpp
     model/transpose.cpp
     core/thread.cpp

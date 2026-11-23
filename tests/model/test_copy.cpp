@@ -20,11 +20,13 @@ using biyos::Family;
 using biyos::Index;
 using biyos::Indicator;
 using biyos::LinearTerm;
+using biyos::Member;
 using biyos::Model;
 using biyos::Objective;
 using biyos::Offset;
 using biyos::QuadraticTerm;
 using biyos::Sense;
+using biyos::SosKind;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::built;
@@ -67,6 +69,10 @@ void change(Model &model)
     };
     model.set_indicators(std::span(&index, 1), std::span(&indicator, 1));
     model.add_indicators(std::span(&indicator, 1));
+    const SosKind kind = SosKind::Sos1;
+    const std::vector<Offset> members{0, 2};
+    const std::vector<Member> sos{{.variable = 3, .weight = 1.0}, {.variable = 1, .weight = 2.0}};
+    model.add_sos(std::span(&kind, 1), members, sos);
     const std::vector<Index> renamed{0, 1};
     const std::vector<std::string_view> names{"y", "w"};
     for (const Family family : biyos::kFamilies)
