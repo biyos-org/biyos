@@ -41,7 +41,7 @@ class Lookup
   private:
     int enum_value(Option option) const;
 
-    const Settings &settings_;
+    const Settings *settings_;
     const Options &options_;
 };
 

@@ -31,8 +31,8 @@ class Settings
                     const BIYOS_model *model = nullptr);
     void set_flags(Option option, Masks value, Events &events, const BIYOS_model *model = nullptr);
 
-    const OptionValue *find(Option option) const noexcept;
-    void erase(Option option) noexcept;
+    const OptionValue *find(Option option) const;
+    void erase(Option option);
 
   private:
     void store(Option option, const OptionValue &value, Events &events, const BIYOS_model *model);

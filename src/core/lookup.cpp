@@ -8,29 +8,19 @@
 namespace biyos
 {
 
-namespace
-{
-
-const Settings &no_settings()
-{
-    static const Settings kNone;
-    return kNone;
-}
-
-}
-
 Lookup::Lookup(const Settings &settings, const Options &options) noexcept
-    : settings_(settings), options_(options)
+    : settings_(&settings), options_(options)
 {
 }
 
-Lookup::Lookup(const Options &options) noexcept : Lookup(no_settings(), options) {}
+Lookup::Lookup(const Options &options) noexcept : settings_(nullptr), options_(options) {}
 
 Found Lookup::find(Option option) const
 {
-    if (const OptionValue *value = settings_.find(option))
+    const OptionValue *own = settings_ != nullptr ? settings_->find(option) : nullptr;
+    if (own != nullptr)
     {
-        return Found{.value = *value, .source = Source::Model};
+        return Found{.value = *own, .source = Source::Model};
     }
     return Found{.value = options_.value_of(option), .source = options_.source_of(option)};
 }

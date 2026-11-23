@@ -147,7 +147,10 @@ TEST_F(SettingTest, Empty)
     }
     for (const OptionSpec &spec : kRows)
     {
-        EXPECT_EQ(settings.find(spec.id), nullptr) << spec.name;
+        if (spec.scope == Scope::Model)
+        {
+            EXPECT_EQ(settings.find(spec.id), nullptr) << spec.name;
+        }
     }
 }
 
@@ -212,7 +215,8 @@ TEST_F(SettingTest, Scope)
     EXPECT_EQ(failure([&] { settings.set_int(kHost, 3, events); }), scope);
     EXPECT_EQ(failure([&] { settings.set_int(kHost, -1, events); }), scope);
     EXPECT_EQ(failure([&] { settings.set_double(kHost, 2.0, events); }), scope);
-    EXPECT_EQ(settings.find(kHost), nullptr);
+    EXPECT_EQ(failure([&] { static_cast<void>(settings.find(kHost)); }), scope);
+    EXPECT_EQ(failure([&] { settings.erase(kHost); }), scope);
     options.set_int(kHost, 3);
     EXPECT_EQ(options.get_int(kHost), 3);
 }
@@ -284,8 +288,18 @@ TEST_F(LookupTest, Shared)
     options.set_int(kNew, 4);
     EXPECT_EQ(lookup.get_int(kNew), 4);
     EXPECT_EQ(source(kNew), Source::Environment);
+}
+
+TEST_F(LookupTest, Scope)
+{
+    const std::string scope = "invalid argument: option 'host': has environment scope";
     options.set_int(kHost, 6);
-    EXPECT_EQ(lookup.get_int(kHost), 6);
+    EXPECT_EQ(failure([&] { static_cast<void>(lookup.find(kHost)); }), scope);
+    EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_int(kHost)); }), scope);
+    EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_double(kHost)); }), scope);
+    const biyos::Lookup shared(options);
+    EXPECT_EQ(shared.get_int(kHost), 6);
+    EXPECT_EQ(shared.find(kHost).source, Source::Environment);
 }
 
 TEST_F(LookupTest, Models)

@@ -87,14 +87,16 @@ void Settings::store(Option option,
     warn_deprecated(events, table_, spec, model);
 }
 
-const OptionValue *Settings::find(Option option) const noexcept
+const OptionValue *Settings::find(Option option) const
 {
+    check_scope(row_of(table_, option));
     const auto held = std::ranges::find(entries_, option, &Entry::option);
     return held != entries_.end() ? &held->value : nullptr;
 }
 
-void Settings::erase(Option option) noexcept
+void Settings::erase(Option option)
 {
+    check_scope(row_of(table_, option));
     std::erase_if(entries_, [option](const Entry &entry) { return entry.option == option; });
 }
 
