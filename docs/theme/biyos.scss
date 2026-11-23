@@ -250,19 +250,7 @@ a.footnote-ref {
   text-decoration: none;
 }
 
-#refs.hanging-indent {
-  margin-left: 0;
-  text-indent: 0;
-}
-
-#refs .csl-entry {
-  font-size: 0.9375rem;
-  line-height: 1.5rem;
-  margin-left: 0;
-  margin-bottom: 0.75rem;
-  padding-left: 1.5em;
-  text-indent: -1.5em;
-}
+@import "parts/bibliography";
 
 @import "parts/landing";
 

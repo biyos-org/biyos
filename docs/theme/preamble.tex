@@ -74,6 +74,7 @@
 \makeatletter
 \newcommand{\biyosragged}{\rightskip=0pt plus 3em\relax\@rightskip=\rightskip\parfillskip=0pt plus 1fil\relax}
 \AtBeginEnvironment{CSLReferences}{\@rightskip=\@flushglue}
+\AtBeginEnvironment{CSLReferences}{\setlength{\parskip}{0pt}\renewcommand{\CSLBlock}[1]{\par\noindent#1\par}}
 \makeatother
 \AtBeginDocument{\biyosragged\lefthyphenmin=64\righthyphenmin=64\renewcommand{\markright}[1]{}}
 \AtBeginDocument{\DeclareCaptionJustification{biyos}{\biyosragged}\captionsetup{justification=biyos, singlelinecheck=false}}

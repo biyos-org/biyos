@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0" demote-non-dropping-particle="never">
+  <info>
+    <title>biyos</title>
+    <id>biyos</id>
+    <updated>2026-11-23T00:00:00+00:00</updated>
+  </info>
+  <macro name="cited">
+    <names variable="author">
+      <name form="short" and="text" delimiter=", " delimiter-precedes-last="never"/>
+      <substitute>
+        <names variable="editor"/>
+        <text variable="title" form="short"/>
+      </substitute>
+    </names>
+  </macro>
+  <macro name="sorted">
+    <names variable="author">
+      <name name-as-sort-order="all"/>
+      <substitute>
+        <names variable="editor"/>
+        <text variable="title"/>
+      </substitute>
+    </names>
+  </macro>
+  <macro name="authors">
+    <names variable="author">
+      <name and="text" delimiter=", " delimiter-precedes-last="never"/>
+      <substitute>
+        <names variable="editor"/>
+      </substitute>
+    </names>
+  </macro>
+  <macro name="editors">
+    <names variable="editor">
+      <name and="text" delimiter=", " delimiter-precedes-last="never"/>
+    </names>
+  </macro>
+  <macro name="issue">
+    <group>
+      <text variable="volume"/>
+      <text variable="issue" prefix="(" suffix=")"/>
+    </group>
+  </macro>
+  <macro name="edition">
+    <group delimiter=" ">
+      <number variable="edition" form="ordinal"/>
+      <text value="edition"/>
+    </group>
+  </macro>
+  <macro name="kind">
+    <choose>
+      <if variable="genre">
+        <text variable="genre"/>
+      </if>
+      <else-if type="article-journal">
+        <text value="Article"/>
+      </else-if>
+      <else-if type="book">
+        <text value="Book"/>
+      </else-if>
+      <else-if type="chapter">
+        <text value="Chapter"/>
+      </else-if>
+      <else-if type="report">
+        <text value="Report"/>
+      </else-if>
+      <else>
+        <text value="Paper"/>
+      </else>
+    </choose>
+  </macro>
+  <macro name="year">
+    <date variable="issued">
+      <date-part name="year"/>
+    </date>
+  </macro>
+  <macro name="journal">
+    <group delimiter=", ">
+      <group delimiter=" ">
+        <text variable="container-title" font-style="italic" text-case="title"/>
+        <text macro="issue"/>
+      </group>
+      <text variable="page"/>
+    </group>
+  </macro>
+  <macro name="collection">
+    <group delimiter=", ">
+      <text variable="container-title" font-style="italic" text-case="title" prefix="In "/>
+      <group delimiter=" ">
+        <text value="edited by"/>
+        <text macro="editors"/>
+      </group>
+    </group>
+  </macro>
+  <macro name="source">
+    <group delimiter=" · ">
+      <choose>
+        <if type="article-journal">
+          <text macro="journal"/>
+        </if>
+        <else-if type="chapter paper-conference" match="any">
+          <text macro="collection"/>
+          <text variable="publisher"/>
+        </else-if>
+        <else-if type="book">
+          <text variable="publisher"/>
+          <text macro="edition"/>
+        </else-if>
+        <else>
+          <text variable="number"/>
+        </else>
+      </choose>
+      <choose>
+        <if variable="note">
+          <text variable="note"/>
+        </if>
+        <else>
+          <text macro="year"/>
+        </else>
+      </choose>
+    </group>
+  </macro>
+  <citation et-al-min="3" et-al-use-first="1" disambiguate-add-year-suffix="true">
+    <layout prefix="(" suffix=")" delimiter="; ">
+      <group delimiter=" ">
+        <text macro="cited"/>
+        <text macro="year"/>
+      </group>
+    </layout>
+  </citation>
+  <bibliography>
+    <sort>
+      <key macro="sorted"/>
+      <key variable="issued"/>
+    </sort>
+    <layout>
+      <text macro="kind" display="block"/>
+      <text variable="title" text-case="title" font-weight="bold" display="block"/>
+      <text macro="authors" display="block"/>
+      <text macro="source" display="block"/>
+    </layout>
+  </bibliography>
+</style>
