@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/index.hpp"
+#include "core/room.hpp"
 #include "model/checks.hpp"
 
 #include <algorithm>
@@ -67,16 +68,6 @@ void clear_parts(std::vector<Offset> &ends,
         ends[function] = static_cast<Offset>(write);
     }
     items.resize(write);
-}
-
-template <typename T> void reserve_more(std::vector<T> &items, std::size_t extra)
-{
-    const std::size_t wanted = items.size() + extra;
-    if (wanted > items.capacity())
-    {
-        const std::size_t doubled = (std::max)(wanted, 2 * items.capacity());
-        items.reserve((std::min)(doubled, items.size() + room(items)));
-    }
 }
 
 }
