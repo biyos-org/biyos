@@ -11,6 +11,7 @@
 #include <functional>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 namespace
@@ -21,6 +22,8 @@ using biyos::ErrorKind;
 using biyos::EventKind;
 using biyos::EventLevel;
 using Texts = std::vector<std::string>;
+
+static_assert(!std::is_constructible_v<biyos::Checker, biyos::Env &, biyos::Lookup, std::string>);
 
 biyos::Error caught(const std::function<void()> &body)
 {

@@ -34,8 +34,8 @@ void describe(Event &event,
 
 }
 
-Checker::Checker(Env &env, const Lookup &lookup, std::string_view module)
-    : env_(env), module_(module), level_(lookup.get_enum<CheckLevel>(Option::CheckLevel))
+Checker::Checker(Env &env, const Lookup &lookup, FixedName module)
+    : env_(env), module_(module.text()), level_(lookup.get_enum<CheckLevel>(Option::CheckLevel))
 {
 }
 
