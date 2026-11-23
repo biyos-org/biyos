@@ -28,7 +28,7 @@ struct Calls
     BIYOS_status (*remove)(BIYOS_model *, BIYOS_index, const BIYOS_index *);
 };
 
-const std::array<Calls, 4> kFamilies{{
+const std::array<Calls, 5> kFamilies{{
     {
         .noun = "variable",
         .set = BIYOS_setvarnamesp,
@@ -56,6 +56,13 @@ const std::array<Calls, 4> kFamilies{{
         .get = BIYOS_getobjnamesp,
         .find = BIYOS_getobjidx,
         .remove = BIYOS_delobjnamesp,
+    },
+    {
+        .noun = "indicator",
+        .set = BIYOS_setindnamesp,
+        .get = BIYOS_getindnamesp,
+        .find = BIYOS_getindidx,
+        .remove = BIYOS_delindnamesp,
     },
 }};
 
@@ -87,11 +94,23 @@ void add_items(const Model &model, BIYOS_index n)
 {
     BIYOS_model *held = model.get();
     const Indices functions(static_cast<std::size_t>(n), 0);
-    ASSERT_EQ(BIYOS_addvar(held, n, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    const std::vector<BIYOS_int> kinds(static_cast<std::size_t>(n), BIYOS_VAR_BIN);
+    const std::vector<BIYOS_int> values(static_cast<std::size_t>(n), 1);
+    const Indices variables(static_cast<std::size_t>(n), 0);
+    ASSERT_EQ(BIYOS_addvar(held, n, kinds.data(), nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(held, n, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addcon(held, n, functions.data(), nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addobj(held, n, functions.data(), nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);
+    const BIYOS_status status = BIYOS_addind(held,
+                                             n,
+                                             variables.data(),
+                                             values.data(),
+                                             functions.data(),
+                                             nullptr,
+                                             nullptr,
+                                             nullptr);
+    ASSERT_EQ(status, BIYOS_OK);
 }
 
 BIYOS_status name(const Calls &family, const Model &model, const Indices &index, const Texts &names)
@@ -225,7 +244,7 @@ TEST(CApiTest, SharedName)
 {
     const Env env;
     const Model model(env);
-    add_items(model, 4);
+    add_items(model, static_cast<BIYOS_index>(kFamilies.size()));
     BIYOS_index index = 0;
     for (const Calls &family : kFamilies)
     {

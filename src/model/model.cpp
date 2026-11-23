@@ -119,6 +119,7 @@ void Model::set_variables(std::span<const Index> indices, std::span<const Variab
         check_index(kNoun, indices[k], n_variables());
         check(indices[k], changed[k]);
     }
+    check_kinds(indices, changed);
     for (std::size_t k = 0; k < indices.size(); ++k)
     {
         variables_[static_cast<std::size_t>(indices[k])] = changed[k];

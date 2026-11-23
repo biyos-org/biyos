@@ -64,6 +64,9 @@ Each entry gives the declaration, then each parameter with its direction, `in` w
 ::: {source="reference/_capi/objectives.md"}
 :::
 
+::: {source="reference/_capi/indicators.md"}
+:::
+
 ::: {source="reference/_capi/names.md"}
 :::
 

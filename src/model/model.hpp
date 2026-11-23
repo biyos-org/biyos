@@ -73,12 +73,22 @@ struct Objective
 
 Objective default_objective(Index function, Index index) noexcept;
 
+struct Indicator
+{
+    Index variable;
+    int value;
+    Index function;
+    double lower;
+    double upper;
+};
+
 enum class Family
 {
     Variable,
     Function,
     Constraint,
     Objective,
+    Indicator,
 };
 
 inline constexpr std::array kFamilies{
@@ -86,6 +96,7 @@ inline constexpr std::array kFamilies{
     Family::Function,
     Family::Constraint,
     Family::Objective,
+    Family::Indicator,
 };
 
 std::string_view noun_of(Family family) noexcept;
@@ -162,12 +173,20 @@ class Model
     void add_objectives(std::span<const Objective> added);
     void set_objectives(std::span<const Index> indices, std::span<const Objective> changed);
 
+    Index n_indicators() const noexcept;
+    const Indicator &indicator(Index index) const;
+    std::span<const Indicator> indicators(Index start, Index size) const;
+
+    void add_indicators(std::span<const Indicator> added);
+    void set_indicators(std::span<const Index> indices, std::span<const Indicator> changed);
+
   private:
     Offset begin_of(std::size_t function) const noexcept;
     void append(std::span<const double> constants,
                 std::span<const Offset> starts,
                 std::span<const LinearTerm> terms);
     Offset quadratic_begin(std::size_t function) const noexcept;
+    void check_kinds(std::span<const Index> indices, std::span<const Variable> changed) const;
 
     std::string name_;
     std::vector<Variable> variables_;
@@ -181,6 +200,7 @@ class Model
     std::vector<Offset> roots_;
     std::vector<Constraint> constraints_;
     std::vector<Objective> objectives_;
+    std::vector<Indicator> indicators_;
     std::array<Names, kFamilies.size()> names_;
 };
 

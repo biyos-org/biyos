@@ -52,11 +52,13 @@ struct Parts
     Expressions expressions;
     std::vector<Constraint> constraints;
     std::vector<Objective> objectives;
+    std::vector<Indicator> indicators;
     std::string name;
     Naming variable_names;
     Naming function_names;
     Naming constraint_names;
     Naming objective_names;
+    Naming indicator_names;
 };
 
 inline Parts sample()
@@ -127,11 +129,17 @@ inline Parts sample()
                     .relative = kInfinity,
                 },
             },
+        .indicators =
+            {
+                {.variable = 1, .value = 1, .function = 2, .lower = -kInfinity, .upper = 4.0},
+                {.variable = 1, .value = 0, .function = 2, .lower = 1.0, .upper = 1.0},
+            },
         .name = "sample",
         .variable_names = {.indices = {2, 0}, .names = {"z", "x"}},
         .function_names = {.indices = {1}, .names = {"f"}},
         .constraint_names = {.indices = {1}, .names = {"c"}},
         .objective_names = {.indices = {0}, .names = {"cost"}},
+        .indicator_names = {.indices = {1}, .names = {"off"}},
     };
 }
 
@@ -180,6 +188,7 @@ inline Model built(const Parts &parts)
     attach(model, parts.expressions);
     model.add_constraints(parts.constraints);
     model.add_objectives(parts.objectives);
+    model.add_indicators(parts.indicators);
     if (!parts.name.empty())
     {
         model.set_name(parts.name);
@@ -188,6 +197,7 @@ inline Model built(const Parts &parts)
     name(model, Family::Function, parts.function_names);
     name(model, Family::Constraint, parts.constraint_names);
     name(model, Family::Objective, parts.objective_names);
+    name(model, Family::Indicator, parts.indicator_names);
     return model;
 }
 

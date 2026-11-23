@@ -14,6 +14,7 @@ enum class ErrorKind
 {
     InvalidArgument,
     Busy,
+    InUse,
     NoMemory,
     Internal,
 };

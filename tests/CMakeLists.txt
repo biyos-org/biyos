@@ -94,6 +94,7 @@ biyos_add_test(test_model
     model/test_copy.cpp
     model/test_expressions.cpp
     model/test_functions.cpp
+    model/test_indicators.cpp
     model/test_names.cpp
     model/test_objectives.cpp
     model/test_quadratic.cpp
@@ -112,6 +113,7 @@ biyos_add_test(test_capi
     capi/test_firewall.cpp
     capi/test_format.cpp
     capi/test_functions.cpp
+    capi/test_indicators.cpp
     capi/test_interrupt.cpp
     capi/test_linear.cpp
     capi/test_model.cpp

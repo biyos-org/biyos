@@ -89,6 +89,7 @@ table Status codes
 value BIYOS_OK The call succeeded.
 value BIYOS_ERR_BADARG The caller passed something the call does not accept: a null pointer, an unknown name, id or index, a value out of range, a call of the wrong kind for its option, or a change to an environment while it delivers an event. The entry of each call says which.
 value BIYOS_ERR_BUSY The environment or the model is in a call on another thread that this call may not overlap (@sec-threads).
+value BIYOS_ERR_INUSE An item that another record uses, so this change of it is refused.
 value BIYOS_ERR_NOMEMORY An allocation failed, or a count would pass the largest the model can hold.
 value BIYOS_ERR_INTERNAL A fault in biyos.
 since 0.1.0
@@ -664,6 +665,7 @@ param idx in In the `sp` form, the variable of each entry; may be null when `n` 
 param knd in The new kind of each; null changes nothing.
 return `BIYOS_OK` once the kinds are set. The bounds are kept.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a variable, the range ends past the last variable, a kind is unknown, or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
+error BIYOS_ERR_INUSE An indicator uses a variable whose new kind is not binary, with a message such as `in use: variable 2: indicator 0 needs it binary`.
 note A variable may appear more than once, as in `BIYOS_setvarbndsp`.
 see BIYOS_getvarkndsp BIYOS_addvar BIYOS_setvarbndsp
 since 0.1.0
@@ -1155,9 +1157,106 @@ note It reads back what `BIYOS_addobj` takes. `BIYOS_getobjtolsp` reads the tole
 see BIYOS_getnobj BIYOS_getobjtolsp
 since 0.1.0
 
+group indicators Indicators
+text An indicator `x[v] = val => lb <= f(x) <= ub` switches a constraint on: when binary variable `v` takes the value `val`, 0 or 1, function `f` must lie within the bounds, and otherwise it is free. An indicator holds the index of its variable, its value, the index of its function and two bounds, numbered from 0 in a table of their own. Its bounds follow the rule of a constraint's, and its function stays shared, so one function may carry several indicators beside its constraints. The variable is binary while an indicator uses it: one that is not is refused, and a change of its kind is refused with `BIYOS_ERR_INUSE`.
+
+function BIYOS_addind
+summary Add indicators after the last one.
+param mdl in The model.
+param n in The number of indicators to add.
+param varidx in The binary variable of each indicator; may be null only when `n` is 0.
+param val in The value of each variable that switches its indicator on, 0 or 1; may be null only when `n` is 0.
+param funidx in The function each indicator bounds; may be null only when `n` is 0.
+param lb in The lower bound of each; null leaves that side of every new indicator unbounded.
+param ub in The upper bound of each; null leaves that side of every new indicator unbounded.
+param pos out Receives the index of the first new indicator; skipped when null.
+return `BIYOS_OK` once the indicators are added.
+error BIYOS_ERR_BADARG `n` is negative, a variable is not one of the model or is not binary, a value is neither 0 nor 1, a function is not one of the model or a bound is refused.
+error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 indicators.
+see BIYOS_setindbndsp BIYOS_setindvarsp BIYOS_getindrg
+since 0.1.0
+
+function BIYOS_setindbndsp BIYOS_setindbndrg
+summary Set the bounds of indicators.
+param mdl in The model.
+param pos in In the `rg` form, the first indicator of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
+param lb in The new lower bound of each; null leaves the lower bounds as they are.
+param ub in The new upper bound of each; null leaves the upper bounds as they are.
+return `BIYOS_OK` once the bounds are set. The variables, values and functions are kept.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an indicator, the range ends past the last indicator or a bound is refused.
+note An indicator may appear more than once, as in `BIYOS_setvarbndsp`.
+see BIYOS_getindbndsp BIYOS_addind BIYOS_getindrg
+since 0.1.0
+
+function BIYOS_getindbndsp BIYOS_getindbndrg
+summary Read the bounds of indicators.
+param mdl in The model.
+param pos in In the `rg` form, the first indicator of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param lb out Entry `j` receives the lower bound of indicator `idx[j]` or `pos + j`; skipped when null.
+param ub out Entry `j` receives its upper bound; skipped when null.
+return `BIYOS_OK` once the arrays are written.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an indicator or the range ends past the last indicator.
+see BIYOS_setindbndsp BIYOS_getindrg
+since 0.1.0
+
+function BIYOS_setindvarsp BIYOS_setindvarrg
+summary Set the variables that switch indicators on, and their values.
+param mdl in The model.
+param pos in In the `rg` form, the first indicator of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
+param varidx in The new binary variable of each; null leaves the variables as they are.
+param val in The new value of each, 0 or 1; null leaves the values as they are.
+return `BIYOS_OK` once the variables and values are set. The functions and bounds are kept.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an indicator, the range ends past the last indicator, a variable is not one of the model or is not binary, or a value is neither 0 nor 1.
+note An indicator may appear more than once, as in `BIYOS_setvarbndsp`.
+see BIYOS_getindvarsp BIYOS_addind BIYOS_getindrg
+since 0.1.0
+
+function BIYOS_getindvarsp BIYOS_getindvarrg
+summary Read the variables that switch indicators on, and their values.
+param mdl in The model.
+param pos in In the `rg` form, the first indicator of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param varidx out Entry `j` receives the variable of indicator `idx[j]` or `pos + j`; skipped when null.
+param val out Entry `j` receives its value; skipped when null.
+return `BIYOS_OK` once the arrays are written.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an indicator or the range ends past the last indicator.
+see BIYOS_setindvarsp BIYOS_getindrg
+since 0.1.0
+
+function BIYOS_getnind
+summary Give the number of indicators.
+param mdl in The model.
+param n out Receives the number of indicators.
+return `BIYOS_OK`, with the number in `*n`.
+since 0.1.0
+
+function BIYOS_getindsp BIYOS_getindrg
+summary Read the variables, values, functions and bounds of indicators.
+param mdl in The model.
+param pos in In the `rg` form, the first indicator to read.
+param n in The number of entries.
+param idx in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param varidx out Entry `j` receives the variable of indicator `idx[j]` or `pos + j`; skipped when null.
+param val out Entry `j` receives its value; skipped when null.
+param funidx out Entry `j` receives its function; skipped when null.
+param lb out Entry `j` receives its lower bound; skipped when null.
+param ub out Entry `j` receives its upper bound; skipped when null.
+return `BIYOS_OK` once the arrays are written.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an indicator or the range ends past the last indicator.
+note It reads back what `BIYOS_addind` takes.
+see BIYOS_getnind
+since 0.1.0
+
 group names Names
-text The model and each variable, function, constraint and objective may have a name, as [Names](#sec-model-names) describes. A name is not empty, is well-formed UTF-8 and holds no NUL. A C string ends at its first NUL, so a name passed in C never holds one. Names match byte for byte. An item has no name until one is set, and reads as an empty string while it has none.
-text Names may repeat: setting a name checks no uniqueness, and several items of a family may hold one name. A lookup never chooses among them: it finds an item only when that item alone holds the name. Every family takes the same four calls, named after its short form, `var`, `fun`, `con` or `obj`, and keeps its names apart from those of the other families.
+text The model and each variable, function, constraint, objective and indicator may have a name, as [Names](#sec-model-names) describes. A name is not empty, is well-formed UTF-8 and holds no NUL. A C string ends at its first NUL, so a name passed in C never holds one. Names match byte for byte. An item has no name until one is set, and reads as an empty string while it has none.
+text Names may repeat: setting a name checks no uniqueness, and several items of a family may hold one name. A lookup never chooses among them: it finds an item only when that item alone holds the name. Every family takes the same four calls, named after its short form, `var`, `fun`, `con`, `obj` or `ind`, and keeps its names apart from those of the other families.
 
 function BIYOS_setmdlname
 summary Name the model.
@@ -1385,6 +1484,56 @@ return `BIYOS_OK` once the objectives listed have no name. One without a name, o
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an objective or the range ends past the last objective.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getobjnamesp` for an objective it lists is no longer valid.
 see BIYOS_setobjnamesp
+since 0.1.0
+
+function BIYOS_setindnamesp BIYOS_setindnamerg
+summary Name indicators.
+param mdl in The model.
+param pos in In the `rg` form, the first indicator of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
+param name in The new name of each, which the model copies; may be null only when `n` is 0, and no entry may be null.
+return `BIYOS_OK` once the names are set.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an indicator, the range ends past the last indicator, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
+note An indicator may appear more than once and several indicators may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getindnamesp` for an indicator it lists is no longer valid.
+see BIYOS_getindnamesp BIYOS_getindidx BIYOS_delindnamesp
+since 0.1.0
+
+function BIYOS_getindnamesp BIYOS_getindnamerg
+summary Read the names of indicators.
+param mdl in The model.
+param pos in In the `rg` form, the first indicator of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of indicator `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an indicator or the range ends past the last indicator.
+note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of indicators and lists that indicator succeeds, or the model is freed.
+see BIYOS_setindnamesp BIYOS_getindidx
+since 0.1.0
+
+function BIYOS_getindidx
+summary Look up indicators by name.
+param mdl in The model.
+param n in The number of names.
+param name in The names, each matched byte for byte; may be null only when `n` is 0, and no entry may be null.
+param idx out Entry `j` receives the index of the indicator that alone holds `name[j]`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no indicator, with a message such as `invalid argument: indicator 'on': unknown`, or by several, with a message that counts them, such as `invalid argument: indicator 'on': names 2 indicators`. The call fails at the first such name.
+note A lookup works as in `BIYOS_getvaridx`, among the indicators alone.
+see BIYOS_setindnamesp BIYOS_getindnamesp
+since 0.1.0
+
+function BIYOS_delindnamesp BIYOS_delindnamerg
+summary Remove the names of indicators.
+param mdl in The model.
+param pos in In the `rg` form, the first indicator of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
+return `BIYOS_OK` once the indicators listed have no name. One without a name, or listed more than once, is left without one.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of an indicator or the range ends past the last indicator.
+note Once the call succeeds, a pointer read earlier with `BIYOS_getindnamesp` for an indicator it lists is no longer valid.
+see BIYOS_setindnamesp
 since 0.1.0
 
 group expressions Expressions

@@ -18,6 +18,7 @@ using biyos::Constraint;
 using biyos::difference;
 using biyos::Family;
 using biyos::Index;
+using biyos::Indicator;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Objective;
@@ -32,7 +33,7 @@ using biyos::test::sample;
 void change(Model &model)
 {
     const Index index = 1;
-    const Variable variable{.kind = VariableKind::Integer, .lower = 0.0, .upper = 1.0};
+    const Variable variable{.kind = VariableKind::Binary, .lower = 1.0, .upper = 1.0};
     const Constraint constraint{.function = 2, .lower = -5.0, .upper = 5.0};
     const std::vector<double> constants{4.0};
     const std::vector<Offset> starts{0, 1};
@@ -57,6 +58,15 @@ void change(Model &model)
     };
     model.set_objectives(std::span(&index, 1), std::span(&objective, 1));
     model.add_objectives(std::span(&objective, 1));
+    const Indicator indicator{
+        .variable = 3,
+        .value = 0,
+        .function = 3,
+        .lower = -1.0,
+        .upper = 2.0,
+    };
+    model.set_indicators(std::span(&index, 1), std::span(&indicator, 1));
+    model.add_indicators(std::span(&indicator, 1));
     const std::vector<Index> renamed{0, 1};
     const std::vector<std::string_view> names{"y", "w"};
     for (const Family family : biyos::kFamilies)

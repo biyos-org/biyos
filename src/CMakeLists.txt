@@ -60,6 +60,7 @@ add_library(biyos_internal STATIC
     model/expressions.cpp
     model/fields.cpp
     model/functions.cpp
+    model/indicators.cpp
     model/match.cpp
     model/merge.cpp
     model/model.cpp
@@ -99,6 +100,7 @@ add_library(biyos
     capi/expressions.cpp
     capi/format.cpp
     capi/functions.cpp
+    capi/indicators.cpp
     capi/linear.cpp
     capi/model.cpp
     capi/names.cpp

@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -15,6 +16,7 @@ namespace
 using biyos::Constraint;
 using biyos::Family;
 using biyos::Index;
+using biyos::Indicator;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Variable;
@@ -44,6 +46,17 @@ Model sized(Index n)
     const Constraint record{.function = 0, .lower = -1.0, .upper = 1.0};
     model.add_constraints(std::vector<Constraint>(size, record));
     model.add_objectives(std::vector<biyos::Objective>(size, biyos::default_objective(0, 0)));
+    const Index first = 0;
+    const Variable binary = biyos::widest(VariableKind::Binary);
+    model.set_variables(std::span(&first, 1), std::span(&binary, 1));
+    const Indicator indicator{
+        .variable = 0,
+        .value = 1,
+        .function = 0,
+        .lower = 0.0,
+        .upper = 1.0,
+    };
+    model.add_indicators(std::vector<Indicator>(size, indicator));
     return model;
 }
 
@@ -64,6 +77,8 @@ Index n_of(const Model &model, Family family)
         return model.n_constraints();
     case Family::Objective:
         return model.n_objectives();
+    case Family::Indicator:
+        return model.n_indicators();
     }
     return 0;
 }
@@ -164,6 +179,7 @@ TEST(NameTest, Nouns)
     EXPECT_EQ(biyos::noun_of(Family::Function), "function");
     EXPECT_EQ(biyos::noun_of(Family::Constraint), "constraint");
     EXPECT_EQ(biyos::noun_of(Family::Objective), "objective");
+    EXPECT_EQ(biyos::noun_of(Family::Indicator), "indicator");
 }
 
 TEST(NameTest, Unnamed)

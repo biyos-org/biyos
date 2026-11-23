@@ -11,6 +11,7 @@ FAMILIES = [
     biyos.Functions,
     biyos.Constraints,
     biyos.Objectives,
+    biyos.Indicators,
 ]
 
 
