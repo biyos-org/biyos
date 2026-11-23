@@ -89,7 +89,7 @@ table Status codes
 value BIYOS_OK The call succeeded.
 value BIYOS_ERR_BADARG The caller passed something the call does not accept: a null pointer, an unknown name, id or index, a value out of range, a call of the wrong kind for its option, or a change to an environment while it delivers an event. The entry of each call says which.
 value BIYOS_ERR_BUSY The environment or the model is in a call on another thread that this call may not overlap (@sec-threads).
-value BIYOS_ERR_INUSE An item that another record uses, so this change of it is refused.
+value BIYOS_ERR_INUSE An item that another record or a callback uses, so this change of it is refused.
 value BIYOS_ERR_NOMEMORY An allocation failed, or a count would pass the largest the model can hold.
 value BIYOS_ERR_INTERNAL A fault in biyos.
 since 0.1.0
