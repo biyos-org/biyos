@@ -133,7 +133,7 @@ quartodoc:
       contents: [Env, CheckLevel, Masks, OptionSource, Error, version, Versions]
     - title: Models
       desc: A model holds the variables, functions, constraints and objectives of a problem.
-      contents: [Model, VariableKind, Sense, Operator]
+      contents: [Model, VariableKind, Sense, SOSKind, Operator]
     - title: Blocks and views
       desc: The items an add call returns, which pass wherever the model takes indices.
       contents:
@@ -157,6 +157,10 @@ quartodoc:
           include_inherited: true
           members: [__len__, __iter__, __getitem__, "on"]
         - Indicator
+        - name: SOSs
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - SOS
     - title: Events
       desc: What a hook receives.
       contents: [Event, EventKind, EventLevel]

@@ -10,7 +10,7 @@ A model keeps its environment alive, so an environment the program no longer ref
 
 ## Blocks and views {#sec-python-blocks}
 
-`addvar`, `addfun`, `addcon`, `addobj` and `addind` return a block: `Variables`, `Functions`, `Constraints`, `Objectives` or `Indicators`. A block holds its model, the index of its first item and its count, so it costs the same whether it holds three items or three million. It supports `len`, iteration, indexing from either end and slicing with step 1:
+`addvar`, `addfun`, `addcon`, `addobj`, `addind` and `addsos` return a block: `Variables`, `Functions`, `Constraints`, `Objectives`, `Indicators` or `SOSs`. A block holds its model, the index of its first item and its count, so it costs the same whether it holds three items or three million. It supports `len`, iteration, indexing from either end and slicing with step 1:
 
 ```python
 x = model.addvar(4)
@@ -36,14 +36,15 @@ The readers return lists, in the order of the C call's arrays:
 | `getcon(idx)` | functions, lower bounds, upper bounds |
 | `getobj(idx)` | functions, senses, priorities, weights |
 | `getind(idx)` | variables, values, functions, lower bounds, upper bounds |
+| `getsos(idx)` | kinds, offsets, variables, weights |
 
-`idx` lists the items to read, or is a block or a range of them, and defaults to every item, so `model.getvar()` reads them all. The readers of terms size their arrays themselves. `getrlinterm` reads the linear terms of functions and `getclinterm` those of variables, each term as its function, its variable and its coefficient, and `getnrlinterm` and `getnclinterm` count them. `getquadterm` reads the quadratic terms of functions in the same shape, with two variables, and `getnquadterm` counts them. `addlinterm(funidx, varidx, coef)` adds terms in that same shape, so `target.addlinterm(*source.getrlinterm())` copies the linear terms of one model into another with the same functions and variables. `addquadterm(funidx, varidx1, varidx2, coef)` does the same for quadratic terms, from `getquadterm`.
+`idx` lists the items to read, or is a block or a range of them, and defaults to every item, so `model.getvar()` reads them all. The readers of terms size their arrays themselves. `getrlinterm` reads the linear terms of functions and `getclinterm` those of variables, each term as its function, its variable and its coefficient, and `getnrlinterm` and `getnclinterm` count them. `getquadterm` reads the quadratic terms of functions in the same shape, with two variables, and `getnquadterm` counts them. `addlinterm(funidx, varidx, coef)` adds terms in that same shape, so `target.addlinterm(*source.getrlinterm())` copies the linear terms of one model into another with the same functions and variables. `addquadterm(funidx, varidx1, varidx2, coef)` does the same for quadratic terms, from `getquadterm`. `getsos` reads special ordered sets as `addsos` takes them, the members of each set from its offset, so `target.addsos(*source.getsos())` copies them into a model with the same variables, and `getnsosvar` counts the members.
 
 A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobj` leaves out, as `addobj` does. `getcst(idx)` returns the constants of functions, which `setcst` sets and `addcst` adds to.
 
 ## Constants {#sec-python-constants}
 
-The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind` and `Sense` for models, `EventKind` and `EventLevel` for events, `CheckLevel` for the values of `check_lvl` and `OptionSource` for where a model's option comes from, so `BIYOS_LVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvar()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name ([Options in Python](#sec-options-python)).
+The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind`, `Sense` and `SOSKind` for models, `EventKind` and `EventLevel` for events, `CheckLevel` for the values of `check_lvl` and `OptionSource` for where a model's option comes from, so `BIYOS_LVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvar()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name ([Options in Python](#sec-options-python)).
 
 ## Failures {#sec-python-errors}
 

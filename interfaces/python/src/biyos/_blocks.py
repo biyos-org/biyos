@@ -360,6 +360,39 @@ class Indicators(Block[Indicator]):
         return model.getnind()
 
 
+class SOS(View):
+    """One special ordered set of a model, as indexing an ``SOSs`` block
+    gives.
+
+    A view holds its model and its index, and passes as that index wherever
+    its model takes an index of sets. Any other model refuses it as an
+    index. A view made before a deletion from its model raises
+    ``ValueError`` when used, as its index may name another set.
+    """
+
+    __slots__ = ()
+    _noun = "set"
+
+
+class SOSs(Block[SOS]):
+    """Consecutive special ordered sets, as ``Model.addsos`` returns.
+
+    A block holds its model, its first index and its count, so it costs the
+    same at any size. ``len`` gives the count, and iterating gives each set
+    in order as an ``SOS``, so a block passes wherever its model takes
+    indices of sets. Any other model refuses it as indices, and ``on`` gives
+    the block of the same indices in another model, such as a copy. A block
+    made before a deletion from its model raises ``ValueError`` when used,
+    as its indices may name other sets.
+    """
+
+    __slots__ = ()
+    _element = SOS
+
+    def _held(self, model: "Model") -> int:
+        return model.getnsos()
+
+
 def _indefinite(noun: str) -> str:
     article = "an" if noun[0] in "aeiou" else "a"
     return f"{article} {noun}"

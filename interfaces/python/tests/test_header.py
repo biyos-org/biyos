@@ -106,6 +106,13 @@ def test_senses():
     assert senses == names
 
 
+def test_sos_kinds():
+    kinds, defined = group("biyos.h", "BIYOS_SOSKND_SOS1")
+    assert len(kinds) == defined
+    names = {f"BIYOS_SOSKND_{kind.name}": kind for kind in biyos.SOSKind}
+    assert kinds == names
+
+
 def test_levels():
     levels, defined = group("biyos.h", "BIYOS_CHECKLVL_NONE")
     assert len(levels) == defined

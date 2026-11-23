@@ -23,6 +23,7 @@ PAIRS = [
     ("ind", "indbnd", ([-5.0, -6.0], [5.0, 6.0])),
     ("ind", "indvar", ([5, 6], [0, 1])),
     ("ind", "indname", (["i", "j"],)),
+    ("sos", "sosname", (["i", "j"],)),
 ]
 
 SPREAD = {
@@ -55,6 +56,7 @@ def blocks(env):
             "con": model.addcon([0] * 4),
             "obj": model.addobj([0] * 4),
             "ind": model.addind(add_switches(model), [1] * 4, [0] * 4),
+            "sos": model.addsos([biyos.SOSKind.SOS1] * 4, [0] * 5, []),
         }
         yield model, found
 
@@ -108,7 +110,7 @@ def test_forms(blocks, monkeypatch, family, call, values, kind):
     assert read(model, call, records(kind)) == values
 
 
-@pytest.mark.parametrize("family", ["var", "fun", "con", "obj", "ind"])
+@pytest.mark.parametrize("family", ["var", "fun", "con", "obj", "ind", "sos"])
 @pytest.mark.parametrize("kind", FORMS)
 def test_delete(blocks, monkeypatch, family, kind):
     model, found = blocks
