@@ -40,6 +40,10 @@ extern char error_end[sizeof(BIYOS_error) == 4 * sizeof(void *) ? 1 : -1];
     BIYOS_KND_ENUM != 5 || BIYOS_KND_FLG != 6
 #error "a public option kind changed"
 #endif
+#if !defined(BIYOS_OPTSRC_MDL) || BIYOS_OPTSRC_MDL != 1 || BIYOS_OPTSRC_ENV != 2 ||                \
+    BIYOS_OPTSRC_DEFAULT != 3
+#error "a public option source changed"
+#endif
 #if !defined(BIYOS_CHECKLVL_NONE) || BIYOS_CHECKLVL_NONE != 1 || BIYOS_CHECKLVL_CHEAP != 2 ||      \
     BIYOS_CHECKLVL_FULL != 3
 #error "a public check level changed"
@@ -367,6 +371,35 @@ static BIYOS_status use_names(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status use_options(BIYOS_model *model)
+{
+    BIYOS_int value = -1;
+    BIYOS_int source = 0;
+    BIYOS_real real = 0.0;
+    const char *text = NULL;
+    BIYOS_mask on = 0;
+    BIYOS_mask off = 0;
+    if (BIYOS_setmdlboolopt(model, BIYOS_OPT_PRESOLVE, 0) != BIYOS_OK ||
+        BIYOS_getmdlboolopt(model, BIYOS_OPT_PRESOLVE, &value) != BIYOS_OK || value != 0 ||
+        BIYOS_setmdlintopt(model, BIYOS_OPT_SEED, 5) != BIYOS_OK ||
+        BIYOS_getmdlintopt(model, BIYOS_OPT_SEED, &value) != BIYOS_OK || value != 5 ||
+        BIYOS_setmdldblopt(model, BIYOS_OPT_MAXTIME, 2.0) != BIYOS_OK ||
+        BIYOS_getmdldblopt(model, BIYOS_OPT_MAXTIME, &real) != BIYOS_OK ||
+        BIYOS_setmdlstropt(model, BIYOS_OPT_REPRO, "header.txt") != BIYOS_OK ||
+        BIYOS_getmdlstropt(model, BIYOS_OPT_REPRO, &text) != BIYOS_OK ||
+        !matches(text, "header.txt") ||
+        BIYOS_setmdlflgopt(model, BIYOS_OPT_SEED, 0, 0) != BIYOS_ERR_BADARG ||
+        BIYOS_getmdlflgopt(model, BIYOS_OPT_SEED, &on, &off) != BIYOS_ERR_BADARG ||
+        BIYOS_getmdloptsrc(model, BIYOS_OPT_SEED, &source) != BIYOS_OK ||
+        source != BIYOS_OPTSRC_MDL || BIYOS_delmdlopt(model, BIYOS_OPT_SEED) != BIYOS_OK ||
+        BIYOS_getmdloptsrc(model, BIYOS_OPT_SEED, &source) != BIYOS_OK ||
+        source != BIYOS_OPTSRC_ENV)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static BIYOS_status use_copy(BIYOS_env *env, BIYOS_model *model)
 {
     BIYOS_model *copy = NULL;
@@ -490,7 +523,8 @@ int main(void)
         use_quadratic(model) != BIYOS_OK || use_nodes(model) != BIYOS_OK ||
         use_postfix(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK ||
         use_objectives(model) != BIYOS_OK || use_names(model) != BIYOS_OK ||
-        use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
+        use_options(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK ||
+        use_readers(env, model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

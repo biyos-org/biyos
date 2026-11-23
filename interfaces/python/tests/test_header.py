@@ -22,6 +22,12 @@ VARIABLES = {
     "BIYOS_VAR_SEMIINT": biyos.VariableKind.SEMIINTEGER,
 }
 
+SOURCES = {
+    "BIYOS_OPTSRC_MDL": biyos.OptionSource.MODEL,
+    "BIYOS_OPTSRC_ENV": biyos.OptionSource.ENVIRONMENT,
+    "BIYOS_OPTSRC_DEFAULT": biyos.OptionSource.DEFAULT,
+}
+
 
 OPERATORS = {
     "BIYOS_OP_CONST": biyos.Operator.CONSTANT,
@@ -109,6 +115,13 @@ def test_levels():
     assert levels == names
 
 
+def test_sources():
+    sources, defined = group("biyos.h", "BIYOS_OPTSRC_MDL")
+    assert len(sources) == defined
+    assert set(SOURCES.values()) == set(biyos.OptionSource)
+    assert sources == SOURCES
+
+
 def test_ok():
     assert macros("biyos.h")["BIYOS_OK"] == _capi.OK
 
@@ -116,5 +129,7 @@ def test_ok():
 def test_masks():
     masks = [c_uint64, c_uint64]
     assert list(lib.BIYOS_setenvflgopt.argtypes[2:]) == masks
+    assert list(lib.BIYOS_setmdlflgopt.argtypes[2:]) == masks
     pointers = [POINTER(c_uint64), POINTER(c_uint64)]
     assert list(lib.BIYOS_getenvflgopt.argtypes[2:]) == pointers
+    assert list(lib.BIYOS_getmdlflgopt.argtypes[2:]) == pointers

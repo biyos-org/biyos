@@ -3,34 +3,24 @@
 #include "core/option_table.hpp"
 #include "core/option_value.hpp"
 
-#include <string>
+#include <string_view>
 
 namespace biyos
 {
 
-namespace
-{
-
-const Settings &no_settings()
-{
-    static const Settings kNone;
-    return kNone;
-}
-
-}
-
 Lookup::Lookup(const Settings &settings, const Options &options) noexcept
-    : settings_(settings), options_(options)
+    : settings_(&settings), options_(options)
 {
 }
 
-Lookup::Lookup(const Options &options) noexcept : Lookup(no_settings(), options) {}
+Lookup::Lookup(const Options &options) noexcept : settings_(nullptr), options_(options) {}
 
 Found Lookup::find(Option option) const
 {
-    if (const OptionValue *value = settings_.find(option))
+    const OptionValue *own = settings_ != nullptr ? settings_->find(option) : nullptr;
+    if (own != nullptr)
     {
-        return Found{.value = *value, .source = Source::Model};
+        return Found{.value = *own, .source = Source::Model};
     }
     return Found{.value = options_.value_of(option), .source = options_.source_of(option)};
 }
@@ -53,7 +43,7 @@ double Lookup::get_double(Option option) const
     return double_of(spec, find(option).value);
 }
 
-const std::string &Lookup::get_string(Option option) const
+std::string_view Lookup::get_string(Option option) const
 {
     const OptionSpec &spec = row_of(options_.table(), option);
     return string_of(spec, find(option).value);

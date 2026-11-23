@@ -3,7 +3,7 @@
 #include "core/options.hpp"
 #include "core/settings.hpp"
 
-#include <string>
+#include <string_view>
 #include <type_traits>
 
 namespace biyos
@@ -27,7 +27,7 @@ class Lookup
     bool get_bool(Option option) const;
     int get_int(Option option) const;
     double get_double(Option option) const;
-    const std::string &get_string(Option option) const;
+    std::string_view get_string(Option option) const;
     Masks get_flags(Option option) const;
     PartState part_state(Option option, Mask part) const;
 
@@ -41,7 +41,7 @@ class Lookup
   private:
     int enum_value(Option option) const;
 
-    const Settings &settings_;
+    const Settings *settings_;
     const Options &options_;
 };
 

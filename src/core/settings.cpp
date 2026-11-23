@@ -7,7 +7,7 @@
 
 #include <algorithm>
 #include <span>
-#include <utility>
+#include <string_view>
 
 namespace biyos
 {
@@ -30,30 +30,73 @@ Settings::Settings() : table_(option_table()) {}
 
 Settings::Settings(std::span<const OptionSpec> table) : table_(table) {}
 
-void Settings::set(Option option, OptionValue value, Events &events)
+Settings::Settings(const Settings &other) : table_(other.table_)
+{
+    entries_.reserve(other.entries_.size());
+    for (const Entry &entry : other.entries_)
+    {
+        entries_.push_back(Entry{.option = entry.option, .value = kept(strings_, entry.value)});
+    }
+}
+
+void Settings::set_bool(Option option, bool value, Events &events, const BIYOS_model *model)
+{
+    store(option, value, events, model);
+}
+
+void Settings::set_int(Option option, int value, Events &events, const BIYOS_model *model)
+{
+    store(option, value, events, model);
+}
+
+void Settings::set_double(Option option, double value, Events &events, const BIYOS_model *model)
+{
+    store(option, value, events, model);
+}
+
+void Settings::set_string(Option option,
+                          std::string_view value,
+                          Events &events,
+                          const BIYOS_model *model)
+{
+    store(option, value, events, model);
+}
+
+void Settings::set_flags(Option option, Masks value, Events &events, const BIYOS_model *model)
+{
+    store(option, value, events, model);
+}
+
+void Settings::store(Option option,
+                     const OptionValue &value,
+                     Events &events,
+                     const BIYOS_model *model)
 {
     check_scope(row_of(table_, option));
     const OptionSpec &spec = checked_row(table_, option, value);
+    const OptionValue own = kept(strings_, value);
     const auto held = std::ranges::find(entries_, option, &Entry::option);
     if (held != entries_.end())
     {
-        held->value = std::move(value);
+        held->value = own;
     }
     else
     {
-        entries_.push_back(Entry{.option = option, .value = std::move(value)});
+        entries_.push_back(Entry{.option = option, .value = own});
     }
-    warn_deprecated(events, table_, spec);
+    warn_deprecated(events, table_, spec, model);
 }
 
-const OptionValue *Settings::find(Option option) const noexcept
+const OptionValue *Settings::find(Option option) const
 {
+    check_scope(row_of(table_, option));
     const auto held = std::ranges::find(entries_, option, &Entry::option);
     return held != entries_.end() ? &held->value : nullptr;
 }
 
-void Settings::erase(Option option) noexcept
+void Settings::erase(Option option)
 {
+    check_scope(row_of(table_, option));
     std::erase_if(entries_, [option](const Entry &entry) { return entry.option == option; });
 }
 

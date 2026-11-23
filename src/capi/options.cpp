@@ -2,7 +2,10 @@
 
 #include "capi/entry.hpp"
 #include "core/env.hpp"
+#include "core/events.hpp"
+#include "core/lookup.hpp"
 #include "core/options.hpp"
+#include "core/settings.hpp"
 #include "core/version.hpp"
 
 #include <optional>
@@ -91,7 +94,7 @@ void get_double(biyos::Env &env, int option, double *value)
 
 void get_string(biyos::Env &env, int option, const char **value)
 {
-    const char *found = env.options().get_string(biyos::find_option(option)).c_str();
+    const char *found = env.options().get_string(biyos::find_option(option)).data();
     *require(value, "val") = found;
 }
 
@@ -102,6 +105,95 @@ void get_flags(biyos::Env &env, int option, BIYOS_mask *on, BIYOS_mask *off)
     require(off, "off");
     *on = found.on;
     *off = found.off;
+}
+
+biyos::Settings &settings_of(BIYOS_model &model)
+{
+    writable(model);
+    return model.settings;
+}
+
+biyos::Events &events_of(const BIYOS_model &model)
+{
+    return model.handle.env().events();
+}
+
+biyos::Lookup lookup_of(const BIYOS_model &model)
+{
+    return biyos::Lookup(model.settings, model.handle.env().options());
+}
+
+void set_model_bool(BIYOS_model &model, int option, int value)
+{
+    settings_of(model).set_bool(biyos::find_option(option), value != 0, events_of(model), &model);
+}
+
+void set_model_int(BIYOS_model &model, int option, int value)
+{
+    settings_of(model).set_int(biyos::find_option(option), value, events_of(model), &model);
+}
+
+void set_model_double(BIYOS_model &model, int option, double value)
+{
+    settings_of(model).set_double(biyos::find_option(option), value, events_of(model), &model);
+}
+
+void set_model_string(BIYOS_model &model, int option, const char *value)
+{
+    biyos::Settings &settings = settings_of(model);
+    const biyos::Option found = biyos::find_option(option);
+    settings.set_string(found, require(value, "val"), events_of(model), &model);
+}
+
+void set_model_flags(BIYOS_model &model, int option, BIYOS_mask on, BIYOS_mask off)
+{
+    biyos::Settings &settings = settings_of(model);
+    const biyos::Masks value{.on = on, .off = off};
+    settings.set_flags(biyos::find_option(option), value, events_of(model), &model);
+}
+
+void get_model_bool(const BIYOS_model &model, int option, int *value)
+{
+    const bool found = lookup_of(model).get_bool(biyos::find_option(option));
+    *require(value, "val") = found ? 1 : 0;
+}
+
+void get_model_int(const BIYOS_model &model, int option, int *value)
+{
+    const int found = lookup_of(model).get_int(biyos::find_option(option));
+    *require(value, "val") = found;
+}
+
+void get_model_double(const BIYOS_model &model, int option, double *value)
+{
+    const double found = lookup_of(model).get_double(biyos::find_option(option));
+    *require(value, "val") = found;
+}
+
+void get_model_string(const BIYOS_model &model, int option, const char **value)
+{
+    const char *found = lookup_of(model).get_string(biyos::find_option(option)).data();
+    *require(value, "val") = found;
+}
+
+void get_model_flags(const BIYOS_model &model, int option, BIYOS_mask *on, BIYOS_mask *off)
+{
+    const biyos::Masks found = lookup_of(model).get_flags(biyos::find_option(option));
+    require(on, "on");
+    require(off, "off");
+    *on = found.on;
+    *off = found.off;
+}
+
+void delete_model_option(BIYOS_model &model, int option)
+{
+    settings_of(model).erase(biyos::find_option(option));
+}
+
+void get_model_source(const BIYOS_model &model, int option, int *source)
+{
+    const biyos::Source found = lookup_of(model).find(biyos::find_option(option)).source;
+    *require(source, "src") = static_cast<int>(found);
 }
 
 }
@@ -173,4 +265,67 @@ BIYOS_status BIYOS_getenvstropt(BIYOS_env *env, BIYOS_int opt, const char **val)
 BIYOS_status BIYOS_getenvflgopt(BIYOS_env *env, BIYOS_int opt, BIYOS_mask *on, BIYOS_mask *off)
 {
     return guarded<get_flags>(env, opt, on, off);
+}
+
+BIYOS_status BIYOS_setmdlboolopt(BIYOS_model *mdl, BIYOS_int opt, BIYOS_int val)
+{
+    return guarded<set_model_bool>(mdl, opt, val);
+}
+
+BIYOS_status BIYOS_setmdlintopt(BIYOS_model *mdl, BIYOS_int opt, BIYOS_int val)
+{
+    return guarded<set_model_int>(mdl, opt, val);
+}
+
+BIYOS_status BIYOS_setmdldblopt(BIYOS_model *mdl, BIYOS_int opt, BIYOS_real val)
+{
+    return guarded<set_model_double>(mdl, opt, val);
+}
+
+BIYOS_status BIYOS_setmdlstropt(BIYOS_model *mdl, BIYOS_int opt, const char *val)
+{
+    return guarded<set_model_string>(mdl, opt, val);
+}
+
+BIYOS_status BIYOS_setmdlflgopt(BIYOS_model *mdl, BIYOS_int opt, BIYOS_mask on, BIYOS_mask off)
+{
+    return guarded<set_model_flags>(mdl, opt, on, off);
+}
+
+BIYOS_status BIYOS_getmdlboolopt(const BIYOS_model *mdl, BIYOS_int opt, BIYOS_int *val)
+{
+    return guarded<get_model_bool>(mdl, opt, val);
+}
+
+BIYOS_status BIYOS_getmdlintopt(const BIYOS_model *mdl, BIYOS_int opt, BIYOS_int *val)
+{
+    return guarded<get_model_int>(mdl, opt, val);
+}
+
+BIYOS_status BIYOS_getmdldblopt(const BIYOS_model *mdl, BIYOS_int opt, BIYOS_real *val)
+{
+    return guarded<get_model_double>(mdl, opt, val);
+}
+
+BIYOS_status BIYOS_getmdlstropt(const BIYOS_model *mdl, BIYOS_int opt, const char **val)
+{
+    return guarded<get_model_string>(mdl, opt, val);
+}
+
+BIYOS_status BIYOS_getmdlflgopt(const BIYOS_model *mdl,
+                                BIYOS_int opt,
+                                BIYOS_mask *on,
+                                BIYOS_mask *off)
+{
+    return guarded<get_model_flags>(mdl, opt, on, off);
+}
+
+BIYOS_status BIYOS_delmdlopt(BIYOS_model *mdl, BIYOS_int opt)
+{
+    return guarded<delete_model_option>(mdl, opt);
+}
+
+BIYOS_status BIYOS_getmdloptsrc(const BIYOS_model *mdl, BIYOS_int opt, BIYOS_int *src)
+{
+    return guarded<get_model_source>(mdl, opt, src);
 }

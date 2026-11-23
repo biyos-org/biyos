@@ -106,7 +106,7 @@ void admit(const OptionSpec &spec, double value)
     check_range(spec, rule_of<DoubleRule>(spec), value);
 }
 
-void admit(const OptionSpec &spec, const std::string &)
+void admit(const OptionSpec &spec, std::string_view)
 {
     rule_of<StringRule>(spec);
 }
@@ -116,7 +116,10 @@ void admit(const OptionSpec &spec, const Masks &value)
     check_value(spec, rule_of<FlagsRule>(spec), value);
 }
 
-void describe(Event &event, std::span<const OptionSpec> table, const OptionSpec &spec)
+void describe(Event &event,
+              std::span<const OptionSpec> table,
+              const OptionSpec &spec,
+              const BIYOS_model *model)
 {
     const Version deprecated = *spec.versions.deprecated;
     const std::string_view replacement = row_of(table, *spec.replacement).name;
@@ -125,6 +128,7 @@ void describe(Event &event, std::span<const OptionSpec> table, const OptionSpec 
     event.fields.push_back(Field{.name = "option", .value = std::string(spec.name)});
     event.fields.push_back(Field{.name = "deprecated", .value = dotted(deprecated)});
     event.fields.push_back(Field{.name = "replacement", .value = std::string(replacement)});
+    event.model = model;
 }
 
 }
@@ -140,14 +144,24 @@ const OptionSpec &checked_row(std::span<const OptionSpec> table,
 
 void warn_deprecated(Events &events,
                      std::span<const OptionSpec> table,
-                     const OptionSpec &spec) noexcept
+                     const OptionSpec &spec,
+                     const BIYOS_model *model) noexcept
 {
     if (!spec.versions.deprecated)
     {
         return;
     }
-    const auto fill = [&](Event &event) { describe(event, table, spec); };
+    const auto fill = [&](Event &event) { describe(event, table, spec, model); };
     events.emit(EventKind::Message, EventLevel::Warning, fill);
+}
+
+OptionValue kept(Strings &strings, const OptionValue &value)
+{
+    if (const std::string_view *text = std::get_if<std::string_view>(&value))
+    {
+        return strings.keep(*text);
+    }
+    return value;
 }
 
 bool bool_of(const OptionSpec &spec, const OptionValue &value)
@@ -171,10 +185,10 @@ double double_of(const OptionSpec &spec, const OptionValue &value)
     return std::get<double>(value);
 }
 
-const std::string &string_of(const OptionSpec &spec, const OptionValue &value)
+std::string_view string_of(const OptionSpec &spec, const OptionValue &value)
 {
     rule_of<StringRule>(spec);
-    return std::get<std::string>(value);
+    return std::get<std::string_view>(value);
 }
 
 int enum_of(const OptionSpec &spec, const OptionValue &value)

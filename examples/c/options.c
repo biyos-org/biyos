@@ -26,6 +26,30 @@ static int read_options(BIYOS_env *env)
     return presolve == 0 && lvl == BIYOS_CHECKLVL_FULL;
 }
 
+static int model_options(BIYOS_env *env)
+{
+    BIYOS_model *mdl = NULL;
+    if (BIYOS_newmdl(env, &mdl) != BIYOS_OK)
+    {
+        return 0;
+    }
+    BIYOS_real own = 0.0;
+    BIYOS_real shared = 0.0;
+    BIYOS_int src = 0;
+    int done =
+        BIYOS_setmdldblopt(mdl, BIYOS_OPT_MAXTIME, 5.0) == BIYOS_OK &&
+        BIYOS_getmdldblopt(mdl, BIYOS_OPT_MAXTIME, &own) == BIYOS_OK &&
+        BIYOS_delmdlopt(mdl, BIYOS_OPT_MAXTIME) == BIYOS_OK &&
+        BIYOS_getmdldblopt(mdl, BIYOS_OPT_MAXTIME, &shared) == BIYOS_OK &&
+        BIYOS_getmdloptsrc(mdl, BIYOS_OPT_MAXTIME, &src) == BIYOS_OK;
+    if (done)
+    {
+        printf("own %g, shared %g, source %d\n", own, shared, src);
+    }
+    BIYOS_freemdl(mdl);
+    return done && src == BIYOS_OPTSRC_ENV;
+}
+
 static int describe(BIYOS_env *env, const char *name)
 {
     BIYOS_int opt = 0;
@@ -55,8 +79,8 @@ int main(void)
     {
         return 1;
     }
-    int done =
-        set_options(env) && read_options(env) && describe(env, "check_lvl");
+    int done = set_options(env) && read_options(env) &&
+               model_options(env) && describe(env, "check_lvl");
     if (!done)
     {
         BIYOS_error error = {.size = sizeof error};

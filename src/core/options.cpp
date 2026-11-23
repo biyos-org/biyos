@@ -10,7 +10,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <variant>
 #include <vector>
 
@@ -35,9 +34,9 @@ double default_of(const DoubleRule &rule)
     return rule.default_value;
 }
 
-std::string default_of(const StringRule &rule)
+std::string_view default_of(const StringRule &rule)
 {
-    return std::string(rule.default_value);
+    return rule.default_value;
 }
 
 int default_of(const EnumRule &rule)
@@ -62,25 +61,25 @@ std::span<const OptionSpec> checked(std::span<const OptionSpec> table)
 }
 
 Options::Options(Events &events)
-    : table_(option_table()), events_(events), values_(defaults(table_)),
+    : table_(option_table()), events_(events), values_(defaults()),
       sources_(table_.size(), Source::Default)
 {
 }
 
 Options::Options(std::span<const OptionSpec> table, Events &events)
-    : table_(checked(table)), events_(events), values_(defaults(table_)),
+    : table_(checked(table)), events_(events), values_(defaults()),
       sources_(table_.size(), Source::Default)
 {
 }
 
-std::vector<OptionValue> Options::defaults(std::span<const OptionSpec> table)
+std::vector<OptionValue> Options::defaults()
 {
     std::vector<OptionValue> values;
-    values.reserve(table.size());
+    values.reserve(table_.size());
     const auto value_of = [](const auto &rule) { return OptionValue(default_of(rule)); };
-    for (const OptionSpec &spec : table)
+    for (const OptionSpec &spec : table_)
     {
-        values.push_back(std::visit(value_of, spec.rule));
+        values.push_back(kept(strings_, std::visit(value_of, spec.rule)));
     }
     return values;
 }
@@ -102,7 +101,7 @@ void Options::set_double(Option option, double value)
 
 void Options::set_string(Option option, std::string_view value)
 {
-    store(option, std::string(value));
+    store(option, value);
 }
 
 void Options::set_flags(Option option, Masks value)
@@ -110,12 +109,12 @@ void Options::set_flags(Option option, Masks value)
     store(option, value);
 }
 
-void Options::store(Option option, OptionValue value)
+void Options::store(Option option, const OptionValue &value)
 {
     const OptionSpec &spec = checked_row(table_, option, value);
-    values_[index_of(option)] = std::move(value);
+    values_[index_of(option)] = kept(strings_, value);
     sources_[index_of(option)] = Source::Environment;
-    warn_deprecated(events_, table_, spec);
+    warn_deprecated(events_, table_, spec, nullptr);
 }
 
 bool Options::get_bool(Option option) const
@@ -136,7 +135,7 @@ double Options::get_double(Option option) const
     return double_of(spec, values_[index_of(option)]);
 }
 
-const std::string &Options::get_string(Option option) const
+std::string_view Options::get_string(Option option) const
 {
     const OptionSpec &spec = row_of(table_, option);
     return string_of(spec, values_[index_of(option)]);

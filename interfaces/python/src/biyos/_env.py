@@ -1,20 +1,19 @@
 import weakref
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from ctypes import byref, c_char_p, c_double, c_int, c_uint64, c_void_p
-from numbers import Real
-from typing import TYPE_CHECKING, NoReturn, SupportsIndex
+from ctypes import byref, c_int, c_void_p
+from typing import TYPE_CHECKING, NoReturn
 
-from biyos import _capi
+from biyos import _capi, _values
 from biyos._capi import lib
 from biyos._error import Error, check
 from biyos._event import Event, EventKind, EventLevel
 from biyos._handles import Handles
-from biyos._integers import integer, mask
-from biyos._options import ENUMS, Masks
+from biyos._integers import integer
 from biyos._relay import Relay
 from biyos._hooks import Hooks
 from biyos._text import encoded
+from biyos._values import Value
 from biyos._versions import Versions, version_text
 
 if TYPE_CHECKING:
@@ -28,11 +27,6 @@ def _name(name: str) -> bytes:
     return encoded(name)
 
 
-def _rejected(name: str, noun: str, value: object) -> TypeError:
-    found = type(value).__name__
-    return TypeError(f"option '{name}' takes {noun}, not {found}")
-
-
 def _callable(
     function: Callable[[Event], object],
 ) -> Callable[[Event], object]:
@@ -42,55 +36,22 @@ def _callable(
     return function
 
 
-def _bool(name: str, value: bool) -> int:
-    if not isinstance(value, bool):
-        raise _rejected(name, "a bool", value)
-    return int(value)
-
-
-def _int(name: str, value: SupportsIndex) -> int:
-    try:
-        return integer(f"option '{name}'", value)
-    except TypeError:
-        raise _rejected(name, "an int", value) from None
-
-
-def _double(name: str, value: float) -> float:
-    if isinstance(value, bool) or not isinstance(value, Real):
-        raise _rejected(name, "a number", value)
-    return float(value)
-
-
-def _string(name: str, value: str) -> bytes:
-    if not isinstance(value, str):
-        raise _rejected(name, "a str", value)
-    return encoded(value)
-
-
-def _masks(name: str, value: object) -> tuple[int, int]:
-    if not isinstance(value, tuple) or len(value) != 2:
-        raise _rejected(name, "a pair (on, off)", value)
-    on, off = value
-    return mask(f"option '{name}' on", on), mask(f"option '{name}' off", off)
-
-
-_SETTERS: dict[int, tuple[Callable[..., int], Callable[..., object]]] = {
-    _capi.KIND_BOOL: (lib.BIYOS_setenvboolopt, _bool),
-    _capi.KIND_INT: (lib.BIYOS_setenvintopt, _int),
-    _capi.KIND_DOUBLE: (lib.BIYOS_setenvdblopt, _double),
-    _capi.KIND_STRING: (lib.BIYOS_setenvstropt, _string),
-    _capi.KIND_ENUM: (lib.BIYOS_setenvintopt, _int),
+_SETTERS: dict[int, Callable[..., int]] = {
+    _capi.KIND_BOOL: lib.BIYOS_setenvboolopt,
+    _capi.KIND_INT: lib.BIYOS_setenvintopt,
+    _capi.KIND_DOUBLE: lib.BIYOS_setenvdblopt,
+    _capi.KIND_STRING: lib.BIYOS_setenvstropt,
+    _capi.KIND_ENUM: lib.BIYOS_setenvintopt,
+    _capi.KIND_FLAGS: lib.BIYOS_setenvflgopt,
 }
 
-_GETTERS: dict[
-    int,
-    tuple[Callable[..., int], type, Callable[..., bool | int | float | str]],
-] = {
-    _capi.KIND_BOOL: (lib.BIYOS_getenvboolopt, c_int, bool),
-    _capi.KIND_INT: (lib.BIYOS_getenvintopt, c_int, int),
-    _capi.KIND_DOUBLE: (lib.BIYOS_getenvdblopt, c_double, float),
-    _capi.KIND_STRING: (lib.BIYOS_getenvstropt, c_char_p, bytes.decode),
-    _capi.KIND_ENUM: (lib.BIYOS_getenvintopt, c_int, int),
+_GETTERS: dict[int, Callable[..., int]] = {
+    _capi.KIND_BOOL: lib.BIYOS_getenvboolopt,
+    _capi.KIND_INT: lib.BIYOS_getenvintopt,
+    _capi.KIND_DOUBLE: lib.BIYOS_getenvdblopt,
+    _capi.KIND_STRING: lib.BIYOS_getenvstropt,
+    _capi.KIND_ENUM: lib.BIYOS_getenvintopt,
+    _capi.KIND_FLAGS: lib.BIYOS_getenvflgopt,
 }
 
 
@@ -103,8 +64,11 @@ def _release(models: Handles, handle: c_void_p) -> int:
 class Env:
     """An environment: the options and the hooks every model made on it shares.
 
-    It is closed by ``close``, on leaving a ``with`` block, or when it is
-    collected, and closing it closes the models still open on it.
+    A model may also hold its own value of an option, which it reads before
+    the environment's.
+
+    The environment is closed by ``close``, on leaving a ``with`` block, or
+    when it is collected, and closing it closes the models still open on it.
 
     Raises
     ------
@@ -172,7 +136,7 @@ class Env:
         if self._calls == 0:
             self._run(self._dispose)
 
-    def setopt(self, name: str, val: bool | int | float | str | Masks) -> None:
+    def setopt(self, name: str, val: Value) -> None:
         """Set an option.
 
         Parameters
@@ -202,14 +166,9 @@ class Env:
         BIYOS_setenvflgopt
         """
         option, kind = self._lookup(name)
-        if kind == _capi.KIND_FLAGS:
-            on, off = _masks(name, val)
-            self._call(lib.BIYOS_setenvflgopt, option, on, off)
-            return
-        setter, convert = _SETTERS[kind]
-        self._call(setter, option, convert(name, val))
+        self._call(_SETTERS[kind], option, *_values.arguments(name, kind, val))
 
-    def getopt(self, name: str) -> bool | int | float | str | Masks:
+    def getopt(self, name: str) -> Value:
         """Read an option.
 
         Parameters
@@ -236,14 +195,9 @@ class Env:
         BIYOS_getenvflgopt
         """
         option, kind = self._lookup(name)
-        if kind == _capi.KIND_FLAGS:
-            return self._flags(option)
-        getter, slot, convert = _GETTERS[kind]
-        value = slot()
-        self._call(getter, option, byref(value))
-        if kind == _capi.KIND_ENUM:
-            return ENUMS[name](value.value)
-        return convert(value.value)
+        found = _values.slots(kind)
+        self._call(_GETTERS[kind], option, *map(byref, found))
+        return _values.value(name, kind, found)
 
     def getoptver(self, name: str) -> Versions:
         """Read the versions that added, deprecated and retired an option.
@@ -386,11 +340,6 @@ class Env:
         kind = c_int()
         self._call(lib.BIYOS_getoptknd, option, byref(kind))
         return option, kind.value
-
-    def _flags(self, option: int) -> Masks:
-        on, off = c_uint64(), c_uint64()
-        self._call(lib.BIYOS_getenvflgopt, option, byref(on), byref(off))
-        return Masks(on.value, off.value)
 
     def _option(self, name: str) -> int:
         option = c_int()

@@ -216,13 +216,14 @@ TEST_F(FlagTest, OtherKinds)
 TEST_F(FlagTest, Models)
 {
     options.set_flags(kParts, Masks{.on = kDual, .off = kScale});
-    settings.set(kParts, Masks{.on = 0, .off = kProbe}, events);
+    settings.set_flags(kParts, Masks{.on = 0, .off = kProbe}, events);
     EXPECT_EQ(lookup.get_flags(kParts), (Masks{.on = 0, .off = kProbe}));
     EXPECT_EQ(state(kDual), PartState::Default);
     EXPECT_EQ(state(kProbe), PartState::Off);
     EXPECT_EQ(state(kScale), PartState::Default);
-    EXPECT_EQ(failure([&] { settings.set(kParts, Masks{.on = kDual, .off = kDual}, events); }),
-              std::string(kSubject) + "sets bit 0 both on and off");
+    EXPECT_EQ(
+        failure([&] { settings.set_flags(kParts, Masks{.on = kDual, .off = kDual}, events); }),
+        std::string(kSubject) + "sets bit 0 both on and off");
     EXPECT_EQ(options.get_flags(kParts), (Masks{.on = kDual, .off = kScale}));
 }
 

@@ -51,7 +51,7 @@ since 0.1.0
 
 type BIYOS_model
 summary A model.
-note It is made on an environment and holds the variables, functions, constraints and objectives of a problem.
+note It is made on an environment and holds the variables, functions, constraints and objectives of a problem, and its own values of options.
 see BIYOS_newmdl BIYOS_copymdl BIYOS_freemdl
 since 0.1.0
 
@@ -151,6 +151,7 @@ since 0.1.0
 group options Options
 text An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_ERR_BADARG`: nothing is converted, so an int option refuses `BIYOS_setenvdblopt`. Every call that takes an option id returns `BIYOS_ERR_BADARG` for an id it does not know, and a failed set leaves the option as it was. @sec-option-table lists every option.
 text Ranges include their ends and are checked exactly, with no tolerance, and NaN lies outside every range. Setting a deprecated option sets it and sends a warning event; setting a retired option, by any call, returns `BIYOS_ERR_BADARG` with a message that names the option to use instead, and changes nothing, while getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither.
+text Options have two levels. An option set on an environment is shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each call that sets or reads an option on the environment has a twin on the model, such as `BIYOS_setmdlintopt` beside `BIYOS_setenvintopt`, which checks the value in the same way. `BIYOS_delmdlopt` drops the model's own value, and `BIYOS_getmdloptsrc` tells where the value a model reads comes from. An option of environment scope is set on the environment only, and every model call on it returns `BIYOS_ERR_BADARG` with a message such as `invalid argument: option 'host': has environment scope`. No option of this release has environment scope.
 
 table Option kinds
 value BIYOS_KND_BOOL A bool, set with `BIYOS_setenvboolopt` and read with `BIYOS_getenvboolopt`.
@@ -159,6 +160,12 @@ value BIYOS_KND_DBL A double, set with `BIYOS_setenvdblopt` and read with `BIYOS
 value BIYOS_KND_STR A string, set with `BIYOS_setenvstropt` and read with `BIYOS_getenvstropt`.
 value BIYOS_KND_ENUM One of a list of values, set with `BIYOS_setenvintopt` and read with `BIYOS_getenvintopt`, each value a macro of the option's group.
 value BIYOS_KND_FLG A pair of masks, set with `BIYOS_setenvflgopt` and read with `BIYOS_getenvflgopt`: one forces parts on, the other forces parts off, each part a bit macro of the option's group.
+since 0.1.0
+
+table Option sources
+value BIYOS_OPTSRC_MDL The model holds its own value of the option.
+value BIYOS_OPTSRC_ENV The model shares the value set on its environment.
+value BIYOS_OPTSRC_DEFAULT Neither the model nor its environment set the option, so it holds its default.
 since 0.1.0
 
 table Option ids
@@ -244,7 +251,7 @@ summary Set a string option.
 param env in The environment.
 param opt in The id of a string option.
 param val in The value, copied by the call.
-return `BIYOS_OK` once the option is set. Pointers read earlier from this option are then no longer valid.
+return `BIYOS_OK` once the option is set. Pointers read earlier from this option stay valid.
 see BIYOS_getenvstropt
 since 0.1.0
 
@@ -293,7 +300,7 @@ param env in The environment.
 param opt in The id of a string option.
 param val out Receives the value.
 return `BIYOS_OK`, with the value in `*val`.
-note The string belongs to the environment. It stays valid until the option is set again or `env` is freed; a failed set of the option and a set of another option leave it valid.
+note The string belongs to the environment and stays valid until `env` is freed. Setting the option again, on the environment or on a model, leaves it valid.
 see BIYOS_setenvstropt
 since 0.1.0
 
@@ -308,9 +315,137 @@ note The masks are those set, never what a solve ran: a part in neither runs or 
 see BIYOS_setenvflgopt
 since 0.1.0
 
+function BIYOS_setmdlboolopt
+summary Set a model's own value of a bool option.
+param mdl in The model.
+param opt in The id of a bool option.
+param val in Nonzero for true, zero for false.
+return `BIYOS_OK` once the option is set.
+error BIYOS_ERR_BADARG The option has environment scope.
+see BIYOS_getmdlboolopt BIYOS_delmdlopt BIYOS_setenvboolopt
+since 0.1.0
+
+function BIYOS_setmdlintopt
+summary Set a model's own value of an int or enum option.
+param mdl in The model.
+param opt in The id of an int or enum option.
+param val in The value, inside the option's range. For an enum option, one of its values, such as `BIYOS_CHECKLVL_FULL`.
+return `BIYOS_OK` once the option is set.
+error BIYOS_ERR_BADARG The option has environment scope, or `val` is outside the option's range or is none of the values of an enum option.
+see BIYOS_getmdlintopt BIYOS_delmdlopt BIYOS_setenvintopt
+since 0.1.0
+
+function BIYOS_setmdldblopt
+summary Set a model's own value of a double option.
+param mdl in The model.
+param opt in The id of a double option.
+param val in The value, inside the option's range.
+return `BIYOS_OK` once the option is set.
+error BIYOS_ERR_BADARG The option has environment scope, or `val` is outside the option's range or is NaN.
+see BIYOS_getmdldblopt BIYOS_delmdlopt BIYOS_setenvdblopt
+since 0.1.0
+
+function BIYOS_setmdlstropt
+summary Set a model's own value of a string option.
+param mdl in The model.
+param opt in The id of a string option.
+param val in The value, copied by the call.
+return `BIYOS_OK` once the option is set. Pointers read earlier from this option stay valid.
+error BIYOS_ERR_BADARG The option has environment scope.
+see BIYOS_getmdlstropt BIYOS_delmdlopt BIYOS_setenvstropt
+since 0.1.0
+
+function BIYOS_setmdlflgopt
+summary Set a model's own value of a flags option.
+param mdl in The model.
+param opt in The id of a flags option.
+param on in The parts to force on, each a bit macro of the option's group.
+param off in The parts to force off. A part in neither mask keeps its default.
+return `BIYOS_OK` once the option is set.
+error BIYOS_ERR_BADARG The option has environment scope, or `on` or `off` holds a bit that is none of the option's parts, or a bit is in both.
+note The call sets both masks, so a part left out of both returns to its default, not to the environment's value.
+see BIYOS_getmdlflgopt BIYOS_delmdlopt BIYOS_setenvflgopt
+since 0.1.0
+
+function BIYOS_getmdlboolopt
+summary Read a bool option as a model sees it.
+param mdl in The model.
+param opt in The id of a bool option.
+param val out Receives 1 when the option is true and 0 when it is false.
+return `BIYOS_OK`, with the value in `*val`.
+error BIYOS_ERR_BADARG The option has environment scope.
+note The value is the model's own when it holds one, else the environment's.
+see BIYOS_setmdlboolopt BIYOS_getmdloptsrc
+since 0.1.0
+
+function BIYOS_getmdlintopt
+summary Read an int or enum option as a model sees it.
+param mdl in The model.
+param opt in The id of an int or enum option.
+param val out Receives the value.
+return `BIYOS_OK`, with the value in `*val`.
+error BIYOS_ERR_BADARG The option has environment scope.
+note The value is the model's own when it holds one, else the environment's.
+see BIYOS_setmdlintopt BIYOS_getmdloptsrc
+since 0.1.0
+
+function BIYOS_getmdldblopt
+summary Read a double option as a model sees it.
+param mdl in The model.
+param opt in The id of a double option.
+param val out Receives the value.
+return `BIYOS_OK`, with the value in `*val`.
+error BIYOS_ERR_BADARG The option has environment scope.
+note The value is the model's own when it holds one, else the environment's.
+see BIYOS_setmdldblopt BIYOS_getmdloptsrc
+since 0.1.0
+
+function BIYOS_getmdlstropt
+summary Read a string option as a model sees it.
+param mdl in The model.
+param opt in The id of a string option.
+param val out Receives the value.
+return `BIYOS_OK`, with the value in `*val`.
+error BIYOS_ERR_BADARG The option has environment scope.
+note The value is the model's own when it holds one, else the environment's. It stays valid until `mdl` is freed, whichever of the two it came from. Setting the option again, on the model or on its environment, leaves it valid.
+see BIYOS_setmdlstropt BIYOS_getmdloptsrc
+since 0.1.0
+
+function BIYOS_getmdlflgopt
+summary Read a flags option as a model sees it.
+param mdl in The model.
+param opt in The id of a flags option.
+param on out Receives the parts forced on.
+param off out Receives the parts forced off.
+return `BIYOS_OK`, with the masks in `*on` and `*off`.
+error BIYOS_ERR_BADARG The option has environment scope.
+note The masks are the model's own when it holds them, else the environment's.
+see BIYOS_setmdlflgopt BIYOS_getmdloptsrc
+since 0.1.0
+
+function BIYOS_delmdlopt
+summary Drop a model's own value of an option.
+param mdl in The model.
+param opt in The id of the option, of any kind.
+return `BIYOS_OK` once the model shares the environment's value. A model without its own value of the option is left as it is.
+error BIYOS_ERR_BADARG The option has environment scope.
+see BIYOS_setmdlintopt BIYOS_getmdloptsrc
+since 0.1.0
+
+function BIYOS_getmdloptsrc
+summary Tell where the value a model reads of an option comes from.
+param mdl in The model.
+param opt in The id of the option, of any kind.
+param src out Receives the source, one of the `BIYOS_OPTSRC_` values.
+return `BIYOS_OK`, with the source in `*src`.
+error BIYOS_ERR_BADARG The option has environment scope.
+note An option set on the environment to its default value comes from the environment.
+see BIYOS_delmdlopt
+since 0.1.0
+
 group events Events
 text biyos writes nothing to standard output or standard error. It reports through events, and a caller reads them by adding a hook on one kind of event at a lowest level. The hook then receives every event of that kind at that level or a more severe one. The hooks of an environment receive an event in the order they were added, and an event no hook wants is not built. They run one at a time: an event sent from one thread waits while a hook runs for another. Each event biyos sends is listed in [Events biyos sends](#sec-capi-sent).
-text While a hook runs, its environment delivers an event and is read-only to the hook's thread. The hook may read options, the last error, the event and the models made on the environment. Every call that would change the environment, setting an option, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change or free a model made on it fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error is again what it was before the hook ran.
+text While a hook runs, its environment delivers an event and is read-only to the hook's thread. The hook may read options, the last error, the event and the models made on the environment. Every call that would change the environment, setting one of its options, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change or free a model made on it fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error is again what it was before the hook ran.
 
 table Event kinds
 value BIYOS_EVT_MESSAGE A message: a level, the module that sent it, a text and fields.
@@ -454,6 +589,7 @@ param copy out Receives the copy; set to null on failure.
 return `BIYOS_OK`, with the copy in `*copy`.
 error BIYOS_ERR_BADARG `env` delivers an event.
 note The copy holds the same variables, functions, constraints and objectives as `mdl`, under the same indices and the same names, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of the two may be freed first.
+note The copy keeps the options set on `mdl` itself and reads every other option from `env`.
 note The call only reads `mdl`, so other threads may read it meanwhile. A change of `mdl`, of its environment or of `env` that would overlap it on another thread refuses one of the two calls with `BIYOS_ERR_BUSY`. It may run while the environment of `mdl` delivers an event. A failure keeps its message on the environment of `mdl`.
 see BIYOS_newmdl
 since 0.1.0
