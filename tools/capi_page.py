@@ -78,7 +78,7 @@ def name(text, anchor=""):
 
 
 def direction(key):
-    return f"[{DIRECTIONS[key]}]{{.dir .dir-{key}}}"
+    return f"[{DIRECTIONS[key]}]{{.dir}}"
 
 
 def above(head, text):
@@ -103,16 +103,24 @@ def errors(entry):
     return [stack("Error", [(f"`{c}`", t) for c, t in entry.errors])]
 
 
-def meta(entry):
-    parts = [f"[Since {entry.since}]{{.since}}"] if entry.since else []
-    if entry.see:
-        names = ", ".join(f"`{name}`" for name in entry.see)
-        parts.append(f"[See also]{{.see}} [{names}]{{.names}}")
+def dated(entry):
+    return [f"[since {entry.since}]{{.since}}"] if entry.since else []
+
+
+def seen(entry):
+    if not entry.see:
+        return []
+    names = ", ".join(f"`{name}`" for name in entry.see)
+    return [f"[See also]{{.see}} [{names}]{{.names}}"]
+
+
+def meta(parts):
     return ["::: {.meta}\n" + "\n".join(parts) + "\n:::"] if parts else []
 
 
 def title(entry):
-    shown = ", ".join(f"`{name}`" for name in entry.names)
+    names = ", ".join(f"`{name}`" for name in entry.names)
+    shown = " ".join([names, *dated(entry)])
     return f"### {shown} {{#{entry.name} .api .unnumbered .unlisted}}"
 
 
@@ -125,7 +133,7 @@ def declared(entry, declarations):
     body += parameters(entry)
     if entry.returns:
         body.append(f"**Returns** {entry.returns}")
-    body += errors(entry) + entry.notes + meta(entry)
+    body += errors(entry) + entry.notes + meta(seen(entry))
     return [title(entry), "::: {.entry}\n\n" + "\n\n".join(body) + "\n\n:::"]
 
 
@@ -140,7 +148,8 @@ def listed(entry, values):
         shown = f"[{values.get(key)}]{{.value}}"
         rows.append((label, shown, text) if known else (label, text))
     caption = f"\n\n: {entry.summary or entry.name}"
-    return [table(header, rows, weights, aligns) + caption, *meta(entry)]
+    shown = table(header, rows, weights, aligns) + caption
+    return [shown, *meta(seen(entry) + dated(entry))]
 
 
 def stacked(names):

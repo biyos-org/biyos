@@ -37,14 +37,15 @@ class PageTest(unittest.TestCase):
     def test_function(self):
         text = self.render(function())
         self.assertIn("## Environment {#sec-capi-env}", text)
-        self.assertIn("### `BIYOS_freeenv` {#BIYOS_freeenv .api", text)
+        heading = "### `BIYOS_freeenv` [since 0.1.0]{.since} {#BIYOS_freeenv"
+        self.assertIn(heading, text)
         self.assertIn(
             "```{.c .signature}\n"
             "BIYOS_status BIYOS_freeenv(BIYOS_env *env);\n```",
             text,
         )
         self.assertIn(
-            "| [`env`]{.name} [in]{.dir .dir-in} "
+            "| [`env`]{.name} [in]{.dir} "
             "[The environment.]{.under} |",
             text,
         )
@@ -53,7 +54,10 @@ class PageTest(unittest.TestCase):
             "| `BIYOS_ERR_BADARG` [It delivers an event.]{.under} |", text
         )
         self.assertIn("::: {.stack}\n| Error", text)
-        self.assertIn("[See also]{.see} [`BIYOS_newenv`]{.names}", text)
+        self.assertIn(
+            "::: {.meta}\n[See also]{.see} [`BIYOS_newenv`]{.names}\n:::",
+            text,
+        )
 
     def test_pair(self):
         entry = function()
@@ -65,7 +69,7 @@ class PageTest(unittest.TestCase):
         with redirect_stderr(io.StringIO()) as err:
             text = capi_page.render(group, VALUES, declared)
         self.assertEqual(err.getvalue(), "")
-        heading = "### `BIYOS_freeenv`, `BIYOS_freeenvrg` {#BIYOS_freeenv "
+        heading = "### `BIYOS_freeenv`, `BIYOS_freeenvrg` [since 0.1.0]"
         self.assertIn(heading, text)
         self.assertIn("[]{#BIYOS_freeenvrg}", text)
         self.assertIn("BIYOS_freeenvrg(int at);\n```", text)
@@ -90,6 +94,7 @@ class PageTest(unittest.TestCase):
         )
         self.assertRegex(text, r"\| -{20,} \| -+: \|")
         self.assertIn(": Codes", text)
+        self.assertIn("::: {.meta}\n[since 0.1.0]{.since}\n:::", text)
 
     def test_widths(self):
         text = self.render(function(), table())

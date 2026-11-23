@@ -90,7 +90,6 @@
 \definecolor{rowrule}{HTML}{E4E4DE}
 \definecolor{headrule}{HTML}{C9CCD4}
 \definecolor{headtint}{HTML}{EEF2FD}
-\definecolor{inktint}{HTML}{E9E9E5}
 \newlength{\biyostmp}
 \newlength{\biyosrest}
 \newlength{\biyoswA}
@@ -112,7 +111,7 @@
 \newenvironment{biyoskept}{\par\penalty0\vspace{6pt}\begingroup\biyostablesetup\setlength{\parskip}{0pt}}{\endgroup\par\nobreak\vspace{10pt}}
 \newcommand{\biyoslabel}[1]{{\scriptsize\bfseries\color{muted}\addfontfeatures{LetterSpace=6}\MakeUppercase{#1}}}
 \newcommand{\biyoshead}[1]{\biyoslabel{#1}}
-\newcommand{\biyossince}[1]{{\scriptsize\bfseries\color{link}\addfontfeatures{LetterSpace=6}\MakeUppercase{#1}}}
+\newcommand{\biyossince}[1]{\hfill{\footnotesize\normalfont\color{muted}#1}}
 \newcommand{\biyoscaption}[1]{\biyoslabel{#1}\rule[-6pt]{0pt}{6pt}}
 \newcommand{\biyosheadrow}{\biyosheadrule\rowcolor{headtint}}
 \newcommand{\biyosheadrule}{\arrayrulecolor{headrule}\specialrule{0.6pt}{0pt}{0pt}}
@@ -122,9 +121,6 @@
 \newcommand{\biyostype}[1]{{\color{muted}\ttfamily\footnotesize #1}}
 \newcommand{\biyosvalue}[1]{{\color{muted}\ttfamily #1}}
 \newcommand{\biyosunbroken}[1]{\mbox{#1}}
-\tcbset{biyospill/.style={enhanced, on line, frame hidden, arc=2.5pt, boxsep=0pt, left=3pt, right=3pt, top=0.8pt, bottom=0.8pt, fontupper=\scriptsize\bfseries}}
-\newtcbox{\biyosdirin}{biyospill, colback=headtint, colupper=link}
-\newtcbox{\biyosdirout}{biyospill, colback=inktint, colupper=brandink}
-\newtcbox{\biyosdirinout}{biyospill, colback=white, colframe=link, colupper=link, borderline={0.5pt}{0pt}{link}}
+\newcommand{\biyosdir}[1]{\enspace{\footnotesize\normalfont\color{muted}#1}}
 \newenvironment{biyosmeta}{\par\nopagebreak\footnotesize}{\par}
 \newcommand{\biyosalso}[1]{\par#1}

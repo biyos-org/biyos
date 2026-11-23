@@ -43,7 +43,17 @@ local function meta(div)
     return blocks
 end
 
+local function dated(span)
+    if span.classes:includes("since") then
+        return label(span, true)
+    end
+end
+
+local function heading(header)
+    return header:walk({Span = dated})
+end
+
 if quarto.doc.is_format("latex") then
-    return {{Div = meta}}
+    return {{Div = meta, Header = heading}}
 end
 return {}
