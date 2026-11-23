@@ -76,6 +76,10 @@ $$
 
 and an upper bound alike. Two finite values $a$ and $b$ are equal unless they differ by more than both `feastol_abs` and `feastol_rel` times $\max(1, |a|, |b|)$. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. An infinite value equals only itself and is not integral, and NaN is not zero, not integral, equal to no value and meets no bound.
 
+## Time limits {#sec-options-limits}
+
+`maxtime` limits the wall time of a solve and `maxcputime` its CPU time, both in seconds and read once as the solve starts. The CPU time is that of the thread that made the call, so solves running at once on other threads, on the same environment or another, never spend each other's budget. A solve that reaches a limit stops with the termination `BIYOS_TRM_TIMELIM` or `BIYOS_TRM_CPULIM`, an outcome rather than an error code.
+
 ## Options in Python {#sec-options-python}
 
 Python reads and sets options by name, with `env.getopt` and `env.setopt`. The value's Python type must match the kind: a `bool` for a bool option, an `int` for an int option, a number for a double option, a `str` for a string option, and for an enum option a member of its class, such as `CheckLevel.FULL`, or its number. A flags option takes a `Masks(on, off)` or any pair of `int`, and a mask that is negative or wider than 64 bits raises `OverflowError`. A mismatch raises `TypeError` before C is called. `getopt` returns the value of an enum option as a member of its class, and that of a flags option as a `Masks`.
