@@ -114,6 +114,11 @@ void Builder::apply(Operator op, Offset n)
     push(node);
 }
 
+Offset Builder::keep()
+{
+    return resolve(take(1));
+}
+
 Offset Builder::finish()
 {
     if (stack_.size() != 1)

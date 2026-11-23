@@ -95,6 +95,7 @@ biyos_add_test(test_model
     model/test_cones.cpp
     model/test_constraints.cpp
     model/test_copy.cpp
+    model/test_encoding.cpp
     model/test_expressions.cpp
     model/test_functions.cpp
     model/test_indicators.cpp
@@ -131,6 +132,7 @@ biyos_add_test(test_capi
     capi/test_products.cpp
     capi/test_quadratic.cpp
     capi/test_ranges.cpp
+    capi/test_rebuild.cpp
     capi/test_sos.cpp
     capi/test_terms.cpp
     capi/test_threads.cpp

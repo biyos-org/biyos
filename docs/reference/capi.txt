@@ -1952,7 +1952,7 @@ since 0.1.0
 
 group expressions Expressions
 text An expression is a node of the model's graph, an operator applied to its children, and the `BIYOS_OP_` constants number the operators. `BIYOS_attachexprsp` adds an expression to a function, as the nonlinear part of $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j + e(x)$. A node is named by its id, a `BIYOS_offset` counted from 0 in the order the nodes are added. Passing a node's id again shares the node, which is stored once however many parents use it, and each variable has one node. Every constant, coefficient and exponent of an expression is finite. @sec-graph describes each operator.
-text `BIYOS_addexpr` takes many expressions in one call, in postfix, where each operand comes before the operator that takes it: the form bindings and file readers write. Expression `k` is the entries from `off[k]` to `off[k + 1] - 1` of `code` and `arg`. An entry's code is a `BIYOS_OP_` constant and its argument a `BIYOS_offset`: for `BIYOS_OP_VAR` the variable, for `BIYOS_OP_NODE` the id of a node the model held before the call, and for an operator the number of operands it takes, 0 for `BIYOS_OP_CONST`. The values the operators take, as `BIYOS_addnode` reads them, follow one another in `val` in the order of the entries, expression after expression. Each expression leaves one operand, its top node. A sum that is an operand of a sum built in the same expression is merged into it, and so is a product that is an operand of a product, so $x_0 + (x_1 + x_2)$ becomes one sum of three terms. A node named by `BIYOS_OP_NODE` is used whole.
+text `BIYOS_addexpr` takes many expressions in one call, in postfix, where each operand comes before the operator that takes it: the form bindings and file readers write. Expression `k` is the entries from `off[k]` to `off[k + 1] - 1` of `code` and `arg`. An entry's code is a `BIYOS_OP_` constant and its argument a `BIYOS_offset`: for `BIYOS_OP_VAR` the variable, for `BIYOS_OP_NODE` the id of a node the model held before the call, and for an operator the number of operands it takes, 0 for `BIYOS_OP_CONST`. The values the operators take, as `BIYOS_addnode` reads them, follow one another in `val` in the order of the entries, expression after expression. Each expression leaves one operand, its top node. A sum that is an operand of a sum built in the same expression is merged into it, and so is a product that is an operand of a product, so $x_0 + (x_1 + x_2)$ becomes one sum of three terms. A node named by `BIYOS_OP_NODE` is used whole. `BIYOS_OP_KEEP`, with the argument 1, makes the operand before it a node of its own, used whole in the same way, so a sum can stay a child of a sum. `BIYOS_OP_REF` names that node again by the position in `code` of the `BIYOS_OP_KEEP` entry, which comes earlier in the same call, so the expressions of one call can share a node they build. Neither takes a value. `BIYOS_getexprsp` writes the expressions of functions back in this form.
 
 table Operators
 value BIYOS_OP_CONST A constant $c$, with no child.
@@ -1990,6 +1990,8 @@ value BIYOS_OP_SPOW $\operatorname{sign}(e)\, \lvert e \rvert^c$, with a constan
 takes $c$
 value BIYOS_OP_ERF $\operatorname{erf} e$, the error function.
 value BIYOS_OP_NODE No operator: in postfix, a node the model already holds, named by its id.
+value BIYOS_OP_KEEP No operator: in postfix, the operand before it kept as a node of its own.
+value BIYOS_OP_REF No operator: in postfix, the node kept by an earlier `BIYOS_OP_KEEP` entry of the same call, named by that entry's position.
 since 0.1.0
 
 function BIYOS_addvarnode
@@ -2006,7 +2008,7 @@ since 0.1.0
 function BIYOS_addnode
 summary Add a node, an operator applied to nodes the model holds.
 param mdl in The model.
-param op in The operator, a `BIYOS_OP_` constant other than `BIYOS_OP_VAR` and `BIYOS_OP_NODE`.
+param op in The operator, a `BIYOS_OP_` constant other than `BIYOS_OP_VAR`, `BIYOS_OP_NODE`, `BIYOS_OP_KEEP` and `BIYOS_OP_REF`.
 param n in The number of children.
 param arg in The ids of the `n` children, in order; may be null only when `n` is 0.
 param val in The values the operator takes, in order; null when it takes none. `BIYOS_OP_CONST` takes its value, `BIYOS_OP_PROD` its coefficient, `BIYOS_OP_CPOW` and `BIYOS_OP_SPOW` their exponent, and `BIYOS_OP_SUM` its constant followed by the weight of each child, `n + 1` values. The call reads no others.
@@ -2026,12 +2028,12 @@ summary Add expressions given in postfix.
 param mdl in The model.
 param n in The number of expressions.
 param off in The `n + 1` offsets of the expressions' entries in `code` and `arg`; may be null only when `n` is 0.
-param code in The code of each entry, an operator or `BIYOS_OP_NODE`; not read when there are no entries.
-param arg in The argument of each entry: a variable, a node id or a number of operands; not read when there are no entries.
+param code in The code of each entry, an operator, `BIYOS_OP_NODE`, `BIYOS_OP_KEEP` or `BIYOS_OP_REF`; not read when there are no entries.
+param arg in The argument of each entry: a variable, a node id, a number of operands or the position of an entry; not read when there are no entries.
 param val in The values the operators take, in the order of the entries; null when they take none.
 param node out Entry `k` receives the id of the top node of expression `k`; skipped when null.
 return `BIYOS_OK` once the expressions are added.
-error BIYOS_ERR_BADARG `n` is negative, `off` does not begin at 0 or decreases, or an expression is malformed: a code that is no operator, a variable or a node the model does not hold, an operator given a number of operands it does not take or more than are left, an expression that leaves no operand or more than one, or a value `BIYOS_addnode` would refuse. The message names the expression and the entry, counted from 0 in `code`, as in `invalid argument: expression 1: entry 4: 2 operands taken, 1 given`.
+error BIYOS_ERR_BADARG `n` is negative, `off` does not begin at 0 or decreases, or an expression is malformed: a code that is no operator, a variable or a node the model does not hold, an operator given a number of operands it does not take or more than are left, a `BIYOS_OP_REF` that names no earlier `BIYOS_OP_KEEP` entry, an expression that leaves no operand or more than one, or a value `BIYOS_addnode` would refuse. The message names the expression and the entry, counted from 0 in `code`, as in `invalid argument: expression 1: entry 4: 2 operands taken, 1 given`.
 note A call that fails adds no node, so the next call gives the same ids again.
 see BIYOS_addnode BIYOS_attachexprsp
 since 0.1.0
@@ -2063,6 +2065,41 @@ note The constraints and objectives that use a function keep using it. Its expre
 note An expression's linear and quadratic parts join the function's own, and nothing tells them apart afterwards, so no call takes an expression back from a function: the function is emptied and built again.
 note A call moves the terms of every function from the lowest one it lists on, so many functions are best emptied in one call.
 see BIYOS_attachexprsp BIYOS_addfun
+since 0.1.0
+
+function BIYOS_getnexprsp BIYOS_getnexprrg
+summary Count the postfix entries and values of the expressions of functions.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of postfix entries of the expressions.
+param nval out Receives the number of values those entries take.
+return `BIYOS_OK`, with the numbers in `*nnz` and `*nval`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, the range ends past the last function, or `nnz` or `nval` is null.
+note The numbers are the `cap` and `valcap` that `BIYOS_getexprsp` and `BIYOS_getexprrg` need for the same entries. A refused call writes nothing.
+see BIYOS_getexprsp
+since 0.1.0
+
+function BIYOS_getexprsp BIYOS_getexprrg
+summary Read the expressions of functions, in the postfix `BIYOS_addexpr` takes.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of postfix entries `code` and `arg` hold.
+param valcap in The number of values `val` holds.
+param off out Receives `n + 1` offsets from 0, the expression of entry `k` being the postfix entries from `off[k]` to `off[k + 1] - 1`; skipped when null.
+param code out Receives the code of each postfix entry; skipped when null.
+param arg out Receives the argument of each postfix entry; skipped when null.
+param val out Receives the values the entries take, in their order; skipped when null.
+return `BIYOS_OK` once the arrays are written.
+error BIYOS_ERR_BADARG `pos`, `n`, `cap` or `valcap` is negative, an index is not that of a function, the range ends past the last function, or `cap` or `valcap` is less than the number `BIYOS_getnexprsp` gives.
+note The expression of a function is the part that stayed in the graph once its constant, linear and quadratic terms were split off, which `BIYOS_getcstsp`, `BIYOS_getrlintermsp` and `BIYOS_getquadtermsp` read. A function with no expression reads as one `BIYOS_OP_CONST` entry with the value 0.
+note A node the expressions use more than once is written once, followed by `BIYOS_OP_KEEP`, and named again by `BIYOS_OP_REF`; so is a sum that is a term of a sum, and a product that is a factor of a product. No entry is `BIYOS_OP_NODE`, so `BIYOS_addexpr` adds the same expressions from these arrays to any model with at least as many variables.
+note Attached to the functions read, the expressions split as they did, provided the model read added every expression before attaching any, attached each one and cleared no function. Otherwise a node shared with an expression no function holds may split differently.
+note A refused call writes nothing.
+see BIYOS_getnexprsp BIYOS_addexpr BIYOS_attachexprsp
 since 0.1.0
 
 group callbacks Callbacks

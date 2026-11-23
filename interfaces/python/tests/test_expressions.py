@@ -105,6 +105,26 @@ def test_postfix(model):
     assert next_id(model) == 9
 
 
+KEPT_CODE = [
+    Operator.VARIABLE,
+    Operator.VARIABLE,
+    Operator.SUM,
+    Operator.KEEP,
+    Operator.REFERENCE,
+    Operator.SUM,
+    Operator.REFERENCE,
+    Operator.SQRT,
+]
+KEPT_ARG = [0, 1, 2, 1, 3, 2, 3, 1]
+KEPT_VAL = [0.0, 1.0, 1.0, 0.5, 2.0, 3.0]
+
+
+def test_kept(model):
+    tops = model.addexpr([0, 6, 8], KEPT_CODE, KEPT_ARG, KEPT_VAL)
+    assert tops == [3, 4]
+    assert next_id(model) == 5
+
+
 def test_same_graph(env):
     with biyos.Model(env) as nodes, biyos.Model(env) as postfix:
         for model in (nodes, postfix):
@@ -189,6 +209,72 @@ def test_clear(model):
     assert message == "invalid argument: function 2: unknown"
 
 
+def rebuilt(env, model):
+    copy = biyos.Model(env)
+    copy.addvar(model.getnvar())
+    f = copy.addfun(model.getnfun())
+    copy.setcst(f, model.getcst(range(model.getnfun())))
+    copy.addlinterm(*model.getrlinterm())
+    copy.addquadterm(*model.getquadterm())
+    copy.attachexpr(f, copy.addexpr(*model.getexpr()))
+    return copy
+
+
+def test_read(model):
+    top = model.addexpr(OFF, CODE, ARG, VAL)
+    model.attachexpr([1], top)
+    assert model.getnexpr() == (3, 1)
+    off, code, arg, val = model.getexpr()
+    assert (off, code, arg, val) == (
+        [0, 1, 3],
+        [Operator.CONSTANT, Operator.VARIABLE, Operator.EXP],
+        [0, 1, 1],
+        [0.0],
+    )
+    assert all(type(entry) is Operator for entry in code)
+    twice = [Operator.VARIABLE, Operator.EXP, Operator.KEEP]
+    twice += [Operator.REFERENCE]
+    assert model.getexpr([1, 1]) == ([0, 3, 4], twice, [1, 1, 1, 2], [])
+    assert model.getnexpr([1, 1]) == (4, 0)
+    assert model.getexpr([]) == ([0], [], [], [])
+    assert model.getnexpr(range(2, 2)) == (0, 0)
+
+
+def test_round_trip(env, model):
+    tops = model.addexpr([0, 6, 8], KEPT_CODE, KEPT_ARG, KEPT_VAL)
+    x = model.addvarnode(0)
+    sine = model.addnode(Operator.SIN, [x])
+    ratio = model.addnode(Operator.DIVISION, [sine, sine])
+    f = model.addfun(2)
+    model.attachexpr([0, 1, f[0]], [*tops, ratio])
+    model.addlinterm([f[1]], [2], [4.0])
+    model.addquadterm([f[1]], [1], [2], [0.5])
+    with rebuilt(env, model) as copy:
+        assert copy.getexpr() == model.getexpr()
+        assert copy.getcst(range(4)) == model.getcst(range(4))
+        assert copy.getrlinterm() == model.getrlinterm()
+        assert copy.getquadterm() == model.getquadterm()
+    code = [Operator.VARIABLE, Operator.SIN, Operator.KEEP]
+    code += [Operator.REFERENCE, Operator.DIVISION, Operator.CONSTANT]
+    assert model.getexpr(f) == ([0, 5, 6], code, [0, 1, 1, 2, 2, 0], [0.0])
+
+
+@pytest.mark.parametrize(
+    "kind, form", [("block", "rg"), ("range", "rg"), ("list", "sp")]
+)
+def test_read_forms(model, monkeypatch, kind, form):
+    f = model.addfun(2)
+    idx = {"block": f, "range": range(2, 4), "list": [2, 3]}[kind]
+    model.attachexpr([3], model.addexpr(OFF, CODE, ARG, VAL))
+    seen = []
+    trace(monkeypatch, seen, "getnexpr")
+    trace(monkeypatch, seen, "getexpr")
+    code = [Operator.CONSTANT, Operator.VARIABLE, Operator.EXP]
+    assert model.getexpr(idx) == ([0, 1, 3], code, [0, 1, 1], [0.0])
+    assert model.getnexpr(idx) == (3, 1)
+    assert seen == [form] * 3
+
+
 def test_refused(model):
     x = model.addvarnode(0)
     expression = "invalid argument: expression 0: "
@@ -197,6 +283,10 @@ def test_refused(model):
         (([0, 1], [31], [0]), "entry 0: operator 31 is unknown"),
         (([0, 1], [Operator.VARIABLE], [3]), "entry 0: variable 3 is unknown"),
         (([0, 1], [Operator.NODE], [1]), "entry 0: node 1 is unknown"),
+        (
+            ([0, 2], [Operator.VARIABLE, Operator.REFERENCE], [0, 0]),
+            "entry 1: entry 0 is no earlier keep",
+        ),
         (
             ([0, 2], [Operator.VARIABLE, Operator.DIVISION], [0, 2]),
             "entry 1: 2 operands taken, 1 given",
@@ -219,6 +309,8 @@ def test_refused(model):
     )
     message = refusal(model.addnode, Operator.NODE, [x])
     assert message == "invalid argument: expression: operator 30 is unknown"
+    message = refusal(model.addnode, Operator.KEEP, [x])
+    assert message == "invalid argument: expression: operator 32 is unknown"
     message = refusal(model.addnode, Operator.PRODUCT, [x])
     assert message == "invalid argument: argument 'val': is null"
     message = refusal(model.addvarnode, 3)
@@ -233,6 +325,12 @@ def test_refused(model):
     assert message == "invalid argument: function 2: unknown"
     message = refusal(model.attachexpr, range(1), [1])
     assert message == "invalid argument: function 0: node 1 is unknown"
+    message = refusal(model.getexpr, [2])
+    assert message == "invalid argument: function 2: unknown"
+    message = refusal(model.getexpr, range(1, 3))
+    assert message == "invalid argument: function 2: unknown"
+    message = refusal(model.getnexpr, [0, 2])
+    assert message == "invalid argument: function 2: unknown"
     assert next_id(model) == 1
 
 
@@ -278,8 +376,8 @@ def test_gone(model, monkeypatch):
     model._gen += 1
     seen = []
     names = ["BIYOS_addvarnode"]
-    for call in ("BIYOS_attachexpr", "BIYOS_clrfun"):
-        names += [f"{call}sp", f"{call}rg"]
+    for call in ("attachexpr", "clrfun", "getnexpr", "getexpr"):
+        names += [f"BIYOS_{call}sp", f"BIYOS_{call}rg"]
     for name in names:
         spy = partial(recorded, seen, getattr(lib, name))
         monkeypatch.setattr(lib, name, spy)
@@ -288,6 +386,7 @@ def test_gone(model, monkeypatch):
         ("the variable predates", partial(model.addvarnode, variable)),
         (stale, partial(model.attachexpr, f, [0])),
         (stale, partial(model.clrfun, f)),
+        (stale, partial(model.getexpr, f)),
     ]
     for message, call in cases:
         with pytest.raises(ValueError, match=message):
@@ -311,11 +410,13 @@ def test_locked(env, model):
                 call()
             except biyos.Error as error:
                 seen.append(str(error))
+        seen.append(model.getexpr())
 
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [LOCKED] * 5
+    empty = ([0, 1, 2], [Operator.CONSTANT] * 2, [0, 0], [0.0, 0.0])
+    assert seen == [LOCKED] * 5 + [empty]
     assert next_id(model) == 0
 
 
@@ -328,6 +429,8 @@ def test_closed(env):
         partial(model.addexpr, [0], [], []),
         partial(model.attachexpr, [], []),
         partial(model.clrfun, []),
+        partial(model.getnexpr, []),
+        partial(model.getexpr, []),
     )
     for call in calls:
         with pytest.raises(ValueError, match="the model is closed"):

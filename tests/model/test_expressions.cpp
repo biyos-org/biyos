@@ -270,6 +270,8 @@ TEST(ExpressionTest, RefusedNode)
     const std::string bad = "invalid argument: expression: ";
     EXPECT_EQ(refused(model, {0, {x}, {}}), bad + "operator 0 is unknown");
     EXPECT_EQ(refused(model, {BIYOS_OP_ERF + 1, {x}, {}}), bad + "operator 30 is unknown");
+    EXPECT_EQ(refused(model, {BIYOS_OP_KEEP, {x}, {}}), bad + "operator 32 is unknown");
+    EXPECT_EQ(refused(model, {BIYOS_OP_REF, {x}, {}}), bad + "operator 33 is unknown");
     EXPECT_EQ(refused(model, {BIYOS_OP_VAR, {}, {}}), bad + "operator 2 takes a variable");
     EXPECT_EQ(refused(model, {BIYOS_OP_EXP, {1}, {}}), bad + "node 1 is unknown");
     EXPECT_EQ(refused(model, {BIYOS_OP_EXP, {-1}, {}}), bad + "node -1 is unknown");
@@ -704,6 +706,104 @@ TEST(ExpressionTest, PostfixMerged)
     EXPECT_EQ(bits(model.graph().coefficients(4)[0]), bits(8.0));
     EXPECT_EQ(bits(model.graph().coefficients(4)[1]), bits(12.0));
     EXPECT_EQ(bits(model.graph().coefficients(4)[2]), bits(5.0));
+}
+
+TEST(ExpressionTest, PostfixKept)
+{
+    Model model = with_functions(2);
+    const Program program{
+        .starts = {0, 6, 12},
+        .codes =
+            {
+                BIYOS_OP_VAR,
+                BIYOS_OP_VAR,
+                BIYOS_OP_SUM,
+                BIYOS_OP_KEEP,
+                BIYOS_OP_VAR,
+                BIYOS_OP_SUM,
+                BIYOS_OP_VAR,
+                BIYOS_OP_VAR,
+                BIYOS_OP_PROD,
+                BIYOS_OP_KEEP,
+                BIYOS_OP_VAR,
+                BIYOS_OP_PROD,
+            },
+        .arguments = {0, 1, 2, 1, 2, 2, 0, 1, 2, 1, 2, 2},
+        .values = {0.5, 1.0, 2.0, 0.0, 3.0, 4.0, 2.0, 3.0},
+    };
+    const std::vector<Offset> tops = decoded(model, program);
+    EXPECT_EQ(tops, (std::vector<Offset>{4, 6}));
+    EXPECT_EQ(children_of(model, 4), (std::vector<Offset>{2, 3}));
+    EXPECT_EQ(children_of(model, 2), (std::vector<Offset>{0, 1}));
+    EXPECT_EQ(bits(model.graph().constant(2)), bits(0.5));
+    EXPECT_EQ(bits(model.graph().coefficients(4)[1]), bits(4.0));
+    EXPECT_EQ(children_of(model, 6), (std::vector<Offset>{5, 3}));
+    EXPECT_EQ(bits(model.graph().constant(5)), bits(2.0));
+    EXPECT_EQ(bits(model.graph().constant(6)), bits(3.0));
+}
+
+TEST(ExpressionTest, PostfixReference)
+{
+    Model model = with_functions(2);
+    const Program program{
+        .starts = {0, 5, 7, 11},
+        .codes =
+            {
+                BIYOS_OP_VAR,
+                BIYOS_OP_EXP,
+                BIYOS_OP_KEEP,
+                BIYOS_OP_REF,
+                BIYOS_OP_DIV,
+                BIYOS_OP_REF,
+                BIYOS_OP_SIN,
+                BIYOS_OP_VAR,
+                BIYOS_OP_KEEP,
+                BIYOS_OP_REF,
+                BIYOS_OP_PROD,
+            },
+        .arguments = {0, 1, 1, 2, 2, 2, 1, 1, 1, 8, 2},
+        .values = {1.0},
+    };
+    const std::vector<Offset> tops = decoded(model, program);
+    EXPECT_EQ(tops, (std::vector<Offset>{2, 3, 5}));
+    EXPECT_EQ(children_of(model, 2), (std::vector<Offset>{1, 1}));
+    EXPECT_EQ(children_of(model, 3), std::vector<Offset>{1});
+    EXPECT_EQ(children_of(model, 5), (std::vector<Offset>{4, 4}));
+    EXPECT_EQ(model.graph().size(), 6);
+}
+
+TEST(ExpressionTest, KeepErrors)
+{
+    Model model = with_functions(1);
+    model.add_variable_node(0);
+    const Model before = model;
+    const std::string entry = "invalid argument: expression 0: entry ";
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_KEEP}, {1}, {})),
+              entry + "0: 1 operand taken, 0 given");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_KEEP}, {0, 2}, {})),
+              entry + "1: operator 32 takes 1 child, not 2");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_KEEP}, {0, 0}, {})),
+              entry + "1: operator 32 takes 1 child, not 0");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_REF}, {0, 0}, {})),
+              entry + "1: entry 0 is no earlier keep");
+    EXPECT_EQ(
+        decode_refusal(model, single({BIYOS_OP_VAR, BIYOS_OP_KEEP, BIYOS_OP_REF}, {0, 1, 2}, {})),
+        entry + "2: entry 2 is no earlier keep");
+    EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_REF}, {-1}, {})),
+              entry + "0: entry -1 is no earlier keep");
+    EXPECT_EQ(
+        decode_refusal(
+            model,
+            single({BIYOS_OP_VAR, BIYOS_OP_KEEP, BIYOS_OP_REF, BIYOS_OP_DIV}, {0, 1, 0, 2}, {})),
+        entry + "2: entry 0 is no earlier keep");
+    const Program later{
+        .starts = {0, 1, 3},
+        .codes = {BIYOS_OP_REF, BIYOS_OP_VAR, BIYOS_OP_KEEP},
+        .arguments = {2, 0, 1},
+        .values = {},
+    };
+    EXPECT_EQ(decode_refusal(model, later), entry + "0: entry 2 is no earlier keep");
+    expect_same(model, before);
 }
 
 TEST(ExpressionTest, PostfixValues)

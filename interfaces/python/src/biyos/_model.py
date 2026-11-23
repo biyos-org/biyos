@@ -1395,6 +1395,83 @@ class Model:
         """
         self._call(*self._chosen("BIYOS_clrfun", Functions, idx))
 
+    def getnexpr(
+        self, idx: Sequence[int | Function] | Functions | None = None
+    ) -> tuple[int, int]:
+        """Count the postfix entries and values of expressions of functions.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
+
+        Returns
+        -------
+        nnz
+            The number of entries ``getexpr`` returns for them.
+        nval
+            The number of values those entries take.
+
+        See Also
+        --------
+        BIYOS_getnexprsp
+        BIYOS_getnexprrg
+        """
+        every = range(self.getnfun()) if idx is None else idx
+        nnz = c_int64()
+        nval = c_int64()
+        chosen = self._chosen("BIYOS_getnexpr", Functions, every)
+        self._call(*chosen, byref(nnz), byref(nval))
+        return nnz.value, nval.value
+
+    def getexpr(
+        self, idx: Sequence[int | Function] | Functions | None = None
+    ) -> tuple[list[int], list[Operator], list[int], list[float]]:
+        """Read the expressions of functions, in the postfix of ``addexpr``.
+
+        The expression of a function is what stayed in the graph once its
+        terms were split off; a function with no expression reads as the
+        constant 0. A node the expressions use more than once is written
+        once, followed by ``Operator.KEEP``, and named again by
+        ``Operator.REFERENCE``. No entry is ``Operator.NODE``, so
+        ``addexpr`` adds the same expressions to any model with at least as
+        many variables.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
+
+        Returns
+        -------
+        off
+            The offsets of the expressions' entries, one more than there are
+            functions read, from 0.
+        code
+            The code of each entry.
+        arg
+            The argument of each entry, as ``addexpr`` takes it.
+        val
+            The values the entries take, one after another in their order.
+
+        See Also
+        --------
+        BIYOS_getexprsp
+        BIYOS_getexprrg
+        """
+        every = range(self.getnfun()) if idx is None else idx
+        nnz, nval = self.getnexpr(every)
+        chosen = self._chosen("BIYOS_getexpr", Functions, every)
+        starts = (c_int64 * (len(every) + 1))()
+        codes = (c_int * nnz)()
+        args = (c_int64 * nnz)()
+        values = (c_double * nval)()
+        self._call(*chosen, nnz, nval, starts, codes, args, values)
+        operators = [Operator(code) for code in codes]
+        return list(starts), operators, list(args), list(values)
+
     def addcb(
         self,
         funidx: Sequence[int | Function] | Functions,

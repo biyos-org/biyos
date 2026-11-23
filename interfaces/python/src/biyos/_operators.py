@@ -3,11 +3,14 @@ from enum import IntEnum
 
 
 class Operator(IntEnum):
-    """The codes of an expression's entries: its operators and ``NODE``.
+    """The codes of an expression's entries: its operators and three more.
 
     Each member is the C constant of the same number, ``CONSTANT`` for
-    ``BIYOS_OP_CONST`` through ``ERF`` for ``BIYOS_OP_ERF``. ``NODE`` is no
-    operator: in postfix it names a node the model holds, by its id.
+    ``BIYOS_OP_CONST`` through ``ERF`` for ``BIYOS_OP_ERF``. The last three
+    are no operators and appear only in postfix. ``NODE`` names a node the
+    model holds, by its id. ``KEEP`` makes the operand before it a node of
+    its own, and ``REFERENCE`` names that node again by the position of the
+    ``KEEP`` entry.
 
     See Also
     --------
@@ -44,6 +47,8 @@ class Operator(IntEnum):
     SIGN_POWER = 28
     ERF = 29
     NODE = 30
+    KEEP = 32
+    REFERENCE = 33
 
 
 _ONE_VALUE = frozenset(

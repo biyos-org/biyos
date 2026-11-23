@@ -24,6 +24,7 @@ class Builder
     void power(double exponent);
     void sign_power(double exponent);
     void apply(Operator op, Offset n);
+    Offset keep();
     Offset finish();
 
   private:

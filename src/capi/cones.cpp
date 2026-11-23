@@ -167,7 +167,7 @@ void get_members(const BIYOS_model &model,
                  Compressed<Index> out)
 {
     const auto chosen = selected(model.core, Family::Cone, selection);
-    check_capacity(capacity, count_of(model.core, chosen, kMembers), "members");
+    check_capacity(capacity, count_of(model.core, chosen, kMembers), "cap", "members");
     write_kinds(model.core, chosen, kinds);
     write_part(model.core, chosen, kMembers, out);
 }
@@ -179,7 +179,7 @@ void get_parameters(const BIYOS_model &model,
                     Compressed<double> out)
 {
     const auto chosen = selected(model.core, Family::Cone, selection);
-    check_capacity(capacity, count_of(model.core, chosen, kParameters), "parameters");
+    check_capacity(capacity, count_of(model.core, chosen, kParameters), "cap", "parameters");
     write_part(model.core, chosen, kParameters, out);
 }
 

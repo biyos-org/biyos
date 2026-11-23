@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -19,6 +20,17 @@ using biyos::test::Env;
 using biyos::test::Model;
 
 constexpr BIYOS_offset kNoNode = -7;
+
+std::vector<std::uint64_t> bits_of(const std::vector<double> &values)
+{
+    std::vector<std::uint64_t> bits;
+    bits.reserve(values.size());
+    for (const double value : values)
+    {
+        bits.push_back(std::bit_cast<std::uint64_t>(value));
+    }
+    return bits;
+}
 
 struct Attempt
 {
@@ -200,6 +212,69 @@ std::vector<BIYOS_offset> roots_of(const Model &model, int n)
 {
     const std::span<const biyos::Offset> roots = model.get()->core.roots(0, n);
     return {roots.begin(), roots.end()};
+}
+
+Program sized(BIYOS_offset nnz, BIYOS_offset nval, int n)
+{
+    return Program{
+        .starts = std::vector<std::int64_t>(static_cast<std::size_t>(n) + 1, -1),
+        .codes = std::vector<int>(static_cast<std::size_t>(nnz), -1),
+        .arguments = std::vector<std::int64_t>(static_cast<std::size_t>(nnz), -1),
+        .values = std::vector<double>(static_cast<std::size_t>(nval), -1.0),
+    };
+}
+
+BIYOS_status get_range(const Model &model, BIYOS_index pos, BIYOS_index n, Program &read)
+{
+    return BIYOS_getexprrg(model.get(),
+                           pos,
+                           n,
+                           static_cast<BIYOS_offset>(read.codes.size()),
+                           static_cast<BIYOS_offset>(read.values.size()),
+                           read.starts.data(),
+                           read.codes.data(),
+                           read.arguments.data(),
+                           read.values.data());
+}
+
+Program read_range(const Model &model, BIYOS_index pos, BIYOS_index n)
+{
+    BIYOS_offset nnz = -1;
+    BIYOS_offset nval = -1;
+    EXPECT_EQ(BIYOS_getnexprrg(model.get(), pos, n, &nnz, &nval), BIYOS_OK);
+    Program read = sized(nnz, nval, n);
+    EXPECT_EQ(get_range(model, pos, n, read), BIYOS_OK);
+    return read;
+}
+
+Program read_list(const Model &model, const std::vector<int> &functions)
+{
+    const auto n = static_cast<int>(functions.size());
+    BIYOS_offset nnz = -1;
+    BIYOS_offset nval = -1;
+    EXPECT_EQ(BIYOS_getnexprsp(model.get(), n, functions.data(), &nnz, &nval), BIYOS_OK);
+    Program read = sized(nnz, nval, n);
+    const BIYOS_status status = BIYOS_getexprsp(model.get(),
+                                                n,
+                                                functions.data(),
+                                                nnz,
+                                                nval,
+                                                read.starts.data(),
+                                                read.codes.data(),
+                                                read.arguments.data(),
+                                                read.values.data());
+    EXPECT_EQ(status, BIYOS_OK);
+    return read;
+}
+
+void add_ratio(const Model &model)
+{
+    add_variables(model, 2);
+    add_functions(model, 3);
+    const BIYOS_offset sine = node_of(model, BIYOS_OP_SIN, {variable_node(model, 0)}, {});
+    const BIYOS_offset y = variable_node(model, 1);
+    const BIYOS_offset ratio = node_of(model, BIYOS_OP_DIV, {sine, y}, {});
+    ASSERT_EQ(attach(model, {0, 2}, {sine, ratio}), BIYOS_OK);
 }
 
 void note(Attempt &attempt, BIYOS_status status)
@@ -667,4 +742,104 @@ TEST(CApiTest, ClearRange)
     EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
     EXPECT_EQ(BIYOS_clrfunrg(model.get(), 3, 0), BIYOS_OK);
     EXPECT_EQ(roots_of(model, 3), roots);
+}
+
+TEST(CApiTest, ReadExpressions)
+{
+    const Env env;
+    const Model model(env);
+    add_ratio(model);
+    const Program all = read_range(model, 0, 3);
+    EXPECT_EQ(all.starts, (std::vector<std::int64_t>{0, 3, 4, 7}));
+    const std::vector<int> codes{
+        BIYOS_OP_VAR,
+        BIYOS_OP_SIN,
+        BIYOS_OP_KEEP,
+        BIYOS_OP_CONST,
+        BIYOS_OP_REF,
+        BIYOS_OP_VAR,
+        BIYOS_OP_DIV,
+    };
+    EXPECT_EQ(all.codes, codes);
+    EXPECT_EQ(all.arguments, (std::vector<std::int64_t>{0, 1, 1, 0, 2, 1, 2}));
+    EXPECT_EQ(bits_of(all.values), bits_of({0.0}));
+    const Program twice = read_list(model, {2, 2});
+    EXPECT_EQ(twice.starts, (std::vector<std::int64_t>{0, 5, 6}));
+    const std::vector<int> shared{
+        BIYOS_OP_VAR,
+        BIYOS_OP_SIN,
+        BIYOS_OP_VAR,
+        BIYOS_OP_DIV,
+        BIYOS_OP_KEEP,
+        BIYOS_OP_REF,
+    };
+    EXPECT_EQ(twice.codes, shared);
+    EXPECT_EQ(twice.arguments, (std::vector<std::int64_t>{0, 1, 1, 2, 1, 4}));
+    EXPECT_TRUE(twice.values.empty());
+    EXPECT_EQ(read_range(model, 3, 0).starts, std::vector<std::int64_t>{0});
+    EXPECT_EQ(env.message(), "");
+}
+
+TEST(CApiTest, PartialRead)
+{
+    const Env env;
+    const Model model(env);
+    add_ratio(model);
+    std::vector<int> codes(7, -1);
+    const BIYOS_status status =
+        BIYOS_getexprrg(model.get(), 0, 3, 7, 1, nullptr, codes.data(), nullptr, nullptr);
+    EXPECT_EQ(status, BIYOS_OK);
+    EXPECT_EQ(codes, read_range(model, 0, 3).codes);
+    EXPECT_EQ(BIYOS_getexprrg(model.get(), 1, 0, 0, 0, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_OK);
+}
+
+TEST(CApiTest, RefusedRead)
+{
+    const Env env;
+    const Model model(env);
+    add_ratio(model);
+    const std::string bad = "invalid argument: ";
+    Program read = sized(6, 1, 3);
+    EXPECT_EQ(get_range(model, 0, 3, read), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'cap': holds 6 of the 7 entries");
+    read = sized(7, 0, 3);
+    EXPECT_EQ(get_range(model, 0, 3, read), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'valcap': holds 0 of the 1 values");
+    EXPECT_EQ(read.starts, std::vector<std::int64_t>(4, -1));
+    EXPECT_EQ(read.codes, std::vector<int>(7, -1));
+    EXPECT_EQ(read.arguments, std::vector<std::int64_t>(7, -1));
+    EXPECT_EQ(BIYOS_getexprrg(model.get(), 0, 3, -1, 1, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'cap': -1 is negative");
+    EXPECT_EQ(get_range(model, 2, 2, read), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "function 3: unknown");
+    const int unknown[] = {0, 3};
+    EXPECT_EQ(BIYOS_getexprsp(model.get(), 2, unknown, 7, 1, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "function 3: unknown");
+    EXPECT_EQ(BIYOS_getexprsp(model.get(), 1, nullptr, 7, 1, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'idx': is null");
+}
+
+TEST(CApiTest, RefusedCount)
+{
+    const Env env;
+    const Model model(env);
+    add_ratio(model);
+    const std::string bad = "invalid argument: ";
+    BIYOS_offset nnz = -1;
+    BIYOS_offset nval = -1;
+    EXPECT_EQ(BIYOS_getnexprrg(model.get(), 0, 3, nullptr, &nval), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'nnz': is null");
+    EXPECT_EQ(BIYOS_getnexprrg(model.get(), 0, 3, &nnz, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'nval': is null");
+    EXPECT_EQ(BIYOS_getnexprrg(model.get(), 0, -1, &nnz, &nval), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
+    const int unknown[] = {3};
+    EXPECT_EQ(BIYOS_getnexprsp(model.get(), 1, unknown, &nnz, &nval), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "function 3: unknown");
+    EXPECT_EQ(nnz, -1);
+    EXPECT_EQ(nval, -1);
 }

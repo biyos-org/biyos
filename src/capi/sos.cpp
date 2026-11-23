@@ -160,7 +160,7 @@ void get_sos(const BIYOS_model &model,
              const Outputs &out)
 {
     const auto chosen = selected(model.core, Family::Sos, selection);
-    check_capacity(capacity, count_of(model.core, chosen), "members");
+    check_capacity(capacity, count_of(model.core, chosen), "cap", "members");
     write_sos(model.core, chosen, out);
 }
 

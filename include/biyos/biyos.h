@@ -907,6 +907,8 @@ BIYOS_API BIYOS_status BIYOS_delcconnamerg(BIYOS_model *mdl, BIYOS_index pos, BI
 #define BIYOS_OP_SPOW 28
 #define BIYOS_OP_ERF 29
 #define BIYOS_OP_NODE 30
+#define BIYOS_OP_KEEP 32
+#define BIYOS_OP_REF 33
 
 BIYOS_API BIYOS_status BIYOS_addvarnode(BIYOS_model *mdl, BIYOS_index var, BIYOS_offset *node);
 BIYOS_API BIYOS_status BIYOS_addnode(BIYOS_model *mdl,
@@ -932,6 +934,34 @@ BIYOS_API BIYOS_status BIYOS_attachexprrg(BIYOS_model *mdl,
                                           const BIYOS_offset *node);
 BIYOS_API BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
+BIYOS_API BIYOS_status BIYOS_getnexprsp(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        BIYOS_offset *nnz,
+                                        BIYOS_offset *nval);
+BIYOS_API BIYOS_status BIYOS_getnexprrg(const BIYOS_model *mdl,
+                                        BIYOS_index pos,
+                                        BIYOS_index n,
+                                        BIYOS_offset *nnz,
+                                        BIYOS_offset *nval);
+BIYOS_API BIYOS_status BIYOS_getexprsp(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_offset cap,
+                                       BIYOS_offset valcap,
+                                       BIYOS_offset *off,
+                                       BIYOS_int *code,
+                                       BIYOS_offset *arg,
+                                       BIYOS_real *val);
+BIYOS_API BIYOS_status BIYOS_getexprrg(const BIYOS_model *mdl,
+                                       BIYOS_index pos,
+                                       BIYOS_index n,
+                                       BIYOS_offset cap,
+                                       BIYOS_offset valcap,
+                                       BIYOS_offset *off,
+                                       BIYOS_int *code,
+                                       BIYOS_offset *arg,
+                                       BIYOS_real *val);
 
 typedef struct BIYOS_cbreq
 {

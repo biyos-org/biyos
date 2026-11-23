@@ -8,12 +8,14 @@
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
 #include "model/checks.hpp"
+#include "model/model.hpp"
 #include "model/nodes.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace biyos
@@ -42,6 +44,12 @@ Offset arity_of(Operator op, Offset argument) noexcept
     return op == Operator::Variable ? 0 : argument;
 }
 
+struct Kept
+{
+    Offset entry;
+    Offset node;
+};
+
 class Decoder
 {
   public:
@@ -51,9 +59,12 @@ class Decoder
 
   private:
     void read(std::size_t k, std::size_t e);
-    void step(int code, Offset argument);
+    void step(std::size_t e, int code, Offset argument);
     void take(Operator op, Offset arity);
+    void pop(Offset arity);
     void build(Operator op, Offset argument);
+    void keep(std::size_t e, Offset arity);
+    void reference(Offset entry);
     void node(Offset id);
     void variable(Offset variable);
     std::span<const double> values(Offset n);
@@ -62,6 +73,7 @@ class Decoder
     Index n_variables_;
     Offset n_nodes_;
     const Postfix &postfix_;
+    std::vector<Kept> kept_;
     std::size_t next_ = 0;
     Offset depth_ = 0;
 };
@@ -91,7 +103,7 @@ void Decoder::read(std::size_t k, std::size_t e)
 {
     try
     {
-        step(postfix_.codes[e], postfix_.arguments[e]);
+        step(e, postfix_.codes[e], postfix_.arguments[e]);
     }
     catch (const Error &error)
     {
@@ -104,11 +116,21 @@ void Decoder::read(std::size_t k, std::size_t e)
     }
 }
 
-void Decoder::step(int code, Offset argument)
+void Decoder::step(std::size_t e, int code, Offset argument)
 {
     if (code == BIYOS_OP_NODE)
     {
         node(argument);
+        return;
+    }
+    if (code == BIYOS_OP_KEEP)
+    {
+        keep(e, argument);
+        return;
+    }
+    if (code == BIYOS_OP_REF)
+    {
+        reference(argument);
         return;
     }
     const Operator op = to_operator(code);
@@ -119,6 +141,11 @@ void Decoder::step(int code, Offset argument)
 void Decoder::take(Operator op, Offset arity)
 {
     check_shape(op, payload_of(op), arity);
+    pop(arity);
+}
+
+void Decoder::pop(Offset arity)
+{
     if (arity > depth_)
     {
         refuse_entry(operand_text(arity) + " taken, " + text_of(depth_) + " given");
@@ -179,6 +206,31 @@ void Decoder::build(Operator op, Offset argument)
     }
 }
 
+void Decoder::keep(std::size_t e, Offset arity)
+{
+    if (arity != 1)
+    {
+        const std::string wanted = "operator " + text_of(BIYOS_OP_KEEP) + " takes 1 child";
+        refuse_entry(wanted + ", not " + text_of(arity));
+    }
+    pop(arity);
+    kept_.push_back(Kept{
+        .entry = static_cast<Offset>(e),
+        .node = builder_.keep(),
+    });
+}
+
+void Decoder::reference(Offset entry)
+{
+    const auto found = std::ranges::lower_bound(kept_, entry, {}, &Kept::entry);
+    if (found == kept_.end() || found->entry != entry)
+    {
+        refuse_entry("entry " + text_of(entry) + " is no earlier keep");
+    }
+    builder_.node(found->node);
+    ++depth_;
+}
+
 void Decoder::node(Offset id)
 {
     check_child(id, n_nodes_);
@@ -212,6 +264,181 @@ Offset clamped(Offset argument, Offset most) noexcept
     return (std::clamp)(argument, Offset{0}, most);
 }
 
+constexpr Offset kUnwritten = -1;
+
+struct Frame
+{
+    Offset node;
+    bool kept;
+    std::size_t next;
+};
+
+bool merges(Operator parent, Operator child) noexcept
+{
+    return parent == child && (child == Operator::Sum || child == Operator::Product);
+}
+
+class Encoder
+{
+  public:
+    explicit Encoder(const Graph &graph);
+
+    Encoding encode(std::span<const Offset> roots);
+
+  private:
+    void count(Offset root);
+    void reach(Offset node);
+    void expression(Offset root);
+    void step();
+    void meet(Offset node, bool nested);
+    void finish(const Frame &frame);
+    void put(int code, Offset argument);
+    void put_values(Offset node);
+
+    const Graph &graph_;
+    std::vector<Offset> meetings_;
+    std::vector<Offset> positions_;
+    std::vector<Offset> pending_;
+    std::vector<Frame> frames_;
+    Encoding encoding_;
+};
+
+Encoder::Encoder(const Graph &graph)
+    : graph_(graph), meetings_(at(graph.size()), 0), positions_(at(graph.size()), kUnwritten)
+{
+}
+
+Encoding Encoder::encode(std::span<const Offset> roots)
+{
+    for (const Offset root : roots)
+    {
+        count(root);
+    }
+    encoding_.starts.push_back(0);
+    for (const Offset root : roots)
+    {
+        expression(root);
+        encoding_.starts.push_back(static_cast<Offset>(encoding_.codes.size()));
+    }
+    return std::move(encoding_);
+}
+
+void Encoder::count(Offset root)
+{
+    if (root == kNoRoot)
+    {
+        return;
+    }
+    reach(root);
+    while (!pending_.empty())
+    {
+        const Offset node = pending_.back();
+        pending_.pop_back();
+        for (const Offset child : graph_.children(node))
+        {
+            reach(child);
+        }
+    }
+}
+
+void Encoder::reach(Offset node)
+{
+    ++meetings_[at(node)];
+    if (meetings_[at(node)] == 1)
+    {
+        pending_.push_back(node);
+    }
+}
+
+void Encoder::expression(Offset root)
+{
+    if (root == kNoRoot)
+    {
+        put(BIYOS_OP_CONST, 0);
+        encoding_.values.push_back(0.0);
+        return;
+    }
+    meet(root, false);
+    while (!frames_.empty())
+    {
+        step();
+    }
+}
+
+void Encoder::step()
+{
+    Frame &top = frames_.back();
+    const std::span<const Offset> children = graph_.children(top.node);
+    if (top.next == children.size())
+    {
+        const Frame done = top;
+        frames_.pop_back();
+        finish(done);
+        return;
+    }
+    const Offset child = children[top.next];
+    ++top.next;
+    meet(child, merges(graph_.op(top.node), graph_.op(child)));
+}
+
+void Encoder::meet(Offset node, bool nested)
+{
+    if (graph_.op(node) == Operator::Variable)
+    {
+        put(BIYOS_OP_VAR, graph_.variable(node));
+        return;
+    }
+    const Offset position = positions_[at(node)];
+    if (position != kUnwritten)
+    {
+        put(BIYOS_OP_REF, position);
+        return;
+    }
+    frames_.push_back(Frame{
+        .node = node,
+        .kept = nested || meetings_[at(node)] > 1,
+        .next = 0,
+    });
+}
+
+void Encoder::finish(const Frame &frame)
+{
+    const auto op = static_cast<int>(graph_.op(frame.node));
+    put(op, static_cast<Offset>(graph_.children(frame.node).size()));
+    put_values(frame.node);
+    if (frame.kept)
+    {
+        positions_[at(frame.node)] = static_cast<Offset>(encoding_.codes.size());
+        put(BIYOS_OP_KEEP, 1);
+    }
+}
+
+void Encoder::put(int code, Offset argument)
+{
+    encoding_.codes.push_back(code);
+    encoding_.arguments.push_back(argument);
+}
+
+void Encoder::put_values(Offset node)
+{
+    switch (payload_of(graph_.op(node)))
+    {
+    case Payload::None:
+    case Payload::Variable:
+        return;
+    case Payload::Constant:
+        encoding_.values.push_back(graph_.constant(node));
+        return;
+    case Payload::Coefficients:
+    {
+        encoding_.values.push_back(graph_.constant(node));
+        const std::span<const double> weights = graph_.coefficients(node);
+        encoding_.values.insert(encoding_.values.end(), weights.begin(), weights.end());
+        return;
+    }
+    }
+}
+
 }
 
 Offset n_values(std::span<const int> codes, std::span<const Offset> arguments)
@@ -236,6 +463,12 @@ std::vector<Offset> decode(Graph &graph, Index variables, const Postfix &postfix
         tops.push_back(decoder.expression(k));
     }
     return tops;
+}
+
+Encoding encode(const Graph &graph, std::span<const Offset> roots)
+{
+    Encoder encoder(graph);
+    return encoder.encode(roots);
 }
 
 }

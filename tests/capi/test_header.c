@@ -103,7 +103,8 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
     BIYOS_OP_MAX != 16 || BIYOS_OP_MIN != 17 || BIYOS_OP_ASIN != 18 || BIYOS_OP_ACOS != 19 ||      \
     BIYOS_OP_ATAN != 20 || BIYOS_OP_SINH != 21 || BIYOS_OP_COSH != 22 || BIYOS_OP_TANH != 23 ||    \
     BIYOS_OP_ASINH != 24 || BIYOS_OP_ACOSH != 25 || BIYOS_OP_ATANH != 26 || BIYOS_OP_ENT != 27 ||  \
-    BIYOS_OP_SPOW != 28 || BIYOS_OP_ERF != 29 || BIYOS_OP_NODE != 30
+    BIYOS_OP_SPOW != 28 || BIYOS_OP_ERF != 29 || BIYOS_OP_NODE != 30 || BIYOS_OP_KEEP != 32 ||     \
+    BIYOS_OP_REF != 33
 #error "a public operator changed"
 #endif
 
@@ -635,6 +636,10 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getnquadtermrg(model, 0, 0, &needed) != BIYOS_OK ||
         BIYOS_getquadtermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getquadtermrg(model, 0, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getnexprsp(model, 0, NULL, &needed, &needed) != BIYOS_OK ||
+        BIYOS_getnexprrg(model, 0, 0, &needed, &needed) != BIYOS_OK ||
+        BIYOS_getexprsp(model, 0, NULL, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getexprrg(model, 0, 0, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getncon(model, &count) != BIYOS_OK ||
         BIYOS_getconrg(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getconbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
