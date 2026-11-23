@@ -1,5 +1,6 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "model/compare.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 #include "sample.hpp"
@@ -21,6 +22,7 @@ namespace
 
 using biyos::ConeKind;
 using biyos::Constraint;
+using biyos::difference;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
@@ -236,6 +238,17 @@ TEST(ConeTest, SharedFunction)
     EXPECT_EQ(members_of(model, 0, 2), (std::vector<Index>{1, 0, 2, 1}));
     EXPECT_EQ(model.constraint(0).function, 1);
     EXPECT_EQ(model.n_functions(), 3);
+}
+
+TEST(ConeTest, Copied)
+{
+    Model model = with_functions(5);
+    add(model, pair());
+    const Model copy = model;
+    EXPECT_EQ(difference(model, copy), "");
+    add(model, one(ConeKind::Semidefinite, {0, 1, 2}));
+    EXPECT_EQ(difference(copy, model), "cone count 2 against 3");
+    EXPECT_EQ(copy.n_cones(), 2);
 }
 
 TEST(ConeTest, UnknownFunction)

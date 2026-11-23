@@ -112,6 +112,16 @@ std::string differ(const Member &a, const Member &b)
     });
 }
 
+std::string differ(Index a, Index b)
+{
+    return compared("function", a, b);
+}
+
+std::string differ(double a, double b)
+{
+    return compared("value", a, b);
+}
+
 template <typename T> Offset size_of(std::span<const T> terms)
 {
     return static_cast<Offset>(terms.size());
@@ -220,6 +230,21 @@ std::string sos_difference(const Model &a, const Model &b, Index sos)
     });
 }
 
+int cone_kind(const Model &model, Index cone)
+{
+    return static_cast<int>(model.cone_kinds(cone, 1).front());
+}
+
+std::string cone_difference(const Model &a, const Model &b, Index cone)
+{
+    return first_of({
+        compared("kind", cone_kind(a, cone), cone_kind(b, cone)),
+        term_differences("member", a.cone_functions(cone, 1), b.cone_functions(cone, 1)),
+        term_differences("parameter", a.cone_parameters(cone, 1), b.cone_parameters(cone, 1)),
+        named(a, b, Family::Cone, cone),
+    });
+}
+
 std::string variable_differences(const Model &a, const Model &b)
 {
     const auto variable = [&](Index k) { return variable_difference(a, b, k); };
@@ -257,6 +282,12 @@ std::string sos_differences(const Model &a, const Model &b)
     return table_difference("set", a.n_sos(), b.n_sos(), sos);
 }
 
+std::string cone_differences(const Model &a, const Model &b)
+{
+    const auto cone = [&](Index k) { return cone_difference(a, b, k); };
+    return table_difference("cone", a.n_cones(), b.n_cones(), cone);
+}
+
 }
 
 std::string difference(const Model &a, const Model &b)
@@ -285,6 +316,10 @@ std::string difference(const Model &a, const Model &b)
     if (found.empty())
     {
         found = sos_differences(a, b);
+    }
+    if (found.empty())
+    {
+        found = cone_differences(a, b);
     }
     return found;
 }

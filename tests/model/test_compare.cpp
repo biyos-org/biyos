@@ -13,6 +13,7 @@
 namespace
 {
 
+using biyos::ConeKind;
 using biyos::difference;
 using biyos::Indicator;
 using biyos::LinearTerm;
@@ -182,6 +183,32 @@ TEST(CompareTest, SosFields)
     EXPECT_EQ(from_sample(n), "set 1: member count 2 against 1");
 }
 
+TEST(CompareTest, ConeFields)
+{
+    Parts kind = sample();
+    kind.cones.kinds[0] = ConeKind::Rotated;
+    EXPECT_EQ(from_sample(kind), "cone 0: kind 2 against 3");
+    Parts member = sample();
+    member.cones.functions[1] = 1;
+    EXPECT_EQ(from_sample(member), "cone 0: member 1: function 0 against 1");
+    Parts members = sample();
+    members.cones.starts[2] = 4;
+    members.cones.functions.pop_back();
+    EXPECT_EQ(from_sample(members), "cone 1: member count 3 against 2");
+    Parts value = sample();
+    value.cones.parameters[0] = 0.5;
+    EXPECT_EQ(from_sample(value), "cone 1: parameter 0: value 0.25 against 0.5");
+    Parts parameters = sample();
+    parameters.cones.parameter_starts[2] = 1;
+    parameters.cones.parameters.pop_back();
+    EXPECT_EQ(from_sample(parameters), "cone 1: parameter count 2 against 1");
+    Parts both = sample();
+    both.cones.kinds[1] = ConeKind::DualPower;
+    both.cones.functions[2] = 1;
+    both.cones.functions[3] = 0;
+    EXPECT_EQ(from_sample(both), "cone 1: kind 6 against 7");
+}
+
 TEST(CompareTest, Counts)
 {
     Parts variables = sample();
@@ -204,6 +231,14 @@ TEST(CompareTest, Counts)
     sos.sos.members.resize(3);
     sos.sos_names = {.indices = {}, .names = {}};
     EXPECT_EQ(from_sample(sos), "set count 2 against 1");
+    Parts cones = sample();
+    cones.cones.kinds.pop_back();
+    cones.cones.starts.pop_back();
+    cones.cones.parameter_starts.pop_back();
+    cones.cones.functions.resize(2);
+    cones.cones.parameters.clear();
+    cones.cone_names = {};
+    EXPECT_EQ(from_sample(cones), "cone count 2 against 1");
 }
 
 TEST(CompareTest, Names)
@@ -245,6 +280,9 @@ TEST(CompareTest, Names)
     Parts sos = sample();
     sos.sos_names = {.indices = {0}, .names = {"t"}};
     EXPECT_EQ(from_sample(sos), "set 0: name none against 't'");
+    Parts cone = sample();
+    cone.cone_names.names[0] = "j";
+    EXPECT_EQ(from_sample(cone), "cone 1: name 'k' against 'j'");
 }
 
 TEST(CompareTest, OneUlp)
@@ -263,6 +301,9 @@ TEST(CompareTest, OneUlp)
     Parts weight = sample();
     weight.objectives[0].weight = std::nextafter(2.0, kInfinity);
     EXPECT_EQ(from_sample(weight), "objective 0: weight 2 against 2.0000000000000004");
+    Parts parameter = sample();
+    parameter.cones.parameters[1] = std::nextafter(0.75, kInfinity);
+    EXPECT_EQ(from_sample(parameter), "cone 1: parameter 1: value 0.75 against 0.7500000000000001");
 }
 
 TEST(CompareTest, SignedZero)
@@ -326,6 +367,10 @@ TEST(CompareTest, Order)
     objective.constraints[2].upper = 4.0;
     objective.objectives[0].weight = 3.0;
     EXPECT_EQ(from_sample(objective), "constraint 2: upper bound 3 against 4");
+    Parts cone = sample();
+    cone.objectives[1].weight = 3.0;
+    cone.cones.kinds[0] = ConeKind::Nonnegative;
+    EXPECT_EQ(from_sample(cone), "objective 1: weight 1 against 3");
     Parts first = sample();
     first.name = "other";
     first.variables.push_back(first.variables[0]);

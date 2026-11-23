@@ -21,6 +21,7 @@
 namespace
 {
 
+using biyos::ConeKind;
 using biyos::Family;
 using biyos::Graph;
 using biyos::Index;
@@ -197,6 +198,33 @@ void add_two(Model &model)
     model.add_functions(constants, starts, {{0, 1.0}});
 }
 
+Model with_cone()
+{
+    Model model;
+    const std::vector<double> constants(3, 0.0);
+    const std::vector<Offset> starts(4, 0);
+    model.add_functions(constants, starts, {});
+    const ConeKind kind = ConeKind::Nonnegative;
+    const Index function = 1;
+    const std::vector<Offset> none{0, 0};
+    model.add_cones(std::span(&kind, 1),
+                    std::vector<Offset>{0, 1},
+                    std::span(&function, 1),
+                    none,
+                    {});
+    return model;
+}
+
+void add_cones(Model &model)
+{
+    const std::vector<ConeKind> kinds{ConeKind::SecondOrder, ConeKind::Power};
+    const std::vector<Offset> starts{0, 2, 5};
+    const std::vector<Index> functions{2, 0, 0, 1, 2};
+    const std::vector<Offset> parameter_starts{0, 0, 2};
+    const std::vector<double> parameters{0.25, 0.75};
+    model.add_cones(kinds, starts, functions, parameter_starts, parameters);
+}
+
 void add_sum(Model &model)
 {
     const std::vector<Offset> children{0, 1};
@@ -367,6 +395,25 @@ TEST(AllocationTest, Functions)
             EXPECT_GT(successes, 0U);
             EXPECT_EQ(model.roots(0, 2).size(), 2U);
             EXPECT_EQ(model.roots(0, 2)[1], biyos::kNoRoot);
+            return;
+        }
+        EXPECT_EQ(biyos::difference(model, before), "");
+    }
+    ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, Cones)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        const Model before = with_cone();
+        Model model = before;
+        if (!runs_out_with(model, add_cones, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(model.n_cones(), 3);
+            EXPECT_EQ(model.cone_functions(0, 3).size(), 6U);
+            EXPECT_EQ(model.cone_parameters(0, 3).size(), 2U);
             return;
         }
         EXPECT_EQ(biyos::difference(model, before), "");
