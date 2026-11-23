@@ -49,11 +49,21 @@ RecordView Records::get() const noexcept
 
 void Records::swap(Record &record) noexcept
 {
-    const std::lock_guard held(lock_);
-    const auto found = std::ranges::find(entries_, this_thread(), &Entry::thread);
-    if (found != entries_.end())
+    try
     {
-        std::swap(found->record, record);
+        const std::lock_guard held(lock_);
+        const auto found = std::ranges::find(entries_, this_thread(), &Entry::thread);
+        if (found != entries_.end())
+        {
+            std::swap(found->record, record);
+        }
+        else if (record.status != BIYOS_OK)
+        {
+            std::swap(slot(this_thread()), record);
+        }
+    }
+    catch (...)
+    {
     }
 }
 

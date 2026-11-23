@@ -1,12 +1,15 @@
 #include "core/clock.hpp"
 #include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/records.hpp"
 #include "delivery.hpp"
 
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cstddef>
 #include <functional>
+#include <latch>
 #include <memory>
 #include <string>
 #include <thread>
@@ -63,6 +66,29 @@ void env_scope(biyos::Env &env)
 void fail_worker(biyos::Env &env)
 {
     env.record_error(biyos::ErrorKind::Internal, "worker");
+}
+
+void fail_together(biyos::Env &env, std::latch &all)
+{
+    env.record_error(biyos::ErrorKind::Internal, "crowd");
+    all.arrive_and_wait();
+}
+
+void crowded_scope(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope scope(env);
+    env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
+    std::latch all(biyos::kRecords);
+    std::vector<std::thread> threads;
+    for (std::size_t i = 0; i < biyos::kRecords; ++i)
+    {
+        threads.emplace_back(fail_together, std::ref(env), std::ref(all));
+    }
+    for (std::thread &thread : threads)
+    {
+        thread.join();
+    }
+    EXPECT_EQ(env.last_error().status, BIYOS_OK);
 }
 
 void shared_scope(biyos::Env &env)
@@ -178,6 +204,15 @@ TEST(EnvTest, IdleScope)
     env.record_error(biyos::ErrorKind::InvalidArgument, "outer");
     two_errors(env);
     EXPECT_STREQ(env.last_error().text, "later");
+}
+
+TEST(EnvTest, CrowdedScope)
+{
+    biyos::Env env;
+    env.record_error(biyos::ErrorKind::InvalidArgument, "outer");
+    biyos::test::in_delivery(env, crowded_scope);
+    EXPECT_EQ(env.last_error().status, BIYOS_ERR_BADARG);
+    EXPECT_STREQ(env.last_error().text, "outer");
 }
 
 TEST(EnvTest, ThreadScope)
