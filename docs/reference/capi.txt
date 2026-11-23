@@ -1330,6 +1330,87 @@ value BIYOS_CONE_DPOW The dual power cone of $(t_1, \dots, t_m, x)$ with weights
 value BIYOS_CONE_PSD The semidefinite cone of the symmetric matrices $X$ of order $n$ with no negative eigenvalue. The members are the lower triangle of $X$ column by column, $X_{11}, \sqrt{2} X_{21}, \dots, \sqrt{2} X_{n1}, X_{22}, \sqrt{2} X_{32}, \dots, X_{nn}$, each entry off the diagonal scaled by $\sqrt{2}$ so that inner products are kept. Dimension $n(n+1)/2$ with $n \ge 1$.
 since 0.1.0
 
+function BIYOS_addcone
+summary Add cones after the last one.
+param mdl in The model.
+param n in The number of cones to add.
+param knd in The kind of each, one of the cone kinds; may be null only when `n` is 0.
+param off in The `n + 1` offsets of the cones' members; may be null only when `n` is 0.
+param funidx in The members of each cone, in order; not read when there are none.
+param prmoff in The `n + 1` offsets of the cones' parameters; null gives no cone a parameter.
+param prm in The parameters of each cone, in order; not read when there are none.
+param pos out Receives the index of the first new cone; skipped when null.
+return `BIYOS_OK` once the cones are added.
+error BIYOS_ERR_BADARG `n` is negative, `off` or `prmoff` does not begin at 0 or decreases, a kind is unknown, a cone has no member, a member is not a function of the model or appears twice in a cone, a dimension does not suit the kind, a cone is given parameters its kind does not take or none when it takes some, or a parameter is not finite and positive.
+error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 cones, or more members or parameters than any allocation can hold.
+note Cone `p + j`, where `p` is the number of cones before the call, takes the kind `knd[j]`, the members from `funidx[off[j]]` to `funidx[off[j + 1] - 1]` and the parameters from `prm[prmoff[j]]` to `prm[prmoff[j + 1] - 1]`. A refused call changes nothing.
+see BIYOS_getconerg BIYOS_getconeprmrg
+since 0.1.0
+
+function BIYOS_getncone
+summary Give the number of cones.
+param mdl in The model.
+param n out Receives the number of cones.
+return `BIYOS_OK`, with the number in `*n`.
+since 0.1.0
+
+function BIYOS_getnconefunsp BIYOS_getnconefunrg
+summary Count the members of cones.
+param mdl in The model.
+param pos in In the `rg` form, the first cone of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of members of the entries, a cone counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a cone, the range ends past the last cone, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getconesp` and `BIYOS_getconerg` need for the same entries.
+see BIYOS_getconesp BIYOS_getnconeprmsp
+since 0.1.0
+
+function BIYOS_getconesp BIYOS_getconerg
+summary Read the kinds and members of cones.
+param mdl in The model.
+param pos in In the `rg` form, the first cone of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of members `funidx` holds.
+param knd out Entry `j` receives the kind of cone `idx[j]` or `pos + j`; skipped when null.
+param off out Receives `n + 1` offsets from 0; skipped when null.
+param funidx out Receives the members of each entry, in order; skipped when null.
+return `BIYOS_OK` once the arrays are written, the members of entry `j` from `funidx[off[j]]` to `funidx[off[j + 1] - 1]`.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a cone, the range ends past the last cone, or `cap` is less than the number of members `BIYOS_getnconefunsp` gives.
+note With `BIYOS_getconeprmsp`, it reads back what `BIYOS_addcone` takes. A refused call writes nothing.
+see BIYOS_getnconefunsp BIYOS_getconeprmsp BIYOS_addcone
+since 0.1.0
+
+function BIYOS_getnconeprmsp BIYOS_getnconeprmrg
+summary Count the parameters of cones.
+param mdl in The model.
+param pos in In the `rg` form, the first cone of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of parameters of the entries, a cone counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a cone, the range ends past the last cone, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getconeprmsp` and `BIYOS_getconeprmrg` need for the same entries.
+see BIYOS_getconeprmsp BIYOS_getnconefunsp
+since 0.1.0
+
+function BIYOS_getconeprmsp BIYOS_getconeprmrg
+summary Read the parameters of cones.
+param mdl in The model.
+param pos in In the `rg` form, the first cone of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of parameters `prm` holds.
+param prmoff out Receives `n + 1` offsets from 0; skipped when null.
+param prm out Receives the parameters of each entry, in order; skipped when null.
+return `BIYOS_OK` once the arrays are written, the parameters of entry `j` from `prm[prmoff[j]]` to `prm[prmoff[j + 1] - 1]`.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a cone, the range ends past the last cone, or `cap` is less than the number of parameters `BIYOS_getnconeprmsp` gives.
+note A refused call writes nothing.
+see BIYOS_getnconeprmsp BIYOS_getconesp BIYOS_addcone
+since 0.1.0
+
 group names Names
 text The model and each variable, function, constraint, objective, indicator and special ordered set may have a name, as [Names](#sec-model-names) describes. A name is not empty, is well-formed UTF-8 and holds no NUL. A C string ends at its first NUL, so a name passed in C never holds one. Names match byte for byte. An item has no name until one is set, and reads as an empty string while it has none.
 text Names may repeat: setting a name checks no uniqueness, and several items of a family may hold one name. A lookup never chooses among them: it finds an item only when that item alone holds the name. Every family takes the same four calls, named after its short form, `var`, `fun`, `con`, `obj`, `ind` or `sos`, and keeps its names apart from those of the other families.

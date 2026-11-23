@@ -300,6 +300,42 @@ static BIYOS_status use_sos(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status use_cones(BIYOS_model *model)
+{
+    const int kinds[2] = {BIYOS_CONE_SOC, BIYOS_CONE_POW};
+    const int64_t offsets[3] = {0, 2, 4};
+    const int functions[4] = {1, 0, 0, 1};
+    const int64_t starts[3] = {0, 0, 1};
+    const double weights[1] = {0.5};
+    const int indices[1] = {1};
+    int64_t read[3] = {-1, -1, -1};
+    int members[4] = {-1, -1, -1, -1};
+    int found[2] = {0, 0};
+    double weight = 0.0;
+    BIYOS_index first = -1;
+    BIYOS_index cones = 0;
+    int64_t needed = -1;
+    if (BIYOS_addcone(model, 2, kinds, offsets, functions, starts, weights, &first) != BIYOS_OK ||
+        BIYOS_getncone(model, &cones) != BIYOS_OK || first != 0 || cones != 2 ||
+        BIYOS_getnconefunrg(model, 0, 2, &needed) != BIYOS_OK || needed != 4 ||
+        BIYOS_getconerg(model, 0, 2, 4, found, read, members) != BIYOS_OK ||
+        found[1] != BIYOS_CONE_POW || read[1] != 2 || members[0] != 1)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    if (BIYOS_getnconeprmsp(model, 1, indices, &needed) != BIYOS_OK || needed != 1 ||
+        BIYOS_getconeprmsp(model, 1, indices, 1, read, &weight) != BIYOS_OK || read[1] != 1 ||
+        memcmp(&weight, weights, sizeof weight) != 0 ||
+        BIYOS_getnconefunsp(model, 0, NULL, &needed) != BIYOS_OK ||
+        BIYOS_getconesp(model, 0, NULL, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getnconeprmrg(model, 0, 0, &needed) != BIYOS_OK ||
+        BIYOS_getconeprmrg(model, 0, 0, 0, NULL, NULL) != BIYOS_OK)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static BIYOS_status use_nodes(BIYOS_model *model)
 {
     BIYOS_offset x = -1;
@@ -609,6 +645,10 @@ int main(void)
         use_sos(model) != BIYOS_OK || use_names(model) != BIYOS_OK ||
         use_options(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK ||
         use_readers(env, model) != BIYOS_OK)
+    {
+        status = BIYOS_ERR_INTERNAL;
+    }
+    if (use_cones(model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }
