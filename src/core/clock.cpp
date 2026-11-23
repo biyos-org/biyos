@@ -42,7 +42,7 @@ std::chrono::nanoseconds process_time()
     FILETIME exited{};
     FILETIME kernel{};
     FILETIME user{};
-    if (GetProcessTimes(GetCurrentProcess(), &created, &exited, &kernel, &user) == 0)
+    if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) == 0)
     {
         throw unreadable();
     }
@@ -54,7 +54,7 @@ std::chrono::nanoseconds process_time()
 std::chrono::nanoseconds process_time()
 {
     timespec now{};
-    if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &now) != 0)
+    if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now) != 0)
     {
         throw unreadable();
     }
