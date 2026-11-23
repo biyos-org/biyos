@@ -42,6 +42,7 @@ typedef struct BIYOS_error
 #define BIYOS_OK 0
 #define BIYOS_ERR_BADARG (-100)
 #define BIYOS_ERR_BUSY (-202)
+#define BIYOS_ERR_INUSE (-203)
 #define BIYOS_ERR_NOMEMORY (-400)
 #define BIYOS_ERR_INTERNAL (-500)
 

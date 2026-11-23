@@ -24,6 +24,14 @@ TEST(ErrorTest, Busy)
     EXPECT_STREQ(error.what(), "busy: model: is in a call on another thread");
 }
 
+TEST(ErrorTest, InUse)
+{
+    const biyos::Error error(biyos::ErrorKind::InUse, "variable 2", "indicator 0 needs it binary");
+    EXPECT_EQ(error.kind(), biyos::ErrorKind::InUse);
+    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_INUSE);
+    EXPECT_STREQ(error.what(), "in use: variable 2: indicator 0 needs it binary");
+}
+
 TEST(ErrorTest, NoMemory)
 {
     const biyos::Error error(biyos::ErrorKind::NoMemory, "workspace", "needs 3 GB");

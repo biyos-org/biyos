@@ -9,7 +9,7 @@ The hundreds of an error code say who is at fault:
 | Codes | At fault | Today |
 | --- | --- | --- |
 | −100 to −199 | the caller | `BIYOS_ERR_BADARG`, −100 |
-| −200 to −299 | the model | `BIYOS_ERR_BUSY`, −202 |
+| −200 to −299 | the model | `BIYOS_ERR_BUSY`, −202, `BIYOS_ERR_INUSE`, −203 |
 | −300 to −399 | user code, such as a callback | none yet |
 | −400 to −499 | resources | `BIYOS_ERR_NOMEMORY`, −400 |
 | −500 to −599 | biyos itself | `BIYOS_ERR_INTERNAL`, −500 |
@@ -28,7 +28,7 @@ Besides the codes the reference names for a call, any call can return `BIYOS_ERR
 ```{.c file="examples/c/errors.c" item="report"}
 ```
 
-The message starts with the kind of failure, `invalid argument`, `busy`, `out of memory` or `internal error`, then says what was wrong:
+The message starts with the kind of failure, `invalid argument`, `busy`, `in use`, `out of memory` or `internal error`, then says what was wrong:
 
 ```text
 -100, at fault the caller, on a model: invalid argument: variable 0: bounds [0, 2] are outside [0, 1], the widest of its kind

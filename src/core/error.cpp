@@ -20,6 +20,8 @@ std::string_view kind_name(ErrorKind kind) noexcept
         return "invalid argument";
     case ErrorKind::Busy:
         return "busy";
+    case ErrorKind::InUse:
+        return "in use";
     case ErrorKind::NoMemory:
         return "out of memory";
     case ErrorKind::Internal:
@@ -36,6 +38,8 @@ BIYOS_status status_of(ErrorKind kind) noexcept
         return BIYOS_ERR_BADARG;
     case ErrorKind::Busy:
         return BIYOS_ERR_BUSY;
+    case ErrorKind::InUse:
+        return BIYOS_ERR_INUSE;
     case ErrorKind::NoMemory:
         return BIYOS_ERR_NOMEMORY;
     case ErrorKind::Internal:
