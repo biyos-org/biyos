@@ -55,5 +55,14 @@ def test_senses():
     assert senses == names
 
 
+def test_levels():
+    levels, defined = group("biyos.h", "BIYOS_CHECKLVL_NONE")
+    assert len(levels) == defined
+    names = {
+        f"BIYOS_CHECKLVL_{level.name}": level for level in biyos.CheckLevel
+    }
+    assert levels == names
+
+
 def test_ok():
     assert macros("biyos.h")["BIYOS_OK"] == _capi.OK

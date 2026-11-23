@@ -7,7 +7,6 @@
 #include "core/version.hpp"
 
 #include <algorithm>
-#include <cstddef>
 #include <span>
 #include <string>
 #include <string_view>
@@ -43,15 +42,15 @@ void check_range(const OptionSpec &spec, const Rule &rule, T value)
                 text_of(value) + " is outside " + range);
 }
 
-void check_value(const OptionSpec &spec, const EnumRule &rule, std::string_view value)
+void check_value(const OptionSpec &spec, const EnumRule &rule, int value)
 {
-    if (std::ranges::find(rule.values, value) != rule.values.end())
+    if (std::ranges::find(rule.values, value, &EnumValue::number) != rule.values.end())
     {
         return;
     }
     throw Error(ErrorKind::InvalidArgument,
                 subject(spec.name),
-                "'" + std::string(value) + "' is not one of " + joined(rule.values));
+                text_of(value) + " is not one of " + joined(rule.values));
 }
 
 const OptionSpec &settable(std::span<const OptionSpec> table, Option option)
@@ -73,7 +72,14 @@ void admit(const OptionSpec &spec, bool)
 
 void admit(const OptionSpec &spec, int value)
 {
-    check_range(spec, rule_of<IntRule>(spec), value);
+    if (const EnumRule *rule = std::get_if<EnumRule>(&spec.rule))
+    {
+        check_value(spec, *rule, value);
+    }
+    else
+    {
+        check_range(spec, rule_of<IntRule>(spec), value);
+    }
 }
 
 void admit(const OptionSpec &spec, double value)
@@ -81,16 +87,9 @@ void admit(const OptionSpec &spec, double value)
     check_range(spec, rule_of<DoubleRule>(spec), value);
 }
 
-void admit(const OptionSpec &spec, const std::string &value)
+void admit(const OptionSpec &spec, const std::string &)
 {
-    if (const EnumRule *rule = std::get_if<EnumRule>(&spec.rule))
-    {
-        check_value(spec, *rule, value);
-    }
-    else
-    {
-        rule_of<StringRule>(spec);
-    }
+    rule_of<StringRule>(spec);
 }
 
 void describe(Event &event, std::span<const OptionSpec> table, const OptionSpec &spec)
@@ -135,7 +134,10 @@ bool bool_of(const OptionSpec &spec, const OptionValue &value)
 
 int int_of(const OptionSpec &spec, const OptionValue &value)
 {
-    rule_of<IntRule>(spec);
+    if (!std::holds_alternative<EnumRule>(spec.rule))
+    {
+        rule_of<IntRule>(spec);
+    }
     return std::get<int>(value);
 }
 
@@ -147,18 +149,14 @@ double double_of(const OptionSpec &spec, const OptionValue &value)
 
 const std::string &string_of(const OptionSpec &spec, const OptionValue &value)
 {
-    if (!std::holds_alternative<EnumRule>(spec.rule))
-    {
-        rule_of<StringRule>(spec);
-    }
+    rule_of<StringRule>(spec);
     return std::get<std::string>(value);
 }
 
-std::size_t position_of(const OptionSpec &spec, const OptionValue &value)
+int enum_of(const OptionSpec &spec, const OptionValue &value)
 {
-    const EnumRule &rule = rule_of<EnumRule>(spec);
-    const auto found = std::ranges::find(rule.values, std::get<std::string>(value));
-    return static_cast<std::size_t>(found - rule.values.begin());
+    rule_of<EnumRule>(spec);
+    return std::get<int>(value);
 }
 
 }

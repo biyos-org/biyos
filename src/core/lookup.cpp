@@ -3,7 +3,6 @@
 #include "core/option_table.hpp"
 #include "core/option_value.hpp"
 
-#include <cstddef>
 #include <string>
 
 namespace biyos
@@ -60,10 +59,10 @@ const std::string &Lookup::get_string(Option option) const
     return string_of(spec, find(option).value);
 }
 
-std::size_t Lookup::position(Option option) const
+int Lookup::enum_value(Option option) const
 {
     const OptionSpec &spec = row_of(options_.table(), option);
-    return position_of(spec, find(option).value);
+    return enum_of(spec, find(option).value);
 }
 
 }

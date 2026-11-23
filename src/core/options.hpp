@@ -3,7 +3,6 @@
 #include "biyos/biyos.h"
 #include "core/version.hpp"
 
-#include <cstddef>
 #include <limits>
 #include <optional>
 #include <span>
@@ -56,9 +55,9 @@ enum class Source
 
 enum class CheckLevel
 {
-    None,
-    Cheap,
-    Full,
+    None = BIYOS_CHECKLVL_NONE,
+    Cheap = BIYOS_CHECKLVL_CHEAP,
+    Full = BIYOS_CHECKLVL_FULL,
 };
 
 struct BoolRule
@@ -85,10 +84,16 @@ struct StringRule
     std::string_view default_value;
 };
 
+struct EnumValue
+{
+    int number;
+    std::string_view name;
+};
+
 struct EnumRule
 {
-    std::string_view default_value;
-    std::span<const std::string_view> values;
+    int default_value;
+    std::span<const EnumValue> values;
 };
 
 struct Versions
@@ -141,7 +146,7 @@ class Options
         requires std::is_enum_v<E>
     E get_enum(Option option) const
     {
-        return static_cast<E>(position(option));
+        return static_cast<E>(enum_value(option));
     }
 
   private:
@@ -149,7 +154,7 @@ class Options
 
     void store(Option option, OptionValue value);
 
-    std::size_t position(Option option) const;
+    int enum_value(Option option) const;
 
     std::span<const OptionSpec> table_;
     Events &events_;

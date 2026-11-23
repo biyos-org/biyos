@@ -279,12 +279,12 @@ TEST(GetterTest, Kinds)
     settings.set(Option::Seed, 4, events);
     settings.set(Option::TimeLimit, 2.5, events);
     settings.set(Option::Reproducer, std::string("replay.txt"), events);
-    settings.set(Option::CheckLevel, std::string("full"), events);
+    settings.set(Option::CheckLevel, BIYOS_CHECKLVL_FULL, events);
     EXPECT_FALSE(lookup.get_bool(Option::Presolve));
     EXPECT_EQ(lookup.get_int(Option::Seed), 4);
     EXPECT_DOUBLE_EQ(lookup.get_double(Option::TimeLimit), 2.5);
     EXPECT_EQ(lookup.get_string(Option::Reproducer), "replay.txt");
-    EXPECT_EQ(lookup.get_string(Option::CheckLevel), "full");
+    EXPECT_EQ(lookup.get_int(Option::CheckLevel), BIYOS_CHECKLVL_FULL);
     EXPECT_EQ(lookup.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Full);
     EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Cheap);
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_int(Option::TimeLimit)); }),
@@ -297,4 +297,23 @@ TEST(GetterTest, Kinds)
               "invalid argument: option 'seed': is an int, not a string");
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_enum<CheckLevel>(Option::Seed)); }),
               "invalid argument: option 'seed': is an int, not an enum");
+    EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_string(Option::CheckLevel)); }),
+              "invalid argument: option 'check_lvl': is an enum, not a string");
+}
+
+TEST(GetterTest, Enum)
+{
+    using biyos::CheckLevel;
+    biyos::FakeClock clock;
+    biyos::Events events{clock};
+    biyos::Options options(events);
+    biyos::Settings settings;
+    const biyos::Lookup lookup(settings, options);
+    settings.set(Option::CheckLevel, BIYOS_CHECKLVL_NONE, events);
+    EXPECT_EQ(
+        failure([&] { settings.set(Option::CheckLevel, 4, events); }),
+        "invalid argument: option 'check_lvl': 4 is not one of 1 (none), 2 (cheap), 3 (full)");
+    EXPECT_EQ(failure([&] { settings.set(Option::CheckLevel, std::string("full"), events); }),
+              "invalid argument: option 'check_lvl': is an enum, not a string");
+    EXPECT_EQ(lookup.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::None);
 }

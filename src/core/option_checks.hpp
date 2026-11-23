@@ -32,9 +32,23 @@ constexpr bool admits(const StringRule &)
     return true;
 }
 
+constexpr bool sequential(std::span<const EnumValue> values)
+{
+    for (std::size_t i = 0; i < values.size(); ++i)
+    {
+        const bool unique = std::ranges::count(values, values[i].name, &EnumValue::name) == 1;
+        if (values[i].number != static_cast<int>(i) + 1 || !unique)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 constexpr bool admits(const EnumRule &rule)
 {
-    return std::ranges::find(rule.values, rule.default_value) != rule.values.end();
+    const auto found = std::ranges::find(rule.values, rule.default_value, &EnumValue::number);
+    return found != rule.values.end() && sequential(rule.values);
 }
 
 constexpr bool admits(const OptionSpec &spec)

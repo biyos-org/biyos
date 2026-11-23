@@ -11,7 +11,7 @@ namespace biyos
 {
 
 std::string subject(std::string_view name);
-std::string joined(std::span<const std::string_view> names);
+std::string joined(std::span<const EnumValue> values);
 std::string_view noun(const BoolRule &);
 std::string_view noun(const IntRule &);
 std::string_view noun(const DoubleRule &);
