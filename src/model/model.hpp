@@ -183,6 +183,12 @@ class Model
     void add_variables(std::span<const Variable> added);
     void set_variables(std::span<const Index> indices, std::span<const Variable> changed);
 
+    Override variable_tolerance(Index index) const;
+    void set_variable_tolerances(std::span<const Index> indices,
+                                 std::span<const double> absolute,
+                                 std::span<const double> relative);
+    void delete_variable_tolerances(std::span<const Index> indices);
+
     Index n_functions() const noexcept;
     const double &constant(Index index) const;
     std::span<const double> constants(Index start, Index size) const;
@@ -213,6 +219,12 @@ class Model
     void add_constraints(std::span<const Constraint> added);
     void set_constraints(std::span<const Index> indices, std::span<const Constraint> changed);
     std::vector<Index> delete_constraints(std::span<const Index> indices);
+
+    Override constraint_tolerance(Index index) const;
+    void set_constraint_tolerances(std::span<const Index> indices,
+                                   std::span<const double> absolute,
+                                   std::span<const double> relative);
+    void delete_constraint_tolerances(std::span<const Index> indices);
 
     Index n_objectives() const noexcept;
     const Objective &objective(Index index) const;
@@ -253,6 +265,12 @@ class Model
                    std::span<const Offset> parameter_starts,
                    std::span<const double> parameters);
     std::vector<Index> delete_cones(std::span<const Index> indices);
+
+    Override cone_tolerance(Index index) const;
+    void set_cone_tolerances(std::span<const Index> indices,
+                             std::span<const double> absolute,
+                             std::span<const double> relative);
+    void delete_cone_tolerances(std::span<const Index> indices);
 
     Index n_complements() const noexcept;
     const Complement &complement(Index index) const;
@@ -308,12 +326,14 @@ class Model
     std::string name_;
     std::array<Names, kFamilies.size()> names_;
     std::vector<Variable> variables_;
+    Overrides variable_tolerances_;
     std::vector<double> constants_;
     std::vector<Offset> linear_ends_;
     std::vector<LinearTerm> linear_terms_;
     std::vector<Offset> quadratic_ends_;
     std::vector<QuadraticTerm> quadratic_terms_;
     std::vector<Constraint> constraints_;
+    Overrides constraint_tolerances_;
     std::vector<Objective> objectives_;
     std::vector<Indicator> indicators_;
     std::vector<SosKind> sos_kinds_;
@@ -324,6 +344,7 @@ class Model
     std::vector<Index> cone_functions_;
     std::vector<Offset> parameter_ends_;
     std::vector<double> cone_parameters_;
+    Overrides cone_tolerances_;
     std::vector<Complement> complements_;
     Overrides complement_tolerances_;
     Graph graph_;

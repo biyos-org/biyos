@@ -574,6 +574,57 @@ TEST(CompareTest, ComplementTolerance)
     EXPECT_EQ(difference(base, both), "complement 1: upper bound 2 against 3");
 }
 
+TEST(CompareTest, VariableTolerance)
+{
+    Parts renamed = sample();
+    renamed.variable_names.names[0] = "w";
+    Model changed = built(renamed);
+    const Index index = 2;
+    const double relative = 0.5;
+    changed.set_variable_tolerances(std::span(&index, 1), {}, std::span(&relative, 1));
+    const Model base = built(sample());
+    EXPECT_EQ(difference(base, changed), "variable 2: relative tolerance nan against 0.5");
+    Parts bounded = renamed;
+    bounded.variables[2].upper = 4.0;
+    Model both = built(bounded);
+    both.set_variable_tolerances(std::span(&index, 1), {}, std::span(&relative, 1));
+    EXPECT_EQ(difference(base, both), "variable 2: upper bound 3 against 4");
+}
+
+TEST(CompareTest, ConstraintTolerance)
+{
+    Parts renamed = sample();
+    renamed.constraint_names.names[0] = "d";
+    Model changed = built(renamed);
+    const Index index = 1;
+    const double relative = 0.5;
+    changed.set_constraint_tolerances(std::span(&index, 1), {}, std::span(&relative, 1));
+    const Model base = built(sample());
+    EXPECT_EQ(difference(base, changed), "constraint 1: relative tolerance nan against 0.5");
+    Parts bounded = renamed;
+    bounded.constraints[1].upper = 5.0;
+    Model both = built(bounded);
+    both.set_constraint_tolerances(std::span(&index, 1), {}, std::span(&relative, 1));
+    EXPECT_EQ(difference(base, both), "constraint 1: upper bound inf against 5");
+}
+
+TEST(CompareTest, ConeTolerance)
+{
+    Parts renamed = sample();
+    renamed.cone_names.names[0] = "j";
+    Model changed = built(renamed);
+    const Index index = 1;
+    const double relative = 0.5;
+    changed.set_cone_tolerances(std::span(&index, 1), {}, std::span(&relative, 1));
+    const Model base = built(sample());
+    EXPECT_EQ(difference(base, changed), "cone 1: relative tolerance nan against 0.5");
+    Parts valued = renamed;
+    valued.cones.parameters[0] = 0.5;
+    Model both = built(valued);
+    both.set_cone_tolerances(std::span(&index, 1), {}, std::span(&relative, 1));
+    EXPECT_EQ(difference(base, both), "cone 1: parameter 0: value 0.25 against 0.5");
+}
+
 TEST(CompareTest, ExpressionFields)
 {
     Parts op = sample();

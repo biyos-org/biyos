@@ -11,6 +11,7 @@ from biyos._capi import lib
 from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
+from tolerance import CHECKS
 
 KINDS = [ConeKind.ROTATED, ConeKind.DUAL_POWER]
 OFF = [0, 3, 5]
@@ -365,3 +366,10 @@ def test_on(env, model):
     assert len(c[:1].on(smaller)) == 1
     copy.close()
     smaller.close()
+
+
+@pytest.mark.parametrize("check", CHECKS)
+def test_tolerances(env, model, check):
+    add_sample(model)
+    model.addcone([ConeKind.NONNEGATIVE], [0, 1], [0])
+    check(env, model, "cone", "cone")

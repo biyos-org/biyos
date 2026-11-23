@@ -11,6 +11,7 @@ from biyos._capi import lib
 from number import Growing, Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
+from tolerance import CHECKS
 
 INFINITY = float("inf")
 NAN = float("nan")
@@ -309,3 +310,9 @@ def test_on(env, model):
         c.on(smaller)
     assert len(c[:2].on(smaller)) == 2
     copy.close()
+
+
+@pytest.mark.parametrize("check", CHECKS)
+def test_tolerances(env, model, check):
+    add_sample(model)
+    check(env, model, "con", "constraint")

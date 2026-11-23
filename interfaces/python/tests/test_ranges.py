@@ -10,8 +10,10 @@ from refusal import refusal
 PAIRS = [
     ("var", "varbnd", ([-1.0, -2.0], [1.0, 2.0])),
     ("var", "varknd", ([VariableKind.INTEGER, VariableKind.SEMIINTEGER],)),
+    ("var", "vartol", ([0.1, 0.2], [0.3, 0.4])),
     ("fun", "cst", ([1.5, -2.5],)),
     ("con", "conbnd", ([-3.0, -4.0], [3.0, 4.0])),
+    ("con", "contol", ([0.1, 0.2], [0.3, 0.4])),
     ("obj", "objsense", ([Sense.MAXIMIZE, Sense.MINIMIZE],)),
     ("obj", "objprio", ([3, 4],)),
     ("obj", "objcoef", ([2.0, 3.0],)),
@@ -24,6 +26,7 @@ PAIRS = [
     ("ind", "indvar", ([5, 6], [0, 1])),
     ("ind", "indname", (["i", "j"],)),
     ("sos", "sosname", (["i", "j"],)),
+    ("cone", "conetol", ([0.1, 0.2], [0.3, 0.4])),
     ("cone", "conename", (["i", "j"],)),
     ("ccon", "cconbnd", ([-5.0, -6.0], [5.0, 6.0])),
     ("ccon", "ccontol", ([0.1, 0.2], [0.3, 0.4])),
@@ -132,6 +135,20 @@ def test_delete(blocks, monkeypatch, family, kind):
     left = getattr(model, f"get{family}name")(range(4))
     assert left.count(None) == 2
     assert [left[k] for k in records(kind)] == [None, None]
+    assert seen == [FORMS[kind]]
+
+
+@pytest.mark.parametrize("family", ["var", "con", "cone", "ccon"])
+@pytest.mark.parametrize("kind", FORMS)
+def test_deltol(blocks, monkeypatch, family, kind):
+    model, found = blocks
+    getattr(model, f"set{family}tol")(range(4), [0.5] * 4, [0.25] * 4)
+    seen = []
+    trace(monkeypatch, seen, f"del{family}tol")
+    getattr(model, f"del{family}tol")(selection(found[family], kind))
+    atol, rtol = getattr(model, f"get{family}tol")(range(4))
+    assert atol.count(None) == 2
+    assert [rtol[k] for k in records(kind)] == [None, None]
     assert seen == [FORMS[kind]]
 
 

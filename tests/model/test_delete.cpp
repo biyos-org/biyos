@@ -41,6 +41,9 @@ using biyos::test::Parts;
 using biyos::test::refusal;
 using Map = std::vector<Index>;
 using Indices = std::vector<Index>;
+using Setter = void (Model::*)(std::span<const Index>,
+                               std::span<const double>,
+                               std::span<const double>);
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 
@@ -469,14 +472,30 @@ void expect_used(const Use &use)
     EXPECT_EQ(in_use(model, {1, 2}), wanted);
 }
 
-void set_tolerances(Model &model, const Indices &indices)
+void set_tolerances(Model &model, Setter set, const Indices &indices)
 {
     const std::vector<double> absolute{1e-6, 1e-7};
     const std::vector<double> relative{1e-3, 1e-4};
     const std::size_t n = indices.size();
-    model.set_complement_tolerances(indices,
-                                    std::span(absolute).first(n),
-                                    std::span(relative).first(n));
+    (model.*set)(indices, std::span(absolute).first(n), std::span(relative).first(n));
+}
+
+void expect_tolerances(const Case &family, Setter set)
+{
+    SCOPED_TRACE(biyos::noun_of(family.family));
+    Model model = built(three());
+    set_tolerances(model, set, {2, 0});
+    EXPECT_EQ((model.*family.call)(Indices{1}), (Map{0, kDeleted, 1}));
+    Parts parts = three();
+    family.keep(parts, {0, kDeleted, 1});
+    Model wanted = built(parts);
+    set_tolerances(wanted, set, {1, 0});
+    EXPECT_EQ(biyos::difference(model, wanted), "");
+    EXPECT_EQ((model.*family.call)(Indices{0}), (Map{kDeleted, 0}));
+    family.keep(parts, {kDeleted, 0});
+    wanted = built(parts);
+    set_tolerances(wanted, set, {0});
+    EXPECT_EQ(biyos::difference(model, wanted), "");
 }
 
 }
@@ -531,19 +550,9 @@ TEST(DeleteTest, Empty)
 
 TEST(DeleteTest, Tolerances)
 {
-    Model model = built(three());
-    set_tolerances(model, {2, 0});
-    EXPECT_EQ(model.delete_complements(Indices{1}), (Map{0, kDeleted, 1}));
-    Parts parts = three();
-    keep_complements(parts, {0, kDeleted, 1});
-    Model wanted = built(parts);
-    set_tolerances(wanted, {1, 0});
-    EXPECT_EQ(biyos::difference(model, wanted), "");
-    EXPECT_EQ(model.delete_complements(Indices{0}), (Map{kDeleted, 0}));
-    keep_complements(parts, {kDeleted, 0});
-    wanted = built(parts);
-    set_tolerances(wanted, {0});
-    EXPECT_EQ(biyos::difference(model, wanted), "");
+    expect_tolerances(kConstraints, &Model::set_constraint_tolerances);
+    expect_tolerances(kCones, &Model::set_cone_tolerances);
+    expect_tolerances(kComplements, &Model::set_complement_tolerances);
 }
 
 TEST(DeleteTest, Functions)

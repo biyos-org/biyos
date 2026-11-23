@@ -268,6 +268,24 @@ void add_names(BIYOS_model *model, Engine &engine, int n, Namer name)
     ASSERT_EQ(name(model, size, named.data(), names.data()), BIYOS_OK);
 }
 
+void add_tolerances(BIYOS_model *model, Engine &engine, int n, decltype(&BIYOS_setvartolsp) set)
+{
+    std::vector<BIYOS_index> held;
+    std::vector<BIYOS_real> absolute;
+    std::vector<BIYOS_real> relative;
+    for (int k = 0; k < n; ++k)
+    {
+        if (below(engine, 2) == 0)
+        {
+            held.push_back(k);
+            absolute.push_back(below(engine, 4) / 4.0);
+            relative.push_back(below(engine, 4) / 8.0);
+        }
+    }
+    const auto size = static_cast<BIYOS_index>(held.size());
+    ASSERT_EQ(set(model, size, held.data(), absolute.data(), relative.data()), BIYOS_OK);
+}
+
 }
 
 int below(Engine &engine, int n)
@@ -296,6 +314,9 @@ void build_sample(BIYOS_model *model, Engine &engine)
     const int cones = 1 + below(engine, 3);
     add_cones(model, engine, cones, functions);
     add_names(model, engine, cones, BIYOS_setconenamesp);
+    add_tolerances(model, engine, variables, BIYOS_setvartolsp);
+    add_tolerances(model, engine, constraints, BIYOS_setcontolsp);
+    add_tolerances(model, engine, cones, BIYOS_setconetolsp);
 }
 
 }

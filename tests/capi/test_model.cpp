@@ -1,6 +1,7 @@
 #include "biyos/biyos.h"
 #include "doubles.hpp"
 #include "handles.hpp"
+#include "tolerance.hpp"
 
 #include <gtest/gtest.h>
 
@@ -115,6 +116,11 @@ void keep(const BIYOS_event *event, void *data)
     static_cast<std::vector<std::string> *>(data)->emplace_back(BIYOS_getevttext(event));
 }
 
+void add_three(const Model &model)
+{
+    ASSERT_EQ(BIYOS_addvar(model.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+}
+
 void fail(const Env &env)
 {
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
@@ -150,6 +156,9 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_getvarbndsp(nullptr, 1, &index, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setvarkndsp(nullptr, 1, &index, &index), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getvarkndsp(nullptr, 1, &index, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setvartolsp(nullptr, 1, &index, &bound, &bound), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getvartolsp(nullptr, 1, &index, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delvartolsp(nullptr, 1, &index), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getnvar(nullptr, &n), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getvarrg(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     BIYOS_offset needed = 0;
@@ -183,6 +192,9 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_addcon(nullptr, 1, &index, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setconbndsp(nullptr, 1, &index, &bound, &bound), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getconbndsp(nullptr, 1, &index, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setcontolsp(nullptr, 1, &index, &bound, &bound), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getcontolsp(nullptr, 1, &index, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delcontolsp(nullptr, 1, &index), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getncon(nullptr, &n), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getconrg(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addobj(nullptr, 1, &index, nullptr, nullptr, nullptr, nullptr),
@@ -572,6 +584,11 @@ TEST(CApiTest, VariableRefusals)
     expect_doubles({lower[0], lower[1]}, {9.0, 9.0});
     expect_doubles({upper[0], upper[1]}, {9.0, 9.0});
     EXPECT_EQ(std::vector<BIYOS_int>({kinds[0], kinds[1]}), std::vector<BIYOS_int>({-1, -1}));
+}
+
+TEST(CApiTest, VariableTolerances)
+{
+    biyos::test::check_tolerances(biyos::test::kVariableTolerances, add_three);
 }
 
 TEST(CApiTest, ModelEvent)

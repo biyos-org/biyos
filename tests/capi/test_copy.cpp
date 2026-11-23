@@ -73,12 +73,14 @@ void add_sample(BIYOS_model *model)
     const int active[] = {1, 0};
     const double floor[] = {-1.0, 0.0};
     ASSERT_EQ(BIYOS_addvar(model, 3, kinds, lower, upper, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setvartolsp(model, 2, added, absolute, relative), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(model, 2, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcstrg(model, 0, 2, constants), BIYOS_OK);
     ASSERT_EQ(BIYOS_addrlintermrg(model, 0, 2, starts, variables, values), BIYOS_OK);
     ASSERT_EQ(BIYOS_addquadtermsp(model, 3, owners, rows, columns, products), BIYOS_OK);
     add_expressions(model, added);
     ASSERT_EQ(BIYOS_addcon(model, 3, functions, lower, upper, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcontolsp(model, 1, added + 1, absolute, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addobj(model, 2, targets, senses, priorities, weights, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setobjtolsp(model, 2, added, absolute, relative), BIYOS_OK);
     ASSERT_EQ(BIYOS_addind(model, 2, switches, active, targets, lower, upper, nullptr), BIYOS_OK);

@@ -205,12 +205,19 @@ static BIYOS_status use_constraints(BIYOS_model *model)
     const int indices[1] = {1};
     int found[2] = {-1, -1};
     int map[2] = {-1, -1};
+    double tolerances[2] = {9.0, 9.0};
     BIYOS_index first = -1;
     BIYOS_index constraints = 0;
     if (BIYOS_addcon(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
         BIYOS_setconbndsp(model, 1, indices, NULL, lower) != BIYOS_OK ||
         BIYOS_getncon(model, &constraints) != BIYOS_OK || constraints != 2 ||
         BIYOS_getconrg(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1 ||
+        BIYOS_setcontolsp(model, 1, indices, NULL, lower) != BIYOS_OK ||
+        BIYOS_setcontolrg(model, 0, 1, lower, NULL) != BIYOS_OK ||
+        BIYOS_getcontolsp(model, 1, indices, tolerances, NULL) != BIYOS_OK ||
+        BIYOS_getcontolrg(model, 0, 2, NULL, tolerances) != BIYOS_OK ||
+        BIYOS_delcontolsp(model, 1, indices) != BIYOS_OK ||
+        BIYOS_delcontolrg(model, 0, 2) != BIYOS_OK ||
         BIYOS_delconsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
         BIYOS_delconrg(model, 2, 0, NULL) != BIYOS_OK)
     {
@@ -337,6 +344,7 @@ static BIYOS_status use_cones(BIYOS_model *model)
     int found[2] = {0, 0};
     int map[2] = {-1, -1};
     double weight = 0.0;
+    double tolerances[2] = {9.0, 9.0};
     BIYOS_index first = -1;
     BIYOS_index cones = 0;
     int64_t needed = -1;
@@ -355,6 +363,12 @@ static BIYOS_status use_cones(BIYOS_model *model)
         BIYOS_getconesp(model, 0, NULL, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnconeprmrg(model, 0, 0, &needed) != BIYOS_OK ||
         BIYOS_getconeprmrg(model, 0, 0, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_setconetolsp(model, 1, indices, weights, NULL) != BIYOS_OK ||
+        BIYOS_setconetolrg(model, 0, 2, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getconetolsp(model, 1, indices, tolerances, tolerances + 1) != BIYOS_OK ||
+        BIYOS_getconetolrg(model, 0, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_delconetolsp(model, 1, indices) != BIYOS_OK ||
+        BIYOS_delconetolrg(model, 0, 2) != BIYOS_OK ||
         BIYOS_delconesp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
         BIYOS_delconerg(model, 2, 0, NULL) != BIYOS_OK)
     {
@@ -650,6 +664,8 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getvarrg(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getvarbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getvarkndsp(model, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getvartolsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getvartolrg(model, 0, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnfun(model, &count) != BIYOS_OK || BIYOS_getcstrg(model, 0, 0, NULL) != BIYOS_OK ||
         BIYOS_getnrlintermrg(model, 0, 0, &needed) != BIYOS_OK ||
         BIYOS_getrlintermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL) != BIYOS_OK ||
@@ -668,6 +684,8 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getncon(model, &count) != BIYOS_OK ||
         BIYOS_getconrg(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getconbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getcontolsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getcontolrg(model, 0, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnobj(model, &count) != BIYOS_OK ||
         BIYOS_getobjrg(model, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getobjsensesp(model, 0, NULL, NULL) != BIYOS_OK ||
@@ -724,6 +742,7 @@ int main(void)
     const double upper[2] = {1.0, 1.0};
     const int indices[1] = {0};
     int found[2] = {0, 0};
+    double tolerances[2] = {9.0, 9.0};
     BIYOS_index first = -1;
     BIYOS_index variables = 0;
     BIYOS_version(&major, &minor, &patch);
@@ -758,6 +777,15 @@ int main(void)
         BIYOS_getnvar(model, &variables) != BIYOS_OK || variables != 2 ||
         BIYOS_getvarrg(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[0] != BIYOS_VAR_BIN ||
         found[1] != BIYOS_VAR_BIN)
+    {
+        status = BIYOS_ERR_INTERNAL;
+    }
+    if (BIYOS_setvartolsp(model, 1, indices, upper, NULL) != BIYOS_OK ||
+        BIYOS_setvartolrg(model, 0, 2, NULL, upper) != BIYOS_OK ||
+        BIYOS_getvartolsp(model, 1, indices, tolerances, NULL) != BIYOS_OK ||
+        BIYOS_getvartolrg(model, 0, 2, NULL, tolerances) != BIYOS_OK ||
+        BIYOS_delvartolsp(model, 1, indices) != BIYOS_OK ||
+        BIYOS_delvartolrg(model, 0, 2) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

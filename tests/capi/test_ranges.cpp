@@ -3,6 +3,7 @@
 #include "handles.hpp"
 #include "model/compare.hpp"
 #include "sample.hpp"
+#include "tolerance.hpp"
 
 #include <gtest/gtest.h>
 
@@ -24,6 +25,7 @@ using biyos::test::build_sample;
 using biyos::test::Engine;
 using biyos::test::Env;
 using biyos::test::Model;
+using biyos::test::ToleranceCalls;
 
 constexpr std::array<std::uint32_t, 8> kSeeds{1, 2, 3, 5, 8, 13, 21, 34};
 
@@ -119,6 +121,12 @@ const NameCalls kComplementNames{BIYOS_getnccon,
                                  BIYOS_getcconnamerg,
                                  BIYOS_delcconnamesp,
                                  BIYOS_delcconnamerg};
+
+const std::array<ToleranceCalls, 3> kToleranceCalls{
+    biyos::test::kVariableTolerances,
+    biyos::test::kConstraintTolerances,
+    biyos::test::kConeTolerances,
+};
 
 std::uint64_t key(double value)
 {
@@ -357,6 +365,22 @@ void write_names(const Held &held, Engine &engine, const NameCalls &calls)
     expect_writes(held, span, calls.delete_listed, calls.delete_ranged);
 }
 
+void write_tolerances(const Held &held, Engine &engine, const ToleranceCalls &calls)
+{
+    const Span span = random_span(engine, count_of(held.model, calls.count));
+    const auto n = static_cast<std::size_t>(span.size);
+    const std::vector<double> absolute = drawn(engine, n, low);
+    const std::vector<double> relative = drawn(engine, n, high);
+    expect_writes(held, span, calls.set_listed, calls.set_ranged, absolute, relative);
+    const Model tolerated(held.env, held.model);
+    const BIYOS_status status =
+        calls.set_ranged(tolerated.get(), span.start, span.size, absolute.data(), relative.data());
+    EXPECT_EQ(status, BIYOS_OK);
+    const Held changed{.env = held.env, .model = tolerated};
+    const Span deleted = random_span(engine, count_of(tolerated, calls.count));
+    expect_writes(changed, deleted, calls.delete_listed, calls.delete_ranged);
+}
+
 struct Switches
 {
     int start;
@@ -552,6 +576,12 @@ void read_all(const Model &model, Engine &engine)
         const std::vector<const char *> names = zeros<const char *>(span);
         expect_reads(model, span, calls.get_listed, calls.get_ranged, names);
     }
+    for (const ToleranceCalls &calls : kToleranceCalls)
+    {
+        const Span span = random_span(engine, count_of(model, calls.count));
+        const std::vector<double> reals = zeros<double>(span);
+        expect_reads(model, span, calls.get_listed, calls.get_ranged, reals, reals);
+    }
 }
 
 std::vector<Span> bad_spans(int count)
@@ -667,6 +697,15 @@ void keep_complements(const Held &held, Span span, BIYOS_status wanted)
     keep_names(held, span, wanted, kComplementNames);
 }
 
+void keep_tolerances(const Held &held, Span span, BIYOS_status wanted, const ToleranceCalls &calls)
+{
+    const auto n = static_cast<std::size_t>(count_of(held.model, calls.count) + 1);
+    const std::vector<double> values(n, 0.5);
+    expect_kept(held, span, wanted, calls.set_ranged, values, values);
+    expect_kept(held, span, wanted, calls.get_ranged, values, values);
+    expect_kept(held, span, wanted, calls.delete_ranged);
+}
+
 void keep_all(const Held &held, Counter count, Span span, BIYOS_status wanted)
 {
     if (count == BIYOS_getnvar)
@@ -696,6 +735,13 @@ void keep_all(const Held &held, Counter count, Span span, BIYOS_status wanted)
             keep_names(held, span, wanted, calls);
         }
     }
+    for (const ToleranceCalls &calls : kToleranceCalls)
+    {
+        if (calls.count == count)
+        {
+            keep_tolerances(held, span, wanted, calls);
+        }
+    }
 }
 
 }
@@ -717,6 +763,10 @@ TEST(RangeTest, Writes)
         for (const NameCalls &calls : kNameCalls)
         {
             write_names(held, engine, calls);
+        }
+        for (const ToleranceCalls &calls : kToleranceCalls)
+        {
+            write_tolerances(held, engine, calls);
         }
         write_indicators(held, engine);
         write_complements(held, engine);

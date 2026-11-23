@@ -2,6 +2,7 @@
 #include "core/index.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
+#include "tolerance.hpp"
 
 #include <gtest/gtest.h>
 
@@ -54,6 +55,20 @@ std::string range(const std::string &bounds, const std::string &allowed)
 {
     return "bounds " + bounds + " are outside " + allowed + ", the widest of its kind";
 }
+
+Model with_variables(std::size_t n)
+{
+    Model model;
+    model.add_variables(std::vector<Variable>(n, continuous(0.0, 1.0)));
+    return model;
+}
+
+constexpr biyos::test::ToleranceCalls kTolerances{
+    .noun = "variable",
+    .read = &Model::variable_tolerance,
+    .set = &Model::set_variable_tolerances,
+    .remove = &Model::delete_variable_tolerances,
+};
 
 }
 
@@ -246,4 +261,24 @@ TEST(VariableTest, Mismatch)
         EXPECT_EQ(error.kind(), biyos::ErrorKind::Internal);
     }
     expect_same(model.variable(0), added[0]);
+}
+
+TEST(VariableTest, OwnTolerance)
+{
+    biyos::test::expect_own(with_variables(3), kTolerances);
+}
+
+TEST(VariableTest, ToleranceRefusal)
+{
+    biyos::test::expect_refused(with_variables(2), kTolerances);
+}
+
+TEST(VariableTest, DeletedTolerance)
+{
+    biyos::test::expect_deleted(with_variables(2), kTolerances);
+}
+
+TEST(VariableTest, ToleranceCopy)
+{
+    biyos::test::expect_copied(with_variables(2), kTolerances);
 }

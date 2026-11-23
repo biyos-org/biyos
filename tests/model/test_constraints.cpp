@@ -2,6 +2,7 @@
 #include "core/index.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
+#include "tolerance.hpp"
 
 #include <gtest/gtest.h>
 
@@ -60,6 +61,20 @@ void expect_constraint(const Constraint &found, const Constraint &wanted)
     EXPECT_DOUBLE_EQ(found.lower, wanted.lower);
     EXPECT_DOUBLE_EQ(found.upper, wanted.upper);
 }
+
+Model with_constraints(std::size_t n)
+{
+    Model model = with_functions(1);
+    model.add_constraints(std::vector<Constraint>(n, on(0, 0.0, 1.0)));
+    return model;
+}
+
+constexpr biyos::test::ToleranceCalls kTolerances{
+    .noun = "constraint",
+    .read = &Model::constraint_tolerance,
+    .set = &Model::set_constraint_tolerances,
+    .remove = &Model::delete_constraint_tolerances,
+};
 
 }
 
@@ -229,4 +244,24 @@ TEST(ConstraintTest, Moved)
     EXPECT_TRUE(model.constraints(0, 0).empty());
     EXPECT_EQ(add_refusal(model, on(0, 0.0, 1.0)),
               "invalid argument: constraint 0: function 0 is unknown");
+}
+
+TEST(ConstraintTest, OwnTolerance)
+{
+    biyos::test::expect_own(with_constraints(3), kTolerances);
+}
+
+TEST(ConstraintTest, ToleranceRefusal)
+{
+    biyos::test::expect_refused(with_constraints(2), kTolerances);
+}
+
+TEST(ConstraintTest, DeletedTolerance)
+{
+    biyos::test::expect_deleted(with_constraints(2), kTolerances);
+}
+
+TEST(ConstraintTest, ToleranceCopy)
+{
+    biyos::test::expect_copied(with_constraints(2), kTolerances);
 }

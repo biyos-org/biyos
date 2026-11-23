@@ -81,10 +81,29 @@ void Model::set_constraints(std::span<const Index> indices, std::span<const Cons
     }
 }
 
+Override Model::constraint_tolerance(Index index) const
+{
+    check_index(kNoun, index, n_constraints());
+    return constraint_tolerances_.at(index);
+}
+
+void Model::set_constraint_tolerances(std::span<const Index> indices,
+                                      std::span<const double> absolute,
+                                      std::span<const double> relative)
+{
+    constraint_tolerances_.set(kNoun, n_constraints(), indices, absolute, relative);
+}
+
+void Model::delete_constraint_tolerances(std::span<const Index> indices)
+{
+    constraint_tolerances_.remove(kNoun, n_constraints(), indices);
+}
+
 std::vector<Index> Model::delete_constraints(std::span<const Index> indices)
 {
     std::vector<Index> map = renumbering(kNoun, n_constraints(), indices);
     keep(constraints_, map);
+    constraint_tolerances_.renumber(map);
     renumber_names(Family::Constraint, map);
     return map;
 }

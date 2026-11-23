@@ -219,6 +219,28 @@ BIYOS_API BIYOS_status BIYOS_getvarkndrg(const BIYOS_model *mdl,
                                          BIYOS_index pos,
                                          BIYOS_index n,
                                          BIYOS_int *knd);
+BIYOS_API BIYOS_status BIYOS_setvartolsp(BIYOS_model *mdl,
+                                         BIYOS_index n,
+                                         const BIYOS_index *idx,
+                                         const BIYOS_real *atol,
+                                         const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_setvartolrg(BIYOS_model *mdl,
+                                         BIYOS_index pos,
+                                         BIYOS_index n,
+                                         const BIYOS_real *atol,
+                                         const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_getvartolsp(const BIYOS_model *mdl,
+                                         BIYOS_index n,
+                                         const BIYOS_index *idx,
+                                         BIYOS_real *atol,
+                                         BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_getvartolrg(const BIYOS_model *mdl,
+                                         BIYOS_index pos,
+                                         BIYOS_index n,
+                                         BIYOS_real *atol,
+                                         BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_delvartolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delvartolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
 BIYOS_API BIYOS_status BIYOS_getnvar(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getvarsp(const BIYOS_model *mdl,
                                       BIYOS_index n,
@@ -437,6 +459,28 @@ BIYOS_API BIYOS_status BIYOS_getconbndrg(const BIYOS_model *mdl,
                                          BIYOS_index n,
                                          BIYOS_real *lb,
                                          BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_setcontolsp(BIYOS_model *mdl,
+                                         BIYOS_index n,
+                                         const BIYOS_index *idx,
+                                         const BIYOS_real *atol,
+                                         const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_setcontolrg(BIYOS_model *mdl,
+                                         BIYOS_index pos,
+                                         BIYOS_index n,
+                                         const BIYOS_real *atol,
+                                         const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_getcontolsp(const BIYOS_model *mdl,
+                                         BIYOS_index n,
+                                         const BIYOS_index *idx,
+                                         BIYOS_real *atol,
+                                         BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_getcontolrg(const BIYOS_model *mdl,
+                                         BIYOS_index pos,
+                                         BIYOS_index n,
+                                         BIYOS_real *atol,
+                                         BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_delcontolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delcontolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
 BIYOS_API BIYOS_status BIYOS_getncon(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getconsp(const BIYOS_model *mdl,
                                       BIYOS_index n,
@@ -765,6 +809,28 @@ BIYOS_API BIYOS_status BIYOS_addcone(BIYOS_model *mdl,
                                      const BIYOS_offset *prmoff,
                                      const BIYOS_real *prm,
                                      BIYOS_index *pos);
+BIYOS_API BIYOS_status BIYOS_setconetolsp(BIYOS_model *mdl,
+                                          BIYOS_index n,
+                                          const BIYOS_index *idx,
+                                          const BIYOS_real *atol,
+                                          const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_setconetolrg(BIYOS_model *mdl,
+                                          BIYOS_index pos,
+                                          BIYOS_index n,
+                                          const BIYOS_real *atol,
+                                          const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_getconetolsp(const BIYOS_model *mdl,
+                                          BIYOS_index n,
+                                          const BIYOS_index *idx,
+                                          BIYOS_real *atol,
+                                          BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_getconetolrg(const BIYOS_model *mdl,
+                                          BIYOS_index pos,
+                                          BIYOS_index n,
+                                          BIYOS_real *atol,
+                                          BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_delconetolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delconetolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
 BIYOS_API BIYOS_status BIYOS_getncone(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getnconefunsp(const BIYOS_model *mdl,
                                            BIYOS_index n,

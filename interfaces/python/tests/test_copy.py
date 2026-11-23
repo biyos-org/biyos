@@ -45,12 +45,14 @@ def add_sample(model):
         VariableKind.INTEGER,
     ]
     model.addvar(3, kinds, [-0.0, 0.0, -INFINITY], [2.5, 1.0, 3.0])
+    model.setvartol([0, 2], [0.5, 0.0])
     f = model.addfun(2)
     model.setcst(f, [1.5, 0.1])
     model.addlinterm([0, 0, 1], [2, 0, 1], [-1.0, 2.0, 0.1])
     pairs = ([1, 0, 0], [2, 0, 1], [2, 1, 1], [0.5, -1.0, 3.0])
     model.addquadterm(*pairs)
     model.addcon([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, INFINITY, 3.0])
+    model.setcontol([1], None, [0.125])
     senses = [Sense.MAXIMIZE, Sense.MINIMIZE]
     tolerances = ([0.25, 0.0], [0.0, INFINITY])
     o = model.addobj([1, 0], senses, [3, -2], [0.5, 2.0])
@@ -63,10 +65,12 @@ def add_sample(model):
 def read(model):
     found = (
         model.getvar(),
+        model.getvartol(range(model.getnvar())),
         model.getcst(range(model.getnfun())),
         model.getrlinterm(),
         model.getquadterm(),
         model.getcon(),
+        model.getcontol(range(model.getncon())),
         model.getobj(),
         model.getobjtol(range(model.getnobj())),
         model.getind(),

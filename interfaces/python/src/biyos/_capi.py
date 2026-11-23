@@ -65,6 +65,12 @@ def _declare_pair(lib: ctypes.CDLL, name: str, *values: type) -> None:
     _declare(lib, f"{name}rg", c_int, c_void_p, c_int32, c_int32, *values)
 
 
+def _declare_tolerances(lib: ctypes.CDLL, family: str, doubles: type) -> None:
+    _declare_pair(lib, f"BIYOS_set{family}tol", doubles, doubles)
+    _declare_pair(lib, f"BIYOS_get{family}tol", doubles, doubles)
+    _declare_pair(lib, f"BIYOS_del{family}tol")
+
+
 def _load() -> ctypes.CDLL:
     package = files("biyos")
     name = (package / "library.txt").read_text()
@@ -131,6 +137,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_getvarbnd", doubles, doubles)
     _declare_pair(lib, "BIYOS_setvarknd", ints)
     _declare_pair(lib, "BIYOS_getvarknd", ints)
+    _declare_tolerances(lib, "var", doubles)
     _declare(lib, "BIYOS_getnvar", c_int, c_void_p, ints)
     _declare_pair(lib, "BIYOS_getvar", ints, doubles, doubles)
     _declare_functions(lib, ints, doubles)
@@ -189,6 +196,7 @@ def _declare_constraints(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_addcon", c_int, *add)
     _declare_pair(lib, "BIYOS_setconbnd", doubles, doubles)
     _declare_pair(lib, "BIYOS_getconbnd", doubles, doubles)
+    _declare_tolerances(lib, "con", doubles)
     _declare(lib, "BIYOS_getncon", c_int, c_void_p, ints)
     _declare_pair(lib, "BIYOS_getcon", ints, doubles, doubles)
     _declare_pair(lib, "BIYOS_delcon", ints)
@@ -234,6 +242,7 @@ def _declare_cones(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     offsets = POINTER(c_int64)
     add = (c_void_p, c_int32, ints, offsets, ints, offsets, doubles, ints)
     _declare(lib, "BIYOS_addcone", c_int, *add)
+    _declare_tolerances(lib, "cone", doubles)
     _declare(lib, "BIYOS_getncone", c_int, c_void_p, ints)
     _declare_pair(lib, "BIYOS_getnconefun", offsets)
     _declare_pair(lib, "BIYOS_getnconeprm", offsets)

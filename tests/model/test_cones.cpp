@@ -4,6 +4,7 @@
 #include "model/model.hpp"
 #include "refusal.hpp"
 #include "sample.hpp"
+#include "tolerance.hpp"
 
 #include <gtest/gtest.h>
 
@@ -120,6 +121,23 @@ std::string add_refusal(Model &model, const Cones &cones)
 {
     return refusal([&] { add(model, cones); });
 }
+
+Model with_cones(std::size_t n)
+{
+    Model model = with_functions(1);
+    for (std::size_t k = 0; k < n; ++k)
+    {
+        add(model, one(ConeKind::Nonnegative, {0}));
+    }
+    return model;
+}
+
+constexpr biyos::test::ToleranceCalls kTolerances{
+    .noun = "cone",
+    .read = &Model::cone_tolerance,
+    .set = &Model::set_cone_tolerances,
+    .remove = &Model::delete_cone_tolerances,
+};
 
 std::vector<Index> members_of(const Model &model, Index start, Index size)
 {
@@ -305,4 +323,24 @@ TEST(ConeTest, Ranges)
     EXPECT_EQ(refusal([&] { model.cone_functions(3, 0); }), "invalid argument: cone 3: unknown");
     EXPECT_EQ(refusal([&] { model.cone_parameters(0, -1); }),
               "invalid argument: argument 'n': -1 is negative");
+}
+
+TEST(ConeTest, OwnTolerance)
+{
+    biyos::test::expect_own(with_cones(3), kTolerances);
+}
+
+TEST(ConeTest, ToleranceRefusal)
+{
+    biyos::test::expect_refused(with_cones(2), kTolerances);
+}
+
+TEST(ConeTest, DeletedTolerance)
+{
+    biyos::test::expect_deleted(with_cones(2), kTolerances);
+}
+
+TEST(ConeTest, ToleranceCopy)
+{
+    biyos::test::expect_copied(with_cones(2), kTolerances);
 }
