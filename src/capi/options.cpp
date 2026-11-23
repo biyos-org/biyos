@@ -198,7 +198,7 @@ void delete_model_option(BIYOS_model &model, int option)
 
 void get_model_source(const BIYOS_model &model, int option, int *source)
 {
-    const biyos::Source found = lookup_of(model).find(biyos::find_option(option)).source;
+    const biyos::OptionSource found = lookup_of(model).find(biyos::find_option(option)).source;
     *require(source, "src") = static_cast<int>(found);
 }
 

@@ -134,7 +134,7 @@ class FlagTest : public ::testing::Test
 TEST_F(FlagTest, Defaults)
 {
     EXPECT_EQ(options.get_flags(kParts), Masks{});
-    EXPECT_EQ(options.source_of(kParts), biyos::Source::Default);
+    EXPECT_EQ(options.source_of(kParts), biyos::OptionSource::Default);
     EXPECT_EQ(state(kDual), PartState::Default);
     EXPECT_EQ(state(kProbe), PartState::Default);
     EXPECT_EQ(state(kScale), PartState::Default);
