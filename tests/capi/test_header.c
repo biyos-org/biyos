@@ -254,9 +254,10 @@ static BIYOS_status use_postfix(BIYOS_model *model)
     const BIYOS_offset arg[4] = {2, 1, 0, 1};
     const BIYOS_real val[1] = {3.0};
     BIYOS_offset node[2] = {-1, -1};
-    const BIYOS_index idx[2] = {1, 0};
+    const BIYOS_index idx[1] = {1};
     if (BIYOS_addexpr(model, 2, off, code, arg, val, node) != BIYOS_OK || node[0] != 3 ||
-        node[1] != 5 || BIYOS_attachexprsp(model, 2, idx, node) != BIYOS_OK)
+        node[1] != 5 || BIYOS_attachexprsp(model, 1, idx, node) != BIYOS_OK ||
+        BIYOS_attachexprrg(model, 0, 1, node + 1) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }

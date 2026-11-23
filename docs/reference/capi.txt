@@ -1295,15 +1295,16 @@ note A call that fails adds no node, so the next call gives the same ids again.
 see BIYOS_addnode BIYOS_attachexprsp
 since 0.1.0
 
-function BIYOS_attachexprsp
+function BIYOS_attachexprsp BIYOS_attachexprrg
 summary Add expressions to functions of the model.
 param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
 param n in The number of functions that gain an expression.
-param idx in The functions, each listed at most once; may be null only when `n` is 0.
+param idx in In the `sp` form, the functions, each listed at most once; may be null only when `n` is 0.
 param node in The node each function gains, by id; may be null only when `n` is 0.
 return `BIYOS_OK` once the expressions are added.
-error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model or is listed twice, a node is not one of the model, or a function's constant, or a coefficient summed with one the function holds, would not be finite.
-note Function `idx[k]` becomes $f + e$, where $e$ is node `node[k]`. The constant, linear and quadratic terms of $e$ join the function's, added as `BIYOS_addlintermsp` and `BIYOS_addquadtermsp` add terms, and the rest becomes the function's expression, or is summed in a new node with the expression it has. An expression that holds no constant leaves the function's as it was.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, a function is not one of the model or is listed twice, the range ends past the last function, a node is not one of the model, or a function's constant, or a coefficient summed with one the function holds, would not be finite.
+note The function of entry `k`, `idx[k]` or `pos + k`, becomes $f + e$, where $e$ is node `node[k]`. The constant, linear and quadratic terms of $e$ join the function's, added as `BIYOS_addlintermsp` and `BIYOS_addquadtermsp` add terms, and the rest becomes the function's expression, or is summed in a new node with the expression it has. An expression that holds no constant leaves the function's as it was.
 note The expression is split at its top. Among the terms of its top sum, a constant, $a x_j$, $q x_i x_j$ and $q x_j^2$ move, with negations and constant factors pushed into that sum; any other term stays whole, so no product of sums is expanded. Below the top, a node that other nodes use is kept whole, so a subexpression shared by several functions is stored once.
 note A call whose expressions bring new linear or quadratic terms moves the terms and offsets of every function from its lowest such one on, as `BIYOS_addlintermsp` does, so the expressions of many functions are best attached in one call, or a function's right after it is added. An expression that brings no new term moves nothing.
 see BIYOS_addexpr BIYOS_addlintermsp BIYOS_addquadtermsp

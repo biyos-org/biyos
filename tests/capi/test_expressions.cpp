@@ -217,6 +217,7 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_addnode(attempt.model, BIYOS_OP_EXP, 1, &child, nullptr, &node));
     note(attempt, BIYOS_addexpr(attempt.model, 0, nullptr, nullptr, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_attachexprsp(attempt.model, 0, nullptr, nullptr));
+    note(attempt, BIYOS_attachexprrg(attempt.model, 0, 0, nullptr));
 }
 
 }
@@ -311,10 +312,10 @@ TEST(CApiTest, LockedExpressions)
     const int message = BIYOS_EVT_MESSAGE;
     ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    const std::vector<BIYOS_status> statuses(4, BIYOS_ERR_BADARG);
+    const std::vector<BIYOS_status> statuses(5, BIYOS_ERR_BADARG);
     EXPECT_EQ(attempt.statuses, statuses);
     const std::string locked = "invalid argument: model: is read-only while delivering an event";
-    EXPECT_EQ(attempt.messages, std::vector<std::string>(4, locked));
+    EXPECT_EQ(attempt.messages, std::vector<std::string>(5, locked));
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     EXPECT_EQ(variable_node(model, 0), 0);
 }
@@ -560,4 +561,30 @@ TEST(CApiTest, RefusedAttach)
     EXPECT_EQ(after.coefficients, before.coefficients);
     EXPECT_EQ(roots_of(model, 2), (std::vector<BIYOS_offset>(2, biyos::kNoRoot)));
     EXPECT_EQ(next_id(model), 2);
+}
+
+TEST(CApiTest, AttachRange)
+{
+    const Env env;
+    const Model model(env);
+    add_variables(model, 1);
+    add_functions(model, 3);
+    const BIYOS_offset x = variable_node(model, 0);
+    const BIYOS_offset sine = node_of(model, BIYOS_OP_SIN, {x}, {});
+    const std::vector<BIYOS_offset> nodes{sine, x};
+    ASSERT_EQ(BIYOS_attachexprrg(model.get(), 1, 2, nodes.data()), BIYOS_OK);
+    const std::vector<BIYOS_offset> roots{biyos::kNoRoot, sine, biyos::kNoRoot};
+    EXPECT_EQ(roots_of(model, 3), roots);
+    EXPECT_EQ(read_functions(model, 3).starts, (std::vector<std::int64_t>{0, 0, 0, 1}));
+    const std::string bad = "invalid argument: ";
+    EXPECT_EQ(BIYOS_attachexprrg(model.get(), 2, 2, nodes.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "function 3: unknown");
+    EXPECT_EQ(BIYOS_attachexprrg(model.get(), -1, 1, nodes.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "function -1: unknown");
+    EXPECT_EQ(BIYOS_attachexprrg(model.get(), 0, -1, nodes.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
+    EXPECT_EQ(BIYOS_attachexprrg(model.get(), 0, 1, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), bad + "argument 'node': is null");
+    EXPECT_EQ(BIYOS_attachexprrg(model.get(), 3, 0, nullptr), BIYOS_OK);
+    EXPECT_EQ(roots_of(model, 3), roots);
 }
