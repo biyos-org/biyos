@@ -1,5 +1,6 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "model/compare.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 
@@ -185,6 +186,20 @@ TEST(IndicatorTest, WithConstraint)
     ASSERT_EQ(model.n_indicators(), 1);
     EXPECT_DOUBLE_EQ(model.constraint(0).lower, -1.0);
     expect_indicator(model.indicator(0), switched);
+}
+
+TEST(IndicatorTest, Copy)
+{
+    Model model = with_parts(2);
+    model.add_indicators(std::vector<Indicator>{when(0, 1, 1, 0.0, 1.0), when(2, 0, 1, -1.0, 1.0)});
+    const Model copy = model;
+    EXPECT_EQ(biyos::difference(model, copy), "");
+    Model changed = model;
+    const Index index = 1;
+    const Indicator other = when(2, 1, 1, -1.0, 1.0);
+    changed.set_indicators(std::span(&index, 1), std::span(&other, 1));
+    EXPECT_EQ(biyos::difference(model, changed), "indicator 1: value 0 against 1");
+    EXPECT_EQ(biyos::difference(model, copy), "");
 }
 
 TEST(IndicatorTest, Bounds)

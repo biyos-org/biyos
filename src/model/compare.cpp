@@ -93,6 +93,17 @@ std::string differ(const Objective &a, const Objective &b)
     });
 }
 
+std::string differ(const Indicator &a, const Indicator &b)
+{
+    return first_of({
+        compared("variable", a.variable, b.variable),
+        compared("value", a.value, b.value),
+        compared("function", a.function, b.function),
+        compared("lower bound", a.lower, b.lower),
+        compared("upper bound", a.upper, b.upper),
+    });
+}
+
 template <typename T> Offset size_of(std::span<const T> terms)
 {
     return static_cast<Offset>(terms.size());
@@ -179,6 +190,14 @@ std::string objective_difference(const Model &a, const Model &b, Index objective
     });
 }
 
+std::string indicator_difference(const Model &a, const Model &b, Index indicator)
+{
+    return first_of({
+        differ(a.indicator(indicator), b.indicator(indicator)),
+        named(a, b, Family::Indicator, indicator),
+    });
+}
+
 std::string variable_differences(const Model &a, const Model &b)
 {
     const auto variable = [&](Index k) { return variable_difference(a, b, k); };
@@ -204,6 +223,12 @@ std::string objective_differences(const Model &a, const Model &b)
     return table_difference("objective", a.n_objectives(), b.n_objectives(), objective);
 }
 
+std::string indicator_differences(const Model &a, const Model &b)
+{
+    const auto indicator = [&](Index k) { return indicator_difference(a, b, k); };
+    return table_difference("indicator", a.n_indicators(), b.n_indicators(), indicator);
+}
+
 }
 
 std::string difference(const Model &a, const Model &b)
@@ -224,6 +249,10 @@ std::string difference(const Model &a, const Model &b)
     if (found.empty())
     {
         found = objective_differences(a, b);
+    }
+    if (found.empty())
+    {
+        found = indicator_differences(a, b);
     }
     return found;
 }

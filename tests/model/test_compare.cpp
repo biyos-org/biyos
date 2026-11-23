@@ -14,6 +14,7 @@ namespace
 {
 
 using biyos::difference;
+using biyos::Indicator;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Objective;
@@ -30,6 +31,13 @@ constexpr double kInfinity = std::numeric_limits<double>::infinity();
 std::string from_sample(const Parts &parts)
 {
     return difference(built(sample()), built(parts));
+}
+
+Parts two_binaries()
+{
+    Parts parts = sample();
+    parts.variables[0] = biyos::widest(VariableKind::Binary);
+    return parts;
 }
 
 Parts with_copy(const Parts &parts)
@@ -135,6 +143,26 @@ TEST(CompareTest, ObjectiveFields)
     EXPECT_EQ(from_sample(relative), "objective 1: relative tolerance inf against 0.25");
 }
 
+TEST(CompareTest, IndicatorFields)
+{
+    Parts variable = two_binaries();
+    variable.indicators[0].variable = 0;
+    EXPECT_EQ(difference(built(two_binaries()), built(variable)),
+              "indicator 0: variable 1 against 0");
+    Parts value = sample();
+    value.indicators[1].value = 1;
+    EXPECT_EQ(from_sample(value), "indicator 1: value 0 against 1");
+    Parts function = sample();
+    function.indicators[0].function = 1;
+    EXPECT_EQ(from_sample(function), "indicator 0: function 2 against 1");
+    Parts lower = sample();
+    lower.indicators[0].lower = -1.0;
+    EXPECT_EQ(from_sample(lower), "indicator 0: lower bound -inf against -1");
+    Parts upper = sample();
+    upper.indicators[1].upper = 2.0;
+    EXPECT_EQ(from_sample(upper), "indicator 1: upper bound 1 against 2");
+}
+
 TEST(CompareTest, Counts)
 {
     Parts variables = sample();
@@ -147,6 +175,10 @@ TEST(CompareTest, Counts)
     Parts objectives = sample();
     objectives.objectives.pop_back();
     EXPECT_EQ(from_sample(objectives), "objective count 2 against 1");
+    Parts indicators = sample();
+    indicators.indicators.pop_back();
+    indicators.indicator_names = {};
+    EXPECT_EQ(from_sample(indicators), "indicator count 2 against 1");
 }
 
 TEST(CompareTest, Names)
@@ -182,6 +214,9 @@ TEST(CompareTest, Names)
     Parts objective = sample();
     objective.objective_names = {.indices = {1}, .names = {"cost"}};
     EXPECT_EQ(from_sample(objective), "objective 0: name 'cost' against none");
+    Parts indicator = sample();
+    indicator.indicator_names = {.indices = {0, 1}, .names = {"on", "off"}};
+    EXPECT_EQ(from_sample(indicator), "indicator 0: name none against 'on'");
 }
 
 TEST(CompareTest, OneUlp)
@@ -265,6 +300,10 @@ TEST(CompareTest, Order)
     later.variable_names.names[1] = "y";
     later.constants[0] = 2.0;
     EXPECT_EQ(from_sample(later), "variable 0: name 'x' against 'y'");
+    Parts last = sample();
+    last.objectives[0].weight = 3.0;
+    last.indicators[0].upper = 5.0;
+    EXPECT_EQ(from_sample(last), "objective 0: weight 2 against 3");
 }
 
 TEST(CompareTest, FieldOrder)
@@ -342,6 +381,34 @@ TEST(CompareTest, ObjectiveOrder)
     EXPECT_EQ(from_sample(changed), "objective 0: relative tolerance 0 against 1");
     objective.relative = 0.0;
     EXPECT_EQ(from_sample(changed), "");
+}
+
+TEST(CompareTest, IndicatorOrder)
+{
+    Parts changed = two_binaries();
+    Indicator &indicator = changed.indicators[1];
+    indicator = Indicator{
+        .variable = 0,
+        .value = 1,
+        .function = 0,
+        .lower = 0.0,
+        .upper = 3.0,
+    };
+    changed.indicator_names = {.indices = {1}, .names = {"on"}};
+    const Model base = built(two_binaries());
+    EXPECT_EQ(difference(base, built(changed)), "indicator 1: variable 1 against 0");
+    indicator.variable = 1;
+    EXPECT_EQ(difference(base, built(changed)), "indicator 1: value 0 against 1");
+    indicator.value = 0;
+    EXPECT_EQ(difference(base, built(changed)), "indicator 1: function 2 against 0");
+    indicator.function = 2;
+    EXPECT_EQ(difference(base, built(changed)), "indicator 1: lower bound 1 against 0");
+    indicator.lower = 1.0;
+    EXPECT_EQ(difference(base, built(changed)), "indicator 1: upper bound 1 against 3");
+    indicator.upper = 1.0;
+    EXPECT_EQ(difference(base, built(changed)), "indicator 1: name 'off' against 'on'");
+    changed.indicator_names.names[0] = "off";
+    EXPECT_EQ(difference(base, built(changed)), "");
 }
 
 TEST(CompareTest, ExpressionFields)
