@@ -45,6 +45,13 @@ struct Variable
 
 Variable widest(VariableKind kind) noexcept;
 
+struct Constraint
+{
+    Index function;
+    double lower;
+    double upper;
+};
+
 enum class Sense
 {
     Minimize = BIYOS_MINIMIZE,
@@ -54,13 +61,6 @@ enum class Sense
 inline constexpr std::array kSenses{
     Sense::Minimize,
     Sense::Maximize,
-};
-
-struct Constraint
-{
-    Index function;
-    double lower;
-    double upper;
 };
 
 struct Objective
@@ -80,14 +80,6 @@ struct Indicator
     Index variable;
     int value;
     Index function;
-    double lower;
-    double upper;
-};
-
-struct Complement
-{
-    Index function;
-    Index partner;
     double lower;
     double upper;
 };
@@ -130,6 +122,14 @@ inline constexpr std::array kConeKinds{
     ConeKind::Power,
     ConeKind::DualPower,
     ConeKind::Semidefinite,
+};
+
+struct Complement
+{
+    Index function;
+    Index partner;
+    double lower;
+    double upper;
 };
 
 enum class Family
@@ -184,16 +184,16 @@ class Model
     void set_variables(std::span<const Index> indices, std::span<const Variable> changed);
 
     Index n_functions() const noexcept;
-    std::span<const double> constants(Index start, Index size) const;
     const double &constant(Index index) const;
-    void set_constants(std::span<const Index> indices, std::span<const double> values);
-    void add_constants(std::span<const Index> indices, std::span<const double> values);
+    std::span<const double> constants(Index start, Index size) const;
     std::span<const LinearTerm> linear_terms(Index start, Index size) const;
 
     void check_room(std::size_t functions, Offset terms) const;
     void add_functions(std::span<const double> constants,
                        std::span<const Offset> starts,
                        std::vector<LinearTerm> terms);
+    void set_constants(std::span<const Index> indices, std::span<const double> values);
+    void add_constants(std::span<const Index> indices, std::span<const double> values);
     void add_linear_terms(std::span<const Index> functions,
                           std::span<const Offset> starts,
                           std::vector<LinearTerm> terms);
@@ -204,6 +204,62 @@ class Model
     void add_quadratic_terms(std::span<const Index> functions,
                              std::span<const Offset> starts,
                              std::vector<QuadraticTerm> terms);
+
+    Index n_constraints() const noexcept;
+    const Constraint &constraint(Index index) const;
+    std::span<const Constraint> constraints(Index start, Index size) const;
+
+    void add_constraints(std::span<const Constraint> added);
+    void set_constraints(std::span<const Index> indices, std::span<const Constraint> changed);
+
+    Index n_objectives() const noexcept;
+    const Objective &objective(Index index) const;
+    std::span<const Objective> objectives(Index start, Index size) const;
+
+    void check_objective_room(std::size_t added) const;
+    void add_objectives(std::span<const Objective> added);
+    void set_objectives(std::span<const Index> indices, std::span<const Objective> changed);
+
+    Index n_indicators() const noexcept;
+    const Indicator &indicator(Index index) const;
+    std::span<const Indicator> indicators(Index start, Index size) const;
+
+    void add_indicators(std::span<const Indicator> added);
+    void set_indicators(std::span<const Index> indices, std::span<const Indicator> changed);
+
+    Index n_sos() const noexcept;
+    SosKind kind_of_sos(Index index) const;
+    std::span<const Member> members(Index start, Index size) const;
+
+    void check_sos_room(std::size_t sos, Offset members) const;
+    void add_sos(std::span<const SosKind> kinds,
+                 std::span<const Offset> starts,
+                 std::span<const Member> members);
+
+    Index n_cones() const noexcept;
+    std::span<const ConeKind> cone_kinds(Index start, Index size) const;
+    std::span<const Index> cone_functions(Index start, Index size) const;
+    std::span<const double> cone_parameters(Index start, Index size) const;
+
+    void check_cone_room(std::size_t cones, Offset members, Offset parameters) const;
+    void add_cones(std::span<const ConeKind> kinds,
+                   std::span<const Offset> starts,
+                   std::span<const Index> functions,
+                   std::span<const Offset> parameter_starts,
+                   std::span<const double> parameters);
+
+    Index n_complements() const noexcept;
+    const Complement &complement(Index index) const;
+    std::span<const Complement> complements(Index start, Index size) const;
+
+    void add_complements(std::span<const Complement> added);
+    void set_complements(std::span<const Index> indices, std::span<const Complement> changed);
+
+    Override complement_tolerance(Index index) const;
+    void set_complement_tolerances(std::span<const Index> indices,
+                                   std::span<const double> absolute,
+                                   std::span<const double> relative);
+    void delete_complement_tolerances(std::span<const Index> indices);
 
     const Graph &graph() const noexcept;
     std::span<const Offset> roots(Index start, Index size) const;
@@ -230,81 +286,24 @@ class Model
     void set_product(Index callback, UserFunction product);
     void set_data(Index callback, void *data);
 
-    Index n_constraints() const noexcept;
-    const Constraint &constraint(Index index) const;
-    std::span<const Constraint> constraints(Index start, Index size) const;
-
-    void add_constraints(std::span<const Constraint> added);
-    void set_constraints(std::span<const Index> indices, std::span<const Constraint> changed);
-
-    Index n_objectives() const noexcept;
-    const Objective &objective(Index index) const;
-    std::span<const Objective> objectives(Index start, Index size) const;
-
-    void check_objective_room(std::size_t added) const;
-    void add_objectives(std::span<const Objective> added);
-    void set_objectives(std::span<const Index> indices, std::span<const Objective> changed);
-
-    Index n_indicators() const noexcept;
-    const Indicator &indicator(Index index) const;
-    std::span<const Indicator> indicators(Index start, Index size) const;
-
-    void add_indicators(std::span<const Indicator> added);
-    void set_indicators(std::span<const Index> indices, std::span<const Indicator> changed);
-    Index n_sos() const noexcept;
-    SosKind kind_of_sos(Index index) const;
-    std::span<const Member> members(Index start, Index size) const;
-
-    void check_sos_room(std::size_t sos, Offset members) const;
-    void add_sos(std::span<const SosKind> kinds,
-                 std::span<const Offset> starts,
-                 std::span<const Member> members);
-    Index n_cones() const noexcept;
-    std::span<const ConeKind> cone_kinds(Index start, Index size) const;
-    std::span<const Index> cone_functions(Index start, Index size) const;
-    std::span<const double> cone_parameters(Index start, Index size) const;
-
-    void check_cone_room(std::size_t cones, Offset members, Offset parameters) const;
-    void add_cones(std::span<const ConeKind> kinds,
-                   std::span<const Offset> starts,
-                   std::span<const Index> functions,
-                   std::span<const Offset> parameter_starts,
-                   std::span<const double> parameters);
-    Index n_complements() const noexcept;
-    const Complement &complement(Index index) const;
-    std::span<const Complement> complements(Index start, Index size) const;
-
-    void add_complements(std::span<const Complement> added);
-    void set_complements(std::span<const Index> indices, std::span<const Complement> changed);
-
-    Override complement_tolerance(Index index) const;
-    void set_complement_tolerances(std::span<const Index> indices,
-                                   std::span<const double> absolute,
-                                   std::span<const double> relative);
-    void delete_complement_tolerances(std::span<const Index> indices);
-
   private:
+    void check_kinds(std::span<const Index> indices, std::span<const Variable> changed) const;
     Offset begin_of(std::size_t function) const noexcept;
     void append(std::span<const double> constants,
                 std::span<const Offset> starts,
                 std::span<const LinearTerm> terms);
     Offset quadratic_begin(std::size_t function) const noexcept;
-    void check_kinds(std::span<const Index> indices, std::span<const Variable> changed) const;
     Offset member_begin(std::size_t sos) const noexcept;
     Callback &changed(Index callback);
 
     std::string name_;
+    std::array<Names, kFamilies.size()> names_;
     std::vector<Variable> variables_;
     std::vector<double> constants_;
     std::vector<Offset> linear_ends_;
     std::vector<LinearTerm> linear_terms_;
     std::vector<Offset> quadratic_ends_;
     std::vector<QuadraticTerm> quadratic_terms_;
-    Graph graph_;
-    Uses uses_;
-    std::vector<Offset> roots_;
-    std::vector<Callback> callbacks_;
-    std::vector<Index> covering_;
     std::vector<Constraint> constraints_;
     std::vector<Objective> objectives_;
     std::vector<Indicator> indicators_;
@@ -318,7 +317,11 @@ class Model
     std::vector<double> cone_parameters_;
     std::vector<Complement> complements_;
     Overrides complement_tolerances_;
-    std::array<Names, kFamilies.size()> names_;
+    Graph graph_;
+    Uses uses_;
+    std::vector<Offset> roots_;
+    std::vector<Callback> callbacks_;
+    std::vector<Index> covering_;
 };
 
 }
