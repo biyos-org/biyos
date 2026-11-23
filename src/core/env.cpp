@@ -117,6 +117,11 @@ std::size_t Env::handles() const noexcept
     return handles_.load();
 }
 
+Usage &Env::usage() noexcept
+{
+    return usage_;
+}
+
 Env::Handle::Handle(Env &env) noexcept : env_(env)
 {
     ++env_.handles_;

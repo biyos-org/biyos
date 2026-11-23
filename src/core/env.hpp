@@ -6,6 +6,7 @@
 #include "core/interrupt.hpp"
 #include "core/options.hpp"
 #include "core/records.hpp"
+#include "core/usage.hpp"
 
 #include <atomic>
 #include <cstddef>
@@ -75,6 +76,8 @@ class Env
 
     std::size_t handles() const noexcept;
 
+    Usage &usage() noexcept;
+
   private:
     ErrorScope *scope() const noexcept;
 
@@ -85,6 +88,7 @@ class Env
     Records records_;
     ErrorScope *scope_ = nullptr;
     std::atomic<std::size_t> handles_{0};
+    Usage usage_;
 };
 
 }

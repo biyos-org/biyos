@@ -1,4 +1,6 @@
 #include "biyos/biyos.h"
+#include "capi/entry.hpp"
+#include "core/env.hpp"
 #include "handles.hpp"
 
 #include <gtest/gtest.h>
@@ -6,6 +8,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
+#include <future>
 #include <latch>
 #include <map>
 #include <memory>
@@ -55,6 +58,81 @@ class Tally
 void tally(const BIYOS_event *event, void *data)
 {
     static_cast<Tally *>(data)->count(BIYOS_getevtmdl(event));
+}
+
+struct Gate
+{
+    std::latch inside{1};
+    std::latch done{1};
+};
+
+void park(Gate *gate)
+{
+    gate->inside.count_down();
+    gate->done.wait();
+}
+
+void hold_env(biyos::Env &, Gate *gate)
+{
+    park(gate);
+}
+
+void change_env(biyos::Env &env, Gate *gate)
+{
+    biyos::capi::writable(env);
+    park(gate);
+}
+
+void hold_model(const BIYOS_model &, Gate *gate)
+{
+    park(gate);
+}
+
+void change_model(BIYOS_model &model, Gate *gate)
+{
+    biyos::capi::writable(model);
+    park(gate);
+}
+
+template <auto Body, typename Target> BIYOS_status run(Target *target, Gate *gate)
+{
+    return biyos::capi::guarded<Body>(target, gate);
+}
+
+class Held
+{
+  public:
+    template <typename Target>
+    Held(BIYOS_status (*call)(Target *, Gate *), Target *target)
+        : status_(std::async(std::launch::async, call, target, &gate_))
+    {
+        gate_.inside.wait();
+    }
+
+    ~Held() { release(); }
+
+    Held(const Held &) = delete;
+    Held &operator=(const Held &) = delete;
+
+    BIYOS_status release()
+    {
+        if (status_.valid())
+        {
+            gate_.done.count_down();
+            returned_ = status_.get();
+        }
+        return returned_;
+    }
+
+  private:
+    Gate gate_;
+    std::future<BIYOS_status> status_;
+    BIYOS_status returned_ = BIYOS_ERR_INTERNAL;
+};
+
+BIYOS_status add_one(const biyos::test::Model &model)
+{
+    return BIYOS_addvar(model.get(), 1, nullptr, nullptr, nullptr, nullptr);
 }
 
 void build(BIYOS_env *env, std::latch &start, Built &built)
@@ -132,4 +210,100 @@ TEST(ThreadTest, Hooks)
     {
         EXPECT_EQ(seen.of(model->get()), kRounds);
     }
+}
+
+TEST(ThreadTest, EnvBusy)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    Held held(run<hold_env, BIYOS_env>, env.get());
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 1), BIYOS_ERR_BUSY);
+    EXPECT_EQ(env.message(), "busy: environment: is in a call on another thread");
+    EXPECT_EQ(biyos::test::last_error(env.get()).mdl, nullptr);
+    BIYOS_index hook = 0;
+    EXPECT_EQ(BIYOS_addenvhook(env.get(), tally, nullptr, BIYOS_EVT_MESSAGE, BIYOS_LVL_ERR, &hook),
+              BIYOS_ERR_BUSY);
+    EXPECT_EQ(BIYOS_delenvhook(env.get(), 1), BIYOS_ERR_BUSY);
+    EXPECT_EQ(BIYOS_freeenv(env.get()), BIYOS_ERR_BUSY);
+    BIYOS_int seed = -1;
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_OK);
+    EXPECT_EQ(seed, 0);
+    EXPECT_EQ(held.release(), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 1), BIYOS_OK);
+}
+
+TEST(ThreadTest, EnvChanging)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    Held held(run<change_env, BIYOS_env>, env.get());
+    BIYOS_int seed = -1;
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_ERR_BUSY);
+    EXPECT_EQ(seed, -1);
+    EXPECT_EQ(env.message(), "busy: environment: is being changed on another thread");
+    BIYOS_index n = -1;
+    EXPECT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_ERR_BUSY);
+    EXPECT_EQ(biyos::test::last_error(env.get()).mdl, model.get());
+    BIYOS_model *made = nullptr;
+    EXPECT_EQ(BIYOS_newmdl(env.get(), &made), BIYOS_ERR_BUSY);
+    EXPECT_EQ(made, nullptr);
+    EXPECT_EQ(held.release(), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_OK);
+    EXPECT_EQ(n, 0);
+}
+
+TEST(ThreadTest, ModelBusy)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    const biyos::test::Model other(env);
+    Held held(run<hold_model, BIYOS_model>, model.get());
+    EXPECT_EQ(add_one(model), BIYOS_ERR_BUSY);
+    EXPECT_EQ(env.message(), "busy: model: is in a call on another thread");
+    EXPECT_EQ(biyos::test::last_error(env.get()).mdl, model.get());
+    EXPECT_EQ(BIYOS_freemdl(model.get()), BIYOS_ERR_BUSY);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 1), BIYOS_ERR_BUSY);
+    BIYOS_index n = -1;
+    EXPECT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_OK);
+    EXPECT_EQ(n, 0);
+    EXPECT_EQ(add_one(other), BIYOS_OK);
+    BIYOS_model *made = nullptr;
+    EXPECT_EQ(BIYOS_newmdl(env.get(), &made), BIYOS_OK);
+    EXPECT_EQ(BIYOS_freemdl(made), BIYOS_OK);
+    EXPECT_EQ(held.release(), BIYOS_OK);
+    EXPECT_EQ(add_one(model), BIYOS_OK);
+}
+
+TEST(ThreadTest, ModelChanging)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    Held held(run<change_model, BIYOS_model>, model.get());
+    BIYOS_index n = -1;
+    EXPECT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_ERR_BUSY);
+    EXPECT_EQ(n, -1);
+    EXPECT_EQ(env.message(), "busy: model: is being changed on another thread");
+    EXPECT_EQ(add_one(model), BIYOS_ERR_BUSY);
+    BIYOS_model *copy = nullptr;
+    EXPECT_EQ(BIYOS_copymdl(model.get(), env.get(), &copy), BIYOS_ERR_BUSY);
+    EXPECT_EQ(copy, nullptr);
+    EXPECT_EQ(held.release(), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_OK);
+    EXPECT_EQ(n, 0);
+}
+
+TEST(ThreadTest, CopyTarget)
+{
+    const biyos::test::Env source;
+    const biyos::test::Env target;
+    const biyos::test::Model model(source);
+    Held held(run<change_env, BIYOS_env>, target.get());
+    BIYOS_model *copy = nullptr;
+    EXPECT_EQ(BIYOS_copymdl(model.get(), target.get(), &copy), BIYOS_ERR_BUSY);
+    EXPECT_EQ(copy, nullptr);
+    EXPECT_EQ(source.message(), "busy: environment: is being changed on another thread");
+    EXPECT_EQ(biyos::test::last_error(source.get()).mdl, model.get());
+    EXPECT_EQ(held.release(), BIYOS_OK);
+    EXPECT_EQ(BIYOS_copymdl(model.get(), target.get(), &copy), BIYOS_OK);
+    EXPECT_EQ(BIYOS_freemdl(copy), BIYOS_OK);
 }
