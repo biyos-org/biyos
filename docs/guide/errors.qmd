@@ -9,9 +9,9 @@ The hundreds of an error code say who is at fault:
 | Codes | At fault | Today |
 | --- | --- | --- |
 | −100 to −199 | the caller | `BIYOS_ERR_BADARG`, −100 |
-| −200 to −299 | the model | `BIYOS_ERR_BUSY`, −202, `BIYOS_ERR_INUSE`, −203 |
+| −200 to −299 | the model | `BIYOS_ERR_BADFILE`, −200, `BIYOS_ERR_UNSUPPORTED`, −201, `BIYOS_ERR_BUSY`, −202, `BIYOS_ERR_INUSE`, −203 |
 | −300 to −399 | user code, such as a callback | none yet |
-| −400 to −499 | resources | `BIYOS_ERR_NOMEMORY`, −400 |
+| −400 to −499 | resources | `BIYOS_ERR_NOMEMORY`, −400, `BIYOS_ERR_FILEIO`, −401 |
 | −500 to −599 | biyos itself | `BIYOS_ERR_INTERNAL`, −500 |
 
 A new code joins its group and keeps its number for good, so test a group by range rather than by value:
@@ -28,7 +28,7 @@ Besides the codes the reference names for a call, any call can return `BIYOS_ERR
 ```{.c file="examples/c/errors.c" item="report"}
 ```
 
-The message starts with the kind of failure, `invalid argument`, `busy`, `in use`, `out of memory` or `internal error`, then says what was wrong:
+The message starts with the kind of failure, `invalid argument`, `bad file`, `unsupported`, `busy`, `in use`, `out of memory`, `file access` or `internal error`, then says what was wrong:
 
 ```text
 -100, at fault the caller, on a model: invalid argument: variable 0: bounds [0, 2] are outside [0, 1], the widest of its kind
@@ -41,7 +41,7 @@ Each thread has its own last error: a failure on one thread never replaces what 
 
 ## What a failure leaves {#sec-errors-state}
 
-A call that fails changes nothing: no variable is half added, no option half set. It leaves its output arguments as they were, except where its entry in the reference says otherwise; `BIYOS_newenv`, `BIYOS_newmdl` and `BIYOS_copymdl` set their output to null. A null pointer argument gives `BIYOS_ERR_BADARG`, unless the reference says a null is allowed. The example checks that the refused seed left the option at its default:
+A call that fails changes nothing: no variable is half added, no option half set. It leaves its output arguments as they were, except where its entry in the reference says otherwise; `BIYOS_newenv`, `BIYOS_newmdl`, `BIYOS_copymdl` and `BIYOS_readmdl` set their output to null. A null pointer argument gives `BIYOS_ERR_BADARG`, unless the reference says a null is allowed. The example checks that the refused seed left the option at its default:
 
 ```{.c file="examples/c/errors.c" item="main"}
 ```

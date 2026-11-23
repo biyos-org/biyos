@@ -47,6 +47,7 @@ book:
         - reference/capi.qmd
         - reference/options.qmd
         - reference/codes.qmd
+        - reference/formats.qmd
         - reference/python.qmd
     - references.qmd
 
@@ -136,7 +137,7 @@ quartodoc:
       contents: [Env, CheckLevel, Masks, OptionSource, Error, version, Versions]
     - title: Models
       desc: A model holds the variables, functions, constraints, objectives, cones and complements of a problem.
-      contents: [Model, VariableKind, ObjectiveSense, SOSKind, ConeKind, Operator]
+      contents: [Model, VariableKind, ObjectiveSense, SOSKind, ConeKind, Format, Operator]
     - title: Blocks and views
       desc: The items an add call returns, which pass wherever the model takes indices.
       contents:

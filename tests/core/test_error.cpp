@@ -16,6 +16,22 @@ TEST(ErrorTest, InvalidArgument)
     EXPECT_STREQ(error.what(), "invalid argument: argument 'n': must be positive");
 }
 
+TEST(ErrorTest, BadFile)
+{
+    const biyos::Error error(biyos::ErrorKind::BadFile, "file 'a.mps' line 3", "unknown row 'r'");
+    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_BADFILE);
+    EXPECT_STREQ(error.what(), "bad file: file 'a.mps' line 3: unknown row 'r'");
+}
+
+TEST(ErrorTest, Unsupported)
+{
+    const biyos::Error error(biyos::ErrorKind::Unsupported,
+                             "file 'a.mps' line 9",
+                             "section QUADOBJ");
+    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_UNSUPPORTED);
+    EXPECT_STREQ(error.what(), "unsupported: file 'a.mps' line 9: section QUADOBJ");
+}
+
 TEST(ErrorTest, Busy)
 {
     const biyos::Error error(biyos::ErrorKind::Busy, "model", "is in a call on another thread");
@@ -37,6 +53,13 @@ TEST(ErrorTest, NoMemory)
     const biyos::Error error(biyos::ErrorKind::NoMemory, "workspace", "needs 3 GB");
     EXPECT_EQ(error.kind(), biyos::ErrorKind::NoMemory);
     EXPECT_STREQ(error.what(), "out of memory: workspace: needs 3 GB");
+}
+
+TEST(ErrorTest, FileAccess)
+{
+    const biyos::Error error(biyos::ErrorKind::FileAccess, "file 'a.mps'", "cannot be opened");
+    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_FILEIO);
+    EXPECT_STREQ(error.what(), "file access: file 'a.mps': cannot be opened");
 }
 
 TEST(ErrorTest, Internal)

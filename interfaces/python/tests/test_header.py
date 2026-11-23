@@ -132,6 +132,13 @@ def test_senses():
     assert senses == SENSES
 
 
+def test_formats():
+    formats, defined = group("biyos.h", "BIYOS_FMT_MPS")
+    assert len(formats) == defined
+    names = {f"BIYOS_FMT_{fmt.name}": fmt for fmt in biyos.Format}
+    assert formats == names
+
+
 def test_sos_kinds():
     kinds, defined = group("biyos.h", "BIYOS_SOSKND_SOS1")
     assert len(kinds) == defined

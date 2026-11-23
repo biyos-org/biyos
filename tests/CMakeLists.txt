@@ -110,6 +110,13 @@ biyos_add_test(test_model
     model/test_variables.cpp)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
+biyos_add_test(test_io
+    io/test_faults.cpp
+    io/test_lines.cpp
+    io/test_mps.cpp)
+target_link_libraries(test_io PRIVATE biyos_internal)
+target_compile_definitions(test_io PRIVATE MPS_DATA="${CMAKE_CURRENT_SOURCE_DIR}/io/data/mps")
+
 biyos_add_test(test_capi
     capi/sample.cpp
     capi/test_adders.cpp
@@ -122,6 +129,7 @@ biyos_add_test(test_capi
     capi/test_delete.cpp
     capi/test_env.cpp
     capi/test_events.cpp
+    capi/test_files.cpp
     capi/test_expressions.cpp
     capi/test_firewall.cpp
     capi/test_format.cpp
@@ -143,6 +151,7 @@ biyos_add_test(test_capi
     capi/test_threads.cpp
     capi/test_version.cpp)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
+target_compile_definitions(test_capi PRIVATE MPS_DATA="${CMAKE_CURRENT_SOURCE_DIR}/io/data/mps")
 
 add_executable(test_capi_c capi/test_header.c)
 target_link_libraries(test_capi_c PRIVATE biyos::biyos)

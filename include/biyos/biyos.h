@@ -41,9 +41,12 @@ typedef struct BIYOS_error
 
 #define BIYOS_OK 0
 #define BIYOS_ERR_BADARG (-100)
+#define BIYOS_ERR_BADFILE (-200)
+#define BIYOS_ERR_UNSUPPORTED (-201)
 #define BIYOS_ERR_BUSY (-202)
 #define BIYOS_ERR_INUSE (-203)
 #define BIYOS_ERR_NOMEMORY (-400)
+#define BIYOS_ERR_FILEIO (-401)
 #define BIYOS_ERR_INTERNAL (-500)
 
 BIYOS_API void BIYOS_version(BIYOS_int *major, BIYOS_int *minor, BIYOS_int *patch);
@@ -178,9 +181,15 @@ BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *b
 #define BIYOS_CONE_DPOW 7
 #define BIYOS_CONE_PSD 8
 
+#define BIYOS_FMT_MPS 1
+
 BIYOS_API BIYOS_status BIYOS_newmdl(BIYOS_env *env, BIYOS_model **mdl);
 BIYOS_API BIYOS_status BIYOS_copymdl(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
 BIYOS_API BIYOS_status BIYOS_freemdl(BIYOS_model *mdl);
+BIYOS_API BIYOS_status BIYOS_readmdl(BIYOS_env *env,
+                                     const char *path,
+                                     BIYOS_int fmt,
+                                     BIYOS_model **mdl);
 BIYOS_API BIYOS_status BIYOS_setmdlname(BIYOS_model *mdl, const char *name);
 BIYOS_API BIYOS_status BIYOS_getmdlname(const BIYOS_model *mdl, const char **name);
 BIYOS_API BIYOS_status BIYOS_delmdlname(BIYOS_model *mdl);

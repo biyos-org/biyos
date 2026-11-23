@@ -1,0 +1,15 @@
+#pragma once
+
+#include "io/draft.hpp"
+#include "io/lines.hpp"
+#include "model/model.hpp"
+
+#include <string_view>
+
+namespace biyos
+{
+
+void read_row(const Lines &lines, Draft &draft);
+Sense sense_of(const Lines &lines, std::string_view word);
+
+}

@@ -18,12 +18,18 @@ std::string_view kind_name(ErrorKind kind) noexcept
     {
     case ErrorKind::InvalidArgument:
         return "invalid argument";
+    case ErrorKind::BadFile:
+        return "bad file";
+    case ErrorKind::Unsupported:
+        return "unsupported";
     case ErrorKind::Busy:
         return "busy";
     case ErrorKind::InUse:
         return "in use";
     case ErrorKind::NoMemory:
         return "out of memory";
+    case ErrorKind::FileAccess:
+        return "file access";
     case ErrorKind::Internal:
         return "internal error";
     }
@@ -36,12 +42,18 @@ BIYOS_status status_of(ErrorKind kind) noexcept
     {
     case ErrorKind::InvalidArgument:
         return BIYOS_ERR_BADARG;
+    case ErrorKind::BadFile:
+        return BIYOS_ERR_BADFILE;
+    case ErrorKind::Unsupported:
+        return BIYOS_ERR_UNSUPPORTED;
     case ErrorKind::Busy:
         return BIYOS_ERR_BUSY;
     case ErrorKind::InUse:
         return BIYOS_ERR_INUSE;
     case ErrorKind::NoMemory:
         return BIYOS_ERR_NOMEMORY;
+    case ErrorKind::FileAccess:
+        return BIYOS_ERR_FILEIO;
     case ErrorKind::Internal:
         return BIYOS_ERR_INTERNAL;
     }

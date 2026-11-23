@@ -29,6 +29,12 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 #if BIYOS_ERR_BADARG > -100 || BIYOS_ERR_BADARG < -199
 #error "BIYOS_ERR_BADARG must be a caller error"
 #endif
+#if BIYOS_ERR_BADFILE > -200 || BIYOS_ERR_BADFILE < -299
+#error "BIYOS_ERR_BADFILE must be a model error"
+#endif
+#if BIYOS_ERR_UNSUPPORTED > -200 || BIYOS_ERR_UNSUPPORTED < -299
+#error "BIYOS_ERR_UNSUPPORTED must be a model error"
+#endif
 #if BIYOS_ERR_BUSY > -200 || BIYOS_ERR_BUSY < -299
 #error "BIYOS_ERR_BUSY must be a model error"
 #endif
@@ -37,6 +43,9 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 #endif
 #if BIYOS_ERR_NOMEMORY > -400 || BIYOS_ERR_NOMEMORY < -499
 #error "BIYOS_ERR_NOMEMORY must be a resource error"
+#endif
+#if BIYOS_ERR_FILEIO > -400 || BIYOS_ERR_FILEIO < -499
+#error "BIYOS_ERR_FILEIO must be a resource error"
 #endif
 #if BIYOS_ERR_INTERNAL > -500 || BIYOS_ERR_INTERNAL < -599
 #error "BIYOS_ERR_INTERNAL must be an internal error"
