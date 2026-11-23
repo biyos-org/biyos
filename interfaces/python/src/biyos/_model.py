@@ -328,6 +328,58 @@ class Model:
         copy._hold()
         return copy
 
+    def setmdlname(self, name: str) -> None:
+        """Name the model.
+
+        A name is a nonempty str. It may hold any character but the null
+        character, and it is kept as UTF-8.
+
+        Parameters
+        ----------
+        name
+            The new name, which replaces the one the model has.
+
+        Raises
+        ------
+        TypeError
+            When ``name`` is not a str.
+        ValueError
+            When ``name`` holds a null character or cannot be encoded as
+            UTF-8, such as a lone surrogate.
+        Error
+            When ``name`` is empty.
+
+        See Also
+        --------
+        BIYOS_setmdlname
+        """
+        self._call(lib.BIYOS_setmdlname, text("name", name))
+
+    def getmdlname(self) -> str | None:
+        """Return the name of the model.
+
+        Returns
+        -------
+        name
+            The name, or None when the model has none.
+
+        See Also
+        --------
+        BIYOS_getmdlname
+        """
+        name = c_char_p()
+        self._call(lib.BIYOS_getmdlname, byref(name))
+        return decoded(name.value)
+
+    def delmdlname(self) -> None:
+        """Remove the name of the model, which then has none.
+
+        See Also
+        --------
+        BIYOS_delmdlname
+        """
+        self._call(lib.BIYOS_delmdlname)
+
     def setopt(self, name: str, val: Value) -> None:
         """Set an option on the model alone.
 
@@ -641,6 +693,116 @@ class Model:
         kinds, lower, upper = found
         return [VariableKind(kind) for kind in kinds], lower, upper
 
+    def setvarname(
+        self, idx: Sequence[int | Variable] | Variables, name: Sequence[str]
+    ) -> None:
+        """Name variables of the model.
+
+        Variable ``idx[j]`` takes the name ``name[j]``, under the rules of
+        ``setmdlname``. A variable listed more than once takes the last of
+        its names. Names may repeat: several variables may hold one name,
+        and ``getvaridx`` then refuses to choose among them. Every other
+        family is named the same way, each apart.
+
+        Parameters
+        ----------
+        idx
+            The variables to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        Raises
+        ------
+        TypeError
+            When ``name`` is a str rather than a sequence of them, or a
+            name is not a str.
+        ValueError
+            When a name holds a null character or cannot be encoded as
+            UTF-8, or when ``name`` and ``idx`` differ in length.
+        Error
+            When an index is not that of a variable or a name is empty.
+
+        See Also
+        --------
+        BIYOS_setvarnamesp
+        BIYOS_setvarnamerg
+        """
+        self._setname("BIYOS_setvarname", Variables, idx, name)
+
+    def getvarname(
+        self, idx: Sequence[int | Variable] | Variables
+    ) -> list[str | None]:
+        """Return the names of variables.
+
+        Parameters
+        ----------
+        idx
+            The variables to read, in any order, any of them more than once.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getvarnamesp
+        BIYOS_getvarnamerg
+        """
+        return self._getname("BIYOS_getvarname", Variables, idx)
+
+    def getvaridx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of the variables with names.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the variable that alone holds each name.
+
+        Raises
+        ------
+        TypeError
+            When ``name`` is None, or a str rather than a sequence of them,
+            or a name is not a str.
+        ValueError
+            When a name holds a null character or cannot be encoded as
+            UTF-8.
+        Error
+            When no variable holds a name, or when several do.
+
+        See Also
+        --------
+        BIYOS_getvaridx
+        """
+        return self._getidx(lib.BIYOS_getvaridx, name)
+
+    def delvarname(self, idx: Sequence[int | Variable] | Variables) -> None:
+        """Remove the names of variables, which then have none.
+
+        Parameters
+        ----------
+        idx
+            The variables that lose their names. One without a name, or
+            listed more than once, is left without one.
+
+        Raises
+        ------
+        Error
+            When an index is not that of a variable, and then no name is
+            removed.
+
+        See Also
+        --------
+        BIYOS_delvarnamesp
+        BIYOS_delvarnamerg
+        """
+        self._delname("BIYOS_delvarname", Variables, idx)
+
     def addfun(self, n: int) -> Functions:
         """Add functions after the last one, each with the constant 0 and
         no terms.
@@ -754,6 +916,81 @@ class Model:
         """
         found = self._getlist("BIYOS_getcst", Functions, idx, c_double)
         return found[0]
+
+    def setfunname(
+        self, idx: Sequence[int | Function] | Functions, name: Sequence[str]
+    ) -> None:
+        """Name functions of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The functions to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setfunnamesp
+        BIYOS_setfunnamerg
+        """
+        self._setname("BIYOS_setfunname", Functions, idx, name)
+
+    def getfunname(
+        self, idx: Sequence[int | Function] | Functions
+    ) -> list[str | None]:
+        """Return the names of functions, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The functions to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getfunnamesp
+        BIYOS_getfunnamerg
+        """
+        return self._getname("BIYOS_getfunname", Functions, idx)
+
+    def getfunidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named functions, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the function that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getfunidx
+        """
+        return self._getidx(lib.BIYOS_getfunidx, name)
+
+    def delfunname(self, idx: Sequence[int | Function] | Functions) -> None:
+        """Remove the names of functions, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The functions that lose their names.
+
+        See Also
+        --------
+        BIYOS_delfunnamesp
+        BIYOS_delfunnamerg
+        """
+        self._delname("BIYOS_delfunname", Functions, idx)
 
     def addlinterm(
         self,
@@ -1537,6 +1774,85 @@ class Model:
         functions, lower, upper = found
         return functions, lower, upper
 
+    def setconname(
+        self,
+        idx: Sequence[int | Constraint] | Constraints,
+        name: Sequence[str],
+    ) -> None:
+        """Name constraints of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The constraints to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setconnamesp
+        BIYOS_setconnamerg
+        """
+        self._setname("BIYOS_setconname", Constraints, idx, name)
+
+    def getconname(
+        self, idx: Sequence[int | Constraint] | Constraints
+    ) -> list[str | None]:
+        """Return the names of constraints, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The constraints to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getconnamesp
+        BIYOS_getconnamerg
+        """
+        return self._getname("BIYOS_getconname", Constraints, idx)
+
+    def getconidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named constraints, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the constraint that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getconidx
+        """
+        return self._getidx(lib.BIYOS_getconidx, name)
+
+    def delconname(
+        self, idx: Sequence[int | Constraint] | Constraints
+    ) -> None:
+        """Remove the names of constraints, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The constraints that lose their names.
+
+        See Also
+        --------
+        BIYOS_delconnamesp
+        BIYOS_delconnamerg
+        """
+        self._delname("BIYOS_delconname", Constraints, idx)
+
     def addobj(
         self,
         funidx: Sequence[int | Function] | Functions,
@@ -1851,6 +2167,81 @@ class Model:
         senses = [Sense(code) for code in codes]
         return functions, senses, priorities, weights
 
+    def setobjname(
+        self, idx: Sequence[int | Objective] | Objectives, name: Sequence[str]
+    ) -> None:
+        """Name objectives of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The objectives to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setobjnamesp
+        BIYOS_setobjnamerg
+        """
+        self._setname("BIYOS_setobjname", Objectives, idx, name)
+
+    def getobjname(
+        self, idx: Sequence[int | Objective] | Objectives
+    ) -> list[str | None]:
+        """Return the names of objectives, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The objectives to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getobjnamesp
+        BIYOS_getobjnamerg
+        """
+        return self._getname("BIYOS_getobjname", Objectives, idx)
+
+    def getobjidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named objectives, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the objective that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getobjidx
+        """
+        return self._getidx(lib.BIYOS_getobjidx, name)
+
+    def delobjname(self, idx: Sequence[int | Objective] | Objectives) -> None:
+        """Remove the names of objectives, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The objectives that lose their names.
+
+        See Also
+        --------
+        BIYOS_delobjnamesp
+        BIYOS_delobjnamerg
+        """
+        self._delname("BIYOS_delobjname", Objectives, idx)
+
     def addind(
         self,
         varidx: Sequence[int | Variable] | Variables,
@@ -2063,6 +2454,81 @@ class Model:
         variables, values, functions, lower, upper = found
         return variables, values, functions, lower, upper
 
+    def setindname(
+        self, idx: Sequence[int | Indicator] | Indicators, name: Sequence[str]
+    ) -> None:
+        """Name indicators of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The indicators to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setindnamesp
+        BIYOS_setindnamerg
+        """
+        self._setname("BIYOS_setindname", Indicators, idx, name)
+
+    def getindname(
+        self, idx: Sequence[int | Indicator] | Indicators
+    ) -> list[str | None]:
+        """Return the names of indicators, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The indicators to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getindnamesp
+        BIYOS_getindnamerg
+        """
+        return self._getname("BIYOS_getindname", Indicators, idx)
+
+    def getindidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named indicators, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the indicator that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getindidx
+        """
+        return self._getidx(lib.BIYOS_getindidx, name)
+
+    def delindname(self, idx: Sequence[int | Indicator] | Indicators) -> None:
+        """Remove the names of indicators, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The indicators that lose their names.
+
+        See Also
+        --------
+        BIYOS_delindnamesp
+        BIYOS_delindnamerg
+        """
+        self._delname("BIYOS_delindname", Indicators, idx)
+
     def addsos(
         self,
         knd: Sequence[SOSKind],
@@ -2194,6 +2660,81 @@ class Model:
         self._call(*chosen, size, kinds, starts, members, weights)
         found = [SOSKind(code) for code in kinds]
         return found, list(starts), list(members), list(weights)
+
+    def setsosname(
+        self, idx: Sequence[int | SOS] | SOSs, name: Sequence[str]
+    ) -> None:
+        """Name special ordered sets, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The sets to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setsosnamesp
+        BIYOS_setsosnamerg
+        """
+        self._setname("BIYOS_setsosname", SOSs, idx, name)
+
+    def getsosname(self, idx: Sequence[int | SOS] | SOSs) -> list[str | None]:
+        """Return the names of special ordered sets, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The sets to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getsosnamesp
+        BIYOS_getsosnamerg
+        """
+        return self._getname("BIYOS_getsosname", SOSs, idx)
+
+    def getsosidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named special ordered sets, as
+        ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the set that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getsosidx
+        """
+        return self._getidx(lib.BIYOS_getsosidx, name)
+
+    def delsosname(self, idx: Sequence[int | SOS] | SOSs) -> None:
+        """Remove the names of special ordered sets, as ``delvarname``
+        does.
+
+        Parameters
+        ----------
+        idx
+            The sets that lose their names.
+
+        See Also
+        --------
+        BIYOS_delsosnamesp
+        BIYOS_delsosnamerg
+        """
+        self._delname("BIYOS_delsosname", SOSs, idx)
 
     def addcone(
         self,
@@ -2385,6 +2926,81 @@ class Model:
         values = (c_double * size)()
         self._call(*chosen, size, starts, values)
         return list(starts), list(values)
+
+    def setconename(
+        self, idx: Sequence[int | Cone] | Cones, name: Sequence[str]
+    ) -> None:
+        """Name cones of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The cones to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setconenamesp
+        BIYOS_setconenamerg
+        """
+        self._setname("BIYOS_setconename", Cones, idx, name)
+
+    def getconename(
+        self, idx: Sequence[int | Cone] | Cones
+    ) -> list[str | None]:
+        """Return the names of cones, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The cones to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getconenamesp
+        BIYOS_getconenamerg
+        """
+        return self._getname("BIYOS_getconename", Cones, idx)
+
+    def getconeidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named cones, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the cone that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getconeidx
+        """
+        return self._getidx(lib.BIYOS_getconeidx, name)
+
+    def delconename(self, idx: Sequence[int | Cone] | Cones) -> None:
+        """Remove the names of cones, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The cones that lose their names.
+
+        See Also
+        --------
+        BIYOS_delconenamesp
+        BIYOS_delconenamerg
+        """
+        self._delname("BIYOS_delconename", Cones, idx)
 
     def addccon(
         self,
@@ -2612,622 +3228,6 @@ class Model:
         found = self._getlist("BIYOS_getccon", Complements, every, *types)
         bounded, partners, lower, upper = found
         return bounded, partners, lower, upper
-
-    def setmdlname(self, name: str) -> None:
-        """Name the model.
-
-        A name is a nonempty str. It may hold any character but the null
-        character, and it is kept as UTF-8.
-
-        Parameters
-        ----------
-        name
-            The new name, which replaces the one the model has.
-
-        Raises
-        ------
-        TypeError
-            When ``name`` is not a str.
-        ValueError
-            When ``name`` holds a null character or cannot be encoded as
-            UTF-8, such as a lone surrogate.
-        Error
-            When ``name`` is empty.
-
-        See Also
-        --------
-        BIYOS_setmdlname
-        """
-        self._call(lib.BIYOS_setmdlname, text("name", name))
-
-    def getmdlname(self) -> str | None:
-        """Return the name of the model.
-
-        Returns
-        -------
-        name
-            The name, or None when the model has none.
-
-        See Also
-        --------
-        BIYOS_getmdlname
-        """
-        name = c_char_p()
-        self._call(lib.BIYOS_getmdlname, byref(name))
-        return decoded(name.value)
-
-    def delmdlname(self) -> None:
-        """Remove the name of the model, which then has none.
-
-        See Also
-        --------
-        BIYOS_delmdlname
-        """
-        self._call(lib.BIYOS_delmdlname)
-
-    def setvarname(
-        self, idx: Sequence[int | Variable] | Variables, name: Sequence[str]
-    ) -> None:
-        """Name variables of the model.
-
-        Variable ``idx[j]`` takes the name ``name[j]``, under the rules of
-        ``setmdlname``. A variable listed more than once takes the last of
-        its names. Names may repeat: several variables may hold one name,
-        and ``getvaridx`` then refuses to choose among them. Every other
-        family is named the same way, each apart.
-
-        Parameters
-        ----------
-        idx
-            The variables to name.
-        name
-            The new name of each, as many as ``idx``.
-
-        Raises
-        ------
-        TypeError
-            When ``name`` is a str rather than a sequence of them, or a
-            name is not a str.
-        ValueError
-            When a name holds a null character or cannot be encoded as
-            UTF-8, or when ``name`` and ``idx`` differ in length.
-        Error
-            When an index is not that of a variable or a name is empty.
-
-        See Also
-        --------
-        BIYOS_setvarnamesp
-        BIYOS_setvarnamerg
-        """
-        self._setname("BIYOS_setvarname", Variables, idx, name)
-
-    def getvarname(
-        self, idx: Sequence[int | Variable] | Variables
-    ) -> list[str | None]:
-        """Return the names of variables.
-
-        Parameters
-        ----------
-        idx
-            The variables to read, in any order, any of them more than once.
-
-        Returns
-        -------
-        name
-            The name of each, or None for one that has none.
-
-        See Also
-        --------
-        BIYOS_getvarnamesp
-        BIYOS_getvarnamerg
-        """
-        return self._getname("BIYOS_getvarname", Variables, idx)
-
-    def getvaridx(self, name: Sequence[str]) -> list[int]:
-        """Return the indices of the variables with names.
-
-        Parameters
-        ----------
-        name
-            The names, each matched exactly.
-
-        Returns
-        -------
-        idx
-            The index of the variable that alone holds each name.
-
-        Raises
-        ------
-        TypeError
-            When ``name`` is None, or a str rather than a sequence of them,
-            or a name is not a str.
-        ValueError
-            When a name holds a null character or cannot be encoded as
-            UTF-8.
-        Error
-            When no variable holds a name, or when several do.
-
-        See Also
-        --------
-        BIYOS_getvaridx
-        """
-        return self._getidx(lib.BIYOS_getvaridx, name)
-
-    def delvarname(self, idx: Sequence[int | Variable] | Variables) -> None:
-        """Remove the names of variables, which then have none.
-
-        Parameters
-        ----------
-        idx
-            The variables that lose their names. One without a name, or
-            listed more than once, is left without one.
-
-        Raises
-        ------
-        Error
-            When an index is not that of a variable, and then no name is
-            removed.
-
-        See Also
-        --------
-        BIYOS_delvarnamesp
-        BIYOS_delvarnamerg
-        """
-        self._delname("BIYOS_delvarname", Variables, idx)
-
-    def setfunname(
-        self, idx: Sequence[int | Function] | Functions, name: Sequence[str]
-    ) -> None:
-        """Name functions of the model, as ``setvarname`` names variables.
-
-        Parameters
-        ----------
-        idx
-            The functions to name.
-        name
-            The new name of each, as many as ``idx``.
-
-        See Also
-        --------
-        BIYOS_setfunnamesp
-        BIYOS_setfunnamerg
-        """
-        self._setname("BIYOS_setfunname", Functions, idx, name)
-
-    def getfunname(
-        self, idx: Sequence[int | Function] | Functions
-    ) -> list[str | None]:
-        """Return the names of functions, as ``getvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The functions to read.
-
-        Returns
-        -------
-        name
-            The name of each, or None for one that has none.
-
-        See Also
-        --------
-        BIYOS_getfunnamesp
-        BIYOS_getfunnamerg
-        """
-        return self._getname("BIYOS_getfunname", Functions, idx)
-
-    def getfunidx(self, name: Sequence[str]) -> list[int]:
-        """Return the indices of named functions, as ``getvaridx`` does.
-
-        Parameters
-        ----------
-        name
-            The names, each matched exactly.
-
-        Returns
-        -------
-        idx
-            The index of the function that alone holds each name.
-
-        See Also
-        --------
-        BIYOS_getfunidx
-        """
-        return self._getidx(lib.BIYOS_getfunidx, name)
-
-    def delfunname(self, idx: Sequence[int | Function] | Functions) -> None:
-        """Remove the names of functions, as ``delvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The functions that lose their names.
-
-        See Also
-        --------
-        BIYOS_delfunnamesp
-        BIYOS_delfunnamerg
-        """
-        self._delname("BIYOS_delfunname", Functions, idx)
-
-    def setconname(
-        self,
-        idx: Sequence[int | Constraint] | Constraints,
-        name: Sequence[str],
-    ) -> None:
-        """Name constraints of the model, as ``setvarname`` names variables.
-
-        Parameters
-        ----------
-        idx
-            The constraints to name.
-        name
-            The new name of each, as many as ``idx``.
-
-        See Also
-        --------
-        BIYOS_setconnamesp
-        BIYOS_setconnamerg
-        """
-        self._setname("BIYOS_setconname", Constraints, idx, name)
-
-    def getconname(
-        self, idx: Sequence[int | Constraint] | Constraints
-    ) -> list[str | None]:
-        """Return the names of constraints, as ``getvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The constraints to read.
-
-        Returns
-        -------
-        name
-            The name of each, or None for one that has none.
-
-        See Also
-        --------
-        BIYOS_getconnamesp
-        BIYOS_getconnamerg
-        """
-        return self._getname("BIYOS_getconname", Constraints, idx)
-
-    def getconidx(self, name: Sequence[str]) -> list[int]:
-        """Return the indices of named constraints, as ``getvaridx`` does.
-
-        Parameters
-        ----------
-        name
-            The names, each matched exactly.
-
-        Returns
-        -------
-        idx
-            The index of the constraint that alone holds each name.
-
-        See Also
-        --------
-        BIYOS_getconidx
-        """
-        return self._getidx(lib.BIYOS_getconidx, name)
-
-    def delconname(
-        self, idx: Sequence[int | Constraint] | Constraints
-    ) -> None:
-        """Remove the names of constraints, as ``delvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The constraints that lose their names.
-
-        See Also
-        --------
-        BIYOS_delconnamesp
-        BIYOS_delconnamerg
-        """
-        self._delname("BIYOS_delconname", Constraints, idx)
-
-    def setobjname(
-        self, idx: Sequence[int | Objective] | Objectives, name: Sequence[str]
-    ) -> None:
-        """Name objectives of the model, as ``setvarname`` names variables.
-
-        Parameters
-        ----------
-        idx
-            The objectives to name.
-        name
-            The new name of each, as many as ``idx``.
-
-        See Also
-        --------
-        BIYOS_setobjnamesp
-        BIYOS_setobjnamerg
-        """
-        self._setname("BIYOS_setobjname", Objectives, idx, name)
-
-    def getobjname(
-        self, idx: Sequence[int | Objective] | Objectives
-    ) -> list[str | None]:
-        """Return the names of objectives, as ``getvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The objectives to read.
-
-        Returns
-        -------
-        name
-            The name of each, or None for one that has none.
-
-        See Also
-        --------
-        BIYOS_getobjnamesp
-        BIYOS_getobjnamerg
-        """
-        return self._getname("BIYOS_getobjname", Objectives, idx)
-
-    def getobjidx(self, name: Sequence[str]) -> list[int]:
-        """Return the indices of named objectives, as ``getvaridx`` does.
-
-        Parameters
-        ----------
-        name
-            The names, each matched exactly.
-
-        Returns
-        -------
-        idx
-            The index of the objective that alone holds each name.
-
-        See Also
-        --------
-        BIYOS_getobjidx
-        """
-        return self._getidx(lib.BIYOS_getobjidx, name)
-
-    def delobjname(self, idx: Sequence[int | Objective] | Objectives) -> None:
-        """Remove the names of objectives, as ``delvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The objectives that lose their names.
-
-        See Also
-        --------
-        BIYOS_delobjnamesp
-        BIYOS_delobjnamerg
-        """
-        self._delname("BIYOS_delobjname", Objectives, idx)
-
-    def setindname(
-        self, idx: Sequence[int | Indicator] | Indicators, name: Sequence[str]
-    ) -> None:
-        """Name indicators of the model, as ``setvarname`` names variables.
-
-        Parameters
-        ----------
-        idx
-            The indicators to name.
-        name
-            The new name of each, as many as ``idx``.
-
-        See Also
-        --------
-        BIYOS_setindnamesp
-        BIYOS_setindnamerg
-        """
-        self._setname("BIYOS_setindname", Indicators, idx, name)
-
-    def getindname(
-        self, idx: Sequence[int | Indicator] | Indicators
-    ) -> list[str | None]:
-        """Return the names of indicators, as ``getvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The indicators to read.
-
-        Returns
-        -------
-        name
-            The name of each, or None for one that has none.
-
-        See Also
-        --------
-        BIYOS_getindnamesp
-        BIYOS_getindnamerg
-        """
-        return self._getname("BIYOS_getindname", Indicators, idx)
-
-    def getindidx(self, name: Sequence[str]) -> list[int]:
-        """Return the indices of named indicators, as ``getvaridx`` does.
-
-        Parameters
-        ----------
-        name
-            The names, each matched exactly.
-
-        Returns
-        -------
-        idx
-            The index of the indicator that alone holds each name.
-
-        See Also
-        --------
-        BIYOS_getindidx
-        """
-        return self._getidx(lib.BIYOS_getindidx, name)
-
-    def delindname(self, idx: Sequence[int | Indicator] | Indicators) -> None:
-        """Remove the names of indicators, as ``delvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The indicators that lose their names.
-
-        See Also
-        --------
-        BIYOS_delindnamesp
-        BIYOS_delindnamerg
-        """
-        self._delname("BIYOS_delindname", Indicators, idx)
-
-    def setsosname(
-        self, idx: Sequence[int | SOS] | SOSs, name: Sequence[str]
-    ) -> None:
-        """Name special ordered sets, as ``setvarname`` names variables.
-
-        Parameters
-        ----------
-        idx
-            The sets to name.
-        name
-            The new name of each, as many as ``idx``.
-
-        See Also
-        --------
-        BIYOS_setsosnamesp
-        BIYOS_setsosnamerg
-        """
-        self._setname("BIYOS_setsosname", SOSs, idx, name)
-
-    def getsosname(self, idx: Sequence[int | SOS] | SOSs) -> list[str | None]:
-        """Return the names of special ordered sets, as ``getvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The sets to read.
-
-        Returns
-        -------
-        name
-            The name of each, or None for one that has none.
-
-        See Also
-        --------
-        BIYOS_getsosnamesp
-        BIYOS_getsosnamerg
-        """
-        return self._getname("BIYOS_getsosname", SOSs, idx)
-
-    def getsosidx(self, name: Sequence[str]) -> list[int]:
-        """Return the indices of named special ordered sets, as
-        ``getvaridx`` does.
-
-        Parameters
-        ----------
-        name
-            The names, each matched exactly.
-
-        Returns
-        -------
-        idx
-            The index of the set that alone holds each name.
-
-        See Also
-        --------
-        BIYOS_getsosidx
-        """
-        return self._getidx(lib.BIYOS_getsosidx, name)
-
-    def delsosname(self, idx: Sequence[int | SOS] | SOSs) -> None:
-        """Remove the names of special ordered sets, as ``delvarname``
-        does.
-
-        Parameters
-        ----------
-        idx
-            The sets that lose their names.
-
-        See Also
-        --------
-        BIYOS_delsosnamesp
-        BIYOS_delsosnamerg
-        """
-        self._delname("BIYOS_delsosname", SOSs, idx)
-
-    def setconename(
-        self, idx: Sequence[int | Cone] | Cones, name: Sequence[str]
-    ) -> None:
-        """Name cones of the model, as ``setvarname`` names variables.
-
-        Parameters
-        ----------
-        idx
-            The cones to name.
-        name
-            The new name of each, as many as ``idx``.
-
-        See Also
-        --------
-        BIYOS_setconenamesp
-        BIYOS_setconenamerg
-        """
-        self._setname("BIYOS_setconename", Cones, idx, name)
-
-    def getconename(
-        self, idx: Sequence[int | Cone] | Cones
-    ) -> list[str | None]:
-        """Return the names of cones, as ``getvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The cones to read.
-
-        Returns
-        -------
-        name
-            The name of each, or None for one that has none.
-
-        See Also
-        --------
-        BIYOS_getconenamesp
-        BIYOS_getconenamerg
-        """
-        return self._getname("BIYOS_getconename", Cones, idx)
-
-    def getconeidx(self, name: Sequence[str]) -> list[int]:
-        """Return the indices of named cones, as ``getvaridx`` does.
-
-        Parameters
-        ----------
-        name
-            The names, each matched exactly.
-
-        Returns
-        -------
-        idx
-            The index of the cone that alone holds each name.
-
-        See Also
-        --------
-        BIYOS_getconeidx
-        """
-        return self._getidx(lib.BIYOS_getconeidx, name)
-
-    def delconename(self, idx: Sequence[int | Cone] | Cones) -> None:
-        """Remove the names of cones, as ``delvarname`` does.
-
-        Parameters
-        ----------
-        idx
-            The cones that lose their names.
-
-        See Also
-        --------
-        BIYOS_delconenamesp
-        BIYOS_delconenamerg
-        """
-        self._delname("BIYOS_delconename", Cones, idx)
 
     def setcconname(
         self,
