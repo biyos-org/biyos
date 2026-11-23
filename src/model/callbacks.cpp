@@ -8,7 +8,6 @@
 
 #include <cstddef>
 #include <span>
-#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -47,11 +46,6 @@ const Callback &Model::callback(Index index) const
     return callbacks_[at(index)];
 }
 
-Index Model::callback_of(Index function) const noexcept
-{
-    return at(function) < covering_.size() ? covering_[at(function)] : kNoCallback;
-}
-
 Callback &Model::changed(Index callback)
 {
     check_index(kNoun, callback, n_callbacks());
@@ -63,17 +57,6 @@ Index Model::add_callback(std::span<const Index> functions, void *data)
     check_n(kNoun, callbacks_, 1);
     check_count(functions);
     check_functions(functions, n_functions(), "funidx");
-    for (const Index function : functions)
-    {
-        if (roots_[at(function)] != kNoRoot)
-        {
-            refuse("function", function, "has an expression");
-        }
-        if (callback_of(function) != kNoCallback)
-        {
-            refuse("function", function, "is in " + item(kNoun, callback_of(function)));
-        }
-    }
     const Index index = n_callbacks();
     Callback added{
         .covered = std::vector<Index>(functions.begin(), functions.end()),
@@ -86,15 +69,7 @@ Index Model::add_callback(std::span<const Index> functions, void *data)
         .hessian = {},
         .hessian_product = {},
     };
-    if (covering_.size() < constants_.size())
-    {
-        covering_.resize(constants_.size(), kNoCallback);
-    }
     callbacks_.push_back(std::move(added));
-    for (const Index function : functions)
-    {
-        covering_[at(function)] = index;
-    }
     return index;
 }
 

@@ -164,3 +164,24 @@ def test_used(model):
     assert model.getfunname(f) == NAMES + [None]
     assert model.getcst(f) == [0.0, 1.0, 2.0, 3.0]
     assert model.getcon()[0] == [3]
+
+
+def in_use(model, idx):
+    with pytest.raises(biyos.Error) as caught:
+        model.delfun(idx)
+    assert caught.value.code == IN_USE
+    return str(caught.value)
+
+
+def test_covered(model):
+    model.addfun(4)
+    for idx in ([2], [1, 2], [3, 1]):
+        model.addcb(idx)
+    used = "in use: function {}: used by callback {}"
+    assert in_use(model, [1]) == used.format(1, 1)
+    assert in_use(model, [2]) == used.format(2, 0)
+    assert in_use(model, [3, 0]) == used.format(3, 2)
+    assert model.delfun([0]) == [-1, 0, 1, 2]
+    assert in_use(model, [0]) == used.format(0, 1)
+    assert in_use(model, [1]) == used.format(1, 0)
+    assert in_use(model, [2]) == used.format(2, 2)

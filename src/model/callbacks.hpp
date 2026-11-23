@@ -11,8 +11,6 @@
 namespace biyos
 {
 
-inline constexpr Index kNoCallback = -1;
-
 struct Request
 {
     const BIYOS_model *model;
