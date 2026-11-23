@@ -76,9 +76,9 @@ void add_complements(BIYOS_model &model, int n, const Fields &fields, int *start
     }
     const biyos::Complement nonnegative{
         .function = 0,
-        .multiplier = 0,
         .lower = 0.0,
         .upper = kInfinity,
+        .multiplier = 0,
     };
     std::vector<biyos::Complement> added;
     added.reserve(size);

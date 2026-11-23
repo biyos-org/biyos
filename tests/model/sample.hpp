@@ -179,8 +179,8 @@ inline Parts sample()
             },
         .complements =
             {
-                {.function = 1, .multiplier = 2, .lower = 0.0, .upper = kInfinity},
-                {.function = 0, .multiplier = 0, .lower = -2.0, .upper = 2.0},
+                {.function = 1, .lower = 0.0, .upper = kInfinity, .multiplier = 2},
+                {.function = 0, .lower = -2.0, .upper = 2.0, .multiplier = 0},
             },
         .name = "sample",
         .variable_names = {.indices = {2, 0}, .names = {"z", "x"}},

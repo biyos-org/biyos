@@ -72,7 +72,7 @@ Model sized(Index n)
     const std::vector<biyos::SosKind> kinds(size, biyos::SosKind::Sos1);
     model.add_sos(kinds, starts, {});
     add_cones(model, size);
-    const Complement complement{.function = 0, .multiplier = 0, .lower = 0.0, .upper = 1.0};
+    const Complement complement{.function = 0, .lower = 0.0, .upper = 1.0, .multiplier = 0};
     model.add_complements(std::vector<Complement>(size, complement));
     return model;
 }

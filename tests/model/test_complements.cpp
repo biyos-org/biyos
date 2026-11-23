@@ -45,9 +45,9 @@ Model with_functions(std::size_t n)
 Complement pair(Index function, Index multiplier, double lower, double upper)
 {
     return Complement{.function = function,
-                      .multiplier = multiplier,
                       .lower = lower,
-                      .upper = upper};
+                      .upper = upper,
+                      .multiplier = multiplier};
 }
 
 void add(Model &model, const Complement &complement)

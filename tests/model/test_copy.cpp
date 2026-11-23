@@ -79,7 +79,7 @@ void change(Model &model)
     const std::vector<Offset> ends{0, 3};
     const std::vector<Index> functions{3, 1, 0};
     model.add_cones(std::span(&cone, 1), ends, functions, std::vector<Offset>{0, 0}, {});
-    const Complement complement{.function = 3, .multiplier = 1, .lower = -1.0, .upper = 3.0};
+    const Complement complement{.function = 3, .lower = -1.0, .upper = 3.0, .multiplier = 1};
     model.set_complements(std::span(&index, 1), std::span(&complement, 1));
     model.add_complements(std::span(&complement, 1));
     const double tolerance = 0.5;

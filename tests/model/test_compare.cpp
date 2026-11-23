@@ -542,16 +542,16 @@ TEST(CompareTest, ComplementOrder)
 {
     Parts changed = sample();
     Complement &complement = changed.complements[1];
-    complement = Complement{.function = 2, .multiplier = 1, .lower = 0.0, .upper = 1.0};
+    complement = Complement{.function = 2, .lower = 0.0, .upper = 1.0, .multiplier = 1};
     changed.complement_names = {.indices = {1}, .names = {"other"}};
     EXPECT_EQ(from_sample(changed), "complement 1: function 0 against 2");
     complement.function = 0;
-    EXPECT_EQ(from_sample(changed), "complement 1: multiplier 0 against 1");
-    complement.multiplier = 0;
     EXPECT_EQ(from_sample(changed), "complement 1: lower bound -2 against 0");
     complement.lower = -2.0;
     EXPECT_EQ(from_sample(changed), "complement 1: upper bound 2 against 1");
     complement.upper = 2.0;
+    EXPECT_EQ(from_sample(changed), "complement 1: multiplier 0 against 1");
+    complement.multiplier = 0;
     EXPECT_EQ(from_sample(changed), "complement 1: name 'pair' against 'other'");
     changed.complement_names.names[0] = "pair";
     EXPECT_EQ(from_sample(changed), "");

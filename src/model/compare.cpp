@@ -120,9 +120,9 @@ std::string differ(const Complement &a, const Complement &b)
 {
     return first_of({
         compared("function", a.function, b.function),
-        compared("multiplier", a.multiplier, b.multiplier),
         compared("lower bound", a.lower, b.lower),
         compared("upper bound", a.upper, b.upper),
+        compared("multiplier", a.multiplier, b.multiplier),
     });
 }
 
