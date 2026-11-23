@@ -89,7 +89,7 @@ table Status codes
 value BIYOS_OK The call succeeded.
 value BIYOS_ERR_BADARG The caller passed something the call does not accept: a null pointer, an unknown name, id or index, a value out of range, a call of the wrong kind for its option, or a change to an environment while it delivers an event. The entry of each call says which.
 value BIYOS_ERR_BUSY The environment or the model is in a call on another thread that this call may not overlap (@sec-threads).
-value BIYOS_ERR_INUSE An item that another record uses, so this change of it is refused.
+value BIYOS_ERR_INUSE An item that another record or a callback uses, so this change of it is refused.
 value BIYOS_ERR_NOMEMORY An allocation failed, or a count would pass the largest the model can hold.
 value BIYOS_ERR_INTERNAL A fault in biyos.
 since 0.1.0
@@ -845,6 +845,20 @@ error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a funct
 see BIYOS_setcstsp BIYOS_addcstsp
 since 0.1.0
 
+function BIYOS_delfunsp BIYOS_delfunrg
+summary Delete functions.
+param mdl in The model.
+param pos in In the `rg` form, the first function to delete.
+param n in The number of functions to delete.
+param idx in In the `sp` form, the functions to delete, in any order; may be null when `n` is 0.
+param map out Receives one entry for each function the model held before the call: entry `i` is the new index of function `i`, or -1 when it is deleted; skipped when null.
+return `BIYOS_OK` once the functions are deleted. The others keep their order, their data and their names, and are numbered from 0 again; each record and callback that uses one refers to it by its new index.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function, a function is listed more than once, with a message such as `invalid argument: argument 'idx': function 1 is repeated`, or the range ends past the last function.
+error BIYOS_ERR_INUSE A function to delete is used by a constraint, an objective, an indicator, a cone, a complement or a callback, with a message that names one use, such as `in use: function 4: used by constraint 2`.
+note A deleted function's name, constant, terms and expression go with it; the nodes of the expression stay in the model with their ids. Once the call succeeds, a pointer read earlier with `BIYOS_getfunnamesp` is no longer valid.
+see BIYOS_getnfun BIYOS_delfunnamesp
+since 0.1.0
+
 function BIYOS_setfunnamesp BIYOS_setfunnamerg
 summary Name functions.
 param mdl in The model.
@@ -867,7 +881,7 @@ param idx in In the `sp` form, the function of each entry, in any order and any 
 param name out Entry `j` receives the name of function `idx[j]` or `pos + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function or the range ends past the last function.
-note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of functions and lists that function succeeds, or the model is freed.
+note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of functions and lists that function succeeds, a call that deletes functions succeeds, or the model is freed.
 see BIYOS_setfunnamesp BIYOS_getfunidx
 since 0.1.0
 
@@ -2182,7 +2196,7 @@ since 0.1.0
 
 group callbacks Callbacks
 text A callback computes the nonlinear part $e(x)$ of some functions in user code, in place of an expression. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for their values, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
-text A function's nonlinear part is an expression or one callback, never both: `BIYOS_addcb` refuses a function that has an expression or another callback, and `BIYOS_attachexprsp` refuses to give a covered function an expression that leaves a nonlinear part once its constant, linear and quadratic terms are split off. A function emptied by `BIYOS_clrfunsp` stays covered.
+text A function's nonlinear part is an expression or one callback, never both: `BIYOS_addcb` refuses a function that has an expression or another callback, and `BIYOS_attachexprsp` refuses to give a covered function an expression that leaves a nonlinear part once its constant, linear and quadratic terms are split off. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function.
 text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. No call evaluates a callback yet.
 text The model keeps the function pointers and `data` as given and never frees `data`. A copy made by `BIYOS_copymdl` shares them with its source, so both call the same code with the same `data`.
 

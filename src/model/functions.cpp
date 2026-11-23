@@ -5,6 +5,7 @@
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
 #include "model/merge.hpp"
+#include "model/renumber.hpp"
 #include "model/terms.hpp"
 
 #include <cstddef>
@@ -151,6 +152,19 @@ void Model::add_linear_terms(std::span<const Index> functions,
         additions.push_back(AddedTerms{.function = functions[k], .terms = part});
     }
     merge_terms(linear_ends_, linear_terms_, additions);
+}
+
+std::vector<Index> Model::delete_functions(std::span<const Index> indices)
+{
+    std::vector<Index> map = renumbering(kNoun, n_functions(), indices);
+    check_unused(map);
+    keep(constants_, map);
+    keep_parts(linear_ends_, linear_terms_, map);
+    keep_parts(quadratic_ends_, quadratic_terms_, map);
+    keep(roots_, map);
+    renumber_functions(map);
+    renumber_names(Family::Function, map);
+    return map;
 }
 
 Offset Model::begin_of(std::size_t function) const noexcept

@@ -211,9 +211,11 @@ A name read in C belongs to the model. The pointer stays valid until a call that
 
 ## Deleting records {#sec-model-deleting}
 
-Constraints, objectives, indicators, special ordered sets, cones and complements can be deleted. Each family takes two calls, named after its short form, `con`, `obj`, `ind`, `sos`, `cone` or `ccon`: `BIYOS_delconsp` deletes the constraints a list names, in any order, and `BIYOS_delconrg` a range of them. The items left keep their order and their data and are numbered from 0 again, so each family stays dense. An optional array, one entry for each item the family held before the call, receives the new index of each, or -1 for one deleted: deleting constraints 2 and 0 of four gives `{-1, 0, -1, 1}`.
+Functions, constraints, objectives, indicators, special ordered sets, cones and complements can be deleted. Each family takes two calls, named after its short form, `fun`, `con`, `obj`, `ind`, `sos`, `cone` or `ccon`: `BIYOS_delconsp` deletes the constraints a list names, in any order, and `BIYOS_delconrg` a range of them. The items left keep their order and their data and are numbered from 0 again, so each family stays dense. An optional array, one entry for each item the family held before the call, receives the new index of each, or -1 for one deleted: deleting constraints 2 and 0 of four gives `{-1, 0, -1, 1}`.
 
 A deleted item takes its name with it, and a deleted complement its tolerances. What it used stays in the model: deleting a constraint leaves its function, and deleting a set leaves its variables. An index listed twice, or one the family does not hold, refuses the call, which then deletes nothing.
+
+A function can be deleted only once nothing uses it. One that a constraint, an objective, an indicator, a cone, a complement or a callback uses refuses the call with `BIYOS_ERR_INUSE` and a message naming the use, such as `in use: function 4: used by constraint 2`, so whatever uses it is deleted first. A function a callback covers cannot be deleted, since no call deletes a callback. A deleted function takes its constant, its terms and its expression with it, while the nodes of the expression stay in the model with their ids. Each record and callback then refers to the functions left by their new indices.
 
 ## The same model in Python {#sec-model-python}
 
