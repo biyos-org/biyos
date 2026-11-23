@@ -39,6 +39,7 @@ class Names
              std::span<const Index> indices,
              std::span<const std::string_view> names);
     void remove(std::string_view noun, Index size, std::span<const Index> indices);
+    void renumber(std::span<const Index> map) noexcept;
 
   private:
     struct Tally
@@ -57,6 +58,7 @@ class Names
                   std::span<const std::size_t> entries) const;
     void grow(Index index);
     void acquire(Index index, std::string_view name, Table &fresh);
+    void shift(Index from, Index to, const std::string *name) noexcept;
     void release(Index index, const std::string *name) noexcept;
 
     Table holders_;

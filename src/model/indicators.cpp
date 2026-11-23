@@ -4,6 +4,7 @@
 #include "core/index.hpp"
 #include "core/text.hpp"
 #include "model/checks.hpp"
+#include "model/renumber.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -152,6 +153,14 @@ void Model::check_kinds(std::span<const Index> indices, std::span<const Variable
             refuse_kind(indicators_, indices[k]);
         }
     }
+}
+
+std::vector<Index> Model::delete_indicators(std::span<const Index> indices)
+{
+    std::vector<Index> map = renumbering(kNoun, n_indicators(), indices);
+    keep(indicators_, map);
+    renumber_names(Family::Indicator, map);
+    return map;
 }
 
 }

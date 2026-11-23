@@ -4,6 +4,7 @@
 #include "core/index.hpp"
 #include "core/text.hpp"
 #include "model/checks.hpp"
+#include "model/renumber.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -12,6 +13,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace biyos
 {
@@ -121,6 +123,21 @@ void Overrides::remove(std::string_view noun, Index size, std::span<const Index>
     for (const Index index : indices)
     {
         held_.erase(index);
+    }
+}
+
+void Overrides::renumber(std::span<const Index> map) noexcept
+{
+    auto at = held_.begin();
+    while (at != held_.end())
+    {
+        const Index to = map[static_cast<std::size_t>(at->first)];
+        auto node = held_.extract(at++);
+        if (to != kDeleted)
+        {
+            node.key() = to;
+            held_.insert(std::move(node));
+        }
     }
 }
 

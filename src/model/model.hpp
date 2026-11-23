@@ -211,6 +211,7 @@ class Model
 
     void add_constraints(std::span<const Constraint> added);
     void set_constraints(std::span<const Index> indices, std::span<const Constraint> changed);
+    std::vector<Index> delete_constraints(std::span<const Index> indices);
 
     Index n_objectives() const noexcept;
     const Objective &objective(Index index) const;
@@ -219,6 +220,7 @@ class Model
     void check_objective_room(std::size_t added) const;
     void add_objectives(std::span<const Objective> added);
     void set_objectives(std::span<const Index> indices, std::span<const Objective> changed);
+    std::vector<Index> delete_objectives(std::span<const Index> indices);
 
     Index n_indicators() const noexcept;
     const Indicator &indicator(Index index) const;
@@ -226,6 +228,7 @@ class Model
 
     void add_indicators(std::span<const Indicator> added);
     void set_indicators(std::span<const Index> indices, std::span<const Indicator> changed);
+    std::vector<Index> delete_indicators(std::span<const Index> indices);
 
     Index n_sos() const noexcept;
     SosKind kind_of_sos(Index index) const;
@@ -235,6 +238,7 @@ class Model
     void add_sos(std::span<const SosKind> kinds,
                  std::span<const Offset> starts,
                  std::span<const Member> members);
+    std::vector<Index> delete_sos(std::span<const Index> indices);
 
     Index n_cones() const noexcept;
     std::span<const ConeKind> cone_kinds(Index start, Index size) const;
@@ -247,6 +251,7 @@ class Model
                    std::span<const Index> functions,
                    std::span<const Offset> parameter_starts,
                    std::span<const double> parameters);
+    std::vector<Index> delete_cones(std::span<const Index> indices);
 
     Index n_complements() const noexcept;
     const Complement &complement(Index index) const;
@@ -254,6 +259,7 @@ class Model
 
     void add_complements(std::span<const Complement> added);
     void set_complements(std::span<const Index> indices, std::span<const Complement> changed);
+    std::vector<Index> delete_complements(std::span<const Index> indices);
 
     Override complement_tolerance(Index index) const;
     void set_complement_tolerances(std::span<const Index> indices,
@@ -287,6 +293,7 @@ class Model
     void set_data(Index callback, void *data);
 
   private:
+    void renumber_names(Family family, std::span<const Index> map) noexcept;
     void check_kinds(std::span<const Index> indices, std::span<const Variable> changed) const;
     Offset begin_of(std::size_t function) const noexcept;
     void append(std::span<const double> constants,

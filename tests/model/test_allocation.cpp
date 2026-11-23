@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cstddef>
 #include <new>
 #include <optional>
@@ -356,6 +357,12 @@ void set_tolerances(Model &model)
     model.set_complement_tolerances(indices, absolute, {});
 }
 
+void delete_two(Model &model)
+{
+    const std::array<Index, 2> indices{3, 0};
+    model.delete_complements(indices);
+}
+
 }
 
 TEST(AllocationTest, Renaming)
@@ -508,6 +515,25 @@ TEST(AllocationTest, Tolerances)
         }
         EXPECT_EQ(biyos::difference(model, before), "");
         EXPECT_EQ(copy_cost(model), copy_cost(before));
+    }
+    ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, Deletion)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        Model before = with_complements();
+        set_tolerances(before);
+        Model model = before;
+        if (!runs_out_with(model, delete_two, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(model.n_complements(), 2);
+            EXPECT_EQ(copy_cost(model), copy_cost(before) - 2);
+            return;
+        }
+        EXPECT_EQ(biyos::difference(model, before), "");
     }
     ADD_FAILURE() << "the call never completed";
 }

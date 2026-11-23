@@ -76,6 +76,7 @@ add_library(biyos_internal STATIC
     model/patterns.cpp
     model/postfix.cpp
     model/quadratic.cpp
+    model/renumber.cpp
     model/sos.cpp
     model/terms.cpp
     model/transpose.cpp

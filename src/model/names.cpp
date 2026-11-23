@@ -5,6 +5,7 @@
 #include "core/text.hpp"
 #include "core/utf8.hpp"
 #include "model/checks.hpp"
+#include "model/renumber.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -180,6 +181,26 @@ void Names::remove(std::string_view noun, Index size, std::span<const Index> ind
     }
 }
 
+void Names::renumber(std::span<const Index> map) noexcept
+{
+    std::size_t kept = 0;
+    for (std::size_t k = 0; k < names_.size(); ++k)
+    {
+        const auto index = static_cast<Index>(k);
+        if (map[k] == kDeleted)
+        {
+            release(index, names_[k]);
+        }
+        else
+        {
+            shift(index, map[k], names_[k]);
+            names_[kept] = names_[k];
+            ++kept;
+        }
+    }
+    names_.resize(kept);
+}
+
 Names::Table Names::missing(std::span<const std::string_view> names,
                             std::span<const std::size_t> entries) const
 {
@@ -209,6 +230,14 @@ void Names::acquire(Index index, std::string_view name, Table &fresh)
     found->second.count += 1;
     found->second.index_sum += index;
     names_[slot(index)] = &found->first;
+}
+
+void Names::shift(Index from, Index to, const std::string *name) noexcept
+{
+    if (name != nullptr)
+    {
+        holders_.find(*name)->second.index_sum -= from - to;
+    }
 }
 
 void Names::release(Index index, const std::string *name) noexcept
