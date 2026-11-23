@@ -36,6 +36,7 @@ class Env
         friend class Env;
 
         Env &env_;
+        bool linked_;
         ErrorScope *outer_;
         Record kept_;
         bool swapped_ = false;
@@ -74,6 +75,8 @@ class Env
     std::size_t handles() const noexcept;
 
   private:
+    ErrorScope *scope() const noexcept;
+
     std::unique_ptr<Clock> clock_;
     Events events_;
     Options options_;

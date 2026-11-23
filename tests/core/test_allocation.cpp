@@ -3,6 +3,7 @@
 #include "core/env.hpp"
 #include "core/events.hpp"
 #include "core/timer.hpp"
+#include "delivery.hpp"
 
 #include <gtest/gtest.h>
 
@@ -22,6 +23,14 @@ void run(biyos::Env &env, biyos::TimingTree &tree)
     {
         const biyos::Timer iterate(env, tree, "nlp", "iterate");
     }
+}
+
+void failed_scope(biyos::Env &env)
+{
+    const biyos::Env::ErrorScope scope(env);
+    biyos::test::fail_after(0);
+    env.record_error(biyos::ErrorKind::Internal, "inner");
+    biyos::test::stop_failing();
 }
 
 }
@@ -52,12 +61,7 @@ TEST(AllocationTest, FirstError)
 TEST(AllocationTest, EmptyScope)
 {
     biyos::Env env;
-    {
-        const biyos::Env::ErrorScope scope(env);
-        biyos::test::fail_after(0);
-        env.record_error(biyos::ErrorKind::Internal, "inner");
-        biyos::test::stop_failing();
-    }
+    biyos::test::in_delivery(env, failed_scope);
     EXPECT_EQ(env.last_error().status, BIYOS_OK);
     EXPECT_STREQ(env.last_error().text, "");
     env.record_error(biyos::ErrorKind::Internal, "later");
@@ -72,12 +76,7 @@ TEST(AllocationTest, ScopedError)
     const std::string outer(64, 'o');
     biyos::Env env;
     env.record_error(biyos::ErrorKind::NoMemory, outer, model);
-    {
-        const biyos::Env::ErrorScope scope(env);
-        biyos::test::fail_after(0);
-        env.record_error(biyos::ErrorKind::Internal, "inner");
-        biyos::test::stop_failing();
-    }
+    biyos::test::in_delivery(env, failed_scope);
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, model);
     EXPECT_STREQ(env.last_error().text, outer.c_str());
