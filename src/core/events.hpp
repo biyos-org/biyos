@@ -1,65 +1,18 @@
 #pragma once
 
-#include "biyos/biyos.h"
 #include "core/clock.hpp"
+#include "core/depth.hpp"
+#include "core/event.hpp"
+#include "core/hooks.hpp"
 #include "core/thread.hpp"
 
-#include <array>
 #include <atomic>
 #include <chrono>
 #include <concepts>
-#include <cstddef>
-#include <deque>
-#include <functional>
-#include <memory>
 #include <mutex>
-#include <string>
-#include <string_view>
-#include <vector>
 
 namespace biyos
 {
-
-enum class EventKind
-{
-    Message = BIYOS_EVT_MESSAGE,
-    Check = BIYOS_EVT_CHECK,
-    Phase = BIYOS_EVT_PHASE,
-};
-
-enum class EventLevel
-{
-    Debug = BIYOS_LVL_DBG,
-    Info = BIYOS_LVL_INFO,
-    Warning = BIYOS_LVL_WARN,
-    Error = BIYOS_LVL_ERR,
-};
-
-inline constexpr std::array kEventKinds{EventKind::Message, EventKind::Check, EventKind::Phase};
-
-EventKind find_kind(int id);
-EventLevel find_level(int id);
-std::string_view name_of(EventKind kind) noexcept;
-std::string_view name_of(EventLevel level) noexcept;
-
-struct Field
-{
-    std::string name;
-    std::string value;
-};
-
-struct Event
-{
-    EventKind kind;
-    EventLevel level;
-    std::chrono::nanoseconds time;
-    std::string module;
-    std::string text;
-    std::vector<Field> fields;
-    const BIYOS_model *model = nullptr;
-};
-
-using Hook = std::function<void(const Event &)>;
 
 class Events
 {
@@ -71,9 +24,9 @@ class Events
 
     bool wanted(EventKind kind, EventLevel level) const noexcept
     {
-        return lowest_[slot(kind)].load() <= level;
+        return hooks_.wanted(kind, level);
     }
-    bool delivering() const noexcept { return mine() && depth_ > 0; }
+    bool delivering() const noexcept { return mine() && hooks_.delivering(); }
     bool filling() const noexcept { return mine() && fills_ > 0; }
     std::chrono::nanoseconds origin() const noexcept { return origin_; }
 
@@ -103,7 +56,7 @@ class Events
         {
             return;
         }
-        deliver(event);
+        hooks_.deliver(event);
     }
 
   private:
@@ -120,47 +73,11 @@ class Events
         bool nested_;
     };
 
-    class Depth
-    {
-      public:
-        explicit Depth(int &n) noexcept : count_(n) { ++count_; }
-
-        ~Depth() { --count_; }
-
-        Depth(const Depth &) = delete;
-        Depth &operator=(const Depth &) = delete;
-
-      private:
-        int &count_;
-    };
-
-    struct Entry
-    {
-        int id;
-        EventKind kind;
-        EventLevel lowest;
-        std::unique_ptr<const Hook> hook;
-        bool active;
-    };
-
-    static constexpr EventLevel kNobody = static_cast<EventLevel>(BIYOS_LVL_ERR + 1);
-
-    static std::size_t slot(EventKind kind) noexcept { return static_cast<std::size_t>(kind) - 1; }
-
-    static bool accepts(const Entry &entry, EventKind kind, EventLevel level) noexcept;
-
     bool mine() const noexcept { return owner_.load() == this_thread(); }
-
-    void refresh(EventKind kind) noexcept;
-    void deliver(const Event &event) noexcept;
-    void prune() noexcept;
 
     const Clock &clock_;
     std::chrono::nanoseconds origin_;
-    std::deque<Entry> hooks_;
-    std::array<std::atomic<EventLevel>, kEventKinds.size()> lowest_;
-    int next_id_ = 1;
-    int depth_ = 0;
+    Hooks hooks_;
     int fills_ = 0;
     std::mutex turn_;
     std::atomic<ThreadId> owner_;
