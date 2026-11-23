@@ -1,0 +1,88 @@
+# File formats {#sec-formats}
+
+`BIYOS_readmdl` and `Model.read` read a model from a file in the format the caller names. This chapter gives the rules of each format as the reader applies them. A file that breaks one gives `BIYOS_ERR_BADFILE`, a section the reader does not handle gives `BIYOS_ERR_UNSUPPORTED`, and each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`.
+
+## Free MPS
+
+`BIYOS_FMT_MPS` reads free MPS, the form of MPS in which fields are separated by white space and names hold no blanks. The rules below are those of the CPLEX [MPS reference](https://www.ibm.com/docs/en/icos/22.1.2?topic=standard-records-in-mps-format) and the Gurobi [MPS reference](https://docs.gurobi.com/projects/optimizer/en/current/reference/fileformats/modelformats.html#mps-format), where the two agree. Where they differ or say nothing, biyos sets its own rule, given in @sec-mps-choices.
+
+### Lines
+
+A line that starts with `*` is a comment. A section line starts in the first column with the name of its section. A data line starts with a blank, and its fields are separated by white space. In a data line, a third or fifth field that starts with `$` makes the rest of the line a comment. Numbers are written in decimal or exponential notation.
+
+### Sections
+
+The sections come in this order: `NAME`, `OBJSENSE`, `ROWS`, `COLUMNS`, `RHS`, `RANGES`, `BOUNDS`, `ENDATA`. `OBJSENSE`, `RANGES` and `BOUNDS` may be left out. A file without `RHS` gives a warning and sets every right-hand side to 0. `ENDATA` is the last line.
+
+| Section | Holds |
+|---|---|
+| `NAME` | The name of the model, on the same line. |
+| `OBJSENSE` | `MAX` to maximize, on the same line or the next. Minimization when left out. `OBJSEN` is the same section. |
+| `ROWS` | A sense letter and a name for each row. |
+| `COLUMNS` | A column name, then one or two pairs of a row name and a coefficient. |
+| `RHS` | A vector name, then one or two pairs of a row name and a value. |
+| `RANGES` | A vector name, then one or two pairs of a row name and a range. |
+| `BOUNDS` | A bound type, a vector name, a column name and a value. |
+
+### Rows
+
+Each row has a sense: `N` free, `L` less than or equal, `G` greater than or equal, `E` equality. The first `N` row is the objective. A row the `RHS` section leaves out has a right-hand side of 0. A right-hand side on the objective row is the negative of the objective's offset.
+
+A range turns a row into an interval. With right-hand side $r$ and range $R$:
+
+| Sense | Lower | Upper |
+|---|---|---|
+| `G` | $r$ | $r + \lvert R \rvert$ |
+| `L` | $r - \lvert R \rvert$ | $r$ |
+| `E`, $R \ge 0$ | $r$ | $r + R$ |
+| `E`, $R < 0$ | $r + R$ | $r$ |
+
+Only the first vector of `RHS`, of `RANGES` and of `BOUNDS` is read.
+
+### Columns
+
+The lines of one column are contiguous. Columns between a marker line `'MARKER'` `'INTORG'` and a marker line `'MARKER'` `'INTEND'` are integer, with bounds 0 and 1 when the `BOUNDS` section gives them none. A file may hold any number of marker pairs.
+
+### Bounds
+
+A column has a lower bound of 0 and no upper bound unless the `BOUNDS` section says otherwise.
+
+| Type | Effect |
+|---|---|
+| `LO` | Lower bound. |
+| `UP` | Upper bound. |
+| `FX` | Lower and upper bound, both the value. |
+| `FR` | Free: no lower and no upper bound. |
+| `MI` | No lower bound. |
+| `PL` | No upper bound. |
+| `BV` | Binary. The value is 1 or left out. |
+| `LI` | Integer, with the value as lower bound. The value is an integer. |
+| `UI` | Integer, with the value as upper bound. The value is an integer. |
+| `SC` | Semi-continuous, with the value as upper bound. The value is given. |
+| `SI` | Semi-integer, with the value as upper bound. |
+
+Both documents list the types. The rules on the values of `BV`, `LI`, `UI` and `SC` are those of CPLEX's table of integer bound types; `SI` is Gurobi's.
+
+An upper bound below 0 on a column with no other bound sets its lower bound to minus infinity, with a warning.
+
+### Choices {#sec-mps-choices}
+
+Each rule below is biyos's rule. The document it follows is named where there is one.
+
+| Case | biyos's rule |
+|---|---|
+| No `N` row | The model has no objective. Neither document requires an `N` row. |
+| `N` rows after the first | Each is a constraint on its function with no lower and no upper bound. CPLEX discards them. |
+| `OBJNAME`, or an `N` row with objective fields | Refused with `BIYOS_ERR_UNSUPPORTED`. |
+| A second right-hand side or range on a row | Refused, within the vector read. |
+| A range on an `N` row | Ignored, with a warning. The CPLEX range table covers `G`, `L` and `E` rows only. |
+| A column that crosses a marker line | Refused: a column lies wholly inside or wholly outside an integer block. |
+| Several vectors in `RHS`, `RANGES` or `BOUNDS` | Only the first is read, as CPLEX states; the first line of each later vector gives a warning. Gurobi ignores the vector names. |
+| Bounds of a marked column | 0 and 1 when the `BOUNDS` section gives none, as CPLEX states. Once one bound is given, the other takes its default for any column: 0 for the lower, no upper bound. Gurobi keeps the upper bound at 1. |
+| Two lower or two upper bounds on a column | Refused. `FX` gives both, so `FX` and `UP` on one column are two upper bounds. |
+| `SI` without a value | Refused, as CPLEX refuses `SC` without one. |
+| Negative upper bound | CPLEX's rule above holds for every type that sets the upper bound alone: `UP`, `UI`, `SC` and `SI`. |
+| A value on `FR`, `MI` or `PL` | It is ignored, with a warning. |
+| `OBJSENSE` | `MAX` and `MIN`, on the same line as Gurobi writes it or on the next as CPLEX does. Neither document states `MIN`. |
+| Numbers | Decimal or exponential, the sign of the exponent optional. A missing exponent, which CPLEX reads as 0, is refused, as is a value outside the range of a double. The 25-character limit of CPLEX is not checked. |
+| Infinity | Neither document gives an MPS spelling of infinity, so a word such as `inf` is refused. `1e30` and larger finite values are read as written; an infinite bound is set with `MI`, `PL` or `FR`. |

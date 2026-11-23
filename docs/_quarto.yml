@@ -47,6 +47,7 @@ book:
         - reference/capi.qmd
         - reference/options.qmd
         - reference/codes.qmd
+        - reference/formats.qmd
         - reference/python.qmd
     - references.qmd
 
