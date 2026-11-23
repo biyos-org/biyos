@@ -10,16 +10,16 @@
 namespace biyos
 {
 
-enum class Format
+enum class FileFormat
 {
     Mps = BIYOS_FMT_MPS,
 };
 
 inline constexpr std::array kFormats{
-    Format::Mps,
+    FileFormat::Mps,
 };
 
-Format find_format(int id);
-Model read_file(Env &env, std::string_view path, Format format);
+FileFormat find_format(int id);
+Model read_file(Env &env, std::string_view path, FileFormat format);
 
 }

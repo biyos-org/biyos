@@ -32,7 +32,7 @@ struct Warning
 inline Model read_data(std::string_view name)
 {
     Env env;
-    return read_file(env, std::string(MPS_DATA) + "/" + std::string(name), Format::Mps);
+    return read_file(env, std::string(MPS_DATA) + "/" + std::string(name), FileFormat::Mps);
 }
 
 inline Model read_text(Env &env, std::string_view text)

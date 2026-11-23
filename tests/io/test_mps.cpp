@@ -216,7 +216,7 @@ TEST(MpsTest, Missing)
     const std::string path = std::string(MPS_DATA) + "/absent.mps";
     try
     {
-        biyos::read_file(env, path, biyos::Format::Mps);
+        biyos::read_file(env, path, biyos::FileFormat::Mps);
         FAIL() << "the file was read";
     }
     catch (const biyos::Error &error)
