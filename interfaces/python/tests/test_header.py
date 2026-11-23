@@ -22,6 +22,12 @@ VARIABLES = {
     "BIYOS_VAR_SEMIINT": biyos.VariableKind.SEMIINTEGER,
 }
 
+SOURCES = {
+    "BIYOS_OPTSRC_MDL": biyos.OptionSource.MODEL,
+    "BIYOS_OPTSRC_ENV": biyos.OptionSource.ENVIRONMENT,
+    "BIYOS_OPTSRC_DEFAULT": biyos.OptionSource.DEFAULT,
+}
+
 
 OPERATORS = {
     "BIYOS_OP_CONST": biyos.Operator.CONSTANT,
@@ -107,6 +113,13 @@ def test_levels():
         f"BIYOS_CHECKLVL_{level.name}": level for level in biyos.CheckLevel
     }
     assert levels == names
+
+
+def test_sources():
+    sources, defined = group("biyos.h", "BIYOS_OPTSRC_MDL")
+    assert len(sources) == defined
+    assert set(SOURCES.values()) == set(biyos.OptionSource)
+    assert sources == SOURCES
 
 
 def test_ok():

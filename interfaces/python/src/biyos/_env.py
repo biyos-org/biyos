@@ -64,8 +64,11 @@ def _release(models: Handles, handle: c_void_p) -> int:
 class Env:
     """An environment: the options and the hooks every model made on it shares.
 
-    It is closed by ``close``, on leaving a ``with`` block, or when it is
-    collected, and closing it closes the models still open on it.
+    A model may also hold its own value of an option, which it reads before
+    the environment's.
+
+    The environment is closed by ``close``, on leaving a ``with`` block, or
+    when it is collected, and closing it closes the models still open on it.
 
     Raises
     ------

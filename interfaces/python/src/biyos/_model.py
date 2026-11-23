@@ -26,12 +26,15 @@ from biyos._blocks import (
     Variables,
     index_of,
 )
+from biyos import _capi, _values
 from biyos._capi import lib
 from biyos._env import Env
 from biyos._error import Error
 from biyos._integers import integer
 from biyos._operators import Operator, node_values, postfix_values
+from biyos._options import OptionSource
 from biyos._text import decoded, text
+from biyos._values import Value
 
 
 class VariableKind(IntEnum):
@@ -79,6 +82,25 @@ _COUNTS: dict[type[Block[Any]], str] = {
     Functions: "getnfun",
     Constraints: "getncon",
     Objectives: "getnobj",
+}
+
+
+_SETTERS: dict[int, Callable[..., int]] = {
+    _capi.KIND_BOOL: lib.BIYOS_setmdlboolopt,
+    _capi.KIND_INT: lib.BIYOS_setmdlintopt,
+    _capi.KIND_DOUBLE: lib.BIYOS_setmdldblopt,
+    _capi.KIND_STRING: lib.BIYOS_setmdlstropt,
+    _capi.KIND_ENUM: lib.BIYOS_setmdlintopt,
+    _capi.KIND_FLAGS: lib.BIYOS_setmdlflgopt,
+}
+
+_GETTERS: dict[int, Callable[..., int]] = {
+    _capi.KIND_BOOL: lib.BIYOS_getmdlboolopt,
+    _capi.KIND_INT: lib.BIYOS_getmdlintopt,
+    _capi.KIND_DOUBLE: lib.BIYOS_getmdldblopt,
+    _capi.KIND_STRING: lib.BIYOS_getmdlstropt,
+    _capi.KIND_ENUM: lib.BIYOS_getmdlintopt,
+    _capi.KIND_FLAGS: lib.BIYOS_getmdlflgopt,
 }
 
 
@@ -187,8 +209,9 @@ class Model:
 
         The copy holds the same variables, functions, constraints and
         objectives under the same indices and names, and changes apart from
-        the model. It reports on its own environment, like any model made
-        there.
+        the model. It keeps the options set on the model itself and reads
+        every other option from its own environment, on which it reports,
+        like any model made there.
 
         Parameters
         ----------
@@ -222,6 +245,130 @@ class Model:
             copy._copy(self)
         copy._hold()
         return copy
+
+    def setopt(self, name: str, val: Value) -> None:
+        """Set an option on the model alone.
+
+        The model reads its own value before its environment's, and the
+        other models of the environment keep sharing the environment's.
+
+        Parameters
+        ----------
+        name
+            The name of the option, such as ``"maxtime"``.
+        val
+            The new value, of the type ``Env.setopt`` takes for the option.
+
+        Raises
+        ------
+        TypeError
+            When ``val`` does not match the option's kind.
+        OverflowError
+            When a mask of a flags option is negative or wider than 64 bits.
+        Error
+            When the name is unknown, the value is refused or the option
+            has environment scope.
+        ValueError
+            When the model is closed.
+
+        See Also
+        --------
+        BIYOS_setmdlboolopt, BIYOS_setmdlintopt,
+        BIYOS_setmdldblopt, BIYOS_setmdlstropt,
+        BIYOS_setmdlflgopt
+        """
+        option, kind = self._lookup(name)
+        arguments = _values.arguments(name, kind, val)
+        self._call(_SETTERS[kind], option, *arguments)
+
+    def getopt(self, name: str) -> Value:
+        """Read the value of an option the model uses.
+
+        It is the model's own value, else its environment's, else the
+        option's default.
+
+        Parameters
+        ----------
+        name
+            The name of the option.
+
+        Returns
+        -------
+        val
+            The value, of the type ``Env.getopt`` gives for the option.
+
+        Raises
+        ------
+        Error
+            When the name is unknown or the option has environment scope.
+        ValueError
+            When the model is closed.
+
+        See Also
+        --------
+        BIYOS_getmdlboolopt, BIYOS_getmdlintopt,
+        BIYOS_getmdldblopt, BIYOS_getmdlstropt,
+        BIYOS_getmdlflgopt
+        """
+        option, kind = self._lookup(name)
+        found = _values.slots(kind)
+        self._call(_GETTERS[kind], option, *map(byref, found))
+        return _values.value(name, kind, found)
+
+    def delopt(self, name: str) -> None:
+        """Remove the model's own value of an option.
+
+        The model then reads its environment's value again. Removing an
+        option the model does not hold does nothing.
+
+        Parameters
+        ----------
+        name
+            The name of the option.
+
+        Raises
+        ------
+        Error
+            When the name is unknown or the option has environment scope.
+        ValueError
+            When the model is closed.
+
+        See Also
+        --------
+        BIYOS_delmdlopt
+        """
+        option, _ = self._lookup(name)
+        self._call(lib.BIYOS_delmdlopt, option)
+
+    def getoptsrc(self, name: str) -> OptionSource:
+        """Tell where the value the model reads of an option comes from.
+
+        Parameters
+        ----------
+        name
+            The name of the option.
+
+        Returns
+        -------
+        src
+            The source. An option set on the environment to its default
+            value comes from the environment.
+
+        Raises
+        ------
+        Error
+            When the name is unknown or the option has environment scope.
+        ValueError
+            When the model is closed.
+
+        See Also
+        --------
+        BIYOS_getmdloptsrc
+        """
+        option, _ = self._lookup(name)
+        src = c_int()
+        self._call(lib.BIYOS_getmdloptsrc, option, byref(src))
+        return OptionSource(src.value)
 
     def addvar(
         self,
@@ -1795,6 +1942,15 @@ class Model:
     def _hold(self) -> None:
         park = self._env._models.park
         self._free = weakref.finalize(self, park, self._handle.value)
+
+    def _lookup(self, name: str) -> tuple[int, int]:
+        if not self._open():
+            raise ValueError("the model is closed")
+        try:
+            return self._env._lookup(name)
+        except Error as error:
+            error.model = self
+            raise
 
     def _open(self) -> bool:
         if self._closing:

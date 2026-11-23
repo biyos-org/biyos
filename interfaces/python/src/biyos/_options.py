@@ -22,6 +22,26 @@ class CheckLevel(IntEnum):
     FULL = 3
 
 
+class OptionSource(IntEnum):
+    """Where the value a model reads of an option comes from, as
+    ``BIYOS_OPTSRC_`` numbers them.
+
+    Attributes
+    ----------
+    MODEL
+        The model holds its own value of the option.
+    ENVIRONMENT
+        The model shares the value set on its environment.
+    DEFAULT
+        Neither the model nor its environment set the option, so it holds
+        its default.
+    """
+
+    MODEL = 1
+    ENVIRONMENT = 2
+    DEFAULT = 3
+
+
 class Masks(NamedTuple):
     """The value of a flags option: the parts forced on and those forced off.
 

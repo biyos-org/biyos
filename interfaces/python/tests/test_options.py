@@ -1,12 +1,15 @@
 from ctypes import byref, c_int
 from fractions import Fraction
+from functools import partial
 
 import pytest
 
 import biyos
+from biyos import EventKind, EventLevel, OptionSource
 from biyos._capi import KIND_FLAGS, OK, lib
 from biyos._versions import version_text
 from number import Number
+from refusal import LOCKED
 
 INVALID_ARGUMENT = -100
 
@@ -69,6 +72,12 @@ WIDE = [(-1, 0), (0, -1), (2**64, 0), (0, 2**64 + 1)]
 def env():
     with biyos.Env() as env:
         yield env
+
+
+@pytest.fixture
+def model(env):
+    with biyos.Model(env) as model:
+        yield model
 
 
 def as_flags(env, monkeypatch, name):
@@ -286,3 +295,179 @@ def test_wide_mask(env, monkeypatch, value):
         env.setopt("seed", value)
     monkeypatch.undo()
     assert env.getopt("seed") == 0
+
+
+@pytest.mark.parametrize("name, default", DEFAULTS.items())
+def test_model_default(model, name, default):
+    value = model.getopt(name)
+    assert type(value) is type(default)
+    assert value == default
+    assert model.getoptsrc(name) is OptionSource.DEFAULT
+
+
+@pytest.mark.parametrize("name, value", VALUES.items())
+def test_model_value(env, model, name, value):
+    model.setopt(name, value)
+    found = model.getopt(name)
+    assert type(found) is type(value)
+    assert found == value
+    assert model.getoptsrc(name) is OptionSource.MODEL
+    assert env.getopt(name) == DEFAULTS[name]
+
+
+@pytest.mark.parametrize("name, value", WRONG)
+def test_model_kind(model, name, value):
+    with pytest.raises(TypeError):
+        model.setopt(name, value)
+    assert model.getoptsrc(name) is OptionSource.DEFAULT
+
+
+def test_model_flags(env, model, monkeypatch):
+    as_flags(env, monkeypatch, "seed")
+    with pytest.raises(biyos.Error, match="is an int, not flags"):
+        model.setopt("seed", biyos.Masks(1, 2))
+    with pytest.raises(biyos.Error, match="is an int, not flags"):
+        model.getopt("seed")
+    with pytest.raises(TypeError, match="takes a pair"):
+        model.setopt("seed", 3)
+    monkeypatch.undo()
+    assert model.getoptsrc("seed") is OptionSource.DEFAULT
+
+
+def test_model_name(model):
+    with pytest.raises(biyos.Error) as caught:
+        model.getopt("seeds")
+    assert str(caught.value) == "invalid argument: option 'seeds': unknown"
+    assert caught.value.code == INVALID_ARGUMENT
+    assert caught.value.model is model
+    with pytest.raises(biyos.Error) as caught:
+        model.setopt("nope", 1)
+    assert caught.value.model is model
+    with pytest.raises(TypeError, match="option name must be a str, not int"):
+        model.delopt(1)
+
+
+def test_sources(env, model):
+    assert model.getoptsrc("maxtime") is OptionSource.DEFAULT
+    env.setopt("maxtime", 10.0)
+    assert model.getoptsrc("maxtime") is OptionSource.ENVIRONMENT
+    model.setopt("maxtime", 5.0)
+    assert model.getoptsrc("maxtime") is OptionSource.MODEL
+    model.delopt("maxtime")
+    assert model.getoptsrc("maxtime") is OptionSource.ENVIRONMENT
+    env.setopt("seed", 0)
+    assert model.getoptsrc("seed") is OptionSource.ENVIRONMENT
+
+
+def test_deleted(env, model):
+    env.setopt("presolve", False)
+    model.setopt("presolve", True)
+    model.delopt("presolve")
+    assert model.getopt("presolve") is False
+    model.delopt("presolve")
+    assert model.getopt("presolve") is False
+    model.delopt("seed")
+    assert model.getoptsrc("seed") is OptionSource.DEFAULT
+
+
+def test_shared(env, model):
+    env.setopt("check_lvl", biyos.CheckLevel.FULL)
+    assert model.getopt("check_lvl") is biyos.CheckLevel.FULL
+    model.setopt("check_lvl", biyos.CheckLevel.NONE)
+    env.setopt("check_lvl", biyos.CheckLevel.CHEAP)
+    assert model.getopt("check_lvl") is biyos.CheckLevel.NONE
+    with biyos.Model(env) as other:
+        assert other.getopt("check_lvl") is biyos.CheckLevel.CHEAP
+
+
+def test_model_refused(env, model):
+    message = (
+        "invalid argument: option 'seed': "
+        "-1 is outside [0, 2147483647]"
+    )
+    env.setopt("seed", 7)
+    model.setopt("seed", 3)
+    with pytest.raises(biyos.Error) as caught:
+        model.setopt("seed", -1)
+    assert str(caught.value) == message
+    assert caught.value.model is model
+    assert model.getopt("seed") == 3
+    model.delopt("seed")
+    with pytest.raises(biyos.Error):
+        model.setopt("seed", -1)
+    assert model.getoptsrc("seed") is OptionSource.ENVIRONMENT
+    assert model.getopt("seed") == 7
+
+
+def test_copied(env, model):
+    model.setopt("maxtime", 5.0)
+    model.setopt("repro", "replay.txt")
+    env.setopt("seed", 9)
+    with model.copy() as copy:
+        model.setopt("maxtime", 6.0)
+        assert copy.getopt("maxtime") == 5.0
+        assert copy.getopt("repro") == "replay.txt"
+        assert copy.getoptsrc("repro") is OptionSource.MODEL
+        assert copy.getopt("seed") == 9
+        assert copy.getoptsrc("seed") is OptionSource.ENVIRONMENT
+
+
+def test_moved(env, model):
+    model.setopt("maxtime", 5.0)
+    env.setopt("seed", 9)
+    with biyos.Env() as other:
+        other.setopt("seed", 4)
+        with model.copy(other) as moved:
+            assert moved.getopt("maxtime") == 5.0
+            assert moved.getopt("seed") == 4
+            assert moved.getoptsrc("seed") is OptionSource.ENVIRONMENT
+            assert moved.getoptsrc("presolve") is OptionSource.DEFAULT
+
+
+def test_model_strings(env, model):
+    env.setopt("repro", "a.txt")
+    assert model.getopt("repro") == "a.txt"
+    model.setopt("repro", "b.txt")
+    env.setopt("repro", "c.txt")
+    assert model.getopt("repro") == "b.txt"
+    assert env.getopt("repro") == "c.txt"
+    model.setopt("repro", "réplique.txt")
+    assert model.getopt("repro") == "réplique.txt"
+    with pytest.raises(ValueError, match="embedded null character"):
+        model.setopt("repro", "replay\0.txt")
+    assert model.getopt("repro") == "réplique.txt"
+
+
+def test_model_locked(env, model):
+    seen = []
+
+    def change(event):
+        changes = [partial(model.setopt, "seed", 3)]
+        changes.append(partial(model.delopt, "seed"))
+        for call in changes:
+            try:
+                call()
+            except biyos.Error as error:
+                seen.append(str(error))
+        seen.append(model.getopt("seed"))
+        seen.append(model.getoptsrc("seed"))
+
+    model.setopt("seed", 5)
+    env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
+    with pytest.raises(biyos.Error):
+        env.setopt("seed", -1)
+    assert seen == [LOCKED, LOCKED, 5, OptionSource.MODEL]
+
+
+@pytest.mark.parametrize("closing", ["model", "env"])
+def test_model_closed(closing):
+    env = biyos.Env()
+    model = biyos.Model(env)
+    {"model": model, "env": env}[closing].close()
+    calls = [partial(model.setopt, "seed", 1), partial(model.getopt, "seed")]
+    calls.append(partial(model.delopt, "seed"))
+    calls.append(partial(model.getoptsrc, "seed"))
+    for call in calls:
+        with pytest.raises(ValueError, match="the model is closed"):
+            call()
+    env.close()
