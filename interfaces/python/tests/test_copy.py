@@ -8,7 +8,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel, Sense, VariableKind
 from biyos._capi import lib
-from spies import interrupted, preceded
+from spies import Trap, followed, interrupted, preceded, traced
 
 INFINITY = float("inf")
 BUSY = (
@@ -106,7 +106,7 @@ def test_same(env, model):
     assert copy._env is env
     assert read(copy) == read(model)
     assert copy._handle.value != model._handle.value
-    assert copy._handle.value in env._models._live
+    assert id(copy._handle) in env._models._live
     copy.close()
 
 
@@ -114,8 +114,8 @@ def test_other(env, other, model):
     copy = model.copy(other)
     assert copy._env is other
     assert read(copy) == read(model)
-    assert copy._handle.value in other._models._live
-    assert copy._handle.value not in env._models._live
+    assert id(copy._handle) in other._models._live
+    assert id(copy._handle) not in env._models._live
     copy.close()
 
 
@@ -191,9 +191,24 @@ def test_interrupted(other, model, monkeypatch):
     monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
     with pytest.raises(KeyboardInterrupt):
         model.copy(other)
-    [handle] = other._models._live
+    [handle] = other._models._live.values()
     other.close()
-    assert log == [handle]
+    assert log == [handle.value]
+    assert not other._free.alive
+
+
+def test_interrupted_make(other, model, monkeypatch):
+    log = []
+    trap = Trap(biyos.Model._make)
+    copy = partial(followed, [trap.arm], lib.BIYOS_copymdl)
+    monkeypatch.setattr(lib, "BIYOS_copymdl", copy)
+    spy = partial(freed, log, lib.BIYOS_freemdl)
+    monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
+    with traced(trap), pytest.raises(KeyboardInterrupt):
+        model.copy(other)
+    [handle] = other._models._live.values()
+    other.close()
+    assert log == [handle.value]
     assert not other._free.alive
 
 

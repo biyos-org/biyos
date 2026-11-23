@@ -357,9 +357,9 @@ class Env:
         """Keep the environment allocated while the block runs.
 
         A close during the block reads as closed at once and frees when the
-        last hold ends. Inside the block, check ``_open()`` before calling C,
-        register any handle the call creates in a ``finally``, and hold every
-        other environment the call uses.
+        last hold ends. Inside the block, before calling C, check ``_open()``
+        and register the slot that will receive any handle the call creates;
+        hold every other environment the call uses.
         """
         self._calls += 1
         try:

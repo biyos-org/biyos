@@ -197,13 +197,13 @@ class Model:
             self._free()
             return
         models = self._env._models
-        models.take(self._handle.value)
+        models.take(self._handle)
         if self._free.detach() is None:
             return
         try:
             self._env._run(lib.BIYOS_freemdl, self._handle)
         except Error:
-            models.add(self._handle.value)
+            models.add(self._handle)
             self._hold()
             raise
 
@@ -2215,12 +2215,15 @@ class Model:
         self._gen = 0
 
     def _make(self, call: Callable[..., None], *arguments: object) -> None:
+        models = self._env._models
         handle = self._handle
+        models.add(handle)
         try:
             call(*arguments, byref(handle))
         finally:
-            if handle.value is not None:
-                self._env._models.add(handle.value)
+            if handle.value is None:
+                models.take(handle)
+            else:
                 self._env._owners[handle.value] = self
 
     def _copy(self, source: "Model") -> None:
@@ -2231,7 +2234,7 @@ class Model:
 
     def _hold(self) -> None:
         park = self._env._models.park
-        self._free = weakref.finalize(self, park, self._handle.value)
+        self._free = weakref.finalize(self, park, self._handle)
 
     def _lookup(self, name: str) -> tuple[int, int]:
         if not self._open():
