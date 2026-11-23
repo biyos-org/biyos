@@ -98,6 +98,7 @@ biyos_set_warnings(biyos_internal)
 add_library(biyos
     capi/arrays.cpp
     capi/columns.cpp
+    capi/complements.cpp
     capi/cones.cpp
     capi/constraints.cpp
     capi/env.cpp

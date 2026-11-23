@@ -420,6 +420,41 @@ void write_indicators(const Held &held, Engine &engine)
     write_names(changed, engine, kIndicatorNames);
 }
 
+void add_complements(const Model &model, Engine &engine)
+{
+    const int functions = count_of(model, BIYOS_getnfun);
+    const auto n = static_cast<std::size_t>(1 + below(engine, 6));
+    std::vector<int> first;
+    std::vector<int> second;
+    for (std::size_t k = 0; k < n; ++k)
+    {
+        first.push_back(below(engine, functions));
+        second.push_back(below(engine, functions));
+    }
+    const std::vector<double> lower = drawn(engine, n, low);
+    const std::vector<double> upper = drawn(engine, n, high);
+    const BIYOS_status status = BIYOS_addccon(model.get(),
+                                              static_cast<BIYOS_index>(n),
+                                              first.data(),
+                                              second.data(),
+                                              lower.data(),
+                                              upper.data(),
+                                              nullptr);
+    EXPECT_EQ(status, BIYOS_OK);
+}
+
+void write_complements(const Held &held, Engine &engine)
+{
+    const Model paired(held.env, held.model);
+    add_complements(paired, engine);
+    const Held changed{.env = held.env, .model = paired};
+    const Span span = random_span(engine, count_of(paired, BIYOS_getnccon));
+    const auto n = static_cast<std::size_t>(span.size);
+    const std::vector<double> lower = drawn(engine, n, low);
+    const std::vector<double> upper = drawn(engine, n, high);
+    expect_writes(changed, span, BIYOS_setcconbndsp, BIYOS_setcconbndrg, lower, upper);
+}
+
 template <typename Value> std::vector<Value> zeros(Span span)
 {
     return std::vector<Value>(static_cast<std::size_t>(span.size));
@@ -475,6 +510,17 @@ void read_indicators(const Held &held, Engine &engine)
     expect_reads(switched, span, BIYOS_getindvarsp, BIYOS_getindvarrg, whole, whole);
     expect_reads(switched, span, BIYOS_getindsp, BIYOS_getindrg, whole, whole, whole, reals, reals);
     expect_reads(switched, span, kIndicatorNames.get_listed, kIndicatorNames.get_ranged, names);
+}
+
+void read_complements(const Held &held, Engine &engine)
+{
+    const Model paired(held.env, held.model);
+    add_complements(paired, engine);
+    const Span span = random_span(engine, count_of(paired, BIYOS_getnccon));
+    const std::vector<double> reals = zeros<double>(span);
+    const std::vector<int> whole = zeros<int>(span);
+    expect_reads(paired, span, BIYOS_getcconbndsp, BIYOS_getcconbndrg, reals, reals);
+    expect_reads(paired, span, BIYOS_getcconsp, BIYOS_getcconrg, whole, whole, reals, reals);
 }
 
 void read_all(const Model &model, Engine &engine)
@@ -590,6 +636,16 @@ void keep_indicators(const Held &held, Span span, BIYOS_status wanted, Switches 
     keep_names(held, span, wanted, kIndicatorNames);
 }
 
+void keep_complements(const Held &held, Span span, BIYOS_status wanted)
+{
+    const auto n = static_cast<std::size_t>(count_of(held.model, BIYOS_getnccon) + 1);
+    const std::vector<double> bounds(n, 0.5);
+    const std::vector<int> functions(n, 0);
+    expect_kept(held, span, wanted, BIYOS_setcconbndrg, bounds, bounds);
+    expect_kept(held, span, wanted, BIYOS_getcconbndrg, bounds, bounds);
+    expect_kept(held, span, wanted, BIYOS_getcconrg, functions, functions, bounds, bounds);
+}
+
 void keep_all(const Held &held, Counter count, Span span, BIYOS_status wanted)
 {
     if (count == BIYOS_getnvar)
@@ -642,6 +698,7 @@ TEST(RangeTest, Writes)
             write_names(held, engine, calls);
         }
         write_indicators(held, engine);
+        write_complements(held, engine);
     }
 }
 
@@ -655,6 +712,7 @@ TEST(RangeTest, Reads)
         build_sample(model.get(), engine);
         read_all(model, engine);
         read_indicators(Held{.env = env, .model = model}, engine);
+        read_complements(Held{.env = env, .model = model}, engine);
     }
 }
 
@@ -691,6 +749,22 @@ TEST(RangeTest, IndicatorRefusals)
         keep_indicators(held, span, BIYOS_ERR_BADARG, switches);
     }
     keep_indicators(held, {count, 0}, BIYOS_OK, switches);
+}
+
+TEST(RangeTest, ComplementRefusals)
+{
+    Engine engine(kSeeds[0]);
+    const Env env;
+    const Model model(env);
+    build_sample(model.get(), engine);
+    add_complements(model, engine);
+    const Held held{.env = env, .model = model};
+    const int count = count_of(model, BIYOS_getnccon);
+    for (const Span span : bad_spans(count))
+    {
+        keep_complements(held, span, BIYOS_ERR_BADARG);
+    }
+    keep_complements(held, {count, 0}, BIYOS_OK);
 }
 
 TEST(RangeTest, Atomic)
