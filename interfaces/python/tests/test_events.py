@@ -28,8 +28,8 @@ EVENTS = ("BIYOS_EVTKND_", "BIYOS_EVTLVL_")
 
 KINDS = {
     "BIYOS_EVTKND_MSG": EventKind.MESSAGE,
-    "BIYOS_EVTKND_INV": EventKind.CHECK,
-    "BIYOS_EVTKND_SPAN": EventKind.PHASE,
+    "BIYOS_EVTKND_INV": EventKind.INVARIANT,
+    "BIYOS_EVTKND_SPAN": EventKind.SPAN,
 }
 
 LEVELS = {
@@ -153,7 +153,8 @@ def test_error():
 def test_kind():
     seen = []
     with biyos.Env() as env:
-        env.addhook(partial(record, seen), EventKind.CHECK, EventLevel.DEBUG)
+        hook = partial(record, seen)
+        env.addhook(hook, EventKind.INVARIANT, EventLevel.DEBUG)
         fail(env)
     assert seen == []
 

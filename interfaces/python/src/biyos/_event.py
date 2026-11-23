@@ -17,15 +17,15 @@ class EventKind(IntEnum):
     ----------
     MESSAGE
         A message for people.
-    CHECK
+    INVARIANT
         A failed check of an invariant.
-    PHASE
+    SPAN
         A phase beginning or ending, with the wall and CPU time.
     """
 
     MESSAGE = 1
-    CHECK = 2
-    PHASE = 3
+    INVARIANT = 2
+    SPAN = 3
 
 
 class EventLevel(IntEnum):
