@@ -104,7 +104,7 @@ def test_same(env, model):
     assert copy._env is env
     assert read(copy) == read(model)
     assert copy._handle.value != model._handle.value
-    assert copy._handle.value in env._models._live
+    assert id(copy._handle) in env._models._live
     copy.close()
 
 
@@ -112,8 +112,8 @@ def test_other(env, other, model):
     copy = model.copy(other)
     assert copy._env is other
     assert read(copy) == read(model)
-    assert copy._handle.value in other._models._live
-    assert copy._handle.value not in env._models._live
+    assert id(copy._handle) in other._models._live
+    assert id(copy._handle) not in env._models._live
     copy.close()
 
 
@@ -189,9 +189,9 @@ def test_interrupted(other, model, monkeypatch):
     monkeypatch.setattr(lib, "BIYOS_freemdl", spy)
     with pytest.raises(KeyboardInterrupt):
         model.copy(other)
-    [handle] = other._models._live
+    [handle] = other._models._live.values()
     other.close()
-    assert log == [handle]
+    assert log == [handle.value]
     assert not other._free.alive
 
 
