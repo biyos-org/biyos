@@ -53,7 +53,7 @@ class TimingTree
 class Timer
 {
   public:
-    Timer(Env &env, TimingTree &tree, FixedName module, FixedName name);
+    Timer(Env &env, TimingTree &tree, StaticName module, StaticName name);
     ~Timer();
 
     Timer(const Timer &) = delete;

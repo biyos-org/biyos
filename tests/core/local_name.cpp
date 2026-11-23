@@ -5,6 +5,6 @@
 std::size_t local_name()
 {
     char buffer[16] = "nlp";
-    const biyos::FixedName name(buffer);
+    const biyos::StaticName name(buffer);
     return name.text().size();
 }

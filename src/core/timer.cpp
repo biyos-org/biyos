@@ -102,7 +102,7 @@ void TimingTree::leave(std::size_t node, nanoseconds wall, nanoseconds cpu) noex
     }
 }
 
-Timer::Timer(Env &env, TimingTree &tree, FixedName module, FixedName name)
+Timer::Timer(Env &env, TimingTree &tree, StaticName module, StaticName name)
     : clock_(env.clock()), events_(env.events()), tree_(tree), module_(module.text()),
       wall_(clock_.wall_time()), cpu_(clock_.cpu_time()), observed_wall_(tree.observed_wall_),
       observed_cpu_(tree.observed_cpu_), node_(tree.enter(name.text()))

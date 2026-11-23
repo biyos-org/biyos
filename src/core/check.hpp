@@ -16,7 +16,7 @@ namespace biyos
 class Checker
 {
   public:
-    Checker(Env &env, const Lookup &lookup, FixedName module);
+    Checker(Env &env, const Lookup &lookup, StaticName module);
 
     bool active(CheckLevel level) const noexcept
     {
