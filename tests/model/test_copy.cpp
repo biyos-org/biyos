@@ -1,3 +1,4 @@
+#include "biyos/biyos.h"
 #include "core/index.hpp"
 #include "expr/terms.hpp"
 #include "model/compare.hpp"
@@ -40,6 +41,10 @@ void change(Model &model)
     model.add_functions(constants, starts, {LinearTerm{.variable = 3, .coefficient = 1.0}});
     const QuadraticTerm pair{.row = 3, .column = 1, .coefficient = 2.0};
     model.add_quadratic_terms(std::span(&index, 1), starts, {pair});
+    const Index added = 3;
+    const Offset exponential = 2;
+    const Offset sine = model.add_node(BIYOS_OP_SIN, std::span(&exponential, 1), {});
+    model.attach_expressions(std::span(&added, 1), std::span(&sine, 1));
     model.set_constraints(std::span(&index, 1), std::span(&constraint, 1));
     model.add_constraints(std::span(&constraint, 1));
     const Objective objective{

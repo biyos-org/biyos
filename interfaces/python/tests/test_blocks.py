@@ -126,10 +126,14 @@ def test_closed_block(env, model):
 
 def test_stale(model):
     x = model.addvar(3)
+    model.setvarname(x, ["a", "b", "c"])
     model._gen += 1
     for use in (len, iter, itemgetter(0), itemgetter(slice(1))):
         with pytest.raises(ValueError, match=STALE):
             use(x)
+    with pytest.raises(ValueError, match=STALE):
+        model.delvarname(x)
+    assert model.getvarname(range(3)) == ["a", "b", "c"]
 
 
 def test_gone(model):

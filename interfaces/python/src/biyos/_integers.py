@@ -1,4 +1,4 @@
-from ctypes import c_int
+from ctypes import c_int, c_int64
 from operator import index
 from typing import SupportsIndex
 
@@ -17,4 +17,11 @@ def integer(name: str, value: SupportsIndex) -> int:
     number = whole(name, value)
     if c_int(number).value != number:
         raise OverflowError(f"{name}: {number} does not fit in a C int")
+    return number
+
+
+def offset(name: str, value: SupportsIndex) -> int:
+    number = whole(name, value)
+    if c_int64(number).value != number:
+        raise OverflowError(f"{name}: {number} does not fit in an int64_t")
     return number

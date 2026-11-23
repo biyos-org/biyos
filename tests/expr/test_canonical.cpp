@@ -2,7 +2,7 @@
 #include "expr/canonical.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
-#include "expr/parents.hpp"
+#include "expr/uses.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>
@@ -23,9 +23,9 @@ using biyos::kNoRemainder;
 using biyos::LinearTerm;
 using biyos::Offset;
 using biyos::Operator;
-using biyos::Parents;
 using biyos::Parts;
 using biyos::QuadraticTerm;
+using biyos::Uses;
 using biyos::test::refusal;
 
 constexpr double kHuge = 1e200;
@@ -94,8 +94,8 @@ void expect_whole(const Parts &parts, Offset node)
 
 Parts parts_of(Graph &graph, Offset node)
 {
-    const Parents parents(graph);
-    return biyos::split(graph, parents, node);
+    const Uses uses(graph);
+    return biyos::split(graph, uses, node);
 }
 
 Offset constant(Graph &graph, double value)
@@ -606,9 +606,9 @@ TEST(CanonicalTest, OldParents)
 {
     Graph graph;
     const Offset x = graph.add_variable(0);
-    const Parents parents(graph);
+    const Uses uses(graph);
     const Offset exponential = unary(graph, Operator::Exp, x);
-    EXPECT_EQ(refusal([&] { biyos::split(graph, parents, exponential); }),
+    EXPECT_EQ(refusal([&] { biyos::split(graph, uses, exponential); }),
               "invalid argument: expression: parents are older than node 1");
     EXPECT_EQ(graph.size(), 2);
 }

@@ -560,6 +560,32 @@ BIYOS_API BIYOS_status BIYOS_delobjnamerg(BIYOS_model *mdl, BIYOS_index pos, BIY
 #define BIYOS_OP_ENT 27
 #define BIYOS_OP_SPOW 28
 #define BIYOS_OP_ERF 29
+#define BIYOS_OP_NODE 30
+
+BIYOS_API BIYOS_status BIYOS_addvarnode(BIYOS_model *mdl, BIYOS_index var, BIYOS_offset *node);
+BIYOS_API BIYOS_status BIYOS_addnode(BIYOS_model *mdl,
+                                     BIYOS_int op,
+                                     BIYOS_offset n,
+                                     const BIYOS_offset *arg,
+                                     const BIYOS_real *val,
+                                     BIYOS_offset *node);
+BIYOS_API BIYOS_status BIYOS_addexpr(BIYOS_model *mdl,
+                                     BIYOS_index n,
+                                     const BIYOS_offset *off,
+                                     const BIYOS_int *code,
+                                     const BIYOS_offset *arg,
+                                     const BIYOS_real *val,
+                                     BIYOS_offset *node);
+BIYOS_API BIYOS_status BIYOS_attachexprsp(BIYOS_model *mdl,
+                                          BIYOS_index n,
+                                          const BIYOS_index *idx,
+                                          const BIYOS_offset *node);
+BIYOS_API BIYOS_status BIYOS_attachexprrg(BIYOS_model *mdl,
+                                          BIYOS_index pos,
+                                          BIYOS_index n,
+                                          const BIYOS_offset *node);
+BIYOS_API BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
 
 #define BIYOS_TRM_NONE 0
 #define BIYOS_TRM_OPTIMAL 101

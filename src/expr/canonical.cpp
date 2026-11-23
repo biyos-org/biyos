@@ -5,8 +5,8 @@
 #include "core/text.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
-#include "expr/parents.hpp"
 #include "expr/terms.hpp"
+#include "expr/uses.hpp"
 
 #include <algorithm>
 #include <array>
@@ -45,9 +45,9 @@ struct Monomial
     std::size_t n_compounds;
 };
 
-void check_parents(const Parents &parents, Offset node)
+void check_uses(const Uses &uses, Offset node)
 {
-    if (node >= parents.size())
+    if (node >= uses.size())
     {
         const std::string reason = "parents are older than node " + text_of(node);
         throw Error(ErrorKind::InvalidArgument, "expression", reason);
@@ -130,7 +130,7 @@ Parts whole(Offset node)
 class Walk
 {
   public:
-    Walk(const Graph &graph, const Parents &parents);
+    Walk(const Graph &graph, const Uses &uses);
 
     void run(Offset node);
     bool moved() const noexcept;
@@ -155,7 +155,7 @@ class Walk
     Offset remainder(Graph &graph) const;
 
     const Graph &graph_;
-    const Parents &parents_;
+    const Uses &uses_;
     std::vector<Item> stack_;
     double constant_ = 0.0;
     std::vector<LinearTerm> linear_;
@@ -166,7 +166,7 @@ class Walk
     bool closed_ = false;
 };
 
-Walk::Walk(const Graph &graph, const Parents &parents) : graph_(graph), parents_(parents) {}
+Walk::Walk(const Graph &graph, const Uses &uses) : graph_(graph), uses_(uses) {}
 
 void Walk::run(Offset node)
 {
@@ -334,7 +334,7 @@ void Walk::open_power(const Item &item)
 
 bool Walk::shared(const Item &item) const noexcept
 {
-    return !item.root && parents_.of(item.node).size() > 1;
+    return !item.root && uses_.shared(item.node);
 }
 
 void Walk::push(Offset node, double factor)
@@ -402,11 +402,11 @@ Offset Walk::remainder(Graph &graph) const
 
 }
 
-Parts split(Graph &graph, const Parents &parents, Offset node)
+Parts split(Graph &graph, const Uses &uses, Offset node)
 {
     check_child(node, graph.size());
-    check_parents(parents, node);
-    Walk walk(graph, parents);
+    check_uses(uses, node);
+    Walk walk(graph, uses);
     walk.run(node);
     if (!walk.moved() || !walk.finite())
     {

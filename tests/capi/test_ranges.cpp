@@ -100,6 +100,11 @@ int key(int value)
     return value;
 }
 
+std::int64_t key(std::int64_t value)
+{
+    return value;
+}
+
 std::string key(const char *value)
 {
     return value == nullptr ? "(null)" : value;
@@ -263,6 +268,31 @@ void write_functions(const Held &held, Engine &engine)
         drawn(engine, static_cast<std::size_t>(span.size), weight);
     expect_writes(held, span, BIYOS_setcstsp, BIYOS_setcstrg, constants);
     expect_writes(held, span, BIYOS_addcstsp, BIYOS_addcstrg, constants);
+    expect_writes(held, span, BIYOS_clrfunsp, BIYOS_clrfunrg);
+}
+
+BIYOS_offset add_expression(const Model &model)
+{
+    BIYOS_offset x = -1;
+    BIYOS_offset sine = -1;
+    BIYOS_offset sum = -1;
+    EXPECT_EQ(BIYOS_addvarnode(model.get(), 0, &x), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addnode(model.get(), BIYOS_OP_SIN, 1, &x, nullptr, &sine), BIYOS_OK);
+    const std::array<BIYOS_offset, 2> children{x, sine};
+    const std::array<double, 3> values{0.5, 2.0, 1.0};
+    EXPECT_EQ(BIYOS_addnode(model.get(), BIYOS_OP_SUM, 2, children.data(), values.data(), &sum),
+              BIYOS_OK);
+    return sum;
+}
+
+void write_expressions(const Held &held, Engine &engine)
+{
+    const Model noded(held.env, held.model);
+    const BIYOS_offset sum = add_expression(noded);
+    const Span span = random_span(engine, count_of(noded, BIYOS_getnfun));
+    const std::vector<BIYOS_offset> nodes(static_cast<std::size_t>(span.size), sum);
+    const Held changed{.env = held.env, .model = noded};
+    expect_writes(changed, span, BIYOS_attachexprsp, BIYOS_attachexprrg, nodes);
 }
 
 void write_constraints(const Held &held, Engine &engine)
@@ -378,6 +408,9 @@ void keep_functions(const Held &held, Span span, BIYOS_status wanted)
     expect_kept(held, span, wanted, BIYOS_setcstrg, constants);
     expect_kept(held, span, wanted, BIYOS_addcstrg, constants);
     expect_kept(held, span, wanted, BIYOS_getcstrg, constants);
+    const std::vector<BIYOS_offset> nodes(n, 0);
+    expect_kept(held, span, wanted, BIYOS_attachexprrg, nodes);
+    expect_kept(held, span, wanted, BIYOS_clrfunrg);
 }
 
 void keep_constraints(const Held &held, Span span, BIYOS_status wanted)
@@ -455,6 +488,7 @@ TEST(RangeTest, Writes)
         const Held held{.env = env, .model = model};
         write_variables(held, engine);
         write_functions(held, engine);
+        write_expressions(held, engine);
         write_constraints(held, engine);
         write_objectives(held, engine);
         for (const NameCalls &calls : kNameCalls)

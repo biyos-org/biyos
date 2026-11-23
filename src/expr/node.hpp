@@ -4,6 +4,7 @@
 #include "core/index.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -52,6 +53,7 @@ enum class Payload
     Coefficients,
 };
 
+std::optional<Operator> operator_of(int code) noexcept;
 Payload payload_of(Operator op);
 void check_shape(Operator op, Payload payload, Offset children);
 void check_child(Offset child, Offset size);

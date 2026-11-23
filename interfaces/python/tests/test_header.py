@@ -20,6 +20,40 @@ VARIABLES = {
 }
 
 
+OPERATORS = {
+    "BIYOS_OP_CONST": biyos.Operator.CONSTANT,
+    "BIYOS_OP_VAR": biyos.Operator.VARIABLE,
+    "BIYOS_OP_SUM": biyos.Operator.SUM,
+    "BIYOS_OP_PROD": biyos.Operator.PRODUCT,
+    "BIYOS_OP_NEG": biyos.Operator.NEGATION,
+    "BIYOS_OP_DIV": biyos.Operator.DIVISION,
+    "BIYOS_OP_CPOW": biyos.Operator.CONSTANT_POWER,
+    "BIYOS_OP_POW": biyos.Operator.POWER,
+    "BIYOS_OP_EXP": biyos.Operator.EXP,
+    "BIYOS_OP_LOG": biyos.Operator.LOG,
+    "BIYOS_OP_SQRT": biyos.Operator.SQRT,
+    "BIYOS_OP_SIN": biyos.Operator.SIN,
+    "BIYOS_OP_COS": biyos.Operator.COS,
+    "BIYOS_OP_TAN": biyos.Operator.TAN,
+    "BIYOS_OP_ABS": biyos.Operator.ABS,
+    "BIYOS_OP_MAX": biyos.Operator.MAX,
+    "BIYOS_OP_MIN": biyos.Operator.MIN,
+    "BIYOS_OP_ASIN": biyos.Operator.ASIN,
+    "BIYOS_OP_ACOS": biyos.Operator.ACOS,
+    "BIYOS_OP_ATAN": biyos.Operator.ATAN,
+    "BIYOS_OP_SINH": biyos.Operator.SINH,
+    "BIYOS_OP_COSH": biyos.Operator.COSH,
+    "BIYOS_OP_TANH": biyos.Operator.TANH,
+    "BIYOS_OP_ASINH": biyos.Operator.ASINH,
+    "BIYOS_OP_ACOSH": biyos.Operator.ACOSH,
+    "BIYOS_OP_ATANH": biyos.Operator.ATANH,
+    "BIYOS_OP_ENT": biyos.Operator.ENTROPY,
+    "BIYOS_OP_SPOW": biyos.Operator.SIGN_POWER,
+    "BIYOS_OP_ERF": biyos.Operator.ERF,
+    "BIYOS_OP_NODE": biyos.Operator.NODE,
+}
+
+
 def declared(name):
     return getattr(lib, name).argtypes is not None
 
@@ -46,6 +80,14 @@ def test_variable_kinds():
     assert len(kinds) == lines("biyos.h", "#define BIYOS_VAR_")
     assert set(VARIABLES.values()) == set(biyos.VariableKind)
     assert kinds == VARIABLES
+
+
+def test_operators():
+    found = macros("biyos.h")
+    codes = {name: value for name, value in found.items() if "_OP_" in name}
+    assert len(codes) == lines("biyos.h", "#define BIYOS_OP_")
+    assert set(OPERATORS.values()) == set(biyos.Operator)
+    assert codes == OPERATORS
 
 
 def test_senses():

@@ -1,3 +1,4 @@
+#include "biyos/biyos.h"
 #include "core/index.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
@@ -8,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <limits>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -318,4 +320,59 @@ TEST(GraphTest, PayloadKind)
     }
     EXPECT_EQ(refusal([] { payload_of(static_cast<Operator>(99)); }),
               "invalid argument: expression: operator 99 is unknown");
+}
+
+TEST(GraphTest, Truncated)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(3);
+    const std::array weight{2.0};
+    const Offset sum = graph.add_sum(1.0, std::span(&x, 1), weight);
+    const Graph::Mark before = graph.mark();
+    graph.truncate(before);
+    EXPECT_EQ(graph.mark(), before);
+    const Offset constant = graph.add(Operator::Constant, 3.0, {});
+    const Offset y = graph.add_variable(1);
+    const Offset z = graph.add_variable(6);
+    const std::array children{x, y, z, constant};
+    const std::array weights{1.0, -1.0, 0.5, 2.0};
+    graph.add_sum(0.0, children, weights);
+    unary(graph, Operator::Exp, y);
+    graph.truncate(before);
+    EXPECT_EQ(graph.mark(), before);
+    EXPECT_EQ(graph.add_variable(3), x);
+    const Offset fresh = graph.add_variable(1);
+    EXPECT_EQ(fresh, 2);
+    EXPECT_EQ(graph.op(fresh), Operator::Variable);
+    EXPECT_EQ(graph.variable(fresh), 1);
+    EXPECT_TRUE(graph.children(fresh).empty());
+    const Offset exponential = unary(graph, Operator::Exp, fresh);
+    EXPECT_EQ(ids(graph.children(exponential)), std::vector<Offset>{fresh});
+    EXPECT_EQ(ids(graph.children(sum)), std::vector<Offset>{x});
+    EXPECT_DOUBLE_EQ(graph.constant(sum), 1.0);
+    expect_values(graph.coefficients(sum), {2.0});
+}
+
+TEST(GraphTest, Codes)
+{
+    for (int code = BIYOS_OP_CONST; code <= BIYOS_OP_ERF; ++code)
+    {
+        const std::optional<Operator> op = biyos::operator_of(code);
+        ASSERT_TRUE(op.has_value()) << code;
+        EXPECT_EQ(static_cast<int>(*op), code);
+    }
+    const std::array unknown{
+        0,
+        BIYOS_OP_ERF + 1,
+        -1,
+        256,
+        256 + BIYOS_OP_EXP,
+        BIYOS_OP_EXP - 256,
+        (std::numeric_limits<int>::max)(),
+        (std::numeric_limits<int>::min)(),
+    };
+    for (const int code : unknown)
+    {
+        EXPECT_FALSE(biyos::operator_of(code).has_value()) << code;
+    }
 }

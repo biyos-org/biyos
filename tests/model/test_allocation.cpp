@@ -1,14 +1,18 @@
 #include "allocations.hpp"
+#include "biyos/biyos.h"
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "expr/graph.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
+#include "model/postfix.hpp"
 
 #include <gtest/gtest.h>
 
 #include <cstddef>
 #include <new>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -18,6 +22,7 @@ namespace
 {
 
 using biyos::Family;
+using biyos::Graph;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
@@ -171,6 +176,126 @@ bool runs_out_adding(Model &model, std::size_t successes)
     return false;
 }
 
+Model with_nodes()
+{
+    Model model;
+    model.add_variables(std::vector<Variable>(4, biyos::widest(VariableKind::Continuous)));
+    const std::vector<Offset> x{model.add_variable_node(0)};
+    model.add_node(BIYOS_OP_EXP, x, {});
+    return model;
+}
+
+void add_variable(Model &model)
+{
+    model.add_variable_node(3);
+}
+
+void add_two(Model &model)
+{
+    const std::vector<double> constants{1.0, 2.0};
+    const std::vector<Offset> starts{0, 1, 1};
+    model.add_functions(constants, starts, {{0, 1.0}});
+}
+
+void add_sum(Model &model)
+{
+    const std::vector<Offset> children{0, 1};
+    const std::vector<double> values{0.0, 1.0, 2.0};
+    model.add_node(BIYOS_OP_SUM, children, values);
+}
+
+Model with_roots()
+{
+    Model model = with_nodes();
+    model.add_functions(std::vector<double>(3, 1.0),
+                        std::vector<Offset>{0, 1, 1, 2},
+                        {{2, 1.0}, {0, 3.0}});
+    const std::vector<Index> held{2};
+    const std::vector<Offset> one{0, 1};
+    model.add_quadratic_terms(held, one, {{1, 1, 2.0}});
+    const std::vector<Offset> x{0};
+    const std::vector<double> values{0.5, 2.0};
+    const std::vector<Offset> sum{model.add_node(BIYOS_OP_SUM, x, values)};
+    const std::vector<Offset> pair{0, 0};
+    const Offset square = model.add_node(BIYOS_OP_PROD, pair, std::vector<double>{3.0});
+    const std::vector<Offset> terms{1, square, 0};
+    model.add_node(BIYOS_OP_SUM, terms, std::vector<double>{1.0, 1.0, 1.0, 4.0});
+    const std::vector<Index> functions{0, 1};
+    const std::vector<Offset> roots{sum.front(), 1};
+    model.attach_expressions(functions, roots);
+    return model;
+}
+
+void attach_all(Model &model)
+{
+    const std::vector<Index> functions{2, 0, 1};
+    const std::vector<Offset> nodes{4, 4, 1};
+    model.attach_expressions(functions, nodes);
+}
+
+void decode_two(Model &model)
+{
+    const std::vector<Offset> starts{0, 6, 9};
+    const std::vector<int> codes{
+        BIYOS_OP_VAR,
+        BIYOS_OP_VAR,
+        BIYOS_OP_SUM,
+        BIYOS_OP_NODE,
+        BIYOS_OP_PROD,
+        BIYOS_OP_SIN,
+        BIYOS_OP_VAR,
+        BIYOS_OP_CONST,
+        BIYOS_OP_DIV,
+    };
+    const std::vector<Offset> arguments{2, 3, 2, 1, 2, 1, 1, 0, 2};
+    const std::vector<double> values{0.0, 1.0, 2.0, 3.0, 4.0};
+    model.add_expressions(
+        biyos::Postfix{.starts = starts, .codes = codes, .arguments = arguments, .values = values});
+}
+
+void clear_two(Model &model)
+{
+    const std::vector<Index> functions{2, 0, 2};
+    model.clear_functions(functions);
+}
+
+std::vector<Offset> roots_of(const Model &model)
+{
+    const std::span<const Offset> roots = model.roots(0, model.n_functions());
+    return {roots.begin(), roots.end()};
+}
+
+bool runs_out_with(Model &model, void (*change)(Model &), std::size_t successes)
+{
+    const PendingFailure failure(successes);
+    try
+    {
+        change(model);
+    }
+    catch (const std::bad_alloc &)
+    {
+        return true;
+    }
+    return false;
+}
+
+void expect_graph(void (*change)(Model &), Offset added)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        Model model = with_nodes();
+        const Graph::Mark before = model.graph().mark();
+        if (!runs_out_with(model, change, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(model.graph().size(), before.nodes + added);
+            return;
+        }
+        EXPECT_EQ(model.graph().mark(), before);
+    }
+    ADD_FAILURE() << "the call never completed";
+}
+
 std::size_t lookup_cost(const Model &model)
 {
     const std::size_t start = biyos::test::allocations();
@@ -229,4 +354,78 @@ TEST(AllocationTest, LinearTerms)
         EXPECT_EQ(biyos::difference(model, with_terms()), "");
     }
     ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, Functions)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        const Model before = with_nodes();
+        Model model = before;
+        if (!runs_out_with(model, add_two, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(model.roots(0, 2).size(), 2U);
+            EXPECT_EQ(model.roots(0, 2)[1], biyos::kNoRoot);
+            return;
+        }
+        EXPECT_EQ(biyos::difference(model, before), "");
+    }
+    ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, VariableNode)
+{
+    expect_graph(add_variable, 1);
+}
+
+TEST(AllocationTest, SumNode)
+{
+    expect_graph(add_sum, 1);
+}
+
+TEST(AllocationTest, Attach)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        const Model before = with_roots();
+        Model model = before;
+        if (!runs_out_with(model, attach_all, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(model.linear_terms(0, 3).size(), 3U);
+            EXPECT_EQ(model.quadratic_terms(0, 3).size(), 3U);
+            EXPECT_EQ(roots_of(model), (std::vector<Offset>{1, 5, 1}));
+            return;
+        }
+        EXPECT_EQ(biyos::difference(model, before), "");
+        EXPECT_EQ(model.graph().mark(), before.graph().mark());
+        EXPECT_EQ(roots_of(model), roots_of(before));
+    }
+    ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, Clear)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        Model model = with_roots();
+        const Model before = model;
+        if (!runs_out_with(model, clear_two, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(model.linear_terms(0, 3).size(), 0U);
+            EXPECT_EQ(model.quadratic_terms(0, 3).size(), 0U);
+            EXPECT_EQ(roots_of(model), (std::vector<Offset>{biyos::kNoRoot, 1, biyos::kNoRoot}));
+            return;
+        }
+        EXPECT_EQ(biyos::difference(model, before), "");
+        EXPECT_EQ(roots_of(model), roots_of(before));
+    }
+    ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, Postfix)
+{
+    expect_graph(decode_two, 8);
 }

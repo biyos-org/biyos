@@ -361,4 +361,5 @@ def range_of(
         raise ValueError(f"{name} is a block of {found}s, not {noun}s")
     if block._model is not model:
         raise ValueError(f"{name} is a block of another model")
+    block._check()
     return block._range()

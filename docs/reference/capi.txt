@@ -1219,7 +1219,8 @@ see BIYOS_setobjnamesp
 since 0.1.0
 
 group expressions Expressions
-text The `BIYOS_OP_` constants number the operators of expressions, which will form the nonlinear parts of functions. An expression is a node of the model's graph, an operator applied to its children, and a node that several parents share is stored once. Every constant, coefficient and exponent of an expression is finite. No call takes the operators yet; @sec-graph describes each one.
+text An expression is a node of the model's graph, an operator applied to its children, and the `BIYOS_OP_` constants number the operators. `BIYOS_attachexprsp` adds an expression to a function, as the nonlinear part of $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j + e(x)$. A node is named by its id, a `BIYOS_offset` counted from 0 in the order the nodes are added. Passing a node's id again shares the node, which is stored once however many parents use it, and each variable has one node. Every constant, coefficient and exponent of an expression is finite. @sec-graph describes each operator.
+text `BIYOS_addexpr` takes many expressions in one call, in postfix, where each operand comes before the operator that takes it: the form bindings and file readers write. Expression `k` is the entries from `off[k]` to `off[k + 1] - 1` of `code` and `arg`. An entry's code is a `BIYOS_OP_` constant and its argument a `BIYOS_offset`: for `BIYOS_OP_VAR` the variable, for `BIYOS_OP_NODE` the id of a node the model held before the call, and for an operator the number of operands it takes, 0 for `BIYOS_OP_CONST`. The values the operators take, as `BIYOS_addnode` reads them, follow one another in `val` in the order of the entries, expression after expression. Each expression leaves one operand, its top node. A sum that is an operand of a sum built in the same expression is merged into it, and so is a product that is an operand of a product, so $x_0 + (x_1 + x_2)$ becomes one sum of three terms. A node named by `BIYOS_OP_NODE` is used whole.
 
 table Operators
 value BIYOS_OP_CONST A constant $c$, with no child.
@@ -1251,6 +1252,76 @@ value BIYOS_OP_ATANH $\operatorname{artanh} e$.
 value BIYOS_OP_ENT $e \log e$.
 value BIYOS_OP_SPOW $\operatorname{sign}(e)\, \lvert e \rvert^c$, with a constant exponent $c > 0$.
 value BIYOS_OP_ERF $\operatorname{erf} e$, the error function.
+value BIYOS_OP_NODE No operator: in postfix, a node the model already holds, named by its id.
+since 0.1.0
+
+function BIYOS_addvarnode
+summary Give the node of a variable.
+param mdl in The model.
+param var in The variable.
+param node out Receives the id of the variable's node; skipped when null.
+return `BIYOS_OK` once the node exists.
+error BIYOS_ERR_BADARG `var` is not a variable of the model.
+note A variable has one node: the first call adds it, and every later call gives the same id.
+see BIYOS_addnode
+since 0.1.0
+
+function BIYOS_addnode
+summary Add a node, an operator applied to nodes the model holds.
+param mdl in The model.
+param op in The operator, a `BIYOS_OP_` constant other than `BIYOS_OP_VAR` and `BIYOS_OP_NODE`.
+param n in The number of children.
+param arg in The ids of the `n` children, in order; may be null only when `n` is 0.
+param val in The values the operator takes, in order; null when it takes none. `BIYOS_OP_CONST` takes its value, `BIYOS_OP_PROD` its coefficient, `BIYOS_OP_CPOW` and `BIYOS_OP_SPOW` their exponent, and `BIYOS_OP_SUM` its constant followed by the weight of each child, `n + 1` values. The call reads no others.
+param node out Receives the id of the new node; skipped when null.
+return `BIYOS_OK` once the node is added.
+error BIYOS_ERR_BADARG `n` is negative, `op` is not an operator the call takes, a child is not a node of the model, the operator does not take `n` children, a value is not finite, or the exponent of `BIYOS_OP_SPOW` is not positive.
+note The node is added as given, so a sum among the children of a sum stays a child, and so does a product among those of a product. An id given twice in `arg` names the same child twice.
+see BIYOS_addvarnode BIYOS_addexpr
+since 0.1.0
+
+function BIYOS_addexpr
+summary Add expressions given in postfix.
+param mdl in The model.
+param n in The number of expressions.
+param off in The `n + 1` offsets of the expressions' entries in `code` and `arg`; may be null only when `n` is 0.
+param code in The code of each entry, an operator or `BIYOS_OP_NODE`; not read when there are no entries.
+param arg in The argument of each entry: a variable, a node id or a number of operands; not read when there are no entries.
+param val in The values the operators take, in the order of the entries; null when they take none.
+param node out Entry `k` receives the id of the top node of expression `k`; skipped when null.
+return `BIYOS_OK` once the expressions are added.
+error BIYOS_ERR_BADARG `n` is negative, `off` does not begin at 0 or decreases, or an expression is malformed: a code that is no operator, a variable or a node the model does not hold, an operator given a number of operands it does not take or more than are left, an expression that leaves no operand or more than one, or a value `BIYOS_addnode` would refuse. The message names the expression and the entry, counted from 0 in `code`, as in `invalid argument: expression 1: entry 4: 2 operands taken, 1 given`.
+note A call that fails adds no node, so the next call gives the same ids again.
+see BIYOS_addnode BIYOS_attachexprsp
+since 0.1.0
+
+function BIYOS_attachexprsp BIYOS_attachexprrg
+summary Add expressions to functions of the model.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of functions that gain an expression.
+param idx in In the `sp` form, the functions, each listed at most once; may be null only when `n` is 0.
+param node in The node each function gains, by id; may be null only when `n` is 0.
+return `BIYOS_OK` once the expressions are added.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, a function is not one of the model or is listed twice, the range ends past the last function, a node is not one of the model, or a function's constant, or a coefficient summed with one the function holds, would not be finite.
+note The function of entry `k`, `idx[k]` or `pos + k`, becomes $f + e$, where $e$ is node `node[k]`. The constant, linear and quadratic terms of $e$ join the function's, added as `BIYOS_addlintermsp` and `BIYOS_addquadtermsp` add terms, and the rest becomes the function's expression, or is summed in a new node with the expression it has. An expression that holds no constant leaves the function's as it was.
+note The expression is split at its top. Among the terms of its top sum, a constant, $a x_j$, $q x_i x_j$ and $q x_j^2$ move, with negations and constant factors pushed into that sum; any other term stays whole, so no product of sums is expanded. Below the top, a node that other nodes use is kept whole, so a subexpression shared by several functions is stored once.
+note A call whose expressions bring new linear or quadratic terms moves the terms and offsets of every function from its lowest such one on, as `BIYOS_addlintermsp` does, so the expressions of many functions are best attached in one call, or a function's right after it is added. An expression that brings no new term moves nothing.
+see BIYOS_addexpr BIYOS_clrfunsp BIYOS_addlintermsp BIYOS_addquadtermsp
+since 0.1.0
+
+function BIYOS_clrfunsp BIYOS_clrfunrg
+summary Empty functions of the model, so they can be built again.
+param mdl in The model.
+param pos in In the `rg` form, the first function of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the function of each entry; may be null only when `n` is 0.
+return `BIYOS_OK` once each function given has the constant 0, no linear or quadratic term and no expression. A function listed more than once is emptied once.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, a function is not one of the model or the range ends past the last function.
+note The constraints and objectives that use a function keep using it. Its expression's nodes stay in the graph, and other functions that share them keep them.
+note An expression's linear and quadratic parts join the function's own, and nothing tells them apart afterwards, so no call takes an expression back from a function: the function is emptied and built again.
+note A call moves the terms of every function from the lowest one it lists on, so many functions are best emptied in one call.
+see BIYOS_attachexprsp BIYOS_addfun
 since 0.1.0
 
 group status Solve status

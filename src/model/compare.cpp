@@ -3,12 +3,11 @@
 #include "core/index.hpp"
 #include "core/text.hpp"
 #include "expr/terms.hpp"
+#include "model/fields.hpp"
+#include "model/match.hpp"
 #include "model/model.hpp"
 
-#include <bit>
 #include <cstddef>
-#include <cstdint>
-#include <initializer_list>
 #include <span>
 #include <string>
 #include <string_view>
@@ -18,45 +17,6 @@ namespace biyos
 
 namespace
 {
-
-template <typename T> std::string against(std::string_view field, T a, T b)
-{
-    return std::string(field) + " " + text_of(a) + " against " + text_of(b);
-}
-
-std::string compared(std::string_view field, Index a, Index b)
-{
-    return a == b ? std::string() : against(field, a, b);
-}
-
-std::string compared(std::string_view field, double a, double b)
-{
-    const bool same = std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b);
-    return same ? std::string() : against(field, a, b);
-}
-
-std::string quoted(const std::string *name)
-{
-    return name == nullptr ? "none" : "'" + *name + "'";
-}
-
-std::string compared(std::string_view field, const std::string *a, const std::string *b)
-{
-    const bool same = a == nullptr || b == nullptr ? a == b : *a == *b;
-    return same ? std::string() : std::string(field) + " " + quoted(a) + " against " + quoted(b);
-}
-
-std::string first_of(std::initializer_list<std::string> found)
-{
-    for (const std::string &text : found)
-    {
-        if (!text.empty())
-        {
-            return text;
-        }
-    }
-    return "";
-}
 
 template <typename Count, typename Compare>
 std::string table_difference(std::string_view noun, Count a, Count b, Compare compare)
@@ -160,6 +120,25 @@ std::span<const QuadraticTerm> quadratic_of(const Model &model, Index function)
     return model.quadratic_terms(function, 1);
 }
 
+Offset root_of(const Model &model, Index function)
+{
+    return model.roots(function, 1).front();
+}
+
+std::string root_text(Offset root)
+{
+    return root == kNoRoot ? "none" : "node " + text_of(root);
+}
+
+std::string expression_difference(Matching &matching, Offset a, Offset b)
+{
+    if (a == kNoRoot || b == kNoRoot)
+    {
+        return a == b ? "" : "root " + root_text(a) + " against " + root_text(b);
+    }
+    return matching.difference(a, b);
+}
+
 std::string named(const Model &a, const Model &b, Family family, Index index)
 {
     return compared("name", a.name_of(family, index), b.name_of(family, index));
@@ -173,12 +152,13 @@ std::string variable_difference(const Model &a, const Model &b, Index variable)
     });
 }
 
-std::string function_difference(const Model &a, const Model &b, Index function)
+std::string function_difference(const Model &a, const Model &b, Index function, Matching &matching)
 {
     return first_of({
         compared("constant", constant_of(a, function), constant_of(b, function)),
         term_differences("term", a.linear_terms(function, 1), b.linear_terms(function, 1)),
         term_differences("quadratic term", quadratic_of(a, function), quadratic_of(b, function)),
+        expression_difference(matching, root_of(a, function), root_of(b, function)),
         named(a, b, Family::Function, function),
     });
 }
@@ -207,7 +187,8 @@ std::string variable_differences(const Model &a, const Model &b)
 
 std::string function_differences(const Model &a, const Model &b)
 {
-    const auto function = [&](Index k) { return function_difference(a, b, k); };
+    Matching matching(a.graph(), b.graph());
+    const auto function = [&](Index k) { return function_difference(a, b, k, matching); };
     return table_difference("function", a.n_functions(), b.n_functions(), function);
 }
 

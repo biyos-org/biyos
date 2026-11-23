@@ -6,7 +6,9 @@
 
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -37,22 +39,22 @@ std::string operator_name(Operator op)
     return "operator " + text_of(static_cast<int>(op));
 }
 
-Shape shape_of(Operator op)
+std::optional<Shape> find_shape(Operator op) noexcept
 {
     switch (op)
     {
     case Operator::Constant:
-        return {.payload = Payload::Constant, .least = 0, .most = 0};
+        return Shape{.payload = Payload::Constant, .least = 0, .most = 0};
     case Operator::Variable:
-        return {.payload = Payload::Variable, .least = 0, .most = 0};
+        return Shape{.payload = Payload::Variable, .least = 0, .most = 0};
     case Operator::Sum:
-        return {.payload = Payload::Coefficients, .least = 1, .most = kMany};
+        return Shape{.payload = Payload::Coefficients, .least = 1, .most = kMany};
     case Operator::Product:
-        return {.payload = Payload::Constant, .least = 1, .most = kMany};
+        return Shape{.payload = Payload::Constant, .least = 1, .most = kMany};
     case Operator::ConstantPower:
-        return {.payload = Payload::Constant, .least = 1, .most = 1};
+        return Shape{.payload = Payload::Constant, .least = 1, .most = 1};
     case Operator::SignPower:
-        return {.payload = Payload::Constant, .least = 1, .most = 1, .positive = true};
+        return Shape{.payload = Payload::Constant, .least = 1, .most = 1, .positive = true};
     case Operator::Negation:
     case Operator::Exp:
     case Operator::Log:
@@ -72,15 +74,25 @@ Shape shape_of(Operator op)
     case Operator::Atanh:
     case Operator::Entropy:
     case Operator::Erf:
-        return {.payload = Payload::None, .least = 1, .most = 1};
+        return Shape{.payload = Payload::None, .least = 1, .most = 1};
     case Operator::Division:
     case Operator::Power:
-        return {.payload = Payload::None, .least = 2, .most = 2};
+        return Shape{.payload = Payload::None, .least = 2, .most = 2};
     case Operator::Max:
     case Operator::Min:
-        return {.payload = Payload::None, .least = 1, .most = kMany};
+        return Shape{.payload = Payload::None, .least = 1, .most = kMany};
     }
-    refuse(operator_name(op) + " is unknown");
+    return std::nullopt;
+}
+
+Shape shape_of(Operator op)
+{
+    const std::optional<Shape> shape = find_shape(op);
+    if (!shape)
+    {
+        refuse(operator_name(op) + " is unknown");
+    }
+    return *shape;
 }
 
 std::string_view payload_name(Payload payload) noexcept
@@ -124,6 +136,20 @@ bool positive(double value) noexcept
     return !std::signbit(value) && std::fpclassify(value) != FP_ZERO;
 }
 
+}
+
+std::optional<Operator> operator_of(int code) noexcept
+{
+    if (code < 0 || code > (std::numeric_limits<std::uint8_t>::max)())
+    {
+        return std::nullopt;
+    }
+    const auto op = static_cast<Operator>(code);
+    if (!find_shape(op))
+    {
+        return std::nullopt;
+    }
+    return op;
 }
 
 Payload payload_of(Operator op)

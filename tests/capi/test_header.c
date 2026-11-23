@@ -75,7 +75,7 @@ extern char error_end[sizeof(BIYOS_error) == 4 * sizeof(void *) ? 1 : -1];
     BIYOS_OP_MAX != 16 || BIYOS_OP_MIN != 17 || BIYOS_OP_ASIN != 18 || BIYOS_OP_ACOS != 19 ||      \
     BIYOS_OP_ATAN != 20 || BIYOS_OP_SINH != 21 || BIYOS_OP_COSH != 22 || BIYOS_OP_TANH != 23 ||    \
     BIYOS_OP_ASINH != 24 || BIYOS_OP_ACOSH != 25 || BIYOS_OP_ATANH != 26 || BIYOS_OP_ENT != 27 ||  \
-    BIYOS_OP_SPOW != 28 || BIYOS_OP_ERF != 29
+    BIYOS_OP_SPOW != 28 || BIYOS_OP_ERF != 29 || BIYOS_OP_NODE != 30
 #error "a public operator changed"
 #endif
 
@@ -221,6 +221,47 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     }
     if (status != BIYOS_OK || first != 0 || objectives != 2 || found[0] != BIYOS_MAXIMIZE ||
         found[1] != BIYOS_MINIMIZE || priorities[1] != 1)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
+static BIYOS_status use_nodes(BIYOS_model *model)
+{
+    BIYOS_offset x = -1;
+    BIYOS_offset children[2] = {-1, -1};
+    const BIYOS_real weights[3] = {0.0, 1.0, 2.0};
+    BIYOS_offset sum = -1;
+    if (BIYOS_addvarnode(model, 1, &x) != BIYOS_OK ||
+        BIYOS_addnode(model, BIYOS_OP_EXP, 1, &x, NULL, &children[0]) != BIYOS_OK)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    children[1] = x;
+    if (BIYOS_addnode(model, BIYOS_OP_SUM, 2, children, weights, &sum) != BIYOS_OK || x != 0 ||
+        children[0] != 1 || sum != 2)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
+static BIYOS_status use_postfix(BIYOS_model *model)
+{
+    const BIYOS_offset off[3] = {0, 2, 4};
+    const BIYOS_int code[4] = {BIYOS_OP_NODE, BIYOS_OP_SIN, BIYOS_OP_VAR, BIYOS_OP_CPOW};
+    const BIYOS_offset arg[4] = {2, 1, 0, 1};
+    const BIYOS_real val[1] = {3.0};
+    BIYOS_offset node[2] = {-1, -1};
+    const BIYOS_index idx[1] = {1};
+    if (BIYOS_addexpr(model, 2, off, code, arg, val, node) != BIYOS_OK || node[0] != 3 ||
+        node[1] != 5 || BIYOS_attachexprsp(model, 1, idx, node) != BIYOS_OK ||
+        BIYOS_attachexprrg(model, 0, 1, node + 1) != BIYOS_OK ||
+        BIYOS_clrfunsp(model, 1, idx) != BIYOS_OK ||
+        BIYOS_attachexprsp(model, 1, idx, node) != BIYOS_OK ||
+        BIYOS_clrfunrg(model, 0, 1) != BIYOS_OK ||
+        BIYOS_attachexprrg(model, 0, 1, node + 1) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -441,7 +482,8 @@ int main(void)
         status = BIYOS_ERR_INTERNAL;
     }
     if (use_functions(model) != BIYOS_OK || use_linear(model) != BIYOS_OK ||
-        use_quadratic(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK ||
+        use_quadratic(model) != BIYOS_OK || use_nodes(model) != BIYOS_OK ||
+        use_postfix(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK ||
         use_objectives(model) != BIYOS_OK || use_names(model) != BIYOS_OK ||
         use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
     {

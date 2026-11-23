@@ -47,19 +47,26 @@ add_library(biyos_internal STATIC
     expr/shape.cpp
     expr/tape.cpp
     expr/terms.cpp
+    expr/uses.cpp
     expr/value.cpp
     expr/waves.cpp
+    model/attach.cpp
     model/checks.cpp
     model/compare.cpp
     model/compressed.cpp
     model/constraints.cpp
+    model/expressions.cpp
+    model/fields.cpp
     model/functions.cpp
+    model/match.cpp
     model/merge.cpp
     model/model.cpp
     model/names.cpp
     model/naming.cpp
+    model/nodes.cpp
     model/objectives.cpp
     model/pairs.cpp
+    model/postfix.cpp
     model/quadratic.cpp
     model/terms.cpp
     model/transpose.cpp
@@ -87,6 +94,7 @@ add_library(biyos
     capi/constraints.cpp
     capi/env.cpp
     capi/events.cpp
+    capi/expressions.cpp
     capi/format.cpp
     capi/functions.cpp
     capi/linear.cpp

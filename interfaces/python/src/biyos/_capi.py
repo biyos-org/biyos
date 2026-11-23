@@ -117,6 +117,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_constraints(lib, ints, doubles)
     _declare_objectives(lib, ints, doubles)
     _declare_names(lib, ints)
+    _declare_expressions(lib, ints, doubles)
 
 
 def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -188,6 +189,17 @@ def _declare_names(lib: ctypes.CDLL, ints: type) -> None:
         _declare_pair(lib, f"BIYOS_get{noun}name", strings)
         _declare(lib, f"BIYOS_get{noun}idx", c_int, *find)
         _declare_pair(lib, f"BIYOS_del{noun}name")
+
+
+def _declare_expressions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
+    offsets = POINTER(c_int64)
+    _declare(lib, "BIYOS_addvarnode", c_int, c_void_p, c_int32, offsets)
+    node = (c_void_p, c_int32, c_int64, offsets, doubles, offsets)
+    _declare(lib, "BIYOS_addnode", c_int, *node)
+    postfix = (c_void_p, c_int32, offsets, ints, offsets, doubles, offsets)
+    _declare(lib, "BIYOS_addexpr", c_int, *postfix)
+    _declare_pair(lib, "BIYOS_attachexpr", offsets)
+    _declare_pair(lib, "BIYOS_clrfun")
 
 
 lib = _load()
