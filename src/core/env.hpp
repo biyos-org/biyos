@@ -7,6 +7,7 @@
 #include "core/options.hpp"
 #include "core/records.hpp"
 
+#include <atomic>
 #include <cstddef>
 #include <memory>
 #include <span>
@@ -83,7 +84,7 @@ class Env
     Interrupt interrupt_;
     Records records_;
     ErrorScope *scope_ = nullptr;
-    std::size_t handles_ = 0;
+    std::atomic<std::size_t> handles_{0};
 };
 
 }

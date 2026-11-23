@@ -91,6 +91,13 @@ void crowded_scope(biyos::Env &env)
     EXPECT_EQ(env.last_error().status, BIYOS_OK);
 }
 
+void hold(biyos::Env &env, std::latch &held, std::latch &release)
+{
+    const biyos::Env::Handle handle(env);
+    held.count_down();
+    release.wait();
+}
+
 void shared_scope(biyos::Env &env)
 {
     const biyos::Env::ErrorScope scope(env);
@@ -232,6 +239,27 @@ TEST(EnvTest, Handles)
         const biyos::Env::Handle second(env);
         EXPECT_EQ(env.handles(), 2U);
         EXPECT_EQ(&first.env(), &env);
+    }
+    EXPECT_EQ(env.handles(), 0U);
+}
+
+TEST(EnvTest, HandleThreads)
+{
+    constexpr std::size_t kThreads = 8;
+    biyos::Env env;
+    std::latch held(kThreads);
+    std::latch release(1);
+    std::vector<std::thread> threads;
+    for (std::size_t i = 0; i < kThreads; ++i)
+    {
+        threads.emplace_back(hold, std::ref(env), std::ref(held), std::ref(release));
+    }
+    held.wait();
+    EXPECT_EQ(env.handles(), kThreads);
+    release.count_down();
+    for (std::thread &thread : threads)
+    {
+        thread.join();
     }
     EXPECT_EQ(env.handles(), 0U);
 }

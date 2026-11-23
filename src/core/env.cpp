@@ -114,7 +114,7 @@ void Env::record_error(ErrorKind kind, std::string_view text, const BIYOS_model 
 
 std::size_t Env::handles() const noexcept
 {
-    return handles_;
+    return handles_.load();
 }
 
 Env::Handle::Handle(Env &env) noexcept : env_(env)
