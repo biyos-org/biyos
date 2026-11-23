@@ -77,3 +77,21 @@ def test_failure(calls):
         with pytest.raises(RuntimeError, match="hook failed"):
             env.setopt("seed", -1)
         assert calls == []
+
+
+def test_model(calls):
+    with biyos.Env() as env, biyos.Model(env) as model:
+        hook = partial(interrupt_aside, env)
+        model.addhook(hook, EventKind.MESSAGE, EventLevel.ERROR)
+        with pytest.raises(biyos.Error, match="option 'seed'"):
+            model.setopt("seed", -1)
+        assert calls == [env._handle.value]
+
+
+def test_model_halt(calls):
+    with biyos.Env() as env, biyos.Model(env) as model:
+        model.addhook(halt, EventKind.MESSAGE, EventLevel.ERROR)
+        with pytest.raises(KeyboardInterrupt):
+            model.setopt("seed", -1)
+        assert calls == [env._handle.value]
+        assert model.getopt("seed") == 0

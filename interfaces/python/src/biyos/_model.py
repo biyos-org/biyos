@@ -50,6 +50,8 @@ from biyos._callbacks import Caller, Callbacks, checked, data_at
 from biyos._capi import lib
 from biyos._env import Env
 from biyos._error import Error
+from biyos._event import Event, EventKind, EventLevel
+from biyos._hooks import Hooks, checked_hook
 from biyos._integers import integer
 from biyos._operators import Operator, node_values, postfix_values
 from biyos._options import OptionSource
@@ -296,6 +298,7 @@ class Model:
             models.add(self._handle)
             self._hold()
             raise
+        self._hooks.clear()
 
     def copy(self, env: Env | None = None) -> "Model":
         """Return a copy of the model, made on an environment.
@@ -515,6 +518,78 @@ class Model:
         src = c_int()
         self._call(lib.BIYOS_getmdloptsrc, option, byref(src))
         return OptionSource(src.value)
+
+    def addhook(
+        self,
+        hk: Callable[[Event], object],
+        knd: EventKind,
+        lvl: EventLevel,
+    ) -> int:
+        """Add a hook on one kind of event of the model at a lowest level.
+
+        The hook receives the events of calls on the model alone, before the
+        hooks of its environment receive them. It is freed with the model,
+        and a copy has none of the model's hooks.
+
+        Parameters
+        ----------
+        hk
+            A callable that takes one ``Event``. It runs on the thread that
+            sent the event, and the event is valid only during the call.
+        knd
+            The kind of events.
+        lvl
+            The lowest level the hook receives.
+
+        Returns
+        -------
+        idx
+            The id of the hook, for ``delhook``. Ids count from 1 in each
+            model.
+
+        Raises
+        ------
+        TypeError
+            When ``hk`` is not callable.
+        Error
+            When the kind or the level is unknown.
+        ValueError
+            When the model is closed.
+
+        See Also
+        --------
+        BIYOS_addmdlhook
+        """
+        hk = checked_hook(hk)
+        kind = integer("knd", knd)
+        level = integer("lvl", lvl)
+        idx = c_int()
+        with self._env._busy():
+            self._addhook(hk, kind, level, idx)
+        return idx.value
+
+    def delhook(self, idx: int) -> None:
+        """Remove a hook of the model.
+
+        Parameters
+        ----------
+        idx
+            The id ``addhook`` gave.
+
+        Raises
+        ------
+        Error
+            When the model has no hook of that id.
+        ValueError
+            When the model is closed.
+
+        See Also
+        --------
+        BIYOS_delmdlhook
+        """
+        idx = integer("idx", idx)
+        with self._env._busy():
+            self._delhook(idx)
 
     def addvar(
         self,
@@ -3903,6 +3978,7 @@ class Model:
         self._closing = False
         self._gen = 0
         self._callbacks = Callbacks()
+        self._hooks = Hooks(env._relay, env._owners)
 
     def _make(self, call: Callable[..., None], *arguments: object) -> None:
         models = self._env._models
@@ -3925,7 +4001,27 @@ class Model:
 
     def _hold(self) -> None:
         park = self._env._models.park
-        self._free = weakref.finalize(self, park, self._handle)
+        callback = self._hooks.callback
+        self._free = weakref.finalize(self, park, self._handle, callback)
+
+    def _addhook(
+        self,
+        hk: Callable[[Event], object],
+        knd: int,
+        lvl: int,
+        idx: c_int,
+    ) -> None:
+        callback = self._hooks.callback
+        out = byref(idx)
+        key = self._hooks.add(hk)
+        try:
+            self._call(lib.BIYOS_addmdlhook, callback, key, knd, lvl, out)
+        finally:
+            self._hooks.settle(key, idx.value)
+
+    def _delhook(self, idx: int) -> None:
+        self._call(lib.BIYOS_delmdlhook, idx)
+        self._hooks.remove(idx)
 
     def _lookup(self, name: str) -> tuple[int, int]:
         if not self._open():

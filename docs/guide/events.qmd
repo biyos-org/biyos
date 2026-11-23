@@ -75,7 +75,7 @@ While a hook runs, whether it belongs to the environment or to one of its models
 
 ## Events in Python {#sec-events-python}
 
-In Python, `env.addhook` attaches any callable that takes one `Event` and returns an id for `env.delhook`. The event's properties, such as `kind`, `level`, `text` and `model`, read its parts, and `fmttext` and `fmtjson` give its lines. Forwarding events to Python's `logging` module takes a few lines:
+In Python, `env.addhook` attaches any callable that takes one `Event` and returns an id for `env.delhook`. `model.addhook` and `model.delhook` do the same for the hooks of one model. The event's properties, such as `kind`, `level`, `text` and `model`, read its parts, and `fmttext` and `fmtjson` give its lines. Forwarding events to Python's `logging` module takes a few lines:
 
 ```{.python file="examples/python/events.py"}
 ```

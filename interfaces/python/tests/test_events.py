@@ -16,6 +16,14 @@ from spies import followed, preceded
 
 CODE = (("code", "-100"),)
 
+SEED = "invalid argument: option 'seed': -1 is outside [0, 2147483647]"
+
+LOCKED = "invalid argument: model: is read-only while delivering an event"
+
+ENV_LOCKED = (
+    "invalid argument: environment: is read-only while delivering an event"
+)
+
 EVENTS = ("BIYOS_EVT_", "BIYOS_LVL_")
 
 LEVELS = {
@@ -72,6 +80,47 @@ def fail(env):
 
 def keep_model(seen, event):
     seen.append(event.model)
+
+
+def listen(target, hook):
+    return target.addhook(hook, EventKind.MESSAGE, EventLevel.DEBUG)
+
+
+def fail_model(model):
+    with pytest.raises(biyos.Error) as caught:
+        model.setopt("seed", -1)
+    return caught.value
+
+
+def mark(heard, name, event):
+    heard.append(name)
+
+
+def refuse_inside(model, seen, event):
+    try:
+        model.addvar(1)
+    except biyos.Error as error:
+        seen.append(str(error))
+
+
+def change_model(model, other, env, seen, event):
+    changes = [
+        partial(model.setopt, "seed", 1),
+        partial(listen, model, Sink()),
+        partial(model.delhook, 1),
+        partial(model.addvar, 1),
+        partial(other.setopt, "seed", 1),
+        partial(env.setopt, "seed", 1),
+        partial(listen, env, Sink()),
+        partial(biyos.Model, env),
+    ]
+    for call in changes:
+        try:
+            call()
+        except biyos.Error as error:
+            seen.append(str(error))
+    seen.append(model.getopt("seed"))
+    seen.append(model.getnvar())
 
 
 def test_constants():
@@ -416,3 +465,165 @@ def test_model():
         assert len(seen) == 2
         assert seen[0] is model
         assert seen[1] is None
+
+
+def test_model_hook():
+    mine = []
+    every = []
+    with biyos.Env() as env, biyos.Model(env) as first:
+        second = biyos.Model(env)
+        listen(first, partial(keep_model, mine))
+        listen(env, partial(keep_model, every))
+        fail_model(first)
+        fail_model(second)
+        fail(env)
+        assert mine == [first]
+        assert every == [first, second, None]
+
+
+def test_model_event():
+    seen = []
+    with biyos.Env() as env, biyos.Model(env) as model:
+        listen(model, partial(record, seen))
+        error = fail_model(model)
+    assert seen == [(EventKind.MESSAGE, EventLevel.ERROR, "capi", SEED, CODE)]
+    assert str(error) == SEED
+
+
+def test_model_order():
+    heard = []
+    with biyos.Env() as env, biyos.Model(env) as model:
+        listen(env, partial(mark, heard, "environment"))
+        listen(model, partial(mark, heard, "first"))
+        listen(model, partial(mark, heard, "second"))
+        fail_model(model)
+    assert heard == ["first", "second", "environment"]
+
+
+def test_model_ids():
+    with biyos.Env() as env, biyos.Model(env) as first:
+        second = biyos.Model(env)
+        ids = [listen(first, Sink()), listen(first, Sink())]
+        ids.extend([listen(second, Sink()), listen(env, Sink())])
+        first.delhook(1)
+        ids.append(listen(first, Sink()))
+        with pytest.raises(biyos.Error) as caught:
+            first.delhook(1)
+        with pytest.raises(biyos.Error):
+            second.delhook(2)
+        second.delhook(1)
+    assert ids == [1, 2, 1, 1, 3]
+    assert str(caught.value) == "invalid argument: hook 1: unknown"
+
+
+@pytest.mark.parametrize("arguments", WRONG)
+def test_model_wrong(arguments):
+    with biyos.Env() as env, biyos.Model(env) as model:
+        with pytest.raises(TypeError):
+            model.addhook(*arguments)
+        assert model._hooks._functions == {}
+
+
+def test_model_unknown():
+    with biyos.Env() as env, biyos.Model(env) as model:
+        with pytest.raises(biyos.Error) as caught:
+            model.addhook(Sink(), 9, EventLevel.DEBUG)
+        assert model._hooks._functions == {}
+    assert caught.value.code == -100
+
+
+def test_model_closed():
+    env = biyos.Env()
+    model = biyos.Model(env)
+    model.close()
+    with pytest.raises(ValueError, match="the model is closed"):
+        listen(model, Sink())
+    with pytest.raises(ValueError, match="the model is closed"):
+        model.delhook(1)
+    env.close()
+
+
+def test_model_free():
+    sink = Sink()
+    alive = weakref.ref(sink)
+    with biyos.Env() as env:
+        model = biyos.Model(env)
+        listen(model, sink)
+        del sink
+        model.close()
+        assert alive() is None
+
+
+def test_model_cycle():
+    with biyos.Env() as env:
+        model = biyos.Model(env)
+        listen(model, partial(keep_model, [model]))
+        alive = weakref.ref(model)
+        del model
+        gc.collect()
+        kept = list(env._models._kept.values())
+        assert alive() is None
+        assert kept[0](None, 1) is None
+        env.getopt("seed")
+        assert env._models._kept == {}
+
+
+def test_model_copy():
+    seen = []
+    with biyos.Env() as env, biyos.Env() as other:
+        model = biyos.Model(env)
+        listen(model, partial(keep_model, seen))
+        near = model.copy()
+        far = model.copy(other)
+        fail_model(near)
+        fail_model(far)
+        ids = [listen(near, Sink()), listen(far, Sink())]
+        far.close()
+    assert seen == []
+    assert ids == [1, 1]
+
+
+def test_model_locked():
+    seen = []
+    with biyos.Env() as env, biyos.Model(env) as model:
+        other = biyos.Model(env)
+        listen(model, partial(change_model, model, other, env, seen))
+        fail_model(model)
+    assert seen == [LOCKED] * 5 + [ENV_LOCKED] * 3 + [0, 0]
+
+
+def test_model_error():
+    seen = []
+    with biyos.Env() as env, biyos.Model(env) as model:
+        listen(model, partial(refuse_inside, model, seen))
+        error = fail_model(model)
+    assert seen == [LOCKED]
+    assert str(error) == SEED
+    assert error.model is model
+
+
+def test_model_raised():
+    with biyos.Env() as env, biyos.Model(env) as model:
+        model.addhook(explode, EventKind.MESSAGE, EventLevel.DEBUG)
+        with pytest.raises(RuntimeError, match="hook failed") as caught:
+            model.setopt("seed", -1)
+        model.setopt("seed", 3)
+        seed = model.getopt("seed")
+    assert seed == 3
+    context = caught.value.__context__
+    assert type(context) is biyos.Error
+    assert context.code == -100
+
+
+def test_model_silent():
+    seen = []
+    heard = []
+    shared = []
+    with biyos.Env() as env, biyos.Model(env) as model:
+        listen(model, partial(refuse_inside, model, seen))
+        listen(model, partial(keep_model, heard))
+        listen(env, partial(keep_model, shared))
+        fail_model(model)
+        assert heard == [model]
+        assert shared == [model]
+    assert seen == [LOCKED]
