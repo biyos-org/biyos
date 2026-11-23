@@ -66,7 +66,7 @@ class Env
     Interrupt &interrupt() noexcept;
     const Interrupt &interrupt() const noexcept;
 
-    const Record &last_error() const noexcept;
+    RecordView last_error() const noexcept;
     void record_error(ErrorKind kind, std::string_view text) noexcept;
 
     std::size_t handles() const noexcept;

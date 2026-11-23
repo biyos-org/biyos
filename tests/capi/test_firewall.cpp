@@ -90,7 +90,7 @@ TEST(FirewallTest, ErrorMessage)
     biyos::Env env;
     const biyos::Error error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "negative");
     EXPECT_EQ(status_after(env, [&] { throw error; }), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.last_error().text, "invalid argument: argument 'n': negative");
+    EXPECT_STREQ(env.last_error().text, "invalid argument: argument 'n': negative");
 }
 
 TEST(FirewallTest, CallerModel)
@@ -108,21 +108,21 @@ TEST(FirewallTest, MemoryMessage)
 {
     biyos::Env env;
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
-    EXPECT_EQ(env.last_error().text, "out of memory");
+    EXPECT_STREQ(env.last_error().text, "out of memory");
 }
 
 TEST(FirewallTest, ForeignMessage)
 {
     biyos::Env env;
     EXPECT_EQ(status_after(env, [] { throw std::runtime_error("foreign"); }), BIYOS_ERR_INTERNAL);
-    EXPECT_EQ(env.last_error().text, "internal error: foreign");
+    EXPECT_STREQ(env.last_error().text, "internal error: foreign");
 }
 
 TEST(FirewallTest, UnknownMessage)
 {
     biyos::Env env;
     EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
-    EXPECT_EQ(env.last_error().text, "internal error: unknown exception");
+    EXPECT_STREQ(env.last_error().text, "internal error: unknown exception");
 }
 
 TEST(FirewallTest, KeptMessage)
@@ -130,7 +130,7 @@ TEST(FirewallTest, KeptMessage)
     biyos::Env env;
     env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
     EXPECT_EQ(status_after(env, [] {}), BIYOS_OK);
-    EXPECT_EQ(env.last_error().text, "earlier");
+    EXPECT_STREQ(env.last_error().text, "earlier");
 }
 
 TEST(FirewallTest, ErrorEvent)
@@ -179,9 +179,9 @@ TEST(FirewallTest, ThrowingHook)
     const auto fail = [](const biyos::Event &) { throw std::runtime_error("hook"); };
     env.events().add_hook(EventKind::Message, EventLevel::Debug, fail);
     EXPECT_EQ(status_after(env, [&] { say(env, "info"); }), BIYOS_OK);
-    EXPECT_EQ(env.last_error().text, "");
+    EXPECT_STREQ(env.last_error().text, "");
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
-    EXPECT_EQ(env.last_error().text, "out of memory");
+    EXPECT_STREQ(env.last_error().text, "out of memory");
 }
 
 TEST(FirewallTest, ThrowingFill)
@@ -193,7 +193,7 @@ TEST(FirewallTest, ThrowingFill)
     const auto fill = [](biyos::Event &) { throw std::bad_alloc(); };
     const auto body = [&] { env.events().emit(EventKind::Message, EventLevel::Info, fill); };
     EXPECT_EQ(status_after(env, body), BIYOS_OK);
-    EXPECT_EQ(env.last_error().text, "");
+    EXPECT_STREQ(env.last_error().text, "");
     EXPECT_TRUE(kept.empty());
 }
 
@@ -216,7 +216,7 @@ TEST(FirewallTest, NestedFailure)
     env.events().add_hook(EventKind::Message, EventLevel::Error, nest);
     EXPECT_EQ(status_after(env, [] { throw std::runtime_error("outer"); }), BIYOS_ERR_INTERNAL);
     EXPECT_EQ(calls, 1);
-    EXPECT_EQ(env.last_error().text, "internal error: outer");
+    EXPECT_STREQ(env.last_error().text, "internal error: outer");
 }
 
 TEST(FirewallTest, QuietSuccess)
@@ -228,5 +228,5 @@ TEST(FirewallTest, QuietSuccess)
     env.events().add_hook(EventKind::Message, EventLevel::Info, nest);
     EXPECT_EQ(status_after(env, [&] { say(env, "info"); }), BIYOS_OK);
     EXPECT_EQ(calls, 1);
-    EXPECT_EQ(env.last_error().text, "earlier");
+    EXPECT_STREQ(env.last_error().text, "earlier");
 }

@@ -39,11 +39,12 @@ void Records::put(BIYOS_status status, const BIYOS_model *model, std::string_vie
     }
 }
 
-const Record &Records::get() const noexcept
+RecordView Records::get() const noexcept
 {
     const std::lock_guard held(lock_);
     const auto found = std::ranges::find(entries_, this_thread(), &Entry::thread);
-    return found == entries_.end() ? none_ : found->record;
+    const Record &record = found == entries_.end() ? none_ : found->record;
+    return RecordView{.status = record.status, .model = record.model, .text = record.text.c_str()};
 }
 
 void Records::swap(Record &record) noexcept

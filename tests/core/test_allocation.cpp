@@ -46,7 +46,7 @@ TEST(AllocationTest, FirstError)
     env.record_error(biyos::ErrorKind::Internal, "first");
     biyos::test::stop_failing();
     EXPECT_EQ(env.last_error().status, BIYOS_OK);
-    EXPECT_EQ(env.last_error().text, "");
+    EXPECT_STREQ(env.last_error().text, "");
 }
 
 TEST(AllocationTest, EmptyScope)
@@ -59,10 +59,10 @@ TEST(AllocationTest, EmptyScope)
         biyos::test::stop_failing();
     }
     EXPECT_EQ(env.last_error().status, BIYOS_OK);
-    EXPECT_EQ(env.last_error().text, "");
+    EXPECT_STREQ(env.last_error().text, "");
     env.record_error(biyos::ErrorKind::Internal, "later");
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
-    EXPECT_EQ(env.last_error().text, "later");
+    EXPECT_STREQ(env.last_error().text, "later");
 }
 
 TEST(AllocationTest, ScopedError)
@@ -83,5 +83,5 @@ TEST(AllocationTest, ScopedError)
     }
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, model);
-    EXPECT_EQ(env.last_error().text, outer);
+    EXPECT_STREQ(env.last_error().text, outer.c_str());
 }

@@ -21,11 +21,18 @@ struct Record
     std::string text;
 };
 
+struct RecordView
+{
+    BIYOS_status status;
+    const BIYOS_model *model;
+    const char *text;
+};
+
 class Records
 {
   public:
     void put(BIYOS_status status, const BIYOS_model *model, std::string_view text) noexcept;
-    const Record &get() const noexcept;
+    RecordView get() const noexcept;
     void swap(Record &record) noexcept;
 
   private:

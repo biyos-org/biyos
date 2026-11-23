@@ -57,10 +57,10 @@ BIYOS_status BIYOS_lasterror(const BIYOS_env *env, BIYOS_error *err)
     {
         return BIYOS_ERR_BADARG;
     }
-    const biyos::Record &record = env->core.last_error();
+    const biyos::RecordView record = env->core.last_error();
     err->status = record.status;
     err->mdl = record.model;
-    err->msg = record.text.c_str();
+    err->msg = record.text;
     return BIYOS_OK;
 }
 

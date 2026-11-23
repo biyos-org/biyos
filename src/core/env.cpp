@@ -70,7 +70,7 @@ const Interrupt &Env::interrupt() const noexcept
     return interrupt_;
 }
 
-const Record &Env::last_error() const noexcept
+RecordView Env::last_error() const noexcept
 {
     return records_.get();
 }

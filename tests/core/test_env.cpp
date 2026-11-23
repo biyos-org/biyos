@@ -15,7 +15,7 @@
 TEST(EnvTest, NoError)
 {
     const biyos::Env env;
-    EXPECT_EQ(env.last_error().text, "");
+    EXPECT_STREQ(env.last_error().text, "");
 }
 
 TEST(EnvTest, LastError)
@@ -23,7 +23,7 @@ TEST(EnvTest, LastError)
     biyos::Env env;
     env.record_error(biyos::ErrorKind::InvalidArgument, "first");
     env.record_error(biyos::ErrorKind::InvalidArgument, "second");
-    EXPECT_EQ(env.last_error().text, "second");
+    EXPECT_STREQ(env.last_error().text, "second");
 }
 
 TEST(EnvTest, OwnsOptions)
@@ -93,9 +93,9 @@ TEST(EnvTest, ScopedError)
         const biyos::Env::ErrorScope scope(env);
         env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
         env.record_error(biyos::ErrorKind::InvalidArgument, "later");
-        EXPECT_EQ(env.last_error().text, "later");
+        EXPECT_STREQ(env.last_error().text, "later");
     }
-    EXPECT_EQ(env.last_error().text, "outer");
+    EXPECT_STREQ(env.last_error().text, "outer");
 }
 
 TEST(EnvTest, NestedScope)
@@ -108,11 +108,11 @@ TEST(EnvTest, NestedScope)
         {
             const biyos::Env::ErrorScope inner(env);
             env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
-            EXPECT_EQ(env.last_error().text, "inner");
+            EXPECT_STREQ(env.last_error().text, "inner");
         }
-        EXPECT_EQ(env.last_error().text, "middle");
+        EXPECT_STREQ(env.last_error().text, "middle");
     }
-    EXPECT_EQ(env.last_error().text, "outer");
+    EXPECT_STREQ(env.last_error().text, "outer");
 }
 
 TEST(EnvTest, CleanScope)
@@ -121,9 +121,9 @@ TEST(EnvTest, CleanScope)
     env.record_error(biyos::ErrorKind::InvalidArgument, "outer");
     {
         const biyos::Env::ErrorScope scope(env);
-        EXPECT_EQ(env.last_error().text, "outer");
+        EXPECT_STREQ(env.last_error().text, "outer");
     }
-    EXPECT_EQ(env.last_error().text, "outer");
+    EXPECT_STREQ(env.last_error().text, "outer");
 }
 
 TEST(EnvTest, Handles)
@@ -211,7 +211,7 @@ TEST(EnvTest, ThreadError)
     worker.join();
     EXPECT_EQ(before, "");
     EXPECT_EQ(after, "worker");
-    EXPECT_EQ(env.last_error().text, "main");
+    EXPECT_STREQ(env.last_error().text, "main");
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_BADARG);
 }
 
@@ -244,5 +244,5 @@ TEST(EnvTest, ErrorModel)
         }
     }
     EXPECT_EQ(env.last_error().model, model);
-    EXPECT_EQ(env.last_error().text, "model");
+    EXPECT_STREQ(env.last_error().text, "model");
 }
