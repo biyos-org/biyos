@@ -528,7 +528,7 @@ see BIYOS_getnvar
 since 0.1.0
 
 group functions Functions
-text A function of the variables $x$ is $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j$: a constant, linear terms and quadratic terms. Constraints and objectives refer to functions by index, so one function may serve several of them. A function's constant must be finite. Its linear terms may come in any order and are kept sorted by variable; each must name a variable of the model, appear once in the function and have a finite coefficient. A term whose coefficient is 0 is kept.
+text A function of the variables $x$ is $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j$: a constant, linear terms and quadratic terms. Constraints and objectives refer to functions by index, so one function may serve several of them. A function's constant must be finite.
 text The terms of many functions travel in compressed form, as three arrays. Function `j` of them has the terms from `off[j]` to `off[j + 1] - 1` of `varidx` and `coef`, which hold a variable and its coefficient each. So `off` holds one more offset than there are functions: the first is 0, none is below the one before it, and the last is the number of terms. An offset or a number of terms is a `BIYOS_offset`.
 text A reader of terms writes into arrays the caller gives: `cap` is the number of terms the arrays hold, and a call whose terms do not fit is refused. Each reader has a count reader that gives the number of terms first. A null array is skipped.
 
@@ -588,6 +588,9 @@ return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a function or the range ends past the last function.
 see BIYOS_setcstsp BIYOS_addcstsp
 since 0.1.0
+
+group linear Linear terms
+text A function is added with no linear terms, and `BIYOS_addlintermsp`, `BIYOS_addrlintermrg` and `BIYOS_addclintermrg` add them. They may come in any order and are kept sorted by variable; each must name a variable of the model, appear once in the function and have a finite coefficient. A term whose coefficient is 0 is kept.
 
 function BIYOS_addlintermsp
 summary Add linear terms to functions, as coordinates.
