@@ -111,6 +111,15 @@ void chatter(biyos::Events &events, std::latch &start)
     }
 }
 
+void churn(biyos::Events &events, std::latch &start)
+{
+    start.arrive_and_wait();
+    for (int i = 0; i < kRounds; ++i)
+    {
+        events.delete_hook(events.add_hook(EventKind::Message, EventLevel::Debug, ignore));
+    }
+}
+
 using Read = bool (biyos::Events::*)() const noexcept;
 
 bool elsewhere(const biyos::Events &events, Read read)
@@ -435,6 +444,26 @@ TEST_F(EventTest, Turns)
     }
     EXPECT_EQ(watch.overlaps(), 0);
     EXPECT_EQ(watch.seen(), kThreads * kRounds);
+}
+
+TEST_F(EventTest, Churn)
+{
+    Watch watch;
+    std::latch start(kThreads + 1);
+    std::vector<std::thread> threads;
+    events.add_hook(EventKind::Message, EventLevel::Info, std::ref(watch));
+    threads.emplace_back(churn, std::ref(events), std::ref(start));
+    for (int i = 0; i < kThreads; ++i)
+    {
+        threads.emplace_back(chatter, std::ref(events), std::ref(start));
+    }
+    for (std::thread &thread : threads)
+    {
+        thread.join();
+    }
+    EXPECT_EQ(watch.overlaps(), 0);
+    EXPECT_EQ(watch.seen(), kThreads * kRounds);
+    EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Debug));
 }
 
 TEST_F(EventTest, OtherThread)
