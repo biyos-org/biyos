@@ -9,6 +9,7 @@ import pytest
 
 import biyos
 from biyos import EventKind, EventLevel
+from biyos._capi import OK
 from header import lines, macros
 from number import Number
 from spies import followed, preceded
@@ -242,6 +243,34 @@ def read_seed(env, seeds, event):
     seeds.append(env.getopt("seed"))
 
 
+def arm(actions, steps, event):
+    actions.extend(steps)
+    raise RuntimeError("hook failed")
+
+
+def relayed(relay, hook):
+    relay.run(hook, None)
+    return OK
+
+
+def trapped(errors, function, event):
+    try:
+        function()
+    except ValueError as error:
+        errors.append(error)
+
+
+def interrupt():
+    raise KeyboardInterrupt
+
+
+def swallowed(function, *arguments):
+    try:
+        function(*arguments)
+    except KeyboardInterrupt:
+        pass
+
+
 def raised(env):
     try:
         env.setopt("seed", -1)
@@ -336,6 +365,44 @@ def test_succeeded(monkeypatch):
             env.getopt("seed")
         assert env.getopt("seed") == 0
     assert caught.value.__context__ is None
+
+
+def test_gap(monkeypatch):
+    actions = []
+    with biyos.Env() as env:
+        settle = partial(preceded, actions, env._settle)
+        monkeypatch.setattr(env, "_settle", settle)
+        nested = partial(env.getopt, "seed")
+        hook = partial(arm, actions, [nested])
+        env.addhook(hook, EventKind.MESSAGE, EventLevel.DEBUG)
+        with pytest.raises(RuntimeError, match="hook failed") as caught:
+            env.setopt("seed", -1)
+        assert env.getopt("seed") == 0
+    assert type(caught.value.__context__) is biyos.Error
+
+
+def test_inner():
+    errors = []
+    with biyos.Env() as env:
+        call = partial(env._run, relayed, env._relay, refuse)
+        hook = partial(trapped, errors, call)
+        env.addhook(hook, EventKind.MESSAGE, EventLevel.DEBUG)
+        with pytest.raises(biyos.Error):
+            env.setopt("seed", -1)
+    assert [str(error) for error in errors] == ["second hook failed"]
+
+
+def test_aborted(monkeypatch):
+    actions = []
+    with biyos.Env() as env:
+        settle = partial(preceded, actions, env._settle)
+        monkeypatch.setattr(env, "_settle", settle)
+        nested = partial(swallowed, env.getopt, "seed")
+        hook = partial(arm, actions, [nested, interrupt])
+        env.addhook(hook, EventKind.MESSAGE, EventLevel.DEBUG)
+        with pytest.raises(RuntimeError, match="hook failed"):
+            env.setopt("seed", -1)
+        assert env.getopt("seed") == 0
 
 
 def test_model():
