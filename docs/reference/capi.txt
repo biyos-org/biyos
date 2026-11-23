@@ -2519,6 +2519,13 @@ note It reads back what `BIYOS_addcb` takes. A refused call writes nothing.
 see BIYOS_getncbfun BIYOS_addcb
 since 0.1.0
 
+group files Files
+text A model is read from a file in the format the caller names, never guessed from the file's name.
+
+table Formats
+value BIYOS_FMT_MPS Free MPS, for linear and mixed-integer models.
+since 0.1.0
+
 group status Solve status
 text Three groups of constants describe how a solve ended. The termination says why the solve stopped, a result status says what a returned point is, the primal and the dual point each having one, and the claim says what was proved. They are kept apart, so a result never says more than its method proved. None of them is an error code: a limit reached or an infeasible model is an outcome, not a failed call. No call returns them yet.
 text Terminations are grouped by hundreds, like the error codes: 100 to 199 solved, 200 to 299 stopped early by a limit or by the user, 300 to 399 infeasibility or unboundedness detected, 400 to 499 no progress. A new one joins its group, so test a group by range. For the dual point, feasible means feasible for the dual problem.

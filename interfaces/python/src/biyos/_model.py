@@ -152,6 +152,18 @@ class ConeKind(IntEnum):
     SEMIDEFINITE = 8
 
 
+class Format(IntEnum):
+    """The file formats, as ``BIYOS_FMT_`` numbers them.
+
+    Attributes
+    ----------
+    MPS
+        Free MPS, for linear and mixed-integer models.
+    """
+
+    MPS = 1
+
+
 _COUNTS: dict[type[Block[Any]], str] = {
     Variables: "getnvar",
     Functions: "getnfun",
