@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
     from biyos._model import Model
 
-Element = TypeVar("Element", c_double, c_int, c_char_p)
+Element = TypeVar("Element", c_double, c_int, c_int64, c_char_p)
 
 
 def _sized(name: str, values: Sized, count: int) -> None:
@@ -141,7 +141,8 @@ def int64s(
         return None
     _sized(name, values, count)
     entry = f"an entry of {name}"
-    return (c_int64 * count)(*(offset(entry, value) for value in values))
+    items = [offset(entry, value) for value in values]
+    return _array(c_int64, name, items, count)
 
 
 def offsets(
