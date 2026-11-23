@@ -4,7 +4,7 @@ from fractions import Fraction
 import pytest
 
 import biyos
-from biyos._capi import OK, lib
+from biyos._capi import KIND_FLAGS, OK, lib
 from biyos._versions import version_text
 from number import Number
 
@@ -50,11 +50,30 @@ WRONG = [
 
 NUMBERS = [(0, None), (100, "0.1.0"), (10203, "1.2.3"), (990099, "99.0.99")]
 
+HELD = {
+    "seed": "an int",
+    "maxtime": "a double",
+    "check_lvl": "an enum",
+    "presolve": "a bool",
+    "repro": "a string",
+}
+
+NOT_PAIRS = [3, (1,), (1, 2, 3), [1, 2], "on"]
+
+NOT_MASKS = [("1", 0), (True, 0), (0, 1.0), (0, None)]
+
+WIDE = [(-1, 0), (0, -1), (2**64, 0), (0, 2**64 + 1)]
+
 
 @pytest.fixture
 def env():
     with biyos.Env() as env:
         yield env
+
+
+def as_flags(env, monkeypatch, name):
+    option = env._option(name)
+    monkeypatch.setattr(env, "_lookup", lambda _: (option, KIND_FLAGS))
 
 
 def n_opts(env):
@@ -210,3 +229,60 @@ def test_unknown_versions(env):
 def test_name_versions(env):
     with pytest.raises(TypeError):
         env.getoptver(1)
+
+
+def test_masks():
+    masks = biyos.Masks(on=5, off=2)
+    assert masks == (5, 2)
+    assert (masks.on, masks.off) == (5, 2)
+    assert biyos.Masks._fields == ("on", "off")
+
+
+@pytest.mark.parametrize("name, held", HELD.items())
+def test_flags_kind(env, monkeypatch, name, held):
+    message = f"invalid argument: option '{name}': is {held}, not flags"
+    as_flags(env, monkeypatch, name)
+    with pytest.raises(biyos.Error) as caught:
+        env.setopt(name, biyos.Masks(1, 2))
+    assert str(caught.value) == message
+    assert caught.value.code == INVALID_ARGUMENT
+    with pytest.raises(biyos.Error) as caught:
+        env.getopt(name)
+    assert str(caught.value) == message
+    assert caught.value.code == INVALID_ARGUMENT
+
+
+def test_full_masks(env, monkeypatch):
+    as_flags(env, monkeypatch, "seed")
+    with pytest.raises(biyos.Error, match="is an int, not flags"):
+        env.setopt("seed", (2**64 - 1, 0))
+
+
+@pytest.mark.parametrize("value", NOT_PAIRS)
+def test_not_pair(env, monkeypatch, value):
+    as_flags(env, monkeypatch, "seed")
+    found = type(value).__name__
+    message = rf"option 'seed' takes a pair \(on, off\), not {found}"
+    with pytest.raises(TypeError, match=message):
+        env.setopt("seed", value)
+    monkeypatch.undo()
+    assert env.getopt("seed") == 0
+
+
+@pytest.mark.parametrize("value", NOT_MASKS)
+def test_not_mask(env, monkeypatch, value):
+    as_flags(env, monkeypatch, "seed")
+    message = "option 'seed' o(n|ff) must be an int"
+    with pytest.raises(TypeError, match=message):
+        env.setopt("seed", value)
+    monkeypatch.undo()
+    assert env.getopt("seed") == 0
+
+
+@pytest.mark.parametrize("value", WIDE)
+def test_wide_mask(env, monkeypatch, value):
+    as_flags(env, monkeypatch, "seed")
+    with pytest.raises(OverflowError, match="does not fit in a BIYOS_mask"):
+        env.setopt("seed", value)
+    monkeypatch.undo()
+    assert env.getopt("seed") == 0
