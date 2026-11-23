@@ -369,20 +369,20 @@ std::string row_difference(const Callback &a, const Callback &b, std::size_t k)
 std::string jacobian_differences(const Callback &a, const Callback &b)
 {
     const auto row = [&](std::size_t k) { return row_difference(a, b, k); };
-    return table_difference("Jacobian row", a.functions.size(), b.functions.size(), row);
+    return table_difference("Jacobian row", a.covered.size(), b.covered.size(), row);
 }
 
 std::string differ(const Callback &a, const Callback &b)
 {
     return first_of({
-        index_differences("covered function", "index", a.functions, b.functions),
+        index_differences("covered function", "index", a.covered, b.covered),
         a.data == b.data ? "" : "data differs",
-        presence("value function", a.values, b.values),
+        presence("value function", a.function, b.function),
         jacobian_differences(a, b),
         presence("Jacobian function", a.jacobian, b.jacobian),
         term_differences("Hessian entry", all_of(a.hessian_pairs), all_of(b.hessian_pairs)),
         presence("Hessian function", a.hessian, b.hessian),
-        presence("Hessian product", a.product, b.product),
+        presence("Hessian product", a.hessian_product, b.hessian_product),
     });
 }
 

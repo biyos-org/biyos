@@ -150,15 +150,15 @@ TEST(CallbackTest, Added)
     EXPECT_EQ(model.add_callback(std::vector<Index>{3}, nullptr), 1);
     EXPECT_EQ(model.n_callbacks(), 2);
     const Callback &first = model.callback(0);
-    EXPECT_EQ(first.functions, (std::vector<Index>{2, 0}));
+    EXPECT_EQ(first.covered, (std::vector<Index>{2, 0}));
     EXPECT_EQ(first.data, &data);
     EXPECT_EQ(first.jacobian_starts, (std::vector<Offset>{0, 0, 0}));
     EXPECT_TRUE(first.jacobian_variables.empty());
     EXPECT_TRUE(first.hessian_pairs.empty());
-    EXPECT_FALSE(first.values);
+    EXPECT_FALSE(first.function);
     EXPECT_FALSE(first.jacobian);
     EXPECT_FALSE(first.hessian);
-    EXPECT_FALSE(first.product);
+    EXPECT_FALSE(first.hessian_product);
     EXPECT_EQ(model.callback_of(0), 0);
     EXPECT_EQ(model.callback_of(1), kNoCallback);
     EXPECT_EQ(model.callback_of(2), 0);
@@ -248,7 +248,7 @@ TEST(CallbackTest, Values)
         .weights = {},
         .direction = {},
     };
-    EXPECT_EQ(held.values(request, out, held.data), 0);
+    EXPECT_EQ(held.function(request, out, held.data), 0);
     EXPECT_EQ(calls, 1);
     EXPECT_EQ(refusal([&] { model.set_values(1, succeed); }), kBad + "callback 1: unknown");
     EXPECT_EQ(refusal([&] { model.set_product(-1, succeed); }), kBad + "callback -1: unknown");
@@ -361,7 +361,7 @@ TEST(CallbackTest, Copied)
         .weights = {},
         .direction = {},
     };
-    EXPECT_EQ(held.values(request, out, held.data), 0);
+    EXPECT_EQ(held.function(request, out, held.data), 0);
     EXPECT_EQ(calls, 1);
     model.set_data(0, nullptr);
     EXPECT_EQ(copy.callback(0).data, &calls);

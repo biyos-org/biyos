@@ -68,7 +68,7 @@ void set_jacobian(BIYOS_model &model,
 {
     biyos::Model &core = writable(model);
     const Caller caller{require(jac, "jac")};
-    const std::size_t n = core.callback(cb).functions.size();
+    const std::size_t n = core.callback(cb).covered.size();
     const std::vector<biyos::Offset> starts = biyos::capi::offsets(n, off);
     biyos::check_starts(starts);
     const auto total = static_cast<std::size_t>(starts.back());

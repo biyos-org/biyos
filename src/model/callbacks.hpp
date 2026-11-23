@@ -35,15 +35,15 @@ struct VariablePair
 
 struct Callback
 {
-    std::vector<Index> functions;
+    std::vector<Index> covered;
     void *data;
-    UserFunction values;
+    UserFunction function;
     std::vector<Offset> jacobian_starts;
     std::vector<Index> jacobian_variables;
     UserFunction jacobian;
     std::vector<VariablePair> hessian_pairs;
     UserFunction hessian;
-    UserFunction product;
+    UserFunction hessian_product;
 };
 
 }

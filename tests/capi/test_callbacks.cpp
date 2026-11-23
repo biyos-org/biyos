@@ -158,14 +158,14 @@ TEST(CallbackTest, Registered)
     EXPECT_EQ(mdl->core.n_callbacks(), 2);
     EXPECT_EQ(mdl->core.callback_of(1), 1);
     const Callback &first = held(model, 0);
-    EXPECT_EQ(first.functions, (std::vector<biyos::Index>{2, 0}));
+    EXPECT_EQ(first.covered, (std::vector<biyos::Index>{2, 0}));
     EXPECT_EQ(first.jacobian_starts, (std::vector<biyos::Offset>{0, 1, 3}));
     EXPECT_EQ(first.jacobian_variables, (std::vector<biyos::Index>{1, 0, 2}));
     EXPECT_EQ(first.hessian_pairs, (std::vector<VariablePair>{{0, 0}, {1, 2}}));
-    EXPECT_TRUE(first.values && first.jacobian && first.hessian && first.product);
+    EXPECT_TRUE(first.function && first.jacobian && first.hessian && first.hessian_product);
     EXPECT_EQ(data_of(model, 0), &tag);
     EXPECT_EQ(data_of(model, 1), nullptr);
-    EXPECT_FALSE(held(model, 1).values);
+    EXPECT_FALSE(held(model, 1).function);
 }
 
 TEST(CallbackTest, Nulls)
@@ -208,7 +208,7 @@ TEST(CallbackTest, Nulls)
     EXPECT_EQ(first.jacobian_starts, (std::vector<biyos::Offset>{0, 0, 0}));
     EXPECT_TRUE(first.jacobian_variables.empty());
     EXPECT_TRUE(first.hessian_pairs.empty());
-    EXPECT_FALSE(first.values);
+    EXPECT_FALSE(first.function);
 }
 
 TEST(CallbackTest, Unknown)
@@ -311,7 +311,7 @@ TEST(CallbackTest, Locked)
     EXPECT_EQ(attempt.read, BIYOS_OK);
     EXPECT_EQ(attempt.data, &tag);
     EXPECT_EQ(model.get()->core.n_callbacks(), 1);
-    EXPECT_FALSE(held(model, 0).values);
+    EXPECT_FALSE(held(model, 0).function);
 }
 
 TEST(CallbackTest, Busy)
@@ -391,7 +391,7 @@ TEST(CallbackTest, Direction)
         .direction = direction,
     };
     const Callback &stored = held(model, 0);
-    EXPECT_EQ(stored.product(request, out, stored.data), 0);
+    EXPECT_EQ(stored.hessian_product(request, out, stored.data), 0);
     EXPECT_EQ(seen.weights, weights.data());
     EXPECT_EQ(seen.direction, direction.data());
 }
@@ -415,8 +415,8 @@ TEST(CallbackTest, Returned)
         .direction = point,
     };
     const Callback &stored = held(model, 0);
-    EXPECT_EQ(stored.values(request, out, stored.data), 1);
-    EXPECT_EQ(stored.product(request, out, stored.data), -1);
+    EXPECT_EQ(stored.function(request, out, stored.data), 1);
+    EXPECT_EQ(stored.hessian_product(request, out, stored.data), -1);
 }
 
 TEST(CallbackTest, CopyShared)
@@ -444,7 +444,7 @@ TEST(CallbackTest, CopyShared)
         .direction = {},
     };
     const Callback &stored = held(copy, 0);
-    EXPECT_EQ(stored.values(request, out, stored.data), 0);
+    EXPECT_EQ(stored.function(request, out, stored.data), 0);
     EXPECT_EQ(seen.calls, 1);
     EXPECT_EQ(seen.model, copy.get());
     EXPECT_EQ(seen.weights, nullptr);

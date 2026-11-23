@@ -76,15 +76,15 @@ Index Model::add_callback(std::span<const Index> functions, void *data)
     }
     const Index index = n_callbacks();
     Callback added{
-        .functions = std::vector<Index>(functions.begin(), functions.end()),
+        .covered = std::vector<Index>(functions.begin(), functions.end()),
         .data = data,
-        .values = {},
+        .function = {},
         .jacobian_starts = std::vector<Offset>(functions.size() + 1, 0),
         .jacobian_variables = {},
         .jacobian = {},
         .hessian_pairs = {},
         .hessian = {},
-        .product = {},
+        .hessian_product = {},
     };
     if (covering_.size() < constants_.size())
     {
@@ -100,7 +100,7 @@ Index Model::add_callback(std::span<const Index> functions, void *data)
 
 void Model::set_values(Index callback, UserFunction values)
 {
-    changed(callback).values = std::move(values);
+    changed(callback).function = std::move(values);
 }
 
 void Model::set_jacobian(Index callback,
@@ -109,7 +109,7 @@ void Model::set_jacobian(Index callback,
                          UserFunction jacobian)
 {
     Callback &held = changed(callback);
-    check_jacobian(callback, held.functions, starts, variables, n_variables());
+    check_jacobian(callback, held.covered, starts, variables, n_variables());
     std::vector<Offset> begins(starts.begin(), starts.end());
     std::vector<Index> pattern(variables.begin(), variables.end());
     held.jacobian_starts = std::move(begins);
@@ -129,7 +129,7 @@ void Model::set_hessian(Index callback,
 
 void Model::set_product(Index callback, UserFunction product)
 {
-    changed(callback).product = std::move(product);
+    changed(callback).hessian_product = std::move(product);
 }
 
 void Model::set_data(Index callback, void *data)
