@@ -11,7 +11,7 @@ from biyos._event import Event, EventKind, EventLevel
 from biyos._handles import Handles
 from biyos._integers import integer
 from biyos._relay import Relay
-from biyos._hooks import Hooks
+from biyos._hooks import Hooks, checked_hook
 from biyos._text import encoded
 from biyos._values import Value
 from biyos._versions import Versions, version_text
@@ -25,15 +25,6 @@ def _name(name: str) -> bytes:
         found = type(name).__name__
         raise TypeError(f"option name must be a str, not {found}")
     return encoded(name)
-
-
-def _callable(
-    function: Callable[[Event], object],
-) -> Callable[[Event], object]:
-    if not callable(function):
-        found = type(function).__name__
-        raise TypeError(f"hook must be callable, not {found}")
-    return function
 
 
 _SETTERS: dict[int, Callable[..., int]] = {
@@ -262,7 +253,7 @@ class Env:
         --------
         BIYOS_addenvhook
         """
-        hk = _callable(hk)
+        hk = checked_hook(hk)
         kind = integer("knd", knd)
         level = integer("lvl", lvl)
         idx = c_int()

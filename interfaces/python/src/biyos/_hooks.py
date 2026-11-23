@@ -20,6 +20,15 @@ def _deliver(
     relay.run(deliver, functions[key], pointer, owners)
 
 
+def checked_hook(
+    function: Callable[[Event], object],
+) -> Callable[[Event], object]:
+    if not callable(function):
+        found = type(function).__name__
+        raise TypeError(f"hook must be callable, not {found}")
+    return function
+
+
 class Hooks:
     def __init__(
         self, relay: Relay, owners: Mapping[int, "Model"]
