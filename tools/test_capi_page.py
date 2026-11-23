@@ -67,6 +67,17 @@ class PageTest(unittest.TestCase):
         self.assertIn("[]{#BIYOS_freeenvrg}", text)
         self.assertIn("BIYOS_freeenvrg(int at);\n```", text)
 
+    def test_index(self):
+        entry = function()
+        entry.pair = "BIYOS_freeenvrg"
+        declared = dict(DECLARED)
+        declared["BIYOS_freeenvrg"] = "BIYOS_status BIYOS_freeenvrg(int env);"
+        group = Group("env", "Environment", [], [entry, function()])
+        with redirect_stderr(io.StringIO()):
+            text = capi_page.render(group, VALUES, declared)
+        row = "| `BIYOS_freeenv` [`BIYOS_freeenvrg`]{.under} | Free it. |"
+        self.assertIn(row, text)
+
     def test_table(self):
         text = self.render(table())
         self.assertIn(

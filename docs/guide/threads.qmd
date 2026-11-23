@@ -3,11 +3,11 @@
 biyos keeps no global state. Everything a call reads or changes belongs to an environment or to a model made on it, so environments are independent of each other. The rule follows:
 
 - Separate threads may use separate environments at the same time, each with its own models.
-- One environment is used by one thread at a time, together with every model made on it, except for `BIYOS_interrupt` (@sec-threads-interrupt).
+- One environment is used by one thread at a time, together with every model made on it, except for `BIYOS_interrupt` ([Interrupting a call](#sec-threads-interrupt)).
 
 A program that wants to work on one model from several threads copies it onto an environment per thread (@sec-copy). `BIYOS_copymdl` reads the source and changes the target environment, so while it runs no other thread may use either environment. Afterwards the two are apart.
 
-An environment keeps a last error per thread (@sec-errors-message), so a thread that takes its turn on an environment reads the failure of its own last failed call, never one another thread left.
+An environment keeps a last error per thread ([The last error](#sec-errors-message)), so a thread that takes its turn on an environment reads the failure of its own last failed call, never one another thread left.
 
 biyos starts no thread of its own yet. `BIYOS_version` reads no state and may be called from any thread. A hook runs on the thread whose call sent the event, so the calls that read or format an event run there too.
 
@@ -24,4 +24,4 @@ The package calls the library through `ctypes`, which releases the global interp
 
 Each thread builds its own model on its own environment, and the results come back in the order the work was given, whatever order the threads finished in. A hook written in Python takes the interpreter lock while it runs.
 
-`Env.interrupt` makes the request of @sec-threads-interrupt, and another thread may call it while a call runs. A `KeyboardInterrupt` raised in a hook makes it too, and is raised once the call returns.
+`Env.interrupt` makes the request that [Interrupting a call](#sec-threads-interrupt) describes, and another thread may call it while a call runs. A `KeyboardInterrupt` raised in a hook makes it too, and is raised once the call returns.

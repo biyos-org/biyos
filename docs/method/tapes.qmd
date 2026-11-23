@@ -10,7 +10,7 @@ $$
 v_k = \phi_k\big(v_{j} : j \in \mathcal{C}(k)\big), \qquad k = 1, \dots, N,
 $$
 
-where each $\phi_k$ is one of the operators of @sec-graph-operators, each $\mathcal{C}(k)$ lists the steps it reads, all earlier than $k$, and the leaves read the variables $x$. The graph fixes such a program up to the order of independent steps, and a tape is one such program written down once, so that running it needs no walk of the graph, no recursion and no dispatch on node kinds beyond one switch per step.
+where each $\phi_k$ is one of the [operators of the graph](#sec-graph-operators), each $\mathcal{C}(k)$ lists the steps it reads, all earlier than $k$, and the leaves read the variables $x$. The graph fixes such a program up to the order of independent steps, and a tape is one such program written down once, so that running it needs no walk of the graph, no recursion and no dispatch on node kinds beyond one switch per step.
 
 ## Partitions and pinned nodes {#sec-tapes-partitions}
 

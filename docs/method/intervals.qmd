@@ -6,7 +6,7 @@ A global method needs to know, for a box of variables, a range that holds every 
 
 An interval is a closed set of reals $[l, u]$ with $l \le u$, $l < +\infty$ and $u > -\infty$, or the empty set. An infinite bound is a limit, so $[-\infty, 0]$ is $(-\infty, 0]$. A box gives each variable an interval.
 
-The domain of a node on a box is the set of points of the box where the node and every node below it are defined, in the sense of @sec-graph-operators. The enclosure of a node over a box is an interval that holds
+The domain of a node on a box is the set of points of the box where the node and every node below it are defined, in the sense of the [operators of the graph](#sec-graph-operators). The enclosure of a node over a box is an interval that holds
 
 1. every real value the node takes at a point of its domain on the box, and
 2. every double the forward sweep computes there, sums and products rounded in the order of the graph.
