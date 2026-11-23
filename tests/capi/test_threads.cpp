@@ -274,6 +274,44 @@ TEST(ThreadTest, ModelBusy)
     EXPECT_EQ(add_one(model), BIYOS_OK);
 }
 
+TEST(ThreadTest, OptionBusy)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    BIYOS_model *busy = model.get();
+    Held held(run<hold_model, BIYOS_model>, busy);
+    EXPECT_EQ(BIYOS_setmdlboolopt(busy, BIYOS_OPT_PRESOLVE, 0), BIYOS_ERR_BUSY);
+    EXPECT_EQ(env.message(), "busy: model: is in a call on another thread");
+    EXPECT_EQ(biyos::test::last_error(env.get()).mdl, busy);
+    EXPECT_EQ(BIYOS_setmdlintopt(busy, BIYOS_OPT_SEED, 1), BIYOS_ERR_BUSY);
+    EXPECT_EQ(BIYOS_setmdldblopt(busy, BIYOS_OPT_MAXTIME, 1.0), BIYOS_ERR_BUSY);
+    EXPECT_EQ(BIYOS_setmdlstropt(busy, BIYOS_OPT_REPRO, "busy.txt"), BIYOS_ERR_BUSY);
+    EXPECT_EQ(BIYOS_setmdlflgopt(busy, BIYOS_OPT_SEED, 0, 0), BIYOS_ERR_BUSY);
+    EXPECT_EQ(BIYOS_delmdlopt(busy, BIYOS_OPT_SEED), BIYOS_ERR_BUSY);
+    BIYOS_int seed = -1;
+    EXPECT_EQ(BIYOS_getmdlintopt(busy, BIYOS_OPT_SEED, &seed), BIYOS_OK);
+    EXPECT_EQ(held.release(), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setmdlintopt(busy, BIYOS_OPT_SEED, 1), BIYOS_OK);
+}
+
+TEST(ThreadTest, OtherHeld)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    const biyos::test::Model other(env);
+    BIYOS_model *idle = model.get();
+    Held held(run<change_model, BIYOS_model>, other.get());
+    EXPECT_EQ(BIYOS_setmdlboolopt(idle, BIYOS_OPT_PRESOLVE, 0), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setmdlintopt(idle, BIYOS_OPT_SEED, 1), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setmdldblopt(idle, BIYOS_OPT_MAXTIME, 1.0), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setmdlstropt(idle, BIYOS_OPT_REPRO, "idle.txt"), BIYOS_OK);
+    BIYOS_int seed = -1;
+    EXPECT_EQ(BIYOS_getmdlintopt(idle, BIYOS_OPT_SEED, &seed), BIYOS_OK);
+    EXPECT_EQ(seed, 1);
+    EXPECT_EQ(BIYOS_delmdlopt(idle, BIYOS_OPT_SEED), BIYOS_OK);
+    EXPECT_EQ(held.release(), BIYOS_OK);
+}
+
 TEST(ThreadTest, ModelChanging)
 {
     const biyos::test::Env env;

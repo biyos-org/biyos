@@ -51,9 +51,9 @@ enum class Scope
 
 enum class Source
 {
-    Model,
-    Environment,
-    Default,
+    Model = BIYOS_OPTSRC_MDL,
+    Environment = BIYOS_OPTSRC_ENV,
+    Default = BIYOS_OPTSRC_DEFAULT,
 };
 
 enum class CheckLevel

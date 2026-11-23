@@ -124,6 +124,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_objectives(lib, ints, doubles)
     _declare_names(lib, ints)
     _declare_expressions(lib, ints, doubles)
+    _declare_settings(lib, ints, doubles)
 
 
 def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -206,6 +207,24 @@ def _declare_expressions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_addexpr", c_int, *postfix)
     _declare_pair(lib, "BIYOS_attachexpr", offsets)
     _declare_pair(lib, "BIYOS_clrfun")
+
+
+def _declare_settings(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
+    _declare(lib, "BIYOS_setmdlboolopt", c_int, c_void_p, c_int32, c_int32)
+    _declare(lib, "BIYOS_setmdlintopt", c_int, c_void_p, c_int32, c_int32)
+    _declare(lib, "BIYOS_setmdldblopt", c_int, c_void_p, c_int32, c_double)
+    _declare(lib, "BIYOS_setmdlstropt", c_int, c_void_p, c_int32, c_char_p)
+    masks = (c_uint64, c_uint64)
+    _declare(lib, "BIYOS_setmdlflgopt", c_int, c_void_p, c_int32, *masks)
+    _declare(lib, "BIYOS_getmdlboolopt", c_int, c_void_p, c_int32, ints)
+    _declare(lib, "BIYOS_getmdlintopt", c_int, c_void_p, c_int32, ints)
+    _declare(lib, "BIYOS_getmdldblopt", c_int, c_void_p, c_int32, doubles)
+    strings = POINTER(c_char_p)
+    _declare(lib, "BIYOS_getmdlstropt", c_int, c_void_p, c_int32, strings)
+    pointers = (POINTER(c_uint64), POINTER(c_uint64))
+    _declare(lib, "BIYOS_getmdlflgopt", c_int, c_void_p, c_int32, *pointers)
+    _declare(lib, "BIYOS_delmdlopt", c_int, c_void_p, c_int32)
+    _declare(lib, "BIYOS_getmdloptsrc", c_int, c_void_p, c_int32, ints)
 
 
 lib = _load()

@@ -6,6 +6,7 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
+#include "core/settings.hpp"
 #include "core/usage.hpp"
 #include "model/model.hpp"
 
@@ -21,11 +22,15 @@ struct BIYOS_env
 
 struct BIYOS_model
 {
-    explicit BIYOS_model(biyos::Env &env) : handle(env) {}
-    BIYOS_model(biyos::Env &env, const biyos::Model &model) : handle(env), core(model) {}
+    explicit BIYOS_model(biyos::Env &env) : handle(env), settings(env.options().table()) {}
+    BIYOS_model(biyos::Env &env, const BIYOS_model &model)
+        : handle(env), core(model.core), settings(model.settings)
+    {
+    }
 
     biyos::Env::Handle handle;
     biyos::Model core;
+    biyos::Settings settings;
     mutable biyos::Usage usage;
 };
 

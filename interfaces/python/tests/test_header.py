@@ -116,5 +116,7 @@ def test_ok():
 def test_masks():
     masks = [c_uint64, c_uint64]
     assert list(lib.BIYOS_setenvflgopt.argtypes[2:]) == masks
+    assert list(lib.BIYOS_setmdlflgopt.argtypes[2:]) == masks
     pointers = [POINTER(c_uint64), POINTER(c_uint64)]
     assert list(lib.BIYOS_getenvflgopt.argtypes[2:]) == pointers
+    assert list(lib.BIYOS_getmdlflgopt.argtypes[2:]) == pointers

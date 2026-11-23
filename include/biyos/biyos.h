@@ -74,6 +74,10 @@ BIYOS_API BIYOS_status BIYOS_interrupt(BIYOS_env *env);
 #define BIYOS_KND_ENUM 5
 #define BIYOS_KND_FLG 6
 
+#define BIYOS_OPTSRC_MDL 1
+#define BIYOS_OPTSRC_ENV 2
+#define BIYOS_OPTSRC_DEFAULT 3
+
 BIYOS_API BIYOS_status BIYOS_getoptid(BIYOS_env *env, const char *name, BIYOS_int *opt);
 BIYOS_API BIYOS_status BIYOS_getoptknd(BIYOS_env *env, BIYOS_int opt, BIYOS_int *knd);
 BIYOS_API BIYOS_status BIYOS_getoptver(BIYOS_env *env,
@@ -97,6 +101,24 @@ BIYOS_API BIYOS_status BIYOS_getenvflgopt(BIYOS_env *env,
                                           BIYOS_int opt,
                                           BIYOS_mask *on,
                                           BIYOS_mask *off);
+BIYOS_API BIYOS_status BIYOS_setmdlboolopt(BIYOS_model *mdl, BIYOS_int opt, BIYOS_int val);
+BIYOS_API BIYOS_status BIYOS_setmdlintopt(BIYOS_model *mdl, BIYOS_int opt, BIYOS_int val);
+BIYOS_API BIYOS_status BIYOS_setmdldblopt(BIYOS_model *mdl, BIYOS_int opt, BIYOS_real val);
+BIYOS_API BIYOS_status BIYOS_setmdlstropt(BIYOS_model *mdl, BIYOS_int opt, const char *val);
+BIYOS_API BIYOS_status BIYOS_setmdlflgopt(BIYOS_model *mdl,
+                                          BIYOS_int opt,
+                                          BIYOS_mask on,
+                                          BIYOS_mask off);
+BIYOS_API BIYOS_status BIYOS_getmdlboolopt(const BIYOS_model *mdl, BIYOS_int opt, BIYOS_int *val);
+BIYOS_API BIYOS_status BIYOS_getmdlintopt(const BIYOS_model *mdl, BIYOS_int opt, BIYOS_int *val);
+BIYOS_API BIYOS_status BIYOS_getmdldblopt(const BIYOS_model *mdl, BIYOS_int opt, BIYOS_real *val);
+BIYOS_API BIYOS_status BIYOS_getmdlstropt(const BIYOS_model *mdl, BIYOS_int opt, const char **val);
+BIYOS_API BIYOS_status BIYOS_getmdlflgopt(const BIYOS_model *mdl,
+                                          BIYOS_int opt,
+                                          BIYOS_mask *on,
+                                          BIYOS_mask *off);
+BIYOS_API BIYOS_status BIYOS_delmdlopt(BIYOS_model *mdl, BIYOS_int opt);
+BIYOS_API BIYOS_status BIYOS_getmdloptsrc(const BIYOS_model *mdl, BIYOS_int opt, BIYOS_int *src);
 
 #define BIYOS_EVT_MESSAGE 1
 #define BIYOS_EVT_CHECK 2

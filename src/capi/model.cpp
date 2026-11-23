@@ -40,7 +40,7 @@ void make_copy(const BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
     const EnvGuard busy(target);
     busy.check();
-    *made = new BIYOS_model(target, model.core);
+    *made = new BIYOS_model(target, model);
 }
 
 void freeable(BIYOS_model &model)
