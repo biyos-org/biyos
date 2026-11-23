@@ -65,14 +65,14 @@ std::string row_fault(std::span<const Index> variables, Index total)
     return "";
 }
 
-std::string pair_name(const VariablePair &pair)
+std::string pair_name(const IndexPair &pair)
 {
-    return "pair (" + text_of(pair.first) + ", " + text_of(pair.second) + ")";
+    return "pair (" + text_of(pair.row) + ", " + text_of(pair.column) + ")";
 }
 
-std::string pair_fault(const VariablePair &pair, Index total)
+std::string pair_fault(const IndexPair &pair, Index total)
 {
-    for (const Index variable : {pair.first, pair.second})
+    for (const Index variable : {pair.row, pair.column})
     {
         const std::string fault = variable_fault(variable, total);
         if (!fault.empty())
@@ -80,14 +80,14 @@ std::string pair_fault(const VariablePair &pair, Index total)
             return fault;
         }
     }
-    if (pair.second < pair.first)
+    if (pair.column < pair.row)
     {
         return pair_name(pair) + " has its second variable below its first";
     }
     return "";
 }
 
-std::string pair_order(const VariablePair &pair, const VariablePair &previous)
+std::string pair_order(const IndexPair &pair, const IndexPair &previous)
 {
     if (pair == previous)
     {
@@ -120,21 +120,21 @@ void check_jacobian(Index callback,
     }
 }
 
-std::vector<VariablePair> hessian_pairs(Index callback,
-                                        std::span<const Index> first,
-                                        std::span<const Index> second,
-                                        Index total)
+std::vector<IndexPair> hessian_pairs(Index callback,
+                                     std::span<const Index> first,
+                                     std::span<const Index> second,
+                                     Index total)
 {
-    check_entries<VariablePair>(first.size());
+    check_entries<IndexPair>(first.size());
     if (first.size() != second.size())
     {
         throw Error(ErrorKind::Internal, "model", "first and second variables differ in number");
     }
-    std::vector<VariablePair> pairs;
+    std::vector<IndexPair> pairs;
     pairs.reserve(first.size());
     for (std::size_t k = 0; k < first.size(); ++k)
     {
-        const VariablePair pair{.first = first[k], .second = second[k]};
+        const IndexPair pair{.row = first[k], .column = second[k]};
         std::string fault = pair_fault(pair, total);
         if (fault.empty() && k > 0)
         {

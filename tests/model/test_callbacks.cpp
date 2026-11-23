@@ -20,6 +20,7 @@ namespace
 using biyos::Callback;
 using biyos::difference;
 using biyos::Index;
+using biyos::IndexPair;
 using biyos::kNoCallback;
 using biyos::kNoRoot;
 using biyos::Model;
@@ -27,7 +28,6 @@ using biyos::Offset;
 using biyos::Request;
 using biyos::UserFunction;
 using biyos::Variable;
-using biyos::VariablePair;
 using biyos::test::refusal;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
@@ -91,9 +91,9 @@ std::string hessian_refusal(Model &model,
 std::vector<Index> firsts(const Callback &callback)
 {
     std::vector<Index> found;
-    for (const VariablePair &pair : callback.hessian_pairs)
+    for (const IndexPair &pair : callback.hessian_pairs)
     {
-        found.push_back(pair.first);
+        found.push_back(pair.row);
     }
     return found;
 }
@@ -101,9 +101,9 @@ std::vector<Index> firsts(const Callback &callback)
 std::vector<Index> seconds(const Callback &callback)
 {
     std::vector<Index> found;
-    for (const VariablePair &pair : callback.hessian_pairs)
+    for (const IndexPair &pair : callback.hessian_pairs)
     {
-        found.push_back(pair.second);
+        found.push_back(pair.column);
     }
     return found;
 }

@@ -19,8 +19,8 @@ namespace
 {
 
 using biyos::Callback;
+using biyos::IndexPair;
 using biyos::Request;
-using biyos::VariablePair;
 using biyos::test::Env;
 using biyos::test::Model;
 
@@ -161,7 +161,7 @@ TEST(CallbackTest, Registered)
     EXPECT_EQ(first.covered, (std::vector<biyos::Index>{2, 0}));
     EXPECT_EQ(first.jacobian_starts, (std::vector<biyos::Offset>{0, 1, 3}));
     EXPECT_EQ(first.jacobian_variables, (std::vector<biyos::Index>{1, 0, 2}));
-    EXPECT_EQ(first.hessian_pairs, (std::vector<VariablePair>{{0, 0}, {1, 2}}));
+    EXPECT_EQ(first.hessian_pairs, (std::vector<IndexPair>{{0, 0}, {1, 2}}));
     EXPECT_TRUE(first.function && first.jacobian && first.hessian && first.hessian_product);
     EXPECT_EQ(data_of(model, 0), &tag);
     EXPECT_EQ(data_of(model, 1), nullptr);

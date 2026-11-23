@@ -25,12 +25,12 @@ struct Request
 
 using UserFunction = std::function<int(const Request &request, std::span<double> out, void *data)>;
 
-struct VariablePair
+struct IndexPair
 {
-    Index first;
-    Index second;
+    Index row;
+    Index column;
 
-    auto operator<=>(const VariablePair &) const = default;
+    auto operator<=>(const IndexPair &) const = default;
 };
 
 struct Callback
@@ -41,7 +41,7 @@ struct Callback
     std::vector<Offset> jacobian_starts;
     std::vector<Index> jacobian_variables;
     UserFunction jacobian;
-    std::vector<VariablePair> hessian_pairs;
+    std::vector<IndexPair> hessian_pairs;
     UserFunction hessian;
     UserFunction hessian_product;
 };
