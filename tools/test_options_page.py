@@ -36,7 +36,8 @@ class OptionsPageTest(unittest.TestCase):
         self.assertEqual(options_page.shown(level), "`BIYOS_LVL_HIGH`")
         self.assertEqual(
             options_page.accepted(level),
-            "`BIYOS_LVL_LOW` (low), `BIYOS_LVL_HIGH` (high)",
+            "[`BIYOS_LVL_LOW`]{.unbroken} (low), "
+            "[`BIYOS_LVL_HIGH`]{.unbroken} (high)",
         )
 
     def test_flags(self):
@@ -49,9 +50,9 @@ class OptionsPageTest(unittest.TestCase):
         self.assertEqual(options_page.shown(steps), "`(0, 0)`")
         self.assertEqual(
             options_page.accepted(steps),
-            "`BIYOS_STEPS_DUAL` (dual, bit 0, on), "
-            "`BIYOS_STEPS_PROBE` (probe, bit 1, off), "
-            "`BIYOS_STEPS_SCALE` (scale, bit 2, automatic)",
+            "[`BIYOS_STEPS_DUAL`]{.unbroken} (dual, bit 0, on), "
+            "[`BIYOS_STEPS_PROBE`]{.unbroken} (probe, bit 1, off), "
+            "[`BIYOS_STEPS_SCALE`]{.unbroken} (scale, bit 2, automatic)",
         )
 
     def test_string(self):

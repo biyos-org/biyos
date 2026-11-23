@@ -26,9 +26,13 @@ def shown(option):
     return f"`{text}`" if text else "empty"
 
 
+def whole(macro):
+    return f"[`{macro}`]{{.unbroken}}"
+
+
 def part(item):
     macro, name, bit, default = item
-    return f"`{macro}` ({name}, bit {bit}, {default})"
+    return f"{whole(macro)} ({name}, bit {bit}, {default})"
 
 
 def accepted(option):
@@ -36,7 +40,7 @@ def accepted(option):
         return f"[{number(option.lower)}, {number(option.upper)}]"
     if option.kind == "enum":
         values = option.values
-        return ", ".join(f"`{macro}` ({name})" for macro, name in values)
+        return ", ".join(f"{whole(macro)} ({name})" for macro, name in values)
     if option.kind == "flags":
         return ", ".join(map(part, option.values))
     return {"bool": "`true`, `false`", "string": "any string"}[option.kind]
