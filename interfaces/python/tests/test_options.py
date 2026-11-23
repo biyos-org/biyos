@@ -13,7 +13,7 @@ INVALID_ARGUMENT = -100
 DEFAULTS = {
     "seed": 0,
     "maxtime": float("inf"),
-    "check_lvl": "cheap",
+    "check_lvl": biyos.CheckLevel.CHEAP,
     "presolve": True,
     "repro": "",
     "feastol_abs": 1e-6,
@@ -26,7 +26,7 @@ DEFAULTS = {
 VALUES = {
     "seed": 42,
     "maxtime": 3.5,
-    "check_lvl": "full",
+    "check_lvl": biyos.CheckLevel.FULL,
     "presolve": False,
     "repro": "replay.txt",
     "feastol_abs": 1e-7,
@@ -42,7 +42,8 @@ WRONG = [
     ("seed", "3"),
     ("maxtime", True),
     ("maxtime", "10"),
-    ("check_lvl", 2),
+    ("check_lvl", "full"),
+    ("check_lvl", 2.0),
     ("presolve", 1),
     ("repro", b"replay.txt"),
 ]
@@ -144,15 +145,30 @@ def test_bad_value(env):
     assert caught.value.code == INVALID_ARGUMENT
 
 
-def test_bad_enum(env):
+@pytest.mark.parametrize("level", list(biyos.CheckLevel))
+def test_enum(env, level):
+    env.setopt("check_lvl", int(level))
+    assert env.getopt("check_lvl") is level
+
+
+@pytest.mark.parametrize("number", [4, 0, -1])
+def test_bad_enum(env, number):
+    env.setopt("check_lvl", biyos.CheckLevel.FULL)
     message = (
-        "invalid argument: option 'check_lvl': "
-        "'most' is not one of none, cheap, full"
+        f"invalid argument: option 'check_lvl': {number} "
+        "is not one of 1 (none), 2 (cheap), 3 (full)"
     )
     with pytest.raises(biyos.Error) as caught:
-        env.setopt("check_lvl", "most")
+        env.setopt("check_lvl", number)
     assert str(caught.value) == message
     assert caught.value.code == INVALID_ARGUMENT
+    assert env.getopt("check_lvl") is biyos.CheckLevel.FULL
+
+
+def test_enum_message(env):
+    message = "option 'check_lvl' takes an int, not str"
+    with pytest.raises(TypeError, match=message):
+        env.setopt("check_lvl", "full")
 
 
 @pytest.mark.parametrize("value", [2**31, 2**32 + 5])

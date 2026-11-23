@@ -1,6 +1,5 @@
 #include <biyos/biyos.h>
 #include <stdio.h>
-#include <string.h>
 
 static int set_options(BIYOS_env *env)
 {
@@ -8,23 +7,23 @@ static int set_options(BIYOS_env *env)
     return BIYOS_setenvdblopt(env, BIYOS_OPT_MAXTIME, 60.0) == BIYOS_OK &&
            BIYOS_setenvboolopt(env, BIYOS_OPT_PRESOLVE, 0) == BIYOS_OK &&
            BIYOS_getoptid(env, "check_lvl", &option) == BIYOS_OK &&
-           BIYOS_setenvstropt(env, option, "full") == BIYOS_OK;
+           BIYOS_setenvintopt(env, option, BIYOS_CHECKLVL_FULL) == BIYOS_OK;
 }
 
 static int read_options(BIYOS_env *env)
 {
     BIYOS_real limit = 0.0;
     BIYOS_int presolve = 1;
-    const char *lvl = NULL;
+    BIYOS_int lvl = 0;
     if (BIYOS_getenvdblopt(env, BIYOS_OPT_MAXTIME, &limit) != BIYOS_OK ||
         BIYOS_getenvboolopt(env, BIYOS_OPT_PRESOLVE, &presolve) !=
             BIYOS_OK ||
-        BIYOS_getenvstropt(env, BIYOS_OPT_CHECKLVL, &lvl) != BIYOS_OK)
+        BIYOS_getenvintopt(env, BIYOS_OPT_CHECKLVL, &lvl) != BIYOS_OK)
     {
         return 0;
     }
-    printf("maxtime %g, presolve %d, check_lvl %s\n", limit, presolve, lvl);
-    return presolve == 0 && strcmp(lvl, "full") == 0;
+    printf("maxtime %g, presolve %d, check_lvl %d\n", limit, presolve, lvl);
+    return presolve == 0 && lvl == BIYOS_CHECKLVL_FULL;
 }
 
 static int describe(BIYOS_env *env, const char *name)

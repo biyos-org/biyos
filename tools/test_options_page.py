@@ -31,11 +31,13 @@ class OptionsPageTest(unittest.TestCase):
         self.assertIn("[Since 0.1.0]{.since}", text)
 
     def test_enum(self):
-        level = option(
-            kind="enum", default='"cheap"', values=["none", "cheap"]
+        values = [("BIYOS_LVL_LOW", "low"), ("BIYOS_LVL_HIGH", "high")]
+        level = option(kind="enum", default="BIYOS_LVL_HIGH", values=values)
+        self.assertEqual(options_page.shown(level), "`BIYOS_LVL_HIGH`")
+        self.assertEqual(
+            options_page.accepted(level),
+            "`BIYOS_LVL_LOW` (low), `BIYOS_LVL_HIGH` (high)",
         )
-        self.assertEqual(options_page.shown(level), "`cheap`")
-        self.assertEqual(options_page.accepted(level), "`none`, `cheap`")
 
     def test_string(self):
         repro = option(kind="string", default='""')

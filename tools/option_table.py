@@ -11,7 +11,8 @@ LIMITS = {
 RULE = re.compile(r"struct (\w+)Rule\s*\{(.*?)\};", re.S)
 MEMBER = re.compile(r"\b(lower|upper) = ([^;]+);")
 CONSTANT = re.compile(r"constexpr \w+ (k\w+) = ([^;]+);")
-ARRAY = re.compile(r"(k\w+)\{((?:\s*\"[^\"]*\",?)+)\s*\}")
+ARRAY = re.compile(r"(k\w+)\{((?:\s*EnumValue\{[^}]*\},?)+)\s*\}")
+VALUE = re.compile(r"\.number = (\w+), \.name = \"([^\"]*)\"")
 ENUMERATOR = re.compile(r"(\w+) = (BIYOS_OPT_\w+),")
 DEFINE = re.compile(r"^#define (BIYOS_OPT_\w+) (\d+)$", re.M)
 FIELD = re.compile(r"\.(\w+) = ")
@@ -125,7 +126,7 @@ def read(root):
         n: LIMITS.get(v.strip(), v.strip())
         for n, v in CONSTANT.findall(source)
     }
-    arrays = {n: STRING.findall(v) for n, v in ARRAY.findall(source)}
+    arrays = {n: VALUE.findall(v) for n, v in ARRAY.findall(source)}
     macros = dict(ENUMERATOR.findall(header))
     ids = {name: int(value) for name, value in DEFINE.findall(public)}
     context = (rule_limits(header), constants, arrays, macros, ids)

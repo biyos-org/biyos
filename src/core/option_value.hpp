@@ -3,7 +3,6 @@
 #include "core/events.hpp"
 #include "core/options.hpp"
 
-#include <cstddef>
 #include <span>
 #include <string>
 
@@ -22,6 +21,6 @@ bool bool_of(const OptionSpec &spec, const OptionValue &value);
 int int_of(const OptionSpec &spec, const OptionValue &value);
 double double_of(const OptionSpec &spec, const OptionValue &value);
 const std::string &string_of(const OptionSpec &spec, const OptionValue &value);
-std::size_t position_of(const OptionSpec &spec, const OptionValue &value);
+int enum_of(const OptionSpec &spec, const OptionValue &value);
 
 }

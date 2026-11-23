@@ -198,27 +198,27 @@ TEST(CApiTest, StringLifetime)
 {
     const Env env;
     const char *path = nullptr;
-    const char *level = nullptr;
     ASSERT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_REPRO, "replay.txt"), BIYOS_OK);
     ASSERT_EQ(BIYOS_getenvstropt(env.get(), BIYOS_OPT_REPRO, &path), BIYOS_OK);
-    ASSERT_EQ(BIYOS_getenvstropt(env.get(), BIYOS_OPT_CHECKLVL, &level), BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_REPRO, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setenvdblopt(env.get(), BIYOS_OPT_REPRO, 1.0), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_CHECKLVL, "most"), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_CHECKLVL, "full"), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 5), BIYOS_OK);
     EXPECT_STREQ(path, "replay.txt");
-    EXPECT_STREQ(level, "cheap");
 }
 
 TEST(CApiTest, Enum)
 {
     const Env env;
-    const char *value = nullptr;
-    EXPECT_EQ(BIYOS_getenvstropt(env.get(), BIYOS_OPT_CHECKLVL, &value), BIYOS_OK);
-    EXPECT_STREQ(value, "cheap");
-    EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_CHECKLVL, "full"), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getenvstropt(env.get(), BIYOS_OPT_CHECKLVL, &value), BIYOS_OK);
-    EXPECT_STREQ(value, "full");
+    BIYOS_int value = 0;
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHECKLVL, &value), BIYOS_OK);
+    EXPECT_EQ(value, BIYOS_CHECKLVL_CHEAP);
+    for (const BIYOS_int level : {BIYOS_CHECKLVL_FULL, BIYOS_CHECKLVL_NONE, BIYOS_CHECKLVL_CHEAP})
+    {
+        EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHECKLVL, level), BIYOS_OK);
+        EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHECKLVL, &value), BIYOS_OK);
+        EXPECT_EQ(value, level);
+    }
 }
 
 TEST(CApiTest, BadSet)
@@ -234,9 +234,32 @@ TEST(CApiTest, BadSet)
 TEST(CApiTest, BadEnum)
 {
     const Env env;
-    EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_CHECKLVL, "most"), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(),
-              "invalid argument: option 'check_lvl': 'most' is not one of none, cheap, full");
+    const std::string option = "invalid argument: option 'check_lvl': ";
+    const std::string list = " is not one of 1 (none), 2 (cheap), 3 (full)";
+    BIYOS_int value = 0;
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHECKLVL, BIYOS_CHECKLVL_FULL), BIYOS_OK);
+    for (const BIYOS_int number : {4, 0, -1})
+    {
+        EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHECKLVL, number), BIYOS_ERR_BADARG);
+        EXPECT_EQ(env.message(), option + std::to_string(number) + list);
+    }
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHECKLVL, &value), BIYOS_OK);
+    EXPECT_EQ(value, BIYOS_CHECKLVL_FULL);
+}
+
+TEST(CApiTest, EnumKind)
+{
+    const Env env;
+    const char *text = nullptr;
+    const std::string refused = "invalid argument: option 'check_lvl': is an enum, not a string";
+    EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_CHECKLVL, "full"), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused);
+    EXPECT_EQ(BIYOS_getenvstropt(env.get(), BIYOS_OPT_CHECKLVL, &text), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), refused);
+    EXPECT_EQ(text, nullptr);
+    BIYOS_int value = 0;
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHECKLVL, &value), BIYOS_OK);
+    EXPECT_EQ(value, BIYOS_CHECKLVL_CHEAP);
 }
 
 TEST(CApiTest, WrongKind)

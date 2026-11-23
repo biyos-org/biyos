@@ -14,18 +14,18 @@ The kind of an option decides which calls set and get it:
 | `BIYOS_KND_INT` | `BIYOS_setenvintopt` | `BIYOS_getenvintopt` |
 | `BIYOS_KND_DBL` | `BIYOS_setenvdblopt` | `BIYOS_getenvdblopt` |
 | `BIYOS_KND_STR` | `BIYOS_setenvstropt` | `BIYOS_getenvstropt` |
-| `BIYOS_KND_ENUM` | `BIYOS_setenvstropt`, by the name of a value | `BIYOS_getenvstropt` |
+| `BIYOS_KND_ENUM` | `BIYOS_setenvintopt`, with a macro of the option's group | `BIYOS_getenvintopt` |
 
-A call of another kind is refused: nothing is converted, so an int option refuses `BIYOS_setenvdblopt`. `BIYOS_getoptknd` gives the kind of an id. The reference lists every option with its kind, default and range (@sec-option-table).
+A call of another kind is refused: nothing is converted, so an int option refuses `BIYOS_setenvdblopt` and an enum option refuses `BIYOS_setenvstropt`. The values of an enum option are macros of a group named after it, numbered from 1, so `check_lvl` takes `BIYOS_CHECKLVL_NONE`, `BIYOS_CHECKLVL_CHEAP` or `BIYOS_CHECKLVL_FULL`, and a mistyped value fails to compile. A value keeps its number for good, as an id does. `BIYOS_getoptknd` gives the kind of an id. The reference lists every option with its kind, default and range (@sec-option-table).
 
 ## Setting and reading {#sec-options-set}
 
-This code sets a double option by its id, a bool option, and an enum option by its name:
+This code sets a double option by its id, a bool option, and an enum option whose id it finds by name:
 
 ```{.c file="examples/c/options.c" item="set_options"}
 ```
 
-A set is checked before it changes anything. An int or double value must lie in the option's range, ends included, compared exactly with no tolerance; NaN lies outside every range. An enum value must name one of the option's values exactly. A failed set leaves the option as it was and returns `BIYOS_ERR_BADARG`, with a message that says why (@sec-errors).
+A set is checked before it changes anything. An int or double value must lie in the option's range, ends included, compared exactly with no tolerance; NaN lies outside every range. An enum value must be the number of one of the option's macros. A failed set leaves the option as it was and returns `BIYOS_ERR_BADARG`, with a message that says why (@sec-errors).
 
 Reading is the mirror image:
 
@@ -60,7 +60,7 @@ and an upper bound alike. Two finite values $a$ and $b$ are equal unless they di
 
 ## Options in Python {#sec-options-python}
 
-Python reads and sets options by name, with `env.getopt` and `env.setopt`. The value's Python type must match the kind: a `bool` for a bool option, an `int` for an int option, a number for a double option and a `str` for a string or enum option. A mismatch raises `TypeError` before C is called.
+Python reads and sets options by name, with `env.getopt` and `env.setopt`. The value's Python type must match the kind: a `bool` for a bool option, an `int` for an int option, a number for a double option, a `str` for a string option, and for an enum option a member of its class, such as `CheckLevel.FULL`, or its number. A mismatch raises `TypeError` before C is called. `getopt` returns the value of an enum option as a member of its class.
 
 ```{.python file="examples/python/options.py"}
 ```

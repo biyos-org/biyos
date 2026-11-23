@@ -149,7 +149,7 @@ value BIYOS_KND_BOOL A bool, set with `BIYOS_setenvboolopt` and read with `BIYOS
 value BIYOS_KND_INT An int, set with `BIYOS_setenvintopt` and read with `BIYOS_getenvintopt`.
 value BIYOS_KND_DBL A double, set with `BIYOS_setenvdblopt` and read with `BIYOS_getenvdblopt`.
 value BIYOS_KND_STR A string, set with `BIYOS_setenvstropt` and read with `BIYOS_getenvstropt`.
-value BIYOS_KND_ENUM One of a list of names, set with `BIYOS_setenvstropt` and read with `BIYOS_getenvstropt`, by the name of the value.
+value BIYOS_KND_ENUM One of a list of values, set with `BIYOS_setenvintopt` and read with `BIYOS_getenvintopt`, each value a macro of the option's group.
 since 0.1.0
 
 table Option ids
@@ -211,12 +211,12 @@ see BIYOS_getenvboolopt
 since 0.1.0
 
 function BIYOS_setenvintopt
-summary Set an int option.
+summary Set an int or enum option.
 param env in The environment.
-param opt in The id of an int option.
-param val in The value, inside the option's range.
+param opt in The id of an int or enum option.
+param val in The value, inside the option's range. For an enum option, one of its values, such as `BIYOS_CHECKLVL_FULL`.
 return `BIYOS_OK` once the option is set.
-error BIYOS_ERR_BADARG `val` is outside the option's range.
+error BIYOS_ERR_BADARG `val` is outside the option's range, or is none of the values of an enum option.
 see BIYOS_getenvintopt
 since 0.1.0
 
@@ -231,12 +231,11 @@ see BIYOS_getenvdblopt
 since 0.1.0
 
 function BIYOS_setenvstropt
-summary Set a string or enum option.
+summary Set a string option.
 param env in The environment.
-param opt in The id of a string or enum option.
-param val in The value, copied by the call. For an enum option, the name of one of its values, matched exactly.
+param opt in The id of a string option.
+param val in The value, copied by the call.
 return `BIYOS_OK` once the option is set. Pointers read earlier from this option are then no longer valid.
-error BIYOS_ERR_BADARG `val` names none of the values of an enum option.
 see BIYOS_getenvstropt
 since 0.1.0
 
@@ -250,9 +249,9 @@ see BIYOS_setenvboolopt
 since 0.1.0
 
 function BIYOS_getenvintopt
-summary Read an int option.
+summary Read an int or enum option.
 param env in The environment.
-param opt in The id of an int option.
+param opt in The id of an int or enum option.
 param val out Receives the value.
 return `BIYOS_OK`, with the value in `*val`.
 see BIYOS_setenvintopt
@@ -268,10 +267,10 @@ see BIYOS_setenvdblopt
 since 0.1.0
 
 function BIYOS_getenvstropt
-summary Read a string or enum option.
+summary Read a string option.
 param env in The environment.
-param opt in The id of a string or enum option.
-param val out Receives the value of a string option, or the name of the value of an enum option.
+param opt in The id of a string option.
+param val out Receives the value.
 return `BIYOS_OK`, with the value in `*val`.
 note The string belongs to the environment. It stays valid until the option is set again or `env` is freed; a failed set of the option and a set of another option leave it valid.
 see BIYOS_setenvstropt

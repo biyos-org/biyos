@@ -19,3 +19,6 @@ class CheckLevel(IntEnum):
     NONE = 1
     CHEAP = 2
     FULL = 3
+
+
+ENUMS: dict[str, type[IntEnum]] = {"check_lvl": CheckLevel}

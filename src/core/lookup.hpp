@@ -3,7 +3,6 @@
 #include "core/options.hpp"
 #include "core/settings.hpp"
 
-#include <cstddef>
 #include <string>
 #include <type_traits>
 
@@ -34,11 +33,11 @@ class Lookup
         requires std::is_enum_v<E>
     E get_enum(Option option) const
     {
-        return static_cast<E>(position(option));
+        return static_cast<E>(enum_value(option));
     }
 
   private:
-    std::size_t position(Option option) const;
+    int enum_value(Option option) const;
 
     const Settings &settings_;
     const Options &options_;

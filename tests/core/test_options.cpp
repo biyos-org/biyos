@@ -10,6 +10,7 @@
 #include <array>
 #include <functional>
 #include <limits>
+#include <span>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -18,6 +19,8 @@
 namespace
 {
 
+using biyos::EnumRule;
+using biyos::EnumValue;
 using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::IntRule;
@@ -33,6 +36,23 @@ constexpr std::string_view kMalformed = "internal error: option table: is not we
 constexpr Version kFirst{0, 0, 1};
 constexpr Version kSecond{0, 0, 2};
 constexpr Version kThird{0, 0, 3};
+
+constexpr std::array kLevels{
+    EnumValue{.number = 1, .name = "low"},
+    EnumValue{.number = 2, .name = "high"},
+};
+constexpr std::array kGapped{
+    EnumValue{.number = 1, .name = "low"},
+    EnumValue{.number = 3, .name = "high"},
+};
+constexpr std::array kZeroed{
+    EnumValue{.number = 0, .name = "low"},
+    EnumValue{.number = 1, .name = "high"},
+};
+constexpr std::array kTwins{
+    EnumValue{.number = 1, .name = "low"},
+    EnumValue{.number = 2, .name = "low"},
+};
 
 constexpr Rows kRows{
     OptionSpec{
@@ -99,6 +119,12 @@ std::string built(const std::function<void(Rows &)> &change)
     return failure([&] { const biyos::Options options(rows, stream.events); });
 }
 
+std::string built_enum(int default_value, std::span<const EnumValue> values)
+{
+    const EnumRule rule{.default_value = default_value, .values = values};
+    return built([&rule](Rows &rows) { rows[0].rule = rule; });
+}
+
 std::string listed(const std::vector<biyos::Field> &fields)
 {
     std::string text;
@@ -117,7 +143,7 @@ TEST(OptionTest, Defaults)
     const biyos::Options options(stream.events);
     EXPECT_EQ(options.get_int(Option::Seed), 0);
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), kInfinity);
-    EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
+    EXPECT_EQ(options.get_int(Option::CheckLevel), BIYOS_CHECKLVL_CHEAP);
     EXPECT_TRUE(options.get_bool(Option::Presolve));
     EXPECT_EQ(options.get_string(Option::Reproducer), "");
     EXPECT_DOUBLE_EQ(options.get_double(Option::FeasAbs), 1e-6);
@@ -225,19 +251,24 @@ TEST(OptionTest, Enum)
 {
     Stream stream;
     biyos::Options options(stream.events);
-    options.set_string(Option::CheckLevel, "full");
-    EXPECT_EQ(options.get_string(Option::CheckLevel), "full");
-    options.set_string(Option::CheckLevel, "none");
-    EXPECT_EQ(options.get_string(Option::CheckLevel), "none");
+    for (const int level : {BIYOS_CHECKLVL_FULL, BIYOS_CHECKLVL_NONE, BIYOS_CHECKLVL_CHEAP})
+    {
+        options.set_int(Option::CheckLevel, level);
+        EXPECT_EQ(options.get_int(Option::CheckLevel), level);
+    }
 }
 
 TEST(OptionTest, EnumValue)
 {
     Stream stream;
     biyos::Options options(stream.events);
-    EXPECT_EQ(failure([&] { options.set_string(Option::CheckLevel, "most"); }),
-              "invalid argument: option 'check_lvl': 'most' is not one of none, cheap, full");
-    EXPECT_EQ(options.get_string(Option::CheckLevel), "cheap");
+    options.set_int(Option::CheckLevel, BIYOS_CHECKLVL_FULL);
+    const std::string option = "invalid argument: option 'check_lvl': ";
+    const std::string list = " is not one of 1 (none), 2 (cheap), 3 (full)";
+    EXPECT_EQ(failure([&] { options.set_int(Option::CheckLevel, 4); }), option + "4" + list);
+    EXPECT_EQ(failure([&] { options.set_int(Option::CheckLevel, 0); }), option + "0" + list);
+    EXPECT_EQ(failure([&] { options.set_int(Option::CheckLevel, -1); }), option + "-1" + list);
+    EXPECT_EQ(options.get_int(Option::CheckLevel), BIYOS_CHECKLVL_FULL);
 }
 
 TEST(OptionTest, TypedEnum)
@@ -246,9 +277,9 @@ TEST(OptionTest, TypedEnum)
     Stream stream;
     biyos::Options options(stream.events);
     EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Cheap);
-    options.set_string(Option::CheckLevel, "full");
+    options.set_int(Option::CheckLevel, BIYOS_CHECKLVL_FULL);
     EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Full);
-    options.set_string(Option::CheckLevel, "none");
+    options.set_int(Option::CheckLevel, BIYOS_CHECKLVL_NONE);
     EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::None);
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_enum<CheckLevel>(Option::Seed)); }),
               "invalid argument: option 'seed': is an int, not an enum");
@@ -262,8 +293,14 @@ TEST(OptionTest, WrongKind)
               "invalid argument: option 'seed': is an int, not a double");
     EXPECT_EQ(failure([&] { options.set_string(Option::Presolve, "yes"); }),
               "invalid argument: option 'presolve': is a bool, not a string");
-    EXPECT_EQ(failure([&] { options.set_int(Option::CheckLevel, 2); }),
-              "invalid argument: option 'check_lvl': is an enum, not an int");
+    EXPECT_EQ(failure([&] { options.set_string(Option::CheckLevel, "full"); }),
+              "invalid argument: option 'check_lvl': is an enum, not a string");
+    EXPECT_EQ(failure([&] { static_cast<void>(options.get_string(Option::CheckLevel)); }),
+              "invalid argument: option 'check_lvl': is an enum, not a string");
+    EXPECT_EQ(failure([&] { options.set_double(Option::CheckLevel, 2.0); }),
+              "invalid argument: option 'check_lvl': is an enum, not a double");
+    EXPECT_EQ(failure([&] { static_cast<void>(options.get_int(Option::Reproducer)); }),
+              "invalid argument: option 'repro': is a string, not an int");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_bool(Option::Reproducer)); }),
               "invalid argument: option 'repro': is a string, not a bool");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_int(Option::TimeLimit)); }),
@@ -383,6 +420,16 @@ TEST(OptionTest, BadTable)
     EXPECT_EQ(built([](Rows &rows) { rows[1].name = "new"; }), kMalformed);
     const IntRule below{.default_value = -1, .lower = 0};
     EXPECT_EQ(built([&below](Rows &rows) { rows[1].rule = below; }), kMalformed);
+}
+
+TEST(OptionTest, BadEnum)
+{
+    EXPECT_EQ(built_enum(2, kLevels), "no error");
+    EXPECT_EQ(built_enum(3, kLevels), kMalformed);
+    EXPECT_EQ(built_enum(1, {}), kMalformed);
+    EXPECT_EQ(built_enum(1, kGapped), kMalformed);
+    EXPECT_EQ(built_enum(1, kZeroed), kMalformed);
+    EXPECT_EQ(built_enum(1, kTwins), kMalformed);
 }
 
 TEST(OptionTest, Scopes)

@@ -7,7 +7,10 @@ import option_table
 TABLE = """namespace
 {
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr std::array<std::string_view, 2> kLevels{"low", "high"};
+constexpr std::array kLevels{
+    EnumValue{.number = BIYOS_LEVEL_LOW, .name = "low"},
+    EnumValue{.number = BIYOS_LEVEL_HIGH, .name = "high"},
+};
 
 constexpr std::array kTable{
     OptionSpec{
@@ -29,7 +32,7 @@ constexpr std::array kTable{
     OptionSpec{
         .id = Option::Level,
         .name = "level",
-        .rule = EnumRule{.default_value = "low", .values = kLevels},
+        .rule = EnumRule{.default_value = BIYOS_LEVEL_LOW, .values = kLevels},
         .doc = "Level.",
         .versions = {.since = {0, 1, 0}},
     },
@@ -101,8 +104,10 @@ class OptionTableTest(unittest.TestCase):
         self.assertEqual(
             (limit.default, limit.upper), ("infinity", "infinity")
         )
+        self.assertEqual(level.default, "BIYOS_LEVEL_LOW")
         self.assertEqual(
-            (level.default, level.values), ('"low"', ["low", "high"])
+            level.values,
+            [("BIYOS_LEVEL_LOW", "low"), ("BIYOS_LEVEL_HIGH", "high")],
         )
 
     def test_texts(self):

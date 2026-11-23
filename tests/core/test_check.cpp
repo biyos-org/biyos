@@ -64,9 +64,9 @@ void finite(const biyos::Checker &checker)
 class CheckTest : public ::testing::Test
 {
   protected:
-    biyos::Checker at(const std::string &level)
+    biyos::Checker at(CheckLevel level)
     {
-        env.options().set_string(biyos::Option::CheckLevel, level);
+        env.options().set_int(biyos::Option::CheckLevel, static_cast<int>(level));
         return biyos::Checker(env, biyos::Lookup(env.options()), "model");
     }
 
@@ -126,36 +126,36 @@ TEST_F(CheckTest, DefaultLevel)
 
 TEST_F(CheckTest, BelowLevel)
 {
-    EXPECT_NO_THROW(check(at("cheap"), CheckLevel::Full, false));
+    EXPECT_NO_THROW(check(at(CheckLevel::Cheap), CheckLevel::Full, false));
     EXPECT_EQ(evaluated, 0);
-    check(at("cheap"), CheckLevel::Cheap, true);
+    check(at(CheckLevel::Cheap), CheckLevel::Cheap, true);
     EXPECT_EQ(evaluated, 1);
-    check(at("full"), CheckLevel::Cheap, true);
-    check(at("full"), CheckLevel::Full, true);
+    check(at(CheckLevel::Full), CheckLevel::Cheap, true);
+    check(at(CheckLevel::Full), CheckLevel::Full, true);
     EXPECT_EQ(evaluated, 3);
 }
 
 TEST_F(CheckTest, NoneLevel)
 {
-    const biyos::Checker checker = at("none");
+    const biyos::Checker checker = at(CheckLevel::None);
     EXPECT_NO_THROW(check(checker, CheckLevel::Cheap, false));
     EXPECT_NO_THROW(check(checker, CheckLevel::Full, false));
-    EXPECT_NO_THROW(check(at("full"), CheckLevel::None, false));
+    EXPECT_NO_THROW(check(at(CheckLevel::Full), CheckLevel::None, false));
     EXPECT_EQ(evaluated, 0);
 }
 
 TEST_F(CheckTest, ReadOnce)
 {
-    const biyos::Checker checker = at("none");
-    env.options().set_string(biyos::Option::CheckLevel, "full");
+    const biyos::Checker checker = at(CheckLevel::None);
+    env.options().set_int(biyos::Option::CheckLevel, BIYOS_CHECKLVL_FULL);
     EXPECT_NO_THROW(check(checker, CheckLevel::Cheap, false));
     EXPECT_EQ(evaluated, 0);
 }
 
 TEST_F(CheckTest, LazyValues)
 {
-    check(at("full"), CheckLevel::Cheap, true);
-    check(at("full"), CheckLevel::Full, true);
+    check(at(CheckLevel::Full), CheckLevel::Cheap, true);
+    check(at(CheckLevel::Full), CheckLevel::Full, true);
     EXPECT_EQ(evaluated, 2);
     EXPECT_EQ(described, 0);
 }
@@ -164,7 +164,8 @@ TEST_F(CheckTest, OneEvent)
 {
     keep(EventKind::Check);
     keep(EventKind::Message);
-    const biyos::Error error = caught([this] { check(at("cheap"), CheckLevel::Cheap, false); });
+    const biyos::Error error =
+        caught([this] { check(at(CheckLevel::Cheap), CheckLevel::Cheap, false); });
     EXPECT_EQ(error.kind(), ErrorKind::InvalidArgument);
     EXPECT_STREQ(error.what(), "invalid argument: row 3: check 'sorted' failed: 3 > 2");
     EXPECT_EQ(described, 1);
@@ -183,14 +184,15 @@ TEST_F(CheckTest, LastError)
     const auto read = [this, &seen](const biyos::Event &) { seen = env.last_error().text; };
     env.events().add_hook(EventKind::Check, EventLevel::Error, read);
     env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
-    const biyos::Error error = caught([this] { check(at("cheap"), CheckLevel::Cheap, false); });
+    const biyos::Error error =
+        caught([this] { check(at(CheckLevel::Cheap), CheckLevel::Cheap, false); });
     EXPECT_EQ(seen, error.what());
     EXPECT_EQ(env.last_error().text, error.what());
 }
 
 TEST_F(CheckTest, CallerKind)
 {
-    const biyos::Checker checker = at("cheap");
+    const biyos::Checker checker = at(CheckLevel::Cheap);
     for (const ErrorKind kind : {ErrorKind::NoMemory, ErrorKind::Internal})
     {
         EXPECT_EQ(caught([&] { check(checker, CheckLevel::Cheap, false, kind); }).kind(), kind);
@@ -199,14 +201,14 @@ TEST_F(CheckTest, CallerKind)
 
 TEST_F(CheckTest, EmptyValues)
 {
-    const biyos::Checker checker = at("cheap");
+    const biyos::Checker checker = at(CheckLevel::Cheap);
     const biyos::Error error = caught([&checker] { finite(checker); });
     EXPECT_STREQ(error.what(), "internal error: x: check 'finite' failed");
 }
 
 TEST_F(CheckTest, Delivering)
 {
-    const biyos::Checker checker = at("cheap");
+    const biyos::Checker checker = at(CheckLevel::Cheap);
     const auto inner = [this, &checker](const biyos::Event &) { reenter(checker); };
     env.events().add_hook(EventKind::Check, EventLevel::Debug, inner);
     EXPECT_EQ(caught([&] { check(checker, CheckLevel::Cheap, false); }).kind(),
@@ -217,7 +219,7 @@ TEST_F(CheckTest, Delivering)
 
 TEST_F(CheckTest, Filling)
 {
-    const biyos::Checker checker = at("cheap");
+    const biyos::Checker checker = at(CheckLevel::Cheap);
     const auto fill = [&](biyos::Event &) { check(checker, CheckLevel::Cheap, false); };
     keep(EventKind::Check);
     keep(EventKind::Message);
@@ -232,7 +234,7 @@ TEST_F(CheckTest, Models)
 {
     biyos::Settings first;
     const biyos::Settings second;
-    first.set(biyos::Option::CheckLevel, std::string("full"), env.events());
+    first.set(biyos::Option::CheckLevel, BIYOS_CHECKLVL_FULL, env.events());
     const biyos::Checker own(env, biyos::Lookup(first, env.options()), "model");
     const biyos::Checker other(env, biyos::Lookup(second, env.options()), "model");
     const biyos::Checker shared(env, biyos::Lookup(env.options()), "model");

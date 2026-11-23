@@ -11,6 +11,7 @@ from biyos._error import Error, check
 from biyos._event import Event, EventKind, EventLevel
 from biyos._handles import Handles
 from biyos._integers import integer
+from biyos._options import ENUMS
 from biyos._relay import Relay
 from biyos._hooks import Hooks
 from biyos._text import encoded
@@ -71,7 +72,7 @@ _SETTERS: dict[int, tuple[Callable[..., int], Callable[..., object]]] = {
     _capi.KIND_INT: (lib.BIYOS_setenvintopt, _int),
     _capi.KIND_DOUBLE: (lib.BIYOS_setenvdblopt, _double),
     _capi.KIND_STRING: (lib.BIYOS_setenvstropt, _string),
-    _capi.KIND_ENUM: (lib.BIYOS_setenvstropt, _string),
+    _capi.KIND_ENUM: (lib.BIYOS_setenvintopt, _int),
 }
 
 _GETTERS: dict[
@@ -82,7 +83,7 @@ _GETTERS: dict[
     _capi.KIND_INT: (lib.BIYOS_getenvintopt, c_int, int),
     _capi.KIND_DOUBLE: (lib.BIYOS_getenvdblopt, c_double, float),
     _capi.KIND_STRING: (lib.BIYOS_getenvstropt, c_char_p, bytes.decode),
-    _capi.KIND_ENUM: (lib.BIYOS_getenvstropt, c_char_p, bytes.decode),
+    _capi.KIND_ENUM: (lib.BIYOS_getenvintopt, c_int, int),
 }
 
 
@@ -172,7 +173,9 @@ class Env:
         name
             The name of the option, such as ``"maxtime"``.
         val
-            The new value, of the type the option's kind takes.
+            The new value, of the type the option's kind takes. An enum
+            option takes a member of its class, such as
+            ``CheckLevel.FULL``, or its number.
 
         Raises
         ------
@@ -201,7 +204,9 @@ class Env:
         Returns
         -------
         val
-            The value, of the type the option's kind gives.
+            The value, of the type the option's kind gives. An enum
+            option gives a member of its class, such as
+            ``CheckLevel.CHEAP``.
 
         Raises
         ------
@@ -217,6 +222,8 @@ class Env:
         getter, slot, convert = _GETTERS[kind]
         value = slot()
         self._call(getter, option, byref(value))
+        if kind == _capi.KIND_ENUM:
+            return ENUMS[name](value.value)
         return convert(value.value)
 
     def getoptver(self, name: str) -> Versions:

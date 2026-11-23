@@ -40,9 +40,9 @@ std::string default_of(const StringRule &rule)
     return std::string(rule.default_value);
 }
 
-std::string default_of(const EnumRule &rule)
+int default_of(const EnumRule &rule)
 {
-    return std::string(rule.default_value);
+    return rule.default_value;
 }
 
 std::span<const OptionSpec> checked(std::span<const OptionSpec> table)
@@ -149,10 +149,10 @@ std::span<const OptionSpec> Options::table() const noexcept
     return table_;
 }
 
-std::size_t Options::position(Option option) const
+int Options::enum_value(Option option) const
 {
     const OptionSpec &spec = row_of(table_, option);
-    return position_of(spec, values_[index_of(option)]);
+    return enum_of(spec, values_[index_of(option)]);
 }
 
 }

@@ -28,7 +28,8 @@ def accepted(option):
     if option.kind in ("int", "double"):
         return f"[{number(option.lower)}, {number(option.upper)}]"
     if option.kind == "enum":
-        return ", ".join(f"`{value}`" for value in option.values)
+        values = option.values
+        return ", ".join(f"`{macro}` ({name})" for macro, name in values)
     return {"bool": "`true`, `false`", "string": "any string"}[option.kind]
 
 

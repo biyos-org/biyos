@@ -15,16 +15,16 @@ std::string subject(std::string_view name)
     return "option '" + std::string(name) + "'";
 }
 
-std::string joined(std::span<const std::string_view> names)
+std::string joined(std::span<const EnumValue> values)
 {
     std::string text;
-    for (const std::string_view name : names)
+    for (const EnumValue &value : values)
     {
         if (!text.empty())
         {
             text += ", ";
         }
-        text += name;
+        text += text_of(value.number) + " (" + std::string(value.name) + ")";
     }
     return text;
 }
