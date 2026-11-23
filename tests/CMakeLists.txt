@@ -35,6 +35,7 @@ biyos_add_test(test_core
     core/test_records.cpp
     core/test_settings.cpp
     core/test_status.cpp
+    core/test_strings.cpp
     core/test_thread.cpp
     core/test_timer.cpp
     core/test_tolerances.cpp

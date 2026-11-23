@@ -91,7 +91,7 @@ void get_double(biyos::Env &env, int option, double *value)
 
 void get_string(biyos::Env &env, int option, const char **value)
 {
-    const char *found = env.options().get_string(biyos::find_option(option)).c_str();
+    const char *found = env.options().get_string(biyos::find_option(option)).data();
     *require(value, "val") = found;
 }
 

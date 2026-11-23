@@ -2,6 +2,7 @@
 
 #include "core/events.hpp"
 #include "core/options.hpp"
+#include "core/strings.hpp"
 
 #include <span>
 #include <string_view>
@@ -15,6 +16,8 @@ class Settings
   public:
     Settings();
     explicit Settings(std::span<const OptionSpec> table);
+    Settings(const Settings &other);
+    Settings &operator=(const Settings &) = delete;
 
     void set_bool(Option option, bool value, Events &events, const BIYOS_model *model = nullptr);
     void set_int(Option option, int value, Events &events, const BIYOS_model *model = nullptr);
@@ -32,7 +35,7 @@ class Settings
     void erase(Option option) noexcept;
 
   private:
-    void store(Option option, OptionValue value, Events &events, const BIYOS_model *model);
+    void store(Option option, const OptionValue &value, Events &events, const BIYOS_model *model);
 
     struct Entry
     {
@@ -41,6 +44,7 @@ class Settings
     };
 
     std::span<const OptionSpec> table_;
+    Strings strings_;
     std::vector<Entry> entries_;
 };
 

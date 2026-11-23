@@ -7,9 +7,7 @@
 
 #include <algorithm>
 #include <span>
-#include <string>
 #include <string_view>
-#include <utility>
 
 namespace biyos
 {
@@ -32,6 +30,15 @@ Settings::Settings() : table_(option_table()) {}
 
 Settings::Settings(std::span<const OptionSpec> table) : table_(table) {}
 
+Settings::Settings(const Settings &other) : table_(other.table_)
+{
+    entries_.reserve(other.entries_.size());
+    for (const Entry &entry : other.entries_)
+    {
+        entries_.push_back(Entry{.option = entry.option, .value = kept(strings_, entry.value)});
+    }
+}
+
 void Settings::set_bool(Option option, bool value, Events &events, const BIYOS_model *model)
 {
     store(option, value, events, model);
@@ -52,7 +59,7 @@ void Settings::set_string(Option option,
                           Events &events,
                           const BIYOS_model *model)
 {
-    store(option, std::string(value), events, model);
+    store(option, value, events, model);
 }
 
 void Settings::set_flags(Option option, Masks value, Events &events, const BIYOS_model *model)
@@ -60,18 +67,22 @@ void Settings::set_flags(Option option, Masks value, Events &events, const BIYOS
     store(option, value, events, model);
 }
 
-void Settings::store(Option option, OptionValue value, Events &events, const BIYOS_model *model)
+void Settings::store(Option option,
+                     const OptionValue &value,
+                     Events &events,
+                     const BIYOS_model *model)
 {
     check_scope(row_of(table_, option));
     const OptionSpec &spec = checked_row(table_, option, value);
+    const OptionValue own = kept(strings_, value);
     const auto held = std::ranges::find(entries_, option, &Entry::option);
     if (held != entries_.end())
     {
-        held->value = std::move(value);
+        held->value = own;
     }
     else
     {
-        entries_.push_back(Entry{.option = option, .value = std::move(value)});
+        entries_.push_back(Entry{.option = option, .value = own});
     }
     warn_deprecated(events, table_, spec, model);
 }

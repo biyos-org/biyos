@@ -3,7 +3,7 @@
 #include "core/option_table.hpp"
 #include "core/option_value.hpp"
 
-#include <string>
+#include <string_view>
 
 namespace biyos
 {
@@ -53,7 +53,7 @@ double Lookup::get_double(Option option) const
     return double_of(spec, find(option).value);
 }
 
-const std::string &Lookup::get_string(Option option) const
+std::string_view Lookup::get_string(Option option) const
 {
     const OptionSpec &spec = row_of(options_.table(), option);
     return string_of(spec, find(option).value);

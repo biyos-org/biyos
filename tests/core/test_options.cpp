@@ -247,6 +247,24 @@ TEST(OptionTest, String)
     EXPECT_EQ(options.get_string(Option::Reproducer), "replay.txt");
 }
 
+TEST(OptionTest, Kept)
+{
+    Stream stream;
+    biyos::Options options(stream.events);
+    const std::string_view empty = options.get_string(Option::Reproducer);
+    options.set_string(Option::Reproducer, "replay.txt");
+    const std::string_view first = options.get_string(Option::Reproducer);
+    options.set_string(Option::Reproducer, "other.txt");
+    options.set_int(Option::Seed, 3);
+    EXPECT_EQ(first, "replay.txt");
+    EXPECT_EQ(first.data()[first.size()], '\0');
+    EXPECT_EQ(empty, "");
+    options.set_string(Option::Reproducer, std::string("replay.txt"));
+    EXPECT_EQ(options.get_string(Option::Reproducer).data(), first.data());
+    options.set_string(Option::Reproducer, "");
+    EXPECT_EQ(options.get_string(Option::Reproducer).data(), empty.data());
+}
+
 TEST(OptionTest, Enum)
 {
     Stream stream;

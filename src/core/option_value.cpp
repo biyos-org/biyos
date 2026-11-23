@@ -106,7 +106,7 @@ void admit(const OptionSpec &spec, double value)
     check_range(spec, rule_of<DoubleRule>(spec), value);
 }
 
-void admit(const OptionSpec &spec, const std::string &)
+void admit(const OptionSpec &spec, std::string_view)
 {
     rule_of<StringRule>(spec);
 }
@@ -155,6 +155,15 @@ void warn_deprecated(Events &events,
     events.emit(EventKind::Message, EventLevel::Warning, fill);
 }
 
+OptionValue kept(Strings &strings, const OptionValue &value)
+{
+    if (const std::string_view *text = std::get_if<std::string_view>(&value))
+    {
+        return strings.keep(*text);
+    }
+    return value;
+}
+
 bool bool_of(const OptionSpec &spec, const OptionValue &value)
 {
     rule_of<BoolRule>(spec);
@@ -176,10 +185,10 @@ double double_of(const OptionSpec &spec, const OptionValue &value)
     return std::get<double>(value);
 }
 
-const std::string &string_of(const OptionSpec &spec, const OptionValue &value)
+std::string_view string_of(const OptionSpec &spec, const OptionValue &value)
 {
     rule_of<StringRule>(spec);
-    return std::get<std::string>(value);
+    return std::get<std::string_view>(value);
 }
 
 int enum_of(const OptionSpec &spec, const OptionValue &value)

@@ -2,9 +2,10 @@
 
 #include "core/events.hpp"
 #include "core/options.hpp"
+#include "core/strings.hpp"
 
 #include <span>
-#include <string>
+#include <string_view>
 
 namespace biyos
 {
@@ -18,10 +19,12 @@ void warn_deprecated(Events &events,
                      const OptionSpec &spec,
                      const BIYOS_model *model) noexcept;
 
+OptionValue kept(Strings &strings, const OptionValue &value);
+
 bool bool_of(const OptionSpec &spec, const OptionValue &value);
 int int_of(const OptionSpec &spec, const OptionValue &value);
 double double_of(const OptionSpec &spec, const OptionValue &value);
-const std::string &string_of(const OptionSpec &spec, const OptionValue &value);
+std::string_view string_of(const OptionSpec &spec, const OptionValue &value);
 int enum_of(const OptionSpec &spec, const OptionValue &value);
 Masks flags_of(const OptionSpec &spec, const OptionValue &value);
 PartState state_of(const OptionSpec &spec, const OptionValue &value, Mask part);

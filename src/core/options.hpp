@@ -1,6 +1,7 @@
 #pragma once
 
 #include "biyos/biyos.h"
+#include "core/strings.hpp"
 #include "core/version.hpp"
 
 #include <cstdint>
@@ -152,7 +153,7 @@ struct OptionSpec
     std::optional<Option> replacement = std::nullopt;
 };
 
-using OptionValue = std::variant<bool, int, double, std::string, Masks>;
+using OptionValue = std::variant<bool, int, double, std::string_view, Masks>;
 
 Option find_option(std::string_view name);
 Option find_option(int id);
@@ -175,7 +176,7 @@ class Options
     bool get_bool(Option option) const;
     int get_int(Option option) const;
     double get_double(Option option) const;
-    const std::string &get_string(Option option) const;
+    std::string_view get_string(Option option) const;
     Masks get_flags(Option option) const;
 
     const OptionValue &value_of(Option option) const;
@@ -190,14 +191,15 @@ class Options
     }
 
   private:
-    static std::vector<OptionValue> defaults(std::span<const OptionSpec> table);
+    std::vector<OptionValue> defaults();
 
-    void store(Option option, OptionValue value);
+    void store(Option option, const OptionValue &value);
 
     int enum_value(Option option) const;
 
     std::span<const OptionSpec> table_;
     Events &events_;
+    Strings strings_;
     std::vector<OptionValue> values_;
     std::vector<Source> sources_;
 };

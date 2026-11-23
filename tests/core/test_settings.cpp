@@ -11,7 +11,10 @@
 
 #include <array>
 #include <functional>
+#include <memory>
 #include <string>
+#include <string_view>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -26,6 +29,7 @@ using biyos::OptionSpec;
 using biyos::OptionValue;
 using biyos::Scope;
 using biyos::Source;
+using biyos::StringRule;
 using biyos::Version;
 
 constexpr Version kFirst{0, 0, 1};
@@ -35,6 +39,7 @@ constexpr Option kNew{1};
 constexpr Option kOld{2};
 constexpr Option kGone{3};
 constexpr Option kHost{4};
+constexpr Option kText{5};
 
 constexpr std::array kRows{
     OptionSpec{
@@ -71,6 +76,14 @@ constexpr std::array kRows{
         .doc = "Environment only.",
         .versions = {.since = kFirst},
     },
+    OptionSpec{
+        .id = kText,
+        .name = "text",
+        .scope = Scope::Model,
+        .rule = StringRule{.default_value = ""},
+        .doc = "A string.",
+        .versions = {.since = kFirst},
+    },
 };
 
 std::string failure(const std::function<void()> &body)
@@ -90,6 +103,11 @@ int held(const biyos::Settings &settings, Option option)
 {
     const OptionValue *value = settings.find(option);
     return value != nullptr ? std::get<int>(*value) : -1;
+}
+
+std::string_view text(const biyos::Settings &settings, Option option)
+{
+    return std::get<std::string_view>(*settings.find(option));
 }
 
 class SettingTest : public ::testing::Test
@@ -158,14 +176,34 @@ TEST_F(SettingTest, Erase)
 
 TEST_F(SettingTest, Copy)
 {
+    static_assert(!std::is_copy_assignable_v<biyos::Settings>);
     settings.set_int(kNew, 5, events);
-    biyos::Settings copy = settings;
-    copy.set_int(kNew, 8, events);
-    copy.erase(kOld);
-    EXPECT_EQ(held(settings, kNew), 5);
-    EXPECT_EQ(held(copy, kNew), 8);
-    copy = settings;
+    settings.set_string(kText, "replay.txt", events);
+    auto source = std::make_unique<biyos::Settings>(settings);
+    const biyos::Settings copy(*source);
+    source.reset();
     EXPECT_EQ(held(copy, kNew), 5);
+    EXPECT_EQ(text(copy, kText), "replay.txt");
+    EXPECT_NE(text(copy, kText).data(), text(settings, kText).data());
+    settings.set_int(kNew, 8, events);
+    EXPECT_EQ(held(copy, kNew), 5);
+}
+
+TEST_F(SettingTest, Kept)
+{
+    settings.set_string(kText, "replay.txt", events);
+    const std::string_view first = text(settings, kText);
+    settings.set_string(kText, "other.txt", events);
+    settings.set_int(kNew, 5, events);
+    settings.set_int(kOld, 6, events);
+    EXPECT_EQ(first, "replay.txt");
+    EXPECT_EQ(first.data()[first.size()], '\0');
+    settings.set_string(kText, std::string("replay.txt"), events);
+    EXPECT_EQ(text(settings, kText).data(), first.data());
+    settings.erase(kText);
+    settings.set_string(kText, "replay.txt", events);
+    EXPECT_EQ(text(settings, kText).data(), first.data());
+    EXPECT_EQ(first, "replay.txt");
 }
 
 TEST_F(SettingTest, Scope)
@@ -265,8 +303,8 @@ TEST_F(LookupTest, Models)
 
 TEST_F(LookupTest, MissingRow)
 {
-    EXPECT_EQ(failure([&] { static_cast<void>(lookup.find(Option{5})); }),
-              "internal error: option 5: has no table row");
+    EXPECT_EQ(failure([&] { static_cast<void>(lookup.find(Option{6})); }),
+              "internal error: option 6: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_int(Option{0})); }),
               "internal error: option 0: has no table row");
 }
