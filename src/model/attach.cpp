@@ -7,6 +7,7 @@
 #include "expr/graph.hpp"
 #include "expr/terms.hpp"
 #include "expr/uses.hpp"
+#include "model/callbacks.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
 #include "model/merge.hpp"
@@ -128,6 +129,20 @@ std::vector<Addition<Term>> additions_of(std::span<const Index> functions,
     return additions;
 }
 
+void check_covered(std::span<const Index> functions,
+                   std::span<const Offset> roots,
+                   const Model &model)
+{
+    for (std::size_t k = 0; k < functions.size(); ++k)
+    {
+        const Index callback = model.callback_of(functions[k]);
+        if (roots[k] != kNoRoot && callback != kNoCallback)
+        {
+            refuse(kNoun, functions[k], "is in " + item("callback", callback));
+        }
+    }
+}
+
 std::vector<Index> distinct(std::span<const Index> functions, Index held)
 {
     for (const Index function : functions)
@@ -151,6 +166,7 @@ void Model::attach_expressions(std::span<const Index> functions, std::span<const
     const std::vector<Parts> parts = split_all(graph_, uses_, nodes);
     const std::vector<double> constants = constants_of(functions, parts, constants_);
     const std::vector<Offset> roots = roots_of(graph_, functions, parts, roots_);
+    check_covered(functions, roots, *this);
     const std::vector<AddedTerms> linear = additions_of(functions, parts, &Parts::linear);
     const std::vector<AddedPairs> pairs = additions_of(functions, parts, &Parts::quadratic);
     Merge<LinearTerm> linear_merge(ends_, terms_, linear);

@@ -89,6 +89,7 @@ biyos_add_test(test_expr
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
 biyos_add_test(test_model
+    model/test_callbacks.cpp
     model/test_compare.cpp
     model/test_complements.cpp
     model/test_cones.cpp

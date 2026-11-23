@@ -53,6 +53,7 @@ add_library(biyos_internal STATIC
     expr/value.cpp
     expr/waves.cpp
     model/attach.cpp
+    model/callbacks.cpp
     model/checks.cpp
     model/compare.cpp
     model/complements.cpp
@@ -72,6 +73,7 @@ add_library(biyos_internal STATIC
     model/objectives.cpp
     model/overrides.cpp
     model/pairs.cpp
+    model/patterns.cpp
     model/postfix.cpp
     model/quadratic.cpp
     model/sos.cpp
