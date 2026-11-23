@@ -30,7 +30,7 @@ constexpr double kInfinity = std::numeric_limits<double>::infinity();
 struct Fields
 {
     const int *functions = nullptr;
-    const int *partners = nullptr;
+    const int *multipliers = nullptr;
     const double *lower = nullptr;
     const double *upper = nullptr;
 };
@@ -38,7 +38,7 @@ struct Fields
 struct Outputs
 {
     int *functions = nullptr;
-    int *partners = nullptr;
+    int *multipliers = nullptr;
     double *lower = nullptr;
     double *upper = nullptr;
 };
@@ -59,7 +59,7 @@ template <typename T> void put(T *values, std::size_t k, T value)
 biyos::Complement given(biyos::Complement complement, std::size_t k, const Fields &fields)
 {
     complement.function = entry_or(fields.functions, k, complement.function);
-    complement.partner = entry_or(fields.partners, k, complement.partner);
+    complement.multiplier = entry_or(fields.multipliers, k, complement.multiplier);
     complement.lower = entry_or(fields.lower, k, complement.lower);
     complement.upper = entry_or(fields.upper, k, complement.upper);
     return complement;
@@ -72,11 +72,11 @@ void add_complements(BIYOS_model &model, int n, const Fields &fields, int *start
     if (size > 0)
     {
         require(fields.functions, "funidx1");
-        require(fields.partners, "funidx2");
+        require(fields.multipliers, "funidx2");
     }
     const biyos::Complement nonnegative{
         .function = 0,
-        .partner = 0,
+        .multiplier = 0,
         .lower = 0.0,
         .upper = kInfinity,
     };
@@ -116,7 +116,7 @@ void n_complements(const BIYOS_model &model, int *n)
 void copy_out(const biyos::Complement &complement, std::size_t k, const Outputs &outputs)
 {
     put(outputs.functions, k, complement.function);
-    put(outputs.partners, k, complement.partner);
+    put(outputs.multipliers, k, complement.multiplier);
     put(outputs.lower, k, complement.lower);
     put(outputs.upper, k, complement.upper);
 }
@@ -184,7 +184,7 @@ BIYOS_status BIYOS_addccon(BIYOS_model *mdl,
 {
     const Fields fields{
         .functions = funidx1,
-        .partners = funidx2,
+        .multipliers = funidx2,
         .lower = lb,
         .upper = ub,
     };
@@ -288,7 +288,7 @@ BIYOS_status BIYOS_getcconsp(const BIYOS_model *mdl,
 {
     const Outputs outputs{
         .functions = funidx1,
-        .partners = funidx2,
+        .multipliers = funidx2,
         .lower = lb,
         .upper = ub,
     };
@@ -305,7 +305,7 @@ BIYOS_status BIYOS_getcconrg(const BIYOS_model *mdl,
 {
     const Outputs outputs{
         .functions = funidx1,
-        .partners = funidx2,
+        .multipliers = funidx2,
         .lower = lb,
         .upper = ub,
     };

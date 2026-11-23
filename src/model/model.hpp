@@ -127,7 +127,7 @@ inline constexpr std::array kConeKinds{
 struct Complement
 {
     Index function;
-    Index partner;
+    Index multiplier;
     double lower;
     double upper;
 };

@@ -218,9 +218,9 @@ TEST(CompareTest, ComplementFields)
     Parts function = sample();
     function.complements[0].function = 0;
     EXPECT_EQ(from_sample(function), "complement 0: function 1 against 0");
-    Parts partner = sample();
-    partner.complements[1].partner = 2;
-    EXPECT_EQ(from_sample(partner), "complement 1: partner 0 against 2");
+    Parts multiplier = sample();
+    multiplier.complements[1].multiplier = 2;
+    EXPECT_EQ(from_sample(multiplier), "complement 1: multiplier 0 against 2");
     Parts lower = sample();
     lower.complements[0].lower = -1.0;
     EXPECT_EQ(from_sample(lower), "complement 0: lower bound 0 against -1");
@@ -542,12 +542,12 @@ TEST(CompareTest, ComplementOrder)
 {
     Parts changed = sample();
     Complement &complement = changed.complements[1];
-    complement = Complement{.function = 2, .partner = 1, .lower = 0.0, .upper = 1.0};
+    complement = Complement{.function = 2, .multiplier = 1, .lower = 0.0, .upper = 1.0};
     changed.complement_names = {.indices = {1}, .names = {"other"}};
     EXPECT_EQ(from_sample(changed), "complement 1: function 0 against 2");
     complement.function = 0;
-    EXPECT_EQ(from_sample(changed), "complement 1: partner 0 against 1");
-    complement.partner = 0;
+    EXPECT_EQ(from_sample(changed), "complement 1: multiplier 0 against 1");
+    complement.multiplier = 0;
     EXPECT_EQ(from_sample(changed), "complement 1: lower bound -2 against 0");
     complement.lower = -2.0;
     EXPECT_EQ(from_sample(changed), "complement 1: upper bound 2 against 1");
