@@ -229,8 +229,8 @@ TEST_F(EventTest, LevelIds)
 TEST_F(EventTest, Names)
 {
     EXPECT_EQ(biyos::name_of(EventKind::Message), "message");
-    EXPECT_EQ(biyos::name_of(EventKind::Invariant), "check");
-    EXPECT_EQ(biyos::name_of(EventKind::Span), "phase");
+    EXPECT_EQ(biyos::name_of(EventKind::Invariant), "invariant");
+    EXPECT_EQ(biyos::name_of(EventKind::Span), "span");
     EXPECT_EQ(biyos::name_of(EventLevel::Debug), "debug");
     EXPECT_EQ(biyos::name_of(EventLevel::Info), "info");
     EXPECT_EQ(biyos::name_of(EventLevel::Warning), "warning");
