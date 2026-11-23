@@ -5,6 +5,7 @@
 #include "expr/graph.hpp"
 #include "expr/terms.hpp"
 #include "expr/uses.hpp"
+#include "model/callbacks.hpp"
 #include "model/names.hpp"
 #include "model/overrides.hpp"
 
@@ -213,6 +214,22 @@ class Model
     void attach_expressions(std::span<const Index> functions, std::span<const Offset> nodes);
     void clear_functions(std::span<const Index> functions);
 
+    Index n_callbacks() const noexcept;
+    const Callback &callback(Index index) const;
+    Index callback_of(Index function) const noexcept;
+    Index add_callback(std::span<const Index> functions, void *data);
+    void set_values(Index callback, UserFunction values);
+    void set_jacobian(Index callback,
+                      std::span<const Offset> starts,
+                      std::span<const Index> variables,
+                      UserFunction jacobian);
+    void set_hessian(Index callback,
+                     std::span<const Index> first,
+                     std::span<const Index> second,
+                     UserFunction hessian);
+    void set_product(Index callback, UserFunction product);
+    void set_data(Index callback, void *data);
+
     Index n_constraints() const noexcept;
     const Constraint &constraint(Index index) const;
     std::span<const Constraint> constraints(Index start, Index size) const;
@@ -274,6 +291,7 @@ class Model
     Offset quadratic_begin(std::size_t function) const noexcept;
     void check_kinds(std::span<const Index> indices, std::span<const Variable> changed) const;
     Offset member_begin(std::size_t sos) const noexcept;
+    Callback &changed(Index callback);
 
     std::string name_;
     std::vector<Variable> variables_;
@@ -285,6 +303,8 @@ class Model
     Graph graph_;
     Uses uses_;
     std::vector<Offset> roots_;
+    std::vector<Callback> callbacks_;
+    std::vector<Index> covering_;
     std::vector<Constraint> constraints_;
     std::vector<Objective> objectives_;
     std::vector<Indicator> indicators_;

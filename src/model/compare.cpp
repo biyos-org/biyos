@@ -3,6 +3,8 @@
 #include "core/index.hpp"
 #include "core/text.hpp"
 #include "expr/terms.hpp"
+#include "model/callbacks.hpp"
+#include "model/compressed.hpp"
 #include "model/fields.hpp"
 #include "model/match.hpp"
 #include "model/model.hpp"
@@ -12,6 +14,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace biyos
 {
@@ -65,6 +68,14 @@ std::string differ(const QuadraticTerm &a, const QuadraticTerm &b)
         compared("first variable", a.row, b.row),
         compared("second variable", a.column, b.column),
         compared("coefficient", a.coefficient, b.coefficient),
+    });
+}
+
+std::string differ(const VariablePair &a, const VariablePair &b)
+{
+    return first_of({
+        compared("first variable", a.first, b.first),
+        compared("second variable", a.second, b.second),
     });
 }
 
@@ -322,6 +333,70 @@ std::string complement_differences(const Model &a, const Model &b)
     return table_difference("complement", a.n_complements(), b.n_complements(), complement);
 }
 
+std::string presence(std::string_view field, const UserFunction &a, const UserFunction &b)
+{
+    if (static_cast<bool>(a) == static_cast<bool>(b))
+    {
+        return "";
+    }
+    return std::string(field) + (a ? " given against none" : " none against given");
+}
+
+template <typename T> std::span<const T> all_of(const std::vector<T> &items)
+{
+    return items;
+}
+
+std::string index_differences(std::string_view noun,
+                              std::string_view field,
+                              std::span<const Index> a,
+                              std::span<const Index> b)
+{
+    const auto entry = [&](Offset k) { return compared(field, at(a, k), at(b, k)); };
+    return table_difference(noun, size_of(a), size_of(b), entry);
+}
+
+std::span<const Index> jacobian_row(const Callback &callback, std::size_t k)
+{
+    return slice(all_of(callback.jacobian_variables), callback.jacobian_starts, k);
+}
+
+std::string row_difference(const Callback &a, const Callback &b, std::size_t k)
+{
+    return index_differences("entry", "variable", jacobian_row(a, k), jacobian_row(b, k));
+}
+
+std::string jacobian_differences(const Callback &a, const Callback &b)
+{
+    const auto row = [&](std::size_t k) { return row_difference(a, b, k); };
+    return table_difference("Jacobian row", a.functions.size(), b.functions.size(), row);
+}
+
+std::string differ(const Callback &a, const Callback &b)
+{
+    return first_of({
+        index_differences("covered function", "index", a.functions, b.functions),
+        a.data == b.data ? "" : "data differs",
+        presence("value function", a.values, b.values),
+        jacobian_differences(a, b),
+        presence("Jacobian function", a.jacobian, b.jacobian),
+        term_differences("Hessian entry", all_of(a.hessian_pairs), all_of(b.hessian_pairs)),
+        presence("Hessian function", a.hessian, b.hessian),
+        presence("Hessian product", a.product, b.product),
+    });
+}
+
+std::string callback_difference(const Model &a, const Model &b, Index callback)
+{
+    return differ(a.callback(callback), b.callback(callback));
+}
+
+std::string callback_differences(const Model &a, const Model &b)
+{
+    const auto callback = [&](Index k) { return callback_difference(a, b, k); };
+    return table_difference("callback", a.n_callbacks(), b.n_callbacks(), callback);
+}
+
 }
 
 std::string difference(const Model &a, const Model &b)
@@ -358,6 +433,10 @@ std::string difference(const Model &a, const Model &b)
     if (found.empty())
     {
         found = complement_differences(a, b);
+    }
+    if (found.empty())
+    {
+        found = callback_differences(a, b);
     }
     return found;
 }
