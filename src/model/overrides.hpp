@@ -25,6 +25,7 @@ class Overrides
              std::span<const double> absolute,
              std::span<const double> relative);
     void remove(std::string_view noun, Index size, std::span<const Index> indices);
+    void renumber(std::span<const Index> map) noexcept;
 
   private:
     std::map<Index, Override> held_;

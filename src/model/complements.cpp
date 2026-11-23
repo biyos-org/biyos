@@ -3,11 +3,13 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "model/checks.hpp"
+#include "model/renumber.hpp"
 
 #include <cstddef>
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace biyos
 {
@@ -96,6 +98,15 @@ void Model::set_complement_tolerances(std::span<const Index> indices,
 void Model::delete_complement_tolerances(std::span<const Index> indices)
 {
     complement_tolerances_.remove(kNoun, n_complements(), indices);
+}
+
+std::vector<Index> Model::delete_complements(std::span<const Index> indices)
+{
+    std::vector<Index> map = renumbering(kNoun, n_complements(), indices);
+    keep(complements_, map);
+    complement_tolerances_.renumber(map);
+    renumber_names(Family::Complement, map);
+    return map;
 }
 
 }

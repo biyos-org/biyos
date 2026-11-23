@@ -198,6 +198,18 @@ def _or_none(values: list[float]) -> list[float | None]:
     return [None if isnan(value) else value for value in values]
 
 
+def _renumbered(total: int, gone: set[int]) -> list[int]:
+    found: list[int] = []
+    kept = 0
+    for k in range(total):
+        if k in gone:
+            found.append(-1)
+        else:
+            found.append(kept)
+            kept += 1
+    return found
+
+
 def _total(starts: Array[c_int64] | None, count: int) -> int:
     if starts is None:
         return 0
@@ -1930,6 +1942,34 @@ class Model:
         """
         self._delname("BIYOS_delconname", Constraints, idx)
 
+    def delcon(
+        self, idx: Sequence[int | Constraint] | Constraints
+    ) -> list[int]:
+        """Delete constraints.
+
+        The constraints left keep their order and are numbered from 0 again. A
+        deleted constraint's name goes with it, and its function stays. Once
+        any constraint is deleted, the model refuses every block and view it
+        gave before.
+
+        Parameters
+        ----------
+        idx
+            The constraints to delete, in any order, none of them twice.
+
+        Returns
+        -------
+        map
+            For each constraint the model held, its new index, or -1 when it is
+            deleted.
+
+        See Also
+        --------
+        BIYOS_delconsp
+        BIYOS_delconrg
+        """
+        return self._delete("BIYOS_delcon", Constraints, idx)
+
     def addobj(
         self,
         funidx: Sequence[int | Function] | Functions,
@@ -1953,9 +1993,10 @@ class Model:
         sense
             Whether each is minimized or maximized, minimized by default.
         prio
-            The priority of each. By default each takes its own index, so
-            the objectives are optimized one after another in the order
-            they are added.
+            The priority of each. By default each takes its index at the
+            time it is added, so the objectives are optimized one after
+            another in the order they are added. Once an objective is
+            deleted, a default can repeat a priority already held.
         coef
             The weight of each in the sum of its stage, finite and
             positive, 1 by default.
@@ -2319,6 +2360,32 @@ class Model:
         """
         self._delname("BIYOS_delobjname", Objectives, idx)
 
+    def delobj(self, idx: Sequence[int | Objective] | Objectives) -> list[int]:
+        """Delete objectives.
+
+        The objectives left keep their order and are numbered from 0 again. A
+        deleted objective's name goes with it, and its function stays. Once any
+        objective is deleted, the model refuses every block and view it gave
+        before.
+
+        Parameters
+        ----------
+        idx
+            The objectives to delete, in any order, none of them twice.
+
+        Returns
+        -------
+        map
+            For each objective the model held, its new index, or -1 when it is
+            deleted.
+
+        See Also
+        --------
+        BIYOS_delobjsp
+        BIYOS_delobjrg
+        """
+        return self._delete("BIYOS_delobj", Objectives, idx)
+
     def addind(
         self,
         varidx: Sequence[int | Variable] | Variables,
@@ -2606,6 +2673,32 @@ class Model:
         """
         self._delname("BIYOS_delindname", Indicators, idx)
 
+    def delind(self, idx: Sequence[int | Indicator] | Indicators) -> list[int]:
+        """Delete indicators.
+
+        The indicators left keep their order and are numbered from 0 again. A
+        deleted indicator's name goes with it, and its variable and function
+        stay. Once any indicator is deleted, the model refuses every block and
+        view it gave before.
+
+        Parameters
+        ----------
+        idx
+            The indicators to delete, in any order, none of them twice.
+
+        Returns
+        -------
+        map
+            For each indicator the model held, its new index, or -1 when it is
+            deleted.
+
+        See Also
+        --------
+        BIYOS_delindsp
+        BIYOS_delindrg
+        """
+        return self._delete("BIYOS_delind", Indicators, idx)
+
     def addsos(
         self,
         knd: Sequence[SOSKind],
@@ -2812,6 +2905,31 @@ class Model:
         BIYOS_delsosnamerg
         """
         self._delname("BIYOS_delsosname", SOSs, idx)
+
+    def delsos(self, idx: Sequence[int | SOS] | SOSs) -> list[int]:
+        """Delete special ordered sets.
+
+        The sets left keep their order and are numbered from 0 again. A deleted
+        set's members and name go with it, and its variables stay. Once any set
+        is deleted, the model refuses every block and view it gave before.
+
+        Parameters
+        ----------
+        idx
+            The sets to delete, in any order, none of them twice.
+
+        Returns
+        -------
+        map
+            For each set the model held, its new index, or -1 when it is
+            deleted.
+
+        See Also
+        --------
+        BIYOS_delsossp
+        BIYOS_delsosrg
+        """
+        return self._delete("BIYOS_delsos", SOSs, idx)
 
     def addcone(
         self,
@@ -3078,6 +3196,32 @@ class Model:
         BIYOS_delconenamerg
         """
         self._delname("BIYOS_delconename", Cones, idx)
+
+    def delcone(self, idx: Sequence[int | Cone] | Cones) -> list[int]:
+        """Delete cones.
+
+        The cones left keep their order and are numbered from 0 again. A
+        deleted cone's members, parameters and name go with it, and its
+        functions stay. Once any cone is deleted, the model refuses every block
+        and view it gave before.
+
+        Parameters
+        ----------
+        idx
+            The cones to delete, in any order, none of them twice.
+
+        Returns
+        -------
+        map
+            For each cone the model held, its new index, or -1 when it is
+            deleted.
+
+        See Also
+        --------
+        BIYOS_delconesp
+        BIYOS_delconerg
+        """
+        return self._delete("BIYOS_delcone", Cones, idx)
 
     def addccon(
         self,
@@ -3385,6 +3529,34 @@ class Model:
         """
         self._delname("BIYOS_delcconname", Complements, idx)
 
+    def delccon(
+        self, idx: Sequence[int | Complement] | Complements
+    ) -> list[int]:
+        """Delete complements.
+
+        The complements left keep their order and are numbered from 0 again. A
+        deleted complement's tolerances and name go with it, and its functions
+        stay. Once any complement is deleted, the model refuses every block and
+        view it gave before.
+
+        Parameters
+        ----------
+        idx
+            The complements to delete, in any order, none of them twice.
+
+        Returns
+        -------
+        map
+            For each complement the model held, its new index, or -1 when it is
+            deleted.
+
+        See Also
+        --------
+        BIYOS_delcconsp
+        BIYOS_delcconrg
+        """
+        return self._delete("BIYOS_delccon", Complements, idx)
+
     def _start(self, env: Env) -> None:
         self._env = env
         self._handle = c_void_p()
@@ -3471,6 +3643,30 @@ class Model:
         idx: Sequence[SupportsIndex] | Block[Any],
     ) -> None:
         self._call(*self._chosen(call, family, idx))
+
+    def _delete(
+        self,
+        call: str,
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+    ) -> list[int]:
+        chosen = self._chosen(call, family, idx)
+        gone = self._gone(family, idx)
+        total: int = getattr(self, _COUNTS[family])()
+        self._call(*chosen, None)
+        if len(idx) > 0:
+            self._gen += 1
+        return _renumbered(total, gone)
+
+    def _gone(
+        self,
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+    ) -> set[int]:
+        span = span_of(self, family, "idx", idx)
+        if span is not None:
+            return set(span)
+        return {index_of(self, family, "idx", value) for value in idx}
 
     def _getname(
         self,

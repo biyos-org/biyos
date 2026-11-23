@@ -3,11 +3,13 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "model/checks.hpp"
+#include "model/renumber.hpp"
 
 #include <cstddef>
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace biyos
 {
@@ -77,6 +79,14 @@ void Model::set_constraints(std::span<const Index> indices, std::span<const Cons
     {
         constraints_[static_cast<std::size_t>(indices[k])] = changed[k];
     }
+}
+
+std::vector<Index> Model::delete_constraints(std::span<const Index> indices)
+{
+    std::vector<Index> map = renumbering(kNoun, n_constraints(), indices);
+    keep(constraints_, map);
+    renumber_names(Family::Constraint, map);
+    return map;
 }
 
 }

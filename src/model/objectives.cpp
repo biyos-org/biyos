@@ -4,6 +4,7 @@
 #include "core/index.hpp"
 #include "core/text.hpp"
 #include "model/checks.hpp"
+#include "model/renumber.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -11,6 +12,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace biyos
 {
@@ -132,6 +134,14 @@ void Model::set_objectives(std::span<const Index> indices, std::span<const Objec
     {
         objectives_[static_cast<std::size_t>(indices[k])] = changed[k];
     }
+}
+
+std::vector<Index> Model::delete_objectives(std::span<const Index> indices)
+{
+    std::vector<Index> map = renumbering(kNoun, n_objectives(), indices);
+    keep(objectives_, map);
+    renumber_names(Family::Objective, map);
+    return map;
 }
 
 }

@@ -201,12 +201,15 @@ static BIYOS_status use_constraints(BIYOS_model *model)
     const double lower[2] = {0.0, -1.0};
     const int indices[1] = {1};
     int found[2] = {-1, -1};
+    int map[2] = {-1, -1};
     BIYOS_index first = -1;
     BIYOS_index constraints = 0;
     if (BIYOS_addcon(model, 2, functions, lower, NULL, &first) != BIYOS_OK || first != 0 ||
         BIYOS_setconbndsp(model, 1, indices, NULL, lower) != BIYOS_OK ||
         BIYOS_getncon(model, &constraints) != BIYOS_OK || constraints != 2 ||
-        BIYOS_getconrg(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1)
+        BIYOS_getconrg(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[1] != 1 ||
+        BIYOS_delconsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
+        BIYOS_delconrg(model, 2, 0, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -221,6 +224,7 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     const int indices[1] = {1};
     int found[2] = {-1, -1};
     int priorities[2] = {-1, -1};
+    int map[2] = {-1, -1};
     BIYOS_index first = -1;
     BIYOS_index objectives = 0;
     BIYOS_status status = BIYOS_addobj(model, 2, functions, senses, NULL, NULL, &first);
@@ -249,7 +253,9 @@ static BIYOS_status use_objectives(BIYOS_model *model)
         status = BIYOS_getobjrg(model, 0, 2, NULL, found, priorities, NULL);
     }
     if (status != BIYOS_OK || first != 0 || objectives != 2 || found[0] != BIYOS_MAXIMIZE ||
-        found[1] != BIYOS_MINIMIZE || priorities[1] != 1)
+        found[1] != BIYOS_MINIMIZE || priorities[1] != 1 ||
+        BIYOS_delobjsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
+        BIYOS_delobjrg(model, 2, 0, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -265,6 +271,7 @@ static BIYOS_status use_indicators(BIYOS_model *model)
     const int indices[1] = {1};
     const int continuous = BIYOS_VAR_CONT;
     int found[2] = {-1, -1};
+    int map[2] = {-1, -1};
     BIYOS_index first = -1;
     BIYOS_index indicators = 0;
     if (BIYOS_addind(model, 2, variables, values, functions, NULL, NULL, &first) != BIYOS_OK ||
@@ -272,7 +279,9 @@ static BIYOS_status use_indicators(BIYOS_model *model)
         BIYOS_setindvarrg(model, 1, 1, variables, values) != BIYOS_OK ||
         BIYOS_getnind(model, &indicators) != BIYOS_OK || indicators != 2 ||
         BIYOS_getindrg(model, 0, 2, found, NULL, NULL, NULL, NULL) != BIYOS_OK || found[0] != 1 ||
-        found[1] != 1 || BIYOS_setvarkndsp(model, 1, indices, &continuous) != BIYOS_ERR_INUSE)
+        found[1] != 1 || BIYOS_setvarkndsp(model, 1, indices, &continuous) != BIYOS_ERR_INUSE ||
+        BIYOS_delindsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
+        BIYOS_delindrg(model, 2, 0, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -289,6 +298,7 @@ static BIYOS_status use_sos(BIYOS_model *model)
     BIYOS_offset offsets[3] = {-1, -1, -1};
     int members[3] = {-1, -1, -1};
     double weights[3] = {0.0, 0.0, 0.0};
+    int map[2] = {-1, -1};
     BIYOS_offset needed = -1;
     BIYOS_index first = -1;
     BIYOS_index sos = 0;
@@ -302,7 +312,9 @@ static BIYOS_status use_sos(BIYOS_model *model)
     if (BIYOS_getsosrg(model, 0, 2, 3, found, offsets, members, weights) != BIYOS_OK ||
         found[1] != BIYOS_SOSKND_SOS2 || offsets[2] != 3 || members[1] != 0 ||
         BIYOS_getsossp(model, 1, indices, 1, found, offsets, members, NULL) != BIYOS_OK ||
-        found[0] != BIYOS_SOSKND_SOS2 || offsets[1] != 1 || members[0] != 1)
+        found[0] != BIYOS_SOSKND_SOS2 || offsets[1] != 1 || members[0] != 1 ||
+        BIYOS_delsossp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
+        BIYOS_delsosrg(model, 2, 0, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -320,6 +332,7 @@ static BIYOS_status use_cones(BIYOS_model *model)
     int64_t read[3] = {-1, -1, -1};
     int members[4] = {-1, -1, -1, -1};
     int found[2] = {0, 0};
+    int map[2] = {-1, -1};
     double weight = 0.0;
     BIYOS_index first = -1;
     BIYOS_index cones = 0;
@@ -338,7 +351,9 @@ static BIYOS_status use_cones(BIYOS_model *model)
         BIYOS_getnconefunsp(model, 0, NULL, &needed) != BIYOS_OK ||
         BIYOS_getconesp(model, 0, NULL, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnconeprmrg(model, 0, 0, &needed) != BIYOS_OK ||
-        BIYOS_getconeprmrg(model, 0, 0, 0, NULL, NULL) != BIYOS_OK)
+        BIYOS_getconeprmrg(model, 0, 0, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_delconesp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
+        BIYOS_delconerg(model, 2, 0, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -354,6 +369,7 @@ static BIYOS_status use_complements(BIYOS_model *model)
     const int indices[1] = {1};
     double found[2] = {9.0, 9.0};
     int read[2] = {-1, -1};
+    int map[2] = {-1, -1};
     BIYOS_index first = -1;
     BIYOS_index complements = 0;
     if (BIYOS_addccon(model, 2, functions, multipliers, NULL, NULL, &first) != BIYOS_OK ||
@@ -364,7 +380,9 @@ static BIYOS_status use_complements(BIYOS_model *model)
         read[1] != 1 || BIYOS_setccontolrg(model, 1, 1, tolerance, NULL) != BIYOS_OK ||
         BIYOS_getccontolsp(model, 1, indices, found, found + 1) != BIYOS_OK ||
         BIYOS_delccontolsp(model, 1, indices) != BIYOS_OK ||
-        BIYOS_delccontolrg(model, 0, 2) != BIYOS_OK)
+        BIYOS_delccontolrg(model, 0, 2) != BIYOS_OK ||
+        BIYOS_delcconsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
+        BIYOS_delcconrg(model, 2, 0, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }

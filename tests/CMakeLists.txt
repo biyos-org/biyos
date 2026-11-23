@@ -95,6 +95,7 @@ biyos_add_test(test_model
     model/test_cones.cpp
     model/test_constraints.cpp
     model/test_copy.cpp
+    model/test_delete.cpp
     model/test_encoding.cpp
     model/test_expressions.cpp
     model/test_functions.cpp
@@ -115,6 +116,7 @@ biyos_add_test(test_capi
     capi/test_constants.cpp
     capi/test_constraints.cpp
     capi/test_copy.cpp
+    capi/test_delete.cpp
     capi/test_env.cpp
     capi/test_events.cpp
     capi/test_expressions.cpp

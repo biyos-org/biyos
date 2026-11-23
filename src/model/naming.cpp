@@ -105,6 +105,11 @@ void Model::delete_names(Family family, std::span<const Index> indices)
     names_[slot(family)].remove(noun_of(family), n_of(family), indices);
 }
 
+void Model::renumber_names(Family family, std::span<const Index> map) noexcept
+{
+    names_[slot(family)].renumber(map);
+}
+
 Index Model::n_of(Family family) const noexcept
 {
     switch (family)

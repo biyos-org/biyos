@@ -5,6 +5,7 @@
 #include "core/text.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
+#include "model/renumber.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -264,6 +265,16 @@ void Model::add_cones(std::span<const ConeKind> kinds,
     cone_kinds_.insert(cone_kinds_.end(), kinds.begin(), kinds.end());
     extend(cone_ends_, cone_functions_, starts, functions);
     extend(parameter_ends_, cone_parameters_, parameter_starts, parameters);
+}
+
+std::vector<Index> Model::delete_cones(std::span<const Index> indices)
+{
+    std::vector<Index> map = renumbering(kNoun, n_cones(), indices);
+    keep(cone_kinds_, map);
+    keep_parts(cone_ends_, cone_functions_, map);
+    keep_parts(parameter_ends_, cone_parameters_, map);
+    renumber_names(Family::Cone, map);
+    return map;
 }
 
 }

@@ -147,7 +147,7 @@ $$
 
 where $P$ holds the objectives of that priority and $w_i$ is the weight of objective $i$. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it: the absolute tolerance in the units of its function, the relative one as a fraction of the size of that optimum. Objectives of different priorities are therefore optimized in sequence, and objectives of one priority are blended.
 
-A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. A null `sense` minimizes every new objective, a null `coef` gives each the weight 1, and a null `prio` gives each objective its own index as its priority. So by default the objectives are optimized one after another in the order they are added, which is what this model asks for explicitly.
+A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. A null `sense` minimizes every new objective, a null `coef` gives each the weight 1, and a null `prio` gives each objective its index at the time it is added as its priority. So by default the objectives are optimized one after another in the order they are added, which is what this model asks for explicitly. Once an objective is deleted, a default priority can repeat one an earlier objective holds, and the two are blended.
 
 `BIYOS_setobjsensesp`, `BIYOS_setobjpriosp`, `BIYOS_setobjcoefsp` and `BIYOS_setobjtolsp` change one attribute of a list of objectives each, and `BIYOS_getobjsensesp`, `BIYOS_getobjpriosp`, `BIYOS_getobjcoefsp` and `BIYOS_getobjtolsp` read it back with the same arguments. `BIYOS_getobjrg` reads back what `BIYOS_addobj` takes, so a model is read whole with it and `BIYOS_getobjtolsp`.
 
@@ -207,7 +207,13 @@ Names match byte for byte, so two names that differ only in case or in Unicode n
 
 Names may repeat. Setting a name checks no uniqueness, so several items of a family may hold the same name, while each family keeps its names apart from the others. A lookup never chooses among the holders of a name: `BIYOS_getvaridx` gives the index of the variable that alone holds a name, and refuses a name that no variable holds or that several hold, counting them, as in `invalid argument: variable 'x': names 3 variables`. So a lookup never returns an item the caller did not mean, and it succeeds again once the other holders are renamed or lose their names.
 
-A name read in C belongs to the model. The pointer stays valid until a call that sets or removes the name of that item succeeds, or the model is freed; adding items, naming other items, a call that fails and a copy of the model leave it valid.
+A name read in C belongs to the model. The pointer stays valid until a call that sets or removes the name of that item, or deletes items of its family, succeeds, or the model is freed; adding items, naming other items, a call that fails and a copy of the model leave it valid.
+
+## Deleting records {#sec-model-deleting}
+
+Constraints, objectives, indicators, special ordered sets, cones and complements can be deleted. Each family takes two calls, named after its short form, `con`, `obj`, `ind`, `sos`, `cone` or `ccon`: `BIYOS_delconsp` deletes the constraints a list names, in any order, and `BIYOS_delconrg` a range of them. The items left keep their order and their data and are numbered from 0 again, so each family stays dense. An optional array, one entry for each item the family held before the call, receives the new index of each, or -1 for one deleted: deleting constraints 2 and 0 of four gives `{-1, 0, -1, 1}`.
+
+A deleted item takes its name with it, and a deleted complement its tolerances. What it used stays in the model: deleting a constraint leaves its function, and deleting a set leaves its variables. An index listed twice, or one the family does not hold, refuses the call, which then deletes nothing.
 
 ## The same model in Python {#sec-model-python}
 

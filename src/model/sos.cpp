@@ -5,6 +5,7 @@
 #include "core/text.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
+#include "model/renumber.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -131,6 +132,15 @@ void Model::add_sos(std::span<const SosKind> kinds,
 Offset Model::member_begin(std::size_t sos) const noexcept
 {
     return sos == 0 ? 0 : sos_ends_[sos - 1];
+}
+
+std::vector<Index> Model::delete_sos(std::span<const Index> indices)
+{
+    std::vector<Index> map = renumbering(kNoun, n_sos(), indices);
+    keep(sos_kinds_, map);
+    keep_parts(sos_ends_, members_, map);
+    renumber_names(Family::Sos, map);
+    return map;
 }
 
 }
