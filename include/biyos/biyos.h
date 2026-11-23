@@ -162,6 +162,15 @@ BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *b
 #define BIYOS_SOSKND_SOS1 1
 #define BIYOS_SOSKND_SOS2 2
 
+#define BIYOS_CONE_NONNEG 1
+#define BIYOS_CONE_SOC 2
+#define BIYOS_CONE_RSOC 3
+#define BIYOS_CONE_EXP 4
+#define BIYOS_CONE_DEXP 5
+#define BIYOS_CONE_POW 6
+#define BIYOS_CONE_DPOW 7
+#define BIYOS_CONE_PSD 8
+
 BIYOS_API BIYOS_status BIYOS_newmdl(BIYOS_env *env, BIYOS_model **mdl);
 BIYOS_API BIYOS_status BIYOS_copymdl(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
 BIYOS_API BIYOS_status BIYOS_freemdl(BIYOS_model *mdl);

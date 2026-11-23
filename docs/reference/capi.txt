@@ -1315,6 +1315,21 @@ note It reads back what `BIYOS_addsos` takes, the weights included when `coef` w
 see BIYOS_getnsosvarsp BIYOS_addsos
 since 0.1.0
 
+group cones Cones
+text A cone places functions of the model, taken in order, in a set of a given kind: $(f_1(x), \dots, f_k(x)) \in K$. The functions are its members and their number $k$ its dimension. A cone holds its kind, its parameters and its members, kept as given, and cones are numbered from 0 in the order they are added. A function may be a member of several cones, and of constraints and objectives as well, but appears once in a cone. The kinds, their member order and their dimensions follow the Conic Benchmark Format, version 3, so a cone of a kind the two share maps member for member.
+text Each kind fixes the dimensions its cones may take. The two power cones take one parameter for each of their first $m$ members, a weight $\alpha_j$ that is finite and positive, with $\sigma = \sum_j \alpha_j$; the weights are kept as given and need not sum to 1. Every other kind takes no parameter. In the table, $t$ names the first members and $x$ the rest, and $\lVert x \rVert$ is the Euclidean norm.
+
+table Cone kinds
+value BIYOS_CONE_NONNEG The nonnegative orthant: every member is 0 or more. Dimension 1 or more.
+value BIYOS_CONE_SOC The second-order cone of $(t, x)$: $t \ge \lVert x \rVert$. Dimension 1 or more.
+value BIYOS_CONE_RSOC The rotated second-order cone of $(t_1, t_2, x)$: $2 t_1 t_2 \ge \lVert x \rVert^2$ with $t_1, t_2 \ge 0$. Dimension 2 or more.
+value BIYOS_CONE_EXP The exponential cone of $(t, s, r)$: the closure of the points with $s > 0$ and $t \ge s e^{r/s}$. Dimension 3.
+value BIYOS_CONE_DEXP The dual exponential cone of $(t, s, r)$: the closure of the points with $r < 0$ and $e\,t \ge -r e^{s/r}$. Dimension 3.
+value BIYOS_CONE_POW The power cone of $(t_1, \dots, t_m, x)$ with weights $\alpha_1, \dots, \alpha_m$: $\prod_j t_j^{\alpha_j} \ge \lVert x \rVert^\sigma$ with every $t_j \ge 0$. Dimension $m$ or more, with $m \ge 1$.
+value BIYOS_CONE_DPOW The dual power cone of $(t_1, \dots, t_m, x)$ with weights $\alpha_1, \dots, \alpha_m$: $\prod_j (t_j / \alpha_j)^{\alpha_j} \ge (\lVert x \rVert / \sigma)^\sigma$ with every $t_j \ge 0$. Dimension $m$ or more, with $m \ge 1$.
+value BIYOS_CONE_PSD The semidefinite cone of the symmetric matrices $X$ of order $n$ with no negative eigenvalue. The members are the lower triangle of $X$ column by column, $X_{11}, \sqrt{2} X_{21}, \dots, \sqrt{2} X_{n1}, X_{22}, \sqrt{2} X_{32}, \dots, X_{nn}$, each entry off the diagonal scaled by $\sqrt{2}$ so that inner products are kept. Dimension $n(n+1)/2$ with $n \ge 1$.
+since 0.1.0
+
 group names Names
 text The model and each variable, function, constraint, objective, indicator and special ordered set may have a name, as [Names](#sec-model-names) describes. A name is not empty, is well-formed UTF-8 and holds no NUL. A C string ends at its first NUL, so a name passed in C never holds one. Names match byte for byte. An item has no name until one is set, and reads as an empty string while it has none.
 text Names may repeat: setting a name checks no uniqueness, and several items of a family may hold one name. A lookup never chooses among them: it finds an item only when that item alone holds the name. Every family takes the same four calls, named after its short form, `var`, `fun`, `con`, `obj`, `ind` or `sos`, and keeps its names apart from those of the other families.
