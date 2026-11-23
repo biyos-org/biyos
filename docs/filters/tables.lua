@@ -11,6 +11,7 @@ local kMarks = {
     ["dir-inout"] = "\\biyosdirinout",
     see = "\\biyoslabel",
     also = "\\biyosalso",
+    unbroken = "\\biyosunbroken",
 }
 
 local function wrapped(span, macro)
