@@ -125,6 +125,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_indicators(lib, ints, doubles)
     _declare_sos(lib, ints, doubles)
     _declare_cones(lib, ints, doubles)
+    _declare_complements(lib, ints, doubles)
     _declare_names(lib, ints)
     _declare_expressions(lib, ints, doubles)
     _declare_settings(lib, ints, doubles)
@@ -219,13 +220,24 @@ def _declare_cones(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_getconeprm", c_int64, offsets, doubles)
 
 
+def _declare_complements(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
+    add = (c_void_p, c_int32, ints, ints, doubles, doubles, ints)
+    _declare(lib, "BIYOS_addccon", c_int, *add)
+    for name in ("bnd", "tol"):
+        _declare_pair(lib, f"BIYOS_setccon{name}", doubles, doubles)
+        _declare_pair(lib, f"BIYOS_getccon{name}", doubles, doubles)
+    _declare_pair(lib, "BIYOS_delccontol")
+    _declare(lib, "BIYOS_getnccon", c_int, c_void_p, ints)
+    _declare_pair(lib, "BIYOS_getccon", ints, ints, doubles, doubles)
+
+
 def _declare_names(lib: ctypes.CDLL, ints: type) -> None:
     strings = POINTER(c_char_p)
     _declare(lib, "BIYOS_setmdlname", c_int, c_void_p, c_char_p)
     _declare(lib, "BIYOS_getmdlname", c_int, c_void_p, strings)
     _declare(lib, "BIYOS_delmdlname", c_int, c_void_p)
     find = (c_void_p, c_int32, strings, ints)
-    for noun in ("var", "fun", "con", "obj", "ind", "sos", "cone"):
+    for noun in ("var", "fun", "con", "obj", "ind", "sos", "cone", "ccon"):
         _declare_pair(lib, f"BIYOS_set{noun}name", strings)
         _declare_pair(lib, f"BIYOS_get{noun}name", strings)
         _declare(lib, f"BIYOS_get{noun}idx", c_int, *find)

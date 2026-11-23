@@ -1,4 +1,6 @@
 from biyos._blocks import (
+    Complement,
+    Complements,
     Cone,
     Cones,
     Constraint,
@@ -25,6 +27,8 @@ from biyos._versions import Versions
 
 __all__ = [
     "CheckLevel",
+    "Complement",
+    "Complements",
     "Cone",
     "ConeKind",
     "Cones",

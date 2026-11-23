@@ -7,7 +7,7 @@ from biyos import EventKind, EventLevel
 from refusal import LOCKED, refusal
 
 ETE = "été \U0001f600"
-FAMILIES = ("var", "fun", "con", "obj", "ind", "sos", "cone")
+FAMILIES = ("var", "fun", "con", "obj", "ind", "sos", "cone", "ccon")
 NOUNS = {
     "var": "variable",
     "fun": "function",
@@ -16,6 +16,7 @@ NOUNS = {
     "ind": "indicator",
     "sos": "set",
     "cone": "cone",
+    "ccon": "complement",
 }
 
 
@@ -41,6 +42,7 @@ def add_items(model, count):
     model.addsos([biyos.SOSKind.SOS1] * count, [0] * (count + 1), [])
     kinds = [biyos.ConeKind.NONNEGATIVE] * count
     model.addcone(kinds, range(count + 1), range(count))
+    model.addccon([0] * count, [0] * count)
 
 
 def calls(model, family):

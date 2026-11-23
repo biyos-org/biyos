@@ -2,6 +2,7 @@ import weakref
 from collections.abc import Callable, Sequence
 from ctypes import Array, byref, c_char_p, c_double, c_int, c_int64, c_void_p
 from enum import IntEnum
+from math import isnan
 from typing import Any, NoReturn, SupportsIndex
 
 from biyos._arrays import (
@@ -16,6 +17,8 @@ from biyos._arrays import (
 )
 from biyos._blocks import (
     Block,
+    Complement,
+    Complements,
     Cone,
     Cones,
     Constraint,
@@ -144,6 +147,7 @@ _COUNTS: dict[type[Block[Any]], str] = {
     Indicators: "getnind",
     SOSs: "getnsos",
     Cones: "getncone",
+    Complements: "getnccon",
 }
 
 
@@ -177,6 +181,10 @@ def _expanded(starts: Array[c_int64], first: int) -> list[int]:
     spans = zip(starts[:-1], starts[1:])
     counts = [end - start for start, end in spans]
     return [first + j for j, count in enumerate(counts) for _ in range(count)]
+
+
+def _or_none(values: list[float]) -> list[float | None]:
+    return [None if isnan(value) else value for value in values]
 
 
 def _total(starts: Array[c_int64] | None, count: int) -> int:
@@ -269,11 +277,12 @@ class Model:
     def copy(self, env: Env | None = None) -> "Model":
         """Return a copy of the model, made on an environment.
 
-        The copy holds the same variables, functions, constraints and
-        objectives under the same indices and names, and changes apart from
-        the model. It keeps the options set on the model itself and reads
-        every other option from its own environment, on which it reports,
-        like any model made there.
+        The copy holds the same variables, functions, constraints,
+        objectives, indicators, special ordered sets, cones and complements
+        under the same indices and names, and changes apart from the model.
+        It keeps the options set on the model itself and reads every other
+        option from its own environment, on which it reports, like any model
+        made there.
 
         Parameters
         ----------
@@ -2122,6 +2131,233 @@ class Model:
         self._call(*chosen, size, starts, values)
         return list(starts), list(values)
 
+    def addccon(
+        self,
+        funidx1: Sequence[int | Function] | Functions,
+        funidx2: Sequence[int | Function] | Functions,
+        lb: Sequence[float] | None = None,
+        ub: Sequence[float] | None = None,
+    ) -> Complements:
+        """Add complements after the last one, one for each pair given.
+
+        A complement ``lb <= f1(x) <= ub`` complementary to ``f2(x)`` holds
+        in one of three cases: ``f1`` at ``lb`` and ``f2 >= 0``, ``f1`` at
+        ``ub`` and ``f2 <= 0``, or ``f1`` strictly between and ``f2 = 0``.
+        A function may appear in any number of complements.
+
+        Parameters
+        ----------
+        funidx1
+            The bounded function ``f1`` of each new complement.
+        funidx2
+            The function ``f2`` complementary to it, as many as
+            ``funidx1``.
+        lb
+            The lower bound of each on ``f1``, 0 by default.
+        ub
+            The upper bound of each on ``f1``, unbounded by default.
+
+        Returns
+        -------
+        ccons
+            The new complements.
+
+        See Also
+        --------
+        BIYOS_addccon
+        """
+        count = len(funidx1)
+        arrays = (
+            indices_of(self, Functions, "funidx1", funidx1, count),
+            indices_of(self, Functions, "funidx2", funidx2, count),
+            doubles("lb", lb, count),
+            doubles("ub", ub, count),
+        )
+        first = c_int()
+        self._call(lib.BIYOS_addccon, count, *arrays, byref(first))
+        return Complements(self, first.value, count, self._gen)
+
+    def setcconbnd(
+        self,
+        idx: Sequence[int | Complement] | Complements,
+        lb: Sequence[float] | None = None,
+        ub: Sequence[float] | None = None,
+    ) -> None:
+        """Set the bounds of complements and keep the rest.
+
+        Parameters
+        ----------
+        idx
+            The complements.
+        lb, ub
+            The new bounds of each; ``None`` leaves that side as it is.
+
+        See Also
+        --------
+        BIYOS_setcconbndsp
+        BIYOS_setcconbndrg
+        """
+        count = len(idx)
+        chosen = self._chosen("BIYOS_setcconbnd", Complements, idx)
+        arrays = (
+            doubles("lb", lb, count),
+            doubles("ub", ub, count),
+        )
+        self._call(*chosen, *arrays)
+
+    def getcconbnd(
+        self, idx: Sequence[int | Complement] | Complements
+    ) -> tuple[list[float], list[float]]:
+        """Read the bounds of complements.
+
+        Parameters
+        ----------
+        idx
+            The complements, in any order, any of them more than once.
+
+        Returns
+        -------
+        lb
+            The lower bound of each.
+        ub
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getcconbndsp
+        BIYOS_getcconbndrg
+        """
+        bounds = (c_double, c_double)
+        lb, ub = self._getlist("BIYOS_getcconbnd", Complements, idx, *bounds)
+        return lb, ub
+
+    def setccontol(
+        self,
+        idx: Sequence[int | Complement] | Complements,
+        atol: Sequence[float] | None = None,
+        rtol: Sequence[float] | None = None,
+    ) -> None:
+        """Set the tolerances of complements.
+
+        A complement's tolerances stand for the options ``feastol_abs`` and
+        ``feastol_rel`` for that complement alone: each finite and at least
+        0. A complement that held none keeps the options for the tolerance
+        not given. A complement may appear more than once; its entries
+        apply in order.
+
+        Parameters
+        ----------
+        idx
+            The complements.
+        atol, rtol
+            The new absolute and relative tolerance of each; ``None``
+            leaves that tolerance as it is.
+
+        See Also
+        --------
+        BIYOS_setccontolsp
+        BIYOS_setccontolrg
+        """
+        n = len(idx)
+        chosen = self._chosen("BIYOS_setccontol", Complements, idx)
+        arrays = (
+            doubles("atol", atol, n),
+            doubles("rtol", rtol, n),
+        )
+        self._call(*chosen, *arrays)
+
+    def getccontol(
+        self, idx: Sequence[int | Complement] | Complements
+    ) -> tuple[list[float | None], list[float | None]]:
+        """Read the tolerances of complements.
+
+        Parameters
+        ----------
+        idx
+            The complements, in any order, any of them more than once.
+
+        Returns
+        -------
+        atol
+            The absolute tolerance of each, None where it holds none.
+        rtol
+            The relative tolerance of each, None where it holds none.
+
+        See Also
+        --------
+        BIYOS_getccontolsp
+        BIYOS_getccontolrg
+        """
+        pair = (c_double, c_double)
+        atol, rtol = self._getlist("BIYOS_getccontol", Complements, idx, *pair)
+        return _or_none(atol), _or_none(rtol)
+
+    def delccontol(
+        self, idx: Sequence[int | Complement] | Complements
+    ) -> None:
+        """Return complements to ``feastol_abs`` and ``feastol_rel``.
+
+        Parameters
+        ----------
+        idx
+            The complements that lose their tolerances.
+
+        See Also
+        --------
+        BIYOS_delccontolsp
+        BIYOS_delccontolrg
+        """
+        self._call(*self._chosen("BIYOS_delccontol", Complements, idx))
+
+    def getnccon(self) -> int:
+        """Return the number of complements.
+
+        Returns
+        -------
+        n
+            The number of complements.
+
+        See Also
+        --------
+        BIYOS_getnccon
+        """
+        count = c_int()
+        self._call(lib.BIYOS_getnccon, byref(count))
+        return count.value
+
+    def getccon(
+        self, idx: Sequence[int | Complement] | Complements | None = None
+    ) -> tuple[list[int], list[int], list[float], list[float]]:
+        """Read the functions and bounds of complements.
+
+        Parameters
+        ----------
+        idx
+            The complements, in any order, any of them more than once; every
+            complement by default.
+
+        Returns
+        -------
+        funidx1
+            The bounded function of each complement.
+        funidx2
+            The function complementary to it.
+        lb
+            The lower bound of each.
+        ub
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getcconsp
+        BIYOS_getcconrg
+        """
+        every = range(self.getnccon()) if idx is None else idx
+        types = (c_int, c_int, c_double, c_double)
+        found = self._getlist("BIYOS_getccon", Complements, every, *types)
+        bounded, partners, lower, upper = found
+        return bounded, partners, lower, upper
+
     def setmdlname(self, name: str) -> None:
         """Name the model.
 
@@ -2182,9 +2418,8 @@ class Model:
         Variable ``idx[j]`` takes the name ``name[j]``, under the rules of
         ``setmdlname``. A variable listed more than once takes the last of
         its names. Names may repeat: several variables may hold one name,
-        and ``getvaridx`` then refuses to choose among them. Functions,
-        constraints and objectives are named the same way, each family
-        apart.
+        and ``getvaridx`` then refuses to choose among them. Every other
+        family is named the same way, each apart.
 
         Parameters
         ----------
@@ -2738,6 +2973,85 @@ class Model:
         BIYOS_delconenamerg
         """
         self._delname("BIYOS_delconename", Cones, idx)
+
+    def setcconname(
+        self,
+        idx: Sequence[int | Complement] | Complements,
+        name: Sequence[str],
+    ) -> None:
+        """Name complements of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The complements to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setcconnamesp
+        BIYOS_setcconnamerg
+        """
+        self._setname("BIYOS_setcconname", Complements, idx, name)
+
+    def getcconname(
+        self, idx: Sequence[int | Complement] | Complements
+    ) -> list[str | None]:
+        """Return the names of complements, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The complements to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getcconnamesp
+        BIYOS_getcconnamerg
+        """
+        return self._getname("BIYOS_getcconname", Complements, idx)
+
+    def getcconidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named complements, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the complement that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getcconidx
+        """
+        return self._getidx(lib.BIYOS_getcconidx, name)
+
+    def delcconname(
+        self, idx: Sequence[int | Complement] | Complements
+    ) -> None:
+        """Remove the names of complements, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The complements that lose their names.
+
+        See Also
+        --------
+        BIYOS_delcconnamesp
+        BIYOS_delcconnamerg
+        """
+        self._delname("BIYOS_delcconname", Complements, idx)
 
     def _start(self, env: Env) -> None:
         self._env = env

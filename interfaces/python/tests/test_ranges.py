@@ -25,6 +25,9 @@ PAIRS = [
     ("ind", "indname", (["i", "j"],)),
     ("sos", "sosname", (["i", "j"],)),
     ("cone", "conename", (["i", "j"],)),
+    ("ccon", "cconbnd", ([-5.0, -6.0], [5.0, 6.0])),
+    ("ccon", "ccontol", ([0.1, 0.2], [0.3, 0.4])),
+    ("ccon", "cconname", (["i", "j"],)),
 ]
 
 SPREAD = {
@@ -32,6 +35,7 @@ SPREAD = {
     "con": ("setconbnd", [-5.0, -6.0, -7.0, -8.0], [5.0, 6.0, 7.0, 8.0]),
     "obj": ("setobjprio", [5, 6, 7, 8]),
     "ind": ("setindbnd", [-1.0, -2.0, -3.0, -4.0], [1.0, 2.0, 3.0, 4.0]),
+    "ccon": ("setcconbnd", [-1.0, -2.0, -3.0, -4.0], [1.0, 2.0, 3.0, 4.0]),
 }
 
 CONES = [ConeKind.NONNEGATIVE] * 4
@@ -61,6 +65,7 @@ def blocks(env):
             "ind": model.addind(add_switches(model), [1] * 4, [0] * 4),
             "sos": model.addsos([biyos.SOSKind.SOS1] * 4, [0] * 5, []),
             "cone": model.addcone(CONES, range(5), range(4)),
+            "ccon": model.addccon([0] * 4, [0] * 4),
         }
         yield model, found
 
@@ -115,7 +120,7 @@ def test_forms(blocks, monkeypatch, family, call, values, kind):
 
 
 @pytest.mark.parametrize(
-    "family", ["var", "fun", "con", "obj", "ind", "sos", "cone"]
+    "family", ["var", "fun", "con", "obj", "ind", "sos", "cone", "ccon"]
 )
 @pytest.mark.parametrize("kind", FORMS)
 def test_delete(blocks, monkeypatch, family, kind):

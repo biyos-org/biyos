@@ -56,6 +56,8 @@ def add_sample(model):
     o = model.addobj([1, 0], senses, [3, -2], [0.5, 2.0])
     model.setobjtol(o, *tolerances)
     model.addind([1], [1], [0], [0.0], [2.0])
+    c = model.addccon([0, 1], [1, 1], [-1.0, 0.0], [1.0, INFINITY])
+    model.setccontol(c[1:], [0.5], [0.25])
 
 
 def read(model):
@@ -68,6 +70,8 @@ def read(model):
         model.getobj(),
         model.getobjtol(range(model.getnobj())),
         model.getind(),
+        model.getccon(),
+        model.getccontol(range(model.getnccon())),
     )
     return repr(found)
 

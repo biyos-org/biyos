@@ -195,7 +195,7 @@ A name read in C belongs to the model. The pointer stays valid until a call that
 
 ## The same model in Python {#sec-model-python}
 
-The Python package wraps the same calls under the same names, without the prefix. Each method that adds variables, functions, constraints or objectives returns a block, a light object holding the first index and the count of the new items, and indexing a block gives a view of one item. A block or a view passes wherever the model takes indices, so the code reads as the mathematics does:
+The Python package wraps the same calls under the same names, without the prefix. Each method that adds variables, functions, constraints, objectives or complements returns a block, a light object holding the first index and the count of the new items, and indexing a block gives a view of one item. A block or a view passes wherever the model takes indices, so the code reads as the mathematics does:
 
 ```{.python file="examples/python/model.py" item="build"}
 ```
