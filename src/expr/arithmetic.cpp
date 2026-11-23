@@ -1,8 +1,8 @@
 #include "expr/arithmetic.hpp"
 
+#include "core/zero.hpp"
 #include "expr/interval.hpp"
 #include "expr/shape.hpp"
-#include "expr/zero.hpp"
 
 #include <algorithm>
 #include <array>
