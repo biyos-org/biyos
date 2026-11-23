@@ -2,11 +2,14 @@
 #include "core/index.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
+#include "model/overrides.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>
 
+#include <bit>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -20,8 +23,12 @@ using biyos::Complement;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Override;
 using biyos::test::failure;
 using biyos::test::refusal;
+
+using Indices = std::vector<Index>;
+using Reals = std::vector<double>;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
@@ -61,6 +68,32 @@ void expect_complement(const Complement &found, const Complement &wanted)
     EXPECT_EQ(found.partner, wanted.partner);
     EXPECT_DOUBLE_EQ(found.lower, wanted.lower);
     EXPECT_DOUBLE_EQ(found.upper, wanted.upper);
+}
+
+Model with_complements(std::size_t n)
+{
+    Model model = with_functions(1);
+    model.add_complements(std::vector<Complement>(n, pair(0, 0, 0.0, kInfinity)));
+    return model;
+}
+
+std::string tolerance_refusal(Model &model,
+                              const Indices &indices,
+                              const Reals &absolute,
+                              const Reals &relative)
+{
+    return refusal([&] { model.set_complement_tolerances(indices, absolute, relative); });
+}
+
+void expect_part(double found, double wanted)
+{
+    EXPECT_EQ(std::bit_cast<std::uint64_t>(found), std::bit_cast<std::uint64_t>(wanted));
+}
+
+void expect_tolerance(const Override &found, double absolute, double relative)
+{
+    expect_part(found.absolute, absolute);
+    expect_part(found.relative, relative);
 }
 
 }
@@ -261,4 +294,104 @@ TEST(ComplementTest, Moved)
     EXPECT_TRUE(model.complements(0, 0).empty());
     EXPECT_EQ(add_refusal(model, pair(0, 0, 0.0, 1.0)),
               "invalid argument: complement 0: function 0 is unknown");
+}
+
+TEST(ComplementTest, NoTolerance)
+{
+    Model model = with_functions(1);
+    add(model, pair(0, 0, 0.0, kInfinity));
+    expect_tolerance(model.complement_tolerance(0), kNan, kNan);
+    EXPECT_EQ(refusal([&] { model.complement_tolerance(1); }),
+              "invalid argument: complement 1: unknown");
+}
+
+TEST(ComplementTest, OwnTolerance)
+{
+    Model model = with_complements(3);
+    model.set_complement_tolerances(Indices{2, 0}, Reals{1e-6, 0.0}, Reals{1e-3, 2.0});
+    expect_tolerance(model.complement_tolerance(0), 0.0, 2.0);
+    expect_tolerance(model.complement_tolerance(1), kNan, kNan);
+    expect_tolerance(model.complement_tolerance(2), 1e-6, 1e-3);
+}
+
+TEST(ComplementTest, PartTolerance)
+{
+    Model model = with_complements(1);
+    model.set_complement_tolerances(Indices{0}, Reals{0.5}, {});
+    expect_tolerance(model.complement_tolerance(0), 0.5, kNan);
+    model.set_complement_tolerances(Indices{0}, {}, Reals{0.25});
+    expect_tolerance(model.complement_tolerance(0), 0.5, 0.25);
+    model.set_complement_tolerances(Indices{0}, {}, {});
+    expect_tolerance(model.complement_tolerance(0), 0.5, 0.25);
+}
+
+TEST(ComplementTest, ToleranceRefusal)
+{
+    Model model = with_complements(2);
+    const std::string refused = "invalid argument: complement 1: ";
+    EXPECT_EQ(tolerance_refusal(model, {1}, {kNan}, {}), refused + "absolute tolerance is NaN");
+    EXPECT_EQ(tolerance_refusal(model, {1}, {kInfinity}, {}),
+              refused + "absolute tolerance is infinity");
+    EXPECT_EQ(tolerance_refusal(model, {1}, {}, {-kInfinity}),
+              refused + "relative tolerance is minus infinity");
+    EXPECT_EQ(tolerance_refusal(model, {1}, {}, {-0.5}),
+              refused + "relative tolerance -0.5 is negative");
+    EXPECT_EQ(tolerance_refusal(model, {2}, {1.0}, {}), "invalid argument: complement 2: unknown");
+    EXPECT_EQ(tolerance_refusal(model, {-1}, {}, {}), "invalid argument: complement -1: unknown");
+    expect_tolerance(model.complement_tolerance(1), kNan, kNan);
+    model.set_complement_tolerances(Indices{1}, Reals{-0.0}, {});
+    expect_tolerance(model.complement_tolerance(1), -0.0, kNan);
+}
+
+TEST(ComplementTest, ToleranceAtomic)
+{
+    Model model = with_complements(2);
+    model.set_complement_tolerances(Indices{0}, Reals{1.0}, Reals{2.0});
+    EXPECT_NE(tolerance_refusal(model, {1, 0}, {3.0, 4.0}, {5.0, kNan}), "");
+    expect_tolerance(model.complement_tolerance(0), 1.0, 2.0);
+    expect_tolerance(model.complement_tolerance(1), kNan, kNan);
+    const Indices indices{1, 0};
+    const Reals short_list{3.0};
+    failure([&] { model.set_complement_tolerances(indices, short_list, {}); },
+            biyos::ErrorKind::Internal);
+    expect_tolerance(model.complement_tolerance(1), kNan, kNan);
+}
+
+TEST(ComplementTest, ToleranceLast)
+{
+    Model model = with_complements(1);
+    model.set_complement_tolerances(Indices{0, 0}, Reals{1.0, 2.0}, {});
+    expect_tolerance(model.complement_tolerance(0), 2.0, kNan);
+}
+
+TEST(ComplementTest, DeletedTolerance)
+{
+    Model model = with_complements(2);
+    model.set_complement_tolerances(Indices{0, 1}, Reals{1.0, 2.0}, Reals{3.0, 4.0});
+    const Indices beyond{1, 2};
+    EXPECT_EQ(refusal([&] { model.delete_complement_tolerances(beyond); }),
+              "invalid argument: complement 2: unknown");
+    expect_tolerance(model.complement_tolerance(1), 2.0, 4.0);
+    model.delete_complement_tolerances(Indices{1, 1});
+    expect_tolerance(model.complement_tolerance(0), 1.0, 3.0);
+    expect_tolerance(model.complement_tolerance(1), kNan, kNan);
+    model.delete_complement_tolerances(Indices{0, 1});
+    expect_tolerance(model.complement_tolerance(0), kNan, kNan);
+}
+
+TEST(ComplementTest, ToleranceCopy)
+{
+    Model model = with_complements(2);
+    model.set_complement_tolerances(Indices{1}, Reals{0.5}, {});
+    const Model copy = model;
+    EXPECT_EQ(biyos::difference(model, copy), "");
+    expect_tolerance(copy.complement_tolerance(1), 0.5, kNan);
+    Model changed = model;
+    changed.set_complement_tolerances(Indices{1}, {}, Reals{0.25});
+    EXPECT_EQ(biyos::difference(model, changed),
+              "complement 1: relative tolerance nan against 0.25");
+    changed.delete_complement_tolerances(Indices{1});
+    EXPECT_EQ(biyos::difference(model, changed),
+              "complement 1: absolute tolerance 0.5 against nan");
+    EXPECT_EQ(biyos::difference(model, copy), "");
 }

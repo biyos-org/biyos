@@ -6,6 +6,7 @@
 #include "expr/terms.hpp"
 #include "expr/uses.hpp"
 #include "model/names.hpp"
+#include "model/overrides.hpp"
 
 #include <array>
 #include <cstddef>
@@ -259,6 +260,12 @@ class Model
     void add_complements(std::span<const Complement> added);
     void set_complements(std::span<const Index> indices, std::span<const Complement> changed);
 
+    Override complement_tolerance(Index index) const;
+    void set_complement_tolerances(std::span<const Index> indices,
+                                   std::span<const double> absolute,
+                                   std::span<const double> relative);
+    void delete_complement_tolerances(std::span<const Index> indices);
+
   private:
     Offset begin_of(std::size_t function) const noexcept;
     void append(std::span<const double> constants,
@@ -290,6 +297,7 @@ class Model
     std::vector<Offset> parameter_ends_;
     std::vector<double> cone_parameters_;
     std::vector<Complement> complements_;
+    Overrides complement_tolerances_;
     std::array<Names, kFamilies.size()> names_;
 };
 

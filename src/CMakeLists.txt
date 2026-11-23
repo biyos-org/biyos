@@ -70,6 +70,7 @@ add_library(biyos_internal STATIC
     model/naming.cpp
     model/nodes.cpp
     model/objectives.cpp
+    model/overrides.cpp
     model/pairs.cpp
     model/postfix.cpp
     model/quadratic.cpp

@@ -6,6 +6,7 @@
 #include "model/fields.hpp"
 #include "model/match.hpp"
 #include "model/model.hpp"
+#include "model/overrides.hpp"
 
 #include <cstddef>
 #include <span>
@@ -130,6 +131,14 @@ std::string differ(Index a, Index b)
 std::string differ(double a, double b)
 {
     return compared("value", a, b);
+}
+
+std::string differ(const Override &a, const Override &b)
+{
+    return first_of({
+        compared("absolute tolerance", a.absolute, b.absolute),
+        compared("relative tolerance", a.relative, b.relative),
+    });
 }
 
 template <typename T> Offset size_of(std::span<const T> terms)
@@ -259,6 +268,7 @@ std::string complement_difference(const Model &a, const Model &b, Index compleme
 {
     return first_of({
         differ(a.complement(complement), b.complement(complement)),
+        differ(a.complement_tolerance(complement), b.complement_tolerance(complement)),
         named(a, b, Family::Complement, complement),
     });
 }

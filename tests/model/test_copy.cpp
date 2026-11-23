@@ -82,6 +82,8 @@ void change(Model &model)
     const Complement complement{.function = 3, .partner = 1, .lower = -1.0, .upper = 3.0};
     model.set_complements(std::span(&index, 1), std::span(&complement, 1));
     model.add_complements(std::span(&complement, 1));
+    const double tolerance = 0.5;
+    model.set_complement_tolerances(std::span(&index, 1), std::span(&tolerance, 1), {});
     const std::vector<Index> renamed{0, 1};
     const std::vector<std::string_view> names{"y", "w"};
     for (const Family family : biyos::kFamilies)

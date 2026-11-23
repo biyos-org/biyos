@@ -80,4 +80,22 @@ void Model::set_complements(std::span<const Index> indices, std::span<const Comp
     }
 }
 
+Override Model::complement_tolerance(Index index) const
+{
+    check_index(kNoun, index, n_complements());
+    return complement_tolerances_.at(index);
+}
+
+void Model::set_complement_tolerances(std::span<const Index> indices,
+                                      std::span<const double> absolute,
+                                      std::span<const double> relative)
+{
+    complement_tolerances_.set(kNoun, n_complements(), indices, absolute, relative);
+}
+
+void Model::delete_complement_tolerances(std::span<const Index> indices)
+{
+    complement_tolerances_.remove(kNoun, n_complements(), indices);
+}
+
 }

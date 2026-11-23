@@ -1,4 +1,5 @@
 #include "biyos/biyos.h"
+#include "core/index.hpp"
 #include "expr/terms.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
@@ -8,6 +9,7 @@
 
 #include <cmath>
 #include <limits>
+#include <span>
 #include <string>
 
 namespace
@@ -16,6 +18,7 @@ namespace
 using biyos::Complement;
 using biyos::ConeKind;
 using biyos::difference;
+using biyos::Index;
 using biyos::Indicator;
 using biyos::LinearTerm;
 using biyos::Member;
@@ -552,6 +555,23 @@ TEST(CompareTest, ComplementOrder)
     EXPECT_EQ(from_sample(changed), "complement 1: name 'pair' against 'other'");
     changed.complement_names.names[0] = "pair";
     EXPECT_EQ(from_sample(changed), "");
+}
+
+TEST(CompareTest, ComplementTolerance)
+{
+    Parts renamed = sample();
+    renamed.complement_names = {.indices = {1}, .names = {"other"}};
+    Model changed = built(renamed);
+    const Index index = 1;
+    const double relative = 0.5;
+    changed.set_complement_tolerances(std::span(&index, 1), {}, std::span(&relative, 1));
+    const Model base = built(sample());
+    EXPECT_EQ(difference(base, changed), "complement 1: relative tolerance nan against 0.5");
+    Parts bounded = renamed;
+    bounded.complements[1].upper = 3.0;
+    Model both = built(bounded);
+    both.set_complement_tolerances(std::span(&index, 1), {}, std::span(&relative, 1));
+    EXPECT_EQ(difference(base, both), "complement 1: upper bound 2 against 3");
 }
 
 TEST(CompareTest, ExpressionFields)
