@@ -14,6 +14,7 @@
 namespace
 {
 
+using biyos::Complement;
 using biyos::ConeKind;
 using biyos::Constraint;
 using biyos::Family;
@@ -71,6 +72,8 @@ Model sized(Index n)
     const std::vector<biyos::SosKind> kinds(size, biyos::SosKind::Sos1);
     model.add_sos(kinds, starts, {});
     add_cones(model, size);
+    const Complement complement{.function = 0, .partner = 0, .lower = 0.0, .upper = 1.0};
+    model.add_complements(std::vector<Complement>(size, complement));
     return model;
 }
 
@@ -97,6 +100,8 @@ Index n_of(const Model &model, Family family)
         return model.n_sos();
     case Family::Cone:
         return model.n_cones();
+    case Family::Complement:
+        return model.n_complements();
     }
     return 0;
 }
@@ -200,6 +205,7 @@ TEST(NameTest, Nouns)
     EXPECT_EQ(biyos::noun_of(Family::Indicator), "indicator");
     EXPECT_EQ(biyos::noun_of(Family::Sos), "set");
     EXPECT_EQ(biyos::noun_of(Family::Cone), "cone");
+    EXPECT_EQ(biyos::noun_of(Family::Complement), "complement");
 }
 
 TEST(NameTest, Unnamed)

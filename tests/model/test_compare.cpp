@@ -1,4 +1,5 @@
 #include "biyos/biyos.h"
+#include "core/index.hpp"
 #include "expr/terms.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
@@ -8,13 +9,16 @@
 
 #include <cmath>
 #include <limits>
+#include <span>
 #include <string>
 
 namespace
 {
 
+using biyos::Complement;
 using biyos::ConeKind;
 using biyos::difference;
+using biyos::Index;
 using biyos::Indicator;
 using biyos::LinearTerm;
 using biyos::Member;
@@ -209,6 +213,22 @@ TEST(CompareTest, ConeFields)
     EXPECT_EQ(from_sample(both), "cone 1: kind 6 against 7");
 }
 
+TEST(CompareTest, ComplementFields)
+{
+    Parts function = sample();
+    function.complements[0].function = 0;
+    EXPECT_EQ(from_sample(function), "complement 0: function 1 against 0");
+    Parts partner = sample();
+    partner.complements[1].partner = 2;
+    EXPECT_EQ(from_sample(partner), "complement 1: partner 0 against 2");
+    Parts lower = sample();
+    lower.complements[0].lower = -1.0;
+    EXPECT_EQ(from_sample(lower), "complement 0: lower bound 0 against -1");
+    Parts upper = sample();
+    upper.complements[1].upper = 3.0;
+    EXPECT_EQ(from_sample(upper), "complement 1: upper bound 2 against 3");
+}
+
 TEST(CompareTest, Counts)
 {
     Parts variables = sample();
@@ -239,6 +259,10 @@ TEST(CompareTest, Counts)
     cones.cones.parameters.clear();
     cones.cone_names = {};
     EXPECT_EQ(from_sample(cones), "cone count 2 against 1");
+    Parts complements = sample();
+    complements.complements.pop_back();
+    complements.complement_names = {};
+    EXPECT_EQ(from_sample(complements), "complement count 2 against 1");
 }
 
 TEST(CompareTest, Names)
@@ -283,6 +307,9 @@ TEST(CompareTest, Names)
     Parts cone = sample();
     cone.cone_names.names[0] = "j";
     EXPECT_EQ(from_sample(cone), "cone 1: name 'k' against 'j'");
+    Parts complement = sample();
+    complement.complement_names = {.indices = {0, 1}, .names = {"ab", "pair"}};
+    EXPECT_EQ(from_sample(complement), "complement 0: name none against 'ab'");
 }
 
 TEST(CompareTest, OneUlp)
@@ -382,6 +409,7 @@ TEST(CompareTest, Order)
     Parts last = sample();
     last.objectives[0].weight = 3.0;
     last.indicators[0].upper = 5.0;
+    last.complements[0].upper = 5.0;
     EXPECT_EQ(from_sample(last), "objective 0: weight 2 against 3");
 }
 
@@ -508,6 +536,42 @@ TEST(CompareTest, SosOrder)
     EXPECT_EQ(from_sample(changed), "set 1: name 's' against 't'");
     changed.sos_names.names[0] = "s";
     EXPECT_EQ(from_sample(changed), "");
+}
+
+TEST(CompareTest, ComplementOrder)
+{
+    Parts changed = sample();
+    Complement &complement = changed.complements[1];
+    complement = Complement{.function = 2, .partner = 1, .lower = 0.0, .upper = 1.0};
+    changed.complement_names = {.indices = {1}, .names = {"other"}};
+    EXPECT_EQ(from_sample(changed), "complement 1: function 0 against 2");
+    complement.function = 0;
+    EXPECT_EQ(from_sample(changed), "complement 1: partner 0 against 1");
+    complement.partner = 0;
+    EXPECT_EQ(from_sample(changed), "complement 1: lower bound -2 against 0");
+    complement.lower = -2.0;
+    EXPECT_EQ(from_sample(changed), "complement 1: upper bound 2 against 1");
+    complement.upper = 2.0;
+    EXPECT_EQ(from_sample(changed), "complement 1: name 'pair' against 'other'");
+    changed.complement_names.names[0] = "pair";
+    EXPECT_EQ(from_sample(changed), "");
+}
+
+TEST(CompareTest, ComplementTolerance)
+{
+    Parts renamed = sample();
+    renamed.complement_names = {.indices = {1}, .names = {"other"}};
+    Model changed = built(renamed);
+    const Index index = 1;
+    const double relative = 0.5;
+    changed.set_complement_tolerances(std::span(&index, 1), {}, std::span(&relative, 1));
+    const Model base = built(sample());
+    EXPECT_EQ(difference(base, changed), "complement 1: relative tolerance nan against 0.5");
+    Parts bounded = renamed;
+    bounded.complements[1].upper = 3.0;
+    Model both = built(bounded);
+    both.set_complement_tolerances(std::span(&index, 1), {}, std::span(&relative, 1));
+    EXPECT_EQ(difference(base, both), "complement 1: upper bound 2 against 3");
 }
 
 TEST(CompareTest, ExpressionFields)

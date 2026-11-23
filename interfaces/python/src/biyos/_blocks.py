@@ -425,6 +425,38 @@ class Cones(Block[Cone]):
         return model.getncone()
 
 
+class Complement(View):
+    """One complement of a model, as indexing a ``Complements`` block gives.
+
+    A view holds its model and its index, and passes as that index wherever
+    its model takes an index of complements. Any other model refuses it as an
+    index. A view made before a deletion from its model raises ``ValueError``
+    when used, as its index may name another complement.
+    """
+
+    __slots__ = ()
+    _noun = "complement"
+
+
+class Complements(Block[Complement]):
+    """Consecutive complements, as ``Model.addccon`` returns.
+
+    A block holds its model, its first index and its count, so it costs the
+    same at any size. ``len`` gives the count, and iterating gives each
+    complement in order as a ``Complement``, so a block passes wherever its
+    model takes indices of complements. Any other model refuses it as
+    indices, and ``on`` gives the block of the same indices in another model,
+    such as a copy. A block made before a deletion from its model raises
+    ``ValueError`` when used, as its indices may name other complements.
+    """
+
+    __slots__ = ()
+    _element = Complement
+
+    def _held(self, model: "Model") -> int:
+        return model.getnccon()
+
+
 def _indefinite(noun: str) -> str:
     article = "an" if noun[0] in "aeiou" else "a"
     return f"{article} {noun}"

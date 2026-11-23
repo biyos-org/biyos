@@ -6,6 +6,7 @@
 #include "expr/terms.hpp"
 #include "expr/uses.hpp"
 #include "model/names.hpp"
+#include "model/overrides.hpp"
 
 #include <array>
 #include <cstddef>
@@ -82,6 +83,14 @@ struct Indicator
     double upper;
 };
 
+struct Complement
+{
+    Index function;
+    Index partner;
+    double lower;
+    double upper;
+};
+
 enum class SosKind
 {
     Sos1 = BIYOS_SOSKND_SOS1,
@@ -131,6 +140,7 @@ enum class Family
     Indicator,
     Sos,
     Cone,
+    Complement,
 };
 
 inline constexpr std::array kFamilies{
@@ -141,6 +151,7 @@ inline constexpr std::array kFamilies{
     Family::Indicator,
     Family::Sos,
     Family::Cone,
+    Family::Complement,
 };
 
 std::string_view noun_of(Family family) noexcept;
@@ -242,6 +253,18 @@ class Model
                    std::span<const Index> functions,
                    std::span<const Offset> parameter_starts,
                    std::span<const double> parameters);
+    Index n_complements() const noexcept;
+    const Complement &complement(Index index) const;
+    std::span<const Complement> complements(Index start, Index size) const;
+
+    void add_complements(std::span<const Complement> added);
+    void set_complements(std::span<const Index> indices, std::span<const Complement> changed);
+
+    Override complement_tolerance(Index index) const;
+    void set_complement_tolerances(std::span<const Index> indices,
+                                   std::span<const double> absolute,
+                                   std::span<const double> relative);
+    void delete_complement_tolerances(std::span<const Index> indices);
 
   private:
     Offset begin_of(std::size_t function) const noexcept;
@@ -273,6 +296,8 @@ class Model
     std::vector<Index> cone_functions_;
     std::vector<Offset> parameter_ends_;
     std::vector<double> cone_parameters_;
+    std::vector<Complement> complements_;
+    Overrides complement_tolerances_;
     std::array<Names, kFamilies.size()> names_;
 };
 

@@ -21,6 +21,7 @@
 namespace
 {
 
+using biyos::Complement;
 using biyos::ConeKind;
 using biyos::Family;
 using biyos::Graph;
@@ -339,6 +340,22 @@ std::size_t copy_cost(const Model &model)
     return biyos::test::allocations() - start;
 }
 
+Model with_complements()
+{
+    Model model;
+    model.add_functions(std::vector<double>{0.0}, std::vector<Offset>{0, 0}, {});
+    const Complement held{.function = 0, .partner = 0, .lower = 0.0, .upper = 1.0};
+    model.add_complements(std::vector<Complement>(4, held));
+    return model;
+}
+
+void set_tolerances(Model &model)
+{
+    const std::vector<Index> indices{3, 0, 2};
+    const std::vector<double> absolute{1e-6, 1e-7, 1e-8};
+    model.set_complement_tolerances(indices, absolute, {});
+}
+
 }
 
 TEST(AllocationTest, Renaming)
@@ -475,4 +492,22 @@ TEST(AllocationTest, Clear)
 TEST(AllocationTest, Postfix)
 {
     expect_graph(decode_two, 8);
+}
+
+TEST(AllocationTest, Tolerances)
+{
+    for (std::size_t successes = 0; successes < kAttempts; ++successes)
+    {
+        const Model before = with_complements();
+        Model model = before;
+        if (!runs_out_with(model, set_tolerances, successes))
+        {
+            EXPECT_GT(successes, 0U);
+            EXPECT_EQ(copy_cost(model), copy_cost(before) + 3);
+            return;
+        }
+        EXPECT_EQ(biyos::difference(model, before), "");
+        EXPECT_EQ(copy_cost(model), copy_cost(before));
+    }
+    ADD_FAILURE() << "the call never completed";
 }

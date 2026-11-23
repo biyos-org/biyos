@@ -6,6 +6,7 @@
 #include "model/fields.hpp"
 #include "model/match.hpp"
 #include "model/model.hpp"
+#include "model/overrides.hpp"
 
 #include <cstddef>
 #include <span>
@@ -104,6 +105,16 @@ std::string differ(const Indicator &a, const Indicator &b)
     });
 }
 
+std::string differ(const Complement &a, const Complement &b)
+{
+    return first_of({
+        compared("function", a.function, b.function),
+        compared("partner", a.partner, b.partner),
+        compared("lower bound", a.lower, b.lower),
+        compared("upper bound", a.upper, b.upper),
+    });
+}
+
 std::string differ(const Member &a, const Member &b)
 {
     return first_of({
@@ -120,6 +131,14 @@ std::string differ(Index a, Index b)
 std::string differ(double a, double b)
 {
     return compared("value", a, b);
+}
+
+std::string differ(const Override &a, const Override &b)
+{
+    return first_of({
+        compared("absolute tolerance", a.absolute, b.absolute),
+        compared("relative tolerance", a.relative, b.relative),
+    });
 }
 
 template <typename T> Offset size_of(std::span<const T> terms)
@@ -245,6 +264,15 @@ std::string cone_difference(const Model &a, const Model &b, Index cone)
     });
 }
 
+std::string complement_difference(const Model &a, const Model &b, Index complement)
+{
+    return first_of({
+        differ(a.complement(complement), b.complement(complement)),
+        differ(a.complement_tolerance(complement), b.complement_tolerance(complement)),
+        named(a, b, Family::Complement, complement),
+    });
+}
+
 std::string variable_differences(const Model &a, const Model &b)
 {
     const auto variable = [&](Index k) { return variable_difference(a, b, k); };
@@ -288,6 +316,12 @@ std::string cone_differences(const Model &a, const Model &b)
     return table_difference("cone", a.n_cones(), b.n_cones(), cone);
 }
 
+std::string complement_differences(const Model &a, const Model &b)
+{
+    const auto complement = [&](Index k) { return complement_difference(a, b, k); };
+    return table_difference("complement", a.n_complements(), b.n_complements(), complement);
+}
+
 }
 
 std::string difference(const Model &a, const Model &b)
@@ -320,6 +354,10 @@ std::string difference(const Model &a, const Model &b)
     if (found.empty())
     {
         found = cone_differences(a, b);
+    }
+    if (found.empty())
+    {
+        found = complement_differences(a, b);
     }
     return found;
 }

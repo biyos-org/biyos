@@ -1,0 +1,101 @@
+#include "model/model.hpp"
+
+#include "core/error.hpp"
+#include "core/index.hpp"
+#include "model/checks.hpp"
+
+#include <cstddef>
+#include <span>
+#include <string>
+#include <string_view>
+
+namespace biyos
+{
+
+namespace
+{
+
+constexpr std::string_view kNoun = "complement";
+
+void check_bounds(Index index, const Complement &complement)
+{
+    const std::string_view fault = bound_fault(complement.lower, complement.upper);
+    if (!fault.empty())
+    {
+        refuse(kNoun, index, std::string(fault));
+    }
+}
+
+void check(Index index, const Complement &complement, Index functions)
+{
+    check_function(kNoun, index, complement.function, functions);
+    check_function(kNoun, index, complement.partner, functions);
+    check_bounds(index, complement);
+}
+
+}
+
+Index Model::n_complements() const noexcept
+{
+    return static_cast<Index>(complements_.size());
+}
+
+const Complement &Model::complement(Index index) const
+{
+    check_index(kNoun, index, n_complements());
+    return complements_[static_cast<std::size_t>(index)];
+}
+
+std::span<const Complement> Model::complements(Index start, Index size) const
+{
+    check_span(kNoun, start, size, n_complements());
+    const auto offset = static_cast<std::size_t>(start);
+    return std::span(complements_).subspan(offset, static_cast<std::size_t>(size));
+}
+
+void Model::add_complements(std::span<const Complement> added)
+{
+    check_n(kNoun, complements_, added.size());
+    for (std::size_t k = 0; k < added.size(); ++k)
+    {
+        check(static_cast<Index>(complements_.size() + k), added[k], n_functions());
+    }
+    complements_.insert(complements_.end(), added.begin(), added.end());
+}
+
+void Model::set_complements(std::span<const Index> indices, std::span<const Complement> changed)
+{
+    if (indices.size() != changed.size())
+    {
+        throw Error(ErrorKind::Internal, "model", "indices and complements differ in number");
+    }
+    for (std::size_t k = 0; k < indices.size(); ++k)
+    {
+        check_index(kNoun, indices[k], n_complements());
+        check(indices[k], changed[k], n_functions());
+    }
+    for (std::size_t k = 0; k < indices.size(); ++k)
+    {
+        complements_[static_cast<std::size_t>(indices[k])] = changed[k];
+    }
+}
+
+Override Model::complement_tolerance(Index index) const
+{
+    check_index(kNoun, index, n_complements());
+    return complement_tolerances_.at(index);
+}
+
+void Model::set_complement_tolerances(std::span<const Index> indices,
+                                      std::span<const double> absolute,
+                                      std::span<const double> relative)
+{
+    complement_tolerances_.set(kNoun, n_complements(), indices, absolute, relative);
+}
+
+void Model::delete_complement_tolerances(std::span<const Index> indices)
+{
+    complement_tolerances_.remove(kNoun, n_complements(), indices);
+}
+
+}

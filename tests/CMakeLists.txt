@@ -90,6 +90,7 @@ target_link_libraries(test_expr PRIVATE biyos_internal)
 
 biyos_add_test(test_model
     model/test_compare.cpp
+    model/test_complements.cpp
     model/test_cones.cpp
     model/test_constraints.cpp
     model/test_copy.cpp
@@ -106,6 +107,7 @@ target_link_libraries(test_model PRIVATE biyos_internal)
 biyos_add_test(test_capi
     capi/sample.cpp
     capi/test_adders.cpp
+    capi/test_complements.cpp
     capi/test_cones.cpp
     capi/test_constants.cpp
     capi/test_constraints.cpp

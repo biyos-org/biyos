@@ -55,6 +55,7 @@ add_library(biyos_internal STATIC
     model/attach.cpp
     model/checks.cpp
     model/compare.cpp
+    model/complements.cpp
     model/compressed.cpp
     model/cones.cpp
     model/constraints.cpp
@@ -69,6 +70,7 @@ add_library(biyos_internal STATIC
     model/naming.cpp
     model/nodes.cpp
     model/objectives.cpp
+    model/overrides.cpp
     model/pairs.cpp
     model/postfix.cpp
     model/quadratic.cpp
@@ -96,6 +98,7 @@ biyos_set_warnings(biyos_internal)
 add_library(biyos
     capi/arrays.cpp
     capi/columns.cpp
+    capi/complements.cpp
     capi/cones.cpp
     capi/constraints.cpp
     capi/env.cpp

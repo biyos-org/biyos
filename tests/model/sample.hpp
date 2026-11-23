@@ -71,6 +71,7 @@ struct Parts
     std::vector<Indicator> indicators;
     Sos sos;
     Cones cones;
+    std::vector<Complement> complements;
     std::string name;
     Naming variable_names;
     Naming function_names;
@@ -79,6 +80,7 @@ struct Parts
     Naming indicator_names;
     Naming sos_names;
     Naming cone_names;
+    Naming complement_names;
 };
 
 inline Parts sample()
@@ -175,6 +177,11 @@ inline Parts sample()
                 .parameter_starts = {0, 0, 2},
                 .parameters = {0.25, 0.75},
             },
+        .complements =
+            {
+                {.function = 1, .partner = 2, .lower = 0.0, .upper = kInfinity},
+                {.function = 0, .partner = 0, .lower = -2.0, .upper = 2.0},
+            },
         .name = "sample",
         .variable_names = {.indices = {2, 0}, .names = {"z", "x"}},
         .function_names = {.indices = {1}, .names = {"f"}},
@@ -183,6 +190,7 @@ inline Parts sample()
         .indicator_names = {.indices = {1}, .names = {"off"}},
         .sos_names = {.indices = {1}, .names = {"s"}},
         .cone_names = {.indices = {1}, .names = {"k"}},
+        .complement_names = {.indices = {1}, .names = {"pair"}},
     };
 }
 
@@ -239,6 +247,7 @@ inline Model built(const Parts &parts)
                     cones.functions,
                     cones.parameter_starts,
                     cones.parameters);
+    model.add_complements(parts.complements);
     if (!parts.name.empty())
     {
         model.set_name(parts.name);
@@ -250,6 +259,7 @@ inline Model built(const Parts &parts)
     name(model, Family::Indicator, parts.indicator_names);
     name(model, Family::Sos, parts.sos_names);
     name(model, Family::Cone, parts.cone_names);
+    name(model, Family::Complement, parts.complement_names);
     return model;
 }
 

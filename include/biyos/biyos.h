@@ -633,6 +633,70 @@ BIYOS_API BIYOS_status BIYOS_getconeprmrg(const BIYOS_model *mdl,
                                           BIYOS_offset cap,
                                           BIYOS_offset *prmoff,
                                           BIYOS_real *prm);
+BIYOS_API BIYOS_status BIYOS_addccon(BIYOS_model *mdl,
+                                     BIYOS_index n,
+                                     const BIYOS_index *funidx1,
+                                     const BIYOS_index *funidx2,
+                                     const BIYOS_real *lb,
+                                     const BIYOS_real *ub,
+                                     BIYOS_index *pos);
+BIYOS_API BIYOS_status BIYOS_setcconbndsp(BIYOS_model *mdl,
+                                          BIYOS_index n,
+                                          const BIYOS_index *idx,
+                                          const BIYOS_real *lb,
+                                          const BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_setcconbndrg(BIYOS_model *mdl,
+                                          BIYOS_index pos,
+                                          BIYOS_index n,
+                                          const BIYOS_real *lb,
+                                          const BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_getcconbndsp(const BIYOS_model *mdl,
+                                          BIYOS_index n,
+                                          const BIYOS_index *idx,
+                                          BIYOS_real *lb,
+                                          BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_getcconbndrg(const BIYOS_model *mdl,
+                                          BIYOS_index pos,
+                                          BIYOS_index n,
+                                          BIYOS_real *lb,
+                                          BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_setccontolsp(BIYOS_model *mdl,
+                                          BIYOS_index n,
+                                          const BIYOS_index *idx,
+                                          const BIYOS_real *atol,
+                                          const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_setccontolrg(BIYOS_model *mdl,
+                                          BIYOS_index pos,
+                                          BIYOS_index n,
+                                          const BIYOS_real *atol,
+                                          const BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_getccontolsp(const BIYOS_model *mdl,
+                                          BIYOS_index n,
+                                          const BIYOS_index *idx,
+                                          BIYOS_real *atol,
+                                          BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_getccontolrg(const BIYOS_model *mdl,
+                                          BIYOS_index pos,
+                                          BIYOS_index n,
+                                          BIYOS_real *atol,
+                                          BIYOS_real *rtol);
+BIYOS_API BIYOS_status BIYOS_delccontolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delccontolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
+BIYOS_API BIYOS_status BIYOS_getnccon(const BIYOS_model *mdl, BIYOS_index *n);
+BIYOS_API BIYOS_status BIYOS_getcconsp(const BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_index *funidx1,
+                                       BIYOS_index *funidx2,
+                                       BIYOS_real *lb,
+                                       BIYOS_real *ub);
+BIYOS_API BIYOS_status BIYOS_getcconrg(const BIYOS_model *mdl,
+                                       BIYOS_index pos,
+                                       BIYOS_index n,
+                                       BIYOS_index *funidx1,
+                                       BIYOS_index *funidx2,
+                                       BIYOS_real *lb,
+                                       BIYOS_real *ub);
 BIYOS_API BIYOS_status BIYOS_setmdlname(BIYOS_model *mdl, const char *name);
 BIYOS_API BIYOS_status BIYOS_getmdlname(const BIYOS_model *mdl, const char **name);
 BIYOS_API BIYOS_status BIYOS_delmdlname(BIYOS_model *mdl);
@@ -790,6 +854,28 @@ BIYOS_API BIYOS_status BIYOS_getconeidx(const BIYOS_model *mdl,
                                         BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delconenamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delconenamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
+BIYOS_API BIYOS_status BIYOS_setcconnamesp(BIYOS_model *mdl,
+                                           BIYOS_index n,
+                                           const BIYOS_index *idx,
+                                           const char *const *name);
+BIYOS_API BIYOS_status BIYOS_setcconnamerg(BIYOS_model *mdl,
+                                           BIYOS_index pos,
+                                           BIYOS_index n,
+                                           const char *const *name);
+BIYOS_API BIYOS_status BIYOS_getcconnamesp(const BIYOS_model *mdl,
+                                           BIYOS_index n,
+                                           const BIYOS_index *idx,
+                                           const char **name);
+BIYOS_API BIYOS_status BIYOS_getcconnamerg(const BIYOS_model *mdl,
+                                           BIYOS_index pos,
+                                           BIYOS_index n,
+                                           const char **name);
+BIYOS_API BIYOS_status BIYOS_getcconidx(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const char *const *name,
+                                        BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delcconnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delcconnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
 
 #define BIYOS_OP_CONST 1
 #define BIYOS_OP_VAR 2

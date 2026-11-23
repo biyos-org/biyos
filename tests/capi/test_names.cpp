@@ -29,7 +29,7 @@ struct Calls
     BIYOS_status (*remove)(BIYOS_model *, BIYOS_index, const BIYOS_index *);
 };
 
-const std::array<Calls, 7> kFamilies{{
+const std::array<Calls, 8> kFamilies{{
     {
         .noun = "variable",
         .set = BIYOS_setvarnamesp,
@@ -78,6 +78,13 @@ const std::array<Calls, 7> kFamilies{{
         .get = BIYOS_getconenamesp,
         .find = BIYOS_getconeidx,
         .remove = BIYOS_delconenamesp,
+    },
+    {
+        .noun = "complement",
+        .set = BIYOS_setcconnamesp,
+        .get = BIYOS_getcconnamesp,
+        .find = BIYOS_getcconidx,
+        .remove = BIYOS_delcconnamesp,
     },
 }};
 
@@ -147,6 +154,8 @@ void add_items(const Model &model, BIYOS_index n)
     ASSERT_EQ(BIYOS_addsos(held, n, sos_kinds.data(), nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);
     add_cones(held, n);
+    const BIYOS_index *shared = functions.data();
+    ASSERT_EQ(BIYOS_addccon(held, n, shared, shared, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
 BIYOS_status name(const Calls &family, const Model &model, const Indices &index, const Texts &names)

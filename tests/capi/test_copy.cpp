@@ -71,6 +71,7 @@ void add_sample(BIYOS_model *model)
     const BIYOS_index added[] = {0, 1};
     const int switches[] = {1, 1};
     const int active[] = {1, 0};
+    const double floor[] = {-1.0, 0.0};
     ASSERT_EQ(BIYOS_addvar(model, 3, kinds, lower, upper, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(model, 2, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcstrg(model, 0, 2, constants), BIYOS_OK);
@@ -81,6 +82,8 @@ void add_sample(BIYOS_model *model)
     ASSERT_EQ(BIYOS_addobj(model, 2, targets, senses, priorities, weights, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setobjtolsp(model, 2, added, absolute, relative), BIYOS_OK);
     ASSERT_EQ(BIYOS_addind(model, 2, switches, active, targets, lower, upper, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addccon(model, 2, targets, functions, floor, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setccontolsp(model, 1, added + 1, nullptr, relative + 1), BIYOS_OK);
     const BIYOS_index named[] = {2, 0};
     const BIYOS_index first[] = {1};
     const char *names[] = {"z", "x"};
@@ -90,6 +93,7 @@ void add_sample(BIYOS_model *model)
     ASSERT_EQ(BIYOS_setconnamesp(model, 2, named, names), BIYOS_OK);
     ASSERT_EQ(BIYOS_setobjnamesp(model, 1, first, names + 1), BIYOS_OK);
     ASSERT_EQ(BIYOS_setindnamesp(model, 1, first, names), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcconnamesp(model, 1, first, names), BIYOS_OK);
 }
 
 BIYOS_env *created()
