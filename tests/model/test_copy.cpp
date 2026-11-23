@@ -14,6 +14,7 @@
 namespace
 {
 
+using biyos::Complement;
 using biyos::ConeKind;
 using biyos::Constraint;
 using biyos::difference;
@@ -78,6 +79,9 @@ void change(Model &model)
     const std::vector<Offset> ends{0, 3};
     const std::vector<Index> functions{3, 1, 0};
     model.add_cones(std::span(&cone, 1), ends, functions, std::vector<Offset>{0, 0}, {});
+    const Complement complement{.function = 3, .partner = 1, .lower = -1.0, .upper = 3.0};
+    model.set_complements(std::span(&index, 1), std::span(&complement, 1));
+    model.add_complements(std::span(&complement, 1));
     const std::vector<Index> renamed{0, 1};
     const std::vector<std::string_view> names{"y", "w"};
     for (const Family family : biyos::kFamilies)
