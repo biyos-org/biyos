@@ -7,11 +7,13 @@
 #include "model/compressed.hpp"
 #include "model/model.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
 
+using biyos::capi::check_capacity;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::require;
@@ -114,6 +116,22 @@ void get_data(const BIYOS_model &model, int cb, void **data)
     *out = model.core.callback(cb).data;
 }
 
+void n_functions(const BIYOS_model &model, int cb, int *n)
+{
+    int *out = require(n, "n");
+    *out = static_cast<int>(model.core.callback(cb).covered.size());
+}
+
+void get_functions(const BIYOS_model &model, int cb, int capacity, int *functions)
+{
+    const std::vector<biyos::Index> &covered = model.core.callback(cb).covered;
+    check_capacity(capacity, covered.size(), "cap", "functions");
+    if (functions != nullptr)
+    {
+        std::ranges::copy(covered, functions);
+    }
+}
+
 }
 
 BIYOS_status BIYOS_addcb(BIYOS_model *mdl,
@@ -162,4 +180,17 @@ BIYOS_status BIYOS_setcbdata(BIYOS_model *mdl, BIYOS_index cb, void *data)
 BIYOS_status BIYOS_getcbdata(const BIYOS_model *mdl, BIYOS_index cb, void **data)
 {
     return guarded<get_data>(mdl, cb, data);
+}
+
+BIYOS_status BIYOS_getncbfun(const BIYOS_model *mdl, BIYOS_index cb, BIYOS_index *n)
+{
+    return guarded<n_functions>(mdl, cb, n);
+}
+
+BIYOS_status BIYOS_getcbfun(const BIYOS_model *mdl,
+                            BIYOS_index cb,
+                            BIYOS_index cap,
+                            BIYOS_index *funidx)
+{
+    return guarded<get_functions>(mdl, cb, cap, funidx);
 }

@@ -1055,6 +1055,11 @@ BIYOS_API BIYOS_status BIYOS_setcbh(BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_setcbhv(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbhv hv);
 BIYOS_API BIYOS_status BIYOS_setcbdata(BIYOS_model *mdl, BIYOS_index cb, void *data);
 BIYOS_API BIYOS_status BIYOS_getcbdata(const BIYOS_model *mdl, BIYOS_index cb, void **data);
+BIYOS_API BIYOS_status BIYOS_getncbfun(const BIYOS_model *mdl, BIYOS_index cb, BIYOS_index *n);
+BIYOS_API BIYOS_status BIYOS_getcbfun(const BIYOS_model *mdl,
+                                      BIYOS_index cb,
+                                      BIYOS_index cap,
+                                      BIYOS_index *funidx);
 
 #define BIYOS_TRM_NONE 0
 #define BIYOS_TRM_OPTIMAL 101
