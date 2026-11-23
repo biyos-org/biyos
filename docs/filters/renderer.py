@@ -29,10 +29,10 @@ def cell(text):
 
 
 WEIGHTS = {
-    "Parameter": 7,
-    "Type": 4,
+    "Parameter": 10,
+    "Type": 5,
     "Default": 2,
-    "Meaning": 9,
+    "Meaning": 7,
     "Returns": 3,
     "Raises": 3,
     "Condition": 9,

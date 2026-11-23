@@ -123,8 +123,11 @@ h4.api {
   margin-top: 0.25rem;
 }
 
-.entry td:first-child .type {
-  white-space: normal;
+@media (min-width: 1100px) {
+  .entry td .type,
+  .entry td .unbroken code {
+    white-space: nowrap;
+  }
 }
 
 .under {
