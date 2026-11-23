@@ -1221,7 +1221,7 @@ param pos out Receives the index of the first new objective; skipped when null.
 return `BIYOS_OK` once the objectives are added, each with tolerances of 0.
 error BIYOS_ERR_BADARG `n` is negative, a function is not one of the model, a sense is unknown or a weight is not finite and positive.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 objectives.
-note By default the objectives are optimized one after another in the order they are added, and objectives given one priority are blended.
+note By default the objectives are optimized one after another in the order they are added, and objectives given one priority are blended. Once an objective is deleted, a default priority can repeat one an earlier objective holds.
 see BIYOS_setobjsensesp BIYOS_setobjtolsp BIYOS_getobjrg
 since 0.1.0
 
