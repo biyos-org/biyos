@@ -153,7 +153,7 @@ class ConeKind(IntEnum):
     SEMIDEFINITE = 8
 
 
-class Format(IntEnum):
+class FileFormat(IntEnum):
     """The file formats, as ``BIYOS_FMT_`` numbers them.
 
     Attributes
@@ -358,7 +358,7 @@ class Model:
 
     @classmethod
     def read(
-        cls, env: Env, path: str | PathLike[str], fmt: Format
+        cls, env: Env, path: str | PathLike[str], fmt: FileFormat
     ) -> "Model":
         """Read a model from a file.
 

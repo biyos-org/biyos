@@ -5,7 +5,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import EventKind, EventLevel, Format
+from biyos import EventKind, EventLevel, FileFormat
 
 DATA = Path(__file__).resolve().parents[3] / "tests" / "io" / "data" / "mps"
 FILEIO = -401
@@ -23,7 +23,7 @@ def record(heard, event):
 
 
 def test_counts(env):
-    with biyos.Model.read(env, DATA / "lp.mps", Format.MPS) as model:
+    with biyos.Model.read(env, DATA / "lp.mps", FileFormat.MPS) as model:
         assert model.getmdlname() == "small"
         assert model.getnvar() == 2
         assert model.getncon() == 3
@@ -34,7 +34,7 @@ def test_counts(env):
 
 
 def test_str_path(env):
-    with biyos.Model.read(env, str(DATA / "rows.mps"), Format.MPS) as model:
+    with biyos.Model.read(env, str(DATA / "rows.mps"), FileFormat.MPS) as model:
         assert model.getmdlname() is None
         assert model.getncon() == 3
 
@@ -42,7 +42,7 @@ def test_str_path(env):
 def test_missing(env):
     path = str(DATA / "absent.mps")
     with pytest.raises(biyos.Error) as caught:
-        biyos.Model.read(env, path, Format.MPS)
+        biyos.Model.read(env, path, FileFormat.MPS)
     assert caught.value.code == FILEIO
     assert str(caught.value) == f"file access: file '{path}': cannot be opened"
 
@@ -55,13 +55,13 @@ def test_unknown_format(env):
 
 def test_refused(env):
     with pytest.raises(TypeError):
-        biyos.Model.read(env, b"lp.mps", Format.MPS)
+        biyos.Model.read(env, b"lp.mps", FileFormat.MPS)
     with pytest.raises(TypeError):
         biyos.Model.read(env, DATA / "lp.mps", "MPS")
     with pytest.raises(ValueError):
-        biyos.Model.read(env, "lp\0.mps", Format.MPS)
+        biyos.Model.read(env, "lp\0.mps", FileFormat.MPS)
     with pytest.raises(TypeError):
-        biyos.Model.read(None, DATA / "lp.mps", Format.MPS)
+        biyos.Model.read(None, DATA / "lp.mps", FileFormat.MPS)
 
 
 def test_warning(env, tmp_path):
@@ -69,6 +69,6 @@ def test_warning(env, tmp_path):
     path.write_text("NAME t\nROWS\n N f\nCOLUMNS\n x f 1\nENDATA\n")
     heard = []
     env.addhook(partial(record, heard), EventKind.MESSAGE, EventLevel.WARNING)
-    with biyos.Model.read(env, path, Format.MPS):
+    with biyos.Model.read(env, path, FileFormat.MPS):
         pass
     assert heard == [("io", (("file", str(path)), ("line", "6")))]

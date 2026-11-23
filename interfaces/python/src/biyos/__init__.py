@@ -23,7 +23,7 @@ from biyos._error import Error
 from biyos._event import Event, EventKind, EventLevel
 from biyos._model import (
     ConeKind,
-    Format,
+    FileFormat,
     Model,
     ObjectiveSense,
     SOSKind,
@@ -47,7 +47,7 @@ __all__ = [
     "Error",
     "Event",
     "EventKind",
-    "Format",
+    "FileFormat",
     "Function",
     "Functions",
     "EventLevel",
