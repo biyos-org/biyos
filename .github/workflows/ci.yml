@@ -4,16 +4,40 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CMAKE_BUILD_PARALLEL_LEVEL: 4
 
 jobs:
+  platforms:
+    runs-on: ubuntu-24.04
+    outputs:
+      os: ${{ steps.pick.outputs.os }}
+    steps:
+      - id: pick
+        env:
+          ALL: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'full-ci') }}
+        run: |
+          if [ "$ALL" = true ]; then
+            echo 'os=["ubuntu-24.04", "macos-15", "windows-2022"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'os=["ubuntu-24.04"]' >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: platforms
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2022]
+        os: ${{ fromJSON(needs.platforms.outputs.os) }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -81,10 +105,11 @@ jobs:
       - run: git ls-files 'src/*.cpp' | xargs clang-tidy -p build --quiet
 
   python:
+    needs: platforms
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2022]
+        os: ${{ fromJSON(needs.platforms.outputs.os) }}
         python: ["3.10", "3.14"]
     runs-on: ${{ matrix.os }}
     steps:
