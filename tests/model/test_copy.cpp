@@ -84,6 +84,9 @@ void change(Model &model)
     model.add_complements(std::span(&complement, 1));
     const double tolerance = 0.5;
     model.set_complement_tolerances(std::span(&index, 1), std::span(&tolerance, 1), {});
+    model.set_variable_tolerances(std::span(&index, 1), {}, std::span(&tolerance, 1));
+    model.set_constraint_tolerances(std::span(&index, 1), std::span(&tolerance, 1), {});
+    model.set_cone_tolerances(std::span(&index, 1), {}, std::span(&tolerance, 1));
     const std::vector<Index> renamed{0, 1};
     const std::vector<std::string_view> names{"y", "w"};
     for (const Family family : biyos::kFamilies)
