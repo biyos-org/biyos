@@ -14,6 +14,14 @@ extern char error_status[offsetof(BIYOS_error, status) == sizeof(size_t) ? 1 : -
 extern char error_mdl[offsetof(BIYOS_error, mdl) == 2 * sizeof(void *) ? 1 : -1];
 extern char error_msg[offsetof(BIYOS_error, msg) == 3 * sizeof(void *) ? 1 : -1];
 extern char error_end[sizeof(BIYOS_error) == 4 * sizeof(void *) ? 1 : -1];
+extern char request_size[offsetof(BIYOS_cbreq, size) == 0 ? 1 : -1];
+extern char request_mdl[offsetof(BIYOS_cbreq, mdl) == sizeof(size_t) ? 1 : -1];
+extern char request_cb[offsetof(BIYOS_cbreq, cb) == 2 * sizeof(void *) ? 1 : -1];
+extern char request_thread[offsetof(BIYOS_cbreq, thread) == 2 * sizeof(void *) + 4 ? 1 : -1];
+extern char request_x[offsetof(BIYOS_cbreq, x) == 2 * sizeof(void *) + 8 ? 1 : -1];
+extern char request_w[offsetof(BIYOS_cbreq, w) == 3 * sizeof(void *) + 8 ? 1 : -1];
+extern char request_v[offsetof(BIYOS_cbreq, v) == 4 * sizeof(void *) + 8 ? 1 : -1];
+extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 
 #if !defined(BIYOS_OK) || BIYOS_OK != 0
 #error "BIYOS_OK must be zero"
@@ -403,6 +411,34 @@ static BIYOS_status use_postfix(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static int evaluate(const BIYOS_cbreq *req, BIYOS_real *out, void *data)
+{
+    out[0] = req->x[0];
+    return data == NULL ? 1 : 0;
+}
+
+static BIYOS_status use_callbacks(BIYOS_model *model)
+{
+    const BIYOS_offset off[2] = {0, 1};
+    const BIYOS_index variables[1] = {0};
+    BIYOS_index function = -1;
+    BIYOS_index cb = -1;
+    int tag = 0;
+    void *data = NULL;
+    if (BIYOS_addfun(model, 1, &function) != BIYOS_OK ||
+        BIYOS_addcb(model, 1, &function, &tag, &cb) != BIYOS_OK || cb != 0 ||
+        BIYOS_setcbf(model, cb, evaluate) != BIYOS_OK ||
+        BIYOS_setcbjac(model, cb, off, variables, evaluate) != BIYOS_OK ||
+        BIYOS_setcbhess(model, cb, 1, variables, variables, evaluate) != BIYOS_OK ||
+        BIYOS_setcbhessvec(model, cb, evaluate) != BIYOS_OK ||
+        BIYOS_getcbdata(model, cb, &data) != BIYOS_OK || data != &tag ||
+        BIYOS_setcbdata(model, cb, NULL) != BIYOS_OK)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static int matches(const char *found, const char *wanted)
 {
     return found != NULL && strcmp(found, wanted) == 0;
@@ -701,7 +737,8 @@ int main(void)
         use_objectives(model) != BIYOS_OK || use_indicators(model) != BIYOS_OK ||
         use_sos(model) != BIYOS_OK || use_complements(model) != BIYOS_OK ||
         use_names(model) != BIYOS_OK || use_options(model) != BIYOS_OK ||
-        use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
+        use_callbacks(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK ||
+        use_readers(env, model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

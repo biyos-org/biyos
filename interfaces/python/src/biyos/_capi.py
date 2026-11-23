@@ -36,6 +36,21 @@ class ErrorRecord(ctypes.Structure):
     ]
 
 
+class RequestRecord(ctypes.Structure):
+    _fields_ = [
+        ("size", c_size_t),
+        ("mdl", c_void_p),
+        ("cb", c_int32),
+        ("thread", c_int32),
+        ("x", c_void_p),
+        ("w", c_void_p),
+        ("v", c_void_p),
+    ]
+
+
+CALLBACK = CFUNCTYPE(c_int, POINTER(RequestRecord), c_void_p, c_void_p)
+
+
 def _declare(
     lib: ctypes.CDLL, name: str, result: type | None, *arguments: type
 ) -> None:
@@ -129,6 +144,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_names(lib, ints)
     _declare_expressions(lib, ints, doubles)
     _declare_settings(lib, ints, doubles)
+    _declare_callbacks(lib, ints)
 
 
 def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -271,6 +287,20 @@ def _declare_settings(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_getmdlflgopt", c_int, c_void_p, c_int32, *pointers)
     _declare(lib, "BIYOS_delmdlopt", c_int, c_void_p, c_int32)
     _declare(lib, "BIYOS_getmdloptsrc", c_int, c_void_p, c_int32, ints)
+
+
+def _declare_callbacks(lib: ctypes.CDLL, ints: type) -> None:
+    added = (c_void_p, c_int32, ints, c_void_p, ints)
+    _declare(lib, "BIYOS_addcb", c_int, *added)
+    _declare(lib, "BIYOS_setcbf", c_int, c_void_p, c_int32, CALLBACK)
+    pattern = (c_void_p, c_int32, POINTER(c_int64), ints, CALLBACK)
+    _declare(lib, "BIYOS_setcbjac", c_int, *pattern)
+    pairs = (c_void_p, c_int32, c_int64, ints, ints, CALLBACK)
+    _declare(lib, "BIYOS_setcbhess", c_int, *pairs)
+    _declare(lib, "BIYOS_setcbhessvec", c_int, c_void_p, c_int32, CALLBACK)
+    _declare(lib, "BIYOS_setcbdata", c_int, c_void_p, c_int32, c_void_p)
+    data = (c_void_p, c_int32, POINTER(c_void_p))
+    _declare(lib, "BIYOS_getcbdata", c_int, *data)
 
 
 lib = _load()

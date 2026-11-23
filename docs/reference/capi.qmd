@@ -82,5 +82,8 @@ Each entry gives the declaration, then each parameter with its direction, `in` w
 ::: {source="reference/_capi/expressions.md"}
 :::
 
+::: {source="reference/_capi/callbacks.md"}
+:::
+
 ::: {source="reference/_capi/status.md"}
 :::

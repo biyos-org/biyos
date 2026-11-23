@@ -933,6 +933,45 @@ BIYOS_API BIYOS_status BIYOS_attachexprrg(BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
 
+typedef struct BIYOS_cbreq
+{
+    size_t size;
+    const BIYOS_model *mdl;
+    BIYOS_index cb;
+    BIYOS_index thread;
+    const BIYOS_real *x;
+    const BIYOS_real *w;
+    const BIYOS_real *v;
+} BIYOS_cbreq;
+
+typedef int (*BIYOS_cbf)(const BIYOS_cbreq *req, BIYOS_real *f, void *data);
+typedef int (*BIYOS_cbjac)(const BIYOS_cbreq *req, BIYOS_real *jac, void *data);
+typedef int (*BIYOS_cbhess)(const BIYOS_cbreq *req, BIYOS_real *hess, void *data);
+typedef int (*BIYOS_cbhessvec)(const BIYOS_cbreq *req, BIYOS_real *hv, void *data);
+
+BIYOS_API BIYOS_status BIYOS_addcb(BIYOS_model *mdl,
+                                   BIYOS_index n,
+                                   const BIYOS_index *funidx,
+                                   void *data,
+                                   BIYOS_index *cb);
+BIYOS_API BIYOS_status BIYOS_setcbf(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbf f);
+BIYOS_API BIYOS_status BIYOS_setcbjac(BIYOS_model *mdl,
+                                      BIYOS_index cb,
+                                      const BIYOS_offset *off,
+                                      const BIYOS_index *varidx,
+                                      BIYOS_cbjac jac);
+BIYOS_API BIYOS_status BIYOS_setcbhess(BIYOS_model *mdl,
+                                       BIYOS_index cb,
+                                       BIYOS_offset nnz,
+                                       const BIYOS_index *varidx1,
+                                       const BIYOS_index *varidx2,
+                                       BIYOS_cbhess hess);
+BIYOS_API BIYOS_status BIYOS_setcbhessvec(BIYOS_model *mdl,
+                                          BIYOS_index cb,
+                                          BIYOS_cbhessvec hessvec);
+BIYOS_API BIYOS_status BIYOS_setcbdata(BIYOS_model *mdl, BIYOS_index cb, void *data);
+BIYOS_API BIYOS_status BIYOS_getcbdata(const BIYOS_model *mdl, BIYOS_index cb, void **data);
+
 #define BIYOS_TRM_NONE 0
 #define BIYOS_TRM_OPTIMAL 101
 #define BIYOS_TRM_LOCAL 102

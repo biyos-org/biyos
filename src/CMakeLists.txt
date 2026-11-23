@@ -99,6 +99,7 @@ biyos_set_warnings(biyos_internal)
 
 add_library(biyos
     capi/arrays.cpp
+    capi/callbacks.cpp
     capi/columns.cpp
     capi/complements.cpp
     capi/cones.cpp
