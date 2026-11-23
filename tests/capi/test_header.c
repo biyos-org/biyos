@@ -21,6 +21,9 @@ extern char error_end[sizeof(BIYOS_error) == 4 * sizeof(void *) ? 1 : -1];
 #if BIYOS_ERR_BADARG > -100 || BIYOS_ERR_BADARG < -199
 #error "BIYOS_ERR_BADARG must be a caller error"
 #endif
+#if BIYOS_ERR_BUSY > -200 || BIYOS_ERR_BUSY < -299
+#error "BIYOS_ERR_BUSY must be a model error"
+#endif
 #if BIYOS_ERR_NOMEMORY > -400 || BIYOS_ERR_NOMEMORY < -499
 #error "BIYOS_ERR_NOMEMORY must be a resource error"
 #endif

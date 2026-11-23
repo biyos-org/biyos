@@ -38,6 +38,7 @@ biyos_add_test(test_core
     core/test_thread.cpp
     core/test_timer.cpp
     core/test_tolerances.cpp
+    core/test_usage.cpp
     core/test_utf8.cpp
     core/test_version.cpp)
 target_link_libraries(test_core PRIVATE biyos_internal)

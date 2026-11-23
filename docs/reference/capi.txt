@@ -39,7 +39,7 @@ since 0.1.0
 
 type BIYOS_env
 summary An environment.
-note It holds the options, the hooks and the last error of each thread that calls it. Environments share no state, so separate threads may use separate environments at the same time. Threads may share one too: calls on different models of it may run at the same time, a call that changes or frees a model runs alone on that model, and a call that changes the environment overlaps no other call on it or on its models. Any thread may call `BIYOS_interrupt` on it at any time. @sec-threads gives the rule.
+note It holds the options, the hooks and the last error of each thread that calls it. Environments share no state, so separate threads may use separate environments at the same time. Threads may share one too: calls on different models of it may run at the same time, and so may calls that only read one model. A call that changes a model runs alone on that model, a call that changes the environment runs alone on it and its models, and a call that would overlap one of them on another thread fails with `BIYOS_ERR_BUSY`. It is freed only once no other thread is in a call on it or will make one. Any thread may call `BIYOS_interrupt` and `BIYOS_lasterror` on it at any time. @sec-threads gives the rule.
 see BIYOS_newenv BIYOS_freeenv
 since 0.1.0
 
@@ -82,12 +82,13 @@ value BIYOS_BUILDING Defined by the library's own build. A caller never defines 
 since 0.1.0
 
 group codes Status codes
-text A call returns `BIYOS_OK` or a negative code. The hundreds of a code say who is at fault: −100 to −199 the caller, −200 to −299 the model, −300 to −399 user code such as a callback, −400 to −499 resources, −500 to −599 biyos. A new code joins its group and keeps its number for good, so test a group by range rather than by value. No code exists yet in the model and user code groups.
-text Besides the codes its entry names, every call that returns a status can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos. A solve outcome is never an error code.
+text A call returns `BIYOS_OK` or a negative code. The hundreds of a code say who is at fault: −100 to −199 the caller, −200 to −299 the model, −300 to −399 user code such as a callback, −400 to −499 resources, −500 to −599 biyos. A new code joins its group and keeps its number for good, so test a group by range rather than by value. No code exists yet in the user code group.
+text Besides the codes its entry names, every call that returns a status can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos, and every call on an environment or a model but `BIYOS_lasterror` and `BIYOS_interrupt` can return `BIYOS_ERR_BUSY` when it would overlap a call on another thread (@sec-threads). A solve outcome is never an error code.
 
 table Status codes
 value BIYOS_OK The call succeeded.
 value BIYOS_ERR_BADARG The caller passed something the call does not accept: a null pointer, an unknown name, id or index, a value out of range, a call of the wrong kind for its option, or a change to an environment while it delivers an event. The entry of each call says which.
+value BIYOS_ERR_BUSY The environment or the model is in a call on another thread that this call may not overlap (@sec-threads).
 value BIYOS_ERR_NOMEMORY An allocation failed, or a count would pass the largest the model can hold.
 value BIYOS_ERR_INTERNAL A fault in biyos.
 since 0.1.0
@@ -119,6 +120,7 @@ summary Free an environment.
 param env in The environment to free, with every string read from it; null does nothing and returns `BIYOS_OK`.
 return `BIYOS_OK` once the environment is freed.
 error BIYOS_ERR_BADARG `env` delivers an event, or has a model that is not freed, with the message `invalid argument: environment: has a model that is not freed`. The call then frees nothing.
+note A call on `env` from another thread refuses the free with `BIYOS_ERR_BUSY`, but nothing refuses a call that starts while the free runs or after it returns: free `env` only once no other thread is in a call on it or will make one (@sec-threads).
 see BIYOS_newenv BIYOS_freemdl
 since 0.1.0
 
@@ -130,7 +132,7 @@ return `BIYOS_OK`, with the error in `*err`. If no call has failed, `err->status
 error BIYOS_ERR_BADARG `env` or `err` is null, or `err->size` is smaller than `offsetof(BIYOS_error, msg) + sizeof err->msg`, the size of `BIYOS_error` in 0.1.0. The call then writes nothing.
 note The call never keeps an error of its own, so a failed read leaves the last error as it was.
 note Each thread reads its own last error: a failure on one thread never replaces another's. The environment keeps the errors of the 256 threads that failed most recently, and dropping one ends the life of its message. If memory runs out on a failure when `env` keeps no error for the thread, no error may be kept for that thread and the read gives `BIYOS_OK`. The failed call's return value still carries its status.
-note The message starts with the kind of failure, `invalid argument`, `out of memory` or `internal error`, and is written for people: branch on the status, not on the text. Successful calls leave it in place, and it is empty after a failure if memory ran out while keeping the message.
+note The message starts with the kind of failure, `invalid argument`, `busy`, `out of memory` or `internal error`, and is written for people: branch on the status, not on the text. Successful calls leave it in place, and it is empty after a failure if memory ran out while keeping the message.
 note `err->msg` stays valid until the next failed call on `env` from the same thread, until the error is dropped or until `env` is freed. A call that fails inside a hook is the last failure only until that hook returns, and a message read inside a hook stays valid only until the hook returns.
 see BIYOS_error BIYOS_status
 since 0.1.0
@@ -452,7 +454,7 @@ param copy out Receives the copy; set to null on failure.
 return `BIYOS_OK`, with the copy in `*copy`.
 error BIYOS_ERR_BADARG `env` delivers an event.
 note The copy holds the same variables, functions, constraints and objectives as `mdl`, under the same indices and the same names, and a change to either leaves the other as it was. It is a model made on `env`: it reports there, and `env` cannot be freed while it lives. Either of the two may be freed first.
-note The call only reads `mdl`, so other threads may read it meanwhile but not change it. It may run while the environment of `mdl` delivers an event. A failure keeps its message on the environment of `mdl`.
+note The call only reads `mdl`, so other threads may read it meanwhile. A change of `mdl`, of its environment or of `env` that would overlap it on another thread refuses one of the two calls with `BIYOS_ERR_BUSY`. It may run while the environment of `mdl` delivers an event. A failure keeps its message on the environment of `mdl`.
 see BIYOS_newmdl
 since 0.1.0
 
@@ -461,6 +463,7 @@ summary Free a model.
 param mdl in The model; null does nothing and returns `BIYOS_OK`.
 return `BIYOS_OK` once the model is freed.
 error BIYOS_ERR_BADARG The environment of `mdl` delivers an event. The call then frees nothing.
+note A call on `mdl` from another thread refuses the free with `BIYOS_ERR_BUSY`, but nothing refuses a call that starts while the free runs or after it returns: free `mdl` only once no other thread is in a call on it or will make one (@sec-threads).
 see BIYOS_newmdl BIYOS_freeenv
 since 0.1.0
 

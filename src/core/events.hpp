@@ -71,7 +71,7 @@ class Events
 
     bool wanted(EventKind kind, EventLevel level) const noexcept
     {
-        return lowest_[slot(kind)] <= level;
+        return lowest_[slot(kind)].load() <= level;
     }
     bool delivering() const noexcept { return mine() && depth_ > 0; }
     bool filling() const noexcept { return mine() && fills_ > 0; }
@@ -158,7 +158,7 @@ class Events
     const Clock &clock_;
     std::chrono::nanoseconds origin_;
     std::deque<Entry> hooks_;
-    std::array<EventLevel, kEventKinds.size()> lowest_;
+    std::array<std::atomic<EventLevel>, kEventKinds.size()> lowest_;
     int next_id_ = 1;
     int depth_ = 0;
     int fills_ = 0;

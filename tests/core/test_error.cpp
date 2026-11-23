@@ -16,6 +16,14 @@ TEST(ErrorTest, InvalidArgument)
     EXPECT_STREQ(error.what(), "invalid argument: argument 'n': must be positive");
 }
 
+TEST(ErrorTest, Busy)
+{
+    const biyos::Error error(biyos::ErrorKind::Busy, "model", "is in a call on another thread");
+    EXPECT_EQ(error.kind(), biyos::ErrorKind::Busy);
+    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_BUSY);
+    EXPECT_STREQ(error.what(), "busy: model: is in a call on another thread");
+}
+
 TEST(ErrorTest, NoMemory)
 {
     const biyos::Error error(biyos::ErrorKind::NoMemory, "workspace", "needs 3 GB");

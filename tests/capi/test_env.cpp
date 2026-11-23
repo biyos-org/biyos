@@ -10,9 +10,10 @@
 namespace
 {
 
-void fail_hook(BIYOS_env *env, BIYOS_index hook, std::latch &failed, std::string &seen)
+void fail_read(BIYOS_env *env, BIYOS_int id, std::latch &failed, std::string &seen)
 {
-    EXPECT_EQ(BIYOS_delenvhook(env, hook), BIYOS_ERR_BADARG);
+    BIYOS_int value = 0;
+    EXPECT_EQ(BIYOS_getenvintopt(env, id, &value), BIYOS_ERR_BADARG);
     failed.arrive_and_wait();
     seen = biyos::test::last_message(env);
 }
@@ -65,8 +66,8 @@ TEST(CApiTest, ErrorThreads)
     std::latch failed(2);
     std::string first;
     std::string second;
-    std::thread one(fail_hook, env.get(), 998, std::ref(failed), std::ref(first));
-    std::thread two(fail_hook, env.get(), 999, std::ref(failed), std::ref(second));
+    std::thread one(fail_read, env.get(), 998, std::ref(failed), std::ref(first));
+    std::thread two(fail_read, env.get(), 999, std::ref(failed), std::ref(second));
     one.join();
     two.join();
     EXPECT_NE(first.find("998"), std::string::npos);

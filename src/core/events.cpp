@@ -120,11 +120,15 @@ Events::Turn::~Turn()
 
 Events::Events(const Clock &clock) : clock_(clock), origin_(clock.wall_time())
 {
-    lowest_.fill(kNobody);
+    for (std::atomic<EventLevel> &lowest : lowest_)
+    {
+        lowest.store(kNobody);
+    }
 }
 
 int Events::add_hook(EventKind kind, EventLevel level, Hook hook)
 {
+    const Turn turn(*this);
     if (!hook)
     {
         throw Error(ErrorKind::InvalidArgument, "hook", "is empty");
@@ -140,13 +144,14 @@ int Events::add_hook(EventKind kind, EventLevel level, Hook hook)
         .hook = std::make_unique<const Hook>(std::move(hook)),
         .active = true,
     });
-    const std::size_t at = slot(kind);
-    lowest_[at] = (std::min)(lowest_[at], level);
+    std::atomic<EventLevel> &lowest = lowest_[slot(kind)];
+    lowest.store((std::min)(lowest.load(), level));
     return next_id_++;
 }
 
 void Events::delete_hook(int id)
 {
+    const Turn turn(*this);
     const auto found = std::ranges::find(hooks_, id, &Entry::id);
     if (found == hooks_.end() || !found->active)
     {
@@ -176,7 +181,7 @@ void Events::refresh(EventKind kind) noexcept
             level = (std::min)(level, entry.lowest);
         }
     }
-    lowest_[slot(kind)] = level;
+    lowest_[slot(kind)].store(level);
 }
 
 void Events::deliver(const Event &event) noexcept

@@ -11,7 +11,7 @@ A model is copied whole. The copy holds the same variables, functions, constrain
 
 The copy is a model of the environment it was made on: it reports there, and that environment cannot be freed while the copy lives. Either the model or its copy may be freed first. A failure keeps its message on the environment of the source, as every call on a model does.
 
-The call only reads the source, so other threads may read it meanwhile but not change it. It may run while the source's environment delivers an event, and is refused inside a hook of the target environment.
+The call only reads the source, so other threads may read it meanwhile. A change of the source, of its environment or of the target environment that would overlap it on another thread refuses one of the two calls with `BIYOS_ERR_BUSY` (@sec-threads). It may run while the source's environment delivers an event, and is refused inside a hook of the target environment.
 
 ## Comparing {#sec-copy-compare}
 

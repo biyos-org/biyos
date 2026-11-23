@@ -1,10 +1,12 @@
 #pragma once
 
 #include "biyos/biyos.h"
+#include "capi/busy.hpp"
 #include "capi/firewall.hpp"
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
+#include "core/usage.hpp"
 #include "model/model.hpp"
 
 #include <concepts>
@@ -24,6 +26,7 @@ struct BIYOS_model
 
     biyos::Env::Handle handle;
     biyos::Model core;
+    mutable biyos::Usage usage;
 };
 
 namespace biyos::capi
@@ -52,7 +55,8 @@ inline biyos::Env &idle(biyos::Env &env, std::string_view object)
 
 inline biyos::Env &writable(biyos::Env &env)
 {
-    return idle(env, "environment");
+    EnvGuard::claim(idle(env, "environment"));
+    return env;
 }
 
 inline biyos::Model &writable(BIYOS_model &model)
@@ -62,6 +66,7 @@ inline biyos::Model &writable(BIYOS_model &model)
         const std::string reason = "is read-only while delivering an event";
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "model", reason);
     }
+    ModelGuard::claim(model.usage);
     return model.core;
 }
 
@@ -73,6 +78,13 @@ inline void start(biyos::Env &env) noexcept
     }
 }
 
+template <auto Body, typename Guard, typename Target, typename... Args>
+void admitted(const Guard &busy, Target &target, Args... arguments)
+{
+    busy.check();
+    Body(target, arguments...);
+}
+
 template <auto Body, typename... Args>
 BIYOS_status guarded(BIYOS_env *env, Args... arguments) noexcept
 {
@@ -80,8 +92,10 @@ BIYOS_status guarded(BIYOS_env *env, Args... arguments) noexcept
     {
         return BIYOS_ERR_BADARG;
     }
-    start(env->core);
-    return biyos::capi::guard(&env->core, nullptr, [&] { Body(env->core, arguments...); });
+    biyos::Env &core = env->core;
+    start(core);
+    const EnvGuard busy(core);
+    return biyos::capi::guard(&core, nullptr, [&] { admitted<Body>(busy, core, arguments...); });
 }
 
 template <auto Body, typename Model, typename... Args>
@@ -94,7 +108,8 @@ BIYOS_status guarded(Model *model, Args... arguments) noexcept
     }
     biyos::Env &env = model->handle.env();
     start(env);
-    return biyos::capi::guard(&env, model, [&] { Body(*model, arguments...); });
+    const ModelGuard busy(env, model->usage);
+    return biyos::capi::guard(&env, model, [&] { admitted<Body>(busy, *model, arguments...); });
 }
 
 }

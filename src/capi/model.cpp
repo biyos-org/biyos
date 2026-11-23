@@ -1,6 +1,7 @@
 #include "biyos/biyos.h"
 
 #include "capi/arrays.hpp"
+#include "capi/busy.hpp"
 #include "capi/entry.hpp"
 #include "capi/selection.hpp"
 #include "core/env.hpp"
@@ -12,6 +13,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::capi::EnvGuard;
 using biyos::capi::guarded;
 using biyos::capi::idle;
 using biyos::capi::length;
@@ -28,7 +30,7 @@ namespace
 void create(biyos::Env &env, BIYOS_model **model)
 {
     BIYOS_model **made = require(model, "mdl");
-    writable(env);
+    idle(env, "environment");
     *made = new BIYOS_model(env);
 }
 
@@ -36,6 +38,8 @@ void make_copy(const BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
 {
     BIYOS_model **made = require(copy, "copy");
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
+    const EnvGuard busy(target);
+    busy.check();
     *made = new BIYOS_model(target, model.core);
 }
 

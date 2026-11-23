@@ -11,7 +11,7 @@ Every call that returns `BIYOS_status` follows these rules:
 - On success it leaves the error as it was.
 - A null pointer argument, the environment or the model included, gives `BIYOS_ERR_BADARG`, unless its entry says otherwise.
 - On failure it changes nothing and leaves its output arguments as they were, unless its entry says otherwise.
-- Besides the codes its entry names, it can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos.
+- Besides the codes its entry names, it can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos, and a call on an environment or a model can return `BIYOS_ERR_BUSY` when it would overlap a call on another thread (@sec-threads).
 
 No call lets an exception out. A call keeps no pointer the caller passes in, unless its entry says so. A string a call returns belongs to biyos, and its entry says how long the pointer stays valid.
 
