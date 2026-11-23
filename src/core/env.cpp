@@ -76,11 +76,12 @@ RecordView Env::last_error() const noexcept
 }
 
 ErrorScope::ErrorScope(Env &env) noexcept
-    : env_(env), linked_(env.events_.delivering()), outer_(env.scope())
+    : env_(env), delivery_(env.events().delivery()),
+      outer_(delivery_ == nullptr ? nullptr : delivery_->scope)
 {
-    if (linked_)
+    if (delivery_ != nullptr)
     {
-        env_.scope_ = this;
+        delivery_->scope = this;
     }
 }
 
@@ -90,15 +91,16 @@ ErrorScope::~ErrorScope()
     {
         env_.records_.swap(kept_);
     }
-    if (linked_)
+    if (delivery_ != nullptr)
     {
-        env_.scope_ = outer_;
+        delivery_->scope = outer_;
     }
 }
 
-ErrorScope *Env::scope() const noexcept
+ErrorScope *Env::scope() noexcept
 {
-    return events_.delivering() ? scope_ : nullptr;
+    const Deliveries::State *const delivery = events_.delivery();
+    return delivery == nullptr ? nullptr : delivery->scope;
 }
 
 void Env::record_error(ErrorKind kind, std::string_view text, const BIYOS_model *model) noexcept

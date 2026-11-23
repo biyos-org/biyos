@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/clock.hpp"
+#include "core/deliveries.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
 #include "core/interrupt.hpp"
@@ -31,7 +32,7 @@ class ErrorScope
     friend class Env;
 
     Env &env_;
-    bool linked_;
+    Deliveries::State *delivery_;
     ErrorScope *outer_;
     Record kept_;
     bool swapped_ = false;
@@ -83,14 +84,13 @@ class Env
   private:
     friend class ErrorScope;
 
-    ErrorScope *scope() const noexcept;
+    ErrorScope *scope() noexcept;
 
     std::unique_ptr<Clock> clock_;
     Events events_;
     Options options_;
     Interrupt interrupt_;
     Records records_;
-    ErrorScope *scope_ = nullptr;
     std::atomic<std::size_t> handles_{0};
     Usage usage_;
 };

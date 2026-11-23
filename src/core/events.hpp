@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/clock.hpp"
+#include "core/deliveries.hpp"
 #include "core/depth.hpp"
 #include "core/event.hpp"
 #include "core/hooks.hpp"
@@ -26,8 +27,9 @@ class Events
     {
         return hooks_.wanted(kind, level);
     }
-    bool delivering() const noexcept { return mine() && hooks_.delivering(); }
-    bool filling() const noexcept { return mine() && fills_ > 0; }
+    bool delivering() const noexcept { return deliveries_.delivering(); }
+    bool filling() const noexcept { return deliveries_.filling(); }
+    Deliveries::State *delivery() noexcept { return deliveries_.delivery(); }
     std::chrono::nanoseconds origin() const noexcept { return origin_; }
 
     template <std::invocable<Event &> Fill>
@@ -37,6 +39,7 @@ class Events
         {
             return;
         }
+        const Deliveries::Entry entry(deliveries_);
         const Turn turn(*this);
         Event event{
             .kind = kind,
@@ -49,13 +52,14 @@ class Events
         };
         try
         {
-            const Depth inside(fills_);
+            const Depth inside(entry.state().fills);
             fill(event);
         }
         catch (...)
         {
             return;
         }
+        const Depth delivery(entry.state().depth);
         hooks_.deliver(event);
     }
 
@@ -78,7 +82,7 @@ class Events
     const Clock &clock_;
     std::chrono::nanoseconds origin_;
     Hooks hooks_;
-    int fills_ = 0;
+    Deliveries deliveries_;
     std::mutex turn_;
     std::atomic<ThreadId> owner_;
 };
