@@ -68,12 +68,12 @@ BIYOS_API BIYOS_status BIYOS_interrupt(BIYOS_env *env);
 #define BIYOS_CHECKLVL_CHEAP 2
 #define BIYOS_CHECKLVL_FULL 3
 
-#define BIYOS_KND_BOOL 1
-#define BIYOS_KND_INT 2
-#define BIYOS_KND_DBL 3
-#define BIYOS_KND_STR 4
-#define BIYOS_KND_ENUM 5
-#define BIYOS_KND_FLG 6
+#define BIYOS_OPTKND_BOOL 1
+#define BIYOS_OPTKND_INT 2
+#define BIYOS_OPTKND_DBL 3
+#define BIYOS_OPTKND_STR 4
+#define BIYOS_OPTKND_ENUM 5
+#define BIYOS_OPTKND_FLG 6
 
 #define BIYOS_OPTSRC_MDL 1
 #define BIYOS_OPTSRC_ENV 2
@@ -121,14 +121,14 @@ BIYOS_API BIYOS_status BIYOS_getmdlflgopt(const BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_delmdlopt(BIYOS_model *mdl, BIYOS_int opt);
 BIYOS_API BIYOS_status BIYOS_getmdloptsrc(const BIYOS_model *mdl, BIYOS_int opt, BIYOS_int *src);
 
-#define BIYOS_EVT_MESSAGE 1
-#define BIYOS_EVT_CHECK 2
-#define BIYOS_EVT_PHASE 3
+#define BIYOS_EVTKND_MSG 1
+#define BIYOS_EVTKND_INV 2
+#define BIYOS_EVTKND_SPAN 3
 
-#define BIYOS_LVL_DBG 1
-#define BIYOS_LVL_INFO 2
-#define BIYOS_LVL_WARN 3
-#define BIYOS_LVL_ERR 4
+#define BIYOS_EVTLVL_DBG 1
+#define BIYOS_EVTLVL_INFO 2
+#define BIYOS_EVTLVL_WARN 3
+#define BIYOS_EVTLVL_ERR 4
 
 BIYOS_API BIYOS_status BIYOS_addenvhook(BIYOS_env *env,
                                         BIYOS_hook hk,
@@ -157,14 +157,14 @@ BIYOS_API const BIYOS_model *BIYOS_getevtmdl(const BIYOS_event *evt);
 BIYOS_API BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, size_t cap, char *buf, size_t *len);
 BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *buf, size_t *len);
 
-#define BIYOS_VAR_CONT 1
-#define BIYOS_VAR_BIN 2
-#define BIYOS_VAR_INT 3
-#define BIYOS_VAR_SEMICONT 4
-#define BIYOS_VAR_SEMIINT 5
+#define BIYOS_VARKND_CONT 1
+#define BIYOS_VARKND_BIN 2
+#define BIYOS_VARKND_INT 3
+#define BIYOS_VARKND_SEMICONT 4
+#define BIYOS_VARKND_SEMIINT 5
 
-#define BIYOS_MINIMIZE 1
-#define BIYOS_MAXIMIZE 2
+#define BIYOS_OBJSENSE_MIN 1
+#define BIYOS_OBJSENSE_MAX 2
 
 #define BIYOS_SOSKND_SOS1 1
 #define BIYOS_SOSKND_SOS2 2

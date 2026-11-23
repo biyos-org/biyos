@@ -11,6 +11,7 @@
 namespace
 {
 
+using biyos::EventKind;
 using biyos::EventLevel;
 using namespace std::chrono_literals;
 
@@ -29,6 +30,13 @@ biyos::Event removed()
     biyos::Event event = message(EventLevel::Info, "removed rows");
     event.fields.push_back(biyos::Field{.name = "rows", .value = "3"});
     event.fields.push_back(biyos::Field{.name = "columns", .value = "1"});
+    return event;
+}
+
+biyos::Event event_of(EventKind kind)
+{
+    biyos::Event event = message(EventLevel::Info, "");
+    event.kind = kind;
     return event;
 }
 
@@ -148,6 +156,15 @@ TEST(FormatTest, JsonLevels)
     EXPECT_EQ(biyos::format_json(message(EventLevel::Info, "")), head + "info" + tail);
     EXPECT_EQ(biyos::format_json(message(EventLevel::Warning, "")), head + "warning" + tail);
     EXPECT_EQ(biyos::format_json(message(EventLevel::Error, "")), head + "error" + tail);
+}
+
+TEST(FormatTest, JsonKinds)
+{
+    const std::string head = R"({"time":0.000000,"kind":")";
+    const std::string tail = R"(","level":"info","module":"core","text":"","fields":{}})";
+    EXPECT_EQ(biyos::format_json(event_of(EventKind::Message)), head + "message" + tail);
+    EXPECT_EQ(biyos::format_json(event_of(EventKind::Invariant)), head + "invariant" + tail);
+    EXPECT_EQ(biyos::format_json(event_of(EventKind::Span)), head + "span" + tail);
 }
 
 TEST(FormatTest, JsonEscapes)

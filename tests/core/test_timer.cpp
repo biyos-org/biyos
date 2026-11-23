@@ -130,7 +130,7 @@ class TimerTest : public ::testing::Test
     void listen(biyos::Env &target)
     {
         const auto keep = [this](const biyos::Event &event) { kept.push_back(event); };
-        target.events().add_hook(EventKind::Phase, EventLevel::Debug, keep);
+        target.events().add_hook(EventKind::Span, EventLevel::Debug, keep);
     }
 
     biyos::FakeClock &clock;
@@ -224,7 +224,7 @@ TEST_F(TimerTest, PhaseEvents)
     EXPECT_EQ(lines(kept), expected);
     for (const biyos::Event &event : kept)
     {
-        EXPECT_EQ(event.kind, EventKind::Phase);
+        EXPECT_EQ(event.kind, EventKind::Span);
         EXPECT_EQ(event.level, EventLevel::Info);
         EXPECT_EQ(event.module, "nlp");
     }
@@ -234,7 +234,7 @@ TEST_F(TimerTest, PhaseEvents)
 TEST_F(TimerTest, SlowHook)
 {
     const auto slow = [this](const biyos::Event &event) { lag(event); };
-    env.events().add_hook(EventKind::Phase, EventLevel::Debug, slow);
+    env.events().add_hook(EventKind::Span, EventLevel::Debug, slow);
     {
         const Timer solve(env, tree, "nlp", "solve");
         advance(1ns, 1ns);
@@ -318,7 +318,7 @@ TEST_F(TimerTest, FailedLeave)
     biyos::Env local(std::move(owned));
     listen(local);
     const auto drift = [&flaky](const biyos::Event &) { flaky.cpu += 10ns; };
-    local.events().add_hook(EventKind::Phase, EventLevel::Debug, drift);
+    local.events().add_hook(EventKind::Span, EventLevel::Debug, drift);
     {
         const Timer solve(local, tree, "nlp", "solve");
         flaky.wall += 5ns;

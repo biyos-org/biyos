@@ -95,7 +95,7 @@ constexpr std::array<const char *, 3> kNames{"r0", "r1", "r2"};
 
 void add_parts(const Model &model)
 {
-    const std::array<BIYOS_int, 3> kinds{BIYOS_VAR_BIN, BIYOS_VAR_BIN, BIYOS_VAR_BIN};
+    const std::array<BIYOS_int, 3> kinds{BIYOS_VARKND_BIN, BIYOS_VARKND_BIN, BIYOS_VARKND_BIN};
     ASSERT_EQ(BIYOS_addvar(model.get(), 3, kinds.data(), nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(model.get(), 3, nullptr), BIYOS_OK);
 }

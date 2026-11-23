@@ -390,7 +390,7 @@ struct Switches
 Switches add_switches(const Model &model, Engine &engine)
 {
     const Switches switches{.start = count_of(model, BIYOS_getnvar), .size = 1 + below(engine, 4)};
-    const std::vector<int> kinds(static_cast<std::size_t>(switches.size), BIYOS_VAR_BIN);
+    const std::vector<int> kinds(static_cast<std::size_t>(switches.size), BIYOS_VARKND_BIN);
     EXPECT_EQ(BIYOS_addvar(model.get(), switches.size, kinds.data(), nullptr, nullptr, nullptr),
               BIYOS_OK);
     return switches;
@@ -593,7 +593,7 @@ void keep_variables(const Held &held, Span span, BIYOS_status wanted)
 {
     const auto n = static_cast<std::size_t>(count_of(held.model, BIYOS_getnvar) + 1);
     const std::vector<double> bounds(n, 0.5);
-    const std::vector<int> kinds(n, BIYOS_VAR_INT);
+    const std::vector<int> kinds(n, BIYOS_VARKND_INT);
     expect_kept(held, span, wanted, BIYOS_setvarbndrg, bounds, bounds);
     expect_kept(held, span, wanted, BIYOS_getvarbndrg, bounds, bounds);
     expect_kept(held, span, wanted, BIYOS_setvarkndrg, kinds);
@@ -626,7 +626,7 @@ void keep_constraints(const Held &held, Span span, BIYOS_status wanted)
 void keep_objectives(const Held &held, Span span, BIYOS_status wanted)
 {
     const auto n = static_cast<std::size_t>(count_of(held.model, BIYOS_getnobj) + 1);
-    const std::vector<int> senses(n, BIYOS_MAXIMIZE);
+    const std::vector<int> senses(n, BIYOS_OBJSENSE_MAX);
     const std::vector<double> values(n, 0.5);
     expect_kept(held, span, wanted, BIYOS_setobjsenserg, senses);
     expect_kept(held, span, wanted, BIYOS_getobjsenserg, senses);

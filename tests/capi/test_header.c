@@ -47,8 +47,8 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
     BIYOS_OPT_MAXCPUTIME != 10
 #error "a public option id changed"
 #endif
-#if BIYOS_KND_BOOL != 1 || BIYOS_KND_INT != 2 || BIYOS_KND_DBL != 3 || BIYOS_KND_STR != 4 ||       \
-    BIYOS_KND_ENUM != 5 || BIYOS_KND_FLG != 6
+#if BIYOS_OPTKND_BOOL != 1 || BIYOS_OPTKND_INT != 2 || BIYOS_OPTKND_DBL != 3 ||                    \
+    BIYOS_OPTKND_STR != 4 || BIYOS_OPTKND_ENUM != 5 || BIYOS_OPTKND_FLG != 6
 #error "a public option kind changed"
 #endif
 #if !defined(BIYOS_OPTSRC_MDL) || BIYOS_OPTSRC_MDL != 1 || BIYOS_OPTSRC_ENV != 2 ||                \
@@ -59,10 +59,11 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
     BIYOS_CHECKLVL_FULL != 3
 #error "a public check level changed"
 #endif
-#if BIYOS_EVT_MESSAGE != 1 || BIYOS_EVT_CHECK != 2 || BIYOS_EVT_PHASE != 3
+#if BIYOS_EVTKND_MSG != 1 || BIYOS_EVTKND_INV != 2 || BIYOS_EVTKND_SPAN != 3
 #error "a public event kind changed"
 #endif
-#if BIYOS_LVL_DBG != 1 || BIYOS_LVL_INFO != 2 || BIYOS_LVL_WARN != 3 || BIYOS_LVL_ERR != 4
+#if BIYOS_EVTLVL_DBG != 1 || BIYOS_EVTLVL_INFO != 2 || BIYOS_EVTLVL_WARN != 3 ||                   \
+    BIYOS_EVTLVL_ERR != 4
 #error "a public level changed"
 #endif
 
@@ -81,11 +82,11 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 #if !defined(BIYOS_CLM_NONE) || BIYOS_CLM_NONE != 0 || BIYOS_CLM_LOCAL != 1 || BIYOS_CLM_GLOBAL != 2
 #error "a public claim changed"
 #endif
-#if !defined(BIYOS_VAR_CONT) || BIYOS_VAR_CONT != 1 || BIYOS_VAR_BIN != 2 || BIYOS_VAR_INT != 3 || \
-    BIYOS_VAR_SEMICONT != 4 || BIYOS_VAR_SEMIINT != 5
+#if !defined(BIYOS_VARKND_CONT) || BIYOS_VARKND_CONT != 1 || BIYOS_VARKND_BIN != 2 ||              \
+    BIYOS_VARKND_INT != 3 || BIYOS_VARKND_SEMICONT != 4 || BIYOS_VARKND_SEMIINT != 5
 #error "a public variable kind changed"
 #endif
-#if !defined(BIYOS_MINIMIZE) || BIYOS_MINIMIZE != 1 || BIYOS_MAXIMIZE != 2
+#if !defined(BIYOS_OBJSENSE_MIN) || BIYOS_OBJSENSE_MIN != 1 || BIYOS_OBJSENSE_MAX != 2
 #error "a public objective sense changed"
 #endif
 #if !defined(BIYOS_SOSKND_SOS1) || BIYOS_SOSKND_SOS1 != 1 || BIYOS_SOSKND_SOS2 != 2
@@ -111,7 +112,7 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 static void count(const BIYOS_event *event, void *data)
 {
     int *errors = data;
-    if (BIYOS_getevtlvl(event) == BIYOS_LVL_ERR)
+    if (BIYOS_getevtlvl(event) == BIYOS_EVTLVL_ERR)
     {
         ++*errors;
     }
@@ -229,7 +230,7 @@ static BIYOS_status use_constraints(BIYOS_model *model)
 static BIYOS_status use_objectives(BIYOS_model *model)
 {
     const int functions[2] = {0, 1};
-    const int senses[2] = {BIYOS_MAXIMIZE, BIYOS_MINIMIZE};
+    const int senses[2] = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN};
     const double weights[1] = {2.0};
     const int indices[1] = {1};
     int found[2] = {-1, -1};
@@ -262,8 +263,8 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     {
         status = BIYOS_getobjrg(model, 0, 2, NULL, found, priorities, NULL);
     }
-    if (status != BIYOS_OK || first != 0 || objectives != 2 || found[0] != BIYOS_MAXIMIZE ||
-        found[1] != BIYOS_MINIMIZE || priorities[1] != 1 ||
+    if (status != BIYOS_OK || first != 0 || objectives != 2 || found[0] != BIYOS_OBJSENSE_MAX ||
+        found[1] != BIYOS_OBJSENSE_MIN || priorities[1] != 1 ||
         BIYOS_delobjsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
         BIYOS_delobjrg(model, 2, 0, NULL) != BIYOS_OK)
     {
@@ -279,7 +280,7 @@ static BIYOS_status use_indicators(BIYOS_model *model)
     const int functions[2] = {0, 1};
     const double upper[1] = {4.0};
     const int indices[1] = {1};
-    const int continuous = BIYOS_VAR_CONT;
+    const int continuous = BIYOS_VARKND_CONT;
     int found[2] = {-1, -1};
     int map[2] = {-1, -1};
     BIYOS_index first = -1;
@@ -642,8 +643,8 @@ static BIYOS_status use_hooks(BIYOS_model *model)
 {
     int errors = 0;
     BIYOS_index id = 0;
-    const int lowest = BIYOS_LVL_DBG;
-    if (BIYOS_addmdlhook(model, count, &errors, BIYOS_EVT_MESSAGE, lowest, &id) != BIYOS_OK ||
+    const int lowest = BIYOS_EVTLVL_DBG;
+    if (BIYOS_addmdlhook(model, count, &errors, BIYOS_EVTKND_MSG, lowest, &id) != BIYOS_OK ||
         id != 1 || BIYOS_getnvar(model, NULL) != BIYOS_ERR_BADARG ||
         BIYOS_delmdlhook(model, id) != BIYOS_OK || errors != 1)
     {
@@ -748,10 +749,10 @@ int main(void)
     BIYOS_int patch = -1;
     BIYOS_int seed = -1;
     BIYOS_int kind = 0;
-    int lowest = BIYOS_LVL_DBG;
+    int lowest = BIYOS_EVTLVL_DBG;
     int errors = 0;
     BIYOS_index id = 0;
-    const int kinds[2] = {BIYOS_VAR_CONT, BIYOS_VAR_BIN};
+    const int kinds[2] = {BIYOS_VARKND_CONT, BIYOS_VARKND_BIN};
     const double lower[2] = {-1.0, 0.0};
     const double upper[2] = {1.0, 1.0};
     const int indices[1] = {0};
@@ -773,11 +774,11 @@ int main(void)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_getoptknd(env, BIYOS_OPT_SEED, &kind) != BIYOS_OK || kind != BIYOS_KND_INT)
+    if (BIYOS_getoptknd(env, BIYOS_OPT_SEED, &kind) != BIYOS_OK || kind != BIYOS_OPTKND_INT)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_addenvhook(env, count, &errors, BIYOS_EVT_MESSAGE, lowest, &id) != BIYOS_OK ||
+    if (BIYOS_addenvhook(env, count, &errors, BIYOS_EVTKND_MSG, lowest, &id) != BIYOS_OK ||
         BIYOS_setenvintopt(env, BIYOS_OPT_SEED, -1) != BIYOS_ERR_BADARG ||
         BIYOS_delenvhook(env, id) != BIYOS_OK || errors != 1)
     {
@@ -787,10 +788,10 @@ int main(void)
         BIYOS_addvar(model, 2, kinds, lower, upper, &first) != BIYOS_OK || first != 0 ||
         BIYOS_setvarbndsp(model, 1, indices, lower + 1, NULL) != BIYOS_OK ||
         BIYOS_setvarkndsp(model, 1, indices, kinds + 1) != BIYOS_OK ||
-        BIYOS_getvarkndsp(model, 1, indices, found + 1) != BIYOS_OK || found[1] != BIYOS_VAR_BIN ||
-        BIYOS_getnvar(model, &variables) != BIYOS_OK || variables != 2 ||
-        BIYOS_getvarrg(model, 0, 2, found, NULL, NULL) != BIYOS_OK || found[0] != BIYOS_VAR_BIN ||
-        found[1] != BIYOS_VAR_BIN)
+        BIYOS_getvarkndsp(model, 1, indices, found + 1) != BIYOS_OK ||
+        found[1] != BIYOS_VARKND_BIN || BIYOS_getnvar(model, &variables) != BIYOS_OK ||
+        variables != 2 || BIYOS_getvarrg(model, 0, 2, found, NULL, NULL) != BIYOS_OK ||
+        found[0] != BIYOS_VARKND_BIN || found[1] != BIYOS_VARKND_BIN)
     {
         status = BIYOS_ERR_INTERNAL;
     }

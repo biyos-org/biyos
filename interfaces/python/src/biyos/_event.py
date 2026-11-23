@@ -11,25 +11,25 @@ if TYPE_CHECKING:
 
 
 class EventKind(IntEnum):
-    """The kinds of events, as ``BIYOS_EVT_`` numbers them.
+    """The kinds of events, as ``BIYOS_EVTKND_`` numbers them.
 
     Attributes
     ----------
     MESSAGE
         A message for people.
-    CHECK
+    INVARIANT
         A failed check of an invariant.
-    PHASE
+    SPAN
         A phase beginning or ending, with the wall and CPU time.
     """
 
     MESSAGE = 1
-    CHECK = 2
-    PHASE = 3
+    INVARIANT = 2
+    SPAN = 3
 
 
 class EventLevel(IntEnum):
-    """The levels of events, from least to most severe, as ``BIYOS_LVL_``
+    """The levels of events, from least to most severe, as ``BIYOS_EVTLVL_``
     numbers them.
 
     Attributes

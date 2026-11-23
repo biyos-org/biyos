@@ -133,7 +133,7 @@ void add_items(const Model &model, BIYOS_index n)
 {
     BIYOS_model *held = model.get();
     const Indices functions(static_cast<std::size_t>(n), 0);
-    const std::vector<BIYOS_int> kinds(static_cast<std::size_t>(n), BIYOS_VAR_BIN);
+    const std::vector<BIYOS_int> kinds(static_cast<std::size_t>(n), BIYOS_VARKND_BIN);
     const std::vector<BIYOS_int> values(static_cast<std::size_t>(n), 1);
     const Indices variables(static_cast<std::size_t>(n), 0);
     const std::vector<BIYOS_int> sos_kinds(static_cast<std::size_t>(n), BIYOS_SOSKND_SOS1);
@@ -599,8 +599,9 @@ TEST(CApiTest, LockedNames)
     attempt.env = env.get();
     attempt.model = model.get();
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), rename, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    const int message = BIYOS_EVTKND_MSG;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), rename, &attempt, message, BIYOS_EVTLVL_ERR, &id),
+              BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     const BIYOS_status locked = BIYOS_ERR_BADARG;

@@ -55,7 +55,7 @@ class Hooks
         bool active;
     };
 
-    static constexpr EventLevel kNobody = static_cast<EventLevel>(BIYOS_LVL_ERR + 1);
+    static constexpr EventLevel kNobody = static_cast<EventLevel>(BIYOS_EVTLVL_ERR + 1);
 
     static std::size_t slot(EventKind kind) noexcept { return static_cast<std::size_t>(kind) - 1; }
 

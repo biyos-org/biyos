@@ -141,7 +141,7 @@ void build(BIYOS_env *env, std::latch &start, Built &built)
     BIYOS_model *model = nullptr;
     EXPECT_EQ(BIYOS_newmdl(env, &model), BIYOS_OK);
     start.arrive_and_wait();
-    const BIYOS_int binary = BIYOS_VAR_BIN;
+    const BIYOS_int binary = BIYOS_VARKND_BIN;
     for (BIYOS_index round = 0; round < kRounds; ++round)
     {
         EXPECT_EQ(BIYOS_addvar(model, 1, &binary, nullptr, nullptr, nullptr), BIYOS_OK);
@@ -149,7 +149,7 @@ void build(BIYOS_env *env, std::latch &start, Built &built)
     EXPECT_EQ(BIYOS_getnvar(model, &built.variables), BIYOS_OK);
     std::vector<BIYOS_int> kinds(static_cast<std::size_t>(built.variables));
     EXPECT_EQ(BIYOS_getvarkndrg(model, 0, built.variables, kinds.data()), BIYOS_OK);
-    built.binaries = std::ranges::count(kinds, BIYOS_VAR_BIN);
+    built.binaries = std::ranges::count(kinds, BIYOS_VARKND_BIN);
     built.freed = BIYOS_freemdl(model);
 }
 
@@ -192,7 +192,7 @@ TEST(ThreadTest, Hooks)
     Tally seen;
     const biyos::test::Env env;
     BIYOS_index hook = 0;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), tally, &seen, BIYOS_EVT_MESSAGE, BIYOS_LVL_ERR, &hook),
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), tally, &seen, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_ERR, &hook),
               BIYOS_OK);
     std::vector<std::unique_ptr<biyos::test::Model>> models;
     std::latch start(kThreads);
@@ -222,12 +222,12 @@ TEST(ThreadTest, ModelHooks)
     const biyos::test::Model second(env);
     const std::array<BIYOS_model *, 2> models{first.get(), second.get()};
     BIYOS_index id = 0;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), tally, &shared, BIYOS_EVT_MESSAGE, BIYOS_LVL_ERR, &id),
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), tally, &shared, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_ERR, &id),
               BIYOS_OK);
     for (std::size_t m = 0; m < models.size(); ++m)
     {
         ASSERT_EQ(
-            BIYOS_addmdlhook(models[m], tally, &local[m], BIYOS_EVT_MESSAGE, BIYOS_LVL_ERR, &id),
+            BIYOS_addmdlhook(models[m], tally, &local[m], BIYOS_EVTKND_MSG, BIYOS_EVTLVL_ERR, &id),
             BIYOS_OK);
     }
     std::latch start(kThreads);
@@ -259,8 +259,9 @@ TEST(ThreadTest, EnvBusy)
     EXPECT_EQ(env.message(), "busy: environment: is in a call on another thread");
     EXPECT_EQ(biyos::test::last_error(env.get()).mdl, nullptr);
     BIYOS_index hook = 0;
-    EXPECT_EQ(BIYOS_addenvhook(env.get(), tally, nullptr, BIYOS_EVT_MESSAGE, BIYOS_LVL_ERR, &hook),
-              BIYOS_ERR_BUSY);
+    EXPECT_EQ(
+        BIYOS_addenvhook(env.get(), tally, nullptr, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_ERR, &hook),
+        BIYOS_ERR_BUSY);
     EXPECT_EQ(BIYOS_delenvhook(env.get(), 1), BIYOS_ERR_BUSY);
     EXPECT_EQ(BIYOS_freeenv(env.get()), BIYOS_ERR_BUSY);
     BIYOS_int seed = -1;

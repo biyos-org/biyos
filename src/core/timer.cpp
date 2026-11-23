@@ -123,14 +123,14 @@ Timer::~Timer()
 
 void Timer::announce(std::string_view edge, nanoseconds wall, nanoseconds cpu) noexcept
 {
-    if (!events_.wanted(EventKind::Phase, EventLevel::Info))
+    if (!events_.wanted(EventKind::Span, EventLevel::Info))
     {
         return;
     }
     const std::string_view name = tree_.nodes()[node_].name;
     const nanoseconds since = wall - events_.origin();
     const auto fill = [&](Event &event) { describe(event, module_, name, edge, since, cpu); };
-    events_.emit(EventKind::Phase, EventLevel::Info, fill);
+    events_.emit(EventKind::Span, EventLevel::Info, fill);
     tree_.observed_wall_ += clock_.wall_time() - wall;
     tree_.observed_cpu_ += cpu_of(clock_).value_or(cpu) - cpu;
 }

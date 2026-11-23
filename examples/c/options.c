@@ -69,7 +69,7 @@ static int describe(BIYOS_env *env, const char *name)
         return 0;
     }
     printf("%s: id %d, kind %d, since %d\n", name, opt, knd, since);
-    return knd == BIYOS_KND_ENUM && deprecated == 0 && retired == 0;
+    return knd == BIYOS_OPTKND_ENUM && deprecated == 0 && retired == 0;
 }
 
 int main(void)

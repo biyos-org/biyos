@@ -35,12 +35,12 @@ enum class Option
 
 enum class OptionKind
 {
-    Bool = BIYOS_KND_BOOL,
-    Int = BIYOS_KND_INT,
-    Double = BIYOS_KND_DBL,
-    String = BIYOS_KND_STR,
-    Enum = BIYOS_KND_ENUM,
-    Flags = BIYOS_KND_FLG,
+    Bool = BIYOS_OPTKND_BOOL,
+    Int = BIYOS_OPTKND_INT,
+    Double = BIYOS_OPTKND_DBL,
+    String = BIYOS_OPTKND_STR,
+    Enum = BIYOS_OPTKND_ENUM,
+    Flags = BIYOS_OPTKND_FLG,
 };
 
 enum class Scope

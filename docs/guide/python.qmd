@@ -48,7 +48,7 @@ A getter of an attribute takes the list of indices its setter takes and returns 
 
 ## Constants {#sec-python-constants}
 
-The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind`, `Sense` and `SOSKind` for models, `EventKind` and `EventLevel` for events, `CheckLevel` for the values of `check_lvl` and `OptionSource` for where a model's option comes from, so `BIYOS_LVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvar()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name ([Options in Python](#sec-options-python)).
+The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind`, `ObjectiveSense` and `SOSKind` for models, `EventKind` and `EventLevel` for events, `CheckLevel` for the values of `check_lvl` and `OptionSource` for where a model's option comes from, so `BIYOS_EVTLVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvar()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name ([Options in Python](#sec-options-python)).
 
 ## Failures {#sec-python-errors}
 

@@ -320,8 +320,9 @@ TEST(CApiTest, LockedLinear)
     attempt.env = env.get();
     attempt.model = model.get();
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    const int message = BIYOS_EVTKND_MSG;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_EVTLVL_ERR, &id),
+              BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     const std::vector<BIYOS_status> statuses{BIYOS_ERR_BADARG,
                                              BIYOS_ERR_BADARG,

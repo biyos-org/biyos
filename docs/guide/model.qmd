@@ -37,11 +37,11 @@ Each variable has a kind and a lower and an upper bound. The kind says which val
 
 | Kind | Takes |
 | --- | --- |
-| `BIYOS_VAR_CONT` | any value between its bounds |
-| `BIYOS_VAR_BIN` | 0 or 1, between its bounds |
-| `BIYOS_VAR_INT` | any integer between its bounds |
-| `BIYOS_VAR_SEMICONT` | 0, or any value between its bounds |
-| `BIYOS_VAR_SEMIINT` | 0, or any integer between its bounds |
+| `BIYOS_VARKND_CONT` | any value between its bounds |
+| `BIYOS_VARKND_BIN` | 0 or 1, between its bounds |
+| `BIYOS_VARKND_INT` | any integer between its bounds |
+| `BIYOS_VARKND_SEMICONT` | 0, or any value between its bounds |
+| `BIYOS_VARKND_SEMIINT` | 0, or any integer between its bounds |
 
 Every kind but continuous is discrete. `BIYOS_addvar` adds variables after the last one:
 

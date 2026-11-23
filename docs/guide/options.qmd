@@ -10,12 +10,12 @@ The kind of an option decides which calls set and get it:
 
 | Kind | Set with | Get with |
 | --- | --- | --- |
-| `BIYOS_KND_BOOL` | `BIYOS_setenvboolopt` | `BIYOS_getenvboolopt` |
-| `BIYOS_KND_INT` | `BIYOS_setenvintopt` | `BIYOS_getenvintopt` |
-| `BIYOS_KND_DBL` | `BIYOS_setenvdblopt` | `BIYOS_getenvdblopt` |
-| `BIYOS_KND_STR` | `BIYOS_setenvstropt` | `BIYOS_getenvstropt` |
-| `BIYOS_KND_ENUM` | `BIYOS_setenvintopt`, with a macro of the option's group | `BIYOS_getenvintopt` |
-| `BIYOS_KND_FLG` | `BIYOS_setenvflgopt`, with two masks of the option's parts | `BIYOS_getenvflgopt` |
+| `BIYOS_OPTKND_BOOL` | `BIYOS_setenvboolopt` | `BIYOS_getenvboolopt` |
+| `BIYOS_OPTKND_INT` | `BIYOS_setenvintopt` | `BIYOS_getenvintopt` |
+| `BIYOS_OPTKND_DBL` | `BIYOS_setenvdblopt` | `BIYOS_getenvdblopt` |
+| `BIYOS_OPTKND_STR` | `BIYOS_setenvstropt` | `BIYOS_getenvstropt` |
+| `BIYOS_OPTKND_ENUM` | `BIYOS_setenvintopt`, with a macro of the option's group | `BIYOS_getenvintopt` |
+| `BIYOS_OPTKND_FLG` | `BIYOS_setenvflgopt`, with two masks of the option's parts | `BIYOS_getenvflgopt` |
 
 A call of another kind is refused: nothing is converted, so an int option refuses `BIYOS_setenvdblopt` and an enum option refuses `BIYOS_setenvstropt`. The values of an enum option are macros of a group named after it, numbered from 1, so `check_lvl` takes `BIYOS_CHECKLVL_NONE`, `BIYOS_CHECKLVL_CHEAP` or `BIYOS_CHECKLVL_FULL`, and a mistyped value fails to compile. A value keeps its number for good, as an id does. `BIYOS_getoptknd` gives the kind of an id. The reference lists every option with its kind, default and range (@sec-option-table).
 

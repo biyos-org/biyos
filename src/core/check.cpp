@@ -54,7 +54,7 @@ void Checker::fail(ErrorKind kind,
     env_.record_error(kind, error.what());
     if (!events.delivering())
     {
-        events.emit(EventKind::Check, EventLevel::Error, fill);
+        events.emit(EventKind::Invariant, EventLevel::Error, fill);
     }
     throw error;
 }

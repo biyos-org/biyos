@@ -52,14 +52,14 @@ static void keep_code(const BIYOS_event *event, void *data)
 
 static int hook(BIYOS_env *env, BIYOS_hook fn, void *data, int lvl)
 {
-    const BIYOS_int knd = BIYOS_EVT_MESSAGE;
+    const BIYOS_int knd = BIYOS_EVTKND_MSG;
     BIYOS_index idx = 0;
     return BIYOS_addenvhook(env, fn, data, knd, lvl, &idx) == BIYOS_OK;
 }
 
 static int hook_model(BIYOS_model *mdl, BIYOS_hook fn, void *data, int lvl)
 {
-    const BIYOS_int knd = BIYOS_EVT_MESSAGE;
+    const BIYOS_int knd = BIYOS_EVTKND_MSG;
     BIYOS_index idx = 0;
     return BIYOS_addmdlhook(mdl, fn, data, knd, lvl, &idx) == BIYOS_OK;
 }
@@ -74,10 +74,10 @@ int main(void)
     BIYOS_model *mdl = NULL;
     int count = 0;
     int code = 0;
-    int hooked = hook(env, print_text, &count, BIYOS_LVL_INFO) &&
-                 hook(env, print_json, NULL, BIYOS_LVL_ERR) &&
+    int hooked = hook(env, print_text, &count, BIYOS_EVTLVL_INFO) &&
+                 hook(env, print_json, NULL, BIYOS_EVTLVL_ERR) &&
                  BIYOS_newmdl(env, &mdl) == BIYOS_OK &&
-                 hook_model(mdl, keep_code, &code, BIYOS_LVL_ERR);
+                 hook_model(mdl, keep_code, &code, BIYOS_EVTLVL_ERR);
     BIYOS_status status = BIYOS_setmdlintopt(mdl, BIYOS_OPT_SEED, -1);
     BIYOS_freemdl(mdl);
     BIYOS_freeenv(env);

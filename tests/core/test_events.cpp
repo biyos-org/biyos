@@ -209,19 +209,19 @@ class EventTest : public ::testing::Test
 
 TEST_F(EventTest, KindIds)
 {
-    EXPECT_EQ(biyos::find_kind(BIYOS_EVT_MESSAGE), EventKind::Message);
-    EXPECT_EQ(biyos::find_kind(BIYOS_EVT_CHECK), EventKind::Check);
-    EXPECT_EQ(biyos::find_kind(BIYOS_EVT_PHASE), EventKind::Phase);
+    EXPECT_EQ(biyos::find_kind(BIYOS_EVTKND_MSG), EventKind::Message);
+    EXPECT_EQ(biyos::find_kind(BIYOS_EVTKND_INV), EventKind::Invariant);
+    EXPECT_EQ(biyos::find_kind(BIYOS_EVTKND_SPAN), EventKind::Span);
     EXPECT_EQ(failure([] { biyos::find_kind(0); }), "invalid argument: event kind 0: unknown");
     EXPECT_EQ(failure([] { biyos::find_kind(4); }), "invalid argument: event kind 4: unknown");
 }
 
 TEST_F(EventTest, LevelIds)
 {
-    EXPECT_EQ(biyos::find_level(BIYOS_LVL_DBG), EventLevel::Debug);
-    EXPECT_EQ(biyos::find_level(BIYOS_LVL_INFO), EventLevel::Info);
-    EXPECT_EQ(biyos::find_level(BIYOS_LVL_WARN), EventLevel::Warning);
-    EXPECT_EQ(biyos::find_level(BIYOS_LVL_ERR), EventLevel::Error);
+    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_DBG), EventLevel::Debug);
+    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_INFO), EventLevel::Info);
+    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_WARN), EventLevel::Warning);
+    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_ERR), EventLevel::Error);
     EXPECT_EQ(failure([] { biyos::find_level(0); }), "invalid argument: level 0: unknown");
     EXPECT_EQ(failure([] { biyos::find_level(5); }), "invalid argument: level 5: unknown");
 }
@@ -229,8 +229,8 @@ TEST_F(EventTest, LevelIds)
 TEST_F(EventTest, Names)
 {
     EXPECT_EQ(biyos::name_of(EventKind::Message), "message");
-    EXPECT_EQ(biyos::name_of(EventKind::Check), "check");
-    EXPECT_EQ(biyos::name_of(EventKind::Phase), "phase");
+    EXPECT_EQ(biyos::name_of(EventKind::Invariant), "invariant");
+    EXPECT_EQ(biyos::name_of(EventKind::Span), "span");
     EXPECT_EQ(biyos::name_of(EventLevel::Debug), "debug");
     EXPECT_EQ(biyos::name_of(EventLevel::Info), "info");
     EXPECT_EQ(biyos::name_of(EventLevel::Warning), "warning");
@@ -267,11 +267,11 @@ TEST_F(EventTest, KindFilter)
 {
     const auto two = [](biyos::Event &event) { event.text = "two"; };
     listen(EventLevel::Debug, recorder("m "));
-    events.add_hook(EventKind::Check, EventLevel::Error, recorder("c "));
+    events.add_hook(EventKind::Invariant, EventLevel::Error, recorder("c "));
     EXPECT_TRUE(events.wanted(EventKind::Message, EventLevel::Debug));
-    EXPECT_FALSE(events.wanted(EventKind::Check, EventLevel::Warning));
+    EXPECT_FALSE(events.wanted(EventKind::Invariant, EventLevel::Warning));
     say(EventLevel::Error, "one");
-    events.emit(EventKind::Check, EventLevel::Error, two);
+    events.emit(EventKind::Invariant, EventLevel::Error, two);
     EXPECT_EQ(texts, (Texts{"m one", "c two"}));
 }
 

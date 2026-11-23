@@ -36,7 +36,7 @@ const Records kSample{
 
 void add_parts(const Model &model)
 {
-    const int kinds[] = {BIYOS_VAR_BIN, BIYOS_VAR_CONT, BIYOS_VAR_BIN};
+    const int kinds[] = {BIYOS_VARKND_BIN, BIYOS_VARKND_CONT, BIYOS_VARKND_BIN};
     ASSERT_EQ(BIYOS_addvar(model.get(), 3, kinds, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(model.get(), 2, nullptr), BIYOS_OK);
 }
@@ -282,17 +282,17 @@ TEST(CApiTest, KindInUse)
     add_sample(model);
     BIYOS_model *held = model.get();
     const BIYOS_index index = 2;
-    const BIYOS_int continuous = BIYOS_VAR_CONT;
+    const BIYOS_int continuous = BIYOS_VARKND_CONT;
     EXPECT_EQ(BIYOS_setvarkndsp(held, 1, &index, &continuous), BIYOS_ERR_INUSE);
     EXPECT_EQ(env.message(), "in use: variable 2: indicator 1 needs it binary");
-    const BIYOS_int kinds[] = {BIYOS_VAR_CONT, BIYOS_VAR_INT};
+    const BIYOS_int kinds[] = {BIYOS_VARKND_CONT, BIYOS_VARKND_INT};
     EXPECT_EQ(BIYOS_setvarkndrg(held, 0, 2, kinds), BIYOS_ERR_INUSE);
     EXPECT_EQ(env.message(), "in use: variable 0: indicator 0 needs it binary");
     BIYOS_int kind = -1;
     ASSERT_EQ(BIYOS_getvarkndsp(held, 1, &index, &kind), BIYOS_OK);
-    EXPECT_EQ(kind, BIYOS_VAR_BIN);
+    EXPECT_EQ(kind, BIYOS_VARKND_BIN);
     const BIYOS_index spare = 1;
-    const BIYOS_int integer = BIYOS_VAR_INT;
+    const BIYOS_int integer = BIYOS_VARKND_INT;
     EXPECT_EQ(BIYOS_setvarkndsp(held, 1, &spare, &integer), BIYOS_OK);
 }
 

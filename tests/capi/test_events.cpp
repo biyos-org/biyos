@@ -106,12 +106,12 @@ void free_inside(const BIYOS_event *, void *data)
 
 BIYOS_status listen(BIYOS_env *env, BIYOS_hook hook, void *data, int level, BIYOS_index *id)
 {
-    return BIYOS_addenvhook(env, hook, data, BIYOS_EVT_MESSAGE, level, id);
+    return BIYOS_addenvhook(env, hook, data, BIYOS_EVTKND_MSG, level, id);
 }
 
 BIYOS_status listen_to(BIYOS_model *model, BIYOS_hook hook, void *data, int level, BIYOS_index *id)
 {
-    return BIYOS_addmdlhook(model, hook, data, BIYOS_EVT_MESSAGE, level, id);
+    return BIYOS_addmdlhook(model, hook, data, BIYOS_EVTKND_MSG, level, id);
 }
 
 void fail(const Env &env)
@@ -166,7 +166,7 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_setenvintopt(env, BIYOS_OPT_SEED, 42));
     note(attempt, BIYOS_setenvdblopt(env, BIYOS_OPT_MAXTIME, 1.0));
     note(attempt, BIYOS_setenvstropt(env, BIYOS_OPT_REPRO, "replay.txt"));
-    note(attempt, listen(env, receive, nullptr, BIYOS_LVL_DBG, &id));
+    note(attempt, listen(env, receive, nullptr, BIYOS_EVTLVL_DBG, &id));
     note(attempt, BIYOS_delenvhook(env, 1));
     note(attempt, BIYOS_getenvintopt(env, BIYOS_OPT_SEED, &attempt.seed));
 }
@@ -178,7 +178,7 @@ void change_model(const BIYOS_event *, void *data)
     BIYOS_model *made = nullptr;
     BIYOS_index id = 0;
     note(attempt, BIYOS_setmdlintopt(model, BIYOS_OPT_SEED, 42));
-    note(attempt, listen_to(model, receive, nullptr, BIYOS_LVL_DBG, &id));
+    note(attempt, listen_to(model, receive, nullptr, BIYOS_EVTLVL_DBG, &id));
     note(attempt, BIYOS_delmdlhook(model, 1));
     note(attempt, BIYOS_addvar(model, 1, nullptr, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_freemdl(model));
@@ -195,12 +195,12 @@ TEST(CApiTest, AddHook)
     const Env env;
     Inbox inbox;
     BIYOS_index id = 0;
-    ASSERT_EQ(listen(env.get(), receive, &inbox, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), receive, &inbox, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(id, 1);
     fail(env);
     EXPECT_EQ(inbox.calls, 1);
-    EXPECT_EQ(inbox.kind, BIYOS_EVT_MESSAGE);
-    EXPECT_EQ(inbox.level, BIYOS_LVL_ERR);
+    EXPECT_EQ(inbox.kind, BIYOS_EVTKND_MSG);
+    EXPECT_EQ(inbox.level, BIYOS_EVTLVL_ERR);
     EXPECT_EQ(inbox.module, "capi");
     EXPECT_EQ(inbox.text, "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
     EXPECT_EQ(inbox.text, env.message());
@@ -214,7 +214,7 @@ TEST(CApiTest, DeleteHook)
     const Env env;
     Inbox inbox;
     BIYOS_index id = 0;
-    ASSERT_EQ(listen(env.get(), receive, &inbox, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), receive, &inbox, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(inbox.calls, 0);
@@ -228,7 +228,7 @@ TEST(CApiTest, ReadOnly)
     Attempt attempt;
     attempt.env = env.get();
     BIYOS_index id = 0;
-    ASSERT_EQ(listen(env.get(), change, &attempt, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), change, &attempt, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     fail(env);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
     const std::vector<BIYOS_status>
@@ -251,7 +251,7 @@ TEST(CApiTest, NestedFailure)
     Probe probe;
     probe.env = env.get();
     BIYOS_index id = 0;
-    ASSERT_EQ(listen(env.get(), delete_unknown, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), delete_unknown, &probe, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(probe.calls, 1);
     EXPECT_EQ(probe.status, BIYOS_ERR_BADARG);
@@ -268,8 +268,8 @@ TEST(CApiTest, TwoHooks)
     first.env = env.get();
     second.env = env.get();
     BIYOS_index id = 0;
-    ASSERT_EQ(listen(env.get(), refuse, &first, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    ASSERT_EQ(listen(env.get(), read_error, &second, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), refuse, &first, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), read_error, &second, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     fail(env);
     const std::string failure = "invalid argument: option 'seed': -1 is outside [0, 2147483647]";
     EXPECT_EQ(first.status, BIYOS_ERR_BADARG);
@@ -286,7 +286,7 @@ TEST(CApiTest, BusyFree)
     Probe probe;
     probe.env = env.get();
     BIYOS_index id = 0;
-    ASSERT_EQ(listen(env.get(), free_inside, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), free_inside, &probe, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     fail(env);
     EXPECT_EQ(probe.calls, 1);
     EXPECT_EQ(probe.status, BIYOS_ERR_BADARG);
@@ -303,8 +303,8 @@ TEST(CApiTest, BadHook)
     const Env env;
     Inbox inbox;
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    const int debug = BIYOS_LVL_DBG;
+    const int message = BIYOS_EVTKND_MSG;
+    const int debug = BIYOS_EVTLVL_DBG;
     EXPECT_EQ(BIYOS_addenvhook(env.get(), nullptr, &inbox, message, debug, &id), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'hk': is null");
     EXPECT_EQ(BIYOS_addenvhook(env.get(), receive, &inbox, 0, debug, &id), BIYOS_ERR_BADARG);
@@ -321,9 +321,9 @@ TEST(CApiTest, BadHook)
 TEST(CApiTest, NullHook)
 {
     BIYOS_index id = 0;
-    EXPECT_EQ(listen(nullptr, receive, nullptr, BIYOS_LVL_DBG, &id), BIYOS_ERR_BADARG);
+    EXPECT_EQ(listen(nullptr, receive, nullptr, BIYOS_EVTLVL_DBG, &id), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_delenvhook(nullptr, 1), BIYOS_ERR_BADARG);
-    EXPECT_EQ(listen_to(nullptr, receive, nullptr, BIYOS_LVL_DBG, &id), BIYOS_ERR_BADARG);
+    EXPECT_EQ(listen_to(nullptr, receive, nullptr, BIYOS_EVTLVL_DBG, &id), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_delmdlhook(nullptr, 1), BIYOS_ERR_BADARG);
 }
 
@@ -338,8 +338,8 @@ TEST(CApiTest, Accessors)
         .fields = {{.name = "rows", .value = "3"}, {.name = "columns", .value = "1"}},
     };
     const BIYOS_event view{&event};
-    EXPECT_EQ(BIYOS_getevtknd(&view), BIYOS_EVT_MESSAGE);
-    EXPECT_EQ(BIYOS_getevtlvl(&view), BIYOS_LVL_WARN);
+    EXPECT_EQ(BIYOS_getevtknd(&view), BIYOS_EVTKND_MSG);
+    EXPECT_EQ(BIYOS_getevtlvl(&view), BIYOS_EVTLVL_WARN);
     EXPECT_STREQ(BIYOS_getevtmod(&view), "presolve");
     EXPECT_STREQ(BIYOS_getevttext(&view), "removed rows");
     EXPECT_EQ(BIYOS_getnevtfld(&view), 2);
@@ -370,7 +370,7 @@ TEST(CApiTest, EventModel)
     const biyos::test::Model model(env);
     std::vector<const BIYOS_model *> seen;
     BIYOS_index id = 0;
-    ASSERT_EQ(listen(env.get(), source, &seen, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), source, &seen, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     EXPECT_EQ(BIYOS_getnvar(model.get(), nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     const std::vector<const BIYOS_model *> expected{model.get(), nullptr};
@@ -385,8 +385,8 @@ TEST(CApiTest, ModelHook)
     std::vector<const BIYOS_model *> local;
     std::vector<const BIYOS_model *> shared;
     BIYOS_index id = 0;
-    ASSERT_EQ(listen_to(first.get(), source, &local, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    ASSERT_EQ(listen(env.get(), source, &shared, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(first.get(), source, &local, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), source, &shared, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     fail(first);
     fail(second);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
@@ -401,11 +401,11 @@ TEST(CApiTest, ModelMessage)
     const biyos::test::Model model(env);
     Inbox inbox;
     BIYOS_index id = 0;
-    ASSERT_EQ(listen_to(model.get(), receive, &inbox, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), receive, &inbox, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     fail(model);
     EXPECT_EQ(inbox.calls, 1);
-    EXPECT_EQ(inbox.kind, BIYOS_EVT_MESSAGE);
-    EXPECT_EQ(inbox.level, BIYOS_LVL_ERR);
+    EXPECT_EQ(inbox.kind, BIYOS_EVTKND_MSG);
+    EXPECT_EQ(inbox.level, BIYOS_EVTLVL_ERR);
     EXPECT_EQ(inbox.module, "capi");
     EXPECT_EQ(inbox.text, env.message());
     EXPECT_EQ(inbox.name, "code");
@@ -421,9 +421,9 @@ TEST(CApiTest, ModelOrder)
     Mark first{&heard, "first"};
     Mark second{&heard, "second"};
     BIYOS_index id = 0;
-    ASSERT_EQ(listen(env.get(), stamp, &shared, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    ASSERT_EQ(listen_to(model.get(), stamp, &first, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    ASSERT_EQ(listen_to(model.get(), stamp, &second, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), stamp, &shared, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), stamp, &first, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), stamp, &second, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     fail(model);
     EXPECT_EQ(heard, (std::vector<std::string>{"first", "second", "environment"}));
 }
@@ -435,12 +435,12 @@ TEST(CApiTest, ModelIds)
     const biyos::test::Model second(env);
     int heard = 0;
     std::vector<BIYOS_index> ids(5, 0);
-    ASSERT_EQ(listen_to(first.get(), count, &heard, BIYOS_LVL_DBG, &ids[0]), BIYOS_OK);
-    ASSERT_EQ(listen_to(first.get(), count, &heard, BIYOS_LVL_DBG, &ids[1]), BIYOS_OK);
-    ASSERT_EQ(listen_to(second.get(), count, &heard, BIYOS_LVL_DBG, &ids[2]), BIYOS_OK);
-    ASSERT_EQ(listen(env.get(), count, &heard, BIYOS_LVL_DBG, &ids[3]), BIYOS_OK);
+    ASSERT_EQ(listen_to(first.get(), count, &heard, BIYOS_EVTLVL_DBG, &ids[0]), BIYOS_OK);
+    ASSERT_EQ(listen_to(first.get(), count, &heard, BIYOS_EVTLVL_DBG, &ids[1]), BIYOS_OK);
+    ASSERT_EQ(listen_to(second.get(), count, &heard, BIYOS_EVTLVL_DBG, &ids[2]), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), count, &heard, BIYOS_EVTLVL_DBG, &ids[3]), BIYOS_OK);
     EXPECT_EQ(BIYOS_delmdlhook(first.get(), 1), BIYOS_OK);
-    ASSERT_EQ(listen_to(first.get(), count, &heard, BIYOS_LVL_DBG, &ids[4]), BIYOS_OK);
+    ASSERT_EQ(listen_to(first.get(), count, &heard, BIYOS_EVTLVL_DBG, &ids[4]), BIYOS_OK);
     EXPECT_EQ(ids, (std::vector<BIYOS_index>{1, 2, 1, 1, 3}));
     EXPECT_EQ(BIYOS_delmdlhook(first.get(), 1), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: hook 1: unknown");
@@ -454,8 +454,8 @@ TEST(CApiTest, ModelArguments)
     const biyos::test::Model model(env);
     Inbox inbox;
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    const int debug = BIYOS_LVL_DBG;
+    const int message = BIYOS_EVTKND_MSG;
+    const int debug = BIYOS_EVTLVL_DBG;
     EXPECT_EQ(BIYOS_addmdlhook(model.get(), nullptr, &inbox, message, debug, &id),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'hk': is null");
@@ -478,12 +478,12 @@ TEST(CApiTest, ModelFree)
     BIYOS_model *model = nullptr;
     BIYOS_index id = 0;
     ASSERT_EQ(BIYOS_newmdl(env.get(), &model), BIYOS_OK);
-    ASSERT_EQ(listen_to(model, count, &heard, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model, count, &heard, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
     ASSERT_EQ(BIYOS_freemdl(model), BIYOS_OK);
     const biyos::test::Model next(env);
     fail(next);
     EXPECT_EQ(heard, 0);
-    ASSERT_EQ(listen_to(next.get(), count, &heard, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(next.get(), count, &heard, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
     EXPECT_EQ(id, 1);
 }
 
@@ -495,13 +495,13 @@ TEST(CApiTest, ModelCopy)
     int heard = 0;
     int copied = 0;
     BIYOS_index id = 0;
-    ASSERT_EQ(listen_to(model.get(), count, &heard, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), count, &heard, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
     const biyos::test::Model near(env, model);
     const biyos::test::Model far(other, model);
     fail(near);
     fail(far);
     EXPECT_EQ(heard, 0);
-    ASSERT_EQ(listen_to(near.get(), count, &copied, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(near.get(), count, &copied, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
     EXPECT_EQ(id, 1);
     fail(model);
     EXPECT_EQ(heard, 1);
@@ -518,7 +518,7 @@ TEST(CApiTest, ModelReadOnly)
     attempt.model = model.get();
     attempt.other = other.get();
     BIYOS_index id = 0;
-    ASSERT_EQ(listen_to(model.get(), change_model, &attempt, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), change_model, &attempt, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     fail(model);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
     const std::vector<BIYOS_status>
@@ -545,7 +545,7 @@ TEST(CApiTest, ModelError)
     probe.env = env.get();
     probe.model = model.get();
     BIYOS_index id = 0;
-    ASSERT_EQ(listen_to(model.get(), delete_own, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), delete_own, &probe, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     fail(model);
     const BIYOS_error error = biyos::test::last_error(env.get());
     EXPECT_EQ(probe.calls, 1);
@@ -566,9 +566,9 @@ TEST(CApiTest, ModelSilent)
     int heard = 0;
     int shared = 0;
     BIYOS_index id = 0;
-    ASSERT_EQ(listen_to(model.get(), delete_own, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
-    ASSERT_EQ(listen_to(model.get(), count, &heard, BIYOS_LVL_DBG, &id), BIYOS_OK);
-    ASSERT_EQ(listen(env.get(), count, &shared, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), delete_own, &probe, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), count, &heard, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), count, &shared, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
     fail(model);
     EXPECT_EQ(probe.calls, 1);
     EXPECT_EQ(heard, 1);

@@ -49,7 +49,11 @@ void expect_columns(const Columns &found, const Columns &wanted)
 }
 
 const Columns kColumns{
-    .kinds = {BIYOS_VAR_CONT, BIYOS_VAR_BIN, BIYOS_VAR_INT, BIYOS_VAR_SEMICONT, BIYOS_VAR_SEMIINT},
+    .kinds = {BIYOS_VARKND_CONT,
+              BIYOS_VARKND_BIN,
+              BIYOS_VARKND_INT,
+              BIYOS_VARKND_SEMICONT,
+              BIYOS_VARKND_SEMIINT},
     .lower = {-kInfinity, 0.0, -3.0, 2.0, 1.0},
     .upper = {kInfinity, 1.0, 7.0, 10.0, 4.0},
 };
@@ -99,7 +103,7 @@ void change(const BIYOS_event *, void *data)
     BIYOS_model *made = nullptr;
     const BIYOS_index index = 0;
     const BIYOS_real bound = 0.0;
-    const BIYOS_int kind = BIYOS_VAR_INT;
+    const BIYOS_int kind = BIYOS_VARKND_INT;
     note(attempt, BIYOS_newmdl(attempt.env, &made));
     note(attempt, BIYOS_freemdl(model));
     note(attempt, BIYOS_addvar(model, 1, nullptr, nullptr, nullptr, nullptr));
@@ -273,8 +277,9 @@ TEST(CApiTest, LockedModel)
     attempt.model = model.get();
     ASSERT_EQ(BIYOS_addvar(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    const int message = BIYOS_EVTKND_MSG;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), change, &attempt, message, BIYOS_EVTLVL_ERR, &id),
+              BIYOS_OK);
     fail(env);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
     const std::vector<BIYOS_status> statuses{
@@ -313,8 +318,11 @@ TEST(CApiTest, BulkAdd)
     const Env env;
     const Model model(env);
     const Columns added{
-        .kinds =
-            {BIYOS_VAR_CONT, BIYOS_VAR_BIN, BIYOS_VAR_INT, BIYOS_VAR_SEMICONT, BIYOS_VAR_SEMIINT},
+        .kinds = {BIYOS_VARKND_CONT,
+                  BIYOS_VARKND_BIN,
+                  BIYOS_VARKND_INT,
+                  BIYOS_VARKND_SEMICONT,
+                  BIYOS_VARKND_SEMIINT},
         .lower = {-kInfinity, 0.0, -3.0, 2.0, 1.0},
         .upper = {kInfinity, 1.0, 7.0, 10.0, 4.0},
     };
@@ -328,7 +336,7 @@ TEST(CApiTest, BulkAdd)
     BIYOS_real lower = 0.0;
     BIYOS_real upper = 0.0;
     EXPECT_EQ(BIYOS_getvarrg(model.get(), 2, 1, &kind, &lower, &upper), BIYOS_OK);
-    EXPECT_EQ(kind, BIYOS_VAR_INT);
+    EXPECT_EQ(kind, BIYOS_VARKND_INT);
     EXPECT_DOUBLE_EQ(lower, -3.0);
     EXPECT_DOUBLE_EQ(upper, 7.0);
     EXPECT_EQ(BIYOS_getvarrg(model.get(), 5, 0, nullptr, nullptr, nullptr), BIYOS_OK);
@@ -357,7 +365,7 @@ TEST(CApiTest, RefusedAdd)
     const Env env;
     const Model model(env);
     BIYOS_index start = -1;
-    const int kinds[] = {BIYOS_VAR_CONT, 9};
+    const int kinds[] = {BIYOS_VARKND_CONT, 9};
     EXPECT_EQ(BIYOS_addvar(model.get(), 2, kinds, nullptr, nullptr, &start), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 1: kind 9 is unknown");
     const double lower[] = {0.0, kInfinity};
@@ -377,7 +385,7 @@ TEST(CApiTest, BinaryKind)
     const Model model(env);
     ASSERT_EQ(BIYOS_addvar(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const BIYOS_index index = 0;
-    const BIYOS_int binary = BIYOS_VAR_BIN;
+    const BIYOS_int binary = BIYOS_VARKND_BIN;
     EXPECT_EQ(BIYOS_setvarkndsp(model.get(), 1, &index, &binary), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(),
               "invalid argument: variable 0: bounds [-inf, inf] are outside "
@@ -399,7 +407,7 @@ TEST(CApiTest, BadIndex)
     const Columns before = read_all(model);
     const int beyond[] = {0, 3};
     const double bounds[] = {0.0, 1.0};
-    const int kinds[] = {BIYOS_VAR_INT, BIYOS_VAR_INT};
+    const int kinds[] = {BIYOS_VARKND_INT, BIYOS_VARKND_INT};
     EXPECT_EQ(BIYOS_setvarbndsp(model.get(), 2, beyond, bounds, bounds), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 3: unknown");
     const int negative[] = {0, -1};
@@ -421,13 +429,13 @@ TEST(CApiTest, NullAdd)
 {
     const Env env;
     const Model model(env);
-    const int kinds[] = {BIYOS_VAR_BIN, BIYOS_VAR_INT};
+    const int kinds[] = {BIYOS_VARKND_BIN, BIYOS_VARKND_INT};
     const double bounds[] = {0.5, 0.75};
     ASSERT_EQ(BIYOS_addvar(model.get(), 2, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addvar(model.get(), 2, kinds, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addvar(model.get(), 2, kinds, bounds, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addvar(model.get(), 2, kinds, nullptr, bounds, nullptr), BIYOS_OK);
-    const int continuous = BIYOS_VAR_CONT;
+    const int continuous = BIYOS_VARKND_CONT;
     const Columns wanted{
         .kinds =
             {continuous, continuous, kinds[0], kinds[1], kinds[0], kinds[1], kinds[0], kinds[1]},
@@ -445,12 +453,12 @@ TEST(CApiTest, NullSet)
     const int indices[] = {1, 0};
     const double lower[] = {1.0, 2.0};
     const double upper[] = {3.0, 4.0};
-    const int kinds[] = {BIYOS_VAR_INT, BIYOS_VAR_SEMIINT};
+    const int kinds[] = {BIYOS_VARKND_INT, BIYOS_VARKND_SEMIINT};
     ASSERT_EQ(BIYOS_setvarbndsp(model.get(), 2, indices, lower, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setvarbndsp(model.get(), 1, indices, nullptr, upper), BIYOS_OK);
     ASSERT_EQ(BIYOS_setvarbndsp(model.get(), 2, indices, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setvarkndsp(model.get(), 2, indices, nullptr), BIYOS_OK);
-    const int continuous = BIYOS_VAR_CONT;
+    const int continuous = BIYOS_VARKND_CONT;
     const Columns bounded{.kinds = {continuous, continuous},
                           .lower = {2.0, 1.0},
                           .upper = {kInfinity, 3.0}};
@@ -471,7 +479,7 @@ TEST(CApiTest, NullGet)
 {
     const Env env;
     const Model model(env);
-    const int kinds[] = {BIYOS_VAR_INT, BIYOS_VAR_BIN};
+    const int kinds[] = {BIYOS_VARKND_INT, BIYOS_VARKND_BIN};
     const double lower[] = {-1.0, 0.0};
     const double upper[] = {1.0, 0.5};
     ASSERT_EQ(BIYOS_addvar(model.get(), 2, kinds, lower, upper, nullptr), BIYOS_OK);
@@ -482,7 +490,7 @@ TEST(CApiTest, NullGet)
     EXPECT_EQ(BIYOS_getvarrg(model.get(), 0, 2, found, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_getvarrg(model.get(), 0, 2, nullptr, low, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_getvarrg(model.get(), 1, 1, nullptr, nullptr, high), BIYOS_OK);
-    EXPECT_EQ(found[1], BIYOS_VAR_BIN);
+    EXPECT_EQ(found[1], BIYOS_VARKND_BIN);
     EXPECT_DOUBLE_EQ(low[0], -1.0);
     EXPECT_DOUBLE_EQ(high[0], 0.5);
     EXPECT_DOUBLE_EQ(high[1], 9.0);
@@ -496,7 +504,7 @@ TEST(CApiTest, ListedVariables)
     const Model model(env);
     add_columns(model);
     const Columns wanted{
-        .kinds = {BIYOS_VAR_SEMIINT, BIYOS_VAR_CONT, BIYOS_VAR_SEMIINT, BIYOS_VAR_INT},
+        .kinds = {BIYOS_VARKND_SEMIINT, BIYOS_VARKND_CONT, BIYOS_VARKND_SEMIINT, BIYOS_VARKND_INT},
         .lower = {1.0, -kInfinity, 1.0, -3.0},
         .upper = {4.0, kInfinity, 4.0, 7.0},
     };
@@ -513,7 +521,7 @@ TEST(CApiTest, VariableSetters)
     const BIYOS_index indices[] = {2, 0, 2};
     const double lower[] = {0.0, -1.0, 0.5};
     const double upper[] = {1.0, 2.0, 1.0};
-    const BIYOS_int kinds[] = {BIYOS_VAR_INT, BIYOS_VAR_SEMICONT, BIYOS_VAR_BIN};
+    const BIYOS_int kinds[] = {BIYOS_VARKND_INT, BIYOS_VARKND_SEMICONT, BIYOS_VARKND_BIN};
     ASSERT_EQ(BIYOS_setvarbndsp(model.get(), 3, indices, lower, upper), BIYOS_OK);
     ASSERT_EQ(BIYOS_setvarkndsp(model.get(), 3, indices, kinds), BIYOS_OK);
     std::vector<double> read_lower(3, 9.0);
@@ -523,12 +531,14 @@ TEST(CApiTest, VariableSetters)
               BIYOS_OK);
     ASSERT_EQ(BIYOS_getvarkndsp(model.get(), 3, indices, found.data()), BIYOS_OK);
     const Columns wanted{
-        .kinds = {BIYOS_VAR_BIN, BIYOS_VAR_SEMICONT, BIYOS_VAR_BIN},
+        .kinds = {BIYOS_VARKND_BIN, BIYOS_VARKND_SEMICONT, BIYOS_VARKND_BIN},
         .lower = {0.5, -1.0, 0.5},
         .upper = {1.0, 2.0, 1.0},
     };
     expect_columns(Columns{.kinds = found, .lower = read_lower, .upper = read_upper}, wanted);
-    const Columns untouched{.kinds = {BIYOS_VAR_CONT}, .lower = {-kInfinity}, .upper = {kInfinity}};
+    const Columns untouched{.kinds = {BIYOS_VARKND_CONT},
+                            .lower = {-kInfinity},
+                            .upper = {kInfinity}};
     expect_columns(read_listed(model, {1}), untouched);
 }
 
@@ -597,8 +607,8 @@ TEST(CApiTest, ModelEvent)
     const Model model(env);
     std::vector<std::string> texts;
     BIYOS_index id = 0;
-    const int message = BIYOS_EVT_MESSAGE;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), keep, &texts, message, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    const int message = BIYOS_EVTKND_MSG;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), keep, &texts, message, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     const BIYOS_index index = 0;
     const BIYOS_real bound = 0.0;
     EXPECT_EQ(BIYOS_setvarbndsp(model.get(), 1, &index, &bound, &bound), BIYOS_ERR_BADARG);
