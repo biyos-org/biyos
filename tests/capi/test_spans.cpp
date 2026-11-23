@@ -71,3 +71,20 @@ TEST(CApiTest, CopySpan)
     EXPECT_EQ(BIYOS_copymdl(recorder.model, &recorder.env, nullptr), BIYOS_ERR_BADARG);
     EXPECT_TRUE(recorder.spans.empty());
 }
+
+TEST(CApiTest, DeleteSpan)
+{
+    Recorder recorder;
+    ASSERT_EQ(BIYOS_addvar(recorder.model, 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    const BIYOS_index first = 0;
+    ASSERT_EQ(BIYOS_delvarsp(recorder.model, 1, &first, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_delvarrg(recorder.model, 0, 1, nullptr), BIYOS_OK);
+    const Texts span = span_of("model/delete");
+    Texts expected = span;
+    expected.insert(expected.end(), span.begin(), span.end());
+    EXPECT_EQ(recorder.spans, expected);
+    recorder.spans.clear();
+    EXPECT_EQ(BIYOS_delvarsp(recorder.model, 1, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delvarrg(recorder.model, 0, 9, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_TRUE(recorder.spans.empty());
+}
