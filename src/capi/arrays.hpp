@@ -13,7 +13,10 @@ namespace biyos::capi
 {
 
 std::size_t length(std::int64_t n, std::string_view name = "n");
-void check_capacity(std::int64_t capacity, std::size_t needed, std::string_view noun = "terms");
+void check_capacity(std::int64_t capacity,
+                    std::size_t needed,
+                    std::string_view name = "cap",
+                    std::string_view items = "terms");
 std::span<const Index> listed(int n, const int *indices, std::string_view name = "idx");
 std::vector<Offset> offsets(std::size_t n, const std::int64_t *starts);
 std::vector<LinearTerm> packed(std::size_t size, const int *variables, const double *values);
