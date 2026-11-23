@@ -71,6 +71,12 @@ class SpecTest(unittest.TestCase):
             entry.values, [("BIYOS_OK", "The call succeeded.", 18)]
         )
 
+    def test_example(self):
+        lines = "example int x;\nexample f(&x);\nnote It"
+        text = SPEC.replace("note It", lines)
+        entry = self.read(text)[0].entries[1]
+        self.assertEqual(entry.example, ["int x;", "f(&x);"])
+
     def test_takes(self):
         text = SPEC.replace("succeeded.\n", "succeeded.\ntakes $c$\n")
         entry = self.read(text)[0].entries[2]

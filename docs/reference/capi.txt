@@ -2014,6 +2014,10 @@ param node out Receives the id of the new node; skipped when null.
 return `BIYOS_OK` once the node is added.
 error BIYOS_ERR_BADARG `n` is negative, `op` is not an operator the call takes, a child is not a node of the model, the operator does not take `n` children, a value is not finite, or the exponent of `BIYOS_OP_SPOW` is not positive.
 note The node is added as given, so a sum among the children of a sum stays a child, and so does a product among those of a product. An id given twice in `arg` names the same child twice.
+example BIYOS_offset x, power;
+example BIYOS_addvarnode(mdl, 0, &x);
+example BIYOS_real exponent = 5.2;
+example BIYOS_addnode(mdl, BIYOS_OP_CPOW, 1, &x, &exponent, &power);
 see BIYOS_addvarnode BIYOS_addexpr
 since 0.1.0
 

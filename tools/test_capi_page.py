@@ -105,6 +105,12 @@ class PageTest(unittest.TestCase):
         self.assertIn("| [0]{.value} | Done. | $c$ |", text)
         self.assertIn("| Bad \\| worse. |  |", text)
 
+    def test_example(self):
+        entry = function()
+        entry.example = ["int x;", "f(&x);"]
+        text = self.render(entry)
+        self.assertIn("**Example**\n\n```c\nint x;\nf(&x);\n```", text)
+
     def test_widths(self):
         text = self.render(function(), table())
         rules = [line for line in text.split("\n") if line.startswith("| -")]

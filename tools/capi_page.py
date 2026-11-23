@@ -103,6 +103,12 @@ def errors(entry):
     return [stack("Error", [(f"`{c}`", t) for c, t in entry.errors])]
 
 
+def example(entry):
+    if not entry.example:
+        return []
+    return ["**Example**", "```c\n" + "\n".join(entry.example) + "\n```"]
+
+
 def dated(entry):
     return [f"[since {entry.since}]{{.since}}"] if entry.since else []
 
@@ -133,7 +139,7 @@ def declared(entry, declarations):
     body += parameters(entry)
     if entry.returns:
         body.append(f"**Returns** {entry.returns}")
-    body += errors(entry) + entry.notes + meta(seen(entry))
+    body += errors(entry) + entry.notes + example(entry) + meta(seen(entry))
     return [title(entry), "::: {.entry}\n\n" + "\n\n".join(body) + "\n\n:::"]
 
 

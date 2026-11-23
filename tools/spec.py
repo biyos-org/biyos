@@ -16,6 +16,7 @@ class Entry:
     notes: list = field(default_factory=list)
     values: list = field(default_factory=list)
     see: list = field(default_factory=list)
+    example: list = field(default_factory=list)
     takes: dict = field(default_factory=dict)
     since: str = ""
     pair: str = ""
@@ -66,6 +67,7 @@ FIELDS = {
     "error": lambda entry, rest: entry.errors.append(_pair(rest)),
     "note": lambda entry, rest: entry.notes.append(rest),
     "see": lambda entry, rest: entry.see.extend(rest.split()),
+    "example": lambda entry, rest: entry.example.append(rest),
     "takes": _takes,
 }
 
