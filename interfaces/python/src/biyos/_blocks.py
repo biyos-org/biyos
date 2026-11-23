@@ -328,6 +328,38 @@ class Objectives(Block[Objective]):
         return model.getnobj()
 
 
+class Indicator(View):
+    """One indicator of a model, as indexing an ``Indicators`` block gives.
+
+    A view holds its model and its index, and passes as that index wherever
+    its model takes an index of indicators. Any other model refuses it as an
+    index. A view made before a deletion from its model raises ``ValueError``
+    when used, as its index may name another indicator.
+    """
+
+    __slots__ = ()
+    _noun = "indicator"
+
+
+class Indicators(Block[Indicator]):
+    """Consecutive indicators, as ``Model.addind`` returns.
+
+    A block holds its model, its first index and its count, so it costs the
+    same at any size. ``len`` gives the count, and iterating gives each
+    indicator in order as an ``Indicator``, so a block passes wherever its
+    model takes indices of indicators. Any other model refuses it as indices,
+    and ``on`` gives the block of the same indices in another model, such as
+    a copy. A block made before a deletion from its model raises
+    ``ValueError`` when used, as its indices may name other indicators.
+    """
+
+    __slots__ = ()
+    _element = Indicator
+
+    def _held(self, model: "Model") -> int:
+        return model.getnind()
+
+
 def _indefinite(noun: str) -> str:
     article = "an" if noun[0] in "aeiou" else "a"
     return f"{article} {noun}"

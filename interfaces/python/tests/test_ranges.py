@@ -20,12 +20,16 @@ PAIRS = [
     ("fun", "funname", (["c", "d"],)),
     ("con", "conname", (["e", "f"],)),
     ("obj", "objname", (["g", "h"],)),
+    ("ind", "indbnd", ([-5.0, -6.0], [5.0, 6.0])),
+    ("ind", "indvar", ([5, 6], [0, 1])),
+    ("ind", "indname", (["i", "j"],)),
 ]
 
 SPREAD = {
     "var": ("setvarbnd", [-1.0, -2.0, -3.0, -4.0], [1.0, 2.0, 3.0, 4.0]),
     "con": ("setconbnd", [-5.0, -6.0, -7.0, -8.0], [5.0, 6.0, 7.0, 8.0]),
     "obj": ("setobjprio", [5, 6, 7, 8]),
+    "ind": ("setindbnd", [-1.0, -2.0, -3.0, -4.0], [1.0, 2.0, 3.0, 4.0]),
 }
 
 FORMS = {
@@ -50,8 +54,13 @@ def blocks(env):
             "fun": model.addfun(4),
             "con": model.addcon([0] * 4),
             "obj": model.addobj([0] * 4),
+            "ind": model.addind(add_switches(model), [1] * 4, [0] * 4),
         }
         yield model, found
+
+
+def add_switches(model):
+    return model.addvar(4, [VariableKind.BINARY] * 4)
 
 
 def traced(seen, name, function, *arguments):
@@ -99,7 +108,7 @@ def test_forms(blocks, monkeypatch, family, call, values, kind):
     assert read(model, call, records(kind)) == values
 
 
-@pytest.mark.parametrize("family", ["var", "fun", "con", "obj"])
+@pytest.mark.parametrize("family", ["var", "fun", "con", "obj", "ind"])
 @pytest.mark.parametrize("kind", FORMS)
 def test_delete(blocks, monkeypatch, family, kind):
     model, found = blocks
@@ -131,10 +140,10 @@ def test_readers(blocks, monkeypatch, family, kind):
 def test_refused(blocks):
     model, _ = blocks
     before = model.getvarbnd(range(4))
-    message = refusal(model.setvarbnd, range(3, 5), [0.0] * 2, [1.0] * 2)
-    assert message == "invalid argument: variable 4: unknown"
-    message = refusal(model.getvarbnd, range(5, 5))
-    assert message == "invalid argument: variable 5: unknown"
+    message = refusal(model.setvarbnd, range(7, 9), [0.0] * 2, [1.0] * 2)
+    assert message == "invalid argument: variable 8: unknown"
+    message = refusal(model.getvarbnd, range(9, 9))
+    assert message == "invalid argument: variable 9: unknown"
     message = refusal(model.setobjprio, range(-1, 1), [0, 0])
     assert message == "invalid argument: objective -1: unknown"
     assert model.getvarbnd(range(4)) == before

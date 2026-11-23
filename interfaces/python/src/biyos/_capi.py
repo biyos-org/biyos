@@ -122,6 +122,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_quadratic(lib, ints, doubles)
     _declare_constraints(lib, ints, doubles)
     _declare_objectives(lib, ints, doubles)
+    _declare_indicators(lib, ints, doubles)
     _declare_names(lib, ints)
     _declare_expressions(lib, ints, doubles)
     _declare_settings(lib, ints, doubles)
@@ -185,13 +186,24 @@ def _declare_objectives(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_getobj", ints, *fields)
 
 
+def _declare_indicators(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
+    fields = (ints, ints, ints, doubles, doubles)
+    _declare(lib, "BIYOS_addind", c_int, c_void_p, c_int32, *fields, ints)
+    _declare_pair(lib, "BIYOS_setindbnd", doubles, doubles)
+    _declare_pair(lib, "BIYOS_getindbnd", doubles, doubles)
+    _declare_pair(lib, "BIYOS_setindvar", ints, ints)
+    _declare_pair(lib, "BIYOS_getindvar", ints, ints)
+    _declare(lib, "BIYOS_getnind", c_int, c_void_p, ints)
+    _declare_pair(lib, "BIYOS_getind", *fields)
+
+
 def _declare_names(lib: ctypes.CDLL, ints: type) -> None:
     strings = POINTER(c_char_p)
     _declare(lib, "BIYOS_setmdlname", c_int, c_void_p, c_char_p)
     _declare(lib, "BIYOS_getmdlname", c_int, c_void_p, strings)
     _declare(lib, "BIYOS_delmdlname", c_int, c_void_p)
     find = (c_void_p, c_int32, strings, ints)
-    for noun in ("var", "fun", "con", "obj"):
+    for noun in ("var", "fun", "con", "obj", "ind"):
         _declare_pair(lib, f"BIYOS_set{noun}name", strings)
         _declare_pair(lib, f"BIYOS_get{noun}name", strings)
         _declare(lib, f"BIYOS_get{noun}idx", c_int, *find)

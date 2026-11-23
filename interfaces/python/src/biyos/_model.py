@@ -20,6 +20,8 @@ from biyos._blocks import (
     Constraints,
     Function,
     Functions,
+    Indicator,
+    Indicators,
     Objective,
     Objectives,
     Variable,
@@ -82,6 +84,7 @@ _COUNTS: dict[type[Block[Any]], str] = {
     Functions: "getnfun",
     Constraints: "getncon",
     Objectives: "getnobj",
+    Indicators: "getnind",
 }
 
 
@@ -1525,6 +1528,218 @@ class Model:
         senses = [Sense(code) for code in codes]
         return functions, senses, priorities, weights
 
+    def addind(
+        self,
+        varidx: Sequence[int | Variable] | Variables,
+        val: Sequence[int],
+        funidx: Sequence[int | Function] | Functions,
+        lb: Sequence[float] | None = None,
+        ub: Sequence[float] | None = None,
+    ) -> Indicators:
+        """Add indicators after the last one, one for each variable given.
+
+        An indicator bounds a function while a binary variable takes a
+        value: when variable ``varidx[j]`` equals ``val[j]``, function
+        ``funidx[j]`` lies within its bounds, and otherwise it is free. A
+        variable stays binary while an indicator uses it.
+
+        Parameters
+        ----------
+        varidx
+            The binary variable that switches each new indicator on.
+        val
+            The value of each variable that switches its indicator on, 0 or
+            1, as many as ``varidx``.
+        funidx
+            The function each indicator bounds, as many as ``varidx``.
+        lb, ub
+            The bounds of each, unbounded by default.
+
+        Returns
+        -------
+        inds
+            The new indicators.
+
+        See Also
+        --------
+        BIYOS_addind
+        """
+        count = len(varidx)
+        arrays = (
+            indices_of(self, Variables, "varidx", varidx, count),
+            ints("val", val, count),
+            indices_of(self, Functions, "funidx", funidx, count),
+            doubles("lb", lb, count),
+            doubles("ub", ub, count),
+        )
+        first = c_int()
+        self._call(lib.BIYOS_addind, count, *arrays, byref(first))
+        return Indicators(self, first.value, count, self._gen)
+
+    def setindbnd(
+        self,
+        idx: Sequence[int | Indicator] | Indicators,
+        lb: Sequence[float] | None = None,
+        ub: Sequence[float] | None = None,
+    ) -> None:
+        """Set the bounds of indicators and keep the rest.
+
+        Parameters
+        ----------
+        idx
+            The indicators.
+        lb, ub
+            The new bounds of each; ``None`` leaves that side as it is.
+
+        See Also
+        --------
+        BIYOS_setindbndsp
+        BIYOS_setindbndrg
+        """
+        count = len(idx)
+        chosen = self._chosen("BIYOS_setindbnd", Indicators, idx)
+        arrays = (
+            doubles("lb", lb, count),
+            doubles("ub", ub, count),
+        )
+        self._call(*chosen, *arrays)
+
+    def getindbnd(
+        self, idx: Sequence[int | Indicator] | Indicators
+    ) -> tuple[list[float], list[float]]:
+        """Read the bounds of indicators.
+
+        Parameters
+        ----------
+        idx
+            The indicators, in any order, any of them more than once.
+
+        Returns
+        -------
+        lb
+            The lower bound of each.
+        ub
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getindbndsp
+        BIYOS_getindbndrg
+        """
+        bounds = (c_double, c_double)
+        lb, ub = self._getlist("BIYOS_getindbnd", Indicators, idx, *bounds)
+        return lb, ub
+
+    def setindvar(
+        self,
+        idx: Sequence[int | Indicator] | Indicators,
+        varidx: Sequence[int | Variable] | Variables | None = None,
+        val: Sequence[int] | None = None,
+    ) -> None:
+        """Set the variables that switch indicators on, and their values.
+
+        Parameters
+        ----------
+        idx
+            The indicators.
+        varidx
+            The new binary variable of each; ``None`` leaves the variables
+            as they are.
+        val
+            The new value of each, 0 or 1; ``None`` leaves the values as
+            they are.
+
+        See Also
+        --------
+        BIYOS_setindvarsp
+        BIYOS_setindvarrg
+        """
+        count = len(idx)
+        chosen = self._chosen("BIYOS_setindvar", Indicators, idx)
+        arrays = (
+            indices_of(self, Variables, "varidx", varidx, count),
+            ints("val", val, count),
+        )
+        self._call(*chosen, *arrays)
+
+    def getindvar(
+        self, idx: Sequence[int | Indicator] | Indicators
+    ) -> tuple[list[int], list[int]]:
+        """Read the variables that switch indicators on, and their values.
+
+        Parameters
+        ----------
+        idx
+            The indicators, in any order, any of them more than once.
+
+        Returns
+        -------
+        varidx
+            The variable of each.
+        val
+            The value of each.
+
+        See Also
+        --------
+        BIYOS_getindvarsp
+        BIYOS_getindvarrg
+        """
+        pair = (c_int, c_int)
+        found = self._getlist("BIYOS_getindvar", Indicators, idx, *pair)
+        variables, values = found
+        return variables, values
+
+    def getnind(self) -> int:
+        """Return the number of indicators.
+
+        Returns
+        -------
+        n
+            The number of indicators.
+
+        See Also
+        --------
+        BIYOS_getnind
+        """
+        count = c_int()
+        self._call(lib.BIYOS_getnind, byref(count))
+        return count.value
+
+    def getind(
+        self, idx: Sequence[int | Indicator] | Indicators | None = None
+    ) -> tuple[list[int], list[int], list[int], list[float], list[float]]:
+        """Read indicators.
+
+        Parameters
+        ----------
+        idx
+            The indicators, in any order, any of them more than once; every
+            indicator by default.
+
+        Returns
+        -------
+        varidx
+            The variable that switches each indicator on.
+        val
+            The value of each variable that switches its indicator on.
+        funidx
+            The function each indicator bounds.
+        lb
+            The lower bound of each.
+        ub
+            The upper bound of each.
+
+        See Also
+        --------
+        BIYOS_getindsp
+        BIYOS_getindrg
+        """
+        every = range(self.getnind()) if idx is None else idx
+        types = (c_int, c_int, c_int, c_double, c_double)
+        found = self._getlist("BIYOS_getind", Indicators, every, *types)
+        variables, values, functions, lower, upper = found
+        return variables, values, functions, lower, upper
+
     def setmdlname(self, name: str) -> None:
         """Name the model.
 
@@ -1916,6 +2131,81 @@ class Model:
         BIYOS_delobjnamerg
         """
         self._delname("BIYOS_delobjname", Objectives, idx)
+
+    def setindname(
+        self, idx: Sequence[int | Indicator] | Indicators, name: Sequence[str]
+    ) -> None:
+        """Name indicators of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The indicators to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setindnamesp
+        BIYOS_setindnamerg
+        """
+        self._setname("BIYOS_setindname", Indicators, idx, name)
+
+    def getindname(
+        self, idx: Sequence[int | Indicator] | Indicators
+    ) -> list[str | None]:
+        """Return the names of indicators, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The indicators to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getindnamesp
+        BIYOS_getindnamerg
+        """
+        return self._getname("BIYOS_getindname", Indicators, idx)
+
+    def getindidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named indicators, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the indicator that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getindidx
+        """
+        return self._getidx(lib.BIYOS_getindidx, name)
+
+    def delindname(self, idx: Sequence[int | Indicator] | Indicators) -> None:
+        """Remove the names of indicators, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The indicators that lose their names.
+
+        See Also
+        --------
+        BIYOS_delindnamesp
+        BIYOS_delindnamerg
+        """
+        self._delname("BIYOS_delindname", Indicators, idx)
 
     def _start(self, env: Env) -> None:
         self._env = env

@@ -153,6 +153,10 @@ quartodoc:
           include_inherited: true
           members: [__len__, __iter__, __getitem__, "on"]
         - Objective
+        - name: Indicators
+          include_inherited: true
+          members: [__len__, __iter__, __getitem__, "on"]
+        - Indicator
     - title: Events
       desc: What a hook receives.
       contents: [Event, EventKind, EventLevel]
