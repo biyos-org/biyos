@@ -636,6 +636,10 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getnquadtermrg(model, 0, 0, &needed) != BIYOS_OK ||
         BIYOS_getquadtermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getquadtermrg(model, 0, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getnexprsp(model, 0, NULL, &needed, &needed) != BIYOS_OK ||
+        BIYOS_getnexprrg(model, 0, 0, &needed, &needed) != BIYOS_OK ||
+        BIYOS_getexprsp(model, 0, NULL, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getexprrg(model, 0, 0, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getncon(model, &count) != BIYOS_OK ||
         BIYOS_getconrg(model, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getconbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||

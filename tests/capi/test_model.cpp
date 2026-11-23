@@ -215,6 +215,13 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_attachexprrg(nullptr, 0, 0, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_clrfunsp(nullptr, 0, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_clrfunrg(nullptr, 0, 0), BIYOS_ERR_BADARG);
+    BIYOS_offset nnz = 0;
+    EXPECT_EQ(BIYOS_getnexprsp(nullptr, 0, nullptr, &nnz, &nnz), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getnexprrg(nullptr, 0, 0, &nnz, &nnz), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getexprsp(nullptr, 0, nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getexprrg(nullptr, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addcb(nullptr, 1, &index, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setcbf(nullptr, 0, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setcbjac(nullptr, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
