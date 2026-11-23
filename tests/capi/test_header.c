@@ -341,6 +341,7 @@ static BIYOS_status use_complements(BIYOS_model *model)
     const int functions[2] = {0, 1};
     const int partners[2] = {1, 1};
     const double lower[1] = {-1.0};
+    const double tolerance[1] = {0.5};
     const int indices[1] = {1};
     double found[2] = {9.0, 9.0};
     int read[2] = {-1, -1};
@@ -351,7 +352,8 @@ static BIYOS_status use_complements(BIYOS_model *model)
         BIYOS_getnccon(model, &complements) != BIYOS_OK || complements != 2 ||
         BIYOS_getcconbndrg(model, 0, 2, found, NULL) != BIYOS_OK ||
         BIYOS_getcconrg(model, 0, 2, read, NULL, NULL, NULL) != BIYOS_OK || read[0] != 0 ||
-        read[1] != 1)
+        read[1] != 1 || BIYOS_setccontolrg(model, 1, 1, tolerance, NULL) != BIYOS_OK ||
+        BIYOS_getccontolsp(model, 1, indices, found, found + 1) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -611,6 +613,8 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getcconrg(model, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getcconbndsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getcconbndrg(model, 0, 0, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getccontolsp(model, 0, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getccontolrg(model, 0, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_copymdl(model, env, &copy) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
