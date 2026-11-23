@@ -1,0 +1,272 @@
+import gc
+import weakref
+from ctypes import addressof, byref, c_double, c_void_p, cast, sizeof
+from functools import partial
+
+import pytest
+
+import biyos
+from biyos import EventKind, EventLevel, Operator
+from biyos._callbacks import Caller
+from biyos._capi import CALLBACK, RequestRecord, lib
+from refusal import LOCKED, refusal
+
+SETTERS = (
+    "BIYOS_setcbf",
+    "BIYOS_setcbjac",
+    "BIYOS_setcbhess",
+    "BIYOS_setcbhessvec",
+)
+
+
+@pytest.fixture
+def env():
+    with biyos.Env() as env:
+        yield env
+
+
+@pytest.fixture
+def model(env):
+    with biyos.Model(env) as model:
+        model.addvar(3)
+        model.addfun(3)
+        yield model
+
+
+@pytest.fixture
+def seen(monkeypatch):
+    found = []
+    for name in SETTERS:
+        spy = partial(recorded, found, getattr(lib, name))
+        monkeypatch.setattr(lib, name, spy)
+    return found
+
+
+def recorded(found, function, *arguments):
+    found.append(cast(arguments[-1], c_void_p).value)
+    return function(*arguments)
+
+
+def doubles(values):
+    return None if values is None else (c_double * len(values))(*values)
+
+
+def start(values):
+    return None if values is None else addressof(values)
+
+
+def evaluate(model, address, cb, size, x, w=None, v=None):
+    arrays = [doubles(values) for values in (x, w, v)]
+    record = RequestRecord(sizeof(RequestRecord), model._handle.value, cb)
+    record.x, record.w, record.v = (start(array) for array in arrays)
+    out = (c_double * size)()
+    data = c_void_p()
+    assert lib.BIYOS_getcbdata(model._handle, cb, byref(data)) == 0
+    function = CALLBACK(address)
+    status = function(byref(record), start(out) if size else None, data)
+    return status, list(out)
+
+
+def caller_of(model):
+    kept = model._callbacks._kept
+    return [held for held in kept if isinstance(held, Caller)][-1]
+
+
+def describe(found, req, out, data):
+    found.append((req.callback, req.thread, list(req.point), data))
+    found.append((req.weights, req.direction, req.point.readonly, len(out)))
+    for k in range(len(out)):
+        out[k] = req.point[k] + 0.5
+
+
+def test_added(model):
+    assert model.addcb([0, 2]) == 0
+    f = model.addfun(2)
+    data = {"scale": 2.0}
+    assert model.addcb(f, data) == 1
+    assert model.getcbdata(0) is None
+    assert model.getcbdata(1) is data
+    other = []
+    model.setcbdata(1, other)
+    assert model.getcbdata(1) is other
+
+
+def test_values(model, seen):
+    cb = model.addcb([2, 0], "data")
+    found = []
+    model.setcbf(cb, partial(describe, found))
+    status, values = evaluate(model, seen[-1], cb, 2, [1.0, 2.0, 3.0])
+    assert (status, values) == (0, [1.5, 2.5])
+    assert found == [(0, 0, [1.0, 2.0, 3.0], "data"), (None, None, True, 2)]
+
+
+def test_collected(model, seen):
+    cb = model.addcb([0])
+
+    def values(req, out, data):
+        out[0] = 2.0 * req.point[1]
+
+    alive = weakref.ref(values)
+    model.setcbf(cb, values)
+    del values
+    gc.collect()
+    assert alive() is not None
+    assert evaluate(model, seen[-1], cb, 1, [0.0, 1.5, 0.0]) == (0, [3.0])
+
+
+def test_copied(env, seen):
+    data = ["shared"]
+    source = biyos.Model(env)
+    source.addvar(1)
+    source.addfun(1)
+    cb = source.addcb([0], data)
+    source.setcbf(cb, partial(describe, []))
+    copy = source.copy()
+    source.close()
+    del source
+    gc.collect()
+    assert copy.getcbdata(cb) is data
+    assert evaluate(copy, seen[-1], cb, 1, [1.0]) == (0, [1.5])
+    copy.close()
+
+
+def answer(result, req, out, data):
+    if isinstance(result, BaseException):
+        raise result
+    return result
+
+
+def test_results(model, seen):
+    cb = model.addcb([0])
+    cases = [(None, 0), (0, 0), (3, 1), (-7, -1), (2**70, 1), (-(2**70), -1)]
+    for result, status in cases:
+        model.setcbf(cb, partial(answer, result))
+        assert evaluate(model, seen[-1], cb, 1, [0.0] * 3)[0] == status
+    error = ValueError("not here")
+    for result in (error, True, 1.5):
+        model.setcbf(cb, partial(answer, result))
+        assert evaluate(model, seen[-1], cb, 1, [0.0] * 3)[0] == -1
+    assert caller_of(model).raised.args[0].startswith("the result of")
+    model.setcbf(cb, partial(answer, error))
+    evaluate(model, seen[-1], cb, 1, [0.0] * 3)
+    assert caller_of(model).raised is error
+
+
+def keep(found, req, out, data):
+    found.extend((req, out))
+
+
+def test_released(model, seen):
+    cb = model.addcb([0])
+    found = []
+    model.setcbhessvec(cb, partial(keep, found))
+    x = [1.0, 2.0, 3.0]
+    assert evaluate(model, seen[-1], cb, 3, x, [1.0], x)[0] == 0
+    req, out = found
+    for view in (req.point, req.weights, req.direction, out):
+        with pytest.raises(ValueError, match="released memoryview"):
+            view[0]
+
+
+def derivatives(found, req, out, data):
+    found.append((list(req.weights or []), list(req.direction or [])))
+    for k in range(len(out)):
+        out[k] = k + 1.0
+
+
+def test_patterns(model, seen):
+    cb = model.addcb([0, 1])
+    found = []
+    function = partial(derivatives, found)
+    model.setcbjac(cb, [0, 2, 3], [0, 2, 1], function)
+    x = [0.0] * 3
+    assert evaluate(model, seen[-1], cb, 3, x) == (0, [1.0, 2.0, 3.0])
+    model.setcbjac(cb, [0, 0, 0], [], function)
+    assert evaluate(model, seen[-1], cb, 0, x) == (0, [])
+    model.setcbhess(cb, [0, 0], [0, 2], function)
+    assert evaluate(model, seen[-1], cb, 2, x, [2.0, 3.0]) == (0, [1.0, 2.0])
+    model.setcbhessvec(cb, function)
+    v = [4.0, 5.0, 6.0]
+    assert evaluate(model, seen[-1], cb, 3, x, [2.0, 3.0], v)[0] == 0
+    assert found == [([], []), ([], []), ([2.0, 3.0], []), ([2.0, 3.0], v)]
+
+
+def test_refused(model):
+    cb = model.addcb([0])
+    bad = "invalid argument: "
+    node = model.addexpr([0, 2], [Operator.VARIABLE, Operator.EXP], [1, 1])
+    model.attachexpr([1], node)
+    cases = [
+        (model.addcb, ([],), "argument 'n': 0 is not positive"),
+        (model.addcb, ([0],), "function 0: is in callback 0"),
+        (model.addcb, ([1],), "function 1: has an expression"),
+        (model.addcb, ([3],), "function 3: unknown"),
+        (model.attachexpr, ([0], node), "function 0: is in callback 0"),
+        (model.setcbf, (1, answer), "callback 1: unknown"),
+        (model.setcbjac, (-1, [0, 1], [0], answer), "callback -1: unknown"),
+        (model.setcbhess, (2, [], [], answer), "callback 2: unknown"),
+        (model.setcbhessvec, (1, answer), "callback 1: unknown"),
+        (model.setcbdata, (1, None), "callback 1: unknown"),
+        (model.getcbdata, (1,), "callback 1: unknown"),
+    ]
+    for call, arguments, message in cases:
+        assert refusal(call, *arguments) == bad + message
+    jacobian = "callback 0: Jacobian of function 0: variable 1 is listed"
+    message = refusal(model.setcbjac, cb, [0, 2], [2, 1], answer)
+    assert message == bad + jacobian + " after variable 2"
+    pair = "callback 0: Hessian pair (1, 0) has its second variable below"
+    message = refusal(model.setcbhess, cb, [1], [0], answer)
+    assert message == bad + pair + " its first"
+
+
+def test_lengths(model):
+    cb = model.addcb([0, 1])
+    with pytest.raises(ValueError, match="off has length 2, not 3"):
+        model.setcbjac(cb, [0, 1], [0], answer)
+    with pytest.raises(ValueError, match="varidx has length 1, not 2"):
+        model.setcbjac(cb, [0, 1, 2], [0], answer)
+    with pytest.raises(ValueError, match="varidx2 has length 1, not 2"):
+        model.setcbhess(cb, [0, 1], [1], answer)
+    with pytest.raises(TypeError, match="f must be callable, not int"):
+        model.setcbf(cb, 3)
+    with pytest.raises(TypeError, match="jac must be callable, not None"):
+        model.setcbjac(cb, [0, 0, 0], [], None)
+    with pytest.raises(TypeError, match="cb must be an int, not float"):
+        model.setcbdata(0.0, None)
+
+
+def changes(model):
+    return (
+        partial(model.addcb, [1]),
+        partial(model.setcbf, 0, answer),
+        partial(model.setcbjac, 0, [0, 0], [], answer),
+        partial(model.setcbhess, 0, [], [], answer),
+        partial(model.setcbhessvec, 0, answer),
+        partial(model.setcbdata, 0, None),
+    )
+
+
+def test_locked(env, model):
+    model.addcb([0], "kept")
+    found = []
+
+    def change(event):
+        for call in changes(model):
+            try:
+                call()
+            except biyos.Error as error:
+                found.append(str(error))
+        found.append(model.getcbdata(0))
+
+    env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
+    with pytest.raises(biyos.Error):
+        env.setopt("seed", -1)
+    assert found == [LOCKED] * 6 + ["kept"]
+
+
+def test_closed(env):
+    model = biyos.Model(env)
+    model.close()
+    for call in (*changes(model), partial(model.getcbdata, 0)):
+        with pytest.raises(ValueError, match="the model is closed"):
+            call()

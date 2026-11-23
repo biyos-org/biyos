@@ -1,6 +1,16 @@
 import weakref
 from collections.abc import Callable, Sequence
-from ctypes import Array, byref, c_char_p, c_double, c_int, c_int64, c_void_p
+from ctypes import (
+    Array,
+    addressof,
+    byref,
+    c_char_p,
+    c_double,
+    c_int,
+    c_int64,
+    c_void_p,
+    py_object,
+)
 from enum import IntEnum
 from math import isnan
 from typing import Any, NoReturn, SupportsIndex
@@ -36,6 +46,7 @@ from biyos._blocks import (
     index_of,
 )
 from biyos import _capi, _values
+from biyos._callbacks import Caller, Callbacks, checked, data_at
 from biyos._capi import lib
 from biyos._env import Env
 from biyos._error import Error
@@ -1146,6 +1157,248 @@ class Model:
         BIYOS_clrfunrg
         """
         self._call(*self._chosen("BIYOS_clrfun", Functions, idx))
+
+    def addcb(
+        self,
+        funidx: Sequence[int | Function] | Functions,
+        data: object = None,
+    ) -> int:
+        """Add a callback that computes the nonlinear part of functions.
+
+        The callback has no function yet and an empty pattern for each
+        derivative; ``setcbf``, ``setcbjac``, ``setcbhess`` and
+        ``setcbhessvec`` give them.
+
+        Parameters
+        ----------
+        funidx
+            The functions, each listed once, none with an expression or
+            another callback. Their order is the order of the callback's
+            values.
+        data
+            The object passed to each of the callback's functions, None by
+            default.
+
+        Returns
+        -------
+        cb
+            The index of the new callback, counted from 0.
+
+        Notes
+        -----
+        Each function of a callback is called with a ``CallbackRequest``, a
+        writable ``memoryview`` of floats to fill and the callback's
+        ``data``. It returns None or 0 once the array is filled, a positive
+        int when its functions are not defined at the point, and a negative
+        int to stop the call that asked for it. An exception it raises
+        counts as a negative int. The model keeps the functions and
+        ``data`` alive, and a copy shares them. No call evaluates a
+        callback yet.
+
+        See Also
+        --------
+        BIYOS_addcb
+        """
+        n = len(funidx)
+        indices = indices_of(self, Functions, "funidx", funidx, n)
+        cell = py_object(data)
+        cb = c_int()
+        self._call(lib.BIYOS_addcb, n, indices, addressof(cell), byref(cb))
+        self._callbacks.added(n)
+        self._callbacks.keep(cell)
+        return cb.value
+
+    def setcbf(self, cb: int, f: Callable[..., object]) -> None:
+        """Give a callback the function that evaluates its values.
+
+        Parameters
+        ----------
+        cb
+            The callback.
+        f
+            The function, as ``addcb`` describes. It writes the nonlinear
+            part of each covered function at the point, in the order given
+            to ``addcb``.
+
+        Raises
+        ------
+        TypeError
+            When ``f`` is not callable.
+
+        See Also
+        --------
+        BIYOS_setcbf
+        """
+        cb = integer("cb", cb)
+        count = self._callbacks.count(cb)
+        caller = Caller(checked("f", f), count, count)
+        self._call(lib.BIYOS_setcbf, cb, caller.pointer)
+        self._callbacks.keep(caller)
+
+    def setcbjac(
+        self,
+        cb: int,
+        off: Sequence[int],
+        varidx: Sequence[int | Variable] | Variables,
+        jac: Callable[..., object],
+    ) -> None:
+        """Give a callback its Jacobian pattern and the function that
+        evaluates it.
+
+        The entries of the ``k``-th covered function are those from
+        ``off[k]`` to ``off[k + 1] - 1`` of ``varidx``. A variable left out
+        of a function's entries has a zero derivative.
+
+        Parameters
+        ----------
+        cb
+            The callback.
+        off
+            The offsets of each covered function's entries, one more than
+            the functions the callback covers, from 0 and never decreasing.
+        varidx
+            The variable of each entry, ``off[-1]`` of them, in increasing
+            order within a function.
+        jac
+            The function, as ``addcb`` describes. It writes the derivative
+            of each entry at the point, in the order of the pattern.
+
+        Raises
+        ------
+        TypeError
+            When ``jac`` is not callable.
+
+        See Also
+        --------
+        BIYOS_setcbjac
+        """
+        cb = integer("cb", cb)
+        jac = checked("jac", jac)
+        if not self._callbacks.known(cb):
+            refused = Caller(jac, 0, 0).pointer
+            self._call(lib.BIYOS_setcbjac, cb, None, None, refused)
+        n = self._callbacks.count(cb)
+        starts = offsets("off", off, n + 1)
+        size = _total(starts, n)
+        variables = indices_of(self, Variables, "varidx", varidx, size)
+        caller = Caller(jac, n, size)
+        self._call(lib.BIYOS_setcbjac, cb, starts, variables, caller.pointer)
+        self._callbacks.keep(caller)
+
+    def setcbhess(
+        self,
+        cb: int,
+        varidx1: Sequence[int | Variable] | Variables,
+        varidx2: Sequence[int | Variable] | Variables,
+        hess: Callable[..., object],
+    ) -> None:
+        """Give a callback its Hessian pattern and the function that
+        evaluates it.
+
+        The pairs are sorted by their first variable, then by their second,
+        as the model lists quadratic terms. They cover every pair of
+        variables ``i <= j`` where a second derivative of some covered
+        function may be nonzero.
+
+        Parameters
+        ----------
+        cb
+            The callback.
+        varidx1
+            The first variable of each pair.
+        varidx2
+            The second variable of each pair, no less than the first.
+        hess
+            The function, as ``addcb`` describes. It writes, for each pair,
+            the entry of the sum of the covered functions' Hessians, each
+            weighted by ``req.weights``, at the point.
+
+        Raises
+        ------
+        TypeError
+            When ``hess`` is not callable.
+
+        See Also
+        --------
+        BIYOS_setcbhess
+        """
+        cb = integer("cb", cb)
+        nnz = len(varidx1)
+        first = indices_of(self, Variables, "varidx1", varidx1, nnz)
+        second = indices_of(self, Variables, "varidx2", varidx2, nnz)
+        caller = Caller(checked("hess", hess), self._callbacks.count(cb), nnz)
+        pairs = (nnz, first, second, caller.pointer)
+        self._call(lib.BIYOS_setcbhess, cb, *pairs)
+        self._callbacks.keep(caller)
+
+    def setcbhessvec(self, cb: int, hessvec: Callable[..., object]) -> None:
+        """Give a callback the function that multiplies its Hessian by a
+        vector.
+
+        Parameters
+        ----------
+        cb
+            The callback.
+        hessvec
+            The function, as ``addcb`` describes. It writes, for every
+            variable, the entry of the product of ``req.direction`` with the
+            sum of the covered functions' Hessians, each weighted by
+            ``req.weights``, at the point.
+
+        Raises
+        ------
+        TypeError
+            When ``hessvec`` is not callable.
+
+        See Also
+        --------
+        BIYOS_setcbhessvec
+        """
+        cb = integer("cb", cb)
+        function = checked("hessvec", hessvec)
+        caller = Caller(function, self._callbacks.count(cb), None)
+        self._call(lib.BIYOS_setcbhessvec, cb, caller.pointer)
+        self._callbacks.keep(caller)
+
+    def setcbdata(self, cb: int, data: object) -> None:
+        """Replace the object a callback's functions receive.
+
+        Parameters
+        ----------
+        cb
+            The callback.
+        data
+            The new object, for every later call of the callback. A copy of
+            the model keeps the object it had when it was made.
+
+        See Also
+        --------
+        BIYOS_setcbdata
+        """
+        cell = py_object(data)
+        self._call(lib.BIYOS_setcbdata, integer("cb", cb), addressof(cell))
+        self._callbacks.keep(cell)
+
+    def getcbdata(self, cb: int) -> object:
+        """Return the object a callback's functions receive.
+
+        Parameters
+        ----------
+        cb
+            The callback.
+
+        Returns
+        -------
+        data
+            The object, as last given.
+
+        See Also
+        --------
+        BIYOS_getcbdata
+        """
+        found = c_void_p()
+        self._call(lib.BIYOS_getcbdata, integer("cb", cb), byref(found))
+        return data_at(found.value)
 
     def addcon(
         self,
@@ -3059,6 +3312,7 @@ class Model:
         self._calls = 0
         self._closing = False
         self._gen = 0
+        self._callbacks = Callbacks()
 
     def _make(self, call: Callable[..., None], *arguments: object) -> None:
         handle = self._handle
@@ -3073,6 +3327,7 @@ class Model:
         if not self._env._open():
             raise ValueError("the environment is closed")
         target = self._env._handle
+        self._callbacks = source._callbacks.copy()
         self._make(source._call, lib.BIYOS_copymdl, target)
 
     def _hold(self) -> None:

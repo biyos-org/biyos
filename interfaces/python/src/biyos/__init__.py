@@ -16,6 +16,7 @@ from biyos._blocks import (
     Variable,
     Variables,
 )
+from biyos._callbacks import CallbackRequest
 from biyos._capi import version
 from biyos._env import Env
 from biyos._error import Error
@@ -26,6 +27,7 @@ from biyos._options import CheckLevel, Masks, OptionSource
 from biyos._versions import Versions
 
 __all__ = [
+    "CallbackRequest",
     "CheckLevel",
     "Complement",
     "Complements",

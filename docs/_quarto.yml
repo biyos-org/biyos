@@ -172,3 +172,6 @@ quartodoc:
     - title: Events
       desc: What a hook receives.
       contents: [Event, EventKind, EventLevel]
+    - title: Callbacks
+      desc: What a callback receives.
+      contents: [CallbackRequest]
