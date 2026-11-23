@@ -57,7 +57,7 @@ void add_callback(BIYOS_model &model, int n, const int *functions, void *data, i
 void set_values(BIYOS_model &model, int cb, BIYOS_cbf f)
 {
     biyos::Model &core = writable(model);
-    core.set_values(cb, Caller{require(f, "f")});
+    core.set_callback_function(cb, Caller{require(f, "f")});
 }
 
 void set_jacobian(BIYOS_model &model,
@@ -76,7 +76,7 @@ void set_jacobian(BIYOS_model &model,
     {
         require(variables, "varidx");
     }
-    core.set_jacobian(cb, starts, {variables, total}, caller);
+    core.set_callback_jacobian(cb, starts, {variables, total}, caller);
 }
 
 void set_hessian(BIYOS_model &model,
@@ -94,18 +94,18 @@ void set_hessian(BIYOS_model &model,
         require(first, "varidx1");
         require(second, "varidx2");
     }
-    core.set_hessian(cb, {first, size}, {second, size}, caller);
+    core.set_callback_hessian(cb, {first, size}, {second, size}, caller);
 }
 
 void set_product(BIYOS_model &model, int cb, BIYOS_cbhessvec hessvec)
 {
     biyos::Model &core = writable(model);
-    core.set_product(cb, Caller{require(hessvec, "hessvec")});
+    core.set_callback_hessian_product(cb, Caller{require(hessvec, "hessvec")});
 }
 
 void set_data(BIYOS_model &model, int cb, void *data)
 {
-    writable(model).set_data(cb, data);
+    writable(model).set_callback_data(cb, data);
 }
 
 void get_data(const BIYOS_model &model, int cb, void **data)

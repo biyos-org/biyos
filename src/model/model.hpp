@@ -274,17 +274,17 @@ class Model
     const Callback &callback(Index index) const;
     Index callback_of(Index function) const noexcept;
     Index add_callback(std::span<const Index> functions, void *data);
-    void set_values(Index callback, UserFunction values);
-    void set_jacobian(Index callback,
-                      std::span<const Offset> starts,
-                      std::span<const Index> variables,
-                      UserFunction jacobian);
-    void set_hessian(Index callback,
-                     std::span<const Index> first,
-                     std::span<const Index> second,
-                     UserFunction hessian);
-    void set_product(Index callback, UserFunction product);
-    void set_data(Index callback, void *data);
+    void set_callback_function(Index callback, UserFunction function);
+    void set_callback_jacobian(Index callback,
+                               std::span<const Offset> starts,
+                               std::span<const Index> variables,
+                               UserFunction jacobian);
+    void set_callback_hessian(Index callback,
+                              std::span<const Index> first,
+                              std::span<const Index> second,
+                              UserFunction hessian);
+    void set_callback_hessian_product(Index callback, UserFunction hessian_product);
+    void set_callback_data(Index callback, void *data);
 
   private:
     void check_kinds(std::span<const Index> indices, std::span<const Variable> changed) const;
