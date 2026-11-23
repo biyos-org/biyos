@@ -265,6 +265,36 @@ static BIYOS_status use_indicators(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status use_sos(BIYOS_model *model)
+{
+    const int kinds[2] = {BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2};
+    const BIYOS_offset starts[3] = {0, 2, 3};
+    const int variables[3] = {1, 0, 1};
+    const int indices[1] = {1};
+    int found[2] = {-1, -1};
+    BIYOS_offset offsets[3] = {-1, -1, -1};
+    int members[3] = {-1, -1, -1};
+    double weights[3] = {0.0, 0.0, 0.0};
+    BIYOS_offset needed = -1;
+    BIYOS_index first = -1;
+    BIYOS_index sos = 0;
+    if (BIYOS_addsos(model, 2, kinds, starts, variables, NULL, &first) != BIYOS_OK || first != 0 ||
+        BIYOS_getnsos(model, &sos) != BIYOS_OK || sos != 2 ||
+        BIYOS_getnsosvarsp(model, 1, indices, &needed) != BIYOS_OK || needed != 1 ||
+        BIYOS_getnsosvarrg(model, 0, 2, &needed) != BIYOS_OK || needed != 3)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    if (BIYOS_getsosrg(model, 0, 2, 3, found, offsets, members, weights) != BIYOS_OK ||
+        found[1] != BIYOS_SOSKND_SOS2 || offsets[2] != 3 || members[1] != 0 ||
+        BIYOS_getsossp(model, 1, indices, 1, found, offsets, members, NULL) != BIYOS_OK ||
+        found[0] != BIYOS_SOSKND_SOS2 || offsets[1] != 1 || members[0] != 1)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static BIYOS_status use_nodes(BIYOS_model *model)
 {
     BIYOS_offset x = -1;
@@ -566,8 +596,9 @@ int main(void)
         use_quadratic(model) != BIYOS_OK || use_nodes(model) != BIYOS_OK ||
         use_postfix(model) != BIYOS_OK || use_constraints(model) != BIYOS_OK ||
         use_objectives(model) != BIYOS_OK || use_indicators(model) != BIYOS_OK ||
-        use_names(model) != BIYOS_OK || use_options(model) != BIYOS_OK ||
-        use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
+        use_sos(model) != BIYOS_OK || use_names(model) != BIYOS_OK ||
+        use_options(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK ||
+        use_readers(env, model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

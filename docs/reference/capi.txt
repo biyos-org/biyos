@@ -1262,6 +1262,59 @@ value BIYOS_SOSKND_SOS1 Type 1: at most one member is nonzero.
 value BIYOS_SOSKND_SOS2 Type 2: at most two members are nonzero, adjacent in the order of their weights.
 since 0.1.0
 
+function BIYOS_addsos
+summary Add special ordered sets after the last one.
+param mdl in The model.
+param n in The number of sets to add.
+param knd in The type of each, `BIYOS_SOSKND_SOS1` or `BIYOS_SOSKND_SOS2`; may be null only when `n` is 0.
+param off in The `n + 1` offsets of the sets' members; null adds sets with no members.
+param varidx in The variable of each member; not read when there are no members.
+param coef in The weight of each member; null gives the members of each set the weights 1, 2, 3 and so on, in the order given.
+param pos out Receives the index of the first new set; skipped when null.
+return `BIYOS_OK` once the sets are added.
+error BIYOS_ERR_BADARG `n` is negative, a type is unknown, `off` does not begin at 0 or decreases, a variable is not one of the model or appears twice in a set, or a weight is not finite or appears twice in a set.
+error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 sets, or more members than any allocation can hold.
+note The set `p + j`, where `p` is the number of sets before the call, holds the members from `off[j]` to `off[j + 1] - 1`, in that order. A set may have no members. Weights are compared as numbers, so 0 and −0 are one weight. A refused call changes nothing.
+see BIYOS_getsosrg BIYOS_getnsos
+since 0.1.0
+
+function BIYOS_getnsos
+summary Give the number of special ordered sets.
+param mdl in The model.
+param n out Receives the number of sets.
+return `BIYOS_OK`, with the number in `*n`.
+since 0.1.0
+
+function BIYOS_getnsosvarsp BIYOS_getnsosvarrg
+summary Count the members of special ordered sets.
+param mdl in The model.
+param pos in In the `rg` form, the first set of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the set of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of members of the entries, a set counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `pos` or `n` is negative, an index is not that of a set, the range ends past the last set, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getsossp` and `BIYOS_getsosrg` need for the same entries.
+see BIYOS_getsossp
+since 0.1.0
+
+function BIYOS_getsossp BIYOS_getsosrg
+summary Read special ordered sets.
+param mdl in The model.
+param pos in In the `rg` form, the first set of the range.
+param n in The number of entries.
+param idx in In the `sp` form, the set of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of members the output arrays hold.
+param knd out Entry `j` receives the type of set `idx[j]` or `pos + j`; skipped when null.
+param off out Receives `n + 1` offsets from 0; skipped when null.
+param varidx out Receives the variable of each member; skipped when null.
+param coef out Receives the weight of each member; skipped when null.
+return `BIYOS_OK` once the arrays are written, the members of entry `j` from `off[j]` in the order they were added.
+error BIYOS_ERR_BADARG `pos`, `n` or `cap` is negative, an index is not that of a set, the range ends past the last set, or `cap` is less than the number of members `BIYOS_getnsosvarsp` gives.
+note It reads back what `BIYOS_addsos` takes, the weights included when `coef` was null. A refused call writes nothing.
+see BIYOS_getnsosvarsp BIYOS_addsos
+since 0.1.0
+
 group names Names
 text The model and each variable, function, constraint, objective and indicator may have a name, as [Names](#sec-model-names) describes. A name is not empty, is well-formed UTF-8 and holds no NUL. A C string ends at its first NUL, so a name passed in C never holds one. Names match byte for byte. An item has no name until one is set, and reads as an empty string while it has none.
 text Names may repeat: setting a name checks no uniqueness, and several items of a family may hold one name. A lookup never chooses among them: it finds an item only when that item alone holds the name. Every family takes the same four calls, named after its short form, `var`, `fun`, `con`, `obj` or `ind`, and keeps its names apart from those of the other families.

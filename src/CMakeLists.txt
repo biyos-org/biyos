@@ -111,6 +111,7 @@ add_library(biyos
     capi/quadratic.cpp
     capi/rows.cpp
     capi/selection.cpp
+    capi/sos.cpp
     capi/version.cpp)
 add_library(biyos::biyos ALIAS biyos)
 

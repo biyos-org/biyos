@@ -27,12 +27,13 @@ std::size_t length(std::int64_t n, std::string_view name)
     return static_cast<std::size_t>(n);
 }
 
-void check_capacity(std::int64_t capacity, std::size_t needed)
+void check_capacity(std::int64_t capacity, std::size_t needed, std::string_view noun)
 {
     if (length(capacity, "cap") < needed)
     {
         const std::string held = std::to_string(capacity);
-        const std::string reason = "holds " + held + " of the " + std::to_string(needed) + " terms";
+        const std::string wanted = std::to_string(needed) + " " + std::string(noun);
+        const std::string reason = "holds " + held + " of the " + wanted;
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "argument 'cap'", reason);
     }
 }
