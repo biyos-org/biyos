@@ -2664,6 +2664,81 @@ class Model:
         """
         self._delname("BIYOS_delsosname", SOSs, idx)
 
+    def setconename(
+        self, idx: Sequence[int | Cone] | Cones, name: Sequence[str]
+    ) -> None:
+        """Name cones of the model, as ``setvarname`` names variables.
+
+        Parameters
+        ----------
+        idx
+            The cones to name.
+        name
+            The new name of each, as many as ``idx``.
+
+        See Also
+        --------
+        BIYOS_setconenamesp
+        BIYOS_setconenamerg
+        """
+        self._setname("BIYOS_setconename", Cones, idx, name)
+
+    def getconename(
+        self, idx: Sequence[int | Cone] | Cones
+    ) -> list[str | None]:
+        """Return the names of cones, as ``getvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The cones to read.
+
+        Returns
+        -------
+        name
+            The name of each, or None for one that has none.
+
+        See Also
+        --------
+        BIYOS_getconenamesp
+        BIYOS_getconenamerg
+        """
+        return self._getname("BIYOS_getconename", Cones, idx)
+
+    def getconeidx(self, name: Sequence[str]) -> list[int]:
+        """Return the indices of named cones, as ``getvaridx`` does.
+
+        Parameters
+        ----------
+        name
+            The names, each matched exactly.
+
+        Returns
+        -------
+        idx
+            The index of the cone that alone holds each name.
+
+        See Also
+        --------
+        BIYOS_getconeidx
+        """
+        return self._getidx(lib.BIYOS_getconeidx, name)
+
+    def delconename(self, idx: Sequence[int | Cone] | Cones) -> None:
+        """Remove the names of cones, as ``delvarname`` does.
+
+        Parameters
+        ----------
+        idx
+            The cones that lose their names.
+
+        See Also
+        --------
+        BIYOS_delconenamesp
+        BIYOS_delconenamerg
+        """
+        self._delname("BIYOS_delconename", Cones, idx)
+
     def _start(self, env: Env) -> None:
         self._env = env
         self._handle = c_void_p()

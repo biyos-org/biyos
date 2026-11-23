@@ -3,7 +3,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import Sense, VariableKind
+from biyos import ConeKind, Sense, VariableKind
 from biyos._capi import lib
 from refusal import refusal
 
@@ -24,6 +24,7 @@ PAIRS = [
     ("ind", "indvar", ([5, 6], [0, 1])),
     ("ind", "indname", (["i", "j"],)),
     ("sos", "sosname", (["i", "j"],)),
+    ("cone", "conename", (["i", "j"],)),
 ]
 
 SPREAD = {
@@ -32,6 +33,8 @@ SPREAD = {
     "obj": ("setobjprio", [5, 6, 7, 8]),
     "ind": ("setindbnd", [-1.0, -2.0, -3.0, -4.0], [1.0, 2.0, 3.0, 4.0]),
 }
+
+CONES = [ConeKind.NONNEGATIVE] * 4
 
 FORMS = {
     "block": "rg",
@@ -57,6 +60,7 @@ def blocks(env):
             "obj": model.addobj([0] * 4),
             "ind": model.addind(add_switches(model), [1] * 4, [0] * 4),
             "sos": model.addsos([biyos.SOSKind.SOS1] * 4, [0] * 5, []),
+            "cone": model.addcone(CONES, range(5), range(4)),
         }
         yield model, found
 
@@ -110,7 +114,9 @@ def test_forms(blocks, monkeypatch, family, call, values, kind):
     assert read(model, call, records(kind)) == values
 
 
-@pytest.mark.parametrize("family", ["var", "fun", "con", "obj", "ind", "sos"])
+@pytest.mark.parametrize(
+    "family", ["var", "fun", "con", "obj", "ind", "sos", "cone"]
+)
 @pytest.mark.parametrize("kind", FORMS)
 def test_delete(blocks, monkeypatch, family, kind):
     model, found = blocks
