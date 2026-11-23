@@ -89,6 +89,10 @@ h4.api {
   .entry table td:first-child {
     white-space: nowrap;
   }
+
+  .entry .returns td:first-child {
+    white-space: normal;
+  }
 }
 
 .meta {
