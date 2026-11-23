@@ -434,3 +434,53 @@ BIYOS_status BIYOS_delsosnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n
 {
     return guarded<delete_names<Family::Sos, Range>>(mdl, Range{pos, n});
 }
+
+BIYOS_status BIYOS_setconenamesp(BIYOS_model *mdl,
+                                 BIYOS_index n,
+                                 const BIYOS_index *idx,
+                                 const char *const *name)
+{
+    return guarded<set_names<Family::Cone, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_setconenamerg(BIYOS_model *mdl,
+                                 BIYOS_index pos,
+                                 BIYOS_index n,
+                                 const char *const *name)
+{
+    return guarded<set_names<Family::Cone, Range>>(mdl, Range{pos, n}, name);
+}
+
+BIYOS_status BIYOS_getconenamesp(const BIYOS_model *mdl,
+                                 BIYOS_index n,
+                                 const BIYOS_index *idx,
+                                 const char **name)
+{
+    return guarded<get_names<Family::Cone, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_getconenamerg(const BIYOS_model *mdl,
+                                 BIYOS_index pos,
+                                 BIYOS_index n,
+                                 const char **name)
+{
+    return guarded<get_names<Family::Cone, Range>>(mdl, Range{pos, n}, name);
+}
+
+BIYOS_status BIYOS_getconeidx(const BIYOS_model *mdl,
+                              BIYOS_index n,
+                              const char *const *name,
+                              BIYOS_index *idx)
+{
+    return guarded<get_indices<Family::Cone>>(mdl, n, name, idx);
+}
+
+BIYOS_status BIYOS_delconenamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+{
+    return guarded<delete_names<Family::Cone, List>>(mdl, List{n, idx});
+}
+
+BIYOS_status BIYOS_delconenamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+{
+    return guarded<delete_names<Family::Cone, Range>>(mdl, Range{pos, n});
+}

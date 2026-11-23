@@ -473,6 +473,25 @@ static BIYOS_status del_names(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status name_cones(BIYOS_model *model)
+{
+    const int indices[1] = {1};
+    const char *names[1] = {"k"};
+    const char *found = NULL;
+    BIYOS_index at = -1;
+    if (BIYOS_setconenamesp(model, 1, indices, names) != BIYOS_OK ||
+        BIYOS_getconenamerg(model, 1, 1, &found) != BIYOS_OK || !matches(found, "k") ||
+        BIYOS_getconeidx(model, 1, names, &at) != BIYOS_OK || at != 1 ||
+        BIYOS_setconenamerg(model, 0, 1, names) != BIYOS_OK ||
+        BIYOS_delconenamerg(model, 0, 1) != BIYOS_OK ||
+        BIYOS_delconenamesp(model, 1, indices) != BIYOS_OK ||
+        BIYOS_getconenamesp(model, 1, indices, &found) != BIYOS_OK || !matches(found, ""))
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static BIYOS_status use_names(BIYOS_model *model)
 {
     if (set_names(model) != BIYOS_OK || get_names(model) != BIYOS_OK ||
@@ -648,7 +667,7 @@ int main(void)
     {
         status = BIYOS_ERR_INTERNAL;
     }
-    if (use_cones(model) != BIYOS_OK)
+    if (use_cones(model) != BIYOS_OK || name_cones(model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

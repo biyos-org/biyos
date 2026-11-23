@@ -768,6 +768,28 @@ BIYOS_API BIYOS_status BIYOS_getsosidx(const BIYOS_model *mdl,
                                        BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delsosnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delsosnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
+BIYOS_API BIYOS_status BIYOS_setconenamesp(BIYOS_model *mdl,
+                                           BIYOS_index n,
+                                           const BIYOS_index *idx,
+                                           const char *const *name);
+BIYOS_API BIYOS_status BIYOS_setconenamerg(BIYOS_model *mdl,
+                                           BIYOS_index pos,
+                                           BIYOS_index n,
+                                           const char *const *name);
+BIYOS_API BIYOS_status BIYOS_getconenamesp(const BIYOS_model *mdl,
+                                           BIYOS_index n,
+                                           const BIYOS_index *idx,
+                                           const char **name);
+BIYOS_API BIYOS_status BIYOS_getconenamerg(const BIYOS_model *mdl,
+                                           BIYOS_index pos,
+                                           BIYOS_index n,
+                                           const char **name);
+BIYOS_API BIYOS_status BIYOS_getconeidx(const BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const char *const *name,
+                                        BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delconenamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delconenamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n);
 
 #define BIYOS_OP_CONST 1
 #define BIYOS_OP_VAR 2
