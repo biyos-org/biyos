@@ -56,6 +56,22 @@ jobs:
       - run: cmake --build build
       - run: ctest --test-dir build --output-on-failure
 
+  threads:
+    runs-on: ubuntu-24.04
+    env:
+      FLAGS: -fsanitize=thread -fno-omit-frame-pointer
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          path: build/_deps/googletest-subbuild/googletest-populate-prefix/src/*.tar.gz
+          key: googletest-${{ runner.os }}-${{ github.job }}-${{ hashFiles('tests/CMakeLists.txt') }}
+          restore-keys: googletest-${{ runner.os }}-${{ github.job }}-
+      - run: sudo sysctl vm.mmap_rnd_bits=28
+      - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_C_FLAGS=$FLAGS" "-DCMAKE_CXX_FLAGS=$FLAGS"
+      - run: cmake --build build
+      - run: ctest --test-dir build --output-on-failure
+
   tidy:
     runs-on: ubuntu-24.04
     steps:
