@@ -13,6 +13,7 @@ from ctypes import (
 )
 from enum import IntEnum
 from math import isnan
+from os import PathLike, fspath
 from typing import Any, NoReturn, SupportsIndex
 
 from biyos._arrays import (
@@ -354,6 +355,56 @@ class Model:
             copy._copy(self)
         copy._hold()
         return copy
+
+    @classmethod
+    def read(
+        cls, env: Env, path: str | PathLike[str], fmt: Format
+    ) -> "Model":
+        """Read a model from a file.
+
+        The format is the one ``fmt`` names, never guessed from the file's
+        name. Each oddity the reader reads past is a warning event from
+        module ``io``, with the fields ``file`` and ``line``.
+
+        Parameters
+        ----------
+        env
+            The environment the model is made on.
+        path
+            The path of the file.
+        fmt
+            The format of the file.
+
+        Returns
+        -------
+        model
+            The model the file holds.
+
+        Raises
+        ------
+        TypeError
+            When ``env`` is not an ``Env``, ``path`` is not a str or a path,
+            or ``fmt`` is not an int.
+        ValueError
+            When ``path`` holds a null character or cannot be encoded as
+            UTF-8, or the environment is closed.
+        Error
+            When ``fmt`` is not a format, the file cannot be read, breaks
+            a rule of its format or holds a part the reader does not handle.
+
+        See Also
+        --------
+        BIYOS_readmdl
+        """
+        env = _checked_env(env)
+        name = text("path", fspath(path))
+        number = integer("fmt", fmt)
+        model = cls.__new__(cls)
+        model._start(env)
+        with env._busy():
+            model._make(env._call, lib.BIYOS_readmdl, name, number)
+        model._hold()
+        return model
 
     def setmdlname(self, name: str) -> None:
         """Name the model.
