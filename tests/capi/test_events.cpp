@@ -41,6 +41,7 @@ struct Inbox
 struct Probe
 {
     BIYOS_env *env = nullptr;
+    BIYOS_model *model = nullptr;
     int calls = 0;
     BIYOS_status status = BIYOS_OK;
     std::string message;
@@ -80,6 +81,14 @@ void refuse(const BIYOS_event *, void *data)
     probe->message = biyos::test::last_message(probe->env);
 }
 
+void delete_own(const BIYOS_event *, void *data)
+{
+    Probe *probe = static_cast<Probe *>(data);
+    ++probe->calls;
+    probe->status = BIYOS_delmdlhook(probe->model, 999);
+    probe->message = biyos::test::last_message(probe->env);
+}
+
 void read_error(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
@@ -100,14 +109,43 @@ BIYOS_status listen(BIYOS_env *env, BIYOS_hook hook, void *data, int level, BIYO
     return BIYOS_addenvhook(env, hook, data, BIYOS_EVT_MESSAGE, level, id);
 }
 
+BIYOS_status listen_to(BIYOS_model *model, BIYOS_hook hook, void *data, int level, BIYOS_index *id)
+{
+    return BIYOS_addmdlhook(model, hook, data, BIYOS_EVT_MESSAGE, level, id);
+}
+
 void fail(const Env &env)
 {
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
 }
 
+void fail(const biyos::test::Model &model)
+{
+    EXPECT_EQ(BIYOS_getnvar(model.get(), nullptr), BIYOS_ERR_BADARG);
+}
+
+void count(const BIYOS_event *, void *data)
+{
+    ++*static_cast<int *>(data);
+}
+
+struct Mark
+{
+    std::vector<std::string> *heard;
+    std::string name;
+};
+
+void stamp(const BIYOS_event *, void *data)
+{
+    const Mark &seen = *static_cast<const Mark *>(data);
+    seen.heard->push_back(seen.name);
+}
+
 struct Attempt
 {
     BIYOS_env *env = nullptr;
+    BIYOS_model *model = nullptr;
+    BIYOS_model *other = nullptr;
     std::vector<BIYOS_status> statuses;
     std::vector<std::string> messages;
     int seed = -1;
@@ -131,6 +169,23 @@ void change(const BIYOS_event *, void *data)
     note(attempt, listen(env, receive, nullptr, BIYOS_LVL_DBG, &id));
     note(attempt, BIYOS_delenvhook(env, 1));
     note(attempt, BIYOS_getenvintopt(env, BIYOS_OPT_SEED, &attempt.seed));
+}
+
+void change_model(const BIYOS_event *, void *data)
+{
+    Attempt &attempt = *static_cast<Attempt *>(data);
+    BIYOS_model *model = attempt.model;
+    BIYOS_model *made = nullptr;
+    BIYOS_index id = 0;
+    note(attempt, BIYOS_setmdlintopt(model, BIYOS_OPT_SEED, 42));
+    note(attempt, listen_to(model, receive, nullptr, BIYOS_LVL_DBG, &id));
+    note(attempt, BIYOS_delmdlhook(model, 1));
+    note(attempt, BIYOS_addvar(model, 1, nullptr, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_freemdl(model));
+    note(attempt, BIYOS_setmdlintopt(attempt.other, BIYOS_OPT_SEED, 42));
+    note(attempt, BIYOS_setenvintopt(attempt.env, BIYOS_OPT_SEED, 42));
+    note(attempt, BIYOS_newmdl(attempt.env, &made));
+    note(attempt, BIYOS_getmdlintopt(model, BIYOS_OPT_SEED, &attempt.seed));
 }
 
 }
@@ -268,6 +323,8 @@ TEST(CApiTest, NullHook)
     BIYOS_index id = 0;
     EXPECT_EQ(listen(nullptr, receive, nullptr, BIYOS_LVL_DBG, &id), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_delenvhook(nullptr, 1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(listen_to(nullptr, receive, nullptr, BIYOS_LVL_DBG, &id), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delmdlhook(nullptr, 1), BIYOS_ERR_BADARG);
 }
 
 TEST(CApiTest, Accessors)
@@ -318,4 +375,202 @@ TEST(CApiTest, EventModel)
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     const std::vector<const BIYOS_model *> expected{model.get(), nullptr};
     EXPECT_EQ(seen, expected);
+}
+
+TEST(CApiTest, ModelHook)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model first(env);
+    const biyos::test::Model second(env);
+    std::vector<const BIYOS_model *> local;
+    std::vector<const BIYOS_model *> shared;
+    BIYOS_index id = 0;
+    ASSERT_EQ(listen_to(first.get(), source, &local, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), source, &shared, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    fail(first);
+    fail(second);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(local, std::vector<const BIYOS_model *>{first.get()});
+    const std::vector<const BIYOS_model *> all{first.get(), second.get(), nullptr};
+    EXPECT_EQ(shared, all);
+}
+
+TEST(CApiTest, ModelMessage)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    Inbox inbox;
+    BIYOS_index id = 0;
+    ASSERT_EQ(listen_to(model.get(), receive, &inbox, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    fail(model);
+    EXPECT_EQ(inbox.calls, 1);
+    EXPECT_EQ(inbox.kind, BIYOS_EVT_MESSAGE);
+    EXPECT_EQ(inbox.level, BIYOS_LVL_ERR);
+    EXPECT_EQ(inbox.module, "capi");
+    EXPECT_EQ(inbox.text, env.message());
+    EXPECT_EQ(inbox.name, "code");
+    EXPECT_EQ(inbox.value, "-100");
+}
+
+TEST(CApiTest, ModelOrder)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    std::vector<std::string> heard;
+    Mark shared{&heard, "environment"};
+    Mark first{&heard, "first"};
+    Mark second{&heard, "second"};
+    BIYOS_index id = 0;
+    ASSERT_EQ(listen(env.get(), stamp, &shared, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), stamp, &first, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), stamp, &second, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    fail(model);
+    EXPECT_EQ(heard, (std::vector<std::string>{"first", "second", "environment"}));
+}
+
+TEST(CApiTest, ModelIds)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model first(env);
+    const biyos::test::Model second(env);
+    int heard = 0;
+    std::vector<BIYOS_index> ids(5, 0);
+    ASSERT_EQ(listen_to(first.get(), count, &heard, BIYOS_LVL_DBG, &ids[0]), BIYOS_OK);
+    ASSERT_EQ(listen_to(first.get(), count, &heard, BIYOS_LVL_DBG, &ids[1]), BIYOS_OK);
+    ASSERT_EQ(listen_to(second.get(), count, &heard, BIYOS_LVL_DBG, &ids[2]), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), count, &heard, BIYOS_LVL_DBG, &ids[3]), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delmdlhook(first.get(), 1), BIYOS_OK);
+    ASSERT_EQ(listen_to(first.get(), count, &heard, BIYOS_LVL_DBG, &ids[4]), BIYOS_OK);
+    EXPECT_EQ(ids, (std::vector<BIYOS_index>{1, 2, 1, 1, 3}));
+    EXPECT_EQ(BIYOS_delmdlhook(first.get(), 1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: hook 1: unknown");
+    EXPECT_EQ(BIYOS_delmdlhook(second.get(), 2), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delmdlhook(second.get(), 1), BIYOS_OK);
+}
+
+TEST(CApiTest, ModelArguments)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    Inbox inbox;
+    BIYOS_index id = 0;
+    const int message = BIYOS_EVT_MESSAGE;
+    const int debug = BIYOS_LVL_DBG;
+    EXPECT_EQ(BIYOS_addmdlhook(model.get(), nullptr, &inbox, message, debug, &id),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'hk': is null");
+    EXPECT_EQ(BIYOS_addmdlhook(model.get(), receive, &inbox, 0, debug, &id), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: event kind 0: unknown");
+    EXPECT_EQ(BIYOS_addmdlhook(model.get(), receive, &inbox, message, 9, &id), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: level 9: unknown");
+    EXPECT_EQ(BIYOS_addmdlhook(model.get(), receive, &inbox, message, debug, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    fail(model);
+    EXPECT_EQ(inbox.calls, 0);
+    EXPECT_EQ(id, 0);
+}
+
+TEST(CApiTest, ModelFree)
+{
+    const biyos::test::Env env;
+    int heard = 0;
+    BIYOS_model *model = nullptr;
+    BIYOS_index id = 0;
+    ASSERT_EQ(BIYOS_newmdl(env.get(), &model), BIYOS_OK);
+    ASSERT_EQ(listen_to(model, count, &heard, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    ASSERT_EQ(BIYOS_freemdl(model), BIYOS_OK);
+    const biyos::test::Model next(env);
+    fail(next);
+    EXPECT_EQ(heard, 0);
+    ASSERT_EQ(listen_to(next.get(), count, &heard, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    EXPECT_EQ(id, 1);
+}
+
+TEST(CApiTest, ModelCopy)
+{
+    const biyos::test::Env env;
+    const biyos::test::Env other;
+    const biyos::test::Model model(env);
+    int heard = 0;
+    int copied = 0;
+    BIYOS_index id = 0;
+    ASSERT_EQ(listen_to(model.get(), count, &heard, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    const biyos::test::Model near(env, model);
+    const biyos::test::Model far(other, model);
+    fail(near);
+    fail(far);
+    EXPECT_EQ(heard, 0);
+    ASSERT_EQ(listen_to(near.get(), count, &copied, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    EXPECT_EQ(id, 1);
+    fail(model);
+    EXPECT_EQ(heard, 1);
+    EXPECT_EQ(copied, 0);
+}
+
+TEST(CApiTest, ModelReadOnly)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    const biyos::test::Model other(env);
+    Attempt attempt;
+    attempt.env = env.get();
+    attempt.model = model.get();
+    attempt.other = other.get();
+    BIYOS_index id = 0;
+    ASSERT_EQ(listen_to(model.get(), change_model, &attempt, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    fail(model);
+    const BIYOS_status refused = BIYOS_ERR_BADARG;
+    const std::vector<BIYOS_status>
+        statuses{refused, refused, refused, refused, refused, refused, refused, refused, BIYOS_OK};
+    const std::string own = "invalid argument: model: is read-only while delivering an event";
+    const std::string shared =
+        "invalid argument: environment: is read-only while delivering an event";
+    const std::vector<std::string> messages{own, own, own, own, own, own, shared, shared, shared};
+    EXPECT_EQ(attempt.statuses, statuses);
+    EXPECT_EQ(attempt.messages, messages);
+    EXPECT_EQ(attempt.seed, 0);
+    BIYOS_index variables = -1;
+    EXPECT_EQ(BIYOS_getnvar(model.get(), &variables), BIYOS_OK);
+    EXPECT_EQ(variables, 0);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
+    EXPECT_EQ(BIYOS_delmdlhook(model.get(), id), BIYOS_OK);
+}
+
+TEST(CApiTest, ModelError)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    Probe probe;
+    probe.env = env.get();
+    probe.model = model.get();
+    BIYOS_index id = 0;
+    ASSERT_EQ(listen_to(model.get(), delete_own, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    fail(model);
+    const BIYOS_error error = biyos::test::last_error(env.get());
+    EXPECT_EQ(probe.calls, 1);
+    EXPECT_EQ(probe.status, BIYOS_ERR_BADARG);
+    EXPECT_EQ(probe.message, "invalid argument: model: is read-only while delivering an event");
+    EXPECT_EQ(error.status, BIYOS_ERR_BADARG);
+    EXPECT_EQ(error.mdl, model.get());
+    EXPECT_STREQ(error.msg, "invalid argument: argument 'n': is null");
+}
+
+TEST(CApiTest, ModelSilent)
+{
+    const biyos::test::Env env;
+    const biyos::test::Model model(env);
+    Probe probe;
+    probe.env = env.get();
+    probe.model = model.get();
+    int heard = 0;
+    int shared = 0;
+    BIYOS_index id = 0;
+    ASSERT_EQ(listen_to(model.get(), delete_own, &probe, BIYOS_LVL_ERR, &id), BIYOS_OK);
+    ASSERT_EQ(listen_to(model.get(), count, &heard, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    ASSERT_EQ(listen(env.get(), count, &shared, BIYOS_LVL_DBG, &id), BIYOS_OK);
+    fail(model);
+    EXPECT_EQ(probe.calls, 1);
+    EXPECT_EQ(heard, 1);
+    EXPECT_EQ(shared, 1);
 }

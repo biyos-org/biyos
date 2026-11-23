@@ -1,10 +1,13 @@
 #include "core/clock.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
+#include "core/hooks.hpp"
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <atomic>
+#include <cstddef>
 #include <functional>
 #include <latch>
 #include <memory>
@@ -120,6 +123,26 @@ void churn(biyos::Events &events, std::latch &start)
     }
 }
 
+void talk(biyos::Events &events, biyos::Hooks &model, std::latch &start)
+{
+    start.arrive_and_wait();
+    for (int i = 0; i < kRounds; ++i)
+    {
+        events.emit(EventKind::Message, EventLevel::Info, describe, &model);
+    }
+}
+
+void meet(std::latch &both, std::atomic<int> &met)
+{
+    both.arrive_and_wait();
+    ++met;
+}
+
+void send(biyos::Events &events, biyos::Hooks &model)
+{
+    events.emit(EventKind::Message, EventLevel::Info, describe, &model);
+}
+
 using Read = bool (biyos::Events::*)() const noexcept;
 
 bool elsewhere(const biyos::Events &events, Read read)
@@ -155,6 +178,12 @@ class EventTest : public ::testing::Test
     void say(EventLevel level, const std::string &text)
     {
         events.emit(EventKind::Message, level, [&](biyos::Event &event) { event.text = text; });
+    }
+
+    void tell(biyos::Hooks &model, EventLevel level, const std::string &text)
+    {
+        const auto fill = [&text](biyos::Event &event) { event.text = text; };
+        events.emit(EventKind::Message, level, fill, &model);
     }
 
     biyos::Hook recorder(const std::string &name)
@@ -475,4 +504,87 @@ TEST_F(EventTest, OtherThread)
                 [&peek](biyos::Event &event) { peek.fill(event); });
     EXPECT_FALSE(peek.delivering);
     EXPECT_FALSE(peek.filling);
+}
+
+TEST_F(EventTest, ModelFirst)
+{
+    biyos::Hooks model;
+    model.add_hook(EventKind::Message, EventLevel::Debug, recorder("m "));
+    listen(EventLevel::Debug, recorder("e "));
+    tell(model, EventLevel::Info, "one");
+    say(EventLevel::Info, "two");
+    EXPECT_EQ(texts, (Texts{"m one", "e one", "e two"}));
+}
+
+TEST_F(EventTest, ModelOnly)
+{
+    biyos::Hooks model;
+    int built = 0;
+    const auto count = [&built](biyos::Event &) { ++built; };
+    model.add_hook(EventKind::Message, EventLevel::Warning, recorder("m "));
+    listen(EventLevel::Error, recorder("e "));
+    events.emit(EventKind::Message, EventLevel::Info, count, &model);
+    EXPECT_EQ(built, 0);
+    events.emit(EventKind::Message, EventLevel::Warning, count, &model);
+    EXPECT_EQ(built, 1);
+    EXPECT_EQ(texts, Texts{"m "});
+}
+
+TEST_F(EventTest, ModelDelivering)
+{
+    biyos::Hooks model;
+    Peek peek(events);
+    bool inside = false;
+    const auto check = [&](const biyos::Event &) { inside = events.delivering(); };
+    const auto look = [&peek](const biyos::Event &event) { peek.hook(event); };
+    const auto fill = [&peek](biyos::Event &event) { peek.fill(event); };
+    model.add_hook(EventKind::Message, EventLevel::Debug, check);
+    model.add_hook(EventKind::Message, EventLevel::Debug, look);
+    events.emit(EventKind::Message, EventLevel::Info, fill, &model);
+    EXPECT_TRUE(inside);
+    EXPECT_FALSE(peek.delivering);
+    EXPECT_FALSE(peek.filling);
+    EXPECT_FALSE(events.delivering());
+}
+
+TEST_F(EventTest, ModelTurns)
+{
+    std::array<biyos::Hooks, 2> models;
+    std::array<Watch, 2> watches;
+    Watch shared;
+    std::latch start(kThreads);
+    std::vector<std::thread> threads;
+    events.add_hook(EventKind::Message, EventLevel::Info, std::ref(shared));
+    for (std::size_t i = 0; i < models.size(); ++i)
+    {
+        models[i].add_hook(EventKind::Message, EventLevel::Info, std::ref(watches[i]));
+    }
+    for (int i = 0; i < kThreads; ++i)
+    {
+        biyos::Hooks &model = models[static_cast<std::size_t>(i) % models.size()];
+        threads.emplace_back(talk, std::ref(events), std::ref(model), std::ref(start));
+    }
+    for (std::thread &thread : threads)
+    {
+        thread.join();
+    }
+    EXPECT_EQ(watches[0].overlaps() + watches[1].overlaps() + shared.overlaps(), 0);
+    EXPECT_EQ(watches[0].seen(), kThreads / 2 * kRounds);
+    EXPECT_EQ(watches[1].seen(), kThreads / 2 * kRounds);
+    EXPECT_EQ(shared.seen(), kThreads * kRounds);
+}
+
+TEST_F(EventTest, ModelsBeside)
+{
+    biyos::Hooks first;
+    biyos::Hooks second;
+    std::latch both(2);
+    std::atomic<int> met{0};
+    const auto meeting = [&both, &met](const biyos::Event &) { meet(both, met); };
+    first.add_hook(EventKind::Message, EventLevel::Info, meeting);
+    second.add_hook(EventKind::Message, EventLevel::Info, meeting);
+    std::thread other(send, std::ref(events), std::ref(second));
+    send(events, first);
+    other.join();
+    EXPECT_EQ(met.load(), 2);
 }

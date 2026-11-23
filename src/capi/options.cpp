@@ -125,31 +125,37 @@ biyos::Lookup lookup_of(const BIYOS_model &model)
 
 void set_model_bool(BIYOS_model &model, int option, int value)
 {
-    settings_of(model).set_bool(biyos::find_option(option), value != 0, events_of(model), &model);
+    biyos::Settings &settings = settings_of(model);
+    const biyos::Option found = biyos::find_option(option);
+    settings.set_bool(found, value != 0, events_of(model), &model, &model.hooks);
 }
 
 void set_model_int(BIYOS_model &model, int option, int value)
 {
-    settings_of(model).set_int(biyos::find_option(option), value, events_of(model), &model);
+    biyos::Settings &settings = settings_of(model);
+    const biyos::Option found = biyos::find_option(option);
+    settings.set_int(found, value, events_of(model), &model, &model.hooks);
 }
 
 void set_model_double(BIYOS_model &model, int option, double value)
 {
-    settings_of(model).set_double(biyos::find_option(option), value, events_of(model), &model);
+    biyos::Settings &settings = settings_of(model);
+    const biyos::Option found = biyos::find_option(option);
+    settings.set_double(found, value, events_of(model), &model, &model.hooks);
 }
 
 void set_model_string(BIYOS_model &model, int option, const char *value)
 {
     biyos::Settings &settings = settings_of(model);
     const biyos::Option found = biyos::find_option(option);
-    settings.set_string(found, require(value, "val"), events_of(model), &model);
+    settings.set_string(found, require(value, "val"), events_of(model), &model, &model.hooks);
 }
 
 void set_model_flags(BIYOS_model &model, int option, BIYOS_mask on, BIYOS_mask off)
 {
     biyos::Settings &settings = settings_of(model);
     const biyos::Masks value{.on = on, .off = off};
-    settings.set_flags(biyos::find_option(option), value, events_of(model), &model);
+    settings.set_flags(biyos::find_option(option), value, events_of(model), &model, &model.hooks);
 }
 
 void get_model_bool(const BIYOS_model &model, int option, int *value)

@@ -27,7 +27,7 @@ void run(biyos::Env &env, biyos::TimingTree &tree)
 
 void failed_scope(biyos::Env &env)
 {
-    const biyos::Env::ErrorScope scope(env);
+    const biyos::ErrorScope scope(env);
     biyos::test::fail_after(0);
     env.record_error(biyos::ErrorKind::Internal, "inner");
     biyos::test::stop_failing();

@@ -638,6 +638,20 @@ static BIYOS_status use_options(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status use_hooks(BIYOS_model *model)
+{
+    int errors = 0;
+    BIYOS_index id = 0;
+    const int lowest = BIYOS_LVL_DBG;
+    if (BIYOS_addmdlhook(model, count, &errors, BIYOS_EVT_MESSAGE, lowest, &id) != BIYOS_OK ||
+        id != 1 || BIYOS_getnvar(model, NULL) != BIYOS_ERR_BADARG ||
+        BIYOS_delmdlhook(model, id) != BIYOS_OK || errors != 1)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static BIYOS_status use_copy(BIYOS_env *env, BIYOS_model *model)
 {
     BIYOS_model *copy = NULL;
@@ -797,8 +811,8 @@ int main(void)
         use_objectives(model) != BIYOS_OK || use_indicators(model) != BIYOS_OK ||
         use_sos(model) != BIYOS_OK || use_complements(model) != BIYOS_OK ||
         use_names(model) != BIYOS_OK || use_options(model) != BIYOS_OK ||
-        use_callbacks(model) != BIYOS_OK || use_copy(env, model) != BIYOS_OK ||
-        use_readers(env, model) != BIYOS_OK)
+        use_hooks(model) != BIYOS_OK || use_callbacks(model) != BIYOS_OK ||
+        use_copy(env, model) != BIYOS_OK || use_readers(env, model) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

@@ -38,6 +38,7 @@ struct Loop
 struct Stopper
 {
     BIYOS_env *env;
+    const BIYOS_model *model = nullptr;
     BIYOS_status interrupted = BIYOS_ERR_INTERNAL;
     BIYOS_status read = BIYOS_ERR_INTERNAL;
 };
@@ -61,6 +62,16 @@ BIYOS_status run(const Env &env, Loop &loop)
     return biyos::capi::guarded<spin>(env.get(), &loop);
 }
 
+void spin_model(const BIYOS_model &model, Loop *loop)
+{
+    spin(model.handle.env(), loop);
+}
+
+BIYOS_status run(const Model &model, Loop &loop)
+{
+    return biyos::capi::guarded<spin_model>(model.get(), &loop);
+}
+
 BIYOS_status interrupt_after(std::future<void> started, BIYOS_env *env)
 {
     started.wait();
@@ -82,6 +93,22 @@ void blank(biyos::Event &) {}
 void announce(biyos::Env &env)
 {
     env.events().emit(biyos::EventKind::Message, biyos::EventLevel::Info, blank);
+}
+
+void tell(const BIYOS_model *model)
+{
+    model->handle.env().events().emit(biyos::EventKind::Message,
+                                      biyos::EventLevel::Info,
+                                      blank,
+                                      &model->hooks);
+}
+
+void stop_model(const BIYOS_event *, void *data)
+{
+    auto *stopper = static_cast<Stopper *>(data);
+    BIYOS_index n = 0;
+    stopper->interrupted = BIYOS_interrupt(stopper->env);
+    stopper->read = BIYOS_getnvar(stopper->model, &n);
 }
 
 void stop_call(const BIYOS_event *, void *data)
@@ -137,6 +164,23 @@ TEST(InterruptTest, HookStop)
     ASSERT_EQ(listen(env, stop_call, &stopper), BIYOS_OK);
     Loop loop{.start = announce, .limit = kPolls};
     EXPECT_EQ(run(env, loop), BIYOS_OK);
+    EXPECT_EQ(stopper.interrupted, BIYOS_OK);
+    EXPECT_EQ(stopper.read, BIYOS_OK);
+    EXPECT_EQ(loop.outcome, TerminationStatus::UserStop);
+    EXPECT_EQ(loop.polls, 0);
+}
+
+TEST(InterruptTest, ModelStop)
+{
+    const Env env;
+    const Model model(env);
+    Stopper stopper{.env = env.get(), .model = model.get()};
+    BIYOS_index id = 0;
+    ASSERT_EQ(
+        BIYOS_addmdlhook(model.get(), stop_model, &stopper, BIYOS_EVT_MESSAGE, BIYOS_LVL_DBG, &id),
+        BIYOS_OK);
+    Loop loop{.start = [&model](biyos::Env &) { tell(model.get()); }, .limit = kPolls};
+    EXPECT_EQ(run(model, loop), BIYOS_OK);
     EXPECT_EQ(stopper.interrupted, BIYOS_OK);
     EXPECT_EQ(stopper.read, BIYOS_OK);
     EXPECT_EQ(loop.outcome, TerminationStatus::UserStop);

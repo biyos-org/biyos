@@ -25,11 +25,13 @@ endfunction()
 biyos_add_test(test_core
     core/test_check.cpp
     core/test_clock.cpp
+    core/test_deliveries.cpp
     core/test_env.cpp
     core/test_error.cpp
     core/test_events.cpp
     core/test_flags.cpp
     core/test_format.cpp
+    core/test_hooks.cpp
     core/test_name.cpp
     core/test_options.cpp
     core/test_records.cpp

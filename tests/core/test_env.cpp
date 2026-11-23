@@ -22,7 +22,7 @@ namespace
 
 void two_errors(biyos::Env &env)
 {
-    const biyos::Env::ErrorScope scope(env);
+    const biyos::ErrorScope scope(env);
     env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
     env.record_error(biyos::ErrorKind::InvalidArgument, "later");
     EXPECT_STREQ(env.last_error().text, "later");
@@ -30,14 +30,14 @@ void two_errors(biyos::Env &env)
 
 void inner_scope(biyos::Env &env)
 {
-    const biyos::Env::ErrorScope inner(env);
+    const biyos::ErrorScope inner(env);
     env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
     EXPECT_STREQ(env.last_error().text, "inner");
 }
 
 void middle_scope(biyos::Env &env)
 {
-    const biyos::Env::ErrorScope scope(env);
+    const biyos::ErrorScope scope(env);
     env.record_error(biyos::ErrorKind::InvalidArgument, "middle");
     inner_scope(env);
     EXPECT_STREQ(env.last_error().text, "middle");
@@ -45,20 +45,20 @@ void middle_scope(biyos::Env &env)
 
 void clean_scope(biyos::Env &env)
 {
-    const biyos::Env::ErrorScope scope(env);
+    const biyos::ErrorScope scope(env);
     EXPECT_STREQ(env.last_error().text, "outer");
 }
 
 void internal_scope(biyos::Env &env)
 {
-    const biyos::Env::ErrorScope scope(env);
+    const biyos::ErrorScope scope(env);
     env.record_error(biyos::ErrorKind::Internal, "inner");
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
 }
 
 void env_scope(biyos::Env &env)
 {
-    const biyos::Env::ErrorScope scope(env);
+    const biyos::ErrorScope scope(env);
     env.record_error(biyos::ErrorKind::InvalidArgument, "env");
     EXPECT_EQ(env.last_error().model, nullptr);
 }
@@ -76,7 +76,7 @@ void fail_together(biyos::Env &env, std::latch &all)
 
 void crowded_scope(biyos::Env &env)
 {
-    const biyos::Env::ErrorScope scope(env);
+    const biyos::ErrorScope scope(env);
     env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
     std::latch all(biyos::kRecords);
     std::vector<std::thread> threads;
@@ -100,7 +100,7 @@ void hold(biyos::Env &env, std::latch &held, std::latch &release)
 
 void shared_scope(biyos::Env &env)
 {
-    const biyos::Env::ErrorScope scope(env);
+    const biyos::ErrorScope scope(env);
     std::thread(fail_worker, std::ref(env)).join();
     env.record_error(biyos::ErrorKind::InvalidArgument, "inner");
     EXPECT_STREQ(env.last_error().text, "inner");

@@ -137,6 +137,13 @@ BIYOS_API BIYOS_status BIYOS_addenvhook(BIYOS_env *env,
                                         BIYOS_int lvl,
                                         BIYOS_index *idx);
 BIYOS_API BIYOS_status BIYOS_delenvhook(BIYOS_env *env, BIYOS_index idx);
+BIYOS_API BIYOS_status BIYOS_addmdlhook(BIYOS_model *mdl,
+                                        BIYOS_hook hk,
+                                        void *data,
+                                        BIYOS_int knd,
+                                        BIYOS_int lvl,
+                                        BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_delmdlhook(BIYOS_model *mdl, BIYOS_index idx);
 
 BIYOS_API BIYOS_int BIYOS_getevtknd(const BIYOS_event *evt);
 BIYOS_API BIYOS_int BIYOS_getevtlvl(const BIYOS_event *evt);

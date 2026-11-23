@@ -1,6 +1,7 @@
 #include "core/clock.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
+#include "core/hooks.hpp"
 #include "core/lookup.hpp"
 #include "core/option_table.hpp"
 #include "core/options.hpp"
@@ -256,6 +257,23 @@ TEST_F(SettingTest, Deprecated)
         EXPECT_EQ(event.text, "option 'old': deprecated in 0.0.2, use 'new'");
         EXPECT_EQ(event.fields.size(), 3U);
     }
+}
+
+TEST_F(SettingTest, ModelHooks)
+{
+    const int address = 0;
+    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    biyos::Hooks hooks;
+    std::vector<biyos::Event> local;
+    const auto keep = [&local](const biyos::Event &event) { local.push_back(event); };
+    hooks.add_hook(EventKind::Message, EventLevel::Warning, keep);
+    settings.set_int(kOld, 5, events, model, &hooks);
+    settings.set_int(kNew, 6, events, model, &hooks);
+    options.set_int(kOld, 7);
+    ASSERT_EQ(local.size(), 1U);
+    EXPECT_EQ(local[0].model, model);
+    EXPECT_EQ(local[0].text, "option 'old': deprecated in 0.0.2, use 'new'");
+    EXPECT_EQ(heard.size(), 2U);
 }
 
 TEST_F(LookupTest, Sources)

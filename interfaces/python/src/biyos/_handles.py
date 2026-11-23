@@ -8,6 +8,7 @@ class Handles:
         self.closed = False
         self._live: dict[int, c_void_p] = {}
         self._parked: list[c_void_p] = []
+        self._kept: dict[int, object] = {}
 
     def add(self, handle: c_void_p) -> None:
         self._live[id(handle)] = handle
@@ -19,9 +20,10 @@ class Handles:
             return False
         return True
 
-    def park(self, handle: c_void_p) -> None:
+    def park(self, handle: c_void_p, kept: object) -> None:
         if not self.closed and id(handle) in self._live:
             self._parked.append(handle)
+            self._kept[id(handle)] = kept
 
     def drain(self) -> None:
         while not self.closed:
@@ -31,9 +33,12 @@ class Handles:
                 return
             if self.take(handle) and lib.BIYOS_freemdl(handle) != OK:
                 self.add(handle)
+            else:
+                self._kept.pop(id(handle), None)
 
     def release(self) -> None:
         self.closed = True
         self._parked.clear()
         while self._live:
             lib.BIYOS_freemdl(self._live.popitem()[1])
+        self._kept.clear()

@@ -145,14 +145,15 @@ const OptionSpec &checked_row(std::span<const OptionSpec> table,
 void warn_deprecated(Events &events,
                      std::span<const OptionSpec> table,
                      const OptionSpec &spec,
-                     const BIYOS_model *model) noexcept
+                     const BIYOS_model *model,
+                     Hooks *hooks) noexcept
 {
     if (!spec.versions.deprecated)
     {
         return;
     }
     const auto fill = [&](Event &event) { describe(event, table, spec, model); };
-    events.emit(EventKind::Message, EventLevel::Warning, fill);
+    events.emit(EventKind::Message, EventLevel::Warning, fill, hooks);
 }
 
 OptionValue kept(Strings &strings, const OptionValue &value)

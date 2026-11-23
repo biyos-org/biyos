@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <future>
@@ -209,6 +210,43 @@ TEST(ThreadTest, Hooks)
     for (const std::unique_ptr<biyos::test::Model> &model : models)
     {
         EXPECT_EQ(seen.of(model->get()), kRounds);
+    }
+}
+
+TEST(ThreadTest, ModelHooks)
+{
+    Tally shared;
+    std::array<Tally, 2> local;
+    const biyos::test::Env env;
+    const biyos::test::Model first(env);
+    const biyos::test::Model second(env);
+    const std::array<BIYOS_model *, 2> models{first.get(), second.get()};
+    BIYOS_index id = 0;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), tally, &shared, BIYOS_EVT_MESSAGE, BIYOS_LVL_ERR, &id),
+              BIYOS_OK);
+    for (std::size_t m = 0; m < models.size(); ++m)
+    {
+        ASSERT_EQ(
+            BIYOS_addmdlhook(models[m], tally, &local[m], BIYOS_EVT_MESSAGE, BIYOS_LVL_ERR, &id),
+            BIYOS_OK);
+    }
+    std::latch start(kThreads);
+    std::vector<std::thread> threads;
+    for (std::size_t i = 0; i < kThreads; ++i)
+    {
+        threads.emplace_back(fail_often, models[i % 2], std::ref(start), env.get());
+    }
+    for (std::thread &thread : threads)
+    {
+        thread.join();
+    }
+    EXPECT_EQ(shared.overlaps(), 0);
+    for (std::size_t m = 0; m < models.size(); ++m)
+    {
+        EXPECT_EQ(local[m].overlaps(), 0);
+        EXPECT_EQ(local[m].of(models[m]), 2 * kRounds);
+        EXPECT_EQ(local[m].of(models[1 - m]), 0);
+        EXPECT_EQ(shared.of(models[m]), 2 * kRounds);
     }
 }
 

@@ -39,38 +39,56 @@ Settings::Settings(const Settings &other) : table_(other.table_)
     }
 }
 
-void Settings::set_bool(Option option, bool value, Events &events, const BIYOS_model *model)
+void Settings::set_bool(Option option,
+                        bool value,
+                        Events &events,
+                        const BIYOS_model *model,
+                        Hooks *hooks)
 {
-    store(option, value, events, model);
+    store(option, value, events, model, hooks);
 }
 
-void Settings::set_int(Option option, int value, Events &events, const BIYOS_model *model)
+void Settings::set_int(Option option,
+                       int value,
+                       Events &events,
+                       const BIYOS_model *model,
+                       Hooks *hooks)
 {
-    store(option, value, events, model);
+    store(option, value, events, model, hooks);
 }
 
-void Settings::set_double(Option option, double value, Events &events, const BIYOS_model *model)
+void Settings::set_double(Option option,
+                          double value,
+                          Events &events,
+                          const BIYOS_model *model,
+                          Hooks *hooks)
 {
-    store(option, value, events, model);
+    store(option, value, events, model, hooks);
 }
 
 void Settings::set_string(Option option,
                           std::string_view value,
                           Events &events,
-                          const BIYOS_model *model)
+                          const BIYOS_model *model,
+                          Hooks *hooks)
 {
-    store(option, value, events, model);
+    store(option, value, events, model, hooks);
 }
 
-void Settings::set_flags(Option option, Masks value, Events &events, const BIYOS_model *model)
+void Settings::set_flags(Option option,
+                         Masks value,
+                         Events &events,
+                         const BIYOS_model *model,
+                         Hooks *hooks)
 {
-    store(option, value, events, model);
+    store(option, value, events, model, hooks);
 }
 
 void Settings::store(Option option,
                      const OptionValue &value,
                      Events &events,
-                     const BIYOS_model *model)
+                     const BIYOS_model *model,
+                     Hooks *hooks)
 {
     check_scope(row_of(table_, option));
     const OptionSpec &spec = checked_row(table_, option, value);
@@ -84,7 +102,7 @@ void Settings::store(Option option,
     {
         entries_.push_back(Entry{.option = option, .value = own});
     }
-    warn_deprecated(events, table_, spec, model);
+    warn_deprecated(events, table_, spec, model, hooks);
 }
 
 const OptionValue *Settings::find(Option option) const

@@ -109,6 +109,8 @@ def _declare_events(lib: ctypes.CDLL, ints: type) -> None:
     arguments = (c_void_p, HOOK, c_void_p, c_int32, c_int32, ints)
     _declare(lib, "BIYOS_addenvhook", c_int, *arguments)
     _declare(lib, "BIYOS_delenvhook", c_int, c_void_p, c_int32)
+    _declare(lib, "BIYOS_addmdlhook", c_int, *arguments)
+    _declare(lib, "BIYOS_delmdlhook", c_int, c_void_p, c_int32)
     _declare(lib, "BIYOS_getevtknd", c_int32, c_void_p)
     _declare(lib, "BIYOS_getevtlvl", c_int32, c_void_p)
     _declare(lib, "BIYOS_getevtmod", c_char_p, c_void_p)

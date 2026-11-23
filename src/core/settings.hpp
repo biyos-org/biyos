@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/events.hpp"
+#include "core/hooks.hpp"
 #include "core/options.hpp"
 #include "core/strings.hpp"
 
@@ -19,23 +20,41 @@ class Settings
     Settings(const Settings &other);
     Settings &operator=(const Settings &) = delete;
 
-    void set_bool(Option option, bool value, Events &events, const BIYOS_model *model = nullptr);
-    void set_int(Option option, int value, Events &events, const BIYOS_model *model = nullptr);
+    void set_bool(Option option,
+                  bool value,
+                  Events &events,
+                  const BIYOS_model *model = nullptr,
+                  Hooks *hooks = nullptr);
+    void set_int(Option option,
+                 int value,
+                 Events &events,
+                 const BIYOS_model *model = nullptr,
+                 Hooks *hooks = nullptr);
     void set_double(Option option,
                     double value,
                     Events &events,
-                    const BIYOS_model *model = nullptr);
+                    const BIYOS_model *model = nullptr,
+                    Hooks *hooks = nullptr);
     void set_string(Option option,
                     std::string_view value,
                     Events &events,
-                    const BIYOS_model *model = nullptr);
-    void set_flags(Option option, Masks value, Events &events, const BIYOS_model *model = nullptr);
+                    const BIYOS_model *model = nullptr,
+                    Hooks *hooks = nullptr);
+    void set_flags(Option option,
+                   Masks value,
+                   Events &events,
+                   const BIYOS_model *model = nullptr,
+                   Hooks *hooks = nullptr);
 
     const OptionValue *find(Option option) const;
     void erase(Option option);
 
   private:
-    void store(Option option, const OptionValue &value, Events &events, const BIYOS_model *model);
+    void store(Option option,
+               const OptionValue &value,
+               Events &events,
+               const BIYOS_model *model,
+               Hooks *hooks);
 
     struct Entry
     {

@@ -4,6 +4,7 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
+#include "core/hooks.hpp"
 
 #include <concepts>
 #include <exception>
@@ -28,16 +29,18 @@ inline void describe_failure(Event &event,
 
 inline void announce(Env &env,
                      const BIYOS_model *model,
+                     Hooks *hooks,
                      ErrorKind kind,
                      std::string_view text) noexcept
 {
     const BIYOS_status status = status_of(kind);
     const auto fill = [&](Event &event) { describe_failure(event, model, status, text); };
-    env.events().emit(EventKind::Message, EventLevel::Error, fill);
+    env.events().emit(EventKind::Message, EventLevel::Error, fill, hooks);
 }
 
 inline void report(Env *env,
                    const BIYOS_model *model,
+                   Hooks *hooks,
                    ErrorKind kind,
                    std::string_view text) noexcept
 {
@@ -48,12 +51,13 @@ inline void report(Env *env,
     env->record_error(kind, text, model);
     if (!env->events().delivering())
     {
-        announce(*env, model, kind, text);
+        announce(*env, model, hooks, kind, text);
     }
 }
 
 inline BIYOS_status fail(Env *env,
                          const BIYOS_model *model,
+                         Hooks *hooks,
                          ErrorKind kind,
                          std::string_view message) noexcept
 {
@@ -61,18 +65,18 @@ inline BIYOS_status fail(Env *env,
     {
         try
         {
-            report(env, model, kind, Error(kind, "", std::string(message)).what());
+            report(env, model, hooks, kind, Error(kind, "", std::string(message)).what());
         }
         catch (...)
         {
-            report(env, model, kind, kind_name(kind));
+            report(env, model, hooks, kind, kind_name(kind));
         }
     }
     return status_of(kind);
 }
 
 template <std::invocable Body>
-BIYOS_status guard(Env *env, const BIYOS_model *model, Body &&body) noexcept
+BIYOS_status guard(Env *env, const BIYOS_model *model, Hooks *hooks, Body &&body) noexcept
 {
     try
     {
@@ -81,27 +85,27 @@ BIYOS_status guard(Env *env, const BIYOS_model *model, Body &&body) noexcept
     }
     catch (const Error &error)
     {
-        report(env, model, error.kind(), error.what());
+        report(env, model, hooks, error.kind(), error.what());
         return status_of(error.kind());
     }
     catch (const std::bad_alloc &)
     {
-        report(env, model, ErrorKind::NoMemory, kind_name(ErrorKind::NoMemory));
+        report(env, model, hooks, ErrorKind::NoMemory, kind_name(ErrorKind::NoMemory));
         return status_of(ErrorKind::NoMemory);
     }
     catch (const std::exception &error)
     {
-        return fail(env, model, ErrorKind::Internal, error.what());
+        return fail(env, model, hooks, ErrorKind::Internal, error.what());
     }
     catch (...)
     {
-        return fail(env, model, ErrorKind::Internal, "unknown exception");
+        return fail(env, model, hooks, ErrorKind::Internal, "unknown exception");
     }
 }
 
 template <std::invocable Body> BIYOS_status guard(Body &&body) noexcept
 {
-    return guard(nullptr, nullptr, std::forward<Body>(body));
+    return guard(nullptr, nullptr, nullptr, std::forward<Body>(body));
 }
 
 }

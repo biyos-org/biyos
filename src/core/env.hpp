@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/clock.hpp"
+#include "core/deliveries.hpp"
 #include "core/error.hpp"
 #include "core/events.hpp"
 #include "core/interrupt.hpp"
@@ -17,6 +18,26 @@
 namespace biyos
 {
 
+class Env;
+
+class ErrorScope
+{
+  public:
+    explicit ErrorScope(Env &env) noexcept;
+    ~ErrorScope();
+    ErrorScope(const ErrorScope &) = delete;
+    ErrorScope &operator=(const ErrorScope &) = delete;
+
+  private:
+    friend class Env;
+
+    Env &env_;
+    Deliveries::State *delivery_;
+    ErrorScope *outer_;
+    Record kept_;
+    bool swapped_ = false;
+};
+
 class Env
 {
   public:
@@ -25,24 +46,6 @@ class Env
     Env(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table);
     Env(const Env &) = delete;
     Env &operator=(const Env &) = delete;
-
-    class ErrorScope
-    {
-      public:
-        explicit ErrorScope(Env &env) noexcept;
-        ~ErrorScope();
-        ErrorScope(const ErrorScope &) = delete;
-        ErrorScope &operator=(const ErrorScope &) = delete;
-
-      private:
-        friend class Env;
-
-        Env &env_;
-        bool linked_;
-        ErrorScope *outer_;
-        Record kept_;
-        bool swapped_ = false;
-    };
 
     class Handle
     {
@@ -79,14 +82,15 @@ class Env
     Usage &usage() noexcept;
 
   private:
-    ErrorScope *scope() const noexcept;
+    friend class ErrorScope;
+
+    ErrorScope *scope() noexcept;
 
     std::unique_ptr<Clock> clock_;
     Events events_;
     Options options_;
     Interrupt interrupt_;
     Records records_;
-    ErrorScope *scope_ = nullptr;
     std::atomic<std::size_t> handles_{0};
     Usage usage_;
 };

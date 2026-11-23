@@ -2,10 +2,13 @@ add_library(biyos_internal STATIC
     core/check.cpp
     core/clock.cpp
     core/deadline.cpp
+    core/deliveries.cpp
     core/env.cpp
     core/error.cpp
+    core/event.cpp
     core/events.cpp
     core/format.cpp
+    core/hooks.cpp
     core/lookup.cpp
     core/option_lookup.cpp
     core/option_table.cpp

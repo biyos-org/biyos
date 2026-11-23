@@ -23,7 +23,14 @@ A hook is a function of the event and of a pointer the program chose, of type `B
 
 The call writes an id for the hook, and `BIYOS_delenvhook` removes it by that id. Ids count from 1 in each environment and are never reused. The hooks of an environment receive an event in the order they were added, and run one at a time even when events come from several threads (@sec-threads). biyos keeps the function and the pointer until the hook is removed or the environment is freed, and passes the pointer back as given, so it may be null.
 
-The example adds three hooks and then makes a call fail:
+A hook can also belong to one model. `BIYOS_addmdlhook` attaches it as `BIYOS_addenvhook` does, and it then receives the events of calls on that model alone:
+
+```{.c file="examples/c/events.c" item="hook_model"}
+```
+
+`BIYOS_delmdlhook` removes it. Ids count from 1 in each model, apart from the ids of the environment. An event of a call on a model reaches the hooks of that model first, in the order they were added, and then the hooks of its environment. A model's hooks are freed with it, and a copy of the model has none of them (@sec-copy).
+
+The example adds two hooks to the environment and one to a model, and then makes a call on the model fail:
 
 ```{.c file="examples/c/events.c" item="main"}
 ```
@@ -64,11 +71,11 @@ No call runs a check or times a phase yet: these events arrive with the solvers.
 
 ## Inside a hook {#sec-events-inside}
 
-While a hook runs, its environment is delivering an event and is read-only to the hook's thread, together with the models made on it. The hook may read options, the last error, the event and the models. A call that would change the environment or one of its models, setting an option, adding or removing a hook, creating, changing or freeing a model, fails with `BIYOS_ERR_BADARG` and changes nothing. Such a failure keeps its message, so `BIYOS_lasterror` explains it, but sends no event, and when the hook returns the last error is again what it was before. The event and every string read from it are valid only until the hook returns.
+While a hook runs, whether it belongs to the environment or to one of its models, the environment is delivering an event and is read-only to the hook's thread, together with every model made on it. The hook may read options, the last error, the event and the models. A call that would change the environment or one of its models, setting an option, adding or removing a hook, creating, changing or freeing a model, fails with `BIYOS_ERR_BADARG` and changes nothing. Such a failure keeps its message, so `BIYOS_lasterror` explains it, but sends no event, and when the hook returns the last error is again what it was before. The event and every string read from it are valid only until the hook returns.
 
 ## Events in Python {#sec-events-python}
 
-In Python, `env.addhook` attaches any callable that takes one `Event` and returns an id for `env.delhook`. The event's properties, such as `kind`, `level`, `text` and `model`, read its parts, and `fmttext` and `fmtjson` give its lines. Forwarding events to Python's `logging` module takes a few lines:
+In Python, `env.addhook` attaches any callable that takes one `Event` and returns an id for `env.delhook`. `model.addhook` and `model.delhook` do the same for the hooks of one model. The event's properties, such as `kind`, `level`, `text` and `model`, read its parts, and `fmttext` and `fmtjson` give its lines. Forwarding events to Python's `logging` module takes a few lines:
 
 ```{.python file="examples/python/events.py"}
 ```
