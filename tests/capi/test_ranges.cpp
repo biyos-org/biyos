@@ -112,6 +112,14 @@ const NameCalls kIndicatorNames{BIYOS_getnind,
                                 BIYOS_delindnamesp,
                                 BIYOS_delindnamerg};
 
+const NameCalls kComplementNames{BIYOS_getnccon,
+                                 BIYOS_setcconnamesp,
+                                 BIYOS_setcconnamerg,
+                                 BIYOS_getcconnamesp,
+                                 BIYOS_getcconnamerg,
+                                 BIYOS_delcconnamesp,
+                                 BIYOS_delcconnamerg};
+
 std::uint64_t key(double value)
 {
     return std::bit_cast<std::uint64_t>(value);
@@ -458,6 +466,7 @@ void write_complements(const Held &held, Engine &engine)
     expect_writes(changed, span, BIYOS_setcconbndsp, BIYOS_setcconbndrg, lower, upper);
     expect_writes(changed, span, BIYOS_setccontolsp, BIYOS_setccontolrg, lower, upper);
     expect_writes(changed, span, BIYOS_delccontolsp, BIYOS_delccontolrg);
+    write_names(changed, engine, kComplementNames);
 }
 
 template <typename Value> std::vector<Value> zeros(Span span)
@@ -524,9 +533,11 @@ void read_complements(const Held &held, Engine &engine)
     const Span span = random_span(engine, count_of(paired, BIYOS_getnccon));
     const std::vector<double> reals = zeros<double>(span);
     const std::vector<int> whole = zeros<int>(span);
+    const std::vector<const char *> names = zeros<const char *>(span);
     expect_reads(paired, span, BIYOS_getcconbndsp, BIYOS_getcconbndrg, reals, reals);
     expect_reads(paired, span, BIYOS_getcconsp, BIYOS_getcconrg, whole, whole, reals, reals);
     expect_reads(paired, span, BIYOS_getccontolsp, BIYOS_getccontolrg, reals, reals);
+    expect_reads(paired, span, kComplementNames.get_listed, kComplementNames.get_ranged, names);
 }
 
 void read_all(const Model &model, Engine &engine)
@@ -653,6 +664,7 @@ void keep_complements(const Held &held, Span span, BIYOS_status wanted)
     expect_kept(held, span, wanted, BIYOS_setccontolrg, bounds, bounds);
     expect_kept(held, span, wanted, BIYOS_getccontolrg, bounds, bounds);
     expect_kept(held, span, wanted, BIYOS_delccontolrg);
+    keep_names(held, span, wanted, kComplementNames);
 }
 
 void keep_all(const Held &held, Counter count, Span span, BIYOS_status wanted)

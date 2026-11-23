@@ -484,3 +484,53 @@ BIYOS_status BIYOS_delconenamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index 
 {
     return guarded<delete_names<Family::Cone, Range>>(mdl, Range{pos, n});
 }
+
+BIYOS_status BIYOS_setcconnamesp(BIYOS_model *mdl,
+                                 BIYOS_index n,
+                                 const BIYOS_index *idx,
+                                 const char *const *name)
+{
+    return guarded<set_names<Family::Complement, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_setcconnamerg(BIYOS_model *mdl,
+                                 BIYOS_index pos,
+                                 BIYOS_index n,
+                                 const char *const *name)
+{
+    return guarded<set_names<Family::Complement, Range>>(mdl, Range{pos, n}, name);
+}
+
+BIYOS_status BIYOS_getcconnamesp(const BIYOS_model *mdl,
+                                 BIYOS_index n,
+                                 const BIYOS_index *idx,
+                                 const char **name)
+{
+    return guarded<get_names<Family::Complement, List>>(mdl, List{n, idx}, name);
+}
+
+BIYOS_status BIYOS_getcconnamerg(const BIYOS_model *mdl,
+                                 BIYOS_index pos,
+                                 BIYOS_index n,
+                                 const char **name)
+{
+    return guarded<get_names<Family::Complement, Range>>(mdl, Range{pos, n}, name);
+}
+
+BIYOS_status BIYOS_getcconidx(const BIYOS_model *mdl,
+                              BIYOS_index n,
+                              const char *const *name,
+                              BIYOS_index *idx)
+{
+    return guarded<get_indices<Family::Complement>>(mdl, n, name, idx);
+}
+
+BIYOS_status BIYOS_delcconnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+{
+    return guarded<delete_names<Family::Complement, List>>(mdl, List{n, idx});
+}
+
+BIYOS_status BIYOS_delcconnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+{
+    return guarded<delete_names<Family::Complement, Range>>(mdl, Range{pos, n});
+}

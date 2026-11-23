@@ -418,7 +418,8 @@ static BIYOS_status set_names(BIYOS_model *model)
         BIYOS_setconnamesp(model, 2, idx, name) != BIYOS_OK ||
         BIYOS_setobjnamesp(model, 1, idx + 1, name + 1) != BIYOS_OK ||
         BIYOS_setindnamesp(model, 1, idx, name) != BIYOS_OK ||
-        BIYOS_setsosnamesp(model, 1, idx, name) != BIYOS_OK)
+        BIYOS_setsosnamesp(model, 1, idx, name) != BIYOS_OK ||
+        BIYOS_setcconnamesp(model, 1, idx, name) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -436,19 +437,21 @@ static BIYOS_status get_names(const BIYOS_model *model)
     const char *objective = NULL;
     const char *indicator = NULL;
     const char *sos = NULL;
+    const char *complement = NULL;
     if (BIYOS_getmdlname(model, &title) != BIYOS_OK ||
         BIYOS_getvarnamesp(model, 2, both, variables) != BIYOS_OK ||
         BIYOS_getfunnamesp(model, 1, both, &function) != BIYOS_OK ||
         BIYOS_getconnamesp(model, 1, both, &constraint) != BIYOS_OK ||
         BIYOS_getobjnamesp(model, 1, first, &objective) != BIYOS_OK ||
         BIYOS_getindnamesp(model, 1, both, &indicator) != BIYOS_OK ||
-        BIYOS_getsosnamesp(model, 1, both, &sos) != BIYOS_OK)
+        BIYOS_getsosnamesp(model, 1, both, &sos) != BIYOS_OK ||
+        BIYOS_getcconnamerg(model, 1, 1, &complement) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
     if (!matches(title, "header") || !matches(variables[0], "y") || !matches(variables[1], "x") ||
         !matches(function, "y") || !matches(constraint, "y") || !matches(objective, "x") ||
-        !matches(indicator, "y") || !matches(sos, "y"))
+        !matches(indicator, "y") || !matches(sos, "y") || !matches(complement, "y"))
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -459,18 +462,19 @@ static BIYOS_status find_names(const BIYOS_model *model)
 {
     const char *names[2] = {"y", "x"};
     BIYOS_index variables[2] = {-1, -1};
-    BIYOS_index found[5] = {-1, -1, -1, -1, -1};
+    BIYOS_index found[6] = {-1, -1, -1, -1, -1, -1};
     if (BIYOS_getvaridx(model, 2, names, variables) != BIYOS_OK ||
         BIYOS_getfunidx(model, 1, names, &found[0]) != BIYOS_OK ||
         BIYOS_getconidx(model, 1, names + 1, &found[1]) != BIYOS_OK ||
         BIYOS_getobjidx(model, 1, names + 1, &found[2]) != BIYOS_OK ||
         BIYOS_getindidx(model, 1, names, &found[3]) != BIYOS_OK ||
-        BIYOS_getsosidx(model, 1, names, &found[4]) != BIYOS_OK)
+        BIYOS_getsosidx(model, 1, names, &found[4]) != BIYOS_OK ||
+        BIYOS_getcconidx(model, 1, names, &found[5]) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
     if (variables[0] != 1 || variables[1] != 0 || found[0] != 1 || found[1] != 0 || found[2] != 0 ||
-        found[3] != 1 || found[4] != 1)
+        found[3] != 1 || found[4] != 1 || found[5] != 1)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -487,7 +491,8 @@ static BIYOS_status del_names(BIYOS_model *model)
         BIYOS_delconnamesp(model, 1, idx) != BIYOS_OK ||
         BIYOS_delobjnamesp(model, 0, NULL) != BIYOS_OK ||
         BIYOS_delindnamesp(model, 1, idx) != BIYOS_OK ||
-        BIYOS_delsosnamesp(model, 1, idx) != BIYOS_OK || BIYOS_delmdlname(model) != BIYOS_OK)
+        BIYOS_delsosnamesp(model, 1, idx) != BIYOS_OK ||
+        BIYOS_delcconnamerg(model, 1, 1) != BIYOS_OK || BIYOS_delmdlname(model) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
