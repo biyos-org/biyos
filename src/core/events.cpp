@@ -100,6 +100,24 @@ std::string_view name_of(EventLevel level) noexcept
     return "";
 }
 
+Events::Turn::Turn(Events &events) noexcept : events_(events), nested_(events.mine())
+{
+    if (!nested_)
+    {
+        events_.turn_.lock();
+        events_.owner_.store(this_thread());
+    }
+}
+
+Events::Turn::~Turn()
+{
+    if (!nested_)
+    {
+        events_.owner_.store(ThreadId{});
+        events_.turn_.unlock();
+    }
+}
+
 Events::Events(const Clock &clock) : clock_(clock), origin_(clock.wall_time())
 {
     lowest_.fill(kNobody);
@@ -136,7 +154,7 @@ void Events::delete_hook(int id)
     }
     found->active = false;
     refresh(found->kind);
-    if (depth_ == 0)
+    if (!delivering())
     {
         const std::unique_ptr<const Hook> removed = std::move(found->hook);
         hooks_.erase(found);

@@ -2,14 +2,17 @@
 
 #include "biyos/biyos.h"
 #include "core/clock.hpp"
+#include "core/thread.hpp"
 
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <concepts>
 #include <cstddef>
 #include <deque>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -70,8 +73,8 @@ class Events
     {
         return lowest_[slot(kind)] <= level;
     }
-    bool delivering() const noexcept { return depth_ > 0; }
-    bool filling() const noexcept { return fills_ > 0; }
+    bool delivering() const noexcept { return mine() && depth_ > 0; }
+    bool filling() const noexcept { return mine() && fills_ > 0; }
     std::chrono::nanoseconds origin() const noexcept { return origin_; }
 
     template <std::invocable<Event &> Fill>
@@ -81,6 +84,7 @@ class Events
         {
             return;
         }
+        const Turn turn(*this);
         Event event{
             .kind = kind,
             .level = level,
@@ -103,6 +107,19 @@ class Events
     }
 
   private:
+    class Turn
+    {
+      public:
+        explicit Turn(Events &events) noexcept;
+        ~Turn();
+        Turn(const Turn &) = delete;
+        Turn &operator=(const Turn &) = delete;
+
+      private:
+        Events &events_;
+        bool nested_;
+    };
+
     class Depth
     {
       public:
@@ -132,6 +149,8 @@ class Events
 
     static bool accepts(const Entry &entry, EventKind kind, EventLevel level) noexcept;
 
+    bool mine() const noexcept { return owner_.load() == this_thread(); }
+
     void refresh(EventKind kind) noexcept;
     void deliver(const Event &event) noexcept;
     void prune() noexcept;
@@ -143,6 +162,8 @@ class Events
     int next_id_ = 1;
     int depth_ = 0;
     int fills_ = 0;
+    std::mutex turn_;
+    std::atomic<ThreadId> owner_;
 };
 
 }
