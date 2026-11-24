@@ -3,7 +3,7 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/options/settings.hpp"
-#include "core/timer.hpp"
+#include "core/timing/timer.hpp"
 #include "io/draft.hpp"
 #include "io/leftovers.hpp"
 #include "io/mps.hpp"

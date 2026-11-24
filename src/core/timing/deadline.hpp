@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/clock.hpp"
-#include "core/interrupt.hpp"
 #include "core/options/lookup.hpp"
 #include "core/status.hpp"
+#include "core/timing/clock.hpp"
+#include "core/timing/interrupt.hpp"
 
 #include <chrono>
 #include <optional>

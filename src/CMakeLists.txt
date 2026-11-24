@@ -1,7 +1,5 @@
 add_library(biyos_internal STATIC
     core/check.cpp
-    core/clock.cpp
-    core/deadline.cpp
     core/env.cpp
     core/error.cpp
     core/events/deliveries.cpp
@@ -20,7 +18,9 @@ add_library(biyos_internal STATIC
     core/status.cpp
     core/strings.cpp
     core/thread.cpp
-    core/timer.cpp
+    core/timing/clock.cpp
+    core/timing/deadline.cpp
+    core/timing/timer.cpp
     core/tolerances.cpp
     core/usage.cpp
     core/utf8.cpp

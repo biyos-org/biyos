@@ -1,4 +1,3 @@
-#include "core/clock.hpp"
 #include "core/error.hpp"
 #include "core/events/events.hpp"
 #include "core/events/hooks.hpp"
@@ -6,6 +5,7 @@
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
 #include "core/options/table.hpp"
+#include "core/timing/clock.hpp"
 #include "core/version.hpp"
 
 #include <gtest/gtest.h>

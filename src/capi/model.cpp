@@ -7,7 +7,7 @@
 #include "capi/tolerances.hpp"
 #include "core/env.hpp"
 #include "core/index.hpp"
-#include "core/timer.hpp"
+#include "core/timing/timer.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>

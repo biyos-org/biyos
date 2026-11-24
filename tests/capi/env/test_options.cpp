@@ -1,8 +1,8 @@
 #include "biyos/biyos.h"
 #include "capi/entry.hpp"
-#include "core/clock.hpp"
 #include "core/env.hpp"
 #include "core/options/options.hpp"
+#include "core/timing/clock.hpp"
 #include "core/version.hpp"
 #include "handles.hpp"
 

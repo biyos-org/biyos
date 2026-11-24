@@ -1,12 +1,12 @@
-#include "core/clock.hpp"
-#include "core/deadline.hpp"
 #include "core/env.hpp"
 #include "core/events/events.hpp"
-#include "core/interrupt.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
 #include "core/status.hpp"
+#include "core/timing/clock.hpp"
+#include "core/timing/deadline.hpp"
+#include "core/timing/interrupt.hpp"
 
 #include <gtest/gtest.h>
 
