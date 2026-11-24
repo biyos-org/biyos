@@ -21,8 +21,12 @@ since 0.1.0
 
 type BIYOS_real
 summary A value: a bound, a constant, a coefficient or an option.
-note A `double`. An infinite bound is `INFINITY` or `-INFINITY` of `<math.h>`.
+note A `double`. An infinite bound is `BIYOS_INF` or `-BIYOS_INF`.
 see BIYOS_index
+since 0.1.0
+
+table Infinity
+value BIYOS_INF Positive infinity, `INFINITY` of `<math.h>`, which `biyos/biyos.h` includes. `-BIYOS_INF` is minus infinity.
 since 0.1.0
 
 type BIYOS_mask
@@ -663,7 +667,7 @@ see BIYOS_setmdlname
 since 0.1.0
 
 group variables Variables
-text Each variable has a kind and a lower and an upper bound. A bound may be `INFINITY` or `-INFINITY` of `<math.h>`, and no finite bound is taken as infinite, however large. A lower bound of minus infinity or an upper bound of infinity leaves that side unbounded. A lower bound of infinity, an upper bound of minus infinity and NaN are refused, and so is a bound outside the widest bounds of the variable's kind: 0 and 1 for a binary, minus infinity and infinity for any other kind. Any other pair is kept as given, a lower bound above the upper one included.
+text Each variable has a kind and a lower and an upper bound. A bound may be `BIYOS_INF` or `-BIYOS_INF`, and no finite bound is taken as infinite, however large. A lower bound of minus infinity or an upper bound of infinity leaves that side unbounded. A lower bound of infinity, an upper bound of minus infinity and NaN are refused, and so is a bound outside the widest bounds of the variable's kind: 0 and 1 for a binary, minus infinity and infinity for any other kind. Any other pair is kept as given, a lower bound above the upper one included.
 text A variable may hold its own absolute and relative tolerance, each finite and at least 0, which stand for the options `feastol_abs` and `feastol_rel` for that variable alone. It holds none until `BIYOS_setvartolsp` sets them, and `BIYOS_delvartolsp` returns it to the options. No call solves a model yet.
 
 table Variable kinds
@@ -1175,7 +1179,7 @@ see BIYOS_getnquadtermsp BIYOS_addquadtermsp
 since 0.1.0
 
 group constraints Constraints
-text A constraint `lb <= f(x) <= ub` bounds a function of the model. It holds the index of the function and two bounds, and several constraints may share a function. A constraint's bounds follow the rule of a continuous variable's: `INFINITY` or `-INFINITY` leaves that side unbounded, a lower bound of infinity, an upper bound of minus infinity and NaN are refused, and any other pair is kept as given, a lower bound above the upper one included. A constraint whose bounds are equal is an equality, and one whose bounds are both infinite is free.
+text A constraint `lb <= f(x) <= ub` bounds a function of the model. It holds the index of the function and two bounds, and several constraints may share a function. A constraint's bounds follow the rule of a continuous variable's: `BIYOS_INF` or `-BIYOS_INF` leaves that side unbounded, a lower bound of infinity, an upper bound of minus infinity and NaN are refused, and any other pair is kept as given, a lower bound above the upper one included. A constraint whose bounds are equal is an equality, and one whose bounds are both infinite is free.
 text A constraint may hold its own absolute and relative tolerance, each finite and at least 0, which stand for the options `feastol_abs` and `feastol_rel` for that constraint alone. It holds none until `BIYOS_setcontolsp` sets them, and `BIYOS_delcontolsp` returns it to the options. No call solves a model yet.
 
 function BIYOS_addcon
@@ -1346,7 +1350,7 @@ since 0.1.0
 
 group objectives Objectives
 text An objective is a function of the model to minimize or maximize, with a priority, a weight and an absolute and a relative tolerance. Several objectives may share a function, and an objective may use the function of a constraint.
-text The objectives are optimized in stages, one for each priority they hold, the lowest priority first. A stage minimizes the weighted sum $\sum w\, s\, f_k(x)$ over the objectives of its priority, where $f_k$ is an objective's function, $s$ is 1 when it minimizes and −1 when it maximizes, and $w$ is its weight. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it, the absolute tolerance in the units of its function and the relative one as a fraction of the size of that optimum. A priority is any `BIYOS_int`. A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. `BIYOS_addobj` takes what defines an objective, its function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds; a new objective's tolerances are 0 until `BIYOS_setobjtolsp` sets them. No call optimizes the objectives yet.
+text The objectives are optimized in stages, one for each priority they hold, the lowest priority first. A stage minimizes the weighted sum $\sum w\, s\, f_k(x)$ over the objectives of its priority, where $f_k$ is an objective's function, $s$ is 1 when it minimizes and −1 when it maximizes, and $w$ is its weight. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it, the absolute tolerance in the units of its function and the relative one as a fraction of the size of that optimum. A priority is any `BIYOS_int`. A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `BIYOS_INF` sets no limit. `BIYOS_addobj` takes what defines an objective, its function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds; a new objective's tolerances are 0 until `BIYOS_setobjtolsp` sets them. No call optimizes the objectives yet.
 
 table Senses
 value BIYOS_OBJSENSE_MIN The function is minimized.
@@ -2045,7 +2049,7 @@ see BIYOS_setconenamesp
 since 0.1.0
 
 group complements Complements
-text A complement `lb <= f1(x) <= ub ⊥ f2(x)` pairs two functions of the model: `f1` is bounded, and the sign of `f2` follows where `f1` lies. One of three cases holds: `f1(x) = lb` and `f2(x) >= 0`, `f1(x) = ub` and `f2(x) <= 0`, or `lb < f1(x) < ub` and `f2(x) = 0`. The classical `0 <= f1(x) ⊥ f2(x) >= 0` is the case of the bounds 0 and `INFINITY`, and the mixed complementarity of GAMS and PATH the case where `f1` is one variable. A complement holds the indices of its two functions and two bounds, numbered from 0 in a table of their own. Its bounds follow the rule of a constraint's, and both infinite state `f2(x) = 0`. Its functions stay shared: a function may appear in any number of complements, as both functions of one, and beside constraints and objectives. The bounds of a variable inside `f1` stay and hold beside the complement.
+text A complement `lb <= f1(x) <= ub ⊥ f2(x)` pairs two functions of the model: `f1` is bounded, and the sign of `f2` follows where `f1` lies. One of three cases holds: `f1(x) = lb` and `f2(x) >= 0`, `f1(x) = ub` and `f2(x) <= 0`, or `lb < f1(x) < ub` and `f2(x) = 0`. The classical `0 <= f1(x) ⊥ f2(x) >= 0` is the case of the bounds 0 and `BIYOS_INF`, and the mixed complementarity of GAMS and PATH the case where `f1` is one variable. A complement holds the indices of its two functions and two bounds, numbered from 0 in a table of their own. Its bounds follow the rule of a constraint's, and both infinite state `f2(x) = 0`. Its functions stay shared: a function may appear in any number of complements, as both functions of one, and beside constraints and objectives. The bounds of a variable inside `f1` stay and hold beside the complement.
 text A complement may hold its own absolute and relative tolerance, each finite and at least 0, which stand for the options `feastol_abs` and `feastol_rel` for that complement alone. It holds none until `BIYOS_setccontolsp` sets them, and `BIYOS_delccontolsp` returns it to the options. No call solves a model yet.
 
 function BIYOS_addccon
