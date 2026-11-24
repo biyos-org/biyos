@@ -1,3 +1,4 @@
+LP_MPS = """\
 * A small linear program
 NAME          small
 ROWS
@@ -14,3 +15,24 @@ RHS
     rhs       cost         4.0   limit       10.0
     rhs       floor        2.0
 ENDATA
+"""
+
+ROWS_MPS = """\
+NAME
+ROWS
+ N  first
+ L  cap
+ N  second
+ N  third
+COLUMNS
+    x         first        1.0   second       2.0
+    x         cap          1.0   third        3.0
+RHS
+    rhs       cap          1.0   second       5.0
+ENDATA
+"""
+
+
+def written(path, text):
+    path.write_text(text)
+    return path

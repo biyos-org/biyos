@@ -4,11 +4,14 @@
 #include "core/env.hpp"
 #include "handles.hpp"
 
+#include "../io/samples.hpp"
+
 #include <gtest/gtest.h>
 
 #include <fstream>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace
@@ -17,7 +20,12 @@ namespace
 using biyos::test::Env;
 using biyos::test::Model;
 
-const std::string kData = MPS_DATA;
+std::string written(std::string_view name, std::string_view text)
+{
+    const std::string path = testing::TempDir() + std::string(name);
+    std::ofstream(path) << text;
+    return path;
+}
 
 struct Read
 {
@@ -62,7 +70,7 @@ void keep(const BIYOS_event *event, void *data)
 TEST(CApiTest, ReadFile)
 {
     const Env env;
-    const std::string path = kData + "/lp.mps";
+    const std::string path = written("biyos_lp.mps", biyos::test::kLpMpsFile);
     const Read made = read(env, path.c_str(), BIYOS_FMT_MPS);
     ASSERT_EQ(made.status, BIYOS_OK);
     EXPECT_EQ(count_of(BIYOS_getnvar, made.model), 2);
@@ -77,7 +85,7 @@ TEST(CApiTest, ReadFile)
 TEST(CApiTest, MissingFile)
 {
     const Env env;
-    const std::string path = kData + "/absent.mps";
+    const std::string path = testing::TempDir() + "biyos_absent/t.mps";
     const Read made = read(env, path.c_str(), BIYOS_FMT_MPS);
     EXPECT_EQ(made.status, BIYOS_ERR_FILEIO);
     EXPECT_EQ(made.model, nullptr);
@@ -98,7 +106,7 @@ TEST(CApiTest, BadFile)
 TEST(CApiTest, ReadRefused)
 {
     const Env env;
-    const std::string path = kData + "/lp.mps";
+    const std::string path = written("biyos_lp.mps", biyos::test::kLpMpsFile);
     EXPECT_EQ(read(env, nullptr, BIYOS_FMT_MPS).status, BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'path': is null");
     EXPECT_EQ(read(env, path.c_str(), 7).status, BIYOS_ERR_BADARG);
@@ -114,7 +122,7 @@ TEST(CApiTest, ReadSpan)
     BIYOS_index hook = -1;
     ASSERT_EQ(BIYOS_addenvhook(&env, keep, &spans, BIYOS_EVTKND_SPAN, BIYOS_EVTLVL_DBG, &hook),
               BIYOS_OK);
-    const std::string path = kData + "/lp.mps";
+    const std::string path = written("biyos_lp.mps", biyos::test::kLpMpsFile);
     BIYOS_model *model = nullptr;
     ASSERT_EQ(BIYOS_readmdl(&env, path.c_str(), BIYOS_FMT_MPS, &model), BIYOS_OK);
     const std::vector<std::string> expected{
@@ -131,7 +139,7 @@ TEST(CApiTest, ReadSpan)
 TEST(CApiTest, WriteFile)
 {
     const Env env;
-    const std::string source = kData + "/lp.mps";
+    const std::string source = written("biyos_lp.mps", biyos::test::kLpMpsFile);
     const Read made = read(env, source.c_str(), BIYOS_FMT_MPS);
     ASSERT_EQ(made.status, BIYOS_OK);
     const std::string path = testing::TempDir() + "biyos_written.mps";

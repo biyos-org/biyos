@@ -5,7 +5,6 @@
 #include "core/event.hpp"
 #include "core/index.hpp"
 #include "expr/terms.hpp"
-#include "io/files.hpp"
 #include "io/mps.hpp"
 #include "model/model.hpp"
 
@@ -29,16 +28,16 @@ struct Warning
     std::string line;
 };
 
-inline Model read_data(std::string_view name)
-{
-    Env env;
-    return read_file(env, std::string(MPS_DATA) + "/" + std::string(name), FileFormat::Mps);
-}
-
 inline Model read_text(Env &env, std::string_view text)
 {
     std::istringstream input{std::string(text)};
     return read_mps(env, input, "t.mps");
+}
+
+inline Model read_sample(std::string_view text)
+{
+    Env env;
+    return read_text(env, text);
 }
 
 inline std::string fault_of(std::string_view text)

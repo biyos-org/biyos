@@ -1,13 +1,11 @@
-from pathlib import Path
-
 from functools import partial
 
 import pytest
 
 import biyos
 from biyos import EventKind, EventLevel, FileFormat
+from samples import LP_MPS, ROWS_MPS, written
 
-DATA = Path(__file__).resolve().parents[3] / "tests" / "io" / "data" / "mps"
 FILEIO = -401
 BADARG = -100
 
@@ -22,8 +20,9 @@ def record(heard, event):
     heard.append((event.module, event.fields))
 
 
-def test_counts(env):
-    with biyos.Model.read(env, DATA / "lp.mps", FileFormat.MPS) as model:
+def test_counts(env, tmp_path):
+    path = written(tmp_path / "lp.mps", LP_MPS)
+    with biyos.Model.read(env, path, FileFormat.MPS) as model:
         assert model.getmdlname() == "small"
         assert model.getnvar() == 2
         assert model.getncon() == 3
@@ -33,35 +32,38 @@ def test_counts(env):
         assert model.getobjname(range(1)) == ["cost"]
 
 
-def test_str_path(env):
-    with biyos.Model.read(env, str(DATA / "rows.mps"), FileFormat.MPS) as model:
+def test_str_path(env, tmp_path):
+    path = str(written(tmp_path / "rows.mps", ROWS_MPS))
+    with biyos.Model.read(env, path, FileFormat.MPS) as model:
         assert model.getmdlname() is None
         assert model.getncon() == 3
 
 
-def test_missing(env):
-    path = str(DATA / "absent.mps")
+def test_missing(env, tmp_path):
+    path = str(tmp_path / "absent.mps")
     with pytest.raises(biyos.Error) as caught:
         biyos.Model.read(env, path, FileFormat.MPS)
     assert caught.value.code == FILEIO
     assert str(caught.value) == f"file access: file '{path}': cannot be opened"
 
 
-def test_unknown_format(env):
+def test_unknown_format(env, tmp_path):
+    path = written(tmp_path / "lp.mps", LP_MPS)
     with pytest.raises(biyos.Error) as caught:
-        biyos.Model.read(env, DATA / "lp.mps", 7)
+        biyos.Model.read(env, path, 7)
     assert caught.value.code == BADARG
 
 
-def test_refused(env):
+def test_refused(env, tmp_path):
+    path = written(tmp_path / "lp.mps", LP_MPS)
     with pytest.raises(TypeError):
         biyos.Model.read(env, b"lp.mps", FileFormat.MPS)
     with pytest.raises(TypeError):
-        biyos.Model.read(env, DATA / "lp.mps", "MPS")
+        biyos.Model.read(env, path, "MPS")
     with pytest.raises(ValueError):
         biyos.Model.read(env, "lp\0.mps", FileFormat.MPS)
     with pytest.raises(TypeError):
-        biyos.Model.read(None, DATA / "lp.mps", FileFormat.MPS)
+        biyos.Model.read(None, path, FileFormat.MPS)
 
 
 def test_warning(env, tmp_path):
