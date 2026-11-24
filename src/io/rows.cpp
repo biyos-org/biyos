@@ -79,4 +79,9 @@ ObjectiveSense sense_of(const Lines &lines, std::string_view word)
     bad_file(lines, "unknown objective sense " + quote(word));
 }
 
+std::string_view letter_of(RowSense sense) noexcept
+{
+    return std::ranges::find(kLetters, sense, &Letter::sense)->code;
+}
+
 }

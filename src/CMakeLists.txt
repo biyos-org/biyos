@@ -64,6 +64,7 @@ add_library(biyos_internal STATIC
     io/labels.cpp
     io/lines.cpp
     io/mps.cpp
+    io/print.cpp
     io/records.cpp
     io/report.cpp
     io/row_shape.cpp
