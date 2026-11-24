@@ -24,8 +24,7 @@ It is designed for problems of the form
 ::: {.form}
 $$
 \begin{aligned}
-\text{minimize}\quad & f_1(x),\ \dots,\ f_p(x) \\
-& \text{in priority order} \\
+\text{minimize}\quad & f_0(x),\ f_1(x),\ \dots \ \text{in priority order} \\
 \text{subject to}\quad & l \le g(x) \le u \\
 & h(x) \in K \\
 & x_j \in \mathbb{Z} \quad \text{for } j \in J
@@ -33,7 +32,7 @@ $$
 $$
 :::
 
-where the bounds $l$ and $u$ may be infinite, $K$ is a product of cones and $J$ is the set of integer variables. The chapter [The problem form](#sec-form) states it in full.
+a shorthand in which $f_0, f_1, \dots$ are the objectives, $g$ the functions that constraints bound, between bounds $l$ and $u$ that may be infinite, $h$ the members of the cones, $K$ the product of those cones and $J$ the set of integer variables. The chapter [The problem form](#sec-form) states it in full.
 
 ::: {.content-visible when-format="html"}
 ::: {.cards}
