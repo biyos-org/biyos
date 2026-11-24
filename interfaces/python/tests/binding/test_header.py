@@ -107,8 +107,8 @@ def test_senses():
 
 
 def test_formats():
-    names = {f"BIYOS_FMT_{fmt.name}": fmt for fmt in biyos.FileFormat}
-    assert group("BIYOS_FMT_") == names
+    names = {f"BIYOS_FILEFMT_{fmt.name}": fmt for fmt in biyos.FileFormat}
+    assert group("BIYOS_FILEFMT_") == names
 
 
 def test_sos_kinds():

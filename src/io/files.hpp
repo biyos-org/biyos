@@ -13,7 +13,7 @@ namespace biyos
 
 enum class FileFormat
 {
-    Mps = BIYOS_FMT_MPS,
+    Mps = BIYOS_FILEFMT_MPS,
 };
 
 inline constexpr std::array kFormats{
