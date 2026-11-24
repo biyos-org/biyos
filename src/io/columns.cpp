@@ -1,7 +1,7 @@
 #include "io/columns.hpp"
 
 #include "core/index.hpp"
-#include "io/draft.hpp"
+#include "io/draft/draft.hpp"
 #include "io/lines.hpp"
 #include "io/records.hpp"
 #include "io/report.hpp"

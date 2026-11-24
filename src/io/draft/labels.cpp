@@ -1,4 +1,4 @@
-#include "io/labels.hpp"
+#include "io/draft/labels.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"

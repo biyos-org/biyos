@@ -58,23 +58,23 @@ add_library(biyos_internal STATIC
     expr/tape/reads.cpp
     expr/tape/tape.cpp
     io/bounds.cpp
-    io/column_shape.cpp
     io/columns.cpp
     io/directory.cpp
-    io/draft.cpp
+    io/draft/column_shape.cpp
+    io/draft/draft.cpp
+    io/draft/labels.cpp
+    io/draft/row_shape.cpp
+    io/draft/sketch.cpp
+    io/draft/support.cpp
     io/files.cpp
-    io/labels.cpp
     io/leftovers.cpp
     io/lines.cpp
     io/mps.cpp
     io/print.cpp
     io/records.cpp
     io/report.cpp
-    io/row_shape.cpp
     io/rows.cpp
     io/sections.cpp
-    io/sketch.cpp
-    io/support.cpp
     io/values.cpp
     io/vectors.cpp
     model/attributes/names.cpp

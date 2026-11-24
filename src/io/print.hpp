@@ -1,6 +1,6 @@
 #pragma once
 
-#include "io/draft.hpp"
+#include "io/draft/draft.hpp"
 
 #include <ostream>
 
