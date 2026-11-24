@@ -1,4 +1,5 @@
 import ctypes
+import math
 from ctypes import (
     CFUNCTYPE,
     POINTER,
@@ -14,6 +15,10 @@ from ctypes import (
     c_void_p,
 )
 from importlib.resources import files
+
+inf = math.inf
+"""Infinity, ``BIYOS_INF`` of the C header: a bound of ``inf`` or ``-inf``
+leaves that side open."""
 
 OK = 0
 

@@ -13,7 +13,6 @@ from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
 
-INFINITY = float("inf")
 NAN = float("nan")
 SIGNED_NAN = math.copysign(NAN, -1.0)
 MAX = ObjectiveSense.MAXIMIZE
@@ -23,7 +22,7 @@ FUNCTIONS = [1, 0, 1]
 SENSES = [MAX, MIN, MIN]
 PRIORITIES = [2, -1, 2]
 WEIGHTS = [0.5, 1.0, 3.0]
-ABSOLUTE = [0.0, 1.5, INFINITY]
+ABSOLUTE = [0.0, 1.5, biyos.inf]
 RELATIVE = [0.25, 0.0, 0.0]
 SAMPLE = (FUNCTIONS, SENSES, PRIORITIES, WEIGHTS)
 TOLERANCES = (ABSOLUTE, RELATIVE)
@@ -219,13 +218,13 @@ def test_set(model):
     model.setobjsense([2, 0], [MAX, MIN])
     model.setobjprio([2], [-5])
     model.setobjcoef([0, 2], [4.0, 8.0])
-    model.setobjtol([1], atol=[INFINITY], rtol=[0.5])
+    model.setobjtol([1], atol=[biyos.inf], rtol=[0.5])
     model.setobjtol([1, 2], None, None)
     found = model.getobj()
     assert found[0] == FUNCTIONS
     assert found[1:3] == ([MIN, MIN, MAX], [2, -1, -5])
     assert found[3] == [4.0, 1.0, 8.0]
-    tolerances = ([0.0, INFINITY, INFINITY], [0.25, 0.5, 0.0])
+    tolerances = ([0.0, biyos.inf, biyos.inf], [0.25, 0.5, 0.0])
     assert model.getobjtol(range(3)) == tolerances
     model.setobjsense([0, 0], [MAX, MIN])
     model.setobjprio([0, 0], [5, 6])
@@ -240,7 +239,7 @@ def test_listed(model):
     assert all(type(value) is ObjectiveSense for value in sense)
     assert model.getobjprio(idx) == [2, 2, 2, -1]
     assert model.getobjcoef(idx) == [3.0, 0.5, 3.0, 1.0]
-    tolerances = ([INFINITY, 0.0, INFINITY, 1.5], [0.0, 0.25, 0.0, 0.0])
+    tolerances = ([biyos.inf, 0.0, biyos.inf, 1.5], [0.0, 0.25, 0.0, 0.0])
     assert model.getobjtol(idx) == tolerances
     assert model.getobjsense(o[1:]) == SENSES[1:]
     assert model.getobjprio([o[1], Number(0)]) == [-1, 2]
@@ -254,20 +253,20 @@ def test_setters(model):
     model.setobjsense(idx, [MIN, MAX, MAX])
     model.setobjprio(idx, [5, -3, 7])
     model.setobjcoef(idx, [2.0, 4.0, 8.0])
-    model.setobjtol(idx, [0.5, INFINITY, 1.0], [0.125, 0.25, 0.0])
+    model.setobjtol(idx, [0.5, biyos.inf, 1.0], [0.125, 0.25, 0.0])
     assert model.getobjsense(idx) == [MAX, MAX, MAX]
     assert model.getobjprio(idx) == [7, -3, 7]
     assert model.getobjcoef(idx) == [8.0, 4.0, 8.0]
-    assert model.getobjtol(idx) == ([1.0, INFINITY, 1.0], [0.0, 0.25, 0.0])
+    assert model.getobjtol(idx) == ([1.0, biyos.inf, 1.0], [0.0, 0.25, 0.0])
     model.setobjsense(idx, None)
     model.setobjprio(idx, None)
     model.setobjcoef(idx, None)
     model.setobjtol(idx)
     model.setobjtol([2], atol=[0.5])
-    model.setobjtol([1], rtol=[INFINITY])
+    model.setobjtol([1], rtol=[biyos.inf])
     found = model.getobj()
     assert found == (FUNCTIONS, [MAX, MIN, MAX], [-3, -1, 7], [4, 1, 8])
-    tolerances = ([INFINITY, 1.5, 0.5], [0.25, INFINITY, 0.0])
+    tolerances = ([biyos.inf, 1.5, 0.5], [0.25, biyos.inf, 0.0])
     assert model.getobjtol(range(3)) == tolerances
 
 
@@ -343,7 +342,7 @@ def test_refused(model):
     assert message == (
         "invalid argument: objective 2: absolute tolerance is NaN"
     )
-    message = refusal(tolerances, None, [-INFINITY])
+    message = refusal(tolerances, None, [-biyos.inf])
     assert message == (
         "invalid argument: objective 2: relative tolerance is minus infinity"
     )

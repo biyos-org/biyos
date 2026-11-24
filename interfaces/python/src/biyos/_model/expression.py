@@ -2,9 +2,8 @@ from collections.abc import Sequence
 from math import isinf, isnan
 from typing import Any, TypeGuard
 
+from biyos._capi import inf
 from biyos._model.operators import Operator
-
-_INFINITY = float("inf")
 
 
 def _number(value: object) -> TypeGuard[int | float]:
@@ -451,8 +450,8 @@ def _compared(
         body = _sum(left, right, -1.0)
     else:
         bound = _bound(float(right), lower, upper)
-    lb = bound if lower else -_INFINITY
-    ub = bound if upper else _INFINITY
+    lb = bound if lower else -inf
+    ub = bound if upper else inf
     return Comparison(body, lb, ub, same)
 
 

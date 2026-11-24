@@ -1,4 +1,3 @@
-import math
 from ctypes import POINTER, c_uint64
 
 import biyos
@@ -132,7 +131,7 @@ def test_ok():
 
 
 def test_infinity():
-    assert _header.BIYOS_INF == math.inf
+    assert _header.BIYOS_INF == biyos.inf
 
 
 def test_masks():

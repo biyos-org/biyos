@@ -10,7 +10,6 @@ from biyos import EventKind, EventLevel, ObjectiveSense, VariableKind
 from biyos._capi import lib
 from spies import Trap, followed, interrupted, preceded, traced
 
-INFINITY = float("inf")
 BUSY = (
     "invalid argument: argument 'env': is read-only while delivering an event"
 )
@@ -43,21 +42,21 @@ def add_sample(model):
         VariableKind.BINARY,
         VariableKind.INTEGER,
     ]
-    model.addvar(3, kinds, [-0.0, 0.0, -INFINITY], [2.5, 1.0, 3.0])
+    model.addvar(3, kinds, [-0.0, 0.0, -biyos.inf], [2.5, 1.0, 3.0])
     model.setvartol([0, 2], [0.5, 0.0])
     f = model.addfun(2)
     model.setcst(f, [1.5, 0.1])
     model.addlinterm([0, 0, 1], [2, 0, 1], [-1.0, 2.0, 0.1])
     pairs = ([1, 0, 0], [2, 0, 1], [2, 1, 1], [0.5, -1.0, 3.0])
     model.addquadterm(*pairs)
-    model.addcon([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, INFINITY, 3.0])
+    model.addcon([0, 1, 0], [-1.0, 0.0, 3.0], [1.0, biyos.inf, 3.0])
     model.setcontol([1], None, [0.125])
     senses = [ObjectiveSense.MAXIMIZE, ObjectiveSense.MINIMIZE]
-    tolerances = ([0.25, 0.0], [0.0, INFINITY])
+    tolerances = ([0.25, 0.0], [0.0, biyos.inf])
     o = model.addobj([1, 0], senses, [3, -2], [0.5, 2.0])
     model.setobjtol(o, *tolerances)
     model.addind([1], [1], [0], [0.0], [2.0])
-    c = model.addccon([0, 1], [1, 1], [-1.0, 0.0], [1.0, INFINITY])
+    c = model.addccon([0, 1], [1, 1], [-1.0, 0.0], [1.0, biyos.inf])
     model.setccontol(c[1:], [0.5], [0.25])
 
 

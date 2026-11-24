@@ -1,4 +1,4 @@
-from biyos._capi import version
+from biyos._capi import inf, version
 from biyos._env.env import Env
 from biyos._env.event import Event, EventKind, EventLevel
 from biyos._env.options import Checking, Masks, OptionSource
@@ -108,6 +108,7 @@ __all__ = [
     "entropy",
     "erf",
     "exp",
+    "inf",
     "log",
     "signpow",
     "sin",
