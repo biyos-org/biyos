@@ -53,6 +53,7 @@ enum class Payload
     Coefficients,
 };
 
+std::string_view fault(double value) noexcept;
 std::optional<Operator> operator_of(int code) noexcept;
 Payload payload_of(Operator op);
 void check_shape(Operator op, Payload payload, Offset children);

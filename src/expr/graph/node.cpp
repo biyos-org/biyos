@@ -122,6 +122,13 @@ std::string arity_text(const Shape &shape)
     return shape.most == shape.least ? least : least + " or more";
 }
 
+bool positive(double value) noexcept
+{
+    return !std::signbit(value) && std::fpclassify(value) != FP_ZERO;
+}
+
+}
+
 std::string_view fault(double value) noexcept
 {
     if (std::isnan(value))
@@ -129,13 +136,6 @@ std::string_view fault(double value) noexcept
         return "is NaN";
     }
     return std::signbit(value) ? "is minus infinity" : "is infinity";
-}
-
-bool positive(double value) noexcept
-{
-    return !std::signbit(value) && std::fpclassify(value) != FP_ZERO;
-}
-
 }
 
 std::optional<Operator> operator_of(int code) noexcept

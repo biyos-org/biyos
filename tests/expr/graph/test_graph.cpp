@@ -360,7 +360,10 @@ TEST(GraphTest, Truncated)
     Graph graph;
     const Offset x = graph.add_variable(3);
     const std::array weight{2.0};
+    const std::array weight_pair{2.0, 4.0};
     const Offset sum = graph.add_sum(1.0, std::span(&x, 1), weight);
+    const std::array points{0.0, 1.0};
+    graph.add_pwl(points, weight_pair);
     const Graph::Mark before = graph.mark();
     graph.truncate(before);
     EXPECT_EQ(graph.mark(), before);
@@ -371,8 +374,12 @@ TEST(GraphTest, Truncated)
     const std::array weights{1.0, -1.0, 0.5, 2.0};
     graph.add_sum(0.0, children, weights);
     unary(graph, Operator::Exp, y);
+    graph.add_pwl(points, points);
+    graph.add_pwl(weight_pair, points);
     graph.truncate(before);
     EXPECT_EQ(graph.mark(), before);
+    EXPECT_EQ(graph.points().size(), 1);
+    EXPECT_EQ(graph.add_pwl(points, points), 1);
     EXPECT_EQ(graph.add_variable(3), x);
     const Offset fresh = graph.add_variable(1);
     EXPECT_EQ(fresh, 2);

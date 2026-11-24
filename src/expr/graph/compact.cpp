@@ -99,8 +99,10 @@ Offset copy(const Graph &source, Offset node, std::span<const Offset> children, 
 Compaction compact(const Graph &graph, std::span<const Offset> roots)
 {
     const std::vector<bool> marks = live(graph, roots);
-    Compaction result;
-    result.map.assign(at(graph.size()), kDead);
+    Compaction result{
+        .graph = Graph(graph.points()),
+        .map = std::vector<Offset>(at(graph.size()), kDead),
+    };
     std::vector<Offset> children;
     children.reserve(widest(graph));
     for (Offset node = 0; node < graph.size(); ++node)

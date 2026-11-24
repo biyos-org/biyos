@@ -235,6 +235,27 @@ TEST(CompactTest, Unchanged)
     }
 }
 
+TEST(CompactTest, WholeTable)
+{
+    Graph graph;
+    const std::array x{-0.0, 1.0, 4.0};
+    const std::array y{2.0, -1e-300, 0.5};
+    const std::array u{3.0, 5.0};
+    const std::array v{1.0, 1.0};
+    graph.add_pwl(x, y);
+    graph.add_pwl(u, v);
+    const Offset z = graph.add_variable(0);
+    const Compaction result = compact(graph, std::span(&z, 1));
+    const biyos::Points &points = result.graph.points();
+    ASSERT_EQ(points.size(), 2);
+    for (Offset pwl = 0; pwl < points.size(); ++pwl)
+    {
+        EXPECT_EQ(bits(points.pwl(pwl).x), bits(graph.points().pwl(pwl).x));
+        EXPECT_EQ(bits(points.pwl(pwl).y), bits(graph.points().pwl(pwl).y));
+    }
+    EXPECT_EQ(compact(graph, {}).graph.points().size(), 2);
+}
+
 TEST(CompactTest, NoRoots)
 {
     Graph graph;
