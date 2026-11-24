@@ -8,52 +8,69 @@ biyos is built for problems of the form
 
 $$
 \begin{aligned}
-\text{minimize}\quad & f_1(x),\ \dots,\ f_p(x) \\
-& \text{in priority order} \\
-\text{subject to}\quad & l \le g(x) \le u \\
-& h(x) \in K \\
-& l^{a} \le a(x) \le u^{a} \ \perp\ b(x) \\
-& x_{v_i} = \beta_i \ \Rightarrow\ l^{d}_i \le d_i(x) \le u^{d}_i \quad \text{for every indicator } i \\
-& x_{S_k} \in \mathcal{S}_{t_k} \quad \text{for every special ordered set } k \\
-& x_j \in D_j \quad \text{for every variable } j,
+\text{minimize}\quad & s\, f_k(x) & & \text{each objective } (k, s, p, \dots) \\
+\text{subject to}\quad & l \le f_k(x) \le u & & \text{each constraint } (k, l, u) \\
+& f_C(x) \in \mathcal{K} & & \text{each cone } (\mathcal{K}, C) \\
+& l \le f_k(x) \le u \ \perp\ f_{k'}(x) & & \text{each complement } (k, k', l, u) \\
+& x_j = \beta \ \Rightarrow\ l \le f_k(x) \le u & & \text{each indicator } (j, \beta, k, l, u) \\
+& x_S \in \mathcal{S}_t & & \text{each special ordered set } (t, S, w) \\
+& x_j \in D_j & & \text{each variable } j
 \end{aligned}
 $$ {#eq-form}
 
-over $x \in \mathbb{R}^n$. Here $g$ maps to $\mathbb{R}^m$ and its bounds $l, u \in (\mathbb{R} \cup \{\pm\infty\})^m$ may be infinite, $K = K_1 \times \dots \times K_q$ is a product of cones, $a$ and $b$ pair functions in complements, each indicator makes a bound on $d_i$ hold when the binary variable $x_{v_i}$ takes the value $\beta_i$, each special ordered set limits which of its variables $x_{S_k}$ may be nonzero, and each $D_j$ is the domain of a variable, which its kind fixes. Every component of $f$, $g$, $h$, $a$, $b$ and $d$ is drawn from one table of functions, so a function may serve a constraint, a cone and an objective at once.
+over $x \in \mathbb{R}^n$. The functions $f_0, f_1, \dots$ form one table, and every record names its functions by index, so a function may serve a constraint, a cone and an objective at once. Bounds $l$ and $u$ may be infinite, and the objectives are optimized in the order of their priorities $p$ ([Several objectives](#sec-form-objectives)). The sections below define each family.
 
 A model holds every part of @eq-form, each family of records in a table of its own over the same functions. No call solves it yet.
 
+## Notation {#sec-form-notation}
+
+| Symbol | Meaning |
+| --- | --- |
+| $x_j$ | variable $j$ |
+| $x^L_j$, $x^U_j$ | lower and upper bound of variable $j$ |
+| $f_k$ | function $k$ of the table |
+| $l$, $u$ | lower and upper bound of a record |
+| $c$, $a_j$, $q_{ij}$ | constant, linear and quadratic coefficients of a function |
+| $\varphi$, $e$, $\gamma$ | nonlinear part of a function, its expression, its callback part |
+| $e_1, \dots, e_n$ | children of a node of the graph |
+| $s$, $p$, $w$ | sense, priority and weight of an objective |
+| $\epsilon_{\mathrm{abs}}$, $\epsilon_{\mathrm{rel}}$ | absolute and relative tolerance |
+| $v_i$, $\bar v_i$ | value and adjoint of step $i$ of a tape |
+| $\mathrm{e}$ | Euler's number |
+
+Variables, functions and records are numbered from 0, as in the API. Stages, tape steps and the children of a node are numbered from 1.
+
 ## Variables {#sec-form-variables}
 
-Each variable $x_j$ has a lower bound $\ell_j \in \mathbb{R} \cup \{-\infty\}$, an upper bound $\upsilon_j \in \mathbb{R} \cup \{+\infty\}$ and a kind, which fixes its domain:
+Each variable $x_j$ has a lower bound $x^L_j \in \mathbb{R} \cup \{-\infty\}$, an upper bound $x^U_j \in \mathbb{R} \cup \{+\infty\}$ and a kind, which fixes its domain:
 
 | Kind | Domain $D_j$ |
 | ------------ | ------------------------------------ |
-| continuous | $[\ell_j, \upsilon_j]$ |
-| binary | $\{0, 1\} \cap [\ell_j, \upsilon_j]$, with $[\ell_j, \upsilon_j] \subseteq [0, 1]$ |
-| integer | $\mathbb{Z} \cap [\ell_j, \upsilon_j]$ |
-| semi-continuous | $\{0\} \cup [\ell_j, \upsilon_j]$ |
-| semi-integer | $\{0\} \cup \left(\mathbb{Z} \cap [\ell_j, \upsilon_j]\right)$ |
+| continuous | $[x^L_j, x^U_j]$ |
+| binary | $\{0, 1\} \cap [x^L_j, x^U_j]$, with $[x^L_j, x^U_j] \subseteq [0, 1]$ |
+| integer | $\mathbb{Z} \cap [x^L_j, x^U_j]$ |
+| semi-continuous | $\{0\} \cup [x^L_j, x^U_j]$ |
+| semi-integer | $\{0\} \cup \left(\mathbb{Z} \cap [x^L_j, x^U_j]\right)$ |
 
-Every kind but continuous is discrete, and a problem with a discrete variable is a discrete problem. An infinite bound leaves its side open. A box with $\ell_j > \upsilon_j$ is empty, and the model keeps it as given.
+Every kind but continuous is discrete, and a problem with a discrete variable is a discrete problem. An infinite bound leaves its side open. A box with $x^L_j > x^U_j$ is empty, and the model keeps it as given.
 
 ## Functions {#sec-form-functions}
 
 Every function of the table has the form
 
 $$
-f(x) = c + \sum_{j} a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x),
+f_k(x) = c + \sum_{j} a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x),
 $$ {#eq-function}
 
-a constant $c$, a linear part, a quadratic part over unordered pairs of variables and a nonlinear part $\varphi(x)$. Each pair $(i, j)$ appears once, with $i \le j$, and its coefficient is taken as written, with no factor $\tfrac12$. In matrix form the quadratic part is $x^{\mathsf{T}} Q x$ for the upper triangular $Q = (q_{ij})$, and its Hessian is $Q + Q^{\mathsf{T}}$.
+a constant $c$, a linear part, a quadratic part over unordered pairs of variables and a nonlinear part $\varphi(x)$. Each pair $(i, j)$ appears once, with $i \le j$, and its coefficient is taken as written, with no factor $\tfrac12$. In matrix form the quadratic part is $x^{\mathsf{T}} Q x$ for the upper triangular $Q = (q_{ij})$, and its Hessian is $Q + Q^{\mathsf{T}}$. Read column by column, the same pairs are the lower triangle, which is how the C API lists a Hessian pattern.
 
 The nonlinear part has two sources:
 
 $$
-\varphi(x) = e(x) + \sum_{m \in M} e_m(x),
+\varphi(x) = e(x) + \gamma(x),
 $$ {#eq-nonlinear}
 
-the function's expression $e(x)$, a node of the model's expression graph ([The expression graph](#sec-graph)) or zero when it holds none, and the part $e_m(x)$ that each callback $m$ covering the function computes in user code ([Callbacks](#sec-capi-callbacks)). $M$ is the set of those callbacks, empty for most functions. A callback lists the functions it covers, and a function may be covered by any number of callbacks and hold an expression beside them.
+the function's expression $e(x)$, a node of the model's expression graph ([The expression graph](#sec-graph)) or zero when it holds none, and $\gamma(x)$, the sum of the parts that the callbacks covering the function compute in user code ([Callbacks](#sec-capi-callbacks)), zero for most functions. A callback lists the functions it covers, and a function may be covered by any number of callbacks and hold an expression beside them.
 
 The parts are kept apart because each is handled best on its own. A linear part has constant derivatives, a quadratic part adds the constant matrix $Q + Q^{\mathsf{T}}$ to a Hessian with no evaluation at all, and the convexity of a quadratic part is a property of $Q$ alone. An expression is open to biyos, which differentiates it ([Derivatives](#sec-derivatives)), bounds it over a box ([Intervals](#sec-intervals)) and proves its curvature ([Curvature](#sec-curvature)); an expression given whole is split on entry, so that its linear and quadratic terms join the first parts and $e(x)$ keeps only the rest. A callback is closed: it gives values and derivatives and nothing else, so nothing about its range or its convexity is known, and a result found through a callback claims at most `local` (@sec-form-claims).
 
@@ -63,36 +80,45 @@ A constraint is a record $(k, l, u)$ that bounds function $k$ of the table: $l \
 
 ## Cones {#sec-form-cones}
 
-A cone is a record $(K_r, k_1, \dots, k_s)$: a kind, with its parameters, and functions of the table, its members, taken in order. It states $(f_{k_1}(x), \dots, f_{k_s}(x)) \in K_r$, and together the cones of a model form $h(x) \in K$. The kinds are the nonnegative orthant, the second-order and rotated second-order cones, the exponential cone and its dual, the power cone and its dual, which take one weight for each of their first members, and the semidefinite cone of a symmetric matrix given by its scaled lower triangle. Their member order and dimensions follow the Conic Benchmark Format, version 3, and [Cones](#sec-capi-cones) states each one.
+A cone is a record $(\mathcal{K}, C)$: a kind $\mathcal{K}$, with its parameters, and functions of the table $C = (k_1, \dots, k_d)$, its members, taken in order. It states $f_C(x) = (f_{k_1}(x), \dots, f_{k_d}(x)) \in \mathcal{K}$. The kinds are the nonnegative orthant, the second-order and rotated second-order cones, the exponential cone and its dual, the power cone and its dual, which take one weight for each of their first members, and the semidefinite cone of a symmetric matrix given by its scaled lower triangle. Their member order and dimensions follow the Conic Benchmark Format, version 3, and [Cones](#sec-capi-cones) states each one.
 
 ## Complements {#sec-form-complements}
 
-A complement is a record $(k_1, k_2, l, u)$ that pairs two functions of the table, written $l \le f_{k_1}(x) \le u \perp f_{k_2}(x)$. The first is bounded, and the sign of the second follows where the first lies: one of
+A complement is a record $(k, k', l, u)$ that pairs two functions of the table, written $l \le f_k(x) \le u \perp f_{k'}(x)$. The first is bounded, and the sign of the second follows where the first lies: one of
 
 $$
 \begin{aligned}
-f_{k_1}(x) = l &\quad\text{and}\quad f_{k_2}(x) \ge 0, \\
-f_{k_1}(x) = u &\quad\text{and}\quad f_{k_2}(x) \le 0, \\
-l < f_{k_1}(x) < u &\quad\text{and}\quad f_{k_2}(x) = 0
+f_k(x) = l &\quad\text{and}\quad f_{k'}(x) \ge 0, \\
+f_k(x) = u &\quad\text{and}\quad f_{k'}(x) \le 0, \\
+l < f_k(x) < u &\quad\text{and}\quad f_{k'}(x) = 0
 \end{aligned}
 $$
 
-holds. The bounds $0$ and $+\infty$ give the classical $0 \le f_{k_1}(x) \perp f_{k_2}(x) \ge 0$, and both bounds infinite give $f_{k_2}(x) = 0$. Its bounds follow the rule of a constraint's, and a function may appear in any number of complements.
+holds. The bounds $0$ and $+\infty$ give the classical $0 \le f_k(x) \perp f_{k'}(x) \ge 0$, and both bounds infinite give $f_{k'}(x) = 0$. Its bounds follow the rule of a constraint's, and a function may appear in any number of complements.
 
 ## Indicators {#sec-form-indicators}
 
-An indicator is a record $(v, \beta, k, l, u)$: a binary variable $x_v$, a value $\beta \in \{0, 1\}$ and a bound on function $k$. It states $x_v = \beta \Rightarrow l \le f_k(x) \le u$: when $x_v$ takes the value $\beta$ the bound holds, and otherwise $f_k$ is free. The variable stays binary while an indicator uses it.
+An indicator is a record $(j, \beta, k, l, u)$: a binary variable $x_j$, a value $\beta \in \{0, 1\}$ and a bound on function $k$. It states $x_j = \beta \Rightarrow l \le f_k(x) \le u$: when $x_j$ takes the value $\beta$ the bound holds, and otherwise $f_k$ is free. The variable stays binary while an indicator uses it.
 
 ## Special ordered sets {#sec-form-sets}
 
-A special ordered set is a record $(t, S, w)$: a type $t \in \{1, 2\}$, variables $S = (s_1, \dots, s_r)$, its members, and a weight $w_i$ for each, finite and distinct. In a set of type 1 at most one member is nonzero. In a set of type 2 at most two are, and two nonzero members are adjacent in the order of their weights. A variable is a member of a set at most once and may belong to several sets. $\mathcal{S}_t$ in @eq-form is the set of the points that meet these conditions for type $t$.
+A special ordered set is a record $(t, S, w)$: a type $t \in \{1, 2\}$, variables $S = (j_1, \dots, j_r)$, its members, and a weight $w_i$ for member $j_i$, finite and distinct. It states $x_S = (x_{j_1}, \dots, x_{j_r}) \in \mathcal{S}_t$, where
+
+$$
+\begin{aligned}
+\mathcal{S}_1 &= \{z \in \mathbb{R}^r : \text{at most one } z_i \ne 0\}, \\
+\mathcal{S}_2 &= \{z \in \mathbb{R}^r : \text{at most two } z_i \ne 0, \text{ adjacent in the order of the weights}\}.
+\end{aligned}
+$$
+
+A variable is a member of a set at most once and may belong to several sets.
 
 ## Several objectives {#sec-form-objectives}
 
-An objective is a record $(k, s, \pi, w, a, r)$: the function $f_k$, a sense $s$, which is $+1$ to minimize and $-1$ to maximize, a priority $\pi \in \mathbb{Z}$, a weight $w > 0$, and an absolute and a relative tolerance $a, r \ge 0$. Let $\pi_1 < \dots < \pi_T$ be the distinct priorities held and $P_t$ the objectives of priority $\pi_t$. The objectives are optimized in stages, stage $t$ solving
+An objective is a record $(k, s, p, w, \epsilon_{\mathrm{abs}}, \epsilon_{\mathrm{rel}})$: the function $f_k$, a sense $s$, which is $+1$ to minimize and $-1$ to maximize, a priority $p \in \mathbb{Z}$, a weight $w > 0$, and an absolute and a relative tolerance $\epsilon_{\mathrm{abs}}, \epsilon_{\mathrm{rel}} \ge 0$. Let $p_1 < \dots < p_T$ be the distinct priorities held and $P_t$ the objectives of priority $p_t$. The objectives are optimized in stages, stage $t$ solving
 
 $$
-\text{minimize}\quad \sum_{i \in P_t} w_i\, s_i\, f_{k_i}(x)
+\text{minimize}\quad \sum_{(k, s, w) \in P_t} w\, s\, f_k(x)
 $$
 
 over the points $x$ where every condition of @eq-form holds and every objective of an earlier stage stays within its tolerances of the optimum found for it. The absolute tolerance of an objective is in the units of its function, the relative one a fraction of the size of its optimum, and a tolerance of $\infty$ sets no limit. Objectives of different priorities are thus optimized in sequence, and objectives of one priority are blended into one weighted sum. A weight is positive, so the sense alone gives the direction. By default each objective takes its own position as its priority, which makes the optimization sequential in the order the objectives were given; equal priorities express a weighted sum.
