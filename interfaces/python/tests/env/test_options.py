@@ -163,10 +163,7 @@ def test_real(env):
 
 
 def test_bad_value(env):
-    message = (
-        "invalid argument: option 'seed': "
-        "-1 is outside [0, 2147483647]"
-    )
+    message = "invalid argument: option 'seed': -1 is outside [0, 2147483647]"
     with pytest.raises(biyos.Error) as caught:
         env.setopt("seed", -1)
     assert str(caught.value) == message
@@ -381,10 +378,7 @@ def test_shared(env, model):
 
 
 def test_model_refused(env, model):
-    message = (
-        "invalid argument: option 'seed': "
-        "-1 is outside [0, 2147483647]"
-    )
+    message = "invalid argument: option 'seed': -1 is outside [0, 2147483647]"
     env.setopt("seed", 7)
     model.setopt("seed", 3)
     with pytest.raises(biyos.Error) as caught:

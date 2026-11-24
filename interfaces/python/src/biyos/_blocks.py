@@ -30,7 +30,7 @@ def _target(value: "Model") -> "Model":
 
 
 class View:
-    __slots__ = ("_model", "_idx", "_gen")
+    __slots__ = ("_gen", "_idx", "_model")
     _noun: ClassVar[str]
 
     def __init__(self, mdl: "Model", idx: int, gen: int) -> None:
@@ -60,7 +60,7 @@ Self = TypeVar("Self", bound="Block[Any]")
 
 
 class Block(Generic[Item]):
-    __slots__ = ("_model", "_start", "_size", "_gen")
+    __slots__ = ("_gen", "_model", "_size", "_start")
     _element: type[Item]
     _held: Callable[["Model"], int]
 
@@ -468,7 +468,7 @@ def _member(
     noun = _indefinite(family._element._noun)
     if not isinstance(view, family._element):
         found = _indefinite(view._noun)
-        raise ValueError(f"{name} is {found}, not {noun}")
+        raise TypeError(f"{name} is {found}, not {noun}")
     if view._model is not model:
         raise ValueError(f"{name} is {noun} of another model")
 
@@ -487,7 +487,7 @@ def range_of(
     if not isinstance(block, family):
         found = block._element._noun
         noun = family._element._noun
-        raise ValueError(f"{name} is a block of {found}s, not {noun}s")
+        raise TypeError(f"{name} is a block of {found}s, not {noun}s")
     if block._model is not model:
         raise ValueError(f"{name} is a block of another model")
     block._check()

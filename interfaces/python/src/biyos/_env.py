@@ -9,9 +9,9 @@ from biyos._capi import lib
 from biyos._error import Error, check
 from biyos._event import Event, EventKind, EventLevel
 from biyos._handles import Handles
+from biyos._hooks import Hooks, checked_hook
 from biyos._integers import integer
 from biyos._relay import Relay
-from biyos._hooks import Hooks, checked_hook
 from biyos._text import encoded
 from biyos._values import Value
 from biyos._versions import Versions, version_text

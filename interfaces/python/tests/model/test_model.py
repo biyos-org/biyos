@@ -8,7 +8,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel, VariableKind, _model
 from biyos._capi import OK, lib
-from number import Growing, Number
+from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
 from spies import Trap, followed, interrupted, preceded, spied, traced
@@ -327,11 +327,10 @@ def test_with():
 
 
 def test_unmasked():
-    with pytest.raises(KeyError, match="inside"):
-        with biyos.Env() as env:
-            model = biyos.Model(env)
-            model.addvar(1)
-            raise KeyError("inside")
+    with pytest.raises(KeyError, match="inside"), biyos.Env() as env:
+        model = biyos.Model(env)
+        model.addvar(1)
+        raise KeyError("inside")
     assert not env._free.alive
 
 
@@ -618,7 +617,7 @@ def test_listed_refusals(env, model):
     with pytest.raises(ValueError, match="idx is a block of another"):
         model.getvarknd(y)
     f = model.addfun(1)
-    with pytest.raises(ValueError, match="is a function, not a variable"):
+    with pytest.raises(TypeError, match="is a function, not a variable"):
         model.getvarbnd([f[0]])
     with pytest.raises(TypeError, match="an entry of idx must be an int"):
         model.getvarknd([0.0])

@@ -140,7 +140,7 @@ def test_range(model):
     assert model.getcone(range(2, 2)) == ([], [0], [])
     assert model.getcone([]) == ([], [0], [])
     assert model.getconeprm([1, 1, 0]) == ([0, 2, 4, 4], PRM * 2)
-    assert model.getconeprm(range(0, 1)) == ([0, 0], [])
+    assert model.getconeprm(range(1)) == ([0, 0], [])
     assert model.getnconefun([1, 0, 1]) == 7
     assert model.getnconefun(range(1, 2)) == 2
     assert model.getnconeprm([0]) == 0
@@ -198,15 +198,15 @@ def test_views(env, model):
         model.addcone([ConeKind.NONNEGATIVE], [0, 2], [0, g[1]])
     with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addcone([ConeKind.NONNEGATIVE], [0, 2], g)
-    with pytest.raises(ValueError, match="is a variable, not a function"):
+    with pytest.raises(TypeError, match="is a variable, not a function"):
         model.addcone([ConeKind.NONNEGATIVE], [0, 1], [x[0]])
     with pytest.raises(ValueError, match="is a cone of another model"):
         model.getcone([d[0]])
     with pytest.raises(ValueError, match="idx is a block of another model"):
         model.getconeprm(d)
-    with pytest.raises(ValueError, match="is a function, not a cone"):
+    with pytest.raises(TypeError, match="is a function, not a cone"):
         model.getcone([f[0]])
-    with pytest.raises(ValueError, match="of functions, not cones"):
+    with pytest.raises(TypeError, match="of functions, not cones"):
         model.getnconefun(f)
     assert model.getncone() == 2
     other.close()

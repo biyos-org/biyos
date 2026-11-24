@@ -12,10 +12,12 @@ from ctypes import (
     py_object,
 )
 from enum import IntEnum
+from itertools import pairwise
 from math import isnan
 from os import PathLike, fspath
 from typing import Any, NoReturn, SupportsIndex
 
+from biyos import _capi, _values
 from biyos._arrays import (
     doubles,
     indices_of,
@@ -27,6 +29,7 @@ from biyos._arrays import (
     strings,
 )
 from biyos._blocks import (
+    SOS,
     Block,
     Complement,
     Complements,
@@ -40,14 +43,12 @@ from biyos._blocks import (
     Indicators,
     Objective,
     Objectives,
-    SOS,
     SOSs,
     Variable,
     Variables,
     index_of,
 )
-from biyos import _capi, _values
-from biyos._callbacks import Caller, Callbacks, checked, data_at
+from biyos._callbacks import Callbacks, Caller, checked, data_at
 from biyos._capi import lib
 from biyos._env import Env
 from biyos._error import Error
@@ -204,7 +205,7 @@ def _checked_env(env: Env) -> Env:
 
 
 def _expanded(starts: Array[c_int64], first: int) -> list[int]:
-    spans = zip(starts[:-1], starts[1:])
+    spans = pairwise(starts)
     counts = [end - start for start, end in spans]
     return [first + j for j, count in enumerate(counts) for _ in range(count)]
 
@@ -801,9 +802,7 @@ class Model:
         """
         count = len(idx)
         chosen = self._chosen("BIYOS_setvarknd", Variables, idx)
-        arrays = (
-            ints("knd", knd, count),
-        )
+        arrays = (ints("knd", knd, count),)
         self._call(*chosen, *arrays)
 
     def getvarknd(
@@ -1187,9 +1186,7 @@ class Model:
         chosen = self._chosen("BIYOS_setcst", Functions, idx)
         self._call(*chosen, doubles("cst", cst, n))
 
-    def getcst(
-        self, idx: Sequence[int | Function] | Functions
-    ) -> list[float]:
+    def getcst(self, idx: Sequence[int | Function] | Functions) -> list[float]:
         """Read the constants of functions.
 
         Parameters
@@ -2360,9 +2357,7 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getconidx, name)
 
-    def delconname(
-        self, idx: Sequence[int | Constraint] | Constraints
-    ) -> None:
+    def delconname(self, idx: Sequence[int | Constraint] | Constraints) -> None:
         """Remove the names of constraints, as ``delvarname`` does.
 
         Parameters
@@ -2479,9 +2474,7 @@ class Model:
         """
         n = len(idx)
         chosen = self._chosen("BIYOS_setobjsense", Objectives, idx)
-        arrays = (
-            ints("sense", sense, n),
-        )
+        arrays = (ints("sense", sense, n),)
         self._call(*chosen, *arrays)
 
     def getobjsense(
@@ -2530,9 +2523,7 @@ class Model:
         """
         n = len(idx)
         chosen = self._chosen("BIYOS_setobjprio", Objectives, idx)
-        arrays = (
-            ints("prio", prio, n),
-        )
+        arrays = (ints("prio", prio, n),)
         self._call(*chosen, *arrays)
 
     def getobjprio(
@@ -2582,9 +2573,7 @@ class Model:
         """
         n = len(idx)
         chosen = self._chosen("BIYOS_setobjcoef", Objectives, idx)
-        arrays = (
-            doubles("coef", coef, n),
-        )
+        arrays = (doubles("coef", coef, n),)
         self._call(*chosen, *arrays)
 
     def getobjcoef(
@@ -3894,9 +3883,7 @@ class Model:
         atol, rtol = self._getlist("BIYOS_getccontol", Complements, idx, *pair)
         return _or_none(atol), _or_none(rtol)
 
-    def delccontol(
-        self, idx: Sequence[int | Complement] | Complements
-    ) -> None:
+    def delccontol(self, idx: Sequence[int | Complement] | Complements) -> None:
         """Return complements to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters

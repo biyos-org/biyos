@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 INCLUDE = Path(__file__).resolve().parents[4] / "include" / "biyos"
-MACRO = re.compile(r"^#define (BIYOS_\w+) \(?(-?\d+)\)?$", re.M)
+MACRO = re.compile(r"^#define (BIYOS_\w+) \(?(-?\d+)\)?$", re.MULTILINE)
 FUNCTION = re.compile(r"\bBIYOS_API [^(;]*?\b(BIYOS_[a-z]\w*)\(")
 
 

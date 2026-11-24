@@ -163,9 +163,7 @@ def test_delhook():
     seen = []
     with biyos.Env() as env:
         function = partial(record, seen)
-        idx = env.addhook(
-            function, EventKind.MESSAGE, EventLevel.DEBUG
-        )
+        idx = env.addhook(function, EventKind.MESSAGE, EventLevel.DEBUG)
         env.delhook(idx)
         fail(env)
         with pytest.raises(biyos.Error) as caught:

@@ -10,9 +10,7 @@ if TYPE_CHECKING:
 
 
 class Relay:
-    def __init__(
-        self, handle: c_void_p, owners: Mapping[int, "Model"]
-    ) -> None:
+    def __init__(self, handle: c_void_p, owners: Mapping[int, "Model"]) -> None:
         self._handle = handle
         self._owners = owners
         self._raised: BaseException | None = None

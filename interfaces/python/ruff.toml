@@ -2,5 +2,12 @@ line-length = 80
 target-version = "py310"
 src = ["src", "tests/utils"]
 
+[lint]
+ignore = ["PYI019", "PYI034"]
+
+[lint.per-file-ignores]
+"src/biyos/_callbacks.py" = ["BLE001"]
+"src/biyos/_relay.py" = ["BLE001"]
+
 [lint.isort]
 known-first-party = ["biyos"]

@@ -24,7 +24,7 @@ class Error(Exception):
         super().__init__(msg, code)
         self.code: int = code
         """The status the call returned, a negative ``BIYOS_ERR_`` value."""
-        self.model: "Model | None" = model
+        self.model: Model | None = model
         """The model of the call that failed, or ``None`` for a call on the
         environment or for an error that was pickled."""
 
@@ -45,9 +45,7 @@ def last_error(handle: c_void_p) -> ErrorRecord:
     return record
 
 
-def check(
-    handle: c_void_p, status: int, owners: Mapping[int, "Model"]
-) -> None:
+def check(handle: c_void_p, status: int, owners: Mapping[int, "Model"]) -> None:
     if status != OK:
         record = last_error(handle)
         text = (record.msg or b"").decode(errors="replace")

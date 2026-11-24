@@ -112,11 +112,11 @@ def test_views(env, model):
     d = other.addccon(g, g)
     with pytest.raises(ValueError, match="funidx2 is a function of another"):
         model.addccon([0], [g[0]])
-    with pytest.raises(ValueError, match="is a variable, not a function"):
+    with pytest.raises(TypeError, match="is a variable, not a function"):
         model.addccon([x[0]], [0])
     with pytest.raises(ValueError, match="is a complement of another model"):
         model.setcconbnd([d[0]], [0.0])
-    with pytest.raises(ValueError, match="of functions, not complements"):
+    with pytest.raises(TypeError, match="of functions, not complements"):
         model.getccontol(f)
     assert model.getcconbnd(c[1:]) == ([-1.0, -INFINITY], [2.0, INFINITY])
     other.close()

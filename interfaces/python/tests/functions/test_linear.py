@@ -30,6 +30,7 @@ MERGED_VARS = (
     [1.0, 0.0, 3.0, 0.0, 5.0, 3.0, 2.0, 0.5],
 )
 
+
 @pytest.fixture
 def env():
     with biyos.Env() as env:
@@ -187,9 +188,9 @@ def test_views(env, model):
         model.addlinterm(g, [0], [1.0])
     with pytest.raises(ValueError, match="idx is a variable of another"):
         model.getclinterm([y[0]])
-    with pytest.raises(ValueError, match="is a function, not a variable"):
+    with pytest.raises(TypeError, match="is a function, not a variable"):
         model.addlinterm([0], [f[0]], [1.0])
-    with pytest.raises(ValueError, match="idx is a function, not a"):
+    with pytest.raises(TypeError, match="idx is a function, not a"):
         model.getclinterm([f[0]])
 
 
