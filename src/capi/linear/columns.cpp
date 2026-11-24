@@ -21,6 +21,7 @@ using biyos::capi::check_capacity;
 using biyos::capi::Coordinates;
 using biyos::capi::given;
 using biyos::capi::guarded;
+using biyos::capi::length_of;
 using biyos::capi::List;
 using biyos::capi::Range;
 using biyos::capi::require;
@@ -118,8 +119,8 @@ void get_ranged(const BIYOS_model &model,
                 double *values)
 {
     const biyos::EntryTimer timer(model.handle.env(), "model", "columns");
-    const std::vector<biyos::Offset> found =
-        biyos::variable_starts(model.core, range.start, range.size);
+    const biyos::Index n = length_of(model.core, Family::Variable, range);
+    const std::vector<biyos::Offset> found = biyos::variable_starts(model.core, range.start, n);
     const auto count = static_cast<std::size_t>(found.back());
     check_capacity(capacity, count);
     biyos::variable_terms(model.core,
@@ -144,11 +145,11 @@ BIYOS_status BIYOS_getnclintermsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getnclintermrg(const BIYOS_model *mdl,
-                                  BIYOS_index pos,
-                                  BIYOS_index n,
+                                  BIYOS_index beg,
+                                  BIYOS_index end,
                                   BIYOS_offset *nnz)
 {
-    return guarded<n_column_terms<Range>>(mdl, Range{pos, n}, nnz);
+    return guarded<n_column_terms<Range>>(mdl, Range{beg, end}, nnz);
 }
 
 BIYOS_status BIYOS_getclintermsp(const BIYOS_model *mdl,
@@ -165,12 +166,12 @@ BIYOS_status BIYOS_getclintermsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,
-                                 BIYOS_index pos,
-                                 BIYOS_index n,
+                                 BIYOS_index beg,
+                                 BIYOS_index end,
                                  BIYOS_offset cap,
                                  BIYOS_offset *off,
                                  BIYOS_index *fun,
                                  BIYOS_real *coef)
 {
-    return guarded<get_ranged>(mdl, Range{pos, n}, cap, off, fun, coef);
+    return guarded<get_ranged>(mdl, Range{beg, end}, cap, off, fun, coef);
 }

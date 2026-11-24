@@ -216,11 +216,11 @@ BIYOS_status BIYOS_attachexprsp(BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_attachexprrg(BIYOS_model *mdl,
-                                BIYOS_index pos,
-                                BIYOS_index n,
+                                BIYOS_index beg,
+                                BIYOS_index end,
                                 const BIYOS_offset *node)
 {
-    return guarded<attach_expressions<Range>>(mdl, Range{pos, n}, node);
+    return guarded<attach_expressions<Range>>(mdl, Range{beg, end}, node);
 }
 
 BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
@@ -228,9 +228,9 @@ BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *
     return guarded<clear_functions<List>>(mdl, List{n, idx});
 }
 
-BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)
 {
-    return guarded<clear_functions<Range>>(mdl, Range{pos, n});
+    return guarded<clear_functions<Range>>(mdl, Range{beg, end});
 }
 
 BIYOS_status BIYOS_getnexprsp(const BIYOS_model *mdl,
@@ -243,12 +243,12 @@ BIYOS_status BIYOS_getnexprsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getnexprrg(const BIYOS_model *mdl,
-                              BIYOS_index pos,
-                              BIYOS_index n,
+                              BIYOS_index beg,
+                              BIYOS_index end,
                               BIYOS_offset *nnz,
                               BIYOS_offset *nval)
 {
-    return guarded<n_expressions<Range>>(mdl, Range{pos, n}, nnz, nval);
+    return guarded<n_expressions<Range>>(mdl, Range{beg, end}, nnz, nval);
 }
 
 BIYOS_status BIYOS_getexprsp(const BIYOS_model *mdl,
@@ -271,8 +271,8 @@ BIYOS_status BIYOS_getexprsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getexprrg(const BIYOS_model *mdl,
-                             BIYOS_index pos,
-                             BIYOS_index n,
+                             BIYOS_index beg,
+                             BIYOS_index end,
                              BIYOS_offset cap,
                              BIYOS_offset valcap,
                              BIYOS_offset *off,
@@ -286,5 +286,5 @@ BIYOS_status BIYOS_getexprrg(const BIYOS_model *mdl,
         .arguments = arg,
         .values = val,
     };
-    return guarded<get_expressions<Range>>(mdl, Range{pos, n}, cap, valcap, out);
+    return guarded<get_expressions<Range>>(mdl, Range{beg, end}, cap, valcap, out);
 }

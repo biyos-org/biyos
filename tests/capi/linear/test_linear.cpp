@@ -64,7 +64,7 @@ BIYOS_status add_functions(const Model &model, int n, const Terms &terms)
     }
     return BIYOS_addrlintermrg(model.get(),
                                start,
-                               n,
+                               start + n,
                                terms.starts.data(),
                                terms.indices.data(),
                                terms.values.data());
@@ -140,7 +140,7 @@ BIYOS_status read_with(const Model &model, int start, int size, Terms &read, std
 {
     return BIYOS_getclintermrg(model.get(),
                                start,
-                               size,
+                               start + size,
                                capacity,
                                read.starts.data(),
                                read.indices.data(),
@@ -150,7 +150,7 @@ BIYOS_status read_with(const Model &model, int start, int size, Terms &read, std
 Terms read_variables(const Model &model, int start, int size)
 {
     BIYOS_offset nnz = -1;
-    EXPECT_EQ(BIYOS_getnclintermrg(model.get(), start, size, &nnz), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnclintermrg(model.get(), start, start + size, &nnz), BIYOS_OK);
     Terms read = blank(static_cast<std::size_t>(size), static_cast<std::size_t>(nnz));
     EXPECT_EQ(read_with(model, start, size, read, nnz), BIYOS_OK);
     return read;
@@ -353,10 +353,10 @@ TEST(CApiTest, HugeLinear)
     BIYOS_model *held = model.get();
     const int *variables = most.indices.data();
     const double *values = most.values.data();
-    EXPECT_EQ(BIYOS_addrlintermrg(held, 1, 1, most.starts.data(), variables, values),
+    EXPECT_EQ(BIYOS_addrlintermrg(held, 1, 2, most.starts.data(), variables, values),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
-    EXPECT_EQ(BIYOS_addclintermrg(held, 1, 1, large.starts.data(), variables, values),
+    EXPECT_EQ(BIYOS_addclintermrg(held, 1, 2, large.starts.data(), variables, values),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
     expect_terms(read_functions(model), kHeld);
@@ -446,7 +446,7 @@ TEST(CApiTest, ColumnRefused)
     const std::vector<std::string> messages{
         "invalid argument: variable 3: unknown",
         "invalid argument: variable -1: unknown",
-        "invalid argument: argument 'n': -1 is negative",
+        "invalid argument: argument 'end': -1 is below 'beg' 0",
         "invalid argument: variable 4: unknown",
         size,
     };

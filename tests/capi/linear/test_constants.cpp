@@ -156,7 +156,7 @@ TEST(ConstantTest, NullValues)
     EXPECT_EQ(BIYOS_setcstrg(model.get(), 0, 2, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_getcstrg(model.get(), 0, 2, nullptr), BIYOS_OK);
     EXPECT_EQ(bits(constants_of(model)), bits(held));
-    EXPECT_EQ(BIYOS_addcstrg(model.get(), 1, 2, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addcstrg(model.get(), 1, 3, nullptr), BIYOS_ERR_BADARG);
     const Model tried(env, model);
     const std::array<BIYOS_index, 2> unknown{0, 2};
     EXPECT_EQ(BIYOS_addcstsp(tried.get(), 2, unknown.data(), nullptr), BIYOS_ERR_BADARG);

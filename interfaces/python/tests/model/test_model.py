@@ -86,8 +86,8 @@ def reached(log, function, *arguments):
     return OK if "free" in log else function(*arguments)
 
 
-def read_lengths(handle, first, count, *arrays):
-    return [(array, count) for array in arrays]
+def read_lengths(handle, beg, end, *arrays):
+    return [(array, end - beg) for array in arrays]
 
 
 def test_context(env):
@@ -653,6 +653,12 @@ def test_outside(model, monkeypatch):
     assert message == "invalid argument: variable 1: unknown"
     message = refusal(model.getvar, range(2, 2**31 - 1))
     assert message == "invalid argument: variable 2: unknown"
+
+
+def test_beyond(model):
+    model.addvar(3)
+    message = refusal(model.getvarknd, range(2**31 - 2, 2**31 + 3))
+    assert message == "invalid argument: variable 2147483646: unknown"
 
 
 def test_stale(model, monkeypatch):

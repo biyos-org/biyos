@@ -174,7 +174,7 @@ TEST(CApiTest, ConstraintRange)
     int functions[] = {-1, -1};
     double lower[] = {0.0, 0.0};
     double upper[] = {0.0, 0.0};
-    EXPECT_EQ(BIYOS_getconrg(model.get(), 1, 2, functions, lower, upper), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconrg(model.get(), 1, 3, functions, lower, upper), BIYOS_OK);
     const Records found{
         .functions = {functions[0], functions[1]},
         .lower = {lower[0], lower[1]},
@@ -186,7 +186,7 @@ TEST(CApiTest, ConstraintRange)
         .upper = {BIYOS_INF, 2.0},
     };
     expect_records(found, wanted);
-    EXPECT_EQ(BIYOS_getconrg(model.get(), 3, 0, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconrg(model.get(), 3, 3, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
 TEST(CApiTest, NullConstraints)
@@ -241,7 +241,7 @@ TEST(CApiTest, NullReads)
     EXPECT_EQ(BIYOS_getconrg(model.get(), 0, 3, nullptr, nullptr, nullptr), BIYOS_OK);
     int functions[] = {-1, -1};
     double high[] = {9.0, 9.0};
-    EXPECT_EQ(BIYOS_getconrg(model.get(), 1, 2, functions, nullptr, high), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconrg(model.get(), 1, 3, functions, nullptr, high), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({functions[0], functions[1]}), std::vector<int>({0, 1}));
     expect_doubles({high[0], high[1]}, {BIYOS_INF, 2.0});
     EXPECT_EQ(BIYOS_getncon(model.get(), nullptr), BIYOS_ERR_BADARG);
@@ -270,9 +270,9 @@ TEST(CApiTest, RefusedConstraints)
     const BIYOS_real infinite = BIYOS_INF;
     EXPECT_EQ(BIYOS_setconbndsp(held, 1, &first, &infinite, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 0: lower bound is infinity");
-    EXPECT_EQ(BIYOS_getconrg(held, 2, 2, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconrg(held, 2, 4, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
-    EXPECT_EQ(BIYOS_getconrg(held, -1, 1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconrg(held, -1, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint -1: unknown");
     expect_records(read_all(model), kSample);
 }

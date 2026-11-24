@@ -126,21 +126,21 @@ BIYOS_status BIYOS_addlintermsp(BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_addrlintermrg(BIYOS_model *mdl,
-                                 BIYOS_index pos,
-                                 BIYOS_index n,
+                                 BIYOS_index beg,
+                                 BIYOS_index end,
                                  const BIYOS_offset *off,
                                  const BIYOS_index *var,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_rows>(mdl, Range{pos, n}, off, var, coef);
+    return guarded<add_rows>(mdl, Range{beg, end}, off, var, coef);
 }
 
 BIYOS_status BIYOS_addclintermrg(BIYOS_model *mdl,
-                                 BIYOS_index pos,
-                                 BIYOS_index n,
+                                 BIYOS_index beg,
+                                 BIYOS_index end,
                                  const BIYOS_offset *off,
                                  const BIYOS_index *fun,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_columns>(mdl, Range{pos, n}, off, fun, coef);
+    return guarded<add_columns>(mdl, Range{beg, end}, off, fun, coef);
 }

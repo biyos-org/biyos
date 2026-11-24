@@ -82,7 +82,8 @@ def add_sample(model):
     return model.addcone(KINDS, OFF, MEMBERS, PRMOFF, PRM)
 
 
-def read_lengths(handle, pos, n, cap, kinds, starts, members):
+def read_lengths(handle, beg, end, cap, kinds, starts, members):
+    n = end - beg
     return [(kinds, n), (starts, n + 1), (members, cap)]
 
 

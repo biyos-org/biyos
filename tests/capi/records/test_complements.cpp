@@ -74,7 +74,7 @@ Records read_range(const Model &model, int start, int n)
     Records read = sized(static_cast<std::size_t>(n));
     const BIYOS_status status = BIYOS_getcconrg(model.get(),
                                                 start,
-                                                n,
+                                                start + n,
                                                 read.functions.data(),
                                                 read.multipliers.data(),
                                                 read.lower.data(),
@@ -259,7 +259,7 @@ TEST(CApiTest, ComplementRange)
         .upper = {BIYOS_INF, 1.0},
     };
     expect_records(read_range(model, 1, 2), ranged);
-    EXPECT_EQ(BIYOS_getcconrg(model.get(), 3, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getcconrg(model.get(), 3, 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const Records listed{
         .functions = {1, 1, 0},
         .multipliers = {2, 0, 0},
@@ -279,7 +279,7 @@ TEST(CApiTest, ComplementOutputs)
     EXPECT_EQ(BIYOS_getcconrg(held, 0, 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     std::vector<int> multipliers(2, -1);
     std::vector<double> upper(2, 9.0);
-    EXPECT_EQ(BIYOS_getcconrg(held, 1, 2, nullptr, multipliers.data(), nullptr, upper.data()),
+    EXPECT_EQ(BIYOS_getcconrg(held, 1, 3, nullptr, multipliers.data(), nullptr, upper.data()),
               BIYOS_OK);
     EXPECT_EQ(multipliers, std::vector<int>({0, 2}));
     expect_doubles(upper, {BIYOS_INF, 1.0});
@@ -302,7 +302,7 @@ TEST(CApiTest, ComplementBounds)
     const double lower[] = {-2.0, -3.0};
     const double upper[] = {2.0, 3.0};
     ASSERT_EQ(BIYOS_setcconbndsp(held, 2, indices, lower, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setcconbndrg(held, 1, 1, nullptr, upper + 1), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcconbndrg(held, 1, 2, nullptr, upper + 1), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcconbndrg(held, 0, 3, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcconbndsp(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     std::vector<double> low(3, 9.0);
@@ -347,7 +347,7 @@ TEST(CApiTest, RefusedComplements)
     const BIYOS_real infinite = BIYOS_INF;
     EXPECT_EQ(BIYOS_setcconbndsp(held, 1, &first, &infinite, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 0: lower bound is infinity");
-    EXPECT_EQ(BIYOS_getcconbndrg(held, 2, 2, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getcconbndrg(held, 2, 4, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
     EXPECT_EQ(BIYOS_getcconsp(held, 1, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
@@ -403,7 +403,7 @@ TEST(CApiTest, ComplementTolerances)
     const double absolute[] = {0.5, 0.0};
     const double relative[] = {0.25, 0.125};
     ASSERT_EQ(BIYOS_setccontolsp(held, 2, indices, absolute, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setccontolrg(held, 1, 2, nullptr, relative), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setccontolrg(held, 1, 3, nullptr, relative), BIYOS_OK);
     ASSERT_EQ(BIYOS_setccontolrg(held, 0, 3, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setccontolsp(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     const Tolerances wanted{
@@ -434,7 +434,7 @@ TEST(CApiTest, RefusedTolerances)
     EXPECT_EQ(env.message(), "invalid argument: complement 1: absolute tolerance is NaN");
     EXPECT_EQ(BIYOS_setccontolsp(held, 1, &index, nullptr, &infinite), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 1: relative tolerance is infinity");
-    EXPECT_EQ(BIYOS_setccontolrg(held, 1, 1, &negative, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setccontolrg(held, 1, 2, &negative, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 1: absolute tolerance -0.5 is negative");
     const BIYOS_index unknown = 3;
     EXPECT_EQ(BIYOS_setccontolsp(held, 1, &unknown, &small, &small), BIYOS_ERR_BADARG);
@@ -446,7 +446,7 @@ TEST(CApiTest, RefusedTolerances)
     EXPECT_EQ(BIYOS_setccontolsp(held, 2, indices, absolute, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 2: absolute tolerance is NaN");
     std::vector<double> kept(2, 9.0);
-    EXPECT_EQ(BIYOS_getccontolrg(held, 2, 2, kept.data(), nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getccontolrg(held, 2, 4, kept.data(), nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
     EXPECT_EQ(bits_of(kept), bits_of({9.0, 9.0}));
     expect_tolerances(read_tolerances(model), kUnset);
@@ -470,7 +470,7 @@ TEST(CApiTest, DeletedTolerances)
     };
     expect_tolerances(read_tolerances(model), wanted);
     ASSERT_EQ(BIYOS_delccontolrg(held, 0, 2), BIYOS_OK);
-    ASSERT_EQ(BIYOS_delccontolrg(held, 1, 2), BIYOS_OK);
+    ASSERT_EQ(BIYOS_delccontolrg(held, 1, 3), BIYOS_OK);
     expect_tolerances(read_tolerances(model), kUnset);
     expect_records(read_all(model), kSample);
 }
@@ -489,7 +489,7 @@ TEST(CApiTest, RefusedDeletion)
     EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
     EXPECT_EQ(BIYOS_delccontolsp(held, 1, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
-    EXPECT_EQ(BIYOS_delccontolrg(held, 2, 2), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delccontolrg(held, 2, 4), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
     expect_tolerances(read_tolerances(model), before);
 }

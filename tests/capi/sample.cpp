@@ -68,10 +68,10 @@ void add_functions(BIYOS_model *model, Engine &engine, int n, int n_variables)
     }
     BIYOS_index start = -1;
     ASSERT_EQ(BIYOS_addfun(model, n, &start), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setcstrg(model, start, n, constants.data()), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcstrg(model, start, start + n, constants.data()), BIYOS_OK);
     const BIYOS_status status = BIYOS_addrlintermrg(model,
                                                     start,
-                                                    n,
+                                                    start + n,
                                                     terms.starts.data(),
                                                     terms.columns.data(),
                                                     terms.values.data());

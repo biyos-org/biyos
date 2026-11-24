@@ -193,11 +193,11 @@ BIYOS_status BIYOS_getnsosvarsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getnsosvarrg(const BIYOS_model *mdl,
-                                BIYOS_index pos,
-                                BIYOS_index n,
+                                BIYOS_index beg,
+                                BIYOS_index end,
                                 BIYOS_offset *nnz)
 {
-    return guarded<n_members<Range>>(mdl, Range{pos, n}, nnz);
+    return guarded<n_members<Range>>(mdl, Range{beg, end}, nnz);
 }
 
 BIYOS_status BIYOS_getsossp(const BIYOS_model *mdl,
@@ -219,8 +219,8 @@ BIYOS_status BIYOS_getsossp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getsosrg(const BIYOS_model *mdl,
-                            BIYOS_index pos,
-                            BIYOS_index n,
+                            BIYOS_index beg,
+                            BIYOS_index end,
                             BIYOS_offset cap,
                             BIYOS_int *knd,
                             BIYOS_offset *off,
@@ -233,5 +233,5 @@ BIYOS_status BIYOS_getsosrg(const BIYOS_model *mdl,
         .variables = var,
         .weights = coef,
     };
-    return guarded<get_special_ordered_sets<Range>>(mdl, Range{pos, n}, cap, out);
+    return guarded<get_special_ordered_sets<Range>>(mdl, Range{beg, end}, cap, out);
 }

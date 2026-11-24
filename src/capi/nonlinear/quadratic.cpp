@@ -87,12 +87,12 @@ BIYOS_status BIYOS_addquadtermsp(BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_addquadtermrg(BIYOS_model *mdl,
-                                 BIYOS_index pos,
-                                 BIYOS_index n,
+                                 BIYOS_index beg,
+                                 BIYOS_index end,
                                  const BIYOS_offset *off,
                                  const BIYOS_index *var1,
                                  const BIYOS_index *var2,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_ranged>(mdl, Range{pos, n}, off, var1, var2, coef);
+    return guarded<add_ranged>(mdl, Range{beg, end}, off, var1, var2, coef);
 }

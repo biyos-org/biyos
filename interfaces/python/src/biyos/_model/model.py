@@ -169,6 +169,8 @@ class FileFormat(IntEnum):
     MPS = 1
 
 
+_INT_MAX = 2**31 - 1
+
 _COUNTS: dict[type[Block[Any]], str] = {
     Variables: "getnvar",
     Functions: "getnfun",
@@ -4202,12 +4204,12 @@ class Model:
             n = len(idx)
             indices = indices_of(self, family, "idx", idx, n)
             return getattr(lib, f"{call}sp"), n, indices
-        pos = integer("the start of idx", span.start)
-        n = integer("idx", len(span))
+        beg = integer("the start of idx", span.start)
+        end = integer("the stop of idx", min(beg + len(span), _INT_MAX))
         function = getattr(lib, f"{call}rg")
         if outputs > 0 and not self._inside(family, span):
-            self._call(function, pos, n, *([None] * outputs))
-        return function, pos, n
+            self._call(function, beg, end, *([None] * outputs))
+        return function, beg, end
 
     def _inside(self, family: type[Block[Any]], span: range) -> bool:
         total: int = getattr(self, _COUNTS[family])()

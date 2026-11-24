@@ -190,7 +190,7 @@ void expect_ranged(const Calls &calls)
     const Model model(env);
     build(model);
     Map map(3, 9);
-    EXPECT_EQ(calls.ranged(model.get(), 1, 2, map.data()), BIYOS_OK);
+    EXPECT_EQ(calls.ranged(model.get(), 1, 3, map.data()), BIYOS_OK);
     EXPECT_EQ(map, (Map{0, -1, -1}));
     EXPECT_EQ(count_of(model, calls), 1);
     EXPECT_EQ(find(env, model, calls, "r0"), "0");
@@ -206,7 +206,7 @@ void expect_unmapped(const Calls &calls)
     EXPECT_EQ(calls.listed(model.get(), 1, &middle, nullptr), BIYOS_OK);
     EXPECT_EQ(count_of(model, calls), 2);
     EXPECT_EQ(find(env, model, calls, "r2"), "1");
-    EXPECT_EQ(calls.ranged(model.get(), 2, 0, nullptr), BIYOS_OK);
+    EXPECT_EQ(calls.ranged(model.get(), 2, 2, nullptr), BIYOS_OK);
     EXPECT_EQ(calls.ranged(model.get(), 0, 2, nullptr), BIYOS_OK);
     EXPECT_EQ(count_of(model, calls), 0);
     EXPECT_EQ(calls.listed(model.get(), 0, nullptr, nullptr), BIYOS_OK);
@@ -226,12 +226,12 @@ std::string listed_refusal(const Env &env, const Model &model, const Calls &call
 std::string ranged_refusal(const Env &env,
                            const Model &model,
                            const Calls &calls,
-                           BIYOS_index pos,
-                           BIYOS_index n)
+                           BIYOS_index beg,
+                           BIYOS_index end)
 {
     const Model tried(env, model);
     Map map(3, 9);
-    EXPECT_EQ(calls.ranged(tried.get(), pos, n, map.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(calls.ranged(tried.get(), beg, end, map.data()), BIYOS_ERR_BADARG);
     EXPECT_EQ(map, Map(3, 9));
     expect_unchanged(tried, model);
     return env.message();
@@ -247,10 +247,10 @@ void expect_refused(const Calls &calls)
     EXPECT_EQ(listed_refusal(env, model, calls, {1, 0, 1}), repeated);
     EXPECT_EQ(listed_refusal(env, model, calls, {0, 3}), refused(calls, "3: unknown"));
     EXPECT_EQ(listed_refusal(env, model, calls, {-1}), refused(calls, "-1: unknown"));
-    EXPECT_EQ(ranged_refusal(env, model, calls, 2, 2), refused(calls, "3: unknown"));
-    EXPECT_EQ(ranged_refusal(env, model, calls, -1, 1), refused(calls, "-1: unknown"));
-    EXPECT_EQ(ranged_refusal(env, model, calls, 0, -1),
-              "invalid argument: argument 'n': -1 is negative");
+    EXPECT_EQ(ranged_refusal(env, model, calls, 2, 4), refused(calls, "3: unknown"));
+    EXPECT_EQ(ranged_refusal(env, model, calls, -1, 0), refused(calls, "-1: unknown"));
+    EXPECT_EQ(ranged_refusal(env, model, calls, 1, 0),
+              "invalid argument: argument 'end': 0 is below 'beg' 1");
     const Model tried(env, model);
     EXPECT_EQ(calls.listed(tried.get(), 1, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(calls.listed(tried.get(), -1, kThree.data(), nullptr), BIYOS_ERR_BADARG);
@@ -442,11 +442,11 @@ TEST(CApiTest, UsedFunction)
     EXPECT_EQ(in_use(env, model, BIYOS_delfunsp, {1, 3}), used);
     const Model tried(env, model);
     Map map(4, 9);
-    EXPECT_EQ(BIYOS_delfunrg(tried.get(), 2, 2, map.data()), BIYOS_ERR_INUSE);
+    EXPECT_EQ(BIYOS_delfunrg(tried.get(), 2, 4, map.data()), BIYOS_ERR_INUSE);
     EXPECT_EQ(env.message(), used);
     EXPECT_EQ(map, Map(4, 9));
     expect_unchanged(tried, model);
-    EXPECT_EQ(BIYOS_delfunrg(tried.get(), 3, 2, map.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delfunrg(tried.get(), 3, 5, map.data()), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refused(kFunctions, "4: unknown"));
 }
 
@@ -474,11 +474,11 @@ TEST(CApiTest, UsedVariable)
     EXPECT_EQ(in_use(env, model, BIYOS_delvarsp, {1, 3}), used);
     const Model tried(env, model);
     Map map(4, 9);
-    EXPECT_EQ(BIYOS_delvarrg(tried.get(), 2, 2, map.data()), BIYOS_ERR_INUSE);
+    EXPECT_EQ(BIYOS_delvarrg(tried.get(), 2, 4, map.data()), BIYOS_ERR_INUSE);
     EXPECT_EQ(env.message(), used);
     EXPECT_EQ(map, Map(4, 9));
     expect_unchanged(tried, model);
-    EXPECT_EQ(BIYOS_delvarrg(tried.get(), 3, 2, map.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_delvarrg(tried.get(), 3, 5, map.data()), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 4: unknown");
     EXPECT_EQ(BIYOS_delvarsp(tried.get(), 1, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_delvarsp(tried.get(), -1, nullptr, nullptr), BIYOS_ERR_BADARG);

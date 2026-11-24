@@ -77,12 +77,12 @@ Cones read_range(const Model &model, BIYOS_index start, BIYOS_index size)
 {
     BIYOS_offset members = -1;
     BIYOS_offset parameters = -1;
-    EXPECT_EQ(BIYOS_getnconefunrg(model.get(), start, size, &members), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getnconeprmrg(model.get(), start, size, &parameters), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnconefunrg(model.get(), start, start + size, &members), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnconeprmrg(model.get(), start, start + size, &parameters), BIYOS_OK);
     Cones read = sized(static_cast<std::size_t>(size), members, parameters);
     const BIYOS_status cones = BIYOS_getconerg(model.get(),
                                                start,
-                                               size,
+                                               start + size,
                                                members,
                                                read.kinds.data(),
                                                read.starts.data(),
@@ -90,7 +90,7 @@ Cones read_range(const Model &model, BIYOS_index start, BIYOS_index size)
     EXPECT_EQ(cones, BIYOS_OK);
     const BIYOS_status weights = BIYOS_getconeprmrg(model.get(),
                                                     start,
-                                                    size,
+                                                    start + size,
                                                     parameters,
                                                     read.parameter_starts.data(),
                                                     read.parameters.data());
@@ -186,7 +186,7 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_getnconefunsp(model, 1, &index, &nnz));
     note(attempt, BIYOS_getnconeprmrg(model, 0, 1, &nnz));
     note(attempt, BIYOS_getconesp(model, 1, &index, 2, nullptr, nullptr, nullptr));
-    note(attempt, BIYOS_getconeprmrg(model, 1, 1, 2, nullptr, nullptr));
+    note(attempt, BIYOS_getconeprmrg(model, 1, 2, 2, nullptr, nullptr));
 }
 
 }
@@ -268,7 +268,7 @@ TEST(CApiTest, ConeCapacity)
     EXPECT_EQ(env.message(), "invalid argument: argument 'cap': holds 1 of the 2 parameters");
     expect_cones(read, sized(3, 8, 2));
     EXPECT_EQ(BIYOS_getconerg(model.get(), 0, 3, 8, nullptr, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getconeprmrg(model.get(), 1, 1, 9, nullptr, weights), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getconeprmrg(model.get(), 1, 2, 9, nullptr, weights), BIYOS_OK);
     EXPECT_EQ(bits_of(read.parameters), bits_of(kSample.parameters));
 }
 
@@ -336,9 +336,9 @@ TEST(CApiTest, RefusedCones)
     BIYOS_offset nnz = 0;
     EXPECT_EQ(BIYOS_getnconefunsp(model.get(), 2, unknown, &nnz), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: cone 3: unknown");
-    EXPECT_EQ(BIYOS_getconerg(model.get(), 2, 2, 9, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconerg(model.get(), 2, 4, 9, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: cone 3: unknown");
-    EXPECT_EQ(BIYOS_getconeprmrg(model.get(), -1, 1, 9, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getconeprmrg(model.get(), -1, 0, 9, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: cone -1: unknown");
     EXPECT_EQ(BIYOS_addcone(model.get(), -1, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);

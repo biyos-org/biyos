@@ -243,12 +243,12 @@ BIYOS_status BIYOS_setvarbndsp(BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_setvarbndrg(BIYOS_model *mdl,
-                               BIYOS_index pos,
-                               BIYOS_index n,
+                               BIYOS_index beg,
+                               BIYOS_index end,
                                const BIYOS_real *lb,
                                const BIYOS_real *ub)
 {
-    return guarded<set_bounds<Range>>(mdl, Range{pos, n}, lb, ub);
+    return guarded<set_bounds<Range>>(mdl, Range{beg, end}, lb, ub);
 }
 
 BIYOS_status BIYOS_getvarbndsp(const BIYOS_model *mdl,
@@ -261,12 +261,12 @@ BIYOS_status BIYOS_getvarbndsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getvarbndrg(const BIYOS_model *mdl,
-                               BIYOS_index pos,
-                               BIYOS_index n,
+                               BIYOS_index beg,
+                               BIYOS_index end,
                                BIYOS_real *lb,
                                BIYOS_real *ub)
 {
-    return guarded<get_bounds<Range>>(mdl, Range{pos, n}, lb, ub);
+    return guarded<get_bounds<Range>>(mdl, Range{beg, end}, lb, ub);
 }
 
 BIYOS_status BIYOS_setvarkndsp(BIYOS_model *mdl,
@@ -278,11 +278,11 @@ BIYOS_status BIYOS_setvarkndsp(BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_setvarkndrg(BIYOS_model *mdl,
-                               BIYOS_index pos,
-                               BIYOS_index n,
+                               BIYOS_index beg,
+                               BIYOS_index end,
                                const BIYOS_int *knd)
 {
-    return guarded<set_kinds<Range>>(mdl, Range{pos, n}, knd);
+    return guarded<set_kinds<Range>>(mdl, Range{beg, end}, knd);
 }
 
 BIYOS_status BIYOS_getvarkndsp(const BIYOS_model *mdl,
@@ -294,11 +294,11 @@ BIYOS_status BIYOS_getvarkndsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getvarkndrg(const BIYOS_model *mdl,
-                               BIYOS_index pos,
-                               BIYOS_index n,
+                               BIYOS_index beg,
+                               BIYOS_index end,
                                BIYOS_int *knd)
 {
-    return guarded<get_kinds<Range>>(mdl, Range{pos, n}, knd);
+    return guarded<get_kinds<Range>>(mdl, Range{beg, end}, knd);
 }
 
 BIYOS_status BIYOS_setvartolsp(BIYOS_model *mdl,
@@ -311,12 +311,12 @@ BIYOS_status BIYOS_setvartolsp(BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_setvartolrg(BIYOS_model *mdl,
-                               BIYOS_index pos,
-                               BIYOS_index n,
+                               BIYOS_index beg,
+                               BIYOS_index end,
                                const BIYOS_real *atol,
                                const BIYOS_real *rtol)
 {
-    return guarded<set_tolerances<Range>>(mdl, Family::Variable, Range{pos, n}, atol, rtol);
+    return guarded<set_tolerances<Range>>(mdl, Family::Variable, Range{beg, end}, atol, rtol);
 }
 
 BIYOS_status BIYOS_getvartolsp(const BIYOS_model *mdl,
@@ -329,12 +329,12 @@ BIYOS_status BIYOS_getvartolsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getvartolrg(const BIYOS_model *mdl,
-                               BIYOS_index pos,
-                               BIYOS_index n,
+                               BIYOS_index beg,
+                               BIYOS_index end,
                                BIYOS_real *atol,
                                BIYOS_real *rtol)
 {
-    return guarded<get_tolerances<Range>>(mdl, Family::Variable, Range{pos, n}, atol, rtol);
+    return guarded<get_tolerances<Range>>(mdl, Family::Variable, Range{beg, end}, atol, rtol);
 }
 
 BIYOS_status BIYOS_delvartolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
@@ -342,9 +342,9 @@ BIYOS_status BIYOS_delvartolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_inde
     return guarded<delete_tolerances<List>>(mdl, Family::Variable, List{n, idx});
 }
 
-BIYOS_status BIYOS_delvartolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+BIYOS_status BIYOS_delvartolrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)
 {
-    return guarded<delete_tolerances<Range>>(mdl, Family::Variable, Range{pos, n});
+    return guarded<delete_tolerances<Range>>(mdl, Family::Variable, Range{beg, end});
 }
 
 BIYOS_status BIYOS_getnvar(const BIYOS_model *mdl, BIYOS_index *n)
@@ -363,11 +363,11 @@ BIYOS_status BIYOS_getvarsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getvarrg(const BIYOS_model *mdl,
-                            BIYOS_index pos,
-                            BIYOS_index n,
+                            BIYOS_index beg,
+                            BIYOS_index end,
                             BIYOS_int *knd,
                             BIYOS_real *lb,
                             BIYOS_real *ub)
 {
-    return guarded<get_variables<Range>>(mdl, Range{pos, n}, knd, lb, ub);
+    return guarded<get_variables<Range>>(mdl, Range{beg, end}, knd, lb, ub);
 }

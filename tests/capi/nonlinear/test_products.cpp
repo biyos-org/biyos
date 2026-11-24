@@ -339,7 +339,7 @@ TEST(ProductTest, Arguments)
     EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
     EXPECT_EQ(BIYOS_addquadtermrg(held, 0, -1, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'end': -1 is below 'beg' 0");
     EXPECT_EQ(BIYOS_addquadtermrg(held, 0, functions + 1, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(),

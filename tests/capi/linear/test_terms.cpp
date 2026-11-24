@@ -155,7 +155,7 @@ BIYOS_offset n_listed(const Model &model, const Reader &reader, const Indices &l
 BIYOS_offset n_ranged(const Model &model, const Reader &reader, Span span)
 {
     BIYOS_offset nnz = -1;
-    EXPECT_EQ(reader.n_ranged(model.get(), span.start, span.size, &nnz), BIYOS_OK);
+    EXPECT_EQ(reader.n_ranged(model.get(), span.start, span.start + span.size, &nnz), BIYOS_OK);
     return nnz;
 }
 
@@ -201,7 +201,7 @@ Coords read_ranged(const Model &model, const Reader &reader, Span span)
     std::vector<double> values(size);
     EXPECT_EQ(reader.ranged(model.get(),
                             span.start,
-                            span.size,
+                            span.start + span.size,
                             count,
                             starts.data(),
                             other.data(),

@@ -13,6 +13,7 @@
 using biyos::Family;
 using biyos::capi::check_capacity;
 using biyos::capi::guarded;
+using biyos::capi::length_of;
 using biyos::capi::List;
 using biyos::capi::Range;
 using biyos::capi::require;
@@ -108,10 +109,11 @@ void get_ranged(const BIYOS_model &model,
                 const Pairs &out)
 {
     const biyos::Model &core = model.core;
-    const auto terms = core.quadratic_terms(range.start, range.size);
+    const biyos::Index n = length_of(core, Family::Function, range);
+    const auto terms = core.quadratic_terms(range.start, n);
     check_capacity(capacity, terms.size());
     const auto before = [&](biyos::Index j) { return core.quadratic_terms(range.start, j); };
-    biyos::capi::write_starts(static_cast<std::size_t>(range.size), starts, before);
+    biyos::capi::write_starts(static_cast<std::size_t>(n), starts, before);
     biyos::capi::unpack(terms, terms.size(), out.rows, out.columns, out.values);
 }
 
@@ -126,11 +128,11 @@ BIYOS_status BIYOS_getnquadtermsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getnquadtermrg(const BIYOS_model *mdl,
-                                  BIYOS_index pos,
-                                  BIYOS_index n,
+                                  BIYOS_index beg,
+                                  BIYOS_index end,
                                   BIYOS_offset *nnz)
 {
-    return guarded<n_pairs<Range>>(mdl, Range{pos, n}, nnz);
+    return guarded<n_pairs<Range>>(mdl, Range{beg, end}, nnz);
 }
 
 BIYOS_status BIYOS_getquadtermsp(const BIYOS_model *mdl,
@@ -148,8 +150,8 @@ BIYOS_status BIYOS_getquadtermsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getquadtermrg(const BIYOS_model *mdl,
-                                 BIYOS_index pos,
-                                 BIYOS_index n,
+                                 BIYOS_index beg,
+                                 BIYOS_index end,
                                  BIYOS_offset cap,
                                  BIYOS_offset *off,
                                  BIYOS_index *var1,
@@ -157,5 +159,5 @@ BIYOS_status BIYOS_getquadtermrg(const BIYOS_model *mdl,
                                  BIYOS_real *coef)
 {
     const Pairs out{.functions = nullptr, .rows = var1, .columns = var2, .values = coef};
-    return guarded<get_ranged>(mdl, Range{pos, n}, cap, off, out);
+    return guarded<get_ranged>(mdl, Range{beg, end}, cap, off, out);
 }

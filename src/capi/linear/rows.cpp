@@ -14,6 +14,7 @@ using biyos::Family;
 using biyos::capi::check_capacity;
 using biyos::capi::Coordinates;
 using biyos::capi::guarded;
+using biyos::capi::length_of;
 using biyos::capi::List;
 using biyos::capi::Range;
 using biyos::capi::require;
@@ -79,10 +80,11 @@ void get_ranged(const BIYOS_model &model,
                 double *values)
 {
     const biyos::Model &core = model.core;
-    const std::span<const biyos::LinearTerm> terms = core.linear_terms(range.start, range.size);
+    const biyos::Index n = length_of(core, Family::Function, range);
+    const std::span<const biyos::LinearTerm> terms = core.linear_terms(range.start, n);
     check_capacity(capacity, terms.size());
     const auto before = [&](biyos::Index j) { return core.linear_terms(range.start, j); };
-    biyos::capi::write_starts(static_cast<std::size_t>(range.size), starts, before);
+    biyos::capi::write_starts(static_cast<std::size_t>(n), starts, before);
     biyos::capi::unpack(terms, terms.size(), variables, values);
 }
 
@@ -97,11 +99,11 @@ BIYOS_status BIYOS_getnrlintermsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getnrlintermrg(const BIYOS_model *mdl,
-                                  BIYOS_index pos,
-                                  BIYOS_index n,
+                                  BIYOS_index beg,
+                                  BIYOS_index end,
                                   BIYOS_offset *nnz)
 {
-    return guarded<n_row_terms<Range>>(mdl, Range{pos, n}, nnz);
+    return guarded<n_row_terms<Range>>(mdl, Range{beg, end}, nnz);
 }
 
 BIYOS_status BIYOS_getrlintermsp(const BIYOS_model *mdl,
@@ -118,12 +120,12 @@ BIYOS_status BIYOS_getrlintermsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getrlintermrg(const BIYOS_model *mdl,
-                                 BIYOS_index pos,
-                                 BIYOS_index n,
+                                 BIYOS_index beg,
+                                 BIYOS_index end,
                                  BIYOS_offset cap,
                                  BIYOS_offset *off,
                                  BIYOS_index *var,
                                  BIYOS_real *coef)
 {
-    return guarded<get_ranged>(mdl, Range{pos, n}, cap, off, var, coef);
+    return guarded<get_ranged>(mdl, Range{beg, end}, cap, off, var, coef);
 }

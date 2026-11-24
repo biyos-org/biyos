@@ -48,8 +48,8 @@ def add_sample(model):
     return o
 
 
-def read_lengths(handle, first, count, *arrays):
-    return [(array, count) for array in arrays]
+def read_lengths(handle, beg, end, *arrays):
+    return [(array, end - beg) for array in arrays]
 
 
 def recorded(seen, function, *arguments):

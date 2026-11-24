@@ -71,7 +71,7 @@ BIYOS_status get_with(BIYOS_model *model, int start, int size, const Outputs &ou
 {
     return BIYOS_getobjrg(model,
                           start,
-                          size,
+                          start + size,
                           outputs.functions,
                           outputs.senses,
                           outputs.priorities,
