@@ -214,7 +214,10 @@ class Renderer(MdRenderer):
 
     def raises(self, found):
         rows = [
-            (code(self.render_annotation(r.annotation)), r.description)
+            (
+                f"[{code(self.render_annotation(r.annotation))}]{{.name}}",
+                r.description,
+            )
             for r in described(found, DocstringSectionRaises)
         ]
         return [stack("Raises", rows)] if rows else []
