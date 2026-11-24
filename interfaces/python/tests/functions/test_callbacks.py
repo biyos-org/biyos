@@ -193,8 +193,9 @@ def test_patterns(model, seen):
     assert evaluate(model, seen[-1], cb, 3, x) == (0, [1.0, 2.0, 3.0])
     model.setcbg(cb, [], [], function)
     assert evaluate(model, seen[-1], cb, 0, x) == (0, [])
-    model.setcbh(cb, [0, 0], [0, 2], function)
-    assert evaluate(model, seen[-1], cb, 2, x, [2.0, 3.0]) == (0, [1.0, 2.0])
+    model.setcbh(cb, [0, 0, 0], [2, 0, 2], function)
+    w = [2.0, 3.0]
+    assert evaluate(model, seen[-1], cb, 3, x, w) == (0, [1.0, 2.0, 3.0])
     model.setcbhv(cb, function)
     v = [4.0, 5.0, 6.0]
     assert evaluate(model, seen[-1], cb, 3, x, [2.0, 3.0], v)[0] == 0

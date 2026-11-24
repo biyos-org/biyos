@@ -91,19 +91,6 @@ std::string pair_fault(const IndexPair &pair, Index total)
     return "";
 }
 
-std::string pair_order(const IndexPair &pair, const IndexPair &previous)
-{
-    if (pair == previous)
-    {
-        return pair_name(pair) + " is repeated";
-    }
-    if (pair < previous)
-    {
-        return pair_name(pair) + " is listed after " + pair_name(previous);
-    }
-    return "";
-}
-
 }
 
 std::vector<IndexPair> jacobian_pairs(Index callback,
@@ -134,11 +121,7 @@ std::vector<IndexPair> hessian_pairs(Index callback,
     for (std::size_t k = 0; k < first.size(); ++k)
     {
         const IndexPair pair{.row = first[k], .column = second[k]};
-        std::string fault = pair_fault(pair, total);
-        if (fault.empty() && k > 0)
-        {
-            fault = pair_order(pair, pairs.back());
-        }
+        const std::string fault = pair_fault(pair, total);
         if (!fault.empty())
         {
             refuse(kNoun, callback, "Hessian " + fault);

@@ -186,12 +186,12 @@ TEST(CallbackTest, Registered)
     EXPECT_EQ(BIYOS_addcb(model.get(), 1, &function, nullptr, nullptr), BIYOS_OK);
     const std::vector<BIYOS_index> fun{0, 2, 0};
     const std::vector<BIYOS_index> var{1, 0, 1};
-    const std::vector<BIYOS_index> var1{0, 1};
-    const std::vector<BIYOS_index> var2{0, 2};
+    const std::vector<BIYOS_index> var1{1, 0, 1};
+    const std::vector<BIYOS_index> var2{2, 0, 2};
     BIYOS_model *mdl = model.get();
     EXPECT_EQ(BIYOS_setcbf(mdl, 0, record), BIYOS_OK);
     EXPECT_EQ(BIYOS_setcbg(mdl, 0, 3, fun.data(), var.data(), record), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setcbh(mdl, 0, 2, var1.data(), var2.data(), record), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setcbh(mdl, 0, 3, var1.data(), var2.data(), record), BIYOS_OK);
     EXPECT_EQ(BIYOS_setcbhv(mdl, 0, record), BIYOS_OK);
     EXPECT_EQ(env.message(), "");
     EXPECT_EQ(mdl->core.n_callbacks(), 2);
@@ -199,7 +199,7 @@ TEST(CallbackTest, Registered)
     const Callback &first = held(model, 0);
     EXPECT_EQ(first.covered, (std::vector<biyos::Index>{2, 0}));
     EXPECT_EQ(first.jacobian_pairs, (std::vector<IndexPair>{{1, 1}, {0, 0}, {1, 1}}));
-    EXPECT_EQ(first.hessian_pairs, (std::vector<IndexPair>{{0, 0}, {1, 2}}));
+    EXPECT_EQ(first.hessian_pairs, (std::vector<IndexPair>{{1, 2}, {0, 0}, {1, 2}}));
     EXPECT_TRUE(first.function && first.jacobian && first.hessian && first.hessian_product);
     EXPECT_EQ(data_of(model, 0), &tag);
     EXPECT_EQ(data_of(model, 1), nullptr);

@@ -313,10 +313,10 @@ TEST(CallbackTest, Hessian)
 {
     Model model = with_functions(1);
     add(model, {0});
-    set_hessian(model, {0, 0, 1, 2}, {0, 2, 1, 2});
+    set_hessian(model, {1, 0, 2, 0, 1}, {1, 2, 2, 0, 1});
     const Callback &held = model.callback(0);
-    EXPECT_EQ(firsts(held), (std::vector<Index>{0, 0, 1, 2}));
-    EXPECT_EQ(seconds(held), (std::vector<Index>{0, 2, 1, 2}));
+    EXPECT_EQ(firsts(held), (std::vector<Index>{1, 0, 2, 0, 1}));
+    EXPECT_EQ(seconds(held), (std::vector<Index>{1, 2, 2, 0, 1}));
     EXPECT_TRUE(held.hessian);
     set_hessian(model, {}, {});
     EXPECT_TRUE(held.hessian_pairs.empty());
@@ -332,11 +332,8 @@ TEST(CallbackTest, HessianRefused)
     EXPECT_EQ(hessian_refusal(model, {0}, {-1}), bad + "variable -1 is unknown");
     EXPECT_EQ(hessian_refusal(model, {0, 2}, {1, 1}),
               bad + "pair (2, 1) has its second variable below its first");
-    EXPECT_EQ(hessian_refusal(model, {1, 0}, {1, 2}),
-              bad + "pair (0, 2) is listed after pair (1, 1)");
-    EXPECT_EQ(hessian_refusal(model, {0, 0}, {2, 1}),
-              bad + "pair (0, 1) is listed after pair (0, 2)");
-    EXPECT_EQ(hessian_refusal(model, {0, 1, 1}, {1, 2, 2}), bad + "pair (1, 2) is repeated");
+    EXPECT_EQ(hessian_refusal(model, {1, 1, 2}, {2, 2, 0}),
+              bad + "pair (2, 0) has its second variable below its first");
     EXPECT_EQ(refusal([&] { model.set_callback_hessian(1, {}, {}, succeed); }),
               kBad + "callback 1: unknown");
     EXPECT_EQ(firsts(model.callback(0)), (std::vector<Index>{1}));
@@ -351,10 +348,12 @@ TEST(CallbackTest, Copied)
     model.add_callback(std::vector<Index>{1}, &calls);
     model.set_callback_function(0, counted);
     set_jacobian(model, 0, {1, 1, 1}, {2, 0, 2});
+    set_hessian(model, {1, 0, 1}, {2, 1, 2});
     const Model copy = model;
     const Callback &held = copy.callback(0);
     EXPECT_EQ(held.data, &calls);
     EXPECT_EQ(held.jacobian_pairs, (std::vector<IndexPair>{{0, 2}, {0, 0}, {0, 2}}));
+    EXPECT_EQ(held.hessian_pairs, (std::vector<IndexPair>{{1, 2}, {0, 1}, {1, 2}}));
     EXPECT_EQ(held.covered, (std::vector<Index>{1}));
     std::vector<double> out(1);
     const Request request{
@@ -406,6 +405,9 @@ TEST(CallbackTest, Difference)
     Model wider = copy;
     set_jacobian(wider, 0, {2, 0, 0}, {1, 2, 2});
     EXPECT_EQ(difference(model, wider), "callback 0: Jacobian entry count 2 against 3");
+    Model flipped = copy;
+    set_hessian(flipped, {1, 0}, {1, 1});
+    EXPECT_EQ(difference(model, flipped), "callback 0: Hessian entry 0: row 0 against 1");
     Model pairs = copy;
     set_hessian(pairs, {0, 1}, {1, 2});
     EXPECT_EQ(difference(model, pairs), "callback 0: Hessian entry 1: column 1 against 2");
