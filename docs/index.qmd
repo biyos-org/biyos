@@ -24,12 +24,14 @@ $$
 \text{minimize}\quad & f_k(x) & & \text{each objective, in priority order} \\
 \text{subject to}\quad & l \le f_k(x) \le u & & \text{each constraint} \\
 & f_C(x) \in \mathcal{K} & & \text{each cone} \\
+& l \le f_k(x) \le u \ \perp\ f_{k'}(x) & & \text{each complement} \\
+& x_S \in \mathcal{S}_t & & \text{each special ordered set} \\
 & x_j \in \mathbb{Z} & & j \in J
 \end{aligned}
 $$
 :::
 
-a shorthand in which $f_0, f_1, \dots$ form one table of functions that objectives, constraints and cones name by index, $l$ and $u$ are bounds that may be infinite, $f_C$ gathers the members of a cone $\mathcal{K}$ and $J$ is the set of integer variables. The chapter [The problem form](#sec-form) states it in full.
+a shorthand in which $f_0, f_1, \dots$ form one table of functions that objectives, constraints and cones name by index, $l$ and $u$ are bounds that may be infinite, $f_C$ gathers the members of a cone $\mathcal{K}$, $\perp$ ties the sign of $f_{k'}$ to where $f_k$ lies between its bounds, $\mathcal{S}_1$ and $\mathcal{S}_2$ let at most one or two adjacent variables of $x_S$ be nonzero and $J$ is the set of integer variables. The chapter [The problem form](#sec-form) states it in full.
 
 ::: {.content-visible when-format="html"}
 ::: {.cards}
