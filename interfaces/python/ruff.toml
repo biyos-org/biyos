@@ -6,8 +6,8 @@ src = ["src", "tests/utils"]
 ignore = ["PYI019", "PYI034"]
 
 [lint.per-file-ignores]
-"src/biyos/_callbacks.py" = ["BLE001"]
-"src/biyos/_relay.py" = ["BLE001"]
+"src/biyos/_model/callbacks.py" = ["BLE001"]
+"src/biyos/_env/relay.py" = ["BLE001"]
 
 [lint.isort]
 known-first-party = ["biyos"]

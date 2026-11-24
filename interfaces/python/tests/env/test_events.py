@@ -392,8 +392,8 @@ def test_stale():
 def test_finish(monkeypatch):
     with biyos.Env() as env:
         nested = partial(env.getopt, "seed")
-        check = partial(preceded, [nested], biyos._relay.check)
-        monkeypatch.setattr(biyos._relay, "check", check)
+        check = partial(preceded, [nested], biyos._env.relay.check)
+        monkeypatch.setattr(biyos._env.relay, "check", check)
         env.addhook(explode, EventKind.MESSAGE, EventLevel.DEBUG)
         with pytest.raises(RuntimeError, match="hook failed") as caught:
             env.setopt("seed", -1)
@@ -408,8 +408,8 @@ def test_succeeded(monkeypatch):
         start = partial(followed, [relayed], relay.start)
         monkeypatch.setattr(relay, "start", start)
         nested = partial(env.getopt, "seed")
-        check = partial(preceded, [nested], biyos._relay.check)
-        monkeypatch.setattr(biyos._relay, "check", check)
+        check = partial(preceded, [nested], biyos._env.relay.check)
+        monkeypatch.setattr(biyos._env.relay, "check", check)
         with pytest.raises(RuntimeError, match="hook failed") as caught:
             env.getopt("seed")
         assert env.getopt("seed") == 0

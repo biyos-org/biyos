@@ -17,8 +17,9 @@ from math import isnan
 from os import PathLike, fspath
 from typing import Any, NoReturn, SupportsIndex
 
-from biyos import _capi, _values
-from biyos._arrays import (
+from biyos import _capi
+from biyos._capi import lib
+from biyos._convert.arrays import (
     doubles,
     indices_of,
     int64s,
@@ -28,7 +29,16 @@ from biyos._arrays import (
     span_of,
     strings,
 )
-from biyos._blocks import (
+from biyos._convert.integers import integer
+from biyos._convert.text import decoded, text
+from biyos._env import values
+from biyos._env.env import Env
+from biyos._env.event import Event, EventKind, EventLevel
+from biyos._env.hooks import Hooks, checked_hook
+from biyos._env.options import OptionSource
+from biyos._env.values import Value
+from biyos._error import Error
+from biyos._model.blocks import (
     SOS,
     Block,
     Complement,
@@ -48,17 +58,8 @@ from biyos._blocks import (
     Variables,
     index_of,
 )
-from biyos._callbacks import Callbacks, Caller, checked, data_at
-from biyos._capi import lib
-from biyos._env import Env
-from biyos._error import Error
-from biyos._event import Event, EventKind, EventLevel
-from biyos._hooks import Hooks, checked_hook
-from biyos._integers import integer
-from biyos._operators import Operator, node_values, postfix_values
-from biyos._options import OptionSource
-from biyos._text import decoded, text
-from biyos._values import Value
+from biyos._model.callbacks import Callbacks, Caller, checked, data_at
+from biyos._model.operators import Operator, node_values, postfix_values
 
 
 class VariableKind(IntEnum):
@@ -524,7 +525,7 @@ class Model:
         BIYOS_setmdlflgopt
         """
         option, kind = self._lookup(name)
-        arguments = _values.arguments(name, kind, val)
+        arguments = values.arguments(name, kind, val)
         self._call(_SETTERS[kind], option, *arguments)
 
     def getopt(self, name: str) -> Value:
@@ -557,9 +558,9 @@ class Model:
         BIYOS_getmdlflgopt
         """
         option, kind = self._lookup(name)
-        found = _values.slots(kind)
+        found = values.slots(kind)
         self._call(_GETTERS[kind], option, *map(byref, found))
-        return _values.value(name, kind, found)
+        return values.value(name, kind, found)
 
     def delopt(self, name: str) -> None:
         """Remove the model's own value of an option.

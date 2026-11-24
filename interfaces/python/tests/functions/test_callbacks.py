@@ -7,8 +7,8 @@ import pytest
 
 import biyos
 from biyos import EventKind, EventLevel, Operator
-from biyos._callbacks import Caller
 from biyos._capi import CALLBACK, RequestRecord, lib
+from biyos._model.callbacks import Caller
 from refusal import LOCKED, refusal
 
 SETTERS = (

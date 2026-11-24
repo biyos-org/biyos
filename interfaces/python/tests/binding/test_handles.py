@@ -3,7 +3,7 @@ from functools import partial
 import pytest
 
 from biyos._capi import OK, lib
-from biyos._handles import Handles
+from biyos._convert.handles import Handles
 
 
 def record(freed, handle):

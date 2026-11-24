@@ -6,7 +6,7 @@ from biyos._capi import lib
 from biyos._error import Error, check
 
 if TYPE_CHECKING:
-    from biyos._model import Model
+    from biyos._model.model import Model
 
 
 class Relay:

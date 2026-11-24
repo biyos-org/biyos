@@ -7,7 +7,7 @@ from operator import index
 import pytest
 
 import biyos
-from biyos import EventKind, EventLevel, ObjectiveSense, _model
+from biyos import EventKind, EventLevel, ObjectiveSense
 from biyos._capi import lib
 from number import Number
 from refusal import LOCKED, refusal
@@ -197,7 +197,7 @@ def test_stale(model, monkeypatch):
 
 
 def test_outside(model, monkeypatch):
-    limit(monkeypatch, _model, 1)
+    limit(monkeypatch, biyos._model.model, 1)
     message = refusal(model.getobj, range(2**31 - 1))
     assert message == "invalid argument: objective 0: unknown"
     message = refusal(model.getobj, range(1, 2**31 - 1))

@@ -3,7 +3,7 @@ from fractions import Fraction
 import pytest
 
 import biyos
-from biyos._arrays import doubles, indices_of, ints, offsets, strings
+from biyos._convert.arrays import doubles, indices_of, ints, offsets, strings
 from number import Growing
 
 FAMILIES = [

@@ -3,8 +3,8 @@ from ctypes import POINTER, byref, c_double, c_int, cast, py_object
 from typing import Any
 
 from biyos._capi import CALLBACK, OK, RequestRecord, lib
+from biyos._convert.integers import whole
 from biyos._error import Error
-from biyos._integers import whole
 
 
 def _bytes(address: int | None, n: int) -> memoryview:

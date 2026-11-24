@@ -3,14 +3,14 @@ from ctypes import Array, c_char_p, c_double, c_int, c_int64
 from numbers import Real
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeGuard, TypeVar
 
-from biyos._blocks import Block, index_of, range_of
-from biyos._integers import integer, offset
-from biyos._text import text
+from biyos._convert.integers import integer, offset
+from biyos._convert.text import text
+from biyos._model.blocks import Block, index_of, range_of
 
 if TYPE_CHECKING:
     from _typeshed import WriteableBuffer
 
-    from biyos._model import Model
+    from biyos._model.model import Model
 
 Element = TypeVar("Element", c_double, c_int, c_int64, c_char_p)
 

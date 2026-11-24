@@ -7,7 +7,7 @@ from biyos._capi import OK, lib
 from biyos._error import Error
 
 if TYPE_CHECKING:
-    from biyos._model import Model
+    from biyos._model.model import Model
 
 
 class EventKind(IntEnum):
