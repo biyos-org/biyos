@@ -69,7 +69,7 @@ std::vector<Member> members_of(std::span<const Offset> starts,
     const auto total = static_cast<std::size_t>(starts.back());
     if (total > 0)
     {
-        require(variables, "varidx");
+        require(variables, "var");
     }
     std::vector<Member> members;
     members.reserve(total);
@@ -172,11 +172,11 @@ BIYOS_status BIYOS_addsos(BIYOS_model *mdl,
                           BIYOS_index n,
                           const BIYOS_int *knd,
                           const BIYOS_offset *off,
-                          const BIYOS_index *varidx,
+                          const BIYOS_index *var,
                           const BIYOS_real *coef,
                           BIYOS_index *pos)
 {
-    return guarded<add_special_ordered_sets>(mdl, n, knd, off, varidx, coef, pos);
+    return guarded<add_special_ordered_sets>(mdl, n, knd, off, var, coef, pos);
 }
 
 BIYOS_status BIYOS_getnsos(const BIYOS_model *mdl, BIYOS_index *n)
@@ -206,13 +206,13 @@ BIYOS_status BIYOS_getsossp(const BIYOS_model *mdl,
                             BIYOS_offset cap,
                             BIYOS_int *knd,
                             BIYOS_offset *off,
-                            BIYOS_index *varidx,
+                            BIYOS_index *var,
                             BIYOS_real *coef)
 {
     const Outputs out{
         .kinds = knd,
         .starts = off,
-        .variables = varidx,
+        .variables = var,
         .weights = coef,
     };
     return guarded<get_special_ordered_sets<List>>(mdl, List{n, idx}, cap, out);
@@ -224,13 +224,13 @@ BIYOS_status BIYOS_getsosrg(const BIYOS_model *mdl,
                             BIYOS_offset cap,
                             BIYOS_int *knd,
                             BIYOS_offset *off,
-                            BIYOS_index *varidx,
+                            BIYOS_index *var,
                             BIYOS_real *coef)
 {
     const Outputs out{
         .kinds = knd,
         .starts = off,
-        .variables = varidx,
+        .variables = var,
         .weights = coef,
     };
     return guarded<get_special_ordered_sets<Range>>(mdl, Range{pos, n}, cap, out);

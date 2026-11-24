@@ -4,13 +4,13 @@
 static int fill(BIYOS_model *mdl)
 {
     const BIYOS_real ub[] = {1.0, 2.0};
-    const BIYOS_index funidx[] = {0};
+    const BIYOS_index fun[] = {0};
     if (BIYOS_addvar(mdl, 2, NULL, NULL, ub, NULL) != BIYOS_OK ||
         BIYOS_addfun(mdl, 1, NULL) != BIYOS_OK)
     {
         return 0;
     }
-    return BIYOS_addcon(mdl, 1, funidx, NULL, NULL, NULL) == BIYOS_OK;
+    return BIYOS_addcon(mdl, 1, fun, NULL, NULL, NULL) == BIYOS_OK;
 }
 
 static int count_vars(BIYOS_model *mdl)

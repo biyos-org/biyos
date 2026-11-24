@@ -70,8 +70,8 @@ void add_complements(BIYOS_model &model, int n, const Fields &fields, int *start
     const std::size_t size = length(n);
     if (size > 0)
     {
-        require(fields.functions, "funidx1");
-        require(fields.multipliers, "funidx2");
+        require(fields.functions, "fun1");
+        require(fields.multipliers, "fun2");
     }
     const biyos::Complement nonnegative{
         .function = 0,
@@ -136,15 +136,15 @@ void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &ou
 
 BIYOS_status BIYOS_addccon(BIYOS_model *mdl,
                            BIYOS_index n,
-                           const BIYOS_index *funidx1,
-                           const BIYOS_index *funidx2,
+                           const BIYOS_index *fun1,
+                           const BIYOS_index *fun2,
                            const BIYOS_real *lb,
                            const BIYOS_real *ub,
                            BIYOS_index *pos)
 {
     const Fields fields{
-        .functions = funidx1,
-        .multipliers = funidx2,
+        .functions = fun1,
+        .multipliers = fun2,
         .lower = lb,
         .upper = ub,
     };
@@ -241,14 +241,14 @@ BIYOS_status BIYOS_getnccon(const BIYOS_model *mdl, BIYOS_index *n)
 BIYOS_status BIYOS_getcconsp(const BIYOS_model *mdl,
                              BIYOS_index n,
                              const BIYOS_index *idx,
-                             BIYOS_index *funidx1,
-                             BIYOS_index *funidx2,
+                             BIYOS_index *fun1,
+                             BIYOS_index *fun2,
                              BIYOS_real *lb,
                              BIYOS_real *ub)
 {
     const Outputs outputs{
-        .functions = funidx1,
-        .multipliers = funidx2,
+        .functions = fun1,
+        .multipliers = fun2,
         .lower = lb,
         .upper = ub,
     };
@@ -258,14 +258,14 @@ BIYOS_status BIYOS_getcconsp(const BIYOS_model *mdl,
 BIYOS_status BIYOS_getcconrg(const BIYOS_model *mdl,
                              BIYOS_index pos,
                              BIYOS_index n,
-                             BIYOS_index *funidx1,
-                             BIYOS_index *funidx2,
+                             BIYOS_index *fun1,
+                             BIYOS_index *fun2,
                              BIYOS_real *lb,
                              BIYOS_real *ub)
 {
     const Outputs outputs{
-        .functions = funidx1,
-        .multipliers = funidx2,
+        .functions = fun1,
+        .multipliers = fun2,
         .lower = lb,
         .upper = ub,
     };

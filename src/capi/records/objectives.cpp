@@ -89,7 +89,7 @@ void add_objectives(BIYOS_model &model,
                     int *start)
 {
     biyos::Model &core = writable(model);
-    const std::span<const biyos::Index> owners = listed(n, functions, "funidx");
+    const std::span<const biyos::Index> owners = listed(n, functions, "fun");
     core.check_objective_room(owners.size());
     const Fields fields{
         .senses = senses,
@@ -149,13 +149,13 @@ void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &ou
 
 BIYOS_status BIYOS_addobj(BIYOS_model *mdl,
                           BIYOS_index n,
-                          const BIYOS_index *funidx,
+                          const BIYOS_index *fun,
                           const BIYOS_int *sense,
                           const BIYOS_int *prio,
                           const BIYOS_real *coef,
                           BIYOS_index *pos)
 {
-    return guarded<add_objectives>(mdl, n, funidx, sense, prio, coef, pos);
+    return guarded<add_objectives>(mdl, n, fun, sense, prio, coef, pos);
 }
 
 BIYOS_status BIYOS_setobjsensesp(BIYOS_model *mdl,
@@ -306,29 +306,23 @@ BIYOS_status BIYOS_getnobj(const BIYOS_model *mdl, BIYOS_index *n)
 BIYOS_status BIYOS_getobjsp(const BIYOS_model *mdl,
                             BIYOS_index n,
                             const BIYOS_index *idx,
-                            BIYOS_index *funidx,
+                            BIYOS_index *fun,
                             BIYOS_int *sense,
                             BIYOS_int *prio,
                             BIYOS_real *coef)
 {
-    const Outputs outputs{.functions = funidx,
-                          .senses = sense,
-                          .priorities = prio,
-                          .weights = coef};
+    const Outputs outputs{.functions = fun, .senses = sense, .priorities = prio, .weights = coef};
     return guarded<get_chosen<List>>(mdl, List{n, idx}, outputs);
 }
 
 BIYOS_status BIYOS_getobjrg(const BIYOS_model *mdl,
                             BIYOS_index pos,
                             BIYOS_index n,
-                            BIYOS_index *funidx,
+                            BIYOS_index *fun,
                             BIYOS_int *sense,
                             BIYOS_int *prio,
                             BIYOS_real *coef)
 {
-    const Outputs outputs{.functions = funidx,
-                          .senses = sense,
-                          .priorities = prio,
-                          .weights = coef};
+    const Outputs outputs{.functions = fun, .senses = sense, .priorities = prio, .weights = coef};
     return guarded<get_chosen<Range>>(mdl, Range{pos, n}, outputs);
 }

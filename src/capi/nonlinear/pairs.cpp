@@ -138,12 +138,12 @@ BIYOS_status BIYOS_getquadtermsp(const BIYOS_model *mdl,
                                  const BIYOS_index *idx,
                                  BIYOS_offset cap,
                                  BIYOS_offset *nnz,
-                                 BIYOS_index *funidx,
-                                 BIYOS_index *varidx1,
-                                 BIYOS_index *varidx2,
+                                 BIYOS_index *fun,
+                                 BIYOS_index *var1,
+                                 BIYOS_index *var2,
                                  BIYOS_real *coef)
 {
-    const Pairs out{.functions = funidx, .rows = varidx1, .columns = varidx2, .values = coef};
+    const Pairs out{.functions = fun, .rows = var1, .columns = var2, .values = coef};
     return guarded<get_listed>(mdl, List{n, idx}, cap, nnz, out);
 }
 
@@ -152,10 +152,10 @@ BIYOS_status BIYOS_getquadtermrg(const BIYOS_model *mdl,
                                  BIYOS_index n,
                                  BIYOS_offset cap,
                                  BIYOS_offset *off,
-                                 BIYOS_index *varidx1,
-                                 BIYOS_index *varidx2,
+                                 BIYOS_index *var1,
+                                 BIYOS_index *var2,
                                  BIYOS_real *coef)
 {
-    const Pairs out{.functions = nullptr, .rows = varidx1, .columns = varidx2, .values = coef};
+    const Pairs out{.functions = nullptr, .rows = var1, .columns = var2, .values = coef};
     return guarded<get_ranged>(mdl, Range{pos, n}, cap, off, out);
 }

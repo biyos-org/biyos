@@ -56,7 +56,7 @@ Index Model::add_callback(std::span<const Index> functions, void *data)
 {
     check_n(kNoun, callbacks_, 1);
     check_count(functions);
-    check_functions(functions, n_functions(), "funidx");
+    check_functions(functions, n_functions(), "fun");
     const Index index = n_callbacks();
     Callback added{
         .covered = std::vector<Index>(functions.begin(), functions.end()),

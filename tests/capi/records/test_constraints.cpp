@@ -208,7 +208,7 @@ TEST(CApiTest, NullConstraints)
     };
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_addcon(held, 1, nullptr, bounds, bounds, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     EXPECT_EQ(n_constraints(model), 6);
 }
 

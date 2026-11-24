@@ -230,7 +230,7 @@ def test_shared(model):
 def test_refused(model):
     cb = model.addcb([0])
     bad = "invalid argument: "
-    repeated = "argument 'funidx': function 1 is repeated"
+    repeated = "argument 'fun': function 1 is repeated"
     cases = [
         (model.addcb, ([],), "argument 'n': 0 is not positive"),
         (model.addcb, ([1, 2, 1],), repeated),
@@ -258,9 +258,9 @@ def test_lengths(model):
     cb = model.addcb([0, 1])
     with pytest.raises(ValueError, match="off has length 2, not 3"):
         model.setcbg(cb, [0, 1], [0], answer)
-    with pytest.raises(ValueError, match="varidx has length 1, not 2"):
+    with pytest.raises(ValueError, match="var has length 1, not 2"):
         model.setcbg(cb, [0, 1, 2], [0], answer)
-    with pytest.raises(ValueError, match="varidx2 has length 1, not 2"):
+    with pytest.raises(ValueError, match="var2 has length 1, not 2"):
         model.setcbh(cb, [0, 1], [1], answer)
     with pytest.raises(TypeError, match="f must be callable, not int"):
         model.setcbf(cb, 3)

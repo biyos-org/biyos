@@ -133,7 +133,7 @@ TEST(QuadraticTest, RepeatedFunction)
         .terms = {{0, 1, 1.0}, {1, 1, 2.0}},
     };
     EXPECT_EQ(add_refusal(model, twice),
-              "invalid argument: argument 'funidx': function 1 is repeated");
+              "invalid argument: argument 'fun': function 1 is repeated");
     EXPECT_TRUE(held(model).empty());
 }
 

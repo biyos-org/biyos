@@ -95,7 +95,7 @@ void add_cones(BIYOS_model &model, int n, const Given &given, int *start)
     const Index index = core.n_cones();
     core.add_cones(kinds_of(size, given.kinds),
                    starts,
-                   items_of(given.functions, starts, "funidx"),
+                   items_of(given.functions, starts, "fun"),
                    parameter_starts,
                    items_of(given.parameters, parameter_starts, "prm"));
     if (start != nullptr)
@@ -193,7 +193,7 @@ BIYOS_status BIYOS_addcone(BIYOS_model *mdl,
                            BIYOS_index n,
                            const BIYOS_int *knd,
                            const BIYOS_offset *off,
-                           const BIYOS_index *funidx,
+                           const BIYOS_index *fun,
                            const BIYOS_offset *prmoff,
                            const BIYOS_real *prm,
                            BIYOS_index *pos)
@@ -201,7 +201,7 @@ BIYOS_status BIYOS_addcone(BIYOS_model *mdl,
     const Given given{
         .kinds = knd,
         .starts = off,
-        .functions = funidx,
+        .functions = fun,
         .parameter_starts = prmoff,
         .parameters = prm,
     };
@@ -281,9 +281,9 @@ BIYOS_status BIYOS_getconesp(const BIYOS_model *mdl,
                              BIYOS_offset cap,
                              BIYOS_int *knd,
                              BIYOS_offset *off,
-                             BIYOS_index *funidx)
+                             BIYOS_index *fun)
 {
-    const Compressed<Index> out{.starts = off, .items = funidx};
+    const Compressed<Index> out{.starts = off, .items = fun};
     return guarded<get_members<List>>(mdl, List{n, idx}, cap, knd, out);
 }
 
@@ -293,9 +293,9 @@ BIYOS_status BIYOS_getconerg(const BIYOS_model *mdl,
                              BIYOS_offset cap,
                              BIYOS_int *knd,
                              BIYOS_offset *off,
-                             BIYOS_index *funidx)
+                             BIYOS_index *fun)
 {
-    const Compressed<Index> out{.starts = off, .items = funidx};
+    const Compressed<Index> out{.starts = off, .items = fun};
     return guarded<get_members<Range>>(mdl, Range{pos, n}, cap, knd, out);
 }
 

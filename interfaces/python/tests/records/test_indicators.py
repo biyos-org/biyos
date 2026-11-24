@@ -99,7 +99,7 @@ def test_views(env, model):
     y = other.addvar(1, [BINARY])
     g = other.addfun(1)
     j = other.addind(y, [1], g)
-    with pytest.raises(ValueError, match="varidx is a variable of another"):
+    with pytest.raises(ValueError, match="var is a variable of another"):
         model.addind([y[0]], [1], [0])
     with pytest.raises(TypeError, match="is a function, not a variable"):
         model.addind([f[0]], [1], [0])
@@ -152,7 +152,7 @@ def test_kind(model):
 def test_lengths(model):
     with pytest.raises(ValueError, match="val has length 1, not 2"):
         model.addind([0, 2], [1], [0, 0])
-    with pytest.raises(ValueError, match="funidx has length 3, not 2"):
+    with pytest.raises(ValueError, match="fun has length 3, not 2"):
         model.addind([0, 2], [1, 1], [0, 0, 0])
     with pytest.raises(ValueError, match="ub has length 1, not 2"):
         model.setindbnd([0, 1], ub=[1.0])

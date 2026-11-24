@@ -29,7 +29,7 @@ def build(model):
 
 with biyos.Env() as env, biyos.Model(env) as model:
     x, f = build(model)
-    funidx, varidx1, varidx2, coef = model.getquadterm(f[2:])
+    fun, var1, var2, coef = model.getquadterm(f[2:])
     print(f"function 2 has {model.getnquadterm(f[2:])} quadratic terms")
-    assert (varidx1, varidx2) == ([0, 1], [0, 1])
+    assert (var1, var2) == ([0, 1], [0, 1])
     assert len(x) == model.getnvar() == 3

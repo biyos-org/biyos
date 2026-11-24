@@ -53,7 +53,7 @@ void add_listed(BIYOS_model &model,
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
     {
-        require(functions, "funidx");
+        require(functions, "fun");
     }
     core.check_quadratic_room(nnz);
     const std::vector<QuadraticTerm> terms = biyos::capi::packed(size, rows, columns, values);
@@ -78,21 +78,21 @@ void add_ranged(BIYOS_model &model,
 
 BIYOS_status BIYOS_addquadtermsp(BIYOS_model *mdl,
                                  BIYOS_offset nnz,
-                                 const BIYOS_index *funidx,
-                                 const BIYOS_index *varidx1,
-                                 const BIYOS_index *varidx2,
+                                 const BIYOS_index *fun,
+                                 const BIYOS_index *var1,
+                                 const BIYOS_index *var2,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_listed>(mdl, nnz, funidx, varidx1, varidx2, coef);
+    return guarded<add_listed>(mdl, nnz, fun, var1, var2, coef);
 }
 
 BIYOS_status BIYOS_addquadtermrg(BIYOS_model *mdl,
                                  BIYOS_index pos,
                                  BIYOS_index n,
                                  const BIYOS_offset *off,
-                                 const BIYOS_index *varidx1,
-                                 const BIYOS_index *varidx2,
+                                 const BIYOS_index *var1,
+                                 const BIYOS_index *var2,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_ranged>(mdl, Range{pos, n}, off, varidx1, varidx2, coef);
+    return guarded<add_ranged>(mdl, Range{pos, n}, off, var1, var2, coef);
 }

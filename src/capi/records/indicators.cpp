@@ -65,9 +65,9 @@ biyos::Indicator given(biyos::Indicator indicator, std::size_t k, const Fields &
 
 void require_fields(const Fields &fields)
 {
-    require(fields.variables, "varidx");
+    require(fields.variables, "var");
     require(fields.values, "val");
-    require(fields.functions, "funidx");
+    require(fields.functions, "fun");
 }
 
 void add_indicators(BIYOS_model &model, int n, const Fields &fields, int *start)
@@ -143,17 +143,17 @@ void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &ou
 
 BIYOS_status BIYOS_addind(BIYOS_model *mdl,
                           BIYOS_index n,
-                          const BIYOS_index *varidx,
+                          const BIYOS_index *var,
                           const BIYOS_int *val,
-                          const BIYOS_index *funidx,
+                          const BIYOS_index *fun,
                           const BIYOS_real *lb,
                           const BIYOS_real *ub,
                           BIYOS_index *pos)
 {
     const Fields fields{
-        .variables = varidx,
+        .variables = var,
         .values = val,
-        .functions = funidx,
+        .functions = fun,
         .lower = lb,
         .upper = ub,
     };
@@ -199,40 +199,40 @@ BIYOS_status BIYOS_getindbndrg(const BIYOS_model *mdl,
 BIYOS_status BIYOS_setindvarsp(BIYOS_model *mdl,
                                BIYOS_index n,
                                const BIYOS_index *idx,
-                               const BIYOS_index *varidx,
+                               const BIYOS_index *var,
                                const BIYOS_int *val)
 {
-    const Fields fields{.variables = varidx, .values = val};
+    const Fields fields{.variables = var, .values = val};
     return guarded<set_chosen<List>>(mdl, List{n, idx}, fields);
 }
 
 BIYOS_status BIYOS_setindvarrg(BIYOS_model *mdl,
                                BIYOS_index pos,
                                BIYOS_index n,
-                               const BIYOS_index *varidx,
+                               const BIYOS_index *var,
                                const BIYOS_int *val)
 {
-    const Fields fields{.variables = varidx, .values = val};
+    const Fields fields{.variables = var, .values = val};
     return guarded<set_chosen<Range>>(mdl, Range{pos, n}, fields);
 }
 
 BIYOS_status BIYOS_getindvarsp(const BIYOS_model *mdl,
                                BIYOS_index n,
                                const BIYOS_index *idx,
-                               BIYOS_index *varidx,
+                               BIYOS_index *var,
                                BIYOS_int *val)
 {
-    const Outputs outputs{.variables = varidx, .values = val};
+    const Outputs outputs{.variables = var, .values = val};
     return guarded<get_chosen<List>>(mdl, List{n, idx}, outputs);
 }
 
 BIYOS_status BIYOS_getindvarrg(const BIYOS_model *mdl,
                                BIYOS_index pos,
                                BIYOS_index n,
-                               BIYOS_index *varidx,
+                               BIYOS_index *var,
                                BIYOS_int *val)
 {
-    const Outputs outputs{.variables = varidx, .values = val};
+    const Outputs outputs{.variables = var, .values = val};
     return guarded<get_chosen<Range>>(mdl, Range{pos, n}, outputs);
 }
 
@@ -244,16 +244,16 @@ BIYOS_status BIYOS_getnind(const BIYOS_model *mdl, BIYOS_index *n)
 BIYOS_status BIYOS_getindsp(const BIYOS_model *mdl,
                             BIYOS_index n,
                             const BIYOS_index *idx,
-                            BIYOS_index *varidx,
+                            BIYOS_index *var,
                             BIYOS_int *val,
-                            BIYOS_index *funidx,
+                            BIYOS_index *fun,
                             BIYOS_real *lb,
                             BIYOS_real *ub)
 {
     const Outputs outputs{
-        .variables = varidx,
+        .variables = var,
         .values = val,
-        .functions = funidx,
+        .functions = fun,
         .lower = lb,
         .upper = ub,
     };
@@ -263,16 +263,16 @@ BIYOS_status BIYOS_getindsp(const BIYOS_model *mdl,
 BIYOS_status BIYOS_getindrg(const BIYOS_model *mdl,
                             BIYOS_index pos,
                             BIYOS_index n,
-                            BIYOS_index *varidx,
+                            BIYOS_index *var,
                             BIYOS_int *val,
-                            BIYOS_index *funidx,
+                            BIYOS_index *fun,
                             BIYOS_real *lb,
                             BIYOS_real *ub)
 {
     const Outputs outputs{
-        .variables = varidx,
+        .variables = var,
         .values = val,
-        .functions = funidx,
+        .functions = fun,
         .lower = lb,
         .upper = ub,
     };

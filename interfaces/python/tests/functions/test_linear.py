@@ -47,9 +47,9 @@ def model(env):
 
 
 def terms(model):
-    funidx, varidx, coef = model.getrlinterm()
+    fun, var, coef = model.getrlinterm()
     ends = range(model.getnfun() + 1)
-    return [bisect_left(funidx, j) for j in ends], varidx, coef
+    return [bisect_left(fun, j) for j in ends], var, coef
 
 
 def read_lengths(handle, pos, n, size, starts, funs, values):
@@ -84,18 +84,18 @@ def transposed(by_function, pos, n):
 
 
 def random_terms(draw, n_vars, n_funs):
-    off, varidx, coef = [0], [], []
+    off, var, coef = [0], [], []
     for _ in range(n_funs):
         chosen = draw.sample(range(n_vars), draw.randint(0, n_vars))
-        varidx += chosen
+        var += chosen
         coef += [float(draw.randint(-4, 4)) for _ in chosen]
-        off.append(len(varidx))
-    return off, varidx, coef
+        off.append(len(var))
+    return off, var, coef
 
 
 def test_coordinates(model):
-    funidx = [1, 2, 1, 2]
-    model.addlinterm(funidx, [0, 2, 2, 0], [0.0, 0.5, 2.0, -1.0])
+    fun = [1, 2, 1, 2]
+    model.addlinterm(fun, [0, 2, 2, 0], [0.0, 0.5, 2.0, -1.0])
     assert terms(model) == MERGED
     model.addlinterm([], [], [])
     assert terms(model) == MERGED
@@ -112,12 +112,12 @@ def test_copied(env):
                 model.addfun(n_funs)
             drawn = random_terms(draw, n_vars, n_funs)
             source.addlinterm(*spread(drawn, 0, 0))
-            funidx, varidx, coef = source.getrlinterm()
+            fun, var, coef = source.getrlinterm()
             order = list(range(len(coef)))
             draw.shuffle(order)
             target.addlinterm(
-                [funidx[k] for k in order],
-                [varidx[k] for k in order],
+                [fun[k] for k in order],
+                [var[k] for k in order],
                 [coef[k] for k in order],
             )
             assert terms(target) == terms(source)
@@ -133,7 +133,7 @@ def test_misplaced(model):
     assert message == (
         "invalid argument: function 2: coefficient of variable 2 is infinity"
     )
-    with pytest.raises(ValueError, match="varidx has length 1, not 2"):
+    with pytest.raises(ValueError, match="var has length 1, not 2"):
         model.addlinterm([0, 1], [0], [1.0, 2.0])
     with pytest.raises(ValueError, match="coef has length 1, not 2"):
         model.addlinterm([0, 1], [0, 1], [1.0])
@@ -163,9 +163,9 @@ def test_sequences(model):
     read_only = memoryview(array.array("i", [1]).tobytes()).cast("i")
     model.addlinterm(read_only, (2,), array.array("d", [4]))
     model.addlinterm((Number(0), Number(0)), range(1, 3), [1, 2])
-    off, varidx, coef = terms(model)
+    off, var, coef = terms(model)
     assert off == [0, 3, 4, 6]
-    assert varidx == [0, 1, 2, 2, 0, 1]
+    assert var == [0, 1, 2, 2, 0, 1]
     assert coef == [1.0, 1.0, 5.0, 4.0, 4.0, 5.0]
 
 
@@ -181,10 +181,10 @@ def test_views(env, model):
     other = biyos.Model(env)
     y = other.addvar(1)
     g = other.addfun(1)
-    entry = "an entry of varidx is a variable of another model"
+    entry = "an entry of var is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.addlinterm([0], [y[0]], [1.0])
-    with pytest.raises(ValueError, match="funidx is a block of another"):
+    with pytest.raises(ValueError, match="fun is a block of another"):
         model.addlinterm(g, [0], [1.0])
     with pytest.raises(ValueError, match="idx is a variable of another"):
         model.getclinterm([y[0]])
@@ -228,9 +228,9 @@ def test_gone(model, monkeypatch):
 def test_numbers(model):
     with pytest.raises(TypeError, match="an entry of coef must be a number"):
         model.addlinterm([0], [0], ["1"])
-    with pytest.raises(TypeError, match="an entry of varidx must be an"):
+    with pytest.raises(TypeError, match="an entry of var must be an"):
         model.addlinterm([0], [0.0], [1.0])
-    with pytest.raises(TypeError, match="an entry of funidx must be an"):
+    with pytest.raises(TypeError, match="an entry of fun must be an"):
         model.addlinterm([0.0], [0], [1.0])
     with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
         model.getclinterm(range(2**32, 2**32 + 1))
@@ -279,10 +279,10 @@ def test_transpose(env):
             drawn = random_terms(draw, n_vars, n_funs)
             model.addlinterm(*spread(drawn, 0, 0))
             for _ in range(3):
-                funidx = draw.sample(range(n_funs), draw.randint(0, n_funs))
-                added = random_terms(draw, n_vars, len(funidx))
-                owners, varidx, coef = spread(added, 0, 0)
-                model.addlinterm([funidx[j] for j in owners], varidx, coef)
+                fun = draw.sample(range(n_funs), draw.randint(0, n_funs))
+                added = random_terms(draw, n_vars, len(fun))
+                owners, var, coef = spread(added, 0, 0)
+                model.addlinterm([fun[j] for j in owners], var, coef)
             by_function = terms(model)
             whole = transposed(by_function, 0, n_vars)
             assert model.getclinterm() == spread(whole)

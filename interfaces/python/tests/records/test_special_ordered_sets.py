@@ -186,10 +186,10 @@ def test_views(env, model):
     other = biyos.Model(env)
     y = other.addvar(1)
     t = other.addsos([ONE], [0, 1], y)
-    entry = "an entry of varidx is a variable of another model"
+    entry = "an entry of var is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.addsos([ONE], [0, 1], [y[0]])
-    with pytest.raises(ValueError, match="varidx is a block of another"):
+    with pytest.raises(ValueError, match="var is a block of another"):
         model.addsos([ONE], [0, 1], y)
     with pytest.raises(ValueError, match="is a set of another model"):
         model.getsos([t[0]])
@@ -262,7 +262,7 @@ def test_refused(model):
         "invalid argument: set 3: weight of variable 1 is minus infinity"
     )
     message = refusal(model.addsos, [ONE], [0, 1], None)
-    assert message == "invalid argument: argument 'varidx': is null"
+    assert message == "invalid argument: argument 'var': is null"
     assert model.getsos() == SAMPLE
 
 
@@ -271,7 +271,7 @@ def test_lengths(model):
         model.addsos([ONE, ONE], [0, 1], [0])
     with pytest.raises(ValueError, match="off has length 0, not 1"):
         model.addsos([], [], [])
-    with pytest.raises(ValueError, match="varidx has length 1, not 2"):
+    with pytest.raises(ValueError, match="var has length 1, not 2"):
         model.addsos([ONE], [0, 2], [0])
     with pytest.raises(ValueError, match="coef has length 3, not 2"):
         model.addsos([ONE], [0, 2], [0, 1], [1.0, 2.0, 3.0])
@@ -289,7 +289,7 @@ def test_numbers(model):
         model.addsos([ONE], None, [0])
     with pytest.raises(TypeError, match="an entry of off must be an int"):
         model.addsos([ONE], [0, 1.0], [0])
-    with pytest.raises(TypeError, match="an entry of varidx must be an"):
+    with pytest.raises(TypeError, match="an entry of var must be an"):
         model.addsos([ONE], [0, 1], [0.0])
     with pytest.raises(TypeError, match="an entry of coef must be a number"):
         model.addsos([ONE], [0, 1], [0], ["1"])

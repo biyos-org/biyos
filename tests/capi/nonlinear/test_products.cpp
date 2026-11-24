@@ -327,13 +327,13 @@ TEST(ProductTest, Arguments)
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': -1 is negative");
     EXPECT_EQ(BIYOS_addquadtermsp(held, 1, nullptr, zero.data(), zero.data(), one.data()),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     EXPECT_EQ(BIYOS_addquadtermsp(held, 1, zero.data(), zero.data(), nullptr, one.data()),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx2': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var2': is null");
     EXPECT_EQ(BIYOS_addquadtermsp(held, 1, zero.data(), nullptr, zero.data(), one.data()),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx1': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var1': is null");
     EXPECT_EQ(BIYOS_addquadtermsp(held, 1, zero.data(), zero.data(), zero.data(), nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");

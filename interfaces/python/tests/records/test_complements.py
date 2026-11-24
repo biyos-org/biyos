@@ -109,7 +109,7 @@ def test_views(env, model):
     other = biyos.Model(env)
     g = other.addfun(1)
     d = other.addccon(g, g)
-    with pytest.raises(ValueError, match="funidx2 is a function of another"):
+    with pytest.raises(ValueError, match="fun2 is a function of another"):
         model.addccon([0], [g[0]])
     with pytest.raises(TypeError, match="is a variable, not a function"):
         model.addccon([x[0]], [0])
@@ -130,7 +130,7 @@ def test_refused(model):
     message = refusal(model.addccon, [0], [0], [NAN])
     assert message == "invalid argument: complement 3: lower bound is NaN"
     message = refusal(model.addccon, [0], None)
-    assert message == "invalid argument: argument 'funidx2': is null"
+    assert message == "invalid argument: argument 'fun2': is null"
     message = refusal(model.setcconbnd, [0], [biyos.inf])
     assert message == "invalid argument: complement 0: lower bound is infinity"
     message = refusal(model.setccontol, [1], [NAN])
@@ -154,7 +154,7 @@ def test_refused(model):
 
 
 def test_lengths(model):
-    with pytest.raises(ValueError, match="funidx2 has length 1, not 2"):
+    with pytest.raises(ValueError, match="fun2 has length 1, not 2"):
         model.addccon([0, 2], [1])
     with pytest.raises(ValueError, match="lb has length 3, not 2"):
         model.addccon([0, 2], [1, 1], [0.0] * 3)
