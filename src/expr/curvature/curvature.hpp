@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/index.hpp"
+#include "expr/curvature/shape.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/intervals/interval.hpp"
-#include "expr/shape.hpp"
 
 #include <cstddef>
 #include <span>

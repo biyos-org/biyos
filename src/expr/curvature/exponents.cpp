@@ -1,9 +1,9 @@
-#include "expr/exponents.hpp"
+#include "expr/curvature/exponents.hpp"
 
 #include "core/numeric/zero.hpp"
-#include "expr/bends.hpp"
+#include "expr/curvature/bends.hpp"
+#include "expr/curvature/shape.hpp"
 #include "expr/intervals/interval.hpp"
-#include "expr/shape.hpp"
 
 #include <cmath>
 #include <span>

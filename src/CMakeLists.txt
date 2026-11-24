@@ -25,15 +25,17 @@ add_library(biyos_internal STATIC
     core/timing/deadline.cpp
     core/timing/timer.cpp
     core/version.cpp
-    expr/arithmetic.cpp
-    expr/bends.cpp
     expr/canonical.cpp
-    expr/curvature.cpp
+    expr/curvature/arithmetic.cpp
+    expr/curvature/bends.cpp
+    expr/curvature/curvature.cpp
+    expr/curvature/exponents.cpp
+    expr/curvature/shape.cpp
+    expr/curvature/waves.cpp
     expr/derivatives/derivative.cpp
     expr/derivatives/partials.cpp
     expr/derivatives/reverse.cpp
     expr/derivatives/value.cpp
-    expr/exponents.cpp
     expr/graph/builder.cpp
     expr/graph/compact.cpp
     expr/graph/graph.cpp
@@ -46,7 +48,6 @@ add_library(biyos_internal STATIC
     expr/intervals/periodic.cpp
     expr/intervals/powers.cpp
     expr/intervals/rounding.cpp
-    expr/shape.cpp
     expr/sparsity/memo.cpp
     expr/sparsity/radix.cpp
     expr/sparsity/reach.cpp
@@ -56,7 +57,6 @@ add_library(biyos_internal STATIC
     expr/tape/reads.cpp
     expr/tape/tape.cpp
     expr/terms.cpp
-    expr/waves.cpp
     io/bounds.cpp
     io/column_shape.cpp
     io/columns.cpp

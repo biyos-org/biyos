@@ -1,7 +1,7 @@
-#include "expr/bends.hpp"
+#include "expr/curvature/bends.hpp"
 
+#include "expr/curvature/shape.hpp"
 #include "expr/intervals/interval.hpp"
-#include "expr/shape.hpp"
 
 #include <limits>
 

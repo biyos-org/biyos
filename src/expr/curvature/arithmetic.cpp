@@ -1,8 +1,8 @@
-#include "expr/arithmetic.hpp"
+#include "expr/curvature/arithmetic.hpp"
 
 #include "core/numeric/zero.hpp"
+#include "expr/curvature/shape.hpp"
 #include "expr/intervals/interval.hpp"
-#include "expr/shape.hpp"
 
 #include <algorithm>
 #include <array>

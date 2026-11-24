@@ -1,16 +1,16 @@
-#include "expr/curvature.hpp"
+#include "expr/curvature/curvature.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text/text.hpp"
-#include "expr/arithmetic.hpp"
-#include "expr/bends.hpp"
-#include "expr/exponents.hpp"
+#include "expr/curvature/arithmetic.hpp"
+#include "expr/curvature/bends.hpp"
+#include "expr/curvature/exponents.hpp"
+#include "expr/curvature/shape.hpp"
+#include "expr/curvature/waves.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/intervals/interval.hpp"
-#include "expr/shape.hpp"
-#include "expr/waves.hpp"
 
 #include <algorithm>
 #include <cstddef>

@@ -1,4 +1,4 @@
-#include "expr/shape.hpp"
+#include "expr/curvature/shape.hpp"
 
 #include "expr/intervals/interval.hpp"
 

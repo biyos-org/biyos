@@ -1,7 +1,7 @@
-#include "expr/waves.hpp"
+#include "expr/curvature/waves.hpp"
 
+#include "expr/curvature/shape.hpp"
 #include "expr/intervals/interval.hpp"
-#include "expr/shape.hpp"
 
 #include <cmath>
 #include <cstddef>
