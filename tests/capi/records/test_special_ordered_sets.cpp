@@ -268,7 +268,7 @@ TEST(CApiTest, NullSets)
     EXPECT_EQ(BIYOS_addsos(held, 1, nullptr, starts, nullptr, weights, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'knd': is null");
     EXPECT_EQ(BIYOS_addsos(held, 1, &kind, starts, nullptr, weights, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var': is null");
     EXPECT_EQ(BIYOS_addsos(held, 0, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(n_special_ordered_sets(model), 0);
     EXPECT_EQ(BIYOS_getnsos(held, nullptr), BIYOS_ERR_BADARG);

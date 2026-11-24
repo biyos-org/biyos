@@ -174,13 +174,13 @@ TEST(CApiTest, NullIndicators)
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_addind(held, 1, nullptr, values, functions, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var': is null");
     EXPECT_EQ(BIYOS_addind(held, 1, variables, nullptr, functions, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'val': is null");
     EXPECT_EQ(BIYOS_addind(held, 1, variables, values, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     EXPECT_EQ(n_indicators(model), 4);
 }
 

@@ -76,7 +76,7 @@ void add_listed(BIYOS_model &model,
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
     {
-        require(functions, "funidx");
+        require(functions, "fun");
     }
     core.check_room(0, nnz);
     const std::span<const biyos::Index> owners(functions, size);
@@ -107,7 +107,7 @@ void add_columns(BIYOS_model &model,
     const auto total = static_cast<std::size_t>(begins.back());
     if (total > 0)
     {
-        require(functions, "funidx");
+        require(functions, "fun");
         require(values, "coef");
     }
     const std::span<const biyos::Index> owners(functions, total);
@@ -118,29 +118,29 @@ void add_columns(BIYOS_model &model,
 
 BIYOS_status BIYOS_addlintermsp(BIYOS_model *mdl,
                                 BIYOS_offset nnz,
-                                const BIYOS_index *funidx,
-                                const BIYOS_index *varidx,
+                                const BIYOS_index *fun,
+                                const BIYOS_index *var,
                                 const BIYOS_real *coef)
 {
-    return guarded<add_listed>(mdl, nnz, funidx, varidx, coef);
+    return guarded<add_listed>(mdl, nnz, fun, var, coef);
 }
 
 BIYOS_status BIYOS_addrlintermrg(BIYOS_model *mdl,
                                  BIYOS_index pos,
                                  BIYOS_index n,
                                  const BIYOS_offset *off,
-                                 const BIYOS_index *varidx,
+                                 const BIYOS_index *var,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_rows>(mdl, Range{pos, n}, off, varidx, coef);
+    return guarded<add_rows>(mdl, Range{pos, n}, off, var, coef);
 }
 
 BIYOS_status BIYOS_addclintermrg(BIYOS_model *mdl,
                                  BIYOS_index pos,
                                  BIYOS_index n,
                                  const BIYOS_offset *off,
-                                 const BIYOS_index *funidx,
+                                 const BIYOS_index *fun,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_columns>(mdl, Range{pos, n}, off, funidx, coef);
+    return guarded<add_columns>(mdl, Range{pos, n}, off, fun, coef);
 }

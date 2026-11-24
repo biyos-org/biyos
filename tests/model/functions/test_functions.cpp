@@ -427,7 +427,7 @@ TEST(FunctionTest, LinearRefused)
         .starts = {0, 1, 1, 2},
         .terms = {{0, 1.0}, {1, 2.0}},
     };
-    EXPECT_EQ(term_refusal(model, twice), bad + "argument 'funidx': function 1 is repeated");
+    EXPECT_EQ(term_refusal(model, twice), bad + "argument 'fun': function 1 is repeated");
     EXPECT_EQ(term_refusal(model, terms_of(3, {})), bad + "function 3: unknown");
     EXPECT_EQ(term_refusal(model, terms_of(-1, {{0, 1.0}})), bad + "function -1: unknown");
     EXPECT_EQ(term_refusal(model, terms_of(0, {{0, 1.0}, {4, 1.0}})),

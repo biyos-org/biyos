@@ -80,7 +80,7 @@ std::vector<LinearTerm> packed(std::size_t size, const int *variables, const dou
 {
     if (size > 0)
     {
-        require(variables, "varidx");
+        require(variables, "var");
         require(values, "coef");
     }
     std::vector<LinearTerm> terms;
@@ -115,8 +115,8 @@ std::vector<QuadraticTerm> packed(std::size_t size,
 {
     if (size > 0)
     {
-        require(rows, "varidx1");
-        require(columns, "varidx2");
+        require(rows, "var1");
+        require(columns, "var2");
         require(values, "coef");
     }
     std::vector<QuadraticTerm> terms;

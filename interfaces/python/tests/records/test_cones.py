@@ -193,10 +193,10 @@ def test_views(env, model):
     g = other.addfun(2)
     d = other.addcone([ConeKind.NONNEGATIVE], [0, 2], g)
     x = model.addvar(1)
-    entry = "an entry of funidx is a function of another model"
+    entry = "an entry of fun is a function of another model"
     with pytest.raises(ValueError, match=entry):
         model.addcone([ConeKind.NONNEGATIVE], [0, 2], [0, g[1]])
-    with pytest.raises(ValueError, match="funidx is a block of another"):
+    with pytest.raises(ValueError, match="fun is a block of another"):
         model.addcone([ConeKind.NONNEGATIVE], [0, 2], g)
     with pytest.raises(TypeError, match="is a variable, not a function"):
         model.addcone([ConeKind.NONNEGATIVE], [0, 1], [x[0]])
@@ -285,7 +285,7 @@ def test_offsets(model):
 def test_lengths(model):
     with pytest.raises(ValueError, match="off has length 2, not 3"):
         model.addcone(KINDS, [0, 3], MEMBERS)
-    with pytest.raises(ValueError, match="funidx has length 4, not 5"):
+    with pytest.raises(ValueError, match="fun has length 4, not 5"):
         model.addcone(KINDS, OFF, MEMBERS[:4])
     with pytest.raises(ValueError, match="prmoff has length 2, not 3"):
         model.addcone(KINDS, OFF, MEMBERS, [0, 2], PRM)
@@ -301,7 +301,7 @@ def test_numbers(model):
         model.addcone([2.0], [0, 1], [0])
     with pytest.raises(TypeError, match="an entry of off must be an"):
         model.addcone([ConeKind.NONNEGATIVE], [0, 1.0], [0])
-    with pytest.raises(TypeError, match="an entry of funidx must be an"):
+    with pytest.raises(TypeError, match="an entry of fun must be an"):
         model.addcone([ConeKind.NONNEGATIVE], [0, 1], [0.0])
     with pytest.raises(TypeError, match="an entry of prm must be a number"):
         model.addcone([ConeKind.POWER], [0, 2], [0, 1], [0, 1], ["1"])

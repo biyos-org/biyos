@@ -350,7 +350,7 @@ TEST(CApiTest, NullObjectives)
     wanted.weights[5] = 2.0;
     expect_records(read_all(model), wanted);
     EXPECT_EQ(add_with(held, 1, nullptr, {.senses = senses}), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     EXPECT_EQ(n_objectives(model), 6);
 }
 

@@ -45,7 +45,7 @@ void Model::add_quadratic_terms(std::span<const Index> functions,
 {
     check_quadratic_room(static_cast<Offset>(terms.size()));
     check_shape(functions.size(), starts, terms.size());
-    check_functions(functions, n_functions(), "funidx");
+    check_functions(functions, n_functions(), "fun");
     std::vector<AddedPairs> additions;
     additions.reserve(functions.size());
     for (std::size_t k = 0; k < functions.size(); ++k)

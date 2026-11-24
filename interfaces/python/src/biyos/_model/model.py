@@ -1321,21 +1321,21 @@ class Model:
 
     def addlinterm(
         self,
-        funidx: Sequence[int | Function] | Functions,
-        varidx: Sequence[int | Variable] | Variables,
+        fun: Sequence[int | Function] | Functions,
+        var: Sequence[int | Variable] | Variables,
         coef: Sequence[float],
     ) -> None:
         """Add linear terms to functions, as coordinates.
 
-        Term ``k`` adds ``coef[k]`` times variable ``varidx[k]`` to
-        function ``funidx[k]``, in any order. A variable the function holds
+        Term ``k`` adds ``coef[k]`` times variable ``var[k]`` to
+        function ``fun[k]``, in any order. A variable the function holds
         already adds its coefficient to the one held.
 
         Parameters
         ----------
-        funidx
+        fun
             The function of each term.
-        varidx
+        var
             The variable of each term, each once for its function.
         coef
             The coefficient of each term.
@@ -1344,10 +1344,10 @@ class Model:
         --------
         BIYOS_addlintermsp
         """
-        size = len(funidx)
+        size = len(fun)
         arrays = (
-            indices_of(self, Functions, "funidx", funidx, size),
-            indices_of(self, Variables, "varidx", varidx, size),
+            indices_of(self, Functions, "fun", fun, size),
+            indices_of(self, Variables, "var", var, size),
             doubles("coef", coef, size),
         )
         self._call(lib.BIYOS_addlintermsp, size, *arrays)
@@ -1390,9 +1390,9 @@ class Model:
 
         Returns
         -------
-        funidx
+        fun
             The function of each term, the terms of ``idx[0]`` first.
-        varidx
+        var
             The variable of each term, each function's sorted by variable.
         coef
             The coefficient of each term.
@@ -1444,9 +1444,9 @@ class Model:
 
         Returns
         -------
-        funidx
+        fun
             The function of each term, each variable's sorted by function.
-        varidx
+        var
             The variable of each term, the terms of ``idx[0]`` first.
         coef
             The coefficient of each term.
@@ -1462,24 +1462,24 @@ class Model:
 
     def addquadterm(
         self,
-        funidx: Sequence[int | Function] | Functions,
-        varidx1: Sequence[int | Variable] | Variables,
-        varidx2: Sequence[int | Variable] | Variables,
+        fun: Sequence[int | Function] | Functions,
+        var1: Sequence[int | Variable] | Variables,
+        var2: Sequence[int | Variable] | Variables,
         coef: Sequence[float],
     ) -> None:
         """Add quadratic terms to functions, as coordinates.
 
         Term ``k`` adds ``coef[k]`` times the product of variables
-        ``varidx1[k]`` and ``varidx2[k]`` to function ``funidx[k]``, with
+        ``var1[k]`` and ``var2[k]`` to function ``fun[k]``, with
         no factor 1/2, in any order. The two variables of a pair may come
         in either order. A pair the function holds already adds its
         coefficient to the one held.
 
         Parameters
         ----------
-        funidx
+        fun
             The function of each term.
-        varidx1, varidx2
+        var1, var2
             The two variables of each term, each pair once for its
             function.
         coef
@@ -1489,11 +1489,11 @@ class Model:
         --------
         BIYOS_addquadtermsp
         """
-        size = len(funidx)
+        size = len(fun)
         arrays = (
-            indices_of(self, Functions, "funidx", funidx, size),
-            indices_of(self, Variables, "varidx1", varidx1, size),
-            indices_of(self, Variables, "varidx2", varidx2, size),
+            indices_of(self, Functions, "fun", fun, size),
+            indices_of(self, Variables, "var1", var1, size),
+            indices_of(self, Variables, "var2", var2, size),
             doubles("coef", coef, size),
         )
         self._call(lib.BIYOS_addquadtermsp, size, *arrays)
@@ -1536,12 +1536,12 @@ class Model:
 
         Returns
         -------
-        funidx
+        fun
             The function of each term, the terms of ``idx[0]`` first.
-        varidx1
+        var1
             The first variable of each term, never above the second, each
             function's terms sorted by pair.
-        varidx2
+        var2
             The second variable of each term.
         coef
             The coefficient of each term.
@@ -1801,7 +1801,7 @@ class Model:
 
     def addcb(
         self,
-        funidx: Sequence[int | Function] | Functions,
+        fun: Sequence[int | Function] | Functions,
         data: object = None,
     ) -> int:
         """Add a callback that covers functions of the model.
@@ -1814,7 +1814,7 @@ class Model:
 
         Parameters
         ----------
-        funidx
+        fun
             The functions, each listed once. Their order is the order of the
             callback's values.
         data
@@ -1842,8 +1842,8 @@ class Model:
         --------
         BIYOS_addcb
         """
-        n = len(funidx)
-        indices = indices_of(self, Functions, "funidx", funidx, n)
+        n = len(fun)
+        indices = indices_of(self, Functions, "fun", fun, n)
         cell = py_object(data)
         cb = c_int()
         self._callbacks.keep(cell)
@@ -1882,14 +1882,14 @@ class Model:
         self,
         cb: int,
         off: Sequence[int],
-        varidx: Sequence[int | Variable] | Variables,
+        var: Sequence[int | Variable] | Variables,
         g: Callable[..., object],
     ) -> None:
         """Give a callback its Jacobian pattern and the function that
         evaluates it.
 
         The entries of the ``k``-th covered function are those from
-        ``off[k]`` to ``off[k + 1] - 1`` of ``varidx``. A variable left out
+        ``off[k]`` to ``off[k + 1] - 1`` of ``var``. A variable left out
         of a function's entries has a zero derivative in the callback's part
         of that function.
 
@@ -1900,7 +1900,7 @@ class Model:
         off
             The offsets of each covered function's entries, one more than
             the functions the callback covers, from 0 and never decreasing.
-        varidx
+        var
             The variable of each entry, ``off[-1]`` of them, in increasing
             order within a function.
         g
@@ -1925,7 +1925,7 @@ class Model:
         n = self._callbacks.count(cb)
         starts = offsets("off", off, n + 1)
         size = _total(starts, n)
-        variables = indices_of(self, Variables, "varidx", varidx, size)
+        variables = indices_of(self, Variables, "var", var, size)
         caller = Caller(g, n, size)
         self._callbacks.keep(caller)
         self._call(lib.BIYOS_setcbg, cb, starts, variables, caller.pointer)
@@ -1933,8 +1933,8 @@ class Model:
     def setcbh(
         self,
         cb: int,
-        varidx1: Sequence[int | Variable] | Variables,
-        varidx2: Sequence[int | Variable] | Variables,
+        var1: Sequence[int | Variable] | Variables,
+        var2: Sequence[int | Variable] | Variables,
         h: Callable[..., object],
     ) -> None:
         """Give a callback its Hessian pattern and the function that
@@ -1949,9 +1949,9 @@ class Model:
         ----------
         cb
             The callback.
-        varidx1
+        var1
             The first variable of each pair.
-        varidx2
+        var2
             The second variable of each pair, no less than the first.
         h
             The function, as ``addcb`` describes. It writes, for each pair,
@@ -1968,9 +1968,9 @@ class Model:
         BIYOS_setcbh
         """
         cb = integer("cb", cb)
-        nnz = len(varidx1)
-        first = indices_of(self, Variables, "varidx1", varidx1, nnz)
-        second = indices_of(self, Variables, "varidx2", varidx2, nnz)
+        nnz = len(var1)
+        first = indices_of(self, Variables, "var1", var1, nnz)
+        second = indices_of(self, Variables, "var2", var2, nnz)
         caller = Caller(checked("h", h), self._callbacks.count(cb), nnz)
         pairs = (nnz, first, second, caller.pointer)
         self._callbacks.keep(caller)
@@ -2076,7 +2076,7 @@ class Model:
 
         Returns
         -------
-        funidx
+        fun
             The functions, in the order given to ``addcb``.
 
         See Also
@@ -2090,7 +2090,7 @@ class Model:
 
     def addcon(
         self,
-        funidx: Sequence[int | Function]
+        fun: Sequence[int | Function]
         | Functions
         | Comparison
         | Sequence[Comparison],
@@ -2108,7 +2108,7 @@ class Model:
 
         Parameters
         ----------
-        funidx
+        fun
             The function each new constraint bounds, or comparisons such as
             ``x[0] * x[1] <= 3``.
         lb, ub
@@ -2132,13 +2132,13 @@ class Model:
         --------
         BIYOS_addcon
         """
-        cons = given(funidx, Comparison, "a comparison")
+        cons = given(fun, Comparison, "a comparison")
         if cons is not None:
             return self._compared(cons, lb, ub)
-        funs = cast("Sequence[int | Function] | Functions", funidx)
+        funs = cast("Sequence[int | Function] | Functions", fun)
         count = len(funs)
         arrays = (
-            indices_of(self, Functions, "funidx", funs, count),
+            indices_of(self, Functions, "fun", funs, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
@@ -2304,7 +2304,7 @@ class Model:
 
         Returns
         -------
-        funidx
+        fun
             The function each constraint bounds.
         lb
             The lower bound of each.
@@ -2429,7 +2429,7 @@ class Model:
 
     def addobj(
         self,
-        funidx: Sequence[int | Function]
+        fun: Sequence[int | Function]
         | Functions
         | Expression
         | Variable
@@ -2452,7 +2452,7 @@ class Model:
 
         Parameters
         ----------
-        funidx
+        fun
             The function each new objective optimizes, or expressions such
             as ``x[0] + biyos.exp(x[1])``.
         sense
@@ -2483,8 +2483,8 @@ class Model:
         --------
         BIYOS_addobj
         """
-        trees = given(funidx, Operand, "an expression")
-        funs = cast("Sequence[int | Function] | Functions", funidx)
+        trees = given(fun, Operand, "an expression")
+        funs = cast("Sequence[int | Function] | Functions", fun)
         count = len(funs) if trees is None else len(trees)
         arrays = (
             ints("sense", sense, count),
@@ -2493,7 +2493,7 @@ class Model:
         )
         if trees is not None:
             funs = attached(self, trees)
-        idx = indices_of(self, Functions, "funidx", funs, count)
+        idx = indices_of(self, Functions, "fun", funs, count)
         first = c_int()
         self._call(lib.BIYOS_addobj, count, idx, *arrays, byref(first))
         return Objectives(self, first.value, count, self._gen)
@@ -2735,7 +2735,7 @@ class Model:
 
         Returns
         -------
-        funidx
+        fun
             The function each objective optimizes.
         sense
             The sense of each.
@@ -2859,28 +2859,28 @@ class Model:
 
     def addind(
         self,
-        varidx: Sequence[int | Variable] | Variables,
+        var: Sequence[int | Variable] | Variables,
         val: Sequence[int],
-        funidx: Sequence[int | Function] | Functions,
+        fun: Sequence[int | Function] | Functions,
         lb: Sequence[float] | None = None,
         ub: Sequence[float] | None = None,
     ) -> Indicators:
         """Add indicators after the last one, one for each variable given.
 
         An indicator bounds a function while a binary variable takes a
-        value: when variable ``varidx[j]`` equals ``val[j]``, function
-        ``funidx[j]`` lies within its bounds, and otherwise it is free. A
+        value: when variable ``var[j]`` equals ``val[j]``, function
+        ``fun[j]`` lies within its bounds, and otherwise it is free. A
         variable stays binary while an indicator uses it.
 
         Parameters
         ----------
-        varidx
+        var
             The binary variable that switches each new indicator on.
         val
             The value of each variable that switches its indicator on, 0 or
-            1, as many as ``varidx``.
-        funidx
-            The function each indicator bounds, as many as ``varidx``.
+            1, as many as ``var``.
+        fun
+            The function each indicator bounds, as many as ``var``.
         lb, ub
             The bounds of each, unbounded by default.
 
@@ -2893,11 +2893,11 @@ class Model:
         --------
         BIYOS_addind
         """
-        count = len(varidx)
+        count = len(var)
         arrays = (
-            indices_of(self, Variables, "varidx", varidx, count),
+            indices_of(self, Variables, "var", var, count),
             ints("val", val, count),
-            indices_of(self, Functions, "funidx", funidx, count),
+            indices_of(self, Functions, "fun", fun, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
@@ -2962,7 +2962,7 @@ class Model:
     def setindvar(
         self,
         idx: Sequence[int | Indicator] | Indicators,
-        varidx: Sequence[int | Variable] | Variables | None = None,
+        var: Sequence[int | Variable] | Variables | None = None,
         val: Sequence[int] | None = None,
     ) -> None:
         """Set the variables that switch indicators on, and their values.
@@ -2971,7 +2971,7 @@ class Model:
         ----------
         idx
             The indicators.
-        varidx
+        var
             The new binary variable of each; ``None`` leaves the variables
             as they are.
         val
@@ -2986,7 +2986,7 @@ class Model:
         count = len(idx)
         chosen = self._chosen("BIYOS_setindvar", Indicators, idx)
         arrays = (
-            indices_of(self, Variables, "varidx", varidx, count),
+            indices_of(self, Variables, "var", var, count),
             ints("val", val, count),
         )
         self._call(*chosen, *arrays)
@@ -3003,7 +3003,7 @@ class Model:
 
         Returns
         -------
-        varidx
+        var
             The variable of each.
         val
             The value of each.
@@ -3047,11 +3047,11 @@ class Model:
 
         Returns
         -------
-        varidx
+        var
             The variable that switches each indicator on.
         val
             The value of each variable that switches its indicator on.
-        funidx
+        fun
             The function each indicator bounds.
         lb
             The lower bound of each.
@@ -3174,7 +3174,7 @@ class Model:
         self,
         knd: Sequence[SpecialOrderedSetKind],
         off: Sequence[int],
-        varidx: Sequence[int | Variable] | Variables,
+        var: Sequence[int | Variable] | Variables,
         coef: Sequence[float] | None = None,
     ) -> SpecialOrderedSets:
         """Add special ordered sets after the last one.
@@ -3192,7 +3192,7 @@ class Model:
         off
             The offsets of the sets' members, one more than there are sets,
             from 0 and never decreasing.
-        varidx
+        var
             The variable of each member, ``off[-1]`` of them.
         coef
             The weight of each member, finite and distinct within a set. By
@@ -3216,7 +3216,7 @@ class Model:
         arrays = (
             ints("knd", knd, count),
             starts,
-            indices_of(self, Variables, "varidx", varidx, size),
+            indices_of(self, Variables, "var", var, size),
             doubles("coef", coef, size),
         )
         first = c_int()
@@ -3288,7 +3288,7 @@ class Model:
         off
             The offsets of their members, one more than there are sets, from
             0.
-        varidx
+        var
             The variable of each member, each set's in the order added.
         coef
             The weight of each member.
@@ -3422,14 +3422,14 @@ class Model:
         self,
         knd: Sequence[ConeKind],
         off: Sequence[int],
-        funidx: Sequence[int | Function] | Functions,
+        fun: Sequence[int | Function] | Functions,
         prmoff: Sequence[int] | None = None,
         prm: Sequence[float] | None = None,
     ) -> Cones:
         """Add cones after the last one.
 
-        Cone ``k`` places the functions from ``funidx[off[k]]`` to
-        ``funidx[off[k + 1] - 1]``, in that order, in a cone of kind
+        Cone ``k`` places the functions from ``fun[off[k]]`` to
+        ``fun[off[k + 1] - 1]``, in that order, in a cone of kind
         ``knd[k]`` whose parameters are those from ``prm[prmoff[k]]`` to
         ``prm[prmoff[k + 1] - 1]``. A call that fails adds no cone.
 
@@ -3440,7 +3440,7 @@ class Model:
         off
             The offsets of the cones' members, one more than there are
             cones, from 0 and never decreasing.
-        funidx
+        fun
             The members of each cone, ``off[-1]`` of them, a function at
             most once in a cone.
         prmoff
@@ -3465,7 +3465,7 @@ class Model:
         arrays = (
             ints("knd", knd, n),
             starts,
-            indices_of(self, Functions, "funidx", funidx, _total(starts, n)),
+            indices_of(self, Functions, "fun", fun, _total(starts, n)),
             weights,
             doubles("prm", prm, _total(weights, n)),
         )
@@ -3607,9 +3607,9 @@ class Model:
         off
             The offsets of their members, one more than there are cones,
             from 0.
-        funidx
+        fun
             The members of each cone in order, those of entry ``j`` from
-            ``funidx[off[j]]`` to ``funidx[off[j + 1] - 1]``.
+            ``fun[off[j]]`` to ``fun[off[j + 1] - 1]``.
 
         See Also
         --------
@@ -3787,8 +3787,8 @@ class Model:
 
     def addccon(
         self,
-        funidx1: Sequence[int | Function] | Functions,
-        funidx2: Sequence[int | Function] | Functions,
+        fun1: Sequence[int | Function] | Functions,
+        fun2: Sequence[int | Function] | Functions,
         lb: Sequence[float] | None = None,
         ub: Sequence[float] | None = None,
     ) -> Complements:
@@ -3801,11 +3801,11 @@ class Model:
 
         Parameters
         ----------
-        funidx1
+        fun1
             The bounded function ``f1`` of each new complement.
-        funidx2
+        fun2
             The function ``f2`` complementary to it, as many as
-            ``funidx1``.
+            ``fun1``.
         lb
             The lower bound of each on ``f1``, 0 by default.
         ub
@@ -3820,10 +3820,10 @@ class Model:
         --------
         BIYOS_addccon
         """
-        count = len(funidx1)
+        count = len(fun1)
         arrays = (
-            indices_of(self, Functions, "funidx1", funidx1, count),
-            indices_of(self, Functions, "funidx2", funidx2, count),
+            indices_of(self, Functions, "fun1", fun1, count),
+            indices_of(self, Functions, "fun2", fun2, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
@@ -3990,9 +3990,9 @@ class Model:
 
         Returns
         -------
-        funidx1
+        fun1
             The bounded function of each complement.
-        funidx2
+        fun2
             The function complementary to it.
         lb
             The lower bound of each.

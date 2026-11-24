@@ -94,7 +94,7 @@ def test_on(env, model):
     assert type(g) is biyos.Functions
     copy.addcon(g)
     assert copy.getcon()[0] == [0, 1, 2]
-    with pytest.raises(ValueError, match="funidx is a block of another"):
+    with pytest.raises(ValueError, match="fun is a block of another"):
         model.addcon(g)
     smaller = biyos.Model(env)
     smaller.addfun(2)

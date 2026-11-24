@@ -49,7 +49,7 @@ struct Caller
 void add_callback(BIYOS_model &model, int n, const int *functions, void *data, int *cb)
 {
     biyos::Model &core = writable(model);
-    const int index = core.add_callback(biyos::capi::listed(n, functions, "funidx"), data);
+    const int index = core.add_callback(biyos::capi::listed(n, functions, "fun"), data);
     if (cb != nullptr)
     {
         *cb = index;
@@ -76,7 +76,7 @@ void set_jacobian(BIYOS_model &model,
     const auto total = static_cast<std::size_t>(starts.back());
     if (total > 0)
     {
-        require(variables, "varidx");
+        require(variables, "var");
     }
     core.set_callback_jacobian(cb, starts, {variables, total}, caller);
 }
@@ -93,8 +93,8 @@ void set_hessian(BIYOS_model &model,
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
     {
-        require(first, "varidx1");
-        require(second, "varidx2");
+        require(first, "var1");
+        require(second, "var2");
     }
     core.set_callback_hessian(cb, {first, size}, {second, size}, caller);
 }
@@ -136,11 +136,11 @@ void get_functions(const BIYOS_model &model, int cb, int capacity, int *function
 
 BIYOS_status BIYOS_addcb(BIYOS_model *mdl,
                          BIYOS_index n,
-                         const BIYOS_index *funidx,
+                         const BIYOS_index *fun,
                          void *data,
                          BIYOS_index *cb)
 {
-    return guarded<add_callback>(mdl, n, funidx, data, cb);
+    return guarded<add_callback>(mdl, n, fun, data, cb);
 }
 
 BIYOS_status BIYOS_setcbf(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbf f)
@@ -151,20 +151,20 @@ BIYOS_status BIYOS_setcbf(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbf f)
 BIYOS_status BIYOS_setcbg(BIYOS_model *mdl,
                           BIYOS_index cb,
                           const BIYOS_offset *off,
-                          const BIYOS_index *varidx,
+                          const BIYOS_index *var,
                           BIYOS_cbg g)
 {
-    return guarded<set_jacobian>(mdl, cb, off, varidx, g);
+    return guarded<set_jacobian>(mdl, cb, off, var, g);
 }
 
 BIYOS_status BIYOS_setcbh(BIYOS_model *mdl,
                           BIYOS_index cb,
                           BIYOS_offset nnz,
-                          const BIYOS_index *varidx1,
-                          const BIYOS_index *varidx2,
+                          const BIYOS_index *var1,
+                          const BIYOS_index *var2,
                           BIYOS_cbh h)
 {
-    return guarded<set_hessian>(mdl, cb, nnz, varidx1, varidx2, h);
+    return guarded<set_hessian>(mdl, cb, nnz, var1, var2, h);
 }
 
 BIYOS_status BIYOS_setcbhv(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbhv hv)
@@ -190,7 +190,7 @@ BIYOS_status BIYOS_getncbfun(const BIYOS_model *mdl, BIYOS_index cb, BIYOS_index
 BIYOS_status BIYOS_getcbfun(const BIYOS_model *mdl,
                             BIYOS_index cb,
                             BIYOS_index cap,
-                            BIYOS_index *funidx)
+                            BIYOS_index *fun)
 {
-    return guarded<get_functions>(mdl, cb, cap, funidx);
+    return guarded<get_functions>(mdl, cb, cap, fun);
 }

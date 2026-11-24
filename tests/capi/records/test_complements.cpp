@@ -240,10 +240,10 @@ TEST(CApiTest, NullComplements)
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_addccon(held, 1, nullptr, functions, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx1': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun1': is null");
     EXPECT_EQ(BIYOS_addccon(held, 1, functions, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx2': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun2': is null");
     EXPECT_EQ(n_complements(model), 6);
 }
 

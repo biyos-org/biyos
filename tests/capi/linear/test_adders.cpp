@@ -310,9 +310,9 @@ TEST(AdderTest, Arguments)
     EXPECT_EQ(BIYOS_addlintermsp(held, -1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': -1 is negative");
     EXPECT_EQ(BIYOS_addlintermsp(held, 1, nullptr, zero.data(), one.data()), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     EXPECT_EQ(BIYOS_addlintermsp(held, 1, zero.data(), nullptr, one.data()), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'varidx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var': is null");
     EXPECT_EQ(BIYOS_addlintermsp(held, 1, zero.data(), zero.data(), nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
     EXPECT_EQ(BIYOS_addrlintermrg(held, 0, functions + 1, nullptr, nullptr, nullptr),
@@ -330,7 +330,7 @@ TEST(AdderTest, Arguments)
     EXPECT_EQ(env.message(), "invalid argument: argument 'off': begins at 1, not 0");
     EXPECT_EQ(BIYOS_addclintermrg(held, 0, 1, backwards.data(), nullptr, one.data()),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     EXPECT_EQ(BIYOS_addlintermsp(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addrlintermrg(held, 0, functions, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addclintermrg(held, variables, 0, nullptr, nullptr, nullptr), BIYOS_OK);

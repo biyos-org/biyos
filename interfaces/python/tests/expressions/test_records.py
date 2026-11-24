@@ -253,9 +253,9 @@ def test_bounds(model, x):
 
 
 def test_mixed(model, x):
-    with pytest.raises(TypeError, match="funidx.1. is int, not a comparison"):
+    with pytest.raises(TypeError, match="fun.1. is int, not a comparison"):
         model.addcon([x[0] <= 1, 0])
-    with pytest.raises(TypeError, match="funidx.1. is str, not an expression"):
+    with pytest.raises(TypeError, match="fun.1. is str, not an expression"):
         model.addobj([x[0], "a"])
     assert model.getnfun() == 0
 

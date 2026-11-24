@@ -156,11 +156,11 @@ BIYOS_status BIYOS_getclintermsp(const BIYOS_model *mdl,
                                  const BIYOS_index *idx,
                                  BIYOS_offset cap,
                                  BIYOS_offset *nnz,
-                                 BIYOS_index *funidx,
-                                 BIYOS_index *varidx,
+                                 BIYOS_index *fun,
+                                 BIYOS_index *var,
                                  BIYOS_real *coef)
 {
-    const Coordinates out{.functions = funidx, .variables = varidx, .values = coef};
+    const Coordinates out{.functions = fun, .variables = var, .values = coef};
     return guarded<get_listed>(mdl, List{n, idx}, cap, nnz, out);
 }
 
@@ -169,8 +169,8 @@ BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,
                                  BIYOS_index n,
                                  BIYOS_offset cap,
                                  BIYOS_offset *off,
-                                 BIYOS_index *funidx,
+                                 BIYOS_index *fun,
                                  BIYOS_real *coef)
 {
-    return guarded<get_ranged>(mdl, Range{pos, n}, cap, off, funidx, coef);
+    return guarded<get_ranged>(mdl, Range{pos, n}, cap, off, fun, coef);
 }

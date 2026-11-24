@@ -294,7 +294,7 @@ TEST(CApiTest, NullCones)
     EXPECT_EQ(env.message(), "invalid argument: argument 'off': is null");
     EXPECT_EQ(BIYOS_addcone(held, 1, &kind, starts, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     const BIYOS_int power = BIYOS_CONEKND_POW;
     const BIYOS_offset weights[] = {0, 1};
     EXPECT_EQ(BIYOS_addcone(held, 1, &power, starts, functions, weights, nullptr, nullptr),

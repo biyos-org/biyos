@@ -81,10 +81,10 @@ def test_sums(model):
 
 
 def test_coordinates(model):
-    funidx = [0, 2, 0, 2, 0]
+    fun = [0, 2, 0, 2, 0]
     firsts = [1, 2, 0, 1, 2]
     seconds = [1, 2, 0, 0, 1]
-    model.addquadterm(funidx, firsts, seconds, [0.0, 1.0, 2.0, 3.0, -1.0])
+    model.addquadterm(fun, firsts, seconds, [0.0, 1.0, 2.0, 3.0, -1.0])
     assert model.getquadterm() == spread(SORTED)
     model.addquadterm([], [], [], [])
     assert model.getquadterm() == spread(SORTED)
@@ -131,7 +131,7 @@ def test_misplaced(model):
     assert message == (
         "invalid argument: function 2: coefficient of pair (2, 2) is infinity"
     )
-    with pytest.raises(ValueError, match="varidx2 has length 1, not 2"):
+    with pytest.raises(ValueError, match="var2 has length 1, not 2"):
         model.addquadterm([0, 1], [0, 1], [0], [1.0, 2.0])
     with pytest.raises(ValueError, match="coef has length 1, not 2"):
         model.addquadterm([0, 1], [0, 1], [0, 1], [1.0])
@@ -180,8 +180,8 @@ def test_forms(env):
                 firsts = [j for _, j in pairs]
                 seconds = [i for i, _ in pairs]
                 values = [float(draw.randint(-4, 4)) for _ in pairs]
-                funidx = [f] * len(pairs)
-                model.addquadterm(funidx, firsts, seconds, values)
+                fun = [f] * len(pairs)
+                model.addquadterm(fun, firsts, seconds, values)
             expect_lists(draw, model, count)
 
 
@@ -263,18 +263,18 @@ def test_views(env, model):
     other = biyos.Model(env)
     y = other.addvar(1)
     g = other.addfun(1)
-    entry = "an entry of varidx1 is a variable of another model"
+    entry = "an entry of var1 is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.addquadterm([0], [y[0]], [0], [1.0])
-    with pytest.raises(ValueError, match="varidx2 is a block of another"):
+    with pytest.raises(ValueError, match="var2 is a block of another"):
         model.addquadterm([0], [0], y, [1.0])
-    with pytest.raises(ValueError, match="funidx is a block of another"):
+    with pytest.raises(ValueError, match="fun is a block of another"):
         model.addquadterm(g, [0], [0], [1.0])
     with pytest.raises(ValueError, match="idx is a block of another"):
         model.getquadterm(g)
     with pytest.raises(TypeError, match="is a function, not a variable"):
         model.addquadterm([0], [f[0]], [0], [1.0])
-    with pytest.raises(TypeError, match="funidx is a block of variables"):
+    with pytest.raises(TypeError, match="fun is a block of variables"):
         model.addquadterm(x, [0, 0], [0, 0], [1.0, 1.0])
     with pytest.raises(TypeError, match="idx is a variable, not a"):
         model.getquadterm([x[0]])
@@ -341,9 +341,9 @@ def test_refused(model):
 
 
 def test_lengths(model):
-    with pytest.raises(ValueError, match="varidx1 has length 1, not 2"):
+    with pytest.raises(ValueError, match="var1 has length 1, not 2"):
         model.addquadterm([0, 0], [0], [0, 1], [1.0, 2.0])
-    with pytest.raises(ValueError, match="varidx2 has length 1, not 2"):
+    with pytest.raises(ValueError, match="var2 has length 1, not 2"):
         model.addquadterm([0, 0], [0, 1], [0], [1.0, 2.0])
     with pytest.raises(ValueError, match="coef has length 1, not 0"):
         model.addquadterm([], [], [], [1.0])
@@ -353,11 +353,11 @@ def test_lengths(model):
 def test_numbers(model):
     with pytest.raises(TypeError, match="an entry of coef must be a number"):
         model.addquadterm([0], [0], [0], ["1"])
-    with pytest.raises(TypeError, match="an entry of varidx1 must be an"):
+    with pytest.raises(TypeError, match="an entry of var1 must be an"):
         model.addquadterm([0], [0.0], [0], [1.0])
-    with pytest.raises(TypeError, match="an entry of varidx2 must be an"):
+    with pytest.raises(TypeError, match="an entry of var2 must be an"):
         model.addquadterm([0], [0], [0.0], [1.0])
-    with pytest.raises(TypeError, match="an entry of funidx must be an"):
+    with pytest.raises(TypeError, match="an entry of fun must be an"):
         model.addquadterm([0.0], [0], [0], [1.0])
     with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
         model.getquadterm(range(2**32, 2**32 + 1))

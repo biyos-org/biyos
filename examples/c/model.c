@@ -15,7 +15,7 @@ static BIYOS_status functions(BIYOS_model *mdl)
 {
     const BIYOS_real cst[] = {0.0, 0.0, 1.0};
     const BIYOS_offset off[] = {0, 3, 5, 6};
-    const BIYOS_index varidx[] = {0, 1, 2, 0, 1, 0};
+    const BIYOS_index var[] = {0, 1, 2, 0, 1, 0};
     const BIYOS_real coef[] = {1.0, 1.0, 1.0, 1.0, -2.0, -2.0};
     BIYOS_index pos = 0;
     BIYOS_status status = BIYOS_addfun(mdl, 3, &pos);
@@ -28,35 +28,35 @@ static BIYOS_status functions(BIYOS_model *mdl)
     {
         return status;
     }
-    return BIYOS_addrlintermrg(mdl, pos, 3, off, varidx, coef);
+    return BIYOS_addrlintermrg(mdl, pos, 3, off, var, coef);
 }
 
 static BIYOS_status squares(BIYOS_model *mdl)
 {
-    const BIYOS_index funidx[] = {2, 2};
-    const BIYOS_index varidx1[] = {0, 1};
-    const BIYOS_index varidx2[] = {0, 1};
+    const BIYOS_index fun[] = {2, 2};
+    const BIYOS_index var1[] = {0, 1};
+    const BIYOS_index var2[] = {0, 1};
     const BIYOS_real coef[] = {1.0, 1.0};
-    return BIYOS_addquadtermsp(mdl, 2, funidx, varidx1, varidx2, coef);
+    return BIYOS_addquadtermsp(mdl, 2, fun, var1, var2, coef);
 }
 
 static BIYOS_status constraints(BIYOS_model *mdl)
 {
-    const BIYOS_index funidx[] = {0, 1};
+    const BIYOS_index fun[] = {0, 1};
     const BIYOS_real lb[] = {1.0, 0.0};
     const BIYOS_real ub[] = {5.0, 0.0};
-    return BIYOS_addcon(mdl, 2, funidx, lb, ub, NULL);
+    return BIYOS_addcon(mdl, 2, fun, lb, ub, NULL);
 }
 
 static BIYOS_status objectives(BIYOS_model *mdl)
 {
-    const BIYOS_index funidx[] = {2, 0};
+    const BIYOS_index fun[] = {2, 0};
     const BIYOS_int sense[] = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX};
     const BIYOS_int prio[] = {0, 1};
     const BIYOS_real atol[] = {0.5};
     BIYOS_index pos = 0;
     BIYOS_status status =
-        BIYOS_addobj(mdl, 2, funidx, sense, prio, NULL, &pos);
+        BIYOS_addobj(mdl, 2, fun, sense, prio, NULL, &pos);
     if (status != BIYOS_OK)
     {
         return status;
@@ -75,22 +75,21 @@ static int read_squares(BIYOS_model *mdl)
 {
     BIYOS_offset off[2];
     BIYOS_offset nnz = 0;
-    BIYOS_index varidx1[2];
-    BIYOS_index varidx2[2];
+    BIYOS_index var1[2];
+    BIYOS_index var2[2];
     BIYOS_real coef[2];
     BIYOS_status status = BIYOS_getnquadtermrg(mdl, 2, 1, &nnz);
     if (status != BIYOS_OK || nnz > 2)
     {
         return 0;
     }
-    status =
-        BIYOS_getquadtermrg(mdl, 2, 1, nnz, off, varidx1, varidx2, coef);
+    status = BIYOS_getquadtermrg(mdl, 2, 1, nnz, off, var1, var2, coef);
     if (status != BIYOS_OK)
     {
         return 0;
     }
     printf("function 2 has %lld quadratic terms\n", (long long)nnz);
-    return nnz == 2 && varidx1[1] == 1 && varidx2[1] == 1;
+    return nnz == 2 && var1[1] == 1 && var2[1] == 1;
 }
 
 int main(void)

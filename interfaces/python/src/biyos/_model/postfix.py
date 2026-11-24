@@ -151,5 +151,5 @@ def given(value: object, kind: type[Given], noun: str) -> list[Given] | None:
     for k, item in enumerate(value):
         if not isinstance(item, kind):
             found = type(item).__name__
-            raise TypeError(f"funidx[{k}] is {found}, not {noun}")
+            raise TypeError(f"fun[{k}] is {found}, not {noun}")
     return list(value)

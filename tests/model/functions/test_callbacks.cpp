@@ -168,8 +168,8 @@ TEST(CallbackTest, AddRefused)
     EXPECT_EQ(add_refusal(model, {}), kBad + "argument 'n': 0 is not positive");
     EXPECT_EQ(add_refusal(model, {0, 3}), kBad + "function 3: unknown");
     EXPECT_EQ(add_refusal(model, {-1}), kBad + "function -1: unknown");
-    EXPECT_EQ(add_refusal(model, {2, 0, 2}), kBad + "argument 'funidx': function 2 is repeated");
-    EXPECT_EQ(add_refusal(model, {1, 1}), kBad + "argument 'funidx': function 1 is repeated");
+    EXPECT_EQ(add_refusal(model, {2, 0, 2}), kBad + "argument 'fun': function 2 is repeated");
+    EXPECT_EQ(add_refusal(model, {1, 1}), kBad + "argument 'fun': function 1 is repeated");
     EXPECT_EQ(model.n_callbacks(), 1);
 }
 
