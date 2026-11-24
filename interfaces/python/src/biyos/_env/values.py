@@ -6,7 +6,7 @@ from typing import Any, SupportsIndex
 from biyos import _capi
 from biyos._convert.integers import integer, mask
 from biyos._convert.text import encoded
-from biyos._options import ENUMS, Masks
+from biyos._env.options import ENUMS, Masks
 
 Value = bool | int | float | str | Masks
 

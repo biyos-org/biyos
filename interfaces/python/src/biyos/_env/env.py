@@ -4,16 +4,17 @@ from contextlib import contextmanager
 from ctypes import byref, c_int, c_void_p
 from typing import TYPE_CHECKING, NoReturn
 
-from biyos import _capi, _values
+from biyos import _capi
 from biyos._capi import lib
 from biyos._convert.handles import Handles
 from biyos._convert.integers import integer
 from biyos._convert.text import encoded
+from biyos._env import values
+from biyos._env.event import Event, EventKind, EventLevel
+from biyos._env.hooks import Hooks, checked_hook
+from biyos._env.relay import Relay
+from biyos._env.values import Value
 from biyos._error import Error, check
-from biyos._event import Event, EventKind, EventLevel
-from biyos._hooks import Hooks, checked_hook
-from biyos._relay import Relay
-from biyos._values import Value
 from biyos._versions import Versions, version_text
 
 if TYPE_CHECKING:
@@ -157,7 +158,7 @@ class Env:
         BIYOS_setenvflgopt
         """
         option, kind = self._lookup(name)
-        self._call(_SETTERS[kind], option, *_values.arguments(name, kind, val))
+        self._call(_SETTERS[kind], option, *values.arguments(name, kind, val))
 
     def getopt(self, name: str) -> Value:
         """Read an option.
@@ -186,9 +187,9 @@ class Env:
         BIYOS_getenvflgopt
         """
         option, kind = self._lookup(name)
-        found = _values.slots(kind)
+        found = values.slots(kind)
         self._call(_GETTERS[kind], option, *map(byref, found))
-        return _values.value(name, kind, found)
+        return values.value(name, kind, found)
 
     def getoptver(self, name: str) -> Versions:
         """Read the versions that added, deprecated and retired an option.

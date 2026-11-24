@@ -4,8 +4,8 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 from biyos._capi import HOOK
-from biyos._event import Event, deliver
-from biyos._relay import Relay
+from biyos._env.event import Event, deliver
+from biyos._env.relay import Relay
 
 if TYPE_CHECKING:
     from biyos._model import Model
