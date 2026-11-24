@@ -16,7 +16,7 @@ INVALID_ARGUMENT = -100
 DEFAULTS = {
     "seed": 0,
     "maxtime": float("inf"),
-    "checking": biyos.CheckLevel.CHEAP,
+    "checking": biyos.Checking.CHEAP,
     "presolve": True,
     "repro": "",
     "feastol_abs": 1e-6,
@@ -29,7 +29,7 @@ DEFAULTS = {
 VALUES = {
     "seed": 42,
     "maxtime": 3.5,
-    "checking": biyos.CheckLevel.FULL,
+    "checking": biyos.Checking.FULL,
     "presolve": False,
     "repro": "replay.txt",
     "feastol_abs": 1e-7,
@@ -170,7 +170,7 @@ def test_bad_value(env):
     assert caught.value.code == INVALID_ARGUMENT
 
 
-@pytest.mark.parametrize("level", list(biyos.CheckLevel))
+@pytest.mark.parametrize("level", list(biyos.Checking))
 def test_enum(env, level):
     env.setopt("checking", int(level))
     assert env.getopt("checking") is level
@@ -178,7 +178,7 @@ def test_enum(env, level):
 
 @pytest.mark.parametrize("number", [4, 0, -1])
 def test_bad_enum(env, number):
-    env.setopt("checking", biyos.CheckLevel.FULL)
+    env.setopt("checking", biyos.Checking.FULL)
     message = (
         f"invalid argument: option 'checking': {number} "
         "is not one of 1 (none), 2 (cheap), 3 (full)"
@@ -187,7 +187,7 @@ def test_bad_enum(env, number):
         env.setopt("checking", number)
     assert str(caught.value) == message
     assert caught.value.code == INVALID_ARGUMENT
-    assert env.getopt("checking") is biyos.CheckLevel.FULL
+    assert env.getopt("checking") is biyos.Checking.FULL
 
 
 def test_enum_message(env):
@@ -368,13 +368,13 @@ def test_deleted(env, model):
 
 
 def test_shared(env, model):
-    env.setopt("checking", biyos.CheckLevel.FULL)
-    assert model.getopt("checking") is biyos.CheckLevel.FULL
-    model.setopt("checking", biyos.CheckLevel.NONE)
-    env.setopt("checking", biyos.CheckLevel.CHEAP)
-    assert model.getopt("checking") is biyos.CheckLevel.NONE
+    env.setopt("checking", biyos.Checking.FULL)
+    assert model.getopt("checking") is biyos.Checking.FULL
+    model.setopt("checking", biyos.Checking.NONE)
+    env.setopt("checking", biyos.Checking.CHEAP)
+    assert model.getopt("checking") is biyos.Checking.NONE
     with biyos.Model(env) as other:
-        assert other.getopt("checking") is biyos.CheckLevel.CHEAP
+        assert other.getopt("checking") is biyos.Checking.CHEAP
 
 
 def test_model_refused(env, model):

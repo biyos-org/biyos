@@ -82,7 +82,7 @@ and an upper bound alike. Two finite values $a$ and $b$ are equal unless they di
 
 ## Options in Python {#sec-options-python}
 
-Python reads and sets options by name, with `env.getopt` and `env.setopt`. The value's Python type must match the kind: a `bool` for a bool option, an `int` for an int option, a number for a double option, a `str` for a string option, and for an enum option a member of its class, such as `CheckLevel.FULL`, or its number. A flags option takes a `Masks(on, off)` or any pair of `int`, and a mask that is negative or wider than 64 bits raises `OverflowError`. A mismatch raises `TypeError` before C is called. `getopt` returns the value of an enum option as a member of its class, and that of a flags option as a `Masks`.
+Python reads and sets options by name, with `env.getopt` and `env.setopt`. The value's Python type must match the kind: a `bool` for a bool option, an `int` for an int option, a number for a double option, a `str` for a string option, and for an enum option a member of its class, such as `Checking.FULL`, or its number. A flags option takes a `Masks(on, off)` or any pair of `int`, and a mask that is negative or wider than 64 bits raises `OverflowError`. A mismatch raises `TypeError` before C is called. `getopt` returns the value of an enum option as a member of its class, and that of a flags option as a `Masks`.
 
 ```{.python file="interfaces/python/examples/options.py"}
 ```

@@ -137,7 +137,7 @@ class Env:
         val
             The new value, of the type the option's kind takes. An enum
             option takes a member of its class, such as
-            ``CheckLevel.FULL``, or its number. A flags option takes a
+            ``Checking.FULL``, or its number. A flags option takes a
             ``Masks`` or a pair of ``int``: the parts forced on, then the
             parts forced off.
 
@@ -172,7 +172,7 @@ class Env:
         val
             The value, of the type the option's kind gives. An enum
             option gives a member of its class, such as
-            ``CheckLevel.CHEAP``, and a flags option its ``Masks`` as set.
+            ``Checking.CHEAP``, and a flags option its ``Masks`` as set.
 
         Raises
         ------
