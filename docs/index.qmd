@@ -9,8 +9,7 @@ body-classes: landing
 ![](logo/lockup.svg){.hero-logo .light-content fig-alt="biyos"}
 ![](logo/lockup-reversed.svg){.hero-logo .dark-content fig-alt="biyos"}
 
-[An optimization solver,\
-built from parts.]{.display}
+[Optimization, honestly.]{.display}
 
 [biyos is being built for nonlinear, conic and mixed-integer optimization. **One C API** states the model, each method is **assembled from interchangeable parts** chosen at run time, and every result says **what was proved**: a global optimum, a local one, or nothing.]{.lead}
 :::
