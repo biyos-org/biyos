@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-EXAMPLES = Path(__file__).resolve().parents[3] / "examples" / "python"
+EXAMPLES = Path(__file__).resolve().parents[4] / "examples" / "python"
 PATHS = sorted(EXAMPLES.glob("*.py"))
 
 
