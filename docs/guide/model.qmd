@@ -24,7 +24,7 @@ Items of each family are numbered from 0 in the order they are added, each famil
 
 ## An environment and a model {#sec-model-handles}
 
-A model is made on an environment, which holds the options and the event stream (@sec-events) and keeps the last error of each thread (@sec-errors). A call on the model reports there. The environment cannot be freed while a model made on it is not, so free the models first.
+A model is made on an environment, which holds the options and the event stream ([Events and timing](#sec-events)) and keeps the last error of each thread ([Errors](#sec-errors)). A call on the model reports there. The environment cannot be freed while a model made on it is not, so free the models first.
 
 ```{.c file="examples/c/model.c" item="main"}
 ```
@@ -94,7 +94,7 @@ A call that adds new pairs moves the terms of every function from the lowest one
 
 ## Expressions {#sec-model-expressions}
 
-A function may also hold a nonlinear part $e(x)$, an expression of the model's graph (@sec-graph):
+A function may also hold a nonlinear part $e(x)$, an expression of the model's graph ([The expression graph](#sec-graph)):
 
 $$
 f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + e(x) .
@@ -228,4 +228,4 @@ The Python package wraps the same calls under the same names, without the prefix
 ```{.python file="interfaces/python/examples/model.py" item="build"}
 ```
 
-A block costs the same at any size, and the model refuses a block or a view of another model. @sec-python describes the package as a whole.
+A block costs the same at any size, and the model refuses a block or a view of another model. [The Python package](#sec-python) describes the package as a whole.

@@ -22,7 +22,7 @@ Inside a tape the operands are slot indices local to the tape, and the workspace
 
 ## The forward sweep {#sec-tapes-forward}
 
-Running a tape is its forward sweep: the instructions in order, each writing its value into its slot. The sweep also stores, for each instruction, the partial derivatives of its value with respect to each of its operands, $\partial \phi_k / \partial v_j$ for $j \in \mathcal{C}(k)$, at the point. These are the local derivatives the reverse sweep of @sec-derivatives needs, and storing them once costs less than computing them again in every sweep that passes through a shared node, as `sin`, `cos` and the powers would require.
+Running a tape is its forward sweep: the instructions in order, each writing its value into its slot. The sweep also stores, for each instruction, the partial derivatives of its value with respect to each of its operands, $\partial \phi_k / \partial v_j$ for $j \in \mathcal{C}(k)$, at the point. These are the local derivatives the reverse sweep of [Derivatives](#sec-derivatives) needs, and storing them once costs less than computing them again in every sweep that passes through a shared node, as `sin`, `cos` and the powers would require.
 
 For a product the partials are the products of the other factors, computed as prefix and suffix products rather than by dividing the product by a factor, so a zero factor gives the right partials. The maximum and the minimum pass their derivative to the operand that gives the value.
 

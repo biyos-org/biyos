@@ -1,6 +1,6 @@
 # Error codes and events {#sec-codes}
 
-A call reports failure through its status and its message, and everything else through events. This chapter lists the codes a call can return and describes each event biyos sends, field by field. The guide shows them at work in @sec-errors and @sec-events.
+A call reports failure through its status and its message, and everything else through events. This chapter lists the codes a call can return and describes each event biyos sends, field by field. The guide shows them at work in [Errors](#sec-errors) and [Events and timing](#sec-events).
 
 ::: {source="reference/_capi/codes.md"}
 :::

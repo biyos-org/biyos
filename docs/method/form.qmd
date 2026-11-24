@@ -42,7 +42,7 @@ $$
 f(x) = c + \sum_{j} a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x),
 $$ {#eq-function}
 
-a constant $c$, a linear part, a quadratic part over unordered pairs of variables and a nonlinear part $\varphi(x)$, a node of the model's expression graph (@sec-graph). Each pair $(i, j)$ appears once, with $i \le j$, and its coefficient is taken as written, with no factor $\tfrac12$. In matrix form the quadratic part is $x^{\mathsf{T}} Q x$ for the upper triangular $Q = (q_{ij})$, and its Hessian is $Q + Q^{\mathsf{T}}$.
+a constant $c$, a linear part, a quadratic part over unordered pairs of variables and a nonlinear part $\varphi(x)$, a node of the model's expression graph ([The expression graph](#sec-graph)). Each pair $(i, j)$ appears once, with $i \le j$, and its coefficient is taken as written, with no factor $\tfrac12$. In matrix form the quadratic part is $x^{\mathsf{T}} Q x$ for the upper triangular $Q = (q_{ij})$, and its Hessian is $Q + Q^{\mathsf{T}}$.
 
 The parts are kept apart because each is handled best on its own. A linear part has constant derivatives, a quadratic part adds the constant matrix $Q + Q^{\mathsf{T}}$ to a Hessian with no evaluation at all, and the convexity of a quadratic part is a property of $Q$ alone. Only $\varphi(x)$ needs the expression graph, and an expression given whole is split on entry, so that its linear and quadratic terms join the first parts and $\varphi(x)$ keeps only the rest.
 
