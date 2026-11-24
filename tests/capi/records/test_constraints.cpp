@@ -16,9 +16,6 @@ namespace
 using biyos::test::Env;
 using biyos::test::expect_doubles;
 using biyos::test::Model;
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
 struct Records
 {
     std::vector<int> functions;
@@ -28,8 +25,8 @@ struct Records
 
 const Records kSample{
     .functions = {1, 0, 1},
-    .lower = {-1.0, -kInfinity, 2.0},
-    .upper = {1.0, kInfinity, 2.0},
+    .lower = {-1.0, -BIYOS_INF, 2.0},
+    .upper = {1.0, BIYOS_INF, 2.0},
 };
 
 void add_functions(const Model &model, int n)
@@ -162,10 +159,10 @@ TEST(CApiTest, SharedFunction)
     const Model model(env);
     add_functions(model, 1);
     const int functions[] = {0, 0};
-    const double lower[] = {0.0, -kInfinity};
+    const double lower[] = {0.0, -BIYOS_INF};
     const double upper[] = {1.0, 3.0};
     ASSERT_EQ(BIYOS_addcon(model.get(), 2, functions, lower, upper, nullptr), BIYOS_OK);
-    const Records wanted{.functions = {0, 0}, .lower = {0.0, -kInfinity}, .upper = {1.0, 3.0}};
+    const Records wanted{.functions = {0, 0}, .lower = {0.0, -BIYOS_INF}, .upper = {1.0, 3.0}};
     expect_records(read_all(model), wanted);
 }
 
@@ -185,8 +182,8 @@ TEST(CApiTest, ConstraintRange)
     };
     const Records wanted{
         .functions = {0, 1},
-        .lower = {-kInfinity, 2.0},
-        .upper = {kInfinity, 2.0},
+        .lower = {-BIYOS_INF, 2.0},
+        .upper = {BIYOS_INF, 2.0},
     };
     expect_records(found, wanted);
     EXPECT_EQ(BIYOS_getconrg(model.get(), 3, 0, nullptr, nullptr, nullptr), BIYOS_OK);
@@ -206,8 +203,8 @@ TEST(CApiTest, NullConstraints)
     ASSERT_EQ(BIYOS_addcon(held, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const Records wanted{
         .functions = {0, 0, 0, 0, 0, 0},
-        .lower = {-kInfinity, -kInfinity, 0.5, 0.75, -kInfinity, -kInfinity},
-        .upper = {kInfinity, kInfinity, kInfinity, kInfinity, 0.5, 0.75},
+        .lower = {-BIYOS_INF, -BIYOS_INF, 0.5, 0.75, -BIYOS_INF, -BIYOS_INF},
+        .upper = {BIYOS_INF, BIYOS_INF, BIYOS_INF, BIYOS_INF, 0.5, 0.75},
     };
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_addcon(held, 1, nullptr, bounds, bounds, nullptr), BIYOS_ERR_BADARG);
@@ -229,7 +226,7 @@ TEST(CApiTest, NullBounds)
     ASSERT_EQ(BIYOS_setconbndsp(held, 2, indices, lower, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setconbndsp(held, 1, indices, nullptr, upper), BIYOS_OK);
     ASSERT_EQ(BIYOS_setconbndsp(held, 2, indices, nullptr, nullptr), BIYOS_OK);
-    const Records wanted{.functions = {0, 0}, .lower = {2.0, 1.0}, .upper = {kInfinity, 3.0}};
+    const Records wanted{.functions = {0, 0}, .lower = {2.0, 1.0}, .upper = {BIYOS_INF, 3.0}};
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_setconbndsp(held, 2, nullptr, lower, upper), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
@@ -246,7 +243,7 @@ TEST(CApiTest, NullReads)
     double high[] = {9.0, 9.0};
     EXPECT_EQ(BIYOS_getconrg(model.get(), 1, 2, functions, nullptr, high), BIYOS_OK);
     EXPECT_EQ(std::vector<int>({functions[0], functions[1]}), std::vector<int>({0, 1}));
-    expect_doubles({high[0], high[1]}, {kInfinity, 2.0});
+    expect_doubles({high[0], high[1]}, {BIYOS_INF, 2.0});
     EXPECT_EQ(BIYOS_getncon(model.get(), nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
 }
@@ -270,7 +267,7 @@ TEST(CApiTest, RefusedConstraints)
     EXPECT_EQ(BIYOS_setconbndsp(held, 1, &index, &bound, &bound), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 3: unknown");
     const BIYOS_index first = 0;
-    const BIYOS_real infinite = kInfinity;
+    const BIYOS_real infinite = BIYOS_INF;
     EXPECT_EQ(BIYOS_setconbndsp(held, 1, &first, &infinite, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: constraint 0: lower bound is infinity");
     EXPECT_EQ(BIYOS_getconrg(held, 2, 2, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
@@ -312,8 +309,8 @@ TEST(CApiTest, ListedConstraints)
     add_sample(model);
     const Records wanted{
         .functions = {},
-        .lower = {2.0, -1.0, 2.0, -kInfinity},
-        .upper = {2.0, 1.0, 2.0, kInfinity},
+        .lower = {2.0, -1.0, 2.0, -BIYOS_INF},
+        .upper = {2.0, 1.0, 2.0, BIYOS_INF},
     };
     expect_records(read_bounds(model, {2, 0, 2, 1}), wanted);
     expect_records(read_bounds(model, {}), Records{});
@@ -332,8 +329,8 @@ TEST(CApiTest, ConstraintNulls)
     EXPECT_EQ(BIYOS_getconbndsp(held, 2, indices, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_getconbndsp(held, 2, indices, lower, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_getconbndsp(held, 1, indices, nullptr, upper), BIYOS_OK);
-    expect_doubles({lower[0], lower[1]}, {-kInfinity, 2.0});
-    expect_doubles({upper[0], upper[1]}, {kInfinity, 9.0});
+    expect_doubles({lower[0], lower[1]}, {-BIYOS_INF, 2.0});
+    expect_doubles({upper[0], upper[1]}, {BIYOS_INF, 9.0});
     EXPECT_EQ(BIYOS_getconbndsp(held, 0, nullptr, lower, upper), BIYOS_OK);
     EXPECT_EQ(env.message(), "");
 }

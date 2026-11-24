@@ -14,9 +14,6 @@ namespace
 using biyos::test::Env;
 using biyos::test::expect_doubles;
 using biyos::test::Model;
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
 struct Records
 {
     std::vector<int> variables;
@@ -30,8 +27,8 @@ const Records kSample{
     .variables = {0, 2, 0},
     .values = {1, 0, 0},
     .functions = {1, 1, 0},
-    .lower = {-kInfinity, 1.0, 0.0},
-    .upper = {4.0, 1.0, kInfinity},
+    .lower = {-BIYOS_INF, 1.0, 0.0},
+    .upper = {4.0, 1.0, BIYOS_INF},
 };
 
 void add_parts(const Model &model)
@@ -171,8 +168,8 @@ TEST(CApiTest, NullIndicators)
         .variables = {0, 2, 0, 2},
         .values = {1, 0, 1, 0},
         .functions = {0, 0, 0, 0},
-        .lower = {0.5, 0.75, -kInfinity, -kInfinity},
-        .upper = {kInfinity, kInfinity, 0.5, 0.75},
+        .lower = {0.5, 0.75, -BIYOS_INF, -BIYOS_INF},
+        .upper = {BIYOS_INF, BIYOS_INF, 0.5, 0.75},
     };
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_addind(held, 1, nullptr, values, functions, nullptr, nullptr, nullptr),
@@ -207,7 +204,7 @@ TEST(CApiTest, IndicatorRange)
         .values = {0, 0},
         .functions = {1, 0},
         .lower = {1.0, 0.0},
-        .upper = {1.0, kInfinity},
+        .upper = {1.0, BIYOS_INF},
     };
     expect_records(found, wanted);
     EXPECT_EQ(BIYOS_getindrg(model.get(), 3, 0, nullptr, nullptr, nullptr, nullptr, nullptr),
@@ -216,8 +213,8 @@ TEST(CApiTest, IndicatorRange)
         .variables = {0, 0},
         .values = {0, 1},
         .functions = {0, 1},
-        .lower = {0.0, -kInfinity},
-        .upper = {kInfinity, 4.0},
+        .lower = {0.0, -BIYOS_INF},
+        .upper = {BIYOS_INF, 4.0},
     };
     expect_records(read_listed(model, {2, 0}), listed);
 }
@@ -238,11 +235,11 @@ TEST(CApiTest, IndicatorBounds)
     std::vector<double> high(3, 9.0);
     ASSERT_EQ(BIYOS_getindbndrg(held, 0, 3, low.data(), high.data()), BIYOS_OK);
     expect_doubles(low, {-2.0, 1.0, -1.0});
-    expect_doubles(high, {4.0, 2.0, kInfinity});
+    expect_doubles(high, {4.0, 2.0, BIYOS_INF});
     std::vector<double> listed(2, 9.0);
     ASSERT_EQ(BIYOS_getindbndsp(held, 2, indices, nullptr, listed.data()), BIYOS_OK);
-    expect_doubles(listed, {kInfinity, 4.0});
-    const double infinite = kInfinity;
+    expect_doubles(listed, {BIYOS_INF, 4.0});
+    const double infinite = BIYOS_INF;
     EXPECT_EQ(BIYOS_setindbndsp(held, 1, indices, &infinite, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: indicator 2: lower bound is infinity");
 }

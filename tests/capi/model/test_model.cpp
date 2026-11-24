@@ -7,7 +7,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <string>
 #include <vector>
 
@@ -17,9 +16,6 @@ namespace
 using biyos::test::Env;
 using biyos::test::expect_doubles;
 using biyos::test::Model;
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
 struct Columns
 {
     std::vector<int> kinds;
@@ -54,8 +50,8 @@ const Columns kColumns{
               BIYOS_VARKND_INT,
               BIYOS_VARKND_SEMICONT,
               BIYOS_VARKND_SEMIINT},
-    .lower = {-kInfinity, 0.0, -3.0, 2.0, 1.0},
-    .upper = {kInfinity, 1.0, 7.0, 10.0, 4.0},
+    .lower = {-BIYOS_INF, 0.0, -3.0, 2.0, 1.0},
+    .upper = {BIYOS_INF, 1.0, 7.0, 10.0, 4.0},
 };
 
 void add_columns(const Model &model)
@@ -323,8 +319,8 @@ TEST(CApiTest, BulkAdd)
                   BIYOS_VARKND_INT,
                   BIYOS_VARKND_SEMICONT,
                   BIYOS_VARKND_SEMIINT},
-        .lower = {-kInfinity, 0.0, -3.0, 2.0, 1.0},
-        .upper = {kInfinity, 1.0, 7.0, 10.0, 4.0},
+        .lower = {-BIYOS_INF, 0.0, -3.0, 2.0, 1.0},
+        .upper = {BIYOS_INF, 1.0, 7.0, 10.0, 4.0},
     };
     const int *kinds = added.kinds.data();
     const double *low = added.lower.data();
@@ -368,7 +364,7 @@ TEST(CApiTest, RefusedAdd)
     const int kinds[] = {BIYOS_VARKND_CONT, 9};
     EXPECT_EQ(BIYOS_addvar(model.get(), 2, kinds, nullptr, nullptr, &start), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 1: kind 9 is unknown");
-    const double lower[] = {0.0, kInfinity};
+    const double lower[] = {0.0, BIYOS_INF};
     EXPECT_EQ(BIYOS_addvar(model.get(), 2, nullptr, lower, nullptr, &start), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 1: lower bound is infinity");
     EXPECT_EQ(BIYOS_addvar(model.get(), -1, nullptr, nullptr, nullptr, &start), BIYOS_ERR_BADARG);
@@ -439,8 +435,8 @@ TEST(CApiTest, NullAdd)
     const Columns wanted{
         .kinds =
             {continuous, continuous, kinds[0], kinds[1], kinds[0], kinds[1], kinds[0], kinds[1]},
-        .lower = {-kInfinity, -kInfinity, 0.0, -kInfinity, 0.5, 0.75, 0.0, -kInfinity},
-        .upper = {kInfinity, kInfinity, 1.0, kInfinity, 1.0, kInfinity, 0.5, 0.75},
+        .lower = {-BIYOS_INF, -BIYOS_INF, 0.0, -BIYOS_INF, 0.5, 0.75, 0.0, -BIYOS_INF},
+        .upper = {BIYOS_INF, BIYOS_INF, 1.0, BIYOS_INF, 1.0, BIYOS_INF, 0.5, 0.75},
     };
     expect_columns(read_all(model), wanted);
 }
@@ -461,7 +457,7 @@ TEST(CApiTest, NullSet)
     const int continuous = BIYOS_VARKND_CONT;
     const Columns bounded{.kinds = {continuous, continuous},
                           .lower = {2.0, 1.0},
-                          .upper = {kInfinity, 3.0}};
+                          .upper = {BIYOS_INF, 3.0}};
     expect_columns(read_all(model), bounded);
     ASSERT_EQ(BIYOS_setvarkndsp(model.get(), 2, indices, kinds), BIYOS_OK);
     expect_columns(
@@ -505,8 +501,8 @@ TEST(CApiTest, ListedVariables)
     add_columns(model);
     const Columns wanted{
         .kinds = {BIYOS_VARKND_SEMIINT, BIYOS_VARKND_CONT, BIYOS_VARKND_SEMIINT, BIYOS_VARKND_INT},
-        .lower = {1.0, -kInfinity, 1.0, -3.0},
-        .upper = {4.0, kInfinity, 4.0, 7.0},
+        .lower = {1.0, -BIYOS_INF, 1.0, -3.0},
+        .upper = {4.0, BIYOS_INF, 4.0, 7.0},
     };
     expect_columns(read_listed(model, {4, 0, 4, 2}), wanted);
     expect_columns(read_listed(model, {}), Columns{});
@@ -537,8 +533,8 @@ TEST(CApiTest, VariableSetters)
     };
     expect_columns(Columns{.kinds = found, .lower = read_lower, .upper = read_upper}, wanted);
     const Columns untouched{.kinds = {BIYOS_VARKND_CONT},
-                            .lower = {-kInfinity},
-                            .upper = {kInfinity}};
+                            .lower = {-BIYOS_INF},
+                            .upper = {BIYOS_INF}};
     expect_columns(read_listed(model, {1}), untouched);
 }
 
