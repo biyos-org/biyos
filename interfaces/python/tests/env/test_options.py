@@ -347,13 +347,13 @@ def test_model_name(model):
 def test_sources(env, model):
     assert model.getoptsrc("maxtime") is OptionSource.DEFAULT
     env.setopt("maxtime", 10.0)
-    assert model.getoptsrc("maxtime") is OptionSource.ENVIRONMENT
+    assert model.getoptsrc("maxtime") is OptionSource.ENV
     model.setopt("maxtime", 5.0)
     assert model.getoptsrc("maxtime") is OptionSource.MODEL
     model.delopt("maxtime")
-    assert model.getoptsrc("maxtime") is OptionSource.ENVIRONMENT
+    assert model.getoptsrc("maxtime") is OptionSource.ENV
     env.setopt("seed", 0)
-    assert model.getoptsrc("seed") is OptionSource.ENVIRONMENT
+    assert model.getoptsrc("seed") is OptionSource.ENV
 
 
 def test_deleted(env, model):
@@ -389,7 +389,7 @@ def test_model_refused(env, model):
     model.delopt("seed")
     with pytest.raises(biyos.Error):
         model.setopt("seed", -1)
-    assert model.getoptsrc("seed") is OptionSource.ENVIRONMENT
+    assert model.getoptsrc("seed") is OptionSource.ENV
     assert model.getopt("seed") == 7
 
 
@@ -403,7 +403,7 @@ def test_copied(env, model):
         assert copy.getopt("repro") == "replay.txt"
         assert copy.getoptsrc("repro") is OptionSource.MODEL
         assert copy.getopt("seed") == 9
-        assert copy.getoptsrc("seed") is OptionSource.ENVIRONMENT
+        assert copy.getoptsrc("seed") is OptionSource.ENV
 
 
 def test_moved(env, model):
@@ -414,7 +414,7 @@ def test_moved(env, model):
         with model.copy(other) as moved:
             assert moved.getopt("maxtime") == 5.0
             assert moved.getopt("seed") == 4
-            assert moved.getoptsrc("seed") is OptionSource.ENVIRONMENT
+            assert moved.getoptsrc("seed") is OptionSource.ENV
             assert moved.getoptsrc("presolve") is OptionSource.DEFAULT
 
 

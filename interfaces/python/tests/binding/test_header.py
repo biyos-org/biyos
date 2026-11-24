@@ -15,7 +15,7 @@ VARIABLES = {
 
 SOURCES = {
     "BIYOS_OPTSRC_MDL": biyos.OptionSource.MODEL,
-    "BIYOS_OPTSRC_ENV": biyos.OptionSource.ENVIRONMENT,
+    "BIYOS_OPTSRC_ENV": biyos.OptionSource.ENV,
     "BIYOS_OPTSRC_DEFAULT": biyos.OptionSource.DEFAULT,
 }
 
