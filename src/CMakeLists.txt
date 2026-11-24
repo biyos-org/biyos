@@ -128,9 +128,6 @@ add_library(biyos
     capi/arrays.cpp
     capi/callbacks.cpp
     capi/columns.cpp
-    capi/complements.cpp
-    capi/cones.cpp
-    capi/constraints.cpp
     capi/env/env.cpp
     capi/env/events.cpp
     capi/env/format.cpp
@@ -138,18 +135,21 @@ add_library(biyos
     capi/env/version.cpp
     capi/expressions.cpp
     capi/functions.cpp
-    capi/indicators.cpp
     capi/linear.cpp
     capi/model/deletion.cpp
     capi/model/files.cpp
     capi/model/model.cpp
     capi/model/names.cpp
     capi/model/selection.cpp
-    capi/objectives.cpp
     capi/pairs.cpp
     capi/quadratic.cpp
-    capi/rows.cpp
-    capi/sos.cpp)
+    capi/records/complements.cpp
+    capi/records/cones.cpp
+    capi/records/constraints.cpp
+    capi/records/indicators.cpp
+    capi/records/objectives.cpp
+    capi/records/sos.cpp
+    capi/rows.cpp)
 add_library(biyos::biyos ALIAS biyos)
 
 target_include_directories(biyos PUBLIC
