@@ -17,7 +17,7 @@ The kind of an option decides which calls set and get it:
 | `BIYOS_OPTKND_ENUM` | `BIYOS_setenvintopt`, with a macro of the option's group | `BIYOS_getenvintopt` |
 | `BIYOS_OPTKND_FLG` | `BIYOS_setenvflgopt`, with two masks of the option's parts | `BIYOS_getenvflgopt` |
 
-A call of another kind is refused: nothing is converted, so an int option refuses `BIYOS_setenvdblopt` and an enum option refuses `BIYOS_setenvstropt`. The values of an enum option are macros of a group named after it, numbered from 1, so `check_lvl` takes `BIYOS_CHECKLVL_NONE`, `BIYOS_CHECKLVL_CHEAP` or `BIYOS_CHECKLVL_FULL`, and a mistyped value fails to compile. A value keeps its number for good, as an id does. `BIYOS_getoptknd` gives the kind of an id. The reference lists every option with its kind, default and range ([Options](#sec-option-table)).
+A call of another kind is refused: nothing is converted, so an int option refuses `BIYOS_setenvdblopt` and an enum option refuses `BIYOS_setenvstropt`. The values of an enum option are macros of a group named after it, numbered from 1, so `checking` takes `BIYOS_CHK_NONE`, `BIYOS_CHK_CHEAP` or `BIYOS_CHK_FULL`, and a mistyped value fails to compile. A value keeps its number for good, as an id does. `BIYOS_getoptknd` gives the kind of an id. The reference lists every option with its kind, default and range ([Options](#sec-option-table)).
 
 ## Setting and reading {#sec-options-set}
 

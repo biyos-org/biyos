@@ -358,12 +358,12 @@ TEST(GetterTest, Kinds)
     settings.set_int(Option::Seed, 4, events);
     settings.set_double(Option::TimeLimit, 2.5, events);
     settings.set_string(Option::Reproducer, "replay.txt", events);
-    settings.set_int(Option::Checking, BIYOS_CHECKLVL_FULL, events);
+    settings.set_int(Option::Checking, BIYOS_CHK_FULL, events);
     EXPECT_FALSE(lookup.get_bool(Option::Presolve));
     EXPECT_EQ(lookup.get_int(Option::Seed), 4);
     EXPECT_DOUBLE_EQ(lookup.get_double(Option::TimeLimit), 2.5);
     EXPECT_EQ(lookup.get_string(Option::Reproducer), "replay.txt");
-    EXPECT_EQ(lookup.get_int(Option::Checking), BIYOS_CHECKLVL_FULL);
+    EXPECT_EQ(lookup.get_int(Option::Checking), BIYOS_CHK_FULL);
     EXPECT_EQ(lookup.get_enum<Checking>(Option::Checking), Checking::Full);
     EXPECT_EQ(options.get_enum<Checking>(Option::Checking), Checking::Cheap);
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_int(Option::TimeLimit)); }),
@@ -377,7 +377,7 @@ TEST(GetterTest, Kinds)
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_enum<Checking>(Option::Seed)); }),
               "invalid argument: option 'seed': is an int, not an enum");
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_string(Option::Checking)); }),
-              "invalid argument: option 'check_lvl': is an enum, not a string");
+              "invalid argument: option 'checking': is an enum, not a string");
 }
 
 TEST(GetterTest, Enum)
@@ -388,11 +388,10 @@ TEST(GetterTest, Enum)
     biyos::Options options(events);
     biyos::Settings settings;
     const biyos::Lookup lookup(settings, options);
-    settings.set_int(Option::Checking, BIYOS_CHECKLVL_NONE, events);
-    EXPECT_EQ(
-        failure([&] { settings.set_int(Option::Checking, 4, events); }),
-        "invalid argument: option 'check_lvl': 4 is not one of 1 (none), 2 (cheap), 3 (full)");
+    settings.set_int(Option::Checking, BIYOS_CHK_NONE, events);
+    EXPECT_EQ(failure([&] { settings.set_int(Option::Checking, 4, events); }),
+              "invalid argument: option 'checking': 4 is not one of 1 (none), 2 (cheap), 3 (full)");
     EXPECT_EQ(failure([&] { settings.set_string(Option::Checking, "full", events); }),
-              "invalid argument: option 'check_lvl': is an enum, not a string");
+              "invalid argument: option 'checking': is an enum, not a string");
     EXPECT_EQ(lookup.get_enum<Checking>(Option::Checking), Checking::None);
 }

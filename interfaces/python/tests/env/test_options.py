@@ -16,7 +16,7 @@ INVALID_ARGUMENT = -100
 DEFAULTS = {
     "seed": 0,
     "maxtime": float("inf"),
-    "check_lvl": biyos.CheckLevel.CHEAP,
+    "checking": biyos.CheckLevel.CHEAP,
     "presolve": True,
     "repro": "",
     "feastol_abs": 1e-6,
@@ -29,7 +29,7 @@ DEFAULTS = {
 VALUES = {
     "seed": 42,
     "maxtime": 3.5,
-    "check_lvl": biyos.CheckLevel.FULL,
+    "checking": biyos.CheckLevel.FULL,
     "presolve": False,
     "repro": "replay.txt",
     "feastol_abs": 1e-7,
@@ -45,8 +45,8 @@ WRONG = [
     ("seed", "3"),
     ("maxtime", True),
     ("maxtime", "10"),
-    ("check_lvl", "full"),
-    ("check_lvl", 2.0),
+    ("checking", "full"),
+    ("checking", 2.0),
     ("presolve", 1),
     ("repro", b"replay.txt"),
 ]
@@ -56,7 +56,7 @@ NUMBERS = [(0, None), (100, "0.1.0"), (10203, "1.2.3"), (990099, "99.0.99")]
 HELD = {
     "seed": "an int",
     "maxtime": "a double",
-    "check_lvl": "an enum",
+    "checking": "an enum",
     "presolve": "a bool",
     "repro": "a string",
 }
@@ -172,28 +172,28 @@ def test_bad_value(env):
 
 @pytest.mark.parametrize("level", list(biyos.CheckLevel))
 def test_enum(env, level):
-    env.setopt("check_lvl", int(level))
-    assert env.getopt("check_lvl") is level
+    env.setopt("checking", int(level))
+    assert env.getopt("checking") is level
 
 
 @pytest.mark.parametrize("number", [4, 0, -1])
 def test_bad_enum(env, number):
-    env.setopt("check_lvl", biyos.CheckLevel.FULL)
+    env.setopt("checking", biyos.CheckLevel.FULL)
     message = (
-        f"invalid argument: option 'check_lvl': {number} "
+        f"invalid argument: option 'checking': {number} "
         "is not one of 1 (none), 2 (cheap), 3 (full)"
     )
     with pytest.raises(biyos.Error) as caught:
-        env.setopt("check_lvl", number)
+        env.setopt("checking", number)
     assert str(caught.value) == message
     assert caught.value.code == INVALID_ARGUMENT
-    assert env.getopt("check_lvl") is biyos.CheckLevel.FULL
+    assert env.getopt("checking") is biyos.CheckLevel.FULL
 
 
 def test_enum_message(env):
-    message = "option 'check_lvl' takes an int, not str"
+    message = "option 'checking' takes an int, not str"
     with pytest.raises(TypeError, match=message):
-        env.setopt("check_lvl", "full")
+        env.setopt("checking", "full")
 
 
 @pytest.mark.parametrize("value", [2**31, 2**32 + 5])
@@ -368,13 +368,13 @@ def test_deleted(env, model):
 
 
 def test_shared(env, model):
-    env.setopt("check_lvl", biyos.CheckLevel.FULL)
-    assert model.getopt("check_lvl") is biyos.CheckLevel.FULL
-    model.setopt("check_lvl", biyos.CheckLevel.NONE)
-    env.setopt("check_lvl", biyos.CheckLevel.CHEAP)
-    assert model.getopt("check_lvl") is biyos.CheckLevel.NONE
+    env.setopt("checking", biyos.CheckLevel.FULL)
+    assert model.getopt("checking") is biyos.CheckLevel.FULL
+    model.setopt("checking", biyos.CheckLevel.NONE)
+    env.setopt("checking", biyos.CheckLevel.CHEAP)
+    assert model.getopt("checking") is biyos.CheckLevel.NONE
     with biyos.Model(env) as other:
-        assert other.getopt("check_lvl") is biyos.CheckLevel.CHEAP
+        assert other.getopt("checking") is biyos.CheckLevel.CHEAP
 
 
 def test_model_refused(env, model):

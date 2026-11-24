@@ -150,7 +150,7 @@ TEST_F(CheckTest, NoneLevel)
 TEST_F(CheckTest, ReadOnce)
 {
     const biyos::Checker checker = at(Checking::None);
-    env.options().set_int(biyos::Option::Checking, BIYOS_CHECKLVL_FULL);
+    env.options().set_int(biyos::Option::Checking, BIYOS_CHK_FULL);
     EXPECT_NO_THROW(check(checker, Checking::Cheap, false));
     EXPECT_EQ(evaluated, 0);
 }
@@ -237,7 +237,7 @@ TEST_F(CheckTest, Models)
 {
     biyos::Settings first;
     const biyos::Settings second;
-    first.set_int(biyos::Option::Checking, BIYOS_CHECKLVL_FULL, env.events());
+    first.set_int(biyos::Option::Checking, BIYOS_CHK_FULL, env.events());
     const biyos::Checker own(env, biyos::Lookup(first, env.options()), "model");
     const biyos::Checker other(env, biyos::Lookup(second, env.options()), "model");
     const biyos::Checker shared(env, biyos::Lookup(env.options()), "model");

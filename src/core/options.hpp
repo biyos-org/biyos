@@ -23,7 +23,7 @@ enum class Option
 {
     Seed = BIYOS_OPT_SEED,
     TimeLimit = BIYOS_OPT_MAXTIME,
-    Checking = BIYOS_OPT_CHECKLVL,
+    Checking = BIYOS_OPT_CHK,
     Presolve = BIYOS_OPT_PRESOLVE,
     Reproducer = BIYOS_OPT_REPRO,
     FeasAbs = BIYOS_OPT_FEASTOLABS,
@@ -58,9 +58,9 @@ enum class OptionSource
 
 enum class Checking
 {
-    None = BIYOS_CHECKLVL_NONE,
-    Cheap = BIYOS_CHECKLVL_CHEAP,
-    Full = BIYOS_CHECKLVL_FULL,
+    None = BIYOS_CHK_NONE,
+    Cheap = BIYOS_CHK_CHEAP,
+    Full = BIYOS_CHK_FULL,
 };
 
 struct BoolRule

@@ -177,7 +177,7 @@ TEST(CApiTest, OptionIds)
     const Env env;
     const char *names[] = {"seed",
                            "maxtime",
-                           "check_lvl",
+                           "checking",
                            "presolve",
                            "repro",
                            "feastol_abs",
@@ -187,7 +187,7 @@ TEST(CApiTest, OptionIds)
                            "maxcputime"};
     const int ids[] = {BIYOS_OPT_SEED,
                        BIYOS_OPT_MAXTIME,
-                       BIYOS_OPT_CHECKLVL,
+                       BIYOS_OPT_CHK,
                        BIYOS_OPT_PRESOLVE,
                        BIYOS_OPT_REPRO,
                        BIYOS_OPT_FEASTOLABS,
@@ -208,7 +208,7 @@ TEST(CApiTest, OptionKinds)
     const Env env;
     const int ids[] = {BIYOS_OPT_SEED,
                        BIYOS_OPT_MAXTIME,
-                       BIYOS_OPT_CHECKLVL,
+                       BIYOS_OPT_CHK,
                        BIYOS_OPT_PRESOLVE,
                        BIYOS_OPT_REPRO,
                        BIYOS_OPT_FEASTOLABS,
@@ -349,7 +349,7 @@ TEST(CApiTest, StringLifetime)
     ASSERT_EQ(BIYOS_getenvstropt(env.get(), BIYOS_OPT_REPRO, &path), BIYOS_OK);
     EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_REPRO, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setenvdblopt(env.get(), BIYOS_OPT_REPRO, 1.0), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_CHECKLVL, "full"), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_CHK, "full"), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 5), BIYOS_OK);
     EXPECT_STREQ(path, "replay.txt");
 }
@@ -358,12 +358,12 @@ TEST(CApiTest, Enum)
 {
     const Env env;
     BIYOS_int value = 0;
-    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHECKLVL, &value), BIYOS_OK);
-    EXPECT_EQ(value, BIYOS_CHECKLVL_CHEAP);
-    for (const BIYOS_int level : {BIYOS_CHECKLVL_FULL, BIYOS_CHECKLVL_NONE, BIYOS_CHECKLVL_CHEAP})
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHK, &value), BIYOS_OK);
+    EXPECT_EQ(value, BIYOS_CHK_CHEAP);
+    for (const BIYOS_int level : {BIYOS_CHK_FULL, BIYOS_CHK_NONE, BIYOS_CHK_CHEAP})
     {
-        EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHECKLVL, level), BIYOS_OK);
-        EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHECKLVL, &value), BIYOS_OK);
+        EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHK, level), BIYOS_OK);
+        EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHK, &value), BIYOS_OK);
         EXPECT_EQ(value, level);
     }
 }
@@ -381,32 +381,32 @@ TEST(CApiTest, BadSet)
 TEST(CApiTest, BadEnum)
 {
     const Env env;
-    const std::string option = "invalid argument: option 'check_lvl': ";
+    const std::string option = "invalid argument: option 'checking': ";
     const std::string list = " is not one of 1 (none), 2 (cheap), 3 (full)";
     BIYOS_int value = 0;
-    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHECKLVL, BIYOS_CHECKLVL_FULL), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHK, BIYOS_CHK_FULL), BIYOS_OK);
     for (const BIYOS_int number : {4, 0, -1})
     {
-        EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHECKLVL, number), BIYOS_ERR_BADARG);
+        EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHK, number), BIYOS_ERR_BADARG);
         EXPECT_EQ(env.message(), option + std::to_string(number) + list);
     }
-    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHECKLVL, &value), BIYOS_OK);
-    EXPECT_EQ(value, BIYOS_CHECKLVL_FULL);
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHK, &value), BIYOS_OK);
+    EXPECT_EQ(value, BIYOS_CHK_FULL);
 }
 
 TEST(CApiTest, EnumKind)
 {
     const Env env;
     const char *text = nullptr;
-    const std::string refused = "invalid argument: option 'check_lvl': is an enum, not a string";
-    EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_CHECKLVL, "full"), BIYOS_ERR_BADARG);
+    const std::string refused = "invalid argument: option 'checking': is an enum, not a string";
+    EXPECT_EQ(BIYOS_setenvstropt(env.get(), BIYOS_OPT_CHK, "full"), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refused);
-    EXPECT_EQ(BIYOS_getenvstropt(env.get(), BIYOS_OPT_CHECKLVL, &text), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getenvstropt(env.get(), BIYOS_OPT_CHK, &text), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refused);
     EXPECT_EQ(text, nullptr);
     BIYOS_int value = 0;
-    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHECKLVL, &value), BIYOS_OK);
-    EXPECT_EQ(value, BIYOS_CHECKLVL_CHEAP);
+    EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHK, &value), BIYOS_OK);
+    EXPECT_EQ(value, BIYOS_CHK_CHEAP);
 }
 
 TEST(CApiTest, WrongKind)
@@ -517,10 +517,10 @@ TEST(CApiTest, OtherKinds)
     const Env env;
     const int ids[] = {BIYOS_OPT_SEED,
                        BIYOS_OPT_MAXTIME,
-                       BIYOS_OPT_CHECKLVL,
+                       BIYOS_OPT_CHK,
                        BIYOS_OPT_PRESOLVE,
                        BIYOS_OPT_REPRO};
-    const char *names[] = {"seed", "maxtime", "check_lvl", "presolve", "repro"};
+    const char *names[] = {"seed", "maxtime", "checking", "presolve", "repro"};
     const char *nouns[] = {"an int", "a double", "an enum", "a bool", "a string"};
     for (int i = 0; i < 5; ++i)
     {
@@ -582,11 +582,11 @@ TEST(CApiTest, ModelEnum)
 {
     const Env env;
     const Model model(env.get());
-    EXPECT_EQ(model_int(model, BIYOS_OPT_CHECKLVL), BIYOS_CHECKLVL_CHEAP);
-    EXPECT_EQ(BIYOS_setmdlintopt(model.get(), BIYOS_OPT_CHECKLVL, BIYOS_CHECKLVL_FULL), BIYOS_OK);
-    EXPECT_EQ(model_int(model, BIYOS_OPT_CHECKLVL), BIYOS_CHECKLVL_FULL);
-    EXPECT_EQ(BIYOS_setmdlstropt(model.get(), BIYOS_OPT_CHECKLVL, "full"), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: option 'check_lvl': is an enum, not a string");
+    EXPECT_EQ(model_int(model, BIYOS_OPT_CHK), BIYOS_CHK_CHEAP);
+    EXPECT_EQ(BIYOS_setmdlintopt(model.get(), BIYOS_OPT_CHK, BIYOS_CHK_FULL), BIYOS_OK);
+    EXPECT_EQ(model_int(model, BIYOS_OPT_CHK), BIYOS_CHK_FULL);
+    EXPECT_EQ(BIYOS_setmdlstropt(model.get(), BIYOS_OPT_CHK, "full"), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: option 'checking': is an enum, not a string");
 }
 
 TEST(CApiTest, ModelDouble)
@@ -687,8 +687,8 @@ TEST(CApiTest, RefusedOption)
     EXPECT_EQ(env.message(), "invalid argument: option 'seed': is an int, not a double");
     EXPECT_EQ(BIYOS_setmdlintopt(model.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     EXPECT_EQ(model_int(model, BIYOS_OPT_SEED), 5);
-    EXPECT_EQ(BIYOS_setmdlintopt(model.get(), BIYOS_OPT_CHECKLVL, 7), BIYOS_ERR_BADARG);
-    EXPECT_EQ(source_of(model, BIYOS_OPT_CHECKLVL), BIYOS_OPTSRC_DEFAULT);
+    EXPECT_EQ(BIYOS_setmdlintopt(model.get(), BIYOS_OPT_CHK, 7), BIYOS_ERR_BADARG);
+    EXPECT_EQ(source_of(model, BIYOS_OPT_CHK), BIYOS_OPTSRC_DEFAULT);
     EXPECT_EQ(BIYOS_setmdlintopt(model.get(), 99, 1), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: option 99: unknown");
 }

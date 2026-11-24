@@ -143,7 +143,7 @@ TEST(OptionTest, Defaults)
     const biyos::Options options(stream.events);
     EXPECT_EQ(options.get_int(Option::Seed), 0);
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), kInfinity);
-    EXPECT_EQ(options.get_int(Option::Checking), BIYOS_CHECKLVL_CHEAP);
+    EXPECT_EQ(options.get_int(Option::Checking), BIYOS_CHK_CHEAP);
     EXPECT_TRUE(options.get_bool(Option::Presolve));
     EXPECT_EQ(options.get_string(Option::Reproducer), "");
     EXPECT_DOUBLE_EQ(options.get_double(Option::FeasAbs), 1e-6);
@@ -269,7 +269,7 @@ TEST(OptionTest, Enum)
 {
     Stream stream;
     biyos::Options options(stream.events);
-    for (const int level : {BIYOS_CHECKLVL_FULL, BIYOS_CHECKLVL_NONE, BIYOS_CHECKLVL_CHEAP})
+    for (const int level : {BIYOS_CHK_FULL, BIYOS_CHK_NONE, BIYOS_CHK_CHEAP})
     {
         options.set_int(Option::Checking, level);
         EXPECT_EQ(options.get_int(Option::Checking), level);
@@ -280,13 +280,13 @@ TEST(OptionTest, EnumValue)
 {
     Stream stream;
     biyos::Options options(stream.events);
-    options.set_int(Option::Checking, BIYOS_CHECKLVL_FULL);
-    const std::string option = "invalid argument: option 'check_lvl': ";
+    options.set_int(Option::Checking, BIYOS_CHK_FULL);
+    const std::string option = "invalid argument: option 'checking': ";
     const std::string list = " is not one of 1 (none), 2 (cheap), 3 (full)";
     EXPECT_EQ(failure([&] { options.set_int(Option::Checking, 4); }), option + "4" + list);
     EXPECT_EQ(failure([&] { options.set_int(Option::Checking, 0); }), option + "0" + list);
     EXPECT_EQ(failure([&] { options.set_int(Option::Checking, -1); }), option + "-1" + list);
-    EXPECT_EQ(options.get_int(Option::Checking), BIYOS_CHECKLVL_FULL);
+    EXPECT_EQ(options.get_int(Option::Checking), BIYOS_CHK_FULL);
 }
 
 TEST(OptionTest, TypedEnum)
@@ -295,9 +295,9 @@ TEST(OptionTest, TypedEnum)
     Stream stream;
     biyos::Options options(stream.events);
     EXPECT_EQ(options.get_enum<Checking>(Option::Checking), Checking::Cheap);
-    options.set_int(Option::Checking, BIYOS_CHECKLVL_FULL);
+    options.set_int(Option::Checking, BIYOS_CHK_FULL);
     EXPECT_EQ(options.get_enum<Checking>(Option::Checking), Checking::Full);
-    options.set_int(Option::Checking, BIYOS_CHECKLVL_NONE);
+    options.set_int(Option::Checking, BIYOS_CHK_NONE);
     EXPECT_EQ(options.get_enum<Checking>(Option::Checking), Checking::None);
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_enum<Checking>(Option::Seed)); }),
               "invalid argument: option 'seed': is an int, not an enum");
@@ -312,11 +312,11 @@ TEST(OptionTest, WrongKind)
     EXPECT_EQ(failure([&] { options.set_string(Option::Presolve, "yes"); }),
               "invalid argument: option 'presolve': is a bool, not a string");
     EXPECT_EQ(failure([&] { options.set_string(Option::Checking, "full"); }),
-              "invalid argument: option 'check_lvl': is an enum, not a string");
+              "invalid argument: option 'checking': is an enum, not a string");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_string(Option::Checking)); }),
-              "invalid argument: option 'check_lvl': is an enum, not a string");
+              "invalid argument: option 'checking': is an enum, not a string");
     EXPECT_EQ(failure([&] { options.set_double(Option::Checking, 2.0); }),
-              "invalid argument: option 'check_lvl': is an enum, not a double");
+              "invalid argument: option 'checking': is an enum, not a double");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_int(Option::Reproducer)); }),
               "invalid argument: option 'repro': is a string, not an int");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_bool(Option::Reproducer)); }),
