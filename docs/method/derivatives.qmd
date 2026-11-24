@@ -1,6 +1,6 @@
 # Derivatives {#sec-derivatives}
 
-The methods of biyos need the gradient of every function and weighted sums of them. On a tape they come from the reverse mode of algorithmic differentiation [@griewank2008]: one backward pass over the instructions, reading the partial derivatives that the forward sweep stored ([The forward sweep](#sec-tapes-forward)). This chapter states the sweeps and the two rules that decide what a derivative is at the edges of the operators' domains.
+The methods of biyos need the gradient of every function and weighted sums of them. On a tape they come from the reverse mode of algorithmic differentiation [@griewank2008]: one backward pass over the instructions, reading the partial derivatives that the forward sweep stored ([The forward sweep](#sec-tapes-forward)). This chapter states the sweeps, the two rules that decide what a derivative is at the edges of the operators' domains, and the slope taken at a kink.
 
 ## The reverse sweep {#sec-derivatives-reverse}
 
@@ -34,3 +34,7 @@ The same reasoning fixes two partials of the power. The derivative of $x^c$ with
 Outside an operator's domain its value is NaN or, at a pole, infinite ([The operators](#sec-graph-operators)). Wherever the value is NaN, every partial of that operator is NaN as well. The textbook formula would often give a finite number: the derivative of $\log x$ is $1/x$, which is $-1$ at $x = -1$, where $\log x$ has no value. A slope means nothing where the function has no value, so biyos makes the derivative as undefined as the value.
 
 The two rules work together. A NaN partial reaches a variable only through a nonzero adjoint, that is, only when the undefined operator actually takes part in the combination being differentiated.
+
+## The right slope at a kink {#sec-derivatives-kink}
+
+A piecewise linear function $p$ ([The operators](#sec-graph-operators)) has no derivative at an inner point $x_i$, where two segments meet. biyos takes the slope on the right there, that of the segment that starts at $x_i$, as the absolute value takes the slope 1 at 0. From $x_{n-1}$ on, the slope is that of the last segment, and before $x_1$ that of the first, so a point past either end has the slope of the end segment. The second derivative of $p$ is 0 everywhere, kinks included.

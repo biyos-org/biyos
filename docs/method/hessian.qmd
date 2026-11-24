@@ -27,7 +27,7 @@ $$
 \dot p_{ij} = \sum_{k \in \mathcal{C}(i)} \frac{\partial^2 \operatorname{op}_i}{\partial v_j \partial v_k}\, \dot v_k.
 $$ {#eq-hessian-tangents}
 
-The partial tangents are zero for a sum, a negation, an absolute value, a maximum and a minimum, whose partials are constant where they exist. For a product of $n$ factors they cost $O(n)$ through running products of value and tangent pairs, not the $O(n^2)$ of the pairwise formula.
+The partial tangents are zero for a sum, a negation, an absolute value, a maximum, a minimum and a piecewise linear function, whose partials are constant where they exist. For a product of $n$ factors they cost $O(n)$ through running products of value and tangent pairs, not the $O(n^2)$ of the pairwise formula.
 
 The reverse sweep then carries each adjoint $\bar v_i$ and its tangent $\dot{\bar v}_i$:
 

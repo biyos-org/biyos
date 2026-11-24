@@ -1,6 +1,6 @@
 # The expression graph {#sec-graph}
 
-The expression $e$ of a function, the part of its nonlinear part $\varphi$ that biyos can read (@eq-nonlinear), is a node of the model's expression graph; callbacks supply the rest. This chapter defines the graph, its 29 operators and their domains, and the way an expression is split into the parts of a function.
+The expression $e$ of a function, the part of its nonlinear part $\varphi$ that biyos can read (@eq-nonlinear), is a node of the model's expression graph; callbacks supply the rest. This chapter defines the graph, its 30 operators and their domains, and the way an expression is split into the parts of a function.
 
 ## Nodes and sharing {#sec-graph-nodes}
 
@@ -14,7 +14,7 @@ Sums and products take any number of children. A sum $c + \sum_i a_i e_i$ carrie
 
 ## The operators {#sec-graph-operators}
 
-The graph has 29 operators. Each is defined by the value `<cmath>` gives, and its domain is the set of arguments where that value is a real number:
+The graph has 30 operators. Each but the piecewise linear function is defined by the value `<cmath>` gives, and the domain of each is the set of arguments where that value is a real number:
 
 | Operator | Value | Domain |
 | ------------ | ------------------------ | ------------------------ |
@@ -42,10 +42,13 @@ The graph has 29 operators. Each is defined by the value `<cmath>` gives, and it
 | entropy | $e \log e$, with $0 \log 0 = 0$ | $e \ge 0$ |
 | sign power | $\operatorname{sign}(e)\, \lvert e \rvert^c$, with $c > 0$ | everywhere |
 | error function | $\operatorname{erf} e$ | everywhere |
+| piecewise linear | $p(e)$, through given points | everywhere |
 
 Every constant, coefficient and exponent is finite. A pole lies outside the domain: $\log 0$, a division by zero, $0^{e_2}$ with $e_2 < 0$ and $\operatorname{artanh}(\pm 1)$ have no value. Outside its domain an operator gives the NaN or the infinity that `<cmath>` gives, and never stops the computation.
 
 Entropy and sign power could be written with the other operators, as a product with a logarithm and as a product of a sign and a power. They are operators of their own because each, taken whole, is a simple function with a known shape: entropy is convex on its domain, and sign power is increasing and continuous since its exponent is positive. Split into pieces, that shape is lost, and the bounds and relaxations built from the pieces are much weaker.
+
+A piecewise linear node names a pwl: points $(x_0, y_0), \dots, (x_n, y_n)$ with $n \ge 1$, finite coordinates, $x_0 < x_1 < \dots < x_n$, and a finite width $x_i - x_{i-1}$, height difference $y_i - y_{i-1}$ and slope on every segment. The graph keeps the points in a table of its own, beside the nodes, and the node holds only the index of its pwl, so several nodes share one pwl by naming the same index. $p$ is linear between neighbouring points and extends its first and last segments past both ends. Each value is computed from the left point of its segment, or from $x_n$ past the last point, so $p(x_i) = y_i$ exactly, a $-0$ height included. Far past an end, where $t - x_i$ overflows, the value is $y_i + (s t - s x_i)$ for the slope $s$. A flat segment gives its height everywhere on it, at an infinite argument too. A pwl is never removed: copying or compacting a graph keeps the whole table, and only undoing a failed call drops the pwls it added.
 
 ## Splitting an expression {#sec-graph-split}
 
