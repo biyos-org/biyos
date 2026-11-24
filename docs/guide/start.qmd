@@ -37,7 +37,7 @@ This program prints the version of the library, then creates an environment and 
 ```{.c file="examples/c/start.c"}
 ```
 
-An environment holds the options, the event stream and the last error of each thread, and every model is made on one. Every call that acts returns a status, `BIYOS_OK` on success, and @sec-errors explains the others.
+An environment holds the options, the event stream and the last error of each thread, and every model is made on one. Every call that acts returns a status, `BIYOS_OK` on success, and [Errors](#sec-errors) explains the others.
 
 ### With CMake
 
@@ -81,4 +81,4 @@ It needs Python 3.10 or later and no other package at run time. Each call goes t
 ```{.python file="interfaces/python/examples/start.py"}
 ```
 
-The `with` block frees the environment when it ends. @sec-python covers the package.
+The `with` block frees the environment when it ends. [The Python package](#sec-python) covers the package.

@@ -21,14 +21,14 @@ A hook is a function of the event and of a pointer the program chose, of type `B
 ```{.c file="examples/c/events.c" item="hook"}
 ```
 
-The call writes an id for the hook, and `BIYOS_delenvhook` removes it by that id. Ids count from 1 in each environment and are never reused. The hooks of an environment receive an event in the order they were added, and run one at a time even when events come from several threads (@sec-threads). biyos keeps the function and the pointer until the hook is removed or the environment is freed, and passes the pointer back as given, so it may be null.
+The call writes an id for the hook, and `BIYOS_delenvhook` removes it by that id. Ids count from 1 in each environment and are never reused. The hooks of an environment receive an event in the order they were added, and run one at a time even when events come from several threads ([Threads](#sec-threads)). biyos keeps the function and the pointer until the hook is removed or the environment is freed, and passes the pointer back as given, so it may be null.
 
 A hook can also belong to one model. `BIYOS_addmdlhook` attaches it as `BIYOS_addenvhook` does, and it then receives the events of calls on that model alone:
 
 ```{.c file="examples/c/events.c" item="hook_model"}
 ```
 
-`BIYOS_delmdlhook` removes it. Ids count from 1 in each model, apart from the ids of the environment. An event of a call on a model reaches the hooks of that model first, in the order they were added, and then the hooks of its environment. A model's hooks are freed with it, and a copy of the model has none of them (@sec-copy).
+`BIYOS_delmdlhook` removes it. Ids count from 1 in each model, apart from the ids of the environment. An event of a call on a model reaches the hooks of that model first, in the order they were added, and then the hooks of its environment. A model's hooks are freed with it, and a copy of the model has none of them ([Copying models](#sec-copy)).
 
 The example adds two hooks to the environment and one to a model, and then makes a call on the model fail:
 
@@ -62,7 +62,7 @@ A hook can also read the parts of an event one by one, with `BIYOS_getevtknd`, `
 
 Two messages exist so far. A call that fails sends an error message, at level error from module `capi`, whose text is the call's error message and whose one field `code` is the returned status as decimal text, so a hook sees every failure without checking every call. Setting a deprecated option sends a warning from module `core` ([Versions](#sec-options-versions)).
 
-An invariant event reports an invariant that does not hold, found by a check that the option `check_lvl` runs; the call then fails. A span event marks a phase beginning or ending, such as presolve, and phases nest. The fields of a span event, `edge`, `wall` and `cpu`, give `begin` or `end` and the wall time since the environment was created and the CPU time of the thread that sent the event, both in nanoseconds. biyos adds up the time of each phase in a timing tree, nested as the phases are, and leaves out the time spent delivering span events, so a hook never changes it. Outside a solve, a call whose cost grows with the model, such as reading a file, times itself as one phase, and its entry in the reference names its span. @sec-codes describes each event field by field.
+An invariant event reports an invariant that does not hold, found by a check that the option `check_lvl` runs; the call then fails. A span event marks a phase beginning or ending, such as presolve, and phases nest. The fields of a span event, `edge`, `wall` and `cpu`, give `begin` or `end` and the wall time since the environment was created and the CPU time of the thread that sent the event, both in nanoseconds. biyos adds up the time of each phase in a timing tree, nested as the phases are, and leaves out the time spent delivering span events, so a hook never changes it. Outside a solve, a call whose cost grows with the model, such as reading a file, times itself as one phase, and its entry in the reference names its span. [Error codes and events](#sec-codes) describes each event field by field.
 
 ::: {.callout-note}
 ## Not yet sent

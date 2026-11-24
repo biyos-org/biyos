@@ -1,6 +1,6 @@
 # Options {#sec-option-table}
 
-Every option biyos knows, generated from the table in the library that declares them, so this list and the library cannot disagree. Each entry gives the option's id, the macro of `biyos/biyos.h` that names it, its kind, its default, the values it accepts and the version that added it. @sec-options shows how to set and read them.
+Every option biyos knows, generated from the table in the library that declares them, so this list and the library cannot disagree. Each entry gives the option's id, the macro of `biyos/biyos.h` that names it, its kind, its default, the values it accepts and the version that added it. The guide's [Options](#sec-options) chapter shows how to set and read them.
 
 Ranges include their ends and are checked exactly, with no tolerance. NaN lies outside every range. Nothing acts on the options yet: they are checked, stored and read back, and take effect with the solvers.
 

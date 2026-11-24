@@ -33,13 +33,13 @@ since 0.1.0
 
 type BIYOS_status
 summary The status a call returns.
-note An `int`: `BIYOS_OK`, which is 0, or a negative error code of @sec-codes. No call returns a positive status.
+note An `int`: `BIYOS_OK`, which is 0, or a negative error code of [Error codes and events](#sec-codes). No call returns a positive status.
 see BIYOS_OK BIYOS_lasterror BIYOS_error
 since 0.1.0
 
 type BIYOS_env
 summary An environment.
-note It holds the options, the hooks and the last error of each thread that calls it. Environments share no state, so separate threads may use separate environments at the same time. Threads may share one too: calls on different models of it may run at the same time, and so may calls that only read one model. A call that changes a model runs alone on that model, a call that changes the environment runs alone on it and its models, and a call that would overlap one of them on another thread fails with `BIYOS_ERR_BUSY`. It is freed only once no other thread is in a call on it or will make one. Any thread may call `BIYOS_interrupt` and `BIYOS_lasterror` on it at any time. @sec-threads gives the rule.
+note It holds the options, the hooks and the last error of each thread that calls it. Environments share no state, so separate threads may use separate environments at the same time. Threads may share one too: calls on different models of it may run at the same time, and so may calls that only read one model. A call that changes a model runs alone on that model, a call that changes the environment runs alone on it and its models, and a call that would overlap one of them on another thread fails with `BIYOS_ERR_BUSY`. It is freed only once no other thread is in a call on it or will make one. Any thread may call `BIYOS_interrupt` and `BIYOS_lasterror` on it at any time. [Threads](#sec-threads) gives the rule.
 see BIYOS_newenv BIYOS_freeenv
 since 0.1.0
 
@@ -83,14 +83,14 @@ since 0.1.0
 
 group codes Status codes
 text A call returns `BIYOS_OK` or a negative code. The hundreds of a code say who is at fault: −100 to −199 the caller, −200 to −299 the model, −300 to −399 user code such as a callback, −400 to −499 resources, −500 to −599 biyos. A new code joins its group and keeps its number for good, so test a group by range rather than by value. No code exists yet in the user code group.
-text Besides the codes its entry names, every call that returns a status can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos, and every call on an environment or a model but `BIYOS_lasterror` and `BIYOS_interrupt` can return `BIYOS_ERR_BUSY` when it would overlap a call on another thread (@sec-threads). A solve outcome is never an error code.
+text Besides the codes its entry names, every call that returns a status can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos, and every call on an environment or a model but `BIYOS_lasterror` and `BIYOS_interrupt` can return `BIYOS_ERR_BUSY` when it would overlap a call on another thread ([Threads](#sec-threads)). A solve outcome is never an error code.
 
 table Status codes
 value BIYOS_OK The call succeeded.
 value BIYOS_ERR_BADARG The caller passed something the call does not accept: a null pointer, an unknown name, id or index, a value out of range, a call of the wrong kind for its option, or a change to an environment while it delivers an event. The entry of each call says which.
 value BIYOS_ERR_BADFILE A file breaks the rules of its format, with a message that names the file and the line.
 value BIYOS_ERR_UNSUPPORTED A part of a file that the reader does not handle, with a message that names the part and its line, or a model that the format cannot hold.
-value BIYOS_ERR_BUSY The environment or the model is in a call on another thread that this call may not overlap (@sec-threads).
+value BIYOS_ERR_BUSY The environment or the model is in a call on another thread that this call may not overlap ([Threads](#sec-threads)).
 value BIYOS_ERR_INUSE An item that another record, a node or a callback uses, so this change of it is refused.
 value BIYOS_ERR_NOMEMORY An allocation failed, or a count would pass the largest the model can hold.
 value BIYOS_ERR_FILEIO The system will not open, read or write a file.
@@ -124,7 +124,7 @@ summary Free an environment.
 param env in The environment to free, with every string read from it; null does nothing and returns `BIYOS_OK`.
 return `BIYOS_OK` once the environment is freed.
 error BIYOS_ERR_BADARG `env` delivers an event, or has a model that is not freed, with the message `invalid argument: environment: has a model that is not freed`. The call then frees nothing.
-note A call on `env` from another thread refuses the free with `BIYOS_ERR_BUSY`, but nothing refuses a call that starts while the free runs or after it returns: free `env` only once no other thread is in a call on it or will make one (@sec-threads).
+note A call on `env` from another thread refuses the free with `BIYOS_ERR_BUSY`, but nothing refuses a call that starts while the free runs or after it returns: free `env` only once no other thread is in a call on it or will make one ([Threads](#sec-threads)).
 see BIYOS_newenv BIYOS_freemdl
 since 0.1.0
 
@@ -153,7 +153,7 @@ see BIYOS_TRM_STOP
 since 0.1.0
 
 group options Options
-text An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_ERR_BADARG`: nothing is converted, so an int option refuses `BIYOS_setenvdblopt`. Every call that takes an option id returns `BIYOS_ERR_BADARG` for an id it does not know, and a failed set leaves the option as it was. @sec-option-table lists every option.
+text An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_ERR_BADARG`: nothing is converted, so an int option refuses `BIYOS_setenvdblopt`. Every call that takes an option id returns `BIYOS_ERR_BADARG` for an id it does not know, and a failed set leaves the option as it was. [Options](#sec-option-table) lists every option.
 text Ranges include their ends and are checked exactly, with no tolerance, and NaN lies outside every range. Setting a deprecated option sets it and sends a warning event; setting a retired option, by any call, returns `BIYOS_ERR_BADARG` with a message that names the option to use instead, and changes nothing, while getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither.
 text Options have two levels. An option set on an environment is shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each call that sets or reads an option on the environment has a twin on the model, such as `BIYOS_setmdlintopt` beside `BIYOS_setenvintopt`, which checks the value in the same way. `BIYOS_delmdlopt` drops the model's own value, and `BIYOS_getmdloptsrc` tells where the value a model reads comes from. An option of environment scope is set on the environment only, and every model call on it returns `BIYOS_ERR_BADARG` with a message such as `invalid argument: option 'host': has environment scope`. No option of this release has environment scope.
 
@@ -631,7 +631,7 @@ summary Free a model.
 param mdl in The model; null does nothing and returns `BIYOS_OK`.
 return `BIYOS_OK` once the model is freed.
 error BIYOS_ERR_BADARG The environment of `mdl` delivers an event. The call then frees nothing.
-note A call on `mdl` from another thread refuses the free with `BIYOS_ERR_BUSY`, but nothing refuses a call that starts while the free runs or after it returns: free `mdl` only once no other thread is in a call on it or will make one (@sec-threads).
+note A call on `mdl` from another thread refuses the free with `BIYOS_ERR_BUSY`, but nothing refuses a call that starts while the free runs or after it returns: free `mdl` only once no other thread is in a call on it or will make one ([Threads](#sec-threads)).
 see BIYOS_newmdl BIYOS_freeenv
 since 0.1.0
 
@@ -2218,7 +2218,7 @@ see BIYOS_setcconnamesp
 since 0.1.0
 
 group expressions Expressions
-text An expression is a node of the model's graph, an operator applied to its children, and the `BIYOS_OP_` constants number the operators. `BIYOS_attachexprsp` adds an expression to a function, as the nonlinear part of $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j + e(x)$. A node is named by its id, a `BIYOS_offset` counted from 0 in the order the nodes are added. Passing a node's id again shares the node, which is stored once however many parents use it, and each variable has one node. Every constant, coefficient and exponent of an expression is finite. @sec-graph describes each operator.
+text An expression is a node of the model's graph, an operator applied to its children, and the `BIYOS_OP_` constants number the operators. `BIYOS_attachexprsp` adds an expression to a function, as the nonlinear part of $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j + e(x)$. A node is named by its id, a `BIYOS_offset` counted from 0 in the order the nodes are added. Passing a node's id again shares the node, which is stored once however many parents use it, and each variable has one node. Every constant, coefficient and exponent of an expression is finite. [The expression graph](#sec-graph) describes each operator.
 text `BIYOS_addexpr` takes many expressions in one call, in postfix, where each operand comes before the operator that takes it: the form bindings and file readers write. Expression `k` is the entries from `off[k]` to `off[k + 1] - 1` of `code` and `arg`. An entry's code is a `BIYOS_OP_` constant and its argument a `BIYOS_offset`: for `BIYOS_OP_VAR` the variable, for `BIYOS_OP_NODE` the id of a node the model held before the call, and for an operator the number of operands it takes, 0 for `BIYOS_OP_CONST`. The values the operators take, as `BIYOS_addnode` reads them, follow one another in `val` in the order of the entries, expression after expression. Each expression leaves one operand, its top node. A sum that is an operand of a sum built in the same expression is merged into it, and so is a product that is an operand of a product, so $x_0 + (x_1 + x_2)$ becomes one sum of three terms. A node named by `BIYOS_OP_NODE` is used whole. `BIYOS_OP_KEEP`, with the argument 1, makes the operand before it a node of its own, used whole in the same way, so a sum can stay a child of a sum. `BIYOS_OP_REF` names that node again by the position in `code` of the `BIYOS_OP_KEEP` entry, which comes earlier in the same call, so the expressions of one call can share a node they build. Neither takes a value. `BIYOS_getexprsp` writes the expressions of functions back in this form.
 
 table Operators
@@ -2548,7 +2548,7 @@ error BIYOS_ERR_BADARG `path` or `mdl` is null, `fmt` is not a format, or `env` 
 error BIYOS_ERR_FILEIO The file cannot be opened or read.
 error BIYOS_ERR_BADFILE The file breaks a rule of its format. The message names the file and the line.
 error BIYOS_ERR_UNSUPPORTED The file holds a part the reader does not handle. The message names the part and its line.
-note Each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`. @sec-formats gives the rules of each format.
+note Each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`. [File formats](#sec-formats) gives the rules of each format.
 note The call sends the span `read` from module `io` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_newmdl BIYOS_freemdl
 since 0.1.0
@@ -2562,7 +2562,7 @@ return `BIYOS_OK` once the file is written.
 error BIYOS_ERR_BADARG `path` is null, `fmt` is not a format, or the environment of `mdl` delivers an event.
 error BIYOS_ERR_FILEIO The file cannot be opened or written.
 error BIYOS_ERR_UNSUPPORTED The model holds a part the format cannot carry. The message names the first record that holds it.
-note Each part of the model the format leaves out, such as a tolerance, is a warning event from module `io`, with the field `file`. @sec-formats gives the rules of each format.
+note Each part of the model the format leaves out, such as a tolerance, is a warning event from module `io`, with the field `file`. [File formats](#sec-formats) gives the rules of each format.
 note The call sends the span `write` from module `io` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_readmdl
 since 0.1.0

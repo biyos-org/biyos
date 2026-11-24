@@ -22,7 +22,7 @@ A new code joins its group and keeps its number for good, so test a group by ran
 ```{.c file="examples/c/errors.c" item="at_fault"}
 ```
 
-Besides the codes the reference names for a call, any call can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos, and a call on an environment or a model can return `BIYOS_ERR_BUSY` when it would overlap a call on another thread (@sec-threads). No call returns a positive status. A solve outcome, such as an infeasible model or a time limit reached, is never an error code: it is a result, and a call that finds it succeeds.
+Besides the codes the reference names for a call, any call can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos, and a call on an environment or a model can return `BIYOS_ERR_BUSY` when it would overlap a call on another thread ([Threads](#sec-threads)). No call returns a positive status. A solve outcome, such as an infeasible model or a time limit reached, is never an error code: it is a result, and a call that finds it succeeds.
 
 ## The last error {#sec-errors-message}
 
