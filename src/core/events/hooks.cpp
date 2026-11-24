@@ -1,7 +1,7 @@
 #include "core/events/hooks.hpp"
 
-#include "core/depth.hpp"
 #include "core/error.hpp"
+#include "core/memory/depth.hpp"
 #include "core/thread.hpp"
 
 #include <algorithm>

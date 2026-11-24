@@ -2,7 +2,7 @@
 
 #include "core/env.hpp"
 #include "core/error.hpp"
-#include "core/usage.hpp"
+#include "core/memory/usage.hpp"
 
 #include <string>
 #include <string_view>

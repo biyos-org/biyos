@@ -1,4 +1,4 @@
-#include "core/usage.hpp"
+#include "core/memory/usage.hpp"
 
 #include "core/thread.hpp"
 

@@ -4,10 +4,10 @@
 #include "core/events/deliveries.hpp"
 #include "core/events/events.hpp"
 #include "core/events/records.hpp"
+#include "core/memory/usage.hpp"
 #include "core/options/options.hpp"
 #include "core/timing/clock.hpp"
 #include "core/timing/interrupt.hpp"
-#include "core/usage.hpp"
 
 #include <atomic>
 #include <cstddef>
