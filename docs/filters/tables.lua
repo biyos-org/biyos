@@ -71,8 +71,21 @@ local function mark(span)
     return out
 end
 
+local function is_span(inline, class)
+    return inline and inline.t == "Span" and inline.classes:includes(class)
+end
+
+local function spaced(inlines)
+    for k = 2, #inlines - 1 do
+        if inlines[k].t == "Space" and is_span(inlines[k - 1], "name") and is_span(inlines[k + 1], "type") then
+            inlines[k] = pandoc.RawInline("latex", "\\enskip{}")
+        end
+    end
+    return inlines
+end
+
 local function latex(blocks)
-    local marked = pandoc.Blocks(blocks):walk({Span = mark})
+    local marked = pandoc.Blocks(blocks):walk({Inlines = spaced}):walk({Span = mark})
     local text = pandoc.write(pandoc.Pandoc(marked), "latex")
     return (text:gsub("^%s+", ""):gsub("%s+$", ""):gsub("\n\n+", "\\par "):gsub("\n", " "))
 end
