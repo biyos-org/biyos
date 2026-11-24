@@ -40,6 +40,8 @@ biyos_add_test(test_core
     core/options/test_options.cpp
     core/options/test_settings.cpp
     core/options/test_tolerances.cpp
+    core/text/test_bignum.cpp
+    core/text/test_chars.cpp
     core/text/test_name.cpp
     core/text/test_strings.cpp
     core/text/test_utf8.cpp
