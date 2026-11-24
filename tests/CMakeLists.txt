@@ -124,38 +124,39 @@ target_link_libraries(test_io PRIVATE biyos_internal)
 
 biyos_add_test(test_capi
     capi/sample.cpp
-    capi/test_adders.cpp
-    capi/test_callbacks.cpp
-    capi/test_complements.cpp
-    capi/test_cones.cpp
-    capi/test_constants.cpp
-    capi/test_constraints.cpp
-    capi/test_copy.cpp
-    capi/test_delete.cpp
-    capi/test_env.cpp
-    capi/test_events.cpp
-    capi/test_files.cpp
-    capi/test_expressions.cpp
-    capi/test_firewall.cpp
-    capi/test_format.cpp
-    capi/test_functions.cpp
-    capi/test_indicators.cpp
-    capi/test_interrupt.cpp
-    capi/test_linear.cpp
-    capi/test_model.cpp
-    capi/test_names.cpp
-    capi/test_objectives.cpp
-    capi/test_options.cpp
-    capi/test_pairs.cpp
-    capi/test_products.cpp
-    capi/test_quadratic.cpp
-    capi/test_ranges.cpp
-    capi/test_rebuild.cpp
-    capi/test_sos.cpp
-    capi/test_spans.cpp
-    capi/test_terms.cpp
-    capi/test_threads.cpp
-    capi/test_version.cpp)
+    capi/env/test_env.cpp
+    capi/env/test_firewall.cpp
+    capi/env/test_interrupt.cpp
+    capi/env/test_options.cpp
+    capi/env/test_threads.cpp
+    capi/env/test_version.cpp
+    capi/events/test_events.cpp
+    capi/events/test_format.cpp
+    capi/events/test_spans.cpp
+    capi/linear/test_adders.cpp
+    capi/linear/test_constants.cpp
+    capi/linear/test_functions.cpp
+    capi/linear/test_linear.cpp
+    capi/linear/test_terms.cpp
+    capi/model/test_copy.cpp
+    capi/model/test_delete.cpp
+    capi/model/test_files.cpp
+    capi/model/test_model.cpp
+    capi/model/test_names.cpp
+    capi/model/test_rebuild.cpp
+    capi/nonlinear/test_callbacks.cpp
+    capi/nonlinear/test_expressions.cpp
+    capi/nonlinear/test_pairs.cpp
+    capi/nonlinear/test_products.cpp
+    capi/nonlinear/test_quadratic.cpp
+    capi/records/test_complements.cpp
+    capi/records/test_cones.cpp
+    capi/records/test_constraints.cpp
+    capi/records/test_indicators.cpp
+    capi/records/test_objectives.cpp
+    capi/records/test_ranges.cpp
+    capi/records/test_sos.cpp)
+target_include_directories(test_capi PRIVATE capi)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
 add_executable(test_capi_c capi/test_header.c)
