@@ -132,7 +132,7 @@ def test_views(env, model):
     with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addobj(g)
     with pytest.raises(TypeError, match="is a variable, not a function"):
-        model.addobj([x[0]])
+        model.addobj([0, x[0]])
     with pytest.raises(TypeError, match="of variables, not functions"):
         model.addobj(x)
     with pytest.raises(ValueError, match="is an objective of another model"):

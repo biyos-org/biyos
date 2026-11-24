@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 from math import isfinite
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, TypeVar
 
-from biyos._model.blocks import Variable, Variables, index_of
+from biyos._model.blocks import Functions, Variable, Variables, index_of
 from biyos._model.expression import Expression, Operand
 from biyos._model.operators import Operator
 
@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from biyos._model.model import Model
 
 Postfix = tuple[list[int], list[Operator], list[int], list[float]]
+Given = TypeVar("Given")
 
 
 class _Close(NamedTuple):
@@ -131,3 +132,24 @@ def postfix(model: "Model", trees: Sequence[Operand]) -> Postfix:
             raise TypeError(f"expr must be an expression, not {found}")
     writer = _Writer(model, trees)
     return writer.off, writer.code, writer.arg, writer.val
+
+
+def attached(model: "Model", trees: Sequence[Operand]) -> Functions:
+    nodes = model.addexpr(*postfix(model, trees))
+    funs = model.addfun(len(trees))
+    model.attachexpr(funs, nodes)
+    return funs
+
+
+def given(value: object, kind: type[Given], noun: str) -> list[Given] | None:
+    if isinstance(value, kind):
+        return [value]
+    if not isinstance(value, (list, tuple)) or not value:
+        return None
+    if not isinstance(value[0], kind):
+        return None
+    for k, item in enumerate(value):
+        if not isinstance(item, kind):
+            found = type(item).__name__
+            raise TypeError(f"funidx[{k}] is {found}, not {noun}")
+    return list(value)
