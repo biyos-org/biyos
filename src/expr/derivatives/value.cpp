@@ -182,9 +182,19 @@ Frame enter(const Block &block, std::span<const double> point, Workspace &worksp
 
 }
 
-Workspace::Workspace(const Tape &tape)
-    : shared(at(tape.pinned()), 0.0), slots(tape.width(), 0.0), partials(at(tape.partials()), 0.0)
+Workspace::Workspace(const Tape &tape, std::size_t count)
+    : lanes(lanes_of(count)), shared(at(tape.pinned()) * count, 0.0),
+      slots(tape.width() * count, 0.0), partials(at(tape.partials()) * count, 0.0)
 {
+}
+
+std::size_t lanes_of(std::size_t count)
+{
+    if (count == 0)
+    {
+        refuse("lanes", "zero");
+    }
+    return count;
 }
 
 void check_sweep(const Tape &tape,

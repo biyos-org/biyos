@@ -175,8 +175,9 @@ void release(const Block &block, Run loads, Adjoints &adjoints) noexcept
 }
 }
 
-Adjoints::Adjoints(const Tape &tape)
-    : slots(tape.width(), 0.0), shared(at(tape.pinned()), 0.0), gradient(at(tape.variables()), 0.0)
+Adjoints::Adjoints(const Tape &tape, std::size_t count)
+    : lanes(lanes_of(count)), slots(tape.width() * count, 0.0),
+      shared(at(tape.pinned()) * count, 0.0), gradient(at(tape.variables()) * count, 0.0)
 {
 }
 

@@ -2,6 +2,7 @@
 
 #include "expr/tape/tape.hpp"
 
+#include <cstddef>
 #include <span>
 #include <vector>
 
@@ -10,13 +11,15 @@ namespace biyos
 
 struct Workspace
 {
-    explicit Workspace(const Tape &tape);
+    explicit Workspace(const Tape &tape, std::size_t count = 1);
 
+    std::size_t lanes;
     std::vector<double> shared;
     std::vector<double> slots;
     std::vector<double> partials;
 };
 
+std::size_t lanes_of(std::size_t count);
 void check_sweep(const Tape &tape,
                  std::span<const double> point,
                  const Workspace &workspace,
