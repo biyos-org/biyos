@@ -3,7 +3,16 @@ import sys
 
 import pytest
 
-NAMES = ["copies", "errors", "events", "model", "options", "start", "threads"]
+NAMES = [
+    "copies",
+    "errors",
+    "events",
+    "expressions",
+    "model",
+    "options",
+    "start",
+    "threads",
+]
 
 
 @pytest.fixture

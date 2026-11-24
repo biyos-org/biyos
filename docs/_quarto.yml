@@ -144,36 +144,63 @@ quartodoc:
       contents:
         - name: Variables
           include_inherited: true
-          members: [__len__, __iter__, __getitem__, "on"]
+          members: [__len__, __contains__, __iter__, __getitem__, "on"]
         - Variable
         - name: Functions
           include_inherited: true
-          members: [__len__, __iter__, __getitem__, "on"]
+          members: [__len__, __contains__, __iter__, __getitem__, "on"]
         - Function
         - name: Constraints
           include_inherited: true
-          members: [__len__, __iter__, __getitem__, "on"]
+          members: [__len__, __contains__, __iter__, __getitem__, "on"]
         - Constraint
         - name: Objectives
           include_inherited: true
-          members: [__len__, __iter__, __getitem__, "on"]
+          members: [__len__, __contains__, __iter__, __getitem__, "on"]
         - Objective
         - name: Indicators
           include_inherited: true
-          members: [__len__, __iter__, __getitem__, "on"]
+          members: [__len__, __contains__, __iter__, __getitem__, "on"]
         - Indicator
         - name: SOSs
           include_inherited: true
-          members: [__len__, __iter__, __getitem__, "on"]
+          members: [__len__, __contains__, __iter__, __getitem__, "on"]
         - SOS
         - name: Cones
           include_inherited: true
-          members: [__len__, __iter__, __getitem__, "on"]
+          members: [__len__, __contains__, __iter__, __getitem__, "on"]
         - Cone
         - name: Complements
           include_inherited: true
-          members: [__len__, __iter__, __getitem__, "on"]
+          members: [__len__, __contains__, __iter__, __getitem__, "on"]
         - Complement
+    - title: Expressions
+      desc: What arithmetic on variables builds, for addobj and addcon to take.
+      contents:
+        - name: Expression
+          include_inherited: true
+          members: [__add__, __sub__, __mul__, __truediv__, __pow__, __neg__, __abs__, __le__, __ge__, __eq__]
+        - Comparison
+        - exp
+        - log
+        - sqrt
+        - sin
+        - cos
+        - tan
+        - asin
+        - acos
+        - atan
+        - sinh
+        - cosh
+        - tanh
+        - asinh
+        - acosh
+        - atanh
+        - erf
+        - entropy
+        - signpow
+        - max
+        - min
     - title: Events
       desc: What a hook receives.
       contents: [Event, EventKind, EventLevel]

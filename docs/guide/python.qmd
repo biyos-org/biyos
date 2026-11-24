@@ -46,6 +46,17 @@ The readers return lists, in the order of the C call's arrays:
 
 A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobj` leaves out, as `addobj` does, and `getvartol(idx)`, `getcontol(idx)`, `getconetol(idx)` and `getccontol(idx)` those of variables, constraints, cones and complements, None where an item holds none. `getcst(idx)` returns the constants of functions, which `setcst` sets and `addcst` adds to.
 
+## Expressions {#sec-python-expressions}
+
+Arithmetic on variable views builds an `Expression`, a tree that holds its operands and computes nothing. `+`, `-`, `*`, `/`, `**`, unary `-` and `abs` take views, expressions and numbers, and `biyos.exp`, `biyos.log` and the other functions of `biyos` give one for each operator of @sec-model-expressions, down to `biyos.max` and `biyos.min`. Those two stay out of `__all__`, so `from biyos import *` leaves the builtins alone. An operand of any other type, a string or `None` for instance, raises `TypeError`. Dividing by a number multiplies by its inverse, so the terms stay linear, and `x[0] / 10` holds the weight `0.1`, which may differ in the last bit from the quotient written.
+
+`<=`, `>=` and `==` give a `Comparison`, the constraint that the difference of the two sides lies in its bounds: `a <= b` is `a - b <= 0`, and a number on either side becomes the bound, so `1 <= e` is `e >= 1`. A comparison has no truth value, so `bool(x[0] + 1 == x[1])`, an `if` on one and a chained `a <= b <= c` raise `TypeError`. The exception is `==` between two views, true when both name one variable of one model, so views serve as keys of dictionaries and sets. `==` with a value of another type, such as `None`, is False. `<` and `>` are refused, and a bound that is NaN or leaves no value, such as `x[0] <= -inf`, raises `ValueError`.
+
+`addobj` takes an expression, a view or a list of them, and `addcon` a comparison or a list of them, its bounds from the comparisons, with `lb` and `ub` left out. Every expression of the call goes to the model in one `addexpr`, a subexpression used twice is sent once with `Operator.KEEP` and `Operator.REFERENCE`, and `attachexpr` splits off the constant, linear and quadratic terms ([Expressions](#sec-model-expressions)). A view made before a deletion, or one of another model, raises `ValueError` before anything is added.
+
+```{.python file="interfaces/python/examples/expressions.py" item="build"}
+```
+
 ## Constants {#sec-python-constants}
 
 The C constants a program passes become `IntEnum` classes with the same values and full names: `VariableKind`, `ObjectiveSense` and `SOSKind` for models, `EventKind` and `EventLevel` for events, `Checking` for the values of `checking` and `OptionSource` for where a model's option comes from, so `BIYOS_EVTLVL_WARN` is `EventLevel.WARNING`. A reader returns them as members of their class, so `model.getvar()[0][0]` is `VariableKind.CONTINUOUS` rather than 1. Options are read and set by name ([Options in Python](#sec-options-python)).
