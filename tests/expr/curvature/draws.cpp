@@ -2,9 +2,9 @@
 
 #include "biyos/biyos.h"
 #include "core/index.hpp"
-#include "expr/graph.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
 #include "expr/interval.hpp"
-#include "expr/node.hpp"
 #include "sampling.hpp"
 
 #include <algorithm>

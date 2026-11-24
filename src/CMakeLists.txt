@@ -27,21 +27,22 @@ add_library(biyos_internal STATIC
     core/version.cpp
     expr/arithmetic.cpp
     expr/bends.cpp
-    expr/builder.cpp
     expr/canonical.cpp
-    expr/compact.cpp
     expr/curvature.cpp
     expr/derivative.cpp
     expr/elementary.cpp
     expr/enclosure.cpp
     expr/exponents.cpp
-    expr/graph.cpp
+    expr/graph/builder.cpp
+    expr/graph/compact.cpp
+    expr/graph/graph.cpp
+    expr/graph/node.cpp
+    expr/graph/parents.cpp
+    expr/graph/uses.cpp
     expr/interval.cpp
     expr/layout.cpp
     expr/locator.cpp
     expr/memo.cpp
-    expr/node.cpp
-    expr/parents.cpp
     expr/partials.cpp
     expr/periodic.cpp
     expr/plan.cpp
@@ -54,7 +55,6 @@ add_library(biyos_internal STATIC
     expr/shape.cpp
     expr/tape.cpp
     expr/terms.cpp
-    expr/uses.cpp
     expr/value.cpp
     expr/waves.cpp
     io/bounds.cpp

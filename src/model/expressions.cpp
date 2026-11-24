@@ -2,7 +2,7 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "expr/graph.hpp"
+#include "expr/graph/graph.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
 #include "model/nodes.hpp"

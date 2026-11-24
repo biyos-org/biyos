@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/index.hpp"
-#include "expr/graph.hpp"
+#include "expr/graph/graph.hpp"
 
 #include <cstdint>
 #include <vector>

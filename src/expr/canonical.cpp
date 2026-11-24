@@ -4,10 +4,10 @@
 #include "core/index.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
-#include "expr/graph.hpp"
-#include "expr/node.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
+#include "expr/graph/uses.hpp"
 #include "expr/terms.hpp"
-#include "expr/uses.hpp"
 
 #include <algorithm>
 #include <array>

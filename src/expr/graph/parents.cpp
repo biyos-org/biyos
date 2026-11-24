@@ -1,7 +1,7 @@
-#include "expr/parents.hpp"
+#include "expr/graph/parents.hpp"
 
 #include "core/index.hpp"
-#include "expr/graph.hpp"
+#include "expr/graph/graph.hpp"
 
 #include <cstddef>
 #include <numeric>

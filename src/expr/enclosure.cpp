@@ -4,9 +4,9 @@
 #include "core/index.hpp"
 #include "core/text/text.hpp"
 #include "expr/elementary.hpp"
-#include "expr/graph.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
 #include "expr/interval.hpp"
-#include "expr/node.hpp"
 #include "expr/periodic.hpp"
 #include "expr/powers.hpp"
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/index.hpp"
-#include "expr/node.hpp"
+#include "expr/graph/node.hpp"
 
 #include <cstddef>
 #include <cstdint>

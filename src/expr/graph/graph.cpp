@@ -1,8 +1,8 @@
-#include "expr/graph.hpp"
+#include "expr/graph/graph.hpp"
 
 #include "core/index.hpp"
 #include "core/memory/room.hpp"
-#include "expr/node.hpp"
+#include "expr/graph/node.hpp"
 
 #include <bit>
 #include <cstddef>

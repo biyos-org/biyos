@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/index.hpp"
-#include "expr/graph.hpp"
+#include "expr/graph/graph.hpp"
 #include "expr/layout.hpp"
 #include "expr/radix.hpp"
 #include "expr/reach.hpp"

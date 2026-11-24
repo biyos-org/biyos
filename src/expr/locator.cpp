@@ -1,7 +1,7 @@
 #include "expr/locator.hpp"
 
 #include "core/index.hpp"
-#include "expr/graph.hpp"
+#include "expr/graph/graph.hpp"
 #include "expr/layout.hpp"
 #include "expr/plan.hpp"
 #include "expr/reach.hpp"

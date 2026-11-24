@@ -1,9 +1,9 @@
-#include "expr/compact.hpp"
+#include "expr/graph/compact.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "expr/graph.hpp"
-#include "expr/node.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
 
 #include <algorithm>
 #include <cstddef>
