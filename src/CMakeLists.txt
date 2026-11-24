@@ -126,13 +126,11 @@ biyos_set_warnings(biyos_internal)
 
 add_library(biyos
     capi/arrays.cpp
-    capi/callbacks.cpp
     capi/env/env.cpp
     capi/env/events.cpp
     capi/env/format.cpp
     capi/env/options.cpp
     capi/env/version.cpp
-    capi/expressions.cpp
     capi/linear/columns.cpp
     capi/linear/functions.cpp
     capi/linear/linear.cpp
@@ -142,8 +140,10 @@ add_library(biyos
     capi/model/model.cpp
     capi/model/names.cpp
     capi/model/selection.cpp
-    capi/pairs.cpp
-    capi/quadratic.cpp
+    capi/nonlinear/callbacks.cpp
+    capi/nonlinear/expressions.cpp
+    capi/nonlinear/pairs.cpp
+    capi/nonlinear/quadratic.cpp
     capi/records/complements.cpp
     capi/records/cones.cpp
     capi/records/constraints.cpp
