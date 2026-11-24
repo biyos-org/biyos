@@ -48,6 +48,7 @@ class Settings
 
     const OptionValue *find(Option option) const;
     void erase(Option option);
+    bool empty() const noexcept;
 
   private:
     void store(Option option,

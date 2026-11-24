@@ -142,6 +142,8 @@ class LookupTest : public SettingTest
 TEST_F(SettingTest, Empty)
 {
     const biyos::Settings none;
+    EXPECT_TRUE(none.empty());
+    EXPECT_TRUE(settings.empty());
     for (const OptionSpec &spec : biyos::option_table())
     {
         EXPECT_EQ(none.find(spec.id), nullptr) << spec.name;
@@ -176,6 +178,9 @@ TEST_F(SettingTest, Erase)
     settings.erase(kNew);
     settings.erase(kGone);
     EXPECT_EQ(held(settings, kOld), 6);
+    EXPECT_FALSE(settings.empty());
+    settings.erase(kOld);
+    EXPECT_TRUE(settings.empty());
 }
 
 TEST_F(SettingTest, Copy)

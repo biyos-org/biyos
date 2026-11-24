@@ -118,4 +118,9 @@ void Settings::erase(Option option)
     std::erase_if(entries_, [option](const Entry &entry) { return entry.option == option; });
 }
 
+bool Settings::empty() const noexcept
+{
+    return entries_.empty();
+}
+
 }
