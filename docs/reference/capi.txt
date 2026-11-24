@@ -2375,6 +2375,7 @@ since 0.1.0
 
 group callbacks Callbacks
 text A callback computes in user code its part $\gamma_k(x)$ of the nonlinear part of each function $k$ it covers. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for the values of those parts, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
+text The derivative patterns are coordinates, as `BIYOS_addlintermsp` takes terms: `BIYOS_setcbg` takes a covered function and a variable for each entry, `BIYOS_setcbh` two variables. Entries may come in any order and may repeat, and `BIYOS_cbg` and `BIYOS_cbh` write one value for each entry in the order given, the values of a repeated entry summed.
 text A function's nonlinear part is its expression plus the part of every callback that covers it. A function may be in any number of callbacks and hold an expression beside them, and a callback lists a function at most once. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function. A callback reads `x` in the numbering it was written for, so `BIYOS_delvarsp` deletes no variable of a model that has a callback.
 text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. No call evaluates a callback yet.
 text The model keeps the function pointers and `data` as given and never frees `data`. A copy made by `BIYOS_copymdl` shares them with its source, so both call the same code with the same `data`.
@@ -2403,7 +2404,7 @@ since 0.1.0
 type BIYOS_cbg
 summary A function that evaluates the first derivatives of a callback's nonlinear parts.
 param req in The request, with the point `x`.
-param g out Receives $\partial \gamma_k / \partial x_j$ for each entry of the pattern given to `BIYOS_setcbg`, in its order.
+param g out Receives a value for each entry $(k, j)$ of the pattern given to `BIYOS_setcbg`, in its order: $\partial \gamma_k / \partial x_j$, or for a repeated entry a part of it, the parts summed.
 param data in The callback's pointer, as given.
 note It returns 0 on success, a positive value when a function is not defined at `x` and a negative value to stop.
 see BIYOS_setcbg BIYOS_cbreq
@@ -2412,7 +2413,7 @@ since 0.1.0
 type BIYOS_cbh
 summary A function that evaluates the second derivatives of a weighted sum of a callback's nonlinear parts.
 param req in The request, with the point `x` and the weights `w`.
-param h out Receives the entry $(i, j)$ of $\sum_k w_k \nabla^2 \gamma_k(x)$ for each pair of the pattern given to `BIYOS_setcbh`, in its order.
+param h out Receives a value for each pair $(i, j)$ of the pattern given to `BIYOS_setcbh`, in its order: the entry $(i, j)$ of $\sum_k w_k \nabla^2 \gamma_k(x)$, or for a repeated pair a part of it, the parts summed.
 param data in The callback's pointer, as given.
 note It returns 0 on success, a positive value when a function is not defined at `x` and a negative value to stop.
 see BIYOS_setcbh BIYOS_cbreq
@@ -2462,7 +2463,8 @@ param g in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
 error BIYOS_ERR_BADARG `cb` is not a callback of the model, `g` is null, `nnz` is negative, `fun` or `var` is null while `nnz` is not 0, a function is not one the callback covers, or a variable is not one of the model.
 error BIYOS_ERR_NOMEMORY The pattern would hold more entries than any allocation can hold.
-note A variable left out of the entries of function $k$ has a zero derivative of $\gamma_k$.
+note The entries may come in any order, and an entry given more than once has its values summed. A variable left out of the entries of function $k$ has a zero derivative of $\gamma_k$.
+note A repeated entry sums here and is refused by `BIYOS_addlintermsp`: a coefficient is data the model merges once, while a callback's value is computed again at every evaluation, and summing repeats spares the user code a merge of its own.
 see BIYOS_cbg BIYOS_addcb
 since 0.1.0
 
@@ -2477,7 +2479,8 @@ param h in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
 error BIYOS_ERR_BADARG `cb` is not a callback of the model, `h` is null, `nnz` is negative, `var1` or `var2` is null while `nnz` is not 0, a variable is not one of the model, or a pair has its second variable below its first.
 error BIYOS_ERR_NOMEMORY The pattern would hold more pairs than any allocation can hold.
-note The pairs are sorted by their first variable, then by their second, as the model lists quadratic terms, so they are the lower triangle of the Hessian compressed by column. They cover every pair $(i, j)$, $i \le j$, where a second derivative of some $\gamma_k$ may be nonzero.
+note The pairs may come in any order, and a pair given more than once has its values summed. They cover every pair $(i, j)$, $i \le j$, where a second derivative of some $\gamma_k$ may be nonzero.
+note A pair with its second variable below its first is refused rather than folded onto its mirror, since a full symmetric pattern would then count each off-diagonal entry twice.
 see BIYOS_cbh BIYOS_addcb
 since 0.1.0
 

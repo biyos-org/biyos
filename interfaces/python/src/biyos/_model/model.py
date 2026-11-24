@@ -1888,8 +1888,11 @@ class Model:
         """Give a callback its Jacobian pattern and the function that
         evaluates it.
 
-        A variable left out of a function's entries has a zero derivative
-        in the callback's part of that function.
+        Entry ``k`` is the derivative of the callback's part of function
+        ``fun[k]`` with respect to variable ``var[k]``. The entries may come
+        in any order, and an entry given more than once has its values
+        summed. A variable left out of a function's entries has a zero
+        derivative in the callback's part of that function.
 
         Parameters
         ----------
@@ -1931,10 +1934,10 @@ class Model:
         """Give a callback its Hessian pattern and the function that
         evaluates it.
 
-        The pairs are sorted by their first variable, then by their second,
-        as the model lists quadratic terms. They cover every pair of
-        variables ``i <= j`` where a second derivative of the callback's part
-        of some covered function may be nonzero.
+        The pairs may come in any order, and a pair given more than once has
+        its values summed. They cover every pair of variables ``i <= j``
+        where a second derivative of the callback's part of some covered
+        function may be nonzero.
 
         Parameters
         ----------
