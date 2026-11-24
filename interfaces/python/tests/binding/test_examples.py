@@ -1,13 +1,23 @@
-import runpy
-from operator import attrgetter
-from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
-EXAMPLES = Path(__file__).resolve().parents[4] / "examples" / "python"
-PATHS = sorted(EXAMPLES.glob("*.py"))
+NAMES = ["copies", "errors", "events", "model", "options", "start", "threads"]
 
 
-@pytest.mark.parametrize("path", PATHS, ids=attrgetter("stem"))
-def test_example(path):
-    runpy.run_path(str(path), run_name="__main__")
+@pytest.fixture
+def examples(project):
+    return project / "examples"
+
+
+def test_listed(examples):
+    assert sorted(path.stem for path in examples.glob("*.py")) == NAMES
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_example(examples, name):
+    path = examples / f"{name}.py"
+    command = [sys.executable, str(path)]
+    ran = subprocess.run(command, check=False, capture_output=True, text=True)
+    assert ran.returncode == 0, ran.stderr

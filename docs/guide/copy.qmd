@@ -1,6 +1,6 @@
 # Copying models {#sec-copy}
 
-A model is copied whole. The copy holds the same variables, functions, constraints and objectives under the same indices, and from then on each changes apart from the other. A copy can live on the same environment or on another, and is how a program hands a model to another thread (@sec-threads), and two models are compared by reading both back ([Comparing](#sec-copy-compare)). The code of this chapter is `examples/c/copies.c` and `examples/python/copies.py`.
+A model is copied whole. The copy holds the same variables, functions, constraints and objectives under the same indices, and from then on each changes apart from the other. A copy can live on the same environment or on another, and is how a program hands a model to another thread (@sec-threads), and two models are compared by reading both back ([Comparing](#sec-copy-compare)). The code of this chapter is `examples/c/copies.c` and `interfaces/python/examples/copies.py`.
 
 ## Copying {#sec-copy-c}
 
@@ -26,7 +26,7 @@ biyos compares stored numbers bit for bit when it checks its own copies and roun
 
 `Model.copy` copies a model onto its own environment or onto another. A block from the source, such as the variables an `addvar` call returned, names items of the source only; `on` gives the block of the same indices in another model, such as the copy:
 
-```{.python file="examples/python/copies.py"}
+```{.python file="interfaces/python/examples/copies.py"}
 ```
 
 `on` refuses a model that holds too few items of the block's family. A block's items keep their indices in a copy, since the copy numbers every family as the source does.
