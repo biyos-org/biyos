@@ -1,6 +1,7 @@
 #include "io/lines.hpp"
 
 #include "core/error.hpp"
+#include "core/text/chars.hpp"
 #include "core/text/text.hpp"
 
 #include <charconv>
@@ -90,7 +91,7 @@ std::optional<double> number_of(std::string_view field)
     }
     double value = 0.0;
     const char *last = digits.data() + digits.size();
-    const std::from_chars_result result = std::from_chars(digits.data(), last, value);
+    const std::from_chars_result result = text::from_chars(digits.data(), last, value);
     if (result.ec != std::errc() || result.ptr != last)
     {
         return std::nullopt;
