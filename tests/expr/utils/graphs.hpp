@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/index.hpp"
-#include "expr/graph.hpp"
-#include "expr/node.hpp"
-#include "expr/tape.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
+#include "expr/tape/tape.hpp"
 
 #include <array>
 #include <cmath>

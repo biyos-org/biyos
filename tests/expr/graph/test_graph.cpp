@@ -1,7 +1,7 @@
 #include "biyos/biyos.h"
 #include "core/index.hpp"
-#include "expr/graph.hpp"
-#include "expr/node.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>

@@ -25,38 +25,38 @@ add_library(biyos_internal STATIC
     core/timing/deadline.cpp
     core/timing/timer.cpp
     core/version.cpp
-    expr/arithmetic.cpp
-    expr/bends.cpp
-    expr/builder.cpp
-    expr/canonical.cpp
-    expr/compact.cpp
-    expr/curvature.cpp
-    expr/derivative.cpp
-    expr/elementary.cpp
-    expr/enclosure.cpp
-    expr/exponents.cpp
-    expr/graph.cpp
-    expr/interval.cpp
-    expr/layout.cpp
-    expr/locator.cpp
-    expr/memo.cpp
-    expr/node.cpp
-    expr/parents.cpp
-    expr/partials.cpp
-    expr/periodic.cpp
-    expr/plan.cpp
-    expr/powers.cpp
-    expr/radix.cpp
-    expr/reach.cpp
-    expr/reads.cpp
-    expr/reverse.cpp
-    expr/rounding.cpp
-    expr/shape.cpp
-    expr/tape.cpp
-    expr/terms.cpp
-    expr/uses.cpp
-    expr/value.cpp
-    expr/waves.cpp
+    expr/curvature/arithmetic.cpp
+    expr/curvature/bends.cpp
+    expr/curvature/curvature.cpp
+    expr/curvature/exponents.cpp
+    expr/curvature/shape.cpp
+    expr/curvature/waves.cpp
+    expr/derivatives/derivative.cpp
+    expr/derivatives/partials.cpp
+    expr/derivatives/reverse.cpp
+    expr/derivatives/value.cpp
+    expr/forms/canonical.cpp
+    expr/forms/terms.cpp
+    expr/graph/builder.cpp
+    expr/graph/compact.cpp
+    expr/graph/graph.cpp
+    expr/graph/node.cpp
+    expr/graph/parents.cpp
+    expr/graph/uses.cpp
+    expr/intervals/elementary.cpp
+    expr/intervals/enclosure.cpp
+    expr/intervals/interval.cpp
+    expr/intervals/periodic.cpp
+    expr/intervals/powers.cpp
+    expr/intervals/rounding.cpp
+    expr/sparsity/memo.cpp
+    expr/sparsity/radix.cpp
+    expr/sparsity/reach.cpp
+    expr/tape/layout.cpp
+    expr/tape/locator.cpp
+    expr/tape/plan.cpp
+    expr/tape/reads.cpp
+    expr/tape/tape.cpp
     io/bounds.cpp
     io/column_shape.cpp
     io/columns.cpp

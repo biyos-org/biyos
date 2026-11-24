@@ -2,7 +2,7 @@
 #include "biyos/biyos.h"
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "expr/graph.hpp"
+#include "expr/graph/graph.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
 #include "model/postfix.hpp"

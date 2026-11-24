@@ -1,7 +1,7 @@
 #include "core/index.hpp"
-#include "expr/graph.hpp"
-#include "expr/node.hpp"
-#include "expr/uses.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
+#include "expr/graph/uses.hpp"
 
 #include <gtest/gtest.h>
 

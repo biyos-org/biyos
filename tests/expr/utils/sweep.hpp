@@ -1,9 +1,9 @@
 #pragma once
 
-#include "expr/derivative.hpp"
-#include "expr/reverse.hpp"
-#include "expr/tape.hpp"
-#include "expr/value.hpp"
+#include "expr/derivatives/derivative.hpp"
+#include "expr/derivatives/reverse.hpp"
+#include "expr/derivatives/value.hpp"
+#include "expr/tape/tape.hpp"
 
 #include <cstddef>
 #include <limits>

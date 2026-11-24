@@ -1,0 +1,64 @@
+#include "expr/forms/terms.hpp"
+
+#include <algorithm>
+#include <cstddef>
+#include <utility>
+#include <vector>
+
+namespace biyos
+{
+
+namespace
+{
+
+bool linear_order(const LinearTerm &a, const LinearTerm &b) noexcept
+{
+    return a.variable < b.variable;
+}
+
+bool pair_order(const QuadraticTerm &a, const QuadraticTerm &b) noexcept
+{
+    return a.row < b.row || (a.row == b.row && a.column < b.column);
+}
+
+void order_pair(QuadraticTerm &term) noexcept
+{
+    if (term.row > term.column)
+    {
+        std::swap(term.row, term.column);
+    }
+}
+
+template <typename Term, typename Order> void add_by(std::vector<Term> &terms, Order order)
+{
+    std::stable_sort(terms.begin(), terms.end(), order);
+    std::size_t n = 0;
+    for (const Term &term : terms)
+    {
+        if (n > 0 && !order(terms[n - 1], term))
+        {
+            terms[n - 1].coefficient += term.coefficient;
+            continue;
+        }
+        terms[n++] = term;
+    }
+    terms.resize(n);
+}
+
+}
+
+void add_alike(std::vector<LinearTerm> &terms)
+{
+    add_by(terms, linear_order);
+}
+
+void add_alike(std::vector<QuadraticTerm> &terms)
+{
+    for (QuadraticTerm &term : terms)
+    {
+        order_pair(term);
+    }
+    add_by(terms, pair_order);
+}
+
+}

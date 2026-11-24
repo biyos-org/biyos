@@ -1,6 +1,6 @@
 #include "bounds.hpp"
-#include "expr/interval.hpp"
-#include "expr/rounding.hpp"
+#include "expr/intervals/interval.hpp"
+#include "expr/intervals/rounding.hpp"
 
 #include <gtest/gtest.h>
 

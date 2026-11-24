@@ -1,8 +1,8 @@
 #pragma once
 
-#include "expr/graph.hpp"
-#include "expr/interval.hpp"
-#include "expr/node.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
+#include "expr/intervals/interval.hpp"
 
 #include <array>
 #include <cstddef>

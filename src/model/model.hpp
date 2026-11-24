@@ -2,9 +2,9 @@
 
 #include "biyos/biyos.h"
 #include "core/index.hpp"
-#include "expr/graph.hpp"
-#include "expr/terms.hpp"
-#include "expr/uses.hpp"
+#include "expr/forms/terms.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/uses.hpp"
 #include "model/callbacks.hpp"
 #include "model/names.hpp"
 #include "model/overrides.hpp"

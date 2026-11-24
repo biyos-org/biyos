@@ -1,8 +1,8 @@
 #include "core/index.hpp"
-#include "expr/canonical.hpp"
-#include "expr/graph.hpp"
-#include "expr/node.hpp"
-#include "expr/uses.hpp"
+#include "expr/forms/canonical.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
+#include "expr/graph/uses.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>

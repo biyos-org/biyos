@@ -2,8 +2,8 @@
 
 #include "core/index.hpp"
 #include "core/text/text.hpp"
-#include "expr/graph.hpp"
-#include "expr/node.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
 #include "model/fields.hpp"
 
 #include <cstddef>

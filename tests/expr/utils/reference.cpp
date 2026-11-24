@@ -1,8 +1,8 @@
 #include "reference.hpp"
 
 #include "core/index.hpp"
-#include "expr/graph.hpp"
-#include "expr/node.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
 
 #include <cmath>
 #include <cstddef>

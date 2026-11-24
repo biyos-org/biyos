@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/index.hpp"
-#include "expr/terms.hpp"
+#include "expr/forms/terms.hpp"
 
 #include <span>
 #include <string>

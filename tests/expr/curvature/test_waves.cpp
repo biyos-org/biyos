@@ -1,10 +1,10 @@
 #include "chords.hpp"
-#include "expr/graph.hpp"
-#include "expr/interval.hpp"
-#include "expr/node.hpp"
-#include "expr/rounding.hpp"
-#include "expr/shape.hpp"
-#include "expr/waves.hpp"
+#include "expr/curvature/shape.hpp"
+#include "expr/curvature/waves.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/node.hpp"
+#include "expr/intervals/interval.hpp"
+#include "expr/intervals/rounding.hpp"
 #include "sampling.hpp"
 
 #include <gtest/gtest.h>

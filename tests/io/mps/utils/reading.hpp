@@ -4,7 +4,7 @@
 #include "core/error.hpp"
 #include "core/events/event.hpp"
 #include "core/index.hpp"
-#include "expr/terms.hpp"
+#include "expr/forms/terms.hpp"
 #include "io/mps.hpp"
 #include "model/model.hpp"
 
