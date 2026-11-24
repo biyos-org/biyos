@@ -1,10 +1,10 @@
 # Building a model {#sec-model}
 
-A model holds the data of one problem: its variables, the functions of those variables, the constraints that bound functions, the objectives to optimize, the indicators that switch constraints on and the complements that pair functions. This chapter builds one small model in C, step by step, then the same model in Python. The C code is `examples/c/model.c`, the Python code `interfaces/python/examples/model.py`.
+A model holds the data of one problem: its variables, the functions of those variables, the constraints that bound functions, the objectives to optimize, the indicators that switch constraints on, the complements that pair functions, the cones that functions lie in and the special ordered sets of variables. This chapter builds one small model in C, step by step, then the same model in Python. The C code is `examples/c/model.c`, the Python code `interfaces/python/examples/model.py`.
 
 ## Variables, functions and the records that use them {#sec-model-parts}
 
-A model keeps its functions in one table. A function is a constant plus linear and quadratic terms in the variables. Constraints and objectives do not hold functions of their own: each refers to a function of the table by its index, so one function can serve several of them.
+A model keeps its functions in one table. A function is a constant plus linear and quadratic terms in the variables, plus a nonlinear part given by an expression, by callbacks or by both. Constraints, objectives and the other records do not hold functions of their own: each refers to a function of the table by its index, so one function can serve several of them.
 
 ![The model of this chapter. Each constraint and each objective names a function by its index, and $f_0$ serves both a constraint and an objective.](../figures/families.svg){#fig-families}
 
@@ -63,10 +63,10 @@ A variable may also hold its own absolute and relative tolerance, which stand fo
 A function of the variables $x$ is
 
 $$
-f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j ,
+f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x) ,
 $$
 
-a constant $c$, linear terms $a_j x_j$ and quadratic terms $q_{ij} x_i x_j$. `BIYOS_addfun` adds functions with the constant 0 and no terms, and later calls give them their constants and terms. `BIYOS_setcstrg` sets the constants of a range of functions, and `BIYOS_addrlintermrg` adds their linear terms. The terms of many functions travel in compressed form, as three arrays: function `pos + k` owns the terms from `off[k]` to `off[k + 1] - 1` of `varidx` and `coef`, which hold the index of a variable and its coefficient. So `off` holds one more entry than there are functions, begins at 0 and never decreases, and its last entry is the number of terms.
+a constant $c$, linear terms $a_j x_j$, quadratic terms $q_{ij} x_i x_j$ and a nonlinear part $\varphi(x)$. The nonlinear part is an expression ([Expressions](#sec-model-expressions)) plus the part of every callback that covers the function ([Callbacks](#sec-capi-callbacks)), and is zero for a function with neither, as in this chapter. `BIYOS_addfun` adds functions with the constant 0 and no terms, and later calls give them their constants and terms. `BIYOS_setcstrg` sets the constants of a range of functions, and `BIYOS_addrlintermrg` adds their linear terms. The terms of many functions travel in compressed form, as three arrays: function `pos + k` owns the terms from `off[k]` to `off[k + 1] - 1` of `varidx` and `coef`, which hold the index of a variable and its coefficient. So `off` holds one more entry than there are functions, begins at 0 and never decreases, and its last entry is the number of terms.
 
 ```{.c file="examples/c/model.c" item="functions"}
 ```
@@ -94,7 +94,7 @@ A call that adds new pairs moves the terms of every function from the lowest one
 
 ## Expressions {#sec-model-expressions}
 
-A function may also hold a nonlinear part $e(x)$, an expression of the model's graph ([The expression graph](#sec-graph)):
+A function may also hold an expression $e(x)$ of the model's graph ([The expression graph](#sec-graph)), its nonlinear part when no callback covers it:
 
 $$
 f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + e(x) .
