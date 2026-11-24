@@ -11,7 +11,7 @@ project:
 
 book:
   title: biyos
-  subtitle: An optimization solver built from parts
+  subtitle: Optimization, honestly
   favicon: logo/favicon.svg
   downloads: [pdf]
   search: true
