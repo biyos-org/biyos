@@ -66,30 +66,31 @@ set_tests_properties(NameTest.LocalBuffer PROPERTIES
 
 biyos_add_test(test_expr
     expr/chords.cpp
-    expr/draws.cpp
     expr/reference.cpp
     expr/sampling.cpp
-    expr/test_arithmetic.cpp
-    expr/test_bends.cpp
-    expr/test_builder.cpp
-    expr/test_canonical.cpp
-    expr/test_compact.cpp
-    expr/test_curvature.cpp
-    expr/test_derivative.cpp
-    expr/test_elementary.cpp
-    expr/test_enclosure.cpp
-    expr/test_exponents.cpp
-    expr/test_graph.cpp
-    expr/test_interval.cpp
-    expr/test_parents.cpp
-    expr/test_partials.cpp
-    expr/test_periodic.cpp
-    expr/test_powers.cpp
-    expr/test_tape.cpp
-    expr/test_terms.cpp
-    expr/test_uses.cpp
-    expr/test_value.cpp
-    expr/test_waves.cpp)
+    expr/curvature/draws.cpp
+    expr/curvature/test_bends.cpp
+    expr/curvature/test_curvature.cpp
+    expr/curvature/test_waves.cpp
+    expr/derivatives/test_derivative.cpp
+    expr/derivatives/test_partials.cpp
+    expr/forms/test_canonical.cpp
+    expr/forms/test_terms.cpp
+    expr/graph/test_builder.cpp
+    expr/graph/test_compact.cpp
+    expr/graph/test_graph.cpp
+    expr/graph/test_parents.cpp
+    expr/graph/test_tape.cpp
+    expr/graph/test_uses.cpp
+    expr/intervals/test_enclosure.cpp
+    expr/intervals/test_interval.cpp
+    expr/values/test_arithmetic.cpp
+    expr/values/test_elementary.cpp
+    expr/values/test_exponents.cpp
+    expr/values/test_periodic.cpp
+    expr/values/test_powers.cpp
+    expr/values/test_value.cpp)
+target_include_directories(test_expr PRIVATE expr)
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
 biyos_add_test(test_model
