@@ -4,8 +4,8 @@
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/memo.hpp"
-#include "expr/plan.hpp"
 #include "expr/radix.hpp"
+#include "expr/tape/plan.hpp"
 
 #include <algorithm>
 #include <cstddef>

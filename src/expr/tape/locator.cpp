@@ -1,11 +1,11 @@
-#include "expr/locator.hpp"
+#include "expr/tape/locator.hpp"
 
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
-#include "expr/layout.hpp"
-#include "expr/plan.hpp"
 #include "expr/reach.hpp"
-#include "expr/tape.hpp"
+#include "expr/tape/layout.hpp"
+#include "expr/tape/plan.hpp"
+#include "expr/tape/tape.hpp"
 
 #include <algorithm>
 #include <cstddef>

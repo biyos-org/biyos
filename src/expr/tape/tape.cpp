@@ -1,16 +1,16 @@
-#include "expr/tape.hpp"
+#include "expr/tape/tape.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text/text.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/layout.hpp"
-#include "expr/locator.hpp"
 #include "expr/partials.hpp"
-#include "expr/plan.hpp"
 #include "expr/reach.hpp"
-#include "expr/reads.hpp"
+#include "expr/tape/layout.hpp"
+#include "expr/tape/locator.hpp"
+#include "expr/tape/plan.hpp"
+#include "expr/tape/reads.hpp"
 
 #include <algorithm>
 #include <bit>

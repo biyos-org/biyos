@@ -1,9 +1,9 @@
 #include "expr/partials.hpp"
 
 #include "core/numeric/zero.hpp"
-#include "expr/frame.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/tape.hpp"
+#include "expr/tape/frame.hpp"
+#include "expr/tape/tape.hpp"
 
 #include <algorithm>
 #include <cmath>

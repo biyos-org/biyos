@@ -5,7 +5,7 @@
 #include "core/text/text.hpp"
 #include "expr/reach.hpp"
 #include "expr/reverse.hpp"
-#include "expr/tape.hpp"
+#include "expr/tape/tape.hpp"
 #include "expr/value.hpp"
 
 #include <algorithm>

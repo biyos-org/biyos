@@ -1,8 +1,8 @@
 #include "expr/memo.hpp"
 
 #include "core/index.hpp"
-#include "expr/plan.hpp"
 #include "expr/reach.hpp"
+#include "expr/tape/plan.hpp"
 
 #include <algorithm>
 #include <cstddef>

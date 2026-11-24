@@ -9,7 +9,7 @@
 #include "expr/graph/node.hpp"
 #include "expr/interval.hpp"
 #include "expr/reverse.hpp"
-#include "expr/tape.hpp"
+#include "expr/tape/tape.hpp"
 #include "expr/value.hpp"
 #include "utils/refusal.hpp"
 

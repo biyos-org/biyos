@@ -2,10 +2,10 @@
 
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
-#include "expr/layout.hpp"
 #include "expr/radix.hpp"
 #include "expr/reach.hpp"
-#include "expr/tape.hpp"
+#include "expr/tape/layout.hpp"
+#include "expr/tape/tape.hpp"
 
 #include <cstddef>
 #include <cstdint>

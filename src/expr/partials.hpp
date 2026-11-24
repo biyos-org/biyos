@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/index.hpp"
-#include "expr/frame.hpp"
-#include "expr/tape.hpp"
+#include "expr/tape/frame.hpp"
+#include "expr/tape/tape.hpp"
 
 #include <cstddef>
 #include <cstdint>

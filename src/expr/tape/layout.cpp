@@ -1,9 +1,9 @@
-#include "expr/layout.hpp"
+#include "expr/tape/layout.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
-#include "expr/plan.hpp"
+#include "expr/tape/plan.hpp"
 
 #include <algorithm>
 #include <cstddef>
