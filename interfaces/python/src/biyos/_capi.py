@@ -135,6 +135,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare(lib, "BIYOS_freemdl", c_int, c_void_p)
     read = (c_void_p, c_char_p, c_int32, POINTER(c_void_p))
     _declare(lib, "BIYOS_readmdl", c_int, *read)
+    _declare(lib, "BIYOS_writemdl", c_int, c_void_p, c_char_p, c_int32)
     variables = (c_void_p, c_int32, ints, doubles, doubles)
     _declare(lib, "BIYOS_addvar", c_int, *variables, ints)
     _declare_pair(lib, "BIYOS_setvarbnd", doubles, doubles)

@@ -406,6 +406,39 @@ class Model:
         model._hold()
         return model
 
+    def write(self, path: str | PathLike[str], fmt: FileFormat) -> None:
+        """Write the model to a file.
+
+        The file is made or replaced, in the format ``fmt`` names. Each
+        part the format leaves out is a warning event from module ``io``,
+        with the field ``file``.
+
+        Parameters
+        ----------
+        path
+            The path of the file.
+        fmt
+            The format of the file.
+
+        Raises
+        ------
+        TypeError
+            When ``path`` is not a str or a path, or ``fmt`` is not an int.
+        ValueError
+            When ``path`` holds a null character or cannot be encoded as
+            UTF-8, or the model is closed.
+        Error
+            When ``fmt`` is not a format, the file cannot be written or the
+            format cannot hold a part of the model.
+
+        See Also
+        --------
+        BIYOS_writemdl
+        """
+        name = text("path", fspath(path))
+        number = integer("fmt", fmt)
+        self._call(lib.BIYOS_writemdl, name, number)
+
     def setmdlname(self, name: str) -> None:
         """Name the model.
 
