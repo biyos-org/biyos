@@ -1,4 +1,5 @@
 #include "reading.hpp"
+#include "samples.hpp"
 #include "writing.hpp"
 
 #include "core/env.hpp"
@@ -33,6 +34,7 @@ using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::continuous;
 using biyos::test::kInfinity;
+using biyos::test::kMpsFiles;
 using biyos::test::printed;
 
 namespace
@@ -240,17 +242,16 @@ const std::string *name_of(const Model &model, Family family, Index index)
 
 }
 
-TEST(MpsTest, DataFiles)
+TEST(MpsTest, Samples)
 {
     const std::string path = testing::TempDir() + "biyos_written.mps";
-    for (const char *file :
-         {"bounds", "constraints", "lp", "markers", "maximize", "ranges", "rows"})
+    for (const std::string_view text : kMpsFiles)
     {
-        const Model read = biyos::test::read_data(std::string(file) + ".mps");
+        const Model read = biyos::test::read_sample(text);
         biyos::Env env;
         biyos::write_file(env, read, biyos::Settings(), path, biyos::FileFormat::Mps);
         const Model back = biyos::read_file(env, path, biyos::FileFormat::Mps);
-        EXPECT_EQ(biyos::difference(read, back), "") << file;
+        EXPECT_EQ(biyos::difference(read, back), "") << text;
     }
 }
 

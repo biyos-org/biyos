@@ -1,4 +1,5 @@
 #include "reading.hpp"
+#include "samples.hpp"
 
 #include "core/env.hpp"
 #include "core/error.hpp"
@@ -58,7 +59,7 @@ TEST(MpsTest, Linear)
                            {row(1, -kInfinity, 10.0), row(2, 2.0, kInfinity), row(3, 0.0, 0.0)},
                            {"limit", "floor", "balance"});
     biyos::test::add_goal(wanted, 0, ObjectiveSense::Minimize, "cost");
-    EXPECT_EQ(biyos::difference(biyos::test::read_data("lp.mps"), wanted), "");
+    EXPECT_EQ(biyos::difference(biyos::test::read_sample(biyos::test::kLpMpsFile), wanted), "");
 }
 
 TEST(MpsTest, Ranges)
@@ -72,7 +73,7 @@ TEST(MpsTest, Ranges)
                            {row(1, 2.5, 4.0), row(2, 1.0, 3.0), row(3, 2.0, 2.5), row(4, 2.5, 3.0)},
                            {"less", "more", "upward", "downward"});
     biyos::test::add_goal(wanted, 0, ObjectiveSense::Minimize, "obj");
-    EXPECT_EQ(biyos::difference(biyos::test::read_data("ranges.mps"), wanted), "");
+    EXPECT_EQ(biyos::difference(biyos::test::read_sample(biyos::test::kRangesMpsFile), wanted), "");
 }
 
 TEST(MpsTest, Bounds)
@@ -104,7 +105,7 @@ TEST(MpsTest, Bounds)
     }
     biyos::test::add_rows(wanted, {0.0}, {0, 13}, terms);
     biyos::test::add_goal(wanted, 0, ObjectiveSense::Minimize, "obj");
-    EXPECT_EQ(biyos::difference(biyos::test::read_data("bounds.mps"), wanted), "");
+    EXPECT_EQ(biyos::difference(biyos::test::read_sample(biyos::test::kBoundsMpsFile), wanted), "");
 }
 
 TEST(MpsTest, Markers)
@@ -132,7 +133,8 @@ TEST(MpsTest, Markers)
     biyos::test::add_rows(wanted, {0.0, 0.0}, {0, 4, 8}, terms);
     biyos::test::add_named(wanted, {row(1, -kInfinity, 5.0)}, {"cap"});
     biyos::test::add_goal(wanted, 0, ObjectiveSense::Minimize, "obj");
-    EXPECT_EQ(biyos::difference(biyos::test::read_data("markers.mps"), wanted), "");
+    EXPECT_EQ(biyos::difference(biyos::test::read_sample(biyos::test::kMarkersMpsFile), wanted),
+              "");
 }
 
 TEST(MpsTest, Maximize)
@@ -149,7 +151,8 @@ TEST(MpsTest, Maximize)
                           });
     biyos::test::add_named(wanted, {row(1, -kInfinity, 3.0)}, {"cap"});
     biyos::test::add_goal(wanted, 0, ObjectiveSense::Maximize, "profit");
-    EXPECT_EQ(biyos::difference(biyos::test::read_data("maximize.mps"), wanted), "");
+    EXPECT_EQ(biyos::difference(biyos::test::read_sample(biyos::test::kMaximizeMpsFile), wanted),
+              "");
 }
 
 TEST(MpsTest, NoObjective)
@@ -168,7 +171,8 @@ TEST(MpsTest, NoObjective)
                               LinearTerm{.variable = 0, .coefficient = 1.0},
                           });
     biyos::test::add_named(wanted, {row(0, -kInfinity, 4.0), row(1, 1.0, 1.0)}, {"cap", "fix"});
-    EXPECT_EQ(biyos::difference(biyos::test::read_data("constraints.mps"), wanted), "");
+    EXPECT_EQ(biyos::difference(biyos::test::read_sample(biyos::test::kConstraintsMpsFile), wanted),
+              "");
 }
 
 TEST(MpsTest, FreeRows)
@@ -189,7 +193,7 @@ TEST(MpsTest, FreeRows)
         {row(1, -kInfinity, 1.0), row(2, -kInfinity, kInfinity), row(3, -kInfinity, kInfinity)},
         {"cap", "second", "third"});
     biyos::test::add_goal(wanted, 0, ObjectiveSense::Minimize, "first");
-    EXPECT_EQ(biyos::difference(biyos::test::read_data("rows.mps"), wanted), "");
+    EXPECT_EQ(biyos::difference(biyos::test::read_sample(biyos::test::kRowsMpsFile), wanted), "");
 }
 
 TEST(MpsTest, SenseLine)
@@ -213,7 +217,7 @@ TEST(MpsTest, ShortSense)
 TEST(MpsTest, Missing)
 {
     biyos::Env env;
-    const std::string path = std::string(MPS_DATA) + "/absent.mps";
+    const std::string path = testing::TempDir() + "biyos_absent/t.mps";
     try
     {
         biyos::read_file(env, path, biyos::FileFormat::Mps);

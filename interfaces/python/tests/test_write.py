@@ -1,11 +1,9 @@
-from pathlib import Path
-
 import pytest
 
 import biyos
 from biyos import FileFormat
+from samples import LP_MPS, written
 
-DATA = Path(__file__).resolve().parents[3] / "tests" / "io" / "data" / "mps"
 FILEIO = -401
 BADARG = -100
 
@@ -35,8 +33,9 @@ def summary(model):
 
 
 def test_round_trip(env, tmp_path):
+    source = written(tmp_path / "source.mps", LP_MPS)
     path = tmp_path / "lp.mps"
-    with biyos.Model.read(env, DATA / "lp.mps", FileFormat.MPS) as model:
+    with biyos.Model.read(env, source, FileFormat.MPS) as model:
         model.write(path, FileFormat.MPS)
         with biyos.Model.read(env, path, FileFormat.MPS) as back:
             assert summary(back) == summary(model)
@@ -44,9 +43,8 @@ def test_round_trip(env, tmp_path):
 
 def test_unwritable(env, tmp_path):
     path = str(tmp_path / "absent" / "lp.mps")
-    with biyos.Model(env) as model:
-        with pytest.raises(biyos.Error) as caught:
-            model.write(path, FileFormat.MPS)
+    with biyos.Model(env) as model, pytest.raises(biyos.Error) as caught:
+        model.write(path, FileFormat.MPS)
     assert caught.value.code == FILEIO
     assert str(caught.value) == f"file access: file '{path}': cannot be opened"
 
