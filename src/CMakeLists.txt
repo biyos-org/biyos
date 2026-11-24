@@ -57,26 +57,26 @@ add_library(biyos_internal STATIC
     expr/tape/plan.cpp
     expr/tape/reads.cpp
     expr/tape/tape.cpp
-    io/bounds.cpp
-    io/column_shape.cpp
-    io/columns.cpp
     io/directory.cpp
-    io/draft.cpp
+    io/draft/column_shape.cpp
+    io/draft/draft.cpp
+    io/draft/labels.cpp
+    io/draft/row_shape.cpp
+    io/draft/sketch.cpp
+    io/draft/support.cpp
     io/files.cpp
-    io/labels.cpp
     io/leftovers.cpp
     io/lines.cpp
-    io/mps.cpp
-    io/print.cpp
+    io/mps/bounds.cpp
+    io/mps/columns.cpp
+    io/mps/mps.cpp
+    io/mps/print.cpp
+    io/mps/rows.cpp
+    io/mps/sections.cpp
+    io/mps/values.cpp
+    io/mps/vectors.cpp
     io/records.cpp
     io/report.cpp
-    io/row_shape.cpp
-    io/rows.cpp
-    io/sections.cpp
-    io/sketch.cpp
-    io/support.cpp
-    io/values.cpp
-    io/vectors.cpp
     model/attributes/names.cpp
     model/attributes/naming.cpp
     model/attributes/overrides.cpp

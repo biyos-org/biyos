@@ -1,9 +1,9 @@
-#include "io/column_shape.hpp"
+#include "io/draft/column_shape.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text/text.hpp"
-#include "io/draft.hpp"
+#include "io/draft/draft.hpp"
 #include "io/identical.hpp"
 #include "model/checks.hpp"
 #include "model/model.hpp"

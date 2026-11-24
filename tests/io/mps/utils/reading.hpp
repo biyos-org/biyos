@@ -5,7 +5,7 @@
 #include "core/events/event.hpp"
 #include "core/index.hpp"
 #include "expr/forms/terms.hpp"
-#include "io/mps.hpp"
+#include "io/mps/mps.hpp"
 #include "model/model.hpp"
 
 #include <limits>

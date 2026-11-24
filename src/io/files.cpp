@@ -4,11 +4,11 @@
 #include "core/error.hpp"
 #include "core/options/settings.hpp"
 #include "core/timing/timer.hpp"
-#include "io/draft.hpp"
+#include "io/draft/draft.hpp"
+#include "io/draft/sketch.hpp"
 #include "io/leftovers.hpp"
-#include "io/mps.hpp"
-#include "io/print.hpp"
-#include "io/sketch.hpp"
+#include "io/mps/mps.hpp"
+#include "io/mps/print.hpp"
 #include "model/model.hpp"
 
 #include <filesystem>

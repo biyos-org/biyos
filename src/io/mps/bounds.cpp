@@ -1,12 +1,12 @@
-#include "io/bounds.hpp"
+#include "io/mps/bounds.hpp"
 
 #include "core/env.hpp"
 #include "core/numeric/zero.hpp"
-#include "io/draft.hpp"
+#include "io/draft/draft.hpp"
 #include "io/lines.hpp"
+#include "io/mps/vectors.hpp"
 #include "io/records.hpp"
 #include "io/report.hpp"
-#include "io/vectors.hpp"
 
 #include <algorithm>
 #include <array>
