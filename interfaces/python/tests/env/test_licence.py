@@ -1,7 +1,4 @@
 from importlib.metadata import distribution
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[4]
 
 
 def test_expression():
@@ -10,6 +7,6 @@ def test_expression():
     assert metadata.get_all("License-File") == ["LICENSE"]
 
 
-def test_file():
+def test_file(project):
     shipped = distribution("biyos").read_text("licenses/LICENSE")
-    assert shipped == (ROOT / "LICENSE").read_text()
+    assert shipped == (project / "LICENSE").read_text()
