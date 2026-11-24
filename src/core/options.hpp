@@ -23,7 +23,7 @@ enum class Option
 {
     Seed = BIYOS_OPT_SEED,
     TimeLimit = BIYOS_OPT_MAXTIME,
-    CheckLevel = BIYOS_OPT_CHECKLVL,
+    Checking = BIYOS_OPT_CHECKLVL,
     Presolve = BIYOS_OPT_PRESOLVE,
     Reproducer = BIYOS_OPT_REPRO,
     FeasAbs = BIYOS_OPT_FEASTOLABS,
@@ -56,7 +56,7 @@ enum class OptionSource
     Default = BIYOS_OPTSRC_DEFAULT,
 };
 
-enum class CheckLevel
+enum class Checking
 {
     None = BIYOS_CHECKLVL_NONE,
     Cheap = BIYOS_CHECKLVL_CHEAP,

@@ -18,15 +18,15 @@ class Checker
   public:
     Checker(Env &env, const Lookup &lookup, StaticName module);
 
-    bool active(CheckLevel level) const noexcept
+    bool active(Checking level) const noexcept
     {
-        return level != CheckLevel::None && level <= level_;
+        return level != Checking::None && level <= level_;
     }
 
     template <typename Holds, typename Values>
         requires std::predicate<Holds &> && std::invocable<Values &> &&
                  std::convertible_to<std::invoke_result_t<Values &>, std::string_view>
-    void require(CheckLevel level,
+    void require(Checking level,
                  ErrorKind kind,
                  std::string_view invariant,
                  std::string_view object,
@@ -47,7 +47,7 @@ class Checker
 
     Env &env_;
     std::string_view module_;
-    CheckLevel level_;
+    Checking level_;
 };
 
 }

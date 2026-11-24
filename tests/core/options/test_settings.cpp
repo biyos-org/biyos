@@ -348,7 +348,7 @@ TEST_F(LookupTest, MissingRow)
 
 TEST(GetterTest, Kinds)
 {
-    using biyos::CheckLevel;
+    using biyos::Checking;
     biyos::FakeClock clock;
     biyos::Events events{clock};
     biyos::Options options(events);
@@ -358,14 +358,14 @@ TEST(GetterTest, Kinds)
     settings.set_int(Option::Seed, 4, events);
     settings.set_double(Option::TimeLimit, 2.5, events);
     settings.set_string(Option::Reproducer, "replay.txt", events);
-    settings.set_int(Option::CheckLevel, BIYOS_CHECKLVL_FULL, events);
+    settings.set_int(Option::Checking, BIYOS_CHECKLVL_FULL, events);
     EXPECT_FALSE(lookup.get_bool(Option::Presolve));
     EXPECT_EQ(lookup.get_int(Option::Seed), 4);
     EXPECT_DOUBLE_EQ(lookup.get_double(Option::TimeLimit), 2.5);
     EXPECT_EQ(lookup.get_string(Option::Reproducer), "replay.txt");
-    EXPECT_EQ(lookup.get_int(Option::CheckLevel), BIYOS_CHECKLVL_FULL);
-    EXPECT_EQ(lookup.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Full);
-    EXPECT_EQ(options.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::Cheap);
+    EXPECT_EQ(lookup.get_int(Option::Checking), BIYOS_CHECKLVL_FULL);
+    EXPECT_EQ(lookup.get_enum<Checking>(Option::Checking), Checking::Full);
+    EXPECT_EQ(options.get_enum<Checking>(Option::Checking), Checking::Cheap);
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_int(Option::TimeLimit)); }),
               "invalid argument: option 'maxtime': is a double, not an int");
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_bool(Option::Seed)); }),
@@ -374,25 +374,25 @@ TEST(GetterTest, Kinds)
               "invalid argument: option 'seed': is an int, not a double");
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_string(Option::Seed)); }),
               "invalid argument: option 'seed': is an int, not a string");
-    EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_enum<CheckLevel>(Option::Seed)); }),
+    EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_enum<Checking>(Option::Seed)); }),
               "invalid argument: option 'seed': is an int, not an enum");
-    EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_string(Option::CheckLevel)); }),
+    EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_string(Option::Checking)); }),
               "invalid argument: option 'check_lvl': is an enum, not a string");
 }
 
 TEST(GetterTest, Enum)
 {
-    using biyos::CheckLevel;
+    using biyos::Checking;
     biyos::FakeClock clock;
     biyos::Events events{clock};
     biyos::Options options(events);
     biyos::Settings settings;
     const biyos::Lookup lookup(settings, options);
-    settings.set_int(Option::CheckLevel, BIYOS_CHECKLVL_NONE, events);
+    settings.set_int(Option::Checking, BIYOS_CHECKLVL_NONE, events);
     EXPECT_EQ(
-        failure([&] { settings.set_int(Option::CheckLevel, 4, events); }),
+        failure([&] { settings.set_int(Option::Checking, 4, events); }),
         "invalid argument: option 'check_lvl': 4 is not one of 1 (none), 2 (cheap), 3 (full)");
-    EXPECT_EQ(failure([&] { settings.set_string(Option::CheckLevel, "full", events); }),
+    EXPECT_EQ(failure([&] { settings.set_string(Option::Checking, "full", events); }),
               "invalid argument: option 'check_lvl': is an enum, not a string");
-    EXPECT_EQ(lookup.get_enum<CheckLevel>(Option::CheckLevel), CheckLevel::None);
+    EXPECT_EQ(lookup.get_enum<Checking>(Option::Checking), Checking::None);
 }

@@ -21,12 +21,12 @@ namespace
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr Version kProject{BIYOS_VERSION_MAJOR, BIYOS_VERSION_MINOR, BIYOS_VERSION_PATCH};
 
-constexpr std::array kCheckLevels{
+constexpr std::array kChecking{
     EnumValue{.number = BIYOS_CHECKLVL_NONE, .name = "none"},
     EnumValue{.number = BIYOS_CHECKLVL_CHEAP, .name = "cheap"},
     EnumValue{.number = BIYOS_CHECKLVL_FULL, .name = "full"},
 };
-static_assert(kCheckLevels.size() == static_cast<std::size_t>(CheckLevel::Full));
+static_assert(kChecking.size() == static_cast<std::size_t>(Checking::Full));
 
 constexpr std::array kTable{
     OptionSpec{
@@ -46,10 +46,10 @@ constexpr std::array kTable{
         .versions = {.since = {0, 1, 0}},
     },
     OptionSpec{
-        .id = Option::CheckLevel,
+        .id = Option::Checking,
         .name = "check_lvl",
         .scope = Scope::Model,
-        .rule = EnumRule{.default_value = BIYOS_CHECKLVL_CHEAP, .values = kCheckLevels},
+        .rule = EnumRule{.default_value = BIYOS_CHECKLVL_CHEAP, .values = kChecking},
         .doc = "Invariant checks to run.",
         .versions = {.since = {0, 1, 0}},
     },
