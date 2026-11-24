@@ -23,33 +23,34 @@ function(biyos_add_test name)
 endfunction()
 
 biyos_add_test(test_core
-    core/test_check.cpp
-    core/test_clock.cpp
-    core/test_deliveries.cpp
-    core/test_env.cpp
-    core/test_error.cpp
-    core/test_events.cpp
-    core/test_flags.cpp
-    core/test_format.cpp
-    core/test_hooks.cpp
-    core/test_name.cpp
-    core/test_options.cpp
-    core/test_records.cpp
-    core/test_room.cpp
-    core/test_settings.cpp
-    core/test_status.cpp
-    core/test_strings.cpp
-    core/test_thread.cpp
-    core/test_timer.cpp
-    core/test_tolerances.cpp
-    core/test_usage.cpp
-    core/test_utf8.cpp
-    core/test_version.cpp)
+    core/env/test_env.cpp
+    core/env/test_error.cpp
+    core/env/test_status.cpp
+    core/env/test_thread.cpp
+    core/env/test_version.cpp
+    core/events/test_deliveries.cpp
+    core/events/test_events.cpp
+    core/events/test_format.cpp
+    core/events/test_hooks.cpp
+    core/events/test_records.cpp
+    core/memory/test_room.cpp
+    core/memory/test_usage.cpp
+    core/options/test_check.cpp
+    core/options/test_flags.cpp
+    core/options/test_options.cpp
+    core/options/test_settings.cpp
+    core/options/test_tolerances.cpp
+    core/text/test_name.cpp
+    core/text/test_strings.cpp
+    core/text/test_utf8.cpp
+    core/timing/test_clock.cpp
+    core/timing/test_timer.cpp)
+target_include_directories(test_core PRIVATE core)
 target_link_libraries(test_core PRIVATE biyos_internal)
 
 biyos_add_test(test_allocation
     core/allocations.cpp
-    core/test_allocation.cpp
+    core/memory/test_allocation.cpp
     expr/test_allocation.cpp
     model/test_allocation.cpp)
 target_include_directories(test_allocation PRIVATE core)
@@ -64,95 +65,99 @@ set_tests_properties(NameTest.LocalBuffer PROPERTIES
     PASS_REGULAR_EXPRESSION "constant expression")
 
 biyos_add_test(test_expr
-    expr/chords.cpp
-    expr/draws.cpp
-    expr/reference.cpp
-    expr/sampling.cpp
-    expr/test_arithmetic.cpp
-    expr/test_bends.cpp
-    expr/test_builder.cpp
-    expr/test_canonical.cpp
-    expr/test_compact.cpp
-    expr/test_curvature.cpp
-    expr/test_derivative.cpp
-    expr/test_elementary.cpp
-    expr/test_enclosure.cpp
-    expr/test_exponents.cpp
-    expr/test_graph.cpp
-    expr/test_interval.cpp
-    expr/test_parents.cpp
-    expr/test_partials.cpp
-    expr/test_periodic.cpp
-    expr/test_powers.cpp
-    expr/test_tape.cpp
-    expr/test_terms.cpp
-    expr/test_uses.cpp
-    expr/test_value.cpp
-    expr/test_waves.cpp)
+    expr/curvature/draws.cpp
+    expr/curvature/test_bends.cpp
+    expr/curvature/test_curvature.cpp
+    expr/curvature/test_waves.cpp
+    expr/derivatives/test_derivative.cpp
+    expr/derivatives/test_partials.cpp
+    expr/forms/test_canonical.cpp
+    expr/forms/test_terms.cpp
+    expr/graph/test_builder.cpp
+    expr/graph/test_compact.cpp
+    expr/graph/test_graph.cpp
+    expr/graph/test_parents.cpp
+    expr/graph/test_tape.cpp
+    expr/graph/test_uses.cpp
+    expr/intervals/test_enclosure.cpp
+    expr/intervals/test_interval.cpp
+    expr/utils/chords.cpp
+    expr/utils/reference.cpp
+    expr/utils/sampling.cpp
+    expr/values/test_arithmetic.cpp
+    expr/values/test_elementary.cpp
+    expr/values/test_exponents.cpp
+    expr/values/test_periodic.cpp
+    expr/values/test_powers.cpp
+    expr/values/test_value.cpp)
+target_include_directories(test_expr PRIVATE expr/utils)
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
 biyos_add_test(test_model
-    model/test_callbacks.cpp
-    model/test_compare.cpp
-    model/test_complements.cpp
-    model/test_cones.cpp
-    model/test_constraints.cpp
-    model/test_copy.cpp
-    model/test_delete.cpp
-    model/test_encoding.cpp
-    model/test_expressions.cpp
-    model/test_functions.cpp
-    model/test_indicators.cpp
-    model/test_names.cpp
-    model/test_objectives.cpp
-    model/test_quadratic.cpp
-    model/test_sos.cpp
-    model/test_variables.cpp)
+    model/edits/test_compare.cpp
+    model/edits/test_copy.cpp
+    model/edits/test_delete.cpp
+    model/edits/test_names.cpp
+    model/functions/test_callbacks.cpp
+    model/functions/test_encoding.cpp
+    model/functions/test_expressions.cpp
+    model/functions/test_functions.cpp
+    model/functions/test_quadratic.cpp
+    model/records/test_complements.cpp
+    model/records/test_cones.cpp
+    model/records/test_constraints.cpp
+    model/records/test_indicators.cpp
+    model/records/test_objectives.cpp
+    model/records/test_sos.cpp
+    model/records/test_variables.cpp)
+target_include_directories(test_model PRIVATE model)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io
-    io/test_faults.cpp
-    io/test_leftovers.cpp
     io/test_lines.cpp
-    io/test_mps.cpp
-    io/test_refusals.cpp
-    io/test_write.cpp)
+    io/mps/test_faults.cpp
+    io/mps/test_leftovers.cpp
+    io/mps/test_mps.cpp
+    io/mps/test_refusals.cpp
+    io/mps/test_write.cpp)
+target_include_directories(test_io PRIVATE io/mps/utils)
 target_link_libraries(test_io PRIVATE biyos_internal)
 
 biyos_add_test(test_capi
     capi/sample.cpp
-    capi/test_adders.cpp
-    capi/test_callbacks.cpp
-    capi/test_complements.cpp
-    capi/test_cones.cpp
-    capi/test_constants.cpp
-    capi/test_constraints.cpp
-    capi/test_copy.cpp
-    capi/test_delete.cpp
-    capi/test_env.cpp
-    capi/test_events.cpp
-    capi/test_files.cpp
-    capi/test_expressions.cpp
-    capi/test_firewall.cpp
-    capi/test_format.cpp
-    capi/test_functions.cpp
-    capi/test_indicators.cpp
-    capi/test_interrupt.cpp
-    capi/test_linear.cpp
-    capi/test_model.cpp
-    capi/test_names.cpp
-    capi/test_objectives.cpp
-    capi/test_options.cpp
-    capi/test_pairs.cpp
-    capi/test_products.cpp
-    capi/test_quadratic.cpp
-    capi/test_ranges.cpp
-    capi/test_rebuild.cpp
-    capi/test_sos.cpp
-    capi/test_spans.cpp
-    capi/test_terms.cpp
-    capi/test_threads.cpp
-    capi/test_version.cpp)
+    capi/env/test_env.cpp
+    capi/env/test_firewall.cpp
+    capi/env/test_interrupt.cpp
+    capi/env/test_options.cpp
+    capi/env/test_threads.cpp
+    capi/env/test_version.cpp
+    capi/events/test_events.cpp
+    capi/events/test_format.cpp
+    capi/events/test_spans.cpp
+    capi/linear/test_adders.cpp
+    capi/linear/test_constants.cpp
+    capi/linear/test_functions.cpp
+    capi/linear/test_linear.cpp
+    capi/linear/test_terms.cpp
+    capi/model/test_copy.cpp
+    capi/model/test_delete.cpp
+    capi/model/test_files.cpp
+    capi/model/test_model.cpp
+    capi/model/test_names.cpp
+    capi/model/test_rebuild.cpp
+    capi/nonlinear/test_callbacks.cpp
+    capi/nonlinear/test_expressions.cpp
+    capi/nonlinear/test_pairs.cpp
+    capi/nonlinear/test_products.cpp
+    capi/nonlinear/test_quadratic.cpp
+    capi/records/test_complements.cpp
+    capi/records/test_cones.cpp
+    capi/records/test_constraints.cpp
+    capi/records/test_indicators.cpp
+    capi/records/test_objectives.cpp
+    capi/records/test_ranges.cpp
+    capi/records/test_sos.cpp)
+target_include_directories(test_capi PRIVATE capi)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
 add_executable(test_capi_c capi/test_header.c)
