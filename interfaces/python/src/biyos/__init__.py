@@ -22,7 +22,33 @@ from biyos._model.blocks import (
     Variables,
 )
 from biyos._model.callbacks import CallbackRequest
-from biyos._model.expression import Expression
+from biyos._model.expression import (
+    Expression,
+    acos,
+    acosh,
+    asin,
+    asinh,
+    atan,
+    atanh,
+    cos,
+    cosh,
+    entropy,
+    erf,
+    exp,
+    log,
+    signpow,
+    sin,
+    sinh,
+    sqrt,
+    tan,
+    tanh,
+)
+from biyos._model.expression import (
+    max as max,
+)
+from biyos._model.expression import (
+    min as min,
+)
 from biyos._model.model import (
     ConeKind,
     FileFormat,
@@ -69,5 +95,23 @@ __all__ = [
     "VariableKind",
     "Variables",
     "Versions",
+    "acos",
+    "acosh",
+    "asin",
+    "asinh",
+    "atan",
+    "atanh",
+    "cos",
+    "cosh",
+    "entropy",
+    "erf",
+    "exp",
+    "log",
+    "signpow",
+    "sin",
+    "sinh",
+    "sqrt",
+    "tan",
+    "tanh",
     "version",
 ]

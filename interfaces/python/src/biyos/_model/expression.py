@@ -286,3 +286,443 @@ def _sum(left: Operand, right: "Term", sign: float) -> Expression:
     if isinstance(right, Operand):
         return Expression(Operator.SUM, (left, right), (0.0, 1.0, sign))
     return _shifted(left, 1.0, sign * float(right))
+
+
+def _operand(value: object) -> Operand:
+    if isinstance(value, Operand):
+        return value
+    if _number(value):
+        return _constant(value)
+    found = type(value).__name__
+    raise TypeError(
+        f"an operand must be an expression or a number, not {found}"
+    )
+
+
+def _apply(op: Operator, *args: Term) -> Expression:
+    return Expression(op, tuple(map(_operand, args)), ())
+
+
+def exp(x: Term) -> Expression:
+    """Return the exponential of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``exp(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.EXP, x)
+
+
+def log(x: Term) -> Expression:
+    """Return the natural logarithm of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``log(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.LOG, x)
+
+
+def sqrt(x: Term) -> Expression:
+    """Return the square root of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``sqrt(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.SQRT, x)
+
+
+def sin(x: Term) -> Expression:
+    """Return the sine of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``sin(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.SIN, x)
+
+
+def cos(x: Term) -> Expression:
+    """Return the cosine of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``cos(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.COS, x)
+
+
+def tan(x: Term) -> Expression:
+    """Return the tangent of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``tan(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.TAN, x)
+
+
+def asin(x: Term) -> Expression:
+    """Return the arc sine of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``asin(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.ASIN, x)
+
+
+def acos(x: Term) -> Expression:
+    """Return the arc cosine of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``acos(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.ACOS, x)
+
+
+def atan(x: Term) -> Expression:
+    """Return the arc tangent of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``atan(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.ATAN, x)
+
+
+def sinh(x: Term) -> Expression:
+    """Return the hyperbolic sine of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``sinh(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.SINH, x)
+
+
+def cosh(x: Term) -> Expression:
+    """Return the hyperbolic cosine of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``cosh(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.COSH, x)
+
+
+def tanh(x: Term) -> Expression:
+    """Return the hyperbolic tangent of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``tanh(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.TANH, x)
+
+
+def asinh(x: Term) -> Expression:
+    """Return the inverse hyperbolic sine of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``asinh(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.ASINH, x)
+
+
+def acosh(x: Term) -> Expression:
+    """Return the inverse hyperbolic cosine of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``acosh(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.ACOSH, x)
+
+
+def atanh(x: Term) -> Expression:
+    """Return the inverse hyperbolic tangent of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``atanh(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.ATANH, x)
+
+
+def erf(x: Term) -> Expression:
+    """Return the error function of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``erf(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.ERF, x)
+
+
+def entropy(x: Term) -> Expression:
+    """Return the entropy of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``x * log(x)``, 0 at 0.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` is of another type.
+    """
+    return _apply(Operator.ENTROPY, x)
+
+
+def signpow(x: Term, p: float) -> Expression:
+    """Return the sign power of an operand.
+
+    Parameters
+    ----------
+    x
+        An expression, a variable or a number.
+    p
+        The exponent, a positive number.
+
+    Returns
+    -------
+    expr
+        The expression ``sign(x) * abs(x) ** p``.
+
+    Raises
+    ------
+    TypeError
+        When ``x`` or ``p`` is of another type.
+    """
+    if not _number(p):
+        raise TypeError(f"p must be a number, not {type(p).__name__}")
+    power = (float(p),)
+    return Expression(Operator.SIGN_POWER, (_operand(x),), power)
+
+
+def max(x: Term, y: Term, *rest: Term) -> Expression:
+    """Return the largest of two or more operands.
+
+    Parameters
+    ----------
+    x, y, *rest
+        Expressions, variables or numbers.
+
+    Returns
+    -------
+    expr
+        The expression ``max(x, y, *rest)``.
+
+    Raises
+    ------
+    TypeError
+        When an operand is of another type.
+    """
+    return _apply(Operator.MAX, x, y, *rest)
+
+
+def min(x: Term, y: Term, *rest: Term) -> Expression:
+    """Return the smallest of two or more operands.
+
+    Parameters
+    ----------
+    x, y, *rest
+        Expressions, variables or numbers.
+
+    Returns
+    -------
+    expr
+        The expression ``min(x, y, *rest)``.
+
+    Raises
+    ------
+    TypeError
+        When an operand is of another type.
+    """
+    return _apply(Operator.MIN, x, y, *rest)
