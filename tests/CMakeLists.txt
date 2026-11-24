@@ -111,12 +111,12 @@ biyos_add_test(test_model
 target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io
-    io/test_faults.cpp
-    io/test_leftovers.cpp
     io/test_lines.cpp
-    io/test_mps.cpp
-    io/test_refusals.cpp
-    io/test_write.cpp)
+    io/mps/test_faults.cpp
+    io/mps/test_leftovers.cpp
+    io/mps/test_mps.cpp
+    io/mps/test_refusals.cpp
+    io/mps/test_write.cpp)
 target_link_libraries(test_io PRIVATE biyos_internal)
 
 biyos_add_test(test_capi
