@@ -467,7 +467,6 @@ static int evaluate(const BIYOS_cbreq *req, BIYOS_real *out, void *data)
 
 static BIYOS_status use_callbacks(BIYOS_model *model)
 {
-    const BIYOS_offset off[2] = {0, 1};
     const BIYOS_index variables[1] = {0};
     BIYOS_index function = -1;
     BIYOS_index cb = -1;
@@ -478,7 +477,7 @@ static BIYOS_status use_callbacks(BIYOS_model *model)
     if (BIYOS_addfun(model, 1, &function) != BIYOS_OK ||
         BIYOS_addcb(model, 1, &function, &tag, &cb) != BIYOS_OK || cb != 0 ||
         BIYOS_setcbf(model, cb, evaluate) != BIYOS_OK ||
-        BIYOS_setcbg(model, cb, off, variables, evaluate) != BIYOS_OK ||
+        BIYOS_setcbg(model, cb, 1, &function, variables, evaluate) != BIYOS_OK ||
         BIYOS_setcbh(model, cb, 1, variables, variables, evaluate) != BIYOS_OK ||
         BIYOS_setcbhv(model, cb, evaluate) != BIYOS_OK ||
         BIYOS_getcbdata(model, cb, &data) != BIYOS_OK || data != &tag ||

@@ -161,7 +161,7 @@ void change_all(Attempt &attempt)
     const BIYOS_index function = 1;
     note(attempt, BIYOS_addcb(model, 1, &function, nullptr, nullptr));
     note(attempt, BIYOS_setcbf(model, 0, record));
-    note(attempt, BIYOS_setcbg(model, 0, nullptr, nullptr, record));
+    note(attempt, BIYOS_setcbg(model, 0, 0, nullptr, nullptr, record));
     note(attempt, BIYOS_setcbh(model, 0, 0, nullptr, nullptr, record));
     note(attempt, BIYOS_setcbhv(model, 0, record));
     note(attempt, BIYOS_setcbdata(model, 0, nullptr));
@@ -184,23 +184,22 @@ TEST(CallbackTest, Registered)
     EXPECT_EQ(add(model, {2, 0}, &tag), 0);
     const BIYOS_index function = 1;
     EXPECT_EQ(BIYOS_addcb(model.get(), 1, &function, nullptr, nullptr), BIYOS_OK);
-    const std::vector<BIYOS_offset> off{0, 1, 3};
-    const std::vector<BIYOS_index> var{1, 0, 2};
-    const std::vector<BIYOS_index> var1{0, 1};
-    const std::vector<BIYOS_index> var2{0, 2};
+    const std::vector<BIYOS_index> fun{0, 2, 0};
+    const std::vector<BIYOS_index> var{1, 0, 1};
+    const std::vector<BIYOS_index> var1{1, 0, 1};
+    const std::vector<BIYOS_index> var2{2, 0, 2};
     BIYOS_model *mdl = model.get();
     EXPECT_EQ(BIYOS_setcbf(mdl, 0, record), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setcbg(mdl, 0, off.data(), var.data(), record), BIYOS_OK);
-    EXPECT_EQ(BIYOS_setcbh(mdl, 0, 2, var1.data(), var2.data(), record), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setcbg(mdl, 0, 3, fun.data(), var.data(), record), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setcbh(mdl, 0, 3, var1.data(), var2.data(), record), BIYOS_OK);
     EXPECT_EQ(BIYOS_setcbhv(mdl, 0, record), BIYOS_OK);
     EXPECT_EQ(env.message(), "");
     EXPECT_EQ(mdl->core.n_callbacks(), 2);
     EXPECT_EQ(held(model, 1).covered, (std::vector<biyos::Index>{1}));
     const Callback &first = held(model, 0);
     EXPECT_EQ(first.covered, (std::vector<biyos::Index>{2, 0}));
-    EXPECT_EQ(first.jacobian_starts, (std::vector<biyos::Offset>{0, 1, 3}));
-    EXPECT_EQ(first.jacobian_variables, (std::vector<biyos::Index>{1, 0, 2}));
-    EXPECT_EQ(first.hessian_pairs, (std::vector<IndexPair>{{0, 0}, {1, 2}}));
+    EXPECT_EQ(first.jacobian_pairs, (std::vector<IndexPair>{{1, 1}, {0, 0}, {1, 1}}));
+    EXPECT_EQ(first.hessian_pairs, (std::vector<IndexPair>{{1, 2}, {0, 0}, {1, 2}}));
     EXPECT_TRUE(first.function && first.jacobian && first.hessian && first.hessian_product);
     EXPECT_EQ(data_of(model, 0), &tag);
     EXPECT_EQ(data_of(model, 1), nullptr);
@@ -216,7 +215,8 @@ TEST(CallbackTest, Nulls)
     BIYOS_model *mdl = model.get();
     const std::string null = kBad + "argument '";
     EXPECT_EQ(failed(env, BIYOS_setcbf(mdl, 0, nullptr)), null + "f': is null");
-    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, nullptr, nullptr, nullptr)), null + "g': is null");
+    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, 0, nullptr, nullptr, nullptr)),
+              null + "g': is null");
     EXPECT_EQ(failed(env, BIYOS_setcbh(mdl, 0, 0, nullptr, nullptr, nullptr)),
               null + "h': is null");
     EXPECT_EQ(failed(env, BIYOS_setcbhv(mdl, 0, nullptr)), null + "hv': is null");
@@ -228,10 +228,13 @@ TEST(CallbackTest, Nulls)
               null + "n': -1 is negative");
     EXPECT_EQ(failed(env, BIYOS_addcb(mdl, 0, nullptr, nullptr, nullptr)),
               null + "n': 0 is not positive");
-    const std::vector<BIYOS_offset> off{0, 1, 1};
-    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, off.data(), nullptr, record)),
-              null + "var': is null");
     const BIYOS_index variable = 0;
+    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, 1, nullptr, &variable, record)),
+              null + "fun': is null");
+    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, 1, &variable, nullptr, record)),
+              null + "var': is null");
+    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, -1, nullptr, nullptr, record)),
+              null + "nnz': -1 is negative");
     EXPECT_EQ(failed(env, BIYOS_setcbh(mdl, 0, 1, nullptr, &variable, record)),
               null + "var1': is null");
     EXPECT_EQ(failed(env, BIYOS_setcbh(mdl, 0, 1, &variable, nullptr, record)),
@@ -244,12 +247,11 @@ TEST(CallbackTest, Nulls)
     EXPECT_EQ(BIYOS_getncbfun(nullptr, 0, &n), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getcbfun(nullptr, 0, 1, &n), BIYOS_ERR_BADARG);
     EXPECT_EQ(n, -1);
-    EXPECT_EQ(BIYOS_setcbg(mdl, 0, nullptr, nullptr, record), BIYOS_OK);
+    EXPECT_EQ(BIYOS_setcbg(mdl, 0, 0, nullptr, nullptr, record), BIYOS_OK);
     EXPECT_EQ(BIYOS_setcbh(mdl, 0, 0, nullptr, nullptr, record), BIYOS_OK);
     EXPECT_EQ(mdl->core.n_callbacks(), 1);
     const Callback &first = held(model, 0);
-    EXPECT_EQ(first.jacobian_starts, (std::vector<biyos::Offset>{0, 0, 0}));
-    EXPECT_TRUE(first.jacobian_variables.empty());
+    EXPECT_TRUE(first.jacobian_pairs.empty());
     EXPECT_TRUE(first.hessian_pairs.empty());
     EXPECT_FALSE(first.function);
 }
@@ -264,7 +266,7 @@ TEST(CallbackTest, Unknown)
     const std::string unknown = kBad + "callback 1: unknown";
     void *data = nullptr;
     EXPECT_EQ(failed(env, BIYOS_setcbf(mdl, 1, record)), unknown);
-    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 1, nullptr, nullptr, record)), unknown);
+    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 1, 0, nullptr, nullptr, record)), unknown);
     EXPECT_EQ(failed(env, BIYOS_setcbh(mdl, 1, 0, nullptr, nullptr, record)), unknown);
     EXPECT_EQ(failed(env, BIYOS_setcbhv(mdl, 1, record)), unknown);
     EXPECT_EQ(failed(env, BIYOS_setcbdata(mdl, 1, nullptr)), unknown);
@@ -332,20 +334,20 @@ TEST(CallbackTest, Patterns)
     build(model, 3, 3);
     add(model, {2, 0}, nullptr);
     BIYOS_model *mdl = model.get();
-    const std::vector<BIYOS_offset> off{0, 1, 2};
-    const std::vector<BIYOS_index> kept{1, 2};
-    ASSERT_EQ(BIYOS_setcbg(mdl, 0, off.data(), kept.data(), record), BIYOS_OK);
+    const std::vector<BIYOS_index> fun{0, 2};
+    const std::vector<BIYOS_index> kept{2, 1};
+    ASSERT_EQ(BIYOS_setcbg(mdl, 0, 2, fun.data(), kept.data(), record), BIYOS_OK);
     const std::vector<BIYOS_index> unknown{0, 3};
-    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, off.data(), unknown.data(), undefined)),
-              kBad + "callback 0: Jacobian of function 0: variable 3 is unknown");
-    const std::vector<BIYOS_offset> falling{0, 2, 1};
-    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, falling.data(), kept.data(), undefined)),
-              kBad + "argument 'off': decreases from 2 to 1 at entry 2");
+    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, 2, fun.data(), unknown.data(), undefined)),
+              kBad + "callback 0: Jacobian of function 2: variable 3 is unknown");
+    const std::vector<BIYOS_index> uncovered{2, 1};
+    EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, 2, uncovered.data(), kept.data(), undefined)),
+              kBad + "callback 0: Jacobian function 1 is not covered");
     const BIYOS_index first = 1;
     const BIYOS_index second = 0;
     EXPECT_EQ(failed(env, BIYOS_setcbh(mdl, 0, 1, &first, &second, undefined)),
               kBad + "callback 0: Hessian pair (1, 0) has its second variable below its first");
-    EXPECT_EQ(held(model, 0).jacobian_variables, (std::vector<biyos::Index>{1, 2}));
+    EXPECT_EQ(held(model, 0).jacobian_pairs, (std::vector<IndexPair>{{1, 2}, {0, 1}}));
     EXPECT_FALSE(held(model, 0).hessian);
 }
 
@@ -572,10 +574,10 @@ TEST(CallbackTest, CopyShared)
     build(source, 2, 2);
     Seen seen;
     add(source, {1}, &seen);
-    const std::vector<BIYOS_offset> off{0, 1};
-    const BIYOS_index variable = 1;
+    const std::vector<BIYOS_index> fun{1, 1};
+    const std::vector<BIYOS_index> var{1, 0};
     ASSERT_EQ(BIYOS_setcbf(source.get(), 0, record), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setcbg(source.get(), 0, off.data(), &variable, record), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcbg(source.get(), 0, 2, fun.data(), var.data(), record), BIYOS_OK);
     const Model copy(env, source);
     EXPECT_EQ(biyos::difference(source.get()->core, copy.get()->core), "");
     EXPECT_EQ(data_of(copy, 0), &seen);

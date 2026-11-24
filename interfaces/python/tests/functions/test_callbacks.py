@@ -188,17 +188,28 @@ def test_patterns(model, seen):
     cb = model.addcb([0, 1])
     found = []
     function = partial(derivatives, found)
-    model.setcbg(cb, [0, 2, 3], [0, 2, 1], function)
+    model.setcbg(cb, [1, 0, 1], [2, 0, 2], function)
     x = [0.0] * 3
     assert evaluate(model, seen[-1], cb, 3, x) == (0, [1.0, 2.0, 3.0])
-    model.setcbg(cb, [0, 0, 0], [], function)
+    model.setcbg(cb, [], [], function)
     assert evaluate(model, seen[-1], cb, 0, x) == (0, [])
-    model.setcbh(cb, [0, 0], [0, 2], function)
-    assert evaluate(model, seen[-1], cb, 2, x, [2.0, 3.0]) == (0, [1.0, 2.0])
+    model.setcbh(cb, [0, 0, 0], [2, 0, 2], function)
+    w = [2.0, 3.0]
+    assert evaluate(model, seen[-1], cb, 3, x, w) == (0, [1.0, 2.0, 3.0])
     model.setcbhv(cb, function)
     v = [4.0, 5.0, 6.0]
     assert evaluate(model, seen[-1], cb, 3, x, [2.0, 3.0], v)[0] == 0
     assert found == [([], []), ([], []), ([2.0, 3.0], []), ([2.0, 3.0], v)]
+
+
+def test_blocks(model, seen):
+    fun = model.addfun(2)
+    cb = model.addcb(fun)
+    model.setcbg(cb, fun, [1, 2], answer)
+    model.setcbg(cb, [fun[1], fun[1]], [0, 0], answer)
+    message = refusal(model.setcbg, cb, [fun[0], 0], [0, 0], answer)
+    uncovered = "callback 0: Jacobian function 0 is not covered"
+    assert message == "invalid argument: " + uncovered
 
 
 def attach_exp(model, idx):
@@ -236,7 +247,7 @@ def test_refused(model):
         (model.addcb, ([1, 2, 1],), repeated),
         (model.addcb, ([3],), "function 3: unknown"),
         (model.setcbf, (1, answer), "callback 1: unknown"),
-        (model.setcbg, (-1, [0, 1], [0], answer), "callback -1: unknown"),
+        (model.setcbg, (-1, [], [], answer), "callback -1: unknown"),
         (model.setcbh, (2, [], [], answer), "callback 2: unknown"),
         (model.setcbhv, (1, answer), "callback 1: unknown"),
         (model.setcbdata, (1, None), "callback 1: unknown"),
@@ -246,9 +257,10 @@ def test_refused(model):
     ]
     for call, arguments, message in cases:
         assert refusal(call, *arguments) == bad + message
-    jacobian = "callback 0: Jacobian of function 0: variable 1 is listed"
-    message = refusal(model.setcbg, cb, [0, 2], [2, 1], answer)
-    assert message == bad + jacobian + " after variable 2"
+    uncovered = "callback 0: Jacobian function 1 is not covered"
+    assert refusal(model.setcbg, cb, [0, 1], [2, 1], answer) == bad + uncovered
+    unknown = "callback 0: Jacobian of function 0: variable 3 is unknown"
+    assert refusal(model.setcbg, cb, [0, 0], [2, 3], answer) == bad + unknown
     pair = "callback 0: Hessian pair (1, 0) has its second variable below"
     message = refusal(model.setcbh, cb, [1], [0], answer)
     assert message == bad + pair + " its first"
@@ -256,16 +268,14 @@ def test_refused(model):
 
 def test_lengths(model):
     cb = model.addcb([0, 1])
-    with pytest.raises(ValueError, match="off has length 2, not 3"):
-        model.setcbg(cb, [0, 1], [0], answer)
     with pytest.raises(ValueError, match="var has length 1, not 2"):
-        model.setcbg(cb, [0, 1, 2], [0], answer)
+        model.setcbg(cb, [0, 1], [0], answer)
     with pytest.raises(ValueError, match="var2 has length 1, not 2"):
         model.setcbh(cb, [0, 1], [1], answer)
     with pytest.raises(TypeError, match="f must be callable, not int"):
         model.setcbf(cb, 3)
     with pytest.raises(TypeError, match="g must be callable, not None"):
-        model.setcbg(cb, [0, 0, 0], [], None)
+        model.setcbg(cb, [], [], None)
     with pytest.raises(TypeError, match="cb must be an int, not float"):
         model.setcbdata(0.0, None)
 
@@ -274,7 +284,7 @@ def changes(model):
     return (
         partial(model.addcb, [1]),
         partial(model.setcbf, 0, answer),
-        partial(model.setcbg, 0, [0, 0], [], answer),
+        partial(model.setcbg, 0, [], [], answer),
         partial(model.setcbh, 0, [], [], answer),
         partial(model.setcbhv, 0, answer),
         partial(model.setcbdata, 0, None),

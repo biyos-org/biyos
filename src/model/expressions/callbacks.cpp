@@ -62,8 +62,7 @@ Index Model::add_callback(std::span<const Index> functions, void *data)
         .covered = std::vector<Index>(functions.begin(), functions.end()),
         .data = data,
         .function = {},
-        .jacobian_starts = std::vector<Offset>(functions.size() + 1, 0),
-        .jacobian_variables = {},
+        .jacobian_pairs = {},
         .jacobian = {},
         .hessian_pairs = {},
         .hessian = {},
@@ -79,16 +78,13 @@ void Model::set_callback_function(Index callback, UserFunction function)
 }
 
 void Model::set_callback_jacobian(Index callback,
-                                  std::span<const Offset> starts,
+                                  std::span<const Index> functions,
                                   std::span<const Index> variables,
                                   UserFunction jacobian)
 {
     Callback &held = changed(callback);
-    check_jacobian(callback, held.covered, starts, variables, n_variables());
-    std::vector<Offset> begins(starts.begin(), starts.end());
-    std::vector<Index> pattern(variables.begin(), variables.end());
-    held.jacobian_starts = std::move(begins);
-    held.jacobian_variables = std::move(pattern);
+    held.jacobian_pairs =
+        jacobian_pairs(callback, held.covered, functions, variables, n_variables());
     held.jacobian = std::move(jacobian);
 }
 

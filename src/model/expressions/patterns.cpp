@@ -2,9 +2,9 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "core/memory/room.hpp"
 #include "core/text/text.hpp"
 #include "model/checks.hpp"
-#include "model/compressed.hpp"
 #include "model/expressions/callbacks.hpp"
 
 #include <cstddef>
@@ -12,6 +12,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace biyos
@@ -22,11 +23,15 @@ namespace
 
 constexpr std::string_view kNoun = "callback";
 
-template <typename T> void check_entries(std::size_t entries)
+void check_sides(std::span<const Index> a, std::span<const Index> b, std::string_view sides)
 {
-    if (entries > room(std::vector<T>()))
+    if (a.size() > room(std::vector<IndexPair>()))
     {
         throw Error(ErrorKind::NoMemory, "model", "no pattern offset left");
+    }
+    if (a.size() != b.size())
+    {
+        throw Error(ErrorKind::Internal, "model", std::string(sides) + " differ in number");
     }
 }
 
@@ -35,34 +40,33 @@ std::string variable_fault(Index variable, Index total)
     return variable < 0 || variable >= total ? item("variable", variable) + " is unknown" : "";
 }
 
-std::string order_fault(Index variable, Index previous)
+std::unordered_map<Index, Index> positions(std::span<const Index> covered)
 {
-    if (variable == previous)
+    std::unordered_map<Index, Index> found;
+    for (std::size_t k = 0; k < covered.size(); ++k)
     {
-        return item("variable", variable) + " is repeated";
+        found.emplace(covered[k], static_cast<Index>(k));
     }
-    if (variable < previous)
-    {
-        return item("variable", variable) + " is listed after " + item("variable", previous);
-    }
-    return "";
+    return found;
 }
 
-std::string row_fault(std::span<const Index> variables, Index total)
+IndexPair jacobian_pair(Index callback,
+                        const std::unordered_map<Index, Index> &found,
+                        Index function,
+                        Index variable,
+                        Index total)
 {
-    for (std::size_t k = 0; k < variables.size(); ++k)
+    const auto row = found.find(function);
+    if (row == found.end())
     {
-        std::string fault = variable_fault(variables[k], total);
-        if (fault.empty() && k > 0)
-        {
-            fault = order_fault(variables[k], variables[k - 1]);
-        }
-        if (!fault.empty())
-        {
-            return fault;
-        }
+        refuse(kNoun, callback, "Jacobian " + item("function", function) + " is not covered");
     }
-    return "";
+    const std::string fault = variable_fault(variable, total);
+    if (!fault.empty())
+    {
+        refuse(kNoun, callback, "Jacobian of " + item("function", function) + ": " + fault);
+    }
+    return {.row = row->second, .column = variable};
 }
 
 std::string pair_name(const IndexPair &pair)
@@ -87,37 +91,23 @@ std::string pair_fault(const IndexPair &pair, Index total)
     return "";
 }
 
-std::string pair_order(const IndexPair &pair, const IndexPair &previous)
-{
-    if (pair == previous)
-    {
-        return pair_name(pair) + " is repeated";
-    }
-    if (pair < previous)
-    {
-        return pair_name(pair) + " is listed after " + pair_name(previous);
-    }
-    return "";
 }
 
-}
-
-void check_jacobian(Index callback,
-                    std::span<const Index> functions,
-                    std::span<const Offset> starts,
-                    std::span<const Index> variables,
-                    Index total)
+std::vector<IndexPair> jacobian_pairs(Index callback,
+                                      std::span<const Index> covered,
+                                      std::span<const Index> functions,
+                                      std::span<const Index> variables,
+                                      Index total)
 {
-    check_entries<Index>(variables.size());
-    check_shape(functions.size(), starts, variables.size());
+    check_sides(functions, variables, "functions and variables");
+    const std::unordered_map<Index, Index> found = positions(covered);
+    std::vector<IndexPair> pairs;
+    pairs.reserve(functions.size());
     for (std::size_t k = 0; k < functions.size(); ++k)
     {
-        const std::string fault = row_fault(slice(variables, starts, k), total);
-        if (!fault.empty())
-        {
-            refuse(kNoun, callback, "Jacobian of " + item("function", functions[k]) + ": " + fault);
-        }
+        pairs.push_back(jacobian_pair(callback, found, functions[k], variables[k], total));
     }
+    return pairs;
 }
 
 std::vector<IndexPair> hessian_pairs(Index callback,
@@ -125,21 +115,13 @@ std::vector<IndexPair> hessian_pairs(Index callback,
                                      std::span<const Index> second,
                                      Index total)
 {
-    check_entries<IndexPair>(first.size());
-    if (first.size() != second.size())
-    {
-        throw Error(ErrorKind::Internal, "model", "first and second variables differ in number");
-    }
+    check_sides(first, second, "first and second variables");
     std::vector<IndexPair> pairs;
     pairs.reserve(first.size());
     for (std::size_t k = 0; k < first.size(); ++k)
     {
         const IndexPair pair{.row = first[k], .column = second[k]};
-        std::string fault = pair_fault(pair, total);
-        if (fault.empty() && k > 0)
-        {
-            fault = pair_order(pair, pairs.back());
-        }
+        const std::string fault = pair_fault(pair, total);
         if (!fault.empty())
         {
             refuse(kNoun, callback, "Hessian " + fault);

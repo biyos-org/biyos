@@ -6,7 +6,6 @@
 #include "model/attributes/overrides.hpp"
 #include "model/compare/fields.hpp"
 #include "model/compare/match.hpp"
-#include "model/compressed.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
 
@@ -74,8 +73,8 @@ std::string differ(const QuadraticTerm &a, const QuadraticTerm &b)
 std::string differ(const IndexPair &a, const IndexPair &b)
 {
     return first_of({
-        compared("first variable", a.row, b.row),
-        compared("second variable", a.column, b.column),
+        compared("row", a.row, b.row),
+        compared("column", a.column, b.column),
     });
 }
 
@@ -362,29 +361,13 @@ std::string index_differences(std::string_view noun,
     return table_difference(noun, size_of(a), size_of(b), entry);
 }
 
-std::span<const Index> jacobian_row(const Callback &callback, std::size_t k)
-{
-    return slice(all_of(callback.jacobian_variables), callback.jacobian_starts, k);
-}
-
-std::string row_difference(const Callback &a, const Callback &b, std::size_t k)
-{
-    return index_differences("entry", "variable", jacobian_row(a, k), jacobian_row(b, k));
-}
-
-std::string jacobian_differences(const Callback &a, const Callback &b)
-{
-    const auto row = [&](std::size_t k) { return row_difference(a, b, k); };
-    return table_difference("Jacobian row", a.covered.size(), b.covered.size(), row);
-}
-
 std::string differ(const Callback &a, const Callback &b)
 {
     return first_of({
         index_differences("covered function", "index", a.covered, b.covered),
         a.data == b.data ? "" : "data differs",
         presence("value function", a.function, b.function),
-        jacobian_differences(a, b),
+        term_differences("Jacobian entry", all_of(a.jacobian_pairs), all_of(b.jacobian_pairs)),
         presence("Jacobian function", a.jacobian, b.jacobian),
         term_differences("Hessian entry", all_of(a.hessian_pairs), all_of(b.hessian_pairs)),
         presence("Hessian function", a.hessian, b.hessian),

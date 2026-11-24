@@ -62,17 +62,17 @@ std::string add_refusal(Model &model, const std::vector<Index> &functions)
 
 void set_jacobian(Model &model,
                   Index callback,
-                  const std::vector<Offset> &starts,
+                  const std::vector<Index> &functions,
                   const std::vector<Index> &variables)
 {
-    model.set_callback_jacobian(callback, starts, variables, succeed);
+    model.set_callback_jacobian(callback, functions, variables, succeed);
 }
 
 std::string jacobian_refusal(Model &model,
-                             const std::vector<Offset> &starts,
+                             const std::vector<Index> &functions,
                              const std::vector<Index> &variables)
 {
-    return refusal([&] { set_jacobian(model, 0, starts, variables); });
+    return refusal([&] { set_jacobian(model, 0, functions, variables); });
 }
 
 void set_hessian(Model &model, const std::vector<Index> &first, const std::vector<Index> &second)
@@ -151,8 +151,7 @@ TEST(CallbackTest, Added)
     const Callback &first = model.callback(0);
     EXPECT_EQ(first.covered, (std::vector<Index>{2, 0}));
     EXPECT_EQ(first.data, &data);
-    EXPECT_EQ(first.jacobian_starts, (std::vector<Offset>{0, 0, 0}));
-    EXPECT_TRUE(first.jacobian_variables.empty());
+    EXPECT_TRUE(first.jacobian_pairs.empty());
     EXPECT_TRUE(first.hessian_pairs.empty());
     EXPECT_FALSE(first.function);
     EXPECT_FALSE(first.jacobian);
@@ -273,47 +272,51 @@ TEST(CallbackTest, Jacobian)
 {
     Model model = with_functions(3);
     add(model, {2, 0});
-    set_jacobian(model, 0, {0, 2, 3}, {0, 2, 1});
+    set_jacobian(model, 0, {0, 2, 0, 0}, {2, 1, 0, 2});
     const Callback &held = model.callback(0);
-    EXPECT_EQ(held.jacobian_starts, (std::vector<Offset>{0, 2, 3}));
-    EXPECT_EQ(held.jacobian_variables, (std::vector<Index>{0, 2, 1}));
+    EXPECT_EQ(held.jacobian_pairs, (std::vector<IndexPair>{{1, 2}, {0, 1}, {1, 0}, {1, 2}}));
     EXPECT_TRUE(held.jacobian);
-    set_jacobian(model, 0, {0, 0, 1}, {2});
-    EXPECT_EQ(held.jacobian_starts, (std::vector<Offset>{0, 0, 1}));
-    EXPECT_EQ(held.jacobian_variables, (std::vector<Index>{2}));
+    set_jacobian(model, 0, {}, {});
+    EXPECT_TRUE(held.jacobian_pairs.empty());
 }
 
 TEST(CallbackTest, JacobianRefused)
 {
     Model model = with_functions(3);
     add(model, {2, 0});
-    model.set_callback_jacobian(0, std::vector<Offset>{0, 1, 1}, std::vector<Index>{1}, counted);
-    const std::string row = kBad + "callback 0: Jacobian of function ";
-    EXPECT_EQ(jacobian_refusal(model, {0, 1, 2}, {0, 3}), row + "0: variable 3 is unknown");
-    EXPECT_EQ(jacobian_refusal(model, {0, 1, 2}, {-1, 0}), row + "2: variable -1 is unknown");
-    EXPECT_EQ(jacobian_refusal(model, {0, 2, 2}, {2, 1}),
-              row + "2: variable 1 is listed after variable 2");
-    EXPECT_EQ(jacobian_refusal(model, {0, 1, 3}, {0, 1, 1}), row + "0: variable 1 is repeated");
-    EXPECT_EQ(jacobian_refusal(model, {1, 1, 2}, {0, 1}),
-              kBad + "argument 'off': begins at 1, not 0");
-    EXPECT_EQ(jacobian_refusal(model, {0, 2, 1}, {0, 1}),
-              kBad + "argument 'off': decreases from 2 to 1 at entry 2");
-    EXPECT_EQ(refusal([&] { set_jacobian(model, 1, {0, 0, 0}, {}); }),
-              kBad + "callback 1: unknown");
+    model.set_callback_jacobian(0, std::vector<Index>{2}, std::vector<Index>{1}, counted);
+    const std::string bad = kBad + "callback 0: Jacobian ";
+    EXPECT_EQ(jacobian_refusal(model, {0, 1}, {0, 0}), bad + "function 1 is not covered");
+    EXPECT_EQ(jacobian_refusal(model, {2, 3}, {0, 0}), bad + "function 3 is not covered");
+    EXPECT_EQ(jacobian_refusal(model, {-1}, {0}), bad + "function -1 is not covered");
+    EXPECT_EQ(jacobian_refusal(model, {2, 0}, {0, 3}),
+              bad + "of function 0: variable 3 is unknown");
+    EXPECT_EQ(jacobian_refusal(model, {2}, {-1}), bad + "of function 2: variable -1 is unknown");
+    EXPECT_EQ(refusal([&] { set_jacobian(model, 1, {}, {}); }), kBad + "callback 1: unknown");
     const Callback &held = model.callback(0);
-    EXPECT_EQ(held.jacobian_starts, (std::vector<Offset>{0, 1, 1}));
-    EXPECT_EQ(held.jacobian_variables, (std::vector<Index>{1}));
+    EXPECT_EQ(held.jacobian_pairs, (std::vector<IndexPair>{{0, 1}}));
     EXPECT_EQ(calls_of(held.jacobian), 1);
+}
+
+TEST(CallbackTest, Uncovered)
+{
+    Model model = with_functions(4);
+    add(model, {3, 1});
+    set_jacobian(model, 0, {1, 3, 1}, {2, 0, 1});
+    model.delete_functions(std::vector<Index>{0, 2});
+    const Callback &held = model.callback(0);
+    EXPECT_EQ(held.covered, (std::vector<Index>{1, 0}));
+    EXPECT_EQ(held.jacobian_pairs, (std::vector<IndexPair>{{1, 2}, {0, 0}, {1, 1}}));
 }
 
 TEST(CallbackTest, Hessian)
 {
     Model model = with_functions(1);
     add(model, {0});
-    set_hessian(model, {0, 0, 1, 2}, {0, 2, 1, 2});
+    set_hessian(model, {1, 0, 2, 0, 1}, {1, 2, 2, 0, 1});
     const Callback &held = model.callback(0);
-    EXPECT_EQ(firsts(held), (std::vector<Index>{0, 0, 1, 2}));
-    EXPECT_EQ(seconds(held), (std::vector<Index>{0, 2, 1, 2}));
+    EXPECT_EQ(firsts(held), (std::vector<Index>{1, 0, 2, 0, 1}));
+    EXPECT_EQ(seconds(held), (std::vector<Index>{1, 2, 2, 0, 1}));
     EXPECT_TRUE(held.hessian);
     set_hessian(model, {}, {});
     EXPECT_TRUE(held.hessian_pairs.empty());
@@ -329,11 +332,8 @@ TEST(CallbackTest, HessianRefused)
     EXPECT_EQ(hessian_refusal(model, {0}, {-1}), bad + "variable -1 is unknown");
     EXPECT_EQ(hessian_refusal(model, {0, 2}, {1, 1}),
               bad + "pair (2, 1) has its second variable below its first");
-    EXPECT_EQ(hessian_refusal(model, {1, 0}, {1, 2}),
-              bad + "pair (0, 2) is listed after pair (1, 1)");
-    EXPECT_EQ(hessian_refusal(model, {0, 0}, {2, 1}),
-              bad + "pair (0, 1) is listed after pair (0, 2)");
-    EXPECT_EQ(hessian_refusal(model, {0, 1, 1}, {1, 2, 2}), bad + "pair (1, 2) is repeated");
+    EXPECT_EQ(hessian_refusal(model, {1, 1, 2}, {2, 2, 0}),
+              bad + "pair (2, 0) has its second variable below its first");
     EXPECT_EQ(refusal([&] { model.set_callback_hessian(1, {}, {}, succeed); }),
               kBad + "callback 1: unknown");
     EXPECT_EQ(firsts(model.callback(0)), (std::vector<Index>{1}));
@@ -347,11 +347,13 @@ TEST(CallbackTest, Copied)
     int calls = 0;
     model.add_callback(std::vector<Index>{1}, &calls);
     model.set_callback_function(0, counted);
-    set_jacobian(model, 0, {0, 2}, {0, 1});
+    set_jacobian(model, 0, {1, 1, 1}, {2, 0, 2});
+    set_hessian(model, {1, 0, 1}, {2, 1, 2});
     const Model copy = model;
     const Callback &held = copy.callback(0);
     EXPECT_EQ(held.data, &calls);
-    EXPECT_EQ(held.jacobian_variables, (std::vector<Index>{0, 1}));
+    EXPECT_EQ(held.jacobian_pairs, (std::vector<IndexPair>{{0, 2}, {0, 0}, {0, 2}}));
+    EXPECT_EQ(held.hessian_pairs, (std::vector<IndexPair>{{1, 2}, {0, 1}, {1, 2}}));
     EXPECT_EQ(held.covered, (std::vector<Index>{1}));
     std::vector<double> out(1);
     const Request request{
@@ -373,7 +375,7 @@ TEST(CallbackTest, Difference)
     Model model = with_functions(3);
     int data = 0;
     model.add_callback(std::vector<Index>{2, 0}, &data);
-    set_jacobian(model, 0, {0, 1, 2}, {1, 2});
+    set_jacobian(model, 0, {2, 0}, {1, 2});
     set_hessian(model, {0, 1}, {1, 1});
     const Model copy = model;
     EXPECT_EQ(difference(model, copy), "");
@@ -394,15 +396,21 @@ TEST(CallbackTest, Difference)
     Model valued = copy;
     valued.set_callback_function(0, succeed);
     EXPECT_EQ(difference(model, valued), "callback 0: value function none against given");
-    Model row = copy;
-    set_jacobian(row, 0, {0, 1, 2}, {1, 0});
-    EXPECT_EQ(difference(model, row), "callback 0: Jacobian row 1: entry 0: variable 2 against 0");
+    Model reordered = copy;
+    set_jacobian(reordered, 0, {0, 2}, {2, 1});
+    EXPECT_EQ(difference(model, reordered), "callback 0: Jacobian entry 0: row 0 against 1");
+    Model column = copy;
+    set_jacobian(column, 0, {2, 0}, {1, 0});
+    EXPECT_EQ(difference(model, column), "callback 0: Jacobian entry 1: column 2 against 0");
     Model wider = copy;
-    set_jacobian(wider, 0, {0, 2, 3}, {1, 2, 2});
-    EXPECT_EQ(difference(model, wider), "callback 0: Jacobian row 0: entry count 1 against 2");
+    set_jacobian(wider, 0, {2, 0, 0}, {1, 2, 2});
+    EXPECT_EQ(difference(model, wider), "callback 0: Jacobian entry count 2 against 3");
+    Model flipped = copy;
+    set_hessian(flipped, {1, 0}, {1, 1});
+    EXPECT_EQ(difference(model, flipped), "callback 0: Hessian entry 0: row 0 against 1");
     Model pairs = copy;
     set_hessian(pairs, {0, 1}, {1, 2});
-    EXPECT_EQ(difference(model, pairs), "callback 0: Hessian entry 1: second variable 1 against 2");
+    EXPECT_EQ(difference(model, pairs), "callback 0: Hessian entry 1: column 1 against 2");
     Model fewer = copy;
     set_hessian(fewer, {0}, {1});
     EXPECT_EQ(difference(model, fewer), "callback 0: Hessian entry count 2 against 1");
