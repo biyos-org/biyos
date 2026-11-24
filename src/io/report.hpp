@@ -13,5 +13,6 @@ namespace biyos
 [[noreturn]] void unsupported(const Lines &lines, const std::string &message);
 void warn(Env &env, const std::string &file, std::size_t line, const std::string &text) noexcept;
 void warn(Env &env, const Lines &lines, const std::string &text) noexcept;
+void warn(Env &env, const std::string &file, const std::string &text) noexcept;
 
 }

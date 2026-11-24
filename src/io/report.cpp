@@ -23,6 +23,13 @@ void describe(Event &event, const std::string &file, std::size_t line, const std
     event.fields.push_back(Field{.name = "line", .value = text_of(line)});
 }
 
+void describe(Event &event, const std::string &file, const std::string &text)
+{
+    event.module = "io";
+    event.text = "file '" + file + "': " + text;
+    event.fields.push_back(Field{.name = "file", .value = file});
+}
+
 }
 
 void bad_file(const Lines &lines, const std::string &message)
@@ -44,6 +51,12 @@ void warn(Env &env, const std::string &file, std::size_t line, const std::string
 void warn(Env &env, const Lines &lines, const std::string &text) noexcept
 {
     warn(env, lines.file(), lines.number(), text);
+}
+
+void warn(Env &env, const std::string &file, const std::string &text) noexcept
+{
+    const auto fill = [&](Event &event) { describe(event, file, text); };
+    env.events().emit(EventKind::Message, EventLevel::Warning, fill);
 }
 
 }

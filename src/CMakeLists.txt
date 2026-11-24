@@ -62,6 +62,7 @@ add_library(biyos_internal STATIC
     io/draft.cpp
     io/files.cpp
     io/labels.cpp
+    io/leftovers.cpp
     io/lines.cpp
     io/mps.cpp
     io/print.cpp

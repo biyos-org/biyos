@@ -3,8 +3,10 @@
 
 #include "core/env.hpp"
 #include "core/index.hpp"
+#include "core/settings.hpp"
 #include "core/text.hpp"
 #include "expr/terms.hpp"
+#include "io/files.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"
 
@@ -236,6 +238,20 @@ const std::string *name_of(const Model &model, Family family, Index index)
     return model.name_of(family, index);
 }
 
+}
+
+TEST(MpsTest, DataFiles)
+{
+    const std::string path = testing::TempDir() + "biyos_written.mps";
+    for (const char *file :
+         {"bounds", "constraints", "lp", "markers", "maximize", "ranges", "rows"})
+    {
+        const Model read = biyos::test::read_data(std::string(file) + ".mps");
+        biyos::Env env;
+        biyos::write_file(env, read, biyos::Settings(), path, biyos::FileFormat::Mps);
+        const Model back = biyos::read_file(env, path, biyos::FileFormat::Mps);
+        EXPECT_EQ(biyos::difference(read, back), "") << file;
+    }
 }
 
 TEST(MpsTest, Generated)
