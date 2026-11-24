@@ -275,6 +275,8 @@ class Model
 
     Offset add_variable_node(Index variable);
     Offset add_node(int op, std::span<const Offset> children, std::span<const double> values);
+    Offset add_pwl(std::span<const double> x, std::span<const double> y);
+    Offset add_piecewise(Offset pwl, Offset child);
     std::vector<Offset> add_expressions(const Postfix &postfix);
     void attach_expressions(std::span<const Index> functions, std::span<const Offset> nodes);
     void clear_functions(std::span<const Index> functions);

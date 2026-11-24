@@ -110,6 +110,7 @@ biyos_add_test(test_model
     model/functions/test_encoding.cpp
     model/functions/test_expressions.cpp
     model/functions/test_functions.cpp
+    model/functions/test_piecewise.cpp
     model/functions/test_quadratic.cpp
     model/records/test_complements.cpp
     model/records/test_cones.cpp
