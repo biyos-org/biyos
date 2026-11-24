@@ -360,11 +360,11 @@ TEST(CApiTest, Enum)
     BIYOS_int value = 0;
     EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHK, &value), BIYOS_OK);
     EXPECT_EQ(value, BIYOS_CHK_CHEAP);
-    for (const BIYOS_int level : {BIYOS_CHK_FULL, BIYOS_CHK_NONE, BIYOS_CHK_CHEAP})
+    for (const BIYOS_int chk : {BIYOS_CHK_FULL, BIYOS_CHK_NONE, BIYOS_CHK_CHEAP})
     {
-        EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHK, level), BIYOS_OK);
+        EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_CHK, chk), BIYOS_OK);
         EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_CHK, &value), BIYOS_OK);
-        EXPECT_EQ(value, level);
+        EXPECT_EQ(value, chk);
     }
 }
 

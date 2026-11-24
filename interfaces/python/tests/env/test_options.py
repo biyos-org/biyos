@@ -170,10 +170,10 @@ def test_bad_value(env):
     assert caught.value.code == INVALID_ARGUMENT
 
 
-@pytest.mark.parametrize("level", list(biyos.Checking))
-def test_enum(env, level):
-    env.setopt("checking", int(level))
-    assert env.getopt("checking") is level
+@pytest.mark.parametrize("checking", list(biyos.Checking))
+def test_enum(env, checking):
+    env.setopt("checking", int(checking))
+    assert env.getopt("checking") is checking
 
 
 @pytest.mark.parametrize("number", [4, 0, -1])

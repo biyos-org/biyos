@@ -269,10 +269,10 @@ TEST(OptionTest, Enum)
 {
     Stream stream;
     biyos::Options options(stream.events);
-    for (const int level : {BIYOS_CHK_FULL, BIYOS_CHK_NONE, BIYOS_CHK_CHEAP})
+    for (const int checking : {BIYOS_CHK_FULL, BIYOS_CHK_NONE, BIYOS_CHK_CHEAP})
     {
-        options.set_int(Option::Checking, level);
-        EXPECT_EQ(options.get_int(Option::Checking), level);
+        options.set_int(Option::Checking, checking);
+        EXPECT_EQ(options.get_int(Option::Checking), checking);
     }
 }
 

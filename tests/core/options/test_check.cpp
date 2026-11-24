@@ -67,9 +67,9 @@ void finite(const biyos::Checker &checker)
 class CheckTest : public ::testing::Test
 {
   protected:
-    biyos::Checker at(Checking level)
+    biyos::Checker at(Checking checking)
     {
-        env.options().set_int(biyos::Option::Checking, static_cast<int>(level));
+        env.options().set_int(biyos::Option::Checking, static_cast<int>(checking));
         return biyos::Checker(env, biyos::Lookup(env.options()), "model");
     }
 
@@ -86,13 +86,13 @@ class CheckTest : public ::testing::Test
     }
 
     void check(const biyos::Checker &checker,
-               Checking level,
+               Checking cost,
                bool result,
                ErrorKind kind = ErrorKind::InvalidArgument)
     {
         const auto holds = [this, result] { return evaluate(result); };
         const auto values = [this] { return describe(); };
-        checker.require(level, kind, "sorted", "row 3", holds, values);
+        checker.require(cost, kind, "sorted", "row 3", holds, values);
     }
 
     void keep(EventKind kind)

@@ -14,16 +14,16 @@ static int read_options(BIYOS_env *env)
 {
     BIYOS_real limit = 0.0;
     BIYOS_int presolve = 1;
-    BIYOS_int lvl = 0;
+    BIYOS_int chk = 0;
     if (BIYOS_getenvdblopt(env, BIYOS_OPT_MAXTIME, &limit) != BIYOS_OK ||
         BIYOS_getenvboolopt(env, BIYOS_OPT_PRESOLVE, &presolve) !=
             BIYOS_OK ||
-        BIYOS_getenvintopt(env, BIYOS_OPT_CHK, &lvl) != BIYOS_OK)
+        BIYOS_getenvintopt(env, BIYOS_OPT_CHK, &chk) != BIYOS_OK)
     {
         return 0;
     }
-    printf("maxtime %g, presolve %d, checking %d\n", limit, presolve, lvl);
-    return presolve == 0 && lvl == BIYOS_CHK_FULL;
+    printf("maxtime %g, presolve %d, checking %d\n", limit, presolve, chk);
+    return presolve == 0 && chk == BIYOS_CHK_FULL;
 }
 
 static int model_options(BIYOS_env *env)
