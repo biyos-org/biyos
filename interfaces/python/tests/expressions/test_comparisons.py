@@ -5,7 +5,6 @@ import pytest
 import biyos
 from biyos import Operator
 
-INFINITY = float("inf")
 STALE = "the block predates a deletion from its model"
 
 
@@ -46,11 +45,11 @@ DIFFERENCE = (Operator.SUM, (0.0, 1.0, -1.0), 0, 1)
 
 
 def test_less(x):
-    assert parts(x[0] <= x[1]) == (DIFFERENCE, -INFINITY, 0.0)
+    assert parts(x[0] <= x[1]) == (DIFFERENCE, -biyos.inf, 0.0)
 
 
 def test_greater(x):
-    assert parts(x[0] >= x[1]) == (DIFFERENCE, 0.0, INFINITY)
+    assert parts(x[0] >= x[1]) == (DIFFERENCE, 0.0, biyos.inf)
 
 
 def test_equal(x):
@@ -58,8 +57,8 @@ def test_equal(x):
 
 
 def test_number(x):
-    assert parts(x[0] <= 3) == (0, -INFINITY, 3.0)
-    assert parts(x[0] >= 3) == (0, 3.0, INFINITY)
+    assert parts(x[0] <= 3) == (0, -biyos.inf, 3.0)
+    assert parts(x[0] >= 3) == (0, 3.0, biyos.inf)
     assert parts(x[0] == 3) == (0, 3.0, 3.0)
 
 
@@ -73,10 +72,10 @@ def test_expressions(x):
     e = x[0] * x[1]
     product = (Operator.PRODUCT, (1.0,), 0, 1)
     body = (Operator.SUM, (0.0, 1.0, -1.0), product, 2)
-    assert parts(e <= x[2]) == (body, -INFINITY, 0.0)
+    assert parts(e <= x[2]) == (body, -biyos.inf, 0.0)
     assert parts(e + 1 <= 2) == (
         (Operator.SUM, (1.0, 1.0), product),
-        -INFINITY,
+        -biyos.inf,
         2.0,
     )
 
@@ -108,15 +107,15 @@ def test_same(env, x):
 
 def test_refused(x):
     nan = float("nan")
-    for bound in (nan, INFINITY, -INFINITY):
+    for bound in (nan, biyos.inf, -biyos.inf):
         with pytest.raises(ValueError, match="refuses the bound"):
             eq(x[0], bound)
-    for bound in (nan, INFINITY):
+    for bound in (nan, biyos.inf):
         with pytest.raises(ValueError, match="refuses the bound"):
             ge(x[0], bound)
         with pytest.raises(ValueError, match="refuses the bound"):
             le(bound, x[0])
-    for bound in (nan, -INFINITY):
+    for bound in (nan, -biyos.inf):
         with pytest.raises(ValueError, match="refuses the bound"):
             le(x[0], bound)
         with pytest.raises(ValueError, match="refuses the bound"):
@@ -124,8 +123,8 @@ def test_refused(x):
 
 
 def test_open(x):
-    assert parts(x[0] <= INFINITY) == (0, -INFINITY, INFINITY)
-    assert parts(x[0] >= -INFINITY) == (0, -INFINITY, INFINITY)
+    assert parts(x[0] <= biyos.inf) == (0, -biyos.inf, biyos.inf)
+    assert parts(x[0] >= -biyos.inf) == (0, -biyos.inf, biyos.inf)
 
 
 @pytest.mark.parametrize("other", ["a", None, True, 1j])

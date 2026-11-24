@@ -7,7 +7,6 @@ import biyos
 from biyos import EventKind, EventLevel, VariableKind
 from refusal import LOCKED, refusal
 
-INFINITY = float("inf")
 NAN = float("nan")
 IN_USE = -203
 BINARY = VariableKind.BINARY
@@ -16,8 +15,8 @@ CONTINUOUS = VariableKind.CONTINUOUS
 VARIABLES = [0, 2, 0]
 VALUES = [1, 0, 0]
 FUNCTIONS = [1, 1, 0]
-LOWER = [-INFINITY, 1.0, 0.0]
-UPPER = [4.0, 1.0, INFINITY]
+LOWER = [-biyos.inf, 1.0, 0.0]
+UPPER = [4.0, 1.0, biyos.inf]
 SAMPLE = (VARIABLES, VALUES, FUNCTIONS, LOWER, UPPER)
 
 
@@ -62,8 +61,8 @@ def test_defaults(model):
     model.addind([0, 2], [1, 0], [0, 1])
     model.addind([2], [1], [1], lb=[0.5])
     found = model.getind()
-    assert found[3] == [-INFINITY, -INFINITY, 0.5]
-    assert found[4] == [INFINITY] * 3
+    assert found[3] == [-biyos.inf, -biyos.inf, 0.5]
+    assert found[4] == [biyos.inf] * 3
 
 
 def test_shared(model):
@@ -95,7 +94,7 @@ def test_views(env, model):
     x = model.addvar(1, [BINARY])
     f = model.addfun(1)
     model.addind(x, [1], f)
-    assert model.getind([3]) == ([3], [1], [2], [-INFINITY], [INFINITY])
+    assert model.getind([3]) == ([3], [1], [2], [-biyos.inf], [biyos.inf])
     other = biyos.Model(env)
     y = other.addvar(1, [BINARY])
     g = other.addfun(1)
@@ -130,7 +129,7 @@ def test_refused(model):
     assert message == "invalid argument: indicator 3: lower bound is NaN"
     message = refusal(model.addind, [0], None, [0])
     assert message == "invalid argument: argument 'val': is null"
-    message = refusal(model.setindbnd, [0], [INFINITY])
+    message = refusal(model.setindbnd, [0], [biyos.inf])
     assert message == "invalid argument: indicator 0: lower bound is infinity"
     message = refusal(model.setindvar, [1], [1])
     assert message == "invalid argument: indicator 1: variable 1 is not binary"
@@ -203,6 +202,6 @@ def test_copy(model):
     copy = model.copy()
     assert copy.getind() == SAMPLE
     copy.setindbnd(i[1:].on(copy), [0.0, 0.0])
-    assert copy.getindbnd(range(3))[0] == [-INFINITY, 0.0, 0.0]
+    assert copy.getindbnd(range(3))[0] == [-biyos.inf, 0.0, 0.0]
     assert model.getind() == SAMPLE
     copy.close()

@@ -15,7 +15,7 @@ INVALID_ARGUMENT = -100
 
 DEFAULTS = {
     "seed": 0,
-    "maxtime": float("inf"),
+    "maxtime": biyos.inf,
     "checking": biyos.Checking.CHEAP,
     "presolve": True,
     "repro": "",
@@ -23,7 +23,7 @@ DEFAULTS = {
     "feastol_rel": 1e-6,
     "inttol": 1e-5,
     "zerotol": 1e-9,
-    "maxcputime": float("inf"),
+    "maxcputime": biyos.inf,
 }
 
 VALUES = {

@@ -12,7 +12,6 @@ from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
 
-INFINITY = float("inf")
 NAN = float("nan")
 SOS1 = SOSKind.SOS1
 SOS2 = SOSKind.SOS2
@@ -258,7 +257,7 @@ def test_refused(model):
     assert message == "invalid argument: set 3: variable 4 is unknown"
     message = refusal(model.addsos, [SOS1], [0, 1], [0], [NAN])
     assert message == "invalid argument: set 3: weight of variable 0 is NaN"
-    message = refusal(model.addsos, [SOS2], [0, 1], [1], [-INFINITY])
+    message = refusal(model.addsos, [SOS2], [0, 1], [1], [-biyos.inf])
     assert message == (
         "invalid argument: set 3: weight of variable 1 is minus infinity"
     )

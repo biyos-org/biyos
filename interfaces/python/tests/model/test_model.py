@@ -14,7 +14,6 @@ from sized import Room, limit
 from spies import Trap, followed, interrupted, preceded, spied, traced
 from tolerance import CHECKS
 
-INFINITY = float("inf")
 
 KINDS = [
     VariableKind.CONTINUOUS,
@@ -498,8 +497,8 @@ def test_closed_env():
 
 
 def test_add(model):
-    lower = [-INFINITY, 0.0, -3.0, 2.0, 1.0]
-    upper = [INFINITY, 1.0, 7.0, 10.0, 4.0]
+    lower = [-biyos.inf, 0.0, -3.0, 2.0, 1.0]
+    upper = [biyos.inf, 1.0, 7.0, 10.0, 4.0]
     added = model.addvar(5, KINDS, lower, upper)
     assert type(added) is biyos.Variables
     assert len(added) == 5
@@ -520,7 +519,7 @@ def test_defaults(model):
     model.addvar(2, kinds, lb=[0.5, 0.75])
     model.addvar(2, kinds, ub=[0.5, 0.75])
     found = model.getvar()
-    low, high = -INFINITY, INFINITY
+    low, high = -biyos.inf, biyos.inf
     assert found[0] == [VariableKind.CONTINUOUS] * 2 + kinds * 3
     assert found[1] == [low, low, 0.0, low, 0.5, 0.75, 0.0, low]
     assert found[2] == [high, high, 1.0, high, 1.0, high, 0.5, 0.75]
@@ -534,7 +533,7 @@ def test_sequences(model):
     assert model.getvar() == (
         kinds,
         [0.0, 1.0, 4.0, 5.0],
-        [2.0, 3.0, INFINITY, INFINITY],
+        [2.0, 3.0, biyos.inf, biyos.inf],
     )
 
 
@@ -558,7 +557,7 @@ def test_bounds(model):
     model.addvar(2)
     model.setvarbnd([1, 0], lb=[1.0, 2.0])
     model.setvarbnd([1], ub=[3.0])
-    assert model.getvar()[1:] == ([2.0, 1.0], [INFINITY, 3.0])
+    assert model.getvar()[1:] == ([2.0, 1.0], [biyos.inf, 3.0])
     model.setvarbnd([0, 0], [5.0, 6.0], [7.0, 8.0])
     assert model.getvar([0])[1:] == ([6.0], [8.0])
 
@@ -574,12 +573,12 @@ def test_kinds(model):
 
 
 def test_listed(model):
-    lower = [-INFINITY, 0.0, -3.0, 2.0, 1.0]
-    upper = [INFINITY, 1.0, 7.0, 10.0, 4.0]
+    lower = [-biyos.inf, 0.0, -3.0, 2.0, 1.0]
+    upper = [biyos.inf, 1.0, 7.0, 10.0, 4.0]
     x = model.addvar(5, KINDS, lower, upper)
     idx = [4, 0, 4, 2]
     found = model.getvarbnd(idx)
-    assert found == ([1.0, -INFINITY, 1.0, -3.0], [4.0, INFINITY, 4.0, 7.0])
+    assert found == ([1.0, -biyos.inf, 1.0, -3.0], [4.0, biyos.inf, 4.0, 7.0])
     knd = model.getvarknd(idx)
     assert knd == [KINDS[4], KINDS[0], KINDS[4], KINDS[2]]
     assert all(type(kind) is VariableKind for kind in knd)
@@ -637,14 +636,14 @@ def test_refused(model):
     )
     message = refusal(model.setvarbnd, [3], [0.0], [1.0])
     assert message == "invalid argument: variable 3: unknown"
-    message = refusal(model.addvar, 1, None, [INFINITY])
+    message = refusal(model.addvar, 1, None, [biyos.inf])
     assert message == "invalid argument: variable 1: lower bound is infinity"
     message = refusal(model.getvar, range(2, 3))
     assert message == "invalid argument: variable 2: unknown"
     message = refusal(model.getvar, [-1])
     assert message == "invalid argument: variable -1: unknown"
     continuous = [VariableKind.CONTINUOUS]
-    assert model.getvar() == (continuous, [-INFINITY], [INFINITY])
+    assert model.getvar() == (continuous, [-biyos.inf], [biyos.inf])
 
 
 def test_outside(model, monkeypatch):
@@ -727,7 +726,7 @@ def test_raising(env):
     model = biyos.Model(env)
     env.addhook(explode, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(RuntimeError, match="hook"):
-        model.addvar(1, None, [INFINITY])
+        model.addvar(1, None, [biyos.inf])
     model.close()
 
 
@@ -747,7 +746,7 @@ def test_locked(env, model):
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    bounds = ([-INFINITY], [INFINITY])
+    bounds = ([-biyos.inf], [biyos.inf])
     assert seen == [LOCKED, 1, bounds, [VariableKind.CONTINUOUS]]
     assert model.getnvar() == 1
 

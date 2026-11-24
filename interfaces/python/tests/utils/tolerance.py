@@ -6,7 +6,6 @@ import biyos
 from biyos import EventKind, EventLevel
 from refusal import LOCKED, refusal
 
-INFINITY = float("inf")
 NAN = float("nan")
 UNSET = ([None] * 3, [None] * 3)
 
@@ -49,7 +48,7 @@ def expect_refused(env, model, short, noun):
     record = f"invalid argument: {noun} 1: "
     message = refusal(tol.set, [0, 1], [3.0, NAN])
     assert message == record + "absolute tolerance is NaN"
-    message = refusal(tol.set, [0, 1], None, [3.0, INFINITY])
+    message = refusal(tol.set, [0, 1], None, [3.0, biyos.inf])
     assert message == record + "relative tolerance is infinity"
     message = refusal(tol.set, range(2), [3.0, -0.5])
     assert message == record + "absolute tolerance -0.5 is negative"
