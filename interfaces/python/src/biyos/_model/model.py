@@ -39,7 +39,6 @@ from biyos._env.options import OptionSource
 from biyos._env.values import Value
 from biyos._error import Error
 from biyos._model.blocks import (
-    SOS,
     Block,
     Complement,
     Complements,
@@ -53,7 +52,8 @@ from biyos._model.blocks import (
     Indicators,
     Objective,
     Objectives,
-    SOSs,
+    SpecialOrderedSet,
+    SpecialOrderedSets,
     Variable,
     Variables,
     index_of,
@@ -104,7 +104,7 @@ class ObjectiveSense(IntEnum):
     MAXIMIZE = 2
 
 
-class SOSKind(IntEnum):
+class SpecialOrderedSetKind(IntEnum):
     """The kinds of special ordered sets, as ``BIYOS_SOSKND_SOS1`` and
     ``BIYOS_SOSKND_SOS2`` number them.
 
@@ -175,7 +175,7 @@ _COUNTS: dict[type[Block[Any]], str] = {
     Constraints: "getncon",
     Objectives: "getnobj",
     Indicators: "getnind",
-    SOSs: "getnsos",
+    SpecialOrderedSets: "getnsos",
     Cones: "getncone",
     Complements: "getnccon",
 }
@@ -3172,11 +3172,11 @@ class Model:
 
     def addsos(
         self,
-        knd: Sequence[SOSKind],
+        knd: Sequence[SpecialOrderedSetKind],
         off: Sequence[int],
         varidx: Sequence[int | Variable] | Variables,
         coef: Sequence[float] | None = None,
-    ) -> SOSs:
+    ) -> SpecialOrderedSets:
         """Add special ordered sets after the last one.
 
         The set ``k`` holds the members from ``off[k]`` to ``off[k + 1] - 1``,
@@ -3221,7 +3221,7 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addsos, count, *arrays, byref(first))
-        return SOSs(self, first.value, count, self._gen)
+        return SpecialOrderedSets(self, first.value, count, self._gen)
 
     def getnsos(self) -> int:
         """Return the number of special ordered sets.
@@ -3239,7 +3239,12 @@ class Model:
         self._call(lib.BIYOS_getnsos, byref(count))
         return count.value
 
-    def getnsosvar(self, idx: Sequence[int | SOS] | SOSs | None = None) -> int:
+    def getnsosvar(
+        self,
+        idx: Sequence[int | SpecialOrderedSet]
+        | SpecialOrderedSets
+        | None = None,
+    ) -> int:
         """Count the members of special ordered sets.
 
         Parameters
@@ -3260,11 +3265,14 @@ class Model:
         BIYOS_getnsosvarrg
         """
         every = range(self.getnsos()) if idx is None else idx
-        return self._count("BIYOS_getnsosvar", SOSs, every)
+        return self._count("BIYOS_getnsosvar", SpecialOrderedSets, every)
 
     def getsos(
-        self, idx: Sequence[int | SOS] | SOSs | None = None
-    ) -> tuple[list[SOSKind], list[int], list[int], list[float]]:
+        self,
+        idx: Sequence[int | SpecialOrderedSet]
+        | SpecialOrderedSets
+        | None = None,
+    ) -> tuple[list[SpecialOrderedSetKind], list[int], list[int], list[float]]:
         """Read special ordered sets, as ``addsos`` takes them.
 
         Parameters
@@ -3297,13 +3305,15 @@ class Model:
         starts = (c_int64 * (count + 1))()
         members = (c_int * size)()
         weights = (c_double * size)()
-        chosen = self._chosen("BIYOS_getsos", SOSs, every)
+        chosen = self._chosen("BIYOS_getsos", SpecialOrderedSets, every)
         self._call(*chosen, size, kinds, starts, members, weights)
-        found = [SOSKind(code) for code in kinds]
+        found = [SpecialOrderedSetKind(code) for code in kinds]
         return found, list(starts), list(members), list(weights)
 
     def setsosname(
-        self, idx: Sequence[int | SOS] | SOSs, name: Sequence[str]
+        self,
+        idx: Sequence[int | SpecialOrderedSet] | SpecialOrderedSets,
+        name: Sequence[str],
     ) -> None:
         """Name special ordered sets, as ``setvarname`` names variables.
 
@@ -3319,9 +3329,11 @@ class Model:
         BIYOS_setsosnamesp
         BIYOS_setsosnamerg
         """
-        self._setname("BIYOS_setsosname", SOSs, idx, name)
+        self._setname("BIYOS_setsosname", SpecialOrderedSets, idx, name)
 
-    def getsosname(self, idx: Sequence[int | SOS] | SOSs) -> list[str | None]:
+    def getsosname(
+        self, idx: Sequence[int | SpecialOrderedSet] | SpecialOrderedSets
+    ) -> list[str | None]:
         """Return the names of special ordered sets, as ``getvarname`` does.
 
         Parameters
@@ -3339,7 +3351,7 @@ class Model:
         BIYOS_getsosnamesp
         BIYOS_getsosnamerg
         """
-        return self._getname("BIYOS_getsosname", SOSs, idx)
+        return self._getname("BIYOS_getsosname", SpecialOrderedSets, idx)
 
     def getsosidx(self, name: Sequence[str]) -> list[int]:
         """Return the indices of named special ordered sets, as
@@ -3361,7 +3373,9 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getsosidx, name)
 
-    def delsosname(self, idx: Sequence[int | SOS] | SOSs) -> None:
+    def delsosname(
+        self, idx: Sequence[int | SpecialOrderedSet] | SpecialOrderedSets
+    ) -> None:
         """Remove the names of special ordered sets, as ``delvarname``
         does.
 
@@ -3375,9 +3389,11 @@ class Model:
         BIYOS_delsosnamesp
         BIYOS_delsosnamerg
         """
-        self._delname("BIYOS_delsosname", SOSs, idx)
+        self._delname("BIYOS_delsosname", SpecialOrderedSets, idx)
 
-    def delsos(self, idx: Sequence[int | SOS] | SOSs) -> list[int]:
+    def delsos(
+        self, idx: Sequence[int | SpecialOrderedSet] | SpecialOrderedSets
+    ) -> list[int]:
         """Delete special ordered sets.
 
         The sets left keep their order and are numbered from 0 again. A deleted
@@ -3400,7 +3416,7 @@ class Model:
         BIYOS_delsossp
         BIYOS_delsosrg
         """
-        return self._delete("BIYOS_delsos", SOSs, idx)
+        return self._delete("BIYOS_delsos", SpecialOrderedSets, idx)
 
     def addcone(
         self,

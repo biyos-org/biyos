@@ -112,7 +112,8 @@ def test_formats():
 
 
 def test_sos_kinds():
-    names = {f"BIYOS_SOSKND_{kind.name}": kind for kind in biyos.SOSKind}
+    kinds = biyos.SpecialOrderedSetKind
+    names = {f"BIYOS_SOSKND_{kind.name}": kind for kind in kinds}
     assert group("BIYOS_SOSKND_") == names
 
 

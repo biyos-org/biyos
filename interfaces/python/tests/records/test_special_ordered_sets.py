@@ -6,15 +6,15 @@ from operator import index
 import pytest
 
 import biyos
-from biyos import EventKind, EventLevel, SOSKind
+from biyos import EventKind, EventLevel, SpecialOrderedSetKind
 from biyos._capi import lib
 from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
 
 NAN = float("nan")
-SOS1 = SOSKind.SOS1
-SOS2 = SOSKind.SOS2
+SOS1 = SpecialOrderedSetKind.SOS1
+SOS2 = SpecialOrderedSetKind.SOS2
 
 KINDS = [SOS2, SOS1, SOS1]
 OFF = [0, 3, 3, 5]
@@ -85,8 +85,8 @@ def test_add(model):
     assert model.getnsos() == 3
     found = model.getsos()
     assert found == SAMPLE
-    assert all(type(kind) is SOSKind for kind in found[0])
-    assert type(added) is biyos.SOSs
+    assert all(type(kind) is SpecialOrderedSetKind for kind in found[0])
+    assert type(added) is biyos.SpecialOrderedSets
     assert [index(item) for item in added] == [0, 1, 2]
     assert model.getnsosvar() == 5
 
@@ -95,8 +95,8 @@ def test_block(model):
     model.addsos([SOS1, SOS1], [0, 0, 0], [])
     s = model.addsos([SOS2] * 3, [0, 1, 2, 3], [0, 1, 2])
     assert len(s) == 3
-    assert all(type(item) is biyos.SOS for item in s)
-    assert type(s[1:]) is biyos.SOSs
+    assert all(type(item) is biyos.SpecialOrderedSet for item in s)
+    assert type(s[1:]) is biyos.SpecialOrderedSets
     assert [index(item) for item in s[1:]] == [3, 4]
     assert len(model.addsos([], [0], [])) == 0
     assert model.getnsos() == 5

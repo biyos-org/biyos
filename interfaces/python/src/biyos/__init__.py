@@ -4,7 +4,6 @@ from biyos._env.event import Event, EventKind, EventLevel
 from biyos._env.options import Checking, Masks, OptionSource
 from biyos._error import Error
 from biyos._model.blocks import (
-    SOS,
     Complement,
     Complements,
     Cone,
@@ -17,7 +16,8 @@ from biyos._model.blocks import (
     Indicators,
     Objective,
     Objectives,
-    SOSs,
+    SpecialOrderedSet,
+    SpecialOrderedSets,
     Variable,
     Variables,
 )
@@ -55,14 +55,13 @@ from biyos._model.model import (
     FileFormat,
     Model,
     ObjectiveSense,
-    SOSKind,
+    SpecialOrderedSetKind,
     VariableKind,
 )
 from biyos._model.operators import Operator
 from biyos._versions import Versions
 
 __all__ = [
-    "SOS",
     "CallbackRequest",
     "Checking",
     "Comparison",
@@ -91,8 +90,9 @@ __all__ = [
     "Objectives",
     "Operator",
     "OptionSource",
-    "SOSKind",
-    "SOSs",
+    "SpecialOrderedSet",
+    "SpecialOrderedSetKind",
+    "SpecialOrderedSets",
     "Variable",
     "VariableKind",
     "Variables",
