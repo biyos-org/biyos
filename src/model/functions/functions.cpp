@@ -4,9 +4,9 @@
 #include "core/index.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
-#include "model/merge.hpp"
+#include "model/functions/merge.hpp"
+#include "model/functions/terms.hpp"
 #include "model/renumber.hpp"
-#include "model/terms.hpp"
 
 #include <cstddef>
 #include <span>

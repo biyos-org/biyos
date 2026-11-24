@@ -9,7 +9,7 @@
 #include "expr/graph/uses.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
-#include "model/merge.hpp"
+#include "model/functions/merge.hpp"
 #include "model/rollback.hpp"
 
 #include <algorithm>

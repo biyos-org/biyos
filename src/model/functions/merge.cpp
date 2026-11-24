@@ -1,10 +1,10 @@
-#include "model/merge.hpp"
+#include "model/functions/merge.hpp"
 
 #include "core/index.hpp"
 #include "expr/forms/terms.hpp"
 #include "model/compressed.hpp"
-#include "model/pairs.hpp"
-#include "model/terms.hpp"
+#include "model/functions/pairs.hpp"
+#include "model/functions/terms.hpp"
 
 #include <algorithm>
 #include <cstddef>

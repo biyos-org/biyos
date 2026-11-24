@@ -77,25 +77,27 @@ add_library(biyos_internal STATIC
     io/support.cpp
     io/values.cpp
     io/vectors.cpp
-    model/attach.cpp
     model/callbacks.cpp
     model/checks.cpp
     model/compare.cpp
     model/compressed.cpp
     model/expressions.cpp
     model/fields.cpp
-    model/functions.cpp
+    model/functions/attach.cpp
+    model/functions/functions.cpp
+    model/functions/merge.cpp
+    model/functions/pairs.cpp
+    model/functions/quadratic.cpp
+    model/functions/terms.cpp
+    model/functions/transpose.cpp
     model/match.cpp
-    model/merge.cpp
     model/model.cpp
     model/names.cpp
     model/naming.cpp
     model/nodes.cpp
     model/overrides.cpp
-    model/pairs.cpp
     model/patterns.cpp
     model/postfix.cpp
-    model/quadratic.cpp
     model/records/complements.cpp
     model/records/cones.cpp
     model/records/constraints.cpp
@@ -104,9 +106,7 @@ add_library(biyos_internal STATIC
     model/records/sos.cpp
     model/records/variables.cpp
     model/renumber.cpp
-    model/terms.cpp
     model/tolerances.cpp
-    model/transpose.cpp
     model/users.cpp)
 
 target_include_directories(biyos_internal PUBLIC

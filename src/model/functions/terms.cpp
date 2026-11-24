@@ -1,4 +1,4 @@
-#include "model/terms.hpp"
+#include "model/functions/terms.hpp"
 
 #include "core/index.hpp"
 #include "expr/forms/terms.hpp"

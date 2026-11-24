@@ -6,8 +6,8 @@
 #include "core/index.hpp"
 #include "core/timing/timer.hpp"
 #include "model/checks.hpp"
+#include "model/functions/transpose.hpp"
 #include "model/model.hpp"
-#include "model/transpose.hpp"
 
 #include <algorithm>
 #include <cstddef>
