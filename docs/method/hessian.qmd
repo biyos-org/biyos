@@ -1,0 +1,51 @@
+# Second derivatives {#sec-hessian}
+
+Interior methods need the Hessian of the Lagrangian, $\sum_r w_r \nabla^2 f_r(x)$, with the objective weighted by 1 and each constraint by its multiplier. biyos computes it element by element: each function is split into small pieces whose Hessians are dense over a few variables, and each piece is differentiated twice by one forward and one reverse sweep over its own part of the tape.
+
+## Elements {#sec-hessian-elements}
+
+A function in optimisation is usually a sum of terms that each depend on a few variables, a partially separable function [@griewank1982]. biyos splits each root $f_r$ along its top-level sum, flattening nested sums and multiplying their coefficients, into elements $f_r = \sum_e c_e f_e$. A root that is not a sum is a single element of weight 1. The linear and quadratic terms are already out of the roots.
+
+The Hessian of the Lagrangian is then
+
+$$
+\sum_r w_r \nabla^2 f_r(x) = \sum_r w_r \sum_e c_e \nabla^2 f_e(x),
+$$ {#eq-hessian-elements}
+
+and $\nabla^2 f_e$ is nonzero only on the variables of $f_e$. Its pattern is the dense lower triangle over those variables. The pattern of the whole Hessian is the union of these triangles and of any entries the caller declares, such as the pairs of quadratic terms, as one lower triangle stored by columns with sorted rows. A map, found once, gives each entry of each element's triangle its position in that pattern.
+
+The elements compile to a tape of their own ([Compiled tapes](#sec-tapes)), one root per element, so a node shared by several elements is pinned and computed once per sweep.
+
+## Second-order adjoints {#sec-hessian-adjoints}
+
+One column of $\nabla^2 f_e$ is the derivative of the gradient along a direction $\dot x$, the unit vector of one variable. It comes from the reverse sweep of @sec-derivatives-reverse differentiated once more along $\dot x$ [@griewank2008].
+
+The forward sweep carries, besides each value $v_i$ and its partials $p_{ij} = \partial \operatorname{op}_i / \partial v_j$, the tangent of the value and of each partial:
+
+$$
+\dot v_i = \sum_{j \in \mathcal{C}(i)} p_{ij}\, \dot v_j, \qquad
+\dot p_{ij} = \sum_{k \in \mathcal{C}(i)} \frac{\partial^2 \operatorname{op}_i}{\partial v_j \partial v_k}\, \dot v_k.
+$$ {#eq-hessian-tangents}
+
+The partial tangents are zero for a sum, a negation, an absolute value, a maximum and a minimum, whose partials are constant where they exist. For a product of $n$ factors they cost $O(n)$ through running products of value and tangent pairs, not the $O(n^2)$ of the pairwise formula.
+
+The reverse sweep then carries each adjoint $\bar v_i$ and its tangent $\dot{\bar v}_i$:
+
+$$
+\bar v_j \mathrel{+}= \bar v_i\, p_{ij}, \qquad
+\dot{\bar v}_j \mathrel{+}= \dot{\bar v}_i\, p_{ij} + \bar v_i\, \dot p_{ij},
+$$ {#eq-hessian-reverse}
+
+seeded with $\bar v = 1$ and $\dot{\bar v} = 0$ on the element's root. When it ends, the adjoint tangent of each variable is the column of $\nabla^2 f_e$ along $\dot x$.
+
+The rule of @sec-derivatives-zero holds for each of the three products: a term whose first factor, an adjoint or an adjoint tangent, is exactly zero contributes nothing. The rule of @sec-derivatives-domain carries over too: wherever an operator's value is NaN, so are the tangents of its partials.
+
+## Lanes and chunks {#sec-hessian-lanes}
+
+The sweeps run several directions at once, one per lane, all at the same point. Lane $l$ is seeded with the unit direction of the element's $l$-th variable, so one sweep of an element with $n$ variables and at least $n$ lanes gives its whole triangle. The workspaces come in a few widths, the powers of two below the largest and the largest itself, and each element uses the narrowest that holds its variables. An element with more variables than the widest runs in chunks, each a sweep over a slice of its variables. Every lane computes the same operations whatever its width, so a chunked result is the same, bit for bit, as one sweep.
+
+Each element's triangle is scaled by $w_r c_e$ and added into the pattern through the map. An element whose scale is zero is skipped, so a zero multiplier on a constraint undefined at the point gives 0 and not NaN.
+
+## Hessian times a vector {#sec-hessian-product}
+
+A product $\sum_r w_r \nabla^2 f_r(x)\, v$ needs no pattern. It runs the same sweeps in one lane, seeded with $v$ restricted to each element's variables, and adds $w_r c_e$ times the adjoint tangents of those variables into the result. Its cost is one second-order sweep per element, whatever the element's size.

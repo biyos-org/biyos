@@ -82,6 +82,9 @@ biyos_add_test(test_expr
     expr/graph/test_parents.cpp
     expr/graph/test_tape.cpp
     expr/graph/test_uses.cpp
+    expr/hessian/test_elements.cpp
+    expr/hessian/test_hessian.cpp
+    expr/hessian/test_tangents.cpp
     expr/intervals/test_enclosure.cpp
     expr/intervals/test_interval.cpp
     expr/utils/chords.cpp

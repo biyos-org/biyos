@@ -8,6 +8,7 @@
 #include "expr/graph/compact.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/hessian/hessian.hpp"
 #include "expr/intervals/enclosure.hpp"
 #include "expr/intervals/interval.hpp"
 #include "expr/tape/tape.hpp"
@@ -171,6 +172,29 @@ std::vector<Offset> products(Graph &graph)
     return roots;
 }
 
+std::size_t hessian_cost(const Graph &graph, std::span<const Offset> roots, std::size_t lanes)
+{
+    biyos::Hessian hessian(graph, roots, {}, lanes, 4);
+    std::vector<double> out(hessian.pattern().rows.size());
+    const std::vector<double> weights(roots.size(), 1.0);
+    const std::array point{0.5, 2.0};
+    const std::size_t start = biyos::test::allocations();
+    hessian.values(point, weights, out);
+    return biyos::test::allocations() - start;
+}
+
+std::size_t product_cost(const Graph &graph, std::span<const Offset> roots, std::size_t lanes)
+{
+    biyos::Hessian hessian(graph, roots, {}, lanes, 4);
+    const std::array point{0.5, 2.0};
+    const std::array direction{1.5, -0.5};
+    std::vector<double> out(point.size());
+    const std::vector<double> weights(roots.size(), 1.0);
+    const std::size_t start = biyos::test::allocations();
+    hessian.product(point, weights, direction, out);
+    return biyos::test::allocations() - start;
+}
+
 std::size_t jacobian_cost(const Tape &tape)
 {
     biyos::Workspace workspace(tape);
@@ -323,6 +347,23 @@ TEST(AllocationTest, GradientSweep)
     const Tape tape(graph, roots, 4);
     ASSERT_GT(tape.prepass(), 0);
     EXPECT_EQ(gradient_cost(tape), 0U);
+}
+
+TEST(AllocationTest, HessianSweep)
+{
+    Graph graph;
+    const std::vector<Offset> roots = products(graph);
+    ASSERT_GT(Tape(graph, roots, 4).prepass(), 0);
+    EXPECT_EQ(hessian_cost(graph, roots, 1), 0U);
+    EXPECT_EQ(hessian_cost(graph, roots, biyos::kLanes), 0U);
+}
+
+TEST(AllocationTest, HessianProduct)
+{
+    Graph graph;
+    const std::vector<Offset> roots = products(graph);
+    EXPECT_EQ(product_cost(graph, roots, 1), 0U);
+    EXPECT_EQ(product_cost(graph, roots, biyos::kLanes), 0U);
 }
 
 TEST(AllocationTest, Curvature)

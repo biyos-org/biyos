@@ -328,6 +328,31 @@ Tape shared_tape(Graph &graph)
     return {graph, roots, 3};
 }
 
+Tape wide_tape(Graph &graph)
+{
+    const std::array pair{graph.add_variable(0), graph.add_variable(2)};
+    const Offset product = graph.add(Operator::Product, 2.0, pair);
+    const Offset shared = unary(graph, Operator::Exp, product);
+    const Offset other = unary(graph, Operator::Sin, product);
+    const std::array both{shared, other};
+    const std::array roots{
+        graph.add(Operator::Product, 1.0, both),
+        unary(graph, Operator::Cos, shared),
+        unary(graph, Operator::Tan, other),
+    };
+    return {graph, roots, 3};
+}
+
+std::string overflow(std::size_t size)
+{
+    const std::size_t lanes = (std::numeric_limits<std::size_t>::max)() / size + 1;
+    return "invalid argument: lanes: " + std::to_string(lanes) + " times size ";
+}
+
+std::string prefix(const std::string &message, const std::string &wanted)
+{
+    return message.substr(0, wanted.size());
+}
 }
 
 TEST(LaneTest, Sizes)
@@ -542,6 +567,50 @@ TEST(LaneTest, Mismatch)
     workspace = Workspace(tape, 3);
     workspace.spare.pop_back();
     EXPECT_EQ(refused(run_jacobian, sweep), "invalid argument: workspace: " + other);
+}
+
+TEST(LaneTest, Overflow)
+{
+    Graph graph;
+    const Tape tape = wide_tape(graph);
+    const std::array sizes{
+        at(tape.roots()),
+        at(tape.variables()),
+        at(tape.pinned()),
+        at(tape.partials()),
+        std::size_t{tape.width()},
+    };
+    Workspace workspace(tape);
+    Adjoints adjoints(tape);
+    const std::vector<double> point(3, 0.5);
+    std::vector<double> values(3);
+    std::vector<double> out(3);
+    for (const std::size_t size : sizes)
+    {
+        SCOPED_TRACE(size);
+        ASSERT_GT(size, 1U);
+        const std::size_t lanes = (std::numeric_limits<std::size_t>::max)() / size + 1;
+        const std::string wanted = overflow(size);
+        EXPECT_EQ(prefix(refusal([&] { Workspace{tape, lanes}; }), wanted), wanted);
+        EXPECT_EQ(prefix(refusal([&] { Adjoints{tape, lanes}; }), wanted), wanted);
+        workspace.lanes = lanes;
+        EXPECT_EQ(prefix(refused(tape, workspace, point, values), wanted), wanted);
+        const Sweep sweep{
+            .tape = &tape,
+            .point = point,
+            .weights = point,
+            .workspace = &workspace,
+            .adjoints = &adjoints,
+            .values = values,
+            .out = out,
+        };
+        EXPECT_EQ(prefix(refused(run_jacobian, sweep), wanted), wanted);
+        EXPECT_EQ(prefix(refused(run_weighted, sweep), wanted), wanted);
+    }
+    std::vector<double> points(4);
+    const std::size_t lanes = (std::numeric_limits<std::size_t>::max)() / 3 + 1;
+    EXPECT_EQ(refusal([&] { biyos::broadcast(point, lanes, points); }),
+              "invalid argument: lanes: " + std::to_string(lanes) + " times size 3 overflows");
 }
 
 TEST(LaneTest, Directions)

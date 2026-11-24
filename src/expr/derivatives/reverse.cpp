@@ -250,7 +250,7 @@ void drain(std::span<double> from, std::span<double> into) noexcept
 }
 
 Adjoints::Adjoints(const Tape &tape, std::size_t count)
-    : lanes(lanes_of(count)), slots(tape.width() * count, 0.0),
+    : lanes(lanes_of(tape, count)), slots(tape.width() * count, 0.0),
       shared(at(tape.pinned()) * count, 0.0), gradient(at(tape.variables()) * count, 0.0),
       taken(count, 0.0)
 {

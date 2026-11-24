@@ -302,6 +302,8 @@ void slopes_of(const Instruction &instruction,
     }
 }
 
+}
+
 void mark_undefined(const Frame &frame, std::span<double> partials) noexcept
 {
     constexpr double kNan = (std::numeric_limits<double>::quiet_NaN)();
@@ -313,8 +315,6 @@ void mark_undefined(const Frame &frame, std::span<double> partials) noexcept
             mine[l] = std::isnan(frame.result[l]) ? kNan : mine[l];
         }
     }
-}
-
 }
 
 std::uint32_t n_partials(const Instruction &instruction) noexcept

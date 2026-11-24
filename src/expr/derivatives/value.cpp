@@ -12,6 +12,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <string>
 #include <utility>
@@ -132,6 +133,67 @@ void signed_power(const Instruction &instruction, const Frame &frame) noexcept
     map(instruction, frame, [exponent](double x) { return sign_power(x, exponent); });
 }
 
+Frame enter(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
+{
+    const std::span<double> slots(workspace.slots);
+    const std::span<const double> shared(workspace.shared);
+    const std::size_t lanes = workspace.lanes;
+    for (std::size_t k = 0; k < block.loads.size(); ++k)
+    {
+        std::ranges::copy(row(shared, at(block.loads[k]), lanes), row(slots, k, lanes).begin());
+    }
+    return {
+        .point = point,
+        .operands = block.operands,
+        .weights = block.weights,
+        .slots = slots,
+        .result = workspace.result,
+        .spare = workspace.spare,
+        .lanes = lanes,
+    };
+}
+
+[[noreturn]] void refuse(std::string object, std::string reason)
+{
+    throw Error(ErrorKind::InvalidArgument, std::move(object), std::move(reason));
+}
+
+void check_point(const Tape &tape, std::span<const double> point, std::size_t lanes)
+{
+    const std::string size = "size " + text_of(point.size());
+    if (point.size() % lanes != 0)
+    {
+        refuse("point", size + " is not a multiple of " + text_of(lanes) + " lanes");
+    }
+    if (static_cast<Offset>(point.size() / lanes) < tape.variables())
+    {
+        const std::string last = text_of(tape.variables() - 1) + in_lanes(lanes);
+        refuse("point", size + " does not cover variable " + last);
+    }
+}
+
+void check_seeds(std::span<const Index> variables, std::size_t lanes, std::size_t size)
+{
+    if (variables.size() > lanes)
+    {
+        refuse("variables", text_of(variables.size()) + " for " + text_of(lanes) + " lanes");
+    }
+    if (size % lanes != 0)
+    {
+        refuse("directions",
+               "size " + text_of(size) + " is not a multiple of " + text_of(lanes) + " lanes");
+    }
+    for (const Index variable : variables)
+    {
+        if (variable < 0 || static_cast<std::size_t>(variable) >= size / lanes)
+        {
+            refuse("variables", "variable " + text_of(variable) + " outside the directions");
+        }
+    }
+}
+
+}
+
 void evaluate(const Instruction &instruction, const Frame &frame) noexcept
 {
     switch (instruction.op)
@@ -231,69 +293,8 @@ void keep(const Instruction &instruction, const Frame &frame) noexcept
     std::ranges::copy(frame.result, row(frame.slots, instruction.target, frame.lanes).begin());
 }
 
-Frame enter(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
-{
-    const std::span<double> slots(workspace.slots);
-    const std::span<const double> shared(workspace.shared);
-    const std::size_t lanes = workspace.lanes;
-    for (std::size_t k = 0; k < block.loads.size(); ++k)
-    {
-        std::ranges::copy(row(shared, at(block.loads[k]), lanes), row(slots, k, lanes).begin());
-    }
-    return {
-        .point = point,
-        .operands = block.operands,
-        .weights = block.weights,
-        .slots = slots,
-        .result = workspace.result,
-        .spare = workspace.spare,
-        .lanes = lanes,
-    };
-}
-
-[[noreturn]] void refuse(std::string object, std::string reason)
-{
-    throw Error(ErrorKind::InvalidArgument, std::move(object), std::move(reason));
-}
-
-void check_point(const Tape &tape, std::span<const double> point, std::size_t lanes)
-{
-    const std::string size = "size " + text_of(point.size());
-    if (point.size() % lanes != 0)
-    {
-        refuse("point", size + " is not a multiple of " + text_of(lanes) + " lanes");
-    }
-    if (static_cast<Offset>(point.size() / lanes) < tape.variables())
-    {
-        const std::string last = text_of(tape.variables() - 1) + in_lanes(lanes);
-        refuse("point", size + " does not cover variable " + last);
-    }
-}
-
-void check_seeds(std::span<const Index> variables, std::size_t lanes, std::size_t size)
-{
-    if (variables.size() > lanes)
-    {
-        refuse("variables", text_of(variables.size()) + " for " + text_of(lanes) + " lanes");
-    }
-    if (size % lanes != 0)
-    {
-        refuse("directions",
-               "size " + text_of(size) + " is not a multiple of " + text_of(lanes) + " lanes");
-    }
-    for (const Index variable : variables)
-    {
-        if (variable < 0 || static_cast<std::size_t>(variable) >= size / lanes)
-        {
-            refuse("variables", "variable " + text_of(variable) + " outside the directions");
-        }
-    }
-}
-
-}
-
 Workspace::Workspace(const Tape &tape, std::size_t count)
-    : lanes(lanes_of(count)), shared(at(tape.pinned()) * count, 0.0),
+    : lanes(lanes_of(tape, count)), shared(at(tape.pinned()) * count, 0.0),
       slots(tape.width() * count, 0.0), partials(at(tape.partials()) * count, 0.0),
       result(count, 0.0), spare(count, 0.0)
 {
@@ -313,12 +314,32 @@ std::size_t lanes_of(std::size_t count)
     return count;
 }
 
+std::size_t sized(std::size_t size, std::size_t lanes)
+{
+    if (size != 0 && lanes > (std::numeric_limits<std::size_t>::max)() / size)
+    {
+        refuse("lanes", text_of(lanes) + " times size " + text_of(size) + " overflows");
+    }
+    return size * lanes;
+}
+
+std::size_t lanes_of(const Tape &tape, std::size_t count)
+{
+    lanes_of(count);
+    sized(at(tape.roots()), count);
+    sized(at(tape.variables()), count);
+    sized(at(tape.pinned()), count);
+    sized(at(tape.partials()), count);
+    sized(tape.width(), count);
+    return count;
+}
+
 void check_sweep(const Tape &tape,
                  std::span<const double> point,
                  const Workspace &workspace,
                  std::span<const double> values)
 {
-    const std::size_t lanes = lanes_of(workspace.lanes);
+    const std::size_t lanes = lanes_of(tape, workspace.lanes);
     check_point(tape, point, lanes);
     if (values.size() != at(tape.roots()) * lanes)
     {
@@ -389,7 +410,7 @@ void forward(const Tape &tape,
 
 void broadcast(std::span<const double> point, std::size_t lanes, std::span<double> points)
 {
-    if (points.size() != point.size() * lanes_of(lanes))
+    if (points.size() != sized(point.size(), lanes_of(lanes)))
     {
         const std::string size = "size " + text_of(points.size());
         refuse("points", size + ", not the point size " + text_of(point.size()) + in_lanes(lanes));
