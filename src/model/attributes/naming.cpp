@@ -3,8 +3,8 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text/text.hpp"
+#include "model/attributes/names.hpp"
 #include "model/checks.hpp"
-#include "model/names.hpp"
 
 #include <cstddef>
 #include <cstdint>
