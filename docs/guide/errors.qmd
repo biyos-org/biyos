@@ -4,15 +4,18 @@ Every C call that acts or can fail returns a status of type `BIYOS_status`, an `
 
 ## Codes and who is at fault {#sec-errors-codes}
 
-The hundreds of an error code say who is at fault:
+The hundreds of an error code say who is at fault: −100 to −199 the caller, −200 to −299 the model, −300 to −399 user code, such as a callback, −400 to −499 resources and −500 to −599 biyos itself. No code exists yet in the user code group.
 
-| Codes | At fault | Today |
+| Code | Value | At fault |
 | --- | --- | --- |
-| −100 to −199 | the caller | `BIYOS_ERR_BADARG`, −100 |
-| −200 to −299 | the model | `BIYOS_ERR_BADFILE`, −200, `BIYOS_ERR_UNSUPPORTED`, −201, `BIYOS_ERR_BUSY`, −202, `BIYOS_ERR_INUSE`, −203 |
-| −300 to −399 | user code, such as a callback | none yet |
-| −400 to −499 | resources | `BIYOS_ERR_NOMEMORY`, −400, `BIYOS_ERR_FILEIO`, −401 |
-| −500 to −599 | biyos itself | `BIYOS_ERR_INTERNAL`, −500 |
+| `BIYOS_ERR_BADARG` | −100 | the caller |
+| `BIYOS_ERR_BADFILE` | −200 | the model |
+| `BIYOS_ERR_UNSUPPORTED` | −201 | the model |
+| `BIYOS_ERR_BUSY` | −202 | the model |
+| `BIYOS_ERR_INUSE` | −203 | the model |
+| `BIYOS_ERR_NOMEMORY` | −400 | resources |
+| `BIYOS_ERR_FILEIO` | −401 | resources |
+| `BIYOS_ERR_INTERNAL` | −500 | biyos itself |
 
 A new code joins its group and keeps its number for good, so test a group by range rather than by value:
 
