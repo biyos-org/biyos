@@ -1,7 +1,7 @@
 #include "core/events/format.hpp"
 
 #include "core/events/events.hpp"
-#include "core/utf8.hpp"
+#include "core/text/utf8.hpp"
 
 #include <array>
 #include <charconv>

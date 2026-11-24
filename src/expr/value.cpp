@@ -2,7 +2,7 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "core/text.hpp"
+#include "core/text/text.hpp"
 #include "expr/frame.hpp"
 #include "expr/node.hpp"
 #include "expr/partials.hpp"

@@ -17,13 +17,13 @@ add_library(biyos_internal STATIC
     core/options/text.cpp
     core/options/value.cpp
     core/status.cpp
-    core/strings.cpp
+    core/text/strings.cpp
+    core/text/utf8.cpp
     core/thread.cpp
     core/timing/clock.cpp
     core/timing/deadline.cpp
     core/timing/timer.cpp
     core/tolerances.cpp
-    core/utf8.cpp
     core/version.cpp
     expr/arithmetic.cpp
     expr/bends.cpp

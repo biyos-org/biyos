@@ -1,4 +1,4 @@
-#include "core/strings.hpp"
+#include "core/text/strings.hpp"
 
 #include <string>
 #include <string_view>

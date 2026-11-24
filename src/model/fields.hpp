@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/index.hpp"
-#include "core/text.hpp"
+#include "core/text/text.hpp"
 
 #include <initializer_list>
 #include <string>

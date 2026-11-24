@@ -2,7 +2,7 @@
 
 #include "core/env.hpp"
 #include "core/events/events.hpp"
-#include "core/name.hpp"
+#include "core/text/name.hpp"
 #include "core/timing/clock.hpp"
 
 #include <chrono>

@@ -3,7 +3,7 @@
 #include "biyos/biyos.h"
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "core/text.hpp"
+#include "core/text/text.hpp"
 #include "expr/builder.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"

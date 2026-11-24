@@ -1,7 +1,7 @@
 #pragma once
 
 #include "biyos/biyos.h"
-#include "core/strings.hpp"
+#include "core/text/strings.hpp"
 #include "core/version.hpp"
 
 #include <cstdint>

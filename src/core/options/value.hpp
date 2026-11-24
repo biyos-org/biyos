@@ -3,7 +3,7 @@
 #include "core/events/events.hpp"
 #include "core/events/hooks.hpp"
 #include "core/options/options.hpp"
-#include "core/strings.hpp"
+#include "core/text/strings.hpp"
 
 #include <span>
 #include <string_view>

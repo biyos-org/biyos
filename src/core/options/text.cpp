@@ -1,6 +1,6 @@
 #include "core/options/text.hpp"
 
-#include "core/text.hpp"
+#include "core/text/text.hpp"
 
 #include <bit>
 #include <span>

@@ -5,7 +5,7 @@
 #include "core/env.hpp"
 #include "core/index.hpp"
 #include "core/options/settings.hpp"
-#include "core/text.hpp"
+#include "core/text/text.hpp"
 #include "expr/terms.hpp"
 #include "io/files.hpp"
 #include "model/compare.hpp"
