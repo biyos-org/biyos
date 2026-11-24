@@ -1,6 +1,6 @@
 #pragma once
 
-#include <limits>
+#include "core/numeric/limits.hpp"
 
 namespace biyos
 {
@@ -25,8 +25,6 @@ class Interval
     constexpr double upper() const noexcept { return upper_; }
 
   private:
-    static constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
     static constexpr bool holds_reals(double lower, double upper) noexcept
     {
         return lower <= upper && lower < kInfinity && upper > -kInfinity;

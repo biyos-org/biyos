@@ -1,12 +1,12 @@
 #include "io/draft/draft.hpp"
 
 #include "core/index.hpp"
+#include "core/numeric/limits.hpp"
 #include "expr/forms/terms.hpp"
 #include "model/model.hpp"
 
 #include <cmath>
 #include <cstddef>
-#include <limits>
 #include <numeric>
 #include <optional>
 #include <span>
@@ -16,13 +16,6 @@
 
 namespace biyos
 {
-
-namespace
-{
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
-}
 
 VariableKind kind_of(const DraftColumn &column) noexcept
 {

@@ -2,6 +2,7 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
 #include "io/draft/draft.hpp"
@@ -10,7 +11,6 @@
 #include "model/model.hpp"
 
 #include <cmath>
-#include <limits>
 #include <optional>
 #include <string>
 #include <vector>
@@ -20,9 +20,6 @@ namespace biyos
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
 [[noreturn]] void refuse_bounds(Index constraint, double lower, double upper)
 {
     const std::string bounds = "[" + text_of(lower) + ", " + text_of(upper) + "]";

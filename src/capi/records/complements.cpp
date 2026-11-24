@@ -5,10 +5,10 @@
 #include "capi/model/selection.hpp"
 #include "capi/model/tolerances.hpp"
 #include "core/index.hpp"
+#include "core/numeric/limits.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
-#include <limits>
 #include <vector>
 
 using biyos::Family;
@@ -26,9 +26,6 @@ using biyos::capi::writable;
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
 struct Fields
 {
     const int *functions = nullptr;
@@ -79,7 +76,7 @@ void add_complements(BIYOS_model &model, int n, const Fields &fields, int *start
     const biyos::Complement nonnegative{
         .function = 0,
         .lower = 0.0,
-        .upper = kInfinity,
+        .upper = biyos::kInfinity,
         .multiplier = 0,
     };
     std::vector<biyos::Complement> added;
