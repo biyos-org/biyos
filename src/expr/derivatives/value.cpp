@@ -270,6 +270,26 @@ void check_point(const Tape &tape, std::span<const double> point, std::size_t la
     }
 }
 
+void check_seeds(std::span<const Index> variables, std::size_t lanes, std::size_t size)
+{
+    if (variables.size() > lanes)
+    {
+        refuse("variables", text_of(variables.size()) + " for " + text_of(lanes) + " lanes");
+    }
+    if (size % lanes != 0)
+    {
+        refuse("directions",
+               "size " + text_of(size) + " is not a multiple of " + text_of(lanes) + " lanes");
+    }
+    for (const Index variable : variables)
+    {
+        if (variable < 0 || static_cast<std::size_t>(variable) >= size / lanes)
+        {
+            refuse("variables", "variable " + text_of(variable) + " outside the directions");
+        }
+    }
+}
+
 }
 
 Workspace::Workspace(const Tape &tape, std::size_t count)
@@ -364,6 +384,31 @@ void forward(const Tape &tape,
         forward(blocks[k], point, workspace);
         const std::span<double> outputs = k < prepass ? std::span(workspace.shared) : values;
         store(blocks[k], workspace, outputs);
+    }
+}
+
+void broadcast(std::span<const double> point, std::size_t lanes, std::span<double> points)
+{
+    if (points.size() != point.size() * lanes_of(lanes))
+    {
+        const std::string size = "size " + text_of(points.size());
+        refuse("points", size + ", not the point size " + text_of(point.size()) + in_lanes(lanes));
+    }
+    for (std::size_t k = 0; k < point.size(); ++k)
+    {
+        std::ranges::fill(row(points, k, lanes), point[k]);
+    }
+}
+
+void seed_directions(std::span<const Index> variables,
+                     std::size_t lanes,
+                     std::span<double> directions)
+{
+    check_seeds(variables, lanes_of(lanes), directions.size());
+    std::ranges::fill(directions, 0.0);
+    for (std::size_t l = 0; l < variables.size(); ++l)
+    {
+        directions[static_cast<std::size_t>(variables[l]) * lanes + l] = 1.0;
     }
 }
 

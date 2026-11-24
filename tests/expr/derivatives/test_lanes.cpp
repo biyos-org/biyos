@@ -28,6 +28,7 @@ namespace
 
 using biyos::Adjoints;
 using biyos::Graph;
+using biyos::Index;
 using biyos::is_zero;
 using biyos::Offset;
 using biyos::Operator;
@@ -38,6 +39,7 @@ using biyos::test::gradient_of;
 using biyos::test::jacobian_of;
 using biyos::test::kBudgets;
 using biyos::test::kRoots;
+using biyos::test::kVariables;
 using biyos::test::listed;
 using biyos::test::picks;
 using biyos::test::Random;
@@ -219,7 +221,7 @@ Points special_points(std::size_t lanes)
     Points points(lanes);
     for (std::size_t l = 0; l < lanes; ++l)
     {
-        for (std::size_t k = 0; k < static_cast<std::size_t>(biyos::test::kVariables); ++k)
+        for (std::size_t k = 0; k < static_cast<std::size_t>(kVariables); ++k)
         {
             points[l].push_back(kSpecial[(l + 3 * k * (l % 2)) % kSpecial.size()]);
         }
@@ -260,6 +262,60 @@ void run_weighted(const Sweep &call)
 std::string refused(void (*sweep)(const Sweep &), const Sweep &call)
 {
     return refusal([&] { sweep(call); });
+}
+
+constexpr double kStep = 0x1p-10;
+
+std::vector<double> stepped(const std::vector<double> &point,
+                            std::span<const double> directions,
+                            std::size_t lanes)
+{
+    std::vector<double> points(point.size() * lanes);
+    biyos::broadcast(point, lanes, points);
+    for (std::size_t k = 0; k < points.size(); ++k)
+    {
+        points[k] += kStep * directions[k];
+    }
+    return points;
+}
+
+std::vector<double> zeros()
+{
+    return std::vector<double>(static_cast<std::size_t>(kVariables), 0.0);
+}
+
+std::vector<double> unit(Index variable)
+{
+    std::vector<double> direction = zeros();
+    direction[static_cast<std::size_t>(variable)] = 1.0;
+    return direction;
+}
+
+void expect_seeded(const Tape &tape, Random &random, std::size_t lanes)
+{
+    constexpr std::array<Index, 4> kOrder{2, 0, 3, 1};
+    const std::size_t seeded = (std::min)(lanes, kOrder.size());
+    const std::span<const Index> variables = std::span(kOrder).first(seeded);
+    std::vector<double> directions(static_cast<std::size_t>(kVariables) * lanes, 0.5);
+    biyos::seed_directions(variables, lanes, directions);
+    const std::vector<double> point = random_point(random);
+    Workspace workspace(tape, lanes);
+    std::vector<double> values(at(tape.roots()) * lanes);
+    biyos::forward(tape, stepped(point, directions, lanes), workspace, values);
+    for (std::size_t l = 0; l < lanes; ++l)
+    {
+        SCOPED_TRACE(l);
+        const std::vector<double> mine = lane(directions, l, lanes);
+        expect_bits(mine, l < seeded ? unit(variables[l]) : zeros());
+        expect_bits(lane(values, l, lanes), values_of(tape, stepped(point, mine, 1)));
+    }
+}
+
+std::string seed_refusal(std::span<const Index> variables,
+                         std::size_t lanes,
+                         std::span<double> directions)
+{
+    return refusal([&] { biyos::seed_directions(variables, lanes, directions); });
 }
 
 Tape shared_tape(Graph &graph)
@@ -486,4 +542,49 @@ TEST(LaneTest, Mismatch)
     workspace = Workspace(tape, 3);
     workspace.spare.pop_back();
     EXPECT_EQ(refused(run_jacobian, sweep), "invalid argument: workspace: " + other);
+}
+
+TEST(LaneTest, Directions)
+{
+    for (std::uint64_t seed = 1; seed <= 20; ++seed)
+    {
+        SCOPED_TRACE(seed);
+        Random random(seed);
+        const Graph graph = random_graph(random);
+        const std::vector<Offset> roots = picks(random, graph, kRoots);
+        const Tape tape(graph, roots, kBudgets[random.below(kBudgets.size())]);
+        for (const std::size_t lanes : kLanes)
+        {
+            SCOPED_TRACE(lanes);
+            expect_seeded(tape, random, lanes);
+        }
+    }
+}
+
+TEST(LaneTest, Seeds)
+{
+    const std::array<Index, 2> variables{1, 0};
+    std::vector<double> directions(6);
+    biyos::seed_directions(variables, 3, directions);
+    expect_bits(directions, std::vector{0.0, 1.0, 0.0, 1.0, 0.0, 0.0});
+    biyos::seed_directions({}, 3, directions);
+    expect_bits(directions, std::vector(6, 0.0));
+    EXPECT_EQ(seed_refusal(variables, 1, directions), "invalid argument: variables: 2 for 1 lanes");
+    EXPECT_EQ(seed_refusal(variables, 4, directions),
+              "invalid argument: directions: size 6 is not a multiple of 4 lanes");
+    const std::array<Index, 2> outside{0, 2};
+    EXPECT_EQ(seed_refusal(outside, 3, directions),
+              "invalid argument: variables: variable 2 outside the directions");
+    const std::array<Index, 1> negative{-1};
+    EXPECT_EQ(seed_refusal(negative, 3, directions),
+              "invalid argument: variables: variable -1 outside the directions");
+    EXPECT_EQ(seed_refusal(variables, 0, directions), "invalid argument: lanes: zero");
+    const std::array point{0.25, 0.5};
+    std::vector<double> points(6);
+    biyos::broadcast(point, 3, points);
+    expect_bits(points, std::vector{0.25, 0.25, 0.25, 0.5, 0.5, 0.5});
+    EXPECT_EQ(refusal([&] { biyos::broadcast(point, 2, points); }),
+              "invalid argument: points: size 6, not the point size 2 in 2 lanes");
+    EXPECT_EQ(refusal([&] { biyos::broadcast(point, 0, points); }),
+              "invalid argument: lanes: zero");
 }

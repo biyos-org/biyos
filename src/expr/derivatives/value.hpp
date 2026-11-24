@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/index.hpp"
 #include "expr/tape/tape.hpp"
 
 #include <cstddef>
@@ -35,5 +36,9 @@ void forward(const Tape &tape,
              std::span<const double> point,
              Workspace &workspace,
              std::span<double> values);
+void broadcast(std::span<const double> point, std::size_t lanes, std::span<double> points);
+void seed_directions(std::span<const Index> variables,
+                     std::size_t lanes,
+                     std::span<double> directions);
 
 }
