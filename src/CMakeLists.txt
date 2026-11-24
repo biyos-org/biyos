@@ -81,33 +81,33 @@ add_library(biyos_internal STATIC
     model/callbacks.cpp
     model/checks.cpp
     model/compare.cpp
-    model/complements.cpp
     model/compressed.cpp
-    model/cones.cpp
-    model/constraints.cpp
     model/expressions.cpp
     model/fields.cpp
     model/functions.cpp
-    model/indicators.cpp
     model/match.cpp
     model/merge.cpp
     model/model.cpp
     model/names.cpp
     model/naming.cpp
     model/nodes.cpp
-    model/objectives.cpp
     model/overrides.cpp
     model/pairs.cpp
     model/patterns.cpp
     model/postfix.cpp
     model/quadratic.cpp
+    model/records/complements.cpp
+    model/records/cones.cpp
+    model/records/constraints.cpp
+    model/records/indicators.cpp
+    model/records/objectives.cpp
+    model/records/sos.cpp
+    model/records/variables.cpp
     model/renumber.cpp
-    model/sos.cpp
     model/terms.cpp
     model/tolerances.cpp
     model/transpose.cpp
-    model/users.cpp
-    model/variables.cpp)
+    model/users.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
