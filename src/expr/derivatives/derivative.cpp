@@ -1,12 +1,12 @@
-#include "expr/derivative.hpp"
+#include "expr/derivatives/derivative.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text/text.hpp"
-#include "expr/reverse.hpp"
+#include "expr/derivatives/reverse.hpp"
+#include "expr/derivatives/value.hpp"
 #include "expr/sparsity/reach.hpp"
 #include "expr/tape/tape.hpp"
-#include "expr/value.hpp"
 
 #include <algorithm>
 #include <cstddef>

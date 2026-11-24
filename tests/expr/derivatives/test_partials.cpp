@@ -1,9 +1,9 @@
 #include "core/index.hpp"
+#include "expr/derivatives/partials.hpp"
+#include "expr/derivatives/value.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/partials.hpp"
 #include "expr/tape/tape.hpp"
-#include "expr/value.hpp"
 #include "graphs.hpp"
 
 #include <gtest/gtest.h>

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "expr/reverse.hpp"
+#include "expr/derivatives/reverse.hpp"
+#include "expr/derivatives/value.hpp"
 #include "expr/tape/tape.hpp"
-#include "expr/value.hpp"
 
 #include <span>
 

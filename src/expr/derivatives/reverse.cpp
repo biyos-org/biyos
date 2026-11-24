@@ -1,11 +1,11 @@
-#include "expr/reverse.hpp"
+#include "expr/derivatives/reverse.hpp"
 
 #include "core/index.hpp"
+#include "expr/derivatives/partials.hpp"
+#include "expr/derivatives/value.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/partials.hpp"
 #include "expr/tape/frame.hpp"
 #include "expr/tape/tape.hpp"
-#include "expr/value.hpp"
 
 #include <cmath>
 #include <cstddef>

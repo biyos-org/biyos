@@ -29,7 +29,10 @@ add_library(biyos_internal STATIC
     expr/bends.cpp
     expr/canonical.cpp
     expr/curvature.cpp
-    expr/derivative.cpp
+    expr/derivatives/derivative.cpp
+    expr/derivatives/partials.cpp
+    expr/derivatives/reverse.cpp
+    expr/derivatives/value.cpp
     expr/elementary.cpp
     expr/enclosure.cpp
     expr/exponents.cpp
@@ -40,10 +43,8 @@ add_library(biyos_internal STATIC
     expr/graph/parents.cpp
     expr/graph/uses.cpp
     expr/interval.cpp
-    expr/partials.cpp
     expr/periodic.cpp
     expr/powers.cpp
-    expr/reverse.cpp
     expr/rounding.cpp
     expr/shape.cpp
     expr/sparsity/memo.cpp
@@ -55,7 +56,6 @@ add_library(biyos_internal STATIC
     expr/tape/reads.cpp
     expr/tape/tape.cpp
     expr/terms.cpp
-    expr/value.cpp
     expr/waves.cpp
     io/bounds.cpp
     io/column_shape.cpp

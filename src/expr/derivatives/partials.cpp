@@ -1,4 +1,4 @@
-#include "expr/partials.hpp"
+#include "expr/derivatives/partials.hpp"
 
 #include "core/numeric/zero.hpp"
 #include "expr/graph/node.hpp"

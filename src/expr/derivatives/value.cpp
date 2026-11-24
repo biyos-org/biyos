@@ -1,10 +1,10 @@
-#include "expr/value.hpp"
+#include "expr/derivatives/value.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text/text.hpp"
+#include "expr/derivatives/partials.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/partials.hpp"
 #include "expr/tape/frame.hpp"
 #include "expr/tape/tape.hpp"
 
