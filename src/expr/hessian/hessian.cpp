@@ -122,6 +122,7 @@ Hessian::Hessian(const Graph &graph,
 {
     const std::vector<std::size_t> widths = widths_of(lanes_of(lanes));
     std::vector<bool> used(widths.size(), false);
+    used.front() = true;
     for (Offset e = 0; e < tape_.roots(); ++e)
     {
         classes_.push_back(class_of(widths, variables_of(tape_.pattern(), e).size()));
@@ -189,6 +190,27 @@ void Hessian::add_block(Offset e, double scale, std::span<double> out) noexcept
     }
 }
 
+void Hessian::add_product(Offset e,
+                          double scale,
+                          std::span<const double> direction,
+                          std::span<double> out) noexcept
+{
+    Pass &pass = passes_.front();
+    const std::span<const Index> variables = variables_of(tape_.pattern(), e);
+    for (const Index variable : variables)
+    {
+        pass.seeds[static_cast<std::size_t>(variable)] =
+            direction[static_cast<std::size_t>(variable)];
+    }
+    sweep(tape_, e, pass);
+    for (const Index variable : variables)
+    {
+        const auto k = static_cast<std::size_t>(variable);
+        out[k] += scale * std::exchange(pass.second.gradient[k], 0.0);
+        pass.seeds[k] = 0.0;
+    }
+}
+
 void Hessian::values(std::span<const double> point,
                      std::span<const double> weights,
                      std::span<double> out)
@@ -207,6 +229,27 @@ void Hessian::values(std::span<const double> point,
         if (!is_zero(scale))
         {
             add_block(e, scale, out);
+        }
+    }
+}
+
+void Hessian::product(std::span<const double> point,
+                      std::span<const double> weights,
+                      std::span<const double> direction,
+                      std::span<double> out)
+{
+    check(point, weights);
+    check_size("direction", direction.size(), point.size(), "the point size");
+    check_size("out", out.size(), point.size(), "the point size");
+    std::ranges::fill(out, 0.0);
+    Pass &pass = passes_.front();
+    broadcast(point.first(at(tape_.variables())), pass.lanes, pass.points);
+    for (Offset e = 0; e < tape_.roots(); ++e)
+    {
+        const double scale = weights[at(elements_.roots[at(e)])] * elements_.weights[at(e)];
+        if (!is_zero(scale))
+        {
+            add_product(e, scale, direction, out);
         }
     }
 }

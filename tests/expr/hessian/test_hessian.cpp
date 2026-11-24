@@ -62,6 +62,16 @@ Values values_of(Hessian &hessian, std::span<const double> point, std::span<cons
     return out;
 }
 
+Values product_of(Hessian &hessian,
+                  std::span<const double> point,
+                  std::span<const double> weights,
+                  std::span<const double> direction)
+{
+    Values out(point.size(), -1.0);
+    hessian.product(point, weights, direction, out);
+    return out;
+}
+
 Rows dense(const Lower &lower, const Values &out, std::size_t size)
 {
     Rows rows(size, Values(size, 0.0));
@@ -129,6 +139,28 @@ std::size_t check_differences(const Graph &graph,
                 EXPECT_NEAR(rows[i][j], fine[j][i], tolerance(fine[j][i]));
                 ++checked;
             }
+        }
+    }
+    return checked;
+}
+
+std::size_t check_product(const Rows &rows, std::span<const double> direction, const Values &found)
+{
+    std::size_t checked = 0;
+    for (std::size_t i = 0; i < rows.size(); ++i)
+    {
+        double wanted = 0.0;
+        double size = 0.0;
+        for (std::size_t j = 0; j < rows.size(); ++j)
+        {
+            wanted += rows[i][j] * direction[j];
+            size += std::fabs(rows[i][j] * direction[j]);
+        }
+        if (std::isfinite(wanted))
+        {
+            SCOPED_TRACE(i);
+            EXPECT_NEAR(found[i], wanted, kBound * (1.0 + size));
+            ++checked;
         }
     }
     return checked;
@@ -380,6 +412,48 @@ TEST(HessianTest, Chunks)
     EXPECT_EQ(check_differences(graph, roots, point, weights, rows), 49U);
 }
 
+TEST(HessianTest, Product)
+{
+    std::size_t checked = 0;
+    std::size_t entries = 0;
+    for (std::uint64_t seed = 1; seed <= 30; ++seed)
+    {
+        SCOPED_TRACE(seed);
+        Random random(seed);
+        const Graph graph = random_graph(random);
+        const std::vector<Offset> roots = picks(random, graph, kPicked);
+        const Offset budget = kBudgets[random.below(kBudgets.size())];
+        Hessian hessian(graph, roots, {}, biyos::kLanes, budget);
+        const Values point = interior_point(random);
+        const Values weights = random_weights(random, roots.size());
+        const Values direction = random_weights(random, point.size());
+        const Rows rows =
+            dense(hessian.pattern(), values_of(hessian, point, weights), point.size());
+        checked += check_product(rows, direction, product_of(hessian, point, weights, direction));
+        entries += point.size();
+    }
+    EXPECT_GT(2 * checked, entries);
+}
+
+TEST(HessianTest, Direction)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 7);
+    const std::array roots{wide(graph, x), unary(graph, Operator::Cos, x[3])};
+    const Values point{0.9, 1.1, 0.8, 1.2, 0.7, 1.3, 1.05, 4.0};
+    const Values direction{0.5, -1.0, 0.25, 2.0, -0.75, 1.5, -0.5, 3.0};
+    const std::array weights{0.8, -1.5};
+    for (const std::size_t lanes : {1U, 2U, 8U})
+    {
+        SCOPED_TRACE(lanes);
+        Hessian hessian(graph, roots, {}, lanes);
+        const Rows rows = dense(hessian.pattern(), values_of(hessian, point, weights), 8);
+        const Values found = product_of(hessian, point, weights, direction);
+        EXPECT_EQ(check_product(rows, direction, found), 8U);
+        EXPECT_EQ(std::bit_cast<std::uint64_t>(found[7]), std::bit_cast<std::uint64_t>(0.0));
+    }
+}
+
 TEST(HessianTest, Declared)
 {
     Graph graph;
@@ -433,6 +507,11 @@ TEST(HessianTest, Refused)
               "invalid argument: weights: size 2, not the root count 1");
     EXPECT_EQ(refusal([&] { hessian.values(point, weights, std::span(out).first(2)); }),
               "invalid argument: out: size 2, not the pattern size 3");
+    EXPECT_EQ(
+        refusal([&] { hessian.product(point, weights, std::array{1.0}, std::span(out).first(2)); }),
+        "invalid argument: direction: size 1, not the point size 2");
+    EXPECT_EQ(refusal([&] { hessian.product(point, weights, point, std::span(out).first(1)); }),
+              "invalid argument: out: size 1, not the point size 2");
 }
 
 TEST(LaneTest, Widest)

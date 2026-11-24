@@ -29,10 +29,18 @@ class Hessian
     void values(std::span<const double> point,
                 std::span<const double> weights,
                 std::span<double> out);
+    void product(std::span<const double> point,
+                 std::span<const double> weights,
+                 std::span<const double> direction,
+                 std::span<double> out);
 
   private:
     void check(std::span<const double> point, std::span<const double> weights) const;
     void add_block(Offset e, double scale, std::span<double> out) noexcept;
+    void add_product(Offset e,
+                     double scale,
+                     std::span<const double> direction,
+                     std::span<double> out) noexcept;
 
     std::size_t roots_;
     Elements elements_;
