@@ -23,6 +23,9 @@ extern char request_w[offsetof(BIYOS_cbreq, w) == 3 * sizeof(void *) + 8 ? 1 : -
 extern char request_v[offsetof(BIYOS_cbreq, v) == 4 * sizeof(void *) + 8 ? 1 : -1];
 extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 
+#if !defined(BIYOS_INF)
+#error "BIYOS_INF must be defined"
+#endif
 #if !defined(BIYOS_OK) || BIYOS_OK != 0
 #error "BIYOS_OK must be zero"
 #endif
@@ -770,6 +773,10 @@ int main(void)
     BIYOS_index variables = 0;
     BIYOS_version(&major, &minor, &patch);
     if (major < 0 || minor < 0 || patch < 0)
+    {
+        status = BIYOS_ERR_INTERNAL;
+    }
+    if (!isinf(BIYOS_INF) || BIYOS_INF < 0)
     {
         status = BIYOS_ERR_INTERNAL;
     }

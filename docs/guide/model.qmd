@@ -48,7 +48,7 @@ Every kind but continuous is discrete. `BIYOS_addvar` adds variables after the l
 ```{.c file="examples/c/model.c" item="variables"}
 ```
 
-A bound may be `INFINITY` or `-INFINITY` from `<math.h>`, which leaves that side unbounded. No finite bound is read as infinite, however large. A lower bound of `INFINITY`, an upper bound of `-INFINITY` and NaN are refused, and so is a bound outside the widest bounds of the kind: 0 and 1 for a binary variable, infinite for every other kind. Any other pair is kept as given, a lower bound above the upper one included.
+A bound may be `BIYOS_INF` or `-BIYOS_INF`, which leaves that side unbounded. No finite bound is read as infinite, however large. A lower bound of `BIYOS_INF`, an upper bound of `-BIYOS_INF` and NaN are refused, and so is a bound outside the widest bounds of the kind: 0 and 1 for a binary variable, infinite for every other kind. Any other pair is kept as given, a lower bound above the upper one included.
 
 A null `knd` makes every new variable continuous, and a null `lb` or `ub` gives each the widest bound of its kind. The last argument, here `NULL`, can receive the index of the first new variable, which is the number of variables held before the call; the new variables follow it in order. Every call that adds items ends with this argument.
 
@@ -130,7 +130,7 @@ A constraint $l \le f_k(x) \le u$ bounds one function of the table. `BIYOS_addco
 ```{.c file="examples/c/model.c" item="constraints"}
 ```
 
-Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A constraint whose bounds are both infinite is free. The bounds follow the rule of a continuous variable's: an infinite bound leaves its side open, and a lower bound of `INFINITY`, an upper bound of `-INFINITY` and NaN are refused. A null `lb` or `ub` leaves that side of every new constraint unbounded. `BIYOS_setconbndsp` changes the bounds and keeps the function, and `BIYOS_getconbndsp` reads the bounds of a list of constraints.
+Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A constraint whose bounds are both infinite is free. The bounds follow the rule of a continuous variable's: an infinite bound leaves its side open, and a lower bound of `BIYOS_INF`, an upper bound of `-BIYOS_INF` and NaN are refused. A null `lb` or `ub` leaves that side of every new constraint unbounded. `BIYOS_setconbndsp` changes the bounds and keeps the function, and `BIYOS_getconbndsp` reads the bounds of a list of constraints.
 
 `BIYOS_setconnamesp` names constraints, and `BIYOS_getconidx` finds them by name (@sec-model-names).
 
@@ -149,7 +149,7 @@ $$
 
 where $P$ holds the objectives of that priority, each with its function $f_k$, sense $s$ and weight $w$. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it: the absolute tolerance in the units of its function, the relative one as a fraction of the size of that optimum. Objectives of different priorities are therefore optimized in sequence, and objectives of one priority are blended.
 
-A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. A null `sense` minimizes every new objective, a null `coef` gives each the weight 1, and a null `prio` gives each objective its index at the time it is added as its priority. So by default the objectives are optimized one after another in the order they are added, which is what this model asks for explicitly. Once an objective is deleted, a default priority can repeat one an earlier objective holds, and the two are blended.
+A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `BIYOS_INF` sets no limit. A null `sense` minimizes every new objective, a null `coef` gives each the weight 1, and a null `prio` gives each objective its index at the time it is added as its priority. So by default the objectives are optimized one after another in the order they are added, which is what this model asks for explicitly. Once an objective is deleted, a default priority can repeat one an earlier objective holds, and the two are blended.
 
 `BIYOS_setobjsensesp`, `BIYOS_setobjpriosp`, `BIYOS_setobjcoefsp` and `BIYOS_setobjtolsp` change one attribute of a list of objectives each, and `BIYOS_getobjsensesp`, `BIYOS_getobjpriosp`, `BIYOS_getobjcoefsp` and `BIYOS_getobjtolsp` read it back with the same arguments. `BIYOS_getobjrg` reads back what `BIYOS_addobj` takes, so a model is read whole with it and `BIYOS_getobjtolsp`.
 

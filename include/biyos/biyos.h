@@ -1,5 +1,6 @@
 #pragma once
 
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -38,6 +39,8 @@ typedef struct BIYOS_error
     const BIYOS_model *mdl;
     const char *msg;
 } BIYOS_error;
+
+#define BIYOS_INF INFINITY
 
 #define BIYOS_OK 0
 #define BIYOS_ERR_BADARG (-100)
