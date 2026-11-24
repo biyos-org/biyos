@@ -2,8 +2,8 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "core/room.hpp"
-#include "core/text.hpp"
+#include "core/memory/room.hpp"
+#include "core/text/text.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
 

@@ -2,9 +2,9 @@
 
 #include "core/env.hpp"
 #include "core/error.hpp"
-#include "core/lookup.hpp"
-#include "core/name.hpp"
-#include "core/options.hpp"
+#include "core/options/lookup.hpp"
+#include "core/options/options.hpp"
+#include "core/text/name.hpp"
 
 #include <concepts>
 #include <string_view>

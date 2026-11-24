@@ -114,17 +114,16 @@ target_include_directories(test_model PRIVATE model)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io
-    io/test_lines.cpp
     io/mps/test_faults.cpp
     io/mps/test_leftovers.cpp
     io/mps/test_mps.cpp
     io/mps/test_refusals.cpp
-    io/mps/test_write.cpp)
+    io/mps/test_write.cpp
+    io/test_lines.cpp)
 target_include_directories(test_io PRIVATE io/mps/utils)
 target_link_libraries(test_io PRIVATE biyos_internal)
 
 biyos_add_test(test_capi
-    capi/sample.cpp
     capi/env/test_env.cpp
     capi/env/test_firewall.cpp
     capi/env/test_interrupt.cpp
@@ -156,7 +155,8 @@ biyos_add_test(test_capi
     capi/records/test_indicators.cpp
     capi/records/test_objectives.cpp
     capi/records/test_ranges.cpp
-    capi/records/test_sos.cpp)
+    capi/records/test_sos.cpp
+    capi/sample.cpp)
 target_include_directories(test_capi PRIVATE capi)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 

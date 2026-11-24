@@ -1,7 +1,7 @@
 #pragma once
 
 #include "biyos/biyos.h"
-#include "core/events.hpp"
+#include "core/events/events.hpp"
 
 struct BIYOS_event
 {

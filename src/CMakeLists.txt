@@ -1,27 +1,29 @@
 add_library(biyos_internal STATIC
     core/check.cpp
-    core/clock.cpp
-    core/deadline.cpp
-    core/deliveries.cpp
     core/env.cpp
     core/error.cpp
-    core/event.cpp
-    core/events.cpp
-    core/format.cpp
-    core/hooks.cpp
-    core/lookup.cpp
-    core/option_lookup.cpp
-    core/option_table.cpp
-    core/option_text.cpp
-    core/option_value.cpp
-    core/options.cpp
-    core/settings.cpp
+    core/events/deliveries.cpp
+    core/events/event.cpp
+    core/events/events.cpp
+    core/events/format.cpp
+    core/events/hooks.cpp
+    core/events/records.cpp
+    core/memory/usage.cpp
+    core/numeric/tolerances.cpp
+    core/options/catalog.cpp
+    core/options/lookup.cpp
+    core/options/options.cpp
+    core/options/settings.cpp
+    core/options/table.cpp
+    core/options/text.cpp
+    core/options/value.cpp
     core/status.cpp
-    core/strings.cpp
-    core/timer.cpp
-    core/tolerances.cpp
-    core/usage.cpp
-    core/utf8.cpp
+    core/text/strings.cpp
+    core/text/utf8.cpp
+    core/thread.cpp
+    core/timing/clock.cpp
+    core/timing/deadline.cpp
+    core/timing/timer.cpp
     core/version.cpp
     expr/arithmetic.cpp
     expr/bends.cpp
@@ -105,9 +107,7 @@ add_library(biyos_internal STATIC
     model/tolerances.cpp
     model/transpose.cpp
     model/users.cpp
-    model/variables.cpp
-    core/thread.cpp
-    core/records.cpp)
+    model/variables.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

@@ -2,8 +2,8 @@
 
 #include "core/env.hpp"
 #include "core/error.hpp"
-#include "core/event.hpp"
-#include "core/text.hpp"
+#include "core/events/event.hpp"
+#include "core/text/text.hpp"
 #include "io/lines.hpp"
 
 #include <cstddef>

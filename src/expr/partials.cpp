@@ -1,6 +1,6 @@
 #include "expr/partials.hpp"
 
-#include "core/zero.hpp"
+#include "core/numeric/zero.hpp"
 #include "expr/frame.hpp"
 #include "expr/node.hpp"
 #include "expr/tape.hpp"

@@ -1,6 +1,6 @@
 #include "expr/exponents.hpp"
 
-#include "core/zero.hpp"
+#include "core/numeric/zero.hpp"
 #include "expr/bends.hpp"
 #include "expr/interval.hpp"
 #include "expr/shape.hpp"

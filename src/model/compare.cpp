@@ -1,7 +1,7 @@
 #include "model/compare.hpp"
 
 #include "core/index.hpp"
-#include "core/text.hpp"
+#include "core/text/text.hpp"
 #include "expr/terms.hpp"
 #include "model/callbacks.hpp"
 #include "model/compressed.hpp"

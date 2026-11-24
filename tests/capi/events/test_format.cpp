@@ -1,6 +1,6 @@
 #include "biyos/biyos.h"
 #include "capi/event.hpp"
-#include "core/events.hpp"
+#include "core/events/events.hpp"
 
 #include <gtest/gtest.h>
 

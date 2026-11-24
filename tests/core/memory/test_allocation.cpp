@@ -1,8 +1,8 @@
 #include "allocations.hpp"
-#include "core/clock.hpp"
 #include "core/env.hpp"
-#include "core/events.hpp"
-#include "core/timer.hpp"
+#include "core/events/events.hpp"
+#include "core/timing/clock.hpp"
+#include "core/timing/timer.hpp"
 #include "delivery.hpp"
 
 #include <gtest/gtest.h>

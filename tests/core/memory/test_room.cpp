@@ -1,4 +1,4 @@
-#include "core/room.hpp"
+#include "core/memory/room.hpp"
 
 #include <gtest/gtest.h>
 

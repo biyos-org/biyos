@@ -2,8 +2,8 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "core/text.hpp"
-#include "core/zero.hpp"
+#include "core/numeric/zero.hpp"
+#include "core/text/text.hpp"
 #include "io/draft.hpp"
 #include "io/identical.hpp"
 #include "model/checks.hpp"

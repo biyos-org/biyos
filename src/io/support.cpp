@@ -2,7 +2,7 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "core/text.hpp"
+#include "core/text/text.hpp"
 #include "io/identical.hpp"
 #include "model/checks.hpp"
 #include "model/model.hpp"

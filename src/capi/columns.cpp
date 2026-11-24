@@ -4,7 +4,7 @@
 #include "capi/entry.hpp"
 #include "capi/selection.hpp"
 #include "core/index.hpp"
-#include "core/timer.hpp"
+#include "core/timing/timer.hpp"
 #include "model/checks.hpp"
 #include "model/model.hpp"
 #include "model/transpose.hpp"

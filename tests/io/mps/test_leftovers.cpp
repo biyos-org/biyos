@@ -1,10 +1,10 @@
 #include "writable.hpp"
 
 #include "core/env.hpp"
-#include "core/event.hpp"
+#include "core/events/event.hpp"
 #include "core/index.hpp"
-#include "core/options.hpp"
-#include "core/settings.hpp"
+#include "core/options/options.hpp"
+#include "core/options/settings.hpp"
 #include "io/files.hpp"
 #include "model/model.hpp"
 

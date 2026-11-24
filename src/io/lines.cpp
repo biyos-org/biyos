@@ -1,7 +1,7 @@
 #include "io/lines.hpp"
 
 #include "core/error.hpp"
-#include "core/text.hpp"
+#include "core/text/text.hpp"
 
 #include <charconv>
 #include <cstddef>

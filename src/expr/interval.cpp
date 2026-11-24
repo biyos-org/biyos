@@ -1,6 +1,6 @@
 #include "expr/interval.hpp"
 
-#include "core/zero.hpp"
+#include "core/numeric/zero.hpp"
 #include "expr/rounding.hpp"
 
 #include <algorithm>

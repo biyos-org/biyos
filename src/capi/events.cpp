@@ -3,7 +3,7 @@
 #include "capi/entry.hpp"
 #include "capi/event.hpp"
 #include "core/env.hpp"
-#include "core/events.hpp"
+#include "core/events/events.hpp"
 
 #include <cstddef>
 #include <vector>

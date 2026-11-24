@@ -1,7 +1,7 @@
 #include "expr/graph.hpp"
 
 #include "core/index.hpp"
-#include "core/room.hpp"
+#include "core/memory/room.hpp"
 #include "expr/node.hpp"
 
 #include <bit>

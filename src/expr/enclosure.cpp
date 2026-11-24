@@ -2,7 +2,7 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "core/text.hpp"
+#include "core/text/text.hpp"
 #include "expr/elementary.hpp"
 #include "expr/graph.hpp"
 #include "expr/interval.hpp"

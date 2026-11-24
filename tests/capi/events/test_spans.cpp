@@ -1,7 +1,7 @@
 #include "biyos/biyos.h"
 #include "capi/entry.hpp"
-#include "core/clock.hpp"
 #include "core/env.hpp"
+#include "core/timing/clock.hpp"
 
 #include <gtest/gtest.h>
 

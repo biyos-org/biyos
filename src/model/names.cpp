@@ -2,8 +2,8 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "core/text.hpp"
-#include "core/utf8.hpp"
+#include "core/text/text.hpp"
+#include "core/text/utf8.hpp"
 #include "model/checks.hpp"
 #include "model/renumber.hpp"
 

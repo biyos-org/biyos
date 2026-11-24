@@ -2,7 +2,7 @@
 
 #include "core/env.hpp"
 #include "core/error.hpp"
-#include "core/event.hpp"
+#include "core/events/event.hpp"
 #include "core/index.hpp"
 #include "expr/terms.hpp"
 #include "io/mps.hpp"

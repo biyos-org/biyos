@@ -1,9 +1,9 @@
-#include "core/clock.hpp"
 #include "core/error.hpp"
-#include "core/events.hpp"
-#include "core/lookup.hpp"
-#include "core/options.hpp"
-#include "core/settings.hpp"
+#include "core/events/events.hpp"
+#include "core/options/lookup.hpp"
+#include "core/options/options.hpp"
+#include "core/options/settings.hpp"
+#include "core/timing/clock.hpp"
 #include "core/version.hpp"
 
 #include <gtest/gtest.h>
