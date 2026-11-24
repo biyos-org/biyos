@@ -342,8 +342,8 @@ TEST(MpsTest, Shared)
     EXPECT_EQ(back.objective(0).function, 0);
     EXPECT_EQ(back.constraint(0).function, 1);
     EXPECT_EQ(back.constraint(1).function, 2);
-    EXPECT_EQ(back.linear_terms(1, 1).size(), 2U);
-    EXPECT_EQ(back.linear_terms(2, 1).size(), 2U);
+    EXPECT_EQ(back.linear_terms(1, 2).size(), 2U);
+    EXPECT_EQ(back.linear_terms(2, 3).size(), 2U);
 }
 
 TEST(MpsTest, Goalless)
@@ -356,8 +356,9 @@ TEST(MpsTest, Goalless)
     const Model back = reread(free);
     ASSERT_EQ(back.n_objectives(), 1);
     EXPECT_EQ(*name_of(back, Family::Objective, 0), "OBJ");
-    EXPECT_TRUE(back.linear_terms(back.objective(0).function, 1).empty());
-    EXPECT_EQ(bits(back.constant(back.objective(0).function)), bits(0.0));
+    const auto function = back.objective(0).function;
+    EXPECT_TRUE(back.linear_terms(function, function + 1).empty());
+    EXPECT_EQ(bits(back.constant(function)), bits(0.0));
     EXPECT_EQ(back.n_constraints(), 1);
 }
 

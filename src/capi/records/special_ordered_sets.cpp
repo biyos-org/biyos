@@ -114,7 +114,7 @@ std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> sos
     std::size_t count = 0;
     for (const biyos::Index index : soss)
     {
-        count += core.members(index, 1).size();
+        count += core.members(index, index + 1).size();
     }
     return count;
 }
@@ -132,7 +132,7 @@ std::size_t write_members(const biyos::Model &core,
                           std::size_t k,
                           const Outputs &out)
 {
-    for (const Member &member : core.members(sos, 1))
+    for (const Member &member : core.members(sos, sos + 1))
     {
         put(out.variables, k, member.variable);
         put(out.weights, k, member.weight);

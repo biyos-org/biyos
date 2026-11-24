@@ -22,12 +22,11 @@ constexpr std::string_view kNoun = "function";
 
 }
 
-std::span<const QuadraticTerm> Model::quadratic_terms(Index start, Index size) const
+std::span<const QuadraticTerm> Model::quadratic_terms(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_functions());
+    check_span(kNoun, start, stop, n_functions());
     const auto begin = static_cast<std::size_t>(quadratic_begin(static_cast<std::size_t>(start)));
-    const auto last = static_cast<std::size_t>(start + size);
-    const auto end = static_cast<std::size_t>(quadratic_begin(last));
+    const auto end = static_cast<std::size_t>(quadratic_begin(static_cast<std::size_t>(stop)));
     return std::span(quadratic_terms_).subspan(begin, end - begin);
 }
 

@@ -9,7 +9,7 @@
 namespace biyos
 {
 
-std::vector<Offset> variable_starts(const Model &model, Index start, Index size);
+std::vector<Offset> variable_starts(const Model &model, Index start, Index stop);
 void variable_terms(const Model &model,
                     Index start,
                     std::span<const Offset> starts,

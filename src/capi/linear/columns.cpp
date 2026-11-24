@@ -21,7 +21,6 @@ using biyos::capi::check_capacity;
 using biyos::capi::Coordinates;
 using biyos::capi::given;
 using biyos::capi::guarded;
-using biyos::capi::length_of;
 using biyos::capi::List;
 using biyos::capi::Range;
 using biyos::capi::require;
@@ -119,8 +118,8 @@ void get_ranged(const BIYOS_model &model,
                 double *values)
 {
     const biyos::EntryTimer timer(model.handle.env(), "model", "columns");
-    const biyos::Index n = length_of(model.core, Family::Variable, range);
-    const std::vector<biyos::Offset> found = biyos::variable_starts(model.core, range.start, n);
+    const std::vector<biyos::Offset> found =
+        biyos::variable_starts(model.core, range.start, range.stop);
     const auto count = static_cast<std::size_t>(found.back());
     check_capacity(capacity, count);
     biyos::variable_terms(model.core,

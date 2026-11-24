@@ -253,17 +253,17 @@ TEST(ComplementTest, ReadRange)
         pair(1, 2, 4.0, 5.0),
     };
     model.add_complements(added);
-    const std::span<const Complement> middle = model.complements(1, 2);
+    const std::span<const Complement> middle = model.complements(1, 3);
     ASSERT_EQ(middle.size(), 2U);
     expect_complement(middle[0], added[1]);
     expect_complement(middle[1], added[2]);
-    EXPECT_TRUE(model.complements(3, 0).empty());
-    EXPECT_EQ(refusal([&] { model.complements(-1, 1); }),
+    EXPECT_TRUE(model.complements(3, 3).empty());
+    EXPECT_EQ(refusal([&] { model.complements(-1, 0); }),
               "invalid argument: complement -1: unknown");
-    EXPECT_EQ(refusal([&] { model.complements(1, 3); }), "invalid argument: complement 3: unknown");
-    EXPECT_EQ(refusal([&] { model.complements(4, 0); }), "invalid argument: complement 4: unknown");
+    EXPECT_EQ(refusal([&] { model.complements(1, 4); }), "invalid argument: complement 3: unknown");
+    EXPECT_EQ(refusal([&] { model.complements(4, 4); }), "invalid argument: complement 4: unknown");
     EXPECT_EQ(refusal([&] { model.complements(0, -1); }),
-              "invalid argument: argument 'n': -1 is negative");
+              "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(ComplementTest, Mismatch)

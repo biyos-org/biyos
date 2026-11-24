@@ -226,16 +226,16 @@ TEST(VariableTest, ReadRange)
     Model model;
     model.add_variables(added);
     EXPECT_EQ(model.variables(0, 3).size(), 3U);
-    EXPECT_TRUE(model.variables(3, 0).empty());
-    const std::span<const Variable> middle = model.variables(1, 2);
+    EXPECT_TRUE(model.variables(3, 3).empty());
+    const std::span<const Variable> middle = model.variables(1, 3);
     ASSERT_EQ(middle.size(), 2U);
     expect_same(middle[0], added[1]);
     expect_same(middle[1], added[2]);
-    EXPECT_EQ(refusal([&] { model.variables(-1, 1); }), "invalid argument: variable -1: unknown");
-    EXPECT_EQ(refusal([&] { model.variables(1, 3); }), "invalid argument: variable 3: unknown");
-    EXPECT_EQ(refusal([&] { model.variables(4, 0); }), "invalid argument: variable 4: unknown");
+    EXPECT_EQ(refusal([&] { model.variables(-1, 0); }), "invalid argument: variable -1: unknown");
+    EXPECT_EQ(refusal([&] { model.variables(1, 4); }), "invalid argument: variable 3: unknown");
+    EXPECT_EQ(refusal([&] { model.variables(4, 4); }), "invalid argument: variable 4: unknown");
     EXPECT_EQ(refusal([&] { model.variables(0, -1); }),
-              "invalid argument: argument 'n': -1 is negative");
+              "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(VariableTest, Mismatch)

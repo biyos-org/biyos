@@ -205,17 +205,17 @@ TEST(ConstraintTest, ReadRange)
     Model model = with_functions(3);
     const std::vector<Constraint> added{on(2, 0.0, 1.0), on(0, 2.0, 3.0), on(1, 4.0, 5.0)};
     model.add_constraints(added);
-    const std::span<const Constraint> middle = model.constraints(1, 2);
+    const std::span<const Constraint> middle = model.constraints(1, 3);
     ASSERT_EQ(middle.size(), 2U);
     expect_constraint(middle[0], added[1]);
     expect_constraint(middle[1], added[2]);
-    EXPECT_TRUE(model.constraints(3, 0).empty());
-    EXPECT_EQ(refusal([&] { model.constraints(-1, 1); }),
+    EXPECT_TRUE(model.constraints(3, 3).empty());
+    EXPECT_EQ(refusal([&] { model.constraints(-1, 0); }),
               "invalid argument: constraint -1: unknown");
-    EXPECT_EQ(refusal([&] { model.constraints(1, 3); }), "invalid argument: constraint 3: unknown");
-    EXPECT_EQ(refusal([&] { model.constraints(4, 0); }), "invalid argument: constraint 4: unknown");
+    EXPECT_EQ(refusal([&] { model.constraints(1, 4); }), "invalid argument: constraint 3: unknown");
+    EXPECT_EQ(refusal([&] { model.constraints(4, 4); }), "invalid argument: constraint 4: unknown");
     EXPECT_EQ(refusal([&] { model.constraints(0, -1); }),
-              "invalid argument: argument 'n': -1 is negative");
+              "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(ConstraintTest, Mismatch)

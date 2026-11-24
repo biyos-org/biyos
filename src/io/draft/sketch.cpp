@@ -126,7 +126,7 @@ std::span<const LinearTerm> terms_of(const Model &model, Index function)
     {
         return {};
     }
-    return model.linear_terms(function, 1);
+    return model.linear_terms(function, function + 1);
 }
 
 void add_entries(Draft &draft, const Model &model, const std::vector<Index> &functions)

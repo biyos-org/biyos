@@ -35,7 +35,7 @@ using Counter = BIYOS_status (*)(const BIYOS_model *, BIYOS_index *);
 struct Span
 {
     BIYOS_index start;
-    BIYOS_index size;
+    BIYOS_index stop;
 };
 
 struct Held
@@ -168,12 +168,17 @@ int count_of(const Model &model, Counter count)
 Span random_span(Engine &engine, int count)
 {
     const int start = below(engine, count + 1);
-    return {.start = start, .size = below(engine, count - start + 1)};
+    return {.start = start, .stop = start + below(engine, count - start + 1)};
+}
+
+std::size_t size_of(Span span)
+{
+    return static_cast<std::size_t>(span.stop - span.start);
 }
 
 Indices indices_of(Span span)
 {
-    Indices indices(static_cast<std::size_t>(span.size));
+    Indices indices(size_of(span));
     std::iota(indices.begin(), indices.end(), span.start);
     return indices;
 }
@@ -243,9 +248,9 @@ void expect_writes(const Held &held,
     const Model by_list(held.env, held.model);
     const Model by_range(held.env, held.model);
     const Indices indices = indices_of(span);
-    EXPECT_EQ(listed(by_list.get(), span.size, indices.data(), values.data()...), BIYOS_OK);
-    EXPECT_EQ(ranged(by_range.get(), span.start, span.start + span.size, values.data()...),
+    EXPECT_EQ(listed(by_list.get(), span.stop - span.start, indices.data(), values.data()...),
               BIYOS_OK);
+    EXPECT_EQ(ranged(by_range.get(), span.start, span.stop, values.data()...), BIYOS_OK);
     EXPECT_EQ(biyos::difference(by_list.get()->core, by_range.get()->core), "");
 }
 
@@ -253,14 +258,15 @@ template <typename Listed, typename... Values>
 auto read_listed(const Model &model, Span span, Listed listed, std::vector<Values>... outputs)
 {
     const Indices indices = indices_of(span);
-    EXPECT_EQ(listed(model.get(), span.size, indices.data(), outputs.data()...), BIYOS_OK);
+    EXPECT_EQ(listed(model.get(), span.stop - span.start, indices.data(), outputs.data()...),
+              BIYOS_OK);
     return std::make_tuple(keys(outputs)...);
 }
 
 template <typename Ranged, typename... Values>
 auto read_ranged(const Model &model, Span span, Ranged ranged, std::vector<Values>... outputs)
 {
-    EXPECT_EQ(ranged(model.get(), span.start, span.start + span.size, outputs.data()...), BIYOS_OK);
+    EXPECT_EQ(ranged(model.get(), span.start, span.stop, outputs.data()...), BIYOS_OK);
     return std::make_tuple(keys(outputs)...);
 }
 
@@ -284,7 +290,7 @@ void expect_kept(const Held &held,
 {
     const Model tried(held.env, held.model);
     const auto before = std::make_tuple(keys(values)...);
-    EXPECT_EQ(ranged(tried.get(), span.start, span.start + span.size, values.data()...), wanted);
+    EXPECT_EQ(ranged(tried.get(), span.start, span.stop, values.data()...), wanted);
     EXPECT_EQ(std::make_tuple(keys(values)...), before);
     EXPECT_EQ(biyos::difference(tried.get()->core, held.model.get()->core), "");
 }
@@ -292,7 +298,7 @@ void expect_kept(const Held &held,
 void write_variables(const Held &held, Engine &engine)
 {
     const Span span = random_span(engine, count_of(held.model, BIYOS_getnvar));
-    const auto n = static_cast<std::size_t>(span.size);
+    const auto n = size_of(span);
     const std::vector<double> lower = drawn(engine, n, low);
     const std::vector<double> upper = drawn(engine, n, high);
     const std::vector<int> kinds = drawn(engine, n, kind);
@@ -303,8 +309,7 @@ void write_variables(const Held &held, Engine &engine)
 void write_functions(const Held &held, Engine &engine)
 {
     const Span span = random_span(engine, count_of(held.model, BIYOS_getnfun));
-    const std::vector<double> constants =
-        drawn(engine, static_cast<std::size_t>(span.size), weight);
+    const std::vector<double> constants = drawn(engine, size_of(span), weight);
     expect_writes(held, span, BIYOS_setcstsp, BIYOS_setcstrg, constants);
     expect_writes(held, span, BIYOS_addcstsp, BIYOS_addcstrg, constants);
     expect_writes(held, span, BIYOS_clrfunsp, BIYOS_clrfunrg);
@@ -329,7 +334,7 @@ void write_expressions(const Held &held, Engine &engine)
     const Model noded(held.env, held.model);
     const BIYOS_offset sum = add_expression(noded);
     const Span span = random_span(engine, count_of(noded, BIYOS_getnfun));
-    const std::vector<BIYOS_offset> nodes(static_cast<std::size_t>(span.size), sum);
+    const std::vector<BIYOS_offset> nodes(size_of(span), sum);
     const Held changed{.env = held.env, .model = noded};
     expect_writes(changed, span, BIYOS_attachexprsp, BIYOS_attachexprrg, nodes);
 }
@@ -337,7 +342,7 @@ void write_expressions(const Held &held, Engine &engine)
 void write_constraints(const Held &held, Engine &engine)
 {
     const Span span = random_span(engine, count_of(held.model, BIYOS_getncon));
-    const auto n = static_cast<std::size_t>(span.size);
+    const auto n = size_of(span);
     const std::vector<double> lower = drawn(engine, n, low);
     const std::vector<double> upper = drawn(engine, n, high);
     expect_writes(held, span, BIYOS_setconbndsp, BIYOS_setconbndrg, lower, upper);
@@ -346,7 +351,7 @@ void write_constraints(const Held &held, Engine &engine)
 void write_objectives(const Held &held, Engine &engine)
 {
     const Span span = random_span(engine, count_of(held.model, BIYOS_getnobj));
-    const auto n = static_cast<std::size_t>(span.size);
+    const auto n = size_of(span);
     const std::vector<int> senses = drawn(engine, n, sense);
     const std::vector<int> priorities = drawn(engine, n, priority);
     const std::vector<double> weights = drawn(engine, n, weight);
@@ -361,7 +366,7 @@ void write_objectives(const Held &held, Engine &engine)
 void write_names(const Held &held, Engine &engine, const NameCalls &calls)
 {
     const Span span = random_span(engine, count_of(held.model, calls.count));
-    const Names names = drawn_names(engine, static_cast<std::size_t>(span.size));
+    const Names names = drawn_names(engine, size_of(span));
     expect_writes(held, span, calls.set_listed, calls.set_ranged, names.pointers);
     expect_writes(held, span, calls.delete_listed, calls.delete_ranged);
 }
@@ -369,16 +374,13 @@ void write_names(const Held &held, Engine &engine, const NameCalls &calls)
 void write_tolerances(const Held &held, Engine &engine, const ToleranceCalls &calls)
 {
     const Span span = random_span(engine, count_of(held.model, calls.count));
-    const auto n = static_cast<std::size_t>(span.size);
+    const auto n = size_of(span);
     const std::vector<double> absolute = drawn(engine, n, low);
     const std::vector<double> relative = drawn(engine, n, high);
     expect_writes(held, span, calls.set_listed, calls.set_ranged, absolute, relative);
     const Model tolerated(held.env, held.model);
-    const BIYOS_status status = calls.set_ranged(tolerated.get(),
-                                                 span.start,
-                                                 span.start + span.size,
-                                                 absolute.data(),
-                                                 relative.data());
+    const BIYOS_status status =
+        calls.set_ranged(tolerated.get(), span.start, span.stop, absolute.data(), relative.data());
     EXPECT_EQ(status, BIYOS_OK);
     const Held changed{.env = held.env, .model = tolerated};
     const Span deleted = random_span(engine, count_of(tolerated, calls.count));
@@ -446,7 +448,7 @@ void write_indicators(const Held &held, Engine &engine)
     add_indicators(switched, engine, switches);
     const Held changed{.env = held.env, .model = switched};
     const Span span = random_span(engine, count_of(switched, BIYOS_getnind));
-    const auto n = static_cast<std::size_t>(span.size);
+    const auto n = size_of(span);
     const std::vector<double> lower = drawn(engine, n, low);
     const std::vector<double> upper = drawn(engine, n, high);
     const std::vector<int> variables = drawn_switches(engine, n, switches);
@@ -489,7 +491,7 @@ void write_complements(const Held &held, Engine &engine)
     add_complements(paired, engine);
     const Held changed{.env = held.env, .model = paired};
     const Span span = random_span(engine, count_of(paired, BIYOS_getnccon));
-    const auto n = static_cast<std::size_t>(span.size);
+    const auto n = size_of(span);
     const std::vector<double> lower = drawn(engine, n, low);
     const std::vector<double> upper = drawn(engine, n, high);
     expect_writes(changed, span, BIYOS_setcconbndsp, BIYOS_setcconbndrg, lower, upper);
@@ -500,7 +502,7 @@ void write_complements(const Held &held, Engine &engine)
 
 template <typename Value> std::vector<Value> zeros(Span span)
 {
-    return std::vector<Value>(static_cast<std::size_t>(span.size));
+    return std::vector<Value>(size_of(span));
 }
 
 void read_variables(const Model &model, Engine &engine)
@@ -591,14 +593,14 @@ void read_all(const Model &model, Engine &engine)
 
 std::vector<Span> bad_spans(int count)
 {
-    return {{-1, 0},
-            {-1, 1},
+    return {{-1, -1},
+            {-1, 0},
             {0, -1},
-            {1, -1},
-            {count, 1},
-            {count + 1, 0},
+            {1, 0},
+            {count, count + 1},
+            {count + 1, count + 1},
             {0, count + 1},
-            {1, count}};
+            {1, count + 1}};
 }
 
 void keep_variables(const Held &held, Span span, BIYOS_status wanted)
@@ -813,7 +815,7 @@ TEST(RangeTest, Refusals)
         {
             keep_all(held, calls.count, span, BIYOS_ERR_BADARG);
         }
-        keep_all(held, calls.count, {count, 0}, BIYOS_OK);
+        keep_all(held, calls.count, {count, count}, BIYOS_OK);
     }
 }
 
@@ -831,7 +833,7 @@ TEST(RangeTest, IndicatorRefusals)
     {
         keep_indicators(held, span, BIYOS_ERR_BADARG, switches);
     }
-    keep_indicators(held, {count, 0}, BIYOS_OK, switches);
+    keep_indicators(held, {count, count}, BIYOS_OK, switches);
 }
 
 TEST(RangeTest, ComplementRefusals)
@@ -847,7 +849,7 @@ TEST(RangeTest, ComplementRefusals)
     {
         keep_complements(held, span, BIYOS_ERR_BADARG);
     }
-    keep_complements(held, {count, 0}, BIYOS_OK);
+    keep_complements(held, {count, count}, BIYOS_OK);
 }
 
 TEST(RangeTest, Atomic)

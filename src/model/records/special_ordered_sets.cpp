@@ -92,11 +92,11 @@ SpecialOrderedSetKind Model::kind_of_special_ordered_set(Index index) const
     return special_ordered_set_kinds_[static_cast<std::size_t>(index)];
 }
 
-std::span<const Member> Model::members(Index start, Index size) const
+std::span<const Member> Model::members(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_special_ordered_sets());
+    check_span(kNoun, start, stop, n_special_ordered_sets());
     const auto begin = static_cast<std::size_t>(member_begin(static_cast<std::size_t>(start)));
-    const auto end = static_cast<std::size_t>(member_begin(static_cast<std::size_t>(start + size)));
+    const auto end = static_cast<std::size_t>(member_begin(static_cast<std::size_t>(stop)));
     return std::span(members_).subspan(begin, end - begin);
 }
 

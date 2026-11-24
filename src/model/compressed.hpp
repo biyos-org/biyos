@@ -30,14 +30,14 @@ std::span<T> slice(std::span<T> terms, std::span<const Offset> starts, std::size
 template <typename T>
 std::size_t keep_part(std::span<T> items,
                       std::size_t start,
-                      std::size_t end,
+                      std::size_t stop,
                       std::size_t to) noexcept
 {
     if (to != start)
     {
-        std::ranges::copy(items.subspan(start, end - start), items.subspan(to).begin());
+        std::ranges::copy(items.subspan(start, stop - start), items.subspan(to).begin());
     }
-    return to + (end - start);
+    return to + (stop - start);
 }
 
 template <typename T>

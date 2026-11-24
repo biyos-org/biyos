@@ -48,11 +48,11 @@ const Complement &Model::complement(Index index) const
     return complements_[static_cast<std::size_t>(index)];
 }
 
-std::span<const Complement> Model::complements(Index start, Index size) const
+std::span<const Complement> Model::complements(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_complements());
+    check_span(kNoun, start, stop, n_complements());
     const auto offset = static_cast<std::size_t>(start);
-    return std::span(complements_).subspan(offset, static_cast<std::size_t>(size));
+    return std::span(complements_).subspan(offset, static_cast<std::size_t>(stop - start));
 }
 
 void Model::add_complements(std::span<const Complement> added)

@@ -115,7 +115,7 @@ std::size_t count_of(const Model &core, std::span<const Index> cones, Part<T> pa
     std::size_t count = 0;
     for (const Index cone : cones)
     {
-        count += (core.*part)(cone, 1).size();
+        count += (core.*part)(cone, cone + 1).size();
     }
     return count;
 }
@@ -130,7 +130,7 @@ void write_part(const Model &core, std::span<const Index> cones, Part<T> part, C
         {
             out.starts[j] = written;
         }
-        const std::span<const T> items = (core.*part)(cones[j], 1);
+        const std::span<const T> items = (core.*part)(cones[j], cones[j] + 1);
         if (out.items != nullptr)
         {
             std::ranges::copy(items, out.items + written);
@@ -151,7 +151,7 @@ void write_kinds(const Model &core, std::span<const Index> cones, int *kinds)
     }
     for (std::size_t j = 0; j < cones.size(); ++j)
     {
-        kinds[j] = static_cast<int>(core.cone_kinds(cones[j], 1).front());
+        kinds[j] = static_cast<int>(core.cone_kinds(cones[j], cones[j] + 1).front());
     }
 }
 

@@ -22,7 +22,6 @@ struct Range
 };
 
 std::span<const Index> selected(const Model &model, Family family, List list);
-Index length_of(const Model &model, Family family, Range range);
 std::vector<Index> selected(const Model &model, Family family, Range range);
 
 }

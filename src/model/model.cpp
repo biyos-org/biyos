@@ -89,11 +89,11 @@ const Variable &Model::variable(Index index) const
     return variables_[static_cast<std::size_t>(index)];
 }
 
-std::span<const Variable> Model::variables(Index start, Index size) const
+std::span<const Variable> Model::variables(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_variables());
+    check_span(kNoun, start, stop, n_variables());
     const auto offset = static_cast<std::size_t>(start);
-    return std::span(variables_).subspan(offset, static_cast<std::size_t>(size));
+    return std::span(variables_).subspan(offset, static_cast<std::size_t>(stop - start));
 }
 
 void Model::add_variables(std::span<const Variable> added)

@@ -129,7 +129,7 @@ template <typename Selection> biyos::Encoding encoded(const biyos::Model &core, 
     roots.reserve(chosen.size());
     for (const biyos::Index function : chosen)
     {
-        roots.push_back(core.roots(function, 1).front());
+        roots.push_back(core.roots(function, function + 1).front());
     }
     return biyos::encode(core.graph(), roots);
 }

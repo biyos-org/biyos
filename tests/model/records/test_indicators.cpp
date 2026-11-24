@@ -274,16 +274,16 @@ TEST(IndicatorTest, ReadRange)
         when(0, 0, 1, 4.0, 5.0),
     };
     model.add_indicators(added);
-    const std::span<const Indicator> middle = model.indicators(1, 2);
+    const std::span<const Indicator> middle = model.indicators(1, 3);
     ASSERT_EQ(middle.size(), 2U);
     expect_indicator(middle[0], added[1]);
     expect_indicator(middle[1], added[2]);
-    EXPECT_TRUE(model.indicators(3, 0).empty());
+    EXPECT_TRUE(model.indicators(3, 3).empty());
     EXPECT_EQ(refusal([&] { model.indicator(3); }), "invalid argument: indicator 3: unknown");
-    EXPECT_EQ(refusal([&] { model.indicators(-1, 1); }), "invalid argument: indicator -1: unknown");
-    EXPECT_EQ(refusal([&] { model.indicators(1, 3); }), "invalid argument: indicator 3: unknown");
+    EXPECT_EQ(refusal([&] { model.indicators(-1, 0); }), "invalid argument: indicator -1: unknown");
+    EXPECT_EQ(refusal([&] { model.indicators(1, 4); }), "invalid argument: indicator 3: unknown");
     EXPECT_EQ(refusal([&] { model.indicators(0, -1); }),
-              "invalid argument: argument 'n': -1 is negative");
+              "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(IndicatorTest, Mismatch)

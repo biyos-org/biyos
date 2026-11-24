@@ -170,17 +170,17 @@ std::string term_differences(std::string_view noun, std::span<const T> a, std::s
 
 double constant_of(const Model &model, Index function)
 {
-    return model.constants(function, 1).front();
+    return model.constants(function, function + 1).front();
 }
 
 std::span<const QuadraticTerm> quadratic_of(const Model &model, Index function)
 {
-    return model.quadratic_terms(function, 1);
+    return model.quadratic_terms(function, function + 1);
 }
 
 Offset root_of(const Model &model, Index function)
 {
-    return model.roots(function, 1).front();
+    return model.roots(function, function + 1).front();
 }
 
 std::string root_text(Offset root)
@@ -216,7 +216,9 @@ std::string function_difference(const Model &a, const Model &b, Index function, 
 {
     return first_of({
         compared("constant", constant_of(a, function), constant_of(b, function)),
-        term_differences("term", a.linear_terms(function, 1), b.linear_terms(function, 1)),
+        term_differences("term",
+                         a.linear_terms(function, function + 1),
+                         b.linear_terms(function, function + 1)),
         term_differences("quadratic term", quadratic_of(a, function), quadratic_of(b, function)),
         expression_difference(matching, root_of(a, function), root_of(b, function)),
         named(a, b, Family::Function, function),
@@ -258,22 +260,26 @@ std::string special_ordered_set_difference(const Model &a, const Model &b, Index
 {
     return first_of({
         compared("kind", kind_of(a, sos), kind_of(b, sos)),
-        term_differences("member", a.members(sos, 1), b.members(sos, 1)),
+        term_differences("member", a.members(sos, sos + 1), b.members(sos, sos + 1)),
         named(a, b, Family::SpecialOrderedSet, sos),
     });
 }
 
 int cone_kind(const Model &model, Index cone)
 {
-    return static_cast<int>(model.cone_kinds(cone, 1).front());
+    return static_cast<int>(model.cone_kinds(cone, cone + 1).front());
 }
 
 std::string cone_difference(const Model &a, const Model &b, Index cone)
 {
     return first_of({
         compared("kind", cone_kind(a, cone), cone_kind(b, cone)),
-        term_differences("member", a.cone_functions(cone, 1), b.cone_functions(cone, 1)),
-        term_differences("parameter", a.cone_parameters(cone, 1), b.cone_parameters(cone, 1)),
+        term_differences("member",
+                         a.cone_functions(cone, cone + 1),
+                         b.cone_functions(cone, cone + 1)),
+        term_differences("parameter",
+                         a.cone_parameters(cone, cone + 1),
+                         b.cone_parameters(cone, cone + 1)),
         differ(a.tolerance_of(Family::Cone, cone), b.tolerance_of(Family::Cone, cone)),
         named(a, b, Family::Cone, cone),
     });

@@ -182,10 +182,10 @@ template <typename T>
 std::span<const T> part(const std::vector<T> &items,
                         const std::vector<Offset> &ends,
                         Index start,
-                        Index size)
+                        Index stop)
 {
     const auto begin = static_cast<std::size_t>(begin_at(ends, start));
-    const auto end = static_cast<std::size_t>(begin_at(ends, start + size));
+    const auto end = static_cast<std::size_t>(begin_at(ends, stop));
     return std::span(items).subspan(begin, end - begin);
 }
 
@@ -210,23 +210,23 @@ Index Model::n_cones() const noexcept
     return static_cast<Index>(cone_kinds_.size());
 }
 
-std::span<const ConeKind> Model::cone_kinds(Index start, Index size) const
+std::span<const ConeKind> Model::cone_kinds(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_cones());
+    check_span(kNoun, start, stop, n_cones());
     const auto offset = static_cast<std::size_t>(start);
-    return std::span(cone_kinds_).subspan(offset, static_cast<std::size_t>(size));
+    return std::span(cone_kinds_).subspan(offset, static_cast<std::size_t>(stop - start));
 }
 
-std::span<const Index> Model::cone_functions(Index start, Index size) const
+std::span<const Index> Model::cone_functions(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_cones());
-    return part(cone_functions_, cone_ends_, start, size);
+    check_span(kNoun, start, stop, n_cones());
+    return part(cone_functions_, cone_ends_, start, stop);
 }
 
-std::span<const double> Model::cone_parameters(Index start, Index size) const
+std::span<const double> Model::cone_parameters(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_cones());
-    return part(cone_parameters_, parameter_ends_, start, size);
+    check_span(kNoun, start, stop, n_cones());
+    return part(cone_parameters_, parameter_ends_, start, stop);
 }
 
 void Model::check_cone_room(std::size_t cones, Offset members, Offset parameters) const

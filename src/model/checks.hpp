@@ -20,7 +20,7 @@ std::string item(std::string_view noun, Index index);
 std::string_view bound_fault(double lower, double upper) noexcept;
 std::string_view value_fault(double value) noexcept;
 void check_index(std::string_view noun, Index index, Index total);
-void check_span(std::string_view noun, Index start, Index size, Index total);
+void check_span(std::string_view noun, Index start, Index stop, Index total);
 void check_function(std::string_view noun, Index index, Index function, Index functions);
 void check_functions(std::span<const Index> functions, Index held, std::string_view argument);
 

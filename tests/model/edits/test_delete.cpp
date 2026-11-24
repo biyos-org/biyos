@@ -822,8 +822,8 @@ TEST(DeleteTest, SplitNode)
     const std::vector<Offset> children{x};
     const Offset scaled = model.add_node(BIYOS_OP_SUM, children, std::vector<double>{1.0, 3.0});
     model.attach_expressions(std::vector<Index>{1}, std::vector<Offset>{scaled});
-    ASSERT_EQ(model.linear_terms(1, 1).size(), 2U);
-    EXPECT_EQ(model.linear_terms(1, 1).front().variable, 0);
+    ASSERT_EQ(model.linear_terms(1, 2).size(), 2U);
+    EXPECT_EQ(model.linear_terms(1, 2).front().variable, 0);
     EXPECT_EQ(held_by(model, {0}), "in use: variable 0: used by node 4");
 }
 
