@@ -6,6 +6,7 @@
 #include "expr/derivatives/reverse.hpp"
 #include "expr/derivatives/value.hpp"
 #include "expr/sparsity/reach.hpp"
+#include "expr/tape/frame.hpp"
 #include "expr/tape/tape.hpp"
 
 #include <algorithm>
@@ -39,13 +40,20 @@ Offset count_of(std::size_t value) noexcept
 
 void check_reverse(const Tape &tape, const Workspace &workspace, const Adjoints &adjoints)
 {
-    if (count_of(workspace.partials.size()) < tape.partials())
+    const std::size_t lanes = workspace.lanes;
+    if (workspace.partials.size() < at(tape.partials()) * lanes)
     {
         refuse("workspace", "sized for another tape");
     }
-    const bool shared = count_of(adjoints.shared.size()) >= tape.pinned();
-    const bool gradient = count_of(adjoints.gradient.size()) >= tape.variables();
-    if (!shared || !gradient || adjoints.slots.size() < tape.width())
+    if (adjoints.lanes != lanes)
+    {
+        const std::string mine = "lane count " + text_of(adjoints.lanes);
+        refuse("adjoints", mine + ", not the workspace's " + text_of(lanes));
+    }
+    const bool shared = adjoints.shared.size() >= at(tape.pinned()) * lanes;
+    const bool gradient = adjoints.gradient.size() >= at(tape.variables()) * lanes;
+    const bool slots = adjoints.slots.size() >= tape.width() * lanes;
+    if (!shared || !gradient || !slots || adjoints.taken.size() < lanes)
     {
         refuse("adjoints", "sized for another tape");
     }
@@ -54,13 +62,13 @@ void check_reverse(const Tape &tape, const Workspace &workspace, const Adjoints 
 void check_size(std::string_view object,
                 std::span<const double> given,
                 Offset wanted,
-                std::string_view name)
+                std::string_view name,
+                std::size_t lanes)
 {
-    const Offset size = count_of(given.size());
-    if (size != wanted)
+    if (given.size() != at(wanted) * lanes)
     {
-        const std::string reason = "size " + text_of(size) + ", not " + std::string(name);
-        refuse(std::string(object), reason + " " + text_of(wanted));
+        const std::string size = "size " + text_of(given.size()) + ", not " + std::string(name);
+        refuse(std::string(object), size + " " + text_of(wanted) + in_lanes(lanes));
     }
 }
 
@@ -79,8 +87,9 @@ void rise(const Block &block,
           Adjoints &adjoints) noexcept
 {
     const std::size_t output = at(position - block.begin);
-    const double adjoint = std::exchange(adjoints.shared[at(position)], 0.0);
-    adjoints.slots[block.outputs[output]] += adjoint;
+    const std::size_t lanes = adjoints.lanes;
+    const std::span<double> from = row(std::span(adjoints.shared), at(position), lanes);
+    drain(from, row(std::span(adjoints.slots), block.outputs[output], lanes));
     retrace(block, output, workspace, adjoints, adjoints.gradient);
 }
 
@@ -109,15 +118,16 @@ void climb(const Tape &tape, Offset root, const Workspace &workspace, Adjoints &
     }
 }
 
-void gather(const Pattern &pattern,
-            Offset root,
-            std::span<double> gradient,
-            std::span<double> gradients) noexcept
+void gather(const Pattern &pattern, Offset root, Adjoints &adjoints, std::span<double> gradients)
 {
+    const std::size_t lanes = adjoints.lanes;
     for (Offset k = pattern.starts[at(root)]; k < pattern.starts[at(root) + 1]; ++k)
     {
         const auto variable = static_cast<std::size_t>(pattern.variables[at(k)]);
-        gradients[at(k)] = std::exchange(gradient[variable], 0.0);
+        const std::span<double> from = row(std::span(adjoints.gradient), variable, lanes);
+        const std::span<double> into = row(gradients, at(k), lanes);
+        std::ranges::copy(from, into.begin());
+        std::ranges::fill(from, 0.0);
     }
 }
 
@@ -127,32 +137,38 @@ void differentiate(const Tape &tape,
                    Adjoints &adjoints,
                    std::span<double> gradients) noexcept
 {
+    const std::size_t lanes = adjoints.lanes;
     for (std::size_t k = 0; k < block.outputs.size(); ++k)
     {
         const Offset root = block.begin + count_of(k);
-        adjoints.slots[block.outputs[k]] = 1.0;
+        std::ranges::fill(row(std::span(adjoints.slots), block.outputs[k], lanes), 1.0);
         retrace(block, k, workspace, adjoints, adjoints.gradient);
         climb(tape, root, workspace, adjoints);
-        gather(tape.pattern(), root, adjoints.gradient, gradients);
+        gather(tape.pattern(), root, adjoints, gradients);
     }
 }
 
-void seed(const Block &block, std::span<const double> weights, std::span<double> slots) noexcept
+void seed(const Block &block, std::span<const double> weights, Adjoints &adjoints) noexcept
 {
-    const std::span<const double> mine = weights.subspan(at(block.begin), block.outputs.size());
-    for (std::size_t k = 0; k < mine.size(); ++k)
+    const std::size_t lanes = adjoints.lanes;
+    for (std::size_t k = 0; k < block.outputs.size(); ++k)
     {
-        slots[block.outputs[k]] += mine[k];
+        const std::span<const double> mine = row(weights, at(block.begin) + k, lanes);
+        const std::span<double> into = row(std::span(adjoints.slots), block.outputs[k], lanes);
+        for (std::size_t l = 0; l < lanes; ++l)
+        {
+            into[l] += mine[l];
+        }
     }
 }
 
 void pull(const Block &block, Adjoints &adjoints) noexcept
 {
-    const std::span<double> shared = std::span(adjoints.shared);
-    const std::span<double> mine = shared.subspan(at(block.begin), block.outputs.size());
-    for (std::size_t k = 0; k < mine.size(); ++k)
+    const std::size_t lanes = adjoints.lanes;
+    for (std::size_t k = 0; k < block.outputs.size(); ++k)
     {
-        adjoints.slots[block.outputs[k]] += std::exchange(mine[k], 0.0);
+        const std::span<double> from = row(std::span(adjoints.shared), at(block.begin) + k, lanes);
+        drain(from, row(std::span(adjoints.slots), block.outputs[k], lanes));
     }
 }
 
@@ -168,7 +184,7 @@ void jacobian(const Tape &tape,
     check_sweep(tape, point, workspace, values);
     check_reverse(tape, workspace, adjoints);
     const Offset entries = count_of(tape.pattern().variables.size());
-    check_size("gradients", gradients, entries, "the pattern size");
+    check_size("gradients", gradients, entries, "the pattern size", workspace.lanes);
     prepare(tape, point, workspace);
     for (const Block &block : tape.blocks().subspan(at(tape.prepass())))
     {
@@ -188,8 +204,8 @@ void weighted_gradient(const Tape &tape,
 {
     check_sweep(tape, point, workspace, values);
     check_reverse(tape, workspace, adjoints);
-    check_size("weights", weights, tape.roots(), "the root count");
-    check_size("gradient", gradient, count_of(point.size()), "the point size");
+    check_size("weights", weights, tape.roots(), "the root count", workspace.lanes);
+    check_size("gradient", gradient, count_of(point.size()), "the point size", 1);
     std::ranges::fill(gradient, 0.0);
     prepare(tape, point, workspace);
     const std::span<const Block> blocks = tape.blocks();
@@ -198,7 +214,7 @@ void weighted_gradient(const Tape &tape,
     {
         linearize(block, point, workspace);
         store(block, workspace, values);
-        seed(block, weights, adjoints.slots);
+        seed(block, weights, adjoints);
         reverse(block, workspace, adjoints, gradient);
     }
     for (const Block &block : std::views::reverse(blocks.first(prepass)))

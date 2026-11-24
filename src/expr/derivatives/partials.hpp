@@ -14,13 +14,14 @@ namespace biyos
 std::uint32_t n_partials(const Instruction &instruction) noexcept;
 void partials_of(const Instruction &instruction,
                  const Frame &frame,
-                 double result,
                  std::span<double> partials) noexcept;
-std::size_t chosen(std::span<const double> partials) noexcept;
+std::size_t chosen(double partial) noexcept;
 
-template <typename T> std::span<T> region(const Block &block, std::span<T> partials) noexcept
+template <typename T>
+std::span<T> region(const Block &block, std::span<T> partials, std::size_t lanes) noexcept
 {
-    return partials.subspan(static_cast<std::size_t>(block.origin), block.places.back());
+    const auto origin = static_cast<std::size_t>(block.origin);
+    return partials.subspan(origin * lanes, block.places.back() * lanes);
 }
 
 }

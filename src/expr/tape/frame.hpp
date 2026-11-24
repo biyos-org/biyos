@@ -17,6 +17,7 @@ struct Frame
     std::span<const double> weights;
     std::span<double> slots;
     std::span<double> result;
+    std::span<double> spare;
     std::size_t lanes;
 };
 
@@ -39,16 +40,6 @@ std::span<T> row(std::span<T> items, std::size_t index, std::size_t lanes) noexc
 inline std::span<const double> row(const Frame &frame, std::uint32_t slot) noexcept
 {
     return row(std::span<const double>(frame.slots), slot, frame.lanes);
-}
-
-inline double left(const Instruction &instruction, const Frame &frame) noexcept
-{
-    return frame.slots[instruction.first];
-}
-
-inline double right(const Instruction &instruction, const Frame &frame) noexcept
-{
-    return frame.slots[instruction.second];
 }
 
 inline std::span<const std::uint32_t> listed(const Instruction &instruction,

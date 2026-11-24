@@ -18,7 +18,10 @@ struct Adjoints
     std::vector<double> slots;
     std::vector<double> shared;
     std::vector<double> gradient;
+    std::vector<double> taken;
 };
+
+void drain(std::span<double> from, std::span<double> into) noexcept;
 
 void retrace(const Block &block,
              std::size_t output,

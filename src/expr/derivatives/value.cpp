@@ -246,13 +246,9 @@ Frame enter(const Block &block, std::span<const double> point, Workspace &worksp
         .weights = block.weights,
         .slots = slots,
         .result = workspace.result,
+        .spare = workspace.spare,
         .lanes = lanes,
     };
-}
-
-std::string in_lanes(std::size_t lanes)
-{
-    return lanes == 1 ? "" : " in " + text_of(lanes) + " lanes";
 }
 
 [[noreturn]] void refuse(std::string object, std::string reason)
@@ -279,8 +275,13 @@ void check_point(const Tape &tape, std::span<const double> point, std::size_t la
 Workspace::Workspace(const Tape &tape, std::size_t count)
     : lanes(lanes_of(count)), shared(at(tape.pinned()) * count, 0.0),
       slots(tape.width() * count, 0.0), partials(at(tape.partials()) * count, 0.0),
-      result(count, 0.0)
+      result(count, 0.0), spare(count, 0.0)
 {
+}
+
+std::string in_lanes(std::size_t lanes)
+{
+    return lanes == 1 ? "" : " in " + text_of(lanes) + " lanes";
 }
 
 std::size_t lanes_of(std::size_t count)
@@ -306,7 +307,8 @@ void check_sweep(const Tape &tape,
     }
     const bool shared = workspace.shared.size() >= at(tape.pinned()) * lanes;
     const bool slots = workspace.slots.size() >= tape.width() * lanes;
-    if (!shared || !slots || workspace.result.size() < lanes)
+    const bool rows = workspace.result.size() >= lanes && workspace.spare.size() >= lanes;
+    if (!shared || !slots || !rows)
     {
         refuse("workspace", "sized for another tape");
     }
@@ -325,14 +327,15 @@ void forward(const Block &block, std::span<const double> point, Workspace &works
 void linearize(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
 {
     const Frame frame = enter(block, point, workspace);
-    const std::span<double> partials = region(block, std::span(workspace.partials));
+    const std::size_t lanes = workspace.lanes;
+    const std::span<double> partials = region(block, std::span(workspace.partials), lanes);
     for (std::size_t k = 0; k < block.instructions.size(); ++k)
     {
         const Instruction &instruction = block.instructions[k];
         evaluate(instruction, frame);
-        const std::uint32_t start = block.places[k];
-        const std::uint32_t n = block.places[k + 1] - start;
-        partials_of(instruction, frame, frame.result[0], partials.subspan(start, n));
+        const std::size_t start = block.places[k] * lanes;
+        const std::size_t n = (block.places[k + 1] - block.places[k]) * lanes;
+        partials_of(instruction, frame, partials.subspan(start, n));
         keep(instruction, frame);
     }
 }

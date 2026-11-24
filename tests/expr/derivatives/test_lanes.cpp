@@ -1,4 +1,6 @@
 #include "core/index.hpp"
+#include "core/numeric/zero.hpp"
+#include "expr/derivatives/derivative.hpp"
 #include "expr/derivatives/reverse.hpp"
 #include "expr/derivatives/value.hpp"
 #include "expr/graph/graph.hpp"
@@ -10,11 +12,13 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <string>
 #include <vector>
@@ -24,13 +28,17 @@ namespace
 
 using biyos::Adjoints;
 using biyos::Graph;
+using biyos::is_zero;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Tape;
 using biyos::Workspace;
 using biyos::test::every_operator;
+using biyos::test::gradient_of;
+using biyos::test::jacobian_of;
 using biyos::test::kBudgets;
 using biyos::test::kRoots;
+using biyos::test::listed;
 using biyos::test::picks;
 using biyos::test::Random;
 using biyos::test::random_graph;
@@ -116,6 +124,142 @@ std::string refused(const Tape &tape,
                     std::span<double> values)
 {
     return refusal([&] { biyos::forward(tape, point, workspace, values); });
+}
+
+bool cleared(const Adjoints &adjoints)
+{
+    return std::ranges::all_of(adjoints.slots, is_zero) &&
+           std::ranges::all_of(adjoints.shared, is_zero) &&
+           std::ranges::all_of(adjoints.gradient, is_zero);
+}
+
+double weight(Random &random)
+{
+    return random.below(4) == 0 ? 0.0 : random.uniform(-2.0, 2.0);
+}
+
+Points random_weights(Random &random, const Tape &tape, std::size_t lanes)
+{
+    Points weights(lanes);
+    for (std::vector<double> &mine : weights)
+    {
+        for (Offset r = 0; r < tape.roots(); ++r)
+        {
+            mine.push_back(weight(random));
+        }
+    }
+    return weights;
+}
+
+void expect_jacobian(const Tape &tape,
+                     Workspace &workspace,
+                     Adjoints &adjoints,
+                     const Points &points)
+{
+    const std::size_t lanes = points.size();
+    std::vector<double> values(at(tape.roots()) * lanes);
+    std::vector<double> gradients(tape.pattern().variables.size() * lanes);
+    biyos::jacobian(tape, interleave(points), workspace, adjoints, values, gradients);
+    EXPECT_TRUE(cleared(adjoints));
+    for (std::size_t l = 0; l < lanes; ++l)
+    {
+        SCOPED_TRACE(l);
+        expect_bits(lane(values, l, lanes), values_of(tape, points[l]));
+        expect_bits(lane(gradients, l, lanes), jacobian_of(tape, points[l]));
+    }
+}
+
+void expect_weighted(const Tape &tape,
+                     Workspace &workspace,
+                     Adjoints &adjoints,
+                     const Points &points,
+                     const Points &weights)
+{
+    const std::size_t lanes = points.size();
+    const std::vector<double> point = interleave(points);
+    std::vector<double> values(at(tape.roots()) * lanes);
+    std::vector<double> gradient(point.size(), (std::numeric_limits<double>::quiet_NaN)());
+    biyos::weighted_gradient(tape,
+                             point,
+                             interleave(weights),
+                             workspace,
+                             adjoints,
+                             values,
+                             gradient);
+    EXPECT_TRUE(cleared(adjoints));
+    for (std::size_t l = 0; l < lanes; ++l)
+    {
+        SCOPED_TRACE(l);
+        expect_bits(lane(values, l, lanes), values_of(tape, points[l]));
+        expect_bits(lane(gradient, l, lanes), gradient_of(tape, points[l], weights[l]));
+    }
+}
+
+void expect_sweeps(const Tape &tape, Random &random)
+{
+    for (const std::size_t lanes : kLanes)
+    {
+        SCOPED_TRACE(lanes);
+        Workspace workspace(tape, lanes);
+        Adjoints adjoints(tape, lanes);
+        for (int k = 0; k < 2; ++k)
+        {
+            expect_jacobian(tape, workspace, adjoints, random_points(random, lanes));
+            const Points points = random_points(random, lanes);
+            expect_weighted(tape, workspace, adjoints, points, random_weights(random, tape, lanes));
+        }
+    }
+}
+
+Points special_points(std::size_t lanes)
+{
+    constexpr double kInfinity = (std::numeric_limits<double>::infinity)();
+    constexpr double kNan = (std::numeric_limits<double>::quiet_NaN)();
+    constexpr std::array kSpecial{0.0, -0.0, 1.0, -1.0, kInfinity, -kInfinity, kNan, 0.5};
+    Points points(lanes);
+    for (std::size_t l = 0; l < lanes; ++l)
+    {
+        for (std::size_t k = 0; k < static_cast<std::size_t>(biyos::test::kVariables); ++k)
+        {
+            points[l].push_back(kSpecial[(l + 3 * k * (l % 2)) % kSpecial.size()]);
+        }
+    }
+    return points;
+}
+
+struct Sweep
+{
+    const Tape *tape;
+    std::span<const double> point;
+    std::span<const double> weights;
+    Workspace *workspace;
+    Adjoints *adjoints;
+    std::span<double> values;
+    std::span<double> out;
+};
+
+void run_jacobian(const Sweep &call)
+{
+    biyos::jacobian(*call.tape, call.point, *call.workspace, *call.adjoints, call.values, call.out);
+}
+
+void run_weighted(const Sweep &call)
+{
+    const Tape &tape = *call.tape;
+    Workspace &workspace = *call.workspace;
+    Adjoints &adjoints = *call.adjoints;
+    biyos::weighted_gradient(tape,
+                             call.point,
+                             call.weights,
+                             workspace,
+                             adjoints,
+                             call.values,
+                             call.out);
+}
+
+std::string refused(void (*sweep)(const Sweep &), const Sweep &call)
+{
+    return refusal([&] { sweep(call); });
 }
 
 Tape shared_tape(Graph &graph)
@@ -218,4 +362,128 @@ TEST(LaneTest, Refused)
     EXPECT_EQ(refused(tape, workspace, point, values), other);
     workspace.lanes = 0;
     EXPECT_EQ(refused(tape, workspace, point, values), "invalid argument: lanes: zero");
+}
+
+TEST(LaneTest, Sweeps)
+{
+    for (std::uint64_t seed = 1; seed <= 40; ++seed)
+    {
+        SCOPED_TRACE(seed);
+        Random random(seed);
+        const Graph graph = random_graph(random);
+        const std::vector<Offset> roots = picks(random, graph, kRoots);
+        const Tape tape(graph, roots, kBudgets[random.below(kBudgets.size())]);
+        expect_sweeps(tape, random);
+    }
+    Graph graph;
+    const std::vector<Offset> roots = every_operator(graph);
+    Random random(9);
+    expect_sweeps(Tape(graph, roots), random);
+}
+
+TEST(LaneTest, Special)
+{
+    Graph graph;
+    const std::vector<Offset> roots = every_operator(graph);
+    const Tape tape(graph, roots);
+    Random random(11);
+    for (const std::size_t lanes : kLanes)
+    {
+        SCOPED_TRACE(lanes);
+        Workspace workspace(tape, lanes);
+        Adjoints adjoints(tape, lanes);
+        const Points points = special_points(lanes);
+        expect_values(tape, workspace, points);
+        expect_jacobian(tape, workspace, adjoints, points);
+        expect_weighted(tape, workspace, adjoints, points, random_weights(random, tape, lanes));
+    }
+}
+
+TEST(LaneTest, ZeroWeight)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset y = graph.add_variable(1);
+    const std::array roots{unary(graph, Operator::Sqrt, x), unary(graph, Operator::Sin, y)};
+    const Tape tape(graph, roots);
+    Workspace workspace(tape, 3);
+    Adjoints adjoints(tape, 3);
+    const Points points{{0.0, 1.0}, {0.0, 2.0}, {4.0, 0.5}};
+    const Points weights{{0.0, 1.0}, {1.0, 1.0}, {0.0, 0.0}};
+    expect_weighted(tape, workspace, adjoints, points, weights);
+}
+
+TEST(LaneTest, Masked)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset y = graph.add_variable(1);
+    const std::array terms{x, y};
+    const std::array roots{
+        graph.add_sum(0.5, terms, std::array{2.0, -3.0}),
+        listed(graph, Operator::Max, {x, y}),
+    };
+    const Tape tape(graph, roots);
+    Workspace workspace(tape, 3);
+    Adjoints adjoints(tape, 3);
+    const double nan = (std::numeric_limits<double>::quiet_NaN)();
+    const Points points{{nan, 2.0}, {nan, 2.0}, {1.0, 2.0}};
+    const Points weights{{0.0, 0.0}, {1.0, 1.0}, {1.0, 1.0}};
+    expect_weighted(tape, workspace, adjoints, points, weights);
+    expect_bits(gradient_of(tape, points[0], weights[0]), std::vector{0.0, 0.0});
+}
+
+TEST(LaneTest, Mismatch)
+{
+    Graph graph;
+    const Tape tape = shared_tape(graph);
+    Workspace workspace(tape, 3);
+    Adjoints adjoints(tape, 3);
+    const std::vector<double> point(6, 0.5);
+    const std::vector<double> weights(6, 1.0);
+    std::vector<double> values(6);
+    std::vector<double> out(6);
+    const Sweep sweep{
+        .tape = &tape,
+        .point = point,
+        .weights = weights,
+        .workspace = &workspace,
+        .adjoints = &adjoints,
+        .values = values,
+        .out = out,
+    };
+    run_jacobian(sweep);
+    run_weighted(sweep);
+    Sweep bad = sweep;
+    bad.out = std::span(out).first(5);
+    EXPECT_EQ(refused(run_jacobian, bad),
+              "invalid argument: gradients: size 5, not the pattern size 2 in 3 lanes");
+    EXPECT_EQ(refused(run_weighted, bad),
+              "invalid argument: gradient: size 5, not the point size 6");
+    bad = sweep;
+    bad.weights = std::span(weights).first(2);
+    EXPECT_EQ(refused(run_weighted, bad),
+              "invalid argument: weights: size 2, not the root count 2 in 3 lanes");
+    const std::string other = "sized for another tape";
+    adjoints = Adjoints(tape);
+    EXPECT_EQ(refused(run_jacobian, sweep),
+              "invalid argument: adjoints: lane count 1, not the workspace's 3");
+    adjoints = Adjoints(tape, 3);
+    adjoints.taken.pop_back();
+    EXPECT_EQ(refused(run_weighted, sweep), "invalid argument: adjoints: " + other);
+    adjoints = Adjoints(tape, 3);
+    adjoints.slots.pop_back();
+    EXPECT_EQ(refused(run_jacobian, sweep), "invalid argument: adjoints: " + other);
+    adjoints = Adjoints(tape, 3);
+    adjoints.shared.pop_back();
+    EXPECT_EQ(refused(run_weighted, sweep), "invalid argument: adjoints: " + other);
+    adjoints = Adjoints(tape, 3);
+    adjoints.gradient.pop_back();
+    EXPECT_EQ(refused(run_jacobian, sweep), "invalid argument: adjoints: " + other);
+    adjoints = Adjoints(tape, 3);
+    workspace.partials.pop_back();
+    EXPECT_EQ(refused(run_jacobian, sweep), "invalid argument: workspace: " + other);
+    workspace = Workspace(tape, 3);
+    workspace.spare.pop_back();
+    EXPECT_EQ(refused(run_jacobian, sweep), "invalid argument: workspace: " + other);
 }

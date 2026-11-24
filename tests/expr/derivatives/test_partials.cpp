@@ -44,7 +44,7 @@ Partials partials_at(const Graph &graph, Offset root, std::span<const double> po
     Workspace workspace(tape);
     const Block &block = tape.blocks()[0];
     biyos::linearize(block, point, workspace);
-    const std::span<const double> all = biyos::region(block, std::span(workspace.partials));
+    const std::span<const double> all = biyos::region(block, std::span(workspace.partials), 1);
     const std::size_t last = block.instructions.size() - 1;
     const std::uint32_t start = block.places[last];
     const std::span<const double> mine = all.subspan(start, block.places[last + 1] - start);

@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <span>
+#include <string>
 #include <vector>
 
 namespace biyos
@@ -18,9 +19,11 @@ struct Workspace
     std::vector<double> slots;
     std::vector<double> partials;
     std::vector<double> result;
+    std::vector<double> spare;
 };
 
 std::size_t lanes_of(std::size_t count);
+std::string in_lanes(std::size_t lanes);
 void check_sweep(const Tape &tape,
                  std::span<const double> point,
                  const Workspace &workspace,
