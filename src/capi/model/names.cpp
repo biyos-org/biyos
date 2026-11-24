@@ -390,7 +390,7 @@ BIYOS_status BIYOS_setsosnamesp(BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const char *const *name)
 {
-    return guarded<set_names<Family::Sos, List>>(mdl, List{n, idx}, name);
+    return guarded<set_names<Family::SpecialOrderedSet, List>>(mdl, List{n, idx}, name);
 }
 
 BIYOS_status BIYOS_setsosnamerg(BIYOS_model *mdl,
@@ -398,7 +398,7 @@ BIYOS_status BIYOS_setsosnamerg(BIYOS_model *mdl,
                                 BIYOS_index n,
                                 const char *const *name)
 {
-    return guarded<set_names<Family::Sos, Range>>(mdl, Range{pos, n}, name);
+    return guarded<set_names<Family::SpecialOrderedSet, Range>>(mdl, Range{pos, n}, name);
 }
 
 BIYOS_status BIYOS_getsosnamesp(const BIYOS_model *mdl,
@@ -406,7 +406,7 @@ BIYOS_status BIYOS_getsosnamesp(const BIYOS_model *mdl,
                                 const BIYOS_index *idx,
                                 const char **name)
 {
-    return guarded<get_names<Family::Sos, List>>(mdl, List{n, idx}, name);
+    return guarded<get_names<Family::SpecialOrderedSet, List>>(mdl, List{n, idx}, name);
 }
 
 BIYOS_status BIYOS_getsosnamerg(const BIYOS_model *mdl,
@@ -414,7 +414,7 @@ BIYOS_status BIYOS_getsosnamerg(const BIYOS_model *mdl,
                                 BIYOS_index n,
                                 const char **name)
 {
-    return guarded<get_names<Family::Sos, Range>>(mdl, Range{pos, n}, name);
+    return guarded<get_names<Family::SpecialOrderedSet, Range>>(mdl, Range{pos, n}, name);
 }
 
 BIYOS_status BIYOS_getsosidx(const BIYOS_model *mdl,
@@ -422,17 +422,17 @@ BIYOS_status BIYOS_getsosidx(const BIYOS_model *mdl,
                              const char *const *name,
                              BIYOS_index *idx)
 {
-    return guarded<get_indices<Family::Sos>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::SpecialOrderedSet>>(mdl, n, name, idx);
 }
 
 BIYOS_status BIYOS_delsosnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
 {
-    return guarded<delete_names<Family::Sos, List>>(mdl, List{n, idx});
+    return guarded<delete_names<Family::SpecialOrderedSet, List>>(mdl, List{n, idx});
 }
 
 BIYOS_status BIYOS_delsosnamerg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
 {
-    return guarded<delete_names<Family::Sos, Range>>(mdl, Range{pos, n});
+    return guarded<delete_names<Family::SpecialOrderedSet, Range>>(mdl, Range{pos, n});
 }
 
 BIYOS_status BIYOS_setconenamesp(BIYOS_model *mdl,

@@ -171,7 +171,7 @@ void add_members(Engine &engine, int n_variables, Terms &terms)
     terms.starts.push_back(static_cast<BIYOS_offset>(terms.columns.size()));
 }
 
-void add_sos(BIYOS_model *model, Engine &engine, int n, int n_variables)
+void add_special_ordered_sets(BIYOS_model *model, Engine &engine, int n, int n_variables)
 {
     Terms terms;
     std::vector<BIYOS_int> kinds;
@@ -306,9 +306,9 @@ void build_sample(BIYOS_model *model, Engine &engine)
     add_names(model, engine, functions, BIYOS_setfunnamesp);
     add_names(model, engine, constraints, BIYOS_setconnamesp);
     add_names(model, engine, objectives, BIYOS_setobjnamesp);
-    const int sos = 1 + below(engine, 4);
-    add_sos(model, engine, sos, variables);
-    add_names(model, engine, sos, BIYOS_setsosnamesp);
+    const int soss = 1 + below(engine, 4);
+    add_special_ordered_sets(model, engine, soss, variables);
+    add_names(model, engine, soss, BIYOS_setsosnamesp);
     const int cones = 1 + below(engine, 3);
     add_cones(model, engine, cones, functions);
     add_names(model, engine, cones, BIYOS_setconenamesp);

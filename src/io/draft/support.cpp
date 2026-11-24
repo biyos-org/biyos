@@ -79,7 +79,7 @@ void check_support(const Model &model)
     }
     check_absent(model, Family::Cone, "cones");
     check_absent(model, Family::Complement, "complements");
-    check_absent(model, Family::Sos, "sets");
+    check_absent(model, Family::SpecialOrderedSet, "sets");
     check_absent(model, Family::Indicator, "indicators");
 }
 

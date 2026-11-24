@@ -478,7 +478,7 @@ void copy_objectives(const Model &from, const Model &to)
     ASSERT_EQ(added, BIYOS_OK);
 }
 
-void copy_sos(const Model &from, const Model &to)
+void copy_special_ordered_sets(const Model &from, const Model &to)
 {
     const BIYOS_index n = count_of(from, BIYOS_getnsos);
     BIYOS_offset nnz = -1;
@@ -634,7 +634,7 @@ void copy_model(const Model &from, const Model &to)
     copy_constraints(from, to);
     copy_objectives(from, to);
     copy_tolerances(from, to);
-    copy_sos(from, to);
+    copy_special_ordered_sets(from, to);
     copy_cones(from, to);
     copy_family(from, to, biyos::test::kVariableTolerances);
     copy_family(from, to, biyos::test::kConstraintTolerances);

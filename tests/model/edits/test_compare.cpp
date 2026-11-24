@@ -27,7 +27,7 @@ using biyos::Model;
 using biyos::Objective;
 using biyos::ObjectiveSense;
 using biyos::QuadraticTerm;
-using biyos::SosKind;
+using biyos::SpecialOrderedSetKind;
 using biyos::VariableKind;
 using biyos::test::built;
 using biyos::test::Node;
@@ -171,20 +171,20 @@ TEST(CompareTest, IndicatorFields)
     EXPECT_EQ(from_sample(upper), "indicator 1: upper bound 1 against 2");
 }
 
-TEST(CompareTest, SosFields)
+TEST(CompareTest, SetFields)
 {
     Parts kind = sample();
-    kind.sos.kinds[1] = SosKind::Sos2;
+    kind.special_ordered_sets.kinds[1] = SpecialOrderedSetKind::Sos2;
     EXPECT_EQ(from_sample(kind), "set 1: kind 1 against 2");
     Parts variable = sample();
-    variable.sos.members[3].variable = 2;
+    variable.special_ordered_sets.members[3].variable = 2;
     EXPECT_EQ(from_sample(variable), "set 1: member 0: variable 0 against 2");
     Parts weight = sample();
-    weight.sos.members[2].weight = 2.0;
+    weight.special_ordered_sets.members[2].weight = 2.0;
     EXPECT_EQ(from_sample(weight), "set 0: member 2: weight 2.5 against 2");
     Parts n = sample();
-    n.sos.members.pop_back();
-    n.sos.starts[2] = 4;
+    n.special_ordered_sets.members.pop_back();
+    n.special_ordered_sets.starts[2] = 4;
     EXPECT_EQ(from_sample(n), "set 1: member count 2 against 1");
 }
 
@@ -246,12 +246,12 @@ TEST(CompareTest, Counts)
     indicators.indicators.pop_back();
     indicators.indicator_names = {};
     EXPECT_EQ(from_sample(indicators), "indicator count 2 against 1");
-    Parts sos = sample();
-    sos.sos.kinds.pop_back();
-    sos.sos.starts.pop_back();
-    sos.sos.members.resize(3);
-    sos.sos_names = {.indices = {}, .names = {}};
-    EXPECT_EQ(from_sample(sos), "set count 2 against 1");
+    Parts soss = sample();
+    soss.special_ordered_sets.kinds.pop_back();
+    soss.special_ordered_sets.starts.pop_back();
+    soss.special_ordered_sets.members.resize(3);
+    soss.special_ordered_set_names = {.indices = {}, .names = {}};
+    EXPECT_EQ(from_sample(soss), "set count 2 against 1");
     Parts cones = sample();
     cones.cones.kinds.pop_back();
     cones.cones.starts.pop_back();
@@ -302,9 +302,9 @@ TEST(CompareTest, Names)
     Parts indicator = sample();
     indicator.indicator_names = {.indices = {0, 1}, .names = {"on", "off"}};
     EXPECT_EQ(from_sample(indicator), "indicator 0: name none against 'on'");
-    Parts sos = sample();
-    sos.sos_names = {.indices = {0}, .names = {"t"}};
-    EXPECT_EQ(from_sample(sos), "set 0: name none against 't'");
+    Parts soss = sample();
+    soss.special_ordered_set_names = {.indices = {0}, .names = {"t"}};
+    EXPECT_EQ(from_sample(soss), "set 0: name none against 't'");
     Parts cone = sample();
     cone.cone_names.names[0] = "j";
     EXPECT_EQ(from_sample(cone), "cone 1: name 'k' against 'j'");
@@ -352,9 +352,9 @@ TEST(CompareTest, SignedZero)
     tolerance.objectives[1].absolute = -0.0;
     EXPECT_EQ(from_sample(tolerance), "objective 1: absolute tolerance 0 against -0");
     Parts positive_weight = sample();
-    positive_weight.sos.members[4].weight = 0.0;
+    positive_weight.special_ordered_sets.members[4].weight = 0.0;
     Parts negative_weight = sample();
-    negative_weight.sos.members[4].weight = -0.0;
+    negative_weight.special_ordered_sets.members[4].weight = -0.0;
     EXPECT_EQ(difference(built(positive_weight), built(negative_weight)),
               "set 1: member 1: weight 0 against -0");
 }
@@ -519,23 +519,23 @@ TEST(CompareTest, IndicatorOrder)
     EXPECT_EQ(difference(base, built(changed)), "");
 }
 
-TEST(CompareTest, SosOrder)
+TEST(CompareTest, SetOrder)
 {
     Parts changed = sample();
     changed.objectives[1].priority = 1;
-    changed.sos.kinds[1] = SosKind::Sos2;
+    changed.special_ordered_sets.kinds[1] = SpecialOrderedSetKind::Sos2;
     EXPECT_EQ(from_sample(changed), "objective 1: priority 0 against 1");
     changed.objectives[1].priority = 0;
-    changed.sos.members[3] = Member{.variable = 2, .weight = -2.0};
-    changed.sos_names.names[0] = "t";
+    changed.special_ordered_sets.members[3] = Member{.variable = 2, .weight = -2.0};
+    changed.special_ordered_set_names.names[0] = "t";
     EXPECT_EQ(from_sample(changed), "set 1: kind 1 against 2");
-    changed.sos.kinds[1] = SosKind::Sos1;
+    changed.special_ordered_sets.kinds[1] = SpecialOrderedSetKind::Sos1;
     EXPECT_EQ(from_sample(changed), "set 1: member 0: variable 0 against 2");
-    changed.sos.members[3].variable = 0;
+    changed.special_ordered_sets.members[3].variable = 0;
     EXPECT_EQ(from_sample(changed), "set 1: member 0: weight -1 against -2");
-    changed.sos.members[3].weight = -1.0;
+    changed.special_ordered_sets.members[3].weight = -1.0;
     EXPECT_EQ(from_sample(changed), "set 1: name 's' against 't'");
-    changed.sos_names.names[0] = "s";
+    changed.special_ordered_set_names.names[0] = "s";
     EXPECT_EQ(from_sample(changed), "");
 }
 

@@ -87,7 +87,7 @@ TEST(MpsTest, Records)
     EXPECT_EQ(refusal(built(complements)),
               "unsupported: complement 0: free MPS cannot hold complements");
     Parts sets = writable();
-    sets.sos = full.sos;
+    sets.special_ordered_sets = full.special_ordered_sets;
     EXPECT_EQ(refusal(built(sets)), "unsupported: set 0: free MPS cannot hold sets");
     Parts indicators = writable();
     indicators.indicators = full.indicators;

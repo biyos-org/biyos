@@ -252,15 +252,15 @@ std::string indicator_difference(const Model &a, const Model &b, Index indicator
 
 int kind_of(const Model &model, Index sos)
 {
-    return static_cast<int>(model.kind_of_sos(sos));
+    return static_cast<int>(model.kind_of_special_ordered_set(sos));
 }
 
-std::string sos_difference(const Model &a, const Model &b, Index sos)
+std::string special_ordered_set_difference(const Model &a, const Model &b, Index sos)
 {
     return first_of({
         compared("kind", kind_of(a, sos), kind_of(b, sos)),
         term_differences("member", a.members(sos, 1), b.members(sos, 1)),
-        named(a, b, Family::Sos, sos),
+        named(a, b, Family::SpecialOrderedSet, sos),
     });
 }
 
@@ -321,10 +321,10 @@ std::string indicator_differences(const Model &a, const Model &b)
     return table_difference("indicator", a.n_indicators(), b.n_indicators(), indicator);
 }
 
-std::string sos_differences(const Model &a, const Model &b)
+std::string special_ordered_set_differences(const Model &a, const Model &b)
 {
-    const auto sos = [&](Index k) { return sos_difference(a, b, k); };
-    return table_difference("set", a.n_sos(), b.n_sos(), sos);
+    const auto sos = [&](Index k) { return special_ordered_set_difference(a, b, k); };
+    return table_difference("set", a.n_special_ordered_sets(), b.n_special_ordered_sets(), sos);
 }
 
 std::string cone_differences(const Model &a, const Model &b)
@@ -430,7 +430,7 @@ std::string difference(const Model &a, const Model &b)
     }
     if (found.empty())
     {
-        found = sos_differences(a, b);
+        found = special_ordered_set_differences(a, b);
     }
     if (found.empty())
     {

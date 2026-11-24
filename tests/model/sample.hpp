@@ -36,9 +36,9 @@ struct Expressions
     std::vector<Offset> roots;
 };
 
-struct Sos
+struct SpecialOrderedSets
 {
-    std::vector<SosKind> kinds;
+    std::vector<SpecialOrderedSetKind> kinds;
     std::vector<Offset> starts;
     std::vector<Member> members;
 };
@@ -69,7 +69,7 @@ struct Parts
     std::vector<Constraint> constraints;
     std::vector<Objective> objectives;
     std::vector<Indicator> indicators;
-    Sos sos;
+    SpecialOrderedSets special_ordered_sets;
     Cones cones;
     std::vector<Complement> complements;
     std::string name;
@@ -78,7 +78,7 @@ struct Parts
     Naming constraint_names;
     Naming objective_names;
     Naming indicator_names;
-    Naming sos_names;
+    Naming special_ordered_set_names;
     Naming cone_names;
     Naming complement_names;
 };
@@ -156,9 +156,9 @@ inline Parts sample()
                 {.variable = 1, .value = 1, .function = 2, .lower = -kInfinity, .upper = 4.0},
                 {.variable = 1, .value = 0, .function = 2, .lower = 1.0, .upper = 1.0},
             },
-        .sos =
+        .special_ordered_sets =
             {
-                .kinds = {SosKind::Sos2, SosKind::Sos1},
+                .kinds = {SpecialOrderedSetKind::Sos2, SpecialOrderedSetKind::Sos1},
                 .starts = {0, 3, 5},
                 .members =
                     {
@@ -188,7 +188,7 @@ inline Parts sample()
         .constraint_names = {.indices = {1}, .names = {"c"}},
         .objective_names = {.indices = {0}, .names = {"cost"}},
         .indicator_names = {.indices = {1}, .names = {"off"}},
-        .sos_names = {.indices = {1}, .names = {"s"}},
+        .special_ordered_set_names = {.indices = {1}, .names = {"s"}},
         .cone_names = {.indices = {1}, .names = {"k"}},
         .complement_names = {.indices = {1}, .names = {"pair"}},
     };
@@ -240,7 +240,9 @@ inline Model built(const Parts &parts)
     model.add_constraints(parts.constraints);
     model.add_objectives(parts.objectives);
     model.add_indicators(parts.indicators);
-    model.add_sos(parts.sos.kinds, parts.sos.starts, parts.sos.members);
+    model.add_special_ordered_sets(parts.special_ordered_sets.kinds,
+                                   parts.special_ordered_sets.starts,
+                                   parts.special_ordered_sets.members);
     const Cones &cones = parts.cones;
     model.add_cones(cones.kinds,
                     cones.starts,
@@ -257,7 +259,7 @@ inline Model built(const Parts &parts)
     name(model, Family::Constraint, parts.constraint_names);
     name(model, Family::Objective, parts.objective_names);
     name(model, Family::Indicator, parts.indicator_names);
-    name(model, Family::Sos, parts.sos_names);
+    name(model, Family::SpecialOrderedSet, parts.special_ordered_set_names);
     name(model, Family::Cone, parts.cone_names);
     name(model, Family::Complement, parts.complement_names);
     return model;
