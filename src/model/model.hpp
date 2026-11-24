@@ -103,14 +103,14 @@ struct Member
 
 enum class ConeKind
 {
-    Nonnegative = BIYOS_CONE_NONNEG,
-    SecondOrder = BIYOS_CONE_SOC,
-    Rotated = BIYOS_CONE_RSOC,
-    Exponential = BIYOS_CONE_EXP,
-    DualExponential = BIYOS_CONE_DEXP,
-    Power = BIYOS_CONE_POW,
-    DualPower = BIYOS_CONE_DPOW,
-    Semidefinite = BIYOS_CONE_PSD,
+    Nonnegative = BIYOS_CONEKND_NONNEG,
+    SecondOrder = BIYOS_CONEKND_SOC,
+    Rotated = BIYOS_CONEKND_RSOC,
+    Exponential = BIYOS_CONEKND_EXP,
+    DualExponential = BIYOS_CONEKND_DEXP,
+    Power = BIYOS_CONEKND_POW,
+    DualPower = BIYOS_CONEKND_DPOW,
+    Semidefinite = BIYOS_CONEKND_PSD,
 };
 
 inline constexpr std::array kConeKinds{

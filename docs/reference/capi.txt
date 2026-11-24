@@ -1850,14 +1850,14 @@ text A cone may hold its own absolute and relative tolerance, each finite and at
 text Each kind fixes the dimensions its cones may take. The two power cones take one parameter for each of their first $r$ members, a weight $\alpha_i$ that is finite and positive, with $\sigma = \sum_i \alpha_i$; the weights are kept as given and need not sum to 1. Every other kind takes no parameter. In the table, $t$ names the first members and $z$ the rest, and $\lVert z \rVert$ is the Euclidean norm.
 
 table Cone kinds
-value BIYOS_CONE_NONNEG The nonnegative orthant: every member is 0 or more. Dimension 1 or more.
-value BIYOS_CONE_SOC The second-order cone of $(t, z)$: $t \ge \lVert z \rVert$. Dimension 1 or more.
-value BIYOS_CONE_RSOC The rotated second-order cone of $(t_1, t_2, z)$: $2 t_1 t_2 \ge \lVert z \rVert^2$ with $t_1, t_2 \ge 0$. Dimension 2 or more.
-value BIYOS_CONE_EXP The exponential cone of $(t_1, t_2, t_3)$: the closure of the points with $t_2 > 0$ and $t_1 \ge t_2 \mathrm{e}^{t_3 / t_2}$. Dimension 3.
-value BIYOS_CONE_DEXP The dual exponential cone of $(t_1, t_2, t_3)$: the closure of the points with $t_3 < 0$ and $\mathrm{e}\, t_1 \ge -t_3 \mathrm{e}^{t_2 / t_3}$. Dimension 3.
-value BIYOS_CONE_POW The power cone of $(t_1, \dots, t_r, z)$ with weights $\alpha_1, \dots, \alpha_r$: $\prod_i t_i^{\alpha_i} \ge \lVert z \rVert^\sigma$ with every $t_i \ge 0$. Dimension $r$ or more, with $r \ge 1$.
-value BIYOS_CONE_DPOW The dual power cone of $(t_1, \dots, t_r, z)$ with weights $\alpha_1, \dots, \alpha_r$: $\prod_i (t_i / \alpha_i)^{\alpha_i} \ge (\lVert z \rVert / \sigma)^\sigma$ with every $t_i \ge 0$. Dimension $r$ or more, with $r \ge 1$.
-value BIYOS_CONE_PSD The semidefinite cone of the symmetric matrices $X$ of order $r$ with no negative eigenvalue. The members are the lower triangle of $X$ column by column, $X_{11}, \sqrt{2} X_{21}, \dots, \sqrt{2} X_{r1}, X_{22}, \sqrt{2} X_{32}, \dots, X_{rr}$, each entry off the diagonal scaled by $\sqrt{2}$ so that inner products are kept. Dimension $r(r+1)/2$ with $r \ge 1$.
+value BIYOS_CONEKND_NONNEG The nonnegative orthant: every member is 0 or more. Dimension 1 or more.
+value BIYOS_CONEKND_SOC The second-order cone of $(t, z)$: $t \ge \lVert z \rVert$. Dimension 1 or more.
+value BIYOS_CONEKND_RSOC The rotated second-order cone of $(t_1, t_2, z)$: $2 t_1 t_2 \ge \lVert z \rVert^2$ with $t_1, t_2 \ge 0$. Dimension 2 or more.
+value BIYOS_CONEKND_EXP The exponential cone of $(t_1, t_2, t_3)$: the closure of the points with $t_2 > 0$ and $t_1 \ge t_2 \mathrm{e}^{t_3 / t_2}$. Dimension 3.
+value BIYOS_CONEKND_DEXP The dual exponential cone of $(t_1, t_2, t_3)$: the closure of the points with $t_3 < 0$ and $\mathrm{e}\, t_1 \ge -t_3 \mathrm{e}^{t_2 / t_3}$. Dimension 3.
+value BIYOS_CONEKND_POW The power cone of $(t_1, \dots, t_r, z)$ with weights $\alpha_1, \dots, \alpha_r$: $\prod_i t_i^{\alpha_i} \ge \lVert z \rVert^\sigma$ with every $t_i \ge 0$. Dimension $r$ or more, with $r \ge 1$.
+value BIYOS_CONEKND_DPOW The dual power cone of $(t_1, \dots, t_r, z)$ with weights $\alpha_1, \dots, \alpha_r$: $\prod_i (t_i / \alpha_i)^{\alpha_i} \ge (\lVert z \rVert / \sigma)^\sigma$ with every $t_i \ge 0$. Dimension $r$ or more, with $r \ge 1$.
+value BIYOS_CONEKND_PSD The semidefinite cone of the symmetric matrices $X$ of order $r$ with no negative eigenvalue. The members are the lower triangle of $X$ column by column, $X_{11}, \sqrt{2} X_{21}, \dots, \sqrt{2} X_{r1}, X_{22}, \sqrt{2} X_{32}, \dots, X_{rr}$, each entry off the diagonal scaled by $\sqrt{2}$ so that inner products are kept. Dimension $r(r+1)/2$ with $r \ge 1$.
 since 0.1.0
 
 function BIYOS_addcone

@@ -120,7 +120,7 @@ class SOSKind(IntEnum):
 
 
 class ConeKind(IntEnum):
-    """The kinds of cones, as ``BIYOS_CONE_`` numbers them.
+    """The kinds of cones, as ``BIYOS_CONEKND_`` numbers them.
 
     The C API reference defines each kind, its member order, its dimensions
     and its parameters.

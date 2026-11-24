@@ -106,7 +106,9 @@ void add_records(const Model &model)
     const BIYOS_index *three = kThree.data();
     const std::array<BIYOS_int, 3> values{1, 0, 1};
     const std::array<BIYOS_int, 3> sets{BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS1};
-    const std::array<BIYOS_int, 3> cones{BIYOS_CONE_NONNEG, BIYOS_CONE_NONNEG, BIYOS_CONE_NONNEG};
+    const std::array<BIYOS_int, 3> cones{BIYOS_CONEKND_NONNEG,
+                                         BIYOS_CONEKND_NONNEG,
+                                         BIYOS_CONEKND_NONNEG};
     const std::array<BIYOS_index, 3> partners{1, 2, 0};
     ASSERT_EQ(BIYOS_addcon(held, 3, three, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addobj(held, 3, three, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
