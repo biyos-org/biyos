@@ -802,9 +802,7 @@ class Model:
         """
         count = len(idx)
         chosen = self._chosen("BIYOS_setvarknd", Variables, idx)
-        arrays = (
-            ints("knd", knd, count),
-        )
+        arrays = (ints("knd", knd, count),)
         self._call(*chosen, *arrays)
 
     def getvarknd(
@@ -1188,9 +1186,7 @@ class Model:
         chosen = self._chosen("BIYOS_setcst", Functions, idx)
         self._call(*chosen, doubles("cst", cst, n))
 
-    def getcst(
-        self, idx: Sequence[int | Function] | Functions
-    ) -> list[float]:
+    def getcst(self, idx: Sequence[int | Function] | Functions) -> list[float]:
         """Read the constants of functions.
 
         Parameters
@@ -2361,9 +2357,7 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getconidx, name)
 
-    def delconname(
-        self, idx: Sequence[int | Constraint] | Constraints
-    ) -> None:
+    def delconname(self, idx: Sequence[int | Constraint] | Constraints) -> None:
         """Remove the names of constraints, as ``delvarname`` does.
 
         Parameters
@@ -2480,9 +2474,7 @@ class Model:
         """
         n = len(idx)
         chosen = self._chosen("BIYOS_setobjsense", Objectives, idx)
-        arrays = (
-            ints("sense", sense, n),
-        )
+        arrays = (ints("sense", sense, n),)
         self._call(*chosen, *arrays)
 
     def getobjsense(
@@ -2531,9 +2523,7 @@ class Model:
         """
         n = len(idx)
         chosen = self._chosen("BIYOS_setobjprio", Objectives, idx)
-        arrays = (
-            ints("prio", prio, n),
-        )
+        arrays = (ints("prio", prio, n),)
         self._call(*chosen, *arrays)
 
     def getobjprio(
@@ -2583,9 +2573,7 @@ class Model:
         """
         n = len(idx)
         chosen = self._chosen("BIYOS_setobjcoef", Objectives, idx)
-        arrays = (
-            doubles("coef", coef, n),
-        )
+        arrays = (doubles("coef", coef, n),)
         self._call(*chosen, *arrays)
 
     def getobjcoef(
@@ -3895,9 +3883,7 @@ class Model:
         atol, rtol = self._getlist("BIYOS_getccontol", Complements, idx, *pair)
         return _or_none(atol), _or_none(rtol)
 
-    def delccontol(
-        self, idx: Sequence[int | Complement] | Complements
-    ) -> None:
+    def delccontol(self, idx: Sequence[int | Complement] | Complements) -> None:
         """Return complements to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters

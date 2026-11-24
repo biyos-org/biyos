@@ -30,6 +30,7 @@ MERGED_VARS = (
     [1.0, 0.0, 3.0, 0.0, 5.0, 3.0, 2.0, 0.5],
 )
 
+
 @pytest.fixture
 def env():
     with biyos.Env() as env:

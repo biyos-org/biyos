@@ -12,8 +12,7 @@ from spies import Trap, followed, interrupted, preceded, traced
 
 INFINITY = float("inf")
 BUSY = (
-    "invalid argument: argument 'env':"
-    " is read-only while delivering an event"
+    "invalid argument: argument 'env': is read-only while delivering an event"
 )
 CLOSED = "the model is closed"
 REFUSED = -100

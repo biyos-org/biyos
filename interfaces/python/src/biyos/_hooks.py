@@ -33,9 +33,7 @@ def checked_hook(
 
 
 class Hooks:
-    def __init__(
-        self, relay: Relay, owners: Mapping[int, "Model"]
-    ) -> None:
+    def __init__(self, relay: Relay, owners: Mapping[int, "Model"]) -> None:
         self._functions: dict[int, Callable[[Event], object]] = {}
         self._keys: dict[int, int] = {}
         self._count = 0

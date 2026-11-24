@@ -45,9 +45,7 @@ def last_error(handle: c_void_p) -> ErrorRecord:
     return record
 
 
-def check(
-    handle: c_void_p, status: int, owners: Mapping[int, "Model"]
-) -> None:
+def check(handle: c_void_p, status: int, owners: Mapping[int, "Model"]) -> None:
     if status != OK:
         record = last_error(handle)
         text = (record.msg or b"").decode(errors="replace")
