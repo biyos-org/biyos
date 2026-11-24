@@ -14,7 +14,7 @@ inline Parts writable()
     parts.expressions = {};
     parts.objectives = {default_objective(2, 0)};
     parts.indicators = {};
-    parts.sos = {.kinds = {}, .starts = {0}, .members = {}};
+    parts.special_ordered_sets = {.kinds = {}, .starts = {0}, .members = {}};
     parts.cones = {.kinds = {},
                    .starts = {0},
                    .functions = {},
@@ -22,7 +22,7 @@ inline Parts writable()
                    .parameters = {}};
     parts.complements = {};
     parts.indicator_names = {};
-    parts.sos_names = {};
+    parts.special_ordered_set_names = {};
     parts.cone_names = {};
     parts.complement_names = {};
     return parts;

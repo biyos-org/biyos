@@ -105,7 +105,7 @@ void add_records(const Model &model)
     BIYOS_model *held = model.get();
     const BIYOS_index *three = kThree.data();
     const std::array<BIYOS_int, 3> values{1, 0, 1};
-    const std::array<BIYOS_int, 3> sets{BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS1};
+    const std::array<BIYOS_int, 3> sets{BIYOS_SOSKND_ONE, BIYOS_SOSKND_ONE, BIYOS_SOSKND_ONE};
     const std::array<BIYOS_int, 3> cones{BIYOS_CONEKND_NONNEG,
                                          BIYOS_CONEKND_NONNEG,
                                          BIYOS_CONEKND_NONNEG};
@@ -335,7 +335,7 @@ void build_variables(const Model &model, const Spread &spread)
     const std::vector<BIYOS_index> functions(spread.lower.size(), 0);
     std::vector<BIYOS_index> variables(spread.lower.size());
     std::iota(variables.begin(), variables.end(), 0);
-    const BIYOS_int kind = BIYOS_SOSKND_SOS1;
+    const BIYOS_int kind = BIYOS_SOSKND_ONE;
     const std::array<BIYOS_offset, 2> starts{0, 1};
     const BIYOS_real *coefficients = spread.coefficients.data();
     ASSERT_EQ(BIYOS_addvar(held, n, nullptr, spread.lower.data(), nullptr, nullptr), BIYOS_OK);

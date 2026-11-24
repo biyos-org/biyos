@@ -100,7 +100,7 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 #if !defined(BIYOS_OBJSENSE_MIN) || BIYOS_OBJSENSE_MIN != 1 || BIYOS_OBJSENSE_MAX != 2
 #error "a public objective sense changed"
 #endif
-#if !defined(BIYOS_SOSKND_SOS1) || BIYOS_SOSKND_SOS1 != 1 || BIYOS_SOSKND_SOS2 != 2
+#if !defined(BIYOS_SOSKND_ONE) || BIYOS_SOSKND_ONE != 1 || BIYOS_SOSKND_TWO != 2
 #error "a public set kind changed"
 #endif
 #if !defined(BIYOS_CONEKND_NONNEG) || BIYOS_CONEKND_NONNEG != 1 || BIYOS_CONEKND_SOC != 2 ||       \
@@ -312,7 +312,7 @@ static BIYOS_status use_indicators(BIYOS_model *model)
 
 static BIYOS_status use_sos(BIYOS_model *model)
 {
-    const int kinds[2] = {BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2};
+    const int kinds[2] = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO};
     const BIYOS_offset starts[3] = {0, 2, 3};
     const int variables[3] = {1, 0, 1};
     const int indices[1] = {1};
@@ -332,9 +332,9 @@ static BIYOS_status use_sos(BIYOS_model *model)
         return BIYOS_ERR_INTERNAL;
     }
     if (BIYOS_getsosrg(model, 0, 2, 3, found, offsets, members, weights) != BIYOS_OK ||
-        found[1] != BIYOS_SOSKND_SOS2 || offsets[2] != 3 || members[1] != 0 ||
+        found[1] != BIYOS_SOSKND_TWO || offsets[2] != 3 || members[1] != 0 ||
         BIYOS_getsossp(model, 1, indices, 1, found, offsets, members, NULL) != BIYOS_OK ||
-        found[0] != BIYOS_SOSKND_SOS2 || offsets[1] != 1 || members[0] != 1 ||
+        found[0] != BIYOS_SOSKND_TWO || offsets[1] != 1 || members[0] != 1 ||
         BIYOS_delsossp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
         BIYOS_delsosrg(model, 2, 0, NULL) != BIYOS_OK)
     {

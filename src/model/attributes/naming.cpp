@@ -47,7 +47,7 @@ std::string_view noun_of(Family family) noexcept
         return "objective";
     case Family::Indicator:
         return "indicator";
-    case Family::Sos:
+    case Family::SpecialOrderedSet:
         return "set";
     case Family::Cone:
         return "cone";
@@ -124,8 +124,8 @@ Index Model::n_of(Family family) const noexcept
         return n_objectives();
     case Family::Indicator:
         return n_indicators();
-    case Family::Sos:
-        return n_sos();
+    case Family::SpecialOrderedSet:
+        return n_special_ordered_sets();
     case Family::Cone:
         return n_cones();
     case Family::Complement:

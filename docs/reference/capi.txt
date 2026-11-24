@@ -1727,15 +1727,15 @@ group sets Special ordered sets
 text A special ordered set holds variables of the model, its members, each with a weight. In a set of type 1 at most one member is nonzero; in a set of type 2 at most two are, and two nonzero members are adjacent in the order of their weights. The weights of a set are finite and distinct, and the members are kept in the order given, whatever their weights. A variable is a member of a set at most once and may belong to several sets.
 
 table Special ordered set kinds
-value BIYOS_SOSKND_SOS1 Type 1: at most one member is nonzero.
-value BIYOS_SOSKND_SOS2 Type 2: at most two members are nonzero, adjacent in the order of their weights.
+value BIYOS_SOSKND_ONE Type 1: at most one member is nonzero.
+value BIYOS_SOSKND_TWO Type 2: at most two members are nonzero, adjacent in the order of their weights.
 since 0.1.0
 
 function BIYOS_addsos
 summary Add special ordered sets after the last one.
 param mdl in The model.
 param n in The number of sets to add.
-param knd in The type of each, `BIYOS_SOSKND_SOS1` or `BIYOS_SOSKND_SOS2`; may be null only when `n` is 0.
+param knd in The type of each, `BIYOS_SOSKND_ONE` or `BIYOS_SOSKND_TWO`; may be null only when `n` is 0.
 param off in The `n + 1` offsets of the sets' members; null adds sets with no members.
 param varidx in The variable of each member; not read when there are no members.
 param coef in The weight of each member; null gives the members of each set the weights 1, 2, 3 and so on, in the order given.

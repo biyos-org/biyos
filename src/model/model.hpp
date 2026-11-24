@@ -84,15 +84,15 @@ struct Indicator
     double upper;
 };
 
-enum class SosKind
+enum class SpecialOrderedSetKind
 {
-    Sos1 = BIYOS_SOSKND_SOS1,
-    Sos2 = BIYOS_SOSKND_SOS2,
+    One = BIYOS_SOSKND_ONE,
+    Two = BIYOS_SOSKND_TWO,
 };
 
-inline constexpr std::array kSosKinds{
-    SosKind::Sos1,
-    SosKind::Sos2,
+inline constexpr std::array kSpecialOrderedSetKinds{
+    SpecialOrderedSetKind::One,
+    SpecialOrderedSetKind::Two,
 };
 
 struct Member
@@ -139,7 +139,7 @@ enum class Family
     Constraint,
     Objective,
     Indicator,
-    Sos,
+    SpecialOrderedSet,
     Cone,
     Complement,
 };
@@ -150,7 +150,7 @@ inline constexpr std::array kFamilies{
     Family::Constraint,
     Family::Objective,
     Family::Indicator,
-    Family::Sos,
+    Family::SpecialOrderedSet,
     Family::Cone,
     Family::Complement,
 };
@@ -239,15 +239,15 @@ class Model
     void set_indicators(std::span<const Index> indices, std::span<const Indicator> changed);
     std::vector<Index> delete_indicators(std::span<const Index> indices);
 
-    Index n_sos() const noexcept;
-    SosKind kind_of_sos(Index index) const;
+    Index n_special_ordered_sets() const noexcept;
+    SpecialOrderedSetKind kind_of_special_ordered_set(Index index) const;
     std::span<const Member> members(Index start, Index size) const;
 
-    void check_sos_room(std::size_t sos, Offset members) const;
-    void add_sos(std::span<const SosKind> kinds,
-                 std::span<const Offset> starts,
-                 std::span<const Member> members);
-    std::vector<Index> delete_sos(std::span<const Index> indices);
+    void check_special_ordered_set_room(std::size_t soss, Offset members) const;
+    void add_special_ordered_sets(std::span<const SpecialOrderedSetKind> kinds,
+                                  std::span<const Offset> starts,
+                                  std::span<const Member> members);
+    std::vector<Index> delete_special_ordered_sets(std::span<const Index> indices);
 
     Index n_cones() const noexcept;
     std::span<const ConeKind> cone_kinds(Index start, Index size) const;
@@ -321,8 +321,8 @@ class Model
     std::vector<Constraint> constraints_;
     std::vector<Objective> objectives_;
     std::vector<Indicator> indicators_;
-    std::vector<SosKind> sos_kinds_;
-    std::vector<Offset> sos_ends_;
+    std::vector<SpecialOrderedSetKind> special_ordered_set_kinds_;
+    std::vector<Offset> special_ordered_set_ends_;
     std::vector<Member> members_;
     std::vector<ConeKind> cone_kinds_;
     std::vector<Offset> cone_ends_;

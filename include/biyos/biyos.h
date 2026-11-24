@@ -172,8 +172,8 @@ BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *b
 #define BIYOS_OBJSENSE_MIN 1
 #define BIYOS_OBJSENSE_MAX 2
 
-#define BIYOS_SOSKND_SOS1 1
-#define BIYOS_SOSKND_SOS2 2
+#define BIYOS_SOSKND_ONE 1
+#define BIYOS_SOSKND_TWO 2
 
 #define BIYOS_CONEKND_NONNEG 1
 #define BIYOS_CONEKND_SOC 2

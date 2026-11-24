@@ -63,9 +63,12 @@ void delete_indicators(BIYOS_model &model, Selection selection, int *map)
     delete_records<Family::Indicator, &Model::delete_indicators>(model, selection, map);
 }
 
-template <typename Selection> void delete_sos(BIYOS_model &model, Selection selection, int *map)
+template <typename Selection>
+void delete_special_ordered_sets(BIYOS_model &model, Selection selection, int *map)
 {
-    delete_records<Family::Sos, &Model::delete_sos>(model, selection, map);
+    delete_records<Family::SpecialOrderedSet, &Model::delete_special_ordered_sets>(model,
+                                                                                   selection,
+                                                                                   map);
 }
 
 template <typename Selection> void delete_cones(BIYOS_model &model, Selection selection, int *map)
@@ -151,12 +154,12 @@ BIYOS_status BIYOS_delsossp(BIYOS_model *mdl,
                             const BIYOS_index *idx,
                             BIYOS_index *map)
 {
-    return guarded<delete_sos<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_special_ordered_sets<List>>(mdl, List{n, idx}, map);
 }
 
 BIYOS_status BIYOS_delsosrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n, BIYOS_index *map)
 {
-    return guarded<delete_sos<Range>>(mdl, Range{pos, n}, map);
+    return guarded<delete_special_ordered_sets<Range>>(mdl, Range{pos, n}, map);
 }
 
 BIYOS_status BIYOS_delconesp(BIYOS_model *mdl,

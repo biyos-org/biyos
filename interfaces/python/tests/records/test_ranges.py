@@ -3,7 +3,12 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import ConeKind, ObjectiveSense, VariableKind
+from biyos import (
+    ConeKind,
+    ObjectiveSense,
+    SpecialOrderedSetKind,
+    VariableKind,
+)
 from biyos._capi import lib
 from refusal import refusal
 
@@ -42,6 +47,7 @@ SPREAD = {
 }
 
 CONES = [ConeKind.NONNEGATIVE] * 4
+SOSS = [SpecialOrderedSetKind.ONE] * 4
 
 FORMS = {
     "block": "rg",
@@ -66,7 +72,7 @@ def blocks(env):
             "con": model.addcon([0] * 4),
             "obj": model.addobj([0] * 4),
             "ind": model.addind(add_switches(model), [1] * 4, [0] * 4),
-            "sos": model.addsos([biyos.SOSKind.SOS1] * 4, [0] * 5, []),
+            "sos": model.addsos(SOSS, [0] * 5, []),
             "cone": model.addcone(CONES, range(5), range(4)),
             "ccon": model.addccon([0] * 4, [0] * 4),
         }

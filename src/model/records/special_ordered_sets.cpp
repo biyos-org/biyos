@@ -22,9 +22,9 @@ namespace
 
 constexpr std::string_view kNoun = "set";
 
-void check_kind(Index sos, SosKind kind)
+void check_kind(Index sos, SpecialOrderedSetKind kind)
 {
-    if (std::ranges::find(kSosKinds, kind) == kSosKinds.end())
+    if (std::ranges::find(kSpecialOrderedSetKinds, kind) == kSpecialOrderedSetKinds.end())
     {
         refuse(kNoun, sos, "kind " + text_of(static_cast<int>(kind)) + " is unknown");
     }
@@ -66,7 +66,10 @@ void check_repeats(Index sos, std::span<const Member> members)
     }
 }
 
-void check_sos(Index sos, SosKind kind, std::span<const Member> members, Index variables)
+void check_special_ordered_set(Index sos,
+                               SpecialOrderedSetKind kind,
+                               std::span<const Member> members,
+                               Index variables)
 {
     check_kind(sos, kind);
     for (const Member &member : members)
@@ -78,68 +81,68 @@ void check_sos(Index sos, SosKind kind, std::span<const Member> members, Index v
 
 }
 
-Index Model::n_sos() const noexcept
+Index Model::n_special_ordered_sets() const noexcept
 {
-    return static_cast<Index>(sos_kinds_.size());
+    return static_cast<Index>(special_ordered_set_kinds_.size());
 }
 
-SosKind Model::kind_of_sos(Index index) const
+SpecialOrderedSetKind Model::kind_of_special_ordered_set(Index index) const
 {
-    check_index(kNoun, index, n_sos());
-    return sos_kinds_[static_cast<std::size_t>(index)];
+    check_index(kNoun, index, n_special_ordered_sets());
+    return special_ordered_set_kinds_[static_cast<std::size_t>(index)];
 }
 
 std::span<const Member> Model::members(Index start, Index size) const
 {
-    check_span(kNoun, start, size, n_sos());
+    check_span(kNoun, start, size, n_special_ordered_sets());
     const auto begin = static_cast<std::size_t>(member_begin(static_cast<std::size_t>(start)));
     const auto end = static_cast<std::size_t>(member_begin(static_cast<std::size_t>(start + size)));
     return std::span(members_).subspan(begin, end - begin);
 }
 
-void Model::check_sos_room(std::size_t sos, Offset members) const
+void Model::check_special_ordered_set_room(std::size_t soss, Offset members) const
 {
-    check_n(kNoun, sos_kinds_, sos);
+    check_n(kNoun, special_ordered_set_kinds_, soss);
     if (members > static_cast<Offset>(room(members_)))
     {
         throw Error(ErrorKind::NoMemory, "model", "no member offset left");
     }
 }
 
-void Model::add_sos(std::span<const SosKind> kinds,
-                    std::span<const Offset> starts,
-                    std::span<const Member> members)
+void Model::add_special_ordered_sets(std::span<const SpecialOrderedSetKind> kinds,
+                                     std::span<const Offset> starts,
+                                     std::span<const Member> members)
 {
-    check_sos_room(kinds.size(), static_cast<Offset>(members.size()));
+    check_special_ordered_set_room(kinds.size(), static_cast<Offset>(members.size()));
     check_shape(kinds.size(), starts, members.size());
     for (std::size_t k = 0; k < kinds.size(); ++k)
     {
-        const auto sos = static_cast<Index>(sos_kinds_.size() + k);
-        check_sos(sos, kinds[k], slice(members, starts, k), n_variables());
+        const auto sos = static_cast<Index>(special_ordered_set_kinds_.size() + k);
+        check_special_ordered_set(sos, kinds[k], slice(members, starts, k), n_variables());
     }
-    reserve_more(sos_kinds_, kinds.size());
-    reserve_more(sos_ends_, kinds.size());
+    reserve_more(special_ordered_set_kinds_, kinds.size());
+    reserve_more(special_ordered_set_ends_, kinds.size());
     reserve_more(members_, members.size());
     const auto base = static_cast<Offset>(members_.size());
-    sos_kinds_.insert(sos_kinds_.end(), kinds.begin(), kinds.end());
+    special_ordered_set_kinds_.insert(special_ordered_set_kinds_.end(), kinds.begin(), kinds.end());
     for (const Offset end : starts.subspan(1))
     {
-        sos_ends_.push_back(base + end);
+        special_ordered_set_ends_.push_back(base + end);
     }
     members_.insert(members_.end(), members.begin(), members.end());
 }
 
 Offset Model::member_begin(std::size_t sos) const noexcept
 {
-    return sos == 0 ? 0 : sos_ends_[sos - 1];
+    return sos == 0 ? 0 : special_ordered_set_ends_[sos - 1];
 }
 
-std::vector<Index> Model::delete_sos(std::span<const Index> indices)
+std::vector<Index> Model::delete_special_ordered_sets(std::span<const Index> indices)
 {
-    std::vector<Index> map = renumbering(kNoun, n_sos(), indices);
-    keep(sos_kinds_, map);
-    keep_parts(sos_ends_, members_, map);
-    renumber_names(Family::Sos, map);
+    std::vector<Index> map = renumbering(kNoun, n_special_ordered_sets(), indices);
+    keep(special_ordered_set_kinds_, map);
+    keep_parts(special_ordered_set_ends_, members_, map);
+    renumber_names(Family::SpecialOrderedSet, map);
     return map;
 }
 

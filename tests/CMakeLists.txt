@@ -111,7 +111,7 @@ biyos_add_test(test_model
     model/records/test_constraints.cpp
     model/records/test_indicators.cpp
     model/records/test_objectives.cpp
-    model/records/test_sos.cpp
+    model/records/test_special_ordered_sets.cpp
     model/records/test_variables.cpp)
 target_include_directories(test_model PRIVATE model)
 target_link_libraries(test_model PRIVATE biyos_internal)
@@ -158,7 +158,7 @@ biyos_add_test(test_capi
     capi/records/test_indicators.cpp
     capi/records/test_objectives.cpp
     capi/records/test_ranges.cpp
-    capi/records/test_sos.cpp
+    capi/records/test_special_ordered_sets.cpp
     capi/sample.cpp)
 target_include_directories(test_capi PRIVATE capi)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)

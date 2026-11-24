@@ -39,7 +39,7 @@ using biyos::Objective;
 using biyos::ObjectiveSense;
 using biyos::Offset;
 using biyos::Operator;
-using biyos::SosKind;
+using biyos::SpecialOrderedSetKind;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::built;
@@ -73,10 +73,11 @@ void add_records(Parts &parts)
     });
     parts.indicators.push_back(
         {.variable = 1, .value = 1, .function = 0, .lower = 0.0, .upper = 2.0});
-    parts.sos.kinds.push_back(SosKind::Sos1);
-    parts.sos.starts.push_back(7);
-    parts.sos.members.insert(parts.sos.members.end(),
-                             {{.variable = 2, .weight = 1.0}, {.variable = 0, .weight = 2.0}});
+    parts.special_ordered_sets.kinds.push_back(SpecialOrderedSetKind::One);
+    parts.special_ordered_sets.starts.push_back(7);
+    parts.special_ordered_sets.members.insert(
+        parts.special_ordered_sets.members.end(),
+        {{.variable = 2, .weight = 1.0}, {.variable = 0, .weight = 2.0}});
     parts.cones.kinds.push_back(ConeKind::DualPower);
     parts.cones.starts.push_back(8);
     parts.cones.functions.insert(parts.cones.functions.end(), {1, 0, 2});
@@ -91,7 +92,7 @@ void add_names(Parts &parts)
     parts.constraint_names = {.indices = {0, 1, 2}, .names = {"a", "c", "a"}};
     parts.objective_names = {.indices = {0}, .names = {"cost"}};
     parts.indicator_names = {.indices = {1, 2}, .names = {"off", "on"}};
-    parts.sos_names = {.indices = {2, 1}, .names = {"t", "s"}};
+    parts.special_ordered_set_names = {.indices = {2, 1}, .names = {"t", "s"}};
     parts.cone_names = {.indices = {1, 2}, .names = {"k", "k"}};
     parts.complement_names = {.indices = {2, 1}, .names = {"pair", "pair"}};
 }
@@ -168,11 +169,11 @@ void keep_indicators(Parts &parts, const Map &map)
     parts.indicator_names = renamed(parts.indicator_names, map);
 }
 
-void keep_sos(Parts &parts, const Map &map)
+void keep_special_ordered_sets(Parts &parts, const Map &map)
 {
-    parts.sos.kinds = kept(parts.sos.kinds, map);
-    kept_parts(parts.sos.starts, parts.sos.members, map);
-    parts.sos_names = renamed(parts.sos_names, map);
+    parts.special_ordered_sets.kinds = kept(parts.special_ordered_sets.kinds, map);
+    kept_parts(parts.special_ordered_sets.starts, parts.special_ordered_sets.members, map);
+    parts.special_ordered_set_names = renamed(parts.special_ordered_set_names, map);
 }
 
 void keep_cones(Parts &parts, const Map &map)
@@ -210,11 +211,11 @@ const Case kIndicators{
     .names = &Parts::indicator_names,
 };
 
-const Case kSos{
-    .family = Family::Sos,
-    .call = &Model::delete_sos,
-    .keep = keep_sos,
-    .names = &Parts::sos_names,
+const Case kSpecialOrderedSets{
+    .family = Family::SpecialOrderedSet,
+    .call = &Model::delete_special_ordered_sets,
+    .keep = keep_special_ordered_sets,
+    .names = &Parts::special_ordered_set_names,
 };
 
 const Case kCones{
@@ -231,7 +232,12 @@ const Case kComplements{
     .names = &Parts::complement_names,
 };
 
-const std::array kCases{kConstraints, kObjectives, kIndicators, kSos, kCones, kComplements};
+const std::array kCases{kConstraints,
+                        kObjectives,
+                        kIndicators,
+                        kSpecialOrderedSets,
+                        kCones,
+                        kComplements};
 
 std::string lookup(const Model &model, Family family, std::string_view name)
 {
@@ -560,8 +566,8 @@ Parts spaced()
     parts.indicators = {
         {.variable = 2, .value = 1, .function = 0, .lower = -kInfinity, .upper = 1.0},
     };
-    parts.sos = {
-        .kinds = {SosKind::Sos1},
+    parts.special_ordered_sets = {
+        .kinds = {SpecialOrderedSetKind::One},
         .starts = {0, 3},
         .members =
             {
@@ -589,8 +595,8 @@ Parts compacted()
     };
     parts.expressions = product(2, 1);
     parts.indicators[0].variable = 1;
-    parts.sos.members[0].variable = 2;
-    parts.sos.members[2].variable = 1;
+    parts.special_ordered_sets.members[0].variable = 2;
+    parts.special_ordered_sets.members[2].variable = 1;
     parts.variable_names = renamed(parts.variable_names, kDropped);
     return parts;
 }
@@ -625,7 +631,9 @@ void add_node(Model &model, Index variable)
 void add_member(Model &model, Index variable)
 {
     const std::array members{Member{.variable = variable, .weight = 1.0}};
-    model.add_sos(std::array{SosKind::Sos1}, std::array<Offset, 2>{0, 1}, members);
+    model.add_special_ordered_sets(std::array{SpecialOrderedSetKind::One},
+                                   std::array<Offset, 2>{0, 1},
+                                   members);
 }
 
 void add_binary(Model &model, Index variable)
@@ -685,7 +693,7 @@ TEST(DeleteTest, Indicators)
 
 TEST(DeleteTest, Sets)
 {
-    expect_each(kSos);
+    expect_each(kSpecialOrderedSets);
 }
 
 TEST(DeleteTest, Cones)

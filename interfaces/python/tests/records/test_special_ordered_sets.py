@@ -6,22 +6,22 @@ from operator import index
 import pytest
 
 import biyos
-from biyos import EventKind, EventLevel, SOSKind
+from biyos import EventKind, EventLevel, SpecialOrderedSetKind
 from biyos._capi import lib
 from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
 
 NAN = float("nan")
-SOS1 = SOSKind.SOS1
-SOS2 = SOSKind.SOS2
+ONE = SpecialOrderedSetKind.ONE
+TWO = SpecialOrderedSetKind.TWO
 
-KINDS = [SOS2, SOS1, SOS1]
+KINDS = [TWO, ONE, ONE]
 OFF = [0, 3, 3, 5]
 VARIDX = [2, 0, 3, 1, 0]
 COEF = [3.0, -1.0, 2.5, 0.5, 1.5]
 SAMPLE = (KINDS, OFF, VARIDX, COEF)
-TAIL = ([SOS1, SOS1], [0, 0, 2], [1, 0], [0.5, 1.5])
+TAIL = ([ONE, ONE], [0, 0, 2], [1, 0], [0.5, 1.5])
 NONE = ([], [0], [], [])
 
 FORMS = {
@@ -85,32 +85,32 @@ def test_add(model):
     assert model.getnsos() == 3
     found = model.getsos()
     assert found == SAMPLE
-    assert all(type(kind) is SOSKind for kind in found[0])
-    assert type(added) is biyos.SOSs
+    assert all(type(kind) is SpecialOrderedSetKind for kind in found[0])
+    assert type(added) is biyos.SpecialOrderedSets
     assert [index(item) for item in added] == [0, 1, 2]
     assert model.getnsosvar() == 5
 
 
 def test_block(model):
-    model.addsos([SOS1, SOS1], [0, 0, 0], [])
-    s = model.addsos([SOS2] * 3, [0, 1, 2, 3], [0, 1, 2])
+    model.addsos([ONE, ONE], [0, 0, 0], [])
+    s = model.addsos([TWO] * 3, [0, 1, 2, 3], [0, 1, 2])
     assert len(s) == 3
-    assert all(type(item) is biyos.SOS for item in s)
-    assert type(s[1:]) is biyos.SOSs
+    assert all(type(item) is biyos.SpecialOrderedSet for item in s)
+    assert type(s[1:]) is biyos.SpecialOrderedSets
     assert [index(item) for item in s[1:]] == [3, 4]
     assert len(model.addsos([], [0], [])) == 0
     assert model.getnsos() == 5
 
 
 def test_defaults(model):
-    model.addsos([SOS1, SOS2], [0, 2, 5], [3, 1, 0, 2, 1])
-    model.addsos([SOS2], [0, 1], [0], [7.0])
+    model.addsos([ONE, TWO], [0, 2, 5], [3, 1, 0, 2, 1])
+    model.addsos([TWO], [0, 1], [0], [7.0])
     assert model.getsos()[3] == [1.0, 2.0, 1.0, 2.0, 3.0, 7.0]
 
 
 def test_empty(model):
-    model.addsos([SOS1, SOS2], [0, 0, 0], [])
-    assert model.getsos() == ([SOS1, SOS2], [0, 0, 0], [], [])
+    model.addsos([ONE, TWO], [0, 0, 0], [])
+    assert model.getsos() == ([ONE, TWO], [0, 0, 0], [], [])
     assert model.getnsosvar() == 0
     assert model.getsos(range(2, 2)) == NONE
     assert model.getsos([]) == NONE
@@ -118,8 +118,8 @@ def test_empty(model):
 
 def test_shared(model):
     weights = [1.0, 2.0, 1.0, 2.0]
-    model.addsos([SOS1, SOS2], [0, 2, 4], [0, 1, 1, 0], weights)
-    model.addsos([SOS1], [0, 1], [0])
+    model.addsos([ONE, TWO], [0, 2, 4], [0, 1, 1, 0], weights)
+    model.addsos([ONE], [0, 1], [0])
     assert model.getsos()[2] == [0, 1, 1, 0, 0]
 
 
@@ -127,13 +127,13 @@ def test_listed(model):
     model.addsos(*SAMPLE)
     idx = [2, 0, 2, 1]
     assert model.getsos(idx) == (
-        [SOS1, SOS2, SOS1, SOS1],
+        [ONE, TWO, ONE, ONE],
         [0, 2, 5, 7, 7],
         [1, 0, 2, 0, 3, 1, 0],
         [0.5, 1.5, 3.0, -1.0, 2.5, 0.5, 1.5],
     )
     assert model.getnsosvar(idx) == 7
-    assert model.getsos([Number(1)]) == ([SOS1], [0, 0], [], [])
+    assert model.getsos([Number(1)]) == ([ONE], [0, 0], [], [])
 
 
 def test_range(model):
@@ -160,7 +160,7 @@ def test_values(model, monkeypatch):
     seen = []
     spy = partial(recorded, seen, lib.BIYOS_addsos)
     monkeypatch.setattr(lib, "BIYOS_addsos", spy)
-    model.addsos([SOS2], [0, 2], [0, 1], weights)
+    model.addsos([TWO], [0, 2], [0, 1], weights)
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][5]) == weights.buffer_info()[0]
     assert model.getsos()[3] == [2.0, 1.0]
@@ -173,32 +173,32 @@ def test_sequences(model):
     model.addsos(kinds, starts, range(3), weights)
     model.addsos((Number(1),), (Number(0), Number(1)), (Number(3),))
     found = model.getsos()
-    assert found[:2] == ([SOS2, SOS1, SOS1], [0, 2, 3, 4])
+    assert found[:2] == ([TWO, ONE, ONE], [0, 2, 3, 4])
     assert found[2:] == ([0, 1, 2, 3], [0.5, 1.5, 4.0, 1.0])
 
 
 def test_views(env, model):
     x = model.addvar(2)
     f = model.addfun(1)
-    s = model.addsos([SOS1, SOS2], [0, 2, 4], [x[0], 1, x[1], 0])
+    s = model.addsos([ONE, TWO], [0, 2, 4], [x[0], 1, x[1], 0])
     assert model.getsos(s)[2] == [4, 1, 5, 0]
-    assert model.getsos([s[1]])[0] == [SOS2]
+    assert model.getsos([s[1]])[0] == [TWO]
     other = biyos.Model(env)
     y = other.addvar(1)
-    t = other.addsos([SOS1], [0, 1], y)
+    t = other.addsos([ONE], [0, 1], y)
     entry = "an entry of varidx is a variable of another model"
     with pytest.raises(ValueError, match=entry):
-        model.addsos([SOS1], [0, 1], [y[0]])
+        model.addsos([ONE], [0, 1], [y[0]])
     with pytest.raises(ValueError, match="varidx is a block of another"):
-        model.addsos([SOS1], [0, 1], y)
+        model.addsos([ONE], [0, 1], y)
     with pytest.raises(ValueError, match="is a set of another model"):
         model.getsos([t[0]])
     with pytest.raises(ValueError, match="idx is a block of another model"):
         model.getnsosvar(t)
     with pytest.raises(TypeError, match="is a set, not a variable"):
-        model.addsos([SOS1], [0, 1], [s[0]])
+        model.addsos([ONE], [0, 1], [s[0]])
     with pytest.raises(TypeError, match="of functions, not variables"):
-        model.addsos([SOS1], [0, 1], f)
+        model.addsos([ONE], [0, 1], f)
     with pytest.raises(TypeError, match="is a variable, not a set"):
         model.getsos([x[0]])
     with pytest.raises(TypeError, match="of variables, not sets"):
@@ -246,39 +246,39 @@ def test_outside(model, monkeypatch):
 
 def test_refused(model):
     model.addsos(*SAMPLE)
-    equal = ([SOS2], [0, 3], [0, 1, 2], [2.0, 1.0, 2.0])
+    equal = ([TWO], [0, 3], [0, 1, 2], [2.0, 1.0, 2.0])
     message = refusal(model.addsos, *equal)
     assert message == "invalid argument: set 3: weight 2 is repeated"
-    message = refusal(model.addsos, [SOS1, SOS1], [0, 1, 3], [1, 3, 3])
+    message = refusal(model.addsos, [ONE, ONE], [0, 1, 3], [1, 3, 3])
     assert message == "invalid argument: set 4: variable 3 is repeated"
     message = refusal(model.addsos, [3], [0, 0], [])
     assert message == "invalid argument: set 3: kind 3 is unknown"
-    message = refusal(model.addsos, [SOS1], [0, 1], [4])
+    message = refusal(model.addsos, [ONE], [0, 1], [4])
     assert message == "invalid argument: set 3: variable 4 is unknown"
-    message = refusal(model.addsos, [SOS1], [0, 1], [0], [NAN])
+    message = refusal(model.addsos, [ONE], [0, 1], [0], [NAN])
     assert message == "invalid argument: set 3: weight of variable 0 is NaN"
-    message = refusal(model.addsos, [SOS2], [0, 1], [1], [-biyos.inf])
+    message = refusal(model.addsos, [TWO], [0, 1], [1], [-biyos.inf])
     assert message == (
         "invalid argument: set 3: weight of variable 1 is minus infinity"
     )
-    message = refusal(model.addsos, [SOS1], [0, 1], None)
+    message = refusal(model.addsos, [ONE], [0, 1], None)
     assert message == "invalid argument: argument 'varidx': is null"
     assert model.getsos() == SAMPLE
 
 
 def test_lengths(model):
     with pytest.raises(ValueError, match="off has length 2, not 3"):
-        model.addsos([SOS1, SOS1], [0, 1], [0])
+        model.addsos([ONE, ONE], [0, 1], [0])
     with pytest.raises(ValueError, match="off has length 0, not 1"):
         model.addsos([], [], [])
     with pytest.raises(ValueError, match="varidx has length 1, not 2"):
-        model.addsos([SOS1], [0, 2], [0])
+        model.addsos([ONE], [0, 2], [0])
     with pytest.raises(ValueError, match="coef has length 3, not 2"):
-        model.addsos([SOS1], [0, 2], [0, 1], [1.0, 2.0, 3.0])
+        model.addsos([ONE], [0, 2], [0, 1], [1.0, 2.0, 3.0])
     with pytest.raises(ValueError, match="off begins at 1, not 0"):
-        model.addsos([SOS1], [1, 2], [0])
+        model.addsos([ONE], [1, 2], [0])
     with pytest.raises(ValueError, match="off decreases from 2 to 1"):
-        model.addsos([SOS1, SOS1], [0, 2, 1], [0])
+        model.addsos([ONE, ONE], [0, 2, 1], [0])
     assert model.getnsos() == 0
 
 
@@ -286,13 +286,13 @@ def test_numbers(model):
     with pytest.raises(TypeError, match="an entry of knd must be an int"):
         model.addsos([1.0], [0, 0], [])
     with pytest.raises(TypeError, match="off must be a sequence of int"):
-        model.addsos([SOS1], None, [0])
+        model.addsos([ONE], None, [0])
     with pytest.raises(TypeError, match="an entry of off must be an int"):
-        model.addsos([SOS1], [0, 1.0], [0])
+        model.addsos([ONE], [0, 1.0], [0])
     with pytest.raises(TypeError, match="an entry of varidx must be an"):
-        model.addsos([SOS1], [0, 1], [0.0])
+        model.addsos([ONE], [0, 1], [0.0])
     with pytest.raises(TypeError, match="an entry of coef must be a number"):
-        model.addsos([SOS1], [0, 1], [0], ["1"])
+        model.addsos([ONE], [0, 1], [0], ["1"])
     with pytest.raises(OverflowError, match="knd: 2147483648 does not"):
         model.addsos([2**31], [0, 0], [])
     with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
@@ -304,7 +304,7 @@ def test_copy(model):
     s = model.addsos(*SAMPLE)
     copy = model.copy()
     assert copy.getsos() == SAMPLE
-    copy.addsos([SOS1], [0, 1], [3])
+    copy.addsos([ONE], [0, 1], [3])
     assert model.getnsos() == 3
     assert copy.getsos(s.on(copy)) == SAMPLE
     assert copy.getnsos() == 4
@@ -316,7 +316,7 @@ def test_locked(env, model):
 
     def change(event):
         try:
-            model.addsos([SOS1], [0, 0], [])
+            model.addsos([ONE], [0, 0], [])
         except biyos.Error as error:
             seen.append(str(error))
         seen.append(model.getnsos())
@@ -326,7 +326,7 @@ def test_locked(env, model):
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    first = ([SOS2], [0, 3], [2, 0, 3], [3.0, -1.0, 2.5])
+    first = ([TWO], [0, 3], [2, 0, 3], [3.0, -1.0, 2.5])
     assert seen == [LOCKED, 3, first]
     assert model.getnsos() == 3
 

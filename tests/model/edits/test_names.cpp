@@ -69,8 +69,8 @@ Model sized(Index n)
         .upper = 1.0,
     };
     model.add_indicators(std::vector<Indicator>(size, indicator));
-    const std::vector<biyos::SosKind> kinds(size, biyos::SosKind::Sos1);
-    model.add_sos(kinds, starts, {});
+    const std::vector<biyos::SpecialOrderedSetKind> kinds(size, biyos::SpecialOrderedSetKind::One);
+    model.add_special_ordered_sets(kinds, starts, {});
     add_cones(model, size);
     const Complement complement{.function = 0, .lower = 0.0, .upper = 1.0, .multiplier = 0};
     model.add_complements(std::vector<Complement>(size, complement));
@@ -96,8 +96,8 @@ Index n_of(const Model &model, Family family)
         return model.n_objectives();
     case Family::Indicator:
         return model.n_indicators();
-    case Family::Sos:
-        return model.n_sos();
+    case Family::SpecialOrderedSet:
+        return model.n_special_ordered_sets();
     case Family::Cone:
         return model.n_cones();
     case Family::Complement:
@@ -203,7 +203,7 @@ TEST(NameTest, Nouns)
     EXPECT_EQ(biyos::noun_of(Family::Constraint), "constraint");
     EXPECT_EQ(biyos::noun_of(Family::Objective), "objective");
     EXPECT_EQ(biyos::noun_of(Family::Indicator), "indicator");
-    EXPECT_EQ(biyos::noun_of(Family::Sos), "set");
+    EXPECT_EQ(biyos::noun_of(Family::SpecialOrderedSet), "set");
     EXPECT_EQ(biyos::noun_of(Family::Cone), "cone");
     EXPECT_EQ(biyos::noun_of(Family::Complement), "complement");
 }

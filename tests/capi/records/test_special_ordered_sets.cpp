@@ -19,7 +19,7 @@ using biyos::test::Env;
 using biyos::test::expect_doubles;
 using biyos::test::Model;
 
-struct Sos
+struct SpecialOrderedSets
 {
     std::vector<int> kinds;
     std::vector<BIYOS_offset> starts;
@@ -27,14 +27,14 @@ struct Sos
     std::vector<double> weights;
 };
 
-const Sos kSample{
-    .kinds = {BIYOS_SOSKND_SOS2, BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS1},
+const SpecialOrderedSets kSample{
+    .kinds = {BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE, BIYOS_SOSKND_ONE},
     .starts = {0, 3, 3, 5},
     .variables = {2, 0, 3, 1, 0},
     .weights = {3.0, -1.0, 2.5, 0.5, 1.5},
 };
 
-const Sos kEmpty{
+const SpecialOrderedSets kEmpty{
     .kinds = {},
     .starts = {0},
     .variables = {},
@@ -46,24 +46,26 @@ void add_variables(const Model &model, int n)
     ASSERT_EQ(BIYOS_addvar(model.get(), n, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
-BIYOS_status add_sos(const Model &model, const Sos &sos, BIYOS_index *pos)
+BIYOS_status add_special_ordered_sets(const Model &model,
+                                      const SpecialOrderedSets &soss,
+                                      BIYOS_index *pos)
 {
     return BIYOS_addsos(model.get(),
-                        static_cast<BIYOS_index>(sos.kinds.size()),
-                        sos.kinds.data(),
-                        sos.starts.data(),
-                        sos.variables.data(),
-                        sos.weights.data(),
+                        static_cast<BIYOS_index>(soss.kinds.size()),
+                        soss.kinds.data(),
+                        soss.starts.data(),
+                        soss.variables.data(),
+                        soss.weights.data(),
                         pos);
 }
 
 void add_sample(const Model &model)
 {
     add_variables(model, 4);
-    ASSERT_EQ(add_sos(model, kSample, nullptr), BIYOS_OK);
+    ASSERT_EQ(add_special_ordered_sets(model, kSample, nullptr), BIYOS_OK);
 }
 
-int n_sos(const Model &model)
+int n_special_ordered_sets(const Model &model)
 {
     BIYOS_index n = -1;
     EXPECT_EQ(BIYOS_getnsos(model.get(), &n), BIYOS_OK);
@@ -77,10 +79,10 @@ BIYOS_offset n_members(const Model &model, BIYOS_index pos, BIYOS_index n)
     return nnz;
 }
 
-Sos sized(std::size_t n, BIYOS_offset nnz)
+SpecialOrderedSets sized(std::size_t n, BIYOS_offset nnz)
 {
     const auto size = static_cast<std::size_t>(nnz);
-    return Sos{
+    return SpecialOrderedSets{
         .kinds = std::vector<int>(n, -1),
         .starts = std::vector<BIYOS_offset>(n + 1, -1),
         .variables = std::vector<BIYOS_index>(size, -1),
@@ -88,7 +90,10 @@ Sos sized(std::size_t n, BIYOS_offset nnz)
     };
 }
 
-BIYOS_status read_range(const Model &model, BIYOS_index pos, BIYOS_offset cap, Sos &read)
+BIYOS_status read_range(const Model &model,
+                        BIYOS_index pos,
+                        BIYOS_offset cap,
+                        SpecialOrderedSets &read)
 {
     return BIYOS_getsosrg(model.get(),
                           pos,
@@ -103,7 +108,7 @@ BIYOS_status read_range(const Model &model, BIYOS_index pos, BIYOS_offset cap, S
 BIYOS_status read_list(const Model &model,
                        const std::vector<BIYOS_index> &indices,
                        BIYOS_offset cap,
-                       Sos &read)
+                       SpecialOrderedSets &read)
 {
     return BIYOS_getsossp(model.get(),
                           static_cast<BIYOS_index>(indices.size()),
@@ -115,26 +120,26 @@ BIYOS_status read_list(const Model &model,
                           read.weights.data());
 }
 
-Sos read_all(const Model &model)
+SpecialOrderedSets read_all(const Model &model)
 {
-    const int n = n_sos(model);
+    const int n = n_special_ordered_sets(model);
     const BIYOS_offset nnz = n_members(model, 0, n);
-    Sos read = sized(static_cast<std::size_t>(n), nnz);
+    SpecialOrderedSets read = sized(static_cast<std::size_t>(n), nnz);
     EXPECT_EQ(read_range(model, 0, nnz, read), BIYOS_OK);
     return read;
 }
 
-Sos read_listed(const Model &model, const std::vector<BIYOS_index> &indices)
+SpecialOrderedSets read_listed(const Model &model, const std::vector<BIYOS_index> &indices)
 {
     const auto n = static_cast<BIYOS_index>(indices.size());
     BIYOS_offset nnz = -1;
     EXPECT_EQ(BIYOS_getnsosvarsp(model.get(), n, indices.data(), &nnz), BIYOS_OK);
-    Sos read = sized(indices.size(), nnz);
+    SpecialOrderedSets read = sized(indices.size(), nnz);
     EXPECT_EQ(read_list(model, indices, nnz, read), BIYOS_OK);
     return read;
 }
 
-void expect_sos(const Sos &found, const Sos &wanted)
+void expect_special_ordered_sets(const SpecialOrderedSets &found, const SpecialOrderedSets &wanted)
 {
     EXPECT_EQ(found.kinds, wanted.kinds);
     EXPECT_EQ(found.starts, wanted.starts);
@@ -142,20 +147,23 @@ void expect_sos(const Sos &found, const Sos &wanted)
     expect_doubles(found.weights, wanted.weights);
 }
 
-void expect_refused(const Env &env, const Model &model, const Sos &sos, const std::string &text)
+void expect_refused(const Env &env,
+                    const Model &model,
+                    const SpecialOrderedSets &soss,
+                    const std::string &text)
 {
     const Model before(env, model);
     BIYOS_index pos = -1;
-    EXPECT_EQ(add_sos(model, sos, &pos), BIYOS_ERR_BADARG);
+    EXPECT_EQ(add_special_ordered_sets(model, soss, &pos), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: " + text);
     EXPECT_EQ(pos, -1);
     EXPECT_EQ(biyos::difference(before.get()->core, model.get()->core), "");
 }
 
-Sos single(int kind, std::vector<BIYOS_index> variables, std::vector<double> weights)
+SpecialOrderedSets single(int kind, std::vector<BIYOS_index> variables, std::vector<double> weights)
 {
     const auto size = static_cast<BIYOS_offset>(variables.size());
-    return Sos{
+    return SpecialOrderedSets{
         .kinds = {kind},
         .starts = {0, size},
         .variables = std::move(variables),
@@ -181,7 +189,7 @@ void change(const BIYOS_event *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
-    const int kind = BIYOS_SOSKND_SOS1;
+    const int kind = BIYOS_SOSKND_ONE;
     BIYOS_index n = 0;
     BIYOS_offset nnz = 0;
     note(attempt, BIYOS_addsos(model, 1, &kind, nullptr, nullptr, nullptr, nullptr));
@@ -192,40 +200,40 @@ void change(const BIYOS_event *, void *data)
 
 }
 
-TEST(CApiTest, AddedSos)
+TEST(CApiTest, AddedSets)
 {
     const Env env;
     const Model model(env);
     add_sample(model);
-    EXPECT_EQ(n_sos(model), 3);
+    EXPECT_EQ(n_special_ordered_sets(model), 3);
     EXPECT_EQ(n_members(model, 0, 3), 5);
     EXPECT_EQ(n_members(model, 1, 1), 0);
-    expect_sos(read_all(model), kSample);
+    expect_special_ordered_sets(read_all(model), kSample);
     EXPECT_EQ(env.message(), "");
 }
 
-TEST(CApiTest, FirstSos)
+TEST(CApiTest, FirstSet)
 {
     const Env env;
     const Model model(env);
     add_variables(model, 2);
-    const Sos two{
-        .kinds = {BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2},
+    const SpecialOrderedSets two{
+        .kinds = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO},
         .starts = {0, 1, 2},
         .variables = {0, 1},
         .weights = {1.0, 2.0},
     };
     BIYOS_index pos = -1;
-    ASSERT_EQ(add_sos(model, kEmpty, &pos), BIYOS_OK);
+    ASSERT_EQ(add_special_ordered_sets(model, kEmpty, &pos), BIYOS_OK);
     EXPECT_EQ(pos, 0);
-    ASSERT_EQ(add_sos(model, two, &pos), BIYOS_OK);
+    ASSERT_EQ(add_special_ordered_sets(model, two, &pos), BIYOS_OK);
     EXPECT_EQ(pos, 0);
-    ASSERT_EQ(add_sos(model, two, nullptr), BIYOS_OK);
-    ASSERT_EQ(add_sos(model, two, &pos), BIYOS_OK);
+    ASSERT_EQ(add_special_ordered_sets(model, two, nullptr), BIYOS_OK);
+    ASSERT_EQ(add_special_ordered_sets(model, two, &pos), BIYOS_OK);
     EXPECT_EQ(pos, 4);
-    EXPECT_EQ(add_sos(model, single(0, {}, {}), &pos), BIYOS_ERR_BADARG);
+    EXPECT_EQ(add_special_ordered_sets(model, single(0, {}, {}), &pos), BIYOS_ERR_BADARG);
     EXPECT_EQ(pos, 4);
-    EXPECT_EQ(n_sos(model), 6);
+    EXPECT_EQ(n_special_ordered_sets(model), 6);
 }
 
 TEST(CApiTest, DefaultWeights)
@@ -233,27 +241,27 @@ TEST(CApiTest, DefaultWeights)
     const Env env;
     const Model model(env);
     add_variables(model, 3);
-    const int kinds[] = {BIYOS_SOSKND_SOS2, BIYOS_SOSKND_SOS1};
+    const int kinds[] = {BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE};
     const BIYOS_offset starts[] = {0, 3, 4};
     const BIYOS_index variables[] = {2, 0, 1, 1};
     BIYOS_model *held = model.get();
     ASSERT_EQ(BIYOS_addsos(held, 2, kinds, starts, variables, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addsos(held, 2, kinds, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    const Sos wanted{
-        .kinds = {BIYOS_SOSKND_SOS2, BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2, BIYOS_SOSKND_SOS1},
+    const SpecialOrderedSets wanted{
+        .kinds = {BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE},
         .starts = {0, 3, 4, 4, 4},
         .variables = {2, 0, 1, 1},
         .weights = {1.0, 2.0, 3.0, 1.0},
     };
-    expect_sos(read_all(model), wanted);
+    expect_special_ordered_sets(read_all(model), wanted);
 }
 
-TEST(CApiTest, NullSos)
+TEST(CApiTest, NullSets)
 {
     const Env env;
     const Model model(env);
     add_variables(model, 2);
-    const int kind = BIYOS_SOSKND_SOS1;
+    const int kind = BIYOS_SOSKND_ONE;
     const BIYOS_offset starts[] = {0, 2};
     const double weights[] = {1.0, 2.0};
     BIYOS_model *held = model.get();
@@ -262,7 +270,7 @@ TEST(CApiTest, NullSos)
     EXPECT_EQ(BIYOS_addsos(held, 1, &kind, starts, nullptr, weights, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'varidx': is null");
     EXPECT_EQ(BIYOS_addsos(held, 0, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(n_sos(model), 0);
+    EXPECT_EQ(n_special_ordered_sets(model), 0);
     EXPECT_EQ(BIYOS_getnsos(held, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
     EXPECT_EQ(BIYOS_getnsosvarrg(held, 0, 0, nullptr), BIYOS_ERR_BADARG);
@@ -271,86 +279,86 @@ TEST(CApiTest, NullSos)
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
 }
 
-TEST(CApiTest, RefusedSos)
+TEST(CApiTest, RefusedSets)
 {
     const Env env;
     const Model model(env);
     add_sample(model);
     const double nan = std::numeric_limits<double>::quiet_NaN();
-    Sos two{
-        .kinds = {BIYOS_SOSKND_SOS1, 0},
+    SpecialOrderedSets two{
+        .kinds = {BIYOS_SOSKND_ONE, 0},
         .starts = {0, 1, 2},
         .variables = {0, 1},
         .weights = {1.0, 2.0},
     };
     expect_refused(env, model, two, "set 4: kind 0 is unknown");
-    two.kinds = {BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2};
+    two.kinds = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO};
     two.starts = {1, 1, 2};
     expect_refused(env, model, two, "argument 'off': begins at 1, not 0");
     two.starts = {0, 2, 1};
     expect_refused(env, model, two, "argument 'off': decreases from 2 to 1 at entry 2");
     expect_refused(env,
                    model,
-                   single(BIYOS_SOSKND_SOS2, {4}, {1.0}),
+                   single(BIYOS_SOSKND_TWO, {4}, {1.0}),
                    "set 3: variable 4 is unknown");
     expect_refused(env,
                    model,
-                   single(BIYOS_SOSKND_SOS2, {-1}, {1.0}),
+                   single(BIYOS_SOSKND_TWO, {-1}, {1.0}),
                    "set 3: variable -1 is unknown");
-    const Sos repeated = single(BIYOS_SOSKND_SOS1, {1, 0, 1}, {1.0, 2.0, 3.0});
+    const SpecialOrderedSets repeated = single(BIYOS_SOSKND_ONE, {1, 0, 1}, {1.0, 2.0, 3.0});
     expect_refused(env, model, repeated, "set 3: variable 1 is repeated");
-    const Sos equal = single(BIYOS_SOSKND_SOS2, {0, 1, 2}, {2.0, 1.0, 2.0});
+    const SpecialOrderedSets equal = single(BIYOS_SOSKND_TWO, {0, 1, 2}, {2.0, 1.0, 2.0});
     expect_refused(env, model, equal, "set 3: weight 2 is repeated");
-    const Sos undefined = single(BIYOS_SOSKND_SOS1, {0}, {nan});
+    const SpecialOrderedSets undefined = single(BIYOS_SOSKND_ONE, {0}, {nan});
     expect_refused(env, model, undefined, "set 3: weight of variable 0 is NaN");
     EXPECT_EQ(BIYOS_addsos(model.get(), -1, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
-    expect_sos(read_all(model), kSample);
+    expect_special_ordered_sets(read_all(model), kSample);
 }
 
-TEST(CApiTest, ListedSos)
+TEST(CApiTest, ListedSets)
 {
     const Env env;
     const Model model(env);
     add_sample(model);
-    const Sos wanted{
-        .kinds = {BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2, BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS1},
+    const SpecialOrderedSets wanted{
+        .kinds = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE, BIYOS_SOSKND_ONE},
         .starts = {0, 2, 5, 7, 7},
         .variables = {1, 0, 2, 0, 3, 1, 0},
         .weights = {0.5, 1.5, 3.0, -1.0, 2.5, 0.5, 1.5},
     };
-    expect_sos(read_listed(model, {2, 0, 2, 1}), wanted);
-    expect_sos(read_listed(model, {0, 1, 2}), read_all(model));
-    expect_sos(read_listed(model, {}), kEmpty);
+    expect_special_ordered_sets(read_listed(model, {2, 0, 2, 1}), wanted);
+    expect_special_ordered_sets(read_listed(model, {0, 1, 2}), read_all(model));
+    expect_special_ordered_sets(read_listed(model, {}), kEmpty);
     EXPECT_EQ(env.message(), "");
 }
 
-TEST(CApiTest, SosCapacity)
+TEST(CApiTest, SetCapacity)
 {
     const Env env;
     const Model model(env);
     add_sample(model);
-    Sos read = sized(3, 8);
-    const Sos untouched = read;
+    SpecialOrderedSets read = sized(3, 8);
+    const SpecialOrderedSets untouched = read;
     EXPECT_EQ(read_range(model, 0, 4, read), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'cap': holds 4 of the 5 members");
     EXPECT_EQ(read_range(model, 0, -1, read), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'cap': -1 is negative");
     EXPECT_EQ(read_list(model, {0, 1, 2}, 4, read), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'cap': holds 4 of the 5 members");
-    expect_sos(read, untouched);
+    expect_special_ordered_sets(read, untouched);
     ASSERT_EQ(read_range(model, 0, 8, read), BIYOS_OK);
     EXPECT_EQ(read.starts, kSample.starts);
     EXPECT_EQ(read.variables, std::vector<BIYOS_index>({2, 0, 3, 1, 0, -1, -1, -1}));
 }
 
-TEST(CApiTest, SosIndices)
+TEST(CApiTest, SetIndices)
 {
     const Env env;
     const Model model(env);
     add_sample(model);
-    Sos read = sized(2, 5);
+    SpecialOrderedSets read = sized(2, 5);
     EXPECT_EQ(read_range(model, 2, 5, read), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: set 3: unknown");
     EXPECT_EQ(read_list(model, {1, 3}, 5, read), BIYOS_ERR_BADARG);
@@ -363,18 +371,18 @@ TEST(CApiTest, SosIndices)
     EXPECT_EQ(env.message(), "invalid argument: set -1: unknown");
     EXPECT_EQ(nnz, 7);
     EXPECT_EQ(n_members(model, 3, 0), 0);
-    expect_sos(read, sized(2, 5));
+    expect_special_ordered_sets(read, sized(2, 5));
 }
 
-TEST(CApiTest, SosOutputs)
+TEST(CApiTest, SetOutputs)
 {
     const Env env;
     const Model model(env);
     add_sample(model);
     const BIYOS_model *held = model.get();
     EXPECT_EQ(BIYOS_getsosrg(held, 0, 3, 5, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    Sos read = sized(3, 5);
-    const Sos untouched = read;
+    SpecialOrderedSets read = sized(3, 5);
+    const SpecialOrderedSets untouched = read;
     EXPECT_EQ(BIYOS_getsosrg(held, 0, 3, 5, nullptr, read.starts.data(), nullptr, nullptr),
               BIYOS_OK);
     EXPECT_EQ(read.starts, kSample.starts);
@@ -393,7 +401,7 @@ TEST(CApiTest, SosOutputs)
     EXPECT_EQ(env.message(), "invalid argument: argument 'cap': holds 3 of the 5 members");
 }
 
-TEST(CApiTest, LockedSos)
+TEST(CApiTest, LockedSets)
 {
     const Env env;
     const Model model(env);
@@ -401,7 +409,7 @@ TEST(CApiTest, LockedSos)
     attempt.env = env.get();
     attempt.model = model.get();
     add_variables(model, 1);
-    const int kind = BIYOS_SOSKND_SOS2;
+    const int kind = BIYOS_SOSKND_TWO;
     ASSERT_EQ(BIYOS_addsos(model.get(), 1, &kind, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     BIYOS_index id = 0;
     const int message = BIYOS_EVTKND_MSG;
@@ -414,5 +422,5 @@ TEST(CApiTest, LockedSos)
     EXPECT_EQ(attempt.messages[0],
               "invalid argument: model: is read-only while delivering an event");
     EXPECT_EQ(BIYOS_delenvhook(env.get(), id), BIYOS_OK);
-    EXPECT_EQ(n_sos(model), 1);
+    EXPECT_EQ(n_special_ordered_sets(model), 1);
 }
