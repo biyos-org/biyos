@@ -17,8 +17,6 @@ namespace
 using biyos::test::Env;
 using biyos::test::expect_doubles;
 using biyos::test::Model;
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
 
 struct Records
@@ -32,8 +30,8 @@ struct Records
 const Records kSample{
     .functions = {1, 0, 1},
     .multipliers = {0, 0, 2},
-    .lower = {0.0, -kInfinity, -1.0},
-    .upper = {kInfinity, kInfinity, 1.0},
+    .lower = {0.0, -BIYOS_INF, -1.0},
+    .upper = {BIYOS_INF, BIYOS_INF, 1.0},
 };
 
 void add_functions(const Model &model, int n)
@@ -237,7 +235,7 @@ TEST(CApiTest, NullComplements)
         .functions = {0, 1, 0, 1, 0, 1},
         .multipliers = {0, 1, 0, 1, 0, 1},
         .lower = {0.0, 0.0, -0.5, 0.75, 0.0, 0.0},
-        .upper = {kInfinity, kInfinity, kInfinity, kInfinity, -0.5, 0.75},
+        .upper = {BIYOS_INF, BIYOS_INF, BIYOS_INF, BIYOS_INF, -0.5, 0.75},
     };
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_addccon(held, 1, nullptr, functions, nullptr, nullptr, nullptr),
@@ -257,16 +255,16 @@ TEST(CApiTest, ComplementRange)
     const Records ranged{
         .functions = {0, 1},
         .multipliers = {0, 2},
-        .lower = {-kInfinity, -1.0},
-        .upper = {kInfinity, 1.0},
+        .lower = {-BIYOS_INF, -1.0},
+        .upper = {BIYOS_INF, 1.0},
     };
     expect_records(read_range(model, 1, 2), ranged);
     EXPECT_EQ(BIYOS_getcconrg(model.get(), 3, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const Records listed{
         .functions = {1, 1, 0},
         .multipliers = {2, 0, 0},
-        .lower = {-1.0, 0.0, -kInfinity},
-        .upper = {1.0, kInfinity, kInfinity},
+        .lower = {-1.0, 0.0, -BIYOS_INF},
+        .upper = {1.0, BIYOS_INF, BIYOS_INF},
     };
     expect_records(read_listed(model, {2, 0, 1}), listed);
     expect_records(read_listed(model, {}), Records{});
@@ -284,7 +282,7 @@ TEST(CApiTest, ComplementOutputs)
     EXPECT_EQ(BIYOS_getcconrg(held, 1, 2, nullptr, multipliers.data(), nullptr, upper.data()),
               BIYOS_OK);
     EXPECT_EQ(multipliers, std::vector<int>({0, 2}));
-    expect_doubles(upper, {kInfinity, 1.0});
+    expect_doubles(upper, {BIYOS_INF, 1.0});
     const BIYOS_index indices[] = {2};
     std::vector<int> functions(1, -1);
     EXPECT_EQ(BIYOS_getcconsp(held, 1, indices, functions.data(), nullptr, nullptr, nullptr),
@@ -310,12 +308,12 @@ TEST(CApiTest, ComplementBounds)
     std::vector<double> low(3, 9.0);
     std::vector<double> high(3, 9.0);
     ASSERT_EQ(BIYOS_getcconbndrg(held, 0, 3, low.data(), high.data()), BIYOS_OK);
-    expect_doubles(low, {-3.0, -kInfinity, -2.0});
-    expect_doubles(high, {kInfinity, 3.0, 1.0});
+    expect_doubles(low, {-3.0, -BIYOS_INF, -2.0});
+    expect_doubles(high, {BIYOS_INF, 3.0, 1.0});
     std::vector<double> listed(3, 9.0);
     const BIYOS_index repeated[] = {2, 0, 2};
     ASSERT_EQ(BIYOS_getcconbndsp(held, 3, repeated, nullptr, listed.data()), BIYOS_OK);
-    expect_doubles(listed, {1.0, kInfinity, 1.0});
+    expect_doubles(listed, {1.0, BIYOS_INF, 1.0});
     EXPECT_EQ(read_all(model).multipliers, kSample.multipliers);
     EXPECT_EQ(BIYOS_setcconbndsp(held, 2, nullptr, lower, upper), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
@@ -346,7 +344,7 @@ TEST(CApiTest, RefusedComplements)
     EXPECT_EQ(BIYOS_setcconbndsp(held, 1, &index, &bound, &bound), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
     const BIYOS_index first = 0;
-    const BIYOS_real infinite = kInfinity;
+    const BIYOS_real infinite = BIYOS_INF;
     EXPECT_EQ(BIYOS_setcconbndsp(held, 1, &first, &infinite, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 0: lower bound is infinity");
     EXPECT_EQ(BIYOS_getcconbndrg(held, 2, 2, nullptr, nullptr), BIYOS_ERR_BADARG);
@@ -429,7 +427,7 @@ TEST(CApiTest, RefusedTolerances)
     BIYOS_model *held = model.get();
     const BIYOS_index index = 1;
     const double nan = kNan;
-    const double infinite = kInfinity;
+    const double infinite = BIYOS_INF;
     const double negative = -0.5;
     const double small = 0.5;
     EXPECT_EQ(BIYOS_setccontolsp(held, 1, &index, &nan, nullptr), BIYOS_ERR_BADARG);

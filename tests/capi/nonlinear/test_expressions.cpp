@@ -465,7 +465,7 @@ TEST(CApiTest, PostfixErrors)
               bad + "entry 0: node 1 is unknown");
     EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_LOG}, {1, 0}, {})),
               bad + "entry 1: operator 10 takes 1 child, not 0");
-    const double infinity = std::numeric_limits<double>::infinity();
+    const double infinity = BIYOS_INF;
     EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_PROD}, {1, 1}, {infinity})),
               bad + "entry 1: constant is infinity");
     const Program made{

@@ -7,7 +7,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <string>
 #include <vector>
 
@@ -16,9 +15,6 @@ namespace biyos::test
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
 struct Terms
 {
     std::vector<BIYOS_offset> starts{0};
@@ -125,8 +121,8 @@ void add_constraints(BIYOS_model *model, Engine &engine, int n, int n_functions)
     {
         functions.push_back(below(engine, n_functions));
         const double base = small(engine);
-        lower.push_back(below(engine, 4) == 0 ? -kInfinity : base);
-        upper.push_back(below(engine, 4) == 0 ? kInfinity : base + below(engine, 4));
+        lower.push_back(below(engine, 4) == 0 ? -BIYOS_INF : base);
+        upper.push_back(below(engine, 4) == 0 ? BIYOS_INF : base + below(engine, 4));
     }
     const BIYOS_status status =
         BIYOS_addcon(model, n, functions.data(), lower.data(), upper.data(), nullptr);

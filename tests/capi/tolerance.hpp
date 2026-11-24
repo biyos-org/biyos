@@ -149,7 +149,7 @@ inline void expect_rejected(const ToleranceCalls &calls, Fill fill)
     BIYOS_model *held = model.get();
     const BIYOS_index index = 1;
     const double nan = kUnknown;
-    const double infinite = std::numeric_limits<double>::infinity();
+    const double infinite = BIYOS_INF;
     const double negative = -0.5;
     const double small = 0.5;
     EXPECT_EQ(calls.set_listed(held, 1, &index, &nan, nullptr), BIYOS_ERR_BADARG);
