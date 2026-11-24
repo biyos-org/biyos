@@ -102,13 +102,13 @@ def test_views(env, model):
     j = other.addind(y, [1], g)
     with pytest.raises(ValueError, match="varidx is a variable of another"):
         model.addind([y[0]], [1], [0])
-    with pytest.raises(ValueError, match="is a function, not a variable"):
+    with pytest.raises(TypeError, match="is a function, not a variable"):
         model.addind([f[0]], [1], [0])
-    with pytest.raises(ValueError, match="of variables, not functions"):
+    with pytest.raises(TypeError, match="of variables, not functions"):
         model.addind([0], [1], x)
     with pytest.raises(ValueError, match="is an indicator of another model"):
         model.setindbnd([j[0]], [0.0])
-    with pytest.raises(ValueError, match="of functions, not indicators"):
+    with pytest.raises(TypeError, match="of functions, not indicators"):
         model.getindvar(f)
     assert model.getindvar(i[1:]) == ([2, 0], [0, 0])
     other.close()

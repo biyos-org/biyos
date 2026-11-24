@@ -196,15 +196,15 @@ def test_views(env, model):
         model.getsos([t[0]])
     with pytest.raises(ValueError, match="idx is a block of another model"):
         model.getnsosvar(t)
-    with pytest.raises(ValueError, match="is a set, not a variable"):
+    with pytest.raises(TypeError, match="is a set, not a variable"):
         model.addsos([SOS1], [0, 1], [s[0]])
-    with pytest.raises(ValueError, match="of functions, not variables"):
+    with pytest.raises(TypeError, match="of functions, not variables"):
         model.addsos([SOS1], [0, 1], f)
-    with pytest.raises(ValueError, match="is a variable, not a set"):
+    with pytest.raises(TypeError, match="is a variable, not a set"):
         model.getsos([x[0]])
-    with pytest.raises(ValueError, match="of variables, not sets"):
+    with pytest.raises(TypeError, match="of variables, not sets"):
         model.getsos(x)
-    with pytest.raises(ValueError, match="is a set, not a constraint"):
+    with pytest.raises(TypeError, match="is a set, not a constraint"):
         model.getconname([s[0]])
     assert model.getnsos() == 2
     other.close()

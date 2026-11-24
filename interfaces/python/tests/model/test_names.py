@@ -117,11 +117,11 @@ def test_views(env, model):
         model.getvarname([y[0]])
     with pytest.raises(ValueError, match="idx is a block of another"):
         model.setvarname(y, ["a"])
-    with pytest.raises(ValueError, match="is a variable, not a constraint"):
+    with pytest.raises(TypeError, match="is a variable, not a constraint"):
         model.setconname([x[0]], ["d"])
-    with pytest.raises(ValueError, match="idx is a constraint, not a"):
+    with pytest.raises(TypeError, match="idx is a constraint, not a"):
         model.getvarname([c[0]])
-    with pytest.raises(ValueError, match="of functions, not objectives"):
+    with pytest.raises(TypeError, match="of functions, not objectives"):
         model.setobjname(f, ["g"])
     assert names_of(model, "con") == [None, None, None, "c"]
 

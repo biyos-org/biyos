@@ -468,7 +468,7 @@ def _member(
     noun = _indefinite(family._element._noun)
     if not isinstance(view, family._element):
         found = _indefinite(view._noun)
-        raise ValueError(f"{name} is {found}, not {noun}")
+        raise TypeError(f"{name} is {found}, not {noun}")
     if view._model is not model:
         raise ValueError(f"{name} is {noun} of another model")
 
@@ -487,7 +487,7 @@ def range_of(
     if not isinstance(block, family):
         found = block._element._noun
         noun = family._element._noun
-        raise ValueError(f"{name} is a block of {found}s, not {noun}s")
+        raise TypeError(f"{name} is a block of {found}s, not {noun}s")
     if block._model is not model:
         raise ValueError(f"{name} is a block of another model")
     block._check()

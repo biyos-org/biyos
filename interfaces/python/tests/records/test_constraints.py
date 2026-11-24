@@ -110,9 +110,9 @@ def test_views(env, model):
         model.addcon([0, g[1]])
     with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addcon(g)
-    with pytest.raises(ValueError, match="is a variable, not a function"):
+    with pytest.raises(TypeError, match="is a variable, not a function"):
         model.addcon([x[0]])
-    with pytest.raises(ValueError, match="of variables, not functions"):
+    with pytest.raises(TypeError, match="of variables, not functions"):
         model.addcon(x)
     with pytest.raises(ValueError, match="is a constraint of another model"):
         model.setconbnd([d[0]], [0.0])
@@ -121,9 +121,9 @@ def test_views(env, model):
     with pytest.raises(ValueError, match="idx is a block of another model"):
         model.getcon(d)
     f = model.addfun(1)
-    with pytest.raises(ValueError, match="is a function, not a constraint"):
+    with pytest.raises(TypeError, match="is a function, not a constraint"):
         model.setconbnd([f[0]], [0.0])
-    with pytest.raises(ValueError, match="of functions, not constraints"):
+    with pytest.raises(TypeError, match="of functions, not constraints"):
         model.setconbnd(f, [0.0])
     model.setconbnd([c[2]], [5.0], [6.0])
     model.setconbnd(c[:2], ub=[7.0, 8.0])
@@ -212,7 +212,7 @@ def test_listed(env, model):
     d = other.addcon([0])
     with pytest.raises(ValueError, match="is a constraint of another model"):
         model.getconbnd([d[0]])
-    with pytest.raises(ValueError, match="of functions, not constraints"):
+    with pytest.raises(TypeError, match="of functions, not constraints"):
         model.getconbnd(model.addfun(1))
     other.close()
 

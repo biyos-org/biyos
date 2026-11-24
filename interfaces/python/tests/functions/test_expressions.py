@@ -83,7 +83,7 @@ def test_views(env, model):
     y = other.addvar(1)
     with pytest.raises(ValueError, match="var is a variable of another"):
         model.addvarnode(y[0])
-    with pytest.raises(ValueError, match="var is a function, not a"):
+    with pytest.raises(TypeError, match="var is a function, not a"):
         model.addvarnode(f[0])
     model.attachexpr(f, [0])
     model.attachexpr([f[0]], [0])

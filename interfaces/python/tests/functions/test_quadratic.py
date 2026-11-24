@@ -273,11 +273,11 @@ def test_views(env, model):
         model.addquadterm(g, [0], [0], [1.0])
     with pytest.raises(ValueError, match="idx is a block of another"):
         model.getquadterm(g)
-    with pytest.raises(ValueError, match="is a function, not a variable"):
+    with pytest.raises(TypeError, match="is a function, not a variable"):
         model.addquadterm([0], [f[0]], [0], [1.0])
-    with pytest.raises(ValueError, match="funidx is a block of variables"):
+    with pytest.raises(TypeError, match="funidx is a block of variables"):
         model.addquadterm(x, [0, 0], [0, 0], [1.0, 1.0])
-    with pytest.raises(ValueError, match="idx is a variable, not a"):
+    with pytest.raises(TypeError, match="idx is a variable, not a"):
         model.getquadterm([x[0]])
     assert model.getquadterm(f) == found
 

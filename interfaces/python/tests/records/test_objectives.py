@@ -131,9 +131,9 @@ def test_views(env, model):
         model.addobj([0, g[1]])
     with pytest.raises(ValueError, match="funidx is a block of another"):
         model.addobj(g)
-    with pytest.raises(ValueError, match="is a variable, not a function"):
+    with pytest.raises(TypeError, match="is a variable, not a function"):
         model.addobj([x[0]])
-    with pytest.raises(ValueError, match="of variables, not functions"):
+    with pytest.raises(TypeError, match="of variables, not functions"):
         model.addobj(x)
     with pytest.raises(ValueError, match="is an objective of another model"):
         model.setobjsense([p[0]], [MAX])
@@ -142,11 +142,11 @@ def test_views(env, model):
     with pytest.raises(ValueError, match="idx is a block of another model"):
         model.getobj(p)
     c = model.addcon([0])
-    with pytest.raises(ValueError, match="is a constraint, not an objective"):
+    with pytest.raises(TypeError, match="is a constraint, not an objective"):
         model.setobjsense([c[0]], [MAX])
-    with pytest.raises(ValueError, match="of constraints, not objectives"):
+    with pytest.raises(TypeError, match="of constraints, not objectives"):
         model.setobjsense(c, [MAX])
-    with pytest.raises(ValueError, match="is an objective, not a function"):
+    with pytest.raises(TypeError, match="is an objective, not a function"):
         model.addcon([o[0]])
     model.setobjsense([o[2]], [MAX])
     model.setobjprio([o[2]], [5])
@@ -299,9 +299,9 @@ def test_listed_refusals(env, model):
     )
     assert model.getobj() == SAMPLE
     c = model.addcon([0])
-    with pytest.raises(ValueError, match="is a constraint, not an objective"):
+    with pytest.raises(TypeError, match="is a constraint, not an objective"):
         model.getobjsense([c[0]])
-    with pytest.raises(ValueError, match="of constraints, not objectives"):
+    with pytest.raises(TypeError, match="of constraints, not objectives"):
         model.setobjtol(c, [0.0])
     other = biyos.Model(env)
     other.addfun(1)
