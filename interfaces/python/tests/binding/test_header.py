@@ -1,9 +1,9 @@
 from ctypes import POINTER, c_uint64
 
 import biyos
-from biyos import _capi
+from biyos import _capi, _header
 from biyos._capi import lib
-from header import functions, group, lines, macros
+from header import group
 
 KINDS = {
     "BIYOS_OPTKND_BOOL": "KIND_BOOL",
@@ -86,84 +86,60 @@ def declared(name):
 
 
 def test_functions():
-    names = functions("biyos.h")
-    assert len(names) == lines("biyos.h", "BIYOS_API ")
-    assert [name for name in names if not declared(name)] == []
+    assert [name for name in _header.FUNCTIONS if not declared(name)] == []
 
 
 def test_kinds():
-    found = macros("biyos.h")
-    kinds = {name: value for name, value in found.items() if "_OPTKND_" in name}
-    assert len(kinds) == lines("biyos.h", "#define BIYOS_OPTKND_")
     names = [name for name in dir(_capi) if name.startswith("KIND_")]
     assert sorted(names) == sorted(KINDS.values())
     paired = {macro: getattr(_capi, name) for macro, name in KINDS.items()}
-    assert kinds == paired
+    assert group("BIYOS_OPTKND_") == paired
 
 
 def test_variable_kinds():
-    found = macros("biyos.h")
-    kinds = {name: value for name, value in found.items() if "_VARKND_" in name}
-    assert len(kinds) == lines("biyos.h", "#define BIYOS_VARKND_")
     assert set(VARIABLES.values()) == set(biyos.VariableKind)
-    assert kinds == VARIABLES
+    assert group("BIYOS_VARKND_") == VARIABLES
 
 
 def test_operators():
-    found = macros("biyos.h")
-    codes = {name: value for name, value in found.items() if "_OP_" in name}
-    assert len(codes) == lines("biyos.h", "#define BIYOS_OP_")
     assert set(OPERATORS.values()) == set(biyos.Operator)
-    assert codes == OPERATORS
+    assert group("BIYOS_OP_") == OPERATORS
 
 
 def test_cone_kinds():
-    found = macros("biyos.h")
-    kinds = {name: value for name, value in found.items() if "_CONE_" in name}
-    assert len(kinds) == lines("biyos.h", "#define BIYOS_CONE_")
     assert set(CONES.values()) == set(biyos.ConeKind)
-    assert kinds == CONES
+    assert group("BIYOS_CONE_") == CONES
 
 
 def test_senses():
-    senses, defined = group("biyos.h", "BIYOS_OBJSENSE_MIN")
-    assert len(senses) == defined
     assert set(SENSES.values()) == set(biyos.ObjectiveSense)
-    assert senses == SENSES
+    assert group("BIYOS_OBJSENSE_") == SENSES
 
 
 def test_formats():
-    formats, defined = group("biyos.h", "BIYOS_FMT_MPS")
-    assert len(formats) == defined
     names = {f"BIYOS_FMT_{fmt.name}": fmt for fmt in biyos.FileFormat}
-    assert formats == names
+    assert group("BIYOS_FMT_") == names
 
 
 def test_sos_kinds():
-    kinds, defined = group("biyos.h", "BIYOS_SOSKND_SOS1")
-    assert len(kinds) == defined
     names = {f"BIYOS_SOSKND_{kind.name}": kind for kind in biyos.SOSKind}
-    assert kinds == names
+    assert group("BIYOS_SOSKND_") == names
 
 
 def test_levels():
-    levels, defined = group("biyos.h", "BIYOS_CHECKLVL_NONE")
-    assert len(levels) == defined
     names = {
         f"BIYOS_CHECKLVL_{level.name}": level for level in biyos.CheckLevel
     }
-    assert levels == names
+    assert group("BIYOS_CHECKLVL_") == names
 
 
 def test_sources():
-    sources, defined = group("biyos.h", "BIYOS_OPTSRC_MDL")
-    assert len(sources) == defined
     assert set(SOURCES.values()) == set(biyos.OptionSource)
-    assert sources == SOURCES
+    assert group("BIYOS_OPTSRC_") == SOURCES
 
 
 def test_ok():
-    assert macros("biyos.h")["BIYOS_OK"] == _capi.OK
+    assert _header.BIYOS_OK == _capi.OK
 
 
 def test_masks():

@@ -10,7 +10,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel
 from biyos._capi import OK
-from header import lines, macros
+from header import group
 from number import Number
 from spies import followed, preceded
 
@@ -23,8 +23,6 @@ LOCKED = "invalid argument: model: is read-only while delivering an event"
 ENV_LOCKED = (
     "invalid argument: environment: is read-only while delivering an event"
 )
-
-EVENTS = ("BIYOS_EVTKND_", "BIYOS_EVTLVL_")
 
 KINDS = {
     "BIYOS_EVTKND_MSG": EventKind.MESSAGE,
@@ -131,12 +129,9 @@ def change_model(model, other, env, seen, event):
 
 def test_constants():
     assert set(KINDS.values()) == set(EventKind)
-    found = macros("biyos.h")
-    events = {name: found[name] for name in found if name.startswith(EVENTS)}
-    defined = sum(lines("biyos.h", f"#define {start}") for start in EVENTS)
-    assert len(events) == defined
     assert set(LEVELS.values()) == set(EventLevel)
-    assert events == KINDS | LEVELS
+    assert group("BIYOS_EVTKND_") == KINDS
+    assert group("BIYOS_EVTLVL_") == LEVELS
 
 
 def test_error():
