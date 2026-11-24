@@ -1057,6 +1057,7 @@ BIYOS_API BIYOS_status BIYOS_delcconrg(BIYOS_model *mdl,
 #define BIYOS_OP_SPOW 28
 #define BIYOS_OP_ERF 29
 #define BIYOS_OP_NODE 30
+#define BIYOS_OP_PWL 31
 #define BIYOS_OP_KEEP 32
 #define BIYOS_OP_REF 33
 

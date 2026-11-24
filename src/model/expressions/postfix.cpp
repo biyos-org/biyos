@@ -41,7 +41,20 @@ std::string operand_text(Offset n)
 
 Offset arity_of(Operator op, Offset argument) noexcept
 {
-    return op == Operator::Variable ? 0 : argument;
+    if (op == Operator::Variable)
+    {
+        return 0;
+    }
+    return op == Operator::PiecewiseLinear ? 1 : argument;
+}
+
+Offset argument_of(const Graph &graph, Offset node) noexcept
+{
+    if (graph.op(node) == Operator::PiecewiseLinear)
+    {
+        return graph.pwl(node);
+    }
+    return static_cast<Offset>(graph.children(node).size());
 }
 
 struct Kept
@@ -177,6 +190,9 @@ void Decoder::build(Operator op, Offset argument)
         return;
     case Operator::SignPower:
         builder_.sign_power(values(1).front());
+        return;
+    case Operator::PiecewiseLinear:
+        builder_.piecewise(argument);
         return;
     case Operator::Negation:
     case Operator::Division:
@@ -404,7 +420,7 @@ void Encoder::meet(Offset node, bool nested)
 void Encoder::finish(const Frame &frame)
 {
     const auto op = static_cast<int>(graph_.op(frame.node));
-    put(op, static_cast<Offset>(graph_.children(frame.node).size()));
+    put(op, argument_of(graph_, frame.node));
     put_values(frame.node);
     if (frame.kept)
     {
@@ -425,6 +441,7 @@ void Encoder::put_values(Offset node)
     {
     case Payload::None:
     case Payload::Variable:
+    case Payload::Points:
         return;
     case Payload::Constant:
         encoding_.values.push_back(graph_.constant(node));

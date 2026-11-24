@@ -26,6 +26,11 @@ std::string compared(std::string_view field, Index a, Index b)
     return a == b ? std::string() : against(field, a, b);
 }
 
+std::string compared(std::string_view field, Offset a, Offset b)
+{
+    return a == b ? std::string() : against(field, a, b);
+}
+
 std::string compared(std::string_view field, double a, double b)
 {
     const bool same = std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b);

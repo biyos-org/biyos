@@ -45,6 +45,8 @@ constexpr double kReach = 1000.0;
 constexpr int kDraws = 24;
 constexpr std::size_t kRounds = 4;
 constexpr int kReported = 5;
+constexpr std::array kKinks{-2.0, -0.5, 1.0, 3.0};
+constexpr std::array kHeights{1.0, -1.0, 0.5, 2.0};
 
 constexpr std::array kSpecial{
     0.0,
@@ -268,6 +270,9 @@ Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
     case Operator::Entropy:
     case Operator::Erf:
         graph.add(op, one);
+        break;
+    case Operator::PiecewiseLinear:
+        graph.add_piecewise(graph.add_pwl(kKinks, kHeights), one);
         break;
     }
     return graph;

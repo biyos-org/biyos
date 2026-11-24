@@ -194,6 +194,10 @@ std::vector<std::uint32_t> operand_slots(const Block &block, const biyos::Instru
         const auto first = block.operands.begin();
         return std::vector<std::uint32_t>(first + instruction.first, first + instruction.second);
     }
+    if (instruction.op == Operator::PiecewiseLinear)
+    {
+        return {instruction.first};
+    }
     return {instruction.first, instruction.second};
 }
 

@@ -5,6 +5,7 @@
 #include "core/text/text.hpp"
 #include "expr/derivatives/partials.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/graph/points.hpp"
 #include "expr/tape/frame.hpp"
 #include "expr/tape/tape.hpp"
 
@@ -131,6 +132,12 @@ void signed_power(const Instruction &instruction, const Frame &frame) noexcept
 {
     const double exponent = constant_of(instruction);
     map(instruction, frame, [exponent](double x) { return sign_power(x, exponent); });
+}
+
+void piecewise(const Instruction &instruction, const Frame &frame) noexcept
+{
+    const Pwl pwl = pwl_of(instruction, frame.weights);
+    map(instruction, frame, [pwl](double x) { return value_at(pwl, x); });
 }
 
 Frame enter(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
@@ -284,6 +291,9 @@ void evaluate(const Instruction &instruction, const Frame &frame) noexcept
         return;
     case Operator::Erf:
         map(instruction, frame, [](double x) { return std::erf(x); });
+        return;
+    case Operator::PiecewiseLinear:
+        piecewise(instruction, frame);
         return;
     }
 }

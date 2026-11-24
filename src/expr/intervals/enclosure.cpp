@@ -183,6 +183,8 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
         return sign_power(first(pass, node), pass.graph.constant(node));
     case Operator::Erf:
         return erf(first(pass, node));
+    case Operator::PiecewiseLinear:
+        return Interval::entire();
     }
     return Interval::entire();
 }

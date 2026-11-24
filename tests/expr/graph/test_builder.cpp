@@ -305,6 +305,31 @@ TEST(GraphTest, UnaryCall)
               "invalid argument: expression: 1 operand taken, 0 given");
 }
 
+TEST(GraphTest, PiecewiseCall)
+{
+    Graph graph;
+    const std::array points{0.0, 1.0};
+    graph.add_pwl(points, points);
+    Builder build(graph);
+    EXPECT_EQ(refusal([&] { build.piecewise(0); }),
+              "invalid argument: expression: 1 operand taken, 0 given");
+    build.variable(0);
+    EXPECT_EQ(refusal([&] { build.piecewise(1); }),
+              "invalid argument: expression: pwl 1 is unknown");
+    EXPECT_EQ(refusal([&] { build.piecewise(-1); }),
+              "invalid argument: expression: pwl -1 is unknown");
+    EXPECT_EQ(refusal([&] { build.apply(Operator::PiecewiseLinear, 1); }),
+              "invalid argument: expression: operator 31 takes a pwl");
+    build.piecewise(0);
+    build.apply(Operator::Exp, 1);
+    const Offset root = build.finish();
+    ASSERT_EQ(graph.size(), 3);
+    EXPECT_EQ(graph.op(1), Operator::PiecewiseLinear);
+    EXPECT_EQ(graph.pwl(1), 0);
+    EXPECT_EQ(ids(graph.children(1)), std::vector<Offset>{0});
+    EXPECT_EQ(ids(graph.children(root)), std::vector<Offset>{1});
+}
+
 TEST(GraphTest, MissingNode)
 {
     Graph graph;

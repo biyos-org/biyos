@@ -75,6 +75,8 @@ std::optional<Shape> find_shape(Operator op) noexcept
     case Operator::Entropy:
     case Operator::Erf:
         return Shape{.payload = Payload::None, .least = 1, .most = 1};
+    case Operator::PiecewiseLinear:
+        return Shape{.payload = Payload::Points, .least = 1, .most = 1};
     case Operator::Division:
     case Operator::Power:
         return Shape{.payload = Payload::None, .least = 2, .most = 2};
@@ -107,6 +109,8 @@ std::string_view payload_name(Payload payload) noexcept
         return "a variable";
     case Payload::Coefficients:
         return "coefficients";
+    case Payload::Points:
+        return "a pwl";
     }
     return "an unknown payload";
 }

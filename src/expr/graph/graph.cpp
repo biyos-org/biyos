@@ -82,6 +82,11 @@ std::span<const double> Graph::coefficients(Offset node) const noexcept
     return std::span(coefficients_).subspan(start, children(node).size());
 }
 
+Offset Graph::pwl(Offset node) const noexcept
+{
+    return static_cast<Offset>(payloads_[at(node)]);
+}
+
 Offset Graph::node_of(Index variable) const noexcept
 {
     const auto index = static_cast<std::size_t>(variable);
@@ -144,6 +149,13 @@ Offset Graph::add_sum(double constant,
 Offset Graph::add_pwl(std::span<const double> x, std::span<const double> y)
 {
     return points_.add(x, y);
+}
+
+Offset Graph::add_piecewise(Offset pwl, std::span<const Offset> children)
+{
+    check(Operator::PiecewiseLinear, Payload::Points, children);
+    check_pwl(pwl, points_.size());
+    return append(Operator::PiecewiseLinear, static_cast<std::uint64_t>(pwl), children);
 }
 
 void Graph::renumber_variables(std::span<const Index> map) noexcept

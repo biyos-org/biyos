@@ -61,6 +61,7 @@ Offset n_values(int op, Offset n)
     {
     case Payload::None:
     case Payload::Variable:
+    case Payload::Points:
         return 0;
     case Payload::Constant:
         return 1;
@@ -81,6 +82,7 @@ Offset append_node(Graph &graph,
     {
     case Payload::None:
     case Payload::Variable:
+    case Payload::Points:
         return graph.add(found, children);
     case Payload::Constant:
         return graph.add(found, taken(values, 1).front(), children);

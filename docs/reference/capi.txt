@@ -2261,6 +2261,7 @@ value BIYOS_OP_SPOW $\operatorname{sign}(e)\, \lvert e \rvert^c$, with a constan
 takes $c$
 value BIYOS_OP_ERF $\operatorname{erf} e$, the error function.
 value BIYOS_OP_NODE No operator: in postfix, a node the model already holds, named by its id.
+value BIYOS_OP_PWL $p(e)$, the piecewise linear function through the points of a pwl the model holds, extended past both ends by its end segments. At a breakpoint its slope is the one on the right.
 value BIYOS_OP_KEEP No operator: in postfix, the operand before it kept as a node of its own.
 value BIYOS_OP_REF No operator: in postfix, the node kept by an earlier `BIYOS_OP_KEEP` entry of the same call, named by that entry's position.
 since 0.1.0

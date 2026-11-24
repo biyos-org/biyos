@@ -86,6 +86,11 @@ void expect_copy(const Compaction &result, const Graph &graph, Offset node)
         EXPECT_EQ(found.variable(image), graph.variable(node));
         return;
     }
+    if (graph.op(node) == Operator::PiecewiseLinear)
+    {
+        EXPECT_EQ(found.pwl(image), graph.pwl(node));
+        return;
+    }
     EXPECT_EQ(bits(found.constant(image)), bits(graph.constant(node)));
 }
 
@@ -254,6 +259,28 @@ TEST(CompactTest, WholeTable)
         EXPECT_EQ(bits(points.pwl(pwl).y), bits(graph.points().pwl(pwl).y));
     }
     EXPECT_EQ(compact(graph, {}).graph.points().size(), 2);
+}
+
+TEST(CompactTest, Piecewise)
+{
+    Graph graph;
+    const std::array x{0.0, 1.0};
+    graph.add_pwl(x, x);
+    graph.add_pwl(x, std::array{2.0, 5.0});
+    const Offset y = graph.add_variable(1);
+    const Offset dead = graph.add_piecewise(0, std::span(&y, 1));
+    const Offset z = graph.add_variable(4);
+    const Offset kept = graph.add_piecewise(1, std::span(&z, 1));
+    const Offset root = unary(graph, Operator::Exp, kept);
+    const Compaction result = compact(graph, std::span(&root, 1));
+    const std::vector<Offset> wanted{kDead, kDead, 0, 1, 2};
+    EXPECT_EQ(result.map, wanted);
+    EXPECT_EQ(result.graph.points().size(), 2);
+    for (const Offset node : {z, kept, root})
+    {
+        expect_copy(result, graph, node);
+    }
+    EXPECT_EQ(result.map[at(dead)], kDead);
 }
 
 TEST(CompactTest, NoRoots)

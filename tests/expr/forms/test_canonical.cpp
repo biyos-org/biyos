@@ -312,6 +312,23 @@ TEST(CanonicalTest, UnaryKept)
     }
 }
 
+TEST(CanonicalTest, PiecewiseKept)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const std::array points{-1.0, 2.0};
+    const Offset pwl = graph.add_pwl(points, points);
+    const Offset inner = sum(graph, 1.0, {x[0], x[1]}, {2.0, 1.0});
+    const Offset node = graph.add_piecewise(pwl, std::span(&inner, 1));
+    expect_whole(parts_of(graph, node), node);
+    const Offset root = sum(graph, 0.0, {node, x[2]}, {1.0, 1.0});
+    const Offset size = graph.size();
+    const Parts parts = parts_of(graph, root);
+    expect_linear(parts, {{.variable = 2, .coefficient = 1.0}});
+    EXPECT_EQ(parts.remainder, node);
+    EXPECT_EQ(graph.size(), size);
+}
+
 TEST(CanonicalTest, NoRemainder)
 {
     Graph graph;

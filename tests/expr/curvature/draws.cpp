@@ -32,6 +32,8 @@ constexpr std::array kWeights{-2.0, -1.0, -0.5, 0.5, 1.0, 2.0, 0.0};
 constexpr std::array kConstants{0.0, 1.0, -1.0, 2.0, 0.5};
 constexpr std::array kExponents{2.0, 3.0, 0.5, 1.5, -1.0, -2.0, -0.5, 1.0, 0.0, 4.0};
 constexpr std::array kSignExponents{0.5, 1.5, 3.0, 1.0};
+constexpr std::array kKinks{-2.0, 0.0, 1.0};
+constexpr std::array kHeights{1.0, 0.0, 2.0};
 
 std::size_t pick(Engine &engine, std::size_t n)
 {
@@ -94,6 +96,7 @@ std::size_t arity_of(Operator op, Engine &engine)
     case Operator::Entropy:
     case Operator::SignPower:
     case Operator::Erf:
+    case Operator::PiecewiseLinear:
         return 1;
     }
     return 1;
@@ -141,6 +144,9 @@ void grow(Graph &graph, Engine &engine)
                       sign ? one_of(kSignExponents, engine) : one_of(kExponents, engine),
                       children);
         }
+        break;
+    case biyos::Payload::Points:
+        graph.add_piecewise(graph.add_pwl(kKinks, kHeights), children);
         break;
     }
 }

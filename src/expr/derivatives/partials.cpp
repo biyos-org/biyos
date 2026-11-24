@@ -2,6 +2,7 @@
 
 #include "core/numeric/zero.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/graph/points.hpp"
 #include "expr/tape/frame.hpp"
 #include "expr/tape/tape.hpp"
 
@@ -200,6 +201,14 @@ double sign(double value) noexcept
     return value < 0.0 ? -1.0 : 1.0;
 }
 
+void piecewise(const Instruction &instruction,
+               const Frame &frame,
+               std::span<double> partials) noexcept
+{
+    const Pwl pwl = pwl_of(instruction, frame.weights);
+    slope(instruction, frame, partials, [pwl](double x, double) { return slope_at(pwl, x); });
+}
+
 void slopes_of(const Instruction &instruction,
                const Frame &frame,
                std::span<double> partials) noexcept
@@ -299,6 +308,9 @@ void slopes_of(const Instruction &instruction,
     case Operator::Erf:
         slope(instruction, frame, partials, [](double x, double) { return erf_slope(x); });
         return;
+    case Operator::PiecewiseLinear:
+        piecewise(instruction, frame, partials);
+        return;
     }
 }
 
@@ -353,6 +365,7 @@ std::uint32_t n_partials(const Instruction &instruction) noexcept
     case Operator::Entropy:
     case Operator::SignPower:
     case Operator::Erf:
+    case Operator::PiecewiseLinear:
         return 1;
     }
     return 0;

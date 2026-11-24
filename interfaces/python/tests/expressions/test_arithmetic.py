@@ -193,5 +193,6 @@ def test_operators():
         Operator.KEEP,
         Operator.REFERENCE,
     }
-    assert reached | postfix == set(Operator)
+    unbuilt = {Operator.PIECEWISE_LINEAR}
+    assert reached | postfix | unbuilt == set(Operator)
     assert not reached & postfix

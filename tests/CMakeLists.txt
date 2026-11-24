@@ -95,6 +95,7 @@ biyos_add_test(test_expr
     expr/values/test_elementary.cpp
     expr/values/test_exponents.cpp
     expr/values/test_periodic.cpp
+    expr/values/test_piecewise.cpp
     expr/values/test_powers.cpp
     expr/values/test_value.cpp)
 target_include_directories(test_expr PRIVATE expr/utils)

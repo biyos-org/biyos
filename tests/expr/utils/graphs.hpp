@@ -31,6 +31,11 @@ constexpr std::array kPowers{Operator::ConstantPower, Operator::SignPower};
 constexpr std::array kBinary{Operator::Division, Operator::Power};
 constexpr std::array kListed{Operator::Max, Operator::Min};
 constexpr std::array kExponents{2.0, 3.0, 0.5, -1.0, 1.5};
+constexpr std::array kKinks{-1.0, 0.25, 1.5};
+constexpr std::array kHeights{2.0, -0.5, 1.0};
+constexpr std::array kSteps{-3.0, -2.0, 0.5, 4.0};
+constexpr std::array kLevels{1.0, 1.0, -2.0, 3.0};
+constexpr Offset kPwls = 2;
 constexpr std::array kSpecial{
     0.0,
     -0.0,
@@ -71,12 +76,24 @@ inline Offset listed(Graph &graph, Operator op, const std::vector<Offset> &child
     return graph.add(op, children);
 }
 
+inline void add_pwls(Graph &graph)
+{
+    graph.add_pwl(kKinks, kHeights);
+    graph.add_pwl(kSteps, kLevels);
+}
+
+inline Offset piecewise(Graph &graph, Offset pwl, Offset child)
+{
+    return graph.add_piecewise(pwl, std::span(&child, 1));
+}
+
 inline std::vector<Offset> every_operator(Graph &graph)
 {
     const Offset x = graph.add_variable(0);
     const Offset y = graph.add_variable(1);
     const Offset z = graph.add_variable(2);
     const Offset w = graph.add_variable(3);
+    const Offset pwl = graph.add_pwl(kKinks, kHeights);
     const std::array xy{x, y};
     const std::array xyz{x, y, z};
     return {
@@ -109,6 +126,7 @@ inline std::vector<Offset> every_operator(Graph &graph)
         unary(graph, Operator::Entropy, x),
         sign_power(graph, z, 1.5),
         unary(graph, Operator::Erf, z),
+        piecewise(graph, pwl, y),
     };
 }
 
@@ -160,7 +178,7 @@ inline Offset powered(Graph &graph, Random &random, Offset base)
 inline Offset grow(Graph &graph, Random &random)
 {
     const std::vector<Offset> children = picks(random, graph, 1 + random.below(4));
-    const std::size_t kind = random.below(7);
+    const std::size_t kind = random.below(8);
     const double number = random.uniform(-2.0, 2.0);
     switch (kind)
     {
@@ -176,14 +194,17 @@ inline Offset grow(Graph &graph, Random &random)
         return sum(graph, random, number, children);
     case 5:
         return graph.add(Operator::Product, number, children);
-    default:
+    case 6:
         return listed(graph, kListed[random.below(2)], children);
+    default:
+        return piecewise(graph, static_cast<Offset>(random.below(kPwls)), children[0]);
     }
 }
 
 inline Graph random_graph(Random &random)
 {
     Graph graph;
+    add_pwls(graph);
     for (Index k = 0; k < kVariables; ++k)
     {
         graph.add_variable(k);

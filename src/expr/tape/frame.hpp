@@ -1,5 +1,6 @@
 #pragma once
 
+#include "expr/graph/points.hpp"
 #include "expr/tape/tape.hpp"
 
 #include <bit>
@@ -29,6 +30,13 @@ inline std::size_t place(std::uint64_t payload) noexcept
 inline double constant_of(const Instruction &instruction) noexcept
 {
     return std::bit_cast<double>(instruction.payload);
+}
+
+inline Pwl pwl_of(const Instruction &instruction, std::span<const double> weights) noexcept
+{
+    const std::size_t n = instruction.second;
+    const std::span<const double> points = weights.subspan(place(instruction.payload), 2 * n);
+    return {.x = points.first(n), .y = points.subspan(n)};
 }
 
 template <typename T>

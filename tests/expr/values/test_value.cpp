@@ -2,6 +2,7 @@
 #include "expr/derivatives/value.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/graph/points.hpp"
 #include "expr/tape/tape.hpp"
 #include "graphs.hpp"
 #include "refusal.hpp"
@@ -134,6 +135,7 @@ std::vector<double> cmath_values(const Point &point)
         x * std::log(x),
         std::copysign(std::pow(std::fabs(z), 1.5), z),
         std::erf(z),
+        y < 0.25 ? 2.0 - 2.0 * (y + 1.0) : -0.5 + 1.2 * (y - 0.25),
     };
 }
 
@@ -230,6 +232,8 @@ double Reference::compute(Offset node)
         return signed_power(child(node, 0), graph_.constant(node));
     case Operator::Erf:
         return std::erf(child(node, 0));
+    case Operator::PiecewiseLinear:
+        return biyos::value_at(graph_.points().pwl(graph_.pwl(node)), child(node, 0));
     }
     return kNan;
 }

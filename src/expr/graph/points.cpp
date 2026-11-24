@@ -3,6 +3,7 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/memory/room.hpp"
+#include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
 #include "expr/graph/node.hpp"
 
@@ -69,6 +70,16 @@ void check_segment(const Pwl &pwl, std::size_t k)
     {
         refuse("the pwl's slope" + between + std::string(fault(slope)));
     }
+}
+
+double rise_over(double slope, double from, double t) noexcept
+{
+    const double step = t - from;
+    if (std::isinf(step))
+    {
+        return slope * t - slope * from;
+    }
+    return slope * step;
 }
 
 }
@@ -149,6 +160,23 @@ double slope_of(const Pwl &pwl, std::size_t segment) noexcept
 {
     const double rise = pwl.y[segment + 1] - pwl.y[segment];
     return rise / (pwl.x[segment + 1] - pwl.x[segment]);
+}
+
+double value_at(const Pwl &pwl, double t) noexcept
+{
+    const std::size_t k = segment_of(pwl.x, t);
+    const std::size_t anchor = t < pwl.x[k + 1] ? k : k + 1;
+    const double slope = slope_of(pwl, k);
+    if ((is_zero(slope) && !std::isnan(t)) || is_zero(t - pwl.x[anchor]))
+    {
+        return pwl.y[anchor];
+    }
+    return pwl.y[anchor] + rise_over(slope, pwl.x[anchor], t);
+}
+
+double slope_at(const Pwl &pwl, double t) noexcept
+{
+    return slope_of(pwl, segment_of(pwl.x, t));
 }
 
 }

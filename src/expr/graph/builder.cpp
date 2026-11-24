@@ -6,6 +6,7 @@
 #include "core/text/text.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/graph/points.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -102,6 +103,16 @@ void Builder::power(double exponent)
 void Builder::sign_power(double exponent)
 {
     raise(Operator::SignPower, exponent);
+}
+
+void Builder::piecewise(Offset pwl)
+{
+    check_pwl(pwl, graph_.points().size());
+    const std::size_t base = take(1);
+    collect(base);
+    const Offset node = graph_.add_piecewise(pwl, next_terms_);
+    pop(base);
+    push(node);
 }
 
 void Builder::apply(Operator op, Offset n)
