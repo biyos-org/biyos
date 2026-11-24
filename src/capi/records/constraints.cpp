@@ -5,10 +5,10 @@
 #include "capi/model/selection.hpp"
 #include "capi/model/tolerances.hpp"
 #include "core/index.hpp"
+#include "core/numeric/limits.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
-#include <limits>
 #include <vector>
 
 using biyos::Family;
@@ -26,9 +26,6 @@ using biyos::capi::writable;
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
 biyos::Constraint bounded(biyos::Constraint constraint,
                           std::size_t k,
                           const double *lower,
@@ -64,8 +61,8 @@ void add_constraints(BIYOS_model &model,
     {
         const biyos::Constraint free{
             .function = functions[k],
-            .lower = -kInfinity,
-            .upper = kInfinity,
+            .lower = -biyos::kInfinity,
+            .upper = biyos::kInfinity,
         };
         added.push_back(bounded(free, k, lower, upper));
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "biyos/biyos.h"
+#include "core/numeric/limits.hpp"
 #include "core/text/strings.hpp"
 #include "core/version.hpp"
 
@@ -78,8 +79,8 @@ struct IntRule
 struct DoubleRule
 {
     double default_value;
-    double lower = -std::numeric_limits<double>::infinity();
-    double upper = std::numeric_limits<double>::infinity();
+    double lower = -kInfinity;
+    double upper = kInfinity;
 };
 
 struct StringRule

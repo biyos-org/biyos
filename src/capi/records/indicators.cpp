@@ -4,10 +4,10 @@
 #include "capi/entry.hpp"
 #include "capi/model/selection.hpp"
 #include "core/index.hpp"
+#include "core/numeric/limits.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
-#include <limits>
 #include <vector>
 
 using biyos::Family;
@@ -22,9 +22,6 @@ using biyos::capi::writable;
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
 struct Fields
 {
     const int *variables = nullptr;
@@ -85,8 +82,8 @@ void add_indicators(BIYOS_model &model, int n, const Fields &fields, int *start)
         .variable = 0,
         .value = 0,
         .function = 0,
-        .lower = -kInfinity,
-        .upper = kInfinity,
+        .lower = -biyos::kInfinity,
+        .upper = biyos::kInfinity,
     };
     std::vector<biyos::Indicator> added;
     added.reserve(size);

@@ -1,6 +1,7 @@
 #include "io/mps/bounds.hpp"
 
 #include "core/env.hpp"
+#include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
 #include "io/draft/draft.hpp"
 #include "io/lines.hpp"
@@ -12,7 +13,6 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -22,9 +22,6 @@ namespace biyos
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
 enum class Effect
 {
     None,

@@ -1,20 +1,17 @@
 #include "expr/intervals/interval.hpp"
 
+#include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/intervals/rounding.hpp"
 
 #include <algorithm>
 #include <cmath>
-#include <limits>
 
 namespace biyos
 {
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-
 using Bound = double (*)(double, double) noexcept;
 
 double sum_down(double left, double right) noexcept

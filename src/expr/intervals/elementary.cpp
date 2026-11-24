@@ -1,11 +1,11 @@
 #include "expr/intervals/elementary.hpp"
 
+#include "core/numeric/limits.hpp"
 #include "expr/intervals/interval.hpp"
 #include "expr/intervals/rounding.hpp"
 
 #include <algorithm>
 #include <cmath>
-#include <limits>
 #include <optional>
 
 namespace biyos
@@ -13,8 +13,6 @@ namespace biyos
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kHalfPiUp = 0x1.921fb54442d19p+0;
 constexpr double kPiUp = 0x1.921fb54442d19p+1;
 constexpr double kInverseE = 0x1.78b56362cef38p-2;
