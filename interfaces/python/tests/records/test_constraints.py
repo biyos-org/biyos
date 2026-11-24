@@ -8,7 +8,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel, _model
 from biyos._capi import lib
-from number import Growing, Number
+from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
 from tolerance import CHECKS
@@ -93,7 +93,7 @@ def test_shared(model):
 
 def test_functions(model):
     f = model.addfun(3)
-    c = model.addcon(f, [0.0] * 3)
+    model.addcon(f, [0.0] * 3)
     model.addcon(f[1:])
     model.addcon([f[0], 1])
     assert model.getcon()[0] == [2, 3, 4, 3, 4, 2, 1]

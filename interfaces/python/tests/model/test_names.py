@@ -128,7 +128,7 @@ def test_views(env, model):
 
 @pytest.mark.parametrize("family", FAMILIES)
 def test_repeat(model, family):
-    set_names, get_name, get_idx, del_names = calls(model, family)
+    set_names, _, get_idx, del_names = calls(model, family)
     noun = NOUNS[family]
     set_names([0, 1, 2], ["c", "c", "c"])
     assert names_of(model, family) == ["c", "c", "c"]

@@ -9,7 +9,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel, ObjectiveSense, _model
 from biyos._capi import lib
-from number import Growing, Number
+from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
 
@@ -114,7 +114,7 @@ def test_shared(model):
 
 def test_functions(model):
     f = model.addfun(3)
-    o = model.addobj(f, coef=[2.0] * 3)
+    model.addobj(f, coef=[2.0] * 3)
     model.addobj(f[1:])
     model.addobj([f[0], 1])
     assert model.getobj()[0] == [2, 3, 4, 3, 4, 2, 1]

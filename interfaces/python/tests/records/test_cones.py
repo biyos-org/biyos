@@ -140,7 +140,7 @@ def test_range(model):
     assert model.getcone(range(2, 2)) == ([], [0], [])
     assert model.getcone([]) == ([], [0], [])
     assert model.getconeprm([1, 1, 0]) == ([0, 2, 4, 4], PRM * 2)
-    assert model.getconeprm(range(0, 1)) == ([0, 0], [])
+    assert model.getconeprm(range(1)) == ([0, 0], [])
     assert model.getnconefun([1, 0, 1]) == 7
     assert model.getnconefun(range(1, 2)) == 2
     assert model.getnconeprm([0]) == 0
