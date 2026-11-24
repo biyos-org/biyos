@@ -127,15 +127,16 @@ biyos_set_warnings(biyos_internal)
 add_library(biyos
     capi/arrays.cpp
     capi/callbacks.cpp
-    capi/columns.cpp
     capi/env/env.cpp
     capi/env/events.cpp
     capi/env/format.cpp
     capi/env/options.cpp
     capi/env/version.cpp
     capi/expressions.cpp
-    capi/functions.cpp
-    capi/linear.cpp
+    capi/linear/columns.cpp
+    capi/linear/functions.cpp
+    capi/linear/linear.cpp
+    capi/linear/rows.cpp
     capi/model/deletion.cpp
     capi/model/files.cpp
     capi/model/model.cpp
@@ -148,8 +149,7 @@ add_library(biyos
     capi/records/constraints.cpp
     capi/records/indicators.cpp
     capi/records/objectives.cpp
-    capi/records/sos.cpp
-    capi/rows.cpp)
+    capi/records/sos.cpp)
 add_library(biyos::biyos ALIAS biyos)
 
 target_include_directories(biyos PUBLIC
