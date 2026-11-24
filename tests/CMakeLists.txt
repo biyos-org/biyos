@@ -70,6 +70,7 @@ biyos_add_test(test_expr
     expr/curvature/test_curvature.cpp
     expr/curvature/test_waves.cpp
     expr/derivatives/test_derivative.cpp
+    expr/derivatives/test_lanes.cpp
     expr/derivatives/test_partials.cpp
     expr/forms/test_canonical.cpp
     expr/forms/test_terms.cpp

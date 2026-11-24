@@ -12,12 +12,16 @@ namespace biyos
 
 struct Adjoints
 {
-    explicit Adjoints(const Tape &tape);
+    explicit Adjoints(const Tape &tape, std::size_t count = 1);
 
+    std::size_t lanes;
     std::vector<double> slots;
     std::vector<double> shared;
     std::vector<double> gradient;
+    std::vector<double> taken;
 };
+
+void drain(std::span<double> from, std::span<double> into) noexcept;
 
 void retrace(const Block &block,
              std::size_t output,
