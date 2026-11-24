@@ -1,6 +1,6 @@
 # The expression graph {#sec-graph}
 
-The nonlinear part $\varphi$ of a function (@eq-function) is a node of the model's expression graph. This chapter defines the graph, its 29 operators and their domains, and the way an expression is split into the parts of a function.
+The expression $e$ of a function, the part of its nonlinear part $\varphi$ that biyos can read (@eq-nonlinear), is a node of the model's expression graph; callbacks supply the rest. This chapter defines the graph, its 29 operators and their domains, and the way an expression is split into the parts of a function.
 
 ## Nodes and sharing {#sec-graph-nodes}
 
@@ -49,6 +49,6 @@ Entropy and sign power could be written with the other operators, as a product w
 
 ## Splitting an expression {#sec-graph-split}
 
-A function keeps its constant, linear and quadratic terms apart from the graph ([Functions](#sec-form-functions) in the problem form), so an expression is split when it enters a function. The split opens the sum at the top of the expression, pushes negations and constant factors into it, and moves out every term that is a constant, a variable times a constant, a product of two variables times a constant or the square of a variable. What remains forms $\varphi$. The split does not expand: a power or a product of a sum stays a node of the graph, so $(x_0 + x_1)^2$ is not rewritten as three quadratic terms. A node that the expression shares with others is used whole, since splitting it would change what the others see.
+A function keeps its constant, linear and quadratic terms apart from the graph ([Functions](#sec-form-functions) in the problem form), so an expression is split when it enters a function. The split opens the sum at the top of the expression, pushes negations and constant factors into it, and moves out every term that is a constant, a variable times a constant, a product of two variables times a constant or the square of a variable. What remains forms $e$. The split does not expand: a power or a product of a sum stays a node of the graph, so $(x_0 + x_1)^2$ is not rewritten as three quadratic terms. A node that the expression shares with others is used whole, since splitting it would change what the others see.
 
-For example, $3 - 2(x_0 - x_0 x_1) + \exp(x_2)$ becomes the constant 3, the linear term $-2x_0$, the quadratic term $2 x_0 x_1$, and $\varphi = \exp(x_2)$.
+For example, $3 - 2(x_0 - x_0 x_1) + \exp(x_2)$ becomes the constant 3, the linear term $-2x_0$, the quadratic term $2 x_0 x_1$, and $e = \exp(x_2)$.

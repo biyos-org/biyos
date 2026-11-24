@@ -12,13 +12,16 @@ $$
 & \text{in priority order} \\
 \text{subject to}\quad & l \le g(x) \le u \\
 & h(x) \in K \\
+& l^{a} \le a(x) \le u^{a} \ \perp\ b(x) \\
+& x_{v_i} = \beta_i \ \Rightarrow\ l^{d}_i \le d_i(x) \le u^{d}_i \quad \text{for every indicator } i \\
+& x_{S_k} \in \mathcal{S}_{t_k} \quad \text{for every special ordered set } k \\
 & x_j \in D_j \quad \text{for every variable } j,
 \end{aligned}
 $$ {#eq-form}
 
-over $x \in \mathbb{R}^n$. Here $g$ maps to $\mathbb{R}^m$ and its bounds $l, u \in (\mathbb{R} \cup \{\pm\infty\})^m$ may be infinite, $K = K_1 \times \dots \times K_q$ is a product of cones, and each $D_j$ is the domain of a variable, which its kind fixes. Every component of $f$, $g$ and $h$ is drawn from one table of functions, so a function may serve a constraint, a cone and an objective at once.
+over $x \in \mathbb{R}^n$. Here $g$ maps to $\mathbb{R}^m$ and its bounds $l, u \in (\mathbb{R} \cup \{\pm\infty\})^m$ may be infinite, $K = K_1 \times \dots \times K_q$ is a product of cones, $a$ and $b$ pair functions in complements, each indicator makes a bound on $d_i$ hold when the binary variable $x_{v_i}$ takes the value $\beta_i$, each special ordered set limits which of its variables $x_{S_k}$ may be nonzero, and each $D_j$ is the domain of a variable, which its kind fixes. Every component of $f$, $g$, $h$, $a$, $b$ and $d$ is drawn from one table of functions, so a function may serve a constraint, a cone and an objective at once.
 
-A model holds part of @eq-form today: the variables with their domains, the functions with their constant, linear and quadratic parts, the constraints $l \le g(x) \le u$ and the objectives. Cones, complementarity, special ordered sets and indicator constraints join the form later, as further tables of records over the same functions.
+A model holds every part of @eq-form, each family of records in a table of its own over the same functions. No call solves it yet.
 
 ## Variables {#sec-form-variables}
 
@@ -42,13 +45,47 @@ $$
 f(x) = c + \sum_{j} a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x),
 $$ {#eq-function}
 
-a constant $c$, a linear part, a quadratic part over unordered pairs of variables and a nonlinear part $\varphi(x)$, a node of the model's expression graph ([The expression graph](#sec-graph)). Each pair $(i, j)$ appears once, with $i \le j$, and its coefficient is taken as written, with no factor $\tfrac12$. In matrix form the quadratic part is $x^{\mathsf{T}} Q x$ for the upper triangular $Q = (q_{ij})$, and its Hessian is $Q + Q^{\mathsf{T}}$.
+a constant $c$, a linear part, a quadratic part over unordered pairs of variables and a nonlinear part $\varphi(x)$. Each pair $(i, j)$ appears once, with $i \le j$, and its coefficient is taken as written, with no factor $\tfrac12$. In matrix form the quadratic part is $x^{\mathsf{T}} Q x$ for the upper triangular $Q = (q_{ij})$, and its Hessian is $Q + Q^{\mathsf{T}}$.
 
-The parts are kept apart because each is handled best on its own. A linear part has constant derivatives, a quadratic part adds the constant matrix $Q + Q^{\mathsf{T}}$ to a Hessian with no evaluation at all, and the convexity of a quadratic part is a property of $Q$ alone. Only $\varphi(x)$ needs the expression graph, and an expression given whole is split on entry, so that its linear and quadratic terms join the first parts and $\varphi(x)$ keeps only the rest.
+The nonlinear part has two sources:
+
+$$
+\varphi(x) = e(x) + \sum_{m \in M} e_m(x),
+$$ {#eq-nonlinear}
+
+the function's expression $e(x)$, a node of the model's expression graph ([The expression graph](#sec-graph)) or zero when it holds none, and the part $e_m(x)$ that each callback $m$ covering the function computes in user code ([Callbacks](#sec-capi-callbacks)). $M$ is the set of those callbacks, empty for most functions. A callback lists the functions it covers, and a function may be covered by any number of callbacks and hold an expression beside them.
+
+The parts are kept apart because each is handled best on its own. A linear part has constant derivatives, a quadratic part adds the constant matrix $Q + Q^{\mathsf{T}}$ to a Hessian with no evaluation at all, and the convexity of a quadratic part is a property of $Q$ alone. An expression is open to biyos, which differentiates it ([Derivatives](#sec-derivatives)), bounds it over a box ([Intervals](#sec-intervals)) and proves its curvature ([Curvature](#sec-curvature)); an expression given whole is split on entry, so that its linear and quadratic terms join the first parts and $e(x)$ keeps only the rest. A callback is closed: it gives values and derivatives and nothing else, so nothing about its range or its convexity is known, and a result found through a callback claims at most `local` (@sec-form-claims).
 
 ## Constraints {#sec-form-constraints}
 
 A constraint is a record $(k, l, u)$ that bounds function $k$ of the table: $l \le f_k(x) \le u$. A constraint with $l = u$ is an equality, one with $l = -\infty$ and $u = +\infty$ is free, and two constraints may bound the same function. Records refer to functions by index, never by copy, so one function may serve several records of any family.
+
+## Cones {#sec-form-cones}
+
+A cone is a record $(K_r, k_1, \dots, k_s)$: a kind, with its parameters, and functions of the table, its members, taken in order. It states $(f_{k_1}(x), \dots, f_{k_s}(x)) \in K_r$, and together the cones of a model form $h(x) \in K$. The kinds are the nonnegative orthant, the second-order and rotated second-order cones, the exponential cone and its dual, the power cone and its dual, which take one weight for each of their first members, and the semidefinite cone of a symmetric matrix given by its scaled lower triangle. Their member order and dimensions follow the Conic Benchmark Format, version 3, and [Cones](#sec-capi-cones) states each one.
+
+## Complements {#sec-form-complements}
+
+A complement is a record $(k_1, k_2, l, u)$ that pairs two functions of the table, written $l \le f_{k_1}(x) \le u \perp f_{k_2}(x)$. The first is bounded, and the sign of the second follows where the first lies: one of
+
+$$
+\begin{aligned}
+f_{k_1}(x) = l &\quad\text{and}\quad f_{k_2}(x) \ge 0, \\
+f_{k_1}(x) = u &\quad\text{and}\quad f_{k_2}(x) \le 0, \\
+l < f_{k_1}(x) < u &\quad\text{and}\quad f_{k_2}(x) = 0
+\end{aligned}
+$$
+
+holds. The bounds $0$ and $+\infty$ give the classical $0 \le f_{k_1}(x) \perp f_{k_2}(x) \ge 0$, and both bounds infinite give $f_{k_2}(x) = 0$. Its bounds follow the rule of a constraint's, and a function may appear in any number of complements.
+
+## Indicators {#sec-form-indicators}
+
+An indicator is a record $(v, \beta, k, l, u)$: a binary variable $x_v$, a value $\beta \in \{0, 1\}$ and a bound on function $k$. It states $x_v = \beta \Rightarrow l \le f_k(x) \le u$: when $x_v$ takes the value $\beta$ the bound holds, and otherwise $f_k$ is free. The variable stays binary while an indicator uses it.
+
+## Special ordered sets {#sec-form-sets}
+
+A special ordered set is a record $(t, S, w)$: a type $t \in \{1, 2\}$, variables $S = (s_1, \dots, s_r)$, its members, and a weight $w_i$ for each, finite and distinct. In a set of type 1 at most one member is nonzero. In a set of type 2 at most two are, and two nonzero members are adjacent in the order of their weights. A variable is a member of a set at most once and may belong to several sets. $\mathcal{S}_t$ in @eq-form is the set of the points that meet these conditions for type $t$.
 
 ## Several objectives {#sec-form-objectives}
 
@@ -58,7 +95,7 @@ $$
 \text{minimize}\quad \sum_{i \in P_t} w_i\, s_i\, f_{k_i}(x)
 $$
 
-over the points $x$ where every constraint and domain of @eq-form holds and every objective of an earlier stage stays within its tolerances of the optimum found for it. The absolute tolerance of an objective is in the units of its function, the relative one a fraction of the size of its optimum, and a tolerance of $\infty$ sets no limit. Objectives of different priorities are thus optimized in sequence, and objectives of one priority are blended into one weighted sum. A weight is positive, so the sense alone gives the direction. By default each objective takes its own position as its priority, which makes the optimization sequential in the order the objectives were given; equal priorities express a weighted sum.
+over the points $x$ where every condition of @eq-form holds and every objective of an earlier stage stays within its tolerances of the optimum found for it. The absolute tolerance of an objective is in the units of its function, the relative one a fraction of the size of its optimum, and a tolerance of $\infty$ sets no limit. Objectives of different priorities are thus optimized in sequence, and objectives of one priority are blended into one weighted sum. A weight is positive, so the sense alone gives the direction. By default each objective takes its own position as its priority, which makes the optimization sequential in the order the objectives were given; equal priorities express a weighted sum.
 
 ## What a result claims {#sec-form-claims}
 
