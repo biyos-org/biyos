@@ -1,7 +1,7 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "model/checks.hpp"
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 

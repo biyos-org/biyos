@@ -4,8 +4,8 @@
 #include "core/index.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
-#include "model/merge.hpp"
-#include "model/pairs.hpp"
+#include "model/functions/merge.hpp"
+#include "model/functions/pairs.hpp"
 
 #include <cstddef>
 #include <span>

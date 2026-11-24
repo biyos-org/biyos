@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/index.hpp"
-#include "model/compare.hpp"
+#include "model/attributes/overrides.hpp"
+#include "model/compare/compare.hpp"
 #include "model/model.hpp"
-#include "model/overrides.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>

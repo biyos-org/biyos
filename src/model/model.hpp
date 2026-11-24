@@ -5,9 +5,9 @@
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/uses.hpp"
-#include "model/callbacks.hpp"
-#include "model/names.hpp"
-#include "model/overrides.hpp"
+#include "model/attributes/names.hpp"
+#include "model/attributes/overrides.hpp"
+#include "model/expressions/callbacks.hpp"
 
 #include <array>
 #include <cstddef>

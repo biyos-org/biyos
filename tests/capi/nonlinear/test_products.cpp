@@ -1,7 +1,7 @@
 #include "biyos/biyos.h"
 #include "capi/entry.hpp"
 #include "handles.hpp"
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
 #include "sample.hpp"
 
 #include <gtest/gtest.h>

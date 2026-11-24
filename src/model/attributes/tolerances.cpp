@@ -1,8 +1,8 @@
 #include "model/model.hpp"
 
 #include "core/index.hpp"
+#include "model/attributes/overrides.hpp"
 #include "model/checks.hpp"
-#include "model/overrides.hpp"
 
 #include <cstddef>
 #include <span>

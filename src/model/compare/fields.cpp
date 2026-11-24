@@ -1,4 +1,4 @@
-#include "model/fields.hpp"
+#include "model/compare/fields.hpp"
 
 #include "core/index.hpp"
 

@@ -1,8 +1,8 @@
 #include "biyos/biyos.h"
 #include "core/index.hpp"
 #include "expr/forms/terms.hpp"
-#include "model/callbacks.hpp"
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
+#include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 

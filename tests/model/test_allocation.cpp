@@ -3,9 +3,9 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
+#include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
-#include "model/postfix.hpp"
 
 #include <gtest/gtest.h>
 

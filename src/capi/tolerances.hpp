@@ -4,8 +4,8 @@
 #include "capi/entry.hpp"
 #include "capi/selection.hpp"
 #include "core/index.hpp"
+#include "model/attributes/overrides.hpp"
 #include "model/model.hpp"
-#include "model/overrides.hpp"
 
 #include <cstddef>
 #include <span>

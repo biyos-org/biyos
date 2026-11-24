@@ -1,10 +1,10 @@
-#include "model/match.hpp"
+#include "model/compare/match.hpp"
 
 #include "core/index.hpp"
 #include "core/text/text.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "model/fields.hpp"
+#include "model/compare/fields.hpp"
 
 #include <cstddef>
 #include <span>

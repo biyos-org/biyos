@@ -77,37 +77,37 @@ add_library(biyos_internal STATIC
     io/support.cpp
     io/values.cpp
     io/vectors.cpp
-    model/attach.cpp
-    model/callbacks.cpp
+    model/attributes/names.cpp
+    model/attributes/naming.cpp
+    model/attributes/overrides.cpp
+    model/attributes/tolerances.cpp
     model/checks.cpp
-    model/compare.cpp
-    model/complements.cpp
+    model/compare/compare.cpp
+    model/compare/fields.cpp
+    model/compare/match.cpp
     model/compressed.cpp
-    model/cones.cpp
-    model/constraints.cpp
-    model/expressions.cpp
-    model/fields.cpp
-    model/functions.cpp
-    model/indicators.cpp
-    model/match.cpp
-    model/merge.cpp
+    model/expressions/callbacks.cpp
+    model/expressions/expressions.cpp
+    model/expressions/nodes.cpp
+    model/expressions/patterns.cpp
+    model/expressions/postfix.cpp
+    model/expressions/users.cpp
+    model/functions/attach.cpp
+    model/functions/functions.cpp
+    model/functions/merge.cpp
+    model/functions/pairs.cpp
+    model/functions/quadratic.cpp
+    model/functions/terms.cpp
+    model/functions/transpose.cpp
     model/model.cpp
-    model/names.cpp
-    model/naming.cpp
-    model/nodes.cpp
-    model/objectives.cpp
-    model/overrides.cpp
-    model/pairs.cpp
-    model/patterns.cpp
-    model/postfix.cpp
-    model/quadratic.cpp
-    model/renumber.cpp
-    model/sos.cpp
-    model/terms.cpp
-    model/tolerances.cpp
-    model/transpose.cpp
-    model/users.cpp
-    model/variables.cpp)
+    model/records/complements.cpp
+    model/records/cones.cpp
+    model/records/constraints.cpp
+    model/records/indicators.cpp
+    model/records/objectives.cpp
+    model/records/sos.cpp
+    model/records/variables.cpp
+    model/renumber.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

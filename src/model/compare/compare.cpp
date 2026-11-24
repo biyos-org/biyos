@@ -1,14 +1,14 @@
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
 
 #include "core/index.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
-#include "model/callbacks.hpp"
+#include "model/attributes/overrides.hpp"
+#include "model/compare/fields.hpp"
+#include "model/compare/match.hpp"
 #include "model/compressed.hpp"
-#include "model/fields.hpp"
-#include "model/match.hpp"
+#include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
-#include "model/overrides.hpp"
 
 #include <cstddef>
 #include <span>
