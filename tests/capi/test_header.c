@@ -100,9 +100,9 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 #if !defined(BIYOS_SOSKND_SOS1) || BIYOS_SOSKND_SOS1 != 1 || BIYOS_SOSKND_SOS2 != 2
 #error "a public set kind changed"
 #endif
-#if !defined(BIYOS_CONE_NONNEG) || BIYOS_CONE_NONNEG != 1 || BIYOS_CONE_SOC != 2 ||                \
-    BIYOS_CONE_RSOC != 3 || BIYOS_CONE_EXP != 4 || BIYOS_CONE_DEXP != 5 || BIYOS_CONE_POW != 6 ||  \
-    BIYOS_CONE_DPOW != 7 || BIYOS_CONE_PSD != 8
+#if !defined(BIYOS_CONEKND_NONNEG) || BIYOS_CONEKND_NONNEG != 1 || BIYOS_CONEKND_SOC != 2 ||       \
+    BIYOS_CONEKND_RSOC != 3 || BIYOS_CONEKND_EXP != 4 || BIYOS_CONEKND_DEXP != 5 ||                \
+    BIYOS_CONEKND_POW != 6 || BIYOS_CONEKND_DPOW != 7 || BIYOS_CONEKND_PSD != 8
 #error "a public cone kind changed"
 #endif
 #if !defined(BIYOS_OP_CONST) || BIYOS_OP_CONST != 1 || BIYOS_OP_VAR != 2 || BIYOS_OP_SUM != 3 ||   \
@@ -342,7 +342,7 @@ static BIYOS_status use_sos(BIYOS_model *model)
 
 static BIYOS_status use_cones(BIYOS_model *model)
 {
-    const int kinds[2] = {BIYOS_CONE_SOC, BIYOS_CONE_POW};
+    const int kinds[2] = {BIYOS_CONEKND_SOC, BIYOS_CONEKND_POW};
     const int64_t offsets[3] = {0, 2, 4};
     const int functions[4] = {1, 0, 0, 1};
     const int64_t starts[3] = {0, 0, 1};
@@ -361,7 +361,7 @@ static BIYOS_status use_cones(BIYOS_model *model)
         BIYOS_getncone(model, &cones) != BIYOS_OK || first != 0 || cones != 2 ||
         BIYOS_getnconefunrg(model, 0, 2, &needed) != BIYOS_OK || needed != 4 ||
         BIYOS_getconerg(model, 0, 2, 4, found, read, members) != BIYOS_OK ||
-        found[1] != BIYOS_CONE_POW || read[1] != 2 || members[0] != 1)
+        found[1] != BIYOS_CONEKND_POW || read[1] != 2 || members[0] != 1)
     {
         return BIYOS_ERR_INTERNAL;
     }

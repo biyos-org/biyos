@@ -30,7 +30,7 @@ struct Cones
 };
 
 const Cones kSample{
-    .kinds = {BIYOS_CONE_SOC, BIYOS_CONE_POW, BIYOS_CONE_PSD},
+    .kinds = {BIYOS_CONEKND_SOC, BIYOS_CONEKND_POW, BIYOS_CONEKND_PSD},
     .starts = {0, 2, 5, 8},
     .functions = {3, 0, 0, 1, 2, 1, 2, 3},
     .parameter_starts = {0, 0, 2, 2},
@@ -176,7 +176,7 @@ void change(const BIYOS_event *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
-    const BIYOS_int kind = BIYOS_CONE_NONNEG;
+    const BIYOS_int kind = BIYOS_CONEKND_NONNEG;
     const BIYOS_offset starts[] = {0, 1};
     const BIYOS_index index = 0;
     BIYOS_index n = 0;
@@ -201,10 +201,10 @@ TEST(CApiTest, AddedCones)
     EXPECT_EQ(start, 0);
     EXPECT_EQ(n_cones(model), 3);
     expect_cones(read_range(model, 0, 3), kSample);
-    ASSERT_EQ(add_cones(model, one(BIYOS_CONE_DEXP, {2, 0, 1}), &start), BIYOS_OK);
+    ASSERT_EQ(add_cones(model, one(BIYOS_CONEKND_DEXP, {2, 0, 1}), &start), BIYOS_OK);
     EXPECT_EQ(start, 3);
     EXPECT_EQ(n_cones(model), 4);
-    expect_cones(read_range(model, 3, 1), one(BIYOS_CONE_DEXP, {2, 0, 1}));
+    expect_cones(read_range(model, 3, 1), one(BIYOS_CONEKND_DEXP, {2, 0, 1}));
     EXPECT_EQ(env.message(), "");
 }
 
@@ -214,7 +214,7 @@ TEST(CApiTest, ConeRange)
     const Model model(env);
     add_sample(model);
     const Cones wanted{
-        .kinds = {BIYOS_CONE_POW, BIYOS_CONE_PSD},
+        .kinds = {BIYOS_CONEKND_POW, BIYOS_CONEKND_PSD},
         .starts = {0, 3, 6},
         .functions = {0, 1, 2, 1, 2, 3},
         .parameter_starts = {0, 2, 2},
@@ -238,7 +238,7 @@ TEST(CApiTest, ListedCones)
     const Model model(env);
     add_sample(model);
     const Cones wanted{
-        .kinds = {BIYOS_CONE_PSD, BIYOS_CONE_POW, BIYOS_CONE_SOC, BIYOS_CONE_POW},
+        .kinds = {BIYOS_CONEKND_PSD, BIYOS_CONEKND_POW, BIYOS_CONEKND_SOC, BIYOS_CONEKND_POW},
         .starts = {0, 3, 6, 8, 11},
         .functions = {1, 2, 3, 0, 1, 2, 3, 0, 0, 1, 2},
         .parameter_starts = {0, 0, 2, 2, 4},
@@ -277,7 +277,7 @@ TEST(CApiTest, NullCones)
     const Env env;
     const Model model(env);
     ASSERT_EQ(BIYOS_addfun(model.get(), 3, nullptr), BIYOS_OK);
-    const BIYOS_int kind = BIYOS_CONE_SOC;
+    const BIYOS_int kind = BIYOS_CONEKND_SOC;
     const BIYOS_offset starts[] = {0, 2};
     const BIYOS_index functions[] = {1, 2};
     BIYOS_model *held = model.get();
@@ -285,7 +285,7 @@ TEST(CApiTest, NullCones)
               BIYOS_OK);
     EXPECT_EQ(BIYOS_addcone(held, 1, &kind, starts, functions, nullptr, nullptr, nullptr),
               BIYOS_OK);
-    expect_cones(read_range(model, 0, 1), one(BIYOS_CONE_SOC, {1, 2}));
+    expect_cones(read_range(model, 0, 1), one(BIYOS_CONEKND_SOC, {1, 2}));
     EXPECT_EQ(BIYOS_addcone(held, 1, nullptr, starts, functions, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'knd': is null");
@@ -295,7 +295,7 @@ TEST(CApiTest, NullCones)
     EXPECT_EQ(BIYOS_addcone(held, 1, &kind, starts, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'funidx': is null");
-    const BIYOS_int power = BIYOS_CONE_POW;
+    const BIYOS_int power = BIYOS_CONEKND_POW;
     const BIYOS_offset weights[] = {0, 1};
     EXPECT_EQ(BIYOS_addcone(held, 1, &power, starts, functions, weights, nullptr, nullptr),
               BIYOS_ERR_BADARG);
@@ -326,11 +326,11 @@ TEST(CApiTest, RefusedCones)
               "invalid argument: argument 'prmoff': decreases from 0 to -1 at entry 2");
     EXPECT_EQ(add_cones(model, one(9, {0})), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: cone 3: kind 9 is unknown");
-    EXPECT_EQ(add_cones(model, one(BIYOS_CONE_EXP, {0, 1})), BIYOS_ERR_BADARG);
+    EXPECT_EQ(add_cones(model, one(BIYOS_CONEKND_EXP, {0, 1})), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: cone 3: dimension 2 is not 3");
-    EXPECT_EQ(add_cones(model, one(BIYOS_CONE_SOC, {0, 4})), BIYOS_ERR_BADARG);
+    EXPECT_EQ(add_cones(model, one(BIYOS_CONEKND_SOC, {0, 4})), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: cone 3: function 4 is unknown");
-    EXPECT_EQ(add_cones(model, one(BIYOS_CONE_DPOW, {0, 1}, {0.5, 0.0})), BIYOS_ERR_BADARG);
+    EXPECT_EQ(add_cones(model, one(BIYOS_CONEKND_DPOW, {0, 1}, {0.5, 0.0})), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: cone 3: parameter 1 is 0, not positive");
     const BIYOS_index unknown[] = {0, 3};
     BIYOS_offset nnz = 0;

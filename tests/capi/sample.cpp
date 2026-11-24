@@ -203,7 +203,9 @@ struct Cones
     std::vector<BIYOS_real> parameters;
 };
 
-constexpr std::array<BIYOS_int, 3> kConeKinds{BIYOS_CONE_NONNEG, BIYOS_CONE_SOC, BIYOS_CONE_POW};
+constexpr std::array<BIYOS_int, 3> kConeKinds{BIYOS_CONEKND_NONNEG,
+                                              BIYOS_CONEKND_SOC,
+                                              BIYOS_CONEKND_POW};
 
 void add_cone(Engine &engine, int n_functions, Cones &cones)
 {
@@ -214,7 +216,7 @@ void add_cone(Engine &engine, int n_functions, Cones &cones)
     {
         cones.functions.push_back((first + j) % n_functions);
     }
-    const int weights = kind == BIYOS_CONE_POW ? 1 + below(engine, dimension) : 0;
+    const int weights = kind == BIYOS_CONEKND_POW ? 1 + below(engine, dimension) : 0;
     for (int j = 0; j < weights; ++j)
     {
         cones.parameters.push_back((1 + below(engine, 4)) / 4.0);

@@ -61,14 +61,14 @@ SENSES = {
 }
 
 CONES = {
-    "BIYOS_CONE_NONNEG": biyos.ConeKind.NONNEGATIVE,
-    "BIYOS_CONE_SOC": biyos.ConeKind.SECOND_ORDER,
-    "BIYOS_CONE_RSOC": biyos.ConeKind.ROTATED,
-    "BIYOS_CONE_EXP": biyos.ConeKind.EXPONENTIAL,
-    "BIYOS_CONE_DEXP": biyos.ConeKind.DUAL_EXPONENTIAL,
-    "BIYOS_CONE_POW": biyos.ConeKind.POWER,
-    "BIYOS_CONE_DPOW": biyos.ConeKind.DUAL_POWER,
-    "BIYOS_CONE_PSD": biyos.ConeKind.SEMIDEFINITE,
+    "BIYOS_CONEKND_NONNEG": biyos.ConeKind.NONNEGATIVE,
+    "BIYOS_CONEKND_SOC": biyos.ConeKind.SECOND_ORDER,
+    "BIYOS_CONEKND_RSOC": biyos.ConeKind.ROTATED,
+    "BIYOS_CONEKND_EXP": biyos.ConeKind.EXPONENTIAL,
+    "BIYOS_CONEKND_DEXP": biyos.ConeKind.DUAL_EXPONENTIAL,
+    "BIYOS_CONEKND_POW": biyos.ConeKind.POWER,
+    "BIYOS_CONEKND_DPOW": biyos.ConeKind.DUAL_POWER,
+    "BIYOS_CONEKND_PSD": biyos.ConeKind.SEMIDEFINITE,
 }
 
 
@@ -98,7 +98,7 @@ def test_operators():
 
 def test_cone_kinds():
     assert set(CONES.values()) == set(biyos.ConeKind)
-    assert group("BIYOS_CONE_") == CONES
+    assert group("BIYOS_CONEKND_") == CONES
 
 
 def test_senses():
