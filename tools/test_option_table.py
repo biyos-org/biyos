@@ -6,7 +6,6 @@ import option_table
 
 TABLE = """namespace
 {
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr std::array kLevels{
     EnumValue{.number = BIYOS_LEVEL_LOW, .name = "low"},
     EnumValue{.number = BIYOS_LEVEL_HIGH, .name = "high"},
@@ -73,8 +72,8 @@ struct IntRule
 struct DoubleRule
 {
     double default_value;
-    double lower = -std::numeric_limits<double>::infinity();
-    double upper = std::numeric_limits<double>::infinity();
+    double lower = -kInfinity;
+    double upper = kInfinity;
 };
 """
 
