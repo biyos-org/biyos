@@ -1,11 +1,23 @@
-import runpy
+import subprocess
+import sys
 
 import pytest
 
 NAMES = ["copies", "errors", "events", "model", "options", "start", "threads"]
 
 
+@pytest.fixture
+def examples(project):
+    return project / "examples"
+
+
+def test_listed(examples):
+    assert sorted(path.stem for path in examples.glob("*.py")) == NAMES
+
+
 @pytest.mark.parametrize("name", NAMES)
-def test_example(project, name):
-    path = project / "examples" / f"{name}.py"
-    runpy.run_path(str(path), run_name="__main__")
+def test_example(examples, name):
+    path = examples / f"{name}.py"
+    command = [sys.executable, str(path)]
+    ran = subprocess.run(command, check=False, capture_output=True, text=True)
+    assert ran.returncode == 0, ran.stderr
