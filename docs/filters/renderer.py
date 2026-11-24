@@ -15,7 +15,6 @@ from quartodoc import ast as qast
 ENUMS = {"Enum", "IntEnum", "Flag", "IntFlag"}
 RECORDS = {"NamedTuple"}
 SPLATS = {"var_positional": "*", "var_keyword": "**"}
-SHOWN = {"Self": "self"}
 HANDLED = (
     DocstringSectionText,
     DocstringSectionAttributes,
@@ -199,22 +198,22 @@ class Renderer(MdRenderer):
         shown = [(headed(*row[:3]), row[3]) for row in merged(rows)]
         return [stack("Parameter", shown)] if rows else []
 
-    def returned_type(self, anno):
+    def returned_type(self, obj, anno):
         text = self.render_annotation(anno)
-        return SHOWN.get(text, text)
+        return obj.parent.name if text == "Self" else text
 
     def returns(self, obj, found):
         given = getattr(target(obj), "returns", None)
         notes = described(found, DocstringSectionReturns)
         rows = [
             (
-                quiet(self.returned_type(part or r.annotation)),
+                quiet(self.returned_type(obj, part or r.annotation)),
                 r.description,
             )
             for part, r in zip(returned(given, len(notes)), notes)
         ]
         if given and not rows and str(given) != "None":
-            rows = [(quiet(self.returned_type(given)), "")]
+            rows = [(quiet(self.returned_type(obj, given)), "")]
         return [stack("Returns", rows)] if rows else []
 
     def raises(self, found):
