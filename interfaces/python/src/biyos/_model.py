@@ -12,6 +12,7 @@ from ctypes import (
     py_object,
 )
 from enum import IntEnum
+from itertools import pairwise
 from math import isnan
 from os import PathLike, fspath
 from typing import Any, NoReturn, SupportsIndex
@@ -204,7 +205,7 @@ def _checked_env(env: Env) -> Env:
 
 
 def _expanded(starts: Array[c_int64], first: int) -> list[int]:
-    spans = zip(starts[:-1], starts[1:])
+    spans = pairwise(starts)
     counts = [end - start for start, end in spans]
     return [first + j for j, count in enumerate(counts) for _ in range(count)]
 
