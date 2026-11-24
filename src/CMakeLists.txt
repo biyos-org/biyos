@@ -9,6 +9,7 @@ add_library(biyos_internal STATIC
     core/events/hooks.cpp
     core/events/records.cpp
     core/memory/usage.cpp
+    core/numeric/tolerances.cpp
     core/options/catalog.cpp
     core/options/lookup.cpp
     core/options/options.cpp
@@ -23,7 +24,6 @@ add_library(biyos_internal STATIC
     core/timing/clock.cpp
     core/timing/deadline.cpp
     core/timing/timer.cpp
-    core/tolerances.cpp
     core/version.cpp
     expr/arithmetic.cpp
     expr/bends.cpp

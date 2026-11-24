@@ -1,6 +1,6 @@
 #include "expr/rounding.hpp"
 
-#include "core/zero.hpp"
+#include "core/numeric/zero.hpp"
 
 #include <algorithm>
 #include <bit>

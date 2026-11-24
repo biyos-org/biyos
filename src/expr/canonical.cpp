@@ -2,8 +2,8 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
-#include "core/zero.hpp"
 #include "expr/graph.hpp"
 #include "expr/node.hpp"
 #include "expr/terms.hpp"
