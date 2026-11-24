@@ -45,6 +45,7 @@ add_library(biyos_internal STATIC
     expr/graph/node.cpp
     expr/graph/parents.cpp
     expr/graph/uses.cpp
+    expr/hessian/elements.cpp
     expr/intervals/elementary.cpp
     expr/intervals/enclosure.cpp
     expr/intervals/interval.cpp
