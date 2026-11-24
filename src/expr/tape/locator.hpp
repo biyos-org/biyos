@@ -2,8 +2,8 @@
 
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
-#include "expr/radix.hpp"
-#include "expr/reach.hpp"
+#include "expr/sparsity/radix.hpp"
+#include "expr/sparsity/reach.hpp"
 #include "expr/tape/layout.hpp"
 #include "expr/tape/tape.hpp"
 

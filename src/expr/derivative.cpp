@@ -3,8 +3,8 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text/text.hpp"
-#include "expr/reach.hpp"
 #include "expr/reverse.hpp"
+#include "expr/sparsity/reach.hpp"
 #include "expr/tape/tape.hpp"
 #include "expr/value.hpp"
 

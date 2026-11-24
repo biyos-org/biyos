@@ -1,7 +1,7 @@
-#include "expr/radix.hpp"
+#include "expr/sparsity/radix.hpp"
 
 #include "core/index.hpp"
-#include "expr/reach.hpp"
+#include "expr/sparsity/reach.hpp"
 
 #include <algorithm>
 #include <array>

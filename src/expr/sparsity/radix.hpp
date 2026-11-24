@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/index.hpp"
-#include "expr/reach.hpp"
+#include "expr/sparsity/reach.hpp"
 
 #include <vector>
 

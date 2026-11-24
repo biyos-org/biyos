@@ -2,7 +2,7 @@
 
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
-#include "expr/reach.hpp"
+#include "expr/sparsity/reach.hpp"
 #include "expr/tape/layout.hpp"
 #include "expr/tape/plan.hpp"
 #include "expr/tape/tape.hpp"

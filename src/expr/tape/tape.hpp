@@ -3,7 +3,7 @@
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/reach.hpp"
+#include "expr/sparsity/reach.hpp"
 
 #include <cstddef>
 #include <cstdint>

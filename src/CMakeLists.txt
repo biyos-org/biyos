@@ -40,15 +40,15 @@ add_library(biyos_internal STATIC
     expr/graph/parents.cpp
     expr/graph/uses.cpp
     expr/interval.cpp
-    expr/memo.cpp
     expr/partials.cpp
     expr/periodic.cpp
     expr/powers.cpp
-    expr/radix.cpp
-    expr/reach.cpp
     expr/reverse.cpp
     expr/rounding.cpp
     expr/shape.cpp
+    expr/sparsity/memo.cpp
+    expr/sparsity/radix.cpp
+    expr/sparsity/reach.cpp
     expr/tape/layout.cpp
     expr/tape/locator.cpp
     expr/tape/plan.cpp

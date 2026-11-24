@@ -1,10 +1,10 @@
-#include "expr/reach.hpp"
+#include "expr/sparsity/reach.hpp"
 
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/memo.hpp"
-#include "expr/radix.hpp"
+#include "expr/sparsity/memo.hpp"
+#include "expr/sparsity/radix.hpp"
 #include "expr/tape/plan.hpp"
 
 #include <algorithm>

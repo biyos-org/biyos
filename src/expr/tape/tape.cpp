@@ -6,7 +6,7 @@
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/partials.hpp"
-#include "expr/reach.hpp"
+#include "expr/sparsity/reach.hpp"
 #include "expr/tape/layout.hpp"
 #include "expr/tape/locator.hpp"
 #include "expr/tape/plan.hpp"
