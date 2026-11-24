@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = biyos
+
+[report]
+show_missing = True
+skip_covered = True
