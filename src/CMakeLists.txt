@@ -18,6 +18,7 @@ add_library(biyos_internal STATIC
     core/options/text.cpp
     core/options/value.cpp
     core/status.cpp
+    core/text/bignum.cpp
     core/text/strings.cpp
     core/text/utf8.cpp
     core/thread.cpp
