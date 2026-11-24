@@ -2455,13 +2455,14 @@ function BIYOS_setcbg
 summary Give a callback its Jacobian pattern and the function that evaluates it.
 param mdl in The model.
 param cb in The callback.
-param off in The offsets of each covered function's entries in `var`, one more than the functions the callback covers; null for an empty pattern.
-param var in The variables of each function's entries, in increasing order within a function; may be null only when the pattern is empty.
+param nnz in The number of entries.
+param fun in The function of each entry, one the callback covers; may be null only when `nnz` is 0.
+param var in The variable of each entry; may be null only when `nnz` is 0.
 param g in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
-error BIYOS_ERR_BADARG `cb` is not a callback of the model, `g` is null, `off` does not begin at 0 or decreases, `var` is null while the pattern is not empty, or a function's variables are not ones of the model in increasing order.
+error BIYOS_ERR_BADARG `cb` is not a callback of the model, `g` is null, `nnz` is negative, `fun` or `var` is null while `nnz` is not 0, a function is not one the callback covers, or a variable is not one of the model.
 error BIYOS_ERR_NOMEMORY The pattern would hold more entries than any allocation can hold.
-note The entries of the `k`-th covered function are those from `off[k]` to `off[k + 1] - 1`, as `BIYOS_addrlintermrg` takes terms. A variable left out of the entries of function $k$ has a zero derivative of $\gamma_k$.
+note A variable left out of the entries of function $k$ has a zero derivative of $\gamma_k$.
 see BIYOS_cbg BIYOS_addcb
 since 0.1.0
 

@@ -36,8 +36,7 @@ struct Callback
     std::vector<Index> covered;
     void *data;
     UserFunction function;
-    std::vector<Offset> jacobian_starts;
-    std::vector<Index> jacobian_variables;
+    std::vector<IndexPair> jacobian_pairs;
     UserFunction jacobian;
     std::vector<IndexPair> hessian_pairs;
     UserFunction hessian;

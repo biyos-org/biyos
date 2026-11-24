@@ -284,7 +284,7 @@ class Model
     Index add_callback(std::span<const Index> functions, void *data);
     void set_callback_function(Index callback, UserFunction function);
     void set_callback_jacobian(Index callback,
-                               std::span<const Offset> starts,
+                               std::span<const Index> functions,
                                std::span<const Index> variables,
                                UserFunction jacobian);
     void set_callback_hessian(Index callback,

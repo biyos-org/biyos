@@ -3,7 +3,6 @@
 #include "capi/arrays.hpp"
 #include "capi/entry.hpp"
 #include "core/index.hpp"
-#include "model/compressed.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
 
@@ -64,21 +63,20 @@ void set_values(BIYOS_model &model, int cb, BIYOS_cbf f)
 
 void set_jacobian(BIYOS_model &model,
                   int cb,
-                  const std::int64_t *off,
+                  std::int64_t nnz,
+                  const int *functions,
                   const int *variables,
                   BIYOS_cbg g)
 {
     biyos::Model &core = writable(model);
     const Caller caller{require(g, "g")};
-    const std::size_t n = core.callback(cb).covered.size();
-    const std::vector<biyos::Offset> starts = biyos::capi::offsets(n, off);
-    biyos::check_starts(starts);
-    const auto total = static_cast<std::size_t>(starts.back());
-    if (total > 0)
+    const std::size_t size = length(nnz, "nnz");
+    if (size > 0)
     {
+        require(functions, "fun");
         require(variables, "var");
     }
-    core.set_callback_jacobian(cb, starts, {variables, total}, caller);
+    core.set_callback_jacobian(cb, {functions, size}, {variables, size}, caller);
 }
 
 void set_hessian(BIYOS_model &model,
@@ -150,11 +148,12 @@ BIYOS_status BIYOS_setcbf(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbf f)
 
 BIYOS_status BIYOS_setcbg(BIYOS_model *mdl,
                           BIYOS_index cb,
-                          const BIYOS_offset *off,
+                          BIYOS_offset nnz,
+                          const BIYOS_index *fun,
                           const BIYOS_index *var,
                           BIYOS_cbg g)
 {
-    return guarded<set_jacobian>(mdl, cb, off, var, g);
+    return guarded<set_jacobian>(mdl, cb, nnz, fun, var, g);
 }
 
 BIYOS_status BIYOS_setcbh(BIYOS_model *mdl,

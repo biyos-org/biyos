@@ -1881,28 +1881,24 @@ class Model:
     def setcbg(
         self,
         cb: int,
-        off: Sequence[int],
+        fun: Sequence[int | Function] | Functions,
         var: Sequence[int | Variable] | Variables,
         g: Callable[..., object],
     ) -> None:
         """Give a callback its Jacobian pattern and the function that
         evaluates it.
 
-        The entries of the ``k``-th covered function are those from
-        ``off[k]`` to ``off[k + 1] - 1`` of ``var``. A variable left out
-        of a function's entries has a zero derivative in the callback's part
-        of that function.
+        A variable left out of a function's entries has a zero derivative
+        in the callback's part of that function.
 
         Parameters
         ----------
         cb
             The callback.
-        off
-            The offsets of each covered function's entries, one more than
-            the functions the callback covers, from 0 and never decreasing.
+        fun
+            The function of each entry, one the callback covers.
         var
-            The variable of each entry, ``off[-1]`` of them, in increasing
-            order within a function.
+            The variable of each entry.
         g
             The function, as ``addcb`` describes. It writes the derivative
             of each entry at the point, in the order of the pattern.
@@ -1917,18 +1913,13 @@ class Model:
         BIYOS_setcbg
         """
         cb = integer("cb", cb)
-        g = checked("g", g)
-        if not self._callbacks.known(cb):
-            refused = Caller(g, 0, 0)
-            self._callbacks.keep(refused)
-            self._call(lib.BIYOS_setcbg, cb, None, None, refused.pointer)
-        n = self._callbacks.count(cb)
-        starts = offsets("off", off, n + 1)
-        size = _total(starts, n)
-        variables = indices_of(self, Variables, "var", var, size)
-        caller = Caller(g, n, size)
+        nnz = len(fun)
+        functions = indices_of(self, Functions, "fun", fun, nnz)
+        variables = indices_of(self, Variables, "var", var, nnz)
+        caller = Caller(checked("g", g), self._callbacks.count(cb), nnz)
+        pattern = (nnz, functions, variables, caller.pointer)
         self._callbacks.keep(caller)
-        self._call(lib.BIYOS_setcbg, cb, starts, variables, caller.pointer)
+        self._call(lib.BIYOS_setcbg, cb, *pattern)
 
     def setcbh(
         self,

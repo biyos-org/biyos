@@ -1137,7 +1137,8 @@ BIYOS_API BIYOS_status BIYOS_addcb(BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_setcbf(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbf f);
 BIYOS_API BIYOS_status BIYOS_setcbg(BIYOS_model *mdl,
                                     BIYOS_index cb,
-                                    const BIYOS_offset *off,
+                                    BIYOS_offset nnz,
+                                    const BIYOS_index *fun,
                                     const BIYOS_index *var,
                                     BIYOS_cbg g);
 BIYOS_API BIYOS_status BIYOS_setcbh(BIYOS_model *mdl,
