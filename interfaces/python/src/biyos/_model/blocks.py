@@ -87,6 +87,35 @@ class Block(Generic[Item]):
         self._check()
         return self._size
 
+    def __contains__(self, item: object) -> bool:
+        """Return whether a view names one of the block's items.
+
+        Parameters
+        ----------
+        item
+            A view, such as a ``Variable``.
+
+        Returns
+        -------
+        found
+            Whether ``item`` is a view of the block's family and model whose
+            index lies in the block. False for any other value.
+
+        Raises
+        ------
+        ValueError
+            When the model has had a deletion since the block or the view
+            was made.
+        """
+        self._check()
+        if (
+            not isinstance(item, self._element)
+            or item._model is not self._model
+        ):
+            return False
+        _current(item._model, item._gen, item._noun)
+        return self._start <= item._idx < self._start + self._size
+
     def __iter__(self) -> Iterator[Item]:
         """Iterate over the items of the block, each as a view.
 
@@ -213,6 +242,22 @@ class Variable(View, Operand):
 
     __slots__ = ()
     _noun = "variable"
+
+    def __hash__(self) -> int:
+        """Return a hash of the model and the index.
+
+        Two views of one variable hash alike, and ``==`` between them
+        builds a ``Comparison`` that is true.
+
+        Returns
+        -------
+        hash
+            The hash of the view's model and index.
+        """
+        return hash(self._key())
+
+    def _key(self) -> tuple[object, int]:
+        return (self._model, self._idx)
 
 
 class Variables(Block[Variable]):

@@ -23,6 +23,7 @@ from biyos._model.blocks import (
 )
 from biyos._model.callbacks import CallbackRequest
 from biyos._model.expression import (
+    Comparison,
     Expression,
     acos,
     acosh,
@@ -64,6 +65,7 @@ __all__ = [
     "SOS",
     "CallbackRequest",
     "Checking",
+    "Comparison",
     "Complement",
     "Complements",
     "Cone",

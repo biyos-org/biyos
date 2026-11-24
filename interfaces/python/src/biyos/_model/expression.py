@@ -1,7 +1,10 @@
 from collections.abc import Sequence
-from typing import TypeGuard
+from math import isinf, isnan
+from typing import Any, TypeGuard
 
 from biyos._model.operators import Operator
+
+_INFINITY = float("inf")
 
 
 def _number(value: object) -> TypeGuard[int | float]:
@@ -241,6 +244,84 @@ class Operand:
         """
         return Expression(Operator.ABS, (self,), ())
 
+    def __le__(self, other: "Term") -> "Comparison":
+        """Return the constraint that the operand is at most another.
+
+        Parameters
+        ----------
+        other
+            An expression, a variable or a number.
+
+        Returns
+        -------
+        con
+            The constraint ``self - other <= 0``, or ``self <= other`` when
+            ``other`` is a number.
+
+        Raises
+        ------
+        TypeError
+            When ``other`` is of another type.
+        ValueError
+            When ``other`` is NaN, or a number that leaves no value, such as
+            ``-inf``.
+        """
+        return _compared(self, other, lower=False, upper=True)
+
+    def __ge__(self, other: "Term") -> "Comparison":
+        """Return the constraint that the operand is at least another.
+
+        Parameters
+        ----------
+        other
+            An expression, a variable or a number.
+
+        Returns
+        -------
+        con
+            The constraint ``self - other >= 0``, or ``self >= other`` when
+            ``other`` is a number.
+
+        Raises
+        ------
+        TypeError
+            When ``other`` is of another type.
+        ValueError
+            When ``other`` is NaN, or a number that leaves no value, such as
+            ``inf``.
+        """
+        return _compared(self, other, lower=True, upper=False)
+
+    def __eq__(self, other: object) -> Any:
+        """Return the constraint that the operand equals another.
+
+        A value of another type is not equal to the operand, so ``==``
+        gives False for it, as Python does.
+
+        Parameters
+        ----------
+        other
+            An expression, a variable or a number.
+
+        Returns
+        -------
+        con
+            The constraint ``self - other == 0``, or ``self == other`` when
+            ``other`` is a number.
+
+        Raises
+        ------
+        ValueError
+            When ``other`` is NaN or infinite.
+        """
+        if not _term(other):
+            return NotImplemented
+        same = _same(self, other)
+        return _compared(self, other, lower=True, upper=True, same=same)
+
+    def _key(self) -> tuple[object, int] | None:
+        return None
+
 
 Term = Operand | int | float
 
@@ -274,6 +355,55 @@ class Expression(Operand):
         self._values = values
 
 
+class Comparison:
+    """A constraint written as a comparison of two operands.
+
+    ``<=``, ``>=`` and ``==`` between expressions, variables and numbers
+    give a comparison, which ``Model.addcon`` takes. With an operand on each
+    side it bounds their difference by 0, and with a number on one side it
+    bounds the other side by the number, so ``x <= 3`` and ``3 >= x`` are
+    the same constraint. ``==`` between two variables is true when both
+    name one variable of one model, so variables serve as keys of
+    dictionaries and sets. Any other comparison has no truth value:
+    ``if x + 1 == y`` raises ``TypeError``, and so does a chained
+    ``0 <= x <= 1``.
+    """
+
+    __slots__ = ("_body", "_lb", "_same", "_ub")
+
+    def __init__(
+        self,
+        body: Operand,
+        lb: float,
+        ub: float,
+        same: bool | None = None,
+    ) -> None:
+        self._body = body
+        self._lb = lb
+        self._ub = ub
+        self._same = same
+
+    def __bool__(self) -> bool:
+        """Return whether ``==`` names one variable twice.
+
+        Returns
+        -------
+        same
+            For ``==`` between two variables, whether both name one variable
+            of one model.
+
+        Raises
+        ------
+        TypeError
+            For any other comparison, since it is a constraint, not a test.
+        """
+        if self._same is None:
+            raise TypeError(
+                "a comparison is a constraint and has no truth value"
+            )
+        return self._same
+
+
 def _constant(value: float) -> Expression:
     return Expression(Operator.CONSTANT, (), (float(value),))
 
@@ -286,6 +416,44 @@ def _sum(left: Operand, right: "Term", sign: float) -> Expression:
     if isinstance(right, Operand):
         return Expression(Operator.SUM, (left, right), (0.0, 1.0, sign))
     return _shifted(left, 1.0, sign * float(right))
+
+
+def _same(left: Operand, right: "Term") -> bool | None:
+    if not isinstance(right, Operand):
+        return None
+    mine = left._key()
+    theirs = right._key()
+    if mine is None or theirs is None:
+        return None
+    return mine == theirs
+
+
+def _bound(value: float, lower: bool, upper: bool) -> float:
+    closed = (lower and value > 0) or (upper and value < 0)
+    if isnan(value) or (isinf(value) and closed):
+        raise ValueError(f"a comparison refuses the bound {value}")
+    return value
+
+
+def _compared(
+    left: Operand,
+    right: object,
+    lower: bool,
+    upper: bool,
+    same: bool | None = None,
+) -> Comparison:
+    if not _term(right):
+        found = type(right).__name__
+        raise TypeError(f"an expression compares with a number, not {found}")
+    body: Operand = left
+    bound = 0.0
+    if isinstance(right, Operand):
+        body = _sum(left, right, -1.0)
+    else:
+        bound = _bound(float(right), lower, upper)
+    lb = bound if lower else -_INFINITY
+    ub = bound if upper else _INFINITY
+    return Comparison(body, lb, ub, same)
 
 
 def _operand(value: object) -> Operand:
