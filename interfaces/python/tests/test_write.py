@@ -43,9 +43,8 @@ def test_round_trip(env, tmp_path):
 
 def test_unwritable(env, tmp_path):
     path = str(tmp_path / "absent" / "lp.mps")
-    with biyos.Model(env) as model:
-        with pytest.raises(biyos.Error) as caught:
-            model.write(path, FileFormat.MPS)
+    with biyos.Model(env) as model, pytest.raises(biyos.Error) as caught:
+        model.write(path, FileFormat.MPS)
     assert caught.value.code == FILEIO
     assert str(caught.value) == f"file access: file '{path}': cannot be opened"
 
