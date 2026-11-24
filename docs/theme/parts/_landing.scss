@@ -135,7 +135,7 @@
   grid-column: body-content-start / page-end-inset;
 }
 
-.landing main.content :is(p, ul, ol) {
+.landing main.content :is(p, ul, ol, .form, .cards) {
   max-width: 50rem;
 }
 
