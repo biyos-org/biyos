@@ -9,7 +9,7 @@ from typing import (
     overload,
 )
 
-from biyos._integers import integer, whole
+from biyos._convert.integers import integer, whole
 
 if TYPE_CHECKING:
     from biyos._model import Model

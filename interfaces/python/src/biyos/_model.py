@@ -18,16 +18,6 @@ from os import PathLike, fspath
 from typing import Any, NoReturn, SupportsIndex
 
 from biyos import _capi, _values
-from biyos._arrays import (
-    doubles,
-    indices_of,
-    int64s,
-    ints,
-    listed,
-    offsets,
-    span_of,
-    strings,
-)
 from biyos._blocks import (
     SOS,
     Block,
@@ -50,14 +40,24 @@ from biyos._blocks import (
 )
 from biyos._callbacks import Callbacks, Caller, checked, data_at
 from biyos._capi import lib
+from biyos._convert.arrays import (
+    doubles,
+    indices_of,
+    int64s,
+    ints,
+    listed,
+    offsets,
+    span_of,
+    strings,
+)
+from biyos._convert.integers import integer
+from biyos._convert.text import decoded, text
 from biyos._env import Env
 from biyos._error import Error
 from biyos._event import Event, EventKind, EventLevel
 from biyos._hooks import Hooks, checked_hook
-from biyos._integers import integer
 from biyos._operators import Operator, node_values, postfix_values
 from biyos._options import OptionSource
-from biyos._text import decoded, text
 from biyos._values import Value
 
 

@@ -4,8 +4,8 @@ from numbers import Real
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeGuard, TypeVar
 
 from biyos._blocks import Block, index_of, range_of
-from biyos._integers import integer, offset
-from biyos._text import text
+from biyos._convert.integers import integer, offset
+from biyos._convert.text import text
 
 if TYPE_CHECKING:
     from _typeshed import WriteableBuffer

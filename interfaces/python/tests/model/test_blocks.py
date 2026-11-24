@@ -3,7 +3,7 @@ from operator import index, itemgetter
 import pytest
 
 import biyos
-from biyos._arrays import indices_of
+from biyos._convert.arrays import indices_of
 from number import Number
 
 INFINITY = float("inf")
