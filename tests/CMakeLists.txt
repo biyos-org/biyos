@@ -92,22 +92,23 @@ biyos_add_test(test_expr
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
 biyos_add_test(test_model
-    model/test_callbacks.cpp
-    model/test_compare.cpp
-    model/test_complements.cpp
-    model/test_cones.cpp
-    model/test_constraints.cpp
-    model/test_copy.cpp
-    model/test_delete.cpp
-    model/test_encoding.cpp
-    model/test_expressions.cpp
-    model/test_functions.cpp
-    model/test_indicators.cpp
-    model/test_names.cpp
-    model/test_objectives.cpp
-    model/test_quadratic.cpp
-    model/test_sos.cpp
-    model/test_variables.cpp)
+    model/edits/test_compare.cpp
+    model/edits/test_copy.cpp
+    model/edits/test_delete.cpp
+    model/edits/test_names.cpp
+    model/functions/test_callbacks.cpp
+    model/functions/test_encoding.cpp
+    model/functions/test_expressions.cpp
+    model/functions/test_functions.cpp
+    model/functions/test_quadratic.cpp
+    model/records/test_complements.cpp
+    model/records/test_cones.cpp
+    model/records/test_constraints.cpp
+    model/records/test_indicators.cpp
+    model/records/test_objectives.cpp
+    model/records/test_sos.cpp
+    model/records/test_variables.cpp)
+target_include_directories(test_model PRIVATE model)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io
