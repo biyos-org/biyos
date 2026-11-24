@@ -1,12 +1,12 @@
 #pragma once
 
 #include "core/clock.hpp"
-#include "core/deliveries.hpp"
 #include "core/error.hpp"
-#include "core/events.hpp"
+#include "core/events/deliveries.hpp"
+#include "core/events/events.hpp"
+#include "core/events/records.hpp"
 #include "core/interrupt.hpp"
 #include "core/options/options.hpp"
-#include "core/records.hpp"
 #include "core/usage.hpp"
 
 #include <atomic>

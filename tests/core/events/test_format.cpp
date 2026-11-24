@@ -1,5 +1,5 @@
-#include "core/events.hpp"
-#include "core/format.hpp"
+#include "core/events/events.hpp"
+#include "core/events/format.hpp"
 
 #include <gtest/gtest.h>
 

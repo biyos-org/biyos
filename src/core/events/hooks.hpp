@@ -1,7 +1,7 @@
 #pragma once
 
 #include "biyos/biyos.h"
-#include "core/event.hpp"
+#include "core/events/event.hpp"
 #include "core/thread.hpp"
 
 #include <array>

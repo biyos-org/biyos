@@ -2,13 +2,14 @@ add_library(biyos_internal STATIC
     core/check.cpp
     core/clock.cpp
     core/deadline.cpp
-    core/deliveries.cpp
     core/env.cpp
     core/error.cpp
-    core/event.cpp
-    core/events.cpp
-    core/format.cpp
-    core/hooks.cpp
+    core/events/deliveries.cpp
+    core/events/event.cpp
+    core/events/events.cpp
+    core/events/format.cpp
+    core/events/hooks.cpp
+    core/events/records.cpp
     core/options/catalog.cpp
     core/options/lookup.cpp
     core/options/options.cpp
@@ -16,7 +17,6 @@ add_library(biyos_internal STATIC
     core/options/table.cpp
     core/options/text.cpp
     core/options/value.cpp
-    core/records.cpp
     core/status.cpp
     core/strings.cpp
     core/thread.cpp

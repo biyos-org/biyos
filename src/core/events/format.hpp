@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/events.hpp"
+#include "core/events/events.hpp"
 
 #include <string>
 

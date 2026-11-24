@@ -1,7 +1,7 @@
 #include "core/check.hpp"
 #include "core/env.hpp"
 #include "core/error.hpp"
-#include "core/events.hpp"
+#include "core/events/events.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"

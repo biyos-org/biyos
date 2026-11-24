@@ -1,7 +1,7 @@
 #include "core/clock.hpp"
 #include "core/deadline.hpp"
 #include "core/env.hpp"
-#include "core/events.hpp"
+#include "core/events/events.hpp"
 #include "core/interrupt.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"

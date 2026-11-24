@@ -1,6 +1,6 @@
 #include "core/clock.hpp"
 #include "core/error.hpp"
-#include "core/events.hpp"
+#include "core/events/events.hpp"
 #include "core/options/options.hpp"
 #include "core/options/table.hpp"
 #include "core/version.hpp"

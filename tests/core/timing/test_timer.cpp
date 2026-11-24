@@ -1,7 +1,7 @@
 #include "core/clock.hpp"
 #include "core/env.hpp"
 #include "core/error.hpp"
-#include "core/events.hpp"
+#include "core/events/events.hpp"
 #include "core/timer.hpp"
 
 #include <gtest/gtest.h>

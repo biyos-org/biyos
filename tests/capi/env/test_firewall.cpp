@@ -1,7 +1,7 @@
 #include "capi/firewall.hpp"
 #include "core/env.hpp"
-#include "core/events.hpp"
-#include "core/hooks.hpp"
+#include "core/events/events.hpp"
+#include "core/events/hooks.hpp"
 
 #include <gtest/gtest.h>
 
