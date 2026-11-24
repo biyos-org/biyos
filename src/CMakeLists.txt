@@ -15,9 +15,11 @@ add_library(biyos_internal STATIC
     core/option_text.cpp
     core/option_value.cpp
     core/options.cpp
+    core/records.cpp
     core/settings.cpp
     core/status.cpp
     core/strings.cpp
+    core/thread.cpp
     core/timer.cpp
     core/tolerances.cpp
     core/usage.cpp
@@ -105,9 +107,7 @@ add_library(biyos_internal STATIC
     model/tolerances.cpp
     model/transpose.cpp
     model/users.cpp
-    model/variables.cpp
-    core/thread.cpp
-    core/records.cpp)
+    model/variables.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
