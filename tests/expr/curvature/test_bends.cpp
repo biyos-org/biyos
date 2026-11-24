@@ -2,8 +2,8 @@
 #include "expr/bends.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/interval.hpp"
-#include "expr/rounding.hpp"
+#include "expr/intervals/interval.hpp"
+#include "expr/intervals/rounding.hpp"
 #include "expr/shape.hpp"
 #include "sampling.hpp"
 

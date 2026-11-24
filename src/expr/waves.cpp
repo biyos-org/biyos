@@ -1,6 +1,6 @@
 #include "expr/waves.hpp"
 
-#include "expr/interval.hpp"
+#include "expr/intervals/interval.hpp"
 #include "expr/shape.hpp"
 
 #include <cmath>

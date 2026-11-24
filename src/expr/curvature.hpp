@@ -2,7 +2,7 @@
 
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
-#include "expr/interval.hpp"
+#include "expr/intervals/interval.hpp"
 #include "expr/shape.hpp"
 
 #include <cstddef>

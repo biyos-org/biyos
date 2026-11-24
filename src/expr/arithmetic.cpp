@@ -1,7 +1,7 @@
 #include "expr/arithmetic.hpp"
 
 #include "core/numeric/zero.hpp"
-#include "expr/interval.hpp"
+#include "expr/intervals/interval.hpp"
 #include "expr/shape.hpp"
 
 #include <algorithm>

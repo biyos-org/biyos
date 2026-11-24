@@ -1,7 +1,7 @@
 #include "bounds.hpp"
-#include "expr/elementary.hpp"
-#include "expr/interval.hpp"
-#include "expr/rounding.hpp"
+#include "expr/intervals/elementary.hpp"
+#include "expr/intervals/interval.hpp"
+#include "expr/intervals/rounding.hpp"
 
 #include <gtest/gtest.h>
 

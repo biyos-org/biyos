@@ -1,7 +1,7 @@
-#include "expr/interval.hpp"
+#include "expr/intervals/interval.hpp"
 
 #include "core/numeric/zero.hpp"
-#include "expr/rounding.hpp"
+#include "expr/intervals/rounding.hpp"
 
 #include <algorithm>
 #include <cmath>

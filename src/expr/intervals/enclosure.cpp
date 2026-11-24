@@ -1,14 +1,14 @@
-#include "expr/enclosure.hpp"
+#include "expr/intervals/enclosure.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text/text.hpp"
-#include "expr/elementary.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/interval.hpp"
-#include "expr/periodic.hpp"
-#include "expr/powers.hpp"
+#include "expr/intervals/elementary.hpp"
+#include "expr/intervals/interval.hpp"
+#include "expr/intervals/periodic.hpp"
+#include "expr/intervals/powers.hpp"
 
 #include <cstddef>
 #include <span>

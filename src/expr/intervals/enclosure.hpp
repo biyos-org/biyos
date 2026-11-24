@@ -1,7 +1,7 @@
 #pragma once
 
 #include "expr/graph/graph.hpp"
-#include "expr/interval.hpp"
+#include "expr/intervals/interval.hpp"
 
 #include <span>
 

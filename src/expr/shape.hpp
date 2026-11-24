@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/index.hpp"
-#include "expr/interval.hpp"
+#include "expr/intervals/interval.hpp"
 
 #include <cstddef>
 #include <cstdint>

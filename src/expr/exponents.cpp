@@ -2,7 +2,7 @@
 
 #include "core/numeric/zero.hpp"
 #include "expr/bends.hpp"
-#include "expr/interval.hpp"
+#include "expr/intervals/interval.hpp"
 #include "expr/shape.hpp"
 
 #include <cmath>

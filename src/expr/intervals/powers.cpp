@@ -1,7 +1,7 @@
-#include "expr/powers.hpp"
+#include "expr/intervals/powers.hpp"
 
-#include "expr/interval.hpp"
-#include "expr/rounding.hpp"
+#include "expr/intervals/interval.hpp"
+#include "expr/intervals/rounding.hpp"
 
 #include <algorithm>
 #include <cmath>

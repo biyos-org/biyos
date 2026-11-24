@@ -33,8 +33,6 @@ add_library(biyos_internal STATIC
     expr/derivatives/partials.cpp
     expr/derivatives/reverse.cpp
     expr/derivatives/value.cpp
-    expr/elementary.cpp
-    expr/enclosure.cpp
     expr/exponents.cpp
     expr/graph/builder.cpp
     expr/graph/compact.cpp
@@ -42,10 +40,12 @@ add_library(biyos_internal STATIC
     expr/graph/node.cpp
     expr/graph/parents.cpp
     expr/graph/uses.cpp
-    expr/interval.cpp
-    expr/periodic.cpp
-    expr/powers.cpp
-    expr/rounding.cpp
+    expr/intervals/elementary.cpp
+    expr/intervals/enclosure.cpp
+    expr/intervals/interval.cpp
+    expr/intervals/periodic.cpp
+    expr/intervals/powers.cpp
+    expr/intervals/rounding.cpp
     expr/shape.cpp
     expr/sparsity/memo.cpp
     expr/sparsity/radix.cpp

@@ -1,6 +1,6 @@
 #include "expr/shape.hpp"
 
-#include "expr/interval.hpp"
+#include "expr/intervals/interval.hpp"
 
 #include <cstddef>
 

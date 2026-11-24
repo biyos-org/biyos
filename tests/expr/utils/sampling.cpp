@@ -2,10 +2,10 @@
 
 #include "bounds.hpp"
 #include "core/index.hpp"
-#include "expr/enclosure.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/interval.hpp"
+#include "expr/intervals/enclosure.hpp"
+#include "expr/intervals/interval.hpp"
 #include "reference.hpp"
 
 #include <gtest/gtest.h>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "expr/interval.hpp"
+#include "expr/intervals/interval.hpp"
 #include "expr/shape.hpp"
 
 #include <span>
