@@ -30,13 +30,13 @@ Each result is then cut to the image of its function, itself rounded outward: $[
 
 ## Why 256 steps {#sec-intervals-margin}
 
-Suppose the library computes $f$ within $k$ units in the last place. Then its result $\tilde f(x)$ satisfies $|\tilde f(x) - f(x)| \le r |f(x)| + s$ with $r = k \cdot 2^{-52}$ and $s = k \cdot 2^{-1074}$, the second term covering subnormal results. Take $f$ monotone on a piece of the box, its least value at an end $e$, and $\tilde v = \tilde f(e)$. Since $z - r|z| - s$ grows with $z$, every value computed on the piece is at least
+Suppose the library computes $f$ within $\kappa$ units in the last place. Then its result $\tilde f(x)$ satisfies $|\tilde f(x) - f(x)| \le \rho |f(x)| + \tau$ with $\rho = \kappa \cdot 2^{-52}$ and $\tau = \kappa \cdot 2^{-1074}$, the second term covering subnormal results. Take $f$ monotone on a piece of the box, its least value at an end $b$, and $\tilde v = \tilde f(b)$. Since $z - \rho|z| - \tau$ grows with $z$, every value computed on the piece is at least
 
 $$
-\tilde v - 2.01\,\big(r |\tilde v| + s\big).
+\tilde v - 2.01\,\big(\rho |\tilde v| + \tau\big).
 $$
 
-One step down from $\tilde v$ is at least $\max\big(|\tilde v| \cdot 2^{-54},\ 2^{-1074}\big)$, so $m$ steps cover the loss once $m \ge 16.08\, k$. Entropy's bound comes from $x \log x$ with the logarithm within $k$ units, and its error has the same form with $k + 1$ in place of $k$. With $k = 14$ the margin must be at least $16.08 \cdot 15 = 241.2$ steps, and biyos takes 256. An upper bound is symmetric.
+One step down from $\tilde v$ is at least $\max\big(|\tilde v| \cdot 2^{-54},\ 2^{-1074}\big)$, so $m$ steps cover the loss once $m \ge 16.08\, \kappa$. Entropy's bound comes from $x \log x$ with the logarithm within $\kappa$ units, and its error has the same form with $\kappa + 1$ in place of $\kappa$. With $\kappa = 14$ the margin must be at least $16.08 \cdot 15 = 241.2$ steps, and biyos takes 256. An upper bound is symmetric.
 
 ## What is proved and what is assumed {#sec-intervals-assumption}
 
@@ -54,6 +54,6 @@ The second assumption is a property of the thread that runs the computation. Opt
 A few operators are not monotone and need their extrema found:
 
 - $\sin$ and $\cos$ over an arc narrower than $\pi$ take the values at its ends, plus 1 when it holds a peak or $-1$ when it holds a trough, found from the sign of the derivative at the ends. A wider arc is split once at its midpoint, so arcs below $2\pi$ stay tight, and anything wider or unbounded is $[-1, 1]$. A point box skips the test: its one value, widened by the margin and cut to $[-1, 1]$, is the enclosure.
-- $\tan$ over an interval narrower than $\pi$ whose ends have cosines of one sign is $[\tan a, \tan b]$, and every other interval meets a pole and gives the whole line.
+- $\tan$ over an interval $[l, u]$ narrower than $\pi$ whose ends have cosines of one sign is $[\tan l, \tan u]$, and every other interval meets a pole and gives the whole line.
 - $x^y$ is the hull of the corner values of the power on the part of the box with $x \ge 0$ and, for $x < 0$, of $\pm |x|^n$ over the integers $n$ in the exponent's range, with $+$ when an even one is there and $-$ when an odd one is. Sign power is increasing, so its ends give its enclosure.
-- Entropy is convex with its least value $-1/e$ at $x = 1/e$.
+- Entropy is convex with its least value $-1/\mathrm{e}$ at $x = 1/\mathrm{e}$.

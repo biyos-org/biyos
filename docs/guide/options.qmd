@@ -65,16 +65,16 @@ A deprecated option still works. Setting it sets it and sends a warning on the e
 
 ## Tolerances {#sec-options-tolerances}
 
-Four options say when a value of a model, such as a variable or a constraint function at a point, meets a bound, equals another value, is zero or is integral: `feastol_abs`, `feastol_rel`, `zerotol` and `inttol`. A finite value $v$ meets a finite lower bound $l$ unless
+Four options say when a value of a model, such as a variable or a constraint function at a point, meets a bound, equals another value, is zero or is integral: `feastol_abs`, `feastol_rel`, `zerotol` and `inttol`. With $\epsilon_{\mathrm{abs}}$ for `feastol_abs` and $\epsilon_{\mathrm{rel}}$ for `feastol_rel`, a finite value $v$ meets a finite lower bound $l$ unless
 
 $$
 \begin{aligned}
-l - v &> \texttt{feastol\_abs} \quad\text{and} \\
-l - v &> \texttt{feastol\_rel} \cdot \max(1, |l|),
+l - v &> \epsilon_{\mathrm{abs}} \quad\text{and} \\
+l - v &> \epsilon_{\mathrm{rel}} \cdot \max(1, |l|),
 \end{aligned}
 $$
 
-and an upper bound alike. Two finite values $a$ and $b$ are equal unless they differ by more than both `feastol_abs` and `feastol_rel` times $\max(1, |a|, |b|)$. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. An infinite value equals only itself and is not integral, and NaN is not zero, not integral, equal to no value and meets no bound.
+and an upper bound alike. Two finite values $y$ and $z$ are equal unless they differ by more than both $\epsilon_{\mathrm{abs}}$ and $\epsilon_{\mathrm{rel}} \max(1, |y|, |z|)$. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. An infinite value equals only itself and is not integral, and NaN is not zero, not integral, equal to no value and meets no bound.
 
 ## Time limits {#sec-options-limits}
 

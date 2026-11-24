@@ -1346,7 +1346,7 @@ since 0.1.0
 
 group objectives Objectives
 text An objective is a function of the model to minimize or maximize, with a priority, a weight and an absolute and a relative tolerance. Several objectives may share a function, and an objective may use the function of a constraint.
-text The objectives are optimized in stages, one for each priority they hold, the lowest priority first. A stage minimizes the weighted sum $\sum_i w_i s_i f_i(x)$ of the objectives of its priority, where $w_i$ is the weight of objective $i$, $s_i$ is 1 when it minimizes and −1 when it maximizes, and $f_i$ is its function. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it, the absolute tolerance in the units of its function and the relative one as a fraction of the size of that optimum. A priority is any `BIYOS_int`. A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. `BIYOS_addobj` takes what defines an objective, its function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds; a new objective's tolerances are 0 until `BIYOS_setobjtolsp` sets them. No call optimizes the objectives yet.
+text The objectives are optimized in stages, one for each priority they hold, the lowest priority first. A stage minimizes the weighted sum $\sum w\, s\, f_k(x)$ over the objectives of its priority, where $f_k$ is an objective's function, $s$ is 1 when it minimizes and −1 when it maximizes, and $w$ is its weight. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it, the absolute tolerance in the units of its function and the relative one as a fraction of the size of that optimum. A priority is any `BIYOS_int`. A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. `BIYOS_addobj` takes what defines an objective, its function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds; a new objective's tolerances are 0 until `BIYOS_setobjtolsp` sets them. No call optimizes the objectives yet.
 
 table Senses
 value BIYOS_OBJSENSE_MIN The function is minimized.
@@ -1845,19 +1845,19 @@ see BIYOS_setsosnamesp
 since 0.1.0
 
 group cones Cones
-text A cone places functions of the model, taken in order, in a set of a given kind: $(f_1(x), \dots, f_k(x)) \in K$. The functions are its members and their number $k$ its dimension. A cone holds its kind, its parameters and its members, kept as given, and cones are numbered from 0 in the order they are added. A function may be a member of several cones, and of constraints and objectives as well, but appears once in a cone. The kinds, their member order and their dimensions follow the Conic Benchmark Format, version 3, so a cone of a kind the two share maps member for member.
+text A cone places functions of the model, taken in order, in a set of a given kind: $(f_{k_1}(x), \dots, f_{k_d}(x)) \in \mathcal{K}$. The functions are its members and their number $d$ its dimension. A cone holds its kind, its parameters and its members, kept as given, and cones are numbered from 0 in the order they are added. A function may be a member of several cones, and of constraints and objectives as well, but appears once in a cone. The kinds, their member order and their dimensions follow the Conic Benchmark Format, version 3, so a cone of a kind the two share maps member for member.
 text A cone may hold its own absolute and relative tolerance, each finite and at least 0, which stand for the options `feastol_abs` and `feastol_rel` for that cone alone. It holds none until `BIYOS_setconetolsp` sets them, and `BIYOS_delconetolsp` returns it to the options. No call solves a model yet.
-text Each kind fixes the dimensions its cones may take. The two power cones take one parameter for each of their first $m$ members, a weight $\alpha_j$ that is finite and positive, with $\sigma = \sum_j \alpha_j$; the weights are kept as given and need not sum to 1. Every other kind takes no parameter. In the table, $t$ names the first members and $x$ the rest, and $\lVert x \rVert$ is the Euclidean norm.
+text Each kind fixes the dimensions its cones may take. The two power cones take one parameter for each of their first $r$ members, a weight $\alpha_i$ that is finite and positive, with $\sigma = \sum_i \alpha_i$; the weights are kept as given and need not sum to 1. Every other kind takes no parameter. In the table, $t$ names the first members and $z$ the rest, and $\lVert z \rVert$ is the Euclidean norm.
 
 table Cone kinds
 value BIYOS_CONE_NONNEG The nonnegative orthant: every member is 0 or more. Dimension 1 or more.
-value BIYOS_CONE_SOC The second-order cone of $(t, x)$: $t \ge \lVert x \rVert$. Dimension 1 or more.
-value BIYOS_CONE_RSOC The rotated second-order cone of $(t_1, t_2, x)$: $2 t_1 t_2 \ge \lVert x \rVert^2$ with $t_1, t_2 \ge 0$. Dimension 2 or more.
-value BIYOS_CONE_EXP The exponential cone of $(t, s, r)$: the closure of the points with $s > 0$ and $t \ge s e^{r/s}$. Dimension 3.
-value BIYOS_CONE_DEXP The dual exponential cone of $(t, s, r)$: the closure of the points with $r < 0$ and $e\,t \ge -r e^{s/r}$. Dimension 3.
-value BIYOS_CONE_POW The power cone of $(t_1, \dots, t_m, x)$ with weights $\alpha_1, \dots, \alpha_m$: $\prod_j t_j^{\alpha_j} \ge \lVert x \rVert^\sigma$ with every $t_j \ge 0$. Dimension $m$ or more, with $m \ge 1$.
-value BIYOS_CONE_DPOW The dual power cone of $(t_1, \dots, t_m, x)$ with weights $\alpha_1, \dots, \alpha_m$: $\prod_j (t_j / \alpha_j)^{\alpha_j} \ge (\lVert x \rVert / \sigma)^\sigma$ with every $t_j \ge 0$. Dimension $m$ or more, with $m \ge 1$.
-value BIYOS_CONE_PSD The semidefinite cone of the symmetric matrices $X$ of order $n$ with no negative eigenvalue. The members are the lower triangle of $X$ column by column, $X_{11}, \sqrt{2} X_{21}, \dots, \sqrt{2} X_{n1}, X_{22}, \sqrt{2} X_{32}, \dots, X_{nn}$, each entry off the diagonal scaled by $\sqrt{2}$ so that inner products are kept. Dimension $n(n+1)/2$ with $n \ge 1$.
+value BIYOS_CONE_SOC The second-order cone of $(t, z)$: $t \ge \lVert z \rVert$. Dimension 1 or more.
+value BIYOS_CONE_RSOC The rotated second-order cone of $(t_1, t_2, z)$: $2 t_1 t_2 \ge \lVert z \rVert^2$ with $t_1, t_2 \ge 0$. Dimension 2 or more.
+value BIYOS_CONE_EXP The exponential cone of $(t_1, t_2, t_3)$: the closure of the points with $t_2 > 0$ and $t_1 \ge t_2 \mathrm{e}^{t_3 / t_2}$. Dimension 3.
+value BIYOS_CONE_DEXP The dual exponential cone of $(t_1, t_2, t_3)$: the closure of the points with $t_3 < 0$ and $\mathrm{e}\, t_1 \ge -t_3 \mathrm{e}^{t_2 / t_3}$. Dimension 3.
+value BIYOS_CONE_POW The power cone of $(t_1, \dots, t_r, z)$ with weights $\alpha_1, \dots, \alpha_r$: $\prod_i t_i^{\alpha_i} \ge \lVert z \rVert^\sigma$ with every $t_i \ge 0$. Dimension $r$ or more, with $r \ge 1$.
+value BIYOS_CONE_DPOW The dual power cone of $(t_1, \dots, t_r, z)$ with weights $\alpha_1, \dots, \alpha_r$: $\prod_i (t_i / \alpha_i)^{\alpha_i} \ge (\lVert z \rVert / \sigma)^\sigma$ with every $t_i \ge 0$. Dimension $r$ or more, with $r \ge 1$.
+value BIYOS_CONE_PSD The semidefinite cone of the symmetric matrices $X$ of order $r$ with no negative eigenvalue. The members are the lower triangle of $X$ column by column, $X_{11}, \sqrt{2} X_{21}, \dots, \sqrt{2} X_{r1}, X_{22}, \sqrt{2} X_{32}, \dots, X_{rr}$, each entry off the diagonal scaled by $\sqrt{2}$ so that inner products are kept. Dimension $r(r+1)/2$ with $r \ge 1$.
 since 0.1.0
 
 function BIYOS_addcone
@@ -2315,7 +2315,7 @@ param node in The node each function gains, by id; may be null only when `n` is 
 return `BIYOS_OK` once the expressions are added.
 error BIYOS_ERR_BADARG `pos` or `n` is negative, a function is not one of the model or is listed twice, the range ends past the last function, a node is not one of the model, or a function's constant, or a coefficient summed with one the function holds, would not be finite.
 note The function of entry `k`, `idx[k]` or `pos + k`, becomes $f + e$, where $e$ is node `node[k]`. The constant, linear and quadratic terms of $e$ join the function's, added as `BIYOS_addlintermsp` and `BIYOS_addquadtermsp` add terms, and the rest becomes the function's expression, or is summed in a new node with the expression it has. An expression that holds no constant leaves the function's as it was.
-note The expression is split at its top. Among the terms of its top sum, a constant, $a x_j$, $q x_i x_j$ and $q x_j^2$ move, with negations and constant factors pushed into that sum; any other term stays whole, so no product of sums is expanded. Below the top, a node that other nodes use is kept whole, so a subexpression shared by several functions is stored once.
+note The expression is split at its top. Among the terms of its top sum, a constant, $a_j x_j$, $q_{ij} x_i x_j$ and $q_{jj} x_j^2$ move, with negations and constant factors pushed into that sum; any other term stays whole, so no product of sums is expanded. Below the top, a node that other nodes use is kept whole, so a subexpression shared by several functions is stored once.
 note A call whose expressions bring new linear or quadratic terms moves the terms and offsets of every function from its lowest such one on, as `BIYOS_addlintermsp` does, so the expressions of many functions are best attached in one call, or a function's right after it is added. An expression that brings no new term moves nothing.
 see BIYOS_addexpr BIYOS_clrfunsp BIYOS_addlintermsp BIYOS_addquadtermsp
 since 0.1.0
@@ -2370,7 +2370,7 @@ see BIYOS_getnexprsp BIYOS_addexpr BIYOS_attachexprsp
 since 0.1.0
 
 group callbacks Callbacks
-text A callback computes in user code its part $e_k(x)$ of the nonlinear part of each function $k$ it covers. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for the values of those parts, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
+text A callback computes in user code its part $\gamma_k(x)$ of the nonlinear part of each function $k$ it covers. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for the values of those parts, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
 text A function's nonlinear part is its expression plus the part of every callback that covers it. A function may be in any number of callbacks and hold an expression beside them, and a callback lists a function at most once. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function. A callback reads `x` in the numbering it was written for, so `BIYOS_delvarsp` deletes no variable of a model that has a callback.
 text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. No call evaluates a callback yet.
 text The model keeps the function pointers and `data` as given and never frees `data`. A copy made by `BIYOS_copymdl` shares them with its source, so both call the same code with the same `data`.
@@ -2390,7 +2390,7 @@ since 0.1.0
 type BIYOS_cbf
 summary A function that evaluates a callback's nonlinear parts.
 param req in The request, with the point `x`.
-param f out Receives $e_k(x)$ for each covered function $k$, in the order given to `BIYOS_addcb`.
+param f out Receives $\gamma_k(x)$ for each covered function $k$, in the order given to `BIYOS_addcb`.
 param data in The callback's pointer, as given.
 note It returns 0 on success, a positive value when a function is not defined at `x` and a negative value to stop.
 see BIYOS_setcbf BIYOS_cbreq
@@ -2399,7 +2399,7 @@ since 0.1.0
 type BIYOS_cbg
 summary A function that evaluates the first derivatives of a callback's nonlinear parts.
 param req in The request, with the point `x`.
-param g out Receives $\partial e_k / \partial x_j$ for each entry of the pattern given to `BIYOS_setcbg`, in its order.
+param g out Receives $\partial \gamma_k / \partial x_j$ for each entry of the pattern given to `BIYOS_setcbg`, in its order.
 param data in The callback's pointer, as given.
 note It returns 0 on success, a positive value when a function is not defined at `x` and a negative value to stop.
 see BIYOS_setcbg BIYOS_cbreq
@@ -2408,7 +2408,7 @@ since 0.1.0
 type BIYOS_cbh
 summary A function that evaluates the second derivatives of a weighted sum of a callback's nonlinear parts.
 param req in The request, with the point `x` and the weights `w`.
-param h out Receives the entry $(i, j)$ of $\sum_k w_k \nabla^2 e_k(x)$ for each pair of the pattern given to `BIYOS_setcbh`, in its order.
+param h out Receives the entry $(i, j)$ of $\sum_k w_k \nabla^2 \gamma_k(x)$ for each pair of the pattern given to `BIYOS_setcbh`, in its order.
 param data in The callback's pointer, as given.
 note It returns 0 on success, a positive value when a function is not defined at `x` and a negative value to stop.
 see BIYOS_setcbh BIYOS_cbreq
@@ -2417,7 +2417,7 @@ since 0.1.0
 type BIYOS_cbhv
 summary A function that multiplies the second derivatives of a weighted sum of a callback's nonlinear parts by a vector.
 param req in The request, with the point `x`, the weights `w` and the vector `v`.
-param hv out Receives $\left(\sum_k w_k \nabla^2 e_k(x)\right) v$, a value for every variable.
+param hv out Receives $\left(\sum_k w_k \nabla^2 \gamma_k(x)\right) v$, a value for every variable.
 param data in The callback's pointer, as given.
 note It returns 0 on success, a positive value when a function is not defined at `x` and a negative value to stop.
 see BIYOS_setcbhv BIYOS_cbreq
@@ -2457,7 +2457,7 @@ param g in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
 error BIYOS_ERR_BADARG `cb` is not a callback of the model, `g` is null, `off` does not begin at 0 or decreases, `varidx` is null while the pattern is not empty, or a function's variables are not ones of the model in increasing order.
 error BIYOS_ERR_NOMEMORY The pattern would hold more entries than any allocation can hold.
-note The entries of the `k`-th covered function are those from `off[k]` to `off[k + 1] - 1`, as `BIYOS_addrlintermrg` takes terms. A variable left out of the entries of function $k$ has a zero derivative of $e_k$.
+note The entries of the `k`-th covered function are those from `off[k]` to `off[k + 1] - 1`, as `BIYOS_addrlintermrg` takes terms. A variable left out of the entries of function $k$ has a zero derivative of $\gamma_k$.
 see BIYOS_cbg BIYOS_addcb
 since 0.1.0
 
@@ -2472,7 +2472,7 @@ param h in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
 error BIYOS_ERR_BADARG `cb` is not a callback of the model, `h` is null, `nnz` is negative, `varidx1` or `varidx2` is null while `nnz` is not 0, a variable is not one of the model, a pair has its second variable below its first, or the pairs are repeated or out of order.
 error BIYOS_ERR_NOMEMORY The pattern would hold more pairs than any allocation can hold.
-note The pairs are sorted by their first variable, then by their second, as the model lists quadratic terms, so they are the lower triangle of the Hessian compressed by column. They cover every pair $(i, j)$, $i \le j$, where a second derivative of some $e_k$ may be nonzero.
+note The pairs are sorted by their first variable, then by their second, as the model lists quadratic terms, so they are the lower triangle of the Hessian compressed by column. They cover every pair $(i, j)$, $i \le j$, where a second derivative of some $\gamma_k$ may be nonzero.
 see BIYOS_cbh BIYOS_addcb
 since 0.1.0
 

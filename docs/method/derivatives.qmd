@@ -4,26 +4,26 @@ The methods of biyos need the gradient of every function and weighted sums of th
 
 ## The reverse sweep {#sec-derivatives-reverse}
 
-Given the stored partials $\partial \phi_k / \partial v_j$ of a straight-line program, the reverse sweep assigns each value $v_k$ an adjoint $\bar v_k$. It starts from a seed on the outputs and visits the instructions in reverse order, adding each adjoint into the adjoints of the operands:
+Given the stored partials $\partial \operatorname{op}_i / \partial v_j$ of a straight-line program, the reverse sweep assigns each value $v_i$ an adjoint $\bar v_i$. It starts from a seed on the outputs and visits the instructions in reverse order, adding each adjoint into the adjoints of the operands:
 
 $$
-\bar v_j \mathrel{+}= \bar v_k\, \frac{\partial \phi_k}{\partial v_j}
+\bar v_j \mathrel{+}= \bar v_i\, \frac{\partial \operatorname{op}_i}{\partial v_j}
 $$ {#eq-adjoint}
 
-for $k$ from $N$ down to 1 and every operand $j \in \mathcal{C}(k)$.
+for $i$ from $N$ down to 1 and every operand $j \in \mathcal{C}(i)$.
 
 When the sweep ends, the adjoint of each variable is the derivative of the seeded combination of outputs with respect to that variable. Two seeds serve the methods:
 
-- Seeding one root $r$ with $\bar v_r = 1$ gives its gradient $\nabla f_r(x)$, which is one row of the Jacobian. The sweep visits only the root's own runs of instructions and the pinned nodes it reaches, so its cost follows the size of that root's expression and not the size of the tape.
-- Seeding every root $r$ with a weight $w_r$ gives $\sum_r w_r \nabla f_r(x)$ in one sweep over the whole tape. With the objective weighted by 1 and each constraint by its multiplier, this is the gradient of the Lagrangian.
+- Seeding the root of one function $f_k$ with 1 gives its gradient $\nabla f_k(x)$, which is one row of the Jacobian. The sweep visits only the root's own runs of instructions and the pinned nodes it reaches, so its cost follows the size of that root's expression and not the size of the tape.
+- Seeding the root of every function $f_k$ with a weight $w_k$ gives $\sum_k w_k \nabla f_k(x)$ in one sweep over the whole tape. With the objective weighted by 1 and each constraint by its multiplier, this is the gradient of the Lagrangian.
 
 The pattern of each root, the variables its gradient can depend on, is found once from the graph when the tape is compiled, so a gradient is written into a fixed sparse pattern.
 
-For example, take $f_0 = \exp(x_0 x_1)$ of @fig-graph at $x_0 = 1$, $x_1 = 0$. The forward sweep computes $p = x_0 x_1 = 0$ with partials $x_1 = 0$ and $x_0 = 1$, then $a_0 = \exp p = 1$ with partial $a_0 = 1$. The reverse sweep seeds $\bar a_0 = 1$, gives $\bar p = 1 \cdot 1 = 1$, then $\bar x_0 = 1 \cdot 0 = 0$ and $\bar x_1 = 1 \cdot 1 = 1$, so $\nabla f_0 = (0, 1, 0)$.
+For example, take $f_0 = \exp(x_0 x_1)$ of @fig-graph at $x_0 = 1$, $x_1 = 0$, a program of two steps. The forward sweep computes $v_1 = x_0 x_1 = 0$ with partials $\partial v_1 / \partial x_0 = x_1 = 0$ and $\partial v_1 / \partial x_1 = x_0 = 1$, then $v_2 = \exp v_1 = 1$ with partial $\partial v_2 / \partial v_1 = \exp v_1 = 1$. The reverse sweep seeds $\bar v_2 = 1$, gives $\bar v_1 = 1 \cdot 1 = 1$, then $\bar x_0 = 1 \cdot 0 = 0$ and $\bar x_1 = 1 \cdot 1 = 1$, so $\nabla f_0 = (0, 1, 0)$.
 
 ## A zero adjoint contributes nothing {#sec-derivatives-zero}
 
-In floating point, @eq-adjoint can turn an exact zero into NaN: when $\bar v_k = 0$ and a partial is infinite or NaN, their product is NaN, and that NaN then spreads to every variable below. This happens in ordinary situations. A constraint whose multiplier is zero contributes nothing to the Lagrangian, yet its function may have an infinite slope at the point, as $\sqrt{x}$ does at $x = 0$. A product with a factor that is zero at the point gives the other factors a zero adjoint, and those factors may have no finite derivative there.
+In floating point, @eq-adjoint can turn an exact zero into NaN: when $\bar v_i = 0$ and a partial is infinite or NaN, their product is NaN, and that NaN then spreads to every variable below. This happens in ordinary situations. A constraint whose multiplier is zero contributes nothing to the Lagrangian, yet its function may have an infinite slope at the point, as $\sqrt{x}$ does at $x = 0$. A product with a factor that is zero at the point gives the other factors a zero adjoint, and those factors may have no finite derivative there.
 
 biyos therefore skips an adjoint that is exactly zero, $+0$ or $-0$: such an instruction adds nothing to its operands, whatever their partials. So a zero weight, or a zero partial upstream, never turns an undefined partial into NaN. For $x_0 \sqrt{x_1}$ at $x_0 = x_1 = 0$, the square root receives the adjoint $x_0 = 0$, and the derivative with respect to $x_1$ comes out as 0, its true value, rather than $0 \cdot \infty$.
 

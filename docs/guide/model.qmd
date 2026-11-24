@@ -63,7 +63,7 @@ A variable may also hold its own absolute and relative tolerance, which stand fo
 A function of the variables $x$ is
 
 $$
-f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x) ,
+f_k(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x) ,
 $$
 
 a constant $c$, linear terms $a_j x_j$, quadratic terms $q_{ij} x_i x_j$ and a nonlinear part $\varphi(x)$. The nonlinear part is an expression ([Expressions](#sec-model-expressions)) plus the part of every callback that covers the function ([Callbacks](#sec-capi-callbacks)), and is zero for a function with neither, as in this chapter. `BIYOS_addfun` adds functions with the constant 0 and no terms, and later calls give them their constants and terms. `BIYOS_setcstrg` sets the constants of a range of functions, and `BIYOS_addrlintermrg` adds their linear terms. The terms of many functions travel in compressed form, as three arrays: function `pos + k` owns the terms from `off[k]` to `off[k + 1] - 1` of `varidx` and `coef`, which hold the index of a variable and its coefficient. So `off` holds one more entry than there are functions, begins at 0 and never decreases, and its last entry is the number of terms.
@@ -97,7 +97,7 @@ A call that adds new pairs moves the terms of every function from the lowest one
 A function may also hold an expression $e(x)$ of the model's graph ([The expression graph](#sec-graph)), its nonlinear part when no callback covers it:
 
 $$
-f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + e(x) .
+f_k(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + e(x) .
 $$
 
 An expression is a node, an operator applied to its children, which are nodes in turn, and the `BIYOS_OP_` constants number the operators ([Expressions](#sec-capi-expressions) in the C API). `BIYOS_addvarnode` gives the node of a variable, and `BIYOS_addnode` adds a node over nodes the model holds, so a program builds an expression from the bottom up, one call per node. Each call gives the id of its node, a `BIYOS_offset` counted from 0. Passing an id again shares the node, which is stored once however many parents use it.
@@ -119,13 +119,13 @@ The product takes $x_0$ and $x_1$ with the coefficient 1, and the sum takes four
 
 A sum that is an operand of a sum is merged into it, and so is a product that is an operand of a product. `BIYOS_OP_KEEP`, with the argument 1, makes the operand before it a node of its own, which stays a child. `BIYOS_OP_REF` names that node again, its argument being the position of the `BIYOS_OP_KEEP` entry, so the expressions of one call share the nodes they build.
 
-`BIYOS_attachexprsp` adds an expression to each function of a list, and `BIYOS_attachexprrg` to each function of a range, so that $f$ becomes $f + e$. The expression is split as it enters ([Splitting an expression](#sec-graph-split)): the constant, linear and quadratic terms of its top sum join the function's, and only the rest stays in the graph. Attached to a function, the expression above adds 3 to its constant, $2 x_0$ to its linear terms and $x_0 x_1$ to its quadratic terms, and $\exp(x_1)$ becomes its expression. A function that has an expression already gains the sum of the two. As with the terms added by `BIYOS_addlintermsp`, attach the expressions of many functions in one call, or a function's right after the function itself. A copy of the model holds the same expressions, and `BIYOS_getexprsp` reads them back ([Reading a model back](#sec-model-reading)).
+`BIYOS_attachexprsp` adds an expression to each function of a list, and `BIYOS_attachexprrg` to each function of a range, so that $f_k$ becomes $f_k + e$. The expression is split as it enters ([Splitting an expression](#sec-graph-split)): the constant, linear and quadratic terms of its top sum join the function's, and only the rest stays in the graph. Attached to a function, the expression above adds 3 to its constant, $2 x_0$ to its linear terms and $x_0 x_1$ to its quadratic terms, and $\exp(x_1)$ becomes its expression. A function that has an expression already gains the sum of the two. As with the terms added by `BIYOS_addlintermsp`, attach the expressions of many functions in one call, or a function's right after the function itself. A copy of the model holds the same expressions, and `BIYOS_getexprsp` reads them back ([Reading a model back](#sec-model-reading)).
 
 Once attached, the linear and quadratic parts of an expression are the function's own, and nothing tells them apart, so no call takes an expression back. `BIYOS_clrfunsp` and `BIYOS_clrfunrg` empty functions instead, their constant, terms and expression, and a function is then built again.
 
 ## Constraints {#sec-model-constraints}
 
-A constraint $l \le f(x) \le u$ bounds one function of the table. `BIYOS_addcon` takes the index of each constraint's function and its two bounds:
+A constraint $l \le f_k(x) \le u$ bounds one function of the table. `BIYOS_addcon` takes the index of each constraint's function and its two bounds:
 
 ```{.c file="examples/c/model.c" item="constraints"}
 ```
@@ -144,10 +144,10 @@ An objective names a function to minimize or maximize, with a priority, a weight
 The objectives are optimized in stages, one for each priority they hold, the lowest first. A stage minimizes the weighted sum of the objectives of its priority,
 
 $$
-\sum_{i \in P} w_i\, s_i\, f_i(x), \qquad s_i = \begin{cases} 1 & \text{to minimize} \\ -1 & \text{to maximize,} \end{cases}
+\sum_{(k, s, w) \in P} w\, s\, f_k(x), \qquad s = \begin{cases} 1 & \text{to minimize} \\ -1 & \text{to maximize,} \end{cases}
 $$
 
-where $P$ holds the objectives of that priority and $w_i$ is the weight of objective $i$. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it: the absolute tolerance in the units of its function, the relative one as a fraction of the size of that optimum. Objectives of different priorities are therefore optimized in sequence, and objectives of one priority are blended.
+where $P$ holds the objectives of that priority, each with its function $f_k$, sense $s$ and weight $w$. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it: the absolute tolerance in the units of its function, the relative one as a fraction of the size of that optimum. Objectives of different priorities are therefore optimized in sequence, and objectives of one priority are blended.
 
 A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `INFINITY` sets no limit. A null `sense` minimizes every new objective, a null `coef` gives each the weight 1, and a null `prio` gives each objective its index at the time it is added as its priority. So by default the objectives are optimized one after another in the order they are added, which is what this model asks for explicitly. Once an objective is deleted, a default priority can repeat one an earlier objective holds, and the two are blended.
 
@@ -162,7 +162,7 @@ biyos stores and checks the objectives but solves nothing yet. The stages above 
 
 ## Indicators {#sec-model-indicators}
 
-An indicator $x_v = a \Rightarrow l \le f(x) \le u$ switches a constraint on: when the binary variable $x_v$ takes the value $a$, 0 or 1, the function must lie within its bounds, and otherwise it is free. `BIYOS_addind` takes the variable, the value, the function and the two bounds of each indicator, and indicators are numbered from 0 in a table of their own. The model keeps the implication as given and adds no constraint in its place.
+An indicator $x_j = \beta \Rightarrow l \le f_k(x) \le u$ switches a constraint on: when the binary variable $x_j$ takes the value $\beta$, 0 or 1, the function must lie within its bounds, and otherwise it is free. `BIYOS_addind` takes the variable, the value, the function and the two bounds of each indicator, and indicators are numbered from 0 in a table of their own. The model keeps the implication as given and adds no constraint in its place.
 
 The bounds follow the rule of a constraint's, and the function stays shared, so one function may carry several indicators beside its constraints. The variable must be binary when the indicator is added or changed, and while an indicator uses a variable, changing its kind to another fails with `BIYOS_ERR_INUSE`. `BIYOS_setindbndsp` changes the bounds and `BIYOS_setindvarsp` the variable and the value, each keeping the rest, and `BIYOS_getindrg` reads back what `BIYOS_addind` takes.
 
@@ -170,19 +170,19 @@ The bounds follow the rule of a constraint's, and the function stays shared, so 
 
 ## Complements {#sec-model-complements}
 
-A complement $l \le f_1(x) \le u \perp f_2(x)$ pairs two functions of the table: the first is held within its bounds, and the sign of the second follows where the first lies. One of three cases holds:
+A complement $l \le f_k(x) \le u \perp f_{k'}(x)$ pairs two functions of the table: the first is held within its bounds, and the sign of the second follows where the first lies. One of three cases holds:
 
 $$
 \begin{aligned}
-f_1(x) = l &\quad\text{and}\quad f_2(x) \ge 0, \\
-f_1(x) = u &\quad\text{and}\quad f_2(x) \le 0, \\
-l < f_1(x) < u &\quad\text{and}\quad f_2(x) = 0.
+f_k(x) = l &\quad\text{and}\quad f_{k'}(x) \ge 0, \\
+f_k(x) = u &\quad\text{and}\quad f_{k'}(x) \le 0, \\
+l < f_k(x) < u &\quad\text{and}\quad f_{k'}(x) = 0.
 \end{aligned}
 $$
 
-`BIYOS_addccon` takes the two functions and the two bounds of each complement, and complements are numbered from 0 in a table of their own. A null `lb` gives the lower bound 0 and a null `ub` leaves the upper side open, so with both null a complement is the classical $0 \le f_1(x) \perp f_2(x) \ge 0$. When $f_1$ is one variable, the complements state the mixed complementarity of GAMS and PATH. Bounds that are both infinite state $f_2(x) = 0$.
+`BIYOS_addccon` takes the two functions and the two bounds of each complement, and complements are numbered from 0 in a table of their own. A null `lb` gives the lower bound 0 and a null `ub` leaves the upper side open, so with both null a complement is the classical $0 \le f_k(x) \perp f_{k'}(x) \ge 0$. When $f_k$ is one variable, the complements state the mixed complementarity of GAMS and PATH. Bounds that are both infinite state $f_{k'}(x) = 0$.
 
-The bounds follow the rule of a constraint's. The functions stay shared, so a function may appear in any number of complements, even as both functions of one, beside its constraints and objectives, and the bounds of a variable inside $f_1$ hold beside the complement. `BIYOS_setcconbndsp` changes the bounds and keeps the functions, and `BIYOS_getcconrg` reads back what `BIYOS_addccon` takes.
+The bounds follow the rule of a constraint's. The functions stay shared, so a function may appear in any number of complements, even as both functions of one, beside its constraints and objectives, and the bounds of a variable inside $f_k$ hold beside the complement. `BIYOS_setcconbndsp` changes the bounds and keeps the functions, and `BIYOS_getcconrg` reads back what `BIYOS_addccon` takes.
 
 A complement may also hold its own absolute and relative tolerance, which stand for the options `feastol_abs` and `feastol_rel` for that complement alone. `BIYOS_setccontolsp` sets them, each finite and at least 0, `BIYOS_getccontolsp` reads them, NaN where a complement holds none, and `BIYOS_delccontolsp` returns a complement to the options.
 
