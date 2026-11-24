@@ -7,10 +7,10 @@ The graph describes the structure of the functions. Evaluating them many times a
 Evaluating the roots of the graph at a point is a straight-line program, an evaluation procedure in the sense of algorithmic differentiation [@griewank2008]: a sequence of elementary steps
 
 $$
-v_k = \phi_k\big(v_{j} : j \in \mathcal{C}(k)\big), \qquad k = 1, \dots, N,
+v_i = \operatorname{op}_i\big(v_j : j \in \mathcal{C}(i)\big), \qquad i = 1, \dots, N,
 $$
 
-where each $\phi_k$ is one of the [operators of the graph](#sec-graph-operators), each $\mathcal{C}(k)$ lists the steps it reads, all earlier than $k$, and the leaves read the variables $x$. The graph fixes such a program up to the order of independent steps, and a tape is one such program written down once, so that running it needs no walk of the graph, no recursion and no dispatch on node kinds beyond one switch per step.
+where each $\operatorname{op}_i$ is one of the [operators of the graph](#sec-graph-operators), each $\mathcal{C}(i)$ lists the steps it reads, all earlier than $i$, and the leaves read the variables $x$. The graph fixes such a program up to the order of independent steps, and a tape is one such program written down once, so that running it needs no walk of the graph, no recursion and no dispatch on node kinds beyond one switch per step.
 
 ## Partitions and pinned nodes {#sec-tapes-partitions}
 
@@ -22,7 +22,7 @@ Inside a tape the operands are slot indices local to the tape, and the workspace
 
 ## The forward sweep {#sec-tapes-forward}
 
-Running a tape is its forward sweep: the instructions in order, each writing its value into its slot. The sweep also stores, for each instruction, the partial derivatives of its value with respect to each of its operands, $\partial \phi_k / \partial v_j$ for $j \in \mathcal{C}(k)$, at the point. These are the local derivatives the reverse sweep of [Derivatives](#sec-derivatives) needs, and storing them once costs less than computing them again in every sweep that passes through a shared node, as `sin`, `cos` and the powers would require.
+Running a tape is its forward sweep: the instructions in order, each writing its value into its slot. The sweep also stores, for each instruction, the partial derivatives of its value with respect to each of its operands, $\partial \operatorname{op}_i / \partial v_j$ for $j \in \mathcal{C}(i)$, at the point. These are the local derivatives the reverse sweep of [Derivatives](#sec-derivatives) needs, and storing them once costs less than computing them again in every sweep that passes through a shared node, as `sin`, `cos` and the powers would require.
 
 For a product the partials are the products of the other factors, computed as prefix and suffix products rather than by dividing the product by a factor, so a zero factor gives the right partials. The maximum and the minimum pass their derivative to the operand that gives the value.
 
