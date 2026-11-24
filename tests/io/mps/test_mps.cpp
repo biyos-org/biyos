@@ -4,7 +4,7 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "io/files.hpp"
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
 #include "model/model.hpp"
 
 #include <gtest/gtest.h>

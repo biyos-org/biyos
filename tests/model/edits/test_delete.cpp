@@ -3,7 +3,7 @@
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
 #include "model/compressed.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"

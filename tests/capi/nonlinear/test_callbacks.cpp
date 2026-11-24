@@ -3,7 +3,7 @@
 #include "core/index.hpp"
 #include "core/memory/usage.hpp"
 #include "handles.hpp"
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
 

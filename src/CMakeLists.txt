@@ -82,7 +82,9 @@ add_library(biyos_internal STATIC
     model/attributes/overrides.cpp
     model/attributes/tolerances.cpp
     model/checks.cpp
-    model/compare.cpp
+    model/compare/compare.cpp
+    model/compare/fields.cpp
+    model/compare/match.cpp
     model/compressed.cpp
     model/expressions/callbacks.cpp
     model/expressions/expressions.cpp
@@ -90,7 +92,6 @@ add_library(biyos_internal STATIC
     model/expressions/patterns.cpp
     model/expressions/postfix.cpp
     model/expressions/users.cpp
-    model/fields.cpp
     model/functions/attach.cpp
     model/functions/functions.cpp
     model/functions/merge.cpp
@@ -98,7 +99,6 @@ add_library(biyos_internal STATIC
     model/functions/quadratic.cpp
     model/functions/terms.cpp
     model/functions/transpose.cpp
-    model/match.cpp
     model/model.cpp
     model/records/complements.cpp
     model/records/cones.cpp

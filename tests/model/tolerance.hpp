@@ -2,7 +2,7 @@
 
 #include "core/index.hpp"
 #include "model/attributes/overrides.hpp"
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
 #include "model/model.hpp"
 #include "refusal.hpp"
 

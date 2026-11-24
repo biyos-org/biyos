@@ -2,7 +2,7 @@
 #include "capi/entry.hpp"
 #include "doubles.hpp"
 #include "handles.hpp"
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
 
 #include <gtest/gtest.h>
 

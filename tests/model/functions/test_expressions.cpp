@@ -3,7 +3,7 @@
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "model/compare.hpp"
+#include "model/compare/compare.hpp"
 #include "model/expressions/nodes.hpp"
 #include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
