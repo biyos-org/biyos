@@ -2,8 +2,8 @@
 
 #include "capi/arrays.hpp"
 #include "capi/entry.hpp"
-#include "capi/selection.hpp"
-#include "capi/tolerances.hpp"
+#include "capi/model/selection.hpp"
+#include "capi/model/tolerances.hpp"
 #include "core/index.hpp"
 #include "model/model.hpp"
 

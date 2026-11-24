@@ -131,24 +131,24 @@ add_library(biyos
     capi/complements.cpp
     capi/cones.cpp
     capi/constraints.cpp
-    capi/deletion.cpp
     capi/env/env.cpp
     capi/env/events.cpp
     capi/env/format.cpp
     capi/env/options.cpp
     capi/env/version.cpp
     capi/expressions.cpp
-    capi/files.cpp
     capi/functions.cpp
     capi/indicators.cpp
     capi/linear.cpp
-    capi/model.cpp
-    capi/names.cpp
+    capi/model/deletion.cpp
+    capi/model/files.cpp
+    capi/model/model.cpp
+    capi/model/names.cpp
+    capi/model/selection.cpp
     capi/objectives.cpp
     capi/pairs.cpp
     capi/quadratic.cpp
     capi/rows.cpp
-    capi/selection.cpp
     capi/sos.cpp)
 add_library(biyos::biyos ALIAS biyos)
 
