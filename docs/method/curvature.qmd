@@ -6,27 +6,27 @@ A convex function lies above each of its tangents, and over a convex set its loc
 
 A curvature is one of affine, convex, concave and unknown, and a monotonicity one of nondecreasing, nonincreasing, constant and unknown. Each is a pair of proved properties: affine is both convex and concave, constant is both nondecreasing and nonincreasing, and unknown proves neither.
 
-The classes are relative to a box. The domain of a node on the box is the set of points where the node and every node below it are defined, as for enclosures. A node is convex when its domain is convex and the node is convex on it, and concave and affine alike. Unknown claims nothing, not even a convex domain. The monotonicity of a node in child $k$ belongs to the operator alone: over the box of its children's intervals, restricted to its domain, moving child $k$ and nothing else moves the value as stated.
+The classes are relative to a box. The domain of a node on the box is the set of points where the node and every node below it are defined, as for enclosures. A node is convex when its domain is convex and the node is convex on it, and concave and affine alike. Unknown claims nothing, not even a convex domain. The monotonicity of a node in child $i$ belongs to the operator alone: over the box of its children's intervals, restricted to its domain, moving child $i$ and nothing else moves the value as stated.
 
 A constant is affine, and so is a variable whose interval is not empty. An empty interval, of the node or of a child, gives unknown curvature and unknown monotonicity, since no point of the box evaluates the node.
 
 ## Composition {#sec-curvature-composition}
 
-For an operator $h$ applied to children $g_1, \dots, g_n$, the node $h(g_1, \dots, g_n)$ is convex when $h$ is convex over the box of its children's intervals and every child is
+For an operator $\psi$ applied to children $e_1, \dots, e_n$, the node $\psi(e_1, \dots, e_n)$ is convex when $\psi$ is convex over the box of its children's intervals and every child is
 
 - affine, or
-- convex, where $h$ is nondecreasing in it, or
-- concave, where $h$ is nonincreasing in it.
+- convex, where $\psi$ is nondecreasing in it, or
+- concave, where $\psi$ is nonincreasing in it.
 
 Concave mirrors it. These are Rules I to IV of Fourer, Maheshwari, Neumaier, Orban and Schichl, which take both the curvature and the monotonicity of the operator over the ranges of its children [@fourer2010]. The rules of disciplined convex programming take the monotonicity over the range in the same way but the curvature of the operator over its whole domain [@grant2006]; using the ranges for both proves more. An unknown child leaves the node unknown, even under a zero weight, since its domain may not be convex.
 
-Composition needs one more condition where a child's interval leaves the operator's domain. Where part of a child's interval lies below the domain, the child must be concave, so that the set where it lies inside, $\{g > a\}$ or $\{g \ge a\}$, is convex; where part lies above, the child must be convex. For a convex or concave child this is the extended-value condition (3.11) of Boyd and Vandenberghe restricted to the child's interval [@boyd2004]. An affine child may be cut on either side, the side (3.11) forbids included: then the domain is the preimage of an interval under an affine map, which is convex, as in their composition with an affine map. So $\log g$ stays concave for a concave $g$ whose interval reaches 0, $x^{1.5}$ over $[-1, 4]$ is convex on its domain $[0, 4]$, and $(x^2 - \tfrac14)^{1.5}$ over $[-1, 1]$ is unknown, its domain $|x| \ge \tfrac12$ not being convex.
+Composition needs one more condition where a child's interval leaves the operator's domain. Where part of a child's interval lies below the domain, the child must be concave, so that the set where it lies inside, $\{e_i > c\}$ or $\{e_i \ge c\}$ for the end $c$ of the domain, is convex; where part lies above, the child must be convex. For a convex or concave child this is the extended-value condition (3.11) of Boyd and Vandenberghe restricted to the child's interval [@boyd2004]. An affine child may be cut on either side, the side (3.11) forbids included: then the domain is the preimage of an interval under an affine map, which is convex, as in their composition with an affine map. So $\log e_1$ stays concave for a concave $e_1$ whose interval reaches 0, $x^{1.5}$ over $[-1, 4]$ is convex on its domain $[0, 4]$, and $(x^2 - \tfrac14)^{1.5}$ over $[-1, 1]$ is unknown, its domain $|x| \ge \tfrac12$ not being convex.
 
 A child whose interval is a single point is constant in its parent.
 
 ## Operators {#sec-curvature-operators}
 
-The curvature of each operator over an interval comes from the sign of its second derivative there, and its monotonicity from the sign of its first. A class holds on closed intervals wherever the function is continuous at the ends, so $\sinh$ is concave on $[-a, 0]$, $x^{1.5}$ convex on $[0, b]$, $\operatorname{arcosh}$ concave on $[1, b]$ and entropy convex on $[0, b]$. Some operators need more:
+The curvature of each operator over an interval comes from the sign of its second derivative there, and its monotonicity from the sign of its first. A class holds on closed intervals wherever the function is continuous at the ends, so $\sinh$ is concave on $[l, 0]$, $x^{1.5}$ convex on $[0, u]$, $\operatorname{arcosh}$ concave on $[1, u]$ and entropy convex on $[0, u]$. Some operators need more:
 
 - The absolute value is affine on either side of 0, and the maximum and the minimum ignore a child that never leads, as in the refinements of Fourer et al. The leader of a maximum is the child with the largest lower bound, ties going to the larger upper bound, and any other child whose upper bound is at most the leader's lower bound is dropped and becomes constant in it; one child left makes the node affine. The minimum mirrors it.
 - A product is affine when its coefficient is zero, when a factor's interval is the point 0, or when at most one factor's interval is not a point. Otherwise it is unknown, since $t_1 t_2$ is indefinite. Its monotonicity in a factor follows the signs of the coefficient and of the other intervals, and is unknown when one of them straddles 0.
@@ -36,4 +36,4 @@ The curvature of each operator over an interval comes from the sign of its secon
 
 ## Exact boundaries {#sec-curvature-boundaries}
 
-Every boundary is decided exactly, with no tolerance. The points 0 and $\pm 1$ are doubles. The point $1/e$ lies strictly between two doubles, and a comparison with strict inequalities against the nearer one is safe on both sides. A multiple $m\pi/2$ is not a double: the side of $x$ is decided by the sign of $m h - x$, computed exactly with one fused multiply-add, where $h$ is the double just below or just above $\pi/2$ as the bound needs. Between $m\pi/2$ and $m h$ lies a band where the side cannot be decided, and an end that falls there loses its class rather than claims a wrong one. Past $|x| = 2^{52}$, the sine, cosine and tangent are unknown.
+Every boundary is decided exactly, with no tolerance. The points 0 and $\pm 1$ are doubles. The point $1/\mathrm{e}$ lies strictly between two doubles, and a comparison with strict inequalities against the nearer one is safe on both sides. A multiple $m\pi/2$ is not a double: the side of $x$ is decided by the sign of $m \theta - x$, computed exactly with one fused multiply-add, where $\theta$ is the double just below or just above $\pi/2$ as the bound needs. Between $m\pi/2$ and $m \theta$ lies a band where the side cannot be decided, and an end that falls there loses its class rather than claims a wrong one. Past $|x| = 2^{52}$, the sine, cosine and tangent are unknown.
