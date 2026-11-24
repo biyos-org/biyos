@@ -16,6 +16,7 @@ from math import isnan
 from os import PathLike, fspath
 from typing import Any, NoReturn, SupportsIndex
 
+from biyos import _capi, _values
 from biyos._arrays import (
     doubles,
     indices_of,
@@ -27,6 +28,7 @@ from biyos._arrays import (
     strings,
 )
 from biyos._blocks import (
+    SOS,
     Block,
     Complement,
     Complements,
@@ -40,14 +42,12 @@ from biyos._blocks import (
     Indicators,
     Objective,
     Objectives,
-    SOS,
     SOSs,
     Variable,
     Variables,
     index_of,
 )
-from biyos import _capi, _values
-from biyos._callbacks import Caller, Callbacks, checked, data_at
+from biyos._callbacks import Callbacks, Caller, checked, data_at
 from biyos._capi import lib
 from biyos._env import Env
 from biyos._error import Error

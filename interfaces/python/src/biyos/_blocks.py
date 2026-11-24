@@ -30,7 +30,7 @@ def _target(value: "Model") -> "Model":
 
 
 class View:
-    __slots__ = ("_model", "_idx", "_gen")
+    __slots__ = ("_gen", "_idx", "_model")
     _noun: ClassVar[str]
 
     def __init__(self, mdl: "Model", idx: int, gen: int) -> None:
@@ -60,7 +60,7 @@ Self = TypeVar("Self", bound="Block[Any]")
 
 
 class Block(Generic[Item]):
-    __slots__ = ("_model", "_start", "_size", "_gen")
+    __slots__ = ("_gen", "_model", "_size", "_start")
     _element: type[Item]
     _held: Callable[["Model"], int]
 
