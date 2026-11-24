@@ -3,6 +3,7 @@
 #include "capi/entry.hpp"
 #include "capi/selection.hpp"
 #include "core/index.hpp"
+#include "core/timer.hpp"
 #include "model/model.hpp"
 
 #include <algorithm>
@@ -23,7 +24,9 @@ template <Family Target, auto Delete, typename Selection>
 void delete_records(BIYOS_model &model, Selection selection, int *map)
 {
     Model &core = writable(model);
-    const std::vector<biyos::Index> renumbered = (core.*Delete)(selected(core, Target, selection));
+    const auto chosen = selected(core, Target, selection);
+    const biyos::EntryTimer timer(model.handle.env(), "model", "delete");
+    const std::vector<biyos::Index> renumbered = (core.*Delete)(chosen);
     if (map != nullptr)
     {
         std::ranges::copy(renumbered, map);

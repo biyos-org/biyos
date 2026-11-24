@@ -75,4 +75,14 @@ class Timer
     std::size_t node_;
 };
 
+class EntryTimer
+{
+  public:
+    EntryTimer(Env &env, StaticName module, StaticName name) : timer_(env, tree_, module, name) {}
+
+  private:
+    TimingTree tree_;
+    Timer timer_;
+};
+
 }
