@@ -10,6 +10,7 @@ from typing import (
 )
 
 from biyos._convert.integers import integer, whole
+from biyos._model.expression import Operand
 
 if TYPE_CHECKING:
     from biyos._model.model import Model
@@ -200,13 +201,14 @@ class Block(Generic[Item]):
         return type(self)(self._model, pos, n, self._gen)
 
 
-class Variable(View):
+class Variable(View, Operand):
     """One variable of a model, as indexing a ``Variables`` block gives.
 
     A view holds its model and its index, and passes as that index wherever
     its model takes an index of variables. Any other model refuses it as an
     index. A view made before a deletion from its model raises ``ValueError``
-    when used, as its index may name another variable.
+    when used, as its index may name another variable. Arithmetic on views
+    builds an ``Expression``.
     """
 
     __slots__ = ()

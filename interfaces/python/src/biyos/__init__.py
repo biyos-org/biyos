@@ -22,6 +22,7 @@ from biyos._model.blocks import (
     Variables,
 )
 from biyos._model.callbacks import CallbackRequest
+from biyos._model.expression import Expression
 from biyos._model.model import (
     ConeKind,
     FileFormat,
@@ -49,6 +50,7 @@ __all__ = [
     "Event",
     "EventKind",
     "EventLevel",
+    "Expression",
     "FileFormat",
     "Function",
     "Functions",
