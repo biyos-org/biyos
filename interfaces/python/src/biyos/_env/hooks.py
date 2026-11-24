@@ -8,7 +8,7 @@ from biyos._env.event import Event, deliver
 from biyos._env.relay import Relay
 
 if TYPE_CHECKING:
-    from biyos._model import Model
+    from biyos._model.model import Model
 
 
 def _deliver(

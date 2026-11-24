@@ -18,7 +18,7 @@ from biyos._error import Error, check
 from biyos._versions import Versions, version_text
 
 if TYPE_CHECKING:
-    from biyos._model import Model
+    from biyos._model.model import Model
 
 
 def _name(name: str) -> bytes:

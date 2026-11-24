@@ -6,7 +6,7 @@ from operator import index
 import pytest
 
 import biyos
-from biyos import ConeKind, EventKind, EventLevel, _model
+from biyos import ConeKind, EventKind, EventLevel
 from biyos._capi import lib
 from number import Number
 from refusal import LOCKED, refusal
@@ -252,7 +252,7 @@ def test_stale(model, monkeypatch):
 
 def test_outside(model, monkeypatch):
     add_sample(model)
-    limit(monkeypatch, _model, 1)
+    limit(monkeypatch, biyos._model.model, 1)
     message = refusal(model.getcone, range(2**31 - 1))
     assert message == "invalid argument: cone 2: unknown"
     message = refusal(model.getconeprm, range(1, 2**31 - 1))

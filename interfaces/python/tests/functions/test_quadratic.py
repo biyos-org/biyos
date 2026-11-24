@@ -6,7 +6,7 @@ from random import Random
 import pytest
 
 import biyos
-from biyos import EventKind, EventLevel, _model
+from biyos import EventKind, EventLevel
 from biyos._capi import lib
 from number import Growing, Number
 from refusal import LOCKED, refusal
@@ -230,7 +230,7 @@ def test_stale(model, monkeypatch):
 
 
 def test_outside(model, monkeypatch):
-    limit(monkeypatch, _model, 1)
+    limit(monkeypatch, biyos._model.model, 1)
     message = refusal(model.getquadterm, range(2**31 - 1))
     assert message == "invalid argument: function 3: unknown"
     message = refusal(model.getquadterm, range(-1, 3))

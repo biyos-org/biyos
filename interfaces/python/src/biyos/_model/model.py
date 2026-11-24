@@ -18,27 +18,6 @@ from os import PathLike, fspath
 from typing import Any, NoReturn, SupportsIndex
 
 from biyos import _capi
-from biyos._blocks import (
-    SOS,
-    Block,
-    Complement,
-    Complements,
-    Cone,
-    Cones,
-    Constraint,
-    Constraints,
-    Function,
-    Functions,
-    Indicator,
-    Indicators,
-    Objective,
-    Objectives,
-    SOSs,
-    Variable,
-    Variables,
-    index_of,
-)
-from biyos._callbacks import Callbacks, Caller, checked, data_at
 from biyos._capi import lib
 from biyos._convert.arrays import (
     doubles,
@@ -59,7 +38,28 @@ from biyos._env.hooks import Hooks, checked_hook
 from biyos._env.options import OptionSource
 from biyos._env.values import Value
 from biyos._error import Error
-from biyos._operators import Operator, node_values, postfix_values
+from biyos._model.blocks import (
+    SOS,
+    Block,
+    Complement,
+    Complements,
+    Cone,
+    Cones,
+    Constraint,
+    Constraints,
+    Function,
+    Functions,
+    Indicator,
+    Indicators,
+    Objective,
+    Objectives,
+    SOSs,
+    Variable,
+    Variables,
+    index_of,
+)
+from biyos._model.callbacks import Callbacks, Caller, checked, data_at
+from biyos._model.operators import Operator, node_values, postfix_values
 
 
 class VariableKind(IntEnum):

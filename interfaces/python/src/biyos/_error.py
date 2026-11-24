@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from biyos._capi import OK, ErrorRecord, lib
 
 if TYPE_CHECKING:
-    from biyos._model import Model
+    from biyos._model.model import Model
 
 
 class Error(Exception):

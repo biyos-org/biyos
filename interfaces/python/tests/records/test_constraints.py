@@ -6,7 +6,7 @@ from operator import index
 import pytest
 
 import biyos
-from biyos import EventKind, EventLevel, _model
+from biyos import EventKind, EventLevel
 from biyos._capi import lib
 from number import Number
 from refusal import LOCKED, refusal
@@ -168,7 +168,7 @@ def test_stale(model, monkeypatch):
 
 
 def test_outside(model, monkeypatch):
-    limit(monkeypatch, _model, 1)
+    limit(monkeypatch, biyos._model.model, 1)
     message = refusal(model.getcon, range(2**31 - 1))
     assert message == "invalid argument: constraint 0: unknown"
     message = refusal(model.getcon, range(1, 2**31 - 1))

@@ -1,4 +1,9 @@
-from biyos._blocks import (
+from biyos._capi import version
+from biyos._env.env import Env
+from biyos._env.event import Event, EventKind, EventLevel
+from biyos._env.options import Checking, Masks, OptionSource
+from biyos._error import Error
+from biyos._model.blocks import (
     SOS,
     Complement,
     Complements,
@@ -16,13 +21,8 @@ from biyos._blocks import (
     Variable,
     Variables,
 )
-from biyos._callbacks import CallbackRequest
-from biyos._capi import version
-from biyos._env.env import Env
-from biyos._env.event import Event, EventKind, EventLevel
-from biyos._env.options import Checking, Masks, OptionSource
-from biyos._error import Error
-from biyos._model import (
+from biyos._model.callbacks import CallbackRequest
+from biyos._model.model import (
     ConeKind,
     FileFormat,
     Model,
@@ -30,7 +30,7 @@ from biyos._model import (
     SOSKind,
     VariableKind,
 )
-from biyos._operators import Operator
+from biyos._model.operators import Operator
 from biyos._versions import Versions
 
 __all__ = [
