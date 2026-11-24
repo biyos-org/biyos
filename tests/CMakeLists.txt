@@ -23,33 +23,34 @@ function(biyos_add_test name)
 endfunction()
 
 biyos_add_test(test_core
-    core/test_check.cpp
-    core/test_clock.cpp
-    core/test_deliveries.cpp
-    core/test_env.cpp
-    core/test_error.cpp
-    core/test_events.cpp
-    core/test_flags.cpp
-    core/test_format.cpp
-    core/test_hooks.cpp
-    core/test_name.cpp
-    core/test_options.cpp
-    core/test_records.cpp
-    core/test_room.cpp
-    core/test_settings.cpp
-    core/test_status.cpp
-    core/test_strings.cpp
-    core/test_thread.cpp
-    core/test_timer.cpp
-    core/test_tolerances.cpp
-    core/test_usage.cpp
-    core/test_utf8.cpp
-    core/test_version.cpp)
+    core/env/test_env.cpp
+    core/env/test_error.cpp
+    core/env/test_status.cpp
+    core/env/test_thread.cpp
+    core/env/test_version.cpp
+    core/events/test_deliveries.cpp
+    core/events/test_events.cpp
+    core/events/test_format.cpp
+    core/events/test_hooks.cpp
+    core/events/test_records.cpp
+    core/memory/test_room.cpp
+    core/memory/test_usage.cpp
+    core/options/test_check.cpp
+    core/options/test_flags.cpp
+    core/options/test_options.cpp
+    core/options/test_settings.cpp
+    core/options/test_tolerances.cpp
+    core/text/test_name.cpp
+    core/text/test_strings.cpp
+    core/text/test_utf8.cpp
+    core/timing/test_clock.cpp
+    core/timing/test_timer.cpp)
+target_include_directories(test_core PRIVATE core)
 target_link_libraries(test_core PRIVATE biyos_internal)
 
 biyos_add_test(test_allocation
     core/allocations.cpp
-    core/test_allocation.cpp
+    core/memory/test_allocation.cpp
     expr/test_allocation.cpp
     model/test_allocation.cpp)
 target_include_directories(test_allocation PRIVATE core)
