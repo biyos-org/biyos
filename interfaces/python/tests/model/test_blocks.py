@@ -6,7 +6,6 @@ import biyos
 from biyos._convert.arrays import indices_of
 from number import Number
 
-INFINITY = float("inf")
 STALE = "the block predates a deletion from its model"
 GONE = "the variable predates a deletion from its model"
 
@@ -84,7 +83,7 @@ def test_view(model):
     model.setvarbnd(x[1:], ub=[5.0, 6.0])
     model.setvarbnd([0, x[2]], lb=[-1.0, -2.0])
     found = model.getvar()[1:]
-    assert found == ([-1.0, 0.0, -2.0], [INFINITY, 5.0, 6.0])
+    assert found == ([-1.0, 0.0, -2.0], [biyos.inf, 5.0, 6.0])
     assert model.getvar(x[2:])[1] == [-2.0]
 
 
@@ -121,7 +120,7 @@ def test_closed_block(env, model):
     model.addvar(3)
     with pytest.raises(ValueError, match="idx is a block of another"):
         model.setvarbnd(x, None, [1.0] * 3)
-    assert model.getvar()[2] == [INFINITY] * 3
+    assert model.getvar()[2] == [biyos.inf] * 3
 
 
 def test_stale(model):
@@ -147,7 +146,7 @@ def test_gone(model):
         index(next(views))
     with pytest.raises(ValueError, match=GONE):
         model.setvarbnd([view], [0.0], [1.0])
-    assert model.getvar()[1] == [-INFINITY] * 3
+    assert model.getvar()[1] == [-biyos.inf] * 3
 
 
 def test_fresh(model):
@@ -157,7 +156,7 @@ def test_fresh(model):
     assert len(x) == 3
     assert indices(x[1:]) == [2, 3]
     model.setvarbnd(x[1:], [0.0, 0.0])
-    assert model.getvar()[1] == [-INFINITY, -INFINITY, 0.0, 0.0]
+    assert model.getvar()[1] == [-biyos.inf, -biyos.inf, 0.0, 0.0]
 
 
 def test_empty(model):
@@ -186,7 +185,7 @@ def test_subclass(model):
     model.addvar(3)
     model.setvarbnd([Mine(model, 1, model._gen)], [3.0])
     model.setvarbnd(Ours(model, 2, 1, model._gen), [4.0])
-    assert model.getvar()[1] == [-INFINITY, 3.0, 4.0]
+    assert model.getvar()[1] == [-biyos.inf, 3.0, 4.0]
 
 
 def test_on(model):
@@ -197,10 +196,10 @@ def test_on(model):
     assert type(y) is biyos.Variables
     assert indices(y) == [1, 2, 3]
     copy.setvarbnd(y[1:], None, [5.0, 6.0])
-    assert copy.getvar()[2] == [INFINITY, INFINITY, 5.0, 6.0]
+    assert copy.getvar()[2] == [biyos.inf, biyos.inf, 5.0, 6.0]
     with pytest.raises(ValueError, match="idx is a block of another"):
         model.setvarbnd(y, None, [1.0] * 3)
-    assert model.getvar()[2] == [INFINITY] * 4
+    assert model.getvar()[2] == [biyos.inf] * 4
     assert indices(x) == [1, 2, 3]
     copy.close()
 

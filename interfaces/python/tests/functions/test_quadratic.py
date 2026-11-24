@@ -12,7 +12,6 @@ from number import Growing, Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
 
-INFINITY = float("inf")
 LARGE = 1.0e308
 
 SAMPLE = (
@@ -323,7 +322,7 @@ def test_refused(model):
     assert message == "invalid argument: function 1: variable 3 is unknown"
     message = refusal(model.addquadterm, [1, 1], [0, 1], [1, 0], [1, 2])
     assert message == "invalid argument: function 1: pair (0, 1) is repeated"
-    message = refusal(model.addquadterm, [1], [2], [0], [INFINITY])
+    message = refusal(model.addquadterm, [1], [2], [0], [biyos.inf])
     assert message == (
         "invalid argument: function 1: coefficient of pair (2, 0) is infinity"
     )

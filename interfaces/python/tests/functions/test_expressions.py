@@ -8,7 +8,6 @@ from biyos._capi import lib
 from number import Number
 from refusal import LOCKED, refusal
 
-INFINITY = float("inf")
 
 OFF = [0, 8]
 CODE = [
@@ -300,7 +299,7 @@ def test_refused(model):
     for arguments, message in cases:
         assert refusal(model.addexpr, *arguments) == expression + message
     message = refusal(
-        model.addexpr, [0, 1], [Operator.CONSTANT], [0], [INFINITY]
+        model.addexpr, [0, 1], [Operator.CONSTANT], [0], [biyos.inf]
     )
     assert message == expression + "entry 0: constant is infinity"
     message = refusal(model.addnode, Operator.EXP, [x, x])

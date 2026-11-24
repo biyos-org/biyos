@@ -13,12 +13,11 @@ from refusal import LOCKED, refusal
 from sized import Room, limit
 from tolerance import CHECKS
 
-INFINITY = float("inf")
 NAN = float("nan")
 
 FUNCTIONS = [1, 0, 1]
-LOWER = [-1.0, -INFINITY, 2.0]
-UPPER = [1.0, INFINITY, 2.0]
+LOWER = [-1.0, -biyos.inf, 2.0]
+UPPER = [1.0, biyos.inf, 2.0]
 SAMPLE = (FUNCTIONS, LOWER, UPPER)
 
 
@@ -77,7 +76,7 @@ def test_defaults(model):
     model.addcon([0, 1])
     model.addcon([1], lb=[0.5])
     model.addcon([0], ub=[0.5])
-    low, high = -INFINITY, INFINITY
+    low, high = -biyos.inf, biyos.inf
     functions, lower, upper = model.getcon()
     assert functions == [0, 1, 1, 0]
     assert lower == [low, low, 0.5, low]
@@ -85,9 +84,9 @@ def test_defaults(model):
 
 
 def test_shared(model):
-    model.addcon([1, 1], [0.0, -INFINITY], [1.0, 3.0])
+    model.addcon([1, 1], [0.0, -biyos.inf], [1.0, 3.0])
     found = model.getcon()
-    assert found == ([1, 1], [0.0, -INFINITY], [1.0, 3.0])
+    assert found == ([1, 1], [0.0, -biyos.inf], [1.0, 3.0])
     assert model.getnfun() == 2
 
 
@@ -128,7 +127,7 @@ def test_views(env, model):
     model.setconbnd([c[2]], [5.0], [6.0])
     model.setconbnd(c[:2], ub=[7.0, 8.0])
     found = model.getcon(c[1:])
-    assert found == ([0, 1], [-INFINITY, 5.0], [8.0, 6.0])
+    assert found == ([0, 1], [-biyos.inf, 5.0], [8.0, 6.0])
     assert model.getncon() == 3
 
 
@@ -188,7 +187,7 @@ def test_bounds(model):
     model.addcon([0, 1])
     model.setconbnd([1, 0], lb=[1.0, 2.0])
     model.setconbnd([1], ub=[3.0])
-    assert model.getcon() == ([0, 1], [2.0, 1.0], [INFINITY, 3.0])
+    assert model.getcon() == ([0, 1], [2.0, 1.0], [biyos.inf, 3.0])
     model.setconbnd([0, 0], [5.0, 6.0], [7.0, 8.0])
     assert model.getcon([0]) == ([0], [6.0], [8.0])
 
@@ -196,7 +195,7 @@ def test_bounds(model):
 def test_listed(env, model):
     c = add_sample(model)
     found = model.getconbnd([2, 0, 2, 1])
-    assert found == ([2.0, -1.0, 2.0, -INFINITY], [2.0, 1.0, 2.0, INFINITY])
+    assert found == ([2.0, -1.0, 2.0, -biyos.inf], [2.0, 1.0, 2.0, biyos.inf])
     assert model.getconbnd(c[1:]) == (LOWER[1:], UPPER[1:])
     assert model.getconbnd([]) == ([], [])
     idx = [1, 0, 1]
@@ -223,13 +222,13 @@ def test_refused(model):
     assert message == "invalid argument: constraint 4: function 9 is unknown"
     message = refusal(model.addcon, [0], [NAN])
     assert message == "invalid argument: constraint 3: lower bound is NaN"
-    message = refusal(model.addcon, [0], None, [-INFINITY])
+    message = refusal(model.addcon, [0], None, [-biyos.inf])
     assert message == (
         "invalid argument: constraint 3: upper bound is minus infinity"
     )
     message = refusal(model.setconbnd, [3], [0.0], [1.0])
     assert message == "invalid argument: constraint 3: unknown"
-    message = refusal(model.setconbnd, [0], [INFINITY])
+    message = refusal(model.setconbnd, [0], [biyos.inf])
     assert message == "invalid argument: constraint 0: lower bound is infinity"
     message = refusal(model.getcon, range(4, 5))
     assert message == "invalid argument: constraint 4: unknown"
@@ -275,7 +274,7 @@ def test_locked(env, model):
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [LOCKED, LOCKED, SAMPLE, ([-INFINITY], [INFINITY])]
+    assert seen == [LOCKED, LOCKED, SAMPLE, ([-biyos.inf], [biyos.inf])]
     assert model.getncon() == 3
 
 

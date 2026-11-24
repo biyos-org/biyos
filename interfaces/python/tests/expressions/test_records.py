@@ -3,7 +3,6 @@ import pytest
 import biyos
 from biyos import ObjectiveSense, Operator
 
-INFINITY = float("inf")
 STALE = "the variable predates a deletion from its model"
 VAR = Operator.VARIABLE
 CONST = Operator.CONSTANT
@@ -217,18 +216,18 @@ def bounds(model, cons):
 def test_less(model, x):
     cons = model.addcon(x[0] <= x[1])
     assert type(cons) is biyos.Constraints
-    assert bounds(model, cons) == (([0, 1], [1.0, -1.0]), [-INFINITY], [0.0])
+    assert bounds(model, cons) == (([0, 1], [1.0, -1.0]), [-biyos.inf], [0.0])
 
 
 def test_greater(model, x):
     cons = model.addcon(x[0] >= x[1])
-    assert bounds(model, cons) == (([0, 1], [1.0, -1.0]), [0.0], [INFINITY])
+    assert bounds(model, cons) == (([0, 1], [1.0, -1.0]), [0.0], [biyos.inf])
 
 
 def test_reversed(model, x):
     cons = model.addcon([1 <= x[0] + x[1], x[0] + x[1] >= 1])
     terms = ([0, 1, 0, 1], [1.0, 1.0, 1.0, 1.0])
-    assert bounds(model, cons) == (terms, [1.0, 1.0], [INFINITY] * 2)
+    assert bounds(model, cons) == (terms, [1.0, 1.0], [biyos.inf] * 2)
 
 
 def test_equal(model, x):

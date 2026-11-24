@@ -20,4 +20,4 @@ with biyos.Env() as env:
         shared = model.getopt("maxtime")
         source = model.getoptsrc("maxtime")
         print("own", own, "shared", shared, "source", source.name)
-        assert source is biyos.OptionSource.ENVIRONMENT
+        assert source is biyos.OptionSource.ENV

@@ -7,14 +7,13 @@ import biyos
 from biyos import EventKind, EventLevel
 from refusal import LOCKED, refusal
 
-INFINITY = float("inf")
 NAN = float("nan")
 UNSET = ([None] * 3, [None] * 3)
 
 BOUNDED = [0, 1, 2]
 PARTNERS = [1, 1, 0]
-LOWER = [0.0, -1.0, -INFINITY]
-UPPER = [INFINITY, 2.0, INFINITY]
+LOWER = [0.0, -1.0, -biyos.inf]
+UPPER = [biyos.inf, 2.0, biyos.inf]
 SAMPLE = (BOUNDED, PARTNERS, LOWER, UPPER)
 
 
@@ -65,13 +64,13 @@ def test_defaults(model):
         [0, 1, 2],
         [1, 0, 2],
         [0.0, 0.0, 0.0],
-        [INFINITY, INFINITY, 1.0],
+        [biyos.inf, biyos.inf, 1.0],
     )
 
 
 def test_shared(model):
     model.addcon([1], [0.0], [2.0])
-    model.addccon([1, 1], [1, 2], [-INFINITY, 0.0])
+    model.addccon([1, 1], [1, 2], [-biyos.inf, 0.0])
     assert model.getcon() == ([1], [0.0], [2.0])
     assert model.getccon()[:2] == ([1, 1], [1, 2])
     assert model.getnfun() == 3
@@ -82,7 +81,7 @@ def test_bounds(model):
     model.setcconbnd([1, 0], lb=[2.0, 3.0])
     model.setcconbnd(range(2, 3), ub=[5.0])
     found = model.getcconbnd(range(3))
-    assert found == ([3.0, 2.0, -INFINITY], [INFINITY, 2.0, 5.0])
+    assert found == ([3.0, 2.0, -biyos.inf], [biyos.inf, 2.0, 5.0])
     assert model.getccon()[:2] == (BOUNDED, PARTNERS)
 
 
@@ -106,7 +105,7 @@ def test_views(env, model):
     f = model.addfun(1)
     x = model.addvar(1)
     model.addccon(f, [f[0]])
-    assert model.getccon([3]) == ([3], [3], [0.0], [INFINITY])
+    assert model.getccon([3]) == ([3], [3], [0.0], [biyos.inf])
     other = biyos.Model(env)
     g = other.addfun(1)
     d = other.addccon(g, g)
@@ -118,7 +117,7 @@ def test_views(env, model):
         model.setcconbnd([d[0]], [0.0])
     with pytest.raises(TypeError, match="of functions, not complements"):
         model.getccontol(f)
-    assert model.getcconbnd(c[1:]) == ([-1.0, -INFINITY], [2.0, INFINITY])
+    assert model.getcconbnd(c[1:]) == ([-1.0, -biyos.inf], [2.0, biyos.inf])
     other.close()
 
 
@@ -132,13 +131,13 @@ def test_refused(model):
     assert message == "invalid argument: complement 3: lower bound is NaN"
     message = refusal(model.addccon, [0], None)
     assert message == "invalid argument: argument 'funidx2': is null"
-    message = refusal(model.setcconbnd, [0], [INFINITY])
+    message = refusal(model.setcconbnd, [0], [biyos.inf])
     assert message == "invalid argument: complement 0: lower bound is infinity"
     message = refusal(model.setccontol, [1], [NAN])
     assert message == (
         "invalid argument: complement 1: absolute tolerance is NaN"
     )
-    message = refusal(model.setccontol, [1], None, [INFINITY])
+    message = refusal(model.setccontol, [1], None, [biyos.inf])
     assert message == (
         "invalid argument: complement 1: relative tolerance is infinity"
     )

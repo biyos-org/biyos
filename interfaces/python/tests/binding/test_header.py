@@ -15,7 +15,7 @@ VARIABLES = {
 
 SOURCES = {
     "BIYOS_OPTSRC_MDL": biyos.OptionSource.MODEL,
-    "BIYOS_OPTSRC_ENV": biyos.OptionSource.ENVIRONMENT,
+    "BIYOS_OPTSRC_ENV": biyos.OptionSource.ENV,
     "BIYOS_OPTSRC_DEFAULT": biyos.OptionSource.DEFAULT,
 }
 
@@ -128,6 +128,10 @@ def test_sources():
 
 def test_ok():
     assert _header.BIYOS_OK == _capi.OK
+
+
+def test_infinity():
+    assert _header.BIYOS_INF == biyos.inf
 
 
 def test_masks():

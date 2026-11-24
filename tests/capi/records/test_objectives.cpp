@@ -16,8 +16,6 @@ namespace
 
 using biyos::test::Env;
 using biyos::test::Model;
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
 
 struct Records
@@ -50,7 +48,7 @@ const Records kSample{
     .senses = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MIN},
     .priorities = {2, -1, 2},
     .weights = {0.5, 1.0, 3.0},
-    .absolute = {0.0, 1.5, kInfinity},
+    .absolute = {0.0, 1.5, BIYOS_INF},
     .relative = {0.25, 0.0, 0.0},
 };
 
@@ -366,7 +364,7 @@ TEST(CApiTest, NullSetters)
     const int senses[] = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN};
     const int priorities[] = {-5, 6};
     const double weights[] = {4.0, 8.0};
-    const double absolute[] = {kInfinity, 0.125};
+    const double absolute[] = {BIYOS_INF, 0.125};
     const double relative[] = {1.0, 0.75};
     EXPECT_EQ(BIYOS_setobjsensesp(held, 2, indices, senses), BIYOS_OK);
     EXPECT_EQ(BIYOS_setobjpriosp(held, 2, indices, priorities), BIYOS_OK);
@@ -379,7 +377,7 @@ TEST(CApiTest, NullSetters)
         .senses = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX},
         .priorities = {6, -1, -5},
         .weights = {0.5, 1.0, 4.0},
-        .absolute = {0.125, 1.5, kInfinity},
+        .absolute = {0.125, 1.5, BIYOS_INF},
         .relative = {0.25, 0.0, 1.0},
     };
     expect_records(read_all(model), wanted);
@@ -415,7 +413,7 @@ TEST(CApiTest, ObjectiveRange)
         .senses = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MIN},
         .priorities = {-1, 2},
         .weights = {1.0, 3.0},
-        .absolute = {1.5, kInfinity},
+        .absolute = {1.5, BIYOS_INF},
         .relative = {0.0, 0.0},
     };
     expect_records(read_range(model, 1, 2), wanted);
@@ -463,7 +461,8 @@ TEST(CApiTest, RefusedObjectives)
     EXPECT_EQ(env.message(), "invalid argument: objective 0: sense 0 is unknown");
     EXPECT_EQ(BIYOS_setobjtolsp(held, 1, &zero, nullptr, &negative), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: relative tolerance -1 is negative");
-    EXPECT_EQ(BIYOS_setobjcoefsp(held, 1, &zero, &kInfinity), BIYOS_ERR_BADARG);
+    const double infinite = BIYOS_INF;
+    EXPECT_EQ(BIYOS_setobjcoefsp(held, 1, &zero, &infinite), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: weight is infinity");
     EXPECT_EQ(get_with(held, 2, 2, {}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 3: unknown");
@@ -507,7 +506,7 @@ TEST(CApiTest, ListedObjectives)
         .senses = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MIN},
         .priorities = {2, 2, 2, -1},
         .weights = {3.0, 0.5, 3.0, 1.0},
-        .absolute = {kInfinity, 0.0, kInfinity, 1.5},
+        .absolute = {BIYOS_INF, 0.0, BIYOS_INF, 1.5},
         .relative = {0.0, 0.25, 0.0, 0.0},
     };
     expect_records(read_listed(model, indices), wanted);
@@ -526,7 +525,7 @@ TEST(CApiTest, ObjectiveSetters)
     const int sense[] = {BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MAX};
     const int priorities[] = {5, -3, 7};
     const double coefficients[] = {2.0, 4.0, 8.0};
-    const double atol[] = {0.5, kInfinity, 1.0};
+    const double atol[] = {0.5, BIYOS_INF, 1.0};
     const double rtol[] = {0.125, 0.25, 0.0};
     ASSERT_EQ(BIYOS_setobjsensesp(held, 3, indices, sense), BIYOS_OK);
     ASSERT_EQ(BIYOS_setobjpriosp(held, 3, indices, priorities), BIYOS_OK);
@@ -537,7 +536,7 @@ TEST(CApiTest, ObjectiveSetters)
         .senses = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MAX},
         .priorities = {7, -3, 7},
         .weights = {8.0, 4.0, 8.0},
-        .absolute = {1.0, kInfinity, 1.0},
+        .absolute = {1.0, BIYOS_INF, 1.0},
         .relative = {0.0, 0.25, 0.0},
     };
     expect_records(read_listed(model, {2, 0, 2}), listed);
@@ -552,7 +551,7 @@ TEST(CApiTest, ObjectiveSetters)
         .senses = {BIYOS_OBJSENSE_MAX, BIYOS_OBJSENSE_MIN, BIYOS_OBJSENSE_MAX},
         .priorities = {-3, -1, 7},
         .weights = {4.0, 1.0, 8.0},
-        .absolute = {kInfinity, 1.5, 0.5},
+        .absolute = {BIYOS_INF, 1.5, 0.5},
         .relative = {0.25, 0.0, 0.0},
     };
     expect_records(read_all(model), wanted);
@@ -575,7 +574,7 @@ TEST(CApiTest, ObjectiveNulls)
     EXPECT_EQ(BIYOS_getobjtolsp(held, 2, indices, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_getobjtolsp(held, 2, indices, atol, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_getobjtolsp(held, 1, indices, nullptr, rtol), BIYOS_OK);
-    EXPECT_EQ(bits_of({atol[0], atol[1]}), bits_of({1.5, kInfinity}));
+    EXPECT_EQ(bits_of({atol[0], atol[1]}), bits_of({1.5, BIYOS_INF}));
     EXPECT_EQ(bits_of({rtol[0], rtol[1]}), bits_of({0.0, -9.0}));
     EXPECT_EQ(BIYOS_getobjsensesp(held, 0, nullptr, found), BIYOS_OK);
     EXPECT_EQ(BIYOS_getobjpriosp(held, 0, nullptr, found), BIYOS_OK);
@@ -616,7 +615,8 @@ TEST(CApiTest, ObjectiveRefusals)
     EXPECT_EQ(env.message(), "invalid argument: objective 0: sense 0 is unknown");
     EXPECT_EQ(BIYOS_setobjcoefsp(held, 2, indices, coefficients), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: weight -1 is not positive");
-    EXPECT_EQ(BIYOS_setobjcoefsp(held, 1, indices, &kInfinity), BIYOS_ERR_BADARG);
+    const double infinite = BIYOS_INF;
+    EXPECT_EQ(BIYOS_setobjcoefsp(held, 1, indices, &infinite), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 1: weight is infinity");
     EXPECT_EQ(BIYOS_setobjtolsp(held, 2, indices, atol, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: absolute tolerance -1 is negative");
@@ -636,11 +636,11 @@ TEST(CApiTest, NewTolerances)
     EXPECT_EQ(start, 0);
     expect_records(read_all(model), defaults({0, 0}));
     const BIYOS_index indices[] = {1, 0};
-    const double atol[] = {0.5, kInfinity};
+    const double atol[] = {0.5, BIYOS_INF};
     const double rtol[] = {0.25, 0.0};
     ASSERT_EQ(BIYOS_setobjtolsp(model.get(), 2, indices, atol, rtol), BIYOS_OK);
     Records wanted = defaults({0, 0});
-    wanted.absolute = {kInfinity, 0.5};
+    wanted.absolute = {BIYOS_INF, 0.5};
     wanted.relative = {0.0, 0.25};
     expect_records(read_all(model), wanted);
     int found[] = {-1, -1};
