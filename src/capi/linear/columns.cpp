@@ -2,7 +2,7 @@
 
 #include "capi/arrays.hpp"
 #include "capi/entry.hpp"
-#include "capi/selection.hpp"
+#include "capi/model/selection.hpp"
 #include "core/index.hpp"
 #include "core/timing/timer.hpp"
 #include "model/checks.hpp"

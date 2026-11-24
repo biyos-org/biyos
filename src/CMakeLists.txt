@@ -126,30 +126,30 @@ biyos_set_warnings(biyos_internal)
 
 add_library(biyos
     capi/arrays.cpp
-    capi/callbacks.cpp
-    capi/columns.cpp
-    capi/complements.cpp
-    capi/cones.cpp
-    capi/constraints.cpp
-    capi/deletion.cpp
-    capi/env.cpp
-    capi/events.cpp
-    capi/expressions.cpp
-    capi/files.cpp
-    capi/format.cpp
-    capi/functions.cpp
-    capi/indicators.cpp
-    capi/linear.cpp
-    capi/model.cpp
-    capi/names.cpp
-    capi/objectives.cpp
-    capi/options.cpp
-    capi/pairs.cpp
-    capi/quadratic.cpp
-    capi/rows.cpp
-    capi/selection.cpp
-    capi/sos.cpp
-    capi/version.cpp)
+    capi/env/env.cpp
+    capi/env/events.cpp
+    capi/env/format.cpp
+    capi/env/options.cpp
+    capi/env/version.cpp
+    capi/linear/columns.cpp
+    capi/linear/functions.cpp
+    capi/linear/linear.cpp
+    capi/linear/rows.cpp
+    capi/model/deletion.cpp
+    capi/model/files.cpp
+    capi/model/model.cpp
+    capi/model/names.cpp
+    capi/model/selection.cpp
+    capi/nonlinear/callbacks.cpp
+    capi/nonlinear/expressions.cpp
+    capi/nonlinear/pairs.cpp
+    capi/nonlinear/quadratic.cpp
+    capi/records/complements.cpp
+    capi/records/cones.cpp
+    capi/records/constraints.cpp
+    capi/records/indicators.cpp
+    capi/records/objectives.cpp
+    capi/records/sos.cpp)
 add_library(biyos::biyos ALIAS biyos)
 
 target_include_directories(biyos PUBLIC

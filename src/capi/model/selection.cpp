@@ -1,4 +1,4 @@
-#include "capi/selection.hpp"
+#include "capi/model/selection.hpp"
 
 #include "capi/arrays.hpp"
 #include "core/index.hpp"
