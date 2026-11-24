@@ -356,3 +356,24 @@ TEST(CharsTest, Long)
     expect_value("1" + std::string(1100, '0') + "e-1200", 1e-100);
     expect_value("144115188075858000." + std::string(900, '0') + "1", 0x1.0000000000043p+57);
 }
+
+TEST(CharsTest, Forward)
+{
+    const std::array<std::string_view, 6> texts = {"1.5e3x", "-0", "+1", "1e400", "5e-324", ".e1"};
+    for (const std::string_view text : texts)
+    {
+        double value = kUntouched;
+        double decimal = kUntouched;
+        const char *last = text.data() + text.size();
+        const std::from_chars_result result = biyos::text::from_chars(text.data(), last, value);
+        const std::from_chars_result expected =
+            biyos::text::from_decimal(text.data(), last, decimal);
+        if (result.ec != std::errc::result_out_of_range)
+        {
+            EXPECT_EQ(std::bit_cast<std::uint64_t>(value), std::bit_cast<std::uint64_t>(decimal))
+                << text;
+        }
+        EXPECT_EQ(result.ptr, expected.ptr) << text;
+        EXPECT_EQ(result.ec, expected.ec) << text;
+    }
+}

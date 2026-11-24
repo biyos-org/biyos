@@ -280,6 +280,15 @@ std::optional<double> magnitude_of(const Decimal &decimal) noexcept
 
 }
 
+std::from_chars_result from_chars(const char *first, const char *last, double &value) noexcept
+{
+#if defined(__cpp_lib_to_chars)
+    return std::from_chars(first, last, value);
+#else
+    return from_decimal(first, last, value);
+#endif
+}
+
 std::from_chars_result from_decimal(const char *first, const char *last, double &value) noexcept
 {
     const bool negative = first != last && *first == '-';
