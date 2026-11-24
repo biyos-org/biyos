@@ -1,13 +1,13 @@
-#include "expr/canonical.hpp"
+#include "expr/forms/canonical.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
+#include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/graph/uses.hpp"
-#include "expr/terms.hpp"
 
 #include <algorithm>
 #include <array>

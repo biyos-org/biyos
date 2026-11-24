@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/index.hpp"
+#include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/uses.hpp"
-#include "expr/terms.hpp"
 
 #include <vector>
 

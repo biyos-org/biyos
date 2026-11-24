@@ -2,7 +2,7 @@
 
 #include "core/index.hpp"
 #include "core/text/text.hpp"
-#include "expr/terms.hpp"
+#include "expr/forms/terms.hpp"
 #include "model/checks.hpp"
 
 #include <algorithm>

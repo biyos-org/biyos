@@ -1,4 +1,4 @@
-#include "expr/terms.hpp"
+#include "expr/forms/terms.hpp"
 
 #include <algorithm>
 #include <cstddef>

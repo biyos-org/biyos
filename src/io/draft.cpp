@@ -1,7 +1,7 @@
 #include "io/draft.hpp"
 
 #include "core/index.hpp"
-#include "expr/terms.hpp"
+#include "expr/forms/terms.hpp"
 #include "model/model.hpp"
 
 #include <cmath>

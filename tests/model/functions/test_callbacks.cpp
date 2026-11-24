@@ -1,6 +1,6 @@
 #include "biyos/biyos.h"
 #include "core/index.hpp"
-#include "expr/terms.hpp"
+#include "expr/forms/terms.hpp"
 #include "model/callbacks.hpp"
 #include "model/compare.hpp"
 #include "model/model.hpp"

@@ -3,8 +3,8 @@
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text/text.hpp"
+#include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
-#include "expr/terms.hpp"
 #include "model/checks.hpp"
 #include "model/renumber.hpp"
 

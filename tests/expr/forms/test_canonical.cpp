@@ -1,5 +1,5 @@
 #include "core/index.hpp"
-#include "expr/canonical.hpp"
+#include "expr/forms/canonical.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/graph/uses.hpp"
