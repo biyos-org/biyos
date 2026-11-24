@@ -10,7 +10,7 @@ The graph of a model is a directed acyclic graph. Each node applies an operator 
 
 Nodes are numbered in the order they are added, and a node is added only after its children, so the ids form a topological order, as in @fig-graph. A computation from the leaves up, such as evaluation, visits the nodes by increasing id, and a computation from the roots down, such as differentiation in reverse, by decreasing id. No node holds anything that depends on a point or a solve: values, derivatives and intervals live in arrays indexed by node id, so many evaluations can run on one graph at once.
 
-Sums and products take any number of children. A sum $c + \sum_k a_k e_k$ carries a constant and a coefficient for each child, and a product $c \prod_k e_k$ a coefficient. A sum of sums built in one expression is flattened into one sum, and a product of products into one product, unless the inner node is already stored for another use.
+Sums and products take any number of children. A sum $c + \sum_i a_i e_i$ carries a constant and a coefficient for each child, and a product $c \prod_i e_i$ a coefficient. A sum of sums built in one expression is flattened into one sum, and a product of products into one product, unless the inner node is already stored for another use.
 
 ## The operators {#sec-graph-operators}
 
@@ -20,8 +20,8 @@ The graph has 29 operators. Each is defined by the value `<cmath>` gives, and it
 | ------------ | ------------------------ | ------------------------ |
 | constant | $c$ | everywhere |
 | variable | $x_j$ | everywhere |
-| sum | $c + \sum_k a_k e_k$ | everywhere |
-| product | $c \prod_k e_k$ | everywhere |
+| sum | $c + \sum_i a_i e_i$ | everywhere |
+| product | $c \prod_i e_i$ | everywhere |
 | negation | $-e$ | everywhere |
 | division | $e_1 / e_2$ | $e_2 \ne 0$ |
 | power by a constant | $e^c$ | as for the power below, with $e_2 = c$ |
@@ -30,9 +30,9 @@ The graph has 29 operators. Each is defined by the value `<cmath>` gives, and it
 | logarithm | $\log e$ | $e > 0$ |
 | square root | $\sqrt{e}$ | $e \ge 0$ |
 | sine, cosine | $\sin e$, $\cos e$ | everywhere |
-| tangent | $\tan e$ | $e \ne \tfrac{\pi}{2} + k\pi$ |
+| tangent | $\tan e$ | $e \notin \tfrac{\pi}{2} + \pi\mathbb{Z}$ |
 | absolute value | $\lvert e \rvert$ | everywhere |
-| maximum, minimum | $\max_k e_k$, $\min_k e_k$ | everywhere |
+| maximum, minimum | $\max_i e_i$, $\min_i e_i$ | everywhere |
 | arc sine, arc cosine | $\arcsin e$, $\arccos e$ | $-1 \le e \le 1$ |
 | arc tangent | $\arctan e$ | everywhere |
 | hyperbolic sine, cosine, tangent | $\sinh e$, $\cosh e$, $\tanh e$ | everywhere |
