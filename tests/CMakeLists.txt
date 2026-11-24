@@ -120,6 +120,7 @@ biyos_add_test(test_io
     io/mps/test_mps.cpp
     io/mps/test_refusals.cpp
     io/mps/test_write.cpp)
+target_include_directories(test_io PRIVATE io/mps/utils)
 target_link_libraries(test_io PRIVATE biyos_internal)
 
 biyos_add_test(test_capi

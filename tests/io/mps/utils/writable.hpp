@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../model/sample.hpp"
+#include "../../../model/sample.hpp"
 
 #include "model/model.hpp"
 
