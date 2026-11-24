@@ -136,7 +136,7 @@ void add_items(const Model &model, BIYOS_index n)
     const std::vector<BIYOS_int> kinds(static_cast<std::size_t>(n), BIYOS_VARKND_BIN);
     const std::vector<BIYOS_int> values(static_cast<std::size_t>(n), 1);
     const Indices variables(static_cast<std::size_t>(n), 0);
-    const std::vector<BIYOS_int> sos_kinds(static_cast<std::size_t>(n), BIYOS_SOSKND_SOS1);
+    const std::vector<BIYOS_int> sos_kinds(static_cast<std::size_t>(n), BIYOS_SOSKND_ONE);
     ASSERT_EQ(BIYOS_addvar(held, n, kinds.data(), nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(held, n, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addcon(held, n, functions.data(), nullptr, nullptr, nullptr), BIYOS_OK);

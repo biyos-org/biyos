@@ -86,13 +86,13 @@ struct Indicator
 
 enum class SpecialOrderedSetKind
 {
-    Sos1 = BIYOS_SOSKND_SOS1,
-    Sos2 = BIYOS_SOSKND_SOS2,
+    One = BIYOS_SOSKND_ONE,
+    Two = BIYOS_SOSKND_TWO,
 };
 
 inline constexpr std::array kSpecialOrderedSetKinds{
-    SpecialOrderedSetKind::Sos1,
-    SpecialOrderedSetKind::Sos2,
+    SpecialOrderedSetKind::One,
+    SpecialOrderedSetKind::Two,
 };
 
 struct Member

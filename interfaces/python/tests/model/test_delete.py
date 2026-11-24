@@ -41,7 +41,7 @@ def build(model):
         "con": model.addcon(f),
         "obj": model.addobj(f),
         "ind": model.addind(x, [1, 0, 1], f),
-        "sos": model.addsos([biyos.SpecialOrderedSetKind.SOS1] * 3, starts, x),
+        "sos": model.addsos([biyos.SpecialOrderedSetKind.ONE] * 3, starts, x),
         "cone": model.addcone([biyos.ConeKind.NONNEGATIVE] * 3, starts, f),
         "ccon": model.addccon(f, [f[1], f[2], f[0]]),
     }
@@ -234,7 +234,7 @@ def variable_in_use(model, idx):
 def test_used_variable(model):
     x = model.addvar(4, [biyos.VariableKind.BINARY] * 4)
     f = model.addfun(1)
-    model.addsos([biyos.SpecialOrderedSetKind.SOS1], [0, 1], x[3:])
+    model.addsos([biyos.SpecialOrderedSetKind.ONE], [0, 1], x[3:])
     model.addind(x[2:3], [1], f)
     model.addvarnode(x[1])
     used = "in use: variable {}: used by {}"

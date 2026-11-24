@@ -28,7 +28,7 @@ struct SpecialOrderedSets
 };
 
 const SpecialOrderedSets kSample{
-    .kinds = {BIYOS_SOSKND_SOS2, BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS1},
+    .kinds = {BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE, BIYOS_SOSKND_ONE},
     .starts = {0, 3, 3, 5},
     .variables = {2, 0, 3, 1, 0},
     .weights = {3.0, -1.0, 2.5, 0.5, 1.5},
@@ -189,7 +189,7 @@ void change(const BIYOS_event *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
-    const int kind = BIYOS_SOSKND_SOS1;
+    const int kind = BIYOS_SOSKND_ONE;
     BIYOS_index n = 0;
     BIYOS_offset nnz = 0;
     note(attempt, BIYOS_addsos(model, 1, &kind, nullptr, nullptr, nullptr, nullptr));
@@ -218,7 +218,7 @@ TEST(CApiTest, FirstSet)
     const Model model(env);
     add_variables(model, 2);
     const SpecialOrderedSets two{
-        .kinds = {BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2},
+        .kinds = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO},
         .starts = {0, 1, 2},
         .variables = {0, 1},
         .weights = {1.0, 2.0},
@@ -241,14 +241,14 @@ TEST(CApiTest, DefaultWeights)
     const Env env;
     const Model model(env);
     add_variables(model, 3);
-    const int kinds[] = {BIYOS_SOSKND_SOS2, BIYOS_SOSKND_SOS1};
+    const int kinds[] = {BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE};
     const BIYOS_offset starts[] = {0, 3, 4};
     const BIYOS_index variables[] = {2, 0, 1, 1};
     BIYOS_model *held = model.get();
     ASSERT_EQ(BIYOS_addsos(held, 2, kinds, starts, variables, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addsos(held, 2, kinds, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const SpecialOrderedSets wanted{
-        .kinds = {BIYOS_SOSKND_SOS2, BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2, BIYOS_SOSKND_SOS1},
+        .kinds = {BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE},
         .starts = {0, 3, 4, 4, 4},
         .variables = {2, 0, 1, 1},
         .weights = {1.0, 2.0, 3.0, 1.0},
@@ -261,7 +261,7 @@ TEST(CApiTest, NullSets)
     const Env env;
     const Model model(env);
     add_variables(model, 2);
-    const int kind = BIYOS_SOSKND_SOS1;
+    const int kind = BIYOS_SOSKND_ONE;
     const BIYOS_offset starts[] = {0, 2};
     const double weights[] = {1.0, 2.0};
     BIYOS_model *held = model.get();
@@ -286,30 +286,30 @@ TEST(CApiTest, RefusedSets)
     add_sample(model);
     const double nan = std::numeric_limits<double>::quiet_NaN();
     SpecialOrderedSets two{
-        .kinds = {BIYOS_SOSKND_SOS1, 0},
+        .kinds = {BIYOS_SOSKND_ONE, 0},
         .starts = {0, 1, 2},
         .variables = {0, 1},
         .weights = {1.0, 2.0},
     };
     expect_refused(env, model, two, "set 4: kind 0 is unknown");
-    two.kinds = {BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2};
+    two.kinds = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO};
     two.starts = {1, 1, 2};
     expect_refused(env, model, two, "argument 'off': begins at 1, not 0");
     two.starts = {0, 2, 1};
     expect_refused(env, model, two, "argument 'off': decreases from 2 to 1 at entry 2");
     expect_refused(env,
                    model,
-                   single(BIYOS_SOSKND_SOS2, {4}, {1.0}),
+                   single(BIYOS_SOSKND_TWO, {4}, {1.0}),
                    "set 3: variable 4 is unknown");
     expect_refused(env,
                    model,
-                   single(BIYOS_SOSKND_SOS2, {-1}, {1.0}),
+                   single(BIYOS_SOSKND_TWO, {-1}, {1.0}),
                    "set 3: variable -1 is unknown");
-    const SpecialOrderedSets repeated = single(BIYOS_SOSKND_SOS1, {1, 0, 1}, {1.0, 2.0, 3.0});
+    const SpecialOrderedSets repeated = single(BIYOS_SOSKND_ONE, {1, 0, 1}, {1.0, 2.0, 3.0});
     expect_refused(env, model, repeated, "set 3: variable 1 is repeated");
-    const SpecialOrderedSets equal = single(BIYOS_SOSKND_SOS2, {0, 1, 2}, {2.0, 1.0, 2.0});
+    const SpecialOrderedSets equal = single(BIYOS_SOSKND_TWO, {0, 1, 2}, {2.0, 1.0, 2.0});
     expect_refused(env, model, equal, "set 3: weight 2 is repeated");
-    const SpecialOrderedSets undefined = single(BIYOS_SOSKND_SOS1, {0}, {nan});
+    const SpecialOrderedSets undefined = single(BIYOS_SOSKND_ONE, {0}, {nan});
     expect_refused(env, model, undefined, "set 3: weight of variable 0 is NaN");
     EXPECT_EQ(BIYOS_addsos(model.get(), -1, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
@@ -323,7 +323,7 @@ TEST(CApiTest, ListedSets)
     const Model model(env);
     add_sample(model);
     const SpecialOrderedSets wanted{
-        .kinds = {BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS2, BIYOS_SOSKND_SOS1, BIYOS_SOSKND_SOS1},
+        .kinds = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE, BIYOS_SOSKND_ONE},
         .starts = {0, 2, 5, 7, 7},
         .variables = {1, 0, 2, 0, 3, 1, 0},
         .weights = {0.5, 1.5, 3.0, -1.0, 2.5, 0.5, 1.5},
@@ -409,7 +409,7 @@ TEST(CApiTest, LockedSets)
     attempt.env = env.get();
     attempt.model = model.get();
     add_variables(model, 1);
-    const int kind = BIYOS_SOSKND_SOS2;
+    const int kind = BIYOS_SOSKND_TWO;
     ASSERT_EQ(BIYOS_addsos(model.get(), 1, &kind, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     BIYOS_index id = 0;
     const int message = BIYOS_EVTKND_MSG;

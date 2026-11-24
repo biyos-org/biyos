@@ -653,7 +653,7 @@ BIYOS_status read_special_ordered_sets(const BIYOS_model *model,
 void keep_special_ordered_sets(const Held &held, Span span, BIYOS_status wanted)
 {
     const auto n = static_cast<std::size_t>(count_of(held.model, BIYOS_getnsos) + 1);
-    const std::vector<int> kinds(n, BIYOS_SOSKND_SOS1);
+    const std::vector<int> kinds(n, BIYOS_SOSKND_ONE);
     const std::vector<BIYOS_offset> starts(n, 0);
     const std::vector<double> weights(n, 0.5);
     expect_kept(held, span, wanted, BIYOS_getnsosvarrg, starts);

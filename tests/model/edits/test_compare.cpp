@@ -174,7 +174,7 @@ TEST(CompareTest, IndicatorFields)
 TEST(CompareTest, SetFields)
 {
     Parts kind = sample();
-    kind.special_ordered_sets.kinds[1] = SpecialOrderedSetKind::Sos2;
+    kind.special_ordered_sets.kinds[1] = SpecialOrderedSetKind::Two;
     EXPECT_EQ(from_sample(kind), "set 1: kind 1 against 2");
     Parts variable = sample();
     variable.special_ordered_sets.members[3].variable = 2;
@@ -523,13 +523,13 @@ TEST(CompareTest, SetOrder)
 {
     Parts changed = sample();
     changed.objectives[1].priority = 1;
-    changed.special_ordered_sets.kinds[1] = SpecialOrderedSetKind::Sos2;
+    changed.special_ordered_sets.kinds[1] = SpecialOrderedSetKind::Two;
     EXPECT_EQ(from_sample(changed), "objective 1: priority 0 against 1");
     changed.objectives[1].priority = 0;
     changed.special_ordered_sets.members[3] = Member{.variable = 2, .weight = -2.0};
     changed.special_ordered_set_names.names[0] = "t";
     EXPECT_EQ(from_sample(changed), "set 1: kind 1 against 2");
-    changed.special_ordered_sets.kinds[1] = SpecialOrderedSetKind::Sos1;
+    changed.special_ordered_sets.kinds[1] = SpecialOrderedSetKind::One;
     EXPECT_EQ(from_sample(changed), "set 1: member 0: variable 0 against 2");
     changed.special_ordered_sets.members[3].variable = 0;
     EXPECT_EQ(from_sample(changed), "set 1: member 0: weight -1 against -2");

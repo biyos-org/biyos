@@ -69,7 +69,7 @@ Model sized(Index n)
         .upper = 1.0,
     };
     model.add_indicators(std::vector<Indicator>(size, indicator));
-    const std::vector<biyos::SpecialOrderedSetKind> kinds(size, biyos::SpecialOrderedSetKind::Sos1);
+    const std::vector<biyos::SpecialOrderedSetKind> kinds(size, biyos::SpecialOrderedSetKind::One);
     model.add_special_ordered_sets(kinds, starts, {});
     add_cones(model, size);
     const Complement complement{.function = 0, .lower = 0.0, .upper = 1.0, .multiplier = 0};

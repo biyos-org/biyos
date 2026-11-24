@@ -71,7 +71,7 @@ void change(Model &model)
     };
     model.set_indicators(std::span(&index, 1), std::span(&indicator, 1));
     model.add_indicators(std::span(&indicator, 1));
-    const SpecialOrderedSetKind kind = SpecialOrderedSetKind::Sos1;
+    const SpecialOrderedSetKind kind = SpecialOrderedSetKind::One;
     const std::vector<Offset> members{0, 2};
     const std::vector<Member> sos{{.variable = 3, .weight = 1.0}, {.variable = 1, .weight = 2.0}};
     model.add_special_ordered_sets(std::span(&kind, 1), members, sos);

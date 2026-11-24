@@ -73,7 +73,7 @@ void add_records(Parts &parts)
     });
     parts.indicators.push_back(
         {.variable = 1, .value = 1, .function = 0, .lower = 0.0, .upper = 2.0});
-    parts.special_ordered_sets.kinds.push_back(SpecialOrderedSetKind::Sos1);
+    parts.special_ordered_sets.kinds.push_back(SpecialOrderedSetKind::One);
     parts.special_ordered_sets.starts.push_back(7);
     parts.special_ordered_sets.members.insert(
         parts.special_ordered_sets.members.end(),
@@ -567,7 +567,7 @@ Parts spaced()
         {.variable = 2, .value = 1, .function = 0, .lower = -kInfinity, .upper = 1.0},
     };
     parts.special_ordered_sets = {
-        .kinds = {SpecialOrderedSetKind::Sos1},
+        .kinds = {SpecialOrderedSetKind::One},
         .starts = {0, 3},
         .members =
             {
@@ -631,7 +631,7 @@ void add_node(Model &model, Index variable)
 void add_member(Model &model, Index variable)
 {
     const std::array members{Member{.variable = variable, .weight = 1.0}};
-    model.add_special_ordered_sets(std::array{SpecialOrderedSetKind::Sos1},
+    model.add_special_ordered_sets(std::array{SpecialOrderedSetKind::One},
                                    std::array<Offset, 2>{0, 1},
                                    members);
 }

@@ -105,20 +105,20 @@ class ObjectiveSense(IntEnum):
 
 
 class SpecialOrderedSetKind(IntEnum):
-    """The kinds of special ordered sets, as ``BIYOS_SOSKND_SOS1`` and
-    ``BIYOS_SOSKND_SOS2`` number them.
+    """The kinds of special ordered sets, as ``BIYOS_SOSKND_ONE`` and
+    ``BIYOS_SOSKND_TWO`` number them.
 
     Attributes
     ----------
-    SOS1
+    ONE
         At most one member is nonzero.
-    SOS2
+    TWO
         At most two members are nonzero, adjacent in the order of their
         weights.
     """
 
-    SOS1 = 1
-    SOS2 = 2
+    ONE = 1
+    TWO = 2
 
 
 class ConeKind(IntEnum):
@@ -3181,7 +3181,7 @@ class Model:
 
         The set ``k`` holds the members from ``off[k]`` to ``off[k + 1] - 1``,
         kept in that order whatever their weights. In a set of kind
-        ``SOS1`` at most one member is nonzero; in a set of kind ``SOS2`` at
+        ``ONE`` at most one member is nonzero; in a set of kind ``TWO`` at
         most two are, adjacent in the order of their weights. A variable is
         a member of a set at most once and may belong to several sets.
 

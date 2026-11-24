@@ -158,7 +158,7 @@ inline Parts sample()
             },
         .special_ordered_sets =
             {
-                .kinds = {SpecialOrderedSetKind::Sos2, SpecialOrderedSetKind::Sos1},
+                .kinds = {SpecialOrderedSetKind::Two, SpecialOrderedSetKind::One},
                 .starts = {0, 3, 5},
                 .members =
                     {

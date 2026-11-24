@@ -47,7 +47,7 @@ SPREAD = {
 }
 
 CONES = [ConeKind.NONNEGATIVE] * 4
-SOSS = [SpecialOrderedSetKind.SOS1] * 4
+SOSS = [SpecialOrderedSetKind.ONE] * 4
 
 FORMS = {
     "block": "rg",

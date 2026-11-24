@@ -96,7 +96,7 @@ const std::vector<Member> kSecond{
 };
 
 const Given kBoth{
-    .kinds = {SpecialOrderedSetKind::Sos1, SpecialOrderedSetKind::Sos2},
+    .kinds = {SpecialOrderedSetKind::One, SpecialOrderedSetKind::Two},
     .starts = {0, 3, 5},
     .members =
         {
@@ -115,19 +115,19 @@ TEST(SpecialOrderedSetTest, Kinds)
     Model model = with_variables(4);
     add(model, kBoth);
     ASSERT_EQ(model.n_special_ordered_sets(), 2);
-    EXPECT_EQ(model.kind_of_special_ordered_set(0), SpecialOrderedSetKind::Sos1);
-    EXPECT_EQ(model.kind_of_special_ordered_set(1), SpecialOrderedSetKind::Sos2);
+    EXPECT_EQ(model.kind_of_special_ordered_set(0), SpecialOrderedSetKind::One);
+    EXPECT_EQ(model.kind_of_special_ordered_set(1), SpecialOrderedSetKind::Two);
     expect_members(model.members(0, 1), kFirst);
     expect_members(model.members(1, 1), kSecond);
-    EXPECT_EQ(static_cast<int>(SpecialOrderedSetKind::Sos1), 1);
-    EXPECT_EQ(static_cast<int>(SpecialOrderedSetKind::Sos2), 2);
+    EXPECT_EQ(static_cast<int>(SpecialOrderedSetKind::One), 1);
+    EXPECT_EQ(static_cast<int>(SpecialOrderedSetKind::Two), 2);
 }
 
 TEST(SpecialOrderedSetTest, Order)
 {
     Model model = with_variables(4);
-    add(model, one(SpecialOrderedSetKind::Sos2, kFirst));
-    add(model, one(SpecialOrderedSetKind::Sos2, kSecond));
+    add(model, one(SpecialOrderedSetKind::Two, kFirst));
+    add(model, one(SpecialOrderedSetKind::Two, kSecond));
     expect_members(model.members(0, 1), kFirst);
     expect_members(model.members(1, 1), kSecond);
     std::vector<Member> both = kFirst;
@@ -139,7 +139,7 @@ TEST(SpecialOrderedSetTest, Shared)
 {
     Model model = with_variables(4);
     add(model, kBoth);
-    add(model, one(SpecialOrderedSetKind::Sos1, {{.variable = 0, .weight = 1.0}}));
+    add(model, one(SpecialOrderedSetKind::One, {{.variable = 0, .weight = 1.0}}));
     EXPECT_EQ(model.members(0, 1)[1].variable, 0);
     EXPECT_EQ(model.members(1, 1)[1].variable, 0);
     EXPECT_EQ(model.members(2, 1)[0].variable, 0);
@@ -155,8 +155,8 @@ TEST(SpecialOrderedSetTest, Empty)
     };
     add(model, none);
     EXPECT_EQ(model.n_special_ordered_sets(), 0);
-    add(model, one(SpecialOrderedSetKind::Sos1, {}));
-    add(model, one(SpecialOrderedSetKind::Sos2, {{.variable = 0, .weight = 0.0}}));
+    add(model, one(SpecialOrderedSetKind::One, {}));
+    add(model, one(SpecialOrderedSetKind::Two, {{.variable = 0, .weight = 0.0}}));
     ASSERT_EQ(model.n_special_ordered_sets(), 2);
     EXPECT_TRUE(model.members(0, 1).empty());
     EXPECT_EQ(model.members(1, 1).size(), 1U);
@@ -171,19 +171,19 @@ TEST(SpecialOrderedSetTest, EqualWeights)
         {.variable = 1, .weight = 1.0},
         {.variable = 2, .weight = 2.0},
     };
-    EXPECT_EQ(add_refusal(model, one(SpecialOrderedSetKind::Sos2, equal)),
+    EXPECT_EQ(add_refusal(model, one(SpecialOrderedSetKind::Two, equal)),
               "invalid argument: set 0: weight 2 is repeated");
     const std::vector<Member> zeros{
         {.variable = 0, .weight = 0.0},
         {.variable = 1, .weight = -0.0},
     };
-    EXPECT_EQ(add_refusal(model, one(SpecialOrderedSetKind::Sos1, zeros)),
+    EXPECT_EQ(add_refusal(model, one(SpecialOrderedSetKind::One, zeros)),
               "invalid argument: set 0: weight 0 is repeated");
     const std::vector<Member> close{
         {.variable = 0, .weight = 1.0},
         {.variable = 1, .weight = std::nextafter(1.0, 2.0)},
     };
-    add(model, one(SpecialOrderedSetKind::Sos1, close));
+    add(model, one(SpecialOrderedSetKind::One, close));
     expect_members(model.members(0, 1), close);
 }
 
@@ -195,7 +195,7 @@ TEST(SpecialOrderedSetTest, Repeated)
         {.variable = 1, .weight = 2.0},
         {.variable = 3, .weight = 3.0},
     };
-    EXPECT_EQ(add_refusal(model, one(SpecialOrderedSetKind::Sos1, twice)),
+    EXPECT_EQ(add_refusal(model, one(SpecialOrderedSetKind::One, twice)),
               "invalid argument: set 0: variable 3 is repeated");
     EXPECT_EQ(model.n_special_ordered_sets(), 0);
 }
@@ -212,11 +212,10 @@ TEST(SpecialOrderedSetTest, UnknownKind)
 TEST(SpecialOrderedSetTest, UnknownVariable)
 {
     Model model = with_variables(2);
+    EXPECT_EQ(add_refusal(model, one(SpecialOrderedSetKind::One, {{.variable = 2, .weight = 1.0}})),
+              "invalid argument: set 0: variable 2 is unknown");
     EXPECT_EQ(
-        add_refusal(model, one(SpecialOrderedSetKind::Sos1, {{.variable = 2, .weight = 1.0}})),
-        "invalid argument: set 0: variable 2 is unknown");
-    EXPECT_EQ(
-        add_refusal(model, one(SpecialOrderedSetKind::Sos1, {{.variable = -1, .weight = 1.0}})),
+        add_refusal(model, one(SpecialOrderedSetKind::One, {{.variable = -1, .weight = 1.0}})),
         "invalid argument: set 0: variable -1 is unknown");
 }
 
@@ -224,15 +223,14 @@ TEST(SpecialOrderedSetTest, BadWeights)
 {
     Model model = with_variables(2);
     EXPECT_EQ(
-        add_refusal(model, one(SpecialOrderedSetKind::Sos1, {{.variable = 1, .weight = kNan}})),
+        add_refusal(model, one(SpecialOrderedSetKind::One, {{.variable = 1, .weight = kNan}})),
         "invalid argument: set 0: weight of variable 1 is NaN");
-    EXPECT_EQ(add_refusal(model,
-                          one(SpecialOrderedSetKind::Sos2, {{.variable = 0, .weight = kInfinity}})),
-              "invalid argument: set 0: weight of variable 0 is infinity");
     EXPECT_EQ(
-        add_refusal(model,
-                    one(SpecialOrderedSetKind::Sos2, {{.variable = 0, .weight = -kInfinity}})),
-        "invalid argument: set 0: weight of variable 0 is minus infinity");
+        add_refusal(model, one(SpecialOrderedSetKind::Two, {{.variable = 0, .weight = kInfinity}})),
+        "invalid argument: set 0: weight of variable 0 is infinity");
+    EXPECT_EQ(add_refusal(model,
+                          one(SpecialOrderedSetKind::Two, {{.variable = 0, .weight = -kInfinity}})),
+              "invalid argument: set 0: weight of variable 0 is minus infinity");
 }
 
 TEST(SpecialOrderedSetTest, Atomic)
@@ -264,7 +262,7 @@ TEST(SpecialOrderedSetTest, ReadRange)
 TEST(SpecialOrderedSetTest, Mismatch)
 {
     Model model = with_variables(1);
-    Given given = one(SpecialOrderedSetKind::Sos1, {{.variable = 0, .weight = 1.0}});
+    Given given = one(SpecialOrderedSetKind::One, {{.variable = 0, .weight = 1.0}});
     given.starts = {0, 2};
     failure([&] { add(model, given); }, biyos::ErrorKind::Internal);
     given.starts = {0};
@@ -283,7 +281,7 @@ TEST(SpecialOrderedSetTest, Room)
     const auto members = [&] { model.check_special_ordered_set_room(0, most); };
     EXPECT_EQ(failure(members, biyos::ErrorKind::NoMemory),
               "out of memory: model: no member offset left");
-    add(model, one(SpecialOrderedSetKind::Sos1, {}));
+    add(model, one(SpecialOrderedSetKind::One, {}));
     const auto full = [&] { model.check_special_ordered_set_room(biyos::kRoom, 0); };
     EXPECT_EQ(failure(full, biyos::ErrorKind::NoMemory), "out of memory: model: no set index left");
 }
@@ -305,7 +303,7 @@ TEST(SpecialOrderedSetTest, Copied)
     add(model, kBoth);
     Model copy = model;
     EXPECT_EQ(difference(model, copy), "");
-    add(copy, one(SpecialOrderedSetKind::Sos2, kSecond));
+    add(copy, one(SpecialOrderedSetKind::Two, kSecond));
     EXPECT_EQ(difference(model, copy), "set count 2 against 3");
     EXPECT_EQ(model.n_special_ordered_sets(), 2);
     EXPECT_EQ(copy.n_special_ordered_sets(), 3);
