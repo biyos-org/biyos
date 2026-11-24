@@ -1,13 +1,11 @@
 import runpy
-from operator import attrgetter
-from pathlib import Path
 
 import pytest
 
-EXAMPLES = Path(__file__).resolve().parents[4] / "examples" / "python"
-PATHS = sorted(EXAMPLES.glob("*.py"))
+NAMES = ["copies", "errors", "events", "model", "options", "start", "threads"]
 
 
-@pytest.mark.parametrize("path", PATHS, ids=attrgetter("stem"))
-def test_example(path):
+@pytest.mark.parametrize("name", NAMES)
+def test_example(project, name):
+    path = project / "examples" / f"{name}.py"
     runpy.run_path(str(path), run_name="__main__")

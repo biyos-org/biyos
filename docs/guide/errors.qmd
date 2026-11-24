@@ -1,6 +1,6 @@
 # Errors {#sec-errors}
 
-Every C call that acts or can fail returns a status of type `BIYOS_status`, an `int`: `BIYOS_OK`, which is zero, or a negative error code. On failure the call keeps a message on its environment that says what went wrong, and changes nothing. No call lets an exception out. The code of this chapter is `examples/c/errors.c` and `examples/python/errors.py`.
+Every C call that acts or can fail returns a status of type `BIYOS_status`, an `int`: `BIYOS_OK`, which is zero, or a negative error code. On failure the call keeps a message on its environment that says what went wrong, and changes nothing. No call lets an exception out. The code of this chapter is `examples/c/errors.c` and `interfaces/python/examples/errors.py`.
 
 ## Codes and who is at fault {#sec-errors-codes}
 
@@ -52,5 +52,5 @@ A failed call also sends an error message on the event stream ([The events biyos
 
 The Python package turns a failed status into a `biyos.Error`, whose `code` holds the status, whose `model` is the `Model` of the failed call, or `None` for a call on the environment, and whose text is the message. `model` is found from the address C keeps, so it is `None` once the program no longer holds the model, and it would name a newer model that took the address of a freed one. A pickled error has no model. Mistakes Python can see by itself raise Python's own exceptions before C is called: `TypeError` for a value of the wrong type, `ValueError` for an array of the wrong length or a closed model, `OverflowError` for an integer that does not fit in 32 bits, `IndexError` for a position outside a block.
 
-```{.python file="examples/python/errors.py"}
+```{.python file="interfaces/python/examples/errors.py"}
 ```

@@ -78,7 +78,7 @@ python -m pip install ./interfaces/python
 
 It needs Python 3.10 or later and no other package at run time. Each call goes through `ctypes` to the C API, so Python and C share every rule of this book. The first program becomes
 
-```{.python file="examples/python/start.py"}
+```{.python file="interfaces/python/examples/start.py"}
 ```
 
 The `with` block frees the environment when it ends. @sec-python covers the package.
