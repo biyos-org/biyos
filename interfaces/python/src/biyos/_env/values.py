@@ -49,40 +49,40 @@ def _masks(name: str, value: object) -> tuple[int, int]:
 
 
 _CONVERTERS: dict[int, Callable[..., object]] = {
-    _capi.KIND_BOOL: _bool,
-    _capi.KIND_INT: _int,
-    _capi.KIND_DOUBLE: _double,
-    _capi.KIND_STRING: _string,
-    _capi.KIND_ENUM: _int,
+    _capi.OPTKND_BOOL: _bool,
+    _capi.OPTKND_INT: _int,
+    _capi.OPTKND_DBL: _double,
+    _capi.OPTKND_STR: _string,
+    _capi.OPTKND_ENUM: _int,
 }
 
 _READERS: dict[int, tuple[type, Callable[..., Value]]] = {
-    _capi.KIND_BOOL: (c_int, bool),
-    _capi.KIND_INT: (c_int, int),
-    _capi.KIND_DOUBLE: (c_double, float),
-    _capi.KIND_STRING: (c_char_p, bytes.decode),
-    _capi.KIND_ENUM: (c_int, int),
+    _capi.OPTKND_BOOL: (c_int, bool),
+    _capi.OPTKND_INT: (c_int, int),
+    _capi.OPTKND_DBL: (c_double, float),
+    _capi.OPTKND_STR: (c_char_p, bytes.decode),
+    _capi.OPTKND_ENUM: (c_int, int),
 }
 
 
 def arguments(name: str, kind: int, val: object) -> tuple[object, ...]:
-    if kind == _capi.KIND_FLAGS:
+    if kind == _capi.OPTKND_FLG:
         return _masks(name, val)
     return (_CONVERTERS[kind](name, val),)
 
 
 def slots(kind: int) -> tuple[Any, ...]:
-    if kind == _capi.KIND_FLAGS:
+    if kind == _capi.OPTKND_FLG:
         return c_uint64(), c_uint64()
     slot, _ = _READERS[kind]
     return (slot(),)
 
 
 def value(name: str, kind: int, found: tuple[Any, ...]) -> Value:
-    if kind == _capi.KIND_FLAGS:
+    if kind == _capi.OPTKND_FLG:
         on, off = found
         return Masks(on.value, off.value)
-    if kind == _capi.KIND_ENUM:
+    if kind == _capi.OPTKND_ENUM:
         return ENUMS[name](found[0].value)
     _, convert = _READERS[kind]
     return convert(found[0].value)

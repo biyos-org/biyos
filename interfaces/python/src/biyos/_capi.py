@@ -17,12 +17,12 @@ from importlib.resources import files
 
 OK = 0
 
-KIND_BOOL = 1
-KIND_INT = 2
-KIND_DOUBLE = 3
-KIND_STRING = 4
-KIND_ENUM = 5
-KIND_FLAGS = 6
+OPTKND_BOOL = 1
+OPTKND_INT = 2
+OPTKND_DBL = 3
+OPTKND_STR = 4
+OPTKND_ENUM = 5
+OPTKND_FLG = 6
 
 HOOK = CFUNCTYPE(None, c_void_p, c_void_p)
 
