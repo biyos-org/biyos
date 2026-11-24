@@ -1,7 +1,7 @@
 from importlib.metadata import distribution
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 
 
 def test_expression():
