@@ -2,8 +2,13 @@
 
 #include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/settings.hpp"
 #include "core/timer.hpp"
+#include "io/draft.hpp"
+#include "io/leftovers.hpp"
 #include "io/mps.hpp"
+#include "io/print.hpp"
+#include "io/sketch.hpp"
 #include "model/model.hpp"
 
 #include <filesystem>
@@ -27,6 +32,27 @@ std::filesystem::path path_of(std::string_view path)
 [[noreturn]] void refuse(const std::string &file, std::string_view reason)
 {
     throw Error(ErrorKind::FileAccess, "file '" + file + "'", std::string(reason));
+}
+
+void print_file(const Draft &draft, const std::string &file, std::string_view path)
+{
+    const std::filesystem::path location = path_of(path);
+    std::error_code code;
+    if (std::filesystem::is_directory(location, code))
+    {
+        refuse(file, "is a directory");
+    }
+    std::ofstream output(location, std::ios::binary | std::ios::trunc);
+    if (!output.is_open())
+    {
+        refuse(file, "cannot be opened");
+    }
+    print_mps(draft, output);
+    output.close();
+    if (output.fail())
+    {
+        refuse(file, "cannot be written");
+    }
 }
 
 }
@@ -64,6 +90,24 @@ Model read_file(Env &env, std::string_view path, FileFormat format)
         break;
     }
     return read_mps(env, input, file);
+}
+
+void write_file(Env &env,
+                const Model &model,
+                const Settings &settings,
+                std::string_view path,
+                FileFormat format)
+{
+    const EntryTimer timer(env, "io", "write");
+    const std::string file(path);
+    switch (format)
+    {
+    case FileFormat::Mps:
+        break;
+    }
+    const Draft draft = draft_of(model);
+    print_file(draft, file, path);
+    warn_leftovers(env, model, settings, file);
 }
 
 }

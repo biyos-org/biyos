@@ -127,3 +127,59 @@ TEST(CApiTest, ReadSpan)
     EXPECT_EQ(BIYOS_readmdl(&env, nullptr, BIYOS_FMT_MPS, &model), BIYOS_ERR_BADARG);
     EXPECT_TRUE(spans.empty());
 }
+
+TEST(CApiTest, WriteFile)
+{
+    const Env env;
+    const std::string source = kData + "/lp.mps";
+    const Read made = read(env, source.c_str(), BIYOS_FMT_MPS);
+    ASSERT_EQ(made.status, BIYOS_OK);
+    const std::string path = testing::TempDir() + "biyos_written.mps";
+    EXPECT_EQ(BIYOS_writemdl(made.model, path.c_str(), BIYOS_FMT_MPS), BIYOS_OK);
+    const Read back = read(env, path.c_str(), BIYOS_FMT_MPS);
+    ASSERT_EQ(back.status, BIYOS_OK);
+    EXPECT_EQ(count_of(BIYOS_getnvar, back.model), 2);
+    EXPECT_EQ(count_of(BIYOS_getncon, back.model), 3);
+    EXPECT_EQ(count_of(BIYOS_getnobj, back.model), 1);
+    EXPECT_EQ(BIYOS_freemdl(back.model), BIYOS_OK);
+    EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
+}
+
+TEST(CApiTest, WriteRefused)
+{
+    const Env env;
+    const Model model(env);
+    const std::string path = testing::TempDir() + "absent/biyos.mps";
+    EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FMT_MPS), BIYOS_ERR_FILEIO);
+    EXPECT_EQ(env.message(), "file access: file '" + path + "': cannot be opened");
+    const std::string folder = testing::TempDir();
+    EXPECT_EQ(BIYOS_writemdl(model.get(), folder.c_str(), BIYOS_FMT_MPS), BIYOS_ERR_FILEIO);
+    EXPECT_EQ(env.message(), "file access: file '" + folder + "': is a directory");
+    EXPECT_EQ(BIYOS_writemdl(model.get(), nullptr, BIYOS_FMT_MPS), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'path': is null");
+    EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), 7), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: format 7: unknown");
+    EXPECT_EQ(BIYOS_writemdl(nullptr, path.c_str(), BIYOS_FMT_MPS), BIYOS_ERR_BADARG);
+}
+
+TEST(CApiTest, WriteSpan)
+{
+    BIYOS_env env{.core = biyos::Env(std::make_unique<biyos::FakeClock>())};
+    BIYOS_model *model = nullptr;
+    ASSERT_EQ(BIYOS_newmdl(&env, &model), BIYOS_OK);
+    std::vector<std::string> spans;
+    BIYOS_index hook = -1;
+    ASSERT_EQ(BIYOS_addenvhook(&env, keep, &spans, BIYOS_EVTKND_SPAN, BIYOS_EVTLVL_DBG, &hook),
+              BIYOS_OK);
+    const std::string path = testing::TempDir() + "biyos_span.mps";
+    ASSERT_EQ(BIYOS_writemdl(model, path.c_str(), BIYOS_FMT_MPS), BIYOS_OK);
+    const std::vector<std::string> expected{
+        "io/write edge=begin wall=0 cpu=0",
+        "io/write edge=end wall=0 cpu=0",
+    };
+    EXPECT_EQ(spans, expected);
+    spans.clear();
+    EXPECT_EQ(BIYOS_writemdl(model, nullptr, BIYOS_FMT_MPS), BIYOS_ERR_BADARG);
+    EXPECT_TRUE(spans.empty());
+    EXPECT_EQ(BIYOS_freemdl(model), BIYOS_OK);
+}

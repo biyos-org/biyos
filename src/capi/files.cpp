@@ -25,6 +25,14 @@ void load(biyos::Env &env, const char *path, BIYOS_int fmt, BIYOS_model **model)
     *made = fresh.release();
 }
 
+void save(const BIYOS_model &model, const char *path, BIYOS_int fmt)
+{
+    const char *file = require(path, "path");
+    const biyos::FileFormat format = biyos::find_format(fmt);
+    biyos::Env &env = idle(model.handle.env(), "environment");
+    biyos::write_file(env, model.core, model.settings, std::string_view(file), format);
+}
+
 }
 
 BIYOS_status BIYOS_readmdl(BIYOS_env *env, const char *path, BIYOS_int fmt, BIYOS_model **mdl)
@@ -34,4 +42,9 @@ BIYOS_status BIYOS_readmdl(BIYOS_env *env, const char *path, BIYOS_int fmt, BIYO
         *mdl = nullptr;
     }
     return guarded<load>(env, path, fmt, mdl);
+}
+
+BIYOS_status BIYOS_writemdl(const BIYOS_model *mdl, const char *path, BIYOS_int fmt)
+{
+    return guarded<save>(mdl, path, fmt);
 }

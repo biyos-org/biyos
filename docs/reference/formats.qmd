@@ -1,6 +1,6 @@
 # File formats {#sec-formats}
 
-`BIYOS_readmdl` and `Model.read` read a model from a file in the format the caller names. This chapter gives the rules of each format as the reader applies them. A file that breaks one gives `BIYOS_ERR_BADFILE`, a section the reader does not handle gives `BIYOS_ERR_UNSUPPORTED`, and each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`.
+`BIYOS_readmdl` and `Model.read` read a model from a file in the format the caller names, and `BIYOS_writemdl` and `Model.write` write one. This chapter gives the rules of each format as the reader applies them, then the rules of the writer. A file that breaks one gives `BIYOS_ERR_BADFILE`, a section the reader does not handle gives `BIYOS_ERR_UNSUPPORTED`, and each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`.
 
 ## Free MPS
 
@@ -86,3 +86,31 @@ Each rule below is biyos's rule. The document it follows is named where there is
 | `OBJSENSE` | `MAX` and `MIN`, on the same line as Gurobi writes it or on the next as CPLEX does. Neither document states `MIN`. |
 | Numbers | Decimal or exponential, the sign of the exponent optional. A missing exponent, which CPLEX reads as 0, is refused, as is a value outside the range of a double. The 25-character limit of CPLEX is not checked. |
 | Infinity | Neither document gives an MPS spelling of infinity, so a word such as `inf` is refused. `1e30` and larger finite values are read as written; an infinite bound is set with `MI`, `PL` or `FR`. |
+
+### Writing {#sec-mps-writing}
+
+`BIYOS_FMT_MPS` writes free MPS that the reader above reads back to the same model, every number bit for bit but a constant of $-0$, which reads back as 0. The file is made or replaced.
+
+| Part | Written as |
+|---|---|
+| Sections | `NAME`, then `OBJSENSE MAX` on one line when the objective maximizes, `ROWS`, `COLUMNS`, `RHS`, `ENDATA`. `RANGES` only when a row has a range, `BOUNDS` only when a column needs a bound line. |
+| Name | The model's name after `NAME`, or `NAME` alone when it has none. |
+| Numbers | The shortest decimal or exponential form that reads back to the same double. An infinite bound is a bound type, never a number. |
+| Objective | The first `N` row, with the negative of its constant as right-hand side. |
+| No objective | No objective row. When a constraint is free, an empty `N` row comes first, so the model reads back with an objective of 0. |
+| Constraints | One row each, in order. A constant moves into the bounds, $l - c$ and $u - c$, so the row reads back with no constant. The sense is `E`, `L` or `G` from the bounds, `G` or `L` with a range for an interval, `N` for a free constraint. |
+| Columns | One column per variable, in order. A variable in no row is a column line holding its name alone. Variables of kind integer lie between marker lines. |
+| Bounds | `BV` for a binary variable, `SC` or `SI` for the upper bound of a semi-continuous or semi-integer one, `FX` for equal bounds, else `LO` or `MI` and `UP` or `PL`. |
+| Names | Each record keeps its name. An unnamed objective is `OBJ`, an unnamed constraint `R` and an unnamed variable `C`, each followed by its index. While a user name holds the label, `_1`, `_2` and so on is added. |
+| Functions | A function several records use is written once for each, and reads back as that many functions. A function no record uses is left out. |
+
+The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the way:
+
+- a second objective, or a weight other than 1 on the only one;
+- quadratic terms, an expression, a callback, a cone, a complement, a set or an indicator;
+- a name two variables share, or two rows among the objective and the constraints;
+- a name that holds white space or starts with `$`, a row named `'MARKER'`, a model name that starts or ends with white space or holds a line break;
+- a binary variable with bounds other than 0 and 1, a semi-continuous or semi-integer variable with no upper bound;
+- constraint bounds no row reads back exactly, or that overflow once the constant moves into them.
+
+A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of the objective, and the model's options. Hooks are not part of the problem and are left out with no event.

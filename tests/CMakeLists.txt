@@ -112,8 +112,11 @@ target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io
     io/test_faults.cpp
+    io/test_leftovers.cpp
     io/test_lines.cpp
-    io/test_mps.cpp)
+    io/test_mps.cpp
+    io/test_refusals.cpp
+    io/test_write.cpp)
 target_link_libraries(test_io PRIVATE biyos_internal)
 target_compile_definitions(test_io PRIVATE MPS_DATA="${CMAKE_CURRENT_SOURCE_DIR}/io/data/mps")
 
