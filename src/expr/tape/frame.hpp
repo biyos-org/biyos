@@ -16,6 +16,8 @@ struct Frame
     std::span<const std::uint32_t> operands;
     std::span<const double> weights;
     std::span<double> slots;
+    std::span<double> result;
+    std::size_t lanes;
 };
 
 inline std::size_t place(std::uint64_t payload) noexcept
@@ -26,6 +28,17 @@ inline std::size_t place(std::uint64_t payload) noexcept
 inline double constant_of(const Instruction &instruction) noexcept
 {
     return std::bit_cast<double>(instruction.payload);
+}
+
+template <typename T>
+std::span<T> row(std::span<T> items, std::size_t index, std::size_t lanes) noexcept
+{
+    return items.subspan(index * lanes, lanes);
+}
+
+inline std::span<const double> row(const Frame &frame, std::uint32_t slot) noexcept
+{
+    return row(std::span<const double>(frame.slots), slot, frame.lanes);
 }
 
 inline double left(const Instruction &instruction, const Frame &frame) noexcept

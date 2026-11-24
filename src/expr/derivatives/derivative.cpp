@@ -69,7 +69,7 @@ void prepare(const Tape &tape, std::span<const double> point, Workspace &workspa
     for (const Block &block : tape.blocks().first(at(tape.prepass())))
     {
         linearize(block, point, workspace);
-        store(block, workspace.slots, workspace.shared);
+        store(block, workspace, workspace.shared);
     }
 }
 
@@ -173,7 +173,7 @@ void jacobian(const Tape &tape,
     for (const Block &block : tape.blocks().subspan(at(tape.prepass())))
     {
         linearize(block, point, workspace);
-        store(block, workspace.slots, values);
+        store(block, workspace, values);
         differentiate(tape, block, workspace, adjoints, gradients);
     }
 }
@@ -197,7 +197,7 @@ void weighted_gradient(const Tape &tape,
     for (const Block &block : blocks.subspan(prepass))
     {
         linearize(block, point, workspace);
-        store(block, workspace.slots, values);
+        store(block, workspace, values);
         seed(block, weights, adjoints.slots);
         reverse(block, workspace, adjoints, gradient);
     }
