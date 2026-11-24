@@ -4,7 +4,7 @@
 
 ## Free MPS
 
-`BIYOS_FMT_MPS` reads free MPS, the form of MPS in which fields are separated by white space and names hold no blanks. The rules below are those of the CPLEX [MPS reference](https://www.ibm.com/docs/en/icos/22.1.2?topic=standard-records-in-mps-format) and the Gurobi [MPS reference](https://docs.gurobi.com/projects/optimizer/en/current/reference/fileformats/modelformats.html#mps-format), where the two agree. Where they differ or say nothing, biyos sets its own rule, given in @sec-mps-choices.
+`BIYOS_FILEFMT_MPS` reads free MPS, the form of MPS in which fields are separated by white space and names hold no blanks. The rules below are those of the CPLEX [MPS reference](https://www.ibm.com/docs/en/icos/22.1.2?topic=standard-records-in-mps-format) and the Gurobi [MPS reference](https://docs.gurobi.com/projects/optimizer/en/current/reference/fileformats/modelformats.html#mps-format), where the two agree. Where they differ or say nothing, biyos sets its own rule, given in @sec-mps-choices.
 
 ### Lines
 
@@ -89,7 +89,7 @@ Each rule below is biyos's rule. The document it follows is named where there is
 
 ### Writing {#sec-mps-writing}
 
-`BIYOS_FMT_MPS` writes free MPS that the reader above reads back to the same model, every number bit for bit but a constant of $-0$, which reads back as 0. The file is made or replaced.
+`BIYOS_FILEFMT_MPS` writes free MPS that the reader above reads back to the same model, every number bit for bit but a constant of $-0$, which reads back as 0. The file is made or replaced.
 
 | Part | Written as |
 |---|---|

@@ -158,7 +158,7 @@ class ConeKind(IntEnum):
 
 
 class FileFormat(IntEnum):
-    """The file formats, as ``BIYOS_FMT_`` numbers them.
+    """The file formats, as ``BIYOS_FILEFMT_`` numbers them.
 
     Attributes
     ----------

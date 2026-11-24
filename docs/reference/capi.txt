@@ -2534,14 +2534,14 @@ group files Files
 text A model is read from a file in the format the caller names, never guessed from the file's name.
 
 table Formats
-value BIYOS_FMT_MPS Free MPS, for linear and mixed-integer models.
+value BIYOS_FILEFMT_MPS Free MPS, for linear and mixed-integer models.
 since 0.1.0
 
 function BIYOS_readmdl
 summary Read a model from a file.
 param env in The environment the model is made on.
 param path in The path of the file, in UTF-8.
-param fmt in The format of the file, a `BIYOS_FMT_` constant.
+param fmt in The format of the file, a `BIYOS_FILEFMT_` constant.
 param mdl out Receives the model; set to null on failure.
 return `BIYOS_OK`, with the model in `*mdl`.
 error BIYOS_ERR_BADARG `path` or `mdl` is null, `fmt` is not a format, or `env` delivers an event.
@@ -2557,7 +2557,7 @@ function BIYOS_writemdl
 summary Write a model to a file.
 param mdl in The model.
 param path in The path of the file, in UTF-8. A file already there is replaced.
-param fmt in The format of the file, a `BIYOS_FMT_` constant.
+param fmt in The format of the file, a `BIYOS_FILEFMT_` constant.
 return `BIYOS_OK` once the file is written.
 error BIYOS_ERR_BADARG `path` is null, `fmt` is not a format, or the environment of `mdl` delivers an event.
 error BIYOS_ERR_FILEIO The file cannot be opened or written.
