@@ -15,7 +15,7 @@ from enum import IntEnum
 from itertools import pairwise
 from math import isnan
 from os import PathLike, fspath
-from typing import Any, NoReturn, SupportsIndex
+from typing import Any, NoReturn, SupportsIndex, cast
 
 from biyos import _capi
 from biyos._capi import lib
@@ -59,7 +59,9 @@ from biyos._model.blocks import (
     index_of,
 )
 from biyos._model.callbacks import Callbacks, Caller, checked, data_at
+from biyos._model.expression import Comparison, Expression, Operand
 from biyos._model.operators import Operator, node_values, postfix_values
+from biyos._model.postfix import attached, given
 
 
 class VariableKind(IntEnum):
@@ -2088,31 +2090,55 @@ class Model:
 
     def addcon(
         self,
-        funidx: Sequence[int | Function] | Functions,
+        funidx: Sequence[int | Function]
+        | Functions
+        | Comparison
+        | Sequence[Comparison],
         lb: Sequence[float] | None = None,
         ub: Sequence[float] | None = None,
     ) -> Constraints:
         """Add constraints after the last one, one for each function given.
 
+        A comparison, or a list of them, adds a function for each, holding
+        the expression its constraint bounds, and takes its bounds from the
+        comparison. Every expression goes to the model in one ``addexpr``
+        call, then ``attachexpr`` splits off its constant, linear and
+        quadratic terms. When the model refuses a later step, the nodes and
+        functions already added stay in it.
+
         Parameters
         ----------
         funidx
-            The function each new constraint bounds.
+            The function each new constraint bounds, or comparisons such as
+            ``x[0] * x[1] <= 3``.
         lb, ub
-            The bounds of each, unbounded by default.
+            The bounds of each, unbounded by default. None with comparisons.
 
         Returns
         -------
         cons
             The new constraints.
 
+        Raises
+        ------
+        TypeError
+            When ``lb`` or ``ub`` comes with comparisons, or a list mixes
+            comparisons with other values.
+        ValueError
+            When an expression holds a variable of another model, or one
+            made before a deletion from the model.
+
         See Also
         --------
         BIYOS_addcon
         """
-        count = len(funidx)
+        cons = given(funidx, Comparison, "a comparison")
+        if cons is not None:
+            return self._compared(cons, lb, ub)
+        funs = cast("Sequence[int | Function] | Functions", funidx)
+        count = len(funs)
         arrays = (
-            indices_of(self, Functions, "funidx", funidx, count),
+            indices_of(self, Functions, "funidx", funs, count),
             doubles("lb", lb, count),
             doubles("ub", ub, count),
         )
@@ -2403,7 +2429,11 @@ class Model:
 
     def addobj(
         self,
-        funidx: Sequence[int | Function] | Functions,
+        funidx: Sequence[int | Function]
+        | Functions
+        | Expression
+        | Variable
+        | Sequence[Expression | Variable],
         sense: Sequence[ObjectiveSense] | None = None,
         prio: Sequence[int] | None = None,
         coef: Sequence[float] | None = None,
@@ -2417,10 +2447,14 @@ class Model:
         found for it. A new objective's tolerances are 0 until ``setobjtol``
         sets them.
 
+        An expression or a variable, or a list of them, adds a function for
+        each, as ``addcon`` does for comparisons.
+
         Parameters
         ----------
         funidx
-            The function each new objective optimizes.
+            The function each new objective optimizes, or expressions such
+            as ``x[0] + biyos.exp(x[1])``.
         sense
             Whether each is minimized or maximized, minimized by default.
         prio
@@ -2437,19 +2471,31 @@ class Model:
         objs
             The new objectives.
 
+        Raises
+        ------
+        TypeError
+            When a list mixes expressions with other values.
+        ValueError
+            When an expression holds a variable of another model, or one
+            made before a deletion from the model.
+
         See Also
         --------
         BIYOS_addobj
         """
-        count = len(funidx)
+        trees = given(funidx, Operand, "an expression")
+        funs = cast("Sequence[int | Function] | Functions", funidx)
+        count = len(funs) if trees is None else len(trees)
         arrays = (
-            indices_of(self, Functions, "funidx", funidx, count),
             ints("sense", sense, count),
             ints("prio", prio, count),
             doubles("coef", coef, count),
         )
+        if trees is not None:
+            funs = attached(self, trees)
+        idx = indices_of(self, Functions, "funidx", funs, count)
         first = c_int()
-        self._call(lib.BIYOS_addobj, count, *arrays, byref(first))
+        self._call(lib.BIYOS_addobj, count, idx, *arrays, byref(first))
         return Objectives(self, first.value, count, self._gen)
 
     def setobjsense(
@@ -4054,6 +4100,19 @@ class Model:
         BIYOS_delcconrg
         """
         return self._delete("BIYOS_delccon", Complements, idx)
+
+    def _compared(
+        self,
+        cons: list[Comparison],
+        lb: Sequence[float] | None,
+        ub: Sequence[float] | None,
+    ) -> Constraints:
+        if lb is not None or ub is not None:
+            raise TypeError("lb and ub come from the comparisons")
+        funs = attached(self, [con._body for con in cons])
+        lower = [con._lb for con in cons]
+        upper = [con._ub for con in cons]
+        return self.addcon(funs, lower, upper)
 
     def _start(self, env: Env) -> None:
         self._env = env
