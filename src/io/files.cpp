@@ -7,8 +7,8 @@
 #include "io/draft/draft.hpp"
 #include "io/draft/sketch.hpp"
 #include "io/leftovers.hpp"
-#include "io/mps.hpp"
-#include "io/print.hpp"
+#include "io/mps/mps.hpp"
+#include "io/mps/print.hpp"
 #include "model/model.hpp"
 
 #include <filesystem>

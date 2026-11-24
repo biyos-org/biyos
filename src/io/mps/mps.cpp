@@ -1,16 +1,16 @@
-#include "io/mps.hpp"
+#include "io/mps/mps.hpp"
 
 #include "core/env.hpp"
-#include "io/bounds.hpp"
-#include "io/columns.hpp"
 #include "io/draft/draft.hpp"
 #include "io/lines.hpp"
+#include "io/mps/bounds.hpp"
+#include "io/mps/columns.hpp"
+#include "io/mps/rows.hpp"
+#include "io/mps/sections.hpp"
+#include "io/mps/values.hpp"
+#include "io/mps/vectors.hpp"
 #include "io/records.hpp"
 #include "io/report.hpp"
-#include "io/rows.hpp"
-#include "io/sections.hpp"
-#include "io/values.hpp"
-#include "io/vectors.hpp"
 #include "model/model.hpp"
 
 #include <algorithm>
