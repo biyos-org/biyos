@@ -22,6 +22,8 @@ namespace
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 
+}
+
 VariableKind kind_of(const DraftColumn &column) noexcept
 {
     const bool integer = column.marked || column.integer;
@@ -83,6 +85,9 @@ Constraint constraint_of(Index function, const DraftRow &row) noexcept
     }
     return Constraint{.function = function, .lower = rhs, .upper = rhs + range};
 }
+
+namespace
+{
 
 std::optional<Index> objective_row(const Draft &draft) noexcept
 {

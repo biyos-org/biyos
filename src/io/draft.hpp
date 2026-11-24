@@ -57,6 +57,10 @@ struct Draft
 };
 
 bool negative_upper(const DraftColumn &column) noexcept;
+VariableKind kind_of(const DraftColumn &column) noexcept;
+double lower_of(const DraftColumn &column) noexcept;
+double upper_of(const DraftColumn &column) noexcept;
+Constraint constraint_of(Index function, const DraftRow &row) noexcept;
 Model build(const Draft &draft);
 
 }
