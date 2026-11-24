@@ -24,6 +24,8 @@ struct Workspace
 };
 
 std::size_t lanes_of(std::size_t count);
+std::size_t lanes_of(const Tape &tape, std::size_t count);
+std::size_t sized(std::size_t size, std::size_t lanes);
 std::string in_lanes(std::size_t lanes);
 void check_sweep(const Tape &tape,
                  std::span<const double> point,

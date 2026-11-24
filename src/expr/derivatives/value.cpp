@@ -12,6 +12,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <string>
 #include <utility>
@@ -293,7 +294,7 @@ void check_seeds(std::span<const Index> variables, std::size_t lanes, std::size_
 }
 
 Workspace::Workspace(const Tape &tape, std::size_t count)
-    : lanes(lanes_of(count)), shared(at(tape.pinned()) * count, 0.0),
+    : lanes(lanes_of(tape, count)), shared(at(tape.pinned()) * count, 0.0),
       slots(tape.width() * count, 0.0), partials(at(tape.partials()) * count, 0.0),
       result(count, 0.0), spare(count, 0.0)
 {
@@ -313,12 +314,32 @@ std::size_t lanes_of(std::size_t count)
     return count;
 }
 
+std::size_t sized(std::size_t size, std::size_t lanes)
+{
+    if (size != 0 && lanes > (std::numeric_limits<std::size_t>::max)() / size)
+    {
+        refuse("lanes", text_of(lanes) + " times size " + text_of(size) + " overflows");
+    }
+    return size * lanes;
+}
+
+std::size_t lanes_of(const Tape &tape, std::size_t count)
+{
+    lanes_of(count);
+    sized(at(tape.roots()), count);
+    sized(at(tape.variables()), count);
+    sized(at(tape.pinned()), count);
+    sized(at(tape.partials()), count);
+    sized(tape.width(), count);
+    return count;
+}
+
 void check_sweep(const Tape &tape,
                  std::span<const double> point,
                  const Workspace &workspace,
                  std::span<const double> values)
 {
-    const std::size_t lanes = lanes_of(workspace.lanes);
+    const std::size_t lanes = lanes_of(tape, workspace.lanes);
     check_point(tape, point, lanes);
     if (values.size() != at(tape.roots()) * lanes)
     {
@@ -389,7 +410,7 @@ void forward(const Tape &tape,
 
 void broadcast(std::span<const double> point, std::size_t lanes, std::span<double> points)
 {
-    if (points.size() != point.size() * lanes_of(lanes))
+    if (points.size() != sized(point.size(), lanes_of(lanes)))
     {
         const std::string size = "size " + text_of(points.size());
         refuse("points", size + ", not the point size " + text_of(point.size()) + in_lanes(lanes));

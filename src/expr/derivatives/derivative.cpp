@@ -40,7 +40,7 @@ Offset count_of(std::size_t value) noexcept
 
 void check_reverse(const Tape &tape, const Workspace &workspace, const Adjoints &adjoints)
 {
-    const std::size_t lanes = workspace.lanes;
+    const std::size_t lanes = lanes_of(tape, workspace.lanes);
     if (workspace.partials.size() < at(tape.partials()) * lanes)
     {
         refuse("workspace", "sized for another tape");
@@ -65,7 +65,7 @@ void check_size(std::string_view object,
                 std::string_view name,
                 std::size_t lanes)
 {
-    if (given.size() != at(wanted) * lanes)
+    if (given.size() != sized(at(wanted), lanes))
     {
         const std::string size = "size " + text_of(given.size()) + ", not " + std::string(name);
         refuse(std::string(object), size + " " + text_of(wanted) + in_lanes(lanes));
