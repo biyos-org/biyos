@@ -1,8 +1,8 @@
 #include "core/clock.hpp"
 #include "core/events.hpp"
-#include "core/lookup.hpp"
-#include "core/options.hpp"
-#include "core/settings.hpp"
+#include "core/options/lookup.hpp"
+#include "core/options/options.hpp"
+#include "core/options/settings.hpp"
 #include "core/tolerances.hpp"
 
 #include <gtest/gtest.h>

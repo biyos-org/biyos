@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/options.hpp"
-#include "core/settings.hpp"
+#include "core/options/options.hpp"
+#include "core/options/settings.hpp"
 
 #include <string_view>
 #include <type_traits>

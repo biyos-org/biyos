@@ -2,7 +2,7 @@
 
 #include "core/env.hpp"
 #include "core/index.hpp"
-#include "core/settings.hpp"
+#include "core/options/settings.hpp"
 #include "io/identical.hpp"
 #include "io/report.hpp"
 #include "model/model.hpp"

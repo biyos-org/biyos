@@ -1,9 +1,9 @@
-#include "core/options.hpp"
+#include "core/options/options.hpp"
 
 #include "core/error.hpp"
-#include "core/option_checks.hpp"
-#include "core/option_table.hpp"
-#include "core/option_value.hpp"
+#include "core/options/checks.hpp"
+#include "core/options/table.hpp"
+#include "core/options/value.hpp"
 #include "core/version.hpp"
 
 #include <cstddef>

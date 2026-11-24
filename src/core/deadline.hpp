@@ -2,7 +2,7 @@
 
 #include "core/clock.hpp"
 #include "core/interrupt.hpp"
-#include "core/lookup.hpp"
+#include "core/options/lookup.hpp"
 #include "core/status.hpp"
 
 #include <chrono>

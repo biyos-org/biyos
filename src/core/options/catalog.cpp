@@ -1,8 +1,8 @@
-#include "core/options.hpp"
+#include "core/options/options.hpp"
 
 #include "core/error.hpp"
-#include "core/option_table.hpp"
-#include "core/option_text.hpp"
+#include "core/options/table.hpp"
+#include "core/options/text.hpp"
 #include "core/text.hpp"
 
 #include <algorithm>

@@ -5,7 +5,7 @@
 #include "core/error.hpp"
 #include "core/events.hpp"
 #include "core/interrupt.hpp"
-#include "core/options.hpp"
+#include "core/options/options.hpp"
 #include "core/records.hpp"
 #include "core/usage.hpp"
 

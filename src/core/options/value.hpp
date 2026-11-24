@@ -2,7 +2,7 @@
 
 #include "core/events.hpp"
 #include "core/hooks.hpp"
-#include "core/options.hpp"
+#include "core/options/options.hpp"
 #include "core/strings.hpp"
 
 #include <span>

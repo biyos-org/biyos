@@ -4,7 +4,7 @@
 
 #include "core/env.hpp"
 #include "core/index.hpp"
-#include "core/settings.hpp"
+#include "core/options/settings.hpp"
 #include "core/text.hpp"
 #include "expr/terms.hpp"
 #include "io/files.hpp"

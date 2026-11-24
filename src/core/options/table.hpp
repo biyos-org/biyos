@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/options.hpp"
+#include "core/options/options.hpp"
 
 #include <cstddef>
 #include <span>

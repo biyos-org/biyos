@@ -7,7 +7,7 @@
 #include "core/error.hpp"
 #include "core/events.hpp"
 #include "core/hooks.hpp"
-#include "core/settings.hpp"
+#include "core/options/settings.hpp"
 #include "core/usage.hpp"
 #include "model/model.hpp"
 

@@ -2,7 +2,7 @@
 #include "capi/entry.hpp"
 #include "core/clock.hpp"
 #include "core/env.hpp"
-#include "core/options.hpp"
+#include "core/options/options.hpp"
 #include "core/version.hpp"
 #include "handles.hpp"
 

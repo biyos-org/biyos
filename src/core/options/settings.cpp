@@ -1,9 +1,9 @@
-#include "core/settings.hpp"
+#include "core/options/settings.hpp"
 
 #include "core/error.hpp"
-#include "core/option_table.hpp"
-#include "core/option_text.hpp"
-#include "core/option_value.hpp"
+#include "core/options/table.hpp"
+#include "core/options/text.hpp"
+#include "core/options/value.hpp"
 
 #include <algorithm>
 #include <span>

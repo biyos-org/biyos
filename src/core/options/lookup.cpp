@@ -1,7 +1,7 @@
-#include "core/lookup.hpp"
+#include "core/options/lookup.hpp"
 
-#include "core/option_table.hpp"
-#include "core/option_value.hpp"
+#include "core/options/table.hpp"
+#include "core/options/value.hpp"
 
 #include <string_view>
 

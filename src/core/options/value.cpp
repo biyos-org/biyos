@@ -1,8 +1,8 @@
-#include "core/option_value.hpp"
+#include "core/options/value.hpp"
 
 #include "core/error.hpp"
-#include "core/option_table.hpp"
-#include "core/option_text.hpp"
+#include "core/options/table.hpp"
+#include "core/options/text.hpp"
 #include "core/text.hpp"
 #include "core/version.hpp"
 

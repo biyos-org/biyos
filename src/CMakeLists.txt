@@ -9,14 +9,14 @@ add_library(biyos_internal STATIC
     core/events.cpp
     core/format.cpp
     core/hooks.cpp
-    core/lookup.cpp
-    core/option_lookup.cpp
-    core/option_table.cpp
-    core/option_text.cpp
-    core/option_value.cpp
-    core/options.cpp
+    core/options/catalog.cpp
+    core/options/lookup.cpp
+    core/options/options.cpp
+    core/options/settings.cpp
+    core/options/table.cpp
+    core/options/text.cpp
+    core/options/value.cpp
     core/records.cpp
-    core/settings.cpp
     core/status.cpp
     core/strings.cpp
     core/thread.cpp

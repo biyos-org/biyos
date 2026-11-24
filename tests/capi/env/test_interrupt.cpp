@@ -3,7 +3,7 @@
 #include "core/deadline.hpp"
 #include "core/env.hpp"
 #include "core/events.hpp"
-#include "core/lookup.hpp"
+#include "core/options/lookup.hpp"
 #include "core/status.hpp"
 #include "handles.hpp"
 

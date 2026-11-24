@@ -93,8 +93,8 @@ class OptionTableTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
         files = {
-            "src/core/option_table.cpp": TABLE,
-            "src/core/options.hpp": HEADER,
+            "src/core/options/table.cpp": TABLE,
+            "src/core/options/options.hpp": HEADER,
             "include/biyos/biyos.h": PUBLIC,
         }
         for name, text in files.items():
