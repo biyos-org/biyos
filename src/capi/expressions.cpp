@@ -5,9 +5,9 @@
 #include "capi/selection.hpp"
 #include "core/index.hpp"
 #include "model/compressed.hpp"
+#include "model/expressions/nodes.hpp"
+#include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
-#include "model/nodes.hpp"
-#include "model/postfix.hpp"
 
 #include <algorithm>
 #include <cstddef>

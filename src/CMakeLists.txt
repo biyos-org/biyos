@@ -77,11 +77,15 @@ add_library(biyos_internal STATIC
     io/support.cpp
     io/values.cpp
     io/vectors.cpp
-    model/callbacks.cpp
     model/checks.cpp
     model/compare.cpp
     model/compressed.cpp
-    model/expressions.cpp
+    model/expressions/callbacks.cpp
+    model/expressions/expressions.cpp
+    model/expressions/nodes.cpp
+    model/expressions/patterns.cpp
+    model/expressions/postfix.cpp
+    model/expressions/users.cpp
     model/fields.cpp
     model/functions/attach.cpp
     model/functions/functions.cpp
@@ -94,10 +98,7 @@ add_library(biyos_internal STATIC
     model/model.cpp
     model/names.cpp
     model/naming.cpp
-    model/nodes.cpp
     model/overrides.cpp
-    model/patterns.cpp
-    model/postfix.cpp
     model/records/complements.cpp
     model/records/cones.cpp
     model/records/constraints.cpp
@@ -106,8 +107,7 @@ add_library(biyos_internal STATIC
     model/records/sos.cpp
     model/records/variables.cpp
     model/renumber.cpp
-    model/tolerances.cpp
-    model/users.cpp)
+    model/tolerances.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

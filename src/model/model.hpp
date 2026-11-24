@@ -5,7 +5,7 @@
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/uses.hpp"
-#include "model/callbacks.hpp"
+#include "model/expressions/callbacks.hpp"
 #include "model/names.hpp"
 #include "model/overrides.hpp"
 

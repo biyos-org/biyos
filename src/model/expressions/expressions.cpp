@@ -5,8 +5,8 @@
 #include "expr/graph/graph.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
-#include "model/nodes.hpp"
-#include "model/postfix.hpp"
+#include "model/expressions/nodes.hpp"
+#include "model/expressions/postfix.hpp"
 #include "model/rollback.hpp"
 
 #include <cstddef>

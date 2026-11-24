@@ -1,11 +1,11 @@
-#include "model/patterns.hpp"
+#include "model/expressions/patterns.hpp"
 
 #include "core/error.hpp"
 #include "core/index.hpp"
 #include "core/text/text.hpp"
-#include "model/callbacks.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
+#include "model/expressions/callbacks.hpp"
 
 #include <cstddef>
 #include <initializer_list>

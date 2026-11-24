@@ -2,9 +2,9 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
-#include "model/callbacks.hpp"
 #include "model/checks.hpp"
-#include "model/patterns.hpp"
+#include "model/expressions/callbacks.hpp"
+#include "model/expressions/patterns.hpp"
 
 #include <cstddef>
 #include <span>

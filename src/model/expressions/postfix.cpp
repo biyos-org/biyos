@@ -1,4 +1,4 @@
-#include "model/postfix.hpp"
+#include "model/expressions/postfix.hpp"
 
 #include "biyos/biyos.h"
 #include "core/error.hpp"
@@ -8,8 +8,8 @@
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "model/checks.hpp"
+#include "model/expressions/nodes.hpp"
 #include "model/model.hpp"
-#include "model/nodes.hpp"
 
 #include <algorithm>
 #include <cstddef>

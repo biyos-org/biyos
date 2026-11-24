@@ -4,9 +4,9 @@
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "model/compare.hpp"
+#include "model/expressions/nodes.hpp"
+#include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
-#include "model/nodes.hpp"
-#include "model/postfix.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>
