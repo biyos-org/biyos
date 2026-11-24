@@ -1,13 +1,13 @@
 #include "core/options/table.hpp"
 
 #include "core/error.hpp"
+#include "core/numeric/limits.hpp"
 #include "core/options/checks.hpp"
 #include "core/text/text.hpp"
 #include "core/version.hpp"
 
 #include <array>
 #include <cstddef>
-#include <limits>
 #include <span>
 #include <string>
 #include <string_view>
@@ -17,8 +17,6 @@ namespace biyos
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr Version kProject{BIYOS_VERSION_MAJOR, BIYOS_VERSION_MINOR, BIYOS_VERSION_PATCH};
 
 constexpr std::array kChecking{

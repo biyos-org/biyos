@@ -5,8 +5,8 @@ from pathlib import Path
 LIMITS = {
     "(std::numeric_limits<int>::min)()": "-2147483648",
     "(std::numeric_limits<int>::max)()": "2147483647",
-    "-std::numeric_limits<double>::infinity()": "-infinity",
-    "std::numeric_limits<double>::infinity()": "infinity",
+    "-kInfinity": "-infinity",
+    "kInfinity": "infinity",
 }
 RULE = re.compile(r"struct (\w+)Rule\s*\{(.*?)\};", re.S)
 MEMBER = re.compile(r"\b(lower|upper) = ([^;]+);")

@@ -1,17 +1,14 @@
 #include "expr/curvature/bends.hpp"
 
+#include "core/numeric/limits.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/intervals/interval.hpp"
-
-#include <limits>
 
 namespace biyos
 {
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr Domain kUnit{.closure = {-1.0, 1.0}};
 constexpr Domain kOpenUnit{.closure = {-1.0, 1.0}, .open_lower = true, .open_upper = true};
 constexpr Domain kFromOne{.closure = {1.0, kInfinity}};

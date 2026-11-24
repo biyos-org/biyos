@@ -2,12 +2,12 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "core/numeric/limits.hpp"
 #include "core/text/text.hpp"
 #include "model/checks.hpp"
 
 #include <algorithm>
 #include <cstddef>
-#include <limits>
 #include <span>
 #include <string>
 #include <string_view>
@@ -17,8 +17,6 @@ namespace biyos
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr std::string_view kNoun = "variable";
 
 std::string interval(double lower, double upper)

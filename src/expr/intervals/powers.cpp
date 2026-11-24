@@ -1,19 +1,17 @@
 #include "expr/intervals/powers.hpp"
 
+#include "core/numeric/limits.hpp"
 #include "expr/intervals/interval.hpp"
 #include "expr/intervals/rounding.hpp"
 
 #include <algorithm>
 #include <cmath>
-#include <limits>
 
 namespace biyos
 {
 
 namespace
 {
-
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr Interval kNonnegative{0.0, kInfinity};
 constexpr Interval kZero{0.0, 0.0};
 constexpr Interval kOne{1.0, 1.0};

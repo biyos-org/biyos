@@ -1,5 +1,6 @@
 #include "expr/intervals/rounding.hpp"
 
+#include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
 
 #include <algorithm>
@@ -15,8 +16,7 @@ namespace
 {
 
 constexpr std::int64_t kSignOrder = (std::numeric_limits<std::int64_t>::min)();
-constexpr std::int64_t kInfiniteOrder =
-    std::bit_cast<std::int64_t>(std::numeric_limits<double>::infinity());
+constexpr std::int64_t kInfiniteOrder = std::bit_cast<std::int64_t>(kInfinity);
 constexpr int kBoundUlps = kLibmUlps + 1;
 constexpr int kHundredths = 100;
 constexpr int kHundredthStepsPerUlp = 1608;

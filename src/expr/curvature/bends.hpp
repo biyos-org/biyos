@@ -1,9 +1,8 @@
 #pragma once
 
+#include "core/numeric/limits.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/intervals/interval.hpp"
-
-#include <limits>
 
 namespace biyos
 {
@@ -41,13 +40,13 @@ template <typename T> constexpr Split<T> at_zero(T below, T above, T across) noe
 }
 
 inline constexpr Domain kReals{.closure = Interval::entire()};
-inline constexpr Domain kNonnegatives{.closure = {0.0, std::numeric_limits<double>::infinity()}};
+inline constexpr Domain kNonnegatives{.closure = {0.0, kInfinity}};
 inline constexpr Domain kPositives{
-    .closure = {0.0, std::numeric_limits<double>::infinity()},
+    .closure = {0.0, kInfinity},
     .open_lower = true,
 };
 inline constexpr Domain kNegatives{
-    .closure = {-std::numeric_limits<double>::infinity(), 0.0},
+    .closure = {-kInfinity, 0.0},
     .open_upper = true,
 };
 
