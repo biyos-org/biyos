@@ -6,24 +6,24 @@ static int set_options(BIYOS_env *env)
     BIYOS_int option = 0;
     return BIYOS_setenvdblopt(env, BIYOS_OPT_MAXTIME, 60.0) == BIYOS_OK &&
            BIYOS_setenvboolopt(env, BIYOS_OPT_PRESOLVE, 0) == BIYOS_OK &&
-           BIYOS_getoptid(env, "check_lvl", &option) == BIYOS_OK &&
-           BIYOS_setenvintopt(env, option, BIYOS_CHECKLVL_FULL) == BIYOS_OK;
+           BIYOS_getoptid(env, "checking", &option) == BIYOS_OK &&
+           BIYOS_setenvintopt(env, option, BIYOS_CHK_FULL) == BIYOS_OK;
 }
 
 static int read_options(BIYOS_env *env)
 {
     BIYOS_real limit = 0.0;
     BIYOS_int presolve = 1;
-    BIYOS_int lvl = 0;
+    BIYOS_int chk = 0;
     if (BIYOS_getenvdblopt(env, BIYOS_OPT_MAXTIME, &limit) != BIYOS_OK ||
         BIYOS_getenvboolopt(env, BIYOS_OPT_PRESOLVE, &presolve) !=
             BIYOS_OK ||
-        BIYOS_getenvintopt(env, BIYOS_OPT_CHECKLVL, &lvl) != BIYOS_OK)
+        BIYOS_getenvintopt(env, BIYOS_OPT_CHK, &chk) != BIYOS_OK)
     {
         return 0;
     }
-    printf("maxtime %g, presolve %d, check_lvl %d\n", limit, presolve, lvl);
-    return presolve == 0 && lvl == BIYOS_CHECKLVL_FULL;
+    printf("maxtime %g, presolve %d, checking %d\n", limit, presolve, chk);
+    return presolve == 0 && chk == BIYOS_CHK_FULL;
 }
 
 static int model_options(BIYOS_env *env)
@@ -80,7 +80,7 @@ int main(void)
         return 1;
     }
     int done = set_options(env) && read_options(env) &&
-               model_options(env) && describe(env, "check_lvl");
+               model_options(env) && describe(env, "checking");
     if (!done)
     {
         BIYOS_error error = {.size = sizeof error};

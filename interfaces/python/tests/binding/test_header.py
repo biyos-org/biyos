@@ -126,11 +126,9 @@ def test_sos_kinds():
     assert group("BIYOS_SOSKND_") == names
 
 
-def test_levels():
-    names = {
-        f"BIYOS_CHECKLVL_{level.name}": level for level in biyos.CheckLevel
-    }
-    assert group("BIYOS_CHECKLVL_") == names
+def test_checking():
+    names = {f"BIYOS_CHK_{value.name}": value for value in biyos.Checking}
+    assert group("BIYOS_CHK_") == names
 
 
 def test_sources():

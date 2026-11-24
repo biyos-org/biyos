@@ -2,8 +2,8 @@ from enum import IntEnum
 from typing import NamedTuple
 
 
-class CheckLevel(IntEnum):
-    """The values of the option ``check_lvl``, as ``BIYOS_CHECKLVL_`` numbers
+class Checking(IntEnum):
+    """The values of the option ``checking``, as ``BIYOS_CHK_`` numbers
     them.
 
     Attributes
@@ -53,4 +53,4 @@ class Masks(NamedTuple):
     off: int
 
 
-ENUMS: dict[str, type[IntEnum]] = {"check_lvl": CheckLevel}
+ENUMS: dict[str, type[IntEnum]] = {"checking": Checking}

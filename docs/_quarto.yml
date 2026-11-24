@@ -135,7 +135,7 @@ quartodoc:
   sections:
     - title: Environments
       desc: An environment holds the options and the hooks, and every model is made on one.
-      contents: [Env, CheckLevel, Masks, OptionSource, Error, version, Versions]
+      contents: [Env, Checking, Masks, OptionSource, Error, version, Versions]
     - title: Models
       desc: A model holds the variables, functions, constraints, objectives, cones and complements of a problem.
       contents: [Model, VariableKind, ObjectiveSense, SOSKind, ConeKind, FileFormat, Operator]

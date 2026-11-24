@@ -30,13 +30,13 @@ from biyos._model import (
     VariableKind,
 )
 from biyos._operators import Operator
-from biyos._options import CheckLevel, Masks, OptionSource
+from biyos._options import Checking, Masks, OptionSource
 from biyos._versions import Versions
 
 __all__ = [
     "SOS",
     "CallbackRequest",
-    "CheckLevel",
+    "Checking",
     "Complement",
     "Complements",
     "Cone",

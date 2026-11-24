@@ -35,7 +35,7 @@ void describe(Event &event,
 }
 
 Checker::Checker(Env &env, const Lookup &lookup, StaticName module)
-    : env_(env), module_(module.text()), level_(lookup.get_enum<CheckLevel>(Option::CheckLevel))
+    : env_(env), module_(module.text()), checking_(lookup.get_enum<Checking>(Option::Checking))
 {
 }
 

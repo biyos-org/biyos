@@ -50,7 +50,7 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 #if BIYOS_ERR_INTERNAL > -500 || BIYOS_ERR_INTERNAL < -599
 #error "BIYOS_ERR_INTERNAL must be an internal error"
 #endif
-#if BIYOS_OPT_SEED != 1 || BIYOS_OPT_MAXTIME != 2 || BIYOS_OPT_CHECKLVL != 3 ||                    \
+#if BIYOS_OPT_SEED != 1 || BIYOS_OPT_MAXTIME != 2 || BIYOS_OPT_CHK != 3 ||                         \
     BIYOS_OPT_PRESOLVE != 4 || BIYOS_OPT_REPRO != 5 || BIYOS_OPT_FEASTOLABS != 6 ||                \
     BIYOS_OPT_FEASTOLREL != 7 || BIYOS_OPT_INTTOL != 8 || BIYOS_OPT_ZEROTOL != 9 ||                \
     BIYOS_OPT_MAXCPUTIME != 10
@@ -64,9 +64,8 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
     BIYOS_OPTSRC_DEFAULT != 3
 #error "a public option source changed"
 #endif
-#if !defined(BIYOS_CHECKLVL_NONE) || BIYOS_CHECKLVL_NONE != 1 || BIYOS_CHECKLVL_CHEAP != 2 ||      \
-    BIYOS_CHECKLVL_FULL != 3
-#error "a public check level changed"
+#if !defined(BIYOS_CHK_NONE) || BIYOS_CHK_NONE != 1 || BIYOS_CHK_CHEAP != 2 || BIYOS_CHK_FULL != 3
+#error "a public checking value changed"
 #endif
 #if BIYOS_EVTKND_MSG != 1 || BIYOS_EVTKND_INV != 2 || BIYOS_EVTKND_SPAN != 3
 #error "a public event kind changed"
