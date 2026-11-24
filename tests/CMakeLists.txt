@@ -65,9 +65,6 @@ set_tests_properties(NameTest.LocalBuffer PROPERTIES
     PASS_REGULAR_EXPRESSION "constant expression")
 
 biyos_add_test(test_expr
-    expr/chords.cpp
-    expr/reference.cpp
-    expr/sampling.cpp
     expr/curvature/draws.cpp
     expr/curvature/test_bends.cpp
     expr/curvature/test_curvature.cpp
@@ -84,13 +81,16 @@ biyos_add_test(test_expr
     expr/graph/test_uses.cpp
     expr/intervals/test_enclosure.cpp
     expr/intervals/test_interval.cpp
+    expr/utils/chords.cpp
+    expr/utils/reference.cpp
+    expr/utils/sampling.cpp
     expr/values/test_arithmetic.cpp
     expr/values/test_elementary.cpp
     expr/values/test_exponents.cpp
     expr/values/test_periodic.cpp
     expr/values/test_powers.cpp
     expr/values/test_value.cpp)
-target_include_directories(test_expr PRIVATE expr)
+target_include_directories(test_expr PRIVATE expr/utils)
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
 biyos_add_test(test_model

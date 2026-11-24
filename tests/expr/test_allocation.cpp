@@ -11,7 +11,7 @@
 #include "expr/reverse.hpp"
 #include "expr/tape.hpp"
 #include "expr/value.hpp"
-#include "refusal.hpp"
+#include "utils/refusal.hpp"
 
 #include <gtest/gtest.h>
 
