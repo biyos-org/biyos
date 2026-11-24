@@ -30,7 +30,7 @@ class OptionSource(IntEnum):
     ----------
     MODEL
         The model holds its own value of the option.
-    ENVIRONMENT
+    ENV
         The model shares the value set on its environment.
     DEFAULT
         Neither the model nor its environment set the option, so it holds
@@ -38,7 +38,7 @@ class OptionSource(IntEnum):
     """
 
     MODEL = 1
-    ENVIRONMENT = 2
+    ENV = 2
     DEFAULT = 3
 
 
