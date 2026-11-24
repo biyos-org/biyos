@@ -5,15 +5,6 @@ from biyos import _capi, _header
 from biyos._capi import lib
 from header import group
 
-KINDS = {
-    "BIYOS_OPTKND_BOOL": "OPTKND_BOOL",
-    "BIYOS_OPTKND_INT": "OPTKND_INT",
-    "BIYOS_OPTKND_DBL": "OPTKND_DBL",
-    "BIYOS_OPTKND_STR": "OPTKND_STR",
-    "BIYOS_OPTKND_ENUM": "OPTKND_ENUM",
-    "BIYOS_OPTKND_FLG": "OPTKND_FLG",
-}
-
 VARIABLES = {
     "BIYOS_VARKND_CONT": biyos.VariableKind.CONTINUOUS,
     "BIYOS_VARKND_BIN": biyos.VariableKind.BINARY,
@@ -91,8 +82,7 @@ def test_functions():
 
 def test_kinds():
     names = [name for name in dir(_capi) if name.startswith("OPTKND_")]
-    assert sorted(names) == sorted(KINDS.values())
-    paired = {macro: getattr(_capi, name) for macro, name in KINDS.items()}
+    paired = {f"BIYOS_{name}": getattr(_capi, name) for name in names}
     assert group("BIYOS_OPTKND_") == paired
 
 
