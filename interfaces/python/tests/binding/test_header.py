@@ -6,12 +6,12 @@ from biyos._capi import lib
 from header import group
 
 KINDS = {
-    "BIYOS_OPTKND_BOOL": "KIND_BOOL",
-    "BIYOS_OPTKND_INT": "KIND_INT",
-    "BIYOS_OPTKND_DBL": "KIND_DOUBLE",
-    "BIYOS_OPTKND_STR": "KIND_STRING",
-    "BIYOS_OPTKND_ENUM": "KIND_ENUM",
-    "BIYOS_OPTKND_FLG": "KIND_FLAGS",
+    "BIYOS_OPTKND_BOOL": "OPTKND_BOOL",
+    "BIYOS_OPTKND_INT": "OPTKND_INT",
+    "BIYOS_OPTKND_DBL": "OPTKND_DBL",
+    "BIYOS_OPTKND_STR": "OPTKND_STR",
+    "BIYOS_OPTKND_ENUM": "OPTKND_ENUM",
+    "BIYOS_OPTKND_FLG": "OPTKND_FLG",
 }
 
 VARIABLES = {
@@ -90,7 +90,7 @@ def test_functions():
 
 
 def test_kinds():
-    names = [name for name in dir(_capi) if name.startswith("KIND_")]
+    names = [name for name in dir(_capi) if name.startswith("OPTKND_")]
     assert sorted(names) == sorted(KINDS.values())
     paired = {macro: getattr(_capi, name) for macro, name in KINDS.items()}
     assert group("BIYOS_OPTKND_") == paired

@@ -29,21 +29,21 @@ def _name(name: str) -> bytes:
 
 
 _SETTERS: dict[int, Callable[..., int]] = {
-    _capi.KIND_BOOL: lib.BIYOS_setenvboolopt,
-    _capi.KIND_INT: lib.BIYOS_setenvintopt,
-    _capi.KIND_DOUBLE: lib.BIYOS_setenvdblopt,
-    _capi.KIND_STRING: lib.BIYOS_setenvstropt,
-    _capi.KIND_ENUM: lib.BIYOS_setenvintopt,
-    _capi.KIND_FLAGS: lib.BIYOS_setenvflgopt,
+    _capi.OPTKND_BOOL: lib.BIYOS_setenvboolopt,
+    _capi.OPTKND_INT: lib.BIYOS_setenvintopt,
+    _capi.OPTKND_DBL: lib.BIYOS_setenvdblopt,
+    _capi.OPTKND_STR: lib.BIYOS_setenvstropt,
+    _capi.OPTKND_ENUM: lib.BIYOS_setenvintopt,
+    _capi.OPTKND_FLG: lib.BIYOS_setenvflgopt,
 }
 
 _GETTERS: dict[int, Callable[..., int]] = {
-    _capi.KIND_BOOL: lib.BIYOS_getenvboolopt,
-    _capi.KIND_INT: lib.BIYOS_getenvintopt,
-    _capi.KIND_DOUBLE: lib.BIYOS_getenvdblopt,
-    _capi.KIND_STRING: lib.BIYOS_getenvstropt,
-    _capi.KIND_ENUM: lib.BIYOS_getenvintopt,
-    _capi.KIND_FLAGS: lib.BIYOS_getenvflgopt,
+    _capi.OPTKND_BOOL: lib.BIYOS_getenvboolopt,
+    _capi.OPTKND_INT: lib.BIYOS_getenvintopt,
+    _capi.OPTKND_DBL: lib.BIYOS_getenvdblopt,
+    _capi.OPTKND_STR: lib.BIYOS_getenvstropt,
+    _capi.OPTKND_ENUM: lib.BIYOS_getenvintopt,
+    _capi.OPTKND_FLG: lib.BIYOS_getenvflgopt,
 }
 
 

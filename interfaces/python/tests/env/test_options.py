@@ -6,7 +6,7 @@ import pytest
 
 import biyos
 from biyos import EventKind, EventLevel, OptionSource
-from biyos._capi import KIND_FLAGS, OK, lib
+from biyos._capi import OPTKND_FLG, OK, lib
 from biyos._versions import version_text
 from number import Number
 from refusal import LOCKED
@@ -82,7 +82,7 @@ def model(env):
 
 def as_flags(env, monkeypatch, name):
     option = env._option(name)
-    monkeypatch.setattr(env, "_lookup", lambda _: (option, KIND_FLAGS))
+    monkeypatch.setattr(env, "_lookup", lambda _: (option, OPTKND_FLG))
 
 
 def n_opts(env):

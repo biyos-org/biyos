@@ -180,21 +180,21 @@ _COUNTS: dict[type[Block[Any]], str] = {
 
 
 _SETTERS: dict[int, Callable[..., int]] = {
-    _capi.KIND_BOOL: lib.BIYOS_setmdlboolopt,
-    _capi.KIND_INT: lib.BIYOS_setmdlintopt,
-    _capi.KIND_DOUBLE: lib.BIYOS_setmdldblopt,
-    _capi.KIND_STRING: lib.BIYOS_setmdlstropt,
-    _capi.KIND_ENUM: lib.BIYOS_setmdlintopt,
-    _capi.KIND_FLAGS: lib.BIYOS_setmdlflgopt,
+    _capi.OPTKND_BOOL: lib.BIYOS_setmdlboolopt,
+    _capi.OPTKND_INT: lib.BIYOS_setmdlintopt,
+    _capi.OPTKND_DBL: lib.BIYOS_setmdldblopt,
+    _capi.OPTKND_STR: lib.BIYOS_setmdlstropt,
+    _capi.OPTKND_ENUM: lib.BIYOS_setmdlintopt,
+    _capi.OPTKND_FLG: lib.BIYOS_setmdlflgopt,
 }
 
 _GETTERS: dict[int, Callable[..., int]] = {
-    _capi.KIND_BOOL: lib.BIYOS_getmdlboolopt,
-    _capi.KIND_INT: lib.BIYOS_getmdlintopt,
-    _capi.KIND_DOUBLE: lib.BIYOS_getmdldblopt,
-    _capi.KIND_STRING: lib.BIYOS_getmdlstropt,
-    _capi.KIND_ENUM: lib.BIYOS_getmdlintopt,
-    _capi.KIND_FLAGS: lib.BIYOS_getmdlflgopt,
+    _capi.OPTKND_BOOL: lib.BIYOS_getmdlboolopt,
+    _capi.OPTKND_INT: lib.BIYOS_getmdlintopt,
+    _capi.OPTKND_DBL: lib.BIYOS_getmdldblopt,
+    _capi.OPTKND_STR: lib.BIYOS_getmdlstropt,
+    _capi.OPTKND_ENUM: lib.BIYOS_getmdlintopt,
+    _capi.OPTKND_FLG: lib.BIYOS_getmdlflgopt,
 }
 
 
