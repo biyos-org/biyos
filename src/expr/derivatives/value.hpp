@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/index.hpp"
+#include "expr/tape/frame.hpp"
 #include "expr/tape/tape.hpp"
 
 #include <cstddef>
@@ -31,6 +32,8 @@ void check_sweep(const Tape &tape,
                  std::span<const double> point,
                  const Workspace &workspace,
                  std::span<const double> values);
+void evaluate(const Instruction &instruction, const Frame &frame) noexcept;
+void keep(const Instruction &instruction, const Frame &frame) noexcept;
 void forward(const Block &block, std::span<const double> point, Workspace &workspace) noexcept;
 void linearize(const Block &block, std::span<const double> point, Workspace &workspace) noexcept;
 void store(const Block &block, const Workspace &workspace, std::span<double> outputs) noexcept;

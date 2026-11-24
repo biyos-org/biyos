@@ -133,6 +133,67 @@ void signed_power(const Instruction &instruction, const Frame &frame) noexcept
     map(instruction, frame, [exponent](double x) { return sign_power(x, exponent); });
 }
 
+Frame enter(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
+{
+    const std::span<double> slots(workspace.slots);
+    const std::span<const double> shared(workspace.shared);
+    const std::size_t lanes = workspace.lanes;
+    for (std::size_t k = 0; k < block.loads.size(); ++k)
+    {
+        std::ranges::copy(row(shared, at(block.loads[k]), lanes), row(slots, k, lanes).begin());
+    }
+    return {
+        .point = point,
+        .operands = block.operands,
+        .weights = block.weights,
+        .slots = slots,
+        .result = workspace.result,
+        .spare = workspace.spare,
+        .lanes = lanes,
+    };
+}
+
+[[noreturn]] void refuse(std::string object, std::string reason)
+{
+    throw Error(ErrorKind::InvalidArgument, std::move(object), std::move(reason));
+}
+
+void check_point(const Tape &tape, std::span<const double> point, std::size_t lanes)
+{
+    const std::string size = "size " + text_of(point.size());
+    if (point.size() % lanes != 0)
+    {
+        refuse("point", size + " is not a multiple of " + text_of(lanes) + " lanes");
+    }
+    if (static_cast<Offset>(point.size() / lanes) < tape.variables())
+    {
+        const std::string last = text_of(tape.variables() - 1) + in_lanes(lanes);
+        refuse("point", size + " does not cover variable " + last);
+    }
+}
+
+void check_seeds(std::span<const Index> variables, std::size_t lanes, std::size_t size)
+{
+    if (variables.size() > lanes)
+    {
+        refuse("variables", text_of(variables.size()) + " for " + text_of(lanes) + " lanes");
+    }
+    if (size % lanes != 0)
+    {
+        refuse("directions",
+               "size " + text_of(size) + " is not a multiple of " + text_of(lanes) + " lanes");
+    }
+    for (const Index variable : variables)
+    {
+        if (variable < 0 || static_cast<std::size_t>(variable) >= size / lanes)
+        {
+            refuse("variables", "variable " + text_of(variable) + " outside the directions");
+        }
+    }
+}
+
+}
+
 void evaluate(const Instruction &instruction, const Frame &frame) noexcept
 {
     switch (instruction.op)
@@ -230,67 +291,6 @@ void evaluate(const Instruction &instruction, const Frame &frame) noexcept
 void keep(const Instruction &instruction, const Frame &frame) noexcept
 {
     std::ranges::copy(frame.result, row(frame.slots, instruction.target, frame.lanes).begin());
-}
-
-Frame enter(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
-{
-    const std::span<double> slots(workspace.slots);
-    const std::span<const double> shared(workspace.shared);
-    const std::size_t lanes = workspace.lanes;
-    for (std::size_t k = 0; k < block.loads.size(); ++k)
-    {
-        std::ranges::copy(row(shared, at(block.loads[k]), lanes), row(slots, k, lanes).begin());
-    }
-    return {
-        .point = point,
-        .operands = block.operands,
-        .weights = block.weights,
-        .slots = slots,
-        .result = workspace.result,
-        .spare = workspace.spare,
-        .lanes = lanes,
-    };
-}
-
-[[noreturn]] void refuse(std::string object, std::string reason)
-{
-    throw Error(ErrorKind::InvalidArgument, std::move(object), std::move(reason));
-}
-
-void check_point(const Tape &tape, std::span<const double> point, std::size_t lanes)
-{
-    const std::string size = "size " + text_of(point.size());
-    if (point.size() % lanes != 0)
-    {
-        refuse("point", size + " is not a multiple of " + text_of(lanes) + " lanes");
-    }
-    if (static_cast<Offset>(point.size() / lanes) < tape.variables())
-    {
-        const std::string last = text_of(tape.variables() - 1) + in_lanes(lanes);
-        refuse("point", size + " does not cover variable " + last);
-    }
-}
-
-void check_seeds(std::span<const Index> variables, std::size_t lanes, std::size_t size)
-{
-    if (variables.size() > lanes)
-    {
-        refuse("variables", text_of(variables.size()) + " for " + text_of(lanes) + " lanes");
-    }
-    if (size % lanes != 0)
-    {
-        refuse("directions",
-               "size " + text_of(size) + " is not a multiple of " + text_of(lanes) + " lanes");
-    }
-    for (const Index variable : variables)
-    {
-        if (variable < 0 || static_cast<std::size_t>(variable) >= size / lanes)
-        {
-            refuse("variables", "variable " + text_of(variable) + " outside the directions");
-        }
-    }
-}
-
 }
 
 Workspace::Workspace(const Tape &tape, std::size_t count)
