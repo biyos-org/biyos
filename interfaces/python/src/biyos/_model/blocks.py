@@ -61,14 +61,14 @@ Self = TypeVar("Self", bound="Block[Any]")
 
 
 class Block(Generic[Item]):
-    __slots__ = ("_gen", "_model", "_size", "_start")
+    __slots__ = ("_gen", "_model", "_start", "_stop")
     _element: type[Item]
     _held: Callable[["Model"], int]
 
-    def __init__(self, mdl: "Model", pos: int, n: int, gen: int) -> None:
+    def __init__(self, mdl: "Model", start: int, stop: int, gen: int) -> None:
         self._model = mdl
-        self._start = pos
-        self._size = n
+        self._start = start
+        self._stop = stop
         self._gen = gen
 
     def __len__(self) -> int:
@@ -85,7 +85,7 @@ class Block(Generic[Item]):
             When the model has had a deletion since the block was made.
         """
         self._check()
-        return self._size
+        return self._stop - self._start
 
     def __contains__(self, item: object) -> bool:
         """Return whether a view names one of the block's items.
@@ -114,7 +114,7 @@ class Block(Generic[Item]):
         ):
             return False
         _current(item._model, item._gen, item._noun)
-        return self._start <= item._idx < self._start + self._size
+        return self._start <= item._idx < self._stop
 
     def __iter__(self) -> Iterator[Item]:
         """Iterate over the items of the block, each as a view.
@@ -197,37 +197,36 @@ class Block(Generic[Item]):
         self._check()
         mdl = _target(mdl)
         held = self._held(mdl)
-        end = self._start + self._size
-        if held < end:
+        if held < self._stop:
             noun = self._element._noun
-            needs = f"{held}, the block needs {end}"
+            needs = f"{held}, the block needs {self._stop}"
             raise ValueError(f"mdl holds too few {noun}s: {needs}")
-        return type(self)(mdl, self._start, self._size, mdl._gen)
+        return type(self)(mdl, self._start, self._stop, mdl._gen)
 
     def _check(self) -> None:
         _current(self._model, self._gen, "block")
 
     def _range(self) -> range:
-        return range(self._start, self._start + self._size)
+        return range(self._start, self._stop)
 
     def _view(self, idx: int) -> Item:
         return self._element(self._model, idx, self._gen)
 
     def _position(self, key: SupportsIndex) -> int:
         number = whole("index", key)
-        position = number + self._size if number < 0 else number
-        if not 0 <= position < self._size:
-            n = self._size
+        n = self._stop - self._start
+        position = number + n if number < 0 else number
+        if not 0 <= position < n:
             raise IndexError(f"index {number} is outside a block of {n}")
         return position
 
     def _slice(self: Self, key: slice) -> Self:
-        start, stop, step = key.indices(self._size)
+        start, stop, step = key.indices(self._stop - self._start)
         if step != 1:
             raise ValueError(f"slice step must be 1, not {step}")
-        pos = self._start + start
-        n = max(stop - start, 0)
-        return type(self)(self._model, pos, n, self._gen)
+        first = self._start + start
+        last = self._start + max(stop, start)
+        return type(self)(self._model, first, last, self._gen)
 
 
 class Variable(View, Operand):

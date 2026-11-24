@@ -728,7 +728,7 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addvar, n, *arrays, byref(first))
-        return Variables(self, first.value, n, self._gen)
+        return Variables(self, first.value, first.value + n, self._gen)
 
     def setvarbnd(
         self,
@@ -1121,7 +1121,7 @@ class Model:
         n = integer("n", n)
         first = c_int()
         self._call(lib.BIYOS_addfun, n, byref(first))
-        return Functions(self, first.value, n, self._gen)
+        return Functions(self, first.value, first.value + n, self._gen)
 
     def getnfun(self) -> int:
         """Return the number of functions.
@@ -2140,7 +2140,7 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addcon, count, *arrays, byref(first))
-        return Constraints(self, first.value, count, self._gen)
+        return Constraints(self, first.value, first.value + count, self._gen)
 
     def setconbnd(
         self,
@@ -2492,7 +2492,7 @@ class Model:
         idx = indices_of(self, Functions, "fun", funs, count)
         first = c_int()
         self._call(lib.BIYOS_addobj, count, idx, *arrays, byref(first))
-        return Objectives(self, first.value, count, self._gen)
+        return Objectives(self, first.value, first.value + count, self._gen)
 
     def setobjsense(
         self,
@@ -2899,7 +2899,7 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addind, count, *arrays, byref(first))
-        return Indicators(self, first.value, count, self._gen)
+        return Indicators(self, first.value, first.value + count, self._gen)
 
     def setindbnd(
         self,
@@ -3217,7 +3217,9 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addsos, count, *arrays, byref(first))
-        return SpecialOrderedSets(self, first.value, count, self._gen)
+        return SpecialOrderedSets(
+            self, first.value, first.value + count, self._gen
+        )
 
     def getnsos(self) -> int:
         """Return the number of special ordered sets.
@@ -3467,7 +3469,7 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addcone, n, *arrays, byref(first))
-        return Cones(self, first.value, n, self._gen)
+        return Cones(self, first.value, first.value + n, self._gen)
 
     def setconetol(
         self,
@@ -3825,7 +3827,7 @@ class Model:
         )
         first = c_int()
         self._call(lib.BIYOS_addccon, count, *arrays, byref(first))
-        return Complements(self, first.value, count, self._gen)
+        return Complements(self, first.value, first.value + count, self._gen)
 
     def setcconbnd(
         self,
@@ -4204,16 +4206,18 @@ class Model:
             n = len(idx)
             indices = indices_of(self, family, "idx", idx, n)
             return getattr(lib, f"{call}sp"), n, indices
-        beg = integer("the start of idx", span.start)
-        end = integer("the stop of idx", min(beg + len(span), _INT_MAX))
+        start = integer("the start of idx", span.start)
+        stop = integer("the stop of idx", min(start + len(span), _INT_MAX))
         function = getattr(lib, f"{call}rg")
-        if outputs > 0 and not self._inside(family, span):
-            self._call(function, beg, end, *([None] * outputs))
-        return function, beg, end
+        if outputs > 0 and not self._inside(family, start, stop):
+            self._call(function, start, stop, *([None] * outputs))
+        return function, start, stop
 
-    def _inside(self, family: type[Block[Any]], span: range) -> bool:
+    def _inside(
+        self, family: type[Block[Any]], start: int, stop: int
+    ) -> bool:
         total: int = getattr(self, _COUNTS[family])()
-        return 0 <= span.start <= total and len(span) <= total - span.start
+        return 0 <= start <= stop <= total
 
     def _setname(
         self,
