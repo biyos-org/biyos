@@ -136,16 +136,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     read = (c_void_p, c_char_p, c_int32, POINTER(c_void_p))
     _declare(lib, "BIYOS_readmdl", c_int, *read)
     _declare(lib, "BIYOS_writemdl", c_int, c_void_p, c_char_p, c_int32)
-    variables = (c_void_p, c_int32, ints, doubles, doubles)
-    _declare(lib, "BIYOS_addvar", c_int, *variables, ints)
-    _declare_pair(lib, "BIYOS_setvarbnd", doubles, doubles)
-    _declare_pair(lib, "BIYOS_getvarbnd", doubles, doubles)
-    _declare_pair(lib, "BIYOS_setvarknd", ints)
-    _declare_pair(lib, "BIYOS_getvarknd", ints)
-    _declare_tolerances(lib, "var", doubles)
-    _declare(lib, "BIYOS_getnvar", c_int, c_void_p, ints)
-    _declare_pair(lib, "BIYOS_getvar", ints, doubles, doubles)
-    _declare_pair(lib, "BIYOS_delvar", ints)
+    _declare_variables(lib, ints, doubles)
     _declare_functions(lib, ints, doubles)
     _declare_quadratic(lib, ints, doubles)
     _declare_constraints(lib, ints, doubles)
@@ -158,6 +149,19 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_expressions(lib, ints, doubles)
     _declare_settings(lib, ints, doubles)
     _declare_callbacks(lib, ints)
+
+
+def _declare_variables(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
+    variables = (c_void_p, c_int32, ints, doubles, doubles)
+    _declare(lib, "BIYOS_addvar", c_int, *variables, ints)
+    _declare_pair(lib, "BIYOS_setvarbnd", doubles, doubles)
+    _declare_pair(lib, "BIYOS_getvarbnd", doubles, doubles)
+    _declare_pair(lib, "BIYOS_setvarknd", ints)
+    _declare_pair(lib, "BIYOS_getvarknd", ints)
+    _declare_tolerances(lib, "var", doubles)
+    _declare(lib, "BIYOS_getnvar", c_int, c_void_p, ints)
+    _declare_pair(lib, "BIYOS_getvar", ints, doubles, doubles)
+    _declare_pair(lib, "BIYOS_delvar", ints)
 
 
 def _declare_functions(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
