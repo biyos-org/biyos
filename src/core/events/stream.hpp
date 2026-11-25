@@ -2,14 +2,16 @@
 
 #include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/events/deliveries.hpp"
 #include "core/events/event.hpp"
+#include "core/events/events.hpp"
 #include "core/events/hooks.hpp"
+#include "core/memory/depth.hpp"
 #include "core/timing/clock.hpp"
 
 #include <chrono>
 #include <concepts>
 #include <string_view>
-#include <utility>
 
 namespace biyos
 {
@@ -24,8 +26,23 @@ class Stream
     template <std::invocable<Event &> Fill>
     void emit(EventKind kind, EventLevel level, Fill &&fill) const noexcept
     {
-        const auto named = [this, &fill](Event &event) { fill(name(event)); };
-        env_.events().emit(kind, level, named, hooks_);
+        if (!wanted(kind, level))
+        {
+            return;
+        }
+        const Deliveries::Entry entry(env_.events().deliveries_);
+        Event event = blank(kind, level);
+        try
+        {
+            const Depth inside(entry.state().fills);
+            fill(event);
+        }
+        catch (...)
+        {
+            return;
+        }
+        const Depth delivery(entry.state().depth);
+        deliver(event);
     }
 
     void record(ErrorKind kind, std::string_view text) const noexcept;
@@ -42,7 +59,8 @@ class Stream
     explicit Stream(Env &env) noexcept;
     Stream(Env &env, Hooks &hooks, const Session &session) noexcept;
 
-    Event &name(Event &event) const noexcept;
+    Event blank(EventKind kind, EventLevel level) const noexcept;
+    void deliver(const Event &event) const noexcept;
 
     Env &env_;
     Hooks *hooks_;

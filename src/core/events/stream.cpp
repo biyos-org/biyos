@@ -44,10 +44,26 @@ bool Stream::filling() const noexcept
     return env_.events().filling();
 }
 
-Event &Stream::name(Event &event) const noexcept
+Event Stream::blank(EventKind kind, EventLevel level) const noexcept
 {
-    event.model = session_;
-    return event;
+    return Event{
+        .kind = kind,
+        .level = level,
+        .time = clock().wall_time() - origin(),
+        .module = {},
+        .text = {},
+        .fields = {},
+        .model = session_,
+    };
+}
+
+void Stream::deliver(const Event &event) const noexcept
+{
+    if (hooks_ != nullptr)
+    {
+        hooks_->deliver(event);
+    }
+    env_.events().hooks_.deliver(event);
 }
 
 const Session *Stream::session() const noexcept

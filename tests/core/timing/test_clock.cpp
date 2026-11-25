@@ -291,13 +291,14 @@ TEST_F(ClockTest, StopReads)
 
 TEST_F(ClockTest, UnwantedEvent)
 {
-    const CountingClock counter;
-    biyos::Events events(counter);
-    events.emit(EventKind::Message, EventLevel::Error, blank);
-    events.add_hook(EventKind::Message, EventLevel::Error, [](const biyos::Event &) {});
-    events.emit(EventKind::Message, EventLevel::Warning, blank);
+    auto owned = std::make_unique<CountingClock>();
+    const CountingClock &counter = *owned;
+    biyos::Env env(std::move(owned));
+    env.stream().emit(EventKind::Message, EventLevel::Error, blank);
+    env.events().add_hook(EventKind::Message, EventLevel::Error, [](const biyos::Event &) {});
+    env.stream().emit(EventKind::Message, EventLevel::Warning, blank);
     EXPECT_EQ(counter.wall_reads(), 1);
-    events.emit(EventKind::Message, EventLevel::Error, blank);
+    env.stream().emit(EventKind::Message, EventLevel::Error, blank);
     EXPECT_EQ(counter.wall_reads(), 2);
     EXPECT_EQ(counter.cpu_reads(), 0);
 }
@@ -311,12 +312,12 @@ TEST_F(ClockTest, EventTime)
     Times times;
     const auto keep = [&times](const biyos::Event &event) { times.push_back(event.time); };
     env.events().add_hook(EventKind::Message, EventLevel::Debug, keep);
-    env.events().emit(EventKind::Message, EventLevel::Info, blank);
+    env.stream().emit(EventKind::Message, EventLevel::Info, blank);
     fake.advance_wall(250ns);
     fake.advance_cpu(1s);
-    env.events().emit(EventKind::Message, EventLevel::Info, blank);
+    env.stream().emit(EventKind::Message, EventLevel::Info, blank);
     fake.advance_wall(3ms);
-    env.events().emit(EventKind::Message, EventLevel::Error, blank);
+    env.stream().emit(EventKind::Message, EventLevel::Error, blank);
     EXPECT_EQ(times, (Times{0ns, 250ns, 3ms + 250ns}));
 }
 

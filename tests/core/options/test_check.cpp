@@ -228,7 +228,7 @@ TEST_F(CheckTest, Filling)
     keep(EventKind::Invariant);
     keep(EventKind::Message);
     env.stream().record(biyos::ErrorKind::InvalidArgument, "earlier");
-    env.events().emit(EventKind::Message, EventLevel::Info, fill);
+    env.stream().emit(EventKind::Message, EventLevel::Info, fill);
     EXPECT_EQ(evaluated, 1);
     EXPECT_TRUE(kept.empty());
     EXPECT_STREQ(env.last_error().text, "earlier");

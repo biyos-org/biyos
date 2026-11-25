@@ -93,7 +93,7 @@ void blank(biyos::Event &) {}
 
 void announce(biyos::Env &env)
 {
-    env.events().emit(biyos::EventKind::Message, biyos::EventLevel::Info, blank);
+    env.stream().emit(biyos::EventKind::Message, biyos::EventLevel::Info, blank);
 }
 
 void tell(const BIYOS_model *model)

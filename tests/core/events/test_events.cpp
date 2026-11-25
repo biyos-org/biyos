@@ -1,7 +1,8 @@
+#include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events/events.hpp"
-#include "core/events/hooks.hpp"
-#include "core/timing/clock.hpp"
+#include "core/events/stream.hpp"
+#include "model/session/session.hpp"
 
 #include <gtest/gtest.h>
 
@@ -58,20 +59,20 @@ void farewell(biyos::Event &event)
 class Farewell
 {
   public:
-    explicit Farewell(biyos::Events &events) : events_(events) {}
-    ~Farewell() { events_.emit(EventKind::Message, EventLevel::Debug, farewell); }
+    explicit Farewell(biyos::Env &env) : env_(env) {}
+    ~Farewell() { env_.stream().emit(EventKind::Message, EventLevel::Debug, farewell); }
     Farewell(const Farewell &) = delete;
     Farewell &operator=(const Farewell &) = delete;
 
   private:
-    biyos::Events &events_;
+    biyos::Env &env_;
 };
 
 class Parting
 {
   public:
-    Parting(biyos::Events &events, Texts &texts)
-        : farewell_(std::make_shared<Farewell>(events)), texts_(&texts)
+    Parting(biyos::Env &env, Texts &texts)
+        : farewell_(std::make_shared<Farewell>(env)), texts_(&texts)
     {
     }
 
@@ -105,12 +106,12 @@ class Watch
     int seen_ = 0;
 };
 
-void chatter(biyos::Events &events, std::latch &start)
+void chatter(biyos::Env &env, std::latch &start)
 {
     start.arrive_and_wait();
     for (int i = 0; i < kRounds; ++i)
     {
-        events.emit(EventKind::Message, EventLevel::Info, describe);
+        env.stream().emit(EventKind::Message, EventLevel::Info, describe);
     }
 }
 
@@ -123,12 +124,12 @@ void churn(biyos::Events &events, std::latch &start)
     }
 }
 
-void talk(biyos::Events &events, biyos::Hooks &model, std::latch &start)
+void talk(const biyos::Session &model, std::latch &start)
 {
     start.arrive_and_wait();
     for (int i = 0; i < kRounds; ++i)
     {
-        events.emit(EventKind::Message, EventLevel::Info, describe, &model);
+        model.stream().emit(EventKind::Message, EventLevel::Info, describe);
     }
 }
 
@@ -138,9 +139,9 @@ void meet(std::latch &both, std::atomic<int> &met)
     ++met;
 }
 
-void send(biyos::Events &events, biyos::Hooks &model)
+void send(const biyos::Session &model)
 {
-    events.emit(EventKind::Message, EventLevel::Info, describe, &model);
+    model.stream().emit(EventKind::Message, EventLevel::Info, describe);
 }
 
 using Read = bool (biyos::Events::*)() const noexcept;
@@ -177,13 +178,15 @@ class EventTest : public ::testing::Test
 
     void say(EventLevel level, const std::string &text)
     {
-        events.emit(EventKind::Message, level, [&](biyos::Event &event) { event.text = text; });
+        env.stream().emit(EventKind::Message,
+                          level,
+                          [&](biyos::Event &event) { event.text = text; });
     }
 
-    void tell(biyos::Hooks &model, EventLevel level, const std::string &text)
+    void tell(const biyos::Session &model, EventLevel level, const std::string &text)
     {
         const auto fill = [&text](biyos::Event &event) { event.text = text; };
-        events.emit(EventKind::Message, level, fill, &model);
+        model.stream().emit(EventKind::Message, level, fill);
     }
 
     biyos::Hook recorder(const std::string &name)
@@ -200,8 +203,8 @@ class EventTest : public ::testing::Test
         }
     }
 
-    biyos::FakeClock clock;
-    biyos::Events events{clock};
+    biyos::Env env;
+    biyos::Events &events = env.events();
     Texts texts;
 };
 
@@ -241,13 +244,13 @@ TEST_F(EventTest, NoRecord)
 {
     int built = 0;
     const auto count = [&built](biyos::Event &) { ++built; };
-    events.emit(EventKind::Message, EventLevel::Error, count);
+    env.stream().emit(EventKind::Message, EventLevel::Error, count);
     events.delete_hook(listen(EventLevel::Debug, ignore));
-    events.emit(EventKind::Message, EventLevel::Error, count);
+    env.stream().emit(EventKind::Message, EventLevel::Error, count);
     listen(EventLevel::Error, ignore);
-    events.emit(EventKind::Message, EventLevel::Warning, count);
+    env.stream().emit(EventKind::Message, EventLevel::Warning, count);
     EXPECT_EQ(built, 0);
-    events.emit(EventKind::Message, EventLevel::Error, count);
+    env.stream().emit(EventKind::Message, EventLevel::Error, count);
     EXPECT_EQ(built, 1);
 }
 
@@ -271,7 +274,7 @@ TEST_F(EventTest, KindFilter)
     EXPECT_TRUE(events.wanted(EventKind::Message, EventLevel::Debug));
     EXPECT_FALSE(events.wanted(EventKind::Invariant, EventLevel::Warning));
     say(EventLevel::Error, "one");
-    events.emit(EventKind::Invariant, EventLevel::Error, two);
+    env.stream().emit(EventKind::Invariant, EventLevel::Error, two);
     EXPECT_EQ(texts, (Texts{"m one", "c two"}));
 }
 
@@ -307,10 +310,10 @@ TEST_F(EventTest, Filling)
     const auto fail = [](biyos::Event &) { throw std::runtime_error("fill"); };
     listen(EventLevel::Debug, [&](const biyos::Event &) { delivered = events.filling(); });
     EXPECT_FALSE(events.filling());
-    events.emit(EventKind::Message, EventLevel::Info, fill);
+    env.stream().emit(EventKind::Message, EventLevel::Info, fill);
     EXPECT_TRUE(filled);
     EXPECT_FALSE(delivered);
-    events.emit(EventKind::Message, EventLevel::Info, fail);
+    env.stream().emit(EventKind::Message, EventLevel::Info, fail);
     EXPECT_FALSE(events.filling());
 }
 
@@ -330,7 +333,7 @@ TEST_F(EventTest, Contents)
 {
     std::vector<biyos::Event> kept;
     listen(EventLevel::Debug, [&kept](const biyos::Event &event) { kept.push_back(event); });
-    events.emit(EventKind::Message, EventLevel::Warning, describe);
+    env.stream().emit(EventKind::Message, EventLevel::Warning, describe);
     ASSERT_EQ(kept.size(), 1U);
     const biyos::Event &event = kept.front();
     EXPECT_EQ(event.kind, EventKind::Message);
@@ -401,7 +404,7 @@ TEST_F(EventTest, NestedRemoval)
 
 TEST_F(EventTest, ErasedFarewell)
 {
-    const int id = listen(EventLevel::Debug, Parting(events, texts));
+    const int id = listen(EventLevel::Debug, Parting(env, texts));
     listen(EventLevel::Debug, recorder("r "));
     events.delete_hook(id);
     EXPECT_EQ(texts, Texts{"r farewell"});
@@ -409,7 +412,7 @@ TEST_F(EventTest, ErasedFarewell)
 
 TEST_F(EventTest, PrunedFarewell)
 {
-    const int id = listen(EventLevel::Debug, Parting(events, texts));
+    const int id = listen(EventLevel::Debug, Parting(env, texts));
     listen(EventLevel::Debug, recorder("r "));
     listen(EventLevel::Info, [this, id](const biyos::Event &) { events.delete_hook(id); });
     say(EventLevel::Info, "one");
@@ -438,21 +441,20 @@ TEST_F(EventTest, ThrowingFill)
 {
     listen(EventLevel::Debug, recorder(""));
     const auto fill = [](biyos::Event &) { throw std::bad_alloc(); };
-    EXPECT_NO_THROW(events.emit(EventKind::Message, EventLevel::Info, fill));
+    EXPECT_NO_THROW(env.stream().emit(EventKind::Message, EventLevel::Info, fill));
     say(EventLevel::Info, "after");
     EXPECT_EQ(texts, Texts{"after"});
 }
 
 TEST_F(EventTest, Model)
 {
-    const int address = 0;
-    const auto *model = reinterpret_cast<const biyos::Session *>(&address);
+    const biyos::Session session(env);
+    const biyos::Session *model = &session;
     std::vector<const biyos::Session *> seen;
     const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
-    const auto named = [model](biyos::Event &event) { event.model = model; };
     events.add_hook(EventKind::Message, EventLevel::Info, keep);
-    events.emit(EventKind::Message, EventLevel::Info, describe);
-    events.emit(EventKind::Message, EventLevel::Info, named);
+    env.stream().emit(EventKind::Message, EventLevel::Info, describe);
+    session.stream().emit(EventKind::Message, EventLevel::Info, describe);
     const std::vector<const biyos::Session *> expected{nullptr, model};
     EXPECT_EQ(seen, expected);
 }
@@ -465,7 +467,7 @@ TEST_F(EventTest, Turns)
     events.add_hook(EventKind::Message, EventLevel::Info, std::ref(watch));
     for (int i = 0; i < kThreads; ++i)
     {
-        threads.emplace_back(chatter, std::ref(events), std::ref(start));
+        threads.emplace_back(chatter, std::ref(env), std::ref(start));
     }
     for (std::thread &thread : threads)
     {
@@ -484,7 +486,7 @@ TEST_F(EventTest, Churn)
     threads.emplace_back(churn, std::ref(events), std::ref(start));
     for (int i = 0; i < kThreads; ++i)
     {
-        threads.emplace_back(chatter, std::ref(events), std::ref(start));
+        threads.emplace_back(chatter, std::ref(env), std::ref(start));
     }
     for (std::thread &thread : threads)
     {
@@ -499,16 +501,16 @@ TEST_F(EventTest, OtherThread)
 {
     Peek peek(events);
     listen(EventLevel::Debug, [&peek](const biyos::Event &event) { peek.hook(event); });
-    events.emit(EventKind::Message,
-                EventLevel::Info,
-                [&peek](biyos::Event &event) { peek.fill(event); });
+    env.stream().emit(EventKind::Message,
+                      EventLevel::Info,
+                      [&peek](biyos::Event &event) { peek.fill(event); });
     EXPECT_FALSE(peek.delivering);
     EXPECT_FALSE(peek.filling);
 }
 
 TEST_F(EventTest, ModelFirst)
 {
-    biyos::Hooks model;
+    biyos::Session model(env);
     model.add_hook(EventKind::Message, EventLevel::Debug, recorder("m "));
     listen(EventLevel::Debug, recorder("e "));
     tell(model, EventLevel::Info, "one");
@@ -518,21 +520,21 @@ TEST_F(EventTest, ModelFirst)
 
 TEST_F(EventTest, ModelOnly)
 {
-    biyos::Hooks model;
+    biyos::Session model(env);
     int built = 0;
     const auto count = [&built](biyos::Event &) { ++built; };
     model.add_hook(EventKind::Message, EventLevel::Warning, recorder("m "));
     listen(EventLevel::Error, recorder("e "));
-    events.emit(EventKind::Message, EventLevel::Info, count, &model);
+    model.stream().emit(EventKind::Message, EventLevel::Info, count);
     EXPECT_EQ(built, 0);
-    events.emit(EventKind::Message, EventLevel::Warning, count, &model);
+    model.stream().emit(EventKind::Message, EventLevel::Warning, count);
     EXPECT_EQ(built, 1);
     EXPECT_EQ(texts, Texts{"m "});
 }
 
 TEST_F(EventTest, ModelDelivering)
 {
-    biyos::Hooks model;
+    biyos::Session model(env);
     Peek peek(events);
     bool inside = false;
     const auto check = [&](const biyos::Event &) { inside = events.delivering(); };
@@ -540,7 +542,7 @@ TEST_F(EventTest, ModelDelivering)
     const auto fill = [&peek](biyos::Event &event) { peek.fill(event); };
     model.add_hook(EventKind::Message, EventLevel::Debug, check);
     model.add_hook(EventKind::Message, EventLevel::Debug, look);
-    events.emit(EventKind::Message, EventLevel::Info, fill, &model);
+    model.stream().emit(EventKind::Message, EventLevel::Info, fill);
     EXPECT_TRUE(inside);
     EXPECT_FALSE(peek.delivering);
     EXPECT_FALSE(peek.filling);
@@ -549,7 +551,7 @@ TEST_F(EventTest, ModelDelivering)
 
 TEST_F(EventTest, ModelTurns)
 {
-    std::array<biyos::Hooks, 2> models;
+    std::array<biyos::Session, 2> models{biyos::Session(env), biyos::Session(env)};
     std::array<Watch, 2> watches;
     Watch shared;
     std::latch start(kThreads);
@@ -561,8 +563,8 @@ TEST_F(EventTest, ModelTurns)
     }
     for (int i = 0; i < kThreads; ++i)
     {
-        biyos::Hooks &model = models[static_cast<std::size_t>(i) % models.size()];
-        threads.emplace_back(talk, std::ref(events), std::ref(model), std::ref(start));
+        const biyos::Session &model = models[static_cast<std::size_t>(i) % models.size()];
+        threads.emplace_back(talk, std::cref(model), std::ref(start));
     }
     for (std::thread &thread : threads)
     {
@@ -576,15 +578,15 @@ TEST_F(EventTest, ModelTurns)
 
 TEST_F(EventTest, ModelsBeside)
 {
-    biyos::Hooks first;
-    biyos::Hooks second;
+    biyos::Session first(env);
+    biyos::Session second(env);
     std::latch both(2);
     std::atomic<int> met{0};
     const auto meeting = [&both, &met](const biyos::Event &) { meet(both, met); };
     first.add_hook(EventKind::Message, EventLevel::Info, meeting);
     second.add_hook(EventKind::Message, EventLevel::Info, meeting);
-    std::thread other(send, std::ref(events), std::ref(second));
-    send(events, first);
+    std::thread other(send, std::cref(second));
+    send(first);
     other.join();
     EXPECT_EQ(met.load(), 2);
 }

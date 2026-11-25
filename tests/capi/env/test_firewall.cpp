@@ -32,7 +32,7 @@ BIYOS_status status_after(biyos::Env &env, const std::function<void()> &body)
 void say(biyos::Env &env, const std::string &text)
 {
     const auto fill = [&text](biyos::Event &event) { event.text = text; };
-    env.events().emit(EventKind::Message, EventLevel::Info, fill);
+    env.stream().emit(EventKind::Message, EventLevel::Info, fill);
 }
 
 void fail_inside(biyos::Env &env, int &calls)
@@ -219,7 +219,7 @@ TEST(FirewallTest, ThrowingFill)
     const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
     env.events().add_hook(EventKind::Message, EventLevel::Debug, keep);
     const auto fill = [](biyos::Event &) { throw std::bad_alloc(); };
-    const auto body = [&] { env.events().emit(EventKind::Message, EventLevel::Info, fill); };
+    const auto body = [&] { env.stream().emit(EventKind::Message, EventLevel::Info, fill); };
     EXPECT_EQ(status_after(env, body), BIYOS_OK);
     EXPECT_STREQ(env.last_error().text, "");
     EXPECT_TRUE(kept.empty());

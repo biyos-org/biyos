@@ -5,7 +5,7 @@
 namespace biyos
 {
 
-Events::Events(const Clock &clock) : clock_(clock), origin_(clock.wall_time()) {}
+Events::Events(const Clock &clock) : origin_(clock.wall_time()) {}
 
 int Events::add_hook(EventKind kind, EventLevel level, Hook hook)
 {
