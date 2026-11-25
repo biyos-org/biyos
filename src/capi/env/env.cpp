@@ -1,5 +1,6 @@
 #include "biyos/biyos.h"
 
+#include "capi/utils/codes.hpp"
 #include "capi/utils/entry.hpp"
 #include "capi/utils/firewall.hpp"
 #include "core/env.hpp"
@@ -10,6 +11,7 @@
 
 using biyos::capi::guarded;
 using biyos::capi::handle_of;
+using biyos::capi::status_of;
 using biyos::capi::writable;
 
 namespace
@@ -59,7 +61,7 @@ BIYOS_status BIYOS_lasterror(const BIYOS_env *env, BIYOS_error *err)
         return BIYOS_ERR_BADARG;
     }
     const biyos::RecordView record = env->core.last_error();
-    err->status = record.kind ? biyos::status_of(*record.kind) : BIYOS_OK;
+    err->status = record.kind ? status_of(*record.kind) : BIYOS_OK;
     err->mdl = handle_of(record.model);
     err->msg = record.text;
     return BIYOS_OK;

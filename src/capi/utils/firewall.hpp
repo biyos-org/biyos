@@ -1,6 +1,7 @@
 #pragma once
 
 #include "biyos/biyos.h"
+#include "capi/utils/codes.hpp"
 #include "core/error.hpp"
 #include "core/events/event.hpp"
 #include "core/events/stream.hpp"
