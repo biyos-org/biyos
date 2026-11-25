@@ -1,6 +1,6 @@
 #include "io/mps/values.hpp"
 
-#include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "io/draft/draft.hpp"
 #include "io/lines.hpp"
@@ -26,7 +26,7 @@ struct Value
 };
 
 template <typename Set>
-void read_pairs(Env &env,
+void read_pairs(Stream stream,
                 const Lines &lines,
                 Vectors &vectors,
                 const Draft &draft,
@@ -40,7 +40,7 @@ void read_pairs(Env &env,
                  "an " + std::string(section) +
                      " line needs a vector and one or two pairs of row and value");
     }
-    if (!vectors.keeps(env, lines, fields[0]))
+    if (!vectors.keeps(stream, lines, fields[0]))
     {
         return;
     }
@@ -61,12 +61,12 @@ void set_rhs(const Lines &lines, Draft &draft, const Value &value)
     row.rhs = value.value;
 }
 
-void set_range(Env &env, const Lines &lines, Draft &draft, const Value &value)
+void set_range(Stream stream, const Lines &lines, Draft &draft, const Value &value)
 {
     DraftRow &row = draft.rows[to_size(value.row)];
     if (row.sense == RowSense::Free)
     {
-        warn(env, lines, "the range of N row " + quote(value.name) + " is ignored");
+        warn(stream, lines, "the range of N row " + quote(value.name) + " is ignored");
         return;
     }
     if (row.range)
@@ -78,16 +78,16 @@ void set_range(Env &env, const Lines &lines, Draft &draft, const Value &value)
 
 }
 
-void read_rhs(Env &env, const Lines &lines, Vectors &vectors, Draft &draft)
+void read_rhs(Stream stream, const Lines &lines, Vectors &vectors, Draft &draft)
 {
     const auto set = [&](const Value &value) { set_rhs(lines, draft, value); };
-    read_pairs(env, lines, vectors, draft, "RHS", set);
+    read_pairs(stream, lines, vectors, draft, "RHS", set);
 }
 
-void read_range(Env &env, const Lines &lines, Vectors &vectors, Draft &draft)
+void read_range(Stream stream, const Lines &lines, Vectors &vectors, Draft &draft)
 {
-    const auto set = [&](const Value &value) { set_range(env, lines, draft, value); };
-    read_pairs(env, lines, vectors, draft, "RANGES", set);
+    const auto set = [&](const Value &value) { set_range(stream, lines, draft, value); };
+    read_pairs(stream, lines, vectors, draft, "RANGES", set);
 }
 
 }

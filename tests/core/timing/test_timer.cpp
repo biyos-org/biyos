@@ -1,6 +1,7 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events/events.hpp"
+#include "core/events/stream.hpp"
 #include "core/timing/clock.hpp"
 #include "core/timing/timer.hpp"
 
@@ -97,16 +98,16 @@ Texts lines(const std::vector<biyos::Event> &events)
 
 void run(biyos::Env &env, TimingTree &tree)
 {
-    const Timer solve(env, tree, "nlp", "solve");
+    const Timer solve(env.stream(), tree, "nlp", "solve");
     for (int step = 0; step < 3; ++step)
     {
-        const Timer iterate(env, tree, "nlp", "iterate");
+        const Timer iterate(env.stream(), tree, "nlp", "iterate");
     }
 }
 
 void abandon(biyos::Env &env, TimingTree &tree, biyos::FakeClock &clock)
 {
-    const Timer solve(env, tree, "nlp", "solve");
+    const Timer solve(env.stream(), tree, "nlp", "solve");
     clock.advance_wall(3ns);
     throw std::runtime_error("stop");
 }
@@ -151,22 +152,22 @@ class TimerTest : public ::testing::Test
 TEST_F(TimerTest, NestedScopes)
 {
     {
-        const Timer solve(env, tree, "nlp", "solve");
+        const Timer solve(env.stream(), tree, "nlp", "solve");
         advance(1ns, 1ns);
         {
-            const Timer presolve(env, tree, "nlp", "presolve");
+            const Timer presolve(env.stream(), tree, "nlp", "presolve");
             advance(2ns, 1ns);
-            const Timer factor(env, tree, "nlp", "factor");
+            const Timer factor(env.stream(), tree, "nlp", "factor");
             advance(4ns, 2ns);
         }
         {
-            const Timer root(env, tree, "nlp", "root");
-            const Timer factor(env, tree, "nlp", "factor");
+            const Timer root(env.stream(), tree, "nlp", "root");
+            const Timer factor(env.stream(), tree, "nlp", "factor");
             advance(8ns, 4ns);
         }
     }
     {
-        const Timer postsolve(env, tree, "nlp", "postsolve");
+        const Timer postsolve(env.stream(), tree, "nlp", "postsolve");
         advance(16ns, 8ns);
     }
     const Texts expected{
@@ -184,11 +185,11 @@ TEST_F(TimerTest, RepeatedScope)
 {
     for (int pass = 0; pass < 2; ++pass)
     {
-        const Timer solve(env, tree, "nlp", "solve");
+        const Timer solve(env.stream(), tree, "nlp", "solve");
         advance(1ns, 1ns);
         for (int step = 0; step < 3; ++step)
         {
-            const Timer iterate(env, tree, "nlp", "iterate");
+            const Timer iterate(env.stream(), tree, "nlp", "iterate");
             advance(2ns, 1ns);
         }
     }
@@ -209,10 +210,10 @@ TEST_F(TimerTest, PhaseEvents)
     listen(local);
     {
         fake.advance_wall(5ns);
-        const Timer solve(local, tree, "nlp", "solve");
+        const Timer solve(local.stream(), tree, "nlp", "solve");
         fake.advance_wall(3ns);
         fake.advance_cpu(2ns);
-        const Timer presolve(local, tree, "nlp", "presolve");
+        const Timer presolve(local.stream(), tree, "nlp", "presolve");
         fake.advance_wall(4ns);
         fake.advance_cpu(1ns);
     }
@@ -237,9 +238,9 @@ TEST_F(TimerTest, SlowHook)
     const auto slow = [this](const biyos::Event &event) { lag(event); };
     env.events().add_hook(EventKind::Span, EventLevel::Debug, slow);
     {
-        const Timer solve(env, tree, "nlp", "solve");
+        const Timer solve(env.stream(), tree, "nlp", "solve");
         advance(1ns, 1ns);
-        const Timer presolve(env, tree, "nlp", "presolve");
+        const Timer presolve(env.stream(), tree, "nlp", "presolve");
         advance(2ns, 1ns);
     }
     const Texts nodes{
@@ -260,7 +261,7 @@ TEST_F(TimerTest, Unwinding)
 {
     EXPECT_THROW(abandon(env, tree, clock), std::runtime_error);
     {
-        const Timer postsolve(env, tree, "nlp", "postsolve");
+        const Timer postsolve(env.stream(), tree, "nlp", "postsolve");
     }
     const Texts expected{
         "solve count=1 wall=3 cpu=0",
@@ -271,17 +272,17 @@ TEST_F(TimerTest, Unwinding)
 
 TEST_F(TimerTest, OutOfOrder)
 {
-    std::unique_ptr<Timer> a(new Timer(env, tree, "nlp", "a"));
-    std::unique_ptr<Timer> b(new Timer(env, tree, "nlp", "b"));
+    std::unique_ptr<Timer> a(new Timer(env.stream(), tree, "nlp", "a"));
+    std::unique_ptr<Timer> b(new Timer(env.stream(), tree, "nlp", "b"));
     advance(1ns, 0ns);
     a.reset();
     advance(2ns, 0ns);
-    std::unique_ptr<Timer> c(new Timer(env, tree, "nlp", "c"));
+    std::unique_ptr<Timer> c(new Timer(env.stream(), tree, "nlp", "c"));
     advance(4ns, 0ns);
     c.reset();
     b.reset();
     {
-        const Timer d(env, tree, "nlp", "d");
+        const Timer d(env.stream(), tree, "nlp", "d");
     }
     const Texts expected{
         "a count=1 wall=1 cpu=0",
@@ -321,7 +322,7 @@ TEST_F(TimerTest, FailedLeave)
     const auto drift = [&flaky](const biyos::Event &) { flaky.cpu += 10ns; };
     local.events().add_hook(EventKind::Span, EventLevel::Debug, drift);
     {
-        const Timer solve(local, tree, "nlp", "solve");
+        const Timer solve(local.stream(), tree, "nlp", "solve");
         flaky.wall += 5ns;
         flaky.cpu += 2ns;
         flaky.broken = true;
@@ -338,13 +339,13 @@ TEST_F(TimerTest, Entry)
 {
     listen(env);
     {
-        const Timer solve(env, tree, "nlp", "solve");
+        const Timer solve(env.stream(), tree, "nlp", "solve");
         advance(1ns, 1ns);
-        const EntryTimer read(env, "io", "read");
+        const EntryTimer read(env.stream(), "io", "read");
         advance(2ns, 1ns);
     }
     {
-        const EntryTimer read(env, "io", "read");
+        const EntryTimer read(env.stream(), "io", "read");
         advance(4ns, 2ns);
     }
     EXPECT_EQ(summary(tree), (Texts{"solve count=1 wall=3 cpu=2"}));

@@ -2,6 +2,7 @@
 
 #include "capi/utils/entry.hpp"
 #include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "io/files.hpp"
 
 #include <memory>
@@ -31,7 +32,11 @@ void save(const Session &session, const char *path, BIYOS_int fmt)
     const char *file = require(path, "path");
     const biyos::FileFormat format = biyos::find_format(fmt);
     biyos::Env &env = idle(session.env(), "environment");
-    biyos::write_file(env, session.model(), session.settings(), std::string_view(file), format);
+    biyos::write_file(env.stream(),
+                      session.model(),
+                      session.settings(),
+                      std::string_view(file),
+                      format);
 }
 
 }

@@ -3,6 +3,7 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events/event.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
 #include "io/mps/mps.hpp"
@@ -31,7 +32,7 @@ struct Warning
 inline Model read_text(Env &env, std::string_view text)
 {
     std::istringstream input{std::string(text)};
-    return read_mps(env, input, "t.mps");
+    return read_mps(env.stream(), input, "t.mps");
 }
 
 inline Model read_sample(std::string_view text)

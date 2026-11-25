@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/events/stream.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/text/name.hpp"
@@ -16,7 +16,7 @@ namespace biyos
 class Checker
 {
   public:
-    Checker(Env &env, const Lookup &lookup, StaticName module);
+    Checker(Stream stream, const Lookup &lookup, StaticName module);
 
     bool active(Checking cost) const noexcept
     {
@@ -45,7 +45,7 @@ class Checker
                            std::string_view object,
                            std::string_view values) const;
 
-    Env &env_;
+    Stream stream_;
     std::string_view module_;
     Checking checking_;
 };

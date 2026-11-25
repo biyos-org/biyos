@@ -105,10 +105,7 @@ BIYOS_status guarded(BIYOS_env *env, Args... arguments) noexcept
     biyos::Env &core = env->core;
     start(core);
     const EnvGuard busy(core);
-    return biyos::capi::guard(&core,
-                              nullptr,
-                              nullptr,
-                              [&] { admitted<Body>(busy, core, arguments...); });
+    return biyos::capi::guard(core.stream(), [&] { admitted<Body>(busy, core, arguments...); });
 }
 
 template <auto Body, typename Handle, typename... Args>
@@ -125,9 +122,7 @@ BIYOS_status guarded(Handle *session, Args... arguments) noexcept
         start(env);
     }
     const ModelGuard busy(env, session->usage());
-    return biyos::capi::guard(&env,
-                              session,
-                              &session->hooks(),
+    return biyos::capi::guard(session->stream(),
                               [&] { admitted<Body>(busy, *session, arguments...); });
 }
 

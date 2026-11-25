@@ -2,7 +2,7 @@
 
 #include "biyos/biyos.h"
 #include "core/check.hpp"
-#include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/timing/timer.hpp"
@@ -52,7 +52,7 @@ class Evaluation
   public:
     using Point = evaluation::Point;
 
-    Evaluation(Env &env, const Model &model, const Session *session = nullptr);
+    Evaluation(const Model &model, Stream stream, const Session *session);
 
     const Pattern &jacobian_pattern() const noexcept;
     const Lower &hessian_pattern() const noexcept;
@@ -78,8 +78,8 @@ class Evaluation
     void evaluate_hessian_product(Checker checker, const Point &point, std::span<Real> hv);
     void multiply(Index c, std::span<const Real> v, std::span<Real> hv) const noexcept;
 
-    Env &env_;
     const Model &model_;
+    Stream stream_;
     const Session *session_;
     evaluation::Program program_;
     Workspace workspace_;

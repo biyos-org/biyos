@@ -1,9 +1,9 @@
+#include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events/events.hpp"
 #include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/options/table.hpp"
-#include "core/timing/clock.hpp"
 #include "core/version.hpp"
 
 #include <gtest/gtest.h>
@@ -98,18 +98,17 @@ std::string failure(const std::function<void()> &body)
     return "no error";
 }
 
-struct Stream
+struct Listener
 {
-    Stream()
+    Listener()
     {
         const auto record = [this](const biyos::Event &event) { heard.push_back(event); };
-        events.add_hook(EventKind::Message, EventLevel::Debug, record);
+        env.events().add_hook(EventKind::Message, EventLevel::Debug, record);
     }
-    Stream(const Stream &) = delete;
-    Stream &operator=(const Stream &) = delete;
+    Listener(const Listener &) = delete;
+    Listener &operator=(const Listener &) = delete;
 
-    biyos::FakeClock clock;
-    biyos::Events events{clock};
+    biyos::Env env;
     std::vector<biyos::Event> heard;
 };
 
@@ -117,8 +116,8 @@ std::string built(const std::function<void(Rows &)> &change)
 {
     Rows rows = kRows;
     change(rows);
-    Stream stream;
-    return failure([&] { const biyos::Options options(rows, stream.events); });
+    Listener listener;
+    return failure([&] { const biyos::Options options(rows, listener.env); });
 }
 
 std::string built_enum(int default_value, std::span<const EnumValue> values)
@@ -141,8 +140,8 @@ std::string listed(const std::vector<biyos::Field> &fields)
 
 TEST(OptionTest, Defaults)
 {
-    Stream stream;
-    const biyos::Options options(stream.events);
+    Listener listener;
+    const biyos::Options options(listener.env);
     EXPECT_EQ(options.get_int(Option::Seed), 0);
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), kInfinity);
     EXPECT_EQ(options.get_int(Option::Checking), BIYOS_CHK_CHEAP);
@@ -157,16 +156,16 @@ TEST(OptionTest, Defaults)
 
 TEST(OptionTest, Bool)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     options.set_bool(Option::Presolve, false);
     EXPECT_FALSE(options.get_bool(Option::Presolve));
 }
 
 TEST(OptionTest, Int)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     options.set_int(Option::Seed, 42);
     EXPECT_EQ(options.get_int(Option::Seed), 42);
     options.set_int(Option::Seed, (std::numeric_limits<int>::max)());
@@ -175,8 +174,8 @@ TEST(OptionTest, Int)
 
 TEST(OptionTest, IntRange)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     options.set_int(Option::Seed, 7);
     EXPECT_EQ(failure([&] { options.set_int(Option::Seed, -1); }),
               "invalid argument: option 'seed': -1 is outside [0, 2147483647]");
@@ -185,8 +184,8 @@ TEST(OptionTest, IntRange)
 
 TEST(OptionTest, Double)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     options.set_double(Option::TimeLimit, 2.5);
     EXPECT_DOUBLE_EQ(options.get_double(Option::TimeLimit), 2.5);
     options.set_double(Option::TimeLimit, 0.0);
@@ -197,8 +196,8 @@ TEST(OptionTest, Double)
 
 TEST(OptionTest, DoubleRange)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     options.set_double(Option::TimeLimit, 2.5);
     EXPECT_EQ(failure([&] { options.set_double(Option::TimeLimit, -0.5); }),
               "invalid argument: option 'maxtime': -0.5 is outside [0, inf]");
@@ -209,8 +208,8 @@ TEST(OptionTest, DoubleRange)
 
 TEST(OptionTest, CpuLimit)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     options.set_double(Option::CpuTimeLimit, 0.0);
     EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), 0.0);
     options.set_double(Option::CpuTimeLimit, 2.5);
@@ -223,8 +222,8 @@ TEST(OptionTest, CpuLimit)
 
 TEST(OptionTest, ToleranceRange)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     for (const Option option : {Option::FeasAbs, Option::FeasRel, Option::IntTol, Option::ZeroTol})
     {
         const std::string name(biyos::name_of(option));
@@ -243,16 +242,16 @@ TEST(OptionTest, ToleranceRange)
 
 TEST(OptionTest, String)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     options.set_string(Option::Reproducer, "replay.txt");
     EXPECT_EQ(options.get_string(Option::Reproducer), "replay.txt");
 }
 
 TEST(OptionTest, Kept)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     const std::string_view empty = options.get_string(Option::Reproducer);
     options.set_string(Option::Reproducer, "replay.txt");
     const std::string_view first = options.get_string(Option::Reproducer);
@@ -269,8 +268,8 @@ TEST(OptionTest, Kept)
 
 TEST(OptionTest, Enum)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     for (const int checking : {BIYOS_CHK_FULL, BIYOS_CHK_NONE, BIYOS_CHK_CHEAP})
     {
         options.set_int(Option::Checking, checking);
@@ -280,8 +279,8 @@ TEST(OptionTest, Enum)
 
 TEST(OptionTest, EnumValue)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     options.set_int(Option::Checking, BIYOS_CHK_FULL);
     const std::string option = "invalid argument: option 'checking': ";
     const std::string list = " is not one of 1 (none), 2 (cheap), 3 (full)";
@@ -294,8 +293,8 @@ TEST(OptionTest, EnumValue)
 TEST(OptionTest, TypedEnum)
 {
     using biyos::Checking;
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     EXPECT_EQ(options.get_enum<Checking>(Option::Checking), Checking::Cheap);
     options.set_int(Option::Checking, BIYOS_CHK_FULL);
     EXPECT_EQ(options.get_enum<Checking>(Option::Checking), Checking::Full);
@@ -307,8 +306,8 @@ TEST(OptionTest, TypedEnum)
 
 TEST(OptionTest, WrongKind)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     EXPECT_EQ(failure([&] { options.set_double(Option::Seed, 1.0); }),
               "invalid argument: option 'seed': is an int, not a double");
     EXPECT_EQ(failure([&] { options.set_string(Option::Presolve, "yes"); }),
@@ -385,8 +384,8 @@ TEST(OptionTest, UnknownId)
 
 TEST(OptionTest, MissingRow)
 {
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     const Option past = static_cast<Option>(11);
     const Option zero = static_cast<Option>(0);
     EXPECT_EQ(failure([&] { options.set_int(past, 1); }),
@@ -404,8 +403,8 @@ TEST(OptionTest, MissingRow)
 TEST(OptionTest, Sources)
 {
     using biyos::OptionSource;
-    Stream stream;
-    biyos::Options options(stream.events);
+    Listener listener;
+    biyos::Options options(listener.env);
     EXPECT_EQ(options.source_of(Option::Seed), OptionSource::Default);
     options.set_int(Option::Seed, 3);
     EXPECT_EQ(options.source_of(Option::Seed), OptionSource::Environment);
@@ -421,8 +420,8 @@ TEST(OptionTest, Sources)
 
 TEST(OptionTest, Table)
 {
-    Stream stream;
-    biyos::Options options(kRows, stream.events);
+    Listener listener;
+    biyos::Options options(kRows, listener.env);
     EXPECT_EQ(options.get_int(Option{1}), 1);
     options.set_int(Option{1}, 5);
     EXPECT_EQ(options.get_int(Option{1}), 5);
@@ -430,7 +429,7 @@ TEST(OptionTest, Table)
               "invalid argument: option 'new': -1 is outside [0, 2147483647]");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_int(Option{4})); }),
               "internal error: option 4: has no table row");
-    EXPECT_TRUE(stream.heard.empty());
+    EXPECT_TRUE(listener.heard.empty());
 }
 
 TEST(OptionTest, BadTable)
@@ -492,24 +491,24 @@ TEST(OptionTest, Replacements)
 TEST(OptionTest, Retired)
 {
     const std::string retired = "invalid argument: option 'gone': retired in 0.0.3, use 'new'";
-    Stream stream;
-    biyos::Options options(kRows, stream.events);
+    Listener listener;
+    biyos::Options options(kRows, listener.env);
     EXPECT_EQ(failure([&] { options.set_int(Option{3}, 5); }), retired);
     EXPECT_EQ(failure([&] { options.set_bool(Option{3}, true); }), retired);
     EXPECT_EQ(failure([&] { options.set_double(Option{3}, 5.0); }), retired);
     EXPECT_EQ(failure([&] { options.set_string(Option{3}, "5"); }), retired);
     EXPECT_EQ(options.get_int(Option{3}), 1);
-    EXPECT_TRUE(stream.heard.empty());
+    EXPECT_TRUE(listener.heard.empty());
 }
 
 TEST(OptionTest, Deprecated)
 {
-    Stream stream;
-    biyos::Options options(kRows, stream.events);
+    Listener listener;
+    biyos::Options options(kRows, listener.env);
     options.set_int(Option{2}, 5);
     EXPECT_EQ(options.get_int(Option{2}), 5);
-    ASSERT_EQ(stream.heard.size(), 1U);
-    const biyos::Event &event = stream.heard.front();
+    ASSERT_EQ(listener.heard.size(), 1U);
+    const biyos::Event &event = listener.heard.front();
     EXPECT_EQ(event.kind, EventKind::Message);
     EXPECT_EQ(event.level, EventLevel::Warning);
     EXPECT_EQ(event.module, "core");
@@ -517,5 +516,5 @@ TEST(OptionTest, Deprecated)
     EXPECT_EQ(listed(event.fields), "option=old deprecated=0.0.2 replacement=new");
     EXPECT_EQ(failure([&] { options.set_int(Option{2}, -1); }),
               "invalid argument: option 'old': -1 is outside [0, 2147483647]");
-    EXPECT_EQ(stream.heard.size(), 1U);
+    EXPECT_EQ(listener.heard.size(), 1U);
 }

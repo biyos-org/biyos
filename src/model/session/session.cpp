@@ -39,9 +39,9 @@ Lookup Session::lookup() const
     return Lookup(settings_, env().options());
 }
 
-Hooks &Session::hooks() const noexcept
+Stream Session::stream() const noexcept
 {
-    return hooks_;
+    return Stream(env(), hooks_, *this);
 }
 
 int Session::add_hook(EventKind kind, EventLevel level, Hook hook)
@@ -58,7 +58,7 @@ Evaluation &Session::evaluation()
 {
     if (evaluation_ == nullptr)
     {
-        evaluation_ = std::make_unique<Evaluation>(env(), model_, this);
+        evaluation_ = std::make_unique<Evaluation>(model_, env().stream(), this);
     }
     return *evaluation_;
 }

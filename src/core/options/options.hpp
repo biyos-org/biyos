@@ -19,7 +19,7 @@
 namespace biyos
 {
 
-class Events;
+class Env;
 
 enum class Option
 {
@@ -166,8 +166,8 @@ Versions versions_of(Option option);
 class Options
 {
   public:
-    explicit Options(Events &events);
-    Options(std::span<const OptionSpec> table, Events &events);
+    explicit Options(Env &env);
+    Options(std::span<const OptionSpec> table, Env &env);
 
     void set_bool(Option option, bool value);
     void set_int(Option option, int value);
@@ -200,7 +200,7 @@ class Options
     int enum_value(Option option) const;
 
     std::span<const OptionSpec> table_;
-    Events &events_;
+    Env &env_;
     Strings strings_;
     std::vector<OptionValue> values_;
     std::vector<OptionSource> sources_;

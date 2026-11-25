@@ -1,5 +1,6 @@
 #include "biyos/biyos.h"
 #include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "expr/forms/terms.hpp"
@@ -196,7 +197,10 @@ std::vector<Real> exact_values(std::span<const Real> x)
 class Probe
 {
   public:
-    explicit Probe(bool product) : model_(mixed(product)), evaluation_(env_, model_) {}
+    explicit Probe(bool product)
+        : model_(mixed(product)), evaluation_(model_, env_.stream(), nullptr)
+    {
+    }
 
     std::vector<Real> values(std::vector<Real> x)
     {

@@ -102,8 +102,8 @@ void TimingTree::leave(std::size_t node, nanoseconds wall, nanoseconds cpu) noex
     }
 }
 
-Timer::Timer(Env &env, TimingTree &tree, StaticName module, StaticName name)
-    : clock_(env.clock()), events_(env.events()), tree_(tree), module_(module.text()),
+Timer::Timer(Stream stream, TimingTree &tree, StaticName module, StaticName name)
+    : stream_(stream), clock_(stream.clock()), tree_(tree), module_(module.text()),
       wall_(clock_.wall_time()), cpu_(clock_.cpu_time()), observed_wall_(tree.observed_wall_),
       observed_cpu_(tree.observed_cpu_), node_(tree.enter(name.text()))
 {
@@ -123,14 +123,14 @@ Timer::~Timer()
 
 void Timer::announce(std::string_view edge, nanoseconds wall, nanoseconds cpu) noexcept
 {
-    if (!events_.wanted(EventKind::Span, EventLevel::Info))
+    if (!stream_.wanted(EventKind::Span, EventLevel::Info))
     {
         return;
     }
     const std::string_view name = tree_.nodes()[node_].name;
-    const nanoseconds since = wall - events_.origin();
+    const nanoseconds since = wall - stream_.origin();
     const auto fill = [&](Event &event) { describe(event, module_, name, edge, since, cpu); };
-    events_.emit(EventKind::Span, EventLevel::Info, fill);
+    stream_.emit(EventKind::Span, EventLevel::Info, fill);
     tree_.observed_wall_ += clock_.wall_time() - wall;
     tree_.observed_cpu_ += cpu_of(clock_).value_or(cpu) - cpu;
 }

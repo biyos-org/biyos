@@ -1,6 +1,6 @@
 #include "io/mps/vectors.hpp"
 
-#include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "io/lines.hpp"
 #include "io/records.hpp"
 #include "io/report.hpp"
@@ -13,7 +13,7 @@ namespace biyos
 
 Vectors::Vectors(std::string_view section) : section_(section) {}
 
-bool Vectors::keeps(Env &env, const Lines &lines, std::string_view name)
+bool Vectors::keeps(Stream stream, const Lines &lines, std::string_view name)
 {
     if (!kept_)
     {
@@ -25,7 +25,7 @@ bool Vectors::keeps(Env &env, const Lines &lines, std::string_view name)
     }
     if (skipped_.emplace(name).second)
     {
-        warn(env,
+        warn(stream,
              lines,
              section_ + " vector " + quote(name) + " is ignored, only " + quote(*kept_) +
                  " is read");

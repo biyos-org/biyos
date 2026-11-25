@@ -1,7 +1,8 @@
 #include "capi/utils/firewall.hpp"
 #include "core/env.hpp"
 #include "core/events/events.hpp"
-#include "core/events/hooks.hpp"
+#include "core/events/stream.hpp"
+#include "model/session/session.hpp"
 
 #include <gtest/gtest.h>
 
@@ -25,13 +26,13 @@ BIYOS_status status_after(const std::function<void()> &body)
 
 BIYOS_status status_after(biyos::Env &env, const std::function<void()> &body)
 {
-    return biyos::capi::guard(&env, nullptr, nullptr, body);
+    return biyos::capi::guard(env.stream(), body);
 }
 
 void say(biyos::Env &env, const std::string &text)
 {
     const auto fill = [&text](biyos::Event &event) { event.text = text; };
-    env.events().emit(EventKind::Message, EventLevel::Info, fill);
+    env.stream().emit(EventKind::Message, EventLevel::Info, fill);
 }
 
 void fail_inside(biyos::Env &env, int &calls)
@@ -96,33 +97,30 @@ TEST(FirewallTest, ErrorMessage)
 
 TEST(FirewallTest, FailureModel)
 {
-    const int address = 0;
-    const auto *model = reinterpret_cast<const biyos::Session *>(&address);
     biyos::Env env;
+    const biyos::Session session(env);
     std::vector<const biyos::Session *> seen;
     const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
     env.events().add_hook(EventKind::Message, EventLevel::Error, keep);
-    EXPECT_EQ(biyos::capi::guard(&env, model, nullptr, [] { throw std::bad_alloc(); }),
+    EXPECT_EQ(biyos::capi::guard(session.stream(), [] { throw std::bad_alloc(); }),
               BIYOS_ERR_NOMEMORY);
-    EXPECT_EQ(env.last_error().model, model);
+    EXPECT_EQ(env.last_error().model, &session);
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, nullptr);
-    EXPECT_EQ(seen, (std::vector<const biyos::Session *>{model, nullptr}));
+    EXPECT_EQ(seen, (std::vector<const biyos::Session *>{&session, nullptr}));
 }
 
 TEST(FirewallTest, ModelHooks)
 {
-    const int address = 0;
-    const auto *model = reinterpret_cast<const biyos::Session *>(&address);
     biyos::Env env;
-    biyos::Hooks hooks;
+    biyos::Session session(env);
     std::vector<std::string> seen;
     const auto local = [&seen](const biyos::Event &event) { seen.push_back("m " + event.text); };
     const auto shared = [&seen](const biyos::Event &event) { seen.push_back("e " + event.text); };
-    hooks.add_hook(EventKind::Message, EventLevel::Error, local);
+    session.add_hook(EventKind::Message, EventLevel::Error, local);
     env.events().add_hook(EventKind::Message, EventLevel::Error, shared);
-    EXPECT_EQ(biyos::capi::guard(&env, model, &hooks, [] { throw std::bad_alloc(); }),
+    EXPECT_EQ(biyos::capi::guard(session.stream(), [] { throw std::bad_alloc(); }),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
     const std::vector<std::string> expected{
@@ -157,7 +155,7 @@ TEST(FirewallTest, UnknownMessage)
 TEST(FirewallTest, KeptMessage)
 {
     biyos::Env env;
-    env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
+    env.stream().record(biyos::ErrorKind::InvalidArgument, "earlier");
     EXPECT_EQ(status_after(env, [] {}), BIYOS_OK);
     EXPECT_STREQ(env.last_error().text, "earlier");
 }
@@ -220,7 +218,7 @@ TEST(FirewallTest, ThrowingFill)
     const auto keep = [&kept](const biyos::Event &event) { kept.push_back(event); };
     env.events().add_hook(EventKind::Message, EventLevel::Debug, keep);
     const auto fill = [](biyos::Event &) { throw std::bad_alloc(); };
-    const auto body = [&] { env.events().emit(EventKind::Message, EventLevel::Info, fill); };
+    const auto body = [&] { env.stream().emit(EventKind::Message, EventLevel::Info, fill); };
     EXPECT_EQ(status_after(env, body), BIYOS_OK);
     EXPECT_STREQ(env.last_error().text, "");
     EXPECT_TRUE(kept.empty());
@@ -229,7 +227,7 @@ TEST(FirewallTest, ThrowingFill)
 TEST(FirewallTest, CurrentMessage)
 {
     biyos::Env env;
-    env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
+    env.stream().record(biyos::ErrorKind::InvalidArgument, "earlier");
     std::string seen;
     const auto read = [&](const biyos::Event &) { seen = env.last_error().text; };
     env.events().add_hook(EventKind::Message, EventLevel::Error, read);
@@ -251,7 +249,7 @@ TEST(FirewallTest, NestedFailure)
 TEST(FirewallTest, QuietSuccess)
 {
     biyos::Env env;
-    env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
+    env.stream().record(biyos::ErrorKind::InvalidArgument, "earlier");
     int calls = 0;
     const auto nest = [&](const biyos::Event &) { fail_inside(env, calls); };
     env.events().add_hook(EventKind::Message, EventLevel::Info, nest);

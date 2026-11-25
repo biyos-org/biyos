@@ -3,6 +3,7 @@
 #include "core/env.hpp"
 #include "core/events/event.hpp"
 #include "core/events/hooks.hpp"
+#include "core/events/stream.hpp"
 #include "core/memory/usage.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/settings.hpp"
@@ -27,7 +28,7 @@ class Session
     Settings &settings() noexcept;
     const Settings &settings() const noexcept;
     Lookup lookup() const;
-    Hooks &hooks() const noexcept;
+    Stream stream() const noexcept;
     int add_hook(EventKind kind, EventLevel level, Hook hook);
     void delete_hook(int id);
     Evaluation &evaluation();

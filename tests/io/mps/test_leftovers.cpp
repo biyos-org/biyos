@@ -2,6 +2,7 @@
 
 #include "core/env.hpp"
 #include "core/events/event.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
@@ -39,7 +40,7 @@ std::vector<std::string> heard(const Model &model, const biyos::Settings &settin
     { texts.push_back(event.module + " " + event.text); };
     env.events().add_hook(EventKind::Message, EventLevel::Warning, record);
     const std::string path = testing::TempDir() + "biyos_left.mps";
-    biyos::write_file(env, model, settings, path, biyos::FileFormat::Mps);
+    biyos::write_file(env.stream(), model, settings, path, biyos::FileFormat::Mps);
     return texts;
 }
 
@@ -73,7 +74,7 @@ TEST(MpsTest, LeftOut)
     model.set_objectives(std::span(&first, 1), std::span(&objective, 1));
     biyos::Env env;
     biyos::Settings settings;
-    settings.set_int(biyos::Option::Seed, 3, env.events());
+    settings.set_int(biyos::Option::Seed, 3, env.stream());
     EXPECT_EQ(heard(model, settings),
               (std::vector{
                   left("the record tolerances"),

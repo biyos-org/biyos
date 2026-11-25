@@ -1,6 +1,7 @@
 #include "core/env.hpp"
 
 #include "core/error.hpp"
+#include "core/events/stream.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -26,12 +27,12 @@ std::unique_ptr<Clock> checked(std::unique_ptr<Clock> clock)
 Env::Env() : Env(std::make_unique<SystemClock>()) {}
 
 Env::Env(std::unique_ptr<Clock> clock)
-    : clock_(checked(std::move(clock))), events_(*clock_), options_(events_)
+    : clock_(checked(std::move(clock))), events_(clock_->wall_time()), options_(*this)
 {
 }
 
 Env::Env(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table)
-    : clock_(checked(std::move(clock))), events_(*clock_), options_(table, events_)
+    : clock_(checked(std::move(clock))), events_(clock_->wall_time()), options_(table, *this)
 {
 }
 
@@ -58,6 +59,11 @@ Events &Env::events() noexcept
 const Events &Env::events() const noexcept
 {
     return events_;
+}
+
+Stream Env::stream() noexcept
+{
+    return Stream(*this);
 }
 
 Interrupt &Env::interrupt() noexcept
@@ -103,7 +109,7 @@ ErrorScope *Env::scope() noexcept
     return delivery == nullptr ? nullptr : delivery->scope;
 }
 
-void Env::record_error(ErrorKind kind, std::string_view text, const Session *model) noexcept
+void Env::record(ErrorKind kind, std::string_view text, const Session *session) noexcept
 {
     ErrorScope *const open = scope();
     if (open != nullptr && !open->swapped_)
@@ -111,7 +117,7 @@ void Env::record_error(ErrorKind kind, std::string_view text, const Session *mod
         open->swapped_ = true;
         records_.swap(open->kept_);
     }
-    records_.put(status_of(kind), model, text);
+    records_.put(status_of(kind), session, text);
 }
 
 std::size_t Env::handles() const noexcept

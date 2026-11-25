@@ -34,8 +34,9 @@ void describe(Event &event,
 
 }
 
-Checker::Checker(Env &env, const Lookup &lookup, StaticName module)
-    : env_(env), module_(module.text()), checking_(lookup.get_enum<Checking>(Option::Checking))
+Checker::Checker(Stream stream, const Lookup &lookup, StaticName module)
+    : stream_(stream), module_(module.text()),
+      checking_(lookup.get_enum<Checking>(Option::Checking))
 {
 }
 
@@ -46,15 +47,14 @@ void Checker::fail(ErrorKind kind,
 {
     const Error error(kind, std::string(object), message_of(invariant, values));
     const auto fill = [&](Event &event) { describe(event, module_, error, invariant, values); };
-    Events &events = env_.events();
-    if (events.filling())
+    if (stream_.filling())
     {
         throw error;
     }
-    env_.record_error(kind, error.what());
-    if (!events.delivering())
+    stream_.record(kind, error.what());
+    if (!stream_.delivering())
     {
-        events.emit(EventKind::Invariant, EventLevel::Error, fill);
+        stream_.emit(EventKind::Invariant, EventLevel::Error, fill);
     }
     throw error;
 }

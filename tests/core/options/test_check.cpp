@@ -2,6 +2,7 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events/events.hpp"
+#include "core/events/stream.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
@@ -70,7 +71,7 @@ class CheckTest : public ::testing::Test
     biyos::Checker at(Checking checking)
     {
         env.options().set_int(biyos::Option::Checking, static_cast<int>(checking));
-        return biyos::Checker(env, biyos::Lookup(env.options()), "model");
+        return biyos::Checker(env.stream(), biyos::Lookup(env.options()), "model");
     }
 
     bool evaluate(bool result)
@@ -122,7 +123,7 @@ class CheckTest : public ::testing::Test
 
 TEST_F(CheckTest, DefaultLevel)
 {
-    const biyos::Checker checker(env, biyos::Lookup(env.options()), "model");
+    const biyos::Checker checker(env.stream(), biyos::Lookup(env.options()), "model");
     EXPECT_TRUE(checker.active(Checking::Cheap));
     EXPECT_FALSE(checker.active(Checking::Full));
 }
@@ -186,7 +187,7 @@ TEST_F(CheckTest, LastError)
     std::string seen;
     const auto read = [this, &seen](const biyos::Event &) { seen = env.last_error().text; };
     env.events().add_hook(EventKind::Invariant, EventLevel::Error, read);
-    env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
+    env.stream().record(biyos::ErrorKind::InvalidArgument, "earlier");
     const biyos::Error error =
         caught([this] { check(at(Checking::Cheap), Checking::Cheap, false); });
     EXPECT_EQ(seen, error.what());
@@ -226,8 +227,8 @@ TEST_F(CheckTest, Filling)
     const auto fill = [&](biyos::Event &) { check(checker, Checking::Cheap, false); };
     keep(EventKind::Invariant);
     keep(EventKind::Message);
-    env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
-    env.events().emit(EventKind::Message, EventLevel::Info, fill);
+    env.stream().record(biyos::ErrorKind::InvalidArgument, "earlier");
+    env.stream().emit(EventKind::Message, EventLevel::Info, fill);
     EXPECT_EQ(evaluated, 1);
     EXPECT_TRUE(kept.empty());
     EXPECT_STREQ(env.last_error().text, "earlier");
@@ -237,10 +238,10 @@ TEST_F(CheckTest, Models)
 {
     biyos::Settings first;
     const biyos::Settings second;
-    first.set_int(biyos::Option::Checking, BIYOS_CHK_FULL, env.events());
-    const biyos::Checker own(env, biyos::Lookup(first, env.options()), "model");
-    const biyos::Checker other(env, biyos::Lookup(second, env.options()), "model");
-    const biyos::Checker shared(env, biyos::Lookup(env.options()), "model");
+    first.set_int(biyos::Option::Checking, BIYOS_CHK_FULL, env.stream());
+    const biyos::Checker own(env.stream(), biyos::Lookup(first, env.options()), "model");
+    const biyos::Checker other(env.stream(), biyos::Lookup(second, env.options()), "model");
+    const biyos::Checker shared(env.stream(), biyos::Lookup(env.options()), "model");
     EXPECT_TRUE(own.active(Checking::Full));
     EXPECT_FALSE(other.active(Checking::Full));
     EXPECT_FALSE(shared.active(Checking::Full));

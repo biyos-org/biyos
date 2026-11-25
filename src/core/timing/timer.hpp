@@ -1,7 +1,6 @@
 #pragma once
 
-#include "core/env.hpp"
-#include "core/events/events.hpp"
+#include "core/events/stream.hpp"
 #include "core/text/name.hpp"
 #include "core/timing/clock.hpp"
 
@@ -54,7 +53,7 @@ class TimingTree
 class Timer
 {
   public:
-    Timer(Env &env, TimingTree &tree, StaticName module, StaticName name);
+    Timer(Stream stream, TimingTree &tree, StaticName module, StaticName name);
     ~Timer();
 
     Timer(const Timer &) = delete;
@@ -65,8 +64,8 @@ class Timer
                   std::chrono::nanoseconds wall,
                   std::chrono::nanoseconds cpu) noexcept;
 
+    Stream stream_;
     const Clock &clock_;
-    Events &events_;
     TimingTree &tree_;
     std::string_view module_;
     std::chrono::nanoseconds wall_;
@@ -79,7 +78,10 @@ class Timer
 class EntryTimer
 {
   public:
-    EntryTimer(Env &env, StaticName module, StaticName name) : timer_(env, tree_, module, name) {}
+    EntryTimer(Stream stream, StaticName module, StaticName name)
+        : timer_(stream, tree_, module, name)
+    {
+    }
 
   private:
     TimingTree tree_;

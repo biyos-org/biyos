@@ -6,6 +6,7 @@
 #include "capi/utils/busy.hpp"
 #include "capi/utils/entry.hpp"
 #include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/timing/timer.hpp"
 #include "model/model.hpp"
@@ -47,7 +48,7 @@ void make_copy(const Session &session, BIYOS_env *env, BIYOS_model **copy)
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
     const EnvGuard busy(target);
     busy.check();
-    const biyos::EntryTimer timer(session.env(), biyos::kModule, "copy");
+    const biyos::EntryTimer timer(session.env().stream(), biyos::kModule, "copy");
     *made = new BIYOS_model(target, session);
 }
 

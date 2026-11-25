@@ -40,52 +40,32 @@ Settings::Settings(const Settings &other) : table_(other.table_)
     }
 }
 
-void Settings::set_bool(Option option,
-                        bool value,
-                        Events &events,
-                        const Session *model,
-                        Hooks *hooks)
+void Settings::set_bool(Option option, bool value, Stream stream)
 {
-    store(option, value, events, model, hooks);
+    store(option, value, stream);
 }
 
-void Settings::set_int(Option option, int value, Events &events, const Session *model, Hooks *hooks)
+void Settings::set_int(Option option, int value, Stream stream)
 {
-    store(option, value, events, model, hooks);
+    store(option, value, stream);
 }
 
-void Settings::set_double(Option option,
-                          Real value,
-                          Events &events,
-                          const Session *model,
-                          Hooks *hooks)
+void Settings::set_double(Option option, Real value, Stream stream)
 {
-    store(option, value, events, model, hooks);
+    store(option, value, stream);
 }
 
-void Settings::set_string(Option option,
-                          std::string_view value,
-                          Events &events,
-                          const Session *model,
-                          Hooks *hooks)
+void Settings::set_string(Option option, std::string_view value, Stream stream)
 {
-    store(option, value, events, model, hooks);
+    store(option, value, stream);
 }
 
-void Settings::set_flags(Option option,
-                         Masks value,
-                         Events &events,
-                         const Session *model,
-                         Hooks *hooks)
+void Settings::set_flags(Option option, Masks value, Stream stream)
 {
-    store(option, value, events, model, hooks);
+    store(option, value, stream);
 }
 
-void Settings::store(Option option,
-                     const OptionValue &value,
-                     Events &events,
-                     const Session *model,
-                     Hooks *hooks)
+void Settings::store(Option option, const OptionValue &value, Stream stream)
 {
     check_scope(row_of(table_, option));
     const OptionSpec &spec = checked_row(table_, option, value);
@@ -99,7 +79,7 @@ void Settings::store(Option option,
     {
         entries_.push_back(Entry{.option = option, .value = own});
     }
-    warn_deprecated(events, table_, spec, model, hooks);
+    warn_deprecated(stream, table_, spec);
 }
 
 const OptionValue *Settings::find(Option option) const

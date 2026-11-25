@@ -2,7 +2,7 @@
 
 #include "capi/utils/entry.hpp"
 #include "core/env.hpp"
-#include "core/events/events.hpp"
+#include "core/events/stream.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
@@ -118,52 +118,39 @@ biyos::Settings &settings_of(Session &session)
     return session.settings();
 }
 
-biyos::Events &events_of(const Session &session)
-{
-    return session.env().events();
-}
-
 void set_model_bool(Session &session, BIYOS_int option, BIYOS_int value)
 {
     biyos::Settings &settings = settings_of(session);
     const biyos::Option found = biyos::find_option(option);
-    settings.set_bool(found, value != 0, events_of(session), &session, &session.hooks());
+    settings.set_bool(found, value != 0, session.stream());
 }
 
 void set_model_int(Session &session, BIYOS_int option, BIYOS_int value)
 {
     biyos::Settings &settings = settings_of(session);
     const biyos::Option found = biyos::find_option(option);
-    settings.set_int(found, value, events_of(session), &session, &session.hooks());
+    settings.set_int(found, value, session.stream());
 }
 
 void set_model_double(Session &session, BIYOS_int option, BIYOS_real value)
 {
     biyos::Settings &settings = settings_of(session);
     const biyos::Option found = biyos::find_option(option);
-    settings.set_double(found, value, events_of(session), &session, &session.hooks());
+    settings.set_double(found, value, session.stream());
 }
 
 void set_model_string(Session &session, BIYOS_int option, const char *value)
 {
     biyos::Settings &settings = settings_of(session);
     const biyos::Option found = biyos::find_option(option);
-    settings.set_string(found,
-                        require(value, "val"),
-                        events_of(session),
-                        &session,
-                        &session.hooks());
+    settings.set_string(found, require(value, "val"), session.stream());
 }
 
 void set_model_flags(Session &session, BIYOS_int option, BIYOS_mask on, BIYOS_mask off)
 {
     biyos::Settings &settings = settings_of(session);
     const biyos::Masks value{.on = on, .off = off};
-    settings.set_flags(biyos::find_option(option),
-                       value,
-                       events_of(session),
-                       &session,
-                       &session.hooks());
+    settings.set_flags(biyos::find_option(option), value, session.stream());
 }
 
 void get_model_bool(const Session &session, BIYOS_int option, BIYOS_int *value)

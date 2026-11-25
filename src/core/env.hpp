@@ -19,6 +19,7 @@ namespace biyos
 {
 
 class Env;
+class Stream;
 
 class ErrorScope
 {
@@ -68,14 +69,12 @@ class Env
 
     Events &events() noexcept;
     const Events &events() const noexcept;
+    Stream stream() noexcept;
 
     Interrupt &interrupt() noexcept;
     const Interrupt &interrupt() const noexcept;
 
     RecordView last_error() const noexcept;
-    void record_error(ErrorKind kind,
-                      std::string_view text,
-                      const Session *model = nullptr) noexcept;
 
     std::size_t handles() const noexcept;
 
@@ -83,8 +82,10 @@ class Env
 
   private:
     friend class ErrorScope;
+    friend class Stream;
 
     ErrorScope *scope() noexcept;
+    void record(ErrorKind kind, std::string_view text, const Session *session) noexcept;
 
     std::unique_ptr<Clock> clock_;
     Events events_;

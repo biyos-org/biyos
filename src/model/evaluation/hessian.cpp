@@ -1,6 +1,7 @@
 #include "model/evaluation/evaluation.hpp"
 
 #include "core/check.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/timing/timer.hpp"
@@ -40,19 +41,19 @@ void require_products(const Model &model)
 
 void Evaluation::hessian(const Lookup &lookup, const Point &point, std::span<Real> h)
 {
-    const Timer timer(env_, tree_, kModule, "hessian");
+    const Timer timer(stream_, tree_, kModule, "hessian");
     check(point.x);
     weigh(point.w);
     check("h", h.size(), hessian_pattern().rows.size());
     require(model_, Part::Hessian);
     program_.hessian.values(point.x, weights_, h);
     term_hessian(point.w, h);
-    evaluate_hessian(Checker(env_, lookup, kModule), point, h);
+    evaluate_hessian(Checker(stream_, lookup, kModule), point, h);
 }
 
 void Evaluation::product(const Lookup &lookup, const Point &point, std::span<Real> hv)
 {
-    const Timer timer(env_, tree_, kModule, "product");
+    const Timer timer(stream_, tree_, kModule, "product");
     check(point.x);
     weigh(point.w);
     check("v", point.v.size(), point.x.size());
@@ -60,7 +61,7 @@ void Evaluation::product(const Lookup &lookup, const Point &point, std::span<Rea
     require_products(model_);
     program_.hessian.product(point.x, weights_, point.v, hv);
     term_hessian_product(point, hv);
-    evaluate_hessian_product(Checker(env_, lookup, kModule), point, hv);
+    evaluate_hessian_product(Checker(stream_, lookup, kModule), point, hv);
 }
 
 void Evaluation::weigh(std::span<const Real> w)

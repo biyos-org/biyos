@@ -2,8 +2,8 @@
 
 #include "biyos/biyos.h"
 #include "core/check.hpp"
-#include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/text/text.hpp"
@@ -47,9 +47,9 @@ namespace
 
 constexpr std::size_t kSpans = 4;
 
-Program program_of(Env &env, const Model &model)
+Program program_of(const Model &model, Stream stream)
 {
-    const EntryTimer timer(env, kModule, "evaluation");
+    const EntryTimer timer(stream, kModule, "evaluation");
     std::vector<Index> rooted;
     std::vector<Offset> roots;
     const std::span<const Offset> all = model.roots(0, model.n_functions());
@@ -80,8 +80,8 @@ Program program_of(Env &env, const Model &model)
 
 }
 
-Evaluation::Evaluation(Env &env, const Model &model, const Session *session)
-    : env_(env), model_(model), session_(session), program_(program_of(env, model)),
+Evaluation::Evaluation(const Model &model, Stream stream, const Session *session)
+    : model_(model), stream_(stream), session_(session), program_(program_of(model, stream)),
       workspace_(program_.tape), adjoints_(program_.tape), values_(to_size(program_.tape.roots())),
       gradients_(program_.tape.pattern().variables.size()), out_(widest(model)),
       weights_(program_.roots.size()), covered_(widest(model))
@@ -101,7 +101,7 @@ const Lower &Evaluation::hessian_pattern() const noexcept
 
 void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span<Real> f)
 {
-    const Timer timer(env_, tree_, kModule, "values");
+    const Timer timer(stream_, tree_, kModule, "values");
     check(x);
     check("f", f.size(), to_size(model_.n_functions()));
     require(model_, Part::Function);
@@ -111,12 +111,12 @@ void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span
     {
         f[to_size(program_.rooted[e])] += values_[e];
     }
-    evaluate_function(Checker(env_, lookup, kModule), {.x = x, .w = {}, .v = {}}, f);
+    evaluate_function(Checker(stream_, lookup, kModule), {.x = x, .w = {}, .v = {}}, f);
 }
 
 void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::span<Real> g)
 {
-    const Timer timer(env_, tree_, kModule, "jacobian");
+    const Timer timer(stream_, tree_, kModule, "jacobian");
     check(x);
     const evaluation::Layout &layout = program_.layout;
     check("g", g.size(), layout.pattern.variables.size());
@@ -127,7 +127,7 @@ void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::sp
     {
         g[to_size(layout.slots.tape[p])] += gradients_[p];
     }
-    evaluate_jacobian(Checker(env_, lookup, kModule), {.x = x, .w = {}, .v = {}}, g);
+    evaluate_jacobian(Checker(stream_, lookup, kModule), {.x = x, .w = {}, .v = {}}, g);
 }
 
 void Evaluation::check(std::string_view argument, std::size_t size, std::size_t wanted)
