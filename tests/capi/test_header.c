@@ -44,6 +44,9 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 #if BIYOS_ERR_INUSE > -200 || BIYOS_ERR_INUSE < -299
 #error "BIYOS_ERR_INUSE must be a model error"
 #endif
+#if BIYOS_ERR_CALLBACK > -300 || BIYOS_ERR_CALLBACK < -399
+#error "BIYOS_ERR_CALLBACK must be a user code error"
+#endif
 #if BIYOS_ERR_NOMEMORY > -400 || BIYOS_ERR_NOMEMORY < -499
 #error "BIYOS_ERR_NOMEMORY must be a resource error"
 #endif

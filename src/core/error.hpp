@@ -17,6 +17,7 @@ enum class ErrorKind
     Unsupported,
     Busy,
     InUse,
+    Callback,
     NoMemory,
     FileAccess,
     Internal,

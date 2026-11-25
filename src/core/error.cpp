@@ -26,6 +26,8 @@ std::string_view kind_name(ErrorKind kind) noexcept
         return "busy";
     case ErrorKind::InUse:
         return "in use";
+    case ErrorKind::Callback:
+        return "callback";
     case ErrorKind::NoMemory:
         return "out of memory";
     case ErrorKind::FileAccess:
@@ -50,6 +52,8 @@ BIYOS_status status_of(ErrorKind kind) noexcept
         return BIYOS_ERR_BUSY;
     case ErrorKind::InUse:
         return BIYOS_ERR_INUSE;
+    case ErrorKind::Callback:
+        return BIYOS_ERR_CALLBACK;
     case ErrorKind::NoMemory:
         return BIYOS_ERR_NOMEMORY;
     case ErrorKind::FileAccess:
