@@ -6,6 +6,7 @@ import pytest
 NAMES = [
     "copies",
     "errors",
+    "evaluation",
     "events",
     "expressions",
     "model",

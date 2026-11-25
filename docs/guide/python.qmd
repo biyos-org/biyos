@@ -42,6 +42,8 @@ The readers return lists, in the order of the C call's arrays:
 | `getsos(idx)` | kinds, counts, variables, weights |
 | `getccon(idx)` | bounded functions, complementary functions, lower bounds, upper bounds |
 | `getpwl(idx)` | counts, abscissas, values |
+| `getgpat(idx)` | counts, variables |
+| `gethpat(idx)` | counts, rows |
 
 `idx` lists the items to read, or is a block or a range of them, and defaults to every item, so `model.getvar()` reads them all. The readers of terms size their arrays themselves. `getrlinterm` reads the linear terms of functions and `getclinterm` those of variables, each term as its function, its variable and its coefficient, and `getnrlinterm` and `getnclinterm` count them. `getquadterm` reads the quadratic terms of functions in the same shape, with two variables, and `getnquadterm` counts them. `addlinterm(fun, var, coef)` adds terms in that same shape, so `target.addlinterm(*source.getrlinterm())` copies the linear terms of one model into another with the same functions and variables. `addquadterm(fun, var1, var2, coef)` does the same for quadratic terms, from `getquadterm`. `getsos` reads special ordered sets as `addsos` takes them, the members of each set after those of the one before, so `target.addsos(*source.getsos())` copies them into a model with the same variables, and `getnsosvar` counts the members. `getpwl` reads piecewise linear functions the same way, the points of each after those of the one before, so `target.addpwl(*source.getpwl())` copies them, and `getnpwlpt` counts the points. `getexpr` reads the expressions of functions in the postfix `addexpr` takes, its codes as `Operator` members, and `getnexpr` counts their entries and values, so `target.addexpr(*source.getexpr())` adds the expressions of one model to another, ready to attach ([Reading a model back](#sec-model-reading)).
 
@@ -62,6 +64,15 @@ A pwl is data `addpwl` adds before any expression applies it, and it takes no na
 
 ```{.python file="interfaces/python/examples/piecewise.py" item="build"}
 ```
+
+## Evaluation {#sec-python-evaluation}
+
+`evalf(x)`, `evalg(x)`, `evalh(x, w)` and `evalhv(x, w, v)` evaluate the model at the point `x` as @sec-model-evaluating describes, and return lists: a value for each function, one for each entry of the Jacobian pattern, one for each entry of the lower Hessian pattern, and the product, a value for each variable. `getgpat(idx)` reads the variables of the functions `idx` lists, and `gethpat(idx)` the rows of the columns `idx` lists, each record's after those of the one before, every function or column by default, and `getngpat(idx)` and `getnhpat(idx)` count those entries. The values of `evalg` follow `getgpat()`, and those of `evalh` follow `gethpat()`:
+
+```{.python file="interfaces/python/examples/evaluation.py" item="evaluate"}
+```
+
+An `Exception` a callback raises stops the call, which raises `biyos.Error` with the code `BIYOS_ERR_CALLBACK` and the callback's exception as its `__cause__`, so the traceback shows both. Any other exception, such as `KeyboardInterrupt` or `SystemExit`, stops the call too and comes out of it unchanged, so `except Exception` does not catch it.
 
 ## Constants {#sec-python-constants}
 
