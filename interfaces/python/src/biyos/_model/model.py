@@ -3425,7 +3425,8 @@ class Model:
         points, extends its end segments past its first and last points,
         and takes the value ``y[i]`` at ``x[i]`` exactly. A pwl is data: it
         takes no name, is never deleted, and ``addpwlnode`` applies it
-        to a node. A call that fails adds no pwl.
+        to a node, ``piecewise`` to an expression. A call that fails adds
+        no pwl.
 
         Parameters
         ----------
