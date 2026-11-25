@@ -50,15 +50,6 @@ template <typename T> std::span<const T> all_of(const std::vector<T> &items)
     return items;
 }
 
-std::string value_table(std::string_view noun,
-                        std::string_view field,
-                        std::span<const Index> a,
-                        std::span<const Index> b)
-{
-    const auto entry = [&](Offset k) { return compared(field, at(a, k), at(b, k)); };
-    return table_difference(noun, size_of(a), size_of(b), entry);
-}
-
 }
 
 std::string differ(const Variable &a, const Variable &b)
@@ -145,16 +136,6 @@ std::string differ(const Member &a, const Member &b)
     });
 }
 
-std::string differ(Index a, Index b)
-{
-    return compared("function", a, b);
-}
-
-std::string differ(double a, double b)
-{
-    return compared("value", a, b);
-}
-
 std::string differ(const Tolerance &a, const Tolerance &b)
 {
     return first_of({
@@ -172,7 +153,7 @@ std::string differ(const PiecewiseLinear &a, const PiecewiseLinear &b)
 std::string differ(const Callback &a, const Callback &b)
 {
     return first_of({
-        value_table("covered function", "index", a.covered, b.covered),
+        value_table("covered function", "index", all_of(a.covered), all_of(b.covered)),
         a.data == b.data ? "" : "data differs",
         presence("value function", a.function, b.function),
         term_table("Jacobian entry", all_of(a.jacobian_pairs), all_of(b.jacobian_pairs)),

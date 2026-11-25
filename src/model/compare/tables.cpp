@@ -128,10 +128,14 @@ std::string cone_difference(const Model &a, const Model &b, Index cone)
 {
     return first_of({
         compared("kind", cone_kind(a, cone), cone_kind(b, cone)),
-        term_table("member", a.cone_functions(cone, cone + 1), b.cone_functions(cone, cone + 1)),
-        term_table("parameter",
-                   a.cone_parameters(cone, cone + 1),
-                   b.cone_parameters(cone, cone + 1)),
+        value_table("member",
+                    "function",
+                    a.cone_functions(cone, cone + 1),
+                    b.cone_functions(cone, cone + 1)),
+        value_table("parameter",
+                    "value",
+                    a.cone_parameters(cone, cone + 1),
+                    b.cone_parameters(cone, cone + 1)),
         differ(a.tolerance_of(Family::Cone, cone), b.tolerance_of(Family::Cone, cone)),
         named(a, b, Family::Cone, cone),
     });

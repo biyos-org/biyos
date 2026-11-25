@@ -36,8 +36,6 @@ std::string differ(const Objective &a, const Objective &b);
 std::string differ(const Indicator &a, const Indicator &b);
 std::string differ(const Complement &a, const Complement &b);
 std::string differ(const Member &a, const Member &b);
-std::string differ(Index a, Index b);
-std::string differ(double a, double b);
 std::string differ(const Tolerance &a, const Tolerance &b);
 std::string differ(const PiecewiseLinear &a, const PiecewiseLinear &b);
 std::string differ(const Callback &a, const Callback &b);
@@ -70,11 +68,31 @@ template <typename T> const T &at(std::span<const T> terms, Offset k)
     return terms[to_size(k)];
 }
 
+template <typename T, typename Compare>
+std::string term_table(std::string_view noun,
+                       std::span<const T> a,
+                       std::span<const T> b,
+                       Compare compare)
+{
+    const auto term = [&](Offset k) { return compare(at(a, k), at(b, k)); };
+    return table_difference(noun, size_of(a), size_of(b), term);
+}
+
 template <typename T>
 std::string term_table(std::string_view noun, std::span<const T> a, std::span<const T> b)
 {
-    const auto term = [&](Offset k) { return differ(at(a, k), at(b, k)); };
-    return table_difference(noun, size_of(a), size_of(b), term);
+    const auto term = [](const T &left, const T &right) { return differ(left, right); };
+    return term_table(noun, a, b, term);
+}
+
+template <typename T>
+std::string value_table(std::string_view noun,
+                        std::string_view field,
+                        std::span<const T> a,
+                        std::span<const T> b)
+{
+    const auto value = [&](T left, T right) { return compared(field, left, right); };
+    return term_table(noun, a, b, value);
 }
 
 }
