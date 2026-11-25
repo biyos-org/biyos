@@ -38,7 +38,7 @@ bool Directory::add(std::string_view name)
 
 Index Directory::size() const noexcept
 {
-    return static_cast<Index>(names_.size());
+    return to_index(names_.size());
 }
 
 std::span<const std::string_view> Directory::names() const noexcept

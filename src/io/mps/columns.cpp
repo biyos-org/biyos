@@ -57,9 +57,9 @@ void Columns::mark(const Lines &lines, std::string_view keyword)
 
 Index Columns::enter(const Lines &lines, Draft &draft, std::string_view name)
 {
-    if (current_ && draft.column_names.names()[static_cast<std::size_t>(*current_)] == name)
+    if (current_ && draft.column_names.names()[to_size(*current_)] == name)
     {
-        if (draft.columns[static_cast<std::size_t>(*current_)].marked != marked_)
+        if (draft.columns[to_size(*current_)].marked != marked_)
         {
             bad_file(lines, "column " + quote(name) + " crosses a marker");
         }
@@ -85,10 +85,10 @@ void Columns::add(const Lines &lines, Draft &draft, Index column, Fields pair)
 {
     const Index row = find_in(draft.row_names, lines, "row", pair[0]);
     const double value = value_of(lines, pair[1]);
-    Index &last = last_[static_cast<std::size_t>(row)];
+    Index &last = last_[to_size(row)];
     if (last == column)
     {
-        const std::string_view name = draft.column_names.names()[static_cast<std::size_t>(column)];
+        const std::string_view name = draft.column_names.names()[to_size(column)];
         bad_file(lines, "column " + quote(name) + " has row " + quote(pair[0]) + " twice");
     }
     last = column;

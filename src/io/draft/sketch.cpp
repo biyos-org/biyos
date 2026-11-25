@@ -81,7 +81,7 @@ std::vector<Index> add_rows(Draft &draft, const Model &model)
 {
     const Taken taken = user_names(model, {Family::Objective, Family::Constraint});
     std::vector<Index> functions;
-    functions.reserve(static_cast<std::size_t>(model.n_constraints()) + 1);
+    functions.reserve(to_size(model.n_constraints()) + 1);
     if (model.n_objectives() > 0)
     {
         add_objective(draft, model, taken);
@@ -109,7 +109,7 @@ std::vector<Index> add_rows(Draft &draft, const Model &model)
 void add_columns(Draft &draft, const Model &model)
 {
     const Taken taken = user_names(model, {Family::Variable});
-    draft.columns.reserve(static_cast<std::size_t>(model.n_variables()));
+    draft.columns.reserve(to_size(model.n_variables()));
     for (Index k = 0; k < model.n_variables(); ++k)
     {
         draft.columns.push_back(column_shape(k, model.variable(k)));
@@ -131,23 +131,22 @@ std::span<const LinearTerm> terms_of(const Model &model, Index function)
 
 void add_entries(Draft &draft, const Model &model, const std::vector<Index> &functions)
 {
-    std::vector<Offset> starts(static_cast<std::size_t>(model.n_variables()) + 1, 0);
+    std::vector<Offset> starts(to_size(model.n_variables()) + 1, 0);
     for (const Index function : functions)
     {
         for (const LinearTerm &term : terms_of(model, function))
         {
-            ++starts[static_cast<std::size_t>(term.variable) + 1];
+            ++starts[to_size(term.variable) + 1];
         }
     }
     std::partial_sum(starts.begin(), starts.end(), starts.begin());
-    draft.entries.resize(static_cast<std::size_t>(starts.back()));
+    draft.entries.resize(to_size(starts.back()));
     for (std::size_t row = 0; row < functions.size(); ++row)
     {
         for (const LinearTerm &term : terms_of(model, functions[row]))
         {
-            const auto at =
-                static_cast<std::size_t>(starts[static_cast<std::size_t>(term.variable)]++);
-            draft.entries[at] = DraftEntry{.row = static_cast<Index>(row),
+            const auto at = to_size(starts[to_size(term.variable)]++);
+            draft.entries[at] = DraftEntry{.row = to_index(row),
                                            .column = term.variable,
                                            .value = term.coefficient};
         }
