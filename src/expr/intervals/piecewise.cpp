@@ -40,6 +40,11 @@ std::size_t piece_of(std::span<const double> x, double t) noexcept
     return static_cast<std::size_t>(std::ranges::upper_bound(starts, t) - starts.begin());
 }
 
+double before(double x) noexcept
+{
+    return std::nextafter(x, -kInfinity);
+}
+
 Piece piece_at(const Pwl &pwl, std::size_t anchor, Interval child) noexcept
 {
     const std::size_t last = pwl.x.size() - 1;
@@ -47,7 +52,7 @@ Piece piece_at(const Pwl &pwl, std::size_t anchor, Interval child) noexcept
         .anchor = anchor,
         .segment = (std::min)(anchor, last - 1),
         .from = anchor == 0 ? child.lower() : (std::max)(child.lower(), pwl.x[anchor]),
-        .to = anchor == last ? child.upper() : (std::min)(child.upper(), pwl.x[anchor + 1]),
+        .to = anchor == last ? child.upper() : (std::min)(child.upper(), before(pwl.x[anchor + 1])),
     };
 }
 

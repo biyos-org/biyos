@@ -308,6 +308,18 @@ TEST(EnclosureTest, Distant)
     }
 }
 
+TEST(EnclosureTest, Steep)
+{
+    const Line steep{.x = {1.0, std::nextafter(1.0, kInfinity)}, .y = {0.0, 1e300}};
+    EXPECT_TRUE(exact(enclose(steep, steep.x[0], steep.x[1]), 0.0, 1e300));
+    const Line left{.x = {std::nextafter(-1.0, -kInfinity), -1.0}, .y = {0.0, 1e300}};
+    EXPECT_TRUE(exact(enclose(left, left.x[0], left.x[1]), 0.0, 1e300));
+    const Line cliff{.x = {0.0, 1.0, std::nextafter(1.0, kInfinity), 2.0},
+                     .y = {0.0, 0.0, 1e300, 1e300}};
+    EXPECT_TRUE(exact(enclose(cliff, 0.5, cliff.x[2]), 0.0, 1e300));
+    EXPECT_TRUE(exact(enclose(cliff, cliff.x[1], cliff.x[1]), 0.0, 0.0));
+}
+
 TEST(EnclosureTest, Sampled)
 {
     std::mt19937_64 engine(kSeed);
