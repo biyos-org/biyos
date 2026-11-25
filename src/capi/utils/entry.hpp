@@ -3,6 +3,7 @@
 #include "biyos/biyos.h"
 #include "capi/utils/busy.hpp"
 #include "capi/utils/firewall.hpp"
+#include "capi/utils/types.hpp"
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events/events.hpp"
