@@ -21,7 +21,7 @@ struct Request
     std::span<const double> v;
 };
 
-using UserFunction = std::function<int(const Request &request, std::span<double> out, void *data)>;
+using Routine = std::function<int(const Request &request, std::span<double> out, void *data)>;
 
 struct IndexPair
 {
@@ -35,12 +35,12 @@ struct Callback
 {
     std::vector<Index> covered;
     void *data;
-    UserFunction function;
+    Routine function;
     std::vector<IndexPair> jacobian_pairs;
-    UserFunction jacobian;
+    Routine jacobian;
     std::vector<IndexPair> hessian_pairs;
-    UserFunction hessian;
-    UserFunction hessian_product;
+    Routine hessian;
+    Routine hessian_product;
 };
 
 }
