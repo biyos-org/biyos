@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import spec
+from capi_page import page_of
 
 DOC = "docs/reference/capi.txt"
 MASKED = re.compile(
@@ -111,6 +112,16 @@ def mismatched(params, calls):
     return found
 
 
+def unplaced(root):
+    problems = []
+    for group in spec.read(root / DOC):
+        page = f"docs/reference/{page_of(group)}.qmd"
+        source = f"reference/_capi/{group.key}.md"
+        if f'source="{source}"' not in (root / page).read_text():
+            problems.append(f"{page}: includes no {source}")
+    return problems
+
+
 def check(root):
     names, params = documented(root / DOC)
     problems = []
@@ -134,7 +145,7 @@ def check(root):
             text = f"{name} has an entry but no header declares it"
             doc_problems.append((number, text))
     problems += [f"{DOC}:{n}: {text}" for n, text in sorted(doc_problems)]
-    return problems
+    return problems + unplaced(root)
 
 
 def main():
