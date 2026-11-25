@@ -290,8 +290,8 @@ class Model
                                std::span<const Index> variables,
                                UserFunction jacobian);
     void set_callback_hessian(Index callback,
-                              std::span<const Index> first,
-                              std::span<const Index> second,
+                              std::span<const Index> rows,
+                              std::span<const Index> columns,
                               UserFunction hessian);
     void set_callback_hessian_product(Index callback, UserFunction hessian_product);
     void set_callback_data(Index callback, void *data);

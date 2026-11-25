@@ -82,8 +82,8 @@ void set_jacobian(BIYOS_model &model,
 void set_hessian(BIYOS_model &model,
                  int cb,
                  std::int64_t nnz,
-                 const int *first,
-                 const int *second,
+                 const int *rows,
+                 const int *columns,
                  BIYOS_cbh h)
 {
     biyos::Model &core = writable(model);
@@ -91,10 +91,10 @@ void set_hessian(BIYOS_model &model,
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
     {
-        require(first, "var1");
-        require(second, "var2");
+        require(rows, "var1");
+        require(columns, "var2");
     }
-    core.set_callback_hessian(cb, {first, size}, {second, size}, caller);
+    core.set_callback_hessian(cb, {rows, size}, {columns, size}, caller);
 }
 
 void set_product(BIYOS_model &model, int cb, BIYOS_cbhv hv)
