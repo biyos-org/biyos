@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 
 #include <span>
+#include <vector>
 
 namespace
 {
@@ -81,6 +82,17 @@ TEST(SessionTest, Dropped)
     session.evaluation();
     session.change();
     EXPECT_EQ(session.cached(), nullptr);
+}
+
+TEST(SessionTest, Evaluated)
+{
+    Env env;
+    Session session(env);
+    std::vector<const Session *> seen;
+    const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
+    session.add_hook(EventKind::Span, EventLevel::Debug, keep);
+    session.evaluation();
+    EXPECT_EQ(seen, (std::vector<const Session *>{&session, &session}));
 }
 
 TEST(SessionTest, CopyEvaluation)

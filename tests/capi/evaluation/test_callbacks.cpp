@@ -1,18 +1,23 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
 #include "handles.hpp"
+#include "probes.hpp"
 
 #include <gtest/gtest.h>
 
 #include <cmath>
 #include <string>
+#include <vector>
 
 namespace
 {
 
 using biyos::test::Env;
+using biyos::test::last_error;
 using biyos::test::last_message;
+using biyos::test::mark;
 using biyos::test::Model;
+using Models = std::vector<const BIYOS_model *>;
 
 struct Inside
 {
@@ -41,6 +46,12 @@ int returning(const BIYOS_cbreq *, double *f, void *data)
 {
     f[0] = 1.0;
     return static_cast<const Inside *>(data)->result;
+}
+
+int unknown(const BIYOS_cbreq *, double *f, void *)
+{
+    f[0] = std::nan("");
+    return 0;
 }
 
 int reentering(const BIYOS_cbreq *request, double *f, void *data)
@@ -85,6 +96,32 @@ void watch(const BIYOS_event *, void *data)
     hooked.evaluated = BIYOS_evalf(hooked.model, &x, &f);
     hooked.counted = BIYOS_getngpatrg(hooked.model, 0, 1, &nnz);
     hooked.read = BIYOS_getnvar(hooked.model, &n);
+}
+
+Hooked hooked_on(const Model &model)
+{
+    return Hooked{.model = model.get(),
+                  .done = false,
+                  .evaluated = BIYOS_OK,
+                  .counted = BIYOS_OK,
+                  .read = BIYOS_ERR_INTERNAL};
+}
+
+void expect_refused(const Model &model, const Hooked &hooked)
+{
+    const double x = 0.5;
+    double f = -1.0;
+    ASSERT_EQ(BIYOS_evalf(model.get(), &x, &f), BIYOS_OK);
+    EXPECT_TRUE(hooked.done);
+    EXPECT_EQ(hooked.evaluated, BIYOS_ERR_BADARG);
+    EXPECT_EQ(hooked.counted, BIYOS_ERR_BADARG);
+    EXPECT_EQ(hooked.read, BIYOS_OK);
+}
+
+void listen(const Model &model, BIYOS_int kind, BIYOS_int level, Models &heard)
+{
+    BIYOS_index hook = -1;
+    EXPECT_EQ(BIYOS_addmdlhook(model.get(), mark, &heard, kind, level, &hook), BIYOS_OK);
 }
 
 void cover(const Model &model, BIYOS_cbf f, Inside &inside)
@@ -190,20 +227,39 @@ TEST(EvaluationTest, Hooked)
     const Model model(env);
     ASSERT_EQ(BIYOS_addvar(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(model.get(), 1, nullptr), BIYOS_OK);
-    Hooked hooked{.model = model.get(),
-                  .done = false,
-                  .evaluated = BIYOS_OK,
-                  .counted = BIYOS_OK,
-                  .read = BIYOS_ERR_INTERNAL};
+    Hooked hooked = hooked_on(model);
     BIYOS_index hook = -1;
     ASSERT_EQ(
         BIYOS_addenvhook(env.get(), watch, &hooked, BIYOS_EVTKND_SPAN, BIYOS_EVTLVL_DBG, &hook),
         BIYOS_OK);
+    expect_refused(model, hooked);
+    ASSERT_EQ(BIYOS_delenvhook(env.get(), hook), BIYOS_OK);
+    hooked = hooked_on(model);
+    ASSERT_EQ(
+        BIYOS_addmdlhook(model.get(), watch, &hooked, BIYOS_EVTKND_SPAN, BIYOS_EVTLVL_DBG, &hook),
+        BIYOS_OK);
+    const Model other(env);
+    Models stray;
+    listen(other, BIYOS_EVTKND_SPAN, BIYOS_EVTLVL_DBG, stray);
+    expect_refused(model, hooked);
+    EXPECT_TRUE(stray.empty());
+}
+
+TEST(EvaluationTest, Invariant)
+{
+    const Env env;
+    const Model model(env);
+    Inside inside = inside_of(env, model, 0);
+    cover(model, unknown, inside);
+    const Model other(env);
+    Models heard;
+    Models stray;
+    listen(model, BIYOS_EVTKND_INV, BIYOS_EVTLVL_ERR, heard);
+    listen(other, BIYOS_EVTKND_INV, BIYOS_EVTLVL_ERR, stray);
     const double x = 0.5;
     double f = -1.0;
-    ASSERT_EQ(BIYOS_evalf(model.get(), &x, &f), BIYOS_OK);
-    EXPECT_TRUE(hooked.done);
-    EXPECT_EQ(hooked.evaluated, BIYOS_ERR_BADARG);
-    EXPECT_EQ(hooked.counted, BIYOS_ERR_BADARG);
-    EXPECT_EQ(hooked.read, BIYOS_OK);
+    EXPECT_EQ(BIYOS_evalf(model.get(), &x, &f), BIYOS_ERR_CALLBACK);
+    EXPECT_EQ(heard, Models{model.get()});
+    EXPECT_TRUE(stray.empty());
+    EXPECT_EQ(last_error(env.get()).mdl, model.get());
 }
