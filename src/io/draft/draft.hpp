@@ -38,7 +38,7 @@ struct DraftColumn
     std::size_t upper_line = 0;
 };
 
-struct Entry
+struct DraftEntry
 {
     Index row;
     Index column;
@@ -53,7 +53,7 @@ struct Draft
     Directory row_names;
     std::vector<DraftColumn> columns;
     Directory column_names;
-    std::vector<Entry> entries;
+    std::vector<DraftEntry> entries;
 };
 
 bool negative_upper(const DraftColumn &column) noexcept;

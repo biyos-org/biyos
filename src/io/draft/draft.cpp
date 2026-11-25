@@ -122,14 +122,14 @@ void add_functions(Model &model, const Draft &draft)
         constants.push_back(free ? 0.0 - row.rhs.value_or(0.0) : 0.0);
     }
     std::vector<Offset> starts(draft.rows.size() + 1, 0);
-    for (const Entry &entry : draft.entries)
+    for (const DraftEntry &entry : draft.entries)
     {
         ++starts[static_cast<std::size_t>(entry.row) + 1];
     }
     std::partial_sum(starts.begin(), starts.end(), starts.begin());
     std::vector<Offset> next(starts.begin(), starts.end() - 1);
     std::vector<LinearTerm> terms(draft.entries.size());
-    for (const Entry &entry : draft.entries)
+    for (const DraftEntry &entry : draft.entries)
     {
         const auto at = static_cast<std::size_t>(next[static_cast<std::size_t>(entry.row)]++);
         terms[at] = LinearTerm{.variable = entry.column, .coefficient = entry.value};

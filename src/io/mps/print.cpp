@@ -57,7 +57,7 @@ void print_marker(std::ostream &output, std::string_view keyword)
 
 auto in_column(std::size_t column) noexcept
 {
-    return [column](const Entry &entry)
+    return [column](const DraftEntry &entry)
     { return static_cast<std::size_t>(entry.column) == column; };
 }
 
