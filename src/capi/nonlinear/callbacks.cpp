@@ -52,8 +52,8 @@ void add_callback(BIYOS_model &session,
                   void *data,
                   BIYOS_index *cb)
 {
-    biyos::Model &core = writable(session);
-    const biyos::Index index = core.add_callback(biyos::capi::listed(n, functions, "fun"), data);
+    biyos::Model &model = writable(session);
+    const biyos::Index index = model.add_callback(biyos::capi::listed(n, functions, "fun"), data);
     if (cb != nullptr)
     {
         *cb = index;
@@ -62,8 +62,8 @@ void add_callback(BIYOS_model &session,
 
 void set_values(BIYOS_model &session, BIYOS_index cb, BIYOS_cbf f)
 {
-    biyos::Model &core = writable(session);
-    core.set_callback_function(cb, Caller{require(f, "f")});
+    biyos::Model &model = writable(session);
+    model.set_callback_function(cb, Caller{require(f, "f")});
 }
 
 void set_jacobian(BIYOS_model &session,
@@ -73,7 +73,7 @@ void set_jacobian(BIYOS_model &session,
                   const BIYOS_index *variables,
                   BIYOS_cbg g)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const Caller caller{require(g, "g")};
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
@@ -81,7 +81,7 @@ void set_jacobian(BIYOS_model &session,
         require(functions, "fun");
         require(variables, "var");
     }
-    core.set_callback_jacobian(cb, {functions, size}, {variables, size}, caller);
+    model.set_callback_jacobian(cb, {functions, size}, {variables, size}, caller);
 }
 
 void set_hessian(BIYOS_model &session,
@@ -91,7 +91,7 @@ void set_hessian(BIYOS_model &session,
                  const BIYOS_index *columns,
                  BIYOS_cbh h)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const Caller caller{require(h, "h")};
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
@@ -99,13 +99,13 @@ void set_hessian(BIYOS_model &session,
         require(rows, "var1");
         require(columns, "var2");
     }
-    core.set_callback_hessian(cb, {rows, size}, {columns, size}, caller);
+    model.set_callback_hessian(cb, {rows, size}, {columns, size}, caller);
 }
 
 void set_product(BIYOS_model &session, BIYOS_index cb, BIYOS_cbhv hv)
 {
-    biyos::Model &core = writable(session);
-    core.set_callback_hessian_product(cb, Caller{require(hv, "hv")});
+    biyos::Model &model = writable(session);
+    model.set_callback_hessian_product(cb, Caller{require(hv, "hv")});
 }
 
 void set_data(BIYOS_model &session, BIYOS_index cb, void *data)

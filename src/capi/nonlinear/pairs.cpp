@@ -30,12 +30,12 @@ struct Pairs
     BIYOS_real *values;
 };
 
-std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> functions)
+std::size_t count_of(const biyos::Model &model, std::span<const biyos::Index> functions)
 {
     std::size_t count = 0;
     for (const biyos::Index function : functions)
     {
-        count += core.quadratic_terms(function, function + 1).size();
+        count += model.quadratic_terms(function, function + 1).size();
     }
     return count;
 }
@@ -71,14 +71,14 @@ void put_pair(const Pairs &out,
     }
 }
 
-void write_pairs(const biyos::Model &core,
+void write_pairs(const biyos::Model &model,
                  std::span<const biyos::Index> functions,
                  const Pairs &out)
 {
     std::size_t k = 0;
     for (const biyos::Index function : functions)
     {
-        for (const biyos::QuadraticTerm &term : core.quadratic_terms(function, function + 1))
+        for (const biyos::QuadraticTerm &term : model.quadratic_terms(function, function + 1))
         {
             put_pair(out, k, function, term);
             ++k;
@@ -108,11 +108,11 @@ void get_ranged(const BIYOS_model &session,
                 BIYOS_offset *counts,
                 const Pairs &out)
 {
-    const biyos::Model &core = session.model();
-    const auto terms = core.quadratic_terms(range.start, range.stop);
+    const biyos::Model &model = session.model();
+    const auto terms = model.quadratic_terms(range.start, range.stop);
     check_capacity(capacity, terms.size());
     const auto record = [&](biyos::Index j)
-    { return core.quadratic_terms(range.start + j, range.start + j + 1); };
+    { return model.quadratic_terms(range.start + j, range.start + j + 1); };
     biyos::capi::write_counts(to_size(range.stop - range.start), counts, record);
     biyos::capi::unpack(terms, terms.size(), out.rows, out.columns, out.values);
 }

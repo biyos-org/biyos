@@ -23,10 +23,10 @@ namespace
 template <Family Target, auto Delete, typename Selection>
 void delete_records(BIYOS_model &session, Selection selection, BIYOS_index *map)
 {
-    Model &core = writable(session);
-    const auto chosen = selected(core, Target, selection);
+    Model &model = writable(session);
+    const auto chosen = selected(model, Target, selection);
     const biyos::EntryTimer timer(session.env(), biyos::kModule, "delete");
-    const std::vector<biyos::Index> renumbered = (core.*Delete)(chosen);
+    const std::vector<biyos::Index> renumbered = (model.*Delete)(chosen);
     if (map != nullptr)
     {
         std::ranges::copy(renumbered, map);

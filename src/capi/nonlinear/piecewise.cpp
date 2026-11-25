@@ -41,9 +41,9 @@ struct Outputs
     BIYOS_real *y;
 };
 
-Index held(const biyos::Model &core) noexcept
+Index held(const biyos::Model &model) noexcept
 {
-    return static_cast<Index>(core.graph().points().size());
+    return static_cast<Index>(model.graph().points().size());
 }
 
 std::span<const BIYOS_real> input(const BIYOS_real *values, std::size_t n, std::string_view name)
@@ -55,9 +55,9 @@ std::span<const BIYOS_real> input(const BIYOS_real *values, std::size_t n, std::
     return {values, n};
 }
 
-void check_room(const biyos::Model &core, std::size_t added)
+void check_room(const biyos::Model &model, std::size_t added)
 {
-    if (added > biyos::kRoom - to_size(held(core)))
+    if (added > biyos::kRoom - to_size(held(model)))
     {
         throw biyos::Error(biyos::ErrorKind::NoMemory, "model", "no pwl index left");
     }
@@ -70,18 +70,18 @@ void add_pwls(BIYOS_model &session,
               const BIYOS_real *y,
               BIYOS_index *start)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
         require(counts, "cnt");
     }
     const std::vector<Offset> begins = starts_of(size, counts);
-    check_room(core, size);
+    check_room(model, size);
     const auto total = to_size(begins.back());
     const std::span<const BIYOS_real> xs = input(x, total, "x");
     const std::span<const BIYOS_real> ys = input(y, total, "y");
-    const Offset first = core.add_piecewise_linears(begins, xs, ys);
+    const Offset first = model.add_piecewise_linears(begins, xs, ys);
     if (start != nullptr)
     {
         *start = static_cast<Index>(first);
@@ -93,30 +93,30 @@ void n_pwls(const BIYOS_model &session, BIYOS_index *n)
     *require(n, "n") = held(session.model());
 }
 
-std::span<const Index> chosen(const biyos::Model &core, List list)
+std::span<const Index> chosen(const biyos::Model &model, List list)
 {
     const std::span<const Index> indices = listed(list.n, list.indices);
     for (const Index index : indices)
     {
-        biyos::check_index(kNoun, index, held(core));
+        biyos::check_index(kNoun, index, held(model));
     }
     return indices;
 }
 
-std::vector<Index> chosen(const biyos::Model &core, Range range)
+std::vector<Index> chosen(const biyos::Model &model, Range range)
 {
-    biyos::check_span(kNoun, range.start, range.stop, held(core));
+    biyos::check_span(kNoun, range.start, range.stop, held(model));
     std::vector<Index> indices(to_size(range.stop - range.start));
     std::iota(indices.begin(), indices.end(), range.start);
     return indices;
 }
 
-std::size_t count_of(const biyos::Model &core, std::span<const Index> pwls)
+std::size_t count_of(const biyos::Model &model, std::span<const Index> pwls)
 {
     std::size_t count = 0;
     for (const Index index : pwls)
     {
-        count += core.graph().points().piecewise_linear(index).x.size();
+        count += model.graph().points().piecewise_linear(index).x.size();
     }
     return count;
 }
@@ -137,12 +137,12 @@ void copy_to(std::span<const biyos::Real> from, BIYOS_real *to, std::size_t k)
     }
 }
 
-void write_pwls(const biyos::Model &core, std::span<const Index> pwls, const Outputs &out)
+void write_pwls(const biyos::Model &model, std::span<const Index> pwls, const Outputs &out)
 {
     std::size_t k = 0;
     for (std::size_t j = 0; j < pwls.size(); ++j)
     {
-        const auto pwl = core.graph().points().piecewise_linear(pwls[j]);
+        const auto pwl = model.graph().points().piecewise_linear(pwls[j]);
         copy_to(pwl.x, out.x, k);
         copy_to(pwl.y, out.y, k);
         k += pwl.x.size();
@@ -166,8 +166,8 @@ void get_pwls(const BIYOS_model &session,
 
 void add_pwl_node(BIYOS_model &session, BIYOS_index pwl, BIYOS_offset argument, BIYOS_offset *node)
 {
-    biyos::Model &core = writable(session);
-    const Offset made = core.add_piecewise(pwl, argument);
+    biyos::Model &model = writable(session);
+    const Offset made = model.add_piecewise(pwl, argument);
     if (node != nullptr)
     {
         *node = made;

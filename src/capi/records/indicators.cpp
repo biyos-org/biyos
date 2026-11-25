@@ -61,7 +61,7 @@ void require_fields(const Fields &fields)
 
 void add_indicators(BIYOS_model &session, BIYOS_index n, const Fields &fields, BIYOS_index *start)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -80,8 +80,8 @@ void add_indicators(BIYOS_model &session, BIYOS_index n, const Fields &fields, B
     {
         added.push_back(given(free, k, fields));
     }
-    const biyos::Index index = core.n_indicators();
-    core.add_indicators(added);
+    const biyos::Index index = model.n_indicators();
+    model.add_indicators(added);
     if (start != nullptr)
     {
         *start = index;
@@ -91,15 +91,15 @@ void add_indicators(BIYOS_model &session, BIYOS_index n, const Fields &fields, B
 template <typename Selection>
 void set_chosen(BIYOS_model &session, Selection selection, const Fields &fields)
 {
-    biyos::Model &core = writable(session);
-    const auto changed = selected(core, Family::Indicator, selection);
+    biyos::Model &model = writable(session);
+    const auto changed = selected(model, Family::Indicator, selection);
     std::vector<biyos::Indicator> indicators;
     indicators.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
-        indicators.push_back(given(core.indicator(changed[k]), k, fields));
+        indicators.push_back(given(model.indicator(changed[k]), k, fields));
     }
-    core.set_indicators(changed, indicators);
+    model.set_indicators(changed, indicators);
 }
 
 void n_indicators(const BIYOS_model &session, BIYOS_index *n)

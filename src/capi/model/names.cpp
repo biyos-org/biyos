@@ -74,9 +74,9 @@ void delete_model_name(BIYOS_model &session)
 template <Family Target, typename Selection>
 void set_names(BIYOS_model &session, Selection selection, const char *const *names)
 {
-    biyos::Model &core = writable(session);
-    const auto changed = selected(core, Target, selection);
-    core.set_names(Target, changed, texts(changed.size(), names));
+    biyos::Model &model = writable(session);
+    const auto changed = selected(model, Target, selection);
+    model.set_names(Target, changed, texts(changed.size(), names));
 }
 
 template <Family Target, typename Selection>
@@ -117,8 +117,8 @@ void get_indices(const BIYOS_model &session,
 template <Family Target, typename Selection>
 void delete_names(BIYOS_model &session, Selection selection)
 {
-    biyos::Model &core = writable(session);
-    core.delete_names(Target, selected(core, Target, selection));
+    biyos::Model &model = writable(session);
+    model.delete_names(Target, selected(model, Target, selection));
 }
 
 }

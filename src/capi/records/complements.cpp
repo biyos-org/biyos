@@ -55,7 +55,7 @@ biyos::Complement given(biyos::Complement complement, std::size_t k, const Field
 
 void add_complements(BIYOS_model &session, BIYOS_index n, const Fields &fields, BIYOS_index *start)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -74,8 +74,8 @@ void add_complements(BIYOS_model &session, BIYOS_index n, const Fields &fields, 
     {
         added.push_back(given(nonnegative, k, fields));
     }
-    const biyos::Index index = core.n_complements();
-    core.add_complements(added);
+    const biyos::Index index = model.n_complements();
+    model.add_complements(added);
     if (start != nullptr)
     {
         *start = index;
@@ -85,15 +85,15 @@ void add_complements(BIYOS_model &session, BIYOS_index n, const Fields &fields, 
 template <typename Selection>
 void set_bounds(BIYOS_model &session, Selection selection, const Fields &fields)
 {
-    biyos::Model &core = writable(session);
-    const auto changed = selected(core, Family::Complement, selection);
+    biyos::Model &model = writable(session);
+    const auto changed = selected(model, Family::Complement, selection);
     std::vector<biyos::Complement> complements;
     complements.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
-        complements.push_back(given(core.complement(changed[k]), k, fields));
+        complements.push_back(given(model.complement(changed[k]), k, fields));
     }
-    core.set_complements(changed, complements);
+    model.set_complements(changed, complements);
 }
 
 void n_complements(const BIYOS_model &session, BIYOS_index *n)

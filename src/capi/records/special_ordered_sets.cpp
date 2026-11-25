@@ -85,12 +85,12 @@ void add_special_ordered_sets(BIYOS_model &session,
                               const BIYOS_real *weights,
                               BIYOS_index *start)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const std::span<const BIYOS_int> codes = listed(n, kinds, "knd");
     const std::vector<Offset> begins = starts_of(codes.size(), counts);
-    core.check_special_ordered_set_room(codes.size(), begins.back());
-    const biyos::Index index = core.n_special_ordered_sets();
-    core.add_special_ordered_sets(kinds_of(codes), begins, members_of(begins, variables, weights));
+    model.check_special_ordered_set_room(codes.size(), begins.back());
+    const biyos::Index index = model.n_special_ordered_sets();
+    model.add_special_ordered_sets(kinds_of(codes), begins, members_of(begins, variables, weights));
     if (start != nullptr)
     {
         *start = index;
@@ -102,12 +102,12 @@ void n_special_ordered_sets(const BIYOS_model &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_special_ordered_sets();
 }
 
-std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> soss)
+std::size_t count_of(const biyos::Model &model, std::span<const biyos::Index> soss)
 {
     std::size_t count = 0;
     for (const biyos::Index index : soss)
     {
-        count += core.members(index, index + 1).size();
+        count += model.members(index, index + 1).size();
     }
     return count;
 }
@@ -120,12 +120,12 @@ void n_members(const BIYOS_model &session, Selection selection, BIYOS_offset *nn
     *require(nnz, "nnz") = to_offset(count);
 }
 
-std::size_t write_members(const biyos::Model &core,
+std::size_t write_members(const biyos::Model &model,
                           biyos::Index sos,
                           std::size_t k,
                           const Outputs &out)
 {
-    for (const Member &member : core.members(sos, sos + 1))
+    for (const Member &member : model.members(sos, sos + 1))
     {
         put(out.variables, k, member.variable);
         put(out.weights, k, member.weight);
@@ -134,16 +134,16 @@ std::size_t write_members(const biyos::Model &core,
     return k;
 }
 
-void write_special_ordered_sets(const biyos::Model &core,
+void write_special_ordered_sets(const biyos::Model &model,
                                 std::span<const biyos::Index> soss,
                                 const Outputs &out)
 {
     std::size_t k = 0;
     for (std::size_t j = 0; j < soss.size(); ++j)
     {
-        put(out.kinds, j, static_cast<BIYOS_int>(core.kind_of_special_ordered_set(soss[j])));
+        put(out.kinds, j, static_cast<BIYOS_int>(model.kind_of_special_ordered_set(soss[j])));
         const std::size_t first = k;
-        k = write_members(core, soss[j], k, out);
+        k = write_members(model, soss[j], k, out);
         put(out.counts, j, to_offset(k - first));
     }
 }

@@ -81,7 +81,7 @@ std::span<const T> items_of(const T *items, std::span<const Offset> starts, std:
 
 void add_cones(BIYOS_model &session, BIYOS_index n, const Given &given, BIYOS_index *start)
 {
-    Model &core = writable(session);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -90,13 +90,13 @@ void add_cones(BIYOS_model &session, BIYOS_index n, const Given &given, BIYOS_in
     }
     const std::vector<Offset> starts = starts_of(size, given.counts);
     const std::vector<Offset> parameter_starts = starts_of(size, given.parameter_counts, "prmcnt");
-    core.check_cone_room(size, starts.back(), parameter_starts.back());
-    const Index index = core.n_cones();
-    core.add_cones(kinds_of(size, given.kinds),
-                   starts,
-                   items_of(given.functions, starts, "fun"),
-                   parameter_starts,
-                   items_of(given.parameters, parameter_starts, "prm"));
+    model.check_cone_room(size, starts.back(), parameter_starts.back());
+    const Index index = model.n_cones();
+    model.add_cones(kinds_of(size, given.kinds),
+                    starts,
+                    items_of(given.functions, starts, "fun"),
+                    parameter_starts,
+                    items_of(given.parameters, parameter_starts, "prm"));
     if (start != nullptr)
     {
         *start = index;
@@ -109,23 +109,23 @@ void n_cones(const BIYOS_model &session, BIYOS_index *n)
 }
 
 template <typename T>
-std::size_t count_of(const Model &core, std::span<const Index> cones, Part<T> part)
+std::size_t count_of(const Model &model, std::span<const Index> cones, Part<T> part)
 {
     std::size_t count = 0;
     for (const Index cone : cones)
     {
-        count += (core.*part)(cone, cone + 1).size();
+        count += (model.*part)(cone, cone + 1).size();
     }
     return count;
 }
 
 template <typename T>
-void write_part(const Model &core, std::span<const Index> cones, Part<T> part, Compressed<T> out)
+void write_part(const Model &model, std::span<const Index> cones, Part<T> part, Compressed<T> out)
 {
     BIYOS_offset written = 0;
     for (std::size_t j = 0; j < cones.size(); ++j)
     {
-        const std::span<const T> items = (core.*part)(cones[j], cones[j] + 1);
+        const std::span<const T> items = (model.*part)(cones[j], cones[j] + 1);
         if (out.counts != nullptr)
         {
             out.counts[j] = to_offset(items.size());
@@ -138,7 +138,7 @@ void write_part(const Model &core, std::span<const Index> cones, Part<T> part, C
     }
 }
 
-void write_kinds(const Model &core, std::span<const Index> cones, BIYOS_int *kinds)
+void write_kinds(const Model &model, std::span<const Index> cones, BIYOS_int *kinds)
 {
     if (kinds == nullptr)
     {
@@ -146,7 +146,7 @@ void write_kinds(const Model &core, std::span<const Index> cones, BIYOS_int *kin
     }
     for (std::size_t j = 0; j < cones.size(); ++j)
     {
-        kinds[j] = static_cast<BIYOS_int>(core.cone_kinds(cones[j], cones[j] + 1).front());
+        kinds[j] = static_cast<BIYOS_int>(model.cone_kinds(cones[j], cones[j] + 1).front());
     }
 }
 

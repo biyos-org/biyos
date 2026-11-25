@@ -37,9 +37,9 @@ struct Columns
     std::vector<biyos::Real> values;
 };
 
-std::vector<biyos::Offset> every_start(const biyos::Model &core)
+std::vector<biyos::Offset> every_start(const biyos::Model &model)
 {
-    return biyos::variable_starts(core, 0, core.n_variables());
+    return biyos::variable_starts(model, 0, model.n_variables());
 }
 
 std::size_t count_of(std::span<const biyos::Offset> starts, std::span<const biyos::Index> variables)
@@ -54,7 +54,7 @@ std::size_t count_of(std::span<const biyos::Offset> starts, std::span<const biyo
     return count;
 }
 
-Columns columns_of(const biyos::Model &core, std::vector<biyos::Offset> starts)
+Columns columns_of(const biyos::Model &model, std::vector<biyos::Offset> starts)
 {
     const auto total = to_size(starts.back());
     Columns columns{
@@ -62,7 +62,7 @@ Columns columns_of(const biyos::Model &core, std::vector<biyos::Offset> starts)
         .functions = std::vector<biyos::Index>(total),
         .values = std::vector<biyos::Real>(total),
     };
-    biyos::variable_terms(core, 0, columns.starts, columns.functions, columns.values);
+    biyos::variable_terms(model, 0, columns.starts, columns.functions, columns.values);
     return columns;
 }
 

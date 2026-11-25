@@ -86,15 +86,15 @@ biyos::Variable kinded(biyos::Variable variable, std::size_t k, const BIYOS_int 
 }
 
 template <auto Change, typename... Arrays>
-void set_each(biyos::Model &core, std::span<const biyos::Index> indices, Arrays... arrays)
+void set_each(biyos::Model &model, std::span<const biyos::Index> indices, Arrays... arrays)
 {
     std::vector<biyos::Variable> changed;
     changed.reserve(indices.size());
     for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        changed.push_back(Change(core.variable(indices[k]), k, arrays...));
+        changed.push_back(Change(model.variable(indices[k]), k, arrays...));
     }
-    core.set_variables(indices, changed);
+    model.set_variables(indices, changed);
 }
 
 void add_variables(BIYOS_model &session,
@@ -104,7 +104,7 @@ void add_variables(BIYOS_model &session,
                    const BIYOS_real *upper,
                    BIYOS_index *start)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const std::size_t size = length(n);
     std::vector<biyos::Variable> added;
     added.reserve(size);
@@ -112,8 +112,8 @@ void add_variables(BIYOS_model &session,
     {
         added.push_back(bounded(biyos::widest(kind_at(kinds, k)), k, lower, upper));
     }
-    const biyos::Index index = core.n_variables();
-    core.add_variables(added);
+    const biyos::Index index = model.n_variables();
+    model.add_variables(added);
     if (start != nullptr)
     {
         *start = index;
@@ -126,17 +126,17 @@ void set_bounds(BIYOS_model &session,
                 const BIYOS_real *lower,
                 const BIYOS_real *upper)
 {
-    biyos::Model &core = writable(session);
-    const auto chosen = selected(core, Family::Variable, selection);
-    set_each<bounded>(core, chosen, lower, upper);
+    biyos::Model &model = writable(session);
+    const auto chosen = selected(model, Family::Variable, selection);
+    set_each<bounded>(model, chosen, lower, upper);
 }
 
 template <typename Selection>
 void set_kinds(BIYOS_model &session, Selection selection, const BIYOS_int *kinds)
 {
-    biyos::Model &core = writable(session);
-    const auto chosen = selected(core, Family::Variable, selection);
-    set_each<kinded>(core, chosen, kinds);
+    biyos::Model &model = writable(session);
+    const auto chosen = selected(model, Family::Variable, selection);
+    set_each<kinded>(model, chosen, kinds);
 }
 
 void n_variables(const BIYOS_model &session, BIYOS_index *n)

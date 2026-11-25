@@ -74,11 +74,11 @@ std::size_t count_of(const Records &records, std::span<const Index> chosen)
     return count;
 }
 
-void check_all(const biyos::Model &core, Family family, std::span<const Index> chosen)
+void check_all(const biyos::Model &model, Family family, std::span<const Index> chosen)
 {
     for (const Index i : chosen)
     {
-        biyos::check_index(biyos::noun_of(family), i, core.n_of(family));
+        biyos::check_index(biyos::noun_of(family), i, model.n_of(family));
     }
 }
 

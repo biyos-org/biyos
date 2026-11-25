@@ -78,16 +78,16 @@ void add_objectives(BIYOS_model &session,
                     const BIYOS_real *weights,
                     BIYOS_index *start)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const std::span<const biyos::Index> owners = listed(n, functions, "fun");
-    core.check_objective_room(owners.size());
+    model.check_objective_room(owners.size());
     const Fields fields{
         .senses = senses,
         .priorities = priorities,
         .weights = weights,
     };
-    const biyos::Index index = core.n_objectives();
-    core.add_objectives(new_objectives(owners, index, fields));
+    const biyos::Index index = model.n_objectives();
+    model.add_objectives(new_objectives(owners, index, fields));
     if (start != nullptr)
     {
         *start = index;
@@ -97,15 +97,15 @@ void add_objectives(BIYOS_model &session,
 template <typename Selection>
 void set_objectives(BIYOS_model &session, Selection selection, const Fields &fields)
 {
-    biyos::Model &core = writable(session);
-    const auto changed = selected(core, Family::Objective, selection);
+    biyos::Model &model = writable(session);
+    const auto changed = selected(model, Family::Objective, selection);
     std::vector<biyos::Objective> objectives;
     objectives.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
-        objectives.push_back(given(core.objective(changed[k]), k, fields));
+        objectives.push_back(given(model.objective(changed[k]), k, fields));
     }
-    core.set_objectives(changed, objectives);
+    model.set_objectives(changed, objectives);
 }
 
 void n_objectives(const BIYOS_model &session, BIYOS_index *n)

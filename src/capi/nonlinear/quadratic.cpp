@@ -27,7 +27,7 @@ using biyos::capi::writable;
 namespace
 {
 
-void add_sliced(biyos::Model &core,
+void add_sliced(biyos::Model &model,
                 std::span<const biyos::Index> owners,
                 const BIYOS_offset *counts,
                 const BIYOS_index *rows,
@@ -35,9 +35,9 @@ void add_sliced(biyos::Model &core,
                 const BIYOS_real *values)
 {
     const std::vector<biyos::Offset> begins = starts_of(owners.size(), counts);
-    core.check_quadratic_room(begins.back());
+    model.check_quadratic_room(begins.back());
     const auto total = to_size(begins.back());
-    core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, rows, columns, values));
+    model.add_quadratic_terms(owners, begins, biyos::capi::packed(total, rows, columns, values));
 }
 
 void add_listed(BIYOS_model &session,
@@ -47,18 +47,18 @@ void add_listed(BIYOS_model &session,
                 const BIYOS_index *columns,
                 const BIYOS_real *values)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
     {
         require(functions, "fun");
     }
-    core.check_quadratic_room(nnz);
+    model.check_quadratic_room(nnz);
     const std::vector<QuadraticTerm> terms = biyos::capi::packed(size, rows, columns, values);
     const std::span<const biyos::Index> owners(functions, size);
     Grouped<QuadraticTerm> groups =
         biyos::capi::grouped(owners, std::span<const QuadraticTerm>(terms));
-    core.add_quadratic_terms(groups.functions, groups.starts, std::move(groups.terms));
+    model.add_quadratic_terms(groups.functions, groups.starts, std::move(groups.terms));
 }
 
 void add_ranged(BIYOS_model &session,
@@ -68,8 +68,8 @@ void add_ranged(BIYOS_model &session,
                 const BIYOS_index *columns,
                 const BIYOS_real *values)
 {
-    biyos::Model &core = writable(session);
-    add_sliced(core, selected(core, Family::Function, range), counts, rows, columns, values);
+    biyos::Model &model = writable(session);
+    add_sliced(model, selected(model, Family::Function, range), counts, rows, columns, values);
 }
 
 }

@@ -49,7 +49,7 @@ void add_constraints(BIYOS_model &session,
                      const BIYOS_real *upper,
                      BIYOS_index *start)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -66,8 +66,8 @@ void add_constraints(BIYOS_model &session,
         };
         added.push_back(bounded(free, k, lower, upper));
     }
-    const biyos::Index index = core.n_constraints();
-    core.add_constraints(added);
+    const biyos::Index index = model.n_constraints();
+    model.add_constraints(added);
     if (start != nullptr)
     {
         *start = index;
@@ -80,15 +80,15 @@ void set_bounds(BIYOS_model &session,
                 const BIYOS_real *lower,
                 const BIYOS_real *upper)
 {
-    biyos::Model &core = writable(session);
-    const auto changed = selected(core, Family::Constraint, selection);
+    biyos::Model &model = writable(session);
+    const auto changed = selected(model, Family::Constraint, selection);
     std::vector<biyos::Constraint> constraints;
     constraints.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
-        constraints.push_back(bounded(core.constraint(changed[k]), k, lower, upper));
+        constraints.push_back(bounded(model.constraint(changed[k]), k, lower, upper));
     }
-    core.set_constraints(changed, constraints);
+    model.set_constraints(changed, constraints);
 }
 
 void n_constraints(const BIYOS_model &session, BIYOS_index *n)

@@ -49,8 +49,8 @@ void write_node(BIYOS_offset *node, biyos::Offset made)
 
 void add_variable_node(BIYOS_model &session, BIYOS_index variable, BIYOS_offset *node)
 {
-    biyos::Model &core = writable(session);
-    write_node(node, core.add_variable_node(variable));
+    biyos::Model &model = writable(session);
+    write_node(node, model.add_variable_node(variable));
 }
 
 void add_node(BIYOS_model &session,
@@ -60,10 +60,10 @@ void add_node(BIYOS_model &session,
               const BIYOS_real *values,
               BIYOS_offset *node)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const std::span<const biyos::Offset> children = input(argument, length(n), "arg");
     const auto needed = to_size(biyos::n_values(op, n));
-    write_node(node, core.add_node(op, children, input(values, needed, "val")));
+    write_node(node, model.add_node(op, children, input(values, needed, "val")));
 }
 
 void write_nodes(std::span<const biyos::Offset> tops, BIYOS_offset *node)
@@ -82,7 +82,7 @@ void add_expressions(BIYOS_model &session,
                      const BIYOS_real *values,
                      BIYOS_offset *node)
 {
-    biyos::Model &core = writable(session);
+    biyos::Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -99,33 +99,34 @@ void add_expressions(BIYOS_model &session,
         .arguments = arguments,
         .values = input(values, needed, "val"),
     };
-    write_nodes(core.add_expressions(postfix), node);
+    write_nodes(model.add_expressions(postfix), node);
 }
 
 template <typename Selection>
 void attach_expressions(BIYOS_model &session, Selection selection, const BIYOS_offset *node)
 {
-    biyos::Model &core = writable(session);
-    const auto owners = selected(core, Family::Function, selection);
-    core.attach_expressions(owners, input(node, owners.size(), "node"));
+    biyos::Model &model = writable(session);
+    const auto owners = selected(model, Family::Function, selection);
+    model.attach_expressions(owners, input(node, owners.size(), "node"));
 }
 
 template <typename Selection> void clear_functions(BIYOS_model &session, Selection selection)
 {
-    biyos::Model &core = writable(session);
-    core.clear_functions(selected(core, Family::Function, selection));
+    biyos::Model &model = writable(session);
+    model.clear_functions(selected(model, Family::Function, selection));
 }
 
-template <typename Selection> biyos::Encoding encoded(const biyos::Model &core, Selection selection)
+template <typename Selection>
+biyos::Encoding encoded(const biyos::Model &model, Selection selection)
 {
-    const auto chosen = selected(core, Family::Function, selection);
+    const auto chosen = selected(model, Family::Function, selection);
     std::vector<biyos::Offset> roots;
     roots.reserve(chosen.size());
     for (const biyos::Index function : chosen)
     {
-        roots.push_back(core.roots(function, function + 1).front());
+        roots.push_back(model.roots(function, function + 1).front());
     }
-    return biyos::encode(core.graph(), roots);
+    return biyos::encode(model.graph(), roots);
 }
 
 template <typename Selection>
