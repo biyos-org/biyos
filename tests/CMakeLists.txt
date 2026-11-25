@@ -128,10 +128,11 @@ biyos_add_test(test_model
     model/records/test_objectives.cpp
     model/records/test_special_ordered_sets.cpp
     model/records/test_variables.cpp
+    model/session/test_routes.cpp
     model/session/test_session.cpp
     model/session/test_stream.cpp
     model/test_tolerances.cpp)
-target_include_directories(test_model PRIVATE model)
+target_include_directories(test_model PRIVATE core model)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io

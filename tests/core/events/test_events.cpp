@@ -2,13 +2,10 @@
 #include "core/error.hpp"
 #include "core/events/events.hpp"
 #include "core/events/stream.hpp"
-#include "model/session/session.hpp"
+#include "watch.hpp"
 
 #include <gtest/gtest.h>
 
-#include <array>
-#include <atomic>
-#include <cstddef>
 #include <functional>
 #include <latch>
 #include <memory>
@@ -24,6 +21,8 @@ namespace
 
 using biyos::EventKind;
 using biyos::EventLevel;
+using biyos::test::Peek;
+using biyos::test::Watch;
 using Texts = std::vector<std::string>;
 
 constexpr int kThreads = 4;
@@ -83,29 +82,6 @@ class Parting
     Texts *texts_;
 };
 
-class Watch
-{
-  public:
-    void operator()(const biyos::Event &)
-    {
-        if (inside_.exchange(true))
-        {
-            ++overlaps_;
-        }
-        std::this_thread::yield();
-        ++seen_;
-        inside_.store(false);
-    }
-
-    int overlaps() const { return overlaps_.load(); }
-    int seen() const { return seen_; }
-
-  private:
-    std::atomic<bool> inside_{false};
-    std::atomic<int> overlaps_{0};
-    int seen_ = 0;
-};
-
 void chatter(biyos::Env &env, std::latch &start)
 {
     start.arrive_and_wait();
@@ -124,50 +100,6 @@ void churn(biyos::Events &events, std::latch &start)
     }
 }
 
-void talk(const biyos::Session &model, std::latch &start)
-{
-    start.arrive_and_wait();
-    for (int i = 0; i < kRounds; ++i)
-    {
-        model.stream().emit(EventKind::Message, EventLevel::Info, describe);
-    }
-}
-
-void meet(std::latch &both, std::atomic<int> &met)
-{
-    both.arrive_and_wait();
-    ++met;
-}
-
-void send(const biyos::Session &model)
-{
-    model.stream().emit(EventKind::Message, EventLevel::Info, describe);
-}
-
-using Read = bool (biyos::Events::*)() const noexcept;
-
-bool elsewhere(const biyos::Events &events, Read read)
-{
-    bool seen = true;
-    std::thread([&] { seen = (events.*read)(); }).join();
-    return seen;
-}
-
-class Peek
-{
-  public:
-    explicit Peek(const biyos::Events &events) : events_(events) {}
-
-    void hook(const biyos::Event &) { delivering = elsewhere(events_, &biyos::Events::delivering); }
-    void fill(biyos::Event &) { filling = elsewhere(events_, &biyos::Events::filling); }
-
-    bool delivering = true;
-    bool filling = true;
-
-  private:
-    const biyos::Events &events_;
-};
-
 class EventTest : public ::testing::Test
 {
   protected:
@@ -181,12 +113,6 @@ class EventTest : public ::testing::Test
         env.stream().emit(EventKind::Message,
                           level,
                           [&](biyos::Event &event) { event.text = text; });
-    }
-
-    void tell(const biyos::Session &model, EventLevel level, const std::string &text)
-    {
-        const auto fill = [&text](biyos::Event &event) { event.text = text; };
-        model.stream().emit(EventKind::Message, level, fill);
     }
 
     biyos::Hook recorder(const std::string &name)
@@ -446,19 +372,6 @@ TEST_F(EventTest, ThrowingFill)
     EXPECT_EQ(texts, Texts{"after"});
 }
 
-TEST_F(EventTest, Model)
-{
-    const biyos::Session session(env);
-    const biyos::Session *model = &session;
-    std::vector<const biyos::Session *> seen;
-    const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
-    events.add_hook(EventKind::Message, EventLevel::Info, keep);
-    env.stream().emit(EventKind::Message, EventLevel::Info, describe);
-    session.stream().emit(EventKind::Message, EventLevel::Info, describe);
-    const std::vector<const biyos::Session *> expected{nullptr, model};
-    EXPECT_EQ(seen, expected);
-}
-
 TEST_F(EventTest, Turns)
 {
     Watch watch;
@@ -506,87 +419,4 @@ TEST_F(EventTest, OtherThread)
                       [&peek](biyos::Event &event) { peek.fill(event); });
     EXPECT_FALSE(peek.delivering);
     EXPECT_FALSE(peek.filling);
-}
-
-TEST_F(EventTest, ModelFirst)
-{
-    biyos::Session model(env);
-    model.add_hook(EventKind::Message, EventLevel::Debug, recorder("m "));
-    listen(EventLevel::Debug, recorder("e "));
-    tell(model, EventLevel::Info, "one");
-    say(EventLevel::Info, "two");
-    EXPECT_EQ(texts, (Texts{"m one", "e one", "e two"}));
-}
-
-TEST_F(EventTest, ModelOnly)
-{
-    biyos::Session model(env);
-    int built = 0;
-    const auto count = [&built](biyos::Event &) { ++built; };
-    model.add_hook(EventKind::Message, EventLevel::Warning, recorder("m "));
-    listen(EventLevel::Error, recorder("e "));
-    model.stream().emit(EventKind::Message, EventLevel::Info, count);
-    EXPECT_EQ(built, 0);
-    model.stream().emit(EventKind::Message, EventLevel::Warning, count);
-    EXPECT_EQ(built, 1);
-    EXPECT_EQ(texts, Texts{"m "});
-}
-
-TEST_F(EventTest, ModelDelivering)
-{
-    biyos::Session model(env);
-    Peek peek(events);
-    bool inside = false;
-    const auto check = [&](const biyos::Event &) { inside = events.delivering(); };
-    const auto look = [&peek](const biyos::Event &event) { peek.hook(event); };
-    const auto fill = [&peek](biyos::Event &event) { peek.fill(event); };
-    model.add_hook(EventKind::Message, EventLevel::Debug, check);
-    model.add_hook(EventKind::Message, EventLevel::Debug, look);
-    model.stream().emit(EventKind::Message, EventLevel::Info, fill);
-    EXPECT_TRUE(inside);
-    EXPECT_FALSE(peek.delivering);
-    EXPECT_FALSE(peek.filling);
-    EXPECT_FALSE(events.delivering());
-}
-
-TEST_F(EventTest, ModelTurns)
-{
-    std::array<biyos::Session, 2> models{biyos::Session(env), biyos::Session(env)};
-    std::array<Watch, 2> watches;
-    Watch shared;
-    std::latch start(kThreads);
-    std::vector<std::thread> threads;
-    events.add_hook(EventKind::Message, EventLevel::Info, std::ref(shared));
-    for (std::size_t i = 0; i < models.size(); ++i)
-    {
-        models[i].add_hook(EventKind::Message, EventLevel::Info, std::ref(watches[i]));
-    }
-    for (int i = 0; i < kThreads; ++i)
-    {
-        const biyos::Session &model = models[static_cast<std::size_t>(i) % models.size()];
-        threads.emplace_back(talk, std::cref(model), std::ref(start));
-    }
-    for (std::thread &thread : threads)
-    {
-        thread.join();
-    }
-    EXPECT_EQ(watches[0].overlaps() + watches[1].overlaps() + shared.overlaps(), 0);
-    EXPECT_EQ(watches[0].seen(), kThreads / 2 * kRounds);
-    EXPECT_EQ(watches[1].seen(), kThreads / 2 * kRounds);
-    EXPECT_EQ(shared.seen(), kThreads * kRounds);
-}
-
-TEST_F(EventTest, ModelsBeside)
-{
-    biyos::Session first(env);
-    biyos::Session second(env);
-    std::latch both(2);
-    std::atomic<int> met{0};
-    const auto meeting = [&both, &met](const biyos::Event &) { meet(both, met); };
-    first.add_hook(EventKind::Message, EventLevel::Info, meeting);
-    second.add_hook(EventKind::Message, EventLevel::Info, meeting);
-    std::thread other(send, std::cref(second));
-    send(first);
-    other.join();
-    EXPECT_EQ(met.load(), 2);
 }
