@@ -17,16 +17,6 @@ namespace
 
 constexpr std::size_t kFlat = 64;
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
-Offset count_of(std::size_t value) noexcept
-{
-    return static_cast<Offset>(value);
-}
-
 template <typename T> void append(std::vector<T> &items, std::span<const T> more)
 {
     items.insert(items.end(), more.begin(), more.end());
@@ -84,13 +74,13 @@ void Memos<Item>::gather(std::span<const Offset> memos, std::vector<Item> &items
     {
         const Offset next = stack_.back();
         stack_.pop_back();
-        if (stamps_[at(next)] == walk_)
+        if (stamps_[to_size(next)] == walk_)
         {
             continue;
         }
-        stamps_[at(next)] = walk_;
-        append(items, items_of(memos_[at(next)]));
-        append(stack_, links_of(memos_[at(next)]));
+        stamps_[to_size(next)] = walk_;
+        append(items, items_of(memos_[to_size(next)]));
+        append(stack_, links_of(memos_[to_size(next)]));
     }
 }
 
@@ -100,12 +90,12 @@ bool Memos<Item>::small(std::span<const Item> own, std::span<const Offset> links
     std::size_t size = own.size();
     for (const Offset link : links)
     {
-        const Memo &memo = memos_[at(link)];
+        const Memo &memo = memos_[to_size(link)];
         if (!memo.flat)
         {
             return false;
         }
-        size += at(memo.n_items);
+        size += to_size(memo.n_items);
     }
     return size <= kFlat;
 }
@@ -116,13 +106,13 @@ Offset Memos<Item>::flatten(std::span<const Item> own, std::span<const Offset> l
     pieces_.assign(own.begin(), own.end());
     for (const Offset link : links)
     {
-        append(pieces_, items_of(memos_[at(link)]));
+        append(pieces_, items_of(memos_[to_size(link)]));
     }
     const std::size_t start = items_.size();
     settle(pieces_, items_);
     return add({
-        .item_start = count_of(start),
-        .n_items = count_of(items_.size() - start),
+        .item_start = to_offset(start),
+        .n_items = to_offset(items_.size() - start),
         .link_start = 0,
         .n_links = 0,
         .flat = true,
@@ -133,10 +123,10 @@ template <typename Item>
 Offset Memos<Item>::store(std::span<const Item> own, std::span<const Offset> links)
 {
     const Memo memo{
-        .item_start = count_of(items_.size()),
-        .n_items = count_of(own.size()),
-        .link_start = count_of(links_.size()),
-        .n_links = count_of(links.size()),
+        .item_start = to_offset(items_.size()),
+        .n_items = to_offset(own.size()),
+        .link_start = to_offset(links_.size()),
+        .n_links = to_offset(links.size()),
         .flat = false,
     };
     append(items_, own);
@@ -148,19 +138,19 @@ template <typename Item> Offset Memos<Item>::add(Memo memo)
 {
     memos_.push_back(memo);
     stamps_.push_back(kUnset);
-    return count_of(memos_.size()) - 1;
+    return to_offset(memos_.size()) - 1;
 }
 
 template <typename Item>
 std::span<const Item> Memos<Item>::items_of(const Memo &memo) const noexcept
 {
-    return std::span(items_).subspan(at(memo.item_start), at(memo.n_items));
+    return std::span(items_).subspan(to_size(memo.item_start), to_size(memo.n_items));
 }
 
 template <typename Item>
 std::span<const Offset> Memos<Item>::links_of(const Memo &memo) const noexcept
 {
-    return std::span(links_).subspan(at(memo.link_start), at(memo.n_links));
+    return std::span(links_).subspan(to_size(memo.link_start), to_size(memo.n_links));
 }
 
 template class Memos<Index>;

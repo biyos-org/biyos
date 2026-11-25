@@ -16,16 +16,6 @@ namespace
 
 constexpr Offset kSeveral = -2;
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
-Offset count_of(std::size_t value) noexcept
-{
-    return static_cast<Offset>(value);
-}
-
 bool is_leaf(const Graph &graph, Offset node) noexcept
 {
     return graph.children(node).empty();
@@ -59,7 +49,7 @@ class Reach
     std::vector<Offset> fresh_;
 };
 
-Reach::Reach(const Graph &graph) : graph_(graph), reached_(at(graph.size()), false) {}
+Reach::Reach(const Graph &graph) : graph_(graph), reached_(to_size(graph.size()), false) {}
 
 std::span<const Offset> Reach::fresh(Offset root)
 {
@@ -79,11 +69,11 @@ std::span<const Offset> Reach::fresh(Offset root)
 
 void Reach::visit(Offset node)
 {
-    if (is_leaf(graph_, node) || reached_[at(node)])
+    if (is_leaf(graph_, node) || reached_[to_size(node)])
     {
         return;
     }
-    reached_[at(node)] = true;
+    reached_[to_size(node)] = true;
     fresh_.push_back(node);
     stack_.push_back(node);
 }
@@ -108,13 +98,13 @@ class Cut
 };
 
 Cut::Cut(const Graph &graph, Offset budget)
-    : graph_(graph), budget_(budget), firsts_(1, 0), stamps_(at(graph.size()), kUnset)
+    : graph_(graph), budget_(budget), firsts_(1, 0), stamps_(to_size(graph.size()), kUnset)
 {
 }
 
 Offset Cut::add(Offset node, std::span<const Offset> fresh, Offset item)
 {
-    const Offset block = count_of(firsts_.size()) - 1;
+    const Offset block = to_offset(firsts_.size()) - 1;
     Offset added = weight(node, fresh, block);
     if (load_ > 0 && load_ + added > budget_)
     {
@@ -123,7 +113,7 @@ Offset Cut::add(Offset node, std::span<const Offset> fresh, Offset item)
         load_ = 0;
     }
     load_ += added;
-    return count_of(firsts_.size()) - 1;
+    return to_offset(firsts_.size()) - 1;
 }
 
 std::vector<Offset> Cut::finish(Offset items)
@@ -137,7 +127,7 @@ std::vector<Offset> Cut::finish(Offset items)
 
 Offset Cut::weight(Offset node, std::span<const Offset> fresh, Offset block)
 {
-    Offset total = count_of(fresh.size()) + stamp(node, block);
+    Offset total = to_offset(fresh.size()) + stamp(node, block);
     for (const Offset parent : fresh)
     {
         for (const Offset child : graph_.children(parent))
@@ -150,11 +140,11 @@ Offset Cut::weight(Offset node, std::span<const Offset> fresh, Offset block)
 
 Offset Cut::stamp(Offset node, Offset block)
 {
-    if (!is_leaf(graph_, node) || stamps_[at(node)] == block)
+    if (!is_leaf(graph_, node) || stamps_[to_size(node)] == block)
     {
         return 0;
     }
-    stamps_[at(node)] = block;
+    stamps_[to_size(node)] = block;
     return 1;
 }
 
@@ -164,33 +154,33 @@ std::vector<Offset> cut_roots(const Graph &graph, std::span<const Offset> roots,
     Cut cut(graph, budget);
     for (std::size_t r = 0; r < roots.size(); ++r)
     {
-        cut.add(roots[r], reach.fresh(roots[r]), count_of(r));
+        cut.add(roots[r], reach.fresh(roots[r]), to_offset(r));
     }
-    return cut.finish(count_of(roots.size()));
+    return cut.finish(to_offset(roots.size()));
 }
 
 std::vector<Offset> labels_of(const Graph &graph,
                               std::span<const Offset> roots,
                               std::span<const Offset> firsts)
 {
-    std::vector<Offset> labels(at(graph.size()), kUnset);
+    std::vector<Offset> labels(to_size(graph.size()), kUnset);
     for (std::size_t p = 0; p + 1 < firsts.size(); ++p)
     {
         for (Offset r = firsts[p]; r < firsts[p + 1]; ++r)
         {
-            merge(labels[at(roots[at(r)])], count_of(p));
+            merge(labels[to_size(roots[to_size(r)])], to_offset(p));
         }
     }
     for (Offset node = graph.size() - 1; node >= 0; --node)
     {
-        const Offset label = labels[at(node)];
+        const Offset label = labels[to_size(node)];
         if (label == kUnset)
         {
             continue;
         }
         for (const Offset child : graph.children(node))
         {
-            merge(labels[at(child)], label);
+            merge(labels[to_size(child)], label);
         }
     }
     return labels;
@@ -201,29 +191,29 @@ void pin(const Graph &graph, Offset budget, Plan &plan)
     Cut cut(graph, budget);
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        if (is_leaf(graph, node) || plan.home[at(node)] != kSeveral)
+        if (is_leaf(graph, node) || plan.home[to_size(node)] != kSeveral)
         {
             continue;
         }
-        const Offset position = count_of(plan.pinned.size());
-        plan.home[at(node)] = cut.add(node, std::span(&node, 1), position);
-        plan.position[at(node)] = position;
+        const Offset position = to_offset(plan.pinned.size());
+        plan.home[to_size(node)] = cut.add(node, std::span(&node, 1), position);
+        plan.position[to_size(node)] = position;
         plan.pinned.push_back(node);
     }
-    plan.prepass = cut.finish(count_of(plan.pinned.size()));
+    plan.prepass = cut.finish(to_offset(plan.pinned.size()));
 }
 
 void rehome(const Graph &graph, Plan &plan)
 {
-    const Offset prepass = count_of(plan.prepass.size()) - 1;
+    const Offset prepass = to_offset(plan.prepass.size()) - 1;
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        Offset &home = plan.home[at(node)];
+        Offset &home = plan.home[to_size(node)];
         if (is_leaf(graph, node))
         {
             home = kUnset;
         }
-        else if (home != kUnset && plan.position[at(node)] == kUnset)
+        else if (home != kUnset && plan.position[to_size(node)] == kUnset)
         {
             home += prepass;
         }
@@ -237,7 +227,7 @@ Plan plan_of(const Graph &graph, std::span<const Offset> roots, Offset budget)
     Plan plan;
     plan.partitions = cut_roots(graph, roots, budget);
     plan.home = labels_of(graph, roots, plan.partitions);
-    plan.position.assign(at(graph.size()), kUnset);
+    plan.position.assign(to_size(graph.size()), kUnset);
     pin(graph, budget, plan);
     rehome(graph, plan);
     return plan;

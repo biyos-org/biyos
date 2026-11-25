@@ -27,11 +27,6 @@ constexpr Offset kLeast = 2;
     throw Error(ErrorKind::InvalidArgument, "expression", reason);
 }
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 void check_finite(std::string_view axis, std::size_t k, double value)
 {
     if (!std::isfinite(value))
@@ -88,13 +83,13 @@ Points::Points() : starts_(1, 0) {}
 
 Offset Points::size() const noexcept
 {
-    return static_cast<Offset>(starts_.size()) - 1;
+    return to_offset(starts_.size()) - 1;
 }
 
 Pwl Points::pwl(Offset index) const noexcept
 {
-    const std::size_t start = at(starts_[at(index)]);
-    const std::size_t n = at(starts_[at(index) + 1]) - start;
+    const std::size_t start = to_size(starts_[to_size(index)]);
+    const std::size_t n = to_size(starts_[to_size(index) + 1]) - start;
     return {
         .x = std::span(x_).subspan(start, n),
         .y = std::span(y_).subspan(start, n),
@@ -109,24 +104,24 @@ Offset Points::add(std::span<const double> x, std::span<const double> y)
     reserve_more(y_, y.size());
     x_.insert(x_.end(), x.begin(), x.end());
     y_.insert(y_.end(), y.begin(), y.end());
-    starts_.push_back(static_cast<Offset>(x_.size()));
+    starts_.push_back(to_offset(x_.size()));
     return size() - 1;
 }
 
 void Points::truncate(Offset size) noexcept
 {
-    const std::size_t n = at(size);
+    const std::size_t n = to_size(size);
     starts_.resize(n + 1);
-    x_.resize(at(starts_[n]));
-    y_.resize(at(starts_[n]));
+    x_.resize(to_size(starts_[n]));
+    y_.resize(to_size(starts_[n]));
 }
 
 void check_points(std::span<const double> x, std::span<const double> y)
 {
-    const auto n = static_cast<Offset>(x.size());
+    const auto n = to_offset(x.size());
     if (x.size() != y.size())
     {
-        const std::string given = n_text(static_cast<Offset>(y.size()), "y value", "y values");
+        const std::string given = n_text(to_offset(y.size()), "y value", "y values");
         refuse(n_text(n, "x value", "x values") + " and " + given);
     }
     if (n < kLeast)

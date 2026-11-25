@@ -24,11 +24,6 @@ namespace biyos
 namespace
 {
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 double entropy(double value) noexcept
 {
     if (std::fpclassify(value) == FP_ZERO)
@@ -147,7 +142,8 @@ Frame enter(const Block &block, std::span<const double> point, Workspace &worksp
     const std::size_t lanes = workspace.lanes;
     for (std::size_t k = 0; k < block.loads.size(); ++k)
     {
-        std::ranges::copy(row(shared, at(block.loads[k]), lanes), row(slots, k, lanes).begin());
+        std::ranges::copy(row(shared, to_size(block.loads[k]), lanes),
+                          row(slots, k, lanes).begin());
     }
     return {
         .point = point,
@@ -172,7 +168,7 @@ void check_point(const Tape &tape, std::span<const double> point, std::size_t la
     {
         refuse("point", size + " is not a multiple of " + text_of(lanes) + " lanes");
     }
-    if (static_cast<Offset>(point.size() / lanes) < tape.variables())
+    if (to_offset(point.size() / lanes) < tape.variables())
     {
         const std::string last = text_of(tape.variables() - 1) + in_lanes(lanes);
         refuse("point", size + " does not cover variable " + last);
@@ -192,7 +188,7 @@ void check_seeds(std::span<const Index> variables, std::size_t lanes, std::size_
     }
     for (const Index variable : variables)
     {
-        if (variable < 0 || static_cast<std::size_t>(variable) >= size / lanes)
+        if (variable < 0 || to_size(variable) >= size / lanes)
         {
             refuse("variables", "variable " + text_of(variable) + " outside the directions");
         }
@@ -304,8 +300,8 @@ void keep(const Instruction &instruction, const Frame &frame) noexcept
 }
 
 Workspace::Workspace(const Tape &tape, std::size_t count)
-    : lanes(lanes_of(tape, count)), shared(at(tape.pinned()) * count, 0.0),
-      slots(tape.width() * count, 0.0), partials(at(tape.partials()) * count, 0.0),
+    : lanes(lanes_of(tape, count)), shared(to_size(tape.pinned()) * count, 0.0),
+      slots(tape.width() * count, 0.0), partials(to_size(tape.partials()) * count, 0.0),
       result(count, 0.0), spare(count, 0.0)
 {
 }
@@ -336,10 +332,10 @@ std::size_t sized(std::size_t size, std::size_t lanes)
 std::size_t lanes_of(const Tape &tape, std::size_t count)
 {
     lanes_of(count);
-    sized(at(tape.roots()), count);
-    sized(at(tape.variables()), count);
-    sized(at(tape.pinned()), count);
-    sized(at(tape.partials()), count);
+    sized(to_size(tape.roots()), count);
+    sized(to_size(tape.variables()), count);
+    sized(to_size(tape.pinned()), count);
+    sized(to_size(tape.partials()), count);
     sized(tape.width(), count);
     return count;
 }
@@ -351,12 +347,12 @@ void check_sweep(const Tape &tape,
 {
     const std::size_t lanes = lanes_of(tape, workspace.lanes);
     check_point(tape, point, lanes);
-    if (values.size() != at(tape.roots()) * lanes)
+    if (values.size() != to_size(tape.roots()) * lanes)
     {
         const std::string roots = text_of(tape.roots()) + in_lanes(lanes);
         refuse("values", "size " + text_of(values.size()) + ", not the root count " + roots);
     }
-    const bool shared = workspace.shared.size() >= at(tape.pinned()) * lanes;
+    const bool shared = workspace.shared.size() >= to_size(tape.pinned()) * lanes;
     const bool slots = workspace.slots.size() >= tape.width() * lanes;
     const bool rows = workspace.result.size() >= lanes && workspace.spare.size() >= lanes;
     if (!shared || !slots || !rows)
@@ -397,7 +393,7 @@ void store(const Block &block, const Workspace &workspace, std::span<double> out
     const std::size_t lanes = workspace.lanes;
     for (std::size_t k = 0; k < block.outputs.size(); ++k)
     {
-        const std::span<double> mine = row(outputs, at(block.begin) + k, lanes);
+        const std::span<double> mine = row(outputs, to_size(block.begin) + k, lanes);
         std::ranges::copy(row(slots, block.outputs[k], lanes), mine.begin());
     }
 }
@@ -409,7 +405,7 @@ void forward(const Tape &tape,
 {
     check_sweep(tape, point, workspace, values);
     const std::span<const Block> blocks = tape.blocks();
-    const std::size_t prepass = at(tape.prepass());
+    const std::size_t prepass = to_size(tape.prepass());
     for (std::size_t k = 0; k < blocks.size(); ++k)
     {
         forward(blocks[k], point, workspace);
@@ -439,7 +435,7 @@ void seed_directions(std::span<const Index> variables,
     std::ranges::fill(directions, 0.0);
     for (std::size_t l = 0; l < variables.size(); ++l)
     {
-        directions[static_cast<std::size_t>(variables[l]) * lanes + l] = 1.0;
+        directions[to_size(variables[l]) * lanes + l] = 1.0;
     }
 }
 

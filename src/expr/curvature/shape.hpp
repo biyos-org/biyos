@@ -48,7 +48,7 @@ struct Operands
 
     Interval operator[](std::size_t position) const noexcept
     {
-        return nodes[static_cast<std::size_t>(children[position])];
+        return nodes[to_size(children[position])];
     }
 };
 

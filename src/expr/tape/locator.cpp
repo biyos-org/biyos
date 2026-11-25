@@ -27,16 +27,6 @@ constexpr std::size_t kWide = 16;
 constexpr std::size_t kNoWalk = (std::numeric_limits<std::size_t>::max)();
 constexpr std::uint32_t kOwn = (std::numeric_limits<std::uint32_t>::max)();
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
-Offset count_of(std::size_t value) noexcept
-{
-    return static_cast<Offset>(value);
-}
-
 Run point(std::size_t position) noexcept
 {
     const auto begin = static_cast<std::uint32_t>(position);
@@ -132,7 +122,7 @@ void Locator::use(Offset node, std::uint8_t times)
     const Offset position = layout_.position(node);
     if (position != kUnset)
     {
-        std::uint8_t &uses = uses_[at(position)];
+        std::uint8_t &uses = uses_[to_size(position)];
         uses = (std::min)(static_cast<std::uint8_t>(uses + times), kMany);
     }
 }
@@ -142,14 +132,14 @@ void Locator::mark(Offset output)
     const Offset position = layout_.position(output);
     if (position != kUnset)
     {
-        outputs_[at(position)] = true;
+        outputs_[to_size(position)] = true;
     }
 }
 
 void Locator::open(std::size_t position)
 {
-    run_starts_[position] = count_of(runs_.size());
-    link_starts_[position] = count_of(links_.size());
+    run_starts_[position] = to_offset(runs_.size());
+    link_starts_[position] = to_offset(links_.size());
 }
 
 void Locator::join(std::size_t position)
@@ -187,14 +177,14 @@ void Locator::enter(Offset node, std::size_t walk)
     {
         return;
     }
-    const std::size_t place = at(position);
+    const std::size_t place = to_size(position);
     if (uses_[place] == 1)
     {
         pieces_.push_back(point(place));
         stack_.push_back(node);
         return;
     }
-    if (seen_[place] != walk && pinned_[at(node)] == kUnset)
+    if (seen_[place] != walk && pinned_[to_size(node)] == kUnset)
     {
         seen_[place] = walk;
         meet(place, walk);
@@ -205,12 +195,12 @@ void Locator::meet(std::size_t position, std::size_t walk)
 {
     if (!outputs_[walk])
     {
-        met_.push_back(count_of(position));
+        met_.push_back(to_offset(position));
         return;
     }
     if (size_of(position) > kSmall)
     {
-        found_.push_back(count_of(position));
+        found_.push_back(to_offset(position));
         return;
     }
     const std::span<const Run> runs = runs_of(position);
@@ -222,9 +212,9 @@ void Locator::adopt(std::size_t position, std::size_t walk)
 {
     for (const Offset link : links_of(position))
     {
-        if (seen_[at(link)] != walk)
+        if (seen_[to_size(link)] != walk)
         {
-            seen_[at(link)] = walk;
+            seen_[to_size(link)] = walk;
             found_.push_back(link);
         }
     }
@@ -259,7 +249,7 @@ bool Locator::fits() const noexcept
     std::size_t size = pieces_.size();
     for (const Offset child : met_)
     {
-        size += size_of(at(child));
+        size += size_of(to_size(child));
     }
     return size <= kSmall;
 }
@@ -268,9 +258,9 @@ void Locator::absorb(std::size_t walk)
 {
     for (const Offset child : met_)
     {
-        const std::span<const Run> runs = runs_of(at(child));
+        const std::span<const Run> runs = runs_of(to_size(child));
         pieces_.insert(pieces_.end(), runs.begin(), runs.end());
-        adopt(at(child), walk);
+        adopt(to_size(child), walk);
     }
     std::ranges::sort(pieces_, {}, &Run::begin);
     merge(pieces_, runs_);
@@ -278,7 +268,7 @@ void Locator::absorb(std::size_t walk)
 
 void Locator::single(std::size_t walk)
 {
-    const std::size_t child = at(met_.front());
+    const std::size_t child = to_size(met_.front());
     const std::size_t size = size_of(child);
     std::ranges::sort(pieces_, {}, &Run::begin);
     chosen_.clear();
@@ -325,7 +315,7 @@ std::size_t Locator::widen()
     std::size_t links = 0;
     for (std::size_t k = 0; k < met_.size(); ++k)
     {
-        const std::size_t position = at(met_[k]);
+        const std::size_t position = to_size(met_[k]);
         taken_[k] = size_of(position) <= kWide;
         links += taken_[k] ? links_of(position).size() : 1;
     }
@@ -337,7 +327,7 @@ void Locator::pick(std::size_t held)
     std::size_t links = 0;
     for (std::size_t k = 0; k < met_.size(); ++k)
     {
-        const std::size_t position = at(met_[k]);
+        const std::size_t position = to_size(met_[k]);
         const std::size_t size = size_of(position);
         const bool loose = loose_[k];
         taken_[k] = size <= kSmall && (!loose || held + links + size <= kSmall);
@@ -371,7 +361,7 @@ std::size_t Locator::linked(std::size_t walk, std::span<const Run> runs)
     adopted_.clear();
     for (std::size_t k = 0; k < met_.size(); ++k)
     {
-        const std::size_t position = at(met_[k]);
+        const std::size_t position = to_size(met_[k]);
         if (!taken_[k])
         {
             adopted_.push_back(met_[k]);
@@ -379,7 +369,7 @@ std::size_t Locator::linked(std::size_t walk, std::span<const Run> runs)
         }
         for (const Offset link : links_of(position))
         {
-            if (seen_[at(link)] != walk)
+            if (seen_[to_size(link)] != walk)
             {
                 adopted_.push_back(link);
             }
@@ -401,7 +391,7 @@ void Locator::apply(std::size_t walk, std::span<const Run> runs)
     {
         if (taken_[k])
         {
-            adopt(at(met_[k]), walk);
+            adopt(to_size(met_[k]), walk);
         }
         else
         {
@@ -420,7 +410,7 @@ std::size_t Locator::tag()
     }
     for (std::size_t k = 0; k < met_.size(); ++k)
     {
-        const std::size_t position = at(met_[k]);
+        const std::size_t position = to_size(met_[k]);
         if (size_of(position) <= kWide)
         {
             for (const Run run : runs_of(position))
@@ -462,7 +452,7 @@ std::size_t Locator::close(std::size_t first, std::size_t &own)
 
 void Locator::keep(std::size_t position)
 {
-    const std::span<const Run> runs = std::span(runs_).subspan(at(run_starts_[position]));
+    const std::span<const Run> runs = std::span(runs_).subspan(to_size(run_starts_[position]));
     for (const Offset link : found_)
     {
         if (!covers(runs, link))
@@ -482,9 +472,9 @@ void Locator::gather(Offset output, std::size_t walk, Block &block)
     const Offset position = layout_.position(output);
     if (position != kUnset)
     {
-        append(at(position), walk, block.runs);
+        append(to_size(position), walk, block.runs);
     }
-    block.starts.push_back(count_of(block.runs.size()));
+    block.starts.push_back(to_offset(block.runs.size()));
 }
 
 void Locator::append(std::size_t position, std::size_t walk, std::vector<Run> &into)
@@ -507,10 +497,10 @@ void Locator::append(std::size_t position, std::size_t walk, std::vector<Run> &i
 
 void Locator::collect(std::size_t position, std::size_t walk)
 {
-    pending_.push_back(count_of(position));
+    pending_.push_back(to_offset(position));
     while (!pending_.empty())
     {
-        const std::size_t next = at(pending_.back());
+        const std::size_t next = to_size(pending_.back());
         pending_.pop_back();
         for (const Run run : runs_of(next))
         {
@@ -518,9 +508,9 @@ void Locator::collect(std::size_t position, std::size_t walk)
         }
         for (const Offset link : links_of(next))
         {
-            if (seen_[at(link)] != walk)
+            if (seen_[to_size(link)] != walk)
             {
-                seen_[at(link)] = walk;
+                seen_[to_size(link)] = walk;
                 pending_.push_back(link);
             }
         }
@@ -530,13 +520,13 @@ void Locator::collect(std::size_t position, std::size_t walk)
 std::span<const Run> Locator::runs_of(std::size_t position) const noexcept
 {
     const Offset first = run_starts_[position];
-    return std::span(runs_).subspan(at(first), at(run_starts_[position + 1] - first));
+    return std::span(runs_).subspan(to_size(first), to_size(run_starts_[position + 1] - first));
 }
 
 std::span<const Offset> Locator::links_of(std::size_t position) const noexcept
 {
     const Offset first = link_starts_[position];
-    return std::span(links_).subspan(at(first), at(link_starts_[position + 1] - first));
+    return std::span(links_).subspan(to_size(first), to_size(link_starts_[position + 1] - first));
 }
 
 }

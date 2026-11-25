@@ -21,16 +21,6 @@ namespace
 constexpr Offset kHeld = (std::numeric_limits<Offset>::max)();
 constexpr std::size_t kLimit = (std::numeric_limits<std::uint32_t>::max)();
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
-Offset count_of(std::size_t value) noexcept
-{
-    return static_cast<Offset>(value);
-}
-
 }
 
 std::uint32_t narrow(std::size_t n)
@@ -43,8 +33,8 @@ std::uint32_t narrow(std::size_t n)
 }
 
 Layout::Layout(const Graph &graph, const Plan &plan)
-    : graph_(graph), plan_(plan), stamps_(at(graph.size()), kUnset),
-      local_(at(graph.size()), kUnset)
+    : graph_(graph), plan_(plan), stamps_(to_size(graph.size()), kUnset),
+      local_(to_size(graph.size()), kUnset)
 {
 }
 
@@ -74,7 +64,7 @@ std::uint32_t Layout::slot(Offset node) const noexcept
 Offset Layout::position(Offset node) const noexcept
 {
     const std::size_t id = local(node);
-    return id < loads_.size() ? kUnset : count_of(id - loads_.size());
+    return id < loads_.size() ? kUnset : to_offset(id - loads_.size());
 }
 
 std::uint32_t Layout::width() const noexcept
@@ -84,16 +74,16 @@ std::uint32_t Layout::width() const noexcept
 
 bool Layout::computed(Offset node, Offset block) const noexcept
 {
-    return graph_.children(node).empty() || plan_.home[at(node)] == block;
+    return graph_.children(node).empty() || plan_.home[to_size(node)] == block;
 }
 
 void Layout::enter(Offset node, Offset block)
 {
-    if (stamps_[at(node)] == block)
+    if (stamps_[to_size(node)] == block)
     {
         return;
     }
-    stamps_[at(node)] = block;
+    stamps_[to_size(node)] = block;
     if (!computed(node, block))
     {
         loads_.push_back(node);
@@ -136,11 +126,11 @@ void Layout::number()
     narrow(loads_.size() + nodes_.size());
     for (std::size_t k = 0; k < loads_.size(); ++k)
     {
-        local_[at(loads_[k])] = count_of(k);
+        local_[to_size(loads_[k])] = to_offset(k);
     }
     for (std::size_t k = 0; k < nodes_.size(); ++k)
     {
-        local_[at(nodes_[k])] = count_of(loads_.size() + k);
+        local_[to_size(nodes_[k])] = to_offset(loads_.size() + k);
     }
 }
 
@@ -151,7 +141,7 @@ void Layout::mark(std::span<const Offset> outputs)
     {
         for (const Offset child : graph_.children(nodes_[k]))
         {
-            last_[local(child)] = count_of(k);
+            last_[local(child)] = to_offset(k);
         }
     }
     for (const Offset output : outputs)
@@ -173,7 +163,7 @@ void Layout::allocate()
     {
         for (const Offset child : graph_.children(nodes_[k]))
         {
-            release(child, count_of(k));
+            release(child, to_offset(k));
         }
         slots_[loads_.size() + k] = take();
     }
@@ -202,7 +192,7 @@ std::uint32_t Layout::take()
 
 std::size_t Layout::local(Offset node) const noexcept
 {
-    return at(local_[at(node)]);
+    return to_size(local_[to_size(node)]);
 }
 
 }

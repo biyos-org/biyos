@@ -16,11 +16,6 @@ namespace biyos
 namespace
 {
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 void check_apart(const Graph &source, const Graph &target)
 {
     if (&source == &target)
@@ -48,7 +43,7 @@ std::span<const Offset> images(std::span<const Offset> nodes,
     workspace.clear();
     for (const Offset node : nodes)
     {
-        workspace.push_back(map[at(node)]);
+        workspace.push_back(map[to_size(node)]);
     }
     return workspace;
 }
@@ -57,21 +52,21 @@ std::span<const Offset> images(std::span<const Offset> nodes,
 
 std::vector<bool> live(const Graph &graph, std::span<const Offset> roots)
 {
-    std::vector<bool> marks(at(graph.size()), false);
+    std::vector<bool> marks(to_size(graph.size()), false);
     for (const Offset root : roots)
     {
         check_child(root, graph.size());
-        marks[at(root)] = true;
+        marks[to_size(root)] = true;
     }
     for (Offset node = graph.size() - 1; node >= 0; --node)
     {
-        if (!marks[at(node)])
+        if (!marks[to_size(node)])
         {
             continue;
         }
         for (const Offset child : graph.children(node))
         {
-            marks[at(child)] = true;
+            marks[to_size(child)] = true;
         }
     }
     return marks;
@@ -88,7 +83,7 @@ Offset copy(const Graph &source, Offset node, std::span<const Offset> children, 
     case Payload::Constant:
         return target.add(op, source.constant(node), children);
     case Payload::Variable:
-        check_shape(op, Payload::Variable, static_cast<Offset>(children.size()));
+        check_shape(op, Payload::Variable, to_offset(children.size()));
         return target.add_variable(source.variable(node));
     case Payload::Coefficients:
         return target.add_sum(source.constant(node), children, source.coefficients(node));
@@ -103,16 +98,16 @@ Compaction compact(const Graph &graph, std::span<const Offset> roots)
     const std::vector<bool> marks = live(graph, roots);
     Compaction result{
         .graph = Graph(graph.points()),
-        .map = std::vector<Offset>(at(graph.size()), kDead),
+        .map = std::vector<Offset>(to_size(graph.size()), kDead),
     };
     std::vector<Offset> children;
     children.reserve(widest(graph));
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        if (marks[at(node)])
+        if (marks[to_size(node)])
         {
             const auto mapped = images(graph.children(node), result.map, children);
-            result.map[at(node)] = copy(graph, node, mapped, result.graph);
+            result.map[to_size(node)] = copy(graph, node, mapped, result.graph);
         }
     }
     return result;

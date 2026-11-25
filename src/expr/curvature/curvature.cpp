@@ -27,11 +27,6 @@ namespace biyos
 namespace
 {
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 [[noreturn]] void refuse(std::string object, std::string reason)
 {
     throw Error(ErrorKind::InvalidArgument, std::move(object), std::move(reason));
@@ -39,15 +34,15 @@ std::size_t at(Offset value) noexcept
 
 Offset n_children(const Graph &graph, Offset node) noexcept
 {
-    return static_cast<Offset>(graph.children(node).size());
+    return to_offset(graph.children(node).size());
 }
 
 std::vector<Offset> starts_of(const Graph &graph)
 {
-    std::vector<Offset> starts(at(graph.size()) + 1, 0);
+    std::vector<Offset> starts(to_size(graph.size()) + 1, 0);
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        starts[at(node) + 1] = starts[at(node)] + n_children(graph, node);
+        starts[to_size(node) + 1] = starts[to_size(node)] + n_children(graph, node);
     }
     return starts;
 }
@@ -154,8 +149,8 @@ bool keeps_concave(Curvature child, Monotonicity monotonicity) noexcept
 }
 
 Shapes::Shapes(const Graph &graph)
-    : starts_(starts_of(graph)), curvatures_(at(graph.size()), Curvature::Unknown),
-      arguments_(at(starts_.back()))
+    : starts_(starts_of(graph)), curvatures_(to_size(graph.size()), Curvature::Unknown),
+      arguments_(to_size(starts_.back()))
 {
 }
 
@@ -164,23 +159,23 @@ void Shapes::classify(const Graph &graph, std::span<const Interval> nodes)
     check(graph, nodes);
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        curvatures_[at(node)] = shape_of(graph, nodes, node);
+        curvatures_[to_size(node)] = shape_of(graph, nodes, node);
     }
 }
 
 Curvature Shapes::curvature(Offset node) const noexcept
 {
-    return curvatures_[at(node)];
+    return curvatures_[to_size(node)];
 }
 
 Monotonicity Shapes::monotonicity(Offset node, std::size_t position) const noexcept
 {
-    return arguments_[at(starts_[at(node)]) + position].monotonicity;
+    return arguments_[to_size(starts_[to_size(node)]) + position].monotonicity;
 }
 
 void Shapes::check(const Graph &graph, std::span<const Interval> nodes) const
 {
-    const auto held = static_cast<Offset>(curvatures_.size());
+    const auto held = to_offset(curvatures_.size());
     if (held != graph.size())
     {
         refuse("graph", "size " + text_of(graph.size()) + ", not " + text_of(held));
@@ -188,7 +183,7 @@ void Shapes::check(const Graph &graph, std::span<const Interval> nodes) const
     for (Offset node = 0; node < graph.size(); ++node)
     {
         const Offset n = n_children(graph, node);
-        const Offset kept = starts_[at(node) + 1] - starts_[at(node)];
+        const Offset kept = starts_[to_size(node) + 1] - starts_[to_size(node)];
         if (n != kept)
         {
             const std::string children = n_text(n, "child", "children");
@@ -196,7 +191,7 @@ void Shapes::check(const Graph &graph, std::span<const Interval> nodes) const
                    "node " + text_of(node) + " has " + children + ", not " + text_of(kept));
         }
     }
-    const auto entries = static_cast<Offset>(nodes.size());
+    const auto entries = to_offset(nodes.size());
     if (entries != graph.size())
     {
         const std::string n = text_of(graph.size());
@@ -206,9 +201,9 @@ void Shapes::check(const Graph &graph, std::span<const Interval> nodes) const
 
 std::span<Argument> Shapes::arguments_of(Offset node) noexcept
 {
-    const Offset start = starts_[at(node)];
-    const Offset n = starts_[at(node) + 1] - start;
-    return std::span(arguments_).subspan(at(start), at(n));
+    const Offset start = starts_[to_size(node)];
+    const Offset n = starts_[to_size(node) + 1] - start;
+    return std::span(arguments_).subspan(to_size(start), to_size(n));
 }
 
 Curvature Shapes::shape_of(const Graph &graph,
@@ -217,7 +212,7 @@ Curvature Shapes::shape_of(const Graph &graph,
 {
     const std::span<Argument> arguments = arguments_of(node);
     const Operands operands{.children = graph.children(node), .nodes = nodes};
-    if (nodes[at(node)].is_empty() || any_empty(operands))
+    if (nodes[to_size(node)].is_empty() || any_empty(operands))
     {
         std::ranges::fill(arguments, Argument{});
         return Curvature::Unknown;
@@ -241,7 +236,7 @@ Curvature Shapes::composed(Curvature outer,
     bool concave = is_concave(outer);
     for (std::size_t k = 0; k < children.size(); ++k)
     {
-        const Curvature child = curvatures_[at(children[k])];
+        const Curvature child = curvatures_[to_size(children[k])];
         const bool kept = fits(child, arguments[k]);
         convex = convex && kept && keeps_convex(child, arguments[k].monotonicity);
         concave = concave && kept && keeps_concave(child, arguments[k].monotonicity);

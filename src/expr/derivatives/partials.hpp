@@ -21,7 +21,7 @@ void mark_undefined(const Frame &frame, std::span<double> partials) noexcept;
 template <typename T>
 std::span<T> region(const Block &block, std::span<T> partials, std::size_t lanes) noexcept
 {
-    const auto origin = static_cast<std::size_t>(block.origin);
+    const auto origin = to_size(block.origin);
     return partials.subspan(origin * lanes, block.places.back() * lanes);
 }
 

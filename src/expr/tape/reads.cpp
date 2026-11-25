@@ -19,19 +19,9 @@ namespace biyos
 namespace
 {
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
-Offset count_of(std::size_t value) noexcept
-{
-    return static_cast<Offset>(value);
-}
-
 void add(Block &block, Run run)
 {
-    const bool joined = count_of(block.reads.size()) > block.read_starts.back();
+    const bool joined = to_offset(block.reads.size()) > block.read_starts.back();
     if (joined && block.reads.back().end == run.begin)
     {
         block.reads.back().end = run.end;
@@ -48,9 +38,9 @@ std::uint32_t slot_of(std::span<const Offset> loads, Offset position)
 
 std::span<const Range> route_of(const Reach &reach, Offset root)
 {
-    const Offset begin = reach.route.starts[at(root)];
-    const Offset end = reach.route.starts[at(root) + 1];
-    return std::span(reach.route.runs).subspan(at(begin), at(end - begin));
+    const Offset begin = reach.route.starts[to_size(root)];
+    const Offset end = reach.route.starts[to_size(root) + 1];
+    return std::span(reach.route.runs).subspan(to_size(begin), to_size(end - begin));
 }
 
 }
@@ -78,7 +68,7 @@ void read_children(const Graph &graph,
         {
             add(block, {.begin = slot, .end = slot + 1});
         }
-        block.read_starts.push_back(count_of(block.reads.size()));
+        block.read_starts.push_back(to_offset(block.reads.size()));
     }
 }
 
@@ -87,7 +77,7 @@ void read_routes(const Reach &reach, Block &block)
     block.read_starts.push_back(0);
     for (std::size_t k = 0; k < block.outputs.size(); ++k)
     {
-        for (const Range run : route_of(reach, block.begin + count_of(k)))
+        for (const Range run : route_of(reach, block.begin + to_offset(k)))
         {
             const std::uint32_t begin = slot_of(block.loads, run.begin);
             const std::uint32_t end = slot_of(block.loads, run.end);
@@ -96,7 +86,7 @@ void read_routes(const Reach &reach, Block &block)
                 add(block, {.begin = begin, .end = end});
             }
         }
-        block.read_starts.push_back(count_of(block.reads.size()));
+        block.read_starts.push_back(to_offset(block.reads.size()));
     }
 }
 

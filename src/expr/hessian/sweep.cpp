@@ -51,17 +51,12 @@ struct Trail
     std::size_t lanes;
 };
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 template <typename T>
 std::span<const T> part(const std::vector<T> &items,
                         const std::vector<Offset> &starts,
                         std::size_t k) noexcept
 {
-    return std::span(items).subspan(at(starts[k]), at(starts[k + 1] - starts[k]));
+    return std::span(items).subspan(to_size(starts[k]), to_size(starts[k + 1] - starts[k]));
 }
 
 template <typename T>
@@ -258,7 +253,7 @@ void load(const Block &block, std::size_t output, Pass &pass) noexcept
     {
         for (std::uint32_t k = run.begin; k < run.end; ++k)
         {
-            const std::size_t from = at(block.loads[k]);
+            const std::size_t from = to_size(block.loads[k]);
             copy_row(pass.workspace.shared, from, pass.workspace.slots, k, lanes);
             copy_row(pass.velocity.shared, from, pass.velocity.slots, k, lanes);
         }
@@ -281,7 +276,7 @@ void lift(const Block &block, std::size_t output, Pass &pass) noexcept
 void hold(const Block &block, std::size_t output, Pass &pass) noexcept
 {
     const std::size_t lanes = pass.lanes;
-    const std::size_t position = at(block.begin) + output;
+    const std::size_t position = to_size(block.begin) + output;
     const std::uint32_t slot = block.outputs[output];
     copy_row(pass.workspace.slots, slot, pass.workspace.shared, position, lanes);
     copy_row(pass.velocity.slots, slot, pass.velocity.shared, position, lanes);
@@ -294,13 +289,13 @@ const Block &block_of(std::span<const Block> blocks, Offset position) noexcept
 
 void rise(const Tape &tape, Offset element, Pass &pass) noexcept
 {
-    const std::span<const Block> prepass = tape.blocks().first(at(tape.prepass()));
+    const std::span<const Block> prepass = tape.blocks().first(to_size(tape.prepass()));
     for (const Range range : tape.route(element))
     {
         for (Offset position = range.begin; position < range.end; ++position)
         {
             const Block &block = block_of(prepass, position);
-            const std::size_t output = at(position - block.begin);
+            const std::size_t output = to_size(position - block.begin);
             lift(block, output, pass);
             hold(block, output, pass);
         }
@@ -462,7 +457,7 @@ void release(const Block &block, Run loads, Pass &pass) noexcept
     const std::size_t lanes = pass.lanes;
     for (std::uint32_t load = loads.begin; load < loads.end; ++load)
     {
-        const std::size_t into = at(block.loads[load]);
+        const std::size_t into = to_size(block.loads[load]);
         drain(row(std::span(pass.first.slots), load, lanes),
               row(std::span(pass.first.shared), into, lanes));
         drain(row(std::span(pass.second.slots), load, lanes),
@@ -493,7 +488,7 @@ void retrace(const Block &block, std::size_t output, Pass &pass) noexcept
 void fall(const Block &block, std::size_t output, Pass &pass) noexcept
 {
     const std::size_t lanes = pass.lanes;
-    const std::size_t position = at(block.begin) + output;
+    const std::size_t position = to_size(block.begin) + output;
     const std::uint32_t slot = block.outputs[output];
     drain(row(std::span(pass.first.shared), position, lanes),
           row(std::span(pass.first.slots), slot, lanes));
@@ -504,13 +499,13 @@ void fall(const Block &block, std::size_t output, Pass &pass) noexcept
 
 void descend(const Tape &tape, Offset element, Pass &pass) noexcept
 {
-    const std::span<const Block> prepass = tape.blocks().first(at(tape.prepass()));
+    const std::span<const Block> prepass = tape.blocks().first(to_size(tape.prepass()));
     for (const Range range : std::views::reverse(tape.route(element)))
     {
         for (Offset position = range.end; position > range.begin; --position)
         {
             const Block &block = block_of(prepass, position - 1);
-            fall(block, at(position - 1 - block.begin), pass);
+            fall(block, to_size(position - 1 - block.begin), pass);
         }
     }
 }
@@ -518,24 +513,24 @@ void descend(const Tape &tape, Offset element, Pass &pass) noexcept
 }
 
 Velocity::Velocity(const Tape &tape, std::size_t lanes)
-    : slots(sized(tape.width(), lanes), 0.0), shared(sized(at(tape.pinned()), lanes), 0.0),
-      partials(sized(at(tape.partials()), lanes), 0.0),
+    : slots(sized(tape.width(), lanes), 0.0), shared(sized(to_size(tape.pinned()), lanes), 0.0),
+      partials(sized(to_size(tape.partials()), lanes), 0.0),
       spare(sized(tangent_rows(tape), lanes), 0.0), result(lanes, 0.0)
 {
 }
 
 Pass::Pass(const Tape &tape, std::size_t count)
     : lanes(lanes_of(tape, count)), workspace(tape, lanes), velocity(tape, lanes),
-      first(tape, lanes), second(tape, lanes), points(sized(at(tape.variables()), lanes), 0.0),
+      first(tape, lanes), second(tape, lanes), points(sized(to_size(tape.variables()), lanes), 0.0),
       seeds(points.size(), 0.0)
 {
 }
 
 void sweep(const Tape &tape, Offset element, Pass &pass) noexcept
 {
-    const std::span<const Block> partition = tape.blocks().subspan(at(tape.prepass()));
+    const std::span<const Block> partition = tape.blocks().subspan(to_size(tape.prepass()));
     const Block &block = block_of(partition, element);
-    const std::size_t output = at(element - block.begin);
+    const std::size_t output = to_size(element - block.begin);
     rise(tape, element, pass);
     lift(block, output, pass);
     std::ranges::fill(row(std::span(pass.first.slots), block.outputs[output], pass.lanes), 1.0);
