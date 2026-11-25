@@ -25,7 +25,7 @@ using biyos::kNoRoot;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Request;
-using biyos::UserFunction;
+using biyos::Routine;
 using biyos::Variable;
 using biyos::test::refusal;
 
@@ -123,7 +123,7 @@ int counted(const Request &, std::span<double>, void *data)
     return 0;
 }
 
-int calls_of(const UserFunction &function)
+int calls_of(const Routine &function)
 {
     int calls = 0;
     const Request request{

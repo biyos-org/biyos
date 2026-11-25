@@ -284,16 +284,16 @@ class Model
     Index n_callbacks() const noexcept;
     const Callback &callback(Index index) const;
     Index add_callback(std::span<const Index> functions, void *data);
-    void set_callback_function(Index callback, UserFunction function);
+    void set_callback_function(Index callback, Routine function);
     void set_callback_jacobian(Index callback,
                                std::span<const Index> functions,
                                std::span<const Index> variables,
-                               UserFunction jacobian);
+                               Routine jacobian);
     void set_callback_hessian(Index callback,
                               std::span<const Index> rows,
                               std::span<const Index> columns,
-                              UserFunction hessian);
-    void set_callback_hessian_product(Index callback, UserFunction hessian_product);
+                              Routine hessian);
+    void set_callback_hessian_product(Index callback, Routine hessian_product);
     void set_callback_data(Index callback, void *data);
 
   private:

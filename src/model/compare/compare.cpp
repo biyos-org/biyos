@@ -370,7 +370,7 @@ std::string complement_differences(const Model &a, const Model &b)
     return table_difference("complement", a.n_complements(), b.n_complements(), complement);
 }
 
-std::string presence(std::string_view field, const UserFunction &a, const UserFunction &b)
+std::string presence(std::string_view field, const Routine &a, const Routine &b)
 {
     if (static_cast<bool>(a) == static_cast<bool>(b))
     {
