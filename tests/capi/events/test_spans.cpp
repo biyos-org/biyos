@@ -255,6 +255,30 @@ TEST(CApiTest, WriteHooked)
     expect_heard(recorder, span_of("io/write"));
 }
 
+TEST(CApiTest, EvaluationHooked)
+{
+    Recorder recorder;
+    BIYOS_model *model = recorder.model;
+    ASSERT_EQ(BIYOS_addvar(model, 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(model, 1, nullptr), BIYOS_OK);
+    recorder.watch();
+    const double x = 0.5;
+    const double w = 1.0;
+    double f = -1.0;
+    double hv = -1.0;
+    ASSERT_EQ(BIYOS_evalf(model, &x, &f), BIYOS_OK);
+    ASSERT_EQ(BIYOS_evalg(model, &x, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_evalh(model, &x, &w, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_evalhv(model, &x, &w, &x, &hv), BIYOS_OK);
+    Texts expected;
+    for (const char *name : {"evaluation", "values", "jacobian", "hessian", "product"})
+    {
+        const Texts span = span_of(std::string("model/") + name);
+        expected.insert(expected.end(), span.begin(), span.end());
+    }
+    expect_heard(recorder, expected);
+}
+
 TEST(CApiTest, ReadUnhooked)
 {
     Recorder recorder;
