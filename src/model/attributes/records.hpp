@@ -2,9 +2,9 @@
 
 #include "core/numbers.hpp"
 
-#include <map>
 #include <span>
 #include <string_view>
+#include <vector>
 
 namespace biyos
 {
@@ -28,7 +28,8 @@ class RecordTolerances
     void renumber(std::span<const Index> map) noexcept;
 
   private:
-    std::map<Index, Tolerance> held_;
+    std::vector<Index> indices_;
+    std::vector<Tolerance> values_;
 };
 
 }

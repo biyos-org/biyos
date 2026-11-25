@@ -3,6 +3,7 @@
 #include "core/error.hpp"
 #include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
+#include "model/attributes/records.hpp"
 #include "model/compare/compare.hpp"
 #include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
@@ -10,6 +11,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <bit>
 #include <cstddef>
 #include <new>
 #include <optional>
@@ -30,6 +32,7 @@ using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
+using biyos::RecordTolerances;
 using biyos::Variable;
 using biyos::VariableKind;
 
@@ -388,6 +391,18 @@ void delete_two(Model &model)
     model.delete_complements(indices);
 }
 
+constexpr Index kRecords = 64;
+
+std::size_t set_each(RecordTolerances &held, double absolute)
+{
+    const std::size_t start = biyos::test::allocations();
+    for (Index k = 0; k < kRecords; ++k)
+    {
+        held.set("variable", kRecords, std::span(&k, 1), std::span(&absolute, 1), {});
+    }
+    return biyos::test::allocations() - start;
+}
+
 }
 
 TEST(AllocationTest, Renaming)
@@ -550,7 +565,7 @@ TEST(AllocationTest, Tolerances)
         if (!runs_out_with(model, set_tolerances, successes))
         {
             EXPECT_GT(successes, 0U);
-            EXPECT_EQ(copy_cost(model), copy_cost(before) + 3);
+            EXPECT_EQ(copy_cost(model), copy_cost(before) + 2);
             return;
         }
         EXPECT_EQ(biyos::difference(model, before), "");
@@ -570,10 +585,28 @@ TEST(AllocationTest, Deletion)
         {
             EXPECT_GT(successes, 0U);
             EXPECT_EQ(model.n_complements(), 2);
-            EXPECT_EQ(copy_cost(model), copy_cost(before) - 2);
+            EXPECT_EQ(copy_cost(model), copy_cost(before));
             return;
         }
         EXPECT_EQ(biyos::difference(model, before), "");
     }
     ADD_FAILURE() << "the call never completed";
+}
+
+TEST(AllocationTest, ToleranceAppend)
+{
+    RecordTolerances held;
+    EXPECT_LE(set_each(held, 1.0), 2 * std::bit_width(biyos::to_size(kRecords)));
+}
+
+TEST(AllocationTest, ToleranceUpdate)
+{
+    RecordTolerances held;
+    set_each(held, 1.0);
+    EXPECT_EQ(set_each(held, 2.0), 0U);
+    const std::vector<Index> indices{5, 1, 3};
+    const std::vector<double> relative{0.5, 0.25, 0.125};
+    const std::size_t start = biyos::test::allocations();
+    held.set("variable", kRecords, indices, {}, relative);
+    EXPECT_EQ(biyos::test::allocations() - start, 0U);
 }
