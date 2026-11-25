@@ -155,6 +155,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_expressions(lib, ints, doubles)
     _declare_settings(lib, ints, doubles)
     _declare_callbacks(lib, ints)
+    _declare_evaluation(lib, ints, doubles)
 
 
 def _declare_variables(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
@@ -349,6 +350,15 @@ def _declare_callbacks(lib: ctypes.CDLL, ints: type) -> None:
     _declare(lib, "BIYOS_getncbfun", c_int, c_void_p, c_int32, ints)
     covered = (c_void_p, c_int32, c_int32, ints)
     _declare(lib, "BIYOS_getcbfun", c_int, *covered)
+
+
+def _declare_evaluation(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
+    offsets = POINTER(c_int64)
+    for name, arrays in (("f", 2), ("g", 2), ("h", 3), ("hv", 4)):
+        _declare(lib, f"BIYOS_eval{name}", c_int, c_void_p, *[doubles] * arrays)
+    for name in ("gpat", "hpat"):
+        _declare_pair(lib, f"BIYOS_getn{name}", offsets)
+        _declare_pair(lib, f"BIYOS_get{name}", c_int64, offsets, ints)
 
 
 lib = _load()

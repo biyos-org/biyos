@@ -493,6 +493,70 @@ static BIYOS_status use_callbacks(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status read_patterns(BIYOS_model *model)
+{
+    const BIYOS_index first = 0;
+    BIYOS_offset nnz = -1;
+    BIYOS_offset cnt[2] = {-1, -1};
+    BIYOS_index var[2] = {-1, -1};
+    if (BIYOS_getngpatsp(model, 1, &first, &nnz) != BIYOS_OK || nnz != 2 ||
+        BIYOS_getngpatrg(model, 0, 1, &nnz) != BIYOS_OK || nnz != 2 ||
+        BIYOS_getgpatsp(model, 1, &first, 2, cnt, var) != BIYOS_OK || cnt[0] != 2 || var[1] != 1 ||
+        BIYOS_getgpatrg(model, 0, 1, 2, cnt, var) != BIYOS_OK ||
+        BIYOS_getnhpatsp(model, 1, &first, &nnz) != BIYOS_OK || nnz != 1 ||
+        BIYOS_getnhpatrg(model, 0, 2, &nnz) != BIYOS_OK || nnz != 1 ||
+        BIYOS_gethpatsp(model, 1, &first, 1, cnt, var) != BIYOS_OK || var[0] != 1 ||
+        BIYOS_gethpatrg(model, 0, 2, 1, cnt, var) != BIYOS_OK || cnt[1] != 0)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
+static BIYOS_status eval_model(BIYOS_model *model)
+{
+    const BIYOS_real x[2] = {2.0, 3.0};
+    const BIYOS_real w[1] = {1.0};
+    const BIYOS_real v[2] = {1.0, 1.0};
+    const BIYOS_real f_want[1] = {6.0};
+    const BIYOS_real g_want[2] = {3.0, 2.0};
+    BIYOS_real f[1] = {0.0};
+    BIYOS_real g[2] = {0.0, 0.0};
+    BIYOS_real h[1] = {0.0};
+    BIYOS_real hv[2] = {0.0, 0.0};
+    if (BIYOS_evalf(model, x, f) != BIYOS_OK || memcmp(f, f_want, sizeof f) != 0 ||
+        BIYOS_evalg(model, x, g) != BIYOS_OK || memcmp(g, g_want, sizeof g) != 0 ||
+        BIYOS_evalh(model, x, w, h) != BIYOS_OK || memcmp(h, w, sizeof h) != 0 ||
+        BIYOS_evalhv(model, x, w, v, hv) != BIYOS_OK || memcmp(hv, v, sizeof hv) != 0)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
+static BIYOS_status use_evaluation(BIYOS_env *env)
+{
+    BIYOS_model *model = NULL;
+    const BIYOS_index fun = 0;
+    const BIYOS_index var1 = 0;
+    const BIYOS_index var2 = 1;
+    const BIYOS_real coef = 1.0;
+    BIYOS_status status = BIYOS_newmdl(env, &model);
+    if (status == BIYOS_OK &&
+        (BIYOS_addvar(model, 2, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+         BIYOS_addfun(model, 1, NULL) != BIYOS_OK ||
+         BIYOS_addquadtermsp(model, 1, &fun, &var1, &var2, &coef) != BIYOS_OK ||
+         read_patterns(model) != BIYOS_OK || eval_model(model) != BIYOS_OK))
+    {
+        status = BIYOS_ERR_INTERNAL;
+    }
+    if (BIYOS_freemdl(model) != BIYOS_OK)
+    {
+        status = BIYOS_ERR_INTERNAL;
+    }
+    return status;
+}
+
 static int matches(const char *found, const char *wanted)
 {
     return found != NULL && strcmp(found, wanted) == 0;
@@ -835,6 +899,10 @@ int main(void)
         status = BIYOS_ERR_INTERNAL;
     }
     if (use_cones(model) != BIYOS_OK || name_cones(model) != BIYOS_OK)
+    {
+        status = BIYOS_ERR_INTERNAL;
+    }
+    if (use_evaluation(env) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

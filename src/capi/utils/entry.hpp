@@ -9,9 +9,11 @@
 #include "core/events/hooks.hpp"
 #include "core/memory/usage.hpp"
 #include "core/options/settings.hpp"
+#include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
 
 #include <concepts>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -34,6 +36,8 @@ struct BIYOS_model
     biyos::Settings settings;
     mutable biyos::Usage usage;
     mutable biyos::Hooks hooks;
+    std::unique_ptr<biyos::Evaluation> evaluation;
+    bool evaluating = false;
 };
 
 namespace biyos::capi
@@ -66,7 +70,7 @@ inline biyos::Env &writable(biyos::Env &env)
     return env;
 }
 
-inline biyos::Model &writable(BIYOS_model &model)
+inline void claim(BIYOS_model &model)
 {
     if (model.handle.env().events().delivering())
     {
@@ -74,6 +78,16 @@ inline biyos::Model &writable(BIYOS_model &model)
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "model", reason);
     }
     ModelGuard::claim(model.usage);
+    if (model.evaluating)
+    {
+        refuse("model", kRunning);
+    }
+}
+
+inline biyos::Model &writable(BIYOS_model &model)
+{
+    claim(model);
+    model.evaluation.reset();
     return model.core;
 }
 
@@ -117,7 +131,10 @@ BIYOS_status guarded(Model *model, Args... arguments) noexcept
         return BIYOS_ERR_BADARG;
     }
     biyos::Env &env = model->handle.env();
-    start(env);
+    if (!model->usage.held())
+    {
+        start(env);
+    }
     const ModelGuard busy(env, model->usage);
     return biyos::capi::guard(&env,
                               model,

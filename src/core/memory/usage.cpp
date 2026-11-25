@@ -52,4 +52,9 @@ void Usage::leave() noexcept
     --calls_;
 }
 
+bool Usage::held() const noexcept
+{
+    return owner_.load() == this_thread();
+}
+
 }

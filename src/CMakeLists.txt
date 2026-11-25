@@ -143,6 +143,9 @@ add_library(biyos
     capi/env/format.cpp
     capi/env/options.cpp
     capi/env/version.cpp
+    capi/evaluation/cache.cpp
+    capi/evaluation/evaluate.cpp
+    capi/evaluation/patterns.cpp
     capi/linear/columns.cpp
     capi/linear/functions.cpp
     capi/linear/linear.cpp

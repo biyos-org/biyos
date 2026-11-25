@@ -43,7 +43,7 @@ since 0.1.0
 
 type BIYOS_env
 summary An environment.
-note It holds the options, the hooks and the last error of each thread that calls it. Environments share no state, so separate threads may use separate environments at the same time. Threads may share one too: calls on different models of it may run at the same time, and so may calls that only read one model. A call that changes a model runs alone on that model, a call that changes the environment runs alone on it and its models, and a call that would overlap one of them on another thread fails with `BIYOS_ERR_BUSY`. It is freed only once no other thread is in a call on it or will make one. Any thread may call `BIYOS_interrupt` and `BIYOS_lasterror` on it at any time. [Threads](#sec-threads) gives the rule.
+note It holds the options, the hooks and the last error of each thread that calls it. Environments share no state, so separate threads may use separate environments at the same time. Threads may share one too: calls on different models of it may run at the same time, and so may calls that only read one model. A call that changes a model, evaluates it or reads one of its derivative patterns runs alone on that model, a call that changes the environment runs alone on it and its models, and a call that would overlap one of them on another thread fails with `BIYOS_ERR_BUSY`. It is freed only once no other thread is in a call on it or will make one. Any thread may call `BIYOS_interrupt` and `BIYOS_lasterror` on it at any time. [Threads](#sec-threads) gives the rule.
 see BIYOS_newenv BIYOS_freeenv
 since 0.1.0
 
@@ -93,8 +93,8 @@ table Status codes
 value BIYOS_OK The call succeeded.
 value BIYOS_ERR_BADARG The caller passed something the call does not accept: a null pointer, an unknown name, id or index, a value out of range, a call of the wrong kind for its option, or a change to an environment while it delivers an event. The entry of each call says which.
 value BIYOS_ERR_BADFILE A file breaks the rules of its format, with a message that names the file and the line.
-value BIYOS_ERR_UNSUPPORTED A part of a file that the reader does not handle, with a message that names the part and its line, or a model that the format cannot hold.
-value BIYOS_ERR_BUSY The environment or the model is in a call on another thread that this call may not overlap ([Threads](#sec-threads)).
+value BIYOS_ERR_UNSUPPORTED A part of a file that the reader does not handle, with a message that names the part and its line, a model that the format cannot hold, or a callback without the function an evaluation needs.
+value BIYOS_ERR_BUSY The environment or the model is in a call on another thread that this call may not overlap, or the model is running a callback and this call would change it, evaluate it or read a pattern ([Threads](#sec-threads)).
 value BIYOS_ERR_INUSE An item that another record, a node or a callback uses, so this change of it is refused.
 value BIYOS_ERR_CALLBACK A callback returned a negative value, or a value that is not finite when checks are on, and stopped the call that asked for it.
 value BIYOS_ERR_NOMEMORY An allocation failed, or a count would pass the largest the model can hold.
@@ -454,7 +454,7 @@ since 0.1.0
 
 group events Events
 text biyos writes nothing to standard output or standard error. It reports through events, and a caller reads them by adding a hook on one kind of event at a lowest level. The hook then receives every event of that kind at that level or a more severe one. The hooks of an environment receive an event in the order they were added, and an event no hook wants is not built. They run one at a time: an event sent from one thread waits while a hook runs for another. A model may have hooks of its own, which receive the events of calls on that model alone, in the order they were added and before the hooks of its environment. They too run one at a time, but beside the hooks of other models and of the environment. Each event biyos sends is listed in [Events biyos sends](#sec-capi-sent).
-text While a hook runs, whether it belongs to the environment or to one of its models, the environment delivers an event and is read-only to the hook's thread. The hook may read options, the last error, the event and the models made on the environment. Every call that would change the environment, setting one of its options, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change or free a model made on it fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error is again what it was before the hook ran.
+text While a hook runs, whether it belongs to the environment or to one of its models, the environment delivers an event and is read-only to the hook's thread. The hook may read options, the last error, the event and the models made on the environment. Every call that would change the environment, setting one of its options, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change, evaluate or free a model made on it or read its derivative patterns fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error is again what it was before the hook ran.
 
 table Event kinds
 value BIYOS_EVTKND_MSG A message: a level, the module that sent it, a text and fields.
@@ -2535,7 +2535,7 @@ group callbacks Callbacks
 text A callback computes in user code its part $\gamma_k(x)$ of the nonlinear part of each function $k$ it covers. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for the values of those parts, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
 text The derivative patterns are coordinates, as `BIYOS_addlintermsp` takes terms: `BIYOS_setcbg` takes a covered function and a variable for each entry, `BIYOS_setcbh` two variables. Entries may come in any order and may repeat, and `BIYOS_cbg` and `BIYOS_cbh` write one value for each entry in the order given, the values of a repeated entry summed.
 text A function's nonlinear part is its expression plus the part of every callback that covers it. A function may be in any number of callbacks and hold an expression beside them, and a callback lists a function at most once. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function. A callback reads `x` in the numbering it was written for, so `BIYOS_delvarsp` deletes no variable of a model that has a callback.
-text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. No call evaluates a callback yet.
+text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. The calls of [Evaluation](#sec-capi-evaluation) run callbacks.
 text The model keeps the function pointers and `data` as given and never frees `data`. A copy made by `BIYOS_copymdl` shares them with its source, so both call the same code with the same `data`.
 
 type BIYOS_cbreq
@@ -2694,6 +2694,130 @@ return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `cb` is not a callback of the model, `cap` is negative, or `cap` is less than the number `BIYOS_getncbfun` gives.
 note It reads back what `BIYOS_addcb` takes. A refused call writes nothing.
 see BIYOS_getncbfun BIYOS_addcb
+since 0.1.0
+
+group evaluation Evaluation
+text The calls of this group evaluate a model's functions and their derivatives at a point, and read the patterns of the derivatives, as a solver does. The first of them after a change of the model builds what they need, timed as the phase `evaluation` of module `model`, and the model keeps it until its next change, so later calls skip the build.
+text The Jacobian holds the first derivatives of each function, a row for each function and a column for each variable. Its pattern lists, for each function, the variables it may depend on, sorted. The Hessian of the Lagrangian $\sum_k w_k \nabla^2 f_k(x)$ is symmetric, so its pattern lists the lower triangle alone: for each variable $j$, the variables $i \ge j$ whose entry $(i, j)$ may be nonzero, sorted. An entry is in a pattern when some part of a function may give it a value: a linear or quadratic term, an expression or the pattern a callback declares. It stays in the pattern where its value at a point is 0.
+text Each call changes no data of the model, but it runs alone on the model, as a change does, so a call on another thread that would overlap it fails with `BIYOS_ERR_BUSY`. While an evaluation runs a callback, a call from the callback that would change the model, evaluate it or read a pattern fails with `BIYOS_ERR_BUSY` too; one that only reads the model runs.
+text A callback that returns a positive value leaves NaN in every output it computes for that call, and the call still returns `BIYOS_OK`, so a solver steps back. A negative value stops the call with `BIYOS_ERR_CALLBACK`, and its message names the callback, the part it was asked for and the value, such as `callback: callback 0: function returned -3`.
+
+function BIYOS_evalf
+summary Evaluate the functions at a point.
+param mdl in The model.
+param x in The point, a value for each variable; may be null when the model has no variable.
+param f out Receives a value for each function, in the order of the functions; may be null when the model has no function.
+return `BIYOS_OK` once `f` is written.
+error BIYOS_ERR_BADARG `x` or `f` is null while the model has variables or functions for it.
+error BIYOS_ERR_UNSUPPORTED A callback of the model has no `BIYOS_cbf`.
+error BIYOS_ERR_CALLBACK A callback returned a negative value, or a value that is not finite when checks are on.
+note The call sends the span `values` from module `model` ([Events biyos sends](#sec-capi-sent)).
+see BIYOS_evalg BIYOS_setcbf
+since 0.1.0
+
+function BIYOS_evalg
+summary Evaluate the Jacobian of the functions at a point.
+param mdl in The model.
+param x in The point, a value for each variable; may be null when the model has no variable.
+param g out Receives a value for each entry of the Jacobian pattern, in the order `BIYOS_getgpatrg` gives from 0 to the number of functions; may be null when the pattern is empty.
+return `BIYOS_OK` once `g` is written.
+error BIYOS_ERR_BADARG `x` or `g` is null while the model or the pattern has entries for it.
+error BIYOS_ERR_UNSUPPORTED A callback of the model has no `BIYOS_cbg`.
+error BIYOS_ERR_CALLBACK A callback returned a negative value, or a value that is not finite when checks are on.
+note `BIYOS_getngpatrg` from 0 to the number of functions gives the number of values.
+note The call sends the span `jacobian` from module `model` ([Events biyos sends](#sec-capi-sent)).
+see BIYOS_getgpatrg BIYOS_setcbg
+since 0.1.0
+
+function BIYOS_evalh
+summary Evaluate the Hessian of the Lagrangian at a point.
+param mdl in The model.
+param x in The point, a value for each variable; may be null when the model has no variable.
+param w in The weight $w_k$ of each function; may be null when the model has no function.
+param h out Receives a value for each entry of the lower Hessian pattern, in the order `BIYOS_gethpatrg` gives from 0 to the number of variables; may be null when the pattern is empty.
+return `BIYOS_OK` once `h` is written.
+error BIYOS_ERR_BADARG `x`, `w` or `h` is null while the model or the pattern has entries for it.
+error BIYOS_ERR_UNSUPPORTED A callback of the model has no `BIYOS_cbh`.
+error BIYOS_ERR_CALLBACK A callback returned a negative value, or a value that is not finite when checks are on.
+note `BIYOS_getnhpatrg` from 0 to the number of variables gives the number of values.
+note The call sends the span `hessian` from module `model` ([Events biyos sends](#sec-capi-sent)).
+see BIYOS_gethpatrg BIYOS_evalhv BIYOS_setcbh
+since 0.1.0
+
+function BIYOS_evalhv
+summary Multiply the Hessian of the Lagrangian at a point by a vector.
+param mdl in The model.
+param x in The point, a value for each variable; may be null when the model has no variable.
+param w in The weight $w_k$ of each function; may be null when the model has no function.
+param v in The vector, a value for each variable; may be null when the model has no variable.
+param hv out Receives the product, a value for each variable; may be null when the model has no variable.
+return `BIYOS_OK` once `hv` is written.
+error BIYOS_ERR_BADARG `x`, `w`, `v` or `hv` is null while the model has variables or functions for it.
+error BIYOS_ERR_UNSUPPORTED A callback of the model has neither `BIYOS_cbhv` nor `BIYOS_cbh`.
+error BIYOS_ERR_CALLBACK A callback returned a negative value, or a value that is not finite when checks are on.
+note A callback without `BIYOS_cbhv` gives its part of the product through its `BIYOS_cbh`.
+note The call sends the span `product` from module `model` ([Events biyos sends](#sec-capi-sent)).
+see BIYOS_evalh BIYOS_setcbhv
+since 0.1.0
+
+function BIYOS_getngpatsp BIYOS_getngpatrg
+summary Count the entries of the Jacobian pattern of functions.
+param mdl in The model.
+param beg in In the `rg` form, the first function of the range.
+param end in In the `rg` form, one past the last function of the range.
+param n in In the `sp` form, the number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of variables in the patterns of the entries, a function counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getgpatsp` and `BIYOS_getgpatrg` need for the same entries.
+see BIYOS_getgpatsp BIYOS_evalg
+since 0.1.0
+
+function BIYOS_getgpatsp BIYOS_getgpatrg
+summary Read the Jacobian pattern of functions.
+param mdl in The model.
+param beg in In the `rg` form, the first function of the range.
+param end in In the `rg` form, one past the last function of the range.
+param n in In the `sp` form, the number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of variables `var` holds.
+param cnt out Receives a count for each entry, `n` of them, `end - beg` in the `rg` form; skipped when null.
+param var out Receives the variables of each entry's pattern, sorted; skipped when null.
+return `BIYOS_OK` once the arrays are written: in the `sp` form the variables of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[k]` for entry `k`.
+error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, or `cap` is less than the number `BIYOS_getngpatsp` gives.
+note A refused call writes nothing. The order of `BIYOS_getgpatrg` from 0 to the number of functions is the order of the values `BIYOS_evalg` writes.
+see BIYOS_getngpatsp BIYOS_evalg
+since 0.1.0
+
+function BIYOS_getnhpatsp BIYOS_getnhpatrg
+summary Count the entries of the Hessian pattern in columns of its lower triangle.
+param mdl in The model.
+param beg in In the `rg` form, the first variable of the range.
+param end in In the `rg` form, one past the last variable of the range.
+param n in In the `sp` form, the number of entries.
+param idx in In the `sp` form, the variable of each entry, its column, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of rows in the columns of the entries, a column counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, or `nnz` is null.
+note The number is the `cap` that `BIYOS_gethpatsp` and `BIYOS_gethpatrg` need for the same entries.
+see BIYOS_gethpatsp BIYOS_evalh
+since 0.1.0
+
+function BIYOS_gethpatsp BIYOS_gethpatrg
+summary Read the Hessian pattern in columns of its lower triangle.
+param mdl in The model.
+param beg in In the `rg` form, the first variable of the range.
+param end in In the `rg` form, one past the last variable of the range.
+param n in In the `sp` form, the number of entries.
+param idx in In the `sp` form, the variable of each entry, its column, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of rows `var` holds.
+param cnt out Receives a count for each entry, `n` of them, `end - beg` in the `rg` form; skipped when null.
+param var out Receives the rows of each entry's column, sorted, each at least the column's variable; skipped when null.
+return `BIYOS_OK` once the arrays are written: in the `sp` form the rows of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[k]` for entry `k`.
+error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, or `cap` is less than the number `BIYOS_getnhpatsp` gives.
+note A refused call writes nothing. The order of `BIYOS_gethpatrg` from 0 to the number of variables is the order of the values `BIYOS_evalh` writes.
+see BIYOS_getnhpatsp BIYOS_evalh
 since 0.1.0
 
 group files Files

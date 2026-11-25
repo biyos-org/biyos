@@ -232,6 +232,20 @@ A function can be deleted only once nothing uses it. One that a constraint, an o
 
 A variable can be deleted while functions use it: its linear and quadratic terms leave every function, and a function left with no term keeps its constant. A variable used elsewhere refuses the call with `BIYOS_ERR_INUSE`, since deleting it there would change what the caller wrote: one that has a node, one that is a member of a set or one that is the binary of an indicator, with a message such as `in use: variable 3: used by set 1`. A variable keeps its node once it has one, so a variable that has appeared in an expression stays. No variable can be deleted while the model has a callback, since a callback reads the variables in the numbering it was written for. A deleted variable takes its kind and bounds with it, and each term, set, indicator and node then refers to the variables left by their new indices.
 
+## Evaluating a model {#sec-model-evaluating}
+
+A model can be evaluated at a point $x$ as a solver will evaluate it. `BIYOS_evalf` writes the value $f_k(x)$ of each function, `BIYOS_evalg` the entries of the Jacobian, `BIYOS_evalh` those of the Hessian of the Lagrangian
+
+$$
+\nabla^2 L(x) = \sum_k w_k \nabla^2 f_k(x)
+$$
+
+for a weight $w_k$ of each function, and `BIYOS_evalhv` its product $\nabla^2 L(x)\,v$ with a vector. The Jacobian and the Hessian are written as values alone, one for each entry of their pattern. `BIYOS_getgpatrg` from 0 to the number of functions gives the variables of each function's row, and `BIYOS_gethpatrg` from 0 to the number of variables the rows of each column of the lower triangle, at or below the column. The values follow these orders. As with the readers of terms, `BIYOS_getngpatrg` and `BIYOS_getnhpatrg` give the number of entries first, so a caller counts, allocates, reads the pattern and then evaluates. The `sp` forms read the patterns of a list of functions or columns.
+
+The first of these calls after a change of the model builds what they need and the model keeps it until its next change, so later calls skip the build. A copy of the model builds its own.
+
+The calls run the callbacks that cover the functions ([Callbacks](#sec-capi-callbacks)). A callback that returns a positive value leaves NaN in what it computes and the call still succeeds, so a solver can step back. A negative value stops the call with `BIYOS_ERR_CALLBACK` and a message such as `callback: callback 0: function returned -3`. A call that needs a function a callback lacks fails with `BIYOS_ERR_UNSUPPORTED`, except `BIYOS_evalhv`, which forms a callback's part of the product from its Hessian when the callback has no product of its own. While a callback runs, the model is read-only: a call from the callback that would change the model, evaluate it or read a pattern fails with `BIYOS_ERR_BUSY` and the message `busy: model: is running a callback`, while the readers of [Reading a model back](#sec-model-reading) run.
+
 ## The same model in Python {#sec-model-python}
 
 The Python package wraps the same calls under the same names, without the prefix. Each method that adds variables, functions, constraints, objectives or complements returns a block, a light object holding the first index and the count of the new items, and indexing a block gives a view of one item. A block or a view passes wherever the model takes indices, so the code reads as the mathematics does:
