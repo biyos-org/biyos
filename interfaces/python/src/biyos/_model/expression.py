@@ -345,7 +345,7 @@ class Expression(Operand):
     ``ValueError`` then.
     """
 
-    __slots__ = ("_args", "_op", "_values")
+    __slots__ = ("_args", "_idx", "_op", "_pwl", "_values")
 
     def __init__(
         self,
@@ -356,6 +356,8 @@ class Expression(Operand):
         self._op = op
         self._args = args
         self._values = values
+        self._pwl: SupportsIndex | None = None
+        self._idx: Index | None = None
 
     def __repr__(self) -> str:
         """Return the expression as it is written.
@@ -369,15 +371,6 @@ class Expression(Operand):
             The formula of the expression, such as ``x[0]**2 + 3*x[1]``.
         """
         return printed(self)
-
-
-class Piecewise(Expression):
-    __slots__ = ("_idx", "_pwl")
-
-    def __init__(self, pwl: SupportsIndex, idx: Index, arg: Operand) -> None:
-        super().__init__(Operator.PIECEWISE_LINEAR, (arg,), ())
-        self._pwl = pwl
-        self._idx = idx
 
 
 class ComparisonSense(Enum):
@@ -970,7 +963,10 @@ def piecewise(p: SupportsIndex, x: Term) -> Expression:
     Model.addpwl
     """
     idx = integer("p", p)
-    return Piecewise(p, idx, _operand(x))
+    expr = Expression(Operator.PIECEWISE_LINEAR, (_operand(x),), ())
+    expr._pwl = p
+    expr._idx = idx
+    return expr
 
 
 def max(x: Term, y: Term, *rest: Term) -> Expression:

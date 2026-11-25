@@ -10,7 +10,7 @@ from biyos._model.blocks import (
     Variables,
     index_of,
 )
-from biyos._model.expression import Expression, Operand, Piecewise
+from biyos._model.expression import Expression, Operand
 from biyos._model.operators import Operator
 
 if TYPE_CHECKING:
@@ -118,9 +118,8 @@ class _Writer:
         return [close, *reversed(children)]
 
     def _arg(self, node: Expression, children: Sequence[Operand]) -> Offset:
-        if isinstance(node, Piecewise):
-            pwl = node._pwl
-            return index_of(self._model, PiecewiseLinears, "expr", pwl)
+        if node._pwl is not None:
+            return index_of(self._model, PiecewiseLinears, "expr", node._pwl)
         return len(children)
 
     def _close(self, close: _Close) -> None:
