@@ -15,6 +15,9 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::to_index;
+using biyos::to_offset;
+using biyos::to_size;
 using biyos::capi::check_capacity;
 using biyos::capi::Coordinates;
 using biyos::capi::given;
@@ -44,16 +47,16 @@ std::size_t count_of(std::span<const biyos::Offset> starts, std::span<const biyo
     std::size_t count = 0;
     for (const biyos::Index variable : variables)
     {
-        biyos::check_index("variable", variable, static_cast<biyos::Index>(starts.size() - 1));
-        const auto k = static_cast<std::size_t>(variable);
-        count += static_cast<std::size_t>(starts[k + 1] - starts[k]);
+        biyos::check_index("variable", variable, to_index(starts.size() - 1));
+        const auto k = to_size(variable);
+        count += to_size(starts[k + 1] - starts[k]);
     }
     return count;
 }
 
 Columns columns_of(const biyos::Model &core, std::vector<biyos::Offset> starts)
 {
-    const auto total = static_cast<std::size_t>(starts.back());
+    const auto total = to_size(starts.back());
     Columns columns{
         .starts = std::move(starts),
         .functions = std::vector<biyos::Index>(total),
@@ -70,10 +73,10 @@ void write_columns(const Columns &columns,
     std::size_t k = 0;
     for (const biyos::Index variable : variables)
     {
-        const auto j = static_cast<std::size_t>(variable);
+        const auto j = to_size(variable);
         for (auto at = columns.starts[j]; at < columns.starts[j + 1]; ++at)
         {
-            const auto t = static_cast<std::size_t>(at);
+            const auto t = to_size(at);
             const biyos::LinearTerm term{.variable = variable, .coefficient = columns.values[t]};
             biyos::capi::put_term(out, k, columns.functions[t], term);
             ++k;
@@ -87,7 +90,7 @@ void n_column_terms(const BIYOS_model &model, Selection selection, BIYOS_offset 
     const auto chosen = selected(model.core, Family::Variable, selection);
     const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "columns");
     const std::size_t count = count_of(every_start(model.core), chosen);
-    *require(nnz, "nnz") = static_cast<BIYOS_offset>(count);
+    *require(nnz, "nnz") = to_offset(count);
 }
 
 void get_listed(const BIYOS_model &model,
@@ -104,7 +107,7 @@ void get_listed(const BIYOS_model &model,
     write_columns(columns_of(model.core, std::move(starts)), chosen, out);
     if (nnz != nullptr)
     {
-        *nnz = static_cast<BIYOS_offset>(count);
+        *nnz = to_offset(count);
     }
 }
 
@@ -118,7 +121,7 @@ void get_ranged(const BIYOS_model &model,
     const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "columns");
     const std::vector<biyos::Offset> found =
         biyos::variable_starts(model.core, range.start, range.stop);
-    const auto count = static_cast<std::size_t>(found.back());
+    const auto count = to_size(found.back());
     check_capacity(capacity, count);
     biyos::variable_terms(model.core,
                           range.start,

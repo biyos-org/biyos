@@ -11,10 +11,13 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::to_index;
+using biyos::capi::entry_or;
 using biyos::capi::guarded;
 using biyos::capi::List;
 using biyos::capi::listed;
 using biyos::capi::picked;
+using biyos::capi::put;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
@@ -42,19 +45,6 @@ struct Outputs
     BIYOS_real *relative = nullptr;
 };
 
-template <typename T> T entry_or(const T *values, std::size_t k, T held)
-{
-    return values == nullptr ? held : values[k];
-}
-
-template <typename T> void put(T *values, std::size_t k, T value)
-{
-    if (values != nullptr)
-    {
-        values[k] = value;
-    }
-}
-
 biyos::Objective given(biyos::Objective objective, std::size_t k, const Fields &fields)
 {
     const BIYOS_int sense = entry_or(fields.senses, k, static_cast<BIYOS_int>(objective.sense));
@@ -74,7 +64,7 @@ std::vector<biyos::Objective> new_objectives(std::span<const biyos::Index> funct
     added.reserve(functions.size());
     for (std::size_t k = 0; k < functions.size(); ++k)
     {
-        const biyos::Index index = start + static_cast<biyos::Index>(k);
+        const biyos::Index index = start + to_index(k);
         added.push_back(given(biyos::default_objective(functions[k], index), k, fields));
     }
     return added;

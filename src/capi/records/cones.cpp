@@ -19,6 +19,8 @@ using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Real;
+using biyos::to_offset;
+using biyos::to_size;
 using biyos::capi::check_capacity;
 using biyos::capi::delete_tolerances;
 using biyos::capi::get_tolerances;
@@ -69,7 +71,7 @@ std::vector<ConeKind> kinds_of(std::size_t n, const BIYOS_int *kinds)
 template <typename T>
 std::span<const T> items_of(const T *items, std::span<const Offset> starts, std::string_view name)
 {
-    const auto total = static_cast<std::size_t>(starts.back());
+    const auto total = to_size(starts.back());
     if (total > 0)
     {
         require(items, name);
@@ -126,13 +128,13 @@ void write_part(const Model &core, std::span<const Index> cones, Part<T> part, C
         const std::span<const T> items = (core.*part)(cones[j], cones[j] + 1);
         if (out.counts != nullptr)
         {
-            out.counts[j] = static_cast<BIYOS_offset>(items.size());
+            out.counts[j] = to_offset(items.size());
         }
         if (out.items != nullptr)
         {
             std::ranges::copy(items, out.items + written);
         }
-        written += static_cast<BIYOS_offset>(items.size());
+        written += to_offset(items.size());
     }
 }
 
@@ -153,7 +155,7 @@ void n_items(const BIYOS_model &model, Selection selection, Part<T> part, BIYOS_
 {
     const auto chosen = selected(model.core, Family::Cone, selection);
     const std::size_t count = count_of(model.core, chosen, part);
-    *require(nnz, "nnz") = static_cast<BIYOS_offset>(count);
+    *require(nnz, "nnz") = to_offset(count);
 }
 
 template <typename Selection>

@@ -14,6 +14,7 @@
 
 using biyos::Family;
 using biyos::LinearTerm;
+using biyos::to_size;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::Range;
@@ -33,7 +34,7 @@ void add_sliced(biyos::Model &core,
 {
     const std::vector<biyos::Offset> begins = starts_of(owners.size(), counts);
     core.check_room(0, begins.back());
-    const auto total = static_cast<std::size_t>(begins.back());
+    const auto total = to_size(begins.back());
     core.add_linear_terms(owners, begins, biyos::capi::packed(total, variables, values));
 }
 
@@ -51,12 +52,12 @@ std::vector<LinearTerm> column_terms(std::span<const biyos::Index> variables,
                                      const BIYOS_real *values)
 {
     std::vector<LinearTerm> terms;
-    terms.reserve(static_cast<std::size_t>(starts.back()));
+    terms.reserve(to_size(starts.back()));
     for (std::size_t j = 0; j < variables.size(); ++j)
     {
         for (auto t = starts[j]; t < starts[j + 1]; ++t)
         {
-            const BIYOS_real value = values[static_cast<std::size_t>(t)];
+            const BIYOS_real value = values[to_size(t)];
             terms.push_back(LinearTerm{.variable = variables[j], .coefficient = value});
         }
     }
@@ -100,7 +101,7 @@ void add_columns(BIYOS_model &model,
     const std::vector<biyos::Index> variables = selected(core, Family::Variable, range);
     const std::vector<biyos::Offset> begins = starts_of(variables.size(), counts);
     core.check_room(0, begins.back());
-    const auto total = static_cast<std::size_t>(begins.back());
+    const auto total = to_size(begins.back());
     if (total > 0)
     {
         require(functions, "fun");

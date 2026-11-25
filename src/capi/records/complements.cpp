@@ -13,11 +13,13 @@
 
 using biyos::Family;
 using biyos::capi::delete_tolerances;
+using biyos::capi::entry_or;
 using biyos::capi::get_tolerances;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
 using biyos::capi::picked;
+using biyos::capi::put;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
@@ -41,19 +43,6 @@ struct Outputs
     BIYOS_real *lower = nullptr;
     BIYOS_real *upper = nullptr;
 };
-
-template <typename T> T entry_or(const T *values, std::size_t k, T held)
-{
-    return values == nullptr ? held : values[k];
-}
-
-template <typename T> void put(T *values, std::size_t k, T value)
-{
-    if (values != nullptr)
-    {
-        values[k] = value;
-    }
-}
 
 biyos::Complement given(biyos::Complement complement, std::size_t k, const Fields &fields)
 {

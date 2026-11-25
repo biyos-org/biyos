@@ -4,10 +4,13 @@
 #include "capi/utils/entry.hpp"
 #include "core/env.hpp"
 #include "core/events/events.hpp"
+#include "core/numbers.hpp"
 
 #include <cstddef>
 #include <vector>
 
+using biyos::to_index;
+using biyos::to_size;
 using biyos::capi::guarded;
 using biyos::capi::require;
 using biyos::capi::writable;
@@ -84,7 +87,7 @@ const biyos::Field *field_of(const BIYOS_event *event, BIYOS_index field)
         return nullptr;
     }
     const std::vector<biyos::Field> &fields = event->core->fields;
-    const auto index = static_cast<std::size_t>(field);
+    const auto index = to_size(field);
     return index < fields.size() ? &fields[index] : nullptr;
 }
 
@@ -142,7 +145,7 @@ const char *BIYOS_getevttext(const BIYOS_event *evt)
 
 BIYOS_index BIYOS_getnevtfld(const BIYOS_event *evt)
 {
-    return evt == nullptr ? 0 : static_cast<BIYOS_index>(evt->core->fields.size());
+    return evt == nullptr ? 0 : to_index(evt->core->fields.size());
 }
 
 const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx)
