@@ -17,6 +17,8 @@
 
 using biyos::Index;
 using biyos::Offset;
+using biyos::to_offset;
+using biyos::to_size;
 using biyos::capi::check_capacity;
 using biyos::capi::guarded;
 using biyos::capi::length;
@@ -55,7 +57,7 @@ std::span<const BIYOS_real> input(const BIYOS_real *values, std::size_t n, std::
 
 void check_room(const biyos::Model &core, std::size_t added)
 {
-    if (added > biyos::kRoom - static_cast<std::size_t>(held(core)))
+    if (added > biyos::kRoom - to_size(held(core)))
     {
         throw biyos::Error(biyos::ErrorKind::NoMemory, "model", "no pwl index left");
     }
@@ -76,7 +78,7 @@ void add_pwls(BIYOS_model &model,
     }
     const std::vector<Offset> begins = starts_of(size, counts);
     check_room(core, size);
-    const auto total = static_cast<std::size_t>(begins.back());
+    const auto total = to_size(begins.back());
     const std::span<const BIYOS_real> xs = input(x, total, "x");
     const std::span<const BIYOS_real> ys = input(y, total, "y");
     const Offset first = core.add_piecewise_linears(begins, xs, ys);
@@ -104,7 +106,7 @@ std::span<const Index> chosen(const biyos::Model &core, List list)
 std::vector<Index> chosen(const biyos::Model &core, Range range)
 {
     biyos::check_span(kNoun, range.start, range.stop, held(core));
-    std::vector<Index> indices(static_cast<std::size_t>(range.stop - range.start));
+    std::vector<Index> indices(to_size(range.stop - range.start));
     std::iota(indices.begin(), indices.end(), range.start);
     return indices;
 }
@@ -124,7 +126,7 @@ void n_points(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
     const auto pwls = chosen(model.core, selection);
     const std::size_t count = count_of(model.core, pwls);
-    *require(nnz, "nnz") = static_cast<BIYOS_offset>(count);
+    *require(nnz, "nnz") = to_offset(count);
 }
 
 void copy_to(std::span<const biyos::Real> from, BIYOS_real *to, std::size_t k)
@@ -146,7 +148,7 @@ void write_pwls(const biyos::Model &core, std::span<const Index> pwls, const Out
         k += pwl.x.size();
         if (out.counts != nullptr)
         {
-            out.counts[j] = static_cast<BIYOS_offset>(pwl.x.size());
+            out.counts[j] = to_offset(pwl.x.size());
         }
     }
 }

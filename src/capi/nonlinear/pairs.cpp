@@ -10,6 +10,8 @@
 #include <span>
 
 using biyos::Family;
+using biyos::to_offset;
+using biyos::to_size;
 using biyos::capi::check_capacity;
 using biyos::capi::guarded;
 using biyos::capi::List;
@@ -43,7 +45,7 @@ void n_pairs(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(model.core, Family::Function, selection);
     const std::size_t count = count_of(model.core, chosen);
-    *require(nnz, "nnz") = static_cast<BIYOS_offset>(count);
+    *require(nnz, "nnz") = to_offset(count);
 }
 
 void put_pair(const Pairs &out,
@@ -96,7 +98,7 @@ void get_listed(const BIYOS_model &model,
     write_pairs(model.core, chosen, out);
     if (nnz != nullptr)
     {
-        *nnz = static_cast<BIYOS_offset>(count);
+        *nnz = to_offset(count);
     }
 }
 
@@ -111,7 +113,7 @@ void get_ranged(const BIYOS_model &model,
     check_capacity(capacity, terms.size());
     const auto record = [&](biyos::Index j)
     { return core.quadratic_terms(range.start + j, range.start + j + 1); };
-    biyos::capi::write_counts(static_cast<std::size_t>(range.stop - range.start), counts, record);
+    biyos::capi::write_counts(to_size(range.stop - range.start), counts, record);
     biyos::capi::unpack(terms, terms.size(), out.rows, out.columns, out.values);
 }
 

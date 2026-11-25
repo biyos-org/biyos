@@ -11,6 +11,7 @@
 #include <span>
 #include <vector>
 
+using biyos::to_index;
 using biyos::capi::check_capacity;
 using biyos::capi::guarded;
 using biyos::capi::length;
@@ -120,7 +121,7 @@ void get_data(const BIYOS_model &model, BIYOS_index cb, void **data)
 void n_functions(const BIYOS_model &model, BIYOS_index cb, BIYOS_index *n)
 {
     BIYOS_index *out = require(n, "n");
-    *out = static_cast<BIYOS_index>(model.core.callback(cb).covered.size());
+    *out = to_index(model.core.callback(cb).covered.size());
 }
 
 void get_functions(const BIYOS_model &model,
