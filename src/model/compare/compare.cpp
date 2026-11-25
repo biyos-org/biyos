@@ -3,6 +3,8 @@
 #include "core/index.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
+#include "expr/graph/graph.hpp"
+#include "expr/graph/points.hpp"
 #include "model/attributes/overrides.hpp"
 #include "model/compare/fields.hpp"
 #include "model/compare/match.hpp"
@@ -301,6 +303,30 @@ std::string variable_differences(const Model &a, const Model &b)
     return table_difference("variable", a.n_variables(), b.n_variables(), variable);
 }
 
+std::string point_difference(const Pwl &a, const Pwl &b, Offset k)
+{
+    return first_of({
+        compared("x", at(a.x, k), at(b.x, k)),
+        compared("y", at(a.y, k), at(b.y, k)),
+    });
+}
+
+std::string pwl_difference(const Points &a, const Points &b, Offset pwl)
+{
+    const Pwl x = a.pwl(pwl);
+    const Pwl y = b.pwl(pwl);
+    const auto point = [&](Offset k) { return point_difference(x, y, k); };
+    return table_difference("point", size_of(x.x), size_of(y.x), point);
+}
+
+std::string pwl_differences(const Model &a, const Model &b)
+{
+    const Points &x = a.graph().points();
+    const Points &y = b.graph().points();
+    const auto pwl = [&](Offset k) { return pwl_difference(x, y, k); };
+    return table_difference("pwl", x.size(), y.size(), pwl);
+}
+
 std::string function_differences(const Model &a, const Model &b)
 {
     Matching matching(a.graph(), b.graph());
@@ -400,6 +426,10 @@ std::string difference(const Model &a, const Model &b)
     if (found.empty())
     {
         found = variable_differences(a, b);
+    }
+    if (found.empty())
+    {
+        found = pwl_differences(a, b);
     }
     if (found.empty())
     {

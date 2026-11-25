@@ -23,6 +23,7 @@ class Builder
     void product(double coefficient, Offset n);
     void power(double exponent);
     void sign_power(double exponent);
+    void piecewise(Offset pwl);
     void apply(Operator op, Offset n);
     Offset keep();
     Offset finish();

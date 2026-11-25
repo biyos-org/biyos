@@ -333,6 +333,36 @@ TEST(GraphTest, Counts)
     EXPECT_EQ(graph.size(), 1);
 }
 
+TEST(GraphTest, Piecewise)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const std::span child(&x, 1);
+    const std::array two{x, x};
+    const Operator op = Operator::PiecewiseLinear;
+    EXPECT_EQ(refusal([&] { graph.add_piecewise(0, child); }),
+              "invalid argument: expression: pwl 0 is unknown");
+    const std::array points{0.0, 1.0};
+    graph.add_pwl(points, points);
+    graph.add_pwl(points, std::array{3.0, -2.0});
+    const Offset node = graph.add_piecewise(1, child);
+    EXPECT_EQ(graph.op(node), op);
+    EXPECT_EQ(graph.pwl(node), 1);
+    EXPECT_EQ(ids(graph.children(node)), std::vector<Offset>{x});
+    EXPECT_EQ(graph.pwl(graph.add_piecewise(0, std::span(&node, 1))), 0);
+    EXPECT_EQ(refusal([&] { graph.add_piecewise(2, child); }),
+              "invalid argument: expression: pwl 2 is unknown");
+    EXPECT_EQ(refusal([&] { graph.add_piecewise(-1, child); }),
+              "invalid argument: expression: pwl -1 is unknown");
+    EXPECT_EQ(refusal([&] { graph.add_piecewise(0, two); }), refused(op, "takes 1 child, not 2"));
+    EXPECT_EQ(refusal([&] { graph.add_piecewise(0, {}); }), refused(op, "takes 1 child, not 0"));
+    EXPECT_EQ(refusal([&] { graph.add_piecewise(0, std::array{Offset{7}}); }),
+              "invalid argument: expression: node 7 is unknown");
+    EXPECT_EQ(refusal([&] { graph.add(op, child); }), refused(op, "takes a pwl"));
+    EXPECT_EQ(refusal([&] { graph.add(op, 1.0, child); }), refused(op, "takes a pwl"));
+    EXPECT_EQ(graph.size(), 3);
+}
+
 TEST(GraphTest, PayloadKind)
 {
     EXPECT_EQ(payload_of(Operator::Constant), Payload::Constant);
@@ -343,6 +373,7 @@ TEST(GraphTest, PayloadKind)
     EXPECT_EQ(payload_of(Operator::Power), Payload::None);
     EXPECT_EQ(payload_of(Operator::Max), Payload::None);
     EXPECT_EQ(payload_of(Operator::Min), Payload::None);
+    EXPECT_EQ(payload_of(Operator::PiecewiseLinear), Payload::Points);
     for (const Operator op : kExponents)
     {
         EXPECT_EQ(payload_of(op), Payload::Constant);
@@ -360,7 +391,10 @@ TEST(GraphTest, Truncated)
     Graph graph;
     const Offset x = graph.add_variable(3);
     const std::array weight{2.0};
+    const std::array weight_pair{2.0, 4.0};
     const Offset sum = graph.add_sum(1.0, std::span(&x, 1), weight);
+    const std::array points{0.0, 1.0};
+    graph.add_pwl(points, weight_pair);
     const Graph::Mark before = graph.mark();
     graph.truncate(before);
     EXPECT_EQ(graph.mark(), before);
@@ -371,8 +405,12 @@ TEST(GraphTest, Truncated)
     const std::array weights{1.0, -1.0, 0.5, 2.0};
     graph.add_sum(0.0, children, weights);
     unary(graph, Operator::Exp, y);
+    graph.add_pwl(points, points);
+    graph.add_pwl(weight_pair, points);
     graph.truncate(before);
     EXPECT_EQ(graph.mark(), before);
+    EXPECT_EQ(graph.points().size(), 1);
+    EXPECT_EQ(graph.add_pwl(points, points), 1);
     EXPECT_EQ(graph.add_variable(3), x);
     const Offset fresh = graph.add_variable(1);
     EXPECT_EQ(fresh, 2);
@@ -394,9 +432,12 @@ TEST(GraphTest, Codes)
         ASSERT_TRUE(op.has_value()) << code;
         EXPECT_EQ(static_cast<int>(*op), code);
     }
+    EXPECT_EQ(biyos::operator_of(BIYOS_OP_PWL), Operator::PiecewiseLinear);
     const std::array unknown{
         0,
-        BIYOS_OP_ERF + 1,
+        BIYOS_OP_NODE,
+        BIYOS_OP_KEEP,
+        BIYOS_OP_REF,
         -1,
         256,
         256 + BIYOS_OP_EXP,

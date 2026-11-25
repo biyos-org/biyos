@@ -2,6 +2,7 @@
 
 #include "core/index.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/graph/points.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -19,11 +20,13 @@ class Graph
         Offset nodes;
         std::size_t coefficients;
         std::size_t variables;
+        Offset pwls;
 
         bool operator==(const Mark &) const = default;
     };
 
     Graph();
+    explicit Graph(Points points);
 
     Offset size() const noexcept;
     Operator op(Offset node) const noexcept;
@@ -31,7 +34,9 @@ class Graph
     double constant(Offset node) const noexcept;
     Index variable(Offset node) const noexcept;
     std::span<const double> coefficients(Offset node) const noexcept;
+    Offset pwl(Offset node) const noexcept;
     Offset node_of(Index variable) const noexcept;
+    const Points &points() const noexcept;
 
     Offset add(Operator op, std::span<const Offset> children);
     Offset add(Operator op, double constant, std::span<const Offset> children);
@@ -39,6 +44,8 @@ class Graph
     Offset add_sum(double constant,
                    std::span<const Offset> children,
                    std::span<const double> coefficients);
+    Offset add_pwl(std::span<const double> x, std::span<const double> y);
+    Offset add_piecewise(Offset pwl, std::span<const Offset> children);
 
     void renumber_variables(std::span<const Index> map) noexcept;
 
@@ -55,6 +62,7 @@ class Graph
     std::vector<Offset> children_;
     std::vector<double> coefficients_;
     std::vector<Offset> variable_nodes_;
+    Points points_;
 };
 
 }

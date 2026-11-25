@@ -80,6 +80,7 @@ biyos_add_test(test_expr
     expr/graph/test_compact.cpp
     expr/graph/test_graph.cpp
     expr/graph/test_parents.cpp
+    expr/graph/test_points.cpp
     expr/graph/test_tape.cpp
     expr/graph/test_uses.cpp
     expr/hessian/test_elements.cpp
@@ -94,6 +95,7 @@ biyos_add_test(test_expr
     expr/values/test_elementary.cpp
     expr/values/test_exponents.cpp
     expr/values/test_periodic.cpp
+    expr/values/test_piecewise.cpp
     expr/values/test_powers.cpp
     expr/values/test_value.cpp)
 target_include_directories(test_expr PRIVATE expr/utils)
@@ -108,6 +110,7 @@ biyos_add_test(test_model
     model/functions/test_encoding.cpp
     model/functions/test_expressions.cpp
     model/functions/test_functions.cpp
+    model/functions/test_piecewise.cpp
     model/functions/test_quadratic.cpp
     model/records/test_complements.cpp
     model/records/test_cones.cpp

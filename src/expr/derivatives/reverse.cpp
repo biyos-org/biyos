@@ -209,6 +209,7 @@ void step(const Instruction &instruction,
     case Operator::Entropy:
     case Operator::SignPower:
     case Operator::Erf:
+    case Operator::PiecewiseLinear:
         add(slot(trail, instruction.first), partials, trail);
         return;
     case Operator::Max:

@@ -43,6 +43,7 @@ enum class Operator : std::uint8_t
     Entropy = BIYOS_OP_ENT,
     SignPower = BIYOS_OP_SPOW,
     Erf = BIYOS_OP_ERF,
+    PiecewiseLinear = BIYOS_OP_PWL,
 };
 
 enum class Payload
@@ -51,8 +52,10 @@ enum class Payload
     Constant,
     Variable,
     Coefficients,
+    Points,
 };
 
+std::string_view fault(double value) noexcept;
 std::optional<Operator> operator_of(int code) noexcept;
 Payload payload_of(Operator op);
 void check_shape(Operator op, Payload payload, Offset children);

@@ -75,6 +75,8 @@ std::optional<Shape> find_shape(Operator op) noexcept
     case Operator::Entropy:
     case Operator::Erf:
         return Shape{.payload = Payload::None, .least = 1, .most = 1};
+    case Operator::PiecewiseLinear:
+        return Shape{.payload = Payload::Points, .least = 1, .most = 1};
     case Operator::Division:
     case Operator::Power:
         return Shape{.payload = Payload::None, .least = 2, .most = 2};
@@ -107,6 +109,8 @@ std::string_view payload_name(Payload payload) noexcept
         return "a variable";
     case Payload::Coefficients:
         return "coefficients";
+    case Payload::Points:
+        return "a pwl";
     }
     return "an unknown payload";
 }
@@ -122,6 +126,13 @@ std::string arity_text(const Shape &shape)
     return shape.most == shape.least ? least : least + " or more";
 }
 
+bool positive(double value) noexcept
+{
+    return !std::signbit(value) && std::fpclassify(value) != FP_ZERO;
+}
+
+}
+
 std::string_view fault(double value) noexcept
 {
     if (std::isnan(value))
@@ -129,13 +140,6 @@ std::string_view fault(double value) noexcept
         return "is NaN";
     }
     return std::signbit(value) ? "is minus infinity" : "is infinity";
-}
-
-bool positive(double value) noexcept
-{
-    return !std::signbit(value) && std::fpclassify(value) != FP_ZERO;
-}
-
 }
 
 std::optional<Operator> operator_of(int code) noexcept

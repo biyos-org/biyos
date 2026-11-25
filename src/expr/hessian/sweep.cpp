@@ -219,6 +219,7 @@ void motion(const Instruction &instruction,
     case Operator::Entropy:
     case Operator::SignPower:
     case Operator::Erf:
+    case Operator::PiecewiseLinear:
         add(lift, tangent(lift, instruction.first), partials);
         return;
     case Operator::Max:
@@ -446,6 +447,7 @@ void step(const Instruction &instruction,
     case Operator::Entropy:
     case Operator::SignPower:
     case Operator::Erf:
+    case Operator::PiecewiseLinear:
         both(instruction.first, partials, curves, trail);
         return;
     case Operator::Max:

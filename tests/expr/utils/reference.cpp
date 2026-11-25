@@ -3,6 +3,7 @@
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/graph/points.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -180,6 +181,7 @@ double unary(Operator op, double value)
     case Operator::Max:
     case Operator::Min:
     case Operator::SignPower:
+    case Operator::PiecewiseLinear:
         break;
     }
     return kUndefined;
@@ -230,6 +232,8 @@ double value_of(const Frame &frame, Offset node)
     case Operator::Entropy:
     case Operator::Erf:
         return unary(graph.op(node), first(frame, node));
+    case Operator::PiecewiseLinear:
+        return biyos::value_at(graph.points().pwl(graph.pwl(node)), first(frame, node));
     }
     return kUndefined;
 }

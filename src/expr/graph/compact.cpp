@@ -92,6 +92,8 @@ Offset copy(const Graph &source, Offset node, std::span<const Offset> children, 
         return target.add_variable(source.variable(node));
     case Payload::Coefficients:
         return target.add_sum(source.constant(node), children, source.coefficients(node));
+    case Payload::Points:
+        return target.add_piecewise(source.pwl(node), children);
     }
     return target.add(op, children);
 }
@@ -99,8 +101,10 @@ Offset copy(const Graph &source, Offset node, std::span<const Offset> children, 
 Compaction compact(const Graph &graph, std::span<const Offset> roots)
 {
     const std::vector<bool> marks = live(graph, roots);
-    Compaction result;
-    result.map.assign(at(graph.size()), kDead);
+    Compaction result{
+        .graph = Graph(graph.points()),
+        .map = std::vector<Offset>(at(graph.size()), kDead),
+    };
     std::vector<Offset> children;
     children.reserve(widest(graph));
     for (Offset node = 0; node < graph.size(); ++node)

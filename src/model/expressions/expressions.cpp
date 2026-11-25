@@ -61,6 +61,20 @@ Offset Model::add_node(int op, std::span<const Offset> children, std::span<const
     return node;
 }
 
+Offset Model::add_pwl(std::span<const double> x, std::span<const double> y)
+{
+    return graph_.add_pwl(x, y);
+}
+
+Offset Model::add_piecewise(Offset pwl, Offset child)
+{
+    Rollback rollback(graph_);
+    const Offset node = graph_.add_piecewise(pwl, std::span(&child, 1));
+    uses_.extend(graph_);
+    rollback.keep();
+    return node;
+}
+
 std::vector<Offset> Model::add_expressions(const Postfix &postfix)
 {
     check_postfix(postfix);

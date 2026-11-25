@@ -120,6 +120,8 @@ Curvature outer_of(const Graph &graph,
         return unary(sign_bend(operands[0], graph.constant(node)), arguments);
     case Operator::Erf:
         return unary(bend(kErf, operands[0]), arguments);
+    case Operator::PiecewiseLinear:
+        return unary(Profile{}, arguments);
     }
     return Curvature::Unknown;
 }

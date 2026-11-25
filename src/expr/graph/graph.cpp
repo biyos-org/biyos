@@ -3,12 +3,14 @@
 #include "core/index.hpp"
 #include "core/memory/room.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/graph/points.hpp"
 
 #include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace biyos
@@ -35,6 +37,8 @@ template <typename T> bool inside(std::span<const T> values, const std::vector<T
 }
 
 Graph::Graph() : starts_(1, 0) {}
+
+Graph::Graph(Points points) : starts_(1, 0), points_(std::move(points)) {}
 
 Offset Graph::size() const noexcept
 {
@@ -78,10 +82,20 @@ std::span<const double> Graph::coefficients(Offset node) const noexcept
     return std::span(coefficients_).subspan(start, children(node).size());
 }
 
+Offset Graph::pwl(Offset node) const noexcept
+{
+    return static_cast<Offset>(payloads_[at(node)]);
+}
+
 Offset Graph::node_of(Index variable) const noexcept
 {
     const auto index = static_cast<std::size_t>(variable);
     return index < variable_nodes_.size() ? variable_nodes_[index] : kNone;
+}
+
+const Points &Graph::points() const noexcept
+{
+    return points_;
 }
 
 Offset Graph::add(Operator op, std::span<const Offset> children)
@@ -132,6 +146,18 @@ Offset Graph::add_sum(double constant,
     return node;
 }
 
+Offset Graph::add_pwl(std::span<const double> x, std::span<const double> y)
+{
+    return points_.add(x, y);
+}
+
+Offset Graph::add_piecewise(Offset pwl, std::span<const Offset> children)
+{
+    check(Operator::PiecewiseLinear, Payload::Points, children);
+    check_pwl(pwl, points_.size());
+    return append(Operator::PiecewiseLinear, static_cast<std::uint64_t>(pwl), children);
+}
+
 void Graph::renumber_variables(std::span<const Index> map) noexcept
 {
     std::size_t kept = 0;
@@ -158,6 +184,7 @@ Graph::Mark Graph::mark() const noexcept
         .nodes = size(),
         .coefficients = coefficients_.size(),
         .variables = variable_nodes_.size(),
+        .pwls = points_.size(),
     };
 }
 
@@ -177,6 +204,7 @@ void Graph::truncate(const Mark &mark) noexcept
     starts_.resize(nodes + 1);
     coefficients_.resize(mark.coefficients);
     variable_nodes_.resize(mark.variables);
+    points_.truncate(mark.pwls);
 }
 
 void Graph::check(Operator op, Payload payload, std::span<const Offset> children) const

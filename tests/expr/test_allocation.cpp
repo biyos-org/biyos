@@ -291,6 +291,11 @@ Graph every_operator()
     {
         graph.add(op, one);
     }
+    const std::array kinks{-1.0, 0.5, 2.0};
+    const std::array heights{1.0, 0.0, 3.0};
+    const Offset pwl = graph.add_pwl(kinks, heights);
+    graph.add_piecewise(pwl, one);
+    graph.add_piecewise(pwl, std::span(x).subspan(1));
     return graph;
 }
 

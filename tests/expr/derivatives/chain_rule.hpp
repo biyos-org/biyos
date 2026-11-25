@@ -3,6 +3,7 @@
 #include "core/index.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/graph/points.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -41,7 +42,7 @@ class ChainRule
         sizes_[at(root)] = 1.0;
         for (Offset node = root; node >= 0; --node)
         {
-            if (reached_[at(node)] && std::fpclassify(adjoints_[at(node)]) != FP_ZERO)
+            if (reached_[at(node)] && std::fpclassify(sizes_[at(node)]) != FP_ZERO)
             {
                 spread(node);
             }
@@ -137,6 +138,8 @@ class ChainRule
             return std::copysign(std::pow(std::fabs(x), graph_.constant(node)), x);
         case Operator::Erf:
             return std::erf(x);
+        case Operator::PiecewiseLinear:
+            return biyos::value_at(graph_.points().pwl(graph_.pwl(node)), x);
         }
         return (std::numeric_limits<double>::quiet_NaN)();
     }
@@ -274,6 +277,8 @@ class ChainRule
             return graph_.constant(node) * std::pow(std::fabs(x), graph_.constant(node) - 1.0L);
         case Operator::Erf:
             return 2.0L / std::sqrt(std::numbers::pi_v<Wide>) * std::exp(-x * x);
+        case Operator::PiecewiseLinear:
+            return biyos::slope_at(graph_.points().pwl(graph_.pwl(node)), child(node, 0));
         }
         return 0.0L;
     }
@@ -330,7 +335,10 @@ class ChainRule
                 continue;
             }
             const double partial_k = partial(node, k);
-            adjoints_[at(children[k])] += adjoint * partial_k;
+            if (std::fpclassify(adjoint) != FP_ZERO)
+            {
+                adjoints_[at(children[k])] += adjoint * partial_k;
+            }
             sizes_[at(children[k])] += size * bound(node, partial_k);
         }
     }

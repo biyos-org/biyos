@@ -27,11 +27,14 @@ namespace biyos
 namespace
 {
 
+constexpr Offset kNone = -1;
+
 enum class Form
 {
     Leaf,
     Direct,
     Listed,
+    Table,
 };
 
 std::size_t at(Offset value) noexcept
@@ -80,6 +83,8 @@ Form form_of(Operator op) noexcept
     case Operator::SignPower:
     case Operator::Erf:
         return Form::Direct;
+    case Operator::PiecewiseLinear:
+        return Form::Table;
     }
     return Form::Direct;
 }
@@ -144,18 +149,23 @@ class Compiler
 
   private:
     Block compile(Offset index, std::span<const Offset> outputs, Offset start);
-    Instruction instruction(Offset node, Block &block) const;
-    std::uint64_t payload(Offset node, Block &block) const;
+    Instruction instruction(Offset node, Block &block);
+    std::uint64_t payload(Offset node, Block &block);
     std::uint64_t weights(Offset node, Block &block) const;
+    std::uint64_t points(Offset node, Block &block);
 
     const Graph &graph_;
     const Plan &plan_;
     Layout layout_;
     Locator locator_;
+    Offset index_ = kNone;
+    std::vector<Offset> owners_;
+    std::vector<std::uint64_t> places_;
 };
 
 Compiler::Compiler(const Graph &graph, const Plan &plan)
-    : graph_(graph), plan_(plan), layout_(graph, plan), locator_(graph, plan.position, layout_)
+    : graph_(graph), plan_(plan), layout_(graph, plan), locator_(graph, plan.position, layout_),
+      owners_(at(graph.points().size()), kNone), places_(at(graph.points().size()), 0)
 {
 }
 
@@ -185,6 +195,7 @@ std::vector<Block> Compiler::blocks(std::span<const Offset> roots, const Reach &
 Block Compiler::compile(Offset index, std::span<const Offset> outputs, Offset start)
 {
     layout_.build(index, outputs);
+    index_ = index;
     Block block{
         .begin = start,
         .width = layout_.width(),
@@ -217,7 +228,7 @@ Block Compiler::compile(Offset index, std::span<const Offset> outputs, Offset st
     return block;
 }
 
-Instruction Compiler::instruction(Offset node, Block &block) const
+Instruction Compiler::instruction(Offset node, Block &block)
 {
     const Operator op = graph_.op(node);
     const std::span<const Offset> children = graph_.children(node);
@@ -244,11 +255,15 @@ Instruction Compiler::instruction(Offset node, Block &block) const
         }
         result.second = narrow(block.operands.size());
         break;
+    case Form::Table:
+        result.first = layout_.slot(children.front());
+        result.second = narrow(graph_.points().pwl(graph_.pwl(node)).x.size());
+        break;
     }
     return result;
 }
 
-std::uint64_t Compiler::payload(Offset node, Block &block) const
+std::uint64_t Compiler::payload(Offset node, Block &block)
 {
     switch (payload_of(graph_.op(node)))
     {
@@ -260,6 +275,8 @@ std::uint64_t Compiler::payload(Offset node, Block &block) const
         return static_cast<std::uint64_t>(graph_.variable(node));
     case Payload::Coefficients:
         return weights(node, block);
+    case Payload::Points:
+        return points(node, block);
     }
     return 0;
 }
@@ -271,6 +288,20 @@ std::uint64_t Compiler::weights(Offset node, Block &block) const
     block.weights.push_back(graph_.constant(node));
     block.weights.insert(block.weights.end(), coefficients.begin(), coefficients.end());
     return position;
+}
+
+std::uint64_t Compiler::points(Offset node, Block &block)
+{
+    const std::size_t pwl = at(graph_.pwl(node));
+    if (owners_[pwl] != index_)
+    {
+        const Pwl table = graph_.points().pwl(graph_.pwl(node));
+        owners_[pwl] = index_;
+        places_[pwl] = block.weights.size();
+        block.weights.insert(block.weights.end(), table.x.begin(), table.x.end());
+        block.weights.insert(block.weights.end(), table.y.begin(), table.y.end());
+    }
+    return places_[pwl];
 }
 
 }

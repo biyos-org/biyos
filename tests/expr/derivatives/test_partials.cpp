@@ -100,6 +100,7 @@ std::vector<Partials> cmath_partials(double x, double y, double z, double w)
         {std::log(x) + 1.0},
         {1.5 * std::sqrt(std::fabs(z))},
         {2.0 / std::sqrt(std::numbers::pi) * std::exp(-z * z)},
+        {y < 0.25 ? -2.0 : 1.2},
     };
 }
 

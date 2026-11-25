@@ -185,12 +185,23 @@ Model with_nodes()
     model.add_variables(std::vector<Variable>(4, biyos::widest(VariableKind::Continuous)));
     const std::vector<Offset> x{model.add_variable_node(0)};
     model.add_node(BIYOS_OP_EXP, x, {});
+    model.add_pwl(std::vector<double>{0.0, 1.0}, std::vector<double>{2.0, -1.0});
     return model;
 }
 
 void add_variable(Model &model)
 {
     model.add_variable_node(3);
+}
+
+void add_points(Model &model)
+{
+    model.add_pwl(std::vector<double>{-1.0, 0.0, 2.0}, std::vector<double>{1.0, 0.0, 3.0});
+}
+
+void add_piecewise(Model &model)
+{
+    model.add_piecewise(0, 1);
 }
 
 void add_two(Model &model)
@@ -309,7 +320,7 @@ bool runs_out_with(Model &model, void (*change)(Model &), std::size_t successes)
     return false;
 }
 
-void expect_graph(void (*change)(Model &), Offset added)
+void expect_graph(void (*change)(Model &), Offset added, Offset pwls = 0)
 {
     for (std::size_t successes = 0; successes < kAttempts; ++successes)
     {
@@ -319,9 +330,14 @@ void expect_graph(void (*change)(Model &), Offset added)
         {
             EXPECT_GT(successes, 0U);
             EXPECT_EQ(model.graph().size(), before.nodes + added);
+            EXPECT_EQ(model.graph().points().size(), before.pwls + pwls);
             return;
         }
         EXPECT_EQ(model.graph().mark(), before);
+        change(model);
+        Model clean = with_nodes();
+        change(clean);
+        EXPECT_EQ(biyos::difference(model, clean), "");
     }
     ADD_FAILURE() << "the call never completed";
 }
@@ -453,6 +469,16 @@ TEST(AllocationTest, VariableNode)
 TEST(AllocationTest, SumNode)
 {
     expect_graph(add_sum, 1);
+}
+
+TEST(AllocationTest, Points)
+{
+    expect_graph(add_points, 0, 1);
+}
+
+TEST(AllocationTest, PiecewiseNode)
+{
+    expect_graph(add_piecewise, 1);
 }
 
 TEST(AllocationTest, Attach)

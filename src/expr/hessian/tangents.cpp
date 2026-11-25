@@ -196,6 +196,7 @@ void curves_of(const Instruction &instruction,
     case Operator::Abs:
     case Operator::Max:
     case Operator::Min:
+    case Operator::PiecewiseLinear:
         std::ranges::fill(out, 0.0);
         return;
     case Operator::Product:

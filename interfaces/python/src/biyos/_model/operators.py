@@ -6,11 +6,12 @@ class Operator(IntEnum):
     """The codes of an expression's entries: its operators and three more.
 
     Each member is the C constant of the same number, ``CONSTANT`` for
-    ``BIYOS_OP_CONST`` through ``ERF`` for ``BIYOS_OP_ERF``. The last three
-    are no operators and appear only in postfix. ``NODE`` names a node the
-    model holds, by its id. ``KEEP`` makes the operand before it a node of
-    its own, and ``REFERENCE`` names that node again by the position of the
-    ``KEEP`` entry.
+    ``BIYOS_OP_CONST`` through ``ERF`` for ``BIYOS_OP_ERF``, and
+    ``PIECEWISE_LINEAR`` for ``BIYOS_OP_PWL``. ``NODE``, ``KEEP`` and
+    ``REFERENCE`` are no operators and appear only in postfix. ``NODE``
+    names a node the model holds, by its id. ``KEEP`` makes the operand
+    before it a node of its own, and ``REFERENCE`` names that node again by
+    the position of the ``KEEP`` entry.
 
     See Also
     --------
@@ -47,6 +48,7 @@ class Operator(IntEnum):
     SIGN_POWER = 28
     ERF = 29
     NODE = 30
+    PIECEWISE_LINEAR = 31
     KEEP = 32
     REFERENCE = 33
 
