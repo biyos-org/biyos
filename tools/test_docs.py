@@ -28,6 +28,7 @@ param steps out The steps.
 """
 
 DOC = "docs/reference/capi.txt"
+PAGE = "docs/reference/capi.qmd"
 
 
 def missing(where, symbol):
@@ -40,6 +41,7 @@ class DocTest(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.header("biyos.h", HEADER)
         self.doc(SPEC)
+        self.page('::: {source="reference/_capi/main.md"}\n:::\n')
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -54,11 +56,19 @@ class DocTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
+    def page(self, text):
+        (self.root / PAGE).write_text(text)
+
     def problems(self):
         return check(self.root)
 
     def test_documented(self):
         self.assertEqual(self.problems(), [])
+
+    def test_unplaced(self):
+        self.page("")
+        problem = f"{PAGE}: includes no reference/_capi/main.md"
+        self.assertEqual(self.problems(), [problem])
 
     def test_function(self):
         self.header("biyos.h", HEADER + "BIYOS_API void BIYOS_stop(void);\n")
