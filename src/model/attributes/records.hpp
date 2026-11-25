@@ -2,23 +2,23 @@
 
 #include "core/numbers.hpp"
 
-#include <map>
 #include <span>
 #include <string_view>
+#include <vector>
 
 namespace biyos
 {
 
-struct Override
+struct Tolerance
 {
     double absolute;
     double relative;
 };
 
-class Overrides
+class RecordTolerances
 {
   public:
-    Override at(Index index) const noexcept;
+    Tolerance at(Index index) const noexcept;
     void set(std::string_view noun,
              Index size,
              std::span<const Index> indices,
@@ -28,7 +28,8 @@ class Overrides
     void renumber(std::span<const Index> map) noexcept;
 
   private:
-    std::map<Index, Override> held_;
+    std::vector<Index> indices_;
+    std::vector<Tolerance> values_;
 };
 
 }

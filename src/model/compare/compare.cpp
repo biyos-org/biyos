@@ -5,7 +5,7 @@
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/points.hpp"
-#include "model/attributes/overrides.hpp"
+#include "model/attributes/records.hpp"
 #include "model/compare/fields.hpp"
 #include "model/compare/match.hpp"
 #include "model/expressions/callbacks.hpp"
@@ -145,7 +145,7 @@ std::string differ(double a, double b)
     return compared("value", a, b);
 }
 
-std::string differ(const Override &a, const Override &b)
+std::string differ(const Tolerance &a, const Tolerance &b)
 {
     return first_of({
         compared("absolute tolerance", a.absolute, b.absolute),

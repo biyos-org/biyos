@@ -4,7 +4,7 @@
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
 #include "core/numbers.hpp"
-#include "model/attributes/overrides.hpp"
+#include "model/attributes/records.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
@@ -37,7 +37,7 @@ void get_tolerances(const BIYOS_model &model,
                     double *relative)
 {
     const auto chosen = selected(model.core, family, selection);
-    std::vector<Override> tolerances;
+    std::vector<Tolerance> tolerances;
     tolerances.reserve(chosen.size());
     for (const Index index : chosen)
     {

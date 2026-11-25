@@ -1,7 +1,7 @@
 #include "model/model.hpp"
 
 #include "core/numbers.hpp"
-#include "model/attributes/overrides.hpp"
+#include "model/attributes/records.hpp"
 #include "model/checks.hpp"
 
 #include <cstddef>
@@ -20,7 +20,7 @@ std::size_t slot(Family family) noexcept
 
 }
 
-Override Model::tolerance_of(Family family, Index index) const
+Tolerance Model::tolerance_of(Family family, Index index) const
 {
     check_index(noun_of(family), index, n_of(family));
     return tolerances_[slot(family)].at(index);
