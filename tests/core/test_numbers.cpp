@@ -7,8 +7,10 @@
 #include <limits>
 #include <type_traits>
 
+using biyos::Bits;
 using biyos::Index;
 using biyos::Offset;
+using biyos::Real;
 
 template <typename T>
 concept sizable = requires(T v) { biyos::to_size(v); };
@@ -62,5 +64,12 @@ TEST(NumberTest, Exact)
     static_assert(!sizable<char> && !sizable<short> && !sizable<std::uint8_t>);
     static_assert(indexable<std::size_t> && !indexable<int> && !indexable<Offset>);
     static_assert(offsettable<std::size_t> && !offsettable<int> && !offsettable<Offset>);
+    SUCCEED();
+}
+
+TEST(NumberTest, Bits)
+{
+    static_assert(sizeof(Bits) == sizeof(Real));
+    static_assert(std::is_unsigned_v<Bits>);
     SUCCEED();
 }
