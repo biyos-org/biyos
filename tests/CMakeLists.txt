@@ -36,6 +36,7 @@ biyos_add_test(test_core
     core/memory/test_room.cpp
     core/memory/test_slice.cpp
     core/memory/test_usage.cpp
+    core/numeric/test_identical.cpp
     core/options/test_check.cpp
     core/options/test_flags.cpp
     core/options/test_options.cpp

@@ -2,11 +2,11 @@
 
 #include "core/error.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/identical.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
 #include "io/draft/draft.hpp"
-#include "io/identical.hpp"
 #include "model/checks.hpp"
 #include "model/model.hpp"
 

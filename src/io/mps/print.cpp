@@ -1,9 +1,9 @@
 #include "io/mps/print.hpp"
 
 #include "core/numbers.hpp"
+#include "core/numeric/identical.hpp"
 #include "core/text/text.hpp"
 #include "io/draft/draft.hpp"
-#include "io/identical.hpp"
 #include "io/mps/rows.hpp"
 #include "io/mps/sections.hpp"
 #include "model/model.hpp"

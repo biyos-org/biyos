@@ -2,6 +2,7 @@
 
 #include "core/error.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/identical.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
@@ -11,7 +12,6 @@
 
 #include <algorithm>
 #include <array>
-#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <string>
@@ -52,11 +52,6 @@ void check_uses(const Uses &uses, Offset node)
         const std::string reason = "parents are older than node " + text_of(node);
         throw Error(ErrorKind::InvalidArgument, "expression", reason);
     }
-}
-
-bool same(Real a, Real b) noexcept
-{
-    return std::bit_cast<Bits>(a) == std::bit_cast<Bits>(b);
 }
 
 bool is_finite(Real value) noexcept
@@ -319,7 +314,7 @@ void Walk::open_product(const Item &item)
 void Walk::open_power(const Item &item)
 {
     const Offset base = graph_.children(item.node).front();
-    if (!same(graph_.constant(item.node), kSquare) || graph_.op(base) != Operator::Variable)
+    if (!identical(graph_.constant(item.node), kSquare) || graph_.op(base) != Operator::Variable)
     {
         keep(item);
         return;
@@ -389,7 +384,7 @@ Offset Walk::remainder(Graph &graph) const
     {
         return kNoRemainder;
     }
-    if (kept_.size() == 1 && !closed_ && same(weights_.front(), kUnit))
+    if (kept_.size() == 1 && !closed_ && identical(weights_.front(), kUnit))
     {
         return kept_.front();
     }

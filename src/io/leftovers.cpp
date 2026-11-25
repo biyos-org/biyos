@@ -2,8 +2,8 @@
 
 #include "core/env.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/identical.hpp"
 #include "core/options/settings.hpp"
-#include "io/identical.hpp"
 #include "io/report.hpp"
 #include "model/model.hpp"
 
