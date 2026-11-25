@@ -246,6 +246,15 @@ TEST(CApiTest, ColumnHooked)
     expect_heard(recorder, repeated(span_of("model/columns"), 4));
 }
 
+TEST(CApiTest, WriteHooked)
+{
+    Recorder recorder;
+    recorder.watch();
+    const std::string path = written("biyos_hooked.mps", "");
+    ASSERT_EQ(BIYOS_writemdl(recorder.model, path.c_str(), BIYOS_FILEFMT_MPS), BIYOS_OK);
+    expect_heard(recorder, span_of("io/write"));
+}
+
 TEST(CApiTest, ReadUnhooked)
 {
     Recorder recorder;

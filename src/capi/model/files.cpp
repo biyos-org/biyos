@@ -31,8 +31,8 @@ void save(const Session &session, const char *path, BIYOS_int fmt)
 {
     const char *file = require(path, "path");
     const biyos::FileFormat format = biyos::find_format(fmt);
-    biyos::Env &env = idle(session.env(), "environment");
-    biyos::write_file(env.stream(),
+    idle(session.env(), "environment");
+    biyos::write_file(session.stream(),
                       session.model(),
                       session.settings(),
                       std::string_view(file),
