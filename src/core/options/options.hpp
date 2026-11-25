@@ -174,6 +174,7 @@ class Options
     void set_double(Option option, Real value);
     void set_string(Option option, std::string_view value);
     void set_flags(Option option, Masks value);
+    void drop(Option option);
 
     bool get_bool(Option option) const;
     int get_int(Option option) const;
