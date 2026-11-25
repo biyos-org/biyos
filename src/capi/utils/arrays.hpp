@@ -87,7 +87,7 @@ template <typename Read> void write_counts(std::size_t n, BIYOS_offset *counts, 
     }
     for (std::size_t j = 0; j < n; ++j)
     {
-        counts[j] = static_cast<BIYOS_offset>(read(static_cast<Index>(j)).size());
+        counts[j] = to_offset(read(to_index(j)).size());
     }
 }
 }

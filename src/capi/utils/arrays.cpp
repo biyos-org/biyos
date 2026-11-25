@@ -36,7 +36,7 @@ std::size_t length(BIYOS_offset n, std::string_view name)
         const std::string argument = "argument '" + std::string(name) + "'";
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, argument, reason);
     }
-    return static_cast<std::size_t>(n);
+    return to_size(n);
 }
 
 void check_capacity(BIYOS_offset capacity,
