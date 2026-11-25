@@ -1,6 +1,6 @@
 #include "model/functions/terms.hpp"
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
 #include "model/checks.hpp"
 

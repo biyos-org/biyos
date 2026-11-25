@@ -1,7 +1,7 @@
 #include "allocations.hpp"
 #include "biyos/biyos.h"
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 #include "model/compare/compare.hpp"
 #include "model/expressions/postfix.hpp"

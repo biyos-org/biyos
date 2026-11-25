@@ -1,6 +1,6 @@
 #include "io/directory.hpp"
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 
 #include <cstddef>
 #include <functional>

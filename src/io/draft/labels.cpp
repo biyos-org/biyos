@@ -1,7 +1,7 @@
 #include "io/draft/labels.hpp"
 
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "model/checks.hpp"
 #include "model/model.hpp"

@@ -1,7 +1,7 @@
 #include "allocations.hpp"
 #include "biyos/biyos.h"
 #include "core/env.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "expr/forms/terms.hpp"
 #include "model/evaluation/evaluation.hpp"

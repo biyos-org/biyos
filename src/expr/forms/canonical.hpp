@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/uses.hpp"

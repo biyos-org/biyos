@@ -2,7 +2,7 @@
 
 #include "biyos/biyos.h"
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/graph/builder.hpp"
 #include "expr/graph/graph.hpp"

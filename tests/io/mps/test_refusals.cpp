@@ -1,7 +1,7 @@
 #include "writable.hpp"
 #include "writing.hpp"
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "model/model.hpp"
 
 #include <gtest/gtest.h>

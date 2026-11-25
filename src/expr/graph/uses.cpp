@@ -1,6 +1,6 @@
 #include "expr/graph/uses.hpp"
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 
 #include <cstddef>

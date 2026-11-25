@@ -1,7 +1,7 @@
 #include "model/renumber.hpp"
 
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "model/checks.hpp"
 
 #include <cstddef>

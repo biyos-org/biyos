@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/index.hpp"
 #include "core/memory/room.hpp"
+#include "core/numbers.hpp"
 #include "model/checks.hpp"
 
 #include <algorithm>

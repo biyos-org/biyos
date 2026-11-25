@@ -1,7 +1,7 @@
 #include "expr/curvature/curvature.hpp"
 
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/curvature/arithmetic.hpp"
 #include "expr/curvature/bends.hpp"

@@ -1,7 +1,7 @@
 #include "sampling.hpp"
 
 #include "bounds.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/intervals/enclosure.hpp"

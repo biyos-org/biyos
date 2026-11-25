@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 
 #include <cstddef>
 #include <span>

@@ -1,6 +1,6 @@
 #include "model/compare/fields.hpp"
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 
 #include <bit>
 #include <cstdint>

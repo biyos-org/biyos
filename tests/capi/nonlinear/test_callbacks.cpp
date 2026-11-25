@@ -1,7 +1,7 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
-#include "core/index.hpp"
 #include "core/memory/usage.hpp"
+#include "core/numbers.hpp"
 #include "handles.hpp"
 #include "model/compare/compare.hpp"
 #include "model/expressions/callbacks.hpp"

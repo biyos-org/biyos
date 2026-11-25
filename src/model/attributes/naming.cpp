@@ -1,7 +1,7 @@
 #include "model/model.hpp"
 
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "model/attributes/names.hpp"
 #include "model/checks.hpp"

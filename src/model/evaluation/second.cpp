@@ -1,7 +1,7 @@
 #include "model/evaluation/evaluation.hpp"
 
 #include "core/check.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/forms/terms.hpp"

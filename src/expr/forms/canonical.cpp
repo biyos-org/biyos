@@ -1,7 +1,7 @@
 #include "expr/forms/canonical.hpp"
 
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"

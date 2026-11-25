@@ -1,6 +1,6 @@
 #include "io/draft/draft.hpp"
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "expr/forms/terms.hpp"
 #include "model/model.hpp"

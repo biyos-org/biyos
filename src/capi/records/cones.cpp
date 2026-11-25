@@ -4,7 +4,7 @@
 #include "capi/model/tolerances.hpp"
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "model/model.hpp"
 
 #include <algorithm>

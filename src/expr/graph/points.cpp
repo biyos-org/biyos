@@ -1,8 +1,8 @@
 #include "expr/graph/points.hpp"
 
 #include "core/error.hpp"
-#include "core/index.hpp"
 #include "core/memory/room.hpp"
+#include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
 #include "expr/graph/node.hpp"

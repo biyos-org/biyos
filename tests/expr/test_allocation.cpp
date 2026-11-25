@@ -1,5 +1,5 @@
 #include "allocations.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/curvature/curvature.hpp"
 #include "expr/derivatives/derivative.hpp"
 #include "expr/derivatives/reverse.hpp"

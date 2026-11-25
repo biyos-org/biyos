@@ -1,7 +1,7 @@
 #include "expr/graph/graph.hpp"
 
-#include "core/index.hpp"
 #include "core/memory/room.hpp"
+#include "core/numbers.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/graph/points.hpp"
 

@@ -1,7 +1,7 @@
 #include "io/draft/support.hpp"
 
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "io/identical.hpp"
 #include "model/checks.hpp"
