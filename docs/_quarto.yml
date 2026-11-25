@@ -186,6 +186,7 @@ quartodoc:
           include_inherited: true
           members: [__add__, __sub__, __mul__, __truediv__, __pow__, __neg__, __abs__, __le__, __ge__, __eq__]
         - Comparison
+        - ComparisonSense
         - exp
         - log
         - sqrt
