@@ -21,7 +21,7 @@ std::span<const Index> selected(const Model &, Family, List list)
 std::vector<Index> selected(const Model &model, Family family, Range range)
 {
     check_span(noun_of(family), range.start, range.stop, model.n_of(family));
-    std::vector<Index> indices(static_cast<std::size_t>(range.stop - range.start));
+    std::vector<Index> indices(to_size(range.stop - range.start));
     std::iota(indices.begin(), indices.end(), range.start);
     return indices;
 }
