@@ -88,6 +88,7 @@ biyos_add_test(test_expr
     expr/hessian/test_tangents.cpp
     expr/intervals/test_enclosure.cpp
     expr/intervals/test_interval.cpp
+    expr/intervals/test_piecewise.cpp
     expr/utils/chords.cpp
     expr/utils/reference.cpp
     expr/utils/sampling.cpp
