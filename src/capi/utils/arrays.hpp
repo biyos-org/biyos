@@ -65,6 +65,19 @@ template <typename T> std::span<T> given(T *array, std::size_t size)
     return array == nullptr ? std::span<T>() : std::span<T>(array, size);
 }
 
+template <typename T> T entry_or(const T *values, std::size_t k, T held)
+{
+    return values == nullptr ? held : values[k];
+}
+
+template <typename T> void put(T *values, std::size_t k, T value)
+{
+    if (values != nullptr)
+    {
+        values[k] = value;
+    }
+}
+
 template <typename Record>
 std::vector<Record> picked(const Model &model,
                            const Record &(Model::*read)(Index) const,

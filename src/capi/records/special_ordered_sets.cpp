@@ -20,6 +20,7 @@ using biyos::capi::check_capacity;
 using biyos::capi::guarded;
 using biyos::capi::List;
 using biyos::capi::listed;
+using biyos::capi::put;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
@@ -36,14 +37,6 @@ struct Outputs
     BIYOS_index *variables;
     BIYOS_real *weights;
 };
-
-template <typename T> void put(T *values, std::size_t k, T value)
-{
-    if (values != nullptr)
-    {
-        values[k] = value;
-    }
-}
 
 std::vector<biyos::SpecialOrderedSetKind> kinds_of(std::span<const BIYOS_int> codes)
 {
