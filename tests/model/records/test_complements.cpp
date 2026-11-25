@@ -22,26 +22,27 @@ using biyos::Family;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::test::expect_tolerance;
 using biyos::test::failure;
 using biyos::test::refusal;
 
 using Indices = std::vector<Index>;
-using Reals = std::vector<double>;
+using Reals = std::vector<Real>;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 
 Model with_functions(std::size_t n)
 {
     Model model;
-    const std::vector<double> constants(n, 0.0);
+    const std::vector<Real> constants(n, 0.0);
     const std::vector<Offset> starts(n + 1, 0);
     model.add_functions(constants, starts, {});
     return model;
 }
 
-Complement pair(Index function, Index multiplier, double lower, double upper)
+Complement pair(Index function, Index multiplier, Real lower, Real upper)
 {
     return Complement{.function = function,
                       .lower = lower,

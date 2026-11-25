@@ -22,6 +22,7 @@ using biyos::Index;
 using biyos::Indicator;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::refusal;
@@ -52,7 +53,7 @@ Model sized(Index n)
     const auto size = static_cast<std::size_t>(n);
     Model model;
     model.add_variables(continuous(n));
-    const std::vector<double> constants(size, 0.0);
+    const std::vector<Real> constants(size, 0.0);
     const std::vector<Offset> starts(size + 1, 0);
     model.add_functions(constants, starts, {});
     const Constraint record{.function = 0, .lower = -1.0, .upper = 1.0};

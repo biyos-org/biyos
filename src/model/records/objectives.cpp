@@ -31,7 +31,7 @@ void check_sense(Index index, ObjectiveSense sense)
     }
 }
 
-void check_weight(Index index, double weight)
+void check_weight(Index index, Real weight)
 {
     const std::string_view fault = value_fault(weight);
     if (!fault.empty())
@@ -44,7 +44,7 @@ void check_weight(Index index, double weight)
     }
 }
 
-void check_tolerance(Index index, std::string_view name, double tolerance)
+void check_tolerance(Index index, std::string_view name, Real tolerance)
 {
     const bool unlimited = std::isinf(tolerance) && !std::signbit(tolerance);
     const std::string_view fault = unlimited ? std::string_view() : value_fault(tolerance);

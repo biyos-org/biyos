@@ -55,7 +55,7 @@ void variable_terms(const Model &model,
                     Index start,
                     std::span<const Offset> starts,
                     std::span<Index> functions,
-                    std::span<double> values)
+                    std::span<Real> values)
 {
     if (functions.empty() && values.empty())
     {

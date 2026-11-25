@@ -20,22 +20,23 @@ using biyos::Constraint;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::test::failure;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 
 Model with_functions(std::size_t n)
 {
     Model model;
-    const std::vector<double> constants(n, 0.0);
+    const std::vector<Real> constants(n, 0.0);
     const std::vector<Offset> starts(n + 1, 0);
     model.add_functions(constants, starts, {});
     return model;
 }
 
-Constraint on(Index function, double lower, double upper)
+Constraint on(Index function, Real lower, Real upper)
 {
     return Constraint{.function = function, .lower = lower, .upper = upper};
 }

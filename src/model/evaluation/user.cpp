@@ -55,7 +55,7 @@ std::string_view name_of(Part part) noexcept
     return "function";
 }
 
-bool infinite(double value) noexcept
+bool infinite(Real value) noexcept
 {
     return !std::isfinite(value);
 }
@@ -65,7 +65,7 @@ bool never() noexcept
     return false;
 }
 
-void check_finite(const Checker &checker, Index index, Part part, std::span<const double> out)
+void check_finite(const Checker &checker, Index index, Part part, std::span<const Real> out)
 {
     if (!checker.active(Checking::Cheap))
     {
@@ -112,7 +112,7 @@ void run(const Checker &checker,
          const Callback &callback,
          Part part,
          const Request &request,
-         std::span<double> out)
+         std::span<Real> out)
 {
     require(callback, request.callback, part);
     std::ranges::fill(out, 0.0);
@@ -124,7 +124,7 @@ void run(const Checker &checker,
     }
     if (status > 0)
     {
-        std::ranges::fill(out, std::numeric_limits<double>::quiet_NaN());
+        std::ranges::fill(out, std::numeric_limits<Real>::quiet_NaN());
         return;
     }
     check_finite(checker, request.callback, part, out);

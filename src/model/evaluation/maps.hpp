@@ -16,7 +16,7 @@ struct Slots
     Pattern pattern;
     std::vector<Offset> linear_starts;
     std::vector<Offset> quadratic_starts;
-    std::vector<double> linear;
+    std::vector<Real> linear;
     std::vector<Offset> quadratic;
     std::vector<Offset> tape;
     std::vector<Offset> callbacks;

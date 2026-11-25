@@ -10,7 +10,6 @@
 #include <bit>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -20,6 +19,7 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::Constraint;
 using biyos::default_objective;
 using biyos::difference;
@@ -28,12 +28,13 @@ using biyos::Model;
 using biyos::Objective;
 using biyos::ObjectiveSense;
 using biyos::Offset;
+using biyos::Real;
 using biyos::test::failure;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
-const double kSignedNan = std::copysign(kNan, -1.0);
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
+const Real kSignedNan = std::copysign(kNan, -1.0);
 constexpr int kLeast = (std::numeric_limits<int>::min)();
 constexpr int kMost = (std::numeric_limits<int>::max)();
 
@@ -49,20 +50,20 @@ const Objective kMaximize{
 Model with_functions(std::size_t n)
 {
     Model model;
-    const std::vector<double> constants(n, 0.0);
+    const std::vector<Real> constants(n, 0.0);
     const std::vector<Offset> starts(n + 1, 0);
     model.add_functions(constants, starts, {});
     return model;
 }
 
-Objective weighted(double weight)
+Objective weighted(Real weight)
 {
     Objective objective = default_objective(0, 0);
     objective.weight = weight;
     return objective;
 }
 
-Objective tolerant(double absolute, double relative)
+Objective tolerant(Real absolute, Real relative)
 {
     Objective objective = default_objective(0, 0);
     objective.absolute = absolute;
@@ -85,9 +86,9 @@ std::string set_refusal(Model &model, Index index, const Objective &objective)
     return refusal([&] { model.set_objectives(std::span(&index, 1), std::span(&objective, 1)); });
 }
 
-std::uint64_t bits_of(double value)
+Bits bits_of(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
 void expect_objective(const Objective &found, const Objective &wanted)
@@ -210,8 +211,8 @@ TEST(ObjectiveTest, Weights)
     EXPECT_EQ(add_refusal(model, weighted(-0.0)), refused + "-0 is not positive");
     EXPECT_EQ(add_refusal(model, weighted(-2.0)), refused + "-2 is not positive");
     EXPECT_EQ(model.n_objectives(), 0);
-    const double least = std::numeric_limits<double>::denorm_min();
-    const double most = (std::numeric_limits<double>::max)();
+    const Real least = std::numeric_limits<Real>::denorm_min();
+    const Real most = (std::numeric_limits<Real>::max)();
     model.add_objectives(std::vector<Objective>{weighted(least), weighted(most)});
     expect_objective(model.objective(0), weighted(least));
     expect_objective(model.objective(1), weighted(most));
@@ -228,7 +229,7 @@ TEST(ObjectiveTest, Tolerances)
               refused + "absolute tolerance -1 is negative");
     EXPECT_EQ(add_refusal(model, tolerant(0.0, -kInfinity)),
               refused + "relative tolerance is minus infinity");
-    const double least = std::numeric_limits<double>::denorm_min();
+    const Real least = std::numeric_limits<Real>::denorm_min();
     EXPECT_EQ(add_refusal(model, tolerant(0.0, -least)),
               refused + "relative tolerance -5e-324 is negative");
     EXPECT_EQ(model.n_objectives(), 0);

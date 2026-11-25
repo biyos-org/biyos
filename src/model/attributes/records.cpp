@@ -24,10 +24,10 @@ namespace biyos
 namespace
 {
 
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 constexpr Tolerance kGlobal{.absolute = kNan, .relative = kNan};
 
-void check_size(std::span<const Index> indices, std::span<const double> values)
+void check_size(std::span<const Index> indices, std::span<const Real> values)
 {
     if (!values.empty() && values.size() != indices.size())
     {
@@ -40,7 +40,7 @@ std::string field_of(std::string_view part)
     return std::string(part) + " tolerance ";
 }
 
-void check_value(std::string_view noun, Index index, std::string_view part, double value)
+void check_value(std::string_view noun, Index index, std::string_view part, Real value)
 {
     const std::string_view fault = value_fault(value);
     if (!fault.empty())
@@ -55,7 +55,7 @@ void check_value(std::string_view noun, Index index, std::string_view part, doub
 
 void check_entry(std::string_view noun,
                  Index index,
-                 std::span<const double> values,
+                 std::span<const Real> values,
                  std::size_t k,
                  std::string_view part)
 {
@@ -65,7 +65,7 @@ void check_entry(std::string_view noun,
     }
 }
 
-void assign(double &held, std::span<const double> values, std::size_t k) noexcept
+void assign(Real &held, std::span<const Real> values, std::size_t k) noexcept
 {
     if (!values.empty())
     {
@@ -84,8 +84,8 @@ std::vector<std::size_t> order_of(std::span<const Index> indices)
 struct Batch
 {
     std::span<const Index> indices;
-    std::span<const double> absolute;
-    std::span<const double> relative;
+    std::span<const Real> absolute;
+    std::span<const Real> relative;
     std::vector<std::size_t> order;
 
     std::size_t size() const noexcept { return indices.size(); }
@@ -290,8 +290,8 @@ Tolerance RecordTolerances::at(Index index) const noexcept
 void RecordTolerances::set(std::string_view noun,
                            Index size,
                            std::span<const Index> indices,
-                           std::span<const double> absolute,
-                           std::span<const double> relative)
+                           std::span<const Real> absolute,
+                           std::span<const Real> relative)
 {
     Batch batch{.indices = indices, .absolute = absolute, .relative = relative, .order = {}};
     check(noun, size, batch);

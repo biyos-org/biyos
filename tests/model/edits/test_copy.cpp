@@ -28,6 +28,7 @@ using biyos::Objective;
 using biyos::ObjectiveSense;
 using biyos::Offset;
 using biyos::QuadraticTerm;
+using biyos::Real;
 using biyos::SpecialOrderedSetKind;
 using biyos::Variable;
 using biyos::VariableKind;
@@ -39,7 +40,7 @@ void change(Model &model)
     const Index index = 1;
     const Variable variable{.kind = VariableKind::Binary, .lower = 1.0, .upper = 1.0};
     const Constraint constraint{.function = 2, .lower = -5.0, .upper = 5.0};
-    const std::vector<double> constants{4.0};
+    const std::vector<Real> constants{4.0};
     const std::vector<Offset> starts{0, 1};
     model.set_variables(std::span(&index, 1), std::span(&variable, 1));
     model.add_variables(std::span(&variable, 1));
@@ -82,7 +83,7 @@ void change(Model &model)
     const Complement complement{.function = 3, .lower = -1.0, .upper = 3.0, .multiplier = 1};
     model.set_complements(std::span(&index, 1), std::span(&complement, 1));
     model.add_complements(std::span(&complement, 1));
-    const double tolerance = 0.5;
+    const Real tolerance = 0.5;
     model.set_tolerances(Family::Complement, std::span(&index, 1), std::span(&tolerance, 1), {});
     model.set_tolerances(Family::Variable, std::span(&index, 1), {}, std::span(&tolerance, 1));
     model.set_tolerances(Family::Constraint, std::span(&index, 1), std::span(&tolerance, 1), {});

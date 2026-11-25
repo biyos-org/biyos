@@ -24,7 +24,7 @@ std::string node_pair(Offset a, Offset b)
     return "node " + text_of(a) + " against " + text_of(b);
 }
 
-std::string weight_differences(std::span<const double> a, std::span<const double> b)
+std::string weight_differences(std::span<const Real> a, std::span<const Real> b)
 {
     for (std::size_t k = 0; k < a.size(); ++k)
     {

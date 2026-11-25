@@ -27,6 +27,7 @@ using biyos::Model;
 using biyos::Objective;
 using biyos::ObjectiveSense;
 using biyos::QuadraticTerm;
+using biyos::Real;
 using biyos::SpecialOrderedSetKind;
 using biyos::VariableKind;
 using biyos::test::built;
@@ -34,7 +35,7 @@ using biyos::test::Node;
 using biyos::test::Parts;
 using biyos::test::sample;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 
 std::string from_sample(const Parts &parts)
 {
@@ -564,7 +565,7 @@ TEST(CompareTest, ComplementTolerance)
     renamed.complement_names = {.indices = {1}, .names = {"other"}};
     Model changed = built(renamed);
     const Index index = 1;
-    const double relative = 0.5;
+    const Real relative = 0.5;
     changed.set_tolerances(Family::Complement, std::span(&index, 1), {}, std::span(&relative, 1));
     const Model base = built(sample());
     EXPECT_EQ(difference(base, changed), "complement 1: relative tolerance nan against 0.5");
@@ -581,7 +582,7 @@ TEST(CompareTest, VariableTolerance)
     renamed.variable_names.names[0] = "w";
     Model changed = built(renamed);
     const Index index = 2;
-    const double relative = 0.5;
+    const Real relative = 0.5;
     changed.set_tolerances(Family::Variable, std::span(&index, 1), {}, std::span(&relative, 1));
     const Model base = built(sample());
     EXPECT_EQ(difference(base, changed), "variable 2: relative tolerance nan against 0.5");
@@ -598,7 +599,7 @@ TEST(CompareTest, ConstraintTolerance)
     renamed.constraint_names.names[0] = "d";
     Model changed = built(renamed);
     const Index index = 1;
-    const double relative = 0.5;
+    const Real relative = 0.5;
     changed.set_tolerances(Family::Constraint, std::span(&index, 1), {}, std::span(&relative, 1));
     const Model base = built(sample());
     EXPECT_EQ(difference(base, changed), "constraint 1: relative tolerance nan against 0.5");
@@ -615,7 +616,7 @@ TEST(CompareTest, ConeTolerance)
     renamed.cone_names.names[0] = "j";
     Model changed = built(renamed);
     const Index index = 1;
-    const double relative = 0.5;
+    const Real relative = 0.5;
     changed.set_tolerances(Family::Cone, std::span(&index, 1), {}, std::span(&relative, 1));
     const Model base = built(sample());
     EXPECT_EQ(difference(base, changed), "cone 1: relative tolerance nan against 0.5");

@@ -22,23 +22,24 @@ using biyos::Evaluation;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::Request;
 
-const std::vector<double> kPoint{0.5, -1.5};
+const std::vector<Real> kPoint{0.5, -1.5};
 
-int squared(const Request &request, std::span<double> out, void *)
+int squared(const Request &request, std::span<Real> out, void *)
 {
     out[0] = request.x[0] * request.x[0];
     return 0;
 }
 
-int doubled(const Request &request, std::span<double> out, void *)
+int doubled(const Request &request, std::span<Real> out, void *)
 {
     out[0] = 2.0 * request.x[0];
     return 0;
 }
 
-int curved(const Request &request, std::span<double> out, void *)
+int curved(const Request &request, std::span<Real> out, void *)
 {
     out[0] = 2.0 * request.w[0];
     return 0;
@@ -82,11 +83,11 @@ TEST(AllocationTest, Evaluation)
     const Model model = evaluated();
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
-    std::vector<double> f(2);
-    std::vector<double> g(evaluation.jacobian_pattern().variables.size());
-    std::vector<double> h(evaluation.hessian_pattern().rows.size());
-    std::vector<double> hv(2);
-    const std::vector<double> w{0.5, 2.0};
+    std::vector<Real> f(2);
+    std::vector<Real> g(evaluation.jacobian_pattern().variables.size());
+    std::vector<Real> h(evaluation.hessian_pattern().rows.size());
+    std::vector<Real> hv(2);
+    const std::vector<Real> w{0.5, 2.0};
     const std::size_t start = biyos::test::allocations();
     evaluation.values(lookup, kPoint, f);
     evaluation.jacobian(lookup, kPoint, g);

@@ -3,7 +3,6 @@
 #include "core/numbers.hpp"
 
 #include <bit>
-#include <cstdint>
 #include <initializer_list>
 #include <string>
 #include <string_view>
@@ -31,9 +30,9 @@ std::string compared(std::string_view field, Offset a, Offset b)
     return a == b ? std::string() : against(field, a, b);
 }
 
-std::string compared(std::string_view field, double a, double b)
+std::string compared(std::string_view field, Real a, Real b)
 {
-    const bool same = std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b);
+    const bool same = std::bit_cast<Bits>(a) == std::bit_cast<Bits>(b);
     return same ? std::string() : against(field, a, b);
 }
 

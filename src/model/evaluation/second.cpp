@@ -34,9 +34,9 @@ void require_products(const Model &model)
 }
 
 void Evaluation::hessian(const Lookup &lookup,
-                         std::span<const double> x,
-                         std::span<const double> w,
-                         std::span<double> h)
+                         std::span<const Real> x,
+                         std::span<const Real> w,
+                         std::span<Real> h)
 {
     const Timer timer(env_, tree_, "model", "hessian");
     check_point(x);
@@ -49,10 +49,10 @@ void Evaluation::hessian(const Lookup &lookup,
 }
 
 void Evaluation::product(const Lookup &lookup,
-                         std::span<const double> x,
-                         std::span<const double> w,
-                         std::span<const double> v,
-                         std::span<double> hv)
+                         std::span<const Real> x,
+                         std::span<const Real> w,
+                         std::span<const Real> v,
+                         std::span<Real> hv)
 {
     const Timer timer(env_, tree_, "model", "product");
     check_point(x);
@@ -65,7 +65,7 @@ void Evaluation::product(const Lookup &lookup,
     add_user_product(Checker(env_, lookup, "model"), x, w, v, hv);
 }
 
-void Evaluation::take_weights(std::span<const double> w)
+void Evaluation::take_weights(std::span<const Real> w)
 {
     check_size("w", w.size(), to_size(model_.n_functions()));
     for (std::size_t e = 0; e < root_weights_.size(); ++e)
@@ -74,8 +74,7 @@ void Evaluation::take_weights(std::span<const double> w)
     }
 }
 
-std::span<const double> Evaluation::covered_weights(const Callback &callback,
-                                                    std::span<const double> w)
+std::span<const Real> Evaluation::covered_weights(const Callback &callback, std::span<const Real> w)
 {
     for (std::size_t i = 0; i < callback.covered.size(); ++i)
     {
@@ -84,7 +83,7 @@ std::span<const double> Evaluation::covered_weights(const Callback &callback,
     return std::span(user_weights_).first(callback.covered.size());
 }
 
-void Evaluation::term_hessian(std::span<const double> w, std::span<double> h) const
+void Evaluation::term_hessian(std::span<const Real> w, std::span<Real> h) const
 {
     const std::span<const QuadraticTerm> quadratic =
         model_.quadratic_terms(0, model_.n_functions());
@@ -95,15 +94,15 @@ void Evaluation::term_hessian(std::span<const double> w, std::span<double> h) co
         for (Offset t = slots.quadratic_starts[k]; t < slots.quadratic_starts[k + 1]; ++t)
         {
             const QuadraticTerm &term = quadratic[to_size(t)];
-            const double scale = term.row == term.column ? 2.0 : 1.0;
+            const Real scale = term.row == term.column ? 2.0 : 1.0;
             h[to_size(declared[to_size(t)])] += scale * w[k] * term.coefficient;
         }
     }
 }
 
-void Evaluation::term_product(std::span<const double> w,
-                              std::span<const double> v,
-                              std::span<double> hv) const
+void Evaluation::term_product(std::span<const Real> w,
+                              std::span<const Real> v,
+                              std::span<Real> hv) const
 {
     const std::span<const QuadraticTerm> quadratic =
         model_.quadratic_terms(0, model_.n_functions());
@@ -113,7 +112,7 @@ void Evaluation::term_product(std::span<const double> w,
         for (Offset t = slots.quadratic_starts[k]; t < slots.quadratic_starts[k + 1]; ++t)
         {
             const QuadraticTerm &term = quadratic[to_size(t)];
-            const double scale = w[k] * term.coefficient;
+            const Real scale = w[k] * term.coefficient;
             hv[to_size(term.row)] += scale * v[to_size(term.column)];
             hv[to_size(term.column)] += scale * v[to_size(term.row)];
         }
@@ -121,15 +120,15 @@ void Evaluation::term_product(std::span<const double> w,
 }
 
 void Evaluation::add_user_hessian(const Checker &checker,
-                                  std::span<const double> x,
-                                  std::span<const double> w,
-                                  std::span<double> h)
+                                  std::span<const Real> x,
+                                  std::span<const Real> w,
+                                  std::span<Real> h)
 {
     const std::span<const Offset> declared = compiled_.hessian.declared();
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);
-        const std::span<double> out = std::span(out_).first(callback.hessian_pairs.size());
+        const std::span<Real> out = std::span(out_).first(callback.hessian_pairs.size());
         run(checker, callback, Part::Hessian, request_of(c, x, covered_weights(callback, w)), out);
         const std::size_t begin = to_size(compiled_.declared.callback_starts[to_size(c)]);
         for (std::size_t p = 0; p < out.size(); ++p)
@@ -140,10 +139,10 @@ void Evaluation::add_user_hessian(const Checker &checker,
 }
 
 void Evaluation::add_user_product(const Checker &checker,
-                                  std::span<const double> x,
-                                  std::span<const double> w,
-                                  std::span<const double> v,
-                                  std::span<double> hv)
+                                  std::span<const Real> x,
+                                  std::span<const Real> w,
+                                  std::span<const Real> v,
+                                  std::span<Real> hv)
 {
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
@@ -151,7 +150,7 @@ void Evaluation::add_user_product(const Checker &checker,
         const Request request = request_of(c, x, covered_weights(callback, w), v);
         if (has(callback, Part::Product))
         {
-            const std::span<double> out = std::span(out_).first(hv.size());
+            const std::span<Real> out = std::span(out_).first(hv.size());
             run(checker, callback, Part::Product, request, out);
             for (std::size_t i = 0; i < out.size(); ++i)
             {
@@ -159,16 +158,16 @@ void Evaluation::add_user_product(const Checker &checker,
             }
             continue;
         }
-        const std::span<double> out = std::span(out_).first(callback.hessian_pairs.size());
+        const std::span<Real> out = std::span(out_).first(callback.hessian_pairs.size());
         run(checker, callback, Part::Hessian, request, out);
         add_pairs_product(callback, out, v, hv);
     }
 }
 
 void Evaluation::add_pairs_product(const Callback &callback,
-                                   std::span<const double> out,
-                                   std::span<const double> v,
-                                   std::span<double> hv) const noexcept
+                                   std::span<const Real> out,
+                                   std::span<const Real> v,
+                                   std::span<Real> hv) const noexcept
 {
     for (std::size_t p = 0; p < out.size(); ++p)
     {

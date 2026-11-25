@@ -39,8 +39,8 @@ inline constexpr std::array kVariableKinds{
 struct Variable
 {
     VariableKind kind;
-    double lower;
-    double upper;
+    Real lower;
+    Real upper;
 };
 
 Variable widest(VariableKind kind) noexcept;
@@ -48,8 +48,8 @@ Variable widest(VariableKind kind) noexcept;
 struct Constraint
 {
     Index function;
-    double lower;
-    double upper;
+    Real lower;
+    Real upper;
 };
 
 enum class ObjectiveSense
@@ -68,9 +68,9 @@ struct Objective
     Index function;
     ObjectiveSense sense;
     int priority;
-    double weight;
-    double absolute;
-    double relative;
+    Real weight;
+    Real absolute;
+    Real relative;
 };
 
 Objective default_objective(Index function, Index index) noexcept;
@@ -80,8 +80,8 @@ struct Indicator
     Index variable;
     int value;
     Index function;
-    double lower;
-    double upper;
+    Real lower;
+    Real upper;
 };
 
 enum class SpecialOrderedSetKind
@@ -98,7 +98,7 @@ inline constexpr std::array kSpecialOrderedSetKinds{
 struct Member
 {
     Index variable;
-    double weight;
+    Real weight;
 };
 
 enum class ConeKind
@@ -127,8 +127,8 @@ inline constexpr std::array kConeKinds{
 struct Complement
 {
     Index function;
-    double lower;
-    double upper;
+    Real lower;
+    Real upper;
     Index multiplier;
 };
 
@@ -179,8 +179,8 @@ class Model
     Tolerance tolerance_of(Family family, Index index) const;
     void set_tolerances(Family family,
                         std::span<const Index> indices,
-                        std::span<const double> absolute,
-                        std::span<const double> relative);
+                        std::span<const Real> absolute,
+                        std::span<const Real> relative);
     void delete_tolerances(Family family, std::span<const Index> indices);
 
     Index n_variables() const noexcept;
@@ -192,16 +192,16 @@ class Model
     std::vector<Index> delete_variables(std::span<const Index> indices);
 
     Index n_functions() const noexcept;
-    const double &constant(Index index) const;
-    std::span<const double> constants(Index start, Index stop) const;
+    const Real &constant(Index index) const;
+    std::span<const Real> constants(Index start, Index stop) const;
     std::span<const LinearTerm> linear_terms(Index start, Index stop) const;
 
     void check_room(std::size_t functions, Offset terms) const;
-    void add_functions(std::span<const double> constants,
+    void add_functions(std::span<const Real> constants,
                        std::span<const Offset> starts,
                        std::vector<LinearTerm> terms);
-    void set_constants(std::span<const Index> indices, std::span<const double> values);
-    void add_constants(std::span<const Index> indices, std::span<const double> values);
+    void set_constants(std::span<const Index> indices, std::span<const Real> values);
+    void add_constants(std::span<const Index> indices, std::span<const Real> values);
     void add_linear_terms(std::span<const Index> functions,
                           std::span<const Offset> starts,
                           std::vector<LinearTerm> terms);
@@ -252,14 +252,14 @@ class Model
     Index n_cones() const noexcept;
     std::span<const ConeKind> cone_kinds(Index start, Index stop) const;
     std::span<const Index> cone_functions(Index start, Index stop) const;
-    std::span<const double> cone_parameters(Index start, Index stop) const;
+    std::span<const Real> cone_parameters(Index start, Index stop) const;
 
     void check_cone_room(std::size_t cones, Offset members, Offset parameters) const;
     void add_cones(std::span<const ConeKind> kinds,
                    std::span<const Offset> starts,
                    std::span<const Index> functions,
                    std::span<const Offset> parameter_starts,
-                   std::span<const double> parameters);
+                   std::span<const Real> parameters);
     std::vector<Index> delete_cones(std::span<const Index> indices);
 
     Index n_complements() const noexcept;
@@ -274,11 +274,11 @@ class Model
     std::span<const Offset> roots(Index start, Index stop) const;
 
     Offset add_variable_node(Index variable);
-    Offset add_node(int op, std::span<const Offset> children, std::span<const double> values);
-    Offset add_piecewise_linear(std::span<const double> x, std::span<const double> y);
+    Offset add_node(int op, std::span<const Offset> children, std::span<const Real> values);
+    Offset add_piecewise_linear(std::span<const Real> x, std::span<const Real> y);
     Offset add_piecewise_linears(std::span<const Offset> starts,
-                                 std::span<const double> x,
-                                 std::span<const double> y);
+                                 std::span<const Real> x,
+                                 std::span<const Real> y);
     Offset add_piecewise(Offset pwl, Offset child);
     std::vector<Offset> add_expressions(const Postfix &postfix);
     void attach_expressions(std::span<const Index> functions, std::span<const Offset> nodes);
@@ -307,7 +307,7 @@ class Model
     void renumber_functions(std::span<const Index> map) noexcept;
     void renumber_variables(std::span<const Index> map) noexcept;
     Offset begin_of(std::size_t function) const noexcept;
-    void append(std::span<const double> constants,
+    void append(std::span<const Real> constants,
                 std::span<const Offset> starts,
                 std::span<const LinearTerm> terms);
     Offset quadratic_begin(std::size_t function) const noexcept;
@@ -318,7 +318,7 @@ class Model
     std::array<Names, kFamilies.size()> names_;
     std::array<RecordTolerances, kFamilies.size()> tolerances_;
     std::vector<Variable> variables_;
-    std::vector<double> constants_;
+    std::vector<Real> constants_;
     std::vector<Offset> linear_ends_;
     std::vector<LinearTerm> linear_terms_;
     std::vector<Offset> quadratic_ends_;
@@ -333,7 +333,7 @@ class Model
     std::vector<Offset> cone_ends_;
     std::vector<Index> cone_functions_;
     std::vector<Offset> cone_parameter_ends_;
-    std::vector<double> cone_parameters_;
+    std::vector<Real> cone_parameters_;
     std::vector<Complement> complements_;
     Graph graph_;
     Uses uses_;

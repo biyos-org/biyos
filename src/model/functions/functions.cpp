@@ -23,7 +23,7 @@ namespace
 
 constexpr std::string_view kNoun = "function";
 
-void check_constant(Index function, double constant)
+void check_constant(Index function, Real constant)
 {
     const std::string_view fault = value_fault(constant);
     if (!fault.empty())
@@ -32,9 +32,7 @@ void check_constant(Index function, double constant)
     }
 }
 
-void check_constants(std::span<const Index> indices,
-                     std::span<const double> values,
-                     Index functions)
+void check_constants(std::span<const Index> indices, std::span<const Real> values, Index functions)
 {
     if (indices.size() != values.size())
     {
@@ -47,7 +45,7 @@ void check_constants(std::span<const Index> indices,
     }
 }
 
-void check_sum(Index function, double sum)
+void check_sum(Index function, Real sum)
 {
     const std::string_view fault = value_fault(sum);
     if (!fault.empty())
@@ -63,20 +61,20 @@ Index Model::n_functions() const noexcept
     return to_index(constants_.size());
 }
 
-std::span<const double> Model::constants(Index start, Index stop) const
+std::span<const Real> Model::constants(Index start, Index stop) const
 {
     check_span(kNoun, start, stop, n_functions());
     const auto offset = to_size(start);
     return std::span(constants_).subspan(offset, to_size(stop - start));
 }
 
-const double &Model::constant(Index index) const
+const Real &Model::constant(Index index) const
 {
     check_index(kNoun, index, n_functions());
     return constants_[to_size(index)];
 }
 
-void Model::set_constants(std::span<const Index> indices, std::span<const double> values)
+void Model::set_constants(std::span<const Index> indices, std::span<const Real> values)
 {
     check_constants(indices, values, n_functions());
     for (std::size_t k = 0; k < indices.size(); ++k)
@@ -85,10 +83,10 @@ void Model::set_constants(std::span<const Index> indices, std::span<const double
     }
 }
 
-void Model::add_constants(std::span<const Index> indices, std::span<const double> values)
+void Model::add_constants(std::span<const Index> indices, std::span<const Real> values)
 {
     check_constants(indices, values, n_functions());
-    std::unordered_map<Index, double> sums;
+    std::unordered_map<Index, Real> sums;
     for (std::size_t k = 0; k < indices.size(); ++k)
     {
         const auto held = sums.try_emplace(indices[k], constant(indices[k])).first;
@@ -118,7 +116,7 @@ void Model::check_room(std::size_t functions, Offset terms) const
     }
 }
 
-void Model::add_functions(std::span<const double> constants,
+void Model::add_functions(std::span<const Real> constants,
                           std::span<const Offset> starts,
                           std::vector<LinearTerm> terms)
 {
@@ -172,7 +170,7 @@ Offset Model::begin_of(std::size_t function) const noexcept
     return function == 0 ? 0 : linear_ends_[function - 1];
 }
 
-void Model::append(std::span<const double> constants,
+void Model::append(std::span<const Real> constants,
                    std::span<const Offset> starts,
                    std::span<const LinearTerm> terms)
 {

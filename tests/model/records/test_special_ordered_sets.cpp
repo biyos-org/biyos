@@ -10,7 +10,6 @@
 #include <bit>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -20,19 +19,21 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::difference;
 using biyos::Index;
 using biyos::Member;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::SpecialOrderedSetKind;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::failure;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 
 struct Given
 {
@@ -69,9 +70,9 @@ std::string add_refusal(Model &model, const Given &given)
     return refusal([&] { add(model, given); });
 }
 
-std::uint64_t bits_of(double value)
+Bits bits_of(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
 void expect_members(std::span<const Member> found, const std::vector<Member> &wanted)

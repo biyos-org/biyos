@@ -17,8 +17,8 @@ namespace biyos
 
 std::string item(std::string_view noun, Index index);
 [[noreturn]] void refuse(std::string_view noun, Index index, const std::string &reason);
-std::string_view bound_fault(double lower, double upper) noexcept;
-std::string_view value_fault(double value) noexcept;
+std::string_view bound_fault(Real lower, Real upper) noexcept;
+std::string_view value_fault(Real value) noexcept;
 void check_index(std::string_view noun, Index index, Index total);
 void check_span(std::string_view noun, Index start, Index stop, Index total);
 void check_function(std::string_view noun, Index index, Index function, Index functions);

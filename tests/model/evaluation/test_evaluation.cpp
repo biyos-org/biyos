@@ -32,27 +32,28 @@ using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
 using biyos::QuadraticTerm;
+using biyos::Real;
 using biyos::Request;
 using biyos::Variable;
 using biyos::test::failure;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 
-constexpr double kExact = 1e-15;
-constexpr double kStale = 7.0;
-constexpr double kStep = 1e-6;
-constexpr double kCentral = 1e-8;
-const std::vector<double> kPoint{0.3, -0.7, 1.1};
+constexpr Real kExact = 1e-15;
+constexpr Real kStale = 7.0;
+constexpr Real kStep = 1e-6;
+constexpr Real kCentral = 1e-8;
+const std::vector<Real> kPoint{0.3, -0.7, 1.1};
 
-int user_values(const Request &request, std::span<double> out, void *)
+int user_values(const Request &request, std::span<Real> out, void *)
 {
     out[0] = request.x[0] * request.x[0];
     out[1] = 3.0 * request.x[2];
     return 0;
 }
 
-int user_gradients(const Request &request, std::span<double> out, void *)
+int user_gradients(const Request &request, std::span<Real> out, void *)
 {
     out[0] = 3.0;
     out[1] = request.x[0];
@@ -60,28 +61,28 @@ int user_gradients(const Request &request, std::span<double> out, void *)
     return 0;
 }
 
-int user_hessian(const Request &request, std::span<double> out, void *)
+int user_hessian(const Request &request, std::span<Real> out, void *)
 {
     out[0] = 2.0 * request.w[0];
     return 0;
 }
 
-int user_product(const Request &request, std::span<double> out, void *)
+int user_product(const Request &request, std::span<Real> out, void *)
 {
     out[0] = 2.0 * request.w[0] * request.v[0];
     return 0;
 }
 
-int returning(const Request &, std::span<double> out, void *data)
+int returning(const Request &, std::span<Real> out, void *data)
 {
     std::ranges::fill(out, 1.0);
     return *static_cast<const int *>(data);
 }
 
-int unknown(const Request &, std::span<double> out, void *)
+int unknown(const Request &, std::span<Real> out, void *)
 {
     std::ranges::fill(out, 1.0);
-    out.back() = std::numeric_limits<double>::quiet_NaN();
+    out.back() = std::numeric_limits<Real>::quiet_NaN();
     return 0;
 }
 
@@ -95,11 +96,11 @@ Model with_functions(Index variables, Index functions)
     };
     model.add_variables(std::vector<Variable>(static_cast<std::size_t>(variables), free));
     const auto n = static_cast<std::size_t>(functions);
-    model.add_functions(std::vector<double>(n, 0.0), std::vector<Offset>(n + 1, 0), {});
+    model.add_functions(std::vector<Real>(n, 0.0), std::vector<Offset>(n + 1, 0), {});
     return model;
 }
 
-void add_linear(Model &model, Index function, Index variable, double coefficient)
+void add_linear(Model &model, Index function, Index variable, Real coefficient)
 {
     const std::array functions{function};
     const std::array<Offset, 2> starts{0, 1};
@@ -168,42 +169,42 @@ std::vector<IndexPair> entries_of(const biyos::Lower &lower)
     return entries;
 }
 
-std::vector<double> values_at(Evaluation &evaluation,
-                              const Model &model,
-                              const biyos::Lookup &lookup,
-                              std::vector<double> x)
+std::vector<Real> values_at(Evaluation &evaluation,
+                            const Model &model,
+                            const biyos::Lookup &lookup,
+                            std::vector<Real> x)
 {
-    std::vector<double> f(static_cast<std::size_t>(model.n_functions()), kStale);
+    std::vector<Real> f(static_cast<std::size_t>(model.n_functions()), kStale);
     evaluation.values(lookup, x, f);
     return f;
 }
 
-std::vector<double> central_jacobian(Evaluation &evaluation,
-                                     const Model &model,
-                                     const biyos::Lookup &lookup,
-                                     const std::vector<double> &x)
+std::vector<Real> central_jacobian(Evaluation &evaluation,
+                                   const Model &model,
+                                   const biyos::Lookup &lookup,
+                                   const std::vector<Real> &x)
 {
     const biyos::Pattern &pattern = evaluation.jacobian_pattern();
-    std::vector<double> g(pattern.variables.size());
+    std::vector<Real> g(pattern.variables.size());
     for (std::size_t row = 0; row + 1 < pattern.starts.size(); ++row)
     {
         for (Offset k = pattern.starts[row]; k < pattern.starts[row + 1]; ++k)
         {
             const auto column =
                 static_cast<std::size_t>(pattern.variables[static_cast<std::size_t>(k)]);
-            std::vector<double> up = x;
-            std::vector<double> down = x;
+            std::vector<Real> up = x;
+            std::vector<Real> down = x;
             up[column] += kStep;
             down[column] -= kStep;
-            const double rise = values_at(evaluation, model, lookup, up)[row];
-            const double fall = values_at(evaluation, model, lookup, down)[row];
+            const Real rise = values_at(evaluation, model, lookup, up)[row];
+            const Real fall = values_at(evaluation, model, lookup, down)[row];
             g[static_cast<std::size_t>(k)] = (rise - fall) / (2.0 * kStep);
         }
     }
     return g;
 }
 
-void expect_near(std::span<const double> found, std::span<const double> wanted, double bound)
+void expect_near(std::span<const Real> found, std::span<const Real> wanted, Real bound)
 {
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < found.size(); ++k)
@@ -290,10 +291,9 @@ TEST(EvaluationTest, Values)
     biyos::Env env;
     const Model model = merged();
     Evaluation evaluation(env, model);
-    const std::vector<double> f =
-        values_at(evaluation, model, biyos::Lookup(env.options()), kPoint);
-    const double f0 = 2.0 * 1.1 + 0.5 * 0.3 * -0.7 + 3.0 * 1.1;
-    const double f1 = std::sin(1.1) + 0.3 * 0.3;
+    const std::vector<Real> f = values_at(evaluation, model, biyos::Lookup(env.options()), kPoint);
+    const Real f0 = 2.0 * 1.1 + 0.5 * 0.3 * -0.7 + 3.0 * 1.1;
+    const Real f1 = std::sin(1.1) + 0.3 * 0.3;
     expect_near(f, std::vector{f0, f1}, kExact);
 }
 
@@ -303,10 +303,10 @@ TEST(EvaluationTest, Jacobian)
     const Model model = merged();
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
-    std::vector<double> g(evaluation.jacobian_pattern().variables.size());
+    std::vector<Real> g(evaluation.jacobian_pattern().variables.size());
     evaluation.jacobian(lookup, kPoint, g);
     expect_near(g, central_jacobian(evaluation, model, lookup, kPoint), kCentral);
-    const std::vector<double> exact{0.5 * -0.7, 0.5 * 0.3, 5.0, 0.6, std::cos(1.1)};
+    const std::vector<Real> exact{0.5 * -0.7, 0.5 * 0.3, 5.0, 0.6, std::cos(1.1)};
     expect_near(g, exact, kExact);
 }
 
@@ -317,10 +317,10 @@ TEST(EvaluationTest, Positive)
     const Model model = returning_model(status);
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
-    const std::vector<double> f = values_at(evaluation, model, lookup, {1.0, 2.0});
+    const std::vector<Real> f = values_at(evaluation, model, lookup, {1.0, 2.0});
     EXPECT_NEAR(f[0], 0.0, kExact);
     EXPECT_TRUE(std::isnan(f[1]));
-    std::vector<double> g(1);
+    std::vector<Real> g(1);
     evaluation.jacobian(lookup, std::vector{1.0, 2.0}, g);
     EXPECT_TRUE(std::isnan(g[0]));
 }
@@ -332,11 +332,11 @@ TEST(EvaluationTest, Negative)
     const Model model = returning_model(status);
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
-    std::vector<double> f(2);
+    std::vector<Real> f(2);
     EXPECT_EQ(failure([&] { evaluation.values(lookup, std::vector{1.0, 2.0}, f); },
                       biyos::ErrorKind::Callback),
               "callback: callback 0: function returned -1");
-    std::vector<double> g(1);
+    std::vector<Real> g(1);
     EXPECT_EQ(failure([&] { evaluation.jacobian(lookup, std::vector{1.0, 2.0}, g); },
                       biyos::ErrorKind::Callback),
               "callback: callback 0: Jacobian returned -1");
@@ -347,7 +347,7 @@ TEST(EvaluationTest, Unknown)
     biyos::Env env;
     const Model model = unknown_model();
     Evaluation evaluation(env, model);
-    std::vector<double> f(1);
+    std::vector<Real> f(1);
     const biyos::Lookup cheap = at_level(env, biyos::Checking::Cheap);
     EXPECT_EQ(failure([&] { evaluation.values(cheap, std::vector{1.0, 2.0}, f); },
                       biyos::ErrorKind::Callback),
@@ -363,12 +363,12 @@ TEST(EvaluationTest, Missing)
     const Model model = bare_model();
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
-    const std::vector<double> x{1.0, 2.0};
-    std::vector<double> f(1, kStale);
+    const std::vector<Real> x{1.0, 2.0};
+    std::vector<Real> f(1, kStale);
     EXPECT_EQ(failure([&] { evaluation.values(lookup, x, f); }, biyos::ErrorKind::Unsupported),
               "unsupported: callback 0: has no function");
     expect_near(f, std::vector(1, kStale), kExact);
-    std::vector<double> g(1, kStale);
+    std::vector<Real> g(1, kStale);
     EXPECT_EQ(failure([&] { evaluation.jacobian(lookup, x, g); }, biyos::ErrorKind::Unsupported),
               "unsupported: callback 0: has no Jacobian");
     expect_near(g, std::vector(1, kStale), kExact);
@@ -380,10 +380,10 @@ TEST(EvaluationTest, Sizes)
     const Model model = merged();
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
-    std::vector<double> f(2);
+    std::vector<Real> f(2);
     EXPECT_EQ(refusal([&] { evaluation.values(lookup, std::vector{1.0}, f); }),
               "invalid argument: argument 'x': size 1, not 3");
-    std::vector<double> g(4);
+    std::vector<Real> g(4);
     EXPECT_EQ(refusal([&] { evaluation.jacobian(lookup, kPoint, g); }),
               "invalid argument: argument 'g': size 4, not 5");
 }
@@ -396,7 +396,7 @@ TEST(EvaluationTest, Constant)
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
     expect_near(values_at(evaluation, model, lookup, {1.0, 2.0}), std::vector{1.5, -2.0}, kExact);
-    std::vector<double> g;
+    std::vector<Real> g;
     evaluation.jacobian(lookup, std::vector{1.0, 2.0}, g);
     EXPECT_TRUE(g.empty());
 }
@@ -406,8 +406,8 @@ TEST(EvaluationTest, Hessian)
     biyos::Env env;
     const Model model = merged();
     Evaluation evaluation(env, model);
-    std::vector<double> h(evaluation.hessian_pattern().rows.size());
-    const std::vector<double> w{0.7, -1.3};
+    std::vector<Real> h(evaluation.hessian_pattern().rows.size());
+    const std::vector<Real> w{0.7, -1.3};
     evaluation.hessian(biyos::Lookup(env.options()), kPoint, w, h);
     expect_near(h, std::vector{2.0 * -1.3, 0.5 * 0.7, -1.3 * -std::sin(1.1)}, kExact);
 }
@@ -417,13 +417,13 @@ TEST(EvaluationTest, Fallback)
     biyos::Env env;
     const Model model = merged();
     Evaluation evaluation(env, model);
-    std::vector<double> hv(3);
-    const std::vector<double> w{0.7, -1.3};
-    const std::vector<double> v{0.4, -0.9, 1.7};
+    std::vector<Real> hv(3);
+    const std::vector<Real> w{0.7, -1.3};
+    const std::vector<Real> v{0.4, -0.9, 1.7};
     evaluation.product(biyos::Lookup(env.options()), kPoint, w, v, hv);
-    const std::vector<double> wanted{2.0 * -1.3 * 0.4 + 0.5 * 0.7 * -0.9,
-                                     0.5 * 0.7 * 0.4,
-                                     -1.3 * -std::sin(1.1) * 1.7};
+    const std::vector<Real> wanted{2.0 * -1.3 * 0.4 + 0.5 * 0.7 * -0.9,
+                                   0.5 * 0.7 * 0.4,
+                                   -1.3 * -std::sin(1.1) * 1.7};
     expect_near(hv, wanted, kExact);
 }
 
@@ -435,9 +435,9 @@ TEST(EvaluationTest, Direct)
     const Index callback = model.add_callback(covered, nullptr);
     model.set_callback_hessian_product(callback, user_product);
     Evaluation evaluation(env, model);
-    std::vector<double> hv(2, kStale);
-    const std::vector<double> x{1.0, 2.0};
-    const std::vector<double> v{3.0, 4.0};
+    std::vector<Real> hv(2, kStale);
+    const std::vector<Real> x{1.0, 2.0};
+    const std::vector<Real> v{3.0, 4.0};
     evaluation.product(biyos::Lookup(env.options()), x, std::vector{0.5}, v, hv);
     expect_near(hv, std::vector{3.0, 0.0}, kExact);
 }
@@ -448,12 +448,12 @@ TEST(EvaluationTest, Unsupported)
     const Model model = unknown_model();
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
-    const std::vector<double> x{1.0, 2.0};
-    const std::vector<double> w{1.0};
-    std::vector<double> h(evaluation.hessian_pattern().rows.size());
+    const std::vector<Real> x{1.0, 2.0};
+    const std::vector<Real> w{1.0};
+    std::vector<Real> h(evaluation.hessian_pattern().rows.size());
     EXPECT_EQ(failure([&] { evaluation.hessian(lookup, x, w, h); }, biyos::ErrorKind::Unsupported),
               "unsupported: callback 0: has no Hessian");
-    std::vector<double> hv(2, kStale);
+    std::vector<Real> hv(2, kStale);
     EXPECT_EQ(
         failure([&] { evaluation.product(lookup, x, w, x, hv); }, biyos::ErrorKind::Unsupported),
         "unsupported: callback 0: has no Hessian");
@@ -469,14 +469,14 @@ TEST(EvaluationTest, SecondNegative)
     model.set_callback_hessian(0, first, first, returning);
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
-    const std::vector<double> x{1.0, 2.0};
-    const std::vector<double> w{1.0, 1.0};
-    std::vector<double> h(1);
+    const std::vector<Real> x{1.0, 2.0};
+    const std::vector<Real> w{1.0, 1.0};
+    std::vector<Real> h(1);
     EXPECT_EQ(failure([&] { evaluation.hessian(lookup, x, w, h); }, biyos::ErrorKind::Callback),
               "callback: callback 0: Hessian returned -3");
     model.set_callback_hessian_product(0, returning);
     Evaluation rebuilt(env, model);
-    std::vector<double> hv(2);
+    std::vector<Real> hv(2);
     EXPECT_EQ(failure([&] { rebuilt.product(lookup, x, w, x, hv); }, biyos::ErrorKind::Callback),
               "callback: callback 0: Hessian product returned -3");
 }
@@ -487,13 +487,13 @@ TEST(EvaluationTest, SecondSizes)
     const Model model = merged();
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
-    std::vector<double> h(3);
+    std::vector<Real> h(3);
     EXPECT_EQ(refusal([&] { evaluation.hessian(lookup, kPoint, std::vector{1.0}, h); }),
               "invalid argument: argument 'w': size 1, not 2");
-    std::vector<double> small(2);
+    std::vector<Real> small(2);
     EXPECT_EQ(refusal([&] { evaluation.hessian(lookup, kPoint, std::vector{1.0, 1.0}, small); }),
               "invalid argument: argument 'h': size 2, not 3");
-    std::vector<double> hv(3);
+    std::vector<Real> hv(3);
     EXPECT_EQ(
         refusal([&] { evaluation.product(lookup, kPoint, std::vector{1.0, 1.0}, small, hv); }),
         "invalid argument: argument 'v': size 2, not 3");

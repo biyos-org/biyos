@@ -9,7 +9,6 @@
 
 #include <bit>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -19,22 +18,24 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::difference;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::Variable;
 using biyos::test::failure;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
-constexpr double kLarge = 1.0e308;
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
+constexpr Real kLarge = 1.0e308;
 
 struct Functions
 {
-    std::vector<double> constants;
+    std::vector<Real> constants;
     std::vector<Offset> starts;
     std::vector<LinearTerm> terms;
 };
@@ -50,7 +51,7 @@ struct ByVariable
 {
     std::vector<Offset> starts;
     std::vector<Index> functions;
-    std::vector<double> values;
+    std::vector<Real> values;
 };
 
 Model with_variables(std::size_t n)
@@ -70,7 +71,7 @@ void add(Model &model, const Functions &functions)
     model.add_functions(functions.constants, functions.starts, functions.terms);
 }
 
-Functions single(double constant, std::vector<LinearTerm> terms)
+Functions single(Real constant, std::vector<LinearTerm> terms)
 {
     const auto size = static_cast<Offset>(terms.size());
     return Functions{.constants = {constant}, .starts = {0, size}, .terms = std::move(terms)};
@@ -91,9 +92,9 @@ void expect_terms(std::span<const LinearTerm> found, const std::vector<LinearTer
     }
 }
 
-std::uint64_t bits_of(double value)
+Bits bits_of(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
 void expect_exact(std::span<const LinearTerm> found, const std::vector<LinearTerm> &wanted)
@@ -101,13 +102,13 @@ void expect_exact(std::span<const LinearTerm> found, const std::vector<LinearTer
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < found.size(); ++k)
     {
-        const double coefficient = found[k].coefficient;
+        const Real coefficient = found[k].coefficient;
         EXPECT_EQ(found[k].variable, wanted[k].variable) << "term " << k;
         EXPECT_EQ(bits_of(coefficient), bits_of(wanted[k].coefficient)) << coefficient;
     }
 }
 
-void expect_constants(std::span<const double> found, const std::vector<double> &wanted)
+void expect_constants(std::span<const Real> found, const std::vector<Real> &wanted)
 {
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < found.size(); ++k)
@@ -577,7 +578,7 @@ TEST(FunctionTest, VariableSized)
     const std::vector<Offset> starts = biyos::variable_starts(model, 0, 4);
     EXPECT_EQ(starts, (std::vector<Offset>{0, 0, 1, 2, 3}));
     std::vector<Index> functions(2, -1);
-    std::vector<double> values(3, kInfinity);
+    std::vector<Real> values(3, kInfinity);
     biyos::variable_terms(model, 0, starts, functions, {});
     EXPECT_EQ(functions, (std::vector<Index>{0, 2}));
     biyos::variable_terms(model, 0, starts, {}, values);

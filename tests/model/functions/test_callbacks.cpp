@@ -24,12 +24,13 @@ using biyos::IndexPair;
 using biyos::kNoRoot;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::Request;
 using biyos::Routine;
 using biyos::Variable;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 const std::string kBad = "invalid argument: ";
 
 Model with_functions(std::size_t n)
@@ -41,11 +42,11 @@ Model with_functions(std::size_t n)
         .upper = kInfinity,
     };
     model.add_variables(std::vector<Variable>(3, free));
-    model.add_functions(std::vector<double>(n, 0.0), std::vector<Offset>(n + 1, 0), {});
+    model.add_functions(std::vector<Real>(n, 0.0), std::vector<Offset>(n + 1, 0), {});
     return model;
 }
 
-int succeed(const Request &, std::span<double>, void *)
+int succeed(const Request &, std::span<Real>, void *)
 {
     return 0;
 }
@@ -117,7 +118,7 @@ void attach_sine(Model &model, Index function)
     model.attach_expressions(functions, nodes);
 }
 
-int counted(const Request &, std::span<double>, void *data)
+int counted(const Request &, std::span<Real>, void *data)
 {
     ++*static_cast<int *>(data);
     return 0;
@@ -215,7 +216,7 @@ TEST(CallbackTest, LinearAttach)
     add(model, {0});
     const Offset x = model.add_variable_node(2);
     const std::vector<Offset> children{x};
-    const Offset scaled = model.add_node(BIYOS_OP_SUM, children, std::vector<double>{1.0, 3.0});
+    const Offset scaled = model.add_node(BIYOS_OP_SUM, children, std::vector<Real>{1.0, 3.0});
     model.attach_expressions(std::vector<Index>{0}, std::vector<Offset>{scaled});
     EXPECT_EQ(model.roots(0, 1).front(), kNoRoot);
     ASSERT_EQ(model.linear_terms(0, 1).size(), 1U);
@@ -237,7 +238,7 @@ TEST(CallbackTest, Values)
     model.add_callback(std::vector<Index>{0}, &calls);
     model.set_callback_function(0, counted);
     const Callback &held = model.callback(0);
-    std::vector<double> out(1);
+    std::vector<Real> out(1);
     const Request request{
         .model = nullptr,
         .callback = 0,
@@ -355,7 +356,7 @@ TEST(CallbackTest, Copied)
     EXPECT_EQ(held.jacobian_pairs, (std::vector<IndexPair>{{0, 2}, {0, 0}, {0, 2}}));
     EXPECT_EQ(held.hessian_pairs, (std::vector<IndexPair>{{1, 2}, {0, 1}, {1, 2}}));
     EXPECT_EQ(held.covered, (std::vector<Index>{1}));
-    std::vector<double> out(1);
+    std::vector<Real> out(1);
     const Request request{
         .model = nullptr,
         .callback = 0,

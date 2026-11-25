@@ -32,6 +32,7 @@ using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::RecordTolerances;
 using biyos::Variable;
 using biyos::VariableKind;
@@ -159,7 +160,7 @@ Model with_terms()
 {
     Model model;
     model.add_variables(std::vector<Variable>(4, biyos::widest(VariableKind::Continuous)));
-    const std::vector<double> constants(3, 0.0);
+    const std::vector<Real> constants(3, 0.0);
     const std::vector<Offset> starts{0, 2, 2, 3};
     model.add_functions(constants, starts, {{1, 1.0}, {3, 2.0}, {2, 3.0}});
     return model;
@@ -188,7 +189,7 @@ Model with_nodes()
     model.add_variables(std::vector<Variable>(4, biyos::widest(VariableKind::Continuous)));
     const std::vector<Offset> x{model.add_variable_node(0)};
     model.add_node(BIYOS_OP_EXP, x, {});
-    model.add_piecewise_linear(std::vector<double>{0.0, 1.0}, std::vector<double>{2.0, -1.0});
+    model.add_piecewise_linear(std::vector<Real>{0.0, 1.0}, std::vector<Real>{2.0, -1.0});
     return model;
 }
 
@@ -199,15 +200,14 @@ void add_variable(Model &model)
 
 void add_points(Model &model)
 {
-    model.add_piecewise_linear(std::vector<double>{-1.0, 0.0, 2.0},
-                               std::vector<double>{1.0, 0.0, 3.0});
+    model.add_piecewise_linear(std::vector<Real>{-1.0, 0.0, 2.0}, std::vector<Real>{1.0, 0.0, 3.0});
 }
 
 void add_batch(Model &model)
 {
     const std::vector<Offset> starts{0, 2, 5};
-    const std::vector<double> x{0.0, 1.0, -1.0, 0.0, 2.0};
-    const std::vector<double> y{2.0, -1.0, 1.0, 0.0, 3.0};
+    const std::vector<Real> x{0.0, 1.0, -1.0, 0.0, 2.0};
+    const std::vector<Real> y{2.0, -1.0, 1.0, 0.0, 3.0};
     model.add_piecewise_linears(starts, x, y);
 }
 
@@ -218,7 +218,7 @@ void add_piecewise(Model &model)
 
 void add_two(Model &model)
 {
-    const std::vector<double> constants{1.0, 2.0};
+    const std::vector<Real> constants{1.0, 2.0};
     const std::vector<Offset> starts{0, 1, 1};
     model.add_functions(constants, starts, {{0, 1.0}});
 }
@@ -226,7 +226,7 @@ void add_two(Model &model)
 Model with_cone()
 {
     Model model;
-    const std::vector<double> constants(3, 0.0);
+    const std::vector<Real> constants(3, 0.0);
     const std::vector<Offset> starts(4, 0);
     model.add_functions(constants, starts, {});
     const ConeKind kind = ConeKind::Nonnegative;
@@ -246,33 +246,33 @@ void add_cones(Model &model)
     const std::vector<Offset> starts{0, 2, 5};
     const std::vector<Index> functions{2, 0, 0, 1, 2};
     const std::vector<Offset> parameter_starts{0, 0, 2};
-    const std::vector<double> parameters{0.25, 0.75};
+    const std::vector<Real> parameters{0.25, 0.75};
     model.add_cones(kinds, starts, functions, parameter_starts, parameters);
 }
 
 void add_sum(Model &model)
 {
     const std::vector<Offset> children{0, 1};
-    const std::vector<double> values{0.0, 1.0, 2.0};
+    const std::vector<Real> values{0.0, 1.0, 2.0};
     model.add_node(BIYOS_OP_SUM, children, values);
 }
 
 Model with_roots()
 {
     Model model = with_nodes();
-    model.add_functions(std::vector<double>(3, 1.0),
+    model.add_functions(std::vector<Real>(3, 1.0),
                         std::vector<Offset>{0, 1, 1, 2},
                         {{2, 1.0}, {0, 3.0}});
     const std::vector<Index> held{2};
     const std::vector<Offset> one{0, 1};
     model.add_quadratic_terms(held, one, {{1, 1, 2.0}});
     const std::vector<Offset> x{0};
-    const std::vector<double> values{0.5, 2.0};
+    const std::vector<Real> values{0.5, 2.0};
     const std::vector<Offset> sum{model.add_node(BIYOS_OP_SUM, x, values)};
     const std::vector<Offset> pair{0, 0};
-    const Offset square = model.add_node(BIYOS_OP_PROD, pair, std::vector<double>{3.0});
+    const Offset square = model.add_node(BIYOS_OP_PROD, pair, std::vector<Real>{3.0});
     const std::vector<Offset> terms{1, square, 0};
-    model.add_node(BIYOS_OP_SUM, terms, std::vector<double>{1.0, 1.0, 1.0, 4.0});
+    model.add_node(BIYOS_OP_SUM, terms, std::vector<Real>{1.0, 1.0, 1.0, 4.0});
     const std::vector<Index> functions{0, 1};
     const std::vector<Offset> roots{sum.front(), 1};
     model.attach_expressions(functions, roots);
@@ -301,7 +301,7 @@ void decode_two(Model &model)
         BIYOS_OP_DIV,
     };
     const std::vector<Offset> arguments{2, 3, 2, 1, 2, 1, 1, 0, 2};
-    const std::vector<double> values{0.0, 1.0, 2.0, 3.0, 4.0};
+    const std::vector<Real> values{0.0, 1.0, 2.0, 3.0, 4.0};
     model.add_expressions(
         biyos::Postfix{.starts = starts, .codes = codes, .arguments = arguments, .values = values});
 }
@@ -372,7 +372,7 @@ std::size_t copy_cost(const Model &model)
 Model with_complements()
 {
     Model model;
-    model.add_functions(std::vector<double>{0.0}, std::vector<Offset>{0, 0}, {});
+    model.add_functions(std::vector<Real>{0.0}, std::vector<Offset>{0, 0}, {});
     const Complement held{.function = 0, .lower = 0.0, .upper = 1.0, .multiplier = 0};
     model.add_complements(std::vector<Complement>(4, held));
     return model;
@@ -381,7 +381,7 @@ Model with_complements()
 void set_tolerances(Model &model)
 {
     const std::vector<Index> indices{3, 0, 2};
-    const std::vector<double> absolute{1e-6, 1e-7, 1e-8};
+    const std::vector<Real> absolute{1e-6, 1e-7, 1e-8};
     model.set_tolerances(Family::Complement, indices, absolute, {});
 }
 
@@ -393,7 +393,7 @@ void delete_two(Model &model)
 
 constexpr Index kRecords = 64;
 
-std::size_t set_each(RecordTolerances &held, double absolute)
+std::size_t set_each(RecordTolerances &held, Real absolute)
 {
     const std::size_t start = biyos::test::allocations();
     for (Index k = 0; k < kRecords; ++k)
@@ -605,7 +605,7 @@ TEST(AllocationTest, ToleranceUpdate)
     set_each(held, 1.0);
     EXPECT_EQ(set_each(held, 2.0), 0U);
     const std::vector<Index> indices{5, 1, 3};
-    const std::vector<double> relative{0.5, 0.25, 0.125};
+    const std::vector<Real> relative{0.5, 0.25, 0.125};
     const std::size_t start = biyos::test::allocations();
     held.set("variable", kRecords, indices, {}, relative);
     EXPECT_EQ(biyos::test::allocations() - start, 0U);

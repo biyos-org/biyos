@@ -42,48 +42,46 @@ class Evaluation
     const Pattern &jacobian_pattern() const noexcept;
     const Lower &hessian_pattern() const noexcept;
 
-    void values(const Lookup &lookup, std::span<const double> x, std::span<double> f);
-    void jacobian(const Lookup &lookup, std::span<const double> x, std::span<double> g);
+    void values(const Lookup &lookup, std::span<const Real> x, std::span<Real> f);
+    void jacobian(const Lookup &lookup, std::span<const Real> x, std::span<Real> g);
     void hessian(const Lookup &lookup,
-                 std::span<const double> x,
-                 std::span<const double> w,
-                 std::span<double> h);
+                 std::span<const Real> x,
+                 std::span<const Real> w,
+                 std::span<Real> h);
     void product(const Lookup &lookup,
-                 std::span<const double> x,
-                 std::span<const double> w,
-                 std::span<const double> v,
-                 std::span<double> hv);
+                 std::span<const Real> x,
+                 std::span<const Real> w,
+                 std::span<const Real> v,
+                 std::span<Real> hv);
 
   private:
     static void check_size(std::string_view argument, std::size_t size, std::size_t wanted);
-    void check_point(std::span<const double> x) const;
-    void take_weights(std::span<const double> w);
+    void check_point(std::span<const Real> x) const;
+    void take_weights(std::span<const Real> w);
     Request request_of(Index callback,
-                       std::span<const double> x,
-                       std::span<const double> w = {},
-                       std::span<const double> v = {}) const noexcept;
-    std::span<const double> covered_weights(const Callback &callback, std::span<const double> w);
-    void term_values(std::span<const double> x, std::span<double> f) const;
-    void term_gradients(std::span<const double> x, std::span<double> g) const;
-    void add_user_values(const Checker &checker, std::span<const double> x, std::span<double> f);
-    void add_user_gradients(const Checker &checker, std::span<const double> x, std::span<double> g);
-    void term_hessian(std::span<const double> w, std::span<double> h) const;
-    void term_product(std::span<const double> w,
-                      std::span<const double> v,
-                      std::span<double> hv) const;
+                       std::span<const Real> x,
+                       std::span<const Real> w = {},
+                       std::span<const Real> v = {}) const noexcept;
+    std::span<const Real> covered_weights(const Callback &callback, std::span<const Real> w);
+    void term_values(std::span<const Real> x, std::span<Real> f) const;
+    void term_gradients(std::span<const Real> x, std::span<Real> g) const;
+    void add_user_values(const Checker &checker, std::span<const Real> x, std::span<Real> f);
+    void add_user_gradients(const Checker &checker, std::span<const Real> x, std::span<Real> g);
+    void term_hessian(std::span<const Real> w, std::span<Real> h) const;
+    void term_product(std::span<const Real> w, std::span<const Real> v, std::span<Real> hv) const;
     void add_user_hessian(const Checker &checker,
-                          std::span<const double> x,
-                          std::span<const double> w,
-                          std::span<double> h);
+                          std::span<const Real> x,
+                          std::span<const Real> w,
+                          std::span<Real> h);
     void add_user_product(const Checker &checker,
-                          std::span<const double> x,
-                          std::span<const double> w,
-                          std::span<const double> v,
-                          std::span<double> hv);
+                          std::span<const Real> x,
+                          std::span<const Real> w,
+                          std::span<const Real> v,
+                          std::span<Real> hv);
     void add_pairs_product(const Callback &callback,
-                           std::span<const double> out,
-                           std::span<const double> v,
-                           std::span<double> hv) const noexcept;
+                           std::span<const Real> out,
+                           std::span<const Real> v,
+                           std::span<Real> hv) const noexcept;
 
     Env &env_;
     const Model &model_;
@@ -91,11 +89,11 @@ class Evaluation
     Compiled compiled_;
     Workspace workspace_;
     Adjoints adjoints_;
-    std::vector<double> tape_values_;
-    std::vector<double> tape_gradients_;
-    std::vector<double> out_;
-    std::vector<double> root_weights_;
-    std::vector<double> user_weights_;
+    std::vector<Real> tape_values_;
+    std::vector<Real> tape_gradients_;
+    std::vector<Real> out_;
+    std::vector<Real> root_weights_;
+    std::vector<Real> user_weights_;
     TimingTree tree_;
 };
 
