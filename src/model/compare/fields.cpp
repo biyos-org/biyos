@@ -1,8 +1,8 @@
 #include "model/compare/fields.hpp"
 
 #include "core/numbers.hpp"
+#include "core/numeric/identical.hpp"
 
-#include <bit>
 #include <initializer_list>
 #include <string>
 #include <string_view>
@@ -32,8 +32,7 @@ std::string compared(std::string_view field, Offset a, Offset b)
 
 std::string compared(std::string_view field, Real a, Real b)
 {
-    const bool same = std::bit_cast<Bits>(a) == std::bit_cast<Bits>(b);
-    return same ? std::string() : against(field, a, b);
+    return identical(a, b) ? std::string() : against(field, a, b);
 }
 
 std::string compared(std::string_view field, const std::string *a, const std::string *b)
