@@ -14,7 +14,7 @@ from ctypes import (
 from enum import IntEnum
 from math import isnan
 from os import PathLike, fspath
-from typing import Any, NoReturn, SupportsIndex, cast
+from typing import Any, NoReturn, SupportsIndex, TypeVar, cast
 
 from biyos import _capi
 from biyos._capi import lib
@@ -171,6 +171,7 @@ class FileFormat(IntEnum):
 
 
 _INT_MAX = 2**31 - 1
+_Block = TypeVar("_Block", bound=Block[Any])
 
 _COUNTS: dict[type[Block[Any]], str] = {
     Variables: "getnvar",
@@ -726,9 +727,7 @@ class Model:
             doubles("lb", lb, n),
             doubles("ub", ub, n),
         )
-        pos = c_int()
-        self._call(lib.BIYOS_addvar, n, *arrays, byref(pos))
-        return Variables(self, pos.value, pos.value + n, self._gen)
+        return self._added(Variables, lib.BIYOS_addvar, n, *arrays)
 
     def setvarbnd(
         self,
@@ -1119,9 +1118,7 @@ class Model:
         BIYOS_addfun
         """
         n = integer("n", n)
-        pos = c_int()
-        self._call(lib.BIYOS_addfun, n, byref(pos))
-        return Functions(self, pos.value, pos.value + n, self._gen)
+        return self._added(Functions, lib.BIYOS_addfun, n)
 
     def getnfun(self) -> int:
         """Return the number of functions.
@@ -2136,9 +2133,7 @@ class Model:
             doubles("lb", lb, n),
             doubles("ub", ub, n),
         )
-        pos = c_int()
-        self._call(lib.BIYOS_addcon, n, *arrays, byref(pos))
-        return Constraints(self, pos.value, pos.value + n, self._gen)
+        return self._added(Constraints, lib.BIYOS_addcon, n, *arrays)
 
     def setconbnd(
         self,
@@ -2488,9 +2483,7 @@ class Model:
         if trees is not None:
             funs = attached(self, trees)
         idx = indices_of(self, Functions, "fun", funs, n)
-        pos = c_int()
-        self._call(lib.BIYOS_addobj, n, idx, *arrays, byref(pos))
-        return Objectives(self, pos.value, pos.value + n, self._gen)
+        return self._added(Objectives, lib.BIYOS_addobj, n, idx, *arrays)
 
     def setobjsense(
         self,
@@ -2895,9 +2888,7 @@ class Model:
             doubles("lb", lb, n),
             doubles("ub", ub, n),
         )
-        pos = c_int()
-        self._call(lib.BIYOS_addind, n, *arrays, byref(pos))
-        return Indicators(self, pos.value, pos.value + n, self._gen)
+        return self._added(Indicators, lib.BIYOS_addind, n, *arrays)
 
     def setindbnd(
         self,
@@ -3212,11 +3203,7 @@ class Model:
             indices_of(self, Variables, "var", var, size),
             doubles("coef", coef, size),
         )
-        pos = c_int()
-        self._call(lib.BIYOS_addsos, n, *arrays, byref(pos))
-        return SpecialOrderedSets(
-            self, pos.value, pos.value + n, self._gen
-        )
+        return self._added(SpecialOrderedSets, lib.BIYOS_addsos, n, *arrays)
 
     def getnsos(self) -> int:
         """Return the number of special ordered sets.
@@ -3453,11 +3440,7 @@ class Model:
         sizes = counts("cnt", cnt, n)
         size = _total(sizes)
         arrays = (sizes, doubles("x", x, size), doubles("y", y, size))
-        pos = c_int()
-        self._call(lib.BIYOS_addpwl, n, *arrays, byref(pos))
-        return PiecewiseLinears(
-            self, pos.value, pos.value + n, self._gen
-        )
+        return self._added(PiecewiseLinears, lib.BIYOS_addpwl, n, *arrays)
 
     def getnpwl(self) -> int:
         """Return the number of piecewise linear functions.
@@ -3613,9 +3596,7 @@ class Model:
             weights,
             doubles("prm", prm, _total(weights)),
         )
-        pos = c_int()
-        self._call(lib.BIYOS_addcone, n, *arrays, byref(pos))
-        return Cones(self, pos.value, pos.value + n, self._gen)
+        return self._added(Cones, lib.BIYOS_addcone, n, *arrays)
 
     def setconetol(
         self,
@@ -3969,9 +3950,7 @@ class Model:
             doubles("lb", lb, n),
             doubles("ub", ub, n),
         )
-        pos = c_int()
-        self._call(lib.BIYOS_addccon, n, *arrays, byref(pos))
-        return Complements(self, pos.value, pos.value + n, self._gen)
+        return self._added(Complements, lib.BIYOS_addccon, n, *arrays)
 
     def setcconbnd(
         self,
@@ -4470,6 +4449,17 @@ class Model:
         found = (c_int * n)()
         self._call(function, n, names, found)
         return list(found)
+
+    def _added(
+        self,
+        family: type[_Block],
+        function: Callable[..., int],
+        n: int,
+        *arguments: object,
+    ) -> _Block:
+        pos = c_int()
+        self._call(function, n, *arguments, byref(pos))
+        return family(self, pos.value, pos.value + n, self._gen)
 
     def _call(self, function: Callable[..., int], *arguments: object) -> None:
         with self._env._busy():
