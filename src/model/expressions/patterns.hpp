@@ -15,8 +15,8 @@ std::vector<IndexPair> jacobian_pairs(Index callback,
                                       std::span<const Index> variables,
                                       Index total);
 std::vector<IndexPair> hessian_pairs(Index callback,
-                                     std::span<const Index> first,
-                                     std::span<const Index> second,
+                                     std::span<const Index> rows,
+                                     std::span<const Index> columns,
                                      Index total);
 
 }

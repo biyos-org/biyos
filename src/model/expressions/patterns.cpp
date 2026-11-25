@@ -111,16 +111,16 @@ std::vector<IndexPair> jacobian_pairs(Index callback,
 }
 
 std::vector<IndexPair> hessian_pairs(Index callback,
-                                     std::span<const Index> first,
-                                     std::span<const Index> second,
+                                     std::span<const Index> rows,
+                                     std::span<const Index> columns,
                                      Index total)
 {
-    check_sides(first, second, "first and second variables");
+    check_sides(rows, columns, "first and second variables");
     std::vector<IndexPair> pairs;
-    pairs.reserve(first.size());
-    for (std::size_t k = 0; k < first.size(); ++k)
+    pairs.reserve(rows.size());
+    for (std::size_t k = 0; k < rows.size(); ++k)
     {
-        const IndexPair pair{.row = first[k], .column = second[k]};
+        const IndexPair pair{.row = rows[k], .column = columns[k]};
         const std::string fault = pair_fault(pair, total);
         if (!fault.empty())
         {

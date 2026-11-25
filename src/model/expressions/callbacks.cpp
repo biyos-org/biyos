@@ -89,12 +89,12 @@ void Model::set_callback_jacobian(Index callback,
 }
 
 void Model::set_callback_hessian(Index callback,
-                                 std::span<const Index> first,
-                                 std::span<const Index> second,
+                                 std::span<const Index> rows,
+                                 std::span<const Index> columns,
                                  UserFunction hessian)
 {
     Callback &held = changed(callback);
-    held.hessian_pairs = hessian_pairs(callback, first, second, n_variables());
+    held.hessian_pairs = hessian_pairs(callback, rows, columns, n_variables());
     held.hessian = std::move(hessian);
 }
 
