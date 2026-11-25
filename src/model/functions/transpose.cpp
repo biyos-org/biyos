@@ -26,7 +26,7 @@ std::span<const LinearTerm> within(std::span<const LinearTerm> terms, Index star
 
 template <typename T> void put(std::span<T> out, Offset at, T value)
 {
-    const auto k = static_cast<std::size_t>(at);
+    const auto k = to_size(at);
     if (k < out.size())
     {
         out[k] = value;
@@ -38,13 +38,13 @@ template <typename T> void put(std::span<T> out, Offset at, T value)
 std::vector<Offset> variable_starts(const Model &model, Index start, Index stop)
 {
     check_span("variable", start, stop, model.n_variables());
-    std::vector<Offset> starts(static_cast<std::size_t>(stop - start) + 1, 0);
+    std::vector<Offset> starts(to_size(stop - start) + 1, 0);
     for (Index function = 0; function < model.n_functions(); ++function)
     {
         for (const LinearTerm &term :
              within(model.linear_terms(function, function + 1), start, stop))
         {
-            ++starts[static_cast<std::size_t>(term.variable - start) + 1];
+            ++starts[to_size(term.variable - start) + 1];
         }
     }
     std::partial_sum(starts.begin(), starts.end(), starts.begin());
@@ -62,13 +62,13 @@ void variable_terms(const Model &model,
         return;
     }
     std::vector<Offset> next(starts.begin(), starts.end() - 1);
-    const auto end = start + static_cast<Index>(next.size());
+    const auto end = start + to_index(next.size());
     for (Index function = 0; function < model.n_functions(); ++function)
     {
         for (const LinearTerm &term :
              within(model.linear_terms(function, function + 1), start, end))
         {
-            const Offset at = next[static_cast<std::size_t>(term.variable - start)]++;
+            const Offset at = next[to_size(term.variable - start)]++;
             put(functions, at, function);
             put(values, at, term.coefficient);
         }

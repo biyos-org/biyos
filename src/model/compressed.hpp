@@ -21,8 +21,8 @@ void check_shape(std::size_t functions,
 template <typename T>
 std::span<T> slice(std::span<T> terms, std::span<const Offset> starts, std::size_t k)
 {
-    const auto begin = static_cast<std::size_t>(starts[k]);
-    const auto end = static_cast<std::size_t>(starts[k + 1]);
+    const auto begin = to_size(starts[k]);
+    const auto end = to_size(starts[k + 1]);
     return terms.subspan(begin, end - begin);
 }
 
@@ -48,14 +48,14 @@ void clear_parts(std::vector<Offset> &ends,
     {
         return;
     }
-    const auto start = static_cast<std::size_t>(functions.front());
-    std::size_t read = start == 0 ? 0 : static_cast<std::size_t>(ends[start - 1]);
+    const auto start = to_size(functions.front());
+    std::size_t read = start == 0 ? 0 : to_size(ends[start - 1]);
     std::size_t write = read;
     std::size_t next = 0;
     for (std::size_t function = start; function < ends.size(); ++function)
     {
-        const auto end = static_cast<std::size_t>(ends[function]);
-        if (next < functions.size() && static_cast<std::size_t>(functions[next]) == function)
+        const auto end = to_size(ends[function]);
+        if (next < functions.size() && to_size(functions[next]) == function)
         {
             ++next;
         }
@@ -64,7 +64,7 @@ void clear_parts(std::vector<Offset> &ends,
             write = keep_part(std::span(items), read, end, write);
         }
         read = end;
-        ends[function] = static_cast<Offset>(write);
+        ends[function] = to_offset(write);
     }
     items.resize(write);
 }

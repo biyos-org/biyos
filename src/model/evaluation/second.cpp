@@ -19,16 +19,6 @@ namespace biyos
 namespace
 {
 
-std::size_t at(Offset offset) noexcept
-{
-    return static_cast<std::size_t>(offset);
-}
-
-std::size_t count_of(Index count) noexcept
-{
-    return static_cast<std::size_t>(count);
-}
-
 void require_products(const Model &model)
 {
     for (Index c = 0; c < model.n_callbacks(); ++c)
@@ -77,10 +67,10 @@ void Evaluation::product(const Lookup &lookup,
 
 void Evaluation::take_weights(std::span<const double> w)
 {
-    check_size("w", w.size(), count_of(model_.n_functions()));
+    check_size("w", w.size(), to_size(model_.n_functions()));
     for (std::size_t e = 0; e < root_weights_.size(); ++e)
     {
-        root_weights_[e] = w[count_of(compiled_.rooted[e])];
+        root_weights_[e] = w[to_size(compiled_.rooted[e])];
     }
 }
 
@@ -89,7 +79,7 @@ std::span<const double> Evaluation::covered_weights(const Callback &callback,
 {
     for (std::size_t i = 0; i < callback.covered.size(); ++i)
     {
-        user_weights_[i] = w[count_of(callback.covered[i])];
+        user_weights_[i] = w[to_size(callback.covered[i])];
     }
     return std::span(user_weights_).first(callback.covered.size());
 }
@@ -104,9 +94,9 @@ void Evaluation::term_hessian(std::span<const double> w, std::span<double> h) co
     {
         for (Offset t = slots.quadratic_starts[k]; t < slots.quadratic_starts[k + 1]; ++t)
         {
-            const QuadraticTerm &term = quadratic[at(t)];
+            const QuadraticTerm &term = quadratic[to_size(t)];
             const double scale = term.row == term.column ? 2.0 : 1.0;
-            h[at(declared[at(t)])] += scale * w[k] * term.coefficient;
+            h[to_size(declared[to_size(t)])] += scale * w[k] * term.coefficient;
         }
     }
 }
@@ -122,10 +112,10 @@ void Evaluation::term_product(std::span<const double> w,
     {
         for (Offset t = slots.quadratic_starts[k]; t < slots.quadratic_starts[k + 1]; ++t)
         {
-            const QuadraticTerm &term = quadratic[at(t)];
+            const QuadraticTerm &term = quadratic[to_size(t)];
             const double scale = w[k] * term.coefficient;
-            hv[count_of(term.row)] += scale * v[count_of(term.column)];
-            hv[count_of(term.column)] += scale * v[count_of(term.row)];
+            hv[to_size(term.row)] += scale * v[to_size(term.column)];
+            hv[to_size(term.column)] += scale * v[to_size(term.row)];
         }
     }
 }
@@ -141,10 +131,10 @@ void Evaluation::add_user_hessian(const Checker &checker,
         const Callback &callback = model_.callback(c);
         const std::span<double> out = std::span(out_).first(callback.hessian_pairs.size());
         run(checker, callback, Part::Hessian, request_of(c, x, covered_weights(callback, w)), out);
-        const std::size_t begin = at(compiled_.declared.callback_starts[count_of(c)]);
+        const std::size_t begin = to_size(compiled_.declared.callback_starts[to_size(c)]);
         for (std::size_t p = 0; p < out.size(); ++p)
         {
-            h[at(declared[begin + p])] += out[p];
+            h[to_size(declared[begin + p])] += out[p];
         }
     }
 }
@@ -183,10 +173,10 @@ void Evaluation::add_pairs_product(const Callback &callback,
     for (std::size_t p = 0; p < out.size(); ++p)
     {
         const IndexPair &pair = callback.hessian_pairs[p];
-        hv[count_of(pair.row)] += out[p] * v[count_of(pair.column)];
+        hv[to_size(pair.row)] += out[p] * v[to_size(pair.column)];
         if (pair.row != pair.column)
         {
-            hv[count_of(pair.column)] += out[p] * v[count_of(pair.row)];
+            hv[to_size(pair.column)] += out[p] * v[to_size(pair.row)];
         }
     }
 }

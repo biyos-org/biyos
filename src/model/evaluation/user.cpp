@@ -140,7 +140,7 @@ std::size_t widest(const Model &model)
                            callback.covered.size(),
                            callback.jacobian_pairs.size(),
                            callback.hessian_pairs.size(),
-                           static_cast<std::size_t>(model.n_variables())});
+                           to_size(model.n_variables())});
     }
     return size;
 }

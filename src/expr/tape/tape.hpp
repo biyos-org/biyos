@@ -14,7 +14,7 @@ namespace biyos
 {
 
 constexpr std::size_t kCacheBytes = 32 * 1024;
-constexpr Offset kBudget = static_cast<Offset>(kCacheBytes / sizeof(double));
+constexpr Offset kBudget = to_offset(kCacheBytes / sizeof(double));
 
 struct Instruction
 {

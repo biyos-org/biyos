@@ -18,10 +18,10 @@ std::vector<Index> renumbering(std::string_view noun, Index total, std::span<con
     {
         check_index(noun, index, total);
     }
-    std::vector<Index> map(static_cast<std::size_t>(total), 0);
+    std::vector<Index> map(to_size(total), 0);
     for (const Index index : deleted)
     {
-        Index &entry = map[static_cast<std::size_t>(index)];
+        Index &entry = map[to_size(index)];
         if (entry == kDeleted)
         {
             throw Error(ErrorKind::InvalidArgument,

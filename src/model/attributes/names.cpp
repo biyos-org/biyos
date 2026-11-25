@@ -22,11 +22,6 @@ namespace biyos
 namespace
 {
 
-std::size_t slot(Index index) noexcept
-{
-    return static_cast<std::size_t>(index);
-}
-
 std::string at_byte(std::string_view fault, std::size_t at)
 {
     return "name " + std::string(fault) + " at byte " + text_of(at);
@@ -119,7 +114,7 @@ Names &Names::operator=(const Names &other)
 
 const std::string *Names::name(Index index) const noexcept
 {
-    return slot(index) < names_.size() ? names_[slot(index)] : nullptr;
+    return to_size(index) < names_.size() ? names_[to_size(index)] : nullptr;
 }
 
 Holders Names::find(std::string_view name) const
@@ -156,7 +151,7 @@ void Names::set(std::string_view noun,
     for (std::size_t j = 0; j < entries.size(); ++j)
     {
         const Index target = indices[entries[j]];
-        given[j] = names_[slot(target)];
+        given[j] = names_[to_size(target)];
         acquire(target, names[entries[j]], fresh);
     }
     for (std::size_t j = 0; j < entries.size(); ++j)
@@ -173,10 +168,10 @@ void Names::remove(std::string_view noun, Index size, std::span<const Index> ind
     }
     for (const Index i : indices)
     {
-        if (slot(i) < names_.size())
+        if (to_size(i) < names_.size())
         {
-            release(i, names_[slot(i)]);
-            names_[slot(i)] = nullptr;
+            release(i, names_[to_size(i)]);
+            names_[to_size(i)] = nullptr;
         }
     }
 }
@@ -186,7 +181,7 @@ void Names::renumber(std::span<const Index> map) noexcept
     std::size_t kept = 0;
     for (std::size_t k = 0; k < names_.size(); ++k)
     {
-        const auto index = static_cast<Index>(k);
+        const auto index = to_index(k);
         if (map[k] == kDeleted)
         {
             release(index, names_[k]);
@@ -217,7 +212,7 @@ Names::Table Names::missing(std::span<const std::string_view> names,
 
 void Names::grow(Index index)
 {
-    names_.resize((std::max)(names_.size(), slot(index) + 1));
+    names_.resize((std::max)(names_.size(), to_size(index) + 1));
 }
 
 void Names::acquire(Index index, std::string_view name, Table &fresh)
@@ -229,7 +224,7 @@ void Names::acquire(Index index, std::string_view name, Table &fresh)
     }
     found->second.count += 1;
     found->second.index_sum += index;
-    names_[slot(index)] = &found->first;
+    names_[to_size(index)] = &found->first;
 }
 
 void Names::shift(Index from, Index to, const std::string *name) noexcept

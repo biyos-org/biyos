@@ -35,11 +35,6 @@ struct Chunk
     std::size_t count;
 };
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 [[noreturn]] void refuse(std::string object, std::string reason)
 {
     throw Error(ErrorKind::InvalidArgument, std::move(object), std::move(reason));
@@ -59,8 +54,9 @@ void check_size(std::string_view object,
 
 std::span<const Index> variables_of(const Pattern &pattern, Offset e) noexcept
 {
-    const Offset begin = pattern.starts[at(e)];
-    return std::span(pattern.variables).subspan(at(begin), at(pattern.starts[at(e) + 1] - begin));
+    const Offset begin = pattern.starts[to_size(e)];
+    return std::span(pattern.variables)
+        .subspan(to_size(begin), to_size(pattern.starts[to_size(e) + 1] - begin));
 }
 
 std::vector<std::size_t> widths_of(std::size_t lanes)
@@ -94,7 +90,7 @@ void seed(std::span<const Index> variables, Chunk chunk, Pass &pass, double valu
 {
     for (std::size_t l = 0; l < chunk.count; ++l)
     {
-        const auto variable = static_cast<std::size_t>(variables[chunk.first + l]);
+        const auto variable = to_size(variables[chunk.first + l]);
         pass.seeds[variable * pass.lanes + l] = value;
     }
 }
@@ -103,9 +99,7 @@ void clear(std::span<const Index> variables, Pass &pass) noexcept
 {
     for (const Index variable : variables)
     {
-        std::ranges::fill(
-            row(std::span(pass.second.gradient), static_cast<std::size_t>(variable), pass.lanes),
-            0.0);
+        std::ranges::fill(row(std::span(pass.second.gradient), to_size(variable), pass.lanes), 0.0);
     }
 }
 
@@ -150,7 +144,7 @@ const Lower &Hessian::pattern() const noexcept
 
 void Hessian::widen(Index columns)
 {
-    const std::size_t wanted = static_cast<std::size_t>(columns) + 1;
+    const std::size_t wanted = to_size(columns) + 1;
     lower_.starts.resize((std::max)(lower_.starts.size(), wanted), lower_.starts.back());
 }
 
@@ -161,7 +155,7 @@ std::span<const Offset> Hessian::declared() const noexcept
 
 void Hessian::check(std::span<const double> point, std::span<const double> weights) const
 {
-    if (point.size() < at(tape_.variables()))
+    if (point.size() < to_size(tape_.variables()))
     {
         refuse("point",
                "size " + text_of(point.size()) + " does not cover variable " +
@@ -172,10 +166,11 @@ void Hessian::check(std::span<const double> point, std::span<const double> weigh
 
 void Hessian::add_block(Offset e, double scale, std::span<double> out) noexcept
 {
-    Pass &pass = passes_[classes_[at(e)]];
+    Pass &pass = passes_[classes_[to_size(e)]];
     const std::span<const Index> variables = variables_of(tape_.pattern(), e);
     const std::size_t size = variables.size();
-    const std::span<const Offset> blocks = std::span(map_.blocks).subspan(at(map_.starts[at(e)]));
+    const std::span<const Offset> blocks =
+        std::span(map_.blocks).subspan(to_size(map_.starts[to_size(e)]));
     for (std::size_t first = 0; first < size; first += pass.lanes)
     {
         const Chunk chunk{.first = first, .count = (std::min)(pass.lanes, size - first)};
@@ -186,8 +181,8 @@ void Hessian::add_block(Offset e, double scale, std::span<double> out) noexcept
             const std::size_t column = first + l;
             for (std::size_t a = column; a < size; ++a)
             {
-                const auto variable = static_cast<std::size_t>(variables[a]);
-                out[at(blocks[offset(size, column, a)])] +=
+                const auto variable = to_size(variables[a]);
+                out[to_size(blocks[offset(size, column, a)])] +=
                     scale * pass.second.gradient[variable * pass.lanes + l];
             }
         }
@@ -205,13 +200,12 @@ void Hessian::add_product(Offset e,
     const std::span<const Index> variables = variables_of(tape_.pattern(), e);
     for (const Index variable : variables)
     {
-        pass.seeds[static_cast<std::size_t>(variable)] =
-            direction[static_cast<std::size_t>(variable)];
+        pass.seeds[to_size(variable)] = direction[to_size(variable)];
     }
     sweep(tape_, e, pass);
     for (const Index variable : variables)
     {
-        const auto k = static_cast<std::size_t>(variable);
+        const auto k = to_size(variable);
         out[k] += scale * std::exchange(pass.second.gradient[k], 0.0);
         pass.seeds[k] = 0.0;
     }
@@ -224,14 +218,15 @@ void Hessian::values(std::span<const double> point,
     check(point, weights);
     check_size("out", out.size(), lower_.rows.size(), "the pattern size");
     std::ranges::fill(out, 0.0);
-    const std::span<const double> used = point.first(at(tape_.variables()));
+    const std::span<const double> used = point.first(to_size(tape_.variables()));
     for (Pass &pass : passes_)
     {
         broadcast(used, pass.lanes, pass.points);
     }
     for (Offset e = 0; e < tape_.roots(); ++e)
     {
-        const double scale = weights[at(elements_.roots[at(e)])] * elements_.weights[at(e)];
+        const std::size_t k = to_size(e);
+        const double scale = weights[to_size(elements_.roots[k])] * elements_.weights[k];
         if (!is_zero(scale))
         {
             add_block(e, scale, out);
@@ -249,10 +244,11 @@ void Hessian::product(std::span<const double> point,
     check_size("out", out.size(), point.size(), "the point size");
     std::ranges::fill(out, 0.0);
     Pass &pass = passes_.front();
-    broadcast(point.first(at(tape_.variables())), pass.lanes, pass.points);
+    broadcast(point.first(to_size(tape_.variables())), pass.lanes, pass.points);
     for (Offset e = 0; e < tape_.roots(); ++e)
     {
-        const double scale = weights[at(elements_.roots[at(e)])] * elements_.weights[at(e)];
+        const std::size_t k = to_size(e);
+        const double scale = weights[to_size(elements_.roots[k])] * elements_.weights[k];
         if (!is_zero(scale))
         {
             add_product(e, scale, direction, out);

@@ -1,6 +1,7 @@
 #include "io/mps/bounds.hpp"
 
 #include "core/env.hpp"
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
 #include "io/draft/draft.hpp"
@@ -172,7 +173,7 @@ void read_bound(Env &env, const Lines &lines, Vectors &vectors, Draft &draft)
     }
     const Index index = find_in(draft.column_names, lines, "column", fields[2]);
     const std::optional<double> value = checked_value(env, lines, kind, fields);
-    DraftColumn &column = draft.columns[static_cast<std::size_t>(index)];
+    DraftColumn &column = draft.columns[to_size(index)];
     apply(lines, column.lower, kind.lower, value, "lower");
     apply(lines, column.upper, kind.upper, value, "upper");
     if (kind.upper != Effect::None)

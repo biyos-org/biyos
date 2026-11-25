@@ -27,11 +27,6 @@ constexpr double kFactor = 1.0;
     throw Error(ErrorKind::InvalidArgument, "expression", reason);
 }
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 bool product_fits(double left, double right) noexcept
 {
     const bool zero = std::fpclassify(left) == FP_ZERO || std::fpclassify(right) == FP_ZERO;
@@ -65,7 +60,7 @@ void Builder::node(Offset id)
 
 void Builder::sum(double constant, std::span<const double> coefficients)
 {
-    const auto n = static_cast<Offset>(coefficients.size());
+    const auto n = to_offset(coefficients.size());
     check_shape(Operator::Sum, Payload::Coefficients, n);
     check_constant(constant);
     check_coefficients(coefficients, n);
@@ -134,7 +129,7 @@ Offset Builder::finish()
 {
     if (stack_.size() != 1)
     {
-        refuse(operand_text(static_cast<Offset>(stack_.size())) + " left, not 1");
+        refuse(operand_text(to_offset(stack_.size())) + " left, not 1");
     }
     const Offset node = resolve(0);
     pop(0);
@@ -157,19 +152,19 @@ void Builder::push(Offset node)
         .node = node,
         .op = graph_.op(node),
         .constant = 0.0,
-        .first = static_cast<Offset>(terms_.size()),
+        .first = to_offset(terms_.size()),
         .count = 0,
     });
 }
 
 std::size_t Builder::take(Offset n) const
 {
-    const auto given = static_cast<Offset>(stack_.size());
+    const auto given = to_offset(stack_.size());
     if (n > given)
     {
         refuse(operand_text(n) + " taken, " + text_of(given) + " given");
     }
-    return at(given - n);
+    return to_size(given - n);
 }
 
 Offset Builder::resolve(std::size_t position)
@@ -184,12 +179,13 @@ Offset Builder::resolve(std::size_t position)
 
 Offset Builder::append(const Operand &operand)
 {
-    const auto terms = std::span(terms_).subspan(at(operand.first), at(operand.count));
+    const auto terms = std::span(terms_).subspan(to_size(operand.first), to_size(operand.count));
     if (operand.op != Operator::Sum)
     {
         return graph_.add(operand.op, operand.constant, terms);
     }
-    const auto weights = std::span(weights_).subspan(at(operand.first), at(operand.count));
+    const auto weights =
+        std::span(weights_).subspan(to_size(operand.first), to_size(operand.count));
     return graph_.add_sum(operand.constant, terms, weights);
 }
 
@@ -218,7 +214,7 @@ bool Builder::merges(const Operand &operand, double coefficient, double constant
     }
     for (Offset k = operand.first; k < operand.first + operand.count; ++k)
     {
-        if (!product_fits(coefficient, weights_[at(k)]))
+        if (!product_fits(coefficient, weights_[to_size(k)]))
         {
             return false;
         }
@@ -238,8 +234,8 @@ void Builder::add_term(std::size_t position, double coefficient, double &constan
     constant += coefficient * operand.constant;
     for (Offset k = operand.first; k < operand.first + operand.count; ++k)
     {
-        next_terms_.push_back(terms_[at(k)]);
-        next_weights_.push_back(coefficient * weights_[at(k)]);
+        next_terms_.push_back(terms_[to_size(k)]);
+        next_weights_.push_back(coefficient * weights_[to_size(k)]);
     }
 }
 
@@ -256,14 +252,14 @@ void Builder::add_factor(std::size_t position, double &coefficient)
     coefficient *= operand.constant;
     for (Offset k = operand.first; k < operand.first + operand.count; ++k)
     {
-        next_terms_.push_back(terms_[at(k)]);
+        next_terms_.push_back(terms_[to_size(k)]);
         next_weights_.push_back(kFactor);
     }
 }
 
 void Builder::pop(std::size_t base)
 {
-    const std::size_t start = at(stack_[base].first);
+    const std::size_t start = to_size(stack_[base].first);
     stack_.resize(base);
     terms_.resize(start);
     weights_.resize(start);
@@ -271,12 +267,12 @@ void Builder::pop(std::size_t base)
 
 void Builder::replace(std::size_t base, Operator op, double constant)
 {
-    const std::size_t needed = at(stack_[base].first) + next_terms_.size();
+    const std::size_t needed = to_size(stack_[base].first) + next_terms_.size();
     make_room(terms_, needed);
     make_room(weights_, needed);
     pop(base);
-    const auto start = static_cast<Offset>(terms_.size());
-    const auto n = static_cast<Offset>(next_terms_.size());
+    const auto start = to_offset(terms_.size());
+    const auto n = to_offset(next_terms_.size());
     terms_.insert(terms_.end(), next_terms_.begin(), next_terms_.end());
     weights_.insert(weights_.end(), next_weights_.begin(), next_weights_.end());
     stack_.push_back(Operand{

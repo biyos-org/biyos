@@ -19,11 +19,6 @@ namespace biyos
 namespace
 {
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 constexpr Offset kNone = -1;
 
 template <typename T> bool inside(std::span<const T> values, const std::vector<T> &storage) noexcept
@@ -42,24 +37,24 @@ Graph::Graph(Points points) : starts_(1, 0), points_(std::move(points)) {}
 
 Offset Graph::size() const noexcept
 {
-    return static_cast<Offset>(operators_.size());
+    return to_offset(operators_.size());
 }
 
 Operator Graph::op(Offset node) const noexcept
 {
-    return operators_[at(node)];
+    return operators_[to_size(node)];
 }
 
 std::span<const Offset> Graph::children(Offset node) const noexcept
 {
-    const Offset start = starts_[at(node)];
-    const Offset n = starts_[at(node) + 1] - start;
-    return std::span(children_).subspan(at(start), at(n));
+    const Offset start = starts_[to_size(node)];
+    const Offset n = starts_[to_size(node) + 1] - start;
+    return std::span(children_).subspan(to_size(start), to_size(n));
 }
 
 double Graph::constant(Offset node) const noexcept
 {
-    const std::uint64_t payload = payloads_[at(node)];
+    const std::uint64_t payload = payloads_[to_size(node)];
     if (op(node) == Operator::Sum)
     {
         return coefficients_[payload];
@@ -69,7 +64,7 @@ double Graph::constant(Offset node) const noexcept
 
 Index Graph::variable(Offset node) const noexcept
 {
-    return static_cast<Index>(payloads_[at(node)]);
+    return static_cast<Index>(payloads_[to_size(node)]);
 }
 
 std::span<const double> Graph::coefficients(Offset node) const noexcept
@@ -78,18 +73,18 @@ std::span<const double> Graph::coefficients(Offset node) const noexcept
     {
         return {};
     }
-    const std::size_t start = payloads_[at(node)] + 1;
+    const std::size_t start = payloads_[to_size(node)] + 1;
     return std::span(coefficients_).subspan(start, children(node).size());
 }
 
 Offset Graph::pwl(Offset node) const noexcept
 {
-    return static_cast<Offset>(payloads_[at(node)]);
+    return static_cast<Offset>(payloads_[to_size(node)]);
 }
 
 Offset Graph::node_of(Index variable) const noexcept
 {
-    const auto index = static_cast<std::size_t>(variable);
+    const auto index = to_size(variable);
     return index < variable_nodes_.size() ? variable_nodes_[index] : kNone;
 }
 
@@ -114,7 +109,7 @@ Offset Graph::add(Operator op, double constant, std::span<const Offset> children
 Offset Graph::add_variable(Index variable)
 {
     check_variable(variable);
-    const auto index = static_cast<std::size_t>(variable);
+    const auto index = to_size(variable);
     if (index >= variable_nodes_.size())
     {
         variable_nodes_.resize(index + 1, kNone);
@@ -138,7 +133,7 @@ Offset Graph::add_sum(double constant,
     }
     check(Operator::Sum, Payload::Coefficients, children);
     check_constant(constant);
-    check_coefficients(coefficients, static_cast<Offset>(children.size()));
+    check_coefficients(coefficients, to_offset(children.size()));
     reserve_more(coefficients_, coefficients.size() + 1);
     const Offset node = append(Operator::Sum, coefficients_.size(), children);
     coefficients_.push_back(constant);
@@ -170,7 +165,7 @@ void Graph::renumber_variables(std::span<const Index> map) noexcept
         const Offset node = variable_nodes_[index];
         if (node != kNone)
         {
-            payloads_[at(node)] = static_cast<std::uint64_t>(map[index]);
+            payloads_[to_size(node)] = static_cast<std::uint64_t>(map[index]);
         }
         variable_nodes_[kept] = node;
         ++kept;
@@ -194,13 +189,13 @@ void Graph::truncate(const Mark &mark) noexcept
     {
         if (op(node) == Operator::Variable)
         {
-            variable_nodes_[at(variable(node))] = kNone;
+            variable_nodes_[to_size(variable(node))] = kNone;
         }
     }
-    const std::size_t nodes = at(mark.nodes);
+    const std::size_t nodes = to_size(mark.nodes);
     operators_.resize(nodes);
     payloads_.resize(nodes);
-    children_.resize(at(starts_[nodes]));
+    children_.resize(to_size(starts_[nodes]));
     starts_.resize(nodes + 1);
     coefficients_.resize(mark.coefficients);
     variable_nodes_.resize(mark.variables);
@@ -209,7 +204,7 @@ void Graph::truncate(const Mark &mark) noexcept
 
 void Graph::check(Operator op, Payload payload, std::span<const Offset> children) const
 {
-    check_shape(op, payload, static_cast<Offset>(children.size()));
+    check_shape(op, payload, to_offset(children.size()));
     for (const Offset child : children)
     {
         check_child(child, size());
@@ -231,7 +226,7 @@ Offset Graph::append(Operator op, std::uint64_t payload, std::span<const Offset>
     operators_.push_back(op);
     payloads_.push_back(payload);
     children_.insert(children_.end(), children.begin(), children.end());
-    starts_.push_back(static_cast<Offset>(children_.size()));
+    starts_.push_back(to_offset(children_.size()));
     return node;
 }
 

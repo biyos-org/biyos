@@ -20,16 +20,6 @@ namespace biyos
 namespace
 {
 
-std::size_t at(Offset offset) noexcept
-{
-    return static_cast<std::size_t>(offset);
-}
-
-Offset count_of(std::size_t size) noexcept
-{
-    return static_cast<Offset>(size);
-}
-
 template <typename Term>
 std::vector<Offset> starts_of(const Model &model,
                               std::span<const Term> (Model::*terms)(Index, Index) const)
@@ -37,7 +27,7 @@ std::vector<Offset> starts_of(const Model &model,
     std::vector<Offset> starts{0};
     for (Index k = 0; k < model.n_functions(); ++k)
     {
-        starts.push_back(starts.back() + count_of((model.*terms)(k, k + 1).size()));
+        starts.push_back(starts.back() + to_offset((model.*terms)(k, k + 1).size()));
     }
     return starts;
 }
@@ -45,7 +35,8 @@ std::vector<Offset> starts_of(const Model &model,
 std::span<const Index> row_of(const Pattern &pattern, std::size_t row) noexcept
 {
     const Offset begin = pattern.starts[row];
-    return std::span(pattern.variables).subspan(at(begin), at(pattern.starts[row + 1] - begin));
+    return std::span(pattern.variables)
+        .subspan(to_size(begin), to_size(pattern.starts[row + 1] - begin));
 }
 
 void add_terms(const Model &model, const Slots &slots, std::vector<IndexPair> &found)
@@ -54,15 +45,15 @@ void add_terms(const Model &model, const Slots &slots, std::vector<IndexPair> &f
     const std::span<const QuadraticTerm> quadratic = model.quadratic_terms(0, model.n_functions());
     for (Index k = 0; k < model.n_functions(); ++k)
     {
-        const auto row = static_cast<std::size_t>(k);
+        const auto row = to_size(k);
         for (Offset t = slots.linear_starts[row]; t < slots.linear_starts[row + 1]; ++t)
         {
-            found.push_back({.row = k, .column = linear[at(t)].variable});
+            found.push_back({.row = k, .column = linear[to_size(t)].variable});
         }
         for (Offset t = slots.quadratic_starts[row]; t < slots.quadratic_starts[row + 1]; ++t)
         {
-            found.push_back({.row = k, .column = quadratic[at(t)].row});
-            found.push_back({.row = k, .column = quadratic[at(t)].column});
+            found.push_back({.row = k, .column = quadratic[to_size(t)].row});
+            found.push_back({.row = k, .column = quadratic[to_size(t)].column});
         }
     }
 }
@@ -85,7 +76,7 @@ void add_callbacks(const Model &model, std::vector<IndexPair> &found)
         const Callback &callback = model.callback(c);
         for (const IndexPair &pair : callback.jacobian_pairs)
         {
-            const Index function = callback.covered[static_cast<std::size_t>(pair.row)];
+            const Index function = callback.covered[to_size(pair.row)];
             found.push_back({.row = function, .column = pair.column});
         }
     }
@@ -96,11 +87,11 @@ Pattern pattern_of(Index functions, std::vector<IndexPair> found)
     std::ranges::sort(found);
     const auto repeated = std::ranges::unique(found);
     found.erase(repeated.begin(), repeated.end());
-    Pattern pattern{.variables = {}, .starts = std::vector<Offset>(at(functions) + 1, 0)};
+    Pattern pattern{.variables = {}, .starts = std::vector<Offset>(to_size(functions) + 1, 0)};
     pattern.variables.reserve(found.size());
     for (const IndexPair &pair : found)
     {
-        ++pattern.starts[static_cast<std::size_t>(pair.row) + 1];
+        ++pattern.starts[to_size(pair.row) + 1];
         pattern.variables.push_back(pair.column);
     }
     std::partial_sum(pattern.starts.begin(), pattern.starts.end(), pattern.starts.begin());
@@ -109,10 +100,9 @@ Pattern pattern_of(Index functions, std::vector<IndexPair> found)
 
 Offset slot_of(const Pattern &pattern, Index function, Index variable) noexcept
 {
-    const std::span<const Index> row = row_of(pattern, static_cast<std::size_t>(function));
+    const std::span<const Index> row = row_of(pattern, to_size(function));
     const auto found = std::ranges::lower_bound(row, variable);
-    return pattern.starts[static_cast<std::size_t>(function)] +
-           static_cast<Offset>(found - row.begin());
+    return pattern.starts[to_size(function)] + static_cast<Offset>(found - row.begin());
 }
 
 void map_terms(const Model &model, Slots &slots)
@@ -122,16 +112,16 @@ void map_terms(const Model &model, Slots &slots)
     slots.linear.assign(slots.pattern.variables.size(), 0.0);
     for (Index k = 0; k < model.n_functions(); ++k)
     {
-        const auto row = static_cast<std::size_t>(k);
+        const auto row = to_size(k);
         for (Offset t = slots.linear_starts[row]; t < slots.linear_starts[row + 1]; ++t)
         {
-            const LinearTerm &term = linear[at(t)];
-            slots.linear[at(slot_of(slots.pattern, k, term.variable))] += term.coefficient;
+            const LinearTerm &term = linear[to_size(t)];
+            slots.linear[to_size(slot_of(slots.pattern, k, term.variable))] += term.coefficient;
         }
         for (Offset t = slots.quadratic_starts[row]; t < slots.quadratic_starts[row + 1]; ++t)
         {
-            slots.quadratic.push_back(slot_of(slots.pattern, k, quadratic[at(t)].row));
-            slots.quadratic.push_back(slot_of(slots.pattern, k, quadratic[at(t)].column));
+            slots.quadratic.push_back(slot_of(slots.pattern, k, quadratic[to_size(t)].row));
+            slots.quadratic.push_back(slot_of(slots.pattern, k, quadratic[to_size(t)].column));
         }
     }
 }
@@ -155,10 +145,10 @@ void map_callbacks(const Model &model, Slots &slots)
         const Callback &callback = model.callback(c);
         for (const IndexPair &pair : callback.jacobian_pairs)
         {
-            const Index function = callback.covered[static_cast<std::size_t>(pair.row)];
+            const Index function = callback.covered[to_size(pair.row)];
             slots.callbacks.push_back(slot_of(slots.pattern, function, pair.column));
         }
-        slots.callback_starts.push_back(count_of(slots.callbacks.size()));
+        slots.callback_starts.push_back(to_offset(slots.callbacks.size()));
     }
 }
 
@@ -194,14 +184,14 @@ Declared declared_of(const Model &model)
     {
         declared.entries.push_back({.row = term.row, .column = term.column});
     }
-    declared.callback_starts.push_back(count_of(declared.entries.size()));
+    declared.callback_starts.push_back(to_offset(declared.entries.size()));
     for (Index c = 0; c < model.n_callbacks(); ++c)
     {
         for (const IndexPair &pair : model.callback(c).hessian_pairs)
         {
             declared.entries.push_back({.row = pair.row, .column = pair.column});
         }
-        declared.callback_starts.push_back(count_of(declared.entries.size()));
+        declared.callback_starts.push_back(to_offset(declared.entries.size()));
     }
     return declared;
 }

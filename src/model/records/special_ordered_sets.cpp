@@ -83,27 +83,27 @@ void check_special_ordered_set(Index sos,
 
 Index Model::n_special_ordered_sets() const noexcept
 {
-    return static_cast<Index>(special_ordered_set_kinds_.size());
+    return to_index(special_ordered_set_kinds_.size());
 }
 
 SpecialOrderedSetKind Model::kind_of_special_ordered_set(Index index) const
 {
     check_index(kNoun, index, n_special_ordered_sets());
-    return special_ordered_set_kinds_[static_cast<std::size_t>(index)];
+    return special_ordered_set_kinds_[to_size(index)];
 }
 
 std::span<const Member> Model::members(Index start, Index stop) const
 {
     check_span(kNoun, start, stop, n_special_ordered_sets());
-    const auto begin = static_cast<std::size_t>(member_begin(static_cast<std::size_t>(start)));
-    const auto end = static_cast<std::size_t>(member_begin(static_cast<std::size_t>(stop)));
+    const auto begin = to_size(member_begin(to_size(start)));
+    const auto end = to_size(member_begin(to_size(stop)));
     return std::span(members_).subspan(begin, end - begin);
 }
 
 void Model::check_special_ordered_set_room(std::size_t soss, Offset members) const
 {
     check_n(kNoun, special_ordered_set_kinds_, soss);
-    if (members > static_cast<Offset>(room(members_)))
+    if (members > to_offset(room(members_)))
     {
         throw Error(ErrorKind::NoMemory, "model", "no member offset left");
     }
@@ -113,17 +113,17 @@ void Model::add_special_ordered_sets(std::span<const SpecialOrderedSetKind> kind
                                      std::span<const Offset> starts,
                                      std::span<const Member> members)
 {
-    check_special_ordered_set_room(kinds.size(), static_cast<Offset>(members.size()));
+    check_special_ordered_set_room(kinds.size(), to_offset(members.size()));
     check_shape(kinds.size(), starts, members.size());
     for (std::size_t k = 0; k < kinds.size(); ++k)
     {
-        const auto sos = static_cast<Index>(special_ordered_set_kinds_.size() + k);
+        const auto sos = to_index(special_ordered_set_kinds_.size() + k);
         check_special_ordered_set(sos, kinds[k], slice(members, starts, k), n_variables());
     }
     reserve_more(special_ordered_set_kinds_, kinds.size());
     reserve_more(special_ordered_set_ends_, kinds.size());
     reserve_more(members_, members.size());
-    const auto base = static_cast<Offset>(members_.size());
+    const auto base = to_offset(members_.size());
     special_ordered_set_kinds_.insert(special_ordered_set_kinds_.end(), kinds.begin(), kinds.end());
     for (const Offset end : starts.subspan(1))
     {

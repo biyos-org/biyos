@@ -29,11 +29,6 @@ struct Pass
     std::span<const Interval> nodes;
 };
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 [[noreturn]] void refuse(std::string object, std::string reason)
 {
     throw Error(ErrorKind::InvalidArgument, std::move(object), std::move(reason));
@@ -41,13 +36,13 @@ std::size_t at(Offset value) noexcept
 
 void check_pass(const Graph &graph, std::span<const Interval> box, std::span<const Interval> nodes)
 {
-    const auto entries = static_cast<Offset>(nodes.size());
+    const auto entries = to_offset(nodes.size());
     if (entries != graph.size())
     {
         const std::string n = text_of(graph.size());
         refuse("nodes", "size " + text_of(entries) + ", not the node count " + n);
     }
-    const auto covered = static_cast<Offset>(box.size());
+    const auto covered = to_offset(box.size());
     for (Offset node = 0; node < graph.size(); ++node)
     {
         if (graph.op(node) == Operator::Variable && graph.variable(node) >= covered)
@@ -65,17 +60,17 @@ Interval point(double value) noexcept
 
 Interval first(const Pass &pass, Offset node) noexcept
 {
-    return pass.nodes[at(pass.graph.children(node)[0])];
+    return pass.nodes[to_size(pass.graph.children(node)[0])];
 }
 
 Interval second(const Pass &pass, Offset node) noexcept
 {
-    return pass.nodes[at(pass.graph.children(node)[1])];
+    return pass.nodes[to_size(pass.graph.children(node)[1])];
 }
 
 Interval variable_of(const Pass &pass, Offset node) noexcept
 {
-    return pass.box[static_cast<std::size_t>(pass.graph.variable(node))];
+    return pass.box[to_size(pass.graph.variable(node))];
 }
 
 Interval sum_of(const Pass &pass, Offset node) noexcept
@@ -85,7 +80,7 @@ Interval sum_of(const Pass &pass, Offset node) noexcept
     Interval total = point(pass.graph.constant(node));
     for (std::size_t k = 0; k < terms.size(); ++k)
     {
-        total = total + point(weights[k]) * pass.nodes[at(terms[k])];
+        total = total + point(weights[k]) * pass.nodes[to_size(terms[k])];
     }
     return total;
 }
@@ -95,7 +90,7 @@ Interval product_of(const Pass &pass, Offset node) noexcept
     Interval total = point(pass.graph.constant(node));
     for (const Offset factor : pass.graph.children(node))
     {
-        total = total * pass.nodes[at(factor)];
+        total = total * pass.nodes[to_size(factor)];
     }
     return total;
 }
@@ -103,10 +98,10 @@ Interval product_of(const Pass &pass, Offset node) noexcept
 Interval largest(const Pass &pass, Offset node) noexcept
 {
     const std::span<const Offset> operands = pass.graph.children(node);
-    Interval best = pass.nodes[at(operands[0])];
+    Interval best = pass.nodes[to_size(operands[0])];
     for (const Offset operand : operands.subspan(1))
     {
-        best = maximum(best, pass.nodes[at(operand)]);
+        best = maximum(best, pass.nodes[to_size(operand)]);
     }
     return best;
 }
@@ -114,10 +109,10 @@ Interval largest(const Pass &pass, Offset node) noexcept
 Interval smallest(const Pass &pass, Offset node) noexcept
 {
     const std::span<const Offset> operands = pass.graph.children(node);
-    Interval best = pass.nodes[at(operands[0])];
+    Interval best = pass.nodes[to_size(operands[0])];
     for (const Offset operand : operands.subspan(1))
     {
-        best = minimum(best, pass.nodes[at(operand)]);
+        best = minimum(best, pass.nodes[to_size(operand)]);
     }
     return best;
 }
@@ -203,7 +198,7 @@ void enclose(const Graph &graph, std::span<const Interval> box, std::span<Interv
     const Pass pass{.graph = graph, .box = box, .nodes = nodes};
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        nodes[at(node)] = enclosure(pass, node);
+        nodes[to_size(node)] = enclosure(pass, node);
     }
 }
 

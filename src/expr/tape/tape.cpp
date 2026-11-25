@@ -37,16 +37,6 @@ enum class Form
     Table,
 };
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
-Offset count_of(std::size_t value) noexcept
-{
-    return static_cast<Offset>(value);
-}
-
 Form form_of(Operator op) noexcept
 {
     switch (op)
@@ -93,7 +83,7 @@ std::span<const Offset> part(std::span<const Offset> items,
                              std::span<const Offset> firsts,
                              std::size_t k) noexcept
 {
-    return items.subspan(at(firsts[k]), at(firsts[k + 1] - firsts[k]));
+    return items.subspan(to_size(firsts[k]), to_size(firsts[k + 1] - firsts[k]));
 }
 
 Offset variables_of(const Block &block) noexcept
@@ -126,13 +116,13 @@ std::vector<std::uint32_t> places_of(std::span<const Instruction> instructions)
 Offset set_origins(std::span<Block> blocks, Offset prepass) noexcept
 {
     Offset total = 0;
-    for (Block &block : blocks.first(at(prepass)))
+    for (Block &block : blocks.first(to_size(prepass)))
     {
         block.origin = total;
         total += block.places.back();
     }
     Offset widest = 0;
-    for (Block &block : blocks.subspan(at(prepass)))
+    for (Block &block : blocks.subspan(to_size(prepass)))
     {
         block.origin = total;
         widest = (std::max)(widest, Offset{block.places.back()});
@@ -165,18 +155,18 @@ class Compiler
 
 Compiler::Compiler(const Graph &graph, const Plan &plan)
     : graph_(graph), plan_(plan), layout_(graph, plan), locator_(graph, plan.position, layout_),
-      owners_(at(graph.points().size()), kNone), places_(at(graph.points().size()), 0)
+      owners_(to_size(graph.points().size()), kNone), places_(to_size(graph.points().size()), 0)
 {
 }
 
 std::vector<Block> Compiler::blocks(std::span<const Offset> roots, const Reach &reach)
 {
     std::vector<Block> blocks;
-    const Offset prepass = count_of(plan_.prepass.size()) - 1;
+    const Offset prepass = to_offset(plan_.prepass.size()) - 1;
     for (std::size_t k = 0; k + 1 < plan_.prepass.size(); ++k)
     {
         const std::span<const Offset> outputs = part(plan_.pinned, plan_.prepass, k);
-        Block pinned = compile(count_of(k), outputs, plan_.prepass[k]);
+        Block pinned = compile(to_offset(k), outputs, plan_.prepass[k]);
         locator_.locate(outputs, pinned);
         read_children(graph_, layout_, outputs, pinned);
         blocks.push_back(std::move(pinned));
@@ -184,7 +174,7 @@ std::vector<Block> Compiler::blocks(std::span<const Offset> roots, const Reach &
     for (std::size_t k = 0; k + 1 < plan_.partitions.size(); ++k)
     {
         const std::span<const Offset> outputs = part(roots, plan_.partitions, k);
-        Block partition = compile(prepass + count_of(k), outputs, plan_.partitions[k]);
+        Block partition = compile(prepass + to_offset(k), outputs, plan_.partitions[k]);
         locator_.locate(outputs, partition);
         read_routes(reach, partition);
         blocks.push_back(std::move(partition));
@@ -218,7 +208,7 @@ Block Compiler::compile(Offset index, std::span<const Offset> outputs, Offset st
     }
     for (const Offset load : layout_.loads())
     {
-        block.loads.push_back(plan_.position[at(load)]);
+        block.loads.push_back(plan_.position[to_size(load)]);
     }
     for (const Offset output : outputs)
     {
@@ -292,7 +282,7 @@ std::uint64_t Compiler::weights(Offset node, Block &block) const
 
 std::uint64_t Compiler::points(Offset node, Block &block)
 {
-    const std::size_t pwl = at(graph_.pwl(node));
+    const std::size_t pwl = to_size(graph_.pwl(node));
     if (owners_[pwl] != index_)
     {
         const Pwl table = graph_.points().pwl(graph_.pwl(node));
@@ -307,7 +297,7 @@ std::uint64_t Compiler::points(Offset node, Block &block)
 }
 
 Tape::Tape(const Graph &graph, std::span<const Offset> roots, Offset budget)
-    : roots_(count_of(roots.size()))
+    : roots_(to_offset(roots.size()))
 {
     for (const Offset root : roots)
     {
@@ -316,8 +306,8 @@ Tape::Tape(const Graph &graph, std::span<const Offset> roots, Offset budget)
     const Plan plan = plan_of(graph, roots, budget);
     reach_ = reach_of(graph, plan.position, roots);
     blocks_ = Compiler(graph, plan).blocks(roots, reach_);
-    pinned_ = count_of(plan.pinned.size());
-    prepass_ = count_of(plan.prepass.size()) - 1;
+    pinned_ = to_offset(plan.pinned.size());
+    prepass_ = to_offset(plan.prepass.size()) - 1;
     partials_ = set_origins(blocks_, prepass_);
     for (const Block &block : blocks_)
     {
@@ -362,13 +352,13 @@ std::span<const Run> Tape::runs(Offset root) const
     {
         throw Error(ErrorKind::InvalidArgument, "tape", "root " + text_of(root) + " is unknown");
     }
-    const std::span<const Block> partitions = std::span(blocks_).subspan(at(prepass_));
+    const std::span<const Block> partitions = std::span(blocks_).subspan(to_size(prepass_));
     const auto after = std::ranges::upper_bound(partitions, root, {}, &Block::begin);
     const Block &block = *(after - 1);
-    const std::size_t output = at(root - block.begin);
+    const std::size_t output = to_size(root - block.begin);
     const Offset begin = block.starts[output];
     const Offset end = block.starts[output + 1];
-    return std::span(block.runs).subspan(at(begin), at(end - begin));
+    return std::span(block.runs).subspan(to_size(begin), to_size(end - begin));
 }
 
 const Pattern &Tape::pattern() const noexcept
@@ -378,9 +368,9 @@ const Pattern &Tape::pattern() const noexcept
 
 std::span<const Range> Tape::route(Offset root) const noexcept
 {
-    const Offset begin = reach_.route.starts[at(root)];
-    const Offset end = reach_.route.starts[at(root) + 1];
-    return std::span(reach_.route.runs).subspan(at(begin), at(end - begin));
+    const Offset begin = reach_.route.starts[to_size(root)];
+    const Offset end = reach_.route.starts[to_size(root) + 1];
+    return std::span(reach_.route.runs).subspan(to_size(begin), to_size(end - begin));
 }
 
 Offset Tape::partials() const noexcept

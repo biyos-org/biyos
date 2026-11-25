@@ -14,19 +14,14 @@ namespace biyos
 namespace
 {
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 std::vector<Offset> starts_of(const Graph &graph)
 {
-    std::vector<Offset> starts(at(graph.size()) + 1, 0);
+    std::vector<Offset> starts(to_size(graph.size()) + 1, 0);
     for (Offset node = 0; node < graph.size(); ++node)
     {
         for (const Offset child : graph.children(node))
         {
-            ++starts[at(child) + 1];
+            ++starts[to_size(child) + 1];
         }
     }
     std::partial_sum(starts.begin(), starts.end(), starts.begin());
@@ -35,13 +30,13 @@ std::vector<Offset> starts_of(const Graph &graph)
 
 std::vector<Offset> parents_of(const Graph &graph, const std::vector<Offset> &starts)
 {
-    std::vector<Offset> parents(at(starts.back()));
+    std::vector<Offset> parents(to_size(starts.back()));
     std::vector<Offset> next(starts.begin(), starts.end() - 1);
     for (Offset node = 0; node < graph.size(); ++node)
     {
         for (const Offset child : graph.children(node))
         {
-            parents[at(next[at(child)]++)] = node;
+            parents[to_size(next[to_size(child)]++)] = node;
         }
     }
     return parents;
@@ -56,14 +51,14 @@ Parents::Parents(const Graph &graph)
 
 Offset Parents::size() const noexcept
 {
-    return static_cast<Offset>(starts_.size() - 1);
+    return to_offset(starts_.size() - 1);
 }
 
 std::span<const Offset> Parents::of(Offset node) const noexcept
 {
-    const Offset start = starts_[at(node)];
-    const Offset n = starts_[at(node) + 1] - start;
-    return std::span(parents_).subspan(at(start), at(n));
+    const Offset start = starts_[to_size(node)];
+    const Offset n = starts_[to_size(node) + 1] - start;
+    return std::span(parents_).subspan(to_size(start), to_size(n));
 }
 
 }

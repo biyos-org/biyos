@@ -18,16 +18,11 @@ namespace biyos
 namespace
 {
 
-std::size_t at(Index index) noexcept
-{
-    return static_cast<std::size_t>(index);
-}
-
 void check_use(Index function, std::string_view user, std::size_t index, std::span<const Index> map)
 {
-    if (map[at(function)] == kDeleted)
+    if (map[to_size(function)] == kDeleted)
     {
-        const std::string reason = "used by " + item(user, static_cast<Index>(index));
+        const std::string reason = "used by " + item(user, to_index(index));
         throw Error(ErrorKind::InUse, item("function", function), reason);
     }
 }
@@ -48,7 +43,7 @@ void check_cones(std::span<const Offset> ends,
     std::size_t begin = 0;
     for (std::size_t cone = 0; cone < ends.size(); ++cone)
     {
-        const auto end = static_cast<std::size_t>(ends[cone]);
+        const auto end = to_size(ends[cone]);
         for (const Index function : functions.subspan(begin, end - begin))
         {
             check_use(function, noun_of(Family::Cone), cone, map);
@@ -79,7 +74,7 @@ void check_callbacks(std::span<const Callback> callbacks, std::span<const Index>
 
 void renumber(Index &function, std::span<const Index> map) noexcept
 {
-    function = map[at(function)];
+    function = map[to_size(function)];
 }
 
 void renumber_all(std::span<Index> functions, std::span<const Index> map) noexcept

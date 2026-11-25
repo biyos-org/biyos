@@ -167,7 +167,7 @@ void check(Index index, const GivenCone &cone, Index functions, std::vector<Inde
 template <typename T>
 void check_more(const std::vector<T> &items, Offset added, std::string_view part)
 {
-    if (added > static_cast<Offset>(room(items)))
+    if (added > to_offset(room(items)))
     {
         throw Error(ErrorKind::NoMemory, "model", "no cone " + std::string(part) + " offset left");
     }
@@ -175,7 +175,7 @@ void check_more(const std::vector<T> &items, Offset added, std::string_view part
 
 Offset begin_at(const std::vector<Offset> &ends, Index cone) noexcept
 {
-    return cone == 0 ? 0 : ends[static_cast<std::size_t>(cone - 1)];
+    return cone == 0 ? 0 : ends[to_size(cone - 1)];
 }
 
 template <typename T>
@@ -184,8 +184,8 @@ std::span<const T> part(const std::vector<T> &items,
                         Index start,
                         Index stop)
 {
-    const auto begin = static_cast<std::size_t>(begin_at(ends, start));
-    const auto end = static_cast<std::size_t>(begin_at(ends, stop));
+    const auto begin = to_size(begin_at(ends, start));
+    const auto end = to_size(begin_at(ends, stop));
     return std::span(items).subspan(begin, end - begin);
 }
 
@@ -195,7 +195,7 @@ void extend(std::vector<Offset> &ends,
             std::span<const Offset> starts,
             std::span<const T> added)
 {
-    const auto base = static_cast<Offset>(items.size());
+    const auto base = to_offset(items.size());
     for (const Offset end : starts.subspan(1))
     {
         ends.push_back(base + end);
@@ -207,14 +207,14 @@ void extend(std::vector<Offset> &ends,
 
 Index Model::n_cones() const noexcept
 {
-    return static_cast<Index>(cone_kinds_.size());
+    return to_index(cone_kinds_.size());
 }
 
 std::span<const ConeKind> Model::cone_kinds(Index start, Index stop) const
 {
     check_span(kNoun, start, stop, n_cones());
-    const auto offset = static_cast<std::size_t>(start);
-    return std::span(cone_kinds_).subspan(offset, static_cast<std::size_t>(stop - start));
+    const auto offset = to_size(start);
+    return std::span(cone_kinds_).subspan(offset, to_size(stop - start));
 }
 
 std::span<const Index> Model::cone_functions(Index start, Index stop) const
@@ -242,9 +242,7 @@ void Model::add_cones(std::span<const ConeKind> kinds,
                       std::span<const Offset> parameter_starts,
                       std::span<const double> parameters)
 {
-    check_cone_room(kinds.size(),
-                    static_cast<Offset>(functions.size()),
-                    static_cast<Offset>(parameters.size()));
+    check_cone_room(kinds.size(), to_offset(functions.size()), to_offset(parameters.size()));
     check_shape(kinds.size(), starts, functions.size());
     check_shape(kinds.size(), parameter_starts, parameters.size(), "prmoff");
     std::vector<Index> sorted;
@@ -255,7 +253,7 @@ void Model::add_cones(std::span<const ConeKind> kinds,
             .functions = slice(functions, starts, k),
             .parameters = slice(parameters, parameter_starts, k),
         };
-        check(static_cast<Index>(cone_kinds_.size() + k), cone, n_functions(), sorted);
+        check(to_index(cone_kinds_.size() + k), cone, n_functions(), sorted);
     }
     reserve_more(cone_kinds_, kinds.size());
     reserve_more(cone_ends_, kinds.size());

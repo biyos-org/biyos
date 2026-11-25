@@ -20,16 +20,6 @@ namespace
 
 constexpr Offset kSeveral = -2;
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
-Offset count_of(std::size_t value) noexcept
-{
-    return static_cast<Offset>(value);
-}
-
 void merge(Offset &label, Offset other) noexcept
 {
     if (label == kUnset)
@@ -90,10 +80,10 @@ class Reacher
 Reacher::Reacher(const Graph &graph,
                  std::span<const Offset> positions,
                  std::span<const Offset> roots)
-    : graph_(graph), positions_(positions), roots_(roots), labels_(at(graph.size()), kUnset),
-      regions_(at(graph.size()), kUnset), heads_(at(graph.size()), false),
-      seen_(at(graph.size()), false), chosen_(at(graph.size()), kUnset),
-      names_of_(at(graph.size()), kUnset), runs_of_(at(graph.size()), kUnset)
+    : graph_(graph), positions_(positions), roots_(roots), labels_(to_size(graph.size()), kUnset),
+      regions_(to_size(graph.size()), kUnset), heads_(to_size(graph.size()), false),
+      seen_(to_size(graph.size()), false), chosen_(to_size(graph.size()), kUnset),
+      names_of_(to_size(graph.size()), kUnset), runs_of_(to_size(graph.size()), kUnset)
 {
 }
 
@@ -116,15 +106,15 @@ void Reacher::label()
 {
     for (std::size_t r = 0; r < roots_.size(); ++r)
     {
-        merge(labels_[at(roots_[r])], count_of(r));
+        merge(labels_[to_size(roots_[r])], to_offset(r));
     }
     for (const Offset root : roots_)
     {
-        heads_[at(root)] = true;
+        heads_[to_size(root)] = true;
     }
     for (Offset node = graph_.size() - 1; node >= 0; --node)
     {
-        if (labels_[at(node)] != kUnset)
+        if (labels_[to_size(node)] != kUnset)
         {
             divide(node);
         }
@@ -133,23 +123,23 @@ void Reacher::label()
 
 void Reacher::divide(Offset node)
 {
-    const Offset label = labels_[at(node)];
-    if (label == kSeveral && heads_[at(node)])
+    const Offset label = labels_[to_size(node)];
+    if (label == kSeveral && heads_[to_size(node)])
     {
-        regions_[at(node)] = node;
+        regions_[to_size(node)] = node;
     }
-    heads_[at(node)] = label == kSeveral && regions_[at(node)] == node;
+    heads_[to_size(node)] = label == kSeveral && regions_[to_size(node)] == node;
     for (const Offset child : graph_.children(node))
     {
-        Offset &region = regions_[at(child)];
-        merge(labels_[at(child)], label);
-        if (label != kSeveral || (region != kUnset && region != regions_[at(node)]))
+        Offset &region = regions_[to_size(child)];
+        merge(labels_[to_size(child)], label);
+        if (label != kSeveral || (region != kUnset && region != regions_[to_size(node)]))
         {
-            heads_[at(child)] = true;
+            heads_[to_size(child)] = true;
         }
         if (region == kUnset && label == kSeveral)
         {
-            region = regions_[at(node)];
+            region = regions_[to_size(node)];
         }
     }
 }
@@ -158,11 +148,11 @@ void Reacher::remember()
 {
     for (Offset node = 0; node < graph_.size(); ++node)
     {
-        if (heads_[at(node)])
+        if (heads_[to_size(node)])
         {
             collect(node);
-            names_of_[at(node)] = keep(names_, names_of_, variables_, own_names_);
-            runs_of_[at(node)] = keep(runs_, runs_of_, pieces_, own_runs_);
+            names_of_[to_size(node)] = keep(names_, names_of_, variables_, own_names_);
+            runs_of_[to_size(node)] = keep(runs_, runs_of_, pieces_, own_runs_);
         }
     }
 }
@@ -184,7 +174,7 @@ void Reacher::link(const std::vector<Offset> &memo_of)
     links_.clear();
     for (const Offset head : met_heads_)
     {
-        links_.push_back(memo_of[at(head)]);
+        links_.push_back(memo_of[to_size(head)]);
     }
     std::ranges::sort(links_);
     links_.erase(std::ranges::unique(links_).begin(), links_.end());
@@ -192,7 +182,7 @@ void Reacher::link(const std::vector<Offset> &memo_of)
 
 void Reacher::trace(Offset root, Reach &reach)
 {
-    if (heads_[at(root)])
+    if (heads_[to_size(root)])
     {
         variables_.clear();
         pieces_.clear();
@@ -209,8 +199,8 @@ void Reacher::trace(Offset root, Reach &reach)
     settle(variables_, reach.pattern.variables);
     radix_.sort(pieces_);
     join(pieces_, reach.route.runs);
-    reach.pattern.starts.push_back(count_of(reach.pattern.variables.size()));
-    reach.route.starts.push_back(count_of(reach.route.runs.size()));
+    reach.pattern.starts.push_back(to_offset(reach.pattern.variables.size()));
+    reach.route.starts.push_back(to_offset(reach.route.runs.size()));
 }
 
 void Reacher::collect(Offset start)
@@ -227,11 +217,11 @@ void Reacher::collect(Offset start)
         stack_.pop_back();
         for (const Offset child : graph_.children(node))
         {
-            if (heads_[at(child)])
+            if (heads_[to_size(child)])
             {
                 choose(child);
             }
-            else if (!seen_[at(child)])
+            else if (!seen_[to_size(child)])
             {
                 take(child);
                 stack_.push_back(child);
@@ -242,12 +232,12 @@ void Reacher::collect(Offset start)
 
 void Reacher::take(Offset node)
 {
-    seen_[at(node)] = true;
+    seen_[to_size(node)] = true;
     if (graph_.op(node) == Operator::Variable)
     {
         variables_.push_back(graph_.variable(node));
     }
-    const Offset position = positions_[at(node)];
+    const Offset position = positions_[to_size(node)];
     if (position != kUnset)
     {
         pieces_.push_back({.begin = position, .end = position + 1});
@@ -256,9 +246,9 @@ void Reacher::take(Offset node)
 
 void Reacher::choose(Offset head)
 {
-    if (chosen_[at(head)] != walk_)
+    if (chosen_[to_size(head)] != walk_)
     {
-        chosen_[at(head)] = walk_;
+        chosen_[to_size(head)] = walk_;
         met_heads_.push_back(head);
     }
 }

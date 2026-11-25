@@ -88,7 +88,7 @@ std::optional<Index> objective_row(const Draft &draft) noexcept
     {
         if (draft.rows[k].sense == RowSense::Free)
         {
-            return static_cast<Index>(k);
+            return to_index(k);
         }
     }
     return std::nullopt;
@@ -124,14 +124,14 @@ void add_functions(Model &model, const Draft &draft)
     std::vector<Offset> starts(draft.rows.size() + 1, 0);
     for (const DraftEntry &entry : draft.entries)
     {
-        ++starts[static_cast<std::size_t>(entry.row) + 1];
+        ++starts[to_size(entry.row) + 1];
     }
     std::partial_sum(starts.begin(), starts.end(), starts.begin());
     std::vector<Offset> next(starts.begin(), starts.end() - 1);
     std::vector<LinearTerm> terms(draft.entries.size());
     for (const DraftEntry &entry : draft.entries)
     {
-        const auto at = static_cast<std::size_t>(next[static_cast<std::size_t>(entry.row)]++);
+        const auto at = to_size(next[to_size(entry.row)]++);
         terms[at] = LinearTerm{.variable = entry.column, .coefficient = entry.value};
     }
     model.add_functions(constants, starts, std::move(terms));
@@ -143,7 +143,7 @@ void add_constraints(Model &model, const Draft &draft, std::optional<Index> obje
     std::vector<std::string_view> names;
     for (std::size_t k = 0; k < draft.rows.size(); ++k)
     {
-        const auto row = static_cast<Index>(k);
+        const auto row = to_index(k);
         if (row != objective)
         {
             constraints.push_back(constraint_of(row, draft.rows[k]));
@@ -162,7 +162,7 @@ void add_objective(Model &model, const Draft &draft, Index row)
     objective.sense = draft.sense;
     model.add_objectives(std::span(&objective, 1));
     const Index index = 0;
-    const std::string_view name = draft.row_names.names()[static_cast<std::size_t>(row)];
+    const std::string_view name = draft.row_names.names()[to_size(row)];
     model.set_names(Family::Objective, std::span(&index, 1), std::span(&name, 1));
 }
 

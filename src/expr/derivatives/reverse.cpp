@@ -35,17 +35,12 @@ struct Trail
     std::size_t lanes;
 };
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 template <typename T>
 std::span<const T> part(const std::vector<T> &items,
                         const std::vector<Offset> &starts,
                         std::size_t k) noexcept
 {
-    return std::span(items).subspan(at(starts[k]), at(starts[k + 1] - starts[k]));
+    return std::span(items).subspan(to_size(starts[k]), to_size(starts[k + 1] - starts[k]));
 }
 
 Trail trail_of(const Block &block,
@@ -235,7 +230,7 @@ void release(const Block &block, Run loads, Adjoints &adjoints) noexcept
     for (std::uint32_t load = loads.begin; load < loads.end; ++load)
     {
         const std::span<double> into =
-            row(std::span(adjoints.shared), at(block.loads[load]), lanes);
+            row(std::span(adjoints.shared), to_size(block.loads[load]), lanes);
         drain(row(std::span(adjoints.slots), load, lanes), into);
     }
 }
@@ -252,7 +247,7 @@ void drain(std::span<double> from, std::span<double> into) noexcept
 
 Adjoints::Adjoints(const Tape &tape, std::size_t count)
     : lanes(lanes_of(tape, count)), slots(tape.width() * count, 0.0),
-      shared(at(tape.pinned()) * count, 0.0), gradient(at(tape.variables()) * count, 0.0),
+      shared(to_size(tape.pinned()) * count, 0.0), gradient(to_size(tape.variables()) * count, 0.0),
       taken(count, 0.0)
 {
 }

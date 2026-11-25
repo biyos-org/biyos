@@ -29,11 +29,6 @@ namespace
 
 constexpr std::string_view kNoun = "function";
 
-std::size_t at(Index function) noexcept
-{
-    return static_cast<std::size_t>(function);
-}
-
 void check_nodes(std::span<const Index> functions, std::span<const Offset> nodes, Offset size)
 {
     if (functions.size() != nodes.size())
@@ -74,7 +69,7 @@ std::vector<double> constants_of(std::span<const Index> functions,
     sums.reserve(functions.size());
     for (std::size_t k = 0; k < functions.size(); ++k)
     {
-        const double sum = added_to(held[at(functions[k])], parts[k].constant);
+        const double sum = added_to(held[to_size(functions[k])], parts[k].constant);
         const std::string_view fault = value_fault(sum);
         if (!fault.empty())
         {
@@ -109,7 +104,7 @@ std::vector<Offset> roots_of(Graph &graph,
     roots.reserve(functions.size());
     for (std::size_t k = 0; k < functions.size(); ++k)
     {
-        roots.push_back(joined(graph, held[at(functions[k])], parts[k].remainder));
+        roots.push_back(joined(graph, held[to_size(functions[k])], parts[k].remainder));
     }
     return roots;
 }
@@ -160,8 +155,8 @@ void Model::attach_expressions(std::span<const Index> functions, std::span<const
     pair_merge.apply();
     for (std::size_t k = 0; k < functions.size(); ++k)
     {
-        constants_[at(functions[k])] = constants[k];
-        roots_[at(functions[k])] = roots[k];
+        constants_[to_size(functions[k])] = constants[k];
+        roots_[to_size(functions[k])] = roots[k];
     }
     rollback.keep();
 }
@@ -173,8 +168,8 @@ void Model::clear_functions(std::span<const Index> functions)
     clear_parts(quadratic_ends_, quadratic_terms_, cleared);
     for (const Index function : cleared)
     {
-        constants_[at(function)] = 0.0;
-        roots_[at(function)] = kNoRoot;
+        constants_[to_size(function)] = 0.0;
+        roots_[to_size(function)] = kNoRoot;
     }
 }
 

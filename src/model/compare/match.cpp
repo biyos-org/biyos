@@ -19,11 +19,6 @@ namespace
 
 constexpr Offset kUnmatched = -1;
 
-std::size_t at(Offset node) noexcept
-{
-    return static_cast<std::size_t>(node);
-}
-
 std::string node_pair(Offset a, Offset b)
 {
     return "node " + text_of(a) + " against " + text_of(b);
@@ -71,7 +66,7 @@ std::string payload_difference(const Graph &a, const Graph &b, Offset x, Offset 
 }
 
 Matching::Matching(const Graph &a, const Graph &b)
-    : a_(a), b_(b), to_b_(at(a.size()), kUnmatched), to_a_(at(b.size()), kUnmatched)
+    : a_(a), b_(b), to_b_(to_size(a.size()), kUnmatched), to_a_(to_size(b.size()), kUnmatched)
 {
 }
 
@@ -93,8 +88,8 @@ std::string Matching::difference(Offset a, Offset b)
 
 std::string Matching::visit(Offset a, Offset b)
 {
-    const Offset paired = to_b_[at(a)];
-    const Offset partner = to_a_[at(b)];
+    const Offset paired = to_b_[to_size(a)];
+    const Offset partner = to_a_[to_size(b)];
     if (paired == b && partner == a)
     {
         return "";
@@ -112,8 +107,8 @@ std::string Matching::visit(Offset a, Offset b)
     {
         return node_pair(a, b) + ": " + found;
     }
-    to_b_[at(a)] = b;
-    to_a_[at(b)] = a;
+    to_b_[to_size(a)] = b;
+    to_a_[to_size(b)] = a;
     const std::span<const Offset> left = a_.children(a);
     const std::span<const Offset> right = b_.children(b);
     for (std::size_t k = left.size(); k > 0; --k)
@@ -130,8 +125,8 @@ std::string Matching::node_difference(Offset a, Offset b) const
     {
         return against("operator", code_of(op), code_of(b_.op(b)));
     }
-    const auto n = static_cast<Offset>(a_.children(a).size());
-    const auto m = static_cast<Offset>(b_.children(b).size());
+    const auto n = to_offset(a_.children(a).size());
+    const auto m = to_offset(b_.children(b).size());
     if (n != m)
     {
         return against("child count", n, m);

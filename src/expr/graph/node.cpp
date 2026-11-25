@@ -210,7 +210,7 @@ void check_constant(Operator op, double value)
 
 void check_coefficients(std::span<const double> coefficients, Offset children)
 {
-    const auto n = static_cast<Offset>(coefficients.size());
+    const auto n = to_offset(coefficients.size());
     if (n != children)
     {
         const std::string given = n_text(n, "coefficient", "coefficients");

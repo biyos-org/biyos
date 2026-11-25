@@ -27,16 +27,6 @@ struct Term
 
 using Key = std::uint64_t;
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
-Offset count_of(std::size_t value) noexcept
-{
-    return static_cast<Offset>(value);
-}
-
 void flatten(const Graph &graph, Offset root, Offset index, Elements &elements)
 {
     std::vector<Term> stack{{.node = root, .weight = 1.0}};
@@ -81,7 +71,8 @@ Entry entry_of(Key key) noexcept
 std::span<const Index> row_of(const Pattern &blocks, std::size_t element) noexcept
 {
     const Offset begin = blocks.starts[element];
-    return std::span(blocks.variables).subspan(at(begin), at(blocks.starts[element + 1] - begin));
+    return std::span(blocks.variables)
+        .subspan(to_size(begin), to_size(blocks.starts[element + 1] - begin));
 }
 
 void check_declared(std::span<const Entry> declared)
@@ -138,7 +129,7 @@ Elements elements_of(const Graph &graph, std::span<const Offset> roots)
     for (std::size_t r = 0; r < roots.size(); ++r)
     {
         check_child(roots[r], graph.size());
-        flatten(graph, roots[r], count_of(r), elements);
+        flatten(graph, roots[r], to_offset(r), elements);
     }
     return elements;
 }
@@ -148,14 +139,14 @@ Lower lower_of(const Pattern &blocks, std::span<const Entry> declared)
     check_declared(declared);
     const std::vector<Key> keys = keys_of(blocks, declared);
     Lower lower{
-        .starts = std::vector<Offset>(at(columns_of(blocks, declared)) + 1, 0),
+        .starts = std::vector<Offset>(to_size(columns_of(blocks, declared)) + 1, 0),
         .rows = {},
     };
     lower.rows.reserve(keys.size());
     for (const Key key : keys)
     {
         const Entry entry = entry_of(key);
-        ++lower.starts[at(entry.column) + 1];
+        ++lower.starts[to_size(entry.column) + 1];
         lower.rows.push_back(entry.row);
     }
     for (std::size_t k = 1; k < lower.starts.size(); ++k)
@@ -168,11 +159,12 @@ Lower lower_of(const Pattern &blocks, std::span<const Entry> declared)
 Offset position(const Lower &lower, Index row, Index column) noexcept
 {
     const Entry entry = lower_entry({.row = row, .column = column});
-    const Offset begin = lower.starts[at(entry.column)];
-    const Offset end = lower.starts[at(entry.column) + 1];
-    const std::span<const Index> rows = std::span(lower.rows).subspan(at(begin), at(end - begin));
-    return begin + count_of(static_cast<std::size_t>(std::ranges::lower_bound(rows, entry.row) -
-                                                     rows.begin()));
+    const Offset begin = lower.starts[to_size(entry.column)];
+    const Offset end = lower.starts[to_size(entry.column) + 1];
+    const std::span<const Index> rows =
+        std::span(lower.rows).subspan(to_size(begin), to_size(end - begin));
+    const auto found = std::ranges::lower_bound(rows, entry.row);
+    return begin + static_cast<Offset>(found - rows.begin());
 }
 
 Map map_of(const Lower &lower, const Pattern &blocks, std::span<const Entry> declared)
@@ -189,7 +181,7 @@ Map map_of(const Lower &lower, const Pattern &blocks, std::span<const Entry> dec
                 map.blocks.push_back(position(lower, variables[a], variables[l]));
             }
         }
-        map.starts.push_back(count_of(map.blocks.size()));
+        map.starts.push_back(to_offset(map.blocks.size()));
     }
     for (const Entry entry : declared)
     {

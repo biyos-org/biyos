@@ -28,13 +28,13 @@ Offset sum_values(Offset n) noexcept
 
 std::span<const double> taken(std::span<const double> values, Offset n)
 {
-    const auto held = static_cast<Offset>(values.size());
+    const auto held = to_offset(values.size());
     if (held < n)
     {
         const std::string reason = "holds " + n_text(held, "value", "values");
         throw Error(ErrorKind::InvalidArgument, "argument 'val'", reason + ", not " + text_of(n));
     }
-    return values.first(static_cast<std::size_t>(n));
+    return values.first(to_size(n));
 }
 
 }
@@ -77,7 +77,7 @@ Offset append_node(Graph &graph,
                    std::span<const double> values)
 {
     const Operator found = to_operator(op);
-    const auto n = static_cast<Offset>(children.size());
+    const auto n = to_offset(children.size());
     switch (payload_of(found))
     {
     case Payload::None:

@@ -80,20 +80,20 @@ Variable widest(VariableKind kind) noexcept
 
 Index Model::n_variables() const noexcept
 {
-    return static_cast<Index>(variables_.size());
+    return to_index(variables_.size());
 }
 
 const Variable &Model::variable(Index index) const
 {
     check_index(kNoun, index, n_variables());
-    return variables_[static_cast<std::size_t>(index)];
+    return variables_[to_size(index)];
 }
 
 std::span<const Variable> Model::variables(Index start, Index stop) const
 {
     check_span(kNoun, start, stop, n_variables());
-    const auto offset = static_cast<std::size_t>(start);
-    return std::span(variables_).subspan(offset, static_cast<std::size_t>(stop - start));
+    const auto offset = to_size(start);
+    return std::span(variables_).subspan(offset, to_size(stop - start));
 }
 
 void Model::add_variables(std::span<const Variable> added)
@@ -101,7 +101,7 @@ void Model::add_variables(std::span<const Variable> added)
     check_n(kNoun, variables_, added.size());
     for (std::size_t k = 0; k < added.size(); ++k)
     {
-        check(static_cast<Index>(variables_.size() + k), added[k]);
+        check(to_index(variables_.size() + k), added[k]);
     }
     variables_.insert(variables_.end(), added.begin(), added.end());
 }
@@ -120,7 +120,7 @@ void Model::set_variables(std::span<const Index> indices, std::span<const Variab
     check_kinds(indices, changed);
     for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        variables_[static_cast<std::size_t>(indices[k])] = changed[k];
+        variables_[to_size(indices[k])] = changed[k];
     }
 }
 

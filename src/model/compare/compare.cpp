@@ -155,12 +155,12 @@ std::string differ(const Override &a, const Override &b)
 
 template <typename T> Offset size_of(std::span<const T> terms)
 {
-    return static_cast<Offset>(terms.size());
+    return to_offset(terms.size());
 }
 
 template <typename T> const T &at(std::span<const T> terms, Offset k)
 {
-    return terms[static_cast<std::size_t>(k)];
+    return terms[to_size(k)];
 }
 
 template <typename T>

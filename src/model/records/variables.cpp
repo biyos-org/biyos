@@ -23,11 +23,6 @@ namespace
 
 constexpr std::string_view kNoun = "variable";
 
-std::size_t at(Index index) noexcept
-{
-    return static_cast<std::size_t>(index);
-}
-
 [[noreturn]] void refuse_use(Index variable, const std::string &user)
 {
     throw Error(ErrorKind::InUse, item(kNoun, variable), "used by " + user);
@@ -37,10 +32,10 @@ void check_nodes(const Graph &graph, std::span<const Index> map)
 {
     for (std::size_t k = 0; k < map.size(); ++k)
     {
-        const Offset node = graph.node_of(static_cast<Index>(k));
+        const Offset node = graph.node_of(to_index(k));
         if (map[k] == kDeleted && node >= 0)
         {
-            refuse_use(static_cast<Index>(k), "node " + text_of(node));
+            refuse_use(to_index(k), "node " + text_of(node));
         }
     }
 }
@@ -52,12 +47,12 @@ void check_members(std::span<const Offset> ends,
     std::size_t begin = 0;
     for (std::size_t sos = 0; sos < ends.size(); ++sos)
     {
-        const auto end = static_cast<std::size_t>(ends[sos]);
+        const auto end = to_size(ends[sos]);
         for (const Member &member : members.subspan(begin, end - begin))
         {
-            if (map[at(member.variable)] == kDeleted)
+            if (map[to_size(member.variable)] == kDeleted)
             {
-                refuse_use(member.variable, item("set", static_cast<Index>(sos)));
+                refuse_use(member.variable, item("set", to_index(sos)));
             }
         }
         begin = end;
@@ -68,9 +63,9 @@ void check_indicators(std::span<const Indicator> indicators, std::span<const Ind
 {
     for (std::size_t k = 0; k < indicators.size(); ++k)
     {
-        if (map[at(indicators[k].variable)] == kDeleted)
+        if (map[to_size(indicators[k].variable)] == kDeleted)
         {
-            refuse_use(indicators[k].variable, item("indicator", static_cast<Index>(k)));
+            refuse_use(indicators[k].variable, item("indicator", to_index(k)));
         }
     }
 }
@@ -86,14 +81,14 @@ void check_callbacks(bool held, std::span<const Index> map)
 
 bool renumbered(LinearTerm &term, std::span<const Index> map) noexcept
 {
-    term.variable = map[at(term.variable)];
+    term.variable = map[to_size(term.variable)];
     return term.variable != kDeleted;
 }
 
 bool renumbered(QuadraticTerm &term, std::span<const Index> map) noexcept
 {
-    term.row = map[at(term.row)];
-    term.column = map[at(term.column)];
+    term.row = map[to_size(term.row)];
+    term.column = map[to_size(term.column)];
     return term.row != kDeleted && term.column != kDeleted;
 }
 
@@ -106,7 +101,7 @@ void renumber_terms(std::vector<Offset> &ends,
     std::size_t write = 0;
     for (Offset &end : ends)
     {
-        for (; read < static_cast<std::size_t>(end); ++read)
+        for (; read < to_size(end); ++read)
         {
             Term term = terms[read];
             if (renumbered(term, map))
@@ -115,7 +110,7 @@ void renumber_terms(std::vector<Offset> &ends,
                 ++write;
             }
         }
-        end = static_cast<Offset>(write);
+        end = to_offset(write);
     }
     terms.resize(write);
 }
@@ -142,11 +137,11 @@ void Model::renumber_variables(std::span<const Index> map) noexcept
 {
     for (Member &member : members_)
     {
-        member.variable = map[at(member.variable)];
+        member.variable = map[to_size(member.variable)];
     }
     for (Indicator &indicator : indicators_)
     {
-        indicator.variable = map[at(indicator.variable)];
+        indicator.variable = map[to_size(indicator.variable)];
     }
     graph_.renumber_variables(map);
 }

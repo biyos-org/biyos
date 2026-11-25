@@ -25,14 +25,14 @@ constexpr std::string_view kNoun = "function";
 std::span<const QuadraticTerm> Model::quadratic_terms(Index start, Index stop) const
 {
     check_span(kNoun, start, stop, n_functions());
-    const auto begin = static_cast<std::size_t>(quadratic_begin(static_cast<std::size_t>(start)));
-    const auto end = static_cast<std::size_t>(quadratic_begin(static_cast<std::size_t>(stop)));
+    const auto begin = to_size(quadratic_begin(to_size(start)));
+    const auto end = to_size(quadratic_begin(to_size(stop)));
     return std::span(quadratic_terms_).subspan(begin, end - begin);
 }
 
 void Model::check_quadratic_room(Offset terms) const
 {
-    if (terms > static_cast<Offset>(room(quadratic_terms_)))
+    if (terms > to_offset(room(quadratic_terms_)))
     {
         throw Error(ErrorKind::NoMemory, "model", "no quadratic term offset left");
     }
@@ -42,7 +42,7 @@ void Model::add_quadratic_terms(std::span<const Index> functions,
                                 std::span<const Offset> starts,
                                 std::vector<QuadraticTerm> terms)
 {
-    check_quadratic_room(static_cast<Offset>(terms.size()));
+    check_quadratic_room(to_offset(terms.size()));
     check_shape(functions.size(), starts, terms.size());
     check_functions(functions, n_functions(), "fun");
     std::vector<AddedPairs> additions;

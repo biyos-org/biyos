@@ -53,7 +53,7 @@ void read_pairs(Env &env,
 
 void set_rhs(const Lines &lines, Draft &draft, const Value &value)
 {
-    DraftRow &row = draft.rows[static_cast<std::size_t>(value.row)];
+    DraftRow &row = draft.rows[to_size(value.row)];
     if (row.rhs)
     {
         bad_file(lines, "row " + quote(value.name) + " has a second right-hand side");
@@ -63,7 +63,7 @@ void set_rhs(const Lines &lines, Draft &draft, const Value &value)
 
 void set_range(Env &env, const Lines &lines, Draft &draft, const Value &value)
 {
-    DraftRow &row = draft.rows[static_cast<std::size_t>(value.row)];
+    DraftRow &row = draft.rows[to_size(value.row)];
     if (row.sense == RowSense::Free)
     {
         warn(env, lines, "the range of N row " + quote(value.name) + " is ignored");

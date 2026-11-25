@@ -36,7 +36,7 @@ template <typename Term> bool before(const Term &a, const Term &b) noexcept
 
 std::size_t start_of(std::span<const Offset> ends, std::size_t function)
 {
-    return function == 0 ? 0 : static_cast<std::size_t>(ends[function - 1]);
+    return function == 0 ? 0 : to_size(ends[function - 1]);
 }
 
 template <typename Term>
@@ -45,7 +45,7 @@ std::span<const Term> held_by(std::span<const Offset> ends,
                               std::size_t function)
 {
     const std::size_t begin = start_of(ends, function);
-    const auto end = static_cast<std::size_t>(ends[function]);
+    const auto end = to_size(ends[function]);
     return terms.subspan(begin, end - begin);
 }
 
@@ -120,7 +120,7 @@ void shift_ends(std::span<Offset> ends, std::size_t from, std::size_t upto, std:
     }
     for (std::size_t function = from; function < upto; ++function)
     {
-        ends[function] += static_cast<Offset>(shift);
+        ends[function] += to_offset(shift);
     }
 }
 
@@ -146,7 +146,7 @@ void insert(std::vector<Offset> &ends,
     for (const Insertion<Term> &insertion : insertions | std::views::reverse)
     {
         const std::size_t begin = start_of(ends, insertion.function);
-        const auto end = static_cast<std::size_t>(ends[insertion.function]);
+        const auto end = to_size(ends[insertion.function]);
         move_right<Term>(terms, end, tail, shift);
         const std::span<Term> area = std::span(terms).subspan(begin, end - begin + shift);
         merge_back(area, end - begin, insertion.terms);
@@ -173,7 +173,7 @@ Merge<Term>::Merge(std::vector<Offset> &ends,
     insertions_.reserve(additions.size());
     for (const Addition<Term> &addition : additions)
     {
-        const auto function = static_cast<std::size_t>(addition.function);
+        const auto function = to_size(addition.function);
         const std::size_t added = new_terms(addition, held_by<Term>(ends, terms, function));
         insertions_.push_back(Insertion<Term>{
             .function = function,
