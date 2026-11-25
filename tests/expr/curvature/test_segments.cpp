@@ -92,7 +92,7 @@ Curvature nested(const Line &line, Operator op, double sign, Interval x)
     const Offset outer = graph.add(op, std::span(&variable, 1));
     const std::array weight{sign};
     const Offset child = graph.add_sum(0.0, std::span(&outer, 1), weight);
-    const Offset pwl = graph.add_pwl(line.x, line.y);
+    const Offset pwl = graph.add_piecewise_linear(line.x, line.y);
     const Offset root = graph.add_piecewise(pwl, std::span(&child, 1));
     std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
     biyos::enclose(graph, std::span(&x, 1), nodes);

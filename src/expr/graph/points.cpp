@@ -137,7 +137,7 @@ void check_points(std::span<const double> x, std::span<const double> y)
     }
 }
 
-void check_pwl(Offset pwl, Offset size)
+void check_piecewise_linear(Offset pwl, Offset size)
 {
     if (pwl < 0 || pwl >= size)
     {

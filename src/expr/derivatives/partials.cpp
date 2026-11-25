@@ -205,7 +205,7 @@ void piecewise(const Instruction &instruction,
                const Frame &frame,
                std::span<double> partials) noexcept
 {
-    const PiecewiseLinear pwl = pwl_of(instruction, frame.weights);
+    const PiecewiseLinear pwl = piecewise_linear_of(instruction, frame.weights);
     slope(instruction, frame, partials, [pwl](double x, double) { return slope_at(pwl, x); });
 }
 

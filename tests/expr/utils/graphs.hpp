@@ -78,8 +78,8 @@ inline Offset listed(Graph &graph, Operator op, const std::vector<Offset> &child
 
 inline void add_pwls(Graph &graph)
 {
-    graph.add_pwl(kKinks, kHeights);
-    graph.add_pwl(kSteps, kLevels);
+    graph.add_piecewise_linear(kKinks, kHeights);
+    graph.add_piecewise_linear(kSteps, kLevels);
 }
 
 inline Offset piecewise(Graph &graph, Offset pwl, Offset child)
@@ -93,7 +93,7 @@ inline std::vector<Offset> every_operator(Graph &graph)
     const Offset y = graph.add_variable(1);
     const Offset z = graph.add_variable(2);
     const Offset w = graph.add_variable(3);
-    const Offset pwl = graph.add_pwl(kKinks, kHeights);
+    const Offset pwl = graph.add_piecewise_linear(kKinks, kHeights);
     const std::array xy{x, y};
     const std::array xyz{x, y, z};
     return {

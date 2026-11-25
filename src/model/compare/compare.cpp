@@ -311,7 +311,7 @@ std::string point_difference(const PiecewiseLinear &a, const PiecewiseLinear &b,
     });
 }
 
-std::string pwl_difference(const Points &a, const Points &b, Offset pwl)
+std::string piecewise_linear_difference(const Points &a, const Points &b, Offset pwl)
 {
     const PiecewiseLinear x = a.pwl(pwl);
     const PiecewiseLinear y = b.pwl(pwl);
@@ -319,11 +319,11 @@ std::string pwl_difference(const Points &a, const Points &b, Offset pwl)
     return table_difference("point", size_of(x.x), size_of(y.x), point);
 }
 
-std::string pwl_differences(const Model &a, const Model &b)
+std::string piecewise_linear_differences(const Model &a, const Model &b)
 {
     const Points &x = a.graph().points();
     const Points &y = b.graph().points();
-    const auto pwl = [&](Offset k) { return pwl_difference(x, y, k); };
+    const auto pwl = [&](Offset k) { return piecewise_linear_difference(x, y, k); };
     return table_difference("pwl", x.size(), y.size(), pwl);
 }
 
@@ -429,7 +429,7 @@ std::string difference(const Model &a, const Model &b)
     }
     if (found.empty())
     {
-        found = pwl_differences(a, b);
+        found = piecewise_linear_differences(a, b);
     }
     if (found.empty())
     {

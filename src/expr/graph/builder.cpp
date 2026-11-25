@@ -102,7 +102,7 @@ void Builder::sign_power(double exponent)
 
 void Builder::piecewise(Offset pwl)
 {
-    check_pwl(pwl, graph_.points().size());
+    check_piecewise_linear(pwl, graph_.points().size());
     const std::size_t base = take(1);
     collect(base);
     const Offset node = graph_.add_piecewise(pwl, next_terms_);

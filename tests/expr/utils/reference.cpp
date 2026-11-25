@@ -233,7 +233,8 @@ double value_of(const Frame &frame, Offset node)
     case Operator::Erf:
         return unary(graph.op(node), first(frame, node));
     case Operator::PiecewiseLinear:
-        return biyos::value_at(graph.points().pwl(graph.pwl(node)), first(frame, node));
+        return biyos::value_at(graph.points().pwl(graph.piecewise_linear(node)),
+                               first(frame, node));
     }
     return kUndefined;
 }

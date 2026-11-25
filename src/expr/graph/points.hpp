@@ -33,7 +33,7 @@ class Points
 };
 
 void check_points(std::span<const double> x, std::span<const double> y);
-void check_pwl(Offset pwl, Offset size);
+void check_piecewise_linear(Offset pwl, Offset size);
 std::size_t segment_of(std::span<const double> x, double t) noexcept;
 double slope_of(const PiecewiseLinear &pwl, std::size_t segment) noexcept;
 double value_at(const PiecewiseLinear &pwl, double t) noexcept;

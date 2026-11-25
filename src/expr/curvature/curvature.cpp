@@ -53,9 +53,9 @@ Curvature unary(const Profile &profile, std::span<Argument> arguments) noexcept
     return profile.curvature;
 }
 
-PiecewiseLinear pwl_of(const Graph &graph, Offset node) noexcept
+PiecewiseLinear piecewise_linear_of(const Graph &graph, Offset node) noexcept
 {
-    return graph.points().pwl(graph.pwl(node));
+    return graph.points().pwl(graph.piecewise_linear(node));
 }
 
 Curvature outer_of(const Graph &graph,
@@ -123,7 +123,7 @@ Curvature outer_of(const Graph &graph,
     case Operator::Erf:
         return unary(bend(kErf, operands[0]), arguments);
     case Operator::PiecewiseLinear:
-        return unary(segments(pwl_of(graph, node), operands[0]), arguments);
+        return unary(segments(piecewise_linear_of(graph, node), operands[0]), arguments);
     }
     return Curvature::Unknown;
 }

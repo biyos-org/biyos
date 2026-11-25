@@ -272,7 +272,7 @@ Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
         graph.add(op, one);
         break;
     case Operator::PiecewiseLinear:
-        graph.add_piecewise(graph.add_pwl(kKinks, kHeights), one);
+        graph.add_piecewise(graph.add_piecewise_linear(kKinks, kHeights), one);
         break;
     }
     return graph;

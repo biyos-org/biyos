@@ -58,7 +58,7 @@ std::string payload_difference(const Graph &a, const Graph &b, Offset x, Offset 
             weight_differences(a.coefficients(x), b.coefficients(y)),
         });
     case Payload::Points:
-        return compared("pwl", a.pwl(x), b.pwl(y));
+        return compared("pwl", a.piecewise_linear(x), b.piecewise_linear(y));
     }
     return "";
 }

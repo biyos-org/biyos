@@ -247,7 +247,7 @@ Instruction Compiler::instruction(Offset node, Block &block)
         break;
     case Form::Table:
         result.first = layout_.slot(children.front());
-        result.second = narrow(graph_.points().pwl(graph_.pwl(node)).x.size());
+        result.second = narrow(graph_.points().pwl(graph_.piecewise_linear(node)).x.size());
         break;
     }
     return result;
@@ -282,10 +282,10 @@ std::uint64_t Compiler::weights(Offset node, Block &block) const
 
 std::uint64_t Compiler::points(Offset node, Block &block)
 {
-    const std::size_t pwl = to_size(graph_.pwl(node));
+    const std::size_t pwl = to_size(graph_.piecewise_linear(node));
     if (owners_[pwl] != index_)
     {
-        const PiecewiseLinear table = graph_.points().pwl(graph_.pwl(node));
+        const PiecewiseLinear table = graph_.points().pwl(graph_.piecewise_linear(node));
         owners_[pwl] = index_;
         places_[pwl] = block.weights.size();
         block.weights.insert(block.weights.end(), table.x.begin(), table.x.end());

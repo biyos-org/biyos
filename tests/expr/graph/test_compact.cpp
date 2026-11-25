@@ -88,7 +88,7 @@ void expect_copy(const Compaction &result, const Graph &graph, Offset node)
     }
     if (graph.op(node) == Operator::PiecewiseLinear)
     {
-        EXPECT_EQ(found.pwl(image), graph.pwl(node));
+        EXPECT_EQ(found.piecewise_linear(image), graph.piecewise_linear(node));
         return;
     }
     EXPECT_EQ(bits(found.constant(image)), bits(graph.constant(node)));
@@ -247,8 +247,8 @@ TEST(CompactTest, WholeTable)
     const std::array y{2.0, -1e-300, 0.5};
     const std::array u{3.0, 5.0};
     const std::array v{1.0, 1.0};
-    graph.add_pwl(x, y);
-    graph.add_pwl(u, v);
+    graph.add_piecewise_linear(x, y);
+    graph.add_piecewise_linear(u, v);
     const Offset z = graph.add_variable(0);
     const Compaction result = compact(graph, std::span(&z, 1));
     const biyos::Points &points = result.graph.points();
@@ -265,8 +265,8 @@ TEST(CompactTest, Piecewise)
 {
     Graph graph;
     const std::array x{0.0, 1.0};
-    graph.add_pwl(x, x);
-    graph.add_pwl(x, std::array{2.0, 5.0});
+    graph.add_piecewise_linear(x, x);
+    graph.add_piecewise_linear(x, std::array{2.0, 5.0});
     const Offset y = graph.add_variable(1);
     const Offset dead = graph.add_piecewise(0, std::span(&y, 1));
     const Offset z = graph.add_variable(4);

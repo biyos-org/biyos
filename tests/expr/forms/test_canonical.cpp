@@ -317,7 +317,7 @@ TEST(CanonicalTest, PiecewiseKept)
     Graph graph;
     const std::vector<Offset> x = variables(graph, 3);
     const std::array points{-1.0, 2.0};
-    const Offset pwl = graph.add_pwl(points, points);
+    const Offset pwl = graph.add_piecewise_linear(points, points);
     const Offset inner = sum(graph, 1.0, {x[0], x[1]}, {2.0, 1.0});
     const Offset node = graph.add_piecewise(pwl, std::span(&inner, 1));
     expect_whole(parts_of(graph, node), node);

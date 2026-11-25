@@ -47,7 +47,7 @@ Offset argument_of(const Graph &graph, Offset node) noexcept
 {
     if (graph.op(node) == Operator::PiecewiseLinear)
     {
-        return graph.pwl(node);
+        return graph.piecewise_linear(node);
     }
     return to_offset(graph.children(node).size());
 }

@@ -46,7 +46,7 @@ void add_numbered(Graph &graph, std::span<const double> x, std::span<const doubl
     const Offset pwl = graph.points().size();
     try
     {
-        graph.add_pwl(x, y);
+        graph.add_piecewise_linear(x, y);
     }
     catch (const Error &error)
     {
@@ -87,9 +87,9 @@ Offset Model::add_node(int op, std::span<const Offset> children, std::span<const
     return node;
 }
 
-Offset Model::add_pwl(std::span<const double> x, std::span<const double> y)
+Offset Model::add_piecewise_linear(std::span<const double> x, std::span<const double> y)
 {
-    return graph_.add_pwl(x, y);
+    return graph_.add_piecewise_linear(x, y);
 }
 
 Offset Model::add_piecewise_linears(std::span<const Offset> starts,
