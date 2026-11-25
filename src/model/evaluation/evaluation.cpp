@@ -39,7 +39,7 @@ constexpr std::size_t kSpans = 4;
 
 Program program_of(Env &env, const Model &model)
 {
-    const EntryTimer timer(env, "model", "evaluation");
+    const EntryTimer timer(env, kModule, "evaluation");
     std::vector<Index> rooted;
     std::vector<Offset> roots;
     const std::span<const Offset> all = model.roots(0, model.n_functions());
@@ -91,7 +91,7 @@ const Lower &Evaluation::hessian_pattern() const noexcept
 
 void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span<Real> f)
 {
-    const Timer timer(env_, tree_, "model", "values");
+    const Timer timer(env_, tree_, kModule, "values");
     check(x);
     check("f", f.size(), to_size(model_.n_functions()));
     require(model_, Part::Function);
@@ -101,12 +101,12 @@ void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span
     {
         f[to_size(program_.rooted[e])] += values_[e];
     }
-    evaluate_function(Checker(env_, lookup, "model"), x, f);
+    evaluate_function(Checker(env_, lookup, kModule), x, f);
 }
 
 void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::span<Real> g)
 {
-    const Timer timer(env_, tree_, "model", "jacobian");
+    const Timer timer(env_, tree_, kModule, "jacobian");
     check(x);
     const JacobianLayout &layout = program_.layout;
     check("g", g.size(), layout.pattern.variables.size());
@@ -117,7 +117,7 @@ void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::sp
     {
         g[to_size(layout.slots.tape[p])] += gradients_[p];
     }
-    evaluate_jacobian(Checker(env_, lookup, "model"), x, g);
+    evaluate_jacobian(Checker(env_, lookup, kModule), x, g);
 }
 
 void Evaluation::check(std::string_view argument, std::size_t size, std::size_t wanted)

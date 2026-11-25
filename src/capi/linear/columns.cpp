@@ -85,7 +85,7 @@ template <typename Selection>
 void n_column_terms(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(model.core, Family::Variable, selection);
-    const biyos::EntryTimer timer(model.handle.env(), "model", "columns");
+    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "columns");
     const std::size_t count = count_of(every_start(model.core), chosen);
     *require(nnz, "nnz") = static_cast<BIYOS_offset>(count);
 }
@@ -97,7 +97,7 @@ void get_listed(const BIYOS_model &model,
                 const Coordinates &out)
 {
     const auto chosen = selected(model.core, Family::Variable, list);
-    const biyos::EntryTimer timer(model.handle.env(), "model", "columns");
+    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "columns");
     std::vector<biyos::Offset> starts = every_start(model.core);
     const std::size_t count = count_of(starts, chosen);
     check_capacity(capacity, count);
@@ -115,7 +115,7 @@ void get_ranged(const BIYOS_model &model,
                 BIYOS_index *functions,
                 BIYOS_real *values)
 {
-    const biyos::EntryTimer timer(model.handle.env(), "model", "columns");
+    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "columns");
     const std::vector<biyos::Offset> found =
         biyos::variable_starts(model.core, range.start, range.stop);
     const auto count = static_cast<std::size_t>(found.back());

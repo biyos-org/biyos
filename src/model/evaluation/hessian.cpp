@@ -38,14 +38,14 @@ void Evaluation::hessian(const Lookup &lookup,
                          std::span<const Real> w,
                          std::span<Real> h)
 {
-    const Timer timer(env_, tree_, "model", "hessian");
+    const Timer timer(env_, tree_, kModule, "hessian");
     check(x);
     weigh(w);
     check("h", h.size(), hessian_pattern().rows.size());
     require(model_, Part::Hessian);
     program_.hessian.values(x, weights_, h);
     term_hessian(w, h);
-    evaluate_hessian(Checker(env_, lookup, "model"), x, w, h);
+    evaluate_hessian(Checker(env_, lookup, kModule), x, w, h);
 }
 
 void Evaluation::product(const Lookup &lookup,
@@ -54,7 +54,7 @@ void Evaluation::product(const Lookup &lookup,
                          std::span<const Real> v,
                          std::span<Real> hv)
 {
-    const Timer timer(env_, tree_, "model", "product");
+    const Timer timer(env_, tree_, kModule, "product");
     check(x);
     weigh(w);
     check("v", v.size(), x.size());
@@ -62,7 +62,7 @@ void Evaluation::product(const Lookup &lookup,
     require_products(model_);
     program_.hessian.product(x, weights_, v, hv);
     term_hessian_product(w, v, hv);
-    evaluate_hessian_product(Checker(env_, lookup, "model"), x, w, v, hv);
+    evaluate_hessian_product(Checker(env_, lookup, kModule), x, w, v, hv);
 }
 
 void Evaluation::weigh(std::span<const Real> w)

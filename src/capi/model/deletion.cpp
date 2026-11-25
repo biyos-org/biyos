@@ -25,7 +25,7 @@ void delete_records(BIYOS_model &model, Selection selection, BIYOS_index *map)
 {
     Model &core = writable(model);
     const auto chosen = selected(core, Target, selection);
-    const biyos::EntryTimer timer(model.handle.env(), "model", "delete");
+    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "delete");
     const std::vector<biyos::Index> renumbered = (core.*Delete)(chosen);
     if (map != nullptr)
     {

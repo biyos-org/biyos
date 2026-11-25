@@ -45,7 +45,7 @@ void make_copy(const BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
     const EnvGuard busy(target);
     busy.check();
-    const biyos::EntryTimer timer(model.handle.env(), "model", "copy");
+    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "copy");
     *made = new BIYOS_model(target, model);
 }
 
