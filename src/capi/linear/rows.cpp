@@ -74,16 +74,16 @@ void get_listed(const BIYOS_model &model,
 void get_ranged(const BIYOS_model &model,
                 Range range,
                 std::int64_t capacity,
-                std::int64_t *starts,
+                std::int64_t *counts,
                 int *variables,
                 double *values)
 {
     const biyos::Model &core = model.core;
     const std::span<const biyos::LinearTerm> terms = core.linear_terms(range.start, range.stop);
     check_capacity(capacity, terms.size());
-    const auto before = [&](biyos::Index j)
-    { return core.linear_terms(range.start, range.start + j); };
-    biyos::capi::write_starts(static_cast<std::size_t>(range.stop - range.start), starts, before);
+    const auto record = [&](biyos::Index j)
+    { return core.linear_terms(range.start + j, range.start + j + 1); };
+    biyos::capi::write_counts(static_cast<std::size_t>(range.stop - range.start), counts, record);
     biyos::capi::unpack(terms, terms.size(), variables, values);
 }
 
@@ -122,9 +122,9 @@ BIYOS_status BIYOS_getrlintermrg(const BIYOS_model *mdl,
                                  BIYOS_index beg,
                                  BIYOS_index end,
                                  BIYOS_offset cap,
-                                 BIYOS_offset *off,
+                                 BIYOS_offset *cnt,
                                  BIYOS_index *var,
                                  BIYOS_real *coef)
 {
-    return guarded<get_ranged>(mdl, Range{beg, end}, cap, off, var, coef);
+    return guarded<get_ranged>(mdl, Range{beg, end}, cap, cnt, var, coef);
 }

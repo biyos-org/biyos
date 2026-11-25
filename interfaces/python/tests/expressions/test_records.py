@@ -37,7 +37,7 @@ def records(model, funs):
 def by_hand(env, code, arg, val):
     with biyos.Model(env) as model:
         model.addvar(4)
-        nodes = model.addexpr([0, len(code)], code, arg, val)
+        nodes = model.addexpr([len(code)], code, arg, val)
         funs = model.addfun(1)
         model.attachexpr(funs, nodes)
         return records(model, funs)
@@ -52,8 +52,8 @@ def test_acceptance(model, x):
     funs = objective(model, objs)
     assert model.getrlinterm(funs) == ([0, 0], [0, 1], [1.0, 1.0])
     assert model.getquadterm(funs) == ([0], [2], [2], [1.0])
-    off, code, arg, val = model.getexpr(funs)
-    assert (off, code, arg, val) == ([0, 2], [VAR, Operator.LOG], [3, 1], [])
+    cnt, code, arg, val = model.getexpr(funs)
+    assert (cnt, code, arg, val) == ([2], [VAR, Operator.LOG], [3, 1], [])
 
 
 UNARY = [
@@ -182,7 +182,7 @@ def test_variable(model, x):
     objs = model.addobj(x[2])
     funs = objective(model, objs)
     assert model.getrlinterm(funs) == ([0], [2], [1.0])
-    assert model.getexpr(funs) == ([0, 1], [CONST], [0], [0.0])
+    assert model.getexpr(funs) == ([1], [CONST], [0], [0.0])
 
 
 def test_objectives(model, x):

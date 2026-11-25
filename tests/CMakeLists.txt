@@ -148,6 +148,7 @@ biyos_add_test(test_capi
     capi/linear/test_linear.cpp
     capi/linear/test_terms.cpp
     capi/model/test_copy.cpp
+    capi/model/test_counts.cpp
     capi/model/test_delete.cpp
     capi/model/test_files.cpp
     capi/model/test_model.cpp

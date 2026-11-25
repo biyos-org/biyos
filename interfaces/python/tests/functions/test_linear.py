@@ -52,8 +52,8 @@ def terms(model):
     return [bisect_left(fun, j) for j in ends], var, coef
 
 
-def read_lengths(handle, beg, end, size, starts, funs, values):
-    return [(starts, end - beg + 1), (funs, size), (values, size)]
+def read_lengths(handle, beg, end, size, counts, funs, values):
+    return [(counts, end - beg), (funs, size), (values, size)]
 
 
 def spread(found, first=0, place=1):

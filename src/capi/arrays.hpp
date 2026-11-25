@@ -18,7 +18,10 @@ void check_capacity(std::int64_t capacity,
                     std::string_view name = "cap",
                     std::string_view items = "terms");
 std::span<const Index> listed(int n, const int *indices, std::string_view name = "idx");
-std::vector<Offset> offsets(std::size_t n, const std::int64_t *starts);
+std::vector<Offset> starts_of(std::size_t n,
+                              const std::int64_t *counts,
+                              std::string_view name = "cnt");
+void write_counts(std::span<const Offset> starts, std::int64_t *counts);
 std::vector<LinearTerm> packed(std::size_t size, const int *variables, const double *values);
 void unpack(std::span<const LinearTerm> terms,
             std::size_t capacity,
@@ -62,16 +65,15 @@ std::vector<Record> picked(const Model &model,
     return found;
 }
 
-template <typename Read> void write_starts(std::size_t n, std::int64_t *starts, Read read)
+template <typename Read> void write_counts(std::size_t n, std::int64_t *counts, Read read)
 {
-    if (starts == nullptr)
+    if (counts == nullptr)
     {
         return;
     }
-    for (std::size_t j = 0; j <= n; ++j)
+    for (std::size_t j = 0; j < n; ++j)
     {
-        starts[j] = static_cast<std::int64_t>(read(static_cast<Index>(j)).size());
+        counts[j] = static_cast<std::int64_t>(read(static_cast<Index>(j)).size());
     }
 }
-
 }

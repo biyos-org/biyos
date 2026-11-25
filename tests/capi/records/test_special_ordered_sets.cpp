@@ -22,21 +22,21 @@ using biyos::test::Model;
 struct SpecialOrderedSets
 {
     std::vector<int> kinds;
-    std::vector<BIYOS_offset> starts;
+    std::vector<BIYOS_offset> counts;
     std::vector<BIYOS_index> variables;
     std::vector<double> weights;
 };
 
 const SpecialOrderedSets kSample{
     .kinds = {BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE, BIYOS_SOSKND_ONE},
-    .starts = {0, 3, 3, 5},
+    .counts = {3, 0, 2},
     .variables = {2, 0, 3, 1, 0},
     .weights = {3.0, -1.0, 2.5, 0.5, 1.5},
 };
 
 const SpecialOrderedSets kEmpty{
     .kinds = {},
-    .starts = {0},
+    .counts = {},
     .variables = {},
     .weights = {},
 };
@@ -53,7 +53,7 @@ BIYOS_status add_special_ordered_sets(const Model &model,
     return BIYOS_addsos(model.get(),
                         static_cast<BIYOS_index>(soss.kinds.size()),
                         soss.kinds.data(),
-                        soss.starts.data(),
+                        soss.counts.data(),
                         soss.variables.data(),
                         soss.weights.data(),
                         pos);
@@ -84,7 +84,7 @@ SpecialOrderedSets sized(std::size_t n, BIYOS_offset nnz)
     const auto size = static_cast<std::size_t>(nnz);
     return SpecialOrderedSets{
         .kinds = std::vector<int>(n, -1),
-        .starts = std::vector<BIYOS_offset>(n + 1, -1),
+        .counts = std::vector<BIYOS_offset>(n, -1),
         .variables = std::vector<BIYOS_index>(size, -1),
         .weights = std::vector<double>(size, 9.0),
     };
@@ -100,7 +100,7 @@ BIYOS_status read_range(const Model &model,
                           pos + static_cast<BIYOS_index>(read.kinds.size()),
                           cap,
                           read.kinds.data(),
-                          read.starts.data(),
+                          read.counts.data(),
                           read.variables.data(),
                           read.weights.data());
 }
@@ -115,7 +115,7 @@ BIYOS_status read_list(const Model &model,
                           indices.data(),
                           cap,
                           read.kinds.data(),
-                          read.starts.data(),
+                          read.counts.data(),
                           read.variables.data(),
                           read.weights.data());
 }
@@ -142,7 +142,7 @@ SpecialOrderedSets read_listed(const Model &model, const std::vector<BIYOS_index
 void expect_special_ordered_sets(const SpecialOrderedSets &found, const SpecialOrderedSets &wanted)
 {
     EXPECT_EQ(found.kinds, wanted.kinds);
-    EXPECT_EQ(found.starts, wanted.starts);
+    EXPECT_EQ(found.counts, wanted.counts);
     EXPECT_EQ(found.variables, wanted.variables);
     expect_doubles(found.weights, wanted.weights);
 }
@@ -165,7 +165,7 @@ SpecialOrderedSets single(int kind, std::vector<BIYOS_index> variables, std::vec
     const auto size = static_cast<BIYOS_offset>(variables.size());
     return SpecialOrderedSets{
         .kinds = {kind},
-        .starts = {0, size},
+        .counts = {size},
         .variables = std::move(variables),
         .weights = std::move(weights),
     };
@@ -219,7 +219,7 @@ TEST(CApiTest, FirstSet)
     add_variables(model, 2);
     const SpecialOrderedSets two{
         .kinds = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO},
-        .starts = {0, 1, 2},
+        .counts = {1, 1},
         .variables = {0, 1},
         .weights = {1.0, 2.0},
     };
@@ -242,14 +242,14 @@ TEST(CApiTest, DefaultWeights)
     const Model model(env);
     add_variables(model, 3);
     const int kinds[] = {BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE};
-    const BIYOS_offset starts[] = {0, 3, 4};
+    const BIYOS_offset counts[] = {3, 1};
     const BIYOS_index variables[] = {2, 0, 1, 1};
     BIYOS_model *held = model.get();
-    ASSERT_EQ(BIYOS_addsos(held, 2, kinds, starts, variables, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addsos(held, 2, kinds, counts, variables, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addsos(held, 2, kinds, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     const SpecialOrderedSets wanted{
         .kinds = {BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE},
-        .starts = {0, 3, 4, 4, 4},
+        .counts = {3, 1, 0, 0},
         .variables = {2, 0, 1, 1},
         .weights = {1.0, 2.0, 3.0, 1.0},
     };
@@ -262,12 +262,12 @@ TEST(CApiTest, NullSets)
     const Model model(env);
     add_variables(model, 2);
     const int kind = BIYOS_SOSKND_ONE;
-    const BIYOS_offset starts[] = {0, 2};
+    const BIYOS_offset count = 2;
     const double weights[] = {1.0, 2.0};
     BIYOS_model *held = model.get();
-    EXPECT_EQ(BIYOS_addsos(held, 1, nullptr, starts, nullptr, weights, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addsos(held, 1, nullptr, &count, nullptr, weights, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'knd': is null");
-    EXPECT_EQ(BIYOS_addsos(held, 1, &kind, starts, nullptr, weights, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addsos(held, 1, &kind, &count, nullptr, weights, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'var': is null");
     EXPECT_EQ(BIYOS_addsos(held, 0, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(n_special_ordered_sets(model), 0);
@@ -287,16 +287,18 @@ TEST(CApiTest, RefusedSets)
     const double nan = std::numeric_limits<double>::quiet_NaN();
     SpecialOrderedSets two{
         .kinds = {BIYOS_SOSKND_ONE, 0},
-        .starts = {0, 1, 2},
+        .counts = {1, 1},
         .variables = {0, 1},
         .weights = {1.0, 2.0},
     };
     expect_refused(env, model, two, "set 4: kind 0 is unknown");
     two.kinds = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO};
-    two.starts = {1, 1, 2};
-    expect_refused(env, model, two, "argument 'off': begins at 1, not 0");
-    two.starts = {0, 2, 1};
-    expect_refused(env, model, two, "argument 'off': decreases from 2 to 1 at entry 2");
+    two.counts = {(std::numeric_limits<BIYOS_offset>::max)(), 1};
+    expect_refused(env, model, two, "argument 'cnt': sum overflows at entry 1");
+    SpecialOrderedSets three = two;
+    three.kinds.push_back(BIYOS_SOSKND_ONE);
+    three.counts = {1, 1, -1};
+    expect_refused(env, model, three, "argument 'cnt': -1 is negative at entry 2");
     expect_refused(env,
                    model,
                    single(BIYOS_SOSKND_TWO, {4}, {1.0}),
@@ -324,7 +326,7 @@ TEST(CApiTest, ListedSets)
     add_sample(model);
     const SpecialOrderedSets wanted{
         .kinds = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO, BIYOS_SOSKND_ONE, BIYOS_SOSKND_ONE},
-        .starts = {0, 2, 5, 7, 7},
+        .counts = {2, 3, 2, 0},
         .variables = {1, 0, 2, 0, 3, 1, 0},
         .weights = {0.5, 1.5, 3.0, -1.0, 2.5, 0.5, 1.5},
     };
@@ -349,7 +351,7 @@ TEST(CApiTest, SetCapacity)
     EXPECT_EQ(env.message(), "invalid argument: argument 'cap': holds 4 of the 5 members");
     expect_special_ordered_sets(read, untouched);
     ASSERT_EQ(read_range(model, 0, 8, read), BIYOS_OK);
-    EXPECT_EQ(read.starts, kSample.starts);
+    EXPECT_EQ(read.counts, kSample.counts);
     EXPECT_EQ(read.variables, std::vector<BIYOS_index>({2, 0, 3, 1, 0, -1, -1, -1}));
 }
 
@@ -383,9 +385,9 @@ TEST(CApiTest, SetOutputs)
     EXPECT_EQ(BIYOS_getsosrg(held, 0, 3, 5, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     SpecialOrderedSets read = sized(3, 5);
     const SpecialOrderedSets untouched = read;
-    EXPECT_EQ(BIYOS_getsosrg(held, 0, 3, 5, nullptr, read.starts.data(), nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getsosrg(held, 0, 3, 5, nullptr, read.counts.data(), nullptr, nullptr),
               BIYOS_OK);
-    EXPECT_EQ(read.starts, kSample.starts);
+    EXPECT_EQ(read.counts, kSample.counts);
     EXPECT_EQ(BIYOS_getsosrg(held, 0, 3, 5, read.kinds.data(), nullptr, nullptr, nullptr),
               BIYOS_OK);
     EXPECT_EQ(read.kinds, kSample.kinds);

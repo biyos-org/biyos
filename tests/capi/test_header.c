@@ -132,10 +132,10 @@ static void count(const BIYOS_event *event, void *data)
 static BIYOS_status use_functions(BIYOS_model *model)
 {
     const double constants[2] = {1.0, 2.0};
-    const int64_t starts[3] = {0, 2, 3};
+    const int64_t counts[2] = {2, 1};
     const int variables[3] = {1, 0, 1};
     const double values[3] = {1.0, 2.0, 3.0};
-    int64_t offsets[3] = {-1, -1, -1};
+    int64_t found[2] = {-1, -1};
     int held[3] = {-1, -1, -1};
     double kept[3] = {0.0, 0.0, 0.0};
     int map[2] = {-1, -1};
@@ -146,12 +146,12 @@ static BIYOS_status use_functions(BIYOS_model *model)
         BIYOS_delfunsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
         BIYOS_delfunrg(model, 2, 2, NULL) != BIYOS_OK ||
         BIYOS_setcstrg(model, 0, 2, constants) != BIYOS_OK ||
-        BIYOS_addrlintermrg(model, 0, 2, starts, variables, values) != BIYOS_OK)
+        BIYOS_addrlintermrg(model, 0, 2, counts, variables, values) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_getrlintermrg(model, 0, 2, 3, offsets, held, kept) != BIYOS_OK || offsets[1] != 2 ||
-        offsets[2] != 3 || held[0] != 0 || held[1] != 1)
+    if (BIYOS_getrlintermrg(model, 0, 2, 3, found, held, kept) != BIYOS_OK || found[0] != 2 ||
+        found[1] != 1 || held[0] != 0 || held[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -163,17 +163,17 @@ static BIYOS_status use_linear(BIYOS_model *model)
     const int functions[1] = {1};
     const int variables[1] = {0};
     const double values[1] = {4.0};
-    int64_t offsets[3] = {-1, -1, -1};
+    int64_t counts[2] = {-1, -1};
     BIYOS_offset needed = -1;
     int held[4] = {-1, -1, -1, -1};
     if (BIYOS_addlintermsp(model, 1, functions, variables, values) != BIYOS_OK ||
-        BIYOS_getrlintermrg(model, 0, 2, 4, offsets, held, NULL) != BIYOS_OK || offsets[2] != 4 ||
+        BIYOS_getrlintermrg(model, 0, 2, 4, counts, held, NULL) != BIYOS_OK || counts[1] != 2 ||
         held[2] != 0 || held[3] != 1)
     {
         return BIYOS_ERR_INTERNAL;
     }
     if (BIYOS_getnclintermrg(model, 1, 2, &needed) != BIYOS_OK || needed != 2 ||
-        BIYOS_getclintermrg(model, 1, 2, 2, offsets, held, NULL) != BIYOS_OK || offsets[1] != 2 ||
+        BIYOS_getclintermrg(model, 1, 2, 2, counts, held, NULL) != BIYOS_OK || counts[0] != 2 ||
         held[0] != 0 || held[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
@@ -184,25 +184,25 @@ static BIYOS_status use_linear(BIYOS_model *model)
 static BIYOS_status use_quadratic(BIYOS_model *model)
 {
     const int functions[1] = {1};
-    const int64_t starts[2] = {0, 2};
+    const int64_t count[1] = {2};
     const int firsts[2] = {1, 0};
     const int seconds[2] = {0, 0};
     const double values[2] = {2.0, 1.0};
-    int64_t offsets[3] = {-1, -1, -1};
+    int64_t counts[2] = {-1, -1};
     BIYOS_offset needed = -1;
     int owners[2] = {-1, -1};
     int held[2] = {-1, -1};
     int paired[2] = {-1, -1};
-    BIYOS_status status = BIYOS_addquadtermrg(model, 1, 2, starts, firsts, seconds, values);
+    BIYOS_status status = BIYOS_addquadtermrg(model, 1, 2, count, firsts, seconds, values);
     if (status == BIYOS_OK)
     {
-        status = BIYOS_getquadtermrg(model, 0, 2, 2, offsets, held, paired, NULL);
+        status = BIYOS_getquadtermrg(model, 0, 2, 2, counts, held, paired, NULL);
     }
     if (status == BIYOS_OK)
     {
         status = BIYOS_getquadtermsp(model, 1, functions, 2, &needed, owners, NULL, NULL, NULL);
     }
-    if (status != BIYOS_OK || needed != 2 || offsets[1] != 0 || offsets[2] != 2 || held[1] != 0 ||
+    if (status != BIYOS_OK || needed != 2 || counts[0] != 0 || counts[1] != 2 || held[1] != 0 ||
         paired[1] != 1 || owners[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
@@ -313,28 +313,28 @@ static BIYOS_status use_indicators(BIYOS_model *model)
 static BIYOS_status use_sos(BIYOS_model *model)
 {
     const int kinds[2] = {BIYOS_SOSKND_ONE, BIYOS_SOSKND_TWO};
-    const BIYOS_offset starts[3] = {0, 2, 3};
+    const BIYOS_offset counts[2] = {2, 1};
     const int variables[3] = {1, 0, 1};
     const int indices[1] = {1};
     int found[2] = {-1, -1};
-    BIYOS_offset offsets[3] = {-1, -1, -1};
+    BIYOS_offset read[2] = {-1, -1};
     int members[3] = {-1, -1, -1};
     double weights[3] = {0.0, 0.0, 0.0};
     int map[2] = {-1, -1};
     BIYOS_offset needed = -1;
     BIYOS_index first = -1;
     BIYOS_index sos = 0;
-    if (BIYOS_addsos(model, 2, kinds, starts, variables, NULL, &first) != BIYOS_OK || first != 0 ||
+    if (BIYOS_addsos(model, 2, kinds, counts, variables, NULL, &first) != BIYOS_OK || first != 0 ||
         BIYOS_getnsos(model, &sos) != BIYOS_OK || sos != 2 ||
         BIYOS_getnsosvarsp(model, 1, indices, &needed) != BIYOS_OK || needed != 1 ||
         BIYOS_getnsosvarrg(model, 0, 2, &needed) != BIYOS_OK || needed != 3)
     {
         return BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_getsosrg(model, 0, 2, 3, found, offsets, members, weights) != BIYOS_OK ||
-        found[1] != BIYOS_SOSKND_TWO || offsets[2] != 3 || members[1] != 0 ||
-        BIYOS_getsossp(model, 1, indices, 1, found, offsets, members, NULL) != BIYOS_OK ||
-        found[0] != BIYOS_SOSKND_TWO || offsets[1] != 1 || members[0] != 1 ||
+    if (BIYOS_getsosrg(model, 0, 2, 3, found, read, members, weights) != BIYOS_OK ||
+        found[1] != BIYOS_SOSKND_TWO || read[1] != 1 || members[1] != 0 ||
+        BIYOS_getsossp(model, 1, indices, 1, found, read, members, NULL) != BIYOS_OK ||
+        found[0] != BIYOS_SOSKND_TWO || read[0] != 1 || members[0] != 1 ||
         BIYOS_delsossp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
         BIYOS_delsosrg(model, 2, 2, NULL) != BIYOS_OK)
     {
@@ -346,12 +346,12 @@ static BIYOS_status use_sos(BIYOS_model *model)
 static BIYOS_status use_cones(BIYOS_model *model)
 {
     const int kinds[2] = {BIYOS_CONEKND_SOC, BIYOS_CONEKND_POW};
-    const int64_t offsets[3] = {0, 2, 4};
+    const int64_t counts[2] = {2, 2};
     const int functions[4] = {1, 0, 0, 1};
-    const int64_t starts[3] = {0, 0, 1};
+    const int64_t prmcnt[2] = {0, 1};
     const double weights[1] = {0.5};
     const int indices[1] = {1};
-    int64_t read[3] = {-1, -1, -1};
+    int64_t read[2] = {-1, -1};
     int members[4] = {-1, -1, -1, -1};
     int found[2] = {0, 0};
     int map[2] = {-1, -1};
@@ -360,7 +360,7 @@ static BIYOS_status use_cones(BIYOS_model *model)
     BIYOS_index first = -1;
     BIYOS_index cones = 0;
     int64_t needed = -1;
-    if (BIYOS_addcone(model, 2, kinds, offsets, functions, starts, weights, &first) != BIYOS_OK ||
+    if (BIYOS_addcone(model, 2, kinds, counts, functions, prmcnt, weights, &first) != BIYOS_OK ||
         BIYOS_getncone(model, &cones) != BIYOS_OK || first != 0 || cones != 2 ||
         BIYOS_getnconefunrg(model, 0, 2, &needed) != BIYOS_OK || needed != 4 ||
         BIYOS_getconerg(model, 0, 2, 4, found, read, members) != BIYOS_OK ||
@@ -369,7 +369,7 @@ static BIYOS_status use_cones(BIYOS_model *model)
         return BIYOS_ERR_INTERNAL;
     }
     if (BIYOS_getnconeprmsp(model, 1, indices, &needed) != BIYOS_OK || needed != 1 ||
-        BIYOS_getconeprmsp(model, 1, indices, 1, read, &weight) != BIYOS_OK || read[1] != 1 ||
+        BIYOS_getconeprmsp(model, 1, indices, 1, read, &weight) != BIYOS_OK || read[0] != 1 ||
         memcmp(&weight, weights, sizeof weight) != 0 ||
         BIYOS_getnconefunsp(model, 0, NULL, &needed) != BIYOS_OK ||
         BIYOS_getconesp(model, 0, NULL, 0, NULL, NULL, NULL) != BIYOS_OK ||
@@ -440,13 +440,13 @@ static BIYOS_status use_nodes(BIYOS_model *model)
 
 static BIYOS_status use_postfix(BIYOS_model *model)
 {
-    const BIYOS_offset off[3] = {0, 2, 4};
+    const BIYOS_offset cnt[2] = {2, 2};
     const BIYOS_int code[4] = {BIYOS_OP_NODE, BIYOS_OP_SIN, BIYOS_OP_VAR, BIYOS_OP_CPOW};
     const BIYOS_offset arg[4] = {2, 1, 0, 1};
     const BIYOS_real val[1] = {3.0};
     BIYOS_offset node[2] = {-1, -1};
     const BIYOS_index idx[1] = {1};
-    if (BIYOS_addexpr(model, 2, off, code, arg, val, node) != BIYOS_OK || node[0] != 3 ||
+    if (BIYOS_addexpr(model, 2, cnt, code, arg, val, node) != BIYOS_OK || node[0] != 3 ||
         node[1] != 5 || BIYOS_attachexprsp(model, 1, idx, node) != BIYOS_OK ||
         BIYOS_attachexprrg(model, 0, 1, node + 1) != BIYOS_OK ||
         BIYOS_clrfunsp(model, 1, idx) != BIYOS_OK ||

@@ -42,7 +42,7 @@ struct Added
 
 struct Compressed
 {
-    std::vector<BIYOS_offset> starts{0};
+    std::vector<BIYOS_offset> counts;
     Indices others;
     std::vector<double> values;
 };
@@ -108,6 +108,7 @@ Compressed compressed(const Added &added, int count, bool by_row)
     Compressed found;
     for (int record = 0; record < count; ++record)
     {
+        const std::size_t before = found.others.size();
         for (std::size_t k = 0; k < records.size(); ++k)
         {
             if (records[k] == record)
@@ -116,7 +117,7 @@ Compressed compressed(const Added &added, int count, bool by_row)
                 found.values.push_back(added.values[k]);
             }
         }
-        found.starts.push_back(static_cast<BIYOS_offset>(found.others.size()));
+        found.counts.push_back(static_cast<BIYOS_offset>(found.others.size() - before));
     }
     return found;
 }
@@ -138,7 +139,7 @@ BIYOS_status add_rows(const Model &model, const Added &added)
     return BIYOS_addrlintermrg(model.get(),
                                0,
                                n,
-                               rows.starts.data(),
+                               rows.counts.data(),
                                variables,
                                rows.values.data());
 }
@@ -149,7 +150,7 @@ BIYOS_status add_columns(const Model &model, const Added &added)
     const Compressed columns = compressed(added, n, false);
     const BIYOS_index *functions = columns.others.data();
     const double *values = columns.values.data();
-    return BIYOS_addclintermrg(model.get(), 0, n, columns.starts.data(), functions, values);
+    return BIYOS_addclintermrg(model.get(), 0, n, columns.counts.data(), functions, values);
 }
 
 Indices every_function(const Model &model)
@@ -305,8 +306,8 @@ TEST(AdderTest, Arguments)
     BIYOS_model *held = model.get();
     const std::array<BIYOS_index, 1> zero{0};
     const std::array<double, 1> one{1.0};
-    const std::array<BIYOS_offset, 3> backwards{0, 1, 0};
-    const std::array<BIYOS_offset, 2> late{1, 1};
+    const std::array<BIYOS_offset, 3> negative{1, 0, -1};
+    const std::array<BIYOS_offset, 2> overflowing{(std::numeric_limits<BIYOS_offset>::max)(), 1};
     EXPECT_EQ(BIYOS_addlintermsp(held, -1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': -1 is negative");
     EXPECT_EQ(BIYOS_addlintermsp(held, 1, nullptr, zero.data(), one.data()), BIYOS_ERR_BADARG);
@@ -323,13 +324,13 @@ TEST(AdderTest, Arguments)
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(),
               "invalid argument: variable " + std::to_string(variables) + ": unknown");
-    EXPECT_EQ(BIYOS_addclintermrg(held, 0, 2, backwards.data(), zero.data(), one.data()),
+    EXPECT_EQ(BIYOS_addclintermrg(held, 0, 3, negative.data(), zero.data(), one.data()),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 1 to 0 at entry 2");
-    EXPECT_EQ(BIYOS_addrlintermrg(held, 0, 1, late.data(), zero.data(), one.data()),
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': -1 is negative at entry 2");
+    EXPECT_EQ(BIYOS_addrlintermrg(held, 0, 2, overflowing.data(), zero.data(), one.data()),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': begins at 1, not 0");
-    EXPECT_EQ(BIYOS_addclintermrg(held, 0, 1, backwards.data(), nullptr, one.data()),
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': sum overflows at entry 1");
+    EXPECT_EQ(BIYOS_addclintermrg(held, 0, 1, negative.data(), nullptr, one.data()),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     EXPECT_EQ(BIYOS_addlintermsp(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);

@@ -36,7 +36,7 @@ constexpr int kDepth = 4;
 
 struct Program
 {
-    std::vector<BIYOS_offset> starts{0};
+    std::vector<BIYOS_offset> counts;
     std::vector<BIYOS_int> codes;
     std::vector<BIYOS_offset> arguments;
     std::vector<BIYOS_real> values;
@@ -250,19 +250,21 @@ Program random_program(const Model &model, Engine &engine, int n)
     };
     for (int k = 0; k < n; ++k)
     {
+        const std::size_t before = writer.program.codes.size();
         put_tree(writer, kDepth);
-        writer.program.starts.push_back(static_cast<BIYOS_offset>(writer.program.codes.size()));
+        const std::size_t after = writer.program.codes.size();
+        writer.program.counts.push_back(static_cast<BIYOS_offset>(after - before));
     }
     return std::move(writer.program);
 }
 
 std::vector<BIYOS_offset> add_program(const Model &model, const Program &program)
 {
-    const auto n = static_cast<int>(program.starts.size()) - 1;
+    const auto n = static_cast<int>(program.counts.size());
     std::vector<BIYOS_offset> nodes(at(n), -1);
     const BIYOS_status status = BIYOS_addexpr(model.get(),
                                               n,
-                                              program.starts.data(),
+                                              program.counts.data(),
                                               program.codes.data(),
                                               program.arguments.data(),
                                               program.values.data(),
@@ -368,14 +370,14 @@ void copy_linear(const Model &from, const Model &to)
     const BIYOS_index n = count_of(from, BIYOS_getnfun);
     BIYOS_offset nnz = -1;
     ASSERT_EQ(BIYOS_getnrlintermrg(from.get(), 0, n, &nnz), BIYOS_OK);
-    std::vector<BIYOS_offset> starts(at(n) + 1);
+    std::vector<BIYOS_offset> counts(at(n));
     std::vector<BIYOS_index> variables(at(nnz));
     std::vector<BIYOS_real> values(at(nnz));
     const BIYOS_status read =
-        BIYOS_getrlintermrg(from.get(), 0, n, nnz, starts.data(), variables.data(), values.data());
+        BIYOS_getrlintermrg(from.get(), 0, n, nnz, counts.data(), variables.data(), values.data());
     ASSERT_EQ(read, BIYOS_OK);
     const BIYOS_status added =
-        BIYOS_addrlintermrg(to.get(), 0, n, starts.data(), variables.data(), values.data());
+        BIYOS_addrlintermrg(to.get(), 0, n, counts.data(), variables.data(), values.data());
     ASSERT_EQ(added, BIYOS_OK);
 }
 
@@ -384,7 +386,7 @@ void copy_pairs(const Model &from, const Model &to)
     const BIYOS_index n = count_of(from, BIYOS_getnfun);
     BIYOS_offset nnz = -1;
     ASSERT_EQ(BIYOS_getnquadtermrg(from.get(), 0, n, &nnz), BIYOS_OK);
-    std::vector<BIYOS_offset> starts(at(n) + 1);
+    std::vector<BIYOS_offset> counts(at(n));
     std::vector<BIYOS_index> rows(at(nnz));
     std::vector<BIYOS_index> columns(at(nnz));
     std::vector<BIYOS_real> values(at(nnz));
@@ -392,7 +394,7 @@ void copy_pairs(const Model &from, const Model &to)
                                                   0,
                                                   n,
                                                   nnz,
-                                                  starts.data(),
+                                                  counts.data(),
                                                   rows.data(),
                                                   columns.data(),
                                                   values.data());
@@ -400,7 +402,7 @@ void copy_pairs(const Model &from, const Model &to)
     const BIYOS_status added = BIYOS_addquadtermrg(to.get(),
                                                    0,
                                                    n,
-                                                   starts.data(),
+                                                   counts.data(),
                                                    rows.data(),
                                                    columns.data(),
                                                    values.data());
@@ -414,7 +416,7 @@ Program read_expressions(const Model &model)
     BIYOS_offset nval = -1;
     EXPECT_EQ(BIYOS_getnexprrg(model.get(), 0, n, &nnz, &nval), BIYOS_OK);
     Program read{
-        .starts = std::vector<BIYOS_offset>(at(n) + 1),
+        .counts = std::vector<BIYOS_offset>(at(n)),
         .codes = std::vector<BIYOS_int>(at(nnz)),
         .arguments = std::vector<BIYOS_offset>(at(nnz)),
         .values = std::vector<BIYOS_real>(at(nval)),
@@ -424,7 +426,7 @@ Program read_expressions(const Model &model)
                                                 n,
                                                 nnz,
                                                 nval,
-                                                read.starts.data(),
+                                                read.counts.data(),
                                                 read.codes.data(),
                                                 read.arguments.data(),
                                                 read.values.data());
@@ -484,7 +486,7 @@ void copy_special_ordered_sets(const Model &from, const Model &to)
     BIYOS_offset nnz = -1;
     ASSERT_EQ(BIYOS_getnsosvarrg(from.get(), 0, n, &nnz), BIYOS_OK);
     std::vector<BIYOS_int> kinds(at(n));
-    std::vector<BIYOS_offset> starts(at(n) + 1);
+    std::vector<BIYOS_offset> counts(at(n));
     std::vector<BIYOS_index> variables(at(nnz));
     std::vector<BIYOS_real> weights(at(nnz));
     const BIYOS_status read = BIYOS_getsosrg(from.get(),
@@ -492,14 +494,14 @@ void copy_special_ordered_sets(const Model &from, const Model &to)
                                              n,
                                              nnz,
                                              kinds.data(),
-                                             starts.data(),
+                                             counts.data(),
                                              variables.data(),
                                              weights.data());
     ASSERT_EQ(read, BIYOS_OK);
     const BIYOS_status added = BIYOS_addsos(to.get(),
                                             n,
                                             kinds.data(),
-                                            starts.data(),
+                                            counts.data(),
                                             variables.data(),
                                             weights.data(),
                                             nullptr);
@@ -514,22 +516,22 @@ void copy_cones(const Model &from, const Model &to)
     ASSERT_EQ(BIYOS_getnconefunrg(from.get(), 0, n, &nnz), BIYOS_OK);
     ASSERT_EQ(BIYOS_getnconeprmrg(from.get(), 0, n, &nprm), BIYOS_OK);
     std::vector<BIYOS_int> kinds(at(n));
-    std::vector<BIYOS_offset> starts(at(n) + 1);
+    std::vector<BIYOS_offset> counts(at(n));
     std::vector<BIYOS_index> functions(at(nnz));
-    std::vector<BIYOS_offset> parameter_starts(at(n) + 1);
+    std::vector<BIYOS_offset> parameter_counts(at(n));
     std::vector<BIYOS_real> parameters(at(nprm));
     const BIYOS_status members =
-        BIYOS_getconerg(from.get(), 0, n, nnz, kinds.data(), starts.data(), functions.data());
+        BIYOS_getconerg(from.get(), 0, n, nnz, kinds.data(), counts.data(), functions.data());
     ASSERT_EQ(members, BIYOS_OK);
     const BIYOS_status read =
-        BIYOS_getconeprmrg(from.get(), 0, n, nprm, parameter_starts.data(), parameters.data());
+        BIYOS_getconeprmrg(from.get(), 0, n, nprm, parameter_counts.data(), parameters.data());
     ASSERT_EQ(read, BIYOS_OK);
     const BIYOS_status added = BIYOS_addcone(to.get(),
                                              n,
                                              kinds.data(),
-                                             starts.data(),
+                                             counts.data(),
                                              functions.data(),
-                                             parameter_starts.data(),
+                                             parameter_counts.data(),
                                              parameters.data(),
                                              nullptr);
     ASSERT_EQ(added, BIYOS_OK);
@@ -667,7 +669,7 @@ std::string difference(const Model &left, const Model &right)
 
 void expect_same(const Program &found, const Program &wanted)
 {
-    EXPECT_EQ(found.starts, wanted.starts);
+    EXPECT_EQ(found.counts, wanted.counts);
     EXPECT_EQ(found.codes, wanted.codes);
     EXPECT_EQ(found.arguments, wanted.arguments);
     EXPECT_EQ(bits_of(found.values), bits_of(wanted.values));

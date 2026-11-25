@@ -90,7 +90,7 @@ const std::array<Calls, 6> kCalls{{
 }};
 
 constexpr std::array<BIYOS_index, 3> kThree{0, 1, 2};
-constexpr std::array<BIYOS_offset, 4> kStarts{0, 1, 2, 3};
+constexpr std::array<BIYOS_offset, 3> kCounts{1, 1, 1};
 constexpr std::array<const char *, 3> kNames{"r0", "r1", "r2"};
 
 void add_parts(const Model &model)
@@ -114,10 +114,10 @@ void add_records(const Model &model)
     ASSERT_EQ(BIYOS_addobj(held, 3, three, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addind(held, 3, three, values.data(), three, nullptr, nullptr, nullptr),
               BIYOS_OK);
-    ASSERT_EQ(BIYOS_addsos(held, 3, sets.data(), kStarts.data(), three, nullptr, nullptr),
+    ASSERT_EQ(BIYOS_addsos(held, 3, sets.data(), kCounts.data(), three, nullptr, nullptr),
               BIYOS_OK);
     ASSERT_EQ(
-        BIYOS_addcone(held, 3, cones.data(), kStarts.data(), three, nullptr, nullptr, nullptr),
+        BIYOS_addcone(held, 3, cones.data(), kCounts.data(), three, nullptr, nullptr, nullptr),
         BIYOS_OK);
     ASSERT_EQ(BIYOS_addccon(held, 3, three, partners.data(), nullptr, nullptr, nullptr), BIYOS_OK);
 }
@@ -336,7 +336,7 @@ void build_variables(const Model &model, const Spread &spread)
     std::vector<BIYOS_index> variables(spread.lower.size());
     std::iota(variables.begin(), variables.end(), 0);
     const BIYOS_int kind = BIYOS_SOSKND_ONE;
-    const std::array<BIYOS_offset, 2> starts{0, 1};
+    const BIYOS_offset count = 1;
     const BIYOS_real *coefficients = spread.coefficients.data();
     ASSERT_EQ(BIYOS_addvar(held, n, nullptr, spread.lower.data(), nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setvarnamerg(held, 0, named, spread.names.data()), BIYOS_OK);
@@ -344,8 +344,7 @@ void build_variables(const Model &model, const Spread &spread)
     ASSERT_EQ(BIYOS_addfun(held, 1, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addlintermsp(held, n, functions.data(), variables.data(), coefficients),
               BIYOS_OK);
-    ASSERT_EQ(BIYOS_addsos(held, 1, &kind, starts.data(), &spread.member, nullptr, nullptr),
-              BIYOS_OK);
+    ASSERT_EQ(BIYOS_addsos(held, 1, &kind, &count, &spread.member, nullptr, nullptr), BIYOS_OK);
 }
 
 void expect_built(const Env &env, const Model &model, const Spread &spread)

@@ -5,7 +5,6 @@
 #include "capi/model/selection.hpp"
 #include "capi/model/tolerances.hpp"
 #include "core/index.hpp"
-#include "model/compressed.hpp"
 #include "model/model.hpp"
 
 #include <algorithm>
@@ -26,11 +25,11 @@ using biyos::capi::get_tolerances;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::offsets;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::set_tolerances;
+using biyos::capi::starts_of;
 using biyos::capi::writable;
 
 namespace
@@ -39,9 +38,9 @@ namespace
 struct Given
 {
     const int *kinds;
-    const std::int64_t *starts;
+    const std::int64_t *counts;
     const int *functions;
-    const std::int64_t *parameter_starts;
+    const std::int64_t *parameter_counts;
     const double *parameters;
 };
 
@@ -49,7 +48,7 @@ template <typename T> using Part = std::span<const T> (Model::*)(Index, Index) c
 
 template <typename T> struct Compressed
 {
-    std::int64_t *starts;
+    std::int64_t *counts;
     T *items;
 };
 
@@ -85,12 +84,10 @@ void add_cones(BIYOS_model &model, int n, const Given &given, int *start)
     if (size > 0)
     {
         require(given.kinds, "knd");
-        require(given.starts, "off");
+        require(given.counts, "cnt");
     }
-    const std::vector<Offset> starts = offsets(size, given.starts);
-    const std::vector<Offset> parameter_starts = offsets(size, given.parameter_starts);
-    biyos::check_starts(starts);
-    biyos::check_starts(parameter_starts, "prmoff");
+    const std::vector<Offset> starts = starts_of(size, given.counts);
+    const std::vector<Offset> parameter_starts = starts_of(size, given.parameter_counts, "prmcnt");
     core.check_cone_room(size, starts.back(), parameter_starts.back());
     const Index index = core.n_cones();
     core.add_cones(kinds_of(size, given.kinds),
@@ -126,20 +123,16 @@ void write_part(const Model &core, std::span<const Index> cones, Part<T> part, C
     std::int64_t written = 0;
     for (std::size_t j = 0; j < cones.size(); ++j)
     {
-        if (out.starts != nullptr)
-        {
-            out.starts[j] = written;
-        }
         const std::span<const T> items = (core.*part)(cones[j], cones[j] + 1);
+        if (out.counts != nullptr)
+        {
+            out.counts[j] = static_cast<std::int64_t>(items.size());
+        }
         if (out.items != nullptr)
         {
             std::ranges::copy(items, out.items + written);
         }
         written += static_cast<std::int64_t>(items.size());
-    }
-    if (out.starts != nullptr)
-    {
-        out.starts[cones.size()] = written;
     }
 }
 
@@ -192,17 +185,17 @@ void get_parameters(const BIYOS_model &model,
 BIYOS_status BIYOS_addcone(BIYOS_model *mdl,
                            BIYOS_index n,
                            const BIYOS_int *knd,
-                           const BIYOS_offset *off,
+                           const BIYOS_offset *cnt,
                            const BIYOS_index *fun,
-                           const BIYOS_offset *prmoff,
+                           const BIYOS_offset *prmcnt,
                            const BIYOS_real *prm,
                            BIYOS_index *pos)
 {
     const Given given{
         .kinds = knd,
-        .starts = off,
+        .counts = cnt,
         .functions = fun,
-        .parameter_starts = prmoff,
+        .parameter_counts = prmcnt,
         .parameters = prm,
     };
     return guarded<add_cones>(mdl, n, given, pos);
@@ -280,10 +273,10 @@ BIYOS_status BIYOS_getconesp(const BIYOS_model *mdl,
                              const BIYOS_index *idx,
                              BIYOS_offset cap,
                              BIYOS_int *knd,
-                             BIYOS_offset *off,
+                             BIYOS_offset *cnt,
                              BIYOS_index *fun)
 {
-    const Compressed<Index> out{.starts = off, .items = fun};
+    const Compressed<Index> out{.counts = cnt, .items = fun};
     return guarded<get_members<List>>(mdl, List{n, idx}, cap, knd, out);
 }
 
@@ -292,10 +285,10 @@ BIYOS_status BIYOS_getconerg(const BIYOS_model *mdl,
                              BIYOS_index end,
                              BIYOS_offset cap,
                              BIYOS_int *knd,
-                             BIYOS_offset *off,
+                             BIYOS_offset *cnt,
                              BIYOS_index *fun)
 {
-    const Compressed<Index> out{.starts = off, .items = fun};
+    const Compressed<Index> out{.counts = cnt, .items = fun};
     return guarded<get_members<Range>>(mdl, Range{beg, end}, cap, knd, out);
 }
 
@@ -319,10 +312,10 @@ BIYOS_status BIYOS_getconeprmsp(const BIYOS_model *mdl,
                                 BIYOS_index n,
                                 const BIYOS_index *idx,
                                 BIYOS_offset cap,
-                                BIYOS_offset *prmoff,
+                                BIYOS_offset *prmcnt,
                                 BIYOS_real *prm)
 {
-    const Compressed<double> out{.starts = prmoff, .items = prm};
+    const Compressed<double> out{.counts = prmcnt, .items = prm};
     return guarded<get_parameters<List>>(mdl, List{n, idx}, cap, out);
 }
 
@@ -330,9 +323,9 @@ BIYOS_status BIYOS_getconeprmrg(const BIYOS_model *mdl,
                                 BIYOS_index beg,
                                 BIYOS_index end,
                                 BIYOS_offset cap,
-                                BIYOS_offset *prmoff,
+                                BIYOS_offset *prmcnt,
                                 BIYOS_real *prm)
 {
-    const Compressed<double> out{.starts = prmoff, .items = prm};
+    const Compressed<double> out{.counts = prmcnt, .items = prm};
     return guarded<get_parameters<Range>>(mdl, Range{beg, end}, cap, out);
 }

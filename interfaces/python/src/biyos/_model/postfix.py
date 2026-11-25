@@ -78,13 +78,14 @@ class _Writer:
         self._model = model
         self._shared = _shared(trees)
         self._kept: dict[int, int] = {}
-        self.off = [0]
+        self.cnt: list[int] = []
         self.code: list[Operator] = []
         self.arg: list[int] = []
         self.val: list[float] = []
         for tree in trees:
+            before = len(self.code)
             self._write(tree)
-            self.off.append(len(self.code))
+            self.cnt.append(len(self.code) - before)
 
     def _write(self, tree: Operand) -> None:
         stack: list[Operand | _Close] = [tree]
@@ -131,7 +132,7 @@ def postfix(model: "Model", trees: Sequence[Operand]) -> Postfix:
             found = type(tree).__name__
             raise TypeError(f"expr must be an expression, not {found}")
     writer = _Writer(model, trees)
-    return writer.off, writer.code, writer.arg, writer.val
+    return writer.cnt, writer.code, writer.arg, writer.val
 
 
 def attached(model: "Model", trees: Sequence[Operand]) -> Functions:

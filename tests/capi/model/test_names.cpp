@@ -5,7 +5,6 @@
 
 #include <array>
 #include <cstddef>
-#include <numeric>
 #include <string>
 #include <vector>
 
@@ -115,13 +114,12 @@ BIYOS_status find_one(const Calls &family,
 void add_cones(BIYOS_model *model, BIYOS_index n)
 {
     const std::vector<BIYOS_int> kinds(static_cast<std::size_t>(n), BIYOS_CONEKND_NONNEG);
-    std::vector<BIYOS_offset> starts(static_cast<std::size_t>(n) + 1);
-    std::iota(starts.begin(), starts.end(), 0);
+    const std::vector<BIYOS_offset> counts(static_cast<std::size_t>(n), 1);
     const Indices functions(static_cast<std::size_t>(n), 0);
     const BIYOS_status status = BIYOS_addcone(model,
                                               n,
                                               kinds.data(),
-                                              starts.data(),
+                                              counts.data(),
                                               functions.data(),
                                               nullptr,
                                               nullptr,

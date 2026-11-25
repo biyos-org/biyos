@@ -22,7 +22,7 @@ constexpr double kNoValue = -7.5;
 
 struct Compressed
 {
-    std::vector<std::int64_t> starts;
+    std::vector<std::int64_t> counts;
     std::vector<int> rows;
     std::vector<int> columns;
     std::vector<double> values;
@@ -31,14 +31,14 @@ struct Compressed
 const std::vector<int> kFunctions{2, 0};
 
 const Compressed kSample{
-    .starts = {0, 2, 5},
+    .counts = {2, 3},
     .rows = {1, 2, 0, 2, 1},
     .columns = {0, 2, 0, 1, 1},
     .values = {3.0, 1.0, 2.0, -1.0, -0.0},
 };
 
 const Compressed kSorted{
-    .starts = {0, 3, 3, 5},
+    .counts = {3, 0, 2},
     .rows = {0, 1, 1, 0, 2},
     .columns = {0, 1, 2, 1, 2},
     .values = {2.0, -0.0, -1.0, 3.0, 1.0},
@@ -49,7 +49,7 @@ std::vector<int> owners_of(const std::vector<int> &functions, const Compressed &
     std::vector<int> owners;
     for (std::size_t j = 0; j < functions.size(); ++j)
     {
-        const auto count = static_cast<std::size_t>(terms.starts[j + 1] - terms.starts[j]);
+        const auto count = static_cast<std::size_t>(terms.counts[j]);
         owners.insert(owners.end(), count, functions[j]);
     }
     return owners;
@@ -79,7 +79,7 @@ void add_sample(const Model &model)
 Compressed blank(std::size_t functions, std::size_t terms)
 {
     return Compressed{
-        .starts = std::vector<std::int64_t>(functions + 1, -1),
+        .counts = std::vector<std::int64_t>(functions, -1),
         .rows = std::vector<int>(terms, kNoVariable),
         .columns = std::vector<int>(terms, kNoVariable),
         .values = std::vector<double>(terms, kNoValue),
@@ -96,7 +96,7 @@ BIYOS_status read_with(const Model &model,
                                start,
                                start + size,
                                capacity,
-                               read.starts.data(),
+                               read.counts.data(),
                                read.rows.data(),
                                read.columns.data(),
                                read.values.data());
@@ -129,7 +129,7 @@ std::vector<std::uint64_t> bits_of(const std::vector<double> &values)
 
 void expect_compressed(const Compressed &found, const Compressed &wanted)
 {
-    EXPECT_EQ(found.starts, wanted.starts);
+    EXPECT_EQ(found.counts, wanted.counts);
     EXPECT_EQ(found.rows, wanted.rows);
     EXPECT_EQ(found.columns, wanted.columns);
     EXPECT_EQ(bits_of(found.values), bits_of(wanted.values));
@@ -183,7 +183,7 @@ TEST(CApiTest, QuadraticSums)
     const Model model(env);
     add_sample(model);
     const Compressed more{
-        .starts = {0, 1, 3},
+        .counts = {1, 2},
         .rows = {2, 1, 1},
         .columns = {2, 0, 2},
         .values = {0.5, 0.25, 4.0},
@@ -192,7 +192,7 @@ TEST(CApiTest, QuadraticSums)
     Compressed read = blank(3, 7);
     EXPECT_EQ(read_terms(model, 0, 3, read), 7);
     const Compressed wanted{
-        .starts = {0, 4, 4, 7},
+        .counts = {4, 0, 3},
         .rows = {0, 1, 1, 2, 0, 1, 2},
         .columns = {0, 1, 2, 2, 1, 2, 2},
         .values = {2.0, -0.0, -1.0, 0.5, 3.25, 4.0, 1.0},
@@ -216,11 +216,11 @@ TEST(CApiTest, QuadraticSizes)
     expect_compressed(small, blank(3, 4));
     Compressed empty = blank(1, 0);
     EXPECT_EQ(read_with(model, 1, 1, empty, 0), BIYOS_OK);
-    EXPECT_EQ(empty.starts, (std::vector<std::int64_t>{0, 0}));
+    EXPECT_EQ(empty.counts, std::vector<std::int64_t>{0});
     Compressed large = blank(3, 6);
     EXPECT_EQ(read_terms(model, 0, 3, large), 5);
     const Compressed whole{
-        .starts = kSorted.starts,
+        .counts = kSorted.counts,
         .rows = {0, 1, 1, 0, 2, kNoVariable},
         .columns = {0, 1, 2, 1, 2, kNoVariable},
         .values = {2.0, -0.0, -1.0, 3.0, 1.0, kNoValue},
@@ -236,7 +236,7 @@ TEST(CApiTest, QuadraticRange)
     Compressed read = blank(2, 2);
     EXPECT_EQ(read_terms(model, 1, 2, read), 2);
     const Compressed wanted{
-        .starts = {0, 0, 2},
+        .counts = {0, 2},
         .rows = {0, 2},
         .columns = {1, 2},
         .values = {3.0, 1.0},
@@ -244,7 +244,6 @@ TEST(CApiTest, QuadraticRange)
     expect_compressed(read, wanted);
     Compressed none = blank(0, 0);
     EXPECT_EQ(read_terms(model, 3, 0, none), 0);
-    EXPECT_EQ(none.starts, std::vector<std::int64_t>{0});
 }
 
 TEST(CApiTest, NullPairs)
@@ -254,13 +253,13 @@ TEST(CApiTest, NullPairs)
     add_sample(model);
     Compressed read = blank(3, 5);
     BIYOS_model *held = model.get();
-    std::int64_t *starts = read.starts.data();
+    std::int64_t *counts = read.counts.data();
     int *rows = read.rows.data();
     int *columns = read.columns.data();
     double *values = read.values.data();
     EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, nullptr, rows, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, nullptr, nullptr, columns, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, starts, nullptr, nullptr, values), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getquadtermrg(held, 0, 3, 5, counts, nullptr, nullptr, values), BIYOS_OK);
     expect_compressed(read, kSorted);
     EXPECT_EQ(BIYOS_getnquadtermrg(held, 0, 3, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
@@ -320,22 +319,22 @@ TEST(CApiTest, HugeQuadratic)
     const Model model(env);
     add_sample(model);
     const Compressed most{
-        .starts = {0, (std::numeric_limits<std::int64_t>::max)()},
+        .counts = {(std::numeric_limits<std::int64_t>::max)()},
         .rows = {0, 1},
         .columns = {0, 1},
         .values = {1.0, 2.0},
     };
     Compressed large = most;
-    large.starts = {0, std::int64_t{1} << 59};
+    large.counts = {std::int64_t{1} << 59};
     const std::string message = "out of memory: model: no quadratic term offset left";
     BIYOS_model *held = model.get();
     const int *rows = most.rows.data();
     const int *columns = most.columns.data();
     const double *values = most.values.data();
-    EXPECT_EQ(BIYOS_addquadtermrg(held, 1, 2, most.starts.data(), rows, columns, values),
+    EXPECT_EQ(BIYOS_addquadtermrg(held, 1, 2, most.counts.data(), rows, columns, values),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
-    EXPECT_EQ(BIYOS_addquadtermrg(held, 1, 2, large.starts.data(), rows, columns, values),
+    EXPECT_EQ(BIYOS_addquadtermrg(held, 1, 2, large.counts.data(), rows, columns, values),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
     expect_sample(model);

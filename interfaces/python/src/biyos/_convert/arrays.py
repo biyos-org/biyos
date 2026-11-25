@@ -125,13 +125,10 @@ def indices_of(
     return _array(c_int, name, items, count)
 
 
-def _ordered(name: str, starts: Array[c_int64]) -> None:
-    if len(starts) > 0 and starts[0] != 0:
-        raise ValueError(f"{name} begins at {starts[0]}, not 0")
-    for k in range(1, len(starts)):
-        if starts[k] < starts[k - 1]:
-            fall = f"{starts[k - 1]} to {starts[k]}"
-            raise ValueError(f"{name} decreases from {fall} at entry {k}")
+def _counted(name: str, counts: Array[c_int64]) -> None:
+    for k, count in enumerate(counts):
+        if count < 0:
+            raise ValueError(f"{name}: {count} is negative at entry {k}")
 
 
 def int64s(
@@ -145,10 +142,10 @@ def int64s(
     return _array(c_int64, name, items, count)
 
 
-def offsets(
+def counts(
     name: str, values: Sequence[SupportsIndex] | None, count: int
 ) -> Array[c_int64] | None:
     copied = int64s(name, values, count)
     if copied is not None:
-        _ordered(name, copied)
+        _counted(name, copied)
     return copied

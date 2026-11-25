@@ -9,7 +9,7 @@ from number import Number
 from refusal import LOCKED, refusal
 
 
-OFF = [0, 8]
+CNT = [8]
 CODE = [
     Operator.CONSTANT,
     Operator.VARIABLE,
@@ -92,11 +92,11 @@ def test_views(env, model):
 
 
 def test_postfix(model):
-    assert model.addexpr(OFF, CODE, ARG, VAL) == [5]
+    assert model.addexpr(CNT, CODE, ARG, VAL) == [5]
     assert next_id(model) == 6
-    assert model.addexpr([0], [], []) == []
+    assert model.addexpr([], [], []) == []
     shared = model.addexpr(
-        [0, 2, 4],
+        [2, 2],
         [Operator.NODE, Operator.SIN, Operator.NODE, Operator.COS],
         [3, 1, 3, 1],
     )
@@ -119,7 +119,7 @@ KEPT_VAL = [0.0, 1.0, 1.0, 0.5, 2.0, 3.0]
 
 
 def test_kept(model):
-    tops = model.addexpr([0, 6, 8], KEPT_CODE, KEPT_ARG, KEPT_VAL)
+    tops = model.addexpr([6, 2], KEPT_CODE, KEPT_ARG, KEPT_VAL)
     assert tops == [3, 4]
     assert next_id(model) == 5
 
@@ -141,13 +141,13 @@ def test_same_graph(env):
             Operator.SIN,
             Operator.PRODUCT,
         ]
-        tops = postfix.addexpr([0, 5], code, [0, 1, 1, 1, 2], [2.0])
+        tops = postfix.addexpr([5], code, [0, 1, 1, 1, 2], [2.0])
         assert tops == [top]
         assert next_id(nodes) == next_id(postfix)
 
 
 def test_attach(model):
-    top = model.addexpr(OFF, CODE, ARG, VAL)
+    top = model.addexpr(CNT, CODE, ARG, VAL)
     model.addlinterm([1], [2], [1.0])
     assert model.attachexpr([1], top) is None
     assert model.getcst(range(2)) == [0.5, 3.0]
@@ -180,7 +180,7 @@ def test_shared(model):
     x = model.addvarnode(0)
     sine = model.addnode(Operator.SIN, [x])
     tops = model.addexpr(
-        [0, 3, 5],
+        [3, 2],
         [Operator.NODE, Operator.VARIABLE, Operator.SUM]
         + [Operator.NODE, Operator.SQRT],
         [sine, 1, 2, sine, 1],
@@ -192,7 +192,7 @@ def test_shared(model):
 
 
 def test_clear(model):
-    top = model.addexpr(OFF, CODE, ARG, VAL)
+    top = model.addexpr(CNT, CODE, ARG, VAL)
     model.attachexpr([0, 1], top * 2)
     model.clrfun([1, 1])
     assert model.getcst(range(2)) == [3.5, 0.0]
@@ -220,12 +220,12 @@ def rebuilt(env, model):
 
 
 def test_read(model):
-    top = model.addexpr(OFF, CODE, ARG, VAL)
+    top = model.addexpr(CNT, CODE, ARG, VAL)
     model.attachexpr([1], top)
     assert model.getnexpr() == (3, 1)
-    off, code, arg, val = model.getexpr()
-    assert (off, code, arg, val) == (
-        [0, 1, 3],
+    cnt, code, arg, val = model.getexpr()
+    assert (cnt, code, arg, val) == (
+        [1, 2],
         [Operator.CONSTANT, Operator.VARIABLE, Operator.EXP],
         [0, 1, 1],
         [0.0],
@@ -233,14 +233,14 @@ def test_read(model):
     assert all(type(entry) is Operator for entry in code)
     twice = [Operator.VARIABLE, Operator.EXP, Operator.KEEP]
     twice += [Operator.REFERENCE]
-    assert model.getexpr([1, 1]) == ([0, 3, 4], twice, [1, 1, 1, 2], [])
+    assert model.getexpr([1, 1]) == ([3, 1], twice, [1, 1, 1, 2], [])
     assert model.getnexpr([1, 1]) == (4, 0)
-    assert model.getexpr([]) == ([0], [], [], [])
+    assert model.getexpr([]) == ([], [], [], [])
     assert model.getnexpr(range(2, 2)) == (0, 0)
 
 
 def test_round_trip(env, model):
-    tops = model.addexpr([0, 6, 8], KEPT_CODE, KEPT_ARG, KEPT_VAL)
+    tops = model.addexpr([6, 2], KEPT_CODE, KEPT_ARG, KEPT_VAL)
     x = model.addvarnode(0)
     sine = model.addnode(Operator.SIN, [x])
     ratio = model.addnode(Operator.DIVISION, [sine, sine])
@@ -255,7 +255,7 @@ def test_round_trip(env, model):
         assert copy.getquadterm() == model.getquadterm()
     code = [Operator.VARIABLE, Operator.SIN, Operator.KEEP]
     code += [Operator.REFERENCE, Operator.DIVISION, Operator.CONSTANT]
-    assert model.getexpr(f) == ([0, 5, 6], code, [0, 1, 1, 2, 2, 0], [0.0])
+    assert model.getexpr(f) == ([5, 1], code, [0, 1, 1, 2, 2, 0], [0.0])
 
 
 @pytest.mark.parametrize(
@@ -264,12 +264,12 @@ def test_round_trip(env, model):
 def test_read_forms(model, monkeypatch, kind, form):
     f = model.addfun(2)
     idx = {"block": f, "range": range(2, 4), "list": [2, 3]}[kind]
-    model.attachexpr([3], model.addexpr(OFF, CODE, ARG, VAL))
+    model.attachexpr([3], model.addexpr(CNT, CODE, ARG, VAL))
     seen = []
     trace(monkeypatch, seen, "getnexpr")
     trace(monkeypatch, seen, "getexpr")
     code = [Operator.CONSTANT, Operator.VARIABLE, Operator.EXP]
-    assert model.getexpr(idx) == ([0, 1, 3], code, [0, 1, 1], [0.0])
+    assert model.getexpr(idx) == ([1, 2], code, [0, 1, 1], [0.0])
     assert model.getnexpr(idx) == (3, 1)
     assert seen == [form] * 3
 
@@ -278,28 +278,28 @@ def test_refused(model):
     x = model.addvarnode(0)
     expression = "invalid argument: expression 0: "
     cases = [
-        (([0, 2], [Operator.VARIABLE] * 2, [0, 1]), "2 operands left, not 1"),
-        (([0, 1], [34], [0]), "entry 0: operator 34 is unknown"),
-        (([0, 1], [Operator.VARIABLE], [3]), "entry 0: variable 3 is unknown"),
-        (([0, 1], [Operator.NODE], [1]), "entry 0: node 1 is unknown"),
+        (([2], [Operator.VARIABLE] * 2, [0, 1]), "2 operands left, not 1"),
+        (([1], [34], [0]), "entry 0: operator 34 is unknown"),
+        (([1], [Operator.VARIABLE], [3]), "entry 0: variable 3 is unknown"),
+        (([1], [Operator.NODE], [1]), "entry 0: node 1 is unknown"),
         (
-            ([0, 2], [Operator.VARIABLE, Operator.REFERENCE], [0, 0]),
+            ([2], [Operator.VARIABLE, Operator.REFERENCE], [0, 0]),
             "entry 1: entry 0 is no earlier keep",
         ),
         (
-            ([0, 2], [Operator.VARIABLE, Operator.DIVISION], [0, 2]),
+            ([2], [Operator.VARIABLE, Operator.DIVISION], [0, 2]),
             "entry 1: 2 operands taken, 1 given",
         ),
         (
-            ([0, 2], [Operator.VARIABLE, Operator.LOG], [0, 2]),
+            ([2], [Operator.VARIABLE, Operator.LOG], [0, 2]),
             "entry 1: operator 10 takes 1 child, not 2",
         ),
-        (([0, 0], [], []), "0 operands left, not 1"),
+        (([0], [], []), "0 operands left, not 1"),
     ]
     for arguments, message in cases:
         assert refusal(model.addexpr, *arguments) == expression + message
     message = refusal(
-        model.addexpr, [0, 1], [Operator.CONSTANT], [0], [biyos.inf]
+        model.addexpr, [1], [Operator.CONSTANT], [0], [biyos.inf]
     )
     assert message == expression + "entry 0: constant is infinity"
     message = refusal(model.addnode, Operator.EXP, [x, x])
@@ -334,22 +334,20 @@ def test_refused(model):
 
 
 def test_lengths(model):
-    with pytest.raises(ValueError, match="off has length 0, not at least 1"):
-        model.addexpr([], [], [])
     with pytest.raises(ValueError, match="code has length 7, not 8"):
-        model.addexpr(OFF, CODE[1:], ARG, VAL)
+        model.addexpr(CNT, CODE[1:], ARG, VAL)
     with pytest.raises(ValueError, match="arg has length 7, not 8"):
-        model.addexpr(OFF, CODE, ARG[1:], VAL)
+        model.addexpr(CNT, CODE, ARG[1:], VAL)
     with pytest.raises(ValueError, match="val has length 6, not 7"):
-        model.addexpr(OFF, CODE, ARG, VAL[1:])
+        model.addexpr(CNT, CODE, ARG, VAL[1:])
     with pytest.raises(ValueError, match="val has length 1, not 0"):
         model.addnode(Operator.EXP, [0], [1.0])
     with pytest.raises(ValueError, match="val has length 1, not 3"):
         model.addnode(Operator.SUM, [0, 0], [1.0])
     with pytest.raises(ValueError, match="node has length 0, not 1"):
         model.attachexpr([0], [])
-    with pytest.raises(ValueError, match="off decreases from 1 to 0"):
-        model.addexpr([0, 1, 0], [Operator.VARIABLE], [0])
+    with pytest.raises(ValueError, match="cnt: -1 is negative at entry 1"):
+        model.addexpr([2, -1], [Operator.VARIABLE], [0])
     assert next_id(model) == 0
 
 
@@ -359,9 +357,9 @@ def test_types(model):
     with pytest.raises(TypeError, match="an entry of arg must be an int"):
         model.addnode(Operator.EXP, [0.0])
     with pytest.raises(TypeError, match="an entry of code must be an int"):
-        model.addexpr([0, 1], ["1"], [0])
+        model.addexpr([1], ["1"], [0])
     with pytest.raises(TypeError, match="an entry of val must be a number"):
-        model.addexpr([0, 1], [Operator.CONSTANT], [0], ["1"])
+        model.addexpr([1], [Operator.CONSTANT], [0], ["1"])
     with pytest.raises(TypeError, match="an entry of node must be an int"):
         model.attachexpr([0], [True])
     with pytest.raises(OverflowError, match="2147483648 does not fit"):
@@ -400,7 +398,7 @@ def test_locked(env, model):
         calls = (
             partial(model.addvarnode, 0),
             partial(model.addnode, Operator.CONSTANT, [], [1.0]),
-            partial(model.addexpr, [0], [], []),
+            partial(model.addexpr, [], [], []),
             partial(model.attachexpr, [], []),
             partial(model.clrfun, []),
         )
@@ -414,7 +412,7 @@ def test_locked(env, model):
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    empty = ([0, 1, 2], [Operator.CONSTANT] * 2, [0, 0], [0.0, 0.0])
+    empty = ([1, 1], [Operator.CONSTANT] * 2, [0, 0], [0.0, 0.0])
     assert seen == [LOCKED] * 5 + [empty]
     assert next_id(model) == 0
 
@@ -425,7 +423,7 @@ def test_closed(env):
     calls = (
         partial(model.addvarnode, 0),
         partial(model.addnode, Operator.CONSTANT, [], [1.0]),
-        partial(model.addexpr, [0], [], []),
+        partial(model.addexpr, [], [], []),
         partial(model.attachexpr, [], []),
         partial(model.clrfun, []),
         partial(model.getnexpr, []),
@@ -437,7 +435,7 @@ def test_closed(env):
 
 
 def test_copy(model):
-    top = model.addexpr(OFF, CODE, ARG, VAL)
+    top = model.addexpr(CNT, CODE, ARG, VAL)
     model.attachexpr([1], top)
     copy = model.copy()
     assert copy.getcst(range(2)) == model.getcst(range(2))

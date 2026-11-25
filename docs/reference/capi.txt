@@ -1,5 +1,5 @@
 group types Types
-text Five types name the numbers the calls take, so a number means the same in every language: an index, a count or a hook id is a `BIYOS_index`, any other integer a `BIYOS_int`, an offset or a total of terms a `BIYOS_offset`, a value a `BIYOS_real`, and a set of parts of a flags option a `BIYOS_mask`. Every handle is an opaque pointer, made and freed by the calls named below, and a program never looks inside it.
+text Five types name the numbers the calls take, so a number means the same in every language: an index, a count or a hook id is a `BIYOS_index`, any other integer a `BIYOS_int`, an offset, a count of entries or a total of terms a `BIYOS_offset`, a value a `BIYOS_real`, and a set of parts of a flags option a `BIYOS_mask`. Every handle is an opaque pointer, made and freed by the calls named below, and a program never looks inside it.
 
 type BIYOS_index
 summary An index or a count of items: variables, functions, constraints, objectives, fields, and the id of a hook.
@@ -14,7 +14,7 @@ see BIYOS_index
 since 0.1.0
 
 type BIYOS_offset
-summary An offset into an array of terms, or a total of terms.
+summary An offset into an array of terms, a count of entries, or a total of terms.
 note A 64-bit signed integer, `int64_t` of `<stdint.h>`, since a model may hold more than $2^{31}$ terms.
 see BIYOS_index
 since 0.1.0
@@ -886,7 +886,7 @@ since 0.1.0
 
 group functions Functions
 text A function of the variables $x$ is $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j + \varphi(x)$: a constant, linear terms, quadratic terms and a nonlinear part. The nonlinear part is the function's expression ([Expressions](#sec-capi-expressions)) plus the part of every callback that covers it ([Callbacks](#sec-capi-callbacks)), and is zero when it has neither. Constraints, objectives, indicators, cones and complements refer to functions by index, so one function may serve several of them. A function's constant must be finite.
-text The terms of many functions travel in compressed form, as three arrays. Function `j` of them has the terms from `off[j]` to `off[j + 1] - 1` of `var` and `coef`, which hold a variable and its coefficient each. So `off` holds one more offset than there are functions: the first is 0, none is below the one before it, and the last is the number of terms. An offset or a number of terms is a `BIYOS_offset`.
+text The terms of many functions travel in compressed form, as three arrays. `cnt` holds one count per function, and `var` and `coef` a variable and its coefficient for each term: the terms of function `j` follow those of function `j - 1`, `cnt[j]` of them. So no count is negative, and the counts add up to the number of terms. A count of entries or a number of terms is a `BIYOS_offset`.
 text A reader of terms writes into arrays the caller gives: `cap` is the number of terms the arrays hold, and a call whose terms do not fit is refused. Each reader has a count reader that gives the number of terms first. A null array is skipped.
 
 function BIYOS_addfun
@@ -1041,13 +1041,13 @@ summary Add linear terms to a range of functions, by function.
 param mdl in The model.
 param beg in The first function of the range.
 param end in One past the last function of the range.
-param off in The `end - beg + 1` offsets of the functions' terms; null adds no terms.
+param cnt in The `end - beg` counts of the functions' terms; null adds no terms.
 param var in The variable of each term; not read when there are no terms.
 param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
-error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last function, `off` does not begin at 0 or decreases, a variable is not one of the model or appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last function, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a variable is not one of the model or appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
-note Function `beg + j` gains the terms from `off[j]` to `off[j + 1] - 1`. A variable the function already holds adds its coefficient to the one held, as in `BIYOS_addlintermsp`. A refused call changes nothing.
+note Function `beg + j` gains the `cnt[j]` terms that follow those of function `beg + j - 1`. A variable the function already holds adds its coefficient to the one held, as in `BIYOS_addlintermsp`. A refused call changes nothing.
 see BIYOS_addlintermsp BIYOS_getrlintermrg
 since 0.1.0
 
@@ -1056,13 +1056,13 @@ summary Add linear terms to functions, by variable.
 param mdl in The model.
 param beg in The first variable of the range.
 param end in One past the last variable of the range.
-param off in The `end - beg + 1` offsets of the variables' terms; null adds no terms.
+param cnt in The `end - beg` counts of the variables' terms; null adds no terms.
 param fun in The function of each term; not read when there are no terms.
 param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
-error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last variable, `off` does not begin at 0 or decreases, a function is not one of the model or appears twice for a variable, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last variable, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a function is not one of the model or appears twice for a variable, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
-note Variable `beg + j` enters the functions from `fun[off[j]]` to `fun[off[j + 1] - 1]`, so a variable added late joins the functions of existing constraints in one call. A variable a function already holds adds its coefficient to the one held. A refused call changes nothing.
+note Variable `beg + j` enters the `cnt[j]` functions of `fun` that follow those of variable `beg + j - 1`, so a variable added late joins the functions of existing constraints in one call. A variable a function already holds adds its coefficient to the one held. A refused call changes nothing.
 see BIYOS_addlintermsp BIYOS_getclintermrg
 since 0.1.0
 
@@ -1088,12 +1088,12 @@ param end in In the `rg` form, one past the last function of the range.
 param n in In the `sp` form, the number of entries.
 param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of terms the output arrays hold.
-param off out In the `rg` form, receives `end - beg + 1` offsets from 0; skipped when null.
+param cnt out In the `rg` form, receives `end - beg` counts; skipped when null.
 param nnz out In the `sp` form, receives the number of terms written; skipped when null.
 param fun out In the `sp` form, receives the function of each term; skipped when null.
 param var out Receives the variable of each term, each function's sorted by variable; skipped when null.
 param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of function `beg + j` from `off[j]`.
+return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[j]` for function `beg + j`.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnrlintermsp` gives.
 note A refused call writes nothing.
 see BIYOS_getnrlintermsp BIYOS_getclintermsp
@@ -1122,12 +1122,12 @@ param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
 param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of terms the output arrays hold.
-param off out In the `rg` form, receives `end - beg + 1` offsets from 0; skipped when null.
+param cnt out In the `rg` form, receives `end - beg` counts; skipped when null.
 param nnz out In the `sp` form, receives the number of terms written; skipped when null.
 param fun out Receives the function of each term, each variable's sorted by function; skipped when null.
 param var out In the `sp` form, receives the variable of each term; skipped when null.
 param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of variable `beg + j` from `off[j]`.
+return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[j]` for variable `beg + j`.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, or `cap` is less than the number of terms `BIYOS_getnclintermsp` gives.
 note The terms are those `BIYOS_getrlintermsp` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function. A refused call writes nothing.
 note The call sends the span `columns` from module `model` ([Events biyos sends](#sec-capi-sent)).
@@ -1158,14 +1158,14 @@ summary Add quadratic terms to a range of functions.
 param mdl in The model.
 param beg in The first function of the range.
 param end in One past the last function of the range.
-param off in The `end - beg + 1` offsets of the functions' terms; null adds no terms.
+param cnt in The `end - beg` counts of the functions' terms; null adds no terms.
 param var1 in The first variable of each term; not read when there are no terms.
 param var2 in The second variable of each term; not read when there are no terms.
 param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
-error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last function, `off` does not begin at 0 or decreases, a variable is not one of the model, a pair appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last function, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a variable is not one of the model, a pair appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more quadratic terms than any allocation can hold.
-note Function `beg + j` gains the terms from `off[j]` to `off[j + 1] - 1`. A pair the function already holds adds its coefficient to the one held, as in `BIYOS_addquadtermsp`. A refused call changes nothing.
+note Function `beg + j` gains the `cnt[j]` terms that follow those of function `beg + j - 1`. A pair the function already holds adds its coefficient to the one held, as in `BIYOS_addquadtermsp`. A refused call changes nothing.
 see BIYOS_addquadtermsp BIYOS_getquadtermrg
 since 0.1.0
 
@@ -1191,13 +1191,13 @@ param end in In the `rg` form, one past the last function of the range.
 param n in In the `sp` form, the number of entries.
 param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of terms the output arrays hold.
-param off out In the `rg` form, receives `end - beg + 1` offsets from 0; skipped when null.
+param cnt out In the `rg` form, receives `end - beg` counts; skipped when null.
 param nnz out In the `sp` form, receives the number of terms written; skipped when null.
 param fun out In the `sp` form, receives the function of each term; skipped when null.
 param var1 out Receives the first variable of each pair; skipped when null.
 param var2 out Receives the second variable of each pair, never below the first; skipped when null.
 param coef out Receives the coefficient of each pair; skipped when null.
-return `BIYOS_OK` once the arrays are written, each function's pairs sorted: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of function `beg + j` from `off[j]`.
+return `BIYOS_OK` once the arrays are written, each function's pairs sorted: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[j]` for function `beg + j`.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnquadtermsp` gives.
 note A refused call writes nothing.
 see BIYOS_getnquadtermsp BIYOS_addquadtermsp
@@ -1793,14 +1793,14 @@ summary Add special ordered sets after the last one.
 param mdl in The model.
 param n in The number of sets to add.
 param knd in The type of each, `BIYOS_SOSKND_ONE` or `BIYOS_SOSKND_TWO`; may be null only when `n` is 0.
-param off in The `n + 1` offsets of the sets' members; null adds sets with no members.
+param cnt in The `n` counts of the sets' members; null adds sets with no members.
 param var in The variable of each member; not read when there are no members.
 param coef in The weight of each member; null gives the members of each set the weights 1, 2, 3 and so on, in the order given.
 param pos out Receives the index of the first new set; skipped when null.
 return `BIYOS_OK` once the sets are added.
-error BIYOS_ERR_BADARG `n` is negative, a type is unknown, `off` does not begin at 0 or decreases, a variable is not one of the model or appears twice in a set, or a weight is not finite or appears twice in a set.
+error BIYOS_ERR_BADARG `n` is negative, a type is unknown, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a variable is not one of the model or appears twice in a set, or a weight is not finite or appears twice in a set.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 sets, or more members than any allocation can hold.
-note The set `p + j`, where `p` is the number of sets before the call, holds the members from `off[j]` to `off[j + 1] - 1`, in that order. A set may have no members. Weights are compared as numbers, so 0 and −0 are one weight. A refused call changes nothing.
+note The set `p + j`, where `p` is the number of sets before the call, holds the `cnt[j]` members that follow those of set `p + j - 1`, in that order. A set may have no members. Weights are compared as numbers, so 0 and −0 are one weight. A refused call changes nothing.
 see BIYOS_getsosrg BIYOS_getnsos
 since 0.1.0
 
@@ -1834,10 +1834,10 @@ param n in In the `sp` form, the number of entries.
 param idx in In the `sp` form, the set of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of members the output arrays hold.
 param knd out Entry `j` receives the type of set `idx[j]` or `beg + j`; skipped when null.
-param off out Receives `n + 1` offsets from 0, `end - beg + 1` in the `rg` form; skipped when null.
+param cnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
 param var out Receives the variable of each member; skipped when null.
 param coef out Receives the weight of each member; skipped when null.
-return `BIYOS_OK` once the arrays are written, the members of entry `j` from `off[j]` in the order they were added.
+return `BIYOS_OK` once the arrays are written, the `cnt[j]` members of entry `j` following those of entry `j - 1`, in the order they were added.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a set, the range ends past the last set, or `cap` is less than the number of members `BIYOS_getnsosvarsp` gives.
 note It reads back what `BIYOS_addsos` takes, the weights included when `coef` was null. A refused call writes nothing.
 see BIYOS_getnsosvarsp BIYOS_addsos
@@ -1932,15 +1932,15 @@ summary Add cones after the last one.
 param mdl in The model.
 param n in The number of cones to add.
 param knd in The kind of each, one of the cone kinds; may be null only when `n` is 0.
-param off in The `n + 1` offsets of the cones' members; may be null only when `n` is 0.
+param cnt in The `n` counts of the cones' members; may be null only when `n` is 0.
 param fun in The members of each cone, in order; not read when there are none.
-param prmoff in The `n + 1` offsets of the cones' parameters; null gives no cone a parameter.
+param prmcnt in The `n` counts of the cones' parameters; null gives no cone a parameter.
 param prm in The parameters of each cone, in order; not read when there are none.
 param pos out Receives the index of the first new cone; skipped when null.
 return `BIYOS_OK` once the cones are added, each without a tolerance of its own.
-error BIYOS_ERR_BADARG `n` is negative, `off` or `prmoff` does not begin at 0 or decreases, a kind is unknown, a cone has no member, a member is not a function of the model or appears twice in a cone, a dimension does not suit the kind, a cone is given parameters its kind does not take or none when it takes some, or a parameter is not finite and positive.
+error BIYOS_ERR_BADARG `n` is negative, a count in `cnt` or `prmcnt` is negative or the counts of either add up past `INT64_MAX`, a kind is unknown, a cone has no member, a member is not a function of the model or appears twice in a cone, a dimension does not suit the kind, a cone is given parameters its kind does not take or none when it takes some, or a parameter is not finite and positive.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 cones, or more members or parameters than any allocation can hold.
-note Cone `p + j`, where `p` is the number of cones before the call, takes the kind `knd[j]`, the members from `fun[off[j]]` to `fun[off[j + 1] - 1]` and the parameters from `prm[prmoff[j]]` to `prm[prmoff[j + 1] - 1]`. A refused call changes nothing.
+note Cone `p + j`, where `p` is the number of cones before the call, takes the kind `knd[j]`, the `cnt[j]` members of `fun` that follow those of cone `p + j - 1` and the `prmcnt[j]` parameters of `prm` that follow its parameters. A refused call changes nothing.
 see BIYOS_getconerg BIYOS_getconeprmrg BIYOS_setconetolsp
 since 0.1.0
 
@@ -2016,9 +2016,9 @@ param n in In the `sp` form, the number of entries.
 param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of members `fun` holds.
 param knd out Entry `j` receives the kind of cone `idx[j]` or `beg + j`; skipped when null.
-param off out Receives `n + 1` offsets from 0, `end - beg + 1` in the `rg` form; skipped when null.
+param cnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
 param fun out Receives the members of each entry, in order; skipped when null.
-return `BIYOS_OK` once the arrays are written, the members of entry `j` from `fun[off[j]]` to `fun[off[j + 1] - 1]`.
+return `BIYOS_OK` once the arrays are written, the `cnt[j]` members of entry `j` following those of entry `j - 1` in `fun`.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a cone, the range ends past the last cone, or `cap` is less than the number of members `BIYOS_getnconefunsp` gives.
 note With `BIYOS_getconeprmsp`, it reads back what `BIYOS_addcone` takes. `BIYOS_getconetolsp` reads the tolerances. A refused call writes nothing.
 see BIYOS_getnconefunsp BIYOS_getconeprmsp BIYOS_getconetolsp BIYOS_addcone
@@ -2046,9 +2046,9 @@ param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
 param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of parameters `prm` holds.
-param prmoff out Receives `n + 1` offsets from 0, `end - beg + 1` in the `rg` form; skipped when null.
+param prmcnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
 param prm out Receives the parameters of each entry, in order; skipped when null.
-return `BIYOS_OK` once the arrays are written, the parameters of entry `j` from `prm[prmoff[j]]` to `prm[prmoff[j + 1] - 1]`.
+return `BIYOS_OK` once the arrays are written, the `prmcnt[j]` parameters of entry `j` following those of entry `j - 1` in `prm`.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a cone, the range ends past the last cone, or `cap` is less than the number of parameters `BIYOS_getnconeprmsp` gives.
 note A refused call writes nothing.
 see BIYOS_getnconeprmsp BIYOS_getconesp BIYOS_addcone
@@ -2307,7 +2307,7 @@ since 0.1.0
 
 group expressions Expressions
 text An expression is a node of the model's graph, an operator applied to its children, and the `BIYOS_OP_` constants number the operators. `BIYOS_attachexprsp` adds an expression $e(x)$ to a function, as its nonlinear part beside the parts of the callbacks that cover it ([Callbacks](#sec-capi-callbacks)): $f(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij} x_i x_j + e(x)$ for a function no callback covers. A node is named by its id, a `BIYOS_offset` counted from 0 in the order the nodes are added. Passing a node's id again shares the node, which is stored once however many parents use it, and each variable has one node. Every constant, coefficient and exponent of an expression is finite. [The expression graph](#sec-graph) describes each operator.
-text `BIYOS_addexpr` takes many expressions in one call, in postfix, where each operand comes before the operator that takes it: the form bindings and file readers write. Expression `k` is the entries from `off[k]` to `off[k + 1] - 1` of `code` and `arg`. An entry's code is a `BIYOS_OP_` constant and its argument a `BIYOS_offset`: for `BIYOS_OP_VAR` the variable, for `BIYOS_OP_NODE` the id of a node the model held before the call, for `BIYOS_OP_PWL` the pwl, and for another operator the number of operands it takes, 0 for `BIYOS_OP_CONST`. The values the operators take, as `BIYOS_addnode` reads them, follow one another in `val` in the order of the entries, expression after expression. Each expression leaves one operand, its top node. A sum that is an operand of a sum built in the same expression is merged into it, and so is a product that is an operand of a product, so $x_0 + (x_1 + x_2)$ becomes one sum of three terms. A node named by `BIYOS_OP_NODE` is used whole. `BIYOS_OP_KEEP`, with the argument 1, makes the operand before it a node of its own, used whole in the same way, so a sum can stay a child of a sum. `BIYOS_OP_REF` names that node again by the position in `code` of the `BIYOS_OP_KEEP` entry, which comes earlier in the same call, so the expressions of one call can share a node they build. Neither takes a value. `BIYOS_getexprsp` writes the expressions of functions back in this form.
+text `BIYOS_addexpr` takes many expressions in one call, in postfix, where each operand comes before the operator that takes it: the form bindings and file readers write. Expression `k` is the `cnt[k]` entries of `code` and `arg` that follow those of expression `k - 1`. An entry's code is a `BIYOS_OP_` constant and its argument a `BIYOS_offset`: for `BIYOS_OP_VAR` the variable, for `BIYOS_OP_NODE` the id of a node the model held before the call, for `BIYOS_OP_PWL` the pwl, and for another operator the number of operands it takes, 0 for `BIYOS_OP_CONST`. The values the operators take, as `BIYOS_addnode` reads them, follow one another in `val` in the order of the entries, expression after expression. Each expression leaves one operand, its top node. A sum that is an operand of a sum built in the same expression is merged into it, and so is a product that is an operand of a product, so $x_0 + (x_1 + x_2)$ becomes one sum of three terms. A node named by `BIYOS_OP_NODE` is used whole. `BIYOS_OP_KEEP`, with the argument 1, makes the operand before it a node of its own, used whole in the same way, so a sum can stay a child of a sum. `BIYOS_OP_REF` names that node again by the position in `code` of the `BIYOS_OP_KEEP` entry, which comes earlier in the same call, so the expressions of one call can share a node they build. Neither takes a value. `BIYOS_getexprsp` writes the expressions of functions back in this form.
 
 table Operators
 value BIYOS_OP_CONST A constant $c$, with no child.
@@ -2383,13 +2383,13 @@ function BIYOS_addexpr
 summary Add expressions given in postfix.
 param mdl in The model.
 param n in The number of expressions.
-param off in The `n + 1` offsets of the expressions' entries in `code` and `arg`; may be null only when `n` is 0.
+param cnt in The `n` counts of the expressions' entries in `code` and `arg`; may be null only when `n` is 0.
 param code in The code of each entry, an operator, `BIYOS_OP_NODE`, `BIYOS_OP_KEEP` or `BIYOS_OP_REF`; not read when there are no entries.
 param arg in The argument of each entry: a variable, a node id, a pwl, a number of operands or the position of an entry; not read when there are no entries.
 param val in The values the operators take, in the order of the entries; null when they take none.
 param node out Entry `k` receives the id of the top node of expression `k`; skipped when null.
 return `BIYOS_OK` once the expressions are added.
-error BIYOS_ERR_BADARG `n` is negative, `off` does not begin at 0 or decreases, or an expression is malformed: a code that is no operator, a variable, a node or a pwl the model does not hold, an operator given a number of operands it does not take or more than are left, a `BIYOS_OP_REF` that names no earlier `BIYOS_OP_KEEP` entry, an expression that leaves no operand or more than one, or a value `BIYOS_addnode` would refuse. The message names the expression and the entry, counted from 0 in `code`, as in `invalid argument: expression 1: entry 4: 2 operands taken, 1 given`.
+error BIYOS_ERR_BADARG `n` is negative, a count in `cnt` is negative or the counts add up past `INT64_MAX`, or an expression is malformed: a code that is no operator, a variable, a node or a pwl the model does not hold, an operator given a number of operands it does not take or more than are left, a `BIYOS_OP_REF` that names no earlier `BIYOS_OP_KEEP` entry, an expression that leaves no operand or more than one, or a value `BIYOS_addnode` would refuse. The message names the expression and the entry, counted from 0 in `code`, as in `invalid argument: expression 1: entry 4: 2 operands taken, 1 given`.
 note A call that fails adds no node, so the next call gives the same ids again.
 see BIYOS_addnode BIYOS_attachexprsp
 since 0.1.0
@@ -2449,7 +2449,7 @@ param n in In the `sp` form, the number of entries.
 param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of postfix entries `code` and `arg` hold.
 param valcap in The number of values `val` holds.
-param off out Receives `n + 1` offsets from 0, `end - beg + 1` in the `rg` form, the expression of entry `k` being the postfix entries from `off[k]` to `off[k + 1] - 1`; skipped when null.
+param cnt out Receives `n` counts, `end - beg` in the `rg` form, the expression of entry `k` being the `cnt[k]` postfix entries that follow those of entry `k - 1`; skipped when null.
 param code out Receives the code of each postfix entry; skipped when null.
 param arg out Receives the argument of each postfix entry; skipped when null.
 param val out Receives the values the entries take, in their order; skipped when null.

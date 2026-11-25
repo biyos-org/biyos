@@ -9,7 +9,6 @@
 #include "model/functions/transpose.hpp"
 #include "model/model.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -113,7 +112,7 @@ void get_listed(const BIYOS_model &model,
 void get_ranged(const BIYOS_model &model,
                 Range range,
                 std::int64_t capacity,
-                std::int64_t *starts,
+                std::int64_t *counts,
                 int *functions,
                 double *values)
 {
@@ -127,10 +126,7 @@ void get_ranged(const BIYOS_model &model,
                           found,
                           given(functions, count),
                           given(values, count));
-    if (starts != nullptr)
-    {
-        std::ranges::copy(found, starts);
-    }
+    biyos::capi::write_counts(found, counts);
 }
 
 }
@@ -168,9 +164,9 @@ BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,
                                  BIYOS_index beg,
                                  BIYOS_index end,
                                  BIYOS_offset cap,
-                                 BIYOS_offset *off,
+                                 BIYOS_offset *cnt,
                                  BIYOS_index *fun,
                                  BIYOS_real *coef)
 {
-    return guarded<get_ranged>(mdl, Range{beg, end}, cap, off, fun, coef);
+    return guarded<get_ranged>(mdl, Range{beg, end}, cap, cnt, fun, coef);
 }

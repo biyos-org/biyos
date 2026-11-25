@@ -38,12 +38,12 @@ void add_expressions(BIYOS_model *model, const BIYOS_index *functions)
     BIYOS_offset sine = -1;
     ASSERT_EQ(BIYOS_addvarnode(model, 1, &x), BIYOS_OK);
     ASSERT_EQ(BIYOS_addnode(model, BIYOS_OP_SIN, 1, &x, nullptr, &sine), BIYOS_OK);
-    const std::int64_t starts[] = {0, 3};
+    const std::int64_t counts[] = {3};
     const int code[] = {BIYOS_OP_NODE, BIYOS_OP_VAR, BIYOS_OP_PROD};
     const std::int64_t argument[] = {sine, 2, 2};
     const double values[] = {2.0};
     BIYOS_offset product = -1;
-    ASSERT_EQ(BIYOS_addexpr(model, 1, starts, code, argument, values, &product), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addexpr(model, 1, counts, code, argument, values, &product), BIYOS_OK);
     const BIYOS_offset roots[] = {product, sine};
     ASSERT_EQ(BIYOS_attachexprsp(model, 2, functions, roots), BIYOS_OK);
 }
@@ -54,7 +54,7 @@ void add_sample(BIYOS_model *model)
     const double lower[] = {-0.0, 0.0, -1.0};
     const double upper[] = {2.5, 1.0, 3.0};
     const double constants[] = {1.5, 0.1};
-    const std::int64_t starts[] = {0, 2, 3};
+    const std::int64_t counts[] = {2, 1};
     const int variables[] = {2, 0, 1};
     const double values[] = {-1.0, 2.0, 0.1};
     const int owners[] = {1, 0, 0};
@@ -76,7 +76,7 @@ void add_sample(BIYOS_model *model)
     ASSERT_EQ(BIYOS_setvartolsp(model, 2, added, absolute, relative), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(model, 2, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcstrg(model, 0, 2, constants), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addrlintermrg(model, 0, 2, starts, variables, values), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addrlintermrg(model, 0, 2, counts, variables, values), BIYOS_OK);
     ASSERT_EQ(BIYOS_addquadtermsp(model, 3, owners, rows, columns, products), BIYOS_OK);
     add_expressions(model, added);
     ASSERT_EQ(BIYOS_addcon(model, 3, functions, lower, upper, nullptr), BIYOS_OK);

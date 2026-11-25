@@ -7,6 +7,7 @@
 #include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -23,17 +24,17 @@ using Offsets = std::vector<BIYOS_offset>;
 struct Cones
 {
     std::vector<BIYOS_int> kinds;
-    Offsets starts;
+    Offsets counts;
     Indices functions;
-    Offsets parameter_starts;
+    Offsets parameter_counts;
     std::vector<double> parameters;
 };
 
 const Cones kSample{
     .kinds = {BIYOS_CONEKND_SOC, BIYOS_CONEKND_POW, BIYOS_CONEKND_PSD},
-    .starts = {0, 2, 5, 8},
+    .counts = {2, 3, 3},
     .functions = {3, 0, 0, 1, 2, 1, 2, 3},
-    .parameter_starts = {0, 0, 2, 2},
+    .parameter_counts = {0, 2, 0},
     .parameters = {0.25, 0.75},
 };
 
@@ -42,9 +43,9 @@ BIYOS_status add_cones(const Model &model, const Cones &cones, BIYOS_index *star
     return BIYOS_addcone(model.get(),
                          static_cast<BIYOS_index>(cones.kinds.size()),
                          cones.kinds.data(),
-                         cones.starts.data(),
+                         cones.counts.data(),
                          cones.functions.data(),
-                         cones.parameter_starts.data(),
+                         cones.parameter_counts.data(),
                          cones.parameters.data(),
                          start);
 }
@@ -66,9 +67,9 @@ Cones sized(std::size_t n, BIYOS_offset members, BIYOS_offset parameters)
 {
     return Cones{
         .kinds = std::vector<BIYOS_int>(n, -9),
-        .starts = Offsets(n + 1, -9),
+        .counts = Offsets(n, -9),
         .functions = Indices(static_cast<std::size_t>(members), -9),
-        .parameter_starts = Offsets(n + 1, -9),
+        .parameter_counts = Offsets(n, -9),
         .parameters = std::vector<double>(static_cast<std::size_t>(parameters), -9.0),
     };
 }
@@ -85,14 +86,14 @@ Cones read_range(const Model &model, BIYOS_index start, BIYOS_index size)
                                                start + size,
                                                members,
                                                read.kinds.data(),
-                                               read.starts.data(),
+                                               read.counts.data(),
                                                read.functions.data());
     EXPECT_EQ(cones, BIYOS_OK);
     const BIYOS_status weights = BIYOS_getconeprmrg(model.get(),
                                                     start,
                                                     start + size,
                                                     parameters,
-                                                    read.parameter_starts.data(),
+                                                    read.parameter_counts.data(),
                                                     read.parameters.data());
     EXPECT_EQ(weights, BIYOS_OK);
     return read;
@@ -112,14 +113,14 @@ Cones read_listed(const Model &model, const Indices &indices)
                                                listed,
                                                members,
                                                read.kinds.data(),
-                                               read.starts.data(),
+                                               read.counts.data(),
                                                read.functions.data());
     EXPECT_EQ(cones, BIYOS_OK);
     const BIYOS_status weights = BIYOS_getconeprmsp(model.get(),
                                                     n,
                                                     listed,
                                                     parameters,
-                                                    read.parameter_starts.data(),
+                                                    read.parameter_counts.data(),
                                                     read.parameters.data());
     EXPECT_EQ(weights, BIYOS_OK);
     return read;
@@ -139,9 +140,9 @@ std::vector<std::uint64_t> bits_of(const std::vector<double> &values)
 void expect_cones(const Cones &found, const Cones &wanted)
 {
     EXPECT_EQ(found.kinds, wanted.kinds);
-    EXPECT_EQ(found.starts, wanted.starts);
+    EXPECT_EQ(found.counts, wanted.counts);
     EXPECT_EQ(found.functions, wanted.functions);
-    EXPECT_EQ(found.parameter_starts, wanted.parameter_starts);
+    EXPECT_EQ(found.parameter_counts, wanted.parameter_counts);
     EXPECT_EQ(bits_of(found.parameters), bits_of(wanted.parameters));
 }
 
@@ -151,9 +152,9 @@ Cones one(BIYOS_int kind, Indices functions, std::vector<double> parameters = {}
     const auto weights = static_cast<BIYOS_offset>(parameters.size());
     return Cones{
         .kinds = {kind},
-        .starts = {0, members},
+        .counts = {members},
         .functions = std::move(functions),
-        .parameter_starts = {0, weights},
+        .parameter_counts = {weights},
         .parameters = std::move(parameters),
     };
 }
@@ -177,11 +178,11 @@ void change(const BIYOS_event *, void *data)
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
     const BIYOS_int kind = BIYOS_CONEKND_NONNEG;
-    const BIYOS_offset starts[] = {0, 1};
+    const BIYOS_offset count = 1;
     const BIYOS_index index = 0;
     BIYOS_index n = 0;
     BIYOS_offset nnz = 0;
-    note(attempt, BIYOS_addcone(model, 1, &kind, starts, &index, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_addcone(model, 1, &kind, &count, &index, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_getncone(model, &n));
     note(attempt, BIYOS_getnconefunsp(model, 1, &index, &nnz));
     note(attempt, BIYOS_getnconeprmrg(model, 0, 1, &nnz));
@@ -215,17 +216,17 @@ TEST(CApiTest, ConeRange)
     add_sample(model);
     const Cones wanted{
         .kinds = {BIYOS_CONEKND_POW, BIYOS_CONEKND_PSD},
-        .starts = {0, 3, 6},
+        .counts = {3, 3},
         .functions = {0, 1, 2, 1, 2, 3},
-        .parameter_starts = {0, 2, 2},
+        .parameter_counts = {2, 0},
         .parameters = {0.25, 0.75},
     };
     expect_cones(read_range(model, 1, 2), wanted);
     const Cones none{
         .kinds = {},
-        .starts = {0},
+        .counts = {},
         .functions = {},
-        .parameter_starts = {0},
+        .parameter_counts = {},
         .parameters = {},
     };
     expect_cones(read_range(model, 3, 0), none);
@@ -239,9 +240,9 @@ TEST(CApiTest, ListedCones)
     add_sample(model);
     const Cones wanted{
         .kinds = {BIYOS_CONEKND_PSD, BIYOS_CONEKND_POW, BIYOS_CONEKND_SOC, BIYOS_CONEKND_POW},
-        .starts = {0, 3, 6, 8, 11},
+        .counts = {3, 3, 2, 3},
         .functions = {1, 2, 3, 0, 1, 2, 3, 0, 0, 1, 2},
-        .parameter_starts = {0, 0, 2, 2, 4},
+        .parameter_counts = {0, 2, 0, 2},
         .parameters = {0.25, 0.75, 0.25, 0.75},
     };
     expect_cones(read_listed(model, {2, 1, 0, 1}), wanted);
@@ -257,7 +258,7 @@ TEST(CApiTest, ConeCapacity)
     Cones read = sized(3, 8, 2);
     const BIYOS_index listed[] = {0, 1, 2};
     BIYOS_int *kinds = read.kinds.data();
-    EXPECT_EQ(BIYOS_getconerg(model.get(), 0, 3, 7, kinds, read.starts.data(), nullptr),
+    EXPECT_EQ(BIYOS_getconerg(model.get(), 0, 3, 7, kinds, read.counts.data(), nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'cap': holds 7 of the 8 members");
     EXPECT_EQ(BIYOS_getconesp(model.get(), 3, listed, -1, kinds, nullptr, nullptr),
@@ -278,26 +279,26 @@ TEST(CApiTest, NullCones)
     const Model model(env);
     ASSERT_EQ(BIYOS_addfun(model.get(), 3, nullptr), BIYOS_OK);
     const BIYOS_int kind = BIYOS_CONEKND_SOC;
-    const BIYOS_offset starts[] = {0, 2};
+    const BIYOS_offset count = 2;
     const BIYOS_index functions[] = {1, 2};
     BIYOS_model *held = model.get();
     EXPECT_EQ(BIYOS_addcone(held, 0, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);
-    EXPECT_EQ(BIYOS_addcone(held, 1, &kind, starts, functions, nullptr, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_addcone(held, 1, &kind, &count, functions, nullptr, nullptr, nullptr),
               BIYOS_OK);
     expect_cones(read_range(model, 0, 1), one(BIYOS_CONEKND_SOC, {1, 2}));
-    EXPECT_EQ(BIYOS_addcone(held, 1, nullptr, starts, functions, nullptr, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_addcone(held, 1, nullptr, &count, functions, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'knd': is null");
     EXPECT_EQ(BIYOS_addcone(held, 1, &kind, nullptr, functions, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': is null");
-    EXPECT_EQ(BIYOS_addcone(held, 1, &kind, starts, nullptr, nullptr, nullptr, nullptr),
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': is null");
+    EXPECT_EQ(BIYOS_addcone(held, 1, &kind, &count, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     const BIYOS_int power = BIYOS_CONEKND_POW;
-    const BIYOS_offset weights[] = {0, 1};
-    EXPECT_EQ(BIYOS_addcone(held, 1, &power, starts, functions, weights, nullptr, nullptr),
+    const BIYOS_offset weights = 1;
+    EXPECT_EQ(BIYOS_addcone(held, 1, &power, &count, functions, &weights, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'prm': is null");
     BIYOS_offset nnz = 0;
@@ -315,15 +316,14 @@ TEST(CApiTest, RefusedCones)
     const Env env;
     const Model model(env);
     add_sample(model);
-    Cones shifted = kSample;
-    shifted.starts[0] = 1;
-    EXPECT_EQ(add_cones(model, shifted), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': begins at 1, not 0");
-    Cones falling = kSample;
-    falling.parameter_starts[2] = -1;
-    EXPECT_EQ(add_cones(model, falling), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(),
-              "invalid argument: argument 'prmoff': decreases from 0 to -1 at entry 2");
+    Cones negative = kSample;
+    negative.counts[2] = -1;
+    EXPECT_EQ(add_cones(model, negative), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': -1 is negative at entry 2");
+    Cones overflowing = kSample;
+    overflowing.parameter_counts = {(std::numeric_limits<BIYOS_offset>::max)(), 1, 0};
+    EXPECT_EQ(add_cones(model, overflowing), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'prmcnt': sum overflows at entry 1");
     EXPECT_EQ(add_cones(model, one(9, {0})), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: cone 3: kind 9 is unknown");
     EXPECT_EQ(add_cones(model, one(BIYOS_CONEKND_EXP, {0, 1})), BIYOS_ERR_BADARG);

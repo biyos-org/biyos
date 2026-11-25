@@ -14,12 +14,12 @@ from sized import Room, limit
 from tolerance import CHECKS
 
 KINDS = [ConeKind.ROTATED, ConeKind.DUAL_POWER]
-OFF = [0, 3, 5]
+CNT = [3, 2]
 MEMBERS = [4, 0, 2, 1, 3]
-PRMOFF = [0, 0, 2]
+PRMCNT = [0, 2]
 PRM = [0.5, 2.0]
-SAMPLE = (KINDS, OFF, MEMBERS)
-WEIGHTS = (PRMOFF, PRM)
+SAMPLE = (KINDS, CNT, MEMBERS)
+WEIGHTS = (PRMCNT, PRM)
 
 SHAPES = [
     (ConeKind.NONNEGATIVE, 1, []),
@@ -33,33 +33,33 @@ SHAPES = [
 ]
 
 REFUSALS = [
-    (([9], [0, 1], [0]), "cone 2: kind 9 is unknown"),
-    (([ConeKind.SECOND_ORDER], [0, 0], []), "cone 2: has no member"),
-    (([ConeKind.EXPONENTIAL], [0, 2], [0, 1]), "cone 2: dimension 2 is not 3"),
-    (([ConeKind.ROTATED], [0, 1], [0]), "cone 2: dimension 1 is below 2"),
+    (([9], [1], [0]), "cone 2: kind 9 is unknown"),
+    (([ConeKind.SECOND_ORDER], [0], []), "cone 2: has no member"),
+    (([ConeKind.EXPONENTIAL], [2], [0, 1]), "cone 2: dimension 2 is not 3"),
+    (([ConeKind.ROTATED], [1], [0]), "cone 2: dimension 1 is below 2"),
     (
-        ([ConeKind.SEMIDEFINITE], [0, 4], [0, 1, 2, 3]),
+        ([ConeKind.SEMIDEFINITE], [4], [0, 1, 2, 3]),
         "cone 2: dimension 4 is not n(n+1)/2",
     ),
     (
-        ([ConeKind.NONNEGATIVE], [0, 2], [1, 1]),
+        ([ConeKind.NONNEGATIVE], [2], [1, 1]),
         "cone 2: function 1 is repeated",
     ),
-    (([ConeKind.NONNEGATIVE], [0, 1], [5]), "cone 2: function 5 is unknown"),
+    (([ConeKind.NONNEGATIVE], [1], [5]), "cone 2: function 5 is unknown"),
     (
-        ([ConeKind.NONNEGATIVE], [0, 1], [0], [0, 1], [1.0]),
+        ([ConeKind.NONNEGATIVE], [1], [0], [1], [1.0]),
         "cone 2: takes no parameter, given 1",
     ),
     (
-        ([ConeKind.POWER], [0, 2], [0, 1]),
+        ([ConeKind.POWER], [2], [0, 1]),
         "cone 2: takes at least one parameter",
     ),
     (
-        ([ConeKind.POWER], [0, 2], [0, 1], [0, 1], [0.0]),
+        ([ConeKind.POWER], [2], [0, 1], [1], [0.0]),
         "cone 2: parameter 0 is 0, not positive",
     ),
     (
-        ([ConeKind.DUAL_POWER], [0, 2], [0, 1], [0, 1], [float("nan")]),
+        ([ConeKind.DUAL_POWER], [2], [0, 1], [1], [float("nan")]),
         "cone 2: parameter 0 is NaN",
     ),
 ]
@@ -79,12 +79,12 @@ def model(env):
 
 
 def add_sample(model):
-    return model.addcone(KINDS, OFF, MEMBERS, PRMOFF, PRM)
+    return model.addcone(KINDS, CNT, MEMBERS, PRMCNT, PRM)
 
 
-def read_lengths(handle, beg, end, cap, kinds, starts, members):
+def read_lengths(handle, beg, end, cap, kinds, counts, members):
     n = end - beg
-    return [(kinds, n), (starts, n + 1), (members, cap)]
+    return [(kinds, n), (counts, n), (members, cap)]
 
 
 def recorded(seen, name, function, *arguments):
@@ -112,13 +112,13 @@ def test_add(model):
 
 
 def test_block(model):
-    model.addcone([ConeKind.NONNEGATIVE], [0, 1], [0])
+    model.addcone([ConeKind.NONNEGATIVE], [1], [0])
     c = add_sample(model)
     assert len(c) == 2
     assert all(type(cone) is biyos.Cone for cone in c)
     assert type(c[1:]) is biyos.Cones
     assert [index(cone) for cone in c] == [1, 2]
-    assert len(model.addcone([], [0], [])) == 0
+    assert len(model.addcone([], [], [])) == 0
     assert model.getncone() == 3
 
 
@@ -126,22 +126,22 @@ def test_block(model):
 def test_kinds(env, kind, dimension, weights):
     with biyos.Model(env) as model:
         f = model.addfun(dimension)
-        model.addcone([kind], [0, dimension], f, [0, len(weights)], weights)
-        found = ([kind], [0, dimension], list(range(dimension)))
+        model.addcone([kind], [dimension], f, [len(weights)], weights)
+        found = ([kind], [dimension], list(range(dimension)))
         assert model.getcone() == found
-        assert model.getconeprm() == ([0, len(weights)], weights)
+        assert model.getconeprm() == ([len(weights)], weights)
 
 
 def test_range(model):
     add_sample(model)
-    assert model.getcone(range(1, 2)) == ([KINDS[1]], [0, 2], [1, 3])
+    assert model.getcone(range(1, 2)) == ([KINDS[1]], [2], [1, 3])
     found = model.getcone([1, 0, 1])
     kinds = [KINDS[1], KINDS[0], KINDS[1]]
-    assert found == (kinds, [0, 2, 5, 7], [1, 3, 4, 0, 2, 1, 3])
-    assert model.getcone(range(2, 2)) == ([], [0], [])
-    assert model.getcone([]) == ([], [0], [])
-    assert model.getconeprm([1, 1, 0]) == ([0, 2, 4, 4], PRM * 2)
-    assert model.getconeprm(range(1)) == ([0, 0], [])
+    assert found == (kinds, [2, 3, 2], [1, 3, 4, 0, 2, 1, 3])
+    assert model.getcone(range(2, 2)) == ([], [], [])
+    assert model.getcone([]) == ([], [], [])
+    assert model.getconeprm([1, 1, 0]) == ([2, 2, 0], PRM * 2)
+    assert model.getconeprm(range(1)) == ([0], [])
     assert model.getnconefun([1, 0, 1]) == 7
     assert model.getnconefun(range(1, 2)) == 2
     assert model.getnconeprm([0]) == 0
@@ -164,17 +164,17 @@ def test_forms(model, monkeypatch):
 
 def test_defaults(model):
     model.addcone(
-        [ConeKind.SECOND_ORDER, ConeKind.NONNEGATIVE], [0, 2, 3], [0, 1, 2]
+        [ConeKind.SECOND_ORDER, ConeKind.NONNEGATIVE], [2, 1], [0, 1, 2]
     )
-    assert model.getconeprm() == ([0, 0, 0], [])
-    model.addcone([ConeKind.POWER], [0, 2], [3, 4], [0, 1], [0.5])
-    assert model.getconeprm() == ([0, 0, 0, 1], [0.5])
+    assert model.getconeprm() == ([0, 0], [])
+    model.addcone([ConeKind.POWER], [2], [3, 4], [1], [0.5])
+    assert model.getconeprm() == ([0, 0, 1], [0.5])
 
 
 def test_shared(model):
     model.addcon([1])
-    model.addcone([ConeKind.SECOND_ORDER], [0, 2], [1, 0])
-    model.addcone([ConeKind.NONNEGATIVE], [0, 2], [2, 1])
+    model.addcone([ConeKind.SECOND_ORDER], [2], [1, 0])
+    model.addcone([ConeKind.NONNEGATIVE], [2], [2, 1])
     assert model.getcone()[2] == [1, 0, 2, 1]
     assert model.getcon()[0] == [1]
     assert model.getnfun() == 5
@@ -182,25 +182,25 @@ def test_shared(model):
 
 def test_views(env, model):
     f = model.addfun(3)
-    c = model.addcone([ConeKind.SECOND_ORDER], [0, 3], f)
-    model.addcone([ConeKind.NONNEGATIVE], [0, 2], [f[2], 0])
+    c = model.addcone([ConeKind.SECOND_ORDER], [3], f)
+    model.addcone([ConeKind.NONNEGATIVE], [2], [f[2], 0])
     assert model.getcone()[2] == [5, 6, 7, 7, 0]
     assert model.getcone([c[0]]) == (
         [ConeKind.SECOND_ORDER],
-        [0, 3],
+        [3],
         [5, 6, 7],
     )
     other = biyos.Model(env)
     g = other.addfun(2)
-    d = other.addcone([ConeKind.NONNEGATIVE], [0, 2], g)
+    d = other.addcone([ConeKind.NONNEGATIVE], [2], g)
     x = model.addvar(1)
     entry = "an entry of fun is a function of another model"
     with pytest.raises(ValueError, match=entry):
-        model.addcone([ConeKind.NONNEGATIVE], [0, 2], [0, g[1]])
+        model.addcone([ConeKind.NONNEGATIVE], [2], [0, g[1]])
     with pytest.raises(ValueError, match="fun is a block of another"):
-        model.addcone([ConeKind.NONNEGATIVE], [0, 2], g)
+        model.addcone([ConeKind.NONNEGATIVE], [2], g)
     with pytest.raises(TypeError, match="is a variable, not a function"):
-        model.addcone([ConeKind.NONNEGATIVE], [0, 1], [x[0]])
+        model.addcone([ConeKind.NONNEGATIVE], [1], [x[0]])
     with pytest.raises(ValueError, match="is a cone of another model"):
         model.getcone([d[0]])
     with pytest.raises(ValueError, match="idx is a block of another model"):
@@ -236,7 +236,7 @@ def test_values(model, monkeypatch):
     found = []
     spy = partial(kept, found, lib.BIYOS_addcone)
     monkeypatch.setattr(lib, "BIYOS_addcone", spy)
-    model.addcone(KINDS, OFF, MEMBERS, PRMOFF, weights)
+    model.addcone(KINDS, CNT, MEMBERS, PRMCNT, weights)
     assert ctypes.addressof(found[0][6]) == weights.buffer_info()[0]
     assert model.getconeprm() == WEIGHTS
 
@@ -247,8 +247,8 @@ def test_stale(model, monkeypatch):
     spy = Room(lib.BIYOS_getconerg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getconerg", spy)
     assert model.getcone(range(2)) == SAMPLE
-    assert model.getcone() == ([], [0], [])
-    assert model.getconeprm() == ([0], [])
+    assert model.getcone() == ([], [], [])
+    assert model.getconeprm() == ([], [])
 
 
 def test_outside(model, monkeypatch):
@@ -273,44 +273,44 @@ def test_refused(model, arguments, fault):
     assert model.getconeprm() == WEIGHTS
 
 
-def test_offsets(model):
-    with pytest.raises(ValueError, match="off begins at 1, not 0"):
-        model.addcone(KINDS, [1, 3, 5], MEMBERS)
-    with pytest.raises(ValueError, match="prmoff decreases from 2 to 1"):
-        model.addcone(KINDS, OFF, MEMBERS, [0, 2, 1], PRM)
+def test_counts(model):
+    with pytest.raises(ValueError, match="cnt: -1 is negative at entry 1"):
+        model.addcone(KINDS, [6, -1], MEMBERS)
+    with pytest.raises(ValueError, match="prmcnt: -1 is negative at entry 1"):
+        model.addcone(KINDS, CNT, MEMBERS, [3, -1], PRM)
     message = refusal(model.addcone, KINDS, None, [])
-    assert message == "invalid argument: argument 'off': is null"
+    assert message == "invalid argument: argument 'cnt': is null"
     assert model.getncone() == 0
 
 
 def test_lengths(model):
-    with pytest.raises(ValueError, match="off has length 2, not 3"):
-        model.addcone(KINDS, [0, 3], MEMBERS)
+    with pytest.raises(ValueError, match="cnt has length 1, not 2"):
+        model.addcone(KINDS, [5], MEMBERS)
     with pytest.raises(ValueError, match="fun has length 4, not 5"):
-        model.addcone(KINDS, OFF, MEMBERS[:4])
-    with pytest.raises(ValueError, match="prmoff has length 2, not 3"):
-        model.addcone(KINDS, OFF, MEMBERS, [0, 2], PRM)
+        model.addcone(KINDS, CNT, MEMBERS[:4])
+    with pytest.raises(ValueError, match="prmcnt has length 1, not 2"):
+        model.addcone(KINDS, CNT, MEMBERS, [2], PRM)
     with pytest.raises(ValueError, match="prm has length 1, not 2"):
-        model.addcone(KINDS, OFF, MEMBERS, PRMOFF, [0.5])
+        model.addcone(KINDS, CNT, MEMBERS, PRMCNT, [0.5])
     with pytest.raises(ValueError, match="prm has length 2, not 0"):
-        model.addcone(KINDS, OFF, MEMBERS, None, PRM)
+        model.addcone(KINDS, CNT, MEMBERS, None, PRM)
     assert model.getncone() == 0
 
 
 def test_numbers(model):
     with pytest.raises(TypeError, match="an entry of knd must be an"):
-        model.addcone([2.0], [0, 1], [0])
-    with pytest.raises(TypeError, match="an entry of off must be an"):
-        model.addcone([ConeKind.NONNEGATIVE], [0, 1.0], [0])
+        model.addcone([2.0], [1], [0])
+    with pytest.raises(TypeError, match="an entry of cnt must be an"):
+        model.addcone([ConeKind.NONNEGATIVE], [1.0], [0])
     with pytest.raises(TypeError, match="an entry of fun must be an"):
-        model.addcone([ConeKind.NONNEGATIVE], [0, 1], [0.0])
+        model.addcone([ConeKind.NONNEGATIVE], [1], [0.0])
     with pytest.raises(TypeError, match="an entry of prm must be a number"):
-        model.addcone([ConeKind.POWER], [0, 2], [0, 1], [0, 1], ["1"])
+        model.addcone([ConeKind.POWER], [2], [0, 1], [1], ["1"])
     with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
         model.getcone(range(2**32, 2**32 + 1))
     assert model.getncone() == 0
-    model.addcone((Number(1),), (0, Number(2)), array.array("i", [1, 0]))
-    assert model.getcone() == ([ConeKind.NONNEGATIVE], [0, 2], [1, 0])
+    model.addcone((Number(1),), (Number(2),), array.array("i", [1, 0]))
+    assert model.getcone() == ([ConeKind.NONNEGATIVE], [2], [1, 0])
 
 
 def test_locked(env, model):
@@ -318,7 +318,7 @@ def test_locked(env, model):
 
     def change(event):
         try:
-            model.addcone([ConeKind.NONNEGATIVE], [0, 1], [0])
+            model.addcone([ConeKind.NONNEGATIVE], [1], [0])
         except biyos.Error as error:
             seen.append(str(error))
         seen.append(model.getcone())
@@ -328,7 +328,7 @@ def test_locked(env, model):
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [LOCKED, SAMPLE, ([0, 2], PRM)]
+    assert seen == [LOCKED, SAMPLE, ([2], PRM)]
     assert model.getncone() == 2
 
 
@@ -336,7 +336,7 @@ def test_closed(env):
     model = biyos.Model(env)
     model.close()
     calls = (
-        partial(model.addcone, [], [0], []),
+        partial(model.addcone, [], [], []),
         model.getncone,
         model.getnconefun,
         model.getcone,
@@ -355,12 +355,12 @@ def test_on(env, model):
     assert copy.getconeprm() == WEIGHTS
     d = c[1:].on(copy)
     assert type(d) is biyos.Cones
-    assert copy.getcone(d) == ([KINDS[1]], [0, 2], [1, 3])
-    copy.addcone([ConeKind.NONNEGATIVE], [0, 1], [0])
+    assert copy.getcone(d) == ([KINDS[1]], [2], [1, 3])
+    copy.addcone([ConeKind.NONNEGATIVE], [1], [0])
     assert model.getncone() == 2
     smaller = biyos.Model(env)
     smaller.addfun(1)
-    smaller.addcone([ConeKind.NONNEGATIVE], [0, 1], [0])
+    smaller.addcone([ConeKind.NONNEGATIVE], [1], [0])
     few = "mdl holds too few cones: 1, the block needs 2"
     with pytest.raises(ValueError, match=few):
         c.on(smaller)
@@ -372,5 +372,5 @@ def test_on(env, model):
 @pytest.mark.parametrize("check", CHECKS)
 def test_tolerances(env, model, check):
     add_sample(model)
-    model.addcone([ConeKind.NONNEGATIVE], [0, 1], [0])
+    model.addcone([ConeKind.NONNEGATIVE], [1], [0])
     check(env, model, "cone", "cone")

@@ -40,9 +40,9 @@ def add_items(model, count):
     model.addobj([0] * count)
     model.addind(x, [1] * count, [0] * count)
     soss = [biyos.SpecialOrderedSetKind.ONE] * count
-    model.addsos(soss, [0] * (count + 1), [])
+    model.addsos(soss, [0] * count, [])
     kinds = [biyos.ConeKind.NONNEGATIVE] * count
-    model.addcone(kinds, range(count + 1), range(count))
+    model.addcone(kinds, [1] * count, range(count))
     model.addccon([0] * count, [0] * count)
 
 

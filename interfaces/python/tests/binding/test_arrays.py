@@ -3,7 +3,7 @@ from fractions import Fraction
 import pytest
 
 import biyos
-from biyos._convert.arrays import doubles, indices_of, ints, offsets, strings
+from biyos._convert.arrays import counts, doubles, indices_of, ints, strings
 from number import Growing
 
 FAMILIES = [
@@ -87,12 +87,19 @@ def test_liar():
         doubles("lb", Liar([1.0, 2.0]), 3)
     with pytest.raises(ValueError, match="name has length 2, not 3"):
         strings("name", Liar(["x", "y"]), 3)
-    with pytest.raises(ValueError, match="off has length 2, not 3"):
-        offsets("off", Liar([0, 0]), 3)
+    with pytest.raises(ValueError, match="cnt has length 2, not 3"):
+        counts("cnt", Liar([0, 0]), 3)
+
+
+def test_counts():
+    assert list(counts("cnt", [2, 0, 1], 3)) == [2, 0, 1]
+    assert counts("cnt", None, 3) is None
+    with pytest.raises(ValueError, match="prmcnt: -1 is negative at entry 2"):
+        counts("prmcnt", [0, 1, -1], 3)
 
 
 def test_expressions(model):
-    with pytest.raises(ValueError, match="off has length 2, not 3"):
+    with pytest.raises(ValueError, match="cnt has length 2, not 3"):
         model.addexpr(Liar([0, 0]), [], [], None)
 
 

@@ -138,13 +138,13 @@ Pairs read_listed(const Model &model, const Indices &listed)
     return found;
 }
 
-Indices expanded(const std::vector<BIYOS_offset> &starts, BIYOS_index first)
+Indices expanded(const std::vector<BIYOS_offset> &counts, BIYOS_index first)
 {
     Indices records;
-    for (std::size_t j = 0; j + 1 < starts.size(); ++j)
+    for (std::size_t j = 0; j < counts.size(); ++j)
     {
         records.insert(records.end(),
-                       static_cast<std::size_t>(starts[j + 1] - starts[j]),
+                       static_cast<std::size_t>(counts[j]),
                        first + static_cast<BIYOS_index>(j));
     }
     return records;
@@ -154,7 +154,7 @@ Pairs read_ranged(const Model &model, Span span)
 {
     const BIYOS_offset count = n_ranged(model, span);
     const auto size = static_cast<std::size_t>(count);
-    std::vector<BIYOS_offset> starts(static_cast<std::size_t>(span.size) + 1, -1);
+    std::vector<BIYOS_offset> counts(static_cast<std::size_t>(span.size), -1);
     Indices rows(size, -1);
     Indices columns(size, -1);
     std::vector<double> values(size);
@@ -162,15 +162,14 @@ Pairs read_ranged(const Model &model, Span span)
                                   span.start,
                                   span.start + span.size,
                                   count,
-                                  starts.data(),
+                                  counts.data(),
                                   rows.data(),
                                   columns.data(),
                                   values.data()),
               BIYOS_OK);
-    EXPECT_EQ(starts.front(), 0);
-    EXPECT_EQ(starts.back(), count);
+    EXPECT_EQ(std::accumulate(counts.begin(), counts.end(), BIYOS_offset{0}), count);
     return {
-        .functions = expanded(starts, span.start),
+        .functions = expanded(counts, span.start),
         .rows = rows,
         .columns = columns,
         .values = bits(values),
