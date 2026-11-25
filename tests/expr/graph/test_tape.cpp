@@ -30,6 +30,7 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::Tape;
+using biyos::to_size;
 using biyos::test::failure;
 using biyos::test::refusal;
 using biyos::test::values_of;
@@ -37,11 +38,6 @@ using biyos::test::values_of;
 using Counts = std::vector<std::size_t>;
 using Spans = std::vector<std::pair<std::uint32_t, std::uint32_t>>;
 using Ranges = std::vector<std::pair<Offset, Offset>>;
-
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
 
 Offset unary(Graph &graph, Operator op, Offset child)
 {
@@ -66,7 +62,7 @@ Offset chain(Graph &graph, Offset start, Offset length)
 
 std::span<const Block> partitions(const Tape &tape)
 {
-    return tape.blocks().subspan(at(tape.prepass()));
+    return tape.blocks().subspan(to_size(tape.prepass()));
 }
 
 Counts sizes(const Tape &tape)
@@ -137,7 +133,7 @@ std::span<const biyos::Run> part(const std::vector<biyos::Run> &runs,
                                  std::size_t output)
 {
     const Offset begin = starts[output];
-    return std::span(runs).subspan(at(begin), at(starts[output + 1] - begin));
+    return std::span(runs).subspan(to_size(begin), to_size(starts[output + 1] - begin));
 }
 
 Spans spans_of(const Block &block, std::size_t output)
@@ -254,21 +250,21 @@ Spans cone_of(const Dag &dag, std::size_t output, bool prepass)
     {
         for (const Offset other : dag.outputs)
         {
-            stops[at(other)] = true;
+            stops[to_size(other)] = true;
         }
     }
     std::vector<bool> inside(dag.children.size(), false);
-    inside[at(start)] = true;
+    inside[to_size(start)] = true;
     std::vector<Offset> stack{start};
     while (!stack.empty())
     {
         const Offset node = stack.back();
         stack.pop_back();
-        for (const Offset child : dag.children[at(node)])
+        for (const Offset child : dag.children[to_size(node)])
         {
-            if (child != kLoaded && !inside[at(child)] && !stops[at(child)])
+            if (child != kLoaded && !inside[to_size(child)] && !stops[to_size(child)])
             {
-                inside[at(child)] = true;
+                inside[to_size(child)] = true;
                 stack.push_back(child);
             }
         }
@@ -287,7 +283,7 @@ void expect_cones(const Tape &tape)
         const Dag dag = dag_of(block);
         for (std::size_t output = 0; output < block.outputs.size(); ++output)
         {
-            EXPECT_EQ(spans_of(block, output), cone_of(dag, output, b < at(tape.prepass())));
+            EXPECT_EQ(spans_of(block, output), cone_of(dag, output, b < to_size(tape.prepass())));
         }
     }
 }
@@ -307,7 +303,7 @@ std::vector<Offset> running(Graph &graph, Index size)
         }
     }
     const std::vector<Real> ones(terms.size(), 1.0);
-    return {graph.add_sum(0.0, terms, ones), total, middle, terms[at(size / 2)]};
+    return {graph.add_sum(0.0, terms, ones), total, middle, terms[to_size(size / 2)]};
 }
 
 std::vector<Offset> exponentials(Graph &graph, Index size)

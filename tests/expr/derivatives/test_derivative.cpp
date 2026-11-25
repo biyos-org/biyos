@@ -33,6 +33,7 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::Tape;
+using biyos::to_size;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::ChainRule;
@@ -61,25 +62,20 @@ constexpr Real kRounding = 1e-12;
 constexpr Real kNan = (std::numeric_limits<Real>::quiet_NaN)();
 constexpr Real kInfinity = (std::numeric_limits<Real>::infinity)();
 
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
-
 std::vector<Index> reached(const Graph &graph, Offset root)
 {
-    std::vector<bool> seen(at(graph.size()), false);
+    std::vector<bool> seen(to_size(graph.size()), false);
     std::vector<Offset> stack{root};
     std::vector<Index> variables;
     while (!stack.empty())
     {
         const Offset node = stack.back();
         stack.pop_back();
-        if (seen[at(node)])
+        if (seen[to_size(node)])
         {
             continue;
         }
-        seen[at(node)] = true;
+        seen[to_size(node)] = true;
         if (graph.op(node) == Operator::Variable)
         {
             variables.push_back(graph.variable(node));
@@ -101,12 +97,12 @@ std::vector<Index> pattern_of(const Tape &tape, std::size_t root)
 Rows dense(const Tape &tape, const std::vector<Real> &gradients, std::size_t width)
 {
     const biyos::Pattern &pattern = tape.pattern();
-    Rows rows(at(tape.roots()), std::vector<Real>(width, 0.0));
+    Rows rows(to_size(tape.roots()), std::vector<Real>(width, 0.0));
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
         for (Offset k = pattern.starts[r]; k < pattern.starts[r + 1]; ++k)
         {
-            rows[r][at(pattern.variables[at(k)])] = gradients[at(k)];
+            rows[r][to_size(pattern.variables[to_size(k)])] = gradients[to_size(k)];
         }
     }
     return rows;
@@ -419,7 +415,7 @@ std::vector<Offset> lattice(Graph &graph, Index size)
     std::vector<Offset> level;
     for (Index j = 0; j < size; ++j)
     {
-        level.push_back(unary(graph, Operator::Sin, sums[at(j % 2)]));
+        level.push_back(unary(graph, Operator::Sin, sums[to_size(j % 2)]));
     }
     std::vector<Offset> next;
     for (Index i = 0; i < size; ++i)
@@ -427,7 +423,7 @@ std::vector<Offset> lattice(Graph &graph, Index size)
         next.clear();
         for (Index j = 0; j < size; ++j)
         {
-            const std::array pair{level[at(j)], level[at((j + 1) % size)]};
+            const std::array pair{level[to_size(j)], level[to_size((j + 1) % size)]};
             next.push_back(graph.add_sum(0.0, pair, std::array{0.5, 0.5}));
         }
         level.swap(next);
@@ -577,7 +573,7 @@ TEST(DerivativeTest, Chains)
                     SCOPED_TRACE(r);
                     EXPECT_EQ(pattern_of(tape, r), reached(graph, roots[r]));
                 }
-                const std::vector<Real> point(at(tape.variables()), 0.5);
+                const std::vector<Real> point(to_size(tape.variables()), 0.5);
                 const Rows rows = dense(tape, jacobian_of(tape, point), point.size());
                 expect_rule(graph, roots, point, rows);
             }

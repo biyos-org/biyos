@@ -31,6 +31,7 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::Shapes;
+using biyos::to_size;
 using biyos::test::Box;
 using biyos::test::Engine;
 
@@ -49,11 +50,6 @@ constexpr Curvature kConvex = Curvature::Convex;
 constexpr Curvature kConcave = Curvature::Concave;
 constexpr Curvature kNeither = Curvature::Unknown;
 
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
-
 std::span<const Offset> one(const Offset &node)
 {
     return {&node, 1};
@@ -69,10 +65,10 @@ Shapes classified(const Graph &graph, std::span<const Interval> box)
 
 std::vector<Curvature> curvatures_of(const Graph &graph, const Shapes &shapes)
 {
-    std::vector<Curvature> curvatures(at(graph.size()));
+    std::vector<Curvature> curvatures(to_size(graph.size()));
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        curvatures[at(node)] = shapes.curvature(node);
+        curvatures[to_size(node)] = shapes.curvature(node);
     }
     return curvatures;
 }
@@ -351,8 +347,8 @@ TEST(CurvatureTest, EmptyChild)
     graph.add(Operator::Division, x);
     graph.add(Operator::Power, x);
     unary(graph, Operator::Exp, x[1]);
-    std::vector<Interval> nodes(at(graph.size()), Interval(0.0, 1.0));
-    nodes[at(x[1])] = Interval::empty();
+    std::vector<Interval> nodes(to_size(graph.size()), Interval(0.0, 1.0));
+    nodes[to_size(x[1])] = Interval::empty();
     Shapes shapes(graph);
     shapes.classify(graph, nodes);
     for (Offset node = 2; node < graph.size(); ++node)

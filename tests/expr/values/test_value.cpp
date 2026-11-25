@@ -30,6 +30,7 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::Tape;
+using biyos::to_size;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::constant;
@@ -51,11 +52,6 @@ using Point = std::array<Real, 4>;
 
 constexpr Real kInfinity = (std::numeric_limits<Real>::infinity)();
 constexpr Real kNan = (std::numeric_limits<Real>::quiet_NaN)();
-
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
 
 bool is_nan(Real value)
 {
@@ -145,18 +141,19 @@ class Reference
 {
   public:
     Reference(const Graph &graph, std::span<const Real> point)
-        : graph_(graph), point_(point), values_(at(graph.size())), done_(at(graph.size()), false)
+        : graph_(graph), point_(point), values_(to_size(graph.size())),
+          done_(to_size(graph.size()), false)
     {
     }
 
     Real value(Offset node)
     {
-        if (!done_[at(node)])
+        if (!done_[to_size(node)])
         {
-            values_[at(node)] = compute(node);
-            done_[at(node)] = true;
+            values_[to_size(node)] = compute(node);
+            done_[to_size(node)] = true;
         }
-        return values_[at(node)];
+        return values_[to_size(node)];
     }
 
   private:

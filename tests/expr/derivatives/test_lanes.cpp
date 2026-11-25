@@ -35,6 +35,7 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::Tape;
+using biyos::to_size;
 using biyos::Workspace;
 using biyos::test::every_operator;
 using biyos::test::gradient_of;
@@ -54,11 +55,6 @@ using biyos::test::values_of;
 using Points = std::vector<std::vector<Real>>;
 
 constexpr std::array kLanes{std::size_t{1}, std::size_t{3}, std::size_t{16}};
-
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
 
 Points random_points(Random &random, std::size_t n)
 {
@@ -113,7 +109,7 @@ void expect_bits(std::span<const Real> found, std::span<const Real> wanted)
 void expect_values(const Tape &tape, Workspace &workspace, const Points &points)
 {
     const std::size_t lanes = points.size();
-    std::vector<Real> values(at(tape.roots()) * lanes);
+    std::vector<Real> values(to_size(tape.roots()) * lanes);
     biyos::forward(tape, interleave(points), workspace, values);
     for (std::size_t l = 0; l < lanes; ++l)
     {
@@ -161,7 +157,7 @@ void expect_jacobian(const Tape &tape,
                      const Points &points)
 {
     const std::size_t lanes = points.size();
-    std::vector<Real> values(at(tape.roots()) * lanes);
+    std::vector<Real> values(to_size(tape.roots()) * lanes);
     std::vector<Real> gradients(tape.pattern().variables.size() * lanes);
     biyos::jacobian(tape, interleave(points), workspace, adjoints, values, gradients);
     EXPECT_TRUE(cleared(adjoints));
@@ -181,7 +177,7 @@ void expect_weighted(const Tape &tape,
 {
     const std::size_t lanes = points.size();
     const std::vector<Real> point = interleave(points);
-    std::vector<Real> values(at(tape.roots()) * lanes);
+    std::vector<Real> values(to_size(tape.roots()) * lanes);
     std::vector<Real> gradient(point.size(), (std::numeric_limits<Real>::quiet_NaN)());
     biyos::weighted_gradient(tape,
                              point,
@@ -302,7 +298,7 @@ void expect_seeded(const Tape &tape, Random &random, std::size_t lanes)
     biyos::seed_directions(variables, lanes, directions);
     const std::vector<Real> point = random_point(random);
     Workspace workspace(tape, lanes);
-    std::vector<Real> values(at(tape.roots()) * lanes);
+    std::vector<Real> values(to_size(tape.roots()) * lanes);
     biyos::forward(tape, stepped(point, directions, lanes), workspace, values);
     for (std::size_t l = 0; l < lanes; ++l)
     {
@@ -364,15 +360,15 @@ TEST(LaneTest, Sizes)
     ASSERT_EQ(tape.pinned(), 1);
     const Workspace workspace(tape, 3);
     EXPECT_EQ(workspace.lanes, 3U);
-    EXPECT_EQ(workspace.shared.size(), 3 * at(tape.pinned()));
+    EXPECT_EQ(workspace.shared.size(), 3 * to_size(tape.pinned()));
     EXPECT_EQ(workspace.slots.size(), 3 * tape.width());
-    EXPECT_EQ(workspace.partials.size(), 3 * at(tape.partials()));
+    EXPECT_EQ(workspace.partials.size(), 3 * to_size(tape.partials()));
     EXPECT_EQ(workspace.result.size(), 3U);
     const Adjoints adjoints(tape, 3);
     EXPECT_EQ(adjoints.lanes, 3U);
     EXPECT_EQ(adjoints.slots.size(), 3 * tape.width());
-    EXPECT_EQ(adjoints.shared.size(), 3 * at(tape.pinned()));
-    EXPECT_EQ(adjoints.gradient.size(), 3 * at(tape.variables()));
+    EXPECT_EQ(adjoints.shared.size(), 3 * to_size(tape.pinned()));
+    EXPECT_EQ(adjoints.gradient.size(), 3 * to_size(tape.variables()));
     EXPECT_EQ(Workspace(tape).lanes, 1U);
     EXPECT_EQ(Adjoints(tape).lanes, 1U);
     EXPECT_EQ(refusal([&] { Workspace{tape, 0}; }), "invalid argument: lanes: zero");
@@ -576,10 +572,10 @@ TEST(LaneTest, Overflow)
     Graph graph;
     const Tape tape = wide_tape(graph);
     const std::array sizes{
-        at(tape.roots()),
-        at(tape.variables()),
-        at(tape.pinned()),
-        at(tape.partials()),
+        to_size(tape.roots()),
+        to_size(tape.variables()),
+        to_size(tape.pinned()),
+        to_size(tape.partials()),
         std::size_t{tape.width()},
     };
     Workspace workspace(tape);

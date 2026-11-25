@@ -30,6 +30,7 @@ using biyos::Monotonicity;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
+using biyos::to_size;
 using biyos::test::Claims;
 using biyos::test::Engine;
 using biyos::test::Monotonicities;
@@ -52,11 +53,6 @@ constexpr int kChords = 96;
 constexpr int kPairs = 48;
 constexpr int kReported = 5;
 constexpr std::uint64_t kSeed = 20261111;
-
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
 
 Real unit(Engine &engine)
 {
@@ -121,9 +117,8 @@ Values between(std::span<const Interval> box, const Values &x, const Values &y, 
 
 bool unreal_below(const Graph &graph, const Values &values, Offset node)
 {
-    const std::span<const Offset> children = graph.children(node);
-    return std::ranges::any_of(children,
-                               [&](Offset child) { return !std::isfinite(values[at(child)]); });
+    const auto unreal = [&](Offset child) { return !std::isfinite(values[to_size(child)]); };
+    return std::ranges::any_of(graph.children(node), unreal);
 }
 
 Real weight(const Graph &graph, Offset node, std::size_t k)
@@ -136,10 +131,10 @@ Real size_of(const Graph &graph, const Run &run, Offset node)
 {
     const std::span<const Offset> children = graph.children(node);
     const Real constant = graph.op(node) == Operator::Sum ? graph.constant(node) : 0.0;
-    Real size = std::fabs(run.values[at(node)]) + std::fabs(constant);
+    Real size = std::fabs(run.values[to_size(node)]) + std::fabs(constant);
     for (std::size_t k = 0; k < children.size(); ++k)
     {
-        size += weight(graph, node, k) * run.sizes[at(children[k])];
+        size += weight(graph, node, k) * run.sizes[to_size(children[k])];
     }
     return size;
 }
@@ -160,15 +155,15 @@ Real weight_of(const Values &x, const Values &y, const Values &z, Real theta)
 
 Run evaluated(const Graph &graph, const Values &point)
 {
-    Run run{.values = Values(at(graph.size())), .sizes = Values(at(graph.size()))};
+    Run run{.values = Values(to_size(graph.size())), .sizes = Values(to_size(graph.size()))};
     biyos::test::evaluate(graph, point, run.values);
     for (Offset node = 0; node < graph.size(); ++node)
     {
         if (unreal_below(graph, run.values, node))
         {
-            run.values[at(node)] = std::nan("");
+            run.values[to_size(node)] = std::nan("");
         }
-        run.sizes[at(node)] = size_of(graph, run, node);
+        run.sizes[to_size(node)] = size_of(graph, run, node);
     }
     return run;
 }
@@ -178,7 +173,7 @@ Real scale_of(Offset node, Runs runs)
     Real scale = 0.0;
     for (const Run &run : runs)
     {
-        scale += run.sizes[at(node)];
+        scale += run.sizes[to_size(node)];
     }
     return scale;
 }
@@ -244,10 +239,10 @@ std::string point_text(const Values &point)
 
 void expect_chord(const Claims &claims, Offset node, Runs runs, Real theta, const Values &z)
 {
-    const Curvature claim = claims.curvatures[at(node)];
-    const Real fx = runs[0].values[at(node)];
-    const Real fy = runs[1].values[at(node)];
-    const Real fz = runs[2].values[at(node)];
+    const Curvature claim = claims.curvatures[to_size(node)];
+    const Real fx = runs[0].values[to_size(node)];
+    const Real fy = runs[1].values[to_size(node)];
+    const Real fz = runs[2].values[to_size(node)];
     if (claim == Curvature::Unknown || !std::isfinite(fx) || !std::isfinite(fy) ||
         !std::isfinite(fz))
     {
@@ -278,8 +273,8 @@ void expect_pair(const Monotonicities &claims,
     const Graph &graph = claims.graph;
     const Offset root = graph.size() - 1;
     const std::array runs{evaluated(graph, low), evaluated(graph, high)};
-    const Real first = runs[0].values[at(root)];
-    const Real last = runs[1].values[at(root)];
+    const Real first = runs[0].values[to_size(root)];
+    const Real last = runs[1].values[to_size(root)];
     if (!std::isfinite(first) || !std::isfinite(last))
     {
         return;
@@ -355,13 +350,13 @@ void biyos::test::expect_root(const Graph &graph,
                               Curvature curvature,
                               std::span<const Monotonicity> monotonicities)
 {
-    std::vector<Curvature> curvatures(at(graph.size()), Curvature::Unknown);
+    std::vector<Curvature> curvatures(to_size(graph.size()), Curvature::Unknown);
     for (Offset node = 0; node < graph.size(); ++node)
     {
         const Operator op = graph.op(node);
         if (op == Operator::Variable || op == Operator::Constant)
         {
-            curvatures[at(node)] = Curvature::Affine;
+            curvatures[to_size(node)] = Curvature::Affine;
         }
     }
     curvatures.back() = curvature;

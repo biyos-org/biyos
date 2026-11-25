@@ -25,14 +25,10 @@ using biyos::Map;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Pattern;
+using biyos::to_size;
 using biyos::test::binary;
 using biyos::test::refusal;
 using biyos::test::unary;
-
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
 
 Pattern pattern_of(const std::vector<std::vector<Index>> &rows)
 {
@@ -52,7 +48,7 @@ std::vector<Entry> entries_of(const Lower &lower)
     {
         for (Offset k = lower.starts[j]; k < lower.starts[j + 1]; ++k)
         {
-            entries.push_back({.row = lower.rows[at(k)], .column = static_cast<Index>(j)});
+            entries.push_back({.row = lower.rows[to_size(k)], .column = static_cast<Index>(j)});
         }
     }
     return entries;
@@ -72,9 +68,9 @@ void expect_entries(const Lower &lower, const std::vector<std::array<Index, 2>> 
 
 void expect_at(const Lower &lower, Offset place, Index row, Index column)
 {
-    ASSERT_GE(place, lower.starts[at(column)]);
-    ASSERT_LT(place, lower.starts[at(column) + 1]);
-    EXPECT_EQ(lower.rows[at(place)], row);
+    ASSERT_GE(place, lower.starts[to_size(column)]);
+    ASSERT_LT(place, lower.starts[to_size(column) + 1]);
+    EXPECT_EQ(lower.rows[to_size(place)], row);
 }
 
 void expect_blocks(const Lower &lower, const Map &map, const Pattern &blocks)
@@ -82,15 +78,15 @@ void expect_blocks(const Lower &lower, const Map &map, const Pattern &blocks)
     for (std::size_t e = 0; e + 1 < blocks.starts.size(); ++e)
     {
         SCOPED_TRACE(e);
-        const auto variables =
-            std::span(blocks.variables)
-                .subspan(at(blocks.starts[e]), at(blocks.starts[e + 1] - blocks.starts[e]));
+        const auto variables = std::span(blocks.variables)
+                                   .subspan(to_size(blocks.starts[e]),
+                                            to_size(blocks.starts[e + 1] - blocks.starts[e]));
         Offset k = map.starts[e];
         for (std::size_t l = 0; l < variables.size(); ++l)
         {
             for (std::size_t a = l; a < variables.size(); ++a)
             {
-                expect_at(lower, map.blocks[at(k)], variables[a], variables[l]);
+                expect_at(lower, map.blocks[to_size(k)], variables[a], variables[l]);
                 ++k;
             }
         }

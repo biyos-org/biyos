@@ -24,12 +24,8 @@ using biyos::live;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
+using biyos::to_size;
 using biyos::test::refusal;
-
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
 
 std::vector<Offset> ids(std::span<const Offset> nodes)
 {
@@ -41,7 +37,7 @@ std::vector<Offset> mapped(std::span<const Offset> nodes, const std::vector<Offs
     std::vector<Offset> images;
     for (const Offset node : nodes)
     {
-        images.push_back(map[at(node)]);
+        images.push_back(map[to_size(node)]);
     }
     return images;
 }
@@ -77,7 +73,7 @@ std::vector<Bits> bits(std::span<const Real> values)
 void expect_copy(const Compaction &result, const Graph &graph, Offset node)
 {
     const Graph &found = result.graph;
-    const Offset image = result.map[at(node)];
+    const Offset image = result.map[to_size(node)];
     ASSERT_NE(image, kDead);
     EXPECT_EQ(found.op(image), graph.op(node));
     EXPECT_EQ(ids(found.children(image)), mapped(graph.children(node), result.map));
@@ -166,7 +162,7 @@ TEST(CompactTest, DeadNodes)
     ASSERT_EQ(result.graph.size(), 5);
     for (const Offset node : {z, unused, product})
     {
-        EXPECT_EQ(result.map[at(node)], kDead);
+        EXPECT_EQ(result.map[to_size(node)], kDead);
     }
     for (const Offset node : {x, y, exponential, sum, power})
     {
@@ -199,9 +195,9 @@ TEST(CompactTest, SharedNode)
     const Offset ratio = binary(graph, Operator::Division, sine, cosine);
     const Compaction result = compact(graph, std::span(&ratio, 1));
     ASSERT_EQ(result.graph.size(), 5);
-    const std::vector<Offset> image{result.map[at(shared)]};
-    EXPECT_EQ(ids(result.graph.children(result.map[at(sine)])), image);
-    EXPECT_EQ(ids(result.graph.children(result.map[at(cosine)])), image);
+    const std::vector<Offset> image{result.map[to_size(shared)]};
+    EXPECT_EQ(ids(result.graph.children(result.map[to_size(sine)])), image);
+    EXPECT_EQ(ids(result.graph.children(result.map[to_size(cosine)])), image);
 }
 
 TEST(CompactTest, Map)
@@ -236,7 +232,7 @@ TEST(CompactTest, Unchanged)
     ASSERT_EQ(result.graph.size(), graph.size());
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        EXPECT_EQ(result.map[at(node)], node);
+        EXPECT_EQ(result.map[to_size(node)], node);
         expect_copy(result, graph, node);
     }
 }
@@ -283,7 +279,7 @@ TEST(CompactTest, Piecewise)
     {
         expect_copy(result, graph, node);
     }
-    EXPECT_EQ(result.map[at(dead)], kDead);
+    EXPECT_EQ(result.map[to_size(dead)], kDead);
 }
 
 TEST(CompactTest, NoRoots)

@@ -29,6 +29,7 @@ using biyos::Model;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
+using biyos::to_size;
 
 using Engine = std::mt19937;
 
@@ -40,11 +41,6 @@ constexpr std::array kScaled{BIYOS_OP_CONST, BIYOS_OP_PROD, BIYOS_OP_CPOW};
 constexpr int kVariables = 4;
 constexpr int kNodes = 80;
 constexpr int kRoots = 6;
-
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
 
 int below(Engine &engine, int n)
 {
@@ -74,7 +70,7 @@ Model with_variables(int n)
         .lower = -kInfinity,
         .upper = kInfinity,
     };
-    model.add_variables(std::vector<biyos::Variable>(at(n), free));
+    model.add_variables(std::vector<biyos::Variable>(to_size(n), free));
     return model;
 }
 
@@ -215,7 +211,7 @@ std::vector<Offset> random_roots(Engine &engine)
 
 Offset reached(const Graph &graph, const std::vector<Offset> &roots)
 {
-    std::vector<bool> seen(at(graph.size()), false);
+    std::vector<bool> seen(to_size(graph.size()), false);
     std::vector<Offset> pending;
     Offset n = 0;
     for (const Offset root : roots)
@@ -229,11 +225,11 @@ Offset reached(const Graph &graph, const std::vector<Offset> &roots)
     {
         const Offset node = pending.back();
         pending.pop_back();
-        if (seen[at(node)])
+        if (seen[to_size(node)])
         {
             continue;
         }
-        seen[at(node)] = true;
+        seen[to_size(node)] = true;
         ++n;
         const std::span<const Offset> children = graph.children(node);
         pending.insert(pending.end(), children.begin(), children.end());
