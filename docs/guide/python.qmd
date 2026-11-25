@@ -27,6 +27,8 @@ Indexing a block gives a view, such as a `Variable`, which passes as its index w
 
 A method that takes an array accepts any sequence of the right length: a list, a tuple, a block where indices are due. A sequence of the wrong length raises `ValueError`, an entry of the wrong type `TypeError`, and an integer too large for 32 bits `OverflowError`. A writable, contiguous buffer of doubles, such as an `array.array("d")`, passes to C without a copy where doubles are due; everything else is copied into a C array for the call. The annotations name sequences, so a type checker refuses a NumPy or a ctypes array, though both work at run time: a contiguous NumPy array of float64 is such a buffer and passes without a copy, while a ctypes array of doubles is copied. `None` stands for a null array and takes the default the C call gives it.
 
+The annotations name each number by what it stands for, as @sec-model does in C: `Real` is a `BIYOS_real`, such as a bound or a coefficient, `Index` a `BIYOS_index`, a count or an index of items, and `Offset` a `BIYOS_offset`, an offset into the terms, members or nodes of a model, or a count of them. They are aliases of `float` and `int`, so a type checker reads them as those.
+
 The readers return lists, in the order of the C call's arrays:
 
 | Method | Returns |

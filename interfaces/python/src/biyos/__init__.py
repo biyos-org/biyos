@@ -1,4 +1,5 @@
 from biyos._capi import inf, version
+from biyos._convert.numbers import Index, Offset, Real
 from biyos._env.env import Env
 from biyos._env.event import Event, EventKind, EventLevel
 from biyos._env.options import Checking, Masks, OptionSource
@@ -86,6 +87,7 @@ __all__ = [
     "FileFormat",
     "Function",
     "Functions",
+    "Index",
     "Indicator",
     "Indicators",
     "Masks",
@@ -93,10 +95,12 @@ __all__ = [
     "Objective",
     "ObjectiveSense",
     "Objectives",
+    "Offset",
     "Operator",
     "OptionSource",
     "PiecewiseLinear",
     "PiecewiseLinears",
+    "Real",
     "SpecialOrderedSet",
     "SpecialOrderedSetKind",
     "SpecialOrderedSets",

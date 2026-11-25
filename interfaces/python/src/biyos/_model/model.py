@@ -5,11 +5,9 @@ from ctypes import (
     addressof,
     byref,
     c_char_p,
-    c_double,
-    c_int,
-    c_int64,
     c_void_p,
     py_object,
+    sizeof,
 )
 from enum import IntEnum
 from math import isnan
@@ -29,6 +27,15 @@ from biyos._convert.arrays import (
     strings,
 )
 from biyos._convert.integers import integer, offset
+from biyos._convert.numbers import (
+    Index,
+    Offset,
+    Real,
+    c_index,
+    c_integer,
+    c_offset,
+    c_real,
+)
 from biyos._convert.text import decoded, text
 from biyos._env import values
 from biyos._env.env import Env
@@ -170,7 +177,7 @@ class FileFormat(IntEnum):
     MPS = 1
 
 
-_INT_MAX = 2**31 - 1
+_INT_MAX = 2 ** (8 * sizeof(c_index) - 1) - 1
 _Block = TypeVar("_Block", bound=Block[Any])
 
 _COUNTS: dict[type[Block[Any]], str] = {
@@ -212,16 +219,16 @@ def _checked_env(env: Env) -> Env:
     return env
 
 
-def _expanded(counts: Array[c_int64], first: int) -> list[int]:
+def _expanded(counts: Array[c_offset], first: Index) -> list[Index]:
     return [first + j for j, count in enumerate(counts) for _ in range(count)]
 
 
-def _or_none(values: list[float]) -> list[float | None]:
+def _or_none(values: list[Real]) -> list[Real | None]:
     return [None if isnan(value) else value for value in values]
 
 
-def _renumbered(total: int, gone: set[int]) -> list[int]:
-    found: list[int] = []
+def _renumbered(total: Index, gone: set[Index]) -> list[Index]:
+    found: list[Index] = []
     kept = 0
     for k in range(total):
         if k in gone:
@@ -232,7 +239,7 @@ def _renumbered(total: int, gone: set[int]) -> list[int]:
     return found
 
 
-def _total(counts: Array[c_int64] | None) -> int:
+def _total(counts: Array[c_offset] | None) -> Offset:
     if counts is None:
         return 0
     return sum(counts)
@@ -618,7 +625,7 @@ class Model:
         BIYOS_getmdloptsrc
         """
         option, _ = self._lookup(name)
-        src = c_int()
+        src = c_integer()
         self._call(lib.BIYOS_getmdloptsrc, option, byref(src))
         return OptionSource(src.value)
 
@@ -627,7 +634,7 @@ class Model:
         hk: Callable[[Event], object],
         knd: EventKind,
         lvl: EventLevel,
-    ) -> int:
+    ) -> Index:
         """Add a hook on one kind of event of the model at a lowest level.
 
         The hook receives the events of calls on the model alone, before the
@@ -666,12 +673,12 @@ class Model:
         hk = checked_hook(hk)
         kind = integer("knd", knd)
         level = integer("lvl", lvl)
-        idx = c_int()
+        idx = c_index()
         with self._env._busy():
             self._addhook(hk, kind, level, idx)
         return idx.value
 
-    def delhook(self, idx: int) -> None:
+    def delhook(self, idx: Index) -> None:
         """Remove a hook of the model.
 
         Parameters
@@ -696,10 +703,10 @@ class Model:
 
     def addvar(
         self,
-        n: int,
+        n: Index,
         knd: Sequence[VariableKind] | None = None,
-        lb: Sequence[float] | None = None,
-        ub: Sequence[float] | None = None,
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
     ) -> Variables:
         """Add variables after the last one.
 
@@ -731,9 +738,9 @@ class Model:
 
     def setvarbnd(
         self,
-        idx: Sequence[int | Variable] | Variables,
-        lb: Sequence[float] | None = None,
-        ub: Sequence[float] | None = None,
+        idx: Sequence[Index | Variable] | Variables,
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
     ) -> None:
         """Set the bounds of variables.
 
@@ -760,8 +767,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getvarbnd(
-        self, idx: Sequence[int | Variable] | Variables
-    ) -> tuple[list[float], list[float]]:
+        self, idx: Sequence[Index | Variable] | Variables
+    ) -> tuple[list[Real], list[Real]]:
         """Read the bounds of variables.
 
         Parameters
@@ -781,13 +788,13 @@ class Model:
         BIYOS_getvarbndsp
         BIYOS_getvarbndrg
         """
-        bounds = (c_double, c_double)
+        bounds = (c_real, c_real)
         lb, ub = self._getlist("BIYOS_getvarbnd", Variables, idx, *bounds)
         return lb, ub
 
     def setvarknd(
         self,
-        idx: Sequence[int | Variable] | Variables,
+        idx: Sequence[Index | Variable] | Variables,
         knd: Sequence[VariableKind] | None,
     ) -> None:
         """Set the kinds of variables.
@@ -810,7 +817,7 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getvarknd(
-        self, idx: Sequence[int | Variable] | Variables
+        self, idx: Sequence[Index | Variable] | Variables
     ) -> list[VariableKind]:
         """Read the kinds of variables.
 
@@ -829,14 +836,14 @@ class Model:
         BIYOS_getvarkndsp
         BIYOS_getvarkndrg
         """
-        found = self._getlist("BIYOS_getvarknd", Variables, idx, c_int)
+        found = self._getlist("BIYOS_getvarknd", Variables, idx, c_integer)
         return [VariableKind(value) for value in found[0]]
 
     def setvartol(
         self,
-        idx: Sequence[int | Variable] | Variables,
-        atol: Sequence[float] | None = None,
-        rtol: Sequence[float] | None = None,
+        idx: Sequence[Index | Variable] | Variables,
+        atol: Sequence[Real] | None = None,
+        rtol: Sequence[Real] | None = None,
     ) -> None:
         """Set the tolerances of variables.
 
@@ -867,8 +874,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getvartol(
-        self, idx: Sequence[int | Variable] | Variables
-    ) -> tuple[list[float | None], list[float | None]]:
+        self, idx: Sequence[Index | Variable] | Variables
+    ) -> tuple[list[Real | None], list[Real | None]]:
         """Read the tolerances of variables.
 
         Parameters
@@ -888,11 +895,11 @@ class Model:
         BIYOS_getvartolsp
         BIYOS_getvartolrg
         """
-        pair = (c_double, c_double)
+        pair = (c_real, c_real)
         atol, rtol = self._getlist("BIYOS_getvartol", Variables, idx, *pair)
         return _or_none(atol), _or_none(rtol)
 
-    def delvartol(self, idx: Sequence[int | Variable] | Variables) -> None:
+    def delvartol(self, idx: Sequence[Index | Variable] | Variables) -> None:
         """Return variables to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
@@ -907,7 +914,7 @@ class Model:
         """
         self._call(*self._chosen("BIYOS_delvartol", Variables, idx))
 
-    def getnvar(self) -> int:
+    def getnvar(self) -> Index:
         """Return the number of variables.
 
         Returns
@@ -919,13 +926,13 @@ class Model:
         --------
         BIYOS_getnvar
         """
-        count = c_int()
+        count = c_index()
         self._call(lib.BIYOS_getnvar, byref(count))
         return count.value
 
     def getvar(
-        self, idx: Sequence[int | Variable] | Variables | None = None
-    ) -> tuple[list[VariableKind], list[float], list[float]]:
+        self, idx: Sequence[Index | Variable] | Variables | None = None
+    ) -> tuple[list[VariableKind], list[Real], list[Real]]:
         """Read the kinds and bounds of variables.
 
         Parameters
@@ -949,13 +956,13 @@ class Model:
         BIYOS_getvarrg
         """
         every = range(self.getnvar()) if idx is None else idx
-        types = (c_int, c_double, c_double)
+        types = (c_integer, c_real, c_real)
         found = self._getlist("BIYOS_getvar", Variables, every, *types)
         kinds, lower, upper = found
         return [VariableKind(kind) for kind in kinds], lower, upper
 
     def setvarname(
-        self, idx: Sequence[int | Variable] | Variables, name: Sequence[str]
+        self, idx: Sequence[Index | Variable] | Variables, name: Sequence[str]
     ) -> None:
         """Name variables of the model.
 
@@ -991,7 +998,7 @@ class Model:
         self._setname("BIYOS_setvarname", Variables, idx, name)
 
     def getvarname(
-        self, idx: Sequence[int | Variable] | Variables
+        self, idx: Sequence[Index | Variable] | Variables
     ) -> list[str | None]:
         """Return the names of variables.
 
@@ -1012,7 +1019,7 @@ class Model:
         """
         return self._getname("BIYOS_getvarname", Variables, idx)
 
-    def getvaridx(self, name: Sequence[str]) -> list[int]:
+    def getvaridx(self, name: Sequence[str]) -> list[Index]:
         """Return the indices of the variables with names.
 
         Parameters
@@ -1042,7 +1049,7 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getvaridx, name)
 
-    def delvarname(self, idx: Sequence[int | Variable] | Variables) -> None:
+    def delvarname(self, idx: Sequence[Index | Variable] | Variables) -> None:
         """Remove the names of variables, which then have none.
 
         Parameters
@@ -1064,7 +1071,9 @@ class Model:
         """
         self._delname("BIYOS_delvarname", Variables, idx)
 
-    def delvar(self, idx: Sequence[int | Variable] | Variables) -> list[int]:
+    def delvar(
+        self, idx: Sequence[Index | Variable] | Variables
+    ) -> list[Index]:
         """Delete variables, with their terms in every function.
 
         The variables left keep their order and are numbered from 0 again, and
@@ -1099,7 +1108,7 @@ class Model:
         """
         return self._delete("BIYOS_delvar", Variables, idx)
 
-    def addfun(self, n: int) -> Functions:
+    def addfun(self, n: Index) -> Functions:
         """Add functions after the last one, each with the constant 0 and
         no terms.
 
@@ -1120,7 +1129,7 @@ class Model:
         n = integer("n", n)
         return self._added(Functions, lib.BIYOS_addfun, n)
 
-    def getnfun(self) -> int:
+    def getnfun(self) -> Index:
         """Return the number of functions.
 
         Returns
@@ -1132,14 +1141,14 @@ class Model:
         --------
         BIYOS_getnfun
         """
-        count = c_int()
+        count = c_index()
         self._call(lib.BIYOS_getnfun, byref(count))
         return count.value
 
     def addcst(
         self,
-        idx: Sequence[int | Function] | Functions,
-        cst: Sequence[float] | None,
+        idx: Sequence[Index | Function] | Functions,
+        cst: Sequence[Real] | None,
     ) -> None:
         """Add to the constants of functions.
 
@@ -1165,8 +1174,8 @@ class Model:
 
     def setcst(
         self,
-        idx: Sequence[int | Function] | Functions,
-        cst: Sequence[float] | None,
+        idx: Sequence[Index | Function] | Functions,
+        cst: Sequence[Real] | None,
     ) -> None:
         """Set the constants of functions.
 
@@ -1188,7 +1197,7 @@ class Model:
         chosen = self._chosen("BIYOS_setcst", Functions, idx)
         self._call(*chosen, doubles("cst", cst, n))
 
-    def getcst(self, idx: Sequence[int | Function] | Functions) -> list[float]:
+    def getcst(self, idx: Sequence[Index | Function] | Functions) -> list[Real]:
         """Read the constants of functions.
 
         Parameters
@@ -1206,11 +1215,11 @@ class Model:
         BIYOS_getcstsp
         BIYOS_getcstrg
         """
-        found = self._getlist("BIYOS_getcst", Functions, idx, c_double)
+        found = self._getlist("BIYOS_getcst", Functions, idx, c_real)
         return found[0]
 
     def setfunname(
-        self, idx: Sequence[int | Function] | Functions, name: Sequence[str]
+        self, idx: Sequence[Index | Function] | Functions, name: Sequence[str]
     ) -> None:
         """Name functions of the model, as ``setvarname`` names variables.
 
@@ -1229,7 +1238,7 @@ class Model:
         self._setname("BIYOS_setfunname", Functions, idx, name)
 
     def getfunname(
-        self, idx: Sequence[int | Function] | Functions
+        self, idx: Sequence[Index | Function] | Functions
     ) -> list[str | None]:
         """Return the names of functions, as ``getvarname`` does.
 
@@ -1250,7 +1259,7 @@ class Model:
         """
         return self._getname("BIYOS_getfunname", Functions, idx)
 
-    def getfunidx(self, name: Sequence[str]) -> list[int]:
+    def getfunidx(self, name: Sequence[str]) -> list[Index]:
         """Return the indices of named functions, as ``getvaridx`` does.
 
         Parameters
@@ -1269,7 +1278,7 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getfunidx, name)
 
-    def delfunname(self, idx: Sequence[int | Function] | Functions) -> None:
+    def delfunname(self, idx: Sequence[Index | Function] | Functions) -> None:
         """Remove the names of functions, as ``delvarname`` does.
 
         Parameters
@@ -1284,7 +1293,9 @@ class Model:
         """
         self._delname("BIYOS_delfunname", Functions, idx)
 
-    def delfun(self, idx: Sequence[int | Function] | Functions) -> list[int]:
+    def delfun(
+        self, idx: Sequence[Index | Function] | Functions
+    ) -> list[Index]:
         """Delete functions that nothing uses.
 
         The functions left keep their order and are numbered from 0 again, and
@@ -1320,9 +1331,9 @@ class Model:
 
     def addlinterm(
         self,
-        fun: Sequence[int | Function] | Functions,
-        var: Sequence[int | Variable] | Variables,
-        coef: Sequence[float],
+        fun: Sequence[Index | Function] | Functions,
+        var: Sequence[Index | Variable] | Variables,
+        coef: Sequence[Real],
     ) -> None:
         """Add linear terms to functions, as coordinates.
 
@@ -1352,8 +1363,8 @@ class Model:
         self._call(lib.BIYOS_addlintermsp, size, *arrays)
 
     def getnrlinterm(
-        self, idx: Sequence[int | Function] | Functions | None = None
-    ) -> int:
+        self, idx: Sequence[Index | Function] | Functions | None = None
+    ) -> Offset:
         """Count the linear terms of functions.
 
         Parameters
@@ -1377,8 +1388,8 @@ class Model:
         return self._count("BIYOS_getnrlinterm", Functions, every)
 
     def getrlinterm(
-        self, idx: Sequence[int | Function] | Functions | None = None
-    ) -> tuple[list[int], list[int], list[float]]:
+        self, idx: Sequence[Index | Function] | Functions | None = None
+    ) -> tuple[list[Index], list[Index], list[Real]]:
         """Read the linear terms of functions, by function.
 
         Parameters
@@ -1406,8 +1417,8 @@ class Model:
         return found[0], found[1], values
 
     def getnclinterm(
-        self, idx: Sequence[int | Variable] | Variables | None = None
-    ) -> int:
+        self, idx: Sequence[Index | Variable] | Variables | None = None
+    ) -> Offset:
         """Count the linear terms of variables.
 
         Parameters
@@ -1431,8 +1442,8 @@ class Model:
         return self._count("BIYOS_getnclinterm", Variables, every)
 
     def getclinterm(
-        self, idx: Sequence[int | Variable] | Variables | None = None
-    ) -> tuple[list[int], list[int], list[float]]:
+        self, idx: Sequence[Index | Variable] | Variables | None = None
+    ) -> tuple[list[Index], list[Index], list[Real]]:
         """Read the linear terms of variables, by variable.
 
         Parameters
@@ -1461,10 +1472,10 @@ class Model:
 
     def addquadterm(
         self,
-        fun: Sequence[int | Function] | Functions,
-        var1: Sequence[int | Variable] | Variables,
-        var2: Sequence[int | Variable] | Variables,
-        coef: Sequence[float],
+        fun: Sequence[Index | Function] | Functions,
+        var1: Sequence[Index | Variable] | Variables,
+        var2: Sequence[Index | Variable] | Variables,
+        coef: Sequence[Real],
     ) -> None:
         """Add quadratic terms to functions, as coordinates.
 
@@ -1498,8 +1509,8 @@ class Model:
         self._call(lib.BIYOS_addquadtermsp, size, *arrays)
 
     def getnquadterm(
-        self, idx: Sequence[int | Function] | Functions | None = None
-    ) -> int:
+        self, idx: Sequence[Index | Function] | Functions | None = None
+    ) -> Offset:
         """Count the quadratic terms of functions.
 
         Parameters
@@ -1523,8 +1534,8 @@ class Model:
         return self._count("BIYOS_getnquadterm", Functions, every)
 
     def getquadterm(
-        self, idx: Sequence[int | Function] | Functions | None = None
-    ) -> tuple[list[int], list[int], list[int], list[float]]:
+        self, idx: Sequence[Index | Function] | Functions | None = None
+    ) -> tuple[list[Index], list[Index], list[Index], list[Real]]:
         """Read the quadratic terms of functions.
 
         Parameters
@@ -1555,7 +1566,7 @@ class Model:
         functions, firsts, seconds = found
         return functions, firsts, seconds, values
 
-    def addvarnode(self, var: int | Variable) -> int:
+    def addvarnode(self, var: Index | Variable) -> Offset:
         """Return the node of a variable, added the first time.
 
         Parameters
@@ -1573,16 +1584,16 @@ class Model:
         BIYOS_addvarnode
         """
         var = index_of(self, Variables, "var", var)
-        node = c_int64()
+        node = c_offset()
         self._call(lib.BIYOS_addvarnode, var, byref(node))
         return node.value
 
     def addnode(
         self,
         op: Operator,
-        arg: Sequence[int] | None = None,
-        val: Sequence[float] | None = None,
-    ) -> int:
+        arg: Sequence[Offset] | None = None,
+        val: Sequence[Real] | None = None,
+    ) -> Offset:
         """Add a node, an operator applied to nodes the model holds.
 
         The node is added as given: a sum among the children of a sum stays
@@ -1618,17 +1629,17 @@ class Model:
             int64s("arg", arg, n),
             doubles("val", val, node_values(code, n)),
         )
-        node = c_int64()
+        node = c_offset()
         self._call(lib.BIYOS_addnode, code, n, *arrays, byref(node))
         return node.value
 
     def addexpr(
         self,
-        cnt: Sequence[int],
+        cnt: Sequence[Offset],
         code: Sequence[Operator],
-        arg: Sequence[int],
-        val: Sequence[float] | None = None,
-    ) -> list[int]:
+        arg: Sequence[Offset],
+        val: Sequence[Real] | None = None,
+    ) -> list[Offset]:
         """Add expressions given in postfix.
 
         Expression ``k`` is the ``cnt[k]`` entries of ``code`` and ``arg``
@@ -1670,14 +1681,14 @@ class Model:
         codes = ints("code", code, size)
         args = int64s("arg", arg, size)
         values = doubles("val", val, postfix_values(codes, args))
-        nodes = (c_int64 * n)()
+        nodes = (c_offset * n)()
         self._call(lib.BIYOS_addexpr, n, sizes, codes, args, values, nodes)
         return list(nodes)
 
     def attachexpr(
         self,
-        idx: Sequence[int | Function] | Functions,
-        node: Sequence[int],
+        idx: Sequence[Index | Function] | Functions,
+        node: Sequence[Offset],
     ) -> None:
         """Add expressions to functions of the model.
 
@@ -1702,7 +1713,7 @@ class Model:
         chosen = self._chosen("BIYOS_attachexpr", Functions, idx)
         self._call(*chosen, int64s("node", node, n))
 
-    def clrfun(self, idx: Sequence[int | Function] | Functions) -> None:
+    def clrfun(self, idx: Sequence[Index | Function] | Functions) -> None:
         """Empty functions of the model, so they can be built again.
 
         Each function given has the constant 0, no term and no expression
@@ -1721,8 +1732,8 @@ class Model:
         self._call(*self._chosen("BIYOS_clrfun", Functions, idx))
 
     def getnexpr(
-        self, idx: Sequence[int | Function] | Functions | None = None
-    ) -> tuple[int, int]:
+        self, idx: Sequence[Index | Function] | Functions | None = None
+    ) -> tuple[Offset, Offset]:
         """Count the postfix entries and values of expressions of functions.
 
         Parameters
@@ -1744,15 +1755,15 @@ class Model:
         BIYOS_getnexprrg
         """
         every = range(self.getnfun()) if idx is None else idx
-        nnz = c_int64()
-        nval = c_int64()
+        nnz = c_offset()
+        nval = c_offset()
         chosen = self._chosen("BIYOS_getnexpr", Functions, every)
         self._call(*chosen, byref(nnz), byref(nval))
         return nnz.value, nval.value
 
     def getexpr(
-        self, idx: Sequence[int | Function] | Functions | None = None
-    ) -> tuple[list[int], list[Operator], list[int], list[float]]:
+        self, idx: Sequence[Index | Function] | Functions | None = None
+    ) -> tuple[list[Offset], list[Operator], list[Offset], list[Real]]:
         """Read the expressions of functions, in the postfix of ``addexpr``.
 
         The expression of a function is what stayed in the graph once its
@@ -1788,19 +1799,19 @@ class Model:
         every = range(self.getnfun()) if idx is None else idx
         nnz, nval = self.getnexpr(every)
         chosen = self._chosen("BIYOS_getexpr", Functions, every)
-        counts = (c_int64 * len(every))()
-        codes = (c_int * nnz)()
-        args = (c_int64 * nnz)()
-        values = (c_double * nval)()
+        counts = (c_offset * len(every))()
+        codes = (c_integer * nnz)()
+        args = (c_offset * nnz)()
+        values = (c_real * nval)()
         self._call(*chosen, nnz, nval, counts, codes, args, values)
         operators = [Operator(code) for code in codes]
         return list(counts), operators, list(args), list(values)
 
     def addcb(
         self,
-        fun: Sequence[int | Function] | Functions,
+        fun: Sequence[Index | Function] | Functions,
         data: object = None,
-    ) -> int:
+    ) -> Index:
         """Add a callback that covers functions of the model.
 
         A function's nonlinear part is its expression plus the part of every
@@ -1843,13 +1854,13 @@ class Model:
         n = len(fun)
         indices = indices_of(self, Functions, "fun", fun, n)
         cell = py_object(data)
-        cb = c_int()
+        cb = c_index()
         self._callbacks.keep(cell)
         self._call(lib.BIYOS_addcb, n, indices, addressof(cell), byref(cb))
         self._callbacks.added(n)
         return cb.value
 
-    def setcbf(self, cb: int, f: Callable[..., object]) -> None:
+    def setcbf(self, cb: Index, f: Callable[..., object]) -> None:
         """Give a callback the function that evaluates its values.
 
         Parameters
@@ -1877,9 +1888,9 @@ class Model:
 
     def setcbg(
         self,
-        cb: int,
-        fun: Sequence[int | Function] | Functions,
-        var: Sequence[int | Variable] | Variables,
+        cb: Index,
+        fun: Sequence[Index | Function] | Functions,
+        var: Sequence[Index | Variable] | Variables,
         g: Callable[..., object],
     ) -> None:
         """Give a callback its Jacobian pattern and the function that
@@ -1923,9 +1934,9 @@ class Model:
 
     def setcbh(
         self,
-        cb: int,
-        var1: Sequence[int | Variable] | Variables,
-        var2: Sequence[int | Variable] | Variables,
+        cb: Index,
+        var1: Sequence[Index | Variable] | Variables,
+        var2: Sequence[Index | Variable] | Variables,
         h: Callable[..., object],
     ) -> None:
         """Give a callback its Hessian pattern and the function that
@@ -1967,7 +1978,7 @@ class Model:
         pairs = (nnz, first, second, caller.pointer)
         self._call(lib.BIYOS_setcbh, cb, *pairs)
 
-    def setcbhv(self, cb: int, hv: Callable[..., object]) -> None:
+    def setcbhv(self, cb: Index, hv: Callable[..., object]) -> None:
         """Give a callback the function that multiplies its Hessian by a
         vector.
 
@@ -1996,7 +2007,7 @@ class Model:
         caller = self._callbacks.caller(function, count, None)
         self._call(lib.BIYOS_setcbhv, cb, caller.pointer)
 
-    def setcbdata(self, cb: int, data: object) -> None:
+    def setcbdata(self, cb: Index, data: object) -> None:
         """Replace the object a callback's functions receive.
 
         Parameters
@@ -2015,7 +2026,7 @@ class Model:
         self._callbacks.keep(cell)
         self._call(lib.BIYOS_setcbdata, integer("cb", cb), addressof(cell))
 
-    def getcbdata(self, cb: int) -> object:
+    def getcbdata(self, cb: Index) -> object:
         """Return the object a callback's functions receive.
 
         Parameters
@@ -2036,7 +2047,7 @@ class Model:
         self._call(lib.BIYOS_getcbdata, integer("cb", cb), byref(found))
         return data_at(found.value)
 
-    def getncbfun(self, cb: int) -> int:
+    def getncbfun(self, cb: Index) -> Index:
         """Return the number of functions a callback covers.
 
         Parameters
@@ -2053,11 +2064,11 @@ class Model:
         --------
         BIYOS_getncbfun
         """
-        count = c_int()
+        count = c_index()
         self._call(lib.BIYOS_getncbfun, integer("cb", cb), byref(count))
         return count.value
 
-    def getcbfun(self, cb: int) -> list[int]:
+    def getcbfun(self, cb: Index) -> list[Index]:
         """Read the functions a callback covers, as ``addcb`` takes them.
 
         Parameters
@@ -2075,18 +2086,18 @@ class Model:
         BIYOS_getcbfun
         """
         n = self.getncbfun(cb)
-        found = (c_int * n)()
+        found = (c_index * n)()
         self._call(lib.BIYOS_getcbfun, integer("cb", cb), n, found)
         return list(found)
 
     def addcon(
         self,
-        fun: Sequence[int | Function]
+        fun: Sequence[Index | Function]
         | Functions
         | Comparison
         | Sequence[Comparison],
-        lb: Sequence[float] | None = None,
-        ub: Sequence[float] | None = None,
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
     ) -> Constraints:
         """Add constraints after the last one, one for each function given.
 
@@ -2126,7 +2137,7 @@ class Model:
         cons = given(fun, Comparison, "a comparison")
         if cons is not None:
             return self._compared(cons, lb, ub)
-        funs = cast("Sequence[int | Function] | Functions", fun)
+        funs = cast("Sequence[Index | Function] | Functions", fun)
         n = len(funs)
         arrays = (
             indices_of(self, Functions, "fun", funs, n),
@@ -2137,9 +2148,9 @@ class Model:
 
     def setconbnd(
         self,
-        idx: Sequence[int | Constraint] | Constraints,
-        lb: Sequence[float] | None = None,
-        ub: Sequence[float] | None = None,
+        idx: Sequence[Index | Constraint] | Constraints,
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
     ) -> None:
         """Set the bounds of constraints and keep their functions.
 
@@ -2164,8 +2175,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getconbnd(
-        self, idx: Sequence[int | Constraint] | Constraints
-    ) -> tuple[list[float], list[float]]:
+        self, idx: Sequence[Index | Constraint] | Constraints
+    ) -> tuple[list[Real], list[Real]]:
         """Read the bounds of constraints.
 
         Parameters
@@ -2185,15 +2196,15 @@ class Model:
         BIYOS_getconbndsp
         BIYOS_getconbndrg
         """
-        bounds = (c_double, c_double)
+        bounds = (c_real, c_real)
         lb, ub = self._getlist("BIYOS_getconbnd", Constraints, idx, *bounds)
         return lb, ub
 
     def setcontol(
         self,
-        idx: Sequence[int | Constraint] | Constraints,
-        atol: Sequence[float] | None = None,
-        rtol: Sequence[float] | None = None,
+        idx: Sequence[Index | Constraint] | Constraints,
+        atol: Sequence[Real] | None = None,
+        rtol: Sequence[Real] | None = None,
     ) -> None:
         """Set the tolerances of constraints.
 
@@ -2224,8 +2235,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getcontol(
-        self, idx: Sequence[int | Constraint] | Constraints
-    ) -> tuple[list[float | None], list[float | None]]:
+        self, idx: Sequence[Index | Constraint] | Constraints
+    ) -> tuple[list[Real | None], list[Real | None]]:
         """Read the tolerances of constraints.
 
         Parameters
@@ -2245,11 +2256,13 @@ class Model:
         BIYOS_getcontolsp
         BIYOS_getcontolrg
         """
-        pair = (c_double, c_double)
+        pair = (c_real, c_real)
         atol, rtol = self._getlist("BIYOS_getcontol", Constraints, idx, *pair)
         return _or_none(atol), _or_none(rtol)
 
-    def delcontol(self, idx: Sequence[int | Constraint] | Constraints) -> None:
+    def delcontol(
+        self, idx: Sequence[Index | Constraint] | Constraints
+    ) -> None:
         """Return constraints to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
@@ -2264,7 +2277,7 @@ class Model:
         """
         self._call(*self._chosen("BIYOS_delcontol", Constraints, idx))
 
-    def getncon(self) -> int:
+    def getncon(self) -> Index:
         """Return the number of constraints.
 
         Returns
@@ -2276,13 +2289,13 @@ class Model:
         --------
         BIYOS_getncon
         """
-        count = c_int()
+        count = c_index()
         self._call(lib.BIYOS_getncon, byref(count))
         return count.value
 
     def getcon(
-        self, idx: Sequence[int | Constraint] | Constraints | None = None
-    ) -> tuple[list[int], list[float], list[float]]:
+        self, idx: Sequence[Index | Constraint] | Constraints | None = None
+    ) -> tuple[list[Index], list[Real], list[Real]]:
         """Read the functions and bounds of constraints.
 
         Parameters
@@ -2306,14 +2319,14 @@ class Model:
         BIYOS_getconrg
         """
         every = range(self.getncon()) if idx is None else idx
-        types = (c_int, c_double, c_double)
+        types = (c_index, c_real, c_real)
         found = self._getlist("BIYOS_getcon", Constraints, every, *types)
         functions, lower, upper = found
         return functions, lower, upper
 
     def setconname(
         self,
-        idx: Sequence[int | Constraint] | Constraints,
+        idx: Sequence[Index | Constraint] | Constraints,
         name: Sequence[str],
     ) -> None:
         """Name constraints of the model, as ``setvarname`` names variables.
@@ -2333,7 +2346,7 @@ class Model:
         self._setname("BIYOS_setconname", Constraints, idx, name)
 
     def getconname(
-        self, idx: Sequence[int | Constraint] | Constraints
+        self, idx: Sequence[Index | Constraint] | Constraints
     ) -> list[str | None]:
         """Return the names of constraints, as ``getvarname`` does.
 
@@ -2354,7 +2367,7 @@ class Model:
         """
         return self._getname("BIYOS_getconname", Constraints, idx)
 
-    def getconidx(self, name: Sequence[str]) -> list[int]:
+    def getconidx(self, name: Sequence[str]) -> list[Index]:
         """Return the indices of named constraints, as ``getvaridx`` does.
 
         Parameters
@@ -2373,7 +2386,9 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getconidx, name)
 
-    def delconname(self, idx: Sequence[int | Constraint] | Constraints) -> None:
+    def delconname(
+        self, idx: Sequence[Index | Constraint] | Constraints
+    ) -> None:
         """Remove the names of constraints, as ``delvarname`` does.
 
         Parameters
@@ -2389,8 +2404,8 @@ class Model:
         self._delname("BIYOS_delconname", Constraints, idx)
 
     def delcon(
-        self, idx: Sequence[int | Constraint] | Constraints
-    ) -> list[int]:
+        self, idx: Sequence[Index | Constraint] | Constraints
+    ) -> list[Index]:
         """Delete constraints.
 
         The constraints left keep their order and are numbered from 0 again. A
@@ -2418,14 +2433,14 @@ class Model:
 
     def addobj(
         self,
-        fun: Sequence[int | Function]
+        fun: Sequence[Index | Function]
         | Functions
         | Expression
         | Variable
         | Sequence[Expression | Variable],
         sense: Sequence[ObjectiveSense] | None = None,
         prio: Sequence[int] | None = None,
-        coef: Sequence[float] | None = None,
+        coef: Sequence[Real] | None = None,
     ) -> Objectives:
         """Add objectives after the last one, one for each function given.
 
@@ -2473,7 +2488,7 @@ class Model:
         BIYOS_addobj
         """
         trees = given(fun, Operand, "an expression")
-        funs = cast("Sequence[int | Function] | Functions", fun)
+        funs = cast("Sequence[Index | Function] | Functions", fun)
         n = len(funs) if trees is None else len(trees)
         arrays = (
             ints("sense", sense, n),
@@ -2487,7 +2502,7 @@ class Model:
 
     def setobjsense(
         self,
-        idx: Sequence[int | Objective] | Objectives,
+        idx: Sequence[Index | Objective] | Objectives,
         sense: Sequence[ObjectiveSense] | None,
     ) -> None:
         """Set the senses of objectives.
@@ -2512,7 +2527,7 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getobjsense(
-        self, idx: Sequence[int | Objective] | Objectives
+        self, idx: Sequence[Index | Objective] | Objectives
     ) -> list[ObjectiveSense]:
         """Read the senses of objectives.
 
@@ -2531,12 +2546,12 @@ class Model:
         BIYOS_getobjsensesp
         BIYOS_getobjsenserg
         """
-        found = self._getlist("BIYOS_getobjsense", Objectives, idx, c_int)
+        found = self._getlist("BIYOS_getobjsense", Objectives, idx, c_integer)
         return [ObjectiveSense(value) for value in found[0]]
 
     def setobjprio(
         self,
-        idx: Sequence[int | Objective] | Objectives,
+        idx: Sequence[Index | Objective] | Objectives,
         prio: Sequence[int] | None,
     ) -> None:
         """Set the priorities of objectives.
@@ -2561,7 +2576,7 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getobjprio(
-        self, idx: Sequence[int | Objective] | Objectives
+        self, idx: Sequence[Index | Objective] | Objectives
     ) -> list[int]:
         """Read the priorities of objectives.
 
@@ -2580,13 +2595,13 @@ class Model:
         BIYOS_getobjpriosp
         BIYOS_getobjpriorg
         """
-        found = self._getlist("BIYOS_getobjprio", Objectives, idx, c_int)
+        found = self._getlist("BIYOS_getobjprio", Objectives, idx, c_integer)
         return found[0]
 
     def setobjcoef(
         self,
-        idx: Sequence[int | Objective] | Objectives,
-        coef: Sequence[float] | None,
+        idx: Sequence[Index | Objective] | Objectives,
+        coef: Sequence[Real] | None,
     ) -> None:
         """Set the weights of objectives.
 
@@ -2611,8 +2626,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getobjcoef(
-        self, idx: Sequence[int | Objective] | Objectives
-    ) -> list[float]:
+        self, idx: Sequence[Index | Objective] | Objectives
+    ) -> list[Real]:
         """Read the weights of objectives.
 
         Parameters
@@ -2630,14 +2645,14 @@ class Model:
         BIYOS_getobjcoefsp
         BIYOS_getobjcoefrg
         """
-        found = self._getlist("BIYOS_getobjcoef", Objectives, idx, c_double)
+        found = self._getlist("BIYOS_getobjcoef", Objectives, idx, c_real)
         return found[0]
 
     def setobjtol(
         self,
-        idx: Sequence[int | Objective] | Objectives,
-        atol: Sequence[float] | None = None,
-        rtol: Sequence[float] | None = None,
+        idx: Sequence[Index | Objective] | Objectives,
+        atol: Sequence[Real] | None = None,
+        rtol: Sequence[Real] | None = None,
     ) -> None:
         """Set the tolerances of objectives.
 
@@ -2668,8 +2683,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getobjtol(
-        self, idx: Sequence[int | Objective] | Objectives
-    ) -> tuple[list[float], list[float]]:
+        self, idx: Sequence[Index | Objective] | Objectives
+    ) -> tuple[list[Real], list[Real]]:
         """Read the tolerances of objectives.
 
         Parameters
@@ -2689,11 +2704,11 @@ class Model:
         BIYOS_getobjtolsp
         BIYOS_getobjtolrg
         """
-        pair = (c_double, c_double)
+        pair = (c_real, c_real)
         atol, rtol = self._getlist("BIYOS_getobjtol", Objectives, idx, *pair)
         return atol, rtol
 
-    def getnobj(self) -> int:
+    def getnobj(self) -> Index:
         """Return the number of objectives.
 
         Returns
@@ -2705,13 +2720,13 @@ class Model:
         --------
         BIYOS_getnobj
         """
-        count = c_int()
+        count = c_index()
         self._call(lib.BIYOS_getnobj, byref(count))
         return count.value
 
     def getobj(
-        self, idx: Sequence[int | Objective] | Objectives | None = None
-    ) -> tuple[list[int], list[ObjectiveSense], list[int], list[float]]:
+        self, idx: Sequence[Index | Objective] | Objectives | None = None
+    ) -> tuple[list[Index], list[ObjectiveSense], list[int], list[Real]]:
         """Read objectives.
 
         Parameters
@@ -2737,14 +2752,14 @@ class Model:
         BIYOS_getobjrg
         """
         every = range(self.getnobj()) if idx is None else idx
-        types = (c_int, c_int, c_int, c_double)
+        types = (c_index, c_integer, c_integer, c_real)
         found = self._getlist("BIYOS_getobj", Objectives, every, *types)
         functions, codes, priorities, weights = found
         senses = [ObjectiveSense(code) for code in codes]
         return functions, senses, priorities, weights
 
     def setobjname(
-        self, idx: Sequence[int | Objective] | Objectives, name: Sequence[str]
+        self, idx: Sequence[Index | Objective] | Objectives, name: Sequence[str]
     ) -> None:
         """Name objectives of the model, as ``setvarname`` names variables.
 
@@ -2763,7 +2778,7 @@ class Model:
         self._setname("BIYOS_setobjname", Objectives, idx, name)
 
     def getobjname(
-        self, idx: Sequence[int | Objective] | Objectives
+        self, idx: Sequence[Index | Objective] | Objectives
     ) -> list[str | None]:
         """Return the names of objectives, as ``getvarname`` does.
 
@@ -2784,7 +2799,7 @@ class Model:
         """
         return self._getname("BIYOS_getobjname", Objectives, idx)
 
-    def getobjidx(self, name: Sequence[str]) -> list[int]:
+    def getobjidx(self, name: Sequence[str]) -> list[Index]:
         """Return the indices of named objectives, as ``getvaridx`` does.
 
         Parameters
@@ -2803,7 +2818,7 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getobjidx, name)
 
-    def delobjname(self, idx: Sequence[int | Objective] | Objectives) -> None:
+    def delobjname(self, idx: Sequence[Index | Objective] | Objectives) -> None:
         """Remove the names of objectives, as ``delvarname`` does.
 
         Parameters
@@ -2818,7 +2833,9 @@ class Model:
         """
         self._delname("BIYOS_delobjname", Objectives, idx)
 
-    def delobj(self, idx: Sequence[int | Objective] | Objectives) -> list[int]:
+    def delobj(
+        self, idx: Sequence[Index | Objective] | Objectives
+    ) -> list[Index]:
         """Delete objectives.
 
         The objectives left keep their order and are numbered from 0 again. A
@@ -2846,11 +2863,11 @@ class Model:
 
     def addind(
         self,
-        var: Sequence[int | Variable] | Variables,
+        var: Sequence[Index | Variable] | Variables,
         val: Sequence[int],
-        fun: Sequence[int | Function] | Functions,
-        lb: Sequence[float] | None = None,
-        ub: Sequence[float] | None = None,
+        fun: Sequence[Index | Function] | Functions,
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
     ) -> Indicators:
         """Add indicators after the last one, one for each variable given.
 
@@ -2892,9 +2909,9 @@ class Model:
 
     def setindbnd(
         self,
-        idx: Sequence[int | Indicator] | Indicators,
-        lb: Sequence[float] | None = None,
-        ub: Sequence[float] | None = None,
+        idx: Sequence[Index | Indicator] | Indicators,
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
     ) -> None:
         """Set the bounds of indicators and keep the rest.
 
@@ -2919,8 +2936,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getindbnd(
-        self, idx: Sequence[int | Indicator] | Indicators
-    ) -> tuple[list[float], list[float]]:
+        self, idx: Sequence[Index | Indicator] | Indicators
+    ) -> tuple[list[Real], list[Real]]:
         """Read the bounds of indicators.
 
         Parameters
@@ -2940,14 +2957,14 @@ class Model:
         BIYOS_getindbndsp
         BIYOS_getindbndrg
         """
-        bounds = (c_double, c_double)
+        bounds = (c_real, c_real)
         lb, ub = self._getlist("BIYOS_getindbnd", Indicators, idx, *bounds)
         return lb, ub
 
     def setindvar(
         self,
-        idx: Sequence[int | Indicator] | Indicators,
-        var: Sequence[int | Variable] | Variables | None = None,
+        idx: Sequence[Index | Indicator] | Indicators,
+        var: Sequence[Index | Variable] | Variables | None = None,
         val: Sequence[int] | None = None,
     ) -> None:
         """Set the variables that switch indicators on, and their values.
@@ -2977,8 +2994,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getindvar(
-        self, idx: Sequence[int | Indicator] | Indicators
-    ) -> tuple[list[int], list[int]]:
+        self, idx: Sequence[Index | Indicator] | Indicators
+    ) -> tuple[list[Index], list[int]]:
         """Read the variables that switch indicators on, and their values.
 
         Parameters
@@ -2998,12 +3015,12 @@ class Model:
         BIYOS_getindvarsp
         BIYOS_getindvarrg
         """
-        pair = (c_int, c_int)
+        pair = (c_index, c_integer)
         found = self._getlist("BIYOS_getindvar", Indicators, idx, *pair)
         variables, values = found
         return variables, values
 
-    def getnind(self) -> int:
+    def getnind(self) -> Index:
         """Return the number of indicators.
 
         Returns
@@ -3015,13 +3032,13 @@ class Model:
         --------
         BIYOS_getnind
         """
-        count = c_int()
+        count = c_index()
         self._call(lib.BIYOS_getnind, byref(count))
         return count.value
 
     def getind(
-        self, idx: Sequence[int | Indicator] | Indicators | None = None
-    ) -> tuple[list[int], list[int], list[int], list[float], list[float]]:
+        self, idx: Sequence[Index | Indicator] | Indicators | None = None
+    ) -> tuple[list[Index], list[int], list[Index], list[Real], list[Real]]:
         """Read indicators.
 
         Parameters
@@ -3049,13 +3066,13 @@ class Model:
         BIYOS_getindrg
         """
         every = range(self.getnind()) if idx is None else idx
-        types = (c_int, c_int, c_int, c_double, c_double)
+        types = (c_index, c_integer, c_index, c_real, c_real)
         found = self._getlist("BIYOS_getind", Indicators, every, *types)
         variables, values, functions, lower, upper = found
         return variables, values, functions, lower, upper
 
     def setindname(
-        self, idx: Sequence[int | Indicator] | Indicators, name: Sequence[str]
+        self, idx: Sequence[Index | Indicator] | Indicators, name: Sequence[str]
     ) -> None:
         """Name indicators of the model, as ``setvarname`` names variables.
 
@@ -3074,7 +3091,7 @@ class Model:
         self._setname("BIYOS_setindname", Indicators, idx, name)
 
     def getindname(
-        self, idx: Sequence[int | Indicator] | Indicators
+        self, idx: Sequence[Index | Indicator] | Indicators
     ) -> list[str | None]:
         """Return the names of indicators, as ``getvarname`` does.
 
@@ -3095,7 +3112,7 @@ class Model:
         """
         return self._getname("BIYOS_getindname", Indicators, idx)
 
-    def getindidx(self, name: Sequence[str]) -> list[int]:
+    def getindidx(self, name: Sequence[str]) -> list[Index]:
         """Return the indices of named indicators, as ``getvaridx`` does.
 
         Parameters
@@ -3114,7 +3131,7 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getindidx, name)
 
-    def delindname(self, idx: Sequence[int | Indicator] | Indicators) -> None:
+    def delindname(self, idx: Sequence[Index | Indicator] | Indicators) -> None:
         """Remove the names of indicators, as ``delvarname`` does.
 
         Parameters
@@ -3129,7 +3146,9 @@ class Model:
         """
         self._delname("BIYOS_delindname", Indicators, idx)
 
-    def delind(self, idx: Sequence[int | Indicator] | Indicators) -> list[int]:
+    def delind(
+        self, idx: Sequence[Index | Indicator] | Indicators
+    ) -> list[Index]:
         """Delete indicators.
 
         The indicators left keep their order and are numbered from 0 again. A
@@ -3158,9 +3177,9 @@ class Model:
     def addsos(
         self,
         knd: Sequence[SpecialOrderedSetKind],
-        cnt: Sequence[int],
-        var: Sequence[int | Variable] | Variables,
-        coef: Sequence[float] | None = None,
+        cnt: Sequence[Offset],
+        var: Sequence[Index | Variable] | Variables,
+        coef: Sequence[Real] | None = None,
     ) -> SpecialOrderedSets:
         """Add special ordered sets after the last one.
 
@@ -3205,7 +3224,7 @@ class Model:
         )
         return self._added(SpecialOrderedSets, lib.BIYOS_addsos, n, *arrays)
 
-    def getnsos(self) -> int:
+    def getnsos(self) -> Index:
         """Return the number of special ordered sets.
 
         Returns
@@ -3217,16 +3236,16 @@ class Model:
         --------
         BIYOS_getnsos
         """
-        count = c_int()
+        count = c_index()
         self._call(lib.BIYOS_getnsos, byref(count))
         return count.value
 
     def getnsosvar(
         self,
-        idx: Sequence[int | SpecialOrderedSet]
+        idx: Sequence[Index | SpecialOrderedSet]
         | SpecialOrderedSets
         | None = None,
-    ) -> int:
+    ) -> Offset:
         """Count the members of special ordered sets.
 
         Parameters
@@ -3251,10 +3270,12 @@ class Model:
 
     def getsos(
         self,
-        idx: Sequence[int | SpecialOrderedSet]
+        idx: Sequence[Index | SpecialOrderedSet]
         | SpecialOrderedSets
         | None = None,
-    ) -> tuple[list[SpecialOrderedSetKind], list[int], list[int], list[float]]:
+    ) -> tuple[
+        list[SpecialOrderedSetKind], list[Offset], list[Index], list[Real]
+    ]:
         """Read special ordered sets, as ``addsos`` takes them.
 
         Parameters
@@ -3282,10 +3303,10 @@ class Model:
         every = range(self.getnsos()) if idx is None else idx
         size = self.getnsosvar(every)
         n = len(every)
-        kinds = (c_int * n)()
-        counts = (c_int64 * n)()
-        members = (c_int * size)()
-        weights = (c_double * size)()
+        kinds = (c_integer * n)()
+        counts = (c_offset * n)()
+        members = (c_index * size)()
+        weights = (c_real * size)()
         chosen = self._chosen("BIYOS_getsos", SpecialOrderedSets, every)
         self._call(*chosen, size, kinds, counts, members, weights)
         found = [SpecialOrderedSetKind(code) for code in kinds]
@@ -3293,7 +3314,7 @@ class Model:
 
     def setsosname(
         self,
-        idx: Sequence[int | SpecialOrderedSet] | SpecialOrderedSets,
+        idx: Sequence[Index | SpecialOrderedSet] | SpecialOrderedSets,
         name: Sequence[str],
     ) -> None:
         """Name special ordered sets, as ``setvarname`` names variables.
@@ -3313,7 +3334,7 @@ class Model:
         self._setname("BIYOS_setsosname", SpecialOrderedSets, idx, name)
 
     def getsosname(
-        self, idx: Sequence[int | SpecialOrderedSet] | SpecialOrderedSets
+        self, idx: Sequence[Index | SpecialOrderedSet] | SpecialOrderedSets
     ) -> list[str | None]:
         """Return the names of special ordered sets, as ``getvarname`` does.
 
@@ -3334,7 +3355,7 @@ class Model:
         """
         return self._getname("BIYOS_getsosname", SpecialOrderedSets, idx)
 
-    def getsosidx(self, name: Sequence[str]) -> list[int]:
+    def getsosidx(self, name: Sequence[str]) -> list[Index]:
         """Return the indices of named special ordered sets, as
         ``getvaridx`` does.
 
@@ -3355,7 +3376,7 @@ class Model:
         return self._getidx(lib.BIYOS_getsosidx, name)
 
     def delsosname(
-        self, idx: Sequence[int | SpecialOrderedSet] | SpecialOrderedSets
+        self, idx: Sequence[Index | SpecialOrderedSet] | SpecialOrderedSets
     ) -> None:
         """Remove the names of special ordered sets, as ``delvarname``
         does.
@@ -3373,8 +3394,8 @@ class Model:
         self._delname("BIYOS_delsosname", SpecialOrderedSets, idx)
 
     def delsos(
-        self, idx: Sequence[int | SpecialOrderedSet] | SpecialOrderedSets
-    ) -> list[int]:
+        self, idx: Sequence[Index | SpecialOrderedSet] | SpecialOrderedSets
+    ) -> list[Index]:
         """Delete special ordered sets.
 
         The sets left keep their order and are numbered from 0 again. A deleted
@@ -3401,9 +3422,9 @@ class Model:
 
     def addpwl(
         self,
-        cnt: Sequence[int],
-        x: Sequence[float],
-        y: Sequence[float],
+        cnt: Sequence[Offset],
+        x: Sequence[Real],
+        y: Sequence[Real],
     ) -> PiecewiseLinears:
         """Add piecewise linear functions after the last one.
 
@@ -3442,7 +3463,7 @@ class Model:
         arrays = (sizes, doubles("x", x, size), doubles("y", y, size))
         return self._added(PiecewiseLinears, lib.BIYOS_addpwl, n, *arrays)
 
-    def getnpwl(self) -> int:
+    def getnpwl(self) -> Index:
         """Return the number of piecewise linear functions.
 
         Returns
@@ -3454,14 +3475,14 @@ class Model:
         --------
         BIYOS_getnpwl
         """
-        count = c_int()
+        count = c_index()
         self._call(lib.BIYOS_getnpwl, byref(count))
         return count.value
 
     def getnpwlpt(
         self,
-        idx: Sequence[int | PiecewiseLinear] | PiecewiseLinears | None = None,
-    ) -> int:
+        idx: Sequence[Index | PiecewiseLinear] | PiecewiseLinears | None = None,
+    ) -> Offset:
         """Count the points of piecewise linear functions.
 
         Parameters
@@ -3486,8 +3507,8 @@ class Model:
 
     def getpwl(
         self,
-        idx: Sequence[int | PiecewiseLinear] | PiecewiseLinears | None = None,
-    ) -> tuple[list[int], list[float], list[float]]:
+        idx: Sequence[Index | PiecewiseLinear] | PiecewiseLinears | None = None,
+    ) -> tuple[list[Offset], list[Real], list[Real]]:
         """Read piecewise linear functions, as ``addpwl`` takes them.
 
         Parameters
@@ -3512,14 +3533,14 @@ class Model:
         """
         every = range(self.getnpwl()) if idx is None else idx
         size = self.getnpwlpt(every)
-        sizes = (c_int64 * len(every))()
-        xs = (c_double * size)()
-        ys = (c_double * size)()
+        sizes = (c_offset * len(every))()
+        xs = (c_real * size)()
+        ys = (c_real * size)()
         chosen = self._chosen("BIYOS_getpwl", PiecewiseLinears, every)
         self._call(*chosen, size, sizes, xs, ys)
         return list(sizes), list(xs), list(ys)
 
-    def addpwlnode(self, pwl: int | PiecewiseLinear, arg: int) -> int:
+    def addpwlnode(self, pwl: Index | PiecewiseLinear, arg: Offset) -> Offset:
         """Add the node that applies a piecewise linear function to a node.
 
         Any number of nodes may apply one pwl. A call that fails adds no
@@ -3542,17 +3563,17 @@ class Model:
         BIYOS_addpwlnode
         """
         pwl = index_of(self, PiecewiseLinears, "pwl", pwl)
-        node = c_int64()
+        node = c_offset()
         self._call(lib.BIYOS_addpwlnode, pwl, offset("arg", arg), byref(node))
         return node.value
 
     def addcone(
         self,
         knd: Sequence[ConeKind],
-        cnt: Sequence[int],
-        fun: Sequence[int | Function] | Functions,
-        prmcnt: Sequence[int] | None = None,
-        prm: Sequence[float] | None = None,
+        cnt: Sequence[Offset],
+        fun: Sequence[Index | Function] | Functions,
+        prmcnt: Sequence[Offset] | None = None,
+        prm: Sequence[Real] | None = None,
     ) -> Cones:
         """Add cones after the last one.
 
@@ -3600,9 +3621,9 @@ class Model:
 
     def setconetol(
         self,
-        idx: Sequence[int | Cone] | Cones,
-        atol: Sequence[float] | None = None,
-        rtol: Sequence[float] | None = None,
+        idx: Sequence[Index | Cone] | Cones,
+        atol: Sequence[Real] | None = None,
+        rtol: Sequence[Real] | None = None,
     ) -> None:
         """Set the tolerances of cones.
 
@@ -3633,8 +3654,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getconetol(
-        self, idx: Sequence[int | Cone] | Cones
-    ) -> tuple[list[float | None], list[float | None]]:
+        self, idx: Sequence[Index | Cone] | Cones
+    ) -> tuple[list[Real | None], list[Real | None]]:
         """Read the tolerances of cones.
 
         Parameters
@@ -3654,11 +3675,11 @@ class Model:
         BIYOS_getconetolsp
         BIYOS_getconetolrg
         """
-        pair = (c_double, c_double)
+        pair = (c_real, c_real)
         atol, rtol = self._getlist("BIYOS_getconetol", Cones, idx, *pair)
         return _or_none(atol), _or_none(rtol)
 
-    def delconetol(self, idx: Sequence[int | Cone] | Cones) -> None:
+    def delconetol(self, idx: Sequence[Index | Cone] | Cones) -> None:
         """Return cones to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
@@ -3673,7 +3694,7 @@ class Model:
         """
         self._call(*self._chosen("BIYOS_delconetol", Cones, idx))
 
-    def getncone(self) -> int:
+    def getncone(self) -> Index:
         """Return the number of cones.
 
         Returns
@@ -3685,13 +3706,13 @@ class Model:
         --------
         BIYOS_getncone
         """
-        count = c_int()
+        count = c_index()
         self._call(lib.BIYOS_getncone, byref(count))
         return count.value
 
     def getnconefun(
-        self, idx: Sequence[int | Cone] | Cones | None = None
-    ) -> int:
+        self, idx: Sequence[Index | Cone] | Cones | None = None
+    ) -> Offset:
         """Count the members of cones.
 
         Parameters
@@ -3715,8 +3736,8 @@ class Model:
         return self._count("BIYOS_getnconefun", Cones, every)
 
     def getcone(
-        self, idx: Sequence[int | Cone] | Cones | None = None
-    ) -> tuple[list[ConeKind], list[int], list[int]]:
+        self, idx: Sequence[Index | Cone] | Cones | None = None
+    ) -> tuple[list[ConeKind], list[Offset], list[Index]]:
         """Read the kinds and members of cones.
 
         Parameters
@@ -3743,16 +3764,16 @@ class Model:
         every = range(self.getncone()) if idx is None else idx
         size = self._count("BIYOS_getnconefun", Cones, every)
         chosen = self._chosen("BIYOS_getcone", Cones, every)
-        kinds = (c_int * len(every))()
-        counts = (c_int64 * len(every))()
-        members = (c_int * size)()
+        kinds = (c_integer * len(every))()
+        counts = (c_offset * len(every))()
+        members = (c_index * size)()
         self._call(*chosen, size, kinds, counts, members)
         found = [ConeKind(kind) for kind in kinds]
         return found, list(counts), list(members)
 
     def getnconeprm(
-        self, idx: Sequence[int | Cone] | Cones | None = None
-    ) -> int:
+        self, idx: Sequence[Index | Cone] | Cones | None = None
+    ) -> Offset:
         """Count the parameters of cones.
 
         Parameters
@@ -3776,8 +3797,8 @@ class Model:
         return self._count("BIYOS_getnconeprm", Cones, every)
 
     def getconeprm(
-        self, idx: Sequence[int | Cone] | Cones | None = None
-    ) -> tuple[list[int], list[float]]:
+        self, idx: Sequence[Index | Cone] | Cones | None = None
+    ) -> tuple[list[Offset], list[Real]]:
         """Read the parameters of cones.
 
         Parameters
@@ -3802,13 +3823,13 @@ class Model:
         every = range(self.getncone()) if idx is None else idx
         size = self._count("BIYOS_getnconeprm", Cones, every)
         chosen = self._chosen("BIYOS_getconeprm", Cones, every)
-        counts = (c_int64 * len(every))()
-        values = (c_double * size)()
+        counts = (c_offset * len(every))()
+        values = (c_real * size)()
         self._call(*chosen, size, counts, values)
         return list(counts), list(values)
 
     def setconename(
-        self, idx: Sequence[int | Cone] | Cones, name: Sequence[str]
+        self, idx: Sequence[Index | Cone] | Cones, name: Sequence[str]
     ) -> None:
         """Name cones of the model, as ``setvarname`` names variables.
 
@@ -3827,7 +3848,7 @@ class Model:
         self._setname("BIYOS_setconename", Cones, idx, name)
 
     def getconename(
-        self, idx: Sequence[int | Cone] | Cones
+        self, idx: Sequence[Index | Cone] | Cones
     ) -> list[str | None]:
         """Return the names of cones, as ``getvarname`` does.
 
@@ -3848,7 +3869,7 @@ class Model:
         """
         return self._getname("BIYOS_getconename", Cones, idx)
 
-    def getconeidx(self, name: Sequence[str]) -> list[int]:
+    def getconeidx(self, name: Sequence[str]) -> list[Index]:
         """Return the indices of named cones, as ``getvaridx`` does.
 
         Parameters
@@ -3867,7 +3888,7 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getconeidx, name)
 
-    def delconename(self, idx: Sequence[int | Cone] | Cones) -> None:
+    def delconename(self, idx: Sequence[Index | Cone] | Cones) -> None:
         """Remove the names of cones, as ``delvarname`` does.
 
         Parameters
@@ -3882,7 +3903,7 @@ class Model:
         """
         self._delname("BIYOS_delconename", Cones, idx)
 
-    def delcone(self, idx: Sequence[int | Cone] | Cones) -> list[int]:
+    def delcone(self, idx: Sequence[Index | Cone] | Cones) -> list[Index]:
         """Delete cones.
 
         The cones left keep their order and are numbered from 0 again. A
@@ -3910,10 +3931,10 @@ class Model:
 
     def addccon(
         self,
-        fun1: Sequence[int | Function] | Functions,
-        fun2: Sequence[int | Function] | Functions,
-        lb: Sequence[float] | None = None,
-        ub: Sequence[float] | None = None,
+        fun1: Sequence[Index | Function] | Functions,
+        fun2: Sequence[Index | Function] | Functions,
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
     ) -> Complements:
         """Add complements after the last one, one for each pair given.
 
@@ -3954,9 +3975,9 @@ class Model:
 
     def setcconbnd(
         self,
-        idx: Sequence[int | Complement] | Complements,
-        lb: Sequence[float] | None = None,
-        ub: Sequence[float] | None = None,
+        idx: Sequence[Index | Complement] | Complements,
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
     ) -> None:
         """Set the bounds of complements and keep the rest.
 
@@ -3981,8 +4002,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getcconbnd(
-        self, idx: Sequence[int | Complement] | Complements
-    ) -> tuple[list[float], list[float]]:
+        self, idx: Sequence[Index | Complement] | Complements
+    ) -> tuple[list[Real], list[Real]]:
         """Read the bounds of complements.
 
         Parameters
@@ -4002,15 +4023,15 @@ class Model:
         BIYOS_getcconbndsp
         BIYOS_getcconbndrg
         """
-        bounds = (c_double, c_double)
+        bounds = (c_real, c_real)
         lb, ub = self._getlist("BIYOS_getcconbnd", Complements, idx, *bounds)
         return lb, ub
 
     def setccontol(
         self,
-        idx: Sequence[int | Complement] | Complements,
-        atol: Sequence[float] | None = None,
-        rtol: Sequence[float] | None = None,
+        idx: Sequence[Index | Complement] | Complements,
+        atol: Sequence[Real] | None = None,
+        rtol: Sequence[Real] | None = None,
     ) -> None:
         """Set the tolerances of complements.
 
@@ -4042,8 +4063,8 @@ class Model:
         self._call(*chosen, *arrays)
 
     def getccontol(
-        self, idx: Sequence[int | Complement] | Complements
-    ) -> tuple[list[float | None], list[float | None]]:
+        self, idx: Sequence[Index | Complement] | Complements
+    ) -> tuple[list[Real | None], list[Real | None]]:
         """Read the tolerances of complements.
 
         Parameters
@@ -4063,11 +4084,13 @@ class Model:
         BIYOS_getccontolsp
         BIYOS_getccontolrg
         """
-        pair = (c_double, c_double)
+        pair = (c_real, c_real)
         atol, rtol = self._getlist("BIYOS_getccontol", Complements, idx, *pair)
         return _or_none(atol), _or_none(rtol)
 
-    def delccontol(self, idx: Sequence[int | Complement] | Complements) -> None:
+    def delccontol(
+        self, idx: Sequence[Index | Complement] | Complements
+    ) -> None:
         """Return complements to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
@@ -4082,7 +4105,7 @@ class Model:
         """
         self._call(*self._chosen("BIYOS_delccontol", Complements, idx))
 
-    def getnccon(self) -> int:
+    def getnccon(self) -> Index:
         """Return the number of complements.
 
         Returns
@@ -4094,13 +4117,13 @@ class Model:
         --------
         BIYOS_getnccon
         """
-        count = c_int()
+        count = c_index()
         self._call(lib.BIYOS_getnccon, byref(count))
         return count.value
 
     def getccon(
-        self, idx: Sequence[int | Complement] | Complements | None = None
-    ) -> tuple[list[int], list[int], list[float], list[float]]:
+        self, idx: Sequence[Index | Complement] | Complements | None = None
+    ) -> tuple[list[Index], list[Index], list[Real], list[Real]]:
         """Read the functions and bounds of complements.
 
         Parameters
@@ -4126,14 +4149,14 @@ class Model:
         BIYOS_getcconrg
         """
         every = range(self.getnccon()) if idx is None else idx
-        types = (c_int, c_int, c_double, c_double)
+        types = (c_index, c_index, c_real, c_real)
         found = self._getlist("BIYOS_getccon", Complements, every, *types)
         bounded, partners, lower, upper = found
         return bounded, partners, lower, upper
 
     def setcconname(
         self,
-        idx: Sequence[int | Complement] | Complements,
+        idx: Sequence[Index | Complement] | Complements,
         name: Sequence[str],
     ) -> None:
         """Name complements of the model, as ``setvarname`` names variables.
@@ -4153,7 +4176,7 @@ class Model:
         self._setname("BIYOS_setcconname", Complements, idx, name)
 
     def getcconname(
-        self, idx: Sequence[int | Complement] | Complements
+        self, idx: Sequence[Index | Complement] | Complements
     ) -> list[str | None]:
         """Return the names of complements, as ``getvarname`` does.
 
@@ -4174,7 +4197,7 @@ class Model:
         """
         return self._getname("BIYOS_getcconname", Complements, idx)
 
-    def getcconidx(self, name: Sequence[str]) -> list[int]:
+    def getcconidx(self, name: Sequence[str]) -> list[Index]:
         """Return the indices of named complements, as ``getvaridx`` does.
 
         Parameters
@@ -4194,7 +4217,7 @@ class Model:
         return self._getidx(lib.BIYOS_getcconidx, name)
 
     def delcconname(
-        self, idx: Sequence[int | Complement] | Complements
+        self, idx: Sequence[Index | Complement] | Complements
     ) -> None:
         """Remove the names of complements, as ``delvarname`` does.
 
@@ -4211,8 +4234,8 @@ class Model:
         self._delname("BIYOS_delcconname", Complements, idx)
 
     def delccon(
-        self, idx: Sequence[int | Complement] | Complements
-    ) -> list[int]:
+        self, idx: Sequence[Index | Complement] | Complements
+    ) -> list[Index]:
         """Delete complements.
 
         The complements left keep their order and are numbered from 0 again. A
@@ -4238,7 +4261,7 @@ class Model:
         """
         return self._delete("BIYOS_delccon", Complements, idx)
 
-    def evalf(self, x: Sequence[float]) -> list[float]:
+    def evalf(self, x: Sequence[Real]) -> list[Real]:
         """Evaluate the functions at a point.
 
         Parameters
@@ -4272,11 +4295,11 @@ class Model:
         --------
         BIYOS_evalf
         """
-        f = (c_double * self.getnfun())()
+        f = (c_real * self.getnfun())()
         self._evaluate(lib.BIYOS_evalf, self._point(x), f)
         return list(f)
 
-    def evalg(self, x: Sequence[float]) -> list[float]:
+    def evalg(self, x: Sequence[Real]) -> list[Real]:
         """Evaluate the Jacobian of the functions at a point.
 
         Parameters
@@ -4301,11 +4324,11 @@ class Model:
         BIYOS_evalg
         """
         point = self._point(x)
-        g = (c_double * self.getngpat())()
+        g = (c_real * self.getngpat())()
         self._evaluate(lib.BIYOS_evalg, point, g)
         return list(g)
 
-    def evalh(self, x: Sequence[float], w: Sequence[float]) -> list[float]:
+    def evalh(self, x: Sequence[Real], w: Sequence[Real]) -> list[Real]:
         """Evaluate the Hessian of the Lagrangian at a point.
 
         The Lagrangian is the sum of the functions, each weighted by its
@@ -4335,13 +4358,13 @@ class Model:
         BIYOS_evalh
         """
         arrays = (self._point(x), doubles("w", w, self.getnfun()))
-        h = (c_double * self.getnhpat())()
+        h = (c_real * self.getnhpat())()
         self._evaluate(lib.BIYOS_evalh, *arrays, h)
         return list(h)
 
     def evalhv(
-        self, x: Sequence[float], w: Sequence[float], v: Sequence[float]
-    ) -> list[float]:
+        self, x: Sequence[Real], w: Sequence[Real], v: Sequence[Real]
+    ) -> list[Real]:
         """Multiply the Hessian of the Lagrangian at a point by a vector.
 
         Parameters
@@ -4377,13 +4400,13 @@ class Model:
         n = self.getnvar()
         weights = doubles("w", w, self.getnfun())
         arrays = (self._point(x), weights, doubles("v", v, n))
-        hv = (c_double * n)()
+        hv = (c_real * n)()
         self._evaluate(lib.BIYOS_evalhv, *arrays, hv)
         return list(hv)
 
     def getngpat(
-        self, idx: Sequence[int | Function] | Functions | None = None
-    ) -> int:
+        self, idx: Sequence[Index | Function] | Functions | None = None
+    ) -> Offset:
         """Count the entries of the Jacobian pattern of functions.
 
         Parameters
@@ -4407,8 +4430,8 @@ class Model:
         return self._count("BIYOS_getngpat", Functions, every)
 
     def getgpat(
-        self, idx: Sequence[int | Function] | Functions | None = None
-    ) -> tuple[list[int], list[int]]:
+        self, idx: Sequence[Index | Function] | Functions | None = None
+    ) -> tuple[list[Offset], list[Index]]:
         """Read the Jacobian pattern of functions.
 
         Parameters
@@ -4434,8 +4457,8 @@ class Model:
         return self._pattern("gpat", Functions, every)
 
     def getnhpat(
-        self, idx: Sequence[int | Variable] | Variables | None = None
-    ) -> int:
+        self, idx: Sequence[Index | Variable] | Variables | None = None
+    ) -> Offset:
         """Count the entries of the Hessian pattern in columns of its lower
         triangle.
 
@@ -4460,8 +4483,8 @@ class Model:
         return self._count("BIYOS_getnhpat", Variables, every)
 
     def gethpat(
-        self, idx: Sequence[int | Variable] | Variables | None = None
-    ) -> tuple[list[int], list[int]]:
+        self, idx: Sequence[Index | Variable] | Variables | None = None
+    ) -> tuple[list[Offset], list[Index]]:
         """Read the Hessian pattern in columns of its lower triangle.
 
         Parameters
@@ -4489,8 +4512,8 @@ class Model:
     def _compared(
         self,
         cons: list[Comparison],
-        lb: Sequence[float] | None,
-        ub: Sequence[float] | None,
+        lb: Sequence[Real] | None,
+        ub: Sequence[Real] | None,
     ) -> Constraints:
         if lb is not None or ub is not None:
             raise TypeError("lb and ub come from the comparisons")
@@ -4537,7 +4560,7 @@ class Model:
         hk: Callable[[Event], object],
         knd: int,
         lvl: int,
-        idx: c_int,
+        idx: c_index,
     ) -> None:
         callback = self._hooks.callback
         out = byref(idx)
@@ -4547,7 +4570,7 @@ class Model:
         finally:
             self._hooks.settle(key, idx.value)
 
-    def _delhook(self, idx: int) -> None:
+    def _delhook(self, idx: Index) -> None:
         self._call(lib.BIYOS_delmdlhook, idx)
         self._hooks.remove(idx)
 
@@ -4571,7 +4594,7 @@ class Model:
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
         outputs: int = 0,
-    ) -> tuple[Callable[..., int], int, object]:
+    ) -> tuple[Callable[..., int], Index, object]:
         span = span_of(self, family, "idx", idx)
         if span is None:
             n = len(idx)
@@ -4585,9 +4608,9 @@ class Model:
         return function, start, stop
 
     def _inside(
-        self, family: type[Block[Any]], start: int, stop: int
+        self, family: type[Block[Any]], start: Index, stop: Index
     ) -> bool:
-        total: int = getattr(self, _COUNTS[family])()
+        total: Index = getattr(self, _COUNTS[family])()
         return 0 <= start <= stop <= total
 
     def _setname(
@@ -4614,10 +4637,10 @@ class Model:
         call: str,
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
-    ) -> list[int]:
+    ) -> list[Index]:
         chosen = self._chosen(call, family, idx)
         gone = self._gone(family, idx)
-        total: int = getattr(self, _COUNTS[family])()
+        total: Index = getattr(self, _COUNTS[family])()
         self._call(*chosen, None)
         if len(idx) > 0:
             self._gen += 1
@@ -4627,7 +4650,7 @@ class Model:
         self,
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
-    ) -> set[int]:
+    ) -> set[Index]:
         span = span_of(self, family, "idx", idx)
         if span is not None:
             return set(span)
@@ -4649,7 +4672,7 @@ class Model:
         call: str,
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
-        *types: type[c_int | c_double],
+        *types: type[c_index | c_integer | c_real],
     ) -> list[list[Any]]:
         chosen = self._chosen(call, family, idx, len(types))
         found = [(element * len(idx))() for element in types]
@@ -4661,8 +4684,8 @@ class Model:
         call: str,
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
-    ) -> int:
-        nnz = c_int64()
+    ) -> Offset:
+        nnz = c_offset()
         self._call(*self._chosen(call, family, idx), byref(nnz))
         return nnz.value
 
@@ -4673,16 +4696,16 @@ class Model:
         idx: Sequence[SupportsIndex] | Block[Any],
         place: int,
         width: int = 2,
-    ) -> tuple[list[list[int]], list[float]]:
+    ) -> tuple[list[list[Index]], list[Real]]:
         size = self._count(f"BIYOS_getn{name}", family, idx)
         span = span_of(self, family, "idx", idx)
         chosen = self._chosen(f"BIYOS_get{name}", family, idx)
-        found = [(c_int * size)() for _ in range(width)]
-        values = (c_double * size)()
+        found = [(c_index * size)() for _ in range(width)]
+        values = (c_real * size)()
         if span is None:
             self._call(*chosen, size, None, *found, values)
             return [list(column) for column in found], list(values)
-        counts = (c_int64 * len(span))()
+        counts = (c_offset * len(span))()
         others = found[:place] + found[place + 1 :]
         self._call(*chosen, size, counts, *others, values)
         columns = [list(column) for column in found]
@@ -4694,15 +4717,15 @@ class Model:
         name: str,
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
-    ) -> tuple[list[int], list[int]]:
+    ) -> tuple[list[Offset], list[Index]]:
         nnz = self._count(f"BIYOS_getn{name}", family, idx)
-        cnt = (c_int64 * len(idx))()
-        var = (c_int * nnz)()
+        cnt = (c_offset * len(idx))()
+        var = (c_index * nnz)()
         chosen = self._chosen(f"BIYOS_get{name}", family, idx)
         self._call(*chosen, nnz, cnt, var)
         return list(cnt), list(var)
 
-    def _point(self, x: Sequence[float]) -> Array[c_double] | None:
+    def _point(self, x: Sequence[Real]) -> Array[c_real] | None:
         return doubles("x", x, self.getnvar())
 
     def _evaluate(
@@ -4721,10 +4744,10 @@ class Model:
 
     def _getidx(
         self, function: Callable[..., int], name: Sequence[str]
-    ) -> list[int]:
+    ) -> list[Index]:
         n = len(listed("name", name))
         names = strings("name", name, n)
-        found = (c_int * n)()
+        found = (c_index * n)()
         self._call(function, n, names, found)
         return list(found)
 
@@ -4732,10 +4755,10 @@ class Model:
         self,
         family: type[_Block],
         function: Callable[..., int],
-        n: int,
+        n: Index,
         *arguments: object,
     ) -> _Block:
-        pos = c_int()
+        pos = c_index()
         self._call(function, n, *arguments, byref(pos))
         return family(self, pos.value, pos.value + n, self._gen)
 

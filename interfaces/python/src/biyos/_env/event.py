@@ -4,6 +4,7 @@ from enum import IntEnum
 from typing import TYPE_CHECKING
 
 from biyos._capi import OK, lib
+from biyos._convert.numbers import Index
 from biyos._error import Error
 
 if TYPE_CHECKING:
@@ -163,7 +164,7 @@ class Event:
         return self._pointer
 
 
-def _field(pointer: int, index: int) -> tuple[str, str]:
+def _field(pointer: int, index: Index) -> tuple[str, str]:
     name = lib.BIYOS_getevtfldname(pointer, index)
     value = lib.BIYOS_getevtfldval(pointer, index)
     return _decoded(name), _decoded(value)

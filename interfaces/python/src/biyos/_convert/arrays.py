@@ -1,9 +1,17 @@
+import numbers
 from collections.abc import Sequence, Sized
-from ctypes import Array, c_char_p, c_double, c_int, c_int64
-from numbers import Real
+from ctypes import Array, c_char_p
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeGuard, TypeVar
 
 from biyos._convert.integers import integer, offset
+from biyos._convert.numbers import (
+    Index,
+    Real,
+    c_index,
+    c_integer,
+    c_offset,
+    c_real,
+)
 from biyos._convert.text import text
 from biyos._model.blocks import Block, index_of, range_of
 
@@ -12,7 +20,7 @@ if TYPE_CHECKING:
 
     from biyos._model.model import Model
 
-Element = TypeVar("Element", c_double, c_int, c_int64, c_char_p)
+Element = TypeVar("Element", c_real, c_integer, c_offset, c_char_p)
 
 
 def _sized(name: str, values: Sized, count: int) -> None:
@@ -30,8 +38,8 @@ def _shared(values: Any) -> "TypeGuard[WriteableBuffer]":
         return flat and view.format == "d" and not view.readonly
 
 
-def _real(name: str, value: float) -> float:
-    if isinstance(value, bool) or not isinstance(value, Real):
+def _real(name: str, value: Real) -> Real:
+    if isinstance(value, bool) or not isinstance(value, numbers.Real):
         found = type(value).__name__
         raise TypeError(f"{name} must be a number, not {found}")
     return float(value)
@@ -45,27 +53,27 @@ def _array(
 
 
 def doubles(
-    name: str, values: Sequence[float] | None, count: int
-) -> Array[c_double] | None:
+    name: str, values: Sequence[Real] | None, count: int
+) -> Array[c_real] | None:
     if values is None:
         return None
     _sized(name, values, count)
     if _shared(values):
-        return (c_double * count).from_buffer(values)
+        return (c_real * count).from_buffer(values)
     entry = f"an entry of {name}"
     items = [_real(entry, value) for value in values]
-    return _array(c_double, name, items, count)
+    return _array(c_real, name, items, count)
 
 
 def ints(
     name: str, values: Sequence[SupportsIndex] | None, count: int
-) -> Array[c_int] | None:
+) -> Array[c_integer] | None:
     if values is None:
         return None
     _sized(name, values, count)
     entry = f"an entry of {name}"
     items = [integer(entry, value) for value in values]
-    return _array(c_int, name, items, count)
+    return _array(c_integer, name, items, count)
 
 
 def listed(name: str, values: Sequence[str] | None) -> Sequence[str]:
@@ -91,7 +99,7 @@ def _indices(
     family: type[Block[Any]],
     name: str,
     values: Sequence[SupportsIndex] | Block[Any],
-) -> range | list[int]:
+) -> range | list[Index]:
     if isinstance(values, Block):
         return range_of(model, family, name, values)
     entry = f"an entry of {name}"
@@ -117,15 +125,15 @@ def indices_of(
     name: str,
     values: Sequence[SupportsIndex] | Block[Any] | None,
     count: int,
-) -> Array[c_int] | None:
+) -> Array[c_index] | None:
     if values is None:
         return None
     _sized(name, values, count)
     items = _indices(model, family, name, values)
-    return _array(c_int, name, items, count)
+    return _array(c_index, name, items, count)
 
 
-def _counted(name: str, counts: Array[c_int64]) -> None:
+def _counted(name: str, counts: Array[c_offset]) -> None:
     for k, count in enumerate(counts):
         if count < 0:
             raise ValueError(f"{name}: {count} is negative at entry {k}")
@@ -133,18 +141,18 @@ def _counted(name: str, counts: Array[c_int64]) -> None:
 
 def int64s(
     name: str, values: Sequence[SupportsIndex] | None, count: int
-) -> Array[c_int64] | None:
+) -> Array[c_offset] | None:
     if values is None:
         return None
     _sized(name, values, count)
     entry = f"an entry of {name}"
     items = [offset(entry, value) for value in values]
-    return _array(c_int64, name, items, count)
+    return _array(c_offset, name, items, count)
 
 
 def counts(
     name: str, values: Sequence[SupportsIndex] | None, count: int
-) -> Array[c_int64] | None:
+) -> Array[c_offset] | None:
     copied = int64s(name, values, count)
     if copied is not None:
         _counted(name, copied)

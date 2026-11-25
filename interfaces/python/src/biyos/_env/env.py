@@ -1,13 +1,14 @@
 import weakref
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from ctypes import byref, c_int, c_void_p
+from ctypes import byref, c_void_p
 from typing import TYPE_CHECKING, NoReturn
 
 from biyos import _capi
 from biyos._capi import lib
 from biyos._convert.handles import Handles
 from biyos._convert.integers import integer
+from biyos._convert.numbers import Index, c_index, c_integer
 from biyos._convert.text import encoded
 from biyos._env import values
 from biyos._env.event import Event, EventKind, EventLevel
@@ -215,7 +216,7 @@ class Env:
         BIYOS_getoptver
         """
         option = self._option(name)
-        numbers = (c_int(), c_int(), c_int())
+        numbers = (c_integer(), c_integer(), c_integer())
         pointers = (byref(number) for number in numbers)
         self._call(lib.BIYOS_getoptver, option, *pointers)
         return Versions(*(version_text(number.value) for number in numbers))
@@ -225,7 +226,7 @@ class Env:
         hk: Callable[[Event], object],
         knd: EventKind,
         lvl: EventLevel,
-    ) -> int:
+    ) -> Index:
         """Add a hook on one kind of event at a lowest level.
 
         Parameters
@@ -257,12 +258,12 @@ class Env:
         hk = checked_hook(hk)
         kind = integer("knd", knd)
         level = integer("lvl", lvl)
-        idx = c_int()
+        idx = c_index()
         with self._busy():
             self._addhook(hk, kind, level, idx)
         return idx.value
 
-    def delhook(self, idx: int) -> None:
+    def delhook(self, idx: Index) -> None:
         """Remove a hook.
 
         Parameters
@@ -313,7 +314,7 @@ class Env:
         hk: Callable[[Event], object],
         knd: int,
         lvl: int,
-        idx: c_int,
+        idx: c_index,
     ) -> None:
         callback = self._hooks.callback
         out = byref(idx)
@@ -323,18 +324,18 @@ class Env:
         finally:
             self._hooks.settle(key, idx.value)
 
-    def _delhook(self, idx: int) -> None:
+    def _delhook(self, idx: Index) -> None:
         self._call(lib.BIYOS_delenvhook, idx)
         self._hooks.remove(idx)
 
     def _lookup(self, name: str) -> tuple[int, int]:
         option = self._option(name)
-        kind = c_int()
+        kind = c_integer()
         self._call(lib.BIYOS_getoptknd, option, byref(kind))
         return option, kind.value
 
     def _option(self, name: str) -> int:
-        option = c_int()
+        option = c_integer()
         self._call(lib.BIYOS_getoptid, _name(name), byref(option))
         return option.value
 

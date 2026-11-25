@@ -1,6 +1,7 @@
-from ctypes import c_int, c_int64, c_uint64
 from operator import index
 from typing import SupportsIndex
+
+from biyos._convert.numbers import Offset, c_integer, c_mask, c_offset
 
 
 def whole(name: str, value: SupportsIndex) -> int:
@@ -15,20 +16,20 @@ def whole(name: str, value: SupportsIndex) -> int:
 
 def integer(name: str, value: SupportsIndex) -> int:
     number = whole(name, value)
-    if c_int(number).value != number:
+    if c_integer(number).value != number:
         raise OverflowError(f"{name}: {number} does not fit in a C int")
     return number
 
 
-def offset(name: str, value: SupportsIndex) -> int:
+def offset(name: str, value: SupportsIndex) -> Offset:
     number = whole(name, value)
-    if c_int64(number).value != number:
+    if c_offset(number).value != number:
         raise OverflowError(f"{name}: {number} does not fit in an int64_t")
     return number
 
 
 def mask(name: str, value: SupportsIndex) -> int:
     number = whole(name, value)
-    if c_uint64(number).value != number:
+    if c_mask(number).value != number:
         raise OverflowError(f"{name}: {number} does not fit in a BIYOS_mask")
     return number

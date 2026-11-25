@@ -1,5 +1,7 @@
-from ctypes import Array, c_int, c_int64
+from ctypes import Array
 from enum import IntEnum
+
+from biyos._convert.numbers import Offset, c_integer, c_offset
 
 
 class Operator(IntEnum):
@@ -63,15 +65,15 @@ _ONE_VALUE = frozenset(
 )
 
 
-def node_values(code: int, arity: int) -> int:
+def node_values(code: int, arity: Offset) -> Offset:
     if code == Operator.SUM:
         return 1 + max(arity, 0)
     return 1 if code in _ONE_VALUE else 0
 
 
 def postfix_values(
-    code: Array[c_int] | None, arg: Array[c_int64] | None
-) -> int:
+    code: Array[c_integer] | None, arg: Array[c_offset] | None
+) -> Offset:
     if code is None or arg is None:
         return 0
     entries = len(code)

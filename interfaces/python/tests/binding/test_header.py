@@ -1,8 +1,9 @@
-from ctypes import POINTER, c_uint64
+from ctypes import POINTER, c_uint64, sizeof
 
 import biyos
 from biyos import _capi, _header
 from biyos._capi import lib
+from biyos._convert import numbers
 from header import group
 
 VARIABLES = {
@@ -71,6 +72,16 @@ CONES = {
     "BIYOS_CONEKND_DPOW": biyos.ConeKind.DUAL_POWER,
     "BIYOS_CONEKND_PSD": biyos.ConeKind.SEMIDEFINITE,
 }
+
+SIZES = {
+    "c_real": 8,
+    "c_index": 4,
+    "c_integer": 4,
+    "c_offset": 8,
+    "c_mask": 8,
+}
+
+ALIASES = {"Real": "c_real", "Index": "c_index", "Offset": "c_offset"}
 
 
 def declared(name):
@@ -143,3 +154,24 @@ def test_masks():
     pointers = [POINTER(c_uint64), POINTER(c_uint64)]
     assert list(lib.BIYOS_getenvflgopt.argtypes[2:]) == pointers
     assert list(lib.BIYOS_getmdlflgopt.argtypes[2:]) == pointers
+
+
+def test_sizes():
+    found = {name: sizeof(getattr(numbers, name)) for name in SIZES}
+    assert found == SIZES
+
+
+def test_signs():
+    assert numbers.c_index(-1).value == -1
+    assert numbers.c_integer(-1).value == -1
+    assert numbers.c_offset(-1).value == -1
+    assert numbers.c_mask(-1).value == 2**64 - 1
+
+
+def held(name):
+    return type(getattr(numbers, name)(0).value)
+
+
+def test_aliases():
+    for alias, name in ALIASES.items():
+        assert getattr(numbers, alias) is held(name)

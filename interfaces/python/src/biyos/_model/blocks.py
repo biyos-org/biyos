@@ -10,6 +10,7 @@ from typing import (
 )
 
 from biyos._convert.integers import integer, whole
+from biyos._convert.numbers import Index
 from biyos._model.expression import Operand
 
 if TYPE_CHECKING:
@@ -34,12 +35,12 @@ class View:
     __slots__ = ("_gen", "_idx", "_model")
     _noun: ClassVar[str]
 
-    def __init__(self, mdl: "Model", idx: int, gen: int) -> None:
+    def __init__(self, mdl: "Model", idx: Index, gen: int) -> None:
         self._model = mdl
         self._idx = idx
         self._gen = gen
 
-    def __index__(self) -> int:
+    def __index__(self) -> Index:
         """Return the index of the item.
 
         Returns
@@ -63,15 +64,17 @@ Self = TypeVar("Self", bound="Block[Any]")
 class Block(Generic[Item]):
     __slots__ = ("_gen", "_model", "_start", "_stop")
     _element: type[Item]
-    _held: Callable[["Model"], int]
+    _held: Callable[["Model"], Index]
 
-    def __init__(self, mdl: "Model", start: int, stop: int, gen: int) -> None:
+    def __init__(
+        self, mdl: "Model", start: Index, stop: Index, gen: int
+    ) -> None:
         self._model = mdl
         self._start = start
         self._stop = stop
         self._gen = gen
 
-    def __len__(self) -> int:
+    def __len__(self) -> Index:
         """Return the number of items in the block.
 
         Returns
@@ -209,10 +212,10 @@ class Block(Generic[Item]):
     def _range(self) -> range:
         return range(self._start, self._stop)
 
-    def _view(self, idx: int) -> Item:
+    def _view(self, idx: Index) -> Item:
         return self._element(self._model, idx, self._gen)
 
-    def _position(self, key: SupportsIndex) -> int:
+    def _position(self, key: SupportsIndex) -> Index:
         number = whole("index", key)
         n = self._stop - self._start
         position = number + n if number < 0 else number
@@ -265,7 +268,7 @@ class Variable(View, Operand):
         """
         return hash(self._key())
 
-    def _key(self) -> tuple[object, int]:
+    def _key(self) -> tuple[object, Index]:
         return (self._model, self._idx)
 
 
@@ -284,7 +287,7 @@ class Variables(Block[Variable]):
     __slots__ = ()
     _element = Variable
 
-    def _held(self, model: "Model") -> int:
+    def _held(self, model: "Model") -> Index:
         return model.getnvar()
 
 
@@ -316,7 +319,7 @@ class Functions(Block[Function]):
     __slots__ = ()
     _element = Function
 
-    def _held(self, model: "Model") -> int:
+    def _held(self, model: "Model") -> Index:
         return model.getnfun()
 
 
@@ -348,7 +351,7 @@ class Constraints(Block[Constraint]):
     __slots__ = ()
     _element = Constraint
 
-    def _held(self, model: "Model") -> int:
+    def _held(self, model: "Model") -> Index:
         return model.getncon()
 
 
@@ -380,7 +383,7 @@ class Objectives(Block[Objective]):
     __slots__ = ()
     _element = Objective
 
-    def _held(self, model: "Model") -> int:
+    def _held(self, model: "Model") -> Index:
         return model.getnobj()
 
 
@@ -412,7 +415,7 @@ class Indicators(Block[Indicator]):
     __slots__ = ()
     _element = Indicator
 
-    def _held(self, model: "Model") -> int:
+    def _held(self, model: "Model") -> Index:
         return model.getnind()
 
 
@@ -445,7 +448,7 @@ class SpecialOrderedSets(Block[SpecialOrderedSet]):
     __slots__ = ()
     _element = SpecialOrderedSet
 
-    def _held(self, model: "Model") -> int:
+    def _held(self, model: "Model") -> Index:
         return model.getnsos()
 
 
@@ -478,7 +481,7 @@ class PiecewiseLinears(Block[PiecewiseLinear]):
     __slots__ = ()
     _element = PiecewiseLinear
 
-    def _held(self, model: "Model") -> int:
+    def _held(self, model: "Model") -> Index:
         return model.getnpwl()
 
 
@@ -510,7 +513,7 @@ class Cones(Block[Cone]):
     __slots__ = ()
     _element = Cone
 
-    def _held(self, model: "Model") -> int:
+    def _held(self, model: "Model") -> Index:
         return model.getncone()
 
 
@@ -542,7 +545,7 @@ class Complements(Block[Complement]):
     __slots__ = ()
     _element = Complement
 
-    def _held(self, model: "Model") -> int:
+    def _held(self, model: "Model") -> Index:
         return model.getnccon()
 
 
@@ -564,7 +567,7 @@ def _member(
 
 def index_of(
     model: "Model", family: type[Block[Any]], name: str, value: SupportsIndex
-) -> int:
+) -> Index:
     if isinstance(value, View):
         _member(model, family, name, value)
     return integer(name, value)

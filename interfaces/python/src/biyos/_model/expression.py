@@ -5,11 +5,12 @@ from typing import Any, SupportsIndex, TypeGuard
 
 from biyos._capi import inf
 from biyos._convert.integers import integer
+from biyos._convert.numbers import Index, Real
 from biyos._model.operators import Operator
 from biyos._model.printer import printed
 
 
-def _number(value: object) -> TypeGuard[int | float]:
+def _number(value: object) -> TypeGuard[int | Real]:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
@@ -43,7 +44,7 @@ class Operand:
             return NotImplemented
         return _sum(self, other, 1.0)
 
-    def __radd__(self, other: float) -> "Expression":
+    def __radd__(self, other: Real) -> "Expression":
         """Return the sum of a number and the operand.
 
         Parameters
@@ -77,7 +78,7 @@ class Operand:
             return NotImplemented
         return _sum(self, other, -1.0)
 
-    def __rsub__(self, other: float) -> "Expression":
+    def __rsub__(self, other: Real) -> "Expression":
         """Return the difference of a number and the operand.
 
         Parameters
@@ -121,7 +122,7 @@ class Operand:
             return NotImplemented
         return Expression(Operator.PRODUCT, (self, other), (1.0,))
 
-    def __rmul__(self, other: float) -> "Expression":
+    def __rmul__(self, other: Real) -> "Expression":
         """Return the product of a number and the operand.
 
         Parameters
@@ -171,7 +172,7 @@ class Operand:
             return NotImplemented
         return Expression(Operator.DIVISION, (self, other), ())
 
-    def __rtruediv__(self, other: float) -> "Expression":
+    def __rtruediv__(self, other: Real) -> "Expression":
         """Return the quotient of a number and the operand.
 
         Parameters
@@ -209,7 +210,7 @@ class Operand:
             return NotImplemented
         return Expression(Operator.POWER, (self, other), ())
 
-    def __rpow__(self, other: float) -> "Expression":
+    def __rpow__(self, other: Real) -> "Expression":
         """Return a number raised to the operand.
 
         Parameters
@@ -321,11 +322,11 @@ class Operand:
         same = _same(self, other)
         return _compared(self, other, ComparisonSense.EQUAL, same)
 
-    def _key(self) -> tuple[object, int] | None:
+    def _key(self) -> tuple[object, Index] | None:
         return None
 
 
-Term = Operand | int | float
+Term = Operand | int | Real
 
 
 class Expression(Operand):
@@ -350,7 +351,7 @@ class Expression(Operand):
         self,
         op: Operator,
         args: tuple[Operand, ...],
-        values: tuple[float, ...],
+        values: tuple[Real, ...],
     ) -> None:
         self._op = op
         self._args = args
@@ -373,7 +374,7 @@ class Expression(Operand):
 class Piecewise(Expression):
     __slots__ = ("_idx", "_pwl")
 
-    def __init__(self, pwl: SupportsIndex, idx: int, arg: Operand) -> None:
+    def __init__(self, pwl: SupportsIndex, idx: Index, arg: Operand) -> None:
         super().__init__(Operator.PIECEWISE_LINEAR, (arg,), ())
         self._pwl = pwl
         self._idx = idx
@@ -419,10 +420,10 @@ class Comparison:
         self,
         lhs: Operand,
         sense: ComparisonSense,
-        rhs: Operand | float,
+        rhs: Operand | Real,
         body: Operand,
-        lb: float,
-        ub: float,
+        lb: Real,
+        ub: Real,
         same: bool | None = None,
     ) -> None:
         self._lhs = lhs
@@ -439,7 +440,7 @@ class Comparison:
         return self._lhs
 
     @property
-    def rhs(self) -> Operand | float:
+    def rhs(self) -> Operand | Real:
         """The operand on the right, or the number as a ``float``."""
         return self._rhs
 
@@ -491,15 +492,15 @@ _SIDES = {
 }
 
 
-def _constant(value: float) -> Expression:
+def _constant(value: Real) -> Expression:
     return Expression(Operator.CONSTANT, (), (float(value),))
 
 
-def _shifted(term: Operand, weight: float, shift: float) -> Expression:
+def _shifted(term: Operand, weight: Real, shift: Real) -> Expression:
     return Expression(Operator.SUM, (term,), (float(shift), weight))
 
 
-def _sum(left: Operand, right: "Term", sign: float) -> Expression:
+def _sum(left: Operand, right: "Term", sign: Real) -> Expression:
     if isinstance(right, Operand):
         return Expression(Operator.SUM, (left, right), (0.0, 1.0, sign))
     return _shifted(left, 1.0, sign * float(right))
@@ -515,7 +516,7 @@ def _same(left: Operand, right: "Term") -> bool | None:
     return mine == theirs
 
 
-def _bound(value: float, lower: bool, upper: bool) -> float:
+def _bound(value: Real, lower: bool, upper: bool) -> Real:
     closed = (lower and value > 0) or (upper and value < 0)
     if isnan(value) or (isinf(value) and closed):
         raise ValueError(f"a comparison refuses the bound {value}")
@@ -534,7 +535,7 @@ def _compared(
     lower, upper = _SIDES[sense]
     body: Operand = left
     bound = 0.0
-    rhs: Operand | float = right
+    rhs: Operand | Real = right
     if isinstance(right, Operand):
         body = _sum(left, right, -1.0)
     else:
@@ -917,7 +918,7 @@ def entropy(x: Term) -> Expression:
     return _apply(Operator.ENTROPY, x)
 
 
-def signpow(x: Term, p: float) -> Expression:
+def signpow(x: Term, p: Real) -> Expression:
     """Return the sign power of an operand.
 
     Parameters
