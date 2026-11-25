@@ -72,8 +72,8 @@ def blocks(env):
             "con": model.addcon([0] * 4),
             "obj": model.addobj([0] * 4),
             "ind": model.addind(add_switches(model), [1] * 4, [0] * 4),
-            "sos": model.addsos(SOSS, [0] * 5, []),
-            "cone": model.addcone(CONES, range(5), range(4)),
+            "sos": model.addsos(SOSS, [0] * 4, []),
+            "cone": model.addcone(CONES, [1] * 4, range(4)),
             "ccon": model.addccon([0] * 4, [0] * 4),
         }
         yield model, found

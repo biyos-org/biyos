@@ -110,7 +110,7 @@ def test_unmerged(model, x):
 def test_several(model, x):
     s = x[0] * x[1]
     pairs, _ = entries(model, s, x[2], biyos.log(s))
-    assert postfix(model, [s, x[2], biyos.log(s)])[0] == [0, 4, 5, 7]
+    assert postfix(model, [s, x[2], biyos.log(s)])[0] == [4, 1, 2]
     assert pairs[3] == (Operator.KEEP, 1)
     assert pairs[5:] == [(Operator.REFERENCE, 3), (Operator.LOG, 1)]
 
@@ -119,19 +119,19 @@ def test_long(model, x):
     e = 0
     for k in range(10**5):
         e += x[k % 3]
-    off, code, arg, val = postfix(model, [e])
-    assert off == [0, 10**5 + 1]
+    cnt, code, arg, val = postfix(model, [e])
+    assert cnt == [10**5 + 1]
     assert code[-1] == Operator.SUM
     assert arg[-1] == 10**5
-    assert len(model.addexpr(off, code, arg, val)) == 1
+    assert len(model.addexpr(cnt, code, arg, val)) == 1
 
 
 def test_deep(model, x):
     e = x[0]
     for _ in range(10**5):
         e = -e
-    off, code = postfix(model, [e])[:2]
-    assert off == [0, 10**5 + 1]
+    cnt, code = postfix(model, [e])[:2]
+    assert cnt == [10**5 + 1]
     assert code.count(Operator.NEGATION) == 10**5
 
 

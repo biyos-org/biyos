@@ -12,7 +12,6 @@ from ctypes import (
     py_object,
 )
 from enum import IntEnum
-from itertools import accumulate, pairwise
 from math import isnan
 from os import PathLike, fspath
 from typing import Any, NoReturn, SupportsIndex, cast
@@ -20,12 +19,12 @@ from typing import Any, NoReturn, SupportsIndex, cast
 from biyos import _capi
 from biyos._capi import lib
 from biyos._convert.arrays import (
+    counts,
     doubles,
     indices_of,
     int64s,
     ints,
     listed,
-    offsets,
     span_of,
     strings,
 )
@@ -209,13 +208,6 @@ def _checked_env(env: Env) -> Env:
     return env
 
 
-def _differences(starts: Array[c_int64] | None) -> Array[c_int64] | None:
-    if starts is None:
-        return None
-    counts = [end - start for start, end in pairwise(starts)]
-    return (c_int64 * len(counts))(*counts)
-
-
 def _expanded(counts: Array[c_int64], first: int) -> list[int]:
     return [first + j for j, count in enumerate(counts) for _ in range(count)]
 
@@ -236,14 +228,10 @@ def _renumbered(total: int, gone: set[int]) -> list[int]:
     return found
 
 
-def _sums(counts: Array[c_int64]) -> list[int]:
-    return [0, *accumulate(counts)]
-
-
-def _total(starts: Array[c_int64] | None, count: int) -> int:
-    if starts is None:
+def _total(counts: Array[c_int64] | None) -> int:
+    if counts is None:
         return 0
-    return starts[count]
+    return sum(counts)
 
 
 class Model:
@@ -1635,29 +1623,28 @@ class Model:
 
     def addexpr(
         self,
-        off: Sequence[int],
+        cnt: Sequence[int],
         code: Sequence[Operator],
         arg: Sequence[int],
         val: Sequence[float] | None = None,
     ) -> list[int]:
         """Add expressions given in postfix.
 
-        Expression ``k`` is the entries from ``off[k]`` to
-        ``off[k + 1] - 1`` of ``code`` and ``arg``, each operand before the
+        Expression ``k`` is the ``cnt[k]`` entries of ``code`` and ``arg``
+        that follow those of expression ``k - 1``, each operand before the
         operator that takes it. A sum that is an operand of a sum built in
         the same expression is merged into it, and so is a product that is
         an operand of a product. A call that fails adds no node.
 
         Parameters
         ----------
-        off
-            The offsets of the expressions' entries, one more than there are
-            expressions, from 0 and never decreasing.
+        cnt
+            The number of entries of each expression, none negative.
         code
-            The code of each entry, ``off[-1]`` of them: an operator, or
+            The code of each entry, ``sum(cnt)`` of them: an operator, or
             ``Operator.NODE``.
         arg
-            The argument of each entry, ``off[-1]`` of them: the variable of
+            The argument of each entry, ``sum(cnt)`` of them: the variable of
             ``Operator.VARIABLE``, the id of a node the model held before
             the call for ``Operator.NODE``, and the number of operands of
             any other operator, 0 for ``Operator.CONSTANT``.
@@ -1675,17 +1662,14 @@ class Model:
         --------
         BIYOS_addexpr
         """
-        n = len(off) - 1
-        if n < 0:
-            raise ValueError("off has length 0, not at least 1")
-        starts = offsets("off", off, n + 1)
-        size = _total(starts, n)
+        n = len(cnt)
+        sizes = counts("cnt", cnt, n)
+        size = _total(sizes)
         codes = ints("code", code, size)
         args = int64s("arg", arg, size)
         values = doubles("val", val, postfix_values(codes, args))
         nodes = (c_int64 * n)()
-        counts = _differences(starts)
-        self._call(lib.BIYOS_addexpr, n, counts, codes, args, values, nodes)
+        self._call(lib.BIYOS_addexpr, n, sizes, codes, args, values, nodes)
         return list(nodes)
 
     def attachexpr(
@@ -1785,9 +1769,8 @@ class Model:
 
         Returns
         -------
-        off
-            The offsets of the expressions' entries, one more than there are
-            functions read, from 0.
+        cnt
+            The number of entries of each expression read.
         code
             The code of each entry.
         arg
@@ -1809,7 +1792,7 @@ class Model:
         values = (c_double * nval)()
         self._call(*chosen, nnz, nval, counts, codes, args, values)
         operators = [Operator(code) for code in codes]
-        return _sums(counts), operators, list(args), list(values)
+        return list(counts), operators, list(args), list(values)
 
     def addcb(
         self,
@@ -3179,14 +3162,14 @@ class Model:
     def addsos(
         self,
         knd: Sequence[SpecialOrderedSetKind],
-        off: Sequence[int],
+        cnt: Sequence[int],
         var: Sequence[int | Variable] | Variables,
         coef: Sequence[float] | None = None,
     ) -> SpecialOrderedSets:
         """Add special ordered sets after the last one.
 
-        The set ``k`` holds the members from ``off[k]`` to ``off[k + 1] - 1``,
-        kept in that order whatever their weights. In a set of kind
+        The set ``k`` holds the ``cnt[k]`` members that follow those of set
+        ``k - 1``, kept in that order whatever their weights. In a set of kind
         ``ONE`` at most one member is nonzero; in a set of kind ``TWO`` at
         most two are, adjacent in the order of their weights. A variable is
         a member of a set at most once and may belong to several sets.
@@ -3195,11 +3178,10 @@ class Model:
         ----------
         knd
             The kind of each new set.
-        off
-            The offsets of the sets' members, one more than there are sets,
-            from 0 and never decreasing.
+        cnt
+            The number of members of each new set, none negative.
         var
-            The variable of each member, ``off[-1]`` of them.
+            The variable of each member, ``sum(cnt)`` of them.
         coef
             The weight of each member, finite and distinct within a set. By
             default the members of each set weigh 1, 2, 3 and so on, in the
@@ -3214,14 +3196,14 @@ class Model:
         --------
         BIYOS_addsos
         """
-        if off is None:
-            raise TypeError("off must be a sequence of int, not NoneType")
+        if cnt is None:
+            raise TypeError("cnt must be a sequence of int, not NoneType")
         count = len(knd)
-        starts = offsets("off", off, count + 1)
-        size = _total(starts, count)
+        sizes = counts("cnt", cnt, count)
+        size = _total(sizes)
         arrays = (
             ints("knd", knd, count),
-            _differences(starts),
+            sizes,
             indices_of(self, Variables, "var", var, size),
             doubles("coef", coef, size),
         )
@@ -3293,9 +3275,8 @@ class Model:
         -------
         knd
             The kind of each set.
-        off
-            The offsets of their members, one more than there are sets, from
-            0.
+        cnt
+            The number of members of each set.
         var
             The variable of each member, each set's in the order added.
         coef
@@ -3316,7 +3297,7 @@ class Model:
         chosen = self._chosen("BIYOS_getsos", SpecialOrderedSets, every)
         self._call(*chosen, size, kinds, counts, members, weights)
         found = [SpecialOrderedSetKind(code) for code in kinds]
-        return found, _sums(counts), list(members), list(weights)
+        return found, list(counts), list(members), list(weights)
 
     def setsosname(
         self,
@@ -3429,33 +3410,32 @@ class Model:
     def addcone(
         self,
         knd: Sequence[ConeKind],
-        off: Sequence[int],
+        cnt: Sequence[int],
         fun: Sequence[int | Function] | Functions,
-        prmoff: Sequence[int] | None = None,
+        prmcnt: Sequence[int] | None = None,
         prm: Sequence[float] | None = None,
     ) -> Cones:
         """Add cones after the last one.
 
-        Cone ``k`` places the functions from ``fun[off[k]]`` to
-        ``fun[off[k + 1] - 1]``, in that order, in a cone of kind
-        ``knd[k]`` whose parameters are those from ``prm[prmoff[k]]`` to
-        ``prm[prmoff[k + 1] - 1]``. A call that fails adds no cone.
+        Cone ``k`` places the ``cnt[k]`` functions of ``fun`` that follow
+        those of cone ``k - 1``, in that order, in a cone of kind ``knd[k]``
+        whose parameters are the ``prmcnt[k]`` of ``prm`` that follow its
+        parameters. A call that fails adds no cone.
 
         Parameters
         ----------
         knd
             The kind of each cone.
-        off
-            The offsets of the cones' members, one more than there are
-            cones, from 0 and never decreasing.
+        cnt
+            The number of members of each cone, none negative.
         fun
-            The members of each cone, ``off[-1]`` of them, a function at
+            The members of each cone, ``sum(cnt)`` of them, a function at
             most once in a cone.
-        prmoff
-            The offsets of the cones' parameters, as ``off`` gives the
-            members'. None when no cone takes one.
+        prmcnt
+            The number of parameters of each cone, none negative. None when
+            no cone takes one.
         prm
-            The parameters of each cone, ``prmoff[-1]`` of them: the
+            The parameters of each cone, ``sum(prmcnt)`` of them: the
             weights of a power cone, each finite and positive.
 
         Returns
@@ -3468,14 +3448,14 @@ class Model:
         BIYOS_addcone
         """
         n = len(knd)
-        starts = offsets("off", off, n + 1)
-        weights = offsets("prmoff", prmoff, n + 1)
+        sizes = counts("cnt", cnt, n)
+        weights = counts("prmcnt", prmcnt, n)
         arrays = (
             ints("knd", knd, n),
-            _differences(starts),
-            indices_of(self, Functions, "fun", fun, _total(starts, n)),
-            _differences(weights),
-            doubles("prm", prm, _total(weights, n)),
+            sizes,
+            indices_of(self, Functions, "fun", fun, _total(sizes)),
+            weights,
+            doubles("prm", prm, _total(weights)),
         )
         first = c_int()
         self._call(lib.BIYOS_addcone, n, *arrays, byref(first))
@@ -3612,12 +3592,11 @@ class Model:
         -------
         knd
             The kind of each cone.
-        off
-            The offsets of their members, one more than there are cones,
-            from 0.
+        cnt
+            The number of members of each cone.
         fun
-            The members of each cone in order, those of entry ``j`` from
-            ``fun[off[j]]`` to ``fun[off[j + 1] - 1]``.
+            The members of each cone in order, the ``cnt[j]`` of entry ``j``
+            following those of entry ``j - 1``.
 
         See Also
         --------
@@ -3632,7 +3611,7 @@ class Model:
         members = (c_int * size)()
         self._call(*chosen, size, kinds, counts, members)
         found = [ConeKind(kind) for kind in kinds]
-        return found, _sums(counts), list(members)
+        return found, list(counts), list(members)
 
     def getnconeprm(
         self, idx: Sequence[int | Cone] | Cones | None = None
@@ -3672,12 +3651,11 @@ class Model:
 
         Returns
         -------
-        prmoff
-            The offsets of their parameters, one more than there are cones,
-            from 0.
+        prmcnt
+            The number of parameters of each cone.
         prm
-            The parameters of each cone in order, those of entry ``j`` from
-            ``prm[prmoff[j]]`` to ``prm[prmoff[j + 1] - 1]``.
+            The parameters of each cone in order, the ``prmcnt[j]`` of entry
+            ``j`` following those of entry ``j - 1``.
 
         See Also
         --------
@@ -3690,7 +3668,7 @@ class Model:
         counts = (c_int64 * len(every))()
         values = (c_double * size)()
         self._call(*chosen, size, counts, values)
-        return _sums(counts), list(values)
+        return list(counts), list(values)
 
     def setconename(
         self, idx: Sequence[int | Cone] | Cones, name: Sequence[str]

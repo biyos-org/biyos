@@ -213,7 +213,7 @@ def test_blocks(model, seen):
 
 
 def attach_exp(model, idx):
-    node = model.addexpr([0, 2], [Operator.VARIABLE, Operator.EXP], [1, 1])
+    node = model.addexpr([2], [Operator.VARIABLE, Operator.EXP], [1, 1])
     model.attachexpr(idx, node * len(idx))
 
 
