@@ -128,6 +128,7 @@ biyos_add_test(test_model
     model/records/test_objectives.cpp
     model/records/test_special_ordered_sets.cpp
     model/records/test_variables.cpp
+    model/session/test_session.cpp
     model/test_tolerances.cpp)
 target_include_directories(test_model PRIVATE model)
 target_link_libraries(test_model PRIVATE biyos_internal)
