@@ -1191,6 +1191,47 @@ BIYOS_API BIYOS_status BIYOS_getcbfun(const BIYOS_model *mdl,
                                       BIYOS_index cap,
                                       BIYOS_index *fun);
 
+BIYOS_API BIYOS_status BIYOS_getngpatsp(BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        BIYOS_offset *nnz);
+BIYOS_API BIYOS_status BIYOS_getngpatrg(BIYOS_model *mdl,
+                                        BIYOS_index beg,
+                                        BIYOS_index end,
+                                        BIYOS_offset *nnz);
+BIYOS_API BIYOS_status BIYOS_getgpatsp(BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_offset cap,
+                                       BIYOS_offset *cnt,
+                                       BIYOS_index *var);
+BIYOS_API BIYOS_status BIYOS_getgpatrg(BIYOS_model *mdl,
+                                       BIYOS_index beg,
+                                       BIYOS_index end,
+                                       BIYOS_offset cap,
+                                       BIYOS_offset *cnt,
+                                       BIYOS_index *var);
+BIYOS_API BIYOS_status BIYOS_getnhpatsp(BIYOS_model *mdl,
+                                        BIYOS_index n,
+                                        const BIYOS_index *idx,
+                                        BIYOS_offset *nnz);
+BIYOS_API BIYOS_status BIYOS_getnhpatrg(BIYOS_model *mdl,
+                                        BIYOS_index beg,
+                                        BIYOS_index end,
+                                        BIYOS_offset *nnz);
+BIYOS_API BIYOS_status BIYOS_gethpatsp(BIYOS_model *mdl,
+                                       BIYOS_index n,
+                                       const BIYOS_index *idx,
+                                       BIYOS_offset cap,
+                                       BIYOS_offset *cnt,
+                                       BIYOS_index *var);
+BIYOS_API BIYOS_status BIYOS_gethpatrg(BIYOS_model *mdl,
+                                       BIYOS_index beg,
+                                       BIYOS_index end,
+                                       BIYOS_offset cap,
+                                       BIYOS_offset *cnt,
+                                       BIYOS_index *var);
+
 #define BIYOS_TRM_NONE 0
 #define BIYOS_TRM_OPTIMAL 101
 #define BIYOS_TRM_LOCAL 102

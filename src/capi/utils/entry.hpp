@@ -69,7 +69,7 @@ inline biyos::Env &writable(biyos::Env &env)
     return env;
 }
 
-inline biyos::Model &writable(BIYOS_model &model)
+inline void claim(BIYOS_model &model)
 {
     if (model.handle.env().events().delivering())
     {
@@ -77,6 +77,11 @@ inline biyos::Model &writable(BIYOS_model &model)
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "model", reason);
     }
     ModelGuard::claim(model.usage);
+}
+
+inline biyos::Model &writable(BIYOS_model &model)
+{
+    claim(model);
     model.evaluation.reset();
     return model.core;
 }
