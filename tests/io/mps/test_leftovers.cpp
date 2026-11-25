@@ -2,6 +2,7 @@
 
 #include "core/env.hpp"
 #include "core/events/event.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
@@ -73,7 +74,7 @@ TEST(MpsTest, LeftOut)
     model.set_objectives(std::span(&first, 1), std::span(&objective, 1));
     biyos::Env env;
     biyos::Settings settings;
-    settings.set_int(biyos::Option::Seed, 3, env.events());
+    settings.set_int(biyos::Option::Seed, 3, env.stream());
     EXPECT_EQ(heard(model, settings),
               (std::vector{
                   left("the record tolerances"),

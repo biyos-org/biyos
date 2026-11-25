@@ -1,9 +1,9 @@
+#include "core/env.hpp"
 #include "core/error.hpp"
-#include "core/events/events.hpp"
+#include "core/events/stream.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
-#include "core/timing/clock.hpp"
 #include "core/version.hpp"
 
 #include <gtest/gtest.h>
@@ -112,9 +112,8 @@ struct Wide
 std::string built(std::span<const FlagPart> parts)
 {
     const std::array rows{row(parts)};
-    biyos::FakeClock clock;
-    biyos::Events events{clock};
-    return failure([&] { const biyos::Options options(rows, events); });
+    biyos::Env env;
+    return failure([&] { const biyos::Options options(rows, env); });
 }
 
 class FlagTest : public ::testing::Test
@@ -122,9 +121,8 @@ class FlagTest : public ::testing::Test
   protected:
     PartState state(Mask part) const { return lookup.part_state(kParts, part); }
 
-    biyos::FakeClock clock;
-    biyos::Events events{clock};
-    biyos::Options options{kRows, events};
+    biyos::Env env;
+    biyos::Options options{kRows, env};
     biyos::Settings settings{kRows};
     biyos::Lookup lookup{settings, options};
 };
@@ -193,7 +191,7 @@ TEST_F(FlagTest, WrongKind)
 
 TEST_F(FlagTest, OtherKinds)
 {
-    biyos::Options shipped(events);
+    biyos::Options shipped(env);
     const biyos::Lookup found(shipped);
     const std::array<std::string_view, 5> held{"an int",
                                                "a double",
@@ -216,13 +214,14 @@ TEST_F(FlagTest, OtherKinds)
 TEST_F(FlagTest, Models)
 {
     options.set_flags(kParts, Masks{.on = kDual, .off = kScale});
-    settings.set_flags(kParts, Masks{.on = 0, .off = kProbe}, events);
+    settings.set_flags(kParts, Masks{.on = 0, .off = kProbe}, env.stream());
     EXPECT_EQ(lookup.get_flags(kParts), (Masks{.on = 0, .off = kProbe}));
     EXPECT_EQ(state(kDual), PartState::Default);
     EXPECT_EQ(state(kProbe), PartState::Off);
     EXPECT_EQ(state(kScale), PartState::Default);
     EXPECT_EQ(
-        failure([&] { settings.set_flags(kParts, Masks{.on = kDual, .off = kDual}, events); }),
+        failure([&]
+                { settings.set_flags(kParts, Masks{.on = kDual, .off = kDual}, env.stream()); }),
         std::string(kSubject) + "sets bit 0 both on and off");
     EXPECT_EQ(options.get_flags(kParts), (Masks{.on = kDual, .off = kScale}));
 }

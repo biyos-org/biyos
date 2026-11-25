@@ -1,7 +1,6 @@
 #pragma once
 
-#include "core/events/events.hpp"
-#include "core/events/hooks.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/text/strings.hpp"
@@ -16,11 +15,9 @@ const OptionSpec &checked_row(std::span<const OptionSpec> table,
                               Option option,
                               const OptionValue &value);
 
-void warn_deprecated(Events &events,
+void warn_deprecated(Stream stream,
                      std::span<const OptionSpec> table,
-                     const OptionSpec &spec,
-                     const Session *model,
-                     Hooks *hooks) noexcept;
+                     const OptionSpec &spec) noexcept;
 
 OptionValue kept(Strings &strings, const OptionValue &value);
 

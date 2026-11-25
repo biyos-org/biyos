@@ -1,6 +1,7 @@
 #include "core/options/options.hpp"
 
 #include "core/error.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/checks.hpp"
 #include "core/options/table.hpp"
@@ -61,14 +62,14 @@ std::span<const OptionSpec> checked(std::span<const OptionSpec> table)
 
 }
 
-Options::Options(Events &events)
-    : table_(option_table()), events_(events), values_(defaults()),
+Options::Options(Env &env)
+    : table_(option_table()), env_(env), values_(defaults()),
       sources_(table_.size(), OptionSource::Default)
 {
 }
 
-Options::Options(std::span<const OptionSpec> table, Events &events)
-    : table_(checked(table)), events_(events), values_(defaults()),
+Options::Options(std::span<const OptionSpec> table, Env &env)
+    : table_(checked(table)), env_(env), values_(defaults()),
       sources_(table_.size(), OptionSource::Default)
 {
 }
@@ -115,7 +116,7 @@ void Options::store(Option option, const OptionValue &value)
     const OptionSpec &spec = checked_row(table_, option, value);
     values_[index_of(option)] = kept(strings_, value);
     sources_[index_of(option)] = OptionSource::Environment;
-    warn_deprecated(events_, table_, spec, nullptr, nullptr);
+    warn_deprecated(env_.stream(), table_, spec);
 }
 
 bool Options::get_bool(Option option) const

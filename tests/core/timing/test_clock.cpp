@@ -1,5 +1,6 @@
 #include "core/env.hpp"
 #include "core/events/events.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
@@ -41,8 +42,8 @@ class ClockTest : public ::testing::Test
     bool reached() const { return biyos::Deadline(lookup, clock, interrupt).reached(); }
 
     biyos::FakeClock clock;
-    biyos::Events stream{clock};
-    biyos::Options options{stream};
+    biyos::Env host;
+    biyos::Options options{host};
     biyos::Lookup lookup{options};
     biyos::Interrupt interrupt;
 };
@@ -322,8 +323,8 @@ TEST_F(ClockTest, EventTime)
 TEST_F(ClockTest, ModelLimit)
 {
     biyos::Settings settings;
-    settings.set_double(Option::TimeLimit, 1.0, stream);
-    settings.set_double(Option::CpuTimeLimit, 0.5, stream);
+    settings.set_double(Option::TimeLimit, 1.0, host.stream());
+    settings.set_double(Option::CpuTimeLimit, 0.5, host.stream());
     const biyos::Lookup model(settings, options);
     const biyos::Deadline own(model, clock, interrupt);
     const biyos::Deadline shared(lookup, clock, interrupt);

@@ -1,6 +1,7 @@
 #include "biyos/biyos.h"
 #include "core/env.hpp"
 #include "core/events/event.hpp"
+#include "core/events/stream.hpp"
 #include "core/options/options.hpp"
 #include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
@@ -50,7 +51,7 @@ TEST(SessionTest, CopySettings)
 {
     Env env;
     Session source(env);
-    source.settings().set_int(Option::Seed, kSeed, env.events());
+    source.settings().set_int(Option::Seed, kSeed, env.stream());
     const Session copy(env, source);
     EXPECT_EQ(copy.lookup().get_int(Option::Seed), kSeed);
 }

@@ -1,10 +1,10 @@
-#include "core/events/events.hpp"
+#include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
-#include "core/timing/clock.hpp"
 
 #include <gtest/gtest.h>
 
@@ -23,16 +23,14 @@ constexpr Real kLargest = (std::numeric_limits<Real>::max)();
 
 biyos::Tolerances defaults()
 {
-    biyos::FakeClock clock;
-    biyos::Events events(clock);
-    return biyos::Tolerances(biyos::Lookup(biyos::Options(events)));
+    biyos::Env env;
+    return biyos::Tolerances(biyos::Lookup(biyos::Options(env)));
 }
 
 biyos::Tolerances relative(Real rel)
 {
-    biyos::FakeClock clock;
-    biyos::Events events(clock);
-    biyos::Options options(events);
+    biyos::Env env;
+    biyos::Options options(env);
     options.set_double(Option::FeasAbs, 0.0);
     options.set_double(Option::FeasRel, rel);
     return biyos::Tolerances(biyos::Lookup(options));
@@ -40,9 +38,8 @@ biyos::Tolerances relative(Real rel)
 
 biyos::Tolerances uniform(Real value)
 {
-    biyos::FakeClock clock;
-    biyos::Events events(clock);
-    biyos::Options options(events);
+    biyos::Env env;
+    biyos::Options options(env);
     for (const Option option : {Option::FeasAbs, Option::FeasRel, Option::IntTol, Option::ZeroTol})
     {
         options.set_double(option, value);
@@ -177,9 +174,8 @@ TEST(ToleranceTest, NanFails)
 
 TEST(ToleranceTest, ReadsOptions)
 {
-    biyos::FakeClock clock;
-    biyos::Events events(clock);
-    biyos::Options options(events);
+    biyos::Env env;
+    biyos::Options options(env);
     options.set_double(Option::FeasAbs, 1e-2);
     options.set_double(Option::FeasRel, 1e-4);
     options.set_double(Option::IntTol, 0.1);
@@ -260,9 +256,8 @@ TEST(ToleranceTest, Exact)
 
 TEST(ToleranceTest, Immutable)
 {
-    biyos::FakeClock clock;
-    biyos::Events events(clock);
-    biyos::Options options(events);
+    biyos::Env env;
+    biyos::Options options(env);
     const biyos::Tolerances tolerances{biyos::Lookup(options)};
     options.set_double(Option::ZeroTol, 1.0);
     options.set_double(Option::FeasAbs, 1.0);
@@ -274,14 +269,13 @@ TEST(ToleranceTest, Immutable)
 
 TEST(ToleranceTest, Model)
 {
-    biyos::FakeClock clock;
-    biyos::Events events(clock);
-    biyos::Options options(events);
+    biyos::Env env;
+    biyos::Options options(env);
     biyos::Settings settings;
-    settings.set_double(Option::ZeroTol, 1e-3, events);
-    settings.set_double(Option::IntTol, 0.0, events);
-    settings.set_double(Option::FeasAbs, 0.5, events);
-    settings.set_double(Option::FeasRel, 0.0, events);
+    settings.set_double(Option::ZeroTol, 1e-3, env.stream());
+    settings.set_double(Option::IntTol, 0.0, env.stream());
+    settings.set_double(Option::FeasAbs, 0.5, env.stream());
+    settings.set_double(Option::FeasRel, 0.0, env.stream());
     const biyos::Tolerances model(biyos::Lookup(settings, options));
     const biyos::Tolerances shared{biyos::Lookup(options)};
     EXPECT_TRUE(model.is_zero(5e-4));
