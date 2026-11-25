@@ -21,7 +21,7 @@ bool Stream::wanted(EventKind kind, EventLevel level) const noexcept
 
 void Stream::record(ErrorKind kind, std::string_view text) const noexcept
 {
-    env_.record_error(kind, text, session_);
+    env_.record(kind, text, session_);
 }
 
 const Clock &Stream::clock() const noexcept

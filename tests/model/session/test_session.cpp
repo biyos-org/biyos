@@ -62,8 +62,8 @@ TEST(SessionTest, CopyHooks)
     Session source(env);
     source.add_hook(EventKind::Message, EventLevel::Debug, ignore);
     const Session copy(env, source);
-    EXPECT_TRUE(source.hooks().wanted(EventKind::Message, EventLevel::Debug));
-    EXPECT_FALSE(copy.hooks().wanted(EventKind::Message, EventLevel::Debug));
+    EXPECT_TRUE(source.stream().wanted(EventKind::Message, EventLevel::Debug));
+    EXPECT_FALSE(copy.stream().wanted(EventKind::Message, EventLevel::Debug));
 }
 
 TEST(SessionTest, Kept)

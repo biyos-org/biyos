@@ -29,7 +29,6 @@ class Session
     const Settings &settings() const noexcept;
     Lookup lookup() const;
     Stream stream() const noexcept;
-    Hooks &hooks() const noexcept;
     int add_hook(EventKind kind, EventLevel level, Hook hook);
     void delete_hook(int id);
     Evaluation &evaluation();

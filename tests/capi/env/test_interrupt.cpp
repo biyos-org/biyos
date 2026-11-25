@@ -2,6 +2,7 @@
 #include "capi/utils/entry.hpp"
 #include "core/env.hpp"
 #include "core/events/events.hpp"
+#include "core/events/stream.hpp"
 #include "core/options/lookup.hpp"
 #include "core/status.hpp"
 #include "core/timing/deadline.hpp"
@@ -97,10 +98,7 @@ void announce(biyos::Env &env)
 
 void tell(const BIYOS_model *model)
 {
-    model->env().events().emit(biyos::EventKind::Message,
-                               biyos::EventLevel::Info,
-                               blank,
-                               &model->hooks());
+    model->stream().emit(biyos::EventKind::Message, biyos::EventLevel::Info, blank);
 }
 
 void stop_model(const BIYOS_event *, void *data)

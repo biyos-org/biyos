@@ -109,7 +109,7 @@ ErrorScope *Env::scope() noexcept
     return delivery == nullptr ? nullptr : delivery->scope;
 }
 
-void Env::record_error(ErrorKind kind, std::string_view text, const Session *model) noexcept
+void Env::record(ErrorKind kind, std::string_view text, const Session *session) noexcept
 {
     ErrorScope *const open = scope();
     if (open != nullptr && !open->swapped_)
@@ -117,7 +117,7 @@ void Env::record_error(ErrorKind kind, std::string_view text, const Session *mod
         open->swapped_ = true;
         records_.swap(open->kept_);
     }
-    records_.put(status_of(kind), model, text);
+    records_.put(status_of(kind), session, text);
 }
 
 std::size_t Env::handles() const noexcept

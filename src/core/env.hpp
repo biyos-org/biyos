@@ -75,9 +75,6 @@ class Env
     const Interrupt &interrupt() const noexcept;
 
     RecordView last_error() const noexcept;
-    void record_error(ErrorKind kind,
-                      std::string_view text,
-                      const Session *model = nullptr) noexcept;
 
     std::size_t handles() const noexcept;
 
@@ -85,8 +82,10 @@ class Env
 
   private:
     friend class ErrorScope;
+    friend class Stream;
 
     ErrorScope *scope() noexcept;
+    void record(ErrorKind kind, std::string_view text, const Session *session) noexcept;
 
     std::unique_ptr<Clock> clock_;
     Events events_;

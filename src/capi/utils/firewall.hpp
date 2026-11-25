@@ -1,13 +1,13 @@
 #pragma once
 
 #include "biyos/biyos.h"
-#include "core/env.hpp"
 #include "core/error.hpp"
-#include "core/events/events.hpp"
-#include "core/events/hooks.hpp"
+#include "core/events/event.hpp"
+#include "core/events/stream.hpp"
 
 #include <concepts>
 #include <exception>
+#include <functional>
 #include <new>
 #include <string>
 #include <string_view>
@@ -16,67 +16,48 @@
 namespace biyos::capi
 {
 
-inline void describe_failure(Event &event,
-                             const Session *model,
-                             BIYOS_status status,
-                             std::string_view text)
+inline void describe_failure(Event &event, BIYOS_status status, std::string_view text)
 {
-    event.model = model;
     event.module = "capi";
     event.text.assign(text);
     event.fields.push_back(Field{.name = "code", .value = std::to_string(status)});
 }
 
-inline void announce(Env &env,
-                     const Session *model,
-                     Hooks *hooks,
-                     ErrorKind kind,
-                     std::string_view text) noexcept
+inline void announce(Stream stream, ErrorKind kind, std::string_view text) noexcept
 {
     const BIYOS_status status = status_of(kind);
-    const auto fill = [&](Event &event) { describe_failure(event, model, status, text); };
-    env.events().emit(EventKind::Message, EventLevel::Error, fill, hooks);
+    const auto fill = [&](Event &event) { describe_failure(event, status, text); };
+    stream.emit(EventKind::Message, EventLevel::Error, fill);
 }
 
-inline void report(Env *env,
-                   const Session *model,
-                   Hooks *hooks,
-                   ErrorKind kind,
-                   std::string_view text) noexcept
+inline void report(Stream stream, ErrorKind kind, std::string_view text) noexcept
 {
-    if (env == nullptr)
+    stream.record(kind, text);
+    if (!stream.delivering())
     {
-        return;
-    }
-    env->record_error(kind, text, model);
-    if (!env->events().delivering())
-    {
-        announce(*env, model, hooks, kind, text);
+        announce(stream, kind, text);
     }
 }
 
-inline BIYOS_status fail(Env *env,
-                         const Session *model,
-                         Hooks *hooks,
-                         ErrorKind kind,
-                         std::string_view message) noexcept
+template <typename Report>
+concept reporter = std::invocable<Report &, ErrorKind, std::string_view>;
+
+template <reporter Report>
+BIYOS_status fail(Report &report, ErrorKind kind, std::string_view message) noexcept
 {
-    if (env != nullptr)
+    try
     {
-        try
-        {
-            report(env, model, hooks, kind, Error(kind, "", std::string(message)).what());
-        }
-        catch (...)
-        {
-            report(env, model, hooks, kind, kind_name(kind));
-        }
+        report(kind, Error(kind, "", std::string(message)).what());
+    }
+    catch (...)
+    {
+        report(kind, kind_name(kind));
     }
     return status_of(kind);
 }
 
-template <std::invocable Body>
-BIYOS_status guard(Env *env, const Session *model, Hooks *hooks, Body &&body) noexcept
+template <std::invocable Body, reporter Report>
+BIYOS_status trap(Body &&body, Report report) noexcept
 {
     try
     {
@@ -85,27 +66,34 @@ BIYOS_status guard(Env *env, const Session *model, Hooks *hooks, Body &&body) no
     }
     catch (const Error &error)
     {
-        report(env, model, hooks, error.kind(), error.what());
+        report(error.kind(), error.what());
         return status_of(error.kind());
     }
     catch (const std::bad_alloc &)
     {
-        report(env, model, hooks, ErrorKind::NoMemory, kind_name(ErrorKind::NoMemory));
+        report(ErrorKind::NoMemory, kind_name(ErrorKind::NoMemory));
         return status_of(ErrorKind::NoMemory);
     }
     catch (const std::exception &error)
     {
-        return fail(env, model, hooks, ErrorKind::Internal, error.what());
+        return fail(report, ErrorKind::Internal, error.what());
     }
     catch (...)
     {
-        return fail(env, model, hooks, ErrorKind::Internal, "unknown exception");
+        return fail(report, ErrorKind::Internal, "unknown exception");
     }
 }
 
+template <std::invocable Body> BIYOS_status guard(Stream stream, Body &&body) noexcept
+{
+    return trap(std::forward<Body>(body), std::bind_front(report, stream));
+}
+
+inline void ignore(ErrorKind, std::string_view) noexcept {}
+
 template <std::invocable Body> BIYOS_status guard(Body &&body) noexcept
 {
-    return guard(nullptr, nullptr, nullptr, std::forward<Body>(body));
+    return trap(std::forward<Body>(body), ignore);
 }
 
 }

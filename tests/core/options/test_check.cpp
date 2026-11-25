@@ -187,7 +187,7 @@ TEST_F(CheckTest, LastError)
     std::string seen;
     const auto read = [this, &seen](const biyos::Event &) { seen = env.last_error().text; };
     env.events().add_hook(EventKind::Invariant, EventLevel::Error, read);
-    env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
+    env.stream().record(biyos::ErrorKind::InvalidArgument, "earlier");
     const biyos::Error error =
         caught([this] { check(at(Checking::Cheap), Checking::Cheap, false); });
     EXPECT_EQ(seen, error.what());
@@ -227,7 +227,7 @@ TEST_F(CheckTest, Filling)
     const auto fill = [&](biyos::Event &) { check(checker, Checking::Cheap, false); };
     keep(EventKind::Invariant);
     keep(EventKind::Message);
-    env.record_error(biyos::ErrorKind::InvalidArgument, "earlier");
+    env.stream().record(biyos::ErrorKind::InvalidArgument, "earlier");
     env.events().emit(EventKind::Message, EventLevel::Info, fill);
     EXPECT_EQ(evaluated, 1);
     EXPECT_TRUE(kept.empty());

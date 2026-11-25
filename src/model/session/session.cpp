@@ -44,11 +44,6 @@ Stream Session::stream() const noexcept
     return Stream(env(), hooks_, *this);
 }
 
-Hooks &Session::hooks() const noexcept
-{
-    return hooks_;
-}
-
 int Session::add_hook(EventKind kind, EventLevel level, Hook hook)
 {
     return hooks_.add_hook(kind, level, std::move(hook));
