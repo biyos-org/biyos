@@ -16,6 +16,8 @@
 using biyos::Family;
 using biyos::Index;
 using biyos::Offset;
+using biyos::to_offset;
+using biyos::to_size;
 using biyos::capi::check_capacity;
 using biyos::capi::evaluation_of;
 using biyos::capi::guarded;
@@ -57,8 +59,8 @@ struct Hessian
 
 std::span<const Index> record(const Records &records, Index i)
 {
-    const auto begin = static_cast<std::size_t>(records.starts[static_cast<std::size_t>(i)]);
-    const auto end = static_cast<std::size_t>(records.starts[static_cast<std::size_t>(i) + 1]);
+    const auto begin = to_size(records.starts[to_size(i)]);
+    const auto end = to_size(records.starts[to_size(i) + 1]);
     return records.items.subspan(begin, end - begin);
 }
 
@@ -91,7 +93,7 @@ void write(const Records &records,
         const std::span<const Index> found = record(records, chosen[j]);
         if (counts != nullptr)
         {
-            counts[j] = static_cast<BIYOS_offset>(found.size());
+            counts[j] = to_offset(found.size());
         }
         if (items != nullptr)
         {
@@ -108,7 +110,7 @@ void n_pattern(BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
     const auto chosen = selected(model.core, Of::kFamily, selection);
     check_all(model.core, Of::kFamily, chosen);
     const Records records = Of::read(evaluation_of(model));
-    *out = static_cast<BIYOS_offset>(count_of(records, chosen));
+    *out = to_offset(count_of(records, chosen));
 }
 
 template <typename Of, typename Selection>

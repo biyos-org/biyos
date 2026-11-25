@@ -3,6 +3,7 @@
 #include "capi/evaluation/cache.hpp"
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
+#include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "model/evaluation/evaluation.hpp"
 
@@ -10,6 +11,7 @@
 #include <span>
 #include <string_view>
 
+using biyos::to_size;
 using biyos::capi::evaluation_of;
 using biyos::capi::given;
 using biyos::capi::guarded;
@@ -35,12 +37,12 @@ biyos::Lookup lookup_of(const BIYOS_model &model)
 
 std::size_t n_vars(const BIYOS_model &model)
 {
-    return static_cast<std::size_t>(model.core.n_variables());
+    return to_size(model.core.n_variables());
 }
 
 std::size_t n_funs(const BIYOS_model &model)
 {
-    return static_cast<std::size_t>(model.core.n_functions());
+    return to_size(model.core.n_functions());
 }
 
 void eval_f(BIYOS_model &model, const BIYOS_real *x, BIYOS_real *f)
