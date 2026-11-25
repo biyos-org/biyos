@@ -144,6 +144,7 @@ biyos_add_test(test_capi
     capi/env/test_options.cpp
     capi/env/test_threads.cpp
     capi/env/test_version.cpp
+    capi/evaluation/test_cache.cpp
     capi/events/test_events.cpp
     capi/events/test_format.cpp
     capi/events/test_spans.cpp

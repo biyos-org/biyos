@@ -9,9 +9,11 @@
 #include "core/events/hooks.hpp"
 #include "core/memory/usage.hpp"
 #include "core/options/settings.hpp"
+#include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
 
 #include <concepts>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -34,6 +36,7 @@ struct BIYOS_model
     biyos::Settings settings;
     mutable biyos::Usage usage;
     mutable biyos::Hooks hooks;
+    std::unique_ptr<biyos::Evaluation> evaluation;
 };
 
 namespace biyos::capi
@@ -74,6 +77,7 @@ inline biyos::Model &writable(BIYOS_model &model)
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "model", reason);
     }
     ModelGuard::claim(model.usage);
+    model.evaluation.reset();
     return model.core;
 }
 
