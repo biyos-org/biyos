@@ -726,9 +726,9 @@ class Model:
             doubles("lb", lb, n),
             doubles("ub", ub, n),
         )
-        first = c_int()
-        self._call(lib.BIYOS_addvar, n, *arrays, byref(first))
-        return Variables(self, first.value, first.value + n, self._gen)
+        pos = c_int()
+        self._call(lib.BIYOS_addvar, n, *arrays, byref(pos))
+        return Variables(self, pos.value, pos.value + n, self._gen)
 
     def setvarbnd(
         self,
@@ -752,11 +752,11 @@ class Model:
         BIYOS_setvarbndsp
         BIYOS_setvarbndrg
         """
-        count = len(idx)
+        n = len(idx)
         chosen = self._chosen("BIYOS_setvarbnd", Variables, idx)
         arrays = (
-            doubles("lb", lb, count),
-            doubles("ub", ub, count),
+            doubles("lb", lb, n),
+            doubles("ub", ub, n),
         )
         self._call(*chosen, *arrays)
 
@@ -805,9 +805,9 @@ class Model:
         BIYOS_setvarkndsp
         BIYOS_setvarkndrg
         """
-        count = len(idx)
+        n = len(idx)
         chosen = self._chosen("BIYOS_setvarknd", Variables, idx)
-        arrays = (ints("knd", knd, count),)
+        arrays = (ints("knd", knd, n),)
         self._call(*chosen, *arrays)
 
     def getvarknd(
@@ -1119,9 +1119,9 @@ class Model:
         BIYOS_addfun
         """
         n = integer("n", n)
-        first = c_int()
-        self._call(lib.BIYOS_addfun, n, byref(first))
-        return Functions(self, first.value, first.value + n, self._gen)
+        pos = c_int()
+        self._call(lib.BIYOS_addfun, n, byref(pos))
+        return Functions(self, pos.value, pos.value + n, self._gen)
 
     def getnfun(self) -> int:
         """Return the number of functions.
@@ -2130,15 +2130,15 @@ class Model:
         if cons is not None:
             return self._compared(cons, lb, ub)
         funs = cast("Sequence[int | Function] | Functions", fun)
-        count = len(funs)
+        n = len(funs)
         arrays = (
-            indices_of(self, Functions, "fun", funs, count),
-            doubles("lb", lb, count),
-            doubles("ub", ub, count),
+            indices_of(self, Functions, "fun", funs, n),
+            doubles("lb", lb, n),
+            doubles("ub", ub, n),
         )
-        first = c_int()
-        self._call(lib.BIYOS_addcon, count, *arrays, byref(first))
-        return Constraints(self, first.value, first.value + count, self._gen)
+        pos = c_int()
+        self._call(lib.BIYOS_addcon, n, *arrays, byref(pos))
+        return Constraints(self, pos.value, pos.value + n, self._gen)
 
     def setconbnd(
         self,
@@ -2160,11 +2160,11 @@ class Model:
         BIYOS_setconbndsp
         BIYOS_setconbndrg
         """
-        count = len(idx)
+        n = len(idx)
         chosen = self._chosen("BIYOS_setconbnd", Constraints, idx)
         arrays = (
-            doubles("lb", lb, count),
-            doubles("ub", ub, count),
+            doubles("lb", lb, n),
+            doubles("ub", ub, n),
         )
         self._call(*chosen, *arrays)
 
@@ -2479,18 +2479,18 @@ class Model:
         """
         trees = given(fun, Operand, "an expression")
         funs = cast("Sequence[int | Function] | Functions", fun)
-        count = len(funs) if trees is None else len(trees)
+        n = len(funs) if trees is None else len(trees)
         arrays = (
-            ints("sense", sense, count),
-            ints("prio", prio, count),
-            doubles("coef", coef, count),
+            ints("sense", sense, n),
+            ints("prio", prio, n),
+            doubles("coef", coef, n),
         )
         if trees is not None:
             funs = attached(self, trees)
-        idx = indices_of(self, Functions, "fun", funs, count)
-        first = c_int()
-        self._call(lib.BIYOS_addobj, count, idx, *arrays, byref(first))
-        return Objectives(self, first.value, first.value + count, self._gen)
+        idx = indices_of(self, Functions, "fun", funs, n)
+        pos = c_int()
+        self._call(lib.BIYOS_addobj, n, idx, *arrays, byref(pos))
+        return Objectives(self, pos.value, pos.value + n, self._gen)
 
     def setobjsense(
         self,
@@ -2887,17 +2887,17 @@ class Model:
         --------
         BIYOS_addind
         """
-        count = len(var)
+        n = len(var)
         arrays = (
-            indices_of(self, Variables, "var", var, count),
-            ints("val", val, count),
-            indices_of(self, Functions, "fun", fun, count),
-            doubles("lb", lb, count),
-            doubles("ub", ub, count),
+            indices_of(self, Variables, "var", var, n),
+            ints("val", val, n),
+            indices_of(self, Functions, "fun", fun, n),
+            doubles("lb", lb, n),
+            doubles("ub", ub, n),
         )
-        first = c_int()
-        self._call(lib.BIYOS_addind, count, *arrays, byref(first))
-        return Indicators(self, first.value, first.value + count, self._gen)
+        pos = c_int()
+        self._call(lib.BIYOS_addind, n, *arrays, byref(pos))
+        return Indicators(self, pos.value, pos.value + n, self._gen)
 
     def setindbnd(
         self,
@@ -2919,11 +2919,11 @@ class Model:
         BIYOS_setindbndsp
         BIYOS_setindbndrg
         """
-        count = len(idx)
+        n = len(idx)
         chosen = self._chosen("BIYOS_setindbnd", Indicators, idx)
         arrays = (
-            doubles("lb", lb, count),
-            doubles("ub", ub, count),
+            doubles("lb", lb, n),
+            doubles("ub", ub, n),
         )
         self._call(*chosen, *arrays)
 
@@ -2977,11 +2977,11 @@ class Model:
         BIYOS_setindvarsp
         BIYOS_setindvarrg
         """
-        count = len(idx)
+        n = len(idx)
         chosen = self._chosen("BIYOS_setindvar", Indicators, idx)
         arrays = (
-            indices_of(self, Variables, "var", var, count),
-            ints("val", val, count),
+            indices_of(self, Variables, "var", var, n),
+            ints("val", val, n),
         )
         self._call(*chosen, *arrays)
 
@@ -3203,19 +3203,19 @@ class Model:
         """
         if cnt is None:
             raise TypeError("cnt must be a sequence of int, not NoneType")
-        count = len(knd)
-        sizes = counts("cnt", cnt, count)
+        n = len(knd)
+        sizes = counts("cnt", cnt, n)
         size = _total(sizes)
         arrays = (
-            ints("knd", knd, count),
+            ints("knd", knd, n),
             sizes,
             indices_of(self, Variables, "var", var, size),
             doubles("coef", coef, size),
         )
-        first = c_int()
-        self._call(lib.BIYOS_addsos, count, *arrays, byref(first))
+        pos = c_int()
+        self._call(lib.BIYOS_addsos, n, *arrays, byref(pos))
         return SpecialOrderedSets(
-            self, first.value, first.value + count, self._gen
+            self, pos.value, pos.value + n, self._gen
         )
 
     def getnsos(self) -> int:
@@ -3294,9 +3294,9 @@ class Model:
         """
         every = range(self.getnsos()) if idx is None else idx
         size = self.getnsosvar(every)
-        count = len(every)
-        kinds = (c_int * count)()
-        counts = (c_int64 * count)()
+        n = len(every)
+        kinds = (c_int * n)()
+        counts = (c_int64 * n)()
         members = (c_int * size)()
         weights = (c_double * size)()
         chosen = self._chosen("BIYOS_getsos", SpecialOrderedSets, every)
@@ -3449,14 +3449,14 @@ class Model:
         """
         if cnt is None:
             raise TypeError("cnt must be a sequence of int, not NoneType")
-        count = len(cnt)
-        sizes = counts("cnt", cnt, count)
+        n = len(cnt)
+        sizes = counts("cnt", cnt, n)
         size = _total(sizes)
         arrays = (sizes, doubles("x", x, size), doubles("y", y, size))
-        first = c_int()
-        self._call(lib.BIYOS_addpwl, count, *arrays, byref(first))
+        pos = c_int()
+        self._call(lib.BIYOS_addpwl, n, *arrays, byref(pos))
         return PiecewiseLinears(
-            self, first.value, first.value + count, self._gen
+            self, pos.value, pos.value + n, self._gen
         )
 
     def getnpwl(self) -> int:
@@ -3613,9 +3613,9 @@ class Model:
             weights,
             doubles("prm", prm, _total(weights)),
         )
-        first = c_int()
-        self._call(lib.BIYOS_addcone, n, *arrays, byref(first))
-        return Cones(self, first.value, first.value + n, self._gen)
+        pos = c_int()
+        self._call(lib.BIYOS_addcone, n, *arrays, byref(pos))
+        return Cones(self, pos.value, pos.value + n, self._gen)
 
     def setconetol(
         self,
@@ -3962,16 +3962,16 @@ class Model:
         --------
         BIYOS_addccon
         """
-        count = len(fun1)
+        n = len(fun1)
         arrays = (
-            indices_of(self, Functions, "fun1", fun1, count),
-            indices_of(self, Functions, "fun2", fun2, count),
-            doubles("lb", lb, count),
-            doubles("ub", ub, count),
+            indices_of(self, Functions, "fun1", fun1, n),
+            indices_of(self, Functions, "fun2", fun2, n),
+            doubles("lb", lb, n),
+            doubles("ub", ub, n),
         )
-        first = c_int()
-        self._call(lib.BIYOS_addccon, count, *arrays, byref(first))
-        return Complements(self, first.value, first.value + count, self._gen)
+        pos = c_int()
+        self._call(lib.BIYOS_addccon, n, *arrays, byref(pos))
+        return Complements(self, pos.value, pos.value + n, self._gen)
 
     def setcconbnd(
         self,
@@ -3993,11 +3993,11 @@ class Model:
         BIYOS_setcconbndsp
         BIYOS_setcconbndrg
         """
-        count = len(idx)
+        n = len(idx)
         chosen = self._chosen("BIYOS_setcconbnd", Complements, idx)
         arrays = (
-            doubles("lb", lb, count),
-            doubles("ub", ub, count),
+            doubles("lb", lb, n),
+            doubles("ub", ub, n),
         )
         self._call(*chosen, *arrays)
 
@@ -4465,10 +4465,10 @@ class Model:
     def _getidx(
         self, function: Callable[..., int], name: Sequence[str]
     ) -> list[int]:
-        count = len(listed("name", name))
-        names = strings("name", name, count)
-        found = (c_int * count)()
-        self._call(function, count, names, found)
+        n = len(listed("name", name))
+        names = strings("name", name, n)
+        found = (c_int * n)()
+        self._call(function, n, names, found)
         return list(found)
 
     def _call(self, function: Callable[..., int], *arguments: object) -> None:
