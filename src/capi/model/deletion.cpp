@@ -13,6 +13,7 @@ using biyos::Family;
 using biyos::Model;
 using biyos::capi::guarded;
 using biyos::capi::List;
+using biyos::capi::model_timer;
 using biyos::capi::Range;
 using biyos::capi::selected;
 using biyos::capi::writable;
@@ -25,7 +26,7 @@ void delete_records(BIYOS_model &model, Selection selection, BIYOS_index *map)
 {
     Model &core = writable(model);
     const auto chosen = selected(core, Target, selection);
-    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "delete");
+    const biyos::EntryTimer timer = model_timer(model, "delete");
     const std::vector<biyos::Index> renumbered = (core.*Delete)(chosen);
     if (map != nullptr)
     {

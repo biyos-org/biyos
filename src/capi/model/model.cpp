@@ -22,6 +22,7 @@ using biyos::capi::guarded;
 using biyos::capi::idle;
 using biyos::capi::length;
 using biyos::capi::List;
+using biyos::capi::model_timer;
 using biyos::capi::picked;
 using biyos::capi::Range;
 using biyos::capi::require;
@@ -45,7 +46,7 @@ void make_copy(const BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
     const EnvGuard busy(target);
     busy.check();
-    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "copy");
+    const biyos::EntryTimer timer = model_timer(model, "copy");
     *made = new BIYOS_model(target, model);
 }
 

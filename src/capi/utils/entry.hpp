@@ -10,6 +10,8 @@
 #include "core/events/hooks.hpp"
 #include "core/memory/usage.hpp"
 #include "core/options/settings.hpp"
+#include "core/text/name.hpp"
+#include "core/timing/timer.hpp"
 #include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
 
@@ -90,6 +92,11 @@ inline biyos::Model &writable(BIYOS_model &model)
     claim(model);
     model.evaluation.reset();
     return model.core;
+}
+
+inline biyos::EntryTimer model_timer(const BIYOS_model &model, biyos::StaticName name)
+{
+    return biyos::EntryTimer(model.handle.env(), biyos::kModule, name, &model, &model.hooks);
 }
 
 inline void start(biyos::Env &env) noexcept
