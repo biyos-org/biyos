@@ -23,7 +23,7 @@ def record(heard, event):
 def test_counts(env, tmp_path):
     path = written(tmp_path / "lp.mps", LP_MPS)
     with biyos.Model.read(env, path, FileFormat.MPS) as model:
-        assert model.getmdlname() == "small"
+        assert model.getname() == "small"
         assert model.getnvar() == 2
         assert model.getncon() == 3
         assert model.getnobj() == 1
@@ -35,7 +35,7 @@ def test_counts(env, tmp_path):
 def test_str_path(env, tmp_path):
     path = str(written(tmp_path / "rows.mps", ROWS_MPS))
     with biyos.Model.read(env, path, FileFormat.MPS) as model:
-        assert model.getmdlname() is None
+        assert model.getname() is None
         assert model.getncon() == 3
 
 

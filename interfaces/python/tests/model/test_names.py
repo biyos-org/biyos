@@ -60,16 +60,16 @@ def names_of(model, family):
     return calls(model, family)[1](range(count))
 
 
-def test_mdlname(model):
-    assert model.getmdlname() is None
-    model.setmdlname("plant")
-    assert model.getmdlname() == "plant"
-    model.setmdlname(ETE)
-    assert model.getmdlname() == ETE
-    model.delmdlname()
-    assert model.getmdlname() is None
-    model.delmdlname()
-    assert model.getmdlname() is None
+def test_model(model):
+    assert model.getname() is None
+    model.setname("plant")
+    assert model.getname() == "plant"
+    model.setname(ETE)
+    assert model.getname() == ETE
+    model.delname()
+    assert model.getname() is None
+    model.delname()
+    assert model.getname() is None
 
 
 @pytest.mark.parametrize("family", FAMILIES)
@@ -185,8 +185,8 @@ def test_missing(model, family):
 
 
 def test_refused(model):
-    model.setmdlname("plant")
-    message = refusal(model.setmdlname, "")
+    model.setname("plant")
+    message = refusal(model.setname, "")
     assert message == "invalid argument: model: name is empty"
     message = refusal(model.setvarname, [0], [""])
     assert message == "invalid argument: variable 0: name is empty"
@@ -202,15 +202,15 @@ def test_refused(model):
     assert message == "invalid argument: objective -1: unknown"
     model.setvarname([], [])
     model.setvarname([], None)
-    assert model.getmdlname() == "plant"
+    assert model.getname() == "plant"
     assert names_of(model, "var") == [None, None, None]
 
 
 def test_types(model):
     with pytest.raises(TypeError, match="name must be a str, not int"):
-        model.setmdlname(3)
+        model.setname(3)
     with pytest.raises(TypeError, match="name must be a str, not bytes"):
-        model.setmdlname(b"plant")
+        model.setname(b"plant")
     with pytest.raises(TypeError, match="an entry of name must be a str"):
         model.setvarname([0], [b"x"])
     with pytest.raises(TypeError, match="name must be a sequence of str"):
@@ -224,7 +224,7 @@ def test_types(model):
     with pytest.raises(TypeError, match="idx must be an int, not str"):
         model.getvarname("x")
     with pytest.raises(ValueError, match="embedded null character"):
-        model.setmdlname("a\0b")
+        model.setname("a\0b")
     with pytest.raises(ValueError, match="embedded null character"):
         model.setconname([0], ["c\0"])
     with pytest.raises(ValueError, match="embedded null character"):
@@ -233,17 +233,17 @@ def test_types(model):
         model.setobjname([0], ["\udc80"])
     with pytest.raises(ValueError, match="name has length 1, not 2"):
         model.setvarname([0, 1], ["x"])
-    assert model.getmdlname() is None
+    assert model.getname() is None
     for family in FAMILIES:
         assert names_of(model, family) == [None, None, None]
 
 
 def test_copy(env, model):
-    model.setmdlname("plant")
+    model.setname("plant")
     for family in FAMILIES:
         calls(model, family)[0]([0, 2], ["x", "z"])
     copy = model.copy()
-    assert copy.getmdlname() == "plant"
+    assert copy.getname() == "plant"
     for family in FAMILIES:
         assert names_of(copy, family) == ["x", None, "z"]
         calls(copy, family)[0]([0, 1], ["y", "x"])
@@ -257,7 +257,7 @@ def test_locked(env, model):
     seen = []
 
     def change(event):
-        changes = [partial(model.setmdlname, "w"), model.delmdlname]
+        changes = [partial(model.setname, "w"), model.delname]
         for family in FAMILIES:
             set_names, _, _, del_names = calls(model, family)
             changes.append(partial(set_names, [0], ["w"]))
@@ -267,13 +267,13 @@ def test_locked(env, model):
                 call()
             except biyos.Error as error:
                 seen.append(str(error))
-        seen.append(model.getmdlname())
+        seen.append(model.getname())
         for family in FAMILIES:
             _, get_name, get_idx, _ = calls(model, family)
             seen.append(get_name([0]))
             seen.append(get_idx(["x"]))
 
-    model.setmdlname("plant")
+    model.setname("plant")
     for family in FAMILIES:
         calls(model, family)[0]([0], ["x"])
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
@@ -281,16 +281,16 @@ def test_locked(env, model):
         env.setopt("seed", -1)
     refused = [LOCKED] * (2 + 2 * len(FAMILIES))
     assert seen == refused + ["plant"] + [["x"], [0]] * len(FAMILIES)
-    assert model.getmdlname() == "plant"
+    assert model.getname() == "plant"
 
 
 def test_closed(env):
     model = biyos.Model(env)
     model.close()
     each = [
-        partial(model.setmdlname, "plant"),
-        model.getmdlname,
-        model.delmdlname,
+        partial(model.setname, "plant"),
+        model.getname,
+        model.delname,
     ]
     for family in FAMILIES:
         set_names, get_name, get_idx, del_names = calls(model, family)

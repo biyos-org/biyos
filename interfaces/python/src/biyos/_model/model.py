@@ -446,7 +446,7 @@ class Model:
         number = integer("fmt", fmt)
         self._call(lib.BIYOS_writemdl, name, number)
 
-    def setmdlname(self, name: str) -> None:
+    def setname(self, name: str) -> None:
         """Name the model.
 
         A name is a nonempty str. It may hold any character but the null
@@ -473,7 +473,7 @@ class Model:
         """
         self._call(lib.BIYOS_setmdlname, text("name", name))
 
-    def getmdlname(self) -> str | None:
+    def getname(self) -> str | None:
         """Return the name of the model.
 
         Returns
@@ -489,7 +489,7 @@ class Model:
         self._call(lib.BIYOS_getmdlname, byref(name))
         return decoded(name.value)
 
-    def delmdlname(self) -> None:
+    def delname(self) -> None:
         """Remove the name of the model, which then has none.
 
         See Also
@@ -960,7 +960,7 @@ class Model:
         """Name variables of the model.
 
         Variable ``idx[j]`` takes the name ``name[j]``, under the rules of
-        ``setmdlname``. A variable listed more than once takes the last of
+        ``setname``. A variable listed more than once takes the last of
         its names. Names may repeat: several variables may hold one name,
         and ``getvaridx`` then refuses to choose among them. Every other
         family is named the same way, each apart.

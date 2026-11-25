@@ -19,7 +19,7 @@ def summary(model):
     constraints = range(model.getncon())
     objectives = range(model.getnobj())
     return (
-        model.getmdlname(),
+        model.getname(),
         model.getvarname(variables),
         model.getvarbnd(variables),
         model.getvarknd(variables),
