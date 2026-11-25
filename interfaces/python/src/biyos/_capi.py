@@ -148,6 +148,7 @@ def _declare_model(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_objectives(lib, ints, doubles)
     _declare_indicators(lib, ints, doubles)
     _declare_sos(lib, ints, doubles)
+    _declare_pwl(lib, ints, doubles)
     _declare_cones(lib, ints, doubles)
     _declare_complements(lib, ints, doubles)
     _declare_names(lib, ints)
@@ -251,6 +252,17 @@ def _declare_sos(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
     _declare_pair(lib, "BIYOS_getnsosvar", offsets)
     _declare_pair(lib, "BIYOS_getsos", c_int64, ints, offsets, ints, doubles)
     _declare_pair(lib, "BIYOS_delsos", ints)
+
+
+def _declare_pwl(lib: ctypes.CDLL, ints: type, doubles: type) -> None:
+    offsets = POINTER(c_int64)
+    add = (c_void_p, c_int32, offsets, doubles, doubles, ints)
+    _declare(lib, "BIYOS_addpwl", c_int, *add)
+    _declare(lib, "BIYOS_getnpwl", c_int, c_void_p, ints)
+    _declare_pair(lib, "BIYOS_getnpwlpt", offsets)
+    _declare_pair(lib, "BIYOS_getpwl", c_int64, offsets, doubles, doubles)
+    node = (c_void_p, c_int32, c_int64, offsets)
+    _declare(lib, "BIYOS_addpwlnode", c_int, *node)
 
 
 def _declare_cones(lib: ctypes.CDLL, ints: type, doubles: type) -> None:

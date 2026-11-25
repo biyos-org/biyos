@@ -162,6 +162,7 @@ biyos_add_test(test_capi
     capi/nonlinear/test_callbacks.cpp
     capi/nonlinear/test_expressions.cpp
     capi/nonlinear/test_pairs.cpp
+    capi/nonlinear/test_piecewise.cpp
     capi/nonlinear/test_products.cpp
     capi/nonlinear/test_quadratic.cpp
     capi/records/test_complements.cpp
