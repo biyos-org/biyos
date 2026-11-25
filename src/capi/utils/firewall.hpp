@@ -89,11 +89,11 @@ template <std::invocable Body> BIYOS_status guard(Stream stream, Body &&body) no
     return trap(std::forward<Body>(body), std::bind_front(report, stream));
 }
 
-inline void ignore(ErrorKind, std::string_view) noexcept {}
+inline void unreported(ErrorKind, std::string_view) noexcept {}
 
 template <std::invocable Body> BIYOS_status guard(Body &&body) noexcept
 {
-    return trap(std::forward<Body>(body), ignore);
+    return trap(std::forward<Body>(body), unreported);
 }
 
 }
