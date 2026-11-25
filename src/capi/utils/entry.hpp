@@ -74,7 +74,7 @@ inline void claim(Session &session)
     }
 }
 
-inline biyos::Model &writable(Session &session)
+inline Model &writable(Session &session)
 {
     claim(session);
     return session.change();

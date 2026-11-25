@@ -12,6 +12,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::capi::delete_tolerances;
 using biyos::capi::get_tolerances;
@@ -50,7 +51,7 @@ void add_constraints(Session &session,
                      const BIYOS_real *upper,
                      BIYOS_index *start)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -81,7 +82,7 @@ void set_bounds(Session &session,
                 const BIYOS_real *lower,
                 const BIYOS_real *upper)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const auto changed = selected(model, Family::Constraint, selection);
     std::vector<biyos::Constraint> constraints;
     constraints.reserve(changed.size());
@@ -126,7 +127,7 @@ void get_constraints(const Session &session,
 {
     const auto chosen = selected(session.model(), Family::Constraint, selection);
     const std::vector<biyos::Constraint> constraints =
-        picked(session.model(), &biyos::Model::constraint, chosen);
+        picked(session.model(), &Model::constraint, chosen);
     for (std::size_t k = 0; k < constraints.size(); ++k)
     {
         copy_out(constraints[k], k, functions, lower, upper);

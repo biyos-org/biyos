@@ -15,6 +15,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::capi::delete_tolerances;
 using biyos::capi::EnvGuard;
@@ -87,7 +88,7 @@ biyos::Variable kinded(biyos::Variable variable, std::size_t k, const BIYOS_int 
 }
 
 template <auto Change, typename... Arrays>
-void set_each(biyos::Model &model, std::span<const biyos::Index> indices, Arrays... arrays)
+void set_each(Model &model, std::span<const biyos::Index> indices, Arrays... arrays)
 {
     std::vector<biyos::Variable> changed;
     changed.reserve(indices.size());
@@ -105,7 +106,7 @@ void add_variables(Session &session,
                    const BIYOS_real *upper,
                    BIYOS_index *start)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     std::vector<biyos::Variable> added;
     added.reserve(size);
@@ -127,7 +128,7 @@ void set_bounds(Session &session,
                 const BIYOS_real *lower,
                 const BIYOS_real *upper)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const auto chosen = selected(model, Family::Variable, selection);
     set_each<bounded>(model, chosen, lower, upper);
 }
@@ -135,7 +136,7 @@ void set_bounds(Session &session,
 template <typename Selection>
 void set_kinds(Session &session, Selection selection, const BIYOS_int *kinds)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const auto chosen = selected(model, Family::Variable, selection);
     set_each<kinded>(model, chosen, kinds);
 }
@@ -174,7 +175,7 @@ void get_variables(const Session &session,
 {
     const auto chosen = selected(session.model(), Family::Variable, selection);
     const std::vector<biyos::Variable> variables =
-        picked(session.model(), &biyos::Model::variable, chosen);
+        picked(session.model(), &Model::variable, chosen);
     for (std::size_t k = 0; k < variables.size(); ++k)
     {
         copy_out(variables[k], k, kinds, lower, upper);

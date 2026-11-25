@@ -11,6 +11,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::capi::entry_or;
 using biyos::capi::guarded;
@@ -62,7 +63,7 @@ void require_fields(const Fields &fields)
 
 void add_indicators(Session &session, BIYOS_index n, const Fields &fields, BIYOS_index *start)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -92,7 +93,7 @@ void add_indicators(Session &session, BIYOS_index n, const Fields &fields, BIYOS
 template <typename Selection>
 void set_chosen(Session &session, Selection selection, const Fields &fields)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const auto changed = selected(model, Family::Indicator, selection);
     std::vector<biyos::Indicator> indicators;
     indicators.reserve(changed.size());
@@ -122,7 +123,7 @@ void get_chosen(const Session &session, Selection selection, const Outputs &outp
 {
     const auto chosen = selected(session.model(), Family::Indicator, selection);
     const std::vector<biyos::Indicator> indicators =
-        picked(session.model(), &biyos::Model::indicator, chosen);
+        picked(session.model(), &Model::indicator, chosen);
     for (std::size_t k = 0; k < indicators.size(); ++k)
     {
         copy_out(indicators[k], k, outputs);

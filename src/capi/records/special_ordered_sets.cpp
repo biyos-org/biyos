@@ -12,6 +12,7 @@
 
 using biyos::Family;
 using biyos::Member;
+using biyos::Model;
 using biyos::Offset;
 using biyos::Real;
 using biyos::Session;
@@ -86,7 +87,7 @@ void add_special_ordered_sets(Session &session,
                               const BIYOS_real *weights,
                               BIYOS_index *start)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::span<const BIYOS_int> codes = listed(n, kinds, "knd");
     const std::vector<Offset> begins = starts_of(codes.size(), counts);
     model.check_special_ordered_set_room(codes.size(), begins.back());
@@ -103,7 +104,7 @@ void n_special_ordered_sets(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_special_ordered_sets();
 }
 
-std::size_t count_of(const biyos::Model &model, std::span<const biyos::Index> soss)
+std::size_t count_of(const Model &model, std::span<const biyos::Index> soss)
 {
     std::size_t count = 0;
     for (const biyos::Index index : soss)
@@ -121,10 +122,7 @@ void n_members(const Session &session, Selection selection, BIYOS_offset *nnz)
     *require(nnz, "nnz") = to_offset(count);
 }
 
-std::size_t write_members(const biyos::Model &model,
-                          biyos::Index sos,
-                          std::size_t k,
-                          const Outputs &out)
+std::size_t write_members(const Model &model, biyos::Index sos, std::size_t k, const Outputs &out)
 {
     for (const Member &member : model.members(sos, sos + 1))
     {
@@ -135,7 +133,7 @@ std::size_t write_members(const biyos::Model &model,
     return k;
 }
 
-void write_special_ordered_sets(const biyos::Model &model,
+void write_special_ordered_sets(const Model &model,
                                 std::span<const biyos::Index> soss,
                                 const Outputs &out)
 {

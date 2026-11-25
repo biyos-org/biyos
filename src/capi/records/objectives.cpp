@@ -11,6 +11,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::to_index;
 using biyos::capi::entry_or;
@@ -79,7 +80,7 @@ void add_objectives(Session &session,
                     const BIYOS_real *weights,
                     BIYOS_index *start)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::span<const biyos::Index> owners = listed(n, functions, "fun");
     model.check_objective_room(owners.size());
     const Fields fields{
@@ -98,7 +99,7 @@ void add_objectives(Session &session,
 template <typename Selection>
 void set_objectives(Session &session, Selection selection, const Fields &fields)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const auto changed = selected(model, Family::Objective, selection);
     std::vector<biyos::Objective> objectives;
     objectives.reserve(changed.size());
@@ -129,7 +130,7 @@ void get_chosen(const Session &session, Selection selection, const Outputs &outp
 {
     const auto chosen = selected(session.model(), Family::Objective, selection);
     const std::vector<biyos::Objective> objectives =
-        picked(session.model(), &biyos::Model::objective, chosen);
+        picked(session.model(), &Model::objective, chosen);
     for (std::size_t k = 0; k < objectives.size(); ++k)
     {
         copy_out(objectives[k], k, outputs);

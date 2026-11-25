@@ -15,6 +15,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
@@ -50,7 +51,7 @@ void write_node(BIYOS_offset *node, biyos::Offset made)
 
 void add_variable_node(Session &session, BIYOS_index variable, BIYOS_offset *node)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     write_node(node, model.add_variable_node(variable));
 }
 
@@ -61,7 +62,7 @@ void add_node(Session &session,
               const BIYOS_real *values,
               BIYOS_offset *node)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::span<const biyos::Offset> children = input(argument, length(n), "arg");
     const auto needed = to_size(biyos::n_values(op, n));
     write_node(node, model.add_node(op, children, input(values, needed, "val")));
@@ -83,7 +84,7 @@ void add_expressions(Session &session,
                      const BIYOS_real *values,
                      BIYOS_offset *node)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -106,19 +107,18 @@ void add_expressions(Session &session,
 template <typename Selection>
 void attach_expressions(Session &session, Selection selection, const BIYOS_offset *node)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const auto owners = selected(model, Family::Function, selection);
     model.attach_expressions(owners, input(node, owners.size(), "node"));
 }
 
 template <typename Selection> void clear_functions(Session &session, Selection selection)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     model.clear_functions(selected(model, Family::Function, selection));
 }
 
-template <typename Selection>
-biyos::Encoding encoded(const biyos::Model &model, Selection selection)
+template <typename Selection> biyos::Encoding encoded(const Model &model, Selection selection)
 {
     const auto chosen = selected(model, Family::Function, selection);
     std::vector<biyos::Offset> roots;

@@ -12,6 +12,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::capi::delete_tolerances;
 using biyos::capi::entry_or;
@@ -56,7 +57,7 @@ biyos::Complement given(biyos::Complement complement, std::size_t k, const Field
 
 void add_complements(Session &session, BIYOS_index n, const Fields &fields, BIYOS_index *start)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -86,7 +87,7 @@ void add_complements(Session &session, BIYOS_index n, const Fields &fields, BIYO
 template <typename Selection>
 void set_bounds(Session &session, Selection selection, const Fields &fields)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const auto changed = selected(model, Family::Complement, selection);
     std::vector<biyos::Complement> complements;
     complements.reserve(changed.size());
@@ -115,7 +116,7 @@ void get_chosen(const Session &session, Selection selection, const Outputs &outp
 {
     const auto chosen = selected(session.model(), Family::Complement, selection);
     const std::vector<biyos::Complement> complements =
-        picked(session.model(), &biyos::Model::complement, chosen);
+        picked(session.model(), &Model::complement, chosen);
     for (std::size_t k = 0; k < complements.size(); ++k)
     {
         copy_out(complements[k], k, outputs);

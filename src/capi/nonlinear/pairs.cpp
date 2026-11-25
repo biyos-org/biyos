@@ -10,6 +10,7 @@
 #include <span>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
@@ -31,7 +32,7 @@ struct Pairs
     BIYOS_real *values;
 };
 
-std::size_t count_of(const biyos::Model &model, std::span<const biyos::Index> functions)
+std::size_t count_of(const Model &model, std::span<const biyos::Index> functions)
 {
     std::size_t count = 0;
     for (const biyos::Index function : functions)
@@ -72,9 +73,7 @@ void put_pair(const Pairs &out,
     }
 }
 
-void write_pairs(const biyos::Model &model,
-                 std::span<const biyos::Index> functions,
-                 const Pairs &out)
+void write_pairs(const Model &model, std::span<const biyos::Index> functions, const Pairs &out)
 {
     std::size_t k = 0;
     for (const biyos::Index function : functions)
@@ -109,7 +108,7 @@ void get_ranged(const Session &session,
                 BIYOS_offset *counts,
                 const Pairs &out)
 {
-    const biyos::Model &model = session.model();
+    const Model &model = session.model();
     const auto terms = model.quadratic_terms(range.start, range.stop);
     check_capacity(capacity, terms.size());
     const auto record = [&](biyos::Index j)

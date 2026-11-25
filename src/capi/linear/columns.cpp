@@ -15,6 +15,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::to_index;
 using biyos::to_offset;
@@ -38,7 +39,7 @@ struct Columns
     std::vector<biyos::Real> values;
 };
 
-std::vector<biyos::Offset> every_start(const biyos::Model &model)
+std::vector<biyos::Offset> every_start(const Model &model)
 {
     return biyos::variable_starts(model, 0, model.n_variables());
 }
@@ -55,7 +56,7 @@ std::size_t count_of(std::span<const biyos::Offset> starts, std::span<const biyo
     return count;
 }
 
-Columns columns_of(const biyos::Model &model, std::vector<biyos::Offset> starts)
+Columns columns_of(const Model &model, std::vector<biyos::Offset> starts)
 {
     const auto total = to_size(starts.back());
     Columns columns{

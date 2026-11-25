@@ -13,6 +13,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::QuadraticTerm;
 using biyos::Session;
 using biyos::to_size;
@@ -28,7 +29,7 @@ using biyos::capi::writable;
 namespace
 {
 
-void add_sliced(biyos::Model &model,
+void add_sliced(Model &model,
                 std::span<const biyos::Index> owners,
                 const BIYOS_offset *counts,
                 const BIYOS_index *rows,
@@ -48,7 +49,7 @@ void add_listed(Session &session,
                 const BIYOS_index *columns,
                 const BIYOS_real *values)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
     {
@@ -69,7 +70,7 @@ void add_ranged(Session &session,
                 const BIYOS_index *columns,
                 const BIYOS_real *values)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     add_sliced(model, selected(model, Family::Function, range), counts, rows, columns, values);
 }
 

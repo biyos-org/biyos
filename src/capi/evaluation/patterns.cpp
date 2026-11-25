@@ -15,6 +15,7 @@
 
 using biyos::Family;
 using biyos::Index;
+using biyos::Model;
 using biyos::Offset;
 using biyos::Session;
 using biyos::to_offset;
@@ -75,7 +76,7 @@ std::size_t count_of(const Records &records, std::span<const Index> chosen)
     return count;
 }
 
-void check_all(const biyos::Model &model, Family family, std::span<const Index> chosen)
+void check_all(const Model &model, Family family, std::span<const Index> chosen)
 {
     for (const Index i : chosen)
     {

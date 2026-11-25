@@ -16,6 +16,7 @@
 #include <vector>
 
 using biyos::Index;
+using biyos::Model;
 using biyos::Offset;
 using biyos::Session;
 using biyos::to_offset;
@@ -42,7 +43,7 @@ struct Outputs
     BIYOS_real *y;
 };
 
-Index held(const biyos::Model &model) noexcept
+Index held(const Model &model) noexcept
 {
     return static_cast<Index>(model.graph().points().size());
 }
@@ -56,7 +57,7 @@ std::span<const BIYOS_real> input(const BIYOS_real *values, std::size_t n, std::
     return {values, n};
 }
 
-void check_room(const biyos::Model &model, std::size_t added)
+void check_room(const Model &model, std::size_t added)
 {
     if (added > biyos::kRoom - to_size(held(model)))
     {
@@ -71,7 +72,7 @@ void add_pwls(Session &session,
               const BIYOS_real *y,
               BIYOS_index *start)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -94,7 +95,7 @@ void n_pwls(const Session &session, BIYOS_index *n)
     *require(n, "n") = held(session.model());
 }
 
-std::span<const Index> chosen(const biyos::Model &model, List list)
+std::span<const Index> chosen(const Model &model, List list)
 {
     const std::span<const Index> indices = listed(list.n, list.indices);
     for (const Index index : indices)
@@ -104,7 +105,7 @@ std::span<const Index> chosen(const biyos::Model &model, List list)
     return indices;
 }
 
-std::vector<Index> chosen(const biyos::Model &model, Range range)
+std::vector<Index> chosen(const Model &model, Range range)
 {
     biyos::check_span(kNoun, range.start, range.stop, held(model));
     std::vector<Index> indices(to_size(range.stop - range.start));
@@ -112,7 +113,7 @@ std::vector<Index> chosen(const biyos::Model &model, Range range)
     return indices;
 }
 
-std::size_t count_of(const biyos::Model &model, std::span<const Index> pwls)
+std::size_t count_of(const Model &model, std::span<const Index> pwls)
 {
     std::size_t count = 0;
     for (const Index index : pwls)
@@ -138,7 +139,7 @@ void copy_to(std::span<const biyos::Real> from, BIYOS_real *to, std::size_t k)
     }
 }
 
-void write_pwls(const biyos::Model &model, std::span<const Index> pwls, const Outputs &out)
+void write_pwls(const Model &model, std::span<const Index> pwls, const Outputs &out)
 {
     std::size_t k = 0;
     for (std::size_t j = 0; j < pwls.size(); ++j)
@@ -167,7 +168,7 @@ void get_pwls(const Session &session,
 
 void add_pwl_node(Session &session, BIYOS_index pwl, BIYOS_offset argument, BIYOS_offset *node)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const Offset made = model.add_piecewise(pwl, argument);
     if (node != nullptr)
     {

@@ -11,6 +11,7 @@
 #include <span>
 #include <vector>
 
+using biyos::Model;
 using biyos::Session;
 using biyos::to_index;
 using biyos::capi::check_capacity;
@@ -53,7 +54,7 @@ void add_callback(Session &session,
                   void *data,
                   BIYOS_index *cb)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const biyos::Index index = model.add_callback(biyos::capi::listed(n, functions, "fun"), data);
     if (cb != nullptr)
     {
@@ -63,7 +64,7 @@ void add_callback(Session &session,
 
 void set_values(Session &session, BIYOS_index cb, BIYOS_cbf f)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     model.set_callback_function(cb, Caller{require(f, "f")});
 }
 
@@ -74,7 +75,7 @@ void set_jacobian(Session &session,
                   const BIYOS_index *variables,
                   BIYOS_cbg g)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const Caller caller{require(g, "g")};
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
@@ -92,7 +93,7 @@ void set_hessian(Session &session,
                  const BIYOS_index *columns,
                  BIYOS_cbh h)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const Caller caller{require(h, "h")};
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
@@ -105,7 +106,7 @@ void set_hessian(Session &session,
 
 void set_product(Session &session, BIYOS_index cb, BIYOS_cbhv hv)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     model.set_callback_hessian_product(cb, Caller{require(hv, "hv")});
 }
 

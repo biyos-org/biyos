@@ -13,6 +13,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::capi::guarded;
 using biyos::capi::length;
@@ -28,7 +29,7 @@ namespace
 
 void add_empty(Session &session, BIYOS_index n, BIYOS_index *start)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     model.check_room(size, 0);
     const biyos::Index index = model.n_functions();
@@ -53,7 +54,7 @@ void write_constants(std::span<const biyos::Real> found, BIYOS_real *constants)
     }
 }
 
-void check_chosen(const biyos::Model &model, std::span<const biyos::Index> chosen)
+void check_chosen(const Model &model, std::span<const biyos::Index> chosen)
 {
     for (const biyos::Index function : chosen)
     {
@@ -64,7 +65,7 @@ void check_chosen(const biyos::Model &model, std::span<const biyos::Index> chose
 template <typename Selection>
 void add_constants(Session &session, Selection selection, const BIYOS_real *constants)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const auto chosen = selected(model, Family::Function, selection);
     check_chosen(model, chosen);
     if (constants != nullptr)
@@ -76,7 +77,7 @@ void add_constants(Session &session, Selection selection, const BIYOS_real *cons
 template <typename Selection>
 void set_constants(Session &session, Selection selection, const BIYOS_real *constants)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const auto chosen = selected(model, Family::Function, selection);
     check_chosen(model, chosen);
     if (constants != nullptr)
@@ -89,7 +90,7 @@ template <typename Selection>
 void get_constants(const Session &session, Selection selection, BIYOS_real *constants)
 {
     const auto chosen = selected(session.model(), Family::Function, selection);
-    write_constants(picked(session.model(), &biyos::Model::constant, chosen), constants);
+    write_constants(picked(session.model(), &Model::constant, chosen), constants);
 }
 
 }

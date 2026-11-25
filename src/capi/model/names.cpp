@@ -14,6 +14,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::capi::guarded;
 using biyos::capi::length;
@@ -75,7 +76,7 @@ void delete_model_name(Session &session)
 template <Family Target, typename Selection>
 void set_names(Session &session, Selection selection, const char *const *names)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const auto changed = selected(model, Target, selection);
     model.set_names(Target, changed, texts(changed.size(), names));
 }
@@ -118,7 +119,7 @@ void get_indices(const Session &session,
 template <Family Target, typename Selection>
 void delete_names(Session &session, Selection selection)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     model.delete_names(Target, selected(model, Target, selection));
 }
 

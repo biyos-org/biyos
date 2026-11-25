@@ -14,6 +14,7 @@
 
 using biyos::Family;
 using biyos::LinearTerm;
+using biyos::Model;
 using biyos::Session;
 using biyos::to_size;
 using biyos::capi::guarded;
@@ -27,7 +28,7 @@ using biyos::capi::writable;
 namespace
 {
 
-void add_sliced(biyos::Model &model,
+void add_sliced(Model &model,
                 std::span<const biyos::Index> owners,
                 const BIYOS_offset *counts,
                 const BIYOS_index *variables,
@@ -39,7 +40,7 @@ void add_sliced(biyos::Model &model,
     model.add_linear_terms(owners, begins, biyos::capi::packed(total, variables, values));
 }
 
-void add_grouped(biyos::Model &model,
+void add_grouped(Model &model,
                  std::span<const biyos::Index> functions,
                  const std::vector<LinearTerm> &terms)
 {
@@ -71,7 +72,7 @@ void add_listed(Session &session,
                 const BIYOS_index *variables,
                 const BIYOS_real *values)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
     {
@@ -88,7 +89,7 @@ void add_rows(Session &session,
               const BIYOS_index *variables,
               const BIYOS_real *values)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     add_sliced(model, selected(model, Family::Function, range), counts, variables, values);
 }
 
@@ -98,7 +99,7 @@ void add_columns(Session &session,
                  const BIYOS_index *functions,
                  const BIYOS_real *values)
 {
-    biyos::Model &model = writable(session);
+    Model &model = writable(session);
     const std::vector<biyos::Index> variables = selected(model, Family::Variable, range);
     const std::vector<biyos::Offset> begins = starts_of(variables.size(), counts);
     model.check_room(0, begins.back());

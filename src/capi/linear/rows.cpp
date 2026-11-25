@@ -10,6 +10,7 @@
 #include <span>
 
 using biyos::Family;
+using biyos::Model;
 using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
@@ -24,7 +25,7 @@ using biyos::capi::selected;
 namespace
 {
 
-std::size_t count_of(const biyos::Model &model, std::span<const biyos::Index> functions)
+std::size_t count_of(const Model &model, std::span<const biyos::Index> functions)
 {
     std::size_t count = 0;
     for (const biyos::Index function : functions)
@@ -42,9 +43,7 @@ void n_row_terms(const Session &session, Selection selection, BIYOS_offset *nnz)
     *require(nnz, "nnz") = to_offset(count);
 }
 
-void write_rows(const biyos::Model &model,
-                std::span<const biyos::Index> functions,
-                const Coordinates &out)
+void write_rows(const Model &model, std::span<const biyos::Index> functions, const Coordinates &out)
 {
     std::size_t k = 0;
     for (const biyos::Index function : functions)
@@ -80,7 +79,7 @@ void get_ranged(const Session &session,
                 BIYOS_index *variables,
                 BIYOS_real *values)
 {
-    const biyos::Model &model = session.model();
+    const Model &model = session.model();
     const std::span<const biyos::LinearTerm> terms = model.linear_terms(range.start, range.stop);
     check_capacity(capacity, terms.size());
     const auto record = [&](biyos::Index j)
