@@ -1,13 +1,14 @@
 from collections.abc import Callable, Sequence
 from typing import NamedTuple, Protocol, TypeGuard
 
+from biyos._convert.numbers import Real
 from biyos._model.operators import Operator
 
 
 class _Node(Protocol):
     _op: Operator
     _args: tuple[object, ...]
-    _values: tuple[float, ...]
+    _values: tuple[Real, ...]
 
 
 Piece = str | tuple[object, int]
@@ -90,7 +91,7 @@ def _sum_level(node: _Node) -> int:
     return _PRODUCT
 
 
-def _text(value: float) -> str:
+def _text(value: Real) -> str:
     text = repr(value)
     return text[:-2] if text.endswith(".0") else text
 
@@ -114,7 +115,7 @@ def _sum(node: _Node, row: _Row) -> list[Piece]:
     return pieces
 
 
-def _negated(constant: float, weights: list[float]) -> bool:
+def _negated(constant: Real, weights: list[Real]) -> bool:
     if len(weights) != 1 or constant == 0:
         return False
     return _text(weights[0]) == _SIGN + _ONE

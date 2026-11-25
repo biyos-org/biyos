@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from math import isfinite
 from typing import TYPE_CHECKING, NamedTuple, TypeVar
 
+from biyos._convert.numbers import Offset, Real
 from biyos._model.blocks import (
     Functions,
     PiecewiseLinears,
@@ -15,14 +16,14 @@ from biyos._model.operators import Operator
 if TYPE_CHECKING:
     from biyos._model.model import Model
 
-Postfix = tuple[list[int], list[Operator], list[int], list[float]]
+Postfix = tuple[list[Offset], list[Operator], list[Offset], list[Real]]
 Given = TypeVar("Given")
 
 
 class _Close(NamedTuple):
     op: Operator
-    arg: int
-    values: tuple[float, ...]
+    arg: Offset
+    values: tuple[Real, ...]
     key: int | None
 
 
@@ -48,7 +49,7 @@ def _shared(trees: Sequence[Operand]) -> set[int]:
 
 
 def _merges(
-    node: Operand, weight: float, constant: float, shared: set[int]
+    node: Operand, weight: Real, constant: Real, shared: set[int]
 ) -> bool:
     if not isinstance(node, Expression) or node._op != Operator.SUM:
         return False
@@ -61,10 +62,10 @@ def _merges(
 
 def _flat(
     node: Expression, shared: set[int]
-) -> tuple[list[Operand], tuple[float, ...]]:
+) -> tuple[list[Operand], tuple[Real, ...]]:
     constant = node._values[0]
     children: list[Operand] = []
-    weights: list[float] = []
+    weights: list[Real] = []
     stack = list(zip(reversed(node._args), reversed(node._values[1:])))
     while stack:
         child, weight = stack.pop()
@@ -83,11 +84,11 @@ class _Writer:
     def __init__(self, model: "Model", trees: Sequence[Operand]) -> None:
         self._model = model
         self._shared = _shared(trees)
-        self._kept: dict[int, int] = {}
-        self.cnt: list[int] = []
+        self._kept: dict[int, Offset] = {}
+        self.cnt: list[Offset] = []
         self.code: list[Operator] = []
-        self.arg: list[int] = []
-        self.val: list[float] = []
+        self.arg: list[Offset] = []
+        self.val: list[Real] = []
         for tree in trees:
             before = len(self.code)
             self._write(tree)
@@ -116,7 +117,7 @@ class _Writer:
         close = _Close(node._op, self._arg(node, children), values, key)
         return [close, *reversed(children)]
 
-    def _arg(self, node: Expression, children: Sequence[Operand]) -> int:
+    def _arg(self, node: Expression, children: Sequence[Operand]) -> Offset:
         if isinstance(node, Piecewise):
             pwl = node._pwl
             return index_of(self._model, PiecewiseLinears, "expr", pwl)
@@ -132,7 +133,9 @@ class _Writer:
         idx = index_of(self._model, Variables, "expr", view)
         self._entry(Operator.VARIABLE, idx, ())
 
-    def _entry(self, op: Operator, arg: int, values: tuple[float, ...]) -> None:
+    def _entry(
+        self, op: Operator, arg: Offset, values: tuple[Real, ...]
+    ) -> None:
         self.code.append(op)
         self.arg.append(arg)
         self.val.extend(values)

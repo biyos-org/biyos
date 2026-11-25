@@ -1,33 +1,34 @@
 from collections.abc import Callable
-from ctypes import POINTER, byref, c_double, c_int, cast, py_object
+from ctypes import POINTER, byref, cast, py_object
 from typing import Any
 
 from biyos._capi import CALLBACK, OK, RequestRecord, lib
 from biyos._convert.integers import whole
+from biyos._convert.numbers import Index, Offset, Real, c_index, c_real
 from biyos._error import Error
 
 
-def _bytes(address: int | None, n: int) -> memoryview:
+def _bytes(address: int | None, n: Offset) -> memoryview:
     if address is None or n == 0:
         return memoryview(bytearray())
-    array = (c_double * n).from_address(address)
+    array = (c_real * n).from_address(address)
     return memoryview(array).cast("B")
 
 
-def _output(address: int | None, n: int) -> "memoryview[float]":
+def _output(address: int | None, n: Offset) -> "memoryview[Real]":
     return _bytes(address, n).cast("d")
 
 
-def _input(address: int | None, n: int) -> "memoryview[float]":
+def _input(address: int | None, n: Index) -> "memoryview[Real]":
     return _bytes(address, n).toreadonly().cast("d")
 
 
-def _optional(address: int | None, n: int) -> "memoryview[float] | None":
+def _optional(address: int | None, n: Index) -> "memoryview[Real] | None":
     return None if address is None else _input(address, n)
 
 
-def _nvar(model: int | None) -> int:
-    n = c_int()
+def _nvar(model: int | None) -> Index:
+    n = c_index()
     status = lib.BIYOS_getnvar(model, byref(n))
     if status != OK:
         raise Error("cannot read the variables of the model", status)
@@ -61,37 +62,39 @@ class CallbackRequest:
     BIYOS_cbreq
     """
 
-    def __init__(self, record: RequestRecord, count: int, nvar: int) -> None:
-        self._callback: int = record.cb
-        self._thread: int = record.thread
+    def __init__(
+        self, record: RequestRecord, count: Index, nvar: Index
+    ) -> None:
+        self._callback: Index = record.cb
+        self._thread: Index = record.thread
         self._x = _input(record.x, nvar)
         self._w = _optional(record.w, count)
         self._v = _optional(record.v, nvar)
 
     @property
-    def callback(self) -> int:
+    def callback(self) -> Index:
         """The index of the callback."""
         return self._callback
 
     @property
-    def thread(self) -> int:
+    def thread(self) -> Index:
         """The thread of the call, counted from 0 among the threads of a
         solve."""
         return self._thread
 
     @property
-    def x(self) -> "memoryview[float]":
+    def x(self) -> "memoryview[Real]":
         """The value of every variable, read-only."""
         return self._x
 
     @property
-    def w(self) -> "memoryview[float] | None":
+    def w(self) -> "memoryview[Real] | None":
         """A weight for each covered function, read-only, in a call of the
         Hessian or of the Hessian-vector product, and ``None`` otherwise."""
         return self._w
 
     @property
-    def v(self) -> "memoryview[float] | None":
+    def v(self) -> "memoryview[Real] | None":
         """A value for every variable, read-only, the vector the Hessian
         multiplies in a call of the Hessian-vector product, and ``None``
         otherwise."""
@@ -107,8 +110,8 @@ class Caller:
     def __init__(
         self,
         function: Callable[..., Any],
-        count: int,
-        size: int | None,
+        count: Index,
+        size: Offset | None,
         raised: dict[int | None, BaseException],
     ) -> None:
         self._function = function
@@ -152,7 +155,7 @@ def checked(name: str, function: object) -> Callable[..., Any]:
 
 class Callbacks:
     def __init__(self) -> None:
-        self._counts: list[int] = []
+        self._counts: list[Index] = []
         self._kept: list[object] = []
         self._raised: dict[int | None, BaseException] = {}
 
@@ -163,20 +166,20 @@ class Callbacks:
         copied._raised = self._raised
         return copied
 
-    def known(self, cb: int) -> bool:
+    def known(self, cb: Index) -> bool:
         return 0 <= cb < len(self._counts)
 
-    def count(self, cb: int) -> int:
+    def count(self, cb: Index) -> Index:
         return self._counts[cb] if self.known(cb) else 0
 
-    def added(self, n: int) -> None:
+    def added(self, n: Index) -> None:
         self._counts.append(n)
 
     def keep(self, held: object) -> None:
         self._kept.append(held)
 
     def caller(
-        self, function: Callable[..., Any], count: int, size: int | None
+        self, function: Callable[..., Any], count: Index, size: Offset | None
     ) -> Caller:
         caller = Caller(function, count, size, self._raised)
         self._kept.append(caller)
