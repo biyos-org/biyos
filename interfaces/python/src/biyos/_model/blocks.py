@@ -22,15 +22,6 @@ def _current(mdl: "Model", gen: int, noun: str) -> None:
         raise ValueError(f"the {noun} predates a deletion from its model")
 
 
-def _target(value: "Model") -> "Model":
-    from biyos._model.model import Model
-
-    if not isinstance(value, Model):
-        found = type(value).__name__
-        raise TypeError(f"mdl must be a Model, not {found}")
-    return value
-
-
 class View:
     __slots__ = ("_gen", "_idx", "_model")
     _noun: ClassVar[str]
@@ -198,7 +189,7 @@ class Block(Generic[Item]):
             made.
         """
         self._check()
-        mdl = _target(mdl)
+        mdl = self._model._peer(mdl)
         held = self._held(mdl)
         if held < self._stop:
             noun = self._element._noun
