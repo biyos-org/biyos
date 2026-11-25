@@ -156,6 +156,7 @@ add_library(biyos
     capi/nonlinear/callbacks.cpp
     capi/nonlinear/expressions.cpp
     capi/nonlinear/pairs.cpp
+    capi/nonlinear/piecewise.cpp
     capi/nonlinear/quadratic.cpp
     capi/records/complements.cpp
     capi/records/cones.cpp

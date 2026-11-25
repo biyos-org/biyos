@@ -2,6 +2,7 @@
 
 #include "core/error.hpp"
 #include "core/index.hpp"
+#include "core/text/text.hpp"
 #include "expr/graph/graph.hpp"
 #include "model/checks.hpp"
 #include "model/compressed.hpp"
@@ -11,6 +12,7 @@
 
 #include <cstddef>
 #include <span>
+#include <string>
 #include <vector>
 
 namespace biyos
@@ -26,6 +28,30 @@ void check_postfix(const Postfix &postfix)
         throw Error(ErrorKind::Internal, "model", "postfix arrays differ in length");
     }
     check_shape(postfix.starts.size() - 1, postfix.starts, postfix.codes.size());
+}
+
+void check_table(std::span<const Offset> starts,
+                 std::span<const double> x,
+                 std::span<const double> y)
+{
+    if (starts.empty() || x.size() != y.size())
+    {
+        throw Error(ErrorKind::Internal, "model", "pwl arrays differ in length");
+    }
+    check_shape(starts.size() - 1, starts, x.size());
+}
+
+void add_numbered(Graph &graph, std::span<const double> x, std::span<const double> y)
+{
+    const Offset pwl = graph.points().size();
+    try
+    {
+        graph.add_pwl(x, y);
+    }
+    catch (const Error &error)
+    {
+        throw Error(error.kind(), "pwl " + text_of(pwl), error.message());
+    }
 }
 
 }
@@ -64,6 +90,21 @@ Offset Model::add_node(int op, std::span<const Offset> children, std::span<const
 Offset Model::add_pwl(std::span<const double> x, std::span<const double> y)
 {
     return graph_.add_pwl(x, y);
+}
+
+Offset Model::add_piecewise_linears(std::span<const Offset> starts,
+                                    std::span<const double> x,
+                                    std::span<const double> y)
+{
+    check_table(starts, x, y);
+    Rollback rollback(graph_);
+    const Offset first = graph_.points().size();
+    for (std::size_t k = 0; k + 1 < starts.size(); ++k)
+    {
+        add_numbered(graph_, slice(x, starts, k), slice(y, starts, k));
+    }
+    rollback.keep();
+    return first;
 }
 
 Offset Model::add_piecewise(Offset pwl, Offset child)

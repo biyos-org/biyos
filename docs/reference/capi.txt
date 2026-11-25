@@ -1912,6 +1912,74 @@ note Once the call succeeds, a pointer read earlier with `BIYOS_getsosnamesp` fo
 see BIYOS_setsosnamesp
 since 0.1.0
 
+group pwls Piecewise linear functions
+text A pwl is a piecewise linear function of one argument, given by its points $(x_0, y_0), \dots, (x_n, y_n)$, with $n \ge 1$, $x_0 < x_1 < \dots < x_n$ and every coordinate finite. It is linear between consecutive points, extends its first and last segments past $x_0$ and $x_n$, and takes the value $y_i$ at $x_i$ exactly. The width, the height difference and the slope between consecutive points are finite as well. A pwl is data, kept as given: `BIYOS_addpwlnode`, or a `BIYOS_OP_PWL` entry of `BIYOS_addexpr`, applies it to a node, and any number of nodes may apply one pwl. Pwls are numbered from 0 in the order they are added and stay in the model once added. They take no name.
+
+function BIYOS_addpwl
+summary Add pwls after the last one.
+param mdl in The model.
+param n in The number of pwls to add.
+param cnt in The `n` counts of the pwls' points; may be null only when `n` is 0.
+param x in The abscissa of each point; may be null only when `n` is 0.
+param y in The value at each point; may be null only when `n` is 0.
+param pos out Receives the index of the first new pwl; skipped when null.
+return `BIYOS_OK` once the pwls are added.
+error BIYOS_ERR_BADARG `n` is negative, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a pwl has fewer than two points, a coordinate is not finite, an `x` is not above the one before it in its pwl, or a width, a height difference or a slope between consecutive points is not finite. The message names the pwl and the point, counted from 0 in the pwl, as in `invalid argument: pwl 2: x 1 is not above x 0`.
+error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 pwls, or more points than any allocation can hold.
+note Pwl `p + k`, where `p` is the number of pwls before the call, holds the `cnt[k]` points that follow those of pwl `p + k - 1`, in that order. A refused call changes nothing.
+see BIYOS_getpwlrg BIYOS_addpwlnode
+since 0.1.0
+
+function BIYOS_getnpwl
+summary Give the number of pwls.
+param mdl in The model.
+param n out Receives the number of pwls.
+return `BIYOS_OK`, with the number in `*n`.
+since 0.1.0
+
+function BIYOS_getnpwlptsp BIYOS_getnpwlptrg
+summary Count the points of pwls.
+param mdl in The model.
+param beg in In the `rg` form, the first pwl of the range.
+param end in In the `rg` form, one past the last pwl of the range.
+param n in In the `sp` form, the number of entries.
+param idx in In the `sp` form, the pwl of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param nnz out Receives the number of points of the entries, a pwl counted each time it appears.
+return `BIYOS_OK`, with the number in `*nnz`.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a pwl, the range ends past the last pwl, or `nnz` is null.
+note The number is the `cap` that `BIYOS_getpwlsp` and `BIYOS_getpwlrg` need for the same entries.
+see BIYOS_getpwlsp
+since 0.1.0
+
+function BIYOS_getpwlsp BIYOS_getpwlrg
+summary Read pwls.
+param mdl in The model.
+param beg in In the `rg` form, the first pwl of the range.
+param end in In the `rg` form, one past the last pwl of the range.
+param n in In the `sp` form, the number of entries.
+param idx in In the `sp` form, the pwl of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of points the output arrays hold.
+param cnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
+param x out Receives the abscissa of each point; skipped when null.
+param y out Receives the value at each point; skipped when null.
+return `BIYOS_OK` once the arrays are written, the `cnt[j]` points of entry `j` following those of entry `j - 1`, in the order they were added.
+error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a pwl, the range ends past the last pwl, or `cap` is less than the number of points `BIYOS_getnpwlptsp` gives.
+note It reads back what `BIYOS_addpwl` takes, bit for bit. A refused call writes nothing.
+see BIYOS_getnpwlptsp BIYOS_addpwl
+since 0.1.0
+
+function BIYOS_addpwlnode
+summary Apply a pwl to a node.
+param mdl in The model.
+param pwl in The pwl.
+param arg in The id of the node it applies to.
+param node out Receives the id of the new node; skipped when null.
+return `BIYOS_OK` once the node is added.
+error BIYOS_ERR_BADARG `pwl` is not a pwl of the model or `arg` is not a node of the model.
+note The node is $p(e)$, operator `BIYOS_OP_PWL`, with the node `arg` as its one child. A call that fails adds no node, as with `BIYOS_addnode`.
+see BIYOS_addpwl BIYOS_addnode BIYOS_addexpr
+since 0.1.0
+
 group cones Cones
 text A cone places functions of the model, taken in order, in a set of a given kind: $(f_{k_1}(x), \dots, f_{k_d}(x)) \in \mathcal{K}$. The functions are its members and their number $d$ its dimension. A cone holds its kind, its parameters and its members, kept as given, and cones are numbered from 0 in the order they are added. A function may be a member of several cones, and of constraints and objectives as well, but appears once in a cone. The kinds, their member order and their dimensions follow the Conic Benchmark Format, version 3, so a cone of a kind the two share maps member for member.
 text A cone may hold its own absolute and relative tolerance, each finite and at least 0, which stand for the options `feastol_abs` and `feastol_rel` for that cone alone. It holds none until `BIYOS_setconetolsp` sets them, and `BIYOS_delconetolsp` returns it to the options. No call solves a model yet.
@@ -2457,7 +2525,7 @@ param val out Receives the values the entries take, in their order; skipped when
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `n`, `beg`, `cap` or `valcap` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, or `cap` or `valcap` is less than the number `BIYOS_getnexprsp` gives.
 note The expression of a function is the part that stayed in the graph once its constant, linear and quadratic terms were split off, which `BIYOS_getcstsp`, `BIYOS_getrlintermsp` and `BIYOS_getquadtermsp` read. A function with no expression reads as one `BIYOS_OP_CONST` entry with the value 0.
-note A node the expressions use more than once is written once, followed by `BIYOS_OP_KEEP`, and named again by `BIYOS_OP_REF`; so is a sum that is a term of a sum, and a product that is a factor of a product. No entry is `BIYOS_OP_NODE`, so `BIYOS_addexpr` adds the same expressions from these arrays to any model with at least as many variables.
+note A node the expressions use more than once is written once, followed by `BIYOS_OP_KEEP`, and named again by `BIYOS_OP_REF`; so is a sum that is a term of a sum, and a product that is a factor of a product. No entry is `BIYOS_OP_NODE`, so `BIYOS_addexpr` adds the same expressions from these arrays to any model with at least as many variables that holds the same pwls under the same indices.
 note Attached to the functions read, the expressions split as they did, provided the model read added every expression before attaching any, attached each one and cleared no function. Otherwise a node shared with an expression no function holds may split differently.
 note A refused call writes nothing.
 see BIYOS_getnexprsp BIYOS_addexpr BIYOS_attachexprsp

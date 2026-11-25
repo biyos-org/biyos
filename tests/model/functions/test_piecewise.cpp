@@ -125,6 +125,36 @@ TEST(PiecewiseTest, Added)
     EXPECT_EQ(bits(pwl.y), bits(kHeights));
 }
 
+TEST(PiecewiseTest, Batch)
+{
+    Model model = with_pwls();
+    const std::array<Offset, 3> starts{0, 3, 5};
+    const std::array x{-1.0, 0.5, 2.0, -0.0, 4.0};
+    const std::array y{1.0, 0.0, 3.0, -0.0, 7.0};
+    EXPECT_EQ(model.add_piecewise_linears(starts, x, y), 2);
+    EXPECT_EQ(model.graph().points().size(), 4);
+    EXPECT_EQ(bits(model.graph().points().pwl(2).x), bits(kKinks));
+    EXPECT_EQ(bits(model.graph().points().pwl(3).x), bits(std::span(x).last(2)));
+    EXPECT_EQ(bits(model.graph().points().pwl(3).y), bits(std::span(y).last(2)));
+    const std::array<Offset, 1> none{0};
+    EXPECT_EQ(model.add_piecewise_linears(none, {}, {}), 4);
+    EXPECT_EQ(model.graph().points().size(), 4);
+}
+
+TEST(PiecewiseTest, BatchRefused)
+{
+    Model model = with_variables(1);
+    const Model before = model;
+    const std::array<Offset, 4> starts{0, 2, 4, 6};
+    const std::array x{0.0, 1.0, 0.0, 1.0, 1.0, 1.0};
+    const std::array y{0.0, 1.0, 0.0, 1.0, 0.0, 1.0};
+    EXPECT_EQ(refusal([&] { model.add_piecewise_linears(starts, x, y); }),
+              "invalid argument: pwl 2: x 1 is not above x 0");
+    EXPECT_EQ(model.graph().points().size(), 0);
+    EXPECT_EQ(model.graph().mark(), before.graph().mark());
+    EXPECT_EQ(difference(model, before), "");
+}
+
 TEST(PiecewiseTest, Refused)
 {
     Model model = with_pwls();

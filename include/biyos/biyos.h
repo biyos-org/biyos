@@ -830,6 +830,39 @@ BIYOS_API BIYOS_status BIYOS_delsosrg(BIYOS_model *mdl,
                                       BIYOS_index beg,
                                       BIYOS_index end,
                                       BIYOS_index *map);
+BIYOS_API BIYOS_status BIYOS_addpwl(BIYOS_model *mdl,
+                                    BIYOS_index n,
+                                    const BIYOS_offset *cnt,
+                                    const BIYOS_real *x,
+                                    const BIYOS_real *y,
+                                    BIYOS_index *pos);
+BIYOS_API BIYOS_status BIYOS_getnpwl(const BIYOS_model *mdl, BIYOS_index *n);
+BIYOS_API BIYOS_status BIYOS_getnpwlptsp(const BIYOS_model *mdl,
+                                         BIYOS_index n,
+                                         const BIYOS_index *idx,
+                                         BIYOS_offset *nnz);
+BIYOS_API BIYOS_status BIYOS_getnpwlptrg(const BIYOS_model *mdl,
+                                         BIYOS_index beg,
+                                         BIYOS_index end,
+                                         BIYOS_offset *nnz);
+BIYOS_API BIYOS_status BIYOS_getpwlsp(const BIYOS_model *mdl,
+                                      BIYOS_index n,
+                                      const BIYOS_index *idx,
+                                      BIYOS_offset cap,
+                                      BIYOS_offset *cnt,
+                                      BIYOS_real *x,
+                                      BIYOS_real *y);
+BIYOS_API BIYOS_status BIYOS_getpwlrg(const BIYOS_model *mdl,
+                                      BIYOS_index beg,
+                                      BIYOS_index end,
+                                      BIYOS_offset cap,
+                                      BIYOS_offset *cnt,
+                                      BIYOS_real *x,
+                                      BIYOS_real *y);
+BIYOS_API BIYOS_status BIYOS_addpwlnode(BIYOS_model *mdl,
+                                        BIYOS_index pwl,
+                                        BIYOS_offset arg,
+                                        BIYOS_offset *node);
 BIYOS_API BIYOS_status BIYOS_addcone(BIYOS_model *mdl,
                                      BIYOS_index n,
                                      const BIYOS_int *knd,
