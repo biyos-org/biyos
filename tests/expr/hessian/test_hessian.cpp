@@ -34,6 +34,7 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::Tape;
+using biyos::to_size;
 using biyos::test::binary;
 using biyos::test::kBudgets;
 using biyos::test::kVariables;
@@ -51,11 +52,6 @@ constexpr Real kStep = 1e-5;
 constexpr Real kBound = 1e-6;
 constexpr Real kRounding = 1e-12;
 constexpr std::size_t kPicked = 4;
-
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
 
 Values values_of(Hessian &hessian, std::span<const Real> point, std::span<const Real> weights)
 {
@@ -81,9 +77,9 @@ Rows dense(const Lower &lower, const Values &out, std::size_t size)
     {
         for (Offset k = lower.starts[j]; k < lower.starts[j + 1]; ++k)
         {
-            const auto i = static_cast<std::size_t>(lower.rows[at(k)]);
-            rows[i][j] = out[at(k)];
-            rows[j][i] = out[at(k)];
+            const auto i = static_cast<std::size_t>(lower.rows[to_size(k)]);
+            rows[i][j] = out[to_size(k)];
+            rows[j][i] = out[to_size(k)];
         }
     }
     return rows;
@@ -196,11 +192,11 @@ Real entry_of(Hessian &hessian, std::span<const Real> point, Index row, Index co
 {
     const Values out = values_of(hessian, point, std::array{1.0});
     const Lower &lower = hessian.pattern();
-    for (Offset k = lower.starts[at(column)]; k < lower.starts[at(column) + 1]; ++k)
+    for (Offset k = lower.starts[to_size(column)]; k < lower.starts[to_size(column) + 1]; ++k)
     {
-        if (lower.rows[at(k)] == row)
+        if (lower.rows[to_size(k)] == row)
         {
-            return out[at(k)];
+            return out[to_size(k)];
         }
     }
     ADD_FAILURE() << "no entry " << row << ", " << column;

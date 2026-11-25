@@ -17,6 +17,7 @@ using biyos::Graph;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
+using biyos::to_size;
 
 constexpr Real kUndefined = std::numeric_limits<Real>::quiet_NaN();
 
@@ -27,11 +28,6 @@ struct Frame
     std::span<const Real> values;
 };
 
-std::size_t at(Offset value)
-{
-    return static_cast<std::size_t>(value);
-}
-
 bool is_zero(Real value)
 {
     return std::fpclassify(value) == FP_ZERO;
@@ -39,12 +35,12 @@ bool is_zero(Real value)
 
 Real first(const Frame &frame, Offset node)
 {
-    return frame.values[at(frame.graph.children(node)[0])];
+    return frame.values[to_size(frame.graph.children(node)[0])];
 }
 
 Real second(const Frame &frame, Offset node)
 {
-    return frame.values[at(frame.graph.children(node)[1])];
+    return frame.values[to_size(frame.graph.children(node)[1])];
 }
 
 Real sum_of(const Frame &frame, Offset node)
@@ -54,7 +50,7 @@ Real sum_of(const Frame &frame, Offset node)
     Real total = frame.graph.constant(node);
     for (std::size_t k = 0; k < terms.size(); ++k)
     {
-        total += weights[k] * frame.values[at(terms[k])];
+        total += weights[k] * frame.values[to_size(terms[k])];
     }
     return total;
 }
@@ -64,7 +60,7 @@ Real product_of(const Frame &frame, Offset node)
     Real total = frame.graph.constant(node);
     for (const Offset factor : frame.graph.children(node))
     {
-        total *= frame.values[at(factor)];
+        total *= frame.values[to_size(factor)];
     }
     return total;
 }
@@ -72,10 +68,10 @@ Real product_of(const Frame &frame, Offset node)
 Real largest(const Frame &frame, Offset node)
 {
     const std::span<const Offset> operands = frame.graph.children(node);
-    Real best = frame.values[at(operands[0])];
+    Real best = frame.values[to_size(operands[0])];
     for (const Offset operand : operands.subspan(1))
     {
-        const Real value = frame.values[at(operand)];
+        const Real value = frame.values[to_size(operand)];
         if (value > best || std::isnan(value))
         {
             best = value;
@@ -87,10 +83,10 @@ Real largest(const Frame &frame, Offset node)
 Real smallest(const Frame &frame, Offset node)
 {
     const std::span<const Offset> operands = frame.graph.children(node);
-    Real best = frame.values[at(operands[0])];
+    Real best = frame.values[to_size(operands[0])];
     for (const Offset operand : operands.subspan(1))
     {
-        const Real value = frame.values[at(operand)];
+        const Real value = frame.values[to_size(operand)];
         if (value < best || std::isnan(value))
         {
             best = value;
@@ -247,6 +243,6 @@ void biyos::test::evaluate(const Graph &graph, std::span<const Real> point, std:
     const Frame frame{.graph = graph, .point = point, .values = values};
     for (Offset node = 0; node < graph.size(); ++node)
     {
-        values[at(node)] = value_of(frame, node);
+        values[to_size(node)] = value_of(frame, node);
     }
 }
