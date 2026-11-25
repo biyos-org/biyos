@@ -38,6 +38,12 @@ int doubled(const Request &request, std::span<double> out, void *)
     return 0;
 }
 
+int curved(const Request &request, std::span<double> out, void *)
+{
+    out[0] = 2.0 * request.w[0];
+    return 0;
+}
+
 void add_callback(Model &model)
 {
     const std::array covered{1};
@@ -46,6 +52,7 @@ void add_callback(Model &model)
     const std::array<Index, 1> functions{1};
     const std::array<Index, 1> variables{0};
     model.set_callback_jacobian(callback, functions, variables, doubled);
+    model.set_callback_hessian(callback, variables, variables, curved);
 }
 
 Model evaluated()
@@ -77,8 +84,13 @@ TEST(AllocationTest, Evaluation)
     const biyos::Lookup lookup(env.options());
     std::vector<double> f(2);
     std::vector<double> g(evaluation.jacobian_pattern().variables.size());
+    std::vector<double> h(evaluation.hessian_pattern().rows.size());
+    std::vector<double> hv(2);
+    const std::vector<double> w{0.5, 2.0};
     const std::size_t start = biyos::test::allocations();
     evaluation.values(lookup, kPoint, f);
     evaluation.jacobian(lookup, kPoint, g);
+    evaluation.hessian(lookup, kPoint, w, h);
+    evaluation.product(lookup, kPoint, w, kPoint, hv);
     EXPECT_EQ(biyos::test::allocations() - start, 0U);
 }

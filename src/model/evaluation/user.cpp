@@ -107,6 +107,7 @@ void run(const Checker &checker,
          std::span<double> out)
 {
     require(callback, request.callback, part);
+    std::ranges::fill(out, 0.0);
     const int status = function_of(callback, part)(request, out, callback.data);
     if (status < 0)
     {

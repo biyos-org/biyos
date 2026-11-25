@@ -81,7 +81,8 @@ Evaluation::Evaluation(Env &env, const Model &model, const BIYOS_model *handle)
     : env_(env), model_(model), handle_(handle), compiled_(compiled_of(env, model)),
       workspace_(compiled_.tape), adjoints_(compiled_.tape),
       tape_values_(at(compiled_.tape.roots())),
-      tape_gradients_(compiled_.tape.pattern().variables.size()), out_(widest(model))
+      tape_gradients_(compiled_.tape.pattern().variables.size()), out_(widest(model)),
+      root_weights_(compiled_.roots.size()), user_weights_(widest(model))
 {
     tree_.reserve(kCalls);
 }
@@ -140,9 +141,12 @@ void Evaluation::check_point(std::span<const double> x) const
     check_size("x", x.size(), count_of(model_.n_variables()));
 }
 
-Request Evaluation::request_of(Index callback, std::span<const double> x) const noexcept
+Request Evaluation::request_of(Index callback,
+                               std::span<const double> x,
+                               std::span<const double> w,
+                               std::span<const double> v) const noexcept
 {
-    return Request{.model = handle_, .callback = callback, .thread = 0, .x = x, .w = {}, .v = {}};
+    return Request{.model = handle_, .callback = callback, .thread = 0, .x = x, .w = w, .v = v};
 }
 
 void Evaluation::term_values(std::span<const double> x, std::span<double> f) const

@@ -66,6 +66,12 @@ int user_hessian(const Request &request, std::span<double> out, void *)
     return 0;
 }
 
+int user_product(const Request &request, std::span<double> out, void *)
+{
+    out[0] = 2.0 * request.w[0] * request.v[0];
+    return 0;
+}
+
 int returning(const Request &, std::span<double> out, void *data)
 {
     std::ranges::fill(out, 1.0);
@@ -379,4 +385,105 @@ TEST(EvaluationTest, Constant)
     std::vector<double> g;
     evaluation.jacobian(lookup, std::vector{1.0, 2.0}, g);
     EXPECT_TRUE(g.empty());
+}
+
+TEST(EvaluationTest, Hessian)
+{
+    biyos::Env env;
+    const Model model = merged();
+    Evaluation evaluation(env, model);
+    std::vector<double> h(evaluation.hessian_pattern().rows.size());
+    const std::vector<double> w{0.7, -1.3};
+    evaluation.hessian(biyos::Lookup(env.options()), kPoint, w, h);
+    expect_near(h, std::vector{2.0 * -1.3, 0.5 * 0.7, -1.3 * -std::sin(1.1)}, kExact);
+}
+
+TEST(EvaluationTest, Fallback)
+{
+    biyos::Env env;
+    const Model model = merged();
+    Evaluation evaluation(env, model);
+    std::vector<double> hv(3);
+    const std::vector<double> w{0.7, -1.3};
+    const std::vector<double> v{0.4, -0.9, 1.7};
+    evaluation.product(biyos::Lookup(env.options()), kPoint, w, v, hv);
+    const std::vector<double> wanted{2.0 * -1.3 * 0.4 + 0.5 * 0.7 * -0.9,
+                                     0.5 * 0.7 * 0.4,
+                                     -1.3 * -std::sin(1.1) * 1.7};
+    expect_near(hv, wanted, kExact);
+}
+
+TEST(EvaluationTest, Direct)
+{
+    biyos::Env env;
+    Model model = with_functions(2, 1);
+    const std::array covered{0};
+    const Index callback = model.add_callback(covered, nullptr);
+    model.set_callback_hessian_product(callback, user_product);
+    Evaluation evaluation(env, model);
+    std::vector<double> hv(2, kStale);
+    const std::vector<double> x{1.0, 2.0};
+    const std::vector<double> v{3.0, 4.0};
+    evaluation.product(biyos::Lookup(env.options()), x, std::vector{0.5}, v, hv);
+    expect_near(hv, std::vector{3.0, 0.0}, kExact);
+}
+
+TEST(EvaluationTest, Unsupported)
+{
+    biyos::Env env;
+    const Model model = unknown_model();
+    Evaluation evaluation(env, model);
+    const biyos::Lookup lookup(env.options());
+    const std::vector<double> x{1.0, 2.0};
+    const std::vector<double> w{1.0};
+    std::vector<double> h(evaluation.hessian_pattern().rows.size());
+    EXPECT_EQ(failure([&] { evaluation.hessian(lookup, x, w, h); }, biyos::ErrorKind::Unsupported),
+              "unsupported: callback 0: has no Hessian");
+    std::vector<double> hv(2, kStale);
+    EXPECT_EQ(
+        failure([&] { evaluation.product(lookup, x, w, x, hv); }, biyos::ErrorKind::Unsupported),
+        "unsupported: callback 0: has no Hessian");
+    expect_near(hv, std::vector(2, kStale), kExact);
+}
+
+TEST(EvaluationTest, SecondNegative)
+{
+    biyos::Env env;
+    int status = -3;
+    Model model = returning_model(status);
+    const std::array<Index, 1> first{0};
+    model.set_callback_hessian(0, first, first, returning);
+    Evaluation evaluation(env, model);
+    const biyos::Lookup lookup(env.options());
+    const std::vector<double> x{1.0, 2.0};
+    const std::vector<double> w{1.0, 1.0};
+    std::vector<double> h(1);
+    EXPECT_EQ(failure([&] { evaluation.hessian(lookup, x, w, h); }, biyos::ErrorKind::Callback),
+              "callback: callback 0: Hessian returned -3");
+    model.set_callback_hessian_product(0, returning);
+    Evaluation rebuilt(env, model);
+    std::vector<double> hv(2);
+    EXPECT_EQ(failure([&] { rebuilt.product(lookup, x, w, x, hv); }, biyos::ErrorKind::Callback),
+              "callback: callback 0: Hessian product returned -3");
+}
+
+TEST(EvaluationTest, SecondSizes)
+{
+    biyos::Env env;
+    const Model model = merged();
+    Evaluation evaluation(env, model);
+    const biyos::Lookup lookup(env.options());
+    std::vector<double> h(3);
+    EXPECT_EQ(refusal([&] { evaluation.hessian(lookup, kPoint, std::vector{1.0}, h); }),
+              "invalid argument: argument 'w': size 1, not 2");
+    std::vector<double> small(2);
+    EXPECT_EQ(refusal([&] { evaluation.hessian(lookup, kPoint, std::vector{1.0, 1.0}, small); }),
+              "invalid argument: argument 'h': size 2, not 3");
+    std::vector<double> hv(3);
+    EXPECT_EQ(
+        refusal([&] { evaluation.product(lookup, kPoint, std::vector{1.0, 1.0}, small, hv); }),
+        "invalid argument: argument 'v': size 2, not 3");
+    EXPECT_EQ(
+        refusal([&] { evaluation.product(lookup, kPoint, std::vector{1.0, 1.0}, kPoint, small); }),
+        "invalid argument: argument 'hv': size 2, not 3");
 }
