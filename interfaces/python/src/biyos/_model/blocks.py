@@ -439,6 +439,39 @@ class SpecialOrderedSets(Block[SpecialOrderedSet]):
         return model.getnsos()
 
 
+class PiecewiseLinear(View):
+    """One piecewise linear function of a model, as indexing a
+    ``PiecewiseLinears`` block gives.
+
+    A view holds its model and its index, and passes as that index wherever
+    its model takes an index of pwls. Any other model refuses it as an
+    index. A view made before a deletion from its model raises
+    ``ValueError`` when used, as do the views of every family.
+    """
+
+    __slots__ = ()
+    _noun = "pwl"
+
+
+class PiecewiseLinears(Block[PiecewiseLinear]):
+    """Consecutive piecewise linear functions, as ``Model.addpwl`` returns.
+
+    A block holds its model, its first index and its count, so it costs the
+    same at any size. ``len`` gives the count, and iterating gives each pwl
+    in order as a ``PiecewiseLinear``, so a block passes wherever its model
+    takes indices of pwls. Any other model refuses it as indices, and ``on``
+    gives the block of the same indices in another model, such as a copy. A
+    block made before a deletion from its model raises ``ValueError`` when
+    used, as do the blocks of every family.
+    """
+
+    __slots__ = ()
+    _element = PiecewiseLinear
+
+    def _held(self, model: "Model") -> int:
+        return model.getnpwl()
+
+
 class Cone(View):
     """One cone of a model, as indexing a ``Cones`` block gives.
 
