@@ -242,6 +242,16 @@ class Variable(View, Operand):
     __slots__ = ()
     _noun = "variable"
 
+    def __repr__(self) -> str:
+        """Return the variable as an expression writes it.
+
+        Returns
+        -------
+        text
+            ``x[i]``, where ``i`` is the index of the variable.
+        """
+        return f"x[{self._idx}]"
+
     def __hash__(self) -> int:
         """Return a hash of the model and the index.
 
