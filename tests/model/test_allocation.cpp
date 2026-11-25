@@ -1,12 +1,16 @@
 #include "allocations.hpp"
 #include "biyos/biyos.h"
+#include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
+#include "delivery.hpp"
 #include "expr/graph/graph.hpp"
 #include "model/attributes/records.hpp"
 #include "model/compare/compare.hpp"
 #include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
+#include "model/session/session.hpp"
 
 #include <gtest/gtest.h>
 
@@ -47,6 +51,13 @@ struct PendingFailure
     PendingFailure &operator=(const PendingFailure &) = delete;
     ~PendingFailure() { biyos::test::stop_failing(); }
 };
+
+void failed_scope(biyos::Env &env)
+{
+    const biyos::ErrorScope scope(env);
+    const PendingFailure failure(0);
+    env.stream().record(biyos::ErrorKind::Internal, "inner");
+}
 
 std::vector<std::string> numbered(Index n)
 {
@@ -609,4 +620,16 @@ TEST(AllocationTest, ToleranceUpdate)
     const std::size_t start = biyos::test::allocations();
     held.set("variable", kRecords, indices, {}, relative);
     EXPECT_EQ(biyos::test::allocations() - start, 0U);
+}
+
+TEST(AllocationTest, ScopedError)
+{
+    const std::string outer(64, 'o');
+    biyos::Env env;
+    const biyos::Session session(env);
+    session.stream().record(biyos::ErrorKind::NoMemory, outer);
+    biyos::test::in_delivery(env, failed_scope);
+    EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.last_error().model, &session);
+    EXPECT_STREQ(env.last_error().text, outer.c_str());
 }

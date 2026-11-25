@@ -4,7 +4,6 @@
 #include "core/events/stream.hpp"
 #include "core/timing/clock.hpp"
 #include "delivery.hpp"
-#include "model/session/session.hpp"
 
 #include <gtest/gtest.h>
 
@@ -56,13 +55,6 @@ void internal_scope(biyos::Env &env)
     const biyos::ErrorScope scope(env);
     env.stream().record(biyos::ErrorKind::Internal, "inner");
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
-}
-
-void env_scope(biyos::Env &env)
-{
-    const biyos::ErrorScope scope(env);
-    env.stream().record(biyos::ErrorKind::InvalidArgument, "env");
-    EXPECT_EQ(env.last_error().model, nullptr);
 }
 
 void fail_worker(biyos::Env &env)
@@ -348,16 +340,4 @@ TEST(EnvTest, ScopedStatus)
     env.stream().record(biyos::ErrorKind::NoMemory, "outer");
     biyos::test::in_delivery(env, internal_scope);
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
-}
-
-TEST(EnvTest, ErrorModel)
-{
-    biyos::Env env;
-    const biyos::Session session(env);
-    const biyos::Session *model = &session;
-    session.stream().record(biyos::ErrorKind::InvalidArgument, "model");
-    EXPECT_EQ(env.last_error().model, model);
-    biyos::test::in_delivery(env, env_scope);
-    EXPECT_EQ(env.last_error().model, model);
-    EXPECT_STREQ(env.last_error().text, "model");
 }

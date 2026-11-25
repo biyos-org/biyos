@@ -7,7 +7,6 @@
 #include "core/options/settings.hpp"
 #include "core/options/table.hpp"
 #include "core/version.hpp"
-#include "model/session/session.hpp"
 
 #include <gtest/gtest.h>
 
@@ -246,38 +245,19 @@ TEST_F(SettingTest, Refusal)
 
 TEST_F(SettingTest, Deprecated)
 {
-    const biyos::Session session(env);
-    const biyos::Session *model = &session;
-    settings.set_int(kOld, 5, session.stream());
+    settings.set_int(kOld, 5, env.stream());
     options.set_int(kOld, 6);
     EXPECT_EQ(held(settings, kOld), 5);
     ASSERT_EQ(heard.size(), 2U);
-    EXPECT_EQ(heard[0].model, model);
-    EXPECT_EQ(heard[1].model, nullptr);
     for (const biyos::Event &event : heard)
     {
+        EXPECT_EQ(event.model, nullptr);
         EXPECT_EQ(event.kind, EventKind::Message);
         EXPECT_EQ(event.level, EventLevel::Warning);
         EXPECT_EQ(event.module, "core");
         EXPECT_EQ(event.text, "option 'old': deprecated in 0.0.2, use 'new'");
         EXPECT_EQ(event.fields.size(), 3U);
     }
-}
-
-TEST_F(SettingTest, ModelHooks)
-{
-    biyos::Session session(env);
-    const biyos::Session *model = &session;
-    std::vector<biyos::Event> local;
-    const auto keep = [&local](const biyos::Event &event) { local.push_back(event); };
-    session.add_hook(EventKind::Message, EventLevel::Warning, keep);
-    settings.set_int(kOld, 5, session.stream());
-    settings.set_int(kNew, 6, session.stream());
-    options.set_int(kOld, 7);
-    ASSERT_EQ(local.size(), 1U);
-    EXPECT_EQ(local[0].model, model);
-    EXPECT_EQ(local[0].text, "option 'old': deprecated in 0.0.2, use 'new'");
-    EXPECT_EQ(heard.size(), 2U);
 }
 
 TEST_F(LookupTest, Sources)

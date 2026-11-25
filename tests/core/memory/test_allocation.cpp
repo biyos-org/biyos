@@ -5,13 +5,11 @@
 #include "core/timing/clock.hpp"
 #include "core/timing/timer.hpp"
 #include "delivery.hpp"
-#include "model/session/session.hpp"
 
 #include <gtest/gtest.h>
 
 #include <cstddef>
 #include <memory>
-#include <string>
 
 namespace
 {
@@ -69,17 +67,4 @@ TEST(AllocationTest, EmptyScope)
     env.stream().record(biyos::ErrorKind::Internal, "later");
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
     EXPECT_STREQ(env.last_error().text, "later");
-}
-
-TEST(AllocationTest, ScopedError)
-{
-    const std::string outer(64, 'o');
-    biyos::Env env;
-    const biyos::Session session(env);
-    const biyos::Session *model = &session;
-    session.stream().record(biyos::ErrorKind::NoMemory, outer);
-    biyos::test::in_delivery(env, failed_scope);
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
-    EXPECT_EQ(env.last_error().model, model);
-    EXPECT_STREQ(env.last_error().text, outer.c_str());
 }

@@ -3,6 +3,7 @@
 #include "core/error.hpp"
 #include "core/events/event.hpp"
 #include "core/events/stream.hpp"
+#include "delivery.hpp"
 #include "model/session/session.hpp"
 
 #include <gtest/gtest.h>
@@ -17,10 +18,16 @@ using biyos::ErrorKind;
 using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::Session;
+using biyos::test::quiet;
 using Texts = std::vector<std::string>;
 using Models = std::vector<const Session *>;
 
-void quiet(biyos::Event &) {}
+void env_scope(biyos::Env &env)
+{
+    const biyos::ErrorScope scope(env);
+    env.stream().record(ErrorKind::InvalidArgument, "env");
+    EXPECT_EQ(env.last_error().model, nullptr);
+}
 
 class StreamTest : public ::testing::Test
 {
@@ -103,4 +110,12 @@ TEST_F(StreamTest, EnvRecord)
     env.stream().record(ErrorKind::Internal, "broken");
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
     EXPECT_EQ(env.last_error().model, nullptr);
+}
+
+TEST_F(StreamTest, ScopedRecord)
+{
+    session.stream().record(ErrorKind::InvalidArgument, "model");
+    biyos::test::in_delivery(env, env_scope);
+    EXPECT_EQ(env.last_error().model, &session);
+    EXPECT_STREQ(env.last_error().text, "model");
 }
