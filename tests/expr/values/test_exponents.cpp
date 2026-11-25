@@ -1,4 +1,5 @@
 #include "chords.hpp"
+#include "core/numbers.hpp"
 #include "expr/curvature/exponents.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/graph/graph.hpp"
@@ -21,13 +22,14 @@ using biyos::Interval;
 using biyos::Monotonicity;
 using biyos::Operator;
 using biyos::Profile;
+using biyos::Real;
 using biyos::test::Parameters;
 using biyos::test::text;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr Interval kZero{0.0, 0.0};
-constexpr double kTiny = 0x1p-1072;
-constexpr double kNear = 0x1p-20;
+constexpr Real kTiny = 0x1p-1072;
+constexpr Real kNear = 0x1p-20;
 
 constexpr Curvature kAffine = Curvature::Affine;
 constexpr Curvature kConvex = Curvature::Convex;
@@ -40,7 +42,7 @@ constexpr Monotonicity kUnsure = Monotonicity::Unknown;
 
 struct Row
 {
-    double exponent;
+    Real exponent;
     Interval base;
     Curvature curvature;
     Monotonicity monotonicity;
@@ -126,7 +128,7 @@ std::string row_text(const Row &row)
            text(row.base.upper()) + "]";
 }
 
-Parameters with(double exponent)
+Parameters with(Real exponent)
 {
     return {.constant = 1.0, .weights = {1.0, 1.0, 1.0}, .exponent = exponent};
 }

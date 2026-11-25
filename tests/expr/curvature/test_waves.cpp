@@ -1,4 +1,5 @@
 #include "chords.hpp"
+#include "core/numbers.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/curvature/waves.hpp"
 #include "expr/graph/graph.hpp"
@@ -24,16 +25,17 @@ using biyos::Interval;
 using biyos::Monotonicity;
 using biyos::Operator;
 using biyos::Profile;
+using biyos::Real;
 using biyos::Wave;
 using biyos::test::Parameters;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kPi = std::numbers::pi;
-constexpr double kPiUp = 0x1.921fb54442d19p+1;
-constexpr double kHalfPi = kPi / 2;
-constexpr double kHalfPiUp = 0x1.921fb54442d19p+0;
-constexpr double kFar = 0x1p52;
-constexpr double kPastPole = 0x1.ab41b09886feap+4;
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kPi = std::numbers::pi;
+constexpr Real kPiUp = 0x1.921fb54442d19p+1;
+constexpr Real kHalfPi = kPi / 2;
+constexpr Real kHalfPiUp = 0x1.921fb54442d19p+0;
+constexpr Real kFar = 0x1p52;
+constexpr Real kPastPole = 0x1.ab41b09886feap+4;
 constexpr Interval kZero{0.0, 0.0};
 constexpr int kLattice = 40;
 constexpr int kSteps = 4;
@@ -160,13 +162,13 @@ void expect_quarter(const Quarters &quarters, Interval child, int quarter, bool 
 
 void expect_sides(const Quarters &quarters, int quarter, int gap)
 {
-    const double near = quarter * kHalfPi;
-    const double below = biyos::shifted(near, -gap);
-    const double above = biyos::shifted(near, gap);
+    const Real near = quarter * kHalfPi;
+    const Real below = biyos::shifted(near, -gap);
+    const Real above = biyos::shifted(near, gap);
     const bool exact = gap > 1;
     expect_quarter(quarters, {biyos::shifted(below, -kSteps), below}, quarter - 1, exact);
     expect_quarter(quarters, {above, biyos::shifted(above, kSteps)}, quarter, exact);
-    for (const double reach : kReaches)
+    for (const Real reach : kReaches)
     {
         expect_quarter(quarters, {below - reach, below}, quarter - 1, exact);
         expect_quarter(quarters, {above, above + reach}, quarter, exact);
@@ -203,9 +205,9 @@ TEST(CurvatureTest, Straddles)
 {
     for (int quarter = -40; quarter <= 40; ++quarter)
     {
-        const double near = quarter * kHalfPi;
-        const double below = std::nextafter(std::nextafter(near, -kInfinity), -kInfinity);
-        const double above = std::nextafter(std::nextafter(near, kInfinity), kInfinity);
+        const Real near = quarter * kHalfPi;
+        const Real below = std::nextafter(std::nextafter(near, -kInfinity), -kInfinity);
+        const Real above = std::nextafter(std::nextafter(near, kInfinity), kInfinity);
         const Interval across(below, above);
         const bool odd = quarter % 2 != 0;
         SCOPED_TRACE("quarter " + std::to_string(quarter));

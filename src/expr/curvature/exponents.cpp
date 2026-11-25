@@ -1,5 +1,6 @@
 #include "expr/curvature/exponents.hpp"
 
+#include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/curvature/bends.hpp"
 #include "expr/curvature/shape.hpp"
@@ -81,17 +82,17 @@ constexpr Bend kOddReciprocal{
     .monotonicity = everywhere(Monotonicity::Nonincreasing),
 };
 
-bool is_whole(double value) noexcept
+bool is_whole(Real value) noexcept
 {
     return is_zero(std::fmod(value, 1.0));
 }
 
-bool is_even(double value) noexcept
+bool is_even(Real value) noexcept
 {
     return is_zero(std::fmod(value, 2.0));
 }
 
-const Bend &whole_power(Interval base, double exponent) noexcept
+const Bend &whole_power(Interval base, Real exponent) noexcept
 {
     if (exponent > 0.0)
     {
@@ -112,7 +113,7 @@ const Bend &whole_power(Interval base, double exponent) noexcept
     return kUnknown;
 }
 
-const Bend &power_shape(Interval base, double exponent) noexcept
+const Bend &power_shape(Interval base, Real exponent) noexcept
 {
     if (is_zero(exponent))
     {
@@ -131,12 +132,12 @@ const Bend &power_shape(Interval base, double exponent) noexcept
 
 }
 
-Profile power_bend(Interval base, double exponent) noexcept
+Profile power_bend(Interval base, Real exponent) noexcept
 {
     return bend(power_shape(base, exponent), base);
 }
 
-Profile sign_bend(Interval base, double exponent) noexcept
+Profile sign_bend(Interval base, Real exponent) noexcept
 {
     if (exponent > 1.0)
     {

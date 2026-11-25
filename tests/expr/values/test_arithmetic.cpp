@@ -25,13 +25,14 @@ using biyos::Monotonicity;
 using biyos::Offset;
 using biyos::Operands;
 using biyos::Operator;
+using biyos::Real;
 using biyos::test::Parameters;
 using biyos::test::text;
 
 using Box = std::array<Interval, 3>;
 using Trios = std::array<Monotonicity, 3>;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr Interval kZero{0.0, 0.0};
 constexpr std::array<Offset, 3> kChildren{0, 1, 2};
 
@@ -46,7 +47,7 @@ constexpr Monotonicity kUnsure = Monotonicity::Unknown;
 
 struct Trio
 {
-    double coefficient;
+    Real coefficient;
     Box box;
     Curvature curvature;
     Trios monotonicities;
@@ -123,7 +124,7 @@ std::string box_text(std::span<const Interval> box)
     return message;
 }
 
-Parameters with(double coefficient)
+Parameters with(Real coefficient)
 {
     return {.constant = coefficient, .weights = {1.0, -2.0, 0.0}, .exponent = 1.0};
 }

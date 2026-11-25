@@ -23,6 +23,7 @@ using biyos::Block;
 using biyos::Graph;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::Tape;
 using biyos::Workspace;
 using biyos::test::binary;
@@ -33,21 +34,21 @@ using biyos::test::power;
 using biyos::test::sign_power;
 using biyos::test::unary;
 
-using Partials = std::vector<double>;
+using Partials = std::vector<Real>;
 
-constexpr double kInfinity = (std::numeric_limits<double>::infinity)();
-constexpr double kNan = (std::numeric_limits<double>::quiet_NaN)();
+constexpr Real kInfinity = (std::numeric_limits<Real>::infinity)();
+constexpr Real kNan = (std::numeric_limits<Real>::quiet_NaN)();
 
-Partials partials_at(const Graph &graph, Offset root, std::span<const double> point)
+Partials partials_at(const Graph &graph, Offset root, std::span<const Real> point)
 {
     const Tape tape(graph, std::span(&root, 1));
     Workspace workspace(tape);
     const Block &block = tape.blocks()[0];
     biyos::linearize(block, point, workspace);
-    const std::span<const double> all = biyos::region(block, std::span(workspace.partials), 1);
+    const std::span<const Real> all = biyos::region(block, std::span(workspace.partials), 1);
     const std::size_t last = block.instructions.size() - 1;
     const std::uint32_t start = block.places[last];
-    const std::span<const double> mine = all.subspan(start, block.places[last + 1] - start);
+    const std::span<const Real> mine = all.subspan(start, block.places[last + 1] - start);
     return {mine.begin(), mine.end()};
 }
 
@@ -66,10 +67,10 @@ void expect_partials(const Partials &found, const Partials &wanted)
     }
 }
 
-std::vector<Partials> cmath_partials(double x, double y, double z, double w)
+std::vector<Partials> cmath_partials(Real x, Real y, Real z, Real w)
 {
-    const double secant = 1.0 / std::cos(x);
-    const double tanh_secant = 1.0 / std::cosh(z);
+    const Real secant = 1.0 / std::cos(x);
+    const Real tanh_secant = 1.0 / std::cosh(z);
     return {
         {},
         {},
@@ -106,7 +107,7 @@ std::vector<Partials> cmath_partials(double x, double y, double z, double w)
 
 void expect_each(const Graph &graph,
                  std::span<const Offset> roots,
-                 std::span<const double> point,
+                 std::span<const Real> point,
                  const std::vector<Partials> &wanted)
 {
     ASSERT_EQ(roots.size(), wanted.size());
@@ -164,7 +165,7 @@ TEST(PartialTest, Zeros)
         {kInfinity},
         {1.0},
     };
-    for (const double nothing : {0.0, -0.0})
+    for (const Real nothing : {0.0, -0.0})
     {
         SCOPED_TRACE(nothing);
         expect_each(graph, roots, std::array{nothing}, wanted);
@@ -249,14 +250,14 @@ TEST(PartialTest, Accuracy)
     Graph graph;
     const Offset x = graph.add_variable(0);
     const std::array waves{unary(graph, Operator::Tanh, x)};
-    for (const double far : {15.0, 19.0, 20.0, -20.0})
+    for (const Real far : {15.0, 19.0, 20.0, -20.0})
     {
         SCOPED_TRACE(far);
-        const double scale = std::cosh(far);
+        const Real scale = std::cosh(far);
         expect_each(graph, waves, std::array{far}, {{1.0 / (scale * scale)}});
     }
     const std::array arcs{unary(graph, Operator::Acosh, x)};
-    for (const double huge : {1e200, 1e300})
+    for (const Real huge : {1e200, 1e300})
     {
         SCOPED_TRACE(huge);
         expect_each(graph, arcs, std::array{huge}, {{1.0 / huge}});

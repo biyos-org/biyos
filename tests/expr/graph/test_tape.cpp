@@ -28,6 +28,7 @@ using biyos::Index;
 using biyos::kBudget;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::Tape;
 using biyos::test::failure;
 using biyos::test::refusal;
@@ -305,7 +306,7 @@ std::vector<Offset> running(Graph &graph, Index size)
             middle = total;
         }
     }
-    const std::vector<double> ones(terms.size(), 1.0);
+    const std::vector<Real> ones(terms.size(), 1.0);
     return {graph.add_sum(0.0, terms, ones), total, middle, terms[at(size / 2)]};
 }
 
@@ -356,7 +357,7 @@ std::vector<Offset> stepped(Graph &graph, Index size)
             terms.push_back(graph.add(Operator::Product, 0.3, std::array{inner, level}));
             terms.push_back(unary(graph, Operator::Cos, inner));
         }
-        const std::vector<double> weights(terms.size(), 0.1);
+        const std::vector<Real> weights(terms.size(), 0.1);
         level = graph.add_sum(0.0, terms, weights);
         steps.push_back(
             graph.add(Operator::Product, 1.0, std::array{level, graph.add_variable(k)}));
@@ -380,7 +381,7 @@ std::vector<Offset> shared(Graph &graph, Index size)
         }
         tops.push_back(total);
     }
-    const std::vector<double> ones(powers.size(), 1.0);
+    const std::vector<Real> ones(powers.size(), 1.0);
     std::vector<Offset> roots{graph.add_sum(0.0, powers, ones)};
     std::vector<Offset> waves;
     for (Index j = 0; j < size; ++j)
@@ -390,12 +391,12 @@ std::vector<Offset> shared(Graph &graph, Index size)
         {
             terms.push_back(graph.add(Operator::Product, 1.0 + j, std::span(&top, 1)));
         }
-        const std::vector<double> weights(terms.size(), 1.0);
+        const std::vector<Real> weights(terms.size(), 1.0);
         const Offset term = graph.add_sum(0.0, terms, weights);
         waves.push_back(unary(graph, Operator::Sin, term));
         waves.push_back(unary(graph, Operator::Cos, term));
     }
-    const std::vector<double> halves(waves.size(), 0.5);
+    const std::vector<Real> halves(waves.size(), 0.5);
     const Offset total = graph.add_sum(0.0, waves, halves);
     for (Index j = 0; j < size; ++j)
     {
@@ -415,9 +416,9 @@ std::vector<Offset> alternate(Graph &graph, Index size)
         waves.push_back(odd.back());
         waves.push_back(unary(graph, Operator::Sin, graph.add_variable(2 * k + 1)));
     }
-    const std::vector<double> ones(waves.size(), 1.0);
+    const std::vector<Real> ones(waves.size(), 1.0);
     const Offset total = graph.add_sum(0.0, waves, ones);
-    const std::vector<double> weights(odd.size(), 1.0);
+    const std::vector<Real> weights(odd.size(), 1.0);
     const Offset half = graph.add_sum(0.0, odd, weights);
     const std::array pair{half, total};
     const Offset both = graph.add_sum(0.0, pair, std::array{1.0, 1.0});
@@ -435,7 +436,7 @@ std::vector<Offset> fan(Graph &graph, Index size)
         level = graph.add_sum(0.0, pair, std::array{0.5, 0.5});
         waves.push_back(unary(graph, Operator::Sin, level));
     }
-    const std::vector<double> ones(waves.size(), 1.0);
+    const std::vector<Real> ones(waves.size(), 1.0);
     std::vector<Offset> roots{graph.add_sum(0.0, waves, ones)};
     std::vector<Offset> heads;
     for (Index k = 0; k < size; ++k)
@@ -448,7 +449,7 @@ std::vector<Offset> fan(Graph &graph, Index size)
     {
         std::vector<Offset> terms = heads;
         terms.push_back(graph.add_variable(next++));
-        const std::vector<double> weights(terms.size(), 1.0 / size);
+        const std::vector<Real> weights(terms.size(), 1.0 / size);
         roots.push_back(graph.add_sum(0.0, terms, weights));
     }
     return roots;
@@ -709,7 +710,7 @@ TEST(TapeTest, Reads)
     {
         waves.push_back(unary(wide, Operator::Sin, wide.add_variable(k)));
     }
-    const std::vector<double> ones(waves.size(), 1.0);
+    const std::vector<Real> ones(waves.size(), 1.0);
     const Offset total = wide.add_sum(0.0, waves, ones);
     const std::array sums{total, unary(wide, Operator::Cos, wide.add_sum(1.0, waves, ones))};
     const Tape cut(wide, sums, 13);
@@ -818,16 +819,16 @@ TEST(TapeTest, Recompile)
     const Tape after(graph, roots);
 
     const std::array point{0.3};
-    const double start = std::exp(point[0]);
-    double sine = start;
+    const Real start = std::exp(point[0]);
+    Real sine = start;
     for (int k = 0; k < 1000; ++k)
     {
         sine = std::sin(sine);
     }
-    const std::vector<double> old_values = values_of(before, point);
+    const std::vector<Real> old_values = values_of(before, point);
     ASSERT_EQ(old_values.size(), 1U);
     EXPECT_DOUBLE_EQ(old_values[0], start);
-    const std::vector<double> new_values = values_of(after, point);
+    const std::vector<Real> new_values = values_of(after, point);
     ASSERT_EQ(new_values.size(), 2U);
     EXPECT_DOUBLE_EQ(new_values[0], start);
     EXPECT_DOUBLE_EQ(new_values[1], sine);

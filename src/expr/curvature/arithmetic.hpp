@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/numbers.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/intervals/interval.hpp"
 
@@ -8,8 +9,8 @@
 namespace biyos
 {
 
-Curvature sum_curvature(std::span<const double> weights, std::span<Argument> arguments) noexcept;
-Curvature product_curvature(double coefficient,
+Curvature sum_curvature(std::span<const Real> weights, std::span<Argument> arguments) noexcept;
+Curvature product_curvature(Real coefficient,
                             const Operands &factors,
                             std::span<Argument> arguments) noexcept;
 Curvature quotient_curvature(Interval numerator,

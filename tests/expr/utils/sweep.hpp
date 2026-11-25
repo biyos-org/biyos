@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/numbers.hpp"
 #include "expr/derivatives/derivative.hpp"
 #include "expr/derivatives/reverse.hpp"
 #include "expr/derivatives/value.hpp"
@@ -13,32 +14,32 @@
 namespace biyos::test
 {
 
-inline std::vector<double> values_of(const Tape &tape, std::span<const double> point)
+inline std::vector<Real> values_of(const Tape &tape, std::span<const Real> point)
 {
     Workspace workspace(tape);
-    std::vector<double> values(static_cast<std::size_t>(tape.roots()));
+    std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
     forward(tape, point, workspace, values);
     return values;
 }
 
-inline std::vector<double> jacobian_of(const Tape &tape, std::span<const double> point)
+inline std::vector<Real> jacobian_of(const Tape &tape, std::span<const Real> point)
 {
     Workspace workspace(tape);
     Adjoints adjoints(tape);
-    std::vector<double> values(static_cast<std::size_t>(tape.roots()));
-    std::vector<double> gradients(tape.pattern().variables.size());
+    std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
+    std::vector<Real> gradients(tape.pattern().variables.size());
     jacobian(tape, point, workspace, adjoints, values, gradients);
     return gradients;
 }
 
-inline std::vector<double> gradient_of(const Tape &tape,
-                                       std::span<const double> point,
-                                       std::span<const double> weights)
+inline std::vector<Real> gradient_of(const Tape &tape,
+                                     std::span<const Real> point,
+                                     std::span<const Real> weights)
 {
     Workspace workspace(tape);
     Adjoints adjoints(tape);
-    std::vector<double> values(static_cast<std::size_t>(tape.roots()));
-    std::vector<double> gradient(point.size(), (std::numeric_limits<double>::quiet_NaN)());
+    std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
+    std::vector<Real> gradient(point.size(), (std::numeric_limits<Real>::quiet_NaN)());
     weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
     return gradient;
 }

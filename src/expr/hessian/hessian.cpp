@@ -86,7 +86,7 @@ std::size_t offset(std::size_t size, std::size_t column, std::size_t row) noexce
     return column * size - column * (column - 1) / 2 + row - column;
 }
 
-void seed(std::span<const Index> variables, Chunk chunk, Pass &pass, double value) noexcept
+void seed(std::span<const Index> variables, Chunk chunk, Pass &pass, Real value) noexcept
 {
     for (std::size_t l = 0; l < chunk.count; ++l)
     {
@@ -153,7 +153,7 @@ std::span<const Offset> Hessian::declared() const noexcept
     return map_.declared;
 }
 
-void Hessian::check(std::span<const double> point, std::span<const double> weights) const
+void Hessian::check(std::span<const Real> point, std::span<const Real> weights) const
 {
     if (point.size() < to_size(tape_.variables()))
     {
@@ -164,7 +164,7 @@ void Hessian::check(std::span<const double> point, std::span<const double> weigh
     check_size("weights", weights.size(), roots_, "the root count");
 }
 
-void Hessian::add_block(Offset e, double scale, std::span<double> out) noexcept
+void Hessian::add_block(Offset e, Real scale, std::span<Real> out) noexcept
 {
     Pass &pass = passes_[classes_[to_size(e)]];
     const std::span<const Index> variables = variables_of(tape_.pattern(), e);
@@ -192,9 +192,9 @@ void Hessian::add_block(Offset e, double scale, std::span<double> out) noexcept
 }
 
 void Hessian::add_product(Offset e,
-                          double scale,
-                          std::span<const double> direction,
-                          std::span<double> out) noexcept
+                          Real scale,
+                          std::span<const Real> direction,
+                          std::span<Real> out) noexcept
 {
     Pass &pass = passes_.front();
     const std::span<const Index> variables = variables_of(tape_.pattern(), e);
@@ -211,14 +211,14 @@ void Hessian::add_product(Offset e,
     }
 }
 
-void Hessian::values(std::span<const double> point,
-                     std::span<const double> weights,
-                     std::span<double> out)
+void Hessian::values(std::span<const Real> point,
+                     std::span<const Real> weights,
+                     std::span<Real> out)
 {
     check(point, weights);
     check_size("out", out.size(), lower_.rows.size(), "the pattern size");
     std::ranges::fill(out, 0.0);
-    const std::span<const double> used = point.first(to_size(tape_.variables()));
+    const std::span<const Real> used = point.first(to_size(tape_.variables()));
     for (Pass &pass : passes_)
     {
         broadcast(used, pass.lanes, pass.points);
@@ -226,7 +226,7 @@ void Hessian::values(std::span<const double> point,
     for (Offset e = 0; e < tape_.roots(); ++e)
     {
         const std::size_t k = to_size(e);
-        const double scale = weights[to_size(elements_.roots[k])] * elements_.weights[k];
+        const Real scale = weights[to_size(elements_.roots[k])] * elements_.weights[k];
         if (!is_zero(scale))
         {
             add_block(e, scale, out);
@@ -234,10 +234,10 @@ void Hessian::values(std::span<const double> point,
     }
 }
 
-void Hessian::product(std::span<const double> point,
-                      std::span<const double> weights,
-                      std::span<const double> direction,
-                      std::span<double> out)
+void Hessian::product(std::span<const Real> point,
+                      std::span<const Real> weights,
+                      std::span<const Real> direction,
+                      std::span<Real> out)
 {
     check(point, weights);
     check_size("direction", direction.size(), point.size(), "the point size");
@@ -248,7 +248,7 @@ void Hessian::product(std::span<const double> point,
     for (Offset e = 0; e < tape_.roots(); ++e)
     {
         const std::size_t k = to_size(e);
-        const double scale = weights[to_size(elements_.roots[k])] * elements_.weights[k];
+        const Real scale = weights[to_size(elements_.roots[k])] * elements_.weights[k];
         if (!is_zero(scale))
         {
             add_product(e, scale, direction, out);

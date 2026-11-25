@@ -1,11 +1,13 @@
 #include "expr/intervals/elementary.hpp"
 
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "expr/intervals/interval.hpp"
 #include "expr/intervals/rounding.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <optional>
 
 namespace biyos
@@ -13,9 +15,10 @@ namespace biyos
 
 namespace
 {
-constexpr double kHalfPiUp = 0x1.921fb54442d19p+0;
-constexpr double kPiUp = 0x1.921fb54442d19p+1;
-constexpr double kInverseE = 0x1.78b56362cef38p-2;
+constexpr Real kHalfPiUp = 0x1.921fb54442d19p+0;
+constexpr Real kPiUp = 0x1.921fb54442d19p+1;
+constexpr Real kInverseE = 0x1.78b56362cef38p-2;
+static_assert(std::numeric_limits<Real>::digits == 53);
 
 constexpr Interval kReals = Interval::entire();
 constexpr Interval kNonnegative{0.0, kInfinity};
@@ -26,17 +29,17 @@ constexpr Interval kHalfTurn{0.0, kPiUp};
 
 struct Monotone
 {
-    double (*value)(double);
+    Real (*value)(Real);
     Interval domain;
     Interval image;
-    std::optional<double> root;
+    std::optional<Real> root;
     int steps;
     bool poles;
     bool rising;
 };
 
 constexpr Monotone kExp{
-    .value = [](double x) { return std::exp(x); },
+    .value = [](Real x) { return std::exp(x); },
     .domain = kReals,
     .image = kNonnegative,
     .root = std::nullopt,
@@ -46,7 +49,7 @@ constexpr Monotone kExp{
 };
 
 constexpr Monotone kLog{
-    .value = [](double x) { return std::log(x); },
+    .value = [](Real x) { return std::log(x); },
     .domain = kNonnegative,
     .image = kReals,
     .root = 1.0,
@@ -56,7 +59,7 @@ constexpr Monotone kLog{
 };
 
 constexpr Monotone kSqrt{
-    .value = [](double x) { return std::sqrt(x); },
+    .value = [](Real x) { return std::sqrt(x); },
     .domain = kNonnegative,
     .image = kNonnegative,
     .root = 0.0,
@@ -66,7 +69,7 @@ constexpr Monotone kSqrt{
 };
 
 constexpr Monotone kAsin{
-    .value = [](double x) { return std::asin(x); },
+    .value = [](Real x) { return std::asin(x); },
     .domain = kUnit,
     .image = kQuarterTurn,
     .root = 0.0,
@@ -76,7 +79,7 @@ constexpr Monotone kAsin{
 };
 
 constexpr Monotone kAcos{
-    .value = [](double x) { return std::acos(x); },
+    .value = [](Real x) { return std::acos(x); },
     .domain = kUnit,
     .image = kHalfTurn,
     .root = 1.0,
@@ -86,7 +89,7 @@ constexpr Monotone kAcos{
 };
 
 constexpr Monotone kAtan{
-    .value = [](double x) { return std::atan(x); },
+    .value = [](Real x) { return std::atan(x); },
     .domain = kReals,
     .image = kQuarterTurn,
     .root = 0.0,
@@ -96,7 +99,7 @@ constexpr Monotone kAtan{
 };
 
 constexpr Monotone kSinh{
-    .value = [](double x) { return std::sinh(x); },
+    .value = [](Real x) { return std::sinh(x); },
     .domain = kReals,
     .image = kReals,
     .root = 0.0,
@@ -106,7 +109,7 @@ constexpr Monotone kSinh{
 };
 
 constexpr Monotone kCosh{
-    .value = [](double x) { return std::cosh(x); },
+    .value = [](Real x) { return std::cosh(x); },
     .domain = kNonnegative,
     .image = kAboveOne,
     .root = std::nullopt,
@@ -116,7 +119,7 @@ constexpr Monotone kCosh{
 };
 
 constexpr Monotone kTanh{
-    .value = [](double x) { return std::tanh(x); },
+    .value = [](Real x) { return std::tanh(x); },
     .domain = kReals,
     .image = kUnit,
     .root = 0.0,
@@ -126,7 +129,7 @@ constexpr Monotone kTanh{
 };
 
 constexpr Monotone kAsinh{
-    .value = [](double x) { return std::asinh(x); },
+    .value = [](Real x) { return std::asinh(x); },
     .domain = kReals,
     .image = kReals,
     .root = 0.0,
@@ -136,7 +139,7 @@ constexpr Monotone kAsinh{
 };
 
 constexpr Monotone kAcosh{
-    .value = [](double x) { return std::acosh(x); },
+    .value = [](Real x) { return std::acosh(x); },
     .domain = kAboveOne,
     .image = kNonnegative,
     .root = 1.0,
@@ -146,7 +149,7 @@ constexpr Monotone kAcosh{
 };
 
 constexpr Monotone kAtanh{
-    .value = [](double x) { return std::atanh(x); },
+    .value = [](Real x) { return std::atanh(x); },
     .domain = kUnit,
     .image = kReals,
     .root = 0.0,
@@ -156,7 +159,7 @@ constexpr Monotone kAtanh{
 };
 
 constexpr Monotone kErf{
-    .value = [](double x) { return std::erf(x); },
+    .value = [](Real x) { return std::erf(x); },
     .domain = kReals,
     .image = kUnit,
     .root = 0.0,
@@ -192,18 +195,18 @@ Interval monotone(const Monotone &f, Interval value) noexcept
     {
         return inside;
     }
-    const double least = f.value(f.rising ? inside.lower() : inside.upper());
-    const double most = f.value(f.rising ? inside.upper() : inside.lower());
+    const Real least = f.value(f.rising ? inside.lower() : inside.upper());
+    const Real most = f.value(f.rising ? inside.upper() : inside.lower());
     const Interval values(shifted(least, -f.steps), shifted(most, f.steps));
     return meet(meet(values, f.image), sign_of(f, inside));
 }
 
-double entropy_value(double value) noexcept
+Real entropy_value(Real value) noexcept
 {
     return value > 0.0 ? value * std::log(value) : 0.0;
 }
 
-double least_entropy(Interval inside) noexcept
+Real least_entropy(Interval inside) noexcept
 {
     if (inside.lower() > kInverseE)
     {
@@ -290,8 +293,8 @@ Interval entropy(Interval value) noexcept
     {
         return inside;
     }
-    const double left = entropy_value(inside.lower());
-    const double right = entropy_value(inside.upper());
+    const Real left = entropy_value(inside.lower());
+    const Real right = entropy_value(inside.upper());
     const Interval values(widen_down(least_entropy(inside)), widen_up((std::max)(left, right)));
     return meet(values, signs(inside, 1.0));
 }

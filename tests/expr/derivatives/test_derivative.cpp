@@ -31,6 +31,7 @@ using biyos::Graph;
 using biyos::Index;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::Tape;
 using biyos::Workspace;
 using biyos::test::binary;
@@ -52,13 +53,13 @@ using biyos::test::refusal;
 using biyos::test::unary;
 using biyos::test::values_of;
 
-using Rows = std::vector<std::vector<double>>;
+using Rows = std::vector<std::vector<Real>>;
 
-constexpr double kStep = 1e-5;
-constexpr double kBound = 1e-6;
-constexpr double kRounding = 1e-12;
-constexpr double kNan = (std::numeric_limits<double>::quiet_NaN)();
-constexpr double kInfinity = (std::numeric_limits<double>::infinity)();
+constexpr Real kStep = 1e-5;
+constexpr Real kBound = 1e-6;
+constexpr Real kRounding = 1e-12;
+constexpr Real kNan = (std::numeric_limits<Real>::quiet_NaN)();
+constexpr Real kInfinity = (std::numeric_limits<Real>::infinity)();
 
 std::size_t at(Offset value)
 {
@@ -97,10 +98,10 @@ std::vector<Index> pattern_of(const Tape &tape, std::size_t root)
     return {first + pattern.starts[root], first + pattern.starts[root + 1]};
 }
 
-Rows dense(const Tape &tape, const std::vector<double> &gradients, std::size_t width)
+Rows dense(const Tape &tape, const std::vector<Real> &gradients, std::size_t width)
 {
     const biyos::Pattern &pattern = tape.pattern();
-    Rows rows(at(tape.roots()), std::vector<double>(width, 0.0));
+    Rows rows(at(tape.roots()), std::vector<Real>(width, 0.0));
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
         for (Offset k = pattern.starts[r]; k < pattern.starts[r + 1]; ++k)
@@ -111,19 +112,19 @@ Rows dense(const Tape &tape, const std::vector<double> &gradients, std::size_t w
     return rows;
 }
 
-std::vector<double> differences(const Tape &tape,
-                                std::vector<double> point,
-                                std::size_t variable,
-                                double step)
+std::vector<Real> differences(const Tape &tape,
+                              std::vector<Real> point,
+                              std::size_t variable,
+                              Real step)
 {
-    const double middle = point[variable];
-    const double size = step * (std::max)(1.0, std::fabs(middle));
+    const Real middle = point[variable];
+    const Real size = step * (std::max)(1.0, std::fabs(middle));
     point[variable] = middle + size;
-    const double up = point[variable];
-    std::vector<double> slopes = values_of(tape, point);
+    const Real up = point[variable];
+    std::vector<Real> slopes = values_of(tape, point);
     point[variable] = middle - size;
-    const double down = point[variable];
-    const std::vector<double> below = values_of(tape, point);
+    const Real down = point[variable];
+    const std::vector<Real> below = values_of(tape, point);
     for (std::size_t k = 0; k < slopes.size(); ++k)
     {
         slopes[k] = (slopes[k] - below[k]) / (up - down);
@@ -131,28 +132,28 @@ std::vector<double> differences(const Tape &tape,
     return slopes;
 }
 
-double tolerance(double difference)
+Real tolerance(Real difference)
 {
     return kBound * (1.0 + std::fabs(difference));
 }
 
-bool is_zero(double value)
+bool is_zero(Real value)
 {
     return std::fpclassify(value) == FP_ZERO;
 }
 
-bool converged(double fine, double coarse)
+bool converged(Real fine, Real coarse)
 {
     const bool finite = std::isfinite(fine) && std::isfinite(coarse);
     return finite && std::fabs(fine - coarse) <= tolerance(fine);
 }
 
-void expect_differences(const Tape &tape, const std::vector<double> &point)
+void expect_differences(const Tape &tape, const std::vector<Real> &point)
 {
     const Rows rows = dense(tape, jacobian_of(tape, point), point.size());
     for (std::size_t j = 0; j < point.size(); ++j)
     {
-        const std::vector<double> wanted = differences(tape, point, j, kStep);
+        const std::vector<Real> wanted = differences(tape, point, j, kStep);
         for (std::size_t r = 0; r < rows.size(); ++r)
         {
             EXPECT_NEAR(rows[r][j], wanted[r], tolerance(wanted[r]))
@@ -161,13 +162,13 @@ void expect_differences(const Tape &tape, const std::vector<double> &point)
     }
 }
 
-std::size_t check_converged(const Tape &tape, const std::vector<double> &point, const Rows &rows)
+std::size_t check_converged(const Tape &tape, const std::vector<Real> &point, const Rows &rows)
 {
     std::size_t checked = 0;
     for (std::size_t j = 0; j < point.size(); ++j)
     {
-        const std::vector<double> fine = differences(tape, point, j, kStep);
-        const std::vector<double> coarse = differences(tape, point, j, 2.0 * kStep);
+        const std::vector<Real> fine = differences(tape, point, j, kStep);
+        const std::vector<Real> coarse = differences(tape, point, j, 2.0 * kStep);
         for (std::size_t r = 0; r < rows.size(); ++r)
         {
             if (converged(fine[r], coarse[r]) && std::isfinite(rows[r][j]))
@@ -181,7 +182,7 @@ std::size_t check_converged(const Tape &tape, const std::vector<double> &point, 
     return checked;
 }
 
-void expect_same(double found, double wanted, double scale)
+void expect_same(Real found, Real wanted, Real scale)
 {
     if (std::isnan(wanted))
     {
@@ -197,7 +198,7 @@ void expect_same(double found, double wanted, double scale)
     }
 }
 
-void expect_agree(double found, double wanted, double scale)
+void expect_agree(Real found, Real wanted, Real scale)
 {
     if (std::isfinite(wanted))
     {
@@ -209,7 +210,7 @@ void expect_agree(double found, double wanted, double scale)
 
 void expect_rule(const Graph &graph,
                  std::span<const Offset> roots,
-                 const std::vector<double> &point,
+                 const std::vector<Real> &point,
                  const Rows &rows)
 {
     ChainRule rule(graph, point);
@@ -224,7 +225,7 @@ void expect_rule(const Graph &graph,
     }
 }
 
-void expect_entries(const std::vector<double> &found, const std::vector<double> &wanted)
+void expect_entries(const std::vector<Real> &found, const std::vector<Real> &wanted)
 {
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < wanted.size(); ++k)
@@ -237,12 +238,12 @@ void expect_entries(const std::vector<double> &found, const std::vector<double> 
 struct Call
 {
     const Tape *tape;
-    std::span<const double> point;
-    std::span<const double> weights;
+    std::span<const Real> point;
+    std::span<const Real> weights;
     Workspace *workspace;
     Adjoints *adjoints;
-    std::span<double> values;
-    std::span<double> out;
+    std::span<Real> values;
+    std::span<Real> out;
 };
 
 void call_jacobian(const Call &call)
@@ -276,7 +277,7 @@ bool cleared(const Adjoints &adjoints)
            std::ranges::all_of(adjoints.gradient, is_zero);
 }
 
-void expect_close(const std::vector<double> &found, const std::vector<double> &wanted)
+void expect_close(const std::vector<Real> &found, const std::vector<Real> &wanted)
 {
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < wanted.size(); ++k)
@@ -286,15 +287,15 @@ void expect_close(const std::vector<double> &found, const std::vector<double> &w
 }
 
 void expect_weighted(const Tape &tape,
-                     const std::vector<double> &point,
-                     const std::vector<double> &weights,
-                     const std::vector<double> &found)
+                     const std::vector<Real> &point,
+                     const std::vector<Real> &weights,
+                     const std::vector<Real> &found)
 {
     const Rows rows = dense(tape, jacobian_of(tape, point), point.size());
     for (std::size_t j = 0; j < point.size(); ++j)
     {
-        double wanted = 0.0;
-        double scale = 1.0;
+        Real wanted = 0.0;
+        Real scale = 1.0;
         for (std::size_t r = 0; r < rows.size(); ++r)
         {
             wanted += weights[r] * rows[r][j];
@@ -311,9 +312,9 @@ void expect_weighted(const Tape &tape,
     }
 }
 
-std::vector<double> random_weights(Random &random, std::size_t n)
+std::vector<Real> random_weights(Random &random, std::size_t n)
 {
-    std::vector<double> weights;
+    std::vector<Real> weights;
     for (std::size_t k = 0; k < n; ++k)
     {
         weights.push_back(random.uniform(-2.0, 2.0));
@@ -321,9 +322,9 @@ std::vector<double> random_weights(Random &random, std::size_t n)
     return weights;
 }
 
-std::vector<double> interior_point(Random &random)
+std::vector<Real> interior_point(Random &random)
 {
-    std::vector<double> point;
+    std::vector<Real> point;
     for (Index k = 0; k < kVariables; ++k)
     {
         point.push_back(random.uniform(0.1, 2.0));
@@ -341,7 +342,7 @@ std::vector<Offset> ladder(Graph &graph, Index size)
         sum = graph.add_sum(0.0, terms, std::array{1.0, 1.0});
         waves.push_back(unary(graph, Operator::Sin, sum));
     }
-    const std::vector<double> ones(waves.size(), 1.0);
+    const std::vector<Real> ones(waves.size(), 1.0);
     return {graph.add_sum(0.0, waves, ones), sum};
 }
 
@@ -382,7 +383,7 @@ std::vector<Offset> products(Graph &graph, Index size)
         total = graph.add(Operator::Product, 1.0, pair);
         terms.push_back(unary(graph, Operator::Exp, total));
     }
-    const std::vector<double> ones(terms.size(), 1.0);
+    const std::vector<Real> ones(terms.size(), 1.0);
     return {graph.add_sum(0.0, terms, ones), total, terms[2]};
 }
 
@@ -393,7 +394,7 @@ Offset sum_of(Graph &graph, Index start, Index size)
     {
         terms.push_back(graph.add_variable(k));
     }
-    const std::vector<double> ones(terms.size(), 1.0);
+    const std::vector<Real> ones(terms.size(), 1.0);
     return graph.add_sum(0.0, terms, ones);
 }
 
@@ -446,7 +447,7 @@ std::vector<Offset> inherited(Graph &graph, Index size)
     {
         terms.push_back(graph.add_variable(k));
     }
-    const std::vector<double> ones(terms.size(), 1.0);
+    const std::vector<Real> ones(terms.size(), 1.0);
     Offset link = graph.add_sum(0.0, terms, ones);
     std::vector<Offset> roots;
     for (Index k = 0; k < size; ++k)
@@ -479,7 +480,7 @@ std::vector<Offset> shared_roots(Graph &graph)
     };
 }
 
-std::vector<double> row(const Tape &tape, const std::vector<double> &point, std::size_t root)
+std::vector<Real> row(const Tape &tape, const std::vector<Real> &point, std::size_t root)
 {
     return dense(tape, jacobian_of(tape, point), point.size())[root];
 }
@@ -496,7 +497,7 @@ TEST(DerivativeTest, Operators)
         std::vector{2.5, 1.25, 4.0, -0.8},
         std::vector{1.1, 3.0, -0.6, 0.95},
     };
-    for (const std::vector<double> &point : points)
+    for (const std::vector<Real> &point : points)
     {
         SCOPED_TRACE(point[0]);
         expect_differences(tape, point);
@@ -518,13 +519,12 @@ TEST(DerivativeTest, Seeded)
         pinned += tape.pinned();
         Workspace workspace(tape);
         Adjoints adjoints(tape);
-        std::vector<double> values(roots.size());
-        std::vector<double> gradients(tape.pattern().variables.size());
+        std::vector<Real> values(roots.size());
+        std::vector<Real> gradients(tape.pattern().variables.size());
         for (int k = 0; k < 6; ++k)
         {
             const bool inside = k % 2 == 0;
-            const std::vector<double> point =
-                inside ? interior_point(random) : random_point(random);
+            const std::vector<Real> point = inside ? interior_point(random) : random_point(random);
             biyos::jacobian(tape, point, workspace, adjoints, values, gradients);
             EXPECT_TRUE(cleared(adjoints));
             const Rows rows = dense(tape, gradients, point.size());
@@ -577,7 +577,7 @@ TEST(DerivativeTest, Chains)
                     SCOPED_TRACE(r);
                     EXPECT_EQ(pattern_of(tape, r), reached(graph, roots[r]));
                 }
-                const std::vector<double> point(at(tape.variables()), 0.5);
+                const std::vector<Real> point(at(tape.variables()), 0.5);
                 const Rows rows = dense(tape, jacobian_of(tape, point), point.size());
                 expect_rule(graph, roots, point, rows);
             }
@@ -589,11 +589,11 @@ TEST(DerivativeTest, Shared)
 {
     Graph graph;
     const std::vector<Offset> roots = shared_roots(graph);
-    const std::vector<double> point{0.7, 1.3, 2.1};
+    const std::vector<Real> point{0.7, 1.3, 2.1};
     const Tape whole(graph, roots);
     ASSERT_EQ(whole.pinned(), 0);
     expect_differences(whole, point);
-    const std::vector<double> wanted = jacobian_of(whole, point);
+    const std::vector<Real> wanted = jacobian_of(whole, point);
 
     const Tape chained(graph, roots, 1);
     ASSERT_EQ(chained.prepass(), 4);
@@ -630,7 +630,7 @@ TEST(DerivativeTest, Kinks)
         power(graph, x, 0.0),
     };
     const Tape tape(graph, roots);
-    const std::vector<double> wanted{
+    const std::vector<Real> wanted{
         1.0,
         1.0,
         -1.0,
@@ -647,12 +647,12 @@ TEST(DerivativeTest, Kinks)
         kInfinity,
         0.0,
     };
-    for (const double zero : {0.0, -0.0})
+    for (const Real zero : {0.0, -0.0})
     {
         SCOPED_TRACE(zero);
         expect_entries(jacobian_of(tape, std::vector{zero, zero, 1.0}), wanted);
     }
-    EXPECT_EQ(row(tape, {0.5, 0.5, 0.5}, 4), (std::vector<double>{0.0, 0.0, 1.0}));
+    EXPECT_EQ(row(tape, {0.5, 0.5, 0.5}, 4), (std::vector<Real>{0.0, 0.0, 1.0}));
 }
 
 TEST(DerivativeTest, Routing)
@@ -686,9 +686,9 @@ TEST(DerivativeTest, ZeroAdjoint)
         unary(graph, Operator::Cos, root),
     };
     const Tape tape(graph, roots);
-    const std::vector<double> flat{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    const std::vector<Real> flat{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     expect_entries(jacobian_of(tape, std::vector{0.0, 0.0}), flat);
-    const std::vector<double> steep{0.0, kInfinity, 0.0, 0.0, 0.0, 0.0, 0.0};
+    const std::vector<Real> steep{0.0, kInfinity, 0.0, 0.0, 0.0, 0.0, 0.0};
     expect_entries(jacobian_of(tape, std::vector{0.0, 2.0}), steep);
 }
 
@@ -723,12 +723,12 @@ TEST(DerivativeTest, Weighted)
         const Tape tape(graph, roots, kBudgets[random.below(kBudgets.size())]);
         Workspace workspace(tape);
         Adjoints adjoints(tape);
-        std::vector<double> values(roots.size());
-        std::vector<double> gradient(kVariables);
+        std::vector<Real> values(roots.size());
+        std::vector<Real> gradient(kVariables);
         for (int k = 0; k < 2; ++k)
         {
-            const std::vector<double> point = random_point(random);
-            const std::vector<double> weights = random_weights(random, roots.size());
+            const std::vector<Real> point = random_point(random);
+            const std::vector<Real> weights = random_weights(random, roots.size());
             std::ranges::fill(gradient, kNan);
             biyos::weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
             EXPECT_TRUE(cleared(adjoints));
@@ -737,14 +737,14 @@ TEST(DerivativeTest, Weighted)
     }
     Graph graph;
     const std::vector<Offset> roots = shared_roots(graph);
-    const std::vector<double> point{0.7, 1.3, 2.1, 0.4};
+    const std::vector<Real> point{0.7, 1.3, 2.1, 0.4};
     Random random(7);
     for (const Offset budget : {Offset{1}, Offset{2}, Offset{5}, Offset{8}, biyos::kBudget})
     {
         SCOPED_TRACE(budget);
         const Tape tape(graph, roots, budget);
-        const std::vector<double> weights = random_weights(random, roots.size());
-        const std::vector<double> gradient = gradient_of(tape, point, weights);
+        const std::vector<Real> weights = random_weights(random, roots.size());
+        const std::vector<Real> gradient = gradient_of(tape, point, weights);
         expect_weighted(tape, point, weights, gradient);
         EXPECT_DOUBLE_EQ(gradient[3], 0.0);
     }
@@ -774,8 +774,8 @@ TEST(DerivativeTest, Sizes)
     ASSERT_EQ(tape.pinned(), 1);
     Workspace workspace(tape);
     Adjoints adjoints(tape);
-    std::vector<double> values(2);
-    std::vector<double> gradients(2);
+    std::vector<Real> values(2);
+    std::vector<Real> gradients(2);
     const std::array point{0.5, 0.25};
     const Call call{
         .tape = &tape,
@@ -790,7 +790,7 @@ TEST(DerivativeTest, Sizes)
     bad.point = std::span(point).first(1);
     EXPECT_EQ(refused(call_jacobian, bad),
               "invalid argument: point: size 1 does not cover variable 1");
-    std::vector<double> more(3);
+    std::vector<Real> more(3);
     bad = call;
     bad.out = more;
     EXPECT_EQ(refused(call_jacobian, bad),
@@ -828,8 +828,8 @@ TEST(DerivativeTest, WeightSizes)
     const Tape tape(graph, roots, 3);
     Workspace workspace(tape);
     Adjoints adjoints(tape);
-    std::vector<double> values(2);
-    std::vector<double> gradient(2);
+    std::vector<Real> values(2);
+    std::vector<Real> gradient(2);
     const std::array point{0.5, 0.25};
     const std::array weights{1.0, -1.0};
     const Call call{
@@ -845,7 +845,7 @@ TEST(DerivativeTest, WeightSizes)
     bad.weights = std::span(weights).first(1);
     EXPECT_EQ(refused(call_weighted, bad),
               "invalid argument: weights: size 1, not the root count 2");
-    std::vector<double> more(3);
+    std::vector<Real> more(3);
     bad = call;
     bad.out = more;
     EXPECT_EQ(refused(call_weighted, bad),
@@ -855,7 +855,7 @@ TEST(DerivativeTest, WeightSizes)
     bad = call;
     bad.adjoints = &small;
     EXPECT_EQ(refused(call_weighted, bad), "invalid argument: adjoints: sized for another tape");
-    std::vector<double> fewer(1);
+    std::vector<Real> fewer(1);
     bad = call;
     bad.values = fewer;
     EXPECT_EQ(refused(call_weighted, bad),

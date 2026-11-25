@@ -9,13 +9,13 @@
 #include <array>
 #include <bit>
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <vector>
 
 namespace
 {
 
+using biyos::Bits;
 using biyos::compact;
 using biyos::Compaction;
 using biyos::Graph;
@@ -23,6 +23,7 @@ using biyos::kDead;
 using biyos::live;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::test::refusal;
 
 std::size_t at(Offset value)
@@ -58,15 +59,15 @@ std::vector<Offset> kept(const std::vector<Offset> &map)
     return images;
 }
 
-std::uint64_t bits(double value)
+Bits bits(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
-std::vector<std::uint64_t> bits(std::span<const double> values)
+std::vector<Bits> bits(std::span<const Real> values)
 {
-    std::vector<std::uint64_t> words;
-    for (const double value : values)
+    std::vector<Bits> words;
+    for (const Real value : values)
     {
         words.push_back(bits(value));
     }
@@ -151,7 +152,7 @@ TEST(CompactTest, DeadNodes)
     const Offset x = graph.add_variable(0);
     const Offset y = graph.add_variable(1);
     const Offset z = graph.add_variable(2);
-    const double four = 4.0;
+    const Real four = 4.0;
     const Offset unused = graph.add_sum(5.0, std::span(&z, 1), std::span(&four, 1));
     const Offset exponential = unary(graph, Operator::Exp, x);
     const std::array terms{exponential, y};
@@ -302,7 +303,7 @@ TEST(CompactTest, SameGraph)
 {
     Graph graph;
     const Offset x = graph.add_variable(0);
-    const double one = 1.0;
+    const Real one = 1.0;
     const Offset sum = graph.add_sum(0.0, std::span(&x, 1), std::span(&one, 1));
     EXPECT_EQ(refusal([&] { biyos::copy(graph, sum, std::span(&x, 1), graph); }),
               "invalid argument: expression: source and target are the same graph");

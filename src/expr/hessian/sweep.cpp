@@ -28,26 +28,26 @@ struct Lift
 {
     Frame frame;
     std::span<const std::uint32_t> places;
-    std::span<double> partials;
-    std::span<double> curves;
-    std::span<double> slots;
-    std::span<double> spare;
-    std::span<double> result;
-    std::span<const double> seeds;
+    std::span<Real> partials;
+    std::span<Real> curves;
+    std::span<Real> slots;
+    std::span<Real> spare;
+    std::span<Real> result;
+    std::span<const Real> seeds;
 };
 
 struct Trail
 {
     std::span<const std::uint32_t> operands;
-    std::span<const double> weights;
+    std::span<const Real> weights;
     std::span<const std::uint32_t> places;
-    std::span<const double> partials;
-    std::span<const double> curves;
-    std::span<double> adjoints;
-    std::span<double> tangents;
-    std::span<double> columns;
-    std::span<double> taken;
-    std::span<double> held;
+    std::span<const Real> partials;
+    std::span<const Real> curves;
+    std::span<Real> adjoints;
+    std::span<Real> tangents;
+    std::span<Real> columns;
+    std::span<Real> taken;
+    std::span<Real> held;
     std::size_t lanes;
 };
 
@@ -93,14 +93,12 @@ Lift lift_of(const Block &block, Pass &pass) noexcept
     };
 }
 
-std::span<const double> tangent(const Lift &lift, std::uint32_t slot) noexcept
+std::span<const Real> tangent(const Lift &lift, std::uint32_t slot) noexcept
 {
-    return row(std::span<const double>(lift.slots), slot, lift.frame.lanes);
+    return row(std::span<const Real>(lift.slots), slot, lift.frame.lanes);
 }
 
-void add(const Lift &lift,
-         std::span<const double> tangents,
-         std::span<const double> partials) noexcept
+void add(const Lift &lift, std::span<const Real> tangents, std::span<const Real> partials) noexcept
 {
     for (std::size_t l = 0; l < lift.frame.lanes; ++l)
     {
@@ -110,14 +108,14 @@ void add(const Lift &lift,
 
 void add_sum(const Instruction &instruction,
              const Lift &lift,
-             std::span<const double> partials) noexcept
+             std::span<const Real> partials) noexcept
 {
     const std::span<const std::uint32_t> terms = listed(instruction, lift.frame.operands);
-    const std::span<const double> weights =
+    const std::span<const Real> weights =
         lift.frame.weights.subspan(place(instruction.payload) + 1, terms.size());
     for (std::size_t k = 0; k < terms.size(); ++k)
     {
-        const std::span<const double> t = tangent(lift, terms[k]);
+        const std::span<const Real> t = tangent(lift, terms[k]);
         for (std::size_t l = 0; l < lift.frame.lanes; ++l)
         {
             lift.result[l] += scaled(t[l], partials[l] * weights[k]);
@@ -127,7 +125,7 @@ void add_sum(const Instruction &instruction,
 
 void add_product(const Instruction &instruction,
                  const Lift &lift,
-                 std::span<const double> partials) noexcept
+                 std::span<const Real> partials) noexcept
 {
     const std::span<const std::uint32_t> factors = listed(instruction, lift.frame.operands);
     for (std::size_t k = 0; k < factors.size(); ++k)
@@ -136,10 +134,10 @@ void add_product(const Instruction &instruction,
     }
 }
 
-void pick(std::span<double> into,
+void pick(std::span<Real> into,
           std::size_t k,
-          std::span<const double> from,
-          std::span<const double> partials) noexcept
+          std::span<const Real> from,
+          std::span<const Real> partials) noexcept
 {
     for (std::size_t l = 0; l < into.size(); ++l)
     {
@@ -160,7 +158,7 @@ void pick(std::span<double> into,
 
 void add_extreme(const Instruction &instruction,
                  const Lift &lift,
-                 std::span<const double> partials) noexcept
+                 std::span<const Real> partials) noexcept
 {
     const std::span<const std::uint32_t> operands = listed(instruction, lift.frame.operands);
     for (std::size_t k = 0; k < operands.size(); ++k)
@@ -171,7 +169,7 @@ void add_extreme(const Instruction &instruction,
 
 void motion(const Instruction &instruction,
             const Lift &lift,
-            std::span<const double> partials) noexcept
+            std::span<const Real> partials) noexcept
 {
     const std::size_t lanes = lift.frame.lanes;
     std::ranges::fill(lift.result, 0.0);
@@ -227,8 +225,8 @@ void motion(const Instruction &instruction,
 void advance(const Instruction &instruction, std::size_t k, const Lift &lift) noexcept
 {
     const std::size_t lanes = lift.frame.lanes;
-    const std::span<double> partials = mine(lift.partials, lift.places, k, lanes);
-    const std::span<double> curves = mine(lift.curves, lift.places, k, lanes);
+    const std::span<Real> partials = mine(lift.partials, lift.places, k, lanes);
+    const std::span<Real> curves = mine(lift.curves, lift.places, k, lanes);
     evaluate(instruction, lift.frame);
     partials_of(instruction, lift.frame, partials);
     partial_tangents(instruction, lift.frame, {lift.slots, lift.spare}, partials, curves);
@@ -237,9 +235,9 @@ void advance(const Instruction &instruction, std::size_t k, const Lift &lift) no
     std::ranges::copy(lift.result, row(lift.slots, instruction.target, lanes).begin());
 }
 
-void copy_row(std::span<const double> from,
+void copy_row(std::span<const Real> from,
               std::size_t source,
-              std::span<double> into,
+              std::span<Real> into,
               std::size_t target,
               std::size_t lanes) noexcept
 {
@@ -309,8 +307,8 @@ Trail trail_of(const Block &block, Pass &pass) noexcept
         .operands = block.operands,
         .weights = block.weights,
         .places = block.places,
-        .partials = region(block, std::span<const double>(pass.workspace.partials), lanes),
-        .curves = region(block, std::span<const double>(pass.velocity.partials), lanes),
+        .partials = region(block, std::span<const Real>(pass.workspace.partials), lanes),
+        .curves = region(block, std::span<const Real>(pass.velocity.partials), lanes),
         .adjoints = pass.first.slots,
         .tangents = pass.second.slots,
         .columns = pass.second.gradient,
@@ -322,8 +320,8 @@ Trail trail_of(const Block &block, Pass &pass) noexcept
 
 void take(const Instruction &instruction, const Trail &trail) noexcept
 {
-    const std::span<double> adjoint = row(trail.adjoints, instruction.target, trail.lanes);
-    const std::span<double> tangent = row(trail.tangents, instruction.target, trail.lanes);
+    const std::span<Real> adjoint = row(trail.adjoints, instruction.target, trail.lanes);
+    const std::span<Real> tangent = row(trail.tangents, instruction.target, trail.lanes);
     std::ranges::copy(adjoint, trail.taken.begin());
     std::ranges::copy(tangent, trail.held.begin());
     std::ranges::fill(adjoint, 0.0);
@@ -331,12 +329,12 @@ void take(const Instruction &instruction, const Trail &trail) noexcept
 }
 
 void both(std::uint32_t slot,
-          std::span<const double> partials,
-          std::span<const double> curves,
+          std::span<const Real> partials,
+          std::span<const Real> curves,
           const Trail &trail) noexcept
 {
-    const std::span<double> adjoint = row(trail.adjoints, slot, trail.lanes);
-    const std::span<double> tangent = row(trail.tangents, slot, trail.lanes);
+    const std::span<Real> adjoint = row(trail.adjoints, slot, trail.lanes);
+    const std::span<Real> tangent = row(trail.tangents, slot, trail.lanes);
     for (std::size_t l = 0; l < trail.lanes; ++l)
     {
         adjoint[l] += scaled(trail.taken[l], partials[l]);
@@ -345,16 +343,16 @@ void both(std::uint32_t slot,
 }
 
 void spread_sum(const Instruction &instruction,
-                std::span<const double> partials,
+                std::span<const Real> partials,
                 const Trail &trail) noexcept
 {
     const std::span<const std::uint32_t> terms = listed(instruction, trail.operands);
-    const std::span<const double> weights =
+    const std::span<const Real> weights =
         trail.weights.subspan(place(instruction.payload) + 1, terms.size());
     for (std::size_t k = 0; k < terms.size(); ++k)
     {
-        const std::span<double> adjoint = row(trail.adjoints, terms[k], trail.lanes);
-        const std::span<double> tangent = row(trail.tangents, terms[k], trail.lanes);
+        const std::span<Real> adjoint = row(trail.adjoints, terms[k], trail.lanes);
+        const std::span<Real> tangent = row(trail.tangents, terms[k], trail.lanes);
         for (std::size_t l = 0; l < trail.lanes; ++l)
         {
             adjoint[l] += scaled(trail.taken[l], partials[l] * weights[k]);
@@ -364,8 +362,8 @@ void spread_sum(const Instruction &instruction,
 }
 
 void spread(const Instruction &instruction,
-            std::span<const double> partials,
-            std::span<const double> curves,
+            std::span<const Real> partials,
+            std::span<const Real> curves,
             const Trail &trail) noexcept
 {
     const std::span<const std::uint32_t> operands = listed(instruction, trail.operands);
@@ -376,7 +374,7 @@ void spread(const Instruction &instruction,
 }
 
 void send(const Instruction &instruction,
-          std::span<const double> partials,
+          std::span<const Real> partials,
           const Trail &trail) noexcept
 {
     const std::span<const std::uint32_t> operands = listed(instruction, trail.operands);
@@ -389,7 +387,7 @@ void send(const Instruction &instruction,
 
 void column(const Instruction &instruction, const Trail &trail) noexcept
 {
-    const std::span<double> into = row(trail.columns, place(instruction.payload), trail.lanes);
+    const std::span<Real> into = row(trail.columns, place(instruction.payload), trail.lanes);
     for (std::size_t l = 0; l < trail.lanes; ++l)
     {
         into[l] += trail.held[l];
@@ -397,8 +395,8 @@ void column(const Instruction &instruction, const Trail &trail) noexcept
 }
 
 void step(const Instruction &instruction,
-          std::span<const double> partials,
-          std::span<const double> curves,
+          std::span<const Real> partials,
+          std::span<const Real> curves,
           const Trail &trail) noexcept
 {
     const std::size_t lanes = trail.lanes;

@@ -15,11 +15,11 @@ struct Velocity
 {
     Velocity(const Tape &tape, std::size_t lanes);
 
-    std::vector<double> slots;
-    std::vector<double> shared;
-    std::vector<double> partials;
-    std::vector<double> spare;
-    std::vector<double> result;
+    std::vector<Real> slots;
+    std::vector<Real> shared;
+    std::vector<Real> partials;
+    std::vector<Real> spare;
+    std::vector<Real> result;
 };
 
 struct Pass
@@ -31,8 +31,8 @@ struct Pass
     Velocity velocity;
     Adjoints first;
     Adjoints second;
-    std::vector<double> points;
-    std::vector<double> seeds;
+    std::vector<Real> points;
+    std::vector<Real> seeds;
 };
 
 void sweep(const Tape &tape, Offset element, Pass &pass) noexcept;

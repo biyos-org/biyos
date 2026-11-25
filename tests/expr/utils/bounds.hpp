@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/numbers.hpp"
 #include "expr/intervals/interval.hpp"
 
 #include <gtest/gtest.h>
@@ -22,7 +23,7 @@ inline std::string interval_text(Interval interval)
     return out.str();
 }
 
-inline testing::AssertionResult holds(Interval found, double lower, double upper)
+inline testing::AssertionResult holds(Interval found, Real lower, Real upper)
 {
     if (!found.is_empty() && found.lower() <= lower && upper <= found.upper())
     {
@@ -32,7 +33,7 @@ inline testing::AssertionResult holds(Interval found, double lower, double upper
     return testing::AssertionFailure() << interval_text(found) << " misses part of " << wanted;
 }
 
-inline testing::AssertionResult within(Interval found, double lower, double upper)
+inline testing::AssertionResult within(Interval found, Real lower, Real upper)
 {
     if (found.is_empty() || (lower <= found.lower() && found.upper() <= upper))
     {
@@ -42,7 +43,7 @@ inline testing::AssertionResult within(Interval found, double lower, double uppe
     return testing::AssertionFailure() << interval_text(found) << " leaves " << bound;
 }
 
-inline testing::AssertionResult exact(Interval found, double lower, double upper)
+inline testing::AssertionResult exact(Interval found, Real lower, Real upper)
 {
     const testing::AssertionResult held = holds(found, lower, upper);
     return held ? within(found, lower, upper) : held;

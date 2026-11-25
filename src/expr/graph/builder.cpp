@@ -20,14 +20,14 @@ namespace
 {
 
 constexpr Offset kPending = -1;
-constexpr double kFactor = 1.0;
+constexpr Real kFactor = 1.0;
 
 [[noreturn]] void refuse(const std::string &reason)
 {
     throw Error(ErrorKind::InvalidArgument, "expression", reason);
 }
 
-bool product_fits(double left, double right) noexcept
+bool product_fits(Real left, Real right) noexcept
 {
     const bool zero = std::fpclassify(left) == FP_ZERO || std::fpclassify(right) == FP_ZERO;
     return zero || std::isnormal(left * right);
@@ -42,7 +42,7 @@ std::string operand_text(Offset n)
 
 Builder::Builder(Graph &graph) : graph_(graph) {}
 
-void Builder::constant(double value)
+void Builder::constant(Real value)
 {
     push(graph_.add(Operator::Constant, value, {}));
 }
@@ -58,14 +58,14 @@ void Builder::node(Offset id)
     push(id);
 }
 
-void Builder::sum(double constant, std::span<const double> coefficients)
+void Builder::sum(Real constant, std::span<const Real> coefficients)
 {
     const auto n = to_offset(coefficients.size());
     check_shape(Operator::Sum, Payload::Coefficients, n);
     check_constant(constant);
     check_coefficients(coefficients, n);
     const std::size_t base = take(n);
-    double merged = constant;
+    Real merged = constant;
     next_terms_.clear();
     next_weights_.clear();
     for (std::size_t k = 0; k < coefficients.size(); ++k)
@@ -75,12 +75,12 @@ void Builder::sum(double constant, std::span<const double> coefficients)
     replace(base, Operator::Sum, merged);
 }
 
-void Builder::product(double coefficient, Offset n)
+void Builder::product(Real coefficient, Offset n)
 {
     check_shape(Operator::Product, Payload::Constant, n);
     check_constant(coefficient);
     const std::size_t base = take(n);
-    double merged = coefficient;
+    Real merged = coefficient;
     next_terms_.clear();
     next_weights_.clear();
     for (std::size_t k = base; k < stack_.size(); ++k)
@@ -90,12 +90,12 @@ void Builder::product(double coefficient, Offset n)
     replace(base, Operator::Product, merged);
 }
 
-void Builder::power(double exponent)
+void Builder::power(Real exponent)
 {
     raise(Operator::ConstantPower, exponent);
 }
 
-void Builder::sign_power(double exponent)
+void Builder::sign_power(Real exponent)
 {
     raise(Operator::SignPower, exponent);
 }
@@ -136,7 +136,7 @@ Offset Builder::finish()
     return node;
 }
 
-void Builder::raise(Operator op, double exponent)
+void Builder::raise(Operator op, Real exponent)
 {
     check_constant(op, exponent);
     const std::size_t base = take(1);
@@ -198,7 +198,7 @@ void Builder::collect(std::size_t base)
     }
 }
 
-bool Builder::merges(const Operand &operand, double coefficient, double constant) const
+bool Builder::merges(const Operand &operand, Real coefficient, Real constant) const
 {
     if (operand.node != kPending || operand.op != Operator::Sum)
     {
@@ -222,7 +222,7 @@ bool Builder::merges(const Operand &operand, double coefficient, double constant
     return true;
 }
 
-void Builder::add_term(std::size_t position, double coefficient, double &constant)
+void Builder::add_term(std::size_t position, Real coefficient, Real &constant)
 {
     const Operand &operand = stack_[position];
     if (!merges(operand, coefficient, constant))
@@ -239,7 +239,7 @@ void Builder::add_term(std::size_t position, double coefficient, double &constan
     }
 }
 
-void Builder::add_factor(std::size_t position, double &coefficient)
+void Builder::add_factor(std::size_t position, Real &coefficient)
 {
     const Operand &operand = stack_[position];
     const bool pending = operand.node == kPending && operand.op == Operator::Product;
@@ -265,7 +265,7 @@ void Builder::pop(std::size_t base)
     weights_.resize(start);
 }
 
-void Builder::replace(std::size_t base, Operator op, double constant)
+void Builder::replace(std::size_t base, Operator op, Real constant)
 {
     const std::size_t needed = to_size(stack_[base].first) + next_terms_.size();
     make_room(terms_, needed);

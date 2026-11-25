@@ -22,7 +22,7 @@ namespace
 struct Term
 {
     Offset node;
-    double weight;
+    Real weight;
 };
 
 using Key = std::uint64_t;
@@ -42,7 +42,7 @@ void flatten(const Graph &graph, Offset root, Offset index, Elements &elements)
             continue;
         }
         const std::span<const Offset> children = graph.children(term.node);
-        const std::span<const double> coefficients = graph.coefficients(term.node);
+        const std::span<const Real> coefficients = graph.coefficients(term.node);
         for (std::size_t k = children.size(); k > 0; --k)
         {
             stack.push_back({.node = children[k - 1], .weight = term.weight * coefficients[k - 1]});

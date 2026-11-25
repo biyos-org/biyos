@@ -126,14 +126,14 @@ std::string arity_text(const Shape &shape)
     return shape.most == shape.least ? least : least + " or more";
 }
 
-bool positive(double value) noexcept
+bool positive(Real value) noexcept
 {
     return !std::signbit(value) && std::fpclassify(value) != FP_ZERO;
 }
 
 }
 
-std::string_view fault(double value) noexcept
+std::string_view fault(Real value) noexcept
 {
     if (std::isnan(value))
     {
@@ -191,7 +191,7 @@ void check_variable(Index variable)
     }
 }
 
-void check_constant(double value)
+void check_constant(Real value)
 {
     if (!std::isfinite(value))
     {
@@ -199,7 +199,7 @@ void check_constant(double value)
     }
 }
 
-void check_constant(Operator op, double value)
+void check_constant(Operator op, Real value)
 {
     check_constant(value);
     if (shape_of(op).positive && !positive(value))
@@ -208,7 +208,7 @@ void check_constant(Operator op, double value)
     }
 }
 
-void check_coefficients(std::span<const double> coefficients, Offset children)
+void check_coefficients(std::span<const Real> coefficients, Offset children)
 {
     const auto n = to_offset(coefficients.size());
     if (n != children)

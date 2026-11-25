@@ -11,8 +11,8 @@ namespace biyos
 
 struct PiecewiseLinear
 {
-    std::span<const double> x;
-    std::span<const double> y;
+    std::span<const Real> x;
+    std::span<const Real> y;
 };
 
 class Points
@@ -23,20 +23,20 @@ class Points
     Offset size() const noexcept;
     PiecewiseLinear piecewise_linear(Offset index) const noexcept;
 
-    Offset add(std::span<const double> x, std::span<const double> y);
+    Offset add(std::span<const Real> x, std::span<const Real> y);
     void truncate(Offset size) noexcept;
 
   private:
     std::vector<Offset> starts_;
-    std::vector<double> x_;
-    std::vector<double> y_;
+    std::vector<Real> x_;
+    std::vector<Real> y_;
 };
 
-void check_points(std::span<const double> x, std::span<const double> y);
+void check_points(std::span<const Real> x, std::span<const Real> y);
 void check_piecewise_linear(Offset pwl, Offset size);
-std::size_t segment_of(std::span<const double> x, double t) noexcept;
-double slope_of(const PiecewiseLinear &pwl, std::size_t segment) noexcept;
-double value_at(const PiecewiseLinear &pwl, double t) noexcept;
-double slope_at(const PiecewiseLinear &pwl, double t) noexcept;
+std::size_t segment_of(std::span<const Real> x, Real t) noexcept;
+Real slope_of(const PiecewiseLinear &pwl, std::size_t segment) noexcept;
+Real value_at(const PiecewiseLinear &pwl, Real t) noexcept;
+Real slope_at(const PiecewiseLinear &pwl, Real t) noexcept;
 
 }

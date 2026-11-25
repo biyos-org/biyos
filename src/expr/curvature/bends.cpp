@@ -1,8 +1,11 @@
 #include "expr/curvature/bends.hpp"
 
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/intervals/interval.hpp"
+
+#include <limits>
 
 namespace biyos
 {
@@ -13,6 +16,7 @@ constexpr Domain kUnit{.closure = {-1.0, 1.0}};
 constexpr Domain kOpenUnit{.closure = {-1.0, 1.0}, .open_lower = true, .open_upper = true};
 constexpr Domain kFromOne{.closure = {1.0, kInfinity}};
 constexpr Interval kInverseE{0x1.78b56362cef37p-2, 0x1.78b56362cef38p-2};
+static_assert(std::numeric_limits<Real>::digits == 53);
 
 bool touches_lower(const Domain &domain, Interval inside) noexcept
 {

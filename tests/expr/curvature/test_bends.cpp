@@ -1,4 +1,5 @@
 #include "chords.hpp"
+#include "core/numbers.hpp"
 #include "expr/curvature/bends.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/graph/graph.hpp"
@@ -22,14 +23,15 @@ using biyos::Interval;
 using biyos::Monotonicity;
 using biyos::Operator;
 using biyos::Profile;
+using biyos::Real;
 using biyos::test::Parameters;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kInverseE = 0x1.78b56362cef38p-2;
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kInverseE = 0x1.78b56362cef38p-2;
 constexpr Interval kZero{0.0, 0.0};
 constexpr Interval kInverseEnclosure{0x1.78b56362cef37p-2, kInverseE};
 constexpr int kSteps = 4;
-constexpr double kReach = 0x1p-20;
+constexpr Real kReach = 0x1p-20;
 constexpr Parameters kFixed{.constant = 1.0, .weights = {1.0, 1.0, 1.0}, .exponent = 2.0};
 
 constexpr Curvature kAffine = Curvature::Affine;
@@ -212,7 +214,7 @@ Row row_of(const Edge &edge, Interval child, Class expected)
     return {edge.op, edge.shape, child, expected.curvature, expected.monotonicity};
 }
 
-void expect_edge(const Edge &edge, double low, double high)
+void expect_edge(const Edge &edge, Real low, Real high)
 {
     const Interval at = edge.at;
     expect_row(row_of(edge, {low, at.lower()}, edge.below));

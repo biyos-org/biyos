@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/numbers.hpp"
+
 namespace biyos
 {
 
@@ -7,10 +9,10 @@ constexpr int kRoundedSteps = 1;
 constexpr int kLibmUlps = 14;
 constexpr int kLibmSteps = 256;
 
-double shifted(double value, int steps) noexcept;
-double round_down(double value) noexcept;
-double round_up(double value) noexcept;
-double widen_down(double value) noexcept;
-double widen_up(double value) noexcept;
+Real shifted(Real value, int steps) noexcept;
+Real round_down(Real value) noexcept;
+Real round_up(Real value) noexcept;
+Real widen_down(Real value) noexcept;
+Real widen_up(Real value) noexcept;
 
 }

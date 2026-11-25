@@ -14,7 +14,7 @@ constexpr Offset kNoRemainder = -1;
 
 struct Parts
 {
-    double constant;
+    Real constant;
     std::vector<LinearTerm> linear;
     std::vector<QuadraticTerm> quadratic;
     Offset remainder;

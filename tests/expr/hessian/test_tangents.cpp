@@ -1,3 +1,4 @@
+#include "core/numbers.hpp"
 #include "expr/derivatives/partials.hpp"
 #include "expr/derivatives/value.hpp"
 #include "expr/graph/graph.hpp"
@@ -14,7 +15,6 @@
 #include <bit>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <vector>
@@ -22,11 +22,13 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::Block;
 using biyos::Graph;
 using biyos::Instruction;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::Tape;
 using biyos::Workspace;
 using biyos::test::binary;
@@ -36,13 +38,13 @@ using biyos::test::power;
 using biyos::test::sign_power;
 using biyos::test::unary;
 
-using Values = std::vector<double>;
+using Values = std::vector<Real>;
 
-constexpr double kStep = 1e-5;
-constexpr double kBound = 1e-6;
-constexpr double kRounding = 1e-12;
-constexpr double kNan = (std::numeric_limits<double>::quiet_NaN)();
-constexpr double kInfinity = (std::numeric_limits<double>::infinity)();
+constexpr Real kStep = 1e-5;
+constexpr Real kBound = 1e-6;
+constexpr Real kRounding = 1e-12;
+constexpr Real kNan = (std::numeric_limits<Real>::quiet_NaN)();
+constexpr Real kInfinity = (std::numeric_limits<Real>::infinity)();
 constexpr std::array kInterior{0.7, 1.9, -1.3, 0.3};
 constexpr std::array kDirection{0.6, -0.4, 0.9, 0.5};
 
@@ -53,20 +55,20 @@ struct Linear
 };
 
 void seed(const Instruction &instruction,
-          std::span<const double> direction,
+          std::span<const Real> direction,
           std::size_t lanes,
-          std::span<double> slots)
+          std::span<Real> slots)
 {
     ASSERT_TRUE(instruction.op == Operator::Variable || instruction.op == Operator::Constant);
     if (instruction.op == Operator::Variable)
     {
-        const std::span<const double> mine =
+        const std::span<const Real> mine =
             biyos::row(direction, biyos::place(instruction.payload), lanes);
         std::ranges::copy(mine, biyos::row(slots, instruction.target, lanes).begin());
     }
 }
 
-biyos::Frame frame_of(const Block &block, std::span<const double> point, Workspace &workspace)
+biyos::Frame frame_of(const Block &block, std::span<const Real> point, Workspace &workspace)
 {
     return {
         .point = point,
@@ -81,15 +83,15 @@ biyos::Frame frame_of(const Block &block, std::span<const double> point, Workspa
 
 Linear linear_at(const Graph &graph,
                  Offset root,
-                 std::span<const double> point,
-                 std::span<const double> direction,
+                 std::span<const Real> point,
+                 std::span<const Real> direction,
                  std::size_t lanes = 1)
 {
     const Tape tape(graph, std::span(&root, 1));
     Workspace workspace(tape, lanes);
     const Block &block = tape.blocks()[0];
     const biyos::Frame frame = frame_of(block, point, workspace);
-    const std::span<double> all = biyos::region(block, std::span(workspace.partials), lanes);
+    const std::span<Real> all = biyos::region(block, std::span(workspace.partials), lanes);
     Values slots(tape.width() * lanes, 0.0);
     Values spare(biyos::tangent_rows(tape) * lanes, 0.0);
     const std::size_t last = block.instructions.size() - 1;
@@ -101,7 +103,7 @@ Linear linear_at(const Graph &graph,
     }
     const Instruction &instruction = block.instructions[last];
     const std::size_t start = block.places[last] * lanes;
-    const std::span<double> mine = all.subspan(start, block.places[last + 1] * lanes - start);
+    const std::span<Real> mine = all.subspan(start, block.places[last + 1] * lanes - start);
     Values out(mine.size(), 0.0);
     biyos::evaluate(instruction, frame);
     biyos::partials_of(instruction, frame, mine);
@@ -109,7 +111,7 @@ Linear linear_at(const Graph &graph,
     return {{mine.begin(), mine.end()}, out};
 }
 
-Values shifted(std::span<const double> point, std::span<const double> direction, double step)
+Values shifted(std::span<const Real> point, std::span<const Real> direction, Real step)
 {
     Values moved(point.begin(), point.end());
     for (std::size_t j = 0; j < moved.size(); ++j)
@@ -121,9 +123,9 @@ Values shifted(std::span<const double> point, std::span<const double> direction,
 
 Values differences(const Graph &graph,
                    Offset root,
-                   std::span<const double> point,
-                   std::span<const double> direction,
-                   double step)
+                   std::span<const Real> point,
+                   std::span<const Real> direction,
+                   Real step)
 {
     const Values ahead =
         linear_at(graph, root, shifted(point, direction, step), direction).partials;
@@ -137,20 +139,20 @@ Values differences(const Graph &graph,
     return slopes;
 }
 
-double tolerance(double difference)
+Real tolerance(Real difference)
 {
     return kBound * (1.0 + std::fabs(difference));
 }
 
-bool converged(double fine, double coarse)
+bool converged(Real fine, Real coarse)
 {
     return std::isfinite(fine) && std::fabs(fine - coarse) <= tolerance(fine);
 }
 
 void expect_differences(const Graph &graph,
                         Offset root,
-                        std::span<const double> point,
-                        std::span<const double> direction)
+                        std::span<const Real> point,
+                        std::span<const Real> direction)
 {
     const Values found = linear_at(graph, root, point, direction).tangents;
     const Values fine = differences(graph, root, point, direction, kStep);
@@ -179,17 +181,17 @@ void expect_values(const Values &found, const Values &wanted)
             EXPECT_TRUE(std::isnan(found[k])) << found[k];
             continue;
         }
-        EXPECT_EQ(std::bit_cast<std::uint64_t>(found[k]), std::bit_cast<std::uint64_t>(wanted[k]))
+        EXPECT_EQ(std::bit_cast<Bits>(found[k]), std::bit_cast<Bits>(wanted[k]))
             << found[k] << " against " << wanted[k];
     }
 }
 
-double pairwise(double c, std::span<const double> x, std::span<const double> t, std::size_t k)
+Real pairwise(Real c, std::span<const Real> x, std::span<const Real> t, std::size_t k)
 {
-    double sum = 0.0;
+    Real sum = 0.0;
     for (std::size_t j = 0; j < x.size(); ++j)
     {
-        double term = j == k ? 0.0 : c * t[j];
+        Real term = j == k ? 0.0 : c * t[j];
         for (std::size_t i = 0; i < x.size(); ++i)
         {
             term *= i == k || i == j ? 1.0 : x[i];
@@ -235,7 +237,7 @@ TEST(TangentTest, Edges)
         unary(graph, Operator::Acosh, y),
     };
     const std::array direction{0.8, 0.3};
-    for (const double near : {0.1, 0.05})
+    for (const Real near : {0.1, 0.05})
     {
         SCOPED_TRACE(near);
         for (const Offset root : roots)
@@ -269,7 +271,7 @@ TEST(TangentTest, Product)
     for (std::size_t k = 0; k < x.size(); ++k)
     {
         SCOPED_TRACE(k);
-        const double wanted = pairwise(-1.5, x, t, k);
+        const Real wanted = pairwise(-1.5, x, t, k);
         EXPECT_NEAR(found[k], wanted, kRounding * (1.0 + std::fabs(wanted)));
     }
 }
@@ -320,7 +322,7 @@ TEST(TangentTest, Zeros)
         {kInfinity},
         {kInfinity, kInfinity},
     };
-    for (const double zero : {0.0, -0.0})
+    for (const Real zero : {0.0, -0.0})
     {
         const std::array point{zero, 2.0};
         for (std::size_t k = 0; k < roots.size(); ++k)

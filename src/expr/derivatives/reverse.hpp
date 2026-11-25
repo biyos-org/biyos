@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/numbers.hpp"
 #include "expr/derivatives/value.hpp"
 #include "expr/tape/tape.hpp"
 
@@ -15,22 +16,22 @@ struct Adjoints
     explicit Adjoints(const Tape &tape, std::size_t count = 1);
 
     std::size_t lanes;
-    std::vector<double> slots;
-    std::vector<double> shared;
-    std::vector<double> gradient;
-    std::vector<double> taken;
+    std::vector<Real> slots;
+    std::vector<Real> shared;
+    std::vector<Real> gradient;
+    std::vector<Real> taken;
 };
 
-void drain(std::span<double> from, std::span<double> into) noexcept;
+void drain(std::span<Real> from, std::span<Real> into) noexcept;
 
 void retrace(const Block &block,
              std::size_t output,
              const Workspace &workspace,
              Adjoints &adjoints,
-             std::span<double> gradient) noexcept;
+             std::span<Real> gradient) noexcept;
 void reverse(const Block &block,
              const Workspace &workspace,
              Adjoints &adjoints,
-             std::span<double> gradient) noexcept;
+             std::span<Real> gradient) noexcept;
 
 }

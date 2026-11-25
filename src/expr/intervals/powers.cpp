@@ -1,5 +1,6 @@
 #include "expr/intervals/powers.hpp"
 
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "expr/intervals/interval.hpp"
 #include "expr/intervals/rounding.hpp"
@@ -18,12 +19,12 @@ constexpr Interval kOne{1.0, 1.0};
 
 Interval corners(Interval base, Interval exponent) noexcept
 {
-    const double first = std::pow(base.lower(), exponent.lower());
-    const double second = std::pow(base.lower(), exponent.upper());
-    const double third = std::pow(base.upper(), exponent.lower());
-    const double fourth = std::pow(base.upper(), exponent.upper());
-    const double low = (std::min)({first, second, third, fourth});
-    const double high = (std::max)({first, second, third, fourth});
+    const Real first = std::pow(base.lower(), exponent.lower());
+    const Real second = std::pow(base.lower(), exponent.upper());
+    const Real third = std::pow(base.upper(), exponent.lower());
+    const Real fourth = std::pow(base.upper(), exponent.upper());
+    const Real low = (std::min)({first, second, third, fourth});
+    const Real high = (std::max)({first, second, third, fourth});
     return {widen_down(low), widen_up(high)};
 }
 
@@ -48,7 +49,7 @@ Interval positive_base(Interval base, Interval exponent) noexcept
     return meet(corners(inside, exponent), kNonnegative);
 }
 
-bool is_even(double whole) noexcept
+bool is_even(Real whole) noexcept
 {
     return std::fpclassify(std::fmod(whole, 2.0)) == FP_ZERO;
 }
@@ -76,7 +77,7 @@ Interval negative_base(Interval base, Interval exponent) noexcept
     return hull(even, odd);
 }
 
-double signed_power(double base, double exponent) noexcept
+Real signed_power(Real base, Real exponent) noexcept
 {
     return std::copysign(std::pow(std::fabs(base), exponent), base);
 }
@@ -92,14 +93,14 @@ Interval power(Interval base, Interval exponent) noexcept
     return hull(positive_base(base, exponent), negative_base(base, exponent));
 }
 
-Interval sign_power(Interval base, double exponent) noexcept
+Interval sign_power(Interval base, Real exponent) noexcept
 {
     if (base.is_empty())
     {
         return base;
     }
-    const double lower = widen_down(signed_power(base.lower(), exponent));
-    const double upper = widen_up(signed_power(base.upper(), exponent));
+    const Real lower = widen_down(signed_power(base.lower(), exponent));
+    const Real upper = widen_up(signed_power(base.upper(), exponent));
     return meet(Interval(lower, upper), signs(base, 0.0));
 }
 

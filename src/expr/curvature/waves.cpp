@@ -1,5 +1,6 @@
 #include "expr/curvature/waves.hpp"
 
+#include "core/numbers.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/intervals/interval.hpp"
 
@@ -7,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+#include <limits>
 #include <optional>
 
 namespace biyos
@@ -15,30 +17,31 @@ namespace biyos
 namespace
 {
 
-constexpr double kHalfPiDown = 0x1.921fb54442d18p+0;
-constexpr double kHalfPiUp = 0x1.921fb54442d19p+0;
-constexpr double kFar = 0x1p52;
+constexpr Real kHalfPiDown = 0x1.921fb54442d18p+0;
+constexpr Real kHalfPiUp = 0x1.921fb54442d19p+0;
+constexpr Real kFar = 0x1p52;
+static_assert(std::numeric_limits<Real>::digits == 53);
 constexpr std::int64_t kWidest = 2;
 constexpr std::int64_t kTurn = 4;
 
-double upper_factor(double quarter) noexcept
+Real upper_factor(Real quarter) noexcept
 {
     return quarter < 0.0 ? kHalfPiDown : kHalfPiUp;
 }
 
-double lower_factor(double quarter) noexcept
+Real lower_factor(Real quarter) noexcept
 {
     return quarter < 0.0 ? kHalfPiUp : kHalfPiDown;
 }
 
-std::optional<std::int64_t> quarter_below(double value) noexcept
+std::optional<std::int64_t> quarter_below(Real value) noexcept
 {
     if (!(std::fabs(value) <= kFar))
     {
         return std::nullopt;
     }
-    const double guess = std::floor(value / kHalfPiDown);
-    for (const double quarter : {guess, guess - 1.0})
+    const Real guess = std::floor(value / kHalfPiDown);
+    for (const Real quarter : {guess, guess - 1.0})
     {
         if (std::fma(quarter, upper_factor(quarter), -value) <= 0.0)
         {
@@ -48,14 +51,14 @@ std::optional<std::int64_t> quarter_below(double value) noexcept
     return std::nullopt;
 }
 
-std::optional<std::int64_t> quarter_above(double value) noexcept
+std::optional<std::int64_t> quarter_above(Real value) noexcept
 {
     if (!(std::fabs(value) <= kFar))
     {
         return std::nullopt;
     }
-    const double guess = std::ceil(value / kHalfPiDown);
-    for (const double quarter : {guess, guess + 1.0})
+    const Real guess = std::ceil(value / kHalfPiDown);
+    for (const Real quarter : {guess, guess + 1.0})
     {
         if (std::fma(quarter, lower_factor(quarter), -value) >= 0.0)
         {

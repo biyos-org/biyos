@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/numbers.hpp"
 #include "expr/graph/points.hpp"
 #include "expr/tape/tape.hpp"
 
@@ -13,12 +14,12 @@ namespace biyos
 
 struct Frame
 {
-    std::span<const double> point;
+    std::span<const Real> point;
     std::span<const std::uint32_t> operands;
-    std::span<const double> weights;
-    std::span<double> slots;
-    std::span<double> result;
-    std::span<double> spare;
+    std::span<const Real> weights;
+    std::span<Real> slots;
+    std::span<Real> result;
+    std::span<Real> spare;
     std::size_t lanes;
 };
 
@@ -27,16 +28,16 @@ inline std::size_t place(std::uint64_t payload) noexcept
     return static_cast<std::size_t>(payload);
 }
 
-inline double constant_of(const Instruction &instruction) noexcept
+inline Real constant_of(const Instruction &instruction) noexcept
 {
-    return std::bit_cast<double>(instruction.payload);
+    return std::bit_cast<Real>(instruction.payload);
 }
 
 inline PiecewiseLinear piecewise_linear_of(const Instruction &instruction,
-                                           std::span<const double> weights) noexcept
+                                           std::span<const Real> weights) noexcept
 {
     const std::size_t n = instruction.second;
-    const std::span<const double> points = weights.subspan(place(instruction.payload), 2 * n);
+    const std::span<const Real> points = weights.subspan(place(instruction.payload), 2 * n);
     return {.x = points.first(n), .y = points.subspan(n)};
 }
 
@@ -46,9 +47,9 @@ std::span<T> row(std::span<T> items, std::size_t index, std::size_t lanes) noexc
     return items.subspan(index * lanes, lanes);
 }
 
-inline std::span<const double> row(const Frame &frame, std::uint32_t slot) noexcept
+inline std::span<const Real> row(const Frame &frame, std::uint32_t slot) noexcept
 {
-    return row(std::span<const double>(frame.slots), slot, frame.lanes);
+    return row(std::span<const Real>(frame.slots), slot, frame.lanes);
 }
 
 inline std::span<const std::uint32_t> listed(const Instruction &instruction,

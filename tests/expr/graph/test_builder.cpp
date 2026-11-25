@@ -19,21 +19,22 @@ using biyos::Builder;
 using biyos::Graph;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::test::refusal;
 
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kHuge = 1e200;
-constexpr double kTiny = 1e-200;
-constexpr double kLargest = (std::numeric_limits<double>::max)();
-constexpr double kSmallest = std::numeric_limits<double>::denorm_min();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kHuge = 1e200;
+constexpr Real kTiny = 1e-200;
+constexpr Real kLargest = (std::numeric_limits<Real>::max)();
+constexpr Real kSmallest = std::numeric_limits<Real>::denorm_min();
 
 std::vector<Offset> ids(std::span<const Offset> nodes)
 {
     return {nodes.begin(), nodes.end()};
 }
 
-void expect_values(std::span<const double> found, const std::vector<double> &wanted)
+void expect_values(std::span<const Real> found, const std::vector<Real> &wanted)
 {
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < wanted.size(); ++k)
@@ -50,10 +51,10 @@ Offset unary(Graph &graph, Operator op, Offset child)
     return build.finish();
 }
 
-Offset sum_of(Graph &graph, Offset start, Offset size, double constant)
+Offset sum_of(Graph &graph, Offset start, Offset size, Real constant)
 {
     Builder build(graph);
-    std::vector<double> coefficients;
+    std::vector<Real> coefficients;
     for (Offset k = 0; k < size; ++k)
     {
         build.node(start + k);
@@ -71,7 +72,7 @@ void add_variables(Builder &build, int n)
     }
 }
 
-Offset nested_sum(Graph &graph, double constant, double weight, double outer, double scale)
+Offset nested_sum(Graph &graph, Real constant, Real weight, Real outer, Real scale)
 {
     Builder build(graph);
     build.variable(0);
@@ -80,7 +81,7 @@ Offset nested_sum(Graph &graph, double constant, double weight, double outer, do
     return build.finish();
 }
 
-Offset nested_product(Graph &graph, double inner, double outer)
+Offset nested_product(Graph &graph, Real inner, Real outer)
 {
     Builder build(graph);
     build.variable(0);
