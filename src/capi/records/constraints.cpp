@@ -12,6 +12,8 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
+using biyos::Session;
 using biyos::capi::delete_tolerances;
 using biyos::capi::get_tolerances;
 using biyos::capi::guarded;
@@ -42,14 +44,14 @@ biyos::Constraint bounded(biyos::Constraint constraint,
     return constraint;
 }
 
-void add_constraints(BIYOS_model &model,
+void add_constraints(Session &session,
                      BIYOS_index n,
                      const BIYOS_index *functions,
                      const BIYOS_real *lower,
                      const BIYOS_real *upper,
                      BIYOS_index *start)
 {
-    biyos::Model &core = writable(model);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -66,8 +68,8 @@ void add_constraints(BIYOS_model &model,
         };
         added.push_back(bounded(free, k, lower, upper));
     }
-    const biyos::Index index = core.n_constraints();
-    core.add_constraints(added);
+    const biyos::Index index = model.n_constraints();
+    model.add_constraints(added);
     if (start != nullptr)
     {
         *start = index;
@@ -75,25 +77,25 @@ void add_constraints(BIYOS_model &model,
 }
 
 template <typename Selection>
-void set_bounds(BIYOS_model &model,
+void set_bounds(Session &session,
                 Selection selection,
                 const BIYOS_real *lower,
                 const BIYOS_real *upper)
 {
-    biyos::Model &core = writable(model);
-    const auto changed = selected(core, Family::Constraint, selection);
+    Model &model = writable(session);
+    const auto changed = selected(model, Family::Constraint, selection);
     std::vector<biyos::Constraint> constraints;
     constraints.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
-        constraints.push_back(bounded(core.constraint(changed[k]), k, lower, upper));
+        constraints.push_back(bounded(model.constraint(changed[k]), k, lower, upper));
     }
-    core.set_constraints(changed, constraints);
+    model.set_constraints(changed, constraints);
 }
 
-void n_constraints(const BIYOS_model &model, BIYOS_index *n)
+void n_constraints(const Session &session, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_constraints();
+    *require(n, "n") = session.model().n_constraints();
 }
 
 void copy_out(const biyos::Constraint &constraint,
@@ -117,15 +119,15 @@ void copy_out(const biyos::Constraint &constraint,
 }
 
 template <typename Selection>
-void get_constraints(const BIYOS_model &model,
+void get_constraints(const Session &session,
                      Selection selection,
                      BIYOS_index *functions,
                      BIYOS_real *lower,
                      BIYOS_real *upper)
 {
-    const auto chosen = selected(model.core, Family::Constraint, selection);
+    const auto chosen = selected(session.model(), Family::Constraint, selection);
     const std::vector<biyos::Constraint> constraints =
-        picked(model.core, &biyos::Model::constraint, chosen);
+        picked(session.model(), &Model::constraint, chosen);
     for (std::size_t k = 0; k < constraints.size(); ++k)
     {
         copy_out(constraints[k], k, functions, lower, upper);
@@ -133,9 +135,9 @@ void get_constraints(const BIYOS_model &model,
 }
 
 template <typename Selection>
-void get_bounds(const BIYOS_model &model, Selection selection, BIYOS_real *lower, BIYOS_real *upper)
+void get_bounds(const Session &session, Selection selection, BIYOS_real *lower, BIYOS_real *upper)
 {
-    get_constraints(model, selection, nullptr, lower, upper);
+    get_constraints(session, selection, nullptr, lower, upper);
 }
 
 }

@@ -10,6 +10,8 @@
 #include <span>
 
 using biyos::Family;
+using biyos::Model;
+using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
@@ -23,32 +25,30 @@ using biyos::capi::selected;
 namespace
 {
 
-std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> functions)
+std::size_t count_of(const Model &model, std::span<const biyos::Index> functions)
 {
     std::size_t count = 0;
     for (const biyos::Index function : functions)
     {
-        count += core.linear_terms(function, function + 1).size();
+        count += model.linear_terms(function, function + 1).size();
     }
     return count;
 }
 
 template <typename Selection>
-void n_row_terms(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
+void n_row_terms(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(model.core, Family::Function, selection);
-    const std::size_t count = count_of(model.core, chosen);
+    const auto chosen = selected(session.model(), Family::Function, selection);
+    const std::size_t count = count_of(session.model(), chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
 
-void write_rows(const biyos::Model &core,
-                std::span<const biyos::Index> functions,
-                const Coordinates &out)
+void write_rows(const Model &model, std::span<const biyos::Index> functions, const Coordinates &out)
 {
     std::size_t k = 0;
     for (const biyos::Index function : functions)
     {
-        for (const biyos::LinearTerm &term : core.linear_terms(function, function + 1))
+        for (const biyos::LinearTerm &term : model.linear_terms(function, function + 1))
         {
             biyos::capi::put_term(out, k, function, term);
             ++k;
@@ -56,34 +56,34 @@ void write_rows(const biyos::Model &core,
     }
 }
 
-void get_listed(const BIYOS_model &model,
+void get_listed(const Session &session,
                 List list,
                 BIYOS_offset capacity,
                 BIYOS_offset *nnz,
                 const Coordinates &out)
 {
-    const auto chosen = selected(model.core, Family::Function, list);
-    const std::size_t count = count_of(model.core, chosen);
+    const auto chosen = selected(session.model(), Family::Function, list);
+    const std::size_t count = count_of(session.model(), chosen);
     check_capacity(capacity, count);
-    write_rows(model.core, chosen, out);
+    write_rows(session.model(), chosen, out);
     if (nnz != nullptr)
     {
         *nnz = to_offset(count);
     }
 }
 
-void get_ranged(const BIYOS_model &model,
+void get_ranged(const Session &session,
                 Range range,
                 BIYOS_offset capacity,
                 BIYOS_offset *counts,
                 BIYOS_index *variables,
                 BIYOS_real *values)
 {
-    const biyos::Model &core = model.core;
-    const std::span<const biyos::LinearTerm> terms = core.linear_terms(range.start, range.stop);
+    const Model &model = session.model();
+    const std::span<const biyos::LinearTerm> terms = model.linear_terms(range.start, range.stop);
     check_capacity(capacity, terms.size());
     const auto record = [&](biyos::Index j)
-    { return core.linear_terms(range.start + j, range.start + j + 1); };
+    { return model.linear_terms(range.start + j, range.start + j + 1); };
     biyos::capi::write_counts(to_size(range.stop - range.start), counts, record);
     biyos::capi::unpack(terms, terms.size(), variables, values);
 }

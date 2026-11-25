@@ -13,6 +13,8 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
+using biyos::Session;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
@@ -25,23 +27,23 @@ using biyos::capi::writable;
 namespace
 {
 
-void add_empty(BIYOS_model &model, BIYOS_index n, BIYOS_index *start)
+void add_empty(Session &session, BIYOS_index n, BIYOS_index *start)
 {
-    biyos::Model &core = writable(model);
+    Model &model = writable(session);
     const std::size_t size = length(n);
-    core.check_room(size, 0);
-    const biyos::Index index = core.n_functions();
+    model.check_room(size, 0);
+    const biyos::Index index = model.n_functions();
     const std::vector<biyos::Offset> starts(size + 1, 0);
-    core.add_functions(std::vector<biyos::Real>(size, 0.0), starts, {});
+    model.add_functions(std::vector<biyos::Real>(size, 0.0), starts, {});
     if (start != nullptr)
     {
         *start = index;
     }
 }
 
-void n_functions(const BIYOS_model &model, BIYOS_index *n)
+void n_functions(const Session &session, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_functions();
+    *require(n, "n") = session.model().n_functions();
 }
 
 void write_constants(std::span<const biyos::Real> found, BIYOS_real *constants)
@@ -52,43 +54,43 @@ void write_constants(std::span<const biyos::Real> found, BIYOS_real *constants)
     }
 }
 
-void check_chosen(const biyos::Model &core, std::span<const biyos::Index> chosen)
+void check_chosen(const Model &model, std::span<const biyos::Index> chosen)
 {
     for (const biyos::Index function : chosen)
     {
-        biyos::check_index("function", function, core.n_functions());
+        biyos::check_index("function", function, model.n_functions());
     }
 }
 
 template <typename Selection>
-void add_constants(BIYOS_model &model, Selection selection, const BIYOS_real *constants)
+void add_constants(Session &session, Selection selection, const BIYOS_real *constants)
 {
-    biyos::Model &core = writable(model);
-    const auto chosen = selected(core, Family::Function, selection);
-    check_chosen(core, chosen);
+    Model &model = writable(session);
+    const auto chosen = selected(model, Family::Function, selection);
+    check_chosen(model, chosen);
     if (constants != nullptr)
     {
-        core.add_constants(chosen, std::span(constants, chosen.size()));
+        model.add_constants(chosen, std::span(constants, chosen.size()));
     }
 }
 
 template <typename Selection>
-void set_constants(BIYOS_model &model, Selection selection, const BIYOS_real *constants)
+void set_constants(Session &session, Selection selection, const BIYOS_real *constants)
 {
-    biyos::Model &core = writable(model);
-    const auto chosen = selected(core, Family::Function, selection);
-    check_chosen(core, chosen);
+    Model &model = writable(session);
+    const auto chosen = selected(model, Family::Function, selection);
+    check_chosen(model, chosen);
     if (constants != nullptr)
     {
-        core.set_constants(chosen, std::span(constants, chosen.size()));
+        model.set_constants(chosen, std::span(constants, chosen.size()));
     }
 }
 
 template <typename Selection>
-void get_constants(const BIYOS_model &model, Selection selection, BIYOS_real *constants)
+void get_constants(const Session &session, Selection selection, BIYOS_real *constants)
 {
-    const auto chosen = selected(model.core, Family::Function, selection);
-    write_constants(picked(model.core, &biyos::Model::constant, chosen), constants);
+    const auto chosen = selected(session.model(), Family::Function, selection);
+    write_constants(picked(session.model(), &Model::constant, chosen), constants);
 }
 
 }

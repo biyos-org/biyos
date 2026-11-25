@@ -12,6 +12,8 @@
 namespace biyos
 {
 
+class Session;
+
 enum class EventKind
 {
     Message = BIYOS_EVTKND_MSG,
@@ -48,7 +50,7 @@ struct Event
     std::string module;
     std::string text;
     std::vector<Field> fields;
-    const BIYOS_model *model = nullptr;
+    const Session *model = nullptr;
 };
 
 using Hook = std::function<void(const Event &)>;

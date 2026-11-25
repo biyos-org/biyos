@@ -52,7 +52,7 @@ class Evaluation
   public:
     using Point = evaluation::Point;
 
-    Evaluation(Env &env, const Model &model, const BIYOS_model *handle = nullptr);
+    Evaluation(Env &env, const Model &model, const Session *session = nullptr);
 
     const Pattern &jacobian_pattern() const noexcept;
     const Lower &hessian_pattern() const noexcept;
@@ -80,7 +80,7 @@ class Evaluation
 
     Env &env_;
     const Model &model_;
-    const BIYOS_model *handle_;
+    const Session *session_;
     evaluation::Program program_;
     Workspace workspace_;
     Adjoints adjoints_;

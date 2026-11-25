@@ -11,9 +11,12 @@
 #include <span>
 #include <vector>
 
+using biyos::Model;
+using biyos::Session;
 using biyos::to_index;
 using biyos::capi::check_capacity;
 using biyos::capi::guarded;
+using biyos::capi::handle_of;
 using biyos::capi::length;
 using biyos::capi::require;
 using biyos::capi::writable;
@@ -34,7 +37,7 @@ struct Caller
     {
         const BIYOS_cbreq view{
             .size = sizeof(BIYOS_cbreq),
-            .mdl = request.model,
+            .mdl = handle_of(request.session),
             .cb = request.callback,
             .thread = request.thread,
             .x = start_of(request.x),
@@ -45,34 +48,34 @@ struct Caller
     }
 };
 
-void add_callback(BIYOS_model &model,
+void add_callback(Session &session,
                   BIYOS_index n,
                   const BIYOS_index *functions,
                   void *data,
                   BIYOS_index *cb)
 {
-    biyos::Model &core = writable(model);
-    const biyos::Index index = core.add_callback(biyos::capi::listed(n, functions, "fun"), data);
+    Model &model = writable(session);
+    const biyos::Index index = model.add_callback(biyos::capi::listed(n, functions, "fun"), data);
     if (cb != nullptr)
     {
         *cb = index;
     }
 }
 
-void set_values(BIYOS_model &model, BIYOS_index cb, BIYOS_cbf f)
+void set_values(Session &session, BIYOS_index cb, BIYOS_cbf f)
 {
-    biyos::Model &core = writable(model);
-    core.set_callback_function(cb, Caller{require(f, "f")});
+    Model &model = writable(session);
+    model.set_callback_function(cb, Caller{require(f, "f")});
 }
 
-void set_jacobian(BIYOS_model &model,
+void set_jacobian(Session &session,
                   BIYOS_index cb,
                   BIYOS_offset nnz,
                   const BIYOS_index *functions,
                   const BIYOS_index *variables,
                   BIYOS_cbg g)
 {
-    biyos::Model &core = writable(model);
+    Model &model = writable(session);
     const Caller caller{require(g, "g")};
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
@@ -80,17 +83,17 @@ void set_jacobian(BIYOS_model &model,
         require(functions, "fun");
         require(variables, "var");
     }
-    core.set_callback_jacobian(cb, {functions, size}, {variables, size}, caller);
+    model.set_callback_jacobian(cb, {functions, size}, {variables, size}, caller);
 }
 
-void set_hessian(BIYOS_model &model,
+void set_hessian(Session &session,
                  BIYOS_index cb,
                  BIYOS_offset nnz,
                  const BIYOS_index *rows,
                  const BIYOS_index *columns,
                  BIYOS_cbh h)
 {
-    biyos::Model &core = writable(model);
+    Model &model = writable(session);
     const Caller caller{require(h, "h")};
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
@@ -98,38 +101,38 @@ void set_hessian(BIYOS_model &model,
         require(rows, "var1");
         require(columns, "var2");
     }
-    core.set_callback_hessian(cb, {rows, size}, {columns, size}, caller);
+    model.set_callback_hessian(cb, {rows, size}, {columns, size}, caller);
 }
 
-void set_product(BIYOS_model &model, BIYOS_index cb, BIYOS_cbhv hv)
+void set_product(Session &session, BIYOS_index cb, BIYOS_cbhv hv)
 {
-    biyos::Model &core = writable(model);
-    core.set_callback_hessian_product(cb, Caller{require(hv, "hv")});
+    Model &model = writable(session);
+    model.set_callback_hessian_product(cb, Caller{require(hv, "hv")});
 }
 
-void set_data(BIYOS_model &model, BIYOS_index cb, void *data)
+void set_data(Session &session, BIYOS_index cb, void *data)
 {
-    writable(model).set_callback_data(cb, data);
+    writable(session).set_callback_data(cb, data);
 }
 
-void get_data(const BIYOS_model &model, BIYOS_index cb, void **data)
+void get_data(const Session &session, BIYOS_index cb, void **data)
 {
     void **out = require(data, "data");
-    *out = model.core.callback(cb).data;
+    *out = session.model().callback(cb).data;
 }
 
-void n_functions(const BIYOS_model &model, BIYOS_index cb, BIYOS_index *n)
+void n_functions(const Session &session, BIYOS_index cb, BIYOS_index *n)
 {
     BIYOS_index *out = require(n, "n");
-    *out = to_index(model.core.callback(cb).covered.size());
+    *out = to_index(session.model().callback(cb).covered.size());
 }
 
-void get_functions(const BIYOS_model &model,
+void get_functions(const Session &session,
                    BIYOS_index cb,
                    BIYOS_index capacity,
                    BIYOS_index *functions)
 {
-    const std::vector<biyos::Index> &covered = model.core.callback(cb).covered;
+    const std::vector<biyos::Index> &covered = session.model().callback(cb).covered;
     check_capacity(capacity, covered.size(), "cap", "functions");
     if (functions != nullptr)
     {

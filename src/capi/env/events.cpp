@@ -9,9 +9,11 @@
 #include <cstddef>
 #include <vector>
 
+using biyos::Session;
 using biyos::to_index;
 using biyos::to_size;
 using biyos::capi::guarded;
+using biyos::capi::handle_of;
 using biyos::capi::require;
 using biyos::capi::writable;
 
@@ -63,21 +65,21 @@ void delete_hook(biyos::Env &env, BIYOS_index index)
     writable(env).events().delete_hook(index);
 }
 
-void add_model_hook(BIYOS_model &model,
+void add_model_hook(Session &session,
                     BIYOS_hook hook,
                     void *data,
                     BIYOS_int kind,
                     BIYOS_int level,
                     BIYOS_index *index)
 {
-    writable(model);
-    add_to(model.hooks, model.handle.env(), hook, data, kind, level, index);
+    writable(session);
+    add_to(session, session.env(), hook, data, kind, level, index);
 }
 
-void delete_model_hook(BIYOS_model &model, BIYOS_index index)
+void delete_model_hook(Session &session, BIYOS_index index)
 {
-    writable(model);
-    model.hooks.delete_hook(index);
+    writable(session);
+    session.delete_hook(index);
 }
 
 const biyos::Field *field_of(const BIYOS_event *event, BIYOS_index field)
@@ -162,5 +164,5 @@ const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx)
 
 const BIYOS_model *BIYOS_getevtmdl(const BIYOS_event *evt)
 {
-    return evt == nullptr ? nullptr : evt->core->model;
+    return evt == nullptr ? nullptr : handle_of(evt->core->model);
 }

@@ -17,7 +17,7 @@ namespace biyos::capi
 {
 
 inline void describe_failure(Event &event,
-                             const BIYOS_model *model,
+                             const Session *model,
                              BIYOS_status status,
                              std::string_view text)
 {
@@ -28,7 +28,7 @@ inline void describe_failure(Event &event,
 }
 
 inline void announce(Env &env,
-                     const BIYOS_model *model,
+                     const Session *model,
                      Hooks *hooks,
                      ErrorKind kind,
                      std::string_view text) noexcept
@@ -39,7 +39,7 @@ inline void announce(Env &env,
 }
 
 inline void report(Env *env,
-                   const BIYOS_model *model,
+                   const Session *model,
                    Hooks *hooks,
                    ErrorKind kind,
                    std::string_view text) noexcept
@@ -56,7 +56,7 @@ inline void report(Env *env,
 }
 
 inline BIYOS_status fail(Env *env,
-                         const BIYOS_model *model,
+                         const Session *model,
                          Hooks *hooks,
                          ErrorKind kind,
                          std::string_view message) noexcept
@@ -76,7 +76,7 @@ inline BIYOS_status fail(Env *env,
 }
 
 template <std::invocable Body>
-BIYOS_status guard(Env *env, const BIYOS_model *model, Hooks *hooks, Body &&body) noexcept
+BIYOS_status guard(Env *env, const Session *model, Hooks *hooks, Body &&body) noexcept
 {
     try
     {

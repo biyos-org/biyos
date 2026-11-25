@@ -97,9 +97,9 @@ TEST(FirewallTest, ErrorMessage)
 TEST(FirewallTest, FailureModel)
 {
     const int address = 0;
-    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    const auto *model = reinterpret_cast<const biyos::Session *>(&address);
     biyos::Env env;
-    std::vector<const BIYOS_model *> seen;
+    std::vector<const biyos::Session *> seen;
     const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
     env.events().add_hook(EventKind::Message, EventLevel::Error, keep);
     EXPECT_EQ(biyos::capi::guard(&env, model, nullptr, [] { throw std::bad_alloc(); }),
@@ -108,13 +108,13 @@ TEST(FirewallTest, FailureModel)
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, nullptr);
-    EXPECT_EQ(seen, (std::vector<const BIYOS_model *>{model, nullptr}));
+    EXPECT_EQ(seen, (std::vector<const biyos::Session *>{model, nullptr}));
 }
 
 TEST(FirewallTest, ModelHooks)
 {
     const int address = 0;
-    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    const auto *model = reinterpret_cast<const biyos::Session *>(&address);
     biyos::Env env;
     biyos::Hooks hooks;
     std::vector<std::string> seen;

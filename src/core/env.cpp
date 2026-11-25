@@ -103,7 +103,7 @@ ErrorScope *Env::scope() noexcept
     return delivery == nullptr ? nullptr : delivery->scope;
 }
 
-void Env::record_error(ErrorKind kind, std::string_view text, const BIYOS_model *model) noexcept
+void Env::record_error(ErrorKind kind, std::string_view text, const Session *model) noexcept
 {
     ErrorScope *const open = scope();
     if (open != nullptr && !open->swapped_)

@@ -11,6 +11,8 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
+using biyos::Session;
 using biyos::to_index;
 using biyos::capi::entry_or;
 using biyos::capi::guarded;
@@ -70,7 +72,7 @@ std::vector<biyos::Objective> new_objectives(std::span<const biyos::Index> funct
     return added;
 }
 
-void add_objectives(BIYOS_model &model,
+void add_objectives(Session &session,
                     BIYOS_index n,
                     const BIYOS_index *functions,
                     const BIYOS_int *senses,
@@ -78,16 +80,16 @@ void add_objectives(BIYOS_model &model,
                     const BIYOS_real *weights,
                     BIYOS_index *start)
 {
-    biyos::Model &core = writable(model);
+    Model &model = writable(session);
     const std::span<const biyos::Index> owners = listed(n, functions, "fun");
-    core.check_objective_room(owners.size());
+    model.check_objective_room(owners.size());
     const Fields fields{
         .senses = senses,
         .priorities = priorities,
         .weights = weights,
     };
-    const biyos::Index index = core.n_objectives();
-    core.add_objectives(new_objectives(owners, index, fields));
+    const biyos::Index index = model.n_objectives();
+    model.add_objectives(new_objectives(owners, index, fields));
     if (start != nullptr)
     {
         *start = index;
@@ -95,22 +97,22 @@ void add_objectives(BIYOS_model &model,
 }
 
 template <typename Selection>
-void set_objectives(BIYOS_model &model, Selection selection, const Fields &fields)
+void set_objectives(Session &session, Selection selection, const Fields &fields)
 {
-    biyos::Model &core = writable(model);
-    const auto changed = selected(core, Family::Objective, selection);
+    Model &model = writable(session);
+    const auto changed = selected(model, Family::Objective, selection);
     std::vector<biyos::Objective> objectives;
     objectives.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
-        objectives.push_back(given(core.objective(changed[k]), k, fields));
+        objectives.push_back(given(model.objective(changed[k]), k, fields));
     }
-    core.set_objectives(changed, objectives);
+    model.set_objectives(changed, objectives);
 }
 
-void n_objectives(const BIYOS_model &model, BIYOS_index *n)
+void n_objectives(const Session &session, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_objectives();
+    *require(n, "n") = session.model().n_objectives();
 }
 
 void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &outputs)
@@ -124,11 +126,11 @@ void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &o
 }
 
 template <typename Selection>
-void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &outputs)
+void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
-    const auto chosen = selected(model.core, Family::Objective, selection);
+    const auto chosen = selected(session.model(), Family::Objective, selection);
     const std::vector<biyos::Objective> objectives =
-        picked(model.core, &biyos::Model::objective, chosen);
+        picked(session.model(), &Model::objective, chosen);
     for (std::size_t k = 0; k < objectives.size(); ++k)
     {
         copy_out(objectives[k], k, outputs);

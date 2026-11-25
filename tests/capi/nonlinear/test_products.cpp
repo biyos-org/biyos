@@ -211,7 +211,7 @@ Held summed(Held held, const Added &added)
 
 std::string difference(const Model &left, const Model &right)
 {
-    return biyos::difference(left.get()->core, right.get()->core);
+    return biyos::difference(left.get()->model(), right.get()->model());
 }
 
 void expect_kept(const Env &env,

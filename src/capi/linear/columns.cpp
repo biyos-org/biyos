@@ -15,6 +15,8 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
+using biyos::Session;
 using biyos::to_index;
 using biyos::to_offset;
 using biyos::to_size;
@@ -37,9 +39,9 @@ struct Columns
     std::vector<biyos::Real> values;
 };
 
-std::vector<biyos::Offset> every_start(const biyos::Model &core)
+std::vector<biyos::Offset> every_start(const Model &model)
 {
-    return biyos::variable_starts(core, 0, core.n_variables());
+    return biyos::variable_starts(model, 0, model.n_variables());
 }
 
 std::size_t count_of(std::span<const biyos::Offset> starts, std::span<const biyos::Index> variables)
@@ -54,7 +56,7 @@ std::size_t count_of(std::span<const biyos::Offset> starts, std::span<const biyo
     return count;
 }
 
-Columns columns_of(const biyos::Model &core, std::vector<biyos::Offset> starts)
+Columns columns_of(const Model &model, std::vector<biyos::Offset> starts)
 {
     const auto total = to_size(starts.back());
     Columns columns{
@@ -62,7 +64,7 @@ Columns columns_of(const biyos::Model &core, std::vector<biyos::Offset> starts)
         .functions = std::vector<biyos::Index>(total),
         .values = std::vector<biyos::Real>(total),
     };
-    biyos::variable_terms(core, 0, columns.starts, columns.functions, columns.values);
+    biyos::variable_terms(model, 0, columns.starts, columns.functions, columns.values);
     return columns;
 }
 
@@ -85,45 +87,45 @@ void write_columns(const Columns &columns,
 }
 
 template <typename Selection>
-void n_column_terms(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
+void n_column_terms(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(model.core, Family::Variable, selection);
-    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "columns");
-    const std::size_t count = count_of(every_start(model.core), chosen);
+    const auto chosen = selected(session.model(), Family::Variable, selection);
+    const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
+    const std::size_t count = count_of(every_start(session.model()), chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
 
-void get_listed(const BIYOS_model &model,
+void get_listed(const Session &session,
                 List list,
                 BIYOS_offset capacity,
                 BIYOS_offset *nnz,
                 const Coordinates &out)
 {
-    const auto chosen = selected(model.core, Family::Variable, list);
-    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "columns");
-    std::vector<biyos::Offset> starts = every_start(model.core);
+    const auto chosen = selected(session.model(), Family::Variable, list);
+    const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
+    std::vector<biyos::Offset> starts = every_start(session.model());
     const std::size_t count = count_of(starts, chosen);
     check_capacity(capacity, count);
-    write_columns(columns_of(model.core, std::move(starts)), chosen, out);
+    write_columns(columns_of(session.model(), std::move(starts)), chosen, out);
     if (nnz != nullptr)
     {
         *nnz = to_offset(count);
     }
 }
 
-void get_ranged(const BIYOS_model &model,
+void get_ranged(const Session &session,
                 Range range,
                 BIYOS_offset capacity,
                 BIYOS_offset *counts,
                 BIYOS_index *functions,
                 BIYOS_real *values)
 {
-    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "columns");
+    const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
     const std::vector<biyos::Offset> found =
-        biyos::variable_starts(model.core, range.start, range.stop);
+        biyos::variable_starts(session.model(), range.start, range.stop);
     const auto count = to_size(found.back());
     check_capacity(capacity, count);
-    biyos::variable_terms(model.core,
+    biyos::variable_terms(session.model(),
                           range.start,
                           found,
                           given(functions, count),

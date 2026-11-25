@@ -11,9 +11,11 @@
 namespace biyos
 {
 
+class Session;
+
 struct Request
 {
-    const BIYOS_model *model;
+    const Session *session;
     Index callback;
     Index thread;
     std::span<const Real> x;

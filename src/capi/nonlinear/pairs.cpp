@@ -10,6 +10,8 @@
 #include <span>
 
 using biyos::Family;
+using biyos::Model;
+using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
@@ -30,21 +32,21 @@ struct Pairs
     BIYOS_real *values;
 };
 
-std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> functions)
+std::size_t count_of(const Model &model, std::span<const biyos::Index> functions)
 {
     std::size_t count = 0;
     for (const biyos::Index function : functions)
     {
-        count += core.quadratic_terms(function, function + 1).size();
+        count += model.quadratic_terms(function, function + 1).size();
     }
     return count;
 }
 
 template <typename Selection>
-void n_pairs(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
+void n_pairs(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(model.core, Family::Function, selection);
-    const std::size_t count = count_of(model.core, chosen);
+    const auto chosen = selected(session.model(), Family::Function, selection);
+    const std::size_t count = count_of(session.model(), chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
 
@@ -71,14 +73,12 @@ void put_pair(const Pairs &out,
     }
 }
 
-void write_pairs(const biyos::Model &core,
-                 std::span<const biyos::Index> functions,
-                 const Pairs &out)
+void write_pairs(const Model &model, std::span<const biyos::Index> functions, const Pairs &out)
 {
     std::size_t k = 0;
     for (const biyos::Index function : functions)
     {
-        for (const biyos::QuadraticTerm &term : core.quadratic_terms(function, function + 1))
+        for (const biyos::QuadraticTerm &term : model.quadratic_terms(function, function + 1))
         {
             put_pair(out, k, function, term);
             ++k;
@@ -86,33 +86,33 @@ void write_pairs(const biyos::Model &core,
     }
 }
 
-void get_listed(const BIYOS_model &model,
+void get_listed(const Session &session,
                 List list,
                 BIYOS_offset capacity,
                 BIYOS_offset *nnz,
                 const Pairs &out)
 {
-    const auto chosen = selected(model.core, Family::Function, list);
-    const std::size_t count = count_of(model.core, chosen);
+    const auto chosen = selected(session.model(), Family::Function, list);
+    const std::size_t count = count_of(session.model(), chosen);
     check_capacity(capacity, count);
-    write_pairs(model.core, chosen, out);
+    write_pairs(session.model(), chosen, out);
     if (nnz != nullptr)
     {
         *nnz = to_offset(count);
     }
 }
 
-void get_ranged(const BIYOS_model &model,
+void get_ranged(const Session &session,
                 Range range,
                 BIYOS_offset capacity,
                 BIYOS_offset *counts,
                 const Pairs &out)
 {
-    const biyos::Model &core = model.core;
-    const auto terms = core.quadratic_terms(range.start, range.stop);
+    const Model &model = session.model();
+    const auto terms = model.quadratic_terms(range.start, range.stop);
     check_capacity(capacity, terms.size());
     const auto record = [&](biyos::Index j)
-    { return core.quadratic_terms(range.start + j, range.start + j + 1); };
+    { return model.quadratic_terms(range.start + j, range.start + j + 1); };
     biyos::capi::write_counts(to_size(range.stop - range.start), counts, record);
     biyos::capi::unpack(terms, terms.size(), out.rows, out.columns, out.values);
 }

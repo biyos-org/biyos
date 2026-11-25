@@ -166,7 +166,7 @@ std::string refused(const Calls &calls, const std::string &reason)
 
 void expect_unchanged(const Model &tried, const Model &model)
 {
-    EXPECT_EQ(biyos::difference(tried.get()->core, model.get()->core), "");
+    EXPECT_EQ(biyos::difference(tried.get()->model(), model.get()->model()), "");
 }
 
 void expect_listed(const Calls &calls)
@@ -351,7 +351,7 @@ void expect_built(const Env &env, const Model &model, const Spread &spread)
 {
     const Model wanted(env);
     build_variables(wanted, spread);
-    EXPECT_EQ(biyos::difference(model.get()->core, wanted.get()->core), "");
+    EXPECT_EQ(biyos::difference(model.get()->model(), wanted.get()->model()), "");
 }
 
 void expect_moved(const ToleranceCalls &tolerances, Listed listed)

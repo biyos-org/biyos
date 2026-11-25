@@ -19,6 +19,7 @@ using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Real;
+using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
@@ -79,9 +80,9 @@ std::span<const T> items_of(const T *items, std::span<const Offset> starts, std:
     return {items, total};
 }
 
-void add_cones(BIYOS_model &model, BIYOS_index n, const Given &given, BIYOS_index *start)
+void add_cones(Session &session, BIYOS_index n, const Given &given, BIYOS_index *start)
 {
-    Model &core = writable(model);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -90,42 +91,42 @@ void add_cones(BIYOS_model &model, BIYOS_index n, const Given &given, BIYOS_inde
     }
     const std::vector<Offset> starts = starts_of(size, given.counts);
     const std::vector<Offset> parameter_starts = starts_of(size, given.parameter_counts, "prmcnt");
-    core.check_cone_room(size, starts.back(), parameter_starts.back());
-    const Index index = core.n_cones();
-    core.add_cones(kinds_of(size, given.kinds),
-                   starts,
-                   items_of(given.functions, starts, "fun"),
-                   parameter_starts,
-                   items_of(given.parameters, parameter_starts, "prm"));
+    model.check_cone_room(size, starts.back(), parameter_starts.back());
+    const Index index = model.n_cones();
+    model.add_cones(kinds_of(size, given.kinds),
+                    starts,
+                    items_of(given.functions, starts, "fun"),
+                    parameter_starts,
+                    items_of(given.parameters, parameter_starts, "prm"));
     if (start != nullptr)
     {
         *start = index;
     }
 }
 
-void n_cones(const BIYOS_model &model, BIYOS_index *n)
+void n_cones(const Session &session, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_cones();
+    *require(n, "n") = session.model().n_cones();
 }
 
 template <typename T>
-std::size_t count_of(const Model &core, std::span<const Index> cones, Part<T> part)
+std::size_t count_of(const Model &model, std::span<const Index> cones, Part<T> part)
 {
     std::size_t count = 0;
     for (const Index cone : cones)
     {
-        count += (core.*part)(cone, cone + 1).size();
+        count += (model.*part)(cone, cone + 1).size();
     }
     return count;
 }
 
 template <typename T>
-void write_part(const Model &core, std::span<const Index> cones, Part<T> part, Compressed<T> out)
+void write_part(const Model &model, std::span<const Index> cones, Part<T> part, Compressed<T> out)
 {
     BIYOS_offset written = 0;
     for (std::size_t j = 0; j < cones.size(); ++j)
     {
-        const std::span<const T> items = (core.*part)(cones[j], cones[j] + 1);
+        const std::span<const T> items = (model.*part)(cones[j], cones[j] + 1);
         if (out.counts != nullptr)
         {
             out.counts[j] = to_offset(items.size());
@@ -138,7 +139,7 @@ void write_part(const Model &core, std::span<const Index> cones, Part<T> part, C
     }
 }
 
-void write_kinds(const Model &core, std::span<const Index> cones, BIYOS_int *kinds)
+void write_kinds(const Model &model, std::span<const Index> cones, BIYOS_int *kinds)
 {
     if (kinds == nullptr)
     {
@@ -146,40 +147,40 @@ void write_kinds(const Model &core, std::span<const Index> cones, BIYOS_int *kin
     }
     for (std::size_t j = 0; j < cones.size(); ++j)
     {
-        kinds[j] = static_cast<BIYOS_int>(core.cone_kinds(cones[j], cones[j] + 1).front());
+        kinds[j] = static_cast<BIYOS_int>(model.cone_kinds(cones[j], cones[j] + 1).front());
     }
 }
 
 template <typename Selection, typename T>
-void n_items(const BIYOS_model &model, Selection selection, Part<T> part, BIYOS_offset *nnz)
+void n_items(const Session &session, Selection selection, Part<T> part, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(model.core, Family::Cone, selection);
-    const std::size_t count = count_of(model.core, chosen, part);
+    const auto chosen = selected(session.model(), Family::Cone, selection);
+    const std::size_t count = count_of(session.model(), chosen, part);
     *require(nnz, "nnz") = to_offset(count);
 }
 
 template <typename Selection>
-void get_members(const BIYOS_model &model,
+void get_members(const Session &session,
                  Selection selection,
                  BIYOS_offset capacity,
                  BIYOS_int *kinds,
                  Compressed<BIYOS_index> out)
 {
-    const auto chosen = selected(model.core, Family::Cone, selection);
-    check_capacity(capacity, count_of(model.core, chosen, kMembers), "cap", "members");
-    write_kinds(model.core, chosen, kinds);
-    write_part(model.core, chosen, kMembers, out);
+    const auto chosen = selected(session.model(), Family::Cone, selection);
+    check_capacity(capacity, count_of(session.model(), chosen, kMembers), "cap", "members");
+    write_kinds(session.model(), chosen, kinds);
+    write_part(session.model(), chosen, kMembers, out);
 }
 
 template <typename Selection>
-void get_parameters(const BIYOS_model &model,
+void get_parameters(const Session &session,
                     Selection selection,
                     BIYOS_offset capacity,
                     Compressed<BIYOS_real> out)
 {
-    const auto chosen = selected(model.core, Family::Cone, selection);
-    check_capacity(capacity, count_of(model.core, chosen, kParameters), "cap", "parameters");
-    write_part(model.core, chosen, kParameters, out);
+    const auto chosen = selected(session.model(), Family::Cone, selection);
+    check_capacity(capacity, count_of(session.model(), chosen, kParameters), "cap", "parameters");
+    write_part(session.model(), chosen, kParameters, out);
 }
 
 }

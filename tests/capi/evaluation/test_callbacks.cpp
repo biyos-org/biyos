@@ -65,7 +65,7 @@ int interrupting(const BIYOS_cbreq *, double *f, void *data)
     BIYOS_index n = -1;
     EXPECT_EQ(BIYOS_interrupt(inside.env), BIYOS_OK);
     inside.read = BIYOS_getnvar(inside.model, &n);
-    inside.interrupted = inside.model->handle.env().interrupt().is_set();
+    inside.interrupted = inside.model->env().interrupt().is_set();
     f[0] = 0.0;
     return 0;
 }

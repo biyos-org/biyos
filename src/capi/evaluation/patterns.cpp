@@ -15,7 +15,9 @@
 
 using biyos::Family;
 using biyos::Index;
+using biyos::Model;
 using biyos::Offset;
+using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
@@ -74,11 +76,11 @@ std::size_t count_of(const Records &records, std::span<const Index> chosen)
     return count;
 }
 
-void check_all(const biyos::Model &core, Family family, std::span<const Index> chosen)
+void check_all(const Model &model, Family family, std::span<const Index> chosen)
 {
     for (const Index i : chosen)
     {
-        biyos::check_index(biyos::noun_of(family), i, core.n_of(family));
+        biyos::check_index(biyos::noun_of(family), i, model.n_of(family));
     }
 }
 
@@ -104,25 +106,25 @@ void write(const Records &records,
 }
 
 template <typename Of, typename Selection>
-void n_pattern(BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
+void n_pattern(Session &session, Selection selection, BIYOS_offset *nnz)
 {
     BIYOS_offset *out = require(nnz, "nnz");
-    const auto chosen = selected(model.core, Of::kFamily, selection);
-    check_all(model.core, Of::kFamily, chosen);
-    const Records records = Of::read(evaluation_of(model));
+    const auto chosen = selected(session.model(), Of::kFamily, selection);
+    check_all(session.model(), Of::kFamily, chosen);
+    const Records records = Of::read(evaluation_of(session));
     *out = to_offset(count_of(records, chosen));
 }
 
 template <typename Of, typename Selection>
-void get_pattern(BIYOS_model &model,
+void get_pattern(Session &session,
                  Selection selection,
                  BIYOS_offset capacity,
                  BIYOS_offset *counts,
                  BIYOS_index *items)
 {
-    const auto chosen = selected(model.core, Of::kFamily, selection);
-    check_all(model.core, Of::kFamily, chosen);
-    const Records records = Of::read(evaluation_of(model));
+    const auto chosen = selected(session.model(), Of::kFamily, selection);
+    check_all(session.model(), Of::kFamily, chosen);
+    const Records records = Of::read(evaluation_of(session));
     check_capacity(capacity, count_of(records, chosen), "cap", "entries");
     write(records, chosen, counts, items);
 }

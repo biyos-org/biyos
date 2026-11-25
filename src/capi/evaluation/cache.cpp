@@ -4,29 +4,23 @@
 #include "capi/utils/entry.hpp"
 #include "model/evaluation/evaluation.hpp"
 
-#include <memory>
-
 namespace biyos::capi
 {
 
-Evaluation &evaluation_of(BIYOS_model &model)
+Evaluation &evaluation_of(Session &session)
 {
-    claim(model);
-    if (model.evaluation == nullptr)
-    {
-        model.evaluation = std::make_unique<Evaluation>(model.handle.env(), model.core, &model);
-    }
-    return *model.evaluation;
+    claim(session);
+    return session.evaluation();
 }
 
-Running::Running(BIYOS_model &model) noexcept : model_(model)
+Running::Running(Session &session) noexcept : session_(session)
 {
-    model_.evaluating = true;
+    session_.set_evaluating(true);
 }
 
 Running::~Running()
 {
-    model_.evaluating = false;
+    session_.set_evaluating(false);
 }
 
 }

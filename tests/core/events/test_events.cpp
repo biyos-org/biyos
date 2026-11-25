@@ -446,14 +446,14 @@ TEST_F(EventTest, ThrowingFill)
 TEST_F(EventTest, Model)
 {
     const int address = 0;
-    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
-    std::vector<const BIYOS_model *> seen;
+    const auto *model = reinterpret_cast<const biyos::Session *>(&address);
+    std::vector<const biyos::Session *> seen;
     const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
     const auto named = [model](biyos::Event &event) { event.model = model; };
     events.add_hook(EventKind::Message, EventLevel::Info, keep);
     events.emit(EventKind::Message, EventLevel::Info, describe);
     events.emit(EventKind::Message, EventLevel::Info, named);
-    const std::vector<const BIYOS_model *> expected{nullptr, model};
+    const std::vector<const biyos::Session *> expected{nullptr, model};
     EXPECT_EQ(seen, expected);
 }
 

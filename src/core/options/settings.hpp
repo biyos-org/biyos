@@ -24,27 +24,27 @@ class Settings
     void set_bool(Option option,
                   bool value,
                   Events &events,
-                  const BIYOS_model *model = nullptr,
+                  const Session *model = nullptr,
                   Hooks *hooks = nullptr);
     void set_int(Option option,
                  int value,
                  Events &events,
-                 const BIYOS_model *model = nullptr,
+                 const Session *model = nullptr,
                  Hooks *hooks = nullptr);
     void set_double(Option option,
                     Real value,
                     Events &events,
-                    const BIYOS_model *model = nullptr,
+                    const Session *model = nullptr,
                     Hooks *hooks = nullptr);
     void set_string(Option option,
                     std::string_view value,
                     Events &events,
-                    const BIYOS_model *model = nullptr,
+                    const Session *model = nullptr,
                     Hooks *hooks = nullptr);
     void set_flags(Option option,
                    Masks value,
                    Events &events,
-                   const BIYOS_model *model = nullptr,
+                   const Session *model = nullptr,
                    Hooks *hooks = nullptr);
 
     const OptionValue *find(Option option) const;
@@ -55,7 +55,7 @@ class Settings
     void store(Option option,
                const OptionValue &value,
                Events &events,
-               const BIYOS_model *model,
+               const Session *model,
                Hooks *hooks);
 
     struct Entry

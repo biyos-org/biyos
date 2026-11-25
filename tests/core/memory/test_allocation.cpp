@@ -72,7 +72,7 @@ TEST(AllocationTest, EmptyScope)
 TEST(AllocationTest, ScopedError)
 {
     const int address = 0;
-    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    const auto *model = reinterpret_cast<const biyos::Session *>(&address);
     const std::string outer(64, 'o');
     biyos::Env env;
     env.record_error(biyos::ErrorKind::NoMemory, outer, model);

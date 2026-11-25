@@ -12,8 +12,10 @@
 
 using biyos::Family;
 using biyos::Member;
+using biyos::Model;
 using biyos::Offset;
 using biyos::Real;
+using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
@@ -77,7 +79,7 @@ std::vector<Member> members_of(std::span<const Offset> starts,
     return members;
 }
 
-void add_special_ordered_sets(BIYOS_model &model,
+void add_special_ordered_sets(Session &session,
                               BIYOS_index n,
                               const BIYOS_int *kinds,
                               const BIYOS_offset *counts,
@@ -85,47 +87,44 @@ void add_special_ordered_sets(BIYOS_model &model,
                               const BIYOS_real *weights,
                               BIYOS_index *start)
 {
-    biyos::Model &core = writable(model);
+    Model &model = writable(session);
     const std::span<const BIYOS_int> codes = listed(n, kinds, "knd");
     const std::vector<Offset> begins = starts_of(codes.size(), counts);
-    core.check_special_ordered_set_room(codes.size(), begins.back());
-    const biyos::Index index = core.n_special_ordered_sets();
-    core.add_special_ordered_sets(kinds_of(codes), begins, members_of(begins, variables, weights));
+    model.check_special_ordered_set_room(codes.size(), begins.back());
+    const biyos::Index index = model.n_special_ordered_sets();
+    model.add_special_ordered_sets(kinds_of(codes), begins, members_of(begins, variables, weights));
     if (start != nullptr)
     {
         *start = index;
     }
 }
 
-void n_special_ordered_sets(const BIYOS_model &model, BIYOS_index *n)
+void n_special_ordered_sets(const Session &session, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_special_ordered_sets();
+    *require(n, "n") = session.model().n_special_ordered_sets();
 }
 
-std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> soss)
+std::size_t count_of(const Model &model, std::span<const biyos::Index> soss)
 {
     std::size_t count = 0;
     for (const biyos::Index index : soss)
     {
-        count += core.members(index, index + 1).size();
+        count += model.members(index, index + 1).size();
     }
     return count;
 }
 
 template <typename Selection>
-void n_members(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
+void n_members(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(model.core, Family::SpecialOrderedSet, selection);
-    const std::size_t count = count_of(model.core, chosen);
+    const auto chosen = selected(session.model(), Family::SpecialOrderedSet, selection);
+    const std::size_t count = count_of(session.model(), chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
 
-std::size_t write_members(const biyos::Model &core,
-                          biyos::Index sos,
-                          std::size_t k,
-                          const Outputs &out)
+std::size_t write_members(const Model &model, biyos::Index sos, std::size_t k, const Outputs &out)
 {
-    for (const Member &member : core.members(sos, sos + 1))
+    for (const Member &member : model.members(sos, sos + 1))
     {
         put(out.variables, k, member.variable);
         put(out.weights, k, member.weight);
@@ -134,29 +133,29 @@ std::size_t write_members(const biyos::Model &core,
     return k;
 }
 
-void write_special_ordered_sets(const biyos::Model &core,
+void write_special_ordered_sets(const Model &model,
                                 std::span<const biyos::Index> soss,
                                 const Outputs &out)
 {
     std::size_t k = 0;
     for (std::size_t j = 0; j < soss.size(); ++j)
     {
-        put(out.kinds, j, static_cast<BIYOS_int>(core.kind_of_special_ordered_set(soss[j])));
+        put(out.kinds, j, static_cast<BIYOS_int>(model.kind_of_special_ordered_set(soss[j])));
         const std::size_t first = k;
-        k = write_members(core, soss[j], k, out);
+        k = write_members(model, soss[j], k, out);
         put(out.counts, j, to_offset(k - first));
     }
 }
 
 template <typename Selection>
-void get_special_ordered_sets(const BIYOS_model &model,
+void get_special_ordered_sets(const Session &session,
                               Selection selection,
                               BIYOS_offset capacity,
                               const Outputs &out)
 {
-    const auto chosen = selected(model.core, Family::SpecialOrderedSet, selection);
-    check_capacity(capacity, count_of(model.core, chosen), "cap", "members");
-    write_special_ordered_sets(model.core, chosen, out);
+    const auto chosen = selected(session.model(), Family::SpecialOrderedSet, selection);
+    check_capacity(capacity, count_of(session.model(), chosen), "cap", "members");
+    write_special_ordered_sets(session.model(), chosen, out);
 }
 
 }

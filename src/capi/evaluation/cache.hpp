@@ -1,23 +1,23 @@
 #pragma once
 
-#include "biyos/biyos.h"
 #include "model/evaluation/evaluation.hpp"
+#include "model/session/session.hpp"
 
 namespace biyos::capi
 {
 
-Evaluation &evaluation_of(BIYOS_model &model);
+Evaluation &evaluation_of(Session &session);
 
 class Running
 {
   public:
-    explicit Running(BIYOS_model &model) noexcept;
+    explicit Running(Session &session) noexcept;
     ~Running();
     Running(const Running &) = delete;
     Running &operator=(const Running &) = delete;
 
   private:
-    BIYOS_model &model_;
+    Session &session_;
 };
 
 }

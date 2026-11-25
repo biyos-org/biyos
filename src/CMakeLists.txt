@@ -121,7 +121,8 @@ add_library(biyos_internal STATIC
     model/records/objectives.cpp
     model/records/special_ordered_sets.cpp
     model/records/variables.cpp
-    model/renumber.cpp)
+    model/renumber.cpp
+    model/session/session.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

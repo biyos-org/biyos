@@ -38,8 +38,8 @@ Bits bits(const Values &values)
 struct Reference
 {
     explicit Reference(const Model &model)
-        : handle(*model.get()), evaluation(handle.handle.env(), handle.core, &handle),
-          lookup(handle.settings, handle.handle.env().options())
+        : handle(*model.get()), evaluation(handle.env(), handle.model(), &handle),
+          lookup(handle.settings(), handle.env().options())
     {
     }
 
@@ -173,7 +173,7 @@ TEST(EvaluationTest, Rebuilt)
     const double coefficient = 1.0;
     ASSERT_EQ(BIYOS_addlintermsp(mixed.model.get(), 1, &function, &variable, &coefficient),
               BIYOS_OK);
-    EXPECT_EQ(mixed.model.get()->evaluation, nullptr);
+    EXPECT_EQ(mixed.model.get()->cached(), nullptr);
     Values g(10);
     ASSERT_EQ(BIYOS_evalg(mixed.model.get(), kPoint.data(), g.data()), BIYOS_OK);
     EXPECT_EQ(bits(g), bits(jacobian_of(mixed.model)));

@@ -210,7 +210,7 @@ void add_functions(const Model &model, int n)
 
 std::vector<BIYOS_offset> roots_of(const Model &model, int n)
 {
-    const std::span<const biyos::Offset> roots = model.get()->core.roots(0, n);
+    const std::span<const biyos::Offset> roots = model.get()->model().roots(0, n);
     return {roots.begin(), roots.end()};
 }
 
@@ -580,7 +580,7 @@ TEST(CApiTest, SharedExpression)
     ASSERT_EQ(attach(model, {0, 1}, tops), BIYOS_OK);
     const std::vector<BIYOS_offset> roots = roots_of(model, 2);
     EXPECT_EQ(roots[0], sine);
-    const biyos::Graph &graph = model.get()->core.graph();
+    const biyos::Graph &graph = model.get()->model().graph();
     ASSERT_EQ(graph.children(roots[1]).size(), 1U);
     EXPECT_EQ(graph.children(roots[1]).front(), sine);
     EXPECT_EQ(next_id(model), 5);
@@ -602,7 +602,7 @@ TEST(CApiTest, AttachTwice)
     const Read functions = read_functions(model, 1);
     EXPECT_EQ(functions.constants, std::vector<double>{2.5});
     EXPECT_EQ(functions.coefficients, std::vector<double>{4.0});
-    const biyos::Graph &graph = model.get()->core.graph();
+    const biyos::Graph &graph = model.get()->model().graph();
     const BIYOS_offset root = roots_of(model, 1).front();
     EXPECT_EQ(root, 3);
     EXPECT_EQ(graph.children(root)[0], 1);

@@ -64,7 +64,7 @@ BIYOS_status run(const Env &env, Loop &loop)
 
 void spin_model(const BIYOS_model &model, Loop *loop)
 {
-    spin(model.handle.env(), loop);
+    spin(model.env(), loop);
 }
 
 BIYOS_status run(const Model &model, Loop &loop)
@@ -97,10 +97,10 @@ void announce(biyos::Env &env)
 
 void tell(const BIYOS_model *model)
 {
-    model->handle.env().events().emit(biyos::EventKind::Message,
-                                      biyos::EventLevel::Info,
-                                      blank,
-                                      &model->hooks);
+    model->env().events().emit(biyos::EventKind::Message,
+                               biyos::EventLevel::Info,
+                               blank,
+                               &model->hooks());
 }
 
 void stop_model(const BIYOS_event *, void *data)

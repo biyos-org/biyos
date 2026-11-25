@@ -12,6 +12,8 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Model;
+using biyos::Session;
 using biyos::capi::delete_tolerances;
 using biyos::capi::entry_or;
 using biyos::capi::get_tolerances;
@@ -53,9 +55,9 @@ biyos::Complement given(biyos::Complement complement, std::size_t k, const Field
     return complement;
 }
 
-void add_complements(BIYOS_model &model, BIYOS_index n, const Fields &fields, BIYOS_index *start)
+void add_complements(Session &session, BIYOS_index n, const Fields &fields, BIYOS_index *start)
 {
-    biyos::Model &core = writable(model);
+    Model &model = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -74,8 +76,8 @@ void add_complements(BIYOS_model &model, BIYOS_index n, const Fields &fields, BI
     {
         added.push_back(given(nonnegative, k, fields));
     }
-    const biyos::Index index = core.n_complements();
-    core.add_complements(added);
+    const biyos::Index index = model.n_complements();
+    model.add_complements(added);
     if (start != nullptr)
     {
         *start = index;
@@ -83,22 +85,22 @@ void add_complements(BIYOS_model &model, BIYOS_index n, const Fields &fields, BI
 }
 
 template <typename Selection>
-void set_bounds(BIYOS_model &model, Selection selection, const Fields &fields)
+void set_bounds(Session &session, Selection selection, const Fields &fields)
 {
-    biyos::Model &core = writable(model);
-    const auto changed = selected(core, Family::Complement, selection);
+    Model &model = writable(session);
+    const auto changed = selected(model, Family::Complement, selection);
     std::vector<biyos::Complement> complements;
     complements.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
-        complements.push_back(given(core.complement(changed[k]), k, fields));
+        complements.push_back(given(model.complement(changed[k]), k, fields));
     }
-    core.set_complements(changed, complements);
+    model.set_complements(changed, complements);
 }
 
-void n_complements(const BIYOS_model &model, BIYOS_index *n)
+void n_complements(const Session &session, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_complements();
+    *require(n, "n") = session.model().n_complements();
 }
 
 void copy_out(const biyos::Complement &complement, std::size_t k, const Outputs &outputs)
@@ -110,11 +112,11 @@ void copy_out(const biyos::Complement &complement, std::size_t k, const Outputs 
 }
 
 template <typename Selection>
-void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &outputs)
+void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
-    const auto chosen = selected(model.core, Family::Complement, selection);
+    const auto chosen = selected(session.model(), Family::Complement, selection);
     const std::vector<biyos::Complement> complements =
-        picked(model.core, &biyos::Model::complement, chosen);
+        picked(session.model(), &Model::complement, chosen);
     for (std::size_t k = 0; k < complements.size(); ++k)
     {
         copy_out(complements[k], k, outputs);
