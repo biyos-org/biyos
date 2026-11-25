@@ -204,3 +204,12 @@ TEST(CApiTest, ColumnHooked)
     ASSERT_EQ(BIYOS_getclintermrg(model, 0, 2, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     expect_heard(recorder, repeated(span_of("model/columns"), 4));
 }
+
+TEST(CApiTest, WriteHooked)
+{
+    Recorder recorder;
+    recorder.watch();
+    const std::string path = testing::TempDir() + "biyos_hooked.mps";
+    ASSERT_EQ(BIYOS_writemdl(recorder.model, path.c_str(), BIYOS_FILEFMT_MPS), BIYOS_OK);
+    expect_heard(recorder, span_of("io/write"));
+}

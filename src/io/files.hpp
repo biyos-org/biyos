@@ -2,6 +2,7 @@
 
 #include "biyos/biyos.h"
 #include "core/env.hpp"
+#include "core/events/hooks.hpp"
 #include "core/options/settings.hpp"
 #include "model/model.hpp"
 
@@ -26,6 +27,8 @@ void write_file(Env &env,
                 const Model &model,
                 const Settings &settings,
                 std::string_view path,
-                FileFormat format);
+                FileFormat format,
+                const BIYOS_model *handle = nullptr,
+                Hooks *hooks = nullptr);
 
 }

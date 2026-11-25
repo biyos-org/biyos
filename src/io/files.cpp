@@ -1,7 +1,9 @@
 #include "io/files.hpp"
 
+#include "biyos/biyos.h"
 #include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/events/hooks.hpp"
 #include "core/options/settings.hpp"
 #include "core/timing/timer.hpp"
 #include "io/draft/draft.hpp"
@@ -96,9 +98,11 @@ void write_file(Env &env,
                 const Model &model,
                 const Settings &settings,
                 std::string_view path,
-                FileFormat format)
+                FileFormat format,
+                const BIYOS_model *handle,
+                Hooks *hooks)
 {
-    const EntryTimer timer(env, "io", "write");
+    const EntryTimer timer(env, "io", "write", handle, hooks);
     const std::string file(path);
     switch (format)
     {

@@ -30,7 +30,13 @@ void save(const BIYOS_model &model, const char *path, BIYOS_int fmt)
     const char *file = require(path, "path");
     const biyos::FileFormat format = biyos::find_format(fmt);
     biyos::Env &env = idle(model.handle.env(), "environment");
-    biyos::write_file(env, model.core, model.settings, std::string_view(file), format);
+    biyos::write_file(env,
+                      model.core,
+                      model.settings,
+                      std::string_view(file),
+                      format,
+                      &model,
+                      &model.hooks);
 }
 
 }
