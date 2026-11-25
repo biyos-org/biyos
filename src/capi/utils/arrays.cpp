@@ -7,7 +7,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -29,7 +28,7 @@ namespace
 
 }
 
-std::size_t length(std::int64_t n, std::string_view name)
+std::size_t length(BIYOS_offset n, std::string_view name)
 {
     if (n < 0)
     {
@@ -40,7 +39,7 @@ std::size_t length(std::int64_t n, std::string_view name)
     return static_cast<std::size_t>(n);
 }
 
-void check_capacity(std::int64_t capacity,
+void check_capacity(BIYOS_offset capacity,
                     std::size_t needed,
                     std::string_view name,
                     std::string_view items)
@@ -70,17 +69,7 @@ void put_term(const Coordinates &out, std::size_t k, Index function, const Linea
     }
 }
 
-std::span<const Index> listed(int n, const int *indices, std::string_view name)
-{
-    const std::size_t size = length(n);
-    if (size > 0)
-    {
-        require(indices, name);
-    }
-    return {indices, size};
-}
-
-std::vector<Offset> starts_of(std::size_t n, const std::int64_t *counts, std::string_view name)
+std::vector<Offset> starts_of(std::size_t n, const BIYOS_offset *counts, std::string_view name)
 {
     std::vector<Offset> starts(n + 1, 0);
     if (counts == nullptr)
@@ -102,7 +91,7 @@ std::vector<Offset> starts_of(std::size_t n, const std::int64_t *counts, std::st
     return starts;
 }
 
-void write_counts(std::span<const Offset> starts, std::int64_t *counts)
+void write_counts(std::span<const Offset> starts, BIYOS_offset *counts)
 {
     if (counts == nullptr)
     {
@@ -114,7 +103,9 @@ void write_counts(std::span<const Offset> starts, std::int64_t *counts)
     }
 }
 
-std::vector<LinearTerm> packed(std::size_t size, const int *variables, const double *values)
+std::vector<LinearTerm> packed(std::size_t size,
+                               const BIYOS_index *variables,
+                               const BIYOS_real *values)
 {
     if (size > 0)
     {
@@ -130,7 +121,10 @@ std::vector<LinearTerm> packed(std::size_t size, const int *variables, const dou
     return terms;
 }
 
-void unpack(std::span<const LinearTerm> terms, std::size_t capacity, int *variables, double *values)
+void unpack(std::span<const LinearTerm> terms,
+            std::size_t capacity,
+            BIYOS_index *variables,
+            BIYOS_real *values)
 {
     const std::size_t written = (std::min)(capacity, terms.size());
     for (std::size_t k = 0; k < written; ++k)
@@ -147,9 +141,9 @@ void unpack(std::span<const LinearTerm> terms, std::size_t capacity, int *variab
 }
 
 std::vector<QuadraticTerm> packed(std::size_t size,
-                                  const int *rows,
-                                  const int *columns,
-                                  const double *values)
+                                  const BIYOS_index *rows,
+                                  const BIYOS_index *columns,
+                                  const BIYOS_real *values)
 {
     if (size > 0)
     {
@@ -172,9 +166,9 @@ std::vector<QuadraticTerm> packed(std::size_t size,
 
 void unpack(std::span<const QuadraticTerm> terms,
             std::size_t capacity,
-            int *rows,
-            int *columns,
-            double *values)
+            BIYOS_index *rows,
+            BIYOS_index *columns,
+            BIYOS_real *values)
 {
     const std::size_t written = (std::min)(capacity, terms.size());
     for (std::size_t k = 0; k < written; ++k)
