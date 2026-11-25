@@ -1,5 +1,6 @@
 #include "expr/intervals/interval.hpp"
 
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/intervals/rounding.hpp"
@@ -12,9 +13,9 @@ namespace biyos
 
 namespace
 {
-using Bound = double (*)(double, double) noexcept;
+using Bound = Real (*)(Real, Real) noexcept;
 
-double sum_down(double left, double right) noexcept
+Real sum_down(Real left, Real right) noexcept
 {
     if (is_zero(left) || is_zero(right))
     {
@@ -23,7 +24,7 @@ double sum_down(double left, double right) noexcept
     return round_down(left + right);
 }
 
-double sum_up(double left, double right) noexcept
+Real sum_up(Real left, Real right) noexcept
 {
     if (is_zero(left) || is_zero(right))
     {
@@ -32,7 +33,7 @@ double sum_up(double left, double right) noexcept
     return round_up(left + right);
 }
 
-double product_down(double left, double right) noexcept
+Real product_down(Real left, Real right) noexcept
 {
     if (is_zero(left) || is_zero(right))
     {
@@ -41,7 +42,7 @@ double product_down(double left, double right) noexcept
     return round_down(left * right);
 }
 
-double product_up(double left, double right) noexcept
+Real product_up(Real left, Real right) noexcept
 {
     if (is_zero(left) || is_zero(right))
     {
@@ -50,7 +51,7 @@ double product_up(double left, double right) noexcept
     return round_up(left * right);
 }
 
-double quotient_down(double left, double right) noexcept
+Real quotient_down(Real left, Real right) noexcept
 {
     if (is_zero(left))
     {
@@ -59,7 +60,7 @@ double quotient_down(double left, double right) noexcept
     return round_down(left / right);
 }
 
-double quotient_up(double left, double right) noexcept
+Real quotient_up(Real left, Real right) noexcept
 {
     if (is_zero(left))
     {
@@ -68,20 +69,20 @@ double quotient_up(double left, double right) noexcept
     return round_up(left / right);
 }
 
-double lowest(Interval left, Interval right, Bound bound) noexcept
+Real lowest(Interval left, Interval right, Bound bound) noexcept
 {
-    const double first =
+    const Real first =
         std::fmin(bound(left.lower(), right.lower()), bound(left.lower(), right.upper()));
-    const double last =
+    const Real last =
         std::fmin(bound(left.upper(), right.lower()), bound(left.upper(), right.upper()));
     return std::fmin(first, last);
 }
 
-double highest(Interval left, Interval right, Bound bound) noexcept
+Real highest(Interval left, Interval right, Bound bound) noexcept
 {
-    const double first =
+    const Real first =
         std::fmax(bound(left.lower(), right.lower()), bound(left.lower(), right.upper()));
-    const double last =
+    const Real last =
         std::fmax(bound(left.upper(), right.lower()), bound(left.upper(), right.upper()));
     return std::fmax(first, last);
 }
@@ -207,10 +208,10 @@ Interval abs(Interval value) noexcept
     return {0.0, (std::max)(-value.lower(), value.upper())};
 }
 
-Interval signs(Interval value, double root) noexcept
+Interval signs(Interval value, Real root) noexcept
 {
-    const double lower = value.lower() >= root ? 0.0 : -kInfinity;
-    const double upper = value.upper() <= root ? 0.0 : kInfinity;
+    const Real lower = value.lower() >= root ? 0.0 : -kInfinity;
+    const Real upper = value.upper() <= root ? 0.0 : kInfinity;
     return {lower, upper};
 }
 

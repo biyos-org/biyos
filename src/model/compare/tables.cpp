@@ -23,7 +23,7 @@ namespace biyos
 namespace
 {
 
-double constant_of(const Model &model, Index function)
+Real constant_of(const Model &model, Index function)
 {
     return model.constants(function, function + 1).front();
 }
@@ -58,7 +58,7 @@ std::span<const Index> cone_functions_of(const Model &model, Index cone)
     return model.cone_functions(cone, cone + 1);
 }
 
-std::span<const double> cone_parameters_of(const Model &model, Index cone)
+std::span<const Real> cone_parameters_of(const Model &model, Index cone)
 {
     return model.cone_parameters(cone, cone + 1);
 }

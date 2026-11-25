@@ -14,7 +14,7 @@ struct Elements
 {
     std::vector<Offset> nodes;
     std::vector<Offset> roots;
-    std::vector<double> weights;
+    std::vector<Real> weights;
 };
 
 struct Entry

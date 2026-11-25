@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/numbers.hpp"
 #include "expr/tape/frame.hpp"
 #include "expr/tape/tape.hpp"
 
@@ -11,16 +12,16 @@ namespace biyos
 
 struct Tangents
 {
-    std::span<const double> slots;
-    std::span<double> spare;
+    std::span<const Real> slots;
+    std::span<Real> spare;
 };
 
 std::size_t tangent_rows(const Tape &tape) noexcept;
-double scaled(double tangent, double factor) noexcept;
+Real scaled(Real tangent, Real factor) noexcept;
 void partial_tangents(const Instruction &instruction,
                       const Frame &frame,
                       const Tangents &tangents,
-                      std::span<const double> partials,
-                      std::span<double> out) noexcept;
+                      std::span<const Real> partials,
+                      std::span<Real> out) noexcept;
 
 }

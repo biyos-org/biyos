@@ -1,4 +1,5 @@
 #include "core/events/events.hpp"
+#include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
@@ -14,10 +15,11 @@ namespace
 {
 
 using biyos::Option;
+using biyos::Real;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
-constexpr double kLargest = (std::numeric_limits<double>::max)();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
+constexpr Real kLargest = (std::numeric_limits<Real>::max)();
 
 biyos::Tolerances defaults()
 {
@@ -26,7 +28,7 @@ biyos::Tolerances defaults()
     return biyos::Tolerances(biyos::Lookup(biyos::Options(events)));
 }
 
-biyos::Tolerances relative(double rel)
+biyos::Tolerances relative(Real rel)
 {
     biyos::FakeClock clock;
     biyos::Events events(clock);
@@ -36,7 +38,7 @@ biyos::Tolerances relative(double rel)
     return biyos::Tolerances(biyos::Lookup(options));
 }
 
-biyos::Tolerances uniform(double value)
+biyos::Tolerances uniform(Real value)
 {
     biyos::FakeClock clock;
     biyos::Events events(clock);
@@ -118,12 +120,12 @@ TEST(ToleranceTest, Infinity)
     EXPECT_FALSE(tolerances.approx_equal(kInfinity, kLargest));
     EXPECT_FALSE(tolerances.approx_equal(0.0, -kInfinity));
 
-    for (const double x : {-kInfinity, -kLargest, 0.0, kLargest, kInfinity})
+    for (const Real x : {-kInfinity, -kLargest, 0.0, kLargest, kInfinity})
     {
         EXPECT_TRUE(tolerances.satisfies_lower(x, -kInfinity));
         EXPECT_TRUE(tolerances.satisfies_upper(x, kInfinity));
     }
-    for (const double x : {-kLargest, 0.0, kLargest})
+    for (const Real x : {-kLargest, 0.0, kLargest})
     {
         EXPECT_FALSE(tolerances.satisfies_lower(x, kInfinity));
         EXPECT_FALSE(tolerances.satisfies_upper(x, -kInfinity));
@@ -162,7 +164,7 @@ TEST(ToleranceTest, NanFails)
         EXPECT_FALSE(tolerances.approx_equal(0.0, kNan));
         EXPECT_FALSE(tolerances.approx_equal(kNan, kInfinity));
         EXPECT_FALSE(tolerances.approx_equal(-kInfinity, kNan));
-        for (const double bound : {-kInfinity, 0.0, kInfinity})
+        for (const Real bound : {-kInfinity, 0.0, kInfinity})
         {
             EXPECT_FALSE(tolerances.satisfies_lower(kNan, bound));
             EXPECT_FALSE(tolerances.satisfies_upper(kNan, bound));
@@ -243,9 +245,9 @@ TEST(ToleranceTest, Overflow)
 TEST(ToleranceTest, Exact)
 {
     const biyos::Tolerances tolerances = uniform(0.0);
-    const double above = std::nextafter(1.0, 2.0);
+    const Real above = std::nextafter(1.0, 2.0);
     EXPECT_TRUE(tolerances.is_zero(0.0));
-    EXPECT_FALSE(tolerances.is_zero(std::numeric_limits<double>::denorm_min()));
+    EXPECT_FALSE(tolerances.is_zero(std::numeric_limits<Real>::denorm_min()));
     EXPECT_TRUE(tolerances.approx_equal(1.0, 1.0));
     EXPECT_FALSE(tolerances.approx_equal(1.0, above));
     EXPECT_TRUE(tolerances.satisfies_lower(1.0, 1.0));

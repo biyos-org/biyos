@@ -15,6 +15,7 @@
 using biyos::Family;
 using biyos::Index;
 using biyos::Model;
+using biyos::Real;
 using biyos::VariableKind;
 using biyos::test::built;
 using biyos::test::Parts;
@@ -24,9 +25,9 @@ using biyos::test::writable;
 namespace
 {
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 
-std::string fault(VariableKind kind, double lower, double upper)
+std::string fault(VariableKind kind, Real lower, Real upper)
 {
     Parts parts = writable();
     parts.variables[1] = {.kind = kind, .lower = lower, .upper = upper};
@@ -151,7 +152,7 @@ TEST(MpsTest, KindBounds)
 
 TEST(MpsTest, RowBounds)
 {
-    const double big = std::numeric_limits<double>::max();
+    const Real big = std::numeric_limits<Real>::max();
     Parts parts = writable();
     parts.constraints[1] = {.function = 1, .lower = -big, .upper = big};
     EXPECT_EQ(refusal(built(parts)),

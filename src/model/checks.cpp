@@ -34,7 +34,7 @@ void refuse(std::string_view noun, Index index, const std::string &reason)
     throw Error(ErrorKind::InvalidArgument, item(noun, index), reason);
 }
 
-std::string_view bound_fault(double lower, double upper) noexcept
+std::string_view bound_fault(Real lower, Real upper) noexcept
 {
     if (std::isnan(lower))
     {
@@ -55,7 +55,7 @@ std::string_view bound_fault(double lower, double upper) noexcept
     return "";
 }
 
-std::string_view value_fault(double value) noexcept
+std::string_view value_fault(Real value) noexcept
 {
     if (std::isnan(value))
     {

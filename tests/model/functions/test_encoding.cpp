@@ -21,16 +21,18 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::Encoding;
 using biyos::Graph;
 using biyos::kNoRoot;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 
 using Engine = std::mt19937;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::array<std::uint32_t, 8> kSeeds{1, 2, 3, 5, 8, 13, 21, 34};
 constexpr std::array kWide{BIYOS_OP_SUM, BIYOS_OP_PROD, BIYOS_OP_MAX, BIYOS_OP_MIN};
 constexpr std::array kBinary{BIYOS_OP_DIV, BIYOS_OP_POW};
@@ -54,12 +56,12 @@ template <std::size_t N> bool among(const std::array<int, N> &codes, int code)
     return std::ranges::count(codes, code) > 0;
 }
 
-std::vector<std::uint64_t> bits(const std::vector<double> &values)
+std::vector<Bits> bits(const std::vector<Real> &values)
 {
-    std::vector<std::uint64_t> found;
-    for (const double value : values)
+    std::vector<Bits> found;
+    for (const Real value : values)
     {
-        found.push_back(std::bit_cast<std::uint64_t>(value));
+        found.push_back(std::bit_cast<Bits>(value));
     }
     return found;
 }
@@ -79,7 +81,7 @@ Model with_variables(int n)
 Offset add(Model &model,
            int code,
            const std::vector<Offset> &children,
-           const std::vector<double> &values)
+           const std::vector<Real> &values)
 {
     return model.add_node(code, children, values);
 }
@@ -107,7 +109,7 @@ void expect_same(const Encoding &found, const Encoding &wanted)
     EXPECT_EQ(bits(found.values), bits(wanted.values));
 }
 
-double value(Engine &engine)
+Real value(Engine &engine)
 {
     if (below(engine, 10) == 0)
     {
@@ -129,9 +131,9 @@ int arity(Engine &engine, int code)
     return among(kBinary, code) ? 2 : 1;
 }
 
-std::vector<double> values(Engine &engine, int code, int n)
+std::vector<Real> values(Engine &engine, int code, int n)
 {
-    std::vector<double> drawn;
+    std::vector<Real> drawn;
     if (code == BIYOS_OP_SUM)
     {
         for (int k = 0; k <= n; ++k)

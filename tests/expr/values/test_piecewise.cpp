@@ -11,7 +11,6 @@
 #include <bit>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <vector>
@@ -19,33 +18,35 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::Block;
 using biyos::Graph;
 using biyos::Hessian;
 using biyos::Instruction;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::Tape;
 using biyos::test::jacobian_of;
 using biyos::test::values_of;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
-constexpr double kRounding = 4.0 * std::numeric_limits<double>::epsilon();
-constexpr double kStep = 1e-7;
-constexpr double kBound = 1e-6;
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
+constexpr Real kRounding = 4.0 * std::numeric_limits<Real>::epsilon();
+constexpr Real kStep = 1e-7;
+constexpr Real kBound = 1e-6;
 constexpr std::array kKinks{-2.0, -0.5, 1.0, 3.0};
 constexpr std::array kHeights{1.0, -1.0, 0.5, 2.0};
 constexpr std::array kShort{0.0, 4.0};
 constexpr std::array kRamp{-1.0, 3.0};
 constexpr std::array kBudgets{Offset{1}, Offset{2}, Offset{3}, biyos::kBudget};
 
-std::uint64_t bits(double value)
+Bits bits(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
-std::size_t segment(double t)
+std::size_t segment(Real t)
 {
     std::size_t k = 0;
     while (k + 2 < kKinks.size() && !(t < kKinks[k + 1]))
@@ -55,12 +56,12 @@ std::size_t segment(double t)
     return k;
 }
 
-double slope(std::size_t k)
+Real slope(std::size_t k)
 {
     return (kHeights[k + 1] - kHeights[k]) / (kKinks[k + 1] - kKinks[k]);
 }
 
-long double line(double t)
+long double line(Real t)
 {
     const std::size_t k = segment(t);
     const long double rise = static_cast<long double>(kHeights[k + 1]) - kHeights[k];
@@ -68,10 +69,10 @@ long double line(double t)
     return kHeights[k] + (static_cast<long double>(t) - kKinks[k]) * rise / run;
 }
 
-std::vector<double> probes()
+std::vector<Real> probes()
 {
-    std::vector<double> found{-1e300, -50.0, -2.5, -1.25, 0.0, -0.0, 0.25, 2.0, 7.0, 1e300};
-    for (const double x : kKinks)
+    std::vector<Real> found{-1e300, -50.0, -2.5, -1.25, 0.0, -0.0, 0.25, 2.0, 7.0, 1e300};
+    for (const Real x : kKinks)
     {
         found.push_back(x);
         found.push_back(std::nextafter(x, -kInfinity));
@@ -86,7 +87,7 @@ struct Single
     Offset root;
 };
 
-Single single(std::span<const double> x, std::span<const double> y)
+Single single(std::span<const Real> x, std::span<const Real> y)
 {
     Single made;
     const Offset pwl = made.graph.add_piecewise_linear(x, y);
@@ -104,12 +105,12 @@ Single single()
     return made;
 }
 
-double value_at(const Tape &tape, double t)
+Real value_at(const Tape &tape, Real t)
 {
     return values_of(tape, std::array{t}).front();
 }
 
-double slope_at(const Tape &tape, double t)
+Real slope_at(const Tape &tape, Real t)
 {
     return jacobian_of(tape, std::array{t}).front();
 }
@@ -123,8 +124,8 @@ void expect_table(const Block &block, const Instruction &instruction)
 {
     const auto start = static_cast<std::size_t>(instruction.payload);
     const bool wide = piecewise_linear_of(instruction) == 0;
-    const std::span<const double> x = wide ? std::span<const double>(kKinks) : kShort;
-    const std::span<const double> y = wide ? std::span<const double>(kHeights) : kRamp;
+    const std::span<const Real> x = wide ? std::span<const Real>(kKinks) : kShort;
+    const std::span<const Real> y = wide ? std::span<const Real>(kHeights) : kRamp;
     ASSERT_LE(start + 2 * x.size(), block.weights.size());
     for (std::size_t k = 0; k < x.size(); ++k)
     {
@@ -155,9 +156,9 @@ void expect_shared(const Block &block)
     EXPECT_EQ(block.weights.size(), stored);
 }
 
-double hessian_at(Hessian &hessian, double t)
+Real hessian_at(Hessian &hessian, Real t)
 {
-    std::vector<double> out(hessian.pattern().rows.size(), kNan);
+    std::vector<Real> out(hessian.pattern().rows.size(), kNan);
     hessian.values(std::array{t}, std::array{1.0}, out);
     return out.front();
 }
@@ -195,12 +196,12 @@ TEST(PiecewiseTest, Values)
 {
     const Single made = single();
     const Tape tape(made.graph, std::span(&made.root, 1));
-    for (const double t : probes())
+    for (const Real t : probes())
     {
         SCOPED_TRACE(t);
         const long double wanted = line(t);
-        const auto scale = static_cast<double>(std::fabs(wanted)) + 1.0;
-        EXPECT_NEAR(value_at(tape, t), static_cast<double>(wanted), kRounding * scale);
+        const auto scale = static_cast<Real>(std::fabs(wanted)) + 1.0;
+        EXPECT_NEAR(value_at(tape, t), static_cast<Real>(wanted), kRounding * scale);
     }
 }
 
@@ -246,7 +247,7 @@ TEST(PiecewiseTest, Signed)
     const std::array y{-0.0, -0.0};
     const Single made = single(x, y);
     const Tape tape(made.graph, std::span(&made.root, 1));
-    for (const double t : {-1.0, 0.0, 0.5, 1.0, 2.0})
+    for (const Real t : {-1.0, 0.0, 0.5, 1.0, 2.0})
     {
         SCOPED_TRACE(t);
         EXPECT_EQ(bits(value_at(tape, t)), bits(-0.0));
@@ -292,7 +293,7 @@ TEST(PiecewiseTest, Slopes)
 {
     const Single made = single();
     const Tape tape(made.graph, std::span(&made.root, 1));
-    for (const double t : probes())
+    for (const Real t : probes())
     {
         SCOPED_TRACE(t);
         EXPECT_EQ(bits(slope_at(tape, t)), bits(slope(segment(t))));
@@ -307,11 +308,11 @@ TEST(PiecewiseTest, Differences)
 {
     const Single made = single();
     const Tape tape(made.graph, std::span(&made.root, 1));
-    for (const double t : {-9.0, -1.25, 0.25, 2.0, 5.5})
+    for (const Real t : {-9.0, -1.25, 0.25, 2.0, 5.5})
     {
         SCOPED_TRACE(t);
-        const double ahead = value_at(tape, t + kStep);
-        const double behind = value_at(tape, t - kStep);
+        const Real ahead = value_at(tape, t + kStep);
+        const Real behind = value_at(tape, t - kStep);
         EXPECT_NEAR(slope_at(tape, t), (ahead - behind) / (2.0 * kStep), kBound);
     }
 }
@@ -324,10 +325,10 @@ TEST(PiecewiseTest, Curvature)
     Hessian flat(made.graph, std::span(&made.root, 1), {});
     Hessian curved(made.graph, std::span(&square, 1), {});
     ASSERT_EQ(flat.pattern().rows.size(), 1U);
-    for (const double t : probes())
+    for (const Real t : probes())
     {
         SCOPED_TRACE(t);
-        const double s = slope(segment(t));
+        const Real s = slope(segment(t));
         EXPECT_EQ(bits(hessian_at(flat, t)), bits(0.0));
         EXPECT_NEAR(hessian_at(curved, t), 2.0 * s * s, kRounding * 2.0 * s * s);
     }
@@ -344,8 +345,8 @@ TEST(PiecewiseTest, Pattern)
     const Tape tape(graph, std::span(&root, 1));
     const std::vector<biyos::Index> wanted{0, 2};
     EXPECT_EQ(tape.pattern().variables, wanted);
-    const std::vector<double> gradient = jacobian_of(tape, std::array{0.25, 9.0, 0.5});
-    const double s = slope(segment(0.5 + 0.25 - 1.0));
+    const std::vector<Real> gradient = jacobian_of(tape, std::array{0.25, 9.0, 0.5});
+    const Real s = slope(segment(0.5 + 0.25 - 1.0));
     EXPECT_EQ(bits(gradient[0]), bits(s));
     EXPECT_EQ(bits(gradient[1]), bits(-2.0 * s));
     Hessian hessian(graph, std::span(&root, 1), {});
@@ -379,7 +380,7 @@ TEST(PiecewiseTest, Shared)
         {
             expect_shared(block);
         }
-        const std::vector<double> values = values_of(tape, point);
+        const std::vector<Real> values = values_of(tape, point);
         EXPECT_EQ(bits(values[0]), bits(kHeights[1]));
         EXPECT_EQ(bits(values[1]), bits(1.625));
         EXPECT_EQ(bits(values[2]), bits(-1.5));

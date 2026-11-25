@@ -23,8 +23,8 @@ enum class RowSense
 struct DraftRow
 {
     RowSense sense;
-    std::optional<double> rhs;
-    std::optional<double> range;
+    std::optional<Real> rhs;
+    std::optional<Real> range;
 };
 
 struct DraftColumn
@@ -33,8 +33,8 @@ struct DraftColumn
     bool integer = false;
     bool semi = false;
     bool binary = false;
-    std::optional<double> lower;
-    std::optional<double> upper;
+    std::optional<Real> lower;
+    std::optional<Real> upper;
     std::size_t upper_line = 0;
 };
 
@@ -42,7 +42,7 @@ struct DraftEntry
 {
     Index row;
     Index column;
-    double value;
+    Real value;
 };
 
 struct Draft
@@ -58,8 +58,8 @@ struct Draft
 
 bool negative_upper(const DraftColumn &column) noexcept;
 VariableKind kind_of(const DraftColumn &column) noexcept;
-double lower_of(const DraftColumn &column) noexcept;
-double upper_of(const DraftColumn &column) noexcept;
+Real lower_of(const DraftColumn &column) noexcept;
+Real upper_of(const DraftColumn &column) noexcept;
 Constraint constraint_of(Index function, const DraftRow &row) noexcept;
 Model build(const Draft &draft);
 

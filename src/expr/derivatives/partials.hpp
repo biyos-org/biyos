@@ -14,9 +14,9 @@ namespace biyos
 std::uint32_t n_partials(const Instruction &instruction) noexcept;
 void partials_of(const Instruction &instruction,
                  const Frame &frame,
-                 std::span<double> partials) noexcept;
-std::size_t chosen(double partial) noexcept;
-void mark_undefined(const Frame &frame, std::span<double> partials) noexcept;
+                 std::span<Real> partials) noexcept;
+std::size_t chosen(Real partial) noexcept;
+void mark_undefined(const Frame &frame, std::span<Real> partials) noexcept;
 
 template <typename T>
 std::span<T> region(const Block &block, std::span<T> partials, std::size_t lanes) noexcept

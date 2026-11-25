@@ -24,9 +24,11 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::Graph;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::Tape;
 using biyos::Workspace;
 using biyos::test::binary;
@@ -45,27 +47,27 @@ using biyos::test::sign_power;
 using biyos::test::unary;
 using biyos::test::values_of;
 
-using Point = std::array<double, 4>;
+using Point = std::array<Real, 4>;
 
-constexpr double kInfinity = (std::numeric_limits<double>::infinity)();
-constexpr double kNan = (std::numeric_limits<double>::quiet_NaN)();
+constexpr Real kInfinity = (std::numeric_limits<Real>::infinity)();
+constexpr Real kNan = (std::numeric_limits<Real>::quiet_NaN)();
 
 std::size_t at(Offset value)
 {
     return static_cast<std::size_t>(value);
 }
 
-bool is_nan(double value)
+bool is_nan(Real value)
 {
     return std::isnan(value);
 }
 
-std::uint64_t bits(double value)
+Bits bits(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
-void expect_same(double found, double wanted)
+void expect_same(Real found, Real wanted)
 {
     if (std::isnan(wanted))
     {
@@ -75,7 +77,7 @@ void expect_same(double found, double wanted)
     EXPECT_DOUBLE_EQ(found, wanted);
 }
 
-void expect_values(const std::vector<double> &found, const std::vector<double> &wanted)
+void expect_values(const std::vector<Real> &found, const std::vector<Real> &wanted)
 {
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < wanted.size(); ++k)
@@ -85,7 +87,7 @@ void expect_values(const std::vector<double> &found, const std::vector<double> &
     }
 }
 
-double entropy_of(double value)
+Real entropy_of(Real value)
 {
     if (std::isnan(value) || value < 0.0)
     {
@@ -94,17 +96,17 @@ double entropy_of(double value)
     return value > 0.0 ? value * std::log(value) : 0.0;
 }
 
-double signed_power(double value, double exponent)
+Real signed_power(Real value, Real exponent)
 {
     return value < 0.0 ? -std::pow(-value, exponent) : std::pow(value, exponent);
 }
 
-std::vector<double> cmath_values(const Point &point)
+std::vector<Real> cmath_values(const Point &point)
 {
-    const double x = point[0];
-    const double y = point[1];
-    const double z = point[2];
-    const double w = point[3];
+    const Real x = point[0];
+    const Real y = point[1];
+    const Real z = point[2];
+    const Real w = point[3];
     return {
         2.5,
         x,
@@ -142,12 +144,12 @@ std::vector<double> cmath_values(const Point &point)
 class Reference
 {
   public:
-    Reference(const Graph &graph, std::span<const double> point)
+    Reference(const Graph &graph, std::span<const Real> point)
         : graph_(graph), point_(point), values_(at(graph.size())), done_(at(graph.size()), false)
     {
     }
 
-    double value(Offset node)
+    Real value(Offset node)
     {
         if (!done_[at(node)])
         {
@@ -158,19 +160,19 @@ class Reference
     }
 
   private:
-    double compute(Offset node);
-    double sum(Offset node);
-    double product(Offset node);
-    double extreme(Offset node, Operator op);
-    double child(Offset node, std::size_t k);
+    Real compute(Offset node);
+    Real sum(Offset node);
+    Real product(Offset node);
+    Real extreme(Offset node, Operator op);
+    Real child(Offset node, std::size_t k);
 
     const Graph &graph_;
-    std::span<const double> point_;
-    std::vector<double> values_;
+    std::span<const Real> point_;
+    std::vector<Real> values_;
     std::vector<bool> done_;
 };
 
-double Reference::compute(Offset node)
+Real Reference::compute(Offset node)
 {
     const Operator op = graph_.op(node);
     switch (op)
@@ -239,10 +241,10 @@ double Reference::compute(Offset node)
     return kNan;
 }
 
-double Reference::sum(Offset node)
+Real Reference::sum(Offset node)
 {
-    const std::span<const double> weights = graph_.coefficients(node);
-    double total = graph_.constant(node);
+    const std::span<const Real> weights = graph_.coefficients(node);
+    Real total = graph_.constant(node);
     for (std::size_t k = 0; k < weights.size(); ++k)
     {
         total += weights[k] * child(node, k);
@@ -250,9 +252,9 @@ double Reference::sum(Offset node)
     return total;
 }
 
-double Reference::product(Offset node)
+Real Reference::product(Offset node)
 {
-    double total = graph_.constant(node);
+    Real total = graph_.constant(node);
     for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
     {
         total *= child(node, k);
@@ -260,9 +262,9 @@ double Reference::product(Offset node)
     return total;
 }
 
-double Reference::extreme(Offset node, Operator op)
+Real Reference::extreme(Offset node, Operator op)
 {
-    std::vector<double> values;
+    std::vector<Real> values;
     for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
     {
         values.push_back(child(node, k));
@@ -274,15 +276,15 @@ double Reference::extreme(Offset node, Operator op)
     return op == Operator::Max ? (std::ranges::max)(values) : (std::ranges::min)(values);
 }
 
-double Reference::child(Offset node, std::size_t k)
+Real Reference::child(Offset node, std::size_t k)
 {
     return value(graph_.children(node)[k]);
 }
 
 void expect_reference(const Graph &graph,
                       std::span<const Offset> roots,
-                      std::span<const double> point,
-                      const std::vector<double> &values)
+                      std::span<const Real> point,
+                      const std::vector<Real> &values)
 {
     Reference reference(graph, point);
     for (std::size_t k = 0; k < roots.size(); ++k)
@@ -354,7 +356,7 @@ TEST(ValueTest, Domain)
     };
     const Tape tape(graph, roots);
     const std::array point{-1.0, 0.0};
-    const std::vector<double> found = values_of(tape, point);
+    const std::vector<Real> found = values_of(tape, point);
     expect_values(found,
                   {
                       std::log(-1.0),
@@ -422,7 +424,7 @@ TEST(ValueTest, Extrema)
     };
     const Tape tape(graph, roots);
     const std::array point{0.5, -2.0, 3.0};
-    const std::vector<double> found = values_of(tape, point);
+    const std::vector<Real> found = values_of(tape, point);
     expect_values(found, {3.0, -2.0, -2.0, 3.0, 0.5, kNan, kNan, kNan, kNan, -0.0, 0.0});
     EXPECT_EQ(bits(found[9]), bits(-0.0));
     EXPECT_EQ(bits(found[10]), bits(0.0));
@@ -440,10 +442,10 @@ TEST(ValueTest, Seeded)
         const Tape tape(graph, roots, kBudgets[random.below(kBudgets.size())]);
         pinned += tape.pinned();
         Workspace workspace(tape);
-        std::vector<double> values(roots.size());
+        std::vector<Real> values(roots.size());
         for (int k = 0; k < 3; ++k)
         {
-            const std::vector<double> point = random_point(random);
+            const std::vector<Real> point = random_point(random);
             biyos::forward(tape, point, workspace, values);
             expect_reference(graph, roots, point, values);
         }
@@ -463,12 +465,12 @@ TEST(ValueTest, Sizes)
     ASSERT_EQ(tape.pinned(), 1);
     ASSERT_EQ(tape.width(), 2U);
     Workspace workspace(tape);
-    std::vector<double> values(2);
+    std::vector<Real> values(2);
     const std::array point{0.5, 0.25};
-    const std::span<const double> short_point = std::span(point).first(1);
+    const std::span<const Real> short_point = std::span(point).first(1);
     EXPECT_EQ(refusal([&] { biyos::forward(tape, short_point, workspace, values); }),
               "invalid argument: point: size 1 does not cover variable 1");
-    std::vector<double> more(3);
+    std::vector<Real> more(3);
     EXPECT_EQ(refusal([&] { biyos::forward(tape, point, workspace, more); }),
               "invalid argument: values: size 3, not the root count 2");
 

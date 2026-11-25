@@ -27,7 +27,7 @@ constexpr Offset kLeast = 2;
     throw Error(ErrorKind::InvalidArgument, "expression", reason);
 }
 
-void check_finite(std::string_view axis, std::size_t k, double value)
+void check_finite(std::string_view axis, std::size_t k, Real value)
 {
     if (!std::isfinite(value))
     {
@@ -35,7 +35,7 @@ void check_finite(std::string_view axis, std::size_t k, double value)
     }
 }
 
-void check_rise(std::span<const double> x, std::size_t k)
+void check_rise(std::span<const Real> x, std::size_t k)
 {
     if (k > 0 && !(x[k - 1] < x[k]))
     {
@@ -50,26 +50,26 @@ void check_segment(const PiecewiseLinear &pwl, std::size_t k)
         return;
     }
     const std::string between = " from point " + text_of(k - 1) + " to point " + text_of(k) + " ";
-    const double width = pwl.x[k] - pwl.x[k - 1];
+    const Real width = pwl.x[k] - pwl.x[k - 1];
     if (!std::isfinite(width))
     {
         refuse("the pwl's width" + between + std::string(fault(width)));
     }
-    const double rise = pwl.y[k] - pwl.y[k - 1];
+    const Real rise = pwl.y[k] - pwl.y[k - 1];
     if (!std::isfinite(rise))
     {
         refuse("the pwl's height difference" + between + std::string(fault(rise)));
     }
-    const double slope = slope_of(pwl, k - 1);
+    const Real slope = slope_of(pwl, k - 1);
     if (!std::isfinite(slope))
     {
         refuse("the pwl's slope" + between + std::string(fault(slope)));
     }
 }
 
-double rise_over(double slope, double from, double t) noexcept
+Real rise_over(Real slope, Real from, Real t) noexcept
 {
-    const double step = t - from;
+    const Real step = t - from;
     if (std::isinf(step))
     {
         return slope * t - slope * from;
@@ -96,7 +96,7 @@ PiecewiseLinear Points::piecewise_linear(Offset index) const noexcept
     };
 }
 
-Offset Points::add(std::span<const double> x, std::span<const double> y)
+Offset Points::add(std::span<const Real> x, std::span<const Real> y)
 {
     check_points(x, y);
     reserve_more(starts_, 1);
@@ -116,7 +116,7 @@ void Points::truncate(Offset size) noexcept
     y_.resize(to_size(starts_[n]));
 }
 
-void check_points(std::span<const double> x, std::span<const double> y)
+void check_points(std::span<const Real> x, std::span<const Real> y)
 {
     const auto n = to_offset(x.size());
     if (x.size() != y.size())
@@ -145,23 +145,23 @@ void check_piecewise_linear(Offset pwl, Offset size)
     }
 }
 
-std::size_t segment_of(std::span<const double> x, double t) noexcept
+std::size_t segment_of(std::span<const Real> x, Real t) noexcept
 {
-    const std::span<const double> inner = x.subspan(1, x.size() - 2);
+    const std::span<const Real> inner = x.subspan(1, x.size() - 2);
     return static_cast<std::size_t>(std::ranges::upper_bound(inner, t) - inner.begin());
 }
 
-double slope_of(const PiecewiseLinear &pwl, std::size_t segment) noexcept
+Real slope_of(const PiecewiseLinear &pwl, std::size_t segment) noexcept
 {
-    const double rise = pwl.y[segment + 1] - pwl.y[segment];
+    const Real rise = pwl.y[segment + 1] - pwl.y[segment];
     return rise / (pwl.x[segment + 1] - pwl.x[segment]);
 }
 
-double value_at(const PiecewiseLinear &pwl, double t) noexcept
+Real value_at(const PiecewiseLinear &pwl, Real t) noexcept
 {
     const std::size_t k = segment_of(pwl.x, t);
     const std::size_t anchor = t < pwl.x[k + 1] ? k : k + 1;
-    const double slope = slope_of(pwl, k);
+    const Real slope = slope_of(pwl, k);
     if ((is_zero(slope) && !std::isnan(t)) || is_zero(t - pwl.x[anchor]))
     {
         return pwl.y[anchor];
@@ -169,7 +169,7 @@ double value_at(const PiecewiseLinear &pwl, double t) noexcept
     return pwl.y[anchor] + rise_over(slope, pwl.x[anchor], t);
 }
 
-double slope_at(const PiecewiseLinear &pwl, double t) noexcept
+Real slope_at(const PiecewiseLinear &pwl, Real t) noexcept
 {
     return slope_of(pwl, segment_of(pwl.x, t));
 }

@@ -82,16 +82,16 @@ const BoundKind &kind_of(const Lines &lines, std::string_view code)
     return *found;
 }
 
-bool integral(double value) noexcept
+bool integral(Real value) noexcept
 {
-    double whole = 0.0;
+    Real whole = 0.0;
     return is_zero(std::modf(value, &whole));
 }
 
-std::optional<double> checked_value(Env &env,
-                                    const Lines &lines,
-                                    const BoundKind &kind,
-                                    Fields fields)
+std::optional<Real> checked_value(Env &env,
+                                  const Lines &lines,
+                                  const BoundKind &kind,
+                                  Fields fields)
 {
     const bool given = fields.size() == 4;
     const std::string type = std::string(kind.code) + " bound";
@@ -108,7 +108,7 @@ std::optional<double> checked_value(Env &env,
         warn(env, lines, type + " takes no value, " + quote(fields[3]) + " is ignored");
         return std::nullopt;
     }
-    const double value = value_of(lines, fields[3]);
+    const Real value = value_of(lines, fields[3]);
     if (kind.need == Need::Integral && !integral(value))
     {
         bad_file(lines, type + " value " + quote(fields[3]) + " is not an integer");
@@ -120,7 +120,7 @@ std::optional<double> checked_value(Env &env,
     return value;
 }
 
-double resolve(Effect effect, std::optional<double> value) noexcept
+Real resolve(Effect effect, std::optional<Real> value) noexcept
 {
     switch (effect)
     {
@@ -140,9 +140,9 @@ double resolve(Effect effect, std::optional<double> value) noexcept
 }
 
 void apply(const Lines &lines,
-           std::optional<double> &slot,
+           std::optional<Real> &slot,
            Effect effect,
-           std::optional<double> value,
+           std::optional<Real> value,
            std::string_view what)
 {
     if (effect == Effect::None)
@@ -172,7 +172,7 @@ void read_bound(Env &env, const Lines &lines, Vectors &vectors, Draft &draft)
         return;
     }
     const Index index = find_in(draft.column_names, lines, "column", fields[2]);
-    const std::optional<double> value = checked_value(env, lines, kind, fields);
+    const std::optional<Real> value = checked_value(env, lines, kind, fields);
     DraftColumn &column = draft.columns[to_size(index)];
     apply(lines, column.lower, kind.lower, value, "lower");
     apply(lines, column.upper, kind.upper, value, "upper");

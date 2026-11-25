@@ -10,7 +10,6 @@
 
 #include <bit>
 #include <cmath>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -20,14 +19,14 @@
 namespace biyos::test
 {
 
-inline constexpr double kUnknown = std::numeric_limits<double>::quiet_NaN();
+inline constexpr Real kUnknown = std::numeric_limits<Real>::quiet_NaN();
 
-inline void expect_part(double found, double wanted)
+inline void expect_part(Real found, Real wanted)
 {
-    EXPECT_EQ(std::bit_cast<std::uint64_t>(found), std::bit_cast<std::uint64_t>(wanted));
+    EXPECT_EQ(std::bit_cast<Bits>(found), std::bit_cast<Bits>(wanted));
 }
 
-inline void expect_tolerance(const Tolerance &found, double absolute, double relative)
+inline void expect_tolerance(const Tolerance &found, Real absolute, Real relative)
 {
     expect_part(found.absolute, absolute);
     expect_part(found.relative, relative);
@@ -36,8 +35,8 @@ inline void expect_tolerance(const Tolerance &found, double absolute, double rel
 inline void set_tolerances(Model &model,
                            Family family,
                            const std::vector<Index> &indices,
-                           const std::vector<double> &absolute,
-                           const std::vector<double> &relative)
+                           const std::vector<Real> &absolute,
+                           const std::vector<Real> &relative)
 {
     model.set_tolerances(family, indices, absolute, relative);
 }
@@ -45,8 +44,8 @@ inline void set_tolerances(Model &model,
 inline std::string tolerance_refusal(Model &model,
                                      Family family,
                                      const std::vector<Index> &indices,
-                                     const std::vector<double> &absolute,
-                                     const std::vector<double> &relative)
+                                     const std::vector<Real> &absolute,
+                                     const std::vector<Real> &relative)
 {
     return refusal([&] { set_tolerances(model, family, indices, absolute, relative); });
 }
@@ -73,7 +72,7 @@ inline void expect_own(Model model, Family family)
 
 inline void expect_refused(Model model, Family family)
 {
-    constexpr double kInfinity = std::numeric_limits<double>::infinity();
+    constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
     set_tolerances(model, family, {0}, {1.0}, {2.0});
     EXPECT_EQ(tolerance_refusal(model, family, {0, 1}, {3.0, -0.5}, {}),
               refused(family, 1, "absolute tolerance -0.5 is negative"));

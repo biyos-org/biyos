@@ -28,8 +28,8 @@ Tolerance Model::tolerance_of(Family family, Index index) const
 
 void Model::set_tolerances(Family family,
                            std::span<const Index> indices,
-                           std::span<const double> absolute,
-                           std::span<const double> relative)
+                           std::span<const Real> absolute,
+                           std::span<const Real> relative)
 {
     tolerances_[slot(family)].set(noun_of(family), n_of(family), indices, absolute, relative);
 }

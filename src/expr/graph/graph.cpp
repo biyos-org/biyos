@@ -52,14 +52,14 @@ std::span<const Offset> Graph::children(Offset node) const noexcept
     return std::span(children_).subspan(to_size(start), to_size(n));
 }
 
-double Graph::constant(Offset node) const noexcept
+Real Graph::constant(Offset node) const noexcept
 {
     const std::uint64_t payload = payloads_[to_size(node)];
     if (op(node) == Operator::Sum)
     {
         return coefficients_[payload];
     }
-    return std::bit_cast<double>(payload);
+    return std::bit_cast<Real>(payload);
 }
 
 Index Graph::variable(Offset node) const noexcept
@@ -67,7 +67,7 @@ Index Graph::variable(Offset node) const noexcept
     return static_cast<Index>(payloads_[to_size(node)]);
 }
 
-std::span<const double> Graph::coefficients(Offset node) const noexcept
+std::span<const Real> Graph::coefficients(Offset node) const noexcept
 {
     if (op(node) != Operator::Sum)
     {
@@ -99,11 +99,11 @@ Offset Graph::add(Operator op, std::span<const Offset> children)
     return append(op, 0, children);
 }
 
-Offset Graph::add(Operator op, double constant, std::span<const Offset> children)
+Offset Graph::add(Operator op, Real constant, std::span<const Offset> children)
 {
     check(op, Payload::Constant, children);
     check_constant(op, constant);
-    return append(op, std::bit_cast<std::uint64_t>(constant), children);
+    return append(op, std::bit_cast<Bits>(constant), children);
 }
 
 Offset Graph::add_variable(Index variable)
@@ -122,13 +122,13 @@ Offset Graph::add_variable(Index variable)
     return variable_nodes_[index];
 }
 
-Offset Graph::add_sum(double constant,
+Offset Graph::add_sum(Real constant,
                       std::span<const Offset> children,
-                      std::span<const double> coefficients)
+                      std::span<const Real> coefficients)
 {
     if (inside(coefficients, coefficients_))
     {
-        const std::vector<double> copy(coefficients.begin(), coefficients.end());
+        const std::vector<Real> copy(coefficients.begin(), coefficients.end());
         return add_sum(constant, children, copy);
     }
     check(Operator::Sum, Payload::Coefficients, children);
@@ -141,7 +141,7 @@ Offset Graph::add_sum(double constant,
     return node;
 }
 
-Offset Graph::add_piecewise_linear(std::span<const double> x, std::span<const double> y)
+Offset Graph::add_piecewise_linear(std::span<const Real> x, std::span<const Real> y)
 {
     return points_.add(x, y);
 }

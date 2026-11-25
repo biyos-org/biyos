@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/intervals/interval.hpp"
@@ -17,14 +18,14 @@ namespace biyos::test
 constexpr std::size_t kVariables = 3;
 
 using Engine = std::mt19937_64;
-using Point = std::array<double, kVariables>;
+using Point = std::array<Real, kVariables>;
 using Box = std::array<Interval, kVariables>;
 
 struct Parameters
 {
-    double constant;
+    Real constant;
     Point weights;
-    double exponent;
+    Real exponent;
 };
 
 struct Check
@@ -40,6 +41,6 @@ Graph operator_graph(Operator op, const Parameters &parameters);
 Box box_of(Engine &engine);
 std::vector<Interval> enclosures(const Graph &graph, std::span<const Interval> box);
 void expect_sampled(const Check &check, Engine &engine);
-std::string text(double value);
+std::string text(Real value);
 
 }

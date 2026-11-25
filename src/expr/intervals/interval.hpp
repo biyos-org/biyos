@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 
 namespace biyos
@@ -8,7 +9,7 @@ namespace biyos
 class Interval
 {
   public:
-    constexpr Interval(double lower, double upper) noexcept
+    constexpr Interval(Real lower, Real upper) noexcept
         : lower_(holds_reals(lower, upper) ? lower : kInfinity),
           upper_(holds_reals(lower, upper) ? upper : -kInfinity)
     {
@@ -20,21 +21,21 @@ class Interval
 
     constexpr bool is_empty() const noexcept { return lower_ > upper_; }
 
-    constexpr double lower() const noexcept { return lower_; }
+    constexpr Real lower() const noexcept { return lower_; }
 
-    constexpr double upper() const noexcept { return upper_; }
+    constexpr Real upper() const noexcept { return upper_; }
 
   private:
-    static constexpr bool holds_reals(double lower, double upper) noexcept
+    static constexpr bool holds_reals(Real lower, Real upper) noexcept
     {
         return lower <= upper && lower < kInfinity && upper > -kInfinity;
     }
 
-    double lower_;
-    double upper_;
+    Real lower_;
+    Real upper_;
 };
 
-static_assert(sizeof(Interval) == 2 * sizeof(double));
+static_assert(sizeof(Interval) == 2 * sizeof(Real));
 
 Interval operator+(Interval left, Interval right) noexcept;
 Interval operator-(Interval value) noexcept;
@@ -45,6 +46,6 @@ Interval meet(Interval left, Interval right) noexcept;
 Interval maximum(Interval left, Interval right) noexcept;
 Interval minimum(Interval left, Interval right) noexcept;
 Interval abs(Interval value) noexcept;
-Interval signs(Interval value, double root) noexcept;
+Interval signs(Interval value, Real root) noexcept;
 
 }

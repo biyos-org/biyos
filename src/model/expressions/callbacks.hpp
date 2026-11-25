@@ -16,12 +16,12 @@ struct Request
     const BIYOS_model *model;
     Index callback;
     Index thread;
-    std::span<const double> x;
-    std::span<const double> w;
-    std::span<const double> v;
+    std::span<const Real> x;
+    std::span<const Real> w;
+    std::span<const Real> v;
 };
 
-using Routine = std::function<int(const Request &request, std::span<double> out, void *data)>;
+using Routine = std::function<int(const Request &request, std::span<Real> out, void *data)>;
 
 struct IndexPair
 {

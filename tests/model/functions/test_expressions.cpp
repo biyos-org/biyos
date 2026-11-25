@@ -13,7 +13,6 @@
 
 #include <bit>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -23,6 +22,7 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::Graph;
 using biyos::Index;
 using biyos::kNoRoot;
@@ -31,18 +31,19 @@ using biyos::Model;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::QuadraticTerm;
+using biyos::Real;
 using biyos::Variable;
 using biyos::test::failure;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 
 struct Node
 {
     int code;
     std::vector<Offset> children;
-    std::vector<double> values;
+    std::vector<Real> values;
 };
 
 Model with_variables(std::size_t n)
@@ -67,9 +68,9 @@ std::vector<Offset> ids(std::span<const Offset> nodes)
     return {nodes.begin(), nodes.end()};
 }
 
-std::uint64_t bits(double value)
+Bits bits(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
 std::string refused(Model &model, const Node &node)
@@ -80,7 +81,7 @@ std::string refused(Model &model, const Node &node)
 Model with_functions(std::size_t n)
 {
     Model model = with_variables(3);
-    model.add_functions(std::vector<double>(n, 0.0), std::vector<Offset>(n + 1, 0), {});
+    model.add_functions(std::vector<Real>(n, 0.0), std::vector<Offset>(n + 1, 0), {});
     return model;
 }
 
@@ -117,7 +118,7 @@ std::string attach_refusal(Model &model,
     return refusal([&] { attach(model, functions, nodes); });
 }
 
-double constant_of(const Model &model, Index function)
+Real constant_of(const Model &model, Index function)
 {
     return model.constants(function, function + 1).front();
 }
@@ -161,7 +162,7 @@ struct Program
     std::vector<Offset> starts;
     std::vector<int> codes;
     std::vector<Offset> arguments;
-    std::vector<double> values;
+    std::vector<Real> values;
 };
 
 biyos::Postfix postfix_of(const Program &program)
@@ -184,7 +185,7 @@ std::string decode_refusal(Model &model, const Program &program)
     return refusal([&] { decoded(model, program); });
 }
 
-Program single(std::vector<int> codes, std::vector<Offset> arguments, std::vector<double> values)
+Program single(std::vector<int> codes, std::vector<Offset> arguments, std::vector<Real> values)
 {
     const auto n = static_cast<Offset>(codes.size());
     return Program{
@@ -325,7 +326,7 @@ TEST(ExpressionTest, ValueNeeds)
 TEST(ExpressionTest, NoRoots)
 {
     Model model = with_variables(1);
-    model.add_functions(std::vector<double>(3, 0.0), std::vector<Offset>(4, 0), {});
+    model.add_functions(std::vector<Real>(3, 0.0), std::vector<Offset>(4, 0), {});
     EXPECT_EQ(ids(model.roots(0, 3)), std::vector<Offset>(3, biyos::kNoRoot));
     EXPECT_TRUE(model.roots(3, 3).empty());
     EXPECT_EQ(refusal([&] { model.roots(2, 4); }), "invalid argument: function 3: unknown");
@@ -366,7 +367,7 @@ TEST(ExpressionTest, AttachTwice)
 TEST(ExpressionTest, HeldParts)
 {
     Model model = with_variables(3);
-    const std::vector<double> constants{1.0, 0.5};
+    const std::vector<Real> constants{1.0, 0.5};
     const std::vector<Offset> starts{0, 2, 3};
     model.add_functions(constants, starts, {{2, 1.0}, {1, -1.0}, {0, 7.0}});
     const std::vector<Index> held{0};
@@ -483,7 +484,7 @@ TEST(ExpressionTest, Cleared)
 TEST(ExpressionTest, ClearedTerms)
 {
     Model model = with_variables(3);
-    const std::vector<double> constants{1.0, 2.0, 3.0, 4.0};
+    const std::vector<Real> constants{1.0, 2.0, 3.0, 4.0};
     const std::vector<Offset> starts{0, 1, 3, 4, 6};
     const std::vector<LinearTerm> terms{{0, 1.0}, {0, 2.0}, {1, 3.0}, {2, 4.0}, {0, 5.0}, {1, 6.0}};
     model.add_functions(constants, starts, terms);
@@ -507,7 +508,7 @@ TEST(ExpressionTest, ClearedTerms)
     EXPECT_TRUE(model.quadratic_terms(0, 4).empty());
     model.clear_functions({});
     EXPECT_EQ(model.linear_terms(0, 4).size(), 1U);
-    model.add_functions(std::vector<double>{0.0}, std::vector<Offset>{0, 1}, {{1, 9.0}});
+    model.add_functions(std::vector<Real>{0.0}, std::vector<Offset>{0, 1}, {{1, 9.0}});
     const std::vector<Index> added{4};
     model.add_quadratic_terms(added, std::vector<Offset>{0, 1}, {{0, 1, 2.0}});
     expect_linear(model.linear_terms(4, 5), {{1, 9.0}});
@@ -549,9 +550,9 @@ TEST(ExpressionTest, Copied)
 
 TEST(ExpressionTest, AttachRefused)
 {
-    constexpr double kLarge = 1.0e308;
+    constexpr Real kLarge = 1.0e308;
     Model model = with_variables(2);
-    const std::vector<double> constants{kLarge, 0.0};
+    const std::vector<Real> constants{kLarge, 0.0};
     const std::vector<Offset> starts{0, 1, 1};
     model.add_functions(constants, starts, {{0, kLarge}});
     const std::vector<Index> held{1};
@@ -582,9 +583,9 @@ TEST(ExpressionTest, AttachRefused)
 
 TEST(ExpressionTest, RefusalOrder)
 {
-    constexpr double kLarge = 1.0e308;
+    constexpr Real kLarge = 1.0e308;
     Model model = with_variables(2);
-    const std::vector<double> constants{kLarge, 0.0};
+    const std::vector<Real> constants{kLarge, 0.0};
     const std::vector<Offset> starts{0, 0, 1};
     model.add_functions(constants, starts, {{0, kLarge}});
     const Offset x = model.add_variable_node(0);
@@ -601,7 +602,7 @@ TEST(ExpressionTest, RefusalOrder)
 TEST(ExpressionTest, SignedZero)
 {
     Model model = with_variables(1);
-    const std::vector<double> constants{-0.0, -0.0, 0.0};
+    const std::vector<Real> constants{-0.0, -0.0, 0.0};
     model.add_functions(constants, std::vector<Offset>(4, 0), {});
     const Offset x = model.add_variable_node(0);
     const Offset exponential = add(model, {BIYOS_OP_EXP, {x}, {}});
@@ -831,7 +832,7 @@ TEST(ExpressionTest, PostfixErrors)
     const Model before = model;
     const std::string bad = "invalid argument: expression 0: ";
     const std::string entry = bad + "entry ";
-    const double nan = kNan;
+    const Real nan = kNan;
     const Offset far = Offset{1} << 40;
     EXPECT_EQ(decode_refusal(model, single({BIYOS_OP_VAR, 0}, {1, 1}, {})),
               entry + "1: operator 0 is unknown");

@@ -21,9 +21,10 @@ using biyos::Graph;
 using biyos::Interval;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::test::Engine;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::size_t kOperators = BIYOS_OP_ERF - BIYOS_OP_CONST + 1;
 constexpr std::size_t kRecent = 4;
 constexpr std::size_t kWidest = 3;
@@ -40,9 +41,9 @@ std::size_t pick(Engine &engine, std::size_t n)
     return static_cast<std::size_t>(engine() % n);
 }
 
-double unit(Engine &engine)
+Real unit(Engine &engine)
 {
-    return static_cast<double>(engine() >> 11) * 0x1p-53;
+    return static_cast<Real>(engine() >> 11) * 0x1p-53;
 }
 
 template <typename T, std::size_t N> T one_of(const std::array<T, N> &values, Engine &engine)
@@ -120,8 +121,8 @@ void grow(Graph &graph, Engine &engine)
         break;
     case biyos::Payload::Coefficients:
     {
-        std::vector<double> weights(children.size());
-        for (double &weight : weights)
+        std::vector<Real> weights(children.size());
+        for (Real &weight : weights)
         {
             weight = one_of(kWeights, engine);
         }
@@ -151,7 +152,7 @@ void grow(Graph &graph, Engine &engine)
     }
 }
 
-double end_of(Engine &engine)
+Real end_of(Engine &engine)
 {
     switch (pick(engine, 10))
     {
@@ -169,8 +170,8 @@ double end_of(Engine &engine)
 
 Interval interval_of(Engine &engine)
 {
-    const double first = end_of(engine);
-    const double last = pick(engine, 8) == 0 ? first : end_of(engine);
+    const Real first = end_of(engine);
+    const Real last = pick(engine, 8) == 0 ? first : end_of(engine);
     const Interval interval((std::min)(first, last), (std::max)(first, last));
     return interval.is_empty() ? Interval(0.0, 1.0) : interval;
 }

@@ -26,7 +26,7 @@ Offset sum_values(Offset n) noexcept
     return n < 0 ? 0 : (std::min)(n, kMost - 1) + 1;
 }
 
-std::span<const double> taken(std::span<const double> values, Offset n)
+std::span<const Real> taken(std::span<const Real> values, Offset n)
 {
     const auto held = to_offset(values.size());
     if (held < n)
@@ -74,7 +74,7 @@ Offset n_values(int op, Offset n)
 Offset append_node(Graph &graph,
                    int op,
                    std::span<const Offset> children,
-                   std::span<const double> values)
+                   std::span<const Real> values)
 {
     const Operator found = to_operator(op);
     const auto n = to_offset(children.size());
@@ -89,7 +89,7 @@ Offset append_node(Graph &graph,
     case Payload::Coefficients:
         break;
     }
-    const std::span<const double> read = taken(values, sum_values(n));
+    const std::span<const Real> read = taken(values, sum_values(n));
     return graph.add_sum(read.front(), children, read.subspan(1));
 }
 

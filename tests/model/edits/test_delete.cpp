@@ -39,6 +39,7 @@ using biyos::Objective;
 using biyos::ObjectiveSense;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::SpecialOrderedSetKind;
 using biyos::Variable;
 using biyos::VariableKind;
@@ -51,7 +52,7 @@ using biyos::test::refusal;
 using Map = std::vector<Index>;
 using Indices = std::vector<Index>;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 
 struct Case
 {
@@ -486,8 +487,8 @@ void expect_used(const Use &use)
 
 void set_tolerances(Model &model, Family family, const Indices &indices)
 {
-    const std::vector<double> absolute{1e-6, 1e-7};
-    const std::vector<double> relative{1e-3, 1e-4};
+    const std::vector<Real> absolute{1e-6, 1e-7};
+    const std::vector<Real> relative{1e-3, 1e-4};
     const std::size_t n = indices.size();
     model.set_tolerances(family,
                          indices,
@@ -820,7 +821,7 @@ TEST(DeleteTest, SplitNode)
     Model model = built(spaced());
     const Offset x = model.add_variable_node(0);
     const std::vector<Offset> children{x};
-    const Offset scaled = model.add_node(BIYOS_OP_SUM, children, std::vector<double>{1.0, 3.0});
+    const Offset scaled = model.add_node(BIYOS_OP_SUM, children, std::vector<Real>{1.0, 3.0});
     model.attach_expressions(std::vector<Index>{1}, std::vector<Offset>{scaled});
     ASSERT_EQ(model.linear_terms(1, 2).size(), 2U);
     EXPECT_EQ(model.linear_terms(1, 2).front().variable, 0);

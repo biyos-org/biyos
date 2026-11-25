@@ -13,7 +13,6 @@
 #include <array>
 #include <bit>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -22,15 +21,17 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::difference;
 using biyos::Encoding;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Postfix;
+using biyos::Real;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::array kKinks{-1.0, 0.5, 2.0};
 constexpr std::array kHeights{1.0, 0.0, 3.0};
 
@@ -43,7 +44,7 @@ Model with_variables(std::size_t n)
         .upper = kInfinity,
     };
     model.add_variables(std::vector<biyos::Variable>(n, free));
-    model.add_functions(std::vector<double>(n, 0.0), std::vector<Offset>(n + 1, 0), {});
+    model.add_functions(std::vector<Real>(n, 0.0), std::vector<Offset>(n + 1, 0), {});
     return model;
 }
 
@@ -61,12 +62,12 @@ Model with_piecewise_linears()
     return model;
 }
 
-std::vector<std::uint64_t> bits(std::span<const double> values)
+std::vector<Bits> bits(std::span<const Real> values)
 {
-    std::vector<std::uint64_t> found;
-    for (const double value : values)
+    std::vector<Bits> found;
+    for (const Real value : values)
     {
-        found.push_back(std::bit_cast<std::uint64_t>(value));
+        found.push_back(std::bit_cast<Bits>(value));
     }
     return found;
 }

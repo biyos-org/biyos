@@ -27,21 +27,19 @@ class Hessian
     const Lower &pattern() const noexcept;
     std::span<const Offset> declared() const noexcept;
     void widen(Index columns);
-    void values(std::span<const double> point,
-                std::span<const double> weights,
-                std::span<double> out);
-    void product(std::span<const double> point,
-                 std::span<const double> weights,
-                 std::span<const double> direction,
-                 std::span<double> out);
+    void values(std::span<const Real> point, std::span<const Real> weights, std::span<Real> out);
+    void product(std::span<const Real> point,
+                 std::span<const Real> weights,
+                 std::span<const Real> direction,
+                 std::span<Real> out);
 
   private:
-    void check(std::span<const double> point, std::span<const double> weights) const;
-    void add_block(Offset e, double scale, std::span<double> out) noexcept;
+    void check(std::span<const Real> point, std::span<const Real> weights) const;
+    void add_block(Offset e, Real scale, std::span<Real> out) noexcept;
     void add_product(Offset e,
-                     double scale,
-                     std::span<const double> direction,
-                     std::span<double> out) noexcept;
+                     Real scale,
+                     std::span<const Real> direction,
+                     std::span<Real> out) noexcept;
 
     std::size_t roots_;
     Elements elements_;

@@ -29,6 +29,7 @@ using biyos::Graph;
 using biyos::Interval;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::test::Box;
 using biyos::test::Check;
 using biyos::test::Engine;
@@ -38,10 +39,10 @@ using biyos::test::Parameters;
 using biyos::test::Point;
 using biyos::test::text;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kHalfPi = std::numbers::pi / 2;
-constexpr double kInverseE = 0x1.78b56362cef38p-2;
-constexpr double kReach = 1000.0;
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kHalfPi = std::numbers::pi / 2;
+constexpr Real kInverseE = 0x1.78b56362cef38p-2;
+constexpr Real kReach = 1000.0;
 constexpr int kDraws = 24;
 constexpr std::size_t kRounds = 4;
 constexpr int kReported = 5;
@@ -86,9 +87,9 @@ constexpr std::array kExponents{
 
 constexpr std::array kPositive{0.1, 1.0 / 3, 0.5, 1.0, 1.5, 2.0, 3.0};
 
-double unit(Engine &engine)
+Real unit(Engine &engine)
 {
-    return static_cast<double>(engine() >> 11) * 0x1p-53;
+    return static_cast<Real>(engine() >> 11) * 0x1p-53;
 }
 
 std::size_t pick(Engine &engine, std::size_t n)
@@ -96,20 +97,20 @@ std::size_t pick(Engine &engine, std::size_t n)
     return static_cast<std::size_t>(engine() % n);
 }
 
-double endpoint(Engine &engine)
+Real endpoint(Engine &engine)
 {
-    const double sign = pick(engine, 2) == 0 ? 1.0 : -1.0;
+    const Real sign = pick(engine, 2) == 0 ? 1.0 : -1.0;
     if (pick(engine, 3) == 0)
     {
         return sign * kSpecial[pick(engine, kSpecial.size())];
     }
-    const double scale = std::pow(10.0, static_cast<double>(pick(engine, 8)) - 4.0);
+    const Real scale = std::pow(10.0, static_cast<Real>(pick(engine, 8)) - 4.0);
     return sign * scale * unit(engine);
 }
 
-double finite_endpoint(Engine &engine)
+Real finite_endpoint(Engine &engine)
 {
-    double value = endpoint(engine);
+    Real value = endpoint(engine);
     while (!std::isfinite(value))
     {
         value = endpoint(engine);
@@ -119,13 +120,13 @@ double finite_endpoint(Engine &engine)
 
 Interval interval_of(Engine &engine)
 {
-    const double first = endpoint(engine);
+    const Real first = endpoint(engine);
     const bool point = pick(engine, 6) == 0;
-    const double last = point ? first : endpoint(engine);
+    const Real last = point ? first : endpoint(engine);
     return {(std::min)(first, last), (std::max)(first, last)};
 }
 
-void add_inside(std::vector<double> &points, Interval box, double value)
+void add_inside(std::vector<Real> &points, Interval box, Real value)
 {
     if (std::isfinite(value) && box.lower() <= value && value <= box.upper())
     {
@@ -133,30 +134,30 @@ void add_inside(std::vector<double> &points, Interval box, double value)
     }
 }
 
-double finite_lower(Interval box)
+Real finite_lower(Interval box)
 {
     return std::isfinite(box.lower()) ? box.lower() : (std::min)(box.upper(), 0.0) - kReach;
 }
 
-double finite_upper(Interval box)
+Real finite_upper(Interval box)
 {
     return std::isfinite(box.upper()) ? box.upper() : (std::max)(box.lower(), 0.0) + kReach;
 }
 
-std::vector<double> points_of(Interval box, Engine &engine)
+std::vector<Real> points_of(Interval box, Engine &engine)
 {
-    std::vector<double> points;
+    std::vector<Real> points;
     add_inside(points, box, box.lower());
     add_inside(points, box, box.upper());
     add_inside(points, box, std::nextafter(box.lower(), kInfinity));
     add_inside(points, box, std::nextafter(box.upper(), -kInfinity));
-    for (const double special : kSpecial)
+    for (const Real special : kSpecial)
     {
         add_inside(points, box, special);
         add_inside(points, box, -special);
     }
-    const double low = finite_lower(box);
-    const double high = finite_upper(box);
+    const Real low = finite_lower(box);
+    const Real high = finite_upper(box);
     for (int k = 0; k < kDraws; ++k)
     {
         add_inside(points, box, low + (high - low) * unit(engine));
@@ -164,7 +165,7 @@ std::vector<double> points_of(Interval box, Engine &engine)
     return points;
 }
 
-bool encloses(Interval interval, double value)
+bool encloses(Interval interval, Real value)
 {
     if (std::isnan(value))
     {
@@ -186,7 +187,7 @@ std::string report(std::span<const Interval> box, const Point &point, Offset nod
 
 void expect_point(const Check &check, const Point &point)
 {
-    std::vector<double> values(check.nodes.size());
+    std::vector<Real> values(check.nodes.size());
     biyos::test::evaluate(check.graph, point, values);
     for (std::size_t node = 0; node < values.size(); ++node)
     {
@@ -205,7 +206,7 @@ biyos::test::Parameters biyos::test::parameters_of(Operator op, Engine &engine)
 {
     Parameters parameters{};
     parameters.constant = finite_endpoint(engine);
-    for (double &weight : parameters.weights)
+    for (Real &weight : parameters.weights)
     {
         weight = pick(engine, 4) == 0 ? 0.0 : finite_endpoint(engine);
     }
@@ -285,7 +286,7 @@ std::vector<Interval> biyos::test::enclosures(const Graph &graph, std::span<cons
     return nodes;
 }
 
-std::string biyos::test::text(double value)
+std::string biyos::test::text(Real value)
 {
     std::ostringstream out;
     out << std::setprecision(17) << value;
@@ -294,7 +295,7 @@ std::string biyos::test::text(double value)
 
 void biyos::test::expect_sampled(const Check &check, Engine &engine)
 {
-    std::array<std::vector<double>, kVariables> candidates;
+    std::array<std::vector<Real>, kVariables> candidates;
     std::size_t largest = 0;
     for (std::size_t k = 0; k < kVariables; ++k)
     {
@@ -310,7 +311,7 @@ void biyos::test::expect_sampled(const Check &check, Engine &engine)
         Point point{};
         for (std::size_t k = 0; k < kVariables; ++k)
         {
-            const std::vector<double> &mine = candidates[k];
+            const std::vector<Real> &mine = candidates[k];
             const std::size_t index = round < largest ? round : pick(engine, largest);
             point[k] = mine[index % mine.size()];
         }

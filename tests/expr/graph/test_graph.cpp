@@ -23,11 +23,12 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Payload;
 using biyos::payload_of;
+using biyos::Real;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
-constexpr double kSmallest = std::numeric_limits<double>::denorm_min();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
+constexpr Real kSmallest = std::numeric_limits<Real>::denorm_min();
 constexpr int kRounds = 64;
 
 constexpr std::array kUnary{
@@ -44,7 +45,7 @@ std::vector<Offset> ids(std::span<const Offset> nodes)
     return {nodes.begin(), nodes.end()};
 }
 
-void expect_values(std::span<const double> found, const std::vector<double> &wanted)
+void expect_values(std::span<const Real> found, const std::vector<Real> &wanted)
 {
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < wanted.size(); ++k)
@@ -64,12 +65,12 @@ std::string refused(Operator op, const std::string &reason)
     return "invalid argument: expression: " + name + " " + reason;
 }
 
-std::string constant_refusal(Graph &graph, double value)
+std::string constant_refusal(Graph &graph, Real value)
 {
     return refusal([&] { graph.add(Operator::Constant, value, {}); });
 }
 
-std::string sum_refusal(Graph &graph, double constant, double coefficient)
+std::string sum_refusal(Graph &graph, Real constant, Real coefficient)
 {
     const Offset child = 0;
     const std::span children(&child, 1);
@@ -297,7 +298,7 @@ TEST(GraphTest, ExponentShape)
     const Offset smallest = graph.add(sign, kSmallest, child);
     EXPECT_DOUBLE_EQ(graph.constant(smallest), kSmallest);
     const std::array exponents{0.0, -1.0, -0.0};
-    for (const double exponent : exponents)
+    for (const Real exponent : exponents)
     {
         EXPECT_EQ(graph.op(graph.add(Operator::ConstantPower, exponent, child)),
                   Operator::ConstantPower);
@@ -325,7 +326,7 @@ TEST(GraphTest, Counts)
     Graph graph;
     const Offset x = graph.add_variable(0);
     const std::array terms{x, x};
-    const double weight = 1.0;
+    const Real weight = 1.0;
     EXPECT_EQ(refusal([&] { graph.add_sum(0.0, terms, std::span(&weight, 1)); }),
               "invalid argument: expression: 2 children and 1 coefficient");
     EXPECT_EQ(refusal([&] { graph.add_variable(-1); }),

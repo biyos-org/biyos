@@ -1,4 +1,5 @@
 #include "bounds.hpp"
+#include "core/numbers.hpp"
 #include "expr/intervals/elementary.hpp"
 #include "expr/intervals/interval.hpp"
 #include "expr/intervals/rounding.hpp"
@@ -12,6 +13,7 @@ namespace
 {
 
 using biyos::Interval;
+using biyos::Real;
 using biyos::shifted;
 using biyos::widen_down;
 using biyos::widen_up;
@@ -19,11 +21,11 @@ using biyos::test::exact;
 using biyos::test::holds;
 using biyos::test::within;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kLargest = (std::numeric_limits<double>::max)();
-constexpr double kHalfPiUp = 0x1.921fb54442d19p+0;
-constexpr double kPiUp = 0x1.921fb54442d19p+1;
-constexpr double kInverseE = 0x1.78b56362cef38p-2;
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kLargest = (std::numeric_limits<Real>::max)();
+constexpr Real kHalfPiUp = 0x1.921fb54442d19p+0;
+constexpr Real kPiUp = 0x1.921fb54442d19p+1;
+constexpr Real kInverseE = 0x1.78b56362cef38p-2;
 constexpr int kWide = 2 * biyos::kLibmSteps;
 constexpr Interval kAll = Interval::entire();
 
@@ -60,10 +62,10 @@ TEST(IntervalTest, Entropy)
     EXPECT_TRUE(holds(biyos::entropy({0.0, 1.0}), -kInverseE, 0.0));
     EXPECT_TRUE(within(biyos::entropy({0.0, 1.0}), shifted(-kInverseE, -kWide), 0.0));
     EXPECT_TRUE(holds(biyos::entropy({0.2, 2.0}), -kInverseE, 2 * std::log(2.0)));
-    const double half = 0.5 * std::log(0.5);
+    const Real half = 0.5 * std::log(0.5);
     EXPECT_TRUE(holds(biyos::entropy({0.5, 2.0}), half, 2 * std::log(2.0)));
     EXPECT_TRUE(within(biyos::entropy({0.5, 2.0}), widen_down(half), kInfinity));
-    const double fifth = 0.2 * std::log(0.2);
+    const Real fifth = 0.2 * std::log(0.2);
     EXPECT_TRUE(holds(biyos::entropy({0.1, 0.2}), fifth, 0.1 * std::log(0.1)));
     EXPECT_TRUE(within(biyos::entropy({0.1, 0.2}), widen_down(fifth), 0.0));
     EXPECT_TRUE(holds(biyos::entropy({1.0, 2.0}), 0.0, 2 * std::log(2.0)));

@@ -30,9 +30,7 @@ void check_postfix(const Postfix &postfix)
     check_shape(postfix.starts.size() - 1, postfix.starts, postfix.codes.size());
 }
 
-void check_table(std::span<const Offset> starts,
-                 std::span<const double> x,
-                 std::span<const double> y)
+void check_table(std::span<const Offset> starts, std::span<const Real> x, std::span<const Real> y)
 {
     if (starts.empty() || x.size() != y.size())
     {
@@ -41,7 +39,7 @@ void check_table(std::span<const Offset> starts,
     check_shape(starts.size() - 1, starts, x.size());
 }
 
-void add_numbered(Graph &graph, std::span<const double> x, std::span<const double> y)
+void add_numbered(Graph &graph, std::span<const Real> x, std::span<const Real> y)
 {
     const Offset pwl = graph.points().size();
     try
@@ -78,7 +76,7 @@ Offset Model::add_variable_node(Index variable)
     return node;
 }
 
-Offset Model::add_node(int op, std::span<const Offset> children, std::span<const double> values)
+Offset Model::add_node(int op, std::span<const Offset> children, std::span<const Real> values)
 {
     Rollback rollback(graph_);
     const Offset node = append_node(graph_, op, children, values);
@@ -87,14 +85,14 @@ Offset Model::add_node(int op, std::span<const Offset> children, std::span<const
     return node;
 }
 
-Offset Model::add_piecewise_linear(std::span<const double> x, std::span<const double> y)
+Offset Model::add_piecewise_linear(std::span<const Real> x, std::span<const Real> y)
 {
     return graph_.add_piecewise_linear(x, y);
 }
 
 Offset Model::add_piecewise_linears(std::span<const Offset> starts,
-                                    std::span<const double> x,
-                                    std::span<const double> y)
+                                    std::span<const Real> x,
+                                    std::span<const Real> y)
 {
     check_table(starts, x, y);
     Rollback rollback(graph_);

@@ -10,14 +10,14 @@ namespace biyos
 struct LinearTerm
 {
     Index variable;
-    double coefficient;
+    Real coefficient;
 };
 
 struct QuadraticTerm
 {
     Index row;
     Index column;
-    double coefficient;
+    Real coefficient;
 };
 
 void add_alike(std::vector<LinearTerm> &terms);

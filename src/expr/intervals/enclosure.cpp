@@ -53,7 +53,7 @@ void check_pass(const Graph &graph, std::span<const Interval> box, std::span<con
     }
 }
 
-Interval point(double value) noexcept
+Interval point(Real value) noexcept
 {
     return {value, value};
 }
@@ -76,7 +76,7 @@ Interval variable_of(const Pass &pass, Offset node) noexcept
 Interval sum_of(const Pass &pass, Offset node) noexcept
 {
     const std::span<const Offset> terms = pass.graph.children(node);
-    const std::span<const double> weights = pass.graph.coefficients(node);
+    const std::span<const Real> weights = pass.graph.coefficients(node);
     Interval total = point(pass.graph.constant(node));
     for (std::size_t k = 0; k < terms.size(); ++k)
     {

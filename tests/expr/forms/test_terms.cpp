@@ -6,22 +6,23 @@
 #include <array>
 #include <bit>
 #include <cstddef>
-#include <cstdint>
 #include <vector>
 
 namespace
 {
 
 using biyos::add_alike;
+using biyos::Bits;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::QuadraticTerm;
+using biyos::Real;
 
-constexpr double kAbsorber = 0x1p54;
+constexpr Real kAbsorber = 0x1p54;
 
-std::uint64_t bits(double value)
+Bits bits(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
 void expect_linear(const std::vector<LinearTerm> &found, const std::vector<LinearTerm> &wanted)
@@ -84,14 +85,14 @@ TEST(TermTest, PairOrder)
 TEST(TermTest, StableAdding)
 {
     const Index n = 16;
-    const std::array<double, 5> absorbed{kAbsorber, 1.0, 1.0, 1.0, -kAbsorber};
+    const std::array<Real, 5> absorbed{kAbsorber, 1.0, 1.0, 1.0, -kAbsorber};
     std::vector<LinearTerm> terms;
     for (Index k = 1; k < n; ++k)
     {
         terms.push_back({.variable = k, .coefficient = 1.0});
         if (k % 3 == 0)
         {
-            const double weight = absorbed[static_cast<std::size_t>(k / 3 - 1)];
+            const Real weight = absorbed[static_cast<std::size_t>(k / 3 - 1)];
             terms.push_back({.variable = 0, .coefficient = weight});
         }
     }

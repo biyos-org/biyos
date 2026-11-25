@@ -24,6 +24,7 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::Entry;
 using biyos::Graph;
 using biyos::Hessian;
@@ -31,6 +32,7 @@ using biyos::Index;
 using biyos::Lower;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::Tape;
 using biyos::test::binary;
 using biyos::test::kBudgets;
@@ -42,12 +44,12 @@ using biyos::test::random_graph;
 using biyos::test::refusal;
 using biyos::test::unary;
 
-using Values = std::vector<double>;
+using Values = std::vector<Real>;
 using Rows = std::vector<Values>;
 
-constexpr double kStep = 1e-5;
-constexpr double kBound = 1e-6;
-constexpr double kRounding = 1e-12;
+constexpr Real kStep = 1e-5;
+constexpr Real kBound = 1e-6;
+constexpr Real kRounding = 1e-12;
 constexpr std::size_t kPicked = 4;
 
 std::size_t at(Offset value)
@@ -55,7 +57,7 @@ std::size_t at(Offset value)
     return static_cast<std::size_t>(value);
 }
 
-Values values_of(Hessian &hessian, std::span<const double> point, std::span<const double> weights)
+Values values_of(Hessian &hessian, std::span<const Real> point, std::span<const Real> weights)
 {
     Values out(hessian.pattern().rows.size(), -1.0);
     hessian.values(point, weights, out);
@@ -63,9 +65,9 @@ Values values_of(Hessian &hessian, std::span<const double> point, std::span<cons
 }
 
 Values product_of(Hessian &hessian,
-                  std::span<const double> point,
-                  std::span<const double> weights,
-                  std::span<const double> direction)
+                  std::span<const Real> point,
+                  std::span<const Real> weights,
+                  std::span<const Real> direction)
 {
     Values out(point.size(), -1.0);
     hessian.product(point, weights, direction, out);
@@ -87,13 +89,13 @@ Rows dense(const Lower &lower, const Values &out, std::size_t size)
     return rows;
 }
 
-Rows differences(const Tape &tape, Values point, std::span<const double> weights, double step)
+Rows differences(const Tape &tape, Values point, std::span<const Real> weights, Real step)
 {
     Rows columns;
     for (std::size_t j = 0; j < point.size(); ++j)
     {
-        const double middle = point[j];
-        const double size = step * (std::max)(1.0, std::fabs(middle));
+        const Real middle = point[j];
+        const Real size = step * (std::max)(1.0, std::fabs(middle));
         point[j] = middle + size;
         const Values ahead = biyos::test::gradient_of(tape, point, weights);
         point[j] = middle - size;
@@ -109,12 +111,12 @@ Rows differences(const Tape &tape, Values point, std::span<const double> weights
     return columns;
 }
 
-double tolerance(double difference)
+Real tolerance(Real difference)
 {
     return kBound * (1.0 + std::fabs(difference));
 }
 
-bool converged(double fine, double coarse)
+bool converged(Real fine, Real coarse)
 {
     return std::isfinite(fine) && std::fabs(fine - coarse) <= tolerance(fine);
 }
@@ -122,7 +124,7 @@ bool converged(double fine, double coarse)
 std::size_t check_differences(const Graph &graph,
                               std::span<const Offset> roots,
                               const Values &point,
-                              std::span<const double> weights,
+                              std::span<const Real> weights,
                               const Rows &rows)
 {
     const Tape tape(graph, roots);
@@ -144,13 +146,13 @@ std::size_t check_differences(const Graph &graph,
     return checked;
 }
 
-std::size_t check_product(const Rows &rows, std::span<const double> direction, const Values &found)
+std::size_t check_product(const Rows &rows, std::span<const Real> direction, const Values &found)
 {
     std::size_t checked = 0;
     for (std::size_t i = 0; i < rows.size(); ++i)
     {
-        double wanted = 0.0;
-        double size = 0.0;
+        Real wanted = 0.0;
+        Real size = 0.0;
         for (std::size_t j = 0; j < rows.size(); ++j)
         {
             wanted += rows[i][j] * direction[j];
@@ -185,12 +187,12 @@ void expect_same(const Values &found, const Values &wanted)
     for (std::size_t k = 0; k < wanted.size(); ++k)
     {
         SCOPED_TRACE(k);
-        EXPECT_EQ(std::bit_cast<std::uint64_t>(found[k]), std::bit_cast<std::uint64_t>(wanted[k]))
+        EXPECT_EQ(std::bit_cast<Bits>(found[k]), std::bit_cast<Bits>(wanted[k]))
             << found[k] << " against " << wanted[k];
     }
 }
 
-double entry_of(Hessian &hessian, std::span<const double> point, Index row, Index column)
+Real entry_of(Hessian &hessian, std::span<const Real> point, Index row, Index column)
 {
     const Values out = values_of(hessian, point, std::array{1.0});
     const Lower &lower = hessian.pattern();
@@ -205,9 +207,9 @@ double entry_of(Hessian &hessian, std::span<const double> point, Index row, Inde
     return std::nan("");
 }
 
-void expect_zero(double value)
+void expect_zero(Real value)
 {
-    EXPECT_EQ(std::bit_cast<std::uint64_t>(value), std::bit_cast<std::uint64_t>(0.0)) << value;
+    EXPECT_EQ(std::bit_cast<Bits>(value), std::bit_cast<Bits>(0.0)) << value;
 }
 
 Offset vanished(Graph &graph, Offset inner, Offset factor)
@@ -247,7 +249,7 @@ std::vector<Offset> variables(Graph &graph, Index size)
 
 Offset wide(Graph &graph, const std::vector<Offset> &x)
 {
-    const std::vector<double> ones(x.size(), 1.0);
+    const std::vector<Real> ones(x.size(), 1.0);
     const Offset total = graph.add_sum(0.0, x, ones);
     const Offset wave = unary(graph, Operator::Sin, total);
     const Offset product = graph.add(Operator::Product, 0.5, x);
@@ -389,7 +391,7 @@ TEST(HessianTest, Nested)
     Hessian hessian(graph, roots, {});
     const std::array point{0.4, -1.1};
     const Rows rows = dense(hessian.pattern(), values_of(hessian, point, std::array{1.0, 3.0}), 2);
-    const double e = std::exp(0.4);
+    const Real e = std::exp(0.4);
     expect_rows(rows, {{0.5 * e + 12.0 * -1.1, 6.0 + 12.0 * 0.4}, {6.0 + 12.0 * 0.4, -4.0}});
 }
 
@@ -450,7 +452,7 @@ TEST(HessianTest, Direction)
         const Rows rows = dense(hessian.pattern(), values_of(hessian, point, weights), 8);
         const Values found = product_of(hessian, point, weights, direction);
         EXPECT_EQ(check_product(rows, direction, found), 8U);
-        EXPECT_EQ(std::bit_cast<std::uint64_t>(found[7]), std::bit_cast<std::uint64_t>(0.0));
+        EXPECT_EQ(std::bit_cast<Bits>(found[7]), std::bit_cast<Bits>(0.0));
     }
 }
 

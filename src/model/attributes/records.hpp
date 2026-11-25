@@ -11,8 +11,8 @@ namespace biyos
 
 struct Tolerance
 {
-    double absolute;
-    double relative;
+    Real absolute;
+    Real relative;
 };
 
 class RecordTolerances
@@ -22,8 +22,8 @@ class RecordTolerances
     void set(std::string_view noun,
              Index size,
              std::span<const Index> indices,
-             std::span<const double> absolute,
-             std::span<const double> relative);
+             std::span<const Real> absolute,
+             std::span<const Real> relative);
     void remove(std::string_view noun, Index size, std::span<const Index> indices);
     void renumber(std::span<const Index> map) noexcept;
 

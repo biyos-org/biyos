@@ -1,4 +1,5 @@
 #include "bounds.hpp"
+#include "core/numbers.hpp"
 #include "expr/intervals/interval.hpp"
 #include "expr/intervals/rounding.hpp"
 
@@ -7,18 +8,19 @@
 #include <bit>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <vector>
 
 namespace
 {
 
+using biyos::Bits;
 using biyos::hull;
 using biyos::Interval;
 using biyos::maximum;
 using biyos::meet;
 using biyos::minimum;
+using biyos::Real;
 using biyos::shifted;
 using biyos::signs;
 using biyos::widen_down;
@@ -27,20 +29,20 @@ using biyos::test::exact;
 using biyos::test::holds;
 using biyos::test::within;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
-constexpr double kLargest = (std::numeric_limits<double>::max)();
-constexpr double kSmallest = std::numeric_limits<double>::denorm_min();
-constexpr double kTiny = 1e-200;
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
+constexpr Real kLargest = (std::numeric_limits<Real>::max)();
+constexpr Real kSmallest = std::numeric_limits<Real>::denorm_min();
+constexpr Real kTiny = 1e-200;
 constexpr int kBoundUlps = biyos::kLibmUlps + 1;
 constexpr Interval kAll = Interval::entire();
 
-std::uint64_t bits(double value)
+Bits bits(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
-double ulp_of(double value)
+Real ulp_of(Real value)
 {
     if (std::fpclassify(value) == FP_ZERO || std::fpclassify(value) == FP_SUBNORMAL)
     {
@@ -49,22 +51,22 @@ double ulp_of(double value)
     return std::ldexp(1.0, std::ilogb(value) - 52);
 }
 
-double above(double value, int ulps)
+Real above(Real value, int ulps)
 {
     return std::nextafter(value + ulps * ulp_of(value), kInfinity);
 }
 
-double below(double value, int ulps)
+Real below(Real value, int ulps)
 {
     return std::nextafter(value - ulps * ulp_of(value), -kInfinity);
 }
 
-std::vector<double> exact_values()
+std::vector<Real> exact_values()
 {
-    std::vector<double> values{0.0, kSmallest, 3 * kSmallest, 0x1p-1022, 0.1, 1.0 / 3};
+    std::vector<Real> values{0.0, kSmallest, 3 * kSmallest, 0x1p-1022, 0.1, 1.0 / 3};
     for (const int exponent : {-1074, -1060, -1023, -1022, -60, -1, 0, 1, 52, 600, 1023})
     {
-        const double power = std::ldexp(1.0, exponent);
+        const Real power = std::ldexp(1.0, exponent);
         values.push_back(power);
         values.push_back(std::nextafter(power, 0.0));
         values.push_back(std::nextafter(power, kInfinity));
@@ -77,7 +79,7 @@ std::vector<double> exact_values()
     return values;
 }
 
-Interval point(double value)
+Interval point(Real value)
 {
     return {value, value};
 }
@@ -129,10 +131,10 @@ TEST(IntervalTest, Steps)
 
 TEST(IntervalTest, Accuracy)
 {
-    for (const double value : exact_values())
+    for (const Real value : exact_values())
     {
-        const double high = above(value, kBoundUlps);
-        const double low = below(value, kBoundUlps);
+        const Real high = above(value, kBoundUlps);
+        const Real low = below(value, kBoundUlps);
         EXPECT_LE(widen_down(high), low) << value;
         EXPECT_GE(widen_up(low), high) << value;
     }

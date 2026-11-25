@@ -30,6 +30,7 @@ using biyos::Graph;
 using biyos::Interval;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::test::Box;
 using biyos::test::box_of;
 using biyos::test::Check;
@@ -52,7 +53,7 @@ constexpr int kBoxes = 300;
 constexpr int kExact = 0;
 constexpr int kLevels = 64;
 constexpr int kLevelSteps = 4;
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 
 constexpr Parameters kFixed{
     .constant = 2.5,
@@ -218,7 +219,7 @@ constexpr std::array<Composite, 7> kComposites{
     shared,
 };
 
-Interval point_box(double value)
+Interval point_box(Real value)
 {
     return {value, value};
 }
@@ -228,10 +229,10 @@ void expect_margin(Operator op, const Point &point, int steps)
     const Graph graph = operator_graph(op, kFixed);
     const std::array box{point_box(point[0]), point_box(point[1]), point_box(point[2])};
     const std::vector<Interval> nodes = enclosures(graph, box);
-    std::vector<double> values(nodes.size());
+    std::vector<Real> values(nodes.size());
     biyos::test::evaluate(graph, point, values);
     const Interval found = nodes.back();
-    const double value = values.back();
+    const Real value = values.back();
     SCOPED_TRACE("operator " + std::to_string(static_cast<int>(op)) + " at " + text(point[0]));
     EXPECT_LE(found.lower(), biyos::shifted(value, -steps));
     EXPECT_GE(found.upper(), biyos::shifted(value, steps));
@@ -383,8 +384,8 @@ TEST(IntervalTest, Shared)
     const std::vector<Interval> nodes = enclosures(graph, box);
     for (int level = 0; level <= kLevels; ++level)
     {
-        const double low = std::ldexp(1.0, level);
-        const double high = 2 * low;
+        const Real low = std::ldexp(1.0, level);
+        const Real high = 2 * low;
         const Interval found = nodes[static_cast<std::size_t>(level)];
         const int steps = kLevelSteps * level;
         EXPECT_TRUE(holds(found, low, high)) << level;

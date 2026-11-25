@@ -25,7 +25,7 @@ struct Node
 {
     int code;
     std::vector<Offset> children = {};
-    std::vector<double> values = {};
+    std::vector<Real> values = {};
     Index variable = -1;
 };
 
@@ -49,7 +49,7 @@ struct Cones
     std::vector<Offset> starts;
     std::vector<Index> functions;
     std::vector<Offset> parameter_starts;
-    std::vector<double> parameters;
+    std::vector<Real> parameters;
 };
 
 struct Naming
@@ -61,7 +61,7 @@ struct Naming
 struct Parts
 {
     std::vector<Variable> variables;
-    std::vector<double> constants;
+    std::vector<Real> constants;
     std::vector<Offset> starts;
     std::vector<LinearTerm> terms;
     Quadratic quadratic;
@@ -85,7 +85,7 @@ struct Parts
 
 inline Parts sample()
 {
-    constexpr double kInfinity = std::numeric_limits<double>::infinity();
+    constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
     return Parts{
         .variables =
             {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "biyos/biyos.h"
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/text/strings.hpp"
 #include "core/version.hpp"
@@ -78,9 +79,9 @@ struct IntRule
 
 struct DoubleRule
 {
-    double default_value;
-    double lower = -kInfinity;
-    double upper = kInfinity;
+    Real default_value;
+    Real lower = -kInfinity;
+    Real upper = kInfinity;
 };
 
 struct StringRule
@@ -154,7 +155,7 @@ struct OptionSpec
     std::optional<Option> replacement = std::nullopt;
 };
 
-using OptionValue = std::variant<bool, int, double, std::string_view, Masks>;
+using OptionValue = std::variant<bool, int, Real, std::string_view, Masks>;
 
 Option find_option(std::string_view name);
 Option find_option(int id);
@@ -170,13 +171,13 @@ class Options
 
     void set_bool(Option option, bool value);
     void set_int(Option option, int value);
-    void set_double(Option option, double value);
+    void set_double(Option option, Real value);
     void set_string(Option option, std::string_view value);
     void set_flags(Option option, Masks value);
 
     bool get_bool(Option option) const;
     int get_int(Option option) const;
-    double get_double(Option option) const;
+    Real get_double(Option option) const;
     std::string_view get_string(Option option) const;
     Masks get_flags(Option option) const;
 

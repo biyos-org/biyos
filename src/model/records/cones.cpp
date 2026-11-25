@@ -27,7 +27,7 @@ struct GivenCone
 {
     ConeKind kind;
     std::span<const Index> functions;
-    std::span<const double> parameters;
+    std::span<const Real> parameters;
 };
 
 bool parametric(ConeKind kind) noexcept
@@ -121,7 +121,7 @@ void check_members(Index cone,
     }
 }
 
-void check_parameter(Index cone, std::size_t k, double value)
+void check_parameter(Index cone, std::size_t k, Real value)
 {
     const std::string name = "parameter " + text_of(k);
     const std::string_view fault = value_fault(value);
@@ -135,7 +135,7 @@ void check_parameter(Index cone, std::size_t k, double value)
     }
 }
 
-void check_parameters(Index cone, ConeKind kind, std::span<const double> parameters)
+void check_parameters(Index cone, ConeKind kind, std::span<const Real> parameters)
 {
     if (!parametric(kind) && !parameters.empty())
     {
@@ -223,7 +223,7 @@ std::span<const Index> Model::cone_functions(Index start, Index stop) const
     return part(cone_functions_, cone_ends_, start, stop);
 }
 
-std::span<const double> Model::cone_parameters(Index start, Index stop) const
+std::span<const Real> Model::cone_parameters(Index start, Index stop) const
 {
     check_span(kNoun, start, stop, n_cones());
     return part(cone_parameters_, cone_parameter_ends_, start, stop);
@@ -240,7 +240,7 @@ void Model::add_cones(std::span<const ConeKind> kinds,
                       std::span<const Offset> starts,
                       std::span<const Index> functions,
                       std::span<const Offset> parameter_starts,
-                      std::span<const double> parameters)
+                      std::span<const Real> parameters)
 {
     check_cone_room(kinds.size(), to_offset(functions.size()), to_offset(parameters.size()));
     check_shape(kinds.size(), starts, functions.size());

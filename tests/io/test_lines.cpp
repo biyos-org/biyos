@@ -1,10 +1,10 @@
 #include "core/error.hpp"
+#include "core/numbers.hpp"
 #include "io/lines.hpp"
 
 #include <gtest/gtest.h>
 
 #include <bit>
-#include <cstdint>
 #include <optional>
 #include <sstream>
 #include <string_view>
@@ -13,16 +13,19 @@
 namespace
 {
 
+using biyos::Bits;
+using biyos::Real;
+
 std::vector<std::string_view> fields_of(const biyos::Lines &lines)
 {
     return {lines.fields().begin(), lines.fields().end()};
 }
 
-void expect_number(std::string_view field, double wanted)
+void expect_number(std::string_view field, Real wanted)
 {
-    const std::optional<double> found = biyos::number_of(field);
+    const std::optional<Real> found = biyos::number_of(field);
     ASSERT_TRUE(found.has_value()) << field;
-    EXPECT_EQ(std::bit_cast<std::uint64_t>(*found), std::bit_cast<std::uint64_t>(wanted)) << field;
+    EXPECT_EQ(std::bit_cast<Bits>(*found), std::bit_cast<Bits>(wanted)) << field;
 }
 
 }

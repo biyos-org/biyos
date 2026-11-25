@@ -14,6 +14,6 @@ Offset n_values(int op, Offset n);
 Offset append_node(Graph &graph,
                    int op,
                    std::span<const Offset> children,
-                   std::span<const double> values);
+                   std::span<const Real> values);
 
 }

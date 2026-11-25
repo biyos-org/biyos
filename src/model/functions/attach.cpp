@@ -55,21 +55,21 @@ std::vector<Parts> split_all(Graph &graph, const Uses &uses, std::span<const Off
     return parts;
 }
 
-double added_to(double held, double added) noexcept
+Real added_to(Real held, Real added) noexcept
 {
     const bool nothing = std::fpclassify(added) == FP_ZERO && !std::signbit(added);
     return nothing ? held : held + added;
 }
 
-std::vector<double> constants_of(std::span<const Index> functions,
-                                 std::span<const Parts> parts,
-                                 std::span<const double> held)
+std::vector<Real> constants_of(std::span<const Index> functions,
+                               std::span<const Parts> parts,
+                               std::span<const Real> held)
 {
-    std::vector<double> sums;
+    std::vector<Real> sums;
     sums.reserve(functions.size());
     for (std::size_t k = 0; k < functions.size(); ++k)
     {
-        const double sum = added_to(held[to_size(functions[k])], parts[k].constant);
+        const Real sum = added_to(held[to_size(functions[k])], parts[k].constant);
         const std::string_view fault = value_fault(sum);
         if (!fault.empty())
         {
@@ -144,7 +144,7 @@ void Model::attach_expressions(std::span<const Index> functions, std::span<const
     check_nodes(functions, nodes, graph_.size());
     Rollback rollback(graph_);
     const std::vector<Parts> parts = split_all(graph_, uses_, nodes);
-    const std::vector<double> constants = constants_of(functions, parts, constants_);
+    const std::vector<Real> constants = constants_of(functions, parts, constants_);
     const std::vector<Offset> roots = roots_of(graph_, functions, parts, roots_);
     const std::vector<AddedTerms> linear = additions_of(functions, parts, &Parts::linear);
     const std::vector<AddedPairs> pairs = additions_of(functions, parts, &Parts::quadratic);

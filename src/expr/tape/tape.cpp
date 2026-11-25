@@ -261,7 +261,7 @@ std::uint64_t Compiler::payload(Offset node, Block &block)
     case Payload::None:
         return 0;
     case Payload::Constant:
-        return std::bit_cast<std::uint64_t>(graph_.constant(node));
+        return std::bit_cast<Bits>(graph_.constant(node));
     case Payload::Variable:
         return static_cast<std::uint64_t>(graph_.variable(node));
     case Payload::Coefficients:
@@ -275,7 +275,7 @@ std::uint64_t Compiler::payload(Offset node, Block &block)
 std::uint64_t Compiler::weights(Offset node, Block &block) const
 {
     const std::size_t position = block.weights.size();
-    const std::span<const double> coefficients = graph_.coefficients(node);
+    const std::span<const Real> coefficients = graph_.coefficients(node);
     block.weights.push_back(graph_.constant(node));
     block.weights.insert(block.weights.end(), coefficients.begin(), coefficients.end());
     return position;

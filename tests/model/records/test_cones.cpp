@@ -10,7 +10,6 @@
 
 #include <bit>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <numeric>
 #include <span>
@@ -21,17 +20,19 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::ConeKind;
 using biyos::Constraint;
 using biyos::difference;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::test::Cones;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 
 struct Shape
 {
@@ -71,7 +72,7 @@ const std::vector<Shape> kShapes{
 Model with_functions(std::size_t n)
 {
     Model model;
-    const std::vector<double> constants(n, 0.0);
+    const std::vector<Real> constants(n, 0.0);
     const std::vector<Offset> starts(n + 1, 0);
     model.add_functions(constants, starts, {});
     return model;
@@ -84,7 +85,7 @@ std::vector<Index> first(Index n)
     return functions;
 }
 
-Cones one(ConeKind kind, std::vector<Index> functions, std::vector<double> parameters = {})
+Cones one(ConeKind kind, std::vector<Index> functions, std::vector<Real> parameters = {})
 {
     const auto members = static_cast<Offset>(functions.size());
     const auto values = static_cast<Offset>(parameters.size());
@@ -138,22 +139,22 @@ std::vector<Index> members_of(const Model &model, Index start, Index stop)
     return {found.begin(), found.end()};
 }
 
-std::vector<std::uint64_t> parameters_of(const Model &model, Index start, Index stop)
+std::vector<Bits> parameters_of(const Model &model, Index start, Index stop)
 {
-    std::vector<std::uint64_t> found;
-    for (const double value : model.cone_parameters(start, stop))
+    std::vector<Bits> found;
+    for (const Real value : model.cone_parameters(start, stop))
     {
-        found.push_back(std::bit_cast<std::uint64_t>(value));
+        found.push_back(std::bit_cast<Bits>(value));
     }
     return found;
 }
 
-std::vector<std::uint64_t> bits_of(const std::vector<double> &values)
+std::vector<Bits> bits_of(const std::vector<Real> &values)
 {
-    std::vector<std::uint64_t> found;
-    for (const double value : values)
+    std::vector<Bits> found;
+    for (const Real value : values)
     {
-        found.push_back(std::bit_cast<std::uint64_t>(value));
+        found.push_back(std::bit_cast<Bits>(value));
     }
     return found;
 }
@@ -161,7 +162,7 @@ std::vector<std::uint64_t> bits_of(const std::vector<double> &values)
 std::string outcome(const Shape &shape)
 {
     Model model = with_functions(10);
-    const std::vector<double> parameters(shape.parameters, 1.0);
+    const std::vector<Real> parameters(shape.parameters, 1.0);
     try
     {
         add(model, one(shape.kind, first(shape.dimension), parameters));
@@ -218,7 +219,7 @@ TEST(ConeTest, Parameters)
               refused + "takes at least one parameter");
     EXPECT_EQ(add_refusal(model, one(ConeKind::DualPower, {0, 1})),
               refused + "takes at least one parameter");
-    const std::vector<std::pair<double, std::string>> refusals{
+    const std::vector<std::pair<Real, std::string>> refusals{
         {kNan, "parameter 1 is NaN"},
         {kInfinity, "parameter 1 is infinity"},
         {-kInfinity, "parameter 1 is minus infinity"},
@@ -232,8 +233,8 @@ TEST(ConeTest, Parameters)
                   refused + fault);
     }
     EXPECT_EQ(model.n_cones(), 0);
-    const double least = std::numeric_limits<double>::denorm_min();
-    const double most = (std::numeric_limits<double>::max)();
+    const Real least = std::numeric_limits<Real>::denorm_min();
+    const Real most = (std::numeric_limits<Real>::max)();
     add(model, one(ConeKind::DualPower, {0, 1, 2}, {least, most}));
     EXPECT_EQ(parameters_of(model, 0, 1), bits_of({least, most}));
 }

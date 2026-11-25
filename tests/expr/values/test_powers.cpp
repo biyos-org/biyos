@@ -1,4 +1,5 @@
 #include "bounds.hpp"
+#include "core/numbers.hpp"
 #include "expr/intervals/interval.hpp"
 #include "expr/intervals/powers.hpp"
 #include "expr/intervals/rounding.hpp"
@@ -12,16 +13,17 @@ namespace
 {
 
 using biyos::Interval;
+using biyos::Real;
 using biyos::widen_down;
 using biyos::widen_up;
 using biyos::test::exact;
 using biyos::test::holds;
 using biyos::test::within;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr Interval kAll = Interval::entire();
 
-Interval raised(Interval base, double exponent)
+Interval raised(Interval base, Real exponent)
 {
     return biyos::power(base, {exponent, exponent});
 }
@@ -74,9 +76,9 @@ TEST(IntervalTest, Power)
 
 TEST(IntervalTest, SignPower)
 {
-    const double root = std::pow(8.0, 1.0 / 3);
+    const Real root = std::pow(8.0, 1.0 / 3);
     EXPECT_TRUE(holds(biyos::sign_power({-8.0, 8.0}, 1.0 / 3), -root, root));
-    const double low = widen_down(-root);
+    const Real low = widen_down(-root);
     EXPECT_TRUE(within(biyos::sign_power({-8.0, 8.0}, 1.0 / 3), low, widen_up(root)));
     EXPECT_TRUE(holds(biyos::sign_power({0.0, 2.0}, 2.0), 0.0, 4.0));
     EXPECT_TRUE(within(biyos::sign_power({0.0, 2.0}, 2.0), 0.0, widen_up(4.0)));

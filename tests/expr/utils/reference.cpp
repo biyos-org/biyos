@@ -16,14 +16,15 @@ namespace
 using biyos::Graph;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 
-constexpr double kUndefined = std::numeric_limits<double>::quiet_NaN();
+constexpr Real kUndefined = std::numeric_limits<Real>::quiet_NaN();
 
 struct Frame
 {
     const Graph &graph;
-    std::span<const double> point;
-    std::span<const double> values;
+    std::span<const Real> point;
+    std::span<const Real> values;
 };
 
 std::size_t at(Offset value)
@@ -31,26 +32,26 @@ std::size_t at(Offset value)
     return static_cast<std::size_t>(value);
 }
 
-bool is_zero(double value)
+bool is_zero(Real value)
 {
     return std::fpclassify(value) == FP_ZERO;
 }
 
-double first(const Frame &frame, Offset node)
+Real first(const Frame &frame, Offset node)
 {
     return frame.values[at(frame.graph.children(node)[0])];
 }
 
-double second(const Frame &frame, Offset node)
+Real second(const Frame &frame, Offset node)
 {
     return frame.values[at(frame.graph.children(node)[1])];
 }
 
-double sum_of(const Frame &frame, Offset node)
+Real sum_of(const Frame &frame, Offset node)
 {
     const std::span<const Offset> terms = frame.graph.children(node);
-    const std::span<const double> weights = frame.graph.coefficients(node);
-    double total = frame.graph.constant(node);
+    const std::span<const Real> weights = frame.graph.coefficients(node);
+    Real total = frame.graph.constant(node);
     for (std::size_t k = 0; k < terms.size(); ++k)
     {
         total += weights[k] * frame.values[at(terms[k])];
@@ -58,9 +59,9 @@ double sum_of(const Frame &frame, Offset node)
     return total;
 }
 
-double product_of(const Frame &frame, Offset node)
+Real product_of(const Frame &frame, Offset node)
 {
-    double total = frame.graph.constant(node);
+    Real total = frame.graph.constant(node);
     for (const Offset factor : frame.graph.children(node))
     {
         total *= frame.values[at(factor)];
@@ -68,13 +69,13 @@ double product_of(const Frame &frame, Offset node)
     return total;
 }
 
-double largest(const Frame &frame, Offset node)
+Real largest(const Frame &frame, Offset node)
 {
     const std::span<const Offset> operands = frame.graph.children(node);
-    double best = frame.values[at(operands[0])];
+    Real best = frame.values[at(operands[0])];
     for (const Offset operand : operands.subspan(1))
     {
-        const double value = frame.values[at(operand)];
+        const Real value = frame.values[at(operand)];
         if (value > best || std::isnan(value))
         {
             best = value;
@@ -83,13 +84,13 @@ double largest(const Frame &frame, Offset node)
     return best;
 }
 
-double smallest(const Frame &frame, Offset node)
+Real smallest(const Frame &frame, Offset node)
 {
     const std::span<const Offset> operands = frame.graph.children(node);
-    double best = frame.values[at(operands[0])];
+    Real best = frame.values[at(operands[0])];
     for (const Offset operand : operands.subspan(1))
     {
-        const double value = frame.values[at(operand)];
+        const Real value = frame.values[at(operand)];
         if (value < best || std::isnan(value))
         {
             best = value;
@@ -98,38 +99,38 @@ double smallest(const Frame &frame, Offset node)
     return best;
 }
 
-double quotient(double left, double right)
+Real quotient(Real left, Real right)
 {
     return is_zero(right) ? kUndefined : left / right;
 }
 
-double power(double base, double exponent)
+Real power(Real base, Real exponent)
 {
     return is_zero(base) && exponent < 0.0 ? kUndefined : std::pow(base, exponent);
 }
 
-double logarithm(double value)
+Real logarithm(Real value)
 {
     return is_zero(value) ? kUndefined : std::log(value);
 }
 
-double inverse_tanh(double value)
+Real inverse_tanh(Real value)
 {
-    const double result = std::atanh(value);
+    const Real result = std::atanh(value);
     return std::isinf(result) ? kUndefined : result;
 }
 
-double entropy(double value)
+Real entropy(Real value)
 {
     return is_zero(value) ? 0.0 : value * std::log(value);
 }
 
-double sign_power(double value, double exponent)
+Real sign_power(Real value, Real exponent)
 {
     return std::copysign(std::pow(std::fabs(value), exponent), value);
 }
 
-double unary(Operator op, double value)
+Real unary(Operator op, Real value)
 {
     switch (op)
     {
@@ -187,7 +188,7 @@ double unary(Operator op, double value)
     return kUndefined;
 }
 
-double value_of(const Frame &frame, Offset node)
+Real value_of(const Frame &frame, Offset node)
 {
     const Graph &graph = frame.graph;
     switch (graph.op(node))
@@ -241,9 +242,7 @@ double value_of(const Frame &frame, Offset node)
 
 }
 
-void biyos::test::evaluate(const Graph &graph,
-                           std::span<const double> point,
-                           std::span<double> values)
+void biyos::test::evaluate(const Graph &graph, std::span<const Real> point, std::span<Real> values)
 {
     const Frame frame{.graph = graph, .point = point, .values = values};
     for (Offset node = 0; node < graph.size(); ++node)

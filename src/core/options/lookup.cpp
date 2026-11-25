@@ -1,5 +1,6 @@
 #include "core/options/lookup.hpp"
 
+#include "core/numbers.hpp"
 #include "core/options/table.hpp"
 #include "core/options/value.hpp"
 
@@ -37,7 +38,7 @@ int Lookup::get_int(Option option) const
     return int_of(spec, find(option).value);
 }
 
-double Lookup::get_double(Option option) const
+Real Lookup::get_double(Option option) const
 {
     const OptionSpec &spec = row_of(options_.table(), option);
     return double_of(spec, find(option).value);

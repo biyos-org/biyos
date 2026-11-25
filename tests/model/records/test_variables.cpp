@@ -17,19 +17,20 @@ namespace
 
 using biyos::Index;
 using biyos::Model;
+using biyos::Real;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 
-Variable continuous(double lower, double upper)
+Variable continuous(Real lower, Real upper)
 {
     return Variable{.kind = VariableKind::Continuous, .lower = lower, .upper = upper};
 }
 
-Variable binary(double lower, double upper)
+Variable binary(Real lower, Real upper)
 {
     return Variable{.kind = VariableKind::Binary, .lower = lower, .upper = upper};
 }

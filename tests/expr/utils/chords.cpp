@@ -29,12 +29,13 @@ using biyos::Interval;
 using biyos::Monotonicity;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::test::Claims;
 using biyos::test::Engine;
 using biyos::test::Monotonicities;
 using biyos::test::text;
 
-using Values = std::vector<double>;
+using Values = std::vector<Real>;
 
 struct Run
 {
@@ -44,9 +45,9 @@ struct Run
 
 using Runs = std::span<const Run>;
 
-constexpr double kReach = 1000.0;
-constexpr double kSlack = 0x1p-30;
-constexpr double kFloor = 0x1p-1000;
+constexpr Real kReach = 1000.0;
+constexpr Real kSlack = 0x1p-30;
+constexpr Real kFloor = 0x1p-1000;
 constexpr int kChords = 96;
 constexpr int kPairs = 48;
 constexpr int kReported = 5;
@@ -57,9 +58,9 @@ std::size_t at(Offset value)
     return static_cast<std::size_t>(value);
 }
 
-double unit(Engine &engine)
+Real unit(Engine &engine)
 {
-    return static_cast<double>(engine() >> 11) * 0x1p-53;
+    return static_cast<Real>(engine() >> 11) * 0x1p-53;
 }
 
 std::size_t pick(Engine &engine, std::size_t n)
@@ -67,20 +68,20 @@ std::size_t pick(Engine &engine, std::size_t n)
     return static_cast<std::size_t>(engine() % n);
 }
 
-double finite_lower(Interval box)
+Real finite_lower(Interval box)
 {
     return std::isfinite(box.lower()) ? box.lower() : (std::min)(box.upper(), 0.0) - kReach;
 }
 
-double finite_upper(Interval box)
+Real finite_upper(Interval box)
 {
     return std::isfinite(box.upper()) ? box.upper() : (std::max)(box.lower(), 0.0) + kReach;
 }
 
-double coordinate(Interval box, Engine &engine)
+Real coordinate(Interval box, Engine &engine)
 {
-    const double low = finite_lower(box);
-    const double high = finite_upper(box);
+    const Real low = finite_lower(box);
+    const Real high = finite_upper(box);
     switch (pick(engine, 4))
     {
     case 0:
@@ -107,12 +108,12 @@ Values point_of(std::span<const Interval> box, Engine &engine)
     return point;
 }
 
-Values between(std::span<const Interval> box, const Values &x, const Values &y, double theta)
+Values between(std::span<const Interval> box, const Values &x, const Values &y, Real theta)
 {
     Values point(box.size());
     for (std::size_t k = 0; k < box.size(); ++k)
     {
-        const double inside = std::lerp(y[k], x[k], theta);
+        const Real inside = std::lerp(y[k], x[k], theta);
         point[k] = std::clamp(inside, finite_lower(box[k]), finite_upper(box[k]));
     }
     return point;
@@ -125,17 +126,17 @@ bool unreal_below(const Graph &graph, const Values &values, Offset node)
                                [&](Offset child) { return !std::isfinite(values[at(child)]); });
 }
 
-double weight(const Graph &graph, Offset node, std::size_t k)
+Real weight(const Graph &graph, Offset node, std::size_t k)
 {
-    const std::span<const double> weights = graph.coefficients(node);
+    const std::span<const Real> weights = graph.coefficients(node);
     return weights.empty() ? 1.0 : std::fabs(weights[k]);
 }
 
-double size_of(const Graph &graph, const Run &run, Offset node)
+Real size_of(const Graph &graph, const Run &run, Offset node)
 {
     const std::span<const Offset> children = graph.children(node);
-    const double constant = graph.op(node) == Operator::Sum ? graph.constant(node) : 0.0;
-    double size = std::fabs(run.values[at(node)]) + std::fabs(constant);
+    const Real constant = graph.op(node) == Operator::Sum ? graph.constant(node) : 0.0;
+    Real size = std::fabs(run.values[at(node)]) + std::fabs(constant);
     for (std::size_t k = 0; k < children.size(); ++k)
     {
         size += weight(graph, node, k) * run.sizes[at(children[k])];
@@ -143,7 +144,7 @@ double size_of(const Graph &graph, const Run &run, Offset node)
     return size;
 }
 
-double weight_of(const Values &x, const Values &y, const Values &z, double theta)
+Real weight_of(const Values &x, const Values &y, const Values &z, Real theta)
 {
     std::size_t widest = 0;
     for (std::size_t k = 1; k < x.size(); ++k)
@@ -153,7 +154,7 @@ double weight_of(const Values &x, const Values &y, const Values &z, double theta
             widest = k;
         }
     }
-    const double span = x[widest] - y[widest];
+    const Real span = x[widest] - y[widest];
     return std::fpclassify(span) == FP_ZERO ? theta : (z[widest] - y[widest]) / span;
 }
 
@@ -172,9 +173,9 @@ Run evaluated(const Graph &graph, const Values &point)
     return run;
 }
 
-double scale_of(Offset node, Runs runs)
+Real scale_of(Offset node, Runs runs)
 {
-    double scale = 0.0;
+    Real scale = 0.0;
     for (const Run &run : runs)
     {
         scale += run.sizes[at(node)];
@@ -234,26 +235,26 @@ using biyos::test::name_of;
 std::string point_text(const Values &point)
 {
     std::string message;
-    for (const double value : point)
+    for (const Real value : point)
     {
         message += " " + text(value);
     }
     return message;
 }
 
-void expect_chord(const Claims &claims, Offset node, Runs runs, double theta, const Values &z)
+void expect_chord(const Claims &claims, Offset node, Runs runs, Real theta, const Values &z)
 {
     const Curvature claim = claims.curvatures[at(node)];
-    const double fx = runs[0].values[at(node)];
-    const double fy = runs[1].values[at(node)];
-    const double fz = runs[2].values[at(node)];
+    const Real fx = runs[0].values[at(node)];
+    const Real fy = runs[1].values[at(node)];
+    const Real fz = runs[2].values[at(node)];
     if (claim == Curvature::Unknown || !std::isfinite(fx) || !std::isfinite(fy) ||
         !std::isfinite(fz))
     {
         return;
     }
-    const double chord = std::lerp(fy, fx, theta);
-    const double slack = kSlack * scale_of(node, runs) + kFloor;
+    const Real chord = std::lerp(fy, fx, theta);
+    const Real slack = kSlack * scale_of(node, runs) + kFloor;
     const bool above = fz > chord + slack;
     const bool below = fz < chord - slack;
     if (!(is_convex(claim) && above) && !(is_concave(claim) && below))
@@ -277,14 +278,14 @@ void expect_pair(const Monotonicities &claims,
     const Graph &graph = claims.graph;
     const Offset root = graph.size() - 1;
     const std::array runs{evaluated(graph, low), evaluated(graph, high)};
-    const double first = runs[0].values[at(root)];
-    const double last = runs[1].values[at(root)];
+    const Real first = runs[0].values[at(root)];
+    const Real last = runs[1].values[at(root)];
     if (!std::isfinite(first) || !std::isfinite(last))
     {
         return;
     }
     const Monotonicity claim = claims.monotonicities[position];
-    const double slack = kSlack * scale_of(root, runs) + kFloor;
+    const Real slack = kSlack * scale_of(root, runs) + kFloor;
     const bool fell = last < first - slack;
     const bool rose = last > first + slack;
     if (!(rises(claim) && fell) && !(falls(claim) && rose))
@@ -311,9 +312,9 @@ void biyos::test::expect_chords(const Claims &claims, Engine &engine)
     {
         const Values x = point_of(claims.box, engine);
         const Values y = point_of(claims.box, engine);
-        const double theta = pick(engine, 2) == 0 ? 0.5 : unit(engine);
+        const Real theta = pick(engine, 2) == 0 ? 0.5 : unit(engine);
         const Values z = between(claims.box, x, y, theta);
-        const double weight = weight_of(x, y, z, theta);
+        const Real weight = weight_of(x, y, z, theta);
         const std::array runs{evaluated(claims.graph, x),
                               evaluated(claims.graph, y),
                               evaluated(claims.graph, z)};
@@ -338,8 +339,8 @@ void biyos::test::expect_monotonicities(const Monotonicities &claims, Engine &en
         for (std::size_t k = 0; k < claims.monotonicities.size(); ++k)
         {
             const auto variable = static_cast<std::size_t>(graph.variable(children[k]));
-            const double first = coordinate(claims.box[variable], engine);
-            const double second = coordinate(claims.box[variable], engine);
+            const Real first = coordinate(claims.box[variable], engine);
+            const Real second = coordinate(claims.box[variable], engine);
             Values low = base;
             Values high = base;
             low[variable] = (std::min)(first, second);

@@ -1,5 +1,6 @@
 #include "expr/curvature/segments.hpp"
 
+#include "core/numbers.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/graph/points.hpp"
 #include "expr/intervals/interval.hpp"
@@ -15,9 +16,9 @@ namespace biyos
 namespace
 {
 
-std::size_t last_segment(std::span<const double> x, double t) noexcept
+std::size_t last_segment(std::span<const Real> x, Real t) noexcept
 {
-    const std::span<const double> inner = x.subspan(1, x.size() - 2);
+    const std::span<const Real> inner = x.subspan(1, x.size() - 2);
     return static_cast<std::size_t>(std::ranges::lower_bound(inner, t) - inner.begin());
 }
 

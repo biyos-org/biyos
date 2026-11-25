@@ -1,3 +1,4 @@
+#include "core/numbers.hpp"
 #include "reading.hpp"
 #include "samples.hpp"
 
@@ -16,6 +17,7 @@ using biyos::Constraint;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::ObjectiveSense;
+using biyos::Real;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::continuous;
@@ -24,12 +26,12 @@ using biyos::test::kInfinity;
 namespace
 {
 
-Variable variable(VariableKind kind, double lower, double upper)
+Variable variable(VariableKind kind, Real lower, Real upper)
 {
     return Variable{.kind = kind, .lower = lower, .upper = upper};
 }
 
-Constraint row(biyos::Index function, double lower, double upper)
+Constraint row(biyos::Index function, Real lower, Real upper)
 {
     return Constraint{.function = function, .lower = lower, .upper = upper};
 }
@@ -121,7 +123,7 @@ TEST(MpsTest, Markers)
                              },
                              {"a", "b", "c", "d"});
     std::vector<LinearTerm> terms;
-    for (const double coefficient : {1.0, 2.0, 3.0, 4.0})
+    for (const Real coefficient : {1.0, 2.0, 3.0, 4.0})
     {
         terms.push_back(LinearTerm{.variable = static_cast<biyos::Index>(terms.size()),
                                    .coefficient = coefficient});

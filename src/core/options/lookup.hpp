@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
 
@@ -26,7 +27,7 @@ class Lookup
 
     bool get_bool(Option option) const;
     int get_int(Option option) const;
-    double get_double(Option option) const;
+    Real get_double(Option option) const;
     std::string_view get_string(Option option) const;
     Masks get_flags(Option option) const;
     PartState part_state(Option option, Mask part) const;

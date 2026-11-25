@@ -39,13 +39,13 @@ constexpr Offset kPiecewiseLinears = 2;
 constexpr std::array kSpecial{
     0.0,
     -0.0,
-    (std::numeric_limits<double>::infinity)(),
-    -(std::numeric_limits<double>::infinity)(),
-    (std::numeric_limits<double>::quiet_NaN)(),
+    (std::numeric_limits<Real>::infinity)(),
+    -(std::numeric_limits<Real>::infinity)(),
+    (std::numeric_limits<Real>::quiet_NaN)(),
     -1.0,
 };
 
-inline Offset constant(Graph &graph, double value)
+inline Offset constant(Graph &graph, Real value)
 {
     return graph.add(Operator::Constant, value, {});
 }
@@ -61,12 +61,12 @@ inline Offset binary(Graph &graph, Operator op, Offset left, Offset right)
     return graph.add(op, children);
 }
 
-inline Offset power(Graph &graph, Offset base, double exponent)
+inline Offset power(Graph &graph, Offset base, Real exponent)
 {
     return graph.add(Operator::ConstantPower, exponent, std::span(&base, 1));
 }
 
-inline Offset sign_power(Graph &graph, Offset base, double exponent)
+inline Offset sign_power(Graph &graph, Offset base, Real exponent)
 {
     return graph.add(Operator::SignPower, exponent, std::span(&base, 1));
 }
@@ -137,9 +137,9 @@ class Random
 
     std::size_t below(std::size_t n) { return static_cast<std::size_t>(engine_() % n); }
 
-    double uniform(double low, double high)
+    Real uniform(Real low, Real high)
     {
-        const double unit = static_cast<double>(engine_() >> 11) * 0x1p-53;
+        const Real unit = static_cast<Real>(engine_() >> 11) * 0x1p-53;
         return low + (high - low) * unit;
     }
 
@@ -157,9 +157,9 @@ inline std::vector<Offset> picks(Random &random, const Graph &graph, std::size_t
     return nodes;
 }
 
-inline Offset sum(Graph &graph, Random &random, double constant, const std::vector<Offset> &terms)
+inline Offset sum(Graph &graph, Random &random, Real constant, const std::vector<Offset> &terms)
 {
-    std::vector<double> weights;
+    std::vector<Real> weights;
     for (std::size_t k = 0; k < terms.size(); ++k)
     {
         weights.push_back(random.uniform(-2.0, 2.0));
@@ -170,8 +170,8 @@ inline Offset sum(Graph &graph, Random &random, double constant, const std::vect
 inline Offset powered(Graph &graph, Random &random, Offset base)
 {
     const Operator op = kPowers[random.below(kPowers.size())];
-    const double exponent = kExponents[random.below(kExponents.size())];
-    const double allowed = op == Operator::SignPower ? std::fabs(exponent) : exponent;
+    const Real exponent = kExponents[random.below(kExponents.size())];
+    const Real allowed = op == Operator::SignPower ? std::fabs(exponent) : exponent;
     return graph.add(op, allowed, std::span(&base, 1));
 }
 
@@ -179,7 +179,7 @@ inline Offset grow(Graph &graph, Random &random)
 {
     const std::vector<Offset> children = picks(random, graph, 1 + random.below(4));
     const std::size_t kind = random.below(8);
-    const double number = random.uniform(-2.0, 2.0);
+    const Real number = random.uniform(-2.0, 2.0);
     switch (kind)
     {
     case 0:
@@ -216,7 +216,7 @@ inline Graph random_graph(Random &random)
     return graph;
 }
 
-inline double coordinate(Random &random)
+inline Real coordinate(Random &random)
 {
     if (random.below(4) == 0)
     {
@@ -225,9 +225,9 @@ inline double coordinate(Random &random)
     return random.uniform(-0.5, 2.0);
 }
 
-inline std::vector<double> random_point(Random &random)
+inline std::vector<Real> random_point(Random &random)
 {
-    std::vector<double> point;
+    std::vector<Real> point;
     for (Index k = 0; k < kVariables; ++k)
     {
         point.push_back(coordinate(random));

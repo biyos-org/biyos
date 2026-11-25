@@ -29,11 +29,12 @@ using biyos::Interval;
 using biyos::Monotonicity;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::Shapes;
 using biyos::test::Box;
 using biyos::test::Engine;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::uint64_t kSeed = 20261111;
 constexpr int kFirst = BIYOS_OP_CONST;
 constexpr int kLast = BIYOS_OP_ERF;
@@ -129,7 +130,7 @@ Offset square(Graph &graph, Offset child)
     return graph.add(Operator::ConstantPower, 2.0, one(child));
 }
 
-Offset affine(Graph &graph, double constant, Offset child, double weight)
+Offset affine(Graph &graph, Real constant, Offset child, Real weight)
 {
     const std::array weights{weight};
     return graph.add_sum(constant, one(child), weights);

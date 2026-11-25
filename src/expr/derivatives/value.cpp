@@ -24,7 +24,7 @@ namespace biyos
 namespace
 {
 
-double entropy(double value) noexcept
+Real entropy(Real value) noexcept
 {
     if (std::fpclassify(value) == FP_ZERO)
     {
@@ -33,14 +33,14 @@ double entropy(double value) noexcept
     return value * std::log(value);
 }
 
-double sign_power(double value, double exponent) noexcept
+Real sign_power(Real value, Real exponent) noexcept
 {
     return std::copysign(std::pow(std::fabs(value), exponent), value);
 }
 
 template <typename F> void map(const Instruction &instruction, const Frame &frame, F f) noexcept
 {
-    const std::span<const double> x = row(frame, instruction.first);
+    const std::span<const Real> x = row(frame, instruction.first);
     for (std::size_t l = 0; l < frame.lanes; ++l)
     {
         frame.result[l] = f(x[l]);
@@ -49,8 +49,8 @@ template <typename F> void map(const Instruction &instruction, const Frame &fram
 
 template <typename F> void combine(const Instruction &instruction, const Frame &frame, F f) noexcept
 {
-    const std::span<const double> x = row(frame, instruction.first);
-    const std::span<const double> y = row(frame, instruction.second);
+    const std::span<const Real> x = row(frame, instruction.first);
+    const std::span<const Real> y = row(frame, instruction.second);
     for (std::size_t l = 0; l < frame.lanes; ++l)
     {
         frame.result[l] = f(x[l], y[l]);
@@ -59,19 +59,19 @@ template <typename F> void combine(const Instruction &instruction, const Frame &
 
 void load(const Instruction &instruction, const Frame &frame) noexcept
 {
-    const std::span<const double> x = row(frame.point, place(instruction.payload), frame.lanes);
+    const std::span<const Real> x = row(frame.point, place(instruction.payload), frame.lanes);
     std::ranges::copy(x, frame.result.begin());
 }
 
 void sum_of(const Instruction &instruction, const Frame &frame) noexcept
 {
     const std::span<const std::uint32_t> terms = listed(instruction, frame.operands);
-    const std::span<const double> weights =
+    const std::span<const Real> weights =
         frame.weights.subspan(place(instruction.payload), terms.size() + 1);
     std::ranges::fill(frame.result, weights[0]);
     for (std::size_t k = 0; k < terms.size(); ++k)
     {
-        const std::span<const double> x = row(frame, terms[k]);
+        const std::span<const Real> x = row(frame, terms[k]);
         for (std::size_t l = 0; l < frame.lanes; ++l)
         {
             frame.result[l] += weights[k + 1] * x[l];
@@ -84,7 +84,7 @@ void product_of(const Instruction &instruction, const Frame &frame) noexcept
     std::ranges::fill(frame.result, constant_of(instruction));
     for (const std::uint32_t factor : listed(instruction, frame.operands))
     {
-        const std::span<const double> x = row(frame, factor);
+        const std::span<const Real> x = row(frame, factor);
         for (std::size_t l = 0; l < frame.lanes; ++l)
         {
             frame.result[l] *= x[l];
@@ -92,12 +92,12 @@ void product_of(const Instruction &instruction, const Frame &frame) noexcept
     }
 }
 
-double larger(double best, double value) noexcept
+Real larger(Real best, Real value) noexcept
 {
     return value > best || std::isnan(value) ? value : best;
 }
 
-double smaller(double best, double value) noexcept
+Real smaller(Real best, Real value) noexcept
 {
     return value < best || std::isnan(value) ? value : best;
 }
@@ -109,7 +109,7 @@ void extreme(const Instruction &instruction, const Frame &frame, F pick) noexcep
     std::ranges::copy(row(frame, operands[0]), frame.result.begin());
     for (const std::uint32_t operand : operands.subspan(1))
     {
-        const std::span<const double> x = row(frame, operand);
+        const std::span<const Real> x = row(frame, operand);
         for (std::size_t l = 0; l < frame.lanes; ++l)
         {
             frame.result[l] = pick(frame.result[l], x[l]);
@@ -119,26 +119,26 @@ void extreme(const Instruction &instruction, const Frame &frame, F pick) noexcep
 
 void fixed_power(const Instruction &instruction, const Frame &frame) noexcept
 {
-    const double exponent = constant_of(instruction);
-    map(instruction, frame, [exponent](double x) { return std::pow(x, exponent); });
+    const Real exponent = constant_of(instruction);
+    map(instruction, frame, [exponent](Real x) { return std::pow(x, exponent); });
 }
 
 void signed_power(const Instruction &instruction, const Frame &frame) noexcept
 {
-    const double exponent = constant_of(instruction);
-    map(instruction, frame, [exponent](double x) { return sign_power(x, exponent); });
+    const Real exponent = constant_of(instruction);
+    map(instruction, frame, [exponent](Real x) { return sign_power(x, exponent); });
 }
 
 void piecewise(const Instruction &instruction, const Frame &frame) noexcept
 {
     const PiecewiseLinear pwl = piecewise_linear_of(instruction, frame.weights);
-    map(instruction, frame, [pwl](double x) { return value_at(pwl, x); });
+    map(instruction, frame, [pwl](Real x) { return value_at(pwl, x); });
 }
 
-Frame enter(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
+Frame enter(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept
 {
-    const std::span<double> slots(workspace.slots);
-    const std::span<const double> shared(workspace.shared);
+    const std::span<Real> slots(workspace.slots);
+    const std::span<const Real> shared(workspace.shared);
     const std::size_t lanes = workspace.lanes;
     for (std::size_t k = 0; k < block.loads.size(); ++k)
     {
@@ -161,7 +161,7 @@ Frame enter(const Block &block, std::span<const double> point, Workspace &worksp
     throw Error(ErrorKind::InvalidArgument, std::move(object), std::move(reason));
 }
 
-void check_point(const Tape &tape, std::span<const double> point, std::size_t lanes)
+void check_point(const Tape &tape, std::span<const Real> point, std::size_t lanes)
 {
     const std::string size = "size " + text_of(point.size());
     if (point.size() % lanes != 0)
@@ -214,37 +214,37 @@ void evaluate(const Instruction &instruction, const Frame &frame) noexcept
         product_of(instruction, frame);
         return;
     case Operator::Negation:
-        map(instruction, frame, [](double x) { return -x; });
+        map(instruction, frame, [](Real x) { return -x; });
         return;
     case Operator::Division:
-        combine(instruction, frame, [](double x, double y) { return x / y; });
+        combine(instruction, frame, [](Real x, Real y) { return x / y; });
         return;
     case Operator::ConstantPower:
         fixed_power(instruction, frame);
         return;
     case Operator::Power:
-        combine(instruction, frame, [](double x, double y) { return std::pow(x, y); });
+        combine(instruction, frame, [](Real x, Real y) { return std::pow(x, y); });
         return;
     case Operator::Exp:
-        map(instruction, frame, [](double x) { return std::exp(x); });
+        map(instruction, frame, [](Real x) { return std::exp(x); });
         return;
     case Operator::Log:
-        map(instruction, frame, [](double x) { return std::log(x); });
+        map(instruction, frame, [](Real x) { return std::log(x); });
         return;
     case Operator::Sqrt:
-        map(instruction, frame, [](double x) { return std::sqrt(x); });
+        map(instruction, frame, [](Real x) { return std::sqrt(x); });
         return;
     case Operator::Sin:
-        map(instruction, frame, [](double x) { return std::sin(x); });
+        map(instruction, frame, [](Real x) { return std::sin(x); });
         return;
     case Operator::Cos:
-        map(instruction, frame, [](double x) { return std::cos(x); });
+        map(instruction, frame, [](Real x) { return std::cos(x); });
         return;
     case Operator::Tan:
-        map(instruction, frame, [](double x) { return std::tan(x); });
+        map(instruction, frame, [](Real x) { return std::tan(x); });
         return;
     case Operator::Abs:
-        map(instruction, frame, [](double x) { return std::fabs(x); });
+        map(instruction, frame, [](Real x) { return std::fabs(x); });
         return;
     case Operator::Max:
         extreme(instruction, frame, larger);
@@ -253,31 +253,31 @@ void evaluate(const Instruction &instruction, const Frame &frame) noexcept
         extreme(instruction, frame, smaller);
         return;
     case Operator::Asin:
-        map(instruction, frame, [](double x) { return std::asin(x); });
+        map(instruction, frame, [](Real x) { return std::asin(x); });
         return;
     case Operator::Acos:
-        map(instruction, frame, [](double x) { return std::acos(x); });
+        map(instruction, frame, [](Real x) { return std::acos(x); });
         return;
     case Operator::Atan:
-        map(instruction, frame, [](double x) { return std::atan(x); });
+        map(instruction, frame, [](Real x) { return std::atan(x); });
         return;
     case Operator::Sinh:
-        map(instruction, frame, [](double x) { return std::sinh(x); });
+        map(instruction, frame, [](Real x) { return std::sinh(x); });
         return;
     case Operator::Cosh:
-        map(instruction, frame, [](double x) { return std::cosh(x); });
+        map(instruction, frame, [](Real x) { return std::cosh(x); });
         return;
     case Operator::Tanh:
-        map(instruction, frame, [](double x) { return std::tanh(x); });
+        map(instruction, frame, [](Real x) { return std::tanh(x); });
         return;
     case Operator::Asinh:
-        map(instruction, frame, [](double x) { return std::asinh(x); });
+        map(instruction, frame, [](Real x) { return std::asinh(x); });
         return;
     case Operator::Acosh:
-        map(instruction, frame, [](double x) { return std::acosh(x); });
+        map(instruction, frame, [](Real x) { return std::acosh(x); });
         return;
     case Operator::Atanh:
-        map(instruction, frame, [](double x) { return std::atanh(x); });
+        map(instruction, frame, [](Real x) { return std::atanh(x); });
         return;
     case Operator::Entropy:
         map(instruction, frame, entropy);
@@ -286,7 +286,7 @@ void evaluate(const Instruction &instruction, const Frame &frame) noexcept
         signed_power(instruction, frame);
         return;
     case Operator::Erf:
-        map(instruction, frame, [](double x) { return std::erf(x); });
+        map(instruction, frame, [](Real x) { return std::erf(x); });
         return;
     case Operator::PiecewiseLinear:
         piecewise(instruction, frame);
@@ -341,9 +341,9 @@ std::size_t lanes_of(const Tape &tape, std::size_t count)
 }
 
 void check_sweep(const Tape &tape,
-                 std::span<const double> point,
+                 std::span<const Real> point,
                  const Workspace &workspace,
-                 std::span<const double> values)
+                 std::span<const Real> values)
 {
     const std::size_t lanes = lanes_of(tape, workspace.lanes);
     check_point(tape, point, lanes);
@@ -361,7 +361,7 @@ void check_sweep(const Tape &tape,
     }
 }
 
-void forward(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
+void forward(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept
 {
     const Frame frame = enter(block, point, workspace);
     for (const Instruction &instruction : block.instructions)
@@ -371,11 +371,11 @@ void forward(const Block &block, std::span<const double> point, Workspace &works
     }
 }
 
-void linearize(const Block &block, std::span<const double> point, Workspace &workspace) noexcept
+void linearize(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept
 {
     const Frame frame = enter(block, point, workspace);
     const std::size_t lanes = workspace.lanes;
-    const std::span<double> partials = region(block, std::span(workspace.partials), lanes);
+    const std::span<Real> partials = region(block, std::span(workspace.partials), lanes);
     for (std::size_t k = 0; k < block.instructions.size(); ++k)
     {
         const Instruction &instruction = block.instructions[k];
@@ -387,21 +387,21 @@ void linearize(const Block &block, std::span<const double> point, Workspace &wor
     }
 }
 
-void store(const Block &block, const Workspace &workspace, std::span<double> outputs) noexcept
+void store(const Block &block, const Workspace &workspace, std::span<Real> outputs) noexcept
 {
-    const std::span<const double> slots(workspace.slots);
+    const std::span<const Real> slots(workspace.slots);
     const std::size_t lanes = workspace.lanes;
     for (std::size_t k = 0; k < block.outputs.size(); ++k)
     {
-        const std::span<double> mine = row(outputs, to_size(block.begin) + k, lanes);
+        const std::span<Real> mine = row(outputs, to_size(block.begin) + k, lanes);
         std::ranges::copy(row(slots, block.outputs[k], lanes), mine.begin());
     }
 }
 
 void forward(const Tape &tape,
-             std::span<const double> point,
+             std::span<const Real> point,
              Workspace &workspace,
-             std::span<double> values)
+             std::span<Real> values)
 {
     check_sweep(tape, point, workspace, values);
     const std::span<const Block> blocks = tape.blocks();
@@ -409,12 +409,12 @@ void forward(const Tape &tape,
     for (std::size_t k = 0; k < blocks.size(); ++k)
     {
         forward(blocks[k], point, workspace);
-        const std::span<double> outputs = k < prepass ? std::span(workspace.shared) : values;
+        const std::span<Real> outputs = k < prepass ? std::span(workspace.shared) : values;
         store(blocks[k], workspace, outputs);
     }
 }
 
-void broadcast(std::span<const double> point, std::size_t lanes, std::span<double> points)
+void broadcast(std::span<const Real> point, std::size_t lanes, std::span<Real> points)
 {
     if (points.size() != sized(point.size(), lanes_of(lanes)))
     {
@@ -429,7 +429,7 @@ void broadcast(std::span<const double> point, std::size_t lanes, std::span<doubl
 
 void seed_directions(std::span<const Index> variables,
                      std::size_t lanes,
-                     std::span<double> directions)
+                     std::span<Real> directions)
 {
     check_seeds(variables, lanes_of(lanes), directions.size());
     std::ranges::fill(directions, 0.0);

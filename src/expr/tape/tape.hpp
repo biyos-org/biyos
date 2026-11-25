@@ -14,7 +14,7 @@ namespace biyos
 {
 
 constexpr std::size_t kCacheBytes = 32 * 1024;
-constexpr Offset kBudget = to_offset(kCacheBytes / sizeof(double));
+constexpr Offset kBudget = to_offset(kCacheBytes / sizeof(Real));
 
 struct Instruction
 {
@@ -39,7 +39,7 @@ struct Block
     std::uint32_t width;
     std::vector<Instruction> instructions;
     std::vector<std::uint32_t> operands;
-    std::vector<double> weights;
+    std::vector<Real> weights;
     std::vector<Offset> loads;
     std::vector<std::uint32_t> outputs;
     std::vector<Run> runs;

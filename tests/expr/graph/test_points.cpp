@@ -8,7 +8,6 @@
 #include <bit>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -17,38 +16,40 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::Offset;
 using biyos::PiecewiseLinear;
 using biyos::Points;
+using biyos::Real;
 using biyos::segment_of;
 using biyos::slope_of;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
-constexpr double kSmallest = std::numeric_limits<double>::denorm_min();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
+constexpr Real kSmallest = std::numeric_limits<Real>::denorm_min();
 
-std::vector<std::uint64_t> bits(std::span<const double> values)
+std::vector<Bits> bits(std::span<const Real> values)
 {
-    std::vector<std::uint64_t> result;
-    for (const double value : values)
+    std::vector<Bits> result;
+    for (const Real value : values)
     {
-        result.push_back(std::bit_cast<std::uint64_t>(value));
+        result.push_back(std::bit_cast<Bits>(value));
     }
     return result;
 }
 
 void expect_stored(const Points &points,
                    Offset pwl,
-                   std::span<const double> x,
-                   std::span<const double> y)
+                   std::span<const Real> x,
+                   std::span<const Real> y)
 {
     const PiecewiseLinear stored = points.piecewise_linear(pwl);
     EXPECT_EQ(bits(stored.x), bits(x));
     EXPECT_EQ(bits(stored.y), bits(y));
 }
 
-std::string refused(std::span<const double> x, std::span<const double> y)
+std::string refused(std::span<const Real> x, std::span<const Real> y)
 {
     Points points;
     const std::string reason = refusal([&] { points.add(x, y); });
@@ -195,7 +196,7 @@ TEST(PointsTest, Segments)
 TEST(PointsTest, TwoPoints)
 {
     const std::array x{1.0, 3.0};
-    for (const double t : {-kInfinity, 0.0, 1.0, 2.0, 3.0, 4.0, kInfinity, kNan})
+    for (const Real t : {-kInfinity, 0.0, 1.0, 2.0, 3.0, 4.0, kInfinity, kNan})
     {
         EXPECT_EQ(segment_of(x, t), 0U) << t;
     }

@@ -27,7 +27,7 @@ void run(const Checker &checker,
          const Callback &callback,
          Part part,
          const Request &request,
-         std::span<double> out);
+         std::span<Real> out);
 std::size_t widest(const Model &model);
 
 }

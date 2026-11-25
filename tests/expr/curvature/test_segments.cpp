@@ -33,17 +33,18 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::PiecewiseLinear;
 using biyos::Profile;
+using biyos::Real;
 
 using Wide = long double;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::uint64_t kSeed = 20261124;
 constexpr int kLines = 400;
 constexpr int kBoxes = 12;
 constexpr int kSamples = 64;
 constexpr int kReported = 5;
 constexpr Wide kSlack = 1e-12L;
-constexpr double kSpacing = 1e-6;
+constexpr Real kSpacing = 1e-6;
 
 constexpr Curvature kAffine = Curvature::Affine;
 constexpr Curvature kConvex = Curvature::Convex;
@@ -56,8 +57,8 @@ constexpr Monotonicity kEither = Monotonicity::Unknown;
 
 struct Line
 {
-    std::vector<double> x;
-    std::vector<double> y;
+    std::vector<Real> x;
+    std::vector<Real> y;
 
     PiecewiseLinear pwl() const { return {.x = x, .y = y}; }
 };
@@ -70,22 +71,22 @@ const Line kNearly{.x = {0.0, 0.1, 0.3}, .y = {0.0, 0.7, 2.0999999999999996}};
 const Line kStraight{.x = {0.0, 1.0, 2.0}, .y = {0.0, 1.0, 2.0}};
 const Line kLevel{.x = {-1.0, 0.0, 1.0}, .y = {-2.0, -1.0, 0.0}};
 
-Profile over(const Line &line, double lower, double upper)
+Profile over(const Line &line, Real lower, Real upper)
 {
     return biyos::segments(line.pwl(), {lower, upper});
 }
 
-Curvature curvature(const Line &line, double lower, double upper)
+Curvature curvature(const Line &line, Real lower, Real upper)
 {
     return over(line, lower, upper).curvature;
 }
 
-Monotonicity monotonicity(const Line &line, double lower, double upper)
+Monotonicity monotonicity(const Line &line, Real lower, Real upper)
 {
     return over(line, lower, upper).argument.monotonicity;
 }
 
-Curvature nested(const Line &line, Operator op, double sign, Interval x)
+Curvature nested(const Line &line, Operator op, Real sign, Interval x)
 {
     Graph graph;
     const Offset variable = graph.add_variable(0);
@@ -101,7 +102,7 @@ Curvature nested(const Line &line, Operator op, double sign, Interval x)
     return shapes.curvature(root);
 }
 
-Wide real_at(const Line &line, double t)
+Wide real_at(const Line &line, Real t)
 {
     std::size_t k = 0;
     while (k + 2 < line.x.size() && !(t < line.x[k + 1]))
@@ -113,10 +114,10 @@ Wide real_at(const Line &line, double t)
     return line.y[k] + (static_cast<Wide>(t) - line.x[k]) * rise / run;
 }
 
-std::vector<double> spaced(std::span<const double> sorted, double gap)
+std::vector<Real> spaced(std::span<const Real> sorted, Real gap)
 {
-    std::vector<double> kept;
-    for (const double t : sorted)
+    std::vector<Real> kept;
+    for (const Real t : sorted)
     {
         if (kept.empty() || t - kept.back() > gap)
         {
@@ -126,23 +127,23 @@ std::vector<double> spaced(std::span<const double> sorted, double gap)
     return kept;
 }
 
-std::vector<double> samples_of(const Line &line, Interval box, std::mt19937_64 &engine)
+std::vector<Real> samples_of(const Line &line, Interval box, std::mt19937_64 &engine)
 {
-    const double from = std::isfinite(box.lower()) ? box.lower() : line.x.front() - 5.0;
-    const double to = std::isfinite(box.upper()) ? box.upper() : line.x.back() + 5.0;
-    std::vector<double> found{from, to};
-    std::uniform_real_distribution<double> draw(0.0, 1.0);
+    const Real from = std::isfinite(box.lower()) ? box.lower() : line.x.front() - 5.0;
+    const Real to = std::isfinite(box.upper()) ? box.upper() : line.x.back() + 5.0;
+    std::vector<Real> found{from, to};
+    std::uniform_real_distribution<Real> draw(0.0, 1.0);
     for (int k = 0; k < kSamples; ++k)
     {
         found.push_back(from + (to - from) * draw(engine));
     }
     found.insert(found.end(), line.x.begin(), line.x.end());
-    std::erase_if(found, [from, to](double t) { return !(from <= t && t <= to); });
+    std::erase_if(found, [from, to](Real t) { return !(from <= t && t <= to); });
     std::ranges::sort(found);
     return spaced(found, kSpacing * (to - from));
 }
 
-std::vector<Wide> secants_of(const Line &line, std::span<const double> t)
+std::vector<Wide> secants_of(const Line &line, std::span<const Real> t)
 {
     std::vector<Wide> secants;
     for (std::size_t k = 0; k + 1 < t.size(); ++k)
@@ -194,17 +195,17 @@ std::string text_of(const Line &line)
 Line random_line(std::mt19937_64 &engine)
 {
     const std::size_t n = 2 + engine() % 6;
-    std::uniform_real_distribution<double> draw(-1.0, 1.0);
+    std::uniform_real_distribution<Real> draw(-1.0, 1.0);
     const bool convex = engine() % 3 == 0;
     Line line;
-    double x = draw(engine);
-    double y = draw(engine);
-    double slope = draw(engine);
+    Real x = draw(engine);
+    Real y = draw(engine);
+    Real slope = draw(engine);
     for (std::size_t k = 0; k < n; ++k)
     {
         line.x.push_back(x);
         line.y.push_back(y);
-        const double width = 0.05 + std::fabs(draw(engine));
+        const Real width = 0.05 + std::fabs(draw(engine));
         x += width;
         slope = convex ? slope + std::fabs(draw(engine)) : draw(engine);
         y = engine() % 5 == 0 ? y : y + slope * width;
@@ -212,7 +213,7 @@ Line random_line(std::mt19937_64 &engine)
     return line;
 }
 
-double end_of(const Line &line, std::mt19937_64 &engine)
+Real end_of(const Line &line, std::mt19937_64 &engine)
 {
     switch (engine() % 5)
     {
@@ -222,7 +223,7 @@ double end_of(const Line &line, std::mt19937_64 &engine)
         return engine() % 2 == 0 ? -kInfinity : kInfinity;
     default:
     {
-        std::uniform_real_distribution<double> draw(-0.5, 1.5);
+        std::uniform_real_distribution<Real> draw(-0.5, 1.5);
         return line.x.front() + (line.x.back() - line.x.front()) * draw(engine);
     }
     }
@@ -230,8 +231,8 @@ double end_of(const Line &line, std::mt19937_64 &engine)
 
 Interval random_box(const Line &line, std::mt19937_64 &engine)
 {
-    const double first = end_of(line, engine);
-    const double last = end_of(line, engine);
+    const Real first = end_of(line, engine);
+    const Real last = end_of(line, engine);
     const Interval box((std::min)(first, last), (std::max)(first, last));
     return box.is_empty() ? Interval(line.x.front(), line.x.back()) : box;
 }
@@ -305,7 +306,7 @@ TEST(CurvatureTest, Slopes)
         {
             const Interval box = random_box(line, engine);
             const Profile profile = biyos::segments(line.pwl(), box);
-            const std::vector<double> t = samples_of(line, box, engine);
+            const std::vector<Real> t = samples_of(line, box, engine);
             const std::vector<Wide> secants = secants_of(line, t);
             claimed += profile.curvature == kNeither ? 0 : 1;
             if (!holds(profile, secants) && reported++ < kReported)

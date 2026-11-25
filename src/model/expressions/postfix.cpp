@@ -75,7 +75,7 @@ class Decoder
     void reference(Offset entry);
     void node(Offset id);
     void variable(Offset variable);
-    std::span<const double> values(Offset n);
+    std::span<const Real> values(Offset n);
 
     Builder builder_;
     Index n_variables_;
@@ -173,7 +173,7 @@ void Decoder::build(Operator op, Offset argument)
         return;
     case Operator::Sum:
     {
-        const std::span<const double> read = values(argument + 1);
+        const std::span<const Real> read = values(argument + 1);
         builder_.sum(read.front(), read.subspan(1));
         return;
     }
@@ -258,14 +258,14 @@ void Decoder::variable(Offset variable)
     builder_.variable(static_cast<Index>(variable));
 }
 
-std::span<const double> Decoder::values(Offset n)
+std::span<const Real> Decoder::values(Offset n)
 {
     const std::size_t left = postfix_.values.size() - next_;
     if (to_size(n) > left)
     {
         throw Error(ErrorKind::Internal, "postfix", "values run out");
     }
-    const std::span<const double> read = postfix_.values.subspan(next_, to_size(n));
+    const std::span<const Real> read = postfix_.values.subspan(next_, to_size(n));
     next_ += to_size(n);
     return read;
 }
@@ -445,7 +445,7 @@ void Encoder::put_values(Offset node)
     case Payload::Coefficients:
     {
         encoding_.values.push_back(graph_.constant(node));
-        const std::span<const double> weights = graph_.coefficients(node);
+        const std::span<const Real> weights = graph_.coefficients(node);
         encoding_.values.insert(encoding_.values.end(), weights.begin(), weights.end());
         return;
     }

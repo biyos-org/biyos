@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 
 namespace biyos
@@ -10,19 +11,19 @@ class Tolerances
   public:
     explicit Tolerances(const Lookup &lookup);
 
-    bool is_zero(double x) const noexcept;
-    bool approx_equal(double a, double b) const noexcept;
-    bool satisfies_lower(double x, double lower) const noexcept;
-    bool satisfies_upper(double x, double upper) const noexcept;
-    bool is_integral(double x) const noexcept;
+    bool is_zero(Real x) const noexcept;
+    bool approx_equal(Real a, Real b) const noexcept;
+    bool satisfies_lower(Real x, Real lower) const noexcept;
+    bool satisfies_upper(Real x, Real upper) const noexcept;
+    bool is_integral(Real x) const noexcept;
 
   private:
-    bool within(double gap, double scaled_gap) const noexcept;
+    bool within(Real gap, Real scaled_gap) const noexcept;
 
-    double feasabs_;
-    double feasrel_;
-    double inttol_;
-    double zerotol_;
+    Real feasabs_;
+    Real feasrel_;
+    Real inttol_;
+    Real zerotol_;
 };
 
 }

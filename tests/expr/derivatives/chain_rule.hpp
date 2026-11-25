@@ -9,7 +9,6 @@
 #include <bit>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <numbers>
 #include <span>
@@ -21,7 +20,7 @@ namespace biyos::test
 class ChainRule
 {
   public:
-    ChainRule(const Graph &graph, std::span<const double> point)
+    ChainRule(const Graph &graph, std::span<const Real> point)
         : graph_(graph), point_(point), values_(at(graph.size()), 0.0),
           adjoints_(at(graph.size()), 0.0), sizes_(at(graph.size()), 0.0)
     {
@@ -49,8 +48,8 @@ class ChainRule
         }
     }
 
-    double entry(std::size_t variable) const { return row_[variable]; }
-    double scale(std::size_t variable) const { return scale_[variable]; }
+    Real entry(std::size_t variable) const { return row_[variable]; }
+    Real scale(std::size_t variable) const { return scale_[variable]; }
 
   private:
     using Wide = long double;
@@ -74,11 +73,11 @@ class ChainRule
         }
     }
 
-    double child(Offset node, std::size_t k) const { return values_[at(graph_.children(node)[k])]; }
+    Real child(Offset node, std::size_t k) const { return values_[at(graph_.children(node)[k])]; }
 
-    double value_of(Offset node) const
+    Real value_of(Offset node) const
     {
-        const double x = graph_.children(node).empty() ? 0.0 : child(node, 0);
+        const Real x = graph_.children(node).empty() ? 0.0 : child(node, 0);
         switch (graph_.op(node))
         {
         case Operator::Constant:
@@ -142,13 +141,13 @@ class ChainRule
             return biyos::value_at(graph_.points().piecewise_linear(graph_.piecewise_linear(node)),
                                    x);
         }
-        return (std::numeric_limits<double>::quiet_NaN)();
+        return (std::numeric_limits<Real>::quiet_NaN)();
     }
 
-    double sum_of(Offset node) const
+    Real sum_of(Offset node) const
     {
-        const std::span<const double> weights = graph_.coefficients(node);
-        double total = graph_.constant(node);
+        const std::span<const Real> weights = graph_.coefficients(node);
+        Real total = graph_.constant(node);
         for (std::size_t k = 0; k < weights.size(); ++k)
         {
             total += weights[k] * child(node, k);
@@ -156,9 +155,9 @@ class ChainRule
         return total;
     }
 
-    double product_of(Offset node, std::size_t skipped) const
+    Real product_of(Offset node, std::size_t skipped) const
     {
-        double total = graph_.constant(node);
+        Real total = graph_.constant(node);
         for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
         {
             if (k != skipped)
@@ -169,16 +168,16 @@ class ChainRule
         return total;
     }
 
-    double extreme_of(Offset node) const
+    Real extreme_of(Offset node) const
     {
-        std::vector<double> operands;
+        std::vector<Real> operands;
         for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
         {
             operands.push_back(child(node, k));
         }
-        if (std::ranges::any_of(operands, [](double value) { return std::isnan(value); }))
+        if (std::ranges::any_of(operands, [](Real value) { return std::isnan(value); }))
         {
-            return (std::numeric_limits<double>::quiet_NaN)();
+            return (std::numeric_limits<Real>::quiet_NaN)();
         }
         const bool largest = graph_.op(node) == Operator::Max;
         return largest ? (std::ranges::max)(operands) : (std::ranges::min)(operands);
@@ -186,10 +185,10 @@ class ChainRule
 
     std::size_t taken(Offset node) const
     {
-        const auto bits = std::bit_cast<std::uint64_t>(values_[at(node)]);
+        const auto bits = std::bit_cast<Bits>(values_[at(node)]);
         for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
         {
-            if (std::bit_cast<std::uint64_t>(child(node, k)) == bits)
+            if (std::bit_cast<Bits>(child(node, k)) == bits)
             {
                 return k;
             }
@@ -285,18 +284,18 @@ class ChainRule
         return 0.0L;
     }
 
-    double partial(Offset node, std::size_t k) const
+    Real partial(Offset node, std::size_t k) const
     {
         if (std::isnan(values_[at(node)]))
         {
-            return (std::numeric_limits<double>::quiet_NaN)();
+            return (std::numeric_limits<Real>::quiet_NaN)();
         }
-        return static_cast<double>(slope(node, k));
+        return static_cast<Real>(slope(node, k));
     }
 
-    double bound(Offset node, double partial) const
+    Real bound(Offset node, Real partial) const
     {
-        const double x = child(node, 0);
+        const Real x = child(node, 0);
         const Operator op = graph_.op(node);
         if (op == Operator::Cosh)
         {
@@ -322,8 +321,8 @@ class ChainRule
 
     void spread(Offset node)
     {
-        const double adjoint = adjoints_[at(node)];
-        const double size = sizes_[at(node)];
+        const Real adjoint = adjoints_[at(node)];
+        const Real size = sizes_[at(node)];
         if (graph_.op(node) == Operator::Variable)
         {
             row_[at(graph_.variable(node))] += adjoint;
@@ -336,7 +335,7 @@ class ChainRule
             {
                 continue;
             }
-            const double partial_k = partial(node, k);
+            const Real partial_k = partial(node, k);
             if (std::fpclassify(adjoint) != FP_ZERO)
             {
                 adjoints_[at(children[k])] += adjoint * partial_k;
@@ -346,13 +345,13 @@ class ChainRule
     }
 
     const Graph &graph_;
-    std::span<const double> point_;
-    std::vector<double> values_;
-    std::vector<double> adjoints_;
-    std::vector<double> sizes_;
+    std::span<const Real> point_;
+    std::vector<Real> values_;
+    std::vector<Real> adjoints_;
+    std::vector<Real> sizes_;
     std::vector<bool> reached_;
-    std::vector<double> row_;
-    std::vector<double> scale_;
+    std::vector<Real> row_;
+    std::vector<Real> scale_;
 };
 
 }

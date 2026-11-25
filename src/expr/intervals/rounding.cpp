@@ -1,5 +1,6 @@
 #include "expr/intervals/rounding.hpp"
 
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
 
@@ -23,20 +24,20 @@ constexpr int kHundredthStepsPerUlp = 1608;
 
 static_assert(kLibmSteps * kHundredths >= kHundredthStepsPerUlp * kBoundUlps);
 
-std::int64_t order_of(double value) noexcept
+std::int64_t order_of(Real value) noexcept
 {
     const auto bits = std::bit_cast<std::int64_t>(value);
     return bits < 0 ? kSignOrder - bits : bits;
 }
 
-double value_of(std::int64_t order) noexcept
+Real value_of(std::int64_t order) noexcept
 {
-    return std::bit_cast<double>(order < 0 ? kSignOrder - order : order);
+    return std::bit_cast<Real>(order < 0 ? kSignOrder - order : order);
 }
 
 }
 
-double shifted(double value, int steps) noexcept
+Real shifted(Real value, int steps) noexcept
 {
     if (std::isnan(value))
     {
@@ -46,7 +47,7 @@ double shifted(double value, int steps) noexcept
     return value_of(std::clamp(order, -kInfiniteOrder, kInfiniteOrder));
 }
 
-double round_down(double value) noexcept
+Real round_down(Real value) noexcept
 {
     if (is_zero(value) && !std::signbit(value))
     {
@@ -55,7 +56,7 @@ double round_down(double value) noexcept
     return shifted(value, -kRoundedSteps);
 }
 
-double round_up(double value) noexcept
+Real round_up(Real value) noexcept
 {
     if (is_zero(value) && std::signbit(value))
     {
@@ -64,12 +65,12 @@ double round_up(double value) noexcept
     return shifted(value, kRoundedSteps);
 }
 
-double widen_down(double value) noexcept
+Real widen_down(Real value) noexcept
 {
     return shifted(value, -kLibmSteps);
 }
 
-double widen_up(double value) noexcept
+Real widen_up(Real value) noexcept
 {
     return shifted(value, kLibmSteps);
 }

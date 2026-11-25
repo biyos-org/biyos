@@ -1,5 +1,6 @@
 #include "expr/intervals/piecewise.hpp"
 
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/graph/points.hpp"
@@ -20,11 +21,11 @@ struct Piece
 {
     std::size_t anchor;
     std::size_t segment;
-    double from;
-    double to;
+    Real from;
+    Real to;
 };
 
-Interval point(double value) noexcept
+Interval point(Real value) noexcept
 {
     return {value, value};
 }
@@ -34,13 +35,13 @@ bool is_flat(const PiecewiseLinear &pwl, std::size_t segment) noexcept
     return is_zero(pwl.y[segment + 1] - pwl.y[segment]);
 }
 
-std::size_t piece_of(std::span<const double> x, double t) noexcept
+std::size_t piece_of(std::span<const Real> x, Real t) noexcept
 {
-    const std::span<const double> starts = x.subspan(1);
+    const std::span<const Real> starts = x.subspan(1);
     return static_cast<std::size_t>(std::ranges::upper_bound(starts, t) - starts.begin());
 }
 
-double before(double x) noexcept
+Real before(Real x) noexcept
 {
     return std::nextafter(x, -kInfinity);
 }
@@ -56,7 +57,7 @@ Piece piece_at(const PiecewiseLinear &pwl, std::size_t anchor, Interval child) n
     };
 }
 
-Interval rise_over(Interval slope, double from, double t) noexcept
+Interval rise_over(Interval slope, Real from, Real t) noexcept
 {
     if (std::isinf(t - from))
     {
@@ -65,10 +66,10 @@ Interval rise_over(Interval slope, double from, double t) noexcept
     return slope * (point(t) + point(-from));
 }
 
-Interval value_at(const PiecewiseLinear &pwl, const Piece &piece, double t) noexcept
+Interval value_at(const PiecewiseLinear &pwl, const Piece &piece, Real t) noexcept
 {
-    const double x = pwl.x[piece.anchor];
-    const double y = pwl.y[piece.anchor];
+    const Real x = pwl.x[piece.anchor];
+    const Real y = pwl.y[piece.anchor];
     if (is_zero(t - x))
     {
         return point(y);
@@ -76,12 +77,12 @@ Interval value_at(const PiecewiseLinear &pwl, const Piece &piece, double t) noex
     return point(y) + rise_over(slope(pwl, piece.segment), x, t);
 }
 
-double lowest(const PiecewiseLinear &pwl, const Piece &piece, double t) noexcept
+Real lowest(const PiecewiseLinear &pwl, const Piece &piece, Real t) noexcept
 {
     return std::isinf(t) ? -kInfinity : value_at(pwl, piece, t).lower();
 }
 
-double highest(const PiecewiseLinear &pwl, const Piece &piece, double t) noexcept
+Real highest(const PiecewiseLinear &pwl, const Piece &piece, Real t) noexcept
 {
     return std::isinf(t) ? kInfinity : value_at(pwl, piece, t).upper();
 }
@@ -93,8 +94,8 @@ Interval range_of(const PiecewiseLinear &pwl, const Piece &piece) noexcept
         return point(pwl.y[piece.anchor]);
     }
     const bool rising = pwl.y[piece.segment + 1] > pwl.y[piece.segment];
-    const double low = rising ? piece.from : piece.to;
-    const double high = rising ? piece.to : piece.from;
+    const Real low = rising ? piece.from : piece.to;
+    const Real high = rising ? piece.to : piece.from;
     return {lowest(pwl, piece, low), highest(pwl, piece, high)};
 }
 

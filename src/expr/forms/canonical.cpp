@@ -14,7 +14,6 @@
 #include <bit>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
@@ -25,21 +24,21 @@ namespace biyos
 namespace
 {
 
-constexpr double kSquare = 2.0;
-constexpr double kUnit = 1.0;
+constexpr Real kSquare = 2.0;
+constexpr Real kUnit = 1.0;
 constexpr std::size_t kDegree = 2;
 constexpr Offset kNoFactor = -1;
 
 struct Item
 {
     Offset node;
-    double factor;
+    Real factor;
     bool root;
 };
 
 struct Monomial
 {
-    double coefficient;
+    Real coefficient;
     std::array<Index, kDegree> variables;
     std::size_t degree;
     Offset compound;
@@ -55,23 +54,23 @@ void check_uses(const Uses &uses, Offset node)
     }
 }
 
-bool same(double a, double b) noexcept
+bool same(Real a, Real b) noexcept
 {
-    return std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b);
+    return std::bit_cast<Bits>(a) == std::bit_cast<Bits>(b);
 }
 
-bool is_finite(double value) noexcept
+bool is_finite(Real value) noexcept
 {
     return std::isfinite(value);
 }
 
-bool scales(const Graph &graph, Offset sum, double factor) noexcept
+bool scales(const Graph &graph, Offset sum, Real factor) noexcept
 {
     if (!is_finite(factor * graph.constant(sum)))
     {
         return false;
     }
-    for (const double weight : graph.coefficients(sum))
+    for (const Real weight : graph.coefficients(sum))
     {
         if (!is_finite(factor * weight))
         {
@@ -102,7 +101,7 @@ void add_factor(const Graph &graph, Offset factor, Monomial &monomial)
     ++monomial.degree;
 }
 
-Monomial monomial_of(const Graph &graph, Offset node, double factor)
+Monomial monomial_of(const Graph &graph, Offset node, Real factor)
 {
     Monomial monomial{
         .coefficient = factor * graph.constant(node),
@@ -141,11 +140,11 @@ class Walk
     void open_product(const Item &item);
     void open_power(const Item &item);
     bool shared(const Item &item) const noexcept;
-    void push(Offset node, double factor);
+    void push(Offset node, Real factor);
     void add_monomial(const Monomial &monomial);
-    void add_constant(double value);
-    void add_linear(Index variable, double coefficient);
-    void add_quadratic(Index first, Index second, double coefficient);
+    void add_constant(Real value);
+    void add_linear(Index variable, Real coefficient);
+    void add_quadratic(Index first, Index second, Real coefficient);
     void keep(const Item &item);
     void close(const Item &item);
     Offset remainder(Graph &graph) const;
@@ -153,11 +152,11 @@ class Walk
     const Graph &graph_;
     const Uses &uses_;
     std::vector<Item> stack_;
-    double constant_ = 0.0;
+    Real constant_ = 0.0;
     std::vector<LinearTerm> linear_;
     std::vector<QuadraticTerm> quadratic_;
     std::vector<Offset> kept_;
-    std::vector<double> weights_;
+    std::vector<Real> weights_;
     bool moved_ = false;
     bool closed_ = false;
 };
@@ -252,7 +251,7 @@ void Walk::visit(const Item &item)
 
 void Walk::open_constant(const Item &item)
 {
-    const double value = item.factor * graph_.constant(item.node);
+    const Real value = item.factor * graph_.constant(item.node);
     if (!is_finite(value))
     {
         close(item);
@@ -268,7 +267,7 @@ void Walk::open_sum(const Item &item)
         close(item);
         return;
     }
-    const double constant = graph_.constant(item.node);
+    const Real constant = graph_.constant(item.node);
     if (!is_zero(constant))
     {
         add_constant(item.factor * constant);
@@ -334,7 +333,7 @@ bool Walk::shared(const Item &item) const noexcept
     return !item.root && uses_.shared(item.node);
 }
 
-void Walk::push(Offset node, double factor)
+void Walk::push(Offset node, Real factor)
 {
     stack_.push_back({.node = node, .factor = factor, .root = false});
 }
@@ -354,19 +353,19 @@ void Walk::add_monomial(const Monomial &monomial)
     add_quadratic(monomial.variables[0], monomial.variables[1], monomial.coefficient);
 }
 
-void Walk::add_constant(double value)
+void Walk::add_constant(Real value)
 {
     constant_ += value;
     moved_ = true;
 }
 
-void Walk::add_linear(Index variable, double coefficient)
+void Walk::add_linear(Index variable, Real coefficient)
 {
     linear_.push_back({.variable = variable, .coefficient = coefficient});
     moved_ = true;
 }
 
-void Walk::add_quadratic(Index first, Index second, double coefficient)
+void Walk::add_quadratic(Index first, Index second, Real coefficient)
 {
     quadratic_.push_back({.row = first, .column = second, .coefficient = coefficient});
     moved_ = true;

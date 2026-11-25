@@ -1,5 +1,6 @@
 #include "core/env.hpp"
 #include "core/events/events.hpp"
+#include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
@@ -25,12 +26,13 @@ using namespace std::chrono_literals;
 using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::Option;
+using biyos::Real;
 using biyos::TerminationStatus;
 using Times = std::vector<std::chrono::nanoseconds>;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::chrono::nanoseconds kForever = (std::chrono::nanoseconds::max)();
-constexpr double kEdgeSeconds = 0x1.12e0be826d695p+33;
+constexpr Real kEdgeSeconds = 0x1.12e0be826d695p+33;
 constexpr std::chrono::nanoseconds kSpin = 50ms;
 
 class ClockTest : public ::testing::Test
@@ -202,7 +204,7 @@ TEST_F(ClockTest, PartialTick)
 
 TEST_F(ClockTest, TinyLimit)
 {
-    options.set_double(Option::TimeLimit, std::numeric_limits<double>::denorm_min());
+    options.set_double(Option::TimeLimit, std::numeric_limits<Real>::denorm_min());
     const biyos::Deadline deadline(lookup, clock, interrupt);
     EXPECT_FALSE(deadline.reached());
     clock.advance_wall(1ns);

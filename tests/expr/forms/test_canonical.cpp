@@ -10,13 +10,13 @@
 #include <array>
 #include <bit>
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <vector>
 
 namespace
 {
 
+using biyos::Bits;
 using biyos::Graph;
 using biyos::Index;
 using biyos::kNoRemainder;
@@ -25,24 +25,25 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Parts;
 using biyos::QuadraticTerm;
+using biyos::Real;
 using biyos::Uses;
 using biyos::test::refusal;
 
-constexpr double kHuge = 1e200;
-constexpr double kLargest = 1e308;
-constexpr double kNearTwo = 2.0000000000000004;
-constexpr double kNearOne = 1.0000000000000002;
-constexpr double kAbsorber = 0x1p54;
+constexpr Real kHuge = 1e200;
+constexpr Real kLargest = 1e308;
+constexpr Real kNearTwo = 2.0000000000000004;
+constexpr Real kNearOne = 1.0000000000000002;
+constexpr Real kAbsorber = 0x1p54;
 
-std::uint64_t bits(double value)
+Bits bits(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
-std::vector<std::uint64_t> bits(std::span<const double> values)
+std::vector<Bits> bits(std::span<const Real> values)
 {
-    std::vector<std::uint64_t> words;
-    for (const double value : values)
+    std::vector<Bits> words;
+    for (const Real value : values)
     {
         words.push_back(bits(value));
     }
@@ -54,7 +55,7 @@ std::vector<Offset> ids(std::span<const Offset> nodes)
     return {nodes.begin(), nodes.end()};
 }
 
-void expect_values(std::span<const double> found, const std::vector<double> &wanted)
+void expect_values(std::span<const Real> found, const std::vector<Real> &wanted)
 {
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < wanted.size(); ++k)
@@ -98,7 +99,7 @@ Parts parts_of(Graph &graph, Offset node)
     return biyos::split(graph, uses, node);
 }
 
-Offset constant(Graph &graph, double value)
+Offset constant(Graph &graph, Real value)
 {
     return graph.add(Operator::Constant, value, {});
 }
@@ -108,20 +109,20 @@ Offset unary(Graph &graph, Operator op, Offset child)
     return graph.add(op, std::span(&child, 1));
 }
 
-Offset product(Graph &graph, double coefficient, const std::vector<Offset> &factors)
+Offset product(Graph &graph, Real coefficient, const std::vector<Offset> &factors)
 {
     return graph.add(Operator::Product, coefficient, factors);
 }
 
-Offset power(Graph &graph, Offset base, double exponent)
+Offset power(Graph &graph, Offset base, Real exponent)
 {
     return graph.add(Operator::ConstantPower, exponent, std::span(&base, 1));
 }
 
 Offset sum(Graph &graph,
-           double constant,
+           Real constant,
            const std::vector<Offset> &terms,
-           const std::vector<double> &weights)
+           const std::vector<Real> &weights)
 {
     return graph.add_sum(constant, terms, weights);
 }
@@ -242,7 +243,7 @@ TEST(CanonicalTest, WideSquare)
     Graph graph;
     const Index n = 100;
     const std::vector<Offset> x = variables(graph, n);
-    const std::vector<double> weights(x.size(), 0.5);
+    const std::vector<Real> weights(x.size(), 0.5);
     const Offset inner = sum(graph, 1.0, x, weights);
     const Offset square = power(graph, inner, 2.0);
     const Offset twice = product(graph, 1.0, {inner, inner});
@@ -701,9 +702,9 @@ TEST(CanonicalTest, StableOrder)
     Graph graph;
     const Index n = 16;
     const std::vector<Offset> x = variables(graph, n);
-    const std::array<double, 5> absorbed{kAbsorber, 1.0, 1.0, 1.0, -kAbsorber};
+    const std::array<Real, 5> absorbed{kAbsorber, 1.0, 1.0, 1.0, -kAbsorber};
     std::vector<Offset> terms;
-    std::vector<double> weights;
+    std::vector<Real> weights;
     for (Index k = 1; k < n; ++k)
     {
         terms.push_back(x[static_cast<std::size_t>(k)]);

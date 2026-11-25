@@ -1,4 +1,5 @@
 #include "bounds.hpp"
+#include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/graph/points.hpp"
 #include "expr/intervals/interval.hpp"
@@ -21,6 +22,7 @@ namespace
 
 using biyos::Interval;
 using biyos::PiecewiseLinear;
+using biyos::Real;
 using biyos::test::exact;
 using biyos::test::holds;
 using biyos::test::interval_text;
@@ -28,9 +30,9 @@ using biyos::test::within;
 
 using Wide = long double;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kSlack = 1e-14;
-constexpr double kCoarse = 1e-12;
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kSlack = 1e-14;
+constexpr Real kCoarse = 1e-12;
 constexpr std::uint64_t kSeed = 20261124;
 constexpr int kLines = 400;
 constexpr int kBoxes = 12;
@@ -39,8 +41,8 @@ constexpr int kReported = 5;
 
 struct Line
 {
-    std::vector<double> x;
-    std::vector<double> y;
+    std::vector<Real> x;
+    std::vector<Real> y;
 
     PiecewiseLinear pwl() const { return {.x = x, .y = y}; }
 };
@@ -49,18 +51,18 @@ const Line kZigzag{.x = {-2.0, -0.5, 1.0, 3.0}, .y = {1.0, -1.0, 0.5, 2.0}};
 const Line kPlateau{.x = {0.0, 1.0, 2.0, 3.0}, .y = {2.0, 2.0, 5.0, 5.0}};
 const Line kRise{.x = {0.0, 1.0}, .y = {0.0, 2.0}};
 
-Interval enclose(const Line &line, double lower, double upper)
+Interval enclose(const Line &line, Real lower, Real upper)
 {
     return biyos::piecewise(line.pwl(), {lower, upper});
 }
 
-testing::AssertionResult near(Interval found, double lower, double upper, double slack = kSlack)
+testing::AssertionResult near(Interval found, Real lower, Real upper, Real slack = kSlack)
 {
     const testing::AssertionResult held = holds(found, lower, upper);
     return held ? within(found, lower - slack, upper + slack) : held;
 }
 
-std::size_t segment_of(const Line &line, double t)
+std::size_t segment_of(const Line &line, Real t)
 {
     std::size_t k = 0;
     while (k + 2 < line.x.size() && !(t < line.x[k + 1]))
@@ -70,7 +72,7 @@ std::size_t segment_of(const Line &line, double t)
     return k;
 }
 
-Wide real_at(const Line &line, double t)
+Wide real_at(const Line &line, Real t)
 {
     const std::size_t k = segment_of(line, t);
     const std::size_t anchor = t < line.x[k + 1] ? k : k + 1;
@@ -79,14 +81,14 @@ Wide real_at(const Line &line, double t)
     return line.y[anchor] + (static_cast<Wide>(t) - line.x[anchor]) * rise / run;
 }
 
-Wide limit_at(const Line &line, double t)
+Wide limit_at(const Line &line, Real t)
 {
     if (std::isfinite(t))
     {
         return real_at(line, t);
     }
     const std::size_t k = t > 0.0 ? line.x.size() - 2 : 0;
-    const double rise = line.y[k + 1] - line.y[k];
+    const Real rise = line.y[k + 1] - line.y[k];
     if (biyos::is_zero(rise))
     {
         return line.y[k];
@@ -120,7 +122,7 @@ Truth truth_of(const Line &line, Interval box)
     return truth;
 }
 
-Wide reach_of(double t, double x)
+Wide reach_of(Real t, Real x)
 {
     return std::isfinite(t) ? std::fabs(static_cast<Wide>(t) - x) : 0.0L;
 }
@@ -142,23 +144,23 @@ Wide scale_of(const Line &line, Interval box)
     return scale;
 }
 
-std::vector<double> samples_of(const Line &line, Interval box, std::mt19937_64 &engine)
+std::vector<Real> samples_of(const Line &line, Interval box, std::mt19937_64 &engine)
 {
-    const double from = std::isfinite(box.lower()) ? box.lower() : line.x.front() - 10.0;
-    const double to = std::isfinite(box.upper()) ? box.upper() : line.x.back() + 10.0;
-    std::vector<double> found{from, to};
-    std::uniform_real_distribution<double> draw(0.0, 1.0);
+    const Real from = std::isfinite(box.lower()) ? box.lower() : line.x.front() - 10.0;
+    const Real to = std::isfinite(box.upper()) ? box.upper() : line.x.back() + 10.0;
+    std::vector<Real> found{from, to};
+    std::uniform_real_distribution<Real> draw(0.0, 1.0);
     for (int k = 0; k < kSamples; ++k)
     {
         found.push_back(from + (to - from) * draw(engine));
     }
-    for (const double x : line.x)
+    for (const Real x : line.x)
     {
         found.push_back(x);
         found.push_back(std::nextafter(x, -kInfinity));
         found.push_back(std::nextafter(x, kInfinity));
     }
-    std::erase_if(found, [box](double t) { return !(box.lower() <= t && t <= box.upper()); });
+    std::erase_if(found, [box](Real t) { return !(box.lower() <= t && t <= box.upper()); });
     return found;
 }
 
@@ -177,7 +179,7 @@ testing::AssertionResult covers(Interval found, Wide value)
 void expect_sampled(const Line &line, Interval box, std::mt19937_64 &engine, int &reported)
 {
     const Interval found = biyos::piecewise(line.pwl(), box);
-    for (const double t : samples_of(line, box, engine))
+    for (const Real t : samples_of(line, box, engine))
     {
         const testing::AssertionResult real = covers(found, real_at(line, t));
         const testing::AssertionResult computed = covers(found, biyos::value_at(line.pwl(), t));
@@ -188,30 +190,30 @@ void expect_sampled(const Line &line, Interval box, std::mt19937_64 &engine, int
         }
     }
     const Truth truth = truth_of(line, box);
-    const Wide slack = 64 * std::numeric_limits<double>::epsilon() * scale_of(line, box);
+    const Wide slack = 64 * std::numeric_limits<Real>::epsilon() * scale_of(line, box);
     const bool lower = found.lower() >= truth.lower - slack && found.lower() <= truth.lower;
     const bool upper = found.upper() <= truth.upper + slack && found.upper() >= truth.upper;
     if ((!lower || !upper) && reported++ < kReported)
     {
         ADD_FAILURE() << "box " << interval_text(box) << " gives " << interval_text(found)
-                      << " for [" << static_cast<double>(truth.lower) << ", "
-                      << static_cast<double>(truth.upper) << "]";
+                      << " for [" << static_cast<Real>(truth.lower) << ", "
+                      << static_cast<Real>(truth.upper) << "]";
     }
 }
 
-double coordinate(std::mt19937_64 &engine, double scale)
+Real coordinate(std::mt19937_64 &engine, Real scale)
 {
-    std::uniform_real_distribution<double> draw(-1.0, 1.0);
+    std::uniform_real_distribution<Real> draw(-1.0, 1.0);
     return scale * draw(engine);
 }
 
 Line random_line(std::mt19937_64 &engine)
 {
     const std::size_t n = 2 + engine() % 7;
-    const double width = std::pow(10.0, static_cast<double>(engine() % 7) - 3.0);
-    const double height = std::pow(10.0, static_cast<double>(engine() % 7) - 3.0);
+    const Real width = std::pow(10.0, static_cast<Real>(engine() % 7) - 3.0);
+    const Real height = std::pow(10.0, static_cast<Real>(engine() % 7) - 3.0);
     Line line;
-    double x = coordinate(engine, width);
+    Real x = coordinate(engine, width);
     for (std::size_t k = 0; k < n; ++k)
     {
         line.x.push_back(x);
@@ -222,7 +224,7 @@ Line random_line(std::mt19937_64 &engine)
     return line;
 }
 
-double end_of(const Line &line, std::mt19937_64 &engine)
+Real end_of(const Line &line, std::mt19937_64 &engine)
 {
     switch (engine() % 6)
     {
@@ -232,7 +234,7 @@ double end_of(const Line &line, std::mt19937_64 &engine)
         return engine() % 2 == 0 ? -kInfinity : kInfinity;
     default:
     {
-        const double spread = line.x.back() - line.x.front();
+        const Real spread = line.x.back() - line.x.front();
         return line.x.front() + spread * (1.5 * coordinate(engine, 1.0) + 0.5);
     }
     }
@@ -240,8 +242,8 @@ double end_of(const Line &line, std::mt19937_64 &engine)
 
 Interval random_box(const Line &line, std::mt19937_64 &engine)
 {
-    const double first = end_of(line, engine);
-    const double last = engine() % 8 == 0 ? first : end_of(line, engine);
+    const Real first = end_of(line, engine);
+    const Real last = engine() % 8 == 0 ? first : end_of(line, engine);
     const Interval box((std::min)(first, last), (std::max)(first, last));
     return box.is_empty() ? Interval(line.x.front(), line.x.back()) : box;
 }
@@ -276,7 +278,7 @@ TEST(EnclosureTest, Breakpoint)
 {
     for (std::size_t k = 0; k < kZigzag.x.size(); ++k)
     {
-        const double x = kZigzag.x[k];
+        const Real x = kZigzag.x[k];
         EXPECT_TRUE(exact(enclose(kZigzag, x, x), kZigzag.y[k], kZigzag.y[k])) << k;
     }
     EXPECT_TRUE(near(enclose(kZigzag, -5.0, -5.0), 5.0, 5.0));
@@ -301,7 +303,7 @@ TEST(EnclosureTest, Distant)
     std::mt19937_64 engine(kSeed);
     int reported = 0;
     const Line far{.x = {-1.5e308, -1e308, -5e307}, .y = {0.0, 10.0, -5.0}};
-    for (const double end : {1e308, 1.5e308, (std::numeric_limits<double>::max)()})
+    for (const Real end : {1e308, 1.5e308, (std::numeric_limits<Real>::max)()})
     {
         expect_sampled(far, {-1.2e308, end}, engine, reported);
         expect_sampled(far, {1e307, end}, engine, reported);

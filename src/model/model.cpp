@@ -19,7 +19,7 @@ namespace
 {
 constexpr std::string_view kNoun = "variable";
 
-std::string interval(double lower, double upper)
+std::string interval(Real lower, Real upper)
 {
     return "[" + text_of(lower) + ", " + text_of(upper) + "]";
 }

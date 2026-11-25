@@ -13,13 +13,14 @@ namespace
 
 using biyos::Index;
 using biyos::kDeleted;
+using biyos::Real;
 using biyos::RecordTolerances;
 using biyos::test::expect_tolerance;
 using biyos::test::kUnknown;
 using biyos::test::refusal;
 
 using Indices = std::vector<Index>;
-using Values = std::vector<double>;
+using Values = std::vector<Real>;
 
 constexpr Index kSize = 8;
 

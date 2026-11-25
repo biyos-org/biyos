@@ -50,7 +50,7 @@ void check_reverse(const Tape &tape, const Workspace &workspace, const Adjoints 
 }
 
 void check_size(std::string_view object,
-                std::span<const double> given,
+                std::span<const Real> given,
                 Offset wanted,
                 std::string_view name,
                 std::size_t lanes)
@@ -62,7 +62,7 @@ void check_size(std::string_view object,
     }
 }
 
-void prepare(const Tape &tape, std::span<const double> point, Workspace &workspace) noexcept
+void prepare(const Tape &tape, std::span<const Real> point, Workspace &workspace) noexcept
 {
     for (const Block &block : tape.blocks().first(to_size(tape.prepass())))
     {
@@ -78,7 +78,7 @@ void rise(const Block &block,
 {
     const std::size_t output = to_size(position - block.begin);
     const std::size_t lanes = adjoints.lanes;
-    const std::span<double> from = row(std::span(adjoints.shared), to_size(position), lanes);
+    const std::span<Real> from = row(std::span(adjoints.shared), to_size(position), lanes);
     drain(from, row(std::span(adjoints.slots), block.outputs[output], lanes));
     retrace(block, output, workspace, adjoints, adjoints.gradient);
 }
@@ -108,14 +108,14 @@ void climb(const Tape &tape, Offset root, const Workspace &workspace, Adjoints &
     }
 }
 
-void gather(const Pattern &pattern, Offset root, Adjoints &adjoints, std::span<double> gradients)
+void gather(const Pattern &pattern, Offset root, Adjoints &adjoints, std::span<Real> gradients)
 {
     const std::size_t lanes = adjoints.lanes;
     for (Offset k = pattern.starts[to_size(root)]; k < pattern.starts[to_size(root) + 1]; ++k)
     {
         const auto variable = to_size(pattern.variables[to_size(k)]);
-        const std::span<double> from = row(std::span(adjoints.gradient), variable, lanes);
-        const std::span<double> into = row(gradients, to_size(k), lanes);
+        const std::span<Real> from = row(std::span(adjoints.gradient), variable, lanes);
+        const std::span<Real> into = row(gradients, to_size(k), lanes);
         std::ranges::copy(from, into.begin());
         std::ranges::fill(from, 0.0);
     }
@@ -125,7 +125,7 @@ void differentiate(const Tape &tape,
                    const Block &block,
                    const Workspace &workspace,
                    Adjoints &adjoints,
-                   std::span<double> gradients) noexcept
+                   std::span<Real> gradients) noexcept
 {
     const std::size_t lanes = adjoints.lanes;
     for (std::size_t k = 0; k < block.outputs.size(); ++k)
@@ -138,13 +138,13 @@ void differentiate(const Tape &tape,
     }
 }
 
-void seed(const Block &block, std::span<const double> weights, Adjoints &adjoints) noexcept
+void seed(const Block &block, std::span<const Real> weights, Adjoints &adjoints) noexcept
 {
     const std::size_t lanes = adjoints.lanes;
     for (std::size_t k = 0; k < block.outputs.size(); ++k)
     {
-        const std::span<const double> mine = row(weights, to_size(block.begin) + k, lanes);
-        const std::span<double> into = row(std::span(adjoints.slots), block.outputs[k], lanes);
+        const std::span<const Real> mine = row(weights, to_size(block.begin) + k, lanes);
+        const std::span<Real> into = row(std::span(adjoints.slots), block.outputs[k], lanes);
         for (std::size_t l = 0; l < lanes; ++l)
         {
             into[l] += mine[l];
@@ -157,7 +157,7 @@ void pull(const Block &block, Adjoints &adjoints) noexcept
     const std::size_t lanes = adjoints.lanes;
     for (std::size_t k = 0; k < block.outputs.size(); ++k)
     {
-        const std::span<double> from =
+        const std::span<Real> from =
             row(std::span(adjoints.shared), to_size(block.begin) + k, lanes);
         drain(from, row(std::span(adjoints.slots), block.outputs[k], lanes));
     }
@@ -166,11 +166,11 @@ void pull(const Block &block, Adjoints &adjoints) noexcept
 }
 
 void jacobian(const Tape &tape,
-              std::span<const double> point,
+              std::span<const Real> point,
               Workspace &workspace,
               Adjoints &adjoints,
-              std::span<double> values,
-              std::span<double> gradients)
+              std::span<Real> values,
+              std::span<Real> gradients)
 {
     check_sweep(tape, point, workspace, values);
     check_reverse(tape, workspace, adjoints);
@@ -186,12 +186,12 @@ void jacobian(const Tape &tape,
 }
 
 void weighted_gradient(const Tape &tape,
-                       std::span<const double> point,
-                       std::span<const double> weights,
+                       std::span<const Real> point,
+                       std::span<const Real> weights,
                        Workspace &workspace,
                        Adjoints &adjoints,
-                       std::span<double> values,
-                       std::span<double> gradient)
+                       std::span<Real> values,
+                       std::span<Real> gradient)
 {
     check_sweep(tape, point, workspace, values);
     check_reverse(tape, workspace, adjoints);

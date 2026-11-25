@@ -1,5 +1,6 @@
 #include "expr/curvature/arithmetic.hpp"
 
+#include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/intervals/interval.hpp"
@@ -45,7 +46,7 @@ std::size_t &count(Counts &counts, Sign sign) noexcept
     return counts[static_cast<std::size_t>(sign)];
 }
 
-Monotonicity product_monotonicity(double coefficient, Counts others) noexcept
+Monotonicity product_monotonicity(Real coefficient, Counts others) noexcept
 {
     if (is_zero(coefficient) || count(others, Sign::Zero) > 0)
     {
@@ -86,7 +87,7 @@ Curvature extreme(const Operands &operands,
             leader = k;
         }
     }
-    const double lead = seen(operands[leader], mirrored).lower();
+    const Real lead = seen(operands[leader], mirrored).lower();
     std::size_t active = 0;
     for (std::size_t k = 0; k < operands.size(); ++k)
     {
@@ -100,7 +101,7 @@ Curvature extreme(const Operands &operands,
 
 }
 
-Curvature sum_curvature(std::span<const double> weights, std::span<Argument> arguments) noexcept
+Curvature sum_curvature(std::span<const Real> weights, std::span<Argument> arguments) noexcept
 {
     for (std::size_t k = 0; k < weights.size(); ++k)
     {
@@ -109,7 +110,7 @@ Curvature sum_curvature(std::span<const double> weights, std::span<Argument> arg
     return Curvature::Affine;
 }
 
-Curvature product_curvature(double coefficient,
+Curvature product_curvature(Real coefficient,
                             const Operands &factors,
                             std::span<Argument> arguments) noexcept
 {

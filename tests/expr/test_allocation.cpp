@@ -30,6 +30,7 @@ using biyos::Graph;
 using biyos::Interval;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Real;
 using biyos::Tape;
 using biyos::test::refusal;
 
@@ -64,8 +65,8 @@ void expect_same(const Graph &found, Offset node, const Graph &wanted, Offset ro
     EXPECT_EQ(found.op(node), wanted.op(root));
     EXPECT_EQ(ids(found.children(node)), ids(wanted.children(root)));
     EXPECT_DOUBLE_EQ(found.constant(node), wanted.constant(root));
-    const std::span<const double> coefficients = found.coefficients(node);
-    const std::span<const double> expected = wanted.coefficients(root);
+    const std::span<const Real> coefficients = found.coefficients(node);
+    const std::span<const Real> expected = wanted.coefficients(root);
     ASSERT_EQ(coefficients.size(), expected.size());
     for (std::size_t k = 0; k < expected.size(); ++k)
     {
@@ -151,7 +152,7 @@ std::size_t compaction_cost(std::size_t width)
     Graph graph;
     const Offset x = graph.add_variable(0);
     const std::vector<Offset> terms(width, x);
-    const std::vector<double> weights(width, 1.0);
+    const std::vector<Real> weights(width, 1.0);
     const Offset root = graph.add_sum(0.0, terms, weights);
     const std::size_t start = biyos::test::allocations();
     biyos::compact(graph, std::span(&root, 1));
@@ -175,8 +176,8 @@ std::vector<Offset> products(Graph &graph)
 std::size_t hessian_cost(const Graph &graph, std::span<const Offset> roots, std::size_t lanes)
 {
     biyos::Hessian hessian(graph, roots, {}, lanes, 4);
-    std::vector<double> out(hessian.pattern().rows.size());
-    const std::vector<double> weights(roots.size(), 1.0);
+    std::vector<Real> out(hessian.pattern().rows.size());
+    const std::vector<Real> weights(roots.size(), 1.0);
     const std::array point{0.5, 2.0};
     const std::size_t start = biyos::test::allocations();
     hessian.values(point, weights, out);
@@ -188,8 +189,8 @@ std::size_t product_cost(const Graph &graph, std::span<const Offset> roots, std:
     biyos::Hessian hessian(graph, roots, {}, lanes, 4);
     const std::array point{0.5, 2.0};
     const std::array direction{1.5, -0.5};
-    std::vector<double> out(point.size());
-    const std::vector<double> weights(roots.size(), 1.0);
+    std::vector<Real> out(point.size());
+    const std::vector<Real> weights(roots.size(), 1.0);
     const std::size_t start = biyos::test::allocations();
     hessian.product(point, weights, direction, out);
     return biyos::test::allocations() - start;
@@ -199,8 +200,8 @@ std::size_t jacobian_cost(const Tape &tape)
 {
     biyos::Workspace workspace(tape);
     biyos::Adjoints adjoints(tape);
-    std::vector<double> values(static_cast<std::size_t>(tape.roots()));
-    std::vector<double> gradients(tape.pattern().variables.size());
+    std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
+    std::vector<Real> gradients(tape.pattern().variables.size());
     const std::array point{0.5, 2.0};
     const std::size_t start = biyos::test::allocations();
     biyos::jacobian(tape, point, workspace, adjoints, values, gradients);
@@ -211,10 +212,10 @@ std::size_t gradient_cost(const Tape &tape)
 {
     biyos::Workspace workspace(tape);
     biyos::Adjoints adjoints(tape);
-    std::vector<double> values(static_cast<std::size_t>(tape.roots()));
-    const std::vector<double> weights(values.size(), 0.5);
+    std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
+    const std::vector<Real> weights(values.size(), 0.5);
     const std::array point{0.5, 2.0};
-    std::vector<double> gradient(point.size());
+    std::vector<Real> gradient(point.size());
     const std::size_t start = biyos::test::allocations();
     biyos::weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
     return biyos::test::allocations() - start;
@@ -230,7 +231,7 @@ std::size_t compile_bytes(biyos::Index steps)
         total = graph.add(Operator::Product, 1.0, std::array{total, graph.add_variable(k)});
         terms.push_back(graph.add(Operator::Exp, std::span(&total, 1)));
     }
-    const std::vector<double> ones(terms.size(), 1.0);
+    const std::vector<Real> ones(terms.size(), 1.0);
     const Offset root = graph.add_sum(0.0, terms, ones);
     const std::size_t start = biyos::test::allocated_bytes();
     const Tape tape(graph, std::span(&root, 1));
@@ -249,7 +250,7 @@ std::size_t shared_bytes(biyos::Index terms)
         parts.push_back(graph.add(Operator::Product, 0.5, std::array{inner, inner}));
         parts.push_back(graph.add(Operator::Cos, std::span(&inner, 1)));
     }
-    const std::vector<double> ones(parts.size(), 1.0);
+    const std::vector<Real> ones(parts.size(), 1.0);
     const Offset total = graph.add_sum(0.0, parts, ones);
     std::vector<Offset> roots;
     for (biyos::Index j = 1; j <= terms; ++j)
@@ -265,7 +266,7 @@ std::size_t shared_bytes(biyos::Index terms)
 std::size_t sweep_cost(const Tape &tape)
 {
     biyos::Workspace workspace(tape);
-    std::vector<double> values(static_cast<std::size_t>(tape.roots()));
+    std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
     const std::array point{0.5, 2.0};
     const std::size_t start = biyos::test::allocations();
     biyos::forward(tape, point, workspace, values);

@@ -9,7 +9,6 @@
 
 #include <bit>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string>
@@ -19,20 +18,22 @@
 namespace
 {
 
+using biyos::Bits;
 using biyos::difference;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
 using biyos::QuadraticTerm;
+using biyos::Real;
 using biyos::Variable;
 using biyos::test::failure;
 using biyos::test::Quadratic;
 using biyos::test::refusal;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
-constexpr double kLarge = 1.0e308;
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
+constexpr Real kLarge = 1.0e308;
 
 Model with_functions(std::size_t variables, std::size_t functions)
 {
@@ -43,7 +44,7 @@ Model with_functions(std::size_t variables, std::size_t functions)
     };
     Model model;
     model.add_variables(std::vector<Variable>(variables, free));
-    const std::vector<double> constants(functions, 0.0);
+    const std::vector<Real> constants(functions, 0.0);
     const std::vector<Offset> starts(functions + 1, 0);
     model.add_functions(constants, starts, {});
     return model;
@@ -65,9 +66,9 @@ std::string add_refusal(Model &model, const Quadratic &quadratic)
     return refusal([&] { add(model, quadratic); });
 }
 
-std::uint64_t bits_of(double value)
+Bits bits_of(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
 void expect_pairs(std::span<const QuadraticTerm> found, const std::vector<QuadraticTerm> &wanted)
@@ -75,7 +76,7 @@ void expect_pairs(std::span<const QuadraticTerm> found, const std::vector<Quadra
     ASSERT_EQ(found.size(), wanted.size());
     for (std::size_t k = 0; k < found.size(); ++k)
     {
-        const double coefficient = found[k].coefficient;
+        const Real coefficient = found[k].coefficient;
         EXPECT_EQ(found[k].row, wanted[k].row) << "term " << k;
         EXPECT_EQ(found[k].column, wanted[k].column) << "term " << k;
         EXPECT_EQ(bits_of(coefficient), bits_of(wanted[k].coefficient)) << coefficient;
@@ -289,7 +290,7 @@ TEST(QuadraticTest, Atomic)
     };
     EXPECT_EQ(add_refusal(model, overflow),
               "invalid argument: function 0: sum of coefficients of pair (0, 0) is infinity");
-    model.add_functions(std::vector<double>{0.0}, std::vector<Offset>{0, 0}, {});
+    model.add_functions(std::vector<Real>{0.0}, std::vector<Offset>{0, 0}, {});
     expect_pairs(held(model), {{0, 0, kLarge}});
     EXPECT_TRUE(model.quadratic_terms(2, 4).empty());
 }
@@ -339,7 +340,7 @@ TEST(QuadraticTest, Later)
 {
     Model model = with_functions(2, 2);
     add(model, single(0, {{0, 1, 1.0}}));
-    const std::vector<double> constants{2.0, 3.0};
+    const std::vector<Real> constants{2.0, 3.0};
     const std::vector<Offset> starts{0, 1, 1};
     model.add_functions(constants, starts, {LinearTerm{.variable = 1, .coefficient = 5.0}});
     expect_pairs(model.quadratic_terms(0, 4), {{0, 1, 1.0}});
@@ -416,7 +417,7 @@ TEST(QuadraticTest, Moved)
     expect_pairs(held(taken), {{0, 0, 2.0}});
     EXPECT_TRUE(model.quadratic_terms(0, 0).empty());
     model.add_variables(std::vector<Variable>(1, taken.variable(0)));
-    model.add_functions(std::vector<double>{0.0}, std::vector<Offset>{0, 0}, {});
+    model.add_functions(std::vector<Real>{0.0}, std::vector<Offset>{0, 0}, {});
     add(model, single(0, {{0, 0, 3.0}}));
     expect_pairs(held(model), {{0, 0, 3.0}});
 }

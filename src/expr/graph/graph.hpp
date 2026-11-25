@@ -31,20 +31,20 @@ class Graph
     Offset size() const noexcept;
     Operator op(Offset node) const noexcept;
     std::span<const Offset> children(Offset node) const noexcept;
-    double constant(Offset node) const noexcept;
+    Real constant(Offset node) const noexcept;
     Index variable(Offset node) const noexcept;
-    std::span<const double> coefficients(Offset node) const noexcept;
+    std::span<const Real> coefficients(Offset node) const noexcept;
     Offset piecewise_linear(Offset node) const noexcept;
     Offset node_of(Index variable) const noexcept;
     const Points &points() const noexcept;
 
     Offset add(Operator op, std::span<const Offset> children);
-    Offset add(Operator op, double constant, std::span<const Offset> children);
+    Offset add(Operator op, Real constant, std::span<const Offset> children);
     Offset add_variable(Index variable);
-    Offset add_sum(double constant,
+    Offset add_sum(Real constant,
                    std::span<const Offset> children,
-                   std::span<const double> coefficients);
-    Offset add_piecewise_linear(std::span<const double> x, std::span<const double> y);
+                   std::span<const Real> coefficients);
+    Offset add_piecewise_linear(std::span<const Real> x, std::span<const Real> y);
     Offset add_piecewise(Offset pwl, std::span<const Offset> children);
 
     void renumber_variables(std::span<const Index> map) noexcept;
@@ -60,7 +60,7 @@ class Graph
     std::vector<std::uint64_t> payloads_;
     std::vector<Offset> starts_;
     std::vector<Offset> children_;
-    std::vector<double> coefficients_;
+    std::vector<Real> coefficients_;
     std::vector<Offset> variable_nodes_;
     Points points_;
 };

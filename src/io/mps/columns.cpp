@@ -84,7 +84,7 @@ Index Columns::enter(const Lines &lines, Draft &draft, std::string_view name)
 void Columns::add(const Lines &lines, Draft &draft, Index column, Fields pair)
 {
     const Index row = find_in(draft.row_names, lines, "row", pair[0]);
-    const double value = value_of(lines, pair[1]);
+    const Real value = value_of(lines, pair[1]);
     Index &last = last_[to_size(row)];
     if (last == column)
     {

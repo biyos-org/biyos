@@ -88,7 +88,7 @@ const Lower &Evaluation::hessian_pattern() const noexcept
     return compiled_.hessian.pattern();
 }
 
-void Evaluation::values(const Lookup &lookup, std::span<const double> x, std::span<double> f)
+void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span<Real> f)
 {
     const Timer timer(env_, tree_, "model", "values");
     check_point(x);
@@ -103,7 +103,7 @@ void Evaluation::values(const Lookup &lookup, std::span<const double> x, std::sp
     add_user_values(Checker(env_, lookup, "model"), x, f);
 }
 
-void Evaluation::jacobian(const Lookup &lookup, std::span<const double> x, std::span<double> g)
+void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::span<Real> g)
 {
     const Timer timer(env_, tree_, "model", "jacobian");
     check_point(x);
@@ -129,23 +129,23 @@ void Evaluation::check_size(std::string_view argument, std::size_t size, std::si
     }
 }
 
-void Evaluation::check_point(std::span<const double> x) const
+void Evaluation::check_point(std::span<const Real> x) const
 {
     check_size("x", x.size(), to_size(model_.n_variables()));
 }
 
 Request Evaluation::request_of(Index callback,
-                               std::span<const double> x,
-                               std::span<const double> w,
-                               std::span<const double> v) const noexcept
+                               std::span<const Real> x,
+                               std::span<const Real> w,
+                               std::span<const Real> v) const noexcept
 {
     return Request{.model = handle_, .callback = callback, .thread = 0, .x = x, .w = w, .v = v};
 }
 
-void Evaluation::term_values(std::span<const double> x, std::span<double> f) const
+void Evaluation::term_values(std::span<const Real> x, std::span<Real> f) const
 {
     const Index n = model_.n_functions();
-    const std::span<const double> constants = model_.constants(0, n);
+    const std::span<const Real> constants = model_.constants(0, n);
     const std::span<const LinearTerm> linear = model_.linear_terms(0, n);
     const std::span<const QuadraticTerm> quadratic = model_.quadratic_terms(0, n);
     const Slots &slots = compiled_.slots;
@@ -165,7 +165,7 @@ void Evaluation::term_values(std::span<const double> x, std::span<double> f) con
     }
 }
 
-void Evaluation::term_gradients(std::span<const double> x, std::span<double> g) const
+void Evaluation::term_gradients(std::span<const Real> x, std::span<Real> g) const
 {
     const Slots &slots = compiled_.slots;
     std::ranges::copy(slots.linear, g.begin());
@@ -179,14 +179,12 @@ void Evaluation::term_gradients(std::span<const double> x, std::span<double> g) 
     }
 }
 
-void Evaluation::add_user_values(const Checker &checker,
-                                 std::span<const double> x,
-                                 std::span<double> f)
+void Evaluation::add_user_values(const Checker &checker, std::span<const Real> x, std::span<Real> f)
 {
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);
-        const std::span<double> out = std::span(out_).first(callback.covered.size());
+        const std::span<Real> out = std::span(out_).first(callback.covered.size());
         run(checker, callback, Part::Function, request_of(c, x), out);
         for (std::size_t i = 0; i < out.size(); ++i)
         {
@@ -196,14 +194,14 @@ void Evaluation::add_user_values(const Checker &checker,
 }
 
 void Evaluation::add_user_gradients(const Checker &checker,
-                                    std::span<const double> x,
-                                    std::span<double> g)
+                                    std::span<const Real> x,
+                                    std::span<Real> g)
 {
     const Slots &slots = compiled_.slots;
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);
-        const std::span<double> out = std::span(out_).first(callback.jacobian_pairs.size());
+        const std::span<Real> out = std::span(out_).first(callback.jacobian_pairs.size());
         run(checker, callback, Part::Jacobian, request_of(c, x), out);
         const std::size_t begin = to_size(slots.callback_starts[to_size(c)]);
         for (std::size_t p = 0; p < out.size(); ++p)

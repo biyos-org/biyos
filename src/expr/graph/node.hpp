@@ -55,15 +55,15 @@ enum class Payload
     Points,
 };
 
-std::string_view fault(double value) noexcept;
+std::string_view fault(Real value) noexcept;
 std::optional<Operator> operator_of(int code) noexcept;
 Payload payload_of(Operator op);
 void check_shape(Operator op, Payload payload, Offset children);
 void check_child(Offset child, Offset size);
 void check_variable(Index variable);
-void check_constant(double value);
-void check_constant(Operator op, double value);
-void check_coefficients(std::span<const double> coefficients, Offset children);
+void check_constant(Real value);
+void check_constant(Operator op, Real value);
+void check_coefficients(std::span<const Real> coefficients, Offset children);
 std::string n_text(Offset n, std::string_view one, std::string_view many);
 
 }
