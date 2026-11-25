@@ -96,7 +96,10 @@ void get_names(const BIYOS_model &model, Selection selection, const char **names
 }
 
 template <Family Target>
-void get_indices(const BIYOS_model &model, int n, const char *const *names, int *indices)
+void get_indices(const BIYOS_model &model,
+                 BIYOS_index n,
+                 const char *const *names,
+                 BIYOS_index *indices)
 {
     const std::vector<std::string_view> wanted = texts(length(n), names);
     std::vector<biyos::Index> found;
