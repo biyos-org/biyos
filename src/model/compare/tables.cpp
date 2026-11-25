@@ -11,6 +11,7 @@
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
 
+#include <array>
 #include <cstddef>
 #include <span>
 #include <string>
@@ -236,52 +237,39 @@ std::string callback_table(const Model &a, const Model &b)
     return table_difference("callback", a.n_callbacks(), b.n_callbacks(), callback);
 }
 
+using Table = std::string (*)(const Model &, const Model &);
+
+constexpr auto kTables = std::to_array<Table>({
+    variable_table,
+    piecewise_linear_table,
+    function_table,
+    constraint_table,
+    objective_table,
+    indicator_table,
+    set_table,
+    cone_table,
+    complement_table,
+    callback_table,
+});
+
 }
 
 std::string difference(const Model &a, const Model &b)
 {
-    std::string found = compared("model name", a.name(), b.name());
-    if (found.empty())
+    const std::string name = compared("model name", a.name(), b.name());
+    if (!name.empty())
     {
-        found = variable_table(a, b);
+        return name;
     }
-    if (found.empty())
+    for (const Table table : kTables)
     {
-        found = piecewise_linear_table(a, b);
+        std::string found = table(a, b);
+        if (!found.empty())
+        {
+            return found;
+        }
     }
-    if (found.empty())
-    {
-        found = function_table(a, b);
-    }
-    if (found.empty())
-    {
-        found = constraint_table(a, b);
-    }
-    if (found.empty())
-    {
-        found = objective_table(a, b);
-    }
-    if (found.empty())
-    {
-        found = indicator_table(a, b);
-    }
-    if (found.empty())
-    {
-        found = set_table(a, b);
-    }
-    if (found.empty())
-    {
-        found = cone_table(a, b);
-    }
-    if (found.empty())
-    {
-        found = complement_table(a, b);
-    }
-    if (found.empty())
-    {
-        found = callback_table(a, b);
-    }
-    return found;
+    return "";
 }
 
 }
