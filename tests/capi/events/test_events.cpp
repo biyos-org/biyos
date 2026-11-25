@@ -168,6 +168,7 @@ void change(const BIYOS_event *, void *data)
     note(attempt, BIYOS_setenvstropt(env, BIYOS_OPT_REPRO, "replay.txt"));
     note(attempt, listen(env, receive, nullptr, BIYOS_EVTLVL_DBG, &id));
     note(attempt, BIYOS_delenvhook(env, 1));
+    note(attempt, BIYOS_delenvopt(env, BIYOS_OPT_SEED));
     note(attempt, BIYOS_getenvintopt(env, BIYOS_OPT_SEED, &attempt.seed));
 }
 
@@ -232,11 +233,11 @@ TEST(CApiTest, ReadOnly)
     fail(env);
     const BIYOS_status refused = BIYOS_ERR_BADARG;
     const std::vector<BIYOS_status>
-        statuses{refused, refused, refused, refused, refused, refused, BIYOS_OK};
+        statuses{refused, refused, refused, refused, refused, refused, refused, BIYOS_OK};
     const std::string reason =
         "invalid argument: environment: is read-only while delivering an event";
     EXPECT_EQ(attempt.statuses, statuses);
-    EXPECT_EQ(attempt.messages, std::vector<std::string>(7, reason));
+    EXPECT_EQ(attempt.messages, std::vector<std::string>(8, reason));
     EXPECT_EQ(attempt.seed, 0);
     BIYOS_int seed = -1;
     EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_OK);

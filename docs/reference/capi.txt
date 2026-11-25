@@ -160,7 +160,7 @@ since 0.1.0
 group options Options
 text An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_ERR_BADARG`: nothing is converted, so an int option refuses `BIYOS_setenvdblopt`. Every call that takes an option id returns `BIYOS_ERR_BADARG` for an id it does not know, and a failed set leaves the option as it was. [Options](#sec-option-table) lists every option.
 text Ranges include their ends and are checked exactly, with no tolerance, and NaN lies outside every range. Setting a deprecated option sets it and sends a warning event; setting a retired option, by any call, returns `BIYOS_ERR_BADARG` with a message that names the option to use instead, and changes nothing, while getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither.
-text Options have two levels. An option set on an environment is shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each call that sets or reads an option on the environment has a twin on the model, such as `BIYOS_setmdlintopt` beside `BIYOS_setenvintopt`, which checks the value in the same way. `BIYOS_delmdlopt` drops the model's own value, and `BIYOS_getmdloptsrc` tells where the value a model reads comes from. An option of environment scope is set on the environment only, and every model call on it returns `BIYOS_ERR_BADARG` with a message such as `invalid argument: option 'host': has environment scope`. No option of this release has environment scope.
+text Options have two levels. An option set on an environment is shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each call that sets or reads an option on the environment has a twin on the model, such as `BIYOS_setmdlintopt` beside `BIYOS_setenvintopt`, which checks the value in the same way. `BIYOS_delmdlopt` drops the model's own value, `BIYOS_delenvopt` returns the environment's value to the default, and `BIYOS_getmdloptsrc` tells where the value a model reads comes from. An option of environment scope is set on the environment only, and every model call on it returns `BIYOS_ERR_BADARG` with a message such as `invalid argument: option 'host': has environment scope`. No option of this release has environment scope.
 
 table Option kinds
 value BIYOS_OPTKND_BOOL A bool, set with `BIYOS_setenvboolopt` and read with `BIYOS_getenvboolopt`.
@@ -432,13 +432,21 @@ note The masks are the model's own when it holds them, else the environment's.
 see BIYOS_setmdlflgopt BIYOS_getmdloptsrc
 since 0.1.0
 
+function BIYOS_delenvopt
+summary Drop an environment's value of an option.
+param env in The environment.
+param opt in The id of the option, of any kind and any scope.
+return `BIYOS_OK` once the environment holds the default. An environment without a value of the option is left as it is.
+see BIYOS_setenvintopt BIYOS_getmdloptsrc BIYOS_delmdlopt
+since 0.1.0
+
 function BIYOS_delmdlopt
 summary Drop a model's own value of an option.
 param mdl in The model.
 param opt in The id of the option, of any kind.
 return `BIYOS_OK` once the model shares the environment's value. A model without its own value of the option is left as it is.
 error BIYOS_ERR_BADARG The option has environment scope.
-see BIYOS_setmdlintopt BIYOS_getmdloptsrc
+see BIYOS_setmdlintopt BIYOS_getmdloptsrc BIYOS_delenvopt
 since 0.1.0
 
 function BIYOS_getmdloptsrc
@@ -449,12 +457,12 @@ param src out Receives the source, one of the `BIYOS_OPTSRC_` values.
 return `BIYOS_OK`, with the source in `*src`.
 error BIYOS_ERR_BADARG The option has environment scope.
 note An option set on the environment to its default value comes from the environment.
-see BIYOS_delmdlopt
+see BIYOS_delmdlopt BIYOS_delenvopt
 since 0.1.0
 
 group events Events
 text biyos writes nothing to standard output or standard error. It reports through events, and a caller reads them by adding a hook on one kind of event at a lowest level. The hook then receives every event of that kind at that level or a more severe one. The hooks of an environment receive an event in the order they were added, and an event no hook wants is not built. They run one at a time: an event sent from one thread waits while a hook runs for another. A model may have hooks of its own, which receive the events of calls on that model alone, in the order they were added and before the hooks of its environment. They too run one at a time, but beside the hooks of other models and of the environment. Each event biyos sends is listed in [Events biyos sends](#sec-capi-sent).
-text While a hook runs, whether it belongs to the environment or to one of its models, the environment delivers an event and is read-only to the hook's thread. The hook may read options, the last error, the event and the models made on the environment. Every call that would change the environment, setting one of its options, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change, evaluate or free a model made on it or read its derivative patterns fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error is again what it was before the hook ran.
+text While a hook runs, whether it belongs to the environment or to one of its models, the environment delivers an event and is read-only to the hook's thread. The hook may read options, the last error, the event and the models made on the environment. Every call that would change the environment, setting or dropping one of its options, adding or removing a hook, creating a model on it or freeing it, fails with `BIYOS_ERR_BADARG` and the message `invalid argument: environment: is read-only while delivering an event`, and every call that would change, evaluate or free a model made on it or read its derivative patterns fails with `invalid argument: model: is read-only while delivering an event`. Such a failure keeps its message but sends no event, and once the hook returns the last error is again what it was before the hook ran.
 
 table Event kinds
 value BIYOS_EVTKND_MSG A message: a level, the module that sent it, a text and fields.

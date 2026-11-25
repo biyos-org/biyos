@@ -115,6 +115,7 @@ def change_model(model, other, env, seen, event):
         partial(model.addvar, 1),
         partial(other.setopt, "seed", 1),
         partial(env.setopt, "seed", 1),
+        partial(env.delopt, "seed"),
         partial(listen, env, Sink()),
         partial(biyos.Model, env),
     ]
@@ -589,7 +590,7 @@ def test_model_locked():
         other = biyos.Model(env)
         listen(model, partial(change_model, model, other, env, seen))
         fail_model(model)
-    assert seen == [LOCKED] * 5 + [ENV_LOCKED] * 3 + [0, 0]
+    assert seen == [LOCKED] * 5 + [ENV_LOCKED] * 4 + [0, 0]
 
 
 def test_model_error():

@@ -664,6 +664,26 @@ TEST(CApiTest, DeletedOption)
     EXPECT_EQ(env.message(), "invalid argument: option 0: unknown");
 }
 
+TEST(CApiTest, DroppedOption)
+{
+    const Env env;
+    const Model shared(env.get());
+    const Model own(env.get());
+    ASSERT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 3), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setmdlintopt(own.get(), BIYOS_OPT_SEED, 7), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvopt(env.get(), BIYOS_OPT_SEED), BIYOS_OK);
+    EXPECT_EQ(model_int(shared, BIYOS_OPT_SEED), 0);
+    EXPECT_EQ(source_of(shared, BIYOS_OPT_SEED), BIYOS_OPTSRC_DEFAULT);
+    EXPECT_EQ(model_int(own, BIYOS_OPT_SEED), 7);
+    EXPECT_EQ(source_of(own, BIYOS_OPT_SEED), BIYOS_OPTSRC_MDL);
+    EXPECT_EQ(BIYOS_delenvopt(env.get(), BIYOS_OPT_SEED), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvopt(env.get(), BIYOS_OPT_MAXTIME), BIYOS_OK);
+    EXPECT_EQ(source_of(shared, BIYOS_OPT_MAXTIME), BIYOS_OPTSRC_DEFAULT);
+    EXPECT_EQ(BIYOS_delenvopt(env.get(), 0), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: option 0: unknown");
+    EXPECT_EQ(BIYOS_delenvopt(nullptr, BIYOS_OPT_SEED), BIYOS_ERR_BADARG);
+}
+
 TEST(CApiTest, SharedOption)
 {
     const Env env;
@@ -791,6 +811,10 @@ TEST(CApiTest, EnvironmentScope)
     EXPECT_EQ(BIYOS_getmdloptsrc(held, kFlags, &value), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refused);
     EXPECT_EQ(BIYOS_setenvflgopt(env.get(), kFlags, kDual, 0), BIYOS_OK);
+    EXPECT_EQ(BIYOS_delenvopt(env.get(), kFlags), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getenvflgopt(env.get(), kFlags, &on, &off), BIYOS_OK);
+    EXPECT_EQ(on, 0U);
+    EXPECT_EQ(off, 0U);
 }
 
 TEST(CApiTest, DeprecatedModel)

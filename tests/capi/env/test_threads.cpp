@@ -263,6 +263,7 @@ TEST(ThreadTest, EnvBusy)
         BIYOS_addenvhook(env.get(), tally, nullptr, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_ERR, &hook),
         BIYOS_ERR_BUSY);
     EXPECT_EQ(BIYOS_delenvhook(env.get(), 1), BIYOS_ERR_BUSY);
+    EXPECT_EQ(BIYOS_delenvopt(env.get(), BIYOS_OPT_SEED), BIYOS_ERR_BUSY);
     EXPECT_EQ(BIYOS_freeenv(env.get()), BIYOS_ERR_BUSY);
     BIYOS_int seed = -1;
     EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_OK);

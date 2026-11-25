@@ -125,6 +125,7 @@ BIYOS_API BIYOS_status BIYOS_getmdlflgopt(const BIYOS_model *mdl,
                                           BIYOS_int opt,
                                           BIYOS_mask *on,
                                           BIYOS_mask *off);
+BIYOS_API BIYOS_status BIYOS_delenvopt(BIYOS_env *env, BIYOS_int opt);
 BIYOS_API BIYOS_status BIYOS_delmdlopt(BIYOS_model *mdl, BIYOS_int opt);
 BIYOS_API BIYOS_status BIYOS_getmdloptsrc(const BIYOS_model *mdl, BIYOS_int opt, BIYOS_int *src);
 

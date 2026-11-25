@@ -112,6 +112,11 @@ void get_flags(biyos::Env &env, BIYOS_int option, BIYOS_mask *on, BIYOS_mask *of
     *off = found.off;
 }
 
+void delete_option(biyos::Env &env, BIYOS_int option)
+{
+    writable(env).options().drop(biyos::find_option(option));
+}
+
 biyos::Settings &settings_of(Session &session)
 {
     writable(session);
@@ -266,6 +271,11 @@ BIYOS_status BIYOS_getenvstropt(BIYOS_env *env, BIYOS_int opt, const char **val)
 BIYOS_status BIYOS_getenvflgopt(BIYOS_env *env, BIYOS_int opt, BIYOS_mask *on, BIYOS_mask *off)
 {
     return guarded<get_flags>(env, opt, on, off);
+}
+
+BIYOS_status BIYOS_delenvopt(BIYOS_env *env, BIYOS_int opt)
+{
+    return guarded<delete_option>(env, opt);
 }
 
 BIYOS_status BIYOS_setmdlboolopt(BIYOS_model *mdl, BIYOS_int opt, BIYOS_int val)

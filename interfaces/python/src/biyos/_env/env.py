@@ -192,6 +192,30 @@ class Env:
         self._call(_GETTERS[kind], option, *map(byref, found))
         return values.value(name, kind, found)
 
+    def delopt(self, name: str) -> None:
+        """Return an option to its default.
+
+        Every model without its own value of the option then reads the
+        default. Dropping an option the environment does not hold does
+        nothing.
+
+        Parameters
+        ----------
+        name
+            The name of the option.
+
+        Raises
+        ------
+        Error
+            When the name is unknown.
+
+        See Also
+        --------
+        BIYOS_delenvopt
+        """
+        option = self._option(name)
+        self._call(lib.BIYOS_delenvopt, option)
+
     def getoptver(self, name: str) -> Versions:
         """Read the versions that added, deprecated and retired an option.
 

@@ -37,7 +37,7 @@ A string read with `BIYOS_getenvstropt` stays valid until the environment is fre
 
 ## Two levels {#sec-options-levels}
 
-An option set on an environment is shared by every model made on it, and a model may hold its own value instead. Each call that sets or reads an option on the environment has a twin on a model, named with `mdl` in place of `env`, such as `BIYOS_setmdldblopt` beside `BIYOS_setenvdblopt`. A model's value is checked as the environment's is, and a failed set leaves the model as it was. A model reads its own value when it holds one, else the environment's, else the default, so a change on the environment reaches every model that holds no value of its own. `BIYOS_delmdlopt` drops the model's value, and the model shares the environment's again; on an option the model holds no value of, it changes nothing and succeeds. `BIYOS_getmdloptsrc` tells where the value a model reads comes from: `BIYOS_OPTSRC_MDL`, `BIYOS_OPTSRC_ENV` or `BIYOS_OPTSRC_DEFAULT`.
+An option set on an environment is shared by every model made on it, and a model may hold its own value instead. Each call that sets or reads an option on the environment has a twin on a model, named with `mdl` in place of `env`, such as `BIYOS_setmdldblopt` beside `BIYOS_setenvdblopt`. A model's value is checked as the environment's is, and a failed set leaves the model as it was. A model reads its own value when it holds one, else the environment's, else the default, so a change on the environment reaches every model that holds no value of its own. `BIYOS_delmdlopt` drops the model's value, and the model shares the environment's again; on an option the model holds no value of, it changes nothing and succeeds. `BIYOS_delenvopt` drops the environment's value in the same way, and every model without its own value reads the default again. `BIYOS_getmdloptsrc` tells where the value a model reads comes from: `BIYOS_OPTSRC_MDL`, `BIYOS_OPTSRC_ENV` or `BIYOS_OPTSRC_DEFAULT`.
 
 ```{.c file="examples/c/options.c" item="model_options"}
 ```
@@ -87,7 +87,7 @@ Python reads and sets options by name, with `env.getopt` and `env.setopt`. The v
 ```{.python file="interfaces/python/examples/options.py"}
 ```
 
-`getoptver` returns the three versions as strings, `None` standing for never. A model has its own `setopt` and `getopt`, which take and give values as the environment's do, with `delopt` to drop its value and `getoptsrc` to tell where the value it reads comes from, as an `OptionSource` ([Two levels](#sec-options-levels)). `getoptver` is on the environment alone.
+`getoptver` returns the three versions as strings, `None` standing for never. A model has its own `setopt` and `getopt`, which take and give values as the environment's do, with `delopt` to drop its value and `getoptsrc` to tell where the value it reads comes from, as an `OptionSource` ([Two levels](#sec-options-levels)). The environment's `delopt` drops its own value. `getoptver` is on the environment alone.
 
 ::: {.callout-note}
 ## Read, checked and stored
