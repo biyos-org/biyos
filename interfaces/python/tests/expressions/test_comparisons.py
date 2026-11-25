@@ -25,6 +25,11 @@ def x(model):
     return model.addvar(3)
 
 
+@pytest.fixture
+def terms(x):
+    return {"e": biyos.exp(x[0]), "f": biyos.log(x[1])}
+
+
 def tree(term):
     if isinstance(term, biyos.Variable):
         return index(term)
@@ -42,6 +47,29 @@ def chained(term):
 
 
 DIFFERENCE = (Operator.SUM, (0.0, 1.0, -1.0), 0, 1)
+VAR = Operator.VARIABLE
+SINGLE = ([2], [VAR, Operator.EXP], [0, 1], [])
+DOUBLE = (
+    [5],
+    [VAR, Operator.EXP, VAR, Operator.LOG, Operator.SUM],
+    [0, 1, 1, 1, 2],
+    [0.0, 1.0, -1.0],
+)
+STORED = [
+    (le, "e", "f", ([-biyos.inf], [0.0]), DOUBLE),
+    (ge, "e", "f", ([0.0], [biyos.inf]), DOUBLE),
+    (eq, "e", "f", ([0.0], [0.0]), DOUBLE),
+    (le, "e", 2, ([-biyos.inf], [2.0]), SINGLE),
+    (ge, "e", 2, ([2.0], [biyos.inf]), SINGLE),
+    (eq, "e", 2, ([2.0], [2.0]), SINGLE),
+    (le, 2, "e", ([2.0], [biyos.inf]), SINGLE),
+    (ge, 2, "e", ([-biyos.inf], [2.0]), SINGLE),
+    (eq, 2, "e", ([2.0], [2.0]), SINGLE),
+]
+
+
+def compared(terms, compare, left, right):
+    return compare(terms.get(left, left), terms.get(right, right))
 
 
 def test_less(x):
@@ -78,6 +106,16 @@ def test_expressions(x):
         -biyos.inf,
         2.0,
     )
+
+
+@pytest.mark.parametrize(
+    ("compare", "left", "right", "bounds", "expr"), STORED
+)
+def test_stored(model, terms, compare, left, right, bounds, expr):
+    cons = model.addcon(compared(terms, compare, left, right))
+    funs = model.getcon(cons)[0]
+    assert model.getconbnd(cons) == bounds
+    assert model.getexpr(funs) == expr
 
 
 def test_truth(x):
