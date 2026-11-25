@@ -21,7 +21,7 @@
 #include <string_view>
 #include <vector>
 
-namespace biyos
+namespace biyos::evaluation
 {
 
 struct Point
@@ -42,9 +42,16 @@ struct Program
     Hessian hessian;
 };
 
+}
+
+namespace biyos
+{
+
 class Evaluation
 {
   public:
+    using Point = evaluation::Point;
+
     Evaluation(Env &env, const Model &model, const BIYOS_model *handle = nullptr);
 
     const Pattern &jacobian_pattern() const noexcept;
@@ -74,7 +81,7 @@ class Evaluation
     Env &env_;
     const Model &model_;
     const BIYOS_model *handle_;
-    Program program_;
+    evaluation::Program program_;
     Workspace workspace_;
     Adjoints adjoints_;
     std::vector<Real> values_;

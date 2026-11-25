@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-namespace biyos
+namespace biyos::evaluation
 {
 
 namespace

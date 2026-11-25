@@ -16,6 +16,11 @@
 namespace biyos
 {
 
+using evaluation::evaluate;
+using evaluation::has;
+using evaluation::Part;
+using evaluation::require;
+
 namespace
 {
 
@@ -81,7 +86,7 @@ void Evaluation::term_hessian(std::span<const Real> w, std::span<Real> h) const
     const std::span<const QuadraticTerm> quadratic =
         model_.quadratic_terms(0, model_.n_functions());
     const std::span<const Offset> declared = program_.hessian.declared();
-    const JacobianLayout &layout = program_.layout;
+    const evaluation::JacobianLayout &layout = program_.layout;
     for (std::size_t k = 0; k < w.size(); ++k)
     {
         for (Offset t = layout.starts.quadratic[k]; t < layout.starts.quadratic[k + 1]; ++t)
@@ -97,7 +102,7 @@ void Evaluation::term_hessian_product(const Point &point, std::span<Real> hv) co
 {
     const std::span<const QuadraticTerm> quadratic =
         model_.quadratic_terms(0, model_.n_functions());
-    const JacobianLayout &layout = program_.layout;
+    const evaluation::JacobianLayout &layout = program_.layout;
     for (std::size_t k = 0; k < point.w.size(); ++k)
     {
         for (Offset t = layout.starts.quadratic[k]; t < layout.starts.quadratic[k + 1]; ++t)

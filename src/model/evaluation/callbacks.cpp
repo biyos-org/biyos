@@ -17,7 +17,7 @@
 #include <string>
 #include <string_view>
 
-namespace biyos
+namespace biyos::evaluation
 {
 
 namespace

@@ -31,11 +31,11 @@ using biyos::IndexPair;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
-using biyos::Point;
 using biyos::QuadraticTerm;
 using biyos::Real;
 using biyos::Request;
 using biyos::Variable;
+using biyos::evaluation::Point;
 using biyos::test::failure;
 using biyos::test::refusal;
 

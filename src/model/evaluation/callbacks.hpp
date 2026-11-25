@@ -9,7 +9,7 @@
 #include <span>
 #include <string_view>
 
-namespace biyos
+namespace biyos::evaluation
 {
 
 enum class Part

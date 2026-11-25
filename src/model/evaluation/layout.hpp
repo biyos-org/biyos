@@ -8,7 +8,7 @@
 #include <span>
 #include <vector>
 
-namespace biyos
+namespace biyos::evaluation
 {
 
 struct JacobianLayout
