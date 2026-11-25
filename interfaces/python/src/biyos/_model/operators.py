@@ -1,5 +1,7 @@
-from ctypes import Array, c_int, c_int64
+from ctypes import Array
 from enum import IntEnum
+
+from biyos._convert.numbers import c_integer, c_offset
 
 
 class Operator(IntEnum):
@@ -70,7 +72,7 @@ def node_values(code: int, arity: int) -> int:
 
 
 def postfix_values(
-    code: Array[c_int] | None, arg: Array[c_int64] | None
+    code: Array[c_integer] | None, arg: Array[c_offset] | None
 ) -> int:
     if code is None or arg is None:
         return 0
