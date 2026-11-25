@@ -31,6 +31,8 @@ def terms(x):
         "e": biyos.exp(x[0]),
         "f": biyos.log(x[1]),
         "p": biyos.piecewise(0, x[1]),
+        "q": biyos.piecewise(1, x[2]),
+        "v": x[2],
     }
 
 
@@ -73,14 +75,18 @@ STORED = [
 LESS = ComparisonSense.LESS_EQUAL
 GREATER = ComparisonSense.GREATER_EQUAL
 EQUAL = ComparisonSense.EQUAL
+PAIR = "piecewise(0, x[1]) <= piecewise(1, x[2])"
 OPERANDS = [
     (le, "e", "f", ("e", LESS, "f"), "exp(x[0]) <= log(x[1])"),
     (ge, "e", "f", ("e", GREATER, "f"), "exp(x[0]) >= log(x[1])"),
     (eq, "e", "f", ("e", EQUAL, "f"), "exp(x[0]) == log(x[1])"),
-]
-MIRRORED = [
-    (le, "e", "p", ("p", GREATER, "e"), "piecewise(0, x[1]) >= exp(x[0])"),
-    (eq, "e", "p", ("p", EQUAL, "e"), "piecewise(0, x[1]) == exp(x[0])"),
+    (le, "e", "p", ("e", LESS, "p"), "exp(x[0]) <= piecewise(0, x[1])"),
+    (ge, "e", "p", ("e", GREATER, "p"), "exp(x[0]) >= piecewise(0, x[1])"),
+    (eq, "e", "p", ("e", EQUAL, "p"), "exp(x[0]) == piecewise(0, x[1])"),
+    (le, "p", "e", ("p", LESS, "e"), "piecewise(0, x[1]) <= exp(x[0])"),
+    (le, "v", "p", ("v", LESS, "p"), "x[2] <= piecewise(0, x[1])"),
+    (le, "p", "v", ("p", LESS, "v"), "piecewise(0, x[1]) <= x[2]"),
+    (le, "p", "q", ("p", LESS, "q"), PAIR),
 ]
 NUMBERS = [
     (le, "e", 2, LESS, "exp(x[0]) <= 2"),
@@ -142,9 +148,7 @@ def test_stored(model, terms, compare, left, right, bounds, expr):
     assert model.getexpr(funs) == expr
 
 
-@pytest.mark.parametrize(
-    ("compare", "left", "right", "kept", "text"), OPERANDS + MIRRORED
-)
+@pytest.mark.parametrize(("compare", "left", "right", "kept", "text"), OPERANDS)
 def test_operands(terms, compare, left, right, kept, text):
     con = compared(terms, compare, left, right)
     lhs, sense, rhs = kept
