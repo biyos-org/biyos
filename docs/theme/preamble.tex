@@ -37,6 +37,9 @@
 \usepackage{needspace}
 \newcommand{\biyosroom}[1]{\needspace{8\baselineskip}}
 \AddtoDoHook{heading/preinit/section}{\biyosroom}
+\newcommand{\biyosanchor}[1]{\phantomsection}
+\AddtoDoHook{heading/begingroup/section}{\biyosanchor}
+\AddtoDoHook{heading/begingroup/subsection}{\biyosanchor}
 
 \usepackage{scrlayer-scrpage}
 \clearpairofpagestyles
