@@ -64,21 +64,21 @@ void delete_hook(biyos::Env &env, BIYOS_index index)
     writable(env).events().delete_hook(index);
 }
 
-void add_model_hook(BIYOS_model &model,
+void add_model_hook(BIYOS_model &session,
                     BIYOS_hook hook,
                     void *data,
                     BIYOS_int kind,
                     BIYOS_int level,
                     BIYOS_index *index)
 {
-    writable(model);
-    add_to(model, model.env(), hook, data, kind, level, index);
+    writable(session);
+    add_to(session, session.env(), hook, data, kind, level, index);
 }
 
-void delete_model_hook(BIYOS_model &model, BIYOS_index index)
+void delete_model_hook(BIYOS_model &session, BIYOS_index index)
 {
-    writable(model);
-    model.delete_hook(index);
+    writable(session);
+    session.delete_hook(index);
 }
 
 const biyos::Field *field_of(const BIYOS_event *event, BIYOS_index field)

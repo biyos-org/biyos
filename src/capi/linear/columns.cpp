@@ -85,45 +85,45 @@ void write_columns(const Columns &columns,
 }
 
 template <typename Selection>
-void n_column_terms(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
+void n_column_terms(const BIYOS_model &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(model.model(), Family::Variable, selection);
-    const biyos::EntryTimer timer(model.env(), biyos::kModule, "columns");
-    const std::size_t count = count_of(every_start(model.model()), chosen);
+    const auto chosen = selected(session.model(), Family::Variable, selection);
+    const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
+    const std::size_t count = count_of(every_start(session.model()), chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
 
-void get_listed(const BIYOS_model &model,
+void get_listed(const BIYOS_model &session,
                 List list,
                 BIYOS_offset capacity,
                 BIYOS_offset *nnz,
                 const Coordinates &out)
 {
-    const auto chosen = selected(model.model(), Family::Variable, list);
-    const biyos::EntryTimer timer(model.env(), biyos::kModule, "columns");
-    std::vector<biyos::Offset> starts = every_start(model.model());
+    const auto chosen = selected(session.model(), Family::Variable, list);
+    const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
+    std::vector<biyos::Offset> starts = every_start(session.model());
     const std::size_t count = count_of(starts, chosen);
     check_capacity(capacity, count);
-    write_columns(columns_of(model.model(), std::move(starts)), chosen, out);
+    write_columns(columns_of(session.model(), std::move(starts)), chosen, out);
     if (nnz != nullptr)
     {
         *nnz = to_offset(count);
     }
 }
 
-void get_ranged(const BIYOS_model &model,
+void get_ranged(const BIYOS_model &session,
                 Range range,
                 BIYOS_offset capacity,
                 BIYOS_offset *counts,
                 BIYOS_index *functions,
                 BIYOS_real *values)
 {
-    const biyos::EntryTimer timer(model.env(), biyos::kModule, "columns");
+    const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
     const std::vector<biyos::Offset> found =
-        biyos::variable_starts(model.model(), range.start, range.stop);
+        biyos::variable_starts(session.model(), range.start, range.stop);
     const auto count = to_size(found.back());
     check_capacity(capacity, count);
-    biyos::variable_terms(model.model(),
+    biyos::variable_terms(session.model(),
                           range.start,
                           found,
                           given(functions, count),

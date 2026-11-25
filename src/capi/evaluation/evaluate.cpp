@@ -30,59 +30,59 @@ template <typename T> std::span<T> sized(T *array, std::size_t size, std::string
     return given(array, size);
 }
 
-std::size_t n_vars(const BIYOS_model &model)
+std::size_t n_vars(const BIYOS_model &session)
 {
-    return to_size(model.model().n_variables());
+    return to_size(session.model().n_variables());
 }
 
-std::size_t n_funs(const BIYOS_model &model)
+std::size_t n_funs(const BIYOS_model &session)
 {
-    return to_size(model.model().n_functions());
+    return to_size(session.model().n_functions());
 }
 
-void eval_f(BIYOS_model &model, const BIYOS_real *x, BIYOS_real *f)
+void eval_f(BIYOS_model &session, const BIYOS_real *x, BIYOS_real *f)
 {
-    biyos::Evaluation &evaluation = evaluation_of(model);
-    const auto point = sized(x, n_vars(model), "x");
-    const auto values = sized(f, n_funs(model), "f");
-    const Running running(model);
-    evaluation.values(model.lookup(), point, values);
+    biyos::Evaluation &evaluation = evaluation_of(session);
+    const auto point = sized(x, n_vars(session), "x");
+    const auto values = sized(f, n_funs(session), "f");
+    const Running running(session);
+    evaluation.values(session.lookup(), point, values);
 }
 
-void eval_g(BIYOS_model &model, const BIYOS_real *x, BIYOS_real *g)
+void eval_g(BIYOS_model &session, const BIYOS_real *x, BIYOS_real *g)
 {
-    biyos::Evaluation &evaluation = evaluation_of(model);
+    biyos::Evaluation &evaluation = evaluation_of(session);
     const std::size_t nnz = evaluation.jacobian_pattern().variables.size();
-    const auto point = sized(x, n_vars(model), "x");
+    const auto point = sized(x, n_vars(session), "x");
     const auto values = sized(g, nnz, "g");
-    const Running running(model);
-    evaluation.jacobian(model.lookup(), point, values);
+    const Running running(session);
+    evaluation.jacobian(session.lookup(), point, values);
 }
 
-void eval_h(BIYOS_model &model, const BIYOS_real *x, const BIYOS_real *w, BIYOS_real *h)
+void eval_h(BIYOS_model &session, const BIYOS_real *x, const BIYOS_real *w, BIYOS_real *h)
 {
-    biyos::Evaluation &evaluation = evaluation_of(model);
+    biyos::Evaluation &evaluation = evaluation_of(session);
     const std::size_t nnz = evaluation.hessian_pattern().rows.size();
-    const auto point = sized(x, n_vars(model), "x");
-    const auto weights = sized(w, n_funs(model), "w");
+    const auto point = sized(x, n_vars(session), "x");
+    const auto weights = sized(w, n_funs(session), "w");
     const auto values = sized(h, nnz, "h");
-    const Running running(model);
-    evaluation.hessian(model.lookup(), {.x = point, .w = weights, .v = {}}, values);
+    const Running running(session);
+    evaluation.hessian(session.lookup(), {.x = point, .w = weights, .v = {}}, values);
 }
 
-void eval_hv(BIYOS_model &model,
+void eval_hv(BIYOS_model &session,
              const BIYOS_real *x,
              const BIYOS_real *w,
              const BIYOS_real *v,
              BIYOS_real *hv)
 {
-    biyos::Evaluation &evaluation = evaluation_of(model);
-    const auto point = sized(x, n_vars(model), "x");
-    const auto weights = sized(w, n_funs(model), "w");
-    const auto direction = sized(v, n_vars(model), "v");
-    const auto values = sized(hv, n_vars(model), "hv");
-    const Running running(model);
-    evaluation.product(model.lookup(), {.x = point, .w = weights, .v = direction}, values);
+    biyos::Evaluation &evaluation = evaluation_of(session);
+    const auto point = sized(x, n_vars(session), "x");
+    const auto weights = sized(w, n_funs(session), "w");
+    const auto direction = sized(v, n_vars(session), "v");
+    const auto values = sized(hv, n_vars(session), "hv");
+    const Running running(session);
+    evaluation.product(session.lookup(), {.x = point, .w = weights, .v = direction}, values);
 }
 
 }

@@ -39,19 +39,19 @@ void create(biyos::Env &env, BIYOS_model **model)
     *made = new BIYOS_model(env);
 }
 
-void make_copy(const BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
+void make_copy(const BIYOS_model &session, BIYOS_env *env, BIYOS_model **copy)
 {
     BIYOS_model **made = require(copy, "copy");
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
     const EnvGuard busy(target);
     busy.check();
-    const biyos::EntryTimer timer(model.env(), biyos::kModule, "copy");
-    *made = new BIYOS_model(target, model);
+    const biyos::EntryTimer timer(session.env(), biyos::kModule, "copy");
+    *made = new BIYOS_model(target, session);
 }
 
-void freeable(BIYOS_model &model)
+void freeable(BIYOS_model &session)
 {
-    writable(model);
+    writable(session);
 }
 
 biyos::VariableKind kind_at(const BIYOS_int *kinds, std::size_t k)
@@ -97,14 +97,14 @@ void set_each(biyos::Model &core, std::span<const biyos::Index> indices, Arrays.
     core.set_variables(indices, changed);
 }
 
-void add_variables(BIYOS_model &model,
+void add_variables(BIYOS_model &session,
                    BIYOS_index n,
                    const BIYOS_int *kinds,
                    const BIYOS_real *lower,
                    const BIYOS_real *upper,
                    BIYOS_index *start)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const std::size_t size = length(n);
     std::vector<biyos::Variable> added;
     added.reserve(size);
@@ -121,27 +121,27 @@ void add_variables(BIYOS_model &model,
 }
 
 template <typename Selection>
-void set_bounds(BIYOS_model &model,
+void set_bounds(BIYOS_model &session,
                 Selection selection,
                 const BIYOS_real *lower,
                 const BIYOS_real *upper)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const auto chosen = selected(core, Family::Variable, selection);
     set_each<bounded>(core, chosen, lower, upper);
 }
 
 template <typename Selection>
-void set_kinds(BIYOS_model &model, Selection selection, const BIYOS_int *kinds)
+void set_kinds(BIYOS_model &session, Selection selection, const BIYOS_int *kinds)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const auto chosen = selected(core, Family::Variable, selection);
     set_each<kinded>(core, chosen, kinds);
 }
 
-void n_variables(const BIYOS_model &model, BIYOS_index *n)
+void n_variables(const BIYOS_model &session, BIYOS_index *n)
 {
-    *require(n, "n") = model.model().n_variables();
+    *require(n, "n") = session.model().n_variables();
 }
 
 void copy_out(const biyos::Variable &variable,
@@ -165,15 +165,15 @@ void copy_out(const biyos::Variable &variable,
 }
 
 template <typename Selection>
-void get_variables(const BIYOS_model &model,
+void get_variables(const BIYOS_model &session,
                    Selection selection,
                    BIYOS_int *kinds,
                    BIYOS_real *lower,
                    BIYOS_real *upper)
 {
-    const auto chosen = selected(model.model(), Family::Variable, selection);
+    const auto chosen = selected(session.model(), Family::Variable, selection);
     const std::vector<biyos::Variable> variables =
-        picked(model.model(), &biyos::Model::variable, chosen);
+        picked(session.model(), &biyos::Model::variable, chosen);
     for (std::size_t k = 0; k < variables.size(); ++k)
     {
         copy_out(variables[k], k, kinds, lower, upper);
@@ -181,15 +181,18 @@ void get_variables(const BIYOS_model &model,
 }
 
 template <typename Selection>
-void get_bounds(const BIYOS_model &model, Selection selection, BIYOS_real *lower, BIYOS_real *upper)
+void get_bounds(const BIYOS_model &session,
+                Selection selection,
+                BIYOS_real *lower,
+                BIYOS_real *upper)
 {
-    get_variables(model, selection, nullptr, lower, upper);
+    get_variables(session, selection, nullptr, lower, upper);
 }
 
 template <typename Selection>
-void get_kinds(const BIYOS_model &model, Selection selection, BIYOS_int *kinds)
+void get_kinds(const BIYOS_model &session, Selection selection, BIYOS_int *kinds)
 {
-    get_variables(model, selection, kinds, nullptr, nullptr);
+    get_variables(session, selection, kinds, nullptr, nullptr);
 }
 
 }

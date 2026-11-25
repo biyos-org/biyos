@@ -104,25 +104,25 @@ void write(const Records &records,
 }
 
 template <typename Of, typename Selection>
-void n_pattern(BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
+void n_pattern(BIYOS_model &session, Selection selection, BIYOS_offset *nnz)
 {
     BIYOS_offset *out = require(nnz, "nnz");
-    const auto chosen = selected(model.model(), Of::kFamily, selection);
-    check_all(model.model(), Of::kFamily, chosen);
-    const Records records = Of::read(evaluation_of(model));
+    const auto chosen = selected(session.model(), Of::kFamily, selection);
+    check_all(session.model(), Of::kFamily, chosen);
+    const Records records = Of::read(evaluation_of(session));
     *out = to_offset(count_of(records, chosen));
 }
 
 template <typename Of, typename Selection>
-void get_pattern(BIYOS_model &model,
+void get_pattern(BIYOS_model &session,
                  Selection selection,
                  BIYOS_offset capacity,
                  BIYOS_offset *counts,
                  BIYOS_index *items)
 {
-    const auto chosen = selected(model.model(), Of::kFamily, selection);
-    check_all(model.model(), Of::kFamily, chosen);
-    const Records records = Of::read(evaluation_of(model));
+    const auto chosen = selected(session.model(), Of::kFamily, selection);
+    check_all(session.model(), Of::kFamily, chosen);
+    const Records records = Of::read(evaluation_of(session));
     check_capacity(capacity, count_of(records, chosen), "cap", "entries");
     write(records, chosen, counts, items);
 }

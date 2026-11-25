@@ -111,93 +111,101 @@ void get_flags(biyos::Env &env, BIYOS_int option, BIYOS_mask *on, BIYOS_mask *of
     *off = found.off;
 }
 
-biyos::Settings &settings_of(BIYOS_model &model)
+biyos::Settings &settings_of(BIYOS_model &session)
 {
-    writable(model);
-    return model.settings();
+    writable(session);
+    return session.settings();
 }
 
-biyos::Events &events_of(const BIYOS_model &model)
+biyos::Events &events_of(const BIYOS_model &session)
 {
-    return model.env().events();
+    return session.env().events();
 }
 
-void set_model_bool(BIYOS_model &model, BIYOS_int option, BIYOS_int value)
+void set_model_bool(BIYOS_model &session, BIYOS_int option, BIYOS_int value)
 {
-    biyos::Settings &settings = settings_of(model);
+    biyos::Settings &settings = settings_of(session);
     const biyos::Option found = biyos::find_option(option);
-    settings.set_bool(found, value != 0, events_of(model), &model, &model.hooks());
+    settings.set_bool(found, value != 0, events_of(session), &session, &session.hooks());
 }
 
-void set_model_int(BIYOS_model &model, BIYOS_int option, BIYOS_int value)
+void set_model_int(BIYOS_model &session, BIYOS_int option, BIYOS_int value)
 {
-    biyos::Settings &settings = settings_of(model);
+    biyos::Settings &settings = settings_of(session);
     const biyos::Option found = biyos::find_option(option);
-    settings.set_int(found, value, events_of(model), &model, &model.hooks());
+    settings.set_int(found, value, events_of(session), &session, &session.hooks());
 }
 
-void set_model_double(BIYOS_model &model, BIYOS_int option, BIYOS_real value)
+void set_model_double(BIYOS_model &session, BIYOS_int option, BIYOS_real value)
 {
-    biyos::Settings &settings = settings_of(model);
+    biyos::Settings &settings = settings_of(session);
     const biyos::Option found = biyos::find_option(option);
-    settings.set_double(found, value, events_of(model), &model, &model.hooks());
+    settings.set_double(found, value, events_of(session), &session, &session.hooks());
 }
 
-void set_model_string(BIYOS_model &model, BIYOS_int option, const char *value)
+void set_model_string(BIYOS_model &session, BIYOS_int option, const char *value)
 {
-    biyos::Settings &settings = settings_of(model);
+    biyos::Settings &settings = settings_of(session);
     const biyos::Option found = biyos::find_option(option);
-    settings.set_string(found, require(value, "val"), events_of(model), &model, &model.hooks());
+    settings.set_string(found,
+                        require(value, "val"),
+                        events_of(session),
+                        &session,
+                        &session.hooks());
 }
 
-void set_model_flags(BIYOS_model &model, BIYOS_int option, BIYOS_mask on, BIYOS_mask off)
+void set_model_flags(BIYOS_model &session, BIYOS_int option, BIYOS_mask on, BIYOS_mask off)
 {
-    biyos::Settings &settings = settings_of(model);
+    biyos::Settings &settings = settings_of(session);
     const biyos::Masks value{.on = on, .off = off};
-    settings.set_flags(biyos::find_option(option), value, events_of(model), &model, &model.hooks());
+    settings.set_flags(biyos::find_option(option),
+                       value,
+                       events_of(session),
+                       &session,
+                       &session.hooks());
 }
 
-void get_model_bool(const BIYOS_model &model, BIYOS_int option, BIYOS_int *value)
+void get_model_bool(const BIYOS_model &session, BIYOS_int option, BIYOS_int *value)
 {
-    const bool found = model.lookup().get_bool(biyos::find_option(option));
+    const bool found = session.lookup().get_bool(biyos::find_option(option));
     *require(value, "val") = found ? 1 : 0;
 }
 
-void get_model_int(const BIYOS_model &model, BIYOS_int option, BIYOS_int *value)
+void get_model_int(const BIYOS_model &session, BIYOS_int option, BIYOS_int *value)
 {
-    const BIYOS_int found = model.lookup().get_int(biyos::find_option(option));
+    const BIYOS_int found = session.lookup().get_int(biyos::find_option(option));
     *require(value, "val") = found;
 }
 
-void get_model_double(const BIYOS_model &model, BIYOS_int option, BIYOS_real *value)
+void get_model_double(const BIYOS_model &session, BIYOS_int option, BIYOS_real *value)
 {
-    const BIYOS_real found = model.lookup().get_double(biyos::find_option(option));
+    const BIYOS_real found = session.lookup().get_double(biyos::find_option(option));
     *require(value, "val") = found;
 }
 
-void get_model_string(const BIYOS_model &model, BIYOS_int option, const char **value)
+void get_model_string(const BIYOS_model &session, BIYOS_int option, const char **value)
 {
-    const char *found = model.lookup().get_string(biyos::find_option(option)).data();
+    const char *found = session.lookup().get_string(biyos::find_option(option)).data();
     *require(value, "val") = found;
 }
 
-void get_model_flags(const BIYOS_model &model, BIYOS_int option, BIYOS_mask *on, BIYOS_mask *off)
+void get_model_flags(const BIYOS_model &session, BIYOS_int option, BIYOS_mask *on, BIYOS_mask *off)
 {
-    const biyos::Masks found = model.lookup().get_flags(biyos::find_option(option));
+    const biyos::Masks found = session.lookup().get_flags(biyos::find_option(option));
     require(on, "on");
     require(off, "off");
     *on = found.on;
     *off = found.off;
 }
 
-void delete_model_option(BIYOS_model &model, BIYOS_int option)
+void delete_model_option(BIYOS_model &session, BIYOS_int option)
 {
-    settings_of(model).erase(biyos::find_option(option));
+    settings_of(session).erase(biyos::find_option(option));
 }
 
-void get_model_source(const BIYOS_model &model, BIYOS_int option, BIYOS_int *source)
+void get_model_source(const BIYOS_model &session, BIYOS_int option, BIYOS_int *source)
 {
-    const biyos::OptionSource found = model.lookup().find(biyos::find_option(option)).source;
+    const biyos::OptionSource found = session.lookup().find(biyos::find_option(option)).source;
     *require(source, "src") = static_cast<BIYOS_int>(found);
 }
 

@@ -79,9 +79,9 @@ std::span<const T> items_of(const T *items, std::span<const Offset> starts, std:
     return {items, total};
 }
 
-void add_cones(BIYOS_model &model, BIYOS_index n, const Given &given, BIYOS_index *start)
+void add_cones(BIYOS_model &session, BIYOS_index n, const Given &given, BIYOS_index *start)
 {
-    Model &core = writable(model);
+    Model &core = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -103,9 +103,9 @@ void add_cones(BIYOS_model &model, BIYOS_index n, const Given &given, BIYOS_inde
     }
 }
 
-void n_cones(const BIYOS_model &model, BIYOS_index *n)
+void n_cones(const BIYOS_model &session, BIYOS_index *n)
 {
-    *require(n, "n") = model.model().n_cones();
+    *require(n, "n") = session.model().n_cones();
 }
 
 template <typename T>
@@ -151,35 +151,35 @@ void write_kinds(const Model &core, std::span<const Index> cones, BIYOS_int *kin
 }
 
 template <typename Selection, typename T>
-void n_items(const BIYOS_model &model, Selection selection, Part<T> part, BIYOS_offset *nnz)
+void n_items(const BIYOS_model &session, Selection selection, Part<T> part, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(model.model(), Family::Cone, selection);
-    const std::size_t count = count_of(model.model(), chosen, part);
+    const auto chosen = selected(session.model(), Family::Cone, selection);
+    const std::size_t count = count_of(session.model(), chosen, part);
     *require(nnz, "nnz") = to_offset(count);
 }
 
 template <typename Selection>
-void get_members(const BIYOS_model &model,
+void get_members(const BIYOS_model &session,
                  Selection selection,
                  BIYOS_offset capacity,
                  BIYOS_int *kinds,
                  Compressed<BIYOS_index> out)
 {
-    const auto chosen = selected(model.model(), Family::Cone, selection);
-    check_capacity(capacity, count_of(model.model(), chosen, kMembers), "cap", "members");
-    write_kinds(model.model(), chosen, kinds);
-    write_part(model.model(), chosen, kMembers, out);
+    const auto chosen = selected(session.model(), Family::Cone, selection);
+    check_capacity(capacity, count_of(session.model(), chosen, kMembers), "cap", "members");
+    write_kinds(session.model(), chosen, kinds);
+    write_part(session.model(), chosen, kMembers, out);
 }
 
 template <typename Selection>
-void get_parameters(const BIYOS_model &model,
+void get_parameters(const BIYOS_model &session,
                     Selection selection,
                     BIYOS_offset capacity,
                     Compressed<BIYOS_real> out)
 {
-    const auto chosen = selected(model.model(), Family::Cone, selection);
-    check_capacity(capacity, count_of(model.model(), chosen, kParameters), "cap", "parameters");
-    write_part(model.model(), chosen, kParameters, out);
+    const auto chosen = selected(session.model(), Family::Cone, selection);
+    check_capacity(capacity, count_of(session.model(), chosen, kParameters), "cap", "parameters");
+    write_part(session.model(), chosen, kParameters, out);
 }
 
 }

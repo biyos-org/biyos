@@ -55,39 +55,39 @@ std::vector<std::string_view> texts(std::size_t n, const char *const *names)
     return found;
 }
 
-void set_model_name(BIYOS_model &model, const char *name)
+void set_model_name(BIYOS_model &session, const char *name)
 {
-    writable(model).set_name(require(name, "name"));
+    writable(session).set_name(require(name, "name"));
 }
 
-void get_model_name(const BIYOS_model &model, const char **name)
+void get_model_name(const BIYOS_model &session, const char **name)
 {
-    const char *found = text(model.model().name());
+    const char *found = text(session.model().name());
     *require(name, "name") = found;
 }
 
-void delete_model_name(BIYOS_model &model)
+void delete_model_name(BIYOS_model &session)
 {
-    writable(model).delete_name();
+    writable(session).delete_name();
 }
 
 template <Family Target, typename Selection>
-void set_names(BIYOS_model &model, Selection selection, const char *const *names)
+void set_names(BIYOS_model &session, Selection selection, const char *const *names)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const auto changed = selected(core, Target, selection);
     core.set_names(Target, changed, texts(changed.size(), names));
 }
 
 template <Family Target, typename Selection>
-void get_names(const BIYOS_model &model, Selection selection, const char **names)
+void get_names(const BIYOS_model &session, Selection selection, const char **names)
 {
-    const auto wanted = selected(model.model(), Target, selection);
+    const auto wanted = selected(session.model(), Target, selection);
     std::vector<const char *> found;
     found.reserve(wanted.size());
     for (const biyos::Index i : wanted)
     {
-        found.push_back(text(model.model().name_of(Target, i)));
+        found.push_back(text(session.model().name_of(Target, i)));
     }
     if (names != nullptr)
     {
@@ -96,7 +96,7 @@ void get_names(const BIYOS_model &model, Selection selection, const char **names
 }
 
 template <Family Target>
-void get_indices(const BIYOS_model &model,
+void get_indices(const BIYOS_model &session,
                  BIYOS_index n,
                  const char *const *names,
                  BIYOS_index *indices)
@@ -106,7 +106,7 @@ void get_indices(const BIYOS_model &model,
     found.reserve(wanted.size());
     for (const std::string_view name : wanted)
     {
-        found.push_back(model.model().index_of(Target, name));
+        found.push_back(session.model().index_of(Target, name));
     }
     if (indices != nullptr)
     {
@@ -115,9 +115,9 @@ void get_indices(const BIYOS_model &model,
 }
 
 template <Family Target, typename Selection>
-void delete_names(BIYOS_model &model, Selection selection)
+void delete_names(BIYOS_model &session, Selection selection)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     core.delete_names(Target, selected(core, Target, selection));
 }
 

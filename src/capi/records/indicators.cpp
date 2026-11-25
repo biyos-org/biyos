@@ -59,9 +59,9 @@ void require_fields(const Fields &fields)
     require(fields.functions, "fun");
 }
 
-void add_indicators(BIYOS_model &model, BIYOS_index n, const Fields &fields, BIYOS_index *start)
+void add_indicators(BIYOS_model &session, BIYOS_index n, const Fields &fields, BIYOS_index *start)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -89,9 +89,9 @@ void add_indicators(BIYOS_model &model, BIYOS_index n, const Fields &fields, BIY
 }
 
 template <typename Selection>
-void set_chosen(BIYOS_model &model, Selection selection, const Fields &fields)
+void set_chosen(BIYOS_model &session, Selection selection, const Fields &fields)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const auto changed = selected(core, Family::Indicator, selection);
     std::vector<biyos::Indicator> indicators;
     indicators.reserve(changed.size());
@@ -102,9 +102,9 @@ void set_chosen(BIYOS_model &model, Selection selection, const Fields &fields)
     core.set_indicators(changed, indicators);
 }
 
-void n_indicators(const BIYOS_model &model, BIYOS_index *n)
+void n_indicators(const BIYOS_model &session, BIYOS_index *n)
 {
-    *require(n, "n") = model.model().n_indicators();
+    *require(n, "n") = session.model().n_indicators();
 }
 
 void copy_out(const biyos::Indicator &indicator, std::size_t k, const Outputs &outputs)
@@ -117,11 +117,11 @@ void copy_out(const biyos::Indicator &indicator, std::size_t k, const Outputs &o
 }
 
 template <typename Selection>
-void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &outputs)
+void get_chosen(const BIYOS_model &session, Selection selection, const Outputs &outputs)
 {
-    const auto chosen = selected(model.model(), Family::Indicator, selection);
+    const auto chosen = selected(session.model(), Family::Indicator, selection);
     const std::vector<biyos::Indicator> indicators =
-        picked(model.model(), &biyos::Model::indicator, chosen);
+        picked(session.model(), &biyos::Model::indicator, chosen);
     for (std::size_t k = 0; k < indicators.size(); ++k)
     {
         copy_out(indicators[k], k, outputs);

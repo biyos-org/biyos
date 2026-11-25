@@ -40,14 +40,14 @@ void add_sliced(biyos::Model &core,
     core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, rows, columns, values));
 }
 
-void add_listed(BIYOS_model &model,
+void add_listed(BIYOS_model &session,
                 BIYOS_offset nnz,
                 const BIYOS_index *functions,
                 const BIYOS_index *rows,
                 const BIYOS_index *columns,
                 const BIYOS_real *values)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
     {
@@ -61,14 +61,14 @@ void add_listed(BIYOS_model &model,
     core.add_quadratic_terms(groups.functions, groups.starts, std::move(groups.terms));
 }
 
-void add_ranged(BIYOS_model &model,
+void add_ranged(BIYOS_model &session,
                 Range range,
                 const BIYOS_offset *counts,
                 const BIYOS_index *rows,
                 const BIYOS_index *columns,
                 const BIYOS_real *values)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     add_sliced(core, selected(core, Family::Function, range), counts, rows, columns, values);
 }
 

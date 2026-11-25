@@ -64,13 +64,13 @@ std::vector<LinearTerm> column_terms(std::span<const biyos::Index> variables,
     return terms;
 }
 
-void add_listed(BIYOS_model &model,
+void add_listed(BIYOS_model &session,
                 BIYOS_offset nnz,
                 const BIYOS_index *functions,
                 const BIYOS_index *variables,
                 const BIYOS_real *values)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const std::size_t size = length(nnz, "nnz");
     if (size > 0)
     {
@@ -81,23 +81,23 @@ void add_listed(BIYOS_model &model,
     add_grouped(core, owners, biyos::capi::packed(size, variables, values));
 }
 
-void add_rows(BIYOS_model &model,
+void add_rows(BIYOS_model &session,
               Range range,
               const BIYOS_offset *counts,
               const BIYOS_index *variables,
               const BIYOS_real *values)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     add_sliced(core, selected(core, Family::Function, range), counts, variables, values);
 }
 
-void add_columns(BIYOS_model &model,
+void add_columns(BIYOS_model &session,
                  Range range,
                  const BIYOS_offset *counts,
                  const BIYOS_index *functions,
                  const BIYOS_real *values)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const std::vector<biyos::Index> variables = selected(core, Family::Variable, range);
     const std::vector<biyos::Offset> begins = starts_of(variables.size(), counts);
     core.check_room(0, begins.back());

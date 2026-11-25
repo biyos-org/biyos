@@ -53,9 +53,9 @@ biyos::Complement given(biyos::Complement complement, std::size_t k, const Field
     return complement;
 }
 
-void add_complements(BIYOS_model &model, BIYOS_index n, const Fields &fields, BIYOS_index *start)
+void add_complements(BIYOS_model &session, BIYOS_index n, const Fields &fields, BIYOS_index *start)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const std::size_t size = length(n);
     if (size > 0)
     {
@@ -83,9 +83,9 @@ void add_complements(BIYOS_model &model, BIYOS_index n, const Fields &fields, BI
 }
 
 template <typename Selection>
-void set_bounds(BIYOS_model &model, Selection selection, const Fields &fields)
+void set_bounds(BIYOS_model &session, Selection selection, const Fields &fields)
 {
-    biyos::Model &core = writable(model);
+    biyos::Model &core = writable(session);
     const auto changed = selected(core, Family::Complement, selection);
     std::vector<biyos::Complement> complements;
     complements.reserve(changed.size());
@@ -96,9 +96,9 @@ void set_bounds(BIYOS_model &model, Selection selection, const Fields &fields)
     core.set_complements(changed, complements);
 }
 
-void n_complements(const BIYOS_model &model, BIYOS_index *n)
+void n_complements(const BIYOS_model &session, BIYOS_index *n)
 {
-    *require(n, "n") = model.model().n_complements();
+    *require(n, "n") = session.model().n_complements();
 }
 
 void copy_out(const biyos::Complement &complement, std::size_t k, const Outputs &outputs)
@@ -110,11 +110,11 @@ void copy_out(const biyos::Complement &complement, std::size_t k, const Outputs 
 }
 
 template <typename Selection>
-void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &outputs)
+void get_chosen(const BIYOS_model &session, Selection selection, const Outputs &outputs)
 {
-    const auto chosen = selected(model.model(), Family::Complement, selection);
+    const auto chosen = selected(session.model(), Family::Complement, selection);
     const std::vector<biyos::Complement> complements =
-        picked(model.model(), &biyos::Model::complement, chosen);
+        picked(session.model(), &biyos::Model::complement, chosen);
     for (std::size_t k = 0; k < complements.size(); ++k)
     {
         copy_out(complements[k], k, outputs);

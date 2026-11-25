@@ -7,20 +7,20 @@
 namespace biyos::capi
 {
 
-Evaluation &evaluation_of(BIYOS_model &model)
+Evaluation &evaluation_of(BIYOS_model &session)
 {
-    claim(model);
-    return model.evaluation();
+    claim(session);
+    return session.evaluation();
 }
 
-Running::Running(BIYOS_model &model) noexcept : model_(model)
+Running::Running(BIYOS_model &session) noexcept : session_(session)
 {
-    model_.set_evaluating(true);
+    session_.set_evaluating(true);
 }
 
 Running::~Running()
 {
-    model_.set_evaluating(false);
+    session_.set_evaluating(false);
 }
 
 }

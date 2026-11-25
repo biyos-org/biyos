@@ -60,24 +60,24 @@ inline biyos::Env &writable(biyos::Env &env)
     return env;
 }
 
-inline void claim(BIYOS_model &model)
+inline void claim(BIYOS_model &session)
 {
-    if (model.env().events().delivering())
+    if (session.env().events().delivering())
     {
         const std::string reason = "is read-only while delivering an event";
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "model", reason);
     }
-    ModelGuard::claim(model.usage());
-    if (model.evaluating())
+    ModelGuard::claim(session.usage());
+    if (session.evaluating())
     {
         refuse("model", kRunning);
     }
 }
 
-inline biyos::Model &writable(BIYOS_model &model)
+inline biyos::Model &writable(BIYOS_model &session)
 {
-    claim(model);
-    return model.change();
+    claim(session);
+    return session.change();
 }
 
 inline void start(biyos::Env &env) noexcept
@@ -111,24 +111,24 @@ BIYOS_status guarded(BIYOS_env *env, Args... arguments) noexcept
                               [&] { admitted<Body>(busy, core, arguments...); });
 }
 
-template <auto Body, typename Model, typename... Args>
-    requires std::same_as<std::remove_const_t<Model>, BIYOS_model>
-BIYOS_status guarded(Model *model, Args... arguments) noexcept
+template <auto Body, typename Handle, typename... Args>
+    requires std::same_as<std::remove_const_t<Handle>, BIYOS_model>
+BIYOS_status guarded(Handle *session, Args... arguments) noexcept
 {
-    if (model == nullptr)
+    if (session == nullptr)
     {
         return BIYOS_ERR_BADARG;
     }
-    biyos::Env &env = model->env();
-    if (!model->usage().held())
+    biyos::Env &env = session->env();
+    if (!session->usage().held())
     {
         start(env);
     }
-    const ModelGuard busy(env, model->usage());
+    const ModelGuard busy(env, session->usage());
     return biyos::capi::guard(&env,
-                              model,
-                              &model->hooks(),
-                              [&] { admitted<Body>(busy, *model, arguments...); });
+                              session,
+                              &session->hooks(),
+                              [&] { admitted<Body>(busy, *session, arguments...); });
 }
 
 }

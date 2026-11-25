@@ -25,12 +25,12 @@ void load(biyos::Env &env, const char *path, BIYOS_int fmt, BIYOS_model **model)
     *made = fresh.release();
 }
 
-void save(const BIYOS_model &model, const char *path, BIYOS_int fmt)
+void save(const BIYOS_model &session, const char *path, BIYOS_int fmt)
 {
     const char *file = require(path, "path");
     const biyos::FileFormat format = biyos::find_format(fmt);
-    biyos::Env &env = idle(model.env(), "environment");
-    biyos::write_file(env, model.model(), model.settings(), std::string_view(file), format);
+    biyos::Env &env = idle(session.env(), "environment");
+    biyos::write_file(env, session.model(), session.settings(), std::string_view(file), format);
 }
 
 }
