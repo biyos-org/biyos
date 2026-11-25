@@ -12,6 +12,7 @@ namespace biyos::capi
 
 inline constexpr std::string_view kChanging = "is being changed on another thread";
 inline constexpr std::string_view kInside = "is in a call on another thread";
+inline constexpr std::string_view kRunning = "is running a callback";
 
 [[noreturn]] inline void refuse(std::string_view object, std::string_view reason)
 {

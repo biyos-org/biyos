@@ -513,6 +513,27 @@ static BIYOS_status read_patterns(BIYOS_model *model)
     return BIYOS_OK;
 }
 
+static BIYOS_status eval_model(BIYOS_model *model)
+{
+    const BIYOS_real x[2] = {2.0, 3.0};
+    const BIYOS_real w[1] = {1.0};
+    const BIYOS_real v[2] = {1.0, 1.0};
+    const BIYOS_real f_want[1] = {6.0};
+    const BIYOS_real g_want[2] = {3.0, 2.0};
+    BIYOS_real f[1] = {0.0};
+    BIYOS_real g[2] = {0.0, 0.0};
+    BIYOS_real h[1] = {0.0};
+    BIYOS_real hv[2] = {0.0, 0.0};
+    if (BIYOS_evalf(model, x, f) != BIYOS_OK || memcmp(f, f_want, sizeof f) != 0 ||
+        BIYOS_evalg(model, x, g) != BIYOS_OK || memcmp(g, g_want, sizeof g) != 0 ||
+        BIYOS_evalh(model, x, w, h) != BIYOS_OK || memcmp(h, w, sizeof h) != 0 ||
+        BIYOS_evalhv(model, x, w, v, hv) != BIYOS_OK || memcmp(hv, v, sizeof hv) != 0)
+    {
+        return BIYOS_ERR_INTERNAL;
+    }
+    return BIYOS_OK;
+}
+
 static BIYOS_status use_evaluation(BIYOS_env *env)
 {
     BIYOS_model *model = NULL;
@@ -525,7 +546,7 @@ static BIYOS_status use_evaluation(BIYOS_env *env)
         (BIYOS_addvar(model, 2, NULL, NULL, NULL, NULL) != BIYOS_OK ||
          BIYOS_addfun(model, 1, NULL) != BIYOS_OK ||
          BIYOS_addquadtermsp(model, 1, &fun, &var1, &var2, &coef) != BIYOS_OK ||
-         read_patterns(model) != BIYOS_OK))
+         read_patterns(model) != BIYOS_OK || eval_model(model) != BIYOS_OK))
     {
         status = BIYOS_ERR_INTERNAL;
     }

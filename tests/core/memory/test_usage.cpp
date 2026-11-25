@@ -30,6 +30,11 @@ bool claims(biyos::Usage &usage)
     return claimed;
 }
 
+bool holds(biyos::Usage &usage)
+{
+    return usage.held();
+}
+
 bool elsewhere(Probe probe, biyos::Usage &usage)
 {
     bool result = false;
@@ -86,4 +91,16 @@ TEST(UsageTest, Outer)
     EXPECT_TRUE(usage.claim());
     usage.leave();
     EXPECT_TRUE(elsewhere(enters, usage));
+}
+
+TEST(UsageTest, Held)
+{
+    biyos::Usage usage;
+    ASSERT_TRUE(usage.enter());
+    EXPECT_FALSE(usage.held());
+    ASSERT_TRUE(usage.claim());
+    EXPECT_TRUE(usage.held());
+    EXPECT_FALSE(elsewhere(holds, usage));
+    usage.leave();
+    EXPECT_FALSE(usage.held());
 }

@@ -37,6 +37,7 @@ struct BIYOS_model
     mutable biyos::Usage usage;
     mutable biyos::Hooks hooks;
     std::unique_ptr<biyos::Evaluation> evaluation;
+    bool evaluating = false;
 };
 
 namespace biyos::capi
@@ -77,6 +78,10 @@ inline void claim(BIYOS_model &model)
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "model", reason);
     }
     ModelGuard::claim(model.usage);
+    if (model.evaluating)
+    {
+        refuse("model", kRunning);
+    }
 }
 
 inline biyos::Model &writable(BIYOS_model &model)
@@ -126,7 +131,10 @@ BIYOS_status guarded(Model *model, Args... arguments) noexcept
         return BIYOS_ERR_BADARG;
     }
     biyos::Env &env = model->handle.env();
-    start(env);
+    if (!model->usage.held())
+    {
+        start(env);
+    }
     const ModelGuard busy(env, model->usage);
     return biyos::capi::guard(&env,
                               model,

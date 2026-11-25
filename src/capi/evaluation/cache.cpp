@@ -19,4 +19,14 @@ Evaluation &evaluation_of(BIYOS_model &model)
     return *model.evaluation;
 }
 
+Running::Running(BIYOS_model &model) noexcept : model_(model)
+{
+    model_.evaluating = true;
+}
+
+Running::~Running()
+{
+    model_.evaluating = false;
+}
+
 }

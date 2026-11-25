@@ -1191,6 +1191,17 @@ BIYOS_API BIYOS_status BIYOS_getcbfun(const BIYOS_model *mdl,
                                       BIYOS_index cap,
                                       BIYOS_index *fun);
 
+BIYOS_API BIYOS_status BIYOS_evalf(BIYOS_model *mdl, const BIYOS_real *x, BIYOS_real *f);
+BIYOS_API BIYOS_status BIYOS_evalg(BIYOS_model *mdl, const BIYOS_real *x, BIYOS_real *g);
+BIYOS_API BIYOS_status BIYOS_evalh(BIYOS_model *mdl,
+                                   const BIYOS_real *x,
+                                   const BIYOS_real *w,
+                                   BIYOS_real *h);
+BIYOS_API BIYOS_status BIYOS_evalhv(BIYOS_model *mdl,
+                                    const BIYOS_real *x,
+                                    const BIYOS_real *w,
+                                    const BIYOS_real *v,
+                                    BIYOS_real *hv);
 BIYOS_API BIYOS_status BIYOS_getngpatsp(BIYOS_model *mdl,
                                         BIYOS_index n,
                                         const BIYOS_index *idx,

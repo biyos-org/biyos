@@ -13,6 +13,7 @@ class Usage
     bool enter() noexcept;
     bool claim() noexcept;
     void leave() noexcept;
+    bool held() const noexcept;
 
   private:
     std::atomic<int> calls_{0};
