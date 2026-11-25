@@ -15,7 +15,7 @@
 #include <string_view>
 #include <type_traits>
 
-struct BIYOS_env
+struct BIYOS_env final
 {
     biyos::Env core;
 };
