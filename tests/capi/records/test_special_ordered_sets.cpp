@@ -157,7 +157,7 @@ void expect_refused(const Env &env,
     EXPECT_EQ(add_special_ordered_sets(model, soss, &pos), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: " + text);
     EXPECT_EQ(pos, -1);
-    EXPECT_EQ(biyos::difference(before.get()->core, model.get()->core), "");
+    EXPECT_EQ(biyos::difference(before.get()->model(), model.get()->model()), "");
 }
 
 SpecialOrderedSets single(int kind, std::vector<BIYOS_index> variables, std::vector<double> weights)

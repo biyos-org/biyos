@@ -99,7 +99,7 @@ void add_special_ordered_sets(BIYOS_model &model,
 
 void n_special_ordered_sets(const BIYOS_model &model, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_special_ordered_sets();
+    *require(n, "n") = model.model().n_special_ordered_sets();
 }
 
 std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> soss)
@@ -115,8 +115,8 @@ std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> sos
 template <typename Selection>
 void n_members(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(model.core, Family::SpecialOrderedSet, selection);
-    const std::size_t count = count_of(model.core, chosen);
+    const auto chosen = selected(model.model(), Family::SpecialOrderedSet, selection);
+    const std::size_t count = count_of(model.model(), chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
 
@@ -154,9 +154,9 @@ void get_special_ordered_sets(const BIYOS_model &model,
                               BIYOS_offset capacity,
                               const Outputs &out)
 {
-    const auto chosen = selected(model.core, Family::SpecialOrderedSet, selection);
-    check_capacity(capacity, count_of(model.core, chosen), "cap", "members");
-    write_special_ordered_sets(model.core, chosen, out);
+    const auto chosen = selected(model.model(), Family::SpecialOrderedSet, selection);
+    check_capacity(capacity, count_of(model.model(), chosen), "cap", "members");
+    write_special_ordered_sets(model.model(), chosen, out);
 }
 
 }

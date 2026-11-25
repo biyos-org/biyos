@@ -104,7 +104,7 @@ void set_chosen(BIYOS_model &model, Selection selection, const Fields &fields)
 
 void n_indicators(const BIYOS_model &model, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_indicators();
+    *require(n, "n") = model.model().n_indicators();
 }
 
 void copy_out(const biyos::Indicator &indicator, std::size_t k, const Outputs &outputs)
@@ -119,9 +119,9 @@ void copy_out(const biyos::Indicator &indicator, std::size_t k, const Outputs &o
 template <typename Selection>
 void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &outputs)
 {
-    const auto chosen = selected(model.core, Family::Indicator, selection);
+    const auto chosen = selected(model.model(), Family::Indicator, selection);
     const std::vector<biyos::Indicator> indicators =
-        picked(model.core, &biyos::Model::indicator, chosen);
+        picked(model.model(), &biyos::Model::indicator, chosen);
     for (std::size_t k = 0; k < indicators.size(); ++k)
     {
         copy_out(indicators[k], k, outputs);

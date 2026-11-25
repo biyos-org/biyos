@@ -134,7 +134,7 @@ void n_expressions(const BIYOS_model &model,
                    BIYOS_offset *nnz,
                    BIYOS_offset *nval)
 {
-    const biyos::Encoding encoding = encoded(model.core, selection);
+    const biyos::Encoding encoding = encoded(model.model(), selection);
     require(nnz, "nnz");
     require(nval, "nval");
     *nnz = to_offset(encoding.codes.size());
@@ -164,7 +164,7 @@ void get_expressions(const BIYOS_model &model,
                      BIYOS_offset valcap,
                      const Output &out)
 {
-    const biyos::Encoding encoding = encoded(model.core, selection);
+    const biyos::Encoding encoding = encoded(model.model(), selection);
     check_capacity(cap, encoding.codes.size(), "cap", "entries");
     check_capacity(valcap, encoding.values.size(), "valcap", "values");
     biyos::capi::write_counts(encoding.starts, out.counts);

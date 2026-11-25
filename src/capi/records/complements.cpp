@@ -98,7 +98,7 @@ void set_bounds(BIYOS_model &model, Selection selection, const Fields &fields)
 
 void n_complements(const BIYOS_model &model, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_complements();
+    *require(n, "n") = model.model().n_complements();
 }
 
 void copy_out(const biyos::Complement &complement, std::size_t k, const Outputs &outputs)
@@ -112,9 +112,9 @@ void copy_out(const biyos::Complement &complement, std::size_t k, const Outputs 
 template <typename Selection>
 void get_chosen(const BIYOS_model &model, Selection selection, const Outputs &outputs)
 {
-    const auto chosen = selected(model.core, Family::Complement, selection);
+    const auto chosen = selected(model.model(), Family::Complement, selection);
     const std::vector<biyos::Complement> complements =
-        picked(model.core, &biyos::Model::complement, chosen);
+        picked(model.model(), &biyos::Model::complement, chosen);
     for (std::size_t k = 0; k < complements.size(); ++k)
     {
         copy_out(complements[k], k, outputs);

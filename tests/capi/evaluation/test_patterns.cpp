@@ -83,7 +83,7 @@ Records hessian(const Model &model)
 Records reference_jacobian(const Model &model)
 {
     BIYOS_model &handle = *model.get();
-    const biyos::Evaluation evaluation(handle.handle.env(), handle.core, &handle);
+    const biyos::Evaluation evaluation(handle.env(), handle.model(), &handle);
     const biyos::Pattern &pattern = evaluation.jacobian_pattern();
     Records records{.counts = {}, .items = {pattern.variables.begin(), pattern.variables.end()}};
     for (std::size_t k = 0; k + 1 < pattern.starts.size(); ++k)
@@ -96,7 +96,7 @@ Records reference_jacobian(const Model &model)
 Records reference_hessian(const Model &model)
 {
     BIYOS_model &handle = *model.get();
-    const biyos::Evaluation evaluation(handle.handle.env(), handle.core, &handle);
+    const biyos::Evaluation evaluation(handle.env(), handle.model(), &handle);
     const biyos::Lower &lower = evaluation.hessian_pattern();
     Records records{.counts = {}, .items = {lower.rows.begin(), lower.rows.end()}};
     for (std::size_t k = 0; k + 1 < lower.starts.size(); ++k)
@@ -185,15 +185,15 @@ TEST_F(PatternTest, Unknown)
     EXPECT_EQ(env_.message(), "invalid argument: variable -1: unknown");
     EXPECT_EQ(BIYOS_getnhpatrg(model_.get(), 0, 5, &nnz), BIYOS_ERR_BADARG);
     EXPECT_EQ(nnz, -1);
-    EXPECT_EQ(model_.get()->evaluation, nullptr);
+    EXPECT_EQ(model_.get()->cached(), nullptr);
 }
 
 TEST_F(PatternTest, Rebuilt)
 {
     EXPECT_EQ(jacobian(model_), kJacobian);
-    const biyos::Evaluation *built = model_.get()->evaluation.get();
+    const biyos::Evaluation *built = model_.get()->cached();
     EXPECT_EQ(hessian(model_), kHessian);
-    EXPECT_EQ(model_.get()->evaluation.get(), built);
+    EXPECT_EQ(model_.get()->cached(), built);
     const BIYOS_index function = 1;
     const BIYOS_index variable = 0;
     const double coefficient = 1.0;

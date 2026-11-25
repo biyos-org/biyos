@@ -45,7 +45,7 @@ void make_copy(const BIYOS_model &model, BIYOS_env *env, BIYOS_model **copy)
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
     const EnvGuard busy(target);
     busy.check();
-    const biyos::EntryTimer timer(model.handle.env(), biyos::kModule, "copy");
+    const biyos::EntryTimer timer(model.env(), biyos::kModule, "copy");
     *made = new BIYOS_model(target, model);
 }
 
@@ -141,7 +141,7 @@ void set_kinds(BIYOS_model &model, Selection selection, const BIYOS_int *kinds)
 
 void n_variables(const BIYOS_model &model, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_variables();
+    *require(n, "n") = model.model().n_variables();
 }
 
 void copy_out(const biyos::Variable &variable,
@@ -171,9 +171,9 @@ void get_variables(const BIYOS_model &model,
                    BIYOS_real *lower,
                    BIYOS_real *upper)
 {
-    const auto chosen = selected(model.core, Family::Variable, selection);
+    const auto chosen = selected(model.model(), Family::Variable, selection);
     const std::vector<biyos::Variable> variables =
-        picked(model.core, &biyos::Model::variable, chosen);
+        picked(model.model(), &biyos::Model::variable, chosen);
     for (std::size_t k = 0; k < variables.size(); ++k)
     {
         copy_out(variables[k], k, kinds, lower, upper);

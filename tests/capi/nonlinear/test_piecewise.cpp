@@ -152,7 +152,7 @@ void expect_refused(const Env &env, const Model &model, const Pwls &pwls, const 
     EXPECT_EQ(add_pwls(model, pwls, &pos), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: " + text);
     EXPECT_EQ(pos, -1);
-    EXPECT_EQ(biyos::difference(before.get()->core, model.get()->core), "");
+    EXPECT_EQ(biyos::difference(before.get()->model(), model.get()->model()), "");
 }
 
 Postfix written(const Model &model, BIYOS_index function)
@@ -365,7 +365,7 @@ TEST(PiecewiseTest, NodeRefused)
     EXPECT_EQ(BIYOS_addpwlnode(model.get(), 0, x + 1, &node), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: expression: node 1 is unknown");
     EXPECT_EQ(node, kNoNode);
-    EXPECT_EQ(biyos::difference(before.get()->core, model.get()->core), "");
+    EXPECT_EQ(biyos::difference(before.get()->model(), model.get()->model()), "");
     EXPECT_EQ(BIYOS_addpwlnode(model.get(), 0, x, nullptr), BIYOS_OK);
 }
 
@@ -381,10 +381,11 @@ TEST(PiecewiseTest, Copy)
     ASSERT_EQ(BIYOS_addpwlnode(model.get(), 1, x, &node), BIYOS_OK);
     attach(model, 0, node);
     const Model copy(env, model);
-    EXPECT_EQ(biyos::difference(copy.get()->core, model.get()->core), "");
+    EXPECT_EQ(biyos::difference(copy.get()->model(), model.get()->model()), "");
     expect_pwls(read_all(copy), kSample);
     expect_postfix(written(copy, 0), written(model, 0));
     ASSERT_EQ(add_pwls(copy, kSample, nullptr), BIYOS_OK);
     EXPECT_EQ(n_pwls(model), 2);
-    EXPECT_EQ(biyos::difference(copy.get()->core, model.get()->core), "pwl count 4 against 2");
+    EXPECT_EQ(biyos::difference(copy.get()->model(), model.get()->model()),
+              "pwl count 4 against 2");
 }

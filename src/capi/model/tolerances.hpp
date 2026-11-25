@@ -36,12 +36,12 @@ void get_tolerances(const BIYOS_model &model,
                     BIYOS_real *absolute,
                     BIYOS_real *relative)
 {
-    const auto chosen = selected(model.core, family, selection);
+    const auto chosen = selected(model.model(), family, selection);
     std::vector<Tolerance> tolerances;
     tolerances.reserve(chosen.size());
     for (const Index index : chosen)
     {
-        tolerances.push_back(model.core.tolerance_of(family, index));
+        tolerances.push_back(model.model().tolerance_of(family, index));
     }
     for (std::size_t k = 0; k < tolerances.size(); ++k)
     {

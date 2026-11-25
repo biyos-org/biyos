@@ -30,6 +30,8 @@ class Session
     Hooks &hooks() const noexcept;
     int add_hook(EventKind kind, EventLevel level, Hook hook);
     void delete_hook(int id);
+    Evaluation &evaluation();
+    const Evaluation *cached() const noexcept;
     bool evaluating() const noexcept;
     void set_evaluating(bool evaluating) noexcept;
     Env &env() const noexcept;

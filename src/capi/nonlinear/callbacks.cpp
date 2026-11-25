@@ -14,6 +14,7 @@
 using biyos::to_index;
 using biyos::capi::check_capacity;
 using biyos::capi::guarded;
+using biyos::capi::handle_of;
 using biyos::capi::length;
 using biyos::capi::require;
 using biyos::capi::writable;
@@ -34,7 +35,7 @@ struct Caller
     {
         const BIYOS_cbreq view{
             .size = sizeof(BIYOS_cbreq),
-            .mdl = request.model,
+            .mdl = handle_of(request.model),
             .cb = request.callback,
             .thread = request.thread,
             .x = start_of(request.x),
@@ -115,13 +116,13 @@ void set_data(BIYOS_model &model, BIYOS_index cb, void *data)
 void get_data(const BIYOS_model &model, BIYOS_index cb, void **data)
 {
     void **out = require(data, "data");
-    *out = model.core.callback(cb).data;
+    *out = model.model().callback(cb).data;
 }
 
 void n_functions(const BIYOS_model &model, BIYOS_index cb, BIYOS_index *n)
 {
     BIYOS_index *out = require(n, "n");
-    *out = to_index(model.core.callback(cb).covered.size());
+    *out = to_index(model.model().callback(cb).covered.size());
 }
 
 void get_functions(const BIYOS_model &model,
@@ -129,7 +130,7 @@ void get_functions(const BIYOS_model &model,
                    BIYOS_index capacity,
                    BIYOS_index *functions)
 {
-    const std::vector<biyos::Index> &covered = model.core.callback(cb).covered;
+    const std::vector<biyos::Index> &covered = model.model().callback(cb).covered;
     check_capacity(capacity, covered.size(), "cap", "functions");
     if (functions != nullptr)
     {

@@ -7,14 +7,10 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events/events.hpp"
-#include "core/events/hooks.hpp"
-#include "core/memory/usage.hpp"
-#include "core/options/settings.hpp"
-#include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
+#include "model/session/session.hpp"
 
 #include <concepts>
-#include <memory>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -24,25 +20,18 @@ struct BIYOS_env
     biyos::Env core;
 };
 
-struct BIYOS_model
+struct BIYOS_model final : biyos::Session
 {
-    explicit BIYOS_model(biyos::Env &env) : handle(env), settings(env.options().table()) {}
-    BIYOS_model(biyos::Env &env, const BIYOS_model &model)
-        : handle(env), core(model.core), settings(model.settings)
-    {
-    }
-
-    biyos::Env::Handle handle;
-    biyos::Model core;
-    biyos::Settings settings;
-    mutable biyos::Usage usage;
-    mutable biyos::Hooks hooks;
-    std::unique_ptr<biyos::Evaluation> evaluation;
-    bool evaluating = false;
+    using Session::Session;
 };
 
 namespace biyos::capi
 {
+
+inline const BIYOS_model *handle_of(const Session *session) noexcept
+{
+    return static_cast<const BIYOS_model *>(session);
+}
 
 template <typename T> T *require(T *pointer, std::string_view name)
 {
@@ -73,13 +62,13 @@ inline biyos::Env &writable(biyos::Env &env)
 
 inline void claim(BIYOS_model &model)
 {
-    if (model.handle.env().events().delivering())
+    if (model.env().events().delivering())
     {
         const std::string reason = "is read-only while delivering an event";
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "model", reason);
     }
-    ModelGuard::claim(model.usage);
-    if (model.evaluating)
+    ModelGuard::claim(model.usage());
+    if (model.evaluating())
     {
         refuse("model", kRunning);
     }
@@ -88,8 +77,7 @@ inline void claim(BIYOS_model &model)
 inline biyos::Model &writable(BIYOS_model &model)
 {
     claim(model);
-    model.evaluation.reset();
-    return model.core;
+    return model.change();
 }
 
 inline void start(biyos::Env &env) noexcept
@@ -131,15 +119,15 @@ BIYOS_status guarded(Model *model, Args... arguments) noexcept
     {
         return BIYOS_ERR_BADARG;
     }
-    biyos::Env &env = model->handle.env();
-    if (!model->usage.held())
+    biyos::Env &env = model->env();
+    if (!model->usage().held())
     {
         start(env);
     }
-    const ModelGuard busy(env, model->usage);
+    const ModelGuard busy(env, model->usage());
     return biyos::capi::guard(&env,
                               model,
-                              &model->hooks,
+                              &model->hooks(),
                               [&] { admitted<Body>(busy, *model, arguments...); });
 }
 

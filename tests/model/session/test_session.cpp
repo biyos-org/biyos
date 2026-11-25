@@ -2,6 +2,7 @@
 #include "core/env.hpp"
 #include "core/events/event.hpp"
 #include "core/options/options.hpp"
+#include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
 #include "model/session/session.hpp"
 
@@ -13,6 +14,7 @@ namespace
 {
 
 using biyos::Env;
+using biyos::Evaluation;
 using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::Option;
@@ -61,6 +63,32 @@ TEST(SessionTest, CopyHooks)
     const Session copy(env, source);
     EXPECT_TRUE(source.hooks().wanted(EventKind::Message, EventLevel::Debug));
     EXPECT_FALSE(copy.hooks().wanted(EventKind::Message, EventLevel::Debug));
+}
+
+TEST(SessionTest, Kept)
+{
+    Env env;
+    Session session(env);
+    const Evaluation &built = session.evaluation();
+    EXPECT_EQ(session.cached(), &built);
+}
+
+TEST(SessionTest, Dropped)
+{
+    Env env;
+    Session session(env);
+    session.evaluation();
+    session.change();
+    EXPECT_EQ(session.cached(), nullptr);
+}
+
+TEST(SessionTest, CopyEvaluation)
+{
+    Env env;
+    Session source(env);
+    source.evaluation();
+    const Session copy(env, source);
+    EXPECT_EQ(copy.cached(), nullptr);
 }
 
 TEST(SessionTest, OtherEnv)

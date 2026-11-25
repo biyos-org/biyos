@@ -71,13 +71,13 @@ void add_model_hook(BIYOS_model &model,
                     BIYOS_index *index)
 {
     writable(model);
-    add_to(model.hooks, model.handle.env(), hook, data, kind, level, index);
+    add_to(model, model.env(), hook, data, kind, level, index);
 }
 
 void delete_model_hook(BIYOS_model &model, BIYOS_index index)
 {
     writable(model);
-    model.hooks.delete_hook(index);
+    model.delete_hook(index);
 }
 
 const biyos::Field *field_of(const BIYOS_event *event, BIYOS_index field)

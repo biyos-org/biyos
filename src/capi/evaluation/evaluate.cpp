@@ -30,19 +30,14 @@ template <typename T> std::span<T> sized(T *array, std::size_t size, std::string
     return given(array, size);
 }
 
-biyos::Lookup lookup_of(const BIYOS_model &model)
-{
-    return biyos::Lookup(model.settings, model.handle.env().options());
-}
-
 std::size_t n_vars(const BIYOS_model &model)
 {
-    return to_size(model.core.n_variables());
+    return to_size(model.model().n_variables());
 }
 
 std::size_t n_funs(const BIYOS_model &model)
 {
-    return to_size(model.core.n_functions());
+    return to_size(model.model().n_functions());
 }
 
 void eval_f(BIYOS_model &model, const BIYOS_real *x, BIYOS_real *f)
@@ -51,7 +46,7 @@ void eval_f(BIYOS_model &model, const BIYOS_real *x, BIYOS_real *f)
     const auto point = sized(x, n_vars(model), "x");
     const auto values = sized(f, n_funs(model), "f");
     const Running running(model);
-    evaluation.values(lookup_of(model), point, values);
+    evaluation.values(model.lookup(), point, values);
 }
 
 void eval_g(BIYOS_model &model, const BIYOS_real *x, BIYOS_real *g)
@@ -61,7 +56,7 @@ void eval_g(BIYOS_model &model, const BIYOS_real *x, BIYOS_real *g)
     const auto point = sized(x, n_vars(model), "x");
     const auto values = sized(g, nnz, "g");
     const Running running(model);
-    evaluation.jacobian(lookup_of(model), point, values);
+    evaluation.jacobian(model.lookup(), point, values);
 }
 
 void eval_h(BIYOS_model &model, const BIYOS_real *x, const BIYOS_real *w, BIYOS_real *h)
@@ -72,7 +67,7 @@ void eval_h(BIYOS_model &model, const BIYOS_real *x, const BIYOS_real *w, BIYOS_
     const auto weights = sized(w, n_funs(model), "w");
     const auto values = sized(h, nnz, "h");
     const Running running(model);
-    evaluation.hessian(lookup_of(model), {.x = point, .w = weights, .v = {}}, values);
+    evaluation.hessian(model.lookup(), {.x = point, .w = weights, .v = {}}, values);
 }
 
 void eval_hv(BIYOS_model &model,
@@ -87,7 +82,7 @@ void eval_hv(BIYOS_model &model,
     const auto direction = sized(v, n_vars(model), "v");
     const auto values = sized(hv, n_vars(model), "hv");
     const Running running(model);
-    evaluation.product(lookup_of(model), {.x = point, .w = weights, .v = direction}, values);
+    evaluation.product(model.lookup(), {.x = point, .w = weights, .v = direction}, values);
 }
 
 }

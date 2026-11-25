@@ -1,5 +1,6 @@
 #include "model/session/session.hpp"
 
+#include <memory>
 #include <utility>
 
 namespace biyos
@@ -51,6 +52,20 @@ int Session::add_hook(EventKind kind, EventLevel level, Hook hook)
 void Session::delete_hook(int id)
 {
     hooks_.delete_hook(id);
+}
+
+Evaluation &Session::evaluation()
+{
+    if (evaluation_ == nullptr)
+    {
+        evaluation_ = std::make_unique<Evaluation>(env(), model_, this);
+    }
+    return *evaluation_;
+}
+
+const Evaluation *Session::cached() const noexcept
+{
+    return evaluation_.get();
 }
 
 bool Session::evaluating() const noexcept

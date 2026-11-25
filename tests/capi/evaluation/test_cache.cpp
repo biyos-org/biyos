@@ -1,11 +1,8 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
 #include "handles.hpp"
-#include "model/evaluation/evaluation.hpp"
 
 #include <gtest/gtest.h>
-
-#include <memory>
 
 namespace
 {
@@ -15,9 +12,7 @@ using biyos::test::Model;
 
 void build(const Model &model)
 {
-    BIYOS_model &handle = *model.get();
-    handle.evaluation =
-        std::make_unique<biyos::Evaluation>(handle.handle.env(), handle.core, &handle);
+    model.get()->evaluation();
 }
 
 }
@@ -28,7 +23,7 @@ TEST(CacheTest, Dropped)
     const Model model(env);
     build(model);
     ASSERT_EQ(BIYOS_addvar(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(model.get()->evaluation, nullptr);
+    EXPECT_EQ(model.get()->cached(), nullptr);
 }
 
 TEST(CacheTest, Kept)
@@ -38,7 +33,7 @@ TEST(CacheTest, Kept)
     build(model);
     BIYOS_index n = -1;
     ASSERT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_OK);
-    EXPECT_NE(model.get()->evaluation, nullptr);
+    EXPECT_NE(model.get()->cached(), nullptr);
 }
 
 TEST(CacheTest, Copied)
@@ -47,6 +42,6 @@ TEST(CacheTest, Copied)
     const Model model(env);
     build(model);
     const Model copy(env, model);
-    EXPECT_EQ(copy.get()->evaluation, nullptr);
-    EXPECT_NE(model.get()->evaluation, nullptr);
+    EXPECT_EQ(copy.get()->cached(), nullptr);
+    EXPECT_NE(model.get()->cached(), nullptr);
 }

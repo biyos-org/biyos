@@ -251,7 +251,7 @@ void expect_writes(const Held &held,
     EXPECT_EQ(listed(by_list.get(), span.stop - span.start, indices.data(), values.data()...),
               BIYOS_OK);
     EXPECT_EQ(ranged(by_range.get(), span.start, span.stop, values.data()...), BIYOS_OK);
-    EXPECT_EQ(biyos::difference(by_list.get()->core, by_range.get()->core), "");
+    EXPECT_EQ(biyos::difference(by_list.get()->model(), by_range.get()->model()), "");
 }
 
 template <typename Listed, typename... Values>
@@ -292,7 +292,7 @@ void expect_kept(const Held &held,
     const auto before = std::make_tuple(keys(values)...);
     EXPECT_EQ(ranged(tried.get(), span.start, span.stop, values.data()...), wanted);
     EXPECT_EQ(std::make_tuple(keys(values)...), before);
-    EXPECT_EQ(biyos::difference(tried.get()->core, held.model.get()->core), "");
+    EXPECT_EQ(biyos::difference(tried.get()->model(), held.model.get()->model()), "");
 }
 
 void write_variables(const Held &held, Engine &engine)
@@ -864,7 +864,7 @@ TEST(RangeTest, Atomic)
     lower.back() = std::numeric_limits<double>::quiet_NaN();
     const BIYOS_index size = count_of(model, BIYOS_getnvar);
     EXPECT_EQ(BIYOS_setvarbndrg(tried.get(), 0, size, lower.data(), nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(biyos::difference(tried.get()->core, model.get()->core), "");
+    EXPECT_EQ(biyos::difference(tried.get()->model(), model.get()->model()), "");
 }
 
 TEST(RangeTest, Messages)

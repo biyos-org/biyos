@@ -80,8 +80,8 @@ Program program_of(Env &env, const Model &model)
 
 }
 
-Evaluation::Evaluation(Env &env, const Model &model, const BIYOS_model *handle)
-    : env_(env), model_(model), handle_(handle), program_(program_of(env, model)),
+Evaluation::Evaluation(Env &env, const Model &model, const Session *session)
+    : env_(env), model_(model), session_(session), program_(program_of(env, model)),
       workspace_(program_.tape), adjoints_(program_.tape), values_(to_size(program_.tape.roots())),
       gradients_(program_.tape.pattern().variables.size()), out_(widest(model)),
       weights_(program_.roots.size()), covered_(widest(model))
@@ -148,7 +148,7 @@ void Evaluation::check(std::span<const Real> x) const
 Request Evaluation::request(Index callback, const Point &point) const noexcept
 {
     return Request{
-        .model = handle_,
+        .model = session_,
         .callback = callback,
         .thread = 0,
         .x = point.x,

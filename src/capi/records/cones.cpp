@@ -105,7 +105,7 @@ void add_cones(BIYOS_model &model, BIYOS_index n, const Given &given, BIYOS_inde
 
 void n_cones(const BIYOS_model &model, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_cones();
+    *require(n, "n") = model.model().n_cones();
 }
 
 template <typename T>
@@ -153,8 +153,8 @@ void write_kinds(const Model &core, std::span<const Index> cones, BIYOS_int *kin
 template <typename Selection, typename T>
 void n_items(const BIYOS_model &model, Selection selection, Part<T> part, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(model.core, Family::Cone, selection);
-    const std::size_t count = count_of(model.core, chosen, part);
+    const auto chosen = selected(model.model(), Family::Cone, selection);
+    const std::size_t count = count_of(model.model(), chosen, part);
     *require(nnz, "nnz") = to_offset(count);
 }
 
@@ -165,10 +165,10 @@ void get_members(const BIYOS_model &model,
                  BIYOS_int *kinds,
                  Compressed<BIYOS_index> out)
 {
-    const auto chosen = selected(model.core, Family::Cone, selection);
-    check_capacity(capacity, count_of(model.core, chosen, kMembers), "cap", "members");
-    write_kinds(model.core, chosen, kinds);
-    write_part(model.core, chosen, kMembers, out);
+    const auto chosen = selected(model.model(), Family::Cone, selection);
+    check_capacity(capacity, count_of(model.model(), chosen, kMembers), "cap", "members");
+    write_kinds(model.model(), chosen, kinds);
+    write_part(model.model(), chosen, kMembers, out);
 }
 
 template <typename Selection>
@@ -177,9 +177,9 @@ void get_parameters(const BIYOS_model &model,
                     BIYOS_offset capacity,
                     Compressed<BIYOS_real> out)
 {
-    const auto chosen = selected(model.core, Family::Cone, selection);
-    check_capacity(capacity, count_of(model.core, chosen, kParameters), "cap", "parameters");
-    write_part(model.core, chosen, kParameters, out);
+    const auto chosen = selected(model.model(), Family::Cone, selection);
+    check_capacity(capacity, count_of(model.model(), chosen, kParameters), "cap", "parameters");
+    write_part(model.model(), chosen, kParameters, out);
 }
 
 }

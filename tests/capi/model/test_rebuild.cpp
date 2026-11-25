@@ -116,7 +116,7 @@ BIYOS_index count_of(const Model &model, Counter count)
 
 BIYOS_offset graph_size(const Model &model)
 {
-    return model.get()->core.graph().size();
+    return model.get()->model().graph().size();
 }
 
 double value(Engine &engine)
@@ -664,7 +664,7 @@ void build_random(const Model &model, Engine &engine)
 
 std::string difference(const Model &left, const Model &right)
 {
-    return biyos::difference(left.get()->core, right.get()->core);
+    return biyos::difference(left.get()->model(), right.get()->model());
 }
 
 void expect_same(const Program &found, const Program &wanted)

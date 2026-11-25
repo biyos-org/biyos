@@ -62,7 +62,7 @@ void set_model_name(BIYOS_model &model, const char *name)
 
 void get_model_name(const BIYOS_model &model, const char **name)
 {
-    const char *found = text(model.core.name());
+    const char *found = text(model.model().name());
     *require(name, "name") = found;
 }
 
@@ -82,12 +82,12 @@ void set_names(BIYOS_model &model, Selection selection, const char *const *names
 template <Family Target, typename Selection>
 void get_names(const BIYOS_model &model, Selection selection, const char **names)
 {
-    const auto wanted = selected(model.core, Target, selection);
+    const auto wanted = selected(model.model(), Target, selection);
     std::vector<const char *> found;
     found.reserve(wanted.size());
     for (const biyos::Index i : wanted)
     {
-        found.push_back(text(model.core.name_of(Target, i)));
+        found.push_back(text(model.model().name_of(Target, i)));
     }
     if (names != nullptr)
     {
@@ -106,7 +106,7 @@ void get_indices(const BIYOS_model &model,
     found.reserve(wanted.size());
     for (const std::string_view name : wanted)
     {
-        found.push_back(model.core.index_of(Target, name));
+        found.push_back(model.model().index_of(Target, name));
     }
     if (indices != nullptr)
     {

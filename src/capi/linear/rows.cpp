@@ -36,8 +36,8 @@ std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> fun
 template <typename Selection>
 void n_row_terms(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(model.core, Family::Function, selection);
-    const std::size_t count = count_of(model.core, chosen);
+    const auto chosen = selected(model.model(), Family::Function, selection);
+    const std::size_t count = count_of(model.model(), chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
 
@@ -62,10 +62,10 @@ void get_listed(const BIYOS_model &model,
                 BIYOS_offset *nnz,
                 const Coordinates &out)
 {
-    const auto chosen = selected(model.core, Family::Function, list);
-    const std::size_t count = count_of(model.core, chosen);
+    const auto chosen = selected(model.model(), Family::Function, list);
+    const std::size_t count = count_of(model.model(), chosen);
     check_capacity(capacity, count);
-    write_rows(model.core, chosen, out);
+    write_rows(model.model(), chosen, out);
     if (nnz != nullptr)
     {
         *nnz = to_offset(count);
@@ -79,7 +79,7 @@ void get_ranged(const BIYOS_model &model,
                 BIYOS_index *variables,
                 BIYOS_real *values)
 {
-    const biyos::Model &core = model.core;
+    const biyos::Model &core = model.model();
     const std::span<const biyos::LinearTerm> terms = core.linear_terms(range.start, range.stop);
     check_capacity(capacity, terms.size());
     const auto record = [&](biyos::Index j)

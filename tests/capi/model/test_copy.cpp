@@ -118,7 +118,7 @@ Held copied(const Held &source, BIYOS_env *env)
     BIYOS_model *copy = nullptr;
     EXPECT_EQ(BIYOS_copymdl(source.model, env, &copy), BIYOS_OK);
     EXPECT_NE(copy, nullptr);
-    EXPECT_EQ(biyos::difference(source.model->core, copy->core), "");
+    EXPECT_EQ(biyos::difference(source.model->model(), copy->model()), "");
     return Held{.env = env, .model = copy};
 }
 

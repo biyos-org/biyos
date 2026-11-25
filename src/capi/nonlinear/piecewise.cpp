@@ -90,7 +90,7 @@ void add_pwls(BIYOS_model &model,
 
 void n_pwls(const BIYOS_model &model, BIYOS_index *n)
 {
-    *require(n, "n") = held(model.core);
+    *require(n, "n") = held(model.model());
 }
 
 std::span<const Index> chosen(const biyos::Model &core, List list)
@@ -124,8 +124,8 @@ std::size_t count_of(const biyos::Model &core, std::span<const Index> pwls)
 template <typename Selection>
 void n_points(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
-    const auto pwls = chosen(model.core, selection);
-    const std::size_t count = count_of(model.core, pwls);
+    const auto pwls = chosen(model.model(), selection);
+    const std::size_t count = count_of(model.model(), pwls);
     *require(nnz, "nnz") = to_offset(count);
 }
 
@@ -159,9 +159,9 @@ void get_pwls(const BIYOS_model &model,
               BIYOS_offset capacity,
               const Outputs &out)
 {
-    const auto pwls = chosen(model.core, selection);
-    check_capacity(capacity, count_of(model.core, pwls), "cap", "points");
-    write_pwls(model.core, pwls, out);
+    const auto pwls = chosen(model.model(), selection);
+    check_capacity(capacity, count_of(model.model(), pwls), "cap", "points");
+    write_pwls(model.model(), pwls, out);
 }
 
 void add_pwl_node(BIYOS_model &model, BIYOS_index pwl, BIYOS_offset argument, BIYOS_offset *node)

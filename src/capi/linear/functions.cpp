@@ -41,7 +41,7 @@ void add_empty(BIYOS_model &model, BIYOS_index n, BIYOS_index *start)
 
 void n_functions(const BIYOS_model &model, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_functions();
+    *require(n, "n") = model.model().n_functions();
 }
 
 void write_constants(std::span<const biyos::Real> found, BIYOS_real *constants)
@@ -87,8 +87,8 @@ void set_constants(BIYOS_model &model, Selection selection, const BIYOS_real *co
 template <typename Selection>
 void get_constants(const BIYOS_model &model, Selection selection, BIYOS_real *constants)
 {
-    const auto chosen = selected(model.core, Family::Function, selection);
-    write_constants(picked(model.core, &biyos::Model::constant, chosen), constants);
+    const auto chosen = selected(model.model(), Family::Function, selection);
+    write_constants(picked(model.model(), &biyos::Model::constant, chosen), constants);
 }
 
 }

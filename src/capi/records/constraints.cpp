@@ -93,7 +93,7 @@ void set_bounds(BIYOS_model &model,
 
 void n_constraints(const BIYOS_model &model, BIYOS_index *n)
 {
-    *require(n, "n") = model.core.n_constraints();
+    *require(n, "n") = model.model().n_constraints();
 }
 
 void copy_out(const biyos::Constraint &constraint,
@@ -123,9 +123,9 @@ void get_constraints(const BIYOS_model &model,
                      BIYOS_real *lower,
                      BIYOS_real *upper)
 {
-    const auto chosen = selected(model.core, Family::Constraint, selection);
+    const auto chosen = selected(model.model(), Family::Constraint, selection);
     const std::vector<biyos::Constraint> constraints =
-        picked(model.core, &biyos::Model::constraint, chosen);
+        picked(model.model(), &biyos::Model::constraint, chosen);
     for (std::size_t k = 0; k < constraints.size(); ++k)
     {
         copy_out(constraints[k], k, functions, lower, upper);

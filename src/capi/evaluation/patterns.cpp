@@ -107,8 +107,8 @@ template <typename Of, typename Selection>
 void n_pattern(BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
     BIYOS_offset *out = require(nnz, "nnz");
-    const auto chosen = selected(model.core, Of::kFamily, selection);
-    check_all(model.core, Of::kFamily, chosen);
+    const auto chosen = selected(model.model(), Of::kFamily, selection);
+    check_all(model.model(), Of::kFamily, chosen);
     const Records records = Of::read(evaluation_of(model));
     *out = to_offset(count_of(records, chosen));
 }
@@ -120,8 +120,8 @@ void get_pattern(BIYOS_model &model,
                  BIYOS_offset *counts,
                  BIYOS_index *items)
 {
-    const auto chosen = selected(model.core, Of::kFamily, selection);
-    check_all(model.core, Of::kFamily, chosen);
+    const auto chosen = selected(model.model(), Of::kFamily, selection);
+    check_all(model.model(), Of::kFamily, chosen);
     const Records records = Of::read(evaluation_of(model));
     check_capacity(capacity, count_of(records, chosen), "cap", "entries");
     write(records, chosen, counts, items);
