@@ -53,7 +53,10 @@ biyos::Complement given(biyos::Complement complement, std::size_t k, const Field
     return complement;
 }
 
-void add_complements(BIYOS_model &session, BIYOS_index n, const Fields &fields, BIYOS_index *start)
+void add_complements(biyos::Session &session,
+                     BIYOS_index n,
+                     const Fields &fields,
+                     BIYOS_index *start)
 {
     biyos::Model &model = writable(session);
     const std::size_t size = length(n);
@@ -83,7 +86,7 @@ void add_complements(BIYOS_model &session, BIYOS_index n, const Fields &fields, 
 }
 
 template <typename Selection>
-void set_bounds(BIYOS_model &session, Selection selection, const Fields &fields)
+void set_bounds(biyos::Session &session, Selection selection, const Fields &fields)
 {
     biyos::Model &model = writable(session);
     const auto changed = selected(model, Family::Complement, selection);
@@ -96,7 +99,7 @@ void set_bounds(BIYOS_model &session, Selection selection, const Fields &fields)
     model.set_complements(changed, complements);
 }
 
-void n_complements(const BIYOS_model &session, BIYOS_index *n)
+void n_complements(const biyos::Session &session, BIYOS_index *n)
 {
     *require(n, "n") = session.model().n_complements();
 }
@@ -110,7 +113,7 @@ void copy_out(const biyos::Complement &complement, std::size_t k, const Outputs 
 }
 
 template <typename Selection>
-void get_chosen(const BIYOS_model &session, Selection selection, const Outputs &outputs)
+void get_chosen(const biyos::Session &session, Selection selection, const Outputs &outputs)
 {
     const auto chosen = selected(session.model(), Family::Complement, selection);
     const std::vector<biyos::Complement> complements =

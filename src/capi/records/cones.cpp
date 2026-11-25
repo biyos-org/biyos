@@ -79,7 +79,7 @@ std::span<const T> items_of(const T *items, std::span<const Offset> starts, std:
     return {items, total};
 }
 
-void add_cones(BIYOS_model &session, BIYOS_index n, const Given &given, BIYOS_index *start)
+void add_cones(biyos::Session &session, BIYOS_index n, const Given &given, BIYOS_index *start)
 {
     Model &model = writable(session);
     const std::size_t size = length(n);
@@ -103,7 +103,7 @@ void add_cones(BIYOS_model &session, BIYOS_index n, const Given &given, BIYOS_in
     }
 }
 
-void n_cones(const BIYOS_model &session, BIYOS_index *n)
+void n_cones(const biyos::Session &session, BIYOS_index *n)
 {
     *require(n, "n") = session.model().n_cones();
 }
@@ -151,7 +151,7 @@ void write_kinds(const Model &model, std::span<const Index> cones, BIYOS_int *ki
 }
 
 template <typename Selection, typename T>
-void n_items(const BIYOS_model &session, Selection selection, Part<T> part, BIYOS_offset *nnz)
+void n_items(const biyos::Session &session, Selection selection, Part<T> part, BIYOS_offset *nnz)
 {
     const auto chosen = selected(session.model(), Family::Cone, selection);
     const std::size_t count = count_of(session.model(), chosen, part);
@@ -159,7 +159,7 @@ void n_items(const BIYOS_model &session, Selection selection, Part<T> part, BIYO
 }
 
 template <typename Selection>
-void get_members(const BIYOS_model &session,
+void get_members(const biyos::Session &session,
                  Selection selection,
                  BIYOS_offset capacity,
                  BIYOS_int *kinds,
@@ -172,7 +172,7 @@ void get_members(const BIYOS_model &session,
 }
 
 template <typename Selection>
-void get_parameters(const BIYOS_model &session,
+void get_parameters(const biyos::Session &session,
                     Selection selection,
                     BIYOS_offset capacity,
                     Compressed<BIYOS_real> out)

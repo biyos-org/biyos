@@ -21,7 +21,7 @@ namespace
 {
 
 template <Family Target, auto Delete, typename Selection>
-void delete_records(BIYOS_model &session, Selection selection, BIYOS_index *map)
+void delete_records(biyos::Session &session, Selection selection, BIYOS_index *map)
 {
     Model &model = writable(session);
     const auto chosen = selected(model, Target, selection);
@@ -34,37 +34,37 @@ void delete_records(BIYOS_model &session, Selection selection, BIYOS_index *map)
 }
 
 template <typename Selection>
-void delete_variables(BIYOS_model &session, Selection selection, BIYOS_index *map)
+void delete_variables(biyos::Session &session, Selection selection, BIYOS_index *map)
 {
     delete_records<Family::Variable, &Model::delete_variables>(session, selection, map);
 }
 
 template <typename Selection>
-void delete_functions(BIYOS_model &session, Selection selection, BIYOS_index *map)
+void delete_functions(biyos::Session &session, Selection selection, BIYOS_index *map)
 {
     delete_records<Family::Function, &Model::delete_functions>(session, selection, map);
 }
 
 template <typename Selection>
-void delete_constraints(BIYOS_model &session, Selection selection, BIYOS_index *map)
+void delete_constraints(biyos::Session &session, Selection selection, BIYOS_index *map)
 {
     delete_records<Family::Constraint, &Model::delete_constraints>(session, selection, map);
 }
 
 template <typename Selection>
-void delete_objectives(BIYOS_model &session, Selection selection, BIYOS_index *map)
+void delete_objectives(biyos::Session &session, Selection selection, BIYOS_index *map)
 {
     delete_records<Family::Objective, &Model::delete_objectives>(session, selection, map);
 }
 
 template <typename Selection>
-void delete_indicators(BIYOS_model &session, Selection selection, BIYOS_index *map)
+void delete_indicators(biyos::Session &session, Selection selection, BIYOS_index *map)
 {
     delete_records<Family::Indicator, &Model::delete_indicators>(session, selection, map);
 }
 
 template <typename Selection>
-void delete_special_ordered_sets(BIYOS_model &session, Selection selection, BIYOS_index *map)
+void delete_special_ordered_sets(biyos::Session &session, Selection selection, BIYOS_index *map)
 {
     delete_records<Family::SpecialOrderedSet, &Model::delete_special_ordered_sets>(session,
                                                                                    selection,
@@ -72,13 +72,13 @@ void delete_special_ordered_sets(BIYOS_model &session, Selection selection, BIYO
 }
 
 template <typename Selection>
-void delete_cones(BIYOS_model &session, Selection selection, BIYOS_index *map)
+void delete_cones(biyos::Session &session, Selection selection, BIYOS_index *map)
 {
     delete_records<Family::Cone, &Model::delete_cones>(session, selection, map);
 }
 
 template <typename Selection>
-void delete_complements(BIYOS_model &session, Selection selection, BIYOS_index *map)
+void delete_complements(biyos::Session &session, Selection selection, BIYOS_index *map)
 {
     delete_records<Family::Complement, &Model::delete_complements>(session, selection, map);
 }

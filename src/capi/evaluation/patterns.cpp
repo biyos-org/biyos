@@ -104,7 +104,7 @@ void write(const Records &records,
 }
 
 template <typename Of, typename Selection>
-void n_pattern(BIYOS_model &session, Selection selection, BIYOS_offset *nnz)
+void n_pattern(biyos::Session &session, Selection selection, BIYOS_offset *nnz)
 {
     BIYOS_offset *out = require(nnz, "nnz");
     const auto chosen = selected(session.model(), Of::kFamily, selection);
@@ -114,7 +114,7 @@ void n_pattern(BIYOS_model &session, Selection selection, BIYOS_offset *nnz)
 }
 
 template <typename Of, typename Selection>
-void get_pattern(BIYOS_model &session,
+void get_pattern(biyos::Session &session,
                  Selection selection,
                  BIYOS_offset capacity,
                  BIYOS_offset *counts,

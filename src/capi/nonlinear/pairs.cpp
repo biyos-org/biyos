@@ -41,7 +41,7 @@ std::size_t count_of(const biyos::Model &model, std::span<const biyos::Index> fu
 }
 
 template <typename Selection>
-void n_pairs(const BIYOS_model &session, Selection selection, BIYOS_offset *nnz)
+void n_pairs(const biyos::Session &session, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(session.model(), Family::Function, selection);
     const std::size_t count = count_of(session.model(), chosen);
@@ -86,7 +86,7 @@ void write_pairs(const biyos::Model &model,
     }
 }
 
-void get_listed(const BIYOS_model &session,
+void get_listed(const biyos::Session &session,
                 List list,
                 BIYOS_offset capacity,
                 BIYOS_offset *nnz,
@@ -102,7 +102,7 @@ void get_listed(const BIYOS_model &session,
     }
 }
 
-void get_ranged(const BIYOS_model &session,
+void get_ranged(const biyos::Session &session,
                 Range range,
                 BIYOS_offset capacity,
                 BIYOS_offset *counts,

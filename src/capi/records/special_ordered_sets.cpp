@@ -77,7 +77,7 @@ std::vector<Member> members_of(std::span<const Offset> starts,
     return members;
 }
 
-void add_special_ordered_sets(BIYOS_model &session,
+void add_special_ordered_sets(biyos::Session &session,
                               BIYOS_index n,
                               const BIYOS_int *kinds,
                               const BIYOS_offset *counts,
@@ -97,7 +97,7 @@ void add_special_ordered_sets(BIYOS_model &session,
     }
 }
 
-void n_special_ordered_sets(const BIYOS_model &session, BIYOS_index *n)
+void n_special_ordered_sets(const biyos::Session &session, BIYOS_index *n)
 {
     *require(n, "n") = session.model().n_special_ordered_sets();
 }
@@ -113,7 +113,7 @@ std::size_t count_of(const biyos::Model &model, std::span<const biyos::Index> so
 }
 
 template <typename Selection>
-void n_members(const BIYOS_model &session, Selection selection, BIYOS_offset *nnz)
+void n_members(const biyos::Session &session, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(session.model(), Family::SpecialOrderedSet, selection);
     const std::size_t count = count_of(session.model(), chosen);
@@ -149,7 +149,7 @@ void write_special_ordered_sets(const biyos::Model &model,
 }
 
 template <typename Selection>
-void get_special_ordered_sets(const BIYOS_model &session,
+void get_special_ordered_sets(const biyos::Session &session,
                               Selection selection,
                               BIYOS_offset capacity,
                               const Outputs &out)

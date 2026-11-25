@@ -46,7 +46,7 @@ struct Caller
     }
 };
 
-void add_callback(BIYOS_model &session,
+void add_callback(biyos::Session &session,
                   BIYOS_index n,
                   const BIYOS_index *functions,
                   void *data,
@@ -60,13 +60,13 @@ void add_callback(BIYOS_model &session,
     }
 }
 
-void set_values(BIYOS_model &session, BIYOS_index cb, BIYOS_cbf f)
+void set_values(biyos::Session &session, BIYOS_index cb, BIYOS_cbf f)
 {
     biyos::Model &model = writable(session);
     model.set_callback_function(cb, Caller{require(f, "f")});
 }
 
-void set_jacobian(BIYOS_model &session,
+void set_jacobian(biyos::Session &session,
                   BIYOS_index cb,
                   BIYOS_offset nnz,
                   const BIYOS_index *functions,
@@ -84,7 +84,7 @@ void set_jacobian(BIYOS_model &session,
     model.set_callback_jacobian(cb, {functions, size}, {variables, size}, caller);
 }
 
-void set_hessian(BIYOS_model &session,
+void set_hessian(biyos::Session &session,
                  BIYOS_index cb,
                  BIYOS_offset nnz,
                  const BIYOS_index *rows,
@@ -102,30 +102,30 @@ void set_hessian(BIYOS_model &session,
     model.set_callback_hessian(cb, {rows, size}, {columns, size}, caller);
 }
 
-void set_product(BIYOS_model &session, BIYOS_index cb, BIYOS_cbhv hv)
+void set_product(biyos::Session &session, BIYOS_index cb, BIYOS_cbhv hv)
 {
     biyos::Model &model = writable(session);
     model.set_callback_hessian_product(cb, Caller{require(hv, "hv")});
 }
 
-void set_data(BIYOS_model &session, BIYOS_index cb, void *data)
+void set_data(biyos::Session &session, BIYOS_index cb, void *data)
 {
     writable(session).set_callback_data(cb, data);
 }
 
-void get_data(const BIYOS_model &session, BIYOS_index cb, void **data)
+void get_data(const biyos::Session &session, BIYOS_index cb, void **data)
 {
     void **out = require(data, "data");
     *out = session.model().callback(cb).data;
 }
 
-void n_functions(const BIYOS_model &session, BIYOS_index cb, BIYOS_index *n)
+void n_functions(const biyos::Session &session, BIYOS_index cb, BIYOS_index *n)
 {
     BIYOS_index *out = require(n, "n");
     *out = to_index(session.model().callback(cb).covered.size());
 }
 
-void get_functions(const BIYOS_model &session,
+void get_functions(const biyos::Session &session,
                    BIYOS_index cb,
                    BIYOS_index capacity,
                    BIYOS_index *functions)

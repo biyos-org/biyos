@@ -64,7 +64,7 @@ std::vector<LinearTerm> column_terms(std::span<const biyos::Index> variables,
     return terms;
 }
 
-void add_listed(BIYOS_model &session,
+void add_listed(biyos::Session &session,
                 BIYOS_offset nnz,
                 const BIYOS_index *functions,
                 const BIYOS_index *variables,
@@ -81,7 +81,7 @@ void add_listed(BIYOS_model &session,
     add_grouped(model, owners, biyos::capi::packed(size, variables, values));
 }
 
-void add_rows(BIYOS_model &session,
+void add_rows(biyos::Session &session,
               Range range,
               const BIYOS_offset *counts,
               const BIYOS_index *variables,
@@ -91,7 +91,7 @@ void add_rows(BIYOS_model &session,
     add_sliced(model, selected(model, Family::Function, range), counts, variables, values);
 }
 
-void add_columns(BIYOS_model &session,
+void add_columns(biyos::Session &session,
                  Range range,
                  const BIYOS_offset *counts,
                  const BIYOS_index *functions,

@@ -59,7 +59,10 @@ void require_fields(const Fields &fields)
     require(fields.functions, "fun");
 }
 
-void add_indicators(BIYOS_model &session, BIYOS_index n, const Fields &fields, BIYOS_index *start)
+void add_indicators(biyos::Session &session,
+                    BIYOS_index n,
+                    const Fields &fields,
+                    BIYOS_index *start)
 {
     biyos::Model &model = writable(session);
     const std::size_t size = length(n);
@@ -89,7 +92,7 @@ void add_indicators(BIYOS_model &session, BIYOS_index n, const Fields &fields, B
 }
 
 template <typename Selection>
-void set_chosen(BIYOS_model &session, Selection selection, const Fields &fields)
+void set_chosen(biyos::Session &session, Selection selection, const Fields &fields)
 {
     biyos::Model &model = writable(session);
     const auto changed = selected(model, Family::Indicator, selection);
@@ -102,7 +105,7 @@ void set_chosen(BIYOS_model &session, Selection selection, const Fields &fields)
     model.set_indicators(changed, indicators);
 }
 
-void n_indicators(const BIYOS_model &session, BIYOS_index *n)
+void n_indicators(const biyos::Session &session, BIYOS_index *n)
 {
     *require(n, "n") = session.model().n_indicators();
 }
@@ -117,7 +120,7 @@ void copy_out(const biyos::Indicator &indicator, std::size_t k, const Outputs &o
 }
 
 template <typename Selection>
-void get_chosen(const BIYOS_model &session, Selection selection, const Outputs &outputs)
+void get_chosen(const biyos::Session &session, Selection selection, const Outputs &outputs)
 {
     const auto chosen = selected(session.model(), Family::Indicator, selection);
     const std::vector<biyos::Indicator> indicators =

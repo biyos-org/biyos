@@ -85,7 +85,7 @@ void write_columns(const Columns &columns,
 }
 
 template <typename Selection>
-void n_column_terms(const BIYOS_model &session, Selection selection, BIYOS_offset *nnz)
+void n_column_terms(const biyos::Session &session, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(session.model(), Family::Variable, selection);
     const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
@@ -93,7 +93,7 @@ void n_column_terms(const BIYOS_model &session, Selection selection, BIYOS_offse
     *require(nnz, "nnz") = to_offset(count);
 }
 
-void get_listed(const BIYOS_model &session,
+void get_listed(const biyos::Session &session,
                 List list,
                 BIYOS_offset capacity,
                 BIYOS_offset *nnz,
@@ -111,7 +111,7 @@ void get_listed(const BIYOS_model &session,
     }
 }
 
-void get_ranged(const BIYOS_model &session,
+void get_ranged(const biyos::Session &session,
                 Range range,
                 BIYOS_offset capacity,
                 BIYOS_offset *counts,

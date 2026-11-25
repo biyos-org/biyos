@@ -40,7 +40,7 @@ void add_sliced(biyos::Model &model,
     model.add_quadratic_terms(owners, begins, biyos::capi::packed(total, rows, columns, values));
 }
 
-void add_listed(BIYOS_model &session,
+void add_listed(biyos::Session &session,
                 BIYOS_offset nnz,
                 const BIYOS_index *functions,
                 const BIYOS_index *rows,
@@ -61,7 +61,7 @@ void add_listed(BIYOS_model &session,
     model.add_quadratic_terms(groups.functions, groups.starts, std::move(groups.terms));
 }
 
-void add_ranged(BIYOS_model &session,
+void add_ranged(biyos::Session &session,
                 Range range,
                 const BIYOS_offset *counts,
                 const BIYOS_index *rows,

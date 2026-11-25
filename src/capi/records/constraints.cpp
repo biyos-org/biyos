@@ -42,7 +42,7 @@ biyos::Constraint bounded(biyos::Constraint constraint,
     return constraint;
 }
 
-void add_constraints(BIYOS_model &session,
+void add_constraints(biyos::Session &session,
                      BIYOS_index n,
                      const BIYOS_index *functions,
                      const BIYOS_real *lower,
@@ -75,7 +75,7 @@ void add_constraints(BIYOS_model &session,
 }
 
 template <typename Selection>
-void set_bounds(BIYOS_model &session,
+void set_bounds(biyos::Session &session,
                 Selection selection,
                 const BIYOS_real *lower,
                 const BIYOS_real *upper)
@@ -91,7 +91,7 @@ void set_bounds(BIYOS_model &session,
     model.set_constraints(changed, constraints);
 }
 
-void n_constraints(const BIYOS_model &session, BIYOS_index *n)
+void n_constraints(const biyos::Session &session, BIYOS_index *n)
 {
     *require(n, "n") = session.model().n_constraints();
 }
@@ -117,7 +117,7 @@ void copy_out(const biyos::Constraint &constraint,
 }
 
 template <typename Selection>
-void get_constraints(const BIYOS_model &session,
+void get_constraints(const biyos::Session &session,
                      Selection selection,
                      BIYOS_index *functions,
                      BIYOS_real *lower,
@@ -133,7 +133,7 @@ void get_constraints(const BIYOS_model &session,
 }
 
 template <typename Selection>
-void get_bounds(const BIYOS_model &session,
+void get_bounds(const biyos::Session &session,
                 Selection selection,
                 BIYOS_real *lower,
                 BIYOS_real *upper)

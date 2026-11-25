@@ -25,7 +25,7 @@ void load(biyos::Env &env, const char *path, BIYOS_int fmt, BIYOS_model **model)
     *made = fresh.release();
 }
 
-void save(const BIYOS_model &session, const char *path, BIYOS_int fmt)
+void save(const biyos::Session &session, const char *path, BIYOS_int fmt)
 {
     const char *file = require(path, "path");
     const biyos::FileFormat format = biyos::find_format(fmt);

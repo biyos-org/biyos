@@ -64,7 +64,7 @@ void delete_hook(biyos::Env &env, BIYOS_index index)
     writable(env).events().delete_hook(index);
 }
 
-void add_model_hook(BIYOS_model &session,
+void add_model_hook(biyos::Session &session,
                     BIYOS_hook hook,
                     void *data,
                     BIYOS_int kind,
@@ -75,7 +75,7 @@ void add_model_hook(BIYOS_model &session,
     add_to(session, session.env(), hook, data, kind, level, index);
 }
 
-void delete_model_hook(BIYOS_model &session, BIYOS_index index)
+void delete_model_hook(biyos::Session &session, BIYOS_index index)
 {
     writable(session);
     session.delete_hook(index);

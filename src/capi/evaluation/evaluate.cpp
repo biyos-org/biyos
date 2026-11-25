@@ -30,17 +30,17 @@ template <typename T> std::span<T> sized(T *array, std::size_t size, std::string
     return given(array, size);
 }
 
-std::size_t n_vars(const BIYOS_model &session)
+std::size_t n_vars(const biyos::Session &session)
 {
     return to_size(session.model().n_variables());
 }
 
-std::size_t n_funs(const BIYOS_model &session)
+std::size_t n_funs(const biyos::Session &session)
 {
     return to_size(session.model().n_functions());
 }
 
-void eval_f(BIYOS_model &session, const BIYOS_real *x, BIYOS_real *f)
+void eval_f(biyos::Session &session, const BIYOS_real *x, BIYOS_real *f)
 {
     biyos::Evaluation &evaluation = evaluation_of(session);
     const auto point = sized(x, n_vars(session), "x");
@@ -49,7 +49,7 @@ void eval_f(BIYOS_model &session, const BIYOS_real *x, BIYOS_real *f)
     evaluation.values(session.lookup(), point, values);
 }
 
-void eval_g(BIYOS_model &session, const BIYOS_real *x, BIYOS_real *g)
+void eval_g(biyos::Session &session, const BIYOS_real *x, BIYOS_real *g)
 {
     biyos::Evaluation &evaluation = evaluation_of(session);
     const std::size_t nnz = evaluation.jacobian_pattern().variables.size();
@@ -59,7 +59,7 @@ void eval_g(BIYOS_model &session, const BIYOS_real *x, BIYOS_real *g)
     evaluation.jacobian(session.lookup(), point, values);
 }
 
-void eval_h(BIYOS_model &session, const BIYOS_real *x, const BIYOS_real *w, BIYOS_real *h)
+void eval_h(biyos::Session &session, const BIYOS_real *x, const BIYOS_real *w, BIYOS_real *h)
 {
     biyos::Evaluation &evaluation = evaluation_of(session);
     const std::size_t nnz = evaluation.hessian_pattern().rows.size();
@@ -70,7 +70,7 @@ void eval_h(BIYOS_model &session, const BIYOS_real *x, const BIYOS_real *w, BIYO
     evaluation.hessian(session.lookup(), {.x = point, .w = weights, .v = {}}, values);
 }
 
-void eval_hv(BIYOS_model &session,
+void eval_hv(biyos::Session &session,
              const BIYOS_real *x,
              const BIYOS_real *w,
              const BIYOS_real *v,
