@@ -36,7 +36,7 @@ struct Program
     std::vector<Index> rooted;
     std::vector<Offset> roots;
     Tape tape;
-    JacobianLayout layout;
+    Layout layout;
     std::vector<Real> linear;
     Entries entries;
     Hessian hessian;

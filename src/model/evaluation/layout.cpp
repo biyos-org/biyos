@@ -39,7 +39,7 @@ std::span<const Index> row_of(const Pattern &pattern, std::size_t row) noexcept
         .subspan(to_size(begin), to_size(pattern.starts[row + 1] - begin));
 }
 
-void add_terms(const Model &model, const JacobianLayout &layout, std::vector<IndexPair> &found)
+void add_terms(const Model &model, const Layout &layout, std::vector<IndexPair> &found)
 {
     const std::span<const LinearTerm> linear = model.linear_terms(0, model.n_functions());
     const std::span<const QuadraticTerm> quadratic = model.quadratic_terms(0, model.n_functions());
@@ -105,7 +105,7 @@ Offset slot_of(const Pattern &pattern, Index function, Index variable) noexcept
     return pattern.starts[to_size(function)] + static_cast<Offset>(found - row.begin());
 }
 
-void map_quadratic(const Model &model, JacobianLayout &layout)
+void map_quadratic(const Model &model, Layout &layout)
 {
     const std::span<const QuadraticTerm> quadratic = model.quadratic_terms(0, model.n_functions());
     for (Index k = 0; k < model.n_functions(); ++k)
@@ -120,7 +120,7 @@ void map_quadratic(const Model &model, JacobianLayout &layout)
     }
 }
 
-void map_tape(std::span<const Index> rooted, const Pattern &tape, JacobianLayout &layout)
+void map_tape(std::span<const Index> rooted, const Pattern &tape, Layout &layout)
 {
     for (std::size_t e = 0; e < rooted.size(); ++e)
     {
@@ -131,7 +131,7 @@ void map_tape(std::span<const Index> rooted, const Pattern &tape, JacobianLayout
     }
 }
 
-void map_callbacks(const Model &model, JacobianLayout &layout)
+void map_callbacks(const Model &model, Layout &layout)
 {
     layout.starts.callbacks.push_back(0);
     for (Index c = 0; c < model.n_callbacks(); ++c)
@@ -148,9 +148,9 @@ void map_callbacks(const Model &model, JacobianLayout &layout)
 
 }
 
-JacobianLayout layout_of(const Model &model, std::span<const Index> rooted, const Pattern &tape)
+Layout layout_of(const Model &model, std::span<const Index> rooted, const Pattern &tape)
 {
-    JacobianLayout layout;
+    Layout layout;
     layout.starts.linear = starts_of(model, &Model::linear_terms);
     layout.starts.quadratic = starts_of(model, &Model::quadratic_terms);
     std::vector<IndexPair> found;
@@ -164,7 +164,7 @@ JacobianLayout layout_of(const Model &model, std::span<const Index> rooted, cons
     return layout;
 }
 
-std::vector<Real> linear_of(const Model &model, const JacobianLayout &layout)
+std::vector<Real> linear_of(const Model &model, const Layout &layout)
 {
     const std::span<const LinearTerm> linear = model.linear_terms(0, model.n_functions());
     std::vector<Real> sums(layout.pattern.variables.size(), 0.0);

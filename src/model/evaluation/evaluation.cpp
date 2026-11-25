@@ -62,7 +62,7 @@ Program program_of(Env &env, const Model &model)
         }
     }
     Tape tape(model.graph(), roots);
-    evaluation::JacobianLayout layout = layout_of(model, rooted, tape.pattern());
+    evaluation::Layout layout = layout_of(model, rooted, tape.pattern());
     std::vector<Real> linear = linear_of(model, layout);
     Entries entries = entries_of(model);
     Hessian hessian(model.graph(), roots, entries.items);
@@ -118,7 +118,7 @@ void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::sp
 {
     const Timer timer(env_, tree_, kModule, "jacobian");
     check(x);
-    const evaluation::JacobianLayout &layout = program_.layout;
+    const evaluation::Layout &layout = program_.layout;
     check("g", g.size(), layout.pattern.variables.size());
     require(model_, Part::Jacobian);
     term_jacobian(x, g);
@@ -163,7 +163,7 @@ void Evaluation::term_function(std::span<const Real> x, std::span<Real> f) const
     const std::span<const Real> constants = model_.constants(0, n);
     const std::span<const LinearTerm> linear = model_.linear_terms(0, n);
     const std::span<const QuadraticTerm> quadratic = model_.quadratic_terms(0, n);
-    const evaluation::JacobianLayout &layout = program_.layout;
+    const evaluation::Layout &layout = program_.layout;
     for (std::size_t k = 0; k < to_size(n); ++k)
     {
         f[k] = constants[k];
@@ -182,7 +182,7 @@ void Evaluation::term_function(std::span<const Real> x, std::span<Real> f) const
 
 void Evaluation::term_jacobian(std::span<const Real> x, std::span<Real> g) const
 {
-    const evaluation::JacobianLayout &layout = program_.layout;
+    const evaluation::Layout &layout = program_.layout;
     std::ranges::copy(program_.linear, g.begin());
     const std::span<const QuadraticTerm> quadratic =
         model_.quadratic_terms(0, model_.n_functions());
@@ -210,7 +210,7 @@ void Evaluation::evaluate_function(const Checker &checker, const Point &point, s
 
 void Evaluation::evaluate_jacobian(const Checker &checker, const Point &point, std::span<Real> g)
 {
-    const evaluation::JacobianLayout &layout = program_.layout;
+    const evaluation::Layout &layout = program_.layout;
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);

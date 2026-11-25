@@ -11,7 +11,7 @@
 namespace biyos::evaluation
 {
 
-struct JacobianLayout
+struct Layout
 {
     struct Starts
     {
@@ -38,8 +38,8 @@ struct Entries
     std::vector<Offset> starts;
 };
 
-JacobianLayout layout_of(const Model &model, std::span<const Index> rooted, const Pattern &tape);
-std::vector<Real> linear_of(const Model &model, const JacobianLayout &layout);
+Layout layout_of(const Model &model, std::span<const Index> rooted, const Pattern &tape);
+std::vector<Real> linear_of(const Model &model, const Layout &layout);
 Entries entries_of(const Model &model);
 
 }
