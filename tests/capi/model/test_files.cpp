@@ -3,6 +3,7 @@
 #include "core/env.hpp"
 #include "core/timing/clock.hpp"
 #include "handles.hpp"
+#include "probes.hpp"
 
 #include "../../io/mps/utils/samples.hpp"
 
@@ -11,7 +12,6 @@
 #include <fstream>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <vector>
 
 namespace
@@ -19,13 +19,7 @@ namespace
 
 using biyos::test::Env;
 using biyos::test::Model;
-
-std::string written(std::string_view name, std::string_view text)
-{
-    const std::string path = testing::TempDir() + std::string(name);
-    std::ofstream(path) << text;
-    return path;
-}
+using biyos::test::written;
 
 struct Read
 {
