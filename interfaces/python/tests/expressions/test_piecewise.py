@@ -42,6 +42,11 @@ def entries(model, *trees):
     return list(zip(code, arg)), val
 
 
+def test_expression(x):
+    assert isinstance(biyos.piecewise(0, x[0]), biyos.Expression)
+    assert isinstance(x[0] + 1, biyos.Expression)
+
+
 def test_variable(model, x, p):
     e = biyos.piecewise(p[0], x[1])
     assert e._op == PWL

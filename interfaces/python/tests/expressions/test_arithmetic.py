@@ -67,7 +67,7 @@ def test_nested(x):
     inner = (Operator.SUM, (1.0, 1.0), 0)
     power = (Operator.CONSTANT_POWER, (2.0,), 1)
     assert tree(e) == (Operator.PRODUCT, (1.0,), inner, power)
-    assert type(e) is biyos.Expression
+    assert isinstance(e, biyos.Expression)
 
 
 def test_unchanged(x):

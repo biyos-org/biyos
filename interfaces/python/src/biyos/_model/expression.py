@@ -120,7 +120,7 @@ class Operand:
             return _shifted(self, float(other), 0.0)
         if not isinstance(other, Operand):
             return NotImplemented
-        return Expression(Operator.PRODUCT, (self, other), (1.0,))
+        return Operation(Operator.PRODUCT, (self, other), (1.0,))
 
     def __rmul__(self, other: Real) -> "Expression":
         """Return the product of a number and the operand.
@@ -170,7 +170,7 @@ class Operand:
             return _shifted(self, 1.0 / float(other), 0.0)
         if not isinstance(other, Operand):
             return NotImplemented
-        return Expression(Operator.DIVISION, (self, other), ())
+        return Operation(Operator.DIVISION, (self, other), ())
 
     def __rtruediv__(self, other: Real) -> "Expression":
         """Return the quotient of a number and the operand.
@@ -187,7 +187,7 @@ class Operand:
         """
         if not _number(other):
             return NotImplemented
-        return Expression(Operator.DIVISION, (_constant(other), self), ())
+        return Operation(Operator.DIVISION, (_constant(other), self), ())
 
     def __pow__(self, other: "Term") -> "Expression":
         """Return the operand raised to a power.
@@ -205,10 +205,10 @@ class Operand:
         """
         if _number(other):
             power = (float(other),)
-            return Expression(Operator.CONSTANT_POWER, (self,), power)
+            return Operation(Operator.CONSTANT_POWER, (self,), power)
         if not isinstance(other, Operand):
             return NotImplemented
-        return Expression(Operator.POWER, (self, other), ())
+        return Operation(Operator.POWER, (self, other), ())
 
     def __rpow__(self, other: Real) -> "Expression":
         """Return a number raised to the operand.
@@ -225,7 +225,7 @@ class Operand:
         """
         if not _number(other):
             return NotImplemented
-        return Expression(Operator.POWER, (_constant(other), self), ())
+        return Operation(Operator.POWER, (_constant(other), self), ())
 
     def __neg__(self) -> "Expression":
         """Return the negation of the operand.
@@ -235,7 +235,7 @@ class Operand:
         expr
             The expression ``-self``.
         """
-        return Expression(Operator.NEGATION, (self,), ())
+        return Operation(Operator.NEGATION, (self,), ())
 
     def __abs__(self) -> "Expression":
         """Return the absolute value of the operand.
@@ -245,7 +245,7 @@ class Operand:
         expr
             The expression ``abs(self)``.
         """
-        return Expression(Operator.ABS, (self,), ())
+        return Operation(Operator.ABS, (self,), ())
 
     def __le__(self, other: "Term") -> "Comparison":
         """Return the constraint that the operand is at most another.
@@ -371,6 +371,10 @@ class Expression(Operand):
         return printed(self)
 
 
+class Operation(Expression):
+    __slots__ = ()
+
+
 class Piecewise(Expression):
     __slots__ = ("_idx", "_pwl")
 
@@ -493,16 +497,16 @@ _SIDES = {
 
 
 def _constant(value: Real) -> Expression:
-    return Expression(Operator.CONSTANT, (), (float(value),))
+    return Operation(Operator.CONSTANT, (), (float(value),))
 
 
 def _shifted(term: Operand, weight: Real, shift: Real) -> Expression:
-    return Expression(Operator.SUM, (term,), (float(shift), weight))
+    return Operation(Operator.SUM, (term,), (float(shift), weight))
 
 
 def _sum(left: Operand, right: "Term", sign: Real) -> Expression:
     if isinstance(right, Operand):
-        return Expression(Operator.SUM, (left, right), (0.0, 1.0, sign))
+        return Operation(Operator.SUM, (left, right), (0.0, 1.0, sign))
     return _shifted(left, 1.0, sign * float(right))
 
 
@@ -558,7 +562,7 @@ def _operand(value: object) -> Operand:
 
 
 def _apply(op: Operator, *args: Term) -> Expression:
-    return Expression(op, tuple(map(_operand, args)), ())
+    return Operation(op, tuple(map(_operand, args)), ())
 
 
 def exp(x: Term) -> Expression:
@@ -941,7 +945,7 @@ def signpow(x: Term, p: Real) -> Expression:
     if not _number(p):
         raise TypeError(f"p must be a number, not {type(p).__name__}")
     power = (float(p),)
-    return Expression(Operator.SIGN_POWER, (_operand(x),), power)
+    return Operation(Operator.SIGN_POWER, (_operand(x),), power)
 
 
 def piecewise(p: SupportsIndex, x: Term) -> Expression:
