@@ -20,7 +20,7 @@ std::size_t slot(Family family) noexcept
 
 }
 
-Override Model::tolerance_of(Family family, Index index) const
+Tolerance Model::tolerance_of(Family family, Index index) const
 {
     check_index(noun_of(family), index, n_of(family));
     return tolerances_[slot(family)].at(index);

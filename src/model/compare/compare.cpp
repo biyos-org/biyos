@@ -145,7 +145,7 @@ std::string differ(double a, double b)
     return compared("value", a, b);
 }
 
-std::string differ(const Override &a, const Override &b)
+std::string differ(const Tolerance &a, const Tolerance &b)
 {
     return first_of({
         compared("absolute tolerance", a.absolute, b.absolute),

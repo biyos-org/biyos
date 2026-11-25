@@ -37,7 +37,7 @@ void get_tolerances(const BIYOS_model &model,
                     double *relative)
 {
     const auto chosen = selected(model.core, family, selection);
-    std::vector<Override> tolerances;
+    std::vector<Tolerance> tolerances;
     tolerances.reserve(chosen.size());
     for (const Index index : chosen)
     {

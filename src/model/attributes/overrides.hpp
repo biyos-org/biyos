@@ -9,7 +9,7 @@
 namespace biyos
 {
 
-struct Override
+struct Tolerance
 {
     double absolute;
     double relative;
@@ -18,7 +18,7 @@ struct Override
 class Overrides
 {
   public:
-    Override at(Index index) const noexcept;
+    Tolerance at(Index index) const noexcept;
     void set(std::string_view noun,
              Index size,
              std::span<const Index> indices,
@@ -28,7 +28,7 @@ class Overrides
     void renumber(std::span<const Index> map) noexcept;
 
   private:
-    std::map<Index, Override> held_;
+    std::map<Index, Tolerance> held_;
 };
 
 }

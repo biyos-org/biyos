@@ -20,7 +20,7 @@ bool held(const Model &model, Family family)
 {
     for (Index k = 0; k < model.n_of(family); ++k)
     {
-        const Override tolerance = model.tolerance_of(family, k);
+        const Tolerance tolerance = model.tolerance_of(family, k);
         if (!std::isnan(tolerance.absolute) || !std::isnan(tolerance.relative))
         {
             return true;

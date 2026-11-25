@@ -176,7 +176,7 @@ class Model
                    std::span<const std::string_view> names);
     void delete_names(Family family, std::span<const Index> indices);
 
-    Override tolerance_of(Family family, Index index) const;
+    Tolerance tolerance_of(Family family, Index index) const;
     void set_tolerances(Family family,
                         std::span<const Index> indices,
                         std::span<const double> absolute,

@@ -22,7 +22,7 @@ namespace
 {
 
 constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
-constexpr Override kGlobal{.absolute = kNan, .relative = kNan};
+constexpr Tolerance kGlobal{.absolute = kNan, .relative = kNan};
 
 void check_size(std::span<const Index> indices, std::span<const double> values)
 {
@@ -58,9 +58,9 @@ void check_entry(std::string_view noun,
     }
 }
 
-void add_missing(std::map<Index, Override> &held, std::span<const Index> indices)
+void add_missing(std::map<Index, Tolerance> &held, std::span<const Index> indices)
 {
-    std::map<Index, Override> added;
+    std::map<Index, Tolerance> added;
     for (const Index index : indices)
     {
         if (!held.contains(index))
@@ -81,7 +81,7 @@ void assign(double &held, std::span<const double> values, std::size_t k) noexcep
 
 }
 
-Override Overrides::at(Index index) const noexcept
+Tolerance Overrides::at(Index index) const noexcept
 {
     const auto found = held_.find(index);
     return found == held_.end() ? kGlobal : found->second;
@@ -108,7 +108,7 @@ void Overrides::set(std::string_view noun,
     add_missing(held_, indices);
     for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        Override &held = held_.find(indices[k])->second;
+        Tolerance &held = held_.find(indices[k])->second;
         assign(held.absolute, absolute, k);
         assign(held.relative, relative, k);
     }
