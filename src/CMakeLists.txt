@@ -91,9 +91,10 @@ add_library(biyos_internal STATIC
     model/attributes/records.cpp
     model/attributes/tolerances.cpp
     model/checks.cpp
-    model/compare/compare.cpp
     model/compare/fields.cpp
     model/compare/match.cpp
+    model/compare/records.cpp
+    model/compare/tables.cpp
     model/compressed.cpp
     model/evaluation/evaluation.cpp
     model/evaluation/maps.cpp

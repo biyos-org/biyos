@@ -24,11 +24,6 @@ std::string node_pair(Offset a, Offset b)
     return "node " + text_of(a) + " against " + text_of(b);
 }
 
-int code_of(Operator op) noexcept
-{
-    return static_cast<int>(op);
-}
-
 std::string weight_differences(std::span<const double> a, std::span<const double> b)
 {
     for (std::size_t k = 0; k < a.size(); ++k)
@@ -123,7 +118,7 @@ std::string Matching::node_difference(Offset a, Offset b) const
     const Operator op = a_.op(a);
     if (op != b_.op(b))
     {
-        return against("operator", code_of(op), code_of(b_.op(b)));
+        return compared("operator", op, b_.op(b));
     }
     const auto n = to_offset(a_.children(a).size());
     const auto m = to_offset(b_.children(b).size());
