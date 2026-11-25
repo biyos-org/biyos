@@ -41,10 +41,10 @@ template <typename T> std::span<const T> all_of(const std::vector<T> &items)
     return items;
 }
 
-std::string index_differences(std::string_view noun,
-                              std::string_view field,
-                              std::span<const Index> a,
-                              std::span<const Index> b)
+std::string value_table(std::string_view noun,
+                        std::string_view field,
+                        std::span<const Index> a,
+                        std::span<const Index> b)
 {
     const auto entry = [&](Offset k) { return compared(field, at(a, k), at(b, k)); };
     return table_difference(noun, size_of(a), size_of(b), entry);
@@ -157,12 +157,12 @@ std::string differ(const Tolerance &a, const Tolerance &b)
 std::string differ(const Callback &a, const Callback &b)
 {
     return first_of({
-        index_differences("covered function", "index", a.covered, b.covered),
+        value_table("covered function", "index", a.covered, b.covered),
         a.data == b.data ? "" : "data differs",
         presence("value function", a.function, b.function),
-        term_differences("Jacobian entry", all_of(a.jacobian_pairs), all_of(b.jacobian_pairs)),
+        term_table("Jacobian entry", all_of(a.jacobian_pairs), all_of(b.jacobian_pairs)),
         presence("Jacobian function", a.jacobian, b.jacobian),
-        term_differences("Hessian entry", all_of(a.hessian_pairs), all_of(b.hessian_pairs)),
+        term_table("Hessian entry", all_of(a.hessian_pairs), all_of(b.hessian_pairs)),
         presence("Hessian function", a.hessian, b.hessian),
         presence("Hessian product", a.hessian_product, b.hessian_product),
     });

@@ -70,10 +70,10 @@ std::string function_difference(const Model &a, const Model &b, Index function, 
 {
     return first_of({
         compared("constant", constant_of(a, function), constant_of(b, function)),
-        term_differences("term",
-                         a.linear_terms(function, function + 1),
-                         b.linear_terms(function, function + 1)),
-        term_differences("quadratic term", quadratic_of(a, function), quadratic_of(b, function)),
+        term_table("term",
+                   a.linear_terms(function, function + 1),
+                   b.linear_terms(function, function + 1)),
+        term_table("quadratic term", quadratic_of(a, function), quadratic_of(b, function)),
         expression_difference(matching, root_of(a, function), root_of(b, function)),
         named(a, b, Family::Function, function),
     });
@@ -114,7 +114,7 @@ std::string special_ordered_set_difference(const Model &a, const Model &b, Index
 {
     return first_of({
         compared("kind", kind_of(a, sos), kind_of(b, sos)),
-        term_differences("member", a.members(sos, sos + 1), b.members(sos, sos + 1)),
+        term_table("member", a.members(sos, sos + 1), b.members(sos, sos + 1)),
         named(a, b, Family::SpecialOrderedSet, sos),
     });
 }
@@ -128,12 +128,10 @@ std::string cone_difference(const Model &a, const Model &b, Index cone)
 {
     return first_of({
         compared("kind", cone_kind(a, cone), cone_kind(b, cone)),
-        term_differences("member",
-                         a.cone_functions(cone, cone + 1),
-                         b.cone_functions(cone, cone + 1)),
-        term_differences("parameter",
-                         a.cone_parameters(cone, cone + 1),
-                         b.cone_parameters(cone, cone + 1)),
+        term_table("member", a.cone_functions(cone, cone + 1), b.cone_functions(cone, cone + 1)),
+        term_table("parameter",
+                   a.cone_parameters(cone, cone + 1),
+                   b.cone_parameters(cone, cone + 1)),
         differ(a.tolerance_of(Family::Cone, cone), b.tolerance_of(Family::Cone, cone)),
         named(a, b, Family::Cone, cone),
     });
@@ -149,7 +147,7 @@ std::string complement_difference(const Model &a, const Model &b, Index compleme
     });
 }
 
-std::string variable_differences(const Model &a, const Model &b)
+std::string variable_table(const Model &a, const Model &b)
 {
     const auto variable = [&](Index k) { return variable_difference(a, b, k); };
     return table_difference("variable", a.n_variables(), b.n_variables(), variable);
@@ -171,52 +169,52 @@ std::string piecewise_linear_difference(const Points &a, const Points &b, Offset
     return table_difference("point", size_of(x.x), size_of(y.x), point);
 }
 
-std::string piecewise_linear_differences(const Model &a, const Model &b)
+std::string piecewise_linear_table(const Model &a, const Model &b)
 {
     const Points &x = a.graph().points();
     const Points &y = b.graph().points();
-    const auto pwl = [&](Offset k) { return piecewise_linear_difference(x, y, k); };
-    return table_difference("pwl", x.size(), y.size(), pwl);
+    const auto piecewise_linear = [&](Offset k) { return piecewise_linear_difference(x, y, k); };
+    return table_difference("pwl", x.size(), y.size(), piecewise_linear);
 }
 
-std::string function_differences(const Model &a, const Model &b)
+std::string function_table(const Model &a, const Model &b)
 {
     Matching matching(a.graph(), b.graph());
     const auto function = [&](Index k) { return function_difference(a, b, k, matching); };
     return table_difference("function", a.n_functions(), b.n_functions(), function);
 }
 
-std::string constraint_differences(const Model &a, const Model &b)
+std::string constraint_table(const Model &a, const Model &b)
 {
     const auto constraint = [&](Index k) { return constraint_difference(a, b, k); };
     return table_difference("constraint", a.n_constraints(), b.n_constraints(), constraint);
 }
 
-std::string objective_differences(const Model &a, const Model &b)
+std::string objective_table(const Model &a, const Model &b)
 {
     const auto objective = [&](Index k) { return objective_difference(a, b, k); };
     return table_difference("objective", a.n_objectives(), b.n_objectives(), objective);
 }
 
-std::string indicator_differences(const Model &a, const Model &b)
+std::string indicator_table(const Model &a, const Model &b)
 {
     const auto indicator = [&](Index k) { return indicator_difference(a, b, k); };
     return table_difference("indicator", a.n_indicators(), b.n_indicators(), indicator);
 }
 
-std::string special_ordered_set_differences(const Model &a, const Model &b)
+std::string set_table(const Model &a, const Model &b)
 {
-    const auto sos = [&](Index k) { return special_ordered_set_difference(a, b, k); };
-    return table_difference("set", a.n_special_ordered_sets(), b.n_special_ordered_sets(), sos);
+    const auto entry = [&](Index k) { return special_ordered_set_difference(a, b, k); };
+    return table_difference("set", a.n_special_ordered_sets(), b.n_special_ordered_sets(), entry);
 }
 
-std::string cone_differences(const Model &a, const Model &b)
+std::string cone_table(const Model &a, const Model &b)
 {
     const auto cone = [&](Index k) { return cone_difference(a, b, k); };
     return table_difference("cone", a.n_cones(), b.n_cones(), cone);
 }
 
-std::string complement_differences(const Model &a, const Model &b)
+std::string complement_table(const Model &a, const Model &b)
 {
     const auto complement = [&](Index k) { return complement_difference(a, b, k); };
     return table_difference("complement", a.n_complements(), b.n_complements(), complement);
@@ -227,7 +225,7 @@ std::string callback_difference(const Model &a, const Model &b, Index callback)
     return differ(a.callback(callback), b.callback(callback));
 }
 
-std::string callback_differences(const Model &a, const Model &b)
+std::string callback_table(const Model &a, const Model &b)
 {
     const auto callback = [&](Index k) { return callback_difference(a, b, k); };
     return table_difference("callback", a.n_callbacks(), b.n_callbacks(), callback);
@@ -240,43 +238,43 @@ std::string difference(const Model &a, const Model &b)
     std::string found = compared("model name", a.name(), b.name());
     if (found.empty())
     {
-        found = variable_differences(a, b);
+        found = variable_table(a, b);
     }
     if (found.empty())
     {
-        found = piecewise_linear_differences(a, b);
+        found = piecewise_linear_table(a, b);
     }
     if (found.empty())
     {
-        found = function_differences(a, b);
+        found = function_table(a, b);
     }
     if (found.empty())
     {
-        found = constraint_differences(a, b);
+        found = constraint_table(a, b);
     }
     if (found.empty())
     {
-        found = objective_differences(a, b);
+        found = objective_table(a, b);
     }
     if (found.empty())
     {
-        found = indicator_differences(a, b);
+        found = indicator_table(a, b);
     }
     if (found.empty())
     {
-        found = special_ordered_set_differences(a, b);
+        found = set_table(a, b);
     }
     if (found.empty())
     {
-        found = cone_differences(a, b);
+        found = cone_table(a, b);
     }
     if (found.empty())
     {
-        found = complement_differences(a, b);
+        found = complement_table(a, b);
     }
     if (found.empty())
     {
-        found = callback_differences(a, b);
+        found = callback_table(a, b);
     }
     return found;
 }

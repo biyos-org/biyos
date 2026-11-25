@@ -69,7 +69,7 @@ template <typename T> const T &at(std::span<const T> terms, Offset k)
 }
 
 template <typename T>
-std::string term_differences(std::string_view noun, std::span<const T> a, std::span<const T> b)
+std::string term_table(std::string_view noun, std::span<const T> a, std::span<const T> b)
 {
     const auto term = [&](Offset k) { return differ(at(a, k), at(b, k)); };
     return table_difference(noun, size_of(a), size_of(b), term);
