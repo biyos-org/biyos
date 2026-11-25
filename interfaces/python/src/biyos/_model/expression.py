@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from enum import Enum
 from math import isinf, isnan
 from typing import Any, SupportsIndex, TypeGuard
 
@@ -267,7 +268,7 @@ class Operand:
             When ``other`` is NaN, or a number that leaves no value, such as
             ``-inf``.
         """
-        return _compared(self, other, lower=False, upper=True)
+        return _compared(self, other, ComparisonSense.LESS_EQUAL)
 
     def __ge__(self, other: "Term") -> "Comparison":
         """Return the constraint that the operand is at least another.
@@ -291,7 +292,7 @@ class Operand:
             When ``other`` is NaN, or a number that leaves no value, such as
             ``inf``.
         """
-        return _compared(self, other, lower=True, upper=False)
+        return _compared(self, other, ComparisonSense.GREATER_EQUAL)
 
     def __eq__(self, other: object) -> Any:
         """Return the constraint that the operand equals another.
@@ -318,7 +319,7 @@ class Operand:
         if not _term(other):
             return NotImplemented
         same = _same(self, other)
-        return _compared(self, other, lower=True, upper=True, same=same)
+        return _compared(self, other, ComparisonSense.EQUAL, same)
 
     def _key(self) -> tuple[object, int] | None:
         return None
@@ -378,6 +379,24 @@ class Piecewise(Expression):
         self._idx = idx
 
 
+class ComparisonSense(Enum):
+    """The senses of comparisons, each valued by its operator.
+
+    Attributes
+    ----------
+    LESS_EQUAL
+        The left side is at most the right side.
+    GREATER_EQUAL
+        The left side is at least the right side.
+    EQUAL
+        The two sides are equal.
+    """
+
+    LESS_EQUAL = "<="
+    GREATER_EQUAL = ">="
+    EQUAL = "=="
+
+
 class Comparison:
     """A constraint written as a comparison of two operands.
 
@@ -385,26 +404,64 @@ class Comparison:
     give a comparison, which ``Model.addcon`` takes. With an operand on each
     side it bounds their difference by 0, and with a number on one side it
     bounds the other side by the number, so ``x <= 3`` and ``3 >= x`` are
-    the same constraint. ``==`` between two variables is true when both
-    name one variable of one model, so variables serve as keys of
-    dictionaries and sets. Any other comparison has no truth value:
-    ``if x + 1 == y`` raises ``TypeError``, and so does a chained
-    ``0 <= x <= 1``.
+    the same constraint. The comparison keeps its sides and its sense in
+    ``lhs``, ``rhs`` and ``sense``, and ``repr`` writes it as a formula. A
+    number always lands in ``rhs``, since Python hands ``3 >= x`` to ``x``
+    as ``x <= 3``. ``==`` between two variables is true when both name one
+    variable of one model, so variables serve as keys of dictionaries and
+    sets. Any other comparison has no truth value: ``if x + 1 == y`` raises
+    ``TypeError``, and so does a chained ``0 <= x <= 1``.
     """
 
-    __slots__ = ("_body", "_lb", "_same", "_ub")
+    __slots__ = ("_body", "_lb", "_lhs", "_rhs", "_same", "_sense", "_ub")
 
     def __init__(
         self,
+        lhs: Operand,
+        sense: ComparisonSense,
+        rhs: Operand | float,
         body: Operand,
         lb: float,
         ub: float,
         same: bool | None = None,
     ) -> None:
+        self._lhs = lhs
+        self._sense = sense
+        self._rhs = rhs
         self._body = body
         self._lb = lb
         self._ub = ub
         self._same = same
+
+    @property
+    def lhs(self) -> Operand:
+        """The operand on the left."""
+        return self._lhs
+
+    @property
+    def rhs(self) -> Operand | float:
+        """The operand on the right, or the number as a ``float``."""
+        return self._rhs
+
+    @property
+    def sense(self) -> ComparisonSense:
+        """The operator between the two sides."""
+        return self._sense
+
+    def __repr__(self) -> str:
+        """Return the comparison as a formula.
+
+        Each side prints as an ``Expression`` prints, a number included, so
+        ``x[0] <= 2`` reads back as itself.
+
+        Returns
+        -------
+        text
+            The two sides around the operator.
+        """
+        lhs = printed(self._lhs)
+        rhs = printed(_operand(self._rhs))
+        return f"{lhs} {self._sense.value} {rhs}"
 
     def __bool__(self) -> bool:
         """Return whether ``==`` names one variable twice.
@@ -425,6 +482,13 @@ class Comparison:
                 "a comparison is a constraint and has no truth value"
             )
         return self._same
+
+
+_SIDES = {
+    ComparisonSense.LESS_EQUAL: (False, True),
+    ComparisonSense.GREATER_EQUAL: (True, False),
+    ComparisonSense.EQUAL: (True, True),
+}
 
 
 def _constant(value: float) -> Expression:
@@ -461,22 +525,24 @@ def _bound(value: float, lower: bool, upper: bool) -> float:
 def _compared(
     left: Operand,
     right: object,
-    lower: bool,
-    upper: bool,
+    sense: ComparisonSense,
     same: bool | None = None,
 ) -> Comparison:
     if not _term(right):
         found = type(right).__name__
         raise TypeError(f"an expression compares with a number, not {found}")
+    lower, upper = _SIDES[sense]
     body: Operand = left
     bound = 0.0
+    rhs: Operand | float = right
     if isinstance(right, Operand):
         body = _sum(left, right, -1.0)
     else:
         bound = _bound(float(right), lower, upper)
+        rhs = bound
     lb = bound if lower else -inf
     ub = bound if upper else inf
-    return Comparison(body, lb, ub, same)
+    return Comparison(left, sense, rhs, body, lb, ub, same)
 
 
 def _operand(value: object) -> Operand:
