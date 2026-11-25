@@ -43,7 +43,7 @@ std::size_t n_funs(const BIYOS_model &model)
     return static_cast<std::size_t>(model.core.n_functions());
 }
 
-void eval_f(BIYOS_model &model, const double *x, double *f)
+void eval_f(BIYOS_model &model, const BIYOS_real *x, BIYOS_real *f)
 {
     biyos::Evaluation &evaluation = evaluation_of(model);
     const auto point = sized(x, n_vars(model), "x");
@@ -52,7 +52,7 @@ void eval_f(BIYOS_model &model, const double *x, double *f)
     evaluation.values(lookup_of(model), point, values);
 }
 
-void eval_g(BIYOS_model &model, const double *x, double *g)
+void eval_g(BIYOS_model &model, const BIYOS_real *x, BIYOS_real *g)
 {
     biyos::Evaluation &evaluation = evaluation_of(model);
     const std::size_t nnz = evaluation.jacobian_pattern().variables.size();
@@ -62,7 +62,7 @@ void eval_g(BIYOS_model &model, const double *x, double *g)
     evaluation.jacobian(lookup_of(model), point, values);
 }
 
-void eval_h(BIYOS_model &model, const double *x, const double *w, double *h)
+void eval_h(BIYOS_model &model, const BIYOS_real *x, const BIYOS_real *w, BIYOS_real *h)
 {
     biyos::Evaluation &evaluation = evaluation_of(model);
     const std::size_t nnz = evaluation.hessian_pattern().rows.size();
@@ -73,7 +73,11 @@ void eval_h(BIYOS_model &model, const double *x, const double *w, double *h)
     evaluation.hessian(lookup_of(model), point, weights, values);
 }
 
-void eval_hv(BIYOS_model &model, const double *x, const double *w, const double *v, double *hv)
+void eval_hv(BIYOS_model &model,
+             const BIYOS_real *x,
+             const BIYOS_real *w,
+             const BIYOS_real *v,
+             BIYOS_real *hv)
 {
     biyos::Evaluation &evaluation = evaluation_of(model);
     const auto point = sized(x, n_vars(model), "x");
