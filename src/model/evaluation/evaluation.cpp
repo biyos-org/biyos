@@ -65,6 +65,7 @@ Compiled compiled_of(Env &env, const Model &model)
     Slots slots = slots_of(model, rooted, tape.pattern());
     Declared declared = declared_of(model);
     Hessian hessian(model.graph(), roots, declared.entries);
+    hessian.widen(model.n_variables());
     return Compiled{
         .rooted = std::move(rooted),
         .roots = std::move(roots),

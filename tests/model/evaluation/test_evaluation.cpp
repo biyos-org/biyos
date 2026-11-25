@@ -268,6 +268,7 @@ TEST(EvaluationTest, Empty)
     const Evaluation evaluation(env, model);
     EXPECT_EQ(evaluation.jacobian_pattern().starts, (std::vector<Offset>{0, 0, 0}));
     EXPECT_TRUE(evaluation.jacobian_pattern().variables.empty());
+    EXPECT_EQ(evaluation.hessian_pattern().starts, (std::vector<Offset>{0, 0, 0}));
     EXPECT_TRUE(evaluation.hessian_pattern().rows.empty());
 }
 
