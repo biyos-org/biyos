@@ -2,6 +2,7 @@
 
 #include "core/events/events.hpp"
 #include "core/events/hooks.hpp"
+#include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/text/strings.hpp"
 
@@ -31,7 +32,7 @@ class Settings
                  const BIYOS_model *model = nullptr,
                  Hooks *hooks = nullptr);
     void set_double(Option option,
-                    double value,
+                    Real value,
                     Events &events,
                     const BIYOS_model *model = nullptr,
                     Hooks *hooks = nullptr);

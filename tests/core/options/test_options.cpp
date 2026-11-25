@@ -1,5 +1,6 @@
 #include "core/error.hpp"
 #include "core/events/events.hpp"
+#include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/options/table.hpp"
 #include "core/timing/clock.hpp"
@@ -26,12 +27,13 @@ using biyos::EventLevel;
 using biyos::IntRule;
 using biyos::Option;
 using biyos::OptionSpec;
+using biyos::Real;
 using biyos::Scope;
 using biyos::Version;
 using Rows = std::array<OptionSpec, 3>;
 
-constexpr double kInfinity = std::numeric_limits<double>::infinity();
-constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 constexpr std::string_view kMalformed = "internal error: option table: is not well formed";
 constexpr Version kFirst{0, 0, 1};
 constexpr Version kSecond{0, 0, 2};

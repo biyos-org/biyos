@@ -1,6 +1,7 @@
 #include "core/options/settings.hpp"
 
 #include "core/error.hpp"
+#include "core/numbers.hpp"
 #include "core/options/table.hpp"
 #include "core/options/text.hpp"
 #include "core/options/value.hpp"
@@ -58,7 +59,7 @@ void Settings::set_int(Option option,
 }
 
 void Settings::set_double(Option option,
-                          double value,
+                          Real value,
                           Events &events,
                           const BIYOS_model *model,
                           Hooks *hooks)

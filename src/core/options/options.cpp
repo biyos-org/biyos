@@ -1,6 +1,7 @@
 #include "core/options/options.hpp"
 
 #include "core/error.hpp"
+#include "core/numbers.hpp"
 #include "core/options/checks.hpp"
 #include "core/options/table.hpp"
 #include "core/options/value.hpp"
@@ -29,7 +30,7 @@ int default_of(const IntRule &rule)
     return rule.default_value;
 }
 
-double default_of(const DoubleRule &rule)
+Real default_of(const DoubleRule &rule)
 {
     return rule.default_value;
 }
@@ -94,7 +95,7 @@ void Options::set_int(Option option, int value)
     store(option, value);
 }
 
-void Options::set_double(Option option, double value)
+void Options::set_double(Option option, Real value)
 {
     store(option, value);
 }
@@ -129,7 +130,7 @@ int Options::get_int(Option option) const
     return int_of(spec, values_[index_of(option)]);
 }
 
-double Options::get_double(Option option) const
+Real Options::get_double(Option option) const
 {
     const OptionSpec &spec = row_of(table_, option);
     return double_of(spec, values_[index_of(option)]);

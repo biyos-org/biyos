@@ -1,6 +1,7 @@
 #include "core/options/value.hpp"
 
 #include "core/error.hpp"
+#include "core/numbers.hpp"
 #include "core/options/table.hpp"
 #include "core/options/text.hpp"
 #include "core/text/text.hpp"
@@ -101,7 +102,7 @@ void admit(const OptionSpec &spec, int value)
     }
 }
 
-void admit(const OptionSpec &spec, double value)
+void admit(const OptionSpec &spec, Real value)
 {
     check_range(spec, rule_of<DoubleRule>(spec), value);
 }
@@ -180,10 +181,10 @@ int int_of(const OptionSpec &spec, const OptionValue &value)
     return std::get<int>(value);
 }
 
-double double_of(const OptionSpec &spec, const OptionValue &value)
+Real double_of(const OptionSpec &spec, const OptionValue &value)
 {
     rule_of<DoubleRule>(spec);
-    return std::get<double>(value);
+    return std::get<Real>(value);
 }
 
 std::string_view string_of(const OptionSpec &spec, const OptionValue &value)
