@@ -18,16 +18,6 @@ namespace biyos
 namespace
 {
 
-int kind_of(const Variable &variable)
-{
-    return static_cast<int>(variable.kind);
-}
-
-int sense_of(const Objective &objective)
-{
-    return static_cast<int>(objective.sense);
-}
-
 std::string point_difference(const PiecewiseLinear &a, const PiecewiseLinear &b, Offset k)
 {
     return first_of({
@@ -55,7 +45,7 @@ template <typename T> std::span<const T> all_of(const std::vector<T> &items)
 std::string differ(const Variable &a, const Variable &b)
 {
     return first_of({
-        compared("kind", kind_of(a), kind_of(b)),
+        compared("kind", a.kind, b.kind),
         compared("lower bound", a.lower, b.lower),
         compared("upper bound", a.upper, b.upper),
     });
@@ -99,7 +89,7 @@ std::string differ(const Objective &a, const Objective &b)
 {
     return first_of({
         compared("function", a.function, b.function),
-        compared("sense", sense_of(a), sense_of(b)),
+        compared("sense", a.sense, b.sense),
         compared("priority", a.priority, b.priority),
         compared("weight", a.weight, b.weight),
         compared("absolute tolerance", a.absolute, b.absolute),

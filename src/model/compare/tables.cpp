@@ -105,29 +105,21 @@ std::string indicator_difference(const Model &a, const Model &b, Index indicator
     });
 }
 
-int kind_of(const Model &model, Index sos)
-{
-    return static_cast<int>(model.kind_of_special_ordered_set(sos));
-}
-
 std::string special_ordered_set_difference(const Model &a, const Model &b, Index sos)
 {
     return first_of({
-        compared("kind", kind_of(a, sos), kind_of(b, sos)),
+        compared("kind", a.kind_of_special_ordered_set(sos), b.kind_of_special_ordered_set(sos)),
         term_table("member", a.members(sos, sos + 1), b.members(sos, sos + 1)),
         named(a, b, Family::SpecialOrderedSet, sos),
     });
 }
 
-int cone_kind(const Model &model, Index cone)
-{
-    return static_cast<int>(model.cone_kinds(cone, cone + 1).front());
-}
-
 std::string cone_difference(const Model &a, const Model &b, Index cone)
 {
     return first_of({
-        compared("kind", cone_kind(a, cone), cone_kind(b, cone)),
+        compared("kind",
+                 a.cone_kinds(cone, cone + 1).front(),
+                 b.cone_kinds(cone, cone + 1).front()),
         value_table("member",
                     "function",
                     a.cone_functions(cone, cone + 1),

@@ -12,6 +12,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 namespace biyos
 {
@@ -25,6 +26,14 @@ std::string compared(std::string_view field, Index a, Index b);
 std::string compared(std::string_view field, Offset a, Offset b);
 std::string compared(std::string_view field, double a, double b);
 std::string compared(std::string_view field, const std::string *a, const std::string *b);
+
+template <typename T>
+    requires std::is_enum_v<T>
+std::string compared(std::string_view field, T a, T b)
+{
+    return a == b ? std::string() : against(field, static_cast<int>(a), static_cast<int>(b));
+}
+
 std::string first_of(std::initializer_list<std::string> found);
 
 std::string differ(const Variable &a, const Variable &b);
