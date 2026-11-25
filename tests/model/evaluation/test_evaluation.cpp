@@ -35,6 +35,7 @@ using biyos::QuadraticTerm;
 using biyos::Real;
 using biyos::Request;
 using biyos::Variable;
+using biyos::evaluation::Point;
 using biyos::test::failure;
 using biyos::test::refusal;
 
@@ -408,7 +409,7 @@ TEST(EvaluationTest, Hessian)
     Evaluation evaluation(env, model);
     std::vector<Real> h(evaluation.hessian_pattern().rows.size());
     const std::vector<Real> w{0.7, -1.3};
-    evaluation.hessian(biyos::Lookup(env.options()), kPoint, w, h);
+    evaluation.hessian(biyos::Lookup(env.options()), {.x = kPoint, .w = w, .v = {}}, h);
     expect_near(h, std::vector{2.0 * -1.3, 0.5 * 0.7, -1.3 * -std::sin(1.1)}, kExact);
 }
 
@@ -420,7 +421,7 @@ TEST(EvaluationTest, Fallback)
     std::vector<Real> hv(3);
     const std::vector<Real> w{0.7, -1.3};
     const std::vector<Real> v{0.4, -0.9, 1.7};
-    evaluation.product(biyos::Lookup(env.options()), kPoint, w, v, hv);
+    evaluation.product(biyos::Lookup(env.options()), {.x = kPoint, .w = w, .v = v}, hv);
     const std::vector<Real> wanted{2.0 * -1.3 * 0.4 + 0.5 * 0.7 * -0.9,
                                    0.5 * 0.7 * 0.4,
                                    -1.3 * -std::sin(1.1) * 1.7};
@@ -437,8 +438,9 @@ TEST(EvaluationTest, Direct)
     Evaluation evaluation(env, model);
     std::vector<Real> hv(2, kStale);
     const std::vector<Real> x{1.0, 2.0};
+    const std::vector<Real> w{0.5};
     const std::vector<Real> v{3.0, 4.0};
-    evaluation.product(biyos::Lookup(env.options()), x, std::vector{0.5}, v, hv);
+    evaluation.product(biyos::Lookup(env.options()), {.x = x, .w = w, .v = v}, hv);
     expect_near(hv, std::vector{3.0, 0.0}, kExact);
 }
 
@@ -450,12 +452,13 @@ TEST(EvaluationTest, Unsupported)
     const biyos::Lookup lookup(env.options());
     const std::vector<Real> x{1.0, 2.0};
     const std::vector<Real> w{1.0};
+    const Point point{.x = x, .w = w, .v = x};
     std::vector<Real> h(evaluation.hessian_pattern().rows.size());
-    EXPECT_EQ(failure([&] { evaluation.hessian(lookup, x, w, h); }, biyos::ErrorKind::Unsupported),
+    EXPECT_EQ(failure([&] { evaluation.hessian(lookup, point, h); }, biyos::ErrorKind::Unsupported),
               "unsupported: callback 0: has no Hessian");
     std::vector<Real> hv(2, kStale);
     EXPECT_EQ(
-        failure([&] { evaluation.product(lookup, x, w, x, hv); }, biyos::ErrorKind::Unsupported),
+        failure([&] { evaluation.product(lookup, point, hv); }, biyos::ErrorKind::Unsupported),
         "unsupported: callback 0: has no Hessian");
     expect_near(hv, std::vector(2, kStale), kExact);
 }
@@ -471,13 +474,14 @@ TEST(EvaluationTest, SecondNegative)
     const biyos::Lookup lookup(env.options());
     const std::vector<Real> x{1.0, 2.0};
     const std::vector<Real> w{1.0, 1.0};
+    const Point point{.x = x, .w = w, .v = x};
     std::vector<Real> h(1);
-    EXPECT_EQ(failure([&] { evaluation.hessian(lookup, x, w, h); }, biyos::ErrorKind::Callback),
+    EXPECT_EQ(failure([&] { evaluation.hessian(lookup, point, h); }, biyos::ErrorKind::Callback),
               "callback: callback 0: Hessian returned -3");
     model.set_callback_hessian_product(0, returning);
     Evaluation rebuilt(env, model);
     std::vector<Real> hv(2);
-    EXPECT_EQ(failure([&] { rebuilt.product(lookup, x, w, x, hv); }, biyos::ErrorKind::Callback),
+    EXPECT_EQ(failure([&] { rebuilt.product(lookup, point, hv); }, biyos::ErrorKind::Callback),
               "callback: callback 0: Hessian product returned -3");
 }
 
@@ -487,17 +491,18 @@ TEST(EvaluationTest, SecondSizes)
     const Model model = merged();
     Evaluation evaluation(env, model);
     const biyos::Lookup lookup(env.options());
+    const std::vector<Real> one{1.0};
+    const std::vector<Real> two{1.0, 1.0};
     std::vector<Real> h(3);
-    EXPECT_EQ(refusal([&] { evaluation.hessian(lookup, kPoint, std::vector{1.0}, h); }),
+    EXPECT_EQ(refusal([&] { evaluation.hessian(lookup, {.x = kPoint, .w = one, .v = {}}, h); }),
               "invalid argument: argument 'w': size 1, not 2");
     std::vector<Real> small(2);
-    EXPECT_EQ(refusal([&] { evaluation.hessian(lookup, kPoint, std::vector{1.0, 1.0}, small); }),
+    EXPECT_EQ(refusal([&] { evaluation.hessian(lookup, {.x = kPoint, .w = two, .v = {}}, small); }),
               "invalid argument: argument 'h': size 2, not 3");
     std::vector<Real> hv(3);
+    EXPECT_EQ(refusal([&] { evaluation.product(lookup, {.x = kPoint, .w = two, .v = small}, hv); }),
+              "invalid argument: argument 'v': size 2, not 3");
     EXPECT_EQ(
-        refusal([&] { evaluation.product(lookup, kPoint, std::vector{1.0, 1.0}, small, hv); }),
-        "invalid argument: argument 'v': size 2, not 3");
-    EXPECT_EQ(
-        refusal([&] { evaluation.product(lookup, kPoint, std::vector{1.0, 1.0}, kPoint, small); }),
+        refusal([&] { evaluation.product(lookup, {.x = kPoint, .w = two, .v = kPoint}, small); }),
         "invalid argument: argument 'hv': size 2, not 3");
 }

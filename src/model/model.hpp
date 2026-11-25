@@ -2,6 +2,7 @@
 
 #include "biyos/biyos.h"
 #include "core/numbers.hpp"
+#include "core/text/name.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/uses.hpp"
@@ -18,6 +19,8 @@
 
 namespace biyos
 {
+
+inline constexpr StaticName kModule = "model";
 
 enum class VariableKind
 {

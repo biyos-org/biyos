@@ -70,7 +70,7 @@ void eval_h(BIYOS_model &model, const BIYOS_real *x, const BIYOS_real *w, BIYOS_
     const auto weights = sized(w, n_funs(model), "w");
     const auto values = sized(h, nnz, "h");
     const Running running(model);
-    evaluation.hessian(lookup_of(model), point, weights, values);
+    evaluation.hessian(lookup_of(model), {.x = point, .w = weights, .v = {}}, values);
 }
 
 void eval_hv(BIYOS_model &model,
@@ -85,7 +85,7 @@ void eval_hv(BIYOS_model &model,
     const auto direction = sized(v, n_vars(model), "v");
     const auto values = sized(hv, n_vars(model), "hv");
     const Running running(model);
-    evaluation.product(lookup_of(model), point, weights, direction, values);
+    evaluation.product(lookup_of(model), {.x = point, .w = weights, .v = direction}, values);
 }
 
 }

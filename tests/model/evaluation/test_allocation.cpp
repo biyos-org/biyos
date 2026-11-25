@@ -91,7 +91,7 @@ TEST(AllocationTest, Evaluation)
     const std::size_t start = biyos::test::allocations();
     evaluation.values(lookup, kPoint, f);
     evaluation.jacobian(lookup, kPoint, g);
-    evaluation.hessian(lookup, kPoint, w, h);
-    evaluation.product(lookup, kPoint, w, kPoint, hv);
+    evaluation.hessian(lookup, {.x = kPoint, .w = w, .v = {}}, h);
+    evaluation.product(lookup, {.x = kPoint, .w = w, .v = kPoint}, hv);
     EXPECT_EQ(biyos::test::allocations() - start, 0U);
 }

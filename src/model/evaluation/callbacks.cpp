@@ -1,4 +1,4 @@
-#include "model/evaluation/user.hpp"
+#include "model/evaluation/callbacks.hpp"
 
 #include "core/check.hpp"
 #include "core/error.hpp"
@@ -17,7 +17,7 @@
 #include <string>
 #include <string_view>
 
-namespace biyos
+namespace biyos::evaluation
 {
 
 namespace
@@ -100,7 +100,7 @@ void require(const Callback &callback, Index index, Part part)
     }
 }
 
-void require_all(const Model &model, Part part)
+void require(const Model &model, Part part)
 {
     for (Index c = 0; c < model.n_callbacks(); ++c)
     {
@@ -108,11 +108,11 @@ void require_all(const Model &model, Part part)
     }
 }
 
-void run(const Checker &checker,
-         const Callback &callback,
-         Part part,
-         const Request &request,
-         std::span<Real> out)
+void evaluate(const Checker &checker,
+              const Callback &callback,
+              Part part,
+              const Request &request,
+              std::span<Real> out)
 {
     require(callback, request.callback, part);
     std::ranges::fill(out, 0.0);
