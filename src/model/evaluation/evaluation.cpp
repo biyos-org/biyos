@@ -112,7 +112,7 @@ void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span
     {
         f[to_size(program_.rooted[e])] += values_[e];
     }
-    evaluate_function(Checker(env_, lookup, kModule), {.x = x, .w = {}, .v = {}}, f);
+    evaluate_function(Checker(env_.stream(), lookup, kModule), {.x = x, .w = {}, .v = {}}, f);
 }
 
 void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::span<Real> g)
@@ -128,7 +128,7 @@ void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::sp
     {
         g[to_size(layout.slots.tape[p])] += gradients_[p];
     }
-    evaluate_jacobian(Checker(env_, lookup, kModule), {.x = x, .w = {}, .v = {}}, g);
+    evaluate_jacobian(Checker(env_.stream(), lookup, kModule), {.x = x, .w = {}, .v = {}}, g);
 }
 
 void Evaluation::check(std::string_view argument, std::size_t size, std::size_t wanted)

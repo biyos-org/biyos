@@ -48,7 +48,7 @@ void Evaluation::hessian(const Lookup &lookup, const Point &point, std::span<Rea
     require(model_, Part::Hessian);
     program_.hessian.values(point.x, weights_, h);
     term_hessian(point.w, h);
-    evaluate_hessian(Checker(env_, lookup, kModule), point, h);
+    evaluate_hessian(Checker(env_.stream(), lookup, kModule), point, h);
 }
 
 void Evaluation::product(const Lookup &lookup, const Point &point, std::span<Real> hv)
@@ -61,7 +61,7 @@ void Evaluation::product(const Lookup &lookup, const Point &point, std::span<Rea
     require_products(model_);
     program_.hessian.product(point.x, weights_, point.v, hv);
     term_hessian_product(point, hv);
-    evaluate_hessian_product(Checker(env_, lookup, kModule), point, hv);
+    evaluate_hessian_product(Checker(env_.stream(), lookup, kModule), point, hv);
 }
 
 void Evaluation::weigh(std::span<const Real> w)
