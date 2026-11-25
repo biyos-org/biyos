@@ -51,6 +51,15 @@ Piece piece_at(const Pwl &pwl, std::size_t anchor, Interval child) noexcept
     };
 }
 
+Interval rise_over(Interval slope, double from, double t) noexcept
+{
+    if (std::isinf(t - from))
+    {
+        return slope * point(t) + -(slope * point(from));
+    }
+    return slope * (point(t) + point(-from));
+}
+
 Interval value_at(const Pwl &pwl, const Piece &piece, double t) noexcept
 {
     const double x = pwl.x[piece.anchor];
@@ -59,12 +68,7 @@ Interval value_at(const Pwl &pwl, const Piece &piece, double t) noexcept
     {
         return point(y);
     }
-    return point(y) + slope(pwl, piece.segment) * (point(t) + point(-x));
-}
-
-bool overflows(double t, double x) noexcept
-{
-    return std::isfinite(t) && std::isinf(t - x);
+    return point(y) + rise_over(slope(pwl, piece.segment), x, t);
 }
 
 double lowest(const Pwl &pwl, const Piece &piece, double t) noexcept
@@ -82,11 +86,6 @@ Interval range_of(const Pwl &pwl, const Piece &piece) noexcept
     if (is_flat(pwl, piece.segment))
     {
         return point(pwl.y[piece.anchor]);
-    }
-    const double x = pwl.x[piece.anchor];
-    if (overflows(piece.from, x) || overflows(piece.to, x))
-    {
-        return Interval::entire();
     }
     const bool rising = pwl.y[piece.segment + 1] > pwl.y[piece.segment];
     const double low = rising ? piece.from : piece.to;

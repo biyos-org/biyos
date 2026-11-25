@@ -30,6 +30,7 @@ using Wide = long double;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kSlack = 1e-14;
+constexpr double kCoarse = 1e-12;
 constexpr std::uint64_t kSeed = 20261124;
 constexpr int kLines = 400;
 constexpr int kBoxes = 12;
@@ -53,10 +54,10 @@ Interval enclose(const Line &line, double lower, double upper)
     return biyos::piecewise(line.pwl(), {lower, upper});
 }
 
-testing::AssertionResult near(Interval found, double lower, double upper)
+testing::AssertionResult near(Interval found, double lower, double upper, double slack = kSlack)
 {
     const testing::AssertionResult held = holds(found, lower, upper);
-    return held ? within(found, lower - kSlack, upper + kSlack) : held;
+    return held ? within(found, lower - slack, upper + slack) : held;
 }
 
 std::size_t segment_of(const Line &line, double t)
@@ -287,13 +288,24 @@ TEST(EnclosureTest, Breakpoint)
 TEST(EnclosureTest, Overflow)
 {
     const Line far{.x = {-1.5e308, -1e308}, .y = {0.0, 10.0}};
-    EXPECT_TRUE(exact(enclose(far, 1e308, 1.5e308), -kInfinity, kInfinity));
-    EXPECT_TRUE(exact(enclose(far, -1e308, 1e308), -kInfinity, kInfinity));
-    EXPECT_TRUE(holds(enclose(far, -1e308, 0.0), 10.0, 30.0));
-    EXPECT_TRUE(within(enclose(far, -1e308, 0.0), 10.0, 30.0 + 1e-12));
+    EXPECT_TRUE(near(enclose(far, 1e308, 1.5e308), 50.0, 60.0, kCoarse));
+    EXPECT_TRUE(near(enclose(far, -1e308, 1e308), 10.0, 50.0, kCoarse));
+    EXPECT_TRUE(near(enclose(far, -1e308, 0.0), 10.0, 30.0, kCoarse));
     const Line back{.x = {1e308, 1.5e308}, .y = {0.0, 10.0}};
-    EXPECT_TRUE(exact(enclose(back, -1.5e308, -1e308), -kInfinity, kInfinity));
-    EXPECT_TRUE(exact(enclose(back, -1e308, 0.0), -kInfinity, kInfinity));
+    EXPECT_TRUE(near(enclose(back, -1.5e308, -1e308), -50.0, -40.0, kCoarse));
+    EXPECT_TRUE(near(enclose(back, -1e308, 0.0), -40.0, -20.0, kCoarse));
+}
+
+TEST(EnclosureTest, Distant)
+{
+    std::mt19937_64 engine(kSeed);
+    int reported = 0;
+    const Line far{.x = {-1.5e308, -1e308, -5e307}, .y = {0.0, 10.0, -5.0}};
+    for (const double end : {1e308, 1.5e308, (std::numeric_limits<double>::max)()})
+    {
+        expect_sampled(far, {-1.2e308, end}, engine, reported);
+        expect_sampled(far, {1e307, end}, engine, reported);
+    }
 }
 
 TEST(EnclosureTest, Sampled)
