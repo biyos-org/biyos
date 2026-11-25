@@ -10,7 +10,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace biyos
 {
@@ -21,8 +20,8 @@ namespace
 std::string point_difference(const PiecewiseLinear &a, const PiecewiseLinear &b, Offset k)
 {
     return first_of({
-        compared("x", at(a.x, k), at(b.x, k)),
-        compared("y", at(a.y, k), at(b.y, k)),
+        compared("x", a.x[to_size(k)], b.x[to_size(k)]),
+        compared("y", a.y[to_size(k)], b.y[to_size(k)]),
     });
 }
 
@@ -33,11 +32,6 @@ std::string presence(std::string_view field, const Routine &a, const Routine &b)
         return "";
     }
     return std::string(field) + (a ? " given against none" : " none against given");
-}
-
-template <typename T> std::span<const T> all_of(const std::vector<T> &items)
-{
-    return items;
 }
 
 }
@@ -137,18 +131,18 @@ std::string differ(const Tolerance &a, const Tolerance &b)
 std::string differ(const PiecewiseLinear &a, const PiecewiseLinear &b)
 {
     const auto point = [&](Offset k) { return point_difference(a, b, k); };
-    return table_difference("point", size_of(a.x), size_of(b.x), point);
+    return table_difference("point", to_offset(a.x.size()), to_offset(b.x.size()), point);
 }
 
 std::string differ(const Callback &a, const Callback &b)
 {
     return first_of({
-        value_table("covered function", "index", all_of(a.covered), all_of(b.covered)),
+        value_table("covered function", "index", std::span(a.covered), std::span(b.covered)),
         a.data == b.data ? "" : "data differs",
         presence("value function", a.function, b.function),
-        term_table("Jacobian entry", all_of(a.jacobian_pairs), all_of(b.jacobian_pairs)),
+        term_table("Jacobian entry", std::span(a.jacobian_pairs), std::span(b.jacobian_pairs)),
         presence("Jacobian function", a.jacobian, b.jacobian),
-        term_table("Hessian entry", all_of(a.hessian_pairs), all_of(b.hessian_pairs)),
+        term_table("Hessian entry", std::span(a.hessian_pairs), std::span(b.hessian_pairs)),
         presence("Hessian function", a.hessian, b.hessian),
         presence("Hessian product", a.hessian_product, b.hessian_product),
     });
