@@ -105,7 +105,7 @@ TEST(FirewallTest, FailureModel)
     EXPECT_EQ(biyos::capi::guard(session.stream(), [] { throw std::bad_alloc(); }),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, &session);
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.last_error().kind, biyos::ErrorKind::NoMemory);
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, nullptr);
     EXPECT_EQ(seen, (std::vector<const biyos::Session *>{&session, nullptr}));

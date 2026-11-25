@@ -629,7 +629,7 @@ TEST(AllocationTest, ScopedError)
     const biyos::Session session(env);
     session.stream().record(biyos::ErrorKind::NoMemory, outer);
     biyos::test::in_delivery(env, failed_scope);
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.last_error().kind, biyos::ErrorKind::NoMemory);
     EXPECT_EQ(env.last_error().model, &session);
     EXPECT_STREQ(env.last_error().text, outer.c_str());
 }

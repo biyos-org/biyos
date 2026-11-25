@@ -24,13 +24,13 @@ void assign(std::string &kept, std::string_view text) noexcept
 
 }
 
-void Records::put(BIYOS_status status, const Session *model, std::string_view text) noexcept
+void Records::put(ErrorKind kind, const Session *model, std::string_view text) noexcept
 {
     try
     {
         const std::lock_guard held(lock_);
         Record &record = slot(this_thread());
-        record.status = status;
+        record.kind = kind;
         record.model = model;
         assign(record.text, text);
     }
@@ -44,7 +44,7 @@ RecordView Records::get() const noexcept
     const std::lock_guard held(lock_);
     const auto found = std::ranges::find(entries_, this_thread(), &Entry::thread);
     const Record &record = found == entries_.end() ? none_ : found->record;
-    return RecordView{.status = record.status, .model = record.model, .text = record.text.c_str()};
+    return RecordView{.kind = record.kind, .model = record.model, .text = record.text.c_str()};
 }
 
 void Records::swap(Record &record) noexcept
@@ -57,7 +57,7 @@ void Records::swap(Record &record) noexcept
         {
             std::swap(found->record, record);
         }
-        else if (record.status != BIYOS_OK)
+        else if (record.kind.has_value())
         {
             std::swap(slot(this_thread()), record);
         }
