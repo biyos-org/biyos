@@ -21,7 +21,7 @@ class Points
     Points();
 
     Offset size() const noexcept;
-    PiecewiseLinear pwl(Offset index) const noexcept;
+    PiecewiseLinear piecewise_linear(Offset index) const noexcept;
 
     Offset add(std::span<const double> x, std::span<const double> y);
     void truncate(Offset size) noexcept;

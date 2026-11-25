@@ -43,7 +43,7 @@ void expect_stored(const Points &points,
                    std::span<const double> x,
                    std::span<const double> y)
 {
-    const PiecewiseLinear stored = points.pwl(pwl);
+    const PiecewiseLinear stored = points.piecewise_linear(pwl);
     EXPECT_EQ(bits(stored.x), bits(x));
     EXPECT_EQ(bits(stored.y), bits(y));
 }

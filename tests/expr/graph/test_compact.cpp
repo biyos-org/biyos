@@ -255,8 +255,10 @@ TEST(CompactTest, WholeTable)
     ASSERT_EQ(points.size(), 2);
     for (Offset pwl = 0; pwl < points.size(); ++pwl)
     {
-        EXPECT_EQ(bits(points.pwl(pwl).x), bits(graph.points().pwl(pwl).x));
-        EXPECT_EQ(bits(points.pwl(pwl).y), bits(graph.points().pwl(pwl).y));
+        EXPECT_EQ(bits(points.piecewise_linear(pwl).x),
+                  bits(graph.points().piecewise_linear(pwl).x));
+        EXPECT_EQ(bits(points.piecewise_linear(pwl).y),
+                  bits(graph.points().piecewise_linear(pwl).y));
     }
     EXPECT_EQ(compact(graph, {}).graph.points().size(), 2);
 }

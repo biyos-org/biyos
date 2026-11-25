@@ -86,7 +86,7 @@ Offset Points::size() const noexcept
     return to_offset(starts_.size()) - 1;
 }
 
-PiecewiseLinear Points::pwl(Offset index) const noexcept
+PiecewiseLinear Points::piecewise_linear(Offset index) const noexcept
 {
     const std::size_t start = to_size(starts_[to_size(index)]);
     const std::size_t n = to_size(starts_[to_size(index) + 1]) - start;

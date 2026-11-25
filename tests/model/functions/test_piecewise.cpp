@@ -120,7 +120,7 @@ TEST(PiecewiseTest, Added)
     EXPECT_EQ(std::vector<Offset>(model.graph().children(node).begin(),
                                   model.graph().children(node).end()),
               std::vector<Offset>{x});
-    const biyos::PiecewiseLinear pwl = model.graph().points().pwl(1);
+    const biyos::PiecewiseLinear pwl = model.graph().points().piecewise_linear(1);
     EXPECT_EQ(bits(pwl.x), bits(kKinks));
     EXPECT_EQ(bits(pwl.y), bits(kHeights));
 }
@@ -133,9 +133,9 @@ TEST(PiecewiseTest, Batch)
     const std::array y{1.0, 0.0, 3.0, -0.0, 7.0};
     EXPECT_EQ(model.add_piecewise_linears(starts, x, y), 2);
     EXPECT_EQ(model.graph().points().size(), 4);
-    EXPECT_EQ(bits(model.graph().points().pwl(2).x), bits(kKinks));
-    EXPECT_EQ(bits(model.graph().points().pwl(3).x), bits(std::span(x).last(2)));
-    EXPECT_EQ(bits(model.graph().points().pwl(3).y), bits(std::span(y).last(2)));
+    EXPECT_EQ(bits(model.graph().points().piecewise_linear(2).x), bits(kKinks));
+    EXPECT_EQ(bits(model.graph().points().piecewise_linear(3).x), bits(std::span(x).last(2)));
+    EXPECT_EQ(bits(model.graph().points().piecewise_linear(3).y), bits(std::span(y).last(2)));
     const std::array<Offset, 1> none{0};
     EXPECT_EQ(model.add_piecewise_linears(none, {}, {}), 4);
     EXPECT_EQ(model.graph().points().size(), 4);

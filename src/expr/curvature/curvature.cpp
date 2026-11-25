@@ -55,7 +55,7 @@ Curvature unary(const Profile &profile, std::span<Argument> arguments) noexcept
 
 PiecewiseLinear piecewise_linear_of(const Graph &graph, Offset node) noexcept
 {
-    return graph.points().pwl(graph.piecewise_linear(node));
+    return graph.points().piecewise_linear(graph.piecewise_linear(node));
 }
 
 Curvature outer_of(const Graph &graph,

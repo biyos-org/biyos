@@ -139,7 +139,8 @@ class ChainRule
         case Operator::Erf:
             return std::erf(x);
         case Operator::PiecewiseLinear:
-            return biyos::value_at(graph_.points().pwl(graph_.piecewise_linear(node)), x);
+            return biyos::value_at(graph_.points().piecewise_linear(graph_.piecewise_linear(node)),
+                                   x);
         }
         return (std::numeric_limits<double>::quiet_NaN)();
     }
@@ -278,7 +279,7 @@ class ChainRule
         case Operator::Erf:
             return 2.0L / std::sqrt(std::numbers::pi_v<Wide>) * std::exp(-x * x);
         case Operator::PiecewiseLinear:
-            return biyos::slope_at(graph_.points().pwl(graph_.piecewise_linear(node)),
+            return biyos::slope_at(graph_.points().piecewise_linear(graph_.piecewise_linear(node)),
                                    child(node, 0));
         }
         return 0.0L;

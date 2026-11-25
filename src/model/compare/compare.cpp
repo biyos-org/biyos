@@ -313,8 +313,8 @@ std::string point_difference(const PiecewiseLinear &a, const PiecewiseLinear &b,
 
 std::string piecewise_linear_difference(const Points &a, const Points &b, Offset pwl)
 {
-    const PiecewiseLinear x = a.pwl(pwl);
-    const PiecewiseLinear y = b.pwl(pwl);
+    const PiecewiseLinear x = a.piecewise_linear(pwl);
+    const PiecewiseLinear y = b.piecewise_linear(pwl);
     const auto point = [&](Offset k) { return point_difference(x, y, k); };
     return table_difference("point", size_of(x.x), size_of(y.x), point);
 }
