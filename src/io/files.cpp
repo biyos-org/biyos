@@ -2,6 +2,7 @@
 
 #include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/events/stream.hpp"
 #include "core/options/settings.hpp"
 #include "core/timing/timer.hpp"
 #include "io/draft/draft.hpp"
@@ -71,7 +72,7 @@ FileFormat find_format(int id)
 
 Model read_file(Env &env, std::string_view path, FileFormat format)
 {
-    const EntryTimer timer(env, "io", "read");
+    const EntryTimer timer(env.stream(), "io", "read");
     const std::string file(path);
     const std::filesystem::path location = path_of(path);
     std::error_code code;
@@ -98,7 +99,7 @@ void write_file(Env &env,
                 std::string_view path,
                 FileFormat format)
 {
-    const EntryTimer timer(env, "io", "write");
+    const EntryTimer timer(env.stream(), "io", "write");
     const std::string file(path);
     switch (format)
     {

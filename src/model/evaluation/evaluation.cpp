@@ -4,6 +4,7 @@
 #include "core/check.hpp"
 #include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/text/text.hpp"
@@ -49,7 +50,7 @@ constexpr std::size_t kSpans = 4;
 
 Program program_of(Env &env, const Model &model)
 {
-    const EntryTimer timer(env, kModule, "evaluation");
+    const EntryTimer timer(env.stream(), kModule, "evaluation");
     std::vector<Index> rooted;
     std::vector<Offset> roots;
     const std::span<const Offset> all = model.roots(0, model.n_functions());
@@ -101,7 +102,7 @@ const Lower &Evaluation::hessian_pattern() const noexcept
 
 void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span<Real> f)
 {
-    const Timer timer(env_, tree_, kModule, "values");
+    const Timer timer(env_.stream(), tree_, kModule, "values");
     check(x);
     check("f", f.size(), to_size(model_.n_functions()));
     require(model_, Part::Function);
@@ -116,7 +117,7 @@ void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span
 
 void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::span<Real> g)
 {
-    const Timer timer(env_, tree_, kModule, "jacobian");
+    const Timer timer(env_.stream(), tree_, kModule, "jacobian");
     check(x);
     const evaluation::Layout &layout = program_.layout;
     check("g", g.size(), layout.pattern.variables.size());

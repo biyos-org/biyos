@@ -1,6 +1,7 @@
 #include "allocations.hpp"
 #include "core/env.hpp"
 #include "core/events/events.hpp"
+#include "core/events/stream.hpp"
 #include "core/timing/clock.hpp"
 #include "core/timing/timer.hpp"
 #include "delivery.hpp"
@@ -18,10 +19,10 @@ void ignore(const biyos::Event &) {}
 
 void run(biyos::Env &env, biyos::TimingTree &tree)
 {
-    const biyos::Timer solve(env, tree, "nlp", "solve");
+    const biyos::Timer solve(env.stream(), tree, "nlp", "solve");
     for (int step = 0; step < 3; ++step)
     {
-        const biyos::Timer iterate(env, tree, "nlp", "iterate");
+        const biyos::Timer iterate(env.stream(), tree, "nlp", "iterate");
     }
 }
 

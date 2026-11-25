@@ -2,6 +2,7 @@
 
 #include "capi/model/selection.hpp"
 #include "capi/utils/entry.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/timing/timer.hpp"
 #include "model/model.hpp"
@@ -26,7 +27,7 @@ void delete_records(Session &session, Selection selection, BIYOS_index *map)
 {
     Model &model = writable(session);
     const auto chosen = selected(model, Target, selection);
-    const biyos::EntryTimer timer(session.env(), biyos::kModule, "delete");
+    const biyos::EntryTimer timer(session.env().stream(), biyos::kModule, "delete");
     const std::vector<biyos::Index> renumbered = (model.*Delete)(chosen);
     if (map != nullptr)
     {

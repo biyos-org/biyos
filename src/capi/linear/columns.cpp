@@ -3,6 +3,7 @@
 #include "capi/model/selection.hpp"
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/timing/timer.hpp"
 #include "model/checks.hpp"
@@ -90,7 +91,7 @@ template <typename Selection>
 void n_column_terms(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(session.model(), Family::Variable, selection);
-    const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
+    const biyos::EntryTimer timer(session.env().stream(), biyos::kModule, "columns");
     const std::size_t count = count_of(every_start(session.model()), chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
@@ -102,7 +103,7 @@ void get_listed(const Session &session,
                 const Coordinates &out)
 {
     const auto chosen = selected(session.model(), Family::Variable, list);
-    const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
+    const biyos::EntryTimer timer(session.env().stream(), biyos::kModule, "columns");
     std::vector<biyos::Offset> starts = every_start(session.model());
     const std::size_t count = count_of(starts, chosen);
     check_capacity(capacity, count);
@@ -120,7 +121,7 @@ void get_ranged(const Session &session,
                 BIYOS_index *functions,
                 BIYOS_real *values)
 {
-    const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
+    const biyos::EntryTimer timer(session.env().stream(), biyos::kModule, "columns");
     const std::vector<biyos::Offset> found =
         biyos::variable_starts(session.model(), range.start, range.stop);
     const auto count = to_size(found.back());
