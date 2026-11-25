@@ -28,18 +28,18 @@ namespace
 {
 struct Fields
 {
-    const int *functions = nullptr;
-    const int *multipliers = nullptr;
-    const double *lower = nullptr;
-    const double *upper = nullptr;
+    const BIYOS_index *functions = nullptr;
+    const BIYOS_index *multipliers = nullptr;
+    const BIYOS_real *lower = nullptr;
+    const BIYOS_real *upper = nullptr;
 };
 
 struct Outputs
 {
-    int *functions = nullptr;
-    int *multipliers = nullptr;
-    double *lower = nullptr;
-    double *upper = nullptr;
+    BIYOS_index *functions = nullptr;
+    BIYOS_index *multipliers = nullptr;
+    BIYOS_real *lower = nullptr;
+    BIYOS_real *upper = nullptr;
 };
 
 template <typename T> T entry_or(const T *values, std::size_t k, T held)
@@ -64,7 +64,7 @@ biyos::Complement given(biyos::Complement complement, std::size_t k, const Field
     return complement;
 }
 
-void add_complements(BIYOS_model &model, int n, const Fields &fields, int *start)
+void add_complements(BIYOS_model &model, BIYOS_index n, const Fields &fields, BIYOS_index *start)
 {
     biyos::Model &core = writable(model);
     const std::size_t size = length(n);
@@ -107,7 +107,7 @@ void set_bounds(BIYOS_model &model, Selection selection, const Fields &fields)
     core.set_complements(changed, complements);
 }
 
-void n_complements(const BIYOS_model &model, int *n)
+void n_complements(const BIYOS_model &model, BIYOS_index *n)
 {
     *require(n, "n") = model.core.n_complements();
 }

@@ -25,21 +25,21 @@ namespace
 
 struct Fields
 {
-    const int *senses = nullptr;
-    const int *priorities = nullptr;
-    const double *weights = nullptr;
-    const double *absolute = nullptr;
-    const double *relative = nullptr;
+    const BIYOS_int *senses = nullptr;
+    const BIYOS_int *priorities = nullptr;
+    const BIYOS_real *weights = nullptr;
+    const BIYOS_real *absolute = nullptr;
+    const BIYOS_real *relative = nullptr;
 };
 
 struct Outputs
 {
-    int *functions = nullptr;
-    int *senses = nullptr;
-    int *priorities = nullptr;
-    double *weights = nullptr;
-    double *absolute = nullptr;
-    double *relative = nullptr;
+    BIYOS_index *functions = nullptr;
+    BIYOS_int *senses = nullptr;
+    BIYOS_int *priorities = nullptr;
+    BIYOS_real *weights = nullptr;
+    BIYOS_real *absolute = nullptr;
+    BIYOS_real *relative = nullptr;
 };
 
 template <typename T> T entry_or(const T *values, std::size_t k, T held)
@@ -57,7 +57,7 @@ template <typename T> void put(T *values, std::size_t k, T value)
 
 biyos::Objective given(biyos::Objective objective, std::size_t k, const Fields &fields)
 {
-    const int sense = entry_or(fields.senses, k, static_cast<int>(objective.sense));
+    const BIYOS_int sense = entry_or(fields.senses, k, static_cast<BIYOS_int>(objective.sense));
     objective.sense = static_cast<biyos::ObjectiveSense>(sense);
     objective.priority = entry_or(fields.priorities, k, objective.priority);
     objective.weight = entry_or(fields.weights, k, objective.weight);
@@ -81,12 +81,12 @@ std::vector<biyos::Objective> new_objectives(std::span<const biyos::Index> funct
 }
 
 void add_objectives(BIYOS_model &model,
-                    int n,
-                    const int *functions,
-                    const int *senses,
-                    const int *priorities,
-                    const double *weights,
-                    int *start)
+                    BIYOS_index n,
+                    const BIYOS_index *functions,
+                    const BIYOS_int *senses,
+                    const BIYOS_int *priorities,
+                    const BIYOS_real *weights,
+                    BIYOS_index *start)
 {
     biyos::Model &core = writable(model);
     const std::span<const biyos::Index> owners = listed(n, functions, "fun");
@@ -118,7 +118,7 @@ void set_objectives(BIYOS_model &model, Selection selection, const Fields &field
     core.set_objectives(changed, objectives);
 }
 
-void n_objectives(const BIYOS_model &model, int *n)
+void n_objectives(const BIYOS_model &model, BIYOS_index *n)
 {
     *require(n, "n") = model.core.n_objectives();
 }
@@ -126,7 +126,7 @@ void n_objectives(const BIYOS_model &model, int *n)
 void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &outputs)
 {
     put(outputs.functions, k, objective.function);
-    put(outputs.senses, k, static_cast<int>(objective.sense));
+    put(outputs.senses, k, static_cast<BIYOS_int>(objective.sense));
     put(outputs.priorities, k, objective.priority);
     put(outputs.weights, k, objective.weight);
     put(outputs.absolute, k, objective.absolute);
