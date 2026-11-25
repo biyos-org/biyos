@@ -199,6 +199,14 @@ void add_points(Model &model)
     model.add_pwl(std::vector<double>{-1.0, 0.0, 2.0}, std::vector<double>{1.0, 0.0, 3.0});
 }
 
+void add_batch(Model &model)
+{
+    const std::vector<Offset> starts{0, 2, 5};
+    const std::vector<double> x{0.0, 1.0, -1.0, 0.0, 2.0};
+    const std::vector<double> y{2.0, -1.0, 1.0, 0.0, 3.0};
+    model.add_piecewise_linears(starts, x, y);
+}
+
 void add_piecewise(Model &model)
 {
     model.add_piecewise(0, 1);
@@ -474,6 +482,11 @@ TEST(AllocationTest, SumNode)
 TEST(AllocationTest, Points)
 {
     expect_graph(add_points, 0, 1);
+}
+
+TEST(AllocationTest, PointBatch)
+{
+    expect_graph(add_batch, 0, 2);
 }
 
 TEST(AllocationTest, PiecewiseNode)
