@@ -40,7 +40,7 @@ std::vector<std::string> heard(const Model &model, const biyos::Settings &settin
     { texts.push_back(event.module + " " + event.text); };
     env.events().add_hook(EventKind::Message, EventLevel::Warning, record);
     const std::string path = testing::TempDir() + "biyos_left.mps";
-    biyos::write_file(env, model, settings, path, biyos::FileFormat::Mps);
+    biyos::write_file(env.stream(), model, settings, path, biyos::FileFormat::Mps);
     return texts;
 }
 

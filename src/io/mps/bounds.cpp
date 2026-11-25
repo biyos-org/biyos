@@ -1,6 +1,6 @@
 #include "io/mps/bounds.hpp"
 
-#include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
@@ -88,7 +88,7 @@ bool integral(Real value) noexcept
     return is_zero(std::modf(value, &whole));
 }
 
-std::optional<Real> checked_value(Env &env,
+std::optional<Real> checked_value(Stream stream,
                                   const Lines &lines,
                                   const BoundKind &kind,
                                   Fields fields)
@@ -105,7 +105,7 @@ std::optional<Real> checked_value(Env &env,
     }
     if (kind.need == Need::Nothing)
     {
-        warn(env, lines, type + " takes no value, " + quote(fields[3]) + " is ignored");
+        warn(stream, lines, type + " takes no value, " + quote(fields[3]) + " is ignored");
         return std::nullopt;
     }
     const Real value = value_of(lines, fields[3]);
@@ -159,7 +159,7 @@ void apply(const Lines &lines,
 
 }
 
-void read_bound(Env &env, const Lines &lines, Vectors &vectors, Draft &draft)
+void read_bound(Stream stream, const Lines &lines, Vectors &vectors, Draft &draft)
 {
     const Fields fields = uncommented(lines.fields(), 2);
     if (fields.size() != 3 && fields.size() != 4)
@@ -167,12 +167,12 @@ void read_bound(Env &env, const Lines &lines, Vectors &vectors, Draft &draft)
         bad_file(lines, "a bound needs a type, a vector, a column and a value");
     }
     const BoundKind &kind = kind_of(lines, fields[0]);
-    if (!vectors.keeps(env, lines, fields[1]))
+    if (!vectors.keeps(stream, lines, fields[1]))
     {
         return;
     }
     const Index index = find_in(draft.column_names, lines, "column", fields[2]);
-    const std::optional<Real> value = checked_value(env, lines, kind, fields);
+    const std::optional<Real> value = checked_value(stream, lines, kind, fields);
     DraftColumn &column = draft.columns[to_size(index)];
     apply(lines, column.lower, kind.lower, value, "lower");
     apply(lines, column.upper, kind.upper, value, "upper");
@@ -185,7 +185,7 @@ void read_bound(Env &env, const Lines &lines, Vectors &vectors, Draft &draft)
     column.binary = column.binary || kind.binary;
 }
 
-void warn_negative(Env &env, const Lines &lines, const Draft &draft)
+void warn_negative(Stream stream, const Lines &lines, const Draft &draft)
 {
     for (std::size_t k = 0; k < draft.columns.size(); ++k)
     {
@@ -193,7 +193,7 @@ void warn_negative(Env &env, const Lines &lines, const Draft &draft)
         if (negative_upper(column))
         {
             const std::string name = quote(draft.column_names.names()[k]);
-            warn(env,
+            warn(stream,
                  lines.file(),
                  column.upper_line,
                  "column " + name +

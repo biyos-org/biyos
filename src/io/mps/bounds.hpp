@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "io/draft/draft.hpp"
 #include "io/lines.hpp"
 #include "io/mps/vectors.hpp"
@@ -8,7 +8,7 @@
 namespace biyos
 {
 
-void read_bound(Env &env, const Lines &lines, Vectors &vectors, Draft &draft);
-void warn_negative(Env &env, const Lines &lines, const Draft &draft);
+void read_bound(Stream stream, const Lines &lines, Vectors &vectors, Draft &draft);
+void warn_negative(Stream stream, const Lines &lines, const Draft &draft);
 
 }

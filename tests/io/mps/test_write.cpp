@@ -3,6 +3,7 @@
 #include "writing.hpp"
 
 #include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/settings.hpp"
 #include "core/text/text.hpp"
@@ -250,7 +251,7 @@ TEST(MpsTest, Samples)
     {
         const Model read = biyos::test::read_sample(text);
         biyos::Env env;
-        biyos::write_file(env, read, biyos::Settings(), path, biyos::FileFormat::Mps);
+        biyos::write_file(env.stream(), read, biyos::Settings(), path, biyos::FileFormat::Mps);
         const Model back = biyos::read_file(env, path, biyos::FileFormat::Mps);
         EXPECT_EQ(biyos::difference(read, back), "") << text;
     }

@@ -1,6 +1,6 @@
 #include "io/mps/mps.hpp"
 
-#include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "io/draft/draft.hpp"
 #include "io/lines.hpp"
 #include "io/mps/bounds.hpp"
@@ -30,7 +30,7 @@ constexpr std::string_view kBlanks = " \t\r\f\v";
 class MpsReader
 {
   public:
-    MpsReader(Env &env, std::istream &input, const std::string &file);
+    MpsReader(Stream stream, std::istream &input, const std::string &file);
 
     Model read();
 
@@ -44,7 +44,7 @@ class MpsReader
     void data();
     void rest();
 
-    Env &env_;
+    Stream stream_;
     Lines lines_;
     Draft draft_;
     Section section_ = Section::None;
@@ -55,8 +55,8 @@ class MpsReader
     Vectors bounds_{"BOUNDS"};
 };
 
-MpsReader::MpsReader(Env &env, std::istream &input, const std::string &file)
-    : env_(env), lines_(input, file)
+MpsReader::MpsReader(Stream stream, std::istream &input, const std::string &file)
+    : stream_(stream), lines_(input, file)
 {
 }
 
@@ -136,7 +136,7 @@ void MpsReader::enter(Section section)
     }
     if (section_ < Section::Rhs && Section::Rhs < section)
     {
-        warn(env_, lines_, "the file has no RHS section, so every right-hand side is 0");
+        warn(stream_, lines_, "the file has no RHS section, so every right-hand side is 0");
     }
     leave();
     section_ = section;
@@ -150,7 +150,7 @@ void MpsReader::leave()
     }
     if (section_ == Section::Bounds)
     {
-        warn_negative(env_, lines_, draft_);
+        warn_negative(stream_, lines_, draft_);
     }
 }
 
@@ -198,13 +198,13 @@ void MpsReader::data()
         columns_.read(lines_, draft_);
         return;
     case Section::Rhs:
-        read_rhs(env_, lines_, rhs_, draft_);
+        read_rhs(stream_, lines_, rhs_, draft_);
         return;
     case Section::Ranges:
-        read_range(env_, lines_, ranges_, draft_);
+        read_range(stream_, lines_, ranges_, draft_);
         return;
     case Section::Bounds:
-        read_bound(env_, lines_, bounds_, draft_);
+        read_bound(stream_, lines_, bounds_, draft_);
         return;
     case Section::End:
         break;
@@ -225,9 +225,9 @@ void MpsReader::rest()
 
 }
 
-Model read_mps(Env &env, std::istream &input, const std::string &file)
+Model read_mps(Stream stream, std::istream &input, const std::string &file)
 {
-    return MpsReader(env, input, file).read();
+    return MpsReader(stream, input, file).read();
 }
 
 }

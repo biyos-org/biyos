@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "io/lines.hpp"
 
 #include <functional>
@@ -17,7 +17,7 @@ class Vectors
   public:
     explicit Vectors(std::string_view section);
 
-    bool keeps(Env &env, const Lines &lines, std::string_view name);
+    bool keeps(Stream stream, const Lines &lines, std::string_view name);
 
   private:
     std::string section_;

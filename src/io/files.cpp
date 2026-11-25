@@ -90,16 +90,16 @@ Model read_file(Env &env, std::string_view path, FileFormat format)
     case FileFormat::Mps:
         break;
     }
-    return read_mps(env, input, file);
+    return read_mps(env.stream(), input, file);
 }
 
-void write_file(Env &env,
+void write_file(Stream stream,
                 const Model &model,
                 const Settings &settings,
                 std::string_view path,
                 FileFormat format)
 {
-    const EntryTimer timer(env.stream(), "io", "write");
+    const EntryTimer timer(stream, "io", "write");
     const std::string file(path);
     switch (format)
     {
@@ -108,7 +108,7 @@ void write_file(Env &env,
     }
     const Draft draft = draft_of(model);
     print_file(draft, file, path);
-    warn_leftovers(env, model, settings, file);
+    warn_leftovers(stream, model, settings, file);
 }
 
 }
