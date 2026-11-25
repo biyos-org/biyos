@@ -47,6 +47,7 @@ biyos_add_test(test_core
     core/text/test_chars.cpp
     core/text/test_name.cpp
     core/text/test_strings.cpp
+    core/text/test_text.cpp
     core/text/test_utf8.cpp
     core/timing/test_clock.cpp
     core/timing/test_timer.cpp)
