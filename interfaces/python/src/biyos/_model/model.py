@@ -59,7 +59,7 @@ from biyos._model.blocks import (
     Variables,
     index_of,
 )
-from biyos._model.callbacks import Callbacks, Caller, checked, data_at
+from biyos._model.callbacks import Callbacks, checked, data_at
 from biyos._model.expression import Comparison, Expression, Operand
 from biyos._model.operators import Operator, node_values, postfix_values
 from biyos._model.postfix import attached, given
@@ -1833,7 +1833,8 @@ class Model:
         counts as a negative int. The request's arrays and the array to
         fill are valid only during the call, and nothing derived from them
         may outlive it. The model keeps the functions and ``data`` alive,
-        and a copy shares them. No call evaluates a callback yet.
+        and a copy shares them. ``evalf``, ``evalg``, ``evalh`` and
+        ``evalhv`` call them.
 
         See Also
         --------
@@ -1871,8 +1872,7 @@ class Model:
         """
         cb = integer("cb", cb)
         count = self._callbacks.count(cb)
-        caller = Caller(checked("f", f), count, count)
-        self._callbacks.keep(caller)
+        caller = self._callbacks.caller(checked("f", f), count, count)
         self._call(lib.BIYOS_setcbf, cb, caller.pointer)
 
     def setcbg(
@@ -1916,9 +1916,9 @@ class Model:
         nnz = len(fun)
         functions = indices_of(self, Functions, "fun", fun, nnz)
         variables = indices_of(self, Variables, "var", var, nnz)
-        caller = Caller(checked("g", g), self._callbacks.count(cb), nnz)
+        count = self._callbacks.count(cb)
+        caller = self._callbacks.caller(checked("g", g), count, nnz)
         pattern = (nnz, functions, variables, caller.pointer)
-        self._callbacks.keep(caller)
         self._call(lib.BIYOS_setcbg, cb, *pattern)
 
     def setcbh(
@@ -1962,9 +1962,9 @@ class Model:
         nnz = len(var1)
         first = indices_of(self, Variables, "var1", var1, nnz)
         second = indices_of(self, Variables, "var2", var2, nnz)
-        caller = Caller(checked("h", h), self._callbacks.count(cb), nnz)
+        count = self._callbacks.count(cb)
+        caller = self._callbacks.caller(checked("h", h), count, nnz)
         pairs = (nnz, first, second, caller.pointer)
-        self._callbacks.keep(caller)
         self._call(lib.BIYOS_setcbh, cb, *pairs)
 
     def setcbhv(self, cb: int, hv: Callable[..., object]) -> None:
@@ -1992,8 +1992,8 @@ class Model:
         """
         cb = integer("cb", cb)
         function = checked("hv", hv)
-        caller = Caller(function, self._callbacks.count(cb), None)
-        self._callbacks.keep(caller)
+        count = self._callbacks.count(cb)
+        caller = self._callbacks.caller(function, count, None)
         self._call(lib.BIYOS_setcbhv, cb, caller.pointer)
 
     def setcbdata(self, cb: int, data: object) -> None:
@@ -4238,6 +4238,254 @@ class Model:
         """
         return self._delete("BIYOS_delccon", Complements, idx)
 
+    def evalf(self, x: Sequence[float]) -> list[float]:
+        """Evaluate the functions at a point.
+
+        Parameters
+        ----------
+        x
+            The point, a value for each variable.
+
+        Returns
+        -------
+        f
+            The value of each function, in the order of the functions.
+
+        Raises
+        ------
+        Error
+            With ``code`` ``BIYOS_ERR_CALLBACK`` when a callback returns a
+            negative int, raises an ``Exception``, which is then the
+            error's ``__cause__``, or writes a value that is not finite
+            while ``checking`` is on. With ``BIYOS_ERR_UNSUPPORTED`` when a
+            callback has no function of its values.
+
+        Notes
+        -----
+        The call runs the callbacks that cover the functions. One that
+        returns a positive int leaves NaN in the values it computes, and the
+        call still returns. An exception that is not an ``Exception``, such
+        as ``KeyboardInterrupt`` or ``SystemExit``, comes out of the call
+        unchanged.
+
+        See Also
+        --------
+        BIYOS_evalf
+        """
+        f = (c_double * self.getnfun())()
+        self._evaluate(lib.BIYOS_evalf, self._point(x), f)
+        return list(f)
+
+    def evalg(self, x: Sequence[float]) -> list[float]:
+        """Evaluate the Jacobian of the functions at a point.
+
+        Parameters
+        ----------
+        x
+            The point, a value for each variable.
+
+        Returns
+        -------
+        g
+            The value of each entry of the Jacobian pattern, in the order
+            ``getgpat()`` gives.
+
+        Raises
+        ------
+        Error
+            With ``BIYOS_ERR_CALLBACK`` as ``evalf`` gives it, and with
+            ``BIYOS_ERR_UNSUPPORTED`` when a callback has no Jacobian.
+
+        See Also
+        --------
+        BIYOS_evalg
+        """
+        point = self._point(x)
+        g = (c_double * self.getngpat())()
+        self._evaluate(lib.BIYOS_evalg, point, g)
+        return list(g)
+
+    def evalh(self, x: Sequence[float], w: Sequence[float]) -> list[float]:
+        """Evaluate the Hessian of the Lagrangian at a point.
+
+        The Lagrangian is the sum of the functions, each weighted by its
+        entry of ``w``.
+
+        Parameters
+        ----------
+        x
+            The point, a value for each variable.
+        w
+            The weight of each function.
+
+        Returns
+        -------
+        h
+            The value of each entry of the lower Hessian pattern, in the
+            order ``gethpat()`` gives.
+
+        Raises
+        ------
+        Error
+            With ``BIYOS_ERR_CALLBACK`` as ``evalf`` gives it, and with
+            ``BIYOS_ERR_UNSUPPORTED`` when a callback has no Hessian.
+
+        See Also
+        --------
+        BIYOS_evalh
+        """
+        arrays = (self._point(x), doubles("w", w, self.getnfun()))
+        h = (c_double * self.getnhpat())()
+        self._evaluate(lib.BIYOS_evalh, *arrays, h)
+        return list(h)
+
+    def evalhv(
+        self, x: Sequence[float], w: Sequence[float], v: Sequence[float]
+    ) -> list[float]:
+        """Multiply the Hessian of the Lagrangian at a point by a vector.
+
+        Parameters
+        ----------
+        x
+            The point, a value for each variable.
+        w
+            The weight of each function.
+        v
+            The vector, a value for each variable.
+
+        Returns
+        -------
+        hv
+            The product, a value for each variable.
+
+        Raises
+        ------
+        Error
+            With ``BIYOS_ERR_CALLBACK`` as ``evalf`` gives it, and with
+            ``BIYOS_ERR_UNSUPPORTED`` when a callback has neither a product
+            nor a Hessian.
+
+        Notes
+        -----
+        A callback without a product of its own gives its part through its
+        Hessian.
+
+        See Also
+        --------
+        BIYOS_evalhv
+        """
+        n = self.getnvar()
+        weights = doubles("w", w, self.getnfun())
+        arrays = (self._point(x), weights, doubles("v", v, n))
+        hv = (c_double * n)()
+        self._evaluate(lib.BIYOS_evalhv, *arrays, hv)
+        return list(hv)
+
+    def getngpat(
+        self, idx: Sequence[int | Function] | Functions | None = None
+    ) -> int:
+        """Count the entries of the Jacobian pattern of functions.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
+
+        Returns
+        -------
+        nnz
+            The number of variables in their patterns, a function counted
+            each time it appears.
+
+        See Also
+        --------
+        BIYOS_getngpatsp
+        BIYOS_getngpatrg
+        """
+        every = range(self.getnfun()) if idx is None else idx
+        return self._count("BIYOS_getngpat", Functions, every)
+
+    def getgpat(
+        self, idx: Sequence[int | Function] | Functions | None = None
+    ) -> tuple[list[int], list[int]]:
+        """Read the Jacobian pattern of functions.
+
+        Parameters
+        ----------
+        idx
+            The functions, in any order, any of them more than once; every
+            function by default.
+
+        Returns
+        -------
+        cnt
+            The number of variables in the pattern of each function.
+        var
+            The variables of each function's pattern, sorted, those of
+            ``idx[0]`` first.
+
+        See Also
+        --------
+        BIYOS_getgpatsp
+        BIYOS_getgpatrg
+        """
+        every = range(self.getnfun()) if idx is None else idx
+        return self._pattern("gpat", Functions, every)
+
+    def getnhpat(
+        self, idx: Sequence[int | Variable] | Variables | None = None
+    ) -> int:
+        """Count the entries of the Hessian pattern in columns of its lower
+        triangle.
+
+        Parameters
+        ----------
+        idx
+            The variables whose columns to count, in any order, any of them
+            more than once; every variable by default.
+
+        Returns
+        -------
+        nnz
+            The number of rows in those columns, a column counted each time
+            it appears.
+
+        See Also
+        --------
+        BIYOS_getnhpatsp
+        BIYOS_getnhpatrg
+        """
+        every = range(self.getnvar()) if idx is None else idx
+        return self._count("BIYOS_getnhpat", Variables, every)
+
+    def gethpat(
+        self, idx: Sequence[int | Variable] | Variables | None = None
+    ) -> tuple[list[int], list[int]]:
+        """Read the Hessian pattern in columns of its lower triangle.
+
+        Parameters
+        ----------
+        idx
+            The variables whose columns to read, in any order, any of them
+            more than once; every variable by default.
+
+        Returns
+        -------
+        cnt
+            The number of rows in each column.
+        var
+            The rows of each column, sorted, each at least the column's
+            variable, those of ``idx[0]`` first.
+
+        See Also
+        --------
+        BIYOS_gethpatsp
+        BIYOS_gethpatrg
+        """
+        every = range(self.getnvar()) if idx is None else idx
+        return self._pattern("hpat", Variables, every)
+
     def _compared(
         self,
         cons: list[Comparison],
@@ -4440,6 +4688,36 @@ class Model:
         columns = [list(column) for column in found]
         columns[place] = _expanded(counts, span.start)
         return columns, list(values)
+
+    def _pattern(
+        self,
+        name: str,
+        family: type[Block[Any]],
+        idx: Sequence[SupportsIndex] | Block[Any],
+    ) -> tuple[list[int], list[int]]:
+        nnz = self._count(f"BIYOS_getn{name}", family, idx)
+        cnt = (c_int64 * len(idx))()
+        var = (c_int * nnz)()
+        chosen = self._chosen(f"BIYOS_get{name}", family, idx)
+        self._call(*chosen, nnz, cnt, var)
+        return list(cnt), list(var)
+
+    def _point(self, x: Sequence[float]) -> Array[c_double] | None:
+        return doubles("x", x, self.getnvar())
+
+    def _evaluate(
+        self, function: Callable[..., int], *arguments: object
+    ) -> None:
+        mdl = self._handle.value
+        try:
+            self._call(function, *arguments)
+        except Error as error:
+            cause = self._callbacks.taken(mdl)
+            if cause is None:
+                raise
+            if not isinstance(cause, Exception):
+                raise cause
+            raise error from cause
 
     def _getidx(
         self, function: Callable[..., int], name: Sequence[str]

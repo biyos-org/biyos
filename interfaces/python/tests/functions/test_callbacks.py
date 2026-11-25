@@ -8,7 +8,6 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel, Operator
 from biyos._capi import CALLBACK, RequestRecord, lib
-from biyos._model.callbacks import Caller
 from refusal import LOCKED, refusal
 
 SETTERS = (
@@ -67,9 +66,8 @@ def evaluate(model, address, cb, size, x, w=None, v=None):
     return status, list(out)
 
 
-def caller_of(model):
-    kept = model._callbacks._kept
-    return [held for held in kept if isinstance(held, Caller)][-1]
+def raised(model):
+    return model._callbacks.taken(model._handle.value)
 
 
 def describe(found, req, out, data):
@@ -156,10 +154,28 @@ def test_results(model, seen):
     for result in (error, True, 1.5):
         model.setcbf(cb, partial(answer, result))
         assert evaluate(model, seen[-1], cb, 1, [0.0] * 3)[0] == -1
-    assert caller_of(model).raised.args[0].startswith("the result of")
+    assert raised(model).args[0].startswith("the result of")
     model.setcbf(cb, partial(answer, error))
     evaluate(model, seen[-1], cb, 1, [0.0] * 3)
-    assert caller_of(model).raised is error
+    assert raised(model) is error
+
+
+def failing(errors, req, out, data):
+    raise errors.pop(0)
+
+
+def test_keyed(model, seen):
+    cb = model.addcb([0])
+    errors = [ValueError("first"), ValueError("second")]
+    expected = list(errors)
+    model.setcbf(cb, partial(failing, errors))
+    copy = model.copy()
+    for target in (model, copy):
+        assert evaluate(target, seen[-1], cb, 1, [0.0] * 3)[0] == -1
+    assert raised(copy) is expected[1]
+    assert raised(model) is expected[0]
+    assert raised(model) is None
+    copy.close()
 
 
 def keep(found, req, out, data):

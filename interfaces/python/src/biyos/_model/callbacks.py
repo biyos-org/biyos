@@ -105,12 +105,16 @@ class CallbackRequest:
 
 class Caller:
     def __init__(
-        self, function: Callable[..., Any], count: int, size: int | None
+        self,
+        function: Callable[..., Any],
+        count: int,
+        size: int | None,
+        raised: dict[int | None, BaseException],
     ) -> None:
         self._function = function
         self._count = count
         self._size = size
-        self.raised: BaseException | None = None
+        self._raised = raised
         self.pointer = CALLBACK(self)
 
     def __call__(
@@ -122,8 +126,7 @@ class Caller:
         try:
             return self._answer(record.contents, out, data)
         except BaseException as error:
-            if self.raised is None:
-                self.raised = error
+            self._raised[record.contents.mdl] = error
             return -1
 
     def _answer(
@@ -151,11 +154,13 @@ class Callbacks:
     def __init__(self) -> None:
         self._counts: list[int] = []
         self._kept: list[object] = []
+        self._raised: dict[int | None, BaseException] = {}
 
     def copy(self) -> "Callbacks":
         copied = Callbacks()
         copied._counts = list(self._counts)
         copied._kept = list(self._kept)
+        copied._raised = self._raised
         return copied
 
     def known(self, cb: int) -> bool:
@@ -169,3 +174,13 @@ class Callbacks:
 
     def keep(self, held: object) -> None:
         self._kept.append(held)
+
+    def caller(
+        self, function: Callable[..., Any], count: int, size: int | None
+    ) -> Caller:
+        caller = Caller(function, count, size, self._raised)
+        self._kept.append(caller)
+        return caller
+
+    def taken(self, mdl: int | None) -> BaseException | None:
+        return self._raised.pop(mdl, None)
