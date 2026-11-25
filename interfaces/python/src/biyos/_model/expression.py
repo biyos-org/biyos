@@ -5,6 +5,7 @@ from typing import Any, SupportsIndex, TypeGuard
 from biyos._capi import inf
 from biyos._convert.integers import integer
 from biyos._model.operators import Operator
+from biyos._model.printer import printed
 
 
 def _number(value: object) -> TypeGuard[int | float]:
@@ -354,13 +355,27 @@ class Expression(Operand):
         self._args = args
         self._values = values
 
+    def __repr__(self) -> str:
+        """Return the expression as it is written.
+
+        Each variable reads ``x[i]``, by its index, and parentheses appear
+        only where precedence needs them, as in ``(x[0] + 1)*x[1]``.
+
+        Returns
+        -------
+        text
+            The formula of the expression, such as ``x[0]**2 + 3*x[1]``.
+        """
+        return printed(self)
+
 
 class Piecewise(Expression):
-    __slots__ = ("_pwl",)
+    __slots__ = ("_idx", "_pwl")
 
-    def __init__(self, pwl: SupportsIndex, arg: Operand) -> None:
+    def __init__(self, pwl: SupportsIndex, idx: int, arg: Operand) -> None:
         super().__init__(Operator.PIECEWISE_LINEAR, (arg,), ())
         self._pwl = pwl
+        self._idx = idx
 
 
 class Comparison:
@@ -887,8 +902,8 @@ def piecewise(p: SupportsIndex, x: Term) -> Expression:
     --------
     Model.addpwl
     """
-    integer("p", p)
-    return Piecewise(p, _operand(x))
+    idx = integer("p", p)
+    return Piecewise(p, idx, _operand(x))
 
 
 def max(x: Term, y: Term, *rest: Term) -> Expression:
