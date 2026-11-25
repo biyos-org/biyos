@@ -167,6 +167,10 @@ quartodoc:
           include_inherited: true
           members: [__len__, __contains__, __iter__, __getitem__, "on"]
         - SpecialOrderedSet
+        - name: PiecewiseLinears
+          include_inherited: true
+          members: [__len__, __contains__, __iter__, __getitem__, "on"]
+        - PiecewiseLinear
         - name: Cones
           include_inherited: true
           members: [__len__, __contains__, __iter__, __getitem__, "on"]
@@ -200,6 +204,7 @@ quartodoc:
         - erf
         - entropy
         - signpow
+        - piecewise
         - max
         - min
     - title: Events

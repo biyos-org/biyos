@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from math import isinf, isnan
-from typing import Any, TypeGuard
+from typing import Any, SupportsIndex, TypeGuard
 
 from biyos._capi import inf
+from biyos._convert.integers import integer
 from biyos._model.operators import Operator
 
 
@@ -352,6 +353,14 @@ class Expression(Operand):
         self._op = op
         self._args = args
         self._values = values
+
+
+class Piecewise(Expression):
+    __slots__ = ("_pwl",)
+
+    def __init__(self, pwl: SupportsIndex, arg: Operand) -> None:
+        super().__init__(Operator.PIECEWISE_LINEAR, (arg,), ())
+        self._pwl = pwl
 
 
 class Comparison:
@@ -851,6 +860,35 @@ def signpow(x: Term, p: float) -> Expression:
         raise TypeError(f"p must be a number, not {type(p).__name__}")
     power = (float(p),)
     return Expression(Operator.SIGN_POWER, (_operand(x),), power)
+
+
+def piecewise(p: SupportsIndex, x: Term) -> Expression:
+    """Return a piecewise linear function applied to an operand.
+
+    Parameters
+    ----------
+    p
+        The pwl, a ``PiecewiseLinear`` or its index. The model that takes
+        the expression checks that it names one of its pwls.
+    x
+        An expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``p(x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``p`` has no integer index or ``x`` is of another type.
+
+    See Also
+    --------
+    Model.addpwl
+    """
+    integer("p", p)
+    return Piecewise(p, _operand(x))
 
 
 def max(x: Term, y: Term, *rest: Term) -> Expression:

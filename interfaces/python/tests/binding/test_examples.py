@@ -10,6 +10,7 @@ NAMES = [
     "expressions",
     "model",
     "options",
+    "piecewise",
     "start",
     "threads",
 ]

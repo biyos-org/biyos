@@ -28,7 +28,7 @@ from biyos._convert.arrays import (
     span_of,
     strings,
 )
-from biyos._convert.integers import integer
+from biyos._convert.integers import integer, offset
 from biyos._convert.text import decoded, text
 from biyos._env import values
 from biyos._env.env import Env
@@ -51,6 +51,8 @@ from biyos._model.blocks import (
     Indicators,
     Objective,
     Objectives,
+    PiecewiseLinear,
+    PiecewiseLinears,
     SpecialOrderedSet,
     SpecialOrderedSets,
     Variable,
@@ -177,6 +179,7 @@ _COUNTS: dict[type[Block[Any]], str] = {
     Objectives: "getnobj",
     Indicators: "getnind",
     SpecialOrderedSets: "getnsos",
+    PiecewiseLinears: "getnpwl",
     Cones: "getncone",
     Complements: "getnccon",
 }
@@ -1592,8 +1595,9 @@ class Model:
         Parameters
         ----------
         op
-            The operator, any but ``Operator.VARIABLE`` and
-            ``Operator.NODE``.
+            The operator, any but ``Operator.VARIABLE``,
+            ``Operator.PIECEWISE_LINEAR`` and ``Operator.NODE``:
+            ``addvarnode`` and ``addpwlnode`` add the first two.
         arg
             The ids of the children, in order, none by default.
         val
@@ -1646,7 +1650,8 @@ class Model:
         arg
             The argument of each entry, ``sum(cnt)`` of them: the variable of
             ``Operator.VARIABLE``, the id of a node the model held before
-            the call for ``Operator.NODE``, and the number of operands of
+            the call for ``Operator.NODE``, the pwl of
+            ``Operator.PIECEWISE_LINEAR``, and the number of operands of
             any other operator, 0 for ``Operator.CONSTANT``.
         val
             The values the operators take, as ``addnode`` takes them, one
@@ -3406,6 +3411,157 @@ class Model:
         BIYOS_delsosrg
         """
         return self._delete("BIYOS_delsos", SpecialOrderedSets, idx)
+
+    def addpwl(
+        self,
+        cnt: Sequence[int],
+        x: Sequence[float],
+        y: Sequence[float],
+    ) -> PiecewiseLinears:
+        """Add piecewise linear functions after the last one.
+
+        Pwl ``k`` passes through the ``cnt[k]`` points of ``x`` and ``y``
+        that follow those of pwl ``k - 1``. It is linear between consecutive
+        points, extends its end segments past its first and last points,
+        and takes the value ``y[i]`` at ``x[i]`` exactly. A pwl is data: it
+        takes no name, is never deleted, and ``addpwlnode`` applies it
+        to a node, ``piecewise`` to an expression. A call that fails adds
+        no pwl.
+
+        Parameters
+        ----------
+        cnt
+            The number of points of each new pwl, 2 or more.
+        x
+            The abscissa of each point, ``sum(cnt)`` of them, finite and
+            strictly increasing within a pwl.
+        y
+            The value of each point, finite.
+
+        Returns
+        -------
+        pwls
+            The new pwls.
+
+        See Also
+        --------
+        BIYOS_addpwl
+        """
+        if cnt is None:
+            raise TypeError("cnt must be a sequence of int, not NoneType")
+        count = len(cnt)
+        sizes = counts("cnt", cnt, count)
+        size = _total(sizes)
+        arrays = (sizes, doubles("x", x, size), doubles("y", y, size))
+        first = c_int()
+        self._call(lib.BIYOS_addpwl, count, *arrays, byref(first))
+        return PiecewiseLinears(
+            self, first.value, first.value + count, self._gen
+        )
+
+    def getnpwl(self) -> int:
+        """Return the number of piecewise linear functions.
+
+        Returns
+        -------
+        n
+            The number of pwls.
+
+        See Also
+        --------
+        BIYOS_getnpwl
+        """
+        count = c_int()
+        self._call(lib.BIYOS_getnpwl, byref(count))
+        return count.value
+
+    def getnpwlpt(
+        self,
+        idx: Sequence[int | PiecewiseLinear] | PiecewiseLinears | None = None,
+    ) -> int:
+        """Count the points of piecewise linear functions.
+
+        Parameters
+        ----------
+        idx
+            The pwls, in any order, any of them more than once; every pwl by
+            default.
+
+        Returns
+        -------
+        nnz
+            The number of points they hold, a pwl counted each time it
+            appears.
+
+        See Also
+        --------
+        BIYOS_getnpwlptsp
+        BIYOS_getnpwlptrg
+        """
+        every = range(self.getnpwl()) if idx is None else idx
+        return self._count("BIYOS_getnpwlpt", PiecewiseLinears, every)
+
+    def getpwl(
+        self,
+        idx: Sequence[int | PiecewiseLinear] | PiecewiseLinears | None = None,
+    ) -> tuple[list[int], list[float], list[float]]:
+        """Read piecewise linear functions, as ``addpwl`` takes them.
+
+        Parameters
+        ----------
+        idx
+            The pwls, in any order, any of them more than once; every pwl by
+            default.
+
+        Returns
+        -------
+        cnt
+            The number of points of each pwl.
+        x
+            The abscissa of each point, each pwl's in the order added.
+        y
+            The value of each point.
+
+        See Also
+        --------
+        BIYOS_getpwlsp
+        BIYOS_getpwlrg
+        """
+        every = range(self.getnpwl()) if idx is None else idx
+        size = self.getnpwlpt(every)
+        sizes = (c_int64 * len(every))()
+        xs = (c_double * size)()
+        ys = (c_double * size)()
+        chosen = self._chosen("BIYOS_getpwl", PiecewiseLinears, every)
+        self._call(*chosen, size, sizes, xs, ys)
+        return list(sizes), list(xs), list(ys)
+
+    def addpwlnode(self, pwl: int | PiecewiseLinear, arg: int) -> int:
+        """Add the node that applies a piecewise linear function to a node.
+
+        Any number of nodes may apply one pwl. A call that fails adds no
+        node.
+
+        Parameters
+        ----------
+        pwl
+            The pwl.
+        arg
+            The id of the node it applies to.
+
+        Returns
+        -------
+        node
+            The id of the new node.
+
+        See Also
+        --------
+        BIYOS_addpwlnode
+        """
+        pwl = index_of(self, PiecewiseLinears, "pwl", pwl)
+        node = c_int64()
+        self._call(lib.BIYOS_addpwlnode, pwl, offset("arg", arg), byref(node))
+        return node.value
 
     def addcone(
         self,

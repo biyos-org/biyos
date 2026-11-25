@@ -2,8 +2,14 @@ from collections.abc import Sequence
 from math import isfinite
 from typing import TYPE_CHECKING, NamedTuple, TypeVar
 
-from biyos._model.blocks import Functions, Variable, Variables, index_of
-from biyos._model.expression import Expression, Operand
+from biyos._model.blocks import (
+    Functions,
+    PiecewiseLinears,
+    Variable,
+    Variables,
+    index_of,
+)
+from biyos._model.expression import Expression, Operand, Piecewise
 from biyos._model.operators import Operator
 
 if TYPE_CHECKING:
@@ -15,7 +21,7 @@ Given = TypeVar("Given")
 
 class _Close(NamedTuple):
     op: Operator
-    arity: int
+    arg: int
     values: tuple[float, ...]
     key: int | None
 
@@ -107,11 +113,17 @@ class _Writer:
         if node._op == Operator.SUM:
             children, values = _flat(node, self._shared)
         key = id(node) if id(node) in self._shared else None
-        close = _Close(node._op, len(children), values, key)
+        close = _Close(node._op, self._arg(node, children), values, key)
         return [close, *reversed(children)]
 
+    def _arg(self, node: Expression, children: Sequence[Operand]) -> int:
+        if isinstance(node, Piecewise):
+            pwl = node._pwl
+            return index_of(self._model, PiecewiseLinears, "expr", pwl)
+        return len(children)
+
     def _close(self, close: _Close) -> None:
-        self._entry(close.op, close.arity, close.values)
+        self._entry(close.op, close.arg, close.values)
         if close.key is not None:
             self._kept[close.key] = len(self.code)
             self._entry(Operator.KEEP, 1, ())

@@ -176,6 +176,7 @@ def test_operators():
     reached = {
         *UNARY.values(),
         Operator.SIGN_POWER,
+        Operator.PIECEWISE_LINEAR,
         Operator.MAX,
         Operator.MIN,
         Operator.SUM,
@@ -193,6 +194,5 @@ def test_operators():
         Operator.KEEP,
         Operator.REFERENCE,
     }
-    unbuilt = {Operator.PIECEWISE_LINEAR}
-    assert reached | postfix | unbuilt == set(Operator)
+    assert reached | postfix == set(Operator)
     assert not reached & postfix
