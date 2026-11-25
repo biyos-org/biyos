@@ -92,7 +92,7 @@ void Columns::add(const Lines &lines, Draft &draft, Index column, Fields pair)
         bad_file(lines, "column " + quote(name) + " has row " + quote(pair[0]) + " twice");
     }
     last = column;
-    draft.entries.push_back(Entry{.row = row, .column = column, .value = value});
+    draft.entries.push_back(DraftEntry{.row = row, .column = column, .value = value});
 }
 
 }

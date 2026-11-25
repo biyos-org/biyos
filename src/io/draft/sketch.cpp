@@ -147,9 +147,9 @@ void add_entries(Draft &draft, const Model &model, const std::vector<Index> &fun
         {
             const auto at =
                 static_cast<std::size_t>(starts[static_cast<std::size_t>(term.variable)]++);
-            draft.entries[at] = Entry{.row = static_cast<Index>(row),
-                                      .column = term.variable,
-                                      .value = term.coefficient};
+            draft.entries[at] = DraftEntry{.row = static_cast<Index>(row),
+                                           .column = term.variable,
+                                           .value = term.coefficient};
         }
     }
 }
