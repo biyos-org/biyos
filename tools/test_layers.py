@@ -50,6 +50,22 @@ class LayerTest(unittest.TestCase):
         self.source("core/error.cpp", text)
         self.assertEqual(self.problems(), [])
 
+    def test_c_name(self):
+        self.source("core/error.hpp", "BIYOS_status status_of();\n")
+        self.assertEqual(
+            self.problems(),
+            ["src/core/error.hpp:1: core may not use BIYOS_status"],
+        )
+
+    def test_c_constant(self):
+        self.source("core/error.cpp", "int code = BIYOS_ERR_BADARG;\n")
+        self.assertEqual(self.problems(), [])
+
+    def test_c_name_in_capi(self):
+        self.table("core:\ncapi: core\n")
+        self.source("capi/env.cpp", "BIYOS_status BIYOS_newenv();\n")
+        self.assertEqual(self.problems(), [])
+
     def test_undeclared(self):
         self.source("cones/soc.cpp", "")
         self.assertEqual(
