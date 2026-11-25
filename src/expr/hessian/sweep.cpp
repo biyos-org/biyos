@@ -1,5 +1,6 @@
 #include "expr/hessian/sweep.hpp"
 
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/derivatives/partials.hpp"
@@ -50,14 +51,6 @@ struct Trail
     std::span<Real> held;
     std::size_t lanes;
 };
-
-template <typename T>
-std::span<const T> part(const std::vector<T> &items,
-                        const std::vector<Offset> &starts,
-                        std::size_t k) noexcept
-{
-    return std::span(items).subspan(to_size(starts[k]), to_size(starts[k + 1] - starts[k]));
-}
 
 template <typename T>
 std::span<T> mine(std::span<T> region,
@@ -247,7 +240,7 @@ void copy_row(std::span<const Real> from,
 void load(const Block &block, std::size_t output, Pass &pass) noexcept
 {
     const std::size_t lanes = pass.lanes;
-    for (const Run run : part(block.reads, block.read_starts, output))
+    for (const Run run : slice(std::span(block.reads), block.read_starts, output))
     {
         for (std::uint32_t k = run.begin; k < run.end; ++k)
         {
@@ -262,7 +255,7 @@ void lift(const Block &block, std::size_t output, Pass &pass) noexcept
 {
     load(block, output, pass);
     const Lift lift = lift_of(block, pass);
-    for (const Run run : part(block.runs, block.starts, output))
+    for (const Run run : slice(std::span(block.runs), block.starts, output))
     {
         for (std::uint32_t k = run.begin; k < run.end; ++k)
         {
@@ -467,7 +460,7 @@ void retrace(const Block &block, std::size_t output, Pass &pass) noexcept
 {
     const Trail trail = trail_of(block, pass);
     const std::size_t lanes = pass.lanes;
-    for (const Run run : std::views::reverse(part(block.runs, block.starts, output)))
+    for (const Run run : std::views::reverse(slice(std::span(block.runs), block.starts, output)))
     {
         for (std::uint32_t k = run.end; k > run.begin; --k)
         {
@@ -477,7 +470,7 @@ void retrace(const Block &block, std::size_t output, Pass &pass) noexcept
                  trail);
         }
     }
-    for (const Run run : part(block.reads, block.read_starts, output))
+    for (const Run run : slice(std::span(block.reads), block.read_starts, output))
     {
         release(block, run, pass);
     }

@@ -1,6 +1,7 @@
 #include "expr/tape/tape.hpp"
 
 #include "core/error.hpp"
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/derivatives/partials.hpp"
@@ -77,13 +78,6 @@ Form form_of(Operator op) noexcept
         return Form::Table;
     }
     return Form::Direct;
-}
-
-std::span<const Offset> part(std::span<const Offset> items,
-                             std::span<const Offset> firsts,
-                             std::size_t k) noexcept
-{
-    return items.subspan(to_size(firsts[k]), to_size(firsts[k + 1] - firsts[k]));
 }
 
 Offset variables_of(const Block &block) noexcept
@@ -165,7 +159,7 @@ std::vector<Block> Compiler::blocks(std::span<const Offset> roots, const Reach &
     const Offset prepass = to_offset(plan_.prepass.size()) - 1;
     for (std::size_t k = 0; k + 1 < plan_.prepass.size(); ++k)
     {
-        const std::span<const Offset> outputs = part(plan_.pinned, plan_.prepass, k);
+        const std::span<const Offset> outputs = slice(std::span(plan_.pinned), plan_.prepass, k);
         Block pinned = compile(to_offset(k), outputs, plan_.prepass[k]);
         locator_.locate(outputs, pinned);
         read_children(graph_, layout_, outputs, pinned);
@@ -173,7 +167,7 @@ std::vector<Block> Compiler::blocks(std::span<const Offset> roots, const Reach &
     }
     for (std::size_t k = 0; k + 1 < plan_.partitions.size(); ++k)
     {
-        const std::span<const Offset> outputs = part(roots, plan_.partitions, k);
+        const std::span<const Offset> outputs = slice(roots, plan_.partitions, k);
         Block partition = compile(prepass + to_offset(k), outputs, plan_.partitions[k]);
         locator_.locate(outputs, partition);
         read_routes(reach, partition);
@@ -358,9 +352,7 @@ std::span<const Run> Tape::runs(Offset root) const
     const auto after = std::ranges::upper_bound(partitions, root, {}, &Block::begin);
     const Block &block = *(after - 1);
     const std::size_t output = to_size(root - block.begin);
-    const Offset begin = block.starts[output];
-    const Offset end = block.starts[output + 1];
-    return std::span(block.runs).subspan(to_size(begin), to_size(end - begin));
+    return slice(std::span(block.runs), block.starts, output);
 }
 
 const Pattern &Tape::pattern() const noexcept

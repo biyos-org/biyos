@@ -1,6 +1,7 @@
 #include "expr/curvature/curvature.hpp"
 
 #include "core/error.hpp"
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/curvature/arithmetic.hpp"
@@ -201,9 +202,7 @@ void Shapes::check(const Graph &graph, std::span<const Interval> nodes) const
 
 std::span<Argument> Shapes::arguments_of(Offset node) noexcept
 {
-    const Offset start = starts_[to_size(node)];
-    const Offset n = starts_[to_size(node) + 1] - start;
-    return std::span(arguments_).subspan(to_size(start), to_size(n));
+    return slice(std::span(arguments_), starts_, to_size(node));
 }
 
 Curvature Shapes::shape_of(const Graph &graph,

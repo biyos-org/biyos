@@ -2,6 +2,7 @@
 
 #include "core/error.hpp"
 #include "core/memory/room.hpp"
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
@@ -88,11 +89,9 @@ Offset Points::size() const noexcept
 
 PiecewiseLinear Points::piecewise_linear(Offset index) const noexcept
 {
-    const std::size_t start = to_size(starts_[to_size(index)]);
-    const std::size_t n = to_size(starts_[to_size(index) + 1]) - start;
     return {
-        .x = std::span(x_).subspan(start, n),
-        .y = std::span(y_).subspan(start, n),
+        .x = slice(std::span(x_), starts_, to_size(index)),
+        .y = slice(std::span(y_), starts_, to_size(index)),
     };
 }
 

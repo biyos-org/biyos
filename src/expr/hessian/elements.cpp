@@ -1,6 +1,7 @@
 #include "expr/hessian/elements.hpp"
 
 #include "core/error.hpp"
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/graph/graph.hpp"
@@ -70,9 +71,7 @@ Entry entry_of(Key key) noexcept
 
 std::span<const Index> row_of(const Pattern &blocks, std::size_t element) noexcept
 {
-    const Offset begin = blocks.starts[element];
-    return std::span(blocks.variables)
-        .subspan(to_size(begin), to_size(blocks.starts[element + 1] - begin));
+    return slice(std::span(blocks.variables), blocks.starts, element);
 }
 
 void check_declared(std::span<const Entry> declared)
@@ -159,12 +158,10 @@ Lower lower_of(const Pattern &blocks, std::span<const Entry> declared)
 Offset position(const Lower &lower, Index row, Index column) noexcept
 {
     const Entry entry = lower_entry({.row = row, .column = column});
-    const Offset begin = lower.starts[to_size(entry.column)];
-    const Offset end = lower.starts[to_size(entry.column) + 1];
-    const std::span<const Index> rows =
-        std::span(lower.rows).subspan(to_size(begin), to_size(end - begin));
+    const auto at = to_size(entry.column);
+    const std::span<const Index> rows = slice(std::span(lower.rows), lower.starts, at);
     const auto found = std::ranges::lower_bound(rows, entry.row);
-    return begin + static_cast<Offset>(found - rows.begin());
+    return lower.starts[at] + static_cast<Offset>(found - rows.begin());
 }
 
 Map map_of(const Lower &lower, const Pattern &blocks, std::span<const Entry> declared)

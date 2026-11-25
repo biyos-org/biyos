@@ -1,5 +1,6 @@
 #include "expr/tape/reads.hpp"
 
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/sparsity/reach.hpp"
@@ -38,9 +39,7 @@ std::uint32_t slot_of(std::span<const Offset> loads, Offset position)
 
 std::span<const Range> route_of(const Reach &reach, Offset root)
 {
-    const Offset begin = reach.route.starts[to_size(root)];
-    const Offset end = reach.route.starts[to_size(root) + 1];
-    return std::span(reach.route.runs).subspan(to_size(begin), to_size(end - begin));
+    return slice(std::span(reach.route.runs), reach.route.starts, to_size(root));
 }
 
 }

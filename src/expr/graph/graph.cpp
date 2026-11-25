@@ -1,6 +1,7 @@
 #include "expr/graph/graph.hpp"
 
 #include "core/memory/room.hpp"
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/graph/points.hpp"
@@ -47,9 +48,7 @@ Operator Graph::op(Offset node) const noexcept
 
 std::span<const Offset> Graph::children(Offset node) const noexcept
 {
-    const Offset start = starts_[to_size(node)];
-    const Offset n = starts_[to_size(node) + 1] - start;
-    return std::span(children_).subspan(to_size(start), to_size(n));
+    return slice(std::span(children_), starts_, to_size(node));
 }
 
 Real Graph::constant(Offset node) const noexcept
