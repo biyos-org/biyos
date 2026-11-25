@@ -59,7 +59,7 @@ from biyos._model.blocks import (
     Variables,
     index_of,
 )
-from biyos._model.callbacks import Callbacks, Caller, checked, data_at
+from biyos._model.callbacks import Callbacks, checked, data_at
 from biyos._model.expression import Comparison, Expression, Operand
 from biyos._model.operators import Operator, node_values, postfix_values
 from biyos._model.postfix import attached, given
@@ -1871,8 +1871,7 @@ class Model:
         """
         cb = integer("cb", cb)
         count = self._callbacks.count(cb)
-        caller = Caller(checked("f", f), count, count)
-        self._callbacks.keep(caller)
+        caller = self._callbacks.caller(checked("f", f), count, count)
         self._call(lib.BIYOS_setcbf, cb, caller.pointer)
 
     def setcbg(
@@ -1916,9 +1915,9 @@ class Model:
         nnz = len(fun)
         functions = indices_of(self, Functions, "fun", fun, nnz)
         variables = indices_of(self, Variables, "var", var, nnz)
-        caller = Caller(checked("g", g), self._callbacks.count(cb), nnz)
+        count = self._callbacks.count(cb)
+        caller = self._callbacks.caller(checked("g", g), count, nnz)
         pattern = (nnz, functions, variables, caller.pointer)
-        self._callbacks.keep(caller)
         self._call(lib.BIYOS_setcbg, cb, *pattern)
 
     def setcbh(
@@ -1962,9 +1961,9 @@ class Model:
         nnz = len(var1)
         first = indices_of(self, Variables, "var1", var1, nnz)
         second = indices_of(self, Variables, "var2", var2, nnz)
-        caller = Caller(checked("h", h), self._callbacks.count(cb), nnz)
+        count = self._callbacks.count(cb)
+        caller = self._callbacks.caller(checked("h", h), count, nnz)
         pairs = (nnz, first, second, caller.pointer)
-        self._callbacks.keep(caller)
         self._call(lib.BIYOS_setcbh, cb, *pairs)
 
     def setcbhv(self, cb: int, hv: Callable[..., object]) -> None:
@@ -1992,8 +1991,8 @@ class Model:
         """
         cb = integer("cb", cb)
         function = checked("hv", hv)
-        caller = Caller(function, self._callbacks.count(cb), None)
-        self._callbacks.keep(caller)
+        count = self._callbacks.count(cb)
+        caller = self._callbacks.caller(function, count, None)
         self._call(lib.BIYOS_setcbhv, cb, caller.pointer)
 
     def setcbdata(self, cb: int, data: object) -> None:
