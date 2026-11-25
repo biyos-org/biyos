@@ -1,5 +1,6 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
+#include "core/events/stream.hpp"
 #include "core/options/lookup.hpp"
 #include "handles.hpp"
 #include "mixed.hpp"
@@ -38,7 +39,7 @@ Bits bits(const Values &values)
 struct Reference
 {
     explicit Reference(const Model &model)
-        : handle(*model.get()), evaluation(handle.env(), handle.model(), &handle),
+        : handle(*model.get()), evaluation(handle.model(), handle.env().stream(), &handle),
           lookup(handle.settings(), handle.env().options())
     {
     }

@@ -1,5 +1,6 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
+#include "core/events/stream.hpp"
 #include "handles.hpp"
 #include "mixed.hpp"
 #include "model/evaluation/evaluation.hpp"
@@ -83,7 +84,7 @@ Records hessian(const Model &model)
 Records reference_jacobian(const Model &model)
 {
     BIYOS_model &handle = *model.get();
-    const biyos::Evaluation evaluation(handle.env(), handle.model(), &handle);
+    const biyos::Evaluation evaluation(handle.model(), handle.env().stream(), &handle);
     const biyos::Pattern &pattern = evaluation.jacobian_pattern();
     Records records{.counts = {}, .items = {pattern.variables.begin(), pattern.variables.end()}};
     for (std::size_t k = 0; k + 1 < pattern.starts.size(); ++k)
@@ -96,7 +97,7 @@ Records reference_jacobian(const Model &model)
 Records reference_hessian(const Model &model)
 {
     BIYOS_model &handle = *model.get();
-    const biyos::Evaluation evaluation(handle.env(), handle.model(), &handle);
+    const biyos::Evaluation evaluation(handle.model(), handle.env().stream(), &handle);
     const biyos::Lower &lower = evaluation.hessian_pattern();
     Records records{.counts = {}, .items = {lower.rows.begin(), lower.rows.end()}};
     for (std::size_t k = 0; k + 1 < lower.starts.size(); ++k)

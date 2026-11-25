@@ -1,6 +1,7 @@
 #include "allocations.hpp"
 #include "biyos/biyos.h"
 #include "core/env.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "expr/forms/terms.hpp"
@@ -81,7 +82,7 @@ TEST(AllocationTest, Evaluation)
 {
     biyos::Env env;
     const Model model = evaluated();
-    Evaluation evaluation(env, model);
+    Evaluation evaluation(model, env.stream(), nullptr);
     const biyos::Lookup lookup(env.options());
     std::vector<Real> f(2);
     std::vector<Real> g(evaluation.jacobian_pattern().variables.size());
