@@ -4,7 +4,7 @@
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "model/checks.hpp"
 #include "model/model.hpp"
 

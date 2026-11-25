@@ -1,6 +1,6 @@
 #include "expr/sparsity/memo.hpp"
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/sparsity/reach.hpp"
 #include "expr/tape/plan.hpp"
 

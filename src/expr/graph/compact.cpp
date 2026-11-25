@@ -1,7 +1,7 @@
 #include "expr/graph/compact.hpp"
 
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 

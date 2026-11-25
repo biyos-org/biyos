@@ -2,7 +2,7 @@
 
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
 

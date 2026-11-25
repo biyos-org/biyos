@@ -1,6 +1,6 @@
 #include "model/functions/pairs.hpp"
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
 #include "model/checks.hpp"

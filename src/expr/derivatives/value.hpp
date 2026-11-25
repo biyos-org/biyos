@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/tape/frame.hpp"
 #include "expr/tape/tape.hpp"
 

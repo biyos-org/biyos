@@ -3,7 +3,7 @@
 #include "capi/model/selection.hpp"
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "model/attributes/overrides.hpp"
 #include "model/model.hpp"
 

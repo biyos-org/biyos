@@ -1,7 +1,7 @@
 #include "biyos/biyos.h"
 #include "core/env.hpp"
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "expr/forms/terms.hpp"

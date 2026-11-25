@@ -3,7 +3,7 @@
 #include "writing.hpp"
 
 #include "core/env.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/options/settings.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"

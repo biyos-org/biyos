@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/hessian/elements.hpp"
 #include "expr/sparsity/reach.hpp"
 #include "model/model.hpp"

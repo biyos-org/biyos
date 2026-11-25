@@ -1,7 +1,7 @@
 #include "io/draft/column_shape.hpp"
 
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "io/draft/draft.hpp"
 #include "io/identical.hpp"

@@ -4,7 +4,7 @@
 #include "core/check.hpp"
 #include "core/env.hpp"
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/text/text.hpp"
 #include "core/timing/timer.hpp"

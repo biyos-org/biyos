@@ -1,6 +1,6 @@
 #include "model/compare/compare.hpp"
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"

@@ -1,5 +1,5 @@
 #include "biyos/biyos.h"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
 #include "model/compare/compare.hpp"
 #include "model/model.hpp"

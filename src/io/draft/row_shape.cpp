@@ -1,7 +1,7 @@
 #include "io/draft/row_shape.hpp"
 
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"

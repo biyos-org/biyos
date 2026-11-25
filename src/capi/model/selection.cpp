@@ -1,7 +1,7 @@
 #include "capi/model/selection.hpp"
 
 #include "capi/utils/arrays.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "model/checks.hpp"
 #include "model/model.hpp"
 

@@ -2,7 +2,7 @@
 
 #include "capi/model/selection.hpp"
 #include "capi/utils/entry.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/timing/timer.hpp"
 #include "model/model.hpp"
 

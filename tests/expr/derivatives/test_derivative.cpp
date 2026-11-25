@@ -1,5 +1,5 @@
 #include "chain_rule.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "expr/derivatives/derivative.hpp"
 #include "expr/derivatives/reverse.hpp"
 #include "expr/derivatives/value.hpp"

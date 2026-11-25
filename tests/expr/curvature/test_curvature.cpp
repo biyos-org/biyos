@@ -1,6 +1,6 @@
 #include "biyos/biyos.h"
 #include "chords.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "draws.hpp"
 #include "expr/curvature/curvature.hpp"
 #include "expr/curvature/shape.hpp"

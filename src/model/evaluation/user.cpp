@@ -2,7 +2,7 @@
 
 #include "core/check.hpp"
 #include "core/error.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/text/text.hpp"
 #include "model/checks.hpp"

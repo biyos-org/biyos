@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/error.hpp"
-#include "core/index.hpp"
 #include "core/memory/room.hpp"
+#include "core/numbers.hpp"
 
 #include <algorithm>
 #include <cstddef>

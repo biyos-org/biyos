@@ -1,6 +1,6 @@
 #include "expr/hessian/sweep.hpp"
 
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/derivatives/partials.hpp"
 #include "expr/derivatives/reverse.hpp"

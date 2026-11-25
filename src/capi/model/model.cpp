@@ -6,7 +6,7 @@
 #include "capi/utils/busy.hpp"
 #include "capi/utils/entry.hpp"
 #include "core/env.hpp"
-#include "core/index.hpp"
+#include "core/numbers.hpp"
 #include "core/timing/timer.hpp"
 #include "model/model.hpp"
 
