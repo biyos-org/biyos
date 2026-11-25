@@ -21,6 +21,7 @@ using biyos::EventLevel;
 using biyos::Family;
 using biyos::Index;
 using biyos::Model;
+using biyos::Real;
 
 namespace
 {
@@ -59,8 +60,8 @@ TEST(MpsTest, LeftOut)
 {
     Model model = plain();
     const Index variable = 1;
-    const double absolute = 1e-3;
-    const double relative = 0.0;
+    const Real absolute = 1e-3;
+    const Real relative = 0.0;
     model.set_tolerances(Family::Variable,
                          std::span(&variable, 1),
                          std::span(&absolute, 1),
@@ -86,8 +87,8 @@ TEST(MpsTest, ConstraintTolerance)
 {
     Model model = plain();
     const Index constraint = 2;
-    const double absolute = 0.0;
-    const double relative = 0.5;
+    const Real absolute = 0.0;
+    const Real relative = 0.5;
     model.set_tolerances(Family::Constraint,
                          std::span(&constraint, 1),
                          std::span(&absolute, 1),

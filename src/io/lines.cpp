@@ -1,6 +1,7 @@
 #include "io/lines.hpp"
 
 #include "core/error.hpp"
+#include "core/numbers.hpp"
 #include "core/text/chars.hpp"
 #include "core/text/text.hpp"
 
@@ -80,7 +81,7 @@ std::string Lines::where() const
     return number_ == 0 ? file : file + " line " + text_of(number_);
 }
 
-std::optional<double> number_of(std::string_view field)
+std::optional<Real> number_of(std::string_view field)
 {
     const bool plus = field.starts_with('+');
     const std::string_view digits = plus ? field.substr(1) : field;
@@ -89,7 +90,7 @@ std::optional<double> number_of(std::string_view field)
     {
         return std::nullopt;
     }
-    double value = 0.0;
+    Real value = 0.0;
     const char *last = digits.data() + digits.size();
     const std::from_chars_result result = text::from_chars(digits.data(), last, value);
     if (result.ec != std::errc() || result.ptr != last)

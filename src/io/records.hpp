@@ -16,7 +16,7 @@ using Fields = std::span<const std::string_view>;
 
 Fields uncommented(Fields fields, std::size_t third) noexcept;
 std::string quote(std::string_view text);
-double value_of(const Lines &lines, std::string_view field);
+Real value_of(const Lines &lines, std::string_view field);
 void check_name(const Lines &lines, std::string_view name);
 Index find_in(const Directory &directory,
               const Lines &lines,

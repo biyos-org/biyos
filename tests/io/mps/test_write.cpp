@@ -16,12 +16,12 @@
 #include <bit>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <random>
 #include <string>
 #include <string_view>
 #include <vector>
 
+using biyos::Bits;
 using biyos::Constraint;
 using biyos::Family;
 using biyos::Index;
@@ -30,6 +30,7 @@ using biyos::Model;
 using biyos::Objective;
 using biyos::ObjectiveSense;
 using biyos::Offset;
+using biyos::Real;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::continuous;
@@ -47,19 +48,19 @@ class Generator
 
     int below(int n) { return static_cast<int>(engine_() % static_cast<unsigned>(n)); }
 
-    double number()
+    Real number()
     {
-        const double whole = below(2001) - 1000;
-        return whole / static_cast<double>(below(97) + 1);
+        const Real whole = below(2001) - 1000;
+        return whole / static_cast<Real>(below(97) + 1);
     }
 
-    double width() { return std::fabs(number()) + 1.0; }
+    Real width() { return std::fabs(number()) + 1.0; }
 
   private:
     std::mt19937 engine_;
 };
 
-double lower_bound(Generator &random)
+Real lower_bound(Generator &random)
 {
     switch (random.below(3))
     {
@@ -71,7 +72,7 @@ double lower_bound(Generator &random)
     return random.number();
 }
 
-double upper_bound(Generator &random, double lower)
+Real upper_bound(Generator &random, Real lower)
 {
     switch (random.below(3))
     {
@@ -85,7 +86,7 @@ double upper_bound(Generator &random, double lower)
 
 Variable semi(Generator &random, VariableKind kind)
 {
-    const double lower = random.below(2) == 0 ? 0.0 : random.width();
+    const Real lower = random.below(2) == 0 ? 0.0 : random.width();
     return Variable{.kind = kind, .lower = lower, .upper = lower + random.width()};
 }
 
@@ -107,13 +108,13 @@ Variable variable(Generator &random)
     {
         return semi(random, kind);
     }
-    const double lower = lower_bound(random);
+    const Real lower = lower_bound(random);
     return Variable{.kind = kind, .lower = lower, .upper = upper_bound(random, lower)};
 }
 
 Constraint constraint(Generator &random, Index function)
 {
-    const double value = random.number();
+    const Real value = random.number();
     switch (random.below(5))
     {
     case 0:
@@ -128,15 +129,15 @@ Constraint constraint(Generator &random, Index function)
     return Constraint{.function = function, .lower = value, .upper = value + random.width()};
 }
 
-double coefficient(Generator &random)
+Real coefficient(Generator &random)
 {
-    const double value = random.number();
+    const Real value = random.number();
     return std::fpclassify(value) == FP_ZERO ? 1.0 : value;
 }
 
 void add_functions(Model &model, Generator &random, Index n_functions)
 {
-    std::vector<double> constants;
+    std::vector<Real> constants;
     std::vector<Offset> starts{0};
     std::vector<LinearTerm> terms;
     for (Index f = 0; f < n_functions; ++f)
@@ -162,7 +163,7 @@ void free_constants(Model &model, Generator &random)
         if (std::isinf(bounds.lower) && std::isinf(bounds.upper))
         {
             const Index function = bounds.function;
-            const double value = random.number();
+            const Real value = random.number();
             model.set_constants(std::span(&function, 1), std::span(&value, 1));
         }
     }
@@ -207,7 +208,7 @@ Model generated(unsigned seed)
     return model;
 }
 
-Model linear(const std::vector<Constraint> &constraints, const std::vector<double> &constants)
+Model linear(const std::vector<Constraint> &constraints, const std::vector<Real> &constants)
 {
     Model model;
     model.add_variables(std::vector{continuous(0.0, kInfinity), continuous(-1.0, 2.0)});
@@ -215,7 +216,7 @@ Model linear(const std::vector<Constraint> &constraints, const std::vector<doubl
     std::vector<LinearTerm> terms;
     for (std::size_t k = 0; k < constants.size(); ++k)
     {
-        terms.push_back(LinearTerm{.variable = 0, .coefficient = 1.0 + static_cast<double>(k)});
+        terms.push_back(LinearTerm{.variable = 0, .coefficient = 1.0 + static_cast<Real>(k)});
         terms.push_back(LinearTerm{.variable = 1, .coefficient = -2.5});
         starts.push_back(static_cast<Offset>(terms.size()));
     }
@@ -230,9 +231,9 @@ Model reread(const Model &model)
     return biyos::test::read_text(env, printed(model));
 }
 
-std::uint64_t bits(double value)
+Bits bits(Real value)
 {
-    return std::bit_cast<std::uint64_t>(value);
+    return std::bit_cast<Bits>(value);
 }
 
 const std::string *name_of(const Model &model, Family family, Index index)

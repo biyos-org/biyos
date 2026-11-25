@@ -1,14 +1,15 @@
 #pragma once
 
+#include "core/numbers.hpp"
+
 #include <bit>
-#include <cstdint>
 
 namespace biyos
 {
 
-inline bool identical(double a, double b) noexcept
+inline bool identical(Real a, Real b) noexcept
 {
-    return std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b);
+    return std::bit_cast<Bits>(a) == std::bit_cast<Bits>(b);
 }
 
 }

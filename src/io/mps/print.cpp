@@ -95,12 +95,12 @@ void print_columns(const Draft &draft, std::ostream &output)
 void print_values(const Draft &draft,
                   std::ostream &output,
                   std::string_view vector,
-                  std::optional<double> DraftRow::*value)
+                  std::optional<Real> DraftRow::*value)
 {
     const std::span<const std::string_view> names = draft.row_names.names();
     for (std::size_t k = 0; k < draft.rows.size(); ++k)
     {
-        if (const std::optional<double> &stated = draft.rows[k].*value)
+        if (const std::optional<Real> &stated = draft.rows[k].*value)
         {
             output << "    " << vector << "  " << names[k] << "  " << text_of(*stated) << '\n';
         }
@@ -116,7 +116,7 @@ bool any_range(const Draft &draft)
 void print_bound(std::ostream &output,
                  std::string_view code,
                  std::string_view column,
-                 std::optional<double> value)
+                 std::optional<Real> value)
 {
     output << ' ' << code << " BND  " << column;
     if (value)
@@ -126,7 +126,7 @@ void print_bound(std::ostream &output,
     output << '\n';
 }
 
-void print_lower(std::ostream &output, std::string_view column, double lower)
+void print_lower(std::ostream &output, std::string_view column, Real lower)
 {
     if (std::isinf(lower))
     {
@@ -136,7 +136,7 @@ void print_lower(std::ostream &output, std::string_view column, double lower)
     print_bound(output, "LO", column, lower);
 }
 
-void print_upper(std::ostream &output, std::string_view column, double upper)
+void print_upper(std::ostream &output, std::string_view column, Real upper)
 {
     if (std::isinf(upper))
     {

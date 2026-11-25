@@ -19,7 +19,7 @@
 namespace biyos::test
 {
 
-inline constexpr double kInfinity = std::numeric_limits<double>::infinity();
+inline constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 
 struct Warning
 {
@@ -89,7 +89,7 @@ inline void add_columns(Model &model,
 }
 
 inline void add_rows(Model &model,
-                     const std::vector<double> &constants,
+                     const std::vector<Real> &constants,
                      const std::vector<Offset> &starts,
                      std::vector<LinearTerm> terms)
 {
@@ -113,7 +113,7 @@ inline void add_goal(Model &model, Index function, ObjectiveSense sense, std::st
     model.set_names(Family::Objective, std::span(&index, 1), std::span(&name, 1));
 }
 
-inline Variable continuous(double lower, double upper)
+inline Variable continuous(Real lower, Real upper)
 {
     return Variable{.kind = VariableKind::Continuous, .lower = lower, .upper = upper};
 }

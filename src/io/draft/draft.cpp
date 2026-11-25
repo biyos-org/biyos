@@ -31,7 +31,7 @@ VariableKind kind_of(const DraftColumn &column) noexcept
     return integer ? VariableKind::Integer : VariableKind::Continuous;
 }
 
-double lower_of(const DraftColumn &column) noexcept
+Real lower_of(const DraftColumn &column) noexcept
 {
     if (column.lower)
     {
@@ -40,7 +40,7 @@ double lower_of(const DraftColumn &column) noexcept
     return negative_upper(column) ? -kInfinity : 0.0;
 }
 
-double upper_of(const DraftColumn &column) noexcept
+Real upper_of(const DraftColumn &column) noexcept
 {
     if (column.upper)
     {
@@ -51,8 +51,8 @@ double upper_of(const DraftColumn &column) noexcept
 
 Constraint constraint_of(Index function, const DraftRow &row) noexcept
 {
-    const double rhs = row.rhs.value_or(0.0);
-    const double range = row.range.value_or(0.0);
+    const Real rhs = row.rhs.value_or(0.0);
+    const Real range = row.range.value_or(0.0);
     switch (row.sense)
     {
     case RowSense::Free:
@@ -114,7 +114,7 @@ void add_variables(Model &model, const Draft &draft)
 
 void add_functions(Model &model, const Draft &draft)
 {
-    std::vector<double> constants;
+    std::vector<Real> constants;
     constants.reserve(draft.rows.size());
     for (const DraftRow &row : draft.rows)
     {

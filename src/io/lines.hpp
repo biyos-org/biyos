@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/numbers.hpp"
+
 #include <cstddef>
 #include <istream>
 #include <optional>
@@ -31,6 +33,6 @@ class Lines
     std::size_t number_ = 0;
 };
 
-std::optional<double> number_of(std::string_view field);
+std::optional<Real> number_of(std::string_view field);
 
 }

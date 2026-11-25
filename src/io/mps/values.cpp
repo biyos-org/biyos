@@ -22,7 +22,7 @@ struct Value
 {
     Index row;
     std::string_view name;
-    double value;
+    Real value;
 };
 
 template <typename Set>

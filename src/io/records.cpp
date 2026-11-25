@@ -31,9 +31,9 @@ std::string quote(std::string_view text)
     return "'" + std::string(text) + "'";
 }
 
-double value_of(const Lines &lines, std::string_view field)
+Real value_of(const Lines &lines, std::string_view field)
 {
-    const std::optional<double> value = number_of(field);
+    const std::optional<Real> value = number_of(field);
     if (!value)
     {
         bad_file(lines, quote(field) + " is not a number");
