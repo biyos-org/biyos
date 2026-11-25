@@ -32,7 +32,8 @@ inline double constant_of(const Instruction &instruction) noexcept
     return std::bit_cast<double>(instruction.payload);
 }
 
-inline Pwl pwl_of(const Instruction &instruction, std::span<const double> weights) noexcept
+inline PiecewiseLinear piecewise_linear_of(const Instruction &instruction,
+                                           std::span<const double> weights) noexcept
 {
     const std::size_t n = instruction.second;
     const std::span<const double> points = weights.subspan(place(instruction.payload), 2 * n);

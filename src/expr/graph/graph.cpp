@@ -77,7 +77,7 @@ std::span<const double> Graph::coefficients(Offset node) const noexcept
     return std::span(coefficients_).subspan(start, children(node).size());
 }
 
-Offset Graph::pwl(Offset node) const noexcept
+Offset Graph::piecewise_linear(Offset node) const noexcept
 {
     return static_cast<Offset>(payloads_[to_size(node)]);
 }
@@ -141,7 +141,7 @@ Offset Graph::add_sum(double constant,
     return node;
 }
 
-Offset Graph::add_pwl(std::span<const double> x, std::span<const double> y)
+Offset Graph::add_piecewise_linear(std::span<const double> x, std::span<const double> y)
 {
     return points_.add(x, y);
 }
@@ -149,7 +149,7 @@ Offset Graph::add_pwl(std::span<const double> x, std::span<const double> y)
 Offset Graph::add_piecewise(Offset pwl, std::span<const Offset> children)
 {
     check(Operator::PiecewiseLinear, Payload::Points, children);
-    check_pwl(pwl, points_.size());
+    check_piecewise_linear(pwl, points_.size());
     return append(Operator::PiecewiseLinear, static_cast<std::uint64_t>(pwl), children);
 }
 
@@ -179,7 +179,7 @@ Graph::Mark Graph::mark() const noexcept
         .nodes = size(),
         .coefficients = coefficients_.size(),
         .variables = variable_nodes_.size(),
-        .pwls = points_.size(),
+        .piecewise_linears = points_.size(),
     };
 }
 
@@ -199,7 +199,7 @@ void Graph::truncate(const Mark &mark) noexcept
     starts_.resize(nodes + 1);
     coefficients_.resize(mark.coefficients);
     variable_nodes_.resize(mark.variables);
-    points_.truncate(mark.pwls);
+    points_.truncate(mark.piecewise_linears);
 }
 
 void Graph::check(Operator op, Payload payload, std::span<const Offset> children) const

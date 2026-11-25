@@ -185,7 +185,7 @@ Model with_nodes()
     model.add_variables(std::vector<Variable>(4, biyos::widest(VariableKind::Continuous)));
     const std::vector<Offset> x{model.add_variable_node(0)};
     model.add_node(BIYOS_OP_EXP, x, {});
-    model.add_pwl(std::vector<double>{0.0, 1.0}, std::vector<double>{2.0, -1.0});
+    model.add_piecewise_linear(std::vector<double>{0.0, 1.0}, std::vector<double>{2.0, -1.0});
     return model;
 }
 
@@ -196,7 +196,8 @@ void add_variable(Model &model)
 
 void add_points(Model &model)
 {
-    model.add_pwl(std::vector<double>{-1.0, 0.0, 2.0}, std::vector<double>{1.0, 0.0, 3.0});
+    model.add_piecewise_linear(std::vector<double>{-1.0, 0.0, 2.0},
+                               std::vector<double>{1.0, 0.0, 3.0});
 }
 
 void add_batch(Model &model)
@@ -338,7 +339,7 @@ void expect_graph(void (*change)(Model &), Offset added, Offset pwls = 0)
         {
             EXPECT_GT(successes, 0U);
             EXPECT_EQ(model.graph().size(), before.nodes + added);
-            EXPECT_EQ(model.graph().points().size(), before.pwls + pwls);
+            EXPECT_EQ(model.graph().points().size(), before.piecewise_linears + pwls);
             return;
         }
         EXPECT_EQ(model.graph().mark(), before);

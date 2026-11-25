@@ -146,7 +146,7 @@ void grow(Graph &graph, Engine &engine)
         }
         break;
     case biyos::Payload::Points:
-        graph.add_piecewise(graph.add_pwl(kKinks, kHeights), children);
+        graph.add_piecewise(graph.add_piecewise_linear(kKinks, kHeights), children);
         break;
     }
 }

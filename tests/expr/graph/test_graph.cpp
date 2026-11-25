@@ -343,13 +343,13 @@ TEST(GraphTest, Piecewise)
     EXPECT_EQ(refusal([&] { graph.add_piecewise(0, child); }),
               "invalid argument: expression: pwl 0 is unknown");
     const std::array points{0.0, 1.0};
-    graph.add_pwl(points, points);
-    graph.add_pwl(points, std::array{3.0, -2.0});
+    graph.add_piecewise_linear(points, points);
+    graph.add_piecewise_linear(points, std::array{3.0, -2.0});
     const Offset node = graph.add_piecewise(1, child);
     EXPECT_EQ(graph.op(node), op);
-    EXPECT_EQ(graph.pwl(node), 1);
+    EXPECT_EQ(graph.piecewise_linear(node), 1);
     EXPECT_EQ(ids(graph.children(node)), std::vector<Offset>{x});
-    EXPECT_EQ(graph.pwl(graph.add_piecewise(0, std::span(&node, 1))), 0);
+    EXPECT_EQ(graph.piecewise_linear(graph.add_piecewise(0, std::span(&node, 1))), 0);
     EXPECT_EQ(refusal([&] { graph.add_piecewise(2, child); }),
               "invalid argument: expression: pwl 2 is unknown");
     EXPECT_EQ(refusal([&] { graph.add_piecewise(-1, child); }),
@@ -394,7 +394,7 @@ TEST(GraphTest, Truncated)
     const std::array weight_pair{2.0, 4.0};
     const Offset sum = graph.add_sum(1.0, std::span(&x, 1), weight);
     const std::array points{0.0, 1.0};
-    graph.add_pwl(points, weight_pair);
+    graph.add_piecewise_linear(points, weight_pair);
     const Graph::Mark before = graph.mark();
     graph.truncate(before);
     EXPECT_EQ(graph.mark(), before);
@@ -405,12 +405,12 @@ TEST(GraphTest, Truncated)
     const std::array weights{1.0, -1.0, 0.5, 2.0};
     graph.add_sum(0.0, children, weights);
     unary(graph, Operator::Exp, y);
-    graph.add_pwl(points, points);
-    graph.add_pwl(weight_pair, points);
+    graph.add_piecewise_linear(points, points);
+    graph.add_piecewise_linear(weight_pair, points);
     graph.truncate(before);
     EXPECT_EQ(graph.mark(), before);
     EXPECT_EQ(graph.points().size(), 1);
-    EXPECT_EQ(graph.add_pwl(points, points), 1);
+    EXPECT_EQ(graph.add_piecewise_linear(points, points), 1);
     EXPECT_EQ(graph.add_variable(3), x);
     const Offset fresh = graph.add_variable(1);
     EXPECT_EQ(fresh, 2);

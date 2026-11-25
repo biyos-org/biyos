@@ -109,7 +109,7 @@ void attach_graphs(Model &model)
     const Offset wave = unary(model, BIYOS_OP_SIN, model.add_variable_node(2));
     const std::array factors{rise, wave};
     const Offset product = model.add_node(BIYOS_OP_PROD, factors, std::array{1.0});
-    const Offset pwl = model.add_pwl(kKinks, kHeights);
+    const Offset pwl = model.add_piecewise_linear(kKinks, kHeights);
     const Offset kinked = model.add_piecewise(pwl, model.add_variable_node(3));
     const std::array nodes{product, unary(model, BIYOS_OP_EXP, kinked)};
     model.attach_expressions(std::vector<Index>{0, 1}, nodes);

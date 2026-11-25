@@ -29,7 +29,7 @@ Interval point(double value) noexcept
     return {value, value};
 }
 
-bool is_flat(const Pwl &pwl, std::size_t segment) noexcept
+bool is_flat(const PiecewiseLinear &pwl, std::size_t segment) noexcept
 {
     return is_zero(pwl.y[segment + 1] - pwl.y[segment]);
 }
@@ -45,7 +45,7 @@ double before(double x) noexcept
     return std::nextafter(x, -kInfinity);
 }
 
-Piece piece_at(const Pwl &pwl, std::size_t anchor, Interval child) noexcept
+Piece piece_at(const PiecewiseLinear &pwl, std::size_t anchor, Interval child) noexcept
 {
     const std::size_t last = pwl.x.size() - 1;
     return {
@@ -65,7 +65,7 @@ Interval rise_over(Interval slope, double from, double t) noexcept
     return slope * (point(t) + point(-from));
 }
 
-Interval value_at(const Pwl &pwl, const Piece &piece, double t) noexcept
+Interval value_at(const PiecewiseLinear &pwl, const Piece &piece, double t) noexcept
 {
     const double x = pwl.x[piece.anchor];
     const double y = pwl.y[piece.anchor];
@@ -76,17 +76,17 @@ Interval value_at(const Pwl &pwl, const Piece &piece, double t) noexcept
     return point(y) + rise_over(slope(pwl, piece.segment), x, t);
 }
 
-double lowest(const Pwl &pwl, const Piece &piece, double t) noexcept
+double lowest(const PiecewiseLinear &pwl, const Piece &piece, double t) noexcept
 {
     return std::isinf(t) ? -kInfinity : value_at(pwl, piece, t).lower();
 }
 
-double highest(const Pwl &pwl, const Piece &piece, double t) noexcept
+double highest(const PiecewiseLinear &pwl, const Piece &piece, double t) noexcept
 {
     return std::isinf(t) ? kInfinity : value_at(pwl, piece, t).upper();
 }
 
-Interval range_of(const Pwl &pwl, const Piece &piece) noexcept
+Interval range_of(const PiecewiseLinear &pwl, const Piece &piece) noexcept
 {
     if (is_flat(pwl, piece.segment))
     {
@@ -100,7 +100,7 @@ Interval range_of(const Pwl &pwl, const Piece &piece) noexcept
 
 }
 
-Interval slope(const Pwl &pwl, std::size_t segment) noexcept
+Interval slope(const PiecewiseLinear &pwl, std::size_t segment) noexcept
 {
     if (is_flat(pwl, segment))
     {
@@ -110,7 +110,7 @@ Interval slope(const Pwl &pwl, std::size_t segment) noexcept
     return rise / (point(pwl.x[segment + 1]) + point(-pwl.x[segment]));
 }
 
-Interval piecewise(const Pwl &pwl, Interval child) noexcept
+Interval piecewise(const PiecewiseLinear &pwl, Interval child) noexcept
 {
     if (child.is_empty())
     {

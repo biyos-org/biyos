@@ -88,7 +88,7 @@ Offset copy(const Graph &source, Offset node, std::span<const Offset> children, 
     case Payload::Coefficients:
         return target.add_sum(source.constant(node), children, source.coefficients(node));
     case Payload::Points:
-        return target.add_piecewise(source.pwl(node), children);
+        return target.add_piecewise(source.piecewise_linear(node), children);
     }
     return target.add(op, children);
 }

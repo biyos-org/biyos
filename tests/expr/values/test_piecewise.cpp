@@ -89,7 +89,7 @@ struct Single
 Single single(std::span<const double> x, std::span<const double> y)
 {
     Single made;
-    const Offset pwl = made.graph.add_pwl(x, y);
+    const Offset pwl = made.graph.add_piecewise_linear(x, y);
     const Offset t = made.graph.add_variable(0);
     made.root = made.graph.add_piecewise(pwl, std::span(&t, 1));
     return made;
@@ -98,7 +98,7 @@ Single single(std::span<const double> x, std::span<const double> y)
 Single single()
 {
     Single made;
-    const Offset pwl = made.graph.add_pwl(kKinks, kHeights);
+    const Offset pwl = made.graph.add_piecewise_linear(kKinks, kHeights);
     const Offset x = made.graph.add_variable(0);
     made.root = made.graph.add_piecewise(pwl, std::span(&x, 1));
     return made;
@@ -114,7 +114,7 @@ double slope_at(const Tape &tape, double t)
     return jacobian_of(tape, std::array{t}).front();
 }
 
-std::size_t pwl_of(const Instruction &instruction)
+std::size_t piecewise_linear_of(const Instruction &instruction)
 {
     return instruction.second == kKinks.size() ? 0 : 1;
 }
@@ -122,7 +122,7 @@ std::size_t pwl_of(const Instruction &instruction)
 void expect_table(const Block &block, const Instruction &instruction)
 {
     const auto start = static_cast<std::size_t>(instruction.payload);
-    const bool wide = pwl_of(instruction) == 0;
+    const bool wide = piecewise_linear_of(instruction) == 0;
     const std::span<const double> x = wide ? std::span<const double>(kKinks) : kShort;
     const std::span<const double> y = wide ? std::span<const double>(kHeights) : kRamp;
     ASSERT_LE(start + 2 * x.size(), block.weights.size());
@@ -144,7 +144,7 @@ void expect_shared(const Block &block)
             continue;
         }
         expect_table(block, instruction);
-        const std::size_t pwl = pwl_of(instruction);
+        const std::size_t pwl = piecewise_linear_of(instruction);
         if (places[pwl] == block.weights.size())
         {
             places[pwl] = static_cast<std::size_t>(instruction.payload);
@@ -180,7 +180,7 @@ TEST(PiecewiseTest, Rounded)
     const std::array x{0.0, 0.1, 0.3, 0.7};
     const std::array y{0.1, 0.7, 0.2, 0.9};
     Graph graph;
-    const Offset pwl = graph.add_pwl(x, y);
+    const Offset pwl = graph.add_piecewise_linear(x, y);
     const Offset t = graph.add_variable(0);
     const Offset root = graph.add_piecewise(pwl, std::span(&t, 1));
     const Tape tape(graph, std::span(&root, 1));
@@ -336,7 +336,7 @@ TEST(PiecewiseTest, Curvature)
 TEST(PiecewiseTest, Pattern)
 {
     Graph graph;
-    const Offset pwl = graph.add_pwl(kKinks, kHeights);
+    const Offset pwl = graph.add_piecewise_linear(kKinks, kHeights);
     const std::array x{graph.add_variable(0), graph.add_variable(1), graph.add_variable(2)};
     const std::array pair{x[0], x[2]};
     const Offset inner = graph.add_sum(0.5, pair, std::array{1.0, -2.0});
@@ -358,8 +358,8 @@ TEST(PiecewiseTest, Pattern)
 TEST(PiecewiseTest, Shared)
 {
     Graph graph;
-    const Offset wide = graph.add_pwl(kKinks, kHeights);
-    const Offset narrow = graph.add_pwl(kShort, kRamp);
+    const Offset wide = graph.add_piecewise_linear(kKinks, kHeights);
+    const Offset narrow = graph.add_piecewise_linear(kShort, kRamp);
     const std::array x{graph.add_variable(0), graph.add_variable(1)};
     std::vector<Offset> roots;
     for (const Offset pwl : {wide, narrow, wide})

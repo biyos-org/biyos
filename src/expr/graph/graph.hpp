@@ -20,7 +20,7 @@ class Graph
         Offset nodes;
         std::size_t coefficients;
         std::size_t variables;
-        Offset pwls;
+        Offset piecewise_linears;
 
         bool operator==(const Mark &) const = default;
     };
@@ -34,7 +34,7 @@ class Graph
     double constant(Offset node) const noexcept;
     Index variable(Offset node) const noexcept;
     std::span<const double> coefficients(Offset node) const noexcept;
-    Offset pwl(Offset node) const noexcept;
+    Offset piecewise_linear(Offset node) const noexcept;
     Offset node_of(Index variable) const noexcept;
     const Points &points() const noexcept;
 
@@ -44,7 +44,7 @@ class Graph
     Offset add_sum(double constant,
                    std::span<const Offset> children,
                    std::span<const double> coefficients);
-    Offset add_pwl(std::span<const double> x, std::span<const double> y);
+    Offset add_piecewise_linear(std::span<const double> x, std::span<const double> y);
     Offset add_piecewise(Offset pwl, std::span<const Offset> children);
 
     void renumber_variables(std::span<const Index> map) noexcept;

@@ -115,7 +115,7 @@ std::size_t count_of(const biyos::Model &core, std::span<const Index> pwls)
     std::size_t count = 0;
     for (const Index index : pwls)
     {
-        count += core.graph().points().pwl(index).x.size();
+        count += core.graph().points().piecewise_linear(index).x.size();
     }
     return count;
 }
@@ -141,7 +141,7 @@ void write_pwls(const biyos::Model &core, std::span<const Index> pwls, const Out
     std::size_t k = 0;
     for (std::size_t j = 0; j < pwls.size(); ++j)
     {
-        const auto pwl = core.graph().points().pwl(pwls[j]);
+        const auto pwl = core.graph().points().piecewise_linear(pwls[j]);
         copy_to(pwl.x, out.x, k);
         copy_to(pwl.y, out.y, k);
         k += pwl.x.size();

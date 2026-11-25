@@ -119,7 +119,8 @@ Interval smallest(const Pass &pass, Offset node) noexcept
 
 Interval piecewise_of(const Pass &pass, Offset node) noexcept
 {
-    return piecewise(pass.graph.points().pwl(pass.graph.pwl(node)), first(pass, node));
+    return piecewise(pass.graph.points().piecewise_linear(pass.graph.piecewise_linear(node)),
+                     first(pass, node));
 }
 
 Interval enclosure(const Pass &pass, Offset node) noexcept

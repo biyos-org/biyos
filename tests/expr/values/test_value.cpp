@@ -233,7 +233,8 @@ double Reference::compute(Offset node)
     case Operator::Erf:
         return std::erf(child(node, 0));
     case Operator::PiecewiseLinear:
-        return biyos::value_at(graph_.points().pwl(graph_.pwl(node)), child(node, 0));
+        return biyos::value_at(graph_.points().piecewise_linear(graph_.piecewise_linear(node)),
+                               child(node, 0));
     }
     return kNan;
 }

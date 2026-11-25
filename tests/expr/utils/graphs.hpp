@@ -35,7 +35,7 @@ constexpr std::array kKinks{-1.0, 0.25, 1.5};
 constexpr std::array kHeights{2.0, -0.5, 1.0};
 constexpr std::array kSteps{-3.0, -2.0, 0.5, 4.0};
 constexpr std::array kLevels{1.0, 1.0, -2.0, 3.0};
-constexpr Offset kPwls = 2;
+constexpr Offset kPiecewiseLinears = 2;
 constexpr std::array kSpecial{
     0.0,
     -0.0,
@@ -78,8 +78,8 @@ inline Offset listed(Graph &graph, Operator op, const std::vector<Offset> &child
 
 inline void add_pwls(Graph &graph)
 {
-    graph.add_pwl(kKinks, kHeights);
-    graph.add_pwl(kSteps, kLevels);
+    graph.add_piecewise_linear(kKinks, kHeights);
+    graph.add_piecewise_linear(kSteps, kLevels);
 }
 
 inline Offset piecewise(Graph &graph, Offset pwl, Offset child)
@@ -93,7 +93,7 @@ inline std::vector<Offset> every_operator(Graph &graph)
     const Offset y = graph.add_variable(1);
     const Offset z = graph.add_variable(2);
     const Offset w = graph.add_variable(3);
-    const Offset pwl = graph.add_pwl(kKinks, kHeights);
+    const Offset pwl = graph.add_piecewise_linear(kKinks, kHeights);
     const std::array xy{x, y};
     const std::array xyz{x, y, z};
     return {
@@ -197,7 +197,7 @@ inline Offset grow(Graph &graph, Random &random)
     case 6:
         return listed(graph, kListed[random.below(2)], children);
     default:
-        return piecewise(graph, static_cast<Offset>(random.below(kPwls)), children[0]);
+        return piecewise(graph, static_cast<Offset>(random.below(kPiecewiseLinears)), children[0]);
     }
 }
 

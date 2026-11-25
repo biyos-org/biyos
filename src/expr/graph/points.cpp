@@ -43,7 +43,7 @@ void check_rise(std::span<const double> x, std::size_t k)
     }
 }
 
-void check_segment(const Pwl &pwl, std::size_t k)
+void check_segment(const PiecewiseLinear &pwl, std::size_t k)
 {
     if (k == 0)
     {
@@ -86,7 +86,7 @@ Offset Points::size() const noexcept
     return to_offset(starts_.size()) - 1;
 }
 
-Pwl Points::pwl(Offset index) const noexcept
+PiecewiseLinear Points::piecewise_linear(Offset index) const noexcept
 {
     const std::size_t start = to_size(starts_[to_size(index)]);
     const std::size_t n = to_size(starts_[to_size(index) + 1]) - start;
@@ -137,7 +137,7 @@ void check_points(std::span<const double> x, std::span<const double> y)
     }
 }
 
-void check_pwl(Offset pwl, Offset size)
+void check_piecewise_linear(Offset pwl, Offset size)
 {
     if (pwl < 0 || pwl >= size)
     {
@@ -151,13 +151,13 @@ std::size_t segment_of(std::span<const double> x, double t) noexcept
     return static_cast<std::size_t>(std::ranges::upper_bound(inner, t) - inner.begin());
 }
 
-double slope_of(const Pwl &pwl, std::size_t segment) noexcept
+double slope_of(const PiecewiseLinear &pwl, std::size_t segment) noexcept
 {
     const double rise = pwl.y[segment + 1] - pwl.y[segment];
     return rise / (pwl.x[segment + 1] - pwl.x[segment]);
 }
 
-double value_at(const Pwl &pwl, double t) noexcept
+double value_at(const PiecewiseLinear &pwl, double t) noexcept
 {
     const std::size_t k = segment_of(pwl.x, t);
     const std::size_t anchor = t < pwl.x[k + 1] ? k : k + 1;
@@ -169,7 +169,7 @@ double value_at(const Pwl &pwl, double t) noexcept
     return pwl.y[anchor] + rise_over(slope, pwl.x[anchor], t);
 }
 
-double slope_at(const Pwl &pwl, double t) noexcept
+double slope_at(const PiecewiseLinear &pwl, double t) noexcept
 {
     return slope_of(pwl, segment_of(pwl.x, t));
 }

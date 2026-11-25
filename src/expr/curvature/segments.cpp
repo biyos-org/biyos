@@ -21,7 +21,7 @@ std::size_t last_segment(std::span<const double> x, double t) noexcept
     return static_cast<std::size_t>(std::ranges::lower_bound(inner, t) - inner.begin());
 }
 
-Profile shape_over(const Pwl &pwl, std::size_t first, std::size_t last) noexcept
+Profile shape_over(const PiecewiseLinear &pwl, std::size_t first, std::size_t last) noexcept
 {
     Interval previous = slope(pwl, first);
     Interval slopes = previous;
@@ -43,7 +43,7 @@ Profile shape_over(const Pwl &pwl, std::size_t first, std::size_t last) noexcept
 
 }
 
-Profile segments(const Pwl &pwl, Interval child) noexcept
+Profile segments(const PiecewiseLinear &pwl, Interval child) noexcept
 {
     if (child.is_empty())
     {

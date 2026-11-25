@@ -31,8 +31,8 @@ using biyos::Interval;
 using biyos::Monotonicity;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::PiecewiseLinear;
 using biyos::Profile;
-using biyos::Pwl;
 
 using Wide = long double;
 
@@ -59,7 +59,7 @@ struct Line
     std::vector<double> x;
     std::vector<double> y;
 
-    Pwl pwl() const { return {.x = x, .y = y}; }
+    PiecewiseLinear pwl() const { return {.x = x, .y = y}; }
 };
 
 const Line kValley{.x = {-1.0, 0.0, 1.0}, .y = {1.0, 0.0, 1.0}};
@@ -92,7 +92,7 @@ Curvature nested(const Line &line, Operator op, double sign, Interval x)
     const Offset outer = graph.add(op, std::span(&variable, 1));
     const std::array weight{sign};
     const Offset child = graph.add_sum(0.0, std::span(&outer, 1), weight);
-    const Offset pwl = graph.add_pwl(line.x, line.y);
+    const Offset pwl = graph.add_piecewise_linear(line.x, line.y);
     const Offset root = graph.add_piecewise(pwl, std::span(&child, 1));
     std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
     biyos::enclose(graph, std::span(&x, 1), nodes);
