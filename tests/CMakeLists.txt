@@ -108,6 +108,7 @@ biyos_add_test(test_model
     model/edits/test_copy.cpp
     model/edits/test_delete.cpp
     model/edits/test_names.cpp
+    model/evaluation/test_evaluation.cpp
     model/functions/test_callbacks.cpp
     model/functions/test_encoding.cpp
     model/functions/test_expressions.cpp

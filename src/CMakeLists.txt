@@ -95,6 +95,8 @@ add_library(biyos_internal STATIC
     model/compare/fields.cpp
     model/compare/match.cpp
     model/compressed.cpp
+    model/evaluation/evaluation.cpp
+    model/evaluation/maps.cpp
     model/expressions/callbacks.cpp
     model/expressions/expressions.cpp
     model/expressions/nodes.cpp
