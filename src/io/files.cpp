@@ -99,10 +99,9 @@ void write_file(Env &env,
                 const Settings &settings,
                 std::string_view path,
                 FileFormat format,
-                const BIYOS_model *handle,
-                Hooks *hooks)
+                Owner owner)
 {
-    const EntryTimer timer(env, "io", "write", handle, hooks);
+    const EntryTimer timer(env, "io", "write", owner);
     const std::string file(path);
     switch (format)
     {

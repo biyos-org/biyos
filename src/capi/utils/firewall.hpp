@@ -27,56 +27,43 @@ inline void describe_failure(Event &event,
     event.fields.push_back(Field{.name = "code", .value = std::to_string(status)});
 }
 
-inline void announce(Env &env,
-                     const BIYOS_model *model,
-                     Hooks *hooks,
-                     ErrorKind kind,
-                     std::string_view text) noexcept
+inline void announce(Env &env, Owner owner, ErrorKind kind, std::string_view text) noexcept
 {
     const BIYOS_status status = status_of(kind);
-    const auto fill = [&](Event &event) { describe_failure(event, model, status, text); };
-    env.events().emit(EventKind::Message, EventLevel::Error, fill, hooks);
+    const auto fill = [&](Event &event) { describe_failure(event, owner.model, status, text); };
+    env.events().emit(EventKind::Message, EventLevel::Error, fill, owner.hooks);
 }
 
-inline void report(Env *env,
-                   const BIYOS_model *model,
-                   Hooks *hooks,
-                   ErrorKind kind,
-                   std::string_view text) noexcept
+inline void report(Env *env, Owner owner, ErrorKind kind, std::string_view text) noexcept
 {
     if (env == nullptr)
     {
         return;
     }
-    env->record_error(kind, text, model);
+    env->record_error(kind, text, owner.model);
     if (!env->events().delivering())
     {
-        announce(*env, model, hooks, kind, text);
+        announce(*env, owner, kind, text);
     }
 }
 
-inline BIYOS_status fail(Env *env,
-                         const BIYOS_model *model,
-                         Hooks *hooks,
-                         ErrorKind kind,
-                         std::string_view message) noexcept
+inline BIYOS_status fail(Env *env, Owner owner, ErrorKind kind, std::string_view message) noexcept
 {
     if (env != nullptr)
     {
         try
         {
-            report(env, model, hooks, kind, Error(kind, "", std::string(message)).what());
+            report(env, owner, kind, Error(kind, "", std::string(message)).what());
         }
         catch (...)
         {
-            report(env, model, hooks, kind, kind_name(kind));
+            report(env, owner, kind, kind_name(kind));
         }
     }
     return status_of(kind);
 }
 
-template <std::invocable Body>
-BIYOS_status guard(Env *env, const BIYOS_model *model, Hooks *hooks, Body &&body) noexcept
+template <std::invocable Body> BIYOS_status guard(Env *env, Owner owner, Body &&body) noexcept
 {
     try
     {
@@ -85,27 +72,27 @@ BIYOS_status guard(Env *env, const BIYOS_model *model, Hooks *hooks, Body &&body
     }
     catch (const Error &error)
     {
-        report(env, model, hooks, error.kind(), error.what());
+        report(env, owner, error.kind(), error.what());
         return status_of(error.kind());
     }
     catch (const std::bad_alloc &)
     {
-        report(env, model, hooks, ErrorKind::NoMemory, kind_name(ErrorKind::NoMemory));
+        report(env, owner, ErrorKind::NoMemory, kind_name(ErrorKind::NoMemory));
         return status_of(ErrorKind::NoMemory);
     }
     catch (const std::exception &error)
     {
-        return fail(env, model, hooks, ErrorKind::Internal, error.what());
+        return fail(env, owner, ErrorKind::Internal, error.what());
     }
     catch (...)
     {
-        return fail(env, model, hooks, ErrorKind::Internal, "unknown exception");
+        return fail(env, owner, ErrorKind::Internal, "unknown exception");
     }
 }
 
 template <std::invocable Body> BIYOS_status guard(Body &&body) noexcept
 {
-    return guard(nullptr, nullptr, nullptr, std::forward<Body>(body));
+    return guard(nullptr, Owner{}, std::forward<Body>(body));
 }
 
 }

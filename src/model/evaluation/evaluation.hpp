@@ -53,10 +53,7 @@ class Evaluation
   public:
     using Point = evaluation::Point;
 
-    Evaluation(Env &env,
-               const Model &model,
-               const BIYOS_model *handle = nullptr,
-               Hooks *hooks = nullptr);
+    Evaluation(Env &env, const Model &model, Owner owner = {});
 
     const Pattern &jacobian_pattern() const noexcept;
     const Lower &hessian_pattern() const noexcept;
@@ -84,8 +81,7 @@ class Evaluation
 
     Env &env_;
     const Model &model_;
-    const BIYOS_model *handle_;
-    Hooks *hooks_;
+    Owner owner_;
     evaluation::Program program_;
     Workspace workspace_;
     Adjoints adjoints_;

@@ -383,7 +383,7 @@ TEST_F(TimerTest, ModelHooks)
     const int address = 0;
     const BIYOS_model *const kHandle = reinterpret_cast<const BIYOS_model *>(&address);
     {
-        const EntryTimer write(env, "io", "write", kHandle, &hooks);
+        const EntryTimer write(env, "io", "write", {.model = kHandle, .hooks = &hooks});
         advance(2ns, 1ns);
     }
     const Texts expected{
@@ -403,7 +403,7 @@ TEST_F(TimerTest, ModelOnly)
     const auto keep = [&local](const biyos::Event &event) { local.push_back(event); };
     hooks.add_hook(EventKind::Span, EventLevel::Debug, keep);
     {
-        const Timer solve(env, tree, "nlp", "solve", nullptr, &hooks);
+        const Timer solve(env, tree, "nlp", "solve", {.hooks = &hooks});
         advance(1ns, 1ns);
     }
     const Texts expected{

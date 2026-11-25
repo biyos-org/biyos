@@ -38,7 +38,7 @@ Bits bits(const Values &values)
 struct Reference
 {
     explicit Reference(const Model &model)
-        : handle(*model.get()), evaluation(handle.handle.env(), handle.core, &handle),
+        : handle(*model.get()), evaluation(handle.handle.env(), handle.core, {.model = &handle}),
           lookup(handle.settings, handle.handle.env().options())
     {
     }

@@ -14,8 +14,8 @@ Evaluation &evaluation_of(BIYOS_model &model)
     claim(model);
     if (model.evaluation == nullptr)
     {
-        model.evaluation =
-            std::make_unique<Evaluation>(model.handle.env(), model.core, &model, &model.hooks);
+        const Owner owner{.model = &model, .hooks = &model.hooks};
+        model.evaluation = std::make_unique<Evaluation>(model.handle.env(), model.core, owner);
     }
     return *model.evaluation;
 }

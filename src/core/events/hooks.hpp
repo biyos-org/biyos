@@ -74,4 +74,10 @@ class Hooks
     std::atomic<ThreadId> owner_;
 };
 
+struct Owner
+{
+    const BIYOS_model *model = nullptr;
+    Hooks *hooks = nullptr;
+};
+
 }

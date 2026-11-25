@@ -91,13 +91,8 @@ void TimingTree::leave(std::size_t node, nanoseconds wall, nanoseconds cpu) noex
     }
 }
 
-Timer::Timer(Env &env,
-             TimingTree &tree,
-             StaticName module,
-             StaticName name,
-             const BIYOS_model *model,
-             Hooks *hooks)
-    : clock_(env.clock()), events_(env.events()), model_(model), hooks_(hooks), tree_(tree),
+Timer::Timer(Env &env, TimingTree &tree, StaticName module, StaticName name, Owner owner)
+    : clock_(env.clock()), events_(env.events()), owner_(owner), tree_(tree),
       module_(module.text()), wall_(clock_.wall_time()), cpu_(clock_.cpu_time()),
       observed_wall_(tree.observed_wall_), observed_cpu_(tree.observed_cpu_),
       node_(tree.enter(name.text()))
@@ -118,7 +113,7 @@ Timer::~Timer()
 
 void Timer::describe(Event &event, std::string_view edge, nanoseconds wall, nanoseconds cpu) const
 {
-    event.model = model_;
+    event.model = owner_.model;
     event.module.assign(module_);
     event.text.assign(tree_.nodes()[node_].name);
     event.fields.push_back(Field{.name = "edge", .value = std::string(edge)});
@@ -128,13 +123,13 @@ void Timer::describe(Event &event, std::string_view edge, nanoseconds wall, nano
 
 void Timer::announce(std::string_view edge, nanoseconds wall, nanoseconds cpu) noexcept
 {
-    if (!events_.wanted(EventKind::Span, EventLevel::Info, hooks_))
+    if (!events_.wanted(EventKind::Span, EventLevel::Info, owner_.hooks))
     {
         return;
     }
     const nanoseconds since = wall - events_.origin();
     const auto fill = [&](Event &event) { describe(event, edge, since, cpu); };
-    events_.emit(EventKind::Span, EventLevel::Info, fill, hooks_);
+    events_.emit(EventKind::Span, EventLevel::Info, fill, owner_.hooks);
     tree_.observed_wall_ += clock_.wall_time() - wall;
     tree_.observed_cpu_ += cpu_of(clock_).value_or(cpu) - cpu;
 }

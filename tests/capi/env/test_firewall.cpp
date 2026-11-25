@@ -25,7 +25,7 @@ BIYOS_status status_after(const std::function<void()> &body)
 
 BIYOS_status status_after(biyos::Env &env, const std::function<void()> &body)
 {
-    return biyos::capi::guard(&env, nullptr, nullptr, body);
+    return biyos::capi::guard(&env, biyos::Owner{}, body);
 }
 
 void say(biyos::Env &env, const std::string &text)
@@ -102,7 +102,7 @@ TEST(FirewallTest, FailureModel)
     std::vector<const BIYOS_model *> seen;
     const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
     env.events().add_hook(EventKind::Message, EventLevel::Error, keep);
-    EXPECT_EQ(biyos::capi::guard(&env, model, nullptr, [] { throw std::bad_alloc(); }),
+    EXPECT_EQ(biyos::capi::guard(&env, {.model = model}, [] { throw std::bad_alloc(); }),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, model);
     EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
@@ -122,8 +122,8 @@ TEST(FirewallTest, ModelHooks)
     const auto shared = [&seen](const biyos::Event &event) { seen.push_back("e " + event.text); };
     hooks.add_hook(EventKind::Message, EventLevel::Error, local);
     env.events().add_hook(EventKind::Message, EventLevel::Error, shared);
-    EXPECT_EQ(biyos::capi::guard(&env, model, &hooks, [] { throw std::bad_alloc(); }),
-              BIYOS_ERR_NOMEMORY);
+    const biyos::Owner owner{.model = model, .hooks = &hooks};
+    EXPECT_EQ(biyos::capi::guard(&env, owner, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(status_after(env, [] { throw 42; }), BIYOS_ERR_INTERNAL);
     const std::vector<std::string> expected{
         "m out of memory",

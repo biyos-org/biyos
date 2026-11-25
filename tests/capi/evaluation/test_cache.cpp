@@ -16,8 +16,9 @@ using biyos::test::Model;
 void build(const Model &model)
 {
     BIYOS_model &handle = *model.get();
+    const biyos::Owner owner{.model = &handle};
     handle.evaluation =
-        std::make_unique<biyos::Evaluation>(handle.handle.env(), handle.core, &handle);
+        std::make_unique<biyos::Evaluation>(handle.handle.env(), handle.core, owner);
 }
 
 }

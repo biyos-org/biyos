@@ -28,7 +28,6 @@ void write_file(Env &env,
                 const Settings &settings,
                 std::string_view path,
                 FileFormat format,
-                const BIYOS_model *handle = nullptr,
-                Hooks *hooks = nullptr);
+                Owner owner = {});
 
 }

@@ -96,7 +96,8 @@ inline biyos::Model &writable(BIYOS_model &model)
 
 inline biyos::EntryTimer model_timer(const BIYOS_model &model, biyos::StaticName name)
 {
-    return biyos::EntryTimer(model.handle.env(), biyos::kModule, name, &model, &model.hooks);
+    const biyos::Owner owner{.model = &model, .hooks = &model.hooks};
+    return biyos::EntryTimer(model.handle.env(), biyos::kModule, name, owner);
 }
 
 inline void start(biyos::Env &env) noexcept
@@ -124,10 +125,7 @@ BIYOS_status guarded(BIYOS_env *env, Args... arguments) noexcept
     biyos::Env &core = env->core;
     start(core);
     const EnvGuard busy(core);
-    return biyos::capi::guard(&core,
-                              nullptr,
-                              nullptr,
-                              [&] { admitted<Body>(busy, core, arguments...); });
+    return biyos::capi::guard(&core, Owner{}, [&] { admitted<Body>(busy, core, arguments...); });
 }
 
 template <auto Body, typename Model, typename... Args>
@@ -144,10 +142,8 @@ BIYOS_status guarded(Model *model, Args... arguments) noexcept
         start(env);
     }
     const ModelGuard busy(env, model->usage);
-    return biyos::capi::guard(&env,
-                              model,
-                              &model->hooks,
-                              [&] { admitted<Body>(busy, *model, arguments...); });
+    const Owner owner{.model = model, .hooks = &model->hooks};
+    return biyos::capi::guard(&env, owner, [&] { admitted<Body>(busy, *model, arguments...); });
 }
 
 }

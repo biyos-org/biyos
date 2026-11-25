@@ -56,12 +56,7 @@ class TimingTree
 class Timer
 {
   public:
-    Timer(Env &env,
-          TimingTree &tree,
-          StaticName module,
-          StaticName name,
-          const BIYOS_model *model = nullptr,
-          Hooks *hooks = nullptr);
+    Timer(Env &env, TimingTree &tree, StaticName module, StaticName name, Owner owner = {});
     ~Timer();
 
     Timer(const Timer &) = delete;
@@ -78,8 +73,7 @@ class Timer
 
     const Clock &clock_;
     Events &events_;
-    const BIYOS_model *model_;
-    Hooks *hooks_;
+    Owner owner_;
     TimingTree &tree_;
     std::string_view module_;
     std::chrono::nanoseconds wall_;
@@ -92,12 +86,8 @@ class Timer
 class EntryTimer
 {
   public:
-    EntryTimer(Env &env,
-               StaticName module,
-               StaticName name,
-               const BIYOS_model *model = nullptr,
-               Hooks *hooks = nullptr)
-        : timer_(env, tree_, module, name, model, hooks)
+    EntryTimer(Env &env, StaticName module, StaticName name, Owner owner = {})
+        : timer_(env, tree_, module, name, owner)
     {
     }
 
