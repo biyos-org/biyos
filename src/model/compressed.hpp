@@ -19,14 +19,6 @@ void check_shape(std::size_t functions,
                  std::string_view argument = "off");
 
 template <typename T>
-std::span<T> slice(std::span<T> terms, std::span<const Offset> starts, std::size_t k)
-{
-    const auto begin = to_size(starts[k]);
-    const auto end = to_size(starts[k + 1]);
-    return terms.subspan(begin, end - begin);
-}
-
-template <typename T>
 std::size_t keep_part(std::span<T> items,
                       std::size_t start,
                       std::size_t stop,

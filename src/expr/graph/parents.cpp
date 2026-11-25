@@ -1,5 +1,6 @@
 #include "expr/graph/parents.hpp"
 
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 
@@ -56,9 +57,7 @@ Offset Parents::size() const noexcept
 
 std::span<const Offset> Parents::of(Offset node) const noexcept
 {
-    const Offset start = starts_[to_size(node)];
-    const Offset n = starts_[to_size(node) + 1] - start;
-    return std::span(parents_).subspan(to_size(start), to_size(n));
+    return slice(std::span(parents_), starts_, to_size(node));
 }
 
 }

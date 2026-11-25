@@ -1,6 +1,7 @@
 #include "expr/hessian/hessian.hpp"
 
 #include "core/error.hpp"
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
@@ -54,9 +55,7 @@ void check_size(std::string_view object,
 
 std::span<const Index> variables_of(const Pattern &pattern, Offset e) noexcept
 {
-    const Offset begin = pattern.starts[to_size(e)];
-    return std::span(pattern.variables)
-        .subspan(to_size(begin), to_size(pattern.starts[to_size(e) + 1] - begin));
+    return slice(std::span(pattern.variables), pattern.starts, to_size(e));
 }
 
 std::vector<std::size_t> widths_of(std::size_t lanes)

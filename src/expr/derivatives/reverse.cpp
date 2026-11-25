@@ -1,5 +1,6 @@
 #include "expr/derivatives/reverse.hpp"
 
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/derivatives/partials.hpp"
@@ -34,14 +35,6 @@ struct Trail
     std::span<Real> taken;
     std::size_t lanes;
 };
-
-template <typename T>
-std::span<const T> part(const std::vector<T> &items,
-                        const std::vector<Offset> &starts,
-                        std::size_t k) noexcept
-{
-    return std::span(items).subspan(to_size(starts[k]), to_size(starts[k + 1] - starts[k]));
-}
 
 Trail trail_of(const Block &block,
                const Workspace &workspace,
@@ -259,11 +252,11 @@ void retrace(const Block &block,
              std::span<Real> gradient) noexcept
 {
     const Trail trail = trail_of(block, workspace, adjoints, gradient);
-    for (const Run run : std::views::reverse(part(block.runs, block.starts, output)))
+    for (const Run run : std::views::reverse(slice(std::span(block.runs), block.starts, output)))
     {
         sweep(block, run, trail);
     }
-    for (const Run run : part(block.reads, block.read_starts, output))
+    for (const Run run : slice(std::span(block.reads), block.read_starts, output))
     {
         release(block, run, adjoints);
     }

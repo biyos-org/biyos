@@ -1,5 +1,6 @@
 #include "expr/tape/locator.hpp"
 
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/sparsity/reach.hpp"
@@ -519,14 +520,12 @@ void Locator::collect(std::size_t position, std::size_t walk)
 
 std::span<const Run> Locator::runs_of(std::size_t position) const noexcept
 {
-    const Offset first = run_starts_[position];
-    return std::span(runs_).subspan(to_size(first), to_size(run_starts_[position + 1] - first));
+    return slice(std::span(runs_), run_starts_, position);
 }
 
 std::span<const Offset> Locator::links_of(std::size_t position) const noexcept
 {
-    const Offset first = link_starts_[position];
-    return std::span(links_).subspan(to_size(first), to_size(link_starts_[position + 1] - first));
+    return slice(std::span(links_), link_starts_, position);
 }
 
 }
