@@ -68,7 +68,7 @@ Values hessian_of(const Model &model)
 {
     Reference reference(model);
     Values h(reference.evaluation.hessian_pattern().rows.size());
-    reference.evaluation.hessian(reference.lookup, kPoint, kWeights, h);
+    reference.evaluation.hessian(reference.lookup, {.x = kPoint, .w = kWeights, .v = {}}, h);
     return h;
 }
 
@@ -76,7 +76,9 @@ Values product_of(const Model &model)
 {
     Reference reference(model);
     Values hv(4);
-    reference.evaluation.product(reference.lookup, kPoint, kWeights, kDirection, hv);
+    reference.evaluation.product(reference.lookup,
+                                 {.x = kPoint, .w = kWeights, .v = kDirection},
+                                 hv);
     return hv;
 }
 

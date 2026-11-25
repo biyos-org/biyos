@@ -101,7 +101,7 @@ void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span
     {
         f[to_size(program_.rooted[e])] += values_[e];
     }
-    evaluate_function(Checker(env_, lookup, kModule), x, f);
+    evaluate_function(Checker(env_, lookup, kModule), {.x = x, .w = {}, .v = {}}, f);
 }
 
 void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::span<Real> g)
@@ -117,7 +117,7 @@ void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::sp
     {
         g[to_size(layout.slots.tape[p])] += gradients_[p];
     }
-    evaluate_jacobian(Checker(env_, lookup, kModule), x, g);
+    evaluate_jacobian(Checker(env_, lookup, kModule), {.x = x, .w = {}, .v = {}}, g);
 }
 
 void Evaluation::check(std::string_view argument, std::size_t size, std::size_t wanted)
@@ -135,12 +135,16 @@ void Evaluation::check(std::span<const Real> x) const
     check("x", x.size(), to_size(model_.n_variables()));
 }
 
-Request Evaluation::request(Index callback,
-                            std::span<const Real> x,
-                            std::span<const Real> w,
-                            std::span<const Real> v) const noexcept
+Request Evaluation::request(Index callback, const Point &point) const noexcept
 {
-    return Request{.model = handle_, .callback = callback, .thread = 0, .x = x, .w = w, .v = v};
+    return Request{
+        .model = handle_,
+        .callback = callback,
+        .thread = 0,
+        .x = point.x,
+        .w = point.w,
+        .v = point.v,
+    };
 }
 
 void Evaluation::term_function(std::span<const Real> x, std::span<Real> f) const
@@ -180,15 +184,13 @@ void Evaluation::term_jacobian(std::span<const Real> x, std::span<Real> g) const
     }
 }
 
-void Evaluation::evaluate_function(const Checker &checker,
-                                   std::span<const Real> x,
-                                   std::span<Real> f)
+void Evaluation::evaluate_function(const Checker &checker, const Point &point, std::span<Real> f)
 {
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);
         const std::span<Real> out = std::span(out_).first(callback.covered.size());
-        evaluate(checker, callback, Part::Function, request(c, x), out);
+        evaluate(checker, callback, Part::Function, request(c, point), out);
         for (std::size_t i = 0; i < out.size(); ++i)
         {
             f[to_size(callback.covered[i])] += out[i];
@@ -196,16 +198,14 @@ void Evaluation::evaluate_function(const Checker &checker,
     }
 }
 
-void Evaluation::evaluate_jacobian(const Checker &checker,
-                                   std::span<const Real> x,
-                                   std::span<Real> g)
+void Evaluation::evaluate_jacobian(const Checker &checker, const Point &point, std::span<Real> g)
 {
     const JacobianLayout &layout = program_.layout;
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);
         const std::span<Real> out = std::span(out_).first(callback.jacobian_pairs.size());
-        evaluate(checker, callback, Part::Jacobian, request(c, x), out);
+        evaluate(checker, callback, Part::Jacobian, request(c, point), out);
         const std::size_t begin = to_size(layout.starts.callbacks[to_size(c)]);
         for (std::size_t p = 0; p < out.size(); ++p)
         {

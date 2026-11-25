@@ -233,7 +233,7 @@ class Probe
     {
         const biyos::Lower &lower = evaluation_.hessian_pattern();
         std::vector<Real> h(lower.rows.size(), kStale);
-        evaluation_.hessian(lookup_, kPoint, kWeights, h);
+        evaluation_.hessian(lookup_, {.x = kPoint, .w = kWeights, .v = {}}, h);
         Dense dense(kVariables, std::vector<Real>(kVariables, 0.0));
         for (std::size_t column = 0; column + 1 < lower.starts.size(); ++column)
         {
@@ -252,7 +252,7 @@ class Probe
     std::vector<Real> product()
     {
         std::vector<Real> hv(kVariables, kStale);
-        evaluation_.product(lookup_, kPoint, kWeights, kDirection, hv);
+        evaluation_.product(lookup_, {.x = kPoint, .w = kWeights, .v = kDirection}, hv);
         return hv;
     }
 

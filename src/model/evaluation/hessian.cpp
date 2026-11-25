@@ -33,36 +33,29 @@ void require_products(const Model &model)
 
 }
 
-void Evaluation::hessian(const Lookup &lookup,
-                         std::span<const Real> x,
-                         std::span<const Real> w,
-                         std::span<Real> h)
+void Evaluation::hessian(const Lookup &lookup, const Point &point, std::span<Real> h)
 {
     const Timer timer(env_, tree_, kModule, "hessian");
-    check(x);
-    weigh(w);
+    check(point.x);
+    weigh(point.w);
     check("h", h.size(), hessian_pattern().rows.size());
     require(model_, Part::Hessian);
-    program_.hessian.values(x, weights_, h);
-    term_hessian(w, h);
-    evaluate_hessian(Checker(env_, lookup, kModule), x, w, h);
+    program_.hessian.values(point.x, weights_, h);
+    term_hessian(point.w, h);
+    evaluate_hessian(Checker(env_, lookup, kModule), point, h);
 }
 
-void Evaluation::product(const Lookup &lookup,
-                         std::span<const Real> x,
-                         std::span<const Real> w,
-                         std::span<const Real> v,
-                         std::span<Real> hv)
+void Evaluation::product(const Lookup &lookup, const Point &point, std::span<Real> hv)
 {
     const Timer timer(env_, tree_, kModule, "product");
-    check(x);
-    weigh(w);
-    check("v", v.size(), x.size());
-    check("hv", hv.size(), x.size());
+    check(point.x);
+    weigh(point.w);
+    check("v", point.v.size(), point.x.size());
+    check("hv", hv.size(), point.x.size());
     require_products(model_);
-    program_.hessian.product(x, weights_, v, hv);
-    term_hessian_product(w, v, hv);
-    evaluate_hessian_product(Checker(env_, lookup, kModule), x, w, v, hv);
+    program_.hessian.product(point.x, weights_, point.v, hv);
+    term_hessian_product(point, hv);
+    evaluate_hessian_product(Checker(env_, lookup, kModule), point, hv);
 }
 
 void Evaluation::weigh(std::span<const Real> w)
@@ -100,36 +93,33 @@ void Evaluation::term_hessian(std::span<const Real> w, std::span<Real> h) const
     }
 }
 
-void Evaluation::term_hessian_product(std::span<const Real> w,
-                                      std::span<const Real> v,
-                                      std::span<Real> hv) const
+void Evaluation::term_hessian_product(const Point &point, std::span<Real> hv) const
 {
     const std::span<const QuadraticTerm> quadratic =
         model_.quadratic_terms(0, model_.n_functions());
     const JacobianLayout &layout = program_.layout;
-    for (std::size_t k = 0; k < w.size(); ++k)
+    for (std::size_t k = 0; k < point.w.size(); ++k)
     {
         for (Offset t = layout.starts.quadratic[k]; t < layout.starts.quadratic[k + 1]; ++t)
         {
             const QuadraticTerm &term = quadratic[to_size(t)];
-            const Real scale = w[k] * term.coefficient;
-            hv[to_size(term.row)] += scale * v[to_size(term.column)];
-            hv[to_size(term.column)] += scale * v[to_size(term.row)];
+            const Real scale = point.w[k] * term.coefficient;
+            hv[to_size(term.row)] += scale * point.v[to_size(term.column)];
+            hv[to_size(term.column)] += scale * point.v[to_size(term.row)];
         }
     }
 }
 
-void Evaluation::evaluate_hessian(const Checker &checker,
-                                  std::span<const Real> x,
-                                  std::span<const Real> w,
-                                  std::span<Real> h)
+void Evaluation::evaluate_hessian(const Checker &checker, const Point &point, std::span<Real> h)
 {
     const std::span<const Offset> declared = program_.hessian.declared();
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);
         const std::span<Real> out = std::span(out_).first(callback.hessian_pairs.size());
-        evaluate(checker, callback, Part::Hessian, request(c, x, covered(callback, w)), out);
+        const std::span<const Real> w = covered(callback, point.w);
+        const Request arguments = request(c, {.x = point.x, .w = w, .v = {}});
+        evaluate(checker, callback, Part::Hessian, arguments, out);
         const std::size_t begin = to_size(program_.entries.starts[to_size(c)]);
         for (std::size_t p = 0; p < out.size(); ++p)
         {
@@ -138,16 +128,13 @@ void Evaluation::evaluate_hessian(const Checker &checker,
     }
 }
 
-void Evaluation::evaluate_hessian_product(const Checker &checker,
-                                          std::span<const Real> x,
-                                          std::span<const Real> w,
-                                          std::span<const Real> v,
-                                          std::span<Real> hv)
+void Evaluation::evaluate_hessian_product(Checker checker, const Point &point, std::span<Real> hv)
 {
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);
-        const Request arguments = request(c, x, covered(callback, w), v);
+        const std::span<const Real> w = covered(callback, point.w);
+        const Request arguments = request(c, {.x = point.x, .w = w, .v = point.v});
         if (has(callback, Part::Product))
         {
             const std::span<Real> out = std::span(out_).first(hv.size());
@@ -160,22 +147,20 @@ void Evaluation::evaluate_hessian_product(const Checker &checker,
         }
         const std::span<Real> out = std::span(out_).first(callback.hessian_pairs.size());
         evaluate(checker, callback, Part::Hessian, arguments, out);
-        multiply(callback, out, v, hv);
+        multiply(c, point.v, hv);
     }
 }
 
-void Evaluation::multiply(const Callback &callback,
-                          std::span<const Real> out,
-                          std::span<const Real> v,
-                          std::span<Real> hv) const noexcept
+void Evaluation::multiply(Index c, std::span<const Real> v, std::span<Real> hv) const noexcept
 {
-    for (std::size_t p = 0; p < out.size(); ++p)
+    const std::vector<IndexPair> &pairs = model_.callback(c).hessian_pairs;
+    for (std::size_t p = 0; p < pairs.size(); ++p)
     {
-        const IndexPair &pair = callback.hessian_pairs[p];
-        hv[to_size(pair.row)] += out[p] * v[to_size(pair.column)];
+        const IndexPair &pair = pairs[p];
+        hv[to_size(pair.row)] += out_[p] * v[to_size(pair.column)];
         if (pair.row != pair.column)
         {
-            hv[to_size(pair.column)] += out[p] * v[to_size(pair.row)];
+            hv[to_size(pair.column)] += out_[p] * v[to_size(pair.row)];
         }
     }
 }
