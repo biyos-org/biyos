@@ -148,6 +148,12 @@ const Lower &Hessian::pattern() const noexcept
     return lower_;
 }
 
+void Hessian::widen(Index columns)
+{
+    const std::size_t wanted = static_cast<std::size_t>(columns) + 1;
+    lower_.starts.resize((std::max)(lower_.starts.size(), wanted), lower_.starts.back());
+}
+
 std::span<const Offset> Hessian::declared() const noexcept
 {
     return map_.declared;

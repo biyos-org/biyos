@@ -491,6 +491,21 @@ TEST(HessianTest, Pattern)
     EXPECT_EQ(lower.rows, (std::vector<Index>{0, 3, 1, 3, 2, 3}));
 }
 
+TEST(HessianTest, Widened)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const std::array roots{unary(graph, Operator::Exp, x[0])};
+    Hessian hessian(graph, roots, {});
+    hessian.widen(3);
+    EXPECT_EQ(hessian.pattern().starts, (std::vector<Offset>{0, 1, 1, 1}));
+    EXPECT_EQ(hessian.pattern().rows, (std::vector<Index>{0}));
+    hessian.widen(1);
+    EXPECT_EQ(hessian.pattern().starts.size(), 4U);
+    const Values out = values_of(hessian, std::array{0.0, 0.0, 0.0}, std::array{2.0});
+    expect_same(out, {2.0});
+}
+
 TEST(HessianTest, Refused)
 {
     Graph graph;
