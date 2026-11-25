@@ -28,7 +28,7 @@ A hook can also belong to one model. `BIYOS_addmdlhook` attaches it as `BIYOS_ad
 ```{.c file="examples/c/events.c" item="hook_model"}
 ```
 
-`BIYOS_delmdlhook` removes it. Ids count from 1 in each model, apart from the ids of the environment. The failure of a call on a model, and the span a timed call on it sends, reach the hooks of that model first, in the order they were added, and then the hooks of its environment. Copying a model sends the span to the hooks of the model copied. Reading a file makes its model, so its span reaches the hooks of the environment alone, as do the warnings `BIYOS_writemdl` sends for each part the format leaves out. A model's hooks are freed with it, and a copy of the model has none of them ([Copying models](#sec-copy)).
+`BIYOS_delmdlhook` removes it. Ids count from 1 in each model, apart from the ids of the environment. The failure of a call on a model, the span a timed call on it sends and the warnings `BIYOS_writemdl` sends for each part the format leaves out reach the hooks of that model first, in the order they were added, and then the hooks of its environment. Copying a model sends the span to the hooks of the model copied. Reading a file makes its model, so its span reaches the hooks of the environment alone. A model's hooks are freed with it, and a copy of the model has none of them ([Copying models](#sec-copy)).
 
 The example adds two hooks to the environment and one to a model, and then makes a call on the model fail:
 

@@ -505,7 +505,7 @@ return `BIYOS_OK`, with the id in `*idx`. Ids count from 1 in each model and are
 error BIYOS_ERR_BADARG `knd` or `lvl` is unknown.
 error BIYOS_ERR_NOMEMORY The model has given out 2147483646 ids.
 note The hook receives the events of calls on `mdl` alone, before the hooks of its environment receive them. A copy made by `BIYOS_copymdl` has none of the hooks of its source.
-note Those events include the span each timed call on `mdl` sends, the span of `BIYOS_copymdl` copying `mdl` among them. `BIYOS_readmdl` makes its model, so its span reaches the hooks of the environment alone.
+note Those events include the span each timed call on `mdl` sends, the span of `BIYOS_copymdl` copying `mdl` among them, and the warnings of `BIYOS_writemdl` on `mdl`. `BIYOS_readmdl` makes its model, so its span reaches the hooks of the environment alone.
 note A failed call adds nothing.
 see BIYOS_delmdlhook BIYOS_addenvhook BIYOS_hook
 since 0.1.0
