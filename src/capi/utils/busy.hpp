@@ -19,12 +19,12 @@ inline constexpr std::string_view kRunning = "is running a callback";
     throw Error(ErrorKind::Busy, std::string(object), std::string(reason));
 }
 
-class EnvGuard
+class EnvAccess
 {
   public:
-    explicit EnvGuard(Env &env) noexcept : usage_(env.usage()), entered_(usage_.enter()) {}
+    explicit EnvAccess(Env &env) noexcept : usage_(env.usage()), entered_(usage_.enter()) {}
 
-    ~EnvGuard()
+    ~EnvAccess()
     {
         if (entered_)
         {
@@ -32,8 +32,8 @@ class EnvGuard
         }
     }
 
-    EnvGuard(const EnvGuard &) = delete;
-    EnvGuard &operator=(const EnvGuard &) = delete;
+    EnvAccess(const EnvAccess &) = delete;
+    EnvAccess &operator=(const EnvAccess &) = delete;
 
     void check() const
     {
@@ -56,14 +56,15 @@ class EnvGuard
     bool entered_;
 };
 
-class ModelGuard
+class ModelAccess
 {
   public:
-    ModelGuard(Env &env, Usage &usage) noexcept : env_(env), usage_(usage), entered_(usage_.enter())
+    ModelAccess(Env &env, Usage &usage) noexcept
+        : env_(env), usage_(usage), entered_(usage_.enter())
     {
     }
 
-    ~ModelGuard()
+    ~ModelAccess()
     {
         if (entered_)
         {
@@ -71,8 +72,8 @@ class ModelGuard
         }
     }
 
-    ModelGuard(const ModelGuard &) = delete;
-    ModelGuard &operator=(const ModelGuard &) = delete;
+    ModelAccess(const ModelAccess &) = delete;
+    ModelAccess &operator=(const ModelAccess &) = delete;
 
     void check() const
     {
@@ -92,7 +93,7 @@ class ModelGuard
     }
 
   private:
-    EnvGuard env_;
+    EnvAccess env_;
     Usage &usage_;
     bool entered_;
 };
