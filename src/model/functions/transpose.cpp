@@ -17,10 +17,10 @@ namespace biyos
 namespace
 {
 
-std::span<const LinearTerm> within(std::span<const LinearTerm> terms, Index start, Index end)
+std::span<const LinearTerm> within(std::span<const LinearTerm> terms, Index start, Index stop)
 {
     const auto from = std::ranges::lower_bound(terms, start, {}, &LinearTerm::variable);
-    const auto upto = std::ranges::lower_bound(from, terms.end(), end, {}, &LinearTerm::variable);
+    const auto upto = std::ranges::lower_bound(from, terms.end(), stop, {}, &LinearTerm::variable);
     return {from, upto};
 }
 
@@ -35,13 +35,14 @@ template <typename T> void put(std::span<T> out, Offset at, T value)
 
 }
 
-std::vector<Offset> variable_starts(const Model &model, Index start, Index size)
+std::vector<Offset> variable_starts(const Model &model, Index start, Index stop)
 {
-    check_span("variable", start, size, model.n_variables());
-    std::vector<Offset> starts(static_cast<std::size_t>(size) + 1, 0);
+    check_span("variable", start, stop, model.n_variables());
+    std::vector<Offset> starts(static_cast<std::size_t>(stop - start) + 1, 0);
     for (Index function = 0; function < model.n_functions(); ++function)
     {
-        for (const LinearTerm &term : within(model.linear_terms(function, 1), start, start + size))
+        for (const LinearTerm &term :
+             within(model.linear_terms(function, function + 1), start, stop))
         {
             ++starts[static_cast<std::size_t>(term.variable - start) + 1];
         }
@@ -64,7 +65,8 @@ void variable_terms(const Model &model,
     const auto end = start + static_cast<Index>(next.size());
     for (Index function = 0; function < model.n_functions(); ++function)
     {
-        for (const LinearTerm &term : within(model.linear_terms(function, 1), start, end))
+        for (const LinearTerm &term :
+             within(model.linear_terms(function, function + 1), start, end))
         {
             const Offset at = next[static_cast<std::size_t>(term.variable - start)]++;
             put(functions, at, function);

@@ -185,7 +185,7 @@ class Model
 
     Index n_variables() const noexcept;
     const Variable &variable(Index index) const;
-    std::span<const Variable> variables(Index start, Index size) const;
+    std::span<const Variable> variables(Index start, Index stop) const;
 
     void add_variables(std::span<const Variable> added);
     void set_variables(std::span<const Index> indices, std::span<const Variable> changed);
@@ -193,8 +193,8 @@ class Model
 
     Index n_functions() const noexcept;
     const double &constant(Index index) const;
-    std::span<const double> constants(Index start, Index size) const;
-    std::span<const LinearTerm> linear_terms(Index start, Index size) const;
+    std::span<const double> constants(Index start, Index stop) const;
+    std::span<const LinearTerm> linear_terms(Index start, Index stop) const;
 
     void check_room(std::size_t functions, Offset terms) const;
     void add_functions(std::span<const double> constants,
@@ -207,7 +207,7 @@ class Model
                           std::vector<LinearTerm> terms);
     std::vector<Index> delete_functions(std::span<const Index> indices);
 
-    std::span<const QuadraticTerm> quadratic_terms(Index start, Index size) const;
+    std::span<const QuadraticTerm> quadratic_terms(Index start, Index stop) const;
 
     void check_quadratic_room(Offset terms) const;
     void add_quadratic_terms(std::span<const Index> functions,
@@ -216,7 +216,7 @@ class Model
 
     Index n_constraints() const noexcept;
     const Constraint &constraint(Index index) const;
-    std::span<const Constraint> constraints(Index start, Index size) const;
+    std::span<const Constraint> constraints(Index start, Index stop) const;
 
     void add_constraints(std::span<const Constraint> added);
     void set_constraints(std::span<const Index> indices, std::span<const Constraint> changed);
@@ -224,7 +224,7 @@ class Model
 
     Index n_objectives() const noexcept;
     const Objective &objective(Index index) const;
-    std::span<const Objective> objectives(Index start, Index size) const;
+    std::span<const Objective> objectives(Index start, Index stop) const;
 
     void check_objective_room(std::size_t added) const;
     void add_objectives(std::span<const Objective> added);
@@ -233,7 +233,7 @@ class Model
 
     Index n_indicators() const noexcept;
     const Indicator &indicator(Index index) const;
-    std::span<const Indicator> indicators(Index start, Index size) const;
+    std::span<const Indicator> indicators(Index start, Index stop) const;
 
     void add_indicators(std::span<const Indicator> added);
     void set_indicators(std::span<const Index> indices, std::span<const Indicator> changed);
@@ -241,7 +241,7 @@ class Model
 
     Index n_special_ordered_sets() const noexcept;
     SpecialOrderedSetKind kind_of_special_ordered_set(Index index) const;
-    std::span<const Member> members(Index start, Index size) const;
+    std::span<const Member> members(Index start, Index stop) const;
 
     void check_special_ordered_set_room(std::size_t soss, Offset members) const;
     void add_special_ordered_sets(std::span<const SpecialOrderedSetKind> kinds,
@@ -250,9 +250,9 @@ class Model
     std::vector<Index> delete_special_ordered_sets(std::span<const Index> indices);
 
     Index n_cones() const noexcept;
-    std::span<const ConeKind> cone_kinds(Index start, Index size) const;
-    std::span<const Index> cone_functions(Index start, Index size) const;
-    std::span<const double> cone_parameters(Index start, Index size) const;
+    std::span<const ConeKind> cone_kinds(Index start, Index stop) const;
+    std::span<const Index> cone_functions(Index start, Index stop) const;
+    std::span<const double> cone_parameters(Index start, Index stop) const;
 
     void check_cone_room(std::size_t cones, Offset members, Offset parameters) const;
     void add_cones(std::span<const ConeKind> kinds,
@@ -264,14 +264,14 @@ class Model
 
     Index n_complements() const noexcept;
     const Complement &complement(Index index) const;
-    std::span<const Complement> complements(Index start, Index size) const;
+    std::span<const Complement> complements(Index start, Index stop) const;
 
     void add_complements(std::span<const Complement> added);
     void set_complements(std::span<const Index> indices, std::span<const Complement> changed);
     std::vector<Index> delete_complements(std::span<const Index> indices);
 
     const Graph &graph() const noexcept;
-    std::span<const Offset> roots(Index start, Index size) const;
+    std::span<const Offset> roots(Index start, Index stop) const;
 
     Offset add_variable_node(Index variable);
     Offset add_node(int op, std::span<const Offset> children, std::span<const double> values);

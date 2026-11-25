@@ -75,7 +75,7 @@ int n_special_ordered_sets(const Model &model)
 BIYOS_offset n_members(const Model &model, BIYOS_index pos, BIYOS_index n)
 {
     BIYOS_offset nnz = -1;
-    EXPECT_EQ(BIYOS_getnsosvarrg(model.get(), pos, n, &nnz), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnsosvarrg(model.get(), pos, pos + n, &nnz), BIYOS_OK);
     return nnz;
 }
 
@@ -97,7 +97,7 @@ BIYOS_status read_range(const Model &model,
 {
     return BIYOS_getsosrg(model.get(),
                           pos,
-                          static_cast<BIYOS_index>(read.kinds.size()),
+                          pos + static_cast<BIYOS_index>(read.kinds.size()),
                           cap,
                           read.kinds.data(),
                           read.starts.data(),
@@ -367,7 +367,7 @@ TEST(CApiTest, SetIndices)
     BIYOS_offset nnz = 7;
     EXPECT_EQ(BIYOS_getnsosvarsp(model.get(), 1, &unknown, &nnz), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: set -1: unknown");
-    EXPECT_EQ(BIYOS_getnsosvarrg(model.get(), -1, 1, &nnz), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getnsosvarrg(model.get(), -1, 0, &nnz), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: set -1: unknown");
     EXPECT_EQ(nnz, 7);
     EXPECT_EQ(n_members(model, 3, 0), 0);

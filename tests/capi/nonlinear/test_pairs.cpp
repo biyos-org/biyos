@@ -106,7 +106,8 @@ BIYOS_offset n_listed(const Model &model, const Indices &listed)
 BIYOS_offset n_ranged(const Model &model, Span span)
 {
     BIYOS_offset nnz = -1;
-    EXPECT_EQ(BIYOS_getnquadtermrg(model.get(), span.start, span.size, &nnz), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnquadtermrg(model.get(), span.start, span.start + span.size, &nnz),
+              BIYOS_OK);
     return nnz;
 }
 
@@ -159,7 +160,7 @@ Pairs read_ranged(const Model &model, Span span)
     std::vector<double> values(size);
     EXPECT_EQ(BIYOS_getquadtermrg(model.get(),
                                   span.start,
-                                  span.size,
+                                  span.start + span.size,
                                   count,
                                   starts.data(),
                                   rows.data(),

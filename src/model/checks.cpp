@@ -76,18 +76,18 @@ void check_index(std::string_view noun, Index index, Index total)
     }
 }
 
-void check_span(std::string_view noun, Index start, Index size, Index total)
+void check_span(std::string_view noun, Index start, Index stop, Index total)
 {
-    if (size < 0)
-    {
-        const std::string reason = text_of(size) + " is negative";
-        throw Error(ErrorKind::InvalidArgument, "argument 'n'", reason);
-    }
     if (start < 0 || start > total)
     {
         unknown(noun, start);
     }
-    if (size > total - start)
+    if (stop < start)
+    {
+        const std::string reason = text_of(stop) + " is below 'beg' " + text_of(start);
+        throw Error(ErrorKind::InvalidArgument, "argument 'end'", reason);
+    }
+    if (stop > total)
     {
         unknown(noun, total);
     }

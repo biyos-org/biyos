@@ -104,11 +104,11 @@ const Indicator &Model::indicator(Index index) const
     return indicators_[static_cast<std::size_t>(index)];
 }
 
-std::span<const Indicator> Model::indicators(Index start, Index size) const
+std::span<const Indicator> Model::indicators(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_indicators());
+    check_span(kNoun, start, stop, n_indicators());
     const auto offset = static_cast<std::size_t>(start);
-    return std::span(indicators_).subspan(offset, static_cast<std::size_t>(size));
+    return std::span(indicators_).subspan(offset, static_cast<std::size_t>(stop - start));
 }
 
 void Model::add_indicators(std::span<const Indicator> added)

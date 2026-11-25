@@ -118,7 +118,7 @@ TEST(SpecialOrderedSetTest, Kinds)
     EXPECT_EQ(model.kind_of_special_ordered_set(0), SpecialOrderedSetKind::One);
     EXPECT_EQ(model.kind_of_special_ordered_set(1), SpecialOrderedSetKind::Two);
     expect_members(model.members(0, 1), kFirst);
-    expect_members(model.members(1, 1), kSecond);
+    expect_members(model.members(1, 2), kSecond);
     EXPECT_EQ(static_cast<int>(SpecialOrderedSetKind::One), 1);
     EXPECT_EQ(static_cast<int>(SpecialOrderedSetKind::Two), 2);
 }
@@ -129,7 +129,7 @@ TEST(SpecialOrderedSetTest, Order)
     add(model, one(SpecialOrderedSetKind::Two, kFirst));
     add(model, one(SpecialOrderedSetKind::Two, kSecond));
     expect_members(model.members(0, 1), kFirst);
-    expect_members(model.members(1, 1), kSecond);
+    expect_members(model.members(1, 2), kSecond);
     std::vector<Member> both = kFirst;
     both.insert(both.end(), kSecond.begin(), kSecond.end());
     expect_members(model.members(0, 2), both);
@@ -141,8 +141,8 @@ TEST(SpecialOrderedSetTest, Shared)
     add(model, kBoth);
     add(model, one(SpecialOrderedSetKind::One, {{.variable = 0, .weight = 1.0}}));
     EXPECT_EQ(model.members(0, 1)[1].variable, 0);
-    EXPECT_EQ(model.members(1, 1)[1].variable, 0);
-    EXPECT_EQ(model.members(2, 1)[0].variable, 0);
+    EXPECT_EQ(model.members(1, 2)[1].variable, 0);
+    EXPECT_EQ(model.members(2, 3)[0].variable, 0);
 }
 
 TEST(SpecialOrderedSetTest, Empty)
@@ -159,8 +159,8 @@ TEST(SpecialOrderedSetTest, Empty)
     add(model, one(SpecialOrderedSetKind::Two, {{.variable = 0, .weight = 0.0}}));
     ASSERT_EQ(model.n_special_ordered_sets(), 2);
     EXPECT_TRUE(model.members(0, 1).empty());
-    EXPECT_EQ(model.members(1, 1).size(), 1U);
-    EXPECT_TRUE(model.members(2, 0).empty());
+    EXPECT_EQ(model.members(1, 2).size(), 1U);
+    EXPECT_TRUE(model.members(2, 2).empty());
 }
 
 TEST(SpecialOrderedSetTest, EqualWeights)
@@ -252,11 +252,11 @@ TEST(SpecialOrderedSetTest, ReadRange)
               "invalid argument: set -1: unknown");
     EXPECT_EQ(refusal([&] { model.kind_of_special_ordered_set(2); }),
               "invalid argument: set 2: unknown");
-    EXPECT_EQ(refusal([&] { model.members(-1, 1); }), "invalid argument: set -1: unknown");
-    EXPECT_EQ(refusal([&] { model.members(1, 2); }), "invalid argument: set 2: unknown");
-    EXPECT_EQ(refusal([&] { model.members(3, 0); }), "invalid argument: set 3: unknown");
+    EXPECT_EQ(refusal([&] { model.members(-1, 0); }), "invalid argument: set -1: unknown");
+    EXPECT_EQ(refusal([&] { model.members(1, 3); }), "invalid argument: set 2: unknown");
+    EXPECT_EQ(refusal([&] { model.members(3, 3); }), "invalid argument: set 3: unknown");
     EXPECT_EQ(refusal([&] { model.members(0, -1); }),
-              "invalid argument: argument 'n': -1 is negative");
+              "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(SpecialOrderedSetTest, Mismatch)
@@ -292,7 +292,7 @@ TEST(SpecialOrderedSetTest, Moved)
     add(model, kBoth);
     const Model taken = std::move(model);
     EXPECT_EQ(taken.n_special_ordered_sets(), 2);
-    expect_members(taken.members(1, 1), kSecond);
+    expect_members(taken.members(1, 2), kSecond);
     EXPECT_EQ(model.n_special_ordered_sets(), 0);
     EXPECT_TRUE(model.members(0, 0).empty());
 }

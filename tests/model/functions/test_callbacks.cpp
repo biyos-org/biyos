@@ -179,7 +179,7 @@ TEST(CallbackTest, Shared)
     EXPECT_EQ(add(model, {1, 0}), 0);
     EXPECT_EQ(add(model, {2, 1}), 1);
     attach_sine(model, 1);
-    EXPECT_NE(model.roots(1, 1).front(), kNoRoot);
+    EXPECT_NE(model.roots(1, 2).front(), kNoRoot);
     const Model copy = model;
     EXPECT_EQ(difference(model, copy), "");
     EXPECT_EQ(copy.callback(0).covered, (std::vector<Index>{1, 0}));
@@ -190,10 +190,10 @@ TEST(CallbackTest, RootFirst)
 {
     Model model = with_functions(2);
     attach_sine(model, 1);
-    const Offset root = model.roots(1, 1).front();
+    const Offset root = model.roots(1, 2).front();
     EXPECT_EQ(add(model, {0, 1}), 0);
     EXPECT_EQ(model.callback(0).covered, (std::vector<Index>{0, 1}));
-    EXPECT_EQ(model.roots(1, 1).front(), root);
+    EXPECT_EQ(model.roots(1, 2).front(), root);
 }
 
 TEST(CallbackTest, RootAfter)
@@ -205,7 +205,7 @@ TEST(CallbackTest, RootAfter)
     attach_sine(model, 1);
     attach_sine(plain, 1);
     attach_sine(plain, 1);
-    EXPECT_NE(model.roots(1, 1).front(), kNoRoot);
+    EXPECT_NE(model.roots(1, 2).front(), kNoRoot);
     EXPECT_EQ(difference(model, plain), "callback count 1 against 0");
 }
 

@@ -157,12 +157,12 @@ BIYOS_status BIYOS_setconbndsp(BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_setconbndrg(BIYOS_model *mdl,
-                               BIYOS_index pos,
-                               BIYOS_index n,
+                               BIYOS_index beg,
+                               BIYOS_index end,
                                const BIYOS_real *lb,
                                const BIYOS_real *ub)
 {
-    return guarded<set_bounds<Range>>(mdl, Range{pos, n}, lb, ub);
+    return guarded<set_bounds<Range>>(mdl, Range{beg, end}, lb, ub);
 }
 
 BIYOS_status BIYOS_getconbndsp(const BIYOS_model *mdl,
@@ -175,12 +175,12 @@ BIYOS_status BIYOS_getconbndsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getconbndrg(const BIYOS_model *mdl,
-                               BIYOS_index pos,
-                               BIYOS_index n,
+                               BIYOS_index beg,
+                               BIYOS_index end,
                                BIYOS_real *lb,
                                BIYOS_real *ub)
 {
-    return guarded<get_bounds<Range>>(mdl, Range{pos, n}, lb, ub);
+    return guarded<get_bounds<Range>>(mdl, Range{beg, end}, lb, ub);
 }
 
 BIYOS_status BIYOS_setcontolsp(BIYOS_model *mdl,
@@ -193,12 +193,12 @@ BIYOS_status BIYOS_setcontolsp(BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_setcontolrg(BIYOS_model *mdl,
-                               BIYOS_index pos,
-                               BIYOS_index n,
+                               BIYOS_index beg,
+                               BIYOS_index end,
                                const BIYOS_real *atol,
                                const BIYOS_real *rtol)
 {
-    return guarded<set_tolerances<Range>>(mdl, Family::Constraint, Range{pos, n}, atol, rtol);
+    return guarded<set_tolerances<Range>>(mdl, Family::Constraint, Range{beg, end}, atol, rtol);
 }
 
 BIYOS_status BIYOS_getcontolsp(const BIYOS_model *mdl,
@@ -211,12 +211,12 @@ BIYOS_status BIYOS_getcontolsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getcontolrg(const BIYOS_model *mdl,
-                               BIYOS_index pos,
-                               BIYOS_index n,
+                               BIYOS_index beg,
+                               BIYOS_index end,
                                BIYOS_real *atol,
                                BIYOS_real *rtol)
 {
-    return guarded<get_tolerances<Range>>(mdl, Family::Constraint, Range{pos, n}, atol, rtol);
+    return guarded<get_tolerances<Range>>(mdl, Family::Constraint, Range{beg, end}, atol, rtol);
 }
 
 BIYOS_status BIYOS_delcontolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
@@ -224,9 +224,9 @@ BIYOS_status BIYOS_delcontolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_inde
     return guarded<delete_tolerances<List>>(mdl, Family::Constraint, List{n, idx});
 }
 
-BIYOS_status BIYOS_delcontolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+BIYOS_status BIYOS_delcontolrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)
 {
-    return guarded<delete_tolerances<Range>>(mdl, Family::Constraint, Range{pos, n});
+    return guarded<delete_tolerances<Range>>(mdl, Family::Constraint, Range{beg, end});
 }
 
 BIYOS_status BIYOS_getncon(const BIYOS_model *mdl, BIYOS_index *n)
@@ -245,11 +245,11 @@ BIYOS_status BIYOS_getconsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getconrg(const BIYOS_model *mdl,
-                            BIYOS_index pos,
-                            BIYOS_index n,
+                            BIYOS_index beg,
+                            BIYOS_index end,
                             BIYOS_index *fun,
                             BIYOS_real *lb,
                             BIYOS_real *ub)
 {
-    return guarded<get_constraints<Range>>(mdl, Range{pos, n}, fun, lb, ub);
+    return guarded<get_constraints<Range>>(mdl, Range{beg, end}, fun, lb, ub);
 }

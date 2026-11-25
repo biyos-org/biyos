@@ -93,11 +93,11 @@ const Objective &Model::objective(Index index) const
     return objectives_[static_cast<std::size_t>(index)];
 }
 
-std::span<const Objective> Model::objectives(Index start, Index size) const
+std::span<const Objective> Model::objectives(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_objectives());
+    check_span(kNoun, start, stop, n_objectives());
     const auto offset = static_cast<std::size_t>(start);
-    return std::span(objectives_).subspan(offset, static_cast<std::size_t>(size));
+    return std::span(objectives_).subspan(offset, static_cast<std::size_t>(stop - start));
 }
 
 void Model::check_objective_room(std::size_t added) const

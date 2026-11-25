@@ -331,11 +331,11 @@ TEST(CApiTest, BulkAdd)
     BIYOS_int kind = 0;
     BIYOS_real lower = 0.0;
     BIYOS_real upper = 0.0;
-    EXPECT_EQ(BIYOS_getvarrg(model.get(), 2, 1, &kind, &lower, &upper), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarrg(model.get(), 2, 3, &kind, &lower, &upper), BIYOS_OK);
     EXPECT_EQ(kind, BIYOS_VARKND_INT);
     EXPECT_DOUBLE_EQ(lower, -3.0);
     EXPECT_DOUBLE_EQ(upper, 7.0);
-    EXPECT_EQ(BIYOS_getvarrg(model.get(), 5, 0, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarrg(model.get(), 5, 5, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(env.message(), "");
 }
 
@@ -411,12 +411,12 @@ TEST(CApiTest, BadIndex)
     EXPECT_EQ(env.message(), "invalid argument: variable -1: unknown");
     expect_columns(read_all(model), before);
     int found[] = {0, 0};
-    EXPECT_EQ(BIYOS_getvarrg(model.get(), 2, 2, found, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getvarrg(model.get(), 2, 4, found, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 3: unknown");
-    EXPECT_EQ(BIYOS_getvarrg(model.get(), -1, 1, found, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getvarrg(model.get(), -1, 0, found, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable -1: unknown");
     EXPECT_EQ(BIYOS_getvarrg(model.get(), 0, -1, found, nullptr, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'end': -1 is below 'beg' 0");
     EXPECT_EQ(found[0], 0);
     EXPECT_EQ(found[1], 0);
 }
@@ -485,7 +485,7 @@ TEST(CApiTest, NullGet)
     double high[] = {9.0, 9.0};
     EXPECT_EQ(BIYOS_getvarrg(model.get(), 0, 2, found, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_getvarrg(model.get(), 0, 2, nullptr, low, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getvarrg(model.get(), 1, 1, nullptr, nullptr, high), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getvarrg(model.get(), 1, 2, nullptr, nullptr, high), BIYOS_OK);
     EXPECT_EQ(found[1], BIYOS_VARKND_BIN);
     EXPECT_DOUBLE_EQ(low[0], -1.0);
     EXPECT_DOUBLE_EQ(high[0], 0.5);

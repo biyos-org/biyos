@@ -192,7 +192,7 @@ TEST(CApiTest, IndicatorRange)
     Records found = sized(2);
     EXPECT_EQ(BIYOS_getindrg(model.get(),
                              1,
-                             2,
+                             3,
                              found.variables.data(),
                              found.values.data(),
                              found.functions.data(),
@@ -207,7 +207,7 @@ TEST(CApiTest, IndicatorRange)
         .upper = {1.0, BIYOS_INF},
     };
     expect_records(found, wanted);
-    EXPECT_EQ(BIYOS_getindrg(model.get(), 3, 0, nullptr, nullptr, nullptr, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getindrg(model.get(), 3, 3, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);
     const Records listed{
         .variables = {0, 0},
@@ -229,7 +229,7 @@ TEST(CApiTest, IndicatorBounds)
     const double lower[] = {-1.0, -2.0};
     const double upper[] = {1.0, 2.0};
     ASSERT_EQ(BIYOS_setindbndsp(held, 2, indices, lower, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setindbndrg(held, 1, 1, nullptr, upper + 1), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setindbndrg(held, 1, 2, nullptr, upper + 1), BIYOS_OK);
     ASSERT_EQ(BIYOS_setindbndrg(held, 0, 3, nullptr, nullptr), BIYOS_OK);
     std::vector<double> low(3, 9.0);
     std::vector<double> high(3, 9.0);
@@ -254,7 +254,7 @@ TEST(CApiTest, IndicatorSwitch)
     const int variables[] = {0, 2};
     const int values[] = {1, 0};
     ASSERT_EQ(BIYOS_setindvarsp(held, 1, indices, variables, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_setindvarrg(held, 2, 1, variables + 1, values), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setindvarrg(held, 2, 3, variables + 1, values), BIYOS_OK);
     std::vector<int> found(3, -1);
     std::vector<int> active(3, -1);
     ASSERT_EQ(BIYOS_getindvarrg(held, 0, 3, found.data(), active.data()), BIYOS_OK);
@@ -319,7 +319,7 @@ TEST(CApiTest, RefusedIndicators)
     const BIYOS_real bound = 0.0;
     EXPECT_EQ(BIYOS_setindbndsp(held, 1, &index, &bound, &bound), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: indicator 3: unknown");
-    EXPECT_EQ(BIYOS_getindbndrg(held, 2, 2, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getindbndrg(held, 2, 4, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: indicator 3: unknown");
     EXPECT_EQ(BIYOS_getindvarsp(held, 1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");

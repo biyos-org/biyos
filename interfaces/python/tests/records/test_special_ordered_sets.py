@@ -45,7 +45,8 @@ def model(env):
         yield model
 
 
-def read_lengths(handle, pos, n, cap, kinds, starts, members, weights):
+def read_lengths(handle, beg, end, cap, kinds, starts, members, weights):
+    n = end - beg
     return [(kinds, n), (starts, n + 1), (members, cap), (weights, cap)]
 
 

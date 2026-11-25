@@ -137,9 +137,9 @@ std::string term_refusal(Model &model, const Linear &linear)
     return refusal([&] { add_terms(model, linear); });
 }
 
-ByVariable read_variables(const Model &model, Index start, Index size)
+ByVariable read_variables(const Model &model, Index start, Index stop)
 {
-    ByVariable read{.starts = biyos::variable_starts(model, start, size),
+    ByVariable read{.starts = biyos::variable_starts(model, start, stop),
                     .functions = {},
                     .values = {}};
     const auto total = static_cast<std::size_t>(read.starts.back());
@@ -185,7 +185,7 @@ TEST(FunctionTest, Sorted)
     add(model, functions);
     ASSERT_EQ(model.n_functions(), 2);
     expect_terms(model.linear_terms(0, 1), {{0, -2.0}, {2, 0.5}, {3, 1.5}});
-    expect_terms(model.linear_terms(1, 1), {{0, 1.0}, {1, 4.0}});
+    expect_terms(model.linear_terms(1, 2), {{0, 1.0}, {1, 4.0}});
 }
 
 TEST(FunctionTest, Constants)
@@ -271,8 +271,8 @@ TEST(FunctionTest, Appended)
     ASSERT_EQ(model.n_functions(), 3);
     expect_constants(model.constants(0, 3), {1.0, 2.0, 3.0});
     expect_terms(model.linear_terms(0, 3), {{0, 2.0}, {1, 1.0}, {1, 4.0}, {2, 3.0}});
-    expect_terms(model.linear_terms(1, 1), {});
-    expect_terms(model.linear_terms(2, 1), {{1, 4.0}, {2, 3.0}});
+    expect_terms(model.linear_terms(1, 2), {});
+    expect_terms(model.linear_terms(2, 3), {{1, 4.0}, {2, 3.0}});
 }
 
 TEST(FunctionTest, Unchanged)
@@ -305,15 +305,15 @@ TEST(FunctionTest, ReadRange)
         .terms = {{0, 1.0}, {1, 2.0}, {0, 3.0}, {1, 4.0}},
     };
     add(model, functions);
-    expect_constants(model.constants(1, 2), {2.0, 3.0});
-    expect_terms(model.linear_terms(1, 2), {{0, 3.0}, {1, 2.0}, {1, 4.0}});
-    EXPECT_TRUE(model.constants(3, 0).empty());
-    EXPECT_TRUE(model.linear_terms(3, 0).empty());
-    EXPECT_EQ(refusal([&] { model.constants(-1, 1); }), "invalid argument: function -1: unknown");
-    EXPECT_EQ(refusal([&] { model.linear_terms(1, 3); }), "invalid argument: function 3: unknown");
-    EXPECT_EQ(refusal([&] { model.linear_terms(4, 0); }), "invalid argument: function 4: unknown");
+    expect_constants(model.constants(1, 3), {2.0, 3.0});
+    expect_terms(model.linear_terms(1, 3), {{0, 3.0}, {1, 2.0}, {1, 4.0}});
+    EXPECT_TRUE(model.constants(3, 3).empty());
+    EXPECT_TRUE(model.linear_terms(3, 3).empty());
+    EXPECT_EQ(refusal([&] { model.constants(-1, 0); }), "invalid argument: function -1: unknown");
+    EXPECT_EQ(refusal([&] { model.linear_terms(1, 4); }), "invalid argument: function 3: unknown");
+    EXPECT_EQ(refusal([&] { model.linear_terms(4, 4); }), "invalid argument: function 4: unknown");
     EXPECT_EQ(refusal([&] { model.linear_terms(0, -1); }),
-              "invalid argument: argument 'n': -1 is negative");
+              "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(FunctionTest, Mismatch)
@@ -369,8 +369,8 @@ TEST(FunctionTest, LinearTerms)
     };
     add_terms(model, linear);
     expect_terms(model.linear_terms(0, 1), {{0, 4.0}, {1, 1.0}, {2, 5.0}, {3, 2.25}});
-    expect_terms(model.linear_terms(1, 1), {});
-    expect_terms(model.linear_terms(2, 1), {{0, -1.0}, {2, 3.5}});
+    expect_terms(model.linear_terms(1, 2), {});
+    expect_terms(model.linear_terms(2, 3), {{0, -1.0}, {2, 3.5}});
     expect_constants(model.constants(0, 3), {1.0, 2.0, 3.0});
 }
 
@@ -414,8 +414,8 @@ TEST(FunctionTest, LinearTwice)
     add_terms(model, terms_of(1, {{3, 1.0}, {1, 2.0}}));
     add_terms(model, terms_of(1, {{2, 4.0}, {1, 0.5}, {0, 3.0}}));
     expect_terms(model.linear_terms(0, 1), {{1, 1.0}, {3, 2.0}});
-    expect_terms(model.linear_terms(1, 1), {{0, 3.0}, {1, 2.5}, {2, 4.0}, {3, 1.0}});
-    expect_terms(model.linear_terms(2, 1), {{2, 3.0}});
+    expect_terms(model.linear_terms(1, 2), {{0, 3.0}, {1, 2.5}, {2, 4.0}, {3, 1.0}});
+    expect_terms(model.linear_terms(2, 3), {{2, 3.0}});
 }
 
 TEST(FunctionTest, LinearRefused)
@@ -469,7 +469,7 @@ TEST(FunctionTest, LinearAtomic)
               "invalid argument: function 2: sum of coefficients of variable 0 is infinity");
     EXPECT_EQ(difference(model, before), "");
     add(model, single(4.0, {{3, 1.0}}));
-    expect_terms(model.linear_terms(2, 2), {{0, kLarge}, {2, 3.0}, {3, 1.0}});
+    expect_terms(model.linear_terms(2, 4), {{0, kLarge}, {2, 3.0}, {3, 1.0}});
 }
 
 TEST(FunctionTest, LinearZeros)
@@ -479,7 +479,7 @@ TEST(FunctionTest, LinearZeros)
     expect_exact(model.linear_terms(0, 1), {{0, 0.0}, {1, 0.0}, {2, -0.0}, {3, 2.0}});
     add_terms(model, terms_of(1, {{2, 1.5}, {3, -0.0}}));
     add_terms(model, terms_of(1, {{2, -1.5}, {3, -0.0}}));
-    expect_exact(model.linear_terms(1, 1), {{2, 0.0}, {3, -0.0}});
+    expect_exact(model.linear_terms(1, 2), {{2, 0.0}, {3, -0.0}});
 }
 
 TEST(FunctionTest, LinearEmpty)
@@ -495,10 +495,10 @@ TEST(FunctionTest, LinearLater)
     Model model = with_terms();
     add_terms(model, terms_of(1, {{0, 1.0}}));
     add(model, single(4.0, {{2, 2.0}}));
-    expect_terms(model.linear_terms(1, 1), {{0, 1.0}});
-    expect_terms(model.linear_terms(3, 1), {{2, 2.0}});
+    expect_terms(model.linear_terms(1, 2), {{0, 1.0}});
+    expect_terms(model.linear_terms(3, 4), {{2, 2.0}});
     add_terms(model, terms_of(3, {{0, 1.0}}));
-    expect_terms(model.linear_terms(2, 2), {{2, 3.0}, {0, 1.0}, {2, 2.0}});
+    expect_terms(model.linear_terms(2, 4), {{2, 3.0}, {0, 1.0}, {2, 2.0}});
     EXPECT_EQ(model.linear_terms(0, 4).size(), 6U);
 }
 
@@ -525,7 +525,7 @@ TEST(FunctionTest, LinearCopy)
     EXPECT_EQ(difference(model, copy), "");
     add_terms(copy, terms_of(1, {{2, 1.0}}));
     EXPECT_EQ(difference(model, copy), "function 1: term 1: coefficient 1.5 against 2.5");
-    expect_exact(model.linear_terms(1, 1), {{0, -0.0}, {2, 1.5}});
+    expect_exact(model.linear_terms(1, 2), {{0, -0.0}, {2, 1.5}});
 }
 
 TEST(FunctionTest, VariableTerms)
@@ -547,12 +547,12 @@ TEST(FunctionTest, VariableRange)
     const ByVariable middle{.starts = {0, 2, 3},
                             .functions = {0, 1, 2},
                             .values = {1.0, -1.0, 3.0}};
-    expect_variables(read_variables(model, 1, 2), middle);
+    expect_variables(read_variables(model, 1, 3), middle);
     const ByVariable last{.starts = {0, 2}, .functions = {0, 1}, .values = {2.0, 4.0}};
-    expect_variables(read_variables(model, 3, 1), last);
+    expect_variables(read_variables(model, 3, 4), last);
     expect_variables(read_variables(model, 0, 1),
                      ByVariable{.starts = {0, 0}, .functions = {}, .values = {}});
-    expect_variables(read_variables(model, 4, 0),
+    expect_variables(read_variables(model, 4, 4),
                      ByVariable{.starts = {0}, .functions = {}, .values = {}});
     expect_variables(read_variables(with_variables(0), 0, 0),
                      ByVariable{.starts = {0}, .functions = {}, .values = {}});
@@ -561,14 +561,14 @@ TEST(FunctionTest, VariableRange)
 TEST(FunctionTest, VariableRefused)
 {
     const Model model = with_terms();
-    EXPECT_EQ(refusal([&] { biyos::variable_starts(model, -1, 1); }),
+    EXPECT_EQ(refusal([&] { biyos::variable_starts(model, -1, 0); }),
               "invalid argument: variable -1: unknown");
-    EXPECT_EQ(refusal([&] { biyos::variable_starts(model, 2, 3); }),
+    EXPECT_EQ(refusal([&] { biyos::variable_starts(model, 2, 5); }),
               "invalid argument: variable 4: unknown");
-    EXPECT_EQ(refusal([&] { biyos::variable_starts(model, 5, 0); }),
+    EXPECT_EQ(refusal([&] { biyos::variable_starts(model, 5, 5); }),
               "invalid argument: variable 5: unknown");
     EXPECT_EQ(refusal([&] { biyos::variable_starts(model, 0, -1); }),
-              "invalid argument: argument 'n': -1 is negative");
+              "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(FunctionTest, VariableSized)

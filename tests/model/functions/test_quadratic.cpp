@@ -105,7 +105,7 @@ TEST(QuadraticTest, Sorted)
     };
     add(model, quadratic);
     expect_pairs(model.quadratic_terms(0, 1), {{0, 0, 1.0}, {2, 3, 4.0}});
-    expect_pairs(model.quadratic_terms(1, 1), {{0, 2, -2.0}, {1, 1, 0.5}, {1, 3, 1.5}});
+    expect_pairs(model.quadratic_terms(1, 2), {{0, 2, -2.0}, {1, 1, 0.5}, {1, 3, 1.5}});
 }
 
 TEST(QuadraticTest, Swapped)
@@ -224,10 +224,10 @@ TEST(QuadraticTest, Merged)
     };
     add(model, second);
     expect_pairs(model.quadratic_terms(0, 1), {{0, 0, 1.0}, {0, 1, 1.0}});
-    expect_pairs(model.quadratic_terms(1, 1), {{1, 1, 2.0}});
-    expect_pairs(model.quadratic_terms(2, 1), {{1, 2, 1.0}});
-    expect_pairs(model.quadratic_terms(3, 1), {{0, 0, 1.0}, {0, 1, 4.0}, {2, 2, 4.0}, {3, 3, 1.0}});
-    expect_pairs(model.quadratic_terms(4, 1), {{0, 3, 1.0}, {1, 2, 5.0}, {2, 3, 1.0}});
+    expect_pairs(model.quadratic_terms(1, 2), {{1, 1, 2.0}});
+    expect_pairs(model.quadratic_terms(2, 3), {{1, 2, 1.0}});
+    expect_pairs(model.quadratic_terms(3, 4), {{0, 0, 1.0}, {0, 1, 4.0}, {2, 2, 4.0}, {3, 3, 1.0}});
+    expect_pairs(model.quadratic_terms(4, 5), {{0, 3, 1.0}, {1, 2, 5.0}, {2, 3, 1.0}});
     EXPECT_EQ(held(model).size(), 11U);
 }
 
@@ -247,8 +247,8 @@ TEST(QuadraticTest, Shifted)
     };
     add(model, second);
     expect_pairs(model.quadratic_terms(0, 1), {{1, 1, 2.0}, {2, 2, 1.0}});
-    expect_pairs(model.quadratic_terms(1, 1), {{0, 0, 1.0}, {0, 1, 4.0}, {2, 3, 3.0}});
-    expect_pairs(model.quadratic_terms(2, 1), {{2, 3, 1.0}});
+    expect_pairs(model.quadratic_terms(1, 2), {{0, 0, 1.0}, {0, 1, 4.0}, {2, 3, 3.0}});
+    expect_pairs(model.quadratic_terms(2, 3), {{2, 3, 1.0}});
 }
 
 TEST(QuadraticTest, Unchanged)
@@ -274,8 +274,8 @@ TEST(QuadraticTest, Unchanged)
     };
     EXPECT_NE(add_refusal(model, overflow), "");
     expect_pairs(model.quadratic_terms(0, 1), {});
-    expect_pairs(model.quadratic_terms(1, 1), {{0, 1, kLarge}});
-    expect_pairs(model.quadratic_terms(2, 1), {});
+    expect_pairs(model.quadratic_terms(1, 2), {{0, 1, kLarge}});
+    expect_pairs(model.quadratic_terms(2, 3), {});
 }
 
 TEST(QuadraticTest, Atomic)
@@ -291,7 +291,7 @@ TEST(QuadraticTest, Atomic)
               "invalid argument: function 0: sum of coefficients of pair (0, 0) is infinity");
     model.add_functions(std::vector<double>{0.0}, std::vector<Offset>{0, 0}, {});
     expect_pairs(held(model), {{0, 0, kLarge}});
-    EXPECT_TRUE(model.quadratic_terms(2, 2).empty());
+    EXPECT_TRUE(model.quadratic_terms(2, 4).empty());
 }
 
 TEST(QuadraticTest, Order)
@@ -343,12 +343,12 @@ TEST(QuadraticTest, Later)
     const std::vector<Offset> starts{0, 1, 1};
     model.add_functions(constants, starts, {LinearTerm{.variable = 1, .coefficient = 5.0}});
     expect_pairs(model.quadratic_terms(0, 4), {{0, 1, 1.0}});
-    expect_pairs(model.quadratic_terms(2, 2), {});
+    expect_pairs(model.quadratic_terms(2, 4), {});
     add(model, single(2, {{1, 1, 2.0}}));
     expect_pairs(model.quadratic_terms(0, 1), {{0, 1, 1.0}});
-    expect_pairs(model.quadratic_terms(2, 1), {{1, 1, 2.0}});
-    EXPECT_EQ(model.linear_terms(2, 1).size(), 1U);
-    EXPECT_TRUE(model.quadratic_terms(3, 1).empty());
+    expect_pairs(model.quadratic_terms(2, 3), {{1, 1, 2.0}});
+    EXPECT_EQ(model.linear_terms(2, 3).size(), 1U);
+    EXPECT_TRUE(model.quadratic_terms(3, 4).empty());
 }
 
 TEST(QuadraticTest, ReadRange)
@@ -360,15 +360,15 @@ TEST(QuadraticTest, ReadRange)
         .terms = {{0, 0, 1.0}, {0, 1, 2.0}, {1, 1, 3.0}},
     };
     add(model, quadratic);
-    expect_pairs(model.quadratic_terms(1, 2), {{0, 1, 2.0}, {1, 1, 3.0}});
-    EXPECT_TRUE(model.quadratic_terms(1, 1).empty());
-    EXPECT_TRUE(model.quadratic_terms(3, 0).empty());
-    EXPECT_EQ(refusal([&] { model.quadratic_terms(-1, 1); }),
+    expect_pairs(model.quadratic_terms(1, 3), {{0, 1, 2.0}, {1, 1, 3.0}});
+    EXPECT_TRUE(model.quadratic_terms(1, 2).empty());
+    EXPECT_TRUE(model.quadratic_terms(3, 3).empty());
+    EXPECT_EQ(refusal([&] { model.quadratic_terms(-1, 0); }),
               "invalid argument: function -1: unknown");
-    EXPECT_EQ(refusal([&] { model.quadratic_terms(1, 3); }),
+    EXPECT_EQ(refusal([&] { model.quadratic_terms(1, 4); }),
               "invalid argument: function 3: unknown");
     EXPECT_EQ(refusal([&] { model.quadratic_terms(0, -1); }),
-              "invalid argument: argument 'n': -1 is negative");
+              "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(QuadraticTest, BadStarts)

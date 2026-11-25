@@ -47,11 +47,11 @@ const Constraint &Model::constraint(Index index) const
     return constraints_[static_cast<std::size_t>(index)];
 }
 
-std::span<const Constraint> Model::constraints(Index start, Index size) const
+std::span<const Constraint> Model::constraints(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_constraints());
+    check_span(kNoun, start, stop, n_constraints());
     const auto offset = static_cast<std::size_t>(start);
-    return std::span(constraints_).subspan(offset, static_cast<std::size_t>(size));
+    return std::span(constraints_).subspan(offset, static_cast<std::size_t>(stop - start));
 }
 
 void Model::add_constraints(std::span<const Constraint> added)

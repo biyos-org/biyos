@@ -319,7 +319,8 @@ TEST(AdderTest, Arguments)
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(),
               "invalid argument: function " + std::to_string(functions) + ": unknown");
-    EXPECT_EQ(BIYOS_addclintermrg(held, variables, 1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addclintermrg(held, variables, variables + 1, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(),
               "invalid argument: variable " + std::to_string(variables) + ": unknown");
     EXPECT_EQ(BIYOS_addclintermrg(held, 0, 2, backwards.data(), zero.data(), one.data()),
@@ -333,5 +334,5 @@ TEST(AdderTest, Arguments)
     EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     EXPECT_EQ(BIYOS_addlintermsp(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addrlintermrg(held, 0, functions, nullptr, nullptr, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_addclintermrg(held, variables, 0, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addclintermrg(held, variables, variables, nullptr, nullptr, nullptr), BIYOS_OK);
 }

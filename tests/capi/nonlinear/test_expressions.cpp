@@ -228,7 +228,7 @@ BIYOS_status get_range(const Model &model, BIYOS_index pos, BIYOS_index n, Progr
 {
     return BIYOS_getexprrg(model.get(),
                            pos,
-                           n,
+                           pos + n,
                            static_cast<BIYOS_offset>(read.codes.size()),
                            static_cast<BIYOS_offset>(read.values.size()),
                            read.starts.data(),
@@ -241,7 +241,7 @@ Program read_range(const Model &model, BIYOS_index pos, BIYOS_index n)
 {
     BIYOS_offset nnz = -1;
     BIYOS_offset nval = -1;
-    EXPECT_EQ(BIYOS_getnexprrg(model.get(), pos, n, &nnz, &nval), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnexprrg(model.get(), pos, pos + n, &nnz, &nval), BIYOS_OK);
     Program read = sized(nnz, nval, n);
     EXPECT_EQ(get_range(model, pos, n, read), BIYOS_OK);
     return read;
@@ -650,20 +650,20 @@ TEST(CApiTest, AttachRange)
     const BIYOS_offset x = variable_node(model, 0);
     const BIYOS_offset sine = node_of(model, BIYOS_OP_SIN, {x}, {});
     const std::vector<BIYOS_offset> nodes{sine, x};
-    ASSERT_EQ(BIYOS_attachexprrg(model.get(), 1, 2, nodes.data()), BIYOS_OK);
+    ASSERT_EQ(BIYOS_attachexprrg(model.get(), 1, 3, nodes.data()), BIYOS_OK);
     const std::vector<BIYOS_offset> roots{biyos::kNoRoot, sine, biyos::kNoRoot};
     EXPECT_EQ(roots_of(model, 3), roots);
     EXPECT_EQ(read_functions(model, 3).starts, (std::vector<std::int64_t>{0, 0, 0, 1}));
     const std::string bad = "invalid argument: ";
-    EXPECT_EQ(BIYOS_attachexprrg(model.get(), 2, 2, nodes.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_attachexprrg(model.get(), 2, 4, nodes.data()), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function 3: unknown");
-    EXPECT_EQ(BIYOS_attachexprrg(model.get(), -1, 1, nodes.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_attachexprrg(model.get(), -1, 0, nodes.data()), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function -1: unknown");
     EXPECT_EQ(BIYOS_attachexprrg(model.get(), 0, -1, nodes.data()), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
+    EXPECT_EQ(env.message(), bad + "argument 'end': -1 is below 'beg' 0");
     EXPECT_EQ(BIYOS_attachexprrg(model.get(), 0, 1, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "argument 'node': is null");
-    EXPECT_EQ(BIYOS_attachexprrg(model.get(), 3, 0, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_attachexprrg(model.get(), 3, 3, nullptr), BIYOS_OK);
     EXPECT_EQ(roots_of(model, 3), roots);
 }
 
@@ -728,20 +728,20 @@ TEST(CApiTest, ClearRange)
     const BIYOS_offset sine = node_of(model, BIYOS_OP_SIN, {x}, {});
     const BIYOS_offset sum = node_of(model, BIYOS_OP_SUM, {x, sine}, {0.0, 1.0, 1.0});
     ASSERT_EQ(attach(model, {0, 1, 2}, {sum, sum, sum}), BIYOS_OK);
-    ASSERT_EQ(BIYOS_clrfunrg(model.get(), 1, 2), BIYOS_OK);
+    ASSERT_EQ(BIYOS_clrfunrg(model.get(), 1, 3), BIYOS_OK);
     const Read functions = read_functions(model, 3);
     EXPECT_EQ(functions.constants, (std::vector<double>{0.5, 0.0, 0.0}));
     EXPECT_EQ(functions.starts, (std::vector<std::int64_t>{0, 1, 1, 1}));
     const std::vector<BIYOS_offset> roots{sine, biyos::kNoRoot, biyos::kNoRoot};
     EXPECT_EQ(roots_of(model, 3), roots);
     const std::string bad = "invalid argument: ";
-    EXPECT_EQ(BIYOS_clrfunrg(model.get(), 2, 2), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_clrfunrg(model.get(), 2, 4), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function 3: unknown");
-    EXPECT_EQ(BIYOS_clrfunrg(model.get(), -1, 1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_clrfunrg(model.get(), -1, 0), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function -1: unknown");
     EXPECT_EQ(BIYOS_clrfunrg(model.get(), 0, -1), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
-    EXPECT_EQ(BIYOS_clrfunrg(model.get(), 3, 0), BIYOS_OK);
+    EXPECT_EQ(env.message(), bad + "argument 'end': -1 is below 'beg' 0");
+    EXPECT_EQ(BIYOS_clrfunrg(model.get(), 3, 3), BIYOS_OK);
     EXPECT_EQ(roots_of(model, 3), roots);
 }
 
@@ -791,7 +791,7 @@ TEST(CApiTest, PartialRead)
         BIYOS_getexprrg(model.get(), 0, 3, 7, 1, nullptr, codes.data(), nullptr, nullptr);
     EXPECT_EQ(status, BIYOS_OK);
     EXPECT_EQ(codes, read_range(model, 0, 3).codes);
-    EXPECT_EQ(BIYOS_getexprrg(model.get(), 1, 0, 0, 0, nullptr, nullptr, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getexprrg(model.get(), 1, 1, 0, 0, nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);
 }
 
@@ -837,7 +837,7 @@ TEST(CApiTest, RefusedCount)
     EXPECT_EQ(BIYOS_getnexprrg(model.get(), 0, 3, &nnz, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "argument 'nval': is null");
     EXPECT_EQ(BIYOS_getnexprrg(model.get(), 0, -1, &nnz, &nval), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
+    EXPECT_EQ(env.message(), bad + "argument 'end': -1 is below 'beg' 0");
     const int unknown[] = {3};
     EXPECT_EQ(BIYOS_getnexprsp(model.get(), 1, unknown, &nnz, &nval), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function 3: unknown");

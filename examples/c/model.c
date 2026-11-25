@@ -23,12 +23,12 @@ static BIYOS_status functions(BIYOS_model *mdl)
     {
         return status;
     }
-    status = BIYOS_setcstrg(mdl, pos, 3, cst);
+    status = BIYOS_setcstrg(mdl, pos, pos + 3, cst);
     if (status != BIYOS_OK)
     {
         return status;
     }
-    return BIYOS_addrlintermrg(mdl, pos, 3, off, var, coef);
+    return BIYOS_addrlintermrg(mdl, pos, pos + 3, off, var, coef);
 }
 
 static BIYOS_status squares(BIYOS_model *mdl)
@@ -78,12 +78,12 @@ static int read_squares(BIYOS_model *mdl)
     BIYOS_index var1[2];
     BIYOS_index var2[2];
     BIYOS_real coef[2];
-    BIYOS_status status = BIYOS_getnquadtermrg(mdl, 2, 1, &nnz);
+    BIYOS_status status = BIYOS_getnquadtermrg(mdl, 2, 3, &nnz);
     if (status != BIYOS_OK || nnz > 2)
     {
         return 0;
     }
-    status = BIYOS_getquadtermrg(mdl, 2, 1, nnz, off, var1, var2, coef);
+    status = BIYOS_getquadtermrg(mdl, 2, 3, nnz, off, var1, var2, coef);
     if (status != BIYOS_OK)
     {
         return 0;

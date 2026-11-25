@@ -144,7 +144,7 @@ static BIYOS_status use_functions(BIYOS_model *model)
     if (BIYOS_addfun(model, 2, &first) != BIYOS_OK || first != 0 ||
         BIYOS_getnfun(model, &functions) != BIYOS_OK || functions != 2 ||
         BIYOS_delfunsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
-        BIYOS_delfunrg(model, 2, 0, NULL) != BIYOS_OK ||
+        BIYOS_delfunrg(model, 2, 2, NULL) != BIYOS_OK ||
         BIYOS_setcstrg(model, 0, 2, constants) != BIYOS_OK ||
         BIYOS_addrlintermrg(model, 0, 2, starts, variables, values) != BIYOS_OK)
     {
@@ -172,8 +172,8 @@ static BIYOS_status use_linear(BIYOS_model *model)
     {
         return BIYOS_ERR_INTERNAL;
     }
-    if (BIYOS_getnclintermrg(model, 1, 1, &needed) != BIYOS_OK || needed != 2 ||
-        BIYOS_getclintermrg(model, 1, 1, 2, offsets, held, NULL) != BIYOS_OK || offsets[1] != 2 ||
+    if (BIYOS_getnclintermrg(model, 1, 2, &needed) != BIYOS_OK || needed != 2 ||
+        BIYOS_getclintermrg(model, 1, 2, 2, offsets, held, NULL) != BIYOS_OK || offsets[1] != 2 ||
         held[0] != 0 || held[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
@@ -193,7 +193,7 @@ static BIYOS_status use_quadratic(BIYOS_model *model)
     int owners[2] = {-1, -1};
     int held[2] = {-1, -1};
     int paired[2] = {-1, -1};
-    BIYOS_status status = BIYOS_addquadtermrg(model, 1, 1, starts, firsts, seconds, values);
+    BIYOS_status status = BIYOS_addquadtermrg(model, 1, 2, starts, firsts, seconds, values);
     if (status == BIYOS_OK)
     {
         status = BIYOS_getquadtermrg(model, 0, 2, 2, offsets, held, paired, NULL);
@@ -231,7 +231,7 @@ static BIYOS_status use_constraints(BIYOS_model *model)
         BIYOS_delcontolsp(model, 1, indices) != BIYOS_OK ||
         BIYOS_delcontolrg(model, 0, 2) != BIYOS_OK ||
         BIYOS_delconsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
-        BIYOS_delconrg(model, 2, 0, NULL) != BIYOS_OK)
+        BIYOS_delconrg(model, 2, 2, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -277,7 +277,7 @@ static BIYOS_status use_objectives(BIYOS_model *model)
     if (status != BIYOS_OK || first != 0 || objectives != 2 || found[0] != BIYOS_OBJSENSE_MAX ||
         found[1] != BIYOS_OBJSENSE_MIN || priorities[1] != 1 ||
         BIYOS_delobjsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
-        BIYOS_delobjrg(model, 2, 0, NULL) != BIYOS_OK)
+        BIYOS_delobjrg(model, 2, 2, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -298,12 +298,12 @@ static BIYOS_status use_indicators(BIYOS_model *model)
     BIYOS_index indicators = 0;
     if (BIYOS_addind(model, 2, variables, values, functions, NULL, NULL, &first) != BIYOS_OK ||
         first != 0 || BIYOS_setindbndsp(model, 1, indices, NULL, upper) != BIYOS_OK ||
-        BIYOS_setindvarrg(model, 1, 1, variables, values) != BIYOS_OK ||
+        BIYOS_setindvarrg(model, 1, 2, variables, values) != BIYOS_OK ||
         BIYOS_getnind(model, &indicators) != BIYOS_OK || indicators != 2 ||
         BIYOS_getindrg(model, 0, 2, found, NULL, NULL, NULL, NULL) != BIYOS_OK || found[0] != 1 ||
         found[1] != 1 || BIYOS_setvarkndsp(model, 1, indices, &continuous) != BIYOS_ERR_INUSE ||
         BIYOS_delindsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
-        BIYOS_delindrg(model, 2, 0, NULL) != BIYOS_OK)
+        BIYOS_delindrg(model, 2, 2, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -336,7 +336,7 @@ static BIYOS_status use_sos(BIYOS_model *model)
         BIYOS_getsossp(model, 1, indices, 1, found, offsets, members, NULL) != BIYOS_OK ||
         found[0] != BIYOS_SOSKND_TWO || offsets[1] != 1 || members[0] != 1 ||
         BIYOS_delsossp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
-        BIYOS_delsosrg(model, 2, 0, NULL) != BIYOS_OK)
+        BIYOS_delsosrg(model, 2, 2, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -382,7 +382,7 @@ static BIYOS_status use_cones(BIYOS_model *model)
         BIYOS_delconetolsp(model, 1, indices) != BIYOS_OK ||
         BIYOS_delconetolrg(model, 0, 2) != BIYOS_OK ||
         BIYOS_delconesp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
-        BIYOS_delconerg(model, 2, 0, NULL) != BIYOS_OK)
+        BIYOS_delconerg(model, 2, 2, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -406,12 +406,12 @@ static BIYOS_status use_complements(BIYOS_model *model)
         BIYOS_getnccon(model, &complements) != BIYOS_OK || complements != 2 ||
         BIYOS_getcconbndrg(model, 0, 2, found, NULL) != BIYOS_OK ||
         BIYOS_getcconrg(model, 0, 2, read, NULL, NULL, NULL) != BIYOS_OK || read[0] != 0 ||
-        read[1] != 1 || BIYOS_setccontolrg(model, 1, 1, tolerance, NULL) != BIYOS_OK ||
+        read[1] != 1 || BIYOS_setccontolrg(model, 1, 2, tolerance, NULL) != BIYOS_OK ||
         BIYOS_getccontolsp(model, 1, indices, found, found + 1) != BIYOS_OK ||
         BIYOS_delccontolsp(model, 1, indices) != BIYOS_OK ||
         BIYOS_delccontolrg(model, 0, 2) != BIYOS_OK ||
         BIYOS_delcconsp(model, 0, NULL, map) != BIYOS_OK || map[1] != 1 ||
-        BIYOS_delcconrg(model, 2, 0, NULL) != BIYOS_OK)
+        BIYOS_delcconrg(model, 2, 2, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -532,7 +532,7 @@ static BIYOS_status get_names(const BIYOS_model *model)
         BIYOS_getobjnamesp(model, 1, first, &objective) != BIYOS_OK ||
         BIYOS_getindnamesp(model, 1, both, &indicator) != BIYOS_OK ||
         BIYOS_getsosnamesp(model, 1, both, &sos) != BIYOS_OK ||
-        BIYOS_getcconnamerg(model, 1, 1, &complement) != BIYOS_OK)
+        BIYOS_getcconnamerg(model, 1, 2, &complement) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -579,7 +579,7 @@ static BIYOS_status del_names(BIYOS_model *model)
         BIYOS_delobjnamesp(model, 0, NULL) != BIYOS_OK ||
         BIYOS_delindnamesp(model, 1, idx) != BIYOS_OK ||
         BIYOS_delsosnamesp(model, 1, idx) != BIYOS_OK ||
-        BIYOS_delcconnamerg(model, 1, 1) != BIYOS_OK || BIYOS_delmdlname(model) != BIYOS_OK)
+        BIYOS_delcconnamerg(model, 1, 2) != BIYOS_OK || BIYOS_delmdlname(model) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -598,7 +598,7 @@ static BIYOS_status name_cones(BIYOS_model *model)
     const char *found = NULL;
     BIYOS_index at = -1;
     if (BIYOS_setconenamesp(model, 1, indices, names) != BIYOS_OK ||
-        BIYOS_getconenamerg(model, 1, 1, &found) != BIYOS_OK || !matches(found, "k") ||
+        BIYOS_getconenamerg(model, 1, 2, &found) != BIYOS_OK || !matches(found, "k") ||
         BIYOS_getconeidx(model, 1, names, &at) != BIYOS_OK || at != 1 ||
         BIYOS_setconenamerg(model, 0, 1, names) != BIYOS_OK ||
         BIYOS_delconenamerg(model, 0, 1) != BIYOS_OK ||
@@ -816,7 +816,7 @@ int main(void)
         BIYOS_delvartolsp(model, 1, indices) != BIYOS_OK ||
         BIYOS_delvartolrg(model, 0, 2) != BIYOS_OK ||
         BIYOS_delvarsp(model, 0, NULL, NULL) != BIYOS_OK ||
-        BIYOS_delvarrg(model, 2, 0, NULL) != BIYOS_OK)
+        BIYOS_delvarrg(model, 2, 2, NULL) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
     }

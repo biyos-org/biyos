@@ -63,11 +63,11 @@ Index Model::n_functions() const noexcept
     return static_cast<Index>(constants_.size());
 }
 
-std::span<const double> Model::constants(Index start, Index size) const
+std::span<const double> Model::constants(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_functions());
+    check_span(kNoun, start, stop, n_functions());
     const auto offset = static_cast<std::size_t>(start);
-    return std::span(constants_).subspan(offset, static_cast<std::size_t>(size));
+    return std::span(constants_).subspan(offset, static_cast<std::size_t>(stop - start));
 }
 
 const double &Model::constant(Index index) const
@@ -101,11 +101,11 @@ void Model::add_constants(std::span<const Index> indices, std::span<const double
     }
 }
 
-std::span<const LinearTerm> Model::linear_terms(Index start, Index size) const
+std::span<const LinearTerm> Model::linear_terms(Index start, Index stop) const
 {
-    check_span(kNoun, start, size, n_functions());
+    check_span(kNoun, start, stop, n_functions());
     const auto begin = static_cast<std::size_t>(begin_of(static_cast<std::size_t>(start)));
-    const auto end = static_cast<std::size_t>(begin_of(static_cast<std::size_t>(start + size)));
+    const auto end = static_cast<std::size_t>(begin_of(static_cast<std::size_t>(stop)));
     return std::span(linear_terms_).subspan(begin, end - begin);
 }
 

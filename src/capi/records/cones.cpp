@@ -115,7 +115,7 @@ std::size_t count_of(const Model &core, std::span<const Index> cones, Part<T> pa
     std::size_t count = 0;
     for (const Index cone : cones)
     {
-        count += (core.*part)(cone, 1).size();
+        count += (core.*part)(cone, cone + 1).size();
     }
     return count;
 }
@@ -130,7 +130,7 @@ void write_part(const Model &core, std::span<const Index> cones, Part<T> part, C
         {
             out.starts[j] = written;
         }
-        const std::span<const T> items = (core.*part)(cones[j], 1);
+        const std::span<const T> items = (core.*part)(cones[j], cones[j] + 1);
         if (out.items != nullptr)
         {
             std::ranges::copy(items, out.items + written);
@@ -151,7 +151,7 @@ void write_kinds(const Model &core, std::span<const Index> cones, int *kinds)
     }
     for (std::size_t j = 0; j < cones.size(); ++j)
     {
-        kinds[j] = static_cast<int>(core.cone_kinds(cones[j], 1).front());
+        kinds[j] = static_cast<int>(core.cone_kinds(cones[j], cones[j] + 1).front());
     }
 }
 
@@ -218,12 +218,12 @@ BIYOS_status BIYOS_setconetolsp(BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_setconetolrg(BIYOS_model *mdl,
-                                BIYOS_index pos,
-                                BIYOS_index n,
+                                BIYOS_index beg,
+                                BIYOS_index end,
                                 const BIYOS_real *atol,
                                 const BIYOS_real *rtol)
 {
-    return guarded<set_tolerances<Range>>(mdl, Family::Cone, Range{pos, n}, atol, rtol);
+    return guarded<set_tolerances<Range>>(mdl, Family::Cone, Range{beg, end}, atol, rtol);
 }
 
 BIYOS_status BIYOS_getconetolsp(const BIYOS_model *mdl,
@@ -236,12 +236,12 @@ BIYOS_status BIYOS_getconetolsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getconetolrg(const BIYOS_model *mdl,
-                                BIYOS_index pos,
-                                BIYOS_index n,
+                                BIYOS_index beg,
+                                BIYOS_index end,
                                 BIYOS_real *atol,
                                 BIYOS_real *rtol)
 {
-    return guarded<get_tolerances<Range>>(mdl, Family::Cone, Range{pos, n}, atol, rtol);
+    return guarded<get_tolerances<Range>>(mdl, Family::Cone, Range{beg, end}, atol, rtol);
 }
 
 BIYOS_status BIYOS_delconetolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
@@ -249,9 +249,9 @@ BIYOS_status BIYOS_delconetolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_ind
     return guarded<delete_tolerances<List>>(mdl, Family::Cone, List{n, idx});
 }
 
-BIYOS_status BIYOS_delconetolrg(BIYOS_model *mdl, BIYOS_index pos, BIYOS_index n)
+BIYOS_status BIYOS_delconetolrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)
 {
-    return guarded<delete_tolerances<Range>>(mdl, Family::Cone, Range{pos, n});
+    return guarded<delete_tolerances<Range>>(mdl, Family::Cone, Range{beg, end});
 }
 
 BIYOS_status BIYOS_getncone(const BIYOS_model *mdl, BIYOS_index *n)
@@ -268,11 +268,11 @@ BIYOS_status BIYOS_getnconefunsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getnconefunrg(const BIYOS_model *mdl,
-                                 BIYOS_index pos,
-                                 BIYOS_index n,
+                                 BIYOS_index beg,
+                                 BIYOS_index end,
                                  BIYOS_offset *nnz)
 {
-    return guarded<n_items<Range, Index>>(mdl, Range{pos, n}, kMembers, nnz);
+    return guarded<n_items<Range, Index>>(mdl, Range{beg, end}, kMembers, nnz);
 }
 
 BIYOS_status BIYOS_getconesp(const BIYOS_model *mdl,
@@ -288,15 +288,15 @@ BIYOS_status BIYOS_getconesp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getconerg(const BIYOS_model *mdl,
-                             BIYOS_index pos,
-                             BIYOS_index n,
+                             BIYOS_index beg,
+                             BIYOS_index end,
                              BIYOS_offset cap,
                              BIYOS_int *knd,
                              BIYOS_offset *off,
                              BIYOS_index *fun)
 {
     const Compressed<Index> out{.starts = off, .items = fun};
-    return guarded<get_members<Range>>(mdl, Range{pos, n}, cap, knd, out);
+    return guarded<get_members<Range>>(mdl, Range{beg, end}, cap, knd, out);
 }
 
 BIYOS_status BIYOS_getnconeprmsp(const BIYOS_model *mdl,
@@ -308,11 +308,11 @@ BIYOS_status BIYOS_getnconeprmsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getnconeprmrg(const BIYOS_model *mdl,
-                                 BIYOS_index pos,
-                                 BIYOS_index n,
+                                 BIYOS_index beg,
+                                 BIYOS_index end,
                                  BIYOS_offset *nnz)
 {
-    return guarded<n_items<Range, double>>(mdl, Range{pos, n}, kParameters, nnz);
+    return guarded<n_items<Range, double>>(mdl, Range{beg, end}, kParameters, nnz);
 }
 
 BIYOS_status BIYOS_getconeprmsp(const BIYOS_model *mdl,
@@ -327,12 +327,12 @@ BIYOS_status BIYOS_getconeprmsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getconeprmrg(const BIYOS_model *mdl,
-                                BIYOS_index pos,
-                                BIYOS_index n,
+                                BIYOS_index beg,
+                                BIYOS_index end,
                                 BIYOS_offset cap,
                                 BIYOS_offset *prmoff,
                                 BIYOS_real *prm)
 {
     const Compressed<double> out{.starts = prmoff, .items = prm};
-    return guarded<get_parameters<Range>>(mdl, Range{pos, n}, cap, out);
+    return guarded<get_parameters<Range>>(mdl, Range{beg, end}, cap, out);
 }

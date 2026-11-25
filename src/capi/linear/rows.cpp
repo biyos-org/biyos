@@ -27,7 +27,7 @@ std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> fun
     std::size_t count = 0;
     for (const biyos::Index function : functions)
     {
-        count += core.linear_terms(function, 1).size();
+        count += core.linear_terms(function, function + 1).size();
     }
     return count;
 }
@@ -47,7 +47,7 @@ void write_rows(const biyos::Model &core,
     std::size_t k = 0;
     for (const biyos::Index function : functions)
     {
-        for (const biyos::LinearTerm &term : core.linear_terms(function, 1))
+        for (const biyos::LinearTerm &term : core.linear_terms(function, function + 1))
         {
             biyos::capi::put_term(out, k, function, term);
             ++k;
@@ -79,10 +79,11 @@ void get_ranged(const BIYOS_model &model,
                 double *values)
 {
     const biyos::Model &core = model.core;
-    const std::span<const biyos::LinearTerm> terms = core.linear_terms(range.start, range.size);
+    const std::span<const biyos::LinearTerm> terms = core.linear_terms(range.start, range.stop);
     check_capacity(capacity, terms.size());
-    const auto before = [&](biyos::Index j) { return core.linear_terms(range.start, j); };
-    biyos::capi::write_starts(static_cast<std::size_t>(range.size), starts, before);
+    const auto before = [&](biyos::Index j)
+    { return core.linear_terms(range.start, range.start + j); };
+    biyos::capi::write_starts(static_cast<std::size_t>(range.stop - range.start), starts, before);
     biyos::capi::unpack(terms, terms.size(), variables, values);
 }
 
@@ -97,11 +98,11 @@ BIYOS_status BIYOS_getnrlintermsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getnrlintermrg(const BIYOS_model *mdl,
-                                  BIYOS_index pos,
-                                  BIYOS_index n,
+                                  BIYOS_index beg,
+                                  BIYOS_index end,
                                   BIYOS_offset *nnz)
 {
-    return guarded<n_row_terms<Range>>(mdl, Range{pos, n}, nnz);
+    return guarded<n_row_terms<Range>>(mdl, Range{beg, end}, nnz);
 }
 
 BIYOS_status BIYOS_getrlintermsp(const BIYOS_model *mdl,
@@ -118,12 +119,12 @@ BIYOS_status BIYOS_getrlintermsp(const BIYOS_model *mdl,
 }
 
 BIYOS_status BIYOS_getrlintermrg(const BIYOS_model *mdl,
-                                 BIYOS_index pos,
-                                 BIYOS_index n,
+                                 BIYOS_index beg,
+                                 BIYOS_index end,
                                  BIYOS_offset cap,
                                  BIYOS_offset *off,
                                  BIYOS_index *var,
                                  BIYOS_real *coef)
 {
-    return guarded<get_ranged>(mdl, Range{pos, n}, cap, off, var, coef);
+    return guarded<get_ranged>(mdl, Range{beg, end}, cap, off, var, coef);
 }

@@ -18,7 +18,7 @@ struct List
 struct Range
 {
     int start;
-    int size;
+    int stop;
 };
 
 std::span<const Index> selected(const Model &model, Family family, List list);

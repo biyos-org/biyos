@@ -316,16 +316,16 @@ TEST(ObjectiveTest, ReadRange)
     Model model = with_functions(3);
     const std::vector<Objective> added{default_objective(2, 0), kMaximize, default_objective(0, 2)};
     model.add_objectives(added);
-    const std::span<const Objective> middle = model.objectives(1, 2);
+    const std::span<const Objective> middle = model.objectives(1, 3);
     ASSERT_EQ(middle.size(), 2U);
     expect_objective(middle[0], added[1]);
     expect_objective(middle[1], added[2]);
-    EXPECT_TRUE(model.objectives(3, 0).empty());
-    EXPECT_EQ(refusal([&] { model.objectives(-1, 1); }), "invalid argument: objective -1: unknown");
-    EXPECT_EQ(refusal([&] { model.objectives(1, 3); }), "invalid argument: objective 3: unknown");
-    EXPECT_EQ(refusal([&] { model.objectives(4, 0); }), "invalid argument: objective 4: unknown");
+    EXPECT_TRUE(model.objectives(3, 3).empty());
+    EXPECT_EQ(refusal([&] { model.objectives(-1, 0); }), "invalid argument: objective -1: unknown");
+    EXPECT_EQ(refusal([&] { model.objectives(1, 4); }), "invalid argument: objective 3: unknown");
+    EXPECT_EQ(refusal([&] { model.objectives(4, 4); }), "invalid argument: objective 4: unknown");
     EXPECT_EQ(refusal([&] { model.objectives(0, -1); }),
-              "invalid argument: argument 'n': -1 is negative");
+              "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(ObjectiveTest, Mismatch)

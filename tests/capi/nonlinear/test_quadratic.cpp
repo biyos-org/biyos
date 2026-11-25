@@ -94,7 +94,7 @@ BIYOS_status read_with(const Model &model,
 {
     return BIYOS_getquadtermrg(model.get(),
                                start,
-                               size,
+                               start + size,
                                capacity,
                                read.starts.data(),
                                read.rows.data(),
@@ -105,7 +105,7 @@ BIYOS_status read_with(const Model &model,
 std::int64_t count_of(const Model &model, int start, int size)
 {
     BIYOS_offset nnz = -1;
-    EXPECT_EQ(BIYOS_getnquadtermrg(model.get(), start, size, &nnz), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getnquadtermrg(model.get(), start, start + size, &nnz), BIYOS_OK);
     return nnz;
 }
 
@@ -275,7 +275,7 @@ TEST(CApiTest, RefusedPairs)
     const std::vector<std::string> messages{
         "invalid argument: function 3: unknown",
         "invalid argument: function -1: unknown",
-        "invalid argument: argument 'n': -1 is negative",
+        "invalid argument: argument 'end': -1 is below 'beg' 0",
         "invalid argument: function 4: unknown",
     };
     for (std::size_t k = 0; k < ranges.size(); ++k)
@@ -332,10 +332,10 @@ TEST(CApiTest, HugeQuadratic)
     const int *rows = most.rows.data();
     const int *columns = most.columns.data();
     const double *values = most.values.data();
-    EXPECT_EQ(BIYOS_addquadtermrg(held, 1, 1, most.starts.data(), rows, columns, values),
+    EXPECT_EQ(BIYOS_addquadtermrg(held, 1, 2, most.starts.data(), rows, columns, values),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
-    EXPECT_EQ(BIYOS_addquadtermrg(held, 1, 1, large.starts.data(), rows, columns, values),
+    EXPECT_EQ(BIYOS_addquadtermrg(held, 1, 2, large.starts.data(), rows, columns, values),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
     expect_sample(model);

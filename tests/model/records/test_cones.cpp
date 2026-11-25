@@ -132,16 +132,16 @@ Model with_cones(std::size_t n)
     return model;
 }
 
-std::vector<Index> members_of(const Model &model, Index start, Index size)
+std::vector<Index> members_of(const Model &model, Index start, Index stop)
 {
-    const std::span<const Index> found = model.cone_functions(start, size);
+    const std::span<const Index> found = model.cone_functions(start, stop);
     return {found.begin(), found.end()};
 }
 
-std::vector<std::uint64_t> parameters_of(const Model &model, Index start, Index size)
+std::vector<std::uint64_t> parameters_of(const Model &model, Index start, Index stop)
 {
     std::vector<std::uint64_t> found;
-    for (const double value : model.cone_parameters(start, size))
+    for (const double value : model.cone_parameters(start, stop))
     {
         found.push_back(std::bit_cast<std::uint64_t>(value));
     }
@@ -183,16 +183,16 @@ TEST(ConeTest, Added)
     const std::span<const ConeKind> kinds = model.cone_kinds(0, 2);
     EXPECT_EQ(std::vector<ConeKind>(kinds.begin(), kinds.end()), pair().kinds);
     EXPECT_EQ(members_of(model, 0, 1), (std::vector<Index>{4, 0, 2}));
-    EXPECT_EQ(members_of(model, 1, 1), (std::vector<Index>{1, 3}));
+    EXPECT_EQ(members_of(model, 1, 2), (std::vector<Index>{1, 3}));
     EXPECT_EQ(members_of(model, 0, 2), pair().functions);
-    EXPECT_EQ(members_of(model, 2, 0), std::vector<Index>{});
+    EXPECT_EQ(members_of(model, 2, 2), std::vector<Index>{});
     EXPECT_EQ(parameters_of(model, 0, 1), bits_of({}));
-    EXPECT_EQ(parameters_of(model, 1, 1), bits_of({0.5, 2.0}));
+    EXPECT_EQ(parameters_of(model, 1, 2), bits_of({0.5, 2.0}));
     add(model, one(ConeKind::Power, {2, 3}, {1.0}));
     const std::vector<Offset> none{0};
     model.add_cones({}, none, {}, none, {});
     ASSERT_EQ(model.n_cones(), 3);
-    EXPECT_EQ(members_of(model, 1, 2), (std::vector<Index>{1, 3, 2, 3}));
+    EXPECT_EQ(members_of(model, 1, 3), (std::vector<Index>{1, 3, 2, 3}));
     EXPECT_EQ(parameters_of(model, 0, 3), bits_of({0.5, 2.0, 1.0}));
 }
 
@@ -312,10 +312,10 @@ TEST(ConeTest, Ranges)
 {
     Model model = with_functions(5);
     add(model, pair());
-    EXPECT_EQ(refusal([&] { model.cone_kinds(1, 2); }), "invalid argument: cone 2: unknown");
-    EXPECT_EQ(refusal([&] { model.cone_functions(3, 0); }), "invalid argument: cone 3: unknown");
+    EXPECT_EQ(refusal([&] { model.cone_kinds(1, 3); }), "invalid argument: cone 2: unknown");
+    EXPECT_EQ(refusal([&] { model.cone_functions(3, 3); }), "invalid argument: cone 3: unknown");
     EXPECT_EQ(refusal([&] { model.cone_parameters(0, -1); }),
-              "invalid argument: argument 'n': -1 is negative");
+              "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(ConeTest, OwnTolerance)

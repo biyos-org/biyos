@@ -37,11 +37,11 @@ void check_objectives(const Model &model)
 
 void check_function(const Model &model, Index function)
 {
-    if (!model.quadratic_terms(function, 1).empty())
+    if (!model.quadratic_terms(function, function + 1).empty())
     {
         refuse_part("function", function, "quadratic terms");
     }
-    if (model.roots(function, 1).front() != kNoRoot)
+    if (model.roots(function, function + 1).front() != kNoRoot)
     {
         refuse_part("function", function, "an expression");
     }

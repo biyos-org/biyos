@@ -47,10 +47,10 @@ def add_sample(model):
     model.addquadterm(*SAMPLE)
 
 
-def read_lengths(handle, first, count, size, starts, *rest):
+def read_lengths(handle, beg, end, size, starts, *rest):
     firsts, seconds, values = rest
     terms = [(firsts, size), (seconds, size), (values, size)]
-    return [(starts, count + 1)] + terms
+    return [(starts, end - beg + 1)] + terms
 
 
 def spread(found, first=0):

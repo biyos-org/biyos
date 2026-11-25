@@ -125,7 +125,7 @@ inline void expect_own(const ToleranceCalls &calls, Fill fill)
     const double absolute[] = {0.5, 0.0};
     const double relative[] = {0.25, 0.125};
     ASSERT_EQ(calls.set_listed(held, 2, indices, absolute, nullptr), BIYOS_OK);
-    ASSERT_EQ(calls.set_ranged(held, 1, 2, nullptr, relative), BIYOS_OK);
+    ASSERT_EQ(calls.set_ranged(held, 1, 3, nullptr, relative), BIYOS_OK);
     ASSERT_EQ(calls.set_ranged(held, 0, 3, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(calls.set_listed(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     const Tolerances wanted{
@@ -156,7 +156,7 @@ inline void expect_rejected(const ToleranceCalls &calls, Fill fill)
     EXPECT_EQ(env.message(), refusal_of(calls, 1, "absolute tolerance is NaN"));
     EXPECT_EQ(calls.set_listed(held, 1, &index, nullptr, &infinite), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refusal_of(calls, 1, "relative tolerance is infinity"));
-    EXPECT_EQ(calls.set_ranged(held, 1, 1, &negative, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(calls.set_ranged(held, 1, 2, &negative, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refusal_of(calls, 1, "absolute tolerance -0.5 is negative"));
     const BIYOS_index unknown = 3;
     EXPECT_EQ(calls.set_listed(held, 1, &unknown, &small, &small), BIYOS_ERR_BADARG);
@@ -168,7 +168,7 @@ inline void expect_rejected(const ToleranceCalls &calls, Fill fill)
     EXPECT_EQ(calls.set_listed(held, 2, indices, absolute, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refusal_of(calls, 2, "absolute tolerance is NaN"));
     std::vector<double> kept(2, 9.0);
-    EXPECT_EQ(calls.get_ranged(held, 2, 2, kept.data(), nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(calls.get_ranged(held, 2, 4, kept.data(), nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refusal_of(calls, 3, "unknown"));
     EXPECT_EQ(bit_patterns(kept), bit_patterns({9.0, 9.0}));
     expect_tolerances(read_tolerances(model, calls), kUnset);
@@ -192,7 +192,7 @@ inline void expect_deleted(const ToleranceCalls &calls, Fill fill)
     };
     expect_tolerances(read_tolerances(model, calls), wanted);
     ASSERT_EQ(calls.delete_ranged(held, 0, 2), BIYOS_OK);
-    ASSERT_EQ(calls.delete_ranged(held, 1, 2), BIYOS_OK);
+    ASSERT_EQ(calls.delete_ranged(held, 1, 3), BIYOS_OK);
     expect_tolerances(read_tolerances(model, calls), kUnset);
 }
 
@@ -210,7 +210,7 @@ inline void expect_undeleted(const ToleranceCalls &calls, Fill fill)
     EXPECT_EQ(env.message(), refusal_of(calls, 3, "unknown"));
     EXPECT_EQ(calls.delete_listed(held, 1, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
-    EXPECT_EQ(calls.delete_ranged(held, 2, 2), BIYOS_ERR_BADARG);
+    EXPECT_EQ(calls.delete_ranged(held, 2, 4), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refusal_of(calls, 3, "unknown"));
     expect_tolerances(read_tolerances(model, calls), before);
 }
@@ -222,7 +222,7 @@ inline void expect_copied(const ToleranceCalls &calls, Fill fill)
     fill(model);
     const double absolute[] = {0.5, 0.25};
     const double relative[] = {0.0, 0.125};
-    ASSERT_EQ(calls.set_ranged(model.get(), 1, 2, absolute, relative), BIYOS_OK);
+    ASSERT_EQ(calls.set_ranged(model.get(), 1, 3, absolute, relative), BIYOS_OK);
     const Tolerances wanted = read_tolerances(model, calls);
     const Env other;
     const Model copy(other, model);
