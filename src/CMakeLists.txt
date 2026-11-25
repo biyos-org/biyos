@@ -8,6 +8,7 @@ add_library(biyos_internal STATIC
     core/events/format.cpp
     core/events/hooks.cpp
     core/events/records.cpp
+    core/events/stream.cpp
     core/memory/usage.cpp
     core/numeric/tolerances.cpp
     core/options/catalog.cpp

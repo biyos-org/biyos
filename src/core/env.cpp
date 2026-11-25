@@ -1,6 +1,7 @@
 #include "core/env.hpp"
 
 #include "core/error.hpp"
+#include "core/events/stream.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -58,6 +59,11 @@ Events &Env::events() noexcept
 const Events &Env::events() const noexcept
 {
     return events_;
+}
+
+Stream Env::stream() noexcept
+{
+    return Stream(*this);
 }
 
 Interrupt &Env::interrupt() noexcept

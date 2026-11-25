@@ -33,6 +33,7 @@ biyos_add_test(test_core
     core/events/test_format.cpp
     core/events/test_hooks.cpp
     core/events/test_records.cpp
+    core/events/test_stream.cpp
     core/memory/test_room.cpp
     core/memory/test_slice.cpp
     core/memory/test_usage.cpp

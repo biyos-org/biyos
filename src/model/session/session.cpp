@@ -39,6 +39,11 @@ Lookup Session::lookup() const
     return Lookup(settings_, env().options());
 }
 
+Stream Session::stream() const noexcept
+{
+    return Stream(env(), hooks_, *this);
+}
+
 Hooks &Session::hooks() const noexcept
 {
     return hooks_;

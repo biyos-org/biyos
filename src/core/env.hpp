@@ -19,6 +19,7 @@ namespace biyos
 {
 
 class Env;
+class Stream;
 
 class ErrorScope
 {
@@ -68,6 +69,7 @@ class Env
 
     Events &events() noexcept;
     const Events &events() const noexcept;
+    Stream stream() noexcept;
 
     Interrupt &interrupt() noexcept;
     const Interrupt &interrupt() const noexcept;
