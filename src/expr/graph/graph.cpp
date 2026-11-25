@@ -179,7 +179,7 @@ Graph::Mark Graph::mark() const noexcept
         .nodes = size(),
         .coefficients = coefficients_.size(),
         .variables = variable_nodes_.size(),
-        .pwls = points_.size(),
+        .piecewise_linears = points_.size(),
     };
 }
 
@@ -199,7 +199,7 @@ void Graph::truncate(const Mark &mark) noexcept
     starts_.resize(nodes + 1);
     coefficients_.resize(mark.coefficients);
     variable_nodes_.resize(mark.variables);
-    points_.truncate(mark.pwls);
+    points_.truncate(mark.piecewise_linears);
 }
 
 void Graph::check(Operator op, Payload payload, std::span<const Offset> children) const

@@ -339,7 +339,7 @@ void expect_graph(void (*change)(Model &), Offset added, Offset pwls = 0)
         {
             EXPECT_GT(successes, 0U);
             EXPECT_EQ(model.graph().size(), before.nodes + added);
-            EXPECT_EQ(model.graph().points().size(), before.pwls + pwls);
+            EXPECT_EQ(model.graph().points().size(), before.piecewise_linears + pwls);
             return;
         }
         EXPECT_EQ(model.graph().mark(), before);

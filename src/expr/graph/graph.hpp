@@ -20,7 +20,7 @@ class Graph
         Offset nodes;
         std::size_t coefficients;
         std::size_t variables;
-        Offset pwls;
+        Offset piecewise_linears;
 
         bool operator==(const Mark &) const = default;
     };
