@@ -15,7 +15,7 @@ Given = TypeVar("Given")
 
 class _Close(NamedTuple):
     op: Operator
-    arity: int
+    arg: int
     values: tuple[float, ...]
     key: int | None
 
@@ -111,7 +111,7 @@ class _Writer:
         return [close, *reversed(children)]
 
     def _close(self, close: _Close) -> None:
-        self._entry(close.op, close.arity, close.values)
+        self._entry(close.op, close.arg, close.values)
         if close.key is not None:
             self._kept[close.key] = len(self.code)
             self._entry(Operator.KEEP, 1, ())
