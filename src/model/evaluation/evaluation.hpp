@@ -12,7 +12,7 @@
 #include "expr/hessian/hessian.hpp"
 #include "expr/sparsity/reach.hpp"
 #include "expr/tape/tape.hpp"
-#include "model/evaluation/maps.hpp"
+#include "model/evaluation/layout.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
 

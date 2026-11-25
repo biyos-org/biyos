@@ -5,8 +5,8 @@
 #include "core/options/lookup.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/forms/terms.hpp"
-#include "model/evaluation/maps.hpp"
-#include "model/evaluation/user.hpp"
+#include "model/evaluation/callbacks.hpp"
+#include "model/evaluation/layout.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
 
