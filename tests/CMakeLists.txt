@@ -33,7 +33,6 @@ biyos_add_test(test_core
     core/events/test_format.cpp
     core/events/test_hooks.cpp
     core/events/test_records.cpp
-    core/events/test_stream.cpp
     core/memory/test_room.cpp
     core/memory/test_slice.cpp
     core/memory/test_usage.cpp
@@ -130,6 +129,7 @@ biyos_add_test(test_model
     model/records/test_special_ordered_sets.cpp
     model/records/test_variables.cpp
     model/session/test_session.cpp
+    model/session/test_stream.cpp
     model/test_tolerances.cpp)
 target_include_directories(test_model PRIVATE model)
 target_link_libraries(test_model PRIVATE biyos_internal)
