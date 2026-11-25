@@ -31,11 +31,11 @@ Grouped<Term> grouped(std::span<const Index> functions, std::span<const Term> te
         if (found.functions.empty() || found.functions.back() != functions[k])
         {
             found.functions.push_back(functions[k]);
-            found.starts.push_back(static_cast<Offset>(found.terms.size()));
+            found.starts.push_back(to_offset(found.terms.size()));
         }
         found.terms.push_back(terms[k]);
     }
-    found.starts.push_back(static_cast<Offset>(found.terms.size()));
+    found.starts.push_back(to_offset(found.terms.size()));
     return found;
 }
 
