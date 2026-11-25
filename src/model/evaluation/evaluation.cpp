@@ -53,6 +53,7 @@ Program program_of(Env &env, const Model &model)
     }
     Tape tape(model.graph(), roots);
     JacobianLayout layout = layout_of(model, rooted, tape.pattern());
+    std::vector<Real> linear = linear_of(model, layout);
     Entries entries = entries_of(model);
     Hessian hessian(model.graph(), roots, entries.items);
     hessian.widen(model.n_variables());
@@ -61,6 +62,7 @@ Program program_of(Env &env, const Model &model)
         .roots = std::move(roots),
         .tape = std::move(tape),
         .layout = std::move(layout),
+        .linear = std::move(linear),
         .entries = std::move(entries),
         .hessian = std::move(hessian),
     };
@@ -167,7 +169,7 @@ void Evaluation::term_function(std::span<const Real> x, std::span<Real> f) const
 void Evaluation::term_jacobian(std::span<const Real> x, std::span<Real> g) const
 {
     const JacobianLayout &layout = program_.layout;
-    std::ranges::copy(layout.linear, g.begin());
+    std::ranges::copy(program_.linear, g.begin());
     const std::span<const QuadraticTerm> quadratic =
         model_.quadratic_terms(0, model_.n_functions());
     for (std::size_t t = 0; t < quadratic.size(); ++t)

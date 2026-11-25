@@ -30,6 +30,7 @@ struct Program
     std::vector<Offset> roots;
     Tape tape;
     JacobianLayout layout;
+    std::vector<Real> linear;
     Entries entries;
     Hessian hessian;
 };

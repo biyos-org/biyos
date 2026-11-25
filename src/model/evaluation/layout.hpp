@@ -30,7 +30,6 @@ struct JacobianLayout
     Pattern pattern;
     Starts starts;
     Slots slots;
-    std::vector<Real> linear;
 };
 
 struct Entries
@@ -40,6 +39,7 @@ struct Entries
 };
 
 JacobianLayout layout_of(const Model &model, std::span<const Index> rooted, const Pattern &tape);
+std::vector<Real> linear_of(const Model &model, const JacobianLayout &layout);
 Entries entries_of(const Model &model);
 
 }

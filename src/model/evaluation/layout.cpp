@@ -105,19 +105,12 @@ Offset slot_of(const Pattern &pattern, Index function, Index variable) noexcept
     return pattern.starts[to_size(function)] + static_cast<Offset>(found - row.begin());
 }
 
-void map_terms(const Model &model, JacobianLayout &layout)
+void map_quadratic(const Model &model, JacobianLayout &layout)
 {
-    const std::span<const LinearTerm> linear = model.linear_terms(0, model.n_functions());
     const std::span<const QuadraticTerm> quadratic = model.quadratic_terms(0, model.n_functions());
-    layout.linear.assign(layout.pattern.variables.size(), 0.0);
     for (Index k = 0; k < model.n_functions(); ++k)
     {
         const auto row = to_size(k);
-        for (Offset t = layout.starts.linear[row]; t < layout.starts.linear[row + 1]; ++t)
-        {
-            const LinearTerm &term = linear[to_size(t)];
-            layout.linear[to_size(slot_of(layout.pattern, k, term.variable))] += term.coefficient;
-        }
         for (Offset t = layout.starts.quadratic[row]; t < layout.starts.quadratic[row + 1]; ++t)
         {
             const QuadraticTerm &term = quadratic[to_size(t)];
@@ -165,10 +158,26 @@ JacobianLayout layout_of(const Model &model, std::span<const Index> rooted, cons
     add_tape(rooted, tape, found);
     add_callbacks(model, found);
     layout.pattern = pattern_of(model.n_functions(), std::move(found));
-    map_terms(model, layout);
+    map_quadratic(model, layout);
     map_tape(rooted, tape, layout);
     map_callbacks(model, layout);
     return layout;
+}
+
+std::vector<Real> linear_of(const Model &model, const JacobianLayout &layout)
+{
+    const std::span<const LinearTerm> linear = model.linear_terms(0, model.n_functions());
+    std::vector<Real> sums(layout.pattern.variables.size(), 0.0);
+    for (Index k = 0; k < model.n_functions(); ++k)
+    {
+        const auto row = to_size(k);
+        for (Offset t = layout.starts.linear[row]; t < layout.starts.linear[row + 1]; ++t)
+        {
+            const LinearTerm &term = linear[to_size(t)];
+            sums[to_size(slot_of(layout.pattern, k, term.variable))] += term.coefficient;
+        }
+    }
+    return sums;
 }
 
 Entries entries_of(const Model &model)
