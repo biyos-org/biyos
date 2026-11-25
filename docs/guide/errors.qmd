@@ -4,7 +4,7 @@ Every C call that acts or can fail returns a status of type `BIYOS_status`, an `
 
 ## Codes and who is at fault {#sec-errors-codes}
 
-The hundreds of an error code say who is at fault: −100 to −199 the caller, −200 to −299 the model, −300 to −399 user code, such as a callback, −400 to −499 resources and −500 to −599 biyos itself. No code exists yet in the user code group.
+The hundreds of an error code say who is at fault: −100 to −199 the caller, −200 to −299 the model, −300 to −399 user code, such as a callback, −400 to −499 resources and −500 to −599 biyos itself.
 
 | Code | Value | At fault |
 | --- | --- | --- |
@@ -13,6 +13,7 @@ The hundreds of an error code say who is at fault: −100 to −199 the caller, 
 | `BIYOS_ERR_UNSUPPORTED` | −201 | the model |
 | `BIYOS_ERR_BUSY` | −202 | the model |
 | `BIYOS_ERR_INUSE` | −203 | the model |
+| `BIYOS_ERR_CALLBACK` | −300 | user code |
 | `BIYOS_ERR_NOMEMORY` | −400 | resources |
 | `BIYOS_ERR_FILEIO` | −401 | resources |
 | `BIYOS_ERR_INTERNAL` | −500 | biyos itself |
@@ -31,7 +32,7 @@ Besides the codes the reference names for a call, any call can return `BIYOS_ERR
 ```{.c file="examples/c/errors.c" item="report"}
 ```
 
-The message starts with the kind of failure, `invalid argument`, `bad file`, `unsupported`, `busy`, `in use`, `out of memory`, `file access` or `internal error`, then says what was wrong:
+The message starts with the kind of failure, `invalid argument`, `bad file`, `unsupported`, `busy`, `in use`, `callback`, `out of memory`, `file access` or `internal error`, then says what was wrong:
 
 ```text
 -100, at fault the caller, on a model: invalid argument: variable 0: bounds [0, 2] are outside [0, 1], the widest of its kind

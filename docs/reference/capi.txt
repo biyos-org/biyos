@@ -86,7 +86,7 @@ value BIYOS_BUILDING Defined by the library's own build. A caller never defines 
 since 0.1.0
 
 group codes Status codes
-text A call returns `BIYOS_OK` or a negative code. The hundreds of a code say who is at fault: −100 to −199 the caller, −200 to −299 the model, −300 to −399 user code such as a callback, −400 to −499 resources, −500 to −599 biyos. A new code joins its group and keeps its number for good, so test a group by range rather than by value. No code exists yet in the user code group.
+text A call returns `BIYOS_OK` or a negative code. The hundreds of a code say who is at fault: −100 to −199 the caller, −200 to −299 the model, −300 to −399 user code such as a callback, −400 to −499 resources, −500 to −599 biyos. A new code joins its group and keeps its number for good, so test a group by range rather than by value.
 text Besides the codes its entry names, every call that returns a status can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos, and every call on an environment or a model but `BIYOS_lasterror` and `BIYOS_interrupt` can return `BIYOS_ERR_BUSY` when it would overlap a call on another thread ([Threads](#sec-threads)). A solve outcome is never an error code.
 
 table Status codes
@@ -96,6 +96,7 @@ value BIYOS_ERR_BADFILE A file breaks the rules of its format, with a message th
 value BIYOS_ERR_UNSUPPORTED A part of a file that the reader does not handle, with a message that names the part and its line, or a model that the format cannot hold.
 value BIYOS_ERR_BUSY The environment or the model is in a call on another thread that this call may not overlap ([Threads](#sec-threads)).
 value BIYOS_ERR_INUSE An item that another record, a node or a callback uses, so this change of it is refused.
+value BIYOS_ERR_CALLBACK A callback returned a negative value, or a value that is not finite when checks are on, and stopped the call that asked for it.
 value BIYOS_ERR_NOMEMORY An allocation failed, or a count would pass the largest the model can hold.
 value BIYOS_ERR_FILEIO The system will not open, read or write a file.
 value BIYOS_ERR_INTERNAL A fault in biyos.

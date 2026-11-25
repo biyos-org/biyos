@@ -26,6 +26,7 @@ class Hessian
 
     const Lower &pattern() const noexcept;
     std::span<const Offset> declared() const noexcept;
+    void widen(Index columns);
     void values(std::span<const double> point,
                 std::span<const double> weights,
                 std::span<double> out);

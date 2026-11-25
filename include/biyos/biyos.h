@@ -48,6 +48,7 @@ typedef struct BIYOS_error
 #define BIYOS_ERR_UNSUPPORTED (-201)
 #define BIYOS_ERR_BUSY (-202)
 #define BIYOS_ERR_INUSE (-203)
+#define BIYOS_ERR_CALLBACK (-300)
 #define BIYOS_ERR_NOMEMORY (-400)
 #define BIYOS_ERR_FILEIO (-401)
 #define BIYOS_ERR_INTERNAL (-500)

@@ -32,6 +32,7 @@ class TimingTree
     static constexpr std::size_t kNone = (std::numeric_limits<std::size_t>::max)();
 
     std::span<const Node> nodes() const noexcept { return nodes_; }
+    void reserve(std::size_t nodes) { nodes_.reserve(nodes); }
 
   private:
     friend class Timer;

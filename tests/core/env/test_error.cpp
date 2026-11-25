@@ -48,6 +48,14 @@ TEST(ErrorTest, InUse)
     EXPECT_STREQ(error.what(), "in use: variable 2: indicator 0 needs it binary");
 }
 
+TEST(ErrorTest, Callback)
+{
+    const biyos::Error error(biyos::ErrorKind::Callback, "callback 1", "returned -2");
+    EXPECT_EQ(error.kind(), biyos::ErrorKind::Callback);
+    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_CALLBACK);
+    EXPECT_STREQ(error.what(), "callback: callback 1: returned -2");
+}
+
 TEST(ErrorTest, NoMemory)
 {
     const biyos::Error error(biyos::ErrorKind::NoMemory, "workspace", "needs 3 GB");
