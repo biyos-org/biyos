@@ -329,7 +329,7 @@ class Model
     std::vector<ConeKind> cone_kinds_;
     std::vector<Offset> cone_ends_;
     std::vector<Index> cone_functions_;
-    std::vector<Offset> parameter_ends_;
+    std::vector<Offset> cone_parameter_ends_;
     std::vector<double> cone_parameters_;
     std::vector<Complement> complements_;
     Graph graph_;
