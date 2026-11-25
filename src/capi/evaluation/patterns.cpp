@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <span>
 
 using biyos::Family;
@@ -81,7 +80,10 @@ void check_all(const biyos::Model &core, Family family, std::span<const Index> c
     }
 }
 
-void write(const Records &records, std::span<const Index> chosen, std::int64_t *counts, int *items)
+void write(const Records &records,
+           std::span<const Index> chosen,
+           BIYOS_offset *counts,
+           BIYOS_index *items)
 {
     std::size_t k = 0;
     for (std::size_t j = 0; j < chosen.size(); ++j)
@@ -89,7 +91,7 @@ void write(const Records &records, std::span<const Index> chosen, std::int64_t *
         const std::span<const Index> found = record(records, chosen[j]);
         if (counts != nullptr)
         {
-            counts[j] = static_cast<std::int64_t>(found.size());
+            counts[j] = static_cast<BIYOS_offset>(found.size());
         }
         if (items != nullptr)
         {
@@ -100,21 +102,21 @@ void write(const Records &records, std::span<const Index> chosen, std::int64_t *
 }
 
 template <typename Of, typename Selection>
-void n_pattern(BIYOS_model &model, Selection selection, std::int64_t *nnz)
+void n_pattern(BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
-    std::int64_t *out = require(nnz, "nnz");
+    BIYOS_offset *out = require(nnz, "nnz");
     const auto chosen = selected(model.core, Of::kFamily, selection);
     check_all(model.core, Of::kFamily, chosen);
     const Records records = Of::read(evaluation_of(model));
-    *out = static_cast<std::int64_t>(count_of(records, chosen));
+    *out = static_cast<BIYOS_offset>(count_of(records, chosen));
 }
 
 template <typename Of, typename Selection>
 void get_pattern(BIYOS_model &model,
                  Selection selection,
-                 std::int64_t capacity,
-                 std::int64_t *counts,
-                 int *items)
+                 BIYOS_offset capacity,
+                 BIYOS_offset *counts,
+                 BIYOS_index *items)
 {
     const auto chosen = selected(model.core, Of::kFamily, selection);
     check_all(model.core, Of::kFamily, chosen);

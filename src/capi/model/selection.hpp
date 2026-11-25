@@ -1,5 +1,6 @@
 #pragma once
 
+#include "biyos/biyos.h"
 #include "core/numbers.hpp"
 #include "model/model.hpp"
 
@@ -11,14 +12,14 @@ namespace biyos::capi
 
 struct List
 {
-    int n;
-    const int *indices;
+    BIYOS_index n;
+    const BIYOS_index *indices;
 };
 
 struct Range
 {
-    int start;
-    int stop;
+    BIYOS_index start;
+    BIYOS_index stop;
 };
 
 std::span<const Index> selected(const Model &model, Family family, List list);

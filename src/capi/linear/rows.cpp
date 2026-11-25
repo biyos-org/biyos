@@ -7,7 +7,6 @@
 #include "model/model.hpp"
 
 #include <cstddef>
-#include <cstdint>
 #include <span>
 
 using biyos::Family;
@@ -33,11 +32,11 @@ std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> fun
 }
 
 template <typename Selection>
-void n_row_terms(const BIYOS_model &model, Selection selection, std::int64_t *nnz)
+void n_row_terms(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(model.core, Family::Function, selection);
     const std::size_t count = count_of(model.core, chosen);
-    *require(nnz, "nnz") = static_cast<std::int64_t>(count);
+    *require(nnz, "nnz") = static_cast<BIYOS_offset>(count);
 }
 
 void write_rows(const biyos::Model &core,
@@ -57,8 +56,8 @@ void write_rows(const biyos::Model &core,
 
 void get_listed(const BIYOS_model &model,
                 List list,
-                std::int64_t capacity,
-                std::int64_t *nnz,
+                BIYOS_offset capacity,
+                BIYOS_offset *nnz,
                 const Coordinates &out)
 {
     const auto chosen = selected(model.core, Family::Function, list);
@@ -67,16 +66,16 @@ void get_listed(const BIYOS_model &model,
     write_rows(model.core, chosen, out);
     if (nnz != nullptr)
     {
-        *nnz = static_cast<std::int64_t>(count);
+        *nnz = static_cast<BIYOS_offset>(count);
     }
 }
 
 void get_ranged(const BIYOS_model &model,
                 Range range,
-                std::int64_t capacity,
-                std::int64_t *counts,
-                int *variables,
-                double *values)
+                BIYOS_offset capacity,
+                BIYOS_offset *counts,
+                BIYOS_index *variables,
+                BIYOS_real *values)
 {
     const biyos::Model &core = model.core;
     const std::span<const biyos::LinearTerm> terms = core.linear_terms(range.start, range.stop);

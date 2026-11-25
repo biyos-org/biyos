@@ -8,7 +8,6 @@
 #include "model/model.hpp"
 
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <utility>
 #include <vector>
@@ -28,9 +27,9 @@ namespace
 
 void add_sliced(biyos::Model &core,
                 std::span<const biyos::Index> owners,
-                const std::int64_t *counts,
-                const int *variables,
-                const double *values)
+                const BIYOS_offset *counts,
+                const BIYOS_index *variables,
+                const BIYOS_real *values)
 {
     const std::vector<biyos::Offset> begins = starts_of(owners.size(), counts);
     core.check_room(0, begins.back());
@@ -49,7 +48,7 @@ void add_grouped(biyos::Model &core,
 
 std::vector<LinearTerm> column_terms(std::span<const biyos::Index> variables,
                                      std::span<const biyos::Offset> starts,
-                                     const double *values)
+                                     const BIYOS_real *values)
 {
     std::vector<LinearTerm> terms;
     terms.reserve(static_cast<std::size_t>(starts.back()));
@@ -57,7 +56,7 @@ std::vector<LinearTerm> column_terms(std::span<const biyos::Index> variables,
     {
         for (auto t = starts[j]; t < starts[j + 1]; ++t)
         {
-            const double value = values[static_cast<std::size_t>(t)];
+            const BIYOS_real value = values[static_cast<std::size_t>(t)];
             terms.push_back(LinearTerm{.variable = variables[j], .coefficient = value});
         }
     }
@@ -65,10 +64,10 @@ std::vector<LinearTerm> column_terms(std::span<const biyos::Index> variables,
 }
 
 void add_listed(BIYOS_model &model,
-                std::int64_t nnz,
-                const int *functions,
-                const int *variables,
-                const double *values)
+                BIYOS_offset nnz,
+                const BIYOS_index *functions,
+                const BIYOS_index *variables,
+                const BIYOS_real *values)
 {
     biyos::Model &core = writable(model);
     const std::size_t size = length(nnz, "nnz");
@@ -83,9 +82,9 @@ void add_listed(BIYOS_model &model,
 
 void add_rows(BIYOS_model &model,
               Range range,
-              const std::int64_t *counts,
-              const int *variables,
-              const double *values)
+              const BIYOS_offset *counts,
+              const BIYOS_index *variables,
+              const BIYOS_real *values)
 {
     biyos::Model &core = writable(model);
     add_sliced(core, selected(core, Family::Function, range), counts, variables, values);
@@ -93,9 +92,9 @@ void add_rows(BIYOS_model &model,
 
 void add_columns(BIYOS_model &model,
                  Range range,
-                 const std::int64_t *counts,
-                 const int *functions,
-                 const double *values)
+                 const BIYOS_offset *counts,
+                 const BIYOS_index *functions,
+                 const BIYOS_real *values)
 {
     biyos::Model &core = writable(model);
     const std::vector<biyos::Index> variables = selected(core, Family::Variable, range);

@@ -18,8 +18,8 @@ template <typename Selection>
 void set_tolerances(BIYOS_model &model,
                     Family family,
                     Selection selection,
-                    const double *absolute,
-                    const double *relative)
+                    const BIYOS_real *absolute,
+                    const BIYOS_real *relative)
 {
     Model &core = writable(model);
     const auto changed = selected(core, family, selection);
@@ -33,8 +33,8 @@ template <typename Selection>
 void get_tolerances(const BIYOS_model &model,
                     Family family,
                     Selection selection,
-                    double *absolute,
-                    double *relative)
+                    BIYOS_real *absolute,
+                    BIYOS_real *relative)
 {
     const auto chosen = selected(model.core, family, selection);
     std::vector<Tolerance> tolerances;

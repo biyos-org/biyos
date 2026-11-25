@@ -10,7 +10,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -38,7 +37,7 @@ template <typename T> std::span<const T> input(const T *array, std::size_t n, st
     return {array, n};
 }
 
-void write_node(std::int64_t *node, biyos::Offset made)
+void write_node(BIYOS_offset *node, biyos::Offset made)
 {
     if (node != nullptr)
     {
@@ -46,18 +45,18 @@ void write_node(std::int64_t *node, biyos::Offset made)
     }
 }
 
-void add_variable_node(BIYOS_model &model, int variable, std::int64_t *node)
+void add_variable_node(BIYOS_model &model, BIYOS_index variable, BIYOS_offset *node)
 {
     biyos::Model &core = writable(model);
     write_node(node, core.add_variable_node(variable));
 }
 
 void add_node(BIYOS_model &model,
-              int op,
-              std::int64_t n,
-              const std::int64_t *argument,
-              const double *values,
-              std::int64_t *node)
+              BIYOS_int op,
+              BIYOS_offset n,
+              const BIYOS_offset *argument,
+              const BIYOS_real *values,
+              BIYOS_offset *node)
 {
     biyos::Model &core = writable(model);
     const std::span<const biyos::Offset> children = input(argument, length(n), "arg");
@@ -65,7 +64,7 @@ void add_node(BIYOS_model &model,
     write_node(node, core.add_node(op, children, input(values, needed, "val")));
 }
 
-void write_nodes(std::span<const biyos::Offset> tops, std::int64_t *node)
+void write_nodes(std::span<const biyos::Offset> tops, BIYOS_offset *node)
 {
     if (node != nullptr)
     {
@@ -74,12 +73,12 @@ void write_nodes(std::span<const biyos::Offset> tops, std::int64_t *node)
 }
 
 void add_expressions(BIYOS_model &model,
-                     int n,
-                     const std::int64_t *counts,
-                     const int *code,
-                     const std::int64_t *argument,
-                     const double *values,
-                     std::int64_t *node)
+                     BIYOS_index n,
+                     const BIYOS_offset *counts,
+                     const BIYOS_int *code,
+                     const BIYOS_offset *argument,
+                     const BIYOS_real *values,
+                     BIYOS_offset *node)
 {
     biyos::Model &core = writable(model);
     const std::size_t size = length(n);
@@ -89,7 +88,7 @@ void add_expressions(BIYOS_model &model,
     }
     const std::vector<biyos::Offset> begins = starts_of(size, counts);
     const auto total = static_cast<std::size_t>(begins.back());
-    const std::span<const int> codes = input(code, total, "code");
+    const std::span<const BIYOS_int> codes = input(code, total, "code");
     const std::span<const biyos::Offset> arguments = input(argument, total, "arg");
     const auto needed = static_cast<std::size_t>(biyos::n_values(codes, arguments));
     const biyos::Postfix postfix{
@@ -102,7 +101,7 @@ void add_expressions(BIYOS_model &model,
 }
 
 template <typename Selection>
-void attach_expressions(BIYOS_model &model, Selection selection, const std::int64_t *node)
+void attach_expressions(BIYOS_model &model, Selection selection, const BIYOS_offset *node)
 {
     biyos::Model &core = writable(model);
     const auto owners = selected(core, Family::Function, selection);
@@ -130,22 +129,22 @@ template <typename Selection> biyos::Encoding encoded(const biyos::Model &core, 
 template <typename Selection>
 void n_expressions(const BIYOS_model &model,
                    Selection selection,
-                   std::int64_t *nnz,
-                   std::int64_t *nval)
+                   BIYOS_offset *nnz,
+                   BIYOS_offset *nval)
 {
     const biyos::Encoding encoding = encoded(model.core, selection);
     require(nnz, "nnz");
     require(nval, "nval");
-    *nnz = static_cast<std::int64_t>(encoding.codes.size());
-    *nval = static_cast<std::int64_t>(encoding.values.size());
+    *nnz = static_cast<BIYOS_offset>(encoding.codes.size());
+    *nval = static_cast<BIYOS_offset>(encoding.values.size());
 }
 
 struct Output
 {
-    std::int64_t *counts;
-    int *codes;
-    std::int64_t *arguments;
-    double *values;
+    BIYOS_offset *counts;
+    BIYOS_int *codes;
+    BIYOS_offset *arguments;
+    BIYOS_real *values;
 };
 
 template <typename T> void copy_to(const std::vector<T> &from, T *to)
@@ -159,8 +158,8 @@ template <typename T> void copy_to(const std::vector<T> &from, T *to)
 template <typename Selection>
 void get_expressions(const BIYOS_model &model,
                      Selection selection,
-                     std::int64_t cap,
-                     std::int64_t valcap,
+                     BIYOS_offset cap,
+                     BIYOS_offset valcap,
                      const Output &out)
 {
     const biyos::Encoding encoding = encoded(model.core, selection);

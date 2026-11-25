@@ -28,8 +28,8 @@ namespace
 {
 biyos::Constraint bounded(biyos::Constraint constraint,
                           std::size_t k,
-                          const double *lower,
-                          const double *upper)
+                          const BIYOS_real *lower,
+                          const BIYOS_real *upper)
 {
     if (lower != nullptr)
     {
@@ -43,11 +43,11 @@ biyos::Constraint bounded(biyos::Constraint constraint,
 }
 
 void add_constraints(BIYOS_model &model,
-                     int n,
-                     const int *functions,
-                     const double *lower,
-                     const double *upper,
-                     int *start)
+                     BIYOS_index n,
+                     const BIYOS_index *functions,
+                     const BIYOS_real *lower,
+                     const BIYOS_real *upper,
+                     BIYOS_index *start)
 {
     biyos::Model &core = writable(model);
     const std::size_t size = length(n);
@@ -75,7 +75,10 @@ void add_constraints(BIYOS_model &model,
 }
 
 template <typename Selection>
-void set_bounds(BIYOS_model &model, Selection selection, const double *lower, const double *upper)
+void set_bounds(BIYOS_model &model,
+                Selection selection,
+                const BIYOS_real *lower,
+                const BIYOS_real *upper)
 {
     biyos::Model &core = writable(model);
     const auto changed = selected(core, Family::Constraint, selection);
@@ -88,16 +91,16 @@ void set_bounds(BIYOS_model &model, Selection selection, const double *lower, co
     core.set_constraints(changed, constraints);
 }
 
-void n_constraints(const BIYOS_model &model, int *n)
+void n_constraints(const BIYOS_model &model, BIYOS_index *n)
 {
     *require(n, "n") = model.core.n_constraints();
 }
 
 void copy_out(const biyos::Constraint &constraint,
               std::size_t k,
-              int *functions,
-              double *lower,
-              double *upper)
+              BIYOS_index *functions,
+              BIYOS_real *lower,
+              BIYOS_real *upper)
 {
     if (functions != nullptr)
     {
@@ -116,9 +119,9 @@ void copy_out(const biyos::Constraint &constraint,
 template <typename Selection>
 void get_constraints(const BIYOS_model &model,
                      Selection selection,
-                     int *functions,
-                     double *lower,
-                     double *upper)
+                     BIYOS_index *functions,
+                     BIYOS_real *lower,
+                     BIYOS_real *upper)
 {
     const auto chosen = selected(model.core, Family::Constraint, selection);
     const std::vector<biyos::Constraint> constraints =
@@ -130,7 +133,7 @@ void get_constraints(const BIYOS_model &model,
 }
 
 template <typename Selection>
-void get_bounds(const BIYOS_model &model, Selection selection, double *lower, double *upper)
+void get_bounds(const BIYOS_model &model, Selection selection, BIYOS_real *lower, BIYOS_real *upper)
 {
     get_constraints(model, selection, nullptr, lower, upper);
 }

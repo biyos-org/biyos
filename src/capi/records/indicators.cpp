@@ -24,20 +24,20 @@ namespace
 {
 struct Fields
 {
-    const int *variables = nullptr;
-    const int *values = nullptr;
-    const int *functions = nullptr;
-    const double *lower = nullptr;
-    const double *upper = nullptr;
+    const BIYOS_index *variables = nullptr;
+    const BIYOS_int *values = nullptr;
+    const BIYOS_index *functions = nullptr;
+    const BIYOS_real *lower = nullptr;
+    const BIYOS_real *upper = nullptr;
 };
 
 struct Outputs
 {
-    int *variables = nullptr;
-    int *values = nullptr;
-    int *functions = nullptr;
-    double *lower = nullptr;
-    double *upper = nullptr;
+    BIYOS_index *variables = nullptr;
+    BIYOS_int *values = nullptr;
+    BIYOS_index *functions = nullptr;
+    BIYOS_real *lower = nullptr;
+    BIYOS_real *upper = nullptr;
 };
 
 template <typename T> T entry_or(const T *values, std::size_t k, T held)
@@ -70,7 +70,7 @@ void require_fields(const Fields &fields)
     require(fields.functions, "fun");
 }
 
-void add_indicators(BIYOS_model &model, int n, const Fields &fields, int *start)
+void add_indicators(BIYOS_model &model, BIYOS_index n, const Fields &fields, BIYOS_index *start)
 {
     biyos::Model &core = writable(model);
     const std::size_t size = length(n);
@@ -113,7 +113,7 @@ void set_chosen(BIYOS_model &model, Selection selection, const Fields &fields)
     core.set_indicators(changed, indicators);
 }
 
-void n_indicators(const BIYOS_model &model, int *n)
+void n_indicators(const BIYOS_model &model, BIYOS_index *n)
 {
     *require(n, "n") = model.core.n_indicators();
 }

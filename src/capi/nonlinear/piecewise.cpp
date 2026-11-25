@@ -10,7 +10,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <numeric>
 #include <span>
 #include <string_view>
@@ -35,9 +34,9 @@ constexpr std::string_view kNoun = "pwl";
 
 struct Outputs
 {
-    std::int64_t *counts;
-    double *x;
-    double *y;
+    BIYOS_offset *counts;
+    BIYOS_real *x;
+    BIYOS_real *y;
 };
 
 Index held(const biyos::Model &core) noexcept
@@ -45,7 +44,7 @@ Index held(const biyos::Model &core) noexcept
     return static_cast<Index>(core.graph().points().size());
 }
 
-std::span<const double> input(const double *values, std::size_t n, std::string_view name)
+std::span<const BIYOS_real> input(const BIYOS_real *values, std::size_t n, std::string_view name)
 {
     if (n > 0)
     {
@@ -63,11 +62,11 @@ void check_room(const biyos::Model &core, std::size_t added)
 }
 
 void add_pwls(BIYOS_model &model,
-              int n,
-              const std::int64_t *counts,
-              const double *x,
-              const double *y,
-              int *start)
+              BIYOS_index n,
+              const BIYOS_offset *counts,
+              const BIYOS_real *x,
+              const BIYOS_real *y,
+              BIYOS_index *start)
 {
     biyos::Model &core = writable(model);
     const std::size_t size = length(n);
@@ -78,8 +77,8 @@ void add_pwls(BIYOS_model &model,
     const std::vector<Offset> begins = starts_of(size, counts);
     check_room(core, size);
     const auto total = static_cast<std::size_t>(begins.back());
-    const std::span<const double> xs = input(x, total, "x");
-    const std::span<const double> ys = input(y, total, "y");
+    const std::span<const BIYOS_real> xs = input(x, total, "x");
+    const std::span<const BIYOS_real> ys = input(y, total, "y");
     const Offset first = core.add_piecewise_linears(begins, xs, ys);
     if (start != nullptr)
     {
@@ -87,7 +86,7 @@ void add_pwls(BIYOS_model &model,
     }
 }
 
-void n_pwls(const BIYOS_model &model, int *n)
+void n_pwls(const BIYOS_model &model, BIYOS_index *n)
 {
     *require(n, "n") = held(model.core);
 }
@@ -121,14 +120,14 @@ std::size_t count_of(const biyos::Model &core, std::span<const Index> pwls)
 }
 
 template <typename Selection>
-void n_points(const BIYOS_model &model, Selection selection, std::int64_t *nnz)
+void n_points(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
     const auto pwls = chosen(model.core, selection);
     const std::size_t count = count_of(model.core, pwls);
-    *require(nnz, "nnz") = static_cast<std::int64_t>(count);
+    *require(nnz, "nnz") = static_cast<BIYOS_offset>(count);
 }
 
-void copy_to(std::span<const double> from, double *to, std::size_t k)
+void copy_to(std::span<const biyos::Real> from, BIYOS_real *to, std::size_t k)
 {
     if (to != nullptr)
     {
@@ -147,7 +146,7 @@ void write_pwls(const biyos::Model &core, std::span<const Index> pwls, const Out
         k += pwl.x.size();
         if (out.counts != nullptr)
         {
-            out.counts[j] = static_cast<std::int64_t>(pwl.x.size());
+            out.counts[j] = static_cast<BIYOS_offset>(pwl.x.size());
         }
     }
 }
@@ -155,7 +154,7 @@ void write_pwls(const biyos::Model &core, std::span<const Index> pwls, const Out
 template <typename Selection>
 void get_pwls(const BIYOS_model &model,
               Selection selection,
-              std::int64_t capacity,
+              BIYOS_offset capacity,
               const Outputs &out)
 {
     const auto pwls = chosen(model.core, selection);
@@ -163,7 +162,7 @@ void get_pwls(const BIYOS_model &model,
     write_pwls(model.core, pwls, out);
 }
 
-void add_pwl_node(BIYOS_model &model, int pwl, std::int64_t argument, std::int64_t *node)
+void add_pwl_node(BIYOS_model &model, BIYOS_index pwl, BIYOS_offset argument, BIYOS_offset *node)
 {
     biyos::Model &core = writable(model);
     const Offset made = core.add_piecewise(pwl, argument);

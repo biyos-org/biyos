@@ -25,26 +25,26 @@ using biyos::capi::writable;
 namespace
 {
 
-void add_empty(BIYOS_model &model, int n, int *start)
+void add_empty(BIYOS_model &model, BIYOS_index n, BIYOS_index *start)
 {
     biyos::Model &core = writable(model);
     const std::size_t size = length(n);
     core.check_room(size, 0);
     const biyos::Index index = core.n_functions();
     const std::vector<biyos::Offset> starts(size + 1, 0);
-    core.add_functions(std::vector<double>(size, 0.0), starts, {});
+    core.add_functions(std::vector<biyos::Real>(size, 0.0), starts, {});
     if (start != nullptr)
     {
         *start = index;
     }
 }
 
-void n_functions(const BIYOS_model &model, int *n)
+void n_functions(const BIYOS_model &model, BIYOS_index *n)
 {
     *require(n, "n") = model.core.n_functions();
 }
 
-void write_constants(std::span<const double> found, double *constants)
+void write_constants(std::span<const biyos::Real> found, BIYOS_real *constants)
 {
     if (constants != nullptr)
     {
@@ -61,7 +61,7 @@ void check_chosen(const biyos::Model &core, std::span<const biyos::Index> chosen
 }
 
 template <typename Selection>
-void add_constants(BIYOS_model &model, Selection selection, const double *constants)
+void add_constants(BIYOS_model &model, Selection selection, const BIYOS_real *constants)
 {
     biyos::Model &core = writable(model);
     const auto chosen = selected(core, Family::Function, selection);
@@ -73,7 +73,7 @@ void add_constants(BIYOS_model &model, Selection selection, const double *consta
 }
 
 template <typename Selection>
-void set_constants(BIYOS_model &model, Selection selection, const double *constants)
+void set_constants(BIYOS_model &model, Selection selection, const BIYOS_real *constants)
 {
     biyos::Model &core = writable(model);
     const auto chosen = selected(core, Family::Function, selection);
@@ -85,7 +85,7 @@ void set_constants(BIYOS_model &model, Selection selection, const double *consta
 }
 
 template <typename Selection>
-void get_constants(const BIYOS_model &model, Selection selection, double *constants)
+void get_constants(const BIYOS_model &model, Selection selection, BIYOS_real *constants)
 {
     const auto chosen = selected(model.core, Family::Function, selection);
     write_constants(picked(model.core, &biyos::Model::constant, chosen), constants);
