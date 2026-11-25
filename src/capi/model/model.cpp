@@ -32,9 +32,9 @@ using biyos::capi::writable;
 namespace
 {
 
-void create(biyos::Env &env, BIYOS_model **model)
+void create(biyos::Env &env, BIYOS_model **mdl)
 {
-    BIYOS_model **made = require(model, "mdl");
+    BIYOS_model **made = require(mdl, "mdl");
     idle(env, "environment");
     *made = new BIYOS_model(env);
 }

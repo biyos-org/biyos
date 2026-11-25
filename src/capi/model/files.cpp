@@ -14,10 +14,10 @@ using biyos::capi::require;
 namespace
 {
 
-void load(biyos::Env &env, const char *path, BIYOS_int fmt, BIYOS_model **model)
+void load(biyos::Env &env, const char *path, BIYOS_int fmt, BIYOS_model **mdl)
 {
     const char *file = require(path, "path");
-    BIYOS_model **made = require(model, "mdl");
+    BIYOS_model **made = require(mdl, "mdl");
     const biyos::FileFormat format = biyos::find_format(fmt);
     idle(env, "environment");
     auto fresh = std::make_unique<BIYOS_model>(env);
