@@ -226,7 +226,7 @@ std::span<const Index> Model::cone_functions(Index start, Index stop) const
 std::span<const double> Model::cone_parameters(Index start, Index stop) const
 {
     check_span(kNoun, start, stop, n_cones());
-    return part(cone_parameters_, parameter_ends_, start, stop);
+    return part(cone_parameters_, cone_parameter_ends_, start, stop);
 }
 
 void Model::check_cone_room(std::size_t cones, Offset members, Offset parameters) const
@@ -260,11 +260,11 @@ void Model::add_cones(std::span<const ConeKind> kinds,
     reserve_more(cone_kinds_, kinds.size());
     reserve_more(cone_ends_, kinds.size());
     reserve_more(cone_functions_, functions.size());
-    reserve_more(parameter_ends_, kinds.size());
+    reserve_more(cone_parameter_ends_, kinds.size());
     reserve_more(cone_parameters_, parameters.size());
     cone_kinds_.insert(cone_kinds_.end(), kinds.begin(), kinds.end());
     extend(cone_ends_, cone_functions_, starts, functions);
-    extend(parameter_ends_, cone_parameters_, parameter_starts, parameters);
+    extend(cone_parameter_ends_, cone_parameters_, parameter_starts, parameters);
 }
 
 std::vector<Index> Model::delete_cones(std::span<const Index> indices)
@@ -272,7 +272,7 @@ std::vector<Index> Model::delete_cones(std::span<const Index> indices)
     std::vector<Index> map = renumbering(kNoun, n_cones(), indices);
     keep(cone_kinds_, map);
     keep_parts(cone_ends_, cone_functions_, map);
-    keep_parts(parameter_ends_, cone_parameters_, map);
+    keep_parts(cone_parameter_ends_, cone_parameters_, map);
     renumber_tolerances(Family::Cone, map);
     renumber_names(Family::Cone, map);
     return map;
