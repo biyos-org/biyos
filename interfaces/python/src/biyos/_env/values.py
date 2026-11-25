@@ -1,14 +1,15 @@
+import numbers
 from collections.abc import Callable
-from ctypes import c_char_p, c_double, c_int, c_uint64
-from numbers import Real
+from ctypes import c_char_p
 from typing import Any, SupportsIndex
 
 from biyos import _capi
 from biyos._convert.integers import integer, mask
+from biyos._convert.numbers import Real, c_integer, c_mask, c_real
 from biyos._convert.text import encoded
 from biyos._env.options import ENUMS, Masks
 
-Value = bool | int | float | str | Masks
+Value = bool | int | Real | str | Masks
 
 
 def _rejected(name: str, noun: str, value: object) -> TypeError:
@@ -29,8 +30,8 @@ def _int(name: str, value: SupportsIndex) -> int:
         raise _rejected(name, "an int", value) from None
 
 
-def _double(name: str, value: float) -> float:
-    if isinstance(value, bool) or not isinstance(value, Real):
+def _double(name: str, value: Real) -> Real:
+    if isinstance(value, bool) or not isinstance(value, numbers.Real):
         raise _rejected(name, "a number", value)
     return float(value)
 
@@ -57,11 +58,11 @@ _CONVERTERS: dict[int, Callable[..., object]] = {
 }
 
 _READERS: dict[int, tuple[type, Callable[..., Value]]] = {
-    _capi.OPTKND_BOOL: (c_int, bool),
-    _capi.OPTKND_INT: (c_int, int),
-    _capi.OPTKND_DBL: (c_double, float),
+    _capi.OPTKND_BOOL: (c_integer, bool),
+    _capi.OPTKND_INT: (c_integer, int),
+    _capi.OPTKND_DBL: (c_real, float),
     _capi.OPTKND_STR: (c_char_p, bytes.decode),
-    _capi.OPTKND_ENUM: (c_int, int),
+    _capi.OPTKND_ENUM: (c_integer, int),
 }
 
 
@@ -73,7 +74,7 @@ def arguments(name: str, kind: int, val: object) -> tuple[object, ...]:
 
 def slots(kind: int) -> tuple[Any, ...]:
     if kind == _capi.OPTKND_FLG:
-        return c_uint64(), c_uint64()
+        return c_mask(), c_mask()
     slot, _ = _READERS[kind]
     return (slot(),)
 

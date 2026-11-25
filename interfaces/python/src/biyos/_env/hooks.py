@@ -4,6 +4,7 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 from biyos._capi import HOOK
+from biyos._convert.numbers import Index
 from biyos._env.event import Event, deliver
 from biyos._env.relay import Relay
 
@@ -35,7 +36,7 @@ def checked_hook(
 class Hooks:
     def __init__(self, relay: Relay, owners: Mapping[int, "Model"]) -> None:
         self._functions: dict[int, Callable[[Event], object]] = {}
-        self._keys: dict[int, int] = {}
+        self._keys: dict[Index, int] = {}
         self._count = 0
         function = partial(_deliver, relay, owners, weakref.ref(self))
         self.callback = HOOK(function)
@@ -45,13 +46,13 @@ class Hooks:
         self._functions[self._count] = function
         return self._count
 
-    def settle(self, key: int, idx: int) -> None:
+    def settle(self, key: int, idx: Index) -> None:
         if idx == 0:
             del self._functions[key]
         else:
             self._keys[idx] = key
 
-    def remove(self, idx: int) -> None:
+    def remove(self, idx: Index) -> None:
         del self._functions[self._keys.pop(idx)]
 
     def clear(self) -> None:
