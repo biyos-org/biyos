@@ -1,5 +1,5 @@
 #include "biyos/biyos.h"
-#include "capi/entry.hpp"
+#include "capi/utils/entry.hpp"
 #include "handles.hpp"
 #include "model/compare/compare.hpp"
 #include "tolerance.hpp"

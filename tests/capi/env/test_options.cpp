@@ -1,5 +1,5 @@
 #include "biyos/biyos.h"
-#include "capi/entry.hpp"
+#include "capi/utils/entry.hpp"
 #include "core/env.hpp"
 #include "core/options/options.hpp"
 #include "core/timing/clock.hpp"

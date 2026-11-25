@@ -1,7 +1,7 @@
 #include "biyos/biyos.h"
 
-#include "capi/entry.hpp"
-#include "capi/firewall.hpp"
+#include "capi/utils/entry.hpp"
+#include "capi/utils/firewall.hpp"
 #include "core/env.hpp"
 #include "core/error.hpp"
 

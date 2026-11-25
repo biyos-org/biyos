@@ -138,7 +138,6 @@ set_target_properties(biyos_internal PROPERTIES
 biyos_set_warnings(biyos_internal)
 
 add_library(biyos
-    capi/arrays.cpp
     capi/env/env.cpp
     capi/env/events.cpp
     capi/env/format.cpp
@@ -163,7 +162,8 @@ add_library(biyos
     capi/records/constraints.cpp
     capi/records/indicators.cpp
     capi/records/objectives.cpp
-    capi/records/special_ordered_sets.cpp)
+    capi/records/special_ordered_sets.cpp
+    capi/utils/arrays.cpp)
 add_library(biyos::biyos ALIAS biyos)
 
 target_include_directories(biyos PUBLIC

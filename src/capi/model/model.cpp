@@ -1,10 +1,10 @@
 #include "biyos/biyos.h"
 
-#include "capi/arrays.hpp"
-#include "capi/busy.hpp"
-#include "capi/entry.hpp"
 #include "capi/model/selection.hpp"
 #include "capi/model/tolerances.hpp"
+#include "capi/utils/arrays.hpp"
+#include "capi/utils/busy.hpp"
+#include "capi/utils/entry.hpp"
 #include "core/env.hpp"
 #include "core/index.hpp"
 #include "core/timing/timer.hpp"
