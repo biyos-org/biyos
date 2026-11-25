@@ -82,7 +82,7 @@ TEST(AllocationTest, Evaluation)
 {
     biyos::Env env;
     const Model model = evaluated();
-    Evaluation evaluation(model, env.stream(), nullptr);
+    Evaluation evaluation(model, env.stream());
     const biyos::Lookup lookup(env.options());
     std::vector<Real> f(2);
     std::vector<Real> g(evaluation.jacobian_pattern().variables.size());

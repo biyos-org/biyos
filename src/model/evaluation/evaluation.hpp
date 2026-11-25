@@ -52,7 +52,7 @@ class Evaluation
   public:
     using Point = evaluation::Point;
 
-    Evaluation(const Model &model, Stream stream, const Session *session);
+    Evaluation(const Model &model, Stream stream);
 
     const Pattern &jacobian_pattern() const noexcept;
     const Lower &hessian_pattern() const noexcept;
@@ -80,7 +80,6 @@ class Evaluation
 
     const Model &model_;
     Stream stream_;
-    const Session *session_;
     evaluation::Program program_;
     Workspace workspace_;
     Adjoints adjoints_;

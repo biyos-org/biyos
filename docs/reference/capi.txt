@@ -504,7 +504,7 @@ param idx out Receives the id of the hook.
 return `BIYOS_OK`, with the id in `*idx`. Ids count from 1 in each model and are never reused.
 error BIYOS_ERR_BADARG `knd` or `lvl` is unknown.
 error BIYOS_ERR_NOMEMORY The model has given out 2147483646 ids.
-note The hook receives the events of calls on `mdl` alone, before the hooks of its environment receive them. A copy made by `BIYOS_copymdl` has none of the hooks of its source.
+note The hook receives every event of a call on `mdl`, its error message, warnings, failed checks and spans, before the hooks of its environment receive it, and the events of no other call. `BIYOS_newmdl` and `BIYOS_readmdl` are calls on the environment. `BIYOS_copymdl` is a call on its source, so a copy into another environment sends nothing there. A copy made by `BIYOS_copymdl` has none of the hooks of its source.
 note A failed call adds nothing.
 see BIYOS_delmdlhook BIYOS_addenvhook BIYOS_hook
 since 0.1.0

@@ -1,6 +1,8 @@
 #include "core/env.hpp"
+#include "core/error.hpp"
 #include "core/events/events.hpp"
 #include "core/events/stream.hpp"
+#include "model/model.hpp"
 #include "model/session/session.hpp"
 #include "watch.hpp"
 
@@ -8,9 +10,11 @@
 
 #include <array>
 #include <atomic>
+#include <cmath>
 #include <cstddef>
 #include <functional>
 #include <latch>
+#include <span>
 #include <string>
 #include <thread>
 #include <utility>
@@ -21,6 +25,7 @@ namespace
 
 using biyos::EventKind;
 using biyos::EventLevel;
+using biyos::Real;
 using biyos::Session;
 using biyos::test::Peek;
 using biyos::test::Watch;
@@ -28,6 +33,23 @@ using Texts = std::vector<std::string>;
 
 constexpr int kThreads = 4;
 constexpr int kRounds = 200;
+
+int unknown(const biyos::Request &, std::span<Real> out, void *)
+{
+    out[0] = std::nan("");
+    return 0;
+}
+
+void cover(biyos::Model &model)
+{
+    const biyos::Variable free{.kind = biyos::VariableKind::Continuous, .lower = 0.0, .upper = 1.0};
+    model.add_variables(std::span(&free, 1));
+    const std::array<Real, 1> constants{0.0};
+    const std::array<biyos::Offset, 2> starts{0, 0};
+    model.add_functions(constants, starts, {});
+    const std::array<biyos::Index, 1> covered{0};
+    model.set_callback_function(model.add_callback(covered, nullptr), unknown);
+}
 
 void describe(biyos::Event &event)
 {
@@ -179,4 +201,18 @@ TEST_F(RouteTest, Beside)
     send(first);
     other.join();
     EXPECT_EQ(met.load(), 2);
+}
+
+TEST_F(RouteTest, Invariant)
+{
+    Session model(env);
+    cover(model.change());
+    std::vector<const Session *> heard;
+    const auto keep = [&heard](const biyos::Event &event) { heard.push_back(event.model); };
+    model.add_hook(EventKind::Invariant, EventLevel::Error, keep);
+    const std::array<Real, 1> x{0.5};
+    std::array<Real, 1> f{};
+    EXPECT_THROW(model.evaluation().values(model.lookup(), x, f), biyos::Error);
+    EXPECT_EQ(heard, std::vector<const Session *>{&model});
+    EXPECT_EQ(env.last_error().model, &model);
 }

@@ -80,8 +80,8 @@ Program program_of(const Model &model, Stream stream)
 
 }
 
-Evaluation::Evaluation(const Model &model, Stream stream, const Session *session)
-    : model_(model), stream_(stream), session_(session), program_(program_of(model, stream)),
+Evaluation::Evaluation(const Model &model, Stream stream)
+    : model_(model), stream_(stream), program_(program_of(model, stream)),
       workspace_(program_.tape), adjoints_(program_.tape), values_(to_size(program_.tape.roots())),
       gradients_(program_.tape.pattern().variables.size()), out_(widest(model)),
       weights_(program_.roots.size()), covered_(widest(model))
@@ -148,7 +148,7 @@ void Evaluation::check(std::span<const Real> x) const
 Request Evaluation::request(Index callback, const Point &point) const noexcept
 {
     return Request{
-        .session = session_,
+        .session = stream_.session(),
         .callback = callback,
         .thread = 0,
         .x = point.x,

@@ -197,10 +197,7 @@ std::vector<Real> exact_values(std::span<const Real> x)
 class Probe
 {
   public:
-    explicit Probe(bool product)
-        : model_(mixed(product)), evaluation_(model_, env_.stream(), nullptr)
-    {
-    }
+    explicit Probe(bool product) : model_(mixed(product)), evaluation_(model_, env_.stream()) {}
 
     std::vector<Real> values(std::vector<Real> x)
     {

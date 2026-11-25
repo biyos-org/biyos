@@ -131,6 +131,7 @@ biyos_add_test(test_model
     model/session/test_routes.cpp
     model/session/test_session.cpp
     model/session/test_stream.cpp
+    model/session/test_timer.cpp
     model/session/test_warnings.cpp
     model/test_tolerances.cpp)
 target_include_directories(test_model PRIVATE core model)

@@ -3,6 +3,7 @@
 #include "core/env.hpp"
 #include "core/timing/clock.hpp"
 #include "handles.hpp"
+#include "probes.hpp"
 
 #include "../../io/mps/utils/samples.hpp"
 
@@ -11,21 +12,15 @@
 #include <fstream>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <vector>
 
 namespace
 {
 
 using biyos::test::Env;
+using biyos::test::mark;
 using biyos::test::Model;
-
-std::string written(std::string_view name, std::string_view text)
-{
-    const std::string path = testing::TempDir() + std::string(name);
-    std::ofstream(path) << text;
-    return path;
-}
+using biyos::test::written;
 
 struct Read
 {
@@ -63,6 +58,12 @@ std::string line_of(const BIYOS_event *event)
 void keep(const BIYOS_event *event, void *data)
 {
     static_cast<std::vector<std::string> *>(data)->push_back(line_of(event));
+}
+
+BIYOS_status listen(BIYOS_model *model, BIYOS_hook hook, void *data)
+{
+    BIYOS_index id = -1;
+    return BIYOS_addmdlhook(model, hook, data, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_WARN, &id);
 }
 
 }
@@ -190,4 +191,45 @@ TEST(CApiTest, WriteSpan)
     EXPECT_EQ(BIYOS_writemdl(model, nullptr, BIYOS_FILEFMT_MPS), BIYOS_ERR_BADARG);
     EXPECT_TRUE(spans.empty());
     EXPECT_EQ(BIYOS_freemdl(model), BIYOS_OK);
+}
+
+TEST(CApiTest, WriteWarned)
+{
+    const Env env;
+    const Model model(env);
+    ASSERT_EQ(BIYOS_setmdlintopt(model.get(), BIYOS_OPT_SEED, 3), BIYOS_OK);
+    std::vector<std::string> heard;
+    std::vector<const BIYOS_model *> models;
+    ASSERT_EQ(listen(model.get(), keep, &heard), BIYOS_OK);
+    ASSERT_EQ(listen(model.get(), mark, &models), BIYOS_OK);
+    const Model other(env);
+    std::vector<const BIYOS_model *> stray;
+    ASSERT_EQ(listen(other.get(), mark, &stray), BIYOS_OK);
+    const std::string path = written("biyos_warned.mps", "");
+    ASSERT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_MPS), BIYOS_OK);
+    const std::string left = "free MPS leaves out the model options";
+    EXPECT_EQ(heard, std::vector{"io/file '" + path + "': " + left + " file=" + path});
+    EXPECT_EQ(models, std::vector<const BIYOS_model *>{model.get()});
+    EXPECT_TRUE(stray.empty());
+}
+
+TEST(CApiTest, ReadWarned)
+{
+    const Env env;
+    const Model model(env);
+    std::vector<const BIYOS_model *> own;
+    std::vector<const BIYOS_model *> shared;
+    ASSERT_EQ(listen(model.get(), mark, &own), BIYOS_OK);
+    BIYOS_index id = -1;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), mark, &shared, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_WARN, &id),
+              BIYOS_OK);
+    const std::string path =
+        written("biyos_warned_read.mps",
+                "NAME t\nROWS\n N f\nCOLUMNS\n x f 1\nRANGES\n r f 2\nENDATA\n");
+    const Read made = read(env, path.c_str(), BIYOS_FILEFMT_MPS);
+    ASSERT_EQ(made.status, BIYOS_OK);
+    EXPECT_FALSE(shared.empty());
+    EXPECT_EQ(shared, std::vector<const BIYOS_model *>(shared.size(), nullptr));
+    EXPECT_TRUE(own.empty());
+    EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
 }
