@@ -11,6 +11,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::to_index;
 using biyos::capi::guarded;
 using biyos::capi::List;
 using biyos::capi::listed;
@@ -74,7 +75,7 @@ std::vector<biyos::Objective> new_objectives(std::span<const biyos::Index> funct
     added.reserve(functions.size());
     for (std::size_t k = 0; k < functions.size(); ++k)
     {
-        const biyos::Index index = start + static_cast<biyos::Index>(k);
+        const biyos::Index index = start + to_index(k);
         added.push_back(given(biyos::default_objective(functions[k], index), k, fields));
     }
     return added;
