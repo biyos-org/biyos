@@ -14,6 +14,7 @@
 
 using biyos::Family;
 using biyos::QuadraticTerm;
+using biyos::to_size;
 using biyos::capi::Grouped;
 using biyos::capi::guarded;
 using biyos::capi::length;
@@ -35,7 +36,7 @@ void add_sliced(biyos::Model &core,
 {
     const std::vector<biyos::Offset> begins = starts_of(owners.size(), counts);
     core.check_quadratic_room(begins.back());
-    const auto total = static_cast<std::size_t>(begins.back());
+    const auto total = to_size(begins.back());
     core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, rows, columns, values));
 }
 

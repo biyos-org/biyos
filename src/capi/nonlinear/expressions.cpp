@@ -15,6 +15,8 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::to_offset;
+using biyos::to_size;
 using biyos::capi::check_capacity;
 using biyos::capi::guarded;
 using biyos::capi::length;
@@ -60,7 +62,7 @@ void add_node(BIYOS_model &model,
 {
     biyos::Model &core = writable(model);
     const std::span<const biyos::Offset> children = input(argument, length(n), "arg");
-    const auto needed = static_cast<std::size_t>(biyos::n_values(op, n));
+    const auto needed = to_size(biyos::n_values(op, n));
     write_node(node, core.add_node(op, children, input(values, needed, "val")));
 }
 
@@ -87,10 +89,10 @@ void add_expressions(BIYOS_model &model,
         require(counts, "cnt");
     }
     const std::vector<biyos::Offset> begins = starts_of(size, counts);
-    const auto total = static_cast<std::size_t>(begins.back());
+    const auto total = to_size(begins.back());
     const std::span<const BIYOS_int> codes = input(code, total, "code");
     const std::span<const biyos::Offset> arguments = input(argument, total, "arg");
-    const auto needed = static_cast<std::size_t>(biyos::n_values(codes, arguments));
+    const auto needed = to_size(biyos::n_values(codes, arguments));
     const biyos::Postfix postfix{
         .starts = begins,
         .codes = codes,
@@ -135,8 +137,8 @@ void n_expressions(const BIYOS_model &model,
     const biyos::Encoding encoding = encoded(model.core, selection);
     require(nnz, "nnz");
     require(nval, "nval");
-    *nnz = static_cast<BIYOS_offset>(encoding.codes.size());
-    *nval = static_cast<BIYOS_offset>(encoding.values.size());
+    *nnz = to_offset(encoding.codes.size());
+    *nval = to_offset(encoding.values.size());
 }
 
 struct Output
