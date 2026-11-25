@@ -7,6 +7,6 @@
 namespace biyos
 {
 
-Profile segments(const Pwl &pwl, Interval child) noexcept;
+Profile segments(const PiecewiseLinear &pwl, Interval child) noexcept;
 
 }

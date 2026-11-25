@@ -285,7 +285,7 @@ std::uint64_t Compiler::points(Offset node, Block &block)
     const std::size_t pwl = to_size(graph_.pwl(node));
     if (owners_[pwl] != index_)
     {
-        const Pwl table = graph_.points().pwl(graph_.pwl(node));
+        const PiecewiseLinear table = graph_.points().pwl(graph_.pwl(node));
         owners_[pwl] = index_;
         places_[pwl] = block.weights.size();
         block.weights.insert(block.weights.end(), table.x.begin(), table.x.end());

@@ -8,7 +8,7 @@
 namespace biyos
 {
 
-Interval slope(const Pwl &pwl, std::size_t segment) noexcept;
-Interval piecewise(const Pwl &pwl, Interval child) noexcept;
+Interval slope(const PiecewiseLinear &pwl, std::size_t segment) noexcept;
+Interval piecewise(const PiecewiseLinear &pwl, Interval child) noexcept;
 
 }

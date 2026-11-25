@@ -53,7 +53,7 @@ Curvature unary(const Profile &profile, std::span<Argument> arguments) noexcept
     return profile.curvature;
 }
 
-Pwl pwl_of(const Graph &graph, Offset node) noexcept
+PiecewiseLinear pwl_of(const Graph &graph, Offset node) noexcept
 {
     return graph.points().pwl(graph.pwl(node));
 }

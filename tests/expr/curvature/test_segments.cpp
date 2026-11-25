@@ -31,8 +31,8 @@ using biyos::Interval;
 using biyos::Monotonicity;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::PiecewiseLinear;
 using biyos::Profile;
-using biyos::Pwl;
 
 using Wide = long double;
 
@@ -59,7 +59,7 @@ struct Line
     std::vector<double> x;
     std::vector<double> y;
 
-    Pwl pwl() const { return {.x = x, .y = y}; }
+    PiecewiseLinear pwl() const { return {.x = x, .y = y}; }
 };
 
 const Line kValley{.x = {-1.0, 0.0, 1.0}, .y = {1.0, 0.0, 1.0}};

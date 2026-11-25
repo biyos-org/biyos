@@ -120,7 +120,7 @@ TEST(PiecewiseTest, Added)
     EXPECT_EQ(std::vector<Offset>(model.graph().children(node).begin(),
                                   model.graph().children(node).end()),
               std::vector<Offset>{x});
-    const biyos::Pwl pwl = model.graph().points().pwl(1);
+    const biyos::PiecewiseLinear pwl = model.graph().points().pwl(1);
     EXPECT_EQ(bits(pwl.x), bits(kKinks));
     EXPECT_EQ(bits(pwl.y), bits(kHeights));
 }

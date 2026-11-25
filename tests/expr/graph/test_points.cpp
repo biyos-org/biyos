@@ -18,8 +18,8 @@ namespace
 {
 
 using biyos::Offset;
+using biyos::PiecewiseLinear;
 using biyos::Points;
-using biyos::Pwl;
 using biyos::segment_of;
 using biyos::slope_of;
 using biyos::test::refusal;
@@ -43,7 +43,7 @@ void expect_stored(const Points &points,
                    std::span<const double> x,
                    std::span<const double> y)
 {
-    const Pwl stored = points.pwl(pwl);
+    const PiecewiseLinear stored = points.pwl(pwl);
     EXPECT_EQ(bits(stored.x), bits(x));
     EXPECT_EQ(bits(stored.y), bits(y));
 }
@@ -205,7 +205,7 @@ TEST(PointsTest, Slopes)
 {
     const std::array x{-1.0, 0.0, 2.0, 6.0};
     const std::array y{3.0, 1.0, 1.0, 7.0};
-    const Pwl pwl{.x = x, .y = y};
+    const PiecewiseLinear pwl{.x = x, .y = y};
     EXPECT_DOUBLE_EQ(slope_of(pwl, 0), -2.0);
     EXPECT_DOUBLE_EQ(slope_of(pwl, 1), 0.0);
     EXPECT_DOUBLE_EQ(slope_of(pwl, 2), 1.5);

@@ -303,7 +303,7 @@ std::string variable_differences(const Model &a, const Model &b)
     return table_difference("variable", a.n_variables(), b.n_variables(), variable);
 }
 
-std::string point_difference(const Pwl &a, const Pwl &b, Offset k)
+std::string point_difference(const PiecewiseLinear &a, const PiecewiseLinear &b, Offset k)
 {
     return first_of({
         compared("x", at(a.x, k), at(b.x, k)),
@@ -313,8 +313,8 @@ std::string point_difference(const Pwl &a, const Pwl &b, Offset k)
 
 std::string pwl_difference(const Points &a, const Points &b, Offset pwl)
 {
-    const Pwl x = a.pwl(pwl);
-    const Pwl y = b.pwl(pwl);
+    const PiecewiseLinear x = a.pwl(pwl);
+    const PiecewiseLinear y = b.pwl(pwl);
     const auto point = [&](Offset k) { return point_difference(x, y, k); };
     return table_difference("point", size_of(x.x), size_of(y.x), point);
 }

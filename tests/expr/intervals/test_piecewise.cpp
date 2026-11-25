@@ -20,7 +20,7 @@ namespace
 {
 
 using biyos::Interval;
-using biyos::Pwl;
+using biyos::PiecewiseLinear;
 using biyos::test::exact;
 using biyos::test::holds;
 using biyos::test::interval_text;
@@ -42,7 +42,7 @@ struct Line
     std::vector<double> x;
     std::vector<double> y;
 
-    Pwl pwl() const { return {.x = x, .y = y}; }
+    PiecewiseLinear pwl() const { return {.x = x, .y = y}; }
 };
 
 const Line kZigzag{.x = {-2.0, -0.5, 1.0, 3.0}, .y = {1.0, -1.0, 0.5, 2.0}};

@@ -131,7 +131,7 @@ void signed_power(const Instruction &instruction, const Frame &frame) noexcept
 
 void piecewise(const Instruction &instruction, const Frame &frame) noexcept
 {
-    const Pwl pwl = pwl_of(instruction, frame.weights);
+    const PiecewiseLinear pwl = pwl_of(instruction, frame.weights);
     map(instruction, frame, [pwl](double x) { return value_at(pwl, x); });
 }
 
