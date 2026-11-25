@@ -28,7 +28,7 @@ A hook can also belong to one model. `BIYOS_addmdlhook` attaches it as `BIYOS_ad
 ```{.c file="examples/c/events.c" item="hook_model"}
 ```
 
-`BIYOS_delmdlhook` removes it. Ids count from 1 in each model, apart from the ids of the environment. An event of a call on a model reaches the hooks of that model first, in the order they were added, and then the hooks of its environment. A model's hooks are freed with it, and a copy of the model has none of them ([Copying models](#sec-copy)).
+`BIYOS_delmdlhook` removes it. Ids count from 1 in each model, apart from the ids of the environment. An event of a call on a model reaches the hooks of that model first, in the order they were added, and then the hooks of its environment. That holds for every event of the call: its error message, its warnings, its failed checks and its spans, such as those of writing or evaluating the model. `BIYOS_newmdl` and `BIYOS_readmdl` are calls on the environment, since the model they make does not exist until they return, so their events reach no model's hooks. `BIYOS_copymdl` is a call on its source: its events reach the hooks of the source and of the source's environment, and when the copy is made on another environment, that environment receives none. A model's hooks are freed with it, and a copy of the model has none of them ([Copying models](#sec-copy)).
 
 The example adds two hooks to the environment and one to a model, and then makes a call on the model fail:
 
@@ -66,7 +66,7 @@ An invariant event reports an invariant that does not hold, found by a check tha
 
 ::: {.callout-note}
 ## Not yet sent
-No call runs a check yet: invariant events arrive with the solvers.
+The one check so far is that of an evaluation: a callback that returns 0 must leave every output it computes finite. The other invariant events arrive with the solvers.
 :::
 
 ## Inside a hook {#sec-events-inside}
