@@ -8,7 +8,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <vector>
 
@@ -21,7 +20,7 @@ using biyos::capi::writable;
 namespace
 {
 
-const double *start_of(std::span<const double> values) noexcept
+const BIYOS_real *start_of(std::span<const biyos::Real> values) noexcept
 {
     return values.empty() ? nullptr : values.data();
 }
@@ -30,7 +29,7 @@ struct Caller
 {
     BIYOS_cbf function;
 
-    int operator()(const biyos::Request &request, std::span<double> out, void *data) const
+    int operator()(const biyos::Request &request, std::span<biyos::Real> out, void *data) const
     {
         const BIYOS_cbreq view{
             .size = sizeof(BIYOS_cbreq),
@@ -45,27 +44,31 @@ struct Caller
     }
 };
 
-void add_callback(BIYOS_model &model, int n, const int *functions, void *data, int *cb)
+void add_callback(BIYOS_model &model,
+                  BIYOS_index n,
+                  const BIYOS_index *functions,
+                  void *data,
+                  BIYOS_index *cb)
 {
     biyos::Model &core = writable(model);
-    const int index = core.add_callback(biyos::capi::listed(n, functions, "fun"), data);
+    const biyos::Index index = core.add_callback(biyos::capi::listed(n, functions, "fun"), data);
     if (cb != nullptr)
     {
         *cb = index;
     }
 }
 
-void set_values(BIYOS_model &model, int cb, BIYOS_cbf f)
+void set_values(BIYOS_model &model, BIYOS_index cb, BIYOS_cbf f)
 {
     biyos::Model &core = writable(model);
     core.set_callback_function(cb, Caller{require(f, "f")});
 }
 
 void set_jacobian(BIYOS_model &model,
-                  int cb,
-                  std::int64_t nnz,
-                  const int *functions,
-                  const int *variables,
+                  BIYOS_index cb,
+                  BIYOS_offset nnz,
+                  const BIYOS_index *functions,
+                  const BIYOS_index *variables,
                   BIYOS_cbg g)
 {
     biyos::Model &core = writable(model);
@@ -80,10 +83,10 @@ void set_jacobian(BIYOS_model &model,
 }
 
 void set_hessian(BIYOS_model &model,
-                 int cb,
-                 std::int64_t nnz,
-                 const int *rows,
-                 const int *columns,
+                 BIYOS_index cb,
+                 BIYOS_offset nnz,
+                 const BIYOS_index *rows,
+                 const BIYOS_index *columns,
                  BIYOS_cbh h)
 {
     biyos::Model &core = writable(model);
@@ -97,30 +100,33 @@ void set_hessian(BIYOS_model &model,
     core.set_callback_hessian(cb, {rows, size}, {columns, size}, caller);
 }
 
-void set_product(BIYOS_model &model, int cb, BIYOS_cbhv hv)
+void set_product(BIYOS_model &model, BIYOS_index cb, BIYOS_cbhv hv)
 {
     biyos::Model &core = writable(model);
     core.set_callback_hessian_product(cb, Caller{require(hv, "hv")});
 }
 
-void set_data(BIYOS_model &model, int cb, void *data)
+void set_data(BIYOS_model &model, BIYOS_index cb, void *data)
 {
     writable(model).set_callback_data(cb, data);
 }
 
-void get_data(const BIYOS_model &model, int cb, void **data)
+void get_data(const BIYOS_model &model, BIYOS_index cb, void **data)
 {
     void **out = require(data, "data");
     *out = model.core.callback(cb).data;
 }
 
-void n_functions(const BIYOS_model &model, int cb, int *n)
+void n_functions(const BIYOS_model &model, BIYOS_index cb, BIYOS_index *n)
 {
-    int *out = require(n, "n");
-    *out = static_cast<int>(model.core.callback(cb).covered.size());
+    BIYOS_index *out = require(n, "n");
+    *out = static_cast<BIYOS_index>(model.core.callback(cb).covered.size());
 }
 
-void get_functions(const BIYOS_model &model, int cb, int capacity, int *functions)
+void get_functions(const BIYOS_model &model,
+                   BIYOS_index cb,
+                   BIYOS_index capacity,
+                   BIYOS_index *functions)
 {
     const std::vector<biyos::Index> &covered = model.core.callback(cb).covered;
     check_capacity(capacity, covered.size(), "cap", "functions");

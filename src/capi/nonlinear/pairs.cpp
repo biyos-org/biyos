@@ -7,7 +7,6 @@
 #include "model/model.hpp"
 
 #include <cstddef>
-#include <cstdint>
 #include <span>
 
 using biyos::Family;
@@ -23,10 +22,10 @@ namespace
 
 struct Pairs
 {
-    int *functions;
-    int *rows;
-    int *columns;
-    double *values;
+    BIYOS_index *functions;
+    BIYOS_index *rows;
+    BIYOS_index *columns;
+    BIYOS_real *values;
 };
 
 std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> functions)
@@ -40,11 +39,11 @@ std::size_t count_of(const biyos::Model &core, std::span<const biyos::Index> fun
 }
 
 template <typename Selection>
-void n_pairs(const BIYOS_model &model, Selection selection, std::int64_t *nnz)
+void n_pairs(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(model.core, Family::Function, selection);
     const std::size_t count = count_of(model.core, chosen);
-    *require(nnz, "nnz") = static_cast<std::int64_t>(count);
+    *require(nnz, "nnz") = static_cast<BIYOS_offset>(count);
 }
 
 void put_pair(const Pairs &out,
@@ -87,8 +86,8 @@ void write_pairs(const biyos::Model &core,
 
 void get_listed(const BIYOS_model &model,
                 List list,
-                std::int64_t capacity,
-                std::int64_t *nnz,
+                BIYOS_offset capacity,
+                BIYOS_offset *nnz,
                 const Pairs &out)
 {
     const auto chosen = selected(model.core, Family::Function, list);
@@ -97,14 +96,14 @@ void get_listed(const BIYOS_model &model,
     write_pairs(model.core, chosen, out);
     if (nnz != nullptr)
     {
-        *nnz = static_cast<std::int64_t>(count);
+        *nnz = static_cast<BIYOS_offset>(count);
     }
 }
 
 void get_ranged(const BIYOS_model &model,
                 Range range,
-                std::int64_t capacity,
-                std::int64_t *counts,
+                BIYOS_offset capacity,
+                BIYOS_offset *counts,
                 const Pairs &out)
 {
     const biyos::Model &core = model.core;

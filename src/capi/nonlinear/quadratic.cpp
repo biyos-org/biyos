@@ -8,7 +8,6 @@
 #include "model/model.hpp"
 
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <utility>
 #include <vector>
@@ -29,10 +28,10 @@ namespace
 
 void add_sliced(biyos::Model &core,
                 std::span<const biyos::Index> owners,
-                const std::int64_t *counts,
-                const int *rows,
-                const int *columns,
-                const double *values)
+                const BIYOS_offset *counts,
+                const BIYOS_index *rows,
+                const BIYOS_index *columns,
+                const BIYOS_real *values)
 {
     const std::vector<biyos::Offset> begins = starts_of(owners.size(), counts);
     core.check_quadratic_room(begins.back());
@@ -41,11 +40,11 @@ void add_sliced(biyos::Model &core,
 }
 
 void add_listed(BIYOS_model &model,
-                std::int64_t nnz,
-                const int *functions,
-                const int *rows,
-                const int *columns,
-                const double *values)
+                BIYOS_offset nnz,
+                const BIYOS_index *functions,
+                const BIYOS_index *rows,
+                const BIYOS_index *columns,
+                const BIYOS_real *values)
 {
     biyos::Model &core = writable(model);
     const std::size_t size = length(nnz, "nnz");
@@ -63,10 +62,10 @@ void add_listed(BIYOS_model &model,
 
 void add_ranged(BIYOS_model &model,
                 Range range,
-                const std::int64_t *counts,
-                const int *rows,
-                const int *columns,
-                const double *values)
+                const BIYOS_offset *counts,
+                const BIYOS_index *rows,
+                const BIYOS_index *columns,
+                const BIYOS_real *values)
 {
     biyos::Model &core = writable(model);
     add_sliced(core, selected(core, Family::Function, range), counts, rows, columns, values);
