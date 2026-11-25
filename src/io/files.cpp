@@ -110,7 +110,7 @@ void write_file(Env &env,
     }
     const Draft draft = draft_of(model);
     print_file(draft, file, path);
-    warn_leftovers(env, model, settings, file);
+    warn_leftovers(env, owner, model, settings, file);
 }
 
 }

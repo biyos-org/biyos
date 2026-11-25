@@ -3,6 +3,7 @@
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events/event.hpp"
+#include "core/events/hooks.hpp"
 #include "core/text/text.hpp"
 #include "io/lines.hpp"
 
@@ -23,8 +24,12 @@ void describe(Event &event, const std::string &file, std::size_t line, const std
     event.fields.push_back(Field{.name = "line", .value = text_of(line)});
 }
 
-void describe(Event &event, const std::string &file, const std::string &text)
+void describe(Event &event,
+              const BIYOS_model *model,
+              const std::string &file,
+              const std::string &text)
 {
+    event.model = model;
     event.module = "io";
     event.text = "file '" + file + "': " + text;
     event.fields.push_back(Field{.name = "file", .value = file});
@@ -53,10 +58,10 @@ void warn(Env &env, const Lines &lines, const std::string &text) noexcept
     warn(env, lines.file(), lines.number(), text);
 }
 
-void warn(Env &env, const std::string &file, const std::string &text) noexcept
+void warn(Env &env, Owner owner, const std::string &file, const std::string &text) noexcept
 {
-    const auto fill = [&](Event &event) { describe(event, file, text); };
-    env.events().emit(EventKind::Message, EventLevel::Warning, fill);
+    const auto fill = [&](Event &event) { describe(event, owner.model, file, text); };
+    env.events().emit(EventKind::Message, EventLevel::Warning, fill, owner.hooks);
 }
 
 }
