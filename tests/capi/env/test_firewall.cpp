@@ -1,4 +1,4 @@
-#include "capi/firewall.hpp"
+#include "capi/utils/firewall.hpp"
 #include "core/env.hpp"
 #include "core/events/events.hpp"
 #include "core/events/hooks.hpp"

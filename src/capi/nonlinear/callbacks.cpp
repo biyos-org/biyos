@@ -1,7 +1,7 @@
 #include "biyos/biyos.h"
 
-#include "capi/arrays.hpp"
-#include "capi/entry.hpp"
+#include "capi/utils/arrays.hpp"
+#include "capi/utils/entry.hpp"
 #include "core/index.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"

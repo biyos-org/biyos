@@ -1,6 +1,6 @@
 #include "capi/model/selection.hpp"
 
-#include "capi/arrays.hpp"
+#include "capi/utils/arrays.hpp"
 #include "core/index.hpp"
 #include "model/checks.hpp"
 #include "model/model.hpp"

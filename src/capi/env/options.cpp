@@ -1,6 +1,6 @@
 #include "biyos/biyos.h"
 
-#include "capi/entry.hpp"
+#include "capi/utils/entry.hpp"
 #include "core/env.hpp"
 #include "core/events/events.hpp"
 #include "core/options/lookup.hpp"

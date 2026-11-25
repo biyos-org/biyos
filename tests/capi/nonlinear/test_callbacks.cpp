@@ -1,5 +1,5 @@
 #include "biyos/biyos.h"
-#include "capi/entry.hpp"
+#include "capi/utils/entry.hpp"
 #include "core/index.hpp"
 #include "core/memory/usage.hpp"
 #include "handles.hpp"

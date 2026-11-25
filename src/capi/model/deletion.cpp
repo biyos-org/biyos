@@ -1,7 +1,7 @@
 #include "biyos/biyos.h"
 
-#include "capi/entry.hpp"
 #include "capi/model/selection.hpp"
+#include "capi/utils/entry.hpp"
 #include "core/index.hpp"
 #include "core/timing/timer.hpp"
 #include "model/model.hpp"
