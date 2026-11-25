@@ -4522,6 +4522,12 @@ class Model:
         upper = [con._ub for con in cons]
         return self.addcon(funs, lower, upper)
 
+    def _peer(self, value: object) -> "Model":
+        if not isinstance(value, Model):
+            found = type(value).__name__
+            raise TypeError(f"mdl must be a Model, not {found}")
+        return value
+
     def _start(self, env: Env) -> None:
         self._env = env
         self._handle = c_void_p()
