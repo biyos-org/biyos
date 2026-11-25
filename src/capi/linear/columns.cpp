@@ -10,7 +10,6 @@
 #include "model/model.hpp"
 
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <utility>
 #include <vector>
@@ -32,7 +31,7 @@ struct Columns
 {
     std::vector<biyos::Offset> starts;
     std::vector<biyos::Index> functions;
-    std::vector<double> values;
+    std::vector<biyos::Real> values;
 };
 
 std::vector<biyos::Offset> every_start(const biyos::Model &core)
@@ -58,7 +57,7 @@ Columns columns_of(const biyos::Model &core, std::vector<biyos::Offset> starts)
     Columns columns{
         .starts = std::move(starts),
         .functions = std::vector<biyos::Index>(total),
-        .values = std::vector<double>(total),
+        .values = std::vector<biyos::Real>(total),
     };
     biyos::variable_terms(core, 0, columns.starts, columns.functions, columns.values);
     return columns;
@@ -83,18 +82,18 @@ void write_columns(const Columns &columns,
 }
 
 template <typename Selection>
-void n_column_terms(const BIYOS_model &model, Selection selection, std::int64_t *nnz)
+void n_column_terms(const BIYOS_model &model, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(model.core, Family::Variable, selection);
     const biyos::EntryTimer timer(model.handle.env(), "model", "columns");
     const std::size_t count = count_of(every_start(model.core), chosen);
-    *require(nnz, "nnz") = static_cast<std::int64_t>(count);
+    *require(nnz, "nnz") = static_cast<BIYOS_offset>(count);
 }
 
 void get_listed(const BIYOS_model &model,
                 List list,
-                std::int64_t capacity,
-                std::int64_t *nnz,
+                BIYOS_offset capacity,
+                BIYOS_offset *nnz,
                 const Coordinates &out)
 {
     const auto chosen = selected(model.core, Family::Variable, list);
@@ -105,16 +104,16 @@ void get_listed(const BIYOS_model &model,
     write_columns(columns_of(model.core, std::move(starts)), chosen, out);
     if (nnz != nullptr)
     {
-        *nnz = static_cast<std::int64_t>(count);
+        *nnz = static_cast<BIYOS_offset>(count);
     }
 }
 
 void get_ranged(const BIYOS_model &model,
                 Range range,
-                std::int64_t capacity,
-                std::int64_t *counts,
-                int *functions,
-                double *values)
+                BIYOS_offset capacity,
+                BIYOS_offset *counts,
+                BIYOS_index *functions,
+                BIYOS_real *values)
 {
     const biyos::EntryTimer timer(model.handle.env(), "model", "columns");
     const std::vector<biyos::Offset> found =
