@@ -3,6 +3,7 @@
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
+#include "expr/graph/points.hpp"
 #include "model/attributes/records.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
@@ -38,6 +39,7 @@ std::string differ(const Member &a, const Member &b);
 std::string differ(Index a, Index b);
 std::string differ(double a, double b);
 std::string differ(const Tolerance &a, const Tolerance &b);
+std::string differ(const PiecewiseLinear &a, const PiecewiseLinear &b);
 std::string differ(const Callback &a, const Callback &b);
 
 template <typename Count, typename Compare>

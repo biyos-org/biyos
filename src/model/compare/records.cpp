@@ -2,6 +2,7 @@
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
+#include "expr/graph/points.hpp"
 #include "model/attributes/records.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
@@ -25,6 +26,14 @@ int kind_of(const Variable &variable)
 int sense_of(const Objective &objective)
 {
     return static_cast<int>(objective.sense);
+}
+
+std::string point_difference(const PiecewiseLinear &a, const PiecewiseLinear &b, Offset k)
+{
+    return first_of({
+        compared("x", at(a.x, k), at(b.x, k)),
+        compared("y", at(a.y, k), at(b.y, k)),
+    });
 }
 
 std::string presence(std::string_view field, const Routine &a, const Routine &b)
@@ -152,6 +161,12 @@ std::string differ(const Tolerance &a, const Tolerance &b)
         compared("absolute tolerance", a.absolute, b.absolute),
         compared("relative tolerance", a.relative, b.relative),
     });
+}
+
+std::string differ(const PiecewiseLinear &a, const PiecewiseLinear &b)
+{
+    const auto point = [&](Offset k) { return point_difference(a, b, k); };
+    return table_difference("point", size_of(a.x), size_of(b.x), point);
 }
 
 std::string differ(const Callback &a, const Callback &b)

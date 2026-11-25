@@ -153,28 +153,20 @@ std::string variable_table(const Model &a, const Model &b)
     return table_difference("variable", a.n_variables(), b.n_variables(), variable);
 }
 
-std::string point_difference(const PiecewiseLinear &a, const PiecewiseLinear &b, Offset k)
+const Points &points_of(const Model &model)
 {
-    return first_of({
-        compared("x", at(a.x, k), at(b.x, k)),
-        compared("y", at(a.y, k), at(b.y, k)),
-    });
+    return model.graph().points();
 }
 
-std::string piecewise_linear_difference(const Points &a, const Points &b, Offset pwl)
+std::string piecewise_linear_difference(const Model &a, const Model &b, Offset k)
 {
-    const PiecewiseLinear x = a.piecewise_linear(pwl);
-    const PiecewiseLinear y = b.piecewise_linear(pwl);
-    const auto point = [&](Offset k) { return point_difference(x, y, k); };
-    return table_difference("point", size_of(x.x), size_of(y.x), point);
+    return differ(points_of(a).piecewise_linear(k), points_of(b).piecewise_linear(k));
 }
 
 std::string piecewise_linear_table(const Model &a, const Model &b)
 {
-    const Points &x = a.graph().points();
-    const Points &y = b.graph().points();
-    const auto piecewise_linear = [&](Offset k) { return piecewise_linear_difference(x, y, k); };
-    return table_difference("pwl", x.size(), y.size(), piecewise_linear);
+    const auto piecewise_linear = [&](Offset k) { return piecewise_linear_difference(a, b, k); };
+    return table_difference("pwl", points_of(a).size(), points_of(b).size(), piecewise_linear);
 }
 
 std::string function_table(const Model &a, const Model &b)
