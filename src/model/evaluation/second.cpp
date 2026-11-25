@@ -29,14 +29,6 @@ std::size_t count_of(Index count) noexcept
     return static_cast<std::size_t>(count);
 }
 
-void require_all(const Model &model, Part part)
-{
-    for (Index c = 0; c < model.n_callbacks(); ++c)
-    {
-        require(model.callback(c), c, part);
-    }
-}
-
 void require_products(const Model &model)
 {
     for (Index c = 0; c < model.n_callbacks(); ++c)

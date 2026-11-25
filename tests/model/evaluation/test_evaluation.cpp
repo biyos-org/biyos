@@ -233,6 +233,15 @@ Model unknown_model()
     return model;
 }
 
+Model bare_model()
+{
+    Model model = with_functions(2, 1);
+    add_linear(model, 0, 0, 1.0);
+    const std::array covered{0};
+    model.add_callback(covered, nullptr);
+    return model;
+}
+
 biyos::Lookup at_level(biyos::Env &env, biyos::Checking checking)
 {
     env.options().set_int(biyos::Option::Checking, static_cast<int>(checking));
@@ -350,14 +359,18 @@ TEST(EvaluationTest, Unknown)
 TEST(EvaluationTest, Missing)
 {
     biyos::Env env;
-    const Model model = unknown_model();
+    const Model model = bare_model();
     Evaluation evaluation(env, model);
-    std::vector<double> g;
-    EXPECT_EQ(
-        failure([&]
-                { evaluation.jacobian(biyos::Lookup(env.options()), std::vector{1.0, 2.0}, g); },
-                biyos::ErrorKind::Unsupported),
-        "unsupported: callback 0: has no Jacobian");
+    const biyos::Lookup lookup(env.options());
+    const std::vector<double> x{1.0, 2.0};
+    std::vector<double> f(1, kStale);
+    EXPECT_EQ(failure([&] { evaluation.values(lookup, x, f); }, biyos::ErrorKind::Unsupported),
+              "unsupported: callback 0: has no function");
+    expect_near(f, std::vector(1, kStale), kExact);
+    std::vector<double> g(1, kStale);
+    EXPECT_EQ(failure([&] { evaluation.jacobian(lookup, x, g); }, biyos::ErrorKind::Unsupported),
+              "unsupported: callback 0: has no Jacobian");
+    expect_near(g, std::vector(1, kStale), kExact);
 }
 
 TEST(EvaluationTest, Sizes)

@@ -102,6 +102,7 @@ void Evaluation::values(const Lookup &lookup, std::span<const double> x, std::sp
     const Timer timer(env_, tree_, "model", "values");
     check_point(x);
     check_size("f", f.size(), count_of(model_.n_functions()));
+    require_all(model_, Part::Function);
     term_values(x, f);
     forward(compiled_.tape, x, workspace_, tape_values_);
     for (std::size_t e = 0; e < compiled_.rooted.size(); ++e)
@@ -117,6 +118,7 @@ void Evaluation::jacobian(const Lookup &lookup, std::span<const double> x, std::
     check_point(x);
     const Slots &slots = compiled_.slots;
     check_size("g", g.size(), slots.pattern.variables.size());
+    require_all(model_, Part::Jacobian);
     term_gradients(x, g);
     biyos::jacobian(compiled_.tape, x, workspace_, adjoints_, tape_values_, tape_gradients_);
     for (std::size_t p = 0; p < slots.tape.size(); ++p)
