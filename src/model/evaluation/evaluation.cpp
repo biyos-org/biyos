@@ -37,7 +37,7 @@ namespace
 
 constexpr std::size_t kCalls = 4;
 
-Compiled compiled_of(Env &env, const Model &model)
+Program program_of(Env &env, const Model &model)
 {
     const EntryTimer timer(env, "model", "evaluation");
     std::vector<Index> rooted;
@@ -52,16 +52,16 @@ Compiled compiled_of(Env &env, const Model &model)
         }
     }
     Tape tape(model.graph(), roots);
-    Slots slots = slots_of(model, rooted, tape.pattern());
-    Declared declared = declared_of(model);
-    Hessian hessian(model.graph(), roots, declared.entries);
+    JacobianLayout layout = layout_of(model, rooted, tape.pattern());
+    Entries entries = entries_of(model);
+    Hessian hessian(model.graph(), roots, entries.items);
     hessian.widen(model.n_variables());
-    return Compiled{
+    return Program{
         .rooted = std::move(rooted),
         .roots = std::move(roots),
         .tape = std::move(tape),
-        .slots = std::move(slots),
-        .declared = std::move(declared),
+        .layout = std::move(layout),
+        .entries = std::move(entries),
         .hessian = std::move(hessian),
     };
 }
@@ -69,23 +69,23 @@ Compiled compiled_of(Env &env, const Model &model)
 }
 
 Evaluation::Evaluation(Env &env, const Model &model, const BIYOS_model *handle)
-    : env_(env), model_(model), handle_(handle), compiled_(compiled_of(env, model)),
-      workspace_(compiled_.tape), adjoints_(compiled_.tape),
-      tape_values_(to_size(compiled_.tape.roots())),
-      tape_gradients_(compiled_.tape.pattern().variables.size()), out_(widest(model)),
-      root_weights_(compiled_.roots.size()), user_weights_(widest(model))
+    : env_(env), model_(model), handle_(handle), program_(program_of(env, model)),
+      workspace_(program_.tape), adjoints_(program_.tape),
+      tape_values_(to_size(program_.tape.roots())),
+      tape_gradients_(program_.tape.pattern().variables.size()), out_(widest(model)),
+      root_weights_(program_.roots.size()), user_weights_(widest(model))
 {
     tree_.reserve(kCalls);
 }
 
 const Pattern &Evaluation::jacobian_pattern() const noexcept
 {
-    return compiled_.slots.pattern;
+    return program_.layout.pattern;
 }
 
 const Lower &Evaluation::hessian_pattern() const noexcept
 {
-    return compiled_.hessian.pattern();
+    return program_.hessian.pattern();
 }
 
 void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span<Real> f)
@@ -95,10 +95,10 @@ void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span
     check_size("f", f.size(), to_size(model_.n_functions()));
     require_all(model_, Part::Function);
     term_values(x, f);
-    forward(compiled_.tape, x, workspace_, tape_values_);
-    for (std::size_t e = 0; e < compiled_.rooted.size(); ++e)
+    forward(program_.tape, x, workspace_, tape_values_);
+    for (std::size_t e = 0; e < program_.rooted.size(); ++e)
     {
-        f[to_size(compiled_.rooted[e])] += tape_values_[e];
+        f[to_size(program_.rooted[e])] += tape_values_[e];
     }
     add_user_values(Checker(env_, lookup, "model"), x, f);
 }
@@ -107,14 +107,14 @@ void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::sp
 {
     const Timer timer(env_, tree_, "model", "jacobian");
     check_point(x);
-    const Slots &slots = compiled_.slots;
-    check_size("g", g.size(), slots.pattern.variables.size());
+    const JacobianLayout &layout = program_.layout;
+    check_size("g", g.size(), layout.pattern.variables.size());
     require_all(model_, Part::Jacobian);
     term_gradients(x, g);
-    biyos::jacobian(compiled_.tape, x, workspace_, adjoints_, tape_values_, tape_gradients_);
-    for (std::size_t p = 0; p < slots.tape.size(); ++p)
+    biyos::jacobian(program_.tape, x, workspace_, adjoints_, tape_values_, tape_gradients_);
+    for (std::size_t p = 0; p < layout.slots.tape.size(); ++p)
     {
-        g[to_size(slots.tape[p])] += tape_gradients_[p];
+        g[to_size(layout.slots.tape[p])] += tape_gradients_[p];
     }
     add_user_gradients(Checker(env_, lookup, "model"), x, g);
 }
@@ -148,16 +148,16 @@ void Evaluation::term_values(std::span<const Real> x, std::span<Real> f) const
     const std::span<const Real> constants = model_.constants(0, n);
     const std::span<const LinearTerm> linear = model_.linear_terms(0, n);
     const std::span<const QuadraticTerm> quadratic = model_.quadratic_terms(0, n);
-    const Slots &slots = compiled_.slots;
+    const JacobianLayout &layout = program_.layout;
     for (std::size_t k = 0; k < to_size(n); ++k)
     {
         f[k] = constants[k];
-        for (Offset t = slots.linear_starts[k]; t < slots.linear_starts[k + 1]; ++t)
+        for (Offset t = layout.starts.linear[k]; t < layout.starts.linear[k + 1]; ++t)
         {
             const LinearTerm &term = linear[to_size(t)];
             f[k] += term.coefficient * x[to_size(term.variable)];
         }
-        for (Offset t = slots.quadratic_starts[k]; t < slots.quadratic_starts[k + 1]; ++t)
+        for (Offset t = layout.starts.quadratic[k]; t < layout.starts.quadratic[k + 1]; ++t)
         {
             const QuadraticTerm &term = quadratic[to_size(t)];
             f[k] += term.coefficient * x[to_size(term.row)] * x[to_size(term.column)];
@@ -167,15 +167,15 @@ void Evaluation::term_values(std::span<const Real> x, std::span<Real> f) const
 
 void Evaluation::term_gradients(std::span<const Real> x, std::span<Real> g) const
 {
-    const Slots &slots = compiled_.slots;
-    std::ranges::copy(slots.linear, g.begin());
+    const JacobianLayout &layout = program_.layout;
+    std::ranges::copy(layout.linear, g.begin());
     const std::span<const QuadraticTerm> quadratic =
         model_.quadratic_terms(0, model_.n_functions());
     for (std::size_t t = 0; t < quadratic.size(); ++t)
     {
         const QuadraticTerm &term = quadratic[t];
-        g[to_size(slots.quadratic[2 * t])] += term.coefficient * x[to_size(term.column)];
-        g[to_size(slots.quadratic[2 * t + 1])] += term.coefficient * x[to_size(term.row)];
+        g[to_size(layout.slots.quadratic[2 * t])] += term.coefficient * x[to_size(term.column)];
+        g[to_size(layout.slots.quadratic[2 * t + 1])] += term.coefficient * x[to_size(term.row)];
     }
 }
 
@@ -197,16 +197,16 @@ void Evaluation::add_user_gradients(const Checker &checker,
                                     std::span<const Real> x,
                                     std::span<Real> g)
 {
-    const Slots &slots = compiled_.slots;
+    const JacobianLayout &layout = program_.layout;
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);
         const std::span<Real> out = std::span(out_).first(callback.jacobian_pairs.size());
         run(checker, callback, Part::Jacobian, request_of(c, x), out);
-        const std::size_t begin = to_size(slots.callback_starts[to_size(c)]);
+        const std::size_t begin = to_size(layout.starts.callbacks[to_size(c)]);
         for (std::size_t p = 0; p < out.size(); ++p)
         {
-            g[to_size(slots.callbacks[begin + p])] += out[p];
+            g[to_size(layout.slots.callbacks[begin + p])] += out[p];
         }
     }
 }

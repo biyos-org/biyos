@@ -11,25 +11,35 @@
 namespace biyos
 {
 
-struct Slots
+struct JacobianLayout
 {
+    struct Starts
+    {
+        std::vector<Offset> linear;
+        std::vector<Offset> quadratic;
+        std::vector<Offset> callbacks;
+    };
+
+    struct Slots
+    {
+        std::vector<Offset> quadratic;
+        std::vector<Offset> tape;
+        std::vector<Offset> callbacks;
+    };
+
     Pattern pattern;
-    std::vector<Offset> linear_starts;
-    std::vector<Offset> quadratic_starts;
+    Starts starts;
+    Slots slots;
     std::vector<Real> linear;
-    std::vector<Offset> quadratic;
-    std::vector<Offset> tape;
-    std::vector<Offset> callbacks;
-    std::vector<Offset> callback_starts;
 };
 
-struct Declared
+struct Entries
 {
-    std::vector<Entry> entries;
-    std::vector<Offset> callback_starts;
+    std::vector<Entry> items;
+    std::vector<Offset> starts;
 };
 
-Slots slots_of(const Model &model, std::span<const Index> rooted, const Pattern &tape);
-Declared declared_of(const Model &model);
+JacobianLayout layout_of(const Model &model, std::span<const Index> rooted, const Pattern &tape);
+Entries entries_of(const Model &model);
 
 }

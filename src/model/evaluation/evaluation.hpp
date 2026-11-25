@@ -24,13 +24,13 @@
 namespace biyos
 {
 
-struct Compiled
+struct Program
 {
     std::vector<Index> rooted;
     std::vector<Offset> roots;
     Tape tape;
-    Slots slots;
-    Declared declared;
+    JacobianLayout layout;
+    Entries entries;
     Hessian hessian;
 };
 
@@ -86,7 +86,7 @@ class Evaluation
     Env &env_;
     const Model &model_;
     const BIYOS_model *handle_;
-    Compiled compiled_;
+    Program program_;
     Workspace workspace_;
     Adjoints adjoints_;
     std::vector<Real> tape_values_;
