@@ -56,7 +56,7 @@ inline biyos::Env &idle(biyos::Env &env, std::string_view object)
 
 inline biyos::Env &writable(biyos::Env &env)
 {
-    EnvGuard::claim(idle(env, "environment"));
+    EnvAccess::claim(idle(env, "environment"));
     return env;
 }
 
@@ -67,7 +67,7 @@ inline void claim(Session &session)
         const std::string reason = "is read-only while delivering an event";
         throw biyos::Error(biyos::ErrorKind::InvalidArgument, "model", reason);
     }
-    ModelGuard::claim(session.usage());
+    ModelAccess::claim(session.usage());
     if (session.evaluating())
     {
         refuse("model", kRunning);
@@ -88,10 +88,10 @@ inline void start(biyos::Env &env) noexcept
     }
 }
 
-template <auto Body, typename Guard, typename Target, typename... Args>
-void admitted(const Guard &busy, Target &target, Args... arguments)
+template <auto Body, typename Access, typename Target, typename... Args>
+void admitted(const Access &access, Target &target, Args... arguments)
 {
-    busy.check();
+    access.check();
     Body(target, arguments...);
 }
 
@@ -104,8 +104,8 @@ BIYOS_status guarded(BIYOS_env *env, Args... arguments) noexcept
     }
     biyos::Env &core = env->core;
     start(core);
-    const EnvGuard busy(core);
-    return biyos::capi::guard(core.stream(), [&] { admitted<Body>(busy, core, arguments...); });
+    const EnvAccess access(core);
+    return biyos::capi::guard(core.stream(), [&] { admitted<Body>(access, core, arguments...); });
 }
 
 template <auto Body, typename Handle, typename... Args>
@@ -121,9 +121,9 @@ BIYOS_status guarded(Handle *session, Args... arguments) noexcept
     {
         start(env);
     }
-    const ModelGuard busy(env, session->usage());
+    const ModelAccess access(env, session->usage());
     return biyos::capi::guard(session->stream(),
-                              [&] { admitted<Body>(busy, *session, arguments...); });
+                              [&] { admitted<Body>(access, *session, arguments...); });
 }
 
 }

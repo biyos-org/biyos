@@ -19,7 +19,7 @@ using biyos::Family;
 using biyos::Model;
 using biyos::Session;
 using biyos::capi::delete_tolerances;
-using biyos::capi::EnvGuard;
+using biyos::capi::EnvAccess;
 using biyos::capi::get_tolerances;
 using biyos::capi::guarded;
 using biyos::capi::idle;
@@ -46,8 +46,8 @@ void make_copy(const Session &session, BIYOS_env *env, BIYOS_model **copy)
 {
     BIYOS_model **made = require(copy, "copy");
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
-    const EnvGuard busy(target);
-    busy.check();
+    const EnvAccess access(target);
+    access.check();
     const biyos::EntryTimer timer(session.env().stream(), biyos::kModule, "copy");
     *made = new BIYOS_model(target, session);
 }
