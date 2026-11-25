@@ -88,7 +88,7 @@ add_library(biyos_internal STATIC
     io/report.cpp
     model/attributes/names.cpp
     model/attributes/naming.cpp
-    model/attributes/overrides.cpp
+    model/attributes/records.cpp
     model/attributes/tolerances.cpp
     model/checks.cpp
     model/compare/compare.cpp

@@ -4,7 +4,7 @@
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
 #include "core/numbers.hpp"
-#include "model/attributes/overrides.hpp"
+#include "model/attributes/records.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>

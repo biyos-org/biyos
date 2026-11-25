@@ -15,7 +15,7 @@ struct Tolerance
     double relative;
 };
 
-class Overrides
+class RecordTolerances
 {
   public:
     Tolerance at(Index index) const noexcept;

@@ -6,7 +6,7 @@
 #include "expr/graph/graph.hpp"
 #include "expr/graph/uses.hpp"
 #include "model/attributes/names.hpp"
-#include "model/attributes/overrides.hpp"
+#include "model/attributes/records.hpp"
 #include "model/expressions/callbacks.hpp"
 
 #include <array>
@@ -316,7 +316,7 @@ class Model
 
     std::string name_;
     std::array<Names, kFamilies.size()> names_;
-    std::array<Overrides, kFamilies.size()> tolerances_;
+    std::array<RecordTolerances, kFamilies.size()> tolerances_;
     std::vector<Variable> variables_;
     std::vector<double> constants_;
     std::vector<Offset> linear_ends_;

@@ -1,4 +1,4 @@
-#include "model/attributes/overrides.hpp"
+#include "model/attributes/records.hpp"
 
 #include "core/error.hpp"
 #include "core/numbers.hpp"
@@ -81,17 +81,17 @@ void assign(double &held, std::span<const double> values, std::size_t k) noexcep
 
 }
 
-Tolerance Overrides::at(Index index) const noexcept
+Tolerance RecordTolerances::at(Index index) const noexcept
 {
     const auto found = held_.find(index);
     return found == held_.end() ? kGlobal : found->second;
 }
 
-void Overrides::set(std::string_view noun,
-                    Index size,
-                    std::span<const Index> indices,
-                    std::span<const double> absolute,
-                    std::span<const double> relative)
+void RecordTolerances::set(std::string_view noun,
+                           Index size,
+                           std::span<const Index> indices,
+                           std::span<const double> absolute,
+                           std::span<const double> relative)
 {
     check_size(indices, absolute);
     check_size(indices, relative);
@@ -114,7 +114,7 @@ void Overrides::set(std::string_view noun,
     }
 }
 
-void Overrides::remove(std::string_view noun, Index size, std::span<const Index> indices)
+void RecordTolerances::remove(std::string_view noun, Index size, std::span<const Index> indices)
 {
     for (const Index index : indices)
     {
@@ -126,7 +126,7 @@ void Overrides::remove(std::string_view noun, Index size, std::span<const Index>
     }
 }
 
-void Overrides::renumber(std::span<const Index> map) noexcept
+void RecordTolerances::renumber(std::span<const Index> map) noexcept
 {
     auto at = held_.begin();
     while (at != held_.end())
