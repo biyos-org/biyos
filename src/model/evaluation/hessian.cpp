@@ -40,7 +40,7 @@ void require_products(const Model &model)
 
 void Evaluation::hessian(const Lookup &lookup, const Point &point, std::span<Real> h)
 {
-    const Timer timer(env_, tree_, kModule, "hessian");
+    const Timer timer(env_, tree_, kModule, "hessian", handle_, hooks_);
     check(point.x);
     weigh(point.w);
     check("h", h.size(), hessian_pattern().rows.size());
@@ -52,7 +52,7 @@ void Evaluation::hessian(const Lookup &lookup, const Point &point, std::span<Rea
 
 void Evaluation::product(const Lookup &lookup, const Point &point, std::span<Real> hv)
 {
-    const Timer timer(env_, tree_, kModule, "product");
+    const Timer timer(env_, tree_, kModule, "product", handle_, hooks_);
     check(point.x);
     weigh(point.w);
     check("v", point.v.size(), point.x.size());

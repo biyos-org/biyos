@@ -3,6 +3,7 @@
 #include "biyos/biyos.h"
 #include "core/check.hpp"
 #include "core/env.hpp"
+#include "core/events/hooks.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/timing/timer.hpp"
@@ -52,7 +53,10 @@ class Evaluation
   public:
     using Point = evaluation::Point;
 
-    Evaluation(Env &env, const Model &model, const BIYOS_model *handle = nullptr);
+    Evaluation(Env &env,
+               const Model &model,
+               const BIYOS_model *handle = nullptr,
+               Hooks *hooks = nullptr);
 
     const Pattern &jacobian_pattern() const noexcept;
     const Lower &hessian_pattern() const noexcept;
@@ -81,6 +85,7 @@ class Evaluation
     Env &env_;
     const Model &model_;
     const BIYOS_model *handle_;
+    Hooks *hooks_;
     evaluation::Program program_;
     Workspace workspace_;
     Adjoints adjoints_;

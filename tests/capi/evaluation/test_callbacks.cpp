@@ -87,6 +87,26 @@ void watch(const BIYOS_event *, void *data)
     hooked.read = BIYOS_getnvar(hooked.model, &n);
 }
 
+Hooked hooked_on(const Model &model)
+{
+    return Hooked{.model = model.get(),
+                  .done = false,
+                  .evaluated = BIYOS_OK,
+                  .counted = BIYOS_OK,
+                  .read = BIYOS_ERR_INTERNAL};
+}
+
+void expect_refused(const Model &model, const Hooked &hooked)
+{
+    const double x = 0.5;
+    double f = -1.0;
+    ASSERT_EQ(BIYOS_evalf(model.get(), &x, &f), BIYOS_OK);
+    EXPECT_TRUE(hooked.done);
+    EXPECT_EQ(hooked.evaluated, BIYOS_ERR_BADARG);
+    EXPECT_EQ(hooked.counted, BIYOS_ERR_BADARG);
+    EXPECT_EQ(hooked.read, BIYOS_OK);
+}
+
 void cover(const Model &model, BIYOS_cbf f, Inside &inside)
 {
     const BIYOS_index function = 0;
@@ -190,20 +210,16 @@ TEST(EvaluationTest, Hooked)
     const Model model(env);
     ASSERT_EQ(BIYOS_addvar(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(model.get(), 1, nullptr), BIYOS_OK);
-    Hooked hooked{.model = model.get(),
-                  .done = false,
-                  .evaluated = BIYOS_OK,
-                  .counted = BIYOS_OK,
-                  .read = BIYOS_ERR_INTERNAL};
+    Hooked hooked = hooked_on(model);
     BIYOS_index hook = -1;
     ASSERT_EQ(
         BIYOS_addenvhook(env.get(), watch, &hooked, BIYOS_EVTKND_SPAN, BIYOS_EVTLVL_DBG, &hook),
         BIYOS_OK);
-    const double x = 0.5;
-    double f = -1.0;
-    ASSERT_EQ(BIYOS_evalf(model.get(), &x, &f), BIYOS_OK);
-    EXPECT_TRUE(hooked.done);
-    EXPECT_EQ(hooked.evaluated, BIYOS_ERR_BADARG);
-    EXPECT_EQ(hooked.counted, BIYOS_ERR_BADARG);
-    EXPECT_EQ(hooked.read, BIYOS_OK);
+    expect_refused(model, hooked);
+    ASSERT_EQ(BIYOS_delenvhook(env.get(), hook), BIYOS_OK);
+    hooked = hooked_on(model);
+    ASSERT_EQ(
+        BIYOS_addmdlhook(model.get(), watch, &hooked, BIYOS_EVTKND_SPAN, BIYOS_EVTLVL_DBG, &hook),
+        BIYOS_OK);
+    expect_refused(model, hooked);
 }

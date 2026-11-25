@@ -4,6 +4,7 @@
 #include "core/check.hpp"
 #include "core/env.hpp"
 #include "core/error.hpp"
+#include "core/events/hooks.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "core/text/text.hpp"
@@ -47,9 +48,9 @@ namespace
 
 constexpr std::size_t kSpans = 4;
 
-Program program_of(Env &env, const Model &model)
+Program program_of(Env &env, const Model &model, const BIYOS_model *handle, Hooks *hooks)
 {
-    const EntryTimer timer(env, kModule, "evaluation");
+    const EntryTimer timer(env, kModule, "evaluation", handle, hooks);
     std::vector<Index> rooted;
     std::vector<Offset> roots;
     const std::span<const Offset> all = model.roots(0, model.n_functions());
@@ -80,9 +81,10 @@ Program program_of(Env &env, const Model &model)
 
 }
 
-Evaluation::Evaluation(Env &env, const Model &model, const BIYOS_model *handle)
-    : env_(env), model_(model), handle_(handle), program_(program_of(env, model)),
-      workspace_(program_.tape), adjoints_(program_.tape), values_(to_size(program_.tape.roots())),
+Evaluation::Evaluation(Env &env, const Model &model, const BIYOS_model *handle, Hooks *hooks)
+    : env_(env), model_(model), handle_(handle), hooks_(hooks),
+      program_(program_of(env, model, handle, hooks)), workspace_(program_.tape),
+      adjoints_(program_.tape), values_(to_size(program_.tape.roots())),
       gradients_(program_.tape.pattern().variables.size()), out_(widest(model)),
       weights_(program_.roots.size()), covered_(widest(model))
 {
@@ -101,7 +103,7 @@ const Lower &Evaluation::hessian_pattern() const noexcept
 
 void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span<Real> f)
 {
-    const Timer timer(env_, tree_, kModule, "values");
+    const Timer timer(env_, tree_, kModule, "values", handle_, hooks_);
     check(x);
     check("f", f.size(), to_size(model_.n_functions()));
     require(model_, Part::Function);
@@ -116,7 +118,7 @@ void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span
 
 void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::span<Real> g)
 {
-    const Timer timer(env_, tree_, kModule, "jacobian");
+    const Timer timer(env_, tree_, kModule, "jacobian", handle_, hooks_);
     check(x);
     const evaluation::Layout &layout = program_.layout;
     check("g", g.size(), layout.pattern.variables.size());
