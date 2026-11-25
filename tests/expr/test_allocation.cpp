@@ -382,7 +382,7 @@ TEST(AllocationTest, Curvature)
     shapes.classify(graph, nodes);
     EXPECT_EQ(biyos::test::allocations(), before);
     EXPECT_EQ(shapes.curvature(0), biyos::Curvature::Affine);
-    EXPECT_EQ(shapes.curvature(graph.size() - 1), biyos::Curvature::Unknown);
+    EXPECT_EQ(shapes.curvature(graph.size() - 1), biyos::Curvature::Convex);
 }
 
 TEST(AllocationTest, RunningProduct)

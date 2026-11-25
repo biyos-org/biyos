@@ -31,6 +31,7 @@ add_library(biyos_internal STATIC
     expr/curvature/bends.cpp
     expr/curvature/curvature.cpp
     expr/curvature/exponents.cpp
+    expr/curvature/segments.cpp
     expr/curvature/shape.cpp
     expr/curvature/waves.cpp
     expr/derivatives/derivative.cpp

@@ -6,10 +6,12 @@
 #include "expr/curvature/arithmetic.hpp"
 #include "expr/curvature/bends.hpp"
 #include "expr/curvature/exponents.hpp"
+#include "expr/curvature/segments.hpp"
 #include "expr/curvature/shape.hpp"
 #include "expr/curvature/waves.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/graph/points.hpp"
 #include "expr/intervals/interval.hpp"
 
 #include <algorithm>
@@ -54,6 +56,11 @@ Curvature unary(const Profile &profile, std::span<Argument> arguments) noexcept
 {
     arguments[0] = profile.argument;
     return profile.curvature;
+}
+
+Pwl pwl_of(const Graph &graph, Offset node) noexcept
+{
+    return graph.points().pwl(graph.pwl(node));
 }
 
 Curvature outer_of(const Graph &graph,
@@ -121,7 +128,7 @@ Curvature outer_of(const Graph &graph,
     case Operator::Erf:
         return unary(bend(kErf, operands[0]), arguments);
     case Operator::PiecewiseLinear:
-        return unary(Profile{}, arguments);
+        return unary(segments(pwl_of(graph, node), operands[0]), arguments);
     }
     return Curvature::Unknown;
 }
