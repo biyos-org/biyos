@@ -1,5 +1,6 @@
 #include "model/evaluation/layout.hpp"
 
+#include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/hessian/elements.hpp"
@@ -34,9 +35,7 @@ std::vector<Offset> starts_of(const Model &model,
 
 std::span<const Index> row_of(const Pattern &pattern, std::size_t row) noexcept
 {
-    const Offset begin = pattern.starts[row];
-    return std::span(pattern.variables)
-        .subspan(to_size(begin), to_size(pattern.starts[row + 1] - begin));
+    return slice(std::span(pattern.variables), pattern.starts, row);
 }
 
 void add_terms(const Model &model, const Layout &layout, std::vector<IndexPair> &found)
