@@ -3,7 +3,7 @@ from operator import contains, eq, ge, gt, index, le, lt, ne
 import pytest
 
 import biyos
-from biyos import Operator
+from biyos import ComparisonSense, Operator
 
 STALE = "the block predates a deletion from its model"
 
@@ -25,6 +25,15 @@ def x(model):
     return model.addvar(3)
 
 
+@pytest.fixture
+def terms(x):
+    return {
+        "e": biyos.exp(x[0]),
+        "f": biyos.log(x[1]),
+        "p": biyos.piecewise(0, x[1]),
+    }
+
+
 def tree(term):
     if isinstance(term, biyos.Variable):
         return index(term)
@@ -42,6 +51,49 @@ def chained(term):
 
 
 DIFFERENCE = (Operator.SUM, (0.0, 1.0, -1.0), 0, 1)
+VAR = Operator.VARIABLE
+SINGLE = ([2], [VAR, Operator.EXP], [0, 1], [])
+DOUBLE = (
+    [5],
+    [VAR, Operator.EXP, VAR, Operator.LOG, Operator.SUM],
+    [0, 1, 1, 1, 2],
+    [0.0, 1.0, -1.0],
+)
+STORED = [
+    (le, "e", "f", ([-biyos.inf], [0.0]), DOUBLE),
+    (ge, "e", "f", ([0.0], [biyos.inf]), DOUBLE),
+    (eq, "e", "f", ([0.0], [0.0]), DOUBLE),
+    (le, "e", 2, ([-biyos.inf], [2.0]), SINGLE),
+    (ge, "e", 2, ([2.0], [biyos.inf]), SINGLE),
+    (eq, "e", 2, ([2.0], [2.0]), SINGLE),
+    (le, 2, "e", ([2.0], [biyos.inf]), SINGLE),
+    (ge, 2, "e", ([-biyos.inf], [2.0]), SINGLE),
+    (eq, 2, "e", ([2.0], [2.0]), SINGLE),
+]
+LESS = ComparisonSense.LESS_EQUAL
+GREATER = ComparisonSense.GREATER_EQUAL
+EQUAL = ComparisonSense.EQUAL
+OPERANDS = [
+    (le, "e", "f", ("e", LESS, "f"), "exp(x[0]) <= log(x[1])"),
+    (ge, "e", "f", ("e", GREATER, "f"), "exp(x[0]) >= log(x[1])"),
+    (eq, "e", "f", ("e", EQUAL, "f"), "exp(x[0]) == log(x[1])"),
+]
+MIRRORED = [
+    (le, "e", "p", ("p", GREATER, "e"), "piecewise(0, x[1]) >= exp(x[0])"),
+    (eq, "e", "p", ("p", EQUAL, "e"), "piecewise(0, x[1]) == exp(x[0])"),
+]
+NUMBERS = [
+    (le, "e", 2, LESS, "exp(x[0]) <= 2"),
+    (ge, "e", 2, GREATER, "exp(x[0]) >= 2"),
+    (eq, "e", 2, EQUAL, "exp(x[0]) == 2"),
+    (le, 2, "e", GREATER, "exp(x[0]) >= 2"),
+    (ge, 2, "e", LESS, "exp(x[0]) <= 2"),
+    (eq, 2, "e", EQUAL, "exp(x[0]) == 2"),
+]
+
+
+def compared(terms, compare, left, right):
+    return compare(terms.get(left, left), terms.get(right, right))
 
 
 def test_less(x):
@@ -78,6 +130,53 @@ def test_expressions(x):
         -biyos.inf,
         2.0,
     )
+
+
+@pytest.mark.parametrize(
+    ("compare", "left", "right", "bounds", "expr"), STORED
+)
+def test_stored(model, terms, compare, left, right, bounds, expr):
+    cons = model.addcon(compared(terms, compare, left, right))
+    funs = model.getcon(cons)[0]
+    assert model.getconbnd(cons) == bounds
+    assert model.getexpr(funs) == expr
+
+
+@pytest.mark.parametrize(
+    ("compare", "left", "right", "kept", "text"), OPERANDS + MIRRORED
+)
+def test_operands(terms, compare, left, right, kept, text):
+    con = compared(terms, compare, left, right)
+    lhs, sense, rhs = kept
+    assert con.lhs is terms[lhs]
+    assert con.rhs is terms[rhs]
+    assert con.sense is sense
+    assert repr(con) == text
+
+
+@pytest.mark.parametrize(("compare", "left", "right", "sense", "text"), NUMBERS)
+def test_numbers(terms, compare, left, right, sense, text):
+    con = compared(terms, compare, left, right)
+    assert con.lhs is terms["e"]
+    assert type(con.rhs) is float
+    assert con.rhs == 2.0
+    assert con.sense is sense
+    assert repr(con) == text
+
+
+def test_printed(x):
+    assert repr(x[0] ** 2 <= x[1] + 1) == "x[0]**2 <= x[1] + 1"
+    assert repr(1 <= x[0]) == "x[0] >= 1"
+    assert repr(x[0] == x[0]) == "x[0] == x[0]"
+    assert repr(x[0] - x[1] >= -0.5) == "x[0] - x[1] >= -0.5"
+    assert repr(x[0] <= biyos.inf) == "x[0] <= inf"
+
+
+@pytest.mark.parametrize("name", ["lhs", "rhs", "sense"])
+def test_frozen(x, name):
+    con = x[0] <= x[1]
+    with pytest.raises(AttributeError):
+        setattr(con, name, x[2])
 
 
 def test_truth(x):
