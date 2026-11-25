@@ -70,6 +70,7 @@ biyos_add_test(test_expr
     expr/curvature/draws.cpp
     expr/curvature/test_bends.cpp
     expr/curvature/test_curvature.cpp
+    expr/curvature/test_segments.cpp
     expr/curvature/test_waves.cpp
     expr/derivatives/test_derivative.cpp
     expr/derivatives/test_lanes.cpp
@@ -88,6 +89,7 @@ biyos_add_test(test_expr
     expr/hessian/test_tangents.cpp
     expr/intervals/test_enclosure.cpp
     expr/intervals/test_interval.cpp
+    expr/intervals/test_piecewise.cpp
     expr/utils/chords.cpp
     expr/utils/reference.cpp
     expr/utils/sampling.cpp

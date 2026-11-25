@@ -33,6 +33,7 @@ The curvature of each operator over an interval comes from the sign of its secon
 - A quotient is affine when the denominator is a point, and $c / t$, with a point numerator $c$, follows the signs of $c$ and $t$. It is unknown when the denominator straddles 0 or both vary, since the Hessian of $t_1 / t_2$ has determinant $-1 / t_2^4$. A denominator that reaches 0 is cut there.
 - $x^y$ is $x^c$ when the exponent is a point, and $c^y$ when the base is a positive point, which is convex and increases with $y$ when $c > 1$ and decreases when $c < 1$. Otherwise it is unknown, with each monotonicity from the signs of $y$ and of $x - 1$ on positive bases.
 - $\sin$, $\cos$ and $\tan$ take the classes common to every quarter period their interval meets, at most two, and $\tan$ only when no odd multiple of $\pi/2$ lies strictly inside.
+- A piecewise linear function takes the segments its child's interval meets, a breakpoint at an end of the interval meeting only the segment inside. Each slope $s_k = (y_{k+1} - y_k) / (x_{k+1} - x_k)$ is an interval rounded outward, exactly 0 on a flat segment. It is affine on one segment, convex when each slope's upper bound is at most the next one's lower bound, concave when each lower bound is at least the next upper bound, and unknown otherwise, so collinear points that are not flat stay unknown. It is nondecreasing when every slope is at least 0 and nonincreasing when every slope is at most 0. Its domain is the whole line, so it cuts no child.
 
 ## Exact boundaries {#sec-curvature-boundaries}
 

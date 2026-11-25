@@ -8,6 +8,7 @@
 #include "expr/intervals/elementary.hpp"
 #include "expr/intervals/interval.hpp"
 #include "expr/intervals/periodic.hpp"
+#include "expr/intervals/piecewise.hpp"
 #include "expr/intervals/powers.hpp"
 
 #include <cstddef>
@@ -121,6 +122,11 @@ Interval smallest(const Pass &pass, Offset node) noexcept
     return best;
 }
 
+Interval piecewise_of(const Pass &pass, Offset node) noexcept
+{
+    return piecewise(pass.graph.points().pwl(pass.graph.pwl(node)), first(pass, node));
+}
+
 Interval enclosure(const Pass &pass, Offset node) noexcept
 {
     switch (pass.graph.op(node))
@@ -184,7 +190,7 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
     case Operator::Erf:
         return erf(first(pass, node));
     case Operator::PiecewiseLinear:
-        return Interval::entire();
+        return piecewise_of(pass, node);
     }
     return Interval::entire();
 }

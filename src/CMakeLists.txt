@@ -31,6 +31,7 @@ add_library(biyos_internal STATIC
     expr/curvature/bends.cpp
     expr/curvature/curvature.cpp
     expr/curvature/exponents.cpp
+    expr/curvature/segments.cpp
     expr/curvature/shape.cpp
     expr/curvature/waves.cpp
     expr/derivatives/derivative.cpp
@@ -54,6 +55,7 @@ add_library(biyos_internal STATIC
     expr/intervals/enclosure.cpp
     expr/intervals/interval.cpp
     expr/intervals/periodic.cpp
+    expr/intervals/piecewise.cpp
     expr/intervals/powers.cpp
     expr/intervals/rounding.cpp
     expr/sparsity/memo.cpp

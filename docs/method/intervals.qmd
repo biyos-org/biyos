@@ -49,7 +49,7 @@ The first is an assumption, not a fact that biyos can check: IEEE 754 recommends
 
 The second assumption is a property of the thread that runs the computation. Options such as `-ffast-math` and some compilers turn flush to zero on, and under it the one-step rule fails near the subnormal numbers, where a result flushed to zero lies further than one step from the exact value.
 
-## Arcs, powers and entropy {#sec-intervals-special}
+## Arcs, powers, entropy and piecewise linear functions {#sec-intervals-special}
 
 A few operators are not monotone and need their extrema found:
 
@@ -57,3 +57,4 @@ A few operators are not monotone and need their extrema found:
 - $\tan$ over an interval $[l, u]$ narrower than $\pi$ whose ends have cosines of one sign is $[\tan l, \tan u]$, and every other interval meets a pole and gives the whole line.
 - $x^y$ is the hull of the corner values of the power on the part of the box with $x \ge 0$ and, for $x < 0$, of $\pm |x|^n$ over the integers $n$ in the exponent's range, with $+$ when an even one is there and $-$ when an odd one is. Sign power is increasing, so its ends give its enclosure.
 - Entropy is convex with its least value $-1/\mathrm{e}$ at $x = 1/\mathrm{e}$.
+- A piecewise linear function $p$ over $[l, u]$ takes its extrema at $l$, at $u$ or at a point $x_i$ strictly inside. Its enclosure is the hull, over each piece of $p$ that meets the interval, of the values at the two ends of the part it meets. A piece covers the points the evaluation gives its segment, as in [the operators](#sec-graph-operators), a breakpoint belonging to the segment on its right, so it ends at the double just below its next breakpoint. The value at $x_i$ itself is $y_i$ exactly. Elsewhere it is $y_i + s (t - x_i)$ in interval arithmetic, with the slope $s$ of the segment an interval rounded outward and exactly 0 on a flat segment, so the bound holds the doubles the sweep computes as well as the real values. An unbounded end follows its end segment: it gives $\pm\infty$ in the direction of the slope, and $y_i$ when the segment is flat. Where $t - x_i$ overflows, the rise is $s t - s x_i$ instead, as the evaluation computes it.
