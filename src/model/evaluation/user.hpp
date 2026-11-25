@@ -1,0 +1,32 @@
+#pragma once
+
+#include "core/check.hpp"
+#include "core/index.hpp"
+#include "model/expressions/callbacks.hpp"
+#include "model/model.hpp"
+
+#include <cstddef>
+#include <span>
+#include <string_view>
+
+namespace biyos
+{
+
+enum class Part
+{
+    Function,
+    Jacobian,
+    Hessian,
+    Product,
+};
+
+bool has(const Callback &callback, Part part) noexcept;
+void require(const Callback &callback, Index index, Part part);
+void run(const Checker &checker,
+         const Callback &callback,
+         Part part,
+         const Request &request,
+         std::span<double> out);
+std::size_t widest(const Model &model);
+
+}

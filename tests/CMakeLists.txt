@@ -54,6 +54,7 @@ biyos_add_test(test_allocation
     core/allocations.cpp
     core/memory/test_allocation.cpp
     expr/test_allocation.cpp
+    model/evaluation/test_allocation.cpp
     model/test_allocation.cpp)
 target_include_directories(test_allocation PRIVATE core)
 target_link_libraries(test_allocation PRIVATE biyos_internal)
