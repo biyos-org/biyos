@@ -87,7 +87,7 @@ Python reads and sets options by name, with `env.getopt` and `env.setopt`. The v
 ```{.python file="interfaces/python/examples/options.py"}
 ```
 
-`getoptver` returns the three versions as strings, `None` standing for never. A model has its own `setopt` and `getopt`, which take and give values as the environment's do, with `delopt` to drop its value and `getoptsrc` to tell where the value it reads comes from, as an `OptionSource` (@sec-options-levels). `getoptver` is on the environment alone.
+`getoptver` returns the three versions as strings, `None` standing for never. A model has its own `setopt` and `getopt`, which take and give values as the environment's do, with `delopt` to drop its value and `getoptsrc` to tell where the value it reads comes from, as an `OptionSource` ([Two levels](#sec-options-levels)). `getoptver` is on the environment alone.
 
 ::: {.callout-note}
 ## Read, checked and stored

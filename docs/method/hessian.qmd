@@ -18,7 +18,7 @@ The elements compile to a tape of their own ([Compiled tapes](#sec-tapes)), one 
 
 ## Second-order adjoints {#sec-hessian-adjoints}
 
-One column of $\nabla^2 f_e$ is the derivative of the gradient along a direction $\dot x$, the unit vector of one variable. It comes from the reverse sweep of @sec-derivatives-reverse differentiated once more along $\dot x$ [@griewank2008].
+One column of $\nabla^2 f_e$ is the derivative of the gradient along a direction $\dot x$, the unit vector of one variable. It comes from [the reverse sweep](#sec-derivatives-reverse) differentiated once more along $\dot x$ [@griewank2008].
 
 The forward sweep carries, besides each value $v_i$ and its partials $p_{ij} = \partial \operatorname{op}_i / \partial v_j$, the tangent of the value and of each partial:
 
@@ -38,7 +38,7 @@ $$ {#eq-hessian-reverse}
 
 seeded with $\bar v = 1$ and $\dot{\bar v} = 0$ on the element's root. When it ends, the adjoint tangent of each variable is the column of $\nabla^2 f_e$ along $\dot x$.
 
-The rule of @sec-derivatives-zero holds for each of the three products: a term whose first factor, an adjoint or an adjoint tangent, is exactly zero contributes nothing. The rule of @sec-derivatives-domain carries over too: wherever an operator's value is NaN, so are the tangents of its partials.
+The rule of [a zero adjoint](#sec-derivatives-zero) holds for each of the three products: a term whose first factor, an adjoint or an adjoint tangent, is exactly zero contributes nothing. The rule of [no derivative off the domain](#sec-derivatives-domain) carries over too: wherever an operator's value is NaN, so are the tangents of its partials.
 
 ## Lanes and chunks {#sec-hessian-lanes}
 
