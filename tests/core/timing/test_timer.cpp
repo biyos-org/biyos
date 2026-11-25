@@ -1,6 +1,8 @@
+#include "biyos/biyos.h"
 #include "core/env.hpp"
 #include "core/error.hpp"
 #include "core/events/events.hpp"
+#include "core/events/hooks.hpp"
 #include "core/timing/clock.hpp"
 #include "core/timing/timer.hpp"
 
@@ -25,6 +27,7 @@ using biyos::EventLevel;
 using biyos::Timer;
 using biyos::TimingTree;
 using Texts = std::vector<std::string>;
+using Models = std::vector<const BIYOS_model *>;
 
 class FlakyClock final : public biyos::Clock
 {
@@ -93,6 +96,16 @@ Texts lines(const std::vector<biyos::Event> &events)
         lines.push_back(line_of(event));
     }
     return lines;
+}
+
+Models models_of(const std::vector<biyos::Event> &events)
+{
+    Models models;
+    for (const biyos::Event &event : events)
+    {
+        models.push_back(event.model);
+    }
+    return models;
 }
 
 void run(biyos::Env &env, TimingTree &tree)
@@ -358,4 +371,45 @@ TEST_F(TimerTest, Entry)
     };
     EXPECT_EQ(lines(kept), expected);
     EXPECT_EQ(kept[1].module, "io");
+}
+
+TEST_F(TimerTest, ModelHooks)
+{
+    listen(env);
+    biyos::Hooks hooks;
+    std::vector<biyos::Event> local;
+    const auto keep = [&local](const biyos::Event &event) { local.push_back(event); };
+    hooks.add_hook(EventKind::Span, EventLevel::Debug, keep);
+    const int address = 0;
+    const BIYOS_model *const kHandle = reinterpret_cast<const BIYOS_model *>(&address);
+    {
+        const EntryTimer write(env, "io", "write", kHandle, &hooks);
+        advance(2ns, 1ns);
+    }
+    const Texts expected{
+        "write edge=begin wall=0 cpu=0",
+        "write edge=end wall=2 cpu=1",
+    };
+    EXPECT_EQ(lines(local), expected);
+    EXPECT_EQ(lines(kept), expected);
+    EXPECT_EQ(models_of(local), Models(2, kHandle));
+    EXPECT_EQ(models_of(kept), Models(2, kHandle));
+}
+
+TEST_F(TimerTest, ModelOnly)
+{
+    biyos::Hooks hooks;
+    std::vector<biyos::Event> local;
+    const auto keep = [&local](const biyos::Event &event) { local.push_back(event); };
+    hooks.add_hook(EventKind::Span, EventLevel::Debug, keep);
+    {
+        const Timer solve(env, tree, "nlp", "solve", nullptr, &hooks);
+        advance(1ns, 1ns);
+    }
+    const Texts expected{
+        "solve edge=begin wall=0 cpu=0",
+        "solve edge=end wall=1 cpu=1",
+    };
+    EXPECT_EQ(lines(local), expected);
+    EXPECT_EQ(summary(tree), (Texts{"solve count=1 wall=1 cpu=1"}));
 }

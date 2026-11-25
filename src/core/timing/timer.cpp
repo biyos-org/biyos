@@ -1,5 +1,8 @@
 #include "core/timing/timer.hpp"
 
+#include "biyos/biyos.h"
+#include "core/events/hooks.hpp"
+
 #include <chrono>
 #include <cstddef>
 #include <optional>
@@ -24,20 +27,6 @@ std::optional<nanoseconds> cpu_of(const Clock &clock) noexcept
     {
         return std::nullopt;
     }
-}
-
-void describe(Event &event,
-              std::string_view module,
-              std::string_view name,
-              std::string_view edge,
-              nanoseconds wall,
-              nanoseconds cpu)
-{
-    event.module.assign(module);
-    event.text.assign(name);
-    event.fields.push_back(Field{.name = "edge", .value = std::string(edge)});
-    event.fields.push_back(Field{.name = "wall", .value = std::to_string(wall.count())});
-    event.fields.push_back(Field{.name = "cpu", .value = std::to_string(cpu.count())});
 }
 
 }
@@ -102,10 +91,16 @@ void TimingTree::leave(std::size_t node, nanoseconds wall, nanoseconds cpu) noex
     }
 }
 
-Timer::Timer(Env &env, TimingTree &tree, StaticName module, StaticName name)
-    : clock_(env.clock()), events_(env.events()), tree_(tree), module_(module.text()),
-      wall_(clock_.wall_time()), cpu_(clock_.cpu_time()), observed_wall_(tree.observed_wall_),
-      observed_cpu_(tree.observed_cpu_), node_(tree.enter(name.text()))
+Timer::Timer(Env &env,
+             TimingTree &tree,
+             StaticName module,
+             StaticName name,
+             const BIYOS_model *model,
+             Hooks *hooks)
+    : clock_(env.clock()), events_(env.events()), model_(model), hooks_(hooks), tree_(tree),
+      module_(module.text()), wall_(clock_.wall_time()), cpu_(clock_.cpu_time()),
+      observed_wall_(tree.observed_wall_), observed_cpu_(tree.observed_cpu_),
+      node_(tree.enter(name.text()))
 {
     announce("begin", wall_, cpu_);
 }
@@ -121,16 +116,25 @@ Timer::~Timer()
     announce("end", wall, cpu.value_or(cpu_));
 }
 
+void Timer::describe(Event &event, std::string_view edge, nanoseconds wall, nanoseconds cpu) const
+{
+    event.model = model_;
+    event.module.assign(module_);
+    event.text.assign(tree_.nodes()[node_].name);
+    event.fields.push_back(Field{.name = "edge", .value = std::string(edge)});
+    event.fields.push_back(Field{.name = "wall", .value = std::to_string(wall.count())});
+    event.fields.push_back(Field{.name = "cpu", .value = std::to_string(cpu.count())});
+}
+
 void Timer::announce(std::string_view edge, nanoseconds wall, nanoseconds cpu) noexcept
 {
-    if (!events_.wanted(EventKind::Span, EventLevel::Info))
+    if (!events_.wanted(EventKind::Span, EventLevel::Info, hooks_))
     {
         return;
     }
-    const std::string_view name = tree_.nodes()[node_].name;
     const nanoseconds since = wall - events_.origin();
-    const auto fill = [&](Event &event) { describe(event, module_, name, edge, since, cpu); };
-    events_.emit(EventKind::Span, EventLevel::Info, fill);
+    const auto fill = [&](Event &event) { describe(event, edge, since, cpu); };
+    events_.emit(EventKind::Span, EventLevel::Info, fill, hooks_);
     tree_.observed_wall_ += clock_.wall_time() - wall;
     tree_.observed_cpu_ += cpu_of(clock_).value_or(cpu) - cpu;
 }

@@ -1,7 +1,9 @@
 #pragma once
 
+#include "biyos/biyos.h"
 #include "core/env.hpp"
 #include "core/events/events.hpp"
+#include "core/events/hooks.hpp"
 #include "core/text/name.hpp"
 #include "core/timing/clock.hpp"
 
@@ -54,19 +56,30 @@ class TimingTree
 class Timer
 {
   public:
-    Timer(Env &env, TimingTree &tree, StaticName module, StaticName name);
+    Timer(Env &env,
+          TimingTree &tree,
+          StaticName module,
+          StaticName name,
+          const BIYOS_model *model = nullptr,
+          Hooks *hooks = nullptr);
     ~Timer();
 
     Timer(const Timer &) = delete;
     Timer &operator=(const Timer &) = delete;
 
   private:
+    void describe(Event &event,
+                  std::string_view edge,
+                  std::chrono::nanoseconds wall,
+                  std::chrono::nanoseconds cpu) const;
     void announce(std::string_view edge,
                   std::chrono::nanoseconds wall,
                   std::chrono::nanoseconds cpu) noexcept;
 
     const Clock &clock_;
     Events &events_;
+    const BIYOS_model *model_;
+    Hooks *hooks_;
     TimingTree &tree_;
     std::string_view module_;
     std::chrono::nanoseconds wall_;
@@ -79,7 +92,14 @@ class Timer
 class EntryTimer
 {
   public:
-    EntryTimer(Env &env, StaticName module, StaticName name) : timer_(env, tree_, module, name) {}
+    EntryTimer(Env &env,
+               StaticName module,
+               StaticName name,
+               const BIYOS_model *model = nullptr,
+               Hooks *hooks = nullptr)
+        : timer_(env, tree_, module, name, model, hooks)
+    {
+    }
 
   private:
     TimingTree tree_;

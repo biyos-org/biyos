@@ -24,6 +24,11 @@ class Events
     {
         return hooks_.wanted(kind, level);
     }
+    bool wanted(EventKind kind, EventLevel level, const Hooks *model_hooks) const noexcept
+    {
+        const bool local = model_hooks != nullptr && model_hooks->wanted(kind, level);
+        return local || wanted(kind, level);
+    }
     bool delivering() const noexcept { return deliveries_.delivering(); }
     bool filling() const noexcept { return deliveries_.filling(); }
     Deliveries::State *delivery() noexcept { return deliveries_.delivery(); }
@@ -32,8 +37,7 @@ class Events
     template <std::invocable<Event &> Fill>
     void emit(EventKind kind, EventLevel level, Fill &&fill, Hooks *model_hooks = nullptr) noexcept
     {
-        const bool local = model_hooks != nullptr && model_hooks->wanted(kind, level);
-        if (!local && !wanted(kind, level))
+        if (!wanted(kind, level, model_hooks))
         {
             return;
         }
