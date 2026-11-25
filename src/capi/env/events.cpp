@@ -12,6 +12,7 @@
 using biyos::to_index;
 using biyos::to_size;
 using biyos::capi::guarded;
+using biyos::capi::handle_of;
 using biyos::capi::require;
 using biyos::capi::writable;
 
@@ -162,5 +163,5 @@ const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx)
 
 const BIYOS_model *BIYOS_getevtmdl(const BIYOS_event *evt)
 {
-    return evt == nullptr ? nullptr : evt->core->model;
+    return evt == nullptr ? nullptr : handle_of(evt->core->model);
 }

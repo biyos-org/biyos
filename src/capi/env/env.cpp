@@ -9,6 +9,7 @@
 #include <string>
 
 using biyos::capi::guarded;
+using biyos::capi::handle_of;
 using biyos::capi::writable;
 
 namespace
@@ -59,7 +60,7 @@ BIYOS_status BIYOS_lasterror(const BIYOS_env *env, BIYOS_error *err)
     }
     const biyos::RecordView record = env->core.last_error();
     err->status = record.status;
-    err->mdl = record.model;
+    err->mdl = handle_of(record.model);
     err->msg = record.text;
     return BIYOS_OK;
 }

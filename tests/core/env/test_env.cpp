@@ -351,7 +351,7 @@ TEST(EnvTest, ScopedStatus)
 TEST(EnvTest, ErrorModel)
 {
     const int address = 0;
-    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    const auto *model = reinterpret_cast<const biyos::Session *>(&address);
     biyos::Env env;
     env.record_error(biyos::ErrorKind::InvalidArgument, "model", model);
     EXPECT_EQ(env.last_error().model, model);

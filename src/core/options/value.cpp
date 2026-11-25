@@ -120,7 +120,7 @@ void admit(const OptionSpec &spec, const Masks &value)
 void describe(Event &event,
               std::span<const OptionSpec> table,
               const OptionSpec &spec,
-              const BIYOS_model *model)
+              const Session *model)
 {
     const Version deprecated = *spec.versions.deprecated;
     const std::string_view replacement = row_of(table, *spec.replacement).name;
@@ -146,7 +146,7 @@ const OptionSpec &checked_row(std::span<const OptionSpec> table,
 void warn_deprecated(Events &events,
                      std::span<const OptionSpec> table,
                      const OptionSpec &spec,
-                     const BIYOS_model *model,
+                     const Session *model,
                      Hooks *hooks) noexcept
 {
     if (!spec.versions.deprecated)

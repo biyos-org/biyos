@@ -75,7 +75,7 @@ class Env
     RecordView last_error() const noexcept;
     void record_error(ErrorKind kind,
                       std::string_view text,
-                      const BIYOS_model *model = nullptr) noexcept;
+                      const Session *model = nullptr) noexcept;
 
     std::size_t handles() const noexcept;
 

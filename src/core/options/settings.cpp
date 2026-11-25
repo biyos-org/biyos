@@ -43,17 +43,13 @@ Settings::Settings(const Settings &other) : table_(other.table_)
 void Settings::set_bool(Option option,
                         bool value,
                         Events &events,
-                        const BIYOS_model *model,
+                        const Session *model,
                         Hooks *hooks)
 {
     store(option, value, events, model, hooks);
 }
 
-void Settings::set_int(Option option,
-                       int value,
-                       Events &events,
-                       const BIYOS_model *model,
-                       Hooks *hooks)
+void Settings::set_int(Option option, int value, Events &events, const Session *model, Hooks *hooks)
 {
     store(option, value, events, model, hooks);
 }
@@ -61,7 +57,7 @@ void Settings::set_int(Option option,
 void Settings::set_double(Option option,
                           Real value,
                           Events &events,
-                          const BIYOS_model *model,
+                          const Session *model,
                           Hooks *hooks)
 {
     store(option, value, events, model, hooks);
@@ -70,7 +66,7 @@ void Settings::set_double(Option option,
 void Settings::set_string(Option option,
                           std::string_view value,
                           Events &events,
-                          const BIYOS_model *model,
+                          const Session *model,
                           Hooks *hooks)
 {
     store(option, value, events, model, hooks);
@@ -79,7 +75,7 @@ void Settings::set_string(Option option,
 void Settings::set_flags(Option option,
                          Masks value,
                          Events &events,
-                         const BIYOS_model *model,
+                         const Session *model,
                          Hooks *hooks)
 {
     store(option, value, events, model, hooks);
@@ -88,7 +84,7 @@ void Settings::set_flags(Option option,
 void Settings::store(Option option,
                      const OptionValue &value,
                      Events &events,
-                     const BIYOS_model *model,
+                     const Session *model,
                      Hooks *hooks)
 {
     check_scope(row_of(table_, option));

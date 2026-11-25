@@ -59,9 +59,9 @@ class Crowd
     std::vector<std::thread> threads_;
 };
 
-const BIYOS_model *fake_model(const int &address)
+const biyos::Session *fake_model(const int &address)
 {
-    return reinterpret_cast<const BIYOS_model *>(&address);
+    return reinterpret_cast<const biyos::Session *>(&address);
 }
 
 }

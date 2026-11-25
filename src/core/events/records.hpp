@@ -12,26 +12,28 @@
 namespace biyos
 {
 
+class Session;
+
 inline constexpr std::size_t kRecords = 256;
 
 struct Record
 {
     BIYOS_status status = BIYOS_OK;
-    const BIYOS_model *model = nullptr;
+    const Session *model = nullptr;
     std::string text;
 };
 
 struct RecordView
 {
     BIYOS_status status;
-    const BIYOS_model *model;
+    const Session *model;
     const char *text;
 };
 
 class Records
 {
   public:
-    void put(BIYOS_status status, const BIYOS_model *model, std::string_view text) noexcept;
+    void put(BIYOS_status status, const Session *model, std::string_view text) noexcept;
     RecordView get() const noexcept;
     void swap(Record &record) noexcept;
 

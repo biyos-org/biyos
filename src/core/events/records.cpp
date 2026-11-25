@@ -24,7 +24,7 @@ void assign(std::string &kept, std::string_view text) noexcept
 
 }
 
-void Records::put(BIYOS_status status, const BIYOS_model *model, std::string_view text) noexcept
+void Records::put(BIYOS_status status, const Session *model, std::string_view text) noexcept
 {
     try
     {

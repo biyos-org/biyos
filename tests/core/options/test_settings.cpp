@@ -247,7 +247,7 @@ TEST_F(SettingTest, Refusal)
 TEST_F(SettingTest, Deprecated)
 {
     const int address = 0;
-    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    const auto *model = reinterpret_cast<const biyos::Session *>(&address);
     settings.set_int(kOld, 5, events, model);
     options.set_int(kOld, 6);
     EXPECT_EQ(held(settings, kOld), 5);
@@ -267,7 +267,7 @@ TEST_F(SettingTest, Deprecated)
 TEST_F(SettingTest, ModelHooks)
 {
     const int address = 0;
-    const auto *model = reinterpret_cast<const BIYOS_model *>(&address);
+    const auto *model = reinterpret_cast<const biyos::Session *>(&address);
     biyos::Hooks hooks;
     std::vector<biyos::Event> local;
     const auto keep = [&local](const biyos::Event &event) { local.push_back(event); };

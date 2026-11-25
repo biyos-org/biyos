@@ -19,7 +19,7 @@ const OptionSpec &checked_row(std::span<const OptionSpec> table,
 void warn_deprecated(Events &events,
                      std::span<const OptionSpec> table,
                      const OptionSpec &spec,
-                     const BIYOS_model *model,
+                     const Session *model,
                      Hooks *hooks) noexcept;
 
 OptionValue kept(Strings &strings, const OptionValue &value);
