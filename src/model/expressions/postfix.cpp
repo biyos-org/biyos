@@ -29,11 +29,6 @@ namespace
     throw Error(ErrorKind::InvalidArgument, "expression", reason);
 }
 
-std::size_t at(Offset value) noexcept
-{
-    return static_cast<std::size_t>(value);
-}
-
 std::string operand_text(Offset n)
 {
     return n_text(n, "operand", "operands");
@@ -54,7 +49,7 @@ Offset argument_of(const Graph &graph, Offset node) noexcept
     {
         return graph.pwl(node);
     }
-    return static_cast<Offset>(graph.children(node).size());
+    return to_offset(graph.children(node).size());
 }
 
 struct Kept
@@ -99,15 +94,15 @@ Decoder::Decoder(Graph &graph, Index variables, const Postfix &postfix)
 Offset Decoder::expression(std::size_t k)
 {
     depth_ = 0;
-    const auto end = at(postfix_.starts[k + 1]);
-    for (auto e = at(postfix_.starts[k]); e < end; ++e)
+    const auto end = to_size(postfix_.starts[k + 1]);
+    for (auto e = to_size(postfix_.starts[k]); e < end; ++e)
     {
         read(k, e);
     }
     if (depth_ != 1)
     {
         const std::string reason = operand_text(depth_) + " left, not 1";
-        throw Error(ErrorKind::InvalidArgument, item("expression", static_cast<Index>(k)), reason);
+        throw Error(ErrorKind::InvalidArgument, item("expression", to_index(k)), reason);
     }
     return builder_.finish();
 }
@@ -125,7 +120,7 @@ void Decoder::read(std::size_t k, std::size_t e)
             throw;
         }
         const std::string reason = "entry " + text_of(e) + ": " + error.message();
-        throw Error(ErrorKind::InvalidArgument, item("expression", static_cast<Index>(k)), reason);
+        throw Error(ErrorKind::InvalidArgument, item("expression", to_index(k)), reason);
     }
 }
 
@@ -231,7 +226,7 @@ void Decoder::keep(std::size_t e, Offset arity)
     }
     pop(arity);
     kept_.push_back(Kept{
-        .entry = static_cast<Offset>(e),
+        .entry = to_offset(e),
         .node = builder_.keep(),
     });
 }
@@ -266,12 +261,12 @@ void Decoder::variable(Offset variable)
 std::span<const double> Decoder::values(Offset n)
 {
     const std::size_t left = postfix_.values.size() - next_;
-    if (at(n) > left)
+    if (to_size(n) > left)
     {
         throw Error(ErrorKind::Internal, "postfix", "values run out");
     }
-    const std::span<const double> read = postfix_.values.subspan(next_, at(n));
-    next_ += at(n);
+    const std::span<const double> read = postfix_.values.subspan(next_, to_size(n));
+    next_ += to_size(n);
     return read;
 }
 
@@ -320,7 +315,8 @@ class Encoder
 };
 
 Encoder::Encoder(const Graph &graph)
-    : graph_(graph), meetings_(at(graph.size()), 0), positions_(at(graph.size()), kUnwritten)
+    : graph_(graph), meetings_(to_size(graph.size()), 0),
+      positions_(to_size(graph.size()), kUnwritten)
 {
 }
 
@@ -334,7 +330,7 @@ Encoding Encoder::encode(std::span<const Offset> roots)
     for (const Offset root : roots)
     {
         expression(root);
-        encoding_.starts.push_back(static_cast<Offset>(encoding_.codes.size()));
+        encoding_.starts.push_back(to_offset(encoding_.codes.size()));
     }
     return std::move(encoding_);
 }
@@ -359,8 +355,8 @@ void Encoder::count(Offset root)
 
 void Encoder::reach(Offset node)
 {
-    ++meetings_[at(node)];
-    if (meetings_[at(node)] == 1)
+    ++meetings_[to_size(node)];
+    if (meetings_[to_size(node)] == 1)
     {
         pending_.push_back(node);
     }
@@ -404,7 +400,7 @@ void Encoder::meet(Offset node, bool nested)
         put(BIYOS_OP_VAR, graph_.variable(node));
         return;
     }
-    const Offset position = positions_[at(node)];
+    const Offset position = positions_[to_size(node)];
     if (position != kUnwritten)
     {
         put(BIYOS_OP_REF, position);
@@ -412,7 +408,7 @@ void Encoder::meet(Offset node, bool nested)
     }
     frames_.push_back(Frame{
         .node = node,
-        .kept = nested || meetings_[at(node)] > 1,
+        .kept = nested || meetings_[to_size(node)] > 1,
         .next = 0,
     });
 }
@@ -424,7 +420,7 @@ void Encoder::finish(const Frame &frame)
     put_values(frame.node);
     if (frame.kept)
     {
-        positions_[at(frame.node)] = static_cast<Offset>(encoding_.codes.size());
+        positions_[to_size(frame.node)] = to_offset(encoding_.codes.size());
         put(BIYOS_OP_KEEP, 1);
     }
 }
@@ -460,7 +456,7 @@ void Encoder::put_values(Offset node)
 
 Offset n_values(std::span<const int> codes, std::span<const Offset> arguments)
 {
-    const auto entries = static_cast<Offset>(codes.size());
+    const auto entries = to_offset(codes.size());
     const Offset most = 2 * entries;
     Offset total = 0;
     for (std::size_t e = 0; e < codes.size() && total < most; ++e)

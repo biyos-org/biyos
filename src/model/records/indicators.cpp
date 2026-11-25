@@ -95,20 +95,20 @@ bool demotes(const Model &model, std::span<const Index> indices, std::span<const
 
 Index Model::n_indicators() const noexcept
 {
-    return static_cast<Index>(indicators_.size());
+    return to_index(indicators_.size());
 }
 
 const Indicator &Model::indicator(Index index) const
 {
     check_index(kNoun, index, n_indicators());
-    return indicators_[static_cast<std::size_t>(index)];
+    return indicators_[to_size(index)];
 }
 
 std::span<const Indicator> Model::indicators(Index start, Index stop) const
 {
     check_span(kNoun, start, stop, n_indicators());
-    const auto offset = static_cast<std::size_t>(start);
-    return std::span(indicators_).subspan(offset, static_cast<std::size_t>(stop - start));
+    const auto offset = to_size(start);
+    return std::span(indicators_).subspan(offset, to_size(stop - start));
 }
 
 void Model::add_indicators(std::span<const Indicator> added)
@@ -116,7 +116,7 @@ void Model::add_indicators(std::span<const Indicator> added)
     check_n(kNoun, indicators_, added.size());
     for (std::size_t k = 0; k < added.size(); ++k)
     {
-        check(static_cast<Index>(indicators_.size() + k), added[k], *this);
+        check(to_index(indicators_.size() + k), added[k], *this);
     }
     indicators_.insert(indicators_.end(), added.begin(), added.end());
 }
@@ -134,7 +134,7 @@ void Model::set_indicators(std::span<const Index> indices, std::span<const Indic
     }
     for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        indicators_[static_cast<std::size_t>(indices[k])] = changed[k];
+        indicators_[to_size(indices[k])] = changed[k];
     }
 }
 

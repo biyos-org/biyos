@@ -39,11 +39,11 @@ void keep_parts(std::vector<Offset> &ends,
     std::size_t kept = 0;
     for (std::size_t k = 0; k < map.size(); ++k)
     {
-        const auto end = static_cast<std::size_t>(ends[k]);
+        const auto end = to_size(ends[k]);
         if (map[k] != kDeleted)
         {
             write = keep_part(std::span(items), read, end, write);
-            ends[kept] = static_cast<Offset>(write);
+            ends[kept] = to_offset(write);
             ++kept;
         }
         read = end;

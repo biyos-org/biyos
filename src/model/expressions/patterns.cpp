@@ -45,7 +45,7 @@ std::unordered_map<Index, Index> positions(std::span<const Index> covered)
     std::unordered_map<Index, Index> found;
     for (std::size_t k = 0; k < covered.size(); ++k)
     {
-        found.emplace(covered[k], static_cast<Index>(k));
+        found.emplace(covered[k], to_index(k));
     }
     return found;
 }

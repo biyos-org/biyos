@@ -84,20 +84,20 @@ Objective default_objective(Index function, Index index) noexcept
 
 Index Model::n_objectives() const noexcept
 {
-    return static_cast<Index>(objectives_.size());
+    return to_index(objectives_.size());
 }
 
 const Objective &Model::objective(Index index) const
 {
     check_index(kNoun, index, n_objectives());
-    return objectives_[static_cast<std::size_t>(index)];
+    return objectives_[to_size(index)];
 }
 
 std::span<const Objective> Model::objectives(Index start, Index stop) const
 {
     check_span(kNoun, start, stop, n_objectives());
-    const auto offset = static_cast<std::size_t>(start);
-    return std::span(objectives_).subspan(offset, static_cast<std::size_t>(stop - start));
+    const auto offset = to_size(start);
+    return std::span(objectives_).subspan(offset, to_size(stop - start));
 }
 
 void Model::check_objective_room(std::size_t added) const
@@ -110,7 +110,7 @@ void Model::add_objectives(std::span<const Objective> added)
     check_objective_room(added.size());
     for (std::size_t k = 0; k < added.size(); ++k)
     {
-        check(static_cast<Index>(objectives_.size() + k), added[k], n_functions());
+        check(to_index(objectives_.size() + k), added[k], n_functions());
     }
     objectives_.insert(objectives_.end(), added.begin(), added.end());
 }
@@ -128,7 +128,7 @@ void Model::set_objectives(std::span<const Index> indices, std::span<const Objec
     }
     for (std::size_t k = 0; k < indices.size(); ++k)
     {
-        objectives_[static_cast<std::size_t>(indices[k])] = changed[k];
+        objectives_[to_size(indices[k])] = changed[k];
     }
 }
 

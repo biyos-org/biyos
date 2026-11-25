@@ -131,7 +131,7 @@ void Overrides::renumber(std::span<const Index> map) noexcept
     auto at = held_.begin();
     while (at != held_.end())
     {
-        const Index to = map[static_cast<std::size_t>(at->first)];
+        const Index to = map[to_size(at->first)];
         auto node = held_.extract(at++);
         if (to != kDeleted)
         {

@@ -37,16 +37,6 @@ namespace
 
 constexpr std::size_t kCalls = 4;
 
-std::size_t at(Offset offset) noexcept
-{
-    return static_cast<std::size_t>(offset);
-}
-
-std::size_t count_of(Index count) noexcept
-{
-    return static_cast<std::size_t>(count);
-}
-
 Compiled compiled_of(Env &env, const Model &model)
 {
     const EntryTimer timer(env, "model", "evaluation");
@@ -57,7 +47,7 @@ Compiled compiled_of(Env &env, const Model &model)
     {
         if (all[k] != kNoRoot)
         {
-            rooted.push_back(static_cast<Index>(k));
+            rooted.push_back(to_index(k));
             roots.push_back(all[k]);
         }
     }
@@ -81,7 +71,7 @@ Compiled compiled_of(Env &env, const Model &model)
 Evaluation::Evaluation(Env &env, const Model &model, const BIYOS_model *handle)
     : env_(env), model_(model), handle_(handle), compiled_(compiled_of(env, model)),
       workspace_(compiled_.tape), adjoints_(compiled_.tape),
-      tape_values_(at(compiled_.tape.roots())),
+      tape_values_(to_size(compiled_.tape.roots())),
       tape_gradients_(compiled_.tape.pattern().variables.size()), out_(widest(model)),
       root_weights_(compiled_.roots.size()), user_weights_(widest(model))
 {
@@ -102,13 +92,13 @@ void Evaluation::values(const Lookup &lookup, std::span<const double> x, std::sp
 {
     const Timer timer(env_, tree_, "model", "values");
     check_point(x);
-    check_size("f", f.size(), count_of(model_.n_functions()));
+    check_size("f", f.size(), to_size(model_.n_functions()));
     require_all(model_, Part::Function);
     term_values(x, f);
     forward(compiled_.tape, x, workspace_, tape_values_);
     for (std::size_t e = 0; e < compiled_.rooted.size(); ++e)
     {
-        f[count_of(compiled_.rooted[e])] += tape_values_[e];
+        f[to_size(compiled_.rooted[e])] += tape_values_[e];
     }
     add_user_values(Checker(env_, lookup, "model"), x, f);
 }
@@ -124,7 +114,7 @@ void Evaluation::jacobian(const Lookup &lookup, std::span<const double> x, std::
     biyos::jacobian(compiled_.tape, x, workspace_, adjoints_, tape_values_, tape_gradients_);
     for (std::size_t p = 0; p < slots.tape.size(); ++p)
     {
-        g[at(slots.tape[p])] += tape_gradients_[p];
+        g[to_size(slots.tape[p])] += tape_gradients_[p];
     }
     add_user_gradients(Checker(env_, lookup, "model"), x, g);
 }
@@ -141,7 +131,7 @@ void Evaluation::check_size(std::string_view argument, std::size_t size, std::si
 
 void Evaluation::check_point(std::span<const double> x) const
 {
-    check_size("x", x.size(), count_of(model_.n_variables()));
+    check_size("x", x.size(), to_size(model_.n_variables()));
 }
 
 Request Evaluation::request_of(Index callback,
@@ -159,18 +149,18 @@ void Evaluation::term_values(std::span<const double> x, std::span<double> f) con
     const std::span<const LinearTerm> linear = model_.linear_terms(0, n);
     const std::span<const QuadraticTerm> quadratic = model_.quadratic_terms(0, n);
     const Slots &slots = compiled_.slots;
-    for (std::size_t k = 0; k < count_of(n); ++k)
+    for (std::size_t k = 0; k < to_size(n); ++k)
     {
         f[k] = constants[k];
         for (Offset t = slots.linear_starts[k]; t < slots.linear_starts[k + 1]; ++t)
         {
-            const LinearTerm &term = linear[at(t)];
-            f[k] += term.coefficient * x[count_of(term.variable)];
+            const LinearTerm &term = linear[to_size(t)];
+            f[k] += term.coefficient * x[to_size(term.variable)];
         }
         for (Offset t = slots.quadratic_starts[k]; t < slots.quadratic_starts[k + 1]; ++t)
         {
-            const QuadraticTerm &term = quadratic[at(t)];
-            f[k] += term.coefficient * x[count_of(term.row)] * x[count_of(term.column)];
+            const QuadraticTerm &term = quadratic[to_size(t)];
+            f[k] += term.coefficient * x[to_size(term.row)] * x[to_size(term.column)];
         }
     }
 }
@@ -184,8 +174,8 @@ void Evaluation::term_gradients(std::span<const double> x, std::span<double> g) 
     for (std::size_t t = 0; t < quadratic.size(); ++t)
     {
         const QuadraticTerm &term = quadratic[t];
-        g[at(slots.quadratic[2 * t])] += term.coefficient * x[count_of(term.column)];
-        g[at(slots.quadratic[2 * t + 1])] += term.coefficient * x[count_of(term.row)];
+        g[to_size(slots.quadratic[2 * t])] += term.coefficient * x[to_size(term.column)];
+        g[to_size(slots.quadratic[2 * t + 1])] += term.coefficient * x[to_size(term.row)];
     }
 }
 
@@ -200,7 +190,7 @@ void Evaluation::add_user_values(const Checker &checker,
         run(checker, callback, Part::Function, request_of(c, x), out);
         for (std::size_t i = 0; i < out.size(); ++i)
         {
-            f[count_of(callback.covered[i])] += out[i];
+            f[to_size(callback.covered[i])] += out[i];
         }
     }
 }
@@ -215,10 +205,10 @@ void Evaluation::add_user_gradients(const Checker &checker,
         const Callback &callback = model_.callback(c);
         const std::span<double> out = std::span(out_).first(callback.jacobian_pairs.size());
         run(checker, callback, Part::Jacobian, request_of(c, x), out);
-        const std::size_t begin = at(slots.callback_starts[count_of(c)]);
+        const std::size_t begin = to_size(slots.callback_starts[to_size(c)]);
         for (std::size_t p = 0; p < out.size(); ++p)
         {
-            g[at(slots.callbacks[begin + p])] += out[p];
+            g[to_size(slots.callbacks[begin + p])] += out[p];
         }
     }
 }

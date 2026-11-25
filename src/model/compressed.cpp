@@ -48,7 +48,7 @@ void check_shape(std::size_t functions,
         throw Error(ErrorKind::Internal, "model", "functions and starts differ in number");
     }
     check_starts(starts, argument);
-    if (starts.back() != static_cast<Offset>(terms))
+    if (starts.back() != to_offset(terms))
     {
         throw Error(ErrorKind::Internal, "model", "starts and terms differ in number");
     }

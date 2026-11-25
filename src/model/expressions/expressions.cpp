@@ -64,8 +64,8 @@ const Graph &Model::graph() const noexcept
 std::span<const Offset> Model::roots(Index start, Index stop) const
 {
     check_span("function", start, stop, n_functions());
-    const auto offset = static_cast<std::size_t>(start);
-    return std::span(roots_).subspan(offset, static_cast<std::size_t>(stop - start));
+    const auto offset = to_size(start);
+    return std::span(roots_).subspan(offset, to_size(stop - start));
 }
 
 Offset Model::add_variable_node(Index variable)

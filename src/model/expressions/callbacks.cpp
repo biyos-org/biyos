@@ -20,11 +20,6 @@ namespace
 
 constexpr std::string_view kNoun = "callback";
 
-std::size_t at(Index index) noexcept
-{
-    return static_cast<std::size_t>(index);
-}
-
 void check_count(std::span<const Index> functions)
 {
     if (functions.empty())
@@ -37,19 +32,19 @@ void check_count(std::span<const Index> functions)
 
 Index Model::n_callbacks() const noexcept
 {
-    return static_cast<Index>(callbacks_.size());
+    return to_index(callbacks_.size());
 }
 
 const Callback &Model::callback(Index index) const
 {
     check_index(kNoun, index, n_callbacks());
-    return callbacks_[at(index)];
+    return callbacks_[to_size(index)];
 }
 
 Callback &Model::changed(Index callback)
 {
     check_index(kNoun, callback, n_callbacks());
-    return callbacks_[at(callback)];
+    return callbacks_[to_size(callback)];
 }
 
 Index Model::add_callback(std::span<const Index> functions, void *data)
