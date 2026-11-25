@@ -14,6 +14,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Session;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
@@ -55,24 +56,24 @@ std::vector<std::string_view> texts(std::size_t n, const char *const *names)
     return found;
 }
 
-void set_model_name(biyos::Session &session, const char *name)
+void set_model_name(Session &session, const char *name)
 {
     writable(session).set_name(require(name, "name"));
 }
 
-void get_model_name(const biyos::Session &session, const char **name)
+void get_model_name(const Session &session, const char **name)
 {
     const char *found = text(session.model().name());
     *require(name, "name") = found;
 }
 
-void delete_model_name(biyos::Session &session)
+void delete_model_name(Session &session)
 {
     writable(session).delete_name();
 }
 
 template <Family Target, typename Selection>
-void set_names(biyos::Session &session, Selection selection, const char *const *names)
+void set_names(Session &session, Selection selection, const char *const *names)
 {
     biyos::Model &model = writable(session);
     const auto changed = selected(model, Target, selection);
@@ -80,7 +81,7 @@ void set_names(biyos::Session &session, Selection selection, const char *const *
 }
 
 template <Family Target, typename Selection>
-void get_names(const biyos::Session &session, Selection selection, const char **names)
+void get_names(const Session &session, Selection selection, const char **names)
 {
     const auto wanted = selected(session.model(), Target, selection);
     std::vector<const char *> found;
@@ -96,7 +97,7 @@ void get_names(const biyos::Session &session, Selection selection, const char **
 }
 
 template <Family Target>
-void get_indices(const biyos::Session &session,
+void get_indices(const Session &session,
                  BIYOS_index n,
                  const char *const *names,
                  BIYOS_index *indices)
@@ -115,7 +116,7 @@ void get_indices(const biyos::Session &session,
 }
 
 template <Family Target, typename Selection>
-void delete_names(biyos::Session &session, Selection selection)
+void delete_names(Session &session, Selection selection)
 {
     biyos::Model &model = writable(session);
     model.delete_names(Target, selected(model, Target, selection));

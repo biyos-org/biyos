@@ -16,6 +16,7 @@
 using biyos::Family;
 using biyos::Index;
 using biyos::Offset;
+using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
@@ -104,7 +105,7 @@ void write(const Records &records,
 }
 
 template <typename Of, typename Selection>
-void n_pattern(biyos::Session &session, Selection selection, BIYOS_offset *nnz)
+void n_pattern(Session &session, Selection selection, BIYOS_offset *nnz)
 {
     BIYOS_offset *out = require(nnz, "nnz");
     const auto chosen = selected(session.model(), Of::kFamily, selection);
@@ -114,7 +115,7 @@ void n_pattern(biyos::Session &session, Selection selection, BIYOS_offset *nnz)
 }
 
 template <typename Of, typename Selection>
-void get_pattern(biyos::Session &session,
+void get_pattern(Session &session,
                  Selection selection,
                  BIYOS_offset capacity,
                  BIYOS_offset *counts,

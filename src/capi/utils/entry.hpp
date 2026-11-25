@@ -60,7 +60,7 @@ inline biyos::Env &writable(biyos::Env &env)
     return env;
 }
 
-inline void claim(biyos::Session &session)
+inline void claim(Session &session)
 {
     if (session.env().events().delivering())
     {
@@ -74,7 +74,7 @@ inline void claim(biyos::Session &session)
     }
 }
 
-inline biyos::Model &writable(biyos::Session &session)
+inline biyos::Model &writable(Session &session)
 {
     claim(session);
     return session.change();

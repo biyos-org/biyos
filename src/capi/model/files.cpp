@@ -7,6 +7,7 @@
 #include <memory>
 #include <string_view>
 
+using biyos::Session;
 using biyos::capi::guarded;
 using biyos::capi::idle;
 using biyos::capi::require;
@@ -25,7 +26,7 @@ void load(biyos::Env &env, const char *path, BIYOS_int fmt, BIYOS_model **mdl)
     *made = fresh.release();
 }
 
-void save(const biyos::Session &session, const char *path, BIYOS_int fmt)
+void save(const Session &session, const char *path, BIYOS_int fmt)
 {
     const char *file = require(path, "path");
     const biyos::FileFormat format = biyos::find_format(fmt);

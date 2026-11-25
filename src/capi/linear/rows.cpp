@@ -10,6 +10,7 @@
 #include <span>
 
 using biyos::Family;
+using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
@@ -34,7 +35,7 @@ std::size_t count_of(const biyos::Model &model, std::span<const biyos::Index> fu
 }
 
 template <typename Selection>
-void n_row_terms(const biyos::Session &session, Selection selection, BIYOS_offset *nnz)
+void n_row_terms(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(session.model(), Family::Function, selection);
     const std::size_t count = count_of(session.model(), chosen);
@@ -56,7 +57,7 @@ void write_rows(const biyos::Model &model,
     }
 }
 
-void get_listed(const biyos::Session &session,
+void get_listed(const Session &session,
                 List list,
                 BIYOS_offset capacity,
                 BIYOS_offset *nnz,
@@ -72,7 +73,7 @@ void get_listed(const biyos::Session &session,
     }
 }
 
-void get_ranged(const biyos::Session &session,
+void get_ranged(const Session &session,
                 Range range,
                 BIYOS_offset capacity,
                 BIYOS_offset *counts,

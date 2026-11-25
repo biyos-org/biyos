@@ -6,18 +6,18 @@
 namespace biyos::capi
 {
 
-Evaluation &evaluation_of(biyos::Session &session);
+Evaluation &evaluation_of(Session &session);
 
 class Running
 {
   public:
-    explicit Running(biyos::Session &session) noexcept;
+    explicit Running(Session &session) noexcept;
     ~Running();
     Running(const Running &) = delete;
     Running &operator=(const Running &) = delete;
 
   private:
-    biyos::Session &session_;
+    Session &session_;
 };
 
 }

@@ -15,7 +15,7 @@ namespace biyos::capi
 {
 
 template <typename Selection>
-void set_tolerances(biyos::Session &session,
+void set_tolerances(Session &session,
                     Family family,
                     Selection selection,
                     const BIYOS_real *absolute,
@@ -30,7 +30,7 @@ void set_tolerances(biyos::Session &session,
 }
 
 template <typename Selection>
-void get_tolerances(const biyos::Session &session,
+void get_tolerances(const Session &session,
                     Family family,
                     Selection selection,
                     BIYOS_real *absolute,
@@ -57,7 +57,7 @@ void get_tolerances(const biyos::Session &session,
 }
 
 template <typename Selection>
-void delete_tolerances(biyos::Session &session, Family family, Selection selection)
+void delete_tolerances(Session &session, Family family, Selection selection)
 {
     Model &model = writable(session);
     model.delete_tolerances(family, selected(model, family, selection));

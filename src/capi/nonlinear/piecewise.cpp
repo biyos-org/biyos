@@ -17,6 +17,7 @@
 
 using biyos::Index;
 using biyos::Offset;
+using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
@@ -63,7 +64,7 @@ void check_room(const biyos::Model &model, std::size_t added)
     }
 }
 
-void add_pwls(biyos::Session &session,
+void add_pwls(Session &session,
               BIYOS_index n,
               const BIYOS_offset *counts,
               const BIYOS_real *x,
@@ -88,7 +89,7 @@ void add_pwls(biyos::Session &session,
     }
 }
 
-void n_pwls(const biyos::Session &session, BIYOS_index *n)
+void n_pwls(const Session &session, BIYOS_index *n)
 {
     *require(n, "n") = held(session.model());
 }
@@ -122,7 +123,7 @@ std::size_t count_of(const biyos::Model &model, std::span<const Index> pwls)
 }
 
 template <typename Selection>
-void n_points(const biyos::Session &session, Selection selection, BIYOS_offset *nnz)
+void n_points(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
     const auto pwls = chosen(session.model(), selection);
     const std::size_t count = count_of(session.model(), pwls);
@@ -154,7 +155,7 @@ void write_pwls(const biyos::Model &model, std::span<const Index> pwls, const Ou
 }
 
 template <typename Selection>
-void get_pwls(const biyos::Session &session,
+void get_pwls(const Session &session,
               Selection selection,
               BIYOS_offset capacity,
               const Outputs &out)
@@ -164,10 +165,7 @@ void get_pwls(const biyos::Session &session,
     write_pwls(session.model(), pwls, out);
 }
 
-void add_pwl_node(biyos::Session &session,
-                  BIYOS_index pwl,
-                  BIYOS_offset argument,
-                  BIYOS_offset *node)
+void add_pwl_node(Session &session, BIYOS_index pwl, BIYOS_offset argument, BIYOS_offset *node)
 {
     biyos::Model &model = writable(session);
     const Offset made = model.add_piecewise(pwl, argument);

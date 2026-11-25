@@ -11,6 +11,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Session;
 using biyos::to_index;
 using biyos::capi::entry_or;
 using biyos::capi::guarded;
@@ -70,7 +71,7 @@ std::vector<biyos::Objective> new_objectives(std::span<const biyos::Index> funct
     return added;
 }
 
-void add_objectives(biyos::Session &session,
+void add_objectives(Session &session,
                     BIYOS_index n,
                     const BIYOS_index *functions,
                     const BIYOS_int *senses,
@@ -95,7 +96,7 @@ void add_objectives(biyos::Session &session,
 }
 
 template <typename Selection>
-void set_objectives(biyos::Session &session, Selection selection, const Fields &fields)
+void set_objectives(Session &session, Selection selection, const Fields &fields)
 {
     biyos::Model &model = writable(session);
     const auto changed = selected(model, Family::Objective, selection);
@@ -108,7 +109,7 @@ void set_objectives(biyos::Session &session, Selection selection, const Fields &
     model.set_objectives(changed, objectives);
 }
 
-void n_objectives(const biyos::Session &session, BIYOS_index *n)
+void n_objectives(const Session &session, BIYOS_index *n)
 {
     *require(n, "n") = session.model().n_objectives();
 }
@@ -124,7 +125,7 @@ void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &o
 }
 
 template <typename Selection>
-void get_chosen(const biyos::Session &session, Selection selection, const Outputs &outputs)
+void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
     const auto chosen = selected(session.model(), Family::Objective, selection);
     const std::vector<biyos::Objective> objectives =

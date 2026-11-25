@@ -15,6 +15,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Session;
 using biyos::to_index;
 using biyos::to_offset;
 using biyos::to_size;
@@ -85,7 +86,7 @@ void write_columns(const Columns &columns,
 }
 
 template <typename Selection>
-void n_column_terms(const biyos::Session &session, Selection selection, BIYOS_offset *nnz)
+void n_column_terms(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
     const auto chosen = selected(session.model(), Family::Variable, selection);
     const biyos::EntryTimer timer(session.env(), biyos::kModule, "columns");
@@ -93,7 +94,7 @@ void n_column_terms(const biyos::Session &session, Selection selection, BIYOS_of
     *require(nnz, "nnz") = to_offset(count);
 }
 
-void get_listed(const biyos::Session &session,
+void get_listed(const Session &session,
                 List list,
                 BIYOS_offset capacity,
                 BIYOS_offset *nnz,
@@ -111,7 +112,7 @@ void get_listed(const biyos::Session &session,
     }
 }
 
-void get_ranged(const biyos::Session &session,
+void get_ranged(const Session &session,
                 Range range,
                 BIYOS_offset capacity,
                 BIYOS_offset *counts,

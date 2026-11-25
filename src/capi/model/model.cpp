@@ -15,6 +15,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Session;
 using biyos::capi::delete_tolerances;
 using biyos::capi::EnvGuard;
 using biyos::capi::get_tolerances;
@@ -39,7 +40,7 @@ void create(biyos::Env &env, BIYOS_model **mdl)
     *made = new BIYOS_model(env);
 }
 
-void make_copy(const biyos::Session &session, BIYOS_env *env, BIYOS_model **copy)
+void make_copy(const Session &session, BIYOS_env *env, BIYOS_model **copy)
 {
     BIYOS_model **made = require(copy, "copy");
     biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
@@ -49,7 +50,7 @@ void make_copy(const biyos::Session &session, BIYOS_env *env, BIYOS_model **copy
     *made = new BIYOS_model(target, session);
 }
 
-void freeable(biyos::Session &session)
+void freeable(Session &session)
 {
     writable(session);
 }
@@ -97,7 +98,7 @@ void set_each(biyos::Model &model, std::span<const biyos::Index> indices, Arrays
     model.set_variables(indices, changed);
 }
 
-void add_variables(biyos::Session &session,
+void add_variables(Session &session,
                    BIYOS_index n,
                    const BIYOS_int *kinds,
                    const BIYOS_real *lower,
@@ -121,7 +122,7 @@ void add_variables(biyos::Session &session,
 }
 
 template <typename Selection>
-void set_bounds(biyos::Session &session,
+void set_bounds(Session &session,
                 Selection selection,
                 const BIYOS_real *lower,
                 const BIYOS_real *upper)
@@ -132,14 +133,14 @@ void set_bounds(biyos::Session &session,
 }
 
 template <typename Selection>
-void set_kinds(biyos::Session &session, Selection selection, const BIYOS_int *kinds)
+void set_kinds(Session &session, Selection selection, const BIYOS_int *kinds)
 {
     biyos::Model &model = writable(session);
     const auto chosen = selected(model, Family::Variable, selection);
     set_each<kinded>(model, chosen, kinds);
 }
 
-void n_variables(const biyos::Session &session, BIYOS_index *n)
+void n_variables(const Session &session, BIYOS_index *n)
 {
     *require(n, "n") = session.model().n_variables();
 }
@@ -165,7 +166,7 @@ void copy_out(const biyos::Variable &variable,
 }
 
 template <typename Selection>
-void get_variables(const biyos::Session &session,
+void get_variables(const Session &session,
                    Selection selection,
                    BIYOS_int *kinds,
                    BIYOS_real *lower,
@@ -181,16 +182,13 @@ void get_variables(const biyos::Session &session,
 }
 
 template <typename Selection>
-void get_bounds(const biyos::Session &session,
-                Selection selection,
-                BIYOS_real *lower,
-                BIYOS_real *upper)
+void get_bounds(const Session &session, Selection selection, BIYOS_real *lower, BIYOS_real *upper)
 {
     get_variables(session, selection, nullptr, lower, upper);
 }
 
 template <typename Selection>
-void get_kinds(const biyos::Session &session, Selection selection, BIYOS_int *kinds)
+void get_kinds(const Session &session, Selection selection, BIYOS_int *kinds)
 {
     get_variables(session, selection, kinds, nullptr, nullptr);
 }

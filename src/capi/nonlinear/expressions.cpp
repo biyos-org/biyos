@@ -15,6 +15,7 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
@@ -47,13 +48,13 @@ void write_node(BIYOS_offset *node, biyos::Offset made)
     }
 }
 
-void add_variable_node(biyos::Session &session, BIYOS_index variable, BIYOS_offset *node)
+void add_variable_node(Session &session, BIYOS_index variable, BIYOS_offset *node)
 {
     biyos::Model &model = writable(session);
     write_node(node, model.add_variable_node(variable));
 }
 
-void add_node(biyos::Session &session,
+void add_node(Session &session,
               BIYOS_int op,
               BIYOS_offset n,
               const BIYOS_offset *argument,
@@ -74,7 +75,7 @@ void write_nodes(std::span<const biyos::Offset> tops, BIYOS_offset *node)
     }
 }
 
-void add_expressions(biyos::Session &session,
+void add_expressions(Session &session,
                      BIYOS_index n,
                      const BIYOS_offset *counts,
                      const BIYOS_int *code,
@@ -103,14 +104,14 @@ void add_expressions(biyos::Session &session,
 }
 
 template <typename Selection>
-void attach_expressions(biyos::Session &session, Selection selection, const BIYOS_offset *node)
+void attach_expressions(Session &session, Selection selection, const BIYOS_offset *node)
 {
     biyos::Model &model = writable(session);
     const auto owners = selected(model, Family::Function, selection);
     model.attach_expressions(owners, input(node, owners.size(), "node"));
 }
 
-template <typename Selection> void clear_functions(biyos::Session &session, Selection selection)
+template <typename Selection> void clear_functions(Session &session, Selection selection)
 {
     biyos::Model &model = writable(session);
     model.clear_functions(selected(model, Family::Function, selection));
@@ -130,7 +131,7 @@ biyos::Encoding encoded(const biyos::Model &model, Selection selection)
 }
 
 template <typename Selection>
-void n_expressions(const biyos::Session &session,
+void n_expressions(const Session &session,
                    Selection selection,
                    BIYOS_offset *nnz,
                    BIYOS_offset *nval)
@@ -159,7 +160,7 @@ template <typename T> void copy_to(const std::vector<T> &from, T *to)
 }
 
 template <typename Selection>
-void get_expressions(const biyos::Session &session,
+void get_expressions(const Session &session,
                      Selection selection,
                      BIYOS_offset cap,
                      BIYOS_offset valcap,
