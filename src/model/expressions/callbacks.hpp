@@ -15,7 +15,7 @@ class Session;
 
 struct Request
 {
-    const Session *model;
+    const Session *session;
     Index callback;
     Index thread;
     std::span<const Real> x;

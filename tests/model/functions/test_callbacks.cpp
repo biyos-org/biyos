@@ -128,7 +128,7 @@ int calls_of(const Routine &function)
 {
     int calls = 0;
     const Request request{
-        .model = nullptr,
+        .session = nullptr,
         .callback = 0,
         .thread = 0,
         .x = {},
@@ -240,7 +240,7 @@ TEST(CallbackTest, Values)
     const Callback &held = model.callback(0);
     std::vector<Real> out(1);
     const Request request{
-        .model = nullptr,
+        .session = nullptr,
         .callback = 0,
         .thread = 0,
         .x = {},
@@ -358,7 +358,7 @@ TEST(CallbackTest, Copied)
     EXPECT_EQ(held.covered, (std::vector<Index>{1}));
     std::vector<Real> out(1);
     const Request request{
-        .model = nullptr,
+        .session = nullptr,
         .callback = 0,
         .thread = 0,
         .x = {},

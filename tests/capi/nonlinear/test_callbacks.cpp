@@ -498,7 +498,7 @@ TEST(CallbackTest, Weights)
     const std::vector<double> weights{3.0, 4.0};
     std::vector<double> out(1);
     const Request request{
-        .model = model.get(),
+        .session = model.get(),
         .callback = 0,
         .thread = 2,
         .x = point,
@@ -531,7 +531,7 @@ TEST(CallbackTest, Direction)
     const std::vector<double> direction{0.0, 1.0};
     std::vector<double> out(2);
     const Request request{
-        .model = model.get(),
+        .session = model.get(),
         .callback = 0,
         .thread = 0,
         .x = point,
@@ -555,7 +555,7 @@ TEST(CallbackTest, Returned)
     const std::vector<double> point{1.0};
     std::vector<double> out(1);
     const Request request{
-        .model = model.get(),
+        .session = model.get(),
         .callback = 0,
         .thread = 0,
         .x = point,
@@ -584,7 +584,7 @@ TEST(CallbackTest, CopyShared)
     const std::vector<double> point{1.0, 2.0};
     std::vector<double> out(1);
     const Request request{
-        .model = copy.get(),
+        .session = copy.get(),
         .callback = 0,
         .thread = 0,
         .x = point,

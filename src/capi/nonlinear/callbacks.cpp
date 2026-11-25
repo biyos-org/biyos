@@ -35,7 +35,7 @@ struct Caller
     {
         const BIYOS_cbreq view{
             .size = sizeof(BIYOS_cbreq),
-            .mdl = handle_of(request.model),
+            .mdl = handle_of(request.session),
             .cb = request.callback,
             .thread = request.thread,
             .x = start_of(request.x),

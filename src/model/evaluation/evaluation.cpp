@@ -148,7 +148,7 @@ void Evaluation::check(std::span<const Real> x) const
 Request Evaluation::request(Index callback, const Point &point) const noexcept
 {
     return Request{
-        .model = session_,
+        .session = session_,
         .callback = callback,
         .thread = 0,
         .x = point.x,
