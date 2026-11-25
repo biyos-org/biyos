@@ -35,7 +35,7 @@ namespace biyos
 namespace
 {
 
-constexpr std::size_t kCalls = 4;
+constexpr std::size_t kSpans = 4;
 
 Program program_of(Env &env, const Model &model)
 {
@@ -70,12 +70,11 @@ Program program_of(Env &env, const Model &model)
 
 Evaluation::Evaluation(Env &env, const Model &model, const BIYOS_model *handle)
     : env_(env), model_(model), handle_(handle), program_(program_of(env, model)),
-      workspace_(program_.tape), adjoints_(program_.tape),
-      tape_values_(to_size(program_.tape.roots())),
-      tape_gradients_(program_.tape.pattern().variables.size()), out_(widest(model)),
-      root_weights_(program_.roots.size()), user_weights_(widest(model))
+      workspace_(program_.tape), adjoints_(program_.tape), values_(to_size(program_.tape.roots())),
+      gradients_(program_.tape.pattern().variables.size()), out_(widest(model)),
+      weights_(program_.roots.size()), covered_(widest(model))
 {
-    tree_.reserve(kCalls);
+    tree_.reserve(kSpans);
 }
 
 const Pattern &Evaluation::jacobian_pattern() const noexcept
@@ -91,35 +90,35 @@ const Lower &Evaluation::hessian_pattern() const noexcept
 void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span<Real> f)
 {
     const Timer timer(env_, tree_, "model", "values");
-    check_point(x);
-    check_size("f", f.size(), to_size(model_.n_functions()));
-    require_all(model_, Part::Function);
-    term_values(x, f);
-    forward(program_.tape, x, workspace_, tape_values_);
+    check(x);
+    check("f", f.size(), to_size(model_.n_functions()));
+    require(model_, Part::Function);
+    term_function(x, f);
+    forward(program_.tape, x, workspace_, values_);
     for (std::size_t e = 0; e < program_.rooted.size(); ++e)
     {
-        f[to_size(program_.rooted[e])] += tape_values_[e];
+        f[to_size(program_.rooted[e])] += values_[e];
     }
-    add_user_values(Checker(env_, lookup, "model"), x, f);
+    evaluate_function(Checker(env_, lookup, "model"), x, f);
 }
 
 void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::span<Real> g)
 {
     const Timer timer(env_, tree_, "model", "jacobian");
-    check_point(x);
+    check(x);
     const JacobianLayout &layout = program_.layout;
-    check_size("g", g.size(), layout.pattern.variables.size());
-    require_all(model_, Part::Jacobian);
-    term_gradients(x, g);
-    biyos::jacobian(program_.tape, x, workspace_, adjoints_, tape_values_, tape_gradients_);
+    check("g", g.size(), layout.pattern.variables.size());
+    require(model_, Part::Jacobian);
+    term_jacobian(x, g);
+    biyos::jacobian(program_.tape, x, workspace_, adjoints_, values_, gradients_);
     for (std::size_t p = 0; p < layout.slots.tape.size(); ++p)
     {
-        g[to_size(layout.slots.tape[p])] += tape_gradients_[p];
+        g[to_size(layout.slots.tape[p])] += gradients_[p];
     }
-    add_user_gradients(Checker(env_, lookup, "model"), x, g);
+    evaluate_jacobian(Checker(env_, lookup, "model"), x, g);
 }
 
-void Evaluation::check_size(std::string_view argument, std::size_t size, std::size_t wanted)
+void Evaluation::check(std::string_view argument, std::size_t size, std::size_t wanted)
 {
     if (size != wanted)
     {
@@ -129,20 +128,20 @@ void Evaluation::check_size(std::string_view argument, std::size_t size, std::si
     }
 }
 
-void Evaluation::check_point(std::span<const Real> x) const
+void Evaluation::check(std::span<const Real> x) const
 {
-    check_size("x", x.size(), to_size(model_.n_variables()));
+    check("x", x.size(), to_size(model_.n_variables()));
 }
 
-Request Evaluation::request_of(Index callback,
-                               std::span<const Real> x,
-                               std::span<const Real> w,
-                               std::span<const Real> v) const noexcept
+Request Evaluation::request(Index callback,
+                            std::span<const Real> x,
+                            std::span<const Real> w,
+                            std::span<const Real> v) const noexcept
 {
     return Request{.model = handle_, .callback = callback, .thread = 0, .x = x, .w = w, .v = v};
 }
 
-void Evaluation::term_values(std::span<const Real> x, std::span<Real> f) const
+void Evaluation::term_function(std::span<const Real> x, std::span<Real> f) const
 {
     const Index n = model_.n_functions();
     const std::span<const Real> constants = model_.constants(0, n);
@@ -165,7 +164,7 @@ void Evaluation::term_values(std::span<const Real> x, std::span<Real> f) const
     }
 }
 
-void Evaluation::term_gradients(std::span<const Real> x, std::span<Real> g) const
+void Evaluation::term_jacobian(std::span<const Real> x, std::span<Real> g) const
 {
     const JacobianLayout &layout = program_.layout;
     std::ranges::copy(layout.linear, g.begin());
@@ -179,13 +178,15 @@ void Evaluation::term_gradients(std::span<const Real> x, std::span<Real> g) cons
     }
 }
 
-void Evaluation::add_user_values(const Checker &checker, std::span<const Real> x, std::span<Real> f)
+void Evaluation::evaluate_function(const Checker &checker,
+                                   std::span<const Real> x,
+                                   std::span<Real> f)
 {
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);
         const std::span<Real> out = std::span(out_).first(callback.covered.size());
-        run(checker, callback, Part::Function, request_of(c, x), out);
+        evaluate(checker, callback, Part::Function, request(c, x), out);
         for (std::size_t i = 0; i < out.size(); ++i)
         {
             f[to_size(callback.covered[i])] += out[i];
@@ -193,16 +194,16 @@ void Evaluation::add_user_values(const Checker &checker, std::span<const Real> x
     }
 }
 
-void Evaluation::add_user_gradients(const Checker &checker,
-                                    std::span<const Real> x,
-                                    std::span<Real> g)
+void Evaluation::evaluate_jacobian(const Checker &checker,
+                                   std::span<const Real> x,
+                                   std::span<Real> g)
 {
     const JacobianLayout &layout = program_.layout;
     for (Index c = 0; c < model_.n_callbacks(); ++c)
     {
         const Callback &callback = model_.callback(c);
         const std::span<Real> out = std::span(out_).first(callback.jacobian_pairs.size());
-        run(checker, callback, Part::Jacobian, request_of(c, x), out);
+        evaluate(checker, callback, Part::Jacobian, request(c, x), out);
         const std::size_t begin = to_size(layout.starts.callbacks[to_size(c)]);
         for (std::size_t p = 0; p < out.size(); ++p)
         {
