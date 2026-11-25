@@ -3,7 +3,6 @@
 #include "core/events/deliveries.hpp"
 #include "core/events/event.hpp"
 #include "core/events/hooks.hpp"
-#include "core/timing/clock.hpp"
 
 #include <chrono>
 
@@ -13,7 +12,7 @@ namespace biyos
 class Events
 {
   public:
-    explicit Events(const Clock &clock);
+    explicit Events(std::chrono::nanoseconds origin) noexcept : origin_(origin) {}
 
     int add_hook(EventKind kind, EventLevel level, Hook hook);
     void delete_hook(int id);
