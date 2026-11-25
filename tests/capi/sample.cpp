@@ -17,7 +17,7 @@ namespace
 {
 struct Terms
 {
-    std::vector<BIYOS_offset> starts{0};
+    std::vector<BIYOS_offset> counts;
     std::vector<BIYOS_index> rows;
     std::vector<BIYOS_index> columns;
     std::vector<BIYOS_real> values;
@@ -46,6 +46,7 @@ void add_variables(BIYOS_model *model, Engine &engine, int n)
 
 void add_row(Engine &engine, int n_variables, Terms &terms)
 {
+    const std::size_t before = terms.columns.size();
     for (int variable = 0; variable < n_variables; ++variable)
     {
         if (below(engine, 2) == 0)
@@ -54,7 +55,7 @@ void add_row(Engine &engine, int n_variables, Terms &terms)
             terms.values.push_back(small(engine));
         }
     }
-    terms.starts.push_back(static_cast<BIYOS_offset>(terms.columns.size()));
+    terms.counts.push_back(static_cast<BIYOS_offset>(terms.columns.size() - before));
 }
 
 void add_functions(BIYOS_model *model, Engine &engine, int n, int n_variables)
@@ -72,7 +73,7 @@ void add_functions(BIYOS_model *model, Engine &engine, int n, int n_variables)
     const BIYOS_status status = BIYOS_addrlintermrg(model,
                                                     start,
                                                     start + n,
-                                                    terms.starts.data(),
+                                                    terms.counts.data(),
                                                     terms.columns.data(),
                                                     terms.values.data());
     ASSERT_EQ(status, BIYOS_OK);
@@ -80,6 +81,7 @@ void add_functions(BIYOS_model *model, Engine &engine, int n, int n_variables)
 
 void add_pairs(Engine &engine, int n_variables, Terms &terms)
 {
+    const std::size_t before = terms.columns.size();
     for (int row = 0; row < n_variables; ++row)
     {
         for (int column = row; column < n_variables; ++column)
@@ -92,7 +94,7 @@ void add_pairs(Engine &engine, int n_variables, Terms &terms)
             }
         }
     }
-    terms.starts.push_back(static_cast<BIYOS_offset>(terms.columns.size()));
+    terms.counts.push_back(static_cast<BIYOS_offset>(terms.columns.size() - before));
 }
 
 void add_squares(BIYOS_model *model, Engine &engine, int n_functions, int n_variables)
@@ -105,7 +107,7 @@ void add_squares(BIYOS_model *model, Engine &engine, int n_functions, int n_vari
     const BIYOS_status status = BIYOS_addquadtermrg(model,
                                                     0,
                                                     n_functions,
-                                                    terms.starts.data(),
+                                                    terms.counts.data(),
                                                     terms.rows.data(),
                                                     terms.columns.data(),
                                                     terms.values.data());
@@ -159,6 +161,7 @@ void add_objectives(BIYOS_model *model, Engine &engine, int n, int n_functions)
 
 void add_members(Engine &engine, int n_variables, Terms &terms)
 {
+    const std::size_t before = terms.columns.size();
     for (int variable = 0; variable < n_variables; ++variable)
     {
         if (below(engine, 4) == 0)
@@ -168,7 +171,7 @@ void add_members(Engine &engine, int n_variables, Terms &terms)
             terms.values.push_back(position + below(engine, 4) / 8.0);
         }
     }
-    terms.starts.push_back(static_cast<BIYOS_offset>(terms.columns.size()));
+    terms.counts.push_back(static_cast<BIYOS_offset>(terms.columns.size() - before));
 }
 
 void add_special_ordered_sets(BIYOS_model *model, Engine &engine, int n, int n_variables)
@@ -183,7 +186,7 @@ void add_special_ordered_sets(BIYOS_model *model, Engine &engine, int n, int n_v
     const BIYOS_status status = BIYOS_addsos(model,
                                              n,
                                              kinds.data(),
-                                             terms.starts.data(),
+                                             terms.counts.data(),
                                              terms.columns.data(),
                                              terms.values.data(),
                                              nullptr);
@@ -193,9 +196,9 @@ void add_special_ordered_sets(BIYOS_model *model, Engine &engine, int n, int n_v
 struct Cones
 {
     std::vector<BIYOS_int> kinds;
-    std::vector<BIYOS_offset> starts{0};
+    std::vector<BIYOS_offset> counts;
     std::vector<BIYOS_index> functions;
-    std::vector<BIYOS_offset> parameter_starts{0};
+    std::vector<BIYOS_offset> parameter_counts;
     std::vector<BIYOS_real> parameters;
 };
 
@@ -218,8 +221,8 @@ void add_cone(Engine &engine, int n_functions, Cones &cones)
         cones.parameters.push_back((1 + below(engine, 4)) / 4.0);
     }
     cones.kinds.push_back(kind);
-    cones.starts.push_back(static_cast<BIYOS_offset>(cones.functions.size()));
-    cones.parameter_starts.push_back(static_cast<BIYOS_offset>(cones.parameters.size()));
+    cones.counts.push_back(dimension);
+    cones.parameter_counts.push_back(weights);
 }
 
 void add_cones(BIYOS_model *model, Engine &engine, int n, int n_functions)
@@ -232,9 +235,9 @@ void add_cones(BIYOS_model *model, Engine &engine, int n, int n_functions)
     const BIYOS_status status = BIYOS_addcone(model,
                                               n,
                                               cones.kinds.data(),
-                                              cones.starts.data(),
+                                              cones.counts.data(),
                                               cones.functions.data(),
-                                              cones.parameter_starts.data(),
+                                              cones.parameter_counts.data(),
                                               cones.parameters.data(),
                                               nullptr);
     ASSERT_EQ(status, BIYOS_OK);

@@ -12,7 +12,7 @@ from ctypes import (
     py_object,
 )
 from enum import IntEnum
-from itertools import pairwise
+from itertools import accumulate, pairwise
 from math import isnan
 from os import PathLike, fspath
 from typing import Any, NoReturn, SupportsIndex, cast
@@ -209,9 +209,14 @@ def _checked_env(env: Env) -> Env:
     return env
 
 
-def _expanded(starts: Array[c_int64], first: int) -> list[int]:
-    spans = pairwise(starts)
-    counts = [end - start for start, end in spans]
+def _differences(starts: Array[c_int64] | None) -> Array[c_int64] | None:
+    if starts is None:
+        return None
+    counts = [end - start for start, end in pairwise(starts)]
+    return (c_int64 * len(counts))(*counts)
+
+
+def _expanded(counts: Array[c_int64], first: int) -> list[int]:
     return [first + j for j, count in enumerate(counts) for _ in range(count)]
 
 
@@ -229,6 +234,10 @@ def _renumbered(total: int, gone: set[int]) -> list[int]:
             found.append(kept)
             kept += 1
     return found
+
+
+def _sums(counts: Array[c_int64]) -> list[int]:
+    return [0, *accumulate(counts)]
 
 
 def _total(starts: Array[c_int64] | None, count: int) -> int:
@@ -1675,7 +1684,8 @@ class Model:
         args = int64s("arg", arg, size)
         values = doubles("val", val, postfix_values(codes, args))
         nodes = (c_int64 * n)()
-        self._call(lib.BIYOS_addexpr, n, starts, codes, args, values, nodes)
+        counts = _differences(starts)
+        self._call(lib.BIYOS_addexpr, n, counts, codes, args, values, nodes)
         return list(nodes)
 
     def attachexpr(
@@ -1793,13 +1803,13 @@ class Model:
         every = range(self.getnfun()) if idx is None else idx
         nnz, nval = self.getnexpr(every)
         chosen = self._chosen("BIYOS_getexpr", Functions, every)
-        starts = (c_int64 * (len(every) + 1))()
+        counts = (c_int64 * len(every))()
         codes = (c_int * nnz)()
         args = (c_int64 * nnz)()
         values = (c_double * nval)()
-        self._call(*chosen, nnz, nval, starts, codes, args, values)
+        self._call(*chosen, nnz, nval, counts, codes, args, values)
         operators = [Operator(code) for code in codes]
-        return list(starts), operators, list(args), list(values)
+        return _sums(counts), operators, list(args), list(values)
 
     def addcb(
         self,
@@ -3211,7 +3221,7 @@ class Model:
         size = _total(starts, count)
         arrays = (
             ints("knd", knd, count),
-            starts,
+            _differences(starts),
             indices_of(self, Variables, "var", var, size),
             doubles("coef", coef, size),
         )
@@ -3300,13 +3310,13 @@ class Model:
         size = self.getnsosvar(every)
         count = len(every)
         kinds = (c_int * count)()
-        starts = (c_int64 * (count + 1))()
+        counts = (c_int64 * count)()
         members = (c_int * size)()
         weights = (c_double * size)()
         chosen = self._chosen("BIYOS_getsos", SpecialOrderedSets, every)
-        self._call(*chosen, size, kinds, starts, members, weights)
+        self._call(*chosen, size, kinds, counts, members, weights)
         found = [SpecialOrderedSetKind(code) for code in kinds]
-        return found, list(starts), list(members), list(weights)
+        return found, _sums(counts), list(members), list(weights)
 
     def setsosname(
         self,
@@ -3462,9 +3472,9 @@ class Model:
         weights = offsets("prmoff", prmoff, n + 1)
         arrays = (
             ints("knd", knd, n),
-            starts,
+            _differences(starts),
             indices_of(self, Functions, "fun", fun, _total(starts, n)),
-            weights,
+            _differences(weights),
             doubles("prm", prm, _total(weights, n)),
         )
         first = c_int()
@@ -3618,11 +3628,11 @@ class Model:
         size = self._count("BIYOS_getnconefun", Cones, every)
         chosen = self._chosen("BIYOS_getcone", Cones, every)
         kinds = (c_int * len(every))()
-        starts = (c_int64 * (len(every) + 1))()
+        counts = (c_int64 * len(every))()
         members = (c_int * size)()
-        self._call(*chosen, size, kinds, starts, members)
+        self._call(*chosen, size, kinds, counts, members)
         found = [ConeKind(kind) for kind in kinds]
-        return found, list(starts), list(members)
+        return found, _sums(counts), list(members)
 
     def getnconeprm(
         self, idx: Sequence[int | Cone] | Cones | None = None
@@ -3677,10 +3687,10 @@ class Model:
         every = range(self.getncone()) if idx is None else idx
         size = self._count("BIYOS_getnconeprm", Cones, every)
         chosen = self._chosen("BIYOS_getconeprm", Cones, every)
-        starts = (c_int64 * (len(every) + 1))()
+        counts = (c_int64 * len(every))()
         values = (c_double * size)()
-        self._call(*chosen, size, starts, values)
-        return list(starts), list(values)
+        self._call(*chosen, size, counts, values)
+        return _sums(counts), list(values)
 
     def setconename(
         self, idx: Sequence[int | Cone] | Cones, name: Sequence[str]
@@ -4311,11 +4321,11 @@ class Model:
         if span is None:
             self._call(*chosen, size, None, *found, values)
             return [list(column) for column in found], list(values)
-        starts = (c_int64 * (len(span) + 1))()
+        counts = (c_int64 * len(span))()
         others = found[:place] + found[place + 1 :]
-        self._call(*chosen, size, starts, *others, values)
+        self._call(*chosen, size, counts, *others, values)
         columns = [list(column) for column in found]
-        columns[place] = _expanded(starts, span.start)
+        columns[place] = _expanded(counts, span.start)
         return columns, list(values)
 
     def _getidx(

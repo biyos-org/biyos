@@ -657,21 +657,21 @@ BIYOS_status read_special_ordered_sets(const BIYOS_model *model,
                                        BIYOS_index beg,
                                        BIYOS_index end,
                                        int *kinds,
-                                       BIYOS_offset *starts,
+                                       BIYOS_offset *counts,
                                        BIYOS_index *variables,
                                        double *weights)
 {
-    return BIYOS_getsosrg(model, beg, end, 0, kinds, starts, variables, weights);
+    return BIYOS_getsosrg(model, beg, end, 0, kinds, counts, variables, weights);
 }
 
 void keep_special_ordered_sets(const Held &held, Span span, BIYOS_status wanted)
 {
     const auto n = static_cast<std::size_t>(count_of(held.model, BIYOS_getnsos) + 1);
     const std::vector<int> kinds(n, BIYOS_SOSKND_ONE);
-    const std::vector<BIYOS_offset> starts(n, 0);
+    const std::vector<BIYOS_offset> counts(n, 0);
     const std::vector<double> weights(n, 0.5);
-    expect_kept(held, span, wanted, BIYOS_getnsosvarrg, starts);
-    expect_kept(held, span, wanted, read_special_ordered_sets, kinds, starts, kinds, weights);
+    expect_kept(held, span, wanted, BIYOS_getnsosvarrg, counts);
+    expect_kept(held, span, wanted, read_special_ordered_sets, kinds, counts, kinds, weights);
 }
 
 void keep_names(const Held &held, Span span, BIYOS_status wanted, const NameCalls &calls)

@@ -23,19 +23,19 @@ constexpr double kNoValue = -7.5;
 
 struct Terms
 {
-    std::vector<std::int64_t> starts;
+    std::vector<std::int64_t> counts;
     std::vector<int> indices;
     std::vector<double> values;
 };
 
 const Terms kFunctions{
-    .starts = {0, 3, 3, 5},
+    .counts = {3, 0, 2},
     .indices = {2, 0, 1, 1, 0},
     .values = {3.0, 1.0, 0.0, 5.0, 4.0},
 };
 
 const Terms kHeld{
-    .starts = {0, 3, 3, 5},
+    .counts = {3, 0, 2},
     .indices = {0, 1, 2, 0, 1},
     .values = {1.0, 0.0, 3.0, 4.0, 5.0},
 };
@@ -43,13 +43,13 @@ const Terms kHeld{
 const std::vector<int> kOwners{2, 1};
 
 const Terms kAdded{
-    .starts = {0, 2, 4},
+    .counts = {2, 2},
     .indices = {2, 0, 2, 0},
     .values = {0.5, -1.0, 2.0, -0.0},
 };
 
 const Terms kMerged{
-    .starts = {0, 3, 5, 8},
+    .counts = {3, 2, 3},
     .indices = {0, 1, 2, 0, 2, 0, 1, 2},
     .values = {1.0, 0.0, 3.0, -0.0, 2.0, 3.0, 5.0, 0.5},
 };
@@ -65,7 +65,7 @@ BIYOS_status add_functions(const Model &model, int n, const Terms &terms)
     return BIYOS_addrlintermrg(model.get(),
                                start,
                                start + n,
-                               terms.starts.data(),
+                               terms.counts.data(),
                                terms.indices.data(),
                                terms.values.data());
 }
@@ -75,7 +75,7 @@ std::vector<int> owners_of(const std::vector<int> &functions, const Terms &terms
     std::vector<int> owners;
     for (std::size_t j = 0; j < functions.size(); ++j)
     {
-        const auto count = static_cast<std::size_t>(terms.starts[j + 1] - terms.starts[j]);
+        const auto count = static_cast<std::size_t>(terms.counts[j]);
         owners.insert(owners.end(), count, functions[j]);
     }
     return owners;
@@ -112,7 +112,7 @@ Terms read_functions(const Model &model)
     EXPECT_EQ(BIYOS_getnrlintermrg(held, 0, n, &nnz), BIYOS_OK);
     const auto size = static_cast<std::size_t>(nnz);
     Terms read{
-        .starts = std::vector<std::int64_t>(static_cast<std::size_t>(n) + 1),
+        .counts = std::vector<std::int64_t>(static_cast<std::size_t>(n)),
         .indices = std::vector<int>(size),
         .values = std::vector<double>(size),
     };
@@ -120,7 +120,7 @@ Terms read_functions(const Model &model)
                                                     0,
                                                     n,
                                                     nnz,
-                                                    read.starts.data(),
+                                                    read.counts.data(),
                                                     read.indices.data(),
                                                     read.values.data());
     EXPECT_EQ(status, BIYOS_OK);
@@ -130,7 +130,7 @@ Terms read_functions(const Model &model)
 Terms blank(std::size_t n, std::size_t nnz)
 {
     return Terms{
-        .starts = std::vector<std::int64_t>(n + 1, -1),
+        .counts = std::vector<std::int64_t>(n, -1),
         .indices = std::vector<int>(nnz, kNoFunction),
         .values = std::vector<double>(nnz, kNoValue),
     };
@@ -142,7 +142,7 @@ BIYOS_status read_with(const Model &model, int start, int size, Terms &read, std
                                start,
                                start + size,
                                capacity,
-                               read.starts.data(),
+                               read.counts.data(),
                                read.indices.data(),
                                read.values.data());
 }
@@ -169,7 +169,7 @@ std::vector<std::uint64_t> bits_of(const std::vector<double> &values)
 
 void expect_terms(const Terms &found, const Terms &wanted)
 {
-    EXPECT_EQ(found.starts, wanted.starts);
+    EXPECT_EQ(found.counts, wanted.counts);
     EXPECT_EQ(found.indices, wanted.indices);
     EXPECT_EQ(bits_of(found.values), bits_of(wanted.values));
 }
@@ -207,6 +207,7 @@ int below(Engine &engine, int n)
 
 void add_random(Engine &engine, int n_variables, Terms &terms)
 {
+    const std::size_t before = terms.indices.size();
     for (int variable = n_variables - 1; variable >= 0; --variable)
     {
         if (below(engine, 2) == 0)
@@ -215,12 +216,12 @@ void add_random(Engine &engine, int n_variables, Terms &terms)
             terms.values.push_back(static_cast<double>(below(engine, 9) - 4));
         }
     }
-    terms.starts.push_back(static_cast<std::int64_t>(terms.indices.size()));
+    terms.counts.push_back(static_cast<std::int64_t>(terms.indices.size() - before));
 }
 
 Terms random_terms(Engine &engine, std::size_t n_functions, int n_variables)
 {
-    Terms terms{.starts = {0}, .indices = {}, .values = {}};
+    Terms terms;
     for (std::size_t k = 0; k < n_functions; ++k)
     {
         add_random(engine, n_variables, terms);
@@ -256,11 +257,12 @@ void build_random(Engine &engine, const Model &model, int n_variables, int n_fun
 
 void add_holders(const Terms &rows, int variable, Terms &columns)
 {
-    for (std::size_t function = 0; function + 1 < rows.starts.size(); ++function)
+    const std::size_t before = columns.indices.size();
+    std::size_t k = 0;
+    for (std::size_t function = 0; function < rows.counts.size(); ++function)
     {
-        const auto start = static_cast<std::size_t>(rows.starts[function]);
-        const auto end = static_cast<std::size_t>(rows.starts[function + 1]);
-        for (std::size_t k = start; k < end; ++k)
+        const std::size_t end = k + static_cast<std::size_t>(rows.counts[function]);
+        for (; k < end; ++k)
         {
             if (rows.indices[k] == variable)
             {
@@ -269,12 +271,12 @@ void add_holders(const Terms &rows, int variable, Terms &columns)
             }
         }
     }
-    columns.starts.push_back(static_cast<std::int64_t>(columns.indices.size()));
+    columns.counts.push_back(static_cast<std::int64_t>(columns.indices.size() - before));
 }
 
 Terms transposed(const Terms &rows, int start, int size)
 {
-    Terms columns{.starts = {0}, .indices = {}, .values = {}};
+    Terms columns;
     for (int variable = start; variable < start + size; ++variable)
     {
         add_holders(rows, variable, columns);
@@ -301,10 +303,10 @@ TEST(CApiTest, LinearSums)
     const Model model(env);
     add_sample(model);
     ASSERT_EQ(add_terms(model, kOwners, kAdded), BIYOS_OK);
-    const Terms more{.starts = {0, 2}, .indices = {1, 2}, .values = {-5.0, 0.25}};
+    const Terms more{.counts = {2}, .indices = {1, 2}, .values = {-5.0, 0.25}};
     ASSERT_EQ(add_terms(model, {2}, more), BIYOS_OK);
     const Terms wanted{
-        .starts = {0, 3, 5, 8},
+        .counts = {3, 2, 3},
         .indices = {0, 1, 2, 0, 2, 0, 1, 2},
         .values = {1.0, 0.0, 3.0, -0.0, 2.0, 3.0, 0.0, 0.75},
     };
@@ -343,20 +345,20 @@ TEST(CApiTest, HugeLinear)
     const Model model(env);
     add_sample(model);
     const Terms most{
-        .starts = {0, (std::numeric_limits<std::int64_t>::max)()},
+        .counts = {(std::numeric_limits<std::int64_t>::max)()},
         .indices = {0, 1},
         .values = {1.0, 2.0},
     };
     Terms large = most;
-    large.starts = {0, std::int64_t{1} << 59};
+    large.counts = {std::int64_t{1} << 59};
     const std::string message = "out of memory: model: no term offset left";
     BIYOS_model *held = model.get();
     const int *variables = most.indices.data();
     const double *values = most.values.data();
-    EXPECT_EQ(BIYOS_addrlintermrg(held, 1, 2, most.starts.data(), variables, values),
+    EXPECT_EQ(BIYOS_addrlintermrg(held, 1, 2, most.counts.data(), variables, values),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
-    EXPECT_EQ(BIYOS_addclintermrg(held, 1, 2, large.starts.data(), variables, values),
+    EXPECT_EQ(BIYOS_addclintermrg(held, 1, 2, large.counts.data(), variables, values),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.message(), message);
     expect_terms(read_functions(model), kHeld);
@@ -368,14 +370,14 @@ TEST(CApiTest, ColumnTerms)
     const Model model(env);
     add_sample(model);
     const Terms held{
-        .starts = {0, 2, 4, 5},
+        .counts = {2, 2, 1},
         .indices = {0, 2, 0, 2, 0},
         .values = {1.0, 4.0, 0.0, 5.0, 3.0},
     };
     expect_terms(read_variables(model, 0, 3), held);
     ASSERT_EQ(add_terms(model, kOwners, kAdded), BIYOS_OK);
     const Terms merged{
-        .starts = {0, 3, 5, 8},
+        .counts = {3, 2, 3},
         .indices = {0, 1, 2, 0, 2, 0, 1, 2},
         .values = {1.0, -0.0, 3.0, 0.0, 5.0, 3.0, 2.0, 0.5},
     };
@@ -388,7 +390,7 @@ TEST(CApiTest, ColumnSizes)
     const Env env;
     const Model model(env);
     add_sample(model);
-    const std::vector<std::int64_t> starts{0, 2, 4, 5};
+    const std::vector<std::int64_t> counts{2, 2, 1};
     Terms small = blank(3, 4);
     EXPECT_EQ(read_with(model, 0, 3, small, 4), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'cap': holds 4 of the 5 terms");
@@ -396,7 +398,7 @@ TEST(CApiTest, ColumnSizes)
     Terms large = blank(3, 6);
     EXPECT_EQ(read_with(model, 0, 3, large, 6), BIYOS_OK);
     const Terms whole{
-        .starts = starts,
+        .counts = counts,
         .indices = {0, 2, 0, 2, 0, kNoFunction},
         .values = {1.0, 4.0, 0.0, 5.0, 3.0, kNoValue},
     };
@@ -408,11 +410,10 @@ TEST(CApiTest, ColumnRange)
     const Env env;
     const Model model(env);
     add_sample(model);
-    const Terms tail{.starts = {0, 2, 3}, .indices = {0, 2, 0}, .values = {0.0, 5.0, 3.0}};
+    const Terms tail{.counts = {2, 1}, .indices = {0, 2, 0}, .values = {0.0, 5.0, 3.0}};
     expect_terms(read_variables(model, 1, 2), tail);
     Terms none = blank(0, 0);
     EXPECT_EQ(read_with(model, 3, 0, none, 0), BIYOS_OK);
-    EXPECT_EQ(none.starts, std::vector<std::int64_t>{0});
 }
 
 TEST(CApiTest, ColumnNulls)
@@ -422,11 +423,11 @@ TEST(CApiTest, ColumnNulls)
     add_sample(model);
     Terms read = blank(3, 5);
     BIYOS_model *held = model.get();
-    std::int64_t *starts = read.starts.data();
+    std::int64_t *counts = read.counts.data();
     int *functions = read.indices.data();
     double *values = read.values.data();
     EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, nullptr, functions, nullptr), BIYOS_OK);
-    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, starts, nullptr, values), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, 5, counts, nullptr, values), BIYOS_OK);
     expect_terms(read, read_variables(model, 0, 3));
     BIYOS_offset nnz = -1;
     EXPECT_EQ(BIYOS_getnclintermrg(held, 0, 3, nullptr), BIYOS_ERR_BADARG);
@@ -460,12 +461,12 @@ TEST(CApiTest, ColumnRefused)
     }
     Terms read = blank(3, 5);
     BIYOS_model *held = model.get();
-    std::int64_t *starts = read.starts.data();
+    std::int64_t *counts = read.counts.data();
     int *functions = read.indices.data();
     double *values = read.values.data();
-    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 5, -1, starts, functions, values), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 5, -1, counts, functions, values), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: variable 3: unknown");
-    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, -1, starts, functions, values), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_getclintermrg(held, 0, 3, -1, counts, functions, values), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), size);
     expect_terms(read, blank(3, 5));
 }

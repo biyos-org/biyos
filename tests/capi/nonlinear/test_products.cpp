@@ -44,7 +44,7 @@ struct Added
 
 struct Compressed
 {
-    std::vector<BIYOS_offset> starts{0};
+    std::vector<BIYOS_offset> counts;
     Indices rows;
     Indices columns;
     std::vector<double> values;
@@ -119,6 +119,7 @@ Compressed compressed(const Added &added, int count)
     Compressed found;
     for (int function = 0; function < count; ++function)
     {
+        const std::size_t before = found.rows.size();
         for (std::size_t k = 0; k < added.functions.size(); ++k)
         {
             if (added.functions[k] == function)
@@ -128,7 +129,7 @@ Compressed compressed(const Added &added, int count)
                 found.values.push_back(added.values[k]);
             }
         }
-        found.starts.push_back(static_cast<BIYOS_offset>(found.rows.size()));
+        found.counts.push_back(static_cast<BIYOS_offset>(found.rows.size() - before));
     }
     return found;
 }
@@ -150,7 +151,7 @@ BIYOS_status add_ranged(const Model &model, const Added &added)
     return BIYOS_addquadtermrg(model.get(),
                                0,
                                n,
-                               found.starts.data(),
+                               found.counts.data(),
                                found.rows.data(),
                                found.columns.data(),
                                found.values.data());
@@ -320,9 +321,8 @@ TEST(ProductTest, Arguments)
     BIYOS_model *held = model.get();
     const std::array<BIYOS_index, 1> zero{0};
     const std::array<double, 1> one{1.0};
-    const std::array<BIYOS_offset, 3> backwards{0, 1, 0};
-    const std::array<BIYOS_offset, 2> late{1, 1};
-    const std::array<BIYOS_offset, 2> negative{0, -1};
+    const std::array<BIYOS_offset, 3> negative{1, 0, -1};
+    const std::array<BIYOS_offset, 2> overflowing{(std::numeric_limits<BIYOS_offset>::max)(), 1};
     EXPECT_EQ(BIYOS_addquadtermsp(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': -1 is negative");
     EXPECT_EQ(BIYOS_addquadtermsp(held, 1, nullptr, zero.data(), zero.data(), one.data()),
@@ -345,16 +345,13 @@ TEST(ProductTest, Arguments)
     EXPECT_EQ(env.message(),
               "invalid argument: function " + std::to_string(functions) + ": unknown");
     EXPECT_EQ(
-        BIYOS_addquadtermrg(held, 0, 2, backwards.data(), zero.data(), zero.data(), one.data()),
+        BIYOS_addquadtermrg(held, 0, 3, negative.data(), zero.data(), zero.data(), one.data()),
         BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 1 to 0 at entry 2");
-    EXPECT_EQ(BIYOS_addquadtermrg(held, 0, 1, late.data(), zero.data(), zero.data(), one.data()),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': begins at 1, not 0");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': -1 is negative at entry 2");
     EXPECT_EQ(
-        BIYOS_addquadtermrg(held, 0, 1, negative.data(), zero.data(), zero.data(), one.data()),
+        BIYOS_addquadtermrg(held, 0, 2, overflowing.data(), zero.data(), zero.data(), one.data()),
         BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'off': decreases from 0 to -1 at entry 1");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': sum overflows at entry 1");
     EXPECT_EQ(BIYOS_addquadtermsp(held, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addquadtermrg(held, 0, functions, nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);

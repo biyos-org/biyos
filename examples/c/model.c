@@ -14,7 +14,7 @@ static BIYOS_status variables(BIYOS_model *mdl)
 static BIYOS_status functions(BIYOS_model *mdl)
 {
     const BIYOS_real cst[] = {0.0, 0.0, 1.0};
-    const BIYOS_offset off[] = {0, 3, 5, 6};
+    const BIYOS_offset cnt[] = {3, 2, 1};
     const BIYOS_index var[] = {0, 1, 2, 0, 1, 0};
     const BIYOS_real coef[] = {1.0, 1.0, 1.0, 1.0, -2.0, -2.0};
     BIYOS_index pos = 0;
@@ -28,7 +28,7 @@ static BIYOS_status functions(BIYOS_model *mdl)
     {
         return status;
     }
-    return BIYOS_addrlintermrg(mdl, pos, pos + 3, off, var, coef);
+    return BIYOS_addrlintermrg(mdl, pos, pos + 3, cnt, var, coef);
 }
 
 static BIYOS_status squares(BIYOS_model *mdl)
@@ -73,7 +73,7 @@ static int build(BIYOS_model *mdl)
 
 static int read_squares(BIYOS_model *mdl)
 {
-    BIYOS_offset off[2];
+    BIYOS_offset cnt[1];
     BIYOS_offset nnz = 0;
     BIYOS_index var1[2];
     BIYOS_index var2[2];
@@ -83,7 +83,7 @@ static int read_squares(BIYOS_model *mdl)
     {
         return 0;
     }
-    status = BIYOS_getquadtermrg(mdl, 2, 3, nnz, off, var1, var2, coef);
+    status = BIYOS_getquadtermrg(mdl, 2, 3, nnz, cnt, var1, var2, coef);
     if (status != BIYOS_OK)
     {
         return 0;

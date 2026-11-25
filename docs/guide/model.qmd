@@ -20,7 +20,7 @@ $$
 \end{aligned}
 $$
 
-Items of each family are numbered from 0 in the order they are added, each family on its own: variable 0, function 0, constraint 0 and objective 0 are four different things. Every count and index is a `BIYOS_index`, a 32-bit integer, and an offset into the terms or a total of terms is a `BIYOS_offset`, a 64-bit integer, since a large model can hold more than $2^{31}$ terms. Kinds, senses and priorities are `BIYOS_int`, and bounds, constants and coefficients `BIYOS_real`, which is `double`.
+Items of each family are numbered from 0 in the order they are added, each family on its own: variable 0, function 0, constraint 0 and objective 0 are four different things. Every count and index is a `BIYOS_index`, a 32-bit integer, and an offset into the terms, a count of terms or a total of terms is a `BIYOS_offset`, a 64-bit integer, since a large model can hold more than $2^{31}$ terms. Kinds, senses and priorities are `BIYOS_int`, and bounds, constants and coefficients `BIYOS_real`, which is `double`.
 
 ## An environment and a model {#sec-model-handles}
 
@@ -66,12 +66,12 @@ $$
 f_k(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x) ,
 $$
 
-a constant $c$, linear terms $a_j x_j$, quadratic terms $q_{ij} x_i x_j$ and a nonlinear part $\varphi(x)$. The nonlinear part is an expression ([Expressions](#sec-model-expressions)) plus the part of every callback that covers the function ([Callbacks](#sec-capi-callbacks)), and is zero for a function with neither, as in this chapter. `BIYOS_addfun` adds functions with the constant 0 and no terms, and later calls give them their constants and terms. `BIYOS_setcstrg` sets the constants of a range of functions, and `BIYOS_addrlintermrg` adds their linear terms. The terms of many functions travel in compressed form, as three arrays: function `beg + k` owns the terms from `off[k]` to `off[k + 1] - 1` of `var` and `coef`, which hold the index of a variable and its coefficient. So `off` holds one more entry than there are functions, begins at 0 and never decreases, and its last entry is the number of terms.
+a constant $c$, linear terms $a_j x_j$, quadratic terms $q_{ij} x_i x_j$ and a nonlinear part $\varphi(x)$. The nonlinear part is an expression ([Expressions](#sec-model-expressions)) plus the part of every callback that covers the function ([Callbacks](#sec-capi-callbacks)), and is zero for a function with neither, as in this chapter. `BIYOS_addfun` adds functions with the constant 0 and no terms, and later calls give them their constants and terms. `BIYOS_setcstrg` sets the constants of a range of functions, and `BIYOS_addrlintermrg` adds their linear terms. The terms of many functions travel in compressed form, as three arrays: `cnt` holds the number of terms of each function, and `var` and `coef` the index of a variable and its coefficient, the terms of function `beg + k` following those of function `beg + k - 1`, `cnt[k]` of them. So `cnt` holds one entry per function, none negative, and their sum is the number of terms.
 
 ```{.c file="examples/c/model.c" item="functions"}
 ```
 
-Here `off` is `{0, 3, 5, 6}`: function 0 owns terms 0 to 2, $x_0 + x_1 + x_2$; function 1 owns terms 3 and 4, $x_0 - 2x_1$; function 2 owns term 5, $-2x_0$, and its constant 1.
+Here `cnt` is `{3, 2, 1}`: function 0 owns terms 0 to 2, $x_0 + x_1 + x_2$; function 1 owns terms 3 and 4, $x_0 - 2x_1$; function 2 owns term 5, $-2x_0$, and its constant 1.
 
 The terms of a function may come in any order, and biyos keeps them sorted by variable. Each must name a variable of the model, appear once in its function and have a finite coefficient. A term whose coefficient is 0 is kept, so a model reads back as it was given.
 

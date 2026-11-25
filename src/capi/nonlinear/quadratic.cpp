@@ -5,7 +5,6 @@
 #include "capi/linear/grouped.hpp"
 #include "capi/model/selection.hpp"
 #include "core/index.hpp"
-#include "model/compressed.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
@@ -19,10 +18,10 @@ using biyos::QuadraticTerm;
 using biyos::capi::Grouped;
 using biyos::capi::guarded;
 using biyos::capi::length;
-using biyos::capi::offsets;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
+using biyos::capi::starts_of;
 using biyos::capi::writable;
 
 namespace
@@ -30,13 +29,12 @@ namespace
 
 void add_sliced(biyos::Model &core,
                 std::span<const biyos::Index> owners,
-                const std::int64_t *starts,
+                const std::int64_t *counts,
                 const int *rows,
                 const int *columns,
                 const double *values)
 {
-    const std::vector<biyos::Offset> begins = offsets(owners.size(), starts);
-    biyos::check_starts(begins);
+    const std::vector<biyos::Offset> begins = starts_of(owners.size(), counts);
     core.check_quadratic_room(begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
     core.add_quadratic_terms(owners, begins, biyos::capi::packed(total, rows, columns, values));
@@ -65,13 +63,13 @@ void add_listed(BIYOS_model &model,
 
 void add_ranged(BIYOS_model &model,
                 Range range,
-                const std::int64_t *starts,
+                const std::int64_t *counts,
                 const int *rows,
                 const int *columns,
                 const double *values)
 {
     biyos::Model &core = writable(model);
-    add_sliced(core, selected(core, Family::Function, range), starts, rows, columns, values);
+    add_sliced(core, selected(core, Family::Function, range), counts, rows, columns, values);
 }
 
 }
@@ -89,10 +87,10 @@ BIYOS_status BIYOS_addquadtermsp(BIYOS_model *mdl,
 BIYOS_status BIYOS_addquadtermrg(BIYOS_model *mdl,
                                  BIYOS_index beg,
                                  BIYOS_index end,
-                                 const BIYOS_offset *off,
+                                 const BIYOS_offset *cnt,
                                  const BIYOS_index *var1,
                                  const BIYOS_index *var2,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_ranged>(mdl, Range{beg, end}, off, var1, var2, coef);
+    return guarded<add_ranged>(mdl, Range{beg, end}, cnt, var1, var2, coef);
 }

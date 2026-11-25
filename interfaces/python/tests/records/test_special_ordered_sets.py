@@ -45,9 +45,9 @@ def model(env):
         yield model
 
 
-def read_lengths(handle, beg, end, cap, kinds, starts, members, weights):
+def read_lengths(handle, beg, end, cap, kinds, counts, members, weights):
     n = end - beg
-    return [(kinds, n), (starts, n + 1), (members, cap), (weights, cap)]
+    return [(kinds, n), (counts, n), (members, cap), (weights, cap)]
 
 
 def recorded(seen, function, *arguments):

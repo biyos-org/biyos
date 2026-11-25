@@ -13,7 +13,6 @@
 namespace biyos
 {
 
-void check_starts(std::span<const Offset> starts, std::string_view argument = "off");
 void check_shape(std::size_t functions,
                  std::span<const Offset> starts,
                  std::size_t terms,

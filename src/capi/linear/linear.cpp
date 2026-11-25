@@ -5,7 +5,6 @@
 #include "capi/linear/grouped.hpp"
 #include "capi/model/selection.hpp"
 #include "core/index.hpp"
-#include "model/compressed.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
@@ -18,10 +17,10 @@ using biyos::Family;
 using biyos::LinearTerm;
 using biyos::capi::guarded;
 using biyos::capi::length;
-using biyos::capi::offsets;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
+using biyos::capi::starts_of;
 using biyos::capi::writable;
 
 namespace
@@ -29,12 +28,11 @@ namespace
 
 void add_sliced(biyos::Model &core,
                 std::span<const biyos::Index> owners,
-                const std::int64_t *starts,
+                const std::int64_t *counts,
                 const int *variables,
                 const double *values)
 {
-    const std::vector<biyos::Offset> begins = offsets(owners.size(), starts);
-    biyos::check_starts(begins);
+    const std::vector<biyos::Offset> begins = starts_of(owners.size(), counts);
     core.check_room(0, begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
     core.add_linear_terms(owners, begins, biyos::capi::packed(total, variables, values));
@@ -85,24 +83,23 @@ void add_listed(BIYOS_model &model,
 
 void add_rows(BIYOS_model &model,
               Range range,
-              const std::int64_t *starts,
+              const std::int64_t *counts,
               const int *variables,
               const double *values)
 {
     biyos::Model &core = writable(model);
-    add_sliced(core, selected(core, Family::Function, range), starts, variables, values);
+    add_sliced(core, selected(core, Family::Function, range), counts, variables, values);
 }
 
 void add_columns(BIYOS_model &model,
                  Range range,
-                 const std::int64_t *starts,
+                 const std::int64_t *counts,
                  const int *functions,
                  const double *values)
 {
     biyos::Model &core = writable(model);
     const std::vector<biyos::Index> variables = selected(core, Family::Variable, range);
-    const std::vector<biyos::Offset> begins = offsets(variables.size(), starts);
-    biyos::check_starts(begins);
+    const std::vector<biyos::Offset> begins = starts_of(variables.size(), counts);
     core.check_room(0, begins.back());
     const auto total = static_cast<std::size_t>(begins.back());
     if (total > 0)
@@ -128,19 +125,19 @@ BIYOS_status BIYOS_addlintermsp(BIYOS_model *mdl,
 BIYOS_status BIYOS_addrlintermrg(BIYOS_model *mdl,
                                  BIYOS_index beg,
                                  BIYOS_index end,
-                                 const BIYOS_offset *off,
+                                 const BIYOS_offset *cnt,
                                  const BIYOS_index *var,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_rows>(mdl, Range{beg, end}, off, var, coef);
+    return guarded<add_rows>(mdl, Range{beg, end}, cnt, var, coef);
 }
 
 BIYOS_status BIYOS_addclintermrg(BIYOS_model *mdl,
                                  BIYOS_index beg,
                                  BIYOS_index end,
-                                 const BIYOS_offset *off,
+                                 const BIYOS_offset *cnt,
                                  const BIYOS_index *fun,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_columns>(mdl, Range{beg, end}, off, fun, coef);
+    return guarded<add_columns>(mdl, Range{beg, end}, cnt, fun, coef);
 }

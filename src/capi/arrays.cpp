@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <string>
 #include <string_view>
@@ -15,6 +16,18 @@
 
 namespace biyos::capi
 {
+
+namespace
+{
+
+[[noreturn]] void refuse_count(std::string_view name, const std::string &reason, std::size_t entry)
+{
+    const std::string argument = "argument '" + std::string(name) + "'";
+    const std::string message = reason + " at entry " + std::to_string(entry);
+    throw biyos::Error(biyos::ErrorKind::InvalidArgument, argument, message);
+}
+
+}
 
 std::size_t length(std::int64_t n, std::string_view name)
 {
@@ -67,13 +80,38 @@ std::span<const Index> listed(int n, const int *indices, std::string_view name)
     return {indices, size};
 }
 
-std::vector<Offset> offsets(std::size_t n, const std::int64_t *starts)
+std::vector<Offset> starts_of(std::size_t n, const std::int64_t *counts, std::string_view name)
 {
-    if (starts == nullptr)
+    std::vector<Offset> starts(n + 1, 0);
+    if (counts == nullptr)
     {
-        return std::vector<Offset>(n + 1, 0);
+        return starts;
     }
-    return std::vector<Offset>(starts, starts + n + 1);
+    for (std::size_t k = 0; k < n; ++k)
+    {
+        if (counts[k] < 0)
+        {
+            refuse_count(name, std::to_string(counts[k]) + " is negative", k);
+        }
+        if (counts[k] > (std::numeric_limits<Offset>::max)() - starts[k])
+        {
+            refuse_count(name, "sum overflows", k);
+        }
+        starts[k + 1] = starts[k] + counts[k];
+    }
+    return starts;
+}
+
+void write_counts(std::span<const Offset> starts, std::int64_t *counts)
+{
+    if (counts == nullptr)
+    {
+        return;
+    }
+    for (std::size_t j = 0; j + 1 < starts.size(); ++j)
+    {
+        counts[j] = starts[j + 1] - starts[j];
+    }
 }
 
 std::vector<LinearTerm> packed(std::size_t size, const int *variables, const double *values)

@@ -4,7 +4,6 @@
 #include "capi/entry.hpp"
 #include "capi/model/selection.hpp"
 #include "core/index.hpp"
-#include "model/compressed.hpp"
 #include "model/expressions/nodes.hpp"
 #include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
@@ -21,10 +20,10 @@ using biyos::capi::check_capacity;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::offsets;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
+using biyos::capi::starts_of;
 using biyos::capi::writable;
 
 namespace
@@ -66,17 +65,6 @@ void add_node(BIYOS_model &model,
     write_node(node, core.add_node(op, children, input(values, needed, "val")));
 }
 
-std::vector<biyos::Offset> starts_of(std::size_t n, const std::int64_t *starts)
-{
-    if (n > 0)
-    {
-        require(starts, "off");
-    }
-    std::vector<biyos::Offset> begins = offsets(n, starts);
-    biyos::check_starts(begins);
-    return begins;
-}
-
 void write_nodes(std::span<const biyos::Offset> tops, std::int64_t *node)
 {
     if (node != nullptr)
@@ -87,14 +75,19 @@ void write_nodes(std::span<const biyos::Offset> tops, std::int64_t *node)
 
 void add_expressions(BIYOS_model &model,
                      int n,
-                     const std::int64_t *starts,
+                     const std::int64_t *counts,
                      const int *code,
                      const std::int64_t *argument,
                      const double *values,
                      std::int64_t *node)
 {
     biyos::Model &core = writable(model);
-    const std::vector<biyos::Offset> begins = starts_of(length(n), starts);
+    const std::size_t size = length(n);
+    if (size > 0)
+    {
+        require(counts, "cnt");
+    }
+    const std::vector<biyos::Offset> begins = starts_of(size, counts);
     const auto total = static_cast<std::size_t>(begins.back());
     const std::span<const int> codes = input(code, total, "code");
     const std::span<const biyos::Offset> arguments = input(argument, total, "arg");
@@ -149,7 +142,7 @@ void n_expressions(const BIYOS_model &model,
 
 struct Output
 {
-    std::int64_t *starts;
+    std::int64_t *counts;
     int *codes;
     std::int64_t *arguments;
     double *values;
@@ -173,7 +166,7 @@ void get_expressions(const BIYOS_model &model,
     const biyos::Encoding encoding = encoded(model.core, selection);
     check_capacity(cap, encoding.codes.size(), "cap", "entries");
     check_capacity(valcap, encoding.values.size(), "valcap", "values");
-    copy_to(encoding.starts, out.starts);
+    biyos::capi::write_counts(encoding.starts, out.counts);
     copy_to(encoding.codes, out.codes);
     copy_to(encoding.arguments, out.arguments);
     copy_to(encoding.values, out.values);
@@ -198,13 +191,13 @@ BIYOS_status BIYOS_addnode(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_addexpr(BIYOS_model *mdl,
                            BIYOS_index n,
-                           const BIYOS_offset *off,
+                           const BIYOS_offset *cnt,
                            const BIYOS_int *code,
                            const BIYOS_offset *arg,
                            const BIYOS_real *val,
                            BIYOS_offset *node)
 {
-    return guarded<add_expressions>(mdl, n, off, code, arg, val, node);
+    return guarded<add_expressions>(mdl, n, cnt, code, arg, val, node);
 }
 
 BIYOS_status BIYOS_attachexprsp(BIYOS_model *mdl,
@@ -256,13 +249,13 @@ BIYOS_status BIYOS_getexprsp(const BIYOS_model *mdl,
                              const BIYOS_index *idx,
                              BIYOS_offset cap,
                              BIYOS_offset valcap,
-                             BIYOS_offset *off,
+                             BIYOS_offset *cnt,
                              BIYOS_int *code,
                              BIYOS_offset *arg,
                              BIYOS_real *val)
 {
     const Output out{
-        .starts = off,
+        .counts = cnt,
         .codes = code,
         .arguments = arg,
         .values = val,
@@ -275,13 +268,13 @@ BIYOS_status BIYOS_getexprrg(const BIYOS_model *mdl,
                              BIYOS_index end,
                              BIYOS_offset cap,
                              BIYOS_offset valcap,
-                             BIYOS_offset *off,
+                             BIYOS_offset *cnt,
                              BIYOS_int *code,
                              BIYOS_offset *arg,
                              BIYOS_real *val)
 {
     const Output out{
-        .starts = off,
+        .counts = cnt,
         .codes = code,
         .arguments = arg,
         .values = val,

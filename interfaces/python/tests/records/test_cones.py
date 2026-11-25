@@ -82,9 +82,9 @@ def add_sample(model):
     return model.addcone(KINDS, OFF, MEMBERS, PRMOFF, PRM)
 
 
-def read_lengths(handle, beg, end, cap, kinds, starts, members):
+def read_lengths(handle, beg, end, cap, kinds, counts, members):
     n = end - beg
-    return [(kinds, n), (starts, n + 1), (members, cap)]
+    return [(kinds, n), (counts, n), (members, cap)]
 
 
 def recorded(seen, name, function, *arguments):
@@ -279,7 +279,7 @@ def test_offsets(model):
     with pytest.raises(ValueError, match="prmoff decreases from 2 to 1"):
         model.addcone(KINDS, OFF, MEMBERS, [0, 2, 1], PRM)
     message = refusal(model.addcone, KINDS, None, [])
-    assert message == "invalid argument: argument 'off': is null"
+    assert message == "invalid argument: argument 'cnt': is null"
     assert model.getncone() == 0
 
 
