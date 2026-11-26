@@ -14,6 +14,7 @@ namespace
 constexpr int kSame = 0;
 constexpr int kDiffers = 1;
 constexpr int kError = 2;
+constexpr int kUnwritable = 3;
 
 using Clock = std::chrono::steady_clock;
 
@@ -45,19 +46,23 @@ class Stopwatch
     Clock::time_point start_ = Clock::now();
 };
 
-void check(BIYOS_env *env, BIYOS_status status)
+std::string message_of(BIYOS_env *env, BIYOS_status status)
 {
-    if (status == BIYOS_OK)
-    {
-        return;
-    }
     BIYOS_error error{};
     error.size = sizeof error;
     if (BIYOS_lasterror(env, &error) != BIYOS_OK || error.msg == nullptr || *error.msg == '\0')
     {
-        throw std::runtime_error("status " + std::to_string(status));
+        return "status " + std::to_string(status);
     }
-    throw std::runtime_error(error.msg);
+    return error.msg;
+}
+
+void check(BIYOS_env *env, BIYOS_status status)
+{
+    if (status != BIYOS_OK)
+    {
+        throw std::runtime_error(message_of(env, status));
+    }
 }
 
 EnvPtr new_env()
@@ -110,7 +115,13 @@ int round_trip(const char *source, const char *scratch, BIYOS_int given)
     const ModelPtr model = read_model(env.get(), source, given);
     watch.lap("read");
     const BIYOS_int format = BIYOS_FILEFMT_MPS;
-    check(env.get(), BIYOS_writemdl(model.get(), scratch, format));
+    const BIYOS_status written = BIYOS_writemdl(model.get(), scratch, format);
+    if (written == BIYOS_ERR_UNSUPPORTED)
+    {
+        std::cout << message_of(env.get(), written) << '\n';
+        return kUnwritable;
+    }
+    check(env.get(), written);
     watch.lap("write");
     const ModelPtr back = read_model(env.get(), scratch, format);
     watch.lap("reread");

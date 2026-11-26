@@ -28,6 +28,9 @@ if text == "broken":
     sys.stderr.write("bad file 'source': line 3\\n")
     sys.exit(2)
 print("read 0.5")
+if text == "unwritable":
+    print("name 'DEDO3 1R' cannot be written")
+    sys.exit(3)
 print("write 0.25")
 print("reread 0.125")
 if text == "differs":
@@ -127,6 +130,13 @@ class RunTest(unittest.TestCase):
         entry = self.outcome("differs")
         self.assertEqual(entry["outcome"], "differs")
         self.assertEqual(entry["detail"], "function 0: term count 3 against 5")
+
+    def test_unwritable(self):
+        entry = self.outcome("unwritable")
+        self.assertEqual(entry["outcome"], "unwritable")
+        self.assertEqual(entry["detail"], "name 'DEDO3 1R' cannot be written")
+        self.assertEqual(entry["times"]["read"], 0.5)
+        self.assertNotIn("write", entry["times"])
 
     def test_error(self):
         entry = self.outcome("broken")

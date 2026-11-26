@@ -19,7 +19,7 @@ CHUNK = 1 << 20
 FETCH_SECONDS = 300
 LIMIT_SECONDS = 600.0
 FAILURES = (OSError, ValueError, EOFError, zlib.error, HTTPException)
-OUTCOMES = {0: "same", 1: "differs", 2: "error"}
+OUTCOMES = {0: "same", 1: "differs", 2: "error", 3: "unwritable"}
 PHASES = ("read", "write", "reread")
 
 
@@ -111,8 +111,9 @@ def failure_of(done):
 
 def judged(done):
     outcome = OUTCOMES.get(done.returncode, "crash")
-    times = timings(done.stdout) if outcome in ("same", "differs") else {}
-    if outcome == "differs":
+    timed = outcome in ("same", "differs", "unwritable")
+    times = timings(done.stdout) if timed else {}
+    if outcome in ("differs", "unwritable"):
         detail = last_line(done.stdout)
     elif outcome == "same":
         detail = ""
