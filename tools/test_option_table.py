@@ -90,16 +90,16 @@ PUBLIC = """#define BIYOS_OPT_SEED 1
 class OptionTableTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        root = Path(self.tmp.name)
+        library = Path(self.tmp.name)
         files = {
             "src/core/options/table.cpp": TABLE,
             "src/core/options/options.hpp": HEADER,
             "include/biyos/biyos.h": PUBLIC,
         }
         for name, text in files.items():
-            (root / name).parent.mkdir(parents=True, exist_ok=True)
-            (root / name).write_text(text)
-        self.options = option_table.read(root)
+            (library / name).parent.mkdir(parents=True, exist_ok=True)
+            (library / name).write_text(text)
+        self.options = option_table.read(library)
 
     def tearDown(self):
         self.tmp.cleanup()
