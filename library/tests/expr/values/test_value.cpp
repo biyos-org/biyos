@@ -96,7 +96,7 @@ Real entropy_of(Real value)
 
 Real signed_power(Real value, Real exponent)
 {
-    return value < 0.0 ? -std::pow(-value, exponent) : std::pow(value, exponent);
+    return std::copysign(std::pow(std::fabs(value), exponent), value);
 }
 
 std::vector<Real> cmath_values(const Point &point)
