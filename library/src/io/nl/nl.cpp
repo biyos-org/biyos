@@ -14,6 +14,7 @@
 #include "model/model.hpp"
 
 #include <algorithm>
+#include <array>
 #include <ios>
 #include <istream>
 #include <optional>
@@ -28,6 +29,14 @@ namespace biyos::nl
 
 namespace
 {
+
+constexpr std::array<std::string_view, 2> kSetSuffixes{"sosno", "ref"};
+constexpr std::array<std::string_view, 4> kSuffixTargets{"variable",
+                                                         "constraint",
+                                                         "objective",
+                                                         "problem"};
+constexpr Offset kSuffixKinds = 8;
+constexpr Offset kRealSuffix = 4;
 
 bool same_variable(const LinearTerm &a, const LinearTerm &b) noexcept
 {
@@ -71,6 +80,8 @@ class NlReader
     void read_bounds(const Entry &entry);
     void read_columns(const Entry &entry);
     void read_linear(const Entry &entry, Index size, Index offset, std::string_view noun);
+    void skip_suffix(const Entry &entry);
+    Index suffix_size(Offset kind) const noexcept;
     void skip_guesses(const Entry &entry,
                       Index size,
                       std::string_view noun,
@@ -122,7 +133,8 @@ void NlReader::segment(const Entry &entry)
     case 'F':
         unsupported(lines_, "imported functions");
     case 'S':
-        unsupported(lines_, "suffixes");
+        skip_suffix(entry);
+        return;
     case 'L':
         unsupported(lines_, "logical constraints");
     case 'V':
@@ -278,6 +290,45 @@ void NlReader::read_linear(const Entry &entry, Index size, Index offset, std::st
         bad_file(lines_, "variable " + text_of(repeat->variable) + " is repeated");
     }
     bodies_.set_terms(function, std::move(terms));
+}
+
+void NlReader::skip_suffix(const Entry &entry)
+{
+    check_size(lines_, entry.size(), 3);
+    const Offset kind = integer_of(lines_, entry[0]);
+    if (kind < 0 || kind >= kSuffixKinds)
+    {
+        bad_file(lines_, "suffix kind " + quote(entry[0]) + " is unknown");
+    }
+    const Index n = count_of(lines_, entry[1]);
+    const std::string name = quote(entry[2]);
+    if (std::ranges::find(kSetSuffixes, entry[2]) != kSetSuffixes.end())
+    {
+        unsupported(lines_, "suffix " + name);
+    }
+    inform(stream_, lines_, "suffix " + name + " is skipped");
+    const std::string_view noun = kSuffixTargets[to_size(kind % kRealSuffix)];
+    for (Index k = 0; k < n; ++k)
+    {
+        advance_in(lines_, "a suffix");
+        const Fields fields = fields_of(lines_);
+        check_size(lines_, fields.size(), 2);
+        index_in(lines_, fields[0], suffix_size(kind), noun);
+        if (kind >= kRealSuffix)
+        {
+            value_of(lines_, fields[1]);
+        }
+        else
+        {
+            integer_of(lines_, fields[1]);
+        }
+    }
+}
+
+Index NlReader::suffix_size(Offset kind) const noexcept
+{
+    const std::array sizes{header_.variables, header_.constraints, header_.objectives, Index{1}};
+    return sizes[to_size(kind % kRealSuffix)];
 }
 
 void NlReader::skip_guesses(const Entry &entry,

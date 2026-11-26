@@ -167,6 +167,17 @@ constexpr std::string_view kColumnsTail = R"(k1
 0
 )";
 
+constexpr std::string_view kSuffixKindTail = R"(S9 0 zork
+)";
+
+constexpr std::string_view kSuffixIndexTail = R"(S1 1 zork
+1 2
+)";
+
+constexpr std::string_view kSuffixValueTail = R"(S0 1 zork
+0 0.5
+)";
+
 constexpr std::string_view kGluedRanges = R"(rjunk
 )";
 
@@ -317,4 +328,11 @@ TEST(NlTest, Bounds)
 {
     EXPECT_EQ(fault_of(kBoundsNlFile),
               bad(12, "variable 0: bounds [0, 2] are outside [0, 1], the widest of its kind"));
+}
+
+TEST(NlTest, Suffix)
+{
+    EXPECT_EQ(tiny_fault(kSuffixKindTail), bad(11, "suffix kind '9' is unknown"));
+    EXPECT_EQ(tiny_fault(kSuffixIndexTail), bad(12, "constraint 1 is out of range"));
+    EXPECT_EQ(tiny_fault(kSuffixValueTail), bad(12, "'0.5' is not an integer"));
 }

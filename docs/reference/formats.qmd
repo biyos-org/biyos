@@ -164,8 +164,9 @@ After the header, each segment starts with a letter. They may come in any order,
 | `G` | The linear terms of an objective. |
 | `x` | A starting point, skipped with an info event. |
 | `d` | Dual guesses, skipped with an info event. |
+| `S` | A suffix, skipped with an info event naming it. The suffixes `sosno` and `ref`, which give special ordered sets, are refused with `BIYOS_ERR_UNSUPPORTED`. |
 
-A bound line starts with a code: `0` gives a lower and an upper bound, `1` an upper bound, `2` a lower bound, `3` neither and `4` one value for both. Code `5`, a complementarity, is refused with `BIYOS_ERR_UNSUPPORTED`, as are the segments `F` (imported functions), `S` (suffixes) and `L` (logical constraints).
+A bound line starts with a code: `0` gives a lower and an upper bound, `1` an upper bound, `2` a lower bound, `3` neither and `4` one value for both. Code `5`, a complementarity, is refused with `BIYOS_ERR_UNSUPPORTED`, as are the segments `F` (imported functions) and `L` (logical constraints).
 
 ### Expressions
 

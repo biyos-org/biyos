@@ -22,8 +22,12 @@ constexpr std::string_view kBinaryNlFile = R"(b3 1 1 0
 constexpr std::string_view kFunctionsTail = R"(F0 1 -1 myfunc
 )";
 
-constexpr std::string_view kSuffixesTail = R"(S0 1 zork
+constexpr std::string_view kSosnoTail = R"(S0 1 sosno
 0 1
+)";
+
+constexpr std::string_view kRefTail = R"(S4 1 ref
+0 1.5
 )";
 
 constexpr std::string_view kLogicalTail = R"(L0
@@ -80,6 +84,22 @@ constexpr std::string_view kComplementsTail = R"(r
 5 1 0
 )";
 
+constexpr std::string_view kSuffixesTail = R"(S0 1 zork
+0 2
+S5 1 scale
+0 0.5
+S3 1 tag
+0 7
+C0
+n0
+O0 0
+n0
+r
+3
+b
+3
+)";
+
 constexpr std::string_view kSkippedTail = R"(C0
 n0
 O0 0
@@ -106,9 +126,10 @@ TEST(NlTest, Functions)
     EXPECT_EQ(tiny_fault(kFunctionsTail), refused(11, "imported functions"));
 }
 
-TEST(NlTest, Suffixes)
+TEST(NlTest, Sets)
 {
-    EXPECT_EQ(tiny_fault(kSuffixesTail), refused(11, "suffixes"));
+    EXPECT_EQ(tiny_fault(kSosnoTail), refused(11, "suffix 'sosno'"));
+    EXPECT_EQ(tiny_fault(kRefTail), refused(11, "suffix 'ref'"));
 }
 
 TEST(NlTest, Logical)
@@ -152,4 +173,14 @@ TEST(NlTest, Skipped)
         "file 't.nl' line 17: the file's starting point is skipped",
     };
     EXPECT_EQ(infos_of(tiny_with(kSkippedTail)), wanted);
+}
+
+TEST(NlTest, Suffixes)
+{
+    const std::vector<std::string> wanted{
+        "file 't.nl' line 11: suffix 'zork' is skipped",
+        "file 't.nl' line 13: suffix 'scale' is skipped",
+        "file 't.nl' line 15: suffix 'tag' is skipped",
+    };
+    EXPECT_EQ(infos_of(tiny_with(kSuffixesTail)), wanted);
 }
