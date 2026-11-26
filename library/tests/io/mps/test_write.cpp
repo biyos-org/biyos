@@ -49,10 +49,23 @@ using biyos::test::kMpsFiles;
 using biyos::test::printed;
 using biyos::test::read_sample;
 using biyos::test::read_text;
-using biyos::test::text;
 
 namespace
 {
+
+constexpr std::string_view kLateGoalMpsFile = R"(NAME
+ROWS
+ L  cap
+ N  cost
+ G  floor
+ N  spare
+COLUMNS
+    x  cap  1  cost  2
+    x  floor  3  spare  6
+RHS
+    RHS  cap  4  cost  5
+ENDATA
+)";
 
 class Generator
 {
@@ -378,18 +391,7 @@ TEST(MpsTest, Goalless)
 
 TEST(MpsTest, LateGoal)
 {
-    const Model read = read_sample(text({"NAME",
-                                         "ROWS",
-                                         " L  cap",
-                                         " N  cost",
-                                         " G  floor",
-                                         " N  spare",
-                                         "COLUMNS",
-                                         "    x  cap  1  cost  2",
-                                         "    x  floor  3  spare  6",
-                                         "RHS",
-                                         "    RHS  cap  4  cost  5",
-                                         "ENDATA"}));
+    const Model read = read_sample(kLateGoalMpsFile);
     ASSERT_EQ(read.objective(0).function, 1);
     EXPECT_EQ(difference(read, reread(read)), "");
 }
