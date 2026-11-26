@@ -41,7 +41,7 @@ using Engine = std::mt19937;
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::array<std::uint32_t, 8> kSeeds{1, 2, 3, 5, 8, 13, 21, 34};
 constexpr std::array kWide{BIYOS_OP_SUM, BIYOS_OP_PROD, BIYOS_OP_MAX, BIYOS_OP_MIN};
-constexpr std::array kBinary{BIYOS_OP_DIV, BIYOS_OP_POW};
+constexpr std::array kBinary{BIYOS_OP_DIV, BIYOS_OP_POW, BIYOS_OP_ATAN2};
 constexpr std::array kScaled{BIYOS_OP_CONST, BIYOS_OP_PROD, BIYOS_OP_CPOW};
 constexpr int kVariables = 4;
 constexpr int kNodes = 80;
@@ -159,7 +159,8 @@ int random_code(Engine &engine)
     {
         return below(engine, 2) == 0 ? BIYOS_OP_SUM : BIYOS_OP_PROD;
     }
-    return 1 + below(engine, BIYOS_OP_ERF);
+    const int code = 1 + below(engine, BIYOS_OP_ERF + 1);
+    return code > BIYOS_OP_ERF ? BIYOS_OP_ATAN2 : code;
 }
 
 Offset random_child(Engine &engine, const Model &model)
