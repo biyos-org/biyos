@@ -28,5 +28,6 @@ std::vector<Index> selected(Family family, Index total, Range range);
 std::span<const Index> selected(std::string_view noun, Index total, List list);
 std::vector<Index> selected(std::string_view noun, Index total, Range range);
 void check_known(Family family, Index total, std::span<const Index> indices);
+void check_known(std::string_view noun, Index total, std::span<const Index> indices);
 
 }

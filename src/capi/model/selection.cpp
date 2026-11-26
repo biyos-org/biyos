@@ -39,9 +39,14 @@ std::vector<Index> selected(std::string_view noun, Index total, Range range)
 
 void check_known(Family family, Index total, std::span<const Index> indices)
 {
+    check_known(noun_of(family), total, indices);
+}
+
+void check_known(std::string_view noun, Index total, std::span<const Index> indices)
+{
     for (const Index index : indices)
     {
-        check_index(noun_of(family), index, total);
+        check_index(noun, index, total);
     }
 }
 
