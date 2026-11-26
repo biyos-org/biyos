@@ -24,7 +24,7 @@ biyos starts no thread of its own yet. `BIYOS_version` reads no state and may be
 
 The package calls the library through `ctypes`, which releases the global interpreter lock for the length of each C call, so threads that work on separate environments run their C code side by side. In Python, one environment and its models are used by one thread at a time.
 
-```{.python file="interfaces/python/examples/threads.py"}
+```{.python file="examples/code/python/threads.py"}
 ```
 
 Each thread builds its own model on its own environment, and the results come back in the order the work was given, whatever order the threads finished in. A hook written in Python takes the interpreter lock while it runs.

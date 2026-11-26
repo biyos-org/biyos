@@ -74,19 +74,19 @@ Arithmetic on variable views builds an `Expression`, a tree that holds its opera
 
 A defined quantity can be written two ways. With `y` a variable, `y == sum(...)` is an equality constraint, a row on top of the variable `y`, which the solver keeps equal to the sum. Held in a name, `y = sum(...)` is an expression and no variable, and every expression built from `y` holds the same tree, which one `addcon` or `addobj` call sends once.
 
-```{.python file="interfaces/python/examples/expressions.py" item="build"}
+```{.python file="examples/code/python/expressions.py" item="build"}
 ```
 
 A pwl is data `addpwl` adds before any expression applies it, and it takes no name and is never deleted ([Expressions](#sec-model-expressions)):
 
-```{.python file="interfaces/python/examples/piecewise.py" item="build"}
+```{.python file="examples/code/python/piecewise.py" item="build"}
 ```
 
 ## Evaluation {#sec-python-evaluation}
 
 `evalf(x)`, `evalg(x)`, `evalh(x, w)` and `evalhv(x, w, v)` evaluate the model at the point `x` as [Evaluating a model](#sec-model-evaluating) describes, and return lists: a value for each function, one for each entry of the Jacobian pattern, one for each entry of the lower Hessian pattern, and the product, a value for each variable. `getgpat(idx)` reads the variables of the functions `idx` lists, and `gethpat(idx)` the rows of the columns `idx` lists, each record's after those of the one before, every function or column by default, and `getngpat(idx)` and `getnhpat(idx)` count those entries. The values of `evalg` follow `getgpat()`, and those of `evalh` follow `gethpat()`:
 
-```{.python file="interfaces/python/examples/evaluation.py" item="evaluate"}
+```{.python file="examples/code/python/evaluation.py" item="evaluate"}
 ```
 
 An `Exception` a callback raises stops the call, which raises `biyos.Error` with the code `BIYOS_ERR_CALLBACK` and the callback's exception as its `__cause__`, so the traceback shows both. Any other exception, such as `KeyboardInterrupt` or `SystemExit`, stops the call too and comes out of it unchanged, so `except Exception` does not catch it.

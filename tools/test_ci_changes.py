@@ -21,6 +21,17 @@ class ChangeTest(unittest.TestCase):
             on(["examples/CMakeLists.txt"]), {"cpp", "python", "docs"}
         )
 
+    def test_c_example(self):
+        self.assertEqual(
+            on(["examples/code/c/start.c"]),
+            {"cpp", "format", "python", "docs"},
+        )
+
+    def test_python_example(self):
+        self.assertEqual(
+            on(["examples/code/python/start.py"]), {"python", "docs"}
+        )
+
     def test_options(self):
         self.assertIn("docs", on(["library/src/core/options/table.cpp"]))
 

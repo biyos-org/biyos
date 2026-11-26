@@ -28,7 +28,7 @@ The install step copies the library, the header and a CMake package into a prefi
 cmake --install build --prefix "$PWD/install"
 ```
 
-The examples in `examples` are a project of their own, built and tested against such a prefix:
+The examples in `examples` are a project of their own: the programs in `examples/code`, the runners that test them in `examples/test`. The C programs are built and tested against such a prefix:
 
 ```sh
 cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH="$PWD/install"
@@ -48,7 +48,7 @@ Inside, each module may use only the modules below it, as @fig-layers shows. The
 
 This program prints the version of the library, then creates an environment and frees it:
 
-```{.c file="examples/c/start.c"}
+```{.c file="examples/code/c/start.c"}
 ```
 
 An environment holds the options, the event stream and the last error of each thread, and every model is made on one. Every call that acts returns a status, `BIYOS_OK` on success, and [Errors](#sec-errors) explains the others.
@@ -93,7 +93,7 @@ CMAKE_PREFIX_PATH="$PWD/install" python -m pip install ./interfaces/python
 
 It needs Python 3.10 or later and no other package at run time. Each call goes through `ctypes` to the C API, so Python and C share every rule of this book. The first program becomes
 
-```{.python file="interfaces/python/examples/start.py"}
+```{.python file="examples/code/python/start.py"}
 ```
 
-The `with` block frees the environment when it ends. [The Python package](#sec-python) covers the package.
+The `with` block frees the environment when it ends. With the package installed, `pytest examples/test/python` runs every Python example. [The Python package](#sec-python) covers the package.

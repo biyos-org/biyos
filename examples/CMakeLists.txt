@@ -25,19 +25,4 @@ endif()
 
 enable_testing()
 
-function(biyos_add_example name file)
-    add_executable(example_${file} c/${file}.c)
-    target_link_libraries(example_${file} PRIVATE biyos::biyos)
-    set_target_properties(example_${file} PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
-    target_compile_options(example_${file} PRIVATE ${warnings})
-    add_test(NAME ExampleTest.${name} COMMAND example_${file})
-    set_tests_properties(ExampleTest.${name} PROPERTIES
-        ENVIRONMENT_MODIFICATION PATH=path_list_prepend:$<TARGET_FILE_DIR:biyos::biyos>)
-endfunction()
-
-biyos_add_example(Start start)
-biyos_add_example(Model model)
-biyos_add_example(Options options)
-biyos_add_example(Events events)
-biyos_add_example(Copies copies)
-biyos_add_example(Errors errors)
+add_subdirectory(test/c)
