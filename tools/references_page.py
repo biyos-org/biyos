@@ -1,7 +1,8 @@
+import argparse
+import os
 import re
 from pathlib import Path
 
-PAGE = Path("_book") / "references.html"
 ICONS = {
     "Article": "journal-text",
     "Book": "book",
@@ -30,9 +31,17 @@ def dress(html):
     return KIND.sub(dressed, html)
 
 
+def arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--page", required=True)
+    return parser.parse_args()
+
+
 def main():
-    if PAGE.exists():
-        PAGE.write_text(dress(PAGE.read_text()))
+    book = Path(os.environ["QUARTO_PROJECT_OUTPUT_DIR"])
+    page = book / arguments().page
+    if page.exists():
+        page.write_text(dress(page.read_text()))
 
 
 if __name__ == "__main__":

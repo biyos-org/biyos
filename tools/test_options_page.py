@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 import options_page
 from option_table import Option
@@ -20,6 +21,12 @@ def option(**fields):
 
 
 class OptionsPageTest(unittest.TestCase):
+    def test_targets(self):
+        found = options_page.targets([option()], Path("reference"))
+        self.assertEqual(
+            found, {"maxtime": "reference/options.qmd#opt-maxtime"}
+        )
+
     def test_double(self):
         text = options_page.entry(option())
         self.assertIn("## `maxtime` {#opt-maxtime .api .unnumbered}", text)

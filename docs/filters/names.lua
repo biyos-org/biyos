@@ -1,7 +1,6 @@
-local kIndexes = {"reference/_capi/names.json", "reference/_options/names.json"}
-
 local function load(targets, path)
-    local file = io.open(pandoc.path.join({quarto.project.directory, path}))
+    local folder = pandoc.path.directory(quarto.doc.input_file)
+    local file = io.open(pandoc.path.join({folder, path}))
     if not file then
         return
     end
@@ -26,10 +25,13 @@ local function href(target, page)
 end
 
 local targets = {}
-for _, path in ipairs(kIndexes) do
-    load(targets, path)
-end
 local page = here()
+
+local function indexes(meta)
+    for _, path in ipairs(meta["name-indexes"]) do
+        load(targets, pandoc.utils.stringify(path))
+    end
+end
 
 local function stop(element)
     return element, false
@@ -48,4 +50,4 @@ local function code(element)
     end
 end
 
-return {{traverse = "topdown", Header = stop, Link = stop, Span = span, Code = code}}
+return {{Meta = indexes}, {traverse = "topdown", Header = stop, Link = stop, Span = span, Code = code}}

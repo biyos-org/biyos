@@ -1,6 +1,7 @@
 import io
 import unittest
 from contextlib import redirect_stderr
+from pathlib import Path
 
 import capi_page
 from spec import Entry, Group
@@ -138,7 +139,7 @@ class PageTest(unittest.TestCase):
             Group("codes", "Codes", [], [table()]),
             Group("env", "E", [], [function()]),
         ]
-        found = capi_page.targets(groups)
+        found = capi_page.targets(groups, Path("reference"))
         self.assertEqual(found["BIYOS_OK"], "reference/codes.qmd#BIYOS_OK")
         self.assertEqual(
             found["BIYOS_freeenv"], "reference/capi.qmd#BIYOS_freeenv"

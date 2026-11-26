@@ -4,7 +4,7 @@ from pathlib import Path
 
 import option_table
 
-OUT = Path("reference") / "_options"
+PAGE = "options.qmd"
 INFINITE = {"infinity": "∞", "-infinity": "−∞"}
 HEADER = ("Macro", "Id", "Kind", "Default", "Accepts")
 RULE = ("-" * 37, "-" * 3 + ":", "-" * 11, "-" * 37, "-" * 37)
@@ -83,16 +83,23 @@ def entry(option):
 def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--library", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
     return parser.parse_args()
 
 
+def targets(options, folder):
+    page = f"{folder.as_posix()}/{PAGE}"
+    return {o.name: f"{page}#opt-{o.name}" for o in options}
+
+
 def main():
-    options = option_table.read(arguments().library)
-    OUT.mkdir(exist_ok=True)
+    given = arguments()
+    options = option_table.read(given.library)
+    given.out.mkdir(exist_ok=True)
     text = "\n\n".join(entry(option) for option in options) + "\n"
-    (OUT / "options.md").write_text(text)
-    names = {o.name: f"reference/options.qmd#opt-{o.name}" for o in options}
-    (OUT / "names.json").write_text(json.dumps(names, indent=1) + "\n")
+    (given.out / "options.md").write_text(text)
+    names = targets(options, given.out.parent)
+    (given.out / "names.json").write_text(json.dumps(names, indent=1) + "\n")
 
 
 if __name__ == "__main__":

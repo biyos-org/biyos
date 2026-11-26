@@ -2,11 +2,11 @@ project:
   type: book
   output-dir: _book
   pre-render:
-    - ../tools/capi_page.py --headers ../include/biyos
-    - ../tools/options_page.py --library ..
+    - ../tools/capi_page.py --headers ../include/biyos --spec reference/capi.txt --out reference/_capi
+    - ../tools/options_page.py --library .. --out reference/_options
     - quartodoc build
   post-render:
-    - ../tools/references_page.py
+    - ../tools/references_page.py --page references.html
     - ../tools/chapter_numbers.py
 
 book:
@@ -60,6 +60,9 @@ tbl-colwidths: true
 bibliography: references.bib
 csl: theme/references.csl
 link-citations: true
+name-indexes:
+  - reference/_capi/names.json
+  - reference/_options/names.json
 filters:
   - path: filters/generated.lua
     at: pre-ast
