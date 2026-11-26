@@ -6,6 +6,7 @@ CPP = (
     "include/*",
     "tests/*",
     "examples/c/*",
+    "examples/CMakeLists.txt",
     "cmake/*",
     "CMakeLists.txt",
     ".clang-tidy",
