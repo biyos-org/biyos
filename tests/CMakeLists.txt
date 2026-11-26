@@ -121,6 +121,7 @@ biyos_add_test(test_model
     model/functions/test_functions.cpp
     model/functions/test_piecewise.cpp
     model/functions/test_quadratic.cpp
+    model/functions/test_transpose.cpp
     model/records/test_complements.cpp
     model/records/test_cones.cpp
     model/records/test_constraints.cpp
