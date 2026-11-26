@@ -1043,7 +1043,7 @@ see BIYOS_setfunnamesp
 since 0.1.0
 
 group linear Linear terms
-text A function is added with no linear terms, and `BIYOS_addlinterm`, `BIYOS_addrlintermrg` and `BIYOS_addclintermrg` add them. They may come in any order and are kept sorted by variable; each must name a variable of the model, appear once in the function and have a finite coefficient. A term whose coefficient is 0 is kept.
+text A function is added with no linear terms, and three forms add them: `BIYOS_addlinterm` takes coordinates, the function, the variable and the coefficient of each term; `BIYOS_addrlintermsp` and `BIYOS_addclintermsp` take a list of functions or of variables with one count each; `BIYOS_addrlintermrg` and `BIYOS_addclintermrg` take a range with one count per record. Terms may come in any order and are kept sorted by variable; each must name a variable of the model, appear once in the function and have a finite coefficient. A term whose coefficient is 0 is kept.
 
 function BIYOS_addlinterm
 summary Add linear terms to functions, as coordinates.
@@ -1057,37 +1057,41 @@ error BIYOS_ERR_BADARG `nnz` is negative, a function or a variable is not one of
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
 note Term `k` adds `coef[k]` times variable `var[k]` to function `fun[k]`, and the terms may come in any order. A variable the function already holds adds its coefficient to the one held, so every call adds $a_j x_j$ to its functions and never replaces a term. A term whose coefficient is 0, given or summed, is kept. A refused call changes nothing.
 note A call that adds new terms moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call.
-see BIYOS_addrlintermrg BIYOS_addclintermrg BIYOS_getrlintermsp
+see BIYOS_addrlintermsp BIYOS_addclintermsp BIYOS_getrlintermsp
 since 0.1.0
 
-function BIYOS_addrlintermrg
-summary Add linear terms to a range of functions, by function.
+function BIYOS_addrlintermsp BIYOS_addrlintermrg
+summary Add linear terms to functions, by function.
 param mdl in The model.
-param beg in The first function of the range.
-param end in One past the last function of the range.
-param cnt in The `end - beg` counts of the functions' terms; null adds no terms.
+param beg in In the `rg` form, the first function of the range.
+param end in In the `rg` form, one past the last function of the range.
+param n in In the `sp` form, the number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cnt in The `n` counts of the entries' terms, `end - beg` in the `rg` form; null adds no terms.
 param var in The variable of each term; not read when there are no terms.
 param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
-error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last function, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a variable is not one of the model or appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a variable is not one of the model or appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
-note Function `beg + j` gains the `cnt[j]` terms that follow those of function `beg + j - 1`. A variable the function already holds adds its coefficient to the one held, as in `BIYOS_addlinterm`. A refused call changes nothing.
-see BIYOS_addlinterm BIYOS_getrlintermrg
+note Entry `j` gains the `cnt[j]` terms that follow those of entry `j - 1`, entry `j` being function `idx[j]`, or `beg + j` in the `rg` form. A function listed twice gains the terms of both entries, which together name each variable once, as coordinates do. A variable the function already holds adds its coefficient to the one held, as in `BIYOS_addlinterm`. A refused call changes nothing.
+see BIYOS_addlinterm BIYOS_getrlintermsp
 since 0.1.0
 
-function BIYOS_addclintermrg
+function BIYOS_addclintermsp BIYOS_addclintermrg
 summary Add linear terms to functions, by variable.
 param mdl in The model.
-param beg in The first variable of the range.
-param end in One past the last variable of the range.
-param cnt in The `end - beg` counts of the variables' terms; null adds no terms.
+param beg in In the `rg` form, the first variable of the range.
+param end in In the `rg` form, one past the last variable of the range.
+param n in In the `sp` form, the number of entries.
+param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cnt in The `n` counts of the entries' terms, `end - beg` in the `rg` form; null adds no terms.
 param fun in The function of each term; not read when there are no terms.
 param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
-error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last variable, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a function is not one of the model or appears twice for a variable, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a function is not one of the model or appears twice for a variable in the call, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
-note Variable `beg + j` enters the `cnt[j]` functions of `fun` that follow those of variable `beg + j - 1`, so a variable added late joins the functions of existing constraints in one call. A variable a function already holds adds its coefficient to the one held. A refused call changes nothing.
-see BIYOS_addlinterm BIYOS_getclintermrg
+note Entry `j` enters the `cnt[j]` functions of `fun` that follow those of entry `j - 1`, entry `j` being variable `idx[j]`, or `beg + j` in the `rg` form, so a variable added late joins the functions of existing constraints in one call. A variable listed twice enters the functions of both entries, which together name each function once. A variable a function already holds adds its coefficient to the one held. A refused call changes nothing.
+see BIYOS_addlinterm BIYOS_getclintermsp
 since 0.1.0
 
 function BIYOS_getnrlintermsp BIYOS_getnrlintermrg
@@ -1151,7 +1155,7 @@ return `BIYOS_OK` once the arrays are written, the `cnt[j]` terms of entry `j` f
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, or `cap` is less than the number of terms `BIYOS_getnclintermsp` gives.
 note The terms are those `BIYOS_getrlintermsp` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function. A refused call writes nothing.
 note The call sends the span `columns` from module `model` ([Events biyos sends](#sec-capi-sent)).
-see BIYOS_getnclintermsp BIYOS_getrlintermsp BIYOS_addclintermrg
+see BIYOS_getnclintermsp BIYOS_getrlintermsp BIYOS_addclintermsp
 since 0.1.0
 
 group quadratic Quadratic terms

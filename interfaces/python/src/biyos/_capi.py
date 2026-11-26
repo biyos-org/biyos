@@ -191,9 +191,8 @@ def _declare_functions(lib: ctypes.CDLL) -> None:
     _declare_pair(lib, "BIYOS_clrfun")
     coordinates = (c_void_p, c_offset, _INDICES, _INDICES, _REALS)
     _declare(lib, "BIYOS_addlinterm", *coordinates)
-    ranged = (c_void_p, c_index, c_index, _OFFSETS, _INDICES, _REALS)
-    _declare(lib, "BIYOS_addrlintermrg", *ranged)
-    _declare(lib, "BIYOS_addclintermrg", *ranged)
+    for name in ("BIYOS_addrlinterm", "BIYOS_addclinterm"):
+        _declare_pair(lib, name, _OFFSETS, _INDICES, _REALS)
     for name in ("rlinterm", "clinterm"):
         _declare_terms(lib, name)
 

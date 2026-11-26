@@ -49,6 +49,22 @@ struct Compressed
     std::vector<double> values;
 };
 
+struct Listed
+{
+    Indices records;
+    Compressed terms;
+};
+
+const Listed kScattered{
+    .records = {0, 7, 9},
+    .terms =
+        {
+            .counts = {3, 5, 2},
+            .others = {0, 1, 2, 0, 1, 2, 3, 4, 3, 4},
+            .values = {1.0, -2.0, 0.5, 4.0, 0.0, -0.0, 3.0, -1.5, 2.0, 8.0},
+        },
+};
+
 int count_of(const Model &model, BIYOS_status (*count)(const BIYOS_model *, BIYOS_index *))
 {
     BIYOS_index n = -1;
@@ -121,6 +137,96 @@ Compressed compressed(const Added &added, int count, bool by_row)
         }
         found.counts.push_back(static_cast<BIYOS_offset>(found.others.size() - before));
     }
+    return found;
+}
+
+void push_part(Listed &listed,
+               BIYOS_index record,
+               const Compressed &whole,
+               std::size_t begin,
+               std::size_t end)
+{
+    listed.records.push_back(record);
+    listed.terms.counts.push_back(static_cast<BIYOS_offset>(end - begin));
+    for (std::size_t k = begin; k < end; ++k)
+    {
+        listed.terms.others.push_back(whole.others[k]);
+        listed.terms.values.push_back(whole.values[k]);
+    }
+}
+
+Listed split(const Added &added, int count, bool by_row)
+{
+    const Compressed whole = compressed(added, count, by_row);
+    Listed found;
+    std::size_t end = whole.others.size();
+    for (int record = count - 1; record >= 0; --record)
+    {
+        const auto size = static_cast<std::size_t>(whole.counts[static_cast<std::size_t>(record)]);
+        const std::size_t begin = end - size;
+        push_part(found, record, whole, begin, begin + size / 2);
+        push_part(found, record, whole, begin + size / 2, end);
+        end = begin;
+    }
+    return found;
+}
+
+Added coordinates_of(const Listed &listed, bool by_row)
+{
+    const Indices owners = expanded(listed.terms.counts, listed.records);
+    return Added{
+        .functions = by_row ? owners : listed.terms.others,
+        .variables = by_row ? listed.terms.others : owners,
+        .values = listed.terms.values,
+    };
+}
+
+BIYOS_status add_list(const Model &model, const Listed &listed, bool by_row)
+{
+    const auto add = by_row ? BIYOS_addrlintermsp : BIYOS_addclintermsp;
+    return add(model.get(),
+               static_cast<BIYOS_index>(listed.records.size()),
+               listed.records.data(),
+               listed.terms.counts.data(),
+               listed.terms.others.data(),
+               listed.terms.values.data());
+}
+
+BIYOS_status add_row_split(const Model &model, const Added &added)
+{
+    return add_list(model, split(added, n_functions(model), true), true);
+}
+
+BIYOS_status add_column_split(const Model &model, const Added &added)
+{
+    return add_list(model, split(added, n_variables(model), false), false);
+}
+
+Listed read_list(const Model &model, const Indices &records, bool by_row)
+{
+    const auto n = static_cast<BIYOS_index>(records.size());
+    const auto count = by_row ? BIYOS_getnrlintermsp : BIYOS_getnclintermsp;
+    const auto read = by_row ? BIYOS_getrlintermsp : BIYOS_getclintermsp;
+    BIYOS_offset nnz = -1;
+    EXPECT_EQ(count(model.get(), n, records.data(), &nnz), BIYOS_OK);
+    const auto size = static_cast<std::size_t>(nnz);
+    Listed found{
+        .records = records,
+        .terms =
+            {
+                .counts = std::vector<BIYOS_offset>(records.size(), -1),
+                .others = Indices(size, -1),
+                .values = std::vector<double>(size),
+            },
+    };
+    EXPECT_EQ(read(model.get(),
+                   n,
+                   records.data(),
+                   nnz,
+                   found.terms.counts.data(),
+                   found.terms.others.data(),
+                   found.terms.values.data()),
+              BIYOS_OK);
     return found;
 }
 
@@ -234,11 +340,17 @@ TEST(AdderTest, Agree)
         const Model listed(env, model);
         const Model rows(env, model);
         const Model columns(env, model);
+        const Model row_list(env, model);
+        const Model column_list(env, model);
         ASSERT_EQ(add_listed(listed, shuffled(added, engine)), BIYOS_OK);
         ASSERT_EQ(add_rows(rows, added), BIYOS_OK);
         ASSERT_EQ(add_columns(columns, added), BIYOS_OK);
+        ASSERT_EQ(add_row_split(row_list, added), BIYOS_OK);
+        ASSERT_EQ(add_column_split(column_list, added), BIYOS_OK);
         EXPECT_EQ(difference(listed, rows), "");
         EXPECT_EQ(difference(listed, columns), "");
+        EXPECT_EQ(difference(listed, row_list), "");
+        EXPECT_EQ(difference(listed, column_list), "");
     }
 }
 
@@ -272,9 +384,12 @@ TEST(AdderTest, Refusals)
     expect_kept(env, model, add_listed, repeated, twice);
     expect_kept(env, model, add_rows, repeated, twice);
     expect_kept(env, model, add_columns, repeated, twice);
+    expect_kept(env, model, add_row_split, repeated, twice);
+    expect_kept(env, model, add_column_split, repeated, twice);
     const Added stranger{.functions = {0, functions}, .variables = {0, 0}, .values = {1.0, 1.0}};
     expect_kept(env, model, add_listed, stranger, unknown + ": unknown");
     expect_kept(env, model, add_columns, stranger, unknown + ": unknown");
+    expect_kept(env, model, add_column_split, stranger, unknown + ": unknown");
     const Added negative{.functions = {-1}, .variables = {0}, .values = {1.0}};
     expect_kept(env, model, add_listed, negative, "invalid argument: function -1: unknown");
     const Added outside{.functions = {0}, .variables = {variables}, .values = {1.0}};
@@ -282,6 +397,7 @@ TEST(AdderTest, Refusals)
         "invalid argument: function 0: variable " + std::to_string(variables) + " is unknown";
     expect_kept(env, model, add_listed, outside, missing);
     expect_kept(env, model, add_rows, outside, missing);
+    expect_kept(env, model, add_row_split, outside, missing);
     const Added wrong{.functions = {0}, .variables = {0}, .values = {nan}};
     expect_kept(env,
                 model,
@@ -339,4 +455,73 @@ TEST(AdderTest, Arguments)
     EXPECT_EQ(BIYOS_addlinterm(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addrlintermrg(held, 0, functions, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addclintermrg(held, variables, variables, nullptr, nullptr, nullptr), BIYOS_OK);
+}
+
+TEST(AdderTest, Scattered)
+{
+    for (const bool by_row : {true, false})
+    {
+        const Env env;
+        const Model model(env);
+        ASSERT_EQ(BIYOS_addvar(model.get(), 10, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+        ASSERT_EQ(BIYOS_addfun(model.get(), 10, nullptr), BIYOS_OK);
+        const Model listed(env, model);
+        ASSERT_EQ(add_list(listed, kScattered, by_row), BIYOS_OK);
+        ASSERT_EQ(add_listed(model, coordinates_of(kScattered, by_row)), BIYOS_OK);
+        EXPECT_EQ(difference(listed, model), "");
+        const Listed read = read_list(listed, kScattered.records, by_row);
+        EXPECT_EQ(read.terms.counts, kScattered.terms.counts);
+        EXPECT_EQ(read.terms.others, kScattered.terms.others);
+    }
+}
+
+TEST(AdderTest, Lists)
+{
+    const Env env;
+    const Model model(env);
+    Engine engine(kSeeds[0]);
+    build_sample(model.get(), engine);
+    const int functions = n_functions(model);
+    const int variables = n_variables(model);
+    BIYOS_model *held = model.get();
+    const std::array<BIYOS_index, 3> zeros{0, 0, 0};
+    const std::array<double, 1> one{1.0};
+    const std::array<BIYOS_offset, 3> negative{1, 0, -1};
+    const std::array<BIYOS_offset, 2> overflowing{(std::numeric_limits<BIYOS_offset>::max)(), 1};
+    const std::array<BIYOS_offset, 1> empty{0};
+    const BIYOS_index *zero = zeros.data();
+    const BIYOS_index minus = -1;
+    EXPECT_EQ(BIYOS_addrlintermsp(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
+    EXPECT_EQ(BIYOS_addclintermsp(held, 1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(BIYOS_addrlintermsp(held, 1, &minus, empty.data(), nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: function -1: unknown");
+    EXPECT_EQ(BIYOS_addclintermsp(held, 1, &minus, empty.data(), nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: variable -1: unknown");
+    EXPECT_EQ(BIYOS_addrlintermsp(held, 1, &functions, empty.data(), nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(),
+              "invalid argument: function " + std::to_string(functions) + ": unknown");
+    EXPECT_EQ(BIYOS_addclintermsp(held, 1, &variables, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(),
+              "invalid argument: variable " + std::to_string(variables) + ": unknown");
+    EXPECT_EQ(BIYOS_addrlintermsp(held, 3, zero, negative.data(), zero, one.data()),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': -1 is negative at entry 2");
+    EXPECT_EQ(BIYOS_addclintermsp(held, 2, zero, overflowing.data(), zero, one.data()),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': sum overflows at entry 1");
+    EXPECT_EQ(BIYOS_addclintermsp(held, 1, zero, negative.data(), nullptr, one.data()),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
+    EXPECT_EQ(BIYOS_addrlintermsp(held, 1, zero, negative.data(), zero, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
+    const Model before(env, model);
+    EXPECT_EQ(BIYOS_addrlintermsp(held, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addclintermsp(held, 2, zero, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(difference(before, model), "");
 }
