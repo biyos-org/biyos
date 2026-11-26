@@ -77,14 +77,14 @@ add_library(biyos_internal STATIC
     io/files.cpp
     io/leftovers.cpp
     io/lines.cpp
-    io/mps/bounds.cpp
-    io/mps/columns.cpp
     io/mps/mps.cpp
     io/mps/print.cpp
-    io/mps/rows.cpp
+    io/mps/readers/bounds.cpp
+    io/mps/readers/columns.cpp
+    io/mps/readers/rows.cpp
+    io/mps/readers/values.cpp
+    io/mps/readers/vectors.cpp
     io/mps/sections.cpp
-    io/mps/values.cpp
-    io/mps/vectors.cpp
     io/records.cpp
     io/report.cpp
     model/attributes/names.cpp

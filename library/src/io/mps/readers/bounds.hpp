@@ -3,7 +3,7 @@
 #include "core/events/stream.hpp"
 #include "io/draft/draft.hpp"
 #include "io/lines.hpp"
-#include "io/mps/vectors.hpp"
+#include "io/mps/readers/vectors.hpp"
 
 namespace biyos
 {

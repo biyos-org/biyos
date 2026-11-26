@@ -1,4 +1,4 @@
-#include "io/mps/bounds.hpp"
+#include "io/mps/readers/bounds.hpp"
 
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
@@ -6,7 +6,7 @@
 #include "core/numeric/zero.hpp"
 #include "io/draft/draft.hpp"
 #include "io/lines.hpp"
-#include "io/mps/vectors.hpp"
+#include "io/mps/readers/vectors.hpp"
 #include "io/records.hpp"
 #include "io/report.hpp"
 
