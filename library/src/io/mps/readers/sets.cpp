@@ -32,7 +32,9 @@ constexpr std::array kSetCodes{
     SetCode{"S2", SpecialOrderedSetKind::Two},
 };
 
-std::optional<SpecialOrderedSetKind> kind_of(std::string_view code) noexcept
+}
+
+std::optional<SpecialOrderedSetKind> set_kind(std::string_view code) noexcept
 {
     const auto found = std::ranges::find(kSetCodes, code, &SetCode::code);
     if (found == kSetCodes.end())
@@ -42,11 +44,15 @@ std::optional<SpecialOrderedSetKind> kind_of(std::string_view code) noexcept
     return found->kind;
 }
 
+std::string_view code_of(SpecialOrderedSetKind kind) noexcept
+{
+    const auto found = std::ranges::find(kSetCodes, kind, &SetCode::kind);
+    return found == kSetCodes.end() ? std::string_view() : found->code;
 }
 
 void Sets::read(const Lines &lines, Draft &draft)
 {
-    const std::optional<SpecialOrderedSetKind> kind = kind_of(lines.fields().front());
+    const std::optional<SpecialOrderedSetKind> kind = set_kind(lines.fields().front());
     if (kind)
     {
         open(lines, draft, *kind);

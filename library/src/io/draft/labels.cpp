@@ -8,6 +8,7 @@
 #include "model/utils/checks.hpp"
 
 #include <initializer_list>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -71,19 +72,26 @@ void enter(Directory &directory, const std::string &label, Family family, Index 
     }
 }
 
+std::optional<std::string> kept_label(const Model &model, Family family, Index index)
+{
+    const std::string *name = model.name_of(family, index);
+    if (name == nullptr)
+    {
+        return std::nullopt;
+    }
+    const bool row = family == Family::Objective || family == Family::Constraint;
+    check_label(item(noun_of(family), index), *name, row);
+    return *name;
+}
+
 std::string label_of(const Model &model,
                      Family family,
                      Index index,
                      const std::string &base,
                      const Taken &taken)
 {
-    const std::string *name = model.name_of(family, index);
-    if (name == nullptr)
-    {
-        return fresh(base, taken);
-    }
-    check_label(item(noun_of(family), index), *name, family != Family::Variable);
-    return *name;
+    const std::optional<std::string> kept = kept_label(model, family, index);
+    return kept ? *kept : fresh(base, taken);
 }
 
 }

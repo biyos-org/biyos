@@ -5,6 +5,7 @@
 #include "core/text/text.hpp"
 #include "io/draft/draft.hpp"
 #include "io/mps/readers/rows.hpp"
+#include "io/mps/readers/sets.hpp"
 #include "io/mps/sections.hpp"
 #include "model/model.hpp"
 
@@ -192,6 +193,35 @@ void print_bounds(const Draft &draft, std::ostream &output)
     }
 }
 
+void print_set(const Draft &draft, std::ostream &output, const DraftSet &set)
+{
+    output << ' ' << code_of(set.kind);
+    if (set.name)
+    {
+        output << ' ' << *set.name;
+    }
+    output << '\n';
+    const std::span<const std::string_view> columns = draft.column_names.names();
+    for (const Member &member : set.members)
+    {
+        const std::string_view column = columns[to_size(member.variable)];
+        output << "    " << column << "  " << text_of(member.weight) << '\n';
+    }
+}
+
+void print_sets(const Draft &draft, std::ostream &output)
+{
+    if (draft.sets.empty())
+    {
+        return;
+    }
+    header(output, Section::Sets);
+    for (const DraftSet &set : draft.sets)
+    {
+        print_set(draft, output, set);
+    }
+}
+
 }
 
 void print_mps(const Draft &draft, std::ostream &output)
@@ -207,6 +237,7 @@ void print_mps(const Draft &draft, std::ostream &output)
         print_values(draft, output, "RNG", &DraftRow::range);
     }
     print_bounds(draft, output);
+    print_sets(draft, output);
     header(output, Section::End);
 }
 

@@ -8,6 +8,7 @@
 #include "io/draft/draft.hpp"
 #include "io/draft/labels.hpp"
 #include "io/draft/row_shape.hpp"
+#include "io/draft/structure.hpp"
 #include "io/draft/support.hpp"
 #include "model/model.hpp"
 #include "model/utils/checks.hpp"
@@ -154,6 +155,7 @@ Draft draft_of(const Model &model)
     const std::vector<Index> functions = add_rows(draft, model);
     add_columns(draft, model);
     add_entries(draft, model, functions);
+    add_sets(draft, model);
     return draft;
 }
 

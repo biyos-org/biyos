@@ -192,6 +192,7 @@ inline constexpr std::string_view kMpsFiles[] = {
     kMaximizeMpsFile,
     kRangesMpsFile,
     kRowsMpsFile,
+    kSetsMpsFile,
 };
 
 }

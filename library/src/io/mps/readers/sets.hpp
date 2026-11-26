@@ -5,10 +5,15 @@
 #include "io/lines.hpp"
 #include "model/model.hpp"
 
+#include <optional>
 #include <set>
+#include <string_view>
 
 namespace biyos
 {
+
+std::optional<SpecialOrderedSetKind> set_kind(std::string_view code) noexcept;
+std::string_view code_of(SpecialOrderedSetKind kind) noexcept;
 
 class Sets
 {

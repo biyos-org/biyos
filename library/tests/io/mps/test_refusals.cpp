@@ -89,13 +89,24 @@ TEST(MpsTest, Records)
     complements.complements = full.complements;
     EXPECT_EQ(refusal(built(complements)),
               "unsupported: complement 0: free MPS cannot hold complements");
-    Parts sets = writable();
-    sets.special_ordered_sets = full.special_ordered_sets;
-    EXPECT_EQ(refusal(built(sets)), "unsupported: set 0: free MPS cannot hold sets");
     Parts indicators = writable();
     indicators.indicators = full.indicators;
     EXPECT_EQ(refusal(built(indicators)),
               "unsupported: indicator 0: free MPS cannot hold indicators");
+}
+
+TEST(MpsTest, SetNames)
+{
+    Parts parts = writable();
+    parts.special_ordered_sets = sample().special_ordered_sets;
+    Model members = built(parts);
+    rename(members, Family::Variable, 1, "S2");
+    EXPECT_EQ(refusal(members), "unsupported: set 0: member 'S2' cannot be written in free MPS");
+    Model sets = built(parts);
+    rename(sets, Family::SpecialOrderedSet, 1, "'MARKER'");
+    EXPECT_EQ(refusal(sets), "");
+    rename(sets, Family::SpecialOrderedSet, 1, "$s");
+    EXPECT_EQ(refusal(sets), "unsupported: set 1: name '$s' cannot be written in free MPS");
 }
 
 TEST(MpsTest, Callback)

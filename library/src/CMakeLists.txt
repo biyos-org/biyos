@@ -73,6 +73,7 @@ add_library(biyos_internal STATIC
     io/draft/labels.cpp
     io/draft/row_shape.cpp
     io/draft/sketch.cpp
+    io/draft/structure.cpp
     io/draft/support.cpp
     io/files.cpp
     io/leftovers.cpp

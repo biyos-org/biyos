@@ -1,5 +1,6 @@
 #include "reading.hpp"
 #include "samples.hpp"
+#include "writing.hpp"
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
@@ -37,6 +38,7 @@ using biyos::test::fault_of;
 using biyos::test::kIndicatorsMpsFile;
 using biyos::test::kInfinity;
 using biyos::test::kSetsMpsFile;
+using biyos::test::printed;
 using biyos::test::read_sample;
 using biyos::test::text;
 
@@ -139,6 +141,24 @@ TEST(MpsTest, SetFaults)
               bad(10, "a set member holds a column and a weight"));
     EXPECT_EQ(fault_of(text({"NAME t", "ROWS", "COLUMNS", "SOS", "BOUNDS", "ENDATA"})),
               bad(5, "section BOUNDS is out of order"));
+}
+
+TEST(MpsTest, PrintedSets)
+{
+    const std::string text = printed(read_sample(kSetsMpsFile));
+    EXPECT_TRUE(text.ends_with("BOUNDS\n"
+                               " UP BND  x  4\n"
+                               "SOS\n"
+                               " S1 pick\n"
+                               "    x  1.5\n"
+                               "    y  3\n"
+                               " S2\n"
+                               "    y  1\n"
+                               "    z  2\n"
+                               "    x  3\n"
+                               " S1 empty\n"
+                               "ENDATA\n"))
+        << text;
 }
 
 TEST(MpsTest, Indicators)
