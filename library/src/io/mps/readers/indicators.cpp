@@ -2,6 +2,7 @@
 
 #include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
+#include "io/codes.hpp"
 #include "io/draft/draft.hpp"
 #include "io/lines.hpp"
 #include "io/records.hpp"
