@@ -2545,8 +2545,9 @@ see BIYOS_getnexprsp BIYOS_addexpr BIYOS_attachexprsp
 since 0.1.0
 
 group callbacks Callbacks
-text A callback computes in user code its part $\gamma_k(x)$ of the nonlinear part of each function $k$ it covers. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for the values of those parts, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
-text The derivative patterns are coordinates, as `BIYOS_addlinterm` takes terms: `BIYOS_setcbg` takes a covered function and a variable for each entry, `BIYOS_setcbh` two variables. Entries may come in any order and may repeat, and `BIYOS_cbg` and `BIYOS_cbh` write one value for each entry in the order given, the values of a repeated entry summed.
+text A callback computes in user code its part $\gamma_k(x)$ of the nonlinear part of each function $k$ it covers. `BIYOS_addcb` names the functions it covers and the variables it reads, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for the values of those parts, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
+text A callback reads either every variable of the model, when `BIYOS_addcb` is given `BIYOS_DENSE`, or the variables it lists. A listed callback works in the numbering of its list: `x`, `v` and `hv` hold one value for each listed variable, in list order.
+text The derivative patterns are coordinates, as `BIYOS_addlinterm` takes terms: `BIYOS_setcbg` takes a covered function and a variable for each entry, `BIYOS_setcbh` two variables. They name variables in the model's numbering, for a listed callback as well, and hold only variables the callback reads. Entries may come in any order and may repeat, and `BIYOS_cbg` and `BIYOS_cbh` write one value for each entry in the order given, the values of a repeated entry summed.
 text A function's nonlinear part is its expression plus the part of every callback that covers it. A function may be in any number of callbacks and hold an expression beside them, and a callback lists a function at most once. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function. A function leaves its callbacks when `BIYOS_delcbsp` deletes them, and may then be deleted. A callback reads `x` in the numbering it was written for, so `BIYOS_delvarsp` deletes no variable of a model that has a callback.
 text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. The calls of [Evaluation](#sec-capi-evaluation) run callbacks.
 text The model keeps the function pointers and `data` as given and never frees `data`. A copy made by `BIYOS_copymdl` shares them with its source, so both call the same code with the same `data`.
@@ -2556,9 +2557,9 @@ summary What a callback is asked to evaluate.
 note `size` is `sizeof(BIYOS_cbreq)` as biyos was built. New members are added at the end, so a callback built against an older header reads the members it knows.
 note `mdl` is the model, read-only, and `cb` the index of the callback.
 note `thread` is the thread of the call, counted from 0 among the threads of a solve.
-note `x` holds a value for every variable of the model.
+note `x` holds a value for each variable the callback reads, in the order given to `BIYOS_addcb`, or for every variable of the model under `BIYOS_DENSE`. It is null when the callback reads no variable.
 note `w` holds a weight for each function the callback covers, in the order given to `BIYOS_addcb`, in a call of the Hessian or of the Hessian-vector product, and is null otherwise.
-note `v` holds a value for every variable, the vector the Hessian multiplies, in a call of the Hessian-vector product, and is null otherwise.
+note `v` holds a value for each variable `x` holds, the vector the Hessian multiplies, in a call of the Hessian-vector product, and is null otherwise or when `x` is. The product the callback writes to `hv` holds a value for each variable `x` holds, in the same order.
 note The request and its arrays are valid only while the callback runs.
 see BIYOS_cbf BIYOS_cbg BIYOS_cbh BIYOS_cbhv
 since 0.1.0
@@ -2593,7 +2594,7 @@ since 0.1.0
 type BIYOS_cbhv
 summary A function that multiplies the second derivatives of a weighted sum of a callback's nonlinear parts by a vector.
 param req in The request, with the point `x`, the weights `w` and the vector `v`.
-param hv out Receives $\left(\sum_k w_k \nabla^2 \gamma_k(x)\right) v$, a value for every variable.
+param hv out Receives $\left(\sum_k w_k \nabla^2 \gamma_k(x)\right) v$, a value for each variable `x` holds, in its order.
 param data in The callback's pointer, as given.
 note It returns 0 on success, a positive value when a function is not defined at `x` and a negative value to stop.
 see BIYOS_setcbhv BIYOS_cbreq

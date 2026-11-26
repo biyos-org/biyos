@@ -136,13 +136,44 @@ std::size_t widest(const Model &model)
     for (Index c = 0; c < model.n_callbacks(); ++c)
     {
         const Callback &callback = model.callback(c);
-        size = (std::max)({size,
-                           callback.covered.size(),
-                           callback.jacobian_pairs.size(),
-                           callback.hessian_pairs.size(),
-                           to_size(model.n_variables())});
+        size =
+            (std::max)({size,
+                        callback.covered.size(),
+                        callback.jacobian_pairs.size(),
+                        callback.hessian_pairs.size(),
+                        callback.dense ? to_size(model.n_variables()) : callback.variables.size()});
     }
     return size;
+}
+
+std::span<const Real> gather(std::span<const Index> indices,
+                             std::span<const Real> values,
+                             std::span<Real> into) noexcept
+{
+    for (std::size_t i = 0; i < indices.size(); ++i)
+    {
+        into[i] = values[to_size(indices[i])];
+    }
+    return into.first(indices.size());
+}
+
+std::span<const Real> read_by(const Callback &callback,
+                              std::span<const Real> values,
+                              std::span<Real> into) noexcept
+{
+    if (callback.dense || values.empty())
+    {
+        return values;
+    }
+    return gather(callback.variables, values, into);
+}
+
+void scatter(const Callback &callback, std::span<const Real> out, std::span<Real> hv) noexcept
+{
+    for (std::size_t i = 0; i < out.size(); ++i)
+    {
+        hv[callback.dense ? i : to_size(callback.variables[i])] += out[i];
+    }
 }
 
 }

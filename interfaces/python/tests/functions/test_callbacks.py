@@ -226,6 +226,24 @@ def test_patterns(model, seen):
     assert found == [([], []), ([], []), ([2.0, 3.0], []), ([2.0, 3.0], v)]
 
 
+def gathered(found, req, out, data):
+    found.append((list(req.x), list(req.v or []), len(out)))
+    for k in range(len(out)):
+        out[k] = req.x[k] * (req.v[k] if req.v else 1.0)
+
+
+def test_gathered(model):
+    cb = model.addcb([1], [2, 0])
+    found = []
+    function = partial(gathered, found)
+    model.setcbf(cb, function)
+    model.setcbhv(cb, function)
+    x = [1.0, 2.0, 3.0]
+    assert model.evalf(x)[1] == 3.0
+    assert model.evalhv(x, [0.0, 1.0, 0.0], [4.0, 5.0, 6.0]) == [4.0, 0.0, 18.0]
+    assert found == [([3.0, 1.0], [], 1), ([3.0, 1.0], [6.0, 4.0], 2)]
+
+
 def test_blocks(model, seen):
     fun = model.addfun(2)
     cb = model.addcb(fun)

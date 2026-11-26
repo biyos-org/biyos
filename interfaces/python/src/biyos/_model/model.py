@@ -2149,10 +2149,10 @@ class Model:
         cb
             The callback.
         hv
-            The function, as ``addcb`` describes. It writes, for every
-            variable, the entry of the product of ``req.v`` with the sum
-            of the Hessians of the callback's parts, each weighted by
-            ``req.w``, at the point.
+            The function, as ``addcb`` describes. It writes, for each
+            variable the callback reads, in its order, the entry of the
+            product of ``req.v`` with the sum of the Hessians of the
+            callback's parts, each weighted by ``req.w``, at the point.
 
         Raises
         ------

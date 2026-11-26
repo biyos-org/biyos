@@ -66,7 +66,7 @@ class Evaluation
     static void check(std::string_view argument, std::size_t size, std::size_t wanted);
     void check(std::span<const Real> x) const;
     void weigh(std::span<const Real> w);
-    Request request(Index callback, const Point &point) const noexcept;
+    Request request(Index callback, const Point &point) noexcept;
     std::span<const Real> covered(const Callback &callback, std::span<const Real> w);
     void term_function(std::span<const Real> x, std::span<Real> f) const;
     void term_jacobian(std::span<const Real> x, std::span<Real> g) const;
@@ -88,6 +88,8 @@ class Evaluation
     std::vector<Real> out_;
     std::vector<Real> weights_;
     std::vector<Real> covered_;
+    std::vector<Real> point_;
+    std::vector<Real> direction_;
     TimingTree tree_;
 };
 

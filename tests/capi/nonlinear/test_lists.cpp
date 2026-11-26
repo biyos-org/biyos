@@ -22,6 +22,14 @@ int succeed(const BIYOS_cbreq *, BIYOS_real *, void *)
     return 0;
 }
 
+int note(const BIYOS_cbreq *req, BIYOS_real *, void *data)
+{
+    std::vector<const BIYOS_real *> &seen = *static_cast<std::vector<const BIYOS_real *> *>(data);
+    seen.push_back(req->x);
+    seen.push_back(req->v);
+    return 0;
+}
+
 void build(const Model &model, int variables, int functions)
 {
     ASSERT_EQ(BIYOS_addvar(model.get(), variables, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
@@ -137,4 +145,22 @@ TEST(ListTest, Unlisted)
               kBad + "callback 0: Hessian variable 1 is not listed");
     EXPECT_EQ(BIYOS_setcbg(mdl, 0, 2, functions.data(), variables.data(), succeed), BIYOS_OK);
     EXPECT_EQ(BIYOS_setcbh(mdl, 0, 1, &variables[1], &variables[0], succeed), BIYOS_OK);
+}
+TEST(ListTest, Empty)
+{
+    const Env env;
+    const Model model(env);
+    build(model, 2, 1);
+    BIYOS_model *mdl = model.get();
+    std::vector<const BIYOS_real *> seen;
+    const BIYOS_index function = 0;
+    ASSERT_EQ(BIYOS_addcb(mdl, 1, &function, 0, nullptr, &seen, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcbf(mdl, 0, note), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setcbhv(mdl, 0, note), BIYOS_OK);
+    const std::vector<BIYOS_real> x{0.5, -1.5};
+    const BIYOS_real w = 2.0;
+    std::vector<BIYOS_real> out(2);
+    ASSERT_EQ(BIYOS_evalf(mdl, x.data(), out.data()), BIYOS_OK);
+    ASSERT_EQ(BIYOS_evalhv(mdl, x.data(), &w, x.data(), out.data()), BIYOS_OK);
+    EXPECT_EQ(seen, std::vector<const BIYOS_real *>(4, nullptr));
 }

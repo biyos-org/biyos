@@ -29,5 +29,12 @@ void evaluate(const Checker &checker,
               const Request &request,
               std::span<Real> out);
 std::size_t widest(const Model &model);
+std::span<const Real> gather(std::span<const Index> indices,
+                             std::span<const Real> values,
+                             std::span<Real> into) noexcept;
+std::span<const Real> read_by(const Callback &callback,
+                              std::span<const Real> values,
+                              std::span<Real> into) noexcept;
+void scatter(const Callback &callback, std::span<const Real> out, std::span<Real> hv) noexcept;
 
 }

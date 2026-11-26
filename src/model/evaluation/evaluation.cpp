@@ -39,6 +39,7 @@ using evaluation::layout_of;
 using evaluation::linear_of;
 using evaluation::Part;
 using evaluation::Program;
+using evaluation::read_by;
 using evaluation::require;
 using evaluation::widest;
 
@@ -84,7 +85,8 @@ Evaluation::Evaluation(const Model &model, Stream stream)
     : model_(model), stream_(stream), program_(program_of(model, stream)),
       workspace_(program_.tape), adjoints_(program_.tape), values_(to_size(program_.tape.roots())),
       gradients_(program_.tape.pattern().variables.size()), out_(widest(model)),
-      weights_(program_.roots.size()), covered_(widest(model))
+      weights_(program_.roots.size()), covered_(out_.size()), point_(out_.size()),
+      direction_(out_.size())
 {
     tree_.reserve(kSpans);
 }
@@ -145,15 +147,16 @@ void Evaluation::check(std::span<const Real> x) const
     check("x", x.size(), to_size(model_.n_variables()));
 }
 
-Request Evaluation::request(Index callback, const Point &point) const noexcept
+Request Evaluation::request(Index callback, const Point &point) noexcept
 {
+    const Callback &held = model_.callback(callback);
     return Request{
         .session = stream_.session(),
         .callback = callback,
         .thread = 0,
-        .x = point.x,
+        .x = read_by(held, point.x, point_),
         .w = point.w,
-        .v = point.v,
+        .v = read_by(held, point.v, direction_),
     };
 }
 
