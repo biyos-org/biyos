@@ -3,6 +3,7 @@
 #include "core/numbers.hpp"
 #include "expr/sparsity/reach.hpp"
 
+#include <cstddef>
 #include <span>
 #include <unordered_map>
 #include <vector>
@@ -17,6 +18,8 @@ void join(std::span<const Range> items, std::vector<Range> &into);
 template <typename Item> class Memos
 {
   public:
+    static constexpr std::size_t kFlat = 64;
+
     Offset keep(std::span<const Item> own, std::span<const Offset> links);
     void gather(std::span<const Offset> memos, std::vector<Item> &items);
 

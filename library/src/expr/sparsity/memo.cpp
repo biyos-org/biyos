@@ -16,7 +16,6 @@ namespace biyos
 namespace
 {
 
-constexpr std::size_t kFlat = 64;
 constexpr std::size_t kStamp = 0;
 constexpr std::size_t kItems = 1;
 constexpr std::size_t kLinks = 2;
