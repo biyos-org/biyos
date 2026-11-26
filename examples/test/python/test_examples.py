@@ -18,8 +18,8 @@ NAMES = [
 
 
 @pytest.fixture
-def examples(project):
-    return project / "examples"
+def examples(request):
+    return request.config.rootpath / "code" / "python"
 
 
 def test_listed(examples):
