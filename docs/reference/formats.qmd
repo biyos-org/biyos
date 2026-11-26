@@ -223,3 +223,66 @@ Every other operator, among them `atan2`, the comparisons, the logical operators
 | `plterm` | Slopes and breakpoints become the points of a piecewise linear function that is 0 at 0, as in AMPL, with one more point beyond the first and the last breakpoint so that the end slopes hold. Breakpoints that do not increase are refused. |
 | Kinds of variables | The variables used nonlinearly in objectives alone number the second count of the fifth header line less the first, the integer ones among them included. |
 | A binary variable | Bounds outside 0 and 1 are refused. |
+
+## Native {#sec-native}
+
+`BIYOS_FILEFMT_NATIVE` is biyos's own format. It holds every part of a model but its callbacks and its options, and the reader reads a written file back to the same model, every number bit for bit.
+
+### Lines
+
+A line is a record of fields separated by white space. Blank lines are skipped, and no line is a comment. The first line is `BIYOS 1`, the version of the format; a later version is refused with `BIYOS_ERR_UNSUPPORTED`. The last line is `END`, and only blank lines may follow it. A word that names no section is refused with `BIYOS_ERR_BADFILE`, since every section of the format is read.
+
+| Field | Written as |
+|---|---|
+| Number | Decimal or exponential, the sign optional, or exactly `inf` or `-inf`. The writer gives the shortest form that reads back to the same double. |
+| Index, count | A whole decimal number. Records and variables are counted from 0. |
+| Kind, sense, operator | The value of its `BIYOS_` constant, such as 2 for `BIYOS_VARKND_BIN`. |
+| Name | One field. A blank, a control byte, the byte 7F and `\` are `\` and two uppercase hexadecimal digits, so `a b` is `a\20b`. Any other byte, those of UTF-8 among them, is itself. |
+
+### Sections
+
+A section is a header line, its word and a count, then that many records, each one line but in `EXPRESSIONS`. The sections come in the order of the table, each at most once, and each may be left out. The writer leaves out an empty one. `NAMES` and `TOLERANCES` give a family after the word, one of `variable`, `function`, `constraint`, `objective`, `indicator`, `set`, `cone` and `complement`, and come at most once for each family, in that order.
+
+| Section | Each line holds |
+|---|---|
+| `NAME` | No lines: the model's name follows the word. |
+| `VARIABLES` | The kind, the lower bound and the upper bound of a variable. |
+| `FUNCTIONS` | The constant of a function. |
+| `LINEAR` | A function, a variable and its coefficient. |
+| `QUADRATIC` | A function, a row, a column and the coefficient of the pair. |
+| `PIECEWISE` | A pwl: the number of its points, then each point's $x$ and $y$. |
+| `EXPRESSIONS` | A function and the number of postfix entries of its expression, then one line for each entry: its code, its argument and the values its operator takes. |
+| `CONSTRAINTS` | A function, the lower bound and the upper bound. |
+| `OBJECTIVES` | A function, the sense, the priority, the weight, the absolute tolerance and the relative tolerance. |
+| `INDICATORS` | A binary variable, the value 0 or 1, a function, the lower bound and the upper bound. |
+| `SETS` | The kind, the number of members, then each member's variable and weight. |
+| `CONES` | The kind, the number of functions and the functions, then the number of parameters and the parameters. |
+| `COMPLEMENTS` | A function, the lower bound, the upper bound and the multiplier. |
+| `NAMES` | An index in the family and its name, the indices increasing. |
+| `TOLERANCES` | An index in the family, its absolute tolerance and its relative tolerance, `none` for a part left unset but not for both, the indices increasing. |
+
+The count of `LINEAR` and `QUADRATIC` is the number of terms; the terms of one function may come in any order. The postfix entries are those `BIYOS_addexpr` takes, the positions `BIYOS_OP_REF` names counted over the whole section. A pwl is named by its line in `PIECEWISE`, from 0. The writer writes only the expressions that functions hold, so nodes no function uses are left out, and a node used more than once is written once and named again.
+
+Each section is checked as the C API checks the same records. A record the model refuses gives `BIYOS_ERR_BADFILE` at the header line of its section, with the model's message.
+
+### Writing {#sec-native-writing}
+
+The writer refuses a model with a callback with `BIYOS_ERR_UNSUPPORTED`, naming the first, before the file is made. Options set on the model are left out with one warning event from module `io`, with the field `file`. Hooks are not part of the problem and are left out with no event.
+
+```
+BIYOS 1
+NAME small\20model
+VARIABLES 2
+1 0 inf
+2 0 1
+FUNCTIONS 1
+0
+LINEAR 2
+0 0 1
+0 1 2
+CONSTRAINTS 1
+0 -inf 4
+NAMES variable 1
+0 x
+END
+```
