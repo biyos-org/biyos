@@ -333,6 +333,7 @@ def _declare_settings(lib: ctypes.CDLL) -> None:
     _declare(lib, "BIYOS_getmdlstropt", c_void_p, c_integer, _STRINGS)
     pointers = (POINTER(c_mask), POINTER(c_mask))
     _declare(lib, "BIYOS_getmdlflgopt", c_void_p, c_integer, *pointers)
+    _declare(lib, "BIYOS_delenvopt", c_void_p, c_integer)
     _declare(lib, "BIYOS_delmdlopt", c_void_p, c_integer)
     _declare(lib, "BIYOS_getmdloptsrc", c_void_p, c_integer, _INTEGERS)
 

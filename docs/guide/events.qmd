@@ -71,7 +71,7 @@ The one check so far is that of an evaluation: a callback that returns 0 must le
 
 ## Inside a hook {#sec-events-inside}
 
-While a hook runs, whether it belongs to the environment or to one of its models, the environment is delivering an event and is read-only to the hook's thread, together with every model made on it. The hook may read options, the last error, the event and the models. A call that would change the environment or one of its models, setting an option, adding or removing a hook, creating, changing or freeing a model, fails with `BIYOS_ERR_BADARG` and changes nothing. Such a failure keeps its message, so `BIYOS_lasterror` explains it, but sends no event, and when the hook returns the last error is again what it was before. The event and every string read from it are valid only until the hook returns.
+While a hook runs, whether it belongs to the environment or to one of its models, the environment is delivering an event and is read-only to the hook's thread, together with every model made on it. The hook may read options, the last error, the event and the models. A call that would change the environment or one of its models, setting or dropping an option, adding or removing a hook, creating, changing or freeing a model, fails with `BIYOS_ERR_BADARG` and changes nothing. Such a failure keeps its message, so `BIYOS_lasterror` explains it, but sends no event, and when the hook returns the last error is again what it was before. The event and every string read from it are valid only until the hook returns.
 
 ## Events in Python {#sec-events-python}
 

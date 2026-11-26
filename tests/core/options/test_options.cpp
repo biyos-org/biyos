@@ -418,6 +418,41 @@ TEST(OptionTest, Sources)
               "internal error: option 0: has no table row");
 }
 
+TEST(OptionTest, Drop)
+{
+    using biyos::OptionSource;
+    Listener listener;
+    biyos::Options options(listener.env);
+    options.set_int(Option::Seed, 3);
+    options.drop(Option::Seed);
+    EXPECT_EQ(options.get_int(Option::Seed), 0);
+    EXPECT_EQ(options.source_of(Option::Seed), OptionSource::Default);
+    options.drop(Option::TimeLimit);
+    EXPECT_EQ(options.source_of(Option::TimeLimit), OptionSource::Default);
+    EXPECT_EQ(failure([&] { options.drop(Option{11}); }),
+              "internal error: option 11: has no table row");
+}
+
+TEST(OptionTest, DropKept)
+{
+    Listener listener;
+    biyos::Options options(listener.env);
+    options.set_string(Option::Reproducer, "replay.txt");
+    const std::string_view held = options.get_string(Option::Reproducer);
+    options.drop(Option::Reproducer);
+    EXPECT_EQ(options.get_string(Option::Reproducer), "");
+    EXPECT_EQ(held, "replay.txt");
+    EXPECT_EQ(held.data()[held.size()], '\0');
+}
+
+TEST(OptionTest, DropSilent)
+{
+    Listener listener;
+    biyos::Options options(kRows, listener.env);
+    options.drop(Option{2});
+    EXPECT_TRUE(listener.heard.empty());
+}
+
 TEST(OptionTest, Table)
 {
     Listener listener;

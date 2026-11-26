@@ -51,6 +51,12 @@ Masks default_of(const FlagsRule &)
     return Masks{};
 }
 
+OptionValue default_of(const OptionSpec &spec)
+{
+    const auto value_of = [](const auto &rule) { return OptionValue(default_of(rule)); };
+    return std::visit(value_of, spec.rule);
+}
+
 std::span<const OptionSpec> checked(std::span<const OptionSpec> table)
 {
     if (!well_formed(table, version()))
@@ -78,10 +84,9 @@ std::vector<OptionValue> Options::defaults()
 {
     std::vector<OptionValue> values;
     values.reserve(table_.size());
-    const auto value_of = [](const auto &rule) { return OptionValue(default_of(rule)); };
     for (const OptionSpec &spec : table_)
     {
-        values.push_back(kept(strings_, std::visit(value_of, spec.rule)));
+        values.push_back(kept(strings_, default_of(spec)));
     }
     return values;
 }
@@ -117,6 +122,13 @@ void Options::store(Option option, const OptionValue &value)
     values_[index_of(option)] = kept(strings_, value);
     sources_[index_of(option)] = OptionSource::Environment;
     warn_deprecated(env_.stream(), table_, spec);
+}
+
+void Options::drop(Option option)
+{
+    const OptionSpec &spec = row_of(table_, option);
+    values_[index_of(option)] = kept(strings_, default_of(spec));
+    sources_[index_of(option)] = OptionSource::Default;
 }
 
 bool Options::get_bool(Option option) const

@@ -367,6 +367,29 @@ def test_deleted(env, model):
     assert model.getoptsrc("seed") is OptionSource.DEFAULT
 
 
+def test_env_deleted(env, model):
+    env.setopt("seed", 3)
+    with biyos.Model(env) as own:
+        own.setopt("seed", 7)
+        env.delopt("seed")
+        assert own.getopt("seed") == 7
+        assert own.getoptsrc("seed") is OptionSource.MODEL
+    assert env.getopt("seed") == 0
+    assert model.getoptsrc("seed") is OptionSource.DEFAULT
+    env.delopt("seed")
+    env.delopt("maxtime")
+    assert model.getoptsrc("maxtime") is OptionSource.DEFAULT
+    with pytest.raises(biyos.Error, match="option 'nope': unknown"):
+        env.delopt("nope")
+
+
+def test_env_delete_closed():
+    env = biyos.Env()
+    env.close()
+    with pytest.raises(ValueError, match="the environment is closed"):
+        env.delopt("seed")
+
+
 def test_shared(env, model):
     env.setopt("checking", biyos.Checking.FULL)
     assert model.getopt("checking") is biyos.Checking.FULL

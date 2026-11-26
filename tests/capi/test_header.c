@@ -902,6 +902,11 @@ int main(void)
     {
         status = BIYOS_ERR_INTERNAL;
     }
+    if (BIYOS_delenvopt(env, BIYOS_OPT_SEED) != BIYOS_OK ||
+        BIYOS_getenvintopt(env, BIYOS_OPT_SEED, &seed) != BIYOS_OK || seed != 0)
+    {
+        status = BIYOS_ERR_INTERNAL;
+    }
     if (use_evaluation(env) != BIYOS_OK)
     {
         status = BIYOS_ERR_INTERNAL;
