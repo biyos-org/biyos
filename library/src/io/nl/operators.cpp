@@ -19,7 +19,7 @@ constexpr std::array kOpcodes{
     Opcode{3, "div", Rule::Same, Arity::Two, Operator::Division},
     Opcode{4, "rem", Rule::Refused},
     Opcode{5, "pow", Rule::Raise, Arity::Two},
-    Opcode{6, "less", Rule::Refused},
+    Opcode{6, "less", Rule::Less, Arity::Two},
     Opcode{11, "min", Rule::Same, Arity::Many, Operator::Min},
     Opcode{12, "max", Rule::Same, Arity::Many, Operator::Max},
     Opcode{13, "floor", Rule::Refused},
