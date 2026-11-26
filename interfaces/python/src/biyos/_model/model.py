@@ -1496,6 +1496,56 @@ class Model:
         found, values = self._terms("rlinterm", Functions, every, 0)
         return found[0], found[1], values
 
+    def addclinterm(
+        self,
+        var: Index | Variable | Sequence[Index | Variable] | Variables,
+        fun: (
+            Index
+            | Function
+            | Sequence[Index | Function]
+            | Functions
+            | Sequence[Sequence[Index | Function] | Functions]
+        ),
+        coef: Real | Sequence[Real] | Sequence[Sequence[Real]],
+    ) -> None:
+        """Add linear terms to functions, by variable.
+
+        Each entry of ``fun`` is a sequence, and variable ``var[j]`` joins
+        function ``fun[j][k]`` with the coefficient ``coef[j][k]`` for each
+        ``k``; a variable listed twice joins both groups. A scalar ``var``
+        is one variable, ``fun`` and ``coef`` its terms, or its one term
+        when both are scalars. A variable the function holds already adds
+        its coefficient to the one held.
+
+        Parameters
+        ----------
+        var
+            The variables, in any order, a block or a range of them; or one
+            variable.
+        fun
+            A sequence of functions for each variable, each function once
+            for its variable.
+        coef
+            The coefficient of each term, nested as ``fun`` is.
+
+        Raises
+        ------
+        TypeError
+            When ``fun`` or ``coef`` is not nested as ``var`` asks, or
+            ``coef`` is a sequence where a scalar ``var`` and ``fun`` want a
+            scalar.
+        ValueError
+            When an entry of ``coef`` is not as long as that of ``fun``.
+
+        See Also
+        --------
+        BIYOS_addclintermsp
+        BIYOS_addclintermrg
+        """
+        lead = (Variables, "var", var)
+        others = [(Functions, "fun", fun)]
+        self._addlists("BIYOS_addclinterm", lead, others, coef)
+
     def getnclinterm(
         self, idx: Sequence[Index | Variable] | Variables | None = None
     ) -> Offset:

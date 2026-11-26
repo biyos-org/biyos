@@ -7,6 +7,7 @@ import biyos
 from biyos._capi import lib
 
 LINEAR = biyos.Model.addlinterm
+COLUMN = biyos.Model.addclinterm
 FUN = [0, 7, 9]
 VAR = [[1, 2, 3], [0, 4, 5, 6, 8], [2, 3]]
 COEF = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0, 8.0], [9.0, -1.0]]
@@ -71,6 +72,15 @@ def test_twice(env):
     assert twice == built(env, LINEAR, [7, 7], [0, 4], [1.0, 2.0])
 
 
+def test_column(env):
+    var = [4, 5]
+    fun = [[0], [1, 2]]
+    coef = [[9.0], [8.0, 7.0]]
+    by_variable = built(env, COLUMN, var, fun, coef)
+    flat = joined(fun), repeated(var, fun), joined(coef)
+    assert by_variable == built(env, LINEAR, *flat)
+
+
 def test_blocks(model):
     x = model.addvar(3)
     f = model.addfun(2)
@@ -103,6 +113,17 @@ def test_calls(model, monkeypatch):
     assert seen == [names[k] for k in (1, 2, 2, 1, 0, 0, 0)]
 
 
+def test_column_calls(model, monkeypatch):
+    names = ("BIYOS_addclintermsp", "BIYOS_addclintermrg")
+    seen = spy(monkeypatch, *names)
+    x = model.addvar(2)
+    model.addclinterm([0, 2], [[0], [1]], [[1.0], [2.0]])
+    model.addclinterm(x, [[0], [1]], [[1.0], [2.0]])
+    model.addclinterm(range(3), [[0], [1], []], [[1.0], [2.0], []])
+    model.addclinterm(x[1], 2, 1.0)
+    assert seen == [names[0], names[1], names[1], names[0]]
+
+
 def test_ragged(model):
     before = held(model)
     short = [COEF[0], COEF[1][:4], COEF[2]]
@@ -114,6 +135,8 @@ def test_ragged(model):
         model.addlinterm([0, 1], [[1], [2]], [1.0, 2.0])
     with pytest.raises(ValueError, match="var has length 2, not 3"):
         model.addlinterm(FUN, VAR[:2], COEF)
+    with pytest.raises(ValueError, match=r"coef\[0\] has length 2, not 1"):
+        model.addclinterm([0], [[1]], [[1.0, 2.0]])
     with pytest.raises(TypeError, match=r"an entry of coef\[0\] must be a"):
         model.addlinterm([0], [[1]], [["1"]])
     assert held(model) == before
@@ -124,8 +147,12 @@ def test_named(model):
     f = model.addfun(1)
     with pytest.raises(TypeError, match="an entry of fun is a variable"):
         model.addlinterm([x[0]], [[0]], [[1.0]])
+    with pytest.raises(TypeError, match="an entry of var is a function"):
+        model.addclinterm([f[0]], [[0]], [[1.0]])
     with pytest.raises(TypeError, match=r"an entry of var\[0\] is a func"):
         model.addlinterm([0], [[f[0]]], [[1.0]])
+    with pytest.raises(TypeError, match=r"an entry of fun\[0\] is a vari"):
+        model.addclinterm([0], [[x[0]]], [[1.0]])
 
 
 def test_read_back(env, model):
@@ -141,6 +168,8 @@ def test_read_back(env, model):
     [
         (LINEAR, (7, [0, 4], [1.0, 2.0]), ([7], [[0, 4]], [[1.0, 2.0]])),
         (LINEAR, (7, 4, 2.0), ([7], [[4]], [[2.0]])),
+        (COLUMN, (2, [0, 1], [1.0, 2.0]), ([2], [[0, 1]], [[1.0, 2.0]])),
+        (COLUMN, (2, 1, 3.0), ([2], [[1]], [[3.0]])),
     ],
 )
 def test_scalar(env, add, scalar, listed):
@@ -159,7 +188,8 @@ def test_views(model):
     x = model.addvar(1)
     f = model.addfun(1)
     model.addlinterm(f[0], x[0], 2.0)
-    assert model.getrlinterm(f) == ([10], [10], [2.0])
+    model.addclinterm(x[0], [f[0]], [3.0])
+    assert model.getrlinterm(f) == ([10], [10], [5.0])
 
 
 @pytest.mark.parametrize(
@@ -172,6 +202,9 @@ def test_views(model):
         (LINEAR, (0, 1, [1.0]), "coef must be a scalar, not list"),
         (LINEAR, (None, 1, 1.0), "^fun must be an int, not NoneType"),
         (LINEAR, (True, 1, 1.0), "^fun must be an int, not bool"),
+        (COLUMN, ([0, 1], 2, [1.0, 2.0]), "fun must be a sequence"),
+        (COLUMN, ([0], [1], [1.0]), r"fun\[0\] must be a sequence"),
+        (COLUMN, (0, [1], 2.0), "coef must be a sequence"),
     ],
 )
 def test_refused(model, add, arguments, message):
