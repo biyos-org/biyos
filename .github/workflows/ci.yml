@@ -109,6 +109,8 @@ jobs:
           python3 tools/check_copies.py
           --licence LICENSE
           --copies $(git ls-files '*LICENSE')
+          --format library/.clang-format
+          --format-copies examples/.clang-format
           --library library/CMakeLists.txt
           --examples examples/CMakeLists.txt
           --python interfaces/python/pyproject.toml
