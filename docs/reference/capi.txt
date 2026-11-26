@@ -2898,6 +2898,7 @@ table Formats
 value BIYOS_FILEFMT_MPS Free MPS, for linear and mixed-integer models.
 value BIYOS_FILEFMT_FIXEDMPS Fixed MPS, for linear and mixed-integer models. Read only.
 value BIYOS_FILEFMT_NL Text NL, for nonlinear models. Read only.
+value BIYOS_FILEFMT_NATIVE The biyos format, which holds every part of a model but its callbacks and its options.
 since 0.1.0
 
 function BIYOS_readmdl

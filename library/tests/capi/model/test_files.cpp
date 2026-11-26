@@ -5,6 +5,7 @@
 #include "files.hpp"
 #include "handles.hpp"
 #include "probes.hpp"
+#include "sample.hpp"
 
 #include "../../io/mps/utils/samples.hpp"
 
@@ -19,6 +20,8 @@ namespace
 {
 
 using biyos::FakeClock;
+using biyos::test::build_sample;
+using biyos::test::Engine;
 using biyos::test::Env;
 using biyos::test::kLpMpsFile;
 using biyos::test::mark;
@@ -183,6 +186,22 @@ TEST(CApiTest, WriteFile)
     EXPECT_EQ(count_of(BIYOS_getnobj, back.model), 1);
     EXPECT_EQ(BIYOS_freemdl(back.model), BIYOS_OK);
     EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
+}
+
+TEST(CApiTest, NativeFile)
+{
+    const Env env;
+    const Model model(env);
+    Engine engine(3);
+    build_sample(model.get(), engine);
+    const std::string path = testing::TempDir() + "biyos_native.biyos";
+    ASSERT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_NATIVE), BIYOS_OK);
+    const Read back = read(env, path.c_str(), BIYOS_FILEFMT_NATIVE);
+    ASSERT_EQ(back.status, BIYOS_OK);
+    BIYOS_int same = 0;
+    EXPECT_EQ(BIYOS_cmpmdl(model.get(), back.model, &same), BIYOS_OK);
+    EXPECT_EQ(same, 1);
+    EXPECT_EQ(BIYOS_freemdl(back.model), BIYOS_OK);
 }
 
 TEST(CApiTest, WriteRefused)

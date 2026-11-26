@@ -17,12 +17,14 @@ enum class FileFormat
     Mps = BIYOS_FILEFMT_MPS,
     FixedMps = BIYOS_FILEFMT_FIXEDMPS,
     Nl = BIYOS_FILEFMT_NL,
+    Native = BIYOS_FILEFMT_NATIVE,
 };
 
 inline constexpr std::array kFormats{
     FileFormat::Mps,
     FileFormat::FixedMps,
     FileFormat::Nl,
+    FileFormat::Native,
 };
 
 FileFormat find_format(int id);

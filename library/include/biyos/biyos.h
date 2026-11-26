@@ -191,6 +191,7 @@ BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *b
 #define BIYOS_FILEFMT_MPS 1
 #define BIYOS_FILEFMT_FIXEDMPS 2
 #define BIYOS_FILEFMT_NL 3
+#define BIYOS_FILEFMT_NATIVE 4
 
 BIYOS_API BIYOS_status BIYOS_newmdl(BIYOS_env *env, BIYOS_model **mdl);
 BIYOS_API BIYOS_status BIYOS_copymdl(const BIYOS_model *mdl, BIYOS_env *env, BIYOS_model **copy);
