@@ -148,8 +148,11 @@ biyos_add_test(test_io
     io/mps/test_refusals.cpp
     io/mps/test_structure.cpp
     io/mps/test_write.cpp
+    io/nl/test_faults.cpp
+    io/nl/test_nl.cpp
+    io/nl/test_refusals.cpp
     io/test_lines.cpp)
-target_include_directories(test_io PRIVATE io/mps/utils)
+target_include_directories(test_io PRIVATE io/mps/utils io/nl/utils)
 target_link_libraries(test_io PRIVATE biyos_internal)
 
 biyos_add_test(test_capi
