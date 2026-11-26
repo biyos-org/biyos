@@ -42,16 +42,12 @@ using biyos::rises;
 using biyos::segments;
 using biyos::Shapes;
 
-using Wide = long double;
-
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::uint64_t kSeed = 20261124;
 constexpr int kLines = 400;
 constexpr int kBoxes = 12;
-constexpr int kSamples = 64;
 constexpr int kReported = 5;
-constexpr Wide kSlack = 1e-12L;
-constexpr Real kSpacing = 1e-6;
+constexpr Real kRounding = 4 * std::numeric_limits<Real>::epsilon();
 
 constexpr Curvature kAffine = Curvature::Affine;
 constexpr Curvature kConvex = Curvature::Convex;
@@ -109,64 +105,42 @@ Curvature nested(const Line &line, Operator op, Real sign, Interval x)
     return shapes.curvature(root);
 }
 
-Wide real_at(const Line &line, Real t)
+std::size_t segment_of(const Line &line, Real t)
 {
     std::size_t k = 0;
     while (k + 2 < line.x.size() && !(t < line.x[k + 1]))
     {
         ++k;
     }
-    const Wide rise = static_cast<Wide>(line.y[k + 1]) - line.y[k];
-    const Wide run = static_cast<Wide>(line.x[k + 1]) - line.x[k];
-    return line.y[k] + (static_cast<Wide>(t) - line.x[k]) * rise / run;
+    return k;
 }
 
-std::vector<Real> spaced(std::span<const Real> sorted, Real gap)
+Real slope_of(const Line &line, std::size_t k)
 {
-    std::vector<Real> kept;
-    for (const Real t : sorted)
+    return (line.y[k + 1] - line.y[k]) / (line.x[k + 1] - line.x[k]);
+}
+
+std::vector<Real> slopes_of(const Line &line, Interval box)
+{
+    std::vector<Real> slopes;
+    std::size_t k = segment_of(line, box.lower());
+    if (box.lower() < box.upper())
     {
-        if (kept.empty() || t - kept.back() > gap)
-        {
-            kept.push_back(t);
-        }
+        slopes.push_back(slope_of(line, k));
     }
-    return kept;
-}
-
-std::vector<Real> samples_of(const Line &line, Interval box, std::mt19937_64 &engine)
-{
-    const Real from = std::isfinite(box.lower()) ? box.lower() : line.x.front() - 5.0;
-    const Real to = std::isfinite(box.upper()) ? box.upper() : line.x.back() + 5.0;
-    std::vector<Real> found{from, to};
-    std::uniform_real_distribution<Real> draw(0.0, 1.0);
-    for (int k = 0; k < kSamples; ++k)
+    while (k + 2 < line.x.size() && line.x[k + 1] < box.upper())
     {
-        found.push_back(from + (to - from) * draw(engine));
+        slopes.push_back(slope_of(line, ++k));
     }
-    found.insert(found.end(), line.x.begin(), line.x.end());
-    std::erase_if(found, [from, to](Real t) { return !(from <= t && t <= to); });
-    std::ranges::sort(found);
-    return spaced(found, kSpacing * (to - from));
+    return slopes;
 }
 
-std::vector<Wide> secants_of(const Line &line, std::span<const Real> t)
+bool ordered(std::span<const Real> slopes, Real sign)
 {
-    std::vector<Wide> secants;
-    for (std::size_t k = 0; k + 1 < t.size(); ++k)
+    for (std::size_t k = 0; k + 1 < slopes.size(); ++k)
     {
-        const Wide rise = real_at(line, t[k + 1]) - real_at(line, t[k]);
-        secants.push_back(rise / (static_cast<Wide>(t[k + 1]) - t[k]));
-    }
-    return secants;
-}
-
-bool ordered(std::span<const Wide> secants, Wide sign)
-{
-    for (std::size_t k = 0; k + 1 < secants.size(); ++k)
-    {
-        const Wide step = sign * (secants[k + 1] - secants[k]);
-        if (step < -kSlack * (1 + std::fabs(secants[k])))
+        const Real step = sign * (slopes[k + 1] - slopes[k]);
+        if (step < -kRounding * (std::fabs(slopes[k]) + std::fabs(slopes[k + 1])))
         {
             return false;
         }
@@ -174,17 +148,17 @@ bool ordered(std::span<const Wide> secants, Wide sign)
     return true;
 }
 
-bool signed_as(std::span<const Wide> secants, Wide sign)
+bool signed_as(std::span<const Real> slopes, Real sign)
 {
-    return std::ranges::all_of(secants, [sign](Wide s) { return sign * s >= -kSlack; });
+    return std::ranges::all_of(slopes, [sign](Real s) { return sign * s >= 0.0; });
 }
 
-bool holds(const Profile &profile, std::span<const Wide> secants)
+bool holds(const Profile &profile, std::span<const Real> slopes)
 {
-    const bool convex = !is_convex(profile.curvature) || ordered(secants, 1);
-    const bool concave = !is_concave(profile.curvature) || ordered(secants, -1);
-    const bool rising = !rises(profile.argument.monotonicity) || signed_as(secants, 1);
-    const bool falling = !falls(profile.argument.monotonicity) || signed_as(secants, -1);
+    const bool convex = !is_convex(profile.curvature) || ordered(slopes, 1);
+    const bool concave = !is_concave(profile.curvature) || ordered(slopes, -1);
+    const bool rising = !rises(profile.argument.monotonicity) || signed_as(slopes, 1);
+    const bool falling = !falls(profile.argument.monotonicity) || signed_as(slopes, -1);
     return convex && concave && rising && falling;
 }
 
@@ -313,10 +287,8 @@ TEST(CurvatureTest, Slopes)
         {
             const Interval box = random_box(line, engine);
             const Profile profile = segments(line.pwl(), box);
-            const std::vector<Real> t = samples_of(line, box, engine);
-            const std::vector<Wide> secants = secants_of(line, t);
             claimed += profile.curvature == kNeither ? 0 : 1;
-            if (!holds(profile, secants) && reported++ < kReported)
+            if (!holds(profile, slopes_of(line, box)) && reported++ < kReported)
             {
                 ADD_FAILURE() << text_of(line) << " over [" << box.lower() << ", " << box.upper()
                               << "] claims " << static_cast<int>(profile.curvature) << " "
