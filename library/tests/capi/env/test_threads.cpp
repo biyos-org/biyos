@@ -391,3 +391,29 @@ TEST(ThreadTest, CopyTarget)
     EXPECT_EQ(BIYOS_copymdl(model.get(), target.get(), &copy), BIYOS_OK);
     EXPECT_EQ(BIYOS_freemdl(copy), BIYOS_OK);
 }
+
+TEST(ThreadTest, CompareOther)
+{
+    const biyos::test::Env first;
+    const biyos::test::Env second;
+    const Model a(first);
+    const Model b(second);
+    BIYOS_int same = -1;
+    {
+        Held held(run<change_model, BIYOS_model>, b.get());
+        EXPECT_EQ(BIYOS_cmpmdl(a.get(), b.get(), &same), BIYOS_ERR_BUSY);
+        EXPECT_EQ(first.message(), "busy: model: is being changed on another thread");
+        EXPECT_EQ(last_error(first.get()).mdl, a.get());
+        EXPECT_EQ(held.release(), BIYOS_OK);
+    }
+    {
+        Held held(run<change_env, BIYOS_env>, second.get());
+        EXPECT_EQ(BIYOS_cmpmdl(a.get(), b.get(), &same), BIYOS_ERR_BUSY);
+        EXPECT_EQ(first.message(), "busy: environment: is being changed on another thread");
+        EXPECT_EQ(held.release(), BIYOS_OK);
+    }
+    EXPECT_EQ(same, -1);
+    EXPECT_EQ(second.message(), "");
+    EXPECT_EQ(BIYOS_cmpmdl(a.get(), b.get(), &same), BIYOS_OK);
+    EXPECT_EQ(same, 1);
+}
