@@ -45,9 +45,9 @@ void add_sliced(Model &model,
     model.add_linear_terms(owners, begins, packed(total, variables, values));
 }
 
-void add_grouped(Model &model,
-                 std::span<const Index> functions,
-                 const std::vector<LinearTerm> &terms)
+void add_linear(Model &model,
+                std::span<const Index> functions,
+                const std::vector<LinearTerm> &terms)
 {
     Grouped<LinearTerm> groups = grouped(functions, std::span<const LinearTerm>(terms));
     model.add_linear_terms(groups.functions, groups.starts, std::move(groups.terms));
@@ -84,7 +84,7 @@ void add_listed(Session &session,
     }
     model.check_room(0, nnz);
     const std::span<const Index> owners(functions, size);
-    add_grouped(model, owners, packed(size, variables, values));
+    add_linear(model, owners, packed(size, variables, values));
 }
 
 void add_rows(Session &session,
@@ -114,7 +114,7 @@ void add_columns(Session &session,
         require(values, "coef");
     }
     const std::span<const Index> owners(functions, total);
-    add_grouped(model, owners, column_terms(variables, begins, values));
+    add_linear(model, owners, column_terms(variables, begins, values));
 }
 
 }
