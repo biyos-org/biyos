@@ -10,16 +10,17 @@ A model keeps its environment alive, so an environment the program no longer ref
 
 ## Blocks and views {#sec-python-blocks}
 
-`addvar`, `addfun`, `addcon`, `addobj`, `addind`, `addsos`, `addcone`, `addccon` and `addpwl` return a block: `Variables`, `Functions`, `Constraints`, `Objectives`, `Indicators`, `SpecialOrderedSets`, `Cones`, `Complements` or `PiecewiseLinears`. A block holds its model, the index of its first item and its count, so it costs the same whether it holds three items or three million. It supports `len`, iteration, indexing from either end and slicing with step 1:
+`addvar`, `addfun`, `addcon`, `addobj`, `addind`, `addsos`, `addcone`, `addccon` and `addpwl` return a block: `Variables`, `Functions`, `Constraints`, `Objectives`, `Indicators`, `SpecialOrderedSets`, `Cones`, `Complements` or `PiecewiseLinears`. A block holds its model and the indices of its items, in one of two forms. A block an adder returns holds a range, the index of its first item and its count, so it costs the same whether it holds three items or three million. A block can also hold a list of indices, in any order and with repeats, in an array of C ints that only the block reaches. Both forms support `len`, iteration, indexing from either end and slicing with step 1, and a slice shares the indices of its block rather than copying them. `indices()` returns them as a new list, so changing the list leaves the block as it was:
 
 ```python
 x = model.addvar(4)
 len(x)        # 4
 x[-1]         # the view of variable 3
 x[1:3]        # a block of variables 1 and 2
+x.indices()   # [0, 1, 2, 3]
 ```
 
-Indexing a block gives a view, such as a `Variable`, which passes as its index wherever the model takes one: `int(x[2])` is 2. A whole block passes wherever the model takes a list of indices. A block or a `range` with step 1 goes to the `rg` form of the C call, two integers whatever its size, and any other sequence to the `sp` form; both give the same result, except that a range past the last item is refused even when it is empty. The model checks the family and the owner of each view and block, so passing a function where a variable is due raises `TypeError`, and a variable of another model `ValueError`, instead of naming the wrong item. `on` gives the block of the same indices in another model, such as a copy ([Copying in Python](#sec-copy-python)).
+Indexing a block gives a view, such as a `Variable`, which passes as its index wherever the model takes one: `int(x[2])` is 2. A whole block passes wherever the model takes a list of indices. A block of a range, or a `range` with step 1, goes to the `rg` form of the C call, two integers whatever its size. A block of a list passes its array to the `sp` form as it is, with no copy and no check of each entry, and any other sequence goes to the `sp` form too; both forms give the same result, except that a range past the last item is refused even when it is empty. The model checks the family and the owner of each view and block, so passing a function where a variable is due raises `TypeError`, and a variable of another model `ValueError`, instead of naming the wrong item. `on` gives the block of the same indices in another model, such as a copy ([Copying in Python](#sec-copy-python)).
 
 `delvar`, `delfun`, `delcon`, `delobj`, `delind`, `delsos`, `delcone` and `delccon` take an index, a view, a list, a range or a block, delete those items and return the map of [Deleting records](#sec-model-deleting) as a list, one entry for each item the model held, even when one item goes. Once a call deletes an item, the indices of every block and view the model gave before may name other items, so the model refuses them with `ValueError`, whatever their family. A call that deletes nothing leaves them valid. `delcb` takes a callback or a list of callbacks and returns the same map; callbacks have no blocks, so it leaves every block and view valid.
 
