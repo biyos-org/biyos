@@ -13,8 +13,11 @@
 namespace
 {
 
+using biyos::test::check_tolerances;
 using biyos::test::Env;
 using biyos::test::expect_doubles;
+using biyos::test::kConstraintTolerances;
+using biyos::test::last_message;
 using biyos::test::Model;
 struct Records
 {
@@ -104,7 +107,7 @@ struct Attempt
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
+    attempt.messages.emplace_back(last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)
@@ -378,5 +381,5 @@ TEST(CApiTest, ConstraintRefusals)
 
 TEST(CApiTest, ConstraintTolerances)
 {
-    biyos::test::check_tolerances(biyos::test::kConstraintTolerances, add_sample);
+    check_tolerances(kConstraintTolerances, add_sample);
 }

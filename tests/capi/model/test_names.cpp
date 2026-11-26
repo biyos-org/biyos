@@ -12,6 +12,7 @@ namespace
 {
 
 using biyos::test::Env;
+using biyos::test::last_message;
 using biyos::test::Model;
 
 const std::string kLocked = "invalid argument: model: is read-only while delivering an event";
@@ -201,7 +202,7 @@ std::string refused(const Calls &family, BIYOS_index index, const std::string &r
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
+    attempt.messages.emplace_back(last_message(attempt.env));
 }
 
 void rename(const BIYOS_event *, void *data)

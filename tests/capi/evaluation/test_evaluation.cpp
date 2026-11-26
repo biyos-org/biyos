@@ -19,6 +19,8 @@
 namespace
 {
 
+using biyos::Evaluation;
+using biyos::Lookup;
 using biyos::test::build_mixed;
 using biyos::test::Env;
 using biyos::test::kDirection;
@@ -45,8 +47,8 @@ struct Reference
     }
 
     BIYOS_model &handle;
-    biyos::Evaluation evaluation;
-    biyos::Lookup lookup;
+    Evaluation evaluation;
+    Lookup lookup;
 };
 
 Values values_of(const Model &model)

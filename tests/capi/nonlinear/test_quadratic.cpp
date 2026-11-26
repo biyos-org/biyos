@@ -15,6 +15,7 @@ namespace
 {
 
 using biyos::test::Env;
+using biyos::test::last_message;
 using biyos::test::Model;
 
 constexpr int kNoVariable = -7;
@@ -153,7 +154,7 @@ struct Attempt
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
+    attempt.messages.emplace_back(last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)

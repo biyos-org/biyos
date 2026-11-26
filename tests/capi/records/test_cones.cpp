@@ -15,7 +15,10 @@
 namespace
 {
 
+using biyos::test::check_tolerances;
 using biyos::test::Env;
+using biyos::test::kConeTolerances;
+using biyos::test::last_message;
 using biyos::test::Model;
 
 using Indices = std::vector<BIYOS_index>;
@@ -170,7 +173,7 @@ struct Attempt
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
+    attempt.messages.emplace_back(last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)
@@ -371,5 +374,5 @@ TEST(CApiTest, LockedCones)
 
 TEST(CApiTest, ConeTolerances)
 {
-    biyos::test::check_tolerances(biyos::test::kConeTolerances, add_sample);
+    check_tolerances(kConeTolerances, add_sample);
 }

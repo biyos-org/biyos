@@ -12,7 +12,9 @@
 namespace
 {
 
+using biyos::difference;
 using biyos::test::Env;
+using biyos::test::last_message;
 using biyos::test::Model;
 
 const std::string kLocked =
@@ -118,7 +120,7 @@ Held copied(const Held &source, BIYOS_env *env)
     BIYOS_model *copy = nullptr;
     EXPECT_EQ(BIYOS_copymdl(source.model, env, &copy), BIYOS_OK);
     EXPECT_NE(copy, nullptr);
-    EXPECT_EQ(biyos::difference(source.model->model(), copy->model()), "");
+    EXPECT_EQ(difference(source.model->model(), copy->model()), "");
     return Held{.env = env, .model = copy};
 }
 
@@ -182,7 +184,7 @@ TEST(CApiTest, SameCopy)
         BIYOS_env *env = created();
         const Held source = made_on(env);
         const Held copy = copied(source, env);
-        EXPECT_STREQ(biyos::test::last_message(env), "");
+        EXPECT_STREQ(last_message(env), "");
         free_both(copy_first ? copy : source, copy_first ? source : copy);
     }
 }
@@ -194,8 +196,8 @@ TEST(CApiTest, OtherCopy)
         SCOPED_TRACE(copy_first ? "copy first" : "source first");
         const Held source = made_on(created());
         const Held copy = copied(source, created());
-        EXPECT_STREQ(biyos::test::last_message(source.env), "");
-        EXPECT_STREQ(biyos::test::last_message(copy.env), "");
+        EXPECT_STREQ(last_message(source.env), "");
+        EXPECT_STREQ(last_message(copy.env), "");
         free_both(copy_first ? copy : source, copy_first ? source : copy);
     }
 }
@@ -208,11 +210,11 @@ TEST(CApiTest, HeldCopy)
     const Held other = copied(source, created());
     EXPECT_EQ(BIYOS_freemdl(source.model), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(source.env), BIYOS_ERR_BADARG);
-    EXPECT_EQ(biyos::test::last_message(source.env), held);
+    EXPECT_EQ(last_message(source.env), held);
     EXPECT_EQ(BIYOS_freemdl(same.model), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(source.env), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(other.env), BIYOS_ERR_BADARG);
-    EXPECT_EQ(biyos::test::last_message(other.env), held);
+    EXPECT_EQ(last_message(other.env), held);
     EXPECT_EQ(BIYOS_freemdl(other.model), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(other.env), BIYOS_OK);
 }

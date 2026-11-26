@@ -17,6 +17,7 @@
 namespace
 {
 
+using biyos::difference;
 using biyos::test::below;
 using biyos::test::build_sample;
 using biyos::test::Engine;
@@ -94,7 +95,7 @@ void expect_refused(const Env &env, const Model &model, const Entries &entries)
 {
     const Model tried(env, model);
     EXPECT_EQ(add(tried, entries), BIYOS_ERR_BADARG);
-    EXPECT_EQ(biyos::difference(tried.get()->model(), model.get()->model()), "");
+    EXPECT_EQ(difference(tried.get()->model(), model.get()->model()), "");
 }
 
 }
@@ -141,7 +142,7 @@ TEST(ConstantTest, Refusals)
     EXPECT_EQ(env.message(), "invalid argument: function 2: unknown");
     const Model tried(env, model);
     EXPECT_EQ(set(tried, {.functions = {0, 1}, .values = {1.0, -nan}}), BIYOS_ERR_BADARG);
-    EXPECT_EQ(biyos::difference(tried.get()->model(), model.get()->model()), "");
+    EXPECT_EQ(difference(tried.get()->model(), model.get()->model()), "");
 }
 
 TEST(ConstantTest, NullValues)
@@ -163,5 +164,5 @@ TEST(ConstantTest, NullValues)
     EXPECT_EQ(env.message(), "invalid argument: function 2: unknown");
     EXPECT_EQ(BIYOS_setcstsp(tried.get(), 2, unknown.data(), nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: function 2: unknown");
-    EXPECT_EQ(biyos::difference(tried.get()->model(), model.get()->model()), "");
+    EXPECT_EQ(difference(tried.get()->model(), model.get()->model()), "");
 }

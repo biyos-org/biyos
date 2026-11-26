@@ -8,6 +8,13 @@
 #include <string>
 #include <vector>
 
+using biyos::Event;
+using biyos::EventKind;
+using biyos::EventLevel;
+using biyos::test::last_error;
+using biyos::test::last_message;
+using biyos::test::Model;
+
 namespace
 {
 
@@ -20,7 +27,7 @@ class Env
     Env &operator=(const Env &) = delete;
 
     BIYOS_env *get() const { return pointer_; }
-    std::string message() const { return biyos::test::last_message(pointer_); }
+    std::string message() const { return last_message(pointer_); }
 
   private:
     BIYOS_env *pointer_ = nullptr;
@@ -70,7 +77,7 @@ void delete_unknown(const BIYOS_event *, void *data)
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->status = BIYOS_delenvhook(probe->env, 999);
-    probe->message = biyos::test::last_message(probe->env);
+    probe->message = last_message(probe->env);
 }
 
 void refuse(const BIYOS_event *, void *data)
@@ -78,7 +85,7 @@ void refuse(const BIYOS_event *, void *data)
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->status = BIYOS_setenvintopt(probe->env, BIYOS_OPT_SEED, 42);
-    probe->message = biyos::test::last_message(probe->env);
+    probe->message = last_message(probe->env);
 }
 
 void delete_own(const BIYOS_event *, void *data)
@@ -86,14 +93,14 @@ void delete_own(const BIYOS_event *, void *data)
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->status = BIYOS_delmdlhook(probe->model, 999);
-    probe->message = biyos::test::last_message(probe->env);
+    probe->message = last_message(probe->env);
 }
 
 void read_error(const BIYOS_event *, void *data)
 {
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
-    probe->message = biyos::test::last_message(probe->env);
+    probe->message = last_message(probe->env);
 }
 
 void free_inside(const BIYOS_event *, void *data)
@@ -101,7 +108,7 @@ void free_inside(const BIYOS_event *, void *data)
     Probe *probe = static_cast<Probe *>(data);
     ++probe->calls;
     probe->status = BIYOS_freeenv(probe->env);
-    probe->message = biyos::test::last_message(probe->env);
+    probe->message = last_message(probe->env);
 }
 
 BIYOS_status listen(BIYOS_env *env, BIYOS_hook hook, void *data, int level, BIYOS_index *id)
@@ -119,7 +126,7 @@ void fail(const Env &env)
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
 }
 
-void fail(const biyos::test::Model &model)
+void fail(const Model &model)
 {
     EXPECT_EQ(BIYOS_getnvar(model.get(), nullptr), BIYOS_ERR_BADARG);
 }
@@ -154,7 +161,7 @@ struct Attempt
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
+    attempt.messages.emplace_back(last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)
@@ -330,9 +337,9 @@ TEST(CApiTest, NullHook)
 
 TEST(CApiTest, Accessors)
 {
-    const biyos::Event event{
-        .kind = biyos::EventKind::Message,
-        .level = biyos::EventLevel::Warning,
+    const Event event{
+        .kind = EventKind::Message,
+        .level = EventLevel::Warning,
         .time = {},
         .module = "presolve",
         .text = "removed rows",
@@ -368,7 +375,7 @@ TEST(CApiTest, NullEvent)
 TEST(CApiTest, EventModel)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Model model(env);
     std::vector<const BIYOS_model *> seen;
     BIYOS_index id = 0;
     ASSERT_EQ(listen(env.get(), source, &seen, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
@@ -381,8 +388,8 @@ TEST(CApiTest, EventModel)
 TEST(CApiTest, ModelHook)
 {
     const biyos::test::Env env;
-    const biyos::test::Model first(env);
-    const biyos::test::Model second(env);
+    const Model first(env);
+    const Model second(env);
     std::vector<const BIYOS_model *> local;
     std::vector<const BIYOS_model *> shared;
     BIYOS_index id = 0;
@@ -399,7 +406,7 @@ TEST(CApiTest, ModelHook)
 TEST(CApiTest, ModelMessage)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Model model(env);
     Inbox inbox;
     BIYOS_index id = 0;
     ASSERT_EQ(listen_to(model.get(), receive, &inbox, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
@@ -416,7 +423,7 @@ TEST(CApiTest, ModelMessage)
 TEST(CApiTest, ModelOrder)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Model model(env);
     std::vector<std::string> heard;
     Mark shared{&heard, "environment"};
     Mark first{&heard, "first"};
@@ -432,8 +439,8 @@ TEST(CApiTest, ModelOrder)
 TEST(CApiTest, ModelIds)
 {
     const biyos::test::Env env;
-    const biyos::test::Model first(env);
-    const biyos::test::Model second(env);
+    const Model first(env);
+    const Model second(env);
     int heard = 0;
     std::vector<BIYOS_index> ids(5, 0);
     ASSERT_EQ(listen_to(first.get(), count, &heard, BIYOS_EVTLVL_DBG, &ids[0]), BIYOS_OK);
@@ -452,7 +459,7 @@ TEST(CApiTest, ModelIds)
 TEST(CApiTest, ModelArguments)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Model model(env);
     Inbox inbox;
     BIYOS_index id = 0;
     const int message = BIYOS_EVTKND_MSG;
@@ -481,7 +488,7 @@ TEST(CApiTest, ModelFree)
     ASSERT_EQ(BIYOS_newmdl(env.get(), &model), BIYOS_OK);
     ASSERT_EQ(listen_to(model, count, &heard, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
     ASSERT_EQ(BIYOS_freemdl(model), BIYOS_OK);
-    const biyos::test::Model next(env);
+    const Model next(env);
     fail(next);
     EXPECT_EQ(heard, 0);
     ASSERT_EQ(listen_to(next.get(), count, &heard, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
@@ -492,13 +499,13 @@ TEST(CApiTest, ModelCopy)
 {
     const biyos::test::Env env;
     const biyos::test::Env other;
-    const biyos::test::Model model(env);
+    const Model model(env);
     int heard = 0;
     int copied = 0;
     BIYOS_index id = 0;
     ASSERT_EQ(listen_to(model.get(), count, &heard, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
-    const biyos::test::Model near(env, model);
-    const biyos::test::Model far(other, model);
+    const Model near(env, model);
+    const Model far(other, model);
     fail(near);
     fail(far);
     EXPECT_EQ(heard, 0);
@@ -512,8 +519,8 @@ TEST(CApiTest, ModelCopy)
 TEST(CApiTest, ModelReadOnly)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
-    const biyos::test::Model other(env);
+    const Model model(env);
+    const Model other(env);
     Attempt attempt;
     attempt.env = env.get();
     attempt.model = model.get();
@@ -541,14 +548,14 @@ TEST(CApiTest, ModelReadOnly)
 TEST(CApiTest, ModelError)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Model model(env);
     Probe probe;
     probe.env = env.get();
     probe.model = model.get();
     BIYOS_index id = 0;
     ASSERT_EQ(listen_to(model.get(), delete_own, &probe, BIYOS_EVTLVL_ERR, &id), BIYOS_OK);
     fail(model);
-    const BIYOS_error error = biyos::test::last_error(env.get());
+    const BIYOS_error error = last_error(env.get());
     EXPECT_EQ(probe.calls, 1);
     EXPECT_EQ(probe.status, BIYOS_ERR_BADARG);
     EXPECT_EQ(probe.message, "invalid argument: model: is read-only while delivering an event");
@@ -560,7 +567,7 @@ TEST(CApiTest, ModelError)
 TEST(CApiTest, ModelSilent)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Model model(env);
     Probe probe;
     probe.env = env.get();
     probe.model = model.get();

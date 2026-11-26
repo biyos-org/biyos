@@ -21,7 +21,14 @@
 namespace
 {
 
+using biyos::Deadline;
+using biyos::Event;
+using biyos::EventKind;
+using biyos::EventLevel;
+using biyos::Interrupt;
+using biyos::Lookup;
 using biyos::TerminationStatus;
+using biyos::capi::guarded;
 using biyos::test::Env;
 using biyos::test::Model;
 
@@ -56,8 +63,8 @@ std::atomic<BIYOS_env *> signalled = nullptr;
 
 void spin(biyos::Env &env, Loop *loop)
 {
-    const biyos::Lookup lookup(env.options());
-    const biyos::Deadline deadline(lookup, env.clock(), env.interrupt());
+    const Lookup lookup(env.options());
+    const Deadline deadline(lookup, env.clock(), env.interrupt());
     loop->start(env);
     while (loop->polls < loop->limit && !deadline.reached())
     {
@@ -68,7 +75,7 @@ void spin(biyos::Env &env, Loop *loop)
 
 BIYOS_status run(const Env &env, Loop &loop)
 {
-    return biyos::capi::guarded<spin>(env.get(), &loop);
+    return guarded<spin>(env.get(), &loop);
 }
 
 void spin_model(const BIYOS_model &model, Loop *loop)
@@ -78,7 +85,7 @@ void spin_model(const BIYOS_model &model, Loop *loop)
 
 BIYOS_status run(const Model &model, Loop &loop)
 {
-    return biyos::capi::guarded<spin_model>(model.get(), &loop);
+    return guarded<spin_model>(model.get(), &loop);
 }
 
 BIYOS_status interrupt_after(std::future<void> started, BIYOS_env *env)
@@ -121,16 +128,16 @@ void raise_signal(biyos::Env &)
     std::raise(SIGINT);
 }
 
-void blank(biyos::Event &) {}
+void blank(Event &) {}
 
 void announce(biyos::Env &env)
 {
-    env.stream().emit(biyos::EventKind::Message, biyos::EventLevel::Info, blank);
+    env.stream().emit(EventKind::Message, EventLevel::Info, blank);
 }
 
 void tell(const BIYOS_model *model)
 {
-    model->stream().emit(biyos::EventKind::Message, biyos::EventLevel::Info, blank);
+    model->stream().emit(EventKind::Message, EventLevel::Info, blank);
 }
 
 void stop_model(const BIYOS_event *, void *data)
@@ -245,7 +252,7 @@ TEST(InterruptTest, NextCall)
 {
     const Env env;
     const Model model(env);
-    const biyos::Interrupt &requests = env.get()->core.interrupt();
+    const Interrupt &requests = env.get()->core.interrupt();
     BIYOS_real value = 0.0;
     BIYOS_index n = 0;
     ASSERT_EQ(BIYOS_interrupt(env.get()), BIYOS_OK);
