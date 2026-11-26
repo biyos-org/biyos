@@ -8,14 +8,13 @@
 #include "core/options/lookup.hpp"
 #include "core/text/text.hpp"
 #include "core/timing/timer.hpp"
-#include "expr/derivatives/derivative.hpp"
-#include "expr/derivatives/reverse.hpp"
-#include "expr/derivatives/value.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/hessian/elements.hpp"
 #include "expr/hessian/hessian.hpp"
 #include "expr/sparsity/reach.hpp"
 #include "expr/tape/tape.hpp"
+#include "expr/threads/sweeps.hpp"
+#include "expr/threads/team.hpp"
 #include "model/evaluation/callbacks.hpp"
 #include "model/evaluation/layout.hpp"
 #include "model/expressions/callbacks.hpp"
@@ -83,7 +82,7 @@ Program program_of(const Model &model, Stream stream)
 
 Evaluation::Evaluation(const Model &model, Stream stream, Pool &pool)
     : model_(model), stream_(stream), pool_(pool), program_(program_of(model, stream)),
-      workspace_(program_.tape), adjoints_(program_.tape), values_(to_size(program_.tape.roots())),
+      team_(program_.tape), values_(to_size(program_.tape.roots())),
       gradients_(program_.tape.pattern().variables.size()), out_(widest(model)),
       weights_(program_.roots.size()), covered_(out_.size()), point_(out_.size()),
       direction_(out_.size())
@@ -107,8 +106,9 @@ void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span
     check(x);
     check("f", f.size(), to_size(model_.n_functions()));
     require(model_, Part::Function);
+    fit(lookup);
     term_function(x, f);
-    forward(program_.tape, x, workspace_, values_);
+    forward(program_.tape, x, team_, pool_, values_);
     for (std::size_t e = 0; e < program_.rooted.size(); ++e)
     {
         f[to_size(program_.rooted[e])] += values_[e];
@@ -123,8 +123,9 @@ void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::sp
     const evaluation::Layout &layout = program_.layout;
     check("g", g.size(), layout.pattern.variables.size());
     require(model_, Part::Jacobian);
+    fit(lookup);
     term_jacobian(x, g);
-    biyos::jacobian(program_.tape, x, workspace_, adjoints_, values_, gradients_);
+    biyos::jacobian(program_.tape, x, team_, pool_, values_, gradients_);
     for (std::size_t p = 0; p < layout.slots.tape.size(); ++p)
     {
         g[to_size(layout.slots.tape[p])] += gradients_[p];
@@ -145,6 +146,13 @@ void Evaluation::check(std::string_view argument, std::size_t size, std::size_t 
 void Evaluation::check(std::span<const Real> x) const
 {
     check("x", x.size(), to_size(model_.n_variables()));
+}
+
+void Evaluation::fit(const Lookup &lookup)
+{
+    const std::size_t threads = to_size(lookup.options().get_int(Option::Threads));
+    team_.fit(program_.tape, threads);
+    program_.hessian.fit(threads);
 }
 
 Request Evaluation::request(Index callback, const Point &point) noexcept
