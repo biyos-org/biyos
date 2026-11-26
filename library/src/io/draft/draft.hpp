@@ -45,6 +45,20 @@ struct DraftEntry
     Real value;
 };
 
+struct DraftSet
+{
+    SpecialOrderedSetKind kind;
+    std::optional<std::string> name;
+    std::vector<Member> members;
+};
+
+struct DraftIndicator
+{
+    Index row;
+    Index column;
+    int value;
+};
+
 struct Draft
 {
     std::optional<std::string> name;
@@ -54,6 +68,8 @@ struct Draft
     std::vector<DraftColumn> columns;
     Directory column_names;
     std::vector<DraftEntry> entries;
+    std::vector<DraftSet> sets;
+    std::vector<DraftIndicator> indicators;
 };
 
 bool negative_upper(const DraftColumn &column) noexcept;
@@ -62,5 +78,6 @@ Real lower_of(const DraftColumn &column) noexcept;
 Real upper_of(const DraftColumn &column) noexcept;
 Constraint constraint_of(Index function, const DraftRow &row) noexcept;
 Model build(const Draft &draft);
+[[noreturn]] void unwritable(const std::string &object, const std::string &part);
 
 }

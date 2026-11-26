@@ -2,32 +2,18 @@
 
 #include <gtest/gtest.h>
 
-#include <initializer_list>
 #include <string>
 #include <string_view>
 #include <vector>
 
+using biyos::test::bad;
 using biyos::test::fault_of;
+using biyos::test::text;
 using biyos::test::Warning;
 using biyos::test::warnings_of;
 
 namespace
 {
-
-std::string text(std::initializer_list<std::string_view> lines)
-{
-    std::string joined;
-    for (const std::string_view line : lines)
-    {
-        joined.append(line).append("\n");
-    }
-    return joined;
-}
-
-std::string bad(int line, std::string_view message)
-{
-    return "bad file: file 't.mps' line " + std::to_string(line) + ": " + std::string(message);
-}
 
 std::string with_bound(std::string_view bound)
 {
@@ -173,6 +159,23 @@ TEST(MpsTest, Unsupported)
         fault_of(text(
             {"NAME t", "ROWS", " N f", "COLUMNS", " x f 1", "RHS", "QUADOBJ", " x x 1", "ENDATA"})),
         "unsupported: file 't.mps' line 7: section QUADOBJ");
+}
+
+TEST(MpsTest, SetMarkers)
+{
+    EXPECT_EQ(fault_of(text({"NAME t",
+                             "ROWS",
+                             " N f",
+                             "COLUMNS",
+                             " S1 SOS s1 'MARKER' 'SOSORG'",
+                             " x f 1",
+                             " SOS1END 'MARKER' 'SOSEND'",
+                             "ENDATA"})),
+              "unsupported: file 't.mps' line 5: marker 'SOSORG'");
+    EXPECT_EQ(fault_of(text({"NAME t", "ROWS", " N f", "COLUMNS", " s 'MARKER' 'SOSEND'"})),
+              "unsupported: file 't.mps' line 5: marker 'SOSEND'");
+    EXPECT_EQ(fault_of(text({"NAME t", "REFROW", " f", "ROWS", " N f", "ENDATA"})),
+              "unsupported: file 't.mps' line 2: section REFROW");
 }
 
 TEST(MpsTest, NegativeUpper)

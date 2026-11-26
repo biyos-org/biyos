@@ -12,7 +12,7 @@ A line that starts with `*` is a comment. A section line starts in the first col
 
 ### Sections
 
-The sections come in this order: `NAME`, `OBJSENSE`, `ROWS`, `COLUMNS`, `RHS`, `RANGES`, `BOUNDS`, `ENDATA`. `OBJSENSE`, `RANGES` and `BOUNDS` may be left out. A file without `RHS` gives a warning and sets every right-hand side to 0. `ENDATA` is the last line.
+The sections come in this order: `NAME`, `OBJSENSE`, `ROWS`, `COLUMNS`, `RHS`, `RANGES`, `BOUNDS`, `SOS`, `INDICATORS`, `ENDATA`. `OBJSENSE`, `RANGES`, `BOUNDS`, `SOS` and `INDICATORS` may be left out. A file without `RHS` gives a warning and sets every right-hand side to 0. `ENDATA` is the last line.
 
 | Section | Holds |
 |---|---|
@@ -23,6 +23,8 @@ The sections come in this order: `NAME`, `OBJSENSE`, `ROWS`, `COLUMNS`, `RHS`, `
 | `RHS` | A vector name, then one or two pairs of a row name and a value. |
 | `RANGES` | A vector name, then one or two pairs of a row name and a range. |
 | `BOUNDS` | A bound type, a vector name, a column name and a value. |
+| `SOS` | A set line with a type and a name, then a line for each member with a column name and a weight. |
+| `INDICATORS` | `IF`, a row name, a column name and the value 0 or 1. |
 
 ### Rows
 
@@ -65,6 +67,14 @@ Both documents list the types. The rules on the values of `BV`, `LI`, `UI` and `
 
 An upper bound below 0 on a column with no other bound sets its lower bound to minus infinity, with a warning.
 
+### Sets
+
+A set line starts with `S1` for a special ordered set of type 1 or `S2` for type 2, followed by the name of the set. Each line after it names a column of the set and its weight. A column appears in a set once, and no two members of a set share a weight.
+
+### Indicators
+
+An indicator line names a row of sense `L`, `G` or `E` and a binary column. The row holds while the column takes the value the line gives. The row becomes a function and an indicator on it with the row's bounds, and no constraint; its name is not kept. Several indicator lines may name one row, each giving an indicator on its function.
+
 ### Choices {#sec-mps-choices}
 
 Each rule below is biyos's rule. The document it follows is named where there is one.
@@ -86,6 +96,14 @@ Each rule below is biyos's rule. The document it follows is named where there is
 | `OBJSENSE` | `MAX` and `MIN`, on the same line as Gurobi writes it or on the next as CPLEX does. Neither document states `MIN`. |
 | Numbers | Decimal or exponential, the sign of the exponent optional. A missing exponent, which CPLEX reads as 0, is refused, as is a value outside the range of a double. The 25-character limit of CPLEX is not checked. |
 | Infinity | Neither document gives an MPS spelling of infinity, so a word such as `inf` is refused. `1e30` and larger finite values are read as written; an infinite bound is set with `MI`, `PL` or `FR`. |
+| A set line | A set line and a member line differ in free MPS by their first field alone, so a line whose first field is `S1` or `S2` starts a set. |
+| A set without a name | It is read without one, as CPLEX allows. Gurobi gives every set a name. |
+| A member without a weight | Its weight is its position in the set, counted from 1, as CPLEX states for a set with no reference row. |
+| A repeated member or weight in a set | Refused. CPLEX states that the weights of a set are distinct. |
+| `SOSORG` markers and `REFROW` | Not read. CPLEX's other form of sets is refused as unsupported: a marker line ending `'SOSORG'` or `'SOSEND'`, and the section `REFROW`. |
+| Order of `SOS` and `INDICATORS` | `SOS` comes first, as in Gurobi's description. CPLEX gives no order between the two. |
+| An indicator on an integer column | A column of kind integer with bounds 0 and 1, such as one between marker lines with no bound, becomes binary, as CPLEX counts marker lines as a way to declare one. Any other column that is not binary is refused. |
+| An indicator on an `N` row or a row with a range | Refused. CPLEX allows `L`, `G` and `E` rows and no row with a range. |
 
 ### Writing {#sec-mps-writing}
 
@@ -93,7 +111,7 @@ Each rule below is biyos's rule. The document it follows is named where there is
 
 | Part | Written as |
 |---|---|
-| Sections | `NAME`, then `OBJSENSE MAX` on one line when the objective maximizes, `ROWS`, `COLUMNS`, `RHS`, `ENDATA`. `RANGES` only when a row has a range, `BOUNDS` only when a column needs a bound line. |
+| Sections | `NAME`, then `OBJSENSE MAX` on one line when the objective maximizes, `ROWS`, `COLUMNS`, `RHS`, `ENDATA`. `RANGES` only when a row has a range, `BOUNDS` only when a column needs a bound line, `SOS` only when the model has a set, `INDICATORS` only when it has an indicator. |
 | Name | The model's name after `NAME`, or `NAME` alone when it has none. |
 | Numbers | The shortest decimal or exponential form that reads back to the same double. An infinite bound is a bound type, never a number. |
 | Objective | The first `N` row, with the negative of its constant as right-hand side. |
@@ -102,15 +120,18 @@ Each rule below is biyos's rule. The document it follows is named where there is
 | Columns | One column per variable, in order. A variable in no row is a column line holding its name alone. Variables of kind integer lie between marker lines. |
 | Bounds | `BV` for a binary variable, `SC` or `SI` for the upper bound of a semi-continuous or semi-integer one, `FX` for equal bounds, else `LO` or `MI` and `UP` or `PL`. |
 | Names | Each record keeps its name. An unnamed objective is `OBJ`, an unnamed constraint `R` and an unnamed variable `C`, each followed by its index. While a user name holds the label, `_1`, `_2` and so on is added. |
+| Sets | A set line with the type and the name, or the type alone for an unnamed set, then one line for each member with its weight, in order. |
+| Indicators | One row for each function and bounds, after the constraints, its sense from the bounds as for a constraint, named `I` and the index of its first indicator with the suffix rule of names, then a line in `INDICATORS` for each indicator. Indicators on one function with the same bounds share its row, as several lines naming one row read back. The name of an indicator is left out. |
 | Functions | A function several records use is written once for each, and reads back as that many functions. A function no record uses is left out. |
 
 The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the way:
 
 - a second objective, or a weight other than 1 on the only one;
-- quadratic terms, an expression, a callback, a cone, a complement, a set or an indicator;
+- quadratic terms, an expression, a callback, a cone or a complement;
+- an indicator whose bounds are two distinct finite values or both infinite, which no indicator row holds, or one on a function a constraint uses;
 - a name two variables share, or two rows among the objective and the constraints;
-- a name that holds white space or starts with `$`, a row named `'MARKER'`, a model name that starts or ends with white space or holds a line break;
+- a name that holds white space or starts with `$`, a row named `'MARKER'`, a set member named `S1` or `S2`, a model name that starts or ends with white space or holds a line break;
 - a binary variable with bounds other than 0 and 1, a semi-continuous or semi-integer variable with no upper bound;
 - constraint bounds no row reads back exactly, or that overflow once the constant moves into them.
 
-A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of the objective, and the model's options. Hooks are not part of the problem and are left out with no event.
+A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of the objective, the names of indicators, and the model's options. Hooks are not part of the problem and are left out with no event.

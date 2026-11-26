@@ -3,12 +3,14 @@
 #include "core/events/stream.hpp"
 #include "io/draft/draft.hpp"
 #include "io/lines.hpp"
-#include "io/mps/bounds.hpp"
-#include "io/mps/columns.hpp"
-#include "io/mps/rows.hpp"
+#include "io/mps/readers/bounds.hpp"
+#include "io/mps/readers/columns.hpp"
+#include "io/mps/readers/indicators.hpp"
+#include "io/mps/readers/rows.hpp"
+#include "io/mps/readers/sets.hpp"
+#include "io/mps/readers/values.hpp"
+#include "io/mps/readers/vectors.hpp"
 #include "io/mps/sections.hpp"
-#include "io/mps/values.hpp"
-#include "io/mps/vectors.hpp"
 #include "io/records.hpp"
 #include "io/report.hpp"
 #include "model/model.hpp"
@@ -53,6 +55,7 @@ class MpsReader
     Vectors rhs_{"RHS"};
     Vectors ranges_{"RANGES"};
     Vectors bounds_{"BOUNDS"};
+    Sets sets_;
 };
 
 MpsReader::MpsReader(Stream stream, std::istream &input, const std::string &file)
@@ -205,6 +208,12 @@ void MpsReader::data()
         return;
     case Section::Bounds:
         read_bound(stream_, lines_, bounds_, draft_);
+        return;
+    case Section::Sets:
+        sets_.read(lines_, draft_);
+        return;
+    case Section::Indicators:
+        read_indicator(lines_, draft_);
         return;
     case Section::End:
         break;

@@ -9,6 +9,7 @@
 #include "io/mps/mps.hpp"
 #include "model/model.hpp"
 
+#include <initializer_list>
 #include <limits>
 #include <numeric>
 #include <span>
@@ -28,6 +29,21 @@ struct Warning
     std::string file;
     std::string line;
 };
+
+inline std::string text(std::initializer_list<std::string_view> lines)
+{
+    std::string joined;
+    for (const std::string_view line : lines)
+    {
+        joined.append(line).append("\n");
+    }
+    return joined;
+}
+
+inline std::string bad(int line, std::string_view message)
+{
+    return "bad file: file 't.mps' line " + std::to_string(line) + ": " + std::string(message);
+}
 
 inline Model read_text(Env &env, std::string_view text)
 {

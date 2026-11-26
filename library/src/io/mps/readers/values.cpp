@@ -1,10 +1,10 @@
-#include "io/mps/values.hpp"
+#include "io/mps/readers/values.hpp"
 
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "io/draft/draft.hpp"
 #include "io/lines.hpp"
-#include "io/mps/vectors.hpp"
+#include "io/mps/readers/vectors.hpp"
 #include "io/records.hpp"
 #include "io/report.hpp"
 

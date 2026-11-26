@@ -30,6 +30,8 @@ using biyos::Real;
 using biyos::Settings;
 using biyos::write_file;
 using biyos::test::built;
+using biyos::test::Parts;
+using biyos::test::sample;
 using biyos::test::writable;
 
 namespace
@@ -103,4 +105,13 @@ TEST(MpsTest, ConstraintTolerance)
                          std::span(&absolute, 1),
                          std::span(&relative, 1));
     EXPECT_EQ(heard(model, Settings()), std::vector{left("the record tolerances")});
+}
+
+TEST(MpsTest, IndicatorNames)
+{
+    Parts parts = writable();
+    parts.indicators = sample().indicators;
+    EXPECT_TRUE(heard(built(parts), Settings()).empty());
+    parts.indicator_names = sample().indicator_names;
+    EXPECT_EQ(heard(built(parts), Settings()), std::vector{left("the indicator names")});
 }

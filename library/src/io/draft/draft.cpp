@@ -1,5 +1,6 @@
 #include "io/draft/draft.hpp"
 
+#include "core/error.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "expr/forms/terms.hpp"
@@ -10,6 +11,7 @@
 #include <numeric>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -137,16 +139,29 @@ void add_functions(Model &model, const Draft &draft)
     model.add_functions(constants, starts, std::move(terms));
 }
 
-void add_constraints(Model &model, const Draft &draft, std::optional<Index> objective)
+std::vector<bool> constraint_rows(const Draft &draft, std::optional<Index> objective)
+{
+    std::vector<bool> kept(draft.rows.size(), true);
+    if (objective)
+    {
+        kept[to_size(*objective)] = false;
+    }
+    for (const DraftIndicator &indicator : draft.indicators)
+    {
+        kept[to_size(indicator.row)] = false;
+    }
+    return kept;
+}
+
+void add_constraints(Model &model, const Draft &draft, const std::vector<bool> &kept)
 {
     std::vector<Constraint> constraints;
     std::vector<std::string_view> names;
     for (std::size_t k = 0; k < draft.rows.size(); ++k)
     {
-        const auto row = to_index(k);
-        if (row != objective)
+        if (kept[k])
         {
-            constraints.push_back(constraint_of(row, draft.rows[k]));
+            constraints.push_back(constraint_of(to_index(k), draft.rows[k]));
             names.push_back(draft.row_names.names()[k]);
         }
     }
@@ -166,6 +181,53 @@ void add_objective(Model &model, const Draft &draft, Index row)
     model.set_names(Family::Objective, std::span(&index, 1), std::span(&name, 1));
 }
 
+void add_indicators(Model &model, const Draft &draft)
+{
+    std::vector<Indicator> indicators;
+    indicators.reserve(draft.indicators.size());
+    for (const DraftIndicator &indicator : draft.indicators)
+    {
+        const Constraint bounds = constraint_of(indicator.row, draft.rows[to_size(indicator.row)]);
+        indicators.push_back(Indicator{
+            .variable = indicator.column,
+            .value = indicator.value,
+            .function = indicator.row,
+            .lower = bounds.lower,
+            .upper = bounds.upper,
+        });
+    }
+    model.add_indicators(indicators);
+}
+
+void add_sets(Model &model, const Draft &draft)
+{
+    std::vector<SpecialOrderedSetKind> kinds;
+    std::vector<Offset> starts{0};
+    std::vector<Member> members;
+    for (const DraftSet &set : draft.sets)
+    {
+        kinds.push_back(set.kind);
+        members.insert(members.end(), set.members.begin(), set.members.end());
+        starts.push_back(to_offset(members.size()));
+    }
+    model.add_special_ordered_sets(kinds, starts, members);
+}
+
+void name_sets(Model &model, const Draft &draft)
+{
+    std::vector<Index> indices;
+    std::vector<std::string_view> names;
+    for (std::size_t k = 0; k < draft.sets.size(); ++k)
+    {
+        if (draft.sets[k].name)
+        {
+            indices.push_back(to_index(k));
+            names.push_back(*draft.sets[k].name);
+        }
+    }
+    model.set_names(Family::SpecialOrderedSet, indices, names);
+}
+
 }
 
 bool negative_upper(const DraftColumn &column) noexcept
@@ -183,12 +245,20 @@ Model build(const Draft &draft)
     const std::optional<Index> objective = objective_row(draft);
     add_variables(model, draft);
     add_functions(model, draft);
-    add_constraints(model, draft, objective);
+    add_constraints(model, draft, constraint_rows(draft, objective));
     if (objective)
     {
         add_objective(model, draft, *objective);
     }
+    add_indicators(model, draft);
+    add_sets(model, draft);
+    name_sets(model, draft);
     return model;
+}
+
+void unwritable(const std::string &object, const std::string &part)
+{
+    throw Error(ErrorKind::Unsupported, object, part + " cannot be written in free MPS");
 }
 
 }

@@ -67,7 +67,11 @@ TEST(MpsTest, Weight)
 TEST(MpsTest, Quadratic)
 {
     Parts parts = writable();
-    parts.quadratic = sample().quadratic;
+    parts.quadratic = {
+        .functions = {2},
+        .starts = {0, 1},
+        .terms = {{.row = 1, .column = 1, .coefficient = 0.5}},
+    };
     EXPECT_EQ(refusal(built(parts)),
               "unsupported: function 2: free MPS cannot hold quadratic terms");
 }
@@ -89,13 +93,54 @@ TEST(MpsTest, Records)
     complements.complements = full.complements;
     EXPECT_EQ(refusal(built(complements)),
               "unsupported: complement 0: free MPS cannot hold complements");
-    Parts sets = writable();
-    sets.special_ordered_sets = full.special_ordered_sets;
-    EXPECT_EQ(refusal(built(sets)), "unsupported: set 0: free MPS cannot hold sets");
-    Parts indicators = writable();
-    indicators.indicators = full.indicators;
-    EXPECT_EQ(refusal(built(indicators)),
-              "unsupported: indicator 0: free MPS cannot hold indicators");
+}
+
+TEST(MpsTest, IndicatorRows)
+{
+    Parts parts = writable();
+    parts.indicators = sample().indicators;
+    EXPECT_EQ(refusal(built(parts)), "");
+    parts.indicators[1].function = 0;
+    EXPECT_EQ(refusal(built(parts)),
+              "unsupported: indicator 1: free MPS cannot hold an indicator on a function a "
+              "constraint uses");
+    parts.indicators[1] = {.variable = 1, .value = 0, .function = 2, .lower = 1.0, .upper = 3.0};
+    EXPECT_EQ(refusal(built(parts)),
+              "unsupported: indicator 1: bounds [1, 3] cannot be an indicator row in free MPS");
+    parts.indicators[1].lower = -kInfinity;
+    parts.indicators[1].upper = kInfinity;
+    EXPECT_EQ(refusal(built(parts)),
+              "unsupported: indicator 1: bounds [-inf, inf] cannot be an indicator row in free "
+              "MPS");
+}
+
+TEST(MpsTest, IndicatorFunction)
+{
+    Parts parts = writable();
+    parts.objectives = {};
+    parts.objective_names = {};
+    parts.indicators = sample().indicators;
+    parts.quadratic = {
+        .functions = {2},
+        .starts = {0, 1},
+        .terms = {{.row = 1, .column = 1, .coefficient = 0.5}},
+    };
+    EXPECT_EQ(refusal(built(parts)),
+              "unsupported: function 2: free MPS cannot hold quadratic terms");
+}
+
+TEST(MpsTest, SetNames)
+{
+    Parts parts = writable();
+    parts.special_ordered_sets = sample().special_ordered_sets;
+    Model members = built(parts);
+    rename(members, Family::Variable, 1, "S2");
+    EXPECT_EQ(refusal(members), "unsupported: set 0: member 'S2' cannot be written in free MPS");
+    Model sets = built(parts);
+    rename(sets, Family::SpecialOrderedSet, 1, "'MARKER'");
+    EXPECT_EQ(refusal(sets), "");
+    rename(sets, Family::SpecialOrderedSet, 1, "$s");
+    EXPECT_EQ(refusal(sets), "unsupported: set 1: name '$s' cannot be written in free MPS");
 }
 
 TEST(MpsTest, Callback)

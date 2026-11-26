@@ -67,24 +67,28 @@ add_library(biyos_internal STATIC
     expr/tape/plan.cpp
     expr/tape/reads.cpp
     expr/tape/tape.cpp
+    io/codes.cpp
     io/directory.cpp
     io/draft/column_shape.cpp
     io/draft/draft.cpp
     io/draft/labels.cpp
     io/draft/row_shape.cpp
     io/draft/sketch.cpp
+    io/draft/structure.cpp
     io/draft/support.cpp
     io/files.cpp
     io/leftovers.cpp
     io/lines.cpp
-    io/mps/bounds.cpp
-    io/mps/columns.cpp
     io/mps/mps.cpp
     io/mps/print.cpp
-    io/mps/rows.cpp
+    io/mps/readers/bounds.cpp
+    io/mps/readers/columns.cpp
+    io/mps/readers/indicators.cpp
+    io/mps/readers/rows.cpp
+    io/mps/readers/sets.cpp
+    io/mps/readers/values.cpp
+    io/mps/readers/vectors.cpp
     io/mps/sections.cpp
-    io/mps/values.cpp
-    io/mps/vectors.cpp
     io/records.cpp
     io/report.cpp
     model/attributes/names.cpp

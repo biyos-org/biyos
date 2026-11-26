@@ -9,6 +9,7 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace biyos
 {
@@ -57,6 +58,26 @@ void check_functions(const Model &model)
     {
         check_function(model, constraint.function);
     }
+    for (const Indicator &indicator : model.indicators(0, model.n_indicators()))
+    {
+        check_function(model, indicator.function);
+    }
+}
+
+void check_indicators(const Model &model)
+{
+    std::vector<bool> constrained(to_size(model.n_functions()), false);
+    for (const Constraint &constraint : model.constraints(0, model.n_constraints()))
+    {
+        constrained[to_size(constraint.function)] = true;
+    }
+    for (Index k = 0; k < model.n_indicators(); ++k)
+    {
+        if (constrained[to_size(model.indicator(k).function)])
+        {
+            refuse_part("indicator", k, "an indicator on a function a constraint uses");
+        }
+    }
 }
 
 void check_absent(const Model &model, Family family, std::string_view part)
@@ -79,8 +100,7 @@ void check_support(const Model &model)
     }
     check_absent(model, Family::Cone, "cones");
     check_absent(model, Family::Complement, "complements");
-    check_absent(model, Family::SpecialOrderedSet, "sets");
-    check_absent(model, Family::Indicator, "indicators");
+    check_indicators(model);
 }
 
 }

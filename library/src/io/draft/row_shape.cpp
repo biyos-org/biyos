@@ -8,7 +8,6 @@
 #include "core/text/text.hpp"
 #include "io/draft/draft.hpp"
 #include "model/model.hpp"
-#include "model/utils/checks.hpp"
 
 #include <cmath>
 #include <optional>
@@ -20,20 +19,20 @@ namespace biyos
 
 namespace
 {
-[[noreturn]] void refuse_bounds(Index constraint, Real lower, Real upper)
+[[noreturn]] void refuse_bounds(const std::string &record, Real lower, Real upper)
 {
-    const std::string bounds = "[" + text_of(lower) + ", " + text_of(upper) + "]";
+    const std::string bounds = interval_of(lower, upper);
     const std::string reason = "bounds " + bounds + " cannot be written exactly in free MPS";
-    throw Error(ErrorKind::Unsupported, item("constraint", constraint), reason);
+    throw Error(ErrorKind::Unsupported, record, reason);
 }
 
-Real shifted(Index constraint, Real bound, Real constant)
+Real shifted(const std::string &record, Real bound, Real constant)
 {
     const Real moved = is_zero(constant) ? bound : bound - constant;
     if (std::isinf(moved) && !std::isinf(bound))
     {
         const std::string reason = "a bound overflows once the constant moves into it";
-        throw Error(ErrorKind::Unsupported, item("constraint", constraint), reason);
+        throw Error(ErrorKind::Unsupported, record, reason);
     }
     return moved;
 }
@@ -94,14 +93,14 @@ DraftRow free_row(Real constant)
     return plain(RowSense::Free, -constant);
 }
 
-DraftRow row_shape(Index constraint, const Constraint &bounds, Real constant)
+DraftRow row_shape(const std::string &record, const Constraint &bounds, Real constant)
 {
     if (std::isinf(bounds.lower) && std::isinf(bounds.upper))
     {
         return free_row(constant);
     }
-    const Real lower = shifted(constraint, bounds.lower, constant);
-    const Real upper = shifted(constraint, bounds.upper, constant);
+    const Real lower = shifted(record, bounds.lower, constant);
+    const Real upper = shifted(record, bounds.upper, constant);
     for (const DraftRow &row : candidates(lower, upper))
     {
         if (holds(row, lower, upper))
@@ -109,7 +108,7 @@ DraftRow row_shape(Index constraint, const Constraint &bounds, Real constant)
             return row;
         }
     }
-    refuse_bounds(constraint, bounds.lower, bounds.upper);
+    refuse_bounds(record, bounds.lower, bounds.upper);
 }
 
 }

@@ -1,4 +1,4 @@
-#include "io/mps/vectors.hpp"
+#include "io/mps/readers/vectors.hpp"
 
 #include "core/events/stream.hpp"
 #include "io/lines.hpp"

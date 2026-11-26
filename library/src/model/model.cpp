@@ -19,11 +19,6 @@ namespace
 {
 constexpr std::string_view kNoun = "variable";
 
-std::string interval(Real lower, Real upper)
-{
-    return "[" + text_of(lower) + ", " + text_of(upper) + "]";
-}
-
 void check_kind(Index index, VariableKind kind)
 {
     if (std::ranges::find(kVariableKinds, kind) == kVariableKinds.end())
@@ -48,8 +43,8 @@ void check_range(Index index, const Variable &variable)
     {
         return;
     }
-    const std::string bounds = interval(variable.lower, variable.upper);
-    const std::string allowed = interval(range.lower, range.upper);
+    const std::string bounds = interval_of(variable.lower, variable.upper);
+    const std::string allowed = interval_of(range.lower, range.upper);
     const std::string reason = "bounds " + bounds + " are outside " + allowed;
     refuse(kNoun, index, reason + ", the widest of its kind");
 }

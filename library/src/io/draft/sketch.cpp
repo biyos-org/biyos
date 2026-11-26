@@ -1,14 +1,13 @@
 #include "io/draft/sketch.hpp"
 
-#include "core/error.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
-#include "io/directory.hpp"
 #include "io/draft/column_shape.hpp"
 #include "io/draft/draft.hpp"
 #include "io/draft/labels.hpp"
 #include "io/draft/row_shape.hpp"
+#include "io/draft/structure.hpp"
 #include "io/draft/support.hpp"
 #include "model/model.hpp"
 #include "model/utils/checks.hpp"
@@ -41,19 +40,9 @@ void name_model(Draft &draft, const Model &model)
                         kBlanks.find(name->back()) != std::string_view::npos;
     if (padded || name->find('\n') != std::string::npos)
     {
-        const std::string reason = "name '" + *name + "' cannot be written in free MPS";
-        throw Error(ErrorKind::Unsupported, "model", reason);
+        unwritable("model", "name '" + *name + "'");
     }
     draft.name = *name;
-}
-
-void enter(Directory &directory, const std::string &label, Family family, Index index)
-{
-    if (!directory.add(label))
-    {
-        const std::string reason = "name '" + label + "' is repeated";
-        throw Error(ErrorKind::Unsupported, item(noun_of(family), index), reason);
-    }
 }
 
 bool is_free(const Constraint &constraint) noexcept
@@ -96,7 +85,8 @@ std::vector<Index> add_rows(Draft &draft, const Model &model)
     for (Index k = 0; k < model.n_constraints(); ++k)
     {
         const Constraint &constraint = model.constraint(k);
-        draft.rows.push_back(row_shape(k, constraint, model.constant(constraint.function)));
+        const Real constant = model.constant(constraint.function);
+        draft.rows.push_back(row_shape(item("constraint", k), constraint, constant));
         enter(draft.row_names,
               label_of(model, Family::Constraint, k, "R" + text_of(k), taken),
               Family::Constraint,
@@ -160,9 +150,11 @@ Draft draft_of(const Model &model)
     check_support(model);
     Draft draft;
     name_model(draft, model);
-    const std::vector<Index> functions = add_rows(draft, model);
+    std::vector<Index> functions = add_rows(draft, model);
+    add_indicators(draft, model, functions);
     add_columns(draft, model);
     add_entries(draft, model, functions);
+    add_sets(draft, model);
     return draft;
 }
 

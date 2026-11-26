@@ -37,7 +37,7 @@ void check_range(const OptionSpec &spec, const Rule &rule, T value)
     {
         return;
     }
-    const std::string range = "[" + text_of(rule.lower) + ", " + text_of(rule.upper) + "]";
+    const std::string range = interval_of(rule.lower, rule.upper);
     throw Error(ErrorKind::InvalidArgument,
                 subject(spec.name),
                 text_of(value) + " is outside " + range);
