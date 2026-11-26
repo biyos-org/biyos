@@ -47,6 +47,7 @@ add_library(biyos_internal STATIC
     expr/graph/node.cpp
     expr/graph/parents.cpp
     expr/graph/points.cpp
+    expr/graph/sharing.cpp
     expr/graph/uses.cpp
     expr/hessian/elements.cpp
     expr/hessian/hessian.cpp
