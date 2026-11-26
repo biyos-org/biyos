@@ -42,11 +42,10 @@ using biyos::test::expect_monotonicities;
 using biyos::test::operator_graph;
 using biyos::test::parameters_of;
 using biyos::test::refusal;
+using biyos::test::sampled_codes;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::uint64_t kSeed = 20261111;
-constexpr int kFirst = BIYOS_OP_CONST;
-constexpr int kLast = BIYOS_OP_ERF;
 constexpr int kBoxes = 200;
 constexpr int kGraphs = 400;
 constexpr std::size_t kSize = 6;
@@ -369,6 +368,20 @@ TEST(CurvatureTest, EmptyChild)
     }
 }
 
+TEST(CurvatureTest, Reclassified)
+{
+    Graph graph;
+    const std::array x{graph.add_variable(0), graph.add_variable(1)};
+    const Offset angle = graph.add(Operator::Atan2, x);
+    Shapes shapes(graph);
+    shapes.classify(graph, enclosures(graph, Box{Interval(1.0, 1.0), Interval(2.0, 2.0), kZero}));
+    shapes.classify(graph, enclosures(graph, Box{Interval(-1.0, 1.0), Interval(2.0, 3.0), kZero}));
+    for (std::size_t k = 0; k < x.size(); ++k)
+    {
+        EXPECT_EQ(shapes.monotonicity(angle, k), Monotonicity::Unknown) << k;
+    }
+}
+
 TEST(CurvatureTest, Points)
 {
     Graph graph;
@@ -412,7 +425,7 @@ TEST(CurvatureTest, Sizes)
 
 TEST(CurvatureTest, Sampled)
 {
-    for (int number = kFirst; number <= kLast; ++number)
+    for (const int number : sampled_codes())
     {
         const auto op = static_cast<Operator>(number);
         SCOPED_TRACE("operator " + std::to_string(number));

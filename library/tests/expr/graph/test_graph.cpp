@@ -435,6 +435,7 @@ TEST(GraphTest, Codes)
         EXPECT_EQ(static_cast<int>(*op), code);
     }
     EXPECT_EQ(operator_of(BIYOS_OP_PWL), Operator::PiecewiseLinear);
+    EXPECT_EQ(operator_of(BIYOS_OP_ATAN2), Operator::Atan2);
     const std::array unknown{
         0,
         BIYOS_OP_NODE,

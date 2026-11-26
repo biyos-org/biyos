@@ -47,12 +47,11 @@ using biyos::test::Parameters;
 using biyos::test::parameters_of;
 using biyos::test::Point;
 using biyos::test::refusal;
+using biyos::test::sampled_codes;
 using biyos::test::text;
 using biyos::test::within;
 
 constexpr std::uint64_t kSeed = 20261111;
-constexpr int kFirst = BIYOS_OP_CONST;
-constexpr int kLast = BIYOS_OP_ERF;
 constexpr int kBoxes = 300;
 constexpr int kExact = 0;
 constexpr int kLevels = 64;
@@ -251,7 +250,7 @@ void expect_margin(Operator op, const Point &point, int steps)
 
 TEST(IntervalTest, Sampled)
 {
-    for (int number = kFirst; number <= kLast; ++number)
+    for (const int number : sampled_codes())
     {
         const auto op = static_cast<Operator>(number);
         SCOPED_TRACE("operator " + std::to_string(number));
@@ -290,7 +289,7 @@ TEST(IntervalTest, Composed)
 TEST(IntervalTest, EmptyBox)
 {
     const std::array box{Interval::empty(), Interval::empty(), Interval::empty()};
-    for (int number = kFirst; number <= kLast; ++number)
+    for (const int number : sampled_codes())
     {
         const auto op = static_cast<Operator>(number);
         const Graph graph = operator_graph(op, kFixed);
@@ -300,6 +299,18 @@ TEST(IntervalTest, EmptyBox)
             const bool constant = graph.op(node) == Operator::Constant;
             EXPECT_EQ(nodes[static_cast<std::size_t>(node)].is_empty(), !constant) << number;
         }
+    }
+}
+
+TEST(IntervalTest, EmptyChild)
+{
+    Graph graph;
+    const std::array children{graph.add_variable(0), graph.add_variable(1)};
+    const Offset angle = graph.add(Operator::Atan2, children);
+    const Interval held(1.0, 2.0);
+    for (const Box &box : {Box{Interval::empty(), held, held}, Box{held, Interval::empty(), held}})
+    {
+        EXPECT_TRUE(enclosures(graph, box)[static_cast<std::size_t>(angle)].is_empty());
     }
 }
 

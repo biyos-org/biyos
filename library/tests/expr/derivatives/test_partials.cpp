@@ -104,6 +104,7 @@ std::vector<Partials> cmath_partials(Real x, Real y, Real z, Real w)
         {1.5 * std::sqrt(std::fabs(z))},
         {2.0 / std::sqrt(std::numbers::pi) * std::exp(-z * z)},
         {y < 0.25 ? -2.0 : 1.2},
+        {x / (x * x + z * z), -z / (x * x + z * z)},
     };
 }
 

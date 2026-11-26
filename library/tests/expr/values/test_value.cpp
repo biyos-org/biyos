@@ -136,6 +136,7 @@ std::vector<Real> cmath_values(const Point &point)
         std::copysign(std::pow(std::fabs(z), 1.5), z),
         std::erf(z),
         y < 0.25 ? 2.0 - 2.0 * (y + 1.0) : -0.5 + 1.2 * (y - 0.25),
+        std::atan2(z, x),
     };
 }
 
