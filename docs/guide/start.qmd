@@ -85,10 +85,10 @@ which prints `biyos 0.1.0`.
 
 ## From Python {#sec-start-python}
 
-The Python package lives in `interfaces/python`. Installing it builds the library with the same CMake files and places it inside the package, so it needs the same compilers:
+The Python package lives in `interfaces/python`. It builds against an installed biyos of the same version, found as a CMake package, and places a copy of its library inside the package. That install is the shared library of a Release build, as [Building](#sec-start-build) makes it:
 
 ```sh
-python -m pip install ./interfaces/python
+CMAKE_PREFIX_PATH="$PWD/install" python -m pip install ./interfaces/python
 ```
 
 It needs Python 3.10 or later and no other package at run time. Each call goes through `ctypes` to the C API, so Python and C share every rule of this book. The first program becomes
