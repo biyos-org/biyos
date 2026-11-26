@@ -1,5 +1,6 @@
 import weakref
-from collections.abc import Callable, Sequence, Sized
+from collections.abc import Callable, Iterator, Sequence, Sized
+from contextlib import contextmanager
 from ctypes import (
     Array,
     addressof,
@@ -10,6 +11,7 @@ from ctypes import (
     sizeof,
 )
 from enum import IntEnum
+from functools import partial
 from math import isnan
 from os import PathLike, fspath
 from typing import (
@@ -239,6 +241,11 @@ def _checked_env(env: Env) -> Env:
     return env
 
 
+def _kept(found: list[str], event: Event) -> None:
+    if event.level == EventLevel.INFO:
+        found.append(event.text)
+
+
 def _expanded(
     counts: Array[c_offset], records: Sequence[Index]
 ) -> list[Index]:
@@ -424,6 +431,60 @@ class Model:
             copy._copy(self)
         copy._hold()
         return copy
+
+    def compare(self, other: "Model") -> str | None:
+        """Compare the model with another.
+
+        Two models are the same when they hold the same name and the same
+        variables, functions, constraints, objectives, indicators, special
+        ordered sets, cones, complements, piecewise linear functions and
+        callbacks, under the same indices and names. Numbers match bit for
+        bit, so ``0.0`` and ``-0.0`` differ. Options and hooks are not
+        compared. The other model may belong to any environment.
+
+        The difference is sent as an info message to the hooks of the model
+        and of its environment, never to those of ``other``. The call reads
+        it through a hook of its own, added and removed on the model, which
+        uses up one hook id.
+
+        Parameters
+        ----------
+        other
+            The model to compare with.
+
+        Returns
+        -------
+        difference
+            ``None`` when the models are the same, otherwise the first
+            difference found, as the info message the call sends.
+
+        Raises
+        ------
+        TypeError
+            When ``other`` is not a ``Model``.
+        Error
+            While the environment of the model delivers an event.
+        ValueError
+            When either model is closed.
+
+        See Also
+        --------
+        BIYOS_cmpmdl
+        """
+        other = self._peer("other", other)
+        found: list[str] = []
+        idx = c_index()
+        same = c_integer()
+        kind = EventKind.MESSAGE
+        level = EventLevel.INFO
+        with self._env._busy(), other._env._busy(), other._held():
+            self._addhook(partial(_kept, found), kind, level, idx)
+            try:
+                self._run(lib.BIYOS_cmpmdl, other._handle, byref(same))
+            finally:
+                if self._open():
+                    self._delhook(idx.value)
+        return None if same.value else found[0]
 
     @classmethod
     def read(
@@ -5483,10 +5544,10 @@ class Model:
         upper = [con._ub for con in cons]
         return self.addcon(funs, lower, upper)
 
-    def _peer(self, value: object) -> "Model":
+    def _peer(self, name: str, value: object) -> "Model":
         if not isinstance(value, Model):
             found = type(value).__name__
-            raise TypeError(f"mdl must be a Model, not {found}")
+            raise TypeError(f"{name} must be a Model, not {found}")
         return value
 
     def _start(self, env: Env) -> None:
@@ -5808,11 +5869,16 @@ class Model:
             self._run(function, *arguments)
 
     def _run(self, function: Callable[..., int], *arguments: object) -> None:
+        with self._held():
+            self._env._run(function, self._handle, *arguments)
+
+    @contextmanager
+    def _held(self) -> Iterator[None]:
         self._calls += 1
         try:
             if not self._open():
                 raise ValueError("the model is closed")
-            self._env._run(function, self._handle, *arguments)
+            yield
         finally:
             self._calls -= 1
             self._settle()
