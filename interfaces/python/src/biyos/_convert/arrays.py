@@ -1,4 +1,5 @@
 import numbers
+from array import array
 from collections.abc import Sequence, Sized
 from ctypes import Array, c_char_p
 from typing import (
@@ -21,7 +22,7 @@ from biyos._convert.numbers import (
     c_real,
 )
 from biyos._convert.text import text
-from biyos._model.blocks import Block, View, idx_of, index_of
+from biyos._model.blocks import Block, Indices, View, idx_of, index_of
 
 if TYPE_CHECKING:
     from _typeshed import WriteableBuffer
@@ -161,7 +162,7 @@ def _indices(
     name: str,
     values: Sequence[SupportsIndex] | Block[View],
     one: bool = False,
-) -> range | list[Index]:
+) -> "Indices | list[Index]":
     if isinstance(values, Block):
         return idx_of(model, family, name, values)
     entry = _entry(name, one)
@@ -175,7 +176,8 @@ def span_of(
     values: Sequence[SupportsIndex] | Block[View],
 ) -> range | None:
     if isinstance(values, Block):
-        return idx_of(model, family, name, values)
+        idx = idx_of(model, family, name, values)
+        return idx if isinstance(idx, range) else None
     if isinstance(values, range) and values.step == 1:
         return values
     return None
@@ -197,7 +199,14 @@ def indices_of(
         _alone(name, values)
     _sized(name, values, count)
     items = _indices(model, family, name, values, one)
+    if isinstance(items, memoryview):
+        _sized(name, items, count)
+        return (c_index * count).from_buffer(items)
     return _array(c_index, name, items, count)
+
+
+def index_view(count: int) -> "memoryview[int]":
+    return memoryview(array(c_index._type_, [0]) * count)
 
 
 def _counted(name: str, counts: Array[c_offset]) -> None:

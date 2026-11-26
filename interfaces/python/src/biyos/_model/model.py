@@ -85,6 +85,7 @@ from biyos._model.blocks import (
     Variable,
     Variables,
     View,
+    idx_of,
     index_of,
 )
 from biyos._model.callbacks import Callbacks, checked, data_at
@@ -5698,6 +5699,8 @@ class Model:
         family: type[Block[View]],
         idx: Sequence[SupportsIndex] | Block[View],
     ) -> set[Index]:
+        if isinstance(idx, Block):
+            return set(idx_of(self, family, "idx", idx))
         span = span_of(self, family, "idx", idx)
         if span is not None:
             return set(span)
