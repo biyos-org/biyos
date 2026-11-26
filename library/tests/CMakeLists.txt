@@ -98,6 +98,7 @@ biyos_add_test(test_expr
     expr/intervals/test_interval.cpp
     expr/intervals/test_piecewise.cpp
     expr/threads/test_levels.cpp
+    expr/threads/test_threads.cpp
     expr/utils/chords.cpp
     expr/utils/reference.cpp
     expr/utils/sampling.cpp
