@@ -15,7 +15,6 @@
 #include "io/report.hpp"
 #include "model/model.hpp"
 
-#include <algorithm>
 #include <istream>
 #include <optional>
 #include <string>
@@ -26,8 +25,6 @@ namespace biyos
 
 namespace
 {
-
-constexpr std::string_view kBlanks = " \t\r\f\v";
 
 class MpsReader
 {
@@ -159,9 +156,7 @@ void MpsReader::leave()
 
 void MpsReader::read_name()
 {
-    std::string_view name = lines_.text().substr(word_of(Section::Name).size());
-    name.remove_prefix((std::min)(name.size(), name.find_first_not_of(kBlanks)));
-    name = name.substr(0, name.find_last_not_of(kBlanks) + 1);
+    const std::string_view name = trimmed(lines_.text().substr(word_of(Section::Name).size()));
     if (!name.empty())
     {
         check_name(lines_, name);
