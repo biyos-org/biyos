@@ -171,6 +171,14 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - if: env.RUN == 'true'
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBIYOS_BUILD_TESTS=OFF ${{ runner.os == 'macOS' && '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0' || '' }}
+      - if: env.RUN == 'true'
+        run: cmake --build build --config Release
+      - if: env.RUN == 'true'
+        run: cmake --install build --config Release --prefix "${{ env.PREFIX }}"
+      - if: env.RUN == 'true'
+        env:
+          CMAKE_PREFIX_PATH: ${{ env.PREFIX }}
         run: python -m pip install ./interfaces/python pytest==9.2.0
       - if: env.RUN == 'true'
         run: pytest interfaces/python/tests

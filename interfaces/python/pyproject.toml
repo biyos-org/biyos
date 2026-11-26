@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "biyos"
-dynamic = ["version"]
+version = "0.1.0"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -12,10 +12,4 @@ license-files = ["LICENSE"]
 [tool.scikit-build]
 minimum-version = "build-system.requires"
 wheel.py-api = "py3"
-cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET = "14.0"
 
-[[tool.dynamic-metadata]]
-provider = "scikit_build_core.metadata.regex"
-field = "version"
-input = "../../CMakeLists.txt"
-regex = 'project\(biyos VERSION (?P<value>[0-9.]+)'
