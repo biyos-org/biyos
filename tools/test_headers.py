@@ -43,6 +43,11 @@ class HeaderTest(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_empty(self):
+        with tempfile.TemporaryDirectory() as empty:
+            with self.assertRaisesRegex(FileNotFoundError, empty):
+                headers.read(empty)
+
     def test_values(self):
         self.assertEqual(
             self.values, {"BIYOS_OK": 0, "BIYOS_ERR_NOMEMORY": -400}

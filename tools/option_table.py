@@ -132,10 +132,10 @@ def option_of(block, context):
     )
 
 
-def read(root):
-    source = (root / "src" / "core" / "options" / "table.cpp").read_text()
-    header = (root / "src" / "core" / "options" / "options.hpp").read_text()
-    public = (root / "include" / "biyos" / "biyos.h").read_text()
+def read(library):
+    source = (library / "src" / "core" / "options" / "table.cpp").read_text()
+    header = (library / "src" / "core" / "options" / "options.hpp").read_text()
+    public = (library / "include" / "biyos" / "biyos.h").read_text()
     constants = {
         n: LIMITS.get(v.strip(), v.strip())
         for n, v in CONSTANT.findall(source)

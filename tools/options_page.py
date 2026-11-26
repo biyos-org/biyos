@@ -1,10 +1,10 @@
+import argparse
 import json
 from pathlib import Path
 
 import option_table
 
-ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "docs" / "reference" / "_options"
+OUT = Path("reference") / "_options"
 INFINITE = {"infinity": "∞", "-infinity": "−∞"}
 HEADER = ("Macro", "Id", "Kind", "Default", "Accepts")
 RULE = ("-" * 37, "-" * 3 + ":", "-" * 11, "-" * 37, "-" * 37)
@@ -80,8 +80,14 @@ def entry(option):
     return title + "\n\n::: {.entry}\n\n" + "\n\n".join(body) + "\n\n:::"
 
 
+def arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--library", type=Path, required=True)
+    return parser.parse_args()
+
+
 def main():
-    options = option_table.read(ROOT)
+    options = option_table.read(arguments().library)
     OUT.mkdir(exist_ok=True)
     text = "\n\n".join(entry(option) for option in options) + "\n"
     (OUT / "options.md").write_text(text)

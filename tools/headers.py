@@ -35,9 +35,12 @@ def _named(statement):
 
 
 def read(include):
+    paths = sorted(Path(include).glob("*.h"))
+    if not paths:
+        raise FileNotFoundError(f"no headers in {include}")
     values = {}
     declarations = {}
-    for path in sorted(Path(include).glob("*.h")):
+    for path in paths:
         text = path.read_text()
         values.update(
             (name, int(value)) for name, value in DEFINE.findall(text)
