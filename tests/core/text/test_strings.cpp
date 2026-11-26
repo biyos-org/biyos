@@ -5,9 +5,11 @@
 #include <string>
 #include <string_view>
 
+using biyos::Strings;
+
 TEST(StringTest, Keep)
 {
-    biyos::Strings strings;
+    Strings strings;
     std::string text = "replay.txt";
     const std::string_view kept = strings.keep(text);
     text = "other.txt";
@@ -17,7 +19,7 @@ TEST(StringTest, Keep)
 
 TEST(StringTest, Reuse)
 {
-    biyos::Strings strings;
+    Strings strings;
     const std::string_view first = strings.keep("replay.txt");
     EXPECT_EQ(strings.keep(std::string("replay.txt")).data(), first.data());
     EXPECT_NE(strings.keep("replay").data(), first.data());
@@ -26,7 +28,7 @@ TEST(StringTest, Reuse)
 
 TEST(StringTest, Stable)
 {
-    biyos::Strings strings;
+    Strings strings;
     const std::string_view first = strings.keep("first");
     for (int count = 0; count < 100; ++count)
     {

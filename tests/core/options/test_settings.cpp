@@ -22,14 +22,21 @@
 namespace
 {
 
+using biyos::Env;
+using biyos::Error;
+using biyos::Event;
 using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::IntRule;
+using biyos::Lookup;
 using biyos::Option;
+using biyos::option_table;
+using biyos::Options;
 using biyos::OptionSource;
 using biyos::OptionSpec;
 using biyos::OptionValue;
 using biyos::Scope;
+using biyos::Settings;
 using biyos::StringRule;
 using biyos::Version;
 
@@ -93,20 +100,20 @@ std::string failure(const std::function<void()> &body)
     {
         body();
     }
-    catch (const biyos::Error &error)
+    catch (const Error &error)
     {
         return error.what();
     }
     return "no error";
 }
 
-int held(const biyos::Settings &settings, Option option)
+int held(const Settings &settings, Option option)
 {
     const OptionValue *value = settings.find(option);
     return value != nullptr ? std::get<int>(*value) : -1;
 }
 
-std::string_view text(const biyos::Settings &settings, Option option)
+std::string_view text(const Settings &settings, Option option)
 {
     return std::get<std::string_view>(*settings.find(option));
 }
@@ -116,14 +123,14 @@ class SettingTest : public ::testing::Test
   protected:
     SettingTest()
     {
-        const auto record = [this](const biyos::Event &event) { heard.push_back(event); };
+        const auto record = [this](const Event &event) { heard.push_back(event); };
         env.events().add_hook(EventKind::Message, EventLevel::Debug, record);
     }
 
-    biyos::Env env;
-    std::vector<biyos::Event> heard;
-    biyos::Options options{kRows, env};
-    biyos::Settings settings{kRows};
+    Env env;
+    std::vector<Event> heard;
+    Options options{kRows, env};
+    Settings settings{kRows};
 };
 
 class LookupTest : public SettingTest
@@ -133,17 +140,17 @@ class LookupTest : public SettingTest
 
     OptionSource source(Option option) const { return lookup.find(option).source; }
 
-    biyos::Lookup lookup{settings, options};
+    Lookup lookup{settings, options};
 };
 
 }
 
 TEST_F(SettingTest, Empty)
 {
-    const biyos::Settings none;
+    const Settings none;
     EXPECT_TRUE(none.empty());
     EXPECT_TRUE(settings.empty());
-    for (const OptionSpec &spec : biyos::option_table())
+    for (const OptionSpec &spec : option_table())
     {
         EXPECT_EQ(none.find(spec.id), nullptr) << spec.name;
     }
@@ -184,11 +191,11 @@ TEST_F(SettingTest, Erase)
 
 TEST_F(SettingTest, Copy)
 {
-    static_assert(!std::is_copy_assignable_v<biyos::Settings>);
+    static_assert(!std::is_copy_assignable_v<Settings>);
     settings.set_int(kNew, 5, env.stream());
     settings.set_string(kText, "replay.txt", env.stream());
-    auto source = std::make_unique<biyos::Settings>(settings);
-    const biyos::Settings copy(*source);
+    auto source = std::make_unique<Settings>(settings);
+    const Settings copy(*source);
     source.reset();
     EXPECT_EQ(held(copy, kNew), 5);
     EXPECT_EQ(text(copy, kText), "replay.txt");
@@ -249,7 +256,7 @@ TEST_F(SettingTest, Deprecated)
     options.set_int(kOld, 6);
     EXPECT_EQ(held(settings, kOld), 5);
     ASSERT_EQ(heard.size(), 2U);
-    for (const biyos::Event &event : heard)
+    for (const Event &event : heard)
     {
         EXPECT_EQ(event.model, nullptr);
         EXPECT_EQ(event.kind, EventKind::Message);
@@ -299,16 +306,16 @@ TEST_F(LookupTest, Scope)
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.find(kHost)); }), scope);
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_int(kHost)); }), scope);
     EXPECT_EQ(failure([&] { static_cast<void>(lookup.get_double(kHost)); }), scope);
-    const biyos::Lookup shared(options);
+    const Lookup shared(options);
     EXPECT_EQ(shared.get_int(kHost), 6);
     EXPECT_EQ(shared.find(kHost).source, OptionSource::Environment);
 }
 
 TEST_F(LookupTest, Models)
 {
-    biyos::Settings other{kRows};
-    const biyos::Lookup second(other, options);
-    const biyos::Lookup shared(options);
+    Settings other{kRows};
+    const Lookup second(other, options);
+    const Lookup shared(options);
     options.set_int(kNew, 3);
     settings.set_int(kNew, 5, env.stream());
     EXPECT_EQ(lookup.get_int(kNew), 5);
@@ -328,10 +335,10 @@ TEST_F(LookupTest, MissingRow)
 TEST(GetterTest, Kinds)
 {
     using biyos::Checking;
-    biyos::Env env;
-    biyos::Options options(env);
-    biyos::Settings settings;
-    const biyos::Lookup lookup(settings, options);
+    Env env;
+    Options options(env);
+    Settings settings;
+    const Lookup lookup(settings, options);
     settings.set_bool(Option::Presolve, false, env.stream());
     settings.set_int(Option::Seed, 4, env.stream());
     settings.set_double(Option::TimeLimit, 2.5, env.stream());
@@ -361,10 +368,10 @@ TEST(GetterTest, Kinds)
 TEST(GetterTest, Enum)
 {
     using biyos::Checking;
-    biyos::Env env;
-    biyos::Options options(env);
-    biyos::Settings settings;
-    const biyos::Lookup lookup(settings, options);
+    Env env;
+    Options options(env);
+    Settings settings;
+    const Lookup lookup(settings, options);
     settings.set_int(Option::Checking, BIYOS_CHK_NONE, env.stream());
     EXPECT_EQ(failure([&] { settings.set_int(Option::Checking, 4, env.stream()); }),
               "invalid argument: option 'checking': 4 is not one of 1 (none), 2 (cheap), 3 (full)");

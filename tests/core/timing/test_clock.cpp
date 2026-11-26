@@ -24,10 +24,20 @@ namespace
 {
 
 using namespace std::chrono_literals;
+using biyos::Clock;
+using biyos::Deadline;
+using biyos::Env;
+using biyos::Event;
 using biyos::EventKind;
 using biyos::EventLevel;
+using biyos::FakeClock;
+using biyos::Interrupt;
+using biyos::Lookup;
 using biyos::Option;
+using biyos::Options;
 using biyos::Real;
+using biyos::Settings;
+using biyos::SystemClock;
 using biyos::TerminationStatus;
 using Times = std::vector<std::chrono::nanoseconds>;
 
@@ -39,16 +49,16 @@ constexpr std::chrono::nanoseconds kSpin = 50ms;
 class ClockTest : public ::testing::Test
 {
   protected:
-    bool reached() const { return biyos::Deadline(lookup, clock, interrupt).reached(); }
+    bool reached() const { return Deadline(lookup, clock, interrupt).reached(); }
 
-    biyos::FakeClock clock;
-    biyos::Env host;
-    biyos::Options options{host};
-    biyos::Lookup lookup{options};
-    biyos::Interrupt interrupt;
+    FakeClock clock;
+    Env host;
+    Options options{host};
+    Lookup lookup{options};
+    Interrupt interrupt;
 };
 
-class CountingClock final : public biyos::Clock
+class CountingClock final : public Clock
 {
   public:
     std::chrono::nanoseconds wall_time() const noexcept override
@@ -71,9 +81,9 @@ class CountingClock final : public biyos::Clock
     mutable int cpu_reads_ = 0;
 };
 
-void blank(biyos::Event &) {}
+void blank(Event &) {}
 
-void spin(const biyos::Clock &clock)
+void spin(const Clock &clock)
 {
     const std::chrono::nanoseconds start = clock.cpu_time();
     while (clock.cpu_time() - start < kSpin)
@@ -96,7 +106,7 @@ TEST_F(ClockTest, FakeTime)
 
 TEST_F(ClockTest, SystemTime)
 {
-    const biyos::SystemClock system;
+    const SystemClock system;
     const std::chrono::nanoseconds wall = system.wall_time();
     const std::chrono::nanoseconds cpu = system.cpu_time();
     EXPECT_GE(system.wall_time(), wall);
@@ -106,7 +116,7 @@ TEST_F(ClockTest, SystemTime)
 
 TEST_F(ClockTest, OtherThread)
 {
-    const biyos::SystemClock system;
+    const SystemClock system;
     const std::chrono::nanoseconds before = system.cpu_time();
     std::thread([&system] { spin(system); }).join();
     EXPECT_LT(system.cpu_time() - before, kSpin);
@@ -116,7 +126,7 @@ TEST_F(ClockTest, WallLimit)
 {
     options.set_double(Option::TimeLimit, 1.5);
     clock.advance_wall(4s);
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     clock.advance_wall(1500ms - 1ns);
     clock.advance_cpu(1h);
     EXPECT_FALSE(deadline.reached());
@@ -128,7 +138,7 @@ TEST_F(ClockTest, CpuLimit)
 {
     options.set_double(Option::CpuTimeLimit, 0.25);
     clock.advance_cpu(3s);
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     clock.advance_cpu(250ms - 1ns);
     clock.advance_wall(1h);
     EXPECT_FALSE(deadline.reached());
@@ -147,7 +157,7 @@ TEST_F(ClockTest, ZeroLimit)
 
 TEST_F(ClockTest, InfiniteLimit)
 {
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     clock.advance_wall(kForever);
     clock.advance_cpu(kForever);
     EXPECT_FALSE(deadline.reached());
@@ -157,7 +167,7 @@ TEST_F(ClockTest, AboveBound)
 {
     options.set_double(Option::TimeLimit, 1e10);
     options.set_double(Option::CpuTimeLimit, 1e300);
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     clock.advance_wall(kForever);
     clock.advance_cpu(kForever);
     EXPECT_FALSE(deadline.reached());
@@ -167,7 +177,7 @@ TEST_F(ClockTest, AtBound)
 {
     options.set_double(Option::TimeLimit, kEdgeSeconds);
     options.set_double(Option::CpuTimeLimit, kEdgeSeconds);
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     clock.advance_wall(kForever);
     clock.advance_cpu(kForever);
     EXPECT_FALSE(deadline.reached());
@@ -176,7 +186,7 @@ TEST_F(ClockTest, AtBound)
 TEST_F(ClockTest, JustBelow)
 {
     options.set_double(Option::TimeLimit, std::nextafter(kEdgeSeconds, 0.0));
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     clock.advance_wall(std::chrono::nanoseconds(9'223'372'036'854'774'784) - 1ns);
     EXPECT_FALSE(deadline.reached());
     clock.advance_wall(1ns);
@@ -186,7 +196,7 @@ TEST_F(ClockTest, JustBelow)
 TEST_F(ClockTest, BelowBound)
 {
     options.set_double(Option::TimeLimit, 9e9);
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     clock.advance_wall(std::chrono::nanoseconds(9'000'000'000'000'000'000) - 1ns);
     EXPECT_FALSE(deadline.reached());
     clock.advance_wall(1ns);
@@ -196,7 +206,7 @@ TEST_F(ClockTest, BelowBound)
 TEST_F(ClockTest, PartialTick)
 {
     options.set_double(Option::CpuTimeLimit, 1.2e-9);
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     clock.advance_cpu(1ns);
     EXPECT_FALSE(deadline.reached());
     clock.advance_cpu(1ns);
@@ -206,7 +216,7 @@ TEST_F(ClockTest, PartialTick)
 TEST_F(ClockTest, TinyLimit)
 {
     options.set_double(Option::TimeLimit, std::numeric_limits<Real>::denorm_min());
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     EXPECT_FALSE(deadline.reached());
     clock.advance_wall(1ns);
     EXPECT_TRUE(deadline.reached());
@@ -215,7 +225,7 @@ TEST_F(ClockTest, TinyLimit)
 TEST_F(ClockTest, NoReads)
 {
     const CountingClock counter;
-    const biyos::Deadline deadline(lookup, counter, interrupt);
+    const Deadline deadline(lookup, counter, interrupt);
     EXPECT_FALSE(deadline.reached());
     EXPECT_EQ(counter.wall_reads(), 0);
     EXPECT_EQ(counter.cpu_reads(), 0);
@@ -225,7 +235,7 @@ TEST_F(ClockTest, WallReads)
 {
     options.set_double(Option::TimeLimit, 1.0);
     const CountingClock counter;
-    const biyos::Deadline deadline(lookup, counter, interrupt);
+    const Deadline deadline(lookup, counter, interrupt);
     EXPECT_FALSE(deadline.reached());
     EXPECT_EQ(counter.wall_reads(), 2);
     EXPECT_EQ(counter.cpu_reads(), 0);
@@ -235,7 +245,7 @@ TEST_F(ClockTest, CpuReads)
 {
     options.set_double(Option::CpuTimeLimit, 1.0);
     const CountingClock counter;
-    const biyos::Deadline deadline(lookup, counter, interrupt);
+    const Deadline deadline(lookup, counter, interrupt);
     EXPECT_FALSE(deadline.reached());
     EXPECT_EQ(counter.wall_reads(), 0);
     EXPECT_EQ(counter.cpu_reads(), 2);
@@ -244,7 +254,7 @@ TEST_F(ClockTest, CpuReads)
 TEST_F(ClockTest, ReadOnce)
 {
     options.set_double(Option::TimeLimit, 1.0);
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     options.set_double(Option::TimeLimit, 0.0);
     options.set_double(Option::CpuTimeLimit, 0.0);
     EXPECT_FALSE(deadline.reached());
@@ -254,7 +264,7 @@ TEST_F(ClockTest, ReadOnce)
 
 TEST_F(ClockTest, Interrupted)
 {
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     EXPECT_EQ(deadline.termination(), TerminationStatus::NotSolved);
     interrupt.request();
     EXPECT_TRUE(deadline.reached());
@@ -266,7 +276,7 @@ TEST_F(ClockTest, Terminations)
 {
     options.set_double(Option::TimeLimit, 2.0);
     options.set_double(Option::CpuTimeLimit, 1.0);
-    const biyos::Deadline deadline(lookup, clock, interrupt);
+    const Deadline deadline(lookup, clock, interrupt);
     EXPECT_EQ(deadline.termination(), TerminationStatus::NotSolved);
     clock.advance_cpu(1s);
     EXPECT_EQ(deadline.termination(), TerminationStatus::CpuTimeLimit);
@@ -281,7 +291,7 @@ TEST_F(ClockTest, StopReads)
     options.set_double(Option::TimeLimit, 1.0);
     options.set_double(Option::CpuTimeLimit, 1.0);
     const CountingClock counter;
-    const biyos::Deadline deadline(lookup, counter, interrupt);
+    const Deadline deadline(lookup, counter, interrupt);
     interrupt.request();
     EXPECT_EQ(deadline.termination(), TerminationStatus::UserStop);
     EXPECT_EQ(counter.wall_reads(), 1);
@@ -292,9 +302,9 @@ TEST_F(ClockTest, UnwantedEvent)
 {
     auto owned = std::make_unique<CountingClock>();
     const CountingClock &counter = *owned;
-    biyos::Env env(std::move(owned));
+    Env env(std::move(owned));
     env.stream().emit(EventKind::Message, EventLevel::Error, blank);
-    env.events().add_hook(EventKind::Message, EventLevel::Error, [](const biyos::Event &) {});
+    env.events().add_hook(EventKind::Message, EventLevel::Error, [](const Event &) {});
     env.stream().emit(EventKind::Message, EventLevel::Warning, blank);
     EXPECT_EQ(counter.wall_reads(), 1);
     env.stream().emit(EventKind::Message, EventLevel::Error, blank);
@@ -304,12 +314,12 @@ TEST_F(ClockTest, UnwantedEvent)
 
 TEST_F(ClockTest, EventTime)
 {
-    auto owned = std::make_unique<biyos::FakeClock>();
-    biyos::FakeClock &fake = *owned;
+    auto owned = std::make_unique<FakeClock>();
+    FakeClock &fake = *owned;
     fake.advance_wall(7s);
-    biyos::Env env(std::move(owned));
+    Env env(std::move(owned));
     Times times;
-    const auto keep = [&times](const biyos::Event &event) { times.push_back(event.time); };
+    const auto keep = [&times](const Event &event) { times.push_back(event.time); };
     env.events().add_hook(EventKind::Message, EventLevel::Debug, keep);
     env.stream().emit(EventKind::Message, EventLevel::Info, blank);
     fake.advance_wall(250ns);
@@ -322,12 +332,12 @@ TEST_F(ClockTest, EventTime)
 
 TEST_F(ClockTest, ModelLimit)
 {
-    biyos::Settings settings;
+    Settings settings;
     settings.set_double(Option::TimeLimit, 1.0, host.stream());
     settings.set_double(Option::CpuTimeLimit, 0.5, host.stream());
-    const biyos::Lookup model(settings, options);
-    const biyos::Deadline own(model, clock, interrupt);
-    const biyos::Deadline shared(lookup, clock, interrupt);
+    const Lookup model(settings, options);
+    const Deadline own(model, clock, interrupt);
+    const Deadline shared(lookup, clock, interrupt);
     clock.advance_cpu(500ms);
     EXPECT_EQ(own.termination(), TerminationStatus::CpuTimeLimit);
     EXPECT_FALSE(shared.reached());

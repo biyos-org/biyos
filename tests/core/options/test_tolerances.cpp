@@ -14,44 +14,49 @@
 namespace
 {
 
+using biyos::Env;
+using biyos::Lookup;
 using biyos::Option;
+using biyos::Options;
 using biyos::Real;
+using biyos::Settings;
+using biyos::Tolerances;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 constexpr Real kLargest = (std::numeric_limits<Real>::max)();
 
-biyos::Tolerances defaults()
+Tolerances defaults()
 {
-    biyos::Env env;
-    return biyos::Tolerances(biyos::Lookup(biyos::Options(env)));
+    Env env;
+    return Tolerances(Lookup(Options(env)));
 }
 
-biyos::Tolerances relative(Real rel)
+Tolerances relative(Real rel)
 {
-    biyos::Env env;
-    biyos::Options options(env);
+    Env env;
+    Options options(env);
     options.set_double(Option::FeasAbs, 0.0);
     options.set_double(Option::FeasRel, rel);
-    return biyos::Tolerances(biyos::Lookup(options));
+    return Tolerances(Lookup(options));
 }
 
-biyos::Tolerances uniform(Real value)
+Tolerances uniform(Real value)
 {
-    biyos::Env env;
-    biyos::Options options(env);
+    Env env;
+    Options options(env);
     for (const Option option : {Option::FeasAbs, Option::FeasRel, Option::IntTol, Option::ZeroTol})
     {
         options.set_double(option, value);
     }
-    return biyos::Tolerances(biyos::Lookup(options));
+    return Tolerances(Lookup(options));
 }
 
 }
 
 TEST(ToleranceTest, NearZero)
 {
-    const biyos::Tolerances tolerances = defaults();
+    const Tolerances tolerances = defaults();
     EXPECT_TRUE(tolerances.is_zero(0.0));
     EXPECT_TRUE(tolerances.is_zero(-0.0));
     EXPECT_TRUE(tolerances.is_zero(5e-10));
@@ -82,7 +87,7 @@ TEST(ToleranceTest, NearZero)
 
 TEST(ToleranceTest, LargeMagnitude)
 {
-    const biyos::Tolerances tolerances = defaults();
+    const Tolerances tolerances = defaults();
     EXPECT_FALSE(tolerances.is_zero(1e9));
     EXPECT_FALSE(tolerances.is_zero(-kLargest));
 
@@ -107,7 +112,7 @@ TEST(ToleranceTest, LargeMagnitude)
 
 TEST(ToleranceTest, Infinity)
 {
-    const biyos::Tolerances tolerances = defaults();
+    const Tolerances tolerances = defaults();
     EXPECT_FALSE(tolerances.is_zero(kInfinity));
     EXPECT_FALSE(tolerances.is_zero(-kInfinity));
 
@@ -139,7 +144,7 @@ TEST(ToleranceTest, Infinity)
     EXPECT_FALSE(tolerances.is_integral(kInfinity));
     EXPECT_FALSE(tolerances.is_integral(-kInfinity));
 
-    const biyos::Tolerances loose = uniform(kInfinity);
+    const Tolerances loose = uniform(kInfinity);
     EXPECT_FALSE(loose.satisfies_lower(kLargest, kInfinity));
     EXPECT_FALSE(loose.satisfies_upper(-kLargest, -kInfinity));
     EXPECT_FALSE(loose.satisfies_lower(-kInfinity, 0.0));
@@ -153,7 +158,7 @@ TEST(ToleranceTest, Infinity)
 
 TEST(ToleranceTest, NanFails)
 {
-    for (const biyos::Tolerances &tolerances : {defaults(), uniform(kInfinity)})
+    for (const Tolerances &tolerances : {defaults(), uniform(kInfinity)})
     {
         EXPECT_FALSE(tolerances.is_zero(kNan));
         EXPECT_FALSE(tolerances.approx_equal(kNan, kNan));
@@ -174,13 +179,13 @@ TEST(ToleranceTest, NanFails)
 
 TEST(ToleranceTest, ReadsOptions)
 {
-    biyos::Env env;
-    biyos::Options options(env);
+    Env env;
+    Options options(env);
     options.set_double(Option::FeasAbs, 1e-2);
     options.set_double(Option::FeasRel, 1e-4);
     options.set_double(Option::IntTol, 0.1);
     options.set_double(Option::ZeroTol, 1e-3);
-    const biyos::Tolerances tolerances{biyos::Lookup(options)};
+    const Tolerances tolerances{Lookup(options)};
 
     EXPECT_TRUE(tolerances.is_zero(5e-4));
     EXPECT_FALSE(tolerances.is_zero(2e-3));
@@ -201,7 +206,7 @@ TEST(ToleranceTest, ReadsOptions)
 
 TEST(ToleranceTest, Scale)
 {
-    const biyos::Tolerances fine = relative(1e-3);
+    const Tolerances fine = relative(1e-3);
     EXPECT_TRUE(fine.approx_equal(0.0, 5e-4));
     EXPECT_TRUE(fine.approx_equal(5e-4, 0.0));
     EXPECT_FALSE(fine.approx_equal(0.0, 2e-3));
@@ -210,7 +215,7 @@ TEST(ToleranceTest, Scale)
     EXPECT_TRUE(fine.satisfies_upper(5e-4, 0.0));
     EXPECT_FALSE(fine.satisfies_upper(2e-3, 0.0));
 
-    const biyos::Tolerances coarse = relative(0.5);
+    const Tolerances coarse = relative(0.5);
     EXPECT_TRUE(coarse.approx_equal(1.0, 1.9));
     EXPECT_TRUE(coarse.approx_equal(1.9, 1.0));
     EXPECT_FALSE(coarse.approx_equal(1.0, 2.1));
@@ -222,25 +227,25 @@ TEST(ToleranceTest, Scale)
 
 TEST(ToleranceTest, Overflow)
 {
-    const biyos::Tolerances wide = relative(1.5);
+    const Tolerances wide = relative(1.5);
     EXPECT_FALSE(wide.approx_equal(kLargest, -kLargest));
     EXPECT_FALSE(wide.satisfies_lower(-kLargest, kLargest));
     EXPECT_FALSE(wide.satisfies_upper(kLargest, -kLargest));
     EXPECT_TRUE(wide.approx_equal(kLargest, kLargest / 4));
 
-    const biyos::Tolerances wider = relative(2.5);
+    const Tolerances wider = relative(2.5);
     EXPECT_TRUE(wider.approx_equal(kLargest, -kLargest));
     EXPECT_TRUE(wider.satisfies_lower(-kLargest, kLargest));
     EXPECT_TRUE(wider.satisfies_upper(kLargest, -kLargest));
 
-    const biyos::Tolerances loose = uniform(kInfinity);
+    const Tolerances loose = uniform(kInfinity);
     EXPECT_TRUE(loose.approx_equal(kLargest, -kLargest));
     EXPECT_TRUE(loose.satisfies_lower(-kLargest, kLargest));
 }
 
 TEST(ToleranceTest, Exact)
 {
-    const biyos::Tolerances tolerances = uniform(0.0);
+    const Tolerances tolerances = uniform(0.0);
     const Real above = std::nextafter(1.0, 2.0);
     EXPECT_TRUE(tolerances.is_zero(0.0));
     EXPECT_FALSE(tolerances.is_zero(std::numeric_limits<Real>::denorm_min()));
@@ -256,9 +261,9 @@ TEST(ToleranceTest, Exact)
 
 TEST(ToleranceTest, Immutable)
 {
-    biyos::Env env;
-    biyos::Options options(env);
-    const biyos::Tolerances tolerances{biyos::Lookup(options)};
+    Env env;
+    Options options(env);
+    const Tolerances tolerances{Lookup(options)};
     options.set_double(Option::ZeroTol, 1.0);
     options.set_double(Option::FeasAbs, 1.0);
     options.set_double(Option::IntTol, 0.5);
@@ -269,15 +274,15 @@ TEST(ToleranceTest, Immutable)
 
 TEST(ToleranceTest, Model)
 {
-    biyos::Env env;
-    biyos::Options options(env);
-    biyos::Settings settings;
+    Env env;
+    Options options(env);
+    Settings settings;
     settings.set_double(Option::ZeroTol, 1e-3, env.stream());
     settings.set_double(Option::IntTol, 0.0, env.stream());
     settings.set_double(Option::FeasAbs, 0.5, env.stream());
     settings.set_double(Option::FeasRel, 0.0, env.stream());
-    const biyos::Tolerances model(biyos::Lookup(settings, options));
-    const biyos::Tolerances shared{biyos::Lookup(options)};
+    const Tolerances model(Lookup(settings, options));
+    const Tolerances shared{Lookup(options)};
     EXPECT_TRUE(model.is_zero(5e-4));
     EXPECT_FALSE(shared.is_zero(5e-4));
     EXPECT_FALSE(model.is_integral(1.0 + 1e-6));

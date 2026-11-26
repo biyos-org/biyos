@@ -13,6 +13,9 @@
 #include <string_view>
 #include <system_error>
 
+using biyos::text::from_chars;
+using biyos::text::from_decimal;
+
 namespace
 {
 
@@ -32,7 +35,7 @@ Read ours(std::string_view text)
 {
     double value = kUntouched;
     const std::from_chars_result result =
-        biyos::text::from_decimal(text.data(), text.data() + text.size(), value);
+        from_decimal(text.data(), text.data() + text.size(), value);
     return {std::bit_cast<std::uint64_t>(value), result.ptr - text.data(), result.ec};
 }
 
@@ -204,18 +207,17 @@ TEST(CharsTest, Bounded)
 {
     const std::string_view text = "12345";
     double value = kUntouched;
-    const std::from_chars_result result =
-        biyos::text::from_decimal(text.data(), text.data() + 3, value);
+    const std::from_chars_result result = from_decimal(text.data(), text.data() + 3, value);
     EXPECT_EQ(value, 123.0);
     EXPECT_EQ(result.ptr, text.data() + 3);
     const std::string_view exponent = "1e5";
-    biyos::text::from_decimal(exponent.data(), exponent.data() + 2, value);
+    from_decimal(exponent.data(), exponent.data() + 2, value);
     EXPECT_EQ(value, 1.0);
     const std::string_view point = "1.5";
-    biyos::text::from_decimal(point.data(), point.data() + 2, value);
+    from_decimal(point.data(), point.data() + 2, value);
     EXPECT_EQ(value, 1.0);
     const std::string_view sign = "1e-5";
-    EXPECT_EQ(biyos::text::from_decimal(sign.data(), sign.data() + 3, value).ptr, sign.data() + 1);
+    EXPECT_EQ(from_decimal(sign.data(), sign.data() + 3, value).ptr, sign.data() + 1);
 }
 
 TEST(CharsTest, Zeros)
@@ -365,9 +367,8 @@ TEST(CharsTest, Forward)
         double value = kUntouched;
         double decimal = kUntouched;
         const char *last = text.data() + text.size();
-        const std::from_chars_result result = biyos::text::from_chars(text.data(), last, value);
-        const std::from_chars_result expected =
-            biyos::text::from_decimal(text.data(), last, decimal);
+        const std::from_chars_result result = from_chars(text.data(), last, value);
+        const std::from_chars_result expected = from_decimal(text.data(), last, decimal);
         if (result.ec != std::errc::result_out_of_range)
         {
             EXPECT_EQ(std::bit_cast<std::uint64_t>(value), std::bit_cast<std::uint64_t>(decimal))

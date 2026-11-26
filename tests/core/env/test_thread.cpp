@@ -4,15 +4,18 @@
 
 #include <thread>
 
+using biyos::this_thread;
+using biyos::ThreadId;
+
 TEST(ThreadTest, Stable)
 {
-    EXPECT_EQ(biyos::this_thread(), biyos::this_thread());
+    EXPECT_EQ(this_thread(), this_thread());
 }
 
 TEST(ThreadTest, Distinct)
 {
-    biyos::ThreadId other;
-    std::thread worker([&other] { other = biyos::this_thread(); });
+    ThreadId other;
+    std::thread worker([&other] { other = this_thread(); });
     worker.join();
-    EXPECT_NE(other, biyos::this_thread());
+    EXPECT_NE(other, this_thread());
 }

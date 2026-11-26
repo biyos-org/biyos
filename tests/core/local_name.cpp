@@ -2,9 +2,11 @@
 
 #include <cstddef>
 
+using biyos::StaticName;
+
 std::size_t local_name()
 {
     char buffer[16] = "nlp";
-    const biyos::StaticName name(buffer);
+    const StaticName name(buffer);
     return name.text().size();
 }

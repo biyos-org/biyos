@@ -19,15 +19,22 @@
 namespace
 {
 
+using biyos::Env;
+using biyos::Error;
 using biyos::FlagPart;
 using biyos::FlagsRule;
+using biyos::Lookup;
 using biyos::Mask;
 using biyos::Masks;
+using biyos::name_of;
 using biyos::Option;
+using biyos::Options;
+using biyos::OptionSource;
 using biyos::OptionSpec;
 using biyos::PartDefault;
 using biyos::PartState;
 using biyos::Scope;
+using biyos::Settings;
 using biyos::Version;
 
 constexpr Version kFirst{0, 0, 1};
@@ -77,7 +84,7 @@ std::string failure(const std::function<void()> &body)
     {
         body();
     }
-    catch (const biyos::Error &error)
+    catch (const Error &error)
     {
         return error.what();
     }
@@ -112,8 +119,8 @@ struct Wide
 std::string built(std::span<const FlagPart> parts)
 {
     const std::array rows{row(parts)};
-    biyos::Env env;
-    return failure([&] { const biyos::Options options(rows, env); });
+    Env env;
+    return failure([&] { const Options options(rows, env); });
 }
 
 class FlagTest : public ::testing::Test
@@ -121,10 +128,10 @@ class FlagTest : public ::testing::Test
   protected:
     PartState state(Mask part) const { return lookup.part_state(kParts, part); }
 
-    biyos::Env env;
-    biyos::Options options{kRows, env};
-    biyos::Settings settings{kRows};
-    biyos::Lookup lookup{settings, options};
+    Env env;
+    Options options{kRows, env};
+    Settings settings{kRows};
+    Lookup lookup{settings, options};
 };
 
 }
@@ -132,7 +139,7 @@ class FlagTest : public ::testing::Test
 TEST_F(FlagTest, Defaults)
 {
     EXPECT_EQ(options.get_flags(kParts), Masks{});
-    EXPECT_EQ(options.source_of(kParts), biyos::OptionSource::Default);
+    EXPECT_EQ(options.source_of(kParts), OptionSource::Default);
     EXPECT_EQ(state(kDual), PartState::Default);
     EXPECT_EQ(state(kProbe), PartState::Default);
     EXPECT_EQ(state(kScale), PartState::Default);
@@ -191,8 +198,8 @@ TEST_F(FlagTest, WrongKind)
 
 TEST_F(FlagTest, OtherKinds)
 {
-    biyos::Options shipped(env);
-    const biyos::Lookup found(shipped);
+    Options shipped(env);
+    const Lookup found(shipped);
     const std::array<std::string_view, 5> held{"an int",
                                                "a double",
                                                "an enum",
@@ -201,7 +208,7 @@ TEST_F(FlagTest, OtherKinds)
     for (std::size_t i = 0; i < held.size(); ++i)
     {
         const auto option = static_cast<Option>(i + 1);
-        const std::string name(biyos::name_of(option));
+        const std::string name(name_of(option));
         const std::string wanted =
             "invalid argument: option '" + name + "': is " + std::string(held[i]) + ", not flags";
         EXPECT_EQ(failure([&] { shipped.set_flags(option, Masks{}); }), wanted);
