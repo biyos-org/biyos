@@ -67,7 +67,7 @@ void read(std::span<const Offset> cells, std::vector<Index> &items)
 
 void read(std::span<const Offset> cells, std::vector<Range> &items)
 {
-    for (std::size_t k = 0; k < cells.size(); k += 2)
+    for (std::size_t k = 0; k < cells.size(); k += kWidth<Range>)
     {
         items.push_back({.begin = cells[k], .end = cells[k + 1]});
     }
@@ -187,13 +187,14 @@ template <typename Item> Offset Memos<Item>::share(std::span<const Offset> links
 template <typename Item>
 Offset Memos<Item>::store(std::span<const Item> own, std::span<const Offset> links)
 {
-    const Offset memo = to_offset(cells_.size());
-    cells_.push_back(kUnset);
-    cells_.push_back(to_offset(own.size()));
-    cells_.push_back(to_offset(links.size()));
+    const std::size_t start = cells_.size();
+    cells_.resize(start + kHeader);
+    cells_[start + kStamp] = kUnset;
+    cells_[start + kCount] = to_offset(own.size());
+    cells_[start + kLinks] = to_offset(links.size());
     put(cells_, own);
     append(cells_, links);
-    return memo;
+    return to_offset(start);
 }
 
 template <typename Item> std::size_t Memos<Item>::count_of(Offset memo) const noexcept
