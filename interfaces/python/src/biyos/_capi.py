@@ -201,7 +201,7 @@ def _declare_functions(lib: ctypes.CDLL) -> None:
 def _declare_terms(lib: ctypes.CDLL, name: str, others: int = 1) -> None:
     _declare_pair(lib, f"BIYOS_getn{name}", _OFFSETS)
     values = (*[_INDICES] * others, _REALS)
-    listed = (c_void_p, c_index, _INDICES, c_offset, _OFFSETS, _INDICES)
+    listed = (c_void_p, c_index, _INDICES, c_offset, _OFFSETS)
     _declare(lib, f"BIYOS_get{name}sp", *listed, *values)
     ranged = (c_void_p, c_index, c_index, c_offset, _OFFSETS)
     _declare(lib, f"BIYOS_get{name}rg", *ranged, *values)

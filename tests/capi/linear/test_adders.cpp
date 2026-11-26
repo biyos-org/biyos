@@ -3,6 +3,7 @@
 #include "handles.hpp"
 #include "model/compare/compare.hpp"
 #include "sample.hpp"
+#include "utils/counts.hpp"
 
 #include <gtest/gtest.h>
 
@@ -24,6 +25,7 @@ using biyos::test::below;
 using biyos::test::build_sample;
 using biyos::test::Engine;
 using biyos::test::Env;
+using biyos::test::expanded;
 using biyos::test::Model;
 
 constexpr std::array<std::uint32_t, 8> kSeeds{1, 2, 3, 5, 8, 13, 21, 34};
@@ -167,20 +169,21 @@ Held held_of(const Model &model)
     BIYOS_offset nnz = -1;
     EXPECT_EQ(BIYOS_getnrlintermsp(model.get(), n, every.data(), &nnz), BIYOS_OK);
     const auto size = static_cast<std::size_t>(nnz);
-    Indices functions(size);
+    std::vector<BIYOS_offset> counts(every.size());
     Indices variables(size);
     std::vector<double> values(size);
     EXPECT_EQ(BIYOS_getrlintermsp(model.get(),
                                   n,
                                   every.data(),
                                   nnz,
-                                  nullptr,
-                                  functions.data(),
+                                  counts.data(),
                                   variables.data(),
                                   values.data()),
               BIYOS_OK);
+    const Indices functions = expanded(counts, every);
+    EXPECT_EQ(functions.size(), size);
     Held held;
-    for (std::size_t k = 0; k < size; ++k)
+    for (std::size_t k = 0; k < functions.size(); ++k)
     {
         held[{functions[k], variables[k]}] = std::bit_cast<std::uint64_t>(values[k]);
     }

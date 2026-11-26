@@ -19,10 +19,10 @@ using biyos::to_size;
 using biyos::capi::check_capacity;
 using biyos::capi::guarded;
 using biyos::capi::List;
+using biyos::capi::put;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
-using biyos::capi::unpack;
 using biyos::capi::write_counts;
 
 namespace
@@ -30,18 +30,22 @@ namespace
 
 struct Pairs
 {
-    BIYOS_index *functions;
     BIYOS_index *rows;
     BIYOS_index *columns;
     BIYOS_real *values;
 };
+
+std::span<const QuadraticTerm> quadratic_terms_of(const Model &model, Index function)
+{
+    return model.quadratic_terms(function, function + 1);
+}
 
 std::size_t count_of(const Model &model, std::span<const Index> functions)
 {
     std::size_t count = 0;
     for (const Index function : functions)
     {
-        count += model.quadratic_terms(function, function + 1).size();
+        count += quadratic_terms_of(model, function).size();
     }
     return count;
 }
@@ -54,24 +58,11 @@ void n_pairs(const Session &session, Selection selection, BIYOS_offset *nnz)
     *require(nnz, "nnz") = to_offset(count);
 }
 
-void put_pair(const Pairs &out, std::size_t k, Index function, const QuadraticTerm &term)
+void put_pair(const Pairs &out, std::size_t k, const QuadraticTerm &term)
 {
-    if (out.functions != nullptr)
-    {
-        out.functions[k] = function;
-    }
-    if (out.rows != nullptr)
-    {
-        out.rows[k] = term.row;
-    }
-    if (out.columns != nullptr)
-    {
-        out.columns[k] = term.column;
-    }
-    if (out.values != nullptr)
-    {
-        out.values[k] = term.coefficient;
-    }
+    put(out.rows, k, term.row);
+    put(out.columns, k, term.column);
+    put(out.values, k, term.coefficient);
 }
 
 void write_pairs(const Model &model, std::span<const Index> functions, const Pairs &out)
@@ -79,43 +70,27 @@ void write_pairs(const Model &model, std::span<const Index> functions, const Pai
     std::size_t k = 0;
     for (const Index function : functions)
     {
-        for (const QuadraticTerm &term : model.quadratic_terms(function, function + 1))
+        for (const QuadraticTerm &term : quadratic_terms_of(model, function))
         {
-            put_pair(out, k, function, term);
+            put_pair(out, k, term);
             ++k;
         }
     }
 }
 
-void get_listed(const Session &session,
-                List list,
-                BIYOS_offset capacity,
-                BIYOS_offset *nnz,
-                const Pairs &out)
-{
-    const auto chosen = selected(session.model(), Family::Function, list);
-    const std::size_t count = count_of(session.model(), chosen);
-    check_capacity(capacity, count);
-    write_pairs(session.model(), chosen, out);
-    if (nnz != nullptr)
-    {
-        *nnz = to_offset(count);
-    }
-}
-
-void get_ranged(const Session &session,
-                Range range,
-                BIYOS_offset capacity,
-                BIYOS_offset *counts,
-                const Pairs &out)
+template <typename Selection>
+void get_pairs(const Session &session,
+               Selection selection,
+               BIYOS_offset capacity,
+               BIYOS_offset *counts,
+               const Pairs &out)
 {
     const Model &model = session.model();
-    const auto terms = model.quadratic_terms(range.start, range.stop);
-    check_capacity(capacity, terms.size());
-    const auto record = [&](Index j)
-    { return model.quadratic_terms(range.start + j, range.start + j + 1); };
-    write_counts(to_size(range.stop - range.start), counts, record);
-    unpack(terms, terms.size(), out.rows, out.columns, out.values);
+    const auto chosen = selected(model, Family::Function, selection);
+    check_capacity(capacity, count_of(model, chosen));
+    const auto record = [&](Index j) { return quadratic_terms_of(model, chosen[to_size(j)]); };
+    write_counts(chosen.size(), counts, record);
+    write_pairs(model, chosen, out);
 }
 
 }
@@ -140,14 +115,13 @@ BIYOS_status BIYOS_getquadtermsp(const BIYOS_model *mdl,
                                  BIYOS_index n,
                                  const BIYOS_index *idx,
                                  BIYOS_offset cap,
-                                 BIYOS_offset *nnz,
-                                 BIYOS_index *fun,
+                                 BIYOS_offset *cnt,
                                  BIYOS_index *var1,
                                  BIYOS_index *var2,
                                  BIYOS_real *coef)
 {
-    const Pairs out{.functions = fun, .rows = var1, .columns = var2, .values = coef};
-    return guarded<get_listed>(mdl, List{n, idx}, cap, nnz, out);
+    const Pairs out{.rows = var1, .columns = var2, .values = coef};
+    return guarded<get_pairs<List>>(mdl, List{n, idx}, cap, cnt, out);
 }
 
 BIYOS_status BIYOS_getquadtermrg(const BIYOS_model *mdl,
@@ -159,6 +133,6 @@ BIYOS_status BIYOS_getquadtermrg(const BIYOS_model *mdl,
                                  BIYOS_index *var2,
                                  BIYOS_real *coef)
 {
-    const Pairs out{.functions = nullptr, .rows = var1, .columns = var2, .values = coef};
-    return guarded<get_ranged>(mdl, Range{beg, end}, cap, cnt, out);
+    const Pairs out{.rows = var1, .columns = var2, .values = coef};
+    return guarded<get_pairs<Range>>(mdl, Range{beg, end}, cap, cnt, out);
 }

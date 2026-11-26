@@ -192,8 +192,8 @@ static BIYOS_status use_quadratic(BIYOS_model *model)
     const int seconds[2] = {0, 0};
     const double values[2] = {2.0, 1.0};
     int64_t counts[2] = {-1, -1};
-    BIYOS_offset needed = -1;
-    int owners[2] = {-1, -1};
+    BIYOS_offset terms = -1;
+    int columns[2] = {-1, -1};
     int held[2] = {-1, -1};
     int paired[2] = {-1, -1};
     BIYOS_status status = BIYOS_addquadtermrg(model, 1, 2, count, firsts, seconds, values);
@@ -203,10 +203,10 @@ static BIYOS_status use_quadratic(BIYOS_model *model)
     }
     if (status == BIYOS_OK)
     {
-        status = BIYOS_getquadtermsp(model, 1, functions, 2, &needed, owners, NULL, NULL, NULL);
+        status = BIYOS_getquadtermsp(model, 1, functions, 2, &terms, NULL, columns, NULL);
     }
-    if (status != BIYOS_OK || needed != 2 || counts[0] != 0 || counts[1] != 2 || held[1] != 0 ||
-        paired[1] != 1 || owners[1] != 1)
+    if (status != BIYOS_OK || terms != 2 || counts[0] != 0 || counts[1] != 2 || held[1] != 0 ||
+        paired[1] != 1 || columns[1] != 1)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -764,14 +764,14 @@ static BIYOS_status use_readers(BIYOS_env *env, const BIYOS_model *model)
         BIYOS_getvartolrg(model, 0, 0, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnfun(model, &count) != BIYOS_OK || BIYOS_getcstrg(model, 0, 0, NULL) != BIYOS_OK ||
         BIYOS_getnrlintermrg(model, 0, 0, &needed) != BIYOS_OK ||
-        BIYOS_getrlintermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getrlintermsp(model, 0, NULL, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getrlintermrg(model, 0, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnclintermsp(model, 0, NULL, &needed) != BIYOS_OK ||
-        BIYOS_getclintermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getclintermsp(model, 0, NULL, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getclintermrg(model, 0, 0, 0, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnquadtermsp(model, 0, NULL, &needed) != BIYOS_OK ||
         BIYOS_getnquadtermrg(model, 0, 0, &needed) != BIYOS_OK ||
-        BIYOS_getquadtermsp(model, 0, NULL, 0, &needed, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_getquadtermsp(model, 0, NULL, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getquadtermrg(model, 0, 0, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getnexprsp(model, 0, NULL, &needed, &needed) != BIYOS_OK ||
         BIYOS_getnexprrg(model, 0, 0, &needed, &needed) != BIYOS_OK ||

@@ -37,28 +37,10 @@ void write_counts(std::span<const Offset> starts, BIYOS_offset *counts);
 std::vector<LinearTerm> packed(std::size_t size,
                                const BIYOS_index *variables,
                                const BIYOS_real *values);
-void unpack(std::span<const LinearTerm> terms,
-            std::size_t capacity,
-            BIYOS_index *variables,
-            BIYOS_real *values);
 std::vector<QuadraticTerm> packed(std::size_t size,
                                   const BIYOS_index *rows,
                                   const BIYOS_index *columns,
                                   const BIYOS_real *values);
-void unpack(std::span<const QuadraticTerm> terms,
-            std::size_t capacity,
-            BIYOS_index *rows,
-            BIYOS_index *columns,
-            BIYOS_real *values);
-
-struct Coordinates
-{
-    BIYOS_index *functions;
-    BIYOS_index *variables;
-    BIYOS_real *values;
-};
-
-void put_term(const Coordinates &out, std::size_t k, Index function, const LinearTerm &term);
 
 template <typename T> std::span<T> given(T *array, std::size_t size)
 {

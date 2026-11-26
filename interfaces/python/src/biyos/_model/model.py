@@ -219,8 +219,11 @@ def _checked_env(env: Env) -> Env:
     return env
 
 
-def _expanded(counts: Array[c_offset], first: Index) -> list[Index]:
-    return [first + j for j, count in enumerate(counts) for _ in range(count)]
+def _expanded(
+    counts: Array[c_offset], records: Sequence[Index]
+) -> list[Index]:
+    pairs = zip(records, counts)
+    return [record for record, count in pairs for _ in range(count)]
 
 
 def _or_none(values: list[Real]) -> list[Real | None]:
@@ -4740,16 +4743,16 @@ class Model:
         size = self._count(f"BIYOS_getn{name}", family, idx)
         span = span_of(self, family, "idx", idx)
         chosen = self._chosen(f"BIYOS_get{name}", family, idx)
+        records = (
+            list(cast("Array[c_index]", chosen[2])) if span is None else span
+        )
         found = [(c_index * size)() for _ in range(width)]
         values = (c_real * size)()
-        if span is None:
-            self._call(*chosen, size, None, *found, values)
-            return [list(column) for column in found], list(values)
-        counts = (c_offset * len(span))()
+        counts = (c_offset * len(records))()
         others = found[:place] + found[place + 1 :]
         self._call(*chosen, size, counts, *others, values)
         columns = [list(column) for column in found]
-        columns[place] = _expanded(counts, span.start)
+        columns[place] = _expanded(counts, records)
         return columns, list(values)
 
     def _pattern(

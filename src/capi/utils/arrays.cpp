@@ -5,7 +5,6 @@
 #include "core/numbers.hpp"
 #include "model/model.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <span>
@@ -50,22 +49,6 @@ void check_capacity(BIYOS_offset capacity,
         const std::string reason = held + std::to_string(needed) + " " + std::string(items);
         const std::string argument = "argument '" + std::string(name) + "'";
         throw Error(ErrorKind::InvalidArgument, argument, reason);
-    }
-}
-
-void put_term(const Coordinates &out, std::size_t k, Index function, const LinearTerm &term)
-{
-    if (out.functions != nullptr)
-    {
-        out.functions[k] = function;
-    }
-    if (out.variables != nullptr)
-    {
-        out.variables[k] = term.variable;
-    }
-    if (out.values != nullptr)
-    {
-        out.values[k] = term.coefficient;
     }
 }
 
@@ -121,25 +104,6 @@ std::vector<LinearTerm> packed(std::size_t size,
     return terms;
 }
 
-void unpack(std::span<const LinearTerm> terms,
-            std::size_t capacity,
-            BIYOS_index *variables,
-            BIYOS_real *values)
-{
-    const std::size_t written = (std::min)(capacity, terms.size());
-    for (std::size_t k = 0; k < written; ++k)
-    {
-        if (variables != nullptr)
-        {
-            variables[k] = terms[k].variable;
-        }
-        if (values != nullptr)
-        {
-            values[k] = terms[k].coefficient;
-        }
-    }
-}
-
 std::vector<QuadraticTerm> packed(std::size_t size,
                                   const BIYOS_index *rows,
                                   const BIYOS_index *columns,
@@ -162,30 +126,6 @@ std::vector<QuadraticTerm> packed(std::size_t size,
         });
     }
     return terms;
-}
-
-void unpack(std::span<const QuadraticTerm> terms,
-            std::size_t capacity,
-            BIYOS_index *rows,
-            BIYOS_index *columns,
-            BIYOS_real *values)
-{
-    const std::size_t written = (std::min)(capacity, terms.size());
-    for (std::size_t k = 0; k < written; ++k)
-    {
-        if (rows != nullptr)
-        {
-            rows[k] = terms[k].row;
-        }
-        if (columns != nullptr)
-        {
-            columns[k] = terms[k].column;
-        }
-        if (values != nullptr)
-        {
-            values[k] = terms[k].coefficient;
-        }
-    }
 }
 
 }
