@@ -31,11 +31,10 @@ using biyos::test::holds;
 using biyos::test::interval_text;
 using biyos::test::within;
 
-using Wide = long double;
-
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr Real kSlack = 1e-14;
 constexpr Real kCoarse = 1e-12;
+constexpr Real kRounding = 4 * std::numeric_limits<Real>::epsilon();
 constexpr std::uint64_t kSeed = 20261124;
 constexpr int kLines = 400;
 constexpr int kBoxes = 12;
@@ -75,16 +74,38 @@ std::size_t segment_of(const Line &line, Real t)
     return k;
 }
 
-Wide real_at(const Line &line, Real t)
+struct Bounds
+{
+    Real lower;
+    Real upper;
+};
+
+Real climb_of(const Line &line, std::size_t k, Real from, Real t)
+{
+    const Real rise = line.y[k + 1] - line.y[k];
+    const Real run = line.x[k + 1] - line.x[k];
+    const Real gap = t - from;
+    const Real share = std::isinf(gap) ? t / run - from / run : gap / run;
+    return share * rise;
+}
+
+Bounds real_at(const Line &line, Real t)
 {
     const std::size_t k = segment_of(line, t);
     const std::size_t anchor = t < line.x[k + 1] ? k : k + 1;
-    const Wide rise = static_cast<Wide>(line.y[k + 1]) - line.y[k];
-    const Wide run = static_cast<Wide>(line.x[k + 1]) - line.x[k];
-    return line.y[anchor] + (static_cast<Wide>(t) - line.x[anchor]) * rise / run;
+    const Real start = line.y[anchor];
+    const Real climb = climb_of(line, k, line.x[anchor], t);
+    const Real value = start + climb;
+    const Real error = kRounding * (std::fabs(start) + std::fabs(climb));
+    return {.lower = value - error, .upper = value + error};
 }
 
-Wide limit_at(const Line &line, Real t)
+Bounds point(Real value)
+{
+    return {.lower = value, .upper = value};
+}
+
+Bounds limit_at(const Line &line, Real t)
 {
     if (std::isfinite(t))
     {
@@ -94,55 +115,55 @@ Wide limit_at(const Line &line, Real t)
     const Real rise = line.y[k + 1] - line.y[k];
     if (is_zero(rise))
     {
-        return line.y[k];
+        return point(line.y[k]);
     }
-    return (rise > 0.0) == (t > 0.0) ? kInfinity : -kInfinity;
+    return point((rise > 0.0) == (t > 0.0) ? kInfinity : -kInfinity);
 }
 
 struct Truth
 {
-    Wide lower;
-    Wide upper;
+    Bounds lowest;
+    Bounds highest;
 };
 
-void take(Truth &truth, Wide value)
+void take(Truth &truth, Bounds value)
 {
-    truth.lower = (std::min)(truth.lower, value);
-    truth.upper = (std::max)(truth.upper, value);
+    truth.lowest.lower = (std::min)(truth.lowest.lower, value.lower);
+    truth.lowest.upper = (std::min)(truth.lowest.upper, value.upper);
+    truth.highest.lower = (std::max)(truth.highest.lower, value.lower);
+    truth.highest.upper = (std::max)(truth.highest.upper, value.upper);
 }
 
 Truth truth_of(const Line &line, Interval box)
 {
-    Truth truth{.lower = limit_at(line, box.lower()), .upper = limit_at(line, box.lower())};
+    Truth truth{.lowest = limit_at(line, box.lower()), .highest = limit_at(line, box.lower())};
     take(truth, limit_at(line, box.upper()));
     for (std::size_t k = 0; k < line.x.size(); ++k)
     {
         if (box.lower() < line.x[k] && line.x[k] < box.upper())
         {
-            take(truth, line.y[k]);
+            take(truth, point(line.y[k]));
         }
     }
     return truth;
 }
 
-Wide reach_of(Real t, Real x)
+Real reach_of(const Line &line, std::size_t k, Real t)
 {
-    return std::isfinite(t) ? std::fabs(static_cast<Wide>(t) - x) : 0.0L;
+    return std::isfinite(t) ? std::fabs(climb_of(line, k, line.x[k], t)) : 0.0;
 }
 
-Wide scale_of(const Line &line, Interval box)
+Real scale_of(const Line &line, Interval box)
 {
-    Wide scale = 1.0;
+    Real scale = 1.0;
     for (std::size_t k = 0; k < line.x.size(); ++k)
     {
-        scale = (std::max)(scale, std::fabs(static_cast<Wide>(line.y[k])));
+        scale = (std::max)(scale, std::fabs(line.y[k]));
     }
     for (std::size_t k = 0; k + 1 < line.x.size(); ++k)
     {
-        const Wide rise = static_cast<Wide>(line.y[k + 1]) - line.y[k];
-        const Wide slope = std::fabs(rise / (static_cast<Wide>(line.x[k + 1]) - line.x[k]));
-        scale = (std::max)(scale, slope * reach_of(box.lower(), line.x[k]));
-        scale = (std::max)(scale, slope * reach_of(box.upper(), line.x[k]));
+        scale = (std::max)(scale, reach_of(line, k, box.lower()));
+        scale = (std::max)(scale, reach_of(line, k, box.upper()));
     }
     return scale;
 }
@@ -167,15 +188,15 @@ std::vector<Real> samples_of(const Line &line, Interval box, std::mt19937_64 &en
     return found;
 }
 
-testing::AssertionResult covers(Interval found, Wide value)
+testing::AssertionResult covers(Interval found, Bounds value)
 {
-    if (!found.is_empty() && found.lower() <= value && value <= found.upper())
+    if (!found.is_empty() && found.lower() <= value.upper && value.lower <= found.upper())
     {
         return testing::AssertionSuccess();
     }
     std::ostringstream out;
-    out.precision(21);
-    out << interval_text(found) << " misses " << value;
+    out.precision(17);
+    out << interval_text(found) << " misses [" << value.lower << ", " << value.upper << "]";
     return testing::AssertionFailure() << out.str();
 }
 
@@ -185,7 +206,7 @@ void expect_sampled(const Line &line, Interval box, std::mt19937_64 &engine, int
     for (const Real t : samples_of(line, box, engine))
     {
         const testing::AssertionResult real = covers(found, real_at(line, t));
-        const testing::AssertionResult computed = covers(found, value_at(line.pwl(), t));
+        const testing::AssertionResult computed = covers(found, point(value_at(line.pwl(), t)));
         if ((!real || !computed) && reported++ < kReported)
         {
             ADD_FAILURE() << "box " << interval_text(box) << " at " << t << ": "
@@ -193,14 +214,15 @@ void expect_sampled(const Line &line, Interval box, std::mt19937_64 &engine, int
         }
     }
     const Truth truth = truth_of(line, box);
-    const Wide slack = 64 * std::numeric_limits<Real>::epsilon() * scale_of(line, box);
-    const bool lower = found.lower() >= truth.lower - slack && found.lower() <= truth.lower;
-    const bool upper = found.upper() <= truth.upper + slack && found.upper() >= truth.upper;
+    const Real slack = 64 * std::numeric_limits<Real>::epsilon() * scale_of(line, box);
+    const Bounds low = truth.lowest;
+    const Bounds high = truth.highest;
+    const bool lower = found.lower() >= low.lower - slack && found.lower() <= low.upper;
+    const bool upper = found.upper() <= high.upper + slack && found.upper() >= high.lower;
     if ((!lower || !upper) && reported++ < kReported)
     {
         ADD_FAILURE() << "box " << interval_text(box) << " gives " << interval_text(found)
-                      << " for [" << static_cast<Real>(truth.lower) << ", "
-                      << static_cast<Real>(truth.upper) << "]";
+                      << " for [" << low.lower << ", " << high.upper << "]";
     }
 }
 
