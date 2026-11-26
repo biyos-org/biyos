@@ -5,6 +5,7 @@
 #include "model/checks.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/expressions/patterns.hpp"
+#include "model/renumber.hpp"
 
 #include <cstddef>
 #include <span>
@@ -101,6 +102,13 @@ void Model::set_callback_hessian_product(Index callback, Routine hessian_product
 void Model::set_callback_data(Index callback, void *data)
 {
     changed(callback).data = data;
+}
+
+std::vector<Index> Model::delete_callbacks(std::span<const Index> indices)
+{
+    std::vector<Index> map = renumbering(kNoun, n_callbacks(), indices);
+    keep(callbacks_, map);
+    return map;
 }
 
 }

@@ -304,6 +304,7 @@ def changes(model):
         partial(model.setcbh, 0, [], [], answer),
         partial(model.setcbhv, 0, answer),
         partial(model.setcbdata, 0, None),
+        partial(model.delcb, [0]),
     )
 
 
@@ -323,7 +324,7 @@ def test_locked(env, model):
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert found == [LOCKED] * 6 + ["kept", [0]]
+    assert found == [LOCKED] * 7 + ["kept", [0]]
 
 
 def test_closed(env):
@@ -338,3 +339,54 @@ def test_closed(env):
     for call in calls:
         with pytest.raises(ValueError, match="the model is closed"):
             call()
+
+
+def constant(value, req, out, data):
+    for k in range(len(out)):
+        out[k] = value
+
+
+def test_deleted(model):
+    for cb, covered in enumerate(([0], [1, 2], [2])):
+        assert model.addcb(covered) == cb
+        model.setcbf(cb, partial(constant, 10.0 * (cb + 1)))
+    assert model.evalf([0.0] * 3) == [10.0, 20.0, 50.0]
+    assert model.delcb([2, 0]) == [-1, 0, -1]
+    assert model.getcbfun(0) == [1, 2]
+    assert model.evalf([0.0] * 3) == [0.0, 20.0, 20.0]
+    assert model.delfun([0]) == [-1, 0, 1]
+    assert model.getcbfun(0) == [0, 1]
+    assert model.evalf([0.0] * 3) == [20.0, 20.0]
+    assert model.delcb(range(1)) == [-1]
+    assert model.delvar([2]) == [0, 1, -1]
+
+
+def test_delete_refused(model):
+    model.addcb([0])
+    bad = "invalid argument: "
+    assert refusal(model.delcb, [1]) == bad + "callback 1: unknown"
+    repeated = "argument 'idx': callback 0 is repeated"
+    assert refusal(model.delcb, [0, 0]) == bad + repeated
+    with pytest.raises(TypeError, match="an entry of idx must be an int"):
+        model.delcb([0.0])
+    assert model.getcbfun(0) == [0]
+
+
+def test_delete_kept(env, model):
+    model.addcb([0])
+    model.addcb([1])
+    model.setcbf(0, partial(constant, 1.0))
+
+    def values(req, out, data):
+        out[0] = 3.0
+
+    alive = weakref.ref(values)
+    model.setcbf(1, values)
+    del values
+    copy = model.copy()
+    assert model.delcb([1]) == [0, -1]
+    gc.collect()
+    assert alive() is not None
+    assert copy.evalf([0.0] * 3) == [1.0, 3.0, 0.0]
+    assert model.evalf([0.0] * 3) == [1.0, 0.0, 0.0]
+    copy.close()

@@ -475,6 +475,8 @@ static BIYOS_status use_callbacks(BIYOS_model *model)
     BIYOS_index cb = -1;
     BIYOS_index n = -1;
     BIYOS_index covered = -1;
+    BIYOS_index extra = -1;
+    BIYOS_index map[2] = {-2, -2};
     int tag = 0;
     void *data = NULL;
     if (BIYOS_addfun(model, 1, &function) != BIYOS_OK ||
@@ -486,7 +488,10 @@ static BIYOS_status use_callbacks(BIYOS_model *model)
         BIYOS_getcbdata(model, cb, &data) != BIYOS_OK || data != &tag ||
         BIYOS_getncbfun(model, cb, &n) != BIYOS_OK || n != 1 ||
         BIYOS_getcbfun(model, cb, n, &covered) != BIYOS_OK || covered != function ||
-        BIYOS_setcbdata(model, cb, NULL) != BIYOS_OK)
+        BIYOS_setcbdata(model, cb, NULL) != BIYOS_OK ||
+        BIYOS_addcb(model, 1, &function, NULL, &extra) != BIYOS_OK ||
+        BIYOS_delcbsp(model, 1, &extra, map) != BIYOS_OK || map[0] != 0 || map[1] != -1 ||
+        BIYOS_delcbrg(model, 1, 1, NULL) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }

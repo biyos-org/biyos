@@ -419,3 +419,58 @@ TEST(CallbackTest, Difference)
     product.set_callback_hessian_product(0, succeed);
     EXPECT_EQ(difference(product, model), "callback 0: Hessian product given against none");
 }
+
+TEST(CallbackTest, Deleted)
+{
+    Model model = with_functions(4);
+    int data = 0;
+    add(model, {0});
+    model.add_callback(std::vector<Index>{3, 1}, &data);
+    add(model, {2});
+    add(model, {1});
+    model.set_callback_function(1, counted);
+    const std::vector<Index> map = model.delete_callbacks(std::vector<Index>{2, 0});
+    EXPECT_EQ(map, (std::vector<Index>{-1, 0, -1, 1}));
+    EXPECT_EQ(model.n_callbacks(), 2);
+    const Callback &held = model.callback(0);
+    EXPECT_EQ(held.covered, (std::vector<Index>{3, 1}));
+    EXPECT_EQ(held.data, &data);
+    EXPECT_EQ(calls_of(held.function), 1);
+    EXPECT_EQ(model.callback(1).covered, (std::vector<Index>{1}));
+}
+
+TEST(CallbackTest, DeleteRefused)
+{
+    Model model = with_functions(2);
+    add(model, {0});
+    add(model, {1});
+    EXPECT_EQ(refusal([&] { model.delete_callbacks(std::vector<Index>{2}); }),
+              kBad + "callback 2: unknown");
+    EXPECT_EQ(refusal([&] { model.delete_callbacks(std::vector<Index>{1, 1}); }),
+              kBad + "argument 'idx': callback 1 is repeated");
+    EXPECT_EQ(model.n_callbacks(), 2);
+}
+
+TEST(CallbackTest, DeleteFrees)
+{
+    Model model = with_functions(3);
+    add(model, {1, 0});
+    add(model, {2, 1});
+    add(model, {0});
+    model.delete_callbacks(std::vector<Index>{1});
+    EXPECT_EQ(model.delete_functions(std::vector<Index>{2}), (std::vector<Index>{0, 1, -1}));
+    model.delete_callbacks(std::vector<Index>{0});
+    EXPECT_EQ(model.delete_functions(std::vector<Index>{1}), (std::vector<Index>{0, -1}));
+    EXPECT_EQ(model.callback(0).covered, (std::vector<Index>{0}));
+}
+
+TEST(CallbackTest, DeleteLast)
+{
+    Model model = with_functions(2);
+    add(model, {0});
+    add(model, {1});
+    model.delete_callbacks(std::vector<Index>{0, 1});
+    EXPECT_EQ(model.n_callbacks(), 0);
+    EXPECT_EQ(model.delete_variables(std::vector<Index>{1}), (std::vector<Index>{0, -1, 1}));
+    EXPECT_EQ(model.n_variables(), 2);
+}

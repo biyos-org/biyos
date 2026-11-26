@@ -836,7 +836,7 @@ error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an in
 error BIYOS_ERR_INUSE A variable to delete has a node, is a member of a set or is the binary of an indicator, or the model has a callback and a variable is to be deleted, with a message that names one use, such as `in use: variable 3: used by set 1`.
 note A deleted variable's kind, bounds, tolerances and name go with it, and so do its linear and quadratic terms; a function left with no term keeps its constant. A variable keeps its node once `BIYOS_addvarnode` or an expression gives it one, even after the function that used the node is deleted. Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` is no longer valid.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
-see BIYOS_getnvar BIYOS_delvarnamesp
+see BIYOS_getnvar BIYOS_delvarnamesp BIYOS_delcbsp
 since 0.1.0
 
 function BIYOS_setvarnamesp BIYOS_setvarnamerg
@@ -971,7 +971,7 @@ error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an in
 error BIYOS_ERR_INUSE A function to delete is used by a constraint, an objective, an indicator, a cone, a complement or a callback, with a message that names one use, such as `in use: function 4: used by constraint 2`.
 note A deleted function's name, constant, terms and expression go with it; the nodes of the expression stay in the model with their ids. Once the call succeeds, a pointer read earlier with `BIYOS_getfunnamesp` is no longer valid.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
-see BIYOS_getnfun BIYOS_delfunnamesp
+see BIYOS_getnfun BIYOS_delfunnamesp BIYOS_delcbsp
 since 0.1.0
 
 function BIYOS_clrfunsp BIYOS_clrfunrg
@@ -2542,7 +2542,7 @@ since 0.1.0
 group callbacks Callbacks
 text A callback computes in user code its part $\gamma_k(x)$ of the nonlinear part of each function $k$ it covers. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for the values of those parts, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
 text The derivative patterns are coordinates, as `BIYOS_addlinterm` takes terms: `BIYOS_setcbg` takes a covered function and a variable for each entry, `BIYOS_setcbh` two variables. Entries may come in any order and may repeat, and `BIYOS_cbg` and `BIYOS_cbh` write one value for each entry in the order given, the values of a repeated entry summed.
-text A function's nonlinear part is its expression plus the part of every callback that covers it. A function may be in any number of callbacks and hold an expression beside them, and a callback lists a function at most once. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function. A callback reads `x` in the numbering it was written for, so `BIYOS_delvarsp` deletes no variable of a model that has a callback.
+text A function's nonlinear part is its expression plus the part of every callback that covers it. A function may be in any number of callbacks and hold an expression beside them, and a callback lists a function at most once. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function. A function leaves its callbacks when `BIYOS_delcbsp` deletes them, and may then be deleted. A callback reads `x` in the numbering it was written for, so `BIYOS_delvarsp` deletes no variable of a model that has a callback.
 text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. The calls of [Evaluation](#sec-capi-evaluation) run callbacks.
 text The model keeps the function pointers and `data` as given and never frees `data`. A copy made by `BIYOS_copymdl` shares them with its source, so both call the same code with the same `data`.
 
@@ -2702,6 +2702,21 @@ return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `cb` is not a callback of the model, `cap` is negative, or `cap` is less than the number `BIYOS_getncbfun` gives.
 note It reads back what `BIYOS_addcb` takes. A refused call writes nothing.
 see BIYOS_getncbfun BIYOS_addcb
+since 0.1.0
+
+function BIYOS_delcbsp BIYOS_delcbrg
+summary Delete callbacks.
+param mdl in The model.
+param beg in In the `rg` form, the first callback to delete.
+param end in In the `rg` form, one past the last callback to delete.
+param n in In the `sp` form, the number of callbacks to delete.
+param idx in In the `sp` form, the callbacks to delete, in any order; may be null when `n` is 0.
+param map out Receives one entry for each callback the model held before the call: entry `i` is the new index of callback `i`, or -1 when it is deleted; skipped when null.
+return `BIYOS_OK` once the callbacks are deleted. The others keep their order, their functions, their patterns and their `data`, and are numbered from 0 again.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a callback, a callback is listed more than once, with a message such as `invalid argument: argument 'idx': callback 1 is repeated`, or the range ends past the last callback.
+note A deleted callback no longer covers its functions, so a function no other callback covers may then be deleted. The model never frees the `data` of a deleted callback. A copy made by `BIYOS_copymdl` keeps its own callbacks.
+note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
+see BIYOS_addcb BIYOS_delfunsp BIYOS_delvarsp
 since 0.1.0
 
 group evaluation Evaluation

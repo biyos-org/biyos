@@ -2090,6 +2090,40 @@ class Model:
         self._call(lib.BIYOS_getcbfun, integer("cb", cb), n, found)
         return list(found)
 
+    def delcb(self, idx: Sequence[Index]) -> list[Index]:
+        """Delete callbacks.
+
+        The callbacks left keep their order, their functions and their
+        ``data``, and are numbered from 0 again. A deleted callback no longer
+        covers its functions, so a function no other callback covers may then
+        be deleted. The model keeps the deleted callback's functions and
+        ``data`` alive until it is freed, since a copy may share them.
+
+        Parameters
+        ----------
+        idx
+            The callbacks to delete, in any order, none of them twice.
+
+        Returns
+        -------
+        map
+            For each callback the model held, its new index, or -1 when it is
+            deleted.
+
+        See Also
+        --------
+        BIYOS_delcbsp
+        BIYOS_delcbrg
+        """
+        n = len(idx)
+        entry = "an entry of idx"
+        indices = (c_index * n)(*[integer(entry, cb) for cb in idx])
+        found = (c_index * self._callbacks.total())()
+        self._call(lib.BIYOS_delcbsp, n, indices, found)
+        renumbered = list(found)
+        self._callbacks.deleted(renumbered)
+        return renumbered
+
     def addcon(
         self,
         fun: Sequence[Index | Function]
