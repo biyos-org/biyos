@@ -55,7 +55,7 @@ bool any_free(const Model &model)
     return std::ranges::any_of(model.constraints(0, model.n_constraints()), is_free);
 }
 
-void add_objective(Draft &draft, const Model &model, const Taken &taken)
+Index add_objective(Draft &draft, const Model &model, const Taken &taken)
 {
     const Objective &objective = model.objective(0);
     draft.sense = objective.sense;
@@ -64,6 +64,34 @@ void add_objective(Draft &draft, const Model &model, const Taken &taken)
           label_of(model, Family::Objective, 0, "OBJ", taken),
           Family::Objective,
           0);
+    return objective.function;
+}
+
+Index add_constraint(Draft &draft, const Model &model, Index k, const Taken &taken)
+{
+    const Constraint &constraint = model.constraint(k);
+    const Real constant = model.constant(constraint.function);
+    draft.rows.push_back(row_shape(item("constraint", k), constraint, constant));
+    enter(draft.row_names,
+          label_of(model, Family::Constraint, k, "R" + text_of(k), taken),
+          Family::Constraint,
+          k);
+    return constraint.function;
+}
+
+Index objective_place(const Model &model)
+{
+    if (model.n_objectives() == 0)
+    {
+        return 0;
+    }
+    const Index function = model.objective(0).function;
+    Index place = 0;
+    while (place < model.n_constraints() && model.constraint(place).function < function)
+    {
+        ++place;
+    }
+    return std::ranges::any_of(model.constraints(0, place), is_free) ? 0 : place;
 }
 
 std::vector<Index> add_rows(Draft &draft, const Model &model)
@@ -71,10 +99,14 @@ std::vector<Index> add_rows(Draft &draft, const Model &model)
     const Taken taken = user_names(model, {Family::Objective, Family::Constraint});
     std::vector<Index> functions;
     functions.reserve(to_size(model.n_constraints()) + 1);
+    const Index place = objective_place(model);
+    for (Index k = 0; k < place; ++k)
+    {
+        functions.push_back(add_constraint(draft, model, k, taken));
+    }
     if (model.n_objectives() > 0)
     {
-        add_objective(draft, model, taken);
-        functions.push_back(model.objective(0).function);
+        functions.push_back(add_objective(draft, model, taken));
     }
     else if (any_free(model))
     {
@@ -82,16 +114,9 @@ std::vector<Index> add_rows(Draft &draft, const Model &model)
         draft.row_names.add(fresh("OBJ", taken));
         functions.push_back(kNoFunction);
     }
-    for (Index k = 0; k < model.n_constraints(); ++k)
+    for (Index k = place; k < model.n_constraints(); ++k)
     {
-        const Constraint &constraint = model.constraint(k);
-        const Real constant = model.constant(constraint.function);
-        draft.rows.push_back(row_shape(item("constraint", k), constraint, constant));
-        enter(draft.row_names,
-              label_of(model, Family::Constraint, k, "R" + text_of(k), taken),
-              Family::Constraint,
-              k);
-        functions.push_back(constraint.function);
+        functions.push_back(add_constraint(draft, model, k, taken));
     }
     return functions;
 }

@@ -49,6 +49,7 @@ using biyos::test::kMpsFiles;
 using biyos::test::printed;
 using biyos::test::read_sample;
 using biyos::test::read_text;
+using biyos::test::text;
 
 namespace
 {
@@ -373,6 +374,50 @@ TEST(MpsTest, Goalless)
     EXPECT_TRUE(back.linear_terms(function, function + 1).empty());
     EXPECT_EQ(bits(back.constant(function)), bits(0.0));
     EXPECT_EQ(back.n_constraints(), 1);
+}
+
+TEST(MpsTest, LateGoal)
+{
+    const Model read = read_sample(text({"NAME",
+                                         "ROWS",
+                                         " L  cap",
+                                         " N  cost",
+                                         " G  floor",
+                                         " N  spare",
+                                         "COLUMNS",
+                                         "    x  cap  1  cost  2",
+                                         "    x  floor  3  spare  6",
+                                         "RHS",
+                                         "    RHS  cap  4  cost  5",
+                                         "ENDATA"}));
+    ASSERT_EQ(read.objective(0).function, 1);
+    EXPECT_EQ(difference(read, reread(read)), "");
+}
+
+TEST(MpsTest, BuiltGoal)
+{
+    Model model = linear({{.function = 0, .lower = -kInfinity, .upper = 1.0},
+                          {.function = 2, .lower = 0.0, .upper = kInfinity}},
+                         {0.0, 1.5, 0.0});
+    add_goal(model, 1, ObjectiveSense::Minimize, "cost");
+    name_all(model, Family::Variable, "C");
+    name_all(model, Family::Constraint, "R");
+    EXPECT_EQ(difference(model, reread(model)), "");
+}
+
+TEST(MpsTest, FreeFirst)
+{
+    Model model = linear({{.function = 0, .lower = 0.0, .upper = 1.0},
+                          {.function = 1, .lower = -kInfinity, .upper = kInfinity},
+                          {.function = 3, .lower = 0.0, .upper = kInfinity}},
+                         {0.0, 0.0, 0.0, 0.0});
+    add_goal(model, 2, ObjectiveSense::Minimize, "cost");
+    const Model back = reread(model);
+    EXPECT_EQ(*name_of(back, Family::Objective, 0), "cost");
+    EXPECT_EQ(back.objective(0).function, 0);
+    EXPECT_EQ(back.constraint(0).function, 1);
+    EXPECT_EQ(back.constraint(1).function, 2);
+    EXPECT_EQ(back.constraint(2).function, 3);
 }
 
 TEST(MpsTest, Nothing)
