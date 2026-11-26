@@ -31,7 +31,7 @@ The same reasoning fixes two partials of the power. The derivative of $x^c$ with
 
 ## No derivative off the domain {#sec-derivatives-domain}
 
-Outside an operator's domain its value is NaN or, at a pole, infinite ([The operators](#sec-graph-operators)). Wherever the value is NaN, every partial of that operator is NaN as well. The textbook formula would often give a finite number: the derivative of $\log x$ is $1/x$, which is $-1$ at $x = -1$, where $\log x$ has no value. A slope means nothing where the function has no value, so biyos makes the derivative as undefined as the value.
+Outside an operator's domain its value is NaN or, at a pole, infinite ([The operators](#sec-graph-operators)). Wherever the value is NaN, every partial of that operator is NaN as well. The textbook formula would often give a finite number: the derivative of $\log x$ is $1/x$, which is $-1$ at $x = -1$, where $\log x$ has no value. A slope means nothing where the function has no value, so biyos makes the derivative as undefined as the value. The converse does not hold: $\operatorname{atan2}$ has the value 0 at the origin, where it jumps, and NaN partials there.
 
 The two rules work together. A NaN partial reaches a variable only through a nonzero adjoint, that is, only when the undefined operator actually takes part in the combination being differentiated.
 
