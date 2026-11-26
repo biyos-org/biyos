@@ -16,19 +16,18 @@ using biyos::Family;
 using biyos::Index;
 using biyos::Model;
 using biyos::Objective;
-using biyos::ObjectiveSense;
 using biyos::picked;
 using biyos::Session;
 using biyos::to_index;
-using biyos::capi::entry_or;
 using biyos::capi::guarded;
 using biyos::capi::List;
 using biyos::capi::listed;
-using biyos::capi::put;
 using biyos::capi::Range;
+using biyos::capi::read_field;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::writable;
+using biyos::capi::write_field;
 
 namespace
 {
@@ -52,27 +51,13 @@ struct Outputs
     BIYOS_real *relative = nullptr;
 };
 
-Objective given(Objective objective, std::size_t k, const Fields &fields)
-{
-    const BIYOS_int sense = entry_or(fields.senses, k, static_cast<BIYOS_int>(objective.sense));
-    objective.sense = static_cast<ObjectiveSense>(sense);
-    objective.priority = entry_or(fields.priorities, k, objective.priority);
-    objective.weight = entry_or(fields.weights, k, objective.weight);
-    objective.absolute = entry_or(fields.absolute, k, objective.absolute);
-    objective.relative = entry_or(fields.relative, k, objective.relative);
-    return objective;
-}
-
-std::vector<Objective> new_objectives(std::span<const Index> functions,
-                                      Index start,
-                                      const Fields &fields)
+std::vector<Objective> default_objectives(std::span<const Index> functions, Index start)
 {
     std::vector<Objective> added;
     added.reserve(functions.size());
     for (std::size_t k = 0; k < functions.size(); ++k)
     {
-        const Index index = start + to_index(k);
-        added.push_back(given(default_objective(functions[k], index), k, fields));
+        added.push_back(default_objective(functions[k], start + to_index(k)));
     }
     return added;
 }
@@ -88,13 +73,12 @@ void add_objectives(Session &session,
     Model &model = writable(session);
     const std::span<const Index> owners = listed(n, functions, "fun");
     model.check_objective_room(owners.size());
-    const Fields fields{
-        .senses = senses,
-        .priorities = priorities,
-        .weights = weights,
-    };
     const Index index = model.n_objectives();
-    model.add_objectives(new_objectives(owners, index, fields));
+    std::vector<Objective> added = default_objectives(owners, index);
+    read_field(added, &Objective::sense, senses);
+    read_field(added, &Objective::priority, priorities);
+    read_field(added, &Objective::weight, weights);
+    model.add_objectives(added);
     if (start != nullptr)
     {
         *start = index;
@@ -106,12 +90,12 @@ void set_objectives(Session &session, Selection selection, const Fields &fields)
 {
     Model &model = writable(session);
     const auto changed = selected(model, Family::Objective, selection);
-    std::vector<Objective> objectives;
-    objectives.reserve(changed.size());
-    for (std::size_t k = 0; k < changed.size(); ++k)
-    {
-        objectives.push_back(given(model.objective(changed[k]), k, fields));
-    }
+    std::vector<Objective> objectives = picked(model, &Model::objective, changed);
+    read_field(objectives, &Objective::sense, fields.senses);
+    read_field(objectives, &Objective::priority, fields.priorities);
+    read_field(objectives, &Objective::weight, fields.weights);
+    read_field(objectives, &Objective::absolute, fields.absolute);
+    read_field(objectives, &Objective::relative, fields.relative);
     model.set_objectives(changed, objectives);
 }
 
@@ -120,25 +104,17 @@ void n_objectives(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_objectives();
 }
 
-void copy_out(const Objective &objective, std::size_t k, const Outputs &outputs)
-{
-    put(outputs.functions, k, objective.function);
-    put(outputs.senses, k, static_cast<BIYOS_int>(objective.sense));
-    put(outputs.priorities, k, objective.priority);
-    put(outputs.weights, k, objective.weight);
-    put(outputs.absolute, k, objective.absolute);
-    put(outputs.relative, k, objective.relative);
-}
-
 template <typename Selection>
 void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
     const auto chosen = selected(session.model(), Family::Objective, selection);
     const std::vector<Objective> objectives = picked(session.model(), &Model::objective, chosen);
-    for (std::size_t k = 0; k < objectives.size(); ++k)
-    {
-        copy_out(objectives[k], k, outputs);
-    }
+    write_field(objectives, &Objective::function, outputs.functions);
+    write_field(objectives, &Objective::sense, outputs.senses);
+    write_field(objectives, &Objective::priority, outputs.priorities);
+    write_field(objectives, &Objective::weight, outputs.weights);
+    write_field(objectives, &Objective::absolute, outputs.absolute);
+    write_field(objectives, &Objective::relative, outputs.relative);
 }
 
 }

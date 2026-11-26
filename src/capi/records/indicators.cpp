@@ -18,15 +18,15 @@ using biyos::kInfinity;
 using biyos::Model;
 using biyos::picked;
 using biyos::Session;
-using biyos::capi::entry_or;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::put;
 using biyos::capi::Range;
+using biyos::capi::read_field;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::writable;
+using biyos::capi::write_field;
 
 namespace
 {
@@ -47,16 +47,6 @@ struct Outputs
     BIYOS_real *lower = nullptr;
     BIYOS_real *upper = nullptr;
 };
-
-Indicator given(Indicator indicator, std::size_t k, const Fields &fields)
-{
-    indicator.variable = entry_or(fields.variables, k, indicator.variable);
-    indicator.value = entry_or(fields.values, k, indicator.value);
-    indicator.function = entry_or(fields.functions, k, indicator.function);
-    indicator.lower = entry_or(fields.lower, k, indicator.lower);
-    indicator.upper = entry_or(fields.upper, k, indicator.upper);
-    return indicator;
-}
 
 void require_fields(const Fields &fields)
 {
@@ -80,12 +70,12 @@ void add_indicators(Session &session, BIYOS_index n, const Fields &fields, BIYOS
         .lower = -kInfinity,
         .upper = kInfinity,
     };
-    std::vector<Indicator> added;
-    added.reserve(size);
-    for (std::size_t k = 0; k < size; ++k)
-    {
-        added.push_back(given(free, k, fields));
-    }
+    std::vector<Indicator> added(size, free);
+    read_field(added, &Indicator::variable, fields.variables);
+    read_field(added, &Indicator::value, fields.values);
+    read_field(added, &Indicator::function, fields.functions);
+    read_field(added, &Indicator::lower, fields.lower);
+    read_field(added, &Indicator::upper, fields.upper);
     const Index index = model.n_indicators();
     model.add_indicators(added);
     if (start != nullptr)
@@ -99,12 +89,12 @@ void set_chosen(Session &session, Selection selection, const Fields &fields)
 {
     Model &model = writable(session);
     const auto changed = selected(model, Family::Indicator, selection);
-    std::vector<Indicator> indicators;
-    indicators.reserve(changed.size());
-    for (std::size_t k = 0; k < changed.size(); ++k)
-    {
-        indicators.push_back(given(model.indicator(changed[k]), k, fields));
-    }
+    std::vector<Indicator> indicators = picked(model, &Model::indicator, changed);
+    read_field(indicators, &Indicator::variable, fields.variables);
+    read_field(indicators, &Indicator::value, fields.values);
+    read_field(indicators, &Indicator::function, fields.functions);
+    read_field(indicators, &Indicator::lower, fields.lower);
+    read_field(indicators, &Indicator::upper, fields.upper);
     model.set_indicators(changed, indicators);
 }
 
@@ -113,24 +103,16 @@ void n_indicators(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_indicators();
 }
 
-void copy_out(const Indicator &indicator, std::size_t k, const Outputs &outputs)
-{
-    put(outputs.variables, k, indicator.variable);
-    put(outputs.values, k, indicator.value);
-    put(outputs.functions, k, indicator.function);
-    put(outputs.lower, k, indicator.lower);
-    put(outputs.upper, k, indicator.upper);
-}
-
 template <typename Selection>
 void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
     const auto chosen = selected(session.model(), Family::Indicator, selection);
     const std::vector<Indicator> indicators = picked(session.model(), &Model::indicator, chosen);
-    for (std::size_t k = 0; k < indicators.size(); ++k)
-    {
-        copy_out(indicators[k], k, outputs);
-    }
+    write_field(indicators, &Indicator::variable, outputs.variables);
+    write_field(indicators, &Indicator::value, outputs.values);
+    write_field(indicators, &Indicator::function, outputs.functions);
+    write_field(indicators, &Indicator::lower, outputs.lower);
+    write_field(indicators, &Indicator::upper, outputs.upper);
 }
 
 }
