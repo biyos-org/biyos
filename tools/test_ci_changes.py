@@ -13,7 +13,7 @@ class ChangeTest(unittest.TestCase):
 
     def test_source(self):
         self.assertEqual(
-            on(["src/expr/graph/node.cpp"]), {"cpp", "format", "python"}
+            on(["library/src/expr/graph/node.cpp"]), {"cpp", "format", "python"}
         )
 
     def test_examples(self):
@@ -22,11 +22,11 @@ class ChangeTest(unittest.TestCase):
         )
 
     def test_options(self):
-        self.assertIn("docs", on(["src/core/options/table.cpp"]))
+        self.assertIn("docs", on(["library/src/core/options/table.cpp"]))
 
     def test_header(self):
         self.assertEqual(
-            on(["include/biyos/biyos.h"]),
+            on(["library/include/biyos/biyos.h"]),
             {"cpp", "format", "python", "docs"},
         )
 

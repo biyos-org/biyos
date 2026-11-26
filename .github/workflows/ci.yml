@@ -66,10 +66,10 @@ jobs:
         uses: actions/cache@v6
         with:
           path: build/_deps/googletest-subbuild/googletest-populate-prefix/src/*.tar.gz
-          key: googletest-${{ runner.os }}-${{ github.job }}-${{ hashFiles('tests/CMakeLists.txt') }}
+          key: googletest-${{ runner.os }}-${{ github.job }}-${{ hashFiles('library/tests/CMakeLists.txt') }}
           restore-keys: googletest-${{ runner.os }}-${{ github.job }}-
       - if: env.RUN == 'true'
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBIYOS_WARNINGS_AS_ERRORS=ON
+        run: cmake -S library -B build -DCMAKE_BUILD_TYPE=Release -DBIYOS_WARNINGS_AS_ERRORS=ON
       - if: env.RUN == 'true'
         run: cmake --build build --config Release
       - if: env.RUN == 'true'
@@ -97,22 +97,23 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: >-
-          python3 tools/check_layers.py
-          --sources src
-          --layers tools/layers.txt
-          --roles tools/roles.txt
+          python3 library/tools/check_layers.py
+          --sources library/src
+          --layers library/tools/layers.txt
+          --roles library/tools/roles.txt
       - run: >-
           python3 tools/check_docs.py
-          --headers include/biyos
+          --headers library/include/biyos
           --doc docs/reference/capi.txt
       - run: >-
           python3 tools/check_copies.py
           --licence LICENSE
           --copies $(git ls-files '*LICENSE')
-          --library CMakeLists.txt
+          --library library/CMakeLists.txt
           --examples examples/CMakeLists.txt
           --python interfaces/python/pyproject.toml
       - run: python3 -m unittest discover -s tools -p 'test_*.py'
+      - run: python3 -m unittest discover -s library/tools -p 'test_*.py'
 
   sanitizers:
     needs: changes
@@ -125,9 +126,9 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: build/_deps/googletest-subbuild/googletest-populate-prefix/src/*.tar.gz
-          key: googletest-${{ runner.os }}-${{ github.job }}-${{ hashFiles('tests/CMakeLists.txt') }}
+          key: googletest-${{ runner.os }}-${{ github.job }}-${{ hashFiles('library/tests/CMakeLists.txt') }}
           restore-keys: googletest-${{ runner.os }}-${{ github.job }}-
-      - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_C_FLAGS=$FLAGS" "-DCMAKE_CXX_FLAGS=$FLAGS"
+      - run: cmake -S library -B build -DCMAKE_BUILD_TYPE=Debug -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_C_FLAGS=$FLAGS" "-DCMAKE_CXX_FLAGS=$FLAGS"
       - run: cmake --build build
       - run: ctest --test-dir build --output-on-failure
       - run: cmake --install build --prefix "${{ env.PREFIX }}"
@@ -146,10 +147,10 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: build/_deps/googletest-subbuild/googletest-populate-prefix/src/*.tar.gz
-          key: googletest-${{ runner.os }}-${{ github.job }}-${{ hashFiles('tests/CMakeLists.txt') }}
+          key: googletest-${{ runner.os }}-${{ github.job }}-${{ hashFiles('library/tests/CMakeLists.txt') }}
           restore-keys: googletest-${{ runner.os }}-${{ github.job }}-
       - run: sudo sysctl vm.mmap_rnd_bits=28
-      - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_C_FLAGS=$FLAGS" "-DCMAKE_CXX_FLAGS=$FLAGS"
+      - run: cmake -S library -B build -DCMAKE_BUILD_TYPE=Debug -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_C_FLAGS=$FLAGS" "-DCMAKE_CXX_FLAGS=$FLAGS"
       - run: cmake --build build
       - run: ctest --test-dir build --output-on-failure
       - run: cmake --install build --prefix "${{ env.PREFIX }}"
@@ -164,8 +165,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: pip install clang-tidy==21.1.6
-      - run: cmake -S . -B build -DBIYOS_BUILD_TESTS=OFF
-      - run: git ls-files 'src/*.cpp' | xargs clang-tidy -p build --quiet
+      - run: cmake -S library -B build -DBIYOS_BUILD_TESTS=OFF
+      - run: git ls-files 'library/src/*.cpp' | xargs clang-tidy -p build --quiet
 
   python:
     needs: changes
@@ -185,7 +186,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - if: env.RUN == 'true'
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBIYOS_BUILD_TESTS=OFF ${{ runner.os == 'macOS' && '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0' || '' }}
+        run: cmake -S library -B build -DCMAKE_BUILD_TYPE=Release -DBIYOS_BUILD_TESTS=OFF ${{ runner.os == 'macOS' && '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0' || '' }}
       - if: env.RUN == 'true'
         run: cmake --build build --config Release
       - if: env.RUN == 'true'

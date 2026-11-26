@@ -2,18 +2,18 @@ import sys
 from fnmatch import fnmatchcase
 
 CPP = (
-    "src/*",
-    "include/*",
-    "tests/*",
+    "library/src/*",
+    "library/include/*",
+    "library/tests/*",
     "examples/c/*",
     "examples/CMakeLists.txt",
-    "cmake/*",
-    "CMakeLists.txt",
-    ".clang-tidy",
+    "library/cmake/*",
+    "library/CMakeLists.txt",
+    "library/.clang-tidy",
 )
 AREAS = {
     "cpp": CPP,
-    "format": ("*.c", "*.h", "*.cpp", "*.hpp", ".clang-format"),
+    "format": ("*.c", "*.h", "*.cpp", "*.hpp", "library/.clang-format"),
     "python": ("interfaces/python/*", *CPP),
     "types": (
         "interfaces/python/src/*",
@@ -22,10 +22,11 @@ AREAS = {
     "docs": (
         "docs/*",
         "tools/*",
-        "include/*",
+        "library/tools/*",
+        "library/include/*",
         "examples/*",
         "interfaces/python/*",
-        "src/core/options/*",
+        "library/src/core/options/*",
     ),
 }
 EVERYTHING = (".github/*",)
