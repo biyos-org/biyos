@@ -1329,6 +1329,24 @@ class Model:
         """
         return self._delete("BIYOS_delfun", Functions, idx)
 
+    def clrfun(self, idx: Sequence[Index | Function] | Functions) -> None:
+        """Empty functions of the model, so they can be built again.
+
+        Each function given has the constant 0, no term and no expression
+        once the call returns. Its expression's nodes stay in the graph.
+
+        Parameters
+        ----------
+        idx
+            The functions, any of them more than once.
+
+        See Also
+        --------
+        BIYOS_clrfunsp
+        BIYOS_clrfunrg
+        """
+        self._call(*self._chosen("BIYOS_clrfun", Functions, idx))
+
     def addlinterm(
         self,
         fun: Sequence[Index | Function] | Functions,
@@ -1712,24 +1730,6 @@ class Model:
         n = len(idx)
         chosen = self._chosen("BIYOS_attachexpr", Functions, idx)
         self._call(*chosen, int64s("node", node, n))
-
-    def clrfun(self, idx: Sequence[Index | Function] | Functions) -> None:
-        """Empty functions of the model, so they can be built again.
-
-        Each function given has the constant 0, no term and no expression
-        once the call returns. Its expression's nodes stay in the graph.
-
-        Parameters
-        ----------
-        idx
-            The functions, any of them more than once.
-
-        See Also
-        --------
-        BIYOS_clrfunsp
-        BIYOS_clrfunrg
-        """
-        self._call(*self._chosen("BIYOS_clrfun", Functions, idx))
 
     def getnexpr(
         self, idx: Sequence[Index | Function] | Functions | None = None

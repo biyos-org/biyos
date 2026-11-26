@@ -362,6 +362,8 @@ BIYOS_API BIYOS_status BIYOS_delfunrg(BIYOS_model *mdl,
                                       BIYOS_index beg,
                                       BIYOS_index end,
                                       BIYOS_index *map);
+BIYOS_API BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+BIYOS_API BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end);
 BIYOS_API BIYOS_status BIYOS_addlinterm(BIYOS_model *mdl,
                                         BIYOS_offset nnz,
                                         const BIYOS_index *fun,
@@ -1118,8 +1120,6 @@ BIYOS_API BIYOS_status BIYOS_attachexprrg(BIYOS_model *mdl,
                                           BIYOS_index beg,
                                           BIYOS_index end,
                                           const BIYOS_offset *node);
-BIYOS_API BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
-BIYOS_API BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end);
 BIYOS_API BIYOS_status BIYOS_getnexprsp(const BIYOS_model *mdl,
                                         BIYOS_index n,
                                         const BIYOS_index *idx,

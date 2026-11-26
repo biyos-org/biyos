@@ -188,6 +188,7 @@ def _declare_functions(lib: ctypes.CDLL) -> None:
     for verb in ("add", "set", "get"):
         _declare_pair(lib, f"BIYOS_{verb}cst", _REALS)
     _declare_pair(lib, "BIYOS_delfun", _INDICES)
+    _declare_pair(lib, "BIYOS_clrfun")
     coordinates = (c_void_p, c_offset, _INDICES, _INDICES, _REALS)
     _declare(lib, "BIYOS_addlinterm", *coordinates)
     ranged = (c_void_p, c_index, c_index, _OFFSETS, _INDICES, _REALS)
@@ -315,7 +316,6 @@ def _declare_expressions(lib: ctypes.CDLL) -> None:
     nodes = (_OFFSETS, _INTEGERS, _OFFSETS, _REALS)
     _declare(lib, "BIYOS_addexpr", c_void_p, c_index, *nodes, _OFFSETS)
     _declare_pair(lib, "BIYOS_attachexpr", _OFFSETS)
-    _declare_pair(lib, "BIYOS_clrfun")
     _declare_pair(lib, "BIYOS_getnexpr", _OFFSETS, _OFFSETS)
     _declare_pair(lib, "BIYOS_getexpr", c_offset, c_offset, *nodes)
 
