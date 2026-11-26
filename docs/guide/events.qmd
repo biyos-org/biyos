@@ -1,6 +1,6 @@
 # Events and timing {#sec-events}
 
-Whatever biyos has to say, a message, a failed check or the time a phase took, it sends as an event on the environment's stream; it writes nothing to standard output or standard error. A program decides what to do with each event by attaching a function to it, a hook. Logging, timing and debugging are this one mechanism. When nobody listens, an event is not even built. The code of this chapter is `examples/c/events.c` and `interfaces/python/examples/events.py`.
+Whatever biyos has to say, a message, a failed check or the time a phase took, it sends as an event on the environment's stream; it writes nothing to standard output or standard error. A program decides what to do with each event by attaching a function to it, a hook. Logging, timing and debugging are this one mechanism. When nobody listens, an event is not even built. The code of this chapter is `examples/code/c/events.c` and `examples/code/python/events.py`.
 
 ## Kinds and levels {#sec-events-kinds}
 
@@ -18,28 +18,28 @@ The levels, from least to most severe, are `BIYOS_EVTLVL_DBG`, `BIYOS_EVTLVL_INF
 
 A hook is a function of the event and of a pointer the program chose, of type `BIYOS_hook`. `BIYOS_addenvhook` attaches it to one kind of event at a lowest level, and it then receives every event of that kind at that level or a more severe one. This helper adds a hook on messages:
 
-```{.c file="examples/c/events.c" item="hook"}
+```{.c file="examples/code/c/events.c" item="hook"}
 ```
 
 The call writes an id for the hook, and `BIYOS_delenvhook` removes it by that id. Ids count from 1 in each environment and are never reused. The hooks of an environment receive an event in the order they were added, and run one at a time even when events come from several threads ([Threads](#sec-threads)). biyos keeps the function and the pointer until the hook is removed or the environment is freed, and passes the pointer back as given, so it may be null.
 
 A hook can also belong to one model. `BIYOS_addmdlhook` attaches it as `BIYOS_addenvhook` does, and it then receives the events of calls on that model alone:
 
-```{.c file="examples/c/events.c" item="hook_model"}
+```{.c file="examples/code/c/events.c" item="hook_model"}
 ```
 
 `BIYOS_delmdlhook` removes it. Ids count from 1 in each model, apart from the ids of the environment. An event of a call on a model reaches the hooks of that model first, in the order they were added, and then the hooks of its environment. That holds for every event of the call: its error message, its warnings, its failed checks and its spans, such as those of writing or evaluating the model. `BIYOS_newmdl` and `BIYOS_readmdl` are calls on the environment, since the model they make does not exist until they return, so their events reach no model's hooks. `BIYOS_copymdl` is a call on its source: its events reach the hooks of the source and of the source's environment, and when the copy is made on another environment, that environment receives none. A model's hooks are freed with it, and a copy of the model has none of them ([Copying models](#sec-copy)).
 
 The example adds two hooks to the environment and one to a model, and then makes a call on the model fail:
 
-```{.c file="examples/c/events.c" item="main"}
+```{.c file="examples/code/c/events.c" item="main"}
 ```
 
 ## Formatting an event {#sec-events-format}
 
 Two calls write an event as one line, for people or for tools. They work like `snprintf`, with one difference in order: the caller gives the size of a buffer first and the buffer after it, as every call takes its inputs before its outputs. The call writes as much of the line as fits, followed by a NUL, and `len` receives the length of the whole line. A size of 0 writes nothing and only reports the length, so a hook can size its buffer exactly:
 
-```{.c file="examples/c/events.c" item="print_json"}
+```{.c file="examples/code/c/events.c" item="print_json"}
 ```
 
 `BIYOS_fmttext` writes the time, the level, the module, the text and the fields; `BIYOS_fmtjson` writes one JSON object with the members `time`, `kind`, `level`, `module`, `text` and `fields`. The failed call of the example gives lines like these, the time aside:
@@ -55,7 +55,7 @@ The time is the wall time since the environment was created, in seconds with six
 
 A hook can also read the parts of an event one by one, with `BIYOS_getevtknd`, `BIYOS_getevtlvl`, `BIYOS_getevtmod`, `BIYOS_getevttext`, `BIYOS_getnevtfld` and the field readers, and `BIYOS_getevtmdl` gives the model of the call that sent it, or null for a call on the environment. These calls cannot fail: a null event or a field number out of range gives 0, null or an empty string. This function finds the status code an error message carries:
 
-```{.c file="examples/c/events.c" item="code_of"}
+```{.c file="examples/code/c/events.c" item="code_of"}
 ```
 
 ## The events biyos sends {#sec-events-sent}
@@ -77,7 +77,7 @@ While a hook runs, whether it belongs to the environment or to one of its models
 
 In Python, `env.addhook` attaches any callable that takes one `Event` and returns an id for `env.delhook`. `model.addhook` and `model.delhook` do the same for the hooks of one model. The event's properties, such as `kind`, `level`, `text` and `model`, read its parts, and `fmttext` and `fmtjson` give its lines. Forwarding events to Python's `logging` module takes a few lines:
 
-```{.python file="interfaces/python/examples/events.py"}
+```{.python file="examples/code/python/events.py"}
 ```
 
 An exception raised by a hook does not escape into C. biyos keeps the first one and raises it in the program once the call that sent the event returns, in place of any error of the call itself. The event is valid only while the hook runs: reading it afterwards raises `ValueError`.

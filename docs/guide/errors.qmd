@@ -1,6 +1,6 @@
 # Errors {#sec-errors}
 
-Every C call that acts or can fail returns a status of type `BIYOS_status`, an `int`: `BIYOS_OK`, which is zero, or a negative error code. On failure the call keeps a message on its environment that says what went wrong, and changes nothing. No call lets an exception out. The code of this chapter is `examples/c/errors.c` and `interfaces/python/examples/errors.py`.
+Every C call that acts or can fail returns a status of type `BIYOS_status`, an `int`: `BIYOS_OK`, which is zero, or a negative error code. On failure the call keeps a message on its environment that says what went wrong, and changes nothing. No call lets an exception out. The code of this chapter is `examples/code/c/errors.c` and `examples/code/python/errors.py`.
 
 ## Codes and who is at fault {#sec-errors-codes}
 
@@ -20,7 +20,7 @@ The hundreds of an error code say who is at fault: −100 to −199 the caller, 
 
 A new code joins its group and keeps its number for good, so test a group by range rather than by value:
 
-```{.c file="examples/c/errors.c" item="at_fault"}
+```{.c file="examples/code/c/errors.c" item="at_fault"}
 ```
 
 Besides the codes the reference names for a call, any call can return `BIYOS_ERR_NOMEMORY` when an allocation fails and `BIYOS_ERR_INTERNAL` on a fault in biyos, and a call on an environment or a model can return `BIYOS_ERR_BUSY` when it would overlap a call on another thread ([Threads](#sec-threads)). No call returns a positive status. A solve outcome, such as an infeasible model or a time limit reached, is never an error code: it is a result, and a call that finds it succeeds.
@@ -29,7 +29,7 @@ Besides the codes the reference names for a call, any call can return `BIYOS_ERR
 
 `BIYOS_lasterror` reads the last error of the calling thread into a `BIYOS_error`: the status the failed call returned, its model, or null for a call on the environment, and its message. The caller sets `size` first, so the struct can grow at the end without breaking a program built against an older header. A call on a model keeps its error on the environment the model was made on.
 
-```{.c file="examples/c/errors.c" item="report"}
+```{.c file="examples/code/c/errors.c" item="report"}
 ```
 
 The message starts with the kind of failure, `invalid argument`, `bad file`, `unsupported`, `busy`, `in use`, `callback`, `out of memory`, `file access` or `internal error`, then says what was wrong:
@@ -47,7 +47,7 @@ Each thread has its own last error: a failure on one thread never replaces what 
 
 A call that fails changes nothing: no variable is half added, no option half set. It leaves its output arguments as they were, except where its entry in the reference says otherwise; `BIYOS_newenv`, `BIYOS_newmdl`, `BIYOS_copymdl` and `BIYOS_readmdl` set their output to null. A null pointer argument gives `BIYOS_ERR_BADARG`, unless the reference says a null is allowed. The example checks that the refused seed left the option at its default:
 
-```{.c file="examples/c/errors.c" item="main"}
+```{.c file="examples/code/c/errors.c" item="main"}
 ```
 
 A failed call also sends an error message on the event stream ([The events biyos sends](#sec-events-sent)), so a program can log every failure in one place.
@@ -56,5 +56,5 @@ A failed call also sends an error message on the event stream ([The events biyos
 
 The Python package turns a failed status into a `biyos.Error`, whose `code` holds the status, whose `model` is the `Model` of the failed call, or `None` for a call on the environment, and whose text is the message. `model` is found from the address C keeps, so it is `None` once the program no longer holds the model, and it would name a newer model that took the address of a freed one. A pickled error has no model. Mistakes Python can see by itself raise Python's own exceptions before C is called: `TypeError` for a value of the wrong type, `ValueError` for an array of the wrong length or a closed model, `OverflowError` for an integer that does not fit in 32 bits, `IndexError` for a position outside a block.
 
-```{.python file="interfaces/python/examples/errors.py"}
+```{.python file="examples/code/python/errors.py"}
 ```

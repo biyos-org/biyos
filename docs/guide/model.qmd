@@ -1,6 +1,6 @@
 # Building a model {#sec-model}
 
-A model holds the data of one problem: its variables, the functions of those variables, the constraints that bound functions, the objectives to optimize, the indicators that switch constraints on, the complements that pair functions, the cones that functions lie in and the special ordered sets of variables. This chapter builds one small model in C, step by step, then the same model in Python. The C code is `examples/c/model.c`, the Python code `interfaces/python/examples/model.py`.
+A model holds the data of one problem: its variables, the functions of those variables, the constraints that bound functions, the objectives to optimize, the indicators that switch constraints on, the complements that pair functions, the cones that functions lie in and the special ordered sets of variables. This chapter builds one small model in C, step by step, then the same model in Python. The C code is `examples/code/c/model.c`, the Python code `examples/code/python/model.py`.
 
 ## Variables, functions and the records that use them {#sec-model-parts}
 
@@ -26,7 +26,7 @@ Items of each family are numbered from 0 in the order they are added, each famil
 
 A model is made on an environment, which holds the options and the event stream ([Events and timing](#sec-events)) and keeps the last error of each thread ([Errors](#sec-errors)). A call on the model reports there. The environment cannot be freed while a model made on it is not, so free the models first.
 
-```{.c file="examples/c/model.c" item="main"}
+```{.c file="examples/code/c/model.c" item="main"}
 ```
 
 Each step of `build` adds one family. The calls take many items at once: a count, then arrays of that many entries, which biyos reads during the call and does not keep. A call that fails changes nothing.
@@ -45,7 +45,7 @@ Each variable has a kind and a lower and an upper bound. The kind says which val
 
 Every kind but continuous is discrete. `BIYOS_addvar` adds variables after the last one:
 
-```{.c file="examples/c/model.c" item="variables"}
+```{.c file="examples/code/c/model.c" item="variables"}
 ```
 
 A bound may be `BIYOS_INF` or `-BIYOS_INF`, which leaves that side unbounded. No finite bound is read as infinite, however large. A lower bound of `BIYOS_INF`, an upper bound of `-BIYOS_INF` and NaN are refused, and so is a bound outside the widest bounds of the kind: 0 and 1 for a binary variable, infinite for every other kind. Any other pair is kept as given, a lower bound above the upper one included.
@@ -68,7 +68,7 @@ $$
 
 a constant $c$, linear terms $a_j x_j$, quadratic terms $q_{ij} x_i x_j$ and a nonlinear part $\varphi(x)$. The nonlinear part is an expression ([Expressions](#sec-model-expressions)) plus the part of every callback that covers the function ([Callbacks](#sec-capi-callbacks)), and is zero for a function with neither, as in this chapter. `BIYOS_addfun` adds functions with the constant 0 and no terms, and later calls give them their constants and terms. `BIYOS_setcstrg` sets the constants of a range of functions, and `BIYOS_addrlintermrg` adds their linear terms. The terms of many functions travel in compressed form, as three arrays: `cnt` holds the number of terms of each function, and `var` and `coef` the index of a variable and its coefficient, the terms of function `beg + k` following those of function `beg + k - 1`, `cnt[k]` of them. So `cnt` holds one entry per function, none negative, and their sum is the number of terms.
 
-```{.c file="examples/c/model.c" item="functions"}
+```{.c file="examples/code/c/model.c" item="functions"}
 ```
 
 Here `cnt` is `{3, 2, 1}`: function 0 owns terms 0 to 2, $x_0 + x_1 + x_2$; function 1 owns terms 3 and 4, $x_0 - 2x_1$; function 2 owns term 5, $-2x_0$, and its constant 1.
@@ -85,7 +85,7 @@ A variable the function already holds adds its coefficient to the one held, so a
 
 Functions are added with no quadratic terms. `BIYOS_addquadterm` adds them as coordinates, the function, the two variables and the coefficient of each, in any order:
 
-```{.c file="examples/c/model.c" item="squares"}
+```{.c file="examples/code/c/model.c" item="squares"}
 ```
 
 A coefficient is taken as written, with no factor $\tfrac12$: $x_0^2$ is the pair $(0, 0)$ with the coefficient 1, and $x_0 x_1$ the pair $(0, 1)$ with the coefficient 1. A pair may be given in either order and is kept as $(i, j)$ with $i \le j$. A pair the function already holds adds its coefficient to the one held, so every call adds $q_{ij} x_i x_j$ to its functions and never replaces a term. `BIYOS_addquadtermsp` and `BIYOS_addquadtermrg` take the terms of a list or a range of functions in compressed form, with two arrays for the two variables of each pair, and follow the same rules. A refused call changes nothing. `BIYOS_getquadtermsp` and `BIYOS_getquadtermrg` read the quadratic terms of a list or a range of functions in the same compressed form.
@@ -138,7 +138,7 @@ Once attached, the linear and quadratic parts of an expression are the function'
 
 A constraint $l \le f_k(x) \le u$ bounds one function of the table. `BIYOS_addcon` takes the index of each constraint's function and its two bounds:
 
-```{.c file="examples/c/model.c" item="constraints"}
+```{.c file="examples/code/c/model.c" item="constraints"}
 ```
 
 Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A constraint whose bounds are both infinite is free. The bounds follow the rule of a continuous variable's: an infinite bound leaves its side open, and a lower bound of `BIYOS_INF`, an upper bound of `-BIYOS_INF` and NaN are refused. A null `lb` or `ub` leaves that side of every new constraint unbounded. `BIYOS_setconbndsp` changes the bounds and keeps the function, and `BIYOS_getconbndsp` reads the bounds of a list of constraints.
@@ -149,7 +149,7 @@ Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A const
 
 An objective names a function to minimize or maximize, with a priority, a weight and two tolerances. `BIYOS_addobj` takes what defines it, the function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds. Its tolerances are 0 until `BIYOS_setobjtolsp` sets them, as here for objective 0:
 
-```{.c file="examples/c/model.c" item="objectives"}
+```{.c file="examples/code/c/model.c" item="objectives"}
 ```
 
 The objectives are optimized in stages, one for each priority they hold, the lowest first. A stage minimizes the weighted sum of the objectives of its priority,
@@ -203,7 +203,7 @@ A complement may also hold its own absolute and relative tolerance, which stand 
 
 Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvarrg`, `BIYOS_getncon` and `BIYOS_getconrg`, and so on. Functions have a count, `BIYOS_getnfun`, and are read through their constants, terms and expressions. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the items to read and fills the arrays it is given; a null array is skipped. Since the caller cannot know the number of terms in advance, each reader of terms has a count reader: `BIYOS_getnquadtermrg` gives the number of terms `BIYOS_getquadtermrg` writes for the same range, `BIYOS_getnrlintermsp` the number `BIYOS_getrlintermsp` writes for the same list, and so on. A reader of terms refuses arrays that hold fewer and then writes nothing, so a caller counts, allocates, and reads:
 
-```{.c file="examples/c/model.c" item="read_squares"}
+```{.c file="examples/code/c/model.c" item="read_squares"}
 ```
 
 A family reader reads a list or a range: `BIYOS_getvarsp` reads the variables a list names, in its order and as often as it names them, and `BIYOS_getvarrg` a range of them. Every setter of an attribute has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items, such as `{0, 4, 10, 12}`, is read in one call: `BIYOS_getvarbndsp` reads what `BIYOS_setvarbndsp` sets, and `BIYOS_getvarbndrg` what `BIYOS_setvarbndrg` sets. An item may appear in the list more than once, and a null output is skipped.
@@ -250,7 +250,7 @@ The calls run the callbacks that cover the functions ([Callbacks](#sec-capi-call
 
 The Python package wraps the same calls under the same names, without the prefix. Each method that adds variables, functions, constraints, objectives or complements returns a block, a light object holding the first index and the count of the new items, and indexing a block gives a view of one item. A block or a view passes wherever the model takes indices, so the code reads as the mathematics does:
 
-```{.python file="interfaces/python/examples/model.py" item="build"}
+```{.python file="examples/code/python/model.py" item="build"}
 ```
 
 A block costs the same at any size, and the model refuses a block or a view of another model. [The Python package](#sec-python) describes the package as a whole.

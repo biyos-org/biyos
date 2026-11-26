@@ -1,6 +1,6 @@
 # Options {#sec-options}
 
-Options are set on an environment and shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each option has a name, a number and a kind, and biyos checks every value as it is set, so a value that would mean nothing is refused at once rather than ignored. The code of this chapter is `examples/c/options.c` and `interfaces/python/examples/options.py`.
+Options are set on an environment and shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each option has a name, a number and a kind, and biyos checks every value as it is set, so a value that would mean nothing is refused at once rather than ignored. The code of this chapter is `examples/code/c/options.c` and `examples/code/python/options.py`.
 
 ## Names, ids and kinds {#sec-options-kinds}
 
@@ -23,14 +23,14 @@ A call of another kind is refused: nothing is converted, so an int option refuse
 
 This code sets a double option by its id, a bool option, and an enum option whose id it finds by name:
 
-```{.c file="examples/c/options.c" item="set_options"}
+```{.c file="examples/code/c/options.c" item="set_options"}
 ```
 
 A set is checked before it changes anything. An int or double value must lie in the option's range, ends included, compared exactly with no tolerance; NaN lies outside every range. An enum value must be the number of one of the option's macros. A failed set leaves the option as it was and returns `BIYOS_ERR_BADARG`, with a message that says why ([Errors](#sec-errors)).
 
 Reading is the mirror image:
 
-```{.c file="examples/c/options.c" item="read_options"}
+```{.c file="examples/code/c/options.c" item="read_options"}
 ```
 
 A string read with `BIYOS_getenvstropt` stays valid until the environment is freed, one read with `BIYOS_getmdlstropt` until the model is freed. Setting the option again, at either level, leaves it valid. A string set with `BIYOS_setenvstropt` is copied, so the caller's buffer may change afterwards.
@@ -39,7 +39,7 @@ A string read with `BIYOS_getenvstropt` stays valid until the environment is fre
 
 An option set on an environment is shared by every model made on it, and a model may hold its own value instead. Each call that sets or reads an option on the environment has a twin on a model, named with `mdl` in place of `env`, such as `BIYOS_setmdldblopt` beside `BIYOS_setenvdblopt`. A model's value is checked as the environment's is, and a failed set leaves the model as it was. A model reads its own value when it holds one, else the environment's, else the default, so a change on the environment reaches every model that holds no value of its own. `BIYOS_delmdlopt` drops the model's value, and the model shares the environment's again; on an option the model holds no value of, it changes nothing and succeeds. `BIYOS_delenvopt` drops the environment's value in the same way, and every model without its own value reads the default again. `BIYOS_getmdloptsrc` tells where the value a model reads comes from: `BIYOS_OPTSRC_MDL`, `BIYOS_OPTSRC_ENV` or `BIYOS_OPTSRC_DEFAULT`.
 
-```{.c file="examples/c/options.c" item="model_options"}
+```{.c file="examples/code/c/options.c" item="model_options"}
 ```
 
 A model's value of a flags option replaces the environment's pair of masks whole, so a part in neither of the model's masks keeps its default, whatever the environment forces. Setting or dropping a model's value is a change to that model: it may run beside calls on the other models of the environment ([Threads](#sec-threads)), and is refused while the environment delivers an event. A copy keeps the model's own values ([Copying models](#sec-copy)).
@@ -56,7 +56,7 @@ Two masks, because one bit holds two states and a part has three. With one mask,
 
 Each option records the version of biyos that added it and, once it is no longer wanted, the versions that deprecated and retired it. `BIYOS_getoptver` reads all three:
 
-```{.c file="examples/c/options.c" item="describe"}
+```{.c file="examples/code/c/options.c" item="describe"}
 ```
 
 A version comes back as one number, $10000 \cdot \text{major} + 100 \cdot \text{minor} + \text{patch}$, so 0.1.0 is 100, and 0 stands for never. Minor and patch numbers stay below 100, so two versions compare as their numbers do.
@@ -84,7 +84,7 @@ and an upper bound alike. Two finite values $y$ and $z$ are equal unless they di
 
 Python reads and sets options by name, with `env.getopt` and `env.setopt`. The value's Python type must match the kind: a `bool` for a bool option, an `int` for an int option, a number for a double option, a `str` for a string option, and for an enum option a member of its class, such as `Checking.FULL`, or its number. A flags option takes a `Masks(on, off)` or any pair of `int`, and a mask that is negative or wider than 64 bits raises `OverflowError`. A mismatch raises `TypeError` before C is called. `getopt` returns the value of an enum option as a member of its class, and that of a flags option as a `Masks`.
 
-```{.python file="interfaces/python/examples/options.py"}
+```{.python file="examples/code/python/options.py"}
 ```
 
 `getoptver` returns the three versions as strings, `None` standing for never. A model has its own `setopt` and `getopt`, which take and give values as the environment's do, with `delopt` to drop its value and `getoptsrc` to tell where the value it reads comes from, as an `OptionSource` ([Two levels](#sec-options-levels)). The environment's `delopt` drops its own value. `getoptver` is on the environment alone.
