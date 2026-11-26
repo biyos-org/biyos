@@ -30,6 +30,7 @@ constexpr std::array kPlus{1.0, 1.0};
 constexpr std::array kMinus{1.0, -1.0};
 constexpr std::array kUnit{1.0};
 constexpr std::array kLog10{std::numbers::log10e};
+constexpr std::array kZero{0.0};
 constexpr std::string_view kPlterm = "a plterm";
 
 std::string operator_text(const Opcode &opcode)
@@ -213,6 +214,8 @@ Offset Expressions::apply(const Opcode &opcode, std::span<const Operand> operand
         return power_of(operands[0], operands[1]);
     case Rule::Log10:
         return log10_of(operands[0]);
+    case Rule::Less:
+        return less_of(operands);
     case Rule::Pieces:
     case Rule::Refused:
         break;
@@ -262,6 +265,12 @@ Offset Expressions::log10_of(const Operand &operand)
     const Offset child = node_of(operand);
     const Offset log = node(Operator::Log, std::span(&child, 1), {});
     return node(Operator::Product, std::span(&log, 1), kLog10);
+}
+
+Offset Expressions::less_of(std::span<const Operand> operands)
+{
+    const std::array children{sum_of(operands, kMinus), node(Operator::Constant, {}, kZero)};
+    return node(Operator::Max, children, {});
 }
 
 Offset Expressions::node(Operator op,

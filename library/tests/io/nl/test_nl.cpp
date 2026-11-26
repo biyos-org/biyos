@@ -1,15 +1,20 @@
 #include "files.hpp"
 #include "loading.hpp"
 
+#include "core/env.hpp"
 #include "core/numbers.hpp"
+#include "core/options/lookup.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "model/compare/compare.hpp"
+#include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
 
 #include <gtest/gtest.h>
 
+#include <cmath>
+#include <cstddef>
 #include <initializer_list>
 #include <limits>
 #include <numbers>
@@ -21,9 +26,12 @@
 using biyos::Constraint;
 using biyos::default_objective;
 using biyos::difference;
+using biyos::Env;
+using biyos::Evaluation;
 using biyos::Index;
 using biyos::kNoRoot;
 using biyos::LinearTerm;
+using biyos::Lookup;
 using biyos::Model;
 using biyos::Objective;
 using biyos::ObjectiveSense;
@@ -46,6 +54,7 @@ namespace
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr Index kDepth = 100000;
+constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 
 constexpr std::string_view kBareTail = R"(V1 0 0
 o41
@@ -77,6 +86,18 @@ n0
 O0 0
 o42
 v0
+r
+3
+b
+3
+)";
+
+constexpr std::string_view kLessTail = R"(C0
+n0
+O0 0
+o6
+v0
+n1
 r
 3
 b
@@ -180,6 +201,23 @@ Offset log10_of(Model &model, Offset x)
 {
     const Offset log = node(model, Operator::Log, {x}, {});
     return node(model, Operator::Product, {log}, {std::numbers::log10e});
+}
+
+Offset less_of(Model &model, Offset x)
+{
+    const Offset one = node(model, Operator::Constant, {}, {1.0});
+    const Offset sum = node(model, Operator::Sum, {x, one}, {0.0, 1.0, -1.0});
+    const Offset zero = node(model, Operator::Constant, {}, {0.0});
+    return node(model, Operator::Max, {sum, zero}, {});
+}
+
+Real objective_at(const Model &model, Real x)
+{
+    Env env;
+    Evaluation evaluation(model, env.stream(), env.pool());
+    std::vector<Real> f(static_cast<std::size_t>(model.n_functions()));
+    evaluation.values(Lookup(env.options()), std::vector{x}, f);
+    return f[1];
 }
 
 Offset pieces_of(Model &model, Offset x)
@@ -287,6 +325,15 @@ TEST(NlTest, Quadratic)
 TEST(NlTest, Log10)
 {
     EXPECT_EQ(difference(read_sample(tiny_with(kLog10Tail)), tiny_wanted(log10_of)), "");
+}
+
+TEST(NlTest, Less)
+{
+    const Model model = read_sample(tiny_with(kLessTail));
+    EXPECT_EQ(difference(model, tiny_wanted(less_of)), "");
+    EXPECT_DOUBLE_EQ(objective_at(model, 3.5), 2.5);
+    EXPECT_DOUBLE_EQ(objective_at(model, -2.0), 0.0);
+    EXPECT_TRUE(std::isnan(objective_at(model, kNan)));
 }
 
 TEST(NlTest, Pieces)

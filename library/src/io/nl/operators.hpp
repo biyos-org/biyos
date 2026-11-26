@@ -24,6 +24,7 @@ enum class Rule
     Times,
     Raise,
     Log10,
+    Less,
     Pieces,
     Refused,
 };

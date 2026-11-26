@@ -50,6 +50,7 @@ class Expressions
     Offset sum_of(std::span<const Operand> operands, std::span<const Real> weights);
     Offset power_of(const Operand &base, const Operand &exponent);
     Offset log10_of(const Operand &operand);
+    Offset less_of(std::span<const Operand> operands);
     Offset node(Operator op, std::span<const Offset> children, std::span<const Real> values);
     Offset piecewise();
     Real piece();

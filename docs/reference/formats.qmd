@@ -201,6 +201,7 @@ An expression is written in prefix order, one item a line: `n` and a number for 
 | `plus`, `minus`, `sum` | A sum. |
 | `mult` | A product. |
 | `div` | A division. |
+| `less` | $\max(x - y, 0)$: a sum, then `max` with 0. A NaN operand gives NaN. |
 | `pow` | A power, with a constant exponent when the exponent is a number. |
 | `neg`, `abs`, `min`, `max` | The same operator. |
 | `sqrt`, `exp`, `log`, `log10` | The same function, `log10` as the natural logarithm times $\log_{10} e$. |
