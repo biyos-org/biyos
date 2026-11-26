@@ -6,7 +6,7 @@ project:
     - ../tools/options_page.py --library ..
     - quartodoc build
   post-render:
-    - ../tools/references_page.py
+    - ../tools/references_page.py --page references.html
     - ../tools/chapter_numbers.py
 
 book:
