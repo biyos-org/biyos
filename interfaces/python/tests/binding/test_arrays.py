@@ -120,7 +120,7 @@ def test_indices(model, family):
 
 def test_long(model):
     model.addvar(2)
-    x = Long(model, 0, 2, model._gen)
+    x = Long(model, range(2), model._gen)
     with pytest.raises(ValueError, match="idx has length 2, not 3"):
         indices_of(model, biyos.Variables, "idx", x, 3)
 

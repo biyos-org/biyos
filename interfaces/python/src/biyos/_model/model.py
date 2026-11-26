@@ -5868,7 +5868,7 @@ class Model:
     ) -> _Block:
         pos = c_index()
         self._call(function, n, *arguments, byref(pos))
-        return family(self, pos.value, pos.value + n, self._gen)
+        return family(self, range(pos.value, pos.value + n), self._gen)
 
     def _call(self, function: Callable[..., int], *arguments: object) -> None:
         with self._env._busy():

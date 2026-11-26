@@ -57,16 +57,13 @@ Selection: TypeAlias = One[Item] | Many[Item, Items]
 
 
 class Block(Generic[Item]):
-    __slots__ = ("_gen", "_model", "_start", "_stop")
+    __slots__ = ("_gen", "_idx", "_model")
     _element: type[Item]
     _held: Callable[["Model"], Index]
 
-    def __init__(
-        self, mdl: "Model", start: Index, stop: Index, gen: int
-    ) -> None:
+    def __init__(self, mdl: "Model", idx: range, gen: int) -> None:
         self._model = mdl
-        self._start = start
-        self._stop = stop
+        self._idx = idx
         self._gen = gen
 
     def __len__(self) -> Index:
@@ -83,7 +80,7 @@ class Block(Generic[Item]):
             When the model has had a deletion since the block was made.
         """
         self._check()
-        return self._stop - self._start
+        return len(self._idx)
 
     def __contains__(self, item: object) -> bool:
         """Return whether a view names one of the block's items.
@@ -112,7 +109,7 @@ class Block(Generic[Item]):
         ):
             return False
         _current(item._model, item._gen, item._noun)
-        return self._start <= item._idx < self._stop
+        return item._idx in self._idx
 
     def __iter__(self) -> Iterator[Item]:
         """Iterate over the items of the block, each as a view.
@@ -128,7 +125,7 @@ class Block(Generic[Item]):
             When the model has had a deletion since the block was made.
         """
         self._check()
-        return map(self._view, self._range())
+        return map(self._view, self._idx)
 
     @overload
     def __getitem__(self, key: SupportsIndex) -> Item: ...
@@ -165,7 +162,7 @@ class Block(Generic[Item]):
         self._check()
         if isinstance(key, slice):
             return self._slice(key)
-        return self._view(self._start + self._position(key))
+        return self._view(self._idx[self._position(key)])
 
     def on(self: Self, mdl: "Model") -> Self:
         """Return the block's items in another model.
@@ -195,36 +192,32 @@ class Block(Generic[Item]):
         self._check()
         mdl = self._model._peer("mdl", mdl)
         held = self._held(mdl)
-        if held < self._stop:
+        if held < self._idx.stop:
             noun = self._element._noun
-            needs = f"{held}, the block needs {self._stop}"
+            needs = f"{held}, the block needs {self._idx.stop}"
             raise ValueError(f"mdl holds too few {noun}s: {needs}")
-        return type(self)(mdl, self._start, self._stop, mdl._gen)
+        return type(self)(mdl, self._idx, mdl._gen)
 
     def _check(self) -> None:
         _current(self._model, self._gen, "block")
-
-    def _range(self) -> range:
-        return range(self._start, self._stop)
 
     def _view(self, idx: Index) -> Item:
         return self._element(self._model, idx, self._gen)
 
     def _position(self, key: SupportsIndex) -> Index:
         number = whole("index", key)
-        n = self._stop - self._start
+        n = len(self._idx)
         position = number + n if number < 0 else number
         if not 0 <= position < n:
             raise IndexError(f"index {number} is outside a block of {n}")
         return position
 
     def _slice(self: Self, key: slice) -> Self:
-        start, stop, step = key.indices(self._stop - self._start)
+        start, stop, step = key.indices(len(self._idx))
         if step != 1:
             raise ValueError(f"slice step must be 1, not {step}")
-        first = self._start + start
-        last = self._start + max(stop, start)
-        return type(self)(self._model, first, last, self._gen)
+        idx = self._idx[start : max(stop, start)]
+        return type(self)(self._model, idx, self._gen)
 
 
 class Variable(View, Operand):
@@ -578,4 +571,4 @@ def range_of(
     if block._model is not model:
         raise ValueError(f"{name} is a block of another model")
     block._check()
-    return block._range()
+    return block._idx

@@ -184,7 +184,7 @@ def test_subclass(model):
 
     model.addvar(3)
     model.setvarbnd([Mine(model, 1, model._gen)], [3.0])
-    model.setvarbnd(Ours(model, 2, 3, model._gen), [4.0])
+    model.setvarbnd(Ours(model, range(2, 3), model._gen), [4.0])
     assert model.getvar()[1] == [-biyos.inf, 3.0, 4.0]
 
 
