@@ -301,6 +301,7 @@ class Model
                               Routine hessian);
     void set_callback_hessian_product(Index callback, Routine hessian_product);
     void set_callback_data(Index callback, void *data);
+    std::vector<Index> delete_callbacks(std::span<const Index> indices);
 
   private:
     void renumber_names(Family family, std::span<const Index> map) noexcept;
