@@ -5,7 +5,8 @@ CPP = (
     "library/src/*",
     "library/include/*",
     "library/tests/*",
-    "examples/c/*",
+    "examples/code/c/*",
+    "examples/test/c/*",
     "examples/CMakeLists.txt",
     "library/cmake/*",
     "library/CMakeLists.txt",
@@ -14,7 +15,13 @@ CPP = (
 AREAS = {
     "cpp": CPP,
     "format": ("*.c", "*.h", "*.cpp", "*.hpp", "library/.clang-format"),
-    "python": ("interfaces/python/*", *CPP),
+    "python": (
+        "interfaces/python/*",
+        "examples/code/python/*",
+        "examples/test/python/*",
+        "examples/pytest.ini",
+        *CPP,
+    ),
     "types": (
         "interfaces/python/src/*",
         "interfaces/python/tests/binding/forms.py",
