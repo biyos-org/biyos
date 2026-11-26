@@ -165,7 +165,7 @@ since 0.1.0
 group options Options
 text An option has a name, an id and a kind. Its kind decides which calls set and get it, and a call of another kind returns `BIYOS_ERR_BADARG`: nothing is converted, so an int option refuses `BIYOS_setenvdblopt`. Every call that takes an option id returns `BIYOS_ERR_BADARG` for an id it does not know, and a failed set leaves the option as it was. [Options](#sec-option-table) lists every option.
 text Ranges include their ends and are checked exactly, with no tolerance, and NaN lies outside every range. Setting a deprecated option sets it and sends a warning event; setting a retired option, by any call, returns `BIYOS_ERR_BADARG` with a message that names the option to use instead, and changes nothing, while getting it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither.
-text Options have two levels. An option set on an environment is shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each call that sets or reads an option on the environment has a twin on the model, such as `BIYOS_setmdlintopt` beside `BIYOS_setenvintopt`, which checks the value in the same way. `BIYOS_delmdlopt` drops the model's own value, `BIYOS_delenvopt` returns the environment's value to the default, and `BIYOS_getmdloptsrc` tells where the value a model reads comes from. An option of environment scope is set on the environment only, and every model call on it returns `BIYOS_ERR_BADARG` with a message such as `invalid argument: option 'host': has environment scope`. No option of this release has environment scope.
+text Options have two levels. An option set on an environment is shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each call that sets or reads an option on the environment has a twin on the model, such as `BIYOS_setmdlintopt` beside `BIYOS_setenvintopt`, which checks the value in the same way. `BIYOS_delmdlopt` drops the model's own value, `BIYOS_delenvopt` returns the environment's value to the default, and `BIYOS_getmdloptsrc` tells where the value a model reads comes from. An option of environment scope is set on the environment only, and every model call on it returns `BIYOS_ERR_BADARG` with a message such as `invalid argument: option 'threads': has environment scope`. `threads` is the one option of this release with environment scope.
 
 table Option kinds
 value BIYOS_OPTKND_BOOL A bool, set with `BIYOS_setenvboolopt` and read with `BIYOS_getenvboolopt`.
@@ -193,6 +193,7 @@ value BIYOS_OPT_FEASTOLREL The id of `feastol_rel`.
 value BIYOS_OPT_INTTOL The id of `inttol`.
 value BIYOS_OPT_ZEROTOL The id of `zerotol`.
 value BIYOS_OPT_MAXCPUTIME The id of `maxcputime`.
+value BIYOS_OPT_THREADS The id of `threads`.
 since 0.1.0
 
 table Checking

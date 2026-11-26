@@ -152,7 +152,10 @@ TEST_F(SettingTest, Empty)
     EXPECT_TRUE(settings.empty());
     for (const OptionSpec &spec : option_table())
     {
-        EXPECT_EQ(none.find(spec.id), nullptr) << spec.name;
+        if (spec.scope == Scope::Model)
+        {
+            EXPECT_EQ(none.find(spec.id), nullptr) << spec.name;
+        }
     }
     for (const OptionSpec &spec : kRows)
     {

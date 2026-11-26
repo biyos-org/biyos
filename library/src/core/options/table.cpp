@@ -107,10 +107,18 @@ constexpr std::array kTable{
         .doc = "CPU time limit in seconds, counting the thread that makes the call.",
         .versions = {.since = {0, 1, 0}},
     },
+    OptionSpec{
+        .id = Option::Threads,
+        .name = "threads",
+        .scope = Scope::Environment,
+        .rule = IntRule{.default_value = 1, .lower = 1},
+        .doc = "Threads that evaluate the model. Results are the same for every count.",
+        .versions = {.since = {0, 1, 0}},
+    },
 };
 
 static_assert(well_formed(kTable, kProject));
-static_assert(kTable.size() == static_cast<std::size_t>(Option::CpuTimeLimit));
+static_assert(kTable.size() == static_cast<std::size_t>(Option::Threads));
 
 }
 

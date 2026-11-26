@@ -24,6 +24,7 @@ DEFAULTS = {
     "inttol": 1e-5,
     "zerotol": 1e-9,
     "maxcputime": biyos.inf,
+    "threads": 1,
 }
 
 VALUES = {
@@ -37,6 +38,17 @@ VALUES = {
     "inttol": 1e-4,
     "zerotol": 1e-12,
     "maxcputime": 60.0,
+    "threads": 4,
+}
+
+ENVIRONMENT = {"threads"}
+
+MODEL_DEFAULTS = {
+    name: value for name, value in DEFAULTS.items() if name not in ENVIRONMENT
+}
+
+MODEL_VALUES = {
+    name: value for name, value in VALUES.items() if name not in ENVIRONMENT
 }
 
 WRONG = [
@@ -294,7 +306,7 @@ def test_wide_mask(env, monkeypatch, value):
     assert env.getopt("seed") == 0
 
 
-@pytest.mark.parametrize("name, default", DEFAULTS.items())
+@pytest.mark.parametrize("name, default", MODEL_DEFAULTS.items())
 def test_model_default(model, name, default):
     value = model.getopt(name)
     assert type(value) is type(default)
@@ -302,7 +314,7 @@ def test_model_default(model, name, default):
     assert model.getoptsrc(name) is OptionSource.DEFAULT
 
 
-@pytest.mark.parametrize("name, value", VALUES.items())
+@pytest.mark.parametrize("name, value", MODEL_VALUES.items())
 def test_model_value(env, model, name, value):
     model.setopt(name, value)
     found = model.getopt(name)
@@ -329,6 +341,24 @@ def test_model_flags(env, model, monkeypatch):
         model.setopt("seed", 3)
     monkeypatch.undo()
     assert model.getoptsrc("seed") is OptionSource.DEFAULT
+
+
+@pytest.mark.parametrize("name", sorted(ENVIRONMENT))
+def test_model_scope(model, name):
+    message = f"invalid argument: option '{name}': has environment scope"
+    with pytest.raises(biyos.Error) as caught:
+        model.getopt(name)
+    assert str(caught.value) == message
+    with pytest.raises(biyos.Error, match="has environment scope"):
+        model.setopt(name, VALUES[name])
+
+
+def test_threads_minimum(env):
+    message = "invalid argument: option 'threads': 0 is outside [1, 2147483647]"
+    with pytest.raises(biyos.Error) as caught:
+        env.setopt("threads", 0)
+    assert str(caught.value) == message
+    assert env.getopt("threads") == 1
 
 
 def test_model_name(model):

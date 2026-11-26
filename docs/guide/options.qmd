@@ -44,7 +44,7 @@ An option set on an environment is shared by every model made on it, and a model
 
 A model's value of a flags option replaces the environment's pair of masks whole, so a part in neither of the model's masks keeps its default, whatever the environment forces. Setting or dropping a model's value is a change to that model: it may run beside calls on the other models of the environment ([Threads](#sec-threads)), and is refused while the environment delivers an event. A copy keeps the model's own values ([Copying models](#sec-copy)).
 
-An option of environment scope belongs to the environment as a whole and is set there only: every model call on it, reading included, fails with `BIYOS_ERR_BADARG` and a message such as `invalid argument: option 'host': has environment scope`. No option of this release has environment scope.
+An option of environment scope belongs to the environment as a whole and is set there only: every model call on it, reading included, fails with `BIYOS_ERR_BADARG` and a message such as `invalid argument: option 'threads': has environment scope`. `threads` is the one option of this release with environment scope.
 
 ## Flags {#sec-options-flags}
 

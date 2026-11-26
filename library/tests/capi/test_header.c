@@ -62,7 +62,7 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 #if BIYOS_OPT_SEED != 1 || BIYOS_OPT_MAXTIME != 2 || BIYOS_OPT_CHK != 3 ||                         \
     BIYOS_OPT_PRESOLVE != 4 || BIYOS_OPT_REPRO != 5 || BIYOS_OPT_FEASTOLABS != 6 ||                \
     BIYOS_OPT_FEASTOLREL != 7 || BIYOS_OPT_INTTOL != 8 || BIYOS_OPT_ZEROTOL != 9 ||                \
-    BIYOS_OPT_MAXCPUTIME != 10
+    BIYOS_OPT_MAXCPUTIME != 10 || BIYOS_OPT_THREADS != 11
 #error "a public option id changed"
 #endif
 #if BIYOS_OPTKND_BOOL != 1 || BIYOS_OPTKND_INT != 2 || BIYOS_OPTKND_DBL != 3 ||                    \
