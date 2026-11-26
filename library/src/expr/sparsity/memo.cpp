@@ -42,12 +42,12 @@ template <typename T> void append(std::vector<T> &items, std::span<const T> more
     items.insert(items.end(), more.begin(), more.end());
 }
 
-void put(std::vector<Offset> &cells, std::span<const Index> items)
+void pack(std::vector<Offset> &cells, std::span<const Index> items)
 {
     cells.insert(cells.end(), items.begin(), items.end());
 }
 
-void put(std::vector<Offset> &cells, std::span<const Range> items)
+void pack(std::vector<Offset> &cells, std::span<const Range> items)
 {
     for (const Range &item : items)
     {
@@ -56,7 +56,7 @@ void put(std::vector<Offset> &cells, std::span<const Range> items)
     }
 }
 
-void read(std::span<const Offset> cells, std::vector<Index> &items)
+void unpack(std::span<const Offset> cells, std::vector<Index> &items)
 {
     for (const Offset cell : cells)
     {
@@ -64,7 +64,7 @@ void read(std::span<const Offset> cells, std::vector<Index> &items)
     }
 }
 
-void read(std::span<const Offset> cells, std::vector<Range> &items)
+void unpack(std::span<const Offset> cells, std::vector<Range> &items)
 {
     for (std::size_t k = 0; k < cells.size(); k += kWidth<Range>)
     {
@@ -134,7 +134,7 @@ void Memos<Item>::gather(std::span<const Offset> memos, std::vector<Item> &items
             continue;
         }
         stamp = walk_;
-        read(item_cells(next), items);
+        unpack(item_cells(next), items);
         append(stack_, links_of(next));
     }
 }
@@ -160,7 +160,7 @@ Offset Memos<Item>::flatten(std::span<const Item> own, std::span<const Offset> l
     pieces_.assign(own.begin(), own.end());
     for (const Offset link : links)
     {
-        read(item_cells(link), pieces_);
+        unpack(item_cells(link), pieces_);
     }
     settled_.clear();
     settle(pieces_, settled_);
@@ -191,7 +191,7 @@ Offset Memos<Item>::store(std::span<const Item> own, std::span<const Offset> lin
     cells_[start + kStamp] = kUnset;
     cells_[start + kItems] = to_offset(own.size());
     cells_[start + kLinks] = to_offset(links.size());
-    put(cells_, own);
+    pack(cells_, own);
     append(cells_, links);
     return to_offset(start);
 }
