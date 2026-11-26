@@ -122,6 +122,7 @@ void Options::store(Option option, const OptionValue &value)
     values_[index_of(option)] = kept(strings_, value);
     sources_[index_of(option)] = OptionSource::Environment;
     warn_deprecated(env_.stream(), table_, spec);
+    warn_capped(env_.stream(), spec, value, env_.pool().limit());
 }
 
 void Options::drop(Option option)

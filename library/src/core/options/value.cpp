@@ -8,6 +8,7 @@
 #include "core/version.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <span>
 #include <string>
 #include <string_view>
@@ -128,6 +129,17 @@ void describe(Event &event, std::span<const OptionSpec> table, const OptionSpec 
     event.fields.push_back(Field{.name = "replacement", .value = std::string(replacement)});
 }
 
+void describe(Event &event, const OptionSpec &spec, int threads, std::size_t limit)
+{
+    const std::string hardware = text_of(limit);
+    event.module = "core";
+    event.text = subject(spec.name) + ": " + text_of(threads) + " is above the " + hardware +
+                 " hardware threads, so " + hardware + " run";
+    event.fields.push_back(Field{.name = "option", .value = std::string(spec.name)});
+    event.fields.push_back(Field{.name = "value", .value = text_of(threads)});
+    event.fields.push_back(Field{.name = "hardware", .value = hardware});
+}
+
 }
 
 const OptionSpec &checked_row(std::span<const OptionSpec> table,
@@ -148,6 +160,20 @@ void warn_deprecated(Stream stream,
         return;
     }
     const auto fill = [&](Event &event) { describe(event, table, spec); };
+    stream.emit(EventKind::Message, EventLevel::Warning, fill);
+}
+
+void warn_capped(Stream stream,
+                 const OptionSpec &spec,
+                 const OptionValue &value,
+                 std::size_t limit) noexcept
+{
+    const int *threads = std::get_if<int>(&value);
+    if (spec.id != Option::Threads || threads == nullptr || to_size(*threads) <= limit)
+    {
+        return;
+    }
+    const auto fill = [&](Event &event) { describe(event, spec, *threads, limit); };
     stream.emit(EventKind::Message, EventLevel::Warning, fill);
 }
 

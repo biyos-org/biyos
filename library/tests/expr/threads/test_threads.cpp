@@ -214,7 +214,7 @@ bool cleared(const Team &team)
 
 TEST(ThreadTest, Identical)
 {
-    Pool pool;
+    Pool pool(kThreads.back());
     std::size_t reals = 0;
     for (std::uint64_t seed = 1; seed <= 12; ++seed)
     {
@@ -234,7 +234,7 @@ TEST(ThreadTest, Identical)
 
 TEST(ThreadTest, Hessian)
 {
-    Pool pool;
+    Pool pool(kThreads.back());
     std::size_t reals = 0;
     for (std::uint64_t seed = 1; seed <= 6; ++seed)
     {
@@ -256,7 +256,7 @@ TEST(ThreadTest, Hessian)
 
 TEST(ThreadTest, Serial)
 {
-    Pool pool;
+    Pool pool(kThreads.back());
     std::size_t checked = 0;
     for (std::uint64_t seed = 1; seed <= 12; ++seed)
     {
@@ -290,7 +290,7 @@ TEST(ThreadTest, Serial)
 
 TEST(ThreadTest, Cleared)
 {
-    Pool pool;
+    Pool pool(kThreads.back());
     const Case test(3);
     ASSERT_GT(test.tape.prepass(), 1);
     Team team(test.tape);

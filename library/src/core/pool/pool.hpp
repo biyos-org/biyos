@@ -14,10 +14,12 @@ namespace biyos
 template <typename Task>
 concept chunk_task = std::is_nothrow_invocable_v<Task &, std::size_t, std::size_t>;
 
+std::size_t hardware_threads() noexcept;
+
 class Pool
 {
   public:
-    Pool() = default;
+    explicit Pool(std::size_t limit = hardware_threads()) noexcept;
     ~Pool();
     Pool(const Pool &) = delete;
     Pool &operator=(const Pool &) = delete;
@@ -28,6 +30,8 @@ class Pool
     }
 
     std::size_t workers();
+    std::size_t limit() const noexcept;
+    std::size_t capped(std::size_t threads) const noexcept;
     void stop() noexcept;
 
   private:
@@ -50,6 +54,7 @@ class Pool
     void work(std::size_t worker, std::size_t seen) noexcept;
     void serve(std::size_t worker) noexcept;
 
+    std::size_t limit_;
     std::atomic<bool> running_{false};
     std::mutex busy_;
     std::mutex mutex_;

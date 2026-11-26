@@ -1,5 +1,6 @@
 #include "core/env.hpp"
 #include "core/pool/pool.hpp"
+#include "core/timing/clock.hpp"
 
 #include <gtest/gtest.h>
 
@@ -7,6 +8,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <span>
 #include <thread>
@@ -16,9 +18,12 @@ namespace
 {
 
 using biyos::Env;
+using biyos::hardware_threads;
 using biyos::Pool;
+using biyos::SystemClock;
 
 constexpr std::size_t kChunks = 100;
+constexpr std::size_t kLimit = 8;
 constexpr std::chrono::seconds kPatience{10};
 
 struct Tally
@@ -78,7 +83,7 @@ TEST(PoolTest, EveryChunkOnce)
 {
     for (const std::size_t threads : std::array<std::size_t, 4>{1, 2, 3, 8})
     {
-        Pool pool;
+        Pool pool(kLimit);
         Tally tally;
         pool.run(threads, kChunks, tally);
         for (std::size_t chunk = 0; chunk < kChunks; ++chunk)
@@ -91,7 +96,7 @@ TEST(PoolTest, EveryChunkOnce)
 
 TEST(PoolTest, Concurrent)
 {
-    Pool pool;
+    Pool pool(kLimit);
     Meeting meeting;
     pool.run(2, 2, meeting);
     EXPECT_EQ(meeting.met, 2);
@@ -99,7 +104,7 @@ TEST(PoolTest, Concurrent)
 
 TEST(PoolTest, StartedAtFirstUse)
 {
-    Pool pool;
+    Pool pool(kLimit);
     EXPECT_EQ(pool.workers(), 0);
     Tally tally;
     pool.run(4, kChunks, tally);
@@ -108,7 +113,7 @@ TEST(PoolTest, StartedAtFirstUse)
 
 TEST(PoolTest, Resized)
 {
-    Pool pool;
+    Pool pool(kLimit);
     Tally tally;
     pool.run(8, kChunks, tally);
     pool.run(2, kChunks, tally);
@@ -117,7 +122,7 @@ TEST(PoolTest, Resized)
 
 TEST(PoolTest, SerialStartsNothing)
 {
-    Pool pool;
+    Pool pool(kLimit);
     Tally tally;
     pool.run(1, kChunks, tally);
     pool.run(8, 1, tally);
@@ -127,7 +132,7 @@ TEST(PoolTest, SerialStartsNothing)
 
 TEST(PoolTest, Stopped)
 {
-    Pool pool;
+    Pool pool(kLimit);
     Tally tally;
     pool.run(4, kChunks, tally);
     pool.stop();
@@ -138,7 +143,7 @@ TEST(PoolTest, Stopped)
 
 TEST(PoolTest, NestedRunsSerially)
 {
-    Pool pool;
+    Pool pool(kLimit);
     Nested nested{.pool = pool};
     pool.run(4, kChunks, nested);
     for (const int runs : nested.runs)
@@ -149,9 +154,29 @@ TEST(PoolTest, NestedRunsSerially)
 
 TEST(PoolTest, StoppedWithEnvironment)
 {
-    std::optional<Env> env(std::in_place);
+    std::optional<Env> env(std::in_place, std::make_unique<SystemClock>(), kLimit);
     Tally tally;
     env->pool().run(4, kChunks, tally);
     EXPECT_EQ(env->pool().workers(), 3);
     env.reset();
+}
+
+TEST(PoolTest, Capped)
+{
+    Pool pool(2);
+    Tally tally;
+    pool.run(kLimit, kChunks, tally);
+    EXPECT_EQ(pool.workers(), 1);
+    for (std::size_t chunk = 0; chunk < kChunks; ++chunk)
+    {
+        EXPECT_EQ(tally.runs[chunk], 1);
+        EXPECT_LT(tally.workers[chunk], 2U);
+    }
+}
+
+TEST(PoolTest, Hardware)
+{
+    EXPECT_EQ(Pool().limit(), hardware_threads());
+    EXPECT_EQ(Env().pool().limit(), hardware_threads());
+    EXPECT_GE(hardware_threads(), 1U);
 }

@@ -1,7 +1,9 @@
 #include "core/pool/pool.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <exception>
+#include <limits>
 #include <mutex>
 #include <thread>
 
@@ -21,6 +23,14 @@ template <typename Job> void alone(Job job, std::size_t chunks) noexcept
 
 }
 
+std::size_t hardware_threads() noexcept
+{
+    const unsigned found = std::thread::hardware_concurrency();
+    return found == 0 ? (std::numeric_limits<std::size_t>::max)() : found;
+}
+
+Pool::Pool(std::size_t limit) noexcept : limit_(limit) {}
+
 Pool::~Pool()
 {
     stop();
@@ -32,6 +42,16 @@ std::size_t Pool::workers()
     return threads_.size();
 }
 
+std::size_t Pool::limit() const noexcept
+{
+    return limit_;
+}
+
+std::size_t Pool::capped(std::size_t threads) const noexcept
+{
+    return (std::min)(threads, limit_);
+}
+
 void Pool::stop() noexcept
 {
     const std::lock_guard busy(busy_);
@@ -40,12 +60,13 @@ void Pool::stop() noexcept
 
 void Pool::dispatch(Job job, std::size_t threads, std::size_t chunks) noexcept
 {
-    if (threads <= 1 || chunks <= 1 || running_.exchange(true))
+    const std::size_t used = capped(threads);
+    if (used <= 1 || chunks <= 1 || running_.exchange(true))
     {
         alone(job, chunks);
         return;
     }
-    share(job, threads, chunks);
+    share(job, used, chunks);
     running_ = false;
 }
 

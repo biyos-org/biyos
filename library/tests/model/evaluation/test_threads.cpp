@@ -4,6 +4,7 @@
 #include "core/numeric/identical.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
+#include "core/timing/clock.hpp"
 #include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
 
@@ -14,6 +15,7 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <memory>
 #include <span>
 #include <vector>
 
@@ -28,12 +30,14 @@ using biyos::Model;
 using biyos::Offset;
 using biyos::Option;
 using biyos::Real;
+using biyos::SystemClock;
 using biyos::to_size;
 using biyos::Variable;
 using biyos::VariableKind;
 
 constexpr Index kWidth = 1000;
 constexpr std::array kThreads{1, 2, 3, 8, 1};
+constexpr std::size_t kHardware = 8;
 
 struct Outputs
 {
@@ -122,7 +126,7 @@ Outputs outputs(Evaluation &evaluation, const Lookup &lookup)
 
 TEST(ThreadTest, Evaluation)
 {
-    Env env;
+    Env env(std::make_unique<SystemClock>(), kHardware);
     const Model model = chained();
     Evaluation evaluation(model, env.stream(), env.pool());
     const Lookup lookup(env.options());
@@ -142,7 +146,7 @@ TEST(ThreadTest, Evaluation)
 
 TEST(ThreadTest, Values)
 {
-    Env env;
+    Env env(std::make_unique<SystemClock>(), kHardware);
     env.options().set_int(Option::Threads, 8);
     const Model model = chained();
     Evaluation evaluation(model, env.stream(), env.pool());
@@ -150,4 +154,17 @@ TEST(ThreadTest, Values)
     std::vector<Real> f(to_size(kWidth));
     evaluation.values(Lookup(env.options()), x, f);
     EXPECT_EQ(env.pool().workers(), 7U);
+}
+
+TEST(ThreadTest, Capped)
+{
+    Env env(std::make_unique<SystemClock>(), 2);
+    env.options().set_int(Option::Threads, 8);
+    const Model model = chained();
+    Evaluation evaluation(model, env.stream(), env.pool());
+    const std::vector<Real> x = ramp(1.0);
+    std::vector<Real> f(to_size(kWidth));
+    evaluation.values(Lookup(env.options()), x, f);
+    EXPECT_EQ(env.options().get_int(Option::Threads), 8);
+    EXPECT_EQ(env.pool().workers(), 1U);
 }

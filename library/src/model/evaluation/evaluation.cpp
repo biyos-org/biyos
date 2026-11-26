@@ -150,7 +150,7 @@ void Evaluation::check(std::span<const Real> x) const
 
 void Evaluation::fit(const Lookup &lookup)
 {
-    const std::size_t threads = to_size(lookup.options().get_int(Option::Threads));
+    const std::size_t threads = pool_.capped(to_size(lookup.options().get_int(Option::Threads)));
     team_.fit(program_.tape, threads);
     program_.hessian.fit(threads);
 }

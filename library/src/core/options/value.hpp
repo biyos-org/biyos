@@ -5,6 +5,7 @@
 #include "core/options/options.hpp"
 #include "core/text/strings.hpp"
 
+#include <cstddef>
 #include <span>
 #include <string_view>
 
@@ -18,6 +19,11 @@ const OptionSpec &checked_row(std::span<const OptionSpec> table,
 void warn_deprecated(Stream stream,
                      std::span<const OptionSpec> table,
                      const OptionSpec &spec) noexcept;
+
+void warn_capped(Stream stream,
+                 const OptionSpec &spec,
+                 const OptionValue &value,
+                 std::size_t limit) noexcept;
 
 OptionValue kept(Strings &strings, const OptionValue &value);
 
