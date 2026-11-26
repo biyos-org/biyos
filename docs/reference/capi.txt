@@ -1159,7 +1159,7 @@ see BIYOS_getnclintermsp BIYOS_getrlintermsp BIYOS_addclintermsp
 since 0.1.0
 
 group quadratic Quadratic terms
-text A function is added with no quadratic terms, and `BIYOS_addquadterm` and `BIYOS_addquadtermrg` add them. Each term is a pair of variables `i` and `j` and its coefficient, taken as written, with no factor ½: $x_0^2$ is the pair (0, 0) with the coefficient 1, and $x_0 x_1$ the pair (0, 1) with the coefficient 1. A pair may be given in either order and is kept as `(i, j)` with `i <= j`, a function's pairs sorted by `i`, then by `j`. Each must name variables of the model, appear once for its function in a call and have a finite coefficient. A pair the function already holds adds its coefficient to the one held, which must stay finite, so every call adds $q_{ij} x_i x_j$ to its functions. A term whose coefficient is 0, given or summed, is kept.
+text A function is added with no quadratic terms, and three forms add them: `BIYOS_addquadterm` takes coordinates, `BIYOS_addquadtermsp` a list of functions with one count each and `BIYOS_addquadtermrg` a range with one count per function. Each term is a pair of variables `i` and `j` and its coefficient, taken as written, with no factor ½: $x_0^2$ is the pair (0, 0) with the coefficient 1, and $x_0 x_1$ the pair (0, 1) with the coefficient 1. A pair may be given in either order and is kept as `(i, j)` with `i <= j`, a function's pairs sorted by `i`, then by `j`. Each must name variables of the model, appear once for its function in a call and have a finite coefficient. A pair the function already holds adds its coefficient to the one held, which must stay finite, so every call adds $q_{ij} x_i x_j$ to its functions. A term whose coefficient is 0, given or summed, is kept.
 
 function BIYOS_addquadterm
 summary Add quadratic terms to functions, as coordinates.
@@ -1174,23 +1174,25 @@ error BIYOS_ERR_BADARG `nnz` is negative, a function or a variable is not one of
 error BIYOS_ERR_NOMEMORY The model would hold more quadratic terms than any allocation can hold.
 note Term `k` adds `coef[k]` times the product of variables `var1[k]` and `var2[k]` to function `fun[k]`, and the terms may come in any order. A pair may be given in either order, and a pair the function already holds adds its coefficient to the one held. A refused call changes nothing.
 note A call that adds new pairs moves the terms and offsets of every function from its lowest one on, so the terms of many functions are best added in one call, or those of a function right after it is added.
-see BIYOS_addquadtermrg BIYOS_getquadtermsp
+see BIYOS_addquadtermsp BIYOS_getquadtermsp
 since 0.1.0
 
-function BIYOS_addquadtermrg
-summary Add quadratic terms to a range of functions.
+function BIYOS_addquadtermsp BIYOS_addquadtermrg
+summary Add quadratic terms to functions.
 param mdl in The model.
-param beg in The first function of the range.
-param end in One past the last function of the range.
-param cnt in The `end - beg` counts of the functions' terms; null adds no terms.
+param beg in In the `rg` form, the first function of the range.
+param end in In the `rg` form, one past the last function of the range.
+param n in In the `sp` form, the number of entries.
+param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cnt in The `n` counts of the entries' terms, `end - beg` in the `rg` form; null adds no terms.
 param var1 in The first variable of each term; not read when there are no terms.
 param var2 in The second variable of each term; not read when there are no terms.
 param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
-error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last function, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a variable is not one of the model, a pair appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a variable is not one of the model, a pair appears twice for a function in the call, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more quadratic terms than any allocation can hold.
-note Function `beg + j` gains the `cnt[j]` terms that follow those of function `beg + j - 1`. A pair the function already holds adds its coefficient to the one held, as in `BIYOS_addquadterm`. A refused call changes nothing.
-see BIYOS_addquadterm BIYOS_getquadtermrg
+note Entry `j` gains the `cnt[j]` terms that follow those of entry `j - 1`, entry `j` being function `idx[j]`, or `beg + j` in the `rg` form. A function listed twice gains the terms of both entries, which together name each pair once, as coordinates do. A pair the function already holds adds its coefficient to the one held, as in `BIYOS_addquadterm`. A refused call changes nothing.
+see BIYOS_addquadterm BIYOS_getquadtermsp
 since 0.1.0
 
 function BIYOS_getnquadtermsp BIYOS_getnquadtermrg

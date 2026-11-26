@@ -209,8 +209,9 @@ def _declare_terms(lib: ctypes.CDLL, name: str, others: int = 1) -> None:
 def _declare_quadratic(lib: ctypes.CDLL) -> None:
     coordinates = (c_void_p, c_offset, _INDICES, _INDICES, _INDICES, _REALS)
     _declare(lib, "BIYOS_addquadterm", *coordinates)
-    ranged = (c_void_p, c_index, c_index, _OFFSETS, _INDICES, _INDICES)
-    _declare(lib, "BIYOS_addquadtermrg", *ranged, _REALS)
+    _declare_pair(
+        lib, "BIYOS_addquadterm", _OFFSETS, _INDICES, _INDICES, _REALS
+    )
     _declare_terms(lib, "quadterm", 2)
 
 

@@ -443,6 +443,13 @@ BIYOS_API BIYOS_status BIYOS_addquadterm(BIYOS_model *mdl,
                                          const BIYOS_index *var1,
                                          const BIYOS_index *var2,
                                          const BIYOS_real *coef);
+BIYOS_API BIYOS_status BIYOS_addquadtermsp(BIYOS_model *mdl,
+                                           BIYOS_index n,
+                                           const BIYOS_index *idx,
+                                           const BIYOS_offset *cnt,
+                                           const BIYOS_index *var1,
+                                           const BIYOS_index *var2,
+                                           const BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_addquadtermrg(BIYOS_model *mdl,
                                            BIYOS_index beg,
                                            BIYOS_index end,

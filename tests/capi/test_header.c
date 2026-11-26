@@ -201,6 +201,10 @@ static BIYOS_status use_quadratic(BIYOS_model *model)
     BIYOS_status status = BIYOS_addquadtermrg(model, 1, 2, count, firsts, seconds, values);
     if (status == BIYOS_OK)
     {
+        status = BIYOS_addquadtermsp(model, 0, NULL, NULL, NULL, NULL, NULL);
+    }
+    if (status == BIYOS_OK)
+    {
         status = BIYOS_getquadtermrg(model, 0, 2, 2, counts, held, paired, NULL);
     }
     if (status == BIYOS_OK)
