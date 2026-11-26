@@ -7,18 +7,17 @@
 #include "core/numbers.hpp"
 #include "model/model.hpp"
 #include "model/utils/checks.hpp"
+#include "model/utils/gather.hpp"
 
-#include <algorithm>
 #include <cstddef>
-#include <numeric>
 #include <span>
 #include <string_view>
 #include <vector>
 
-using biyos::check_index;
-using biyos::check_span;
 using biyos::Error;
 using biyos::ErrorKind;
+using biyos::Gathered;
+using biyos::gathered;
 using biyos::Index;
 using biyos::kRoom;
 using biyos::Model;
@@ -28,14 +27,18 @@ using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
+using biyos::capi::check_known;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::listed;
 using biyos::capi::Range;
 using biyos::capi::require;
+using biyos::capi::selected;
+using biyos::capi::span_of;
 using biyos::capi::starts_of;
 using biyos::capi::writable;
+using biyos::capi::write_array;
+using biyos::capi::write_counts;
 
 namespace
 {
@@ -52,15 +55,6 @@ struct Outputs
 Index held(const Model &model) noexcept
 {
     return static_cast<Index>(model.graph().points().size());
-}
-
-std::span<const BIYOS_real> input(const BIYOS_real *values, std::size_t n, std::string_view name)
-{
-    if (n > 0)
-    {
-        require(values, name);
-    }
-    return {values, n};
 }
 
 void check_room(const Model &model, std::size_t added)
@@ -87,8 +81,8 @@ void add_pwls(Session &session,
     const std::vector<Offset> begins = starts_of(size, counts);
     check_room(model, size);
     const auto total = to_size(begins.back());
-    const std::span<const BIYOS_real> xs = input(x, total, "x");
-    const std::span<const BIYOS_real> ys = input(y, total, "y");
+    const std::span<const Real> xs = span_of(x, total, "x");
+    const std::span<const Real> ys = span_of(y, total, "y");
     const Offset first = model.add_piecewise_linears(begins, xs, ys);
     if (start != nullptr)
     {
@@ -99,24 +93,6 @@ void add_pwls(Session &session,
 void n_pwls(const Session &session, BIYOS_index *n)
 {
     *require(n, "n") = held(session.model());
-}
-
-std::span<const Index> chosen(const Model &model, List list)
-{
-    const std::span<const Index> indices = listed(list.n, list.indices);
-    for (const Index index : indices)
-    {
-        check_index(kNoun, index, held(model));
-    }
-    return indices;
-}
-
-std::vector<Index> chosen(const Model &model, Range range)
-{
-    check_span(kNoun, range.start, range.stop, held(model));
-    std::vector<Index> indices(to_size(range.stop - range.start));
-    std::iota(indices.begin(), indices.end(), range.start);
-    return indices;
 }
 
 std::size_t count_of(const Model &model, std::span<const Index> pwls)
@@ -132,33 +108,11 @@ std::size_t count_of(const Model &model, std::span<const Index> pwls)
 template <typename Selection>
 void n_points(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto pwls = chosen(session.model(), selection);
-    const std::size_t count = count_of(session.model(), pwls);
+    const Model &model = session.model();
+    const auto pwls = selected(kNoun, held(model), selection);
+    check_known(kNoun, held(model), pwls);
+    const std::size_t count = count_of(model, pwls);
     *require(nnz, "nnz") = to_offset(count);
-}
-
-void copy_to(std::span<const Real> from, BIYOS_real *to, std::size_t k)
-{
-    if (to != nullptr)
-    {
-        std::ranges::copy(from, to + k);
-    }
-}
-
-void write_pwls(const Model &model, std::span<const Index> pwls, const Outputs &out)
-{
-    std::size_t k = 0;
-    for (std::size_t j = 0; j < pwls.size(); ++j)
-    {
-        const auto pwl = model.graph().points().piecewise_linear(pwls[j]);
-        copy_to(pwl.x, out.x, k);
-        copy_to(pwl.y, out.y, k);
-        k += pwl.x.size();
-        if (out.counts != nullptr)
-        {
-            out.counts[j] = to_offset(pwl.x.size());
-        }
-    }
 }
 
 template <typename Selection>
@@ -167,9 +121,18 @@ void get_pwls(const Session &session,
               BIYOS_offset capacity,
               const Outputs &out)
 {
-    const auto pwls = chosen(session.model(), selection);
-    check_capacity(capacity, count_of(session.model(), pwls), "cap", "points");
-    write_pwls(session.model(), pwls, out);
+    const Model &model = session.model();
+    const auto pwls = selected(kNoun, held(model), selection);
+    check_known(kNoun, held(model), pwls);
+    const auto &points = model.graph().points();
+    const Gathered<Real> xs =
+        gathered(pwls, [&](Index pwl) { return points.piecewise_linear(pwl).x; });
+    const Gathered<Real> ys =
+        gathered(pwls, [&](Index pwl) { return points.piecewise_linear(pwl).y; });
+    check_capacity(capacity, xs.items.size(), "cap", "points");
+    write_counts(xs.starts, out.counts);
+    write_array(xs.items, out.x);
+    write_array(ys.items, out.y);
 }
 
 void add_pwl_node(Session &session, BIYOS_index pwl, BIYOS_offset argument, BIYOS_offset *node)

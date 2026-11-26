@@ -1,13 +1,13 @@
 #include "biyos/biyos.h"
 
 #include "capi/model/selection.hpp"
+#include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/timing/timer.hpp"
 #include "model/model.hpp"
 
-#include <algorithm>
 #include <span>
 #include <vector>
 
@@ -22,26 +22,24 @@ using biyos::capi::List;
 using biyos::capi::Range;
 using biyos::capi::selected;
 using biyos::capi::writable;
+using biyos::capi::write_array;
 
 namespace
 {
 
 template <auto Delete>
-void delete_chosen(Session &session, Model &model, std::span<const Index> chosen, BIYOS_index *map)
+std::vector<Index> delete_chosen(Session &session, Model &model, std::span<const Index> chosen)
 {
     const EntryTimer timer(session.stream(), kModule, "delete");
-    const std::vector<Index> renumbered = (model.*Delete)(chosen);
-    if (map != nullptr)
-    {
-        std::ranges::copy(renumbered, map);
-    }
+    return (model.*Delete)(chosen);
 }
 
 template <Family Target, auto Delete, typename Selection>
 void delete_records(Session &session, Selection selection, BIYOS_index *map)
 {
     Model &model = writable(session);
-    delete_chosen<Delete>(session, model, selected(model, Target, selection), map);
+    const auto chosen = selected(Target, model.n_of(Target), selection);
+    write_array(delete_chosen<Delete>(session, model, chosen), map);
 }
 
 template <typename Selection>
@@ -99,7 +97,7 @@ void delete_callbacks(Session &session, Selection selection, BIYOS_index *map)
 {
     Model &model = writable(session);
     const auto chosen = selected("callback", model.n_callbacks(), selection);
-    delete_chosen<&Model::delete_callbacks>(session, model, chosen, map);
+    write_array(delete_chosen<&Model::delete_callbacks>(session, model, chosen), map);
 }
 
 }

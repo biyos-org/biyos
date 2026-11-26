@@ -5,8 +5,8 @@
 #include "capi/utils/entry.hpp"
 #include "core/numbers.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <span>
 #include <vector>
@@ -15,17 +15,18 @@ using biyos::Family;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
+using biyos::picked;
 using biyos::Real;
 using biyos::Session;
 using biyos::capi::check_known;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::picked;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::writable;
+using biyos::capi::write_array;
 
 namespace
 {
@@ -52,23 +53,15 @@ void n_functions(const Session &session, BIYOS_index *n)
 template <typename Selection> void clear_functions(Session &session, Selection selection)
 {
     Model &model = writable(session);
-    model.clear_functions(selected(model, Family::Function, selection));
-}
-
-void write_constants(std::span<const Real> found, BIYOS_real *constants)
-{
-    if (constants != nullptr)
-    {
-        std::ranges::copy(found, constants);
-    }
+    model.clear_functions(selected(Family::Function, model.n_of(Family::Function), selection));
 }
 
 template <typename Selection>
 void add_constants(Session &session, Selection selection, const BIYOS_real *constants)
 {
     Model &model = writable(session);
-    const auto chosen = selected(model, Family::Function, selection);
-    check_known(model, Family::Function, chosen);
+    const auto chosen = selected(Family::Function, model.n_of(Family::Function), selection);
+    check_known(Family::Function, model.n_of(Family::Function), chosen);
     if (constants != nullptr)
     {
         model.add_constants(chosen, std::span(constants, chosen.size()));
@@ -79,8 +72,8 @@ template <typename Selection>
 void set_constants(Session &session, Selection selection, const BIYOS_real *constants)
 {
     Model &model = writable(session);
-    const auto chosen = selected(model, Family::Function, selection);
-    check_known(model, Family::Function, chosen);
+    const auto chosen = selected(Family::Function, model.n_of(Family::Function), selection);
+    check_known(Family::Function, model.n_of(Family::Function), chosen);
     if (constants != nullptr)
     {
         model.set_constants(chosen, std::span(constants, chosen.size()));
@@ -90,8 +83,9 @@ void set_constants(Session &session, Selection selection, const BIYOS_real *cons
 template <typename Selection>
 void get_constants(const Session &session, Selection selection, BIYOS_real *constants)
 {
-    const auto chosen = selected(session.model(), Family::Function, selection);
-    write_constants(picked(session.model(), &Model::constant, chosen), constants);
+    const auto chosen =
+        selected(Family::Function, session.model().n_of(Family::Function), selection);
+    write_array(picked(session.model(), &Model::constant, chosen), constants);
 }
 
 }

@@ -7,8 +7,9 @@
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
-#include <cstddef>
+#include <span>
 #include <vector>
 
 using biyos::Constraint;
@@ -16,35 +17,32 @@ using biyos::Family;
 using biyos::Index;
 using biyos::kInfinity;
 using biyos::Model;
+using biyos::picked;
 using biyos::Session;
 using biyos::capi::delete_tolerances;
 using biyos::capi::get_tolerances;
 using biyos::capi::guarded;
-using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::picked;
+using biyos::capi::listed;
 using biyos::capi::Range;
+using biyos::capi::read_field;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::set_tolerances;
 using biyos::capi::writable;
+using biyos::capi::write_field;
 
 namespace
 {
-Constraint bounded(Constraint constraint,
-                   std::size_t k,
-                   const BIYOS_real *lower,
-                   const BIYOS_real *upper)
+std::vector<Constraint> free_constraints(std::span<const Index> functions)
 {
-    if (lower != nullptr)
+    std::vector<Constraint> found;
+    found.reserve(functions.size());
+    for (const Index function : functions)
     {
-        constraint.lower = lower[k];
+        found.push_back(Constraint{.function = function, .lower = -kInfinity, .upper = kInfinity});
     }
-    if (upper != nullptr)
-    {
-        constraint.upper = upper[k];
-    }
-    return constraint;
+    return found;
 }
 
 void add_constraints(Session &session,
@@ -55,22 +53,9 @@ void add_constraints(Session &session,
                      BIYOS_index *start)
 {
     Model &model = writable(session);
-    const std::size_t size = length(n);
-    if (size > 0)
-    {
-        require(functions, "fun");
-    }
-    std::vector<Constraint> added;
-    added.reserve(size);
-    for (std::size_t k = 0; k < size; ++k)
-    {
-        const Constraint free{
-            .function = functions[k],
-            .lower = -kInfinity,
-            .upper = kInfinity,
-        };
-        added.push_back(bounded(free, k, lower, upper));
-    }
+    std::vector<Constraint> added = free_constraints(listed(n, functions, "fun"));
+    read_field(added, &Constraint::lower, lower);
+    read_field(added, &Constraint::upper, upper);
     const Index index = model.n_constraints();
     model.add_constraints(added);
     if (start != nullptr)
@@ -86,39 +71,16 @@ void set_bounds(Session &session,
                 const BIYOS_real *upper)
 {
     Model &model = writable(session);
-    const auto changed = selected(model, Family::Constraint, selection);
-    std::vector<Constraint> constraints;
-    constraints.reserve(changed.size());
-    for (std::size_t k = 0; k < changed.size(); ++k)
-    {
-        constraints.push_back(bounded(model.constraint(changed[k]), k, lower, upper));
-    }
+    const auto changed = selected(Family::Constraint, model.n_of(Family::Constraint), selection);
+    std::vector<Constraint> constraints = picked(model, &Model::constraint, changed);
+    read_field(constraints, &Constraint::lower, lower);
+    read_field(constraints, &Constraint::upper, upper);
     model.set_constraints(changed, constraints);
 }
 
 void n_constraints(const Session &session, BIYOS_index *n)
 {
     *require(n, "n") = session.model().n_constraints();
-}
-
-void copy_out(const Constraint &constraint,
-              std::size_t k,
-              BIYOS_index *functions,
-              BIYOS_real *lower,
-              BIYOS_real *upper)
-{
-    if (functions != nullptr)
-    {
-        functions[k] = constraint.function;
-    }
-    if (lower != nullptr)
-    {
-        lower[k] = constraint.lower;
-    }
-    if (upper != nullptr)
-    {
-        upper[k] = constraint.upper;
-    }
 }
 
 template <typename Selection>
@@ -128,12 +90,12 @@ void get_constraints(const Session &session,
                      BIYOS_real *lower,
                      BIYOS_real *upper)
 {
-    const auto chosen = selected(session.model(), Family::Constraint, selection);
+    const auto chosen =
+        selected(Family::Constraint, session.model().n_of(Family::Constraint), selection);
     const std::vector<Constraint> constraints = picked(session.model(), &Model::constraint, chosen);
-    for (std::size_t k = 0; k < constraints.size(); ++k)
-    {
-        copy_out(constraints[k], k, functions, lower, upper);
-    }
+    write_field(constraints, &Constraint::function, functions);
+    write_field(constraints, &Constraint::lower, lower);
+    write_field(constraints, &Constraint::upper, upper);
 }
 
 template <typename Selection>

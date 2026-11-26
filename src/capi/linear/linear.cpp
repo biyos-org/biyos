@@ -18,6 +18,7 @@ using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::Session;
 using biyos::to_size;
 using biyos::capi::check_known;
@@ -45,7 +46,7 @@ void add_linear(Model &model, std::span<const Index> functions, std::span<const 
 
 std::vector<LinearTerm> column_terms(std::span<const Index> variables,
                                      std::span<const Offset> starts,
-                                     const BIYOS_real *values)
+                                     std::span<const Real> values)
 {
     std::vector<LinearTerm> terms;
     terms.reserve(to_size(starts.back()));
@@ -53,7 +54,7 @@ std::vector<LinearTerm> column_terms(std::span<const Index> variables,
     {
         for (auto t = starts[j]; t < starts[j + 1]; ++t)
         {
-            const BIYOS_real value = values[to_size(t)];
+            const Real value = values[to_size(t)];
             terms.push_back(LinearTerm{.variable = variables[j], .coefficient = value});
         }
     }
@@ -85,10 +86,10 @@ void add_rows(Session &session,
               const BIYOS_real *values)
 {
     Model &model = writable(session);
-    const auto functions = selected(model, Family::Function, selection);
+    const auto functions = selected(Family::Function, model.n_of(Family::Function), selection);
     if constexpr (std::same_as<Selection, List>)
     {
-        check_known(model, Family::Function, functions);
+        check_known(Family::Function, model.n_of(Family::Function), functions);
     }
     const std::vector<Offset> begins = starts_of(functions.size(), counts);
     model.check_room(0, begins.back());
@@ -111,10 +112,10 @@ void add_columns(Session &session,
                  const BIYOS_real *values)
 {
     Model &model = writable(session);
-    const auto variables = selected(model, Family::Variable, selection);
+    const auto variables = selected(Family::Variable, model.n_of(Family::Variable), selection);
     if constexpr (std::same_as<Selection, List>)
     {
-        check_known(model, Family::Variable, variables);
+        check_known(Family::Variable, model.n_of(Family::Variable), variables);
     }
     const std::vector<Offset> begins = starts_of(variables.size(), counts);
     model.check_room(0, begins.back());
@@ -125,7 +126,8 @@ void add_columns(Session &session,
         require(values, "coef");
     }
     const std::span<const Index> owners(functions, total);
-    add_linear(model, owners, column_terms(variables, begins, values));
+    const std::span<const Real> coefficients(values, total);
+    add_linear(model, owners, column_terms(variables, begins, coefficients));
 }
 
 }

@@ -6,18 +6,21 @@
 #include "capi/utils/entry.hpp"
 #include "core/numbers.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <span>
-#include <string_view>
 #include <vector>
 
 using biyos::ConeKind;
 using biyos::Family;
+using biyos::Gathered;
+using biyos::gathered;
 using biyos::Index;
+using biyos::item_count;
 using biyos::Model;
 using biyos::Offset;
+using biyos::PartReader;
 using biyos::Real;
 using biyos::Session;
 using biyos::to_offset;
@@ -26,14 +29,19 @@ using biyos::capi::check_capacity;
 using biyos::capi::delete_tolerances;
 using biyos::capi::get_tolerances;
 using biyos::capi::guarded;
+using biyos::capi::kinds_of;
 using biyos::capi::length;
 using biyos::capi::List;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::set_tolerances;
+using biyos::capi::span_of;
 using biyos::capi::starts_of;
 using biyos::capi::writable;
+using biyos::capi::write_array;
+using biyos::capi::write_codes;
+using biyos::capi::write_counts;
 
 namespace
 {
@@ -47,38 +55,14 @@ struct Given
     const BIYOS_real *parameters;
 };
 
-template <typename T> using Part = std::span<const T> (Model::*)(Index, Index) const;
-
 template <typename T> struct Compressed
 {
     BIYOS_offset *counts;
     T *items;
 };
 
-constexpr Part<Index> kMembers = &Model::cone_functions;
-constexpr Part<Real> kParameters = &Model::cone_parameters;
-
-std::vector<ConeKind> kinds_of(std::size_t n, const BIYOS_int *kinds)
-{
-    std::vector<ConeKind> found;
-    found.reserve(n);
-    for (std::size_t k = 0; k < n; ++k)
-    {
-        found.push_back(static_cast<ConeKind>(kinds[k]));
-    }
-    return found;
-}
-
-template <typename T>
-std::span<const T> items_of(const T *items, std::span<const Offset> starts, std::string_view name)
-{
-    const auto total = to_size(starts.back());
-    if (total > 0)
-    {
-        require(items, name);
-    }
-    return {items, total};
-}
+constexpr PartReader<Index> kMembers = &Model::cone_functions;
+constexpr PartReader<Real> kParameters = &Model::cone_parameters;
 
 void add_cones(Session &session, BIYOS_index n, const Given &given, BIYOS_index *start)
 {
@@ -93,11 +77,11 @@ void add_cones(Session &session, BIYOS_index n, const Given &given, BIYOS_index 
     const std::vector<Offset> parameter_starts = starts_of(size, given.parameter_counts, "prmcnt");
     model.check_cone_room(size, starts.back(), parameter_starts.back());
     const Index index = model.n_cones();
-    model.add_cones(kinds_of(size, given.kinds),
+    model.add_cones(kinds_of<ConeKind>(std::span(given.kinds, size)),
                     starts,
-                    items_of(given.functions, starts, "fun"),
+                    span_of(given.functions, to_size(starts.back()), "fun"),
                     parameter_starts,
-                    items_of(given.parameters, parameter_starts, "prm"));
+                    span_of(given.parameters, to_size(parameter_starts.back()), "prm"));
     if (start != nullptr)
     {
         *start = index;
@@ -109,53 +93,11 @@ void n_cones(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_cones();
 }
 
-template <typename T>
-std::size_t count_of(const Model &model, std::span<const Index> cones, Part<T> part)
-{
-    std::size_t count = 0;
-    for (const Index cone : cones)
-    {
-        count += (model.*part)(cone, cone + 1).size();
-    }
-    return count;
-}
-
-template <typename T>
-void write_part(const Model &model, std::span<const Index> cones, Part<T> part, Compressed<T> out)
-{
-    BIYOS_offset written = 0;
-    for (std::size_t j = 0; j < cones.size(); ++j)
-    {
-        const std::span<const T> items = (model.*part)(cones[j], cones[j] + 1);
-        if (out.counts != nullptr)
-        {
-            out.counts[j] = to_offset(items.size());
-        }
-        if (out.items != nullptr)
-        {
-            std::ranges::copy(items, out.items + written);
-        }
-        written += to_offset(items.size());
-    }
-}
-
-void write_kinds(const Model &model, std::span<const Index> cones, BIYOS_int *kinds)
-{
-    if (kinds == nullptr)
-    {
-        return;
-    }
-    for (std::size_t j = 0; j < cones.size(); ++j)
-    {
-        kinds[j] = static_cast<BIYOS_int>(model.cone_kinds(cones[j], cones[j] + 1).front());
-    }
-}
-
 template <typename Selection, typename T>
-void n_items(const Session &session, Selection selection, Part<T> part, BIYOS_offset *nnz)
+void n_items(const Session &session, Selection selection, PartReader<T> part, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(session.model(), Family::Cone, selection);
-    const std::size_t count = count_of(session.model(), chosen, part);
+    const auto chosen = selected(Family::Cone, session.model().n_of(Family::Cone), selection);
+    const std::size_t count = item_count(session.model(), part, chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
 
@@ -166,10 +108,13 @@ void get_members(const Session &session,
                  BIYOS_int *kinds,
                  Compressed<BIYOS_index> out)
 {
-    const auto chosen = selected(session.model(), Family::Cone, selection);
-    check_capacity(capacity, count_of(session.model(), chosen, kMembers), "cap", "members");
-    write_kinds(session.model(), chosen, kinds);
-    write_part(session.model(), chosen, kMembers, out);
+    const Model &model = session.model();
+    const auto chosen = selected(Family::Cone, model.n_of(Family::Cone), selection);
+    const Gathered<Index> members = gathered(model, kMembers, chosen);
+    check_capacity(capacity, members.items.size(), "cap", "members");
+    write_codes(gathered(model, &Model::cone_kinds, chosen).items, kinds);
+    write_counts(members.starts, out.counts);
+    write_array(members.items, out.items);
 }
 
 template <typename Selection>
@@ -178,9 +123,12 @@ void get_parameters(const Session &session,
                     BIYOS_offset capacity,
                     Compressed<BIYOS_real> out)
 {
-    const auto chosen = selected(session.model(), Family::Cone, selection);
-    check_capacity(capacity, count_of(session.model(), chosen, kParameters), "cap", "parameters");
-    write_part(session.model(), chosen, kParameters, out);
+    const Model &model = session.model();
+    const auto chosen = selected(Family::Cone, model.n_of(Family::Cone), selection);
+    const Gathered<Real> parameters = gathered(model, kParameters, chosen);
+    check_capacity(capacity, parameters.items.size(), "cap", "parameters");
+    write_counts(parameters.starts, out.counts);
+    write_array(parameters.items, out.items);
 }
 
 }

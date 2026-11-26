@@ -72,10 +72,10 @@ void add_counted(Session &session,
                  const BIYOS_real *values)
 {
     Model &model = writable(session);
-    const auto functions = selected(model, Family::Function, selection);
+    const auto functions = selected(Family::Function, model.n_of(Family::Function), selection);
     if constexpr (std::same_as<Selection, List>)
     {
-        check_known(model, Family::Function, functions);
+        check_known(Family::Function, model.n_of(Family::Function), functions);
     }
     const std::vector<Offset> begins = starts_of(functions.size(), counts);
     model.check_quadratic_room(begins.back());

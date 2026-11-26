@@ -10,6 +10,7 @@
 #include "core/numbers.hpp"
 #include "core/timing/timer.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
 #include <cstddef>
 #include <span>
@@ -21,6 +22,7 @@ using biyos::Family;
 using biyos::Index;
 using biyos::kModule;
 using biyos::Model;
+using biyos::picked;
 using biyos::Session;
 using biyos::Variable;
 using biyos::VariableKind;
@@ -30,14 +32,16 @@ using biyos::capi::EnvAccess;
 using biyos::capi::get_tolerances;
 using biyos::capi::guarded;
 using biyos::capi::idle;
+using biyos::capi::kinds_of;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::picked;
 using biyos::capi::Range;
+using biyos::capi::read_field;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::set_tolerances;
 using biyos::capi::writable;
+using biyos::capi::write_field;
 
 namespace
 {
@@ -64,60 +68,32 @@ void freeable(Session &session)
     writable(session);
 }
 
-VariableKind kind_at(const BIYOS_int *kinds, std::size_t k)
+std::vector<Variable> widest_variables(std::span<const VariableKind> kinds)
 {
-    return kinds == nullptr ? VariableKind::Continuous : static_cast<VariableKind>(kinds[k]);
-}
-
-Variable bounded(Variable variable, std::size_t k, const BIYOS_real *lower, const BIYOS_real *upper)
-{
-    if (lower != nullptr)
+    std::vector<Variable> variables;
+    variables.reserve(kinds.size());
+    for (const VariableKind kind : kinds)
     {
-        variable.lower = lower[k];
+        variables.push_back(widest(kind));
     }
-    if (upper != nullptr)
-    {
-        variable.upper = upper[k];
-    }
-    return variable;
-}
-
-Variable kinded(Variable variable, std::size_t k, const BIYOS_int *kinds)
-{
-    if (kinds != nullptr)
-    {
-        variable.kind = static_cast<VariableKind>(kinds[k]);
-    }
-    return variable;
-}
-
-template <auto Change, typename... Arrays>
-void set_each(Model &model, std::span<const Index> indices, Arrays... arrays)
-{
-    std::vector<Variable> changed;
-    changed.reserve(indices.size());
-    for (std::size_t k = 0; k < indices.size(); ++k)
-    {
-        changed.push_back(Change(model.variable(indices[k]), k, arrays...));
-    }
-    model.set_variables(indices, changed);
+    return variables;
 }
 
 void add_variables(Session &session,
                    BIYOS_index n,
-                   const BIYOS_int *kinds,
+                   const BIYOS_int *codes,
                    const BIYOS_real *lower,
                    const BIYOS_real *upper,
                    BIYOS_index *start)
 {
     Model &model = writable(session);
     const std::size_t size = length(n);
-    std::vector<Variable> added;
-    added.reserve(size);
-    for (std::size_t k = 0; k < size; ++k)
-    {
-        added.push_back(bounded(widest(kind_at(kinds, k)), k, lower, upper));
-    }
+    const std::vector<VariableKind> kinds = codes == nullptr
+                                                ? std::vector(size, VariableKind::Continuous)
+                                                : kinds_of<VariableKind>(std::span(codes, size));
+    std::vector<Variable> added = widest_variables(kinds);
+    read_field(added, &Variable::lower, lower);
+    read_field(added, &Variable::upper, upper);
     const Index index = model.n_variables();
     model.add_variables(added);
     if (start != nullptr)
@@ -133,41 +109,26 @@ void set_bounds(Session &session,
                 const BIYOS_real *upper)
 {
     Model &model = writable(session);
-    const auto chosen = selected(model, Family::Variable, selection);
-    set_each<bounded>(model, chosen, lower, upper);
+    const auto chosen = selected(Family::Variable, model.n_of(Family::Variable), selection);
+    std::vector<Variable> changed = picked(model, &Model::variable, chosen);
+    read_field(changed, &Variable::lower, lower);
+    read_field(changed, &Variable::upper, upper);
+    model.set_variables(chosen, changed);
 }
 
 template <typename Selection>
 void set_kinds(Session &session, Selection selection, const BIYOS_int *kinds)
 {
     Model &model = writable(session);
-    const auto chosen = selected(model, Family::Variable, selection);
-    set_each<kinded>(model, chosen, kinds);
+    const auto chosen = selected(Family::Variable, model.n_of(Family::Variable), selection);
+    std::vector<Variable> changed = picked(model, &Model::variable, chosen);
+    read_field(changed, &Variable::kind, kinds);
+    model.set_variables(chosen, changed);
 }
 
 void n_variables(const Session &session, BIYOS_index *n)
 {
     *require(n, "n") = session.model().n_variables();
-}
-
-void copy_out(const Variable &variable,
-              std::size_t k,
-              BIYOS_int *kinds,
-              BIYOS_real *lower,
-              BIYOS_real *upper)
-{
-    if (kinds != nullptr)
-    {
-        kinds[k] = static_cast<BIYOS_int>(variable.kind);
-    }
-    if (lower != nullptr)
-    {
-        lower[k] = variable.lower;
-    }
-    if (upper != nullptr)
-    {
-        upper[k] = variable.upper;
-    }
 }
 
 template <typename Selection>
@@ -177,12 +138,12 @@ void get_variables(const Session &session,
                    BIYOS_real *lower,
                    BIYOS_real *upper)
 {
-    const auto chosen = selected(session.model(), Family::Variable, selection);
+    const auto chosen =
+        selected(Family::Variable, session.model().n_of(Family::Variable), selection);
     const std::vector<Variable> variables = picked(session.model(), &Model::variable, chosen);
-    for (std::size_t k = 0; k < variables.size(); ++k)
-    {
-        copy_out(variables[k], k, kinds, lower, upper);
-    }
+    write_field(variables, &Variable::kind, kinds);
+    write_field(variables, &Variable::lower, lower);
+    write_field(variables, &Variable::upper, upper);
 }
 
 template <typename Selection>

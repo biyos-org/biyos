@@ -5,31 +5,41 @@
 #include "capi/utils/entry.hpp"
 #include "core/numbers.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
 #include <cstddef>
 #include <span>
 #include <vector>
 
 using biyos::Family;
+using biyos::Gathered;
+using biyos::gathered;
 using biyos::Index;
+using biyos::item_count;
 using biyos::Member;
 using biyos::Model;
 using biyos::Offset;
+using biyos::picked;
 using biyos::Real;
 using biyos::Session;
 using biyos::SpecialOrderedSetKind;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
+using biyos::capi::given;
 using biyos::capi::guarded;
+using biyos::capi::kinds_of;
 using biyos::capi::List;
 using biyos::capi::listed;
-using biyos::capi::put;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
+using biyos::capi::span_of;
 using biyos::capi::starts_of;
 using biyos::capi::writable;
+using biyos::capi::write_codes;
+using biyos::capi::write_counts;
+using biyos::capi::write_field;
 
 namespace
 {
@@ -42,35 +52,22 @@ struct Outputs
     BIYOS_real *weights;
 };
 
-std::vector<SpecialOrderedSetKind> kinds_of(std::span<const BIYOS_int> codes)
-{
-    std::vector<SpecialOrderedSetKind> kinds;
-    kinds.reserve(codes.size());
-    for (const BIYOS_int code : codes)
-    {
-        kinds.push_back(static_cast<SpecialOrderedSetKind>(code));
-    }
-    return kinds;
-}
-
-Member member_at(Offset k, Offset start, const BIYOS_index *variables, const BIYOS_real *weights)
+Member member_at(Offset k,
+                 Offset start,
+                 std::span<const Index> variables,
+                 std::span<const Real> weights)
 {
     const auto at = to_size(k);
-    const Real weight = weights == nullptr ? static_cast<Real>(k - start + 1) : weights[at];
+    const Real weight = weights.empty() ? static_cast<Real>(k - start + 1) : weights[at];
     return Member{.variable = variables[at], .weight = weight};
 }
 
 std::vector<Member> members_of(std::span<const Offset> starts,
-                               const BIYOS_index *variables,
-                               const BIYOS_real *weights)
+                               std::span<const Index> variables,
+                               std::span<const Real> weights)
 {
-    const auto total = to_size(starts.back());
-    if (total > 0)
-    {
-        require(variables, "var");
-    }
     std::vector<Member> members;
-    members.reserve(total);
+    members.reserve(variables.size());
     for (std::size_t j = 0; j + 1 < starts.size(); ++j)
     {
         for (Offset k = starts[j]; k < starts[j + 1]; ++k)
@@ -94,7 +91,10 @@ void add_special_ordered_sets(Session &session,
     const std::vector<Offset> begins = starts_of(codes.size(), counts);
     model.check_special_ordered_set_room(codes.size(), begins.back());
     const Index index = model.n_special_ordered_sets();
-    model.add_special_ordered_sets(kinds_of(codes), begins, members_of(begins, variables, weights));
+    const auto total = to_size(begins.back());
+    const std::vector<Member> members =
+        members_of(begins, span_of(variables, total, "var"), given(weights, total));
+    model.add_special_ordered_sets(kinds_of<SpecialOrderedSetKind>(codes), begins, members);
     if (start != nullptr)
     {
         *start = index;
@@ -106,45 +106,14 @@ void n_special_ordered_sets(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_special_ordered_sets();
 }
 
-std::size_t count_of(const Model &model, std::span<const Index> soss)
-{
-    std::size_t count = 0;
-    for (const Index index : soss)
-    {
-        count += model.members(index, index + 1).size();
-    }
-    return count;
-}
-
 template <typename Selection>
 void n_members(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(session.model(), Family::SpecialOrderedSet, selection);
-    const std::size_t count = count_of(session.model(), chosen);
+    const auto chosen = selected(Family::SpecialOrderedSet,
+                                 session.model().n_of(Family::SpecialOrderedSet),
+                                 selection);
+    const std::size_t count = item_count(session.model(), &Model::members, chosen);
     *require(nnz, "nnz") = to_offset(count);
-}
-
-std::size_t write_members(const Model &model, Index sos, std::size_t k, const Outputs &out)
-{
-    for (const Member &member : model.members(sos, sos + 1))
-    {
-        put(out.variables, k, member.variable);
-        put(out.weights, k, member.weight);
-        ++k;
-    }
-    return k;
-}
-
-void write_special_ordered_sets(const Model &model, std::span<const Index> soss, const Outputs &out)
-{
-    std::size_t k = 0;
-    for (std::size_t j = 0; j < soss.size(); ++j)
-    {
-        put(out.kinds, j, static_cast<BIYOS_int>(model.kind_of_special_ordered_set(soss[j])));
-        const std::size_t first = k;
-        k = write_members(model, soss[j], k, out);
-        put(out.counts, j, to_offset(k - first));
-    }
 }
 
 template <typename Selection>
@@ -153,9 +122,15 @@ void get_special_ordered_sets(const Session &session,
                               BIYOS_offset capacity,
                               const Outputs &out)
 {
-    const auto chosen = selected(session.model(), Family::SpecialOrderedSet, selection);
-    check_capacity(capacity, count_of(session.model(), chosen), "cap", "members");
-    write_special_ordered_sets(session.model(), chosen, out);
+    const Model &model = session.model();
+    const auto chosen =
+        selected(Family::SpecialOrderedSet, model.n_of(Family::SpecialOrderedSet), selection);
+    const Gathered<Member> sets = gathered(model, &Model::members, chosen);
+    check_capacity(capacity, sets.items.size(), "cap", "members");
+    write_codes(picked(model, &Model::kind_of_special_ordered_set, chosen), out.kinds);
+    write_counts(sets.starts, out.counts);
+    write_field(sets.items, &Member::variable, out.variables);
+    write_field(sets.items, &Member::weight, out.weights);
 }
 
 }

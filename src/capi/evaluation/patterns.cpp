@@ -7,13 +7,15 @@
 #include "core/numbers.hpp"
 #include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <span>
 
 using biyos::Evaluation;
 using biyos::Family;
+using biyos::Gathered;
+using biyos::gathered;
 using biyos::Index;
 using biyos::Lower;
 using biyos::Offset;
@@ -29,6 +31,8 @@ using biyos::capi::List;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
+using biyos::capi::write_array;
+using biyos::capi::write_counts;
 
 namespace
 {
@@ -78,33 +82,12 @@ std::size_t count_of(const Records &records, std::span<const Index> chosen)
     return count;
 }
 
-void write(const Records &records,
-           std::span<const Index> chosen,
-           BIYOS_offset *counts,
-           BIYOS_index *items)
-{
-    std::size_t k = 0;
-    for (std::size_t j = 0; j < chosen.size(); ++j)
-    {
-        const std::span<const Index> found = record(records, chosen[j]);
-        if (counts != nullptr)
-        {
-            counts[j] = to_offset(found.size());
-        }
-        if (items != nullptr)
-        {
-            std::copy(found.begin(), found.end(), items + k);
-        }
-        k += found.size();
-    }
-}
-
 template <typename Of, typename Selection>
 void n_pattern(Session &session, Selection selection, BIYOS_offset *nnz)
 {
     BIYOS_offset *out = require(nnz, "nnz");
-    const auto chosen = selected(session.model(), Of::kFamily, selection);
-    check_known(session.model(), Of::kFamily, chosen);
+    const auto chosen = selected(Of::kFamily, session.model().n_of(Of::kFamily), selection);
+    check_known(Of::kFamily, session.model().n_of(Of::kFamily), chosen);
     const Records records = Of::read(evaluation_of(session));
     *out = to_offset(count_of(records, chosen));
 }
@@ -116,11 +99,13 @@ void get_pattern(Session &session,
                  BIYOS_offset *counts,
                  BIYOS_index *items)
 {
-    const auto chosen = selected(session.model(), Of::kFamily, selection);
-    check_known(session.model(), Of::kFamily, chosen);
+    const auto chosen = selected(Of::kFamily, session.model().n_of(Of::kFamily), selection);
+    check_known(Of::kFamily, session.model().n_of(Of::kFamily), chosen);
     const Records records = Of::read(evaluation_of(session));
-    check_capacity(capacity, count_of(records, chosen), "cap", "entries");
-    write(records, chosen, counts, items);
+    const Gathered<Index> found = gathered(chosen, [&](Index i) { return record(records, i); });
+    check_capacity(capacity, found.items.size(), "cap", "entries");
+    write_counts(found.starts, counts);
+    write_array(found.items, items);
 }
 
 }

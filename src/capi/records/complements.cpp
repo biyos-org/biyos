@@ -7,6 +7,7 @@
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -16,20 +17,20 @@ using biyos::Family;
 using biyos::Index;
 using biyos::kInfinity;
 using biyos::Model;
+using biyos::picked;
 using biyos::Session;
 using biyos::capi::delete_tolerances;
-using biyos::capi::entry_or;
 using biyos::capi::get_tolerances;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::picked;
-using biyos::capi::put;
 using biyos::capi::Range;
+using biyos::capi::read_field;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::set_tolerances;
 using biyos::capi::writable;
+using biyos::capi::write_field;
 
 namespace
 {
@@ -49,15 +50,6 @@ struct Outputs
     BIYOS_real *upper = nullptr;
 };
 
-Complement given(Complement complement, std::size_t k, const Fields &fields)
-{
-    complement.function = entry_or(fields.functions, k, complement.function);
-    complement.multiplier = entry_or(fields.multipliers, k, complement.multiplier);
-    complement.lower = entry_or(fields.lower, k, complement.lower);
-    complement.upper = entry_or(fields.upper, k, complement.upper);
-    return complement;
-}
-
 void add_complements(Session &session, BIYOS_index n, const Fields &fields, BIYOS_index *start)
 {
     Model &model = writable(session);
@@ -73,12 +65,11 @@ void add_complements(Session &session, BIYOS_index n, const Fields &fields, BIYO
         .upper = kInfinity,
         .multiplier = 0,
     };
-    std::vector<Complement> added;
-    added.reserve(size);
-    for (std::size_t k = 0; k < size; ++k)
-    {
-        added.push_back(given(nonnegative, k, fields));
-    }
+    std::vector<Complement> added(size, nonnegative);
+    read_field(added, &Complement::function, fields.functions);
+    read_field(added, &Complement::multiplier, fields.multipliers);
+    read_field(added, &Complement::lower, fields.lower);
+    read_field(added, &Complement::upper, fields.upper);
     const Index index = model.n_complements();
     model.add_complements(added);
     if (start != nullptr)
@@ -91,13 +82,12 @@ template <typename Selection>
 void set_bounds(Session &session, Selection selection, const Fields &fields)
 {
     Model &model = writable(session);
-    const auto changed = selected(model, Family::Complement, selection);
-    std::vector<Complement> complements;
-    complements.reserve(changed.size());
-    for (std::size_t k = 0; k < changed.size(); ++k)
-    {
-        complements.push_back(given(model.complement(changed[k]), k, fields));
-    }
+    const auto changed = selected(Family::Complement, model.n_of(Family::Complement), selection);
+    std::vector<Complement> complements = picked(model, &Model::complement, changed);
+    read_field(complements, &Complement::function, fields.functions);
+    read_field(complements, &Complement::multiplier, fields.multipliers);
+    read_field(complements, &Complement::lower, fields.lower);
+    read_field(complements, &Complement::upper, fields.upper);
     model.set_complements(changed, complements);
 }
 
@@ -106,23 +96,16 @@ void n_complements(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_complements();
 }
 
-void copy_out(const Complement &complement, std::size_t k, const Outputs &outputs)
-{
-    put(outputs.functions, k, complement.function);
-    put(outputs.multipliers, k, complement.multiplier);
-    put(outputs.lower, k, complement.lower);
-    put(outputs.upper, k, complement.upper);
-}
-
 template <typename Selection>
 void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
-    const auto chosen = selected(session.model(), Family::Complement, selection);
+    const auto chosen =
+        selected(Family::Complement, session.model().n_of(Family::Complement), selection);
     const std::vector<Complement> complements = picked(session.model(), &Model::complement, chosen);
-    for (std::size_t k = 0; k < complements.size(); ++k)
-    {
-        copy_out(complements[k], k, outputs);
-    }
+    write_field(complements, &Complement::function, outputs.functions);
+    write_field(complements, &Complement::multiplier, outputs.multipliers);
+    write_field(complements, &Complement::lower, outputs.lower);
+    write_field(complements, &Complement::upper, outputs.upper);
 }
 
 }

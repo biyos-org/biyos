@@ -121,6 +121,7 @@ biyos_add_test(test_model
     model/functions/test_functions.cpp
     model/functions/test_piecewise.cpp
     model/functions/test_quadratic.cpp
+    model/functions/test_transpose.cpp
     model/records/test_complements.cpp
     model/records/test_cones.cpp
     model/records/test_constraints.cpp
@@ -133,6 +134,7 @@ biyos_add_test(test_model
     model/session/test_stream.cpp
     model/session/test_timer.cpp
     model/session/test_warnings.cpp
+    model/test_gather.cpp
     model/test_tolerances.cpp)
 target_include_directories(test_model PRIVATE core model)
 target_link_libraries(test_model PRIVATE biyos_internal)
