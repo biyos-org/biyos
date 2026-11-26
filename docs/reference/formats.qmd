@@ -12,7 +12,7 @@ A line that starts with `*` is a comment. A section line starts in the first col
 
 ### Sections
 
-The sections come in this order: `NAME`, `OBJSENSE`, `ROWS`, `COLUMNS`, `RHS`, `RANGES`, `BOUNDS`, `ENDATA`. `OBJSENSE`, `RANGES` and `BOUNDS` may be left out. A file without `RHS` gives a warning and sets every right-hand side to 0. `ENDATA` is the last line.
+The sections come in this order: `NAME`, `OBJSENSE`, `ROWS`, `COLUMNS`, `RHS`, `RANGES`, `BOUNDS`, `SOS`, `ENDATA`. `OBJSENSE`, `RANGES`, `BOUNDS` and `SOS` may be left out. A file without `RHS` gives a warning and sets every right-hand side to 0. `ENDATA` is the last line.
 
 | Section | Holds |
 |---|---|
@@ -23,6 +23,7 @@ The sections come in this order: `NAME`, `OBJSENSE`, `ROWS`, `COLUMNS`, `RHS`, `
 | `RHS` | A vector name, then one or two pairs of a row name and a value. |
 | `RANGES` | A vector name, then one or two pairs of a row name and a range. |
 | `BOUNDS` | A bound type, a vector name, a column name and a value. |
+| `SOS` | A set line with a type and a name, then a line for each member with a column name and a weight. |
 
 ### Rows
 
@@ -65,6 +66,10 @@ Both documents list the types. The rules on the values of `BV`, `LI`, `UI` and `
 
 An upper bound below 0 on a column with no other bound sets its lower bound to minus infinity, with a warning.
 
+### Sets
+
+A set line starts with `S1` for a special ordered set of type 1 or `S2` for type 2, followed by the name of the set. Each line after it names a column of the set and its weight. A column appears in a set once, and no two members of a set share a weight.
+
 ### Choices {#sec-mps-choices}
 
 Each rule below is biyos's rule. The document it follows is named where there is one.
@@ -86,6 +91,11 @@ Each rule below is biyos's rule. The document it follows is named where there is
 | `OBJSENSE` | `MAX` and `MIN`, on the same line as Gurobi writes it or on the next as CPLEX does. Neither document states `MIN`. |
 | Numbers | Decimal or exponential, the sign of the exponent optional. A missing exponent, which CPLEX reads as 0, is refused, as is a value outside the range of a double. The 25-character limit of CPLEX is not checked. |
 | Infinity | Neither document gives an MPS spelling of infinity, so a word such as `inf` is refused. `1e30` and larger finite values are read as written; an infinite bound is set with `MI`, `PL` or `FR`. |
+| A set line | A set line and a member line differ in free MPS by their first field alone, so a line whose first field is `S1` or `S2` starts a set. |
+| A set without a name | It is read without one, as CPLEX allows. Gurobi gives every set a name. |
+| A member without a weight | Its weight is its position in the set, counted from 1, as CPLEX states for a set with no reference row. |
+| A repeated member or weight in a set | Refused. CPLEX states that the weights of a set are distinct. |
+| `SOSORG` markers and `REFROW` | Not read. CPLEX's other form of sets is refused: `'SOSORG'` as an unknown marker, `REFROW` as an unsupported section. |
 
 ### Writing {#sec-mps-writing}
 

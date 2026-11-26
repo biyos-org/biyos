@@ -6,6 +6,7 @@
 #include "io/mps/readers/bounds.hpp"
 #include "io/mps/readers/columns.hpp"
 #include "io/mps/readers/rows.hpp"
+#include "io/mps/readers/sets.hpp"
 #include "io/mps/readers/values.hpp"
 #include "io/mps/readers/vectors.hpp"
 #include "io/mps/sections.hpp"
@@ -53,6 +54,7 @@ class MpsReader
     Vectors rhs_{"RHS"};
     Vectors ranges_{"RANGES"};
     Vectors bounds_{"BOUNDS"};
+    Sets sets_;
 };
 
 MpsReader::MpsReader(Stream stream, std::istream &input, const std::string &file)
@@ -205,6 +207,9 @@ void MpsReader::data()
         return;
     case Section::Bounds:
         read_bound(stream_, lines_, bounds_, draft_);
+        return;
+    case Section::Sets:
+        sets_.read(lines_, draft_);
         return;
     case Section::End:
         break;

@@ -137,6 +137,28 @@ RHS
 ENDATA
 )";
 
+inline constexpr std::string_view kSetsMpsFile = R"(NAME          sets
+ROWS
+ N  obj
+COLUMNS
+    x         obj          1.0
+    y         obj          1.0
+    z         obj          1.0
+RHS
+BOUNDS
+ UP bnd       x            4.0
+SOS
+ S1 pick
+    x         1.5
+    y         3.0
+ S2
+    y
+    z         $ weight 2
+    x
+ S1 empty
+ENDATA
+)";
+
 inline constexpr std::string_view kMpsFiles[] = {
     kBoundsMpsFile,
     kConstraintsMpsFile,

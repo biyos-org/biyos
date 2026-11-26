@@ -145,6 +145,7 @@ biyos_add_test(test_io
     io/mps/test_leftovers.cpp
     io/mps/test_mps.cpp
     io/mps/test_refusals.cpp
+    io/mps/test_structure.cpp
     io/mps/test_write.cpp
     io/test_lines.cpp)
 target_include_directories(test_io PRIVATE io/mps/utils)

@@ -166,6 +166,35 @@ void add_objective(Model &model, const Draft &draft, Index row)
     model.set_names(Family::Objective, std::span(&index, 1), std::span(&name, 1));
 }
 
+void add_sets(Model &model, const Draft &draft)
+{
+    std::vector<SpecialOrderedSetKind> kinds;
+    std::vector<Offset> starts{0};
+    std::vector<Member> members;
+    for (const DraftSet &set : draft.sets)
+    {
+        kinds.push_back(set.kind);
+        members.insert(members.end(), set.members.begin(), set.members.end());
+        starts.push_back(to_offset(members.size()));
+    }
+    model.add_special_ordered_sets(kinds, starts, members);
+}
+
+void name_sets(Model &model, const Draft &draft)
+{
+    std::vector<Index> indices;
+    std::vector<std::string_view> names;
+    for (std::size_t k = 0; k < draft.sets.size(); ++k)
+    {
+        if (draft.sets[k].name)
+        {
+            indices.push_back(to_index(k));
+            names.push_back(*draft.sets[k].name);
+        }
+    }
+    model.set_names(Family::SpecialOrderedSet, indices, names);
+}
+
 }
 
 bool negative_upper(const DraftColumn &column) noexcept
@@ -188,6 +217,8 @@ Model build(const Draft &draft)
     {
         add_objective(model, draft, *objective);
     }
+    add_sets(model, draft);
+    name_sets(model, draft);
     return model;
 }
 

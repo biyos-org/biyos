@@ -16,6 +16,7 @@ enum class Section
     Rhs,
     Ranges,
     Bounds,
+    Sets,
     End,
 };
 

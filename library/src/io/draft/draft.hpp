@@ -45,6 +45,13 @@ struct DraftEntry
     Real value;
 };
 
+struct DraftSet
+{
+    SpecialOrderedSetKind kind;
+    std::optional<std::string> name;
+    std::vector<Member> members;
+};
+
 struct Draft
 {
     std::optional<std::string> name;
@@ -54,6 +61,7 @@ struct Draft
     std::vector<DraftColumn> columns;
     Directory column_names;
     std::vector<DraftEntry> entries;
+    std::vector<DraftSet> sets;
 };
 
 bool negative_upper(const DraftColumn &column) noexcept;
