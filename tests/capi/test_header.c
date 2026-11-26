@@ -29,6 +29,9 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 #if !defined(BIYOS_OK) || BIYOS_OK != 0
 #error "BIYOS_OK must be zero"
 #endif
+#if !defined(BIYOS_DENSE) || BIYOS_DENSE != -1
+#error "BIYOS_DENSE must be minus one"
+#endif
 #if BIYOS_ERR_BADARG > -100 || BIYOS_ERR_BADARG < -199
 #error "BIYOS_ERR_BADARG must be a caller error"
 #endif
@@ -486,7 +489,7 @@ static BIYOS_status use_callbacks(BIYOS_model *model)
     int tag = 0;
     void *data = NULL;
     if (BIYOS_addfun(model, 1, &function) != BIYOS_OK ||
-        BIYOS_addcb(model, 1, &function, &tag, &cb) != BIYOS_OK || cb != 0 ||
+        BIYOS_addcb(model, 1, &function, BIYOS_DENSE, NULL, &tag, &cb) != BIYOS_OK || cb != 0 ||
         BIYOS_setcbf(model, cb, evaluate) != BIYOS_OK ||
         BIYOS_setcbg(model, cb, 1, &function, variables, evaluate) != BIYOS_OK ||
         BIYOS_setcbh(model, cb, 1, variables, variables, evaluate) != BIYOS_OK ||
@@ -495,7 +498,7 @@ static BIYOS_status use_callbacks(BIYOS_model *model)
         BIYOS_getncbfun(model, cb, &n) != BIYOS_OK || n != 1 ||
         BIYOS_getcbfun(model, cb, n, &covered) != BIYOS_OK || covered != function ||
         BIYOS_setcbdata(model, cb, NULL) != BIYOS_OK ||
-        BIYOS_addcb(model, 1, &function, NULL, &extra) != BIYOS_OK ||
+        BIYOS_addcb(model, 1, &function, BIYOS_DENSE, NULL, NULL, &extra) != BIYOS_OK ||
         BIYOS_delcbsp(model, 1, &extra, map) != BIYOS_OK || map[0] != 0 || map[1] != -1 ||
         BIYOS_delcbrg(model, 1, 1, NULL) != BIYOS_OK)
     {

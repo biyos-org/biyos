@@ -2,6 +2,7 @@
 
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
+#include "core/error.hpp"
 #include "core/numbers.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
@@ -52,14 +53,26 @@ struct Caller
     }
 };
 
+void check_dense(BIYOS_index n)
+{
+    if (n != BIYOS_DENSE)
+    {
+        throw biyos::Error(biyos::ErrorKind::InvalidArgument, "argument 'n'", "is not BIYOS_DENSE");
+    }
+}
+
 void add_callback(Session &session,
-                  BIYOS_index n,
+                  BIYOS_index m,
                   const BIYOS_index *functions,
+                  BIYOS_index n,
+                  const BIYOS_index *,
                   void *data,
                   BIYOS_index *cb)
 {
     Model &model = writable(session);
-    const Index index = model.add_callback(listed(n, functions, "fun"), data);
+    const std::span<const Index> covered = listed(m, functions, "fun", "m");
+    check_dense(n);
+    const Index index = model.add_callback(covered, data);
     if (cb != nullptr)
     {
         *cb = index;
@@ -147,12 +160,14 @@ void get_functions(const Session &session,
 }
 
 BIYOS_status BIYOS_addcb(BIYOS_model *mdl,
-                         BIYOS_index n,
+                         BIYOS_index m,
                          const BIYOS_index *fun,
+                         BIYOS_index n,
+                         const BIYOS_index *var,
                          void *data,
                          BIYOS_index *cb)
 {
-    return guarded<add_callback>(mdl, n, fun, data, cb);
+    return guarded<add_callback>(mdl, m, fun, n, var, data, cb);
 }
 
 BIYOS_status BIYOS_setcbf(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbf f)

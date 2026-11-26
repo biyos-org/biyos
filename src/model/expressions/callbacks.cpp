@@ -25,7 +25,7 @@ void check_count(std::span<const Index> functions)
 {
     if (functions.empty())
     {
-        throw Error(ErrorKind::InvalidArgument, "argument 'n'", "0 is not positive");
+        throw Error(ErrorKind::InvalidArgument, "argument 'm'", "0 is not positive");
     }
 }
 

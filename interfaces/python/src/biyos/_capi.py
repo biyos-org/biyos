@@ -26,6 +26,8 @@ leaves that side open."""
 
 OK = 0
 
+DENSE = -1
+
 OPTKND_BOOL = 1
 OPTKND_INT = 2
 OPTKND_DBL = 3
@@ -339,7 +341,7 @@ def _declare_settings(lib: ctypes.CDLL) -> None:
 
 
 def _declare_callbacks(lib: ctypes.CDLL) -> None:
-    added = (c_void_p, c_index, _INDICES, c_void_p, _INDICES)
+    added = (c_void_p, c_index, _INDICES, c_index, _INDICES, c_void_p, _INDICES)
     _declare(lib, "BIYOS_addcb", *added)
     _declare(lib, "BIYOS_setcbf", c_void_p, c_index, CALLBACK)
     pairs = (c_void_p, c_index, c_offset, _INDICES, _INDICES, CALLBACK)

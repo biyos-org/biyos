@@ -259,7 +259,7 @@ def test_refused(model):
     bad = "invalid argument: "
     repeated = "argument 'fun': function 1 is repeated"
     cases = [
-        (model.addcb, ([],), "argument 'n': 0 is not positive"),
+        (model.addcb, ([],), "argument 'm': 0 is not positive"),
         (model.addcb, ([1, 2, 1],), repeated),
         (model.addcb, ([3],), "function 3: unknown"),
         (model.setcbf, (1, answer), "callback 1: unknown"),

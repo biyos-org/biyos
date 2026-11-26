@@ -41,6 +41,7 @@ typedef struct BIYOS_error
 } BIYOS_error;
 
 #define BIYOS_INF INFINITY
+#define BIYOS_DENSE (-1)
 
 #define BIYOS_OK 0
 #define BIYOS_ERR_BADARG (-100)
@@ -1182,8 +1183,10 @@ typedef int (*BIYOS_cbh)(const BIYOS_cbreq *req, BIYOS_real *h, void *data);
 typedef int (*BIYOS_cbhv)(const BIYOS_cbreq *req, BIYOS_real *hv, void *data);
 
 BIYOS_API BIYOS_status BIYOS_addcb(BIYOS_model *mdl,
-                                   BIYOS_index n,
+                                   BIYOS_index m,
                                    const BIYOS_index *fun,
+                                   BIYOS_index n,
+                                   const BIYOS_index *var,
                                    void *data,
                                    BIYOS_index *cb);
 BIYOS_API BIYOS_status BIYOS_setcbf(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbf f);

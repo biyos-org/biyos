@@ -2001,7 +2001,15 @@ class Model:
         cell = py_object(data)
         cb = c_index()
         self._callbacks.keep(cell)
-        self._call(lib.BIYOS_addcb, n, indices, addressof(cell), byref(cb))
+        self._call(
+            lib.BIYOS_addcb,
+            n,
+            indices,
+            _capi.DENSE,
+            None,
+            addressof(cell),
+            byref(cb),
+        )
         self._callbacks.added(n)
         return cb.value
 

@@ -29,6 +29,11 @@ table Infinity
 value BIYOS_INF Positive infinity, `INFINITY` of `<math.h>`, which `biyos/biyos.h` includes. `-BIYOS_INF` is minus infinity.
 since 0.1.0
 
+table Dense
+value BIYOS_DENSE A count of -1 that stands for every variable of the model.
+see BIYOS_addcb
+since 0.1.0
+
 type BIYOS_mask
 summary A set of parts of a flags option, one bit per part.
 note A 64-bit unsigned integer, `uint64_t` of `<stdint.h>`. Each part is a macro written as a shift, such as `((BIYOS_mask)1 << 0)`, so an option holds at most 64 parts.
@@ -2597,12 +2602,14 @@ since 0.1.0
 function BIYOS_addcb
 summary Add a callback that covers functions of the model.
 param mdl in The model.
-param n in The number of functions the callback covers.
+param m in The number of functions the callback covers.
 param fun in The functions, each listed once; their order is the order of the callback's values.
+param n in `BIYOS_DENSE`: the callback reads every variable of the model.
+param var in Null.
 param data in A pointer passed to each of the callback's functions; the model keeps it and never frees it.
 param cb out Receives the index of the new callback; skipped when null.
 return `BIYOS_OK` once the callback is added.
-error BIYOS_ERR_BADARG `n` is not positive, `fun` is null, or a function is not one of the model or is listed twice.
+error BIYOS_ERR_BADARG `m` is not positive, `fun` is null, a function is not one of the model or is listed twice, or `n` is not `BIYOS_DENSE`.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 callbacks.
 note The callback has no function yet and an empty pattern for each derivative. The calls below give them.
 see BIYOS_setcbf BIYOS_setcbg BIYOS_setcbh BIYOS_setcbhv BIYOS_setcbdata

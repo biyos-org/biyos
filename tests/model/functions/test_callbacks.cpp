@@ -166,7 +166,7 @@ TEST(CallbackTest, AddRefused)
 {
     Model model = with_functions(3);
     add(model, {1});
-    EXPECT_EQ(add_refusal(model, {}), kBad + "argument 'n': 0 is not positive");
+    EXPECT_EQ(add_refusal(model, {}), kBad + "argument 'm': 0 is not positive");
     EXPECT_EQ(add_refusal(model, {0, 3}), kBad + "function 3: unknown");
     EXPECT_EQ(add_refusal(model, {-1}), kBad + "function -1: unknown");
     EXPECT_EQ(add_refusal(model, {2, 0, 2}), kBad + "argument 'fun': function 2 is repeated");

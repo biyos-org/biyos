@@ -495,7 +495,8 @@ TEST(CApiTest, UsedVariable)
     ASSERT_EQ(BIYOS_addvarnode(model.get(), 1, nullptr), BIYOS_OK);
     EXPECT_EQ(in_use(env, model, BIYOS_delvarsp, {1}), "in use: variable 1: used by node 0");
     const BIYOS_index function = 0;
-    ASSERT_EQ(BIYOS_addcb(model.get(), 1, &function, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcb(model.get(), 1, &function, BIYOS_DENSE, nullptr, nullptr, nullptr),
+              BIYOS_OK);
     EXPECT_EQ(in_use(env, model, BIYOS_delvarsp, {0}), "in use: variable 0: used by callback 0");
 }
 

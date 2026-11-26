@@ -32,9 +32,12 @@ template <typename T> std::span<T> span_of(T *items, std::size_t size, std::stri
 }
 
 template <typename T>
-std::span<const T> listed(BIYOS_index n, const T *items, std::string_view name = "idx")
+std::span<const T> listed(BIYOS_index n,
+                          const T *items,
+                          std::string_view name = "idx",
+                          std::string_view count = "n")
 {
-    return span_of(items, length(n), name);
+    return span_of(items, length(n, count), name);
 }
 
 std::vector<Offset> starts_of(std::size_t n,
