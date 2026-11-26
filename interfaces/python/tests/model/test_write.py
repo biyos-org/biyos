@@ -67,7 +67,16 @@ def test_unwritable(env, tmp_path):
     assert str(caught.value) == f"file access: file '{path}': cannot be opened"
 
 
-def test_read_only(env, tmp_path):
+def test_fixed_read_only(env, tmp_path):
+    path = str(tmp_path / "lp.mps")
+    with biyos.Model(env) as model, pytest.raises(biyos.Error) as caught:
+        model.write(path, FileFormat.FIXED_MPS)
+    assert caught.value.code == UNSUPPORTED
+    reason = "fixed MPS files are read, never written"
+    assert str(caught.value) == f"unsupported: file '{path}': {reason}"
+
+
+def test_nl_read_only(env, tmp_path):
     path = str(tmp_path / "lp.nl")
     with biyos.Model(env) as model, pytest.raises(biyos.Error) as caught:
         model.write(path, FileFormat.NL)

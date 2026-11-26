@@ -31,9 +31,14 @@ std::filesystem::path path_of(std::string_view path)
     return std::filesystem::path(std::u8string(path.begin(), path.end()));
 }
 
+std::string object_of(const std::string &file)
+{
+    return "file '" + file + "'";
+}
+
 [[noreturn]] void refuse(const std::string &file, std::string_view reason)
 {
-    throw Error(ErrorKind::FileAccess, "file '" + file + "'", std::string(reason));
+    throw Error(ErrorKind::FileAccess, object_of(file), std::string(reason));
 }
 
 void print_file(const Draft &draft, const std::string &file, std::string_view path)
@@ -90,6 +95,8 @@ Model read_file(Env &env, std::string_view path, FileFormat format)
     {
     case FileFormat::Mps:
         return read_mps(env.stream(), input, file, MpsForm::Free);
+    case FileFormat::FixedMps:
+        return read_mps(env.stream(), input, file, MpsForm::Fixed);
     case FileFormat::Nl:
         break;
     }
@@ -108,10 +115,12 @@ void write_file(Stream stream,
     {
     case FileFormat::Mps:
         break;
-    case FileFormat::Nl:
+    case FileFormat::FixedMps:
         throw Error(ErrorKind::Unsupported,
-                    "file '" + file + "'",
-                    "NL files are read, never written");
+                    object_of(file),
+                    "fixed MPS files are read, never written");
+    case FileFormat::Nl:
+        throw Error(ErrorKind::Unsupported, object_of(file), "NL files are read, never written");
     }
     const Draft draft = draft_of(model);
     print_file(draft, file, path);

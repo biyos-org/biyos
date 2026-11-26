@@ -8,6 +8,14 @@ from samples import LP_MPS, LP_NL, ROWS_MPS, written
 
 FILEIO = -401
 BADARG = -100
+FIXED_MPS = """NAME          fixed
+ROWS
+ N  tot cost
+ L  cap one
+COLUMNS
+    x 1       tot cost  1.0            cap one   2.0
+ENDATA
+"""
 
 
 @pytest.fixture
@@ -47,6 +55,14 @@ def test_str_path(env, tmp_path):
     with biyos.Model.read(env, path, FileFormat.MPS) as model:
         assert model.getname() is None
         assert model.getncon() == 3
+
+
+def test_fixed(env, tmp_path):
+    path = written(tmp_path / "fixed.mps", FIXED_MPS)
+    with biyos.Model.read(env, path, FileFormat.FIXED_MPS) as model:
+        assert model.getvarname(range(1)) == ["x 1"]
+        assert model.getconname(range(1)) == ["cap one"]
+        assert model.getobjname(range(1)) == ["tot cost"]
 
 
 def test_missing(env, tmp_path):

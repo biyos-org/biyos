@@ -57,6 +57,11 @@ OPERATORS = {
     "BIYOS_OP_REF": biyos.Operator.REFERENCE,
 }
 
+FORMATS = {
+    "BIYOS_FILEFMT_MPS": biyos.FileFormat.MPS,
+    "BIYOS_FILEFMT_FIXEDMPS": biyos.FileFormat.FIXED_MPS,
+}
+
 SENSES = {
     "BIYOS_OBJSENSE_MIN": biyos.ObjectiveSense.MINIMIZE,
     "BIYOS_OBJSENSE_MAX": biyos.ObjectiveSense.MAXIMIZE,
@@ -119,8 +124,8 @@ def test_senses():
 
 
 def test_formats():
-    names = {f"BIYOS_FILEFMT_{fmt.name}": fmt for fmt in biyos.FileFormat}
-    assert group("BIYOS_FILEFMT_") == names
+    assert set(FORMATS.values()) == set(biyos.FileFormat)
+    assert group("BIYOS_FILEFMT_") == FORMATS
 
 
 def test_sos_kinds():
