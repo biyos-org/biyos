@@ -29,6 +29,18 @@ bool held(const Model &model, Family family)
     return false;
 }
 
+bool named(const Model &model, Family family)
+{
+    for (Index k = 0; k < model.n_of(family); ++k)
+    {
+        if (model.name_of(family, k) != nullptr)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool loose(const Objective &objective) noexcept
 {
     return !identical(objective.absolute, 0.0) || !identical(objective.relative, 0.0);
@@ -54,6 +66,7 @@ void warn_leftovers(Stream stream,
     leave_out(stream, file, records, "the record tolerances");
     leave_out(stream, file, lone && loose(model.objective(0)), "the objective tolerances");
     leave_out(stream, file, lone && model.objective(0).priority != 0, "the objective priority");
+    leave_out(stream, file, named(model, Family::Indicator), "the indicator names");
     leave_out(stream, file, !settings.empty(), "the model options");
 }
 

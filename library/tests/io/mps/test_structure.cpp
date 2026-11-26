@@ -191,6 +191,23 @@ TEST(MpsTest, Indicators)
     EXPECT_EQ(difference(read_sample(kIndicatorsMpsFile), wanted), "");
 }
 
+TEST(MpsTest, PrintedIndicators)
+{
+    const std::string text = printed(read_sample(kIndicatorsMpsFile));
+    EXPECT_NE(text.find("ROWS\n"
+                        " N  obj\n"
+                        " E  fix\n"
+                        " L  I0\n"
+                        " G  I1\n"),
+              std::string::npos)
+        << text;
+    EXPECT_TRUE(text.ends_with("INDICATORS\n"
+                               " IF I0  z  1\n"
+                               " IF I1  b  0\n"
+                               "ENDATA\n"))
+        << text;
+}
+
 TEST(MpsTest, SharedRow)
 {
     const Model model = read_sample(with_indicators({" IF c b 1", " IF c b 0"}));
@@ -200,6 +217,15 @@ TEST(MpsTest, SharedRow)
     EXPECT_EQ(model.indicator(1).value, 0);
     EXPECT_EQ(model.n_constraints(), 1);
     EXPECT_EQ(model.constraint(0).function, 2);
+    const std::string text = printed(model);
+    EXPECT_TRUE(text.ends_with("INDICATORS\n"
+                               " IF I0  b  1\n"
+                               " IF I0  b  0\n"
+                               "ENDATA\n"))
+        << text;
+    const Model back = read_sample(text);
+    EXPECT_EQ(back.n_functions(), 3);
+    EXPECT_EQ(back.indicator(1).function, back.indicator(0).function);
 }
 
 TEST(MpsTest, IndicatorFaults)

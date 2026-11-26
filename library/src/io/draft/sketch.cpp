@@ -152,7 +152,8 @@ Draft draft_of(const Model &model)
     check_support(model);
     Draft draft;
     name_model(draft, model);
-    const std::vector<Index> functions = add_rows(draft, model);
+    std::vector<Index> functions = add_rows(draft, model);
+    add_indicators(draft, model, functions);
     add_columns(draft, model);
     add_entries(draft, model, functions);
     add_sets(draft, model);

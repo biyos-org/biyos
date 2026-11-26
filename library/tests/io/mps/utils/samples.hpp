@@ -187,6 +187,7 @@ ENDATA
 inline constexpr std::string_view kMpsFiles[] = {
     kBoundsMpsFile,
     kConstraintsMpsFile,
+    kIndicatorsMpsFile,
     kLpMpsFile,
     kMarkersMpsFile,
     kMaximizeMpsFile,

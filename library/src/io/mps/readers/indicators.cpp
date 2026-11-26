@@ -68,7 +68,7 @@ int switch_value(const Lines &lines, std::string_view field)
 void read_indicator(const Lines &lines, Draft &draft)
 {
     const Fields fields = uncommented(lines.fields(), 2);
-    if (fields.size() != 4 || fields[0] != "IF")
+    if (fields.size() != 4 || fields[0] != kIndicatorCode)
     {
         bad_file(lines, "an indicator line holds IF, a row, a column and a value");
     }

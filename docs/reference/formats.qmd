@@ -111,7 +111,7 @@ Each rule below is biyos's rule. The document it follows is named where there is
 
 | Part | Written as |
 |---|---|
-| Sections | `NAME`, then `OBJSENSE MAX` on one line when the objective maximizes, `ROWS`, `COLUMNS`, `RHS`, `ENDATA`. `RANGES` only when a row has a range, `BOUNDS` only when a column needs a bound line, `SOS` only when the model has a set. |
+| Sections | `NAME`, then `OBJSENSE MAX` on one line when the objective maximizes, `ROWS`, `COLUMNS`, `RHS`, `ENDATA`. `RANGES` only when a row has a range, `BOUNDS` only when a column needs a bound line, `SOS` only when the model has a set, `INDICATORS` only when it has an indicator. |
 | Name | The model's name after `NAME`, or `NAME` alone when it has none. |
 | Numbers | The shortest decimal or exponential form that reads back to the same double. An infinite bound is a bound type, never a number. |
 | Objective | The first `N` row, with the negative of its constant as right-hand side. |
@@ -121,15 +121,17 @@ Each rule below is biyos's rule. The document it follows is named where there is
 | Bounds | `BV` for a binary variable, `SC` or `SI` for the upper bound of a semi-continuous or semi-integer one, `FX` for equal bounds, else `LO` or `MI` and `UP` or `PL`. |
 | Names | Each record keeps its name. An unnamed objective is `OBJ`, an unnamed constraint `R` and an unnamed variable `C`, each followed by its index. While a user name holds the label, `_1`, `_2` and so on is added. |
 | Sets | A set line with the type and the name, or the type alone for an unnamed set, then one line for each member with its weight, in order. |
+| Indicators | One row for each function and bounds, after the constraints, its sense from the bounds as for a constraint, named `I` and the index of its first indicator with the suffix rule of names, then a line in `INDICATORS` for each indicator. Indicators on one function with the same bounds share its row, as several lines naming one row read back. The name of an indicator is left out. |
 | Functions | A function several records use is written once for each, and reads back as that many functions. A function no record uses is left out. |
 
 The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the way:
 
 - a second objective, or a weight other than 1 on the only one;
-- quadratic terms, an expression, a callback, a cone, a complement or an indicator;
+- quadratic terms, an expression, a callback, a cone or a complement;
+- an indicator whose bounds are two distinct finite values or both infinite, which no indicator row holds, or one on a function a constraint uses;
 - a name two variables share, or two rows among the objective and the constraints;
 - a name that holds white space or starts with `$`, a row named `'MARKER'`, a set member named `S1` or `S2`, a model name that starts or ends with white space or holds a line break;
 - a binary variable with bounds other than 0 and 1, a semi-continuous or semi-integer variable with no upper bound;
 - constraint bounds no row reads back exactly, or that overflow once the constant moves into them.
 
-A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of the objective, and the model's options. Hooks are not part of the problem and are left out with no event.
+A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of the objective, the names of indicators, and the model's options. Hooks are not part of the problem and are left out with no event.
