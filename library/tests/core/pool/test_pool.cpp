@@ -1,3 +1,4 @@
+#include "core/env.hpp"
 #include "core/pool/pool.hpp"
 
 #include <gtest/gtest.h>
@@ -6,6 +7,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <optional>
 #include <span>
 #include <thread>
 #include <vector>
@@ -13,6 +15,7 @@
 namespace
 {
 
+using biyos::Env;
 using biyos::Pool;
 
 constexpr std::size_t kChunks = 100;
@@ -142,4 +145,13 @@ TEST(PoolTest, NestedRunsSerially)
     {
         EXPECT_EQ(runs, 1);
     }
+}
+
+TEST(PoolTest, StoppedWithEnvironment)
+{
+    std::optional<Env> env(std::in_place);
+    Tally tally;
+    env->pool().run(4, kChunks, tally);
+    EXPECT_EQ(env->pool().workers(), 3);
+    env.reset();
 }
