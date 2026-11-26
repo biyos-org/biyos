@@ -6,8 +6,8 @@
 #include "core/numbers.hpp"
 #include "model/attributes/records.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
-#include <cstddef>
 #include <span>
 #include <vector>
 
@@ -36,24 +36,12 @@ void get_tolerances(const Session &session,
                     BIYOS_real *absolute,
                     BIYOS_real *relative)
 {
-    const auto chosen = selected(session.model(), family, selection);
-    std::vector<Tolerance> tolerances;
-    tolerances.reserve(chosen.size());
-    for (const Index index : chosen)
-    {
-        tolerances.push_back(session.model().tolerance_of(family, index));
-    }
-    for (std::size_t k = 0; k < tolerances.size(); ++k)
-    {
-        if (absolute != nullptr)
-        {
-            absolute[k] = tolerances[k].absolute;
-        }
-        if (relative != nullptr)
-        {
-            relative[k] = tolerances[k].relative;
-        }
-    }
+    const Model &model = session.model();
+    const auto chosen = selected(model, family, selection);
+    const std::vector<Tolerance> tolerances =
+        picked(chosen, [&](Index index) { return model.tolerance_of(family, index); });
+    write_field(tolerances, &Tolerance::absolute, absolute);
+    write_field(tolerances, &Tolerance::relative, relative);
 }
 
 template <typename Selection>
