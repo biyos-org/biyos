@@ -878,7 +878,7 @@ TEST(DeleteTest, VariableLists)
     add_listed(wanted,
                {.variables = {3, 1}, .columns = {3, 1}, .firsts = {1, 3}, .seconds = {3, 3}});
     wanted.add_callback(std::array<Index, 1>{0}, std::array<Index, 1>{3}, nullptr);
-    EXPECT_EQ(biyos::difference(model, wanted), "");
+    EXPECT_EQ(difference(model, wanted), "");
 }
 
 TEST(DeleteTest, VariableListed)
