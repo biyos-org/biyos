@@ -26,7 +26,9 @@ void check_apart(const Graph &source, const Graph &target)
     }
 }
 
-std::size_t widest(const Graph &graph) noexcept
+}
+
+std::size_t most_children(const Graph &graph) noexcept
 {
     std::size_t width = 0;
     for (Offset node = 0; node < graph.size(); ++node)
@@ -36,9 +38,9 @@ std::size_t widest(const Graph &graph) noexcept
     return width;
 }
 
-std::span<const Offset> images(std::span<const Offset> nodes,
-                               std::span<const Offset> map,
-                               std::vector<Offset> &workspace)
+std::span<const Offset> map_children(std::span<const Offset> nodes,
+                                     std::span<const Offset> map,
+                                     std::vector<Offset> &workspace)
 {
     workspace.clear();
     for (const Offset node : nodes)
@@ -46,8 +48,6 @@ std::span<const Offset> images(std::span<const Offset> nodes,
         workspace.push_back(map[to_size(node)]);
     }
     return workspace;
-}
-
 }
 
 std::vector<bool> live(const Graph &graph, std::span<const Offset> roots)
@@ -101,12 +101,12 @@ Compaction compact(const Graph &graph, std::span<const Offset> roots)
         .map = std::vector<Offset>(to_size(graph.size()), kDead),
     };
     std::vector<Offset> children;
-    children.reserve(widest(graph));
+    children.reserve(most_children(graph));
     for (Offset node = 0; node < graph.size(); ++node)
     {
         if (marks[to_size(node)])
         {
-            const auto mapped = images(graph.children(node), result.map, children);
+            const auto mapped = map_children(graph.children(node), result.map, children);
             result.map[to_size(node)] = copy(graph, node, mapped, result.graph);
         }
     }

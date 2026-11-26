@@ -9,6 +9,7 @@
 #include "expr/graph/compact.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/graph/sharing.hpp"
 #include "expr/hessian/hessian.hpp"
 #include "expr/intervals/enclosure.hpp"
 #include "expr/intervals/interval.hpp"
@@ -44,6 +45,7 @@ using biyos::Operator;
 using biyos::Pool;
 using biyos::Real;
 using biyos::Shapes;
+using biyos::share;
 using biyos::Tape;
 using biyos::Team;
 using biyos::to_size;
@@ -170,15 +172,39 @@ void expect_kept(void (*prepare)(Builder &), void (*call)(Builder &))
     ADD_FAILURE() << "the call never completed";
 }
 
-std::size_t compaction_cost(std::size_t width)
+Graph wide_sum(std::size_t width)
 {
     Graph graph;
     const Offset x = graph.add_variable(0);
     const std::vector<Offset> terms(width, x);
     const std::vector<Real> weights(width, 1.0);
-    const Offset root = graph.add_sum(0.0, terms, weights);
+    graph.add_sum(0.0, terms, weights);
+    return graph;
+}
+
+Graph chain(Offset length)
+{
+    Graph graph;
+    Offset node = graph.add_variable(0);
+    for (Offset k = 0; k < length; ++k)
+    {
+        node = graph.add(Operator::Exp, std::span(&node, 1));
+    }
+    return graph;
+}
+
+std::size_t compaction_cost(const Graph &graph)
+{
+    const Offset root = graph.size() - 1;
     const std::size_t start = allocations();
     compact(graph, std::span(&root, 1));
+    return allocations() - start;
+}
+
+std::size_t sharing_cost(const Graph &graph)
+{
+    const std::size_t start = allocations();
+    share(graph);
     return allocations() - start;
 }
 
@@ -391,7 +417,21 @@ TEST(AllocationTest, MergedProduct)
 
 TEST(AllocationTest, CompactWorkspace)
 {
-    EXPECT_EQ(compaction_cost(2), compaction_cost(64));
+    EXPECT_EQ(compaction_cost(wide_sum(2)), compaction_cost(wide_sum(64)));
+}
+
+TEST(AllocationTest, SharingWorkspace)
+{
+    EXPECT_EQ(sharing_cost(wide_sum(2)), sharing_cost(wide_sum(64)));
+}
+
+TEST(AllocationTest, SharingTable)
+{
+    for (const Offset length : {16, 4096})
+    {
+        const Graph graph = chain(length);
+        EXPECT_EQ(sharing_cost(graph), compaction_cost(graph));
+    }
 }
 
 TEST(AllocationTest, ForwardSweep)

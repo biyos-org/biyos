@@ -2,12 +2,12 @@
 #include "expr/graph/compact.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "graphs.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>
 
 #include <array>
-#include <bit>
 #include <cstddef>
 #include <span>
 #include <vector>
@@ -15,7 +15,6 @@
 namespace
 {
 
-using biyos::Bits;
 using biyos::compact;
 using biyos::Compaction;
 using biyos::copy;
@@ -27,12 +26,12 @@ using biyos::Operator;
 using biyos::Points;
 using biyos::Real;
 using biyos::to_size;
+using biyos::test::binary;
+using biyos::test::bits;
+using biyos::test::ids;
+using biyos::test::ordered;
 using biyos::test::refusal;
-
-std::vector<Offset> ids(std::span<const Offset> nodes)
-{
-    return {nodes.begin(), nodes.end()};
-}
+using biyos::test::unary;
 
 std::vector<Offset> mapped(std::span<const Offset> nodes, const std::vector<Offset> &map)
 {
@@ -57,21 +56,6 @@ std::vector<Offset> kept(const std::vector<Offset> &map)
     return images;
 }
 
-Bits bits(Real value)
-{
-    return std::bit_cast<Bits>(value);
-}
-
-std::vector<Bits> bits(std::span<const Real> values)
-{
-    std::vector<Bits> words;
-    for (const Real value : values)
-    {
-        words.push_back(bits(value));
-    }
-    return words;
-}
-
 void expect_copy(const Compaction &result, const Graph &graph, Offset node)
 {
     const Graph &found = result.graph;
@@ -91,28 +75,6 @@ void expect_copy(const Compaction &result, const Graph &graph, Offset node)
         return;
     }
     EXPECT_EQ(bits(found.constant(image)), bits(graph.constant(node)));
-}
-
-void expect_order(const Graph &graph)
-{
-    for (Offset node = 0; node < graph.size(); ++node)
-    {
-        for (const Offset child : graph.children(node))
-        {
-            EXPECT_LT(child, node);
-        }
-    }
-}
-
-Offset unary(Graph &graph, Operator op, Offset child)
-{
-    return graph.add(op, std::span(&child, 1));
-}
-
-Offset binary(Graph &graph, Operator op, Offset left, Offset right)
-{
-    const std::array children{left, right};
-    return graph.add(op, children);
 }
 
 }
@@ -183,7 +145,7 @@ TEST(CompactTest, Order)
     const std::array roots{ratio, exponential};
     const Compaction result = compact(graph, roots);
     EXPECT_EQ(kept(result.map), (std::vector<Offset>{0, 1, 2, 3}));
-    expect_order(result.graph);
+    EXPECT_TRUE(ordered(result.graph));
 }
 
 TEST(CompactTest, SharedNode)

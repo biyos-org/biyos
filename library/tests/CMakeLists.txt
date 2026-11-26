@@ -89,6 +89,7 @@ biyos_add_test(test_expr
     expr/graph/test_graph.cpp
     expr/graph/test_parents.cpp
     expr/graph/test_points.cpp
+    expr/graph/test_sharing.cpp
     expr/graph/test_tape.cpp
     expr/graph/test_uses.cpp
     expr/hessian/test_elements.cpp
