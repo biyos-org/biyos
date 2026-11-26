@@ -35,7 +35,16 @@ void check_sweep(const Tape &tape,
 void evaluate(const Instruction &instruction, const Frame &frame) noexcept;
 void keep(const Instruction &instruction, const Frame &frame) noexcept;
 void forward(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept;
+void forward(const Block &block,
+             std::span<const Real> point,
+             std::span<const Real> shared,
+             Workspace &workspace) noexcept;
 void linearize(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept;
+void linearize(const Block &block,
+               std::span<const Real> point,
+               std::span<const Real> shared,
+               std::span<Real> partials,
+               Workspace &workspace) noexcept;
 void store(const Block &block, const Workspace &workspace, std::span<Real> outputs) noexcept;
 void forward(const Tape &tape,
              std::span<const Real> point,
