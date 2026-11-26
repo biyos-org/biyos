@@ -157,7 +157,7 @@ TEST(MpsTest, Repeated)
     EXPECT_EQ(refusal(columns), "unsupported: variable 2: name 'z' is repeated");
     Model rows = built(writable());
     rename(rows, Family::Constraint, 2, "cost");
-    EXPECT_EQ(refusal(rows), "unsupported: constraint 2: name 'cost' is repeated");
+    EXPECT_EQ(refusal(rows), "unsupported: objective 0: name 'cost' is repeated");
 }
 
 TEST(MpsTest, BadNames)

@@ -79,11 +79,31 @@ Index add_constraint(Draft &draft, const Model &model, Index k, const Taken &tak
     return constraint.function;
 }
 
+Index objective_place(const Model &model)
+{
+    if (model.n_objectives() == 0)
+    {
+        return 0;
+    }
+    const Index function = model.objective(0).function;
+    Index place = 0;
+    while (place < model.n_constraints() && model.constraint(place).function < function)
+    {
+        ++place;
+    }
+    return std::ranges::any_of(model.constraints(0, place), is_free) ? 0 : place;
+}
+
 std::vector<Index> add_rows(Draft &draft, const Model &model)
 {
     const Taken taken = user_names(model, {Family::Objective, Family::Constraint});
     std::vector<Index> functions;
     functions.reserve(to_size(model.n_constraints()) + 1);
+    const Index place = objective_place(model);
+    for (Index k = 0; k < place; ++k)
+    {
+        functions.push_back(add_constraint(draft, model, k, taken));
+    }
     if (model.n_objectives() > 0)
     {
         functions.push_back(add_objective(draft, model, taken));
@@ -94,7 +114,7 @@ std::vector<Index> add_rows(Draft &draft, const Model &model)
         draft.row_names.add(fresh("OBJ", taken));
         functions.push_back(kNoFunction);
     }
-    for (Index k = 0; k < model.n_constraints(); ++k)
+    for (Index k = place; k < model.n_constraints(); ++k)
     {
         functions.push_back(add_constraint(draft, model, k, taken));
     }
