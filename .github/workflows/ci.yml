@@ -15,6 +15,7 @@ concurrency:
 
 env:
   CMAKE_BUILD_PARALLEL_LEVEL: 4
+  PREFIX: ${{ github.workspace }}/build/install
 
 jobs:
   changes:
@@ -73,6 +74,14 @@ jobs:
         run: cmake --build build --config Release
       - if: env.RUN == 'true'
         run: ctest --test-dir build -C Release --output-on-failure
+      - if: env.RUN == 'true'
+        run: cmake --install build --config Release --prefix "${{ env.PREFIX }}"
+      - if: env.RUN == 'true'
+        run: cmake -S examples -B build/examples -DCMAKE_BUILD_TYPE=Release -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_PREFIX_PATH=${{ env.PREFIX }}"
+      - if: env.RUN == 'true'
+        run: cmake --build build/examples --config Release
+      - if: env.RUN == 'true'
+        run: ctest --test-dir build/examples -C Release --output-on-failure
 
   format:
     needs: changes
@@ -107,6 +116,10 @@ jobs:
       - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_C_FLAGS=$FLAGS" "-DCMAKE_CXX_FLAGS=$FLAGS"
       - run: cmake --build build
       - run: ctest --test-dir build --output-on-failure
+      - run: cmake --install build --prefix "${{ env.PREFIX }}"
+      - run: cmake -S examples -B build/examples -DCMAKE_BUILD_TYPE=Debug -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_C_FLAGS=$FLAGS" "-DCMAKE_PREFIX_PATH=${{ env.PREFIX }}"
+      - run: cmake --build build/examples
+      - run: ctest --test-dir build/examples --output-on-failure
 
   threads:
     needs: changes
@@ -125,6 +138,10 @@ jobs:
       - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_C_FLAGS=$FLAGS" "-DCMAKE_CXX_FLAGS=$FLAGS"
       - run: cmake --build build
       - run: ctest --test-dir build --output-on-failure
+      - run: cmake --install build --prefix "${{ env.PREFIX }}"
+      - run: cmake -S examples -B build/examples -DCMAKE_BUILD_TYPE=Debug -DBIYOS_WARNINGS_AS_ERRORS=ON "-DCMAKE_C_FLAGS=$FLAGS" "-DCMAKE_PREFIX_PATH=${{ env.PREFIX }}"
+      - run: cmake --build build/examples
+      - run: ctest --test-dir build/examples --output-on-failure
 
   tidy:
     needs: changes
