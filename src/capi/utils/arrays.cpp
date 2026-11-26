@@ -23,7 +23,7 @@ namespace
 {
     const std::string argument = "argument '" + std::string(name) + "'";
     const std::string message = reason + " at entry " + std::to_string(entry);
-    throw biyos::Error(biyos::ErrorKind::InvalidArgument, argument, message);
+    throw Error(ErrorKind::InvalidArgument, argument, message);
 }
 
 }
@@ -34,7 +34,7 @@ std::size_t length(BIYOS_offset n, std::string_view name)
     {
         const std::string reason = std::to_string(n) + " is negative";
         const std::string argument = "argument '" + std::string(name) + "'";
-        throw biyos::Error(biyos::ErrorKind::InvalidArgument, argument, reason);
+        throw Error(ErrorKind::InvalidArgument, argument, reason);
     }
     return to_size(n);
 }
@@ -49,7 +49,7 @@ void check_capacity(BIYOS_offset capacity,
         const std::string held = "holds " + std::to_string(capacity) + " of the ";
         const std::string reason = held + std::to_string(needed) + " " + std::string(items);
         const std::string argument = "argument '" + std::string(name) + "'";
-        throw biyos::Error(biyos::ErrorKind::InvalidArgument, argument, reason);
+        throw Error(ErrorKind::InvalidArgument, argument, reason);
     }
 }
 

@@ -13,10 +13,15 @@
 #include <cstddef>
 #include <span>
 
+using biyos::check_index;
+using biyos::Evaluation;
 using biyos::Family;
 using biyos::Index;
+using biyos::Lower;
 using biyos::Model;
+using biyos::noun_of;
 using biyos::Offset;
+using biyos::Pattern;
 using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
@@ -41,9 +46,9 @@ struct Jacobian
 {
     static constexpr Family kFamily = Family::Function;
 
-    static Records read(const biyos::Evaluation &evaluation)
+    static Records read(const Evaluation &evaluation)
     {
-        const biyos::Pattern &pattern = evaluation.jacobian_pattern();
+        const Pattern &pattern = evaluation.jacobian_pattern();
         return Records{.starts = pattern.starts, .items = pattern.variables};
     }
 };
@@ -52,9 +57,9 @@ struct Hessian
 {
     static constexpr Family kFamily = Family::Variable;
 
-    static Records read(const biyos::Evaluation &evaluation)
+    static Records read(const Evaluation &evaluation)
     {
-        const biyos::Lower &lower = evaluation.hessian_pattern();
+        const Lower &lower = evaluation.hessian_pattern();
         return Records{.starts = lower.starts, .items = lower.rows};
     }
 };
@@ -80,7 +85,7 @@ void check_all(const Model &model, Family family, std::span<const Index> chosen)
 {
     for (const Index i : chosen)
     {
-        biyos::check_index(biyos::noun_of(family), i, model.n_of(family));
+        check_index(noun_of(family), i, model.n_of(family));
     }
 }
 

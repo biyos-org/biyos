@@ -9,6 +9,14 @@
 #include <cstddef>
 #include <vector>
 
+using biyos::Env;
+using biyos::ErrorScope;
+using biyos::Event;
+using biyos::EventKind;
+using biyos::EventLevel;
+using biyos::Field;
+using biyos::find_kind;
+using biyos::find_level;
 using biyos::Session;
 using biyos::to_index;
 using biyos::to_size;
@@ -22,13 +30,13 @@ namespace
 
 struct Forwarder
 {
-    biyos::Env *env;
+    Env *env;
     BIYOS_hook hook;
     void *data;
 
-    void operator()(const biyos::Event &event) const
+    void operator()(const Event &event) const
     {
-        const biyos::ErrorScope scope(*env);
+        const ErrorScope scope(*env);
         const BIYOS_event view{&event};
         hook(&view, data);
     }
@@ -36,7 +44,7 @@ struct Forwarder
 
 template <typename List>
 void add_to(List &list,
-            biyos::Env &env,
+            Env &env,
             BIYOS_hook hook,
             void *data,
             BIYOS_int kind,
@@ -44,13 +52,13 @@ void add_to(List &list,
             BIYOS_index *index)
 {
     const Forwarder forwarder{&env, require(hook, "hk"), data};
-    const biyos::EventKind found = biyos::find_kind(kind);
-    const biyos::EventLevel lowest = biyos::find_level(level);
+    const EventKind found = find_kind(kind);
+    const EventLevel lowest = find_level(level);
     BIYOS_index *id = require(index, "idx");
     *id = list.add_hook(found, lowest, forwarder);
 }
 
-void add_hook(biyos::Env &env,
+void add_hook(Env &env,
               BIYOS_hook hook,
               void *data,
               BIYOS_int kind,
@@ -60,7 +68,7 @@ void add_hook(biyos::Env &env,
     add_to(writable(env).events(), env, hook, data, kind, level, index);
 }
 
-void delete_hook(biyos::Env &env, BIYOS_index index)
+void delete_hook(Env &env, BIYOS_index index)
 {
     writable(env).events().delete_hook(index);
 }
@@ -82,13 +90,13 @@ void delete_model_hook(Session &session, BIYOS_index index)
     session.delete_hook(index);
 }
 
-const biyos::Field *field_of(const BIYOS_event *event, BIYOS_index field)
+const Field *field_of(const BIYOS_event *event, BIYOS_index field)
 {
     if (event == nullptr || field < 0)
     {
         return nullptr;
     }
-    const std::vector<biyos::Field> &fields = event->core->fields;
+    const std::vector<Field> &fields = event->core->fields;
     const auto index = to_size(field);
     return index < fields.size() ? &fields[index] : nullptr;
 }
@@ -152,13 +160,13 @@ BIYOS_index BIYOS_getnevtfld(const BIYOS_event *evt)
 
 const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx)
 {
-    const biyos::Field *found = field_of(evt, idx);
+    const Field *found = field_of(evt, idx);
     return found == nullptr ? "" : found->name.c_str();
 }
 
 const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx)
 {
-    const biyos::Field *found = field_of(evt, idx);
+    const Field *found = field_of(evt, idx);
     return found == nullptr ? "" : found->value.c_str();
 }
 

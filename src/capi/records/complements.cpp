@@ -11,7 +11,10 @@
 #include <cstddef>
 #include <vector>
 
+using biyos::Complement;
 using biyos::Family;
+using biyos::Index;
+using biyos::kInfinity;
 using biyos::Model;
 using biyos::Session;
 using biyos::capi::delete_tolerances;
@@ -46,7 +49,7 @@ struct Outputs
     BIYOS_real *upper = nullptr;
 };
 
-biyos::Complement given(biyos::Complement complement, std::size_t k, const Fields &fields)
+Complement given(Complement complement, std::size_t k, const Fields &fields)
 {
     complement.function = entry_or(fields.functions, k, complement.function);
     complement.multiplier = entry_or(fields.multipliers, k, complement.multiplier);
@@ -64,19 +67,19 @@ void add_complements(Session &session, BIYOS_index n, const Fields &fields, BIYO
         require(fields.functions, "fun1");
         require(fields.multipliers, "fun2");
     }
-    const biyos::Complement nonnegative{
+    const Complement nonnegative{
         .function = 0,
         .lower = 0.0,
-        .upper = biyos::kInfinity,
+        .upper = kInfinity,
         .multiplier = 0,
     };
-    std::vector<biyos::Complement> added;
+    std::vector<Complement> added;
     added.reserve(size);
     for (std::size_t k = 0; k < size; ++k)
     {
         added.push_back(given(nonnegative, k, fields));
     }
-    const biyos::Index index = model.n_complements();
+    const Index index = model.n_complements();
     model.add_complements(added);
     if (start != nullptr)
     {
@@ -89,7 +92,7 @@ void set_bounds(Session &session, Selection selection, const Fields &fields)
 {
     Model &model = writable(session);
     const auto changed = selected(model, Family::Complement, selection);
-    std::vector<biyos::Complement> complements;
+    std::vector<Complement> complements;
     complements.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
@@ -103,7 +106,7 @@ void n_complements(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_complements();
 }
 
-void copy_out(const biyos::Complement &complement, std::size_t k, const Outputs &outputs)
+void copy_out(const Complement &complement, std::size_t k, const Outputs &outputs)
 {
     put(outputs.functions, k, complement.function);
     put(outputs.multipliers, k, complement.multiplier);
@@ -115,8 +118,7 @@ template <typename Selection>
 void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
     const auto chosen = selected(session.model(), Family::Complement, selection);
-    const std::vector<biyos::Complement> complements =
-        picked(session.model(), &Model::complement, chosen);
+    const std::vector<Complement> complements = picked(session.model(), &Model::complement, chosen);
     for (std::size_t k = 0; k < complements.size(); ++k)
     {
         copy_out(complements[k], k, outputs);

@@ -11,20 +11,24 @@
 #include <span>
 #include <vector>
 
+using biyos::Index;
 using biyos::Model;
+using biyos::Real;
+using biyos::Request;
 using biyos::Session;
 using biyos::to_index;
 using biyos::capi::check_capacity;
 using biyos::capi::guarded;
 using biyos::capi::handle_of;
 using biyos::capi::length;
+using biyos::capi::listed;
 using biyos::capi::require;
 using biyos::capi::writable;
 
 namespace
 {
 
-const BIYOS_real *start_of(std::span<const biyos::Real> values) noexcept
+const BIYOS_real *start_of(std::span<const Real> values) noexcept
 {
     return values.empty() ? nullptr : values.data();
 }
@@ -33,7 +37,7 @@ struct Caller
 {
     BIYOS_cbf function;
 
-    int operator()(const biyos::Request &request, std::span<biyos::Real> out, void *data) const
+    int operator()(const Request &request, std::span<Real> out, void *data) const
     {
         const BIYOS_cbreq view{
             .size = sizeof(BIYOS_cbreq),
@@ -55,7 +59,7 @@ void add_callback(Session &session,
                   BIYOS_index *cb)
 {
     Model &model = writable(session);
-    const biyos::Index index = model.add_callback(biyos::capi::listed(n, functions, "fun"), data);
+    const Index index = model.add_callback(listed(n, functions, "fun"), data);
     if (cb != nullptr)
     {
         *cb = index;
@@ -132,7 +136,7 @@ void get_functions(const Session &session,
                    BIYOS_index capacity,
                    BIYOS_index *functions)
 {
-    const std::vector<biyos::Index> &covered = session.model().callback(cb).covered;
+    const std::vector<Index> &covered = session.model().callback(cb).covered;
     check_capacity(capacity, covered.size(), "cap", "functions");
     if (functions != nullptr)
     {

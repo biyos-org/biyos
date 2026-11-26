@@ -13,13 +13,17 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Index;
 using biyos::Model;
+using biyos::Offset;
 using biyos::QuadraticTerm;
 using biyos::Session;
 using biyos::to_size;
+using biyos::capi::grouped;
 using biyos::capi::Grouped;
 using biyos::capi::guarded;
 using biyos::capi::length;
+using biyos::capi::packed;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
@@ -30,16 +34,16 @@ namespace
 {
 
 void add_sliced(Model &model,
-                std::span<const biyos::Index> owners,
+                std::span<const Index> owners,
                 const BIYOS_offset *counts,
                 const BIYOS_index *rows,
                 const BIYOS_index *columns,
                 const BIYOS_real *values)
 {
-    const std::vector<biyos::Offset> begins = starts_of(owners.size(), counts);
+    const std::vector<Offset> begins = starts_of(owners.size(), counts);
     model.check_quadratic_room(begins.back());
     const auto total = to_size(begins.back());
-    model.add_quadratic_terms(owners, begins, biyos::capi::packed(total, rows, columns, values));
+    model.add_quadratic_terms(owners, begins, packed(total, rows, columns, values));
 }
 
 void add_listed(Session &session,
@@ -56,10 +60,9 @@ void add_listed(Session &session,
         require(functions, "fun");
     }
     model.check_quadratic_room(nnz);
-    const std::vector<QuadraticTerm> terms = biyos::capi::packed(size, rows, columns, values);
-    const std::span<const biyos::Index> owners(functions, size);
-    Grouped<QuadraticTerm> groups =
-        biyos::capi::grouped(owners, std::span<const QuadraticTerm>(terms));
+    const std::vector<QuadraticTerm> terms = packed(size, rows, columns, values);
+    const std::span<const Index> owners(functions, size);
+    Grouped<QuadraticTerm> groups = grouped(owners, std::span<const QuadraticTerm>(terms));
     model.add_quadratic_terms(groups.functions, groups.starts, std::move(groups.terms));
 }
 

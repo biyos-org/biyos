@@ -13,7 +13,10 @@
 #include <string_view>
 #include <vector>
 
+using biyos::Error;
+using biyos::ErrorKind;
 using biyos::Family;
+using biyos::Index;
 using biyos::Model;
 using biyos::Session;
 using biyos::capi::guarded;
@@ -37,7 +40,7 @@ const char *entry(const char *const *names, std::size_t k)
     if (names[k] == nullptr)
     {
         const std::string reason = "entry " + std::to_string(k) + " is null";
-        throw biyos::Error(biyos::ErrorKind::InvalidArgument, "argument 'name'", reason);
+        throw Error(ErrorKind::InvalidArgument, "argument 'name'", reason);
     }
     return names[k];
 }
@@ -87,7 +90,7 @@ void get_names(const Session &session, Selection selection, const char **names)
     const auto wanted = selected(session.model(), Target, selection);
     std::vector<const char *> found;
     found.reserve(wanted.size());
-    for (const biyos::Index i : wanted)
+    for (const Index i : wanted)
     {
         found.push_back(text(session.model().name_of(Target, i)));
     }
@@ -104,7 +107,7 @@ void get_indices(const Session &session,
                  BIYOS_index *indices)
 {
     const std::vector<std::string_view> wanted = texts(length(n), names);
-    std::vector<biyos::Index> found;
+    std::vector<Index> found;
     found.reserve(wanted.size());
     for (const std::string_view name : wanted)
     {

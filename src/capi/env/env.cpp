@@ -9,6 +9,11 @@
 #include <cstddef>
 #include <string>
 
+using biyos::Env;
+using biyos::Error;
+using biyos::ErrorKind;
+using biyos::RecordView;
+using biyos::capi::guard;
 using biyos::capi::guarded;
 using biyos::capi::handle_of;
 using biyos::capi::status_of;
@@ -19,12 +24,12 @@ namespace
 
 constexpr std::size_t kErrorSize = offsetof(BIYOS_error, msg) + sizeof(BIYOS_error::msg);
 
-void freeable(biyos::Env &env)
+void freeable(Env &env)
 {
     if (writable(env).handles() > 0)
     {
         const std::string reason = "has a model that is not freed";
-        throw biyos::Error(biyos::ErrorKind::InvalidArgument, "environment", reason);
+        throw Error(ErrorKind::InvalidArgument, "environment", reason);
     }
 }
 
@@ -37,7 +42,7 @@ BIYOS_status BIYOS_newenv(BIYOS_env **env)
         return BIYOS_ERR_BADARG;
     }
     *env = nullptr;
-    return biyos::capi::guard([&] { *env = new BIYOS_env; });
+    return guard([&] { *env = new BIYOS_env; });
 }
 
 BIYOS_status BIYOS_freeenv(BIYOS_env *env)
@@ -60,7 +65,7 @@ BIYOS_status BIYOS_lasterror(const BIYOS_env *env, BIYOS_error *err)
     {
         return BIYOS_ERR_BADARG;
     }
-    const biyos::RecordView record = env->core.last_error();
+    const RecordView record = env->core.last_error();
     err->status = record.kind ? status_of(*record.kind) : BIYOS_OK;
     err->mdl = handle_of(record.model);
     err->msg = record.text;

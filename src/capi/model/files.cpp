@@ -8,7 +8,12 @@
 #include <memory>
 #include <string_view>
 
+using biyos::Env;
+using biyos::FileFormat;
+using biyos::find_format;
+using biyos::read_file;
 using biyos::Session;
+using biyos::write_file;
 using biyos::capi::guarded;
 using biyos::capi::idle;
 using biyos::capi::require;
@@ -16,27 +21,27 @@ using biyos::capi::require;
 namespace
 {
 
-void load(biyos::Env &env, const char *path, BIYOS_int fmt, BIYOS_model **mdl)
+void load(Env &env, const char *path, BIYOS_int fmt, BIYOS_model **mdl)
 {
     const char *file = require(path, "path");
     BIYOS_model **made = require(mdl, "mdl");
-    const biyos::FileFormat format = biyos::find_format(fmt);
+    const FileFormat format = find_format(fmt);
     idle(env, "environment");
     auto fresh = std::make_unique<BIYOS_model>(env);
-    fresh->change() = biyos::read_file(env, std::string_view(file), format);
+    fresh->change() = read_file(env, std::string_view(file), format);
     *made = fresh.release();
 }
 
 void save(const Session &session, const char *path, BIYOS_int fmt)
 {
     const char *file = require(path, "path");
-    const biyos::FileFormat format = biyos::find_format(fmt);
+    const FileFormat format = find_format(fmt);
     idle(session.env(), "environment");
-    biyos::write_file(session.stream(),
-                      session.model(),
-                      session.settings(),
-                      std::string_view(file),
-                      format);
+    write_file(session.stream(),
+               session.model(),
+               session.settings(),
+               std::string_view(file),
+               format);
 }
 
 }

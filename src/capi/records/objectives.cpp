@@ -10,8 +10,12 @@
 #include <span>
 #include <vector>
 
+using biyos::default_objective;
 using biyos::Family;
+using biyos::Index;
 using biyos::Model;
+using biyos::Objective;
+using biyos::ObjectiveSense;
 using biyos::Session;
 using biyos::to_index;
 using biyos::capi::entry_or;
@@ -47,10 +51,10 @@ struct Outputs
     BIYOS_real *relative = nullptr;
 };
 
-biyos::Objective given(biyos::Objective objective, std::size_t k, const Fields &fields)
+Objective given(Objective objective, std::size_t k, const Fields &fields)
 {
     const BIYOS_int sense = entry_or(fields.senses, k, static_cast<BIYOS_int>(objective.sense));
-    objective.sense = static_cast<biyos::ObjectiveSense>(sense);
+    objective.sense = static_cast<ObjectiveSense>(sense);
     objective.priority = entry_or(fields.priorities, k, objective.priority);
     objective.weight = entry_or(fields.weights, k, objective.weight);
     objective.absolute = entry_or(fields.absolute, k, objective.absolute);
@@ -58,16 +62,16 @@ biyos::Objective given(biyos::Objective objective, std::size_t k, const Fields &
     return objective;
 }
 
-std::vector<biyos::Objective> new_objectives(std::span<const biyos::Index> functions,
-                                             biyos::Index start,
-                                             const Fields &fields)
+std::vector<Objective> new_objectives(std::span<const Index> functions,
+                                      Index start,
+                                      const Fields &fields)
 {
-    std::vector<biyos::Objective> added;
+    std::vector<Objective> added;
     added.reserve(functions.size());
     for (std::size_t k = 0; k < functions.size(); ++k)
     {
-        const biyos::Index index = start + to_index(k);
-        added.push_back(given(biyos::default_objective(functions[k], index), k, fields));
+        const Index index = start + to_index(k);
+        added.push_back(given(default_objective(functions[k], index), k, fields));
     }
     return added;
 }
@@ -81,14 +85,14 @@ void add_objectives(Session &session,
                     BIYOS_index *start)
 {
     Model &model = writable(session);
-    const std::span<const biyos::Index> owners = listed(n, functions, "fun");
+    const std::span<const Index> owners = listed(n, functions, "fun");
     model.check_objective_room(owners.size());
     const Fields fields{
         .senses = senses,
         .priorities = priorities,
         .weights = weights,
     };
-    const biyos::Index index = model.n_objectives();
+    const Index index = model.n_objectives();
     model.add_objectives(new_objectives(owners, index, fields));
     if (start != nullptr)
     {
@@ -101,7 +105,7 @@ void set_objectives(Session &session, Selection selection, const Fields &fields)
 {
     Model &model = writable(session);
     const auto changed = selected(model, Family::Objective, selection);
-    std::vector<biyos::Objective> objectives;
+    std::vector<Objective> objectives;
     objectives.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
@@ -115,7 +119,7 @@ void n_objectives(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_objectives();
 }
 
-void copy_out(const biyos::Objective &objective, std::size_t k, const Outputs &outputs)
+void copy_out(const Objective &objective, std::size_t k, const Outputs &outputs)
 {
     put(outputs.functions, k, objective.function);
     put(outputs.senses, k, static_cast<BIYOS_int>(objective.sense));
@@ -129,8 +133,7 @@ template <typename Selection>
 void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
     const auto chosen = selected(session.model(), Family::Objective, selection);
-    const std::vector<biyos::Objective> objectives =
-        picked(session.model(), &Model::objective, chosen);
+    const std::vector<Objective> objectives = picked(session.model(), &Model::objective, chosen);
     for (std::size_t k = 0; k < objectives.size(); ++k)
     {
         copy_out(objectives[k], k, outputs);

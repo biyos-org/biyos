@@ -11,6 +11,7 @@
 #include <span>
 #include <string_view>
 
+using biyos::Evaluation;
 using biyos::Session;
 using biyos::to_size;
 using biyos::capi::evaluation_of;
@@ -43,7 +44,7 @@ std::size_t n_funs(const Session &session)
 
 void eval_f(Session &session, const BIYOS_real *x, BIYOS_real *f)
 {
-    biyos::Evaluation &evaluation = evaluation_of(session);
+    Evaluation &evaluation = evaluation_of(session);
     const auto point = sized(x, n_vars(session), "x");
     const auto values = sized(f, n_funs(session), "f");
     const Running running(session);
@@ -52,7 +53,7 @@ void eval_f(Session &session, const BIYOS_real *x, BIYOS_real *f)
 
 void eval_g(Session &session, const BIYOS_real *x, BIYOS_real *g)
 {
-    biyos::Evaluation &evaluation = evaluation_of(session);
+    Evaluation &evaluation = evaluation_of(session);
     const std::size_t nnz = evaluation.jacobian_pattern().variables.size();
     const auto point = sized(x, n_vars(session), "x");
     const auto values = sized(g, nnz, "g");
@@ -62,7 +63,7 @@ void eval_g(Session &session, const BIYOS_real *x, BIYOS_real *g)
 
 void eval_h(Session &session, const BIYOS_real *x, const BIYOS_real *w, BIYOS_real *h)
 {
-    biyos::Evaluation &evaluation = evaluation_of(session);
+    Evaluation &evaluation = evaluation_of(session);
     const std::size_t nnz = evaluation.hessian_pattern().rows.size();
     const auto point = sized(x, n_vars(session), "x");
     const auto weights = sized(w, n_funs(session), "w");
@@ -77,7 +78,7 @@ void eval_hv(Session &session,
              const BIYOS_real *v,
              BIYOS_real *hv)
 {
-    biyos::Evaluation &evaluation = evaluation_of(session);
+    Evaluation &evaluation = evaluation_of(session);
     const auto point = sized(x, n_vars(session), "x");
     const auto weights = sized(w, n_funs(session), "w");
     const auto direction = sized(v, n_vars(session), "v");

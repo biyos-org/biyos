@@ -14,8 +14,14 @@
 #include <string_view>
 #include <vector>
 
+using biyos::encode;
+using biyos::Encoding;
 using biyos::Family;
+using biyos::Index;
 using biyos::Model;
+using biyos::n_values;
+using biyos::Offset;
+using biyos::Postfix;
 using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
@@ -28,6 +34,7 @@ using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::starts_of;
 using biyos::capi::writable;
+using biyos::capi::write_counts;
 
 namespace
 {
@@ -41,7 +48,7 @@ template <typename T> std::span<const T> input(const T *array, std::size_t n, st
     return {array, n};
 }
 
-void write_node(BIYOS_offset *node, biyos::Offset made)
+void write_node(BIYOS_offset *node, Offset made)
 {
     if (node != nullptr)
     {
@@ -63,12 +70,12 @@ void add_node(Session &session,
               BIYOS_offset *node)
 {
     Model &model = writable(session);
-    const std::span<const biyos::Offset> children = input(argument, length(n), "arg");
-    const auto needed = to_size(biyos::n_values(op, n));
+    const std::span<const Offset> children = input(argument, length(n), "arg");
+    const auto needed = to_size(n_values(op, n));
     write_node(node, model.add_node(op, children, input(values, needed, "val")));
 }
 
-void write_nodes(std::span<const biyos::Offset> tops, BIYOS_offset *node)
+void write_nodes(std::span<const Offset> tops, BIYOS_offset *node)
 {
     if (node != nullptr)
     {
@@ -90,12 +97,12 @@ void add_expressions(Session &session,
     {
         require(counts, "cnt");
     }
-    const std::vector<biyos::Offset> begins = starts_of(size, counts);
+    const std::vector<Offset> begins = starts_of(size, counts);
     const auto total = to_size(begins.back());
     const std::span<const BIYOS_int> codes = input(code, total, "code");
-    const std::span<const biyos::Offset> arguments = input(argument, total, "arg");
-    const auto needed = to_size(biyos::n_values(codes, arguments));
-    const biyos::Postfix postfix{
+    const std::span<const Offset> arguments = input(argument, total, "arg");
+    const auto needed = to_size(n_values(codes, arguments));
+    const Postfix postfix{
         .starts = begins,
         .codes = codes,
         .arguments = arguments,
@@ -112,16 +119,16 @@ void attach_expressions(Session &session, Selection selection, const BIYOS_offse
     model.attach_expressions(owners, input(node, owners.size(), "node"));
 }
 
-template <typename Selection> biyos::Encoding encoded(const Model &model, Selection selection)
+template <typename Selection> Encoding encoded(const Model &model, Selection selection)
 {
     const auto chosen = selected(model, Family::Function, selection);
-    std::vector<biyos::Offset> roots;
+    std::vector<Offset> roots;
     roots.reserve(chosen.size());
-    for (const biyos::Index function : chosen)
+    for (const Index function : chosen)
     {
         roots.push_back(model.roots(function, function + 1).front());
     }
-    return biyos::encode(model.graph(), roots);
+    return encode(model.graph(), roots);
 }
 
 template <typename Selection>
@@ -130,7 +137,7 @@ void n_expressions(const Session &session,
                    BIYOS_offset *nnz,
                    BIYOS_offset *nval)
 {
-    const biyos::Encoding encoding = encoded(session.model(), selection);
+    const Encoding encoding = encoded(session.model(), selection);
     require(nnz, "nnz");
     require(nval, "nval");
     *nnz = to_offset(encoding.codes.size());
@@ -160,10 +167,10 @@ void get_expressions(const Session &session,
                      BIYOS_offset valcap,
                      const Output &out)
 {
-    const biyos::Encoding encoding = encoded(session.model(), selection);
+    const Encoding encoding = encoded(session.model(), selection);
     check_capacity(cap, encoding.codes.size(), "cap", "entries");
     check_capacity(valcap, encoding.values.size(), "valcap", "values");
-    biyos::capi::write_counts(encoding.starts, out.counts);
+    write_counts(encoding.starts, out.counts);
     copy_to(encoding.codes, out.codes);
     copy_to(encoding.arguments, out.arguments);
     copy_to(encoding.values, out.values);

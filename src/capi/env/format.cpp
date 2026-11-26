@@ -7,6 +7,10 @@
 #include <cstddef>
 #include <string>
 
+using biyos::format_json;
+using biyos::format_text;
+using biyos::capi::guard;
+
 namespace
 {
 
@@ -30,18 +34,17 @@ BIYOS_status formatted(const BIYOS_event *event,
     {
         return BIYOS_ERR_BADARG;
     }
-    return biyos::capi::guard([&]
-                              { copy_line(Formatter(*event->core), buffer, capacity, needed); });
+    return guard([&] { copy_line(Formatter(*event->core), buffer, capacity, needed); });
 }
 
 }
 
 BIYOS_status BIYOS_fmttext(const BIYOS_event *evt, size_t cap, char *buf, size_t *len)
 {
-    return formatted<biyos::format_text>(evt, buf, cap, len);
+    return formatted<format_text>(evt, buf, cap, len);
 }
 
 BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *buf, size_t *len)
 {
-    return formatted<biyos::format_json>(evt, buf, cap, len);
+    return formatted<format_json>(evt, buf, cap, len);
 }

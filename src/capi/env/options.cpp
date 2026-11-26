@@ -11,7 +11,20 @@
 #include <optional>
 #include <string_view>
 
+using biyos::Env;
+using biyos::find_option;
+using biyos::kind_of;
+using biyos::Masks;
+using biyos::number_of;
+using biyos::Option;
+using biyos::OptionKind;
+using biyos::Options;
+using biyos::OptionSource;
 using biyos::Session;
+using biyos::Settings;
+using biyos::Version;
+using biyos::Versions;
+using biyos::versions_of;
 using biyos::capi::guarded;
 using biyos::capi::require;
 using biyos::capi::writable;
@@ -19,105 +32,105 @@ using biyos::capi::writable;
 namespace
 {
 
-void option_id(biyos::Env &, const char *name, BIYOS_int *option)
+void option_id(Env &, const char *name, BIYOS_int *option)
 {
-    const biyos::Option found = biyos::find_option(std::string_view(require(name, "name")));
+    const Option found = find_option(std::string_view(require(name, "name")));
     *require(option, "opt") = static_cast<BIYOS_int>(found);
 }
 
-void option_kind(biyos::Env &, BIYOS_int option, BIYOS_int *kind)
+void option_kind(Env &, BIYOS_int option, BIYOS_int *kind)
 {
-    const biyos::OptionKind found = biyos::kind_of(biyos::find_option(option));
+    const OptionKind found = kind_of(find_option(option));
     *require(kind, "knd") = static_cast<BIYOS_int>(found);
 }
 
-BIYOS_int optional_number(std::optional<biyos::Version> version)
+BIYOS_int optional_number(std::optional<Version> version)
 {
-    return version ? biyos::number_of(*version) : 0;
+    return version ? number_of(*version) : 0;
 }
 
-void option_versions(biyos::Env &,
+void option_versions(Env &,
                      BIYOS_int option,
                      BIYOS_int *since,
                      BIYOS_int *deprecated,
                      BIYOS_int *retired)
 {
-    const biyos::Versions versions = biyos::versions_of(biyos::find_option(option));
+    const Versions versions = versions_of(find_option(option));
     require(since, "since");
     require(deprecated, "deprecated");
     require(retired, "retired");
-    *since = biyos::number_of(versions.since);
+    *since = number_of(versions.since);
     *deprecated = optional_number(versions.deprecated);
     *retired = optional_number(versions.retired);
 }
 
-void set_bool(biyos::Env &env, BIYOS_int option, BIYOS_int value)
+void set_bool(Env &env, BIYOS_int option, BIYOS_int value)
 {
-    writable(env).options().set_bool(biyos::find_option(option), value != 0);
+    writable(env).options().set_bool(find_option(option), value != 0);
 }
 
-void set_int(biyos::Env &env, BIYOS_int option, BIYOS_int value)
+void set_int(Env &env, BIYOS_int option, BIYOS_int value)
 {
-    writable(env).options().set_int(biyos::find_option(option), value);
+    writable(env).options().set_int(find_option(option), value);
 }
 
-void set_double(biyos::Env &env, BIYOS_int option, BIYOS_real value)
+void set_double(Env &env, BIYOS_int option, BIYOS_real value)
 {
-    writable(env).options().set_double(biyos::find_option(option), value);
+    writable(env).options().set_double(find_option(option), value);
 }
 
-void set_string(biyos::Env &env, BIYOS_int option, const char *value)
+void set_string(Env &env, BIYOS_int option, const char *value)
 {
-    biyos::Options &options = writable(env).options();
-    const biyos::Option found = biyos::find_option(option);
+    Options &options = writable(env).options();
+    const Option found = find_option(option);
     options.set_string(found, require(value, "val"));
 }
 
-void set_flags(biyos::Env &env, BIYOS_int option, BIYOS_mask on, BIYOS_mask off)
+void set_flags(Env &env, BIYOS_int option, BIYOS_mask on, BIYOS_mask off)
 {
-    biyos::Options &options = writable(env).options();
-    options.set_flags(biyos::find_option(option), biyos::Masks{.on = on, .off = off});
+    Options &options = writable(env).options();
+    options.set_flags(find_option(option), Masks{.on = on, .off = off});
 }
 
-void get_bool(biyos::Env &env, BIYOS_int option, BIYOS_int *value)
+void get_bool(Env &env, BIYOS_int option, BIYOS_int *value)
 {
-    const bool found = env.options().get_bool(biyos::find_option(option));
+    const bool found = env.options().get_bool(find_option(option));
     *require(value, "val") = found ? 1 : 0;
 }
 
-void get_int(biyos::Env &env, BIYOS_int option, BIYOS_int *value)
+void get_int(Env &env, BIYOS_int option, BIYOS_int *value)
 {
-    const BIYOS_int found = env.options().get_int(biyos::find_option(option));
+    const BIYOS_int found = env.options().get_int(find_option(option));
     *require(value, "val") = found;
 }
 
-void get_double(biyos::Env &env, BIYOS_int option, BIYOS_real *value)
+void get_double(Env &env, BIYOS_int option, BIYOS_real *value)
 {
-    const BIYOS_real found = env.options().get_double(biyos::find_option(option));
+    const BIYOS_real found = env.options().get_double(find_option(option));
     *require(value, "val") = found;
 }
 
-void get_string(biyos::Env &env, BIYOS_int option, const char **value)
+void get_string(Env &env, BIYOS_int option, const char **value)
 {
-    const char *found = env.options().get_string(biyos::find_option(option)).data();
+    const char *found = env.options().get_string(find_option(option)).data();
     *require(value, "val") = found;
 }
 
-void get_flags(biyos::Env &env, BIYOS_int option, BIYOS_mask *on, BIYOS_mask *off)
+void get_flags(Env &env, BIYOS_int option, BIYOS_mask *on, BIYOS_mask *off)
 {
-    const biyos::Masks found = env.options().get_flags(biyos::find_option(option));
+    const Masks found = env.options().get_flags(find_option(option));
     require(on, "on");
     require(off, "off");
     *on = found.on;
     *off = found.off;
 }
 
-void delete_option(biyos::Env &env, BIYOS_int option)
+void delete_option(Env &env, BIYOS_int option)
 {
-    writable(env).options().drop(biyos::find_option(option));
+    writable(env).options().drop(find_option(option));
 }
 
-biyos::Settings &settings_of(Session &session)
+Settings &settings_of(Session &session)
 {
     writable(session);
     return session.settings();
@@ -125,66 +138,66 @@ biyos::Settings &settings_of(Session &session)
 
 void set_model_bool(Session &session, BIYOS_int option, BIYOS_int value)
 {
-    biyos::Settings &settings = settings_of(session);
-    const biyos::Option found = biyos::find_option(option);
+    Settings &settings = settings_of(session);
+    const Option found = find_option(option);
     settings.set_bool(found, value != 0, session.stream());
 }
 
 void set_model_int(Session &session, BIYOS_int option, BIYOS_int value)
 {
-    biyos::Settings &settings = settings_of(session);
-    const biyos::Option found = biyos::find_option(option);
+    Settings &settings = settings_of(session);
+    const Option found = find_option(option);
     settings.set_int(found, value, session.stream());
 }
 
 void set_model_double(Session &session, BIYOS_int option, BIYOS_real value)
 {
-    biyos::Settings &settings = settings_of(session);
-    const biyos::Option found = biyos::find_option(option);
+    Settings &settings = settings_of(session);
+    const Option found = find_option(option);
     settings.set_double(found, value, session.stream());
 }
 
 void set_model_string(Session &session, BIYOS_int option, const char *value)
 {
-    biyos::Settings &settings = settings_of(session);
-    const biyos::Option found = biyos::find_option(option);
+    Settings &settings = settings_of(session);
+    const Option found = find_option(option);
     settings.set_string(found, require(value, "val"), session.stream());
 }
 
 void set_model_flags(Session &session, BIYOS_int option, BIYOS_mask on, BIYOS_mask off)
 {
-    biyos::Settings &settings = settings_of(session);
-    const biyos::Masks value{.on = on, .off = off};
-    settings.set_flags(biyos::find_option(option), value, session.stream());
+    Settings &settings = settings_of(session);
+    const Masks value{.on = on, .off = off};
+    settings.set_flags(find_option(option), value, session.stream());
 }
 
 void get_model_bool(const Session &session, BIYOS_int option, BIYOS_int *value)
 {
-    const bool found = session.lookup().get_bool(biyos::find_option(option));
+    const bool found = session.lookup().get_bool(find_option(option));
     *require(value, "val") = found ? 1 : 0;
 }
 
 void get_model_int(const Session &session, BIYOS_int option, BIYOS_int *value)
 {
-    const BIYOS_int found = session.lookup().get_int(biyos::find_option(option));
+    const BIYOS_int found = session.lookup().get_int(find_option(option));
     *require(value, "val") = found;
 }
 
 void get_model_double(const Session &session, BIYOS_int option, BIYOS_real *value)
 {
-    const BIYOS_real found = session.lookup().get_double(biyos::find_option(option));
+    const BIYOS_real found = session.lookup().get_double(find_option(option));
     *require(value, "val") = found;
 }
 
 void get_model_string(const Session &session, BIYOS_int option, const char **value)
 {
-    const char *found = session.lookup().get_string(biyos::find_option(option)).data();
+    const char *found = session.lookup().get_string(find_option(option)).data();
     *require(value, "val") = found;
 }
 
 void get_model_flags(const Session &session, BIYOS_int option, BIYOS_mask *on, BIYOS_mask *off)
 {
-    const biyos::Masks found = session.lookup().get_flags(biyos::find_option(option));
+    const Masks found = session.lookup().get_flags(find_option(option));
     require(on, "on");
     require(off, "off");
     *on = found.on;
@@ -193,12 +206,12 @@ void get_model_flags(const Session &session, BIYOS_int option, BIYOS_mask *on, B
 
 void delete_model_option(Session &session, BIYOS_int option)
 {
-    settings_of(session).erase(biyos::find_option(option));
+    settings_of(session).erase(find_option(option));
 }
 
 void get_model_source(const Session &session, BIYOS_int option, BIYOS_int *source)
 {
-    const biyos::OptionSource found = session.lookup().find(biyos::find_option(option)).source;
+    const OptionSource found = session.lookup().find(find_option(option)).source;
     *require(source, "src") = static_cast<BIYOS_int>(found);
 }
 
