@@ -112,7 +112,7 @@ class CallbackRequest:
 class Caller:
     def __init__(
         self,
-        function: Callable[..., Any],
+        function: Callable[..., object],
         count: Index,
         size: Offset | None,
         raised: dict[int | None, BaseException],
@@ -149,7 +149,7 @@ class Caller:
         return _status(result)
 
 
-def checked(name: str, function: object) -> Callable[..., Any]:
+def checked(name: str, function: object) -> Callable[..., object]:
     if not callable(function):
         found = type(function).__name__
         raise TypeError(f"{name} must be callable, not {found}")
@@ -189,7 +189,10 @@ class Callbacks:
         self._kept.append(held)
 
     def caller(
-        self, function: Callable[..., Any], count: Index, size: Offset | None
+        self,
+        function: Callable[..., object],
+        count: Index,
+        size: Offset | None,
     ) -> Caller:
         caller = Caller(function, count, size, self._raised)
         self._kept.append(caller)
