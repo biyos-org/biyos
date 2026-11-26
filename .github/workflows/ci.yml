@@ -96,8 +96,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - run: python3 tools/check_layers.py
-      - run: python3 tools/check_docs.py
+      - run: >-
+          python3 tools/check_layers.py
+          --sources src
+          --layers tools/layers.txt
+          --roles tools/roles.txt
+      - run: >-
+          python3 tools/check_docs.py
+          --headers include/biyos
+          --doc docs/reference/capi.txt
       - run: >-
           python3 tools/check_copies.py
           --licence LICENSE

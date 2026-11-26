@@ -1,3 +1,4 @@
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -7,7 +8,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import spec
 from capi_page import page_of
 
-DOC = "docs/reference/capi.txt"
 MASKED = re.compile(
     r'"(?:\\.|[^"\\\n])*"'
     r"|'(?:\\.|[^'\\\n])*'"
@@ -112,29 +112,30 @@ def mismatched(params, calls):
     return found
 
 
-def unplaced(root):
+def unplaced(doc):
     problems = []
-    for group in spec.read(root / DOC):
-        page = f"docs/reference/{page_of(group)}.qmd"
+    for group in spec.read(doc):
+        page = doc.parent / f"{page_of(group)}.qmd"
         source = f"reference/_capi/{group.key}.md"
-        if f'source="{source}"' not in (root / page).read_text():
-            problems.append(f"{page}: includes no {source}")
+        if f'source="{source}"' not in page.read_text():
+            problems.append(f"{page.as_posix()}: includes no {source}")
     return problems
 
 
-def check(root):
-    names, params = documented(root / DOC)
+def check(headers, doc):
+    where = doc.as_posix()
+    names, params = documented(doc)
     problems = []
     doc_problems = []
     declared = set()
     calls = {}
-    for path in sorted((root / "include" / "biyos").rglob("*.h")):
-        header = path.relative_to(root).as_posix()
+    for path in sorted(headers.rglob("*.h")):
+        header = path.as_posix()
         found_names, functions, unnamed = scan(path)
         found = [(n, "BIYOS_API declares no function") for n in unnamed]
         for name, number in found_names.items():
             if name not in names and name not in declared:
-                found.append((number, f"{name} has no entry in {DOC}"))
+                found.append((number, f"{name} has no entry in {where}"))
             declared.add(name)
         for name, (number, words) in functions.items():
             calls[name] = (header, number, arguments(words))
@@ -144,12 +145,19 @@ def check(root):
         if name not in declared:
             text = f"{name} has an entry but no header declares it"
             doc_problems.append((number, text))
-    problems += [f"{DOC}:{n}: {text}" for n, text in sorted(doc_problems)]
-    return problems + unplaced(root)
+    problems += [f"{where}:{n}: {text}" for n, text in sorted(doc_problems)]
+    return problems + unplaced(doc)
+
+
+def command_line():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--headers", type=Path, required=True)
+    parser.add_argument("--doc", type=Path, required=True)
+    return parser.parse_args()
 
 
 def main():
-    problems = check(Path(__file__).resolve().parent.parent)
+    problems = check(**vars(command_line()))
     for problem in problems:
         print(problem)
     return 1 if problems else 0

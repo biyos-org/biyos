@@ -1,8 +1,11 @@
+import contextlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
-from check_docs import check
+from check_docs import check, main
 
 HEADER = """#pragma once
 
@@ -39,6 +42,7 @@ class DocTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
+        self.headers = self.root / "include" / "biyos"
         self.header("biyos.h", HEADER)
         self.doc(SPEC)
         self.page('::: {source="reference/_capi/main.md"}\n:::\n')
@@ -47,7 +51,7 @@ class DocTest(unittest.TestCase):
         self.tmp.cleanup()
 
     def header(self, name, text):
-        path = self.root / "include" / "biyos" / name
+        path = self.headers / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
@@ -60,7 +64,8 @@ class DocTest(unittest.TestCase):
         (self.root / PAGE).write_text(text)
 
     def problems(self):
-        return check(self.root)
+        found = check(self.headers, self.root / DOC)
+        return [problem.replace(f"{self.root}/", "") for problem in found]
 
     def test_documented(self):
         self.assertEqual(self.problems(), [])
@@ -237,3 +242,19 @@ class DocTest(unittest.TestCase):
         expected = missing("biyos.h:9", "BIYOS_run")
         expected.append(f"{DOC}:8: BIYOS_walk {stale}")
         self.assertEqual(self.problems(), expected)
+
+    def test_arguments(self):
+        self.page("")
+        argv = [
+            "check_docs.py",
+            "--headers",
+            str(self.headers),
+            "--doc",
+            str(self.root / DOC),
+        ]
+        output = io.StringIO()
+        with mock.patch("sys.argv", argv), contextlib.redirect_stdout(output):
+            self.assertEqual(main(), 1)
+        page = self.root / PAGE
+        problem = f"{page}: includes no reference/_capi/main.md\n"
+        self.assertEqual(output.getvalue(), problem)
