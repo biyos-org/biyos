@@ -109,9 +109,9 @@ def kept(heard, event):
     heard.append((event.module, event.text))
 
 
-def closed(models, event):
-    for model in models:
-        model.close()
+def closed(handles, event):
+    for handle in handles:
+        handle.close()
 
 
 def compare_inside(seen, model, event):
@@ -376,7 +376,17 @@ def test_compare_close(env, model):
     assert len(env._models._live) == 0
 
 
-def test_compare_locked(env, model):
+def test_compare_close_env(place, model):
+    copy = model.copy(place)
+    copy.setvartol([0], [0.25])
+    shut = partial(closed, [place])
+    model.addhook(shut, EventKind.MESSAGE, EventLevel.INFO)
+    assert model.compare(copy) == TOLERANCE
+    assert not place._open()
+    assert not place._free.alive
+
+
+def test_compare_inside(env, model):
     seen = []
     inside = partial(compare_inside, seen, model)
     env.addhook(inside, EventKind.MESSAGE, EventLevel.ERROR)

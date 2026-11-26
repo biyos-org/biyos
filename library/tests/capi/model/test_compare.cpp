@@ -25,8 +25,8 @@ struct Heard
 
 struct Inside
 {
-    const BIYOS_model *a = nullptr;
-    const BIYOS_model *b = nullptr;
+    BIYOS_model *a = nullptr;
+    BIYOS_model *b = nullptr;
     std::vector<BIYOS_status> statuses;
     std::vector<BIYOS_int> answers;
 };
@@ -52,23 +52,35 @@ void compare_inside(const BIYOS_event *, void *data)
     inside.answers.push_back(same);
 }
 
+void rename_inside(const BIYOS_event *, void *data)
+{
+    Inside &inside = *static_cast<Inside *>(data);
+    inside.statuses.push_back(BIYOS_setmdlname(inside.b, "b"));
+}
+
 template <typename Handle>
 using Adder = BIYOS_status (*)(Handle *, BIYOS_hook, void *, BIYOS_int, BIYOS_int, BIYOS_index *);
 
-template <typename Handle> void listen(Adder<Handle> add, Handle *handle, Heard &heard)
+template <typename Handle>
+void listen(Adder<Handle> add, Handle *handle, BIYOS_hook hook, void *data, BIYOS_int level)
 {
     BIYOS_index id = -1;
-    EXPECT_EQ(add(handle, note, &heard, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_DBG, &id), BIYOS_OK);
+    EXPECT_EQ(add(handle, hook, data, BIYOS_EVTKND_MSG, level, &id), BIYOS_OK);
 }
 
 void listen(const Env &env, Heard &heard)
 {
-    listen(BIYOS_addenvhook, env.get(), heard);
+    listen(BIYOS_addenvhook, env.get(), note, &heard, BIYOS_EVTLVL_DBG);
 }
 
 void listen(const Model &model, Heard &heard)
 {
-    listen(BIYOS_addmdlhook, model.get(), heard);
+    listen(BIYOS_addmdlhook, model.get(), note, &heard, BIYOS_EVTLVL_DBG);
+}
+
+void listen(const Env &env, BIYOS_hook hook, Inside &inside, BIYOS_int level)
+{
+    listen(BIYOS_addenvhook, env.get(), hook, &inside, level);
 }
 
 BIYOS_int compared(const Model &a, const Model &b)
@@ -168,7 +180,7 @@ TEST(CApiTest, NullCompare)
     EXPECT_EQ(same, -1);
 }
 
-TEST(CApiTest, LockedCompare)
+TEST(CApiTest, HookCompare)
 {
     const Env env;
     const Model a(env);
@@ -177,13 +189,42 @@ TEST(CApiTest, LockedCompare)
     Inside inside{.a = a.get(), .b = b.get(), .statuses = {}, .answers = {}};
     Heard heard;
     listen(env, heard);
-    BIYOS_index id = -1;
-    const int message = BIYOS_EVTKND_MSG;
-    ASSERT_EQ(BIYOS_addenvhook(env.get(), compare_inside, &inside, message, BIYOS_EVTLVL_ERR, &id),
-              BIYOS_OK);
+    listen(env, compare_inside, inside, BIYOS_EVTLVL_ERR);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     EXPECT_EQ(inside.statuses, std::vector<BIYOS_status>{BIYOS_OK});
     EXPECT_EQ(inside.answers, std::vector<BIYOS_int>{0});
     const std::string refused = line_of(BIYOS_EVTLVL_ERR, "capi: " + kRefused, 1);
     EXPECT_EQ(heard.lines, (Texts{refused, info(kNamed)}));
+}
+
+TEST(CApiTest, OtherHookCompare)
+{
+    const Env first;
+    const Env second;
+    const Model a(first);
+    const Model b(second);
+    ASSERT_EQ(BIYOS_setmdlname(a.get(), "a"), BIYOS_OK);
+    Inside inside{.a = a.get(), .b = b.get(), .statuses = {}, .answers = {}};
+    Heard heard;
+    listen(first, heard);
+    listen(second, compare_inside, inside, BIYOS_EVTLVL_ERR);
+    EXPECT_EQ(BIYOS_setenvintopt(second.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
+    EXPECT_EQ(inside.statuses, std::vector<BIYOS_status>{BIYOS_OK});
+    EXPECT_EQ(inside.answers, std::vector<BIYOS_int>{0});
+    EXPECT_EQ(heard.lines, Texts{info(kNamed)});
+}
+
+TEST(CApiTest, ChangeCompare)
+{
+    const Env first;
+    const Env second;
+    const Model a(first);
+    const Model b(second);
+    ASSERT_EQ(BIYOS_setmdlname(a.get(), "a"), BIYOS_OK);
+    Inside inside{.a = a.get(), .b = b.get(), .statuses = {}, .answers = {}};
+    listen(first, rename_inside, inside, BIYOS_EVTLVL_INFO);
+    EXPECT_EQ(compared(a, b), 0);
+    EXPECT_EQ(inside.statuses, std::vector<BIYOS_status>{BIYOS_ERR_BUSY});
+    EXPECT_EQ(second.message(), "busy: model: is in a call on another thread");
+    EXPECT_EQ(compared(b, a), 0);
 }

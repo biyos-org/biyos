@@ -517,7 +517,7 @@ param idx out Receives the id of the hook.
 return `BIYOS_OK`, with the id in `*idx`. Ids count from 1 in each model and are never reused.
 error BIYOS_ERR_BADARG `knd` or `lvl` is unknown.
 error BIYOS_ERR_NOMEMORY The model has given out 2147483646 ids.
-note The hook receives every event of a call on `mdl`, its error message, warnings, failed checks and spans, before the hooks of its environment receive it, and the events of no other call. `BIYOS_newmdl` and `BIYOS_readmdl` are calls on the environment. `BIYOS_copymdl` is a call on its source, so a copy into another environment sends nothing there. A copy made by `BIYOS_copymdl` has none of the hooks of its source.
+note The hook receives every event of a call on `mdl`, its error message, warnings, failed checks and spans, before the hooks of its environment receive it, and the events of no other call. `BIYOS_newmdl` and `BIYOS_readmdl` are calls on the environment. `BIYOS_copymdl` is a call on its source, so a copy into another environment sends nothing there, and `BIYOS_cmpmdl` is a call on `a`. A copy made by `BIYOS_copymdl` has none of the hooks of its source.
 note A failed call adds nothing.
 see BIYOS_delmdlhook BIYOS_addenvhook BIYOS_hook
 since 0.1.0
@@ -654,7 +654,7 @@ error BIYOS_ERR_BADARG `b` or `same` is null.
 note Two models are the same when they hold the same name and the same variables, functions, constraints, objectives, indicators, special ordered sets, cones, complements, piecewise linear functions and callbacks, under the same indices and the same names. Numbers match bit for bit, so `0.0` and `-0.0` differ. A callback matches on its data pointer and on which of its functions are given, since two functions cannot be told apart. Options and hooks are not compared.
 note When the models differ, the call sends one info message from module `model` whose text names the first difference, such as `variable 0: upper bound 1 against 2` ([Events biyos sends](#sec-capi-sent)). When they are the same it sends none.
 note The call is a call on `a`: its events reach the hooks of `a` and then those of its environment, and a failure keeps its message there. When `b` is on another environment, that environment receives nothing.
-note The call only reads the two models, so other threads may read them meanwhile. A change of either model or of either environment that would overlap it on another thread refuses one of the two calls with `BIYOS_ERR_BUSY`. It may run while either environment delivers an event.
+note The call only reads the two models, so other threads may read them meanwhile. A change of either model or of either environment that would overlap it on another thread refuses one of the two calls with `BIYOS_ERR_BUSY`. It may run while either environment delivers an event. A change of `b` or of its environment from a hook of the call is refused with `BIYOS_ERR_BUSY`.
 note The call sends the span `compare` from module `model` on the environment of `a` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_copymdl
 since 0.1.0
@@ -2965,7 +2965,7 @@ value BIYOS_CLM_GLOBAL What the termination says holds for the whole model.
 since 0.1.0
 
 group sent Events biyos sends
-text A field is a name and a value, both text. Three messages exist so far: an error when a call fails, a warning when a deprecated option is set and an info message when two compared models differ.
+text A field is a name and a value, both text. The messages so far are an error when a call fails, a warning when a deprecated option is set, the warnings of `BIYOS_readmdl` and `BIYOS_writemdl` from module `io`, and an info message when two compared models differ.
 text A call on an environment that fails sends an error message, unless the environment is delivering an event. Its level is `BIYOS_EVTLVL_ERR`, its module `capi`, its text the message `BIYOS_lasterror` reads for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a hook can tell the group from the range.
 text Setting a deprecated option sends a warning message at level `BIYOS_EVTLVL_WARN` from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. No option is deprecated yet.
 text `BIYOS_cmpmdl` sends an info message at level `BIYOS_EVTLVL_INFO` from module `model` when the two models differ. Its text names the first difference, such as `variable 0: upper bound 1 against 2` or `model name 'a' against none`, and it has no fields.
