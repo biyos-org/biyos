@@ -18,6 +18,7 @@ add_library(biyos_internal STATIC
     core/options/table.cpp
     core/options/text.cpp
     core/options/value.cpp
+    core/pool/pool.cpp
     core/status.cpp
     core/text/bignum.cpp
     core/text/chars.cpp
@@ -67,6 +68,9 @@ add_library(biyos_internal STATIC
     expr/tape/plan.cpp
     expr/tape/reads.cpp
     expr/tape/tape.cpp
+    expr/threads/levels.cpp
+    expr/threads/sweeps.cpp
+    expr/threads/team.cpp
     io/codes.cpp
     io/directory.cpp
     io/draft/column_shape.cpp

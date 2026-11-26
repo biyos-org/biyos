@@ -5,13 +5,13 @@
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
+#include "core/pool/pool.hpp"
 #include "core/timing/timer.hpp"
-#include "expr/derivatives/reverse.hpp"
-#include "expr/derivatives/value.hpp"
 #include "expr/hessian/elements.hpp"
 #include "expr/hessian/hessian.hpp"
 #include "expr/sparsity/reach.hpp"
 #include "expr/tape/tape.hpp"
+#include "expr/threads/team.hpp"
 #include "model/evaluation/layout.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
@@ -52,7 +52,7 @@ class Evaluation
   public:
     using Point = evaluation::Point;
 
-    Evaluation(const Model &model, Stream stream);
+    Evaluation(const Model &model, Stream stream, Pool &pool);
 
     const Pattern &jacobian_pattern() const noexcept;
     const Lower &hessian_pattern() const noexcept;
@@ -65,6 +65,7 @@ class Evaluation
   private:
     static void check(std::string_view argument, std::size_t size, std::size_t wanted);
     void check(std::span<const Real> x) const;
+    void fit(const Lookup &lookup);
     void weigh(std::span<const Real> w);
     Request request(Index callback, const Point &point) noexcept;
     std::span<const Real> covered(const Callback &callback, std::span<const Real> w);
@@ -80,9 +81,9 @@ class Evaluation
 
     const Model &model_;
     Stream stream_;
+    Pool &pool_;
     evaluation::Program program_;
-    Workspace workspace_;
-    Adjoints adjoints_;
+    Team team_;
     std::vector<Real> values_;
     std::vector<Real> gradients_;
     std::vector<Real> out_;

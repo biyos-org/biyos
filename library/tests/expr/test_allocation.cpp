@@ -1,5 +1,6 @@
 #include "allocations.hpp"
 #include "core/numbers.hpp"
+#include "core/pool/pool.hpp"
 #include "expr/curvature/curvature.hpp"
 #include "expr/derivatives/derivative.hpp"
 #include "expr/derivatives/reverse.hpp"
@@ -12,6 +13,8 @@
 #include "expr/intervals/enclosure.hpp"
 #include "expr/intervals/interval.hpp"
 #include "expr/tape/tape.hpp"
+#include "expr/threads/sweeps.hpp"
+#include "expr/threads/team.hpp"
 #include "utils/refusal.hpp"
 
 #include <gtest/gtest.h>
@@ -38,9 +41,12 @@ using biyos::jacobian;
 using biyos::kLanes;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Pool;
 using biyos::Real;
 using biyos::Shapes;
 using biyos::Tape;
+using biyos::Team;
+using biyos::to_size;
 using biyos::weighted_gradient;
 using biyos::Workspace;
 using biyos::test::allocated_bytes;
@@ -54,6 +60,8 @@ constexpr Index kSteps = 1000;
 constexpr std::size_t kGrowth = 8;
 constexpr Index kTerms = 1000;
 constexpr Offset kWhole = Offset{1} << 40;
+constexpr Index kRing = 200;
+constexpr std::size_t kThreads = 3;
 
 constexpr std::array kUnary{
     Operator::Negation, Operator::Exp,   Operator::Log,     Operator::Sqrt, Operator::Sin,
@@ -194,8 +202,9 @@ std::size_t hessian_cost(const Graph &graph, std::span<const Offset> roots, std:
     std::vector<Real> out(hessian.pattern().rows.size());
     const std::vector<Real> weights(roots.size(), 1.0);
     const std::array point{0.5, 2.0};
+    Pool pool;
     const std::size_t start = allocations();
-    hessian.values(point, weights, out);
+    hessian.values(point, weights, out, pool);
     return allocations() - start;
 }
 
@@ -206,8 +215,9 @@ std::size_t product_cost(const Graph &graph, std::span<const Offset> roots, std:
     const std::array direction{1.5, -0.5};
     std::vector<Real> out(point.size());
     const std::vector<Real> weights(roots.size(), 1.0);
+    Pool pool;
     const std::size_t start = allocations();
-    hessian.product(point, weights, direction, out);
+    hessian.product(point, weights, direction, out, pool);
     return allocations() - start;
 }
 
@@ -286,6 +296,58 @@ std::size_t sweep_cost(const Tape &tape)
     const std::size_t start = allocations();
     forward(tape, point, workspace, values);
     return allocations() - start;
+}
+
+std::vector<Offset> ring(Graph &graph)
+{
+    std::vector<Offset> sines;
+    for (Index k = 0; k < kRing; ++k)
+    {
+        const Offset x = graph.add_variable(k);
+        sines.push_back(graph.add(Operator::Sin, std::span(&x, 1)));
+    }
+    std::vector<Offset> roots;
+    for (std::size_t k = 0; k < sines.size(); ++k)
+    {
+        const std::array pair{sines[k], sines[(k + 1) % sines.size()]};
+        roots.push_back(graph.add(Operator::Product, 1.0, pair));
+    }
+    return roots;
+}
+
+struct Threaded
+{
+    Threaded(const Graph &graph, std::span<const Offset> roots);
+    void run();
+
+    Tape tape;
+    Team team;
+    Hessian hessian;
+    Pool pool;
+    std::vector<Real> point;
+    std::vector<Real> weights;
+    std::vector<Real> values;
+    std::vector<Real> gradients;
+    std::vector<Real> gradient;
+    std::vector<Real> entries;
+};
+
+Threaded::Threaded(const Graph &graph, std::span<const Offset> roots)
+    : tape(graph, roots, 4), team(tape), hessian(graph, roots, {}), point(to_size(kRing), 0.5),
+      weights(roots.size(), 1.0), values(roots.size()), gradients(tape.pattern().variables.size()),
+      gradient(point.size()), entries(hessian.pattern().rows.size())
+{
+    team.fit(tape, kThreads);
+    hessian.fit(kThreads);
+}
+
+void Threaded::run()
+{
+    forward(tape, point, team, pool, values);
+    jacobian(tape, point, team, pool, values, gradients);
+    weighted_gradient(tape, point, weights, team, pool, values, gradient);
+    hessian.values(point, weights, entries, pool);
+    hessian.product(point, weights, point, gradient, pool);
 }
 
 Graph every_operator()
@@ -385,6 +447,19 @@ TEST(AllocationTest, HessianProduct)
     const std::vector<Offset> roots = products(graph);
     EXPECT_EQ(product_cost(graph, roots, 1), 0U);
     EXPECT_EQ(product_cost(graph, roots, kLanes), 0U);
+}
+
+TEST(AllocationTest, Threads)
+{
+    Graph graph;
+    const std::vector<Offset> roots = ring(graph);
+    Threaded threaded(graph, roots);
+    ASSERT_GT(threaded.tape.prepass(), 0);
+    threaded.run();
+    const std::size_t start = allocations();
+    threaded.run();
+    EXPECT_EQ(allocations(), start);
+    EXPECT_EQ(threaded.pool.workers(), kThreads - 1);
 }
 
 TEST(AllocationTest, Curvature)

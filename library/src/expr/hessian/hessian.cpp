@@ -1,9 +1,11 @@
 #include "expr/hessian/hessian.hpp"
 
 #include "core/error.hpp"
+#include "core/memory/resize.hpp"
 #include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
+#include "core/pool/pool.hpp"
 #include "core/text/text.hpp"
 #include "expr/derivatives/value.hpp"
 #include "expr/graph/graph.hpp"
@@ -29,6 +31,7 @@ namespace
 {
 
 constexpr std::size_t kWidest = std::size_t{1} << (std::numeric_limits<std::size_t>::digits - 1);
+constexpr Offset kGrain = 64;
 
 struct Chunk
 {
@@ -102,6 +105,45 @@ void clear(std::span<const Index> variables, Pass &pass) noexcept
     }
 }
 
+std::vector<Offset> chunks_of(const Pattern &pattern)
+{
+    std::vector<Offset> chunks{0};
+    const auto elements = to_offset(pattern.starts.size() - 1);
+    for (Offset e = 0; e < elements; ++e)
+    {
+        if (pattern.starts[to_size(e) + 1] - pattern.starts[to_size(chunks.back())] >= kGrain)
+        {
+            chunks.push_back(e + 1);
+        }
+    }
+    if (chunks.back() != elements)
+    {
+        chunks.push_back(elements);
+    }
+    return chunks;
+}
+
+std::vector<Pass> passes_of(const Tape &tape, std::span<const std::size_t> widths)
+{
+    std::vector<Pass> passes;
+    for (const std::size_t width : widths)
+    {
+        passes.emplace_back(tape, width);
+    }
+    return passes;
+}
+
+template <typename Place>
+void gather(std::span<const Real> parts,
+            std::span<const Place> places,
+            std::span<Real> out) noexcept
+{
+    for (std::size_t k = 0; k < places.size(); ++k)
+    {
+        out[to_size(places[k])] += parts[k];
+    }
+}
+
 }
 
 Hessian::Hessian(const Graph &graph,
@@ -126,14 +168,18 @@ Hessian::Hessian(const Graph &graph,
     {
         if (used[c])
         {
-            places[c] = passes_.size();
-            passes_.emplace_back(tape_, widths[c]);
+            places[c] = widths_.size();
+            widths_.push_back(widths[c]);
         }
     }
     for (std::size_t &c : classes_)
     {
         c = places[c];
     }
+    workers_.push_back(passes_of(tape_, widths_));
+    chunks_ = chunks_of(tape_.pattern());
+    scales_.assign(to_size(tape_.roots()), 0.0);
+    parts_.assign((std::max)(map_.blocks.size(), tape_.pattern().variables.size()), 0.0);
 }
 
 const Lower &Hessian::pattern() const noexcept
@@ -163,13 +209,33 @@ void Hessian::check(std::span<const Real> point, std::span<const Real> weights) 
     check_size("weights", weights.size(), roots_, "the root count");
 }
 
-void Hessian::add_block(Offset e, Real scale, std::span<Real> out) noexcept
+void Hessian::fit(std::size_t threads)
 {
-    Pass &pass = passes_[classes_[to_size(e)]];
+    resize(workers_, threads, [&] { return passes_of(tape_, widths_); });
+}
+
+void Hessian::spread(std::span<const Real> point, std::size_t worker, std::size_t passes) noexcept
+{
+    for (Pass &pass : std::span(workers_[worker]).first(passes))
+    {
+        repeat(point, pass.lanes, pass.points);
+    }
+}
+
+void Hessian::weigh(std::span<const Real> weights) noexcept
+{
+    for (std::size_t k = 0; k < scales_.size(); ++k)
+    {
+        scales_[k] = weights[to_size(elements_.roots[k])] * elements_.weights[k];
+    }
+}
+
+void Hessian::write_block(Offset e, Real scale, std::vector<Pass> &passes) noexcept
+{
+    Pass &pass = passes[classes_[to_size(e)]];
     const std::span<const Index> variables = variables_of(tape_.pattern(), e);
     const std::size_t size = variables.size();
-    const std::span<const Offset> blocks =
-        std::span(map_.blocks).subspan(to_size(map_.starts[to_size(e)]));
+    const std::span<Real> parts = std::span(parts_).subspan(to_size(map_.starts[to_size(e)]));
     for (std::size_t first = 0; first < size; first += pass.lanes)
     {
         const Chunk chunk{.first = first, .count = (std::min)(pass.lanes, size - first)};
@@ -181,7 +247,7 @@ void Hessian::add_block(Offset e, Real scale, std::span<Real> out) noexcept
             for (std::size_t a = column; a < size; ++a)
             {
                 const auto variable = to_size(variables[a]);
-                out[to_size(blocks[offset(size, column, a)])] +=
+                parts[offset(size, column, a)] =
                     scale * pass.second.gradient[variable * pass.lanes + l];
             }
         }
@@ -190,69 +256,98 @@ void Hessian::add_block(Offset e, Real scale, std::span<Real> out) noexcept
     }
 }
 
-void Hessian::add_product(Offset e,
-                          Real scale,
-                          std::span<const Real> direction,
-                          std::span<Real> out) noexcept
+void Hessian::write_product(Offset e,
+                            Real scale,
+                            std::span<const Real> direction,
+                            Pass &pass) noexcept
 {
-    Pass &pass = passes_.front();
     const std::span<const Index> variables = variables_of(tape_.pattern(), e);
+    const std::span<Real> parts =
+        std::span(parts_).subspan(to_size(tape_.pattern().starts[to_size(e)]));
     for (const Index variable : variables)
     {
         pass.seeds[to_size(variable)] = direction[to_size(variable)];
     }
     sweep(tape_, e, pass);
-    for (const Index variable : variables)
+    for (std::size_t k = 0; k < variables.size(); ++k)
     {
-        const auto k = to_size(variable);
-        out[k] += scale * std::exchange(pass.second.gradient[k], 0.0);
-        pass.seeds[k] = 0.0;
+        const auto variable = to_size(variables[k]);
+        parts[k] = scale * std::exchange(pass.second.gradient[variable], 0.0);
+        pass.seeds[variable] = 0.0;
+    }
+}
+
+void Hessian::fill_blocks(std::size_t chunk, std::size_t worker) noexcept
+{
+    for (Offset e = chunks_[chunk]; e < chunks_[chunk + 1]; ++e)
+    {
+        const Real scale = scales_[to_size(e)];
+        if (is_zero(scale))
+        {
+            std::ranges::fill(slice(std::span(parts_), map_.starts, to_size(e)), 0.0);
+        }
+        else
+        {
+            write_block(e, scale, workers_[worker]);
+        }
+    }
+}
+
+void Hessian::fill_products(std::size_t chunk,
+                            std::size_t worker,
+                            std::span<const Real> direction) noexcept
+{
+    const Pattern &pattern = tape_.pattern();
+    for (Offset e = chunks_[chunk]; e < chunks_[chunk + 1]; ++e)
+    {
+        const Real scale = scales_[to_size(e)];
+        if (is_zero(scale))
+        {
+            std::ranges::fill(slice(std::span(parts_), pattern.starts, to_size(e)), 0.0);
+        }
+        else
+        {
+            write_product(e, scale, direction, workers_[worker].front());
+        }
     }
 }
 
 void Hessian::values(std::span<const Real> point,
                      std::span<const Real> weights,
-                     std::span<Real> out)
+                     std::span<Real> out,
+                     Pool &pool)
 {
     check(point, weights);
     check_size("out", out.size(), lower_.rows.size(), "the pattern size");
-    std::ranges::fill(out, 0.0);
     const std::span<const Real> used = point.first(to_size(tape_.variables()));
-    for (Pass &pass : passes_)
-    {
-        broadcast(used, pass.lanes, pass.points);
-    }
-    for (Offset e = 0; e < tape_.roots(); ++e)
-    {
-        const std::size_t k = to_size(e);
-        const Real scale = weights[to_size(elements_.roots[k])] * elements_.weights[k];
-        if (!is_zero(scale))
-        {
-            add_block(e, scale, out);
-        }
-    }
+    const std::size_t passes = widths_.size();
+    auto copy = [&](auto worker, auto) noexcept { spread(used, worker, passes); };
+    pool.run(workers_.size(), workers_.size(), copy);
+    weigh(weights);
+    auto fill = [&](auto chunk, auto worker) noexcept { fill_blocks(chunk, worker); };
+    pool.run(workers_.size(), chunks_.size() - 1, fill);
+    std::ranges::fill(out, 0.0);
+    gather(std::span<const Real>(parts_), std::span<const Offset>(map_.blocks), out);
 }
 
 void Hessian::product(std::span<const Real> point,
                       std::span<const Real> weights,
                       std::span<const Real> direction,
-                      std::span<Real> out)
+                      std::span<Real> out,
+                      Pool &pool)
 {
     check(point, weights);
     check_size("direction", direction.size(), point.size(), "the point size");
     check_size("out", out.size(), point.size(), "the point size");
+    const std::span<const Real> used = point.first(to_size(tape_.variables()));
+    auto copy = [&](auto worker, auto) noexcept { spread(used, worker, 1); };
+    pool.run(workers_.size(), workers_.size(), copy);
+    weigh(weights);
+    auto fill = [&](auto chunk, auto worker) noexcept { fill_products(chunk, worker, direction); };
+    pool.run(workers_.size(), chunks_.size() - 1, fill);
     std::ranges::fill(out, 0.0);
-    Pass &pass = passes_.front();
-    broadcast(point.first(to_size(tape_.variables())), pass.lanes, pass.points);
-    for (Offset e = 0; e < tape_.roots(); ++e)
-    {
-        const std::size_t k = to_size(e);
-        const Real scale = weights[to_size(elements_.roots[k])] * elements_.weights[k];
-        if (!is_zero(scale))
-        {
-            add_product(e, scale, direction, out);
-        }
-    }
+    const std::span<const Index> variables = tape_.pattern().variables;
+    gather(std::span<const Real>(parts_), variables, out);
 }
 
 }

@@ -103,7 +103,7 @@ Model listed()
 std::size_t allocated(const Model &model)
 {
     Env env;
-    Evaluation evaluation(model, env.stream());
+    Evaluation evaluation(model, env.stream(), env.pool());
     const Lookup lookup(env.options());
     std::vector<Real> f(2);
     std::vector<Real> g(evaluation.jacobian_pattern().variables.size());

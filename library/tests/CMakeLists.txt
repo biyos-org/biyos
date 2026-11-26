@@ -42,6 +42,7 @@ biyos_add_test(test_core
     core/options/test_options.cpp
     core/options/test_settings.cpp
     core/options/test_tolerances.cpp
+    core/pool/test_pool.cpp
     core/test_numbers.cpp
     core/text/test_bignum.cpp
     core/text/test_chars.cpp
@@ -96,6 +97,8 @@ biyos_add_test(test_expr
     expr/intervals/test_enclosure.cpp
     expr/intervals/test_interval.cpp
     expr/intervals/test_piecewise.cpp
+    expr/threads/test_levels.cpp
+    expr/threads/test_threads.cpp
     expr/utils/chords.cpp
     expr/utils/reference.cpp
     expr/utils/sampling.cpp
@@ -117,6 +120,7 @@ biyos_add_test(test_model
     model/evaluation/test_evaluation.cpp
     model/evaluation/test_mixed.cpp
     model/evaluation/test_numbering.cpp
+    model/evaluation/test_threads.cpp
     model/functions/test_callbacks.cpp
     model/functions/test_encoding.cpp
     model/functions/test_expressions.cpp

@@ -130,6 +130,11 @@ Usage &Env::usage() noexcept
     return usage_;
 }
 
+Pool &Env::pool() noexcept
+{
+    return pool_;
+}
+
 Env::Handle::Handle(Env &env) noexcept : env_(env)
 {
     ++env_.handles_;

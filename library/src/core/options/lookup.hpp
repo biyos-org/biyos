@@ -23,6 +23,7 @@ class Lookup
     Lookup(Settings &&settings, const Options &options) = delete;
     explicit Lookup(const Options &options) noexcept;
 
+    const Options &options() const noexcept;
     Found find(Option option) const;
 
     bool get_bool(Option option) const;

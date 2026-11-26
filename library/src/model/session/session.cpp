@@ -58,7 +58,7 @@ Evaluation &Session::evaluation()
 {
     if (evaluation_ == nullptr)
     {
-        evaluation_ = std::make_unique<Evaluation>(model_, stream());
+        evaluation_ = std::make_unique<Evaluation>(model_, stream(), env().pool());
     }
     return *evaluation_;
 }

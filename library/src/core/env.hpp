@@ -6,6 +6,7 @@
 #include "core/events/records.hpp"
 #include "core/memory/usage.hpp"
 #include "core/options/options.hpp"
+#include "core/pool/pool.hpp"
 #include "core/timing/clock.hpp"
 #include "core/timing/interrupt.hpp"
 
@@ -80,6 +81,8 @@ class Env
 
     Usage &usage() noexcept;
 
+    Pool &pool() noexcept;
+
   private:
     friend class ErrorScope;
     friend class Stream;
@@ -94,6 +97,7 @@ class Env
     Records records_;
     std::atomic<std::size_t> handles_{0};
     Usage usage_;
+    Pool pool_;
 };
 
 }

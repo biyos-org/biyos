@@ -71,6 +71,7 @@ BIYOS_API BIYOS_status BIYOS_interrupt(BIYOS_env *env);
 #define BIYOS_OPT_INTTOL 8
 #define BIYOS_OPT_ZEROTOL 9
 #define BIYOS_OPT_MAXCPUTIME 10
+#define BIYOS_OPT_THREADS 11
 
 #define BIYOS_CHK_NONE 1
 #define BIYOS_CHK_CHEAP 2

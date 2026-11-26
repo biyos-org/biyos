@@ -135,10 +135,12 @@ void piecewise(const Instruction &instruction, const Frame &frame) noexcept
     map(instruction, frame, [pwl](Real x) { return value_at(pwl, x); });
 }
 
-Frame enter(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept
+Frame enter(const Block &block,
+            std::span<const Real> point,
+            std::span<const Real> shared,
+            Workspace &workspace) noexcept
 {
     const std::span<Real> slots(workspace.slots);
-    const std::span<const Real> shared(workspace.shared);
     const std::size_t lanes = workspace.lanes;
     for (std::size_t k = 0; k < block.loads.size(); ++k)
     {
@@ -363,7 +365,15 @@ void check_sweep(const Tape &tape,
 
 void forward(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept
 {
-    const Frame frame = enter(block, point, workspace);
+    forward(block, point, workspace.shared, workspace);
+}
+
+void forward(const Block &block,
+             std::span<const Real> point,
+             std::span<const Real> shared,
+             Workspace &workspace) noexcept
+{
+    const Frame frame = enter(block, point, shared, workspace);
     for (const Instruction &instruction : block.instructions)
     {
         evaluate(instruction, frame);
@@ -373,9 +383,18 @@ void forward(const Block &block, std::span<const Real> point, Workspace &workspa
 
 void linearize(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept
 {
-    const Frame frame = enter(block, point, workspace);
+    linearize(block, point, workspace.shared, workspace.partials, workspace);
+}
+
+void linearize(const Block &block,
+               std::span<const Real> point,
+               std::span<const Real> shared,
+               std::span<Real> all,
+               Workspace &workspace) noexcept
+{
+    const Frame frame = enter(block, point, shared, workspace);
     const std::size_t lanes = workspace.lanes;
-    const std::span<Real> partials = region(block, std::span(workspace.partials), lanes);
+    const std::span<Real> partials = region(block, all, lanes);
     for (std::size_t k = 0; k < block.instructions.size(); ++k)
     {
         const Instruction &instruction = block.instructions[k];
@@ -421,6 +440,11 @@ void broadcast(std::span<const Real> point, std::size_t lanes, std::span<Real> p
         const std::string size = "size " + text_of(points.size());
         refuse("points", size + ", not the point size " + text_of(point.size()) + in_lanes(lanes));
     }
+    repeat(point, lanes, points);
+}
+
+void repeat(std::span<const Real> point, std::size_t lanes, std::span<Real> points) noexcept
+{
     for (std::size_t k = 0; k < point.size(); ++k)
     {
         std::ranges::fill(row(points, k, lanes), point[k]);
