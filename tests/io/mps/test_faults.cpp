@@ -8,6 +8,7 @@
 #include <vector>
 
 using biyos::test::fault_of;
+using biyos::test::Warning;
 using biyos::test::warnings_of;
 
 namespace
@@ -33,10 +34,10 @@ std::string with_bound(std::string_view bound)
     return text({"NAME t", "ROWS", " N f", "COLUMNS", " x f 1", "RHS", "BOUNDS", bound, "ENDATA"});
 }
 
-std::vector<std::string> texts_of(const std::vector<biyos::test::Warning> &warnings)
+std::vector<std::string> texts_of(const std::vector<Warning> &warnings)
 {
     std::vector<std::string> texts;
-    for (const biyos::test::Warning &warning : warnings)
+    for (const Warning &warning : warnings)
     {
         texts.push_back(warning.line + ": " + warning.text);
     }
@@ -176,7 +177,7 @@ TEST(MpsTest, Unsupported)
 
 TEST(MpsTest, NegativeUpper)
 {
-    const std::vector<biyos::test::Warning> heard = warnings_of(with_bound(" UP b x -1"));
+    const std::vector<Warning> heard = warnings_of(with_bound(" UP b x -1"));
     ASSERT_EQ(heard.size(), 1U);
     EXPECT_EQ(heard[0].file, "t.mps");
     EXPECT_EQ(heard[0].line, "8");
