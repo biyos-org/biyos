@@ -16,6 +16,11 @@ class ChangeTest(unittest.TestCase):
             on(["src/expr/graph/node.cpp"]), {"cpp", "format", "python"}
         )
 
+    def test_examples(self):
+        self.assertEqual(
+            on(["examples/CMakeLists.txt"]), {"cpp", "python", "docs"}
+        )
+
     def test_options(self):
         self.assertIn("docs", on(["src/core/options/table.cpp"]))
 

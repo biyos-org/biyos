@@ -126,8 +126,8 @@ add_library(biyos_internal STATIC
     model/utils/renumber.cpp)
 
 target_include_directories(biyos_internal PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/include)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 target_compile_features(biyos_internal PUBLIC cxx_std_20)
 target_compile_definitions(biyos_internal PRIVATE
     BIYOS_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
@@ -172,9 +172,10 @@ add_library(biyos
     capi/utils/arrays.cpp)
 add_library(biyos::biyos ALIAS biyos)
 
-target_include_directories(biyos PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>)
+target_sources(biyos PUBLIC
+    FILE_SET HEADERS
+    BASE_DIRS ${PROJECT_SOURCE_DIR}/include
+    FILES ${PROJECT_SOURCE_DIR}/include/biyos/biyos.h)
 target_link_libraries(biyos PRIVATE biyos_internal)
 target_compile_definitions(biyos PRIVATE BIYOS_BUILDING)
 if(NOT BUILD_SHARED_LIBS)
