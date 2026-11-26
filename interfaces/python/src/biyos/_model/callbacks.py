@@ -172,8 +172,15 @@ class Callbacks:
     def count(self, cb: Index) -> Index:
         return self._counts[cb] if self.known(cb) else 0
 
+    def total(self) -> Index:
+        return len(self._counts)
+
     def added(self, n: Index) -> None:
         self._counts.append(n)
+
+    def deleted(self, renumbered: list[Index]) -> None:
+        pairs = zip(self._counts, renumbered)
+        self._counts = [count for count, new in pairs if new != -1]
 
     def keep(self, held: object) -> None:
         self._kept.append(held)
