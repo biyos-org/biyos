@@ -198,7 +198,7 @@ TEST_F(PatternTest, Rebuilt)
     const BIYOS_index function = 1;
     const BIYOS_index variable = 0;
     const double coefficient = 1.0;
-    ASSERT_EQ(BIYOS_addlintermsp(model_.get(), 1, &function, &variable, &coefficient), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addlinterm(model_.get(), 1, &function, &variable, &coefficient), BIYOS_OK);
     const Records grown{.counts = {4, 3, 3}, .items = {0, 1, 2, 3, 0, 1, 3, 0, 1, 3}};
     EXPECT_EQ(jacobian(model_), grown);
 }

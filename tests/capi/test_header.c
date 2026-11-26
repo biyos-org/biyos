@@ -169,7 +169,7 @@ static BIYOS_status use_linear(BIYOS_model *model)
     int64_t counts[2] = {-1, -1};
     BIYOS_offset needed = -1;
     int held[4] = {-1, -1, -1, -1};
-    if (BIYOS_addlintermsp(model, 1, functions, variables, values) != BIYOS_OK ||
+    if (BIYOS_addlinterm(model, 1, functions, variables, values) != BIYOS_OK ||
         BIYOS_getrlintermrg(model, 0, 2, 4, counts, held, NULL) != BIYOS_OK || counts[1] != 2 ||
         held[2] != 0 || held[3] != 1)
     {
@@ -542,11 +542,10 @@ static BIYOS_status use_evaluation(BIYOS_env *env)
     const BIYOS_index var2 = 1;
     const BIYOS_real coef = 1.0;
     BIYOS_status status = BIYOS_newmdl(env, &model);
-    if (status == BIYOS_OK &&
-        (BIYOS_addvar(model, 2, NULL, NULL, NULL, NULL) != BIYOS_OK ||
-         BIYOS_addfun(model, 1, NULL) != BIYOS_OK ||
-         BIYOS_addquadtermsp(model, 1, &fun, &var1, &var2, &coef) != BIYOS_OK ||
-         read_patterns(model) != BIYOS_OK || eval_model(model) != BIYOS_OK))
+    if (status == BIYOS_OK && (BIYOS_addvar(model, 2, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+                               BIYOS_addfun(model, 1, NULL) != BIYOS_OK ||
+                               BIYOS_addquadterm(model, 1, &fun, &var1, &var2, &coef) != BIYOS_OK ||
+                               read_patterns(model) != BIYOS_OK || eval_model(model) != BIYOS_OK))
     {
         status = BIYOS_ERR_INTERNAL;
     }

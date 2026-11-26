@@ -907,7 +907,7 @@ return `BIYOS_OK` once the functions are added.
 error BIYOS_ERR_BADARG `n` is negative.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 functions.
 note The constants and terms follow through `BIYOS_setcstrg`, `BIYOS_addrlintermrg` and `BIYOS_addquadtermrg`, or their list forms.
-see BIYOS_setcstsp BIYOS_addlintermsp BIYOS_addquadtermsp
+see BIYOS_setcstsp BIYOS_addlinterm BIYOS_addquadterm
 since 0.1.0
 
 function BIYOS_getnfun
@@ -1028,9 +1028,9 @@ see BIYOS_setfunnamesp
 since 0.1.0
 
 group linear Linear terms
-text A function is added with no linear terms, and `BIYOS_addlintermsp`, `BIYOS_addrlintermrg` and `BIYOS_addclintermrg` add them. They may come in any order and are kept sorted by variable; each must name a variable of the model, appear once in the function and have a finite coefficient. A term whose coefficient is 0 is kept.
+text A function is added with no linear terms, and `BIYOS_addlinterm`, `BIYOS_addrlintermrg` and `BIYOS_addclintermrg` add them. They may come in any order and are kept sorted by variable; each must name a variable of the model, appear once in the function and have a finite coefficient. A term whose coefficient is 0 is kept.
 
-function BIYOS_addlintermsp
+function BIYOS_addlinterm
 summary Add linear terms to functions, as coordinates.
 param mdl in The model.
 param nnz in The number of terms.
@@ -1056,8 +1056,8 @@ param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
 error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last function, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a variable is not one of the model or appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
-note Function `beg + j` gains the `cnt[j]` terms that follow those of function `beg + j - 1`. A variable the function already holds adds its coefficient to the one held, as in `BIYOS_addlintermsp`. A refused call changes nothing.
-see BIYOS_addlintermsp BIYOS_getrlintermrg
+note Function `beg + j` gains the `cnt[j]` terms that follow those of function `beg + j - 1`. A variable the function already holds adds its coefficient to the one held, as in `BIYOS_addlinterm`. A refused call changes nothing.
+see BIYOS_addlinterm BIYOS_getrlintermrg
 since 0.1.0
 
 function BIYOS_addclintermrg
@@ -1072,7 +1072,7 @@ return `BIYOS_OK` once the terms are added.
 error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last variable, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a function is not one of the model or appears twice for a variable, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
 note Variable `beg + j` enters the `cnt[j]` functions of `fun` that follow those of variable `beg + j - 1`, so a variable added late joins the functions of existing constraints in one call. A variable a function already holds adds its coefficient to the one held. A refused call changes nothing.
-see BIYOS_addlintermsp BIYOS_getclintermrg
+see BIYOS_addlinterm BIYOS_getclintermrg
 since 0.1.0
 
 function BIYOS_getnrlintermsp BIYOS_getnrlintermrg
@@ -1144,9 +1144,9 @@ see BIYOS_getnclintermsp BIYOS_getrlintermsp BIYOS_addclintermrg
 since 0.1.0
 
 group quadratic Quadratic terms
-text A function is added with no quadratic terms, and `BIYOS_addquadtermsp` and `BIYOS_addquadtermrg` add them. Each term is a pair of variables `i` and `j` and its coefficient, taken as written, with no factor ½: $x_0^2$ is the pair (0, 0) with the coefficient 1, and $x_0 x_1$ the pair (0, 1) with the coefficient 1. A pair may be given in either order and is kept as `(i, j)` with `i <= j`, a function's pairs sorted by `i`, then by `j`. Each must name variables of the model, appear once for its function in a call and have a finite coefficient. A pair the function already holds adds its coefficient to the one held, which must stay finite, so every call adds $q_{ij} x_i x_j$ to its functions. A term whose coefficient is 0, given or summed, is kept.
+text A function is added with no quadratic terms, and `BIYOS_addquadterm` and `BIYOS_addquadtermrg` add them. Each term is a pair of variables `i` and `j` and its coefficient, taken as written, with no factor ½: $x_0^2$ is the pair (0, 0) with the coefficient 1, and $x_0 x_1$ the pair (0, 1) with the coefficient 1. A pair may be given in either order and is kept as `(i, j)` with `i <= j`, a function's pairs sorted by `i`, then by `j`. Each must name variables of the model, appear once for its function in a call and have a finite coefficient. A pair the function already holds adds its coefficient to the one held, which must stay finite, so every call adds $q_{ij} x_i x_j$ to its functions. A term whose coefficient is 0, given or summed, is kept.
 
-function BIYOS_addquadtermsp
+function BIYOS_addquadterm
 summary Add quadratic terms to functions, as coordinates.
 param mdl in The model.
 param nnz in The number of terms.
@@ -1174,8 +1174,8 @@ param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
 error BIYOS_ERR_BADARG `beg` is negative, `end` is less than `beg`, the range ends past the last function, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a variable is not one of the model, a pair appears twice for a function, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more quadratic terms than any allocation can hold.
-note Function `beg + j` gains the `cnt[j]` terms that follow those of function `beg + j - 1`. A pair the function already holds adds its coefficient to the one held, as in `BIYOS_addquadtermsp`. A refused call changes nothing.
-see BIYOS_addquadtermsp BIYOS_getquadtermrg
+note Function `beg + j` gains the `cnt[j]` terms that follow those of function `beg + j - 1`. A pair the function already holds adds its coefficient to the one held, as in `BIYOS_addquadterm`. A refused call changes nothing.
+see BIYOS_addquadterm BIYOS_getquadtermrg
 since 0.1.0
 
 function BIYOS_getnquadtermsp BIYOS_getnquadtermrg
@@ -1209,7 +1209,7 @@ param coef out Receives the coefficient of each pair; skipped when null.
 return `BIYOS_OK` once the arrays are written, each function's pairs sorted: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[j]` for function `beg + j`.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnquadtermsp` gives.
 note A refused call writes nothing.
-see BIYOS_getnquadtermsp BIYOS_addquadtermsp
+see BIYOS_getnquadtermsp BIYOS_addquadterm
 since 0.1.0
 
 group constraints Constraints
@@ -2481,10 +2481,10 @@ param idx in In the `sp` form, the functions, each listed at most once; may be n
 param node in The node each function gains, by id; may be null only when there are no entries.
 return `BIYOS_OK` once the expressions are added.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, a function is not one of the model or is listed twice, the range ends past the last function, a node is not one of the model, or a function's constant, or a coefficient summed with one the function holds, would not be finite.
-note The function of entry `k`, `idx[k]` or `beg + k`, becomes $f + e$, where $e$ is node `node[k]`. The constant, linear and quadratic terms of $e$ join the function's, added as `BIYOS_addlintermsp` and `BIYOS_addquadtermsp` add terms, and the rest becomes the function's expression, or is summed in a new node with the expression it has. An expression that holds no constant leaves the function's as it was.
+note The function of entry `k`, `idx[k]` or `beg + k`, becomes $f + e$, where $e$ is node `node[k]`. The constant, linear and quadratic terms of $e$ join the function's, added as `BIYOS_addlinterm` and `BIYOS_addquadterm` add terms, and the rest becomes the function's expression, or is summed in a new node with the expression it has. An expression that holds no constant leaves the function's as it was.
 note The expression is split at its top. Among the terms of its top sum, a constant, $a_j x_j$, $q_{ij} x_i x_j$ and $q_{jj} x_j^2$ move, with negations and constant factors pushed into that sum; any other term stays whole, so no product of sums is expanded. Below the top, a node that other nodes use is kept whole, so a subexpression shared by several functions is stored once.
-note A call whose expressions bring new linear or quadratic terms moves the terms and offsets of every function from its lowest such one on, as `BIYOS_addlintermsp` does, so the expressions of many functions are best attached in one call, or a function's right after it is added. An expression that brings no new term moves nothing.
-see BIYOS_addexpr BIYOS_clrfunsp BIYOS_addlintermsp BIYOS_addquadtermsp
+note A call whose expressions bring new linear or quadratic terms moves the terms and offsets of every function from its lowest such one on, as `BIYOS_addlinterm` does, so the expressions of many functions are best attached in one call, or a function's right after it is added. An expression that brings no new term moves nothing.
+see BIYOS_addexpr BIYOS_clrfunsp BIYOS_addlinterm BIYOS_addquadterm
 since 0.1.0
 
 function BIYOS_clrfunsp BIYOS_clrfunrg
@@ -2541,7 +2541,7 @@ since 0.1.0
 
 group callbacks Callbacks
 text A callback computes in user code its part $\gamma_k(x)$ of the nonlinear part of each function $k$ it covers. `BIYOS_addcb` names the functions it covers, and `BIYOS_setcbf`, `BIYOS_setcbg`, `BIYOS_setcbh` and `BIYOS_setcbhv` give it the code for the values of those parts, their first derivatives, the second derivatives of a weighted sum of them and the product of those with a vector. The constant, linear and quadratic terms of a covered function stay in the model beside the callback. A callback is named by its index, counted from 0 in the order the callbacks are added.
-text The derivative patterns are coordinates, as `BIYOS_addlintermsp` takes terms: `BIYOS_setcbg` takes a covered function and a variable for each entry, `BIYOS_setcbh` two variables. Entries may come in any order and may repeat, and `BIYOS_cbg` and `BIYOS_cbh` write one value for each entry in the order given, the values of a repeated entry summed.
+text The derivative patterns are coordinates, as `BIYOS_addlinterm` takes terms: `BIYOS_setcbg` takes a covered function and a variable for each entry, `BIYOS_setcbh` two variables. Entries may come in any order and may repeat, and `BIYOS_cbg` and `BIYOS_cbh` write one value for each entry in the order given, the values of a repeated entry summed.
 text A function's nonlinear part is its expression plus the part of every callback that covers it. A function may be in any number of callbacks and hold an expression beside them, and a callback lists a function at most once. A function emptied by `BIYOS_clrfunsp` stays covered, and `BIYOS_delfunsp` refuses to delete a covered function. A callback reads `x` in the numbering it was written for, so `BIYOS_delvarsp` deletes no variable of a model that has a callback.
 text Each of the four functions is called with a `BIYOS_cbreq`, the array it fills and the callback's `data`. It returns 0 once the array is filled, a positive value when its functions are not defined at `x`, so the solver steps back as it does for a domain error of an expression, and a negative value to stop the call that asked for it. The model is read-only while a callback runs, and a callback runs on one thread at a time. A result found through a callback claims at most `BIYOS_CLM_LOCAL`. The calls of [Evaluation](#sec-capi-evaluation) run callbacks.
 text The model keeps the function pointers and `data` as given and never frees `data`. A copy made by `BIYOS_copymdl` shares them with its source, so both call the same code with the same `data`.
@@ -2630,7 +2630,7 @@ return `BIYOS_OK` once the pattern and the function are kept, in place of those 
 error BIYOS_ERR_BADARG `cb` is not a callback of the model, `g` is null, `nnz` is negative, `fun` or `var` is null while `nnz` is not 0, a function is not one the callback covers, or a variable is not one of the model.
 error BIYOS_ERR_NOMEMORY The pattern would hold more entries than any allocation can hold.
 note The entries may come in any order, and an entry given more than once has its values summed. A variable left out of the entries of function $k$ has a zero derivative of $\gamma_k$.
-note A repeated entry sums here and is refused by `BIYOS_addlintermsp`: a coefficient is data the model merges once, while a callback's value is computed again at every evaluation, and summing repeats spares the user code a merge of its own.
+note A repeated entry sums here and is refused by `BIYOS_addlinterm`: a coefficient is data the model merges once, while a callback's value is computed again at every evaluation, and summing repeats spares the user code a merge of its own.
 see BIYOS_cbg BIYOS_addcb
 since 0.1.0
 

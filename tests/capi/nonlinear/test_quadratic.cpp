@@ -60,12 +60,12 @@ BIYOS_status add_terms(const Model &model,
                        const Compressed &terms)
 {
     const std::vector<int> owners = owners_of(functions, terms);
-    return BIYOS_addquadtermsp(model.get(),
-                               static_cast<BIYOS_offset>(owners.size()),
-                               owners.data(),
-                               terms.rows.data(),
-                               terms.columns.data(),
-                               terms.values.data());
+    return BIYOS_addquadterm(model.get(),
+                             static_cast<BIYOS_offset>(owners.size()),
+                             owners.data(),
+                             terms.rows.data(),
+                             terms.columns.data(),
+                             terms.values.data());
 }
 
 void add_sample(const Model &model)
@@ -161,7 +161,7 @@ void change(const BIYOS_event *, void *data)
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_model *model = attempt.model;
     BIYOS_offset needed = 0;
-    note(attempt, BIYOS_addquadtermsp(model, 0, nullptr, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_addquadterm(model, 0, nullptr, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_addquadtermrg(model, 0, 1, nullptr, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_getnquadtermrg(model, 0, 1, &needed));
 }

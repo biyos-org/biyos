@@ -76,12 +76,12 @@ void add_ranged(Session &session,
 
 }
 
-BIYOS_status BIYOS_addquadtermsp(BIYOS_model *mdl,
-                                 BIYOS_offset nnz,
-                                 const BIYOS_index *fun,
-                                 const BIYOS_index *var1,
-                                 const BIYOS_index *var2,
-                                 const BIYOS_real *coef)
+BIYOS_status BIYOS_addquadterm(BIYOS_model *mdl,
+                               BIYOS_offset nnz,
+                               const BIYOS_index *fun,
+                               const BIYOS_index *var1,
+                               const BIYOS_index *var2,
+                               const BIYOS_real *coef)
 {
     return guarded<add_listed>(mdl, nnz, fun, var1, var2, coef);
 }

@@ -1352,7 +1352,7 @@ class Model:
 
         See Also
         --------
-        BIYOS_addlintermsp
+        BIYOS_addlinterm
         """
         size = len(fun)
         arrays = (
@@ -1360,7 +1360,7 @@ class Model:
             indices_of(self, Variables, "var", var, size),
             doubles("coef", coef, size),
         )
-        self._call(lib.BIYOS_addlintermsp, size, *arrays)
+        self._call(lib.BIYOS_addlinterm, size, *arrays)
 
     def getnrlinterm(
         self, idx: Sequence[Index | Function] | Functions | None = None
@@ -1497,7 +1497,7 @@ class Model:
 
         See Also
         --------
-        BIYOS_addquadtermsp
+        BIYOS_addquadterm
         """
         size = len(fun)
         arrays = (
@@ -1506,7 +1506,7 @@ class Model:
             indices_of(self, Variables, "var2", var2, size),
             doubles("coef", coef, size),
         )
-        self._call(lib.BIYOS_addquadtermsp, size, *arrays)
+        self._call(lib.BIYOS_addquadterm, size, *arrays)
 
     def getnquadterm(
         self, idx: Sequence[Index | Function] | Functions | None = None

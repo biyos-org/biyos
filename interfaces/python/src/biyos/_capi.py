@@ -189,7 +189,7 @@ def _declare_functions(lib: ctypes.CDLL) -> None:
         _declare_pair(lib, f"BIYOS_{verb}cst", _REALS)
     _declare_pair(lib, "BIYOS_delfun", _INDICES)
     coordinates = (c_void_p, c_offset, _INDICES, _INDICES, _REALS)
-    _declare(lib, "BIYOS_addlintermsp", *coordinates)
+    _declare(lib, "BIYOS_addlinterm", *coordinates)
     ranged = (c_void_p, c_index, c_index, _OFFSETS, _INDICES, _REALS)
     _declare(lib, "BIYOS_addrlintermrg", *ranged)
     _declare(lib, "BIYOS_addclintermrg", *ranged)
@@ -208,7 +208,7 @@ def _declare_terms(lib: ctypes.CDLL, name: str, others: int = 1) -> None:
 
 def _declare_quadratic(lib: ctypes.CDLL) -> None:
     coordinates = (c_void_p, c_offset, _INDICES, _INDICES, _INDICES, _REALS)
-    _declare(lib, "BIYOS_addquadtermsp", *coordinates)
+    _declare(lib, "BIYOS_addquadterm", *coordinates)
     ranged = (c_void_p, c_index, c_index, _OFFSETS, _INDICES, _INDICES)
     _declare(lib, "BIYOS_addquadtermrg", *ranged, _REALS)
     _declare_terms(lib, "quadterm", 2)

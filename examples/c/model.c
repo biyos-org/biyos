@@ -37,7 +37,7 @@ static BIYOS_status squares(BIYOS_model *mdl)
     const BIYOS_index var1[] = {0, 1};
     const BIYOS_index var2[] = {0, 1};
     const BIYOS_real coef[] = {1.0, 1.0};
-    return BIYOS_addquadtermsp(mdl, 2, fun, var1, var2, coef);
+    return BIYOS_addquadterm(mdl, 2, fun, var1, var2, coef);
 }
 
 static BIYOS_status constraints(BIYOS_model *mdl)

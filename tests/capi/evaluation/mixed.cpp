@@ -106,17 +106,17 @@ void add_terms(BIYOS_model *model)
     const std::array functions{0, 0, 2};
     const std::array variables{0, 3, 1};
     const std::array linear{1.5, -1.0, 2.0};
-    ASSERT_EQ(BIYOS_addlintermsp(model, 3, functions.data(), variables.data(), linear.data()),
+    ASSERT_EQ(BIYOS_addlinterm(model, 3, functions.data(), variables.data(), linear.data()),
               BIYOS_OK);
     const std::array rows{0, 1, 0};
     const std::array columns{0, 2, 3};
     const std::array quadratic{0.7, -0.4, 0.3};
-    ASSERT_EQ(BIYOS_addquadtermsp(model,
-                                  3,
-                                  functions.data(),
-                                  rows.data(),
-                                  columns.data(),
-                                  quadratic.data()),
+    ASSERT_EQ(BIYOS_addquadterm(model,
+                                3,
+                                functions.data(),
+                                rows.data(),
+                                columns.data(),
+                                quadratic.data()),
               BIYOS_OK);
 }
 

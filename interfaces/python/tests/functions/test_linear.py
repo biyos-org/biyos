@@ -151,8 +151,8 @@ def test_sums(model):
 def test_values(model, monkeypatch):
     values = array.array("d", [1.0, 2.0])
     seen = []
-    spy = partial(recorded, seen, lib.BIYOS_addlintermsp)
-    monkeypatch.setattr(lib, "BIYOS_addlintermsp", spy)
+    spy = partial(recorded, seen, lib.BIYOS_addlinterm)
+    monkeypatch.setattr(lib, "BIYOS_addlinterm", spy)
     model.addlinterm([1, 1], [2, 0], values)
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][4]) == values.buffer_info()[0]
@@ -201,7 +201,7 @@ def test_gone(model, monkeypatch):
     function, variable = f[0], x[0]
     model._gen += 1
     seen = []
-    names = ["BIYOS_addlintermsp"]
+    names = ["BIYOS_addlinterm"]
     for form in ("sp", "rg"):
         names += [f"BIYOS_getnclinterm{form}", f"BIYOS_getclinterm{form}"]
     for name in names:

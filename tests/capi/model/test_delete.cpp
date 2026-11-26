@@ -342,7 +342,7 @@ void build_variables(const Model &model, const Spread &spread)
     ASSERT_EQ(BIYOS_setvarnamerg(held, 0, named, spread.names.data()), BIYOS_OK);
     ASSERT_EQ(BIYOS_setvartolrg(held, 0, n, spread.absolute.data(), nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(held, 1, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addlintermsp(held, n, functions.data(), variables.data(), coefficients),
+    ASSERT_EQ(BIYOS_addlinterm(held, n, functions.data(), variables.data(), coefficients),
               BIYOS_OK);
     ASSERT_EQ(BIYOS_addsos(held, 1, &kind, &count, &spread.member, nullptr, nullptr), BIYOS_OK);
 }

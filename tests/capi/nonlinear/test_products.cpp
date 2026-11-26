@@ -136,12 +136,12 @@ Compressed compressed(const Added &added, int count)
 
 BIYOS_status add_listed(const Model &model, const Added &added)
 {
-    return BIYOS_addquadtermsp(model.get(),
-                               static_cast<BIYOS_offset>(added.values.size()),
-                               added.functions.data(),
-                               added.rows.data(),
-                               added.columns.data(),
-                               added.values.data());
+    return BIYOS_addquadterm(model.get(),
+                             static_cast<BIYOS_offset>(added.values.size()),
+                             added.functions.data(),
+                             added.rows.data(),
+                             added.columns.data(),
+                             added.values.data());
 }
 
 BIYOS_status add_ranged(const Model &model, const Added &added)
@@ -323,18 +323,18 @@ TEST(ProductTest, Arguments)
     const std::array<double, 1> one{1.0};
     const std::array<BIYOS_offset, 3> negative{1, 0, -1};
     const std::array<BIYOS_offset, 2> overflowing{(std::numeric_limits<BIYOS_offset>::max)(), 1};
-    EXPECT_EQ(BIYOS_addquadtermsp(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addquadterm(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': -1 is negative");
-    EXPECT_EQ(BIYOS_addquadtermsp(held, 1, nullptr, zero.data(), zero.data(), one.data()),
+    EXPECT_EQ(BIYOS_addquadterm(held, 1, nullptr, zero.data(), zero.data(), one.data()),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
-    EXPECT_EQ(BIYOS_addquadtermsp(held, 1, zero.data(), zero.data(), nullptr, one.data()),
+    EXPECT_EQ(BIYOS_addquadterm(held, 1, zero.data(), zero.data(), nullptr, one.data()),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'var2': is null");
-    EXPECT_EQ(BIYOS_addquadtermsp(held, 1, zero.data(), nullptr, zero.data(), one.data()),
+    EXPECT_EQ(BIYOS_addquadterm(held, 1, zero.data(), nullptr, zero.data(), one.data()),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'var1': is null");
-    EXPECT_EQ(BIYOS_addquadtermsp(held, 1, zero.data(), zero.data(), zero.data(), nullptr),
+    EXPECT_EQ(BIYOS_addquadterm(held, 1, zero.data(), zero.data(), zero.data(), nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
     EXPECT_EQ(BIYOS_addquadtermrg(held, 0, -1, nullptr, nullptr, nullptr, nullptr),
@@ -352,7 +352,7 @@ TEST(ProductTest, Arguments)
         BIYOS_addquadtermrg(held, 0, 2, overflowing.data(), zero.data(), zero.data(), one.data()),
         BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': sum overflows at entry 1");
-    EXPECT_EQ(BIYOS_addquadtermsp(held, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addquadterm(held, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addquadtermrg(held, 0, functions, nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);
 }
