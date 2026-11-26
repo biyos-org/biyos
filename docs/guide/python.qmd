@@ -49,6 +49,17 @@ The readers return lists, in the order of the C call's arrays:
 
 `idx` lists the items to read, or is a block or a range of them, and defaults to every item, so `model.getvar()` reads them all. The readers of terms size their arrays themselves. `getrlinterm` reads the linear terms of functions and `getclinterm` those of variables, each term as its function, its variable and its coefficient, and `getnrlinterm` and `getnclinterm` count them. `getquadterm` reads the quadratic terms of functions in the same shape, with two variables, and `getnquadterm` counts them. `addlinterm(fun, var, coef)` adds terms in that same shape, so `target.addlinterm(*source.getrlinterm())` copies the linear terms of one model into another with the same functions and variables. `addquadterm(fun, var1, var2, coef)` does the same for quadratic terms, from `getquadterm`. `getsos` reads special ordered sets as `addsos` takes them, the members of each set after those of the one before, so `target.addsos(*source.getsos())` copies them into a model with the same variables, and `getnsosvar` counts the members. `getpwl` reads piecewise linear functions the same way, the points of each after those of the one before, so `target.addpwl(*source.getpwl())` copies them, and `getnpwlpt` counts the points. `getexpr` reads the expressions of functions in the postfix `addexpr` takes, its codes as `Operator` members, and `getnexpr` counts their entries and values, so `target.addexpr(*source.getexpr())` adds the expressions of one model to another, ready to attach ([Reading a model back](#sec-model-reading)).
 
+`addlinterm` also takes the terms of each function as one list. When the entries of `var` are sequences, `fun` lists the functions in any order, or is a block or a range of them, and `var[j]` and `coef[j]` hold the variables and the coefficients of `fun[j]`, so no function index is repeated. The call goes to `BIYOS_addrlintermsp`, or `BIYOS_addrlintermrg` for a block or a range. `addquadterm` follows the same rule with `var1` and `var2`, and `addclinterm(var, fun, coef)` takes the functions of each variable that way only. A scalar in place of the functions, or of the variables for `addclinterm`, stands for one record, its terms one level less nested, or its one term when they are scalars too:
+
+```python
+model.addlinterm([0, 2], [[1, 2], [0]], [[1.0, 2.0], [3.0]])
+model.addlinterm(0, [0, 1], [1.0, 2.0])
+model.addlinterm(0, 1, 1.0)
+model.addclinterm(x[2], [f[0], f[1]], [1.0, 2.0])
+```
+
+An entry of `coef` longer or shorter than its entry of `var` raises `ValueError`, as does one of `var2` against `var1`, and a scalar anywhere else `TypeError`.
+
 A getter of an attribute takes the list of indices its setter takes and returns lists the same way: `model.getvarbnd(idx)` returns the lower and the upper bounds of the variables `idx` lists, and `model.getvarknd(idx)` their kinds. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobj` leaves out, as `addobj` does, and `getvartol(idx)`, `getcontol(idx)`, `getconetol(idx)` and `getccontol(idx)` those of variables, constraints, cones and complements, None where an item holds none. `getcst(idx)` returns the constants of functions, which `setcst` sets and `addcst` adds to.
 
 ## Expressions {#sec-python-expressions}

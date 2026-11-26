@@ -1,7 +1,15 @@
 import numbers
 from collections.abc import Sequence, Sized
 from ctypes import Array, c_char_p
-from typing import TYPE_CHECKING, Any, SupportsIndex, TypeGuard, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    SupportsIndex,
+    TypeAlias,
+    TypeGuard,
+    TypeVar,
+    cast,
+)
 
 from biyos._convert.integers import integer, offset
 from biyos._convert.numbers import (
@@ -21,6 +29,7 @@ if TYPE_CHECKING:
     from biyos._model.model import Model
 
 Element = TypeVar("Element", c_real, c_integer, c_offset, c_char_p)
+Entries: TypeAlias = list[tuple[str, Sequence[Any]]]
 
 
 def _sized(name: str, values: Sized, count: int) -> None:
@@ -157,3 +166,51 @@ def counts(
     if copied is not None:
         _counted(name, copied)
     return copied
+
+
+def sequence(name: str, values: object) -> Sequence[Any]:
+    if not isinstance(values, Sized):
+        found = type(values).__name__
+        raise TypeError(f"{name} must be a sequence, not {found}")
+    return cast("Sequence[Any]", values)
+
+
+def nested(name: str, values: object) -> bool:
+    entries = sequence(name, values)
+    if isinstance(entries, Block):
+        return False
+    return isinstance(next(iter(entries), None), Sized)
+
+
+def entries_of(name: str, values: object, count: int) -> Entries:
+    found = sequence(name, values)
+    _sized(name, found, count)
+    parts = [f"{name}[{k}]" for k in range(count)]
+    return [(part, sequence(part, entry)) for part, entry in zip(parts, found)]
+
+
+def matched(name: str, values: object, sizes: Sequence[int]) -> Entries:
+    entries = entries_of(name, values, len(sizes))
+    for (part, entry), size in zip(entries, sizes):
+        _sized(part, entry, size)
+    return entries
+
+
+def nested_indices(
+    model: "Model", family: type[Block[Any]], entries: Entries
+) -> Array[c_index]:
+    items = [
+        index
+        for part, entry in entries
+        for index in _indices(model, family, part, entry)
+    ]
+    return (c_index * len(items))(*items)
+
+
+def nested_doubles(entries: Entries) -> Array[c_real]:
+    items = [
+        _real(f"an entry of {part}", value)
+        for part, entry in entries
+        for value in entry
+    ]
+    return (c_real * len(items))(*items)
