@@ -17,25 +17,28 @@ using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
-using biyos::capi::Coordinates;
 using biyos::capi::guarded;
 using biyos::capi::List;
-using biyos::capi::put_term;
+using biyos::capi::put;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
-using biyos::capi::unpack;
 using biyos::capi::write_counts;
 
 namespace
 {
+
+std::span<const LinearTerm> linear_terms_of(const Model &model, Index function)
+{
+    return model.linear_terms(function, function + 1);
+}
 
 std::size_t count_of(const Model &model, std::span<const Index> functions)
 {
     std::size_t count = 0;
     for (const Index function : functions)
     {
-        count += model.linear_terms(function, function + 1).size();
+        count += linear_terms_of(model, function).size();
     }
     return count;
 }
@@ -48,49 +51,37 @@ void n_row_terms(const Session &session, Selection selection, BIYOS_offset *nnz)
     *require(nnz, "nnz") = to_offset(count);
 }
 
-void write_rows(const Model &model, std::span<const Index> functions, const Coordinates &out)
+void write_rows(const Model &model,
+                std::span<const Index> functions,
+                BIYOS_index *variables,
+                BIYOS_real *values)
 {
     std::size_t k = 0;
     for (const Index function : functions)
     {
-        for (const LinearTerm &term : model.linear_terms(function, function + 1))
+        for (const LinearTerm &term : linear_terms_of(model, function))
         {
-            put_term(out, k, function, term);
+            put(variables, k, term.variable);
+            put(values, k, term.coefficient);
             ++k;
         }
     }
 }
 
-void get_listed(const Session &session,
-                List list,
-                BIYOS_offset capacity,
-                BIYOS_offset *nnz,
-                const Coordinates &out)
-{
-    const auto chosen = selected(session.model(), Family::Function, list);
-    const std::size_t count = count_of(session.model(), chosen);
-    check_capacity(capacity, count);
-    write_rows(session.model(), chosen, out);
-    if (nnz != nullptr)
-    {
-        *nnz = to_offset(count);
-    }
-}
-
-void get_ranged(const Session &session,
-                Range range,
-                BIYOS_offset capacity,
-                BIYOS_offset *counts,
-                BIYOS_index *variables,
-                BIYOS_real *values)
+template <typename Selection>
+void get_rows(const Session &session,
+              Selection selection,
+              BIYOS_offset capacity,
+              BIYOS_offset *counts,
+              BIYOS_index *variables,
+              BIYOS_real *values)
 {
     const Model &model = session.model();
-    const std::span<const LinearTerm> terms = model.linear_terms(range.start, range.stop);
-    check_capacity(capacity, terms.size());
-    const auto record = [&](Index j)
-    { return model.linear_terms(range.start + j, range.start + j + 1); };
-    write_counts(to_size(range.stop - range.start), counts, record);
-    unpack(terms, terms.size(), variables, values);
+    const auto chosen = selected(model, Family::Function, selection);
+    check_capacity(capacity, count_of(model, chosen));
+    const auto record = [&](Index j) { return linear_terms_of(model, chosen[to_size(j)]); };
+    write_counts(chosen.size(), counts, record);
+    write_rows(model, chosen, variables, values);
 }
 
 }
@@ -115,13 +106,11 @@ BIYOS_status BIYOS_getrlintermsp(const BIYOS_model *mdl,
                                  BIYOS_index n,
                                  const BIYOS_index *idx,
                                  BIYOS_offset cap,
-                                 BIYOS_offset *nnz,
-                                 BIYOS_index *fun,
+                                 BIYOS_offset *cnt,
                                  BIYOS_index *var,
                                  BIYOS_real *coef)
 {
-    const Coordinates out{.functions = fun, .variables = var, .values = coef};
-    return guarded<get_listed>(mdl, List{n, idx}, cap, nnz, out);
+    return guarded<get_rows<List>>(mdl, List{n, idx}, cap, cnt, var, coef);
 }
 
 BIYOS_status BIYOS_getrlintermrg(const BIYOS_model *mdl,
@@ -132,5 +121,5 @@ BIYOS_status BIYOS_getrlintermrg(const BIYOS_model *mdl,
                                  BIYOS_index *var,
                                  BIYOS_real *coef)
 {
-    return guarded<get_ranged>(mdl, Range{beg, end}, cap, cnt, var, coef);
+    return guarded<get_rows<Range>>(mdl, Range{beg, end}, cap, cnt, var, coef);
 }

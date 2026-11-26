@@ -1,6 +1,7 @@
 #include "biyos/biyos.h"
 #include "handles.hpp"
 #include "sample.hpp"
+#include "utils/counts.hpp"
 
 #include <gtest/gtest.h>
 
@@ -19,6 +20,7 @@ using biyos::test::below;
 using biyos::test::build_sample;
 using biyos::test::Engine;
 using biyos::test::Env;
+using biyos::test::expanded;
 using biyos::test::Model;
 
 constexpr std::array<std::uint32_t, 8> kSeeds{1, 2, 3, 5, 8, 13, 21, 34};
@@ -35,7 +37,6 @@ using ReadListed = BIYOS_status (*)(const BIYOS_model *,
                                     const BIYOS_index *,
                                     BIYOS_offset,
                                     BIYOS_offset *,
-                                    BIYOS_index *,
                                     BIYOS_index *,
                                     BIYOS_real *);
 using ReadRanged = BIYOS_status (*)(const BIYOS_model *,
@@ -159,61 +160,67 @@ BIYOS_offset n_ranged(const Model &model, const Reader &reader, Span span)
     return nnz;
 }
 
-Coords read_listed(const Model &model, const Reader &reader, const Indices &listed)
+struct Read
+{
+    std::vector<BIYOS_offset> counts;
+    Indices other;
+    std::vector<double> values;
+};
+
+Read sized(std::size_t n, BIYOS_offset count)
+{
+    const auto size = static_cast<std::size_t>(count);
+    return {
+        .counts = std::vector<BIYOS_offset>(n, -1),
+        .other = Indices(size, -1),
+        .values = std::vector<double>(size),
+    };
+}
+
+Coords arranged(const Reader &reader, const Indices &listed, const Read &read)
+{
+    Indices records = expanded(read.counts, listed);
+    EXPECT_EQ(records.size(), read.values.size());
+    if (reader.by_row)
+    {
+        return {.functions = records, .variables = read.other, .values = bits(read.values)};
+    }
+    return {.functions = read.other, .variables = records, .values = bits(read.values)};
+}
+
+Read fetched(const Model &model, const Reader &reader, const Indices &listed)
 {
     const BIYOS_offset count = n_listed(model, reader, listed);
-    const auto size = static_cast<std::size_t>(count);
-    Coords found{.functions = Indices(size, -1), .variables = Indices(size, -1), .values = {}};
-    std::vector<double> values(size);
-    BIYOS_offset nnz = -1;
+    Read read = sized(listed.size(), count);
     EXPECT_EQ(reader.listed(model.get(),
                             static_cast<BIYOS_index>(listed.size()),
                             listed.data(),
                             count,
-                            &nnz,
-                            found.functions.data(),
-                            found.variables.data(),
-                            values.data()),
+                            read.counts.data(),
+                            read.other.data(),
+                            read.values.data()),
               BIYOS_OK);
-    EXPECT_EQ(nnz, count);
-    found.values = bits(values);
-    return found;
+    return read;
 }
 
-Indices expanded(const std::vector<BIYOS_offset> &counts, BIYOS_index first)
+Coords read_listed(const Model &model, const Reader &reader, const Indices &listed)
 {
-    Indices records;
-    for (std::size_t j = 0; j < counts.size(); ++j)
-    {
-        records.insert(records.end(),
-                       static_cast<std::size_t>(counts[j]),
-                       first + static_cast<BIYOS_index>(j));
-    }
-    return records;
+    return arranged(reader, listed, fetched(model, reader, listed));
 }
 
 Coords read_ranged(const Model &model, const Reader &reader, Span span)
 {
     const BIYOS_offset count = n_ranged(model, reader, span);
-    const auto size = static_cast<std::size_t>(count);
-    std::vector<BIYOS_offset> counts(static_cast<std::size_t>(span.size), -1);
-    Indices other(size, -1);
-    std::vector<double> values(size);
+    Read read = sized(static_cast<std::size_t>(span.size), count);
     EXPECT_EQ(reader.ranged(model.get(),
                             span.start,
                             span.start + span.size,
                             count,
-                            counts.data(),
-                            other.data(),
-                            values.data()),
+                            read.counts.data(),
+                            read.other.data(),
+                            read.values.data()),
               BIYOS_OK);
-    EXPECT_EQ(std::accumulate(counts.begin(), counts.end(), BIYOS_offset{0}), count);
-    Indices records = expanded(counts, span.start);
-    if (reader.by_row)
-    {
-        return {.functions = records, .variables = other, .values = bits(values)};
-    }
-    return {.functions = other, .variables = records, .values = bits(values)};
+    return arranged(reader, indices_of(span), read);
 }
 
 void expect_pairs(const Model &model, const Reader &reader, Engine &engine)
@@ -230,26 +237,54 @@ void expect_pairs(const Model &model, const Reader &reader, Engine &engine)
     expect_same(read_listed(model, reader, listed), wanted);
 }
 
+void build_small(const Model &model)
+{
+    ASSERT_EQ(BIYOS_addvar(model.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(model.get(), 2, nullptr), BIYOS_OK);
+    const Indices functions{0, 0, 0, 1};
+    const Indices variables{0, 1, 2, 1};
+    const std::vector<double> values{1.0, 2.0, 3.0, 4.0};
+    ASSERT_EQ(BIYOS_addlinterm(model.get(), 4, functions.data(), variables.data(), values.data()),
+              BIYOS_OK);
+}
+
+void expect_read(const Read &read, const Read &wanted)
+{
+    EXPECT_EQ(read.counts, wanted.counts);
+    EXPECT_EQ(read.other, wanted.other);
+    EXPECT_EQ(bits(read.values), bits(wanted.values));
+}
+
+void expect_uncounted(const Model &model, const Reader &reader, const Indices &listed)
+{
+    const Read wanted = fetched(model, reader, listed);
+    const BIYOS_offset count = n_listed(model, reader, listed);
+    Read read = sized(0, count);
+    EXPECT_EQ(reader.listed(model.get(),
+                            static_cast<BIYOS_index>(listed.size()),
+                            listed.data(),
+                            count,
+                            nullptr,
+                            read.other.data(),
+                            read.values.data()),
+              BIYOS_OK);
+    EXPECT_EQ(read.other, wanted.other);
+    EXPECT_EQ(bits(read.values), bits(wanted.values));
+}
+
 void expect_kept(const Model &model, const Reader &reader, const Indices &listed, BIYOS_offset cap)
 {
     const auto n = static_cast<BIYOS_index>(listed.size());
-    BIYOS_offset nnz = -1;
     const auto size = static_cast<std::size_t>(cap) + 1;
-    Indices functions(size, -1);
-    Indices variables(size, -1);
+    std::vector<BIYOS_offset> counts(listed.size(), -1);
+    Indices other(size, -1);
     std::vector<double> values(size, -1.0);
-    EXPECT_EQ(reader.listed(model.get(),
-                            n,
-                            listed.data(),
-                            cap,
-                            &nnz,
-                            functions.data(),
-                            variables.data(),
-                            values.data()),
-              BIYOS_ERR_BADARG);
-    EXPECT_EQ(nnz, -1);
-    EXPECT_EQ(functions, Indices(size, -1));
-    EXPECT_EQ(variables, Indices(size, -1));
+    EXPECT_EQ(
+        reader
+            .listed(model.get(), n, listed.data(), cap, counts.data(), other.data(), values.data()),
+        BIYOS_ERR_BADARG);
+    EXPECT_EQ(counts, std::vector<BIYOS_offset>(listed.size(), -1));
+    EXPECT_EQ(other, Indices(size, -1));
     EXPECT_EQ(bits(values), bits(std::vector<double>(size, -1.0)));
 }
 
@@ -327,4 +362,32 @@ TEST(TermTest, Refusals)
     const Env env;
     expect_refused(env, kRows);
     expect_refused(env, kColumns);
+}
+
+TEST(TermTest, Repeats)
+{
+    const Env env;
+    const Model model(env);
+    build_small(model);
+    const Read rows{
+        .counts = {1, 3, 1},
+        .other = {1, 0, 1, 2, 1},
+        .values = {4.0, 1.0, 2.0, 3.0, 4.0},
+    };
+    expect_read(fetched(model, kRows, {1, 0, 1}), rows);
+    const Read columns{
+        .counts = {2, 1, 2},
+        .other = {0, 1, 0, 0, 1},
+        .values = {2.0, 4.0, 3.0, 2.0, 4.0},
+    };
+    expect_read(fetched(model, kColumns, {1, 2, 1}), columns);
+}
+
+TEST(TermTest, Uncounted)
+{
+    const Env env;
+    const Model model(env);
+    build_small(model);
+    expect_uncounted(model, kRows, {1, 0, 1});
+    expect_uncounted(model, kColumns, {1, 2, 1});
 }

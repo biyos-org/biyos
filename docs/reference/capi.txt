@@ -1112,12 +1112,10 @@ param end in In the `rg` form, one past the last function of the range.
 param n in In the `sp` form, the number of entries.
 param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of terms the output arrays hold.
-param cnt out In the `rg` form, receives `end - beg` counts; skipped when null.
-param nnz out In the `sp` form, receives the number of terms written; skipped when null.
-param fun out In the `sp` form, receives the function of each term; skipped when null.
+param cnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
 param var out Receives the variable of each term, each function's sorted by variable; skipped when null.
 param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[j]` for function `beg + j`.
+return `BIYOS_OK` once the arrays are written, the `cnt[j]` terms of entry `j` following those of entry `j - 1`.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnrlintermsp` gives.
 note A refused call writes nothing.
 see BIYOS_getnrlintermsp BIYOS_getclintermsp
@@ -1146,12 +1144,10 @@ param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
 param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of terms the output arrays hold.
-param cnt out In the `rg` form, receives `end - beg` counts; skipped when null.
-param nnz out In the `sp` form, receives the number of terms written; skipped when null.
+param cnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
 param fun out Receives the function of each term, each variable's sorted by function; skipped when null.
-param var out In the `sp` form, receives the variable of each term; skipped when null.
 param coef out Receives the coefficient of each term; skipped when null.
-return `BIYOS_OK` once the arrays are written: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[j]` for variable `beg + j`.
+return `BIYOS_OK` once the arrays are written, the `cnt[j]` terms of entry `j` following those of entry `j - 1`.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, or `cap` is less than the number of terms `BIYOS_getnclintermsp` gives.
 note The terms are those `BIYOS_getrlintermsp` reads, grouped by variable instead of by function. The model keeps no copy of them in this order, so each call reads the terms of every function. A refused call writes nothing.
 note The call sends the span `columns` from module `model` ([Events biyos sends](#sec-capi-sent)).
@@ -1215,13 +1211,11 @@ param end in In the `rg` form, one past the last function of the range.
 param n in In the `sp` form, the number of entries.
 param idx in In the `sp` form, the function of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of terms the output arrays hold.
-param cnt out In the `rg` form, receives `end - beg` counts; skipped when null.
-param nnz out In the `sp` form, receives the number of terms written; skipped when null.
-param fun out In the `sp` form, receives the function of each term; skipped when null.
+param cnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
 param var1 out Receives the first variable of each pair; skipped when null.
 param var2 out Receives the second variable of each pair, never below the first; skipped when null.
 param coef out Receives the coefficient of each pair; skipped when null.
-return `BIYOS_OK` once the arrays are written, each function's pairs sorted: in the `sp` form the terms of `idx[0]`, then those of `idx[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[j]` for function `beg + j`.
+return `BIYOS_OK` once the arrays are written, each function's pairs sorted, the `cnt[j]` terms of entry `j` following those of entry `j - 1`.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, or `cap` is less than the number of terms `BIYOS_getnquadtermsp` gives.
 note A refused call writes nothing.
 see BIYOS_getnquadtermsp BIYOS_addquadterm

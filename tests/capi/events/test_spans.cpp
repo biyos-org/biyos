@@ -182,7 +182,7 @@ TEST(CApiTest, ColumnSpan)
     BIYOS_offset nnz = -1;
     ASSERT_EQ(BIYOS_getnclintermsp(model, 2, both, &nnz), BIYOS_OK);
     ASSERT_EQ(BIYOS_getnclintermrg(model, 0, 2, &nnz), BIYOS_OK);
-    ASSERT_EQ(BIYOS_getclintermsp(model, 2, both, 0, &nnz, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_getclintermsp(model, 2, both, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_getclintermrg(model, 0, 2, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     const Texts span = span_of("model/columns");
     Texts expected;
@@ -194,7 +194,7 @@ TEST(CApiTest, ColumnSpan)
     recorder.spans.clear();
     EXPECT_EQ(BIYOS_getnclintermsp(model, 1, nullptr, &nnz), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getnclintermrg(model, 0, 3, &nnz), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_getclintermsp(model, 1, nullptr, 0, &nnz, nullptr, nullptr, nullptr),
+    EXPECT_EQ(BIYOS_getclintermsp(model, 1, nullptr, 0, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_TRUE(recorder.spans.empty());
 }
@@ -244,7 +244,7 @@ TEST(CApiTest, ColumnHooked)
     BIYOS_offset nnz = -1;
     ASSERT_EQ(BIYOS_getnclintermsp(model, 2, both, &nnz), BIYOS_OK);
     ASSERT_EQ(BIYOS_getnclintermrg(model, 0, 2, &nnz), BIYOS_OK);
-    ASSERT_EQ(BIYOS_getclintermsp(model, 2, both, 0, &nnz, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_getclintermsp(model, 2, both, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_getclintermrg(model, 0, 2, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     expect_heard(recorder, repeated(span_of("model/columns"), 4));
 }

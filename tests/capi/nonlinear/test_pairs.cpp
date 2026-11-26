@@ -1,6 +1,7 @@
 #include "biyos/biyos.h"
 #include "handles.hpp"
 #include "sample.hpp"
+#include "utils/counts.hpp"
 
 #include <gtest/gtest.h>
 
@@ -19,6 +20,7 @@ using biyos::test::below;
 using biyos::test::build_sample;
 using biyos::test::Engine;
 using biyos::test::Env;
+using biyos::test::expanded;
 using biyos::test::Model;
 
 constexpr std::array<std::uint32_t, 8> kSeeds{1, 2, 3, 5, 8, 13, 21, 34};
@@ -111,93 +113,129 @@ BIYOS_offset n_ranged(const Model &model, Span span)
     return nnz;
 }
 
-Pairs read_listed(const Model &model, const Indices &listed)
+struct Read
 {
-    const BIYOS_offset count = n_listed(model, listed);
+    std::vector<BIYOS_offset> counts;
+    Indices rows;
+    Indices columns;
+    std::vector<double> values;
+};
+
+Read sized(std::size_t n, BIYOS_offset count)
+{
     const auto size = static_cast<std::size_t>(count);
-    Pairs found{
-        .functions = Indices(size, -1),
+    return {
+        .counts = std::vector<BIYOS_offset>(n, -1),
         .rows = Indices(size, -1),
         .columns = Indices(size, -1),
-        .values = {},
+        .values = std::vector<double>(size),
     };
-    std::vector<double> values(size);
-    BIYOS_offset nnz = -1;
+}
+
+Pairs arranged(const Indices &listed, const Read &read)
+{
+    const Indices functions = expanded(read.counts, listed);
+    EXPECT_EQ(functions.size(), read.values.size());
+    return {
+        .functions = functions,
+        .rows = read.rows,
+        .columns = read.columns,
+        .values = bits(read.values),
+    };
+}
+
+Read fetched(const Model &model, const Indices &listed)
+{
+    const BIYOS_offset count = n_listed(model, listed);
+    Read read = sized(listed.size(), count);
     EXPECT_EQ(BIYOS_getquadtermsp(model.get(),
                                   static_cast<BIYOS_index>(listed.size()),
                                   listed.data(),
                                   count,
-                                  &nnz,
-                                  found.functions.data(),
-                                  found.rows.data(),
-                                  found.columns.data(),
-                                  values.data()),
+                                  read.counts.data(),
+                                  read.rows.data(),
+                                  read.columns.data(),
+                                  read.values.data()),
               BIYOS_OK);
-    EXPECT_EQ(nnz, count);
-    found.values = bits(values);
-    return found;
+    return read;
 }
 
-Indices expanded(const std::vector<BIYOS_offset> &counts, BIYOS_index first)
+Pairs read_listed(const Model &model, const Indices &listed)
 {
-    Indices records;
-    for (std::size_t j = 0; j < counts.size(); ++j)
-    {
-        records.insert(records.end(),
-                       static_cast<std::size_t>(counts[j]),
-                       first + static_cast<BIYOS_index>(j));
-    }
-    return records;
+    return arranged(listed, fetched(model, listed));
 }
 
 Pairs read_ranged(const Model &model, Span span)
 {
     const BIYOS_offset count = n_ranged(model, span);
-    const auto size = static_cast<std::size_t>(count);
-    std::vector<BIYOS_offset> counts(static_cast<std::size_t>(span.size), -1);
-    Indices rows(size, -1);
-    Indices columns(size, -1);
-    std::vector<double> values(size);
+    Read read = sized(static_cast<std::size_t>(span.size), count);
     EXPECT_EQ(BIYOS_getquadtermrg(model.get(),
                                   span.start,
                                   span.start + span.size,
                                   count,
-                                  counts.data(),
-                                  rows.data(),
-                                  columns.data(),
-                                  values.data()),
+                                  read.counts.data(),
+                                  read.rows.data(),
+                                  read.columns.data(),
+                                  read.values.data()),
               BIYOS_OK);
-    EXPECT_EQ(std::accumulate(counts.begin(), counts.end(), BIYOS_offset{0}), count);
-    return {
-        .functions = expanded(counts, span.start),
-        .rows = rows,
-        .columns = columns,
-        .values = bits(values),
-    };
+    return arranged(indices_of(span), read);
 }
 
 void expect_kept(const Model &model, const Indices &listed, BIYOS_offset cap)
 {
     const auto n = static_cast<BIYOS_index>(listed.size());
-    BIYOS_offset nnz = -1;
     const auto size = static_cast<std::size_t>(cap) + 1;
-    Indices functions(size, -1);
+    std::vector<BIYOS_offset> counts(listed.size(), -1);
     Indices rows(size, -1);
     std::vector<double> values(size, -1.0);
     EXPECT_EQ(BIYOS_getquadtermsp(model.get(),
                                   n,
                                   listed.data(),
                                   cap,
-                                  &nnz,
-                                  functions.data(),
+                                  counts.data(),
                                   rows.data(),
                                   nullptr,
                                   values.data()),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(nnz, -1);
-    EXPECT_EQ(functions, Indices(size, -1));
+    EXPECT_EQ(counts, std::vector<BIYOS_offset>(listed.size(), -1));
     EXPECT_EQ(rows, Indices(size, -1));
     EXPECT_EQ(bits(values), bits(std::vector<double>(size, -1.0)));
+}
+
+void build_small(const Model &model)
+{
+    ASSERT_EQ(BIYOS_addvar(model.get(), 3, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(model.get(), 2, nullptr), BIYOS_OK);
+    const Indices functions{0, 0, 1};
+    const Indices firsts{0, 1, 2};
+    const Indices seconds{0, 2, 2};
+    const std::vector<double> values{1.0, 2.0, 3.0};
+    ASSERT_EQ(BIYOS_addquadterm(model.get(),
+                                3,
+                                functions.data(),
+                                firsts.data(),
+                                seconds.data(),
+                                values.data()),
+              BIYOS_OK);
+}
+
+void expect_uncounted(const Model &model, const Indices &listed)
+{
+    const Read wanted = fetched(model, listed);
+    const BIYOS_offset count = n_listed(model, listed);
+    Read read = sized(0, count);
+    EXPECT_EQ(BIYOS_getquadtermsp(model.get(),
+                                  static_cast<BIYOS_index>(listed.size()),
+                                  listed.data(),
+                                  count,
+                                  nullptr,
+                                  read.rows.data(),
+                                  read.columns.data(),
+                                  read.values.data()),
+              BIYOS_OK);
+    EXPECT_EQ(read.rows, wanted.rows);
+    EXPECT_EQ(read.columns, wanted.columns);
+    EXPECT_EQ(bits(read.values), bits(wanted.values));
 }
 
 }
@@ -221,6 +259,26 @@ TEST(PairTest, Agree)
         }
         expect_same(read_listed(model, listed), wanted);
     }
+}
+
+TEST(PairTest, Repeats)
+{
+    const Env env;
+    const Model model(env);
+    build_small(model);
+    const Read read = fetched(model, {0, 1, 0});
+    EXPECT_EQ(read.counts, (std::vector<BIYOS_offset>{2, 1, 2}));
+    EXPECT_EQ(read.rows, (Indices{0, 1, 2, 0, 1}));
+    EXPECT_EQ(read.columns, (Indices{0, 2, 2, 0, 2}));
+    EXPECT_EQ(bits(read.values), bits({1.0, 2.0, 3.0, 1.0, 2.0}));
+}
+
+TEST(PairTest, Uncounted)
+{
+    const Env env;
+    const Model model(env);
+    build_small(model);
+    expect_uncounted(model, {0, 1, 0});
 }
 
 TEST(PairTest, Counts)
