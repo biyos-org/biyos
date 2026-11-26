@@ -6,6 +6,7 @@
 #include "expr/tape/tape.hpp"
 
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -44,6 +45,41 @@ constexpr std::array kSpecial{
     (std::numeric_limits<Real>::quiet_NaN)(),
     -1.0,
 };
+
+inline Bits bits(Real value)
+{
+    return std::bit_cast<Bits>(value);
+}
+
+inline std::vector<Bits> bits(std::span<const Real> values)
+{
+    std::vector<Bits> words;
+    for (const Real value : values)
+    {
+        words.push_back(bits(value));
+    }
+    return words;
+}
+
+inline std::vector<Offset> ids(std::span<const Offset> nodes)
+{
+    return {nodes.begin(), nodes.end()};
+}
+
+inline bool ordered(const Graph &graph)
+{
+    for (Offset node = 0; node < graph.size(); ++node)
+    {
+        for (const Offset child : graph.children(node))
+        {
+            if (child >= node)
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
 inline Offset constant(Graph &graph, Real value)
 {
