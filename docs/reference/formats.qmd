@@ -114,7 +114,7 @@ Each rule below is biyos's rule. The document it follows is named where there is
 | Sections | `NAME`, then `OBJSENSE MAX` on one line when the objective maximizes, `ROWS`, `COLUMNS`, `RHS`, `ENDATA`. `RANGES` only when a row has a range, `BOUNDS` only when a column needs a bound line, `SOS` only when the model has a set, `INDICATORS` only when it has an indicator. |
 | Name | The model's name after `NAME`, or `NAME` alone when it has none. |
 | Numbers | The shortest decimal or exponential form that reads back to the same double. An infinite bound is a bound type, never a number. |
-| Objective | The first `N` row, with the negative of its constant as right-hand side. |
+| Objective | The first `N` row, with the negative of its constant as right-hand side. It comes before the first constraint whose function is its own or a later one, so the objective of a model read from MPS reads back on the same function. When a free constraint would come before it, it comes first, since the reader takes the first `N` row as the objective. |
 | No objective | No objective row. When a constraint is free, an empty `N` row comes first, so the model reads back with an objective of 0. |
 | Constraints | One row each, in order. A constant moves into the bounds, $l - c$ and $u - c$, so the row reads back with no constant. The sense is `E`, `L` or `G` from the bounds, `G` or `L` with a range for an interval, `N` for a free constraint. |
 | Columns | One column per variable, in order. A variable in no row is a column line holding its name alone. Variables of kind integer lie between marker lines. |
