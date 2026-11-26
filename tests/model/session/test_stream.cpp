@@ -99,7 +99,7 @@ TEST_F(StreamTest, Owner)
 TEST_F(StreamTest, ModelRecord)
 {
     session.stream().record(ErrorKind::InvalidArgument, "bad");
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.last_error().kind, ErrorKind::InvalidArgument);
     EXPECT_EQ(env.last_error().model, &session);
     EXPECT_STREQ(env.last_error().text, "bad");
 }
@@ -108,7 +108,7 @@ TEST_F(StreamTest, EnvRecord)
 {
     session.stream().record(ErrorKind::InvalidArgument, "bad");
     env.stream().record(ErrorKind::Internal, "broken");
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
+    EXPECT_EQ(env.last_error().kind, ErrorKind::Internal);
     EXPECT_EQ(env.last_error().model, nullptr);
 }
 

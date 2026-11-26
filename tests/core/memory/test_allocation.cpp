@@ -10,6 +10,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 
 namespace
 {
@@ -54,7 +55,7 @@ TEST(AllocationTest, FirstError)
     biyos::test::fail_after(0);
     env.stream().record(biyos::ErrorKind::Internal, "first");
     biyos::test::stop_failing();
-    EXPECT_EQ(env.last_error().status, BIYOS_OK);
+    EXPECT_EQ(env.last_error().kind, std::nullopt);
     EXPECT_STREQ(env.last_error().text, "");
 }
 
@@ -62,9 +63,9 @@ TEST(AllocationTest, EmptyScope)
 {
     biyos::Env env;
     biyos::test::in_delivery(env, failed_scope);
-    EXPECT_EQ(env.last_error().status, BIYOS_OK);
+    EXPECT_EQ(env.last_error().kind, std::nullopt);
     EXPECT_STREQ(env.last_error().text, "");
     env.stream().record(biyos::ErrorKind::Internal, "later");
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
+    EXPECT_EQ(env.last_error().kind, biyos::ErrorKind::Internal);
     EXPECT_STREQ(env.last_error().text, "later");
 }

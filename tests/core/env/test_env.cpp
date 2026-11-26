@@ -12,6 +12,7 @@
 #include <functional>
 #include <latch>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <type_traits>
@@ -54,7 +55,7 @@ void internal_scope(biyos::Env &env)
 {
     const biyos::ErrorScope scope(env);
     env.stream().record(biyos::ErrorKind::Internal, "inner");
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_INTERNAL);
+    EXPECT_EQ(env.last_error().kind, biyos::ErrorKind::Internal);
 }
 
 void fail_worker(biyos::Env &env)
@@ -82,7 +83,7 @@ void crowded_scope(biyos::Env &env)
     {
         thread.join();
     }
-    EXPECT_EQ(env.last_error().status, BIYOS_OK);
+    EXPECT_EQ(env.last_error().kind, std::nullopt);
 }
 
 void hold(biyos::Env &env, std::latch &held, std::latch &release)
@@ -212,7 +213,7 @@ TEST(EnvTest, CrowdedScope)
     biyos::Env env;
     env.stream().record(biyos::ErrorKind::InvalidArgument, "outer");
     biyos::test::in_delivery(env, crowded_scope);
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.last_error().kind, biyos::ErrorKind::InvalidArgument);
     EXPECT_STREQ(env.last_error().text, "outer");
 }
 
@@ -308,9 +309,9 @@ TEST(EnvTest, Deprecated)
 TEST(EnvTest, ErrorStatus)
 {
     biyos::Env env;
-    EXPECT_EQ(env.last_error().status, BIYOS_OK);
+    EXPECT_EQ(env.last_error().kind, std::nullopt);
     env.stream().record(biyos::ErrorKind::NoMemory, "full");
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.last_error().kind, biyos::ErrorKind::NoMemory);
     EXPECT_EQ(env.last_error().model, nullptr);
 }
 
@@ -331,7 +332,7 @@ TEST(EnvTest, ThreadError)
     EXPECT_EQ(before, "");
     EXPECT_EQ(after, "worker");
     EXPECT_STREQ(env.last_error().text, "main");
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.last_error().kind, biyos::ErrorKind::InvalidArgument);
 }
 
 TEST(EnvTest, ScopedStatus)
@@ -339,5 +340,5 @@ TEST(EnvTest, ScopedStatus)
     biyos::Env env;
     env.stream().record(biyos::ErrorKind::NoMemory, "outer");
     biyos::test::in_delivery(env, internal_scope);
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.last_error().kind, biyos::ErrorKind::NoMemory);
 }

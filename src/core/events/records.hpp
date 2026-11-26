@@ -1,11 +1,12 @@
 #pragma once
 
-#include "biyos/biyos.h"
+#include "core/error.hpp"
 #include "core/thread.hpp"
 
 #include <cstddef>
 #include <list>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -18,14 +19,14 @@ inline constexpr std::size_t kRecords = 256;
 
 struct Record
 {
-    BIYOS_status status = BIYOS_OK;
+    std::optional<ErrorKind> kind;
     const Session *model = nullptr;
     std::string text;
 };
 
 struct RecordView
 {
-    BIYOS_status status;
+    std::optional<ErrorKind> kind;
     const Session *model;
     const char *text;
 };
@@ -33,7 +34,7 @@ struct RecordView
 class Records
 {
   public:
-    void put(BIYOS_status status, const Session *model, std::string_view text) noexcept;
+    void put(ErrorKind kind, const Session *model, std::string_view text) noexcept;
     RecordView get() const noexcept;
     void swap(Record &record) noexcept;
 

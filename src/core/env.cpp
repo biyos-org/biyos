@@ -117,7 +117,7 @@ void Env::record(ErrorKind kind, std::string_view text, const Session *session) 
         open->swapped_ = true;
         records_.swap(open->kept_);
     }
-    records_.put(status_of(kind), session, text);
+    records_.put(kind, session, text);
 }
 
 std::size_t Env::handles() const noexcept

@@ -1,11 +1,14 @@
+#include "capi/utils/entry.hpp"
 #include "capi/utils/firewall.hpp"
 #include "core/env.hpp"
 #include "core/events/events.hpp"
 #include "core/events/stream.hpp"
+#include "handles.hpp"
 #include "model/session/session.hpp"
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cstddef>
 #include <functional>
 #include <new>
@@ -41,6 +44,24 @@ void fail_inside(biyos::Env &env, int &calls)
     ++calls;
     status_after(env, [] { throw std::runtime_error("inner"); });
 }
+
+struct Code
+{
+    biyos::ErrorKind kind;
+    BIYOS_status status;
+};
+
+constexpr std::array kCodes{
+    Code{.kind = biyos::ErrorKind::InvalidArgument, .status = BIYOS_ERR_BADARG},
+    Code{.kind = biyos::ErrorKind::BadFile, .status = BIYOS_ERR_BADFILE},
+    Code{.kind = biyos::ErrorKind::Unsupported, .status = BIYOS_ERR_UNSUPPORTED},
+    Code{.kind = biyos::ErrorKind::Busy, .status = BIYOS_ERR_BUSY},
+    Code{.kind = biyos::ErrorKind::InUse, .status = BIYOS_ERR_INUSE},
+    Code{.kind = biyos::ErrorKind::Callback, .status = BIYOS_ERR_CALLBACK},
+    Code{.kind = biyos::ErrorKind::NoMemory, .status = BIYOS_ERR_NOMEMORY},
+    Code{.kind = biyos::ErrorKind::FileAccess, .status = BIYOS_ERR_FILEIO},
+    Code{.kind = biyos::ErrorKind::Internal, .status = BIYOS_ERR_INTERNAL},
+};
 
 }
 
@@ -105,7 +126,7 @@ TEST(FirewallTest, FailureModel)
     EXPECT_EQ(biyos::capi::guard(session.stream(), [] { throw std::bad_alloc(); }),
               BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, &session);
-    EXPECT_EQ(env.last_error().status, BIYOS_ERR_NOMEMORY);
+    EXPECT_EQ(env.last_error().kind, biyos::ErrorKind::NoMemory);
     EXPECT_EQ(status_after(env, [] { throw std::bad_alloc(); }), BIYOS_ERR_NOMEMORY);
     EXPECT_EQ(env.last_error().model, nullptr);
     EXPECT_EQ(seen, (std::vector<const biyos::Session *>{&session, nullptr}));
@@ -256,4 +277,15 @@ TEST(FirewallTest, QuietSuccess)
     EXPECT_EQ(status_after(env, [&] { say(env, "info"); }), BIYOS_OK);
     EXPECT_EQ(calls, 1);
     EXPECT_STREQ(env.last_error().text, "earlier");
+}
+
+TEST(FirewallTest, LastError)
+{
+    const biyos::test::Env env;
+    for (const Code code : kCodes)
+    {
+        const auto fail = [code] { throw biyos::Error(code.kind, "", "failed"); };
+        EXPECT_EQ(biyos::capi::guard(env.get()->core.stream(), fail), code.status);
+        EXPECT_EQ(biyos::test::last_error(env.get()).status, code.status);
+    }
 }

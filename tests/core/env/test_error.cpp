@@ -19,7 +19,6 @@ TEST(ErrorTest, InvalidArgument)
 TEST(ErrorTest, BadFile)
 {
     const biyos::Error error(biyos::ErrorKind::BadFile, "file 'a.mps' line 3", "unknown row 'r'");
-    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_BADFILE);
     EXPECT_STREQ(error.what(), "bad file: file 'a.mps' line 3: unknown row 'r'");
 }
 
@@ -28,7 +27,6 @@ TEST(ErrorTest, Unsupported)
     const biyos::Error error(biyos::ErrorKind::Unsupported,
                              "file 'a.mps' line 9",
                              "section QUADOBJ");
-    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_UNSUPPORTED);
     EXPECT_STREQ(error.what(), "unsupported: file 'a.mps' line 9: section QUADOBJ");
 }
 
@@ -36,7 +34,6 @@ TEST(ErrorTest, Busy)
 {
     const biyos::Error error(biyos::ErrorKind::Busy, "model", "is in a call on another thread");
     EXPECT_EQ(error.kind(), biyos::ErrorKind::Busy);
-    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_BUSY);
     EXPECT_STREQ(error.what(), "busy: model: is in a call on another thread");
 }
 
@@ -44,7 +41,6 @@ TEST(ErrorTest, InUse)
 {
     const biyos::Error error(biyos::ErrorKind::InUse, "variable 2", "indicator 0 needs it binary");
     EXPECT_EQ(error.kind(), biyos::ErrorKind::InUse);
-    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_INUSE);
     EXPECT_STREQ(error.what(), "in use: variable 2: indicator 0 needs it binary");
 }
 
@@ -52,7 +48,6 @@ TEST(ErrorTest, Callback)
 {
     const biyos::Error error(biyos::ErrorKind::Callback, "callback 1", "returned -2");
     EXPECT_EQ(error.kind(), biyos::ErrorKind::Callback);
-    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_CALLBACK);
     EXPECT_STREQ(error.what(), "callback: callback 1: returned -2");
 }
 
@@ -66,7 +61,6 @@ TEST(ErrorTest, NoMemory)
 TEST(ErrorTest, FileAccess)
 {
     const biyos::Error error(biyos::ErrorKind::FileAccess, "file 'a.mps'", "cannot be opened");
-    EXPECT_EQ(biyos::status_of(error.kind()), BIYOS_ERR_FILEIO);
     EXPECT_STREQ(error.what(), "file access: file 'a.mps': cannot be opened");
 }
 

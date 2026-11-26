@@ -6,6 +6,8 @@ from pathlib import Path, PurePosixPath
 INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"')
 SOURCES = {".c", ".h", ".cpp", ".hpp"}
 ENGINE = "engine"
+CAPI = "capi"
+C_NAME = re.compile(r"\bBIYOS_[a-z]\w*")
 
 
 def read_layers(path):
@@ -60,8 +62,8 @@ def resolve(src, path, target):
     return local if (src / local).is_file() else target
 
 
-def includes(src, path):
-    for number, line in enumerate(path.read_text().splitlines(), 1):
+def includes(src, path, lines):
+    for number, line in enumerate(lines, 1):
         match = INCLUDE.match(line)
         if match:
             yield number, resolve(src, path, match.group(1))
@@ -128,14 +130,25 @@ def refuse(source, target, layers, roles):
     return refuse_module(module_of(source), target, layers)
 
 
+def c_names(name, module, lines):
+    if module == CAPI:
+        return []
+    problems = []
+    for number, line in enumerate(lines, 1):
+        for found in C_NAME.findall(line):
+            problems.append(f"{name}:{number}: {module} may not use {found}")
+    return problems
+
+
 def check_file(src, path, layers, roles):
     name = path.relative_to(src.parent).as_posix()
     parts = path.relative_to(src).parts
     if len(parts) < 2 or parts[0] not in layers:
         return [f"{name}: not in a declared module"]
     source = "/".join(parts)
-    problems = []
-    for number, target in includes(src, path):
+    lines = path.read_text().splitlines()
+    problems = c_names(name, parts[0], lines)
+    for number, target in includes(src, path, lines):
         refusal = refuse(source, target, layers, roles)
         if refusal:
             problems.append(f"{name}:{number}: {refusal}")
