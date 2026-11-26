@@ -126,6 +126,11 @@ Real sign_power(Real value, Real exponent)
     return std::copysign(std::pow(std::fabs(value), exponent), value);
 }
 
+Real angle(Real y, Real x)
+{
+    return std::atan2(y + 0.0, x + 0.0);
+}
+
 Real unary(Operator op, Real value)
 {
     switch (op)
@@ -179,6 +184,7 @@ Real unary(Operator op, Real value)
     case Operator::Min:
     case Operator::SignPower:
     case Operator::PiecewiseLinear:
+    case Operator::Atan2:
         break;
     }
     return kUndefined;
@@ -232,6 +238,8 @@ Real value_of(const Frame &frame, Offset node)
     case Operator::PiecewiseLinear:
         return biyos::value_at(graph.points().piecewise_linear(graph.piecewise_linear(node)),
                                first(frame, node));
+    case Operator::Atan2:
+        return angle(first(frame, node), second(frame, node));
     }
     return kUndefined;
 }

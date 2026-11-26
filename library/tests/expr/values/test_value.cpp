@@ -236,6 +236,8 @@ Real Reference::compute(Offset node)
     case Operator::PiecewiseLinear:
         return value_at(graph_.points().piecewise_linear(graph_.piecewise_linear(node)),
                         child(node, 0));
+    case Operator::Atan2:
+        return std::atan2(child(node, 0) + 0.0, child(node, 1) + 0.0);
     }
     return kNan;
 }

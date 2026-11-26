@@ -212,6 +212,7 @@ void Decoder::build(Operator op, Offset argument)
     case Operator::Atanh:
     case Operator::Entropy:
     case Operator::Erf:
+    case Operator::Atan2:
         builder_.apply(op, argument);
         return;
     }

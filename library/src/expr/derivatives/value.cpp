@@ -38,6 +38,11 @@ Real sign_power(Real value, Real exponent) noexcept
     return std::copysign(std::pow(std::fabs(value), exponent), value);
 }
 
+Real angle(Real y, Real x) noexcept
+{
+    return std::atan2(y + 0.0, x + 0.0);
+}
+
 template <typename F> void map(const Instruction &instruction, const Frame &frame, F f) noexcept
 {
     const std::span<const Real> x = row(frame, instruction.first);
@@ -292,6 +297,9 @@ void evaluate(const Instruction &instruction, const Frame &frame) noexcept
         return;
     case Operator::PiecewiseLinear:
         piecewise(instruction, frame);
+        return;
+    case Operator::Atan2:
+        combine(instruction, frame, angle);
         return;
     }
 }

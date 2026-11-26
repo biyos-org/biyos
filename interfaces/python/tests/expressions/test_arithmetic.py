@@ -193,6 +193,7 @@ def test_operators():
         Operator.NODE,
         Operator.KEEP,
         Operator.REFERENCE,
+        Operator.ATAN2,
     }
     assert reached | postfix == set(Operator)
     assert not reached & postfix

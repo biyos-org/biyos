@@ -8,12 +8,13 @@ class Operator(IntEnum):
     """The codes of an expression's entries: its operators and three more.
 
     Each member is the C constant of the same number, ``CONSTANT`` for
-    ``BIYOS_OP_CONST`` through ``ERF`` for ``BIYOS_OP_ERF``, and
-    ``PIECEWISE_LINEAR`` for ``BIYOS_OP_PWL``. ``NODE``, ``KEEP`` and
-    ``REFERENCE`` are no operators and appear only in postfix. ``NODE``
-    names a node the model holds, by its id. ``KEEP`` makes the operand
-    before it a node of its own, and ``REFERENCE`` names that node again by
-    the position of the ``KEEP`` entry.
+    ``BIYOS_OP_CONST`` through ``ERF`` for ``BIYOS_OP_ERF``,
+    ``PIECEWISE_LINEAR`` for ``BIYOS_OP_PWL`` and ``ATAN2`` for
+    ``BIYOS_OP_ATAN2``. ``NODE``, ``KEEP`` and ``REFERENCE`` are no
+    operators and appear only in postfix. ``NODE`` names a node the model
+    holds, by its id. ``KEEP`` makes the operand before it a node of its
+    own, and ``REFERENCE`` names that node again by the position of the
+    ``KEEP`` entry.
 
     See Also
     --------
@@ -53,6 +54,7 @@ class Operator(IntEnum):
     PIECEWISE_LINEAR = 31
     KEEP = 32
     REFERENCE = 33
+    ATAN2 = 34
 
 
 _ONE_VALUE = frozenset(

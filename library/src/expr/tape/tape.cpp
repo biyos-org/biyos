@@ -73,6 +73,7 @@ Form form_of(Operator op) noexcept
     case Operator::Entropy:
     case Operator::SignPower:
     case Operator::Erf:
+    case Operator::Atan2:
         return Form::Direct;
     case Operator::PiecewiseLinear:
         return Form::Table;

@@ -239,6 +239,7 @@ void Walk::visit(const Item &item)
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
+    case Operator::Atan2:
         keep(item);
         break;
     }

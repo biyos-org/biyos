@@ -75,6 +75,7 @@ std::size_t arity_of(Operator op, Engine &engine)
         return 1 + pick(engine, kWidest);
     case Operator::Division:
     case Operator::Power:
+    case Operator::Atan2:
         return 2;
     case Operator::Negation:
     case Operator::ConstantPower:

@@ -121,6 +121,27 @@ void quotient(const Instruction &instruction,
     }
 }
 
+void angle(const Instruction &instruction,
+           const Frame &frame,
+           const Tangents &tangents,
+           std::span<const Real> partials,
+           std::span<Real> out) noexcept
+{
+    const std::span<const Real> ty = tangent(tangents, instruction.first, frame);
+    const std::span<const Real> tx = tangent(tangents, instruction.second, frame);
+    const std::span<const Real> along_y = row(partials, 0, frame.lanes);
+    const std::span<const Real> along_x = row(partials, 1, frame.lanes);
+    const std::span<Real> first = part(out, 0, frame);
+    const std::span<Real> second = part(out, 1, frame);
+    for (std::size_t l = 0; l < frame.lanes; ++l)
+    {
+        const Real cross = 2.0 * along_y[l] * along_x[l];
+        const Real bend = along_x[l] * along_x[l] - along_y[l] * along_y[l];
+        first[l] = scaled(ty[l], cross) + scaled(tx[l], bend);
+        second[l] = scaled(ty[l], bend) - scaled(tx[l], cross);
+    }
+}
+
 Real power_curve(Real exponent, Real base) noexcept
 {
     const Real factor = exponent * (exponent - 1.0);
@@ -205,6 +226,9 @@ void curves_of(const Instruction &instruction,
         return;
     case Operator::Division:
         quotient(instruction, frame, tangents, partials, out);
+        return;
+    case Operator::Atan2:
+        angle(instruction, frame, tangents, partials, out);
         return;
     case Operator::ConstantPower:
         curve(instruction,

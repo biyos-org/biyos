@@ -11,6 +11,7 @@ Interval sqrt(Interval value) noexcept;
 Interval asin(Interval value) noexcept;
 Interval acos(Interval value) noexcept;
 Interval atan(Interval value) noexcept;
+Interval atan2(Interval y, Interval x) noexcept;
 Interval sinh(Interval value) noexcept;
 Interval cosh(Interval value) noexcept;
 Interval tanh(Interval value) noexcept;

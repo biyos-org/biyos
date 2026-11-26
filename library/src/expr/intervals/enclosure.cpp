@@ -187,6 +187,8 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
         return erf(first(pass, node));
     case Operator::PiecewiseLinear:
         return piecewise_of(pass, node);
+    case Operator::Atan2:
+        return atan2(first(pass, node), second(pass, node));
     }
     return Interval::entire();
 }

@@ -117,6 +117,20 @@ void quotient(const Instruction &instruction, const Frame &frame, std::span<Real
     }
 }
 
+void angle(const Instruction &instruction, const Frame &frame, std::span<Real> partials) noexcept
+{
+    const std::span<const Real> y = row(frame, instruction.first);
+    const std::span<const Real> x = row(frame, instruction.second);
+    const std::span<Real> first = part(partials, 0, frame);
+    const std::span<Real> second = part(partials, 1, frame);
+    for (std::size_t l = 0; l < frame.lanes; ++l)
+    {
+        const Real radius = std::hypot(x[l], y[l]);
+        first[l] = x[l] / radius / radius;
+        second[l] = -(y[l] / radius) / radius;
+    }
+}
+
 Real exponent_slope(Real result, Real base) noexcept
 {
     return is_zero(result) ? 0.0 : result * std::log(base);
@@ -299,6 +313,9 @@ void slopes_of(const Instruction &instruction,
     case Operator::PiecewiseLinear:
         piecewise(instruction, frame, partials);
         return;
+    case Operator::Atan2:
+        angle(instruction, frame, partials);
+        return;
     }
 }
 
@@ -328,6 +345,7 @@ std::uint32_t n_partials(const Instruction &instruction) noexcept
         return instruction.second - instruction.first;
     case Operator::Division:
     case Operator::Power:
+    case Operator::Atan2:
         return 2;
     case Operator::Sum:
     case Operator::Negation:

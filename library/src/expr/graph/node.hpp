@@ -44,6 +44,7 @@ enum class Operator : std::uint8_t
     SignPower = BIYOS_OP_SPOW,
     Erf = BIYOS_OP_ERF,
     PiecewiseLinear = BIYOS_OP_PWL,
+    Atan2 = BIYOS_OP_ATAN2,
 };
 
 enum class Payload

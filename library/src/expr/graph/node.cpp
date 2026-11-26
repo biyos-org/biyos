@@ -79,6 +79,7 @@ std::optional<Shape> find_shape(Operator op) noexcept
         return Shape{.payload = Payload::Points, .least = 1, .most = 1};
     case Operator::Division:
     case Operator::Power:
+    case Operator::Atan2:
         return Shape{.payload = Payload::None, .least = 2, .most = 2};
     case Operator::Max:
     case Operator::Min:

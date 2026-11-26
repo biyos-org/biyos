@@ -34,6 +34,7 @@ def direct(x):
         (Expression(Operator.NODE, (), (3.0,)), "node(3)"),
         (Expression(Operator.KEEP, (a + b,), ()), "x[0] + x[1]"),
         (Expression(Operator.REFERENCE, (), (4.0,)), "ref(4)"),
+        (Expression(Operator.ATAN2, (a, b), ()), "atan2(x[0], x[1])"),
     ]
 
 

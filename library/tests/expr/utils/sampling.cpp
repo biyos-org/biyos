@@ -245,6 +245,7 @@ Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
         break;
     case Operator::Division:
     case Operator::Power:
+    case Operator::Atan2:
         graph.add(op, two);
         break;
     case Operator::Max:

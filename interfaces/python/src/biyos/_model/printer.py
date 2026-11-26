@@ -234,4 +234,5 @@ _ROWS = {
     Operator.PIECEWISE_LINEAR: _Row(_piecewise, "piecewise"),
     Operator.KEEP: _Row(_written, "keep"),
     Operator.REFERENCE: _Row(_written, "ref"),
+    Operator.ATAN2: _Row(_written, "atan2"),
 }
