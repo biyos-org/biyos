@@ -21,6 +21,9 @@ if text == "sleep":
     time.sleep(60)
 if text == "crash":
     os.kill(os.getpid(), signal.SIGKILL)
+if text == "fixed" and sys.argv[3:] != ["fixed"]:
+    sys.stderr.write("bad file 'source': line 1\\n")
+    sys.exit(2)
 if text == "broken":
     sys.stderr.write("bad file 'source': line 3\\n")
     sys.exit(2)
@@ -55,12 +58,13 @@ class RunTest(unittest.TestCase):
     def file_of(self, name):
         return self.root / "served" / name
 
-    def served(self, name, text, packed=True):
+    def served(self, name, text, packed=True, fixed=False):
         path = self.file_of(f"{name}.mps.gz" if packed else f"{name}.mps")
         path.parent.mkdir(exist_ok=True)
         data = text.encode()
         path.write_bytes(gzip.compress(data) if packed else data)
-        return Instance("netlib", name, path.as_uri(), sha256_of(path))
+        url = path.as_uri()
+        return Instance("netlib", name, url, sha256_of(path), fixed)
 
     def records(self, *instances, limit=LIMIT):
         tool = [sys.executable, "-I", "-c", TOOL]
@@ -79,13 +83,13 @@ class RunTest(unittest.TestCase):
         path = self.root / "netlib.txt"
         path.write_text(
             f"# netlib LP\n\nafiro {AFIRO} 00ff\n"
-            f"  adlittle {ADLITTLE} 11ee  \n"
+            f"  adlittle {ADLITTLE} 11ee fixed \n"
         )
         self.assertEqual(
             parse_list(path),
             [
                 Instance("netlib", "afiro", AFIRO, "00ff"),
-                Instance("netlib", "adlittle", ADLITTLE, "11ee"),
+                Instance("netlib", "adlittle", ADLITTLE, "11ee", True),
             ],
         )
 
@@ -94,6 +98,17 @@ class RunTest(unittest.TestCase):
         path.write_text(f"# netlib LP\nafiro {AFIRO}\n")
         with self.assertRaisesRegex(ValueError, "netlib.txt:2:"):
             parse_list(path)
+
+    def test_bad_form(self):
+        path = self.root / "netlib.txt"
+        path.write_text(f"afiro {AFIRO} 00ff free\n")
+        with self.assertRaisesRegex(ValueError, "netlib.txt:1:"):
+            parse_list(path)
+
+    def test_fixed(self):
+        fixed = self.served("afiro", "fixed", fixed=True)
+        self.assertEqual(self.records(fixed)[-1]["outcome"], "same")
+        self.assertEqual(self.outcome("fixed")["outcome"], "error")
 
     def test_same(self):
         entry = self.outcome("same")
