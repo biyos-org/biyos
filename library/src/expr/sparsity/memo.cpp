@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <ranges>
 #include <span>
 #include <vector>
 
@@ -23,6 +24,19 @@ constexpr std::size_t kHeader = 3;
 
 template <typename Item>
 constexpr std::size_t kWidth = (sizeof(Item) + sizeof(Offset) - 1) / sizeof(Offset);
+
+constexpr Bits kSeed = 14695981039346656037ULL;
+constexpr Bits kPrime = 1099511628211ULL;
+
+Bits hash_of(std::span<const Offset> links)
+{
+    Bits hash = kSeed;
+    for (const Offset link : links)
+    {
+        hash = (hash ^ static_cast<Bits>(link)) * kPrime;
+    }
+    return hash;
+}
 
 template <typename T> void append(std::vector<T> &items, std::span<const T> more)
 {
@@ -99,6 +113,10 @@ Offset Memos<Item>::keep(std::span<const Item> own, std::span<const Offset> link
     {
         return links.front();
     }
+    if (own.empty())
+    {
+        return share(links);
+    }
     return store(own, links);
 }
 
@@ -148,6 +166,22 @@ Offset Memos<Item>::flatten(std::span<const Item> own, std::span<const Offset> l
     settled_.clear();
     settle(pieces_, settled_);
     return store(settled_, {});
+}
+
+template <typename Item> Offset Memos<Item>::share(std::span<const Offset> links)
+{
+    const Bits hash = hash_of(links);
+    const auto [first, last] = shared_.equal_range(hash);
+    for (const auto &[_, memo] : std::ranges::subrange(first, last))
+    {
+        if (std::ranges::equal(links_of(memo), links))
+        {
+            return memo;
+        }
+    }
+    const Offset memo = store({}, links);
+    shared_.emplace(hash, memo);
+    return memo;
 }
 
 template <typename Item>

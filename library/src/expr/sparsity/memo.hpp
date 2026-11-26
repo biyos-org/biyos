@@ -4,6 +4,7 @@
 #include "expr/sparsity/reach.hpp"
 
 #include <span>
+#include <unordered_map>
 #include <vector>
 
 namespace biyos
@@ -22,12 +23,14 @@ template <typename Item> class Memos
   private:
     bool small(std::span<const Item> own, std::span<const Offset> links) const noexcept;
     Offset flatten(std::span<const Item> own, std::span<const Offset> links);
+    Offset share(std::span<const Offset> links);
     Offset store(std::span<const Item> own, std::span<const Offset> links);
     std::size_t count_of(Offset memo) const noexcept;
     std::span<const Offset> items_of(Offset memo) const noexcept;
     std::span<const Offset> links_of(Offset memo) const noexcept;
 
     std::vector<Offset> cells_;
+    std::unordered_multimap<Bits, Offset> shared_;
     std::vector<Offset> stack_;
     std::vector<Item> pieces_;
     std::vector<Item> settled_;

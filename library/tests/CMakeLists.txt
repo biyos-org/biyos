@@ -95,6 +95,7 @@ biyos_add_test(test_expr
     expr/intervals/test_enclosure.cpp
     expr/intervals/test_interval.cpp
     expr/intervals/test_piecewise.cpp
+    expr/sparsity/test_memo.cpp
     expr/utils/chords.cpp
     expr/utils/reference.cpp
     expr/utils/sampling.cpp
