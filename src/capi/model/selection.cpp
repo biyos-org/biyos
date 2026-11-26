@@ -8,19 +8,30 @@
 #include <cstddef>
 #include <numeric>
 #include <span>
+#include <string_view>
 #include <vector>
 
 namespace biyos::capi
 {
 
-std::span<const Index> selected(const Model &, Family, List list)
+std::span<const Index> selected(const Model &model, Family family, List list)
 {
-    return listed(list.n, list.indices);
+    return selected(noun_of(family), model.n_of(family), list);
 }
 
 std::vector<Index> selected(const Model &model, Family family, Range range)
 {
-    check_span(noun_of(family), range.start, range.stop, model.n_of(family));
+    return selected(noun_of(family), model.n_of(family), range);
+}
+
+std::span<const Index> selected(std::string_view, Index, List list)
+{
+    return listed(list.n, list.indices);
+}
+
+std::vector<Index> selected(std::string_view noun, Index total, Range range)
+{
+    check_span(noun, range.start, range.stop, total);
     std::vector<Index> indices(to_size(range.stop - range.start));
     std::iota(indices.begin(), indices.end(), range.start);
     return indices;
