@@ -170,6 +170,8 @@ static BIYOS_status use_linear(BIYOS_model *model)
     BIYOS_offset needed = -1;
     int held[4] = {-1, -1, -1, -1};
     if (BIYOS_addlinterm(model, 1, functions, variables, values) != BIYOS_OK ||
+        BIYOS_addrlintermsp(model, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
+        BIYOS_addclintermsp(model, 0, NULL, NULL, NULL, NULL) != BIYOS_OK ||
         BIYOS_getrlintermrg(model, 0, 2, 4, counts, held, NULL) != BIYOS_OK || counts[1] != 2 ||
         held[2] != 0 || held[3] != 1)
     {
@@ -197,6 +199,10 @@ static BIYOS_status use_quadratic(BIYOS_model *model)
     int held[2] = {-1, -1};
     int paired[2] = {-1, -1};
     BIYOS_status status = BIYOS_addquadtermrg(model, 1, 2, count, firsts, seconds, values);
+    if (status == BIYOS_OK)
+    {
+        status = BIYOS_addquadtermsp(model, 0, NULL, NULL, NULL, NULL, NULL);
+    }
     if (status == BIYOS_OK)
     {
         status = BIYOS_getquadtermrg(model, 0, 2, 2, counts, held, paired, NULL);

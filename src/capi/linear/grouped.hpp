@@ -39,4 +39,15 @@ Grouped<Term> grouped(std::span<const Index> functions, std::span<const Term> te
     return found;
 }
 
+inline std::vector<Index> owners_of(std::span<const Index> records, std::span<const Offset> starts)
+{
+    std::vector<Index> owners;
+    owners.reserve(to_size(starts.back()));
+    for (std::size_t j = 0; j < records.size(); ++j)
+    {
+        owners.insert(owners.end(), to_size(starts[j + 1] - starts[j]), records[j]);
+    }
+    return owners;
+}
+
 }

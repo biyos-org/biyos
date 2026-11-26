@@ -52,6 +52,23 @@ struct Compressed
     std::vector<double> values;
 };
 
+struct Listed
+{
+    Indices functions;
+    Compressed terms;
+};
+
+const Listed kScattered{
+    .functions = {0, 7, 9},
+    .terms =
+        {
+            .counts = {3, 5, 2},
+            .rows = {0, 0, 1, 0, 0, 1, 2, 3, 1, 4},
+            .columns = {0, 2, 1, 1, 4, 3, 2, 4, 1, 4},
+            .values = {1.0, -2.0, 0.5, 4.0, 0.0, -0.0, 3.0, -1.5, 2.0, 8.0},
+        },
+};
+
 int count_of(const Model &model, BIYOS_status (*count)(const BIYOS_model *, BIYOS_index *))
 {
     BIYOS_index n = -1;
@@ -133,6 +150,93 @@ Compressed compressed(const Added &added, int count)
         }
         found.counts.push_back(static_cast<BIYOS_offset>(found.rows.size() - before));
     }
+    return found;
+}
+
+void push_part(Listed &listed,
+               BIYOS_index function,
+               const Compressed &whole,
+               std::size_t begin,
+               std::size_t end)
+{
+    listed.functions.push_back(function);
+    listed.terms.counts.push_back(static_cast<BIYOS_offset>(end - begin));
+    for (std::size_t k = begin; k < end; ++k)
+    {
+        listed.terms.rows.push_back(whole.rows[k]);
+        listed.terms.columns.push_back(whole.columns[k]);
+        listed.terms.values.push_back(whole.values[k]);
+    }
+}
+
+Listed split(const Added &added, int count)
+{
+    const Compressed whole = compressed(added, count);
+    Listed found;
+    std::size_t end = whole.rows.size();
+    for (int function = count - 1; function >= 0; --function)
+    {
+        const auto size =
+            static_cast<std::size_t>(whole.counts[static_cast<std::size_t>(function)]);
+        const std::size_t begin = end - size;
+        push_part(found, function, whole, begin, begin + size / 2);
+        push_part(found, function, whole, begin + size / 2, end);
+        end = begin;
+    }
+    return found;
+}
+
+Added coordinates_of(const Listed &listed)
+{
+    return Added{
+        .functions = expanded(listed.terms.counts, listed.functions),
+        .rows = listed.terms.rows,
+        .columns = listed.terms.columns,
+        .values = listed.terms.values,
+    };
+}
+
+BIYOS_status add_list(const Model &model, const Listed &listed)
+{
+    return BIYOS_addquadtermsp(model.get(),
+                               static_cast<BIYOS_index>(listed.functions.size()),
+                               listed.functions.data(),
+                               listed.terms.counts.data(),
+                               listed.terms.rows.data(),
+                               listed.terms.columns.data(),
+                               listed.terms.values.data());
+}
+
+BIYOS_status add_split(const Model &model, const Added &added)
+{
+    return add_list(model, split(added, n_functions(model)));
+}
+
+Listed read_list(const Model &model, const Indices &functions)
+{
+    const auto n = static_cast<BIYOS_index>(functions.size());
+    BIYOS_offset nnz = -1;
+    EXPECT_EQ(BIYOS_getnquadtermsp(model.get(), n, functions.data(), &nnz), BIYOS_OK);
+    const auto size = static_cast<std::size_t>(nnz);
+    Listed found{
+        .functions = functions,
+        .terms =
+            {
+                .counts = std::vector<BIYOS_offset>(functions.size(), -1),
+                .rows = Indices(size, -1),
+                .columns = Indices(size, -1),
+                .values = std::vector<double>(size),
+            },
+    };
+    EXPECT_EQ(BIYOS_getquadtermsp(model.get(),
+                                  n,
+                                  functions.data(),
+                                  nnz,
+                                  found.terms.counts.data(),
+                                  found.terms.rows.data(),
+                                  found.terms.columns.data(),
+                                  found.terms.values.data()),
+              BIYOS_OK);
     return found;
 }
 
@@ -239,9 +343,12 @@ TEST(ProductTest, Agree)
         const Added added = drawn(engine, n_functions(model), n_variables(model));
         const Model listed(env, model);
         const Model ranged(env, model);
+        const Model parts(env, model);
         ASSERT_EQ(add_listed(listed, shuffled(added, engine)), BIYOS_OK);
         ASSERT_EQ(add_ranged(ranged, added), BIYOS_OK);
+        ASSERT_EQ(add_split(parts, added), BIYOS_OK);
         EXPECT_EQ(difference(listed, ranged), "");
+        EXPECT_EQ(difference(listed, parts), "");
     }
 }
 
@@ -278,6 +385,7 @@ TEST(ProductTest, Refusals)
     };
     expect_kept(env, model, add_listed, repeated, twice);
     expect_kept(env, model, add_ranged, repeated, twice);
+    expect_kept(env, model, add_split, repeated, twice);
     const Added stranger{
         .functions = {0, functions},
         .rows = {0, 0},
@@ -291,6 +399,7 @@ TEST(ProductTest, Refusals)
         "invalid argument: function 0: variable " + std::to_string(variables) + " is unknown";
     expect_kept(env, model, add_listed, outside, missing);
     expect_kept(env, model, add_ranged, outside, missing);
+    expect_kept(env, model, add_split, outside, missing);
     const Added swapped{.functions = {0}, .rows = {variables}, .columns = {0}, .values = {1.0}};
     expect_kept(env, model, add_listed, swapped, missing);
     const Added negative{.functions = {-1}, .rows = {0}, .columns = {0}, .values = {1.0}};
@@ -355,4 +464,63 @@ TEST(ProductTest, Arguments)
     EXPECT_EQ(BIYOS_addquadterm(held, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addquadtermrg(held, 0, functions, nullptr, nullptr, nullptr, nullptr),
               BIYOS_OK);
+}
+
+TEST(ProductTest, Scattered)
+{
+    const Env env;
+    const Model model(env);
+    ASSERT_EQ(BIYOS_addvar(model.get(), 10, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addfun(model.get(), 10, nullptr), BIYOS_OK);
+    const Model listed(env, model);
+    ASSERT_EQ(add_list(listed, kScattered), BIYOS_OK);
+    ASSERT_EQ(add_listed(model, coordinates_of(kScattered)), BIYOS_OK);
+    EXPECT_EQ(difference(listed, model), "");
+    const Listed read = read_list(listed, kScattered.functions);
+    EXPECT_EQ(read.terms.counts, kScattered.terms.counts);
+    EXPECT_EQ(read.terms.rows, kScattered.terms.rows);
+    EXPECT_EQ(read.terms.columns, kScattered.terms.columns);
+}
+
+TEST(ProductTest, Lists)
+{
+    const Env env;
+    const Model model(env);
+    Engine engine(kSeeds[0]);
+    build_sample(model.get(), engine);
+    const int functions = n_functions(model);
+    BIYOS_model *held = model.get();
+    const std::array<BIYOS_index, 3> zeros{0, 0, 0};
+    const std::array<double, 1> one{1.0};
+    const std::array<BIYOS_offset, 3> negative{1, 0, -1};
+    const std::array<BIYOS_offset, 2> overflowing{(std::numeric_limits<BIYOS_offset>::max)(), 1};
+    const std::array<BIYOS_offset, 1> empty{0};
+    const BIYOS_index *zero = zeros.data();
+    const BIYOS_index minus = -1;
+    EXPECT_EQ(BIYOS_addquadtermsp(held, -1, nullptr, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
+    EXPECT_EQ(BIYOS_addquadtermsp(held, 1, nullptr, nullptr, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(BIYOS_addquadtermsp(held, 1, &minus, empty.data(), nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: function -1: unknown");
+    EXPECT_EQ(BIYOS_addquadtermsp(held, 1, &functions, empty.data(), nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(),
+              "invalid argument: function " + std::to_string(functions) + ": unknown");
+    EXPECT_EQ(BIYOS_addquadtermsp(held, 3, zero, negative.data(), zero, zero, one.data()),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': -1 is negative at entry 2");
+    EXPECT_EQ(BIYOS_addquadtermsp(held, 2, zero, overflowing.data(), zero, zero, one.data()),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cnt': sum overflows at entry 1");
+    EXPECT_EQ(BIYOS_addquadtermsp(held, 1, zero, negative.data(), zero, nullptr, one.data()),
+              BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var2': is null");
+    const Model before(env, model);
+    EXPECT_EQ(BIYOS_addquadtermsp(held, 0, nullptr, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addquadtermsp(held, 2, zero, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(difference(before, model), "");
 }

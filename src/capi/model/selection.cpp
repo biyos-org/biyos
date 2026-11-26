@@ -37,4 +37,12 @@ std::vector<Index> selected(std::string_view noun, Index total, Range range)
     return indices;
 }
 
+void check_known(const Model &model, Family family, std::span<const Index> indices)
+{
+    for (const Index index : indices)
+    {
+        check_index(noun_of(family), index, model.n_of(family));
+    }
+}
+
 }

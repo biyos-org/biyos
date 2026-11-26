@@ -5,20 +5,19 @@
 #include "capi/utils/entry.hpp"
 #include "core/numbers.hpp"
 #include "model/model.hpp"
-#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <span>
 #include <vector>
 
-using biyos::check_index;
 using biyos::Family;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Real;
 using biyos::Session;
+using biyos::capi::check_known;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
@@ -64,20 +63,12 @@ void write_constants(std::span<const Real> found, BIYOS_real *constants)
     }
 }
 
-void check_chosen(const Model &model, std::span<const Index> chosen)
-{
-    for (const Index function : chosen)
-    {
-        check_index("function", function, model.n_functions());
-    }
-}
-
 template <typename Selection>
 void add_constants(Session &session, Selection selection, const BIYOS_real *constants)
 {
     Model &model = writable(session);
     const auto chosen = selected(model, Family::Function, selection);
-    check_chosen(model, chosen);
+    check_known(model, Family::Function, chosen);
     if (constants != nullptr)
     {
         model.add_constants(chosen, std::span(constants, chosen.size()));
@@ -89,7 +80,7 @@ void set_constants(Session &session, Selection selection, const BIYOS_real *cons
 {
     Model &model = writable(session);
     const auto chosen = selected(model, Family::Function, selection);
-    check_chosen(model, chosen);
+    check_known(model, Family::Function, chosen);
     if (constants != nullptr)
     {
         model.set_constants(chosen, std::span(constants, chosen.size()));
