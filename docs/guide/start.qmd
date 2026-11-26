@@ -17,7 +17,7 @@ The configure step downloads GoogleTest for the tests. Three options change the 
 | Option | Default | Effect |
 | ------------------------ | -------- | ---------------------------------------- |
 | `BUILD_SHARED_LIBS` | `ON` | build `biyos` as a shared library; `OFF` builds a static one |
-| `BIYOS_BUILD_TESTS` | `ON` | build the tests and the examples, and register them with CTest |
+| `BIYOS_BUILD_TESTS` | `ON` | build the tests and register them with CTest |
 | `BIYOS_WARNINGS_AS_ERRORS` | `OFF` | treat every compiler warning as an error |
 
 The library lands in `build/lib`, as `libbiyos.so` on Linux and `libbiyos.dylib` on macOS. On Windows `biyos.dll` lands in `build/bin` and its import library in `build/lib`, each in a folder named for the configuration when the generator is Visual Studio. The header stays in `include/biyos`.
@@ -26,6 +26,14 @@ The install step copies the library, the header and a CMake package into a prefi
 
 ```sh
 cmake --install build --prefix "$PWD/install"
+```
+
+The examples in `examples` are a project of their own, built and tested against such a prefix:
+
+```sh
+cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH="$PWD/install"
+cmake --build build/examples
+ctest --test-dir build/examples --output-on-failure
 ```
 
 ## The library and its header {#sec-start-layers}
