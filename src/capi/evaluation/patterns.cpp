@@ -7,25 +7,22 @@
 #include "core/numbers.hpp"
 #include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
-#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <span>
 
-using biyos::check_index;
 using biyos::Evaluation;
 using biyos::Family;
 using biyos::Index;
 using biyos::Lower;
-using biyos::Model;
-using biyos::noun_of;
 using biyos::Offset;
 using biyos::Pattern;
 using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
 using biyos::capi::check_capacity;
+using biyos::capi::check_known;
 using biyos::capi::evaluation_of;
 using biyos::capi::guarded;
 using biyos::capi::List;
@@ -81,14 +78,6 @@ std::size_t count_of(const Records &records, std::span<const Index> chosen)
     return count;
 }
 
-void check_all(const Model &model, Family family, std::span<const Index> chosen)
-{
-    for (const Index i : chosen)
-    {
-        check_index(noun_of(family), i, model.n_of(family));
-    }
-}
-
 void write(const Records &records,
            std::span<const Index> chosen,
            BIYOS_offset *counts,
@@ -115,7 +104,7 @@ void n_pattern(Session &session, Selection selection, BIYOS_offset *nnz)
 {
     BIYOS_offset *out = require(nnz, "nnz");
     const auto chosen = selected(session.model(), Of::kFamily, selection);
-    check_all(session.model(), Of::kFamily, chosen);
+    check_known(session.model(), Of::kFamily, chosen);
     const Records records = Of::read(evaluation_of(session));
     *out = to_offset(count_of(records, chosen));
 }
@@ -128,7 +117,7 @@ void get_pattern(Session &session,
                  BIYOS_index *items)
 {
     const auto chosen = selected(session.model(), Of::kFamily, selection);
-    check_all(session.model(), Of::kFamily, chosen);
+    check_known(session.model(), Of::kFamily, chosen);
     const Records records = Of::read(evaluation_of(session));
     check_capacity(capacity, count_of(records, chosen), "cap", "entries");
     write(records, chosen, counts, items);
