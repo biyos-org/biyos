@@ -95,6 +95,7 @@ add_library(biyos_internal STATIC
     model/attributes/naming.cpp
     model/attributes/records.cpp
     model/attributes/tolerances.cpp
+    model/compare/compare.cpp
     model/compare/fields.cpp
     model/compare/match.cpp
     model/compare/records.cpp
@@ -157,6 +158,7 @@ add_library(biyos
     capi/linear/functions.cpp
     capi/linear/linear.cpp
     capi/linear/rows.cpp
+    capi/model/compare.cpp
     capi/model/deletion.cpp
     capi/model/files.cpp
     capi/model/model.cpp

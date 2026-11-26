@@ -156,6 +156,17 @@ TEST(CApiTest, CopySpan)
     EXPECT_TRUE(recorder.spans.empty());
 }
 
+TEST(CApiTest, CompareSpan)
+{
+    Recorder recorder;
+    BIYOS_int same = -1;
+    ASSERT_EQ(BIYOS_cmpmdl(recorder.model, recorder.model, &same), BIYOS_OK);
+    EXPECT_EQ(recorder.spans, span_of("model/compare"));
+    recorder.spans.clear();
+    EXPECT_EQ(BIYOS_cmpmdl(recorder.model, recorder.model, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_TRUE(recorder.spans.empty());
+}
+
 TEST(CApiTest, DeleteSpan)
 {
     Recorder recorder;
