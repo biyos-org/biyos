@@ -5,8 +5,8 @@
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
-#include "model/checks.hpp"
-#include "model/renumber.hpp"
+#include "model/utils/checks.hpp"
+#include "model/utils/renumber.hpp"
 
 #include <algorithm>
 #include <cstddef>

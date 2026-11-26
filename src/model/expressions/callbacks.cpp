@@ -2,10 +2,10 @@
 
 #include "core/error.hpp"
 #include "core/numbers.hpp"
-#include "model/checks.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/expressions/patterns.hpp"
-#include "model/renumber.hpp"
+#include "model/utils/checks.hpp"
+#include "model/utils/renumber.hpp"
 
 #include <cstddef>
 #include <span>

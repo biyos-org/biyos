@@ -2,8 +2,8 @@
 
 #include "capi/utils/arrays.hpp"
 #include "core/numbers.hpp"
-#include "model/checks.hpp"
 #include "model/model.hpp"
+#include "model/utils/checks.hpp"
 
 #include <cstddef>
 #include <numeric>

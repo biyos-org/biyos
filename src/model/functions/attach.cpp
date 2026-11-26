@@ -7,10 +7,10 @@
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/uses.hpp"
-#include "model/checks.hpp"
 #include "model/compressed.hpp"
 #include "model/functions/merge.hpp"
-#include "model/rollback.hpp"
+#include "model/utils/checks.hpp"
+#include "model/utils/rollback.hpp"
 
 #include <algorithm>
 #include <array>

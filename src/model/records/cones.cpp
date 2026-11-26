@@ -4,9 +4,9 @@
 #include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
-#include "model/checks.hpp"
 #include "model/compressed.hpp"
-#include "model/renumber.hpp"
+#include "model/utils/checks.hpp"
+#include "model/utils/renumber.hpp"
 
 #include <algorithm>
 #include <cmath>

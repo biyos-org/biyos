@@ -2,7 +2,7 @@
 
 #include "core/numbers.hpp"
 #include "model/attributes/records.hpp"
-#include "model/checks.hpp"
+#include "model/utils/checks.hpp"
 
 #include <cstddef>
 #include <span>

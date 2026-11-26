@@ -5,9 +5,9 @@
 #include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/text/text.hpp"
-#include "model/checks.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
+#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <cmath>

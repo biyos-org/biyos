@@ -7,7 +7,7 @@
 #include "model/compare/compare.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
-#include "model/renumber.hpp"
+#include "model/utils/renumber.hpp"
 #include "refusal.hpp"
 #include "sample.hpp"
 

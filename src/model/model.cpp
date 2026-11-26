@@ -4,7 +4,7 @@
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/text/text.hpp"
-#include "model/checks.hpp"
+#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <cstddef>

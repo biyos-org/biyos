@@ -6,9 +6,9 @@
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/timing/timer.hpp"
-#include "model/checks.hpp"
 #include "model/functions/transpose.hpp"
 #include "model/model.hpp"
+#include "model/utils/checks.hpp"
 
 #include <cstddef>
 #include <span>

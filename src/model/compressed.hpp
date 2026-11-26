@@ -2,7 +2,7 @@
 
 #include "core/memory/room.hpp"
 #include "core/numbers.hpp"
-#include "model/checks.hpp"
+#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <cstddef>

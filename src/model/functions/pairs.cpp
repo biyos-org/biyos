@@ -3,7 +3,7 @@
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
-#include "model/checks.hpp"
+#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <span>
