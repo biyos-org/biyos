@@ -1,0 +1,13 @@
+#pragma once
+
+#include "model/model.hpp"
+
+#include <istream>
+#include <string>
+
+namespace biyos
+{
+
+Model read_native(std::istream &input, const std::string &file);
+
+}

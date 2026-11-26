@@ -68,7 +68,7 @@ void inform(Stream stream, const Lines &lines, const std::string &text) noexcept
     stream.emit(EventKind::Message, EventLevel::Info, fill);
 }
 
-void reject(const Lines &lines, const Error &error)
+void reject(const std::string &where, const Error &error)
 {
     if (error.kind() != ErrorKind::InvalidArgument)
     {
@@ -76,9 +76,14 @@ void reject(const Lines &lines, const Error &error)
     }
     if (error.object().empty())
     {
-        bad_file(lines, error.message());
+        throw Error(ErrorKind::BadFile, where, error.message());
     }
-    bad_file(lines, error.object() + ": " + error.message());
+    throw Error(ErrorKind::BadFile, where, error.object() + ": " + error.message());
+}
+
+void reject(const Lines &lines, const Error &error)
+{
+    reject(lines.where(), error);
 }
 
 }
