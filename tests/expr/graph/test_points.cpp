@@ -17,6 +17,7 @@ namespace
 {
 
 using biyos::Bits;
+using biyos::check_piecewise_linear;
 using biyos::Offset;
 using biyos::PiecewiseLinear;
 using biyos::Points;
@@ -163,13 +164,13 @@ TEST(PointsTest, Unchanged)
 
 TEST(PointsTest, Unknown)
 {
-    EXPECT_NO_THROW(biyos::check_piecewise_linear(0, 1));
-    EXPECT_NO_THROW(biyos::check_piecewise_linear(2, 3));
-    EXPECT_EQ(refusal([] { biyos::check_piecewise_linear(1, 1); }),
+    EXPECT_NO_THROW(check_piecewise_linear(0, 1));
+    EXPECT_NO_THROW(check_piecewise_linear(2, 3));
+    EXPECT_EQ(refusal([] { check_piecewise_linear(1, 1); }),
               "invalid argument: expression: pwl 1 is unknown");
-    EXPECT_EQ(refusal([] { biyos::check_piecewise_linear(-1, 4); }),
+    EXPECT_EQ(refusal([] { check_piecewise_linear(-1, 4); }),
               "invalid argument: expression: pwl -1 is unknown");
-    EXPECT_EQ(refusal([] { biyos::check_piecewise_linear(0, 0); }),
+    EXPECT_EQ(refusal([] { check_piecewise_linear(0, 0); }),
               "invalid argument: expression: pwl 0 is unknown");
 }
 

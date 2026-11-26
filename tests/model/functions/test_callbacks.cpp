@@ -28,6 +28,7 @@ using biyos::Real;
 using biyos::Request;
 using biyos::Routine;
 using biyos::Variable;
+using biyos::VariableKind;
 using biyos::test::refusal;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
@@ -37,7 +38,7 @@ Model with_functions(std::size_t n)
 {
     Model model;
     const Variable free{
-        .kind = biyos::VariableKind::Continuous,
+        .kind = VariableKind::Continuous,
         .lower = -kInfinity,
         .upper = kInfinity,
     };

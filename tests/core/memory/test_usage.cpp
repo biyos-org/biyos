@@ -4,12 +4,14 @@
 
 #include <thread>
 
+using biyos::Usage;
+
 namespace
 {
 
-using Probe = bool (*)(biyos::Usage &);
+using Probe = bool (*)(Usage &);
 
-bool enters(biyos::Usage &usage)
+bool enters(Usage &usage)
 {
     const bool entered = usage.enter();
     if (entered)
@@ -19,7 +21,7 @@ bool enters(biyos::Usage &usage)
     return entered;
 }
 
-bool claims(biyos::Usage &usage)
+bool claims(Usage &usage)
 {
     if (!usage.enter())
     {
@@ -30,12 +32,12 @@ bool claims(biyos::Usage &usage)
     return claimed;
 }
 
-bool holds(biyos::Usage &usage)
+bool holds(Usage &usage)
 {
     return usage.held();
 }
 
-bool elsewhere(Probe probe, biyos::Usage &usage)
+bool elsewhere(Probe probe, Usage &usage)
 {
     bool result = false;
     std::thread([&] { result = probe(usage); }).join();
@@ -46,7 +48,7 @@ bool elsewhere(Probe probe, biyos::Usage &usage)
 
 TEST(UsageTest, Shared)
 {
-    biyos::Usage usage;
+    Usage usage;
     ASSERT_TRUE(usage.enter());
     EXPECT_TRUE(elsewhere(enters, usage));
     EXPECT_FALSE(elsewhere(claims, usage));
@@ -57,7 +59,7 @@ TEST(UsageTest, Shared)
 
 TEST(UsageTest, Claim)
 {
-    biyos::Usage usage;
+    Usage usage;
     ASSERT_TRUE(usage.enter());
     ASSERT_TRUE(usage.claim());
     EXPECT_TRUE(usage.claim());
@@ -70,7 +72,7 @@ TEST(UsageTest, Claim)
 
 TEST(UsageTest, Nested)
 {
-    biyos::Usage usage;
+    Usage usage;
     ASSERT_TRUE(usage.enter());
     ASSERT_TRUE(usage.claim());
     ASSERT_TRUE(usage.enter());
@@ -83,7 +85,7 @@ TEST(UsageTest, Nested)
 
 TEST(UsageTest, Outer)
 {
-    biyos::Usage usage;
+    Usage usage;
     ASSERT_TRUE(usage.enter());
     ASSERT_TRUE(usage.enter());
     EXPECT_FALSE(usage.claim());
@@ -95,7 +97,7 @@ TEST(UsageTest, Outer)
 
 TEST(UsageTest, Held)
 {
-    biyos::Usage usage;
+    Usage usage;
     ASSERT_TRUE(usage.enter());
     EXPECT_FALSE(usage.held());
     ASSERT_TRUE(usage.claim());

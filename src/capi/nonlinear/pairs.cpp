@@ -10,7 +10,9 @@
 #include <span>
 
 using biyos::Family;
+using biyos::Index;
 using biyos::Model;
+using biyos::QuadraticTerm;
 using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
@@ -20,6 +22,8 @@ using biyos::capi::List;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
+using biyos::capi::unpack;
+using biyos::capi::write_counts;
 
 namespace
 {
@@ -32,10 +36,10 @@ struct Pairs
     BIYOS_real *values;
 };
 
-std::size_t count_of(const Model &model, std::span<const biyos::Index> functions)
+std::size_t count_of(const Model &model, std::span<const Index> functions)
 {
     std::size_t count = 0;
-    for (const biyos::Index function : functions)
+    for (const Index function : functions)
     {
         count += model.quadratic_terms(function, function + 1).size();
     }
@@ -50,10 +54,7 @@ void n_pairs(const Session &session, Selection selection, BIYOS_offset *nnz)
     *require(nnz, "nnz") = to_offset(count);
 }
 
-void put_pair(const Pairs &out,
-              std::size_t k,
-              biyos::Index function,
-              const biyos::QuadraticTerm &term)
+void put_pair(const Pairs &out, std::size_t k, Index function, const QuadraticTerm &term)
 {
     if (out.functions != nullptr)
     {
@@ -73,12 +74,12 @@ void put_pair(const Pairs &out,
     }
 }
 
-void write_pairs(const Model &model, std::span<const biyos::Index> functions, const Pairs &out)
+void write_pairs(const Model &model, std::span<const Index> functions, const Pairs &out)
 {
     std::size_t k = 0;
-    for (const biyos::Index function : functions)
+    for (const Index function : functions)
     {
-        for (const biyos::QuadraticTerm &term : model.quadratic_terms(function, function + 1))
+        for (const QuadraticTerm &term : model.quadratic_terms(function, function + 1))
         {
             put_pair(out, k, function, term);
             ++k;
@@ -111,10 +112,10 @@ void get_ranged(const Session &session,
     const Model &model = session.model();
     const auto terms = model.quadratic_terms(range.start, range.stop);
     check_capacity(capacity, terms.size());
-    const auto record = [&](biyos::Index j)
+    const auto record = [&](Index j)
     { return model.quadratic_terms(range.start + j, range.start + j + 1); };
-    biyos::capi::write_counts(to_size(range.stop - range.start), counts, record);
-    biyos::capi::unpack(terms, terms.size(), out.rows, out.columns, out.values);
+    write_counts(to_size(range.stop - range.start), counts, record);
+    unpack(terms, terms.size(), out.rows, out.columns, out.values);
 }
 
 }

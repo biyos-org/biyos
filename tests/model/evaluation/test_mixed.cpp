@@ -21,12 +21,20 @@
 namespace
 {
 
+using biyos::Constraint;
+using biyos::default_objective;
+using biyos::Env;
 using biyos::Evaluation;
 using biyos::Index;
+using biyos::Lookup;
+using biyos::Lower;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Pattern;
 using biyos::Real;
 using biyos::Request;
+using biyos::VariableKind;
+using biyos::widest;
 using Dense = std::vector<std::vector<Real>>;
 
 constexpr Real kExact = 1e-14;
@@ -168,15 +176,14 @@ void add_second(Model &model)
 Model mixed(bool product)
 {
     Model model;
-    model.add_variables(std::vector(kVariables, biyos::widest(biyos::VariableKind::Continuous)));
+    model.add_variables(std::vector(kVariables, widest(VariableKind::Continuous)));
     model.add_functions(std::vector{0.5, 0.0, -1.0}, std::vector<Offset>{0, 0, 0, 0}, {});
     attach_graphs(model);
     add_terms(model);
     add_user(model, product);
     add_second(model);
-    model.add_constraints(
-        std::vector{biyos::Constraint{.function = 0, .lower = 0.0, .upper = 1.0}});
-    model.add_objectives(std::vector{biyos::default_objective(0, 0)});
+    model.add_constraints(std::vector{Constraint{.function = 0, .lower = 0.0, .upper = 1.0}});
+    model.add_objectives(std::vector{default_objective(0, 0)});
     return model;
 }
 
@@ -216,7 +223,7 @@ class Probe
     std::vector<Real> gradient(std::vector<Real> x)
     {
         const std::vector<Real> g = jacobian(x);
-        const biyos::Pattern &pattern = evaluation_.jacobian_pattern();
+        const Pattern &pattern = evaluation_.jacobian_pattern();
         std::vector<Real> sum(kVariables, 0.0);
         for (std::size_t k = 0; k < kWeights.size(); ++k)
         {
@@ -232,7 +239,7 @@ class Probe
 
     Dense hessian()
     {
-        const biyos::Lower &lower = evaluation_.hessian_pattern();
+        const Lower &lower = evaluation_.hessian_pattern();
         std::vector<Real> h(lower.rows.size(), kStale);
         evaluation_.hessian(lookup_, {.x = kPoint, .w = kWeights, .v = {}}, h);
         Dense dense(kVariables, std::vector<Real>(kVariables, 0.0));
@@ -257,13 +264,13 @@ class Probe
         return hv;
     }
 
-    const biyos::Pattern &pattern() const { return evaluation_.jacobian_pattern(); }
+    const Pattern &pattern() const { return evaluation_.jacobian_pattern(); }
 
   private:
-    biyos::Env env_;
+    Env env_;
     Model model_;
     Evaluation evaluation_;
-    biyos::Lookup lookup_{env_.options()};
+    Lookup lookup_{env_.options()};
 };
 
 std::vector<Real> moved(std::vector<Real> x, std::size_t variable, Real step)
@@ -274,7 +281,7 @@ std::vector<Real> moved(std::vector<Real> x, std::size_t variable, Real step)
 
 std::vector<Real> central_jacobian(Probe &probe)
 {
-    const biyos::Pattern &pattern = probe.pattern();
+    const Pattern &pattern = probe.pattern();
     std::vector<Real> g(pattern.variables.size());
     for (std::size_t row = 0; row + 1 < pattern.starts.size(); ++row)
     {

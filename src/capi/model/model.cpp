@@ -15,9 +15,16 @@
 #include <span>
 #include <vector>
 
+using biyos::EntryTimer;
+using biyos::Env;
 using biyos::Family;
+using biyos::Index;
+using biyos::kModule;
 using biyos::Model;
 using biyos::Session;
+using biyos::Variable;
+using biyos::VariableKind;
+using biyos::widest;
 using biyos::capi::delete_tolerances;
 using biyos::capi::EnvAccess;
 using biyos::capi::get_tolerances;
@@ -35,7 +42,7 @@ using biyos::capi::writable;
 namespace
 {
 
-void create(biyos::Env &env, BIYOS_model **mdl)
+void create(Env &env, BIYOS_model **mdl)
 {
     BIYOS_model **made = require(mdl, "mdl");
     idle(env, "environment");
@@ -45,10 +52,10 @@ void create(biyos::Env &env, BIYOS_model **mdl)
 void make_copy(const Session &session, BIYOS_env *env, BIYOS_model **copy)
 {
     BIYOS_model **made = require(copy, "copy");
-    biyos::Env &target = idle(require(env, "env")->core, "argument 'env'");
+    Env &target = idle(require(env, "env")->core, "argument 'env'");
     const EnvAccess access(target);
     access.check();
-    const biyos::EntryTimer timer(session.stream(), biyos::kModule, "copy");
+    const EntryTimer timer(session.stream(), kModule, "copy");
     *made = new BIYOS_model(target, session);
 }
 
@@ -57,16 +64,12 @@ void freeable(Session &session)
     writable(session);
 }
 
-biyos::VariableKind kind_at(const BIYOS_int *kinds, std::size_t k)
+VariableKind kind_at(const BIYOS_int *kinds, std::size_t k)
 {
-    return kinds == nullptr ? biyos::VariableKind::Continuous
-                            : static_cast<biyos::VariableKind>(kinds[k]);
+    return kinds == nullptr ? VariableKind::Continuous : static_cast<VariableKind>(kinds[k]);
 }
 
-biyos::Variable bounded(biyos::Variable variable,
-                        std::size_t k,
-                        const BIYOS_real *lower,
-                        const BIYOS_real *upper)
+Variable bounded(Variable variable, std::size_t k, const BIYOS_real *lower, const BIYOS_real *upper)
 {
     if (lower != nullptr)
     {
@@ -79,19 +82,19 @@ biyos::Variable bounded(biyos::Variable variable,
     return variable;
 }
 
-biyos::Variable kinded(biyos::Variable variable, std::size_t k, const BIYOS_int *kinds)
+Variable kinded(Variable variable, std::size_t k, const BIYOS_int *kinds)
 {
     if (kinds != nullptr)
     {
-        variable.kind = static_cast<biyos::VariableKind>(kinds[k]);
+        variable.kind = static_cast<VariableKind>(kinds[k]);
     }
     return variable;
 }
 
 template <auto Change, typename... Arrays>
-void set_each(Model &model, std::span<const biyos::Index> indices, Arrays... arrays)
+void set_each(Model &model, std::span<const Index> indices, Arrays... arrays)
 {
-    std::vector<biyos::Variable> changed;
+    std::vector<Variable> changed;
     changed.reserve(indices.size());
     for (std::size_t k = 0; k < indices.size(); ++k)
     {
@@ -109,13 +112,13 @@ void add_variables(Session &session,
 {
     Model &model = writable(session);
     const std::size_t size = length(n);
-    std::vector<biyos::Variable> added;
+    std::vector<Variable> added;
     added.reserve(size);
     for (std::size_t k = 0; k < size; ++k)
     {
-        added.push_back(bounded(biyos::widest(kind_at(kinds, k)), k, lower, upper));
+        added.push_back(bounded(widest(kind_at(kinds, k)), k, lower, upper));
     }
-    const biyos::Index index = model.n_variables();
+    const Index index = model.n_variables();
     model.add_variables(added);
     if (start != nullptr)
     {
@@ -147,7 +150,7 @@ void n_variables(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_variables();
 }
 
-void copy_out(const biyos::Variable &variable,
+void copy_out(const Variable &variable,
               std::size_t k,
               BIYOS_int *kinds,
               BIYOS_real *lower,
@@ -175,8 +178,7 @@ void get_variables(const Session &session,
                    BIYOS_real *upper)
 {
     const auto chosen = selected(session.model(), Family::Variable, selection);
-    const std::vector<biyos::Variable> variables =
-        picked(session.model(), &Model::variable, chosen);
+    const std::vector<Variable> variables = picked(session.model(), &Model::variable, chosen);
     for (std::size_t k = 0; k < variables.size(); ++k)
     {
         copy_out(variables[k], k, kinds, lower, upper);

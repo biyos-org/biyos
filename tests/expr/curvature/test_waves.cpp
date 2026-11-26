@@ -21,13 +21,25 @@ namespace
 {
 
 using biyos::Curvature;
+using biyos::falls;
 using biyos::Interval;
+using biyos::is_concave;
+using biyos::is_convex;
+using biyos::kCosine;
+using biyos::kSine;
+using biyos::kTangent;
 using biyos::Monotonicity;
 using biyos::Operator;
 using biyos::Profile;
 using biyos::Real;
+using biyos::rises;
+using biyos::shifted;
+using biyos::wave;
 using biyos::Wave;
+using biyos::test::expect_root;
+using biyos::test::operator_graph;
 using biyos::test::Parameters;
+using biyos::test::text;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr Real kPi = std::numbers::pi;
@@ -61,40 +73,40 @@ struct Row
 };
 
 const std::array kRows{
-    Row{Operator::Sin, &biyos::kSine, {0.0, 3.0}, kConcave, kUnsure},
-    Row{Operator::Sin, &biyos::kSine, {0.0, 1.5}, kConcave, kRising},
-    Row{Operator::Sin, &biyos::kSine, {0.0, kPi}, kConcave, kUnsure},
-    Row{Operator::Sin, &biyos::kSine, {0.0, kPiUp}, kNeither, kUnsure},
-    Row{Operator::Sin, &biyos::kSine, {kPiUp, 6.0}, kConvex, kUnsure},
-    Row{Operator::Sin, &biyos::kSine, {kPi, 4.0}, kNeither, kFalling},
-    Row{Operator::Sin, &biyos::kSine, {-3.0, -0.2}, kConvex, kUnsure},
-    Row{Operator::Sin, &biyos::kSine, {2.0, 4.0}, kNeither, kFalling},
-    Row{Operator::Sin, &biyos::kSine, {-1.0, 1.0}, kNeither, kRising},
-    Row{Operator::Sin, &biyos::kSine, {-kHalfPi, kHalfPi}, kNeither, kRising},
-    Row{Operator::Sin, &biyos::kSine, {0.0, 7.0}, kNeither, kUnsure},
-    Row{Operator::Sin, &biyos::kSine, {-kInfinity, 0.0}, kNeither, kUnsure},
-    Row{Operator::Sin, &biyos::kSine, {1.0, 1.0}, kAffine, kFlat},
-    Row{Operator::Sin, &biyos::kSine, {1000.0, 1001.0}, kConcave, kUnsure},
-    Row{Operator::Sin, &biyos::kSine, {kFar, kFar + 1.0}, kNeither, kUnsure},
-    Row{Operator::Cos, &biyos::kCosine, {-1.5, 1.5}, kConcave, kUnsure},
-    Row{Operator::Cos, &biyos::kCosine, {0.0, 1.5}, kConcave, kFalling},
-    Row{Operator::Cos, &biyos::kCosine, {2.0, 4.0}, kConvex, kUnsure},
-    Row{Operator::Cos, &biyos::kCosine, {1.0, 2.0}, kNeither, kFalling},
-    Row{Operator::Cos, &biyos::kCosine, {-3.0, -2.0}, kConvex, kRising},
-    Row{Operator::Cos, &biyos::kCosine, {4.8, 6.0}, kConcave, kRising},
-    Row{Operator::Tan, &biyos::kTangent, {0.0, 1.5}, kConvex, kRising},
-    Row{Operator::Tan, &biyos::kTangent, {0.0, kHalfPi}, kConvex, kRising},
-    Row{Operator::Tan, &biyos::kTangent, {0.0, kHalfPiUp}, kNeither, kUnsure},
-    Row{Operator::Tan, &biyos::kTangent, {kHalfPi, 2.0}, kNeither, kUnsure},
-    Row{Operator::Tan, &biyos::kTangent, {25.2, kPastPole}, kNeither, kUnsure},
-    Row{Operator::Tan, &biyos::kTangent, {-1.5, 0.0}, kConcave, kRising},
-    Row{Operator::Tan, &biyos::kTangent, {-1.0, 1.0}, kNeither, kRising},
-    Row{Operator::Tan, &biyos::kTangent, {1.0, 2.0}, kNeither, kUnsure},
-    Row{Operator::Tan, &biyos::kTangent, {2.0, 3.0}, kConcave, kRising},
-    Row{Operator::Tan, &biyos::kTangent, {3.2, 4.0}, kConvex, kRising},
-    Row{Operator::Tan, &biyos::kTangent, {2.0, 4.0}, kNeither, kRising},
-    Row{Operator::Tan, &biyos::kTangent, {-4.0, -3.2}, kConcave, kRising},
-    Row{Operator::Tan, &biyos::kTangent, {0.0, 7.0}, kNeither, kUnsure},
+    Row{Operator::Sin, &kSine, {0.0, 3.0}, kConcave, kUnsure},
+    Row{Operator::Sin, &kSine, {0.0, 1.5}, kConcave, kRising},
+    Row{Operator::Sin, &kSine, {0.0, kPi}, kConcave, kUnsure},
+    Row{Operator::Sin, &kSine, {0.0, kPiUp}, kNeither, kUnsure},
+    Row{Operator::Sin, &kSine, {kPiUp, 6.0}, kConvex, kUnsure},
+    Row{Operator::Sin, &kSine, {kPi, 4.0}, kNeither, kFalling},
+    Row{Operator::Sin, &kSine, {-3.0, -0.2}, kConvex, kUnsure},
+    Row{Operator::Sin, &kSine, {2.0, 4.0}, kNeither, kFalling},
+    Row{Operator::Sin, &kSine, {-1.0, 1.0}, kNeither, kRising},
+    Row{Operator::Sin, &kSine, {-kHalfPi, kHalfPi}, kNeither, kRising},
+    Row{Operator::Sin, &kSine, {0.0, 7.0}, kNeither, kUnsure},
+    Row{Operator::Sin, &kSine, {-kInfinity, 0.0}, kNeither, kUnsure},
+    Row{Operator::Sin, &kSine, {1.0, 1.0}, kAffine, kFlat},
+    Row{Operator::Sin, &kSine, {1000.0, 1001.0}, kConcave, kUnsure},
+    Row{Operator::Sin, &kSine, {kFar, kFar + 1.0}, kNeither, kUnsure},
+    Row{Operator::Cos, &kCosine, {-1.5, 1.5}, kConcave, kUnsure},
+    Row{Operator::Cos, &kCosine, {0.0, 1.5}, kConcave, kFalling},
+    Row{Operator::Cos, &kCosine, {2.0, 4.0}, kConvex, kUnsure},
+    Row{Operator::Cos, &kCosine, {1.0, 2.0}, kNeither, kFalling},
+    Row{Operator::Cos, &kCosine, {-3.0, -2.0}, kConvex, kRising},
+    Row{Operator::Cos, &kCosine, {4.8, 6.0}, kConcave, kRising},
+    Row{Operator::Tan, &kTangent, {0.0, 1.5}, kConvex, kRising},
+    Row{Operator::Tan, &kTangent, {0.0, kHalfPi}, kConvex, kRising},
+    Row{Operator::Tan, &kTangent, {0.0, kHalfPiUp}, kNeither, kUnsure},
+    Row{Operator::Tan, &kTangent, {kHalfPi, 2.0}, kNeither, kUnsure},
+    Row{Operator::Tan, &kTangent, {25.2, kPastPole}, kNeither, kUnsure},
+    Row{Operator::Tan, &kTangent, {-1.5, 0.0}, kConcave, kRising},
+    Row{Operator::Tan, &kTangent, {-1.0, 1.0}, kNeither, kRising},
+    Row{Operator::Tan, &kTangent, {1.0, 2.0}, kNeither, kUnsure},
+    Row{Operator::Tan, &kTangent, {2.0, 3.0}, kConcave, kRising},
+    Row{Operator::Tan, &kTangent, {3.2, 4.0}, kConvex, kRising},
+    Row{Operator::Tan, &kTangent, {2.0, 4.0}, kNeither, kRising},
+    Row{Operator::Tan, &kTangent, {-4.0, -3.2}, kConcave, kRising},
+    Row{Operator::Tan, &kTangent, {0.0, 7.0}, kNeither, kUnsure},
 };
 
 struct Quarters
@@ -107,15 +119,15 @@ struct Quarters
 
 const std::array kQuarters{
     Quarters{Operator::Sin,
-             &biyos::kSine,
+             &kSine,
              {kConcave, kConcave, kConvex, kConvex},
              {kRising, kFalling, kFalling, kRising}},
     Quarters{Operator::Cos,
-             &biyos::kCosine,
+             &kCosine,
              {kConcave, kConvex, kConvex, kConcave},
              {kFalling, kFalling, kRising, kRising}},
     Quarters{Operator::Tan,
-             &biyos::kTangent,
+             &kTangent,
              {kConvex, kConcave, kConvex, kConcave},
              {kRising, kRising, kRising, kRising}},
 };
@@ -127,22 +139,22 @@ std::size_t phase(int quarter)
 
 bool within(Curvature claim, Curvature truth)
 {
-    const bool convex = !biyos::is_convex(claim) || biyos::is_convex(truth);
-    return convex && (!biyos::is_concave(claim) || biyos::is_concave(truth));
+    const bool convex = !is_convex(claim) || is_convex(truth);
+    return convex && (!is_concave(claim) || is_concave(truth));
 }
 
 bool within(Monotonicity claim, Monotonicity truth)
 {
-    const bool rising = !biyos::rises(claim) || biyos::rises(truth);
-    return rising && (!biyos::falls(claim) || biyos::falls(truth));
+    const bool rising = !rises(claim) || rises(truth);
+    return rising && (!falls(claim) || falls(truth));
 }
 
 void expect_quarter(const Quarters &quarters, Interval child, int quarter, bool exact)
 {
     SCOPED_TRACE("operator " + std::to_string(static_cast<int>(quarters.op)) + " over [" +
-                 biyos::test::text(child.lower()) + ", " + biyos::test::text(child.upper()) +
-                 "] in quarter " + std::to_string(quarter));
-    const Profile profile = biyos::wave(*quarters.shape, child);
+                 text(child.lower()) + ", " + text(child.upper()) + "] in quarter " +
+                 std::to_string(quarter));
+    const Profile profile = wave(*quarters.shape, child);
     const Curvature curvature = quarters.curvatures[phase(quarter)];
     const Monotonicity monotonicity = quarters.monotonicities[phase(quarter)];
     EXPECT_TRUE(within(profile.curvature, curvature));
@@ -154,20 +166,17 @@ void expect_quarter(const Quarters &quarters, Interval child, int quarter, bool 
     }
     const std::array box{child, kZero, kZero};
     const std::array monotonicities{profile.argument.monotonicity};
-    biyos::test::expect_root(biyos::test::operator_graph(quarters.op, kFixed),
-                             box,
-                             profile.curvature,
-                             monotonicities);
+    expect_root(operator_graph(quarters.op, kFixed), box, profile.curvature, monotonicities);
 }
 
 void expect_sides(const Quarters &quarters, int quarter, int gap)
 {
     const Real near = quarter * kHalfPi;
-    const Real below = biyos::shifted(near, -gap);
-    const Real above = biyos::shifted(near, gap);
+    const Real below = shifted(near, -gap);
+    const Real above = shifted(near, gap);
     const bool exact = gap > 1;
-    expect_quarter(quarters, {biyos::shifted(below, -kSteps), below}, quarter - 1, exact);
-    expect_quarter(quarters, {above, biyos::shifted(above, kSteps)}, quarter, exact);
+    expect_quarter(quarters, {shifted(below, -kSteps), below}, quarter - 1, exact);
+    expect_quarter(quarters, {above, shifted(above, kSteps)}, quarter, exact);
     for (const Real reach : kReaches)
     {
         expect_quarter(quarters, {below - reach, below}, quarter - 1, exact);
@@ -178,7 +187,7 @@ void expect_sides(const Quarters &quarters, int quarter, int gap)
 std::string row_text(const Row &row)
 {
     return "operator " + std::to_string(static_cast<int>(row.op)) + " over [" +
-           biyos::test::text(row.child.lower()) + ", " + biyos::test::text(row.child.upper()) + "]";
+           text(row.child.lower()) + ", " + text(row.child.upper()) + "]";
 }
 
 }
@@ -188,16 +197,13 @@ TEST(CurvatureTest, Waves)
     for (const Row &row : kRows)
     {
         SCOPED_TRACE(row_text(row));
-        const Profile profile = biyos::wave(*row.shape, row.child);
+        const Profile profile = wave(*row.shape, row.child);
         EXPECT_EQ(profile.curvature, row.curvature);
         EXPECT_EQ(profile.argument.monotonicity, row.monotonicity);
         EXPECT_FALSE(profile.argument.cut_below || profile.argument.cut_above);
         const std::array box{row.child, kZero, kZero};
         const std::array monotonicities{profile.argument.monotonicity};
-        biyos::test::expect_root(biyos::test::operator_graph(row.op, kFixed),
-                                 box,
-                                 profile.curvature,
-                                 monotonicities);
+        expect_root(operator_graph(row.op, kFixed), box, profile.curvature, monotonicities);
     }
 }
 
@@ -211,9 +217,9 @@ TEST(CurvatureTest, Straddles)
         const Interval across(below, above);
         const bool odd = quarter % 2 != 0;
         SCOPED_TRACE("quarter " + std::to_string(quarter));
-        const Profile sine = biyos::wave(biyos::kSine, across);
-        const Profile cosine = biyos::wave(biyos::kCosine, across);
-        const Profile tangent = biyos::wave(biyos::kTangent, across);
+        const Profile sine = wave(kSine, across);
+        const Profile cosine = wave(kCosine, across);
+        const Profile tangent = wave(kTangent, across);
         EXPECT_EQ(odd ? sine.argument.monotonicity : cosine.argument.monotonicity, kUnsure);
         EXPECT_EQ(odd ? cosine.curvature : sine.curvature, kNeither);
         EXPECT_EQ(tangent.curvature, kNeither);

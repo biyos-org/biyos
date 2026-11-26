@@ -22,14 +22,19 @@ namespace
 {
 
 using biyos::Bits;
+using biyos::encode;
 using biyos::Encoding;
 using biyos::Graph;
 using biyos::kNoRoot;
+using biyos::Matching;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Postfix;
 using biyos::Real;
 using biyos::to_size;
+using biyos::Variable;
+using biyos::VariableKind;
 
 using Engine = std::mt19937;
 
@@ -65,12 +70,12 @@ std::vector<Bits> bits(const std::vector<Real> &values)
 Model with_variables(int n)
 {
     Model model;
-    const biyos::Variable free{
-        .kind = biyos::VariableKind::Continuous,
+    const Variable free{
+        .kind = VariableKind::Continuous,
         .lower = -kInfinity,
         .upper = kInfinity,
     };
-    model.add_variables(std::vector<biyos::Variable>(to_size(n), free));
+    model.add_variables(std::vector<Variable>(to_size(n), free));
     return model;
 }
 
@@ -84,12 +89,12 @@ Offset add(Model &model,
 
 Encoding encoded(const Model &model, const std::vector<Offset> &roots)
 {
-    return biyos::encode(model.graph(), roots);
+    return encode(model.graph(), roots);
 }
 
 std::vector<Offset> decoded(Model &model, const Encoding &encoding)
 {
-    return model.add_expressions(biyos::Postfix{
+    return model.add_expressions(Postfix{
         .starts = encoding.starts,
         .codes = encoding.codes,
         .arguments = encoding.arguments,
@@ -242,7 +247,7 @@ void expect_matched(const Model &model,
                     const std::vector<Offset> &roots,
                     const std::vector<Offset> &tops)
 {
-    biyos::Matching matching(model.graph(), rebuilt.graph());
+    Matching matching(model.graph(), rebuilt.graph());
     Offset empty = 0;
     for (std::size_t k = 0; k < roots.size(); ++k)
     {

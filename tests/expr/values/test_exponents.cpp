@@ -21,8 +21,13 @@ using biyos::Curvature;
 using biyos::Interval;
 using biyos::Monotonicity;
 using biyos::Operator;
+using biyos::power_bend;
+using biyos::power_curvature;
 using biyos::Profile;
 using biyos::Real;
+using biyos::sign_bend;
+using biyos::test::expect_root;
+using biyos::test::operator_graph;
 using biyos::test::Parameters;
 using biyos::test::text;
 
@@ -140,8 +145,8 @@ void expect_row(Operator op, const Row &row, const Profile &profile)
     EXPECT_EQ(profile.argument.monotonicity, row.monotonicity);
     const std::array box{row.base, kZero, kZero};
     const std::array monotonicities{profile.argument.monotonicity};
-    const auto graph = biyos::test::operator_graph(op, with(row.exponent));
-    biyos::test::expect_root(graph, box, profile.curvature, monotonicities);
+    const auto graph = operator_graph(op, with(row.exponent));
+    expect_root(graph, box, profile.curvature, monotonicities);
 }
 
 }
@@ -150,7 +155,7 @@ TEST(CurvatureTest, Powers)
 {
     for (const Row &row : kPowers)
     {
-        expect_row(Operator::ConstantPower, row, biyos::power_bend(row.base, row.exponent));
+        expect_row(Operator::ConstantPower, row, power_bend(row.base, row.exponent));
     }
 }
 
@@ -158,7 +163,7 @@ TEST(CurvatureTest, SignPowers)
 {
     for (const Row &row : kSignPowers)
     {
-        expect_row(Operator::SignPower, row, biyos::sign_bend(row.base, row.exponent));
+        expect_row(Operator::SignPower, row, sign_bend(row.base, row.exponent));
     }
 }
 
@@ -170,27 +175,27 @@ TEST(CurvatureTest, PowerPairs)
                      "], exponent [" + text(pair.exponent.lower()) + ", " +
                      text(pair.exponent.upper()) + "]");
         std::array<Argument, 2> arguments{};
-        const Curvature found = biyos::power_curvature(pair.base, pair.exponent, arguments);
+        const Curvature found = power_curvature(pair.base, pair.exponent, arguments);
         EXPECT_EQ(found, pair.curvature);
         EXPECT_EQ(arguments[0].monotonicity, pair.base_monotonicity);
         EXPECT_EQ(arguments[1].monotonicity, pair.exponent_monotonicity);
         const std::array box{pair.base, pair.exponent, kZero};
         const std::array monotonicities{arguments[0].monotonicity, arguments[1].monotonicity};
-        const auto graph = biyos::test::operator_graph(Operator::Power, with(1.0));
-        biyos::test::expect_root(graph, box, found, monotonicities);
+        const auto graph = operator_graph(Operator::Power, with(1.0));
+        expect_root(graph, box, found, monotonicities);
     }
 }
 
 TEST(CurvatureTest, PowerFlags)
 {
-    EXPECT_TRUE(biyos::power_bend({-1.0, 4.0}, 0.5).argument.cut_below);
-    EXPECT_FALSE(biyos::power_bend({0.0, 4.0}, 0.5).argument.cut_below);
-    EXPECT_TRUE(biyos::power_bend({0.0, 4.0}, -0.5).argument.cut_below);
-    EXPECT_TRUE(biyos::power_bend({0.0, 4.0}, -1.0).argument.cut_below);
-    EXPECT_TRUE(biyos::power_bend({-4.0, 0.0}, -1.0).argument.cut_above);
-    EXPECT_FALSE(biyos::power_bend({-4.0, -1.0}, -1.0).argument.cut_above);
-    EXPECT_FALSE(biyos::power_bend({-4.0, 4.0}, 2.0).argument.cut_below);
-    EXPECT_FALSE(biyos::sign_bend({-4.0, 4.0}, 0.5).argument.cut_below);
-    EXPECT_EQ(biyos::power_bend({0.0, 0.0}, -1.0).curvature, kNeither);
-    EXPECT_EQ(biyos::power_bend({-2.0, -1.0}, 0.5).curvature, kNeither);
+    EXPECT_TRUE(power_bend({-1.0, 4.0}, 0.5).argument.cut_below);
+    EXPECT_FALSE(power_bend({0.0, 4.0}, 0.5).argument.cut_below);
+    EXPECT_TRUE(power_bend({0.0, 4.0}, -0.5).argument.cut_below);
+    EXPECT_TRUE(power_bend({0.0, 4.0}, -1.0).argument.cut_below);
+    EXPECT_TRUE(power_bend({-4.0, 0.0}, -1.0).argument.cut_above);
+    EXPECT_FALSE(power_bend({-4.0, -1.0}, -1.0).argument.cut_above);
+    EXPECT_FALSE(power_bend({-4.0, 4.0}, 2.0).argument.cut_below);
+    EXPECT_FALSE(sign_bend({-4.0, 4.0}, 0.5).argument.cut_below);
+    EXPECT_EQ(power_bend({0.0, 0.0}, -1.0).curvature, kNeither);
+    EXPECT_EQ(power_bend({-2.0, -1.0}, 0.5).curvature, kNeither);
 }

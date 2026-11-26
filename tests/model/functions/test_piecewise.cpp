@@ -23,12 +23,17 @@ namespace
 
 using biyos::Bits;
 using biyos::difference;
+using biyos::encode;
 using biyos::Encoding;
+using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::PiecewiseLinear;
 using biyos::Postfix;
 using biyos::Real;
+using biyos::Variable;
+using biyos::VariableKind;
 using biyos::test::refusal;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
@@ -38,12 +43,12 @@ constexpr std::array kHeights{1.0, 0.0, 3.0};
 Model with_variables(std::size_t n)
 {
     Model model;
-    const biyos::Variable free{
-        .kind = biyos::VariableKind::Continuous,
+    const Variable free{
+        .kind = VariableKind::Continuous,
         .lower = -kInfinity,
         .upper = kInfinity,
     };
-    model.add_variables(std::vector<biyos::Variable>(n, free));
+    model.add_variables(std::vector<Variable>(n, free));
     model.add_functions(std::vector<Real>(n, 0.0), std::vector<Offset>(n + 1, 0), {});
     return model;
 }
@@ -97,12 +102,12 @@ Encoding piecewise_of(Offset pwl)
     };
 }
 
-Model attached(Offset pwl, biyos::Index variable)
+Model attached(Offset pwl, Index variable)
 {
     Model model = with_piecewise_linears();
     const Offset x = model.add_variable_node(variable);
     const Offset node = model.add_piecewise(pwl, x);
-    const std::array<biyos::Index, 1> functions{0};
+    const std::array<Index, 1> functions{0};
     model.attach_expressions(functions, std::span(&node, 1));
     return model;
 }
@@ -121,7 +126,7 @@ TEST(PiecewiseTest, Added)
     EXPECT_EQ(std::vector<Offset>(model.graph().children(node).begin(),
                                   model.graph().children(node).end()),
               std::vector<Offset>{x});
-    const biyos::PiecewiseLinear pwl = model.graph().points().piecewise_linear(1);
+    const PiecewiseLinear pwl = model.graph().points().piecewise_linear(1);
     EXPECT_EQ(bits(pwl.x), bits(kKinks));
     EXPECT_EQ(bits(pwl.y), bits(kHeights));
 }
@@ -189,7 +194,7 @@ TEST(PiecewiseTest, Postfix)
     EXPECT_EQ(decoded(postfix, piecewise_of(1)), std::vector<Offset>{top});
     EXPECT_EQ(postfix.graph().mark(), nodes.graph().mark());
     EXPECT_EQ(postfix.graph().piecewise_linear(node), 1);
-    const Encoding written = biyos::encode(nodes.graph(), std::span(&top, 1));
+    const Encoding written = encode(nodes.graph(), std::span(&top, 1));
     const Encoding wanted = piecewise_of(1);
     EXPECT_EQ(written.starts, wanted.starts);
     EXPECT_EQ(written.codes, wanted.codes);

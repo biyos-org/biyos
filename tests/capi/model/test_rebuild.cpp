@@ -23,6 +23,9 @@ using biyos::test::below;
 using biyos::test::build_sample;
 using biyos::test::Engine;
 using biyos::test::Env;
+using biyos::test::kConeTolerances;
+using biyos::test::kConstraintTolerances;
+using biyos::test::kVariableTolerances;
 using biyos::test::Model;
 using biyos::test::ToleranceCalls;
 
@@ -638,9 +641,9 @@ void copy_model(const Model &from, const Model &to)
     copy_tolerances(from, to);
     copy_special_ordered_sets(from, to);
     copy_cones(from, to);
-    copy_family(from, to, biyos::test::kVariableTolerances);
-    copy_family(from, to, biyos::test::kConstraintTolerances);
-    copy_family(from, to, biyos::test::kConeTolerances);
+    copy_family(from, to, kVariableTolerances);
+    copy_family(from, to, kConstraintTolerances);
+    copy_family(from, to, kConeTolerances);
     copy_title(from, to);
     for (const NameCalls &calls : kNameCalls)
     {

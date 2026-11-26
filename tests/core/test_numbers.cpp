@@ -11,49 +11,52 @@ using biyos::Bits;
 using biyos::Index;
 using biyos::Offset;
 using biyos::Real;
+using biyos::to_index;
+using biyos::to_offset;
+using biyos::to_size;
 
 template <typename T>
-concept sizable = requires(T v) { biyos::to_size(v); };
+concept sizable = requires(T v) { to_size(v); };
 template <typename T>
-concept indexable = requires(T v) { biyos::to_index(v); };
+concept indexable = requires(T v) { to_index(v); };
 template <typename T>
-concept offsettable = requires(T v) { biyos::to_offset(v); };
+concept offsettable = requires(T v) { to_offset(v); };
 
 TEST(NumberTest, Size)
 {
-    static_assert(std::is_same_v<decltype(biyos::to_size(Index{7})), std::size_t>);
-    static_assert(std::is_same_v<decltype(biyos::to_size(Offset{9})), std::size_t>);
-    EXPECT_EQ(biyos::to_size((std::numeric_limits<Index>::max)()), 2147483647U);
-    EXPECT_EQ(biyos::to_size(Offset{1} << 40), std::size_t{1} << 40);
+    static_assert(std::is_same_v<decltype(to_size(Index{7})), std::size_t>);
+    static_assert(std::is_same_v<decltype(to_size(Offset{9})), std::size_t>);
+    EXPECT_EQ(to_size((std::numeric_limits<Index>::max)()), 2147483647U);
+    EXPECT_EQ(to_size(Offset{1} << 40), std::size_t{1} << 40);
 }
 
 TEST(NumberTest, Index)
 {
-    static_assert(std::is_same_v<decltype(biyos::to_index(std::size_t{3})), Index>);
-    EXPECT_EQ(biyos::to_index(std::size_t{2147483647}), (std::numeric_limits<Index>::max)());
+    static_assert(std::is_same_v<decltype(to_index(std::size_t{3})), Index>);
+    EXPECT_EQ(to_index(std::size_t{2147483647}), (std::numeric_limits<Index>::max)());
 }
 
 TEST(NumberTest, Offset)
 {
-    static_assert(std::is_same_v<decltype(biyos::to_offset(std::size_t{5})), Offset>);
-    EXPECT_EQ(biyos::to_offset(std::size_t{1} << 40), Offset{1} << 40);
+    static_assert(std::is_same_v<decltype(to_offset(std::size_t{5})), Offset>);
+    EXPECT_EQ(to_offset(std::size_t{1} << 40), Offset{1} << 40);
 }
 
 TEST(NumberTest, Constant)
 {
-    static_assert(biyos::to_size(Index{7}) == 7U);
-    static_assert(biyos::to_size(Offset{9}) == 9U);
-    static_assert(biyos::to_index(std::size_t{3}) == 3);
-    static_assert(biyos::to_offset(std::size_t{5}) == 5);
+    static_assert(to_size(Index{7}) == 7U);
+    static_assert(to_size(Offset{9}) == 9U);
+    static_assert(to_index(std::size_t{3}) == 3);
+    static_assert(to_offset(std::size_t{5}) == 5);
     SUCCEED();
 }
 
 TEST(NumberTest, Noexcept)
 {
-    static_assert(noexcept(biyos::to_size(Index{0})));
-    static_assert(noexcept(biyos::to_size(Offset{0})));
-    static_assert(noexcept(biyos::to_index(std::size_t{0})));
-    static_assert(noexcept(biyos::to_offset(std::size_t{0})));
+    static_assert(noexcept(to_size(Index{0})));
+    static_assert(noexcept(to_size(Offset{0})));
+    static_assert(noexcept(to_index(std::size_t{0})));
+    static_assert(noexcept(to_offset(std::size_t{0})));
     SUCCEED();
 }
 

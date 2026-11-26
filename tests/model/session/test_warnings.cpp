@@ -15,12 +15,17 @@
 namespace
 {
 
+using biyos::Env;
+using biyos::Event;
 using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::IntRule;
 using biyos::Option;
+using biyos::Options;
 using biyos::OptionSpec;
 using biyos::Scope;
+using biyos::Session;
+using biyos::Settings;
 using biyos::Version;
 
 constexpr Version kFirst{0, 0, 1};
@@ -54,15 +59,15 @@ class WarningTest : public ::testing::Test
   protected:
     WarningTest()
     {
-        const auto record = [this](const biyos::Event &event) { heard.push_back(event); };
+        const auto record = [this](const Event &event) { heard.push_back(event); };
         env.events().add_hook(EventKind::Message, EventLevel::Debug, record);
     }
 
-    biyos::Env env;
-    biyos::Session session{env};
-    std::vector<biyos::Event> heard;
-    biyos::Options options{kRows, env};
-    biyos::Settings settings{kRows};
+    Env env;
+    Session session{env};
+    std::vector<Event> heard;
+    Options options{kRows, env};
+    Settings settings{kRows};
 };
 
 }
@@ -79,8 +84,8 @@ TEST_F(WarningTest, Deprecated)
 
 TEST_F(WarningTest, ModelHooks)
 {
-    std::vector<biyos::Event> local;
-    const auto keep = [&local](const biyos::Event &event) { local.push_back(event); };
+    std::vector<Event> local;
+    const auto keep = [&local](const Event &event) { local.push_back(event); };
     session.add_hook(EventKind::Message, EventLevel::Warning, keep);
     settings.set_int(kOld, 5, session.stream());
     settings.set_int(kNew, 6, session.stream());

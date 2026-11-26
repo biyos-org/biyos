@@ -15,8 +15,10 @@
 namespace
 {
 
+using biyos::difference;
 using biyos::test::Env;
 using biyos::test::expect_doubles;
+using biyos::test::last_message;
 using biyos::test::Model;
 
 struct SpecialOrderedSets
@@ -157,7 +159,7 @@ void expect_refused(const Env &env,
     EXPECT_EQ(add_special_ordered_sets(model, soss, &pos), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: " + text);
     EXPECT_EQ(pos, -1);
-    EXPECT_EQ(biyos::difference(before.get()->model(), model.get()->model()), "");
+    EXPECT_EQ(difference(before.get()->model(), model.get()->model()), "");
 }
 
 SpecialOrderedSets single(int kind, std::vector<BIYOS_index> variables, std::vector<double> weights)
@@ -182,7 +184,7 @@ struct Attempt
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
+    attempt.messages.emplace_back(last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)

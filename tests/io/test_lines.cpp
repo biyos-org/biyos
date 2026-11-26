@@ -14,16 +14,20 @@ namespace
 {
 
 using biyos::Bits;
+using biyos::Error;
+using biyos::ErrorKind;
+using biyos::Lines;
+using biyos::number_of;
 using biyos::Real;
 
-std::vector<std::string_view> fields_of(const biyos::Lines &lines)
+std::vector<std::string_view> fields_of(const Lines &lines)
 {
     return {lines.fields().begin(), lines.fields().end()};
 }
 
 void expect_number(std::string_view field, Real wanted)
 {
-    const std::optional<Real> found = biyos::number_of(field);
+    const std::optional<Real> found = number_of(field);
     ASSERT_TRUE(found.has_value()) << field;
     EXPECT_EQ(std::bit_cast<Bits>(*found), std::bit_cast<Bits>(wanted)) << field;
 }
@@ -33,7 +37,7 @@ void expect_number(std::string_view field, Real wanted)
 TEST(LineTest, Fields)
 {
     std::istringstream input(" a\tb  c\r\n");
-    biyos::Lines lines(input, "a.mps");
+    Lines lines(input, "a.mps");
     ASSERT_TRUE(lines.next());
     EXPECT_EQ(fields_of(lines), (std::vector<std::string_view>{"a", "b", "c"}));
     EXPECT_EQ(lines.text().front(), ' ');
@@ -42,7 +46,7 @@ TEST(LineTest, Fields)
 TEST(LineTest, Numbers)
 {
     std::istringstream input("NAME x\n\n  \nROWS");
-    biyos::Lines lines(input, "a.mps");
+    Lines lines(input, "a.mps");
     ASSERT_TRUE(lines.next());
     EXPECT_EQ(lines.number(), 1U);
     ASSERT_TRUE(lines.next());
@@ -59,7 +63,7 @@ TEST(LineTest, Numbers)
 TEST(LineTest, Where)
 {
     std::istringstream input("a\nb\n");
-    biyos::Lines lines(input, "dir/a.mps");
+    Lines lines(input, "dir/a.mps");
     EXPECT_EQ(lines.where(), "file 'dir/a.mps'");
     lines.next();
     lines.next();
@@ -71,15 +75,15 @@ TEST(LineTest, Unreadable)
 {
     std::istringstream input("a\n");
     input.setstate(std::ios::badbit);
-    biyos::Lines lines(input, "a.mps");
+    Lines lines(input, "a.mps");
     try
     {
         lines.next();
         FAIL() << "a bad stream was read";
     }
-    catch (const biyos::Error &error)
+    catch (const Error &error)
     {
-        EXPECT_EQ(error.kind(), biyos::ErrorKind::FileAccess);
+        EXPECT_EQ(error.kind(), ErrorKind::FileAccess);
         EXPECT_EQ(error.object(), "file 'a.mps'");
     }
 }
@@ -102,6 +106,6 @@ TEST(NumberTest, Rejected)
          {"",    "+",  "-",   ".",    "inf", "-inf", "infinity", "nan",   "+-1",    "-+1",
           "--1", "1e", "1e+", "0x10", "1,5", "1 ",   "e5",       "1e400", "-1e400", "2.5d+0"})
     {
-        EXPECT_FALSE(biyos::number_of(field).has_value()) << field;
+        EXPECT_FALSE(number_of(field).has_value()) << field;
     }
 }

@@ -16,7 +16,11 @@
 namespace
 {
 
+using biyos::Graph;
+using biyos::kNoRoot;
+using biyos::Offset;
 using biyos::test::Env;
+using biyos::test::last_message;
 using biyos::test::Model;
 
 constexpr BIYOS_offset kNoNode = -7;
@@ -210,7 +214,7 @@ void add_functions(const Model &model, int n)
 
 std::vector<BIYOS_offset> roots_of(const Model &model, int n)
 {
-    const std::span<const biyos::Offset> roots = model.get()->model().roots(0, n);
+    const std::span<const Offset> roots = model.get()->model().roots(0, n);
     return {roots.begin(), roots.end()};
 }
 
@@ -280,7 +284,7 @@ void add_ratio(const Model &model)
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
+    attempt.messages.emplace_back(last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)
@@ -557,7 +561,7 @@ TEST(CApiTest, Attach)
     EXPECT_EQ(pairs.seconds, std::vector<int>{1});
     EXPECT_EQ(pairs.coefficients, std::vector<double>{1.0});
     EXPECT_EQ(tops, std::vector<BIYOS_offset>{5});
-    EXPECT_EQ(roots_of(model, 2), (std::vector<BIYOS_offset>{biyos::kNoRoot, 3}));
+    EXPECT_EQ(roots_of(model, 2), (std::vector<BIYOS_offset>{kNoRoot, 3}));
     EXPECT_EQ(next_id(model), 6);
     EXPECT_EQ(env.message(), "");
 }
@@ -580,7 +584,7 @@ TEST(CApiTest, SharedExpression)
     ASSERT_EQ(attach(model, {0, 1}, tops), BIYOS_OK);
     const std::vector<BIYOS_offset> roots = roots_of(model, 2);
     EXPECT_EQ(roots[0], sine);
-    const biyos::Graph &graph = model.get()->model().graph();
+    const Graph &graph = model.get()->model().graph();
     ASSERT_EQ(graph.children(roots[1]).size(), 1U);
     EXPECT_EQ(graph.children(roots[1]).front(), sine);
     EXPECT_EQ(next_id(model), 5);
@@ -602,7 +606,7 @@ TEST(CApiTest, AttachTwice)
     const Read functions = read_functions(model, 1);
     EXPECT_EQ(functions.constants, std::vector<double>{2.5});
     EXPECT_EQ(functions.coefficients, std::vector<double>{4.0});
-    const biyos::Graph &graph = model.get()->model().graph();
+    const Graph &graph = model.get()->model().graph();
     const BIYOS_offset root = roots_of(model, 1).front();
     EXPECT_EQ(root, 3);
     EXPECT_EQ(graph.children(root)[0], 1);
@@ -640,7 +644,7 @@ TEST(CApiTest, RefusedAttach)
     const Read after = read_functions(model, 2);
     EXPECT_EQ(after.constants, before.constants);
     EXPECT_EQ(after.coefficients, before.coefficients);
-    EXPECT_EQ(roots_of(model, 2), (std::vector<BIYOS_offset>(2, biyos::kNoRoot)));
+    EXPECT_EQ(roots_of(model, 2), (std::vector<BIYOS_offset>(2, kNoRoot)));
     EXPECT_EQ(next_id(model), 2);
 }
 
@@ -654,7 +658,7 @@ TEST(CApiTest, AttachRange)
     const BIYOS_offset sine = node_of(model, BIYOS_OP_SIN, {x}, {});
     const std::vector<BIYOS_offset> nodes{sine, x};
     ASSERT_EQ(BIYOS_attachexprrg(model.get(), 1, 3, nodes.data()), BIYOS_OK);
-    const std::vector<BIYOS_offset> roots{biyos::kNoRoot, sine, biyos::kNoRoot};
+    const std::vector<BIYOS_offset> roots{kNoRoot, sine, kNoRoot};
     EXPECT_EQ(roots_of(model, 3), roots);
     EXPECT_EQ(read_functions(model, 3).counts, (std::vector<std::int64_t>{0, 0, 1}));
     const std::string bad = "invalid argument: ";
@@ -696,7 +700,7 @@ TEST(CApiTest, Cleared)
     EXPECT_EQ(functions.variables, std::vector<int>{1});
     EXPECT_EQ(functions.coefficients, std::vector<double>{7.0});
     EXPECT_EQ(read_pairs(model, 3).counts, (std::vector<std::int64_t>{0, 0, 0}));
-    EXPECT_EQ(roots_of(model, 3), std::vector<BIYOS_offset>(3, biyos::kNoRoot));
+    EXPECT_EQ(roots_of(model, 3), std::vector<BIYOS_offset>(3, kNoRoot));
     ASSERT_EQ(attach(model, {1}, {exponential}), BIYOS_OK);
     EXPECT_EQ(roots_of(model, 3)[1], exponential);
     EXPECT_EQ(next_id(model), 2);
@@ -735,7 +739,7 @@ TEST(CApiTest, ClearRange)
     const Read functions = read_functions(model, 3);
     EXPECT_EQ(functions.constants, (std::vector<double>{0.5, 0.0, 0.0}));
     EXPECT_EQ(functions.counts, (std::vector<std::int64_t>{1, 0, 0}));
-    const std::vector<BIYOS_offset> roots{sine, biyos::kNoRoot, biyos::kNoRoot};
+    const std::vector<BIYOS_offset> roots{sine, kNoRoot, kNoRoot};
     EXPECT_EQ(roots_of(model, 3), roots);
     const std::string bad = "invalid argument: ";
     EXPECT_EQ(BIYOS_clrfunrg(model.get(), 2, 4), BIYOS_ERR_BADARG);

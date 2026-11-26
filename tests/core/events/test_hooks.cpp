@@ -17,8 +17,12 @@
 namespace
 {
 
+using biyos::Error;
+using biyos::Event;
 using biyos::EventKind;
 using biyos::EventLevel;
+using biyos::Hook;
+using biyos::Hooks;
 using Texts = std::vector<std::string>;
 
 constexpr int kThreads = 4;
@@ -30,16 +34,16 @@ std::string failure(const std::function<void()> &body)
     {
         body();
     }
-    catch (const biyos::Error &error)
+    catch (const Error &error)
     {
         return error.what();
     }
     return "no error";
 }
 
-void ignore(const biyos::Event &) {}
+void ignore(const Event &) {}
 
-void fail(const biyos::Event &)
+void fail(const Event &)
 {
     throw std::runtime_error("hook");
 }
@@ -48,13 +52,13 @@ struct Holder
 {
     std::shared_ptr<int> held;
 
-    void operator()(const biyos::Event &) const {}
+    void operator()(const Event &) const {}
 };
 
 class Watch
 {
   public:
-    void operator()(const biyos::Event &)
+    void operator()(const Event &)
     {
         if (inside_.exchange(true))
         {
@@ -74,9 +78,9 @@ class Watch
     int seen_ = 0;
 };
 
-biyos::Event message(EventLevel level, const std::string &text)
+Event message(EventLevel level, const std::string &text)
 {
-    return biyos::Event{
+    return Event{
         .kind = EventKind::Message,
         .level = level,
         .time = {},
@@ -87,9 +91,9 @@ biyos::Event message(EventLevel level, const std::string &text)
     };
 }
 
-void chatter(biyos::Hooks &hooks, std::latch &start)
+void chatter(Hooks &hooks, std::latch &start)
 {
-    const biyos::Event event = message(EventLevel::Info, "chatter");
+    const Event event = message(EventLevel::Info, "chatter");
     start.arrive_and_wait();
     for (int i = 0; i < kRounds; ++i)
     {
@@ -97,7 +101,7 @@ void chatter(biyos::Hooks &hooks, std::latch &start)
     }
 }
 
-void churn(biyos::Hooks &hooks, std::latch &start)
+void churn(Hooks &hooks, std::latch &start)
 {
     start.arrive_and_wait();
     for (int i = 0; i < kRounds; ++i)
@@ -106,7 +110,7 @@ void churn(biyos::Hooks &hooks, std::latch &start)
     }
 }
 
-bool elsewhere(const biyos::Hooks &hooks)
+bool elsewhere(const Hooks &hooks)
 {
     bool seen = true;
     std::thread([&] { seen = hooks.delivering(); }).join();
@@ -116,26 +120,26 @@ bool elsewhere(const biyos::Hooks &hooks)
 class HookTest : public ::testing::Test
 {
   protected:
-    int listen(EventLevel level, biyos::Hook hook)
+    int listen(EventLevel level, Hook hook)
     {
         return hooks.add_hook(EventKind::Message, level, std::move(hook));
     }
 
     void say(EventKind kind, EventLevel level, const std::string &text)
     {
-        biyos::Event event = message(level, text);
+        Event event = message(level, text);
         event.kind = kind;
         hooks.deliver(event);
     }
 
     void say(EventLevel level, const std::string &text) { say(EventKind::Message, level, text); }
 
-    biyos::Hook recorder(const std::string &name)
+    Hook recorder(const std::string &name)
     {
-        return [this, name](const biyos::Event &event) { texts.push_back(name + event.text); };
+        return [this, name](const Event &event) { texts.push_back(name + event.text); };
     }
 
-    biyos::Hooks hooks;
+    Hooks hooks;
     Texts texts;
 };
 
@@ -178,7 +182,7 @@ TEST_F(HookTest, Order)
 TEST_F(HookTest, Delivering)
 {
     bool inside = false;
-    listen(EventLevel::Debug, [&](const biyos::Event &) { inside = hooks.delivering(); });
+    listen(EventLevel::Debug, [&](const Event &) { inside = hooks.delivering(); });
     EXPECT_FALSE(hooks.delivering());
     say(EventLevel::Info, "one");
     EXPECT_TRUE(inside);
@@ -188,7 +192,7 @@ TEST_F(HookTest, Delivering)
 TEST_F(HookTest, PeerRemoval)
 {
     int peer = 0;
-    listen(EventLevel::Debug, [&](const biyos::Event &) { hooks.delete_hook(peer); });
+    listen(EventLevel::Debug, [&](const Event &) { hooks.delete_hook(peer); });
     peer = listen(EventLevel::Debug, recorder(""));
     say(EventLevel::Info, "one");
     EXPECT_TRUE(texts.empty());
@@ -201,8 +205,8 @@ TEST_F(HookTest, Pruned)
     const std::weak_ptr<int> kept = token;
     bool alive = false;
     const int id = listen(EventLevel::Debug, Holder{std::move(token)});
-    listen(EventLevel::Debug, [&](const biyos::Event &) { hooks.delete_hook(id); });
-    listen(EventLevel::Debug, [&](const biyos::Event &) { alive = !kept.expired(); });
+    listen(EventLevel::Debug, [&](const Event &) { hooks.delete_hook(id); });
+    listen(EventLevel::Debug, [&](const Event &) { alive = !kept.expired(); });
     say(EventLevel::Info, "one");
     EXPECT_TRUE(alive);
     EXPECT_TRUE(kept.expired());
@@ -210,8 +214,7 @@ TEST_F(HookTest, Pruned)
 
 TEST_F(HookTest, LateHook)
 {
-    listen(EventLevel::Debug,
-           [this](const biyos::Event &) { listen(EventLevel::Debug, recorder("")); });
+    listen(EventLevel::Debug, [this](const Event &) { listen(EventLevel::Debug, recorder("")); });
     say(EventLevel::Info, "one");
     say(EventLevel::Info, "two");
     EXPECT_EQ(texts, Texts{"two"});
@@ -236,7 +239,7 @@ TEST_F(HookTest, Refusals)
 TEST_F(HookTest, OtherThread)
 {
     bool seen = true;
-    listen(EventLevel::Debug, [&](const biyos::Event &) { seen = elsewhere(hooks); });
+    listen(EventLevel::Debug, [&](const Event &) { seen = elsewhere(hooks); });
     say(EventLevel::Info, "one");
     EXPECT_FALSE(seen);
 }

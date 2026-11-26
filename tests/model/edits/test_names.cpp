@@ -17,14 +17,20 @@ namespace
 using biyos::Complement;
 using biyos::ConeKind;
 using biyos::Constraint;
+using biyos::default_objective;
 using biyos::Family;
 using biyos::Index;
 using biyos::Indicator;
+using biyos::kFamilies;
 using biyos::Model;
+using biyos::noun_of;
+using biyos::Objective;
 using biyos::Offset;
 using biyos::Real;
+using biyos::SpecialOrderedSetKind;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::widest;
 using biyos::test::refusal;
 
 using Indices = std::vector<Index>;
@@ -35,7 +41,7 @@ constexpr Family kVariable = Family::Variable;
 
 std::vector<Variable> continuous(Index n)
 {
-    const Variable free = biyos::widest(VariableKind::Continuous);
+    const Variable free = widest(VariableKind::Continuous);
     return std::vector<Variable>(static_cast<std::size_t>(n), free);
 }
 
@@ -58,9 +64,9 @@ Model sized(Index n)
     model.add_functions(constants, starts, {});
     const Constraint record{.function = 0, .lower = -1.0, .upper = 1.0};
     model.add_constraints(std::vector<Constraint>(size, record));
-    model.add_objectives(std::vector<biyos::Objective>(size, biyos::default_objective(0, 0)));
+    model.add_objectives(std::vector<Objective>(size, default_objective(0, 0)));
     const Index first = 0;
-    const Variable binary = biyos::widest(VariableKind::Binary);
+    const Variable binary = widest(VariableKind::Binary);
     model.set_variables(std::span(&first, 1), std::span(&binary, 1));
     const Indicator indicator{
         .variable = 0,
@@ -70,7 +76,7 @@ Model sized(Index n)
         .upper = 1.0,
     };
     model.add_indicators(std::vector<Indicator>(size, indicator));
-    const std::vector<biyos::SpecialOrderedSetKind> kinds(size, biyos::SpecialOrderedSetKind::One);
+    const std::vector<SpecialOrderedSetKind> kinds(size, SpecialOrderedSetKind::One);
     model.add_special_ordered_sets(kinds, starts, {});
     add_cones(model, size);
     const Complement complement{.function = 0, .lower = 0.0, .upper = 1.0, .multiplier = 0};
@@ -134,7 +140,7 @@ std::string model_refusal(Model &model, std::string_view name)
 
 std::string prefixed(Family family, Index index, const std::string &reason)
 {
-    const std::string noun(biyos::noun_of(family));
+    const std::string noun(noun_of(family));
     return "invalid argument: " + noun + " " + std::to_string(index) + ": " + reason;
 }
 
@@ -145,13 +151,13 @@ std::string lookup_refusal(const Model &model, Family family, std::string_view n
 
 std::string unresolved(Family family, const std::string &name, const std::string &reason)
 {
-    const std::string noun(biyos::noun_of(family));
+    const std::string noun(noun_of(family));
     return "invalid argument: " + noun + " '" + name + "': " + reason;
 }
 
 std::string repeated(Family family, const std::string &name, Index n)
 {
-    const std::string noun(biyos::noun_of(family));
+    const std::string noun(noun_of(family));
     return unresolved(family, name, "names " + std::to_string(n) + " " + noun + "s");
 }
 
@@ -199,20 +205,20 @@ TEST(NameTest, Text)
 
 TEST(NameTest, Nouns)
 {
-    EXPECT_EQ(biyos::noun_of(Family::Variable), "variable");
-    EXPECT_EQ(biyos::noun_of(Family::Function), "function");
-    EXPECT_EQ(biyos::noun_of(Family::Constraint), "constraint");
-    EXPECT_EQ(biyos::noun_of(Family::Objective), "objective");
-    EXPECT_EQ(biyos::noun_of(Family::Indicator), "indicator");
-    EXPECT_EQ(biyos::noun_of(Family::SpecialOrderedSet), "set");
-    EXPECT_EQ(biyos::noun_of(Family::Cone), "cone");
-    EXPECT_EQ(biyos::noun_of(Family::Complement), "complement");
+    EXPECT_EQ(noun_of(Family::Variable), "variable");
+    EXPECT_EQ(noun_of(Family::Function), "function");
+    EXPECT_EQ(noun_of(Family::Constraint), "constraint");
+    EXPECT_EQ(noun_of(Family::Objective), "objective");
+    EXPECT_EQ(noun_of(Family::Indicator), "indicator");
+    EXPECT_EQ(noun_of(Family::SpecialOrderedSet), "set");
+    EXPECT_EQ(noun_of(Family::Cone), "cone");
+    EXPECT_EQ(noun_of(Family::Complement), "complement");
 }
 
 TEST(NameTest, Unnamed)
 {
     Model model = sized(3);
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         name(model, family, {}, {});
         unname(model, family, {});
@@ -225,12 +231,12 @@ TEST(NameTest, Unnamed)
 
 TEST(NameTest, Set)
 {
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         Model model = sized(3);
         name(model, family, {2, 0}, {"z", "x"});
         EXPECT_EQ(names_of(model, family), Held({"'x'", "none", "'z'"}));
-        for (const Family other : biyos::kFamilies)
+        for (const Family other : kFamilies)
         {
             if (other != family)
             {
@@ -249,13 +255,13 @@ TEST(NameTest, Lookup)
 {
     Model model = sized(3);
     Index shift = 0;
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         name(model, family, {shift % 3, (shift + 1) % 3}, {"x", "y"});
         ++shift;
     }
     shift = 0;
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         EXPECT_EQ(model.index_of(family, "x"), shift % 3);
         EXPECT_EQ(model.index_of(family, "y"), (shift + 1) % 3);
@@ -271,7 +277,7 @@ TEST(NameTest, Lookup)
 
 TEST(NameTest, Repeat)
 {
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         Model model = sized(4);
         name(model, family, {0}, {"x"});
@@ -290,7 +296,7 @@ TEST(NameTest, Repeat)
 
 TEST(NameTest, Resolved)
 {
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         Model model = sized(3);
         name(model, family, {0, 1, 2}, {"x", "x", "x"});
@@ -311,7 +317,7 @@ TEST(NameTest, Resolved)
 
 TEST(NameTest, Delete)
 {
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         Model model = sized(3);
         name(model, family, {0, 1, 2}, {"a", "b", "c"});
@@ -332,7 +338,7 @@ TEST(NameTest, Delete)
 
 TEST(NameTest, Rename)
 {
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         Model model = sized(3);
         name(model, family, {0}, {"x"});
@@ -377,7 +383,7 @@ TEST(NameTest, LastEntry)
 
 TEST(NameTest, Refused)
 {
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         Model model = sized(3);
         name(model, family, {0}, {"x"});
@@ -412,7 +418,7 @@ TEST(NameTest, Copied)
 {
     Model source = sized(3);
     source.set_name("plant");
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         name(source, family, {0, 1, 2}, {"x", "z", "z"});
     }
@@ -422,7 +428,7 @@ TEST(NameTest, Copied)
     for (const Model *made : {&copy, &assigned})
     {
         EXPECT_EQ(held(made->name()), "'plant'");
-        for (const Family family : biyos::kFamilies)
+        for (const Family family : kFamilies)
         {
             EXPECT_EQ(names_of(*made, family), Held({"'x'", "'z'", "'z'"}));
             EXPECT_EQ(made->index_of(family, "x"), 0);
@@ -431,14 +437,14 @@ TEST(NameTest, Copied)
             EXPECT_EQ(made->name_of(family, 1), made->name_of(family, 2));
         }
     }
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         name(copy, family, {0, 1}, {"y", "x"});
         EXPECT_EQ(names_of(source, family), Held({"'x'", "'z'", "'z'"}));
         EXPECT_EQ(lookup_refusal(source, family, "y"), unresolved(family, "y", "unknown"));
     }
     source = Model();
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         EXPECT_EQ(names_of(copy, family), Held({"'y'", "'x'", "'z'"}));
         EXPECT_EQ(copy.index_of(family, "z"), 2);

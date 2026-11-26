@@ -30,33 +30,46 @@ namespace
 
 using biyos::Complement;
 using biyos::ConeKind;
+using biyos::difference;
+using biyos::Env;
+using biyos::Error;
+using biyos::ErrorKind;
+using biyos::ErrorScope;
 using biyos::Family;
 using biyos::Graph;
 using biyos::Index;
+using biyos::kNoRoot;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Real;
 using biyos::RecordTolerances;
+using biyos::Session;
+using biyos::to_size;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::widest;
+using biyos::test::allocations;
+using biyos::test::fail_after;
+using biyos::test::in_delivery;
+using biyos::test::stop_failing;
 
 constexpr std::size_t kAttempts = 100;
 constexpr std::string_view kLong = "a name too long to sit inside the string itself";
 
 struct PendingFailure
 {
-    explicit PendingFailure(std::size_t successes) noexcept { biyos::test::fail_after(successes); }
+    explicit PendingFailure(std::size_t successes) noexcept { fail_after(successes); }
     PendingFailure(const PendingFailure &) = delete;
     PendingFailure &operator=(const PendingFailure &) = delete;
-    ~PendingFailure() { biyos::test::stop_failing(); }
+    ~PendingFailure() { stop_failing(); }
 };
 
-void failed_scope(biyos::Env &env)
+void failed_scope(Env &env)
 {
-    const biyos::ErrorScope scope(env);
+    const ErrorScope scope(env);
     const PendingFailure failure(0);
-    env.stream().record(biyos::ErrorKind::Internal, "inner");
+    env.stream().record(ErrorKind::Internal, "inner");
 }
 
 std::vector<std::string> numbered(Index n)
@@ -73,7 +86,7 @@ Model named(Index n)
 {
     Model model;
     const auto size = static_cast<std::size_t>(n) + 2;
-    model.add_variables(std::vector<Variable>(size, biyos::widest(VariableKind::Continuous)));
+    model.add_variables(std::vector<Variable>(size, widest(VariableKind::Continuous)));
     std::vector<Index> indices;
     for (Index k = 0; k < n; ++k)
     {
@@ -124,7 +137,7 @@ std::optional<Index> lookup(const Model &model, const std::string &name)
     {
         return model.index_of(Family::Variable, name);
     }
-    catch (const biyos::Error &)
+    catch (const Error &)
     {
         return std::nullopt;
     }
@@ -170,7 +183,7 @@ void expect_kept(Index n)
 Model with_terms()
 {
     Model model;
-    model.add_variables(std::vector<Variable>(4, biyos::widest(VariableKind::Continuous)));
+    model.add_variables(std::vector<Variable>(4, widest(VariableKind::Continuous)));
     const std::vector<Real> constants(3, 0.0);
     const std::vector<Offset> starts{0, 2, 2, 3};
     model.add_functions(constants, starts, {{1, 1.0}, {3, 2.0}, {2, 3.0}});
@@ -197,7 +210,7 @@ bool runs_out_adding(Model &model, std::size_t successes)
 Model with_nodes()
 {
     Model model;
-    model.add_variables(std::vector<Variable>(4, biyos::widest(VariableKind::Continuous)));
+    model.add_variables(std::vector<Variable>(4, widest(VariableKind::Continuous)));
     const std::vector<Offset> x{model.add_variable_node(0)};
     model.add_node(BIYOS_OP_EXP, x, {});
     model.add_piecewise_linear(std::vector<Real>{0.0, 1.0}, std::vector<Real>{2.0, -1.0});
@@ -360,24 +373,24 @@ void expect_graph(void (*change)(Model &), Offset added, Offset pwls = 0)
         change(model);
         Model clean = with_nodes();
         change(clean);
-        EXPECT_EQ(biyos::difference(model, clean), "");
+        EXPECT_EQ(difference(model, clean), "");
     }
     ADD_FAILURE() << "the call never completed";
 }
 
 std::size_t lookup_cost(const Model &model)
 {
-    const std::size_t start = biyos::test::allocations();
+    const std::size_t start = allocations();
     EXPECT_EQ(model.index_of(Family::Variable, kLong), 2);
     EXPECT_NE(model.name_of(Family::Variable, 2), nullptr);
-    return biyos::test::allocations() - start;
+    return allocations() - start;
 }
 
 std::size_t copy_cost(const Model &model)
 {
-    const std::size_t start = biyos::test::allocations();
+    const std::size_t start = allocations();
     const Model copy = model;
-    return biyos::test::allocations() - start;
+    return allocations() - start;
 }
 
 Model with_complements()
@@ -406,12 +419,12 @@ constexpr Index kRecords = 64;
 
 std::size_t set_each(RecordTolerances &held, Real absolute)
 {
-    const std::size_t start = biyos::test::allocations();
+    const std::size_t start = allocations();
     for (Index k = 0; k < kRecords; ++k)
     {
         held.set("variable", kRecords, std::span(&k, 1), std::span(&absolute, 1), {});
     }
-    return biyos::test::allocations() - start;
+    return allocations() - start;
 }
 
 }
@@ -454,7 +467,7 @@ TEST(AllocationTest, LinearTerms)
             EXPECT_EQ(model.linear_terms(0, 3).size(), 6U);
             return;
         }
-        EXPECT_EQ(biyos::difference(model, with_terms()), "");
+        EXPECT_EQ(difference(model, with_terms()), "");
     }
     ADD_FAILURE() << "the call never completed";
 }
@@ -469,10 +482,10 @@ TEST(AllocationTest, Functions)
         {
             EXPECT_GT(successes, 0U);
             EXPECT_EQ(model.roots(0, 2).size(), 2U);
-            EXPECT_EQ(model.roots(0, 2)[1], biyos::kNoRoot);
+            EXPECT_EQ(model.roots(0, 2)[1], kNoRoot);
             return;
         }
-        EXPECT_EQ(biyos::difference(model, before), "");
+        EXPECT_EQ(difference(model, before), "");
     }
     ADD_FAILURE() << "the call never completed";
 }
@@ -491,7 +504,7 @@ TEST(AllocationTest, Cones)
             EXPECT_EQ(model.cone_parameters(0, 3).size(), 2U);
             return;
         }
-        EXPECT_EQ(biyos::difference(model, before), "");
+        EXPECT_EQ(difference(model, before), "");
     }
     ADD_FAILURE() << "the call never completed";
 }
@@ -535,7 +548,7 @@ TEST(AllocationTest, Attach)
             EXPECT_EQ(roots_of(model), (std::vector<Offset>{1, 5, 1}));
             return;
         }
-        EXPECT_EQ(biyos::difference(model, before), "");
+        EXPECT_EQ(difference(model, before), "");
         EXPECT_EQ(model.graph().mark(), before.graph().mark());
         EXPECT_EQ(roots_of(model), roots_of(before));
     }
@@ -553,10 +566,10 @@ TEST(AllocationTest, Clear)
             EXPECT_GT(successes, 0U);
             EXPECT_EQ(model.linear_terms(0, 3).size(), 0U);
             EXPECT_EQ(model.quadratic_terms(0, 3).size(), 0U);
-            EXPECT_EQ(roots_of(model), (std::vector<Offset>{biyos::kNoRoot, 1, biyos::kNoRoot}));
+            EXPECT_EQ(roots_of(model), (std::vector<Offset>{kNoRoot, 1, kNoRoot}));
             return;
         }
-        EXPECT_EQ(biyos::difference(model, before), "");
+        EXPECT_EQ(difference(model, before), "");
         EXPECT_EQ(roots_of(model), roots_of(before));
     }
     ADD_FAILURE() << "the call never completed";
@@ -579,7 +592,7 @@ TEST(AllocationTest, Tolerances)
             EXPECT_EQ(copy_cost(model), copy_cost(before) + 2);
             return;
         }
-        EXPECT_EQ(biyos::difference(model, before), "");
+        EXPECT_EQ(difference(model, before), "");
         EXPECT_EQ(copy_cost(model), copy_cost(before));
     }
     ADD_FAILURE() << "the call never completed";
@@ -599,7 +612,7 @@ TEST(AllocationTest, Deletion)
             EXPECT_EQ(copy_cost(model), copy_cost(before));
             return;
         }
-        EXPECT_EQ(biyos::difference(model, before), "");
+        EXPECT_EQ(difference(model, before), "");
     }
     ADD_FAILURE() << "the call never completed";
 }
@@ -607,7 +620,7 @@ TEST(AllocationTest, Deletion)
 TEST(AllocationTest, ToleranceAppend)
 {
     RecordTolerances held;
-    EXPECT_LE(set_each(held, 1.0), 2 * std::bit_width(biyos::to_size(kRecords)));
+    EXPECT_LE(set_each(held, 1.0), 2 * std::bit_width(to_size(kRecords)));
 }
 
 TEST(AllocationTest, ToleranceUpdate)
@@ -617,19 +630,19 @@ TEST(AllocationTest, ToleranceUpdate)
     EXPECT_EQ(set_each(held, 2.0), 0U);
     const std::vector<Index> indices{5, 1, 3};
     const std::vector<Real> relative{0.5, 0.25, 0.125};
-    const std::size_t start = biyos::test::allocations();
+    const std::size_t start = allocations();
     held.set("variable", kRecords, indices, {}, relative);
-    EXPECT_EQ(biyos::test::allocations() - start, 0U);
+    EXPECT_EQ(allocations() - start, 0U);
 }
 
 TEST(AllocationTest, ScopedError)
 {
     const std::string outer(64, 'o');
-    biyos::Env env;
-    const biyos::Session session(env);
-    session.stream().record(biyos::ErrorKind::NoMemory, outer);
-    biyos::test::in_delivery(env, failed_scope);
-    EXPECT_EQ(env.last_error().kind, biyos::ErrorKind::NoMemory);
+    Env env;
+    const Session session(env);
+    session.stream().record(ErrorKind::NoMemory, outer);
+    in_delivery(env, failed_scope);
+    EXPECT_EQ(env.last_error().kind, ErrorKind::NoMemory);
     EXPECT_EQ(env.last_error().model, &session);
     EXPECT_STREQ(env.last_error().text, outer.c_str());
 }

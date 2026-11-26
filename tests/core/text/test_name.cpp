@@ -6,26 +6,28 @@
 #include <string_view>
 #include <type_traits>
 
+using biyos::StaticName;
+
 namespace
 {
 
 constexpr char kPadded[8] = "nlp";
 
-static_assert(!std::is_constructible_v<biyos::StaticName, const char *>);
-static_assert(!std::is_constructible_v<biyos::StaticName, std::string>);
-static_assert(!std::is_constructible_v<biyos::StaticName, std::string_view>);
+static_assert(!std::is_constructible_v<StaticName, const char *>);
+static_assert(!std::is_constructible_v<StaticName, std::string>);
+static_assert(!std::is_constructible_v<StaticName, std::string_view>);
 
 }
 
 TEST(NameTest, Literal)
 {
-    constexpr biyos::StaticName name("presolve");
+    constexpr StaticName name("presolve");
     static_assert(name.text() == "presolve");
     EXPECT_EQ(name.text(), "presolve");
 }
 
 TEST(NameTest, ConstantArray)
 {
-    constexpr biyos::StaticName name(kPadded);
+    constexpr StaticName name(kPadded);
     EXPECT_EQ(name.text(), "nlp");
 }

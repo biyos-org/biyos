@@ -21,7 +21,9 @@ namespace
 
 using biyos::Bits;
 using biyos::difference;
+using biyos::ErrorKind;
 using biyos::Index;
+using biyos::kRoom;
 using biyos::Member;
 using biyos::Model;
 using biyos::Offset;
@@ -29,6 +31,7 @@ using biyos::Real;
 using biyos::SpecialOrderedSetKind;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::widest;
 using biyos::test::failure;
 using biyos::test::refusal;
 
@@ -45,7 +48,7 @@ struct Given
 Model with_variables(Index n)
 {
     Model model;
-    const Variable free = biyos::widest(VariableKind::Continuous);
+    const Variable free = widest(VariableKind::Continuous);
     model.add_variables(std::vector<Variable>(static_cast<std::size_t>(n), free));
     return model;
 }
@@ -265,26 +268,24 @@ TEST(SpecialOrderedSetTest, Mismatch)
     Model model = with_variables(1);
     Given given = one(SpecialOrderedSetKind::One, {{.variable = 0, .weight = 1.0}});
     given.starts = {0, 2};
-    failure([&] { add(model, given); }, biyos::ErrorKind::Internal);
+    failure([&] { add(model, given); }, ErrorKind::Internal);
     given.starts = {0};
-    failure([&] { add(model, given); }, biyos::ErrorKind::Internal);
+    failure([&] { add(model, given); }, ErrorKind::Internal);
     EXPECT_EQ(model.n_special_ordered_sets(), 0);
 }
 
 TEST(SpecialOrderedSetTest, Room)
 {
     Model model = with_variables(1);
-    model.check_special_ordered_set_room(biyos::kRoom, 0);
-    const auto beyond = [&] { model.check_special_ordered_set_room(biyos::kRoom + 1, 0); };
-    EXPECT_EQ(failure(beyond, biyos::ErrorKind::NoMemory),
-              "out of memory: model: no set index left");
+    model.check_special_ordered_set_room(kRoom, 0);
+    const auto beyond = [&] { model.check_special_ordered_set_room(kRoom + 1, 0); };
+    EXPECT_EQ(failure(beyond, ErrorKind::NoMemory), "out of memory: model: no set index left");
     const Offset most = (std::numeric_limits<Offset>::max)();
     const auto members = [&] { model.check_special_ordered_set_room(0, most); };
-    EXPECT_EQ(failure(members, biyos::ErrorKind::NoMemory),
-              "out of memory: model: no member offset left");
+    EXPECT_EQ(failure(members, ErrorKind::NoMemory), "out of memory: model: no member offset left");
     add(model, one(SpecialOrderedSetKind::One, {}));
-    const auto full = [&] { model.check_special_ordered_set_room(biyos::kRoom, 0); };
-    EXPECT_EQ(failure(full, biyos::ErrorKind::NoMemory), "out of memory: model: no set index left");
+    const auto full = [&] { model.check_special_ordered_set_room(kRoom, 0); };
+    EXPECT_EQ(failure(full, ErrorKind::NoMemory), "out of memory: model: no set index left");
 }
 
 TEST(SpecialOrderedSetTest, Moved)

@@ -25,10 +25,12 @@ namespace
 {
 
 using biyos::Bits;
+using biyos::elements_of;
 using biyos::Entry;
 using biyos::Graph;
 using biyos::Hessian;
 using biyos::Index;
+using biyos::kLanes;
 using biyos::Lower;
 using biyos::Offset;
 using biyos::Operator;
@@ -36,6 +38,7 @@ using biyos::Real;
 using biyos::Tape;
 using biyos::to_size;
 using biyos::test::binary;
+using biyos::test::gradient_of;
 using biyos::test::kBudgets;
 using biyos::test::kVariables;
 using biyos::test::picks;
@@ -93,9 +96,9 @@ Rows differences(const Tape &tape, Values point, std::span<const Real> weights, 
         const Real middle = point[j];
         const Real size = step * (std::max)(1.0, std::fabs(middle));
         point[j] = middle + size;
-        const Values ahead = biyos::test::gradient_of(tape, point, weights);
+        const Values ahead = gradient_of(tape, point, weights);
         point[j] = middle - size;
-        const Values behind = biyos::test::gradient_of(tape, point, weights);
+        const Values behind = gradient_of(tape, point, weights);
         point[j] = middle;
         Values column(point.size());
         for (std::size_t i = 0; i < point.size(); ++i)
@@ -266,8 +269,8 @@ TEST(HessianTest, Seeded)
         const Graph graph = random_graph(random);
         const std::vector<Offset> roots = picks(random, graph, kPicked);
         const Offset budget = kBudgets[random.below(kBudgets.size())];
-        Hessian hessian(graph, roots, {}, biyos::kLanes, budget);
-        pinned += Tape(graph, biyos::elements_of(graph, roots).nodes, budget).pinned();
+        Hessian hessian(graph, roots, {}, kLanes, budget);
+        pinned += Tape(graph, elements_of(graph, roots).nodes, budget).pinned();
         for (int k = 0; k < 3; ++k)
         {
             const Values point = interior_point(random);
@@ -366,7 +369,7 @@ TEST(HessianTest, Shared)
     for (const Offset budget : kBudgets)
     {
         SCOPED_TRACE(budget);
-        Hessian hessian(graph, roots, {}, biyos::kLanes, budget);
+        Hessian hessian(graph, roots, {}, kLanes, budget);
         const Rows rows = dense(hessian.pattern(), values_of(hessian, point, weights), 3);
         EXPECT_EQ(check_differences(graph, roots, point, weights, rows), 9U);
     }
@@ -421,7 +424,7 @@ TEST(HessianTest, Product)
         const Graph graph = random_graph(random);
         const std::vector<Offset> roots = picks(random, graph, kPicked);
         const Offset budget = kBudgets[random.below(kBudgets.size())];
-        Hessian hessian(graph, roots, {}, biyos::kLanes, budget);
+        Hessian hessian(graph, roots, {}, kLanes, budget);
         const Values point = interior_point(random);
         const Values weights = random_weights(random, roots.size());
         const Values direction = random_weights(random, point.size());

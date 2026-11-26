@@ -17,6 +17,7 @@ namespace
 {
 
 using biyos::Constraint;
+using biyos::difference;
 using biyos::ErrorKind;
 using biyos::Index;
 using biyos::Indicator;
@@ -25,6 +26,7 @@ using biyos::Offset;
 using biyos::Real;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::widest;
 using biyos::test::failure;
 using biyos::test::refusal;
 
@@ -35,9 +37,9 @@ Model with_parts(std::size_t n)
 {
     Model model;
     const std::vector<Variable> variables{
-        biyos::widest(VariableKind::Binary),
-        biyos::widest(VariableKind::Continuous),
-        biyos::widest(VariableKind::Binary),
+        widest(VariableKind::Binary),
+        widest(VariableKind::Continuous),
+        widest(VariableKind::Binary),
     };
     model.add_variables(variables);
     const std::vector<Real> constants(n, 0.0);
@@ -74,7 +76,7 @@ std::string set_refusal(Model &model, Index index, const Indicator &indicator)
 
 void set_kind(Model &model, Index index, VariableKind kind)
 {
-    const Variable changed = biyos::widest(kind);
+    const Variable changed = widest(kind);
     model.set_variables(std::span(&index, 1), std::span(&changed, 1));
 }
 
@@ -142,9 +144,9 @@ TEST(IndicatorTest, KindList)
     add(model, when(2, 1, 0, 0.0, 1.0));
     const std::vector<Index> indices{1, 2, 2};
     const std::vector<Variable> changed{
-        biyos::widest(VariableKind::Integer),
-        biyos::widest(VariableKind::Integer),
-        biyos::widest(VariableKind::Binary),
+        widest(VariableKind::Integer),
+        widest(VariableKind::Integer),
+        widest(VariableKind::Binary),
     };
     const auto change = [&] { model.set_variables(indices, changed); };
     EXPECT_EQ(failure(change, ErrorKind::InUse), "in use: variable 2: indicator 1 needs it binary");
@@ -194,13 +196,13 @@ TEST(IndicatorTest, Copy)
     Model model = with_parts(2);
     model.add_indicators(std::vector<Indicator>{when(0, 1, 1, 0.0, 1.0), when(2, 0, 1, -1.0, 1.0)});
     const Model copy = model;
-    EXPECT_EQ(biyos::difference(model, copy), "");
+    EXPECT_EQ(difference(model, copy), "");
     Model changed = model;
     const Index index = 1;
     const Indicator other = when(2, 1, 1, -1.0, 1.0);
     changed.set_indicators(std::span(&index, 1), std::span(&other, 1));
-    EXPECT_EQ(biyos::difference(model, changed), "indicator 1: value 0 against 1");
-    EXPECT_EQ(biyos::difference(model, copy), "");
+    EXPECT_EQ(difference(model, changed), "indicator 1: value 0 against 1");
+    EXPECT_EQ(difference(model, copy), "");
 }
 
 TEST(IndicatorTest, Bounds)

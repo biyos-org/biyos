@@ -17,10 +17,14 @@ namespace
 using biyos::Bits;
 using biyos::hull;
 using biyos::Interval;
+using biyos::kLibmSteps;
+using biyos::kLibmUlps;
 using biyos::maximum;
 using biyos::meet;
 using biyos::minimum;
 using biyos::Real;
+using biyos::round_down;
+using biyos::round_up;
 using biyos::shifted;
 using biyos::signs;
 using biyos::widen_down;
@@ -34,7 +38,7 @@ constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 constexpr Real kLargest = (std::numeric_limits<Real>::max)();
 constexpr Real kSmallest = std::numeric_limits<Real>::denorm_min();
 constexpr Real kTiny = 1e-200;
-constexpr int kBoundUlps = biyos::kLibmUlps + 1;
+constexpr int kBoundUlps = kLibmUlps + 1;
 constexpr Interval kAll = Interval::entire();
 
 Bits bits(Real value)
@@ -120,13 +124,13 @@ TEST(IntervalTest, Steps)
     EXPECT_EQ(bits(shifted(kInfinity, -1)), bits(kLargest));
     EXPECT_EQ(bits(shifted(-kInfinity, -5)), bits(-kInfinity));
     EXPECT_TRUE(std::isnan(shifted(kNan, 1)));
-    EXPECT_EQ(bits(biyos::round_down(0.0)), bits(0.0));
-    EXPECT_EQ(bits(biyos::round_down(-0.0)), bits(-kSmallest));
-    EXPECT_EQ(bits(biyos::round_up(-0.0)), bits(-0.0));
-    EXPECT_EQ(bits(biyos::round_up(0.0)), bits(kSmallest));
-    EXPECT_EQ(bits(biyos::round_down(2.0)), bits(std::nextafter(2.0, 0.0)));
-    EXPECT_EQ(bits(widen_down(1.0)), bits(shifted(1.0, -biyos::kLibmSteps)));
-    EXPECT_EQ(bits(widen_up(1.0)), bits(shifted(1.0, biyos::kLibmSteps)));
+    EXPECT_EQ(bits(round_down(0.0)), bits(0.0));
+    EXPECT_EQ(bits(round_down(-0.0)), bits(-kSmallest));
+    EXPECT_EQ(bits(round_up(-0.0)), bits(-0.0));
+    EXPECT_EQ(bits(round_up(0.0)), bits(kSmallest));
+    EXPECT_EQ(bits(round_down(2.0)), bits(std::nextafter(2.0, 0.0)));
+    EXPECT_EQ(bits(widen_down(1.0)), bits(shifted(1.0, -kLibmSteps)));
+    EXPECT_EQ(bits(widen_up(1.0)), bits(shifted(1.0, kLibmSteps)));
 }
 
 TEST(IntervalTest, Accuracy)

@@ -23,10 +23,21 @@
 namespace
 {
 
+using biyos::Env;
+using biyos::Error;
+using biyos::Event;
 using biyos::EventKind;
 using biyos::EventLevel;
+using biyos::Events;
+using biyos::Hook;
+using biyos::Index;
+using biyos::Model;
+using biyos::Offset;
 using biyos::Real;
+using biyos::Request;
 using biyos::Session;
+using biyos::Variable;
+using biyos::VariableKind;
 using biyos::test::Peek;
 using biyos::test::Watch;
 using Texts = std::vector<std::string>;
@@ -34,24 +45,24 @@ using Texts = std::vector<std::string>;
 constexpr int kThreads = 4;
 constexpr int kRounds = 200;
 
-int unknown(const biyos::Request &, std::span<Real> out, void *)
+int unknown(const Request &, std::span<Real> out, void *)
 {
     out[0] = std::nan("");
     return 0;
 }
 
-void cover(biyos::Model &model)
+void cover(Model &model)
 {
-    const biyos::Variable free{.kind = biyos::VariableKind::Continuous, .lower = 0.0, .upper = 1.0};
+    const Variable free{.kind = VariableKind::Continuous, .lower = 0.0, .upper = 1.0};
     model.add_variables(std::span(&free, 1));
     const std::array<Real, 1> constants{0.0};
-    const std::array<biyos::Offset, 2> starts{0, 0};
+    const std::array<Offset, 2> starts{0, 0};
     model.add_functions(constants, starts, {});
-    const std::array<biyos::Index, 1> covered{0};
+    const std::array<Index, 1> covered{0};
     model.set_callback_function(model.add_callback(covered, nullptr), unknown);
 }
 
-void describe(biyos::Event &event)
+void describe(Event &event)
 {
     event.text = "removed rows";
 }
@@ -79,30 +90,30 @@ void send(const Session &model)
 class RouteTest : public ::testing::Test
 {
   protected:
-    int listen(EventLevel level, biyos::Hook hook)
+    int listen(EventLevel level, Hook hook)
     {
         return events.add_hook(EventKind::Message, level, std::move(hook));
     }
 
     void say(EventLevel level, const std::string &text)
     {
-        const auto fill = [&text](biyos::Event &event) { event.text = text; };
+        const auto fill = [&text](Event &event) { event.text = text; };
         env.stream().emit(EventKind::Message, level, fill);
     }
 
     void tell(const Session &model, EventLevel level, const std::string &text)
     {
-        const auto fill = [&text](biyos::Event &event) { event.text = text; };
+        const auto fill = [&text](Event &event) { event.text = text; };
         model.stream().emit(EventKind::Message, level, fill);
     }
 
-    biyos::Hook recorder(const std::string &name)
+    Hook recorder(const std::string &name)
     {
-        return [this, name](const biyos::Event &event) { texts.push_back(name + event.text); };
+        return [this, name](const Event &event) { texts.push_back(name + event.text); };
     }
 
-    biyos::Env env;
-    biyos::Events &events = env.events();
+    Env env;
+    Events &events = env.events();
     Texts texts;
 };
 
@@ -112,7 +123,7 @@ TEST_F(RouteTest, Marked)
 {
     const Session session(env);
     std::vector<const Session *> seen;
-    const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
+    const auto keep = [&seen](const Event &event) { seen.push_back(event.model); };
     events.add_hook(EventKind::Message, EventLevel::Info, keep);
     env.stream().emit(EventKind::Message, EventLevel::Info, describe);
     session.stream().emit(EventKind::Message, EventLevel::Info, describe);
@@ -134,7 +145,7 @@ TEST_F(RouteTest, ModelOnly)
 {
     Session model(env);
     int built = 0;
-    const auto count = [&built](biyos::Event &) { ++built; };
+    const auto count = [&built](Event &) { ++built; };
     model.add_hook(EventKind::Message, EventLevel::Warning, recorder("m "));
     listen(EventLevel::Error, recorder("e "));
     model.stream().emit(EventKind::Message, EventLevel::Info, count);
@@ -149,9 +160,9 @@ TEST_F(RouteTest, Delivering)
     Session model(env);
     Peek peek(events);
     bool inside = false;
-    const auto check = [&](const biyos::Event &) { inside = events.delivering(); };
-    const auto look = [&peek](const biyos::Event &event) { peek.hook(event); };
-    const auto fill = [&peek](biyos::Event &event) { peek.fill(event); };
+    const auto check = [&](const Event &) { inside = events.delivering(); };
+    const auto look = [&peek](const Event &event) { peek.hook(event); };
+    const auto fill = [&peek](Event &event) { peek.fill(event); };
     model.add_hook(EventKind::Message, EventLevel::Debug, check);
     model.add_hook(EventKind::Message, EventLevel::Debug, look);
     model.stream().emit(EventKind::Message, EventLevel::Info, fill);
@@ -194,7 +205,7 @@ TEST_F(RouteTest, Beside)
     Session second(env);
     std::latch both(2);
     std::atomic<int> met{0};
-    const auto meeting = [&both, &met](const biyos::Event &) { meet(both, met); };
+    const auto meeting = [&both, &met](const Event &) { meet(both, met); };
     first.add_hook(EventKind::Message, EventLevel::Info, meeting);
     second.add_hook(EventKind::Message, EventLevel::Info, meeting);
     std::thread other(send, std::cref(second));
@@ -208,11 +219,11 @@ TEST_F(RouteTest, Invariant)
     Session model(env);
     cover(model.change());
     std::vector<const Session *> heard;
-    const auto keep = [&heard](const biyos::Event &event) { heard.push_back(event.model); };
+    const auto keep = [&heard](const Event &event) { heard.push_back(event.model); };
     model.add_hook(EventKind::Invariant, EventLevel::Error, keep);
     const std::array<Real, 1> x{0.5};
     std::array<Real, 1> f{};
-    EXPECT_THROW(model.evaluation().values(model.lookup(), x, f), biyos::Error);
+    EXPECT_THROW(model.evaluation().values(model.lookup(), x, f), Error);
     EXPECT_EQ(heard, std::vector<const Session *>{&model});
     EXPECT_EQ(env.last_error().model, &model);
 }

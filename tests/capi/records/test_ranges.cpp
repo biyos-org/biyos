@@ -20,10 +20,14 @@
 namespace
 {
 
+using biyos::difference;
 using biyos::test::below;
 using biyos::test::build_sample;
 using biyos::test::Engine;
 using biyos::test::Env;
+using biyos::test::kConeTolerances;
+using biyos::test::kConstraintTolerances;
+using biyos::test::kVariableTolerances;
 using biyos::test::Model;
 using biyos::test::ToleranceCalls;
 
@@ -123,9 +127,9 @@ const NameCalls kComplementNames{BIYOS_getnccon,
                                  BIYOS_delcconnamerg};
 
 const std::array<ToleranceCalls, 3> kToleranceCalls{
-    biyos::test::kVariableTolerances,
-    biyos::test::kConstraintTolerances,
-    biyos::test::kConeTolerances,
+    kVariableTolerances,
+    kConstraintTolerances,
+    kConeTolerances,
 };
 
 std::uint64_t key(double value)
@@ -251,7 +255,7 @@ void expect_writes(const Held &held,
     EXPECT_EQ(listed(by_list.get(), span.stop - span.start, indices.data(), values.data()...),
               BIYOS_OK);
     EXPECT_EQ(ranged(by_range.get(), span.start, span.stop, values.data()...), BIYOS_OK);
-    EXPECT_EQ(biyos::difference(by_list.get()->model(), by_range.get()->model()), "");
+    EXPECT_EQ(difference(by_list.get()->model(), by_range.get()->model()), "");
 }
 
 template <typename Listed, typename... Values>
@@ -292,7 +296,7 @@ void expect_kept(const Held &held,
     const auto before = std::make_tuple(keys(values)...);
     EXPECT_EQ(ranged(tried.get(), span.start, span.stop, values.data()...), wanted);
     EXPECT_EQ(std::make_tuple(keys(values)...), before);
-    EXPECT_EQ(biyos::difference(tried.get()->model(), held.model.get()->model()), "");
+    EXPECT_EQ(difference(tried.get()->model(), held.model.get()->model()), "");
 }
 
 void write_variables(const Held &held, Engine &engine)
@@ -864,7 +868,7 @@ TEST(RangeTest, Atomic)
     lower.back() = std::numeric_limits<double>::quiet_NaN();
     const BIYOS_index size = count_of(model, BIYOS_getnvar);
     EXPECT_EQ(BIYOS_setvarbndrg(tried.get(), 0, size, lower.data(), nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(biyos::difference(tried.get()->model(), model.get()->model()), "");
+    EXPECT_EQ(difference(tried.get()->model(), model.get()->model()), "");
 }
 
 TEST(RangeTest, Messages)

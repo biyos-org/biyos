@@ -11,7 +11,10 @@
 #include <cstddef>
 #include <vector>
 
+using biyos::Constraint;
 using biyos::Family;
+using biyos::Index;
+using biyos::kInfinity;
 using biyos::Model;
 using biyos::Session;
 using biyos::capi::delete_tolerances;
@@ -28,10 +31,10 @@ using biyos::capi::writable;
 
 namespace
 {
-biyos::Constraint bounded(biyos::Constraint constraint,
-                          std::size_t k,
-                          const BIYOS_real *lower,
-                          const BIYOS_real *upper)
+Constraint bounded(Constraint constraint,
+                   std::size_t k,
+                   const BIYOS_real *lower,
+                   const BIYOS_real *upper)
 {
     if (lower != nullptr)
     {
@@ -57,18 +60,18 @@ void add_constraints(Session &session,
     {
         require(functions, "fun");
     }
-    std::vector<biyos::Constraint> added;
+    std::vector<Constraint> added;
     added.reserve(size);
     for (std::size_t k = 0; k < size; ++k)
     {
-        const biyos::Constraint free{
+        const Constraint free{
             .function = functions[k],
-            .lower = -biyos::kInfinity,
-            .upper = biyos::kInfinity,
+            .lower = -kInfinity,
+            .upper = kInfinity,
         };
         added.push_back(bounded(free, k, lower, upper));
     }
-    const biyos::Index index = model.n_constraints();
+    const Index index = model.n_constraints();
     model.add_constraints(added);
     if (start != nullptr)
     {
@@ -84,7 +87,7 @@ void set_bounds(Session &session,
 {
     Model &model = writable(session);
     const auto changed = selected(model, Family::Constraint, selection);
-    std::vector<biyos::Constraint> constraints;
+    std::vector<Constraint> constraints;
     constraints.reserve(changed.size());
     for (std::size_t k = 0; k < changed.size(); ++k)
     {
@@ -98,7 +101,7 @@ void n_constraints(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_constraints();
 }
 
-void copy_out(const biyos::Constraint &constraint,
+void copy_out(const Constraint &constraint,
               std::size_t k,
               BIYOS_index *functions,
               BIYOS_real *lower,
@@ -126,8 +129,7 @@ void get_constraints(const Session &session,
                      BIYOS_real *upper)
 {
     const auto chosen = selected(session.model(), Family::Constraint, selection);
-    const std::vector<biyos::Constraint> constraints =
-        picked(session.model(), &Model::constraint, chosen);
+    const std::vector<Constraint> constraints = picked(session.model(), &Model::constraint, chosen);
     for (std::size_t k = 0; k < constraints.size(); ++k)
     {
         copy_out(constraints[k], k, functions, lower, upper);

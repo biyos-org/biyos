@@ -27,6 +27,9 @@ namespace
 using biyos::Complement;
 using biyos::ConeKind;
 using biyos::Constraint;
+using biyos::default_objective;
+using biyos::difference;
+using biyos::Error;
 using biyos::ErrorKind;
 using biyos::Family;
 using biyos::Graph;
@@ -35,20 +38,24 @@ using biyos::Indicator;
 using biyos::kDeleted;
 using biyos::Member;
 using biyos::Model;
+using biyos::noun_of;
 using biyos::Objective;
 using biyos::ObjectiveSense;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
+using biyos::slice;
 using biyos::SpecialOrderedSetKind;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::widest;
 using biyos::test::built;
 using biyos::test::Expressions;
 using biyos::test::failure;
 using biyos::test::Naming;
 using biyos::test::Parts;
 using biyos::test::refusal;
+using biyos::test::sample;
 using Map = std::vector<Index>;
 using Indices = std::vector<Index>;
 
@@ -100,7 +107,7 @@ void add_names(Parts &parts)
 
 Parts three()
 {
-    Parts parts = biyos::test::sample();
+    Parts parts = sample();
     add_records(parts);
     add_names(parts);
     return parts;
@@ -128,7 +135,7 @@ void kept_parts(std::vector<Offset> &starts, std::vector<T> &items, const Map &m
     {
         if (map[k] != kDeleted)
         {
-            const std::span<const T> part = biyos::slice(std::span<const T>(items), starts, k);
+            const std::span<const T> part = slice(std::span<const T>(items), starts, k);
             kept_items.insert(kept_items.end(), part.begin(), part.end());
             kept_starts.push_back(static_cast<Offset>(kept_items.size()));
         }
@@ -246,7 +253,7 @@ std::string lookup(const Model &model, Family family, std::string_view name)
     {
         return std::to_string(model.index_of(family, name));
     }
-    catch (const biyos::Error &error)
+    catch (const Error &error)
     {
         return error.what();
     }
@@ -270,7 +277,7 @@ void expect_deleted(const Case &family, const Indices &indices, const Map &map)
     Parts parts = three();
     family.keep(parts, map);
     const Model wanted = built(parts);
-    EXPECT_EQ(biyos::difference(model, wanted), "");
+    EXPECT_EQ(difference(model, wanted), "");
     EXPECT_EQ(model.n_of(family.family), wanted.n_of(family.family));
     expect_lookups(model, wanted, family);
 }
@@ -286,13 +293,13 @@ void expect_each(const Case &family)
 
 std::string prefixed(const Case &family, Index index, const std::string &reason)
 {
-    const std::string noun(biyos::noun_of(family.family));
+    const std::string noun(noun_of(family.family));
     return "invalid argument: " + noun + " " + std::to_string(index) + ": " + reason;
 }
 
 std::string repeated(const Case &family, Index index)
 {
-    const std::string noun(biyos::noun_of(family.family));
+    const std::string noun(noun_of(family.family));
     return "invalid argument: argument 'idx': " + noun + " " + std::to_string(index) +
            " is repeated";
 }
@@ -302,7 +309,7 @@ std::string refused(const Case &family, const Indices &indices)
     Model model = built(three());
     const Model before = model;
     const std::string message = refusal([&] { (model.*family.call)(indices); });
-    EXPECT_EQ(biyos::difference(model, before), "");
+    EXPECT_EQ(difference(model, before), "");
     expect_lookups(model, before, family);
     return message;
 }
@@ -320,7 +327,7 @@ void expect_empty(const Case &family)
     Model model = built(three());
     const Model before = model;
     EXPECT_EQ((model.*family.call)(Indices{}), (Map{0, 1, 2}));
-    EXPECT_EQ(biyos::difference(model, before), "");
+    EXPECT_EQ(difference(model, before), "");
     expect_lookups(model, before, family);
 }
 
@@ -376,7 +383,7 @@ void expect_unused(const Indices &indices)
     const Offset nodes = model.graph().size();
     EXPECT_EQ(model.delete_functions(indices), (Map{0, kDeleted, 1, kDeleted, 2}));
     const Model wanted = built(three());
-    EXPECT_EQ(biyos::difference(model, wanted), "");
+    EXPECT_EQ(difference(model, wanted), "");
     EXPECT_EQ(model.graph().size(), nodes);
     for (const std::string_view name : five().function_names.names)
     {
@@ -408,7 +415,7 @@ void add_constraint(Model &model, Index function)
 
 void add_objective(Model &model, Index function)
 {
-    model.add_objectives(std::array{biyos::default_objective(function, 0)});
+    model.add_objectives(std::array{default_objective(function, 0)});
 }
 
 void add_indicator(Model &model, Index function)
@@ -461,7 +468,7 @@ const std::array kUses{
 Model used(const Use &use)
 {
     Model model;
-    model.add_variables(std::array{biyos::widest(biyos::VariableKind::Binary)});
+    model.add_variables(std::array{widest(VariableKind::Binary)});
     model.add_functions(std::array{0.0, 1.0, 2.0, 3.0}, std::array<Offset, 5>{}, {});
     use.add(model, 0);
     use.add(model, 2);
@@ -472,7 +479,7 @@ std::string in_use(Model &model, const Indices &indices)
 {
     const Model before = model;
     const std::string message = failure([&] { model.delete_functions(indices); }, ErrorKind::InUse);
-    EXPECT_EQ(biyos::difference(model, before), "");
+    EXPECT_EQ(difference(model, before), "");
     return message;
 }
 
@@ -498,7 +505,7 @@ void set_tolerances(Model &model, Family family, const Indices &indices)
 
 void expect_tolerances(const Case &family)
 {
-    SCOPED_TRACE(biyos::noun_of(family.family));
+    SCOPED_TRACE(noun_of(family.family));
     Model model = built(three());
     set_tolerances(model, family.family, {2, 0});
     EXPECT_EQ((model.*family.call)(Indices{1}), (Map{0, kDeleted, 1}));
@@ -506,12 +513,12 @@ void expect_tolerances(const Case &family)
     family.keep(parts, {0, kDeleted, 1});
     Model wanted = built(parts);
     set_tolerances(wanted, family.family, {1, 0});
-    EXPECT_EQ(biyos::difference(model, wanted), "");
+    EXPECT_EQ(difference(model, wanted), "");
     EXPECT_EQ((model.*family.call)(Indices{0}), (Map{kDeleted, 0}));
     family.keep(parts, {kDeleted, 0});
     wanted = built(parts);
     set_tolerances(wanted, family.family, {0});
-    EXPECT_EQ(biyos::difference(model, wanted), "");
+    EXPECT_EQ(difference(model, wanted), "");
 }
 
 const Map kDropped{0, kDeleted, 1, kDeleted, 2};
@@ -619,7 +626,7 @@ std::string held_by(Model &model, const Indices &indices)
 {
     const Model before = model;
     const std::string message = failure([&] { model.delete_variables(indices); }, ErrorKind::InUse);
-    EXPECT_EQ(biyos::difference(model, before), "");
+    EXPECT_EQ(difference(model, before), "");
     EXPECT_EQ(payloads(model.graph()), payloads(before.graph()));
     return message;
 }
@@ -658,7 +665,7 @@ const std::array kHolders{
 Model held(const Use &use)
 {
     Model model;
-    const Variable binary = biyos::widest(VariableKind::Binary);
+    const Variable binary = widest(VariableKind::Binary);
     model.add_variables(std::array{binary, binary, binary});
     model.add_functions(std::array{0.0}, std::array<Offset, 2>{}, {});
     use.add(model, 0);
@@ -711,7 +718,7 @@ TEST(DeleteTest, Refused)
 {
     for (const Case &family : kCases)
     {
-        SCOPED_TRACE(biyos::noun_of(family.family));
+        SCOPED_TRACE(noun_of(family.family));
         expect_refused(family);
     }
 }
@@ -720,7 +727,7 @@ TEST(DeleteTest, Empty)
 {
     for (const Case &family : kCases)
     {
-        SCOPED_TRACE(biyos::noun_of(family.family));
+        SCOPED_TRACE(noun_of(family.family));
         expect_empty(family);
     }
 }
@@ -771,7 +778,7 @@ TEST(DeleteTest, Checks)
               "invalid argument: function 4: unknown");
     EXPECT_EQ(refusal([&] { model.delete_functions(Indices{2, 2}); }),
               "invalid argument: argument 'idx': function 2 is repeated");
-    EXPECT_EQ(biyos::difference(model, before), "");
+    EXPECT_EQ(difference(model, before), "");
 }
 
 TEST(DeleteTest, Variables)
@@ -781,7 +788,7 @@ TEST(DeleteTest, Variables)
     EXPECT_EQ(model.delete_variables(Indices{3, 1}), kDropped);
     Model wanted = built(compacted());
     set_tolerances(wanted, Family::Variable, {2});
-    EXPECT_EQ(biyos::difference(model, wanted), "");
+    EXPECT_EQ(difference(model, wanted), "");
     for (const std::string_view name : spaced().variable_names.names)
     {
         SCOPED_TRACE(name);
@@ -836,7 +843,7 @@ TEST(DeleteTest, VariableCallbacks)
     EXPECT_EQ(held_by(model, {3}), "in use: variable 3: used by callback 0");
     const Model before = model;
     EXPECT_EQ(model.delete_variables(Indices{}), (Map{0, 1, 2, 3, 4}));
-    EXPECT_EQ(biyos::difference(model, before), "");
+    EXPECT_EQ(difference(model, before), "");
 }
 
 TEST(DeleteTest, VariableChecks)
@@ -847,5 +854,5 @@ TEST(DeleteTest, VariableChecks)
               "invalid argument: variable 5: unknown");
     EXPECT_EQ(refusal([&] { model.delete_variables(Indices{3, 3}); }),
               "invalid argument: argument 'idx': variable 3 is repeated");
-    EXPECT_EQ(biyos::difference(model, before), "");
+    EXPECT_EQ(difference(model, before), "");
 }

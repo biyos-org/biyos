@@ -10,13 +10,20 @@
 #include <thread>
 #include <vector>
 
+using biyos::ErrorKind;
+using biyos::kRecords;
+using biyos::Record;
+using biyos::Records;
+using biyos::RecordView;
+using biyos::Session;
+
 namespace
 {
 
 class Crowd
 {
   public:
-    Crowd(biyos::Records &records, std::size_t size)
+    Crowd(Records &records, std::size_t size)
         : filled_(static_cast<std::ptrdiff_t>(size)), seen_(size)
     {
         for (std::size_t i = 0; i < size; ++i)
@@ -46,9 +53,9 @@ class Crowd
     }
 
   private:
-    void stay(biyos::Records &records, std::size_t i)
+    void stay(Records &records, std::size_t i)
     {
-        records.put(biyos::ErrorKind::InvalidArgument, nullptr, std::to_string(i));
+        records.put(ErrorKind::InvalidArgument, nullptr, std::to_string(i));
         filled_.count_down();
         release_.wait();
         seen_[i] = records.get().text;
@@ -60,17 +67,17 @@ class Crowd
     std::vector<std::thread> threads_;
 };
 
-const biyos::Session *fake_model(const int &address)
+const Session *fake_model(const int &address)
 {
-    return reinterpret_cast<const biyos::Session *>(&address);
+    return reinterpret_cast<const Session *>(&address);
 }
 
 }
 
 TEST(RecordTest, Empty)
 {
-    const biyos::Records records;
-    const biyos::RecordView record = records.get();
+    const Records records;
+    const RecordView record = records.get();
     EXPECT_EQ(record.kind, std::nullopt);
     EXPECT_EQ(record.model, nullptr);
     EXPECT_STREQ(record.text, "");
@@ -79,25 +86,25 @@ TEST(RecordTest, Empty)
 TEST(RecordTest, Kept)
 {
     const int address = 0;
-    biyos::Records records;
-    records.put(biyos::ErrorKind::InvalidArgument, fake_model(address), "first");
-    records.put(biyos::ErrorKind::NoMemory, nullptr, "second");
-    const biyos::RecordView record = records.get();
-    EXPECT_EQ(record.kind, biyos::ErrorKind::NoMemory);
+    Records records;
+    records.put(ErrorKind::InvalidArgument, fake_model(address), "first");
+    records.put(ErrorKind::NoMemory, nullptr, "second");
+    const RecordView record = records.get();
+    EXPECT_EQ(record.kind, ErrorKind::NoMemory);
     EXPECT_EQ(record.model, nullptr);
     EXPECT_STREQ(record.text, "second");
-    records.put(biyos::ErrorKind::InvalidArgument, fake_model(address), "third");
+    records.put(ErrorKind::InvalidArgument, fake_model(address), "third");
     EXPECT_EQ(records.get().model, fake_model(address));
 }
 
 TEST(RecordTest, PerThread)
 {
-    biyos::Records records;
+    Records records;
     std::latch both(2);
     std::vector<std::string> seen(2);
     const auto fail = [&](std::size_t i)
     {
-        records.put(biyos::ErrorKind::InvalidArgument, nullptr, std::to_string(i));
+        records.put(ErrorKind::InvalidArgument, nullptr, std::to_string(i));
         both.arrive_and_wait();
         seen[i] = records.get().text;
     };
@@ -111,34 +118,34 @@ TEST(RecordTest, PerThread)
 
 TEST(RecordTest, DropsOldest)
 {
-    biyos::Records records;
-    records.put(biyos::ErrorKind::InvalidArgument, nullptr, "main");
-    Crowd crowd(records, biyos::kRecords);
+    Records records;
+    records.put(ErrorKind::InvalidArgument, nullptr, "main");
+    Crowd crowd(records, kRecords);
     EXPECT_EQ(records.get().kind, std::nullopt);
     EXPECT_STREQ(records.get().text, "");
     const std::vector<std::string> seen = crowd.leave();
     EXPECT_EQ(seen.front(), "0");
-    EXPECT_EQ(seen.back(), std::to_string(biyos::kRecords - 1));
+    EXPECT_EQ(seen.back(), std::to_string(kRecords - 1));
     EXPECT_EQ(std::ranges::count(seen, std::string()), 0);
 }
 
 TEST(RecordTest, ReadDropped)
 {
     const int address = 0;
-    biyos::Records records;
-    records.put(biyos::ErrorKind::InvalidArgument, fake_model(address), "main");
+    Records records;
+    records.put(ErrorKind::InvalidArgument, fake_model(address), "main");
     const auto &read = records.get();
-    const Crowd crowd(records, biyos::kRecords);
-    EXPECT_EQ(read.kind, biyos::ErrorKind::InvalidArgument);
+    const Crowd crowd(records, kRecords);
+    EXPECT_EQ(read.kind, ErrorKind::InvalidArgument);
     EXPECT_EQ(read.model, fake_model(address));
 }
 
 TEST(RecordTest, Refreshed)
 {
-    biyos::Records records;
-    records.put(biyos::ErrorKind::InvalidArgument, nullptr, "main");
-    Crowd first(records, biyos::kRecords - 1);
-    records.put(biyos::ErrorKind::InvalidArgument, nullptr, "again");
+    Records records;
+    records.put(ErrorKind::InvalidArgument, nullptr, "main");
+    Crowd first(records, kRecords - 1);
+    records.put(ErrorKind::InvalidArgument, nullptr, "again");
     Crowd second(records, 1);
     EXPECT_STREQ(records.get().text, "again");
     const std::vector<std::string> seen = first.leave();
@@ -149,11 +156,11 @@ TEST(RecordTest, Refreshed)
 TEST(RecordTest, Swapped)
 {
     const int address = 0;
-    biyos::Records records;
-    records.put(biyos::ErrorKind::InvalidArgument, fake_model(address), "kept");
-    biyos::Record held;
+    Records records;
+    records.put(ErrorKind::InvalidArgument, fake_model(address), "kept");
+    Record held;
     records.swap(held);
-    EXPECT_EQ(held.kind, biyos::ErrorKind::InvalidArgument);
+    EXPECT_EQ(held.kind, ErrorKind::InvalidArgument);
     EXPECT_EQ(held.model, fake_model(address));
     EXPECT_EQ(held.text, "kept");
     EXPECT_EQ(records.get().kind, std::nullopt);
@@ -164,24 +171,24 @@ TEST(RecordTest, Swapped)
 
 TEST(RecordTest, SwapEmpty)
 {
-    biyos::Records records;
-    biyos::Record held{.kind = biyos::ErrorKind::InvalidArgument, .model = nullptr, .text = "held"};
+    Records records;
+    Record held{.kind = ErrorKind::InvalidArgument, .model = nullptr, .text = "held"};
     records.swap(held);
     EXPECT_EQ(held.kind, std::nullopt);
     EXPECT_EQ(held.text, "");
-    EXPECT_EQ(records.get().kind, biyos::ErrorKind::InvalidArgument);
+    EXPECT_EQ(records.get().kind, ErrorKind::InvalidArgument);
     EXPECT_STREQ(records.get().text, "held");
 }
 
 TEST(RecordTest, SwapDropped)
 {
-    biyos::Records records;
-    records.put(biyos::ErrorKind::InvalidArgument, nullptr, "outer");
-    biyos::Record held;
+    Records records;
+    records.put(ErrorKind::InvalidArgument, nullptr, "outer");
+    Record held;
     records.swap(held);
-    records.put(biyos::ErrorKind::Internal, nullptr, "inner");
-    const Crowd crowd(records, biyos::kRecords);
+    records.put(ErrorKind::Internal, nullptr, "inner");
+    const Crowd crowd(records, kRecords);
     records.swap(held);
-    EXPECT_EQ(records.get().kind, biyos::ErrorKind::InvalidArgument);
+    EXPECT_EQ(records.get().kind, ErrorKind::InvalidArgument);
     EXPECT_STREQ(records.get().text, "outer");
 }

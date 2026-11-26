@@ -15,6 +15,9 @@
 namespace
 {
 
+using biyos::Env;
+using biyos::FakeClock;
+using biyos::test::kLpMpsFile;
 using biyos::test::written;
 using Texts = std::vector<std::string>;
 using Models = std::vector<const BIYOS_model *>;
@@ -69,7 +72,7 @@ void hook(BIYOS_env *env, Seen &seen)
 
 BIYOS_env fake_env()
 {
-    return BIYOS_env{.core = biyos::Env(std::make_unique<biyos::FakeClock>())};
+    return BIYOS_env{.core = Env(std::make_unique<FakeClock>())};
 }
 
 Texts span_of(const std::string &name)
@@ -285,7 +288,7 @@ TEST(CApiTest, ReadUnhooked)
     recorder.watch();
     Seen shared;
     hook(&recorder.env, shared);
-    const std::string path = written("biyos_unhooked.mps", biyos::test::kLpMpsFile);
+    const std::string path = written("biyos_unhooked.mps", kLpMpsFile);
     BIYOS_model *read = nullptr;
     ASSERT_EQ(BIYOS_readmdl(&recorder.env, path.c_str(), BIYOS_FILEFMT_MPS, &read), BIYOS_OK);
     EXPECT_EQ(shared.spans, span_of("io/read"));

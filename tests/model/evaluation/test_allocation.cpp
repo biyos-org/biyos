@@ -19,12 +19,17 @@
 namespace
 {
 
+using biyos::Env;
 using biyos::Evaluation;
 using biyos::Index;
+using biyos::Lookup;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Real;
 using biyos::Request;
+using biyos::VariableKind;
+using biyos::widest;
+using biyos::test::allocations;
 
 const std::vector<Real> kPoint{0.5, -1.5};
 
@@ -60,7 +65,7 @@ void add_callback(Model &model)
 Model evaluated()
 {
     Model model;
-    model.add_variables(std::vector(2, biyos::widest(biyos::VariableKind::Continuous)));
+    model.add_variables(std::vector(2, widest(VariableKind::Continuous)));
     const std::array<Offset, 3> starts{0, 1, 2};
     model.add_functions(
         std::vector{1.0, 2.0},
@@ -80,19 +85,19 @@ Model evaluated()
 
 TEST(AllocationTest, Evaluation)
 {
-    biyos::Env env;
+    Env env;
     const Model model = evaluated();
     Evaluation evaluation(model, env.stream());
-    const biyos::Lookup lookup(env.options());
+    const Lookup lookup(env.options());
     std::vector<Real> f(2);
     std::vector<Real> g(evaluation.jacobian_pattern().variables.size());
     std::vector<Real> h(evaluation.hessian_pattern().rows.size());
     std::vector<Real> hv(2);
     const std::vector<Real> w{0.5, 2.0};
-    const std::size_t start = biyos::test::allocations();
+    const std::size_t start = allocations();
     evaluation.values(lookup, kPoint, f);
     evaluation.jacobian(lookup, kPoint, g);
     evaluation.hessian(lookup, {.x = kPoint, .w = w, .v = {}}, h);
     evaluation.product(lookup, {.x = kPoint, .w = w, .v = kPoint}, hv);
-    EXPECT_EQ(biyos::test::allocations() - start, 0U);
+    EXPECT_EQ(allocations() - start, 0U);
 }

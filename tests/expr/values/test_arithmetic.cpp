@@ -21,11 +21,18 @@ namespace
 using biyos::Argument;
 using biyos::Curvature;
 using biyos::Interval;
+using biyos::largest_curvature;
 using biyos::Monotonicity;
 using biyos::Offset;
 using biyos::Operands;
 using biyos::Operator;
+using biyos::product_curvature;
+using biyos::quotient_curvature;
 using biyos::Real;
+using biyos::smallest_curvature;
+using biyos::sum_curvature;
+using biyos::test::expect_root;
+using biyos::test::operator_graph;
 using biyos::test::Parameters;
 using biyos::test::text;
 
@@ -146,25 +153,25 @@ void expect_trios(Operator op, std::span<const Trio> trios, Rule rule)
             EXPECT_EQ(monotonicities[k], trio.monotonicities[k]) << "child " << k;
             EXPECT_FALSE(arguments[k].cut_below || arguments[k].cut_above);
         }
-        const auto graph = biyos::test::operator_graph(op, with(trio.coefficient));
-        biyos::test::expect_root(graph, trio.box, found, monotonicities);
+        const auto graph = operator_graph(op, with(trio.coefficient));
+        expect_root(graph, trio.box, found, monotonicities);
     }
 }
 
 Curvature product_rule(const Trio &trio, std::span<Argument> arguments)
 {
     const Operands factors{.children = kChildren, .nodes = trio.box};
-    return biyos::product_curvature(trio.coefficient, factors, arguments);
+    return product_curvature(trio.coefficient, factors, arguments);
 }
 
 Curvature largest_rule(const Trio &trio, std::span<Argument> arguments)
 {
-    return biyos::largest_curvature({.children = kChildren, .nodes = trio.box}, arguments);
+    return largest_curvature({.children = kChildren, .nodes = trio.box}, arguments);
 }
 
 Curvature smallest_rule(const Trio &trio, std::span<Argument> arguments)
 {
-    return biyos::smallest_curvature({.children = kChildren, .nodes = trio.box}, arguments);
+    return smallest_curvature({.children = kChildren, .nodes = trio.box}, arguments);
 }
 
 }
@@ -173,14 +180,14 @@ TEST(CurvatureTest, Sums)
 {
     const std::array weights{1.0, -2.0, 0.0};
     std::array<Argument, 3> arguments{};
-    EXPECT_EQ(biyos::sum_curvature(weights, arguments), kAffine);
+    EXPECT_EQ(sum_curvature(weights, arguments), kAffine);
     const Trios monotonicities{arguments[0].monotonicity,
                                arguments[1].monotonicity,
                                arguments[2].monotonicity};
     EXPECT_EQ(monotonicities, (Trios{kRising, kFalling, kFlat}));
     const Box box{{{-1.0, 2.0}, {-kInfinity, 3.0}, {0.0, 1.0}}};
-    const auto graph = biyos::test::operator_graph(Operator::Sum, with(0.5));
-    biyos::test::expect_root(graph, box, kAffine, monotonicities);
+    const auto graph = operator_graph(Operator::Sum, with(0.5));
+    expect_root(graph, box, kAffine, monotonicities);
 }
 
 TEST(CurvatureTest, Products)
@@ -193,7 +200,7 @@ TEST(CurvatureTest, EmptyFactor)
     const Box box{{{1.0, 1.0}, Interval::empty(), {2.0, 3.0}}};
     std::array<Argument, 3> arguments{};
     const Operands factors{.children = kChildren, .nodes = box};
-    EXPECT_EQ(biyos::product_curvature(2.0, factors, arguments), kNeither);
+    EXPECT_EQ(product_curvature(2.0, factors, arguments), kNeither);
     for (const Argument &argument : arguments)
     {
         EXPECT_EQ(argument.monotonicity, kUnsure);
@@ -213,8 +220,7 @@ TEST(CurvatureTest, Quotients)
         const std::array pair{row.numerator, row.denominator};
         SCOPED_TRACE(box_text(pair));
         std::array<Argument, 2> arguments{};
-        const Curvature found =
-            biyos::quotient_curvature(row.numerator, row.denominator, arguments);
+        const Curvature found = quotient_curvature(row.numerator, row.denominator, arguments);
         EXPECT_EQ(found, row.curvature);
         EXPECT_EQ(arguments[0].monotonicity, row.numerator_monotonicity);
         EXPECT_EQ(arguments[1].monotonicity, row.denominator_monotonicity);
@@ -222,7 +228,7 @@ TEST(CurvatureTest, Quotients)
         EXPECT_EQ(arguments[1].cut_above, row.cut_above);
         const Box box{row.numerator, row.denominator, kZero};
         const std::array monotonicities{arguments[0].monotonicity, arguments[1].monotonicity};
-        const auto graph = biyos::test::operator_graph(Operator::Division, with(1.0));
-        biyos::test::expect_root(graph, box, found, monotonicities);
+        const auto graph = operator_graph(Operator::Division, with(1.0));
+        expect_root(graph, box, found, monotonicities);
     }
 }

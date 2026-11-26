@@ -13,6 +13,7 @@ namespace
 {
 
 using biyos::Claim;
+using biyos::name_of;
 using biyos::ResultStatus;
 using biyos::TerminationStatus;
 
@@ -94,7 +95,7 @@ template <typename Status, std::size_t N> void expect_distinct(const std::array<
     for (const Status status : all)
     {
         codes.insert(static_cast<int>(status));
-        names.insert(biyos::name_of(status));
+        names.insert(name_of(status));
     }
     EXPECT_EQ(codes.size(), N);
     EXPECT_EQ(names.size(), N);
@@ -103,17 +104,17 @@ template <typename Status, std::size_t N> void expect_distinct(const std::array<
 
 std::string_view termination_name(int code)
 {
-    return biyos::name_of(static_cast<TerminationStatus>(code));
+    return name_of(static_cast<TerminationStatus>(code));
 }
 
 std::string_view result_name(int code)
 {
-    return biyos::name_of(static_cast<ResultStatus>(code));
+    return name_of(static_cast<ResultStatus>(code));
 }
 
 std::string_view claim_name(int code)
 {
-    return biyos::name_of(static_cast<Claim>(code));
+    return name_of(static_cast<Claim>(code));
 }
 
 template <typename Status, std::size_t N> void expect_listed(const std::array<Status, N> &all)
@@ -121,7 +122,7 @@ template <typename Status, std::size_t N> void expect_listed(const std::array<St
     for (int code = -kLargest; code <= kLargest; ++code)
     {
         const Status status = static_cast<Status>(code);
-        const bool named = !biyos::name_of(status).empty();
+        const bool named = !name_of(status).empty();
         const bool listed = std::ranges::find(all, status) != all.end();
         EXPECT_EQ(named, listed) << "code " << code;
     }
@@ -152,7 +153,7 @@ TEST(StatusTest, Groups)
     for (const TerminationStatus status : kTerminations)
     {
         const int group = static_cast<int>(group_of(status));
-        EXPECT_EQ(static_cast<int>(status) / 100, group) << biyos::name_of(status);
+        EXPECT_EQ(static_cast<int>(status) / 100, group) << name_of(status);
     }
 }
 

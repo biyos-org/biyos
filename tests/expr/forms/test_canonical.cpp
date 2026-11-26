@@ -26,6 +26,7 @@ using biyos::Operator;
 using biyos::Parts;
 using biyos::QuadraticTerm;
 using biyos::Real;
+using biyos::split;
 using biyos::Uses;
 using biyos::test::refusal;
 
@@ -96,7 +97,7 @@ void expect_whole(const Parts &parts, Offset node)
 Parts parts_of(Graph &graph, Offset node)
 {
     const Uses uses(graph);
-    return biyos::split(graph, uses, node);
+    return split(graph, uses, node);
 }
 
 Offset constant(Graph &graph, Real value)
@@ -626,7 +627,7 @@ TEST(CanonicalTest, OldParents)
     const Offset x = graph.add_variable(0);
     const Uses uses(graph);
     const Offset exponential = unary(graph, Operator::Exp, x);
-    EXPECT_EQ(refusal([&] { biyos::split(graph, uses, exponential); }),
+    EXPECT_EQ(refusal([&] { split(graph, uses, exponential); }),
               "invalid argument: expression: parents are older than node 1");
     EXPECT_EQ(graph.size(), 2);
 }

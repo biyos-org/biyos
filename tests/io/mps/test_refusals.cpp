@@ -12,6 +12,7 @@
 #include <string_view>
 #include <vector>
 
+using biyos::default_objective;
 using biyos::Family;
 using biyos::Index;
 using biyos::Model;
@@ -20,6 +21,7 @@ using biyos::VariableKind;
 using biyos::test::built;
 using biyos::test::Parts;
 using biyos::test::refusal;
+using biyos::test::sample;
 using biyos::test::writable;
 
 namespace
@@ -49,7 +51,7 @@ TEST(MpsTest, Writable)
 TEST(MpsTest, SecondObjective)
 {
     Parts parts = writable();
-    parts.objectives.push_back(biyos::default_objective(0, 1));
+    parts.objectives.push_back(default_objective(0, 1));
     EXPECT_EQ(refusal(built(parts)),
               "unsupported: objective 1: free MPS cannot hold a second objective");
 }
@@ -65,7 +67,7 @@ TEST(MpsTest, Weight)
 TEST(MpsTest, Quadratic)
 {
     Parts parts = writable();
-    parts.quadratic = biyos::test::sample().quadratic;
+    parts.quadratic = sample().quadratic;
     EXPECT_EQ(refusal(built(parts)),
               "unsupported: function 2: free MPS cannot hold quadratic terms");
 }
@@ -73,13 +75,13 @@ TEST(MpsTest, Quadratic)
 TEST(MpsTest, Expression)
 {
     Parts parts = writable();
-    parts.expressions = biyos::test::sample().expressions;
+    parts.expressions = sample().expressions;
     EXPECT_EQ(refusal(built(parts)), "unsupported: function 2: free MPS cannot hold an expression");
 }
 
 TEST(MpsTest, Records)
 {
-    const Parts full = biyos::test::sample();
+    const Parts full = sample();
     Parts cones = writable();
     cones.cones = full.cones;
     EXPECT_EQ(refusal(built(cones)), "unsupported: cone 0: free MPS cannot hold cones");

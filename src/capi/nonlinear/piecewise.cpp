@@ -15,9 +15,15 @@
 #include <string_view>
 #include <vector>
 
+using biyos::check_index;
+using biyos::check_span;
+using biyos::Error;
+using biyos::ErrorKind;
 using biyos::Index;
+using biyos::kRoom;
 using biyos::Model;
 using biyos::Offset;
+using biyos::Real;
 using biyos::Session;
 using biyos::to_offset;
 using biyos::to_size;
@@ -59,9 +65,9 @@ std::span<const BIYOS_real> input(const BIYOS_real *values, std::size_t n, std::
 
 void check_room(const Model &model, std::size_t added)
 {
-    if (added > biyos::kRoom - to_size(held(model)))
+    if (added > kRoom - to_size(held(model)))
     {
-        throw biyos::Error(biyos::ErrorKind::NoMemory, "model", "no pwl index left");
+        throw Error(ErrorKind::NoMemory, "model", "no pwl index left");
     }
 }
 
@@ -100,14 +106,14 @@ std::span<const Index> chosen(const Model &model, List list)
     const std::span<const Index> indices = listed(list.n, list.indices);
     for (const Index index : indices)
     {
-        biyos::check_index(kNoun, index, held(model));
+        check_index(kNoun, index, held(model));
     }
     return indices;
 }
 
 std::vector<Index> chosen(const Model &model, Range range)
 {
-    biyos::check_span(kNoun, range.start, range.stop, held(model));
+    check_span(kNoun, range.start, range.stop, held(model));
     std::vector<Index> indices(to_size(range.stop - range.start));
     std::iota(indices.begin(), indices.end(), range.start);
     return indices;
@@ -131,7 +137,7 @@ void n_points(const Session &session, Selection selection, BIYOS_offset *nnz)
     *require(nnz, "nnz") = to_offset(count);
 }
 
-void copy_to(std::span<const biyos::Real> from, BIYOS_real *to, std::size_t k)
+void copy_to(std::span<const Real> from, BIYOS_real *to, std::size_t k)
 {
     if (to != nullptr)
     {

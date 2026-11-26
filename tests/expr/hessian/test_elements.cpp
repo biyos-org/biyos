@@ -17,11 +17,15 @@
 namespace
 {
 
+using biyos::Elements;
+using biyos::elements_of;
 using biyos::Entry;
 using biyos::Graph;
 using biyos::Index;
 using biyos::Lower;
+using biyos::lower_of;
 using biyos::Map;
+using biyos::map_of;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Pattern;
@@ -108,7 +112,7 @@ TEST(ElementTest, Nested)
     const Offset outer = graph.add_sum(4.0, std::array{inner, exp, x}, std::array{2.0, 0.5, 7.0});
     const Offset cosine = unary(graph, Operator::Cos, x);
     const std::array roots{outer, cosine, inner};
-    const biyos::Elements elements = biyos::elements_of(graph, roots);
+    const Elements elements = elements_of(graph, roots);
     EXPECT_EQ(elements.nodes, (std::vector{quotient, sine, exp, x, cosine, quotient, sine}));
     EXPECT_EQ(elements.roots, (std::vector<Offset>{0, 0, 0, 0, 1, 2, 2}));
     EXPECT_EQ(elements.weights, (std::vector{6.0, -2.0, 0.5, 7.0, 1.0, 3.0, -1.0}));
@@ -119,19 +123,19 @@ TEST(ElementTest, Refused)
     Graph graph;
     graph.add_variable(0);
     const std::array roots{Offset{0}, Offset{1}};
-    EXPECT_EQ(refusal([&] { biyos::elements_of(graph, roots); }),
+    EXPECT_EQ(refusal([&] { elements_of(graph, roots); }),
               "invalid argument: expression: node 1 is unknown");
     const std::array declared{Entry{.row = 1, .column = 0}, Entry{.row = 0, .column = -1}};
-    EXPECT_EQ(refusal([&] { biyos::lower_of(pattern_of({}), declared); }),
+    EXPECT_EQ(refusal([&] { lower_of(pattern_of({}), declared); }),
               "invalid argument: entries: entry 1 has a negative index");
 }
 
 TEST(ElementTest, Union)
 {
     const Pattern blocks = pattern_of({{0, 3}, {1, 3}, {}, {2}, {0, 3}});
-    const Lower lower = biyos::lower_of(blocks, {});
+    const Lower lower = lower_of(blocks, {});
     expect_entries(lower, {{0, 0}, {3, 0}, {1, 1}, {3, 1}, {2, 2}, {3, 3}});
-    const Map map = biyos::map_of(lower, blocks, {});
+    const Map map = map_of(lower, blocks, {});
     EXPECT_EQ(map.starts, (std::vector<Offset>{0, 3, 6, 6, 7, 10}));
     expect_blocks(lower, map, blocks);
     EXPECT_TRUE(map.declared.empty());
@@ -146,10 +150,10 @@ TEST(ElementTest, Declared)
         Entry{.row = 5, .column = 4},
         Entry{.row = 2, .column = 0},
     };
-    const Lower lower = biyos::lower_of(blocks, declared);
+    const Lower lower = lower_of(blocks, declared);
     expect_entries(lower, {{2, 0}, {1, 1}, {2, 1}, {2, 2}, {5, 4}});
     EXPECT_EQ(lower.starts.size(), 7U);
-    const Map map = biyos::map_of(lower, blocks, declared);
+    const Map map = map_of(lower, blocks, declared);
     EXPECT_EQ(map.declared, (std::vector<Offset>{0, 2, 4, 0}));
     expect_blocks(lower, map, blocks);
 }

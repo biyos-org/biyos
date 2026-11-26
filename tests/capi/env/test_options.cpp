@@ -15,6 +15,16 @@
 #include <string_view>
 #include <vector>
 
+using biyos::FakeClock;
+using biyos::FlagPart;
+using biyos::FlagsRule;
+using biyos::Option;
+using biyos::OptionSpec;
+using biyos::PartDefault;
+using biyos::Scope;
+using biyos::Version;
+using biyos::test::last_message;
+
 namespace
 {
 
@@ -26,48 +36,48 @@ constexpr BIYOS_mask kProbe = BIYOS_mask{1} << 1;
 constexpr BIYOS_mask kScale = BIYOS_mask{1} << 2;
 
 constexpr std::array kParts{
-    biyos::FlagPart{
+    FlagPart{
         .bit = kDual,
         .name = "dual",
-        .default_value = biyos::PartDefault::On,
+        .default_value = PartDefault::On,
     },
-    biyos::FlagPart{
+    FlagPart{
         .bit = kProbe,
         .name = "probe",
-        .default_value = biyos::PartDefault::Off,
+        .default_value = PartDefault::Off,
     },
-    biyos::FlagPart{
+    FlagPart{
         .bit = kScale,
         .name = "scale",
-        .default_value = biyos::PartDefault::Automatic,
+        .default_value = PartDefault::Automatic,
     },
 };
 
 constexpr std::array kRows{
-    biyos::OptionSpec{
-        .id = biyos::Option{kFlags},
+    OptionSpec{
+        .id = Option{kFlags},
         .name = "parts",
-        .scope = biyos::Scope::Environment,
-        .rule = biyos::FlagsRule{.parts = kParts},
+        .scope = Scope::Environment,
+        .rule = FlagsRule{.parts = kParts},
         .doc = "Parts.",
-        .versions = {.since = biyos::Version{0, 0, 1}},
+        .versions = {.since = Version{0, 0, 1}},
     },
-    biyos::OptionSpec{
-        .id = biyos::Option{kMasks},
+    OptionSpec{
+        .id = Option{kMasks},
         .name = "masks",
-        .scope = biyos::Scope::Model,
-        .rule = biyos::FlagsRule{.parts = kParts},
+        .scope = Scope::Model,
+        .rule = FlagsRule{.parts = kParts},
         .doc = "Masks.",
-        .versions = {.since = biyos::Version{0, 0, 1}},
+        .versions = {.since = Version{0, 0, 1}},
     },
-    biyos::OptionSpec{
-        .id = biyos::Option{kMask},
+    OptionSpec{
+        .id = Option{kMask},
         .name = "mask",
-        .scope = biyos::Scope::Model,
-        .rule = biyos::FlagsRule{.parts = kParts},
+        .scope = Scope::Model,
+        .rule = FlagsRule{.parts = kParts},
         .doc = "Mask.",
-        .versions = {.since = biyos::Version{0, 0, 1}, .deprecated = biyos::Version{0, 0, 2}},
-        .replacement = biyos::Option{kMasks},
+        .versions = {.since = Version{0, 0, 1}, .deprecated = Version{0, 0, 2}},
+        .replacement = Option{kMasks},
     },
 };
 
@@ -80,7 +90,7 @@ class Env
     Env &operator=(const Env &) = delete;
 
     BIYOS_env *get() const { return pointer_; }
-    std::string message() const { return biyos::test::last_message(pointer_); }
+    std::string message() const { return last_message(pointer_); }
 
   private:
     BIYOS_env *pointer_ = nullptr;
@@ -90,10 +100,10 @@ class Flagged
 {
   public:
     BIYOS_env *get() { return &env_; }
-    std::string message() const { return biyos::test::last_message(&env_); }
+    std::string message() const { return last_message(&env_); }
 
   private:
-    BIYOS_env env_{.core = biyos::Env(std::make_unique<biyos::FakeClock>(), kRows)};
+    BIYOS_env env_{.core = biyos::Env(std::make_unique<FakeClock>(), kRows)};
 };
 
 class Model
@@ -125,7 +135,7 @@ struct Attempt
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
+    attempt.messages.emplace_back(last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)

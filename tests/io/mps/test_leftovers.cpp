@@ -16,31 +16,39 @@
 #include <string_view>
 #include <vector>
 
+using biyos::Env;
 using biyos::Event;
 using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::Family;
+using biyos::FileFormat;
 using biyos::Index;
 using biyos::Model;
+using biyos::Objective;
+using biyos::Option;
 using biyos::Real;
+using biyos::Settings;
+using biyos::write_file;
+using biyos::test::built;
+using biyos::test::writable;
 
 namespace
 {
 
 Model plain()
 {
-    return biyos::test::built(biyos::test::writable());
+    return built(writable());
 }
 
-std::vector<std::string> heard(const Model &model, const biyos::Settings &settings)
+std::vector<std::string> heard(const Model &model, const Settings &settings)
 {
-    biyos::Env env;
+    Env env;
     std::vector<std::string> texts;
     const auto record = [&texts](const Event &event)
     { texts.push_back(event.module + " " + event.text); };
     env.events().add_hook(EventKind::Message, EventLevel::Warning, record);
     const std::string path = testing::TempDir() + "biyos_left.mps";
-    biyos::write_file(env.stream(), model, settings, path, biyos::FileFormat::Mps);
+    write_file(env.stream(), model, settings, path, FileFormat::Mps);
     return texts;
 }
 
@@ -54,7 +62,7 @@ std::string left(std::string_view part)
 
 TEST(MpsTest, Complete)
 {
-    EXPECT_TRUE(heard(plain(), biyos::Settings()).empty());
+    EXPECT_TRUE(heard(plain(), Settings()).empty());
 }
 
 TEST(MpsTest, LeftOut)
@@ -67,14 +75,14 @@ TEST(MpsTest, LeftOut)
                          std::span(&variable, 1),
                          std::span(&absolute, 1),
                          std::span(&relative, 1));
-    biyos::Objective objective = model.objective(0);
+    Objective objective = model.objective(0);
     objective.relative = 1e-6;
     objective.priority = 4;
     const Index first = 0;
     model.set_objectives(std::span(&first, 1), std::span(&objective, 1));
-    biyos::Env env;
-    biyos::Settings settings;
-    settings.set_int(biyos::Option::Seed, 3, env.stream());
+    Env env;
+    Settings settings;
+    settings.set_int(Option::Seed, 3, env.stream());
     EXPECT_EQ(heard(model, settings),
               (std::vector{
                   left("the record tolerances"),
@@ -94,5 +102,5 @@ TEST(MpsTest, ConstraintTolerance)
                          std::span(&constraint, 1),
                          std::span(&absolute, 1),
                          std::span(&relative, 1));
-    EXPECT_EQ(heard(model, biyos::Settings()), std::vector{left("the record tolerances")});
+    EXPECT_EQ(heard(model, Settings()), std::vector{left("the record tolerances")});
 }

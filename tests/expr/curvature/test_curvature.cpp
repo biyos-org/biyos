@@ -33,7 +33,15 @@ using biyos::Real;
 using biyos::Shapes;
 using biyos::to_size;
 using biyos::test::Box;
+using biyos::test::box_of;
+using biyos::test::draw_box;
+using biyos::test::draw_graph;
+using biyos::test::enclosures;
 using biyos::test::Engine;
+using biyos::test::expect_monotonicities;
+using biyos::test::operator_graph;
+using biyos::test::parameters_of;
+using biyos::test::refusal;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::uint64_t kSeed = 20261111;
@@ -57,7 +65,7 @@ std::span<const Offset> one(const Offset &node)
 
 Shapes classified(const Graph &graph, std::span<const Interval> box)
 {
-    const std::vector<Interval> nodes = biyos::test::enclosures(graph, box);
+    const std::vector<Interval> nodes = enclosures(graph, box);
     Shapes shapes(graph);
     shapes.classify(graph, nodes);
     return shapes;
@@ -98,7 +106,7 @@ void expect_operator(const Graph &graph,
     {
         monotonicities[k] = shapes.monotonicity(root, k);
     }
-    biyos::test::expect_monotonicities(
+    expect_monotonicities(
         {.graph = graph, .box = box, .monotonicities = monotonicities, .reported = reported},
         engine);
 }
@@ -383,12 +391,12 @@ TEST(CurvatureTest, Sizes)
     unary(graph, Operator::Exp, x);
     Shapes shapes(graph);
     const std::vector<Interval> small(1, Interval(0.0, 1.0));
-    EXPECT_EQ(biyos::test::refusal([&] { shapes.classify(graph, small); }),
+    EXPECT_EQ(refusal([&] { shapes.classify(graph, small); }),
               "invalid argument: nodes: size 1, not the node count 2");
     Graph grown = graph;
     unary(grown, Operator::Log, x);
     const std::vector<Interval> three(3, Interval(0.0, 1.0));
-    EXPECT_EQ(biyos::test::refusal([&] { shapes.classify(grown, three); }),
+    EXPECT_EQ(refusal([&] { shapes.classify(grown, three); }),
               "invalid argument: graph: size 3, not 2");
     Graph other;
     const std::array pair{other.add_variable(0), other.add_variable(1)};
@@ -398,7 +406,7 @@ TEST(CurvatureTest, Sizes)
     single.add_variable(1);
     single.add(Operator::Exp, one(pair[0]));
     Shapes small_shapes(single);
-    EXPECT_EQ(biyos::test::refusal([&] { small_shapes.classify(other, three); }),
+    EXPECT_EQ(refusal([&] { small_shapes.classify(other, three); }),
               "invalid argument: graph: node 2 has 2 children, not 1");
 }
 
@@ -412,10 +420,9 @@ TEST(CurvatureTest, Sampled)
         int reported = 0;
         for (int round = 0; round < kBoxes; ++round)
         {
-            const Graph graph =
-                biyos::test::operator_graph(op, biyos::test::parameters_of(op, engine));
+            const Graph graph = operator_graph(op, parameters_of(op, engine));
             const bool tame = round % 2 == 0;
-            const Box box = tame ? biyos::test::draw_box(engine) : biyos::test::box_of(engine);
+            const Box box = tame ? draw_box(engine) : box_of(engine);
             expect_operator(graph, box, engine, reported);
         }
     }
@@ -427,8 +434,8 @@ TEST(CurvatureTest, Random)
     int reported = 0;
     for (int round = 0; round < kGraphs; ++round)
     {
-        const Graph graph = biyos::test::draw_graph(engine, kSize);
-        const Box box = biyos::test::draw_box(engine);
+        const Graph graph = draw_graph(engine, kSize);
+        const Box box = draw_box(engine);
         SCOPED_TRACE("graph " + std::to_string(round));
         expect_chords(graph, box, engine, reported);
     }

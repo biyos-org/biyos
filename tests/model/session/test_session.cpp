@@ -17,6 +17,7 @@ namespace
 
 using biyos::Env;
 using biyos::Evaluation;
+using biyos::Event;
 using biyos::EventKind;
 using biyos::EventLevel;
 using biyos::Option;
@@ -26,7 +27,7 @@ using biyos::VariableKind;
 
 constexpr int kSeed = 7;
 
-void ignore(const biyos::Event &) {}
+void ignore(const Event &) {}
 
 TEST(SessionTest, Fresh)
 {
@@ -89,7 +90,7 @@ TEST(SessionTest, Evaluated)
     Env env;
     Session session(env);
     std::vector<const Session *> seen;
-    const auto keep = [&seen](const biyos::Event &event) { seen.push_back(event.model); };
+    const auto keep = [&seen](const Event &event) { seen.push_back(event.model); };
     session.add_hook(EventKind::Span, EventLevel::Debug, keep);
     session.evaluation();
     EXPECT_EQ(seen, (std::vector<const Session *>{&session, &session}));

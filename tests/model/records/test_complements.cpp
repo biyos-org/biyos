@@ -18,6 +18,8 @@ namespace
 {
 
 using biyos::Complement;
+using biyos::difference;
+using biyos::ErrorKind;
 using biyos::Family;
 using biyos::Index;
 using biyos::Model;
@@ -154,13 +156,13 @@ TEST(ComplementTest, Copy)
     model.add_complements(
         std::vector<Complement>{pair(0, 1, 0.0, kInfinity), pair(1, 1, -1.0, 1.0)});
     const Model copy = model;
-    EXPECT_EQ(biyos::difference(model, copy), "");
+    EXPECT_EQ(difference(model, copy), "");
     Model changed = model;
     const Index index = 1;
     const Complement other = pair(1, 0, -1.0, 1.0);
     changed.set_complements(std::span(&index, 1), std::span(&other, 1));
-    EXPECT_EQ(biyos::difference(model, changed), "complement 1: multiplier 1 against 0");
-    EXPECT_EQ(biyos::difference(model, copy), "");
+    EXPECT_EQ(difference(model, changed), "complement 1: multiplier 1 against 0");
+    EXPECT_EQ(difference(model, copy), "");
 }
 
 TEST(ComplementTest, UnknownFunction)
@@ -272,7 +274,7 @@ TEST(ComplementTest, Mismatch)
     Model model = with_functions(1);
     add(model, pair(0, 0, 0.0, 1.0));
     const std::vector<Index> indices{0};
-    failure([&] { model.set_complements(indices, {}); }, biyos::ErrorKind::Internal);
+    failure([&] { model.set_complements(indices, {}); }, ErrorKind::Internal);
     expect_complement(model.complement(0), pair(0, 0, 0.0, 1.0));
 }
 
@@ -345,7 +347,7 @@ TEST(ComplementTest, ToleranceAtomic)
     const Indices indices{1, 0};
     const Reals short_list{3.0};
     failure([&] { model.set_tolerances(Family::Complement, indices, short_list, {}); },
-            biyos::ErrorKind::Internal);
+            ErrorKind::Internal);
     expect_tolerance(model.tolerance_of(Family::Complement, 1), kNan, kNan);
 }
 
@@ -376,14 +378,12 @@ TEST(ComplementTest, ToleranceCopy)
     Model model = with_complements(2);
     model.set_tolerances(Family::Complement, Indices{1}, Reals{0.5}, {});
     const Model copy = model;
-    EXPECT_EQ(biyos::difference(model, copy), "");
+    EXPECT_EQ(difference(model, copy), "");
     expect_tolerance(copy.tolerance_of(Family::Complement, 1), 0.5, kNan);
     Model changed = model;
     changed.set_tolerances(Family::Complement, Indices{1}, {}, Reals{0.25});
-    EXPECT_EQ(biyos::difference(model, changed),
-              "complement 1: relative tolerance nan against 0.25");
+    EXPECT_EQ(difference(model, changed), "complement 1: relative tolerance nan against 0.25");
     changed.delete_tolerances(Family::Complement, Indices{1});
-    EXPECT_EQ(biyos::difference(model, changed),
-              "complement 1: absolute tolerance 0.5 against nan");
-    EXPECT_EQ(biyos::difference(model, copy), "");
+    EXPECT_EQ(difference(model, changed), "complement 1: absolute tolerance 0.5 against nan");
+    EXPECT_EQ(difference(model, copy), "");
 }

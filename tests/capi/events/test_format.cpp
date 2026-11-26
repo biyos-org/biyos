@@ -11,6 +11,11 @@
 #include <string_view>
 #include <vector>
 
+using biyos::Event;
+using biyos::EventKind;
+using biyos::EventLevel;
+using biyos::Field;
+
 namespace
 {
 
@@ -21,21 +26,18 @@ constexpr std::string_view kJson =
     R"({"time":0.000000,"kind":"message","level":"warning",)"
     R"("module":"presolve","text":"removed rows","fields":{"rows":"3"}})";
 
-biyos::Event removed()
+Event removed()
 {
-    biyos::Event event{};
-    event.kind = biyos::EventKind::Message;
-    event.level = biyos::EventLevel::Warning;
+    Event event{};
+    event.kind = EventKind::Message;
+    event.level = EventLevel::Warning;
     event.module = "presolve";
     event.text = "removed rows";
-    event.fields.push_back(biyos::Field{.name = "rows", .value = "3"});
+    event.fields.push_back(Field{.name = "rows", .value = "3"});
     return event;
 }
 
-std::string fill(Format format,
-                 const biyos::Event &event,
-                 std::size_t capacity,
-                 std::size_t &needed)
+std::string fill(Format format, const Event &event, std::size_t capacity, std::size_t &needed)
 {
     const BIYOS_event view{&event};
     std::vector<char> buffer(capacity, 'x');
@@ -46,7 +48,7 @@ std::string fill(Format format,
 
 void expect_resize(Format format, std::string_view line)
 {
-    const biyos::Event event = removed();
+    const Event event = removed();
     std::size_t needed = 0;
     EXPECT_EQ(fill(format, event, 8, needed), line.substr(0, 7));
     const std::size_t length = needed;
@@ -98,7 +100,7 @@ TEST(CApiTest, JsonBuffer)
 
 TEST(CApiTest, OneByte)
 {
-    const biyos::Event event = removed();
+    const Event event = removed();
     std::size_t needed = 0;
     EXPECT_EQ(fill(BIYOS_fmttext, event, 1, needed), "");
     EXPECT_EQ(needed, kText.size());
@@ -108,7 +110,7 @@ TEST(CApiTest, OneByte)
 
 TEST(CApiTest, SplitCharacter)
 {
-    biyos::Event event = removed();
+    Event event = removed();
     event.text = "caf\xc3\xa9";
     event.fields.clear();
     const std::string line = "0.000000 warning presolve: caf\xc3\xa9";
@@ -120,7 +122,7 @@ TEST(CApiTest, SplitCharacter)
 
 TEST(CApiTest, ZeroSize)
 {
-    const biyos::Event event = removed();
+    const Event event = removed();
     const BIYOS_event view{&event};
     std::size_t needed = 0;
     EXPECT_EQ(BIYOS_fmttext(&view, 0, nullptr, &needed), BIYOS_OK);
@@ -133,7 +135,7 @@ TEST(CApiTest, ZeroSize)
 
 TEST(CApiTest, BadFormat)
 {
-    const biyos::Event event = removed();
+    const Event event = removed();
     const BIYOS_event view{&event};
     std::array<char, 4> buffer{'a', 'b', 'c', '\0'};
     std::size_t needed = 7;

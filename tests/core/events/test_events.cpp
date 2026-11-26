@@ -19,8 +19,17 @@
 namespace
 {
 
+using biyos::Env;
+using biyos::Error;
+using biyos::Event;
 using biyos::EventKind;
 using biyos::EventLevel;
+using biyos::Events;
+using biyos::Field;
+using biyos::find_kind;
+using biyos::find_level;
+using biyos::Hook;
+using biyos::name_of;
 using biyos::test::Peek;
 using biyos::test::Watch;
 using Texts = std::vector<std::string>;
@@ -34,23 +43,23 @@ std::string failure(const std::function<void()> &body)
     {
         body();
     }
-    catch (const biyos::Error &error)
+    catch (const Error &error)
     {
         return error.what();
     }
     return "no error";
 }
 
-void ignore(const biyos::Event &) {}
+void ignore(const Event &) {}
 
-void describe(biyos::Event &event)
+void describe(Event &event)
 {
     event.module = "presolve";
     event.text = "removed rows";
-    event.fields.push_back(biyos::Field{.name = "rows", .value = "3"});
+    event.fields.push_back(Field{.name = "rows", .value = "3"});
 }
 
-void farewell(biyos::Event &event)
+void farewell(Event &event)
 {
     event.text = "farewell";
 }
@@ -58,31 +67,28 @@ void farewell(biyos::Event &event)
 class Farewell
 {
   public:
-    explicit Farewell(biyos::Env &env) : env_(env) {}
+    explicit Farewell(Env &env) : env_(env) {}
     ~Farewell() { env_.stream().emit(EventKind::Message, EventLevel::Debug, farewell); }
     Farewell(const Farewell &) = delete;
     Farewell &operator=(const Farewell &) = delete;
 
   private:
-    biyos::Env &env_;
+    Env &env_;
 };
 
 class Parting
 {
   public:
-    Parting(biyos::Env &env, Texts &texts)
-        : farewell_(std::make_shared<Farewell>(env)), texts_(&texts)
-    {
-    }
+    Parting(Env &env, Texts &texts) : farewell_(std::make_shared<Farewell>(env)), texts_(&texts) {}
 
-    void operator()(const biyos::Event &event) const { texts_->push_back("p " + event.text); }
+    void operator()(const Event &event) const { texts_->push_back("p " + event.text); }
 
   private:
     std::shared_ptr<Farewell> farewell_;
     Texts *texts_;
 };
 
-void chatter(biyos::Env &env, std::latch &start)
+void chatter(Env &env, std::latch &start)
 {
     start.arrive_and_wait();
     for (int i = 0; i < kRounds; ++i)
@@ -91,7 +97,7 @@ void chatter(biyos::Env &env, std::latch &start)
     }
 }
 
-void churn(biyos::Events &events, std::latch &start)
+void churn(Events &events, std::latch &start)
 {
     start.arrive_and_wait();
     for (int i = 0; i < kRounds; ++i)
@@ -103,24 +109,22 @@ void churn(biyos::Events &events, std::latch &start)
 class EventTest : public ::testing::Test
 {
   protected:
-    int listen(EventLevel level, biyos::Hook hook)
+    int listen(EventLevel level, Hook hook)
     {
         return events.add_hook(EventKind::Message, level, std::move(hook));
     }
 
     void say(EventLevel level, const std::string &text)
     {
-        env.stream().emit(EventKind::Message,
-                          level,
-                          [&](biyos::Event &event) { event.text = text; });
+        env.stream().emit(EventKind::Message, level, [&](Event &event) { event.text = text; });
     }
 
-    biyos::Hook recorder(const std::string &name)
+    Hook recorder(const std::string &name)
     {
-        return [this, name](const biyos::Event &event) { texts.push_back(name + event.text); };
+        return [this, name](const Event &event) { texts.push_back(name + event.text); };
     }
 
-    void rewire(int removed, const biyos::Event &event)
+    void rewire(int removed, const Event &event)
     {
         if (event.level == EventLevel::Debug)
         {
@@ -129,8 +133,8 @@ class EventTest : public ::testing::Test
         }
     }
 
-    biyos::Env env;
-    biyos::Events &events = env.events();
+    Env env;
+    Events &events = env.events();
     Texts texts;
 };
 
@@ -138,38 +142,38 @@ class EventTest : public ::testing::Test
 
 TEST_F(EventTest, KindIds)
 {
-    EXPECT_EQ(biyos::find_kind(BIYOS_EVTKND_MSG), EventKind::Message);
-    EXPECT_EQ(biyos::find_kind(BIYOS_EVTKND_INV), EventKind::Invariant);
-    EXPECT_EQ(biyos::find_kind(BIYOS_EVTKND_SPAN), EventKind::Span);
-    EXPECT_EQ(failure([] { biyos::find_kind(0); }), "invalid argument: event kind 0: unknown");
-    EXPECT_EQ(failure([] { biyos::find_kind(4); }), "invalid argument: event kind 4: unknown");
+    EXPECT_EQ(find_kind(BIYOS_EVTKND_MSG), EventKind::Message);
+    EXPECT_EQ(find_kind(BIYOS_EVTKND_INV), EventKind::Invariant);
+    EXPECT_EQ(find_kind(BIYOS_EVTKND_SPAN), EventKind::Span);
+    EXPECT_EQ(failure([] { find_kind(0); }), "invalid argument: event kind 0: unknown");
+    EXPECT_EQ(failure([] { find_kind(4); }), "invalid argument: event kind 4: unknown");
 }
 
 TEST_F(EventTest, LevelIds)
 {
-    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_DBG), EventLevel::Debug);
-    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_INFO), EventLevel::Info);
-    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_WARN), EventLevel::Warning);
-    EXPECT_EQ(biyos::find_level(BIYOS_EVTLVL_ERR), EventLevel::Error);
-    EXPECT_EQ(failure([] { biyos::find_level(0); }), "invalid argument: level 0: unknown");
-    EXPECT_EQ(failure([] { biyos::find_level(5); }), "invalid argument: level 5: unknown");
+    EXPECT_EQ(find_level(BIYOS_EVTLVL_DBG), EventLevel::Debug);
+    EXPECT_EQ(find_level(BIYOS_EVTLVL_INFO), EventLevel::Info);
+    EXPECT_EQ(find_level(BIYOS_EVTLVL_WARN), EventLevel::Warning);
+    EXPECT_EQ(find_level(BIYOS_EVTLVL_ERR), EventLevel::Error);
+    EXPECT_EQ(failure([] { find_level(0); }), "invalid argument: level 0: unknown");
+    EXPECT_EQ(failure([] { find_level(5); }), "invalid argument: level 5: unknown");
 }
 
 TEST_F(EventTest, Names)
 {
-    EXPECT_EQ(biyos::name_of(EventKind::Message), "message");
-    EXPECT_EQ(biyos::name_of(EventKind::Invariant), "invariant");
-    EXPECT_EQ(biyos::name_of(EventKind::Span), "span");
-    EXPECT_EQ(biyos::name_of(EventLevel::Debug), "debug");
-    EXPECT_EQ(biyos::name_of(EventLevel::Info), "info");
-    EXPECT_EQ(biyos::name_of(EventLevel::Warning), "warning");
-    EXPECT_EQ(biyos::name_of(EventLevel::Error), "error");
+    EXPECT_EQ(name_of(EventKind::Message), "message");
+    EXPECT_EQ(name_of(EventKind::Invariant), "invariant");
+    EXPECT_EQ(name_of(EventKind::Span), "span");
+    EXPECT_EQ(name_of(EventLevel::Debug), "debug");
+    EXPECT_EQ(name_of(EventLevel::Info), "info");
+    EXPECT_EQ(name_of(EventLevel::Warning), "warning");
+    EXPECT_EQ(name_of(EventLevel::Error), "error");
 }
 
 TEST_F(EventTest, NoRecord)
 {
     int built = 0;
-    const auto count = [&built](biyos::Event &) { ++built; };
+    const auto count = [&built](Event &) { ++built; };
     env.stream().emit(EventKind::Message, EventLevel::Error, count);
     events.delete_hook(listen(EventLevel::Debug, ignore));
     env.stream().emit(EventKind::Message, EventLevel::Error, count);
@@ -194,7 +198,7 @@ TEST_F(EventTest, LevelFilter)
 
 TEST_F(EventTest, KindFilter)
 {
-    const auto two = [](biyos::Event &event) { event.text = "two"; };
+    const auto two = [](Event &event) { event.text = "two"; };
     listen(EventLevel::Debug, recorder("m "));
     events.add_hook(EventKind::Invariant, EventLevel::Error, recorder("c "));
     EXPECT_TRUE(events.wanted(EventKind::Message, EventLevel::Debug));
@@ -221,7 +225,7 @@ TEST_F(EventTest, LowestLevel)
 TEST_F(EventTest, Delivering)
 {
     bool inside = false;
-    listen(EventLevel::Debug, [&](const biyos::Event &) { inside = events.delivering(); });
+    listen(EventLevel::Debug, [&](const Event &) { inside = events.delivering(); });
     EXPECT_FALSE(events.delivering());
     say(EventLevel::Info, "one");
     EXPECT_TRUE(inside);
@@ -232,9 +236,9 @@ TEST_F(EventTest, Filling)
 {
     bool filled = false;
     bool delivered = true;
-    const auto fill = [&](biyos::Event &) { filled = events.filling(); };
-    const auto fail = [](biyos::Event &) { throw std::runtime_error("fill"); };
-    listen(EventLevel::Debug, [&](const biyos::Event &) { delivered = events.filling(); });
+    const auto fill = [&](Event &) { filled = events.filling(); };
+    const auto fail = [](Event &) { throw std::runtime_error("fill"); };
+    listen(EventLevel::Debug, [&](const Event &) { delivered = events.filling(); });
     EXPECT_FALSE(events.filling());
     env.stream().emit(EventKind::Message, EventLevel::Info, fill);
     EXPECT_TRUE(filled);
@@ -257,11 +261,11 @@ TEST_F(EventTest, Order)
 
 TEST_F(EventTest, Contents)
 {
-    std::vector<biyos::Event> kept;
-    listen(EventLevel::Debug, [&kept](const biyos::Event &event) { kept.push_back(event); });
+    std::vector<Event> kept;
+    listen(EventLevel::Debug, [&kept](const Event &event) { kept.push_back(event); });
     env.stream().emit(EventKind::Message, EventLevel::Warning, describe);
     ASSERT_EQ(kept.size(), 1U);
-    const biyos::Event &event = kept.front();
+    const Event &event = kept.front();
     EXPECT_EQ(event.kind, EventKind::Message);
     EXPECT_EQ(event.level, EventLevel::Warning);
     EXPECT_EQ(event.module, "presolve");
@@ -301,7 +305,7 @@ TEST_F(EventTest, UnknownId)
 TEST_F(EventTest, SelfRemoval)
 {
     int id = 0;
-    id = listen(EventLevel::Debug, [&](const biyos::Event &) { events.delete_hook(id); });
+    id = listen(EventLevel::Debug, [&](const Event &) { events.delete_hook(id); });
     say(EventLevel::Info, "one");
     EXPECT_FALSE(events.wanted(EventKind::Message, EventLevel::Error));
     EXPECT_NO_THROW(say(EventLevel::Info, "two"));
@@ -310,7 +314,7 @@ TEST_F(EventTest, SelfRemoval)
 TEST_F(EventTest, PeerRemoval)
 {
     int peer = 0;
-    listen(EventLevel::Debug, [&](const biyos::Event &) { events.delete_hook(peer); });
+    listen(EventLevel::Debug, [&](const Event &) { events.delete_hook(peer); });
     peer = listen(EventLevel::Debug, recorder(""));
     say(EventLevel::Info, "one");
     EXPECT_TRUE(texts.empty());
@@ -320,10 +324,10 @@ TEST_F(EventTest, PeerRemoval)
 TEST_F(EventTest, NestedRemoval)
 {
     const int x = listen(EventLevel::Info, recorder("x "));
-    listen(EventLevel::Info, [this](const biyos::Event &) { say(EventLevel::Debug, "inner"); });
+    listen(EventLevel::Info, [this](const Event &) { say(EventLevel::Debug, "inner"); });
     listen(EventLevel::Info, recorder("c "));
     listen(EventLevel::Info, recorder("d "));
-    listen(EventLevel::Debug, [this, x](const biyos::Event &event) { rewire(x, event); });
+    listen(EventLevel::Debug, [this, x](const Event &event) { rewire(x, event); });
     say(EventLevel::Info, "outer");
     EXPECT_EQ(texts, (Texts{"x outer", "c outer", "d outer"}));
 }
@@ -340,15 +344,14 @@ TEST_F(EventTest, PrunedFarewell)
 {
     const int id = listen(EventLevel::Debug, Parting(env, texts));
     listen(EventLevel::Debug, recorder("r "));
-    listen(EventLevel::Info, [this, id](const biyos::Event &) { events.delete_hook(id); });
+    listen(EventLevel::Info, [this, id](const Event &) { events.delete_hook(id); });
     say(EventLevel::Info, "one");
     EXPECT_EQ(texts, (Texts{"p one", "r one", "r farewell"}));
 }
 
 TEST_F(EventTest, LateHook)
 {
-    listen(EventLevel::Debug,
-           [this](const biyos::Event &) { listen(EventLevel::Debug, recorder("")); });
+    listen(EventLevel::Debug, [this](const Event &) { listen(EventLevel::Debug, recorder("")); });
     say(EventLevel::Info, "one");
     say(EventLevel::Info, "two");
     EXPECT_EQ(texts, Texts{"two"});
@@ -356,7 +359,7 @@ TEST_F(EventTest, LateHook)
 
 TEST_F(EventTest, HookThrows)
 {
-    const auto fail = [](const biyos::Event &) { throw std::runtime_error("hook"); };
+    const auto fail = [](const Event &) { throw std::runtime_error("hook"); };
     listen(EventLevel::Debug, fail);
     listen(EventLevel::Debug, recorder(""));
     EXPECT_NO_THROW(say(EventLevel::Info, "one"));
@@ -366,7 +369,7 @@ TEST_F(EventTest, HookThrows)
 TEST_F(EventTest, ThrowingFill)
 {
     listen(EventLevel::Debug, recorder(""));
-    const auto fill = [](biyos::Event &) { throw std::bad_alloc(); };
+    const auto fill = [](Event &) { throw std::bad_alloc(); };
     EXPECT_NO_THROW(env.stream().emit(EventKind::Message, EventLevel::Info, fill));
     say(EventLevel::Info, "after");
     EXPECT_EQ(texts, Texts{"after"});
@@ -413,10 +416,10 @@ TEST_F(EventTest, Churn)
 TEST_F(EventTest, OtherThread)
 {
     Peek peek(events);
-    listen(EventLevel::Debug, [&peek](const biyos::Event &event) { peek.hook(event); });
+    listen(EventLevel::Debug, [&peek](const Event &event) { peek.hook(event); });
     env.stream().emit(EventKind::Message,
                       EventLevel::Info,
-                      [&peek](biyos::Event &event) { peek.fill(event); });
+                      [&peek](Event &event) { peek.fill(event); });
     EXPECT_FALSE(peek.delivering);
     EXPECT_FALSE(peek.filling);
 }

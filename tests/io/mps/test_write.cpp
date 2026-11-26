@@ -24,20 +24,31 @@
 
 using biyos::Bits;
 using biyos::Constraint;
+using biyos::difference;
+using biyos::Env;
 using biyos::Family;
+using biyos::FileFormat;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Objective;
 using biyos::ObjectiveSense;
 using biyos::Offset;
+using biyos::read_file;
 using biyos::Real;
+using biyos::Settings;
+using biyos::text_of;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::write_file;
+using biyos::test::add_goal;
 using biyos::test::continuous;
+using biyos::test::indices;
 using biyos::test::kInfinity;
 using biyos::test::kMpsFiles;
 using biyos::test::printed;
+using biyos::test::read_sample;
+using biyos::test::read_text;
 
 namespace
 {
@@ -175,17 +186,17 @@ void name_all(Model &model, Family family, std::string_view prefix)
     std::vector<std::string> names;
     for (Index k = 0; k < model.n_of(family); ++k)
     {
-        names.push_back(std::string(prefix) + biyos::text_of(k));
+        names.push_back(std::string(prefix) + text_of(k));
     }
     const std::vector<std::string_view> views(names.begin(), names.end());
-    model.set_names(family, biyos::test::indices(names.size()), views);
+    model.set_names(family, indices(names.size()), views);
 }
 
 Model generated(unsigned seed)
 {
     Generator random(seed);
     Model model;
-    model.set_name("seed " + biyos::text_of(seed));
+    model.set_name("seed " + text_of(seed));
     std::vector<Variable> variables;
     for (int k = random.below(6) + 1; k > 0; --k)
     {
@@ -203,7 +214,7 @@ Model generated(unsigned seed)
     free_constants(model, random);
     const ObjectiveSense sense =
         random.below(2) == 0 ? ObjectiveSense::Minimize : ObjectiveSense::Maximize;
-    biyos::test::add_goal(model, 0, sense, "goal");
+    add_goal(model, 0, sense, "goal");
     name_all(model, Family::Variable, "x");
     name_all(model, Family::Constraint, "c");
     return model;
@@ -228,8 +239,8 @@ Model linear(const std::vector<Constraint> &constraints, const std::vector<Real>
 
 Model reread(const Model &model)
 {
-    biyos::Env env;
-    return biyos::test::read_text(env, printed(model));
+    Env env;
+    return read_text(env, printed(model));
 }
 
 Bits bits(Real value)
@@ -249,11 +260,11 @@ TEST(MpsTest, Samples)
     const std::string path = testing::TempDir() + "biyos_written.mps";
     for (const std::string_view text : kMpsFiles)
     {
-        const Model read = biyos::test::read_sample(text);
-        biyos::Env env;
-        biyos::write_file(env.stream(), read, biyos::Settings(), path, biyos::FileFormat::Mps);
-        const Model back = biyos::read_file(env, path, biyos::FileFormat::Mps);
-        EXPECT_EQ(biyos::difference(read, back), "") << text;
+        const Model read = read_sample(text);
+        Env env;
+        write_file(env.stream(), read, Settings(), path, FileFormat::Mps);
+        const Model back = read_file(env, path, FileFormat::Mps);
+        EXPECT_EQ(difference(read, back), "") << text;
     }
 }
 
@@ -262,14 +273,14 @@ TEST(MpsTest, Generated)
     for (unsigned seed = 0; seed < 64; ++seed)
     {
         const Model model = generated(seed);
-        EXPECT_EQ(biyos::difference(model, reread(model)), "") << printed(model);
+        EXPECT_EQ(difference(model, reread(model)), "") << printed(model);
     }
 }
 
 TEST(MpsTest, Printed)
 {
     Model model = linear({{.function = 1, .lower = 1.0, .upper = 4.5}}, {0.5, 0.0});
-    biyos::test::add_goal(model, 0, ObjectiveSense::Maximize, "cost");
+    add_goal(model, 0, ObjectiveSense::Maximize, "cost");
     model.set_name("small one");
     EXPECT_EQ(printed(model),
               "NAME small one\n"
@@ -296,7 +307,7 @@ TEST(MpsTest, Printed)
 TEST(MpsTest, Unnamed)
 {
     Model model = linear({{.function = 1, .lower = -kInfinity, .upper = 3.0}}, {0.0, 0.0});
-    biyos::test::add_goal(model, 0, ObjectiveSense::Minimize, "C0");
+    add_goal(model, 0, ObjectiveSense::Minimize, "C0");
     const Model back = reread(model);
     EXPECT_EQ(*name_of(back, Family::Objective, 0), "C0");
     EXPECT_EQ(*name_of(back, Family::Constraint, 0), "R0");
@@ -338,7 +349,7 @@ TEST(MpsTest, Shared)
     Model model = linear({{.function = 0, .lower = -kInfinity, .upper = 1.0},
                           {.function = 0, .lower = 0.0, .upper = kInfinity}},
                          {0.0});
-    biyos::test::add_goal(model, 0, ObjectiveSense::Minimize, "cost");
+    add_goal(model, 0, ObjectiveSense::Minimize, "cost");
     const Model back = reread(model);
     EXPECT_EQ(back.n_functions(), 3);
     EXPECT_EQ(back.objective(0).function, 0);
@@ -353,7 +364,7 @@ TEST(MpsTest, Goalless)
     Model bounded = linear({{.function = 0, .lower = 0.0, .upper = 1.0}}, {0.0});
     name_all(bounded, Family::Variable, "C");
     name_all(bounded, Family::Constraint, "R");
-    EXPECT_EQ(biyos::difference(bounded, reread(bounded)), "");
+    EXPECT_EQ(difference(bounded, reread(bounded)), "");
     const Model free = linear({{.function = 0, .lower = -kInfinity, .upper = kInfinity}}, {0.0});
     const Model back = reread(free);
     ASSERT_EQ(back.n_objectives(), 1);
@@ -367,5 +378,5 @@ TEST(MpsTest, Goalless)
 TEST(MpsTest, Nothing)
 {
     const Model model;
-    EXPECT_EQ(biyos::difference(model, reread(model)), "");
+    EXPECT_EQ(difference(model, reread(model)), "");
 }

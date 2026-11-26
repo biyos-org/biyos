@@ -25,19 +25,34 @@
 namespace
 {
 
+using biyos::Adjoints;
 using biyos::Builder;
+using biyos::compact;
+using biyos::enclose;
+using biyos::forward;
 using biyos::Graph;
+using biyos::Hessian;
+using biyos::Index;
 using biyos::Interval;
+using biyos::jacobian;
+using biyos::kLanes;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
+using biyos::Shapes;
 using biyos::Tape;
+using biyos::weighted_gradient;
+using biyos::Workspace;
+using biyos::test::allocated_bytes;
+using biyos::test::allocations;
+using biyos::test::fail_after;
 using biyos::test::refusal;
+using biyos::test::stop_failing;
 
 constexpr std::size_t kAttempts = 100;
-constexpr biyos::Index kSteps = 1000;
+constexpr Index kSteps = 1000;
 constexpr std::size_t kGrowth = 8;
-constexpr biyos::Index kTerms = 1000;
+constexpr Index kTerms = 1000;
 constexpr Offset kWhole = Offset{1} << 40;
 
 constexpr std::array kUnary{
@@ -49,10 +64,10 @@ constexpr std::array kUnary{
 
 struct PendingFailure
 {
-    explicit PendingFailure(std::size_t successes) noexcept { biyos::test::fail_after(successes); }
+    explicit PendingFailure(std::size_t successes) noexcept { fail_after(successes); }
     PendingFailure(const PendingFailure &) = delete;
     PendingFailure &operator=(const PendingFailure &) = delete;
-    ~PendingFailure() { biyos::test::stop_failing(); }
+    ~PendingFailure() { stop_failing(); }
 };
 
 std::vector<Offset> ids(std::span<const Offset> nodes)
@@ -154,9 +169,9 @@ std::size_t compaction_cost(std::size_t width)
     const std::vector<Offset> terms(width, x);
     const std::vector<Real> weights(width, 1.0);
     const Offset root = graph.add_sum(0.0, terms, weights);
-    const std::size_t start = biyos::test::allocations();
-    biyos::compact(graph, std::span(&root, 1));
-    return biyos::test::allocations() - start;
+    const std::size_t start = allocations();
+    compact(graph, std::span(&root, 1));
+    return allocations() - start;
 }
 
 std::vector<Offset> products(Graph &graph)
@@ -175,75 +190,75 @@ std::vector<Offset> products(Graph &graph)
 
 std::size_t hessian_cost(const Graph &graph, std::span<const Offset> roots, std::size_t lanes)
 {
-    biyos::Hessian hessian(graph, roots, {}, lanes, 4);
+    Hessian hessian(graph, roots, {}, lanes, 4);
     std::vector<Real> out(hessian.pattern().rows.size());
     const std::vector<Real> weights(roots.size(), 1.0);
     const std::array point{0.5, 2.0};
-    const std::size_t start = biyos::test::allocations();
+    const std::size_t start = allocations();
     hessian.values(point, weights, out);
-    return biyos::test::allocations() - start;
+    return allocations() - start;
 }
 
 std::size_t product_cost(const Graph &graph, std::span<const Offset> roots, std::size_t lanes)
 {
-    biyos::Hessian hessian(graph, roots, {}, lanes, 4);
+    Hessian hessian(graph, roots, {}, lanes, 4);
     const std::array point{0.5, 2.0};
     const std::array direction{1.5, -0.5};
     std::vector<Real> out(point.size());
     const std::vector<Real> weights(roots.size(), 1.0);
-    const std::size_t start = biyos::test::allocations();
+    const std::size_t start = allocations();
     hessian.product(point, weights, direction, out);
-    return biyos::test::allocations() - start;
+    return allocations() - start;
 }
 
 std::size_t jacobian_cost(const Tape &tape)
 {
-    biyos::Workspace workspace(tape);
-    biyos::Adjoints adjoints(tape);
+    Workspace workspace(tape);
+    Adjoints adjoints(tape);
     std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
     std::vector<Real> gradients(tape.pattern().variables.size());
     const std::array point{0.5, 2.0};
-    const std::size_t start = biyos::test::allocations();
-    biyos::jacobian(tape, point, workspace, adjoints, values, gradients);
-    return biyos::test::allocations() - start;
+    const std::size_t start = allocations();
+    jacobian(tape, point, workspace, adjoints, values, gradients);
+    return allocations() - start;
 }
 
 std::size_t gradient_cost(const Tape &tape)
 {
-    biyos::Workspace workspace(tape);
-    biyos::Adjoints adjoints(tape);
+    Workspace workspace(tape);
+    Adjoints adjoints(tape);
     std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
     const std::vector<Real> weights(values.size(), 0.5);
     const std::array point{0.5, 2.0};
     std::vector<Real> gradient(point.size());
-    const std::size_t start = biyos::test::allocations();
-    biyos::weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
-    return biyos::test::allocations() - start;
+    const std::size_t start = allocations();
+    weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
+    return allocations() - start;
 }
 
-std::size_t compile_bytes(biyos::Index steps)
+std::size_t compile_bytes(Index steps)
 {
     Graph graph;
     Offset total = graph.add_variable(0);
     std::vector<Offset> terms;
-    for (biyos::Index k = 1; k <= steps; ++k)
+    for (Index k = 1; k <= steps; ++k)
     {
         total = graph.add(Operator::Product, 1.0, std::array{total, graph.add_variable(k)});
         terms.push_back(graph.add(Operator::Exp, std::span(&total, 1)));
     }
     const std::vector<Real> ones(terms.size(), 1.0);
     const Offset root = graph.add_sum(0.0, terms, ones);
-    const std::size_t start = biyos::test::allocated_bytes();
+    const std::size_t start = allocated_bytes();
     const Tape tape(graph, std::span(&root, 1));
-    return biyos::test::allocated_bytes() - start;
+    return allocated_bytes() - start;
 }
 
-std::size_t shared_bytes(biyos::Index terms)
+std::size_t shared_bytes(Index terms)
 {
     Graph graph;
     const Offset x = graph.add_variable(0);
     std::vector<Offset> parts;
-    for (biyos::Index j = 0; j < terms; ++j)
+    for (Index j = 0; j < terms; ++j)
     {
         const Offset turn = graph.add(Operator::Cos, std::span(&x, 1));
         const Offset inner = graph.add(Operator::Sin, std::span(&turn, 1));
@@ -253,24 +268,24 @@ std::size_t shared_bytes(biyos::Index terms)
     const std::vector<Real> ones(parts.size(), 1.0);
     const Offset total = graph.add_sum(0.0, parts, ones);
     std::vector<Offset> roots;
-    for (biyos::Index j = 1; j <= terms; ++j)
+    for (Index j = 1; j <= terms; ++j)
     {
         roots.push_back(
             graph.add(Operator::Product, 1.0, std::array{total, graph.add_variable(j)}));
     }
-    const std::size_t start = biyos::test::allocated_bytes();
+    const std::size_t start = allocated_bytes();
     const Tape tape(graph, roots, kWhole);
-    return biyos::test::allocated_bytes() - start;
+    return allocated_bytes() - start;
 }
 
 std::size_t sweep_cost(const Tape &tape)
 {
-    biyos::Workspace workspace(tape);
+    Workspace workspace(tape);
     std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
     const std::array point{0.5, 2.0};
-    const std::size_t start = biyos::test::allocations();
-    biyos::forward(tape, point, workspace, values);
-    return biyos::test::allocations() - start;
+    const std::size_t start = allocations();
+    forward(tape, point, workspace, values);
+    return allocations() - start;
 }
 
 Graph every_operator()
@@ -331,9 +346,9 @@ TEST(AllocationTest, Intervals)
     const Graph graph = every_operator();
     std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
     const std::array box{Interval(-0.5, 2.0), Interval(-1.0, 3.0)};
-    const std::size_t before = biyos::test::allocations();
-    biyos::enclose(graph, box, nodes);
-    EXPECT_EQ(biyos::test::allocations(), before);
+    const std::size_t before = allocations();
+    enclose(graph, box, nodes);
+    EXPECT_EQ(allocations(), before);
     EXPECT_FALSE(nodes.back().is_empty());
 }
 
@@ -361,7 +376,7 @@ TEST(AllocationTest, HessianSweep)
     const std::vector<Offset> roots = products(graph);
     ASSERT_GT(Tape(graph, roots, 4).prepass(), 0);
     EXPECT_EQ(hessian_cost(graph, roots, 1), 0U);
-    EXPECT_EQ(hessian_cost(graph, roots, biyos::kLanes), 0U);
+    EXPECT_EQ(hessian_cost(graph, roots, kLanes), 0U);
 }
 
 TEST(AllocationTest, HessianProduct)
@@ -369,7 +384,7 @@ TEST(AllocationTest, HessianProduct)
     Graph graph;
     const std::vector<Offset> roots = products(graph);
     EXPECT_EQ(product_cost(graph, roots, 1), 0U);
-    EXPECT_EQ(product_cost(graph, roots, biyos::kLanes), 0U);
+    EXPECT_EQ(product_cost(graph, roots, kLanes), 0U);
 }
 
 TEST(AllocationTest, Curvature)
@@ -377,11 +392,11 @@ TEST(AllocationTest, Curvature)
     const Graph graph = every_operator();
     std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
     const std::array box{Interval(-0.5, 2.0), Interval(-1.0, 3.0)};
-    biyos::enclose(graph, box, nodes);
-    biyos::Shapes shapes(graph);
-    const std::size_t before = biyos::test::allocations();
+    enclose(graph, box, nodes);
+    Shapes shapes(graph);
+    const std::size_t before = allocations();
     shapes.classify(graph, nodes);
-    EXPECT_EQ(biyos::test::allocations(), before);
+    EXPECT_EQ(allocations(), before);
     EXPECT_EQ(shapes.curvature(0), biyos::Curvature::Affine);
     EXPECT_EQ(shapes.curvature(graph.size() - 1), biyos::Curvature::Convex);
 }

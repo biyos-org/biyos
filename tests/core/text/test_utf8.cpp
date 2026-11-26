@@ -5,18 +5,21 @@
 #include <cstddef>
 #include <string_view>
 
+using biyos::utf8::first_sequence;
+using biyos::utf8::Sequence;
+
 namespace
 {
 
 std::size_t valid_size(std::string_view text)
 {
-    const biyos::utf8::Sequence sequence = biyos::utf8::first_sequence(text);
+    const Sequence sequence = first_sequence(text);
     return sequence.valid ? sequence.size : 0;
 }
 
 std::size_t subpart(std::string_view text)
 {
-    const biyos::utf8::Sequence sequence = biyos::utf8::first_sequence(text);
+    const Sequence sequence = first_sequence(text);
     return sequence.valid ? 0 : sequence.size;
 }
 

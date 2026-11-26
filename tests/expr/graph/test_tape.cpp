@@ -23,15 +23,26 @@ namespace
 {
 
 using biyos::Block;
+using biyos::ErrorKind;
 using biyos::Graph;
 using biyos::Index;
+using biyos::Instruction;
 using biyos::kBudget;
+using biyos::narrow;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Pattern;
+using biyos::Range;
 using biyos::Real;
+using biyos::Run;
 using biyos::Tape;
 using biyos::to_size;
 using biyos::test::failure;
+using biyos::test::kBudgets;
+using biyos::test::kRoots;
+using biyos::test::picks;
+using biyos::test::Random;
+using biyos::test::random_graph;
 using biyos::test::refusal;
 using biyos::test::values_of;
 
@@ -90,7 +101,7 @@ std::size_t count(const Tape &tape, Operator op)
     std::size_t total = 0;
     for (const Block &block : tape.blocks())
     {
-        for (const biyos::Instruction &instruction : block.instructions)
+        for (const Instruction &instruction : block.instructions)
         {
             total += instruction.op == op ? 1 : 0;
         }
@@ -101,7 +112,7 @@ std::size_t count(const Tape &tape, Operator op)
 std::vector<std::uint32_t> targets(const Block &block)
 {
     std::vector<std::uint32_t> slots;
-    for (const biyos::Instruction &instruction : block.instructions)
+    for (const Instruction &instruction : block.instructions)
     {
         slots.push_back(instruction.target);
     }
@@ -111,26 +122,26 @@ std::vector<std::uint32_t> targets(const Block &block)
 Spans spans(const Tape &tape, Offset root)
 {
     Spans found;
-    for (const biyos::Run &run : tape.runs(root))
+    for (const Run &run : tape.runs(root))
     {
         found.emplace_back(run.begin, run.end);
     }
     return found;
 }
 
-Spans runs_of(std::span<const biyos::Run> runs)
+Spans runs_of(std::span<const Run> runs)
 {
     Spans found;
-    for (const biyos::Run &run : runs)
+    for (const Run &run : runs)
     {
         found.emplace_back(run.begin, run.end);
     }
     return found;
 }
 
-std::span<const biyos::Run> part(const std::vector<biyos::Run> &runs,
-                                 const std::vector<Offset> &starts,
-                                 std::size_t output)
+std::span<const Run> part(const std::vector<Run> &runs,
+                          const std::vector<Offset> &starts,
+                          std::size_t output)
 {
     const Offset begin = starts[output];
     return std::span(runs).subspan(to_size(begin), to_size(starts[output + 1] - begin));
@@ -149,7 +160,7 @@ Spans reads_of(const Block &block, std::size_t output)
 Ranges route(const Tape &tape, Offset root)
 {
     Ranges found;
-    for (const biyos::Range &run : tape.route(root))
+    for (const Range &run : tape.route(root))
     {
         found.emplace_back(run.begin, run.end);
     }
@@ -180,7 +191,7 @@ bool is_listed(Operator op)
            op == Operator::Min;
 }
 
-std::vector<std::uint32_t> operand_slots(const Block &block, const biyos::Instruction &instruction)
+std::vector<std::uint32_t> operand_slots(const Block &block, const Instruction &instruction)
 {
     if (is_leaf(instruction.op))
     {
@@ -202,7 +213,7 @@ Dag dag_of(const Block &block)
 {
     std::vector<Offset> holder(block.width, kLoaded);
     Dag dag;
-    for (const biyos::Instruction &instruction : block.instructions)
+    for (const Instruction &instruction : block.instructions)
     {
         std::vector<Offset> children;
         for (const std::uint32_t slot : operand_slots(block, instruction))
@@ -658,10 +669,10 @@ TEST(TapeTest, Cones)
     for (std::uint64_t seed = 1; seed <= 40; ++seed)
     {
         SCOPED_TRACE(seed);
-        biyos::test::Random random(seed);
-        const Graph graph = biyos::test::random_graph(random);
-        const std::vector<Offset> roots = biyos::test::picks(random, graph, biyos::test::kRoots);
-        for (const Offset budget : biyos::test::kBudgets)
+        Random random(seed);
+        const Graph graph = random_graph(random);
+        const std::vector<Offset> roots = picks(random, graph, kRoots);
+        for (const Offset budget : kBudgets)
         {
             expect_cones(Tape(graph, roots, budget));
         }
@@ -741,7 +752,7 @@ TEST(TapeTest, Route)
     EXPECT_EQ(route(split, 0), (Ranges{{0, 2}}));
     EXPECT_TRUE(route(split, 1).empty());
     EXPECT_EQ(route(split, 2), (Ranges{{0, 2}}));
-    const biyos::Pattern &pattern = split.pattern();
+    const Pattern &pattern = split.pattern();
     EXPECT_EQ(pattern.variables, (std::vector<Index>{0, 1, 2, 0, 1}));
     EXPECT_EQ(pattern.starts, (std::vector<Offset>{0, 2, 3, 5}));
 
@@ -842,8 +853,8 @@ TEST(TapeTest, MissingRoot)
 TEST(TapeTest, Bound)
 {
     const std::size_t largest = (std::numeric_limits<std::uint32_t>::max)();
-    EXPECT_EQ(biyos::narrow(largest), largest);
-    EXPECT_EQ(failure([&] { biyos::narrow(largest + 1); }, biyos::ErrorKind::NoMemory),
+    EXPECT_EQ(narrow(largest), largest);
+    EXPECT_EQ(failure([&] { narrow(largest + 1); }, ErrorKind::NoMemory),
               "out of memory: tape: a block is too large for 32-bit slots");
 }
 

@@ -13,7 +13,9 @@ namespace
 {
 
 using biyos::Interval;
+using biyos::power;
 using biyos::Real;
+using biyos::sign_power;
 using biyos::widen_down;
 using biyos::widen_up;
 using biyos::test::exact;
@@ -25,7 +27,7 @@ constexpr Interval kAll = Interval::entire();
 
 Interval raised(Interval base, Real exponent)
 {
-    return biyos::power(base, {exponent, exponent});
+    return power(base, {exponent, exponent});
 }
 
 }
@@ -61,28 +63,28 @@ TEST(IntervalTest, ConstantPower)
 
 TEST(IntervalTest, Power)
 {
-    EXPECT_TRUE(holds(biyos::power({-2.0, -1.0}, {2.0, 3.0}), -8.0, 4.0));
-    EXPECT_TRUE(holds(biyos::power({-8.0, -8.0}, {3.0, 3.0}), -512.0, -512.0));
-    EXPECT_TRUE(holds(biyos::power({1.0, 2.0}, {-1.0, 1.0}), 0.5, 2.0));
-    EXPECT_TRUE(within(biyos::power({1.0, 2.0}, {-1.0, 1.0}), widen_down(0.5), widen_up(2.0)));
-    EXPECT_TRUE(exact(biyos::power({0.0, 0.0}, {-1.0, 1.0}), 0.0, 1.0));
-    EXPECT_TRUE(holds(biyos::power({2.0, kInfinity}, {1.0, kInfinity}), 2.0, kInfinity));
-    EXPECT_TRUE(holds(biyos::power({0.5, 2.0}, kAll), 0.0, kInfinity));
-    EXPECT_TRUE(biyos::power({-2.0, -1.0}, {0.2, 0.8}).is_empty());
-    EXPECT_TRUE(biyos::power({0.0, 0.0}, {-2.0, -1.0}).is_empty());
-    EXPECT_TRUE(biyos::power(Interval::empty(), {1.0, 2.0}).is_empty());
-    EXPECT_TRUE(biyos::power({1.0, 2.0}, Interval::empty()).is_empty());
+    EXPECT_TRUE(holds(power({-2.0, -1.0}, {2.0, 3.0}), -8.0, 4.0));
+    EXPECT_TRUE(holds(power({-8.0, -8.0}, {3.0, 3.0}), -512.0, -512.0));
+    EXPECT_TRUE(holds(power({1.0, 2.0}, {-1.0, 1.0}), 0.5, 2.0));
+    EXPECT_TRUE(within(power({1.0, 2.0}, {-1.0, 1.0}), widen_down(0.5), widen_up(2.0)));
+    EXPECT_TRUE(exact(power({0.0, 0.0}, {-1.0, 1.0}), 0.0, 1.0));
+    EXPECT_TRUE(holds(power({2.0, kInfinity}, {1.0, kInfinity}), 2.0, kInfinity));
+    EXPECT_TRUE(holds(power({0.5, 2.0}, kAll), 0.0, kInfinity));
+    EXPECT_TRUE(power({-2.0, -1.0}, {0.2, 0.8}).is_empty());
+    EXPECT_TRUE(power({0.0, 0.0}, {-2.0, -1.0}).is_empty());
+    EXPECT_TRUE(power(Interval::empty(), {1.0, 2.0}).is_empty());
+    EXPECT_TRUE(power({1.0, 2.0}, Interval::empty()).is_empty());
 }
 
 TEST(IntervalTest, SignPower)
 {
     const Real root = std::pow(8.0, 1.0 / 3);
-    EXPECT_TRUE(holds(biyos::sign_power({-8.0, 8.0}, 1.0 / 3), -root, root));
+    EXPECT_TRUE(holds(sign_power({-8.0, 8.0}, 1.0 / 3), -root, root));
     const Real low = widen_down(-root);
-    EXPECT_TRUE(within(biyos::sign_power({-8.0, 8.0}, 1.0 / 3), low, widen_up(root)));
-    EXPECT_TRUE(holds(biyos::sign_power({0.0, 2.0}, 2.0), 0.0, 4.0));
-    EXPECT_TRUE(within(biyos::sign_power({0.0, 2.0}, 2.0), 0.0, widen_up(4.0)));
-    EXPECT_TRUE(within(biyos::sign_power({-2.0, 0.0}, 0.5), -kInfinity, 0.0));
-    EXPECT_TRUE(exact(biyos::sign_power(kAll, 1.5), -kInfinity, kInfinity));
-    EXPECT_TRUE(biyos::sign_power(Interval::empty(), 2.0).is_empty());
+    EXPECT_TRUE(within(sign_power({-8.0, 8.0}, 1.0 / 3), low, widen_up(root)));
+    EXPECT_TRUE(holds(sign_power({0.0, 2.0}, 2.0), 0.0, 4.0));
+    EXPECT_TRUE(within(sign_power({0.0, 2.0}, 2.0), 0.0, widen_up(4.0)));
+    EXPECT_TRUE(within(sign_power({-2.0, 0.0}, 0.5), -kInfinity, 0.0));
+    EXPECT_TRUE(exact(sign_power(kAll, 1.5), -kInfinity, kInfinity));
+    EXPECT_TRUE(sign_power(Interval::empty(), 2.0).is_empty());
 }

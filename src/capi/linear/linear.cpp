@@ -13,12 +13,17 @@
 #include <vector>
 
 using biyos::Family;
+using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
+using biyos::Offset;
 using biyos::Session;
 using biyos::to_size;
+using biyos::capi::Grouped;
+using biyos::capi::grouped;
 using biyos::capi::guarded;
 using biyos::capi::length;
+using biyos::capi::packed;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
@@ -29,28 +34,27 @@ namespace
 {
 
 void add_sliced(Model &model,
-                std::span<const biyos::Index> owners,
+                std::span<const Index> owners,
                 const BIYOS_offset *counts,
                 const BIYOS_index *variables,
                 const BIYOS_real *values)
 {
-    const std::vector<biyos::Offset> begins = starts_of(owners.size(), counts);
+    const std::vector<Offset> begins = starts_of(owners.size(), counts);
     model.check_room(0, begins.back());
     const auto total = to_size(begins.back());
-    model.add_linear_terms(owners, begins, biyos::capi::packed(total, variables, values));
+    model.add_linear_terms(owners, begins, packed(total, variables, values));
 }
 
 void add_grouped(Model &model,
-                 std::span<const biyos::Index> functions,
+                 std::span<const Index> functions,
                  const std::vector<LinearTerm> &terms)
 {
-    biyos::capi::Grouped<LinearTerm> groups =
-        biyos::capi::grouped(functions, std::span<const LinearTerm>(terms));
+    Grouped<LinearTerm> groups = grouped(functions, std::span<const LinearTerm>(terms));
     model.add_linear_terms(groups.functions, groups.starts, std::move(groups.terms));
 }
 
-std::vector<LinearTerm> column_terms(std::span<const biyos::Index> variables,
-                                     std::span<const biyos::Offset> starts,
+std::vector<LinearTerm> column_terms(std::span<const Index> variables,
+                                     std::span<const Offset> starts,
                                      const BIYOS_real *values)
 {
     std::vector<LinearTerm> terms;
@@ -79,8 +83,8 @@ void add_listed(Session &session,
         require(functions, "fun");
     }
     model.check_room(0, nnz);
-    const std::span<const biyos::Index> owners(functions, size);
-    add_grouped(model, owners, biyos::capi::packed(size, variables, values));
+    const std::span<const Index> owners(functions, size);
+    add_grouped(model, owners, packed(size, variables, values));
 }
 
 void add_rows(Session &session,
@@ -100,8 +104,8 @@ void add_columns(Session &session,
                  const BIYOS_real *values)
 {
     Model &model = writable(session);
-    const std::vector<biyos::Index> variables = selected(model, Family::Variable, range);
-    const std::vector<biyos::Offset> begins = starts_of(variables.size(), counts);
+    const std::vector<Index> variables = selected(model, Family::Variable, range);
+    const std::vector<Offset> begins = starts_of(variables.size(), counts);
     model.check_room(0, begins.back());
     const auto total = to_size(begins.back());
     if (total > 0)
@@ -109,7 +113,7 @@ void add_columns(Session &session,
         require(functions, "fun");
         require(values, "coef");
     }
-    const std::span<const biyos::Index> owners(functions, total);
+    const std::span<const Index> owners(functions, total);
     add_grouped(model, owners, column_terms(variables, begins, values));
 }
 

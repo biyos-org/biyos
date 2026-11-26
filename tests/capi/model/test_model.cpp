@@ -13,8 +13,11 @@
 namespace
 {
 
+using biyos::test::check_tolerances;
 using biyos::test::Env;
 using biyos::test::expect_doubles;
+using biyos::test::kVariableTolerances;
+using biyos::test::last_message;
 using biyos::test::Model;
 struct Columns
 {
@@ -89,7 +92,7 @@ struct Attempt
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
+    attempt.messages.emplace_back(last_message(attempt.env));
 }
 
 void change(const BIYOS_event *, void *data)
@@ -254,8 +257,7 @@ TEST(CApiTest, HeldFree)
     ASSERT_EQ(BIYOS_newmdl(env, &first), BIYOS_OK);
     ASSERT_EQ(BIYOS_newmdl(env, &second), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(env), BIYOS_ERR_BADARG);
-    EXPECT_STREQ(biyos::test::last_message(env),
-                 "invalid argument: environment: has a model that is not freed");
+    EXPECT_STREQ(last_message(env), "invalid argument: environment: has a model that is not freed");
     EXPECT_EQ(BIYOS_freemdl(first), BIYOS_OK);
     EXPECT_EQ(BIYOS_freeenv(env), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_setenvintopt(env, BIYOS_OPT_SEED, 5), BIYOS_OK);
@@ -593,7 +595,7 @@ TEST(CApiTest, VariableRefusals)
 
 TEST(CApiTest, VariableTolerances)
 {
-    biyos::test::check_tolerances(biyos::test::kVariableTolerances, add_three);
+    check_tolerances(kVariableTolerances, add_three);
 }
 
 TEST(CApiTest, ModelEvent)

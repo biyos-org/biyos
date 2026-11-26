@@ -11,7 +11,10 @@
 #include <span>
 #include <vector>
 
+using biyos::EntryTimer;
 using biyos::Family;
+using biyos::Index;
+using biyos::kModule;
 using biyos::Model;
 using biyos::Session;
 using biyos::capi::guarded;
@@ -24,13 +27,10 @@ namespace
 {
 
 template <auto Delete>
-void delete_chosen(Session &session,
-                   Model &model,
-                   std::span<const biyos::Index> chosen,
-                   BIYOS_index *map)
+void delete_chosen(Session &session, Model &model, std::span<const Index> chosen, BIYOS_index *map)
 {
-    const biyos::EntryTimer timer(session.stream(), biyos::kModule, "delete");
-    const std::vector<biyos::Index> renumbered = (model.*Delete)(chosen);
+    const EntryTimer timer(session.stream(), kModule, "delete");
+    const std::vector<Index> renumbered = (model.*Delete)(chosen);
     if (map != nullptr)
     {
         std::ranges::copy(renumbered, map);

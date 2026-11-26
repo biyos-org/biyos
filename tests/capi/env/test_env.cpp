@@ -7,6 +7,11 @@
 #include <string>
 #include <thread>
 
+using biyos::test::Env;
+using biyos::test::last_error;
+using biyos::test::last_message;
+using biyos::test::Model;
+
 namespace
 {
 
@@ -15,7 +20,7 @@ void fail_read(BIYOS_env *env, BIYOS_int id, std::latch &failed, std::string &se
     BIYOS_int value = 0;
     EXPECT_EQ(BIYOS_getenvintopt(env, id, &value), BIYOS_ERR_BADARG);
     failed.arrive_and_wait();
-    seen = biyos::test::last_message(env);
+    seen = last_message(env);
 }
 
 }
@@ -25,7 +30,7 @@ TEST(CApiTest, Create)
     BIYOS_env *env = nullptr;
     ASSERT_EQ(BIYOS_newenv(&env), BIYOS_OK);
     EXPECT_NE(env, nullptr);
-    EXPECT_STREQ(biyos::test::last_message(env), "");
+    EXPECT_STREQ(last_message(env), "");
     EXPECT_EQ(BIYOS_freeenv(env), BIYOS_OK);
 }
 
@@ -41,8 +46,8 @@ TEST(CApiTest, NullFree)
 
 TEST(CApiTest, NoError)
 {
-    const biyos::test::Env env;
-    const BIYOS_error error = biyos::test::last_error(env.get());
+    const Env env;
+    const BIYOS_error error = last_error(env.get());
     EXPECT_EQ(error.status, BIYOS_OK);
     EXPECT_EQ(error.mdl, nullptr);
     EXPECT_STREQ(error.msg, "");
@@ -50,19 +55,19 @@ TEST(CApiTest, NoError)
 
 TEST(CApiTest, ErrorModel)
 {
-    const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Env env;
+    const Model model(env);
     EXPECT_EQ(BIYOS_getnvar(model.get(), nullptr), BIYOS_ERR_BADARG);
-    const BIYOS_error error = biyos::test::last_error(env.get());
+    const BIYOS_error error = last_error(env.get());
     EXPECT_EQ(error.status, BIYOS_ERR_BADARG);
     EXPECT_EQ(error.mdl, model.get());
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
-    EXPECT_EQ(biyos::test::last_error(env.get()).mdl, nullptr);
+    EXPECT_EQ(last_error(env.get()).mdl, nullptr);
 }
 
 TEST(CApiTest, ErrorThreads)
 {
-    const biyos::test::Env env;
+    const Env env;
     std::latch failed(2);
     std::string first;
     std::string second;
@@ -77,7 +82,7 @@ TEST(CApiTest, ErrorThreads)
 
 TEST(CApiTest, ShortError)
 {
-    const biyos::test::Env env;
+    const Env env;
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, -1), BIYOS_ERR_BADARG);
     const std::string held = env.message();
     BIYOS_error error{};
@@ -88,5 +93,5 @@ TEST(CApiTest, ShortError)
     EXPECT_EQ(BIYOS_lasterror(env.get(), &error), BIYOS_ERR_BADARG);
     EXPECT_EQ(error.msg, nullptr);
     EXPECT_EQ(env.message(), held);
-    EXPECT_EQ(biyos::test::last_error(env.get()).status, BIYOS_ERR_BADARG);
+    EXPECT_EQ(last_error(env.get()).status, BIYOS_ERR_BADARG);
 }

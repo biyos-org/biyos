@@ -23,16 +23,20 @@ namespace
 {
 
 using biyos::Bits;
+using biyos::difference;
+using biyos::ErrorKind;
 using biyos::Graph;
 using biyos::Index;
 using biyos::kNoRoot;
 using biyos::LinearTerm;
 using biyos::Model;
+using biyos::n_values;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::QuadraticTerm;
 using biyos::Real;
 using biyos::Variable;
+using biyos::VariableKind;
 using biyos::test::failure;
 using biyos::test::refusal;
 
@@ -50,7 +54,7 @@ Model with_variables(std::size_t n)
 {
     Model model;
     const Variable free{
-        .kind = biyos::VariableKind::Continuous,
+        .kind = VariableKind::Continuous,
         .lower = -kInfinity,
         .upper = kInfinity,
     };
@@ -151,7 +155,7 @@ void expect_pairs(std::span<const QuadraticTerm> found, const std::vector<Quadra
 
 void expect_same(const Model &found, const Model &wanted)
 {
-    EXPECT_EQ(biyos::difference(found, wanted), "");
+    EXPECT_EQ(difference(found, wanted), "");
     EXPECT_EQ(found.graph().mark(), wanted.graph().mark());
     const Index n = wanted.n_functions();
     EXPECT_EQ(ids(found.roots(0, n)), ids(wanted.roots(0, n)));
@@ -309,25 +313,25 @@ TEST(ExpressionTest, ValueCount)
 TEST(ExpressionTest, ValueNeeds)
 {
     constexpr Offset kMost = (std::numeric_limits<Offset>::max)();
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_CONST, 0), 1);
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_SUM, 3), 4);
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_SUM, kMost), kMost);
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_SUM, -1), 0);
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_PROD, 2), 1);
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_CPOW, 1), 1);
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_SPOW, 1), 1);
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_EXP, 1), 0);
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_MAX, 3), 0);
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_VAR, 4), 0);
-    EXPECT_EQ(biyos::n_values(0, 1), 0);
-    EXPECT_EQ(biyos::n_values(BIYOS_OP_ERF + 1, 1), 0);
+    EXPECT_EQ(n_values(BIYOS_OP_CONST, 0), 1);
+    EXPECT_EQ(n_values(BIYOS_OP_SUM, 3), 4);
+    EXPECT_EQ(n_values(BIYOS_OP_SUM, kMost), kMost);
+    EXPECT_EQ(n_values(BIYOS_OP_SUM, -1), 0);
+    EXPECT_EQ(n_values(BIYOS_OP_PROD, 2), 1);
+    EXPECT_EQ(n_values(BIYOS_OP_CPOW, 1), 1);
+    EXPECT_EQ(n_values(BIYOS_OP_SPOW, 1), 1);
+    EXPECT_EQ(n_values(BIYOS_OP_EXP, 1), 0);
+    EXPECT_EQ(n_values(BIYOS_OP_MAX, 3), 0);
+    EXPECT_EQ(n_values(BIYOS_OP_VAR, 4), 0);
+    EXPECT_EQ(n_values(0, 1), 0);
+    EXPECT_EQ(n_values(BIYOS_OP_ERF + 1, 1), 0);
 }
 
 TEST(ExpressionTest, NoRoots)
 {
     Model model = with_variables(1);
     model.add_functions(std::vector<Real>(3, 0.0), std::vector<Offset>(4, 0), {});
-    EXPECT_EQ(ids(model.roots(0, 3)), std::vector<Offset>(3, biyos::kNoRoot));
+    EXPECT_EQ(ids(model.roots(0, 3)), std::vector<Offset>(3, kNoRoot));
     EXPECT_TRUE(model.roots(3, 3).empty());
     EXPECT_EQ(refusal([&] { model.roots(2, 4); }), "invalid argument: function 3: unknown");
 }
@@ -477,7 +481,7 @@ TEST(ExpressionTest, Cleared)
     Model fresh = with_functions(3);
     const Sample again = sample(fresh);
     attach(fresh, {1, 2}, {again.top, again.exponential});
-    EXPECT_EQ(biyos::difference(model, fresh), "");
+    EXPECT_EQ(difference(model, fresh), "");
     EXPECT_EQ(root_of(model, 1), root_of(fresh, 1));
 }
 
@@ -537,15 +541,15 @@ TEST(ExpressionTest, Copied)
     const Sample made = sample(model);
     attach(model, {2, 0}, {made.top, made.exponential});
     const Model copy = model;
-    EXPECT_EQ(biyos::difference(copy, model), "");
+    EXPECT_EQ(difference(copy, model), "");
     EXPECT_EQ(copy.graph().mark(), model.graph().mark());
     attach(model, {1}, {made.exponential});
-    EXPECT_EQ(biyos::difference(copy, model), "function 1: root none against node 2");
+    EXPECT_EQ(difference(copy, model), "function 1: root none against node 2");
     EXPECT_EQ(root_of(copy, 1), kNoRoot);
     Model changed = copy;
     add(changed, {BIYOS_OP_SIN, {made.x}, {}});
     EXPECT_EQ(changed.graph().size(), copy.graph().size() + 1);
-    EXPECT_EQ(biyos::difference(changed, copy), "");
+    EXPECT_EQ(difference(changed, copy), "");
 }
 
 TEST(ExpressionTest, AttachRefused)
@@ -646,7 +650,7 @@ TEST(ExpressionTest, Postfix)
     EXPECT_EQ(postfix.graph().mark(), nodes.graph().mark());
     attach(nodes, {0}, {top});
     attach(postfix, {0}, {top});
-    EXPECT_EQ(biyos::difference(postfix, nodes), "");
+    EXPECT_EQ(difference(postfix, nodes), "");
     EXPECT_EQ(root_of(postfix, 0), top);
 }
 
@@ -669,7 +673,7 @@ TEST(ExpressionTest, PostfixOrder)
     EXPECT_EQ(children_of(postfix, 4), (std::vector<Offset>{3, 2}));
     attach(nodes, {0}, {top});
     attach(postfix, {0}, tops);
-    EXPECT_EQ(biyos::difference(postfix, nodes), "");
+    EXPECT_EQ(difference(postfix, nodes), "");
 }
 
 TEST(ExpressionTest, PostfixShared)
@@ -899,7 +903,7 @@ TEST(ExpressionTest, ValuesRun)
     Model model = with_functions(1);
     const Model before = model;
     const Program program = single({BIYOS_OP_VAR, BIYOS_OP_SUM}, {0, 1}, {0.0});
-    EXPECT_EQ(failure([&] { decoded(model, program); }, biyos::ErrorKind::Internal),
+    EXPECT_EQ(failure([&] { decoded(model, program); }, ErrorKind::Internal),
               "internal error: postfix: values run out");
     expect_same(model, before);
 }
@@ -921,7 +925,7 @@ TEST(ExpressionTest, PostfixShape)
         .values = {},
     };
     const std::string differ = "internal error: model: postfix arrays differ in length";
-    const auto internal = biyos::ErrorKind::Internal;
+    const auto internal = ErrorKind::Internal;
     EXPECT_EQ(failure([&] { model.add_expressions(shorter); }, internal), differ);
     EXPECT_EQ(failure([&] { model.add_expressions(empty); }, internal), differ);
     EXPECT_EQ(failure([&] { model.add_expressions(longer); }, internal),
@@ -939,14 +943,14 @@ TEST(ExpressionTest, PostfixCount)
         BIYOS_OP_PROD,
         BIYOS_OP_EXP,
     };
-    EXPECT_EQ(biyos::n_values(codes, std::vector<Offset>{0, 0, 2, 0, 2, 1}), 5);
-    EXPECT_EQ(biyos::n_values(codes, std::vector<Offset>{0, 0, -3, 0, 2, 1}), 3);
-    EXPECT_EQ(biyos::n_values(codes, std::vector<Offset>{0, 0, 3, 0, 2, 1}), 6);
+    EXPECT_EQ(n_values(codes, std::vector<Offset>{0, 0, 2, 0, 2, 1}), 5);
+    EXPECT_EQ(n_values(codes, std::vector<Offset>{0, 0, -3, 0, 2, 1}), 3);
+    EXPECT_EQ(n_values(codes, std::vector<Offset>{0, 0, 3, 0, 2, 1}), 6);
     const Offset most = (std::numeric_limits<Offset>::max)();
-    EXPECT_EQ(biyos::n_values(codes, std::vector<Offset>{0, 0, most, 0, 2, 1}), 9);
+    EXPECT_EQ(n_values(codes, std::vector<Offset>{0, 0, most, 0, 2, 1}), 9);
     const std::vector<int> sums(3, BIYOS_OP_SUM);
-    EXPECT_EQ(biyos::n_values(sums, std::vector<Offset>{3, 3, 3}), 6);
-    EXPECT_EQ(biyos::n_values(sums, std::vector<Offset>{1, 1, 1}), 6);
-    EXPECT_EQ(biyos::n_values(sums, std::vector<Offset>{0, 1, 0}), 4);
-    EXPECT_EQ(biyos::n_values({}, {}), 0);
+    EXPECT_EQ(n_values(sums, std::vector<Offset>{3, 3, 3}), 6);
+    EXPECT_EQ(n_values(sums, std::vector<Offset>{1, 1, 1}), 6);
+    EXPECT_EQ(n_values(sums, std::vector<Offset>{0, 1, 0}), 4);
+    EXPECT_EQ(n_values({}, {}), 0);
 }

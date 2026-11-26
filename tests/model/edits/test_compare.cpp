@@ -30,6 +30,7 @@ using biyos::QuadraticTerm;
 using biyos::Real;
 using biyos::SpecialOrderedSetKind;
 using biyos::VariableKind;
+using biyos::widest;
 using biyos::test::built;
 using biyos::test::Node;
 using biyos::test::Parts;
@@ -45,7 +46,7 @@ std::string from_sample(const Parts &parts)
 Parts two_binaries()
 {
     Parts parts = sample();
-    parts.variables[0] = biyos::widest(VariableKind::Binary);
+    parts.variables[0] = widest(VariableKind::Binary);
     return parts;
 }
 

@@ -12,8 +12,12 @@
 #include <span>
 #include <vector>
 
+using biyos::check_index;
 using biyos::Family;
+using biyos::Index;
 using biyos::Model;
+using biyos::Offset;
+using biyos::Real;
 using biyos::Session;
 using biyos::capi::guarded;
 using biyos::capi::length;
@@ -32,9 +36,9 @@ void add_empty(Session &session, BIYOS_index n, BIYOS_index *start)
     Model &model = writable(session);
     const std::size_t size = length(n);
     model.check_room(size, 0);
-    const biyos::Index index = model.n_functions();
-    const std::vector<biyos::Offset> starts(size + 1, 0);
-    model.add_functions(std::vector<biyos::Real>(size, 0.0), starts, {});
+    const Index index = model.n_functions();
+    const std::vector<Offset> starts(size + 1, 0);
+    model.add_functions(std::vector<Real>(size, 0.0), starts, {});
     if (start != nullptr)
     {
         *start = index;
@@ -52,7 +56,7 @@ template <typename Selection> void clear_functions(Session &session, Selection s
     model.clear_functions(selected(model, Family::Function, selection));
 }
 
-void write_constants(std::span<const biyos::Real> found, BIYOS_real *constants)
+void write_constants(std::span<const Real> found, BIYOS_real *constants)
 {
     if (constants != nullptr)
     {
@@ -60,11 +64,11 @@ void write_constants(std::span<const biyos::Real> found, BIYOS_real *constants)
     }
 }
 
-void check_chosen(const Model &model, std::span<const biyos::Index> chosen)
+void check_chosen(const Model &model, std::span<const Index> chosen)
 {
-    for (const biyos::Index function : chosen)
+    for (const Index function : chosen)
     {
-        biyos::check_index("function", function, model.n_functions());
+        check_index("function", function, model.n_functions());
     }
 }
 

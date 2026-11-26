@@ -14,9 +14,16 @@
 namespace
 {
 
+using biyos::difference;
 using biyos::test::Env;
+using biyos::test::expect_tolerances;
+using biyos::test::kConeTolerances;
+using biyos::test::kConstraintTolerances;
+using biyos::test::kUnknown;
 using biyos::test::Model;
+using biyos::test::read_tolerances;
 using biyos::test::ToleranceCalls;
+using biyos::test::Tolerances;
 using Map = std::vector<BIYOS_index>;
 using Indices = std::vector<BIYOS_index>;
 using Counter = BIYOS_status (*)(const BIYOS_model *, BIYOS_index *);
@@ -166,7 +173,7 @@ std::string refused(const Calls &calls, const std::string &reason)
 
 void expect_unchanged(const Model &tried, const Model &model)
 {
-    EXPECT_EQ(biyos::difference(tried.get()->model(), model.get()->model()), "");
+    EXPECT_EQ(difference(tried.get()->model(), model.get()->model()), "");
 }
 
 void expect_listed(const Calls &calls)
@@ -351,7 +358,7 @@ void expect_built(const Env &env, const Model &model, const Spread &spread)
 {
     const Model wanted(env);
     build_variables(wanted, spread);
-    EXPECT_EQ(biyos::difference(model.get()->model(), wanted.get()->model()), "");
+    EXPECT_EQ(difference(model.get()->model(), wanted.get()->model()), "");
 }
 
 void expect_moved(const ToleranceCalls &tolerances, Listed listed)
@@ -367,11 +374,11 @@ void expect_moved(const ToleranceCalls &tolerances, Listed listed)
     ASSERT_EQ(tolerances.set_listed(model.get(), 1, &last, nullptr, &relative), BIYOS_OK);
     const BIYOS_index first = 0;
     ASSERT_EQ(listed(model.get(), 1, &first, nullptr), BIYOS_OK);
-    const biyos::test::Tolerances wanted{
+    const Tolerances wanted{
         .absolute = {0.25, 0.125},
-        .relative = {biyos::test::kUnknown, 0.75},
+        .relative = {kUnknown, 0.75},
     };
-    biyos::test::expect_tolerances(biyos::test::read_tolerances(model, tolerances), wanted);
+    expect_tolerances(read_tolerances(model, tolerances), wanted);
 }
 
 }
@@ -494,6 +501,6 @@ TEST(CApiTest, UsedVariable)
 
 TEST(CApiTest, MovedTolerances)
 {
-    expect_moved(biyos::test::kConstraintTolerances, BIYOS_delconsp);
-    expect_moved(biyos::test::kConeTolerances, BIYOS_delconesp);
+    expect_moved(kConstraintTolerances, BIYOS_delconsp);
+    expect_moved(kConeTolerances, BIYOS_delconesp);
 }

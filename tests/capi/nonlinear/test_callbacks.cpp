@@ -19,9 +19,13 @@ namespace
 {
 
 using biyos::Callback;
+using biyos::difference;
+using biyos::Index;
 using biyos::IndexPair;
 using biyos::Request;
+using biyos::Usage;
 using biyos::test::Env;
+using biyos::test::last_message;
 using biyos::test::Model;
 
 const std::string kBad = "invalid argument: ";
@@ -148,7 +152,7 @@ std::vector<BIYOS_index> covered_by(const Model &model)
 {
     std::vector<BIYOS_index> found;
     const biyos::Model &stored = model.get()->model();
-    for (biyos::Index cb = 0; cb < stored.n_callbacks(); ++cb)
+    for (Index cb = 0; cb < stored.n_callbacks(); ++cb)
     {
         found.push_back(stored.callback(cb).covered.front());
     }
@@ -177,7 +181,7 @@ std::uint64_t bits(double value)
 void note(Attempt &attempt, BIYOS_status status)
 {
     attempt.statuses.push_back(status);
-    attempt.messages.emplace_back(biyos::test::last_message(attempt.env));
+    attempt.messages.emplace_back(last_message(attempt.env));
 }
 
 void change_all(Attempt &attempt)
@@ -220,9 +224,9 @@ TEST(CallbackTest, Registered)
     EXPECT_EQ(BIYOS_setcbhv(mdl, 0, record), BIYOS_OK);
     EXPECT_EQ(env.message(), "");
     EXPECT_EQ(mdl->model().n_callbacks(), 2);
-    EXPECT_EQ(held(model, 1).covered, (std::vector<biyos::Index>{1}));
+    EXPECT_EQ(held(model, 1).covered, (std::vector<Index>{1}));
     const Callback &first = held(model, 0);
-    EXPECT_EQ(first.covered, (std::vector<biyos::Index>{2, 0}));
+    EXPECT_EQ(first.covered, (std::vector<Index>{2, 0}));
     EXPECT_EQ(first.jacobian_pairs, (std::vector<IndexPair>{{1, 1}, {0, 0}, {1, 1}}));
     EXPECT_EQ(first.hessian_pairs, (std::vector<IndexPair>{{1, 2}, {0, 0}, {1, 2}}));
     EXPECT_TRUE(first.function && first.jacobian && first.hessian && first.hessian_product);
@@ -392,8 +396,7 @@ TEST(CallbackTest, Expression)
     attach_exp(plain, 1);
     attach_exp(plain, 0);
     EXPECT_EQ(env.message(), "");
-    EXPECT_EQ(biyos::difference(model.get()->model(), plain.get()->model()),
-              "callback count 2 against 0");
+    EXPECT_EQ(difference(model.get()->model(), plain.get()->model()), "callback count 2 against 0");
 }
 
 TEST(CallbackTest, Shared)
@@ -406,8 +409,8 @@ TEST(CallbackTest, Shared)
     EXPECT_EQ(add(model, {2, 1}, nullptr), 1);
     attach_exp(model, 1);
     EXPECT_EQ(env.message(), "");
-    EXPECT_EQ(held(model, 0).covered, (std::vector<biyos::Index>{1, 0}));
-    EXPECT_EQ(held(model, 1).covered, (std::vector<biyos::Index>{2, 1}));
+    EXPECT_EQ(held(model, 0).covered, (std::vector<Index>{1, 0}));
+    EXPECT_EQ(held(model, 1).covered, (std::vector<Index>{2, 1}));
     const std::vector<BIYOS_index> twice{2, 1, 2};
     EXPECT_EQ(failed(env, BIYOS_addcb(model.get(), 3, twice.data(), nullptr, nullptr)),
               kBad + "argument 'fun': function 2 is repeated");
@@ -420,15 +423,15 @@ TEST(CallbackTest, CopyLists)
     const Model source(env);
     cover(source);
     const Model copy(env, source);
-    EXPECT_EQ(biyos::difference(source.get()->model(), copy.get()->model()), "");
-    EXPECT_EQ(held(copy, 1).covered, (std::vector<biyos::Index>{1, 2}));
-    EXPECT_EQ(held(copy, 2).covered, (std::vector<biyos::Index>{3, 1}));
+    EXPECT_EQ(difference(source.get()->model(), copy.get()->model()), "");
+    EXPECT_EQ(held(copy, 1).covered, (std::vector<Index>{1, 2}));
+    EXPECT_EQ(held(copy, 2).covered, (std::vector<Index>{3, 1}));
     const Model other(env);
     build(other, 1, 4);
     add(other, {2}, nullptr);
     add(other, {1, 2}, nullptr);
     add(other, {3, 2}, nullptr);
-    EXPECT_EQ(biyos::difference(copy.get()->model(), other.get()->model()),
+    EXPECT_EQ(difference(copy.get()->model(), other.get()->model()),
               "callback 2: covered function 1: index 1 against 2");
 }
 
@@ -443,9 +446,9 @@ TEST(CallbackTest, Deleted)
     std::vector<BIYOS_index> map(4, 9);
     EXPECT_EQ(BIYOS_delfunrg(model.get(), 0, 1, map.data()), BIYOS_OK);
     EXPECT_EQ(map, (std::vector<BIYOS_index>{-1, 0, 1, 2}));
-    EXPECT_EQ(held(model, 0).covered, (std::vector<biyos::Index>{1}));
-    EXPECT_EQ(held(model, 1).covered, (std::vector<biyos::Index>{0, 1}));
-    EXPECT_EQ(held(model, 2).covered, (std::vector<biyos::Index>{2, 0}));
+    EXPECT_EQ(held(model, 0).covered, (std::vector<Index>{1}));
+    EXPECT_EQ(held(model, 1).covered, (std::vector<Index>{0, 1}));
+    EXPECT_EQ(held(model, 2).covered, (std::vector<Index>{2, 0}));
 }
 
 TEST(CallbackTest, DataPointer)
@@ -497,7 +500,7 @@ TEST(CallbackTest, Busy)
     Attempt attempt;
     attempt.env = env.get();
     attempt.model = model.get();
-    biyos::Usage &usage = model.get()->usage();
+    Usage &usage = model.get()->usage();
     ASSERT_TRUE(usage.enter());
     change_all(attempt);
     usage.leave();
@@ -604,7 +607,7 @@ TEST(CallbackTest, CopyShared)
     ASSERT_EQ(BIYOS_setcbf(source.get(), 0, record), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcbg(source.get(), 0, 2, fun.data(), var.data(), record), BIYOS_OK);
     const Model copy(env, source);
-    EXPECT_EQ(biyos::difference(source.get()->model(), copy.get()->model()), "");
+    EXPECT_EQ(difference(source.get()->model(), copy.get()->model()), "");
     EXPECT_EQ(data_of(copy, 0), &seen);
     const std::vector<double> point{1.0, 2.0};
     std::vector<double> out(1);
@@ -625,8 +628,7 @@ TEST(CallbackTest, CopyShared)
     int other = 0;
     EXPECT_EQ(BIYOS_setcbdata(copy.get(), 0, &other), BIYOS_OK);
     EXPECT_EQ(data_of(source, 0), &seen);
-    EXPECT_EQ(biyos::difference(source.get()->model(), copy.get()->model()),
-              "callback 0: data differs");
+    EXPECT_EQ(difference(source.get()->model(), copy.get()->model()), "callback 0: data differs");
 }
 
 TEST(CallbackTest, Dropped)
@@ -650,7 +652,7 @@ TEST(CallbackTest, Dropped)
     EXPECT_EQ(map[0], -1);
     EXPECT_EQ(map[1], 0);
     EXPECT_EQ(BIYOS_delfunsp(model.get(), 1, &function, nullptr), BIYOS_OK);
-    EXPECT_EQ(held(model, 0).covered, (std::vector<biyos::Index>{2, 1}));
+    EXPECT_EQ(held(model, 0).covered, (std::vector<Index>{2, 1}));
 }
 
 TEST(CallbackTest, DropNull)

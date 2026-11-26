@@ -15,11 +15,20 @@
 namespace
 {
 
+using biyos::Error;
+using biyos::ErrorKind;
+using biyos::Family;
 using biyos::Index;
+using biyos::kVariableKinds;
 using biyos::Model;
 using biyos::Real;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::widest;
+using biyos::test::expect_copied;
+using biyos::test::expect_deleted;
+using biyos::test::expect_own;
+using biyos::test::expect_refused;
 using biyos::test::refusal;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
@@ -151,11 +160,11 @@ TEST(VariableTest, NanBounds)
 
 TEST(VariableTest, Defaults)
 {
-    for (const VariableKind kind : biyos::kVariableKinds)
+    for (const VariableKind kind : kVariableKinds)
     {
         const Variable free{.kind = kind, .lower = -kInfinity, .upper = kInfinity};
         const Variable wanted = kind == VariableKind::Binary ? binary(0.0, 1.0) : free;
-        expect_same(biyos::widest(kind), wanted);
+        expect_same(widest(kind), wanted);
     }
 }
 
@@ -250,29 +259,29 @@ TEST(VariableTest, Mismatch)
         model.set_variables(indices, added);
         ADD_FAILURE() << "no error";
     }
-    catch (const biyos::Error &error)
+    catch (const Error &error)
     {
-        EXPECT_EQ(error.kind(), biyos::ErrorKind::Internal);
+        EXPECT_EQ(error.kind(), ErrorKind::Internal);
     }
     expect_same(model.variable(0), added[0]);
 }
 
 TEST(VariableTest, OwnTolerance)
 {
-    biyos::test::expect_own(with_variables(3), biyos::Family::Variable);
+    expect_own(with_variables(3), Family::Variable);
 }
 
 TEST(VariableTest, ToleranceRefusal)
 {
-    biyos::test::expect_refused(with_variables(2), biyos::Family::Variable);
+    expect_refused(with_variables(2), Family::Variable);
 }
 
 TEST(VariableTest, DeletedTolerance)
 {
-    biyos::test::expect_deleted(with_variables(2), biyos::Family::Variable);
+    expect_deleted(with_variables(2), Family::Variable);
 }
 
 TEST(VariableTest, ToleranceCopy)
 {
-    biyos::test::expect_copied(with_variables(2), biyos::Family::Variable);
+    expect_copied(with_variables(2), Family::Variable);
 }

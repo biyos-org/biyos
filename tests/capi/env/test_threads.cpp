@@ -16,6 +16,11 @@
 #include <thread>
 #include <vector>
 
+using biyos::capi::guarded;
+using biyos::capi::writable;
+using biyos::test::last_error;
+using biyos::test::Model;
+
 namespace
 {
 
@@ -80,7 +85,7 @@ void hold_env(biyos::Env &, Gate *gate)
 
 void change_env(biyos::Env &env, Gate *gate)
 {
-    biyos::capi::writable(env);
+    writable(env);
     park(gate);
 }
 
@@ -91,13 +96,13 @@ void hold_model(const BIYOS_model &, Gate *gate)
 
 void change_model(BIYOS_model &model, Gate *gate)
 {
-    biyos::capi::writable(model);
+    writable(model);
     park(gate);
 }
 
 template <auto Body, typename Target> BIYOS_status run(Target *target, Gate *gate)
 {
-    return biyos::capi::guarded<Body>(target, gate);
+    return guarded<Body>(target, gate);
 }
 
 class Held
@@ -131,7 +136,7 @@ class Held
     BIYOS_status returned_ = BIYOS_ERR_INTERNAL;
 };
 
-BIYOS_status add_one(const biyos::test::Model &model)
+BIYOS_status add_one(const Model &model)
 {
     return BIYOS_addvar(model.get(), 1, nullptr, nullptr, nullptr, nullptr);
 }
@@ -159,7 +164,7 @@ void fail_often(BIYOS_model *model, std::latch &start, const BIYOS_env *env)
     for (BIYOS_index round = 0; round < kRounds; ++round)
     {
         EXPECT_EQ(BIYOS_getnvar(model, nullptr), BIYOS_ERR_BADARG);
-        EXPECT_EQ(biyos::test::last_error(env).mdl, model);
+        EXPECT_EQ(last_error(env).mdl, model);
     }
 }
 
@@ -194,12 +199,12 @@ TEST(ThreadTest, Hooks)
     BIYOS_index hook = 0;
     ASSERT_EQ(BIYOS_addenvhook(env.get(), tally, &seen, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_ERR, &hook),
               BIYOS_OK);
-    std::vector<std::unique_ptr<biyos::test::Model>> models;
+    std::vector<std::unique_ptr<Model>> models;
     std::latch start(kThreads);
     std::vector<std::thread> threads;
     for (std::size_t i = 0; i < kThreads; ++i)
     {
-        models.push_back(std::make_unique<biyos::test::Model>(env));
+        models.push_back(std::make_unique<Model>(env));
         threads.emplace_back(fail_often, models.back()->get(), std::ref(start), env.get());
     }
     for (std::thread &thread : threads)
@@ -207,7 +212,7 @@ TEST(ThreadTest, Hooks)
         thread.join();
     }
     EXPECT_EQ(seen.overlaps(), 0);
-    for (const std::unique_ptr<biyos::test::Model> &model : models)
+    for (const std::unique_ptr<Model> &model : models)
     {
         EXPECT_EQ(seen.of(model->get()), kRounds);
     }
@@ -218,8 +223,8 @@ TEST(ThreadTest, ModelHooks)
     Tally shared;
     std::array<Tally, 2> local;
     const biyos::test::Env env;
-    const biyos::test::Model first(env);
-    const biyos::test::Model second(env);
+    const Model first(env);
+    const Model second(env);
     const std::array<BIYOS_model *, 2> models{first.get(), second.get()};
     BIYOS_index id = 0;
     ASSERT_EQ(BIYOS_addenvhook(env.get(), tally, &shared, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_ERR, &id),
@@ -253,11 +258,11 @@ TEST(ThreadTest, ModelHooks)
 TEST(ThreadTest, EnvBusy)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Model model(env);
     Held held(run<hold_env, BIYOS_env>, env.get());
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 1), BIYOS_ERR_BUSY);
     EXPECT_EQ(env.message(), "busy: environment: is in a call on another thread");
-    EXPECT_EQ(biyos::test::last_error(env.get()).mdl, nullptr);
+    EXPECT_EQ(last_error(env.get()).mdl, nullptr);
     BIYOS_index hook = 0;
     EXPECT_EQ(
         BIYOS_addenvhook(env.get(), tally, nullptr, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_ERR, &hook),
@@ -275,7 +280,7 @@ TEST(ThreadTest, EnvBusy)
 TEST(ThreadTest, EnvChanging)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Model model(env);
     Held held(run<change_env, BIYOS_env>, env.get());
     BIYOS_int seed = -1;
     EXPECT_EQ(BIYOS_getenvintopt(env.get(), BIYOS_OPT_SEED, &seed), BIYOS_ERR_BUSY);
@@ -283,7 +288,7 @@ TEST(ThreadTest, EnvChanging)
     EXPECT_EQ(env.message(), "busy: environment: is being changed on another thread");
     BIYOS_index n = -1;
     EXPECT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_ERR_BUSY);
-    EXPECT_EQ(biyos::test::last_error(env.get()).mdl, model.get());
+    EXPECT_EQ(last_error(env.get()).mdl, model.get());
     BIYOS_model *made = nullptr;
     EXPECT_EQ(BIYOS_newmdl(env.get(), &made), BIYOS_ERR_BUSY);
     EXPECT_EQ(made, nullptr);
@@ -295,12 +300,12 @@ TEST(ThreadTest, EnvChanging)
 TEST(ThreadTest, ModelBusy)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
-    const biyos::test::Model other(env);
+    const Model model(env);
+    const Model other(env);
     Held held(run<hold_model, BIYOS_model>, model.get());
     EXPECT_EQ(add_one(model), BIYOS_ERR_BUSY);
     EXPECT_EQ(env.message(), "busy: model: is in a call on another thread");
-    EXPECT_EQ(biyos::test::last_error(env.get()).mdl, model.get());
+    EXPECT_EQ(last_error(env.get()).mdl, model.get());
     EXPECT_EQ(BIYOS_freemdl(model.get()), BIYOS_ERR_BUSY);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 1), BIYOS_ERR_BUSY);
     EXPECT_EQ(BIYOS_delcbrg(model.get(), 0, 0, nullptr), BIYOS_ERR_BUSY);
@@ -318,12 +323,12 @@ TEST(ThreadTest, ModelBusy)
 TEST(ThreadTest, OptionBusy)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Model model(env);
     BIYOS_model *busy = model.get();
     Held held(run<hold_model, BIYOS_model>, busy);
     EXPECT_EQ(BIYOS_setmdlboolopt(busy, BIYOS_OPT_PRESOLVE, 0), BIYOS_ERR_BUSY);
     EXPECT_EQ(env.message(), "busy: model: is in a call on another thread");
-    EXPECT_EQ(biyos::test::last_error(env.get()).mdl, busy);
+    EXPECT_EQ(last_error(env.get()).mdl, busy);
     EXPECT_EQ(BIYOS_setmdlintopt(busy, BIYOS_OPT_SEED, 1), BIYOS_ERR_BUSY);
     EXPECT_EQ(BIYOS_setmdldblopt(busy, BIYOS_OPT_MAXTIME, 1.0), BIYOS_ERR_BUSY);
     EXPECT_EQ(BIYOS_setmdlstropt(busy, BIYOS_OPT_REPRO, "busy.txt"), BIYOS_ERR_BUSY);
@@ -338,8 +343,8 @@ TEST(ThreadTest, OptionBusy)
 TEST(ThreadTest, OtherHeld)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
-    const biyos::test::Model other(env);
+    const Model model(env);
+    const Model other(env);
     BIYOS_model *idle = model.get();
     Held held(run<change_model, BIYOS_model>, other.get());
     EXPECT_EQ(BIYOS_setmdlboolopt(idle, BIYOS_OPT_PRESOLVE, 0), BIYOS_OK);
@@ -356,7 +361,7 @@ TEST(ThreadTest, OtherHeld)
 TEST(ThreadTest, ModelChanging)
 {
     const biyos::test::Env env;
-    const biyos::test::Model model(env);
+    const Model model(env);
     Held held(run<change_model, BIYOS_model>, model.get());
     BIYOS_index n = -1;
     EXPECT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_ERR_BUSY);
@@ -375,13 +380,13 @@ TEST(ThreadTest, CopyTarget)
 {
     const biyos::test::Env source;
     const biyos::test::Env target;
-    const biyos::test::Model model(source);
+    const Model model(source);
     Held held(run<change_env, BIYOS_env>, target.get());
     BIYOS_model *copy = nullptr;
     EXPECT_EQ(BIYOS_copymdl(model.get(), target.get(), &copy), BIYOS_ERR_BUSY);
     EXPECT_EQ(copy, nullptr);
     EXPECT_EQ(source.message(), "busy: environment: is being changed on another thread");
-    EXPECT_EQ(biyos::test::last_error(source.get()).mdl, model.get());
+    EXPECT_EQ(last_error(source.get()).mdl, model.get());
     EXPECT_EQ(held.release(), BIYOS_OK);
     EXPECT_EQ(BIYOS_copymdl(model.get(), target.get(), &copy), BIYOS_OK);
     EXPECT_EQ(BIYOS_freemdl(copy), BIYOS_OK);

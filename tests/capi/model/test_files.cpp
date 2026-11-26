@@ -17,7 +17,9 @@
 namespace
 {
 
+using biyos::FakeClock;
 using biyos::test::Env;
+using biyos::test::kLpMpsFile;
 using biyos::test::mark;
 using biyos::test::Model;
 using biyos::test::written;
@@ -71,7 +73,7 @@ BIYOS_status listen(BIYOS_model *model, BIYOS_hook hook, void *data)
 TEST(CApiTest, ReadFile)
 {
     const Env env;
-    const std::string path = written("biyos_lp.mps", biyos::test::kLpMpsFile);
+    const std::string path = written("biyos_lp.mps", kLpMpsFile);
     const Read made = read(env, path.c_str(), BIYOS_FILEFMT_MPS);
     ASSERT_EQ(made.status, BIYOS_OK);
     EXPECT_EQ(count_of(BIYOS_getnvar, made.model), 2);
@@ -107,7 +109,7 @@ TEST(CApiTest, BadFile)
 TEST(CApiTest, ReadRefused)
 {
     const Env env;
-    const std::string path = written("biyos_lp.mps", biyos::test::kLpMpsFile);
+    const std::string path = written("biyos_lp.mps", kLpMpsFile);
     EXPECT_EQ(read(env, nullptr, BIYOS_FILEFMT_MPS).status, BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'path': is null");
     EXPECT_EQ(read(env, path.c_str(), 7).status, BIYOS_ERR_BADARG);
@@ -118,12 +120,12 @@ TEST(CApiTest, ReadRefused)
 
 TEST(CApiTest, ReadSpan)
 {
-    BIYOS_env env{.core = biyos::Env(std::make_unique<biyos::FakeClock>())};
+    BIYOS_env env{.core = biyos::Env(std::make_unique<FakeClock>())};
     std::vector<std::string> spans;
     BIYOS_index hook = -1;
     ASSERT_EQ(BIYOS_addenvhook(&env, keep, &spans, BIYOS_EVTKND_SPAN, BIYOS_EVTLVL_DBG, &hook),
               BIYOS_OK);
-    const std::string path = written("biyos_lp.mps", biyos::test::kLpMpsFile);
+    const std::string path = written("biyos_lp.mps", kLpMpsFile);
     BIYOS_model *model = nullptr;
     ASSERT_EQ(BIYOS_readmdl(&env, path.c_str(), BIYOS_FILEFMT_MPS, &model), BIYOS_OK);
     const std::vector<std::string> expected{
@@ -140,7 +142,7 @@ TEST(CApiTest, ReadSpan)
 TEST(CApiTest, WriteFile)
 {
     const Env env;
-    const std::string source = written("biyos_lp.mps", biyos::test::kLpMpsFile);
+    const std::string source = written("biyos_lp.mps", kLpMpsFile);
     const Read made = read(env, source.c_str(), BIYOS_FILEFMT_MPS);
     ASSERT_EQ(made.status, BIYOS_OK);
     const std::string path = testing::TempDir() + "biyos_written.mps";
@@ -173,7 +175,7 @@ TEST(CApiTest, WriteRefused)
 
 TEST(CApiTest, WriteSpan)
 {
-    BIYOS_env env{.core = biyos::Env(std::make_unique<biyos::FakeClock>())};
+    BIYOS_env env{.core = biyos::Env(std::make_unique<FakeClock>())};
     BIYOS_model *model = nullptr;
     ASSERT_EQ(BIYOS_newmdl(&env, &model), BIYOS_OK);
     std::vector<std::string> spans;

@@ -28,14 +28,19 @@ namespace
 
 using biyos::Adjoints;
 using biyos::Bits;
+using biyos::broadcast;
+using biyos::forward;
 using biyos::Graph;
 using biyos::Index;
 using biyos::is_zero;
+using biyos::jacobian;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
+using biyos::seed_directions;
 using biyos::Tape;
 using biyos::to_size;
+using biyos::weighted_gradient;
 using biyos::Workspace;
 using biyos::test::every_operator;
 using biyos::test::gradient_of;
@@ -110,7 +115,7 @@ void expect_values(const Tape &tape, Workspace &workspace, const Points &points)
 {
     const std::size_t lanes = points.size();
     std::vector<Real> values(to_size(tape.roots()) * lanes);
-    biyos::forward(tape, interleave(points), workspace, values);
+    forward(tape, interleave(points), workspace, values);
     for (std::size_t l = 0; l < lanes; ++l)
     {
         SCOPED_TRACE(l);
@@ -123,7 +128,7 @@ std::string refused(const Tape &tape,
                     std::span<const Real> point,
                     std::span<Real> values)
 {
-    return refusal([&] { biyos::forward(tape, point, workspace, values); });
+    return refusal([&] { forward(tape, point, workspace, values); });
 }
 
 bool cleared(const Adjoints &adjoints)
@@ -159,7 +164,7 @@ void expect_jacobian(const Tape &tape,
     const std::size_t lanes = points.size();
     std::vector<Real> values(to_size(tape.roots()) * lanes);
     std::vector<Real> gradients(tape.pattern().variables.size() * lanes);
-    biyos::jacobian(tape, interleave(points), workspace, adjoints, values, gradients);
+    jacobian(tape, interleave(points), workspace, adjoints, values, gradients);
     EXPECT_TRUE(cleared(adjoints));
     for (std::size_t l = 0; l < lanes; ++l)
     {
@@ -179,13 +184,7 @@ void expect_weighted(const Tape &tape,
     const std::vector<Real> point = interleave(points);
     std::vector<Real> values(to_size(tape.roots()) * lanes);
     std::vector<Real> gradient(point.size(), (std::numeric_limits<Real>::quiet_NaN)());
-    biyos::weighted_gradient(tape,
-                             point,
-                             interleave(weights),
-                             workspace,
-                             adjoints,
-                             values,
-                             gradient);
+    weighted_gradient(tape, point, interleave(weights), workspace, adjoints, values, gradient);
     EXPECT_TRUE(cleared(adjoints));
     for (std::size_t l = 0; l < lanes; ++l)
     {
@@ -240,7 +239,7 @@ struct Sweep
 
 void run_jacobian(const Sweep &call)
 {
-    biyos::jacobian(*call.tape, call.point, *call.workspace, *call.adjoints, call.values, call.out);
+    jacobian(*call.tape, call.point, *call.workspace, *call.adjoints, call.values, call.out);
 }
 
 void run_weighted(const Sweep &call)
@@ -248,13 +247,7 @@ void run_weighted(const Sweep &call)
     const Tape &tape = *call.tape;
     Workspace &workspace = *call.workspace;
     Adjoints &adjoints = *call.adjoints;
-    biyos::weighted_gradient(tape,
-                             call.point,
-                             call.weights,
-                             workspace,
-                             adjoints,
-                             call.values,
-                             call.out);
+    weighted_gradient(tape, call.point, call.weights, workspace, adjoints, call.values, call.out);
 }
 
 std::string refused(void (*sweep)(const Sweep &), const Sweep &call)
@@ -269,7 +262,7 @@ std::vector<Real> stepped(const std::vector<Real> &point,
                           std::size_t lanes)
 {
     std::vector<Real> points(point.size() * lanes);
-    biyos::broadcast(point, lanes, points);
+    broadcast(point, lanes, points);
     for (std::size_t k = 0; k < points.size(); ++k)
     {
         points[k] += kStep * directions[k];
@@ -295,11 +288,11 @@ void expect_seeded(const Tape &tape, Random &random, std::size_t lanes)
     const std::size_t seeded = (std::min)(lanes, kOrder.size());
     const std::span<const Index> variables = std::span(kOrder).first(seeded);
     std::vector<Real> directions(static_cast<std::size_t>(kVariables) * lanes, 0.5);
-    biyos::seed_directions(variables, lanes, directions);
+    seed_directions(variables, lanes, directions);
     const std::vector<Real> point = random_point(random);
     Workspace workspace(tape, lanes);
     std::vector<Real> values(to_size(tape.roots()) * lanes);
-    biyos::forward(tape, stepped(point, directions, lanes), workspace, values);
+    forward(tape, stepped(point, directions, lanes), workspace, values);
     for (std::size_t l = 0; l < lanes; ++l)
     {
         SCOPED_TRACE(l);
@@ -313,7 +306,7 @@ std::string seed_refusal(std::span<const Index> variables,
                          std::size_t lanes,
                          std::span<Real> directions)
 {
-    return refusal([&] { biyos::seed_directions(variables, lanes, directions); });
+    return refusal([&] { seed_directions(variables, lanes, directions); });
 }
 
 Tape shared_tape(Graph &graph)
@@ -607,7 +600,7 @@ TEST(LaneTest, Overflow)
     }
     std::vector<Real> points(4);
     const std::size_t lanes = (std::numeric_limits<std::size_t>::max)() / 3 + 1;
-    EXPECT_EQ(refusal([&] { biyos::broadcast(point, lanes, points); }),
+    EXPECT_EQ(refusal([&] { broadcast(point, lanes, points); }),
               "invalid argument: lanes: " + std::to_string(lanes) + " times size 3 overflows");
 }
 
@@ -632,9 +625,9 @@ TEST(LaneTest, Seeds)
 {
     const std::array<Index, 2> variables{1, 0};
     std::vector<Real> directions(6);
-    biyos::seed_directions(variables, 3, directions);
+    seed_directions(variables, 3, directions);
     expect_bits(directions, std::vector{0.0, 1.0, 0.0, 1.0, 0.0, 0.0});
-    biyos::seed_directions({}, 3, directions);
+    seed_directions({}, 3, directions);
     expect_bits(directions, std::vector(6, 0.0));
     EXPECT_EQ(seed_refusal(variables, 1, directions), "invalid argument: variables: 2 for 1 lanes");
     EXPECT_EQ(seed_refusal(variables, 4, directions),
@@ -648,10 +641,9 @@ TEST(LaneTest, Seeds)
     EXPECT_EQ(seed_refusal(variables, 0, directions), "invalid argument: lanes: zero");
     const std::array point{0.25, 0.5};
     std::vector<Real> points(6);
-    biyos::broadcast(point, 3, points);
+    broadcast(point, 3, points);
     expect_bits(points, std::vector{0.25, 0.25, 0.25, 0.5, 0.5, 0.5});
-    EXPECT_EQ(refusal([&] { biyos::broadcast(point, 2, points); }),
+    EXPECT_EQ(refusal([&] { broadcast(point, 2, points); }),
               "invalid argument: points: size 6, not the point size 2 in 2 lanes");
-    EXPECT_EQ(refusal([&] { biyos::broadcast(point, 0, points); }),
-              "invalid argument: lanes: zero");
+    EXPECT_EQ(refusal([&] { broadcast(point, 0, points); }), "invalid argument: lanes: zero");
 }
