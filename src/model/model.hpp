@@ -290,6 +290,9 @@ class Model
     Index n_callbacks() const noexcept;
     const Callback &callback(Index index) const;
     Index add_callback(std::span<const Index> functions, void *data);
+    Index add_callback(std::span<const Index> functions,
+                       std::span<const Index> variables,
+                       void *data);
     void set_callback_function(Index callback, Routine function);
     void set_callback_jacobian(Index callback,
                                std::span<const Index> functions,
@@ -317,6 +320,10 @@ class Model
     Offset quadratic_begin(std::size_t function) const noexcept;
     Offset member_begin(std::size_t sos) const noexcept;
     Callback &changed(Index callback);
+    Index push_callback(std::span<const Index> functions,
+                        std::span<const Index> variables,
+                        bool dense,
+                        void *data);
 
     std::string name_;
     std::array<Names, kFamilies.size()> names_;

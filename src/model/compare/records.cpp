@@ -34,6 +34,15 @@ std::string presence(std::string_view field, const Routine &a, const Routine &b)
     return std::string(field) + (a ? " given against none" : " none against given");
 }
 
+std::string density(bool a, bool b)
+{
+    if (a == b)
+    {
+        return "";
+    }
+    return a ? "dense against listed" : "listed against dense";
+}
+
 }
 
 std::string differ(const Variable &a, const Variable &b)
@@ -138,6 +147,8 @@ std::string differ(const Callback &a, const Callback &b)
 {
     return first_of({
         value_table("covered function", "index", std::span(a.covered), std::span(b.covered)),
+        density(a.dense, b.dense),
+        value_table("listed variable", "index", std::span(a.variables), std::span(b.variables)),
         a.data == b.data ? "" : "data differs",
         presence("value function", a.function, b.function),
         term_table("Jacobian entry", std::span(a.jacobian_pairs), std::span(b.jacobian_pairs)),

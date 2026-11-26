@@ -498,7 +498,10 @@ static BIYOS_status use_callbacks(BIYOS_model *model)
         BIYOS_getncbfun(model, cb, &n) != BIYOS_OK || n != 1 ||
         BIYOS_getcbfun(model, cb, n, &covered) != BIYOS_OK || covered != function ||
         BIYOS_setcbdata(model, cb, NULL) != BIYOS_OK ||
-        BIYOS_addcb(model, 1, &function, BIYOS_DENSE, NULL, NULL, &extra) != BIYOS_OK ||
+        BIYOS_getncbvar(model, cb, &n) != BIYOS_OK || n != BIYOS_DENSE ||
+        BIYOS_addcb(model, 1, &function, 1, variables, NULL, &extra) != BIYOS_OK ||
+        BIYOS_getncbvar(model, extra, &n) != BIYOS_OK || n != 1 ||
+        BIYOS_getcbvar(model, extra, n, &covered) != BIYOS_OK || covered != variables[0] ||
         BIYOS_delcbsp(model, 1, &extra, map) != BIYOS_OK || map[0] != 0 || map[1] != -1 ||
         BIYOS_delcbrg(model, 1, 1, NULL) != BIYOS_OK)
     {

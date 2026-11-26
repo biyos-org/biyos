@@ -62,6 +62,18 @@ std::string add_refusal(Model &model, const std::vector<Index> &functions)
     return refusal([&] { add(model, functions); });
 }
 
+Index add_listed(Model &model,
+                 const std::vector<Index> &functions,
+                 const std::vector<Index> &variables)
+{
+    return model.add_callback(functions, variables, nullptr);
+}
+
+std::string list_refusal(Model &model, const std::vector<Index> &variables)
+{
+    return refusal([&] { add_listed(model, {0}, variables); });
+}
+
 void set_jacobian(Model &model,
                   Index callback,
                   const std::vector<Index> &functions,
@@ -172,6 +184,50 @@ TEST(CallbackTest, AddRefused)
     EXPECT_EQ(add_refusal(model, {2, 0, 2}), kBad + "argument 'fun': function 2 is repeated");
     EXPECT_EQ(add_refusal(model, {1, 1}), kBad + "argument 'fun': function 1 is repeated");
     EXPECT_EQ(model.n_callbacks(), 1);
+}
+
+TEST(CallbackTest, Listed)
+{
+    Model model = with_functions(2);
+    EXPECT_EQ(add_listed(model, {1, 0}, {2, 0}), 0);
+    EXPECT_EQ(add_listed(model, {0}, {}), 1);
+    EXPECT_EQ(add(model, {1}), 2);
+    EXPECT_FALSE(model.callback(0).dense);
+    EXPECT_EQ(model.callback(0).variables, (std::vector<Index>{2, 0}));
+    EXPECT_FALSE(model.callback(1).dense);
+    EXPECT_TRUE(model.callback(1).variables.empty());
+    EXPECT_TRUE(model.callback(2).dense);
+    EXPECT_TRUE(model.callback(2).variables.empty());
+    const Model copy = model;
+    EXPECT_EQ(difference(model, copy), "");
+    EXPECT_EQ(copy.callback(0).variables, (std::vector<Index>{2, 0}));
+}
+
+TEST(CallbackTest, ListRefused)
+{
+    Model model = with_functions(1);
+    EXPECT_EQ(list_refusal(model, {0, 3}), kBad + "variable 3: unknown");
+    EXPECT_EQ(list_refusal(model, {-1}), kBad + "variable -1: unknown");
+    EXPECT_EQ(list_refusal(model, {2, 0, 2}), kBad + "argument 'var': variable 2 is repeated");
+    EXPECT_EQ(refusal([&] { add_listed(model, {1}, {0}); }), kBad + "function 1: unknown");
+    EXPECT_EQ(model.n_callbacks(), 0);
+}
+
+TEST(CallbackTest, Unlisted)
+{
+    Model model = with_functions(2);
+    add_listed(model, {1, 0}, {2, 0});
+    set_jacobian(model, 0, {0, 1}, {2, 0});
+    set_hessian(model, {0, 0}, {0, 2});
+    const std::string bad = kBad + "callback 0: ";
+    EXPECT_EQ(jacobian_refusal(model, {0, 1}, {0, 1}),
+              bad + "Jacobian of function 1: variable 1 is not listed");
+    EXPECT_EQ(hessian_refusal(model, {0, 1}, {2, 2}), bad + "Hessian variable 1 is not listed");
+    EXPECT_EQ(hessian_refusal(model, {0}, {1}), bad + "Hessian variable 1 is not listed");
+    EXPECT_EQ(hessian_refusal(model, {0}, {3}), bad + "Hessian variable 3 is unknown");
+    const Callback &held = model.callback(0);
+    EXPECT_EQ(held.jacobian_pairs, (std::vector<IndexPair>{{1, 2}, {0, 0}}));
+    EXPECT_EQ(held.hessian_pairs, (std::vector<IndexPair>{{0, 0}, {0, 2}}));
 }
 
 TEST(CallbackTest, Shared)
@@ -419,6 +475,25 @@ TEST(CallbackTest, Difference)
     Model product = copy;
     product.set_callback_hessian_product(0, succeed);
     EXPECT_EQ(difference(product, model), "callback 0: Hessian product given against none");
+}
+
+TEST(CallbackTest, ListDifference)
+{
+    Model model = with_functions(1);
+    add_listed(model, {0}, {2, 0});
+    Model dense = with_functions(1);
+    add(dense, {0});
+    EXPECT_EQ(difference(model, dense), "callback 0: listed against dense");
+    EXPECT_EQ(difference(dense, model), "callback 0: dense against listed");
+    Model empty = with_functions(1);
+    add_listed(empty, {0}, {});
+    EXPECT_EQ(difference(empty, dense), "callback 0: listed against dense");
+    Model swapped = with_functions(1);
+    add_listed(swapped, {0}, {0, 2});
+    EXPECT_EQ(difference(model, swapped), "callback 0: listed variable 0: index 2 against 0");
+    Model longer = with_functions(1);
+    add_listed(longer, {0}, {2, 0, 1});
+    EXPECT_EQ(difference(model, longer), "callback 0: listed variable count 2 against 3");
 }
 
 TEST(CallbackTest, Deleted)

@@ -50,12 +50,30 @@ Callback &Model::changed(Index callback)
 
 Index Model::add_callback(std::span<const Index> functions, void *data)
 {
+    return push_callback(functions, {}, true, data);
+}
+
+Index Model::add_callback(std::span<const Index> functions,
+                          std::span<const Index> variables,
+                          void *data)
+{
+    return push_callback(functions, variables, false, data);
+}
+
+Index Model::push_callback(std::span<const Index> functions,
+                           std::span<const Index> variables,
+                           bool dense,
+                           void *data)
+{
     check_n(kNoun, callbacks_, 1);
     check_count(functions);
     check_functions(functions, n_functions(), "fun");
+    check_variables(variables, n_variables(), "var");
     const Index index = n_callbacks();
     Callback added{
         .covered = std::vector<Index>(functions.begin(), functions.end()),
+        .dense = dense,
+        .variables = std::vector<Index>(variables.begin(), variables.end()),
         .data = data,
         .function = {},
         .jacobian_pairs = {},
@@ -79,8 +97,7 @@ void Model::set_callback_jacobian(Index callback,
                                   Routine jacobian)
 {
     Callback &held = changed(callback);
-    held.jacobian_pairs =
-        jacobian_pairs(callback, held.covered, functions, variables, n_variables());
+    held.jacobian_pairs = jacobian_pairs(callback, held, functions, variables, n_variables());
     held.jacobian = std::move(jacobian);
 }
 
@@ -90,7 +107,7 @@ void Model::set_callback_hessian(Index callback,
                                  Routine hessian)
 {
     Callback &held = changed(callback);
-    held.hessian_pairs = hessian_pairs(callback, rows, columns, n_variables());
+    held.hessian_pairs = hessian_pairs(callback, held, rows, columns, n_variables());
     held.hessian = std::move(hessian);
 }
 

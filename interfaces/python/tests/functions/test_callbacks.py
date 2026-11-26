@@ -81,7 +81,7 @@ def test_added(model):
     assert model.addcb([0, 2]) == 0
     f = model.addfun(2)
     data = {"scale": 2.0}
-    assert model.addcb(f, data) == 1
+    assert model.addcb(f, data=data) == 1
     assert model.getcbdata(0) is None
     assert model.getcbdata(1) is data
     other = []
@@ -99,8 +99,16 @@ def test_covered(model):
     assert model.getcbfun(1) == [3, 4]
 
 
+def test_listed(model):
+    assert model.addcb([0], [2, 0]) == 0
+    assert model.addcb([1], []) == 1
+    assert model.addcb([2], model.addvar(2)) == 2
+    assert model.addcb([0]) == 3
+    assert [model.getcbvar(cb) for cb in range(4)] == [[2, 0], [], [3, 4], None]
+
+
 def test_values(model, seen):
-    cb = model.addcb([2, 0], "data")
+    cb = model.addcb([2, 0], data="data")
     found = []
     model.setcbf(cb, partial(describe, found))
     status, values = evaluate(model, seen[-1], cb, 2, [1.0, 2.0, 3.0])
@@ -127,7 +135,7 @@ def test_copied(env, seen):
     source = biyos.Model(env)
     source.addvar(1)
     source.addfun(1)
-    cb = source.addcb([0], data)
+    cb = source.addcb([0], data=data)
     source.setcbf(cb, partial(describe, []))
     copy = source.copy()
     source.close()
@@ -270,6 +278,9 @@ def test_refused(model):
         (model.getcbdata, (1,), "callback 1: unknown"),
         (model.getncbfun, (1,), "callback 1: unknown"),
         (model.getcbfun, (-1,), "callback -1: unknown"),
+        (model.getcbvar, (1,), "callback 1: unknown"),
+        (model.addcb, ([1], [0, 0]), "argument 'var': variable 0 is repeated"),
+        (model.addcb, ([1], [3]), "variable 3: unknown"),
     ]
     for call, arguments, message in cases:
         assert refusal(call, *arguments) == bad + message
@@ -280,6 +291,17 @@ def test_refused(model):
     pair = "callback 0: Hessian pair (1, 0) has its second variable below"
     message = refusal(model.setcbh, cb, [1], [0], answer)
     assert message == bad + pair + " its first"
+
+
+def test_unlisted(model):
+    cb = model.addcb([0, 1], [2, 0])
+    model.setcbg(cb, [1, 0], [0, 2], answer)
+    model.setcbh(cb, [0, 2], [2, 2], answer)
+    bad = "invalid argument: callback 0: "
+    jacobian = "Jacobian of function 1: variable 1 is not listed"
+    assert refusal(model.setcbg, cb, [0, 1], [2, 1], answer) == bad + jacobian
+    hessian = "Hessian variable 1 is not listed"
+    assert refusal(model.setcbh, cb, [0], [1], answer) == bad + hessian
 
 
 def test_lengths(model):
@@ -309,7 +331,7 @@ def changes(model):
 
 
 def test_locked(env, model):
-    model.addcb([0], "kept")
+    model.addcb([0], data="kept")
     found = []
 
     def change(event):

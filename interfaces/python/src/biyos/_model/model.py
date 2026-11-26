@@ -1955,6 +1955,7 @@ class Model:
     def addcb(
         self,
         fun: Sequence[Index | Function] | Functions,
+        var: Sequence[Index | Variable] | Variables | None = None,
         data: object = None,
     ) -> Index:
         """Add a callback that covers functions of the model.
@@ -1970,6 +1971,12 @@ class Model:
         fun
             The functions, each listed once. Their order is the order of the
             callback's values.
+        var
+            The variables the callback reads, each listed once, or None for
+            every variable of the model, the default. Their order is the
+            order of the callback's ``x`` and ``v``, and of the values it
+            writes for ``hv``. Its patterns hold only these variables, and
+            name them by their model index.
         data
             The object passed to each of the callback's functions, None by
             default.
@@ -1996,21 +2003,23 @@ class Model:
         --------
         BIYOS_addcb
         """
-        n = len(fun)
-        indices = indices_of(self, Functions, "fun", fun, n)
+        m = len(fun)
+        functions = indices_of(self, Functions, "fun", fun, m)
+        n = _capi.DENSE if var is None else len(var)
+        variables = indices_of(self, Variables, "var", var, n)
         cell = py_object(data)
         cb = c_index()
         self._callbacks.keep(cell)
         self._call(
             lib.BIYOS_addcb,
+            m,
+            functions,
             n,
-            indices,
-            _capi.DENSE,
-            None,
+            variables,
             addressof(cell),
             byref(cb),
         )
-        self._callbacks.added(n)
+        self._callbacks.added(m)
         return cb.value
 
     def setcbf(self, cb: Index, f: Callable[..., object]) -> None:
@@ -2241,6 +2250,33 @@ class Model:
         n = self.getncbfun(cb)
         found = (c_index * n)()
         self._call(lib.BIYOS_getcbfun, integer("cb", cb), n, found)
+        return list(found)
+
+    def getcbvar(self, cb: Index) -> list[Index] | None:
+        """Read the variables a callback reads, as ``addcb`` takes them.
+
+        Parameters
+        ----------
+        cb
+            The callback.
+
+        Returns
+        -------
+        var
+            The variables, in the order given to ``addcb``, or None when
+            the callback reads every variable of the model.
+
+        See Also
+        --------
+        BIYOS_getncbvar
+        BIYOS_getcbvar
+        """
+        count = c_index()
+        self._call(lib.BIYOS_getncbvar, integer("cb", cb), byref(count))
+        if count.value == _capi.DENSE:
+            return None
+        found = (c_index * count.value)()
+        self._call(lib.BIYOS_getcbvar, integer("cb", cb), count.value, found)
         return list(found)
 
     def delcb(self, idx: Sequence[Index]) -> list[Index]:

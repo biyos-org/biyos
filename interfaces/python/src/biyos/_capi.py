@@ -354,6 +354,8 @@ def _declare_callbacks(lib: ctypes.CDLL) -> None:
     _declare(lib, "BIYOS_getncbfun", c_void_p, c_index, _INDICES)
     covered = (c_void_p, c_index, c_index, _INDICES)
     _declare(lib, "BIYOS_getcbfun", *covered)
+    _declare(lib, "BIYOS_getncbvar", c_void_p, c_index, _INDICES)
+    _declare(lib, "BIYOS_getcbvar", *covered)
     _declare_pair(lib, "BIYOS_delcb", _INDICES)
 
 

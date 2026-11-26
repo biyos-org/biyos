@@ -2604,15 +2604,16 @@ summary Add a callback that covers functions of the model.
 param mdl in The model.
 param m in The number of functions the callback covers.
 param fun in The functions, each listed once; their order is the order of the callback's values.
-param n in `BIYOS_DENSE`: the callback reads every variable of the model.
-param var in Null.
+param n in The number of variables the callback reads, or `BIYOS_DENSE` for every variable of the model.
+param var in The variables, each listed once; null when `n` is `BIYOS_DENSE`; may be null when `n` is 0.
 param data in A pointer passed to each of the callback's functions; the model keeps it and never frees it.
 param cb out Receives the index of the new callback; skipped when null.
 return `BIYOS_OK` once the callback is added.
-error BIYOS_ERR_BADARG `m` is not positive, `fun` is null, a function is not one of the model or is listed twice, or `n` is not `BIYOS_DENSE`.
+error BIYOS_ERR_BADARG `m` is not positive, `fun` is null, a function is not one of the model or is listed twice, `n` is negative and not `BIYOS_DENSE`, `var` is null while `n` is positive or not null while `n` is `BIYOS_DENSE`, or a variable is not one of the model or is listed twice.
 error BIYOS_ERR_NOMEMORY The model would hold more than 2147483647 callbacks.
 note The callback has no function yet and an empty pattern for each derivative. The calls below give them.
-see BIYOS_setcbf BIYOS_setcbg BIYOS_setcbh BIYOS_setcbhv BIYOS_setcbdata
+note Both lists are fixed for the callback's life. Its patterns hold only listed variables.
+see BIYOS_setcbf BIYOS_setcbg BIYOS_setcbh BIYOS_setcbhv BIYOS_setcbdata BIYOS_getcbvar
 since 0.1.0
 
 function BIYOS_setcbf
@@ -2634,7 +2635,7 @@ param fun in The function of each entry, one the callback covers; may be null on
 param var in The variable of each entry; may be null only when `nnz` is 0.
 param g in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
-error BIYOS_ERR_BADARG `cb` is not a callback of the model, `g` is null, `nnz` is negative, `fun` or `var` is null while `nnz` is not 0, a function is not one the callback covers, or a variable is not one of the model.
+error BIYOS_ERR_BADARG `cb` is not a callback of the model, `g` is null, `nnz` is negative, `fun` or `var` is null while `nnz` is not 0, a function is not one the callback covers, or a variable is not one of the model or not one the callback reads.
 error BIYOS_ERR_NOMEMORY The pattern would hold more entries than any allocation can hold.
 note The entries may come in any order, and an entry given more than once has its values summed. A variable left out of the entries of function $k$ has a zero derivative of $\gamma_k$.
 note A repeated entry sums here and is refused by `BIYOS_addlinterm`: a coefficient is data the model merges once, while a callback's value is computed again at every evaluation, and summing repeats spares the user code a merge of its own.
@@ -2650,7 +2651,7 @@ param var1 in The first variable of each pair; may be null only when `nnz` is 0.
 param var2 in The second variable of each pair, no less than the first; may be null only when `nnz` is 0.
 param h in The function; the model keeps it.
 return `BIYOS_OK` once the pattern and the function are kept, in place of those the callback had.
-error BIYOS_ERR_BADARG `cb` is not a callback of the model, `h` is null, `nnz` is negative, `var1` or `var2` is null while `nnz` is not 0, a variable is not one of the model, or a pair has its second variable below its first.
+error BIYOS_ERR_BADARG `cb` is not a callback of the model, `h` is null, `nnz` is negative, `var1` or `var2` is null while `nnz` is not 0, a variable is not one of the model or not one the callback reads, or a pair has its second variable below its first.
 error BIYOS_ERR_NOMEMORY The pattern would hold more pairs than any allocation can hold.
 note The pairs may come in any order, and a pair given more than once has its values summed. They cover every pair $(i, j)$, $i \le j$, where a second derivative of some $\gamma_k$ may be nonzero.
 note A pair with its second variable below its first is refused rather than folded onto its mirror, since a full symmetric pattern would then count each off-diagonal entry twice.
@@ -2709,6 +2710,29 @@ return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `cb` is not a callback of the model, `cap` is negative, or `cap` is less than the number `BIYOS_getncbfun` gives.
 note It reads back what `BIYOS_addcb` takes. A refused call writes nothing.
 see BIYOS_getncbfun BIYOS_addcb
+since 0.1.0
+
+function BIYOS_getncbvar
+summary Give the number of variables a callback reads.
+param mdl in The model.
+param cb in The callback.
+param n out Receives the number of variables the callback reads, or `BIYOS_DENSE` when it reads every variable of the model.
+return `BIYOS_OK`, with the number in `*n`.
+error BIYOS_ERR_BADARG `cb` is not a callback of the model, or `n` is null.
+note A number other than `BIYOS_DENSE` is the `cap` that `BIYOS_getcbvar` needs.
+see BIYOS_getcbvar
+since 0.1.0
+
+function BIYOS_getcbvar
+summary Read the variables a callback reads.
+param mdl in The model.
+param cb in The callback.
+param cap in The number of variables `var` holds.
+param var out Receives the variables, in the order given to `BIYOS_addcb`; skipped when null.
+return `BIYOS_OK` once the array is written.
+error BIYOS_ERR_BADARG `cb` is not a callback of the model, the callback reads every variable, `cap` is negative, or `cap` is less than the number `BIYOS_getncbvar` gives.
+note It reads back what `BIYOS_addcb` takes. A refused call writes nothing.
+see BIYOS_getncbvar BIYOS_addcb
 since 0.1.0
 
 function BIYOS_delcbsp BIYOS_delcbrg

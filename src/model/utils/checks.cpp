@@ -22,6 +22,25 @@ namespace
     refuse(noun, index, "unknown");
 }
 
+void check_listed(std::string_view noun,
+                  std::span<const Index> items,
+                  Index held,
+                  std::string_view argument)
+{
+    for (const Index index : items)
+    {
+        check_index(noun, index, held);
+    }
+    std::vector<Index> sorted(items.begin(), items.end());
+    std::ranges::sort(sorted);
+    const auto repeat = std::ranges::adjacent_find(sorted);
+    if (repeat != sorted.end())
+    {
+        const std::string reason = item(noun, *repeat) + " is repeated";
+        throw Error(ErrorKind::InvalidArgument, "argument '" + std::string(argument) + "'", reason);
+    }
+}
+
 }
 
 std::string item(std::string_view noun, Index index)
@@ -103,18 +122,12 @@ void check_function(std::string_view noun, Index index, Index function, Index fu
 
 void check_functions(std::span<const Index> functions, Index held, std::string_view argument)
 {
-    for (const Index function : functions)
-    {
-        check_index("function", function, held);
-    }
-    std::vector<Index> sorted(functions.begin(), functions.end());
-    std::ranges::sort(sorted);
-    const auto repeat = std::ranges::adjacent_find(sorted);
-    if (repeat != sorted.end())
-    {
-        const std::string reason = item("function", *repeat) + " is repeated";
-        throw Error(ErrorKind::InvalidArgument, "argument '" + std::string(argument) + "'", reason);
-    }
+    check_listed("function", functions, held, argument);
+}
+
+void check_variables(std::span<const Index> variables, Index held, std::string_view argument)
+{
+    check_listed("variable", variables, held, argument);
 }
 
 }

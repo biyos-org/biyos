@@ -36,6 +36,8 @@ struct IndexPair
 struct Callback
 {
     std::vector<Index> covered;
+    bool dense;
+    std::vector<Index> variables;
     void *data;
     Routine function;
     std::vector<IndexPair> jacobian_pairs;
