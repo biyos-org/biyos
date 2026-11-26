@@ -15,7 +15,10 @@ AREAS = {
     "cpp": CPP,
     "format": ("*.c", "*.h", "*.cpp", "*.hpp", ".clang-format"),
     "python": ("interfaces/python/*", *CPP),
-    "types": ("interfaces/python/src/*",),
+    "types": (
+        "interfaces/python/src/*",
+        "interfaces/python/tests/binding/forms.py",
+    ),
     "docs": (
         "docs/*",
         "tools/*",

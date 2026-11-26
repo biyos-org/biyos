@@ -42,6 +42,12 @@ class ChangeTest(unittest.TestCase):
             {"python", "docs"},
         )
 
+    def test_probe(self):
+        self.assertEqual(
+            on(["interfaces/python/tests/binding/forms.py"]),
+            {"python", "types", "docs"},
+        )
+
     def test_workflow(self):
         self.assertEqual(on([".github/workflows/ci.yml"]), set(AREAS))
 
