@@ -1,7 +1,6 @@
 from collections.abc import Callable, Iterator, Sequence
 from typing import (
     TYPE_CHECKING,
-    Any,
     ClassVar,
     Generic,
     SupportsIndex,
@@ -49,9 +48,9 @@ class View:
         return self._idx
 
 
-Item = TypeVar("Item", bound=View)
-Items = TypeVar("Items", bound="Block[Any]")
-Self = TypeVar("Self", bound="Block[Any]")
+Item = TypeVar("Item", bound=View, covariant=True)
+Items = TypeVar("Items", bound="Block[View]")
+Self = TypeVar("Self", bound="Block[View]")
 One: TypeAlias = Index | Item
 Many: TypeAlias = Sequence[One[Item]] | Items
 Selection: TypeAlias = One[Item] | Many[Item, Items]
@@ -137,7 +136,7 @@ class Block(Generic[Item]):
     @overload
     def __getitem__(self: Self, key: slice) -> Self: ...
 
-    def __getitem__(self, key: SupportsIndex | slice) -> "Item | Block[Item]":
+    def __getitem__(self, key: SupportsIndex | slice) -> "Item | Block[View]":
         """Return one item of the block, or a block for a slice.
 
         Parameters
@@ -551,7 +550,7 @@ def _indefinite(noun: str) -> str:
 
 
 def _member(
-    model: "Model", family: type[Block[Any]], name: str, view: View
+    model: "Model", family: type[Block[View]], name: str, view: View
 ) -> None:
     noun = _indefinite(family._element._noun)
     if not isinstance(view, family._element):
@@ -562,7 +561,7 @@ def _member(
 
 
 def index_of(
-    model: "Model", family: type[Block[Any]], name: str, value: SupportsIndex
+    model: "Model", family: type[Block[View]], name: str, value: SupportsIndex
 ) -> Index:
     if isinstance(value, View):
         _member(model, family, name, value)
@@ -570,7 +569,7 @@ def index_of(
 
 
 def range_of(
-    model: "Model", family: type[Block[Any]], name: str, block: Block[Any]
+    model: "Model", family: type[Block[View]], name: str, block: Block[View]
 ) -> range:
     if not isinstance(block, family):
         found = block._element._noun
