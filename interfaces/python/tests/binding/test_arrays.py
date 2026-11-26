@@ -3,7 +3,14 @@ from fractions import Fraction
 import pytest
 
 import biyos
-from biyos._convert.arrays import counts, doubles, indices_of, ints, strings
+from biyos._convert.arrays import (
+    counts,
+    doubles,
+    indices_of,
+    int64s,
+    ints,
+    strings,
+)
 from number import Growing
 
 FAMILIES = [
@@ -116,3 +123,45 @@ def test_long(model):
     x = Long(model, 0, 2, model._gen)
     with pytest.raises(ValueError, match="idx has length 2, not 3"):
         indices_of(model, biyos.Variables, "idx", x, 3)
+
+
+def test_one():
+    assert list(doubles("lb", 1.5, 1, True)) == [1.5]
+    assert list(ints("knd", 2, 1, True)) == [2]
+    assert list(int64s("node", 3, 1, True)) == [3]
+    assert [bytes(b) for b in strings("name", "x", 1, True)] == [b"x"]
+
+
+@pytest.mark.parametrize("convert", [doubles, ints, int64s, strings])
+def test_one_list(convert):
+    with pytest.raises(TypeError, match="^v must be one value for one index"):
+        convert("v", [0], 1, True)
+
+
+def test_one_entry():
+    with pytest.raises(TypeError, match="^lb must be a number, not str"):
+        doubles("lb", "x", 1, True)
+    with pytest.raises(TypeError, match="^an entry of lb must be a number"):
+        doubles("lb", ["x"], 1)
+    with pytest.raises(TypeError, match="^knd must be an int, not float"):
+        ints("knd", 0.5, 1, True)
+    with pytest.raises(TypeError, match="^node must be an int, not float"):
+        int64s("node", 0.5, 1, True)
+    with pytest.raises(TypeError, match="^name must be a str, not int"):
+        strings("name", 0, 1, True)
+
+
+def test_one_view(model):
+    x = model.addvar(2)
+    assert list(indices_of(model, biyos.Variables, "var", x[1], 1, True)) == [1]
+    with pytest.raises(TypeError, match="^var must be one value"):
+        indices_of(model, biyos.Variables, "var", x, 2, True)
+    f = model.addfun(1)
+    with pytest.raises(TypeError, match="^var is a function"):
+        indices_of(model, biyos.Variables, "var", f[0], 1, True)
+
+
+def test_adder_scalar(model):
+    kind = biyos.VariableKind.CONTINUOUS
+    with pytest.raises(TypeError, match="^lb must be a sequence, not float"):
+        model.addvar(1, [kind], 0.0)
