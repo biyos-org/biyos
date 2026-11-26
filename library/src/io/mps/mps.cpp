@@ -15,8 +15,11 @@
 #include "io/report.hpp"
 #include "model/model.hpp"
 
+#include <array>
+#include <cstddef>
 #include <istream>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -26,10 +29,18 @@ namespace biyos
 namespace
 {
 
+constexpr std::array<std::size_t, 6> kStarts{1, 4, 14, 24, 39, 49};
+
+std::span<const std::size_t> starts_of(std::string_view text)
+{
+    const std::string_view first = text.substr(kStarts[0], kStarts[1] - kStarts[0]);
+    return std::span(kStarts).subspan(trimmed(first).empty() ? 1 : 0);
+}
+
 class MpsReader
 {
   public:
-    MpsReader(Stream stream, std::istream &input, const std::string &file);
+    MpsReader(Stream stream, std::istream &input, const std::string &file, MpsForm form);
 
     Model read();
 
@@ -40,11 +51,13 @@ class MpsReader
     void leave();
     void read_name();
     void read_sense(std::string_view word);
+    void split_fixed();
     void data();
     void rest();
 
     Stream stream_;
     Lines lines_;
+    MpsForm form_;
     Draft draft_;
     Section section_ = Section::None;
     bool sensed_ = false;
@@ -55,8 +68,8 @@ class MpsReader
     Sets sets_;
 };
 
-MpsReader::MpsReader(Stream stream, std::istream &input, const std::string &file)
-    : stream_(stream), lines_(input, file)
+MpsReader::MpsReader(Stream stream, std::istream &input, const std::string &file, MpsForm form)
+    : stream_(stream), lines_(input, file), form_(form)
 {
 }
 
@@ -71,6 +84,7 @@ Model MpsReader::read()
         const char first = lines_.text().front();
         if (first == ' ' || first == '\t')
         {
+            split_fixed();
             data();
         }
         else
@@ -174,6 +188,16 @@ void MpsReader::read_sense(std::string_view word)
     sensed_ = true;
 }
 
+void MpsReader::split_fixed()
+{
+    const bool marker = section_ == Section::Columns && marker_line(lines_.fields());
+    if (form_ == MpsForm::Free || section_ == Section::Sense || marker)
+    {
+        return;
+    }
+    lines_.split(starts_of(lines_.text()));
+}
+
 void MpsReader::data()
 {
     switch (section_)
@@ -229,9 +253,9 @@ void MpsReader::rest()
 
 }
 
-Model read_mps(Stream stream, std::istream &input, const std::string &file)
+Model read_mps(Stream stream, std::istream &input, const std::string &file, MpsForm form)
 {
-    return MpsReader(stream, input, file).read();
+    return MpsReader(stream, input, file, form).read();
 }
 
 }

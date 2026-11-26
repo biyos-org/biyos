@@ -89,7 +89,7 @@ Model read_file(Env &env, std::string_view path, FileFormat format)
     switch (format)
     {
     case FileFormat::Mps:
-        return read_mps(env.stream(), input, file);
+        return read_mps(env.stream(), input, file, MpsForm::Free);
     case FileFormat::Nl:
         break;
     }

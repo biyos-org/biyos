@@ -45,24 +45,24 @@ inline std::string bad(int line, std::string_view message)
     return "bad file: file 't.mps' line " + std::to_string(line) + ": " + std::string(message);
 }
 
-inline Model read_text(Env &env, std::string_view text)
+inline Model read_text(Env &env, std::string_view text, MpsForm form = MpsForm::Free)
 {
     std::istringstream input{std::string(text)};
-    return read_mps(env.stream(), input, "t.mps");
+    return read_mps(env.stream(), input, "t.mps", form);
 }
 
-inline Model read_sample(std::string_view text)
+inline Model read_sample(std::string_view text, MpsForm form = MpsForm::Free)
 {
     Env env;
-    return read_text(env, text);
+    return read_text(env, text, form);
 }
 
-inline std::string fault_of(std::string_view text)
+inline std::string fault_of(std::string_view text, MpsForm form = MpsForm::Free)
 {
     Env env;
     try
     {
-        read_text(env, text);
+        read_text(env, text, form);
     }
     catch (const Error &error)
     {
@@ -80,13 +80,13 @@ inline Warning warning_of(const Event &event)
     };
 }
 
-inline std::vector<Warning> warnings_of(std::string_view text)
+inline std::vector<Warning> warnings_of(std::string_view text, MpsForm form = MpsForm::Free)
 {
     Env env;
     std::vector<Warning> heard;
     const auto record = [&heard](const Event &event) { heard.push_back(warning_of(event)); };
     env.events().add_hook(EventKind::Message, EventLevel::Warning, record);
-    read_text(env, text);
+    read_text(env, text, form);
     return heard;
 }
 
@@ -97,12 +97,17 @@ inline std::vector<Index> indices(std::size_t n)
     return all;
 }
 
+inline void rename(Model &model, Family family, const std::vector<std::string_view> &names)
+{
+    model.set_names(family, indices(names.size()), names);
+}
+
 inline void add_columns(Model &model,
                         const std::vector<Variable> &variables,
                         const std::vector<std::string_view> &names)
 {
     model.add_variables(variables);
-    model.set_names(Family::Variable, indices(names.size()), names);
+    rename(model, Family::Variable, names);
 }
 
 inline void add_rows(Model &model,
@@ -118,7 +123,7 @@ inline void add_named(Model &model,
                       const std::vector<std::string_view> &names)
 {
     model.add_constraints(constraints);
-    model.set_names(Family::Constraint, indices(names.size()), names);
+    rename(model, Family::Constraint, names);
 }
 
 inline void add_goal(Model &model, Index function, ObjectiveSense sense, std::string_view name)

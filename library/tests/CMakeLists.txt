@@ -143,6 +143,7 @@ target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io
     io/mps/test_faults.cpp
+    io/mps/test_fixed.cpp
     io/mps/test_leftovers.cpp
     io/mps/test_mps.cpp
     io/mps/test_refusals.cpp
