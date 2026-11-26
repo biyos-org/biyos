@@ -163,17 +163,15 @@ TEST(EnvTest, OwnsEvents)
     EXPECT_TRUE(view.events().wanted(biyos::EventKind::Message, biyos::EventLevel::Info));
 }
 
-TEST(EnvTest, InterruptFlag)
+TEST(EnvTest, InterruptCount)
 {
     biyos::Env env;
     const biyos::Env &view = env;
-    EXPECT_FALSE(view.interrupt().is_set());
-    env.interrupt().set();
-    EXPECT_TRUE(view.interrupt().is_set());
-    env.interrupt().set();
-    EXPECT_TRUE(view.interrupt().is_set());
-    env.interrupt().clear();
-    EXPECT_FALSE(view.interrupt().is_set());
+    EXPECT_EQ(view.interrupt().count(), 0U);
+    env.interrupt().request();
+    EXPECT_EQ(view.interrupt().count(), 1U);
+    env.interrupt().request();
+    EXPECT_EQ(view.interrupt().count(), 2U);
 }
 
 TEST(EnvTest, ScopedError)

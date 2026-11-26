@@ -73,6 +73,6 @@ BIYOS_status BIYOS_interrupt(BIYOS_env *env)
     {
         return BIYOS_ERR_BADARG;
     }
-    env->core.interrupt().set();
+    env->core.interrupt().request();
     return BIYOS_OK;
 }

@@ -80,14 +80,6 @@ inline Model &writable(Session &session)
     return session.change();
 }
 
-inline void start(biyos::Env &env) noexcept
-{
-    if (!env.events().delivering())
-    {
-        env.interrupt().clear();
-    }
-}
-
 template <auto Body, typename Access, typename Target, typename... Args>
 void admitted(const Access &access, Target &target, Args... arguments)
 {
@@ -103,7 +95,6 @@ BIYOS_status guarded(BIYOS_env *env, Args... arguments) noexcept
         return BIYOS_ERR_BADARG;
     }
     biyos::Env &core = env->core;
-    start(core);
     const EnvAccess access(core);
     return biyos::capi::guard(core.stream(), [&] { admitted<Body>(access, core, arguments...); });
 }
@@ -117,10 +108,6 @@ BIYOS_status guarded(Handle *session, Args... arguments) noexcept
         return BIYOS_ERR_BADARG;
     }
     biyos::Env &env = session->env();
-    if (!session->usage().held())
-    {
-        start(env);
-    }
     const ModelAccess access(env, session->usage());
     return biyos::capi::guard(session->stream(),
                               [&] { admitted<Body>(access, *session, arguments...); });

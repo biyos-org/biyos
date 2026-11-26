@@ -14,6 +14,7 @@
 #include <csignal>
 #include <functional>
 #include <future>
+#include <latch>
 #include <limits>
 #include <string>
 
@@ -34,6 +35,13 @@ struct Loop
     long limit = (std::numeric_limits<long>::max)();
     long polls = 0;
     TerminationStatus outcome = TerminationStatus::NotSolved;
+};
+
+struct Relay
+{
+    std::latch running{1};
+    std::latch resumed{1};
+    std::atomic<bool> released = false;
 };
 
 struct Stopper
@@ -77,6 +85,30 @@ BIYOS_status interrupt_after(std::future<void> started, BIYOS_env *env)
 {
     started.wait();
     return BIYOS_interrupt(env);
+}
+
+BIYOS_status run_aside(const Model *model, Loop *loop)
+{
+    return run(*model, *loop);
+}
+
+void hold(Relay *relay, biyos::Env &)
+{
+    relay->running.count_down();
+    relay->resumed.wait();
+}
+
+void resume(Relay *relay)
+{
+    if (!relay->released.exchange(true))
+    {
+        relay->resumed.count_down();
+    }
+}
+
+void release(Relay *relay, biyos::Env &)
+{
+    resume(relay);
 }
 
 void on_signal(int)
@@ -141,6 +173,26 @@ TEST(InterruptTest, OtherThread)
     EXPECT_EQ(loop.outcome, TerminationStatus::UserStop);
 }
 
+TEST(InterruptTest, OtherModel)
+{
+    const Env env;
+    const Model first(env);
+    const Model second(env);
+    Relay relay;
+    Loop stopped{.start = std::bind_front(hold, &relay), .limit = kPolls};
+    auto other = std::async(std::launch::async, run_aside, &second, &stopped);
+    relay.running.wait();
+    EXPECT_EQ(BIYOS_interrupt(env.get()), BIYOS_OK);
+    Loop next{.start = std::bind_front(release, &relay), .limit = kPolls};
+    EXPECT_EQ(run(first, next), BIYOS_OK);
+    resume(&relay);
+    EXPECT_EQ(other.get(), BIYOS_OK);
+    EXPECT_EQ(stopped.outcome, TerminationStatus::UserStop);
+    EXPECT_EQ(stopped.polls, 0);
+    EXPECT_EQ(next.outcome, TerminationStatus::NotSolved);
+    EXPECT_EQ(next.polls, kPolls);
+}
+
 TEST(InterruptTest, SignalHandler)
 {
     const Env env;
@@ -193,16 +245,15 @@ TEST(InterruptTest, NextCall)
 {
     const Env env;
     const Model model(env);
-    const biyos::Interrupt &flag = env.get()->core.interrupt();
+    const biyos::Interrupt &requests = env.get()->core.interrupt();
     BIYOS_real value = 0.0;
     BIYOS_index n = 0;
     ASSERT_EQ(BIYOS_interrupt(env.get()), BIYOS_OK);
-    EXPECT_TRUE(flag.is_set());
     EXPECT_EQ(BIYOS_getenvdblopt(env.get(), BIYOS_OPT_MAXTIME, &value), BIYOS_OK);
-    EXPECT_FALSE(flag.is_set());
+    EXPECT_EQ(requests.count(), 1U);
     ASSERT_EQ(BIYOS_interrupt(env.get()), BIYOS_OK);
     EXPECT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_OK);
-    EXPECT_FALSE(flag.is_set());
+    EXPECT_EQ(requests.count(), 2U);
 }
 
 TEST(InterruptTest, LateInterrupt)
