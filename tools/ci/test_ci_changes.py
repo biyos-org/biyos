@@ -27,6 +27,10 @@ class ChangeTest(unittest.TestCase):
             {"cpp", "format", "python", "docs"},
         )
 
+    def test_bench(self):
+        self.assertEqual(on(["bench/run.py"]), {"cpp"})
+        self.assertEqual(on(["bench/roundtrip.cpp"]), {"cpp", "format"})
+
     def test_python_example(self):
         self.assertEqual(
             on(["examples/code/python/start.py"]), {"python", "docs"}

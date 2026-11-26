@@ -13,7 +13,7 @@ CPP = (
     "library/.clang-tidy",
 )
 AREAS = {
-    "cpp": CPP,
+    "cpp": (*CPP, "bench/*"),
     "format": ("*.c", "*.h", "*.cpp", "*.hpp", "library/.clang-format"),
     "python": (
         "interfaces/python/*",
