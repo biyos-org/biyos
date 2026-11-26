@@ -253,6 +253,7 @@ def indicators(mdl: Model) -> None:
 
 
 def others(mdl: Model) -> None:
+    assert_type(mdl.compare(mdl), str | None)
     mdl.setsosname(one, name)
     mdl.setsosname(flat, names)
     mdl.setconetol(one, real, real)

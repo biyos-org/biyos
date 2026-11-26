@@ -750,8 +750,10 @@ static BIYOS_status use_copy(BIYOS_env *env, BIYOS_model *model)
 {
     BIYOS_model *copy = NULL;
     BIYOS_index constraints = 0;
+    BIYOS_int same = 0;
     BIYOS_status status = BIYOS_copymdl(model, env, &copy);
-    if (status == BIYOS_OK && (BIYOS_getncon(copy, &constraints) != BIYOS_OK || constraints != 2))
+    if (status == BIYOS_OK && (BIYOS_getncon(copy, &constraints) != BIYOS_OK || constraints != 2 ||
+                               BIYOS_cmpmdl(model, copy, &same) != BIYOS_OK || same != 1))
     {
         status = BIYOS_ERR_INTERNAL;
     }

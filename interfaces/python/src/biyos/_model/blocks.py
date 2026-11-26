@@ -193,7 +193,7 @@ class Block(Generic[Item]):
             made.
         """
         self._check()
-        mdl = self._model._peer(mdl)
+        mdl = self._model._peer("mdl", mdl)
         held = self._held(mdl)
         if held < self._stop:
             noun = self._element._noun

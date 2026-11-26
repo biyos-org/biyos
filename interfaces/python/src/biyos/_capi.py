@@ -150,6 +150,7 @@ def _declare_model(lib: ctypes.CDLL) -> None:
     _declare(lib, "BIYOS_newmdl", c_void_p, POINTER(c_void_p))
     copy = (c_void_p, c_void_p, POINTER(c_void_p))
     _declare(lib, "BIYOS_copymdl", *copy)
+    _declare(lib, "BIYOS_cmpmdl", c_void_p, c_void_p, _INTEGERS)
     _declare(lib, "BIYOS_freemdl", c_void_p)
     read = (c_void_p, c_char_p, c_integer, POINTER(c_void_p))
     _declare(lib, "BIYOS_readmdl", *read)
