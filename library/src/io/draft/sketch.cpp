@@ -96,7 +96,8 @@ std::vector<Index> add_rows(Draft &draft, const Model &model)
     for (Index k = 0; k < model.n_constraints(); ++k)
     {
         const Constraint &constraint = model.constraint(k);
-        draft.rows.push_back(row_shape(k, constraint, model.constant(constraint.function)));
+        const Real constant = model.constant(constraint.function);
+        draft.rows.push_back(row_shape(item("constraint", k), constraint, constant));
         enter(draft.row_names,
               label_of(model, Family::Constraint, k, "R" + text_of(k), taken),
               Family::Constraint,
