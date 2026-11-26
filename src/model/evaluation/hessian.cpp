@@ -18,9 +18,11 @@ namespace biyos
 {
 
 using evaluation::evaluate;
+using evaluation::gather;
 using evaluation::has;
 using evaluation::Part;
 using evaluation::require;
+using evaluation::scatter;
 
 namespace
 {
@@ -75,11 +77,7 @@ void Evaluation::weigh(std::span<const Real> w)
 
 std::span<const Real> Evaluation::covered(const Callback &callback, std::span<const Real> w)
 {
-    for (std::size_t i = 0; i < callback.covered.size(); ++i)
-    {
-        covered_[i] = w[to_size(callback.covered[i])];
-    }
-    return std::span(covered_).first(callback.covered.size());
+    return gather(callback.covered, w, covered_);
 }
 
 void Evaluation::term_hessian(std::span<const Real> w, std::span<Real> h) const
@@ -140,17 +138,15 @@ void Evaluation::evaluate_hessian_product(Checker checker, const Point &point, s
     {
         const Callback &callback = model_.callback(c);
         const std::span<const Real> w = covered(callback, point.w);
-        const Request arguments = request(c, {.x = point.x, .w = w, .v = point.v});
         if (has(callback, Part::Product))
         {
-            const std::span<Real> out = std::span(out_).first(hv.size());
+            const Request arguments = request(c, {.x = point.x, .w = w, .v = point.v});
+            const std::span<Real> out = std::span(out_).first(arguments.v.size());
             evaluate(checker, callback, Part::Product, arguments, out);
-            for (std::size_t i = 0; i < out.size(); ++i)
-            {
-                hv[i] += out[i];
-            }
+            scatter(callback, out, hv);
             continue;
         }
+        const Request arguments = request(c, {.x = point.x, .w = w, .v = {}});
         const std::span<Real> out = std::span(out_).first(callback.hessian_pairs.size());
         evaluate(checker, callback, Part::Hessian, arguments, out);
         multiply(c, point.v, hv);

@@ -2,15 +2,18 @@
 
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
+#include "core/error.hpp"
 #include "core/numbers.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
+#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <span>
 #include <vector>
 
+using biyos::Callback;
 using biyos::Index;
 using biyos::Model;
 using biyos::Real;
@@ -24,6 +27,8 @@ using biyos::capi::length;
 using biyos::capi::listed;
 using biyos::capi::require;
 using biyos::capi::writable;
+using biyos::capi::write_array;
+using biyos::capi::write_value;
 
 namespace
 {
@@ -52,18 +57,33 @@ struct Caller
     }
 };
 
+void check_dense(const BIYOS_index *variables)
+{
+    if (variables != nullptr)
+    {
+        throw biyos::Error(biyos::ErrorKind::InvalidArgument,
+                           "argument 'var'",
+                           "is not null for BIYOS_DENSE");
+    }
+}
+
 void add_callback(Session &session,
-                  BIYOS_index n,
+                  BIYOS_index m,
                   const BIYOS_index *functions,
+                  BIYOS_index n,
+                  const BIYOS_index *variables,
                   void *data,
                   BIYOS_index *cb)
 {
     Model &model = writable(session);
-    const Index index = model.add_callback(listed(n, functions, "fun"), data);
-    if (cb != nullptr)
+    const std::span<const Index> covered = listed(m, functions, "fun", "m");
+    if (n == BIYOS_DENSE)
     {
-        *cb = index;
+        check_dense(variables);
+        write_value(model.add_callback(covered, data), cb);
+        return;
     }
+    write_value(model.add_callback(covered, listed(n, variables, "var"), data), cb);
 }
 
 void set_values(Session &session, BIYOS_index cb, BIYOS_cbf f)
@@ -131,6 +151,27 @@ void n_functions(const Session &session, BIYOS_index cb, BIYOS_index *n)
     *out = to_index(session.model().callback(cb).covered.size());
 }
 
+void n_variables(const Session &session, BIYOS_index cb, BIYOS_index *n)
+{
+    BIYOS_index *out = require(n, "n");
+    const Callback &held = session.model().callback(cb);
+    *out = held.dense ? BIYOS_DENSE : to_index(held.variables.size());
+}
+
+void get_variables(const Session &session,
+                   BIYOS_index cb,
+                   BIYOS_index capacity,
+                   BIYOS_index *variables)
+{
+    const Callback &held = session.model().callback(cb);
+    if (held.dense)
+    {
+        biyos::refuse("callback", cb, "reads every variable");
+    }
+    check_capacity(capacity, held.variables.size(), "cap", "variables");
+    write_array(held.variables, variables);
+}
+
 void get_functions(const Session &session,
                    BIYOS_index cb,
                    BIYOS_index capacity,
@@ -147,12 +188,14 @@ void get_functions(const Session &session,
 }
 
 BIYOS_status BIYOS_addcb(BIYOS_model *mdl,
-                         BIYOS_index n,
+                         BIYOS_index m,
                          const BIYOS_index *fun,
+                         BIYOS_index n,
+                         const BIYOS_index *var,
                          void *data,
                          BIYOS_index *cb)
 {
-    return guarded<add_callback>(mdl, n, fun, data, cb);
+    return guarded<add_callback>(mdl, m, fun, n, var, data, cb);
 }
 
 BIYOS_status BIYOS_setcbf(BIYOS_model *mdl, BIYOS_index cb, BIYOS_cbf f)
@@ -206,4 +249,17 @@ BIYOS_status BIYOS_getcbfun(const BIYOS_model *mdl,
                             BIYOS_index *fun)
 {
     return guarded<get_functions>(mdl, cb, cap, fun);
+}
+
+BIYOS_status BIYOS_getncbvar(const BIYOS_model *mdl, BIYOS_index cb, BIYOS_index *n)
+{
+    return guarded<n_variables>(mdl, cb, n);
+}
+
+BIYOS_status BIYOS_getcbvar(const BIYOS_model *mdl,
+                            BIYOS_index cb,
+                            BIYOS_index cap,
+                            BIYOS_index *var)
+{
+    return guarded<get_variables>(mdl, cb, cap, var);
 }

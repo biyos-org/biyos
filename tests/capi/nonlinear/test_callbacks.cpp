@@ -87,7 +87,8 @@ BIYOS_index add(const Model &model, const std::vector<BIYOS_index> &functions, v
 {
     BIYOS_index cb = -1;
     const auto n = static_cast<BIYOS_index>(functions.size());
-    EXPECT_EQ(BIYOS_addcb(model.get(), n, functions.data(), data, &cb), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addcb(model.get(), n, functions.data(), BIYOS_DENSE, nullptr, data, &cb),
+              BIYOS_OK);
     return cb;
 }
 
@@ -188,7 +189,7 @@ void change_all(Attempt &attempt)
 {
     BIYOS_model *model = attempt.model;
     const BIYOS_index function = 1;
-    note(attempt, BIYOS_addcb(model, 1, &function, nullptr, nullptr));
+    note(attempt, BIYOS_addcb(model, 1, &function, BIYOS_DENSE, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_setcbf(model, 0, record));
     note(attempt, BIYOS_setcbg(model, 0, 0, nullptr, nullptr, record));
     note(attempt, BIYOS_setcbh(model, 0, 0, nullptr, nullptr, record));
@@ -212,7 +213,8 @@ TEST(CallbackTest, Registered)
     int tag = 0;
     EXPECT_EQ(add(model, {2, 0}, &tag), 0);
     const BIYOS_index function = 1;
-    EXPECT_EQ(BIYOS_addcb(model.get(), 1, &function, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addcb(model.get(), 1, &function, BIYOS_DENSE, nullptr, nullptr, nullptr),
+              BIYOS_OK);
     const std::vector<BIYOS_index> fun{0, 2, 0};
     const std::vector<BIYOS_index> var{1, 0, 1};
     const std::vector<BIYOS_index> var1{1, 0, 1};
@@ -252,11 +254,12 @@ TEST(CallbackTest, Nulls)
     EXPECT_EQ(failed(env, BIYOS_getcbdata(mdl, 0, nullptr)), null + "data': is null");
     EXPECT_EQ(failed(env, BIYOS_getncbfun(mdl, 0, nullptr)), null + "n': is null");
     EXPECT_EQ(BIYOS_getcbfun(mdl, 0, 2, nullptr), BIYOS_OK);
-    EXPECT_EQ(failed(env, BIYOS_addcb(mdl, 1, nullptr, nullptr, nullptr)), null + "fun': is null");
-    EXPECT_EQ(failed(env, BIYOS_addcb(mdl, -1, nullptr, nullptr, nullptr)),
-              null + "n': -1 is negative");
-    EXPECT_EQ(failed(env, BIYOS_addcb(mdl, 0, nullptr, nullptr, nullptr)),
-              null + "n': 0 is not positive");
+    EXPECT_EQ(failed(env, BIYOS_addcb(mdl, 1, nullptr, BIYOS_DENSE, nullptr, nullptr, nullptr)),
+              null + "fun': is null");
+    EXPECT_EQ(failed(env, BIYOS_addcb(mdl, -1, nullptr, BIYOS_DENSE, nullptr, nullptr, nullptr)),
+              null + "m': -1 is negative");
+    EXPECT_EQ(failed(env, BIYOS_addcb(mdl, 0, nullptr, BIYOS_DENSE, nullptr, nullptr, nullptr)),
+              null + "m': 0 is not positive");
     const BIYOS_index variable = 0;
     EXPECT_EQ(failed(env, BIYOS_setcbg(mdl, 0, 1, nullptr, &variable, record)),
               null + "fun': is null");
@@ -270,7 +273,8 @@ TEST(CallbackTest, Nulls)
               null + "var2': is null");
     EXPECT_EQ(failed(env, BIYOS_setcbh(mdl, 0, -1, nullptr, nullptr, record)),
               null + "nnz': -1 is negative");
-    EXPECT_EQ(BIYOS_addcb(nullptr, 1, &variable, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addcb(nullptr, 1, &variable, BIYOS_DENSE, nullptr, nullptr, nullptr),
+              BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getcbdata(nullptr, 0, nullptr), BIYOS_ERR_BADARG);
     BIYOS_index n = -1;
     EXPECT_EQ(BIYOS_getncbfun(nullptr, 0, &n), BIYOS_ERR_BADARG);
@@ -307,7 +311,7 @@ TEST(CallbackTest, Unknown)
     EXPECT_EQ(n, -1);
     EXPECT_EQ(failed(env, BIYOS_setcbf(mdl, -1, record)), kBad + "callback -1: unknown");
     const BIYOS_index function = 3;
-    EXPECT_EQ(failed(env, BIYOS_addcb(mdl, 1, &function, nullptr, nullptr)),
+    EXPECT_EQ(failed(env, BIYOS_addcb(mdl, 1, &function, BIYOS_DENSE, nullptr, nullptr, nullptr)),
               kBad + "function 3: unknown");
 }
 
@@ -412,8 +416,10 @@ TEST(CallbackTest, Shared)
     EXPECT_EQ(held(model, 0).covered, (std::vector<Index>{1, 0}));
     EXPECT_EQ(held(model, 1).covered, (std::vector<Index>{2, 1}));
     const std::vector<BIYOS_index> twice{2, 1, 2};
-    EXPECT_EQ(failed(env, BIYOS_addcb(model.get(), 3, twice.data(), nullptr, nullptr)),
-              kBad + "argument 'fun': function 2 is repeated");
+    EXPECT_EQ(
+        failed(env,
+               BIYOS_addcb(model.get(), 3, twice.data(), BIYOS_DENSE, nullptr, nullptr, nullptr)),
+        kBad + "argument 'fun': function 2 is repeated");
     EXPECT_EQ(model.get()->model().n_callbacks(), 2);
 }
 

@@ -631,6 +631,26 @@ std::string held_by(Model &model, const Indices &indices)
     return message;
 }
 
+int answer(const biyos::Request &, std::span<Real>, void *)
+{
+    return 0;
+}
+
+struct Listed
+{
+    Indices variables;
+    Indices columns;
+    Indices firsts;
+    Indices seconds;
+};
+
+void add_listed(Model &model, const Listed &listed)
+{
+    const Index callback = model.add_callback(Indices{1, 2}, listed.variables, nullptr);
+    model.set_callback_jacobian(callback, Indices{2, 1}, listed.columns, answer);
+    model.set_callback_hessian(callback, listed.firsts, listed.seconds, answer);
+}
+
 void add_node(Model &model, Index variable)
 {
     model.add_variable_node(variable);
@@ -844,6 +864,31 @@ TEST(DeleteTest, VariableCallbacks)
     const Model before = model;
     EXPECT_EQ(model.delete_variables(Indices{}), (Map{0, 1, 2, 3, 4}));
     EXPECT_EQ(difference(model, before), "");
+}
+
+TEST(DeleteTest, VariableLists)
+{
+    Model model = built(spaced());
+    add_listed(model,
+               {.variables = {4, 1}, .columns = {4, 1}, .firsts = {1, 4}, .seconds = {4, 4}});
+    model.add_callback(std::array<Index, 1>{0}, std::array<Index, 1>{4}, nullptr);
+    EXPECT_EQ(model.delete_variables(Indices{3}), (Map{0, 1, 2, -1, 3}));
+    Model wanted = built(spaced());
+    wanted.delete_variables(Indices{3});
+    add_listed(wanted,
+               {.variables = {3, 1}, .columns = {3, 1}, .firsts = {1, 3}, .seconds = {3, 3}});
+    wanted.add_callback(std::array<Index, 1>{0}, std::array<Index, 1>{3}, nullptr);
+    EXPECT_EQ(difference(model, wanted), "");
+}
+
+TEST(DeleteTest, VariableListed)
+{
+    Model model = built(spaced());
+    add_listed(model,
+               {.variables = {4, 1}, .columns = {4, 1}, .firsts = {1, 4}, .seconds = {4, 4}});
+    EXPECT_EQ(held_by(model, {3, 1}), "in use: variable 1: used by callback 0");
+    model.add_callback(std::array<Index, 1>{0}, nullptr);
+    EXPECT_EQ(held_by(model, {3}), "in use: variable 3: used by callback 1");
 }
 
 TEST(DeleteTest, VariableChecks)

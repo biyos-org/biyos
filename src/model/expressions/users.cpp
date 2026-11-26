@@ -72,19 +72,6 @@ void check_callbacks(std::span<const Callback> callbacks, std::span<const Index>
     }
 }
 
-void renumber(Index &function, std::span<const Index> map) noexcept
-{
-    function = map[to_size(function)];
-}
-
-void renumber_all(std::span<Index> functions, std::span<const Index> map) noexcept
-{
-    for (Index &function : functions)
-    {
-        renumber(function, map);
-    }
-}
-
 template <typename Record>
 void renumber_records(std::span<Record> records, std::span<const Index> map) noexcept
 {

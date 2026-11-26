@@ -124,7 +124,7 @@ void add_user(BIYOS_model *model, bool product)
 {
     const std::array covered{2, 1};
     BIYOS_index cb = -1;
-    ASSERT_EQ(BIYOS_addcb(model, 2, covered.data(), nullptr, &cb), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcb(model, 2, covered.data(), BIYOS_DENSE, nullptr, nullptr, &cb), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcbf(model, cb, user_values), BIYOS_OK);
     const std::array functions{2, 1, 2, 2};
     const std::array variables{3, 1, 0, 3};
@@ -143,7 +143,7 @@ void add_second(BIYOS_model *model)
 {
     const std::array covered{0};
     BIYOS_index cb = -1;
-    ASSERT_EQ(BIYOS_addcb(model, 1, covered.data(), nullptr, &cb), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcb(model, 1, covered.data(), BIYOS_DENSE, nullptr, nullptr, &cb), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcbf(model, cb, second_values), BIYOS_OK);
     const std::array functions{0, 0};
     const std::array variables{3, 2};

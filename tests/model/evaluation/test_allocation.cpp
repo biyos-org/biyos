@@ -51,6 +51,12 @@ int curved(const Request &request, std::span<Real> out, void *)
     return 0;
 }
 
+int multiplied(const Request &request, std::span<Real> out, void *)
+{
+    out[0] = 2.0 * request.w[0] * request.v[0];
+    return 0;
+}
+
 void add_callback(Model &model)
 {
     const std::array covered{1};
@@ -81,12 +87,22 @@ Model evaluated()
     return model;
 }
 
+Model listed()
+{
+    Model model = evaluated();
+    const std::array covered{0};
+    const std::array<Index, 1> variables{1};
+    const Index callback = model.add_callback(covered, variables, nullptr);
+    model.set_callback_function(callback, squared);
+    model.set_callback_jacobian(callback, covered, variables, doubled);
+    model.set_callback_hessian(callback, variables, variables, curved);
+    model.set_callback_hessian_product(callback, multiplied);
+    return model;
 }
 
-TEST(AllocationTest, Evaluation)
+std::size_t allocated(const Model &model)
 {
     Env env;
-    const Model model = evaluated();
     Evaluation evaluation(model, env.stream());
     const Lookup lookup(env.options());
     std::vector<Real> f(2);
@@ -99,5 +115,17 @@ TEST(AllocationTest, Evaluation)
     evaluation.jacobian(lookup, kPoint, g);
     evaluation.hessian(lookup, {.x = kPoint, .w = w, .v = {}}, h);
     evaluation.product(lookup, {.x = kPoint, .w = w, .v = kPoint}, hv);
-    EXPECT_EQ(allocations() - start, 0U);
+    return allocations() - start;
+}
+
+}
+
+TEST(AllocationTest, Evaluation)
+{
+    EXPECT_EQ(allocated(evaluated()), 0U);
+}
+
+TEST(AllocationTest, Listed)
+{
+    EXPECT_EQ(allocated(listed()), 0U);
 }

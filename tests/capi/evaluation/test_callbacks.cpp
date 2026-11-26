@@ -130,7 +130,7 @@ void cover(const Model &model, BIYOS_cbf f, Inside &inside)
     BIYOS_index cb = -1;
     ASSERT_EQ(BIYOS_addvar(model.get(), 1, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_addfun(model.get(), 1, nullptr), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addcb(model.get(), 1, &function, &inside, &cb), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addcb(model.get(), 1, &function, BIYOS_DENSE, nullptr, &inside, &cb), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcbf(model.get(), cb, f), BIYOS_OK);
 }
 

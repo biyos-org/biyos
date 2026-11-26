@@ -2,7 +2,7 @@ from collections.abc import Callable
 from ctypes import POINTER, byref, cast, py_object
 from typing import Any
 
-from biyos._capi import CALLBACK, OK, RequestRecord, lib
+from biyos._capi import CALLBACK, DENSE, OK, RequestRecord, lib
 from biyos._convert.integers import whole
 from biyos._convert.numbers import Index, Offset, Real, c_index, c_real
 from biyos._error import Error
@@ -27,11 +27,13 @@ def _optional(address: int | None, n: Index) -> "memoryview[Real] | None":
     return None if address is None else _input(address, n)
 
 
-def _nvar(model: int | None) -> Index:
+def _nvar(record: RequestRecord) -> Index:
     n = c_index()
-    status = lib.BIYOS_getnvar(model, byref(n))
+    status = lib.BIYOS_getncbvar(record.mdl, record.cb, byref(n))
+    if status == OK and n.value == DENSE:
+        status = lib.BIYOS_getnvar(record.mdl, byref(n))
     if status != OK:
-        raise Error("cannot read the variables of the model", status)
+        raise Error("cannot read the variables of the callback", status)
     return n.value
 
 
@@ -84,7 +86,8 @@ class CallbackRequest:
 
     @property
     def x(self) -> "memoryview[Real]":
-        """The value of every variable, read-only."""
+        """The value of each variable the callback reads, read-only, in
+        the order given to ``addcb``."""
         return self._x
 
     @property
@@ -95,9 +98,9 @@ class CallbackRequest:
 
     @property
     def v(self) -> "memoryview[Real] | None":
-        """A value for every variable, read-only, the vector the Hessian
-        multiplies in a call of the Hessian-vector product, and ``None``
-        otherwise."""
+        """A value for each variable the callback reads, read-only, the
+        vector the Hessian multiplies in a call of the Hessian-vector
+        product, and ``None`` otherwise."""
         return self._v
 
     def _release(self) -> None:
@@ -135,7 +138,7 @@ class Caller:
     def _answer(
         self, record: RequestRecord, out: int | None, data: int | None
     ) -> int:
-        nvar = _nvar(record.mdl)
+        nvar = _nvar(record)
         request = CallbackRequest(record, self._count, nvar)
         values = _output(out, nvar if self._size is None else self._size)
         try:

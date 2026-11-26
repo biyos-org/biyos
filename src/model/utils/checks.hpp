@@ -23,6 +23,7 @@ void check_index(std::string_view noun, Index index, Index total);
 void check_span(std::string_view noun, Index start, Index stop, Index total);
 void check_function(std::string_view noun, Index index, Index function, Index functions);
 void check_functions(std::span<const Index> functions, Index held, std::string_view argument);
+void check_variables(std::span<const Index> variables, Index held, std::string_view argument);
 
 inline constexpr auto kRoom = to_size((std::numeric_limits<Index>::max)());
 
