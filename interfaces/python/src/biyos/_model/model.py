@@ -1113,11 +1113,11 @@ class Model:
         """Delete variables, with their terms in every function.
 
         The variables left keep their order and are numbered from 0 again, and
-        each term, set, indicator and node refers to them by their new indices.
-        A deleted variable's kind, bounds, tolerances, name and terms go with
-        it, and a function left with no term keeps its constant. Once any
-        variable is deleted, the model refuses every block and view it gave
-        before.
+        each term, set, indicator, node and callback refers to them by their
+        new indices. A deleted variable's kind, bounds, tolerances, name and
+        terms go with it, and a function left with no term keeps its constant.
+        Once any variable is deleted, the model refuses every block and view
+        it gave before.
 
         Parameters
         ----------
@@ -1133,9 +1133,10 @@ class Model:
         Raises
         ------
         Error
-            When a variable to delete has a node, is a member of a set or is
-            the binary of an indicator, or when the model has a callback and
-            a variable is to be deleted. The model is then left as it was.
+            When a variable to delete has a node, is a member of a set, is
+            the binary of an indicator or is listed by a callback, or when a
+            callback reads every variable and a variable is to be deleted.
+            The model is then left as it was.
 
         See Also
         --------

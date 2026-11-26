@@ -5,10 +5,10 @@
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
+#include "model/expressions/callbacks.hpp"
 #include "model/utils/checks.hpp"
 #include "model/utils/renumber.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <span>
 #include <string>
@@ -70,12 +70,56 @@ void check_indicators(std::span<const Indicator> indicators, std::span<const Ind
     }
 }
 
-void check_callbacks(bool held, std::span<const Index> map)
+void check_callback(const Callback &callback, Index index, std::span<const Index> map)
 {
-    const auto deleted = std::ranges::find(map, kDeleted);
-    if (held && deleted != map.end())
+    for (const Index variable : callback.variables)
     {
-        refuse_use(static_cast<Index>(deleted - map.begin()), item("callback", 0));
+        if (map[to_size(variable)] == kDeleted)
+        {
+            refuse_use(variable, item("callback", index));
+        }
+    }
+}
+
+Index first_deleted(std::span<const Index> map) noexcept
+{
+    for (std::size_t k = 0; k < map.size(); ++k)
+    {
+        if (map[k] == kDeleted)
+        {
+            return to_index(k);
+        }
+    }
+    return kDeleted;
+}
+
+void check_callbacks(std::span<const Callback> callbacks, std::span<const Index> map)
+{
+    const Index deleted = first_deleted(map);
+    for (std::size_t k = 0; k < callbacks.size(); ++k)
+    {
+        if (callbacks[k].dense && deleted != kDeleted)
+        {
+            refuse_use(deleted, item("callback", to_index(k)));
+        }
+        check_callback(callbacks[k], to_index(k), map);
+    }
+}
+
+void renumber_callback(Callback &callback, std::span<const Index> map) noexcept
+{
+    for (Index &variable : callback.variables)
+    {
+        renumber(variable, map);
+    }
+    for (IndexPair &pair : callback.jacobian_pairs)
+    {
+        renumber(pair.column, map);
+    }
+    for (IndexPair &pair : callback.hessian_pairs)
+    {
+        renumber(pair.row, map);
+        renumber(pair.column, map);
     }
 }
 
@@ -123,7 +167,7 @@ std::vector<Index> Model::delete_variables(std::span<const Index> indices)
     check_nodes(graph_, map);
     check_members(special_ordered_set_ends_, members_, map);
     check_indicators(indicators_, map);
-    check_callbacks(n_callbacks() > 0, map);
+    check_callbacks(callbacks_, map);
     keep(variables_, map);
     renumber_tolerances(Family::Variable, map);
     renumber_terms(linear_ends_, linear_terms_, map);
@@ -142,6 +186,10 @@ void Model::renumber_variables(std::span<const Index> map) noexcept
     for (Indicator &indicator : indicators_)
     {
         indicator.variable = map[to_size(indicator.variable)];
+    }
+    for (Callback &callback : callbacks_)
+    {
+        renumber_callback(callback, map);
     }
     graph_.renumber_variables(map);
 }

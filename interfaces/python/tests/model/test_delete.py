@@ -231,6 +231,19 @@ def variable_in_use(model, idx):
     return str(caught.value)
 
 
+def test_listed_variable(model):
+    model.addvar(5)
+    model.addfun(1)
+    model.addcb([0], [4, 1])
+    assert model.delvar([3, 0]) == [-1, 0, 1, -1, 2]
+    assert model.getcbvar(0) == [2, 0]
+    used = "in use: variable 2: used by callback 0"
+    assert variable_in_use(model, [1, 2]) == used
+    model.addcb([0])
+    used = "in use: variable 1: used by callback 1"
+    assert variable_in_use(model, [1]) == used
+
+
 def test_used_variable(model):
     x = model.addvar(4, [biyos.VariableKind.BINARY] * 4)
     f = model.addfun(1)

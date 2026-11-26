@@ -30,6 +30,12 @@ int note(const BIYOS_cbreq *req, BIYOS_real *, void *data)
     return 0;
 }
 
+int weigh(const BIYOS_cbreq *req, BIYOS_real *f, void *)
+{
+    f[0] = req->x[0] + 10.0 * req->x[1];
+    return 0;
+}
+
 void build(const Model &model, int variables, int functions)
 {
     ASSERT_EQ(BIYOS_addvar(model.get(), variables, nullptr, nullptr, nullptr, nullptr), BIYOS_OK);
@@ -146,6 +152,30 @@ TEST(ListTest, Unlisted)
     EXPECT_EQ(BIYOS_setcbg(mdl, 0, 2, functions.data(), variables.data(), succeed), BIYOS_OK);
     EXPECT_EQ(BIYOS_setcbh(mdl, 0, 1, &variables[1], &variables[0], succeed), BIYOS_OK);
 }
+
+TEST(ListTest, Deleted)
+{
+    const Env env;
+    const Model model(env);
+    build(model, 5, 1);
+    const Indices variables{4, 1};
+    ASSERT_EQ(add(model, 2, variables.data()), BIYOS_OK);
+    BIYOS_model *mdl = model.get();
+    const Indices listed{0, 1};
+    EXPECT_EQ(BIYOS_delvarsp(mdl, 2, listed.data(), nullptr), BIYOS_ERR_INUSE);
+    EXPECT_EQ(env.message(), "in use: variable 1: used by callback 0");
+    const Indices outside{3, 0};
+    Indices map(5, 9);
+    ASSERT_EQ(BIYOS_delvarsp(mdl, 2, outside.data(), map.data()), BIYOS_OK);
+    EXPECT_EQ(map, (Indices{-1, 0, 1, -1, 2}));
+    EXPECT_EQ(read(model, 0), (Indices{2, 0}));
+    ASSERT_EQ(BIYOS_setcbf(mdl, 0, weigh), BIYOS_OK);
+    const std::vector<BIYOS_real> x{1.0, 2.0, 3.0};
+    BIYOS_real f = 0.0;
+    ASSERT_EQ(BIYOS_evalf(mdl, x.data(), &f), BIYOS_OK);
+    EXPECT_DOUBLE_EQ(f, 13.0);
+}
+
 TEST(ListTest, Empty)
 {
     const Env env;
