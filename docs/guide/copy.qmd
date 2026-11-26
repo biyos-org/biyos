@@ -1,6 +1,6 @@
 # Copying models {#sec-copy}
 
-A model is copied whole. The copy holds the same variables, functions, constraints and objectives under the same indices, and from then on each changes apart from the other. A copy can live on the same environment or on another, and is how a program hands a model to another thread ([Threads](#sec-threads)), and two models are compared by reading both back ([Comparing](#sec-copy-compare)). The code of this chapter is `examples/code/c/copies.c` and `examples/code/python/copies.py`.
+A model is copied whole. The copy holds the same variables, functions, constraints and objectives under the same indices, and from then on each changes apart from the other. A copy can live on the same environment or on another, and is how a program hands a model to another thread ([Threads](#sec-threads)), and `BIYOS_cmpmdl` tells whether two models are the same ([Comparing](#sec-copy-compare)). The code of this chapter is `examples/code/c/copies.c` and `examples/code/python/copies.py`.
 
 ## Copying {#sec-copy-c}
 
@@ -15,7 +15,7 @@ The call only reads the source, so other threads may read it meanwhile. A change
 
 ## Comparing {#sec-copy-compare}
 
-Two models are the same when they hold the same tables in the same order: the same variables with the same kinds and bounds, the same functions with the same constants and terms, the same constraints and objectives naming the same functions. Every reader gives back exactly what the model holds, terms in their stored order, so a program compares two models by reading both. The example compares the bounds of the copy with those of the source:
+Two models are the same when they hold the same tables in the same order: the same variables with the same kinds and bounds, the same functions with the same constants and terms, the same constraints and objectives naming the same functions. `BIYOS_cmpmdl` compares two whole models, on one environment or two, and when they differ sends the first difference as an info message ([The events biyos sends](#sec-events-sent)); `Model.compare` returns that text. Every reader gives back exactly what the model holds, terms in their stored order, so a program that compares part of two models reads both. The example compares the bounds of the copy with those of the source:
 
 ```{.c file="examples/code/c/copies.c" item="same_bounds"}
 ```
