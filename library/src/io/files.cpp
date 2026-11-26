@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <ostream>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -41,7 +42,8 @@ std::string object_of(const std::string &file)
     throw Error(ErrorKind::FileAccess, object_of(file), std::string(reason));
 }
 
-void print_file(const Draft &draft, const std::string &file, std::string_view path)
+template <typename Print>
+void print_file(const std::string &file, std::string_view path, Print print)
 {
     const std::filesystem::path location = path_of(path);
     std::error_code code;
@@ -54,7 +56,7 @@ void print_file(const Draft &draft, const std::string &file, std::string_view pa
     {
         refuse(file, "cannot be opened");
     }
-    print_mps(draft, output);
+    print(output);
     output.close();
     if (output.fail())
     {
@@ -123,7 +125,7 @@ void write_file(Stream stream,
         throw Error(ErrorKind::Unsupported, object_of(file), "NL files are read, never written");
     }
     const Draft draft = draft_of(model);
-    print_file(draft, file, path);
+    print_file(file, path, [&draft](std::ostream &output) { print_mps(draft, output); });
     warn_leftovers(stream, model, settings, file);
 }
 
