@@ -20,28 +20,17 @@ template <typename Item> class Memos
     void gather(std::span<const Offset> memos, std::vector<Item> &items);
 
   private:
-    struct Memo
-    {
-        Offset item_start;
-        Offset n_items;
-        Offset link_start;
-        Offset n_links;
-        bool flat;
-    };
-
     bool small(std::span<const Item> own, std::span<const Offset> links) const noexcept;
     Offset flatten(std::span<const Item> own, std::span<const Offset> links);
     Offset store(std::span<const Item> own, std::span<const Offset> links);
-    Offset add(Memo memo);
-    std::span<const Item> items_of(const Memo &memo) const noexcept;
-    std::span<const Offset> links_of(const Memo &memo) const noexcept;
+    std::size_t count_of(Offset memo) const noexcept;
+    std::span<const Offset> items_of(Offset memo) const noexcept;
+    std::span<const Offset> links_of(Offset memo) const noexcept;
 
-    std::vector<Memo> memos_;
-    std::vector<Item> items_;
-    std::vector<Offset> links_;
-    std::vector<Offset> stamps_;
+    std::vector<Offset> cells_;
     std::vector<Offset> stack_;
     std::vector<Item> pieces_;
+    std::vector<Item> settled_;
     Offset walk_ = 0;
 };
 
