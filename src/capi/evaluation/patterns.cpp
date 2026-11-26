@@ -5,9 +5,9 @@
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
 #include "core/numbers.hpp"
-#include "model/checks.hpp"
 #include "model/evaluation/evaluation.hpp"
 #include "model/model.hpp"
+#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <cstddef>

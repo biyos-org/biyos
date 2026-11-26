@@ -2,7 +2,7 @@
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
-#include "model/checks.hpp"
+#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <span>

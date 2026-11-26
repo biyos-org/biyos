@@ -10,8 +10,8 @@
 #include "io/draft/labels.hpp"
 #include "io/draft/row_shape.hpp"
 #include "io/draft/support.hpp"
-#include "model/checks.hpp"
 #include "model/model.hpp"
+#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <cmath>

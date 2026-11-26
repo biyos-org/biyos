@@ -91,7 +91,6 @@ add_library(biyos_internal STATIC
     model/attributes/naming.cpp
     model/attributes/records.cpp
     model/attributes/tolerances.cpp
-    model/checks.cpp
     model/compare/fields.cpp
     model/compare/match.cpp
     model/compare/records.cpp
@@ -122,8 +121,9 @@ add_library(biyos_internal STATIC
     model/records/objectives.cpp
     model/records/special_ordered_sets.cpp
     model/records/variables.cpp
-    model/renumber.cpp
-    model/session/session.cpp)
+    model/session/session.cpp
+    model/utils/checks.cpp
+    model/utils/renumber.cpp)
 
 target_include_directories(biyos_internal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

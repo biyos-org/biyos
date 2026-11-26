@@ -4,7 +4,7 @@
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "model/attributes/names.hpp"
-#include "model/checks.hpp"
+#include "model/utils/checks.hpp"
 
 #include <cstddef>
 #include <cstdint>

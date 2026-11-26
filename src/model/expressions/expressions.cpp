@@ -5,11 +5,11 @@
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/graph/graph.hpp"
-#include "model/checks.hpp"
 #include "model/compressed.hpp"
 #include "model/expressions/nodes.hpp"
 #include "model/expressions/postfix.hpp"
-#include "model/rollback.hpp"
+#include "model/utils/checks.hpp"
+#include "model/utils/rollback.hpp"
 
 #include <cstddef>
 #include <span>

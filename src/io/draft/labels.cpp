@@ -3,8 +3,8 @@
 #include "core/error.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
-#include "model/checks.hpp"
 #include "model/model.hpp"
+#include "model/utils/checks.hpp"
 
 #include <initializer_list>
 #include <string>

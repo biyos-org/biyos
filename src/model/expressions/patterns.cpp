@@ -4,8 +4,8 @@
 #include "core/memory/room.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
-#include "model/checks.hpp"
 #include "model/expressions/callbacks.hpp"
+#include "model/utils/checks.hpp"
 
 #include <cstddef>
 #include <initializer_list>

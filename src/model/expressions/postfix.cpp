@@ -7,9 +7,9 @@
 #include "expr/graph/builder.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "model/checks.hpp"
 #include "model/expressions/nodes.hpp"
 #include "model/model.hpp"
+#include "model/utils/checks.hpp"
 
 #include <algorithm>
 #include <cstddef>
