@@ -1602,41 +1602,74 @@ class Model:
 
     def addquadterm(
         self,
-        fun: Sequence[Index | Function] | Functions,
-        var1: Sequence[Index | Variable] | Variables,
-        var2: Sequence[Index | Variable] | Variables,
-        coef: Sequence[Real],
+        fun: Index | Function | Sequence[Index | Function] | Functions,
+        var1: (
+            Index
+            | Variable
+            | Sequence[Index | Variable]
+            | Variables
+            | Sequence[Sequence[Index | Variable] | Variables]
+        ),
+        var2: (
+            Index
+            | Variable
+            | Sequence[Index | Variable]
+            | Variables
+            | Sequence[Sequence[Index | Variable] | Variables]
+        ),
+        coef: Real | Sequence[Real] | Sequence[Sequence[Real]],
     ) -> None:
-        """Add quadratic terms to functions, as coordinates.
+        """Add quadratic terms to functions, as coordinates or by function.
 
-        Term ``k`` adds ``coef[k]`` times the product of variables
-        ``var1[k]`` and ``var2[k]`` to function ``fun[k]``, with
-        no factor 1/2, in any order. The two variables of a pair may come
-        in either order. A pair the function holds already adds its
-        coefficient to the one held.
+        As coordinates, term ``k`` adds ``coef[k]`` times the product of
+        variables ``var1[k]`` and ``var2[k]`` to function ``fun[k]``, in any
+        order. By function, each entry of ``var1`` is a sequence, and
+        function ``fun[j]`` gains ``coef[j][k]`` times the product of
+        ``var1[j][k]`` and ``var2[j][k]`` for each ``k``; a function listed
+        twice gains both groups. A scalar ``fun`` is one function,
+        ``var1``, ``var2`` and ``coef`` its terms, or its one term when all
+        three are scalars. A product carries no factor 1/2, and the two
+        variables of a pair may come in either order. A pair the function
+        holds already adds its coefficient to the one held.
 
         Parameters
         ----------
         fun
-            The function of each term.
+            The function of each term; or the functions, in any order, a
+            block or a range of them; or one function.
         var1, var2
-            The two variables of each term, each pair once for its
-            function.
+            The two variables of each term; by function, a sequence of
+            first and a sequence of second variables for each function. Each
+            pair comes once for its function.
         coef
-            The coefficient of each term.
+            The coefficient of each term, nested as ``var1`` is.
+
+        Raises
+        ------
+        TypeError
+            When ``var1``, ``var2`` or ``coef`` is a scalar while ``fun`` is
+            not, ``var2`` or ``coef`` is a sequence where a scalar ``fun``
+            and ``var1`` want scalars, or either is not nested as ``var1``
+            is.
+        ValueError
+            When an entry of ``var2`` or ``coef`` is not as long as that of
+            ``var1``.
 
         See Also
         --------
         BIYOS_addquadterm
+        BIYOS_addquadtermsp
+        BIYOS_addquadtermrg
         """
-        size = len(fun)
-        arrays = (
-            indices_of(self, Functions, "fun", fun, size),
-            indices_of(self, Variables, "var1", var1, size),
-            indices_of(self, Variables, "var2", var2, size),
-            doubles("coef", coef, size),
+        lead = (Functions, "fun", fun)
+        others = [(Variables, "var1", var1), (Variables, "var2", var2)]
+        self._addterms(
+            lead,
+            others,
+            coef,
+            coordinates="BIYOS_addquadterm",
+            lists="BIYOS_addquadterm",
         )
-        self._call(lib.BIYOS_addquadterm, size, *arrays)
 
     def getnquadterm(
         self, idx: Sequence[Index | Function] | Functions | None = None

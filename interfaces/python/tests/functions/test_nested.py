@@ -8,9 +8,11 @@ from biyos._capi import lib
 
 LINEAR = biyos.Model.addlinterm
 COLUMN = biyos.Model.addclinterm
+QUADRATIC = biyos.Model.addquadterm
 FUN = [0, 7, 9]
 VAR = [[1, 2, 3], [0, 4, 5, 6, 8], [2, 3]]
 COEF = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0, 8.0], [9.0, -1.0]]
+SECONDS = [[1, 2, 4], [0, 4, 3, 6, 8], [2, 3]]
 
 
 @pytest.fixture
@@ -81,6 +83,12 @@ def test_column(env):
     assert by_variable == built(env, LINEAR, *flat)
 
 
+def test_quadratic(env):
+    nested = built(env, QUADRATIC, FUN, VAR, SECONDS, COEF)
+    flat = repeated(FUN, VAR), joined(VAR), joined(SECONDS), joined(COEF)
+    assert nested == built(env, QUADRATIC, *flat)
+
+
 def test_blocks(model):
     x = model.addvar(3)
     f = model.addfun(2)
@@ -124,6 +132,16 @@ def test_column_calls(model, monkeypatch):
     assert seen == [names[0], names[1], names[1], names[0]]
 
 
+def test_quadratic_calls(model, monkeypatch):
+    names = ("BIYOS_addquadterm", "BIYOS_addquadtermsp", "BIYOS_addquadtermrg")
+    seen = spy(monkeypatch, *names)
+    model.addquadterm([0, 2], [[0], [1]], [[0], [1]], [[1.0], [2.0]])
+    model.addquadterm(range(2), [[0], [1]], [[0], [1]], [[1.0], [2.0]])
+    model.addquadterm([0], [1], [1], [1.0])
+    model.addquadterm(0, 1, 1, 1.0)
+    assert seen == [names[1], names[2], names[0], names[1]]
+
+
 def test_ragged(model):
     before = held(model)
     short = [COEF[0], COEF[1][:4], COEF[2]]
@@ -135,6 +153,8 @@ def test_ragged(model):
         model.addlinterm([0, 1], [[1], [2]], [1.0, 2.0])
     with pytest.raises(ValueError, match="var has length 2, not 3"):
         model.addlinterm(FUN, VAR[:2], COEF)
+    with pytest.raises(ValueError, match=r"var2\[2\] has length 1, not 2"):
+        model.addquadterm(FUN, VAR, [*SECONDS[:2], [2]], COEF)
     with pytest.raises(ValueError, match=r"coef\[0\] has length 2, not 1"):
         model.addclinterm([0], [[1]], [[1.0, 2.0]])
     with pytest.raises(TypeError, match=r"an entry of coef\[0\] must be a"):
@@ -147,6 +167,8 @@ def test_named(model):
     f = model.addfun(1)
     with pytest.raises(TypeError, match="an entry of fun is a variable"):
         model.addlinterm([x[0]], [[0]], [[1.0]])
+    with pytest.raises(TypeError, match="^fun is a variable"):
+        model.addquadterm(x[0], 0, 0, 1.0)
     with pytest.raises(TypeError, match="an entry of var is a function"):
         model.addclinterm([f[0]], [[0]], [[1.0]])
     with pytest.raises(TypeError, match=r"an entry of var\[0\] is a func"):
@@ -157,10 +179,13 @@ def test_named(model):
 
 def test_read_back(env, model):
     model.addlinterm(FUN, VAR, COEF)
+    model.addquadterm(FUN, VAR, SECONDS, COEF)
     by_function = built(env, LINEAR, *model.getrlinterm())
     by_variable = built(env, LINEAR, *model.getclinterm())
+    quadratic = built(env, QUADRATIC, *model.getquadterm())
     assert by_function[0] == held(model)[0]
     assert by_variable[0] == held(model)[0]
+    assert quadratic[1] == held(model)[1]
 
 
 @pytest.mark.parametrize(
@@ -170,6 +195,12 @@ def test_read_back(env, model):
         (LINEAR, (7, 4, 2.0), ([7], [[4]], [[2.0]])),
         (COLUMN, (2, [0, 1], [1.0, 2.0]), ([2], [[0, 1]], [[1.0, 2.0]])),
         (COLUMN, (2, 1, 3.0), ([2], [[1]], [[3.0]])),
+        (
+            QUADRATIC,
+            (0, [0, 1], [0, 2], [1.0, 2.0]),
+            ([0], [[0, 1]], [[0, 2]], [[1.0, 2.0]]),
+        ),
+        (QUADRATIC, (0, 1, 2, 3.0), ([0], [[1]], [[2]], [[3.0]])),
     ],
 )
 def test_scalar(env, add, scalar, listed):
@@ -202,6 +233,9 @@ def test_views(model):
         (LINEAR, (0, 1, [1.0]), "coef must be a scalar, not list"),
         (LINEAR, (None, 1, 1.0), "^fun must be an int, not NoneType"),
         (LINEAR, (True, 1, 1.0), "^fun must be an int, not bool"),
+        (QUADRATIC, ([0], [0], 1, [1.0]), "var2 must be a sequence"),
+        (QUADRATIC, ([0], [[0]], 1, [[1.0]]), "var2 must be a sequence"),
+        (QUADRATIC, (0, 0, [1], 1.0), "var2 must be a scalar"),
         (COLUMN, ([0, 1], 2, [1.0, 2.0]), "fun must be a sequence"),
         (COLUMN, ([0], [1], [1.0]), r"fun\[0\] must be a sequence"),
         (COLUMN, (0, [1], 2.0), "coef must be a sequence"),
