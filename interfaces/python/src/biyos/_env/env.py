@@ -314,8 +314,8 @@ class Env:
         This is the one method another thread may call while a call runs on
         the environment or on one of its models. No thread may close the
         environment while it runs. A long call stops where it checks its
-        time limits. The request clears when the next call starts, so one
-        made between two calls stops neither. A ``KeyboardInterrupt`` raised
+        time limits, on a request made after it started, so one made between
+        two calls stops neither. A ``KeyboardInterrupt`` raised
         in a hook makes the same request, and is raised once the call
         returns.
 

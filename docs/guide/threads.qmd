@@ -18,7 +18,7 @@ biyos starts no thread of its own yet. `BIYOS_version` reads no state and may be
 
 ## Interrupting a call {#sec-threads-interrupt}
 
-`BIYOS_interrupt` asks the call running on an environment to stop. Any thread may call it while another thread is inside a call on that environment or on one of its models, and so may a signal handler, since it only sets a flag and returns. A long call reads the flag where it checks its time limits and stops with the termination `BIYOS_TRM_STOP`, an outcome rather than an error code. The flag clears when the next call on the environment or on one of its models starts, a refused one included, so a request that arrives after a call has returned does not stop the one that follows. A call made by a hook leaves it set, so a hook may stop the call that sent its event. No call is long enough to read the flag yet.
+`BIYOS_interrupt` asks the calls running on an environment to stop. Any thread may call it while another thread is inside a call on that environment or on one of its models, and so may a signal handler, since it only counts the request and returns. A long call notes the count when it starts, reads it where it checks its time limits and stops with the termination `BIYOS_TRM_STOP` once the count has moved, an outcome rather than an error code. A request made before a call starts never stops it, so one that arrives after a call has returned does not stop the one that follows, and a call starting on one model leaves alone a request meant for a call running on another. A hook may stop the call that sent its event. No call is long enough to read the count yet.
 
 ## In Python {#sec-threads-python}
 

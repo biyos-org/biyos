@@ -25,6 +25,7 @@ class Deadline
 
     const Clock &clock_;
     const Interrupt &interrupt_;
+    unsigned seen_;
     std::optional<std::chrono::nanoseconds> wall_limit_;
     std::optional<std::chrono::nanoseconds> cpu_limit_;
     std::chrono::nanoseconds wall_start_;

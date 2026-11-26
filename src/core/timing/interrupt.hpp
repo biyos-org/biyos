@@ -8,14 +8,13 @@ namespace biyos
 class Interrupt
 {
   public:
-    void set() noexcept { flag_.store(true, std::memory_order_relaxed); }
-    void clear() noexcept { flag_.store(false, std::memory_order_relaxed); }
-    bool is_set() const noexcept { return flag_.load(std::memory_order_relaxed); }
+    void request() noexcept { count_.fetch_add(1, std::memory_order_relaxed); }
+    unsigned count() const noexcept { return count_.load(std::memory_order_relaxed); }
 
   private:
-    static_assert(std::atomic<bool>::is_always_lock_free);
+    static_assert(std::atomic<unsigned>::is_always_lock_free);
 
-    std::atomic<bool> flag_ = false;
+    std::atomic<unsigned> count_ = 0;
 };
 
 }

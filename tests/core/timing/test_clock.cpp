@@ -256,11 +256,10 @@ TEST_F(ClockTest, Interrupted)
 {
     const biyos::Deadline deadline(lookup, clock, interrupt);
     EXPECT_EQ(deadline.termination(), TerminationStatus::NotSolved);
-    interrupt.set();
+    interrupt.request();
     EXPECT_TRUE(deadline.reached());
     EXPECT_EQ(deadline.termination(), TerminationStatus::UserStop);
-    interrupt.clear();
-    EXPECT_FALSE(deadline.reached());
+    EXPECT_FALSE(reached());
 }
 
 TEST_F(ClockTest, Terminations)
@@ -273,7 +272,7 @@ TEST_F(ClockTest, Terminations)
     EXPECT_EQ(deadline.termination(), TerminationStatus::CpuTimeLimit);
     clock.advance_wall(2s);
     EXPECT_EQ(deadline.termination(), TerminationStatus::TimeLimit);
-    interrupt.set();
+    interrupt.request();
     EXPECT_EQ(deadline.termination(), TerminationStatus::UserStop);
 }
 
@@ -283,7 +282,7 @@ TEST_F(ClockTest, StopReads)
     options.set_double(Option::CpuTimeLimit, 1.0);
     const CountingClock counter;
     const biyos::Deadline deadline(lookup, counter, interrupt);
-    interrupt.set();
+    interrupt.request();
     EXPECT_EQ(deadline.termination(), TerminationStatus::UserStop);
     EXPECT_EQ(counter.wall_reads(), 1);
     EXPECT_EQ(counter.cpu_reads(), 1);
