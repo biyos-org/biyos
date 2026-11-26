@@ -79,6 +79,7 @@ biyos_add_test(test_expr
     expr/curvature/test_waves.cpp
     expr/derivatives/test_derivative.cpp
     expr/derivatives/test_lanes.cpp
+    expr/derivatives/test_memo.cpp
     expr/derivatives/test_partials.cpp
     expr/forms/test_canonical.cpp
     expr/forms/test_terms.cpp
@@ -95,7 +96,6 @@ biyos_add_test(test_expr
     expr/intervals/test_enclosure.cpp
     expr/intervals/test_interval.cpp
     expr/intervals/test_piecewise.cpp
-    expr/sparsity/test_memo.cpp
     expr/utils/chords.cpp
     expr/utils/reference.cpp
     expr/utils/sampling.cpp
