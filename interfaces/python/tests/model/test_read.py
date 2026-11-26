@@ -4,7 +4,7 @@ import pytest
 
 import biyos
 from biyos import EventKind, EventLevel, FileFormat
-from samples import LP_MPS, ROWS_MPS, written
+from samples import LP_MPS, LP_NL, ROWS_MPS, written
 
 FILEIO = -401
 BADARG = -100
@@ -30,6 +30,16 @@ def test_counts(env, tmp_path):
         assert model.getvarname(range(2)) == ["x", "y"]
         assert model.getconname(range(3)) == ["limit", "floor", "balance"]
         assert model.getobjname(range(1)) == ["cost"]
+
+
+def test_nl(env, tmp_path):
+    path = written(tmp_path / "lp.nl", LP_NL)
+    with biyos.Model.read(env, path, FileFormat.NL) as model:
+        assert model.getnvar() == 2
+        assert model.getncon() == 2
+        assert model.getnobj() == 1
+        assert model.getvarbnd(range(2)) == ([0.0, 0.0], [10.0, float("inf")])
+        assert model.getobjsense(range(1)) == [biyos.ObjectiveSense.MINIMIZE]
 
 
 def test_str_path(env, tmp_path):

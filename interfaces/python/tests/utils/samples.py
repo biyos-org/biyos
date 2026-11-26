@@ -64,6 +64,42 @@ INDICATORS
 ENDATA
 """
 
+LP_NL = """\
+g3 1 1 0
+ 2 2 1 0 1
+ 0 0
+ 0 0
+ 0 0 0
+ 0 0 0 1
+ 0 0 0 0 0
+ 4 2
+ 0 0
+ 0 0 0 0 0
+C0
+n0
+C1
+n0
+O0 0
+n1
+r
+2 1
+4 0
+b
+0 0 10
+2 0
+k1
+2
+J0 2
+0 1
+1 1
+J1 2
+0 1
+1 -1
+G0 2
+0 2
+1 3
+"""
+
 
 def written(path, text):
     path.write_text(text)
