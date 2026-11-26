@@ -46,6 +46,12 @@ void n_functions(const Session &session, BIYOS_index *n)
     *require(n, "n") = session.model().n_functions();
 }
 
+template <typename Selection> void clear_functions(Session &session, Selection selection)
+{
+    Model &model = writable(session);
+    model.clear_functions(selected(model, Family::Function, selection));
+}
+
 void write_constants(std::span<const biyos::Real> found, BIYOS_real *constants)
 {
     if (constants != nullptr)
@@ -151,4 +157,14 @@ BIYOS_status BIYOS_getcstrg(const BIYOS_model *mdl,
                             BIYOS_real *cst)
 {
     return guarded<get_constants<Range>>(mdl, Range{beg, end}, cst);
+}
+
+BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+{
+    return guarded<clear_functions<List>>(mdl, List{n, idx});
+}
+
+BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)
+{
+    return guarded<clear_functions<Range>>(mdl, Range{beg, end});
 }
