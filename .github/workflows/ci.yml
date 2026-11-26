@@ -36,9 +36,9 @@ jobs:
           ALL: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci') }}
         run: |
           if [ "$ALL" = true ]; then
-            python3 tools/ci_changes.py --all < /dev/null >> "$GITHUB_OUTPUT"
+            python3 tools/ci/ci_changes.py --all < /dev/null >> "$GITHUB_OUTPUT"
           else
-            git diff --name-only HEAD^1 HEAD | python3 tools/ci_changes.py >> "$GITHUB_OUTPUT"
+            git diff --name-only HEAD^1 HEAD | python3 tools/ci/ci_changes.py >> "$GITHUB_OUTPUT"
           fi
       - id: pick
         env:
@@ -102,11 +102,11 @@ jobs:
           --layers library/tools/layers.txt
           --roles library/tools/roles.txt
       - run: >-
-          python3 tools/check_docs.py
+          python3 tools/docs/capi/check_docs.py
           --headers library/include/biyos
           --doc docs/reference/capi.txt
       - run: >-
-          python3 tools/check_copies.py
+          python3 tools/ci/check_copies.py
           --licence LICENSE
           --copies $(git ls-files '*LICENSE')
           --format library/.clang-format
@@ -114,7 +114,10 @@ jobs:
           --library library/CMakeLists.txt
           --examples examples/CMakeLists.txt
           --python interfaces/python/pyproject.toml
-      - run: python3 -m unittest discover -s tools -p 'test_*.py'
+      - run: python3 -m unittest discover -s tools/docs/capi -p 'test_*.py'
+      - run: python3 -m unittest discover -s tools/docs/options -p 'test_*.py'
+      - run: python3 -m unittest discover -s tools/docs/book -p 'test_*.py'
+      - run: python3 -m unittest discover -s tools/ci -p 'test_*.py'
       - run: python3 -m unittest discover -s library/tools -p 'test_*.py'
 
   sanitizers:
