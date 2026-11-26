@@ -100,7 +100,7 @@ Each rule below is biyos's rule. The document it follows is named where there is
 | A set without a name | It is read without one, as CPLEX allows. Gurobi gives every set a name. |
 | A member without a weight | Its weight is its position in the set, counted from 1, as CPLEX states for a set with no reference row. |
 | A repeated member or weight in a set | Refused. CPLEX states that the weights of a set are distinct. |
-| `SOSORG` markers and `REFROW` | Not read. CPLEX's other form of sets is refused: `'SOSORG'` as an unknown marker, `REFROW` as an unsupported section. |
+| `SOSORG` markers and `REFROW` | Not read. CPLEX's other form of sets is refused as unsupported: a marker line ending `'SOSORG'` or `'SOSEND'`, and the section `REFROW`. |
 | Order of `SOS` and `INDICATORS` | `SOS` comes first, as in Gurobi's description. CPLEX gives no order between the two. |
 | An indicator on an integer column | A column of kind integer with bounds 0 and 1, such as one between marker lines with no bound, becomes binary, as CPLEX counts marker lines as a way to declare one. Any other column that is not binary is refused. |
 | An indicator on an `N` row or a row with a range | Refused. CPLEX allows `L`, `G` and `E` rows and no row with a range. |

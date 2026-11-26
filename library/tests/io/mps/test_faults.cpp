@@ -161,6 +161,23 @@ TEST(MpsTest, Unsupported)
         "unsupported: file 't.mps' line 7: section QUADOBJ");
 }
 
+TEST(MpsTest, SetMarkers)
+{
+    EXPECT_EQ(fault_of(text({"NAME t",
+                             "ROWS",
+                             " N f",
+                             "COLUMNS",
+                             " S1 SOS s1 'MARKER' 'SOSORG'",
+                             " x f 1",
+                             " SOS1END 'MARKER' 'SOSEND'",
+                             "ENDATA"})),
+              "unsupported: file 't.mps' line 5: marker 'SOSORG'");
+    EXPECT_EQ(fault_of(text({"NAME t", "ROWS", " N f", "COLUMNS", " s 'MARKER' 'SOSEND'"})),
+              "unsupported: file 't.mps' line 5: marker 'SOSEND'");
+    EXPECT_EQ(fault_of(text({"NAME t", "REFROW", " f", "ROWS", " N f", "ENDATA"})),
+              "unsupported: file 't.mps' line 2: section REFROW");
+}
+
 TEST(MpsTest, NegativeUpper)
 {
     const std::vector<Warning> heard = warnings_of(with_bound(" UP b x -1"));

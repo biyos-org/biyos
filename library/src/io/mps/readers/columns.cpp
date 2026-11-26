@@ -13,9 +13,28 @@
 namespace biyos
 {
 
+namespace
+{
+
+bool set_marker(Fields fields)
+{
+    const std::size_t n = fields.size();
+    if (n < 3 || fields[n - 2] != "'MARKER'")
+    {
+        return false;
+    }
+    return fields[n - 1] == "'SOSORG'" || fields[n - 1] == "'SOSEND'";
+}
+
+}
+
 void Columns::read(const Lines &lines, Draft &draft)
 {
     const Fields fields = uncommented(lines.fields(), 1);
+    if (set_marker(fields))
+    {
+        unsupported(lines, "marker " + std::string(fields.back()));
+    }
     if (fields.size() >= 3 && fields[1] == "'MARKER'")
     {
         mark(lines, fields[2]);
