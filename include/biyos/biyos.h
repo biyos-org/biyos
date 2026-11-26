@@ -1191,6 +1191,14 @@ BIYOS_API BIYOS_status BIYOS_getcbfun(const BIYOS_model *mdl,
                                       BIYOS_index cb,
                                       BIYOS_index cap,
                                       BIYOS_index *fun);
+BIYOS_API BIYOS_status BIYOS_delcbsp(BIYOS_model *mdl,
+                                     BIYOS_index n,
+                                     const BIYOS_index *idx,
+                                     BIYOS_index *map);
+BIYOS_API BIYOS_status BIYOS_delcbrg(BIYOS_model *mdl,
+                                     BIYOS_index beg,
+                                     BIYOS_index end,
+                                     BIYOS_index *map);
 
 BIYOS_API BIYOS_status BIYOS_evalf(BIYOS_model *mdl, const BIYOS_real *x, BIYOS_real *f);
 BIYOS_API BIYOS_status BIYOS_evalg(BIYOS_model *mdl, const BIYOS_real *x, BIYOS_real *g);

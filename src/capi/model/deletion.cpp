@@ -8,6 +8,7 @@
 #include "model/model.hpp"
 
 #include <algorithm>
+#include <span>
 #include <vector>
 
 using biyos::Family;
@@ -22,17 +23,25 @@ using biyos::capi::writable;
 namespace
 {
 
-template <Family Target, auto Delete, typename Selection>
-void delete_records(Session &session, Selection selection, BIYOS_index *map)
+template <auto Delete>
+void delete_chosen(Session &session,
+                   Model &model,
+                   std::span<const biyos::Index> chosen,
+                   BIYOS_index *map)
 {
-    Model &model = writable(session);
-    const auto chosen = selected(model, Target, selection);
     const biyos::EntryTimer timer(session.stream(), biyos::kModule, "delete");
     const std::vector<biyos::Index> renumbered = (model.*Delete)(chosen);
     if (map != nullptr)
     {
         std::ranges::copy(renumbered, map);
     }
+}
+
+template <Family Target, auto Delete, typename Selection>
+void delete_records(Session &session, Selection selection, BIYOS_index *map)
+{
+    Model &model = writable(session);
+    delete_chosen<Delete>(session, model, selected(model, Target, selection), map);
 }
 
 template <typename Selection>
@@ -83,6 +92,14 @@ template <typename Selection>
 void delete_complements(Session &session, Selection selection, BIYOS_index *map)
 {
     delete_records<Family::Complement, &Model::delete_complements>(session, selection, map);
+}
+
+template <typename Selection>
+void delete_callbacks(Session &session, Selection selection, BIYOS_index *map)
+{
+    Model &model = writable(session);
+    const auto chosen = selected("callback", model.n_callbacks(), selection);
+    delete_chosen<&Model::delete_callbacks>(session, model, chosen, map);
 }
 
 }
@@ -189,4 +206,17 @@ BIYOS_status BIYOS_delcconsp(BIYOS_model *mdl,
 BIYOS_status BIYOS_delcconrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
 {
     return guarded<delete_complements<Range>>(mdl, Range{beg, end}, map);
+}
+
+BIYOS_status BIYOS_delcbsp(BIYOS_model *mdl,
+                           BIYOS_index n,
+                           const BIYOS_index *idx,
+                           BIYOS_index *map)
+{
+    return guarded<delete_callbacks<List>>(mdl, List{n, idx}, map);
+}
+
+BIYOS_status BIYOS_delcbrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
+{
+    return guarded<delete_callbacks<Range>>(mdl, Range{beg, end}, map);
 }

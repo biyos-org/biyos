@@ -303,6 +303,7 @@ TEST(ThreadTest, ModelBusy)
     EXPECT_EQ(biyos::test::last_error(env.get()).mdl, model.get());
     EXPECT_EQ(BIYOS_freemdl(model.get()), BIYOS_ERR_BUSY);
     EXPECT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 1), BIYOS_ERR_BUSY);
+    EXPECT_EQ(BIYOS_delcbrg(model.get(), 0, 0, nullptr), BIYOS_ERR_BUSY);
     BIYOS_index n = -1;
     EXPECT_EQ(BIYOS_getnvar(model.get(), &n), BIYOS_OK);
     EXPECT_EQ(n, 0);
