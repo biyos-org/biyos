@@ -78,7 +78,7 @@ DraftColumn column_shape(Index variable, const Variable &bounds)
     }
     if (!holds(column, bounds))
     {
-        const std::string range = "[" + text_of(bounds.lower) + ", " + text_of(bounds.upper) + "]";
+        const std::string range = interval_of(bounds.lower, bounds.upper);
         const std::string reason = "bounds " + range + " of its kind cannot be written in free MPS";
         throw Error(ErrorKind::Unsupported, item("variable", variable), reason);
     }

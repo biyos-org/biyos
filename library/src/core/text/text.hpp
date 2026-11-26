@@ -43,4 +43,9 @@ template <typename T> std::string text_of(T value)
     return std::string(buffer.data(), result.ptr);
 }
 
+template <typename T> std::string interval_of(T lower, T upper)
+{
+    return "[" + text_of(lower) + ", " + text_of(upper) + "]";
+}
+
 }

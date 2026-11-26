@@ -21,7 +21,7 @@ namespace
 {
 [[noreturn]] void refuse_bounds(const std::string &record, Real lower, Real upper)
 {
-    const std::string bounds = "[" + text_of(lower) + ", " + text_of(upper) + "]";
+    const std::string bounds = interval_of(lower, upper);
     const std::string reason = "bounds " + bounds + " cannot be written exactly in free MPS";
     throw Error(ErrorKind::Unsupported, record, reason);
 }

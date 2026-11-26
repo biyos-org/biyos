@@ -35,9 +35,8 @@ DraftRow indicator_row(const Model &model, Index index)
     const DraftRow row = row_shape(record, bounds, model.constant(indicator.function));
     if (row.range || row.sense == RowSense::Free)
     {
-        const std::string range =
-            "[" + text_of(indicator.lower) + ", " + text_of(indicator.upper) + "]";
-        const std::string reason = "bounds " + range + " cannot be an indicator row in free MPS";
+        const std::string interval = interval_of(indicator.lower, indicator.upper);
+        const std::string reason = "bounds " + interval + " cannot be an indicator row in free MPS";
         throw Error(ErrorKind::Unsupported, record, reason);
     }
     return row;
