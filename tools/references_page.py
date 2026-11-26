@@ -1,8 +1,7 @@
 import re
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-PAGE = ROOT / "docs" / "_book" / "references.html"
+PAGE = Path("_book") / "references.html"
 ICONS = {
     "Article": "journal-text",
     "Book": "book",
