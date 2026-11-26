@@ -42,4 +42,17 @@ std::vector<Index> renumbering(std::string_view noun, Index total, std::span<con
     return map;
 }
 
+void renumber(Index &index, std::span<const Index> map) noexcept
+{
+    index = map[to_size(index)];
+}
+
+void renumber_all(std::span<Index> indices, std::span<const Index> map) noexcept
+{
+    for (Index &index : indices)
+    {
+        renumber(index, map);
+    }
+}
+
 }

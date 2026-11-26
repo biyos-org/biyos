@@ -15,6 +15,9 @@ inline constexpr Index kDeleted = -1;
 
 std::vector<Index> renumbering(std::string_view noun, Index total, std::span<const Index> deleted);
 
+void renumber(Index &index, std::span<const Index> map) noexcept;
+void renumber_all(std::span<Index> indices, std::span<const Index> map) noexcept;
+
 template <typename T> void keep(std::vector<T> &items, std::span<const Index> map) noexcept
 {
     std::size_t kept = 0;
