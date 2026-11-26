@@ -1,3 +1,4 @@
+import argparse
 import posixpath
 import re
 import sys
@@ -141,7 +142,7 @@ def c_names(name, module, lines):
 
 
 def check_file(src, path, layers, roles):
-    name = path.relative_to(src.parent).as_posix()
+    name = path.as_posix()
     parts = path.relative_to(src).parts
     if len(parts) < 2 or parts[0] not in layers:
         return [f"{name}: not in a declared module"]
@@ -168,11 +169,19 @@ def check(src, layers, roles):
     return tables + check_sources(src, layers, roles)
 
 
+def arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sources", type=Path, required=True)
+    parser.add_argument("--layers", type=Path, required=True)
+    parser.add_argument("--roles", type=Path, required=True)
+    return parser.parse_args()
+
+
 def main():
-    tools = Path(__file__).resolve().parent
-    layers = read_layers(tools / "layers.txt")
-    roles = read_layers(tools / "roles.txt")
-    problems = check(tools.parent / "src", layers, roles)
+    given = arguments()
+    layers = read_layers(given.layers)
+    roles = read_layers(given.roles)
+    problems = check(given.sources, layers, roles)
     for problem in problems:
         print(problem)
     return 1 if problems else 0

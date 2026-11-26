@@ -59,7 +59,8 @@ class RoleTest(unittest.TestCase):
         path.write_text(lines(targets))
 
     def problems(self):
-        return check(self.root / "src", self.layers, self.roles)
+        found = check(self.root / "src", self.layers, self.roles)
+        return [problem.replace(f"{self.root}/", "") for problem in found]
 
     def test_layout(self):
         for name, targets in LAYOUT.items():

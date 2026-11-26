@@ -1,31 +1,36 @@
+import contextlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
-from check_layers import check, read_layers
+from check_layers import check, main, read_layers
 
 
 class LayerTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
+        self.sources = self.root / "src"
+        self.table_path = self.root / "layers.txt"
         self.table("core:\ntree: core\n")
 
     def tearDown(self):
         self.tmp.cleanup()
 
     def table(self, text):
-        path = self.root / "layers.txt"
-        path.write_text(text)
-        self.layers = read_layers(path)
+        self.table_path.write_text(text)
+        self.layers = read_layers(self.table_path)
 
     def source(self, name, text):
-        path = self.root / "src" / name
+        path = self.sources / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
     def problems(self):
-        return check(self.root / "src", self.layers, {})
+        found = check(self.sources, self.layers, {})
+        return [problem.replace(f"{self.root}/", "") for problem in found]
 
     def test_allowed(self):
         self.source("tree/node.hpp", '#include "core/error.hpp"\n')
@@ -81,6 +86,33 @@ class LayerTest(unittest.TestCase):
     def test_unknown(self):
         self.table("core: graph\n")
         self.assertEqual(self.problems(), ["layers: core uses unknown graph"])
+
+    def test_nested(self):
+        self.sources = self.root / "library" / "src"
+        self.source("core/error.cpp", '#include "tree/node.hpp"\n')
+        self.assertEqual(
+            self.problems(),
+            ["library/src/core/error.cpp:1: core may not use tree"],
+        )
+
+    def test_arguments(self):
+        self.source("core/error.cpp", '#include "tree/node.hpp"\n')
+        roles = self.root / "roles.txt"
+        roles.write_text("")
+        argv = [
+            "check_layers.py",
+            "--sources",
+            str(self.sources),
+            "--layers",
+            str(self.table_path),
+            "--roles",
+            str(roles),
+        ]
+        output = io.StringIO()
+        with mock.patch("sys.argv", argv), contextlib.redirect_stdout(output):
+            self.assertEqual(main(), 1)
+        problem = f"{self.sources}/core/error.cpp:1: core may not use tree\n"
+        self.assertEqual(output.getvalue(), problem)
 
 
 if __name__ == "__main__":
