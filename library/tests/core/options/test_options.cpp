@@ -4,13 +4,16 @@
 #include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/options/table.hpp"
+#include "core/timing/clock.hpp"
 #include "core/version.hpp"
 
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cstddef>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
@@ -38,6 +41,7 @@ using biyos::Options;
 using biyos::OptionSpec;
 using biyos::Real;
 using biyos::Scope;
+using biyos::SystemClock;
 using biyos::version;
 using biyos::Version;
 using biyos::versions_of;
@@ -49,6 +53,7 @@ constexpr std::string_view kMalformed = "internal error: option table: is not we
 constexpr Version kFirst{0, 0, 1};
 constexpr Version kSecond{0, 0, 2};
 constexpr Version kThird{0, 0, 3};
+constexpr std::size_t kHardware = 8;
 
 constexpr std::array kLevels{
     EnumValue{.number = 1, .name = "low"},
@@ -111,7 +116,8 @@ std::string failure(const std::function<void()> &body)
 
 struct Listener
 {
-    Listener()
+    Listener() : Listener(kHardware) {}
+    explicit Listener(std::size_t hardware) : env(std::make_unique<SystemClock>(), hardware)
     {
         const auto record = [this](const Event &event) { heard.push_back(event); };
         env.events().add_hook(EventKind::Message, EventLevel::Debug, record);
@@ -240,6 +246,23 @@ TEST(OptionTest, Threads)
     EXPECT_EQ(failure([&] { options.set_int(Option::Threads, 0); }),
               "invalid argument: option 'threads': 0 is outside [1, 2147483647]");
     EXPECT_EQ(options.get_int(Option::Threads), 8);
+}
+
+TEST(OptionTest, Capped)
+{
+    Listener listener(4);
+    Options options(listener.env);
+    options.set_int(Option::Threads, 4);
+    EXPECT_TRUE(listener.heard.empty());
+    options.set_int(Option::Threads, 8);
+    EXPECT_EQ(options.get_int(Option::Threads), 8);
+    ASSERT_EQ(listener.heard.size(), 1U);
+    const Event &event = listener.heard.front();
+    EXPECT_EQ(event.kind, EventKind::Message);
+    EXPECT_EQ(event.level, EventLevel::Warning);
+    EXPECT_EQ(event.module, "core");
+    EXPECT_EQ(event.text, "option 'threads': 8 is above the 4 hardware threads, so 4 run");
+    EXPECT_EQ(listed(event.fields), "option=threads value=8 hardware=4");
 }
 
 TEST(OptionTest, ToleranceRange)

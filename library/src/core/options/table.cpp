@@ -112,7 +112,8 @@ constexpr std::array kTable{
         .name = "threads",
         .scope = Scope::Environment,
         .rule = IntRule{.default_value = 1, .lower = 1},
-        .doc = "Threads that evaluate the model. Results are the same for every count.",
+        .doc = "Threads that evaluate the model, at most the hardware threads. Results are the "
+               "same for every count.",
         .versions = {.since = {0, 1, 0}},
     },
 };

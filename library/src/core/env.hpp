@@ -46,6 +46,7 @@ class Env
     Env();
     explicit Env(std::unique_ptr<Clock> clock);
     Env(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table);
+    Env(std::unique_ptr<Clock> clock, std::size_t hardware);
     Env(const Env &) = delete;
     Env &operator=(const Env &) = delete;
 

@@ -36,6 +36,12 @@ Env::Env(std::unique_ptr<Clock> clock, std::span<const OptionSpec> table)
 {
 }
 
+Env::Env(std::unique_ptr<Clock> clock, std::size_t hardware)
+    : clock_(checked(std::move(clock))), events_(clock_->wall_time()), options_(*this),
+      pool_(hardware)
+{
+}
+
 Options &Env::options() noexcept
 {
     return options_;

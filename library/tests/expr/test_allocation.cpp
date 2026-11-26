@@ -349,7 +349,7 @@ struct Threaded
     Tape tape;
     Team team;
     Hessian hessian;
-    Pool pool;
+    Pool pool{kThreads};
     std::vector<Real> point;
     std::vector<Real> weights;
     std::vector<Real> values;
