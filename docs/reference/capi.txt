@@ -974,6 +974,21 @@ note The call sends the span `delete` from module `model` ([Events biyos sends](
 see BIYOS_getnfun BIYOS_delfunnamesp
 since 0.1.0
 
+function BIYOS_clrfunsp BIYOS_clrfunrg
+summary Empty functions of the model, so they can be built again.
+param mdl in The model.
+param beg in In the `rg` form, the first function of the range.
+param end in In the `rg` form, one past the last function of the range.
+param n in In the `sp` form, the number of entries.
+param idx in In the `sp` form, the function of each entry; may be null only when there are no entries.
+return `BIYOS_OK` once each function given has the constant 0, no linear or quadratic term and no expression. A function listed more than once is emptied once.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, a function is not one of the model or the range ends past the last function.
+note The constraints and objectives that use a function keep using it. Its expression's nodes stay in the graph, and other functions that share them keep them.
+note An expression's linear and quadratic parts join the function's own, and nothing tells them apart afterwards, so no call takes an expression back from a function: the function is emptied and built again.
+note A call moves the terms of every function from the lowest one it lists on, so many functions are best emptied in one call.
+see BIYOS_attachexprsp BIYOS_addfun
+since 0.1.0
+
 function BIYOS_setfunnamesp BIYOS_setfunnamerg
 summary Name functions.
 param mdl in The model.
@@ -2485,21 +2500,6 @@ note The function of entry `k`, `idx[k]` or `beg + k`, becomes $f + e$, where $e
 note The expression is split at its top. Among the terms of its top sum, a constant, $a_j x_j$, $q_{ij} x_i x_j$ and $q_{jj} x_j^2$ move, with negations and constant factors pushed into that sum; any other term stays whole, so no product of sums is expanded. Below the top, a node that other nodes use is kept whole, so a subexpression shared by several functions is stored once.
 note A call whose expressions bring new linear or quadratic terms moves the terms and offsets of every function from its lowest such one on, as `BIYOS_addlinterm` does, so the expressions of many functions are best attached in one call, or a function's right after it is added. An expression that brings no new term moves nothing.
 see BIYOS_addexpr BIYOS_clrfunsp BIYOS_addlinterm BIYOS_addquadterm
-since 0.1.0
-
-function BIYOS_clrfunsp BIYOS_clrfunrg
-summary Empty functions of the model, so they can be built again.
-param mdl in The model.
-param beg in In the `rg` form, the first function of the range.
-param end in In the `rg` form, one past the last function of the range.
-param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the function of each entry; may be null only when there are no entries.
-return `BIYOS_OK` once each function given has the constant 0, no linear or quadratic term and no expression. A function listed more than once is emptied once.
-error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, a function is not one of the model or the range ends past the last function.
-note The constraints and objectives that use a function keep using it. Its expression's nodes stay in the graph, and other functions that share them keep them.
-note An expression's linear and quadratic parts join the function's own, and nothing tells them apart afterwards, so no call takes an expression back from a function: the function is emptied and built again.
-note A call moves the terms of every function from the lowest one it lists on, so many functions are best emptied in one call.
-see BIYOS_attachexprsp BIYOS_addfun
 since 0.1.0
 
 function BIYOS_getnexprsp BIYOS_getnexprrg

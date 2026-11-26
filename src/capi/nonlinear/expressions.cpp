@@ -112,12 +112,6 @@ void attach_expressions(Session &session, Selection selection, const BIYOS_offse
     model.attach_expressions(owners, input(node, owners.size(), "node"));
 }
 
-template <typename Selection> void clear_functions(Session &session, Selection selection)
-{
-    Model &model = writable(session);
-    model.clear_functions(selected(model, Family::Function, selection));
-}
-
 template <typename Selection> biyos::Encoding encoded(const Model &model, Selection selection)
 {
     const auto chosen = selected(model, Family::Function, selection);
@@ -217,16 +211,6 @@ BIYOS_status BIYOS_attachexprrg(BIYOS_model *mdl,
                                 const BIYOS_offset *node)
 {
     return guarded<attach_expressions<Range>>(mdl, Range{beg, end}, node);
-}
-
-BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
-{
-    return guarded<clear_functions<List>>(mdl, List{n, idx});
-}
-
-BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)
-{
-    return guarded<clear_functions<Range>>(mdl, Range{beg, end});
 }
 
 BIYOS_status BIYOS_getnexprsp(const BIYOS_model *mdl,
