@@ -1495,15 +1495,41 @@ class Model:
         rows = picked(self, Functions, idx)
         self._call(*self._chosen("BIYOS_clrfun", Functions, rows))
 
+    @overload
+    def addlinterm(
+        self, fun: One[Function], var: One[Variable], coef: Real
+    ) -> None: ...
+
+    @overload
     def addlinterm(
         self,
-        fun: Index | Function | Sequence[Index | Function] | Functions,
+        fun: One[Function],
+        var: Many[Variable, Variables],
+        coef: Sequence[Real],
+    ) -> None: ...
+
+    @overload
+    def addlinterm(
+        self,
+        fun: Many[Function, Functions],
+        var: Many[Variable, Variables],
+        coef: Sequence[Real],
+    ) -> None: ...
+
+    @overload
+    def addlinterm(
+        self,
+        fun: Many[Function, Functions],
+        var: Sequence[Many[Variable, Variables]],
+        coef: Sequence[Sequence[Real]],
+    ) -> None: ...
+
+    def addlinterm(
+        self,
+        fun: Selection[Function, Functions],
         var: (
-            Index
-            | Variable
-            | Sequence[Index | Variable]
-            | Variables
-            | Sequence[Sequence[Index | Variable] | Variables]
+            Selection[Variable, Variables]
+            | Sequence[Many[Variable, Variables]]
         ),
         coef: Real | Sequence[Real] | Sequence[Sequence[Real]],
     ) -> None:
@@ -1608,15 +1634,33 @@ class Model:
         found, values = self._terms("rlinterm", Functions, every, 0)
         return found[0], found[1], values
 
+    @overload
+    def addclinterm(
+        self, var: One[Variable], fun: One[Function], coef: Real
+    ) -> None: ...
+
+    @overload
     def addclinterm(
         self,
-        var: Index | Variable | Sequence[Index | Variable] | Variables,
+        var: One[Variable],
+        fun: Many[Function, Functions],
+        coef: Sequence[Real],
+    ) -> None: ...
+
+    @overload
+    def addclinterm(
+        self,
+        var: Many[Variable, Variables],
+        fun: Sequence[Many[Function, Functions]],
+        coef: Sequence[Sequence[Real]],
+    ) -> None: ...
+
+    def addclinterm(
+        self,
+        var: Selection[Variable, Variables],
         fun: (
-            Index
-            | Function
-            | Sequence[Index | Function]
-            | Functions
-            | Sequence[Sequence[Index | Function] | Functions]
+            Selection[Function, Functions]
+            | Sequence[Many[Function, Functions]]
         ),
         coef: Real | Sequence[Real] | Sequence[Sequence[Real]],
     ) -> None:
@@ -1712,22 +1756,52 @@ class Model:
         found, values = self._terms("clinterm", Variables, every, 1)
         return found[0], found[1], values
 
+    @overload
     def addquadterm(
         self,
-        fun: Index | Function | Sequence[Index | Function] | Functions,
+        fun: One[Function],
+        var1: One[Variable],
+        var2: One[Variable],
+        coef: Real,
+    ) -> None: ...
+
+    @overload
+    def addquadterm(
+        self,
+        fun: One[Function],
+        var1: Many[Variable, Variables],
+        var2: Many[Variable, Variables],
+        coef: Sequence[Real],
+    ) -> None: ...
+
+    @overload
+    def addquadterm(
+        self,
+        fun: Many[Function, Functions],
+        var1: Many[Variable, Variables],
+        var2: Many[Variable, Variables],
+        coef: Sequence[Real],
+    ) -> None: ...
+
+    @overload
+    def addquadterm(
+        self,
+        fun: Many[Function, Functions],
+        var1: Sequence[Many[Variable, Variables]],
+        var2: Sequence[Many[Variable, Variables]],
+        coef: Sequence[Sequence[Real]],
+    ) -> None: ...
+
+    def addquadterm(
+        self,
+        fun: Selection[Function, Functions],
         var1: (
-            Index
-            | Variable
-            | Sequence[Index | Variable]
-            | Variables
-            | Sequence[Sequence[Index | Variable] | Variables]
+            Selection[Variable, Variables]
+            | Sequence[Many[Variable, Variables]]
         ),
         var2: (
-            Index
-            | Variable
-            | Sequence[Index | Variable]
-            | Variables
-            | Sequence[Sequence[Index | Variable] | Variables]
+            Selection[Variable, Variables]
+            | Sequence[Many[Variable, Variables]]
         ),
         coef: Real | Sequence[Real] | Sequence[Sequence[Real]],
     ) -> None:
