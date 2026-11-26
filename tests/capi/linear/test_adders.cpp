@@ -124,11 +124,11 @@ Compressed compressed(const Added &added, int count, bool by_row)
 
 BIYOS_status add_listed(const Model &model, const Added &added)
 {
-    return BIYOS_addlintermsp(model.get(),
-                              static_cast<BIYOS_offset>(added.values.size()),
-                              added.functions.data(),
-                              added.variables.data(),
-                              added.values.data());
+    return BIYOS_addlinterm(model.get(),
+                            static_cast<BIYOS_offset>(added.values.size()),
+                            added.functions.data(),
+                            added.variables.data(),
+                            added.values.data());
 }
 
 BIYOS_status add_rows(const Model &model, const Added &added)
@@ -308,13 +308,13 @@ TEST(AdderTest, Arguments)
     const std::array<double, 1> one{1.0};
     const std::array<BIYOS_offset, 3> negative{1, 0, -1};
     const std::array<BIYOS_offset, 2> overflowing{(std::numeric_limits<BIYOS_offset>::max)(), 1};
-    EXPECT_EQ(BIYOS_addlintermsp(held, -1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addlinterm(held, -1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': -1 is negative");
-    EXPECT_EQ(BIYOS_addlintermsp(held, 1, nullptr, zero.data(), one.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addlinterm(held, 1, nullptr, zero.data(), one.data()), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
-    EXPECT_EQ(BIYOS_addlintermsp(held, 1, zero.data(), nullptr, one.data()), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addlinterm(held, 1, zero.data(), nullptr, one.data()), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'var': is null");
-    EXPECT_EQ(BIYOS_addlintermsp(held, 1, zero.data(), zero.data(), nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addlinterm(held, 1, zero.data(), zero.data(), nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'coef': is null");
     EXPECT_EQ(BIYOS_addrlintermrg(held, 0, functions + 1, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
@@ -333,7 +333,7 @@ TEST(AdderTest, Arguments)
     EXPECT_EQ(BIYOS_addclintermrg(held, 0, 1, negative.data(), nullptr, one.data()),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
-    EXPECT_EQ(BIYOS_addlintermsp(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
+    EXPECT_EQ(BIYOS_addlinterm(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addrlintermrg(held, 0, functions, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_addclintermrg(held, variables, variables, nullptr, nullptr, nullptr), BIYOS_OK);
 }

@@ -77,7 +77,7 @@ void add_sample(BIYOS_model *model)
     ASSERT_EQ(BIYOS_addfun(model, 2, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcstrg(model, 0, 2, constants), BIYOS_OK);
     ASSERT_EQ(BIYOS_addrlintermrg(model, 0, 2, counts, variables, values), BIYOS_OK);
-    ASSERT_EQ(BIYOS_addquadtermsp(model, 3, owners, rows, columns, products), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addquadterm(model, 3, owners, rows, columns, products), BIYOS_OK);
     add_expressions(model, added);
     ASSERT_EQ(BIYOS_addcon(model, 3, functions, lower, upper, nullptr), BIYOS_OK);
     ASSERT_EQ(BIYOS_setcontolsp(model, 1, added + 1, absolute, nullptr), BIYOS_OK);

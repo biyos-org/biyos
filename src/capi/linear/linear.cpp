@@ -115,11 +115,11 @@ void add_columns(Session &session,
 
 }
 
-BIYOS_status BIYOS_addlintermsp(BIYOS_model *mdl,
-                                BIYOS_offset nnz,
-                                const BIYOS_index *fun,
-                                const BIYOS_index *var,
-                                const BIYOS_real *coef)
+BIYOS_status BIYOS_addlinterm(BIYOS_model *mdl,
+                              BIYOS_offset nnz,
+                              const BIYOS_index *fun,
+                              const BIYOS_index *var,
+                              const BIYOS_real *coef)
 {
     return guarded<add_listed>(mdl, nnz, fun, var, coef);
 }

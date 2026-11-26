@@ -165,7 +165,7 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_addfun(nullptr, 0, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getnfun(nullptr, &n), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getcstrg(nullptr, 0, 0, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_addlintermsp(nullptr, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addlinterm(nullptr, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addrlintermrg(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addclintermrg(nullptr, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getnrlintermsp(nullptr, 1, &index, &needed), BIYOS_ERR_BADARG);
@@ -178,8 +178,7 @@ TEST(CApiTest, NullModel)
     EXPECT_EQ(BIYOS_getclintermsp(nullptr, 1, &index, 0, &needed, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getclintermrg(nullptr, 0, 0, 0, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_addquadtermsp(nullptr, 0, nullptr, nullptr, nullptr, nullptr),
-              BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_addquadterm(nullptr, 0, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_addquadtermrg(nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_getnquadtermsp(nullptr, 1, &index, &needed), BIYOS_ERR_BADARG);

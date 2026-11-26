@@ -202,8 +202,8 @@ def expect_lists(draw, model, count):
 def test_values(model, monkeypatch):
     values = array.array("d", [1.0, 2.0])
     seen = []
-    spy = partial(recorded, seen, lib.BIYOS_addquadtermsp)
-    monkeypatch.setattr(lib, "BIYOS_addquadtermsp", spy)
+    spy = partial(recorded, seen, lib.BIYOS_addquadterm)
+    monkeypatch.setattr(lib, "BIYOS_addquadterm", spy)
     model.addquadterm([0, 0], [1, 0], [0, 0], values)
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][5]) == values.buffer_info()[0]
@@ -289,7 +289,7 @@ def test_gone(model, monkeypatch):
     function, other, variable = f[0], f[1], x[1]
     model._gen += 1
     seen = []
-    names = ["BIYOS_addquadtermsp"]
+    names = ["BIYOS_addquadterm"]
     for form in ("sp", "rg"):
         names += [f"BIYOS_getnquadterm{form}", f"BIYOS_getquadterm{form}"]
     for name in names:

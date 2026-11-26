@@ -172,8 +172,7 @@ TEST(EvaluationTest, Rebuilt)
     const BIYOS_index function = 1;
     const BIYOS_index variable = 0;
     const double coefficient = 1.0;
-    ASSERT_EQ(BIYOS_addlintermsp(mixed.model.get(), 1, &function, &variable, &coefficient),
-              BIYOS_OK);
+    ASSERT_EQ(BIYOS_addlinterm(mixed.model.get(), 1, &function, &variable, &coefficient), BIYOS_OK);
     EXPECT_EQ(mixed.model.get()->cached(), nullptr);
     Values g(10);
     ASSERT_EQ(BIYOS_evalg(mixed.model.get(), kPoint.data(), g.data()), BIYOS_OK);

@@ -530,7 +530,7 @@ TEST(CApiTest, Attach)
     const int owners[] = {1, 1};
     const int variables[] = {2, 0};
     const double coefficients[] = {1.0, -1.0};
-    ASSERT_EQ(BIYOS_addlintermsp(model.get(), 2, owners, variables, coefficients), BIYOS_OK);
+    ASSERT_EQ(BIYOS_addlinterm(model.get(), 2, owners, variables, coefficients), BIYOS_OK);
     const Program program = single(
         {
             BIYOS_OP_CONST,
@@ -683,7 +683,7 @@ TEST(CApiTest, Cleared)
     ASSERT_EQ(BIYOS_setcstrg(model.get(), 0, 3, constants), BIYOS_OK);
     ASSERT_EQ(BIYOS_addrlintermrg(model.get(), 0, 3, counts, variables, coefficients), BIYOS_OK);
     const int owner = 1;
-    ASSERT_EQ(BIYOS_addquadtermsp(model.get(), 1, &owner, variables, variables, coefficients),
+    ASSERT_EQ(BIYOS_addquadterm(model.get(), 1, &owner, variables, variables, coefficients),
               BIYOS_OK);
     const BIYOS_offset x = variable_node(model, 0);
     const BIYOS_offset exponential = node_of(model, BIYOS_OP_EXP, {x}, {});

@@ -84,11 +84,11 @@ std::vector<int> owners_of(const std::vector<int> &functions, const Terms &terms
 BIYOS_status add_terms(const Model &model, const std::vector<int> &functions, const Terms &terms)
 {
     const std::vector<int> owners = owners_of(functions, terms);
-    return BIYOS_addlintermsp(model.get(),
-                              static_cast<BIYOS_offset>(owners.size()),
-                              owners.data(),
-                              terms.indices.data(),
-                              terms.values.data());
+    return BIYOS_addlinterm(model.get(),
+                            static_cast<BIYOS_offset>(owners.size()),
+                            owners.data(),
+                            terms.indices.data(),
+                            terms.values.data());
 }
 
 void add_sample(const Model &model)
@@ -192,7 +192,7 @@ void change(const BIYOS_event *, void *data)
 {
     Attempt &attempt = *static_cast<Attempt *>(data);
     BIYOS_offset nnz = 0;
-    note(attempt, BIYOS_addlintermsp(attempt.model, 0, nullptr, nullptr, nullptr));
+    note(attempt, BIYOS_addlinterm(attempt.model, 0, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_addrlintermrg(attempt.model, 0, 1, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_addclintermrg(attempt.model, 0, 1, nullptr, nullptr, nullptr));
     note(attempt, BIYOS_getnclintermrg(attempt.model, 0, 1, &nnz));
