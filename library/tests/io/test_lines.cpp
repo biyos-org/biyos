@@ -5,7 +5,9 @@
 #include <gtest/gtest.h>
 
 #include <bit>
+#include <cstddef>
 #include <optional>
+#include <span>
 #include <sstream>
 #include <string_view>
 #include <vector>
@@ -19,6 +21,7 @@ using biyos::ErrorKind;
 using biyos::Lines;
 using biyos::number_of;
 using biyos::Real;
+using biyos::trimmed;
 
 std::vector<std::string_view> fields_of(const Lines &lines)
 {
@@ -58,6 +61,26 @@ TEST(LineTest, Numbers)
     EXPECT_EQ(fields_of(lines), (std::vector<std::string_view>{"ROWS"}));
     EXPECT_FALSE(lines.next());
     EXPECT_TRUE(lines.fields().empty());
+}
+
+TEST(LineTest, Split)
+{
+    std::istringstream input(" a    b c d\r\n");
+    Lines lines(input, "a.mps");
+    ASSERT_TRUE(lines.next());
+    const std::size_t starts[] = {1, 3, 6, 9, 20};
+    lines.split(starts);
+    EXPECT_EQ(fields_of(lines), (std::vector<std::string_view>{"a", "", "b c", "d"}));
+    lines.split(std::span(starts).first(1));
+    EXPECT_EQ(fields_of(lines), (std::vector<std::string_view>{"a    b c d"}));
+}
+
+TEST(LineTest, Trimmed)
+{
+    EXPECT_EQ(trimmed(" \ta b\r"), "a b");
+    EXPECT_EQ(trimmed("ab"), "ab");
+    EXPECT_EQ(trimmed(" \t "), "");
+    EXPECT_EQ(trimmed(""), "");
 }
 
 TEST(LineTest, Where)

@@ -5,6 +5,7 @@
 #include "core/text/chars.hpp"
 #include "core/text/text.hpp"
 
+#include <algorithm>
 #include <charconv>
 #include <cstddef>
 #include <istream>
@@ -55,6 +56,23 @@ bool Lines::next()
     return true;
 }
 
+void Lines::split(std::span<const std::size_t> starts)
+{
+    fields_.clear();
+    const std::string_view text = text_;
+    for (std::size_t k = 0; k < starts.size(); ++k)
+    {
+        const std::size_t begin = (std::min)(starts[k], text.size());
+        const bool last = k + 1 == starts.size();
+        const std::size_t width = last ? std::string_view::npos : starts[k + 1] - starts[k];
+        fields_.push_back(trimmed(text.substr(begin, width)));
+    }
+    while (!fields_.empty() && fields_.back().empty())
+    {
+        fields_.pop_back();
+    }
+}
+
 std::size_t Lines::number() const noexcept
 {
     return number_;
@@ -79,6 +97,16 @@ std::string Lines::where() const
 {
     const std::string file = "file '" + file_ + "'";
     return number_ == 0 ? file : file + " line " + text_of(number_);
+}
+
+std::string_view trimmed(std::string_view text) noexcept
+{
+    const std::size_t begin = text.find_first_not_of(kBlanks);
+    if (begin == std::string_view::npos)
+    {
+        return {};
+    }
+    return text.substr(begin, text.find_last_not_of(kBlanks) + 1 - begin);
 }
 
 std::optional<Real> number_of(std::string_view field)
