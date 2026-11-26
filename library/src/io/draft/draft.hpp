@@ -78,5 +78,6 @@ Real lower_of(const DraftColumn &column) noexcept;
 Real upper_of(const DraftColumn &column) noexcept;
 Constraint constraint_of(Index function, const DraftRow &row) noexcept;
 Model build(const Draft &draft);
+[[noreturn]] void unwritable(const std::string &object, const std::string &part);
 
 }

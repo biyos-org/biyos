@@ -1,5 +1,6 @@
 #include "io/draft/draft.hpp"
 
+#include "core/error.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "expr/forms/terms.hpp"
@@ -10,6 +11,7 @@
 #include <numeric>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -252,6 +254,11 @@ Model build(const Draft &draft)
     add_sets(model, draft);
     name_sets(model, draft);
     return model;
+}
+
+void unwritable(const std::string &object, const std::string &part)
+{
+    throw Error(ErrorKind::Unsupported, object, part + " cannot be written in free MPS");
 }
 
 }

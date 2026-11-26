@@ -58,9 +58,7 @@ void check_member(const Draft &draft, Index sos, const Member &member)
     const std::string_view column = draft.column_names.names()[to_size(member.variable)];
     if (set_kind(column))
     {
-        const std::string reason =
-            "member '" + std::string(column) + "' cannot be written in free MPS";
-        throw Error(ErrorKind::Unsupported, item("set", sos), reason);
+        unwritable(item("set", sos), "member '" + std::string(column) + "'");
     }
 }
 

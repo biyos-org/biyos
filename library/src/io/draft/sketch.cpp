@@ -1,6 +1,5 @@
 #include "io/draft/sketch.hpp"
 
-#include "core/error.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
@@ -41,8 +40,7 @@ void name_model(Draft &draft, const Model &model)
                         kBlanks.find(name->back()) != std::string_view::npos;
     if (padded || name->find('\n') != std::string::npos)
     {
-        const std::string reason = "name '" + *name + "' cannot be written in free MPS";
-        throw Error(ErrorKind::Unsupported, "model", reason);
+        unwritable("model", "name '" + *name + "'");
     }
     draft.name = *name;
 }

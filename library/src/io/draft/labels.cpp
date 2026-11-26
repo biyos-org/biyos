@@ -4,6 +4,7 @@
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "io/directory.hpp"
+#include "io/draft/draft.hpp"
 #include "model/model.hpp"
 #include "model/utils/checks.hpp"
 
@@ -30,8 +31,7 @@ void check_label(const std::string &object, std::string_view name, bool row)
 {
     if (!carried(name, row))
     {
-        const std::string reason = "name '" + std::string(name) + "' cannot be written in free MPS";
-        throw Error(ErrorKind::Unsupported, object, reason);
+        unwritable(object, "name '" + std::string(name) + "'");
     }
 }
 

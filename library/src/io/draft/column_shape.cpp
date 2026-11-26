@@ -1,6 +1,5 @@
 #include "io/draft/column_shape.hpp"
 
-#include "core/error.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/identical.hpp"
 #include "core/text/text.hpp"
@@ -79,8 +78,7 @@ DraftColumn column_shape(Index variable, const Variable &bounds)
     if (!holds(column, bounds))
     {
         const std::string range = interval_of(bounds.lower, bounds.upper);
-        const std::string reason = "bounds " + range + " of its kind cannot be written in free MPS";
-        throw Error(ErrorKind::Unsupported, item("variable", variable), reason);
+        unwritable(item("variable", variable), "bounds " + range + " of its kind");
     }
     return column;
 }
