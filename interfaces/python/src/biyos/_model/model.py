@@ -12,7 +12,14 @@ from ctypes import (
 from enum import IntEnum
 from math import isnan
 from os import PathLike, fspath
-from typing import Any, NoReturn, SupportsIndex, TypeVar, cast
+from typing import (
+    Any,
+    NoReturn,
+    SupportsIndex,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from biyos import _capi
 from biyos._capi import lib
@@ -236,8 +243,14 @@ def _expanded(
     return [record for record, count in pairs for _ in range(count)]
 
 
-def _or_none(values: list[Real]) -> list[Real | None]:
-    return [None if isnan(value) else value for value in values]
+def _or_none(value: Real) -> Real | None:
+    return None if isnan(value) else value
+
+
+def _each(convert: Callable[[Any], object], found: Any) -> Any:
+    if isinstance(found, list):
+        return [convert(value) for value in found]
+    return convert(found)
 
 
 def _renumbered(total: Index, gone: set[Index]) -> list[Index]:
@@ -806,15 +819,25 @@ class Model:
         )
         self._call(*chosen, *arrays)
 
+    @overload
+    def getvarbnd(self, idx: Index | Variable) -> tuple[Real, Real]: ...
+
+    @overload
     def getvarbnd(
         self, idx: Sequence[Index | Variable] | Variables
-    ) -> tuple[list[Real], list[Real]]:
+    ) -> tuple[list[Real], list[Real]]: ...
+
+    def getvarbnd(
+        self, idx: Selection[Variable, Variables]
+    ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of variables.
 
         Parameters
         ----------
         idx
             The variables, in any order, any of them more than once.
+            An index or a view stands for one variable, and each result is then
+            a scalar.
 
         Returns
         -------
@@ -857,15 +880,25 @@ class Model:
         arrays = (ints("knd", knd, n, one),)
         self._call(*chosen, *arrays)
 
+    @overload
+    def getvarknd(self, idx: Index | Variable) -> VariableKind: ...
+
+    @overload
     def getvarknd(
         self, idx: Sequence[Index | Variable] | Variables
-    ) -> list[VariableKind]:
+    ) -> list[VariableKind]: ...
+
+    def getvarknd(
+        self, idx: Selection[Variable, Variables]
+    ) -> VariableKind | list[VariableKind]:
         """Read the kinds of variables.
 
         Parameters
         ----------
         idx
             The variables, in any order, any of them more than once.
+            An index or a view stands for one variable, and the result is then a
+            scalar.
 
         Returns
         -------
@@ -877,8 +910,9 @@ class Model:
         BIYOS_getvarkndsp
         BIYOS_getvarkndrg
         """
-        found = self._getlist("BIYOS_getvarknd", Variables, idx, c_integer)
-        return [VariableKind(value) for value in found[0]]
+        (found,) = self._getlist("BIYOS_getvarknd", Variables, idx, c_integer)
+        knd: VariableKind | list[VariableKind] = _each(VariableKind, found)
+        return knd
 
     def setvartol(
         self,
@@ -915,15 +949,30 @@ class Model:
         )
         self._call(*chosen, *arrays)
 
+    @overload
+    def getvartol(
+        self, idx: Index | Variable
+    ) -> tuple[Real | None, Real | None]: ...
+
+    @overload
     def getvartol(
         self, idx: Sequence[Index | Variable] | Variables
-    ) -> tuple[list[Real | None], list[Real | None]]:
+    ) -> tuple[list[Real | None], list[Real | None]]: ...
+
+    def getvartol(
+        self, idx: Selection[Variable, Variables]
+    ) -> (
+        tuple[Real | None, Real | None]
+        | tuple[list[Real | None], list[Real | None]]
+    ):
         """Read the tolerances of variables.
 
         Parameters
         ----------
         idx
             The variables, in any order, any of them more than once.
+            An index or a view stands for one variable, and each result is then
+            a scalar.
 
         Returns
         -------
@@ -939,7 +988,7 @@ class Model:
         """
         pair = (c_real, c_real)
         atol, rtol = self._getlist("BIYOS_getvartol", Variables, idx, *pair)
-        return _or_none(atol), _or_none(rtol)
+        return _each(_or_none, atol), _each(_or_none, rtol)
 
     def delvartol(self, idx: Selection[Variable, Variables]) -> None:
         """Return variables to ``feastol_abs`` and ``feastol_rel``.
@@ -974,9 +1023,22 @@ class Model:
         self._call(lib.BIYOS_getnvar, byref(count))
         return count.value
 
+    @overload
+    def getvar(
+        self, idx: Index | Variable
+    ) -> tuple[VariableKind, Real, Real]: ...
+
+    @overload
     def getvar(
         self, idx: Sequence[Index | Variable] | Variables | None = None
-    ) -> tuple[list[VariableKind], list[Real], list[Real]]:
+    ) -> tuple[list[VariableKind], list[Real], list[Real]]: ...
+
+    def getvar(
+        self, idx: Selection[Variable, Variables] | None = None
+    ) -> (
+        tuple[VariableKind, Real, Real]
+        | tuple[list[VariableKind], list[Real], list[Real]]
+    ):
         """Read the kinds and bounds of variables.
 
         Parameters
@@ -984,6 +1046,8 @@ class Model:
         idx
             The variables, in any order, any of them more than once; every
             variable by default.
+            An index or a view stands for one variable, and each result is then
+            a scalar.
 
         Returns
         -------
@@ -1003,7 +1067,7 @@ class Model:
         types = (c_integer, c_real, c_real)
         found = self._getlist("BIYOS_getvar", Variables, every, *types)
         kinds, lower, upper = found
-        return [VariableKind(kind) for kind in kinds], lower, upper
+        return _each(VariableKind, kinds), lower, upper
 
     def setvarname(
         self, idx: Selection[Variable, Variables], name: str | Sequence[str]
@@ -1043,15 +1107,25 @@ class Model:
         """
         self._setname("BIYOS_setvarname", Variables, idx, name)
 
+    @overload
+    def getvarname(self, idx: Index | Variable) -> str | None: ...
+
+    @overload
     def getvarname(
         self, idx: Sequence[Index | Variable] | Variables
-    ) -> list[str | None]:
+    ) -> list[str | None]: ...
+
+    def getvarname(
+        self, idx: Selection[Variable, Variables]
+    ) -> str | None | list[str | None]:
         """Return the names of variables.
 
         Parameters
         ----------
         idx
             The variables to read, in any order, any of them more than once.
+            An index or a view stands for one variable, and the result is then a
+            scalar.
 
         Returns
         -------
@@ -1246,13 +1320,23 @@ class Model:
         one, n, chosen = self._selected("BIYOS_setcst", Functions, idx)
         self._call(*chosen, doubles("cst", cst, n, one))
 
-    def getcst(self, idx: Sequence[Index | Function] | Functions) -> list[Real]:
+    @overload
+    def getcst(self, idx: Index | Function) -> Real: ...
+
+    @overload
+    def getcst(
+        self, idx: Sequence[Index | Function] | Functions
+    ) -> list[Real]: ...
+
+    def getcst(self, idx: Selection[Function, Functions]) -> Real | list[Real]:
         """Read the constants of functions.
 
         Parameters
         ----------
         idx
             The functions, in any order, any of them more than once.
+            An index or a view stands for one function, and the result is then a
+            scalar.
 
         Returns
         -------
@@ -1264,8 +1348,9 @@ class Model:
         BIYOS_getcstsp
         BIYOS_getcstrg
         """
-        found = self._getlist("BIYOS_getcst", Functions, idx, c_real)
-        return found[0]
+        cst: Real | list[Real]
+        (cst,) = self._getlist("BIYOS_getcst", Functions, idx, c_real)
+        return cst
 
     def setfunname(
         self, idx: Selection[Function, Functions], name: str | Sequence[str]
@@ -1288,15 +1373,25 @@ class Model:
         """
         self._setname("BIYOS_setfunname", Functions, idx, name)
 
+    @overload
+    def getfunname(self, idx: Index | Function) -> str | None: ...
+
+    @overload
     def getfunname(
         self, idx: Sequence[Index | Function] | Functions
-    ) -> list[str | None]:
+    ) -> list[str | None]: ...
+
+    def getfunname(
+        self, idx: Selection[Function, Functions]
+    ) -> str | None | list[str | None]:
         """Return the names of functions, as ``getvarname`` does.
 
         Parameters
         ----------
         idx
             The functions to read.
+            An index or a view stands for one function, and the result is then a
+            scalar.
 
         Returns
         -------
@@ -2415,15 +2510,25 @@ class Model:
         )
         self._call(*chosen, *arrays)
 
+    @overload
+    def getconbnd(self, idx: Index | Constraint) -> tuple[Real, Real]: ...
+
+    @overload
     def getconbnd(
         self, idx: Sequence[Index | Constraint] | Constraints
-    ) -> tuple[list[Real], list[Real]]:
+    ) -> tuple[list[Real], list[Real]]: ...
+
+    def getconbnd(
+        self, idx: Selection[Constraint, Constraints]
+    ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of constraints.
 
         Parameters
         ----------
         idx
             The constraints, in any order, any of them more than once.
+            An index or a view stands for one constraint, and each result is
+            then a scalar.
 
         Returns
         -------
@@ -2476,15 +2581,30 @@ class Model:
         )
         self._call(*chosen, *arrays)
 
+    @overload
+    def getcontol(
+        self, idx: Index | Constraint
+    ) -> tuple[Real | None, Real | None]: ...
+
+    @overload
     def getcontol(
         self, idx: Sequence[Index | Constraint] | Constraints
-    ) -> tuple[list[Real | None], list[Real | None]]:
+    ) -> tuple[list[Real | None], list[Real | None]]: ...
+
+    def getcontol(
+        self, idx: Selection[Constraint, Constraints]
+    ) -> (
+        tuple[Real | None, Real | None]
+        | tuple[list[Real | None], list[Real | None]]
+    ):
         """Read the tolerances of constraints.
 
         Parameters
         ----------
         idx
             The constraints, in any order, any of them more than once.
+            An index or a view stands for one constraint, and each result is
+            then a scalar.
 
         Returns
         -------
@@ -2500,7 +2620,7 @@ class Model:
         """
         pair = (c_real, c_real)
         atol, rtol = self._getlist("BIYOS_getcontol", Constraints, idx, *pair)
-        return _or_none(atol), _or_none(rtol)
+        return _each(_or_none, atol), _each(_or_none, rtol)
 
     def delcontol(self, idx: Selection[Constraint, Constraints]) -> None:
         """Return constraints to ``feastol_abs`` and ``feastol_rel``.
@@ -2535,9 +2655,17 @@ class Model:
         self._call(lib.BIYOS_getncon, byref(count))
         return count.value
 
+    @overload
+    def getcon(self, idx: Index | Constraint) -> tuple[Index, Real, Real]: ...
+
+    @overload
     def getcon(
         self, idx: Sequence[Index | Constraint] | Constraints | None = None
-    ) -> tuple[list[Index], list[Real], list[Real]]:
+    ) -> tuple[list[Index], list[Real], list[Real]]: ...
+
+    def getcon(
+        self, idx: Selection[Constraint, Constraints] | None = None
+    ) -> tuple[Index, Real, Real] | tuple[list[Index], list[Real], list[Real]]:
         """Read the functions and bounds of constraints.
 
         Parameters
@@ -2545,6 +2673,8 @@ class Model:
         idx
             The constraints, in any order, any of them more than once; every
             constraint by default.
+            An index or a view stands for one constraint, and each result is
+            then a scalar.
 
         Returns
         -------
@@ -2587,15 +2717,25 @@ class Model:
         """
         self._setname("BIYOS_setconname", Constraints, idx, name)
 
+    @overload
+    def getconname(self, idx: Index | Constraint) -> str | None: ...
+
+    @overload
     def getconname(
         self, idx: Sequence[Index | Constraint] | Constraints
-    ) -> list[str | None]:
+    ) -> list[str | None]: ...
+
+    def getconname(
+        self, idx: Selection[Constraint, Constraints]
+    ) -> str | None | list[str | None]:
         """Return the names of constraints, as ``getvarname`` does.
 
         Parameters
         ----------
         idx
             The constraints to read.
+            An index or a view stands for one constraint, and the result is then
+            a scalar.
 
         Returns
         -------
@@ -2767,15 +2907,25 @@ class Model:
         arrays = (ints("sense", sense, n, one),)
         self._call(*chosen, *arrays)
 
+    @overload
+    def getobjsense(self, idx: Index | Objective) -> ObjectiveSense: ...
+
+    @overload
     def getobjsense(
         self, idx: Sequence[Index | Objective] | Objectives
-    ) -> list[ObjectiveSense]:
+    ) -> list[ObjectiveSense]: ...
+
+    def getobjsense(
+        self, idx: Selection[Objective, Objectives]
+    ) -> ObjectiveSense | list[ObjectiveSense]:
         """Read the senses of objectives.
 
         Parameters
         ----------
         idx
             The objectives, in any order, any of them more than once.
+            An index or a view stands for one objective, and the result is then
+            a scalar.
 
         Returns
         -------
@@ -2787,8 +2937,12 @@ class Model:
         BIYOS_getobjsensesp
         BIYOS_getobjsenserg
         """
-        found = self._getlist("BIYOS_getobjsense", Objectives, idx, c_integer)
-        return [ObjectiveSense(value) for value in found[0]]
+        (found,) = self._getlist(
+            "BIYOS_getobjsense", Objectives, idx, c_integer
+        )
+        sense: ObjectiveSense | list[ObjectiveSense]
+        sense = _each(ObjectiveSense, found)
+        return sense
 
     def setobjprio(
         self,
@@ -2817,15 +2971,25 @@ class Model:
         arrays = (ints("prio", prio, n, one),)
         self._call(*chosen, *arrays)
 
+    @overload
+    def getobjprio(self, idx: Index | Objective) -> int: ...
+
+    @overload
     def getobjprio(
         self, idx: Sequence[Index | Objective] | Objectives
-    ) -> list[int]:
+    ) -> list[int]: ...
+
+    def getobjprio(
+        self, idx: Selection[Objective, Objectives]
+    ) -> int | list[int]:
         """Read the priorities of objectives.
 
         Parameters
         ----------
         idx
             The objectives, in any order, any of them more than once.
+            An index or a view stands for one objective, and the result is then
+            a scalar.
 
         Returns
         -------
@@ -2837,8 +3001,9 @@ class Model:
         BIYOS_getobjpriosp
         BIYOS_getobjpriorg
         """
-        found = self._getlist("BIYOS_getobjprio", Objectives, idx, c_integer)
-        return found[0]
+        prio: int | list[int]
+        (prio,) = self._getlist("BIYOS_getobjprio", Objectives, idx, c_integer)
+        return prio
 
     def setobjcoef(
         self,
@@ -2868,15 +3033,25 @@ class Model:
         arrays = (doubles("coef", coef, n, one),)
         self._call(*chosen, *arrays)
 
+    @overload
+    def getobjcoef(self, idx: Index | Objective) -> Real: ...
+
+    @overload
     def getobjcoef(
         self, idx: Sequence[Index | Objective] | Objectives
-    ) -> list[Real]:
+    ) -> list[Real]: ...
+
+    def getobjcoef(
+        self, idx: Selection[Objective, Objectives]
+    ) -> Real | list[Real]:
         """Read the weights of objectives.
 
         Parameters
         ----------
         idx
             The objectives, in any order, any of them more than once.
+            An index or a view stands for one objective, and the result is then
+            a scalar.
 
         Returns
         -------
@@ -2888,8 +3063,9 @@ class Model:
         BIYOS_getobjcoefsp
         BIYOS_getobjcoefrg
         """
-        found = self._getlist("BIYOS_getobjcoef", Objectives, idx, c_real)
-        return found[0]
+        coef: Real | list[Real]
+        (coef,) = self._getlist("BIYOS_getobjcoef", Objectives, idx, c_real)
+        return coef
 
     def setobjtol(
         self,
@@ -2926,15 +3102,25 @@ class Model:
         )
         self._call(*chosen, *arrays)
 
+    @overload
+    def getobjtol(self, idx: Index | Objective) -> tuple[Real, Real]: ...
+
+    @overload
     def getobjtol(
         self, idx: Sequence[Index | Objective] | Objectives
-    ) -> tuple[list[Real], list[Real]]:
+    ) -> tuple[list[Real], list[Real]]: ...
+
+    def getobjtol(
+        self, idx: Selection[Objective, Objectives]
+    ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the tolerances of objectives.
 
         Parameters
         ----------
         idx
             The objectives, in any order, any of them more than once.
+            An index or a view stands for one objective, and each result is then
+            a scalar.
 
         Returns
         -------
@@ -2968,9 +3154,22 @@ class Model:
         self._call(lib.BIYOS_getnobj, byref(count))
         return count.value
 
+    @overload
+    def getobj(
+        self, idx: Index | Objective
+    ) -> tuple[Index, ObjectiveSense, int, Real]: ...
+
+    @overload
     def getobj(
         self, idx: Sequence[Index | Objective] | Objectives | None = None
-    ) -> tuple[list[Index], list[ObjectiveSense], list[int], list[Real]]:
+    ) -> tuple[list[Index], list[ObjectiveSense], list[int], list[Real]]: ...
+
+    def getobj(
+        self, idx: Selection[Objective, Objectives] | None = None
+    ) -> (
+        tuple[Index, ObjectiveSense, int, Real]
+        | tuple[list[Index], list[ObjectiveSense], list[int], list[Real]]
+    ):
         """Read objectives.
 
         Parameters
@@ -2978,6 +3177,8 @@ class Model:
         idx
             The objectives, in any order, any of them more than once; every
             objective by default.
+            An index or a view stands for one objective, and each result is then
+            a scalar.
 
         Returns
         -------
@@ -2999,7 +3200,7 @@ class Model:
         types = (c_index, c_integer, c_integer, c_real)
         found = self._getlist("BIYOS_getobj", Objectives, every, *types)
         functions, codes, priorities, weights = found
-        senses = [ObjectiveSense(code) for code in codes]
+        senses = _each(ObjectiveSense, codes)
         return functions, senses, priorities, weights
 
     def setobjname(
@@ -3023,15 +3224,25 @@ class Model:
         """
         self._setname("BIYOS_setobjname", Objectives, idx, name)
 
+    @overload
+    def getobjname(self, idx: Index | Objective) -> str | None: ...
+
+    @overload
     def getobjname(
         self, idx: Sequence[Index | Objective] | Objectives
-    ) -> list[str | None]:
+    ) -> list[str | None]: ...
+
+    def getobjname(
+        self, idx: Selection[Objective, Objectives]
+    ) -> str | None | list[str | None]:
         """Return the names of objectives, as ``getvarname`` does.
 
         Parameters
         ----------
         idx
             The objectives to read.
+            An index or a view stands for one objective, and the result is then
+            a scalar.
 
         Returns
         -------
@@ -3182,15 +3393,25 @@ class Model:
         )
         self._call(*chosen, *arrays)
 
+    @overload
+    def getindbnd(self, idx: Index | Indicator) -> tuple[Real, Real]: ...
+
+    @overload
     def getindbnd(
         self, idx: Sequence[Index | Indicator] | Indicators
-    ) -> tuple[list[Real], list[Real]]:
+    ) -> tuple[list[Real], list[Real]]: ...
+
+    def getindbnd(
+        self, idx: Selection[Indicator, Indicators]
+    ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of indicators.
 
         Parameters
         ----------
         idx
             The indicators, in any order, any of them more than once.
+            An index or a view stands for one indicator, and each result is then
+            a scalar.
 
         Returns
         -------
@@ -3241,15 +3462,25 @@ class Model:
         )
         self._call(*chosen, *arrays)
 
+    @overload
+    def getindvar(self, idx: Index | Indicator) -> tuple[Index, int]: ...
+
+    @overload
     def getindvar(
         self, idx: Sequence[Index | Indicator] | Indicators
-    ) -> tuple[list[Index], list[int]]:
+    ) -> tuple[list[Index], list[int]]: ...
+
+    def getindvar(
+        self, idx: Selection[Indicator, Indicators]
+    ) -> tuple[Index, int] | tuple[list[Index], list[int]]:
         """Read the variables that switch indicators on, and their values.
 
         Parameters
         ----------
         idx
             The indicators, in any order, any of them more than once.
+            An index or a view stands for one indicator, and each result is then
+            a scalar.
 
         Returns
         -------
@@ -3284,9 +3515,22 @@ class Model:
         self._call(lib.BIYOS_getnind, byref(count))
         return count.value
 
+    @overload
+    def getind(
+        self, idx: Index | Indicator
+    ) -> tuple[Index, int, Index, Real, Real]: ...
+
+    @overload
     def getind(
         self, idx: Sequence[Index | Indicator] | Indicators | None = None
-    ) -> tuple[list[Index], list[int], list[Index], list[Real], list[Real]]:
+    ) -> tuple[list[Index], list[int], list[Index], list[Real], list[Real]]: ...
+
+    def getind(
+        self, idx: Selection[Indicator, Indicators] | None = None
+    ) -> (
+        tuple[Index, int, Index, Real, Real]
+        | tuple[list[Index], list[int], list[Index], list[Real], list[Real]]
+    ):
         """Read indicators.
 
         Parameters
@@ -3294,6 +3538,8 @@ class Model:
         idx
             The indicators, in any order, any of them more than once; every
             indicator by default.
+            An index or a view stands for one indicator, and each result is then
+            a scalar.
 
         Returns
         -------
@@ -3340,15 +3586,25 @@ class Model:
         """
         self._setname("BIYOS_setindname", Indicators, idx, name)
 
+    @overload
+    def getindname(self, idx: Index | Indicator) -> str | None: ...
+
+    @overload
     def getindname(
         self, idx: Sequence[Index | Indicator] | Indicators
-    ) -> list[str | None]:
+    ) -> list[str | None]: ...
+
+    def getindname(
+        self, idx: Selection[Indicator, Indicators]
+    ) -> str | None | list[str | None]:
         """Return the names of indicators, as ``getvarname`` does.
 
         Parameters
         ----------
         idx
             The indicators to read.
+            An index or a view stands for one indicator, and the result is then
+            a scalar.
 
         Returns
         -------
@@ -3585,15 +3841,25 @@ class Model:
         """
         self._setname("BIYOS_setsosname", SpecialOrderedSets, idx, name)
 
+    @overload
+    def getsosname(self, idx: Index | SpecialOrderedSet) -> str | None: ...
+
+    @overload
     def getsosname(
         self, idx: Sequence[Index | SpecialOrderedSet] | SpecialOrderedSets
-    ) -> list[str | None]:
+    ) -> list[str | None]: ...
+
+    def getsosname(
+        self, idx: Selection[SpecialOrderedSet, SpecialOrderedSets]
+    ) -> str | None | list[str | None]:
         """Return the names of special ordered sets, as ``getvarname`` does.
 
         Parameters
         ----------
         idx
             The sets to read.
+            An index or a view stands for one set, and the result is then a
+            scalar.
 
         Returns
         -------
@@ -3908,15 +4174,30 @@ class Model:
         )
         self._call(*chosen, *arrays)
 
+    @overload
+    def getconetol(
+        self, idx: Index | Cone
+    ) -> tuple[Real | None, Real | None]: ...
+
+    @overload
     def getconetol(
         self, idx: Sequence[Index | Cone] | Cones
-    ) -> tuple[list[Real | None], list[Real | None]]:
+    ) -> tuple[list[Real | None], list[Real | None]]: ...
+
+    def getconetol(
+        self, idx: Selection[Cone, Cones]
+    ) -> (
+        tuple[Real | None, Real | None]
+        | tuple[list[Real | None], list[Real | None]]
+    ):
         """Read the tolerances of cones.
 
         Parameters
         ----------
         idx
             The cones, in any order, any of them more than once.
+            An index or a view stands for one cone, and each result is then a
+            scalar.
 
         Returns
         -------
@@ -3932,7 +4213,7 @@ class Model:
         """
         pair = (c_real, c_real)
         atol, rtol = self._getlist("BIYOS_getconetol", Cones, idx, *pair)
-        return _or_none(atol), _or_none(rtol)
+        return _each(_or_none, atol), _each(_or_none, rtol)
 
     def delconetol(self, idx: Selection[Cone, Cones]) -> None:
         """Return cones to ``feastol_abs`` and ``feastol_rel``.
@@ -4106,15 +4387,25 @@ class Model:
         """
         self._setname("BIYOS_setconename", Cones, idx, name)
 
+    @overload
+    def getconename(self, idx: Index | Cone) -> str | None: ...
+
+    @overload
     def getconename(
         self, idx: Sequence[Index | Cone] | Cones
-    ) -> list[str | None]:
+    ) -> list[str | None]: ...
+
+    def getconename(
+        self, idx: Selection[Cone, Cones]
+    ) -> str | None | list[str | None]:
         """Return the names of cones, as ``getvarname`` does.
 
         Parameters
         ----------
         idx
             The cones to read.
+            An index or a view stands for one cone, and the result is then a
+            scalar.
 
         Returns
         -------
@@ -4263,15 +4554,25 @@ class Model:
         )
         self._call(*chosen, *arrays)
 
+    @overload
+    def getcconbnd(self, idx: Index | Complement) -> tuple[Real, Real]: ...
+
+    @overload
     def getcconbnd(
         self, idx: Sequence[Index | Complement] | Complements
-    ) -> tuple[list[Real], list[Real]]:
+    ) -> tuple[list[Real], list[Real]]: ...
+
+    def getcconbnd(
+        self, idx: Selection[Complement, Complements]
+    ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of complements.
 
         Parameters
         ----------
         idx
             The complements, in any order, any of them more than once.
+            An index or a view stands for one complement, and each result is
+            then a scalar.
 
         Returns
         -------
@@ -4325,15 +4626,30 @@ class Model:
         )
         self._call(*chosen, *arrays)
 
+    @overload
+    def getccontol(
+        self, idx: Index | Complement
+    ) -> tuple[Real | None, Real | None]: ...
+
+    @overload
     def getccontol(
         self, idx: Sequence[Index | Complement] | Complements
-    ) -> tuple[list[Real | None], list[Real | None]]:
+    ) -> tuple[list[Real | None], list[Real | None]]: ...
+
+    def getccontol(
+        self, idx: Selection[Complement, Complements]
+    ) -> (
+        tuple[Real | None, Real | None]
+        | tuple[list[Real | None], list[Real | None]]
+    ):
         """Read the tolerances of complements.
 
         Parameters
         ----------
         idx
             The complements, in any order, any of them more than once.
+            An index or a view stands for one complement, and each result is
+            then a scalar.
 
         Returns
         -------
@@ -4349,7 +4665,7 @@ class Model:
         """
         pair = (c_real, c_real)
         atol, rtol = self._getlist("BIYOS_getccontol", Complements, idx, *pair)
-        return _or_none(atol), _or_none(rtol)
+        return _each(_or_none, atol), _each(_or_none, rtol)
 
     def delccontol(self, idx: Selection[Complement, Complements]) -> None:
         """Return complements to ``feastol_abs`` and ``feastol_rel``.
@@ -4384,9 +4700,22 @@ class Model:
         self._call(lib.BIYOS_getnccon, byref(count))
         return count.value
 
+    @overload
+    def getccon(
+        self, idx: Index | Complement
+    ) -> tuple[Index, Index, Real, Real]: ...
+
+    @overload
     def getccon(
         self, idx: Sequence[Index | Complement] | Complements | None = None
-    ) -> tuple[list[Index], list[Index], list[Real], list[Real]]:
+    ) -> tuple[list[Index], list[Index], list[Real], list[Real]]: ...
+
+    def getccon(
+        self, idx: Selection[Complement, Complements] | None = None
+    ) -> (
+        tuple[Index, Index, Real, Real]
+        | tuple[list[Index], list[Index], list[Real], list[Real]]
+    ):
         """Read the functions and bounds of complements.
 
         Parameters
@@ -4394,6 +4723,8 @@ class Model:
         idx
             The complements, in any order, any of them more than once; every
             complement by default.
+            An index or a view stands for one complement, and each result is
+            then a scalar.
 
         Returns
         -------
@@ -4438,15 +4769,25 @@ class Model:
         """
         self._setname("BIYOS_setcconname", Complements, idx, name)
 
+    @overload
+    def getcconname(self, idx: Index | Complement) -> str | None: ...
+
+    @overload
     def getcconname(
         self, idx: Sequence[Index | Complement] | Complements
-    ) -> list[str | None]:
+    ) -> list[str | None]: ...
+
+    def getcconname(
+        self, idx: Selection[Complement, Complements]
+    ) -> str | None | list[str | None]:
         """Return the names of complements, as ``getvarname`` does.
 
         Parameters
         ----------
         idx
             The complements to read.
+            An index or a view stands for one complement, and the result is then
+            a scalar.
 
         Returns
         -------
@@ -4863,7 +5204,7 @@ class Model:
         outputs: int = 0,
         name: str = "idx",
     ) -> tuple[Callable[..., int], Index, object]:
-        span = span_of(self, family, name, idx)
+        span = span_of(self, family, name, sequence(name, idx))
         if span is None:
             n = len(idx)
             indices = indices_of(self, family, name, idx, n)
@@ -4880,9 +5221,11 @@ class Model:
         call: str,
         family: type[Block[Any]],
         idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
+        outputs: int = 0,
     ) -> tuple[bool, Index, tuple[Callable[..., int], Index, object]]:
         one, n = counted(idx)
-        return one, n, self._chosen(call, family, picked(self, family, idx))
+        rows = picked(self, family, idx)
+        return one, n, self._chosen(call, family, rows, outputs)
 
     def _inside(
         self, family: type[Block[Any]], start: Index, stop: Index
@@ -4938,23 +5281,26 @@ class Model:
         self,
         call: str,
         family: type[Block[Any]],
-        idx: Sequence[SupportsIndex] | Block[Any],
-    ) -> list[str | None]:
-        chosen = self._chosen(call, family, idx, 1)
-        found = (c_char_p * len(idx))()
+        idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
+    ) -> str | None | list[str | None]:
+        one, n, chosen = self._selected(call, family, idx, 1)
+        found = (c_char_p * n)()
         self._call(*chosen, found)
-        return [decoded(value) for value in found]
+        names = [decoded(value) for value in found]
+        return names[0] if one else names
 
     def _getlist(
         self,
         call: str,
         family: type[Block[Any]],
-        idx: Sequence[SupportsIndex] | Block[Any],
+        idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
         *types: type[c_index | c_integer | c_real],
-    ) -> list[list[Any]]:
-        chosen = self._chosen(call, family, idx, len(types))
-        found = [(element * len(idx))() for element in types]
+    ) -> list[Any]:
+        one, n, chosen = self._selected(call, family, idx, len(types))
+        found = [(element * n)() for element in types]
         self._call(*chosen, *found)
+        if one:
+            return [values[0] for values in found]
         return [list(values) for values in found]
 
     def _count(

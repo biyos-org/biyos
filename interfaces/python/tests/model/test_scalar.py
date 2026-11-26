@@ -52,6 +52,55 @@ READERS = [
     ("getccon", "ccon"),
     ("getccontol", "ccon"),
 ] + [(f"get{short}name", short) for short in NAMED]
+SCALAR_READERS = [
+    ("getvarbnd", "var"),
+    ("getvarknd", "var"),
+    ("getvartol", "var"),
+    ("getvar", "var"),
+    ("getcst", "fun"),
+    ("getconbnd", "con"),
+    ("getcontol", "con"),
+    ("getcon", "con"),
+    ("getobjsense", "obj"),
+    ("getobjprio", "obj"),
+    ("getobjcoef", "obj"),
+    ("getobjtol", "obj"),
+    ("getobj", "obj"),
+    ("getindbnd", "ind"),
+    ("getindvar", "ind"),
+    ("getind", "ind"),
+    ("getconetol", "cone"),
+    ("getcconbnd", "ccon"),
+    ("getccontol", "ccon"),
+    ("getccon", "ccon"),
+] + [(f"get{short}name", short) for short in NAMED]
+DEFAULT_READERS = [
+    (f"get{short}", short) for short in ("var", "con", "obj", "ind", "ccon")
+]
+LIST_READERS = {
+    "getrlinterm",
+    "getclinterm",
+    "getquadterm",
+    "getexpr",
+    "getsos",
+    "getpwl",
+    "getcone",
+    "getconeprm",
+    "getgpat",
+    "gethpat",
+}
+LIST_COUNTERS = (
+    "getnrlinterm",
+    "getnclinterm",
+    "getnquadterm",
+    "getnexpr",
+    "getnsosvar",
+    "getnpwlpt",
+    "getnconefun",
+    "getnconeprm",
+    "getngpat",
+    "getnhpat",
+)
 COUNTS = {
     "var": "getnvar",
     "fun": "getnfun",
@@ -231,5 +280,47 @@ def test_coverage():
     tested = {call[0] for call in WRITERS + DELETERS} | {"delcb", "delhook"}
     for name in dir(biyos.Model):
         if name.startswith(("set", "del")):
+            call = getattr(biyos.Model, name)
+            assert "idx" not in signature(call).parameters or name in tested
+
+
+def unwrapped(found):
+    if isinstance(found, tuple):
+        return tuple(values[0] for values in found)
+    return found[0]
+
+
+@pytest.mark.parametrize("method, short", SCALAR_READERS)
+def test_reader_scalar(model, method, short):
+    build(model)
+    k = last(model, short)
+    call = getattr(model, method)
+    assert repr(call(k)) == repr(unwrapped(call([k])))
+
+
+@pytest.mark.parametrize("method, short", SCALAR_READERS)
+def test_reader_view(model, method, short):
+    view = build(model)[short][-1]
+    call = getattr(model, method)
+    assert repr(call(view)) == repr(call(index(view)))
+
+
+@pytest.mark.parametrize("method, short", DEFAULT_READERS)
+def test_reader_every(model, method, short):
+    build(model)
+    call = getattr(model, method)
+    assert call() == call(range(last(model, short) + 1))
+
+
+@pytest.mark.parametrize("method", sorted(LIST_READERS) + list(LIST_COUNTERS))
+def test_reader_list(model, method):
+    with pytest.raises(TypeError, match="idx must be a sequence, not int"):
+        getattr(model, method)(0)
+
+
+def test_reader_coverage():
+    tested = {call[0] for call in SCALAR_READERS} | LIST_READERS
+    for name in dir(biyos.Model):
+        if name.startswith("get") and not name.startswith("getn"):
             call = getattr(biyos.Model, name)
             assert "idx" not in signature(call).parameters or name in tested
