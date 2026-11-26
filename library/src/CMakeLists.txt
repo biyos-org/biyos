@@ -68,6 +68,7 @@ add_library(biyos_internal STATIC
     expr/tape/plan.cpp
     expr/tape/reads.cpp
     expr/tape/tape.cpp
+    expr/threads/levels.cpp
     io/codes.cpp
     io/directory.cpp
     io/draft/column_shape.cpp
