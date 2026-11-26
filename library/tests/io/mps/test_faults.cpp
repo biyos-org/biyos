@@ -2,32 +2,18 @@
 
 #include <gtest/gtest.h>
 
-#include <initializer_list>
 #include <string>
 #include <string_view>
 #include <vector>
 
+using biyos::test::bad;
 using biyos::test::fault_of;
+using biyos::test::text;
 using biyos::test::Warning;
 using biyos::test::warnings_of;
 
 namespace
 {
-
-std::string text(std::initializer_list<std::string_view> lines)
-{
-    std::string joined;
-    for (const std::string_view line : lines)
-    {
-        joined.append(line).append("\n");
-    }
-    return joined;
-}
-
-std::string bad(int line, std::string_view message)
-{
-    return "bad file: file 't.mps' line " + std::to_string(line) + ": " + std::string(message);
-}
 
 std::string with_bound(std::string_view bound)
 {
