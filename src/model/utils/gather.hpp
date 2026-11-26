@@ -11,18 +11,31 @@
 namespace biyos
 {
 
+template <typename Read> auto picked(std::span<const Index> indices, Read read)
+{
+    std::vector<std::decay_t<std::invoke_result_t<Read, Index>>> found;
+    found.reserve(indices.size());
+    for (const Index i : indices)
+    {
+        found.push_back(read(i));
+    }
+    return found;
+}
+
 template <typename Record>
 std::vector<Record> picked(const Model &model,
                            const Record &(Model::*read)(Index) const,
                            std::span<const Index> indices)
 {
-    std::vector<Record> found;
-    found.reserve(indices.size());
-    for (const Index i : indices)
-    {
-        found.push_back((model.*read)(i));
-    }
-    return found;
+    return picked(indices, [&](Index i) { return (model.*read)(i); });
+}
+
+template <typename Record>
+std::vector<Record> picked(const Model &model,
+                           Record (Model::*read)(Index) const,
+                           std::span<const Index> indices)
+{
+    return picked(indices, [&](Index i) { return (model.*read)(i); });
 }
 
 template <typename T> struct Gathered

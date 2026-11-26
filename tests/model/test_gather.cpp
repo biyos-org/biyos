@@ -16,9 +16,12 @@ using biyos::gathered;
 using biyos::Index;
 using biyos::item_count;
 using biyos::LinearTerm;
+using biyos::Member;
 using biyos::Model;
 using biyos::Offset;
+using biyos::picked;
 using biyos::Real;
+using biyos::SpecialOrderedSetKind;
 using biyos::to_size;
 using biyos::Variable;
 using biyos::VariableKind;
@@ -72,6 +75,21 @@ TEST(GatherTest, Read)
     const Gathered<Index> found = gathered(records, read);
     EXPECT_EQ(found.starts, (std::vector<Offset>{0, 2, 2, 5}));
     EXPECT_EQ(found.items, (std::vector<Index>{4, 5, 4, 5, 6}));
+}
+
+TEST(GatherTest, Picked)
+{
+    Model model = with_terms();
+    const std::vector<SpecialOrderedSetKind> kinds{SpecialOrderedSetKind::One,
+                                                   SpecialOrderedSetKind::Two};
+    const std::vector<Offset> starts{0, 1, 2};
+    const std::vector<Member> members{{0, 1.0}, {1, 1.0}};
+    model.add_special_ordered_sets(kinds, starts, members);
+    const std::vector<Index> chosen{1, 1, 0};
+    EXPECT_EQ(picked(model, &Model::kind_of_special_ordered_set, chosen),
+              (std::vector<SpecialOrderedSetKind>{SpecialOrderedSetKind::Two,
+                                                  SpecialOrderedSetKind::Two,
+                                                  SpecialOrderedSetKind::One}));
 }
 
 TEST(GatherTest, Refused)
