@@ -71,8 +71,10 @@ from biyos._model.blocks import (
     Functions,
     Indicator,
     Indicators,
+    Many,
     Objective,
     Objectives,
+    One,
     PiecewiseLinear,
     PiecewiseLinears,
     Selection,
@@ -788,6 +790,22 @@ class Model:
         )
         return self._added(Variables, lib.BIYOS_addvar, n, *arrays)
 
+    @overload
+    def setvarbnd(
+        self,
+        idx: One[Variable],
+        lb: Real | None = None,
+        ub: Real | None = None,
+    ) -> None: ...
+
+    @overload
+    def setvarbnd(
+        self,
+        idx: Many[Variable, Variables],
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
+    ) -> None: ...
+
     def setvarbnd(
         self,
         idx: Selection[Variable, Variables],
@@ -820,11 +838,11 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getvarbnd(self, idx: Index | Variable) -> tuple[Real, Real]: ...
+    def getvarbnd(self, idx: One[Variable]) -> tuple[Real, Real]: ...
 
     @overload
     def getvarbnd(
-        self, idx: Sequence[Index | Variable] | Variables
+        self, idx: Many[Variable, Variables]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getvarbnd(
@@ -855,6 +873,18 @@ class Model:
         lb, ub = self._getlist("BIYOS_getvarbnd", Variables, idx, *bounds)
         return lb, ub
 
+    @overload
+    def setvarknd(
+        self, idx: One[Variable], knd: VariableKind | None
+    ) -> None: ...
+
+    @overload
+    def setvarknd(
+        self,
+        idx: Many[Variable, Variables],
+        knd: Sequence[VariableKind] | None,
+    ) -> None: ...
+
     def setvarknd(
         self,
         idx: Selection[Variable, Variables],
@@ -881,11 +911,11 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getvarknd(self, idx: Index | Variable) -> VariableKind: ...
+    def getvarknd(self, idx: One[Variable]) -> VariableKind: ...
 
     @overload
     def getvarknd(
-        self, idx: Sequence[Index | Variable] | Variables
+        self, idx: Many[Variable, Variables]
     ) -> list[VariableKind]: ...
 
     def getvarknd(
@@ -913,6 +943,22 @@ class Model:
         (found,) = self._getlist("BIYOS_getvarknd", Variables, idx, c_integer)
         knd: VariableKind | list[VariableKind] = _each(VariableKind, found)
         return knd
+
+    @overload
+    def setvartol(
+        self,
+        idx: One[Variable],
+        atol: Real | None = None,
+        rtol: Real | None = None,
+    ) -> None: ...
+
+    @overload
+    def setvartol(
+        self,
+        idx: Many[Variable, Variables],
+        atol: Sequence[Real] | None = None,
+        rtol: Sequence[Real] | None = None,
+    ) -> None: ...
 
     def setvartol(
         self,
@@ -951,12 +997,12 @@ class Model:
 
     @overload
     def getvartol(
-        self, idx: Index | Variable
+        self, idx: One[Variable]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getvartol(
-        self, idx: Sequence[Index | Variable] | Variables
+        self, idx: Many[Variable, Variables]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getvartol(
@@ -1025,12 +1071,12 @@ class Model:
 
     @overload
     def getvar(
-        self, idx: Index | Variable
+        self, idx: One[Variable]
     ) -> tuple[VariableKind, Real, Real]: ...
 
     @overload
     def getvar(
-        self, idx: Sequence[Index | Variable] | Variables | None = None
+        self, idx: Many[Variable, Variables] | None = None
     ) -> tuple[list[VariableKind], list[Real], list[Real]]: ...
 
     def getvar(
@@ -1068,6 +1114,14 @@ class Model:
         found = self._getlist("BIYOS_getvar", Variables, every, *types)
         kinds, lower, upper = found
         return _each(VariableKind, kinds), lower, upper
+
+    @overload
+    def setvarname(self, idx: One[Variable], name: str) -> None: ...
+
+    @overload
+    def setvarname(
+        self, idx: Many[Variable, Variables], name: Sequence[str]
+    ) -> None: ...
 
     def setvarname(
         self, idx: Selection[Variable, Variables], name: str | Sequence[str]
@@ -1108,11 +1162,11 @@ class Model:
         self._setname("BIYOS_setvarname", Variables, idx, name)
 
     @overload
-    def getvarname(self, idx: Index | Variable) -> str | None: ...
+    def getvarname(self, idx: One[Variable]) -> str | None: ...
 
     @overload
     def getvarname(
-        self, idx: Sequence[Index | Variable] | Variables
+        self, idx: Many[Variable, Variables]
     ) -> list[str | None]: ...
 
     def getvarname(
@@ -1266,6 +1320,14 @@ class Model:
         self._call(lib.BIYOS_getnfun, byref(count))
         return count.value
 
+    @overload
+    def addcst(self, idx: One[Function], cst: Real | None) -> None: ...
+
+    @overload
+    def addcst(
+        self, idx: Many[Function, Functions], cst: Sequence[Real] | None
+    ) -> None: ...
+
     def addcst(
         self,
         idx: Selection[Function, Functions],
@@ -1294,6 +1356,14 @@ class Model:
         one, n, chosen = self._selected("BIYOS_addcst", Functions, idx)
         self._call(*chosen, doubles("cst", cst, n, one))
 
+    @overload
+    def setcst(self, idx: One[Function], cst: Real | None) -> None: ...
+
+    @overload
+    def setcst(
+        self, idx: Many[Function, Functions], cst: Sequence[Real] | None
+    ) -> None: ...
+
     def setcst(
         self,
         idx: Selection[Function, Functions],
@@ -1321,12 +1391,10 @@ class Model:
         self._call(*chosen, doubles("cst", cst, n, one))
 
     @overload
-    def getcst(self, idx: Index | Function) -> Real: ...
+    def getcst(self, idx: One[Function]) -> Real: ...
 
     @overload
-    def getcst(
-        self, idx: Sequence[Index | Function] | Functions
-    ) -> list[Real]: ...
+    def getcst(self, idx: Many[Function, Functions]) -> list[Real]: ...
 
     def getcst(self, idx: Selection[Function, Functions]) -> Real | list[Real]:
         """Read the constants of functions.
@@ -1352,6 +1420,14 @@ class Model:
         (cst,) = self._getlist("BIYOS_getcst", Functions, idx, c_real)
         return cst
 
+    @overload
+    def setfunname(self, idx: One[Function], name: str) -> None: ...
+
+    @overload
+    def setfunname(
+        self, idx: Many[Function, Functions], name: Sequence[str]
+    ) -> None: ...
+
     def setfunname(
         self, idx: Selection[Function, Functions], name: str | Sequence[str]
     ) -> None:
@@ -1374,11 +1450,11 @@ class Model:
         self._setname("BIYOS_setfunname", Functions, idx, name)
 
     @overload
-    def getfunname(self, idx: Index | Function) -> str | None: ...
+    def getfunname(self, idx: One[Function]) -> str | None: ...
 
     @overload
     def getfunname(
-        self, idx: Sequence[Index | Function] | Functions
+        self, idx: Many[Function, Functions]
     ) -> list[str | None]: ...
 
     def getfunname(
@@ -1495,15 +1571,41 @@ class Model:
         rows = picked(self, Functions, idx)
         self._call(*self._chosen("BIYOS_clrfun", Functions, rows))
 
+    @overload
+    def addlinterm(
+        self, fun: One[Function], var: One[Variable], coef: Real
+    ) -> None: ...
+
+    @overload
     def addlinterm(
         self,
-        fun: Index | Function | Sequence[Index | Function] | Functions,
+        fun: One[Function],
+        var: Many[Variable, Variables],
+        coef: Sequence[Real],
+    ) -> None: ...
+
+    @overload
+    def addlinterm(
+        self,
+        fun: Many[Function, Functions],
+        var: Many[Variable, Variables],
+        coef: Sequence[Real],
+    ) -> None: ...
+
+    @overload
+    def addlinterm(
+        self,
+        fun: Many[Function, Functions],
+        var: Sequence[Many[Variable, Variables]],
+        coef: Sequence[Sequence[Real]],
+    ) -> None: ...
+
+    def addlinterm(
+        self,
+        fun: Selection[Function, Functions],
         var: (
-            Index
-            | Variable
-            | Sequence[Index | Variable]
-            | Variables
-            | Sequence[Sequence[Index | Variable] | Variables]
+            Selection[Variable, Variables]
+            | Sequence[Many[Variable, Variables]]
         ),
         coef: Real | Sequence[Real] | Sequence[Sequence[Real]],
     ) -> None:
@@ -1608,15 +1710,33 @@ class Model:
         found, values = self._terms("rlinterm", Functions, every, 0)
         return found[0], found[1], values
 
+    @overload
+    def addclinterm(
+        self, var: One[Variable], fun: One[Function], coef: Real
+    ) -> None: ...
+
+    @overload
     def addclinterm(
         self,
-        var: Index | Variable | Sequence[Index | Variable] | Variables,
+        var: One[Variable],
+        fun: Many[Function, Functions],
+        coef: Sequence[Real],
+    ) -> None: ...
+
+    @overload
+    def addclinterm(
+        self,
+        var: Many[Variable, Variables],
+        fun: Sequence[Many[Function, Functions]],
+        coef: Sequence[Sequence[Real]],
+    ) -> None: ...
+
+    def addclinterm(
+        self,
+        var: Selection[Variable, Variables],
         fun: (
-            Index
-            | Function
-            | Sequence[Index | Function]
-            | Functions
-            | Sequence[Sequence[Index | Function] | Functions]
+            Selection[Function, Functions]
+            | Sequence[Many[Function, Functions]]
         ),
         coef: Real | Sequence[Real] | Sequence[Sequence[Real]],
     ) -> None:
@@ -1712,22 +1832,52 @@ class Model:
         found, values = self._terms("clinterm", Variables, every, 1)
         return found[0], found[1], values
 
+    @overload
     def addquadterm(
         self,
-        fun: Index | Function | Sequence[Index | Function] | Functions,
+        fun: One[Function],
+        var1: One[Variable],
+        var2: One[Variable],
+        coef: Real,
+    ) -> None: ...
+
+    @overload
+    def addquadterm(
+        self,
+        fun: One[Function],
+        var1: Many[Variable, Variables],
+        var2: Many[Variable, Variables],
+        coef: Sequence[Real],
+    ) -> None: ...
+
+    @overload
+    def addquadterm(
+        self,
+        fun: Many[Function, Functions],
+        var1: Many[Variable, Variables],
+        var2: Many[Variable, Variables],
+        coef: Sequence[Real],
+    ) -> None: ...
+
+    @overload
+    def addquadterm(
+        self,
+        fun: Many[Function, Functions],
+        var1: Sequence[Many[Variable, Variables]],
+        var2: Sequence[Many[Variable, Variables]],
+        coef: Sequence[Sequence[Real]],
+    ) -> None: ...
+
+    def addquadterm(
+        self,
+        fun: Selection[Function, Functions],
         var1: (
-            Index
-            | Variable
-            | Sequence[Index | Variable]
-            | Variables
-            | Sequence[Sequence[Index | Variable] | Variables]
+            Selection[Variable, Variables]
+            | Sequence[Many[Variable, Variables]]
         ),
         var2: (
-            Index
-            | Variable
-            | Sequence[Index | Variable]
-            | Variables
-            | Sequence[Sequence[Index | Variable] | Variables]
+            Selection[Variable, Variables]
+            | Sequence[Many[Variable, Variables]]
         ),
         coef: Real | Sequence[Real] | Sequence[Sequence[Real]],
     ) -> None:
@@ -1959,6 +2109,14 @@ class Model:
         nodes = (c_offset * n)()
         self._call(lib.BIYOS_addexpr, n, sizes, codes, args, values, nodes)
         return list(nodes)
+
+    @overload
+    def attachexpr(self, idx: One[Function], node: Offset) -> None: ...
+
+    @overload
+    def attachexpr(
+        self, idx: Many[Function, Functions], node: Sequence[Offset]
+    ) -> None: ...
 
     def attachexpr(
         self,
@@ -2481,6 +2639,22 @@ class Model:
         )
         return self._added(Constraints, lib.BIYOS_addcon, n, *arrays)
 
+    @overload
+    def setconbnd(
+        self,
+        idx: One[Constraint],
+        lb: Real | None = None,
+        ub: Real | None = None,
+    ) -> None: ...
+
+    @overload
+    def setconbnd(
+        self,
+        idx: Many[Constraint, Constraints],
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
+    ) -> None: ...
+
     def setconbnd(
         self,
         idx: Selection[Constraint, Constraints],
@@ -2511,11 +2685,11 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getconbnd(self, idx: Index | Constraint) -> tuple[Real, Real]: ...
+    def getconbnd(self, idx: One[Constraint]) -> tuple[Real, Real]: ...
 
     @overload
     def getconbnd(
-        self, idx: Sequence[Index | Constraint] | Constraints
+        self, idx: Many[Constraint, Constraints]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getconbnd(
@@ -2545,6 +2719,22 @@ class Model:
         bounds = (c_real, c_real)
         lb, ub = self._getlist("BIYOS_getconbnd", Constraints, idx, *bounds)
         return lb, ub
+
+    @overload
+    def setcontol(
+        self,
+        idx: One[Constraint],
+        atol: Real | None = None,
+        rtol: Real | None = None,
+    ) -> None: ...
+
+    @overload
+    def setcontol(
+        self,
+        idx: Many[Constraint, Constraints],
+        atol: Sequence[Real] | None = None,
+        rtol: Sequence[Real] | None = None,
+    ) -> None: ...
 
     def setcontol(
         self,
@@ -2583,12 +2773,12 @@ class Model:
 
     @overload
     def getcontol(
-        self, idx: Index | Constraint
+        self, idx: One[Constraint]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getcontol(
-        self, idx: Sequence[Index | Constraint] | Constraints
+        self, idx: Many[Constraint, Constraints]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getcontol(
@@ -2656,11 +2846,11 @@ class Model:
         return count.value
 
     @overload
-    def getcon(self, idx: Index | Constraint) -> tuple[Index, Real, Real]: ...
+    def getcon(self, idx: One[Constraint]) -> tuple[Index, Real, Real]: ...
 
     @overload
     def getcon(
-        self, idx: Sequence[Index | Constraint] | Constraints | None = None
+        self, idx: Many[Constraint, Constraints] | None = None
     ) -> tuple[list[Index], list[Real], list[Real]]: ...
 
     def getcon(
@@ -2696,6 +2886,14 @@ class Model:
         functions, lower, upper = found
         return functions, lower, upper
 
+    @overload
+    def setconname(self, idx: One[Constraint], name: str) -> None: ...
+
+    @overload
+    def setconname(
+        self, idx: Many[Constraint, Constraints], name: Sequence[str]
+    ) -> None: ...
+
     def setconname(
         self, idx: Selection[Constraint, Constraints], name: str | Sequence[str]
     ) -> None:
@@ -2718,11 +2916,11 @@ class Model:
         self._setname("BIYOS_setconname", Constraints, idx, name)
 
     @overload
-    def getconname(self, idx: Index | Constraint) -> str | None: ...
+    def getconname(self, idx: One[Constraint]) -> str | None: ...
 
     @overload
     def getconname(
-        self, idx: Sequence[Index | Constraint] | Constraints
+        self, idx: Many[Constraint, Constraints]
     ) -> list[str | None]: ...
 
     def getconname(
@@ -2880,6 +3078,18 @@ class Model:
         idx = indices_of(self, Functions, "fun", funs, n)
         return self._added(Objectives, lib.BIYOS_addobj, n, idx, *arrays)
 
+    @overload
+    def setobjsense(
+        self, idx: One[Objective], sense: ObjectiveSense | None
+    ) -> None: ...
+
+    @overload
+    def setobjsense(
+        self,
+        idx: Many[Objective, Objectives],
+        sense: Sequence[ObjectiveSense] | None,
+    ) -> None: ...
+
     def setobjsense(
         self,
         idx: Selection[Objective, Objectives],
@@ -2908,11 +3118,11 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjsense(self, idx: Index | Objective) -> ObjectiveSense: ...
+    def getobjsense(self, idx: One[Objective]) -> ObjectiveSense: ...
 
     @overload
     def getobjsense(
-        self, idx: Sequence[Index | Objective] | Objectives
+        self, idx: Many[Objective, Objectives]
     ) -> list[ObjectiveSense]: ...
 
     def getobjsense(
@@ -2944,6 +3154,14 @@ class Model:
         sense = _each(ObjectiveSense, found)
         return sense
 
+    @overload
+    def setobjprio(self, idx: One[Objective], prio: int | None) -> None: ...
+
+    @overload
+    def setobjprio(
+        self, idx: Many[Objective, Objectives], prio: Sequence[int] | None
+    ) -> None: ...
+
     def setobjprio(
         self,
         idx: Selection[Objective, Objectives],
@@ -2972,12 +3190,10 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjprio(self, idx: Index | Objective) -> int: ...
+    def getobjprio(self, idx: One[Objective]) -> int: ...
 
     @overload
-    def getobjprio(
-        self, idx: Sequence[Index | Objective] | Objectives
-    ) -> list[int]: ...
+    def getobjprio(self, idx: Many[Objective, Objectives]) -> list[int]: ...
 
     def getobjprio(
         self, idx: Selection[Objective, Objectives]
@@ -3004,6 +3220,14 @@ class Model:
         prio: int | list[int]
         (prio,) = self._getlist("BIYOS_getobjprio", Objectives, idx, c_integer)
         return prio
+
+    @overload
+    def setobjcoef(self, idx: One[Objective], coef: Real | None) -> None: ...
+
+    @overload
+    def setobjcoef(
+        self, idx: Many[Objective, Objectives], coef: Sequence[Real] | None
+    ) -> None: ...
 
     def setobjcoef(
         self,
@@ -3034,12 +3258,10 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjcoef(self, idx: Index | Objective) -> Real: ...
+    def getobjcoef(self, idx: One[Objective]) -> Real: ...
 
     @overload
-    def getobjcoef(
-        self, idx: Sequence[Index | Objective] | Objectives
-    ) -> list[Real]: ...
+    def getobjcoef(self, idx: Many[Objective, Objectives]) -> list[Real]: ...
 
     def getobjcoef(
         self, idx: Selection[Objective, Objectives]
@@ -3066,6 +3288,22 @@ class Model:
         coef: Real | list[Real]
         (coef,) = self._getlist("BIYOS_getobjcoef", Objectives, idx, c_real)
         return coef
+
+    @overload
+    def setobjtol(
+        self,
+        idx: One[Objective],
+        atol: Real | None = None,
+        rtol: Real | None = None,
+    ) -> None: ...
+
+    @overload
+    def setobjtol(
+        self,
+        idx: Many[Objective, Objectives],
+        atol: Sequence[Real] | None = None,
+        rtol: Sequence[Real] | None = None,
+    ) -> None: ...
 
     def setobjtol(
         self,
@@ -3103,11 +3341,11 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjtol(self, idx: Index | Objective) -> tuple[Real, Real]: ...
+    def getobjtol(self, idx: One[Objective]) -> tuple[Real, Real]: ...
 
     @overload
     def getobjtol(
-        self, idx: Sequence[Index | Objective] | Objectives
+        self, idx: Many[Objective, Objectives]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getobjtol(
@@ -3156,12 +3394,12 @@ class Model:
 
     @overload
     def getobj(
-        self, idx: Index | Objective
+        self, idx: One[Objective]
     ) -> tuple[Index, ObjectiveSense, int, Real]: ...
 
     @overload
     def getobj(
-        self, idx: Sequence[Index | Objective] | Objectives | None = None
+        self, idx: Many[Objective, Objectives] | None = None
     ) -> tuple[list[Index], list[ObjectiveSense], list[int], list[Real]]: ...
 
     def getobj(
@@ -3203,6 +3441,14 @@ class Model:
         senses = _each(ObjectiveSense, codes)
         return functions, senses, priorities, weights
 
+    @overload
+    def setobjname(self, idx: One[Objective], name: str) -> None: ...
+
+    @overload
+    def setobjname(
+        self, idx: Many[Objective, Objectives], name: Sequence[str]
+    ) -> None: ...
+
     def setobjname(
         self, idx: Selection[Objective, Objectives], name: str | Sequence[str]
     ) -> None:
@@ -3225,11 +3471,11 @@ class Model:
         self._setname("BIYOS_setobjname", Objectives, idx, name)
 
     @overload
-    def getobjname(self, idx: Index | Objective) -> str | None: ...
+    def getobjname(self, idx: One[Objective]) -> str | None: ...
 
     @overload
     def getobjname(
-        self, idx: Sequence[Index | Objective] | Objectives
+        self, idx: Many[Objective, Objectives]
     ) -> list[str | None]: ...
 
     def getobjname(
@@ -3364,6 +3610,22 @@ class Model:
         )
         return self._added(Indicators, lib.BIYOS_addind, n, *arrays)
 
+    @overload
+    def setindbnd(
+        self,
+        idx: One[Indicator],
+        lb: Real | None = None,
+        ub: Real | None = None,
+    ) -> None: ...
+
+    @overload
+    def setindbnd(
+        self,
+        idx: Many[Indicator, Indicators],
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
+    ) -> None: ...
+
     def setindbnd(
         self,
         idx: Selection[Indicator, Indicators],
@@ -3394,11 +3656,11 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getindbnd(self, idx: Index | Indicator) -> tuple[Real, Real]: ...
+    def getindbnd(self, idx: One[Indicator]) -> tuple[Real, Real]: ...
 
     @overload
     def getindbnd(
-        self, idx: Sequence[Index | Indicator] | Indicators
+        self, idx: Many[Indicator, Indicators]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getindbnd(
@@ -3428,6 +3690,22 @@ class Model:
         bounds = (c_real, c_real)
         lb, ub = self._getlist("BIYOS_getindbnd", Indicators, idx, *bounds)
         return lb, ub
+
+    @overload
+    def setindvar(
+        self,
+        idx: One[Indicator],
+        var: One[Variable] | None = None,
+        val: int | None = None,
+    ) -> None: ...
+
+    @overload
+    def setindvar(
+        self,
+        idx: Many[Indicator, Indicators],
+        var: Many[Variable, Variables] | None = None,
+        val: Sequence[int] | None = None,
+    ) -> None: ...
 
     def setindvar(
         self,
@@ -3463,11 +3741,11 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getindvar(self, idx: Index | Indicator) -> tuple[Index, int]: ...
+    def getindvar(self, idx: One[Indicator]) -> tuple[Index, int]: ...
 
     @overload
     def getindvar(
-        self, idx: Sequence[Index | Indicator] | Indicators
+        self, idx: Many[Indicator, Indicators]
     ) -> tuple[list[Index], list[int]]: ...
 
     def getindvar(
@@ -3517,12 +3795,12 @@ class Model:
 
     @overload
     def getind(
-        self, idx: Index | Indicator
+        self, idx: One[Indicator]
     ) -> tuple[Index, int, Index, Real, Real]: ...
 
     @overload
     def getind(
-        self, idx: Sequence[Index | Indicator] | Indicators | None = None
+        self, idx: Many[Indicator, Indicators] | None = None
     ) -> tuple[list[Index], list[int], list[Index], list[Real], list[Real]]: ...
 
     def getind(
@@ -3565,6 +3843,14 @@ class Model:
         variables, values, functions, lower, upper = found
         return variables, values, functions, lower, upper
 
+    @overload
+    def setindname(self, idx: One[Indicator], name: str) -> None: ...
+
+    @overload
+    def setindname(
+        self, idx: Many[Indicator, Indicators], name: Sequence[str]
+    ) -> None: ...
+
     def setindname(
         self, idx: Selection[Indicator, Indicators], name: str | Sequence[str]
     ) -> None:
@@ -3587,11 +3873,11 @@ class Model:
         self._setname("BIYOS_setindname", Indicators, idx, name)
 
     @overload
-    def getindname(self, idx: Index | Indicator) -> str | None: ...
+    def getindname(self, idx: One[Indicator]) -> str | None: ...
 
     @overload
     def getindname(
-        self, idx: Sequence[Index | Indicator] | Indicators
+        self, idx: Many[Indicator, Indicators]
     ) -> list[str | None]: ...
 
     def getindname(
@@ -3818,6 +4104,16 @@ class Model:
         found = [SpecialOrderedSetKind(code) for code in kinds]
         return found, list(counts), list(members), list(weights)
 
+    @overload
+    def setsosname(self, idx: One[SpecialOrderedSet], name: str) -> None: ...
+
+    @overload
+    def setsosname(
+        self,
+        idx: Many[SpecialOrderedSet, SpecialOrderedSets],
+        name: Sequence[str],
+    ) -> None: ...
+
     def setsosname(
         self,
         idx: Selection[SpecialOrderedSet, SpecialOrderedSets],
@@ -3842,11 +4138,11 @@ class Model:
         self._setname("BIYOS_setsosname", SpecialOrderedSets, idx, name)
 
     @overload
-    def getsosname(self, idx: Index | SpecialOrderedSet) -> str | None: ...
+    def getsosname(self, idx: One[SpecialOrderedSet]) -> str | None: ...
 
     @overload
     def getsosname(
-        self, idx: Sequence[Index | SpecialOrderedSet] | SpecialOrderedSets
+        self, idx: Many[SpecialOrderedSet, SpecialOrderedSets]
     ) -> list[str | None]: ...
 
     def getsosname(
@@ -4139,6 +4435,22 @@ class Model:
         )
         return self._added(Cones, lib.BIYOS_addcone, n, *arrays)
 
+    @overload
+    def setconetol(
+        self,
+        idx: One[Cone],
+        atol: Real | None = None,
+        rtol: Real | None = None,
+    ) -> None: ...
+
+    @overload
+    def setconetol(
+        self,
+        idx: Many[Cone, Cones],
+        atol: Sequence[Real] | None = None,
+        rtol: Sequence[Real] | None = None,
+    ) -> None: ...
+
     def setconetol(
         self,
         idx: Selection[Cone, Cones],
@@ -4176,12 +4488,12 @@ class Model:
 
     @overload
     def getconetol(
-        self, idx: Index | Cone
+        self, idx: One[Cone]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getconetol(
-        self, idx: Sequence[Index | Cone] | Cones
+        self, idx: Many[Cone, Cones]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getconetol(
@@ -4366,6 +4678,14 @@ class Model:
         self._call(*chosen, size, counts, values)
         return list(counts), list(values)
 
+    @overload
+    def setconename(self, idx: One[Cone], name: str) -> None: ...
+
+    @overload
+    def setconename(
+        self, idx: Many[Cone, Cones], name: Sequence[str]
+    ) -> None: ...
+
     def setconename(
         self, idx: Selection[Cone, Cones], name: str | Sequence[str]
     ) -> None:
@@ -4388,12 +4708,10 @@ class Model:
         self._setname("BIYOS_setconename", Cones, idx, name)
 
     @overload
-    def getconename(self, idx: Index | Cone) -> str | None: ...
+    def getconename(self, idx: One[Cone]) -> str | None: ...
 
     @overload
-    def getconename(
-        self, idx: Sequence[Index | Cone] | Cones
-    ) -> list[str | None]: ...
+    def getconename(self, idx: Many[Cone, Cones]) -> list[str | None]: ...
 
     def getconename(
         self, idx: Selection[Cone, Cones]
@@ -4525,6 +4843,22 @@ class Model:
         )
         return self._added(Complements, lib.BIYOS_addccon, n, *arrays)
 
+    @overload
+    def setcconbnd(
+        self,
+        idx: One[Complement],
+        lb: Real | None = None,
+        ub: Real | None = None,
+    ) -> None: ...
+
+    @overload
+    def setcconbnd(
+        self,
+        idx: Many[Complement, Complements],
+        lb: Sequence[Real] | None = None,
+        ub: Sequence[Real] | None = None,
+    ) -> None: ...
+
     def setcconbnd(
         self,
         idx: Selection[Complement, Complements],
@@ -4555,11 +4889,11 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getcconbnd(self, idx: Index | Complement) -> tuple[Real, Real]: ...
+    def getcconbnd(self, idx: One[Complement]) -> tuple[Real, Real]: ...
 
     @overload
     def getcconbnd(
-        self, idx: Sequence[Index | Complement] | Complements
+        self, idx: Many[Complement, Complements]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getcconbnd(
@@ -4589,6 +4923,22 @@ class Model:
         bounds = (c_real, c_real)
         lb, ub = self._getlist("BIYOS_getcconbnd", Complements, idx, *bounds)
         return lb, ub
+
+    @overload
+    def setccontol(
+        self,
+        idx: One[Complement],
+        atol: Real | None = None,
+        rtol: Real | None = None,
+    ) -> None: ...
+
+    @overload
+    def setccontol(
+        self,
+        idx: Many[Complement, Complements],
+        atol: Sequence[Real] | None = None,
+        rtol: Sequence[Real] | None = None,
+    ) -> None: ...
 
     def setccontol(
         self,
@@ -4628,12 +4978,12 @@ class Model:
 
     @overload
     def getccontol(
-        self, idx: Index | Complement
+        self, idx: One[Complement]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getccontol(
-        self, idx: Sequence[Index | Complement] | Complements
+        self, idx: Many[Complement, Complements]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getccontol(
@@ -4702,12 +5052,12 @@ class Model:
 
     @overload
     def getccon(
-        self, idx: Index | Complement
+        self, idx: One[Complement]
     ) -> tuple[Index, Index, Real, Real]: ...
 
     @overload
     def getccon(
-        self, idx: Sequence[Index | Complement] | Complements | None = None
+        self, idx: Many[Complement, Complements] | None = None
     ) -> tuple[list[Index], list[Index], list[Real], list[Real]]: ...
 
     def getccon(
@@ -4748,6 +5098,14 @@ class Model:
         bounded, partners, lower, upper = found
         return bounded, partners, lower, upper
 
+    @overload
+    def setcconname(self, idx: One[Complement], name: str) -> None: ...
+
+    @overload
+    def setcconname(
+        self, idx: Many[Complement, Complements], name: Sequence[str]
+    ) -> None: ...
+
     def setcconname(
         self, idx: Selection[Complement, Complements], name: str | Sequence[str]
     ) -> None:
@@ -4770,11 +5128,11 @@ class Model:
         self._setname("BIYOS_setcconname", Complements, idx, name)
 
     @overload
-    def getcconname(self, idx: Index | Complement) -> str | None: ...
+    def getcconname(self, idx: One[Complement]) -> str | None: ...
 
     @overload
     def getcconname(
-        self, idx: Sequence[Index | Complement] | Complements
+        self, idx: Many[Complement, Complements]
     ) -> list[str | None]: ...
 
     def getcconname(

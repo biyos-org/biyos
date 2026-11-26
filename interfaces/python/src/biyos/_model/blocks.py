@@ -52,7 +52,9 @@ class View:
 Item = TypeVar("Item", bound=View)
 Items = TypeVar("Items", bound="Block[Any]")
 Self = TypeVar("Self", bound="Block[Any]")
-Selection: TypeAlias = Index | Item | Sequence[Index | Item] | Items
+One: TypeAlias = Index | Item
+Many: TypeAlias = Sequence[One[Item]] | Items
+Selection: TypeAlias = One[Item] | Many[Item, Items]
 
 
 class Block(Generic[Item]):
