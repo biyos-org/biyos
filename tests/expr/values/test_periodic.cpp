@@ -14,9 +14,12 @@
 namespace
 {
 
+using biyos::cos;
 using biyos::Interval;
 using biyos::Real;
 using biyos::shifted;
+using biyos::sin;
+using biyos::tan;
 using biyos::widen_down;
 using biyos::widen_up;
 using biyos::test::exact;
@@ -74,65 +77,65 @@ Real tangent(Real x)
 
 TEST(IntervalTest, Sine)
 {
-    EXPECT_TRUE(holds(biyos::sin({0.0, kPiUp}), std::sin(kPiUp), 1.0));
-    EXPECT_TRUE(within(biyos::sin({0.0, kPiUp}), widen_down(std::sin(kPiUp)), 1.0));
-    EXPECT_TRUE(holds(biyos::sin({1.5, 1.6}), std::sin(1.5), 1.0));
-    EXPECT_TRUE(within(biyos::sin({1.5, 1.6}), widen_down(std::sin(1.5)), 1.0));
-    EXPECT_TRUE(holds(biyos::sin({0.0, 4.0}), std::sin(4.0), 1.0));
-    EXPECT_TRUE(within(biyos::sin({0.0, 4.0}), widen_down(std::sin(4.0)), 1.0));
-    EXPECT_TRUE(exact(biyos::sin({1.0, 5.0}), -1.0, 1.0));
-    EXPECT_TRUE(exact(biyos::sin({0.0, 100.0}), -1.0, 1.0));
-    EXPECT_TRUE(exact(biyos::sin({-kInfinity, 0.0}), -1.0, 1.0));
-    EXPECT_TRUE(biyos::sin(Interval::empty()).is_empty());
+    EXPECT_TRUE(holds(sin({0.0, kPiUp}), std::sin(kPiUp), 1.0));
+    EXPECT_TRUE(within(sin({0.0, kPiUp}), widen_down(std::sin(kPiUp)), 1.0));
+    EXPECT_TRUE(holds(sin({1.5, 1.6}), std::sin(1.5), 1.0));
+    EXPECT_TRUE(within(sin({1.5, 1.6}), widen_down(std::sin(1.5)), 1.0));
+    EXPECT_TRUE(holds(sin({0.0, 4.0}), std::sin(4.0), 1.0));
+    EXPECT_TRUE(within(sin({0.0, 4.0}), widen_down(std::sin(4.0)), 1.0));
+    EXPECT_TRUE(exact(sin({1.0, 5.0}), -1.0, 1.0));
+    EXPECT_TRUE(exact(sin({0.0, 100.0}), -1.0, 1.0));
+    EXPECT_TRUE(exact(sin({-kInfinity, 0.0}), -1.0, 1.0));
+    EXPECT_TRUE(sin(Interval::empty()).is_empty());
 }
 
 TEST(IntervalTest, Cosine)
 {
-    EXPECT_TRUE(holds(biyos::cos({-1.0, 1.0}), std::cos(1.0), 1.0));
-    EXPECT_TRUE(within(biyos::cos({-1.0, 1.0}), widen_down(std::cos(1.0)), 1.0));
-    EXPECT_TRUE(holds(biyos::cos({3.0, 3.5}), -1.0, std::cos(3.5)));
-    EXPECT_TRUE(within(biyos::cos({3.0, 3.5}), -1.0, widen_up(std::cos(3.5))));
-    EXPECT_TRUE(holds(biyos::cos({0.5, 1.0}), std::cos(1.0), std::cos(0.5)));
+    EXPECT_TRUE(holds(cos({-1.0, 1.0}), std::cos(1.0), 1.0));
+    EXPECT_TRUE(within(cos({-1.0, 1.0}), widen_down(std::cos(1.0)), 1.0));
+    EXPECT_TRUE(holds(cos({3.0, 3.5}), -1.0, std::cos(3.5)));
+    EXPECT_TRUE(within(cos({3.0, 3.5}), -1.0, widen_up(std::cos(3.5))));
+    EXPECT_TRUE(holds(cos({0.5, 1.0}), std::cos(1.0), std::cos(0.5)));
     const Real low = widen_down(std::cos(1.0));
-    EXPECT_TRUE(within(biyos::cos({0.5, 1.0}), low, widen_up(std::cos(0.5))));
-    EXPECT_TRUE(exact(biyos::cos({0.0, kInfinity}), -1.0, 1.0));
-    EXPECT_TRUE(biyos::cos(Interval::empty()).is_empty());
+    EXPECT_TRUE(within(cos({0.5, 1.0}), low, widen_up(std::cos(0.5))));
+    EXPECT_TRUE(exact(cos({0.0, kInfinity}), -1.0, 1.0));
+    EXPECT_TRUE(cos(Interval::empty()).is_empty());
 }
 
 TEST(IntervalTest, Tangent)
 {
-    EXPECT_TRUE(exact(biyos::tan({1.0, 2.0}), -kInfinity, kInfinity));
-    EXPECT_TRUE(exact(biyos::tan({4.0, 5.0}), -kInfinity, kInfinity));
-    EXPECT_TRUE(exact(biyos::tan({0.0, 10.0}), -kInfinity, kInfinity));
-    EXPECT_TRUE(exact(biyos::tan({-kInfinity, 0.0}), -kInfinity, kInfinity));
-    EXPECT_TRUE(holds(biyos::tan({-1.0, 1.0}), std::tan(-1.0), std::tan(1.0)));
+    EXPECT_TRUE(exact(tan({1.0, 2.0}), -kInfinity, kInfinity));
+    EXPECT_TRUE(exact(tan({4.0, 5.0}), -kInfinity, kInfinity));
+    EXPECT_TRUE(exact(tan({0.0, 10.0}), -kInfinity, kInfinity));
+    EXPECT_TRUE(exact(tan({-kInfinity, 0.0}), -kInfinity, kInfinity));
+    EXPECT_TRUE(holds(tan({-1.0, 1.0}), std::tan(-1.0), std::tan(1.0)));
     const Real low = widen_down(std::tan(-1.0));
-    EXPECT_TRUE(within(biyos::tan({-1.0, 1.0}), low, widen_up(std::tan(1.0))));
-    EXPECT_TRUE(holds(biyos::tan({2.0, 4.0}), std::tan(2.0), std::tan(4.0)));
+    EXPECT_TRUE(within(tan({-1.0, 1.0}), low, widen_up(std::tan(1.0))));
+    EXPECT_TRUE(holds(tan({2.0, 4.0}), std::tan(2.0), std::tan(4.0)));
     const Real high = widen_up(std::tan(4.0));
-    EXPECT_TRUE(within(biyos::tan({2.0, 4.0}), widen_down(std::tan(2.0)), high));
-    EXPECT_TRUE(biyos::tan(Interval::empty()).is_empty());
+    EXPECT_TRUE(within(tan({2.0, 4.0}), widen_down(std::tan(2.0)), high));
+    EXPECT_TRUE(tan(Interval::empty()).is_empty());
 }
 
 TEST(IntervalTest, Points)
 {
     const Interval zeros(-0.0, 0.0);
-    EXPECT_TRUE(holds(biyos::cos({0.0, 0.0}), 1.0, 1.0));
-    EXPECT_TRUE(within(biyos::cos({0.0, 0.0}), widen_down(1.0), 1.0));
-    EXPECT_TRUE(holds(biyos::cos(zeros), 1.0, 1.0));
-    EXPECT_TRUE(within(biyos::cos(zeros), widen_down(1.0), 1.0));
-    EXPECT_TRUE(holds(biyos::sin({0.0, 0.0}), 0.0, 0.0));
-    EXPECT_TRUE(within(biyos::sin({0.0, 0.0}), widen_down(0.0), widen_up(0.0)));
-    EXPECT_TRUE(holds(biyos::sin(zeros), 0.0, 0.0));
-    EXPECT_TRUE(within(biyos::sin(zeros), widen_down(0.0), widen_up(0.0)));
-    EXPECT_TRUE(holds(biyos::cos({kPi, kPi}), -1.0, shifted(-1.0, 1)));
-    EXPECT_TRUE(within(biyos::cos({kPi, kPi}), -1.0, widen_up(std::cos(kPi))));
+    EXPECT_TRUE(holds(cos({0.0, 0.0}), 1.0, 1.0));
+    EXPECT_TRUE(within(cos({0.0, 0.0}), widen_down(1.0), 1.0));
+    EXPECT_TRUE(holds(cos(zeros), 1.0, 1.0));
+    EXPECT_TRUE(within(cos(zeros), widen_down(1.0), 1.0));
+    EXPECT_TRUE(holds(sin({0.0, 0.0}), 0.0, 0.0));
+    EXPECT_TRUE(within(sin({0.0, 0.0}), widen_down(0.0), widen_up(0.0)));
+    EXPECT_TRUE(holds(sin(zeros), 0.0, 0.0));
+    EXPECT_TRUE(within(sin(zeros), widen_down(0.0), widen_up(0.0)));
+    EXPECT_TRUE(holds(cos({kPi, kPi}), -1.0, shifted(-1.0, 1)));
+    EXPECT_TRUE(within(cos({kPi, kPi}), -1.0, widen_up(std::cos(kPi))));
     const std::array points{
-        Point{.interval = biyos::sin, .value = sine, .at = kPi, .truth = kSinPi},
-        Point{.interval = biyos::sin, .value = sine, .at = kHuge, .truth = kSinHuge},
-        Point{.interval = biyos::cos, .value = cosine, .at = kHuge, .truth = kCosHuge},
-        Point{.interval = biyos::tan, .value = tangent, .at = kHalfPi, .truth = kTanHalfPi},
-        Point{.interval = biyos::tan, .value = tangent, .at = kHalfPiUp, .truth = kTanHalfPiUp},
+        Point{.interval = sin, .value = sine, .at = kPi, .truth = kSinPi},
+        Point{.interval = sin, .value = sine, .at = kHuge, .truth = kSinHuge},
+        Point{.interval = cos, .value = cosine, .at = kHuge, .truth = kCosHuge},
+        Point{.interval = tan, .value = tangent, .at = kHalfPi, .truth = kTanHalfPi},
+        Point{.interval = tan, .value = tangent, .at = kHalfPiUp, .truth = kTanHalfPiUp},
     };
     for (const Point &point : points)
     {

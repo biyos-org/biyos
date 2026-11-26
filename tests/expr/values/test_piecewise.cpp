@@ -22,7 +22,9 @@ using biyos::Bits;
 using biyos::Block;
 using biyos::Graph;
 using biyos::Hessian;
+using biyos::Index;
 using biyos::Instruction;
+using biyos::kBudget;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
@@ -39,7 +41,7 @@ constexpr std::array kKinks{-2.0, -0.5, 1.0, 3.0};
 constexpr std::array kHeights{1.0, -1.0, 0.5, 2.0};
 constexpr std::array kShort{0.0, 4.0};
 constexpr std::array kRamp{-1.0, 3.0};
-constexpr std::array kBudgets{Offset{1}, Offset{2}, Offset{3}, biyos::kBudget};
+constexpr std::array kBudgets{Offset{1}, Offset{2}, Offset{3}, kBudget};
 
 Bits bits(Real value)
 {
@@ -343,7 +345,7 @@ TEST(PiecewiseTest, Pattern)
     const Offset inner = graph.add_sum(0.5, pair, std::array{1.0, -2.0});
     const Offset root = graph.add_piecewise(pwl, std::span(&inner, 1));
     const Tape tape(graph, std::span(&root, 1));
-    const std::vector<biyos::Index> wanted{0, 2};
+    const std::vector<Index> wanted{0, 2};
     EXPECT_EQ(tape.pattern().variables, wanted);
     const std::vector<Real> gradient = jacobian_of(tape, std::array{0.25, 9.0, 0.5});
     const Real s = slope(segment(0.5 + 0.25 - 1.0));
@@ -351,7 +353,7 @@ TEST(PiecewiseTest, Pattern)
     EXPECT_EQ(bits(gradient[1]), bits(-2.0 * s));
     Hessian hessian(graph, std::span(&root, 1), {});
     const std::vector<Offset> starts{0, 2, 2, 3};
-    const std::vector<biyos::Index> rows{0, 2, 2};
+    const std::vector<Index> rows{0, 2, 2};
     EXPECT_EQ(hessian.pattern().starts, starts);
     EXPECT_EQ(hessian.pattern().rows, rows);
 }

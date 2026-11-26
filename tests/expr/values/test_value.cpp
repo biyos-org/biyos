@@ -25,12 +25,14 @@ namespace
 {
 
 using biyos::Bits;
+using biyos::forward;
 using biyos::Graph;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::Tape;
 using biyos::to_size;
+using biyos::value_at;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::constant;
@@ -232,8 +234,8 @@ Real Reference::compute(Offset node)
     case Operator::Erf:
         return std::erf(child(node, 0));
     case Operator::PiecewiseLinear:
-        return biyos::value_at(graph_.points().piecewise_linear(graph_.piecewise_linear(node)),
-                               child(node, 0));
+        return value_at(graph_.points().piecewise_linear(graph_.piecewise_linear(node)),
+                        child(node, 0));
     }
     return kNan;
 }
@@ -443,7 +445,7 @@ TEST(ValueTest, Seeded)
         for (int k = 0; k < 3; ++k)
         {
             const std::vector<Real> point = random_point(random);
-            biyos::forward(tape, point, workspace, values);
+            forward(tape, point, workspace, values);
             expect_reference(graph, roots, point, values);
         }
     }
@@ -465,23 +467,23 @@ TEST(ValueTest, Sizes)
     std::vector<Real> values(2);
     const std::array point{0.5, 0.25};
     const std::span<const Real> short_point = std::span(point).first(1);
-    EXPECT_EQ(refusal([&] { biyos::forward(tape, short_point, workspace, values); }),
+    EXPECT_EQ(refusal([&] { forward(tape, short_point, workspace, values); }),
               "invalid argument: point: size 1 does not cover variable 1");
     std::vector<Real> more(3);
-    EXPECT_EQ(refusal([&] { biyos::forward(tape, point, workspace, more); }),
+    EXPECT_EQ(refusal([&] { forward(tape, point, workspace, more); }),
               "invalid argument: values: size 3, not the root count 2");
 
     const std::string other = "invalid argument: workspace: sized for another tape";
     Workspace empty(Tape(graph, {}));
-    EXPECT_EQ(refusal([&] { biyos::forward(tape, point, empty, values); }), other);
+    EXPECT_EQ(refusal([&] { forward(tape, point, empty, values); }), other);
     const Tape whole(graph, std::span(&ratio, 1));
     ASSERT_EQ(whole.pinned(), 0);
     ASSERT_EQ(whole.width(), tape.width());
     Workspace unshared(whole);
-    EXPECT_EQ(refusal([&] { biyos::forward(tape, point, unshared, values); }), other);
+    EXPECT_EQ(refusal([&] { forward(tape, point, unshared, values); }), other);
     const Tape thin(graph, std::array{sine, cosine}, 3);
     ASSERT_EQ(thin.pinned(), tape.pinned());
     ASSERT_LT(thin.width(), tape.width());
     Workspace few_slots(thin);
-    EXPECT_EQ(refusal([&] { biyos::forward(tape, point, few_slots, values); }), other);
+    EXPECT_EQ(refusal([&] { forward(tape, point, few_slots, values); }), other);
 }

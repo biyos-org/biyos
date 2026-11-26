@@ -18,11 +18,13 @@ namespace
 using biyos::Bits;
 using biyos::compact;
 using biyos::Compaction;
+using biyos::copy;
 using biyos::Graph;
 using biyos::kDead;
 using biyos::live;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Points;
 using biyos::Real;
 using biyos::to_size;
 using biyos::test::refusal;
@@ -248,7 +250,7 @@ TEST(CompactTest, WholeTable)
     graph.add_piecewise_linear(u, v);
     const Offset z = graph.add_variable(0);
     const Compaction result = compact(graph, std::span(&z, 1));
-    const biyos::Points &points = result.graph.points();
+    const Points &points = result.graph.points();
     ASSERT_EQ(points.size(), 2);
     for (Offset pwl = 0; pwl < points.size(); ++pwl)
     {
@@ -301,7 +303,7 @@ TEST(CompactTest, SameGraph)
     const Offset x = graph.add_variable(0);
     const Real one = 1.0;
     const Offset sum = graph.add_sum(0.0, std::span(&x, 1), std::span(&one, 1));
-    EXPECT_EQ(refusal([&] { biyos::copy(graph, sum, std::span(&x, 1), graph); }),
+    EXPECT_EQ(refusal([&] { copy(graph, sum, std::span(&x, 1), graph); }),
               "invalid argument: expression: source and target are the same graph");
     EXPECT_EQ(graph.size(), 2);
 }
@@ -312,7 +314,7 @@ TEST(CompactTest, VariableArity)
     const Offset x = source.add_variable(0);
     Graph target;
     const Offset y = target.add_variable(1);
-    EXPECT_EQ(refusal([&] { biyos::copy(source, x, std::span(&y, 1), target); }),
+    EXPECT_EQ(refusal([&] { copy(source, x, std::span(&y, 1), target); }),
               "invalid argument: expression: operator 2 takes 0 children, not 1");
     EXPECT_EQ(target.size(), 1);
 }

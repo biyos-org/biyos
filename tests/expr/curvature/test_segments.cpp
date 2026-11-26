@@ -26,14 +26,21 @@ namespace
 {
 
 using biyos::Curvature;
+using biyos::enclose;
+using biyos::falls;
 using biyos::Graph;
 using biyos::Interval;
+using biyos::is_concave;
+using biyos::is_convex;
 using biyos::Monotonicity;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::PiecewiseLinear;
 using biyos::Profile;
 using biyos::Real;
+using biyos::rises;
+using biyos::segments;
+using biyos::Shapes;
 
 using Wide = long double;
 
@@ -73,7 +80,7 @@ const Line kLevel{.x = {-1.0, 0.0, 1.0}, .y = {-2.0, -1.0, 0.0}};
 
 Profile over(const Line &line, Real lower, Real upper)
 {
-    return biyos::segments(line.pwl(), {lower, upper});
+    return segments(line.pwl(), {lower, upper});
 }
 
 Curvature curvature(const Line &line, Real lower, Real upper)
@@ -96,8 +103,8 @@ Curvature nested(const Line &line, Operator op, Real sign, Interval x)
     const Offset pwl = graph.add_piecewise_linear(line.x, line.y);
     const Offset root = graph.add_piecewise(pwl, std::span(&child, 1));
     std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
-    biyos::enclose(graph, std::span(&x, 1), nodes);
-    biyos::Shapes shapes(graph);
+    enclose(graph, std::span(&x, 1), nodes);
+    Shapes shapes(graph);
     shapes.classify(graph, nodes);
     return shapes.curvature(root);
 }
@@ -174,10 +181,10 @@ bool signed_as(std::span<const Wide> secants, Wide sign)
 
 bool holds(const Profile &profile, std::span<const Wide> secants)
 {
-    const bool convex = !biyos::is_convex(profile.curvature) || ordered(secants, 1);
-    const bool concave = !biyos::is_concave(profile.curvature) || ordered(secants, -1);
-    const bool rising = !biyos::rises(profile.argument.monotonicity) || signed_as(secants, 1);
-    const bool falling = !biyos::falls(profile.argument.monotonicity) || signed_as(secants, -1);
+    const bool convex = !is_convex(profile.curvature) || ordered(secants, 1);
+    const bool concave = !is_concave(profile.curvature) || ordered(secants, -1);
+    const bool rising = !rises(profile.argument.monotonicity) || signed_as(secants, 1);
+    const bool falling = !falls(profile.argument.monotonicity) || signed_as(secants, -1);
     return convex && concave && rising && falling;
 }
 
@@ -305,7 +312,7 @@ TEST(CurvatureTest, Slopes)
         for (int k = 0; k < kBoxes; ++k)
         {
             const Interval box = random_box(line, engine);
-            const Profile profile = biyos::segments(line.pwl(), box);
+            const Profile profile = segments(line.pwl(), box);
             const std::vector<Real> t = samples_of(line, box, engine);
             const std::vector<Wide> secants = secants_of(line, t);
             claimed += profile.curvature == kNeither ? 0 : 1;

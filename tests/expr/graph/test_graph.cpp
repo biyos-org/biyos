@@ -21,6 +21,7 @@ using biyos::Graph;
 using biyos::Index;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::operator_of;
 using biyos::Payload;
 using biyos::payload_of;
 using biyos::Real;
@@ -429,11 +430,11 @@ TEST(GraphTest, Codes)
 {
     for (int code = BIYOS_OP_CONST; code <= BIYOS_OP_ERF; ++code)
     {
-        const std::optional<Operator> op = biyos::operator_of(code);
+        const std::optional<Operator> op = operator_of(code);
         ASSERT_TRUE(op.has_value()) << code;
         EXPECT_EQ(static_cast<int>(*op), code);
     }
-    EXPECT_EQ(biyos::operator_of(BIYOS_OP_PWL), Operator::PiecewiseLinear);
+    EXPECT_EQ(operator_of(BIYOS_OP_PWL), Operator::PiecewiseLinear);
     const std::array unknown{
         0,
         BIYOS_OP_NODE,
@@ -448,6 +449,6 @@ TEST(GraphTest, Codes)
     };
     for (const int code : unknown)
     {
-        EXPECT_FALSE(biyos::operator_of(code).has_value()) << code;
+        EXPECT_FALSE(operator_of(code).has_value()) << code;
     }
 }

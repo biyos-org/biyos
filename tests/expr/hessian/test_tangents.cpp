@@ -24,11 +24,21 @@ namespace
 
 using biyos::Bits;
 using biyos::Block;
+using biyos::evaluate;
+using biyos::Frame;
 using biyos::Graph;
+using biyos::Index;
 using biyos::Instruction;
+using biyos::keep;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::partial_tangents;
+using biyos::partials_of;
+using biyos::place;
 using biyos::Real;
+using biyos::region;
+using biyos::row;
+using biyos::tangent_rows;
 using biyos::Tape;
 using biyos::Workspace;
 using biyos::test::binary;
@@ -62,13 +72,12 @@ void seed(const Instruction &instruction,
     ASSERT_TRUE(instruction.op == Operator::Variable || instruction.op == Operator::Constant);
     if (instruction.op == Operator::Variable)
     {
-        const std::span<const Real> mine =
-            biyos::row(direction, biyos::place(instruction.payload), lanes);
-        std::ranges::copy(mine, biyos::row(slots, instruction.target, lanes).begin());
+        const std::span<const Real> mine = row(direction, place(instruction.payload), lanes);
+        std::ranges::copy(mine, row(slots, instruction.target, lanes).begin());
     }
 }
 
-biyos::Frame frame_of(const Block &block, std::span<const Real> point, Workspace &workspace)
+Frame frame_of(const Block &block, std::span<const Real> point, Workspace &workspace)
 {
     return {
         .point = point,
@@ -90,24 +99,24 @@ Linear linear_at(const Graph &graph,
     const Tape tape(graph, std::span(&root, 1));
     Workspace workspace(tape, lanes);
     const Block &block = tape.blocks()[0];
-    const biyos::Frame frame = frame_of(block, point, workspace);
-    const std::span<Real> all = biyos::region(block, std::span(workspace.partials), lanes);
+    const Frame frame = frame_of(block, point, workspace);
+    const std::span<Real> all = region(block, std::span(workspace.partials), lanes);
     Values slots(tape.width() * lanes, 0.0);
-    Values spare(biyos::tangent_rows(tape) * lanes, 0.0);
+    Values spare(tangent_rows(tape) * lanes, 0.0);
     const std::size_t last = block.instructions.size() - 1;
     for (std::size_t k = 0; k < last; ++k)
     {
-        biyos::evaluate(block.instructions[k], frame);
+        evaluate(block.instructions[k], frame);
         seed(block.instructions[k], direction, lanes, slots);
-        biyos::keep(block.instructions[k], frame);
+        keep(block.instructions[k], frame);
     }
     const Instruction &instruction = block.instructions[last];
     const std::size_t start = block.places[last] * lanes;
     const std::span<Real> mine = all.subspan(start, block.places[last + 1] * lanes - start);
     Values out(mine.size(), 0.0);
-    biyos::evaluate(instruction, frame);
-    biyos::partials_of(instruction, frame, mine);
-    biyos::partial_tangents(instruction, frame, {slots, spare}, mine, out);
+    evaluate(instruction, frame);
+    partials_of(instruction, frame, mine);
+    partial_tangents(instruction, frame, {slots, spare}, mine, out);
     return {{mine.begin(), mine.end()}, out};
 }
 
@@ -263,7 +272,7 @@ TEST(TangentTest, Product)
     std::vector<Offset> factors;
     for (std::size_t k = 0; k < x.size(); ++k)
     {
-        factors.push_back(graph.add_variable(static_cast<biyos::Index>(k)));
+        factors.push_back(graph.add_variable(static_cast<Index>(k)));
     }
     const Offset root = graph.add(Operator::Product, -1.5, factors);
     const Values found = linear_at(graph, root, x, t).tangents;

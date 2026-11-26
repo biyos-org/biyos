@@ -21,8 +21,11 @@ namespace
 {
 
 using biyos::Interval;
+using biyos::is_zero;
+using biyos::piecewise;
 using biyos::PiecewiseLinear;
 using biyos::Real;
+using biyos::value_at;
 using biyos::test::exact;
 using biyos::test::holds;
 using biyos::test::interval_text;
@@ -53,7 +56,7 @@ const Line kRise{.x = {0.0, 1.0}, .y = {0.0, 2.0}};
 
 Interval enclose(const Line &line, Real lower, Real upper)
 {
-    return biyos::piecewise(line.pwl(), {lower, upper});
+    return piecewise(line.pwl(), {lower, upper});
 }
 
 testing::AssertionResult near(Interval found, Real lower, Real upper, Real slack = kSlack)
@@ -89,7 +92,7 @@ Wide limit_at(const Line &line, Real t)
     }
     const std::size_t k = t > 0.0 ? line.x.size() - 2 : 0;
     const Real rise = line.y[k + 1] - line.y[k];
-    if (biyos::is_zero(rise))
+    if (is_zero(rise))
     {
         return line.y[k];
     }
@@ -178,11 +181,11 @@ testing::AssertionResult covers(Interval found, Wide value)
 
 void expect_sampled(const Line &line, Interval box, std::mt19937_64 &engine, int &reported)
 {
-    const Interval found = biyos::piecewise(line.pwl(), box);
+    const Interval found = piecewise(line.pwl(), box);
     for (const Real t : samples_of(line, box, engine))
     {
         const testing::AssertionResult real = covers(found, real_at(line, t));
-        const testing::AssertionResult computed = covers(found, biyos::value_at(line.pwl(), t));
+        const testing::AssertionResult computed = covers(found, value_at(line.pwl(), t));
         if ((!real || !computed) && reported++ < kReported)
         {
             ADD_FAILURE() << "box " << interval_text(box) << " at " << t << ": "
@@ -284,7 +287,7 @@ TEST(EnclosureTest, Breakpoint)
     EXPECT_TRUE(near(enclose(kZigzag, -5.0, -5.0), 5.0, 5.0));
     EXPECT_TRUE(near(enclose(kZigzag, 7.0, 7.0), 5.0, 5.0));
     EXPECT_TRUE(enclose(kZigzag, kInfinity, -kInfinity).is_empty());
-    EXPECT_TRUE(biyos::piecewise(kZigzag.pwl(), Interval::empty()).is_empty());
+    EXPECT_TRUE(piecewise(kZigzag.pwl(), Interval::empty()).is_empty());
 }
 
 TEST(EnclosureTest, Overflow)

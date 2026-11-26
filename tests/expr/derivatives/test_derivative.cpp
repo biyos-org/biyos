@@ -29,11 +29,15 @@ namespace
 using biyos::Adjoints;
 using biyos::Graph;
 using biyos::Index;
+using biyos::jacobian;
+using biyos::kBudget;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Pattern;
 using biyos::Real;
 using biyos::Tape;
 using biyos::to_size;
+using biyos::weighted_gradient;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::ChainRule;
@@ -89,14 +93,14 @@ std::vector<Index> reached(const Graph &graph, Offset root)
 
 std::vector<Index> pattern_of(const Tape &tape, std::size_t root)
 {
-    const biyos::Pattern &pattern = tape.pattern();
+    const Pattern &pattern = tape.pattern();
     const auto first = pattern.variables.begin();
     return {first + pattern.starts[root], first + pattern.starts[root + 1]};
 }
 
 Rows dense(const Tape &tape, const std::vector<Real> &gradients, std::size_t width)
 {
-    const biyos::Pattern &pattern = tape.pattern();
+    const Pattern &pattern = tape.pattern();
     Rows rows(to_size(tape.roots()), std::vector<Real>(width, 0.0));
     for (std::size_t r = 0; r < rows.size(); ++r)
     {
@@ -244,7 +248,7 @@ struct Call
 
 void call_jacobian(const Call &call)
 {
-    biyos::jacobian(*call.tape, call.point, *call.workspace, *call.adjoints, call.values, call.out);
+    jacobian(*call.tape, call.point, *call.workspace, *call.adjoints, call.values, call.out);
 }
 
 void call_weighted(const Call &call)
@@ -252,13 +256,7 @@ void call_weighted(const Call &call)
     const Tape &tape = *call.tape;
     Workspace &workspace = *call.workspace;
     Adjoints &adjoints = *call.adjoints;
-    biyos::weighted_gradient(tape,
-                             call.point,
-                             call.weights,
-                             workspace,
-                             adjoints,
-                             call.values,
-                             call.out);
+    weighted_gradient(tape, call.point, call.weights, workspace, adjoints, call.values, call.out);
 }
 
 std::string refused(void (*sweep)(const Call &), const Call &call)
@@ -521,7 +519,7 @@ TEST(DerivativeTest, Seeded)
         {
             const bool inside = k % 2 == 0;
             const std::vector<Real> point = inside ? interior_point(random) : random_point(random);
-            biyos::jacobian(tape, point, workspace, adjoints, values, gradients);
+            jacobian(tape, point, workspace, adjoints, values, gradients);
             EXPECT_TRUE(cleared(adjoints));
             const Rows rows = dense(tape, gradients, point.size());
             expect_rule(graph, roots, point, rows);
@@ -557,7 +555,7 @@ TEST(DerivativeTest, Patterns)
 TEST(DerivativeTest, Chains)
 {
     constexpr std::array shapes{ladder, recurrence, prefixes, products, inherited, powers, lattice};
-    for (const Offset budget : {Offset{1}, Offset{3}, biyos::kBudget})
+    for (const Offset budget : {Offset{1}, Offset{3}, kBudget})
     {
         SCOPED_TRACE(budget);
         for (const Index size : {6, 100})
@@ -726,7 +724,7 @@ TEST(DerivativeTest, Weighted)
             const std::vector<Real> point = random_point(random);
             const std::vector<Real> weights = random_weights(random, roots.size());
             std::ranges::fill(gradient, kNan);
-            biyos::weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
+            weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
             EXPECT_TRUE(cleared(adjoints));
             expect_weighted(tape, point, weights, gradient);
         }
@@ -735,7 +733,7 @@ TEST(DerivativeTest, Weighted)
     const std::vector<Offset> roots = shared_roots(graph);
     const std::vector<Real> point{0.7, 1.3, 2.1, 0.4};
     Random random(7);
-    for (const Offset budget : {Offset{1}, Offset{2}, Offset{5}, Offset{8}, biyos::kBudget})
+    for (const Offset budget : {Offset{1}, Offset{2}, Offset{5}, Offset{8}, kBudget})
     {
         SCOPED_TRACE(budget);
         const Tape tape(graph, roots, budget);

@@ -26,21 +26,25 @@ namespace
 {
 
 using biyos::Builder;
+using biyos::enclose;
 using biyos::Graph;
 using biyos::Interval;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
+using biyos::shifted;
 using biyos::test::Box;
 using biyos::test::box_of;
 using biyos::test::Check;
 using biyos::test::enclosures;
 using biyos::test::Engine;
+using biyos::test::evaluate;
 using biyos::test::exact;
 using biyos::test::expect_sampled;
 using biyos::test::holds;
 using biyos::test::operator_graph;
 using biyos::test::Parameters;
+using biyos::test::parameters_of;
 using biyos::test::Point;
 using biyos::test::refusal;
 using biyos::test::text;
@@ -230,12 +234,12 @@ void expect_margin(Operator op, const Point &point, int steps)
     const std::array box{point_box(point[0]), point_box(point[1]), point_box(point[2])};
     const std::vector<Interval> nodes = enclosures(graph, box);
     std::vector<Real> values(nodes.size());
-    biyos::test::evaluate(graph, point, values);
+    evaluate(graph, point, values);
     const Interval found = nodes.back();
     const Real value = values.back();
     SCOPED_TRACE("operator " + std::to_string(static_cast<int>(op)) + " at " + text(point[0]));
-    EXPECT_LE(found.lower(), biyos::shifted(value, -steps));
-    EXPECT_GE(found.upper(), biyos::shifted(value, steps));
+    EXPECT_LE(found.lower(), shifted(value, -steps));
+    EXPECT_GE(found.upper(), shifted(value, steps));
     if (steps == kExact)
     {
         EXPECT_GE(found.lower(), value);
@@ -255,7 +259,7 @@ TEST(IntervalTest, Sampled)
         int reported = 0;
         for (int round = 0; round < kBoxes; ++round)
         {
-            const Graph graph = operator_graph(op, biyos::test::parameters_of(op, engine));
+            const Graph graph = operator_graph(op, parameters_of(op, engine));
             const Box box = box_of(engine);
             const std::vector<Interval> nodes = enclosures(graph, box);
             const Check check{.graph = graph, .box = box, .nodes = nodes, .reported = reported};
@@ -389,8 +393,7 @@ TEST(IntervalTest, Shared)
         const Interval found = nodes[static_cast<std::size_t>(level)];
         const int steps = kLevelSteps * level;
         EXPECT_TRUE(holds(found, low, high)) << level;
-        EXPECT_TRUE(within(found, biyos::shifted(low, -steps), biyos::shifted(high, steps)))
-            << level;
+        EXPECT_TRUE(within(found, shifted(low, -steps), shifted(high, steps))) << level;
     }
 }
 
@@ -401,14 +404,14 @@ TEST(IntervalTest, Sizes)
     graph.add(Operator::Exp, std::span(&x, 1));
     const std::vector<Interval> box(4, Interval(0.0, 1.0));
     std::vector<Interval> small(1, Interval::empty());
-    EXPECT_EQ(refusal([&] { biyos::enclose(graph, box, small); }),
+    EXPECT_EQ(refusal([&] { enclose(graph, box, small); }),
               "invalid argument: nodes: size 1, not the node count 2");
     std::vector<Interval> nodes(2, Interval::empty());
     const std::array short_box{Interval(0.0, 1.0)};
-    EXPECT_EQ(refusal([&] { biyos::enclose(graph, short_box, nodes); }),
+    EXPECT_EQ(refusal([&] { enclose(graph, short_box, nodes); }),
               "invalid argument: box: size 1 does not cover variable 3");
     EXPECT_TRUE(nodes[0].is_empty());
     EXPECT_TRUE(nodes[1].is_empty());
-    biyos::enclose(graph, box, nodes);
+    enclose(graph, box, nodes);
     EXPECT_TRUE(holds(nodes[1], 1.0, std::exp(1.0)));
 }
