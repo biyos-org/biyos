@@ -95,12 +95,11 @@ void attach_expressions(Session &session, Selection selection, const BIYOS_offse
     model.attach_expressions(owners, span_of(node, owners.size(), "node"));
 }
 
-template <typename Selection> Encoding encoded(const Model &model, Selection selection)
+Encoding encoded(const Model &model, std::span<const Index> functions)
 {
-    const auto chosen = selected(Family::Function, model.n_of(Family::Function), selection);
     std::vector<Offset> roots;
-    roots.reserve(chosen.size());
-    for (const Index function : chosen)
+    roots.reserve(functions.size());
+    for (const Index function : functions)
     {
         roots.push_back(model.roots(function, function + 1).front());
     }
@@ -113,7 +112,9 @@ void n_expressions(const Session &session,
                    BIYOS_offset *nnz,
                    BIYOS_offset *nval)
 {
-    const Encoding encoding = encoded(session.model(), selection);
+    const Model &model = session.model();
+    const auto functions = selected(Family::Function, model.n_of(Family::Function), selection);
+    const Encoding encoding = encoded(model, functions);
     require(nnz, "nnz");
     require(nval, "nval");
     *nnz = to_offset(encoding.codes.size());
@@ -135,7 +136,9 @@ void get_expressions(const Session &session,
                      BIYOS_offset valcap,
                      const Output &out)
 {
-    const Encoding encoding = encoded(session.model(), selection);
+    const Model &model = session.model();
+    const auto functions = selected(Family::Function, model.n_of(Family::Function), selection);
+    const Encoding encoding = encoded(model, functions);
     check_capacity(cap, encoding.codes.size(), "cap", "entries");
     check_capacity(valcap, encoding.values.size(), "valcap", "values");
     write_counts(encoding.starts, out.counts);
