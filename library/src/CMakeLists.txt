@@ -89,6 +89,13 @@ add_library(biyos_internal STATIC
     io/mps/readers/values.cpp
     io/mps/readers/vectors.cpp
     io/mps/sections.cpp
+    io/nl/bodies.cpp
+    io/nl/expressions.cpp
+    io/nl/header.cpp
+    io/nl/nl.cpp
+    io/nl/operators.cpp
+    io/nl/pieces.cpp
+    io/nl/tokens.cpp
     io/records.cpp
     io/report.cpp
     model/attributes/names.cpp

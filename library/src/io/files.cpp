@@ -10,6 +10,7 @@
 #include "io/leftovers.hpp"
 #include "io/mps/mps.hpp"
 #include "io/mps/print.hpp"
+#include "io/nl/nl.hpp"
 #include "model/model.hpp"
 
 #include <filesystem>
@@ -88,9 +89,11 @@ Model read_file(Env &env, std::string_view path, FileFormat format)
     switch (format)
     {
     case FileFormat::Mps:
+        return read_mps(env.stream(), input, file);
+    case FileFormat::Nl:
         break;
     }
-    return read_mps(env.stream(), input, file);
+    return read_nl(env.stream(), input, file);
 }
 
 void write_file(Stream stream,
@@ -105,6 +108,10 @@ void write_file(Stream stream,
     {
     case FileFormat::Mps:
         break;
+    case FileFormat::Nl:
+        throw Error(ErrorKind::Unsupported,
+                    "file '" + file + "'",
+                    "NL files are read, never written");
     }
     const Draft draft = draft_of(model);
     print_file(draft, file, path);

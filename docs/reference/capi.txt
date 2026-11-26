@@ -2895,6 +2895,7 @@ text A model is read from a file in the format the caller names, never guessed f
 
 table Formats
 value BIYOS_FILEFMT_MPS Free MPS, for linear and mixed-integer models.
+value BIYOS_FILEFMT_NL Text NL, for nonlinear models. Read only.
 since 0.1.0
 
 function BIYOS_readmdl
@@ -2908,7 +2909,7 @@ error BIYOS_ERR_BADARG `path` or `mdl` is null, `fmt` is not a format, or `env` 
 error BIYOS_ERR_FILEIO The file cannot be opened or read.
 error BIYOS_ERR_BADFILE The file breaks a rule of its format. The message names the file and the line.
 error BIYOS_ERR_UNSUPPORTED The file holds a part the reader does not handle. The message names the part and its line.
-note Each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`. [File formats](#sec-formats) gives the rules of each format.
+note Each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`, and each part it skips, such as the starting point of an NL file, an info event with the same fields. [File formats](#sec-formats) gives the rules of each format.
 note The call sends the span `read` from module `io` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_newmdl BIYOS_freemdl
 since 0.1.0
@@ -2921,7 +2922,7 @@ param fmt in The format of the file, a `BIYOS_FILEFMT_` constant.
 return `BIYOS_OK` once the file is written.
 error BIYOS_ERR_BADARG `path` is null, `fmt` is not a format, or the environment of `mdl` delivers an event.
 error BIYOS_ERR_FILEIO The file cannot be opened or written.
-error BIYOS_ERR_UNSUPPORTED The model holds a part the format cannot carry. The message names the first record that holds it.
+error BIYOS_ERR_UNSUPPORTED The format is read only, or the model holds a part the format cannot carry. The message names the first record that holds it.
 note Each part of the model the format leaves out, such as a tolerance, is a warning event from module `io`, with the field `file`. [File formats](#sec-formats) gives the rules of each format.
 note The call sends the span `write` from module `io` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_readmdl

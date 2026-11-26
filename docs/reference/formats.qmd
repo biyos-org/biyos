@@ -1,6 +1,6 @@
 # File formats {#sec-formats}
 
-`BIYOS_readmdl` and `Model.read` read a model from a file in the format the caller names, and `BIYOS_writemdl` and `Model.write` write one. This chapter gives the rules of each format as the reader applies them, then the rules of the writer. A file that breaks one gives `BIYOS_ERR_BADFILE`, a section the reader does not handle gives `BIYOS_ERR_UNSUPPORTED`, and each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`.
+`BIYOS_readmdl` and `Model.read` read a model from a file in the format the caller names, and `BIYOS_writemdl` and `Model.write` write one. This chapter gives the rules of each format as the reader applies them, then the rules of the writer. A file that breaks one gives `BIYOS_ERR_BADFILE`, a section or segment the reader does not handle gives `BIYOS_ERR_UNSUPPORTED`, each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`, and each part it skips is an info event with the same fields.
 
 ## Free MPS
 
@@ -135,3 +135,65 @@ The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the 
 - constraint bounds no row reads back exactly, or that overflow once the constant moves into them.
 
 A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of the objective, the names of indicators, and the model's options. Hooks are not part of the problem and are left out with no event.
+
+## Text NL
+
+`BIYOS_FILEFMT_NL` reads the text form of NL, the format AMPL writes for a solver. The rules below are those of Gay's description of the format [@gay2005]. Where it says nothing, biyos sets its own rule, given in [Choices](#sec-nl-choices). The format is read only: `BIYOS_writemdl` refuses it with `BIYOS_ERR_UNSUPPORTED`.
+
+### Lines
+
+The first field of a line is a letter, often followed by a number in the same field, such as `C3` or `o2`. Fields are separated by white space, and a `#` starts a comment that runs to the end of the line. Numbers are written in decimal or exponential notation.
+
+### Header
+
+The file starts with ten lines. The first starts with `g`; a file that starts with `b` is binary NL, refused with `BIYOS_ERR_UNSUPPORTED`. The next nine hold counts in the order Gay gives, the second line starting with the numbers of variables, constraints and objectives. The counts fix the kind of each variable from its place in the order of variables in Gay's tables [@gay2017], and every variable they do not mark integer or binary is continuous.
+
+### Segments
+
+After the header, each segment starts with a letter. They may come in any order, but a segment for one record, or a `b`, `r`, `k`, `x` or `d` segment, appears once. Every constraint needs its `C` segment and every objective its `O` segment, and a file with constraints needs `r`, one with variables `b`.
+
+| Segment | Holds |
+|---|---|
+| `V` | A defined variable: its index, a count of linear terms, the terms, then its expression. |
+| `C` | The expression of a constraint. |
+| `O` | The expression of an objective and its sense, `0` to minimize and `1` to maximize. |
+| `r` | The bounds of each constraint. |
+| `b` | The bounds of each variable. |
+| `k` | The column lengths of the Jacobian, which are checked for their count alone. |
+| `J` | The linear terms of a constraint. |
+| `G` | The linear terms of an objective. |
+| `x` | A starting point, skipped with an info event. |
+| `d` | Dual guesses, skipped with an info event. |
+
+A bound line starts with a code: `0` gives a lower and an upper bound, `1` an upper bound, `2` a lower bound, `3` neither and `4` one value for both. Code `5`, a complementarity, is refused with `BIYOS_ERR_UNSUPPORTED`, as are the segments `F` (imported functions), `S` (suffixes) and `L` (logical constraints).
+
+### Expressions
+
+An expression is written in prefix order, one item a line: `n` and a number for a constant, `v` and an index for a variable or a defined variable, `o` and a code for an operator followed by its operands. An operator that takes any number of operands, `min`, `max` and `sum`, has its count on the next line.
+
+| Operators | Read as |
+|---|---|
+| `plus`, `minus`, `sum` | A sum. |
+| `mult` | A product. |
+| `div` | A division. |
+| `pow` | A power, with a constant exponent when the exponent is a number. |
+| `neg`, `abs`, `min`, `max` | The same operator. |
+| `sqrt`, `exp`, `log`, `log10` | The same function, `log10` as the natural logarithm times $\log_{10} e$. |
+| `sin`, `cos`, `tan`, `asin`, `acos`, `atan` | The same function. |
+| `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh` | The same function. |
+| `plterm` | A piecewise linear function of one variable. |
+
+Every other operator, among them `atan2`, the comparisons, the logical operators, `if`, `floor`, `ceil` and `round`, is refused with `BIYOS_ERR_UNSUPPORTED`, as are imported functions (`f`) and strings (`h`).
+
+### Choices {#sec-nl-choices}
+
+| Case | biyos's rule |
+|---|---|
+| Header counts | A file must hold at least two bytes for each variable, constraint, objective and defined variable the header counts, so a short file cannot make the reader allocate for a large model. |
+| Several objectives | Each is read, with its sense, and its priority is its place in the file. |
+| Names | NL holds none; names in separate files are not read. |
+| A linear term with coefficient 0 | Kept as a term of the function. |
+| A defined variable | Read once and shared by each expression that uses it. A use before its `V` segment is refused. |
+| `plterm` | Slopes and breakpoints become the points of a piecewise linear function that is 0 at 0, as in AMPL, with one more point beyond the first and the last breakpoint so that the end slopes hold. Breakpoints that do not increase are refused. |
+| Kinds of variables | The variables used nonlinearly in objectives alone number the second count of the fifth header line less the first, the integer ones among them included. |
+| A binary variable | Bounds outside 0 and 1 are refused. |

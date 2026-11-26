@@ -62,4 +62,23 @@ void warn(Stream stream, const std::string &file, const std::string &text) noexc
     stream.emit(EventKind::Message, EventLevel::Warning, fill);
 }
 
+void inform(Stream stream, const Lines &lines, const std::string &text) noexcept
+{
+    const auto fill = [&](Event &event) { describe(event, lines.file(), lines.number(), text); };
+    stream.emit(EventKind::Message, EventLevel::Info, fill);
+}
+
+void reject(const Lines &lines, const Error &error)
+{
+    if (error.kind() != ErrorKind::InvalidArgument)
+    {
+        throw error;
+    }
+    if (error.object().empty())
+    {
+        bad_file(lines, error.message());
+    }
+    bad_file(lines, error.object() + ": " + error.message());
+}
+
 }

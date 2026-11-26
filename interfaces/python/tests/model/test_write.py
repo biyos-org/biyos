@@ -4,6 +4,7 @@ import biyos
 from biyos import FileFormat
 from samples import LP_MPS, STRUCTURE_MPS, written
 
+UNSUPPORTED = -201
 FILEIO = -401
 BADARG = -100
 
@@ -64,6 +65,15 @@ def test_unwritable(env, tmp_path):
         model.write(path, FileFormat.MPS)
     assert caught.value.code == FILEIO
     assert str(caught.value) == f"file access: file '{path}': cannot be opened"
+
+
+def test_read_only(env, tmp_path):
+    path = str(tmp_path / "lp.nl")
+    with biyos.Model(env) as model, pytest.raises(biyos.Error) as caught:
+        model.write(path, FileFormat.NL)
+    assert caught.value.code == UNSUPPORTED
+    message = f"unsupported: file '{path}': NL files are read, never written"
+    assert str(caught.value) == message
 
 
 def test_refused(env, tmp_path):

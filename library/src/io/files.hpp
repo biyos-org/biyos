@@ -15,10 +15,12 @@ namespace biyos
 enum class FileFormat
 {
     Mps = BIYOS_FILEFMT_MPS,
+    Nl = BIYOS_FILEFMT_NL,
 };
 
 inline constexpr std::array kFormats{
     FileFormat::Mps,
+    FileFormat::Nl,
 };
 
 FileFormat find_format(int id);
