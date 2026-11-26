@@ -24,11 +24,17 @@ using biyos::Bits;
 using biyos::ConeKind;
 using biyos::Constraint;
 using biyos::difference;
+using biyos::Error;
+using biyos::Family;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Real;
 using biyos::test::Cones;
+using biyos::test::expect_copied;
+using biyos::test::expect_deleted;
+using biyos::test::expect_own;
+using biyos::test::expect_refused;
 using biyos::test::refusal;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
@@ -167,7 +173,7 @@ std::string outcome(const Shape &shape)
     {
         add(model, one(shape.kind, first(shape.dimension), parameters));
     }
-    catch (const biyos::Error &error)
+    catch (const Error &error)
     {
         return error.what();
     }
@@ -321,20 +327,20 @@ TEST(ConeTest, Ranges)
 
 TEST(ConeTest, OwnTolerance)
 {
-    biyos::test::expect_own(with_cones(3), biyos::Family::Cone);
+    expect_own(with_cones(3), Family::Cone);
 }
 
 TEST(ConeTest, ToleranceRefusal)
 {
-    biyos::test::expect_refused(with_cones(2), biyos::Family::Cone);
+    expect_refused(with_cones(2), Family::Cone);
 }
 
 TEST(ConeTest, DeletedTolerance)
 {
-    biyos::test::expect_deleted(with_cones(2), biyos::Family::Cone);
+    expect_deleted(with_cones(2), Family::Cone);
 }
 
 TEST(ConeTest, ToleranceCopy)
 {
-    biyos::test::expect_copied(with_cones(2), biyos::Family::Cone);
+    expect_copied(with_cones(2), Family::Cone);
 }

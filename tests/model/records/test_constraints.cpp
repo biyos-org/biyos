@@ -17,10 +17,16 @@ namespace
 {
 
 using biyos::Constraint;
+using biyos::ErrorKind;
+using biyos::Family;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Real;
+using biyos::test::expect_copied;
+using biyos::test::expect_deleted;
+using biyos::test::expect_own;
+using biyos::test::expect_refused;
 using biyos::test::failure;
 using biyos::test::refusal;
 
@@ -224,7 +230,7 @@ TEST(ConstraintTest, Mismatch)
     Model model = with_functions(1);
     add(model, on(0, 0.0, 1.0));
     const std::vector<Index> indices{0};
-    failure([&] { model.set_constraints(indices, {}); }, biyos::ErrorKind::Internal);
+    failure([&] { model.set_constraints(indices, {}); }, ErrorKind::Internal);
     expect_constraint(model.constraint(0), on(0, 0.0, 1.0));
 }
 
@@ -242,20 +248,20 @@ TEST(ConstraintTest, Moved)
 
 TEST(ConstraintTest, OwnTolerance)
 {
-    biyos::test::expect_own(with_constraints(3), biyos::Family::Constraint);
+    expect_own(with_constraints(3), Family::Constraint);
 }
 
 TEST(ConstraintTest, ToleranceRefusal)
 {
-    biyos::test::expect_refused(with_constraints(2), biyos::Family::Constraint);
+    expect_refused(with_constraints(2), Family::Constraint);
 }
 
 TEST(ConstraintTest, DeletedTolerance)
 {
-    biyos::test::expect_deleted(with_constraints(2), biyos::Family::Constraint);
+    expect_deleted(with_constraints(2), Family::Constraint);
 }
 
 TEST(ConstraintTest, ToleranceCopy)
 {
-    biyos::test::expect_copied(with_constraints(2), biyos::Family::Constraint);
+    expect_copied(with_constraints(2), Family::Constraint);
 }

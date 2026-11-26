@@ -14,17 +14,22 @@
 namespace
 {
 
+using biyos::Env;
 using biyos::ErrorKind;
+using biyos::ErrorScope;
+using biyos::Event;
 using biyos::EventKind;
 using biyos::EventLevel;
+using biyos::Hook;
 using biyos::Session;
+using biyos::test::in_delivery;
 using biyos::test::quiet;
 using Texts = std::vector<std::string>;
 using Models = std::vector<const Session *>;
 
-void env_scope(biyos::Env &env)
+void env_scope(Env &env)
 {
-    const biyos::ErrorScope scope(env);
+    const ErrorScope scope(env);
     env.stream().record(ErrorKind::InvalidArgument, "env");
     EXPECT_EQ(env.last_error().model, nullptr);
 }
@@ -32,12 +37,12 @@ void env_scope(biyos::Env &env)
 class StreamTest : public ::testing::Test
 {
   protected:
-    biyos::Hook recorder(const std::string &name)
+    Hook recorder(const std::string &name)
     {
-        return [this, name](const biyos::Event &event) { note(name, event); };
+        return [this, name](const Event &event) { note(name, event); };
     }
 
-    void note(const std::string &name, const biyos::Event &event)
+    void note(const std::string &name, const Event &event)
     {
         texts.push_back(name);
         models.push_back(event.model);
@@ -49,7 +54,7 @@ class StreamTest : public ::testing::Test
         session.add_hook(EventKind::Message, EventLevel::Debug, recorder("model"));
     }
 
-    biyos::Env env;
+    Env env;
     Session session{env};
     Session other{env};
     Texts texts;
@@ -115,7 +120,7 @@ TEST_F(StreamTest, EnvRecord)
 TEST_F(StreamTest, ScopedRecord)
 {
     session.stream().record(ErrorKind::InvalidArgument, "model");
-    biyos::test::in_delivery(env, env_scope);
+    in_delivery(env, env_scope);
     EXPECT_EQ(env.last_error().model, &session);
     EXPECT_STREQ(env.last_error().text, "model");
 }

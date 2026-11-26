@@ -20,6 +20,7 @@ namespace
 
 using biyos::Bits;
 using biyos::difference;
+using biyos::ErrorKind;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
@@ -27,6 +28,7 @@ using biyos::Offset;
 using biyos::QuadraticTerm;
 using biyos::Real;
 using biyos::Variable;
+using biyos::VariableKind;
 using biyos::test::failure;
 using biyos::test::Quadratic;
 using biyos::test::refusal;
@@ -38,7 +40,7 @@ constexpr Real kLarge = 1.0e308;
 Model with_functions(std::size_t variables, std::size_t functions)
 {
     const Variable free{
-        .kind = biyos::VariableKind::Continuous,
+        .kind = VariableKind::Continuous,
         .lower = -kInfinity,
         .upper = kInfinity,
     };
@@ -91,7 +93,7 @@ std::vector<QuadraticTerm> held(const Model &model)
 
 template <typename Call> void expect_internal(Call call)
 {
-    failure(call, biyos::ErrorKind::Internal);
+    failure(call, ErrorKind::Internal);
 }
 
 }
@@ -398,11 +400,11 @@ TEST(QuadraticTest, Room)
     Model model = with_functions(1, 1);
     const Offset most = (std::numeric_limits<Offset>::max)();
     const auto call = [&] { model.check_quadratic_room(most); };
-    EXPECT_EQ(failure(call, biyos::ErrorKind::NoMemory),
+    EXPECT_EQ(failure(call, ErrorKind::NoMemory),
               "out of memory: model: no quadratic term offset left");
     const Offset large = Offset{1} << 59;
     const auto beyond = [&] { model.check_quadratic_room(large); };
-    EXPECT_EQ(failure(beyond, biyos::ErrorKind::NoMemory),
+    EXPECT_EQ(failure(beyond, ErrorKind::NoMemory),
               "out of memory: model: no quadratic term offset left");
     model.check_quadratic_room(1);
     add(model, single(0, {{0, 0, 1.0}}));

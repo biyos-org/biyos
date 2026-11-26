@@ -21,6 +21,7 @@ using biyos::difference;
 using biyos::Family;
 using biyos::Index;
 using biyos::Indicator;
+using biyos::kFamilies;
 using biyos::LinearTerm;
 using biyos::Member;
 using biyos::Model;
@@ -90,7 +91,7 @@ void change(Model &model)
     model.set_tolerances(Family::Cone, std::span(&index, 1), {}, std::span(&tolerance, 1));
     const std::vector<Index> renamed{0, 1};
     const std::vector<std::string_view> names{"y", "w"};
-    for (const Family family : biyos::kFamilies)
+    for (const Family family : kFamilies)
     {
         model.set_names(family, renamed, names);
     }

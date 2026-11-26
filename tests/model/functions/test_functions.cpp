@@ -20,12 +20,16 @@ namespace
 
 using biyos::Bits;
 using biyos::difference;
+using biyos::ErrorKind;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Real;
 using biyos::Variable;
+using biyos::variable_starts;
+using biyos::variable_terms;
+using biyos::VariableKind;
 using biyos::test::failure;
 using biyos::test::refusal;
 
@@ -57,7 +61,7 @@ struct ByVariable
 Model with_variables(std::size_t n)
 {
     const Variable free{
-        .kind = biyos::VariableKind::Continuous,
+        .kind = VariableKind::Continuous,
         .lower = -kInfinity,
         .upper = kInfinity,
     };
@@ -119,7 +123,7 @@ void expect_constants(std::span<const Real> found, const std::vector<Real> &want
 
 template <typename Call> void expect_internal(Call call)
 {
-    failure(call, biyos::ErrorKind::Internal);
+    failure(call, ErrorKind::Internal);
 }
 
 void add_terms(Model &model, const Linear &linear)
@@ -140,13 +144,11 @@ std::string term_refusal(Model &model, const Linear &linear)
 
 ByVariable read_variables(const Model &model, Index start, Index stop)
 {
-    ByVariable read{.starts = biyos::variable_starts(model, start, stop),
-                    .functions = {},
-                    .values = {}};
+    ByVariable read{.starts = variable_starts(model, start, stop), .functions = {}, .values = {}};
     const auto total = static_cast<std::size_t>(read.starts.back());
     read.functions.assign(total, -1);
     read.values.assign(total, kNan);
-    biyos::variable_terms(model, start, read.starts, read.functions, read.values);
+    variable_terms(model, start, read.starts, read.functions, read.values);
     return read;
 }
 
@@ -332,12 +334,10 @@ TEST(FunctionTest, Room)
     Model model = with_variables(1);
     const Offset most = (std::numeric_limits<Offset>::max)();
     const auto call = [&] { model.check_room(1, most); };
-    EXPECT_EQ(failure(call, biyos::ErrorKind::NoMemory),
-              "out of memory: model: no term offset left");
+    EXPECT_EQ(failure(call, ErrorKind::NoMemory), "out of memory: model: no term offset left");
     const Offset large = Offset{1} << 59;
     const auto beyond = [&] { model.check_room(1, large); };
-    EXPECT_EQ(failure(beyond, biyos::ErrorKind::NoMemory),
-              "out of memory: model: no term offset left");
+    EXPECT_EQ(failure(beyond, ErrorKind::NoMemory), "out of memory: model: no term offset left");
     model.check_room(1, 1);
     add(model, single(0.0, {{0, 1.0}}));
     EXPECT_EQ(model.n_functions(), 1);
@@ -562,29 +562,29 @@ TEST(FunctionTest, VariableRange)
 TEST(FunctionTest, VariableRefused)
 {
     const Model model = with_terms();
-    EXPECT_EQ(refusal([&] { biyos::variable_starts(model, -1, 0); }),
+    EXPECT_EQ(refusal([&] { variable_starts(model, -1, 0); }),
               "invalid argument: variable -1: unknown");
-    EXPECT_EQ(refusal([&] { biyos::variable_starts(model, 2, 5); }),
+    EXPECT_EQ(refusal([&] { variable_starts(model, 2, 5); }),
               "invalid argument: variable 4: unknown");
-    EXPECT_EQ(refusal([&] { biyos::variable_starts(model, 5, 5); }),
+    EXPECT_EQ(refusal([&] { variable_starts(model, 5, 5); }),
               "invalid argument: variable 5: unknown");
-    EXPECT_EQ(refusal([&] { biyos::variable_starts(model, 0, -1); }),
+    EXPECT_EQ(refusal([&] { variable_starts(model, 0, -1); }),
               "invalid argument: argument 'end': -1 is below 'beg' 0");
 }
 
 TEST(FunctionTest, VariableSized)
 {
     const Model model = with_terms();
-    const std::vector<Offset> starts = biyos::variable_starts(model, 0, 4);
+    const std::vector<Offset> starts = variable_starts(model, 0, 4);
     EXPECT_EQ(starts, (std::vector<Offset>{0, 0, 1, 2, 3}));
     std::vector<Index> functions(2, -1);
     std::vector<Real> values(3, kInfinity);
-    biyos::variable_terms(model, 0, starts, functions, {});
+    variable_terms(model, 0, starts, functions, {});
     EXPECT_EQ(functions, (std::vector<Index>{0, 2}));
-    biyos::variable_terms(model, 0, starts, {}, values);
+    variable_terms(model, 0, starts, {}, values);
     expect_constants(values, {1.0, 3.0, 2.0});
     functions.assign(2, -1);
-    biyos::variable_terms(model, 0, starts, std::span(functions).first(1), {});
+    variable_terms(model, 0, starts, std::span(functions).first(1), {});
     EXPECT_EQ(functions, (std::vector<Index>{0, -1}));
-    biyos::variable_terms(model, 0, starts, {}, {});
+    variable_terms(model, 0, starts, {}, {});
 }

@@ -12,8 +12,12 @@
 namespace
 {
 
+using biyos::EntryTimer;
+using biyos::Env;
+using biyos::Event;
 using biyos::EventKind;
 using biyos::EventLevel;
+using biyos::Hook;
 using biyos::Session;
 using Models = std::vector<const Session *>;
 using Texts = std::vector<std::string>;
@@ -24,22 +28,22 @@ struct Heard
     Models models;
 };
 
-void note(Heard &heard, const biyos::Event &event)
+void note(Heard &heard, const Event &event)
 {
     heard.edges.push_back(event.text + " " + event.fields[0].value);
     heard.models.push_back(event.model);
 }
 
-biyos::Hook listener(Heard &heard)
+Hook listener(Heard &heard)
 {
-    return [&heard](const biyos::Event &event) { note(heard, event); };
+    return [&heard](const Event &event) { note(heard, event); };
 }
 
 }
 
 TEST(TimerTest, ModelSpan)
 {
-    biyos::Env env;
+    Env env;
     Session session(env);
     Session other(env);
     Heard model;
@@ -49,7 +53,7 @@ TEST(TimerTest, ModelSpan)
     other.add_hook(EventKind::Span, EventLevel::Debug, listener(stray));
     env.events().add_hook(EventKind::Span, EventLevel::Debug, listener(shared));
     {
-        const biyos::EntryTimer timer(session.stream(), "io", "write");
+        const EntryTimer timer(session.stream(), "io", "write");
     }
     const Texts edges{"write begin", "write end"};
     EXPECT_EQ(model.edges, edges);

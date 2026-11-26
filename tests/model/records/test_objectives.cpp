@@ -23,7 +23,9 @@ using biyos::Bits;
 using biyos::Constraint;
 using biyos::default_objective;
 using biyos::difference;
+using biyos::ErrorKind;
 using biyos::Index;
+using biyos::kRoom;
 using biyos::Model;
 using biyos::Objective;
 using biyos::ObjectiveSense;
@@ -334,22 +336,21 @@ TEST(ObjectiveTest, Mismatch)
     Model model = with_functions(1);
     add(model, default_objective(0, 0));
     const std::vector<Index> indices{0};
-    failure([&] { model.set_objectives(indices, {}); }, biyos::ErrorKind::Internal);
+    failure([&] { model.set_objectives(indices, {}); }, ErrorKind::Internal);
     expect_objective(model.objective(0), default_objective(0, 0));
 }
 
 TEST(ObjectiveTest, Room)
 {
     Model model = with_functions(1);
-    model.check_objective_room(biyos::kRoom);
-    const auto beyond = [&] { model.check_objective_room(biyos::kRoom + 1); };
-    EXPECT_EQ(failure(beyond, biyos::ErrorKind::NoMemory),
+    model.check_objective_room(kRoom);
+    const auto beyond = [&] { model.check_objective_room(kRoom + 1); };
+    EXPECT_EQ(failure(beyond, ErrorKind::NoMemory),
               "out of memory: model: no objective index left");
     add(model, default_objective(0, 0));
-    const auto full = [&] { model.check_objective_room(biyos::kRoom); };
-    EXPECT_EQ(failure(full, biyos::ErrorKind::NoMemory),
-              "out of memory: model: no objective index left");
-    model.check_objective_room(biyos::kRoom - 1);
+    const auto full = [&] { model.check_objective_room(kRoom); };
+    EXPECT_EQ(failure(full, ErrorKind::NoMemory), "out of memory: model: no objective index left");
+    model.check_objective_room(kRoom - 1);
 }
 
 TEST(ObjectiveTest, Moved)
