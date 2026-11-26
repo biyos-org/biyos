@@ -2,7 +2,7 @@ project:
   type: book
   output-dir: _book
   pre-render:
-    - ../tools/capi_page.py
+    - ../tools/capi_page.py --headers ../include/biyos
     - ../tools/options_page.py
     - quartodoc build
   post-render:

@@ -1,3 +1,4 @@
+import argparse
 import json
 import re
 import sys
@@ -6,10 +7,9 @@ from pathlib import Path
 import headers
 import spec
 
-ROOT = Path(__file__).resolve().parent.parent
-SPEC = ROOT / "docs" / "reference" / "capi.txt"
-INCLUDE = ROOT / "include" / "biyos"
-OUT = ROOT / "docs" / "reference" / "_capi"
+REFERENCE = Path("reference")
+SPEC = REFERENCE / "capi.txt"
+OUT = REFERENCE / "_capi"
 PAGES = {"codes": "codes", "sent": "codes"}
 DIRECTIONS = {"in": "in", "out": "out", "inout": "in/out"}
 ARGUMENT = re.compile(r"(\w+)\s*[,)]")
@@ -206,9 +206,16 @@ def targets(groups):
     }
 
 
+def arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--headers", type=Path, required=True)
+    return parser.parse_args()
+
+
 def main():
+    given = arguments()
     groups = spec.read(SPEC)
-    values, declarations = headers.read(INCLUDE)
+    values, declarations = headers.read(given.headers)
     OUT.mkdir(exist_ok=True)
     for group in groups:
         (OUT / f"{group.key}.md").write_text(
