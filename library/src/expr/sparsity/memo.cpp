@@ -18,7 +18,7 @@ namespace
 
 constexpr std::size_t kFlat = 64;
 constexpr std::size_t kStamp = 0;
-constexpr std::size_t kCount = 1;
+constexpr std::size_t kItems = 1;
 constexpr std::size_t kLinks = 2;
 constexpr std::size_t kHeader = 3;
 
@@ -135,7 +135,7 @@ void Memos<Item>::gather(std::span<const Offset> memos, std::vector<Item> &items
             continue;
         }
         stamp = walk_;
-        read(items_of(next), items);
+        read(item_cells(next), items);
         append(stack_, links_of(next));
     }
 }
@@ -150,7 +150,7 @@ bool Memos<Item>::small(std::span<const Item> own, std::span<const Offset> links
         {
             return false;
         }
-        size += count_of(link);
+        size += item_count(link);
     }
     return size <= kFlat;
 }
@@ -161,7 +161,7 @@ Offset Memos<Item>::flatten(std::span<const Item> own, std::span<const Offset> l
     pieces_.assign(own.begin(), own.end());
     for (const Offset link : links)
     {
-        read(items_of(link), pieces_);
+        read(item_cells(link), pieces_);
     }
     settled_.clear();
     settle(pieces_, settled_);
@@ -190,27 +190,32 @@ Offset Memos<Item>::store(std::span<const Item> own, std::span<const Offset> lin
     const std::size_t start = cells_.size();
     cells_.resize(start + kHeader);
     cells_[start + kStamp] = kUnset;
-    cells_[start + kCount] = to_offset(own.size());
+    cells_[start + kItems] = to_offset(own.size());
     cells_[start + kLinks] = to_offset(links.size());
     put(cells_, own);
     append(cells_, links);
     return to_offset(start);
 }
 
-template <typename Item> std::size_t Memos<Item>::count_of(Offset memo) const noexcept
+template <typename Item> std::size_t Memos<Item>::item_count(Offset memo) const noexcept
 {
-    return to_size(cells_[to_size(memo) + kCount]);
+    return to_size(cells_[to_size(memo) + kItems]);
 }
 
-template <typename Item> std::span<const Offset> Memos<Item>::items_of(Offset memo) const noexcept
+template <typename Item> std::size_t Memos<Item>::link_count(Offset memo) const noexcept
 {
-    return std::span(cells_).subspan(to_size(memo) + kHeader, count_of(memo) * kWidth<Item>);
+    return to_size(cells_[to_size(memo) + kLinks]);
+}
+
+template <typename Item> std::span<const Offset> Memos<Item>::item_cells(Offset memo) const noexcept
+{
+    return std::span(cells_).subspan(to_size(memo) + kHeader, item_count(memo) * kWidth<Item>);
 }
 
 template <typename Item> std::span<const Offset> Memos<Item>::links_of(Offset memo) const noexcept
 {
-    const std::size_t start = to_size(memo) + kHeader + count_of(memo) * kWidth<Item>;
-    return std::span(cells_).subspan(start, to_size(cells_[to_size(memo) + kLinks]));
+    const std::size_t start = to_size(memo) + kHeader + item_count(memo) * kWidth<Item>;
+    return std::span(cells_).subspan(start, link_count(memo));
 }
 
 template class Memos<Index>;

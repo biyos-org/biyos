@@ -25,8 +25,9 @@ template <typename Item> class Memos
     Offset flatten(std::span<const Item> own, std::span<const Offset> links);
     Offset share(std::span<const Offset> links);
     Offset store(std::span<const Item> own, std::span<const Offset> links);
-    std::size_t count_of(Offset memo) const noexcept;
-    std::span<const Offset> items_of(Offset memo) const noexcept;
+    std::size_t item_count(Offset memo) const noexcept;
+    std::size_t link_count(Offset memo) const noexcept;
+    std::span<const Offset> item_cells(Offset memo) const noexcept;
     std::span<const Offset> links_of(Offset memo) const noexcept;
 
     std::vector<Offset> cells_;
