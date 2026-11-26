@@ -53,15 +53,15 @@ void n_functions(const Session &session, BIYOS_index *n)
 template <typename Selection> void clear_functions(Session &session, Selection selection)
 {
     Model &model = writable(session);
-    model.clear_functions(selected(model, Family::Function, selection));
+    model.clear_functions(selected(Family::Function, model.n_of(Family::Function), selection));
 }
 
 template <typename Selection>
 void add_constants(Session &session, Selection selection, const BIYOS_real *constants)
 {
     Model &model = writable(session);
-    const auto chosen = selected(model, Family::Function, selection);
-    check_known(model, Family::Function, chosen);
+    const auto chosen = selected(Family::Function, model.n_of(Family::Function), selection);
+    check_known(Family::Function, model.n_of(Family::Function), chosen);
     if (constants != nullptr)
     {
         model.add_constants(chosen, std::span(constants, chosen.size()));
@@ -72,8 +72,8 @@ template <typename Selection>
 void set_constants(Session &session, Selection selection, const BIYOS_real *constants)
 {
     Model &model = writable(session);
-    const auto chosen = selected(model, Family::Function, selection);
-    check_known(model, Family::Function, chosen);
+    const auto chosen = selected(Family::Function, model.n_of(Family::Function), selection);
+    check_known(Family::Function, model.n_of(Family::Function), chosen);
     if (constants != nullptr)
     {
         model.set_constants(chosen, std::span(constants, chosen.size()));
@@ -83,7 +83,8 @@ void set_constants(Session &session, Selection selection, const BIYOS_real *cons
 template <typename Selection>
 void get_constants(const Session &session, Selection selection, BIYOS_real *constants)
 {
-    const auto chosen = selected(session.model(), Family::Function, selection);
+    const auto chosen =
+        selected(Family::Function, session.model().n_of(Family::Function), selection);
     write_array(picked(session.model(), &Model::constant, chosen), constants);
 }
 

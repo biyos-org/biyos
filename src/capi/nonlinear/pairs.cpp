@@ -39,7 +39,8 @@ struct Pairs
 template <typename Selection>
 void n_pairs(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(session.model(), Family::Function, selection);
+    const auto chosen =
+        selected(Family::Function, session.model().n_of(Family::Function), selection);
     const std::size_t count = item_count(session.model(), &Model::quadratic_terms, chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
@@ -51,7 +52,8 @@ void get_pairs(const Session &session,
                BIYOS_offset *counts,
                const Pairs &out)
 {
-    const auto chosen = selected(session.model(), Family::Function, selection);
+    const auto chosen =
+        selected(Family::Function, session.model().n_of(Family::Function), selection);
     const Gathered<QuadraticTerm> pairs =
         gathered(session.model(), &Model::quadratic_terms, chosen);
     check_capacity(capacity, pairs.items.size());

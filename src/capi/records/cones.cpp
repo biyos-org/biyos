@@ -96,7 +96,7 @@ void n_cones(const Session &session, BIYOS_index *n)
 template <typename Selection, typename T>
 void n_items(const Session &session, Selection selection, PartReader<T> part, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(session.model(), Family::Cone, selection);
+    const auto chosen = selected(Family::Cone, session.model().n_of(Family::Cone), selection);
     const std::size_t count = item_count(session.model(), part, chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
@@ -109,7 +109,7 @@ void get_members(const Session &session,
                  Compressed<BIYOS_index> out)
 {
     const Model &model = session.model();
-    const auto chosen = selected(model, Family::Cone, selection);
+    const auto chosen = selected(Family::Cone, model.n_of(Family::Cone), selection);
     const Gathered<Index> members = gathered(model, kMembers, chosen);
     check_capacity(capacity, members.items.size(), "cap", "members");
     write_codes(gathered(model, &Model::cone_kinds, chosen).items, kinds);
@@ -124,7 +124,7 @@ void get_parameters(const Session &session,
                     Compressed<BIYOS_real> out)
 {
     const Model &model = session.model();
-    const auto chosen = selected(model, Family::Cone, selection);
+    const auto chosen = selected(Family::Cone, model.n_of(Family::Cone), selection);
     const Gathered<Real> parameters = gathered(model, kParameters, chosen);
     check_capacity(capacity, parameters.items.size(), "cap", "parameters");
     write_counts(parameters.starts, out.counts);

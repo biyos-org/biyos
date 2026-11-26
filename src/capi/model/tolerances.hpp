@@ -22,7 +22,7 @@ void set_tolerances(Session &session,
                     const BIYOS_real *relative)
 {
     Model &model = writable(session);
-    const auto changed = selected(model, family, selection);
+    const auto changed = selected(family, model.n_of(family), selection);
     model.set_tolerances(family,
                          changed,
                          given(absolute, changed.size()),
@@ -37,7 +37,7 @@ void get_tolerances(const Session &session,
                     BIYOS_real *relative)
 {
     const Model &model = session.model();
-    const auto chosen = selected(model, family, selection);
+    const auto chosen = selected(family, model.n_of(family), selection);
     const std::vector<Tolerance> tolerances =
         picked(chosen, [&](Index index) { return model.tolerance_of(family, index); });
     write_field(tolerances, &Tolerance::absolute, absolute);
@@ -48,7 +48,7 @@ template <typename Selection>
 void delete_tolerances(Session &session, Family family, Selection selection)
 {
     Model &model = writable(session);
-    model.delete_tolerances(family, selected(model, family, selection));
+    model.delete_tolerances(family, selected(family, model.n_of(family), selection));
 }
 
 }

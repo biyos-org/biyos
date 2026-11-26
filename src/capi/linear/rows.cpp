@@ -32,7 +32,8 @@ namespace
 template <typename Selection>
 void n_row_terms(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(session.model(), Family::Function, selection);
+    const auto chosen =
+        selected(Family::Function, session.model().n_of(Family::Function), selection);
     const std::size_t count = item_count(session.model(), &Model::linear_terms, chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
@@ -45,7 +46,8 @@ void get_rows(const Session &session,
               BIYOS_index *variables,
               BIYOS_real *values)
 {
-    const auto chosen = selected(session.model(), Family::Function, selection);
+    const auto chosen =
+        selected(Family::Function, session.model().n_of(Family::Function), selection);
     const Gathered<LinearTerm> rows = gathered(session.model(), &Model::linear_terms, chosen);
     check_capacity(capacity, rows.items.size());
     write_counts(rows.starts, counts);

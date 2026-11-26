@@ -34,7 +34,8 @@ namespace
 template <typename Selection>
 void n_column_terms(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(session.model(), Family::Variable, selection);
+    const auto chosen =
+        selected(Family::Variable, session.model().n_of(Family::Variable), selection);
     const EntryTimer timer(session.stream(), kModule, "columns");
     const std::size_t count = column_count(session.model(), chosen);
     *require(nnz, "nnz") = to_offset(count);
@@ -47,7 +48,7 @@ void get_listed(const Session &session,
                 BIYOS_index *functions,
                 BIYOS_real *values)
 {
-    const auto chosen = selected(session.model(), Family::Variable, list);
+    const auto chosen = selected(Family::Variable, session.model().n_of(Family::Variable), list);
     const EntryTimer timer(session.stream(), kModule, "columns");
     const ColumnTerms columns = columns_of(session.model(), chosen);
     check_capacity(capacity, columns.functions.size());

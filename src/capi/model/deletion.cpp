@@ -38,7 +38,8 @@ template <Family Target, auto Delete, typename Selection>
 void delete_records(Session &session, Selection selection, BIYOS_index *map)
 {
     Model &model = writable(session);
-    write_array(delete_chosen<Delete>(session, model, selected(model, Target, selection)), map);
+    const auto chosen = selected(Target, model.n_of(Target), selection);
+    write_array(delete_chosen<Delete>(session, model, chosen), map);
 }
 
 template <typename Selection>

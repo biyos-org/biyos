@@ -71,7 +71,7 @@ void set_bounds(Session &session,
                 const BIYOS_real *upper)
 {
     Model &model = writable(session);
-    const auto changed = selected(model, Family::Constraint, selection);
+    const auto changed = selected(Family::Constraint, model.n_of(Family::Constraint), selection);
     std::vector<Constraint> constraints = picked(model, &Model::constraint, changed);
     read_field(constraints, &Constraint::lower, lower);
     read_field(constraints, &Constraint::upper, upper);
@@ -90,7 +90,8 @@ void get_constraints(const Session &session,
                      BIYOS_real *lower,
                      BIYOS_real *upper)
 {
-    const auto chosen = selected(session.model(), Family::Constraint, selection);
+    const auto chosen =
+        selected(Family::Constraint, session.model().n_of(Family::Constraint), selection);
     const std::vector<Constraint> constraints = picked(session.model(), &Model::constraint, chosen);
     write_field(constraints, &Constraint::function, functions);
     write_field(constraints, &Constraint::lower, lower);

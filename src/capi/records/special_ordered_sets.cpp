@@ -109,7 +109,9 @@ void n_special_ordered_sets(const Session &session, BIYOS_index *n)
 template <typename Selection>
 void n_members(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
-    const auto chosen = selected(session.model(), Family::SpecialOrderedSet, selection);
+    const auto chosen = selected(Family::SpecialOrderedSet,
+                                 session.model().n_of(Family::SpecialOrderedSet),
+                                 selection);
     const std::size_t count = item_count(session.model(), &Model::members, chosen);
     *require(nnz, "nnz") = to_offset(count);
 }
@@ -121,7 +123,8 @@ void get_special_ordered_sets(const Session &session,
                               const Outputs &out)
 {
     const Model &model = session.model();
-    const auto chosen = selected(model, Family::SpecialOrderedSet, selection);
+    const auto chosen =
+        selected(Family::SpecialOrderedSet, model.n_of(Family::SpecialOrderedSet), selection);
     const Gathered<Member> sets = gathered(model, &Model::members, chosen);
     check_capacity(capacity, sets.items.size(), "cap", "members");
     write_codes(picked(model, &Model::kind_of_special_ordered_set, chosen), out.kinds);

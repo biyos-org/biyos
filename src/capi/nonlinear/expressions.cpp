@@ -91,13 +91,13 @@ template <typename Selection>
 void attach_expressions(Session &session, Selection selection, const BIYOS_offset *node)
 {
     Model &model = writable(session);
-    const auto owners = selected(model, Family::Function, selection);
+    const auto owners = selected(Family::Function, model.n_of(Family::Function), selection);
     model.attach_expressions(owners, span_of(node, owners.size(), "node"));
 }
 
 template <typename Selection> Encoding encoded(const Model &model, Selection selection)
 {
-    const auto chosen = selected(model, Family::Function, selection);
+    const auto chosen = selected(Family::Function, model.n_of(Family::Function), selection);
     std::vector<Offset> roots;
     roots.reserve(chosen.size());
     for (const Index function : chosen)

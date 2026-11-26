@@ -89,7 +89,7 @@ template <typename Selection>
 void set_objectives(Session &session, Selection selection, const Fields &fields)
 {
     Model &model = writable(session);
-    const auto changed = selected(model, Family::Objective, selection);
+    const auto changed = selected(Family::Objective, model.n_of(Family::Objective), selection);
     std::vector<Objective> objectives = picked(model, &Model::objective, changed);
     read_field(objectives, &Objective::sense, fields.senses);
     read_field(objectives, &Objective::priority, fields.priorities);
@@ -107,7 +107,8 @@ void n_objectives(const Session &session, BIYOS_index *n)
 template <typename Selection>
 void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
-    const auto chosen = selected(session.model(), Family::Objective, selection);
+    const auto chosen =
+        selected(Family::Objective, session.model().n_of(Family::Objective), selection);
     const std::vector<Objective> objectives = picked(session.model(), &Model::objective, chosen);
     write_field(objectives, &Objective::function, outputs.functions);
     write_field(objectives, &Objective::sense, outputs.senses);

@@ -82,7 +82,7 @@ template <typename Selection>
 void set_bounds(Session &session, Selection selection, const Fields &fields)
 {
     Model &model = writable(session);
-    const auto changed = selected(model, Family::Complement, selection);
+    const auto changed = selected(Family::Complement, model.n_of(Family::Complement), selection);
     std::vector<Complement> complements = picked(model, &Model::complement, changed);
     read_field(complements, &Complement::function, fields.functions);
     read_field(complements, &Complement::multiplier, fields.multipliers);
@@ -99,7 +99,8 @@ void n_complements(const Session &session, BIYOS_index *n)
 template <typename Selection>
 void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
-    const auto chosen = selected(session.model(), Family::Complement, selection);
+    const auto chosen =
+        selected(Family::Complement, session.model().n_of(Family::Complement), selection);
     const std::vector<Complement> complements = picked(session.model(), &Model::complement, chosen);
     write_field(complements, &Complement::function, outputs.functions);
     write_field(complements, &Complement::multiplier, outputs.multipliers);

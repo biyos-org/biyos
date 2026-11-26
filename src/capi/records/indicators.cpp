@@ -88,7 +88,7 @@ template <typename Selection>
 void set_chosen(Session &session, Selection selection, const Fields &fields)
 {
     Model &model = writable(session);
-    const auto changed = selected(model, Family::Indicator, selection);
+    const auto changed = selected(Family::Indicator, model.n_of(Family::Indicator), selection);
     std::vector<Indicator> indicators = picked(model, &Model::indicator, changed);
     read_field(indicators, &Indicator::variable, fields.variables);
     read_field(indicators, &Indicator::value, fields.values);
@@ -106,7 +106,8 @@ void n_indicators(const Session &session, BIYOS_index *n)
 template <typename Selection>
 void get_chosen(const Session &session, Selection selection, const Outputs &outputs)
 {
-    const auto chosen = selected(session.model(), Family::Indicator, selection);
+    const auto chosen =
+        selected(Family::Indicator, session.model().n_of(Family::Indicator), selection);
     const std::vector<Indicator> indicators = picked(session.model(), &Model::indicator, chosen);
     write_field(indicators, &Indicator::variable, outputs.variables);
     write_field(indicators, &Indicator::value, outputs.values);

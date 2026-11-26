@@ -14,14 +14,14 @@
 namespace biyos::capi
 {
 
-std::span<const Index> selected(const Model &model, Family family, List list)
+std::span<const Index> selected(Family family, Index total, List list)
 {
-    return selected(noun_of(family), model.n_of(family), list);
+    return selected(noun_of(family), total, list);
 }
 
-std::vector<Index> selected(const Model &model, Family family, Range range)
+std::vector<Index> selected(Family family, Index total, Range range)
 {
-    return selected(noun_of(family), model.n_of(family), range);
+    return selected(noun_of(family), total, range);
 }
 
 std::span<const Index> selected(std::string_view, Index, List list)
@@ -37,11 +37,11 @@ std::vector<Index> selected(std::string_view noun, Index total, Range range)
     return indices;
 }
 
-void check_known(const Model &model, Family family, std::span<const Index> indices)
+void check_known(Family family, Index total, std::span<const Index> indices)
 {
     for (const Index index : indices)
     {
-        check_index(noun_of(family), index, model.n_of(family));
+        check_index(noun_of(family), index, total);
     }
 }
 

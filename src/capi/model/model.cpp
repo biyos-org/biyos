@@ -109,7 +109,7 @@ void set_bounds(Session &session,
                 const BIYOS_real *upper)
 {
     Model &model = writable(session);
-    const auto chosen = selected(model, Family::Variable, selection);
+    const auto chosen = selected(Family::Variable, model.n_of(Family::Variable), selection);
     std::vector<Variable> changed = picked(model, &Model::variable, chosen);
     read_field(changed, &Variable::lower, lower);
     read_field(changed, &Variable::upper, upper);
@@ -120,7 +120,7 @@ template <typename Selection>
 void set_kinds(Session &session, Selection selection, const BIYOS_int *kinds)
 {
     Model &model = writable(session);
-    const auto chosen = selected(model, Family::Variable, selection);
+    const auto chosen = selected(Family::Variable, model.n_of(Family::Variable), selection);
     std::vector<Variable> changed = picked(model, &Model::variable, chosen);
     read_field(changed, &Variable::kind, kinds);
     model.set_variables(chosen, changed);
@@ -138,7 +138,8 @@ void get_variables(const Session &session,
                    BIYOS_real *lower,
                    BIYOS_real *upper)
 {
-    const auto chosen = selected(session.model(), Family::Variable, selection);
+    const auto chosen =
+        selected(Family::Variable, session.model().n_of(Family::Variable), selection);
     const std::vector<Variable> variables = picked(session.model(), &Model::variable, chosen);
     write_field(variables, &Variable::kind, kinds);
     write_field(variables, &Variable::lower, lower);

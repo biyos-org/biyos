@@ -86,10 +86,10 @@ void add_rows(Session &session,
               const BIYOS_real *values)
 {
     Model &model = writable(session);
-    const auto functions = selected(model, Family::Function, selection);
+    const auto functions = selected(Family::Function, model.n_of(Family::Function), selection);
     if constexpr (std::same_as<Selection, List>)
     {
-        check_known(model, Family::Function, functions);
+        check_known(Family::Function, model.n_of(Family::Function), functions);
     }
     const std::vector<Offset> begins = starts_of(functions.size(), counts);
     model.check_room(0, begins.back());
@@ -112,10 +112,10 @@ void add_columns(Session &session,
                  const BIYOS_real *values)
 {
     Model &model = writable(session);
-    const auto variables = selected(model, Family::Variable, selection);
+    const auto variables = selected(Family::Variable, model.n_of(Family::Variable), selection);
     if constexpr (std::same_as<Selection, List>)
     {
-        check_known(model, Family::Variable, variables);
+        check_known(Family::Variable, model.n_of(Family::Variable), variables);
     }
     const std::vector<Offset> begins = starts_of(variables.size(), counts);
     model.check_room(0, begins.back());
