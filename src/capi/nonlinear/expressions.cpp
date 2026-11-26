@@ -8,10 +8,8 @@
 #include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <span>
-#include <string_view>
 #include <vector>
 
 using biyos::encode;
@@ -32,34 +30,20 @@ using biyos::capi::List;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
+using biyos::capi::span_of;
 using biyos::capi::starts_of;
 using biyos::capi::writable;
+using biyos::capi::write_array;
 using biyos::capi::write_counts;
+using biyos::capi::write_value;
 
 namespace
 {
 
-template <typename T> std::span<const T> input(const T *array, std::size_t n, std::string_view name)
-{
-    if (n > 0)
-    {
-        require(array, name);
-    }
-    return {array, n};
-}
-
-void write_node(BIYOS_offset *node, Offset made)
-{
-    if (node != nullptr)
-    {
-        *node = made;
-    }
-}
-
 void add_variable_node(Session &session, BIYOS_index variable, BIYOS_offset *node)
 {
     Model &model = writable(session);
-    write_node(node, model.add_variable_node(variable));
+    write_value(model.add_variable_node(variable), node);
 }
 
 void add_node(Session &session,
@@ -70,17 +54,9 @@ void add_node(Session &session,
               BIYOS_offset *node)
 {
     Model &model = writable(session);
-    const std::span<const Offset> children = input(argument, length(n), "arg");
+    const std::span<const Offset> children = span_of(argument, length(n), "arg");
     const auto needed = to_size(n_values(op, n));
-    write_node(node, model.add_node(op, children, input(values, needed, "val")));
-}
-
-void write_nodes(std::span<const Offset> tops, BIYOS_offset *node)
-{
-    if (node != nullptr)
-    {
-        std::ranges::copy(tops, node);
-    }
+    write_value(model.add_node(op, children, span_of(values, needed, "val")), node);
 }
 
 void add_expressions(Session &session,
@@ -99,16 +75,16 @@ void add_expressions(Session &session,
     }
     const std::vector<Offset> begins = starts_of(size, counts);
     const auto total = to_size(begins.back());
-    const std::span<const BIYOS_int> codes = input(code, total, "code");
-    const std::span<const Offset> arguments = input(argument, total, "arg");
+    const std::span<const BIYOS_int> codes = span_of(code, total, "code");
+    const std::span<const Offset> arguments = span_of(argument, total, "arg");
     const auto needed = to_size(n_values(codes, arguments));
     const Postfix postfix{
         .starts = begins,
         .codes = codes,
         .arguments = arguments,
-        .values = input(values, needed, "val"),
+        .values = span_of(values, needed, "val"),
     };
-    write_nodes(model.add_expressions(postfix), node);
+    write_array(model.add_expressions(postfix), node);
 }
 
 template <typename Selection>
@@ -116,7 +92,7 @@ void attach_expressions(Session &session, Selection selection, const BIYOS_offse
 {
     Model &model = writable(session);
     const auto owners = selected(model, Family::Function, selection);
-    model.attach_expressions(owners, input(node, owners.size(), "node"));
+    model.attach_expressions(owners, span_of(node, owners.size(), "node"));
 }
 
 template <typename Selection> Encoding encoded(const Model &model, Selection selection)
@@ -152,14 +128,6 @@ struct Output
     BIYOS_real *values;
 };
 
-template <typename T> void copy_to(const std::vector<T> &from, T *to)
-{
-    if (to != nullptr)
-    {
-        std::ranges::copy(from, to);
-    }
-}
-
 template <typename Selection>
 void get_expressions(const Session &session,
                      Selection selection,
@@ -171,9 +139,9 @@ void get_expressions(const Session &session,
     check_capacity(cap, encoding.codes.size(), "cap", "entries");
     check_capacity(valcap, encoding.values.size(), "valcap", "values");
     write_counts(encoding.starts, out.counts);
-    copy_to(encoding.codes, out.codes);
-    copy_to(encoding.arguments, out.arguments);
-    copy_to(encoding.values, out.values);
+    write_array(encoding.codes, out.codes);
+    write_array(encoding.arguments, out.arguments);
+    write_array(encoding.values, out.values);
 }
 
 }

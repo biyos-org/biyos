@@ -67,6 +67,14 @@ template <typename T> void write_array(std::span<const std::type_identity_t<T>> 
     }
 }
 
+template <typename T> void write_value(std::type_identity_t<T> value, T *to)
+{
+    if (to != nullptr)
+    {
+        *to = value;
+    }
+}
+
 template <typename Field, typename T>
 concept field_of = std::same_as<Field, T> || std::is_enum_v<Field>;
 

@@ -7,7 +7,6 @@
 #include "model/model.hpp"
 #include "model/utils/gather.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <span>
 #include <vector>
@@ -27,6 +26,7 @@ using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;
 using biyos::capi::writable;
+using biyos::capi::write_array;
 
 namespace
 {
@@ -54,14 +54,6 @@ template <typename Selection> void clear_functions(Session &session, Selection s
 {
     Model &model = writable(session);
     model.clear_functions(selected(model, Family::Function, selection));
-}
-
-void write_constants(std::span<const Real> found, BIYOS_real *constants)
-{
-    if (constants != nullptr)
-    {
-        std::ranges::copy(found, constants);
-    }
 }
 
 template <typename Selection>
@@ -92,7 +84,7 @@ template <typename Selection>
 void get_constants(const Session &session, Selection selection, BIYOS_real *constants)
 {
     const auto chosen = selected(session.model(), Family::Function, selection);
-    write_constants(picked(session.model(), &Model::constant, chosen), constants);
+    write_array(picked(session.model(), &Model::constant, chosen), constants);
 }
 
 }
