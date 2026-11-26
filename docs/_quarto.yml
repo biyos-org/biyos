@@ -60,6 +60,9 @@ tbl-colwidths: true
 bibliography: references.bib
 csl: theme/references.csl
 link-citations: true
+name-indexes:
+  - reference/_capi/names.json
+  - reference/_options/names.json
 filters:
   - path: filters/generated.lua
     at: pre-ast
