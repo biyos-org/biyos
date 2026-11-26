@@ -7,9 +7,6 @@ from pathlib import Path
 import headers
 import spec
 
-REFERENCE = Path("reference")
-SPEC = REFERENCE / "capi.txt"
-OUT = REFERENCE / "_capi"
 PAGES = {"codes": "codes", "sent": "codes"}
 DIRECTIONS = {"in": "in", "out": "out", "inout": "in/out"}
 ARGUMENT = re.compile(r"(\w+)\s*[,)]")
@@ -198,10 +195,10 @@ def render(group, values, declarations):
     return "\n\n".join(parts) + "\n"
 
 
-def targets(groups):
+def targets(groups, folder):
     found = spec.names(groups)
     return {
-        name: f"reference/{page_of(group)}.qmd#{name}"
+        name: f"{folder.as_posix()}/{page_of(group)}.qmd#{name}"
         for name, (group, _) in found.items()
     }
 
@@ -209,20 +206,22 @@ def targets(groups):
 def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--headers", type=Path, required=True)
+    parser.add_argument("--spec", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
     return parser.parse_args()
 
 
 def main():
     given = arguments()
-    groups = spec.read(SPEC)
+    groups = spec.read(given.spec)
     values, declarations = headers.read(given.headers)
-    OUT.mkdir(exist_ok=True)
+    given.out.mkdir(exist_ok=True)
     for group in groups:
-        (OUT / f"{group.key}.md").write_text(
+        (given.out / f"{group.key}.md").write_text(
             render(group, values, declarations)
         )
-    (OUT / "names.json").write_text(
-        json.dumps(targets(groups), indent=1) + "\n"
+    (given.out / "names.json").write_text(
+        json.dumps(targets(groups, given.out.parent), indent=1) + "\n"
     )
 
 
