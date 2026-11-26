@@ -7,7 +7,7 @@ biyos is a C library with a C++ core. It builds with CMake, links into a program
 biyos needs CMake 3.25 or later and a compiler for C99 and C++20. Continuous integration builds it with GCC on Ubuntu 24.04, Clang on macOS 15 and MSVC on Windows Server 2022. From a clone of the repository:
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake -S library -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
@@ -20,7 +20,7 @@ The configure step downloads GoogleTest for the tests. Three options change the 
 | `BIYOS_BUILD_TESTS` | `ON` | build the tests and register them with CTest |
 | `BIYOS_WARNINGS_AS_ERRORS` | `OFF` | treat every compiler warning as an error |
 
-The library lands in `build/lib`, as `libbiyos.so` on Linux and `libbiyos.dylib` on macOS. On Windows `biyos.dll` lands in `build/bin` and its import library in `build/lib`, each in a folder named for the configuration when the generator is Visual Studio. The header stays in `include/biyos`.
+The library lands in `build/lib`, as `libbiyos.so` on Linux and `libbiyos.dylib` on macOS. On Windows `biyos.dll` lands in `build/bin` and its import library in `build/lib`, each in a folder named for the configuration when the generator is Visual Studio. The header stays in `library/include/biyos`.
 
 The install step copies the library, the header and a CMake package into a prefix:
 
@@ -42,7 +42,7 @@ A program sees one header, `biyos/biyos.h`, which includes only `<stddef.h>` and
 
 ![The layers of biyos. Each arrow points from a part to one it uses. Only `biyos.h` crosses the library's boundary.](../figures/layers.svg){#fig-layers}
 
-Inside, each module may use only the modules below it, as @fig-layers shows. The repository's `tools/layers.txt` holds this order as data, and a check run by continuous integration refuses any include that breaks it.
+Inside, each module may use only the modules below it, as @fig-layers shows. The repository's `library/tools/layers.txt` holds this order as data, and a check run by continuous integration refuses any include that breaks it.
 
 ## A first program {#sec-start-program}
 
