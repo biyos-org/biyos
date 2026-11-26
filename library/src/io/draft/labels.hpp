@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
+#include "io/directory.hpp"
 #include "model/model.hpp"
 
 #include <initializer_list>
@@ -15,6 +16,7 @@ using Taken = std::unordered_set<std::string_view>;
 
 Taken user_names(const Model &model, std::initializer_list<Family> families);
 std::string fresh(const std::string &base, const Taken &taken);
+void enter(Directory &directory, const std::string &label, Family family, Index index);
 std::string label_of(const Model &model,
                      Family family,
                      Index index,

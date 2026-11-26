@@ -3,6 +3,7 @@
 #include "core/error.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
+#include "io/directory.hpp"
 #include "model/model.hpp"
 #include "model/utils/checks.hpp"
 
@@ -59,6 +60,15 @@ std::string fresh(const std::string &base, const Taken &taken)
         label = base + "_" + text_of(k);
     }
     return label;
+}
+
+void enter(Directory &directory, const std::string &label, Family family, Index index)
+{
+    if (!directory.add(label))
+    {
+        const std::string reason = "name '" + label + "' is repeated";
+        throw Error(ErrorKind::Unsupported, item(noun_of(family), index), reason);
+    }
 }
 
 std::string label_of(const Model &model,

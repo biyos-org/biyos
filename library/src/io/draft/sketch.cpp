@@ -4,7 +4,6 @@
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
-#include "io/directory.hpp"
 #include "io/draft/column_shape.hpp"
 #include "io/draft/draft.hpp"
 #include "io/draft/labels.hpp"
@@ -45,15 +44,6 @@ void name_model(Draft &draft, const Model &model)
         throw Error(ErrorKind::Unsupported, "model", reason);
     }
     draft.name = *name;
-}
-
-void enter(Directory &directory, const std::string &label, Family family, Index index)
-{
-    if (!directory.add(label))
-    {
-        const std::string reason = "name '" + label + "' is repeated";
-        throw Error(ErrorKind::Unsupported, item(noun_of(family), index), reason);
-    }
 }
 
 bool is_free(const Constraint &constraint) noexcept
