@@ -16,6 +16,11 @@ Lookup::Lookup(const Settings &settings, const Options &options) noexcept
 
 Lookup::Lookup(const Options &options) noexcept : settings_(nullptr), options_(options) {}
 
+const Options &Lookup::options() const noexcept
+{
+    return options_;
+}
+
 Found Lookup::find(Option option) const
 {
     const OptionValue *own = settings_ != nullptr ? settings_->find(option) : nullptr;
