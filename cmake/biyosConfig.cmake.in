@@ -1,0 +1,14 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Threads)
+
+include(${CMAKE_CURRENT_LIST_DIR}/biyosTargets.cmake)
+
+get_target_property(biyos_kind biyos::biyos TYPE)
+if(biyos_kind STREQUAL "STATIC_LIBRARY")
+    enable_language(CXX)
+endif()
+unset(biyos_kind)
+
+check_required_components(biyos)

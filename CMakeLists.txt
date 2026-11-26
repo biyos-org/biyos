@@ -19,6 +19,28 @@ endif()
 
 add_subdirectory(src)
 
+if(PROJECT_IS_TOP_LEVEL)
+    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
+
+    set(package_dir ${CMAKE_INSTALL_LIBDIR}/cmake/biyos)
+    set(installed biyos)
+    if(NOT BUILD_SHARED_LIBS)
+        list(APPEND installed biyos_internal)
+    endif()
+
+    install(TARGETS ${installed} EXPORT biyosTargets FILE_SET HEADERS)
+    install(EXPORT biyosTargets NAMESPACE biyos:: DESTINATION ${package_dir})
+
+    configure_package_config_file(cmake/biyosConfig.cmake.in biyosConfig.cmake
+        INSTALL_DESTINATION ${package_dir})
+    write_basic_package_version_file(biyosConfigVersion.cmake COMPATIBILITY ExactVersion)
+    install(FILES
+        ${PROJECT_BINARY_DIR}/biyosConfig.cmake
+        ${PROJECT_BINARY_DIR}/biyosConfigVersion.cmake
+        DESTINATION ${package_dir})
+endif()
+
 if(BIYOS_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
