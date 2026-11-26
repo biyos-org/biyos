@@ -477,7 +477,7 @@ class Model:
         same = c_integer()
         kind = EventKind.MESSAGE
         level = EventLevel.INFO
-        with self._env._busy(), other._env._busy(), other._held():
+        with self._env._busy(), other._env._busy(), other._entered():
             self._addhook(partial(_kept, found), kind, level, idx)
             try:
                 self._run(lib.BIYOS_cmpmdl, other._handle, byref(same))
@@ -5869,11 +5869,11 @@ class Model:
             self._run(function, *arguments)
 
     def _run(self, function: Callable[..., int], *arguments: object) -> None:
-        with self._held():
+        with self._entered():
             self._env._run(function, self._handle, *arguments)
 
     @contextmanager
-    def _held(self) -> Iterator[None]:
+    def _entered(self) -> Iterator[None]:
         self._calls += 1
         try:
             if not self._open():
