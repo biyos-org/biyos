@@ -2,7 +2,7 @@ import pytest
 
 import biyos
 from biyos import FileFormat
-from samples import LP_MPS, written
+from samples import LP_MPS, STRUCTURE_MPS, written
 
 FILEIO = -401
 BADARG = -100
@@ -39,6 +39,23 @@ def test_round_trip(env, tmp_path):
         model.write(path, FileFormat.MPS)
         with biyos.Model.read(env, path, FileFormat.MPS) as back:
             assert summary(back) == summary(model)
+
+
+def structure(model):
+    sets = range(model.getnsos())
+    names = model.getsosname(sets)
+    return summary(model), model.getind(), model.getsos(), names
+
+
+def test_structure(env, tmp_path):
+    source = written(tmp_path / "source.mps", STRUCTURE_MPS)
+    path = tmp_path / "structure.mps"
+    with biyos.Model.read(env, source, FileFormat.MPS) as model:
+        assert model.getnind() == 2
+        assert model.getsosname(range(2)) == ["pick", None]
+        model.write(path, FileFormat.MPS)
+        with biyos.Model.read(env, path, FileFormat.MPS) as back:
+            assert structure(back) == structure(model)
 
 
 def test_unwritable(env, tmp_path):

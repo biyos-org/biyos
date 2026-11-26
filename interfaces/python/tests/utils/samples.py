@@ -32,6 +32,38 @@ RHS
 ENDATA
 """
 
+STRUCTURE_MPS = """\
+NAME          structure
+ROWS
+ N  cost
+ E  balance
+ L  cap
+ G  floor
+COLUMNS
+    x         cost         1.0   balance      1.0
+    x         cap          1.0   floor        1.0
+    y         cost         2.0   cap          1.0
+    z         cost        -1.0   floor        2.0
+    b         cost         3.0
+RHS
+    rhs       balance      2.0   cap          4.0
+    rhs       floor        1.0
+BOUNDS
+ BV bnd       b
+ UP bnd       x            4.0
+SOS
+ S1 pick
+    x         1.5
+    y         3.0
+ S2
+    y         1.0
+    z         2.0
+INDICATORS
+ IF cap       b            1
+ IF floor     b            0
+ENDATA
+"""
+
 
 def written(path, text):
     path.write_text(text)
