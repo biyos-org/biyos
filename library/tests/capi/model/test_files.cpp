@@ -2,6 +2,7 @@
 #include "capi/utils/entry.hpp"
 #include "core/env.hpp"
 #include "core/timing/clock.hpp"
+#include "files.hpp"
 #include "handles.hpp"
 #include "probes.hpp"
 
@@ -23,6 +24,7 @@ using biyos::test::kLpMpsFile;
 using biyos::test::mark;
 using biyos::test::Model;
 using biyos::test::written;
+using biyos::test::nl::kLinearNlFile;
 
 struct Read
 {
@@ -82,6 +84,18 @@ TEST(CApiTest, ReadFile)
     const char *name = nullptr;
     EXPECT_EQ(BIYOS_getmdlname(made.model, &name), BIYOS_OK);
     EXPECT_STREQ(name, "small");
+    EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
+}
+
+TEST(CApiTest, ReadNl)
+{
+    const Env env;
+    const std::string path = written("biyos_lp.nl", kLinearNlFile);
+    const Read made = read(env, path.c_str(), BIYOS_FILEFMT_NL);
+    ASSERT_EQ(made.status, BIYOS_OK);
+    EXPECT_EQ(count_of(BIYOS_getnvar, made.model), 2);
+    EXPECT_EQ(count_of(BIYOS_getncon, made.model), 2);
+    EXPECT_EQ(count_of(BIYOS_getnobj, made.model), 1);
     EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
 }
 
@@ -171,6 +185,8 @@ TEST(CApiTest, WriteRefused)
     EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), 7), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: format 7: unknown");
     EXPECT_EQ(BIYOS_writemdl(nullptr, path.c_str(), BIYOS_FILEFMT_MPS), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_NL), BIYOS_ERR_UNSUPPORTED);
+    EXPECT_EQ(env.message(), "unsupported: file '" + path + "': NL files are read, never written");
 }
 
 TEST(CApiTest, WriteSpan)

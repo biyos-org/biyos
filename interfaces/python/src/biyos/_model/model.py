@@ -193,9 +193,12 @@ class FileFormat(IntEnum):
     ----------
     MPS
         Free MPS, for linear and mixed-integer models.
+    NL
+        Text NL, for nonlinear models. Read only.
     """
 
     MPS = 1
+    NL = 3
 
 
 _INT_MAX = 2 ** (8 * sizeof(c_index) - 1) - 1
@@ -558,8 +561,8 @@ class Model:
             When ``path`` holds a null character or cannot be encoded as
             UTF-8, or the model is closed.
         Error
-            When ``fmt`` is not a format, the file cannot be written or the
-            format cannot hold a part of the model.
+            When ``fmt`` is not a format or is read only, the file cannot
+            be written or the format cannot hold a part of the model.
 
         See Also
         --------

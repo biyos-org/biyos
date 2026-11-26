@@ -198,7 +198,7 @@ biyos_add_test(test_capi
     capi/records/test_ranges.cpp
     capi/records/test_special_ordered_sets.cpp
     capi/sample.cpp)
-target_include_directories(test_capi PRIVATE capi)
+target_include_directories(test_capi PRIVATE capi io/nl/utils)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
 add_executable(test_capi_c capi/test_header.c)
