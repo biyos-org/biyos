@@ -17,6 +17,7 @@ enum class Section
     Ranges,
     Bounds,
     Sets,
+    Indicators,
     End,
 };
 

@@ -5,6 +5,7 @@
 #include "io/lines.hpp"
 #include "io/mps/readers/bounds.hpp"
 #include "io/mps/readers/columns.hpp"
+#include "io/mps/readers/indicators.hpp"
 #include "io/mps/readers/rows.hpp"
 #include "io/mps/readers/sets.hpp"
 #include "io/mps/readers/values.hpp"
@@ -210,6 +211,9 @@ void MpsReader::data()
         return;
     case Section::Sets:
         sets_.read(lines_, draft_);
+        return;
+    case Section::Indicators:
+        read_indicator(lines_, draft_);
         return;
     case Section::End:
         break;

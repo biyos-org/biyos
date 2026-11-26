@@ -81,6 +81,7 @@ add_library(biyos_internal STATIC
     io/mps/print.cpp
     io/mps/readers/bounds.cpp
     io/mps/readers/columns.cpp
+    io/mps/readers/indicators.cpp
     io/mps/readers/rows.cpp
     io/mps/readers/sets.cpp
     io/mps/readers/values.cpp

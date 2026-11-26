@@ -159,6 +159,31 @@ SOS
 ENDATA
 )";
 
+inline constexpr std::string_view kIndicatorsMpsFile = R"(NAME          indicators
+ROWS
+ N  obj
+ E  fix
+ L  cap
+ G  low
+COLUMNS
+    MARKER                 'MARKER'                 'INTORG'
+    z         obj          1.0
+    MARKER                 'MARKER'                 'INTEND'
+    b         obj          2.0
+    x         obj          1.0   fix          1.0
+    x         cap          1.0   low          1.0
+    y         cap          1.0   low          2.0
+RHS
+    rhs       fix          2.0   cap          4.0
+    rhs       low          1.0
+BOUNDS
+ BV bnd       b
+INDICATORS
+ IF cap       z            1
+ IF low       b            0
+ENDATA
+)";
+
 inline constexpr std::string_view kMpsFiles[] = {
     kBoundsMpsFile,
     kConstraintsMpsFile,

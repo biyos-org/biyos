@@ -52,6 +52,13 @@ struct DraftSet
     std::vector<Member> members;
 };
 
+struct DraftIndicator
+{
+    Index row;
+    Index column;
+    int value;
+};
+
 struct Draft
 {
     std::optional<std::string> name;
@@ -62,6 +69,7 @@ struct Draft
     Directory column_names;
     std::vector<DraftEntry> entries;
     std::vector<DraftSet> sets;
+    std::vector<DraftIndicator> indicators;
 };
 
 bool negative_upper(const DraftColumn &column) noexcept;

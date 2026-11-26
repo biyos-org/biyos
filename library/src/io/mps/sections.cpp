@@ -27,6 +27,7 @@ constexpr std::array kHeaders{
     Header{"RANGES", Section::Ranges},
     Header{"BOUNDS", Section::Bounds},
     Header{"SOS", Section::Sets},
+    Header{"INDICATORS", Section::Indicators},
     Header{"ENDATA", Section::End},
 };
 
