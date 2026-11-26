@@ -5,6 +5,7 @@
 #include "capi/utils/entry.hpp"
 #include "core/numbers.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -15,13 +16,13 @@ using biyos::Family;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
+using biyos::picked;
 using biyos::Real;
 using biyos::Session;
 using biyos::capi::check_known;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::picked;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;

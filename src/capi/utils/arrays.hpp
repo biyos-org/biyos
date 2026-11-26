@@ -70,20 +70,6 @@ template <typename T> void put(T *values, std::size_t k, T value)
     }
 }
 
-template <typename Record>
-std::vector<Record> picked(const Model &model,
-                           const Record &(Model::*read)(Index) const,
-                           std::span<const Index> indices)
-{
-    std::vector<Record> found;
-    found.reserve(indices.size());
-    for (const Index i : indices)
-    {
-        found.push_back((model.*read)(i));
-    }
-    return found;
-}
-
 template <typename Read> void write_counts(std::size_t n, BIYOS_offset *counts, Read read)
 {
     if (counts == nullptr)

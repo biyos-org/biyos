@@ -6,6 +6,7 @@
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -15,12 +16,12 @@ using biyos::Index;
 using biyos::Indicator;
 using biyos::kInfinity;
 using biyos::Model;
+using biyos::picked;
 using biyos::Session;
 using biyos::capi::entry_or;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::picked;
 using biyos::capi::put;
 using biyos::capi::Range;
 using biyos::capi::require;

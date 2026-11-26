@@ -10,6 +10,7 @@
 #include "core/numbers.hpp"
 #include "core/timing/timer.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
 #include <cstddef>
 #include <span>
@@ -21,6 +22,7 @@ using biyos::Family;
 using biyos::Index;
 using biyos::kModule;
 using biyos::Model;
+using biyos::picked;
 using biyos::Session;
 using biyos::Variable;
 using biyos::VariableKind;
@@ -32,7 +34,6 @@ using biyos::capi::guarded;
 using biyos::capi::idle;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::picked;
 using biyos::capi::Range;
 using biyos::capi::require;
 using biyos::capi::selected;

@@ -7,6 +7,7 @@
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "model/model.hpp"
+#include "model/utils/gather.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -16,6 +17,7 @@ using biyos::Family;
 using biyos::Index;
 using biyos::kInfinity;
 using biyos::Model;
+using biyos::picked;
 using biyos::Session;
 using biyos::capi::delete_tolerances;
 using biyos::capi::entry_or;
@@ -23,7 +25,6 @@ using biyos::capi::get_tolerances;
 using biyos::capi::guarded;
 using biyos::capi::length;
 using biyos::capi::List;
-using biyos::capi::picked;
 using biyos::capi::put;
 using biyos::capi::Range;
 using biyos::capi::require;
