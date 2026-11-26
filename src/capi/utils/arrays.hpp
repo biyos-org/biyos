@@ -5,9 +5,11 @@
 #include "core/numbers.hpp"
 #include "model/model.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <span>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 namespace biyos::capi
@@ -50,6 +52,14 @@ template <typename T> std::span<T> given(T *array, std::size_t size)
 template <typename T> T entry_or(const T *values, std::size_t k, T held)
 {
     return values == nullptr ? held : values[k];
+}
+
+template <typename T> void write_array(std::span<const std::type_identity_t<T>> from, T *to)
+{
+    if (to != nullptr)
+    {
+        std::ranges::copy(from, to);
+    }
 }
 
 template <typename T> void put(T *values, std::size_t k, T value)
