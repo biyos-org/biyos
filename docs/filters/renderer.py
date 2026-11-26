@@ -1,4 +1,5 @@
 import re
+from functools import reduce
 
 from griffe import (
     Alias,
@@ -7,6 +8,7 @@ from griffe import (
     DocstringSectionRaises,
     DocstringSectionReturns,
     DocstringSectionText,
+    ExprBinOp,
 )
 from plum import dispatch
 from quartodoc import MdRenderer, layout
@@ -147,10 +149,26 @@ def public(cls):
 
 
 def returned(given, count):
-    if not getattr(given, "is_tuple", False):
+    shapes = [positions(part) for part in alternatives(given)]
+    if any(len(shape) != count for shape in shapes):
         return [given] * count
-    elements = getattr(given.slice, "elements", [given.slice])
-    return elements if len(elements) == count else [given] * count
+    return [reduce(union, column) for column in zip(*shapes)]
+
+
+def alternatives(given):
+    if getattr(given, "operator", None) != "|":
+        return [given]
+    return alternatives(given.left) + alternatives(given.right)
+
+
+def positions(given):
+    if not getattr(given, "is_tuple", False):
+        return [given]
+    return getattr(given.slice, "elements", [given.slice])
+
+
+def union(left, right):
+    return ExprBinOp(left, "|", right)
 
 
 def is_enum(obj):
