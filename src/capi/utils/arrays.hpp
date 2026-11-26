@@ -54,11 +54,6 @@ template <typename T> std::span<T> given(T *array, std::size_t size)
     return array == nullptr ? std::span<T>() : std::span<T>(array, size);
 }
 
-template <typename T> T entry_or(const T *values, std::size_t k, T held)
-{
-    return values == nullptr ? held : values[k];
-}
-
 template <typename T> void write_array(std::span<const std::type_identity_t<T>> from, T *to)
 {
     if (to != nullptr)
@@ -128,26 +123,6 @@ template <typename Kind> void write_codes(const std::vector<Kind> &kinds, BIYOS_
     for (std::size_t k = 0; k < kinds.size(); ++k)
     {
         codes[k] = static_cast<BIYOS_int>(kinds[k]);
-    }
-}
-
-template <typename T> void put(T *values, std::size_t k, T value)
-{
-    if (values != nullptr)
-    {
-        values[k] = value;
-    }
-}
-
-template <typename Read> void write_counts(std::size_t n, BIYOS_offset *counts, Read read)
-{
-    if (counts == nullptr)
-    {
-        return;
-    }
-    for (std::size_t j = 0; j < n; ++j)
-    {
-        counts[j] = to_offset(read(to_index(j)).size());
     }
 }
 }
