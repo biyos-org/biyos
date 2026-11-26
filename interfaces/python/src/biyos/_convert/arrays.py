@@ -29,12 +29,52 @@ if TYPE_CHECKING:
     from biyos._model.model import Model
 
 Element = TypeVar("Element", c_real, c_integer, c_offset, c_char_p)
+Value = TypeVar("Value")
 Entries: TypeAlias = list[tuple[str, Sequence[Any]]]
 
 
 def _sized(name: str, values: Sized, count: int) -> None:
     if len(values) != count:
         raise ValueError(f"{name} has length {len(values)}, not {count}")
+
+
+def _single(values: object) -> bool:
+    return isinstance(values, str) or not isinstance(values, Sized)
+
+
+def _alone(name: str, values: object) -> None:
+    if not _single(values):
+        found = type(values).__name__
+        raise TypeError(f"{name} must be one value for one index, not {found}")
+
+
+def _wrapped(
+    name: str, values: Value | Sequence[Value], one: bool
+) -> Sequence[Value]:
+    if one:
+        _alone(name, values)
+        return [cast(Value, values)]
+    return sequence(name, values)
+
+
+def _entry(name: str, one: bool) -> str:
+    return name if one else f"an entry of {name}"
+
+
+def counted(idx: object) -> tuple[bool, int]:
+    if isinstance(idx, Sized):
+        return False, len(idx)
+    return True, 1
+
+
+def picked(
+    model: "Model",
+    family: type[Block[Any]],
+    idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
+) -> Sequence[SupportsIndex] | Block[Any]:
+    if isinstance(idx, Sized):
+        return idx
+    return [index_of(model, family, "idx", idx)]
 
 
 def _shared(values: Any) -> "TypeGuard[WriteableBuffer]":
@@ -62,25 +102,33 @@ def _array(
 
 
 def doubles(
-    name: str, values: Sequence[Real] | None, count: int
+    name: str,
+    values: Real | Sequence[Real] | None,
+    count: int,
+    one: bool = False,
 ) -> Array[c_real] | None:
     if values is None:
         return None
+    values = _wrapped(name, values, one)
     _sized(name, values, count)
     if _shared(values):
         return (c_real * count).from_buffer(values)
-    entry = f"an entry of {name}"
+    entry = _entry(name, one)
     items = [_real(entry, value) for value in values]
     return _array(c_real, name, items, count)
 
 
 def ints(
-    name: str, values: Sequence[SupportsIndex] | None, count: int
+    name: str,
+    values: SupportsIndex | Sequence[SupportsIndex] | None,
+    count: int,
+    one: bool = False,
 ) -> Array[c_integer] | None:
     if values is None:
         return None
+    values = _wrapped(name, values, one)
     _sized(name, values, count)
-    entry = f"an entry of {name}"
+    entry = _entry(name, one)
     items = [integer(entry, value) for value in values]
     return _array(c_integer, name, items, count)
 
@@ -93,12 +141,16 @@ def listed(name: str, values: Sequence[str] | None) -> Sequence[str]:
 
 
 def strings(
-    name: str, values: Sequence[str] | None, count: int
+    name: str,
+    values: str | Sequence[str] | None,
+    count: int,
+    one: bool = False,
 ) -> Array[c_char_p] | None:
     if values is None:
         return None
+    values = _wrapped(name, values, one)
     _sized(name, listed(name, values), count)
-    entry = f"an entry of {name}"
+    entry = _entry(name, one)
     items = [text(entry, value) for value in values]
     return _array(c_char_p, name, items, count)
 
@@ -108,10 +160,11 @@ def _indices(
     family: type[Block[Any]],
     name: str,
     values: Sequence[SupportsIndex] | Block[Any],
+    one: bool = False,
 ) -> range | list[Index]:
     if isinstance(values, Block):
         return range_of(model, family, name, values)
-    entry = f"an entry of {name}"
+    entry = _entry(name, one)
     return [index_of(model, family, entry, value) for value in values]
 
 
@@ -132,13 +185,18 @@ def indices_of(
     model: "Model",
     family: type[Block[Any]],
     name: str,
-    values: Sequence[SupportsIndex] | Block[Any] | None,
+    values: SupportsIndex | Sequence[SupportsIndex] | Block[Any] | None,
     count: int,
+    one: bool = False,
 ) -> Array[c_index] | None:
     if values is None:
         return None
+    if not isinstance(values, Block):
+        values = _wrapped(name, values, one)
+    elif one:
+        _alone(name, values)
     _sized(name, values, count)
-    items = _indices(model, family, name, values)
+    items = _indices(model, family, name, values, one)
     return _array(c_index, name, items, count)
 
 
@@ -149,12 +207,16 @@ def _counted(name: str, counts: Array[c_offset]) -> None:
 
 
 def int64s(
-    name: str, values: Sequence[SupportsIndex] | None, count: int
+    name: str,
+    values: SupportsIndex | Sequence[SupportsIndex] | None,
+    count: int,
+    one: bool = False,
 ) -> Array[c_offset] | None:
     if values is None:
         return None
+    values = _wrapped(name, values, one)
     _sized(name, values, count)
-    entry = f"an entry of {name}"
+    entry = _entry(name, one)
     items = [offset(entry, value) for value in values]
     return _array(c_offset, name, items, count)
 
