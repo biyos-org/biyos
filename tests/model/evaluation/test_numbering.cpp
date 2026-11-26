@@ -120,6 +120,7 @@ int gradients(const Request &request, std::span<Real> out, void *data)
 int curvatures(const Request &request, std::span<Real> out, void *data)
 {
     const auto [a, b] = reads_of(data);
+    note(request, data);
     out[0] = -request.w[1] * std::sin(request.x[b]);
     out[1] = 2.0 * request.w[0] * request.x[a];
     out[2] = 2.0 * request.w[0] * request.x[b];
@@ -409,6 +410,7 @@ TEST_F(NumberingTest, Hessian)
     Evaluation full(dense, env_.stream());
     expect_near(hessian_at(listed, lookup_), hessian_at(full, lookup_), kExact);
     const std::vector<Real> hv = product_at(listed, lookup_);
+    EXPECT_EQ(seen_.v, 0U);
     expect_near(hv, product_at(full, lookup_), kExact);
     expect_near(hv, central_product(listed, lookup_), kCentral);
 }

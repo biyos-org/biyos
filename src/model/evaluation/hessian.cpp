@@ -138,14 +138,15 @@ void Evaluation::evaluate_hessian_product(Checker checker, const Point &point, s
     {
         const Callback &callback = model_.callback(c);
         const std::span<const Real> w = covered(callback, point.w);
-        const Request arguments = request(c, {.x = point.x, .w = w, .v = point.v});
         if (has(callback, Part::Product))
         {
+            const Request arguments = request(c, {.x = point.x, .w = w, .v = point.v});
             const std::span<Real> out = std::span(out_).first(arguments.v.size());
             evaluate(checker, callback, Part::Product, arguments, out);
             scatter(callback, out, hv);
             continue;
         }
+        const Request arguments = request(c, {.x = point.x, .w = w, .v = {}});
         const std::span<Real> out = std::span(out_).first(callback.hessian_pairs.size());
         evaluate(checker, callback, Part::Hessian, arguments, out);
         multiply(c, point.v, hv);
