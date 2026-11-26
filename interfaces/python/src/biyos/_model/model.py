@@ -5676,7 +5676,7 @@ class Model:
         self,
         lead: _Argument,
         others: Sequence[_Argument],
-        coef: Any,
+        coef: object,
         *,
         coordinates: str,
         lists: str,
@@ -5688,11 +5688,11 @@ class Model:
             self._addlists(lists, lead, others, coef)
 
     def _addcoordinates(
-        self, call: str, arguments: Sequence[_Argument], coef: Any
+        self, call: str, arguments: Sequence[_Argument], coef: object
     ) -> None:
         for _, name, entries in arguments[1:]:
             sequence(name, entries)
-        sequence("coef", coef)
+        coef = sequence("coef", coef)
         size = len(arguments[0][2])
         arrays = [
             indices_of(self, family, name, entries, size)
@@ -5706,7 +5706,7 @@ class Model:
         call: str,
         lead: _Argument,
         others: Sequence[_Argument],
-        coef: Any,
+        coef: object,
     ) -> None:
         family, name, entries = lead
         if not isinstance(entries, Sized):
@@ -5717,7 +5717,7 @@ class Model:
         self._call(*chosen, cnt, *arrays, coefs)
 
     def _lists(
-        self, others: Sequence[_Argument], coef: Any, count: int
+        self, others: Sequence[_Argument], coef: object, count: int
     ) -> tuple[Array[c_offset], list[Array[c_index]], Array[c_real]]:
         family, name, entries = others[0]
         first = entries_of(name, entries, count)
