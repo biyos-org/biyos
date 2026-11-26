@@ -82,6 +82,7 @@ from biyos._model.blocks import (
     SpecialOrderedSets,
     Variable,
     Variables,
+    View,
     index_of,
 )
 from biyos._model.callbacks import Callbacks, checked, data_at
@@ -196,10 +197,10 @@ class FileFormat(IntEnum):
 
 
 _INT_MAX = 2 ** (8 * sizeof(c_index) - 1) - 1
-_Block = TypeVar("_Block", bound=Block[Any])
-_Argument = tuple[type[Block[Any]], str, Any]
+_Block = TypeVar("_Block", bound=Block[View])
+_Argument = tuple[type[Block[View]], str, Any]
 
-_COUNTS: dict[type[Block[Any]], str] = {
+_COUNTS: dict[type[Block[View]], str] = {
     Variables: "getnvar",
     Functions: "getnfun",
     Constraints: "getncon",
@@ -5557,8 +5558,8 @@ class Model:
     def _chosen(
         self,
         call: str,
-        family: type[Block[Any]],
-        idx: Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: Sequence[SupportsIndex] | Block[View],
         outputs: int = 0,
         name: str = "idx",
     ) -> tuple[Callable[..., int], Index, object]:
@@ -5577,8 +5578,8 @@ class Model:
     def _selected(
         self,
         call: str,
-        family: type[Block[Any]],
-        idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
         outputs: int = 0,
     ) -> tuple[bool, Index, tuple[Callable[..., int], Index, object]]:
         one, n = counted(idx)
@@ -5586,7 +5587,7 @@ class Model:
         return one, n, self._chosen(call, family, rows, outputs)
 
     def _inside(
-        self, family: type[Block[Any]], start: Index, stop: Index
+        self, family: type[Block[View]], start: Index, stop: Index
     ) -> bool:
         total: Index = getattr(self, _COUNTS[family])()
         return 0 <= start <= stop <= total
@@ -5594,8 +5595,8 @@ class Model:
     def _setname(
         self,
         call: str,
-        family: type[Block[Any]],
-        idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
         name: str | Sequence[str],
     ) -> None:
         one, n, chosen = self._selected(call, family, idx)
@@ -5604,8 +5605,8 @@ class Model:
     def _delname(
         self,
         call: str,
-        family: type[Block[Any]],
-        idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
     ) -> None:
         idx = picked(self, family, idx)
         self._call(*self._chosen(call, family, idx))
@@ -5613,8 +5614,8 @@ class Model:
     def _delete(
         self,
         call: str,
-        family: type[Block[Any]],
-        idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
     ) -> list[Index]:
         idx = picked(self, family, idx)
         chosen = self._chosen(call, family, idx)
@@ -5627,8 +5628,8 @@ class Model:
 
     def _gone(
         self,
-        family: type[Block[Any]],
-        idx: Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: Sequence[SupportsIndex] | Block[View],
     ) -> set[Index]:
         span = span_of(self, family, "idx", idx)
         if span is not None:
@@ -5638,8 +5639,8 @@ class Model:
     def _getname(
         self,
         call: str,
-        family: type[Block[Any]],
-        idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
     ) -> str | None | list[str | None]:
         one, n, chosen = self._selected(call, family, idx, 1)
         found = (c_char_p * n)()
@@ -5650,8 +5651,8 @@ class Model:
     def _getlist(
         self,
         call: str,
-        family: type[Block[Any]],
-        idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
         *types: type[c_index | c_integer | c_real],
     ) -> list[Any]:
         one, n, chosen = self._selected(call, family, idx, len(types))
@@ -5664,8 +5665,8 @@ class Model:
     def _count(
         self,
         call: str,
-        family: type[Block[Any]],
-        idx: Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: Sequence[SupportsIndex] | Block[View],
     ) -> Offset:
         nnz = c_offset()
         self._call(*self._chosen(call, family, idx), byref(nnz))
@@ -5675,7 +5676,7 @@ class Model:
         self,
         lead: _Argument,
         others: Sequence[_Argument],
-        coef: Any,
+        coef: object,
         *,
         coordinates: str,
         lists: str,
@@ -5687,11 +5688,11 @@ class Model:
             self._addlists(lists, lead, others, coef)
 
     def _addcoordinates(
-        self, call: str, arguments: Sequence[_Argument], coef: Any
+        self, call: str, arguments: Sequence[_Argument], coef: object
     ) -> None:
         for _, name, entries in arguments[1:]:
             sequence(name, entries)
-        sequence("coef", coef)
+        coef = sequence("coef", coef)
         size = len(arguments[0][2])
         arrays = [
             indices_of(self, family, name, entries, size)
@@ -5705,7 +5706,7 @@ class Model:
         call: str,
         lead: _Argument,
         others: Sequence[_Argument],
-        coef: Any,
+        coef: object,
     ) -> None:
         family, name, entries = lead
         if not isinstance(entries, Sized):
@@ -5716,7 +5717,7 @@ class Model:
         self._call(*chosen, cnt, *arrays, coefs)
 
     def _lists(
-        self, others: Sequence[_Argument], coef: Any, count: int
+        self, others: Sequence[_Argument], coef: object, count: int
     ) -> tuple[Array[c_offset], list[Array[c_index]], Array[c_real]]:
         family, name, entries = others[0]
         first = entries_of(name, entries, count)
@@ -5732,8 +5733,8 @@ class Model:
     def _terms(
         self,
         name: str,
-        family: type[Block[Any]],
-        idx: Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: Sequence[SupportsIndex] | Block[View],
         place: int,
         width: int = 2,
     ) -> tuple[list[list[Index]], list[Real]]:
@@ -5755,8 +5756,8 @@ class Model:
     def _pattern(
         self,
         name: str,
-        family: type[Block[Any]],
-        idx: Sequence[SupportsIndex] | Block[Any],
+        family: type[Block[View]],
+        idx: Sequence[SupportsIndex] | Block[View],
     ) -> tuple[list[Offset], list[Index]]:
         nnz = self._count(f"BIYOS_getn{name}", family, idx)
         cnt = (c_offset * len(idx))()

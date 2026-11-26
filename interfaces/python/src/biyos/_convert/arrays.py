@@ -21,7 +21,7 @@ from biyos._convert.numbers import (
     c_real,
 )
 from biyos._convert.text import text
-from biyos._model.blocks import Block, index_of, range_of
+from biyos._model.blocks import Block, View, index_of, range_of
 
 if TYPE_CHECKING:
     from _typeshed import WriteableBuffer
@@ -69,9 +69,9 @@ def counted(idx: object) -> tuple[bool, int]:
 
 def picked(
     model: "Model",
-    family: type[Block[Any]],
-    idx: SupportsIndex | Sequence[SupportsIndex] | Block[Any],
-) -> Sequence[SupportsIndex] | Block[Any]:
+    family: type[Block[View]],
+    idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
+) -> Sequence[SupportsIndex] | Block[View]:
     if isinstance(idx, Sized):
         return idx
     return [index_of(model, family, "idx", idx)]
@@ -157,9 +157,9 @@ def strings(
 
 def _indices(
     model: "Model",
-    family: type[Block[Any]],
+    family: type[Block[View]],
     name: str,
-    values: Sequence[SupportsIndex] | Block[Any],
+    values: Sequence[SupportsIndex] | Block[View],
     one: bool = False,
 ) -> range | list[Index]:
     if isinstance(values, Block):
@@ -170,9 +170,9 @@ def _indices(
 
 def span_of(
     model: "Model",
-    family: type[Block[Any]],
+    family: type[Block[View]],
     name: str,
-    values: Sequence[SupportsIndex] | Block[Any],
+    values: Sequence[SupportsIndex] | Block[View],
 ) -> range | None:
     if isinstance(values, Block):
         return range_of(model, family, name, values)
@@ -183,9 +183,9 @@ def span_of(
 
 def indices_of(
     model: "Model",
-    family: type[Block[Any]],
+    family: type[Block[View]],
     name: str,
-    values: SupportsIndex | Sequence[SupportsIndex] | Block[Any] | None,
+    values: SupportsIndex | Sequence[SupportsIndex] | Block[View] | None,
     count: int,
     one: bool = False,
 ) -> Array[c_index] | None:
@@ -259,7 +259,7 @@ def matched(name: str, values: object, sizes: Sequence[int]) -> Entries:
 
 
 def nested_indices(
-    model: "Model", family: type[Block[Any]], entries: Entries
+    model: "Model", family: type[Block[View]], entries: Entries
 ) -> Array[c_index]:
     items = [
         index
