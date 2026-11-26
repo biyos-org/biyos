@@ -362,8 +362,8 @@ class NumberingTest : public testing::Test
     {
         const Model listed_model = monomial_model(listed);
         const Model dense_model = monomial_model(dense);
-        Evaluation evaluation(listed_model, env_.stream());
-        Evaluation full(dense_model, env_.stream());
+        Evaluation evaluation(listed_model, env_.stream(), env_.pool());
+        Evaluation full(dense_model, env_.stream(), env_.pool());
         std::vector<Real> f(listed.size());
         std::vector<Real> wanted(dense.size());
         evaluation.values(lookup_, kPoint, f);
@@ -383,8 +383,8 @@ TEST_F(NumberingTest, Values)
 {
     const Model model = listed_model(Curvature::Hessian);
     const Model dense = dense_model(Curvature::Hessian);
-    Evaluation listed(model, env_.stream());
-    Evaluation full(dense, env_.stream());
+    Evaluation listed(model, env_.stream(), env_.pool());
+    Evaluation full(dense, env_.stream(), env_.pool());
     expect_near(values_at(listed, lookup_, kPoint), values_at(full, lookup_, kPoint), kExact);
     EXPECT_EQ(seen_.x, kListed.size());
     EXPECT_EQ(seen_.v, 0U);
@@ -395,8 +395,8 @@ TEST_F(NumberingTest, Jacobian)
 {
     const Model model = listed_model(Curvature::Hessian);
     const Model dense = dense_model(Curvature::Hessian);
-    Evaluation listed(model, env_.stream());
-    Evaluation full(dense, env_.stream());
+    Evaluation listed(model, env_.stream(), env_.pool());
+    Evaluation full(dense, env_.stream(), env_.pool());
     const std::vector<Real> g = jacobian_at(listed, lookup_, kPoint);
     expect_near(g, jacobian_at(full, lookup_, kPoint), kExact);
     expect_near(g, central_jacobian(listed, lookup_), kCentral);
@@ -406,8 +406,8 @@ TEST_F(NumberingTest, Hessian)
 {
     const Model model = listed_model(Curvature::Hessian);
     const Model dense = dense_model(Curvature::Hessian);
-    Evaluation listed(model, env_.stream());
-    Evaluation full(dense, env_.stream());
+    Evaluation listed(model, env_.stream(), env_.pool());
+    Evaluation full(dense, env_.stream(), env_.pool());
     expect_near(hessian_at(listed, lookup_), hessian_at(full, lookup_), kExact);
     const std::vector<Real> hv = product_at(listed, lookup_);
     EXPECT_EQ(seen_.v, 0U);
@@ -419,8 +419,8 @@ TEST_F(NumberingTest, Product)
 {
     const Model model = listed_model(Curvature::Product);
     const Model dense = dense_model(Curvature::Product);
-    Evaluation listed(model, env_.stream());
-    Evaluation full(dense, env_.stream());
+    Evaluation listed(model, env_.stream(), env_.pool());
+    Evaluation full(dense, env_.stream(), env_.pool());
     const std::vector<Real> hv = product_at(listed, lookup_);
     expect_near(hv, product_at(full, lookup_), kExact);
     EXPECT_EQ(seen_.x, kListed.size());

@@ -81,8 +81,8 @@ Program program_of(const Model &model, Stream stream)
 
 }
 
-Evaluation::Evaluation(const Model &model, Stream stream)
-    : model_(model), stream_(stream), program_(program_of(model, stream)),
+Evaluation::Evaluation(const Model &model, Stream stream, Pool &pool)
+    : model_(model), stream_(stream), pool_(pool), program_(program_of(model, stream)),
       workspace_(program_.tape), adjoints_(program_.tape), values_(to_size(program_.tape.roots())),
       gradients_(program_.tape.pattern().variables.size()), out_(widest(model)),
       weights_(program_.roots.size()), covered_(out_.size()), point_(out_.size()),

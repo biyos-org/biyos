@@ -5,6 +5,7 @@
 #include "expr/derivatives/reverse.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/hessian/hessian.hpp"
 #include "expr/tape/tape.hpp"
 #include "expr/threads/sweeps.hpp"
 #include "expr/threads/team.hpp"
@@ -26,6 +27,7 @@ namespace
 
 using biyos::Adjoints;
 using biyos::Graph;
+using biyos::Hessian;
 using biyos::Index;
 using biyos::is_zero;
 using biyos::Offset;
@@ -63,14 +65,22 @@ struct Sweeps
     std::vector<Real> gradient;
 };
 
+struct Second
+{
+    std::vector<Real> values;
+    std::vector<Real> product;
+};
+
 struct Case
 {
     explicit Case(std::uint64_t seed);
 
     Random random;
     Graph graph;
+    std::vector<Offset> roots;
     Tape tape;
     std::vector<Real> point;
+    std::vector<Real> direction;
     std::vector<Real> weights;
 };
 
@@ -116,9 +126,10 @@ std::vector<Real> draws(Random &random, std::size_t count, Real bound)
 }
 
 Case::Case(std::uint64_t seed)
-    : random(seed), graph(sharing_graph(random)),
-      tape(graph, picks(random, graph, kOutputs), kBudgets[seed % kBudgets.size()]),
-      point(draws(random, to_size(kInputs), 1.0)), weights(draws(random, kOutputs, 2.0))
+    : random(seed), graph(sharing_graph(random)), roots(picks(random, graph, kOutputs)),
+      tape(graph, roots, kBudgets[seed % kBudgets.size()]),
+      point(draws(random, to_size(kInputs), 1.0)), direction(draws(random, to_size(kInputs), 1.0)),
+      weights(draws(random, kOutputs, 2.0))
 {
 }
 
@@ -139,6 +150,17 @@ Sweeps sweep(const Case &test, std::size_t threads, Pool &pool)
     jacobian(test.tape, test.point, team, pool, found.values, found.gradients);
     EXPECT_TRUE(same(values, found.values));
     weighted_gradient(test.tape, test.point, test.weights, team, pool, values, found.gradient);
+    return found;
+}
+
+Second second(const Case &test, std::size_t threads, Pool &pool)
+{
+    Hessian hessian(test.graph, test.roots, {});
+    hessian.fit(threads);
+    Second found{.values = std::vector<Real>(hessian.pattern().rows.size()),
+                 .product = std::vector<Real>(test.point.size())};
+    hessian.values(test.point, test.weights, found.values, pool);
+    hessian.product(test.point, test.weights, test.direction, found.product, pool);
     return found;
 }
 
@@ -204,6 +226,28 @@ TEST(ThreadTest, Identical)
         {
             SCOPED_TRACE(threads);
             expect_same(sweep(test, threads, pool), wanted);
+        }
+    }
+    EXPECT_GT(reals, 0);
+    EXPECT_EQ(pool.workers(), kThreads.back() - 1);
+}
+
+TEST(ThreadTest, Hessian)
+{
+    Pool pool;
+    std::size_t reals = 0;
+    for (std::uint64_t seed = 1; seed <= 6; ++seed)
+    {
+        SCOPED_TRACE(seed);
+        const Case test(seed);
+        const Second wanted = second(test, 1, pool);
+        reals += finite(wanted.values) + finite(wanted.product);
+        for (const std::size_t threads : kThreads)
+        {
+            SCOPED_TRACE(threads);
+            const Second found = second(test, threads, pool);
+            EXPECT_TRUE(same(found.values, wanted.values));
+            EXPECT_TRUE(same(found.product, wanted.product));
         }
     }
     EXPECT_GT(reals, 0);

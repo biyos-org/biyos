@@ -1,4 +1,5 @@
 #include "core/numbers.hpp"
+#include "core/pool/pool.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/hessian/hessian.hpp"
@@ -27,6 +28,7 @@ using biyos::Instruction;
 using biyos::kBudget;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Pool;
 using biyos::Real;
 using biyos::Tape;
 using biyos::test::jacobian_of;
@@ -161,7 +163,8 @@ void expect_shared(const Block &block)
 Real hessian_at(Hessian &hessian, Real t)
 {
     std::vector<Real> out(hessian.pattern().rows.size(), kNan);
-    hessian.values(std::array{t}, std::array{1.0}, out);
+    Pool pool;
+    hessian.values(std::array{t}, std::array{1.0}, out, pool);
     return out.front();
 }
 

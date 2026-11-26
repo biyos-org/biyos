@@ -5,6 +5,7 @@
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
+#include "core/pool/pool.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/derivatives/reverse.hpp"
 #include "expr/derivatives/value.hpp"
@@ -52,7 +53,7 @@ class Evaluation
   public:
     using Point = evaluation::Point;
 
-    Evaluation(const Model &model, Stream stream);
+    Evaluation(const Model &model, Stream stream, Pool &pool);
 
     const Pattern &jacobian_pattern() const noexcept;
     const Lower &hessian_pattern() const noexcept;
@@ -80,6 +81,7 @@ class Evaluation
 
     const Model &model_;
     Stream stream_;
+    Pool &pool_;
     evaluation::Program program_;
     Workspace workspace_;
     Adjoints adjoints_;

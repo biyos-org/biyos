@@ -87,7 +87,7 @@ Records hessian(const Model &model)
 Records reference_jacobian(const Model &model)
 {
     BIYOS_model &handle = *model.get();
-    const Evaluation evaluation(handle.model(), handle.stream());
+    const Evaluation evaluation(handle.model(), handle.stream(), handle.env().pool());
     const Pattern &pattern = evaluation.jacobian_pattern();
     Records records{.counts = {}, .items = {pattern.variables.begin(), pattern.variables.end()}};
     for (std::size_t k = 0; k + 1 < pattern.starts.size(); ++k)
@@ -100,7 +100,7 @@ Records reference_jacobian(const Model &model)
 Records reference_hessian(const Model &model)
 {
     BIYOS_model &handle = *model.get();
-    const Evaluation evaluation(handle.model(), handle.stream());
+    const Evaluation evaluation(handle.model(), handle.stream(), handle.env().pool());
     const Lower &lower = evaluation.hessian_pattern();
     Records records{.counts = {}, .items = {lower.rows.begin(), lower.rows.end()}};
     for (std::size_t k = 0; k + 1 < lower.starts.size(); ++k)
