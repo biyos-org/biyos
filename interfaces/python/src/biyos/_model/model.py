@@ -1,5 +1,5 @@
 import weakref
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Sequence, Sized
 from ctypes import (
     Array,
     addressof,
@@ -19,10 +19,16 @@ from biyos._capi import lib
 from biyos._convert.arrays import (
     counts,
     doubles,
+    entries_of,
     indices_of,
     int64s,
     ints,
     listed,
+    matched,
+    nested,
+    nested_doubles,
+    nested_indices,
+    sequence,
     span_of,
     strings,
 )
@@ -179,6 +185,7 @@ class FileFormat(IntEnum):
 
 _INT_MAX = 2 ** (8 * sizeof(c_index) - 1) - 1
 _Block = TypeVar("_Block", bound=Block[Any])
+_Argument = tuple[type[Block[Any]], str, Any]
 
 _COUNTS: dict[type[Block[Any]], str] = {
     Variables: "getnvar",
@@ -240,6 +247,32 @@ def _renumbered(total: Index, gone: set[Index]) -> list[Index]:
             found.append(kept)
             kept += 1
     return found
+
+
+def _alike(name: str, entries: object, many: bool) -> None:
+    if many:
+        sequence(name, entries)
+    elif isinstance(entries, Sized):
+        found = type(entries).__name__
+        raise TypeError(f"{name} must be a scalar, not {found}")
+
+
+def _lifted(entries: object, many: bool) -> list[object]:
+    return [entries] if many else [[entries]]
+
+
+def _single(
+    others: Sequence[_Argument], coef: object
+) -> tuple[list[_Argument], list[object]]:
+    many = isinstance(others[0][2], Sized)
+    for _, name, entries in others[1:]:
+        _alike(name, entries, many)
+    _alike("coef", coef, many)
+    lifted = [
+        (family, name, _lifted(entries, many))
+        for family, name, entries in others
+    ]
+    return lifted, _lifted(coef, many)
 
 
 def _total(counts: Array[c_offset] | None) -> Offset:
@@ -1352,36 +1385,62 @@ class Model:
 
     def addlinterm(
         self,
-        fun: Sequence[Index | Function] | Functions,
-        var: Sequence[Index | Variable] | Variables,
-        coef: Sequence[Real],
+        fun: Index | Function | Sequence[Index | Function] | Functions,
+        var: (
+            Index
+            | Variable
+            | Sequence[Index | Variable]
+            | Variables
+            | Sequence[Sequence[Index | Variable] | Variables]
+        ),
+        coef: Real | Sequence[Real] | Sequence[Sequence[Real]],
     ) -> None:
-        """Add linear terms to functions, as coordinates.
+        """Add linear terms to functions, as coordinates or by function.
 
-        Term ``k`` adds ``coef[k]`` times variable ``var[k]`` to
-        function ``fun[k]``, in any order. A variable the function holds
-        already adds its coefficient to the one held.
+        As coordinates, term ``k`` adds ``coef[k]`` times variable
+        ``var[k]`` to function ``fun[k]``, in any order. By function, each
+        entry of ``var`` is a sequence, and function ``fun[j]`` gains
+        ``coef[j][k]`` times variable ``var[j][k]`` for each ``k``; a
+        function listed twice gains both groups. A scalar ``fun`` is one
+        function, ``var`` and ``coef`` its terms, or its one term when both
+        are scalars. A variable the function holds already adds its
+        coefficient to the one held.
 
         Parameters
         ----------
         fun
-            The function of each term.
+            The function of each term; or the functions, in any order, a
+            block or a range of them; or one function.
         var
-            The variable of each term, each once for its function.
+            The variable of each term, or a sequence of variables for each
+            function, each variable once for its function.
         coef
-            The coefficient of each term.
+            The coefficient of each term, nested as ``var`` is.
+
+        Raises
+        ------
+        TypeError
+            When ``var`` or ``coef`` is a scalar while ``fun`` is not,
+            ``coef`` is a sequence where a scalar ``fun`` and ``var`` want
+            a scalar, or ``coef`` is not nested as ``var`` is.
+        ValueError
+            When an entry of ``coef`` is not as long as that of ``var``.
 
         See Also
         --------
         BIYOS_addlinterm
+        BIYOS_addrlintermsp
+        BIYOS_addrlintermrg
         """
-        size = len(fun)
-        arrays = (
-            indices_of(self, Functions, "fun", fun, size),
-            indices_of(self, Variables, "var", var, size),
-            doubles("coef", coef, size),
+        lead = (Functions, "fun", fun)
+        others = [(Variables, "var", var)]
+        self._addterms(
+            lead,
+            others,
+            coef,
+            coordinates="BIYOS_addlinterm",
+            lists="BIYOS_addrlinterm",
         )
-        self._call(lib.BIYOS_addlinterm, size, *arrays)
 
     def getnrlinterm(
         self, idx: Sequence[Index | Function] | Functions | None = None
@@ -4637,14 +4696,15 @@ class Model:
         family: type[Block[Any]],
         idx: Sequence[SupportsIndex] | Block[Any],
         outputs: int = 0,
+        name: str = "idx",
     ) -> tuple[Callable[..., int], Index, object]:
-        span = span_of(self, family, "idx", idx)
+        span = span_of(self, family, name, idx)
         if span is None:
             n = len(idx)
-            indices = indices_of(self, family, "idx", idx, n)
+            indices = indices_of(self, family, name, idx, n)
             return getattr(lib, f"{call}sp"), n, indices
-        start = integer("the start of idx", span.start)
-        stop = integer("the stop of idx", min(start + len(span), _INT_MAX))
+        start = integer(f"the start of {name}", span.start)
+        stop = integer(f"the stop of {name}", min(start + len(span), _INT_MAX))
         function = getattr(lib, f"{call}rg")
         if outputs > 0 and not self._inside(family, start, stop):
             self._call(function, start, stop, *([None] * outputs))
@@ -4731,6 +4791,64 @@ class Model:
         nnz = c_offset()
         self._call(*self._chosen(call, family, idx), byref(nnz))
         return nnz.value
+
+    def _addterms(
+        self,
+        lead: _Argument,
+        others: Sequence[_Argument],
+        coef: Any,
+        *,
+        coordinates: str,
+        lists: str,
+    ) -> None:
+        _, name, entries = others[0]
+        if isinstance(lead[2], Sized) and not nested(name, entries):
+            self._addcoordinates(coordinates, [lead, *others], coef)
+        else:
+            self._addlists(lists, lead, others, coef)
+
+    def _addcoordinates(
+        self, call: str, arguments: Sequence[_Argument], coef: Any
+    ) -> None:
+        for _, name, entries in arguments[1:]:
+            sequence(name, entries)
+        sequence("coef", coef)
+        size = len(arguments[0][2])
+        arrays = [
+            indices_of(self, family, name, entries, size)
+            for family, name, entries in arguments
+        ]
+        coefs = doubles("coef", coef, size)
+        self._call(getattr(lib, call), size, *arrays, coefs)
+
+    def _addlists(
+        self,
+        call: str,
+        lead: _Argument,
+        others: Sequence[_Argument],
+        coef: Any,
+    ) -> None:
+        family, name, entries = lead
+        if not isinstance(entries, Sized):
+            entries = [index_of(self, family, name, entries)]
+            others, coef = _single(others, coef)
+        chosen = self._chosen(call, family, entries, name=name)
+        cnt, arrays, coefs = self._lists(others, coef, len(entries))
+        self._call(*chosen, cnt, *arrays, coefs)
+
+    def _lists(
+        self, others: Sequence[_Argument], coef: Any, count: int
+    ) -> tuple[Array[c_offset], list[Array[c_index]], Array[c_real]]:
+        family, name, entries = others[0]
+        first = entries_of(name, entries, count)
+        sizes = [len(entry) for _, entry in first]
+        arrays = [nested_indices(self, family, first)]
+        for family, name, entries in others[1:]:
+            parts = matched(name, entries, sizes)
+            arrays.append(nested_indices(self, family, parts))
+        coefs = nested_doubles(matched("coef", coef, sizes))
+        cnt = (c_offset * count)(*sizes)
+        return cnt, arrays, coefs
 
     def _terms(
         self,
