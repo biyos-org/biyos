@@ -19,6 +19,7 @@ class Lines
     Lines(std::istream &input, std::string file);
 
     bool next();
+    void split(std::span<const std::size_t> starts);
     std::size_t number() const noexcept;
     std::string_view text() const noexcept;
     std::span<const std::string_view> fields() const noexcept;
@@ -33,6 +34,7 @@ class Lines
     std::size_t number_ = 0;
 };
 
+std::string_view trimmed(std::string_view text) noexcept;
 std::optional<Real> number_of(std::string_view field);
 
 }

@@ -29,6 +29,7 @@ class Instance:
     name: str
     url: str
     sha256: str
+    fixed: bool = False
 
 
 def parse_list(path):
@@ -38,9 +39,11 @@ def parse_list(path):
         fields = line.split()
         if not fields or fields[0].startswith("#"):
             continue
-        if len(fields) != 3:
-            raise ValueError(f"{path}:{number}: expected name, URL, SHA-256")
-        instances.append(Instance(library, *fields))
+        if len(fields) < 3 or fields[3:] not in ([], ["fixed"]):
+            raise ValueError(
+                f"{path}:{number}: expected name, URL, SHA-256, maybe fixed"
+            )
+        instances.append(Instance(library, *fields[:3], len(fields) == 4))
     return instances
 
 
@@ -118,8 +121,8 @@ def judged(done):
     return outcome, times, detail
 
 
-def round_trip(tool, source, scratch, limit):
-    command = [*tool, str(source), str(scratch)]
+def round_trip(tool, source, scratch, limit, fixed):
+    command = [*tool, str(source), str(scratch), *(["fixed"] if fixed else [])]
     start = time.monotonic()
     try:
         done = subprocess.run(
@@ -143,7 +146,8 @@ def attempt(instance, cache, tool, limit):
             source = expanded(fetch(instance, cache), folder)
         except FAILURES as error:
             return "refused", {}, str(error)
-        return round_trip(tool, source, folder / "written", limit)
+        scratch = folder / "written"
+        return round_trip(tool, source, scratch, limit, instance.fixed)
 
 
 def record_of(instance, outcome, times, detail, stamp):

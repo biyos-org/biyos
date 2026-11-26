@@ -28,6 +28,11 @@ bool set_marker(Fields fields)
 
 }
 
+bool marker_line(Fields fields) noexcept
+{
+    return fields.size() >= 3 && fields[1] == "'MARKER'";
+}
+
 void Columns::read(const Lines &lines, Draft &draft)
 {
     const Fields fields = uncommented(lines.fields(), 1);
@@ -35,7 +40,7 @@ void Columns::read(const Lines &lines, Draft &draft)
     {
         unsupported(lines, "marker " + std::string(fields.back()));
     }
-    if (fields.size() >= 3 && fields[1] == "'MARKER'")
+    if (marker_line(fields))
     {
         mark(lines, fields[2]);
         return;

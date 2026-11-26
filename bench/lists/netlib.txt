@@ -5,7 +5,8 @@
 # expanded copies kept by COIN-OR Data-Netlib at a fixed commit. Its
 # EPL-2.0 covers its build system, not the .mps.gz files.
 # Data-Netlib lacks pilot.ja and pilot.we. stocfor3 and truss ship as
-# Fortran generators and are left out.
+# Fortran generators and are left out. A last field fixed marks a file
+# read as fixed MPS.
 25fv47 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/25fv47.mps.gz 4e1b96340294785ddd20fc9f902f2fd4a28761006d65c01a44820550bd4cd6da
 80bau3b https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/80bau3b.mps.gz 4a37a7d0e91bac0c100798819a7ce36b79ad0adfc240c71bb93913bbba8b521f
 adlittle https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/adlittle.mps.gz 9c9e7581b9157b13ba6985783f4ece702b478b53b813205d14c807aa6e5233c3
@@ -15,7 +16,7 @@ agg2 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d5
 agg3 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/agg3.mps.gz 14b7e8ee5b542b606a685adfefbaa3acbe7a97166057a308f8fe0ae463f1c8ad
 bandm https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/bandm.mps.gz 006bc57678525d02e3d975bc4eba26530f127593017f773cc85946ea9c5be45a
 beaconfd https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/beaconfd.mps.gz b57da9b9351a586426ec1205b3b3d6cd27f6e09888389af6978fc43bd44e03f7
-blend https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/blend.mps.gz 57e8b96633bcb03d7b98ca65880855ecabd3a515dfac6110aaaddd3a1876d244
+blend https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/blend.mps.gz 57e8b96633bcb03d7b98ca65880855ecabd3a515dfac6110aaaddd3a1876d244 fixed
 bnl1 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/bnl1.mps.gz 30269766d1d3baa5ed876e3cca02e3ff19df69b504fc0f3918fc1978fb5001f1
 bnl2 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/bnl2.mps.gz 10b73c3a34ac21ef19c63b5f971c834c1c985fe91256e5d2d3aa566c9cfd984c
 boeing1 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/boeing1.mps.gz c3bf482c680274a8377e9d2be8e9376795ed963522e5807e619e3701777a3cd2
@@ -29,7 +30,7 @@ d2q06c https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407
 d6cube https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/d6cube.mps.gz 85cf9ceec66139e2ba00100394f0f5ab8e9dae022a86b09df4d4ff43a93a03af
 degen2 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/degen2.mps.gz 47ad212b08b5c517cbe169bd6711cdc1051391bf1b30531bcf9893abae498346
 degen3 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/degen3.mps.gz 54184bf6c94b75d3c862d7d059ac84e956780d66e761fedfe993786e76daddc8
-dfl001 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/dfl001.mps.gz 9e6e3e922d4e47c9c34cc58e5eebfc8be9255afa2cd0225edf7fd2a1058c5a79
+dfl001 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/dfl001.mps.gz 9e6e3e922d4e47c9c34cc58e5eebfc8be9255afa2cd0225edf7fd2a1058c5a79 fixed
 e226 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/e226.mps.gz a150d4e4ca1257844e92cc351e3c4572f074dfdbd71e8de90059216ecd272b01
 etamacro https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/etamacro.mps.gz 471f47bacec1d0c351eb0a283ac827a320eaeef8be859970f7721e28158b95ec
 fffff800 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/fffff800.mps.gz c6e8781df29802f00c7bce1e7d8d6cef65d28712f47851b039a1d65057013ee1
@@ -38,9 +39,9 @@ fit1d https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d
 fit1p https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/fit1p.mps.gz 7312a940d24b10a1728424578bd010e46d08a81e367046c228e7c59b8967730c
 fit2d https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/fit2d.mps.gz d2dd1d3be78fb7993a6b34ed28c3bf7fffdb2cdc17e0dbff7b8aa8f61b324515
 fit2p https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/fit2p.mps.gz e9484608fb358f7d6a8c351ad544ff0438c33caead9bd602a1a7fa5f9d4032fa
-forplan https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/forplan.mps.gz e18f491632581cf0390de7724274c9d9fbfb2c03652042d09f07cc55626d6966
+forplan https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/forplan.mps.gz e18f491632581cf0390de7724274c9d9fbfb2c03652042d09f07cc55626d6966 fixed
 ganges https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/ganges.mps.gz ab529312cd1b0de444dff304f390f06c6cf2ea824d24be3523e06b6ec30a46e6
-gfrd-pnc https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/gfrd-pnc.mps.gz c2b869d4a21f222a3968b2b8042309cfccc699f32f4f94b7feb084612c935a5a
+gfrd-pnc https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/gfrd-pnc.mps.gz c2b869d4a21f222a3968b2b8042309cfccc699f32f4f94b7feb084612c935a5a fixed
 greenbea https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/greenbea.mps.gz dceb7cf5a184e6e8dc68485815660a1269771aef9c401dd61e635f9a64cca266
 greenbeb https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/greenbeb.mps.gz d3b6eabf2a049592489d3a4d79df32b1b985928f1dd06aa7642ff0e7cafd25a4
 grow15 https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/grow15.mps.gz 4bf803ee2654e2ce012174ad327210af9453a54c017f313616bda982553ded5d
@@ -86,7 +87,7 @@ ship08l https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc42306740
 ship08s https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/ship08s.mps.gz 6f203234486f7ee0970d70ec553b3d474db39e39378a388f1c9090e2d5fd26f4
 ship12l https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/ship12l.mps.gz e81d1cba7fc3cbc26bea94f541824c411c11f96d94ee6964ea4345ee09a5c847
 ship12s https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/ship12s.mps.gz 3712f0f8c220c507c9de3b2a0642cf1c8a262b519e3832c0b70b13d44bbb5ca8
-sierra https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/sierra.mps.gz 287fb50a0b278624bed713d6b47a4c3820d52ccd7c0eae7766d67193d05c41b5
+sierra https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/sierra.mps.gz 287fb50a0b278624bed713d6b47a4c3820d52ccd7c0eae7766d67193d05c41b5 fixed
 stair https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/stair.mps.gz 5e93434e32ad5ceac61abe7fedbd6a85a2db2813d6fa70f68e96102f3c47cc6c
 standata https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/standata.mps.gz caf4fa7498d9ceb150696039853f87f683540cc0c7ffa5987ea83e5ae6ffeb4a
 standgub https://raw.githubusercontent.com/coin-or-tools/Data-Netlib/f1cc423067407d55d579c9c35fb01edf860dbc24/standgub.mps.gz 7e7280ef0c83612ef12091331ac59e542069e143a8ede6f078419f129f47e4c1

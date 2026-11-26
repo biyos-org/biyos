@@ -9,6 +9,12 @@
 namespace biyos
 {
 
-Model read_mps(Stream stream, std::istream &input, const std::string &file);
+enum class MpsForm
+{
+    Free,
+    Fixed,
+};
+
+Model read_mps(Stream stream, std::istream &input, const std::string &file, MpsForm form);
 
 }

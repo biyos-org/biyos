@@ -15,11 +15,13 @@ namespace biyos
 enum class FileFormat
 {
     Mps = BIYOS_FILEFMT_MPS,
+    FixedMps = BIYOS_FILEFMT_FIXEDMPS,
     Nl = BIYOS_FILEFMT_NL,
 };
 
 inline constexpr std::array kFormats{
     FileFormat::Mps,
+    FileFormat::FixedMps,
     FileFormat::Nl,
 };
 

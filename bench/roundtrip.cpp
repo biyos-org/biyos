@@ -70,10 +70,10 @@ EnvPtr new_env()
     return EnvPtr(env);
 }
 
-ModelPtr read_model(BIYOS_env *env, const char *path)
+ModelPtr read_model(BIYOS_env *env, const char *path, BIYOS_int format)
 {
     BIYOS_model *model = nullptr;
-    check(env, BIYOS_readmdl(env, path, BIYOS_FILEFMT_MPS, &model));
+    check(env, BIYOS_readmdl(env, path, format, &model));
     return ModelPtr(model);
 }
 
@@ -103,16 +103,16 @@ std::optional<std::string> difference(BIYOS_env *env, const BIYOS_model *a, cons
     return text;
 }
 
-int round_trip(const char *source, const char *scratch)
+int round_trip(const char *source, const char *scratch, BIYOS_int given)
 {
     const EnvPtr env = new_env();
     Stopwatch watch;
-    const ModelPtr model = read_model(env.get(), source);
+    const ModelPtr model = read_model(env.get(), source, given);
     watch.lap("read");
     const BIYOS_int format = BIYOS_FILEFMT_MPS;
     check(env.get(), BIYOS_writemdl(model.get(), scratch, format));
     watch.lap("write");
-    const ModelPtr back = read_model(env.get(), scratch);
+    const ModelPtr back = read_model(env.get(), scratch, format);
     watch.lap("reread");
     const std::optional<std::string> found = difference(env.get(), model.get(), back.get());
     if (!found)
@@ -123,18 +123,32 @@ int round_trip(const char *source, const char *scratch)
     return kDiffers;
 }
 
+std::optional<BIYOS_int> format_of(int argc, char **argv)
+{
+    if (argc == 3)
+    {
+        return BIYOS_FILEFMT_MPS;
+    }
+    if (argc == 4 && std::strcmp(argv[3], "fixed") == 0)
+    {
+        return BIYOS_FILEFMT_FIXEDMPS;
+    }
+    return std::nullopt;
+}
+
 }
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    const std::optional<BIYOS_int> format = format_of(argc, argv);
+    if (!format)
     {
-        std::cerr << "usage: roundtrip <file> <scratch>\n";
+        std::cerr << "usage: roundtrip <file> <scratch> [fixed]\n";
         return kError;
     }
     try
     {
-        return round_trip(argv[1], argv[2]);
+        return round_trip(argv[1], argv[2], *format);
     }
     catch (const std::exception &error)
     {

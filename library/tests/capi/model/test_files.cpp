@@ -87,6 +87,21 @@ TEST(CApiTest, ReadFile)
     EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
 }
 
+TEST(CApiTest, ReadFixed)
+{
+    const Env env;
+    const std::string path =
+        written("biyos_fixed.mps",
+                "NAME\nROWS\n L  cap one\nCOLUMNS\n    x 1       cap one   1.0\n"
+                "RHS\n              cap one   4.0\nENDATA\n");
+    const Read made = read(env, path.c_str(), BIYOS_FILEFMT_FIXEDMPS);
+    ASSERT_EQ(made.status, BIYOS_OK);
+    EXPECT_EQ(count_of(BIYOS_getnvar, made.model), 1);
+    EXPECT_EQ(count_of(BIYOS_getncon, made.model), 1);
+    EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
+    EXPECT_EQ(read(env, path.c_str(), BIYOS_FILEFMT_MPS).status, BIYOS_ERR_BADFILE);
+}
+
 TEST(CApiTest, ReadNl)
 {
     const Env env;
@@ -187,6 +202,18 @@ TEST(CApiTest, WriteRefused)
     EXPECT_EQ(BIYOS_writemdl(nullptr, path.c_str(), BIYOS_FILEFMT_MPS), BIYOS_ERR_BADARG);
     EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_NL), BIYOS_ERR_UNSUPPORTED);
     EXPECT_EQ(env.message(), "unsupported: file '" + path + "': NL files are read, never written");
+}
+
+TEST(CApiTest, WriteFixed)
+{
+    const Env env;
+    const Model model(env);
+    const std::string path = testing::TempDir() + "biyos_fixed_written.mps";
+    EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_FIXEDMPS),
+              BIYOS_ERR_UNSUPPORTED);
+    const std::string reason = "fixed MPS files are read, never written";
+    EXPECT_EQ(env.message(), "unsupported: file '" + path + "': " + reason);
+    EXPECT_FALSE(std::ifstream(path).is_open());
 }
 
 TEST(CApiTest, WriteSpan)

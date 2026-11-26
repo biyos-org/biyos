@@ -136,6 +136,30 @@ The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the 
 
 A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of the objective, the names of indicators, and the model's options. Hooks are not part of the problem and are left out with no event.
 
+## Fixed MPS {#sec-mps-fixed}
+
+`BIYOS_FILEFMT_FIXEDMPS` reads fixed MPS, the form of MPS in which each field of a data line starts in a set column and names may hold blanks. Every rule of free MPS above holds but the split of a data line into fields. The columns are those of the Gurobi [MPS reference](https://docs.gurobi.com/projects/optimizer/en/current/reference/fileformats/modelformats.html#mps-format), which states where each field starts; the CPLEX reference describes fields separated by white space alone. Fixed MPS is read, never written.
+
+| Field | Columns |
+|---|---|
+| 1 | 2 to 4 |
+| 2 | 5 to 14 |
+| 3 | 15 to 24 |
+| 4 | 25 to 39 |
+| 5 | 40 to 49 |
+| 6 | 50 to the end of the line |
+
+A section line is read as in free MPS, with the model name the rest of the `NAME` line. In a data line, the blanks at either end of a field are dropped and those inside it are part of the name. A data line whose field 1 is blank holds the fields from field 2 on, as a free MPS line in `COLUMNS`, `RHS` or `RANGES` does. Empty fields at the end of a line are left out, and one before a field that is not empty stays empty: a vector name of `RHS`, `RANGES` or `BOUNDS` may be blank, while an empty row, column or set member name and an empty value are refused. An `OBJSENSE` data line is one word and is split at white space, as in free MPS.
+
+| Case | biyos's rule |
+|---|---|
+| Field ends | Gurobi states where each field starts. A field runs to the column before the next one starts, so text too long for its columns runs into the next field. |
+| A blank vector name | The empty name, read as any vector name, so a later vector gives the warning of free MPS. Neither document says a vector name may be blank. |
+| Blanks in names | Kept inside a name, as Gurobi states for fixed format, and dropped at its ends. |
+| Marker lines | A `COLUMNS` line whose second word is `'MARKER'` is split at white space, as in free MPS, since the reader keeps nothing of the marker's name. A marker name with blanks is refused. Gurobi places `'MARKER'` in column 15 and `'INTORG'` or `'INTEND'` in column 40. |
+| Tabs | A tab is one column. |
+| Long lines | Field 6 runs to the end of the line, so text after it, such as a card number in columns 73 to 80, makes its value unreadable. |
+
 ## Text NL
 
 `BIYOS_FILEFMT_NL` reads the text form of NL, the format AMPL writes for a solver. The rules below are those of Gay's description of the format [@gay2005]. Where it says nothing, biyos sets its own rule, given in [Choices](#sec-nl-choices). The format is read only: `BIYOS_writemdl` refuses it with `BIYOS_ERR_UNSUPPORTED`.

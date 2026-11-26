@@ -12,6 +12,8 @@
 namespace biyos
 {
 
+bool marker_line(Fields fields) noexcept;
+
 class Columns
 {
   public:

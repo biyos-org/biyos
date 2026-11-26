@@ -193,11 +193,14 @@ class FileFormat(IntEnum):
     ----------
     MPS
         Free MPS, for linear and mixed-integer models.
+    FIXED_MPS
+        Fixed MPS, for linear and mixed-integer models. Read only.
     NL
         Text NL, for nonlinear models. Read only.
     """
 
     MPS = 1
+    FIXED_MPS = 2
     NL = 3
 
 
