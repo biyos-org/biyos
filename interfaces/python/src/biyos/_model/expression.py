@@ -7,7 +7,7 @@ from biyos._capi import inf
 from biyos._convert.integers import integer
 from biyos._convert.numbers import Index, Real
 from biyos._model.operators import Operator
-from biyos._model.printer import printed
+from biyos._model.printer import printed, printed_condition
 
 
 def _number(value: object) -> TypeGuard[int | Real]:
@@ -384,6 +384,54 @@ class Piecewise(Expression):
         self._idx = idx
 
 
+class Logical:
+    __slots__ = ()
+
+    def __and__(self, other: "Logical") -> "Condition":
+        """Return the condition that both hold.
+
+        Parameters
+        ----------
+        other
+            A comparison or a condition.
+
+        Returns
+        -------
+        cond
+            The condition ``self & other``.
+        """
+        if not isinstance(other, Logical):
+            return NotImplemented
+        return Condition(Operator.AND, (self, other))
+
+    def __or__(self, other: "Logical") -> "Condition":
+        """Return the condition that one or both hold.
+
+        Parameters
+        ----------
+        other
+            A comparison or a condition.
+
+        Returns
+        -------
+        cond
+            The condition ``self | other``.
+        """
+        if not isinstance(other, Logical):
+            return NotImplemented
+        return Condition(Operator.OR, (self, other))
+
+    def __invert__(self) -> "Condition":
+        """Return the condition that this one does not hold.
+
+        Returns
+        -------
+        cond
+            The condition ``~self``.
+        """
+        return Condition(Operator.NOT, (self,))
+
+
 class ComparisonSense(Enum):
     """The senses of comparisons, each valued by its operator.
 
@@ -402,7 +450,7 @@ class ComparisonSense(Enum):
     EQUAL = "=="
 
 
-class Comparison:
+class Comparison(Logical):
     """A constraint written as a comparison of two operands.
 
     ``<=``, ``>=`` and ``==`` between expressions, variables and numbers
@@ -487,6 +535,59 @@ class Comparison:
                 "a comparison is a constraint and has no truth value"
             )
         return self._same
+
+
+class Condition(Logical):
+    """A logical constraint built from comparisons.
+
+    ``&``, ``|`` and ``~`` on comparisons and conditions give a condition,
+    ``Operator.AND``, ``Operator.OR`` or ``Operator.NOT`` of its operands,
+    which ``Model.addcon`` takes as a constraint with bounds 1 and 1. Python
+    cannot overload ``and``, ``or`` and ``not``, and ``&`` and ``|`` bind
+    more tightly than a comparison, so each comparison takes parentheses:
+    ``(x <= 1) | (y >= 2)``. An expression has no ``&``, so ``x <= 1 & y``
+    raises ``TypeError``. A condition has no truth value, and ``repr``
+    writes it as a formula.
+    """
+
+    __slots__ = ("_args", "_op")
+
+    def __init__(self, op: Operator, args: tuple[Logical, ...]) -> None:
+        self._op = op
+        self._args = args
+
+    @property
+    def operator(self) -> Operator:
+        """The operator, ``AND``, ``OR`` or ``NOT``."""
+        return self._op
+
+    @property
+    def operands(self) -> tuple[Logical, ...]:
+        """The comparisons and conditions the operator takes."""
+        return self._args
+
+    def __repr__(self) -> str:
+        """Return the condition as a formula.
+
+        Each comparison prints in parentheses, so
+        ``(x[0] <= 1) | (x[1] >= 2)`` reads back as itself.
+
+        Returns
+        -------
+        text
+            The operands around ``&`` and ``|``, or after ``~``.
+        """
+        return printed_condition(self)
+
+    def __bool__(self) -> bool:
+        """Refuse a truth value.
+
+        Raises
+        ------
+        TypeError
+            Always, since a condition is a constraint, not a test.
+        """
+        raise TypeError("a condition is a constraint and has no truth value")
 
 
 _SIDES = {

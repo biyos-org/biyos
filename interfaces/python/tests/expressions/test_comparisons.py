@@ -1,3 +1,4 @@
+import sys
 from operator import contains, eq, ge, gt, index, le, lt, ne
 
 import pytest
@@ -289,3 +290,108 @@ def test_stale(model, x):
     fresh = model.addvar(1)
     with pytest.raises(ValueError, match="variable predates"):
         contains(fresh, view)
+
+
+def logic(cond):
+    if type(cond) is biyos.Comparison:
+        return (repr(cond.lhs), cond.sense, repr(cond.rhs))
+    assert type(cond) is biyos.Condition
+    return (cond.operator, *map(logic, cond.operands))
+
+
+def test_condition(x):
+    a = x[0] <= 1
+    b = x[1] >= 2
+    either = a | b
+    assert either.operator is Operator.OR
+    assert either.operands[0] is a
+    assert either.operands[1] is b
+    assert (a & b).operator is Operator.AND
+    assert (~a).operator is Operator.NOT
+    assert (~a).operands == (a,)
+
+
+def test_nested(x):
+    a = x[0] <= 1
+    b = x[1] >= 2
+    c = x[2] == 0
+    assert logic(~(a & b) | c) == (
+        Operator.OR,
+        (Operator.NOT, (Operator.AND, logic(a), logic(b))),
+        logic(c),
+    )
+
+
+CONDITIONS = {
+    "(x[0] <= 1) | (x[1] >= 2)": lambda a, b, c: (a <= 1) | (b >= 2),
+    "(x[0] <= 1) & (x[1] >= 2)": lambda a, b, c: (a <= 1) & (b >= 2),
+    "~(x[0] >= 1)": lambda a, b, c: ~(a >= 1),
+    "~~(x[0] >= 1)": lambda a, b, c: ~~(a >= 1),
+    "~((x[0] >= 1) & (x[1] <= 0))": lambda a, b, c: ~((a >= 1) & (b <= 0)),
+    "(x[0] <= 1) & (x[1] <= 1) & (x[2] <= 1)": lambda a, b, c: (
+        (a <= 1) & (b <= 1) & (c <= 1)
+    ),
+    "(x[0] <= 1) & ((x[1] <= 1) & (x[2] <= 1))": lambda a, b, c: (
+        (a <= 1) & ((b <= 1) & (c <= 1))
+    ),
+    "(x[0] <= 1) | (x[1] <= 1) | (x[2] <= 1)": lambda a, b, c: (
+        (a <= 1) | (b <= 1) | (c <= 1)
+    ),
+    "(x[0] <= 1) | ((x[1] <= 1) | (x[2] <= 1))": lambda a, b, c: (
+        (a <= 1) | ((b <= 1) | (c <= 1))
+    ),
+    "(x[0] <= 1) & (x[1] <= 1) | (x[2] <= 1)": lambda a, b, c: (
+        (a <= 1) & (b <= 1) | (c <= 1)
+    ),
+    "(x[0] <= 1) | (x[1] <= 1) & (x[2] <= 1)": lambda a, b, c: (
+        (a <= 1) | (b <= 1) & (c <= 1)
+    ),
+    "((x[0] <= 1) | (x[1] <= 1)) & (x[2] <= 1)": lambda a, b, c: (
+        ((a <= 1) | (b <= 1)) & (c <= 1)
+    ),
+    "~(x[0] <= 1) & ~(x[1] <= 1)": lambda a, b, c: ~(a <= 1) & ~(b <= 1),
+    "~((x[0] <= 1) | (x[1] <= 1))": lambda a, b, c: ~((a <= 1) | (b <= 1)),
+    "(exp(x[0]) == x[1] + 1) | (x[2] >= x[0]*x[1])": lambda a, b, c: (
+        (biyos.exp(a) == b + 1) | (c >= a * b)
+    ),
+}
+
+
+@pytest.mark.parametrize("text", CONDITIONS)
+def test_written(x, text):
+    cond = CONDITIONS[text](*x)
+    assert repr(cond) == text
+    read = eval(text, {"exp": biyos.exp, "x": x})
+    assert logic(read) == logic(cond)
+
+
+def test_deep_condition(x):
+    cond = x[0] <= 0
+    depth = 10 * sys.getrecursionlimit()
+    for _ in range(depth):
+        cond = cond & (x[1] <= 0)
+    assert repr(cond) == "(x[0] <= 0)" + depth * " & (x[1] <= 0)"
+
+
+def unparenthesized(a, b):
+    return a <= 1 & b
+
+
+def test_precedence(x):
+    with pytest.raises(TypeError):
+        unparenthesized(x[0], x[1])
+    with pytest.raises(TypeError):
+        (x[0] <= 1) & x[1]
+    with pytest.raises(TypeError):
+        x[1] | (x[0] <= 1)
+    with pytest.raises(TypeError):
+        ~x[0]
+    with pytest.raises(TypeError):
+        (x[0] <= 1) | True
+
+
+def test_condition_truth(x):
+    with pytest.raises(TypeError, match="has no truth value"):
+        bool((x[0] <= 1) | (x[1] >= 2))
+    with pytest.raises(TypeError, match="has no truth value"):
+        bool(~(x[0] == x[1]))
