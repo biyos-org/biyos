@@ -201,6 +201,16 @@ void expect_point(const Check &check, const Point &point)
     }
 }
 
+std::vector<Offset> conditions_of(Graph &graph, Operator op, std::span<const Offset> x)
+{
+    std::vector<Offset> conditions{graph.add(Operator::Less, x.first(2))};
+    if (op != Operator::Not)
+    {
+        conditions.push_back(graph.add(Operator::GreaterEqual, x.last(2)));
+    }
+    return conditions;
+}
+
 }
 
 std::vector<int> biyos::test::sampled_codes()
@@ -210,7 +220,7 @@ std::vector<int> biyos::test::sampled_codes()
     {
         codes.push_back(code);
     }
-    for (int code = BIYOS_OP_ATAN2; code <= BIYOS_OP_NE; ++code)
+    for (int code = BIYOS_OP_ATAN2; code <= BIYOS_OP_NOT; ++code)
     {
         codes.push_back(code);
     }
@@ -272,6 +282,11 @@ Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
     case Operator::Max:
     case Operator::Min:
         graph.add(op, x);
+        break;
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+        graph.add(op, conditions_of(graph, op, x));
         break;
     case Operator::Negation:
     case Operator::Exp:

@@ -36,6 +36,8 @@ constexpr Arity arity_of(Operator op)
     case Operator::Product:
     case Operator::Max:
     case Operator::Min:
+    case Operator::And:
+    case Operator::Or:
         return {.least = 1, .listed = true};
     case Operator::Negation:
     case Operator::ConstantPower:
@@ -59,6 +61,7 @@ constexpr Arity arity_of(Operator op)
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
+    case Operator::Not:
         return {.least = 1, .listed = false};
     case Operator::Division:
     case Operator::Power:

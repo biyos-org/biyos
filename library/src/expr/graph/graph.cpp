@@ -207,6 +207,7 @@ void Graph::check(Operator op, Payload payload, std::span<const Offset> children
     for (const Offset child : children)
     {
         check_child(child, size());
+        check_operand(op, child, operators_[to_size(child)]);
     }
 }
 

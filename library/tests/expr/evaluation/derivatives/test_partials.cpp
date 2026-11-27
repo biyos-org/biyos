@@ -113,6 +113,9 @@ std::vector<Partials> cmath_partials(Real x, Real y, Real z, Real w)
         {0.0, 0.0},
         {0.0, 0.0},
         {0.0, 0.0},
+        {0.0, 0.0},
+        {0.0, 0.0},
+        {0.0},
     };
 }
 

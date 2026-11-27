@@ -380,6 +380,15 @@ void evaluate(const Instruction &instruction, const Frame &frame) noexcept
     case Operator::NotEqual:
         compare(instruction, frame, not_equal);
         return;
+    case Operator::And:
+        extreme(instruction, frame, smaller);
+        return;
+    case Operator::Or:
+        extreme(instruction, frame, larger);
+        return;
+    case Operator::Not:
+        map(instruction, frame, [](Real x) { return 1.0 - x; });
+        return;
     }
 }
 

@@ -20,6 +20,8 @@ inline Tolerances default_tolerances()
 
 Real comparison(Operator op, Real a, Real b);
 
+Real connective(Operator op, std::span<const Real> conditions);
+
 void evaluate(const Graph &graph, std::span<const Real> point, std::span<Real> values);
 
 }

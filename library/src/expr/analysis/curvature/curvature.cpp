@@ -138,6 +138,9 @@ Curvature outer_of(const Graph &graph,
     case Operator::Less:
     case Operator::Greater:
     case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         return unknown(arguments);
     }
     return Curvature::Unknown;

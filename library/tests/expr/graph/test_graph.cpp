@@ -442,12 +442,15 @@ TEST(GraphTest, Codes)
     EXPECT_EQ(operator_of(BIYOS_OP_LT), Operator::Less);
     EXPECT_EQ(operator_of(BIYOS_OP_GT), Operator::Greater);
     EXPECT_EQ(operator_of(BIYOS_OP_NE), Operator::NotEqual);
+    EXPECT_EQ(operator_of(BIYOS_OP_AND), Operator::And);
+    EXPECT_EQ(operator_of(BIYOS_OP_OR), Operator::Or);
+    EXPECT_EQ(operator_of(BIYOS_OP_NOT), Operator::Not);
     const std::array unknown{
         0,
         BIYOS_OP_NODE,
         BIYOS_OP_KEEP,
         BIYOS_OP_REF,
-        BIYOS_OP_NE + 1,
+        BIYOS_OP_NOT + 1,
         -1,
         256,
         256 + BIYOS_OP_EXP,

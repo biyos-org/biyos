@@ -246,6 +246,9 @@ void Walk::visit(const Item &item)
     case Operator::Less:
     case Operator::Greater:
     case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         keep(item);
         break;
     }

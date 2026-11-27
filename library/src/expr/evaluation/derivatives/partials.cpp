@@ -322,6 +322,9 @@ void slopes_of(const Instruction &instruction,
     case Operator::Less:
     case Operator::Greater:
     case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         std::ranges::fill(partials, 0.0);
         return;
     }
@@ -350,6 +353,8 @@ std::uint32_t n_partials(const Instruction &instruction) noexcept
     case Operator::Variable:
         return 0;
     case Operator::Product:
+    case Operator::And:
+    case Operator::Or:
         return instruction.second - instruction.first;
     case Operator::Division:
     case Operator::Power:
@@ -386,6 +391,7 @@ std::uint32_t n_partials(const Instruction &instruction) noexcept
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
+    case Operator::Not:
         return 1;
     }
     return 0;

@@ -39,6 +39,7 @@ using biyos::value_at;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::comparison;
+using biyos::test::connective;
 using biyos::test::constant;
 using biyos::test::default_tolerances;
 using biyos::test::every_operator;
@@ -56,7 +57,7 @@ using biyos::test::unary;
 using biyos::test::values_of;
 
 using Point = std::array<Real, 4>;
-using Truths = std::array<Real, 6>;
+using Truths = std::array<Real, 9>;
 
 constexpr Real kInfinity = (std::numeric_limits<Real>::infinity)();
 constexpr Real kNan = (std::numeric_limits<Real>::quiet_NaN)();
@@ -172,6 +173,7 @@ class Reference
     Real sum(Offset node);
     Real product(Offset node);
     Real extreme(Offset node, Operator op);
+    std::vector<Real> children(Offset node);
     Real child(Offset node, std::size_t k);
 
     const Graph &graph_;
@@ -254,6 +256,10 @@ Real Reference::compute(Offset node)
     case Operator::Greater:
     case Operator::NotEqual:
         return comparison(op, child(node, 0), child(node, 1));
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+        return connective(op, children(node));
     }
     return kNan;
 }
@@ -279,13 +285,19 @@ Real Reference::product(Offset node)
     return total;
 }
 
-Real Reference::extreme(Offset node, Operator op)
+std::vector<Real> Reference::children(Offset node)
 {
     std::vector<Real> values;
     for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
     {
         values.push_back(child(node, k));
     }
+    return values;
+}
+
+Real Reference::extreme(Offset node, Operator op)
+{
+    const std::vector<Real> values = children(node);
     if (std::ranges::any_of(values, is_nan))
     {
         return kNan;
@@ -324,9 +336,9 @@ TEST(ValueTest, Operators)
         {1.1, 3.0, -0.6, 0.95},
     }};
     const std::array<Truths, 3> truths{{
-        {1.0, 0.0, 1.0, 1.0, 0.0, 1.0},
-        {0.0, 1.0, 1.0, 0.0, 1.0, 1.0},
-        {1.0, 0.0, 1.0, 1.0, 0.0, 1.0},
+        {1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0},
+        {0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0},
+        {1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0},
     }};
     for (std::size_t k = 0; k < points.size(); ++k)
     {

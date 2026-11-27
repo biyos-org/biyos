@@ -227,6 +227,9 @@ void curves_of(const Instruction &instruction,
     case Operator::Less:
     case Operator::Greater:
     case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         std::ranges::fill(out, 0.0);
         return;
     case Operator::Product:

@@ -150,6 +150,10 @@ class ChainRule
         case Operator::Greater:
         case Operator::NotEqual:
             return comparison(graph_.op(node), x, child(node, 1));
+        case Operator::And:
+        case Operator::Or:
+        case Operator::Not:
+            return connective(graph_.op(node), operands_of(node));
         }
         return (std::numeric_limits<Real>::quiet_NaN)();
     }
@@ -178,13 +182,19 @@ class ChainRule
         return total;
     }
 
-    Real extreme_of(Offset node) const
+    std::vector<Real> operands_of(Offset node) const
     {
         std::vector<Real> operands;
         for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
         {
             operands.push_back(child(node, k));
         }
+        return operands;
+    }
+
+    Real extreme_of(Offset node) const
+    {
+        const std::vector<Real> operands = operands_of(node);
         if (std::ranges::any_of(operands, [](Real value) { return std::isnan(value); }))
         {
             return (std::numeric_limits<Real>::quiet_NaN)();
@@ -304,6 +314,9 @@ class ChainRule
         case Operator::Less:
         case Operator::Greater:
         case Operator::NotEqual:
+        case Operator::And:
+        case Operator::Or:
+        case Operator::Not:
             return 0.0L;
         }
         return 0.0L;

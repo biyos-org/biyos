@@ -48,6 +48,7 @@ using biyos::test::binary;
 using biyos::test::constant;
 using biyos::test::default_tolerances;
 using biyos::test::every_operator;
+using biyos::test::kComparisons;
 using biyos::test::power;
 using biyos::test::sign_power;
 using biyos::test::unary;
@@ -68,12 +69,17 @@ struct Linear
     Values tangents;
 };
 
+bool flat(Operator op)
+{
+    return op == Operator::Constant || std::ranges::find(kComparisons, op) != kComparisons.end();
+}
+
 void seed(const Instruction &instruction,
           std::span<const Real> direction,
           std::size_t lanes,
           std::span<Real> slots)
 {
-    ASSERT_TRUE(instruction.op == Operator::Variable || instruction.op == Operator::Constant);
+    ASSERT_TRUE(instruction.op == Operator::Variable || flat(instruction.op));
     if (instruction.op == Operator::Variable)
     {
         const std::span<const Real> mine = row(direction, place(instruction.payload), lanes);

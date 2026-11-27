@@ -125,11 +125,14 @@ Interval piecewise_of(const Pass &pass, Offset node) noexcept
                      first(pass, node));
 }
 
-Interval undecided(Interval a, Interval b) noexcept
+Interval undecided(const Pass &pass, Offset node) noexcept
 {
-    if (a.is_empty() || b.is_empty())
+    for (const Offset child : pass.graph.children(node))
     {
-        return Interval::empty();
+        if (pass.nodes[to_size(child)].is_empty())
+        {
+            return Interval::empty();
+        }
     }
     return {0.0, 1.0};
 }
@@ -206,7 +209,10 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
     case Operator::Less:
     case Operator::Greater:
     case Operator::NotEqual:
-        return undecided(first(pass, node), second(pass, node));
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+        return undecided(pass, node);
     }
     return Interval::entire();
 }

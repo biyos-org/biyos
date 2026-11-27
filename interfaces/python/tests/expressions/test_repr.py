@@ -40,6 +40,9 @@ def direct(x):
         (Expression(Operator.LESS, (a, b), ()), "lt(x[0], x[1])"),
         (Expression(Operator.GREATER, (a, b), ()), "gt(x[0], x[1])"),
         (Expression(Operator.NOT_EQUAL, (a, b), ()), "ne(x[0], x[1])"),
+        (Expression(Operator.AND, (a, b), ()), "and(x[0], x[1])"),
+        (Expression(Operator.OR, (a, b), ()), "or(x[0], x[1])"),
+        (Expression(Operator.NOT, (a,), ()), "not(x[0])"),
     ]
 
 
