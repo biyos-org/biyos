@@ -1405,16 +1405,16 @@ class Model:
         return count.value
 
     @overload
-    def addcst(self, idx: One[Function], cst: Real | None) -> None: ...
+    def addcst(self, fun: One[Function], cst: Real | None) -> None: ...
 
     @overload
     def addcst(
-        self, idx: Many[Function, Functions], cst: Sequence[Real] | None
+        self, fun: Many[Function, Functions], cst: Sequence[Real] | None
     ) -> None: ...
 
     def addcst(
         self,
-        idx: Selection[Function, Functions],
+        fun: Selection[Function, Functions],
         cst: Real | Sequence[Real] | None,
     ) -> None:
         """Add to the constants of functions.
@@ -1423,7 +1423,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions.
             An index or a view stands for one function, and each other argument
             is then a scalar.
@@ -1437,20 +1437,20 @@ class Model:
         BIYOS_addcstsp
         BIYOS_addcstrg
         """
-        one, n, chosen = self._selected("BIYOS_addcst", Functions, idx)
+        one, n, chosen = self._selected("BIYOS_addcst", Functions, fun)
         self._call(*chosen, doubles("cst", cst, n, one))
 
     @overload
-    def setcst(self, idx: One[Function], cst: Real | None) -> None: ...
+    def setcst(self, fun: One[Function], cst: Real | None) -> None: ...
 
     @overload
     def setcst(
-        self, idx: Many[Function, Functions], cst: Sequence[Real] | None
+        self, fun: Many[Function, Functions], cst: Sequence[Real] | None
     ) -> None: ...
 
     def setcst(
         self,
-        idx: Selection[Function, Functions],
+        fun: Selection[Function, Functions],
         cst: Real | Sequence[Real] | None,
     ) -> None:
         """Set the constants of functions.
@@ -1459,7 +1459,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions.
             An index or a view stands for one function, and each other argument
             is then a scalar.
@@ -1471,21 +1471,21 @@ class Model:
         BIYOS_setcstsp
         BIYOS_setcstrg
         """
-        one, n, chosen = self._selected("BIYOS_setcst", Functions, idx)
+        one, n, chosen = self._selected("BIYOS_setcst", Functions, fun)
         self._call(*chosen, doubles("cst", cst, n, one))
 
     @overload
-    def getcst(self, idx: One[Function]) -> Real: ...
+    def getcst(self, fun: One[Function]) -> Real: ...
 
     @overload
-    def getcst(self, idx: Many[Function, Functions]) -> list[Real]: ...
+    def getcst(self, fun: Many[Function, Functions]) -> list[Real]: ...
 
-    def getcst(self, idx: Selection[Function, Functions]) -> Real | list[Real]:
+    def getcst(self, fun: Selection[Function, Functions]) -> Real | list[Real]:
         """Read the constants of functions.
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once.
             An index or a view stands for one function, and the result is then a
             scalar.
@@ -1501,54 +1501,54 @@ class Model:
         BIYOS_getcstrg
         """
         cst: Real | list[Real]
-        (cst,) = self._getlist("BIYOS_getcst", Functions, idx, c_real)
+        (cst,) = self._getlist("BIYOS_getcst", Functions, fun, c_real)
         return cst
 
     @overload
-    def setfunname(self, idx: One[Function], name: str) -> None: ...
+    def setfunname(self, fun: One[Function], name: str) -> None: ...
 
     @overload
     def setfunname(
-        self, idx: Many[Function, Functions], name: Sequence[str]
+        self, fun: Many[Function, Functions], name: Sequence[str]
     ) -> None: ...
 
     def setfunname(
-        self, idx: Selection[Function, Functions], name: str | Sequence[str]
+        self, fun: Selection[Function, Functions], name: str | Sequence[str]
     ) -> None:
         """Name functions of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        fun
             The functions to name.
             An index or a view stands for one function, and each other argument
             is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``fun``.
 
         See Also
         --------
         BIYOS_setfunnamesp
         BIYOS_setfunnamerg
         """
-        self._setname("BIYOS_setfunname", Functions, idx, name)
+        self._setname("BIYOS_setfunname", Functions, fun, name)
 
     @overload
-    def getfunname(self, idx: One[Function]) -> str | None: ...
+    def getfunname(self, fun: One[Function]) -> str | None: ...
 
     @overload
     def getfunname(
-        self, idx: Many[Function, Functions]
+        self, fun: Many[Function, Functions]
     ) -> list[str | None]: ...
 
     def getfunname(
-        self, idx: Selection[Function, Functions]
+        self, fun: Selection[Function, Functions]
     ) -> str | None | list[str | None]:
         """Return the names of functions, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        fun
             The functions to read.
             An index or a view stands for one function, and the result is then a
             scalar.
@@ -1563,7 +1563,7 @@ class Model:
         BIYOS_getfunnamesp
         BIYOS_getfunnamerg
         """
-        return self._getname("BIYOS_getfunname", Functions, idx)
+        return self._getname("BIYOS_getfunname", Functions, fun)
 
     def getfunidx(self, name: Sequence[str]) -> Functions:
         """Return the named functions, as ``getvaridx`` does.
@@ -1575,7 +1575,7 @@ class Model:
 
         Returns
         -------
-        idx
+        fun
             The function that alone holds each name, as a ``Functions`` block.
 
         See Also
@@ -1584,12 +1584,12 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getfunidx, Functions, name)
 
-    def delfunname(self, idx: Selection[Function, Functions]) -> None:
+    def delfunname(self, fun: Selection[Function, Functions]) -> None:
         """Remove the names of functions, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        fun
             The functions that lose their names.
             An index or a view stands for one function.
 
@@ -1598,9 +1598,9 @@ class Model:
         BIYOS_delfunnamesp
         BIYOS_delfunnamerg
         """
-        self._delname("BIYOS_delfunname", Functions, idx)
+        self._delname("BIYOS_delfunname", Functions, fun)
 
-    def delfun(self, idx: Selection[Function, Functions]) -> list[Index]:
+    def delfun(self, fun: Selection[Function, Functions]) -> list[Index]:
         """Delete functions that nothing uses.
 
         The functions left keep their order and are numbered from 0 again, and
@@ -1611,7 +1611,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions to delete, in any order, none of them twice.
             An index or a view stands for one function.
 
@@ -1633,9 +1633,9 @@ class Model:
         BIYOS_delfunsp
         BIYOS_delfunrg
         """
-        return self._delete("BIYOS_delfun", Functions, idx)
+        return self._delete("BIYOS_delfun", Functions, fun)
 
-    def clrfun(self, idx: Selection[Function, Functions]) -> None:
+    def clrfun(self, fun: Selection[Function, Functions]) -> None:
         """Empty functions of the model, so they can be built again.
 
         Each function given has the constant 0, no term and no expression
@@ -1643,7 +1643,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions, any of them more than once.
             An index or a view stands for one function.
 
@@ -1652,7 +1652,7 @@ class Model:
         BIYOS_clrfunsp
         BIYOS_clrfunrg
         """
-        rows = picked(self, Functions, idx)
+        rows = picked(self, Functions, fun)
         self._call(*self._chosen("BIYOS_clrfun", Functions, rows))
 
     @overload
@@ -1741,13 +1741,13 @@ class Model:
         )
 
     def getnrlinterm(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> Offset:
         """Count the linear terms of functions.
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -1762,11 +1762,11 @@ class Model:
         BIYOS_getnrlintermsp
         BIYOS_getnrlintermrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         return self._count("BIYOS_getnrlinterm", Functions, every)
 
     def getrlinterm(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> tuple[Functions, Variables, list[Real]]:
         """Read the linear terms of functions, by function.
 
@@ -1776,14 +1776,14 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
         Returns
         -------
         fun
-            The function of each term, the terms of ``idx[0]`` first, as a
+            The function of each term, the terms of ``fun[0]`` first, as a
             ``Functions`` block.
         var
             The variable of each term, each function's sorted by variable,
@@ -1796,7 +1796,7 @@ class Model:
         BIYOS_getrlintermsp
         BIYOS_getrlintermrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         types = (Functions, Variables)
         found, values = self._terms("rlinterm", types, every, 0)
         return found[0], found[1], values
@@ -2032,13 +2032,13 @@ class Model:
         )
 
     def getnquadterm(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> Offset:
         """Count the quadratic terms of functions.
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -2053,11 +2053,11 @@ class Model:
         BIYOS_getnquadtermsp
         BIYOS_getnquadtermrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         return self._count("BIYOS_getnquadterm", Functions, every)
 
     def getquadterm(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> tuple[Functions, Variables, Variables, list[Real]]:
         """Read the quadratic terms of functions.
 
@@ -2067,14 +2067,14 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
         Returns
         -------
         fun
-            The function of each term, the terms of ``idx[0]`` first, as a
+            The function of each term, the terms of ``fun[0]`` first, as a
             ``Functions`` block.
         var1
             The first variable of each term, never above the second, each
@@ -2089,7 +2089,7 @@ class Model:
         BIYOS_getquadtermsp
         BIYOS_getquadtermrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         types = (Functions, Variables, Variables)
         found, values = self._terms("quadterm", types, every, 0)
         functions, firsts, seconds = found
@@ -2215,28 +2215,28 @@ class Model:
         return list(nodes)
 
     @overload
-    def attachexpr(self, idx: One[Function], node: Offset) -> None: ...
+    def attachexpr(self, fun: One[Function], node: Offset) -> None: ...
 
     @overload
     def attachexpr(
-        self, idx: Many[Function, Functions], node: Sequence[Offset]
+        self, fun: Many[Function, Functions], node: Sequence[Offset]
     ) -> None: ...
 
     def attachexpr(
         self,
-        idx: Selection[Function, Functions],
+        fun: Selection[Function, Functions],
         node: Offset | Sequence[Offset],
     ) -> None:
         """Add expressions to functions of the model.
 
-        Function ``idx[k]`` becomes ``f + e``, where ``e`` is node
+        Function ``fun[k]`` becomes ``f + e``, where ``e`` is node
         ``node[k]``. The constant, linear and quadratic terms of the
         expression's top sum join the function's, and the rest becomes its
         expression, or is summed with the expression it has.
 
         Parameters
         ----------
-        idx
+        fun
             The functions that gain an expression, each listed once.
             An index or a view stands for one function, and each other argument
             is then a scalar.
@@ -2248,17 +2248,17 @@ class Model:
         BIYOS_attachexprsp
         BIYOS_attachexprrg
         """
-        one, n, chosen = self._selected("BIYOS_attachexpr", Functions, idx)
+        one, n, chosen = self._selected("BIYOS_attachexpr", Functions, fun)
         self._call(*chosen, int64s("node", node, n, one))
 
     def getnexpr(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> tuple[Offset, Offset]:
         """Count the postfix entries and values of expressions of functions.
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -2274,7 +2274,7 @@ class Model:
         BIYOS_getnexprsp
         BIYOS_getnexprrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         nnz = c_offset()
         nval = c_offset()
         chosen = self._chosen("BIYOS_getnexpr", Functions, every)
@@ -2282,7 +2282,7 @@ class Model:
         return nnz.value, nval.value
 
     def getexpr(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> tuple[list[Offset], list[Operator], list[Offset], list[Real]]:
         """Read the expressions of functions, in the postfix of ``addexpr``.
 
@@ -2296,7 +2296,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -2316,7 +2316,7 @@ class Model:
         BIYOS_getexprsp
         BIYOS_getexprrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         nnz, nval = self.getnexpr(every)
         chosen = self._chosen("BIYOS_getexpr", Functions, every)
         counts = (c_offset * len(every))()
@@ -5507,13 +5507,13 @@ class Model:
         return list(hv)
 
     def getngpat(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> Offset:
         """Count the entries of the Jacobian pattern of functions.
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -5528,11 +5528,11 @@ class Model:
         BIYOS_getngpatsp
         BIYOS_getngpatrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         return self._count("BIYOS_getngpat", Functions, every)
 
     def getgpat(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> tuple[list[Offset], Variables]:
         """Read the Jacobian pattern of functions.
 
@@ -5541,7 +5541,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -5551,14 +5551,14 @@ class Model:
             The number of variables in the pattern of each function.
         var
             The variables of each function's pattern, sorted, those of
-            ``idx[0]`` first, as a ``Variables`` block.
+            ``fun[0]`` first, as a ``Variables`` block.
 
         See Also
         --------
         BIYOS_getgpatsp
         BIYOS_getgpatrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         return self._pattern("gpat", Functions, every)
 
     def getnhpat(
