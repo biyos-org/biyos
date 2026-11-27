@@ -9,5 +9,6 @@ namespace biyos
 {
 
 Curvature condition_curvature(Interval condition, std::span<Argument> arguments) noexcept;
+Curvature branch_curvature(Interval condition, std::span<Argument> arguments) noexcept;
 
 }

@@ -147,8 +147,9 @@ Curvature outer_of(const Graph &graph,
     case Operator::Or:
     case Operator::Not:
         return condition_curvature(enclosure_of(operands.nodes, node), arguments);
-    case Operator::Atan2:
     case Operator::If:
+        return branch_curvature(operands[0], arguments);
+    case Operator::Atan2:
         return unknown(arguments);
     }
     return Curvature::Unknown;
