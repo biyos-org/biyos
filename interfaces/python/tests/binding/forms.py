@@ -322,3 +322,11 @@ def lookups(mdl: Model) -> None:
 def callbacks(mdl: Model) -> None:
     assert_type(mdl.getcbfun(0), Functions)
     assert_type(mdl.getcbvar(0), Variables | None)
+
+
+def terms(mdl: Model) -> None:
+    assert_type(mdl.getrlinterm(), tuple[Functions, Variables, list[float]])
+    assert_type(mdl.getclinterm(), tuple[Functions, Variables, list[float]])
+    assert_type(
+        mdl.getquadterm(), tuple[Functions, Variables, Variables, list[float]]
+    )

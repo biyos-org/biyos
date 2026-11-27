@@ -5,6 +5,7 @@ import pytest
 
 import biyos
 from biyos._capi import lib
+from listed import indexed
 
 LINEAR = biyos.Model.addlinterm
 COLUMN = biyos.Model.addclinterm
@@ -30,7 +31,7 @@ def model(env):
 
 
 def held(model):
-    return model.getrlinterm(), model.getquadterm()
+    return indexed(model.getrlinterm()), indexed(model.getquadterm())
 
 
 def built(env, add, *arguments):
@@ -93,7 +94,11 @@ def test_blocks(model):
     x = model.addvar(3)
     f = model.addfun(2)
     model.addlinterm(f, [x[:2], x[2:]], [array.array("d", [1, 2]), (3,)])
-    assert model.getrlinterm(f) == ([10, 10, 11], [10, 11, 12], [1, 2, 3])
+    assert indexed(model.getrlinterm(f)) == (
+        [10, 10, 11],
+        [10, 11, 12],
+        [1, 2, 3],
+    )
 
 
 def test_set(env):
@@ -180,9 +185,9 @@ def test_named(model):
 def test_read_back(env, model):
     model.addlinterm(FUN, VAR, COEF)
     model.addquadterm(FUN, VAR, SECONDS, COEF)
-    by_function = built(env, LINEAR, *model.getrlinterm())
-    by_variable = built(env, LINEAR, *model.getclinterm())
-    quadratic = built(env, QUADRATIC, *model.getquadterm())
+    by_function = built(env, LINEAR, *indexed(model.getrlinterm()))
+    by_variable = built(env, LINEAR, *indexed(model.getclinterm()))
+    quadratic = built(env, QUADRATIC, *indexed(model.getquadterm()))
     assert by_function[0] == held(model)[0]
     assert by_variable[0] == held(model)[0]
     assert quadratic[1] == held(model)[1]
@@ -220,7 +225,7 @@ def test_views(model):
     f = model.addfun(1)
     model.addlinterm(f[0], x[0], 2.0)
     model.addclinterm(x[0], [f[0]], [3.0])
-    assert model.getrlinterm(f) == ([10], [10], [5.0])
+    assert indexed(model.getrlinterm(f)) == ([10], [10], [5.0])
 
 
 @pytest.mark.parametrize(

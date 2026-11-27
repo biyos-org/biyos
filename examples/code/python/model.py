@@ -31,5 +31,5 @@ with biyos.Env() as env, biyos.Model(env) as model:
     x, f = build(model)
     fun, var1, var2, coef = model.getquadterm(f[2:])
     print(f"function 2 has {model.getnquadterm(f[2:])} quadratic terms")
-    assert (var1, var2) == ([0, 1], [0, 1])
+    assert (var1.indices(), var2.indices()) == ([0, 1], [0, 1])
     assert len(x) == model.getnvar() == 3

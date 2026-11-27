@@ -30,7 +30,7 @@ def summary(model):
         model.getobjname(objectives),
         model.getobjsense(objectives),
         model.getcst(range(model.getnfun())),
-        model.getrlinterm(),
+        indexed(model.getrlinterm()),
     )
 
 

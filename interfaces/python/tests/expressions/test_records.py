@@ -2,6 +2,7 @@ import pytest
 
 import biyos
 from biyos import ObjectiveSense, Operator
+from listed import indexed
 
 STALE = "the variable predates a deletion from its model"
 VAR = Operator.VARIABLE
@@ -28,8 +29,8 @@ def x(model):
 def records(model, funs):
     return (
         model.getcst(funs),
-        model.getrlinterm(funs),
-        model.getquadterm(funs),
+        indexed(model.getrlinterm(funs)),
+        indexed(model.getquadterm(funs)),
         model.getexpr(funs),
     )
 
@@ -50,8 +51,8 @@ def objective(model, objs):
 def test_acceptance(model, x):
     objs = model.addobj(x[0] + x[1] + x[2] ** 2 + biyos.log(x[3]))
     funs = objective(model, objs)
-    assert model.getrlinterm(funs) == ([0, 0], [0, 1], [1.0, 1.0])
-    assert model.getquadterm(funs) == ([0], [2], [2], [1.0])
+    assert indexed(model.getrlinterm(funs)) == ([0, 0], [0, 1], [1.0, 1.0])
+    assert indexed(model.getquadterm(funs)) == ([0], [2], [2], [1.0])
     cnt, code, arg, val = model.getexpr(funs)
     assert (cnt, code, arg, val) == ([2], [VAR, Operator.LOG], [3, 1], [])
 
@@ -181,7 +182,7 @@ def test_shared(model, x):
 def test_variable(model, x):
     objs = model.addobj(x[2])
     funs = objective(model, objs)
-    assert model.getrlinterm(funs) == ([0], [2], [1.0])
+    assert indexed(model.getrlinterm(funs)) == ([0], [2], [1.0])
     assert model.getexpr(funs) == ([1], [CONST], [0], [0.0])
 
 
@@ -211,7 +212,7 @@ def test_functions(model, x):
 
 def bounds(model, cons):
     funs, lb, ub = model.getcon(cons)
-    return model.getrlinterm(funs)[1:], lb, ub
+    return indexed(model.getrlinterm(funs))[1:], lb, ub
 
 
 def test_less(model, x):
@@ -235,7 +236,7 @@ def test_equal(model, x):
     cons = model.addcon(x[0] * x[1] == 2)
     funs, lb, ub = model.getcon(cons)
     assert (lb, ub) == ([2.0], [2.0])
-    assert model.getquadterm(funs) == ([0], [0], [1], [1.0])
+    assert indexed(model.getquadterm(funs)) == ([0], [0], [1], [1.0])
 
 
 def test_constant(model, x):

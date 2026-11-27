@@ -8,6 +8,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel
 from biyos._capi import lib
+from listed import indexed
 from number import Growing, Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
@@ -67,13 +68,13 @@ def recorded(seen, function, *arguments):
 
 def test_add(model):
     assert model.addquadterm(*SAMPLE) is None
-    assert model.getquadterm() == spread(SORTED)
+    assert indexed(model.getquadterm()) == spread(SORTED)
 
 
 def test_sums(model):
     add_sample(model)
     model.addquadterm([0, 2, 2], [2, 1, 1], [2, 0, 2], [5, 1, 4])
-    found = model.getquadterm()
+    found = indexed(model.getquadterm())
     assert found[0] == [0, 0, 0, 0, 2, 2, 2]
     assert found[1] == [0, 1, 1, 2, 0, 1, 2]
     assert found[2] == [0, 1, 2, 2, 1, 2, 2]
@@ -85,9 +86,9 @@ def test_coordinates(model):
     firsts = [1, 2, 0, 1, 2]
     seconds = [1, 2, 0, 0, 1]
     model.addquadterm(fun, firsts, seconds, [0.0, 1.0, 2.0, 3.0, -1.0])
-    assert model.getquadterm() == spread(SORTED)
+    assert indexed(model.getquadterm()) == spread(SORTED)
     model.addquadterm([], [], [], [])
-    assert model.getquadterm() == spread(SORTED)
+    assert indexed(model.getquadterm()) == spread(SORTED)
 
 
 def test_shuffled(env):
@@ -100,12 +101,12 @@ def test_shuffled(env):
                 model.addvar(n_vars)
                 model.addfun(n_funs)
             add_random(draw, source, n_vars, n_funs)
-            found = source.getquadterm()
+            found = indexed(source.getquadterm())
             order = list(range(len(found[3])))
             draw.shuffle(order)
             shuffled = ([column[k] for k in order] for column in found)
             target.addquadterm(*shuffled)
-            assert target.getquadterm() == found
+            assert indexed(target.getquadterm()) == found
 
 
 def add_random(draw, model, n_vars, n_funs):
@@ -120,7 +121,7 @@ def add_random(draw, model, n_vars, n_funs):
 
 def test_misplaced(model):
     add_sample(model)
-    before = model.getquadterm()
+    before = indexed(model.getquadterm())
     terms = ([0, 1, 0], [0, 1, 1], [1, 1, 0], [1, 2, 3])
     message = refusal(model.addquadterm, *terms)
     assert message == "invalid argument: function 0: pair (0, 1) is repeated"
@@ -135,26 +136,26 @@ def test_misplaced(model):
         model.addquadterm([0, 1], [0, 1], [0], [1.0, 2.0])
     with pytest.raises(ValueError, match="coef has length 1, not 2"):
         model.addquadterm([0, 1], [0, 1], [0, 1], [1.0])
-    assert model.getquadterm() == before
+    assert indexed(model.getquadterm()) == before
 
 
 def test_range(model):
     add_sample(model)
     tail = ([2, 2], [0, 2], [1, 2], [3.0, 1.0])
-    assert model.getquadterm(range(1, 3)) == tail
-    assert model.getquadterm([1, 2]) == tail
-    assert model.getquadterm(range(3, 3)) == ([], [], [], [])
+    assert indexed(model.getquadterm(range(1, 3))) == tail
+    assert indexed(model.getquadterm([1, 2])) == tail
+    assert indexed(model.getquadterm(range(3, 3))) == ([], [], [], [])
 
 
 def test_listed(model):
     add_sample(model)
-    assert model.getquadterm([2, 0, 2]) == (
+    assert indexed(model.getquadterm([2, 0, 2])) == (
         [2, 2, 0, 0, 0, 2, 2],
         [0, 2, 0, 1, 1, 0, 2],
         [1, 2, 0, 1, 2, 1, 2],
         [3.0, 1.0, 2.0, 0.0, -1.0, 3.0, 1.0],
     )
-    assert model.getquadterm([1, 1]) == ([], [], [], [])
+    assert indexed(model.getquadterm([1, 1])) == ([], [], [], [])
 
 
 def test_counts(model):
@@ -189,14 +190,16 @@ def expect_lists(draw, model, count):
     listed = [draw.randrange(count) for _ in range(draw.randint(0, 8))]
     wanted = ([], [], [], [])
     for index in listed:
-        for column, more in zip(wanted, model.getquadterm([index])):
+        for column, more in zip(wanted, indexed(model.getquadterm([index]))):
             column += more
-    assert model.getquadterm(listed) == wanted
+    assert indexed(model.getquadterm(listed)) == wanted
     assert model.getnquadterm(listed) == len(wanted[3])
     pos = draw.randint(0, count)
     n = draw.randint(0, count - pos)
     span = range(pos, pos + n)
-    assert model.getquadterm(span) == model.getquadterm(list(span))
+    assert indexed(model.getquadterm(span)) == indexed(
+        model.getquadterm(list(span))
+    )
 
 
 def test_values(model, monkeypatch):
@@ -208,14 +211,14 @@ def test_values(model, monkeypatch):
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][5]) == values.buffer_info()[0]
     expected = ([0, 0], [0, 0], [0, 1], [2.0, 1.0])
-    assert model.getquadterm() == expected
+    assert indexed(model.getquadterm()) == expected
 
 
 def test_growing(model):
     add_sample(model)
     grow = partial(model.addfun, 3)
-    expected = model.getquadterm()
-    assert model.getquadterm([0, Growing(1, grow), 2]) == expected
+    expected = indexed(model.getquadterm())
+    assert indexed(model.getquadterm([0, Growing(1, grow), 2])) == expected
     assert model.getnfun() == 9
 
 
@@ -224,8 +227,8 @@ def test_stale(model, monkeypatch):
     monkeypatch.setattr(model, "getnfun", lambda: 0)
     spy = Room(lib.BIYOS_getquadtermrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getquadtermrg", spy)
-    assert model.getquadterm(range(3)) == spread(SORTED)
-    assert model.getquadterm() == NONE
+    assert indexed(model.getquadterm(range(3))) == spread(SORTED)
+    assert indexed(model.getquadterm()) == NONE
 
 
 def test_outside(model, monkeypatch):
@@ -246,7 +249,7 @@ def test_sequences(model):
     four = array.array("d", [4])
     model.addquadterm(range(2, 3), read_only, (1,), four)
     model.addquadterm((Number(0), Number(0)), firsts, range(1, 3), [1, 2])
-    functions, firsts, seconds, values = model.getquadterm()
+    functions, firsts, seconds, values = indexed(model.getquadterm())
     assert functions == [0, 0, 2]
     assert firsts == [0, 1, 1]
     assert seconds == [2, 2, 2]
@@ -258,7 +261,7 @@ def test_views(env, model):
     f = model.addfun(2)
     model.addquadterm(f, [x[1], 0], x, [1.0, 2.0])
     model.addquadterm([f[0]], [x[0]], [x[1]], [3.0])
-    found = model.getquadterm(f)
+    found = indexed(model.getquadterm(f))
     assert found == ([3, 4], [3, 0], [4, 4], [4.0, 2.0])
     other = biyos.Model(env)
     y = other.addvar(1)
@@ -278,14 +281,14 @@ def test_views(env, model):
         model.addquadterm(x, [0, 0], [0, 0], [1.0, 1.0])
     with pytest.raises(TypeError, match="idx is a variable, not a"):
         model.getquadterm([x[0]])
-    assert model.getquadterm(f) == found
+    assert indexed(model.getquadterm(f)) == found
 
 
 def test_gone(model, monkeypatch):
     x = model.addvar(2)
     f = model.addfun(2)
     model.addquadterm(f, [0, 1], x, [1.0, 2.0])
-    before = model.getquadterm()
+    before = indexed(model.getquadterm())
     function, other, variable = f[0], f[1], x[1]
     model._gen += 1
     seen = []
@@ -311,7 +314,7 @@ def test_gone(model, monkeypatch):
         with pytest.raises(ValueError, match=message):
             call()
     assert seen == []
-    assert model.getquadterm() == before
+    assert indexed(model.getquadterm()) == before
 
 
 def test_refused(model):
@@ -335,7 +338,7 @@ def test_refused(model):
     )
     message = refusal(model.getquadterm, [4])
     assert message == "invalid argument: function 4: unknown"
-    found = model.getquadterm()
+    found = indexed(model.getquadterm())
     assert found[0] == [0, 0, 0, 1, 2, 2]
     assert found[3] == [2.0, 0.0, -1.0, LARGE, 3.0, 1.0]
 
@@ -347,7 +350,7 @@ def test_lengths(model):
         model.addquadterm([0, 0], [0, 1], [0], [1.0, 2.0])
     with pytest.raises(ValueError, match="coef has length 1, not 0"):
         model.addquadterm([], [], [], [1.0])
-    assert model.getquadterm() == NONE
+    assert indexed(model.getquadterm()) == NONE
 
 
 def test_numbers(model):
@@ -361,7 +364,7 @@ def test_numbers(model):
         model.addquadterm([0.0], [0], [0], [1.0])
     with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
         model.getquadterm(range(2**32, 2**32 + 1))
-    assert model.getquadterm() == NONE
+    assert indexed(model.getquadterm()) == NONE
 
 
 def test_locked(env, model):
@@ -372,14 +375,14 @@ def test_locked(env, model):
             model.addquadterm([0], [0], [0], [1.0])
         except biyos.Error as error:
             seen.append(str(error))
-        seen.append(model.getquadterm())
+        seen.append(indexed(model.getquadterm()))
 
     add_sample(model)
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
     assert seen == [LOCKED, spread(SORTED)]
-    assert model.getquadterm() == spread(SORTED)
+    assert indexed(model.getquadterm()) == spread(SORTED)
 
 
 def test_closed(env):
@@ -398,8 +401,8 @@ def test_closed(env):
 def test_copy(env, model):
     add_sample(model)
     copy = model.copy()
-    assert copy.getquadterm() == spread(SORTED)
+    assert indexed(copy.getquadterm()) == spread(SORTED)
     copy.addquadterm([1], [0], [0], [1.0])
-    assert model.getquadterm() == spread(SORTED)
-    assert copy.getquadterm()[0] == [0, 0, 0, 1, 2, 2]
+    assert indexed(model.getquadterm()) == spread(SORTED)
+    assert indexed(copy.getquadterm())[0] == [0, 0, 0, 1, 2, 2]
     copy.close()

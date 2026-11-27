@@ -19,8 +19,10 @@ def build(model):
 with biyos.Env() as env, biyos.Model(env) as model:
     build(model)
     f = model.getobj()[0]
-    assert model.getrlinterm(f) == ([0, 0], [0, 1], [1.0, 1.0])
-    assert model.getquadterm(f) == ([0], [2], [2], [1.0])
+    fun, var, coef = model.getrlinterm(f)
+    assert (fun.indices(), var.indices(), coef) == ([0, 0], [0, 1], [1.0, 1.0])
+    fun, var1, var2, coef = model.getquadterm(f)
+    assert (var1.indices(), var2.indices(), coef) == ([2], [2], [1.0])
     assert model.getexpr(f)[1] == [Operator.VARIABLE, Operator.LOG]
     code = model.getexpr(model.getcon()[0][:1])[1]
     assert code.count(Operator.KEEP) == code.count(Operator.REFERENCE) == 1

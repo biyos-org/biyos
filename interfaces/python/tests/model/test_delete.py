@@ -5,6 +5,7 @@ import pytest
 
 import biyos
 from biyos._capi import lib
+from listed import indexed
 from refusal import refusal
 
 IN_USE = -203
@@ -214,14 +215,14 @@ def test_variables(model):
     assert model.getvarname(range(2)) == ["r1", None]
     assert model.getvar()[1] == [1.0, 3.0]
     assert model.getvartol(range(2)) == ([0.25, 0.0625], [None, None])
-    assert model.getrlinterm() == ([0], [1], [4.0])
-    assert model.getquadterm() == ([0], [0], [1], [7.0])
+    assert indexed(model.getrlinterm()) == ([0], [1], [4.0])
+    assert indexed(model.getquadterm()) == ([0], [0], [1], [7.0])
     assert model.getcst(range(2)) == [1.0, 2.0]
     with pytest.raises(ValueError, match=STALE):
         model.getvar(x)
     assert model.delvar(range(1, 2)) == [0, -1]
     assert model.getvarname(range(1)) == ["r1"]
-    assert model.getquadterm() == ([], [], [], [])
+    assert indexed(model.getquadterm()) == ([], [], [], [])
 
 
 def variable_in_use(model, idx):

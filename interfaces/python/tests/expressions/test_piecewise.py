@@ -3,6 +3,7 @@ import pytest
 import biyos
 from biyos import Operator
 from biyos._model.postfix import postfix
+from listed import indexed
 from refusal import refusal
 
 PWL = Operator.PIECEWISE_LINEAR
@@ -123,7 +124,7 @@ def test_same_graph(env):
 def test_objective(model, x, p):
     o = model.addobj(biyos.piecewise(p[0], x[0]) + x[1])
     f = model.getobj(o)[0]
-    assert model.getrlinterm(f) == (f.indices(), [3], [1.0])
+    assert indexed(model.getrlinterm(f)) == (f.indices(), [3], [1.0])
     assert model.getexpr(f) == ([2], [VAR, PWL], [2, 2], [])
 
 
