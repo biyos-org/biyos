@@ -73,42 +73,48 @@ STORED = [
     (ge, 2, "e", ([-biyos.inf], [2.0]), SINGLE),
     (eq, 2, "e", ([2.0], [2.0]), SINGLE),
 ]
-LESS = ComparisonSense.LESS_EQUAL
-GREATER = ComparisonSense.GREATER_EQUAL
+LESS_EQUAL = ComparisonSense.LESS_EQUAL
+GREATER_EQUAL = ComparisonSense.GREATER_EQUAL
 EQUAL = ComparisonSense.EQUAL
-BELOW = ComparisonSense.LESS
-ABOVE = ComparisonSense.GREATER
-DIFFERENT = ComparisonSense.NOT_EQUAL
+LESS = ComparisonSense.LESS
+GREATER = ComparisonSense.GREATER
+NOT_EQUAL = ComparisonSense.NOT_EQUAL
 PAIR = "piecewise(0, x[1]) <= piecewise(1, x[2])"
 OPERANDS = [
-    (le, "e", "f", ("e", LESS, "f"), "exp(x[0]) <= log(x[1])"),
-    (ge, "e", "f", ("e", GREATER, "f"), "exp(x[0]) >= log(x[1])"),
+    (le, "e", "f", ("e", LESS_EQUAL, "f"), "exp(x[0]) <= log(x[1])"),
+    (ge, "e", "f", ("e", GREATER_EQUAL, "f"), "exp(x[0]) >= log(x[1])"),
     (eq, "e", "f", ("e", EQUAL, "f"), "exp(x[0]) == log(x[1])"),
-    (le, "e", "p", ("e", LESS, "p"), "exp(x[0]) <= piecewise(0, x[1])"),
-    (ge, "e", "p", ("e", GREATER, "p"), "exp(x[0]) >= piecewise(0, x[1])"),
+    (le, "e", "p", ("e", LESS_EQUAL, "p"), "exp(x[0]) <= piecewise(0, x[1])"),
+    (
+        ge,
+        "e",
+        "p",
+        ("e", GREATER_EQUAL, "p"),
+        "exp(x[0]) >= piecewise(0, x[1])",
+    ),
     (eq, "e", "p", ("e", EQUAL, "p"), "exp(x[0]) == piecewise(0, x[1])"),
-    (lt, "e", "f", ("e", BELOW, "f"), "exp(x[0]) < log(x[1])"),
-    (gt, "e", "f", ("e", ABOVE, "f"), "exp(x[0]) > log(x[1])"),
-    (ne, "e", "f", ("e", DIFFERENT, "f"), "exp(x[0]) != log(x[1])"),
-    (ne, "v", "p", ("v", DIFFERENT, "p"), "x[2] != piecewise(0, x[1])"),
-    (le, "p", "e", ("p", LESS, "e"), "piecewise(0, x[1]) <= exp(x[0])"),
-    (le, "v", "p", ("v", LESS, "p"), "x[2] <= piecewise(0, x[1])"),
-    (le, "p", "v", ("p", LESS, "v"), "piecewise(0, x[1]) <= x[2]"),
-    (le, "p", "q", ("p", LESS, "q"), PAIR),
+    (lt, "e", "f", ("e", LESS, "f"), "exp(x[0]) < log(x[1])"),
+    (gt, "e", "f", ("e", GREATER, "f"), "exp(x[0]) > log(x[1])"),
+    (ne, "e", "f", ("e", NOT_EQUAL, "f"), "exp(x[0]) != log(x[1])"),
+    (ne, "v", "p", ("v", NOT_EQUAL, "p"), "x[2] != piecewise(0, x[1])"),
+    (le, "p", "e", ("p", LESS_EQUAL, "e"), "piecewise(0, x[1]) <= exp(x[0])"),
+    (le, "v", "p", ("v", LESS_EQUAL, "p"), "x[2] <= piecewise(0, x[1])"),
+    (le, "p", "v", ("p", LESS_EQUAL, "v"), "piecewise(0, x[1]) <= x[2]"),
+    (le, "p", "q", ("p", LESS_EQUAL, "q"), PAIR),
 ]
 NUMBERS = [
-    (le, "e", 2, LESS, "exp(x[0]) <= 2"),
-    (ge, "e", 2, GREATER, "exp(x[0]) >= 2"),
+    (le, "e", 2, LESS_EQUAL, "exp(x[0]) <= 2"),
+    (ge, "e", 2, GREATER_EQUAL, "exp(x[0]) >= 2"),
     (eq, "e", 2, EQUAL, "exp(x[0]) == 2"),
-    (le, 2, "e", GREATER, "exp(x[0]) >= 2"),
-    (ge, 2, "e", LESS, "exp(x[0]) <= 2"),
+    (le, 2, "e", GREATER_EQUAL, "exp(x[0]) >= 2"),
+    (ge, 2, "e", LESS_EQUAL, "exp(x[0]) <= 2"),
     (eq, 2, "e", EQUAL, "exp(x[0]) == 2"),
-    (lt, "e", 2, BELOW, "exp(x[0]) < 2"),
-    (gt, "e", 2, ABOVE, "exp(x[0]) > 2"),
-    (ne, "e", 2, DIFFERENT, "exp(x[0]) != 2"),
-    (lt, 2, "e", ABOVE, "exp(x[0]) > 2"),
-    (gt, 2, "e", BELOW, "exp(x[0]) < 2"),
-    (ne, 2, "e", DIFFERENT, "exp(x[0]) != 2"),
+    (lt, "e", 2, LESS, "exp(x[0]) < 2"),
+    (gt, "e", 2, GREATER, "exp(x[0]) > 2"),
+    (ne, "e", 2, NOT_EQUAL, "exp(x[0]) != 2"),
+    (lt, 2, "e", GREATER, "exp(x[0]) > 2"),
+    (gt, 2, "e", LESS, "exp(x[0]) < 2"),
+    (ne, 2, "e", NOT_EQUAL, "exp(x[0]) != 2"),
 ]
 
 
