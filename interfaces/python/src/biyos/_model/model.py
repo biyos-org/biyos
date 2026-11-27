@@ -100,7 +100,7 @@ from biyos._model.expression import (
     Operand,
 )
 from biyos._model.operators import Operator, node_values, postfix_values
-from biyos._model.postfix import attached, expression_of, given
+from biyos._model.postfix import Made, attached, expression_of, given
 
 
 class VariableKind(IntEnum):
@@ -333,9 +333,7 @@ def _total(counts: Array[c_offset] | None) -> Offset:
     return sum(counts)
 
 
-def _bounded(
-    con: Logical, made: dict[int, Expression]
-) -> tuple[Operand, Real, Real]:
+def _bounded(con: Logical, made: Made) -> tuple[Operand, Real, Real]:
     if isinstance(con, Comparison):
         con._refuse_open()
         return con._body, con._lb, con._ub
@@ -3212,7 +3210,7 @@ class Model:
             doubles("coef", coef, n),
         )
         if trees is not None:
-            funs = attached(self, trees)
+            funs = attached(self, trees, {})
         idx = indices_of(self, Functions, "fun", funs, n)
         return self._added(Objectives, lib.BIYOS_addobj, n, idx, *arrays)
 
@@ -5650,10 +5648,10 @@ class Model:
     ) -> Constraints:
         if lb is not None or ub is not None:
             raise TypeError("lb and ub come from the comparisons")
-        made: dict[int, Expression] = {}
+        made: Made = {}
         rows = [_bounded(con, made) for con in cons]
         bodies, lower, upper = zip(*rows)
-        funs = attached(self, bodies)
+        funs = attached(self, bodies, made)
         return self.addcon(funs, lower, upper)
 
     def _peer(self, name: str, value: object) -> "Model":

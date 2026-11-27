@@ -454,6 +454,16 @@ class Piecewise(Expression):
         self._idx = idx
 
 
+class IfElse(Operation):
+    __slots__ = ("_cond",)
+
+    def __init__(
+        self, cond: "Comparison | Condition", a: Operand, b: Operand
+    ) -> None:
+        super().__init__(Operator.IF, (a, b), ())
+        self._cond = cond
+
+
 class Logical:
     __slots__ = ()
 
@@ -1265,3 +1275,45 @@ def min(x: Term, y: Term, *rest: Term) -> Expression:
         When an operand is of another type.
     """
     return _apply(Operator.MIN, x, y, *rest)
+
+
+def ifelse(cond: Comparison | Condition, a: Term, b: Term) -> Expression:
+    """Return the expression that picks between two operands by a condition.
+
+    The expression is ``a`` where ``cond`` holds and ``b`` elsewhere, and
+    so are its derivatives. Both branches are evaluated, and the one not
+    taken never reaches the value, so ``ifelse(x >= 0, sqrt(x), 0)`` is 0
+    at ``x = -1``. The model that takes the expression refuses a
+    comparison with an infinite bound in ``cond``, as ``Model.addcon``
+    refuses it in a condition.
+
+    Parameters
+    ----------
+    cond
+        A comparison or a condition, such as ``x[0] >= x[1]`` or
+        ``(x[0] <= 1) | (x[1] >= 2)``.
+    a
+        The operand where ``cond`` holds, an expression, a variable or a
+        number.
+    b
+        The operand where ``cond`` does not hold, an expression, a
+        variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``ifelse(cond, a, b)``, ``Operator.IF`` of its
+        operands.
+
+    Raises
+    ------
+    TypeError
+        When ``cond`` is not a comparison or a condition, or ``a`` or
+        ``b`` is of another type.
+    """
+    if not isinstance(cond, Logical):
+        found = type(cond).__name__
+        raise TypeError(
+            f"cond must be a comparison or a condition, not {found}"
+        )
+    return IfElse(cond, _operand(a), _operand(b))

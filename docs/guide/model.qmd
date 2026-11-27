@@ -145,6 +145,8 @@ Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A const
 
 A condition (a comparison or a `BIYOS_OP_AND`, `BIYOS_OP_OR` or `BIYOS_OP_NOT` node) is 1 where it holds and 0 elsewhere. A function whose expression is a condition, with no constant and no terms, makes a logical constraint with bounds 1 and 1: the condition holds.
 
+`BIYOS_OP_IF` takes a condition and two nodes, and is the second where the condition holds and the third elsewhere. Both branches are evaluated, and the one not taken never reaches the value or its derivatives.
+
 `BIYOS_setconnamesp` names constraints, and `BIYOS_getconidx` finds them by name ([Names](#sec-model-names)).
 
 ## Objectives {#sec-model-objectives}

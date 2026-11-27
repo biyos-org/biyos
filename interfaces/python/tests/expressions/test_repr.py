@@ -43,7 +43,7 @@ def direct(x):
         (Expression(Operator.AND, (a, b), ()), "and(x[0], x[1])"),
         (Expression(Operator.OR, (a, b), ()), "or(x[0], x[1])"),
         (Expression(Operator.NOT, (a,), ()), "not(x[0])"),
-        (Expression(Operator.IF, (a, b, a), ()), "if(x[0], x[1], x[0])"),
+        (Expression(Operator.IF, (a, b, a), ()), "ifelse(x[0], x[1], x[0])"),
     ]
 
 
@@ -79,6 +79,7 @@ def built(x):
         (biyos.signpow(a, 1.5), "signpow(x[0], 1.5)"),
         (biyos.erf(a), "erf(x[0])"),
         (biyos.piecewise(1, a + c), "piecewise(1, x[0] + x[2])"),
+        (biyos.ifelse(a >= b, a, 2), "ifelse(x[0] >= x[1], x[0], 2)"),
         ((a + b) * (a + b), "(x[0] + x[1])*(x[0] + x[1])"),
     ]
 
@@ -200,6 +201,7 @@ NAMES = (
     "signpow",
     "erf",
     "piecewise",
+    "ifelse",
     "inf",
 )
 
