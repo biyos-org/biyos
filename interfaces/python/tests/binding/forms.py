@@ -2,7 +2,21 @@ from typing import TypeAlias
 
 from typing_extensions import assert_type
 
-from biyos import Functions, Model, ObjectiveSense, Variables, VariableKind
+from biyos import (
+    Complements,
+    Cones,
+    Constraints,
+    Function,
+    Functions,
+    Indicators,
+    Model,
+    Objectives,
+    ObjectiveSense,
+    SpecialOrderedSets,
+    Variable,
+    Variables,
+    VariableKind,
+)
 
 one = 0
 flat = [0, 1]
@@ -175,8 +189,8 @@ def constraints(mdl: Model) -> None:
     assert_type(mdl.getconbnd(flat), Pairs)
     assert_type(mdl.getcontol(one), Tolerance)
     assert_type(mdl.getcontol(flat), Tolerances)
-    assert_type(mdl.getcon(one), tuple[int, float, float])
-    assert_type(mdl.getcon(flat), tuple[list[int], list[float], list[float]])
+    assert_type(mdl.getcon(one), tuple[Function, float, float])
+    assert_type(mdl.getcon(flat), tuple[Functions, list[float], list[float]])
     assert_type(mdl.getconname(one), Label)
     assert_type(mdl.getconname(flat), Labels)
     mdl.setconbnd(one, real, reals)  # type: ignore[call-overload]
@@ -206,10 +220,10 @@ def objectives(mdl: Model) -> None:
     assert_type(mdl.getobjcoef(flat), list[float])
     assert_type(mdl.getobjtol(one), Pair)
     assert_type(mdl.getobjtol(flat), Pairs)
-    assert_type(mdl.getobj(one), tuple[int, ObjectiveSense, int, float])
+    assert_type(mdl.getobj(one), tuple[Function, ObjectiveSense, int, float])
     assert_type(
         mdl.getobj(flat),
-        tuple[list[int], list[ObjectiveSense], list[int], list[float]],
+        tuple[Functions, list[ObjectiveSense], list[int], list[float]],
     )
     assert_type(mdl.getobjname(one), Label)
     assert_type(mdl.getobjname(flat), Labels)
@@ -234,12 +248,12 @@ def indicators(mdl: Model) -> None:
     mdl.setindname(flat, names)
     assert_type(mdl.getindbnd(one), Pair)
     assert_type(mdl.getindbnd(flat), Pairs)
-    assert_type(mdl.getindvar(one), tuple[int, int])
-    assert_type(mdl.getindvar(flat), tuple[list[int], list[int]])
-    assert_type(mdl.getind(one), tuple[int, int, int, float, float])
+    assert_type(mdl.getindvar(one), tuple[Variable, int])
+    assert_type(mdl.getindvar(flat), tuple[Variables, list[int]])
+    assert_type(mdl.getind(one), tuple[Variable, int, Function, float, float])
     assert_type(
         mdl.getind(flat),
-        tuple[list[int], list[int], list[int], list[float], list[float]],
+        tuple[Variables, list[int], Functions, list[float], list[float]],
     )
     assert_type(mdl.getindname(one), Label)
     assert_type(mdl.getindname(flat), Labels)
@@ -276,10 +290,10 @@ def others(mdl: Model) -> None:
     assert_type(mdl.getcconbnd(flat), Pairs)
     assert_type(mdl.getccontol(one), Tolerance)
     assert_type(mdl.getccontol(flat), Tolerances)
-    assert_type(mdl.getccon(one), tuple[int, int, float, float])
+    assert_type(mdl.getccon(one), tuple[Function, Function, float, float])
     assert_type(
         mdl.getccon(flat),
-        tuple[list[int], list[int], list[float], list[float]],
+        tuple[Functions, Functions, list[float], list[float]],
     )
     assert_type(mdl.getcconname(one), Label)
     assert_type(mdl.getcconname(flat), Labels)
@@ -292,3 +306,19 @@ def others(mdl: Model) -> None:
     mdl.setccontol(one, reals)  # type: ignore[call-overload]
     mdl.setccontol(flat, real)  # type: ignore[call-overload]
     mdl.setcconname(one, names)  # type: ignore[call-overload]
+
+
+def lookups(mdl: Model) -> None:
+    assert_type(mdl.getvaridx(names), Variables)
+    assert_type(mdl.getfunidx(names), Functions)
+    assert_type(mdl.getconidx(names), Constraints)
+    assert_type(mdl.getobjidx(names), Objectives)
+    assert_type(mdl.getindidx(names), Indicators)
+    assert_type(mdl.getsosidx(names), SpecialOrderedSets)
+    assert_type(mdl.getconeidx(names), Cones)
+    assert_type(mdl.getcconidx(names), Complements)
+
+
+def callbacks(mdl: Model) -> None:
+    assert_type(mdl.getcbfun(0), Functions)
+    assert_type(mdl.getcbvar(0), Variables | None)

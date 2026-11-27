@@ -8,6 +8,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel
 from biyos._capi import lib
+from listed import indexed
 from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
@@ -50,7 +51,7 @@ def recorded(seen, function, *arguments):
 def test_add(model):
     added = add_sample(model)
     assert model.getncon() == 3
-    assert model.getcon() == SAMPLE
+    assert indexed(model.getcon()) == SAMPLE
     assert type(added) is biyos.Constraints
     assert [index(constraint) for constraint in added] == [0, 1, 2]
 
@@ -67,9 +68,9 @@ def test_block(model):
 
 def test_range(model):
     add_sample(model)
-    assert model.getcon(range(1, 3)) == ([0, 1], LOWER[1:], UPPER[1:])
-    assert model.getcon([2, 1]) == ([1, 0], LOWER[:0:-1], UPPER[:0:-1])
-    assert model.getcon(range(3, 3)) == ([], [], [])
+    assert indexed(model.getcon(range(1, 3))) == ([0, 1], LOWER[1:], UPPER[1:])
+    assert indexed(model.getcon([2, 1])) == ([1, 0], LOWER[:0:-1], UPPER[:0:-1])
+    assert indexed(model.getcon(range(3, 3))) == ([], [], [])
 
 
 def test_defaults(model):
@@ -78,14 +79,14 @@ def test_defaults(model):
     model.addcon([0], ub=[0.5])
     low, high = -biyos.inf, biyos.inf
     functions, lower, upper = model.getcon()
-    assert functions == [0, 1, 1, 0]
+    assert functions.indices() == [0, 1, 1, 0]
     assert lower == [low, low, 0.5, low]
     assert upper == [high, high, high, 0.5]
 
 
 def test_shared(model):
     model.addcon([1, 1], [0.0, -biyos.inf], [1.0, 3.0])
-    found = model.getcon()
+    found = indexed(model.getcon())
     assert found == ([1, 1], [0.0, -biyos.inf], [1.0, 3.0])
     assert model.getnfun() == 2
 
@@ -95,7 +96,7 @@ def test_functions(model):
     model.addcon(f, [0.0] * 3)
     model.addcon(f[1:])
     model.addcon([f[0], 1])
-    assert model.getcon()[0] == [2, 3, 4, 3, 4, 2, 1]
+    assert model.getcon()[0].indices() == [2, 3, 4, 3, 4, 2, 1]
 
 
 def test_views(env, model):
@@ -126,7 +127,7 @@ def test_views(env, model):
         model.setconbnd(f, [0.0])
     model.setconbnd([c[2]], [5.0], [6.0])
     model.setconbnd(c[:2], ub=[7.0, 8.0])
-    found = model.getcon(c[1:])
+    found = indexed(model.getcon(c[1:]))
     assert found == ([0, 1], [-biyos.inf, 5.0], [8.0, 6.0])
     assert model.getncon() == 3
 
@@ -141,7 +142,7 @@ def test_gone(model):
         model.setconbnd([view], [0.0])
     with pytest.raises(ValueError, match="the block predates a deletion"):
         model.setconbnd(c, [0.0] * 3)
-    assert model.getcon() == SAMPLE
+    assert indexed(model.getcon()) == SAMPLE
 
 
 def test_values(model, monkeypatch):
@@ -154,7 +155,7 @@ def test_values(model, monkeypatch):
     assert len(seen) == 1
     assert ctypes.addressof(seen[0][3]) == lower.buffer_info()[0]
     assert ctypes.addressof(seen[0][4]) == upper.buffer_info()[0]
-    assert model.getcon() == ([0, 1], [0.0, 1.0], [2.0, 3.0])
+    assert indexed(model.getcon()) == ([0, 1], [0.0, 1.0], [2.0, 3.0])
 
 
 def test_stale(model, monkeypatch):
@@ -162,8 +163,8 @@ def test_stale(model, monkeypatch):
     monkeypatch.setattr(model, "getncon", lambda: 0)
     spy = Room(lib.BIYOS_getconrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getconrg", spy)
-    assert model.getcon(range(3)) == SAMPLE
-    assert model.getcon(range(1, 1)) == ([], [], [])
+    assert indexed(model.getcon(range(3))) == SAMPLE
+    assert indexed(model.getcon(range(1, 1))) == ([], [], [])
 
 
 def test_outside(model, monkeypatch):
@@ -179,7 +180,7 @@ def test_sequences(model):
     model.addcon(functions, range(2), array.array("d", [2.0, 3.0]))
     read_only = memoryview(array.array("d", [4.0]).tobytes()).cast("d")
     model.addcon((Number(1),), read_only, [5])
-    found = model.getcon()
+    found = indexed(model.getcon())
     assert found == ([1, 0, 1], [0.0, 1.0, 4.0], [2.0, 3.0, 5.0])
 
 
@@ -187,9 +188,9 @@ def test_bounds(model):
     model.addcon([0, 1])
     model.setconbnd([1, 0], lb=[1.0, 2.0])
     model.setconbnd([1], ub=[3.0])
-    assert model.getcon() == ([0, 1], [2.0, 1.0], [biyos.inf, 3.0])
+    assert indexed(model.getcon()) == ([0, 1], [2.0, 1.0], [biyos.inf, 3.0])
     model.setconbnd([0, 0], [5.0, 6.0], [7.0, 8.0])
-    assert model.getcon([0]) == ([0], [6.0], [8.0])
+    assert indexed(model.getcon([0])) == ([0], [6.0], [8.0])
 
 
 def test_listed(env, model):
@@ -234,7 +235,7 @@ def test_refused(model):
     assert message == "invalid argument: constraint 4: unknown"
     message = refusal(model.getcon, [-1])
     assert message == "invalid argument: constraint -1: unknown"
-    assert model.getcon() == SAMPLE
+    assert indexed(model.getcon()) == SAMPLE
 
 
 def test_lengths(model):
@@ -267,7 +268,7 @@ def test_locked(env, model):
                 call()
             except biyos.Error as error:
                 seen.append(str(error))
-        seen.append(model.getcon())
+        seen.append(indexed(model.getcon()))
         seen.append(model.getconbnd([1]))
 
     add_sample(model)
@@ -300,7 +301,7 @@ def test_on(env, model):
     assert type(d) is biyos.Constraints
     copy.setconbnd(d, [0.0, 0.0])
     assert copy.getcon()[1] == [-1.0, 0.0, 0.0]
-    assert model.getcon() == SAMPLE
+    assert indexed(model.getcon()) == SAMPLE
     smaller = biyos.Model(env)
     smaller.addfun(1)
     smaller.addcon([0, 0])

@@ -2,6 +2,7 @@ import pytest
 
 import biyos
 from biyos import FileFormat
+from listed import indexed
 from samples import LP_MPS, STRUCTURE_MPS, written
 
 UNSUPPORTED = -201
@@ -45,7 +46,8 @@ def test_round_trip(env, tmp_path):
 def structure(model):
     sets = range(model.getnsos())
     names = model.getsosname(sets)
-    return summary(model), model.getind(), model.getsos(), names
+    indicators = indexed(model.getind())
+    return summary(model), indicators, model.getsos(), names
 
 
 def test_structure(env, tmp_path):

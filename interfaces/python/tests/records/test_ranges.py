@@ -12,7 +12,7 @@ from biyos import (
 )
 from biyos._capi import lib
 from biyos._convert.numbers import c_index
-from listed import listed
+from listed import indexed, listed
 from refusal import refusal
 
 PAIRS = [
@@ -140,7 +140,7 @@ def selection(block, kind):
 
 def read(model, call, idx):
     found = getattr(model, f"get{call}")(idx)
-    return found if isinstance(found, tuple) else (found,)
+    return indexed(found) if isinstance(found, tuple) else (found,)
 
 
 def records(kind):
@@ -200,7 +200,7 @@ def test_readers(blocks, monkeypatch, family, kind):
     trace(monkeypatch, seen, f"get{family}")
     got = getattr(model, f"get{family}")(selection(found[family], kind))
     picked = tuple([column[k] for k in records(kind)] for column in every)
-    assert got == picked
+    assert indexed(got) == indexed(picked)
     assert seen == [FORMS[kind]]
 
 

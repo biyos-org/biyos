@@ -5,6 +5,7 @@ import pytest
 
 import biyos
 from biyos import EventKind, EventLevel, VariableKind
+from listed import indexed
 from refusal import LOCKED, refusal
 
 NAN = float("nan")
@@ -41,7 +42,7 @@ def add_sample(model):
 def test_add(model):
     added = add_sample(model)
     assert model.getnind() == 3
-    assert model.getind() == SAMPLE
+    assert indexed(model.getind()) == SAMPLE
     assert type(added) is biyos.Indicators
     assert [index(indicator) for indicator in added] == [0, 1, 2]
     assert all(type(item) is biyos.Indicator for item in added)
@@ -50,17 +51,17 @@ def test_add(model):
 
 def test_range(model):
     add_sample(model)
-    found = model.getind(range(1, 3))
+    found = indexed(model.getind(range(1, 3)))
     assert found == tuple(column[1:] for column in SAMPLE)
-    found = model.getind([2, 0, 2])
+    found = indexed(model.getind([2, 0, 2]))
     assert found == tuple([c[2], c[0], c[2]] for c in SAMPLE)
-    assert model.getind(range(3, 3)) == ([], [], [], [], [])
+    assert indexed(model.getind(range(3, 3))) == ([], [], [], [], [])
 
 
 def test_defaults(model):
     model.addind([0, 2], [1, 0], [0, 1])
     model.addind([2], [1], [1], lb=[0.5])
-    found = model.getind()
+    found = indexed(model.getind())
     assert found[3] == [-biyos.inf, -biyos.inf, 0.5]
     assert found[4] == [biyos.inf] * 3
 
@@ -68,8 +69,8 @@ def test_defaults(model):
 def test_shared(model):
     model.addcon([1], [0.0], [2.0])
     model.addind([0, 2], [1, 1], [1, 1], [3.0, -1.0], [3.0, 1.0])
-    assert model.getcon() == ([1], [0.0], [2.0])
-    assert model.getind()[2:] == ([1, 1], [3.0, -1.0], [3.0, 1.0])
+    assert indexed(model.getcon()) == ([1], [0.0], [2.0])
+    assert indexed(model.getind()[2:]) == ([1, 1], [3.0, -1.0], [3.0, 1.0])
     assert model.getnfun() == 2
 
 
@@ -78,15 +79,15 @@ def test_bounds(model):
     model.setindbnd([1, 0], lb=[2.0, 3.0])
     model.setindbnd(range(2, 3), ub=[5.0])
     assert model.getindbnd(range(3)) == ([3.0, 2.0, 0.0], [4.0, 1.0, 5.0])
-    assert model.getind()[:3] == (VARIABLES, VALUES, FUNCTIONS)
+    assert indexed(model.getind()[:3]) == (VARIABLES, VALUES, FUNCTIONS)
 
 
 def test_switch(model):
     i = add_sample(model)
     model.setindvar([2, 1], [2, 0], [1, 1])
     model.setindvar(i[:1], val=[0])
-    assert model.getindvar(i) == ([0, 0, 2], [0, 1, 1])
-    assert model.getind()[2:] == (FUNCTIONS, LOWER, UPPER)
+    assert indexed(model.getindvar(i)) == ([0, 0, 2], [0, 1, 1])
+    assert indexed(model.getind()[2:]) == (FUNCTIONS, LOWER, UPPER)
 
 
 def test_views(env, model):
@@ -94,7 +95,8 @@ def test_views(env, model):
     x = model.addvar(1, [BINARY])
     f = model.addfun(1)
     model.addind(x, [1], f)
-    assert model.getind([3]) == ([3], [1], [2], [-biyos.inf], [biyos.inf])
+    found = indexed(model.getind([3]))
+    assert found == ([3], [1], [2], [-biyos.inf], [biyos.inf])
     other = biyos.Model(env)
     y = other.addvar(1, [BINARY])
     g = other.addfun(1)
@@ -109,7 +111,7 @@ def test_views(env, model):
         model.setindbnd([j[0]], [0.0])
     with pytest.raises(TypeError, match="of functions, not indicators"):
         model.getindvar(f)
-    assert model.getindvar(i[1:]) == ([2, 0], [0, 0])
+    assert indexed(model.getindvar(i[1:])) == ([2, 0], [0, 0])
     other.close()
 
 
@@ -135,7 +137,7 @@ def test_refused(model):
     assert message == "invalid argument: indicator 1: variable 1 is not binary"
     message = refusal(model.getind, [3])
     assert message == "invalid argument: indicator 3: unknown"
-    assert model.getind() == SAMPLE
+    assert indexed(model.getind()) == SAMPLE
 
 
 def test_kind(model):
@@ -172,7 +174,7 @@ def test_locked(env, model):
                 call()
             except biyos.Error as error:
                 seen.append(str(error))
-        seen.append(model.getind())
+        seen.append(indexed(model.getind()))
 
     add_sample(model)
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
@@ -200,8 +202,8 @@ def test_closed(env):
 def test_copy(model):
     i = add_sample(model)
     copy = model.copy()
-    assert copy.getind() == SAMPLE
+    assert indexed(copy.getind()) == SAMPLE
     copy.setindbnd(i[1:].on(copy), [0.0, 0.0])
     assert copy.getindbnd(range(3))[0] == [-biyos.inf, 0.0, 0.0]
-    assert model.getind() == SAMPLE
+    assert indexed(model.getind()) == SAMPLE
     copy.close()

@@ -44,7 +44,7 @@ def by_hand(env, code, arg, val):
 
 
 def objective(model, objs):
-    return model.getobj(objs)[0]
+    return model.getobj(objs)[0].indices()
 
 
 def test_acceptance(model, x):
@@ -190,7 +190,8 @@ def test_objectives(model, x):
     objs = model.addobj([x[0], 2 * x[1]], sense, [1, 0], [0.5, 2.0])
     assert type(objs) is biyos.Objectives
     funs, read, prio, coef = model.getobj(objs)
-    assert (funs, read, prio, coef) == ([0, 1], sense, [1, 0], [0.5, 2.0])
+    found = (funs.indices(), read, prio, coef)
+    assert found == ([0, 1], sense, [1, 0], [0.5, 2.0])
     assert model.getnfun() == 2
 
 

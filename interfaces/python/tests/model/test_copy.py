@@ -8,6 +8,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel, ObjectiveSense, VariableKind
 from biyos._capi import lib
+from listed import indexed
 from spies import Trap, followed, interrupted, preceded, traced
 
 BUSY = (
@@ -78,7 +79,7 @@ def read(model):
         model.getccon(),
         model.getccontol(range(model.getnccon())),
     )
-    return repr(found)
+    return repr(indexed(found))
 
 
 def freed(log, function, handle):

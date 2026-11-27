@@ -201,12 +201,16 @@ def indices_of(
     items = _indices(model, family, name, values, one)
     if isinstance(items, memoryview):
         _sized(name, items, count)
-        return (c_index * count).from_buffer(items)
+        return index_array(items)
     return _array(c_index, name, items, count)
 
 
 def index_view(count: int) -> "memoryview[int]":
     return memoryview(array(c_index._type_, [0]) * count)
+
+
+def index_array(view: "memoryview[int]") -> Array[c_index]:
+    return (c_index * len(view)).from_buffer(view)
 
 
 def _counted(name: str, counts: Array[c_offset]) -> None:

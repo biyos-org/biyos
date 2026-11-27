@@ -176,7 +176,7 @@ def test_shared(model):
     model.addcone([ConeKind.SECOND_ORDER], [2], [1, 0])
     model.addcone([ConeKind.NONNEGATIVE], [2], [2, 1])
     assert model.getcone()[2] == [1, 0, 2, 1]
-    assert model.getcon()[0] == [1]
+    assert model.getcon()[0].indices() == [1]
     assert model.getnfun() == 5
 
 

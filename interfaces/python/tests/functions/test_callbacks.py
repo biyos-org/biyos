@@ -95,8 +95,8 @@ def test_covered(model):
     model.addcb([2, 0])
     model.addcb(model.addfun(2))
     assert [model.getncbfun(cb) for cb in (0, 1)] == [2, 2]
-    assert model.getcbfun(0) == [2, 0]
-    assert model.getcbfun(1) == [3, 4]
+    assert model.getcbfun(0).indices() == [2, 0]
+    assert model.getcbfun(1).indices() == [3, 4]
 
 
 def test_listed(model):
@@ -104,7 +104,9 @@ def test_listed(model):
     assert model.addcb([1], []) == 1
     assert model.addcb([2], model.addvar(2)) == 2
     assert model.addcb([0]) == 3
-    assert [model.getcbvar(cb) for cb in range(4)] == [[2, 0], [], [3, 4], None]
+    found = [model.getcbvar(cb) for cb in range(3)]
+    assert [block.indices() for block in found] == [[2, 0], [], [3, 4]]
+    assert model.getcbvar(3) is None
 
 
 def test_values(model, seen):
@@ -359,7 +361,7 @@ def test_locked(env, model):
             except biyos.Error as error:
                 found.append(str(error))
         found.append(model.getcbdata(0))
-        found.append(model.getcbfun(0))
+        found.append(model.getcbfun(0).indices())
 
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
@@ -392,10 +394,10 @@ def test_deleted(model):
         model.setcbf(cb, partial(constant, 10.0 * (cb + 1)))
     assert model.evalf([0.0] * 3) == [10.0, 20.0, 50.0]
     assert model.delcb([2, 0]) == [-1, 0, -1]
-    assert model.getcbfun(0) == [1, 2]
+    assert model.getcbfun(0).indices() == [1, 2]
     assert model.evalf([0.0] * 3) == [0.0, 20.0, 20.0]
     assert model.delfun([0]) == [-1, 0, 1]
-    assert model.getcbfun(0) == [0, 1]
+    assert model.getcbfun(0).indices() == [0, 1]
     assert model.evalf([0.0] * 3) == [20.0, 20.0]
     assert model.delcb(range(1)) == [-1]
     assert model.delvar([2]) == [0, 1, -1]
@@ -409,7 +411,7 @@ def test_delete_refused(model):
     assert refusal(model.delcb, [0, 0]) == bad + repeated
     with pytest.raises(TypeError, match="an entry of idx must be an int"):
         model.delcb([0.0])
-    assert model.getcbfun(0) == [0]
+    assert model.getcbfun(0).indices() == [0]
 
 
 def test_delete_kept(env, model):

@@ -9,6 +9,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel, ObjectiveSense
 from biyos._capi import lib
+from listed import indexed
 from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
@@ -60,7 +61,7 @@ def recorded(seen, function, *arguments):
 def test_add(model):
     added = add_sample(model)
     assert model.getnobj() == 3
-    found = model.getobj()
+    found = indexed(model.getobj())
     assert found == SAMPLE
     assert model.getobjtol(added) == TOLERANCES
     assert all(type(sense) is ObjectiveSense for sense in found[1])
@@ -81,9 +82,9 @@ def test_block(model):
 def test_range(model):
     add_sample(model)
     tail = tuple(values[1:] for values in SAMPLE)
-    assert model.getobj(range(1, 3)) == tail
-    assert model.getobj([1, 2]) == tail
-    assert model.getobj(range(3, 3)) == NONE
+    assert indexed(model.getobj(range(1, 3))) == tail
+    assert indexed(model.getobj([1, 2])) == tail
+    assert indexed(model.getobj(range(3, 3))) == NONE
 
 
 def test_defaults(model):
@@ -93,7 +94,7 @@ def test_defaults(model):
     model.addobj([1])
     model.addobj([0])
     functions, senses, priorities, weights = model.getobj()
-    assert functions == [0, 1, 1, 0, 1, 0]
+    assert functions.indices() == [0, 1, 1, 0, 1, 0]
     assert senses == [MIN, MIN, MIN, MAX, MIN, MIN]
     assert priorities == [0, 1, -7, 3, 4, 5]
     assert weights == [1.0, 1.0, 1.0, 2.0, 1.0, 1.0]
@@ -105,9 +106,9 @@ def test_shared(model):
     model.addobj([1, 1], [MIN, MAX])
     model.addobj([1], coef=[2.0])
     functions, senses, priorities, weights = model.getobj()
-    assert (functions, senses) == ([1, 1, 1], [MIN, MAX, MIN])
+    assert (functions.indices(), senses) == ([1, 1, 1], [MIN, MAX, MIN])
     assert (priorities, weights) == ([0, 1, 2], [1.0, 1.0, 2.0])
-    assert model.getcon() == ([1], [0.0], [1.0])
+    assert indexed(model.getcon()) == ([1], [0.0], [1.0])
     assert model.getnfun() == 2
 
 
@@ -116,7 +117,7 @@ def test_functions(model):
     model.addobj(f, coef=[2.0] * 3)
     model.addobj(f[1:])
     model.addobj([f[0], 1])
-    assert model.getobj()[0] == [2, 3, 4, 3, 4, 2, 1]
+    assert model.getobj()[0].indices() == [2, 3, 4, 3, 4, 2, 1]
 
 
 def test_views(env, model):
@@ -150,7 +151,7 @@ def test_views(env, model):
     model.setobjsense([o[2]], [MAX])
     model.setobjprio([o[2]], [5])
     model.setobjcoef(o[:2], [7.0, 8.0])
-    found = model.getobj(o[1:])
+    found = indexed(model.getobj(o[1:]))
     assert found[1:4] == ([MIN, MAX], [-1, 5], [8.0, 3.0])
     assert model.getnobj() == 3
 
@@ -165,7 +166,7 @@ def test_gone(model):
         model.setobjsense([view], [MIN])
     with pytest.raises(ValueError, match="the block predates a deletion"):
         model.setobjsense(o, [MIN] * 3)
-    assert model.getobj() == SAMPLE
+    assert indexed(model.getobj()) == SAMPLE
 
 
 def test_values(model, monkeypatch):
@@ -191,8 +192,8 @@ def test_stale(model, monkeypatch):
     monkeypatch.setattr(model, "getnobj", lambda: 0)
     spy = Room(lib.BIYOS_getobjrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getobjrg", spy)
-    assert model.getobj(range(3)) == SAMPLE
-    assert model.getobj(range(1, 1)) == NONE
+    assert indexed(model.getobj(range(3))) == SAMPLE
+    assert indexed(model.getobj(range(1, 1))) == NONE
 
 
 def test_outside(model, monkeypatch):
@@ -209,7 +210,7 @@ def test_sequences(model):
     model.addobj(functions, senses, range(2), [2, 3])
     read_only = memoryview(array.array("d", [4.0]).tobytes()).cast("d")
     model.addobj((Number(1),), (Number(2),), (Number(-3),), read_only)
-    found = model.getobj()
+    found = indexed(model.getobj())
     assert found == ([1, 0, 1], [MAX, MIN, MAX], [0, 1, -3], [2, 3, 4])
 
 
@@ -220,7 +221,7 @@ def test_set(model):
     model.setobjcoef([0, 2], [4.0, 8.0])
     model.setobjtol([1], atol=[biyos.inf], rtol=[0.5])
     model.setobjtol([1, 2], None, None)
-    found = model.getobj()
+    found = indexed(model.getobj())
     assert found[0] == FUNCTIONS
     assert found[1:3] == ([MIN, MIN, MAX], [2, -1, -5])
     assert found[3] == [4.0, 1.0, 8.0]
@@ -228,7 +229,7 @@ def test_set(model):
     assert model.getobjtol(range(3)) == tolerances
     model.setobjsense([0, 0], [MAX, MIN])
     model.setobjprio([0, 0], [5, 6])
-    assert model.getobj([0])[1:3] == ([MIN], [6])
+    assert indexed(model.getobj([0])[1:3]) == ([MIN], [6])
 
 
 def test_listed(model):
@@ -264,7 +265,7 @@ def test_setters(model):
     model.setobjtol(idx)
     model.setobjtol([2], atol=[0.5])
     model.setobjtol([1], rtol=[biyos.inf])
-    found = model.getobj()
+    found = indexed(model.getobj())
     assert found == (FUNCTIONS, [MAX, MIN, MAX], [-3, -1, 7], [4, 1, 8])
     tolerances = ([biyos.inf, 1.5, 0.5], [0.25, biyos.inf, 0.0])
     assert model.getobjtol(range(3)) == tolerances
@@ -296,7 +297,7 @@ def test_listed_refusals(env, model):
     assert message == (
         "invalid argument: objective 0: relative tolerance is NaN"
     )
-    assert model.getobj() == SAMPLE
+    assert indexed(model.getobj()) == SAMPLE
     c = model.addcon([0])
     with pytest.raises(TypeError, match="is a constraint, not an objective"):
         model.getobjsense([c[0]])
@@ -356,7 +357,7 @@ def test_refused(model):
     assert message == "invalid argument: objective 4: unknown"
     message = refusal(model.getobj, [-1])
     assert message == "invalid argument: objective -1: unknown"
-    assert model.getobj() == SAMPLE
+    assert indexed(model.getobj()) == SAMPLE
     assert model.getobjtol(range(3)) == TOLERANCES
 
 
@@ -401,7 +402,7 @@ def test_locked(env, model):
                 call()
             except biyos.Error as error:
                 seen.append(str(error))
-        seen.append(model.getobj())
+        seen.append(indexed(model.getobj()))
         seen.append(model.getobjsense([0]))
         seen.append(model.getobjprio([0]))
         seen.append(model.getobjcoef([0]))
@@ -444,7 +445,7 @@ def test_on(env, model):
     assert type(p) is biyos.Objectives
     copy.setobjsense(p, [MAX, MAX])
     assert copy.getobj()[1] == [MAX, MAX, MAX]
-    assert model.getobj() == SAMPLE
+    assert indexed(model.getobj()) == SAMPLE
     smaller = biyos.Model(env)
     smaller.addfun(1)
     smaller.addobj([0, 0])
