@@ -71,11 +71,12 @@ def counted(idx: object) -> tuple[bool, int]:
 def picked(
     model: "Model",
     family: type[Block[View]],
+    name: str,
     idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
 ) -> Sequence[SupportsIndex] | Block[View]:
     if isinstance(idx, Sized):
         return idx
-    return [index_of(model, family, "idx", idx)]
+    return [index_of(model, family, name, idx)]
 
 
 def _shared(values: Any) -> "TypeGuard[WriteableBuffer]":

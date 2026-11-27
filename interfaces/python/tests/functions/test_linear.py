@@ -187,11 +187,11 @@ def test_views(env, model):
         model.addlinterm([0], [y[0]], [1.0])
     with pytest.raises(ValueError, match="fun is a block of another"):
         model.addlinterm(g, [0], [1.0])
-    with pytest.raises(ValueError, match="idx is a variable of another"):
+    with pytest.raises(ValueError, match="var is a variable of another"):
         model.getclinterm([y[0]])
     with pytest.raises(TypeError, match="is a function, not a variable"):
         model.addlinterm([0], [f[0]], [1.0])
-    with pytest.raises(TypeError, match="idx is a function, not a"):
+    with pytest.raises(TypeError, match="var is a function, not a"):
         model.getclinterm([f[0]])
 
 
@@ -233,7 +233,7 @@ def test_numbers(model):
         model.addlinterm([0], [0.0], [1.0])
     with pytest.raises(TypeError, match="an entry of fun must be an"):
         model.addlinterm([0.0], [0], [1.0])
-    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="var: 4294967296 does not fit"):
         model.getclinterm(range(2**32, 2**32 + 1))
     assert terms(model) == SORTED
 

@@ -1132,7 +1132,7 @@ class Model:
         BIYOS_delvartolsp
         BIYOS_delvartolrg
         """
-        rows = picked(self, Variables, var)
+        rows = picked(self, Variables, "var", var)
         self._call(*self._chosen("BIYOS_delvartol", Variables, rows))
 
     def getnvar(self) -> Index:
@@ -1652,7 +1652,7 @@ class Model:
         BIYOS_clrfunsp
         BIYOS_clrfunrg
         """
-        rows = picked(self, Functions, fun)
+        rows = picked(self, Functions, "fun", fun)
         self._call(*self._chosen("BIYOS_clrfun", Functions, rows))
 
     @overload
@@ -2688,7 +2688,7 @@ class Model:
         """
         one, n = counted(cb)
         found = (c_index * self._callbacks.total())()
-        self._call(lib.BIYOS_delcbsp, n, ints("idx", cb, n, one), found)
+        self._call(lib.BIYOS_delcbsp, n, ints("cb", cb, n, one), found)
         renumbered = list(found)
         self._callbacks.deleted(renumbered)
         return renumbered
@@ -2936,7 +2936,7 @@ class Model:
         BIYOS_delcontolsp
         BIYOS_delcontolrg
         """
-        rows = picked(self, Constraints, con)
+        rows = picked(self, Constraints, "con", con)
         self._call(*self._chosen("BIYOS_delcontol", Constraints, rows))
 
     def getncon(self) -> Index:
@@ -4675,7 +4675,7 @@ class Model:
         BIYOS_delconetolsp
         BIYOS_delconetolrg
         """
-        rows = picked(self, Cones, cone)
+        rows = picked(self, Cones, "cone", cone)
         self._call(*self._chosen("BIYOS_delconetol", Cones, rows))
 
     def getncone(self) -> Index:
@@ -5168,7 +5168,7 @@ class Model:
         BIYOS_delccontolsp
         BIYOS_delccontolrg
         """
-        rows = picked(self, Complements, ccon)
+        rows = picked(self, Complements, "ccon", ccon)
         self._call(*self._chosen("BIYOS_delccontol", Complements, rows))
 
     def getnccon(self) -> Index:
@@ -5710,8 +5710,8 @@ class Model:
         family: type[Block[View]],
         idx: Sequence[SupportsIndex] | Block[View],
         outputs: int = 0,
-        name: str = "idx",
     ) -> tuple[Callable[..., int], Index, object]:
+        name = _WORDS[family]
         span = span_of(self, family, name, sequence(name, idx))
         if span is None:
             n = len(idx)
@@ -5732,7 +5732,7 @@ class Model:
         outputs: int = 0,
     ) -> tuple[bool, Index, tuple[Callable[..., int], Index, object]]:
         one, n = counted(idx)
-        rows = picked(self, family, idx)
+        rows = picked(self, family, _WORDS[family], idx)
         return one, n, self._chosen(call, family, rows, outputs)
 
     def _inside(
@@ -5757,7 +5757,7 @@ class Model:
         family: type[Block[View]],
         idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
     ) -> None:
-        idx = picked(self, family, idx)
+        idx = picked(self, family, _WORDS[family], idx)
         self._call(*self._chosen(call, family, idx))
 
     def _delete(
@@ -5766,7 +5766,7 @@ class Model:
         family: type[Block[View]],
         idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
     ) -> list[Index]:
-        idx = picked(self, family, idx)
+        idx = picked(self, family, _WORDS[family], idx)
         chosen = self._chosen(call, family, idx)
         gone = self._gone(family, idx)
         total: Index = getattr(self, f"getn{_WORDS[family]}")()
@@ -5780,12 +5780,13 @@ class Model:
         family: type[Block[View]],
         idx: Sequence[SupportsIndex] | Block[View],
     ) -> set[Index]:
+        name = _WORDS[family]
         if isinstance(idx, Block):
-            return set(idx_of(self, family, "idx", idx))
-        span = span_of(self, family, "idx", idx)
+            return set(idx_of(self, family, name, idx))
+        span = span_of(self, family, name, idx)
         if span is not None:
             return set(span)
-        return {index_of(self, family, "idx", value) for value in idx}
+        return {index_of(self, family, name, value) for value in idx}
 
     def _getname(
         self,
@@ -5868,7 +5869,7 @@ class Model:
         if not isinstance(entries, Sized):
             entries = [index_of(self, family, name, entries)]
             others, coef = _single(others, coef)
-        chosen = self._chosen(call, family, entries, name=name)
+        chosen = self._chosen(call, family, entries)
         cnt, arrays, coefs = self._lists(others, coef, len(entries))
         self._call(*chosen, cnt, *arrays, coefs)
 
@@ -5895,7 +5896,7 @@ class Model:
     ) -> tuple[list[Any], list[Real]]:
         family = types[place]
         size = self._count(f"BIYOS_getn{name}", family, idx)
-        span = span_of(self, family, "idx", idx)
+        span = span_of(self, family, _WORDS[family], idx)
         chosen = self._chosen(f"BIYOS_get{name}", family, idx)
         records = cast("Array[c_index]", chosen[2]) if span is None else span
         found = [index_view(size) for _ in types[1:]]

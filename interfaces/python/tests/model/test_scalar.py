@@ -322,8 +322,10 @@ def test_reader_every(model, method, short):
 
 @pytest.mark.parametrize("method", sorted(LIST_READERS) + list(LIST_COUNTERS))
 def test_reader_list(model, method):
-    with pytest.raises(TypeError, match="idx must be a sequence, not int"):
-        getattr(model, method)(0)
+    call = getattr(model, method)
+    word = next(iter(signature(call).parameters))
+    with pytest.raises(TypeError, match=f"{word} must be a sequence, not int"):
+        call(0)
 
 
 def test_reader_coverage():
