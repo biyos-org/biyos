@@ -409,7 +409,7 @@ def test_delete_refused(model):
     assert refusal(model.delcb, [1]) == bad + "callback 1: unknown"
     repeated = "argument 'idx': callback 0 is repeated"
     assert refusal(model.delcb, [0, 0]) == bad + repeated
-    with pytest.raises(TypeError, match="an entry of idx must be an int"):
+    with pytest.raises(TypeError, match="an entry of cb must be an int"):
         model.delcb([0.0])
     assert model.getcbfun(0).indices() == [0]
 
