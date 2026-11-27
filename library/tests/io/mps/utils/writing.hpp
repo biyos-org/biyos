@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "io/draft/sketch.hpp"
 #include "io/mps/print.hpp"
 #include "model/model.hpp"

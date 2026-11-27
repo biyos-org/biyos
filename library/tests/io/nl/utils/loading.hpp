@@ -2,8 +2,8 @@
 
 #include "files.hpp"
 
-#include "core/env.hpp"
-#include "core/error.hpp"
+#include "core/env/env.hpp"
+#include "core/env/error.hpp"
 #include "core/events/event.hpp"
 #include "io/nl/nl.hpp"
 #include "model/model.hpp"

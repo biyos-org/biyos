@@ -1,12 +1,12 @@
 #include "biyos/biyos.h"
 
 #include "capi/utils/entry.hpp"
-#include "core/env.hpp"
+#include "core/env/env.hpp"
+#include "core/env/version.hpp"
 #include "core/events/stream.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
-#include "core/version.hpp"
 
 #include <optional>
 #include <string_view>

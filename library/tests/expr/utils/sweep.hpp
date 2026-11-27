@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "expr/derivatives/derivative.hpp"
-#include "expr/derivatives/reverse.hpp"
-#include "expr/derivatives/value.hpp"
+#include "expr/evaluation/derivatives/derivative.hpp"
+#include "expr/evaluation/derivatives/reverse.hpp"
+#include "expr/evaluation/derivatives/value.hpp"
 #include "expr/tape/tape.hpp"
 
 #include <cstddef>

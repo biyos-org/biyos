@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "expr/intervals/interval.hpp"
+#include "expr/analysis/intervals/interval.hpp"
 
 #include <gtest/gtest.h>
 

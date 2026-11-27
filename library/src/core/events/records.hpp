@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/error.hpp"
-#include "core/thread.hpp"
+#include "core/env/error.hpp"
+#include "core/env/thread.hpp"
 
 #include <cstddef>
 #include <list>

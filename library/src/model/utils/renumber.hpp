@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "model/compressed.hpp"
+#include "model/utils/compressed.hpp"
 
 #include <cstddef>
 #include <span>

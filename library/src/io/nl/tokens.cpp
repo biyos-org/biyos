@@ -3,9 +3,9 @@
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/text/text.hpp"
-#include "io/lines.hpp"
-#include "io/records.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/records.hpp"
+#include "io/utils/report.hpp"
 
 #include <algorithm>
 #include <charconv>

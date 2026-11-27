@@ -1,9 +1,9 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
+#include "counts.hpp"
 #include "handles.hpp"
 #include "model/compare/compare.hpp"
 #include "sample.hpp"
-#include "utils/counts.hpp"
 
 #include <gtest/gtest.h>
 

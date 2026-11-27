@@ -4,13 +4,13 @@
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
-#include "io/lines.hpp"
 #include "io/nl/bodies.hpp"
 #include "io/nl/expressions.hpp"
 #include "io/nl/header.hpp"
 #include "io/nl/tokens.hpp"
-#include "io/records.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/records.hpp"
+#include "io/utils/report.hpp"
 #include "model/model.hpp"
 
 #include <algorithm>

@@ -1,7 +1,7 @@
 #include "biyos/biyos.h"
+#include "counts.hpp"
 #include "handles.hpp"
 #include "sample.hpp"
-#include "utils/counts.hpp"
 
 #include <gtest/gtest.h>
 

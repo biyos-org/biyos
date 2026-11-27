@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/env.hpp"
-#include "core/error.hpp"
+#include "core/env/env.hpp"
+#include "core/env/error.hpp"
 #include "core/memory/usage.hpp"
 
 #include <string>

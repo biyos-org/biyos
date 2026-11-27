@@ -1,7 +1,7 @@
 #include "files.hpp"
 #include "loading.hpp"
 
-#include "core/env.hpp"
+#include "core/env/env.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
 #include "expr/forms/terms.hpp"

@@ -1,9 +1,9 @@
 #include "io/mps/readers/vectors.hpp"
 
 #include "core/events/stream.hpp"
-#include "io/lines.hpp"
-#include "io/records.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/records.hpp"
+#include "io/utils/report.hpp"
 
 #include <string>
 #include <string_view>

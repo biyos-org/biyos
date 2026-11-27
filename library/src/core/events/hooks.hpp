@@ -1,8 +1,8 @@
 #pragma once
 
 #include "biyos/biyos.h"
+#include "core/env/thread.hpp"
 #include "core/events/event.hpp"
-#include "core/thread.hpp"
 
 #include <array>
 #include <atomic>

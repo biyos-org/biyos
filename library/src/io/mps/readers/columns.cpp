@@ -2,9 +2,9 @@
 
 #include "core/numbers.hpp"
 #include "io/draft/draft.hpp"
-#include "io/lines.hpp"
-#include "io/records.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/records.hpp"
+#include "io/utils/report.hpp"
 
 #include <cstddef>
 #include <string>

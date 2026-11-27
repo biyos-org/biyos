@@ -1,10 +1,10 @@
 #include "expr/tape/tape.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
-#include "expr/derivatives/partials.hpp"
+#include "expr/evaluation/derivatives/partials.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/sparsity/reach.hpp"

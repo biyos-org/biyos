@@ -1,7 +1,7 @@
 #pragma once
 
+#include "core/env/status.hpp"
 #include "core/options/lookup.hpp"
-#include "core/status.hpp"
 #include "core/timing/clock.hpp"
 #include "core/timing/interrupt.hpp"
 

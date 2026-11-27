@@ -1,7 +1,7 @@
 #pragma once
 
 #include "biyos/biyos.h"
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 
 namespace biyos::capi
 {

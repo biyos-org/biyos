@@ -1,6 +1,6 @@
 #include "model/evaluation/evaluation.hpp"
 
-#include "core/check.hpp"
+#include "core/env/check.hpp"
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
