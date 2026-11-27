@@ -1987,7 +1987,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first pwl of the range.
 param end in In the `rg` form, one past the last pwl of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the pwl of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param pwl in In the `sp` form, the pwl of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param nnz out Receives the number of points of the entries, a pwl counted each time it appears.
 return `BIYOS_OK`, with the number in `*nnz`.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a pwl, the range ends past the last pwl, or `nnz` is null.
@@ -2001,7 +2001,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first pwl of the range.
 param end in In the `rg` form, one past the last pwl of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the pwl of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param pwl in In the `sp` form, the pwl of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of points the output arrays hold.
 param cnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
 param x out Receives the abscissa of each point; skipped when null.

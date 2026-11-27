@@ -864,7 +864,7 @@ BIYOS_API BIYOS_status BIYOS_addpwl(BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_getnpwl(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getnpwlptsp(const BIYOS_model *mdl,
                                          BIYOS_index n,
-                                         const BIYOS_index *idx,
+                                         const BIYOS_index *pwl,
                                          BIYOS_offset *nnz);
 BIYOS_API BIYOS_status BIYOS_getnpwlptrg(const BIYOS_model *mdl,
                                          BIYOS_index beg,
@@ -872,7 +872,7 @@ BIYOS_API BIYOS_status BIYOS_getnpwlptrg(const BIYOS_model *mdl,
                                          BIYOS_offset *nnz);
 BIYOS_API BIYOS_status BIYOS_getpwlsp(const BIYOS_model *mdl,
                                       BIYOS_index n,
-                                      const BIYOS_index *idx,
+                                      const BIYOS_index *pwl,
                                       BIYOS_offset cap,
                                       BIYOS_offset *cnt,
                                       BIYOS_real *x,
