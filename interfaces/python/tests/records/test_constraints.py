@@ -383,6 +383,44 @@ def test_deep(model, x):
     assert code.count(Operator.AND) == 10**4
 
 
+def test_strict_condition(model, x):
+    cons = model.addcon((x[0] < 1) | (x[1] != x[2]) | ~(x[2] > 0))
+    funs = model.getcon(cons)[0]
+    assert model.getexpr(funs)[1] == [
+        VAR,
+        CONST,
+        Operator.LESS,
+        VAR,
+        VAR,
+        Operator.NOT_EQUAL,
+        Operator.OR,
+        VAR,
+        CONST,
+        Operator.GREATER,
+        Operator.NOT,
+        Operator.OR,
+    ]
+
+
+@pytest.mark.parametrize(
+    ("con", "named"),
+    [
+        (lambda x: x[0] < 1, r"~\(x\[0\] >= 1\)"),
+        (lambda x: x[0] + x[1] > x[2], r"~\(x\[0\] \+ x\[1\] <= x\[2\]\)"),
+        (lambda x: x[0] != 2, r"~\(x\[0\] == 2\)"),
+    ],
+)
+def test_open(model, x, con, named):
+    with pytest.raises(ValueError, match=named):
+        model.addcon(con(x))
+    with pytest.raises(ValueError, match="since a constraint is closed"):
+        model.addcon([x[0] <= 1, con(x)])
+    assert model.getncon() == 0
+    assert model.getnfun() == 2
+    model.addcon(~(x[0] >= 1))
+    assert model.getncon() == 1
+
+
 def test_condition_bounds(model, x):
     with pytest.raises(TypeError, match="lb and ub come from"):
         model.addcon((x[0] <= 1) | (x[1] <= 1), lb=[0.0])

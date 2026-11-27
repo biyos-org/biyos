@@ -76,6 +76,9 @@ STORED = [
 LESS = ComparisonSense.LESS_EQUAL
 GREATER = ComparisonSense.GREATER_EQUAL
 EQUAL = ComparisonSense.EQUAL
+BELOW = ComparisonSense.LESS
+ABOVE = ComparisonSense.GREATER
+DIFFERENT = ComparisonSense.NOT_EQUAL
 PAIR = "piecewise(0, x[1]) <= piecewise(1, x[2])"
 OPERANDS = [
     (le, "e", "f", ("e", LESS, "f"), "exp(x[0]) <= log(x[1])"),
@@ -84,6 +87,10 @@ OPERANDS = [
     (le, "e", "p", ("e", LESS, "p"), "exp(x[0]) <= piecewise(0, x[1])"),
     (ge, "e", "p", ("e", GREATER, "p"), "exp(x[0]) >= piecewise(0, x[1])"),
     (eq, "e", "p", ("e", EQUAL, "p"), "exp(x[0]) == piecewise(0, x[1])"),
+    (lt, "e", "f", ("e", BELOW, "f"), "exp(x[0]) < log(x[1])"),
+    (gt, "e", "f", ("e", ABOVE, "f"), "exp(x[0]) > log(x[1])"),
+    (ne, "e", "f", ("e", DIFFERENT, "f"), "exp(x[0]) != log(x[1])"),
+    (ne, "v", "p", ("v", DIFFERENT, "p"), "x[2] != piecewise(0, x[1])"),
     (le, "p", "e", ("p", LESS, "e"), "piecewise(0, x[1]) <= exp(x[0])"),
     (le, "v", "p", ("v", LESS, "p"), "x[2] <= piecewise(0, x[1])"),
     (le, "p", "v", ("p", LESS, "v"), "piecewise(0, x[1]) <= x[2]"),
@@ -96,6 +103,12 @@ NUMBERS = [
     (le, 2, "e", GREATER, "exp(x[0]) >= 2"),
     (ge, 2, "e", LESS, "exp(x[0]) <= 2"),
     (eq, 2, "e", EQUAL, "exp(x[0]) == 2"),
+    (lt, "e", 2, BELOW, "exp(x[0]) < 2"),
+    (gt, "e", 2, ABOVE, "exp(x[0]) > 2"),
+    (ne, "e", 2, DIFFERENT, "exp(x[0]) != 2"),
+    (lt, 2, "e", ABOVE, "exp(x[0]) > 2"),
+    (gt, 2, "e", BELOW, "exp(x[0]) < 2"),
+    (ne, 2, "e", DIFFERENT, "exp(x[0]) != 2"),
 ]
 
 
@@ -188,7 +201,9 @@ def test_truth(x):
     with pytest.raises(TypeError, match="has no truth value"):
         bool(x[0] + 0 == x[1])
     with pytest.raises(TypeError, match="has no truth value"):
-        ne(x[0] + 0, x[1])
+        bool(x[0] + 0 != x[1])
+    with pytest.raises(TypeError, match="has no truth value"):
+        bool(x[0] < x[1])
     with pytest.raises(TypeError, match="has no truth value"):
         bool(x[0] == 1)
     with pytest.raises(TypeError, match="has no truth value"):
@@ -201,12 +216,15 @@ def test_same(env, x):
     assert x[0] == x[0]
     assert not x[0] == x[1]
     assert x[0] != x[1]
+    assert not ne(x[0], x[0])
+    assert not ne(x[0:2][1], x[1])
     assert {x[0]: 1}[x[0]] == 1
     assert x[0] in {x[1], x[0]}
     assert x[0] in [x[1], x[0]]
     assert [x[1], x[0]].index(x[0]) == 1
     with biyos.Model(env) as other:
         assert other.addvar(1)[0] != x[0]
+        assert not eq(other.addvar(1)[0], x[0])
 
 
 def test_refused(x):
@@ -214,6 +232,18 @@ def test_refused(x):
     for bound in (nan, biyos.inf, -biyos.inf):
         with pytest.raises(ValueError, match="refuses the bound"):
             eq(x[0], bound)
+        with pytest.raises(ValueError, match="refuses the bound"):
+            ne(x[0], bound)
+    for bound in (nan, biyos.inf):
+        with pytest.raises(ValueError, match="refuses the bound"):
+            gt(x[0], bound)
+        with pytest.raises(ValueError, match="refuses the bound"):
+            lt(bound, x[0])
+    for bound in (nan, -biyos.inf):
+        with pytest.raises(ValueError, match="refuses the bound"):
+            lt(x[0], bound)
+        with pytest.raises(ValueError, match="refuses the bound"):
+            gt(bound, x[0])
     for bound in (nan, biyos.inf):
         with pytest.raises(ValueError, match="refuses the bound"):
             ge(x[0], bound)
@@ -235,18 +265,23 @@ def test_open(x):
 def test_foreign(x, other):
     assert not eq(x[0], other)
     assert not eq(other, x[0])
+    assert ne(x[0], other)
+    assert ne(other, x[0])
     assert x[0] in [other, x[0]]
     with pytest.raises(TypeError, match="compares with a number, not"):
         le(x[0], other)
     with pytest.raises(TypeError, match="compares with a number, not"):
         le(other, x[0])
+    with pytest.raises(TypeError, match="compares with a number, not"):
+        lt(x[0], other)
 
 
 def test_strict(x):
-    with pytest.raises(TypeError):
-        lt(x[0], x[1])
-    with pytest.raises(TypeError):
-        gt(x[0], 1)
+    assert parts(x[0] < x[1]) == (DIFFERENCE, -biyos.inf, 0.0)
+    assert parts(x[0] > 3) == (0, 3.0, biyos.inf)
+    assert parts(x[0] != 3) == (0, 3.0, 3.0)
+    assert parts(3 > x[0]) == parts(x[0] < 3)
+    assert repr(x[0] + 1 != x[1]) == "x[0] + 1 != x[1]"
 
 
 def test_hash(model, x):
@@ -326,6 +361,8 @@ CONDITIONS = {
     "(x[0] <= 1) | (x[1] >= 2)": lambda a, b, c: (a <= 1) | (b >= 2),
     "(x[0] <= 1) & (x[1] >= 2)": lambda a, b, c: (a <= 1) & (b >= 2),
     "~(x[0] >= 1)": lambda a, b, c: ~(a >= 1),
+    "(x[0] < 1) | (x[1] != x[2])": lambda a, b, c: (a < 1) | (b != c),
+    "~(x[0] > 1)": lambda a, b, c: ~(a > 1),
     "~~(x[0] >= 1)": lambda a, b, c: ~~(a >= 1),
     "~((x[0] >= 1) & (x[1] <= 0))": lambda a, b, c: ~((a >= 1) & (b <= 0)),
     "(x[0] <= 1) & (x[1] <= 1) & (x[2] <= 1)": lambda a, b, c: (

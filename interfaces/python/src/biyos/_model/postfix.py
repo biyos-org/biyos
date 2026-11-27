@@ -167,6 +167,7 @@ def attached(model: "Model", trees: Sequence[Operand]) -> Functions:
 
 def bounded(con: Logical) -> tuple[Operand, Real, Real]:
     if isinstance(con, Comparison):
+        con._closed()
         return con._body, con._lb, con._ub
     assert isinstance(con, Condition)
     return expression_of(con), 1.0, 1.0
