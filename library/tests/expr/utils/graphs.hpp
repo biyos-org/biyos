@@ -224,6 +224,19 @@ class Random
     std::mt19937_64 engine_;
 };
 
+inline Offset products(Graph &graph, const std::vector<Offset> &x, Random &random)
+{
+    std::vector<Offset> terms;
+    for (std::size_t k = 0; k < x.size(); ++k)
+    {
+        const Offset wave = unary(graph, Operator::Sin, x[random.below(x.size())]);
+        const std::array factors{wave, x[random.below(x.size())], x[random.below(x.size())]};
+        terms.push_back(graph.add(Operator::Product, 1.0, factors));
+    }
+    const Offset total = graph.add_sum(0.0, terms, std::vector<Real>(terms.size(), 1.0));
+    return unary(graph, Operator::Abs, total);
+}
+
 inline std::vector<Offset> picks(Random &random, const Graph &graph, std::size_t n)
 {
     std::vector<Offset> nodes;
