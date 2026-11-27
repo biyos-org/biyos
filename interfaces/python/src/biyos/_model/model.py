@@ -589,6 +589,89 @@ class Model:
         number = integer("fmt", fmt)
         self._call(lib.BIYOS_writemdl, name, number)
 
+    @classmethod
+    def readrepro(cls, env: Env, path: str | PathLike[str]) -> "Model":
+        """Read a reproducer: set the options and read the model.
+
+        An option the file gives from the model is set on the model read,
+        one from the environment is set on ``env``, and one at its default,
+        or left out, is unset on ``env``. They are set once the whole file
+        is read, so a failed read leaves ``env`` as it was. The hooks of
+        ``env`` stay. A file written by another version of biyos, and an
+        option this version does not know or has retired, are warning
+        events from module ``io``, with the fields ``file`` and ``line``.
+        Setting a deprecated option sends its usual warning. One at its
+        default is not set, so it sends none.
+
+        Parameters
+        ----------
+        env
+            The environment whose options are set and on which the model
+            is made.
+        path
+            The path of the file.
+
+        Returns
+        -------
+        model
+            The model the file holds.
+
+        Raises
+        ------
+        TypeError
+            When ``env`` is not an ``Env`` or ``path`` is not a str or a
+            path.
+        ValueError
+            When ``path`` holds a null character or cannot be encoded as
+            UTF-8, or the environment is closed.
+        Error
+            When the file cannot be read, breaks a rule of the format,
+            gives an option a value it does not take, or holds a part the
+            reader does not handle.
+
+        See Also
+        --------
+        BIYOS_readrepro
+        """
+        env = _checked_env(env)
+        name = text("path", fspath(path))
+        model = cls.__new__(cls)
+        model._start(env)
+        with env._busy():
+            model._make(env._call, lib.BIYOS_readrepro, name)
+        model._hold()
+        return model
+
+    def writerepro(self, path: str | PathLike[str]) -> None:
+        """Write a reproducer: the options in force and the model.
+
+        The file is made or replaced. It holds the version of biyos, every
+        option with its value in force for the model and where it comes
+        from, the model, its environment or the default, then the model in
+        the biyos format. A default is written without its value.
+
+        Parameters
+        ----------
+        path
+            The path of the file.
+
+        Raises
+        ------
+        TypeError
+            When ``path`` is not a str or a path.
+        ValueError
+            When ``path`` holds a null character or cannot be encoded as
+            UTF-8, or the model is closed.
+        Error
+            When the file cannot be written or the model holds a callback.
+
+        See Also
+        --------
+        BIYOS_writerepro
+        """
+        name = text("path", fspath(path))
+        self._call(lib.BIYOS_writerepro, name)
+
     def setname(self, name: str) -> None:
         """Name the model.
 

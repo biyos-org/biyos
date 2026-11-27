@@ -3,7 +3,7 @@ from functools import partial
 import pytest
 
 import biyos
-from biyos import EventKind, EventLevel, FileFormat
+from biyos import EventKind, EventLevel, FileFormat, OptionSource
 from samples import LP_MPS, LP_NL, ROWS_MPS, written
 
 FILEIO = -401
@@ -100,3 +100,51 @@ def test_warning(env, tmp_path):
     with biyos.Model.read(env, path, FileFormat.MPS):
         pass
     assert heard == [("io", (("file", str(path)), ("line", "6")))]
+
+
+def test_repro(env, tmp_path):
+    path = tmp_path / "run.repro"
+    source = written(tmp_path / "lp.mps", LP_MPS)
+    env.setopt("seed", 7)
+    with biyos.Model.read(env, source, FileFormat.MPS) as model:
+        model.setopt("presolve", False)
+        model.writerepro(path)
+        with biyos.Env() as other:
+            other.setopt("maxtime", 5.0)
+            with biyos.Model.readrepro(other, str(path)) as back:
+                assert model.compare(back) is None
+                assert back.getopt("presolve") is False
+                assert back.getoptsrc("presolve") is OptionSource.MODEL
+            assert other.getopt("seed") == 7
+            assert other.getopt("presolve") is True
+            assert other.getopt("maxtime") == float("inf")
+
+
+def test_repro_warning(env, tmp_path):
+    path = written(
+        tmp_path / "old.repro",
+        "REPRO 1\nVERSION 0.0.1\nOPTIONS 1\nnosuch model 1\nBIYOS 1\nEND\n",
+    )
+    heard = []
+    env.addhook(partial(record, heard), EventKind.MESSAGE, EventLevel.WARNING)
+    with biyos.Model.readrepro(env, path):
+        pass
+    file = ("file", str(path))
+    lines = [("io", (file, ("line", line))) for line in ("2", "4")]
+    assert heard == lines
+
+
+def test_repro_refused(env, tmp_path):
+    with pytest.raises(biyos.Error) as caught:
+        biyos.Model.readrepro(env, tmp_path / "absent.repro")
+    assert caught.value.code == FILEIO
+    with pytest.raises(TypeError):
+        biyos.Model.readrepro(env, b"run.repro")
+    with pytest.raises(TypeError):
+        biyos.Model.readrepro(None, tmp_path / "run.repro")
+    with biyos.Model(env) as model:
+        with pytest.raises(biyos.Error) as caught:
+            model.writerepro(tmp_path)
+        assert caught.value.code == FILEIO
+        with pytest.raises(ValueError):
+            model.writerepro("run\0.repro")
