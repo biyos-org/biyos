@@ -217,16 +217,16 @@ _Block = TypeVar("_Block", bound=Block[View])
 _Argument = tuple[type[Block[View]], str, Any]
 _Column = type[c_integer | c_real] | type[Block[View]]
 
-_COUNTS: dict[type[Block[View]], str] = {
-    Variables: "getnvar",
-    Functions: "getnfun",
-    Constraints: "getncon",
-    Objectives: "getnobj",
-    Indicators: "getnind",
-    SpecialOrderedSets: "getnsos",
-    PiecewiseLinears: "getnpwl",
-    Cones: "getncone",
-    Complements: "getnccon",
+_WORDS: dict[type[Block[View]], str] = {
+    Variables: "var",
+    Functions: "fun",
+    Constraints: "con",
+    Objectives: "obj",
+    Indicators: "ind",
+    SpecialOrderedSets: "sos",
+    PiecewiseLinears: "pwl",
+    Cones: "cone",
+    Complements: "ccon",
 }
 
 
@@ -5738,7 +5738,7 @@ class Model:
     def _inside(
         self, family: type[Block[View]], start: Index, stop: Index
     ) -> bool:
-        total: Index = getattr(self, _COUNTS[family])()
+        total: Index = getattr(self, f"getn{_WORDS[family]}")()
         return 0 <= start <= stop <= total
 
     def _setname(
@@ -5769,7 +5769,7 @@ class Model:
         idx = picked(self, family, idx)
         chosen = self._chosen(call, family, idx)
         gone = self._gone(family, idx)
-        total: Index = getattr(self, _COUNTS[family])()
+        total: Index = getattr(self, f"getn{_WORDS[family]}")()
         self._call(*chosen, None)
         if len(idx) > 0:
             self._gen += 1
