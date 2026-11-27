@@ -34,6 +34,8 @@ enum class Option
     ZeroTol = BIYOS_OPT_ZEROTOL,
     CpuTimeLimit = BIYOS_OPT_MAXCPUTIME,
     Threads = BIYOS_OPT_THREADS,
+    CmpAbs = BIYOS_OPT_CMPTOLABS,
+    CmpRel = BIYOS_OPT_CMPTOLREL,
 };
 
 enum class OptionKind

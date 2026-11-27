@@ -76,6 +76,8 @@ $$
 
 and an upper bound alike. Two finite values $y$ and $z$ are equal unless they differ by more than both $\epsilon_{\mathrm{abs}}$ and $\epsilon_{\mathrm{rel}} \max(1, |y|, |z|)$. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. An infinite value equals only itself and is not integral, and NaN is not zero, not integral, equal to no value and meets no bound.
 
+The comparisons of an expression, such as $e_1 \le e_2$ in a condition, take `cmptol_abs` and `cmptol_rel` in place of `feastol_abs` and `feastol_rel`, with the same rule. Both pairs default to $10^{-6}$, so a condition and a constraint on the same values agree. Setting `cmptol_abs` and `cmptol_rel` to 0 makes comparisons exact and leaves feasibility as it was; setting only one changes nothing, since a gap either accepts is accepted.
+
 ## Time limits {#sec-options-limits}
 
 `maxtime` limits the wall time of a solve and `maxcputime` its CPU time, both in seconds and read once as the solve starts. The CPU time is that of the thread that made the call, so solves running at once on other threads, on the same environment or another, never spend each other's budget. A solve that reaches a limit stops with the termination `BIYOS_TRM_TIMELIM` or `BIYOS_TRM_CPULIM`, an outcome rather than an error code.

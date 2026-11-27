@@ -215,7 +215,7 @@ An expression is written in prefix order, one item a line: `n` and a number for 
 | `atan2` | The same function, its first operand $y$ in $\operatorname{atan2}(y, x)$. |
 | `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh` | The same function. |
 | `plterm` | A piecewise linear function of one variable. |
-| `lt`, `le`, `eq`, `ge`, `gt`, `ne` | The same comparison, which holds within `feastol_abs` and `feastol_rel` as for `BIYOS_OP_LE`. |
+| `lt`, `le`, `eq`, `ge`, `gt`, `ne` | The same comparison, which holds within `cmptol_abs` and `cmptol_rel` as for `BIYOS_OP_LE`. |
 | `and`, `or`, `not` | The same operator, both the two-operand and the list form of `and` and `or`. |
 | `if` | `BIYOS_OP_IF`, its first operand a condition. |
 

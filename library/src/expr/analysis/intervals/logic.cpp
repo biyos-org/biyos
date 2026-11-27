@@ -16,7 +16,7 @@ constexpr Interval kUnknown{0.0, 1.0};
 
 bool narrow(const Tolerances &tolerances) noexcept
 {
-    return !tolerances.at_most(1.0, 0.0);
+    return !tolerances.compares_at_most(1.0, 0.0);
 }
 
 bool settled(const Tolerances &tolerances, Real a, Real b) noexcept
@@ -26,12 +26,12 @@ bool settled(const Tolerances &tolerances, Real a, Real b) noexcept
 
 bool holds(const Tolerances &tolerances, Real a, Real b) noexcept
 {
-    return settled(tolerances, a, b) && tolerances.at_most(a, b);
+    return settled(tolerances, a, b) && tolerances.compares_at_most(a, b);
 }
 
 bool fails(const Tolerances &tolerances, Real a, Real b) noexcept
 {
-    return settled(tolerances, a, b) && !tolerances.at_most(a, b);
+    return settled(tolerances, a, b) && !tolerances.compares_at_most(a, b);
 }
 
 }

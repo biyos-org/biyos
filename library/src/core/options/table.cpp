@@ -116,10 +116,26 @@ constexpr std::array kTable{
                "same for every count.",
         .versions = {.since = {0, 1, 0}},
     },
+    OptionSpec{
+        .id = Option::CmpAbs,
+        .name = "cmptol_abs",
+        .scope = Scope::Model,
+        .rule = DoubleRule{.default_value = 1e-6, .lower = 0.0},
+        .doc = "Absolute tolerance of a comparison in an expression.",
+        .versions = {.since = {0, 1, 0}},
+    },
+    OptionSpec{
+        .id = Option::CmpRel,
+        .name = "cmptol_rel",
+        .scope = Scope::Model,
+        .rule = DoubleRule{.default_value = 1e-6, .lower = 0.0},
+        .doc = "Relative tolerance of a comparison in an expression.",
+        .versions = {.since = {0, 1, 0}},
+    },
 };
 
 static_assert(well_formed(kTable, kProject));
-static_assert(kTable.size() == static_cast<std::size_t>(Option::Threads));
+static_assert(kTable.size() == static_cast<std::size_t>(Option::CmpRel));
 
 }
 
