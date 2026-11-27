@@ -206,12 +206,9 @@ BIYOS_status BIYOS_delcconrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end,
     return guarded<delete_complements<Range>>(mdl, Range{beg, end}, map);
 }
 
-BIYOS_status BIYOS_delcbsp(BIYOS_model *mdl,
-                           BIYOS_index n,
-                           const BIYOS_index *idx,
-                           BIYOS_index *map)
+BIYOS_status BIYOS_delcbsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *cb, BIYOS_index *map)
 {
-    return guarded<delete_callbacks<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_callbacks<List>>(mdl, List{n, cb}, map);
 }
 
 BIYOS_status BIYOS_delcbrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)

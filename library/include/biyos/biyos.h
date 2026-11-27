@@ -1227,7 +1227,7 @@ BIYOS_API BIYOS_status BIYOS_getcbvar(const BIYOS_model *mdl,
                                       BIYOS_index *var);
 BIYOS_API BIYOS_status BIYOS_delcbsp(BIYOS_model *mdl,
                                      BIYOS_index n,
-                                     const BIYOS_index *idx,
+                                     const BIYOS_index *cb,
                                      BIYOS_index *map);
 BIYOS_API BIYOS_status BIYOS_delcbrg(BIYOS_model *mdl,
                                      BIYOS_index beg,

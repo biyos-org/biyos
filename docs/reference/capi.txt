@@ -2759,7 +2759,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first callback to delete.
 param end in In the `rg` form, one past the last callback to delete.
 param n in In the `sp` form, the number of callbacks to delete.
-param idx in In the `sp` form, the callbacks to delete, in any order; may be null when `n` is 0.
+param cb in In the `sp` form, the callbacks to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each callback the model held before the call: entry `i` is the new index of callback `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the callbacks are deleted. The others keep their order, their functions, their patterns and their `data`, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a callback, a callback is listed more than once, with a message such as `invalid argument: argument 'idx': callback 1 is repeated`, or the range ends past the last callback.
