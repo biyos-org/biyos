@@ -168,6 +168,12 @@ Offset random_child(Engine &engine, const Model &model)
     return below(engine, n);
 }
 
+Offset random_condition(Engine &engine, Model &model)
+{
+    const Offset left = random_child(engine, model);
+    return add(model, BIYOS_OP_LT, {left, random_child(engine, model)}, {});
+}
+
 void add_random(Model &model, Engine &engine)
 {
     const int code = random_code(engine);
@@ -177,10 +183,12 @@ void add_random(Model &model, Engine &engine)
         return;
     }
     const int n = arity(engine, code);
+    const bool conditions = arity_of(static_cast<Operator>(code)).conditions;
     std::vector<Offset> children;
     for (int k = 0; k < n; ++k)
     {
-        children.push_back(random_child(engine, model));
+        children.push_back(conditions ? random_condition(engine, model)
+                                      : random_child(engine, model));
     }
     add(model, code, children, values(engine, code, n));
 }

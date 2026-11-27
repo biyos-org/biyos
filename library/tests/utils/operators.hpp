@@ -10,9 +10,10 @@ struct Arity
 {
     int least;
     bool listed;
+    bool conditions = false;
 };
 
-constexpr int kTail = BIYOS_OP_NE - BIYOS_OP_ATAN2 + 1;
+constexpr int kTail = BIYOS_OP_NOT - BIYOS_OP_ATAN2 + 1;
 
 constexpr int operator_count(int first)
 {
@@ -36,9 +37,10 @@ constexpr Arity arity_of(Operator op)
     case Operator::Product:
     case Operator::Max:
     case Operator::Min:
+        return {.least = 1, .listed = true};
     case Operator::And:
     case Operator::Or:
-        return {.least = 1, .listed = true};
+        return {.least = 1, .listed = true, .conditions = true};
     case Operator::Negation:
     case Operator::ConstantPower:
     case Operator::Exp:
@@ -61,8 +63,9 @@ constexpr Arity arity_of(Operator op)
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
-    case Operator::Not:
         return {.least = 1, .listed = false};
+    case Operator::Not:
+        return {.least = 1, .listed = false, .conditions = true};
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:

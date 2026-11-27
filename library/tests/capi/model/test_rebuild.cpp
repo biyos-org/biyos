@@ -42,6 +42,7 @@ using Setter = decltype(&BIYOS_setvarnamesp);
 
 constexpr std::array<std::uint32_t, 8> kSeeds{1, 2, 3, 5, 8, 13, 21, 34};
 constexpr int kDepth = 4;
+constexpr int kComparators = BIYOS_OP_NE - BIYOS_OP_LE + 1;
 
 struct Program
 {
@@ -217,6 +218,15 @@ void put_keep(Writer &writer)
     put(writer, BIYOS_OP_KEEP, 1);
 }
 
+void put_tree(Writer &writer, int depth);
+
+void put_condition(Writer &writer, int depth)
+{
+    put_tree(writer, depth);
+    put_tree(writer, depth);
+    put(writer, BIYOS_OP_LE + below(writer.engine, kComparators), 2);
+}
+
 void put_tree(Writer &writer, int depth)
 {
     if (depth == 0 || below(writer.engine, 4) == 0)
@@ -226,9 +236,17 @@ void put_tree(Writer &writer, int depth)
     }
     const int code = random_code(writer.engine);
     const int n = arity(writer.engine, code);
+    const bool conditions = arity_of(static_cast<Operator>(code)).conditions;
     for (int k = 0; k < n; ++k)
     {
-        put_tree(writer, depth - 1);
+        if (conditions)
+        {
+            put_condition(writer, depth - 1);
+        }
+        else
+        {
+            put_tree(writer, depth - 1);
+        }
     }
     put(writer, code, n);
     put_values(writer, code, n);
