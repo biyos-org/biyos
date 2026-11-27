@@ -13,12 +13,12 @@ namespace
 {
 
 constexpr std::array kOpcodes{
-    Opcode{0, "plus", Rule::Plus, Arity::Two},
-    Opcode{1, "minus", Rule::Minus, Arity::Two},
-    Opcode{2, "mult", Rule::Times, Arity::Two},
+    Opcode{kPlusCode, "plus", Rule::Plus, Arity::Two},
+    Opcode{kMinusCode, "minus", Rule::Minus, Arity::Two},
+    Opcode{kTimesCode, "mult", Rule::Times, Arity::Two},
     Opcode{3, "div", Rule::Same, Arity::Two, Operator::Division},
     Opcode{4, "rem", Rule::Refused},
-    Opcode{5, "pow", Rule::Raise, Arity::Two},
+    Opcode{kPowerCode, "pow", Rule::Raise, Arity::Two},
     Opcode{6, "less", Rule::Less, Arity::Two},
     Opcode{11, "min", Rule::Same, Arity::Many, Operator::Min},
     Opcode{12, "max", Rule::Same, Arity::Many, Operator::Max},
@@ -41,7 +41,7 @@ constexpr std::array kOpcodes{
     Opcode{39, "sqrt", Rule::Same, Arity::One, Operator::Sqrt},
     Opcode{40, "sinh", Rule::Same, Arity::One, Operator::Sinh},
     Opcode{41, "sin", Rule::Same, Arity::One, Operator::Sin},
-    Opcode{42, "log10", Rule::Log10},
+    Opcode{kLog10Code, "log10", Rule::Log10},
     Opcode{43, "log", Rule::Same, Arity::One, Operator::Log},
     Opcode{44, "exp", Rule::Same, Arity::One, Operator::Exp},
     Opcode{45, "cosh", Rule::Same, Arity::One, Operator::Cosh},
@@ -53,7 +53,7 @@ constexpr std::array kOpcodes{
     Opcode{51, "asin", Rule::Same, Arity::One, Operator::Asin},
     Opcode{52, "acosh", Rule::Same, Arity::One, Operator::Acosh},
     Opcode{53, "acos", Rule::Same, Arity::One, Operator::Acos},
-    Opcode{54, "sum", Rule::Sum, Arity::Many},
+    Opcode{kSumCode, "sum", Rule::Sum, Arity::Many},
     Opcode{55, "intdiv", Rule::Refused},
     Opcode{56, "precision", Rule::Refused},
     Opcode{57, "round", Rule::Refused},
@@ -61,7 +61,7 @@ constexpr std::array kOpcodes{
     Opcode{59, "count", Rule::Refused},
     Opcode{60, "numberof", Rule::Refused},
     Opcode{61, "numberofs", Rule::Refused},
-    Opcode{64, "plterm", Rule::Pieces},
+    Opcode{kPiecesCode, "plterm", Rule::Pieces},
     Opcode{65, "ifs", Rule::Refused},
     Opcode{70, "and", Rule::Refused},
     Opcode{71, "or", Rule::Refused},
@@ -76,6 +76,18 @@ const Opcode *find_opcode(Offset code) noexcept
 {
     const auto found = std::ranges::find(kOpcodes, code, &Opcode::code);
     return found == kOpcodes.end() ? nullptr : &*found;
+}
+
+int code_of(Operator op) noexcept
+{
+    for (const Opcode &opcode : kOpcodes)
+    {
+        if (opcode.rule == Rule::Same && opcode.op == op)
+        {
+            return opcode.code;
+        }
+    }
+    return -1;
 }
 
 }

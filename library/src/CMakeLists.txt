@@ -98,17 +98,24 @@ add_library(biyos_internal STATIC
     io/mps/readers/values.cpp
     io/mps/readers/vectors.cpp
     io/mps/sections.cpp
-    io/nl/bodies.cpp
-    io/nl/expressions.cpp
     io/nl/header.cpp
     io/nl/nl.cpp
     io/nl/operators.cpp
-    io/nl/pieces.cpp
+    io/nl/reader/bodies.cpp
+    io/nl/reader/expressions.cpp
+    io/nl/reader/pieces.cpp
     io/nl/source/binary.cpp
     io/nl/source/bounds.cpp
     io/nl/source/source.cpp
     io/nl/source/text.cpp
     io/nl/tokens.cpp
+    io/nl/writer/defined.cpp
+    io/nl/writer/entries.cpp
+    io/nl/writer/layout.cpp
+    io/nl/writer/printer.cpp
+    io/nl/writer/refusals.cpp
+    io/nl/writer/usage.cpp
+    io/nl/writer/writer.cpp
     io/native/native.cpp
     io/native/parts.cpp
     io/native/print.cpp
@@ -126,6 +133,7 @@ add_library(biyos_internal STATIC
     io/utils/leftovers.cpp
     io/utils/lines.cpp
     io/utils/records.cpp
+    io/utils/refuse.cpp
     io/utils/report.cpp
     model/compare/compare.cpp
     model/compare/fields.cpp

@@ -22,6 +22,7 @@ void warn(Stream stream,
 void warn(Stream stream, const Lines &lines, const std::string &text) noexcept;
 void warn(Stream stream, const std::string &file, const std::string &text) noexcept;
 void inform(Stream stream, const Lines &lines, const std::string &text) noexcept;
+void inform(Stream stream, const std::string &file, const std::string &text) noexcept;
 void inform(Stream stream,
             const std::string &file,
             std::string_view unit,

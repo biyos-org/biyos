@@ -83,6 +83,12 @@ void inform(Stream stream, const Lines &lines, const std::string &text) noexcept
     inform(stream, lines.file(), "line", lines.number(), text);
 }
 
+void inform(Stream stream, const std::string &file, const std::string &text) noexcept
+{
+    const auto fill = [&](Event &event) { describe(event, file, text); };
+    stream.emit(EventKind::Message, EventLevel::Info, fill);
+}
+
 void inform(Stream stream,
             const std::string &file,
             std::string_view unit,

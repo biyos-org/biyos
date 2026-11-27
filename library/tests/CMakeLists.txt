@@ -173,8 +173,10 @@ biyos_add_test(test_io
     io/native/test_words.cpp
     io/nl/test_binary.cpp
     io/nl/test_faults.cpp
+    io/nl/test_limits.cpp
     io/nl/test_nl.cpp
     io/nl/test_refusals.cpp
+    io/nl/test_write.cpp
     io/test_lines.cpp)
 target_include_directories(test_io PRIVATE io/mps/utils io/native/utils io/nl/utils model/utils utils)
 target_link_libraries(test_io PRIVATE biyos_internal)
