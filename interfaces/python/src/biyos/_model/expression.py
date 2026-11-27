@@ -618,7 +618,7 @@ class Comparison(Logical):
             return not self._same
         return self._same
 
-    def _closed(self) -> None:
+    def _refuse_open(self) -> None:
         negated = _NEGATED.get(self._sense)
         if negated is None:
             return
