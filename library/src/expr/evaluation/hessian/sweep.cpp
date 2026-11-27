@@ -179,6 +179,15 @@ void motion(const Instruction &instruction,
     switch (instruction.op)
     {
     case Operator::Constant:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         return;
     case Operator::Variable:
         std::ranges::copy(row(lift.seeds, place(instruction.payload), lanes), lift.result.begin());
@@ -221,6 +230,7 @@ void motion(const Instruction &instruction,
         return;
     case Operator::Max:
     case Operator::Min:
+    case Operator::If:
         add_extreme(instruction, lift, partials);
         return;
     }
@@ -417,11 +427,19 @@ void step(const Instruction &instruction,
         spread_sum(instruction, partials, trail);
         return;
     case Operator::Product:
+    case Operator::And:
+    case Operator::Or:
         spread(instruction, partials, curves, trail);
         return;
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         both(instruction.first, partials[0], row(curves, 0, lanes), trail);
         both(instruction.second, partials[1], row(curves, 1, lanes), trail);
         return;
@@ -447,10 +465,12 @@ void step(const Instruction &instruction,
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
+    case Operator::Not:
         both(instruction.first, partials[0], curves, trail);
         return;
     case Operator::Max:
     case Operator::Min:
+    case Operator::If:
         send(instruction, partials, trail);
         return;
     }

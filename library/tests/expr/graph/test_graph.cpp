@@ -251,6 +251,61 @@ TEST(GraphTest, Arity)
     EXPECT_EQ(graph.size(), 1);
 }
 
+TEST(GraphTest, Conditions)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset y = graph.add_variable(1);
+    const Offset less = graph.add(Operator::Less, std::array{x, y});
+    const Offset both = graph.add(Operator::And, std::array{less, less});
+    const Offset either = graph.add(Operator::Or, std::array{both, less});
+    const Offset negated = unary(graph, Operator::Not, either);
+    EXPECT_EQ(graph.op(unary(graph, Operator::Not, negated)), Operator::Not);
+    EXPECT_EQ(ids(graph.children(either)), (std::vector<Offset>{both, less}));
+    EXPECT_EQ(graph.op(graph.add(Operator::Equal, std::array{negated, x})), Operator::Equal);
+    EXPECT_EQ(graph.size(), 8);
+}
+
+TEST(GraphTest, NumericOperand)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset less = graph.add(Operator::Less, std::array{x, x});
+    const Offset ratio = graph.add(Operator::Division, std::array{x, x});
+    const Offset two = graph.add(Operator::Constant, 2.0, {});
+    EXPECT_EQ(refusal([&] { graph.add(Operator::And, std::array{less, x}); }),
+              refused(Operator::And, "takes conditions: node 0 is operator 2"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::Or, std::array{ratio, less}); }),
+              refused(Operator::Or, "takes conditions: node 2 is operator 6"));
+    EXPECT_EQ(refusal([&] { unary(graph, Operator::Not, two); }),
+              refused(Operator::Not, "takes conditions: node 3 is operator 1"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::Not, std::array{less, less}); }),
+              refused(Operator::Not, "takes 1 child, not 2"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::And, {}); }),
+              refused(Operator::And, "takes 1 child or more, not 0"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::Or, 1.0, std::span(&less, 1)); }),
+              refused(Operator::Or, "takes no payload"));
+    EXPECT_EQ(graph.size(), 4);
+}
+
+TEST(GraphTest, Branches)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset less = graph.add(Operator::Less, std::array{x, x});
+    const Offset ratio = graph.add(Operator::Division, std::array{x, x});
+    const Offset branch = graph.add(Operator::If, std::array{less, ratio, x});
+    EXPECT_EQ(ids(graph.children(branch)), (std::vector<Offset>{less, ratio, x}));
+    EXPECT_EQ(graph.op(graph.add(Operator::If, std::array{less, less, less})), Operator::If);
+    EXPECT_EQ(refusal([&] { graph.add(Operator::If, std::array{ratio, less, x}); }),
+              refused(Operator::If, "takes a condition first: node 2 is operator 6"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::If, std::array{less, x}); }),
+              refused(Operator::If, "takes 3 children, not 2"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::If, 1.0, std::array{less, x, x}); }),
+              refused(Operator::If, "takes no payload"));
+    EXPECT_EQ(graph.size(), 5);
+}
+
 TEST(GraphTest, UnaryShape)
 {
     Graph graph;
@@ -436,11 +491,22 @@ TEST(GraphTest, Codes)
     }
     EXPECT_EQ(operator_of(BIYOS_OP_PWL), Operator::PiecewiseLinear);
     EXPECT_EQ(operator_of(BIYOS_OP_ATAN2), Operator::Atan2);
+    EXPECT_EQ(operator_of(BIYOS_OP_LE), Operator::LessEqual);
+    EXPECT_EQ(operator_of(BIYOS_OP_GE), Operator::GreaterEqual);
+    EXPECT_EQ(operator_of(BIYOS_OP_EQ), Operator::Equal);
+    EXPECT_EQ(operator_of(BIYOS_OP_LT), Operator::Less);
+    EXPECT_EQ(operator_of(BIYOS_OP_GT), Operator::Greater);
+    EXPECT_EQ(operator_of(BIYOS_OP_NE), Operator::NotEqual);
+    EXPECT_EQ(operator_of(BIYOS_OP_AND), Operator::And);
+    EXPECT_EQ(operator_of(BIYOS_OP_OR), Operator::Or);
+    EXPECT_EQ(operator_of(BIYOS_OP_NOT), Operator::Not);
+    EXPECT_EQ(operator_of(BIYOS_OP_IF), Operator::If);
     const std::array unknown{
         0,
         BIYOS_OP_NODE,
         BIYOS_OP_KEEP,
         BIYOS_OP_REF,
+        BIYOS_OP_IF + 1,
         -1,
         256,
         256 + BIYOS_OP_EXP,

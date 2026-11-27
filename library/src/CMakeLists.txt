@@ -33,12 +33,14 @@ add_library(biyos_internal STATIC
     expr/analysis/curvature/bends.cpp
     expr/analysis/curvature/curvature.cpp
     expr/analysis/curvature/exponents.cpp
+    expr/analysis/curvature/logic.cpp
     expr/analysis/curvature/segments.cpp
     expr/analysis/curvature/shape.cpp
     expr/analysis/curvature/waves.cpp
     expr/analysis/intervals/elementary.cpp
     expr/analysis/intervals/enclosure.cpp
     expr/analysis/intervals/interval.cpp
+    expr/analysis/intervals/logic.cpp
     expr/analysis/intervals/periodic.cpp
     expr/analysis/intervals/piecewise.cpp
     expr/analysis/intervals/powers.cpp

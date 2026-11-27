@@ -2462,6 +2462,16 @@ value BIYOS_OP_PWL $p(e)$, the piecewise linear function through the points of a
 value BIYOS_OP_KEEP No operator: in postfix, the operand before it kept as a node of its own.
 value BIYOS_OP_REF No operator: in postfix, the node kept by an earlier `BIYOS_OP_KEEP` entry of the same call, named by that entry's position.
 value BIYOS_OP_ATAN2 $\operatorname{atan2}(e_1, e_2)$, the angle of the point $(e_2, e_1)$, in $(-\pi, \pi]$. A zero counts as $+0$ whatever its sign, so the angle is $\pi$ on the whole negative $e_2$ axis and 0 at the origin.
+value BIYOS_OP_LE $e_1 \le e_2$: 1 when $e_1$ is below $e_2$ or equal to it within `feastol_abs` and `feastol_rel`, else 0, and NaN when either child is NaN.
+value BIYOS_OP_GE $e_1 \ge e_2$, which is `BIYOS_OP_LE` with its children swapped.
+value BIYOS_OP_EQ $e_1 = e_2$: 1 when $e_1$ equals $e_2$ within `feastol_abs` and `feastol_rel`, else 0, and NaN when either child is NaN.
+value BIYOS_OP_LT $e_1 < e_2$, the negation of `BIYOS_OP_GE`: 1 where it gives 0, 0 where it gives 1, and NaN where it gives NaN.
+value BIYOS_OP_GT $e_1 > e_2$, the negation of `BIYOS_OP_LE`.
+value BIYOS_OP_NE $e_1 \ne e_2$, the negation of `BIYOS_OP_EQ`.
+value BIYOS_OP_AND $e_1 \land \dots \land e_n$, of one or more conditions: 1 when each holds, else 0, and NaN when a child is NaN. A condition is a comparison, `BIYOS_OP_AND`, `BIYOS_OP_OR` or `BIYOS_OP_NOT`.
+value BIYOS_OP_OR $e_1 \lor \dots \lor e_n$, of one or more conditions: 1 when one holds, else 0, and NaN when a child is NaN.
+value BIYOS_OP_NOT $\lnot e$, of a condition: 1 where it gives 0, 0 where it gives 1, and NaN where it gives NaN.
+value BIYOS_OP_IF $e_2$ where the condition $e_1$ holds and $e_3$ where it does not, and NaN when $e_1$ is NaN. The branch not taken never reaches the value or its derivatives.
 since 0.1.0
 
 function BIYOS_addvarnode
@@ -2484,7 +2494,7 @@ param arg in The ids of the `n` children, in order; may be null only when `n` is
 param val in The values the operator takes, in order; null when it takes none. `BIYOS_OP_CONST` takes its value, `BIYOS_OP_PROD` its coefficient, `BIYOS_OP_CPOW` and `BIYOS_OP_SPOW` their exponent, and `BIYOS_OP_SUM` its constant followed by the weight of each child, `n + 1` values. The call reads no others.
 param node out Receives the id of the new node; skipped when null.
 return `BIYOS_OK` once the node is added.
-error BIYOS_ERR_BADARG `n` is negative, `op` is not an operator the call takes, a child is not a node of the model, the operator does not take `n` children, a value is not finite, or the exponent of `BIYOS_OP_SPOW` is not positive.
+error BIYOS_ERR_BADARG `n` is negative, `op` is not an operator the call takes, a child is not a node of the model, the operator does not take `n` children, a child of `BIYOS_OP_AND`, `BIYOS_OP_OR` or `BIYOS_OP_NOT`, or the first child of `BIYOS_OP_IF`, is not a condition, a value is not finite, or the exponent of `BIYOS_OP_SPOW` is not positive.
 note The node is added as given, so a sum among the children of a sum stays a child, and so does a product among those of a product. An id given twice in `arg` names the same child twice.
 example BIYOS_offset x, power;
 example BIYOS_addvarnode(mdl, 0, &x);
@@ -2503,7 +2513,7 @@ param arg in The argument of each entry: a variable, a node id, a pwl, a number 
 param val in The values the operators take, in the order of the entries; null when they take none.
 param node out Entry `k` receives the id of the top node of expression `k`; skipped when null.
 return `BIYOS_OK` once the expressions are added.
-error BIYOS_ERR_BADARG `n` is negative, a count in `cnt` is negative or the counts add up past `INT64_MAX`, or an expression is malformed: a code that is no operator, a variable, a node or a pwl the model does not hold, an operator given a number of operands it does not take or more than are left, a `BIYOS_OP_REF` that names no earlier `BIYOS_OP_KEEP` entry, an expression that leaves no operand or more than one, or a value `BIYOS_addnode` would refuse. The message names the expression and the entry, counted from 0 in `code`, as in `invalid argument: expression 1: entry 4: 2 operands taken, 1 given`.
+error BIYOS_ERR_BADARG `n` is negative, a count in `cnt` is negative or the counts add up past `INT64_MAX`, or an expression is malformed: a code that is no operator, a variable, a node or a pwl the model does not hold, an operator given a number of operands it does not take or more than are left, an operand of `BIYOS_OP_AND`, `BIYOS_OP_OR` or `BIYOS_OP_NOT`, or the first of `BIYOS_OP_IF`, that is not a condition, a `BIYOS_OP_REF` that names no earlier `BIYOS_OP_KEEP` entry, an expression that leaves no operand or more than one, or a value `BIYOS_addnode` would refuse. The message names the expression and the entry, counted from 0 in `code`, as in `invalid argument: expression 1: entry 4: 2 operands taken, 1 given`.
 note A call that fails adds no node, so the next call gives the same ids again.
 see BIYOS_addnode BIYOS_attachexprsp
 since 0.1.0

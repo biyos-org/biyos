@@ -52,6 +52,7 @@ class Pusher
         Unary,
         Binary,
         Listed,
+        Branches,
     };
 
     struct Rule

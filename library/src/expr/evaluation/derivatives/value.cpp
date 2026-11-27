@@ -3,6 +3,7 @@
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
+#include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
 #include "expr/evaluation/derivatives/partials.hpp"
 #include "expr/graph/node.hpp"
@@ -44,6 +45,45 @@ Real angle(Real y, Real x) noexcept
     return std::atan2(y + 0.0, x + 0.0);
 }
 
+Real truth(bool holds, Real a, Real b) noexcept
+{
+    if (std::isnan(a) || std::isnan(b))
+    {
+        return (std::numeric_limits<Real>::quiet_NaN)();
+    }
+    return holds ? 1.0 : 0.0;
+}
+
+bool less_equal(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return tolerances.at_most(a, b);
+}
+
+bool greater_equal(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return tolerances.at_most(b, a);
+}
+
+bool equal(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return tolerances.approx_equal(a, b);
+}
+
+bool less(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return !greater_equal(tolerances, a, b);
+}
+
+bool greater(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return !less_equal(tolerances, a, b);
+}
+
+bool not_equal(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return !equal(tolerances, a, b);
+}
+
 template <typename F> void map(const Instruction &instruction, const Frame &frame, F f) noexcept
 {
     const std::span<const Real> x = row(frame, instruction.first);
@@ -60,6 +100,17 @@ template <typename F> void combine(const Instruction &instruction, const Frame &
     for (std::size_t l = 0; l < frame.lanes; ++l)
     {
         frame.result[l] = f(x[l], y[l]);
+    }
+}
+
+template <typename F>
+void compare(const Instruction &instruction, const Frame &frame, F holds) noexcept
+{
+    const std::span<const Real> x = row(frame, instruction.first);
+    const std::span<const Real> y = row(frame, instruction.second);
+    for (std::size_t l = 0; l < frame.lanes; ++l)
+    {
+        frame.result[l] = truth(holds(frame.tolerances, x[l], y[l]), x[l], y[l]);
     }
 }
 
@@ -120,6 +171,19 @@ void extreme(const Instruction &instruction, const Frame &frame, F pick) noexcep
         {
             frame.result[l] = pick(frame.result[l], x[l]);
         }
+    }
+}
+
+void select(const Instruction &instruction, const Frame &frame) noexcept
+{
+    const std::span<const std::uint32_t> operands = listed(instruction, frame.operands);
+    const std::span<const Real> condition = row(frame, operands[0]);
+    const std::span<const Real> then = row(frame, operands[1]);
+    const std::span<const Real> otherwise = row(frame, operands[2]);
+    for (std::size_t l = 0; l < frame.lanes; ++l)
+    {
+        const Real taken = is_zero(condition[l]) ? otherwise[l] : then[l];
+        frame.result[l] = std::isnan(condition[l]) ? condition[l] : taken;
     }
 }
 
@@ -311,6 +375,36 @@ void evaluate(const Instruction &instruction, const Frame &frame) noexcept
         return;
     case Operator::Atan2:
         combine(instruction, frame, angle);
+        return;
+    case Operator::LessEqual:
+        compare(instruction, frame, less_equal);
+        return;
+    case Operator::GreaterEqual:
+        compare(instruction, frame, greater_equal);
+        return;
+    case Operator::Equal:
+        compare(instruction, frame, equal);
+        return;
+    case Operator::Less:
+        compare(instruction, frame, less);
+        return;
+    case Operator::Greater:
+        compare(instruction, frame, greater);
+        return;
+    case Operator::NotEqual:
+        compare(instruction, frame, not_equal);
+        return;
+    case Operator::And:
+        extreme(instruction, frame, smaller);
+        return;
+    case Operator::Or:
+        extreme(instruction, frame, larger);
+        return;
+    case Operator::Not:
+        map(instruction, frame, [](Real x) { return 1.0 - x; });
+        return;
+    case Operator::If:
+        select(instruction, frame);
         return;
     }
 }

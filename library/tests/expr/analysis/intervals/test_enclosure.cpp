@@ -68,6 +68,29 @@ constexpr Parameters kFixed{
     .exponent = 1.5,
 };
 
+struct Connected
+{
+    Box box;
+    std::array<Interval, 3> wanted;
+};
+
+constexpr Interval kTrue{1.0, 1.0};
+constexpr Interval kFalse{0.0, 0.0};
+constexpr Interval kUnknown{0.0, 1.0};
+
+const std::array kConnected{
+    Connected{.box = {Interval(1.0, 2.0), Interval(3.0, 4.0), Interval(1.0, 2.0)},
+              .wanted = {kTrue, kTrue, kFalse}},
+    Connected{.box = {Interval(1.0, 2.0), Interval(3.0, 4.0), Interval(2.0, 5.0)},
+              .wanted = {kUnknown, kTrue, kFalse}},
+    Connected{.box = {Interval(3.0, 4.0), Interval(1.0, 2.0), Interval(0.0, 0.5)},
+              .wanted = {kFalse, kTrue, kTrue}},
+    Connected{.box = {Interval(3.0, 4.0), Interval(1.0, 2.0), Interval(1.5, 3.0)},
+              .wanted = {kFalse, kUnknown, kTrue}},
+    Connected{.box = {Interval(1.0, 3.0), Interval(2.0, 4.0), Interval(2.0, 4.0)},
+              .wanted = {kUnknown, kUnknown, kUnknown}},
+};
+
 Offset rational(Graph &graph)
 {
     Builder build(graph);
@@ -315,6 +338,78 @@ TEST(IntervalTest, EmptyChild)
     for (const Box &box : {Box{Interval::empty(), held, held}, Box{held, Interval::empty(), held}})
     {
         EXPECT_TRUE(enclosures(graph, box)[static_cast<std::size_t>(angle)].is_empty());
+    }
+}
+
+TEST(IntervalTest, Connectives)
+{
+    const Interval held(1.0, 2.0);
+    for (int code = BIYOS_OP_AND; code <= BIYOS_OP_NOT; ++code)
+    {
+        const auto op = static_cast<Operator>(code);
+        Graph graph;
+        const std::array x{graph.add_variable(0), graph.add_variable(1), graph.add_variable(2)};
+        const std::array conditions{graph.add(Operator::Less, std::span(x).first(2)),
+                                    graph.add(Operator::Greater, std::span(x).last(2))};
+        const std::span<const Offset> children =
+            op == Operator::Not ? std::span(conditions).first(1) : std::span(conditions);
+        const auto node = static_cast<std::size_t>(graph.add(op, children));
+        const std::size_t row = static_cast<std::size_t>(code - BIYOS_OP_AND);
+        for (std::size_t k = 0; k < kConnected.size(); ++k)
+        {
+            const Interval found = enclosures(graph, kConnected[k].box)[node];
+            const Interval wanted = kConnected[k].wanted[row];
+            EXPECT_TRUE(exact(found, wanted.lower(), wanted.upper())) << code << " box " << k;
+        }
+        const Box first{Interval::empty(), held, held};
+        EXPECT_TRUE(enclosures(graph, first)[node].is_empty()) << code;
+        const Box last{held, held, Interval::empty()};
+        EXPECT_EQ(enclosures(graph, last)[node].is_empty(), op != Operator::Not) << code;
+    }
+}
+
+TEST(IntervalTest, Branches)
+{
+    Graph graph;
+    const std::array x{graph.add_variable(0), graph.add_variable(1), graph.add_variable(2)};
+    const Offset below = graph.add(Operator::Less, std::span(x).first(2));
+    const auto node =
+        static_cast<std::size_t>(graph.add(Operator::If, std::array{below, x[1], x[2]}));
+    const Interval held(1.0, 2.0);
+    const Interval high(3.0, 4.0);
+    const Interval low(-1.0, 0.0);
+    EXPECT_TRUE(exact(enclosures(graph, Box{held, high, low})[node], 3.0, 4.0));
+    EXPECT_TRUE(exact(enclosures(graph, Box{high, held, low})[node], -1.0, 0.0));
+    EXPECT_TRUE(exact(enclosures(graph, Box{Interval(1.0, 4.0), high, low})[node], -1.0, 4.0));
+    EXPECT_TRUE(enclosures(graph, Box{Interval::empty(), high, held})[node].is_empty());
+    EXPECT_TRUE(exact(enclosures(graph, Box{held, high, Interval::empty()})[node], 3.0, 4.0));
+    const Offset zero = graph.add(Operator::Constant, 0.0, {});
+    const Offset positive = graph.add(Operator::GreaterEqual, std::array{x[0], zero});
+    const Offset root = graph.add(Operator::Sqrt, std::span(x).first(1));
+    const auto domain =
+        static_cast<std::size_t>(graph.add(Operator::If, std::array{positive, root, zero}));
+    EXPECT_TRUE(exact(enclosures(graph, Box{Interval(-2.0, -1.0), held, held})[domain], 0.0, 0.0));
+}
+
+TEST(IntervalTest, Comparisons)
+{
+    const Interval held(1.0, 2.0);
+    const std::array decided{1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
+    for (int code = BIYOS_OP_LE; code <= BIYOS_OP_NE; ++code)
+    {
+        Graph graph;
+        const std::array children{graph.add_variable(0), graph.add_variable(1)};
+        const auto node =
+            static_cast<std::size_t>(graph.add(static_cast<Operator>(code), children));
+        const Real truth = decided[static_cast<std::size_t>(code - BIYOS_OP_LE)];
+        const Box apart{held, Interval(3.0, 4.0), held};
+        EXPECT_TRUE(exact(enclosures(graph, apart)[node], truth, truth)) << code;
+        const Box overlap{held, Interval(1.5, 3.0), held};
+        EXPECT_TRUE(exact(enclosures(graph, overlap)[node], 0.0, 1.0)) << code;
+        const Box first{Interval::empty(), held, held};
+        EXPECT_TRUE(enclosures(graph, first)[node].is_empty()) << code;
+        const Box second{held, Interval::empty(), held};
+        EXPECT_TRUE(enclosures(graph, second)[node].is_empty()) << code;
     }
 }
 

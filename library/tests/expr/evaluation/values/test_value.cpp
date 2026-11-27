@@ -6,6 +6,7 @@
 #include "expr/graph/points.hpp"
 #include "expr/tape/tape.hpp"
 #include "graphs.hpp"
+#include "reference.hpp"
 #include "refusal.hpp"
 #include "sweep.hpp"
 
@@ -37,6 +38,9 @@ using biyos::Tolerances;
 using biyos::value_at;
 using biyos::Workspace;
 using biyos::test::binary;
+using biyos::test::children_of;
+using biyos::test::comparison;
+using biyos::test::connective;
 using biyos::test::constant;
 using biyos::test::default_tolerances;
 using biyos::test::every_operator;
@@ -49,11 +53,13 @@ using biyos::test::Random;
 using biyos::test::random_graph;
 using biyos::test::random_point;
 using biyos::test::refusal;
+using biyos::test::select;
 using biyos::test::sign_power;
 using biyos::test::unary;
 using biyos::test::values_of;
 
 using Point = std::array<Real, 4>;
+using Truths = std::array<Real, 9>;
 
 constexpr Real kInfinity = (std::numeric_limits<Real>::infinity)();
 constexpr Real kNan = (std::numeric_limits<Real>::quiet_NaN)();
@@ -102,13 +108,13 @@ Real signed_power(Real value, Real exponent)
     return std::copysign(std::pow(std::fabs(value), exponent), value);
 }
 
-std::vector<Real> cmath_values(const Point &point)
+std::vector<Real> cmath_values(const Point &point, const Truths &truths)
 {
     const Real x = point[0];
     const Real y = point[1];
     const Real z = point[2];
     const Real w = point[3];
-    return {
+    std::vector<Real> values{
         2.5,
         x,
         1.5 + 2.0 * x + -3.0 * y,
@@ -141,6 +147,9 @@ std::vector<Real> cmath_values(const Point &point)
         y < 0.25 ? 2.0 - 2.0 * (y + 1.0) : -0.5 + 1.2 * (y - 0.25),
         std::atan2(z, x),
     };
+    values.insert(values.end(), truths.begin(), truths.end());
+    values.push_back(x > y ? x : z);
+    return values;
 }
 
 class Reference
@@ -167,6 +176,7 @@ class Reference
     Real sum(Offset node);
     Real product(Offset node);
     Real extreme(Offset node, Operator op);
+    std::vector<Real> children(Offset node);
     Real child(Offset node, std::size_t k);
 
     const Graph &graph_;
@@ -242,6 +252,19 @@ Real Reference::compute(Offset node)
                         child(node, 0));
     case Operator::Atan2:
         return std::atan2(child(node, 0) + 0.0, child(node, 1) + 0.0);
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+        return comparison(op, child(node, 0), child(node, 1));
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+        return connective(op, children(node));
+    case Operator::If:
+        return select(child(node, 0), child(node, 1), child(node, 2));
     }
     return kNan;
 }
@@ -267,13 +290,14 @@ Real Reference::product(Offset node)
     return total;
 }
 
+std::vector<Real> Reference::children(Offset node)
+{
+    return children_of(graph_, node, [this](Offset child) { return value(child); });
+}
+
 Real Reference::extreme(Offset node, Operator op)
 {
-    std::vector<Real> values;
-    for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
-    {
-        values.push_back(child(node, k));
-    }
+    const std::vector<Real> values = children(node);
     if (std::ranges::any_of(values, is_nan))
     {
         return kNan;
@@ -306,14 +330,19 @@ TEST(ValueTest, Operators)
     Graph graph;
     const std::vector<Offset> roots = every_operator(graph);
     const Tape tape(graph, roots);
-    const std::array points{
-        Point{0.7, 1.9, -1.3, 0.3},
-        Point{2.5, 1.25, 4.0, -0.8},
-        Point{1.1, 3.0, -0.6, 0.95},
-    };
-    for (const Point &point : points)
+    const std::array<Point, 3> points{{
+        {0.7, 1.9, -1.3, 0.3},
+        {2.5, 1.25, 4.0, -0.8},
+        {1.1, 3.0, -0.6, 0.95},
+    }};
+    const std::array<Truths, 3> truths{{
+        {1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0},
+        {0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0},
+        {1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0},
+    }};
+    for (std::size_t k = 0; k < points.size(); ++k)
     {
-        expect_values(values_of(tape, point), cmath_values(point));
+        expect_values(values_of(tape, points[k]), cmath_values(points[k], truths[k]));
     }
 }
 

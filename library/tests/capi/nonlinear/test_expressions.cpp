@@ -346,6 +346,11 @@ TEST(CApiTest, RefusedNode)
     EXPECT_EQ(env.message(), expression + "operator 9 takes 1 child, not 2");
     EXPECT_EQ(add_node(model, BIYOS_OP_LOG, {1}, {}, &node), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), expression + "node 1 is unknown");
+    EXPECT_EQ(add_node(model, BIYOS_OP_NOT, {x}, {}, &node), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), expression + "operator 43 takes conditions: node 0 is operator 2");
+    EXPECT_EQ(add_node(model, BIYOS_OP_IF, {x, x, x}, {}, &node), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(),
+              expression + "operator 44 takes a condition first: node 0 is operator 2");
     const double nan = std::numeric_limits<double>::quiet_NaN();
     EXPECT_EQ(add_node(model, BIYOS_OP_PROD, {x}, {nan}, &node), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), expression + "constant is NaN");
@@ -363,6 +368,30 @@ TEST(CApiTest, RefusedNode)
     EXPECT_EQ(env.message(), bad + "argument 'val': is null");
     EXPECT_EQ(node, kNoNode);
     EXPECT_EQ(next_id(model), 1);
+}
+
+TEST(CApiTest, Conditions)
+{
+    const Env env;
+    const Model model(env);
+    add_variables(model, 2);
+    const BIYOS_offset x = variable_node(model, 0);
+    const BIYOS_offset y = variable_node(model, 1);
+    const BIYOS_offset less = node_of(model, BIYOS_OP_LT, {x, y}, {});
+    const BIYOS_offset both = node_of(model, BIYOS_OP_AND, {less, less}, {});
+    const BIYOS_offset either = node_of(model, BIYOS_OP_OR, {both, less}, {});
+    EXPECT_EQ(node_of(model, BIYOS_OP_NOT, {either}, {}), 5);
+    const Program logic =
+        single({BIYOS_OP_VAR, BIYOS_OP_VAR, BIYOS_OP_GE, BIYOS_OP_NODE, BIYOS_OP_OR, BIYOS_OP_NOT},
+               {0, 1, 2, less, 2, 1},
+               {});
+    EXPECT_EQ(expressions_of(model, logic), std::vector<BIYOS_offset>{8});
+    EXPECT_EQ(node_of(model, BIYOS_OP_IF, {less, x, y}, {}), 9);
+    const Program branch =
+        single({BIYOS_OP_NODE, BIYOS_OP_VAR, BIYOS_OP_VAR, BIYOS_OP_IF}, {less, 1, 0, 3}, {});
+    EXPECT_EQ(expressions_of(model, branch), std::vector<BIYOS_offset>{10});
+    EXPECT_EQ(next_id(model), 11);
+    EXPECT_EQ(env.message(), "");
 }
 
 TEST(CApiTest, NullValues)
@@ -461,8 +490,8 @@ TEST(CApiTest, PostfixErrors)
     EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_VAR}, {0, 1}, {})),
               bad + "2 operands left, not 1");
     EXPECT_EQ(refused(env, model, single({}, {}, {})), bad + "0 operands left, not 1");
-    EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, 35}, {0, 1}, {})),
-              bad + "entry 1: operator 35 is unknown");
+    EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, 45}, {0, 1}, {})),
+              bad + "entry 1: operator 45 is unknown");
     EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_PWL}, {0, 0}, {})),
               bad + "entry 1: pwl 0 is unknown");
     EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR}, {2}, {})),
@@ -471,6 +500,14 @@ TEST(CApiTest, PostfixErrors)
               bad + "entry 0: node 1 is unknown");
     EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_LOG}, {1, 0}, {})),
               bad + "entry 1: operator 10 takes 1 child, not 0");
+    EXPECT_EQ(
+        refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_VAR, BIYOS_OP_AND}, {0, 1, 2}, {})),
+        bad + "entry 2: operator 41 takes conditions: node 0 is operator 2");
+    EXPECT_EQ(
+        refused(env,
+                model,
+                single({BIYOS_OP_VAR, BIYOS_OP_VAR, BIYOS_OP_VAR, BIYOS_OP_IF}, {0, 1, 0, 3}, {})),
+        bad + "entry 3: operator 44 takes a condition first: node 0 is operator 2");
     const double infinity = BIYOS_INF;
     EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_PROD}, {1, 1}, {infinity})),
               bad + "entry 1: constant is infinity");

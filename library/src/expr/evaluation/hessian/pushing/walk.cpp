@@ -58,6 +58,14 @@ void pick(Real partial, std::span<Real> slopes) noexcept
     }
 }
 
+void take(Real partial, std::span<Real> slopes) noexcept
+{
+    for (std::size_t k = 0; k < slopes.size(); ++k)
+    {
+        slopes[k] = std::isnan(partial) ? partial : (chosen(partial) == k + 1 ? 1.0 : 0.0);
+    }
+}
+
 void slopes_of(const Instruction &instruction,
                const Frame &frame,
                std::span<const Real> partials,
@@ -71,6 +79,9 @@ void slopes_of(const Instruction &instruction,
     case Operator::Max:
     case Operator::Min:
         pick(partials[0], slopes);
+        return;
+    case Operator::If:
+        take(partials[0], slopes);
         return;
     case Operator::Constant:
     case Operator::Variable:
@@ -100,6 +111,15 @@ void slopes_of(const Instruction &instruction,
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         std::ranges::copy(partials.first(slopes.size()), slopes.begin());
         return;
     }

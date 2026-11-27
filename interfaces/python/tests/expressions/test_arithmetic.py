@@ -205,5 +205,18 @@ def test_operators():
         Operator.KEEP,
         Operator.REFERENCE,
     }
-    assert reached | postfix == set(Operator)
+    conditions = {
+        Operator.LESS_EQUAL,
+        Operator.GREATER_EQUAL,
+        Operator.EQUAL,
+        Operator.LESS,
+        Operator.GREATER,
+        Operator.NOT_EQUAL,
+        Operator.AND,
+        Operator.OR,
+        Operator.NOT,
+    }
+    logic = {*conditions, Operator.IF}
+    assert reached | postfix | logic == set(Operator)
     assert not reached & postfix
+    assert not (reached | postfix) & logic

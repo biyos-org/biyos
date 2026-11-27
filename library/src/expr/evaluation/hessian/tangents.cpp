@@ -215,6 +215,16 @@ void curves_of(const Instruction &instruction,
     case Operator::Max:
     case Operator::Min:
     case Operator::PiecewiseLinear:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+    case Operator::If:
         std::ranges::fill(out, 0.0);
         return;
     case Operator::Product:
@@ -295,6 +305,16 @@ Bends bends_of(const Instruction &instruction,
     case Operator::Max:
     case Operator::Min:
     case Operator::PiecewiseLinear:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+    case Operator::If:
         return bend(0.0);
     case Operator::Division:
         return quotient_of(frame, partials);

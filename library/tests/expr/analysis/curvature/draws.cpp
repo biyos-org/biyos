@@ -72,11 +72,21 @@ std::size_t arity_of(Operator op, Engine &engine)
     case Operator::Product:
     case Operator::Max:
     case Operator::Min:
+    case Operator::And:
+    case Operator::Or:
         return 1 + pick(engine, kWidest);
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         return 2;
+    case Operator::If:
+        return 3;
     case Operator::Negation:
     case Operator::ConstantPower:
     case Operator::Exp:
@@ -99,6 +109,7 @@ std::size_t arity_of(Operator op, Engine &engine)
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
+    case Operator::Not:
         return 1;
     }
     return 1;

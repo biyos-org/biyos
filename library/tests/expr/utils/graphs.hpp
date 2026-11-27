@@ -32,6 +32,15 @@ constexpr std::array kUnary{
 constexpr std::array kPowers{Operator::ConstantPower, Operator::SignPower};
 constexpr std::array kBinary{Operator::Division, Operator::Power, Operator::Atan2};
 constexpr std::array kListed{Operator::Max, Operator::Min};
+constexpr std::array kComparisons{
+    Operator::LessEqual,
+    Operator::GreaterEqual,
+    Operator::Equal,
+    Operator::Less,
+    Operator::Greater,
+    Operator::NotEqual,
+};
+constexpr std::array kConnectives{Operator::And, Operator::Or, Operator::Not};
 constexpr std::array kExponents{2.0, 3.0, 0.5, -1.0, 1.5};
 constexpr std::array kKinks{-1.0, 0.25, 1.5};
 constexpr std::array kHeights{2.0, -0.5, 1.0};
@@ -96,6 +105,11 @@ inline Offset binary(Graph &graph, Operator op, Offset left, Offset right)
 {
     const std::array children{left, right};
     return graph.add(op, children);
+}
+
+inline Offset branch(Graph &graph, Offset condition, Offset then, Offset otherwise)
+{
+    return graph.add(Operator::If, std::array{condition, then, otherwise});
 }
 
 inline Offset power(Graph &graph, Offset base, Real exponent)
@@ -172,6 +186,18 @@ inline Offset piecewise(Graph &graph, Offset pwl, Offset child)
     return graph.add_piecewise(pwl, std::span(&child, 1));
 }
 
+inline std::array<Offset, 3> connectives(Graph &graph, Offset x, Offset y, Offset z)
+{
+    const Offset below = binary(graph, Operator::Less, y, x);
+    const Offset above = binary(graph, Operator::Greater, x, z);
+    const std::array conditions{below, above};
+    return {
+        graph.add(Operator::And, conditions),
+        graph.add(Operator::Or, conditions),
+        unary(graph, Operator::Not, below),
+    };
+}
+
 inline std::vector<Offset> every_operator(Graph &graph)
 {
     const Offset x = graph.add_variable(0);
@@ -181,7 +207,7 @@ inline std::vector<Offset> every_operator(Graph &graph)
     const Offset pwl = graph.add_piecewise_linear(kKinks, kHeights);
     const std::array xy{x, y};
     const std::array xyz{x, y, z};
-    return {
+    std::vector<Offset> roots{
         constant(graph, 2.5),
         x,
         graph.add_sum(1.5, xy, std::array{2.0, -3.0}),
@@ -213,7 +239,18 @@ inline std::vector<Offset> every_operator(Graph &graph)
         unary(graph, Operator::Erf, z),
         piecewise(graph, pwl, y),
         binary(graph, Operator::Atan2, z, x),
+        binary(graph, Operator::LessEqual, x, y),
+        binary(graph, Operator::GreaterEqual, x, y),
+        binary(graph, Operator::Equal, x, x),
+        binary(graph, Operator::Less, z, x),
+        binary(graph, Operator::Greater, z, x),
+        binary(graph, Operator::NotEqual, y, z),
     };
+    const std::array logic = connectives(graph, x, y, z);
+    roots.insert(roots.end(), logic.begin(), logic.end());
+    const Offset above = binary(graph, Operator::Greater, x, y);
+    roots.push_back(branch(graph, above, x, z));
+    return roots;
 }
 
 class Random
@@ -277,7 +314,7 @@ inline Offset powered(Graph &graph, Random &random, Offset base)
 inline Offset grow(Graph &graph, Random &random)
 {
     const std::vector<Offset> children = picks(random, graph, 1 + random.below(4));
-    const std::size_t kind = random.below(8);
+    const std::size_t kind = random.below(9);
     const Real number = random.uniform(-2.0, 2.0);
     switch (kind)
     {
@@ -298,6 +335,11 @@ inline Offset grow(Graph &graph, Random &random)
         return graph.add(Operator::Product, number, children);
     case 6:
         return listed(graph, kListed[random.below(2)], children);
+    case 7:
+        return binary(graph,
+                      kComparisons[random.below(kComparisons.size())],
+                      children.front(),
+                      children.back());
     default:
         return piecewise(graph, static_cast<Offset>(random.below(kPiecewiseLinears)), children[0]);
     }

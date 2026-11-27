@@ -64,6 +64,15 @@ Pusher::Rule Pusher::rule_of(const Instruction &instruction) noexcept
     switch (instruction.op)
     {
     case Operator::Constant:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         return {.form = Form::Constant, .bending = Bending::None};
     case Operator::Variable:
         return {.form = Form::Variable, .bending = Bending::None};
@@ -71,6 +80,8 @@ Pusher::Rule Pusher::rule_of(const Instruction &instruction) noexcept
     case Operator::Max:
     case Operator::Min:
         return {.form = Form::Listed, .bending = Bending::None};
+    case Operator::If:
+        return {.form = Form::Branches, .bending = Bending::None};
     case Operator::Product:
         return {.form = Form::Listed, .bending = Bending::Cross};
     case Operator::Negation:
@@ -186,6 +197,12 @@ void Pusher::gather(const Instruction &instruction,
         return;
     case Form::Listed:
         for (const std::uint32_t slot : listed(instruction, operands))
+        {
+            operands_.push_back(occupants_[slot]);
+        }
+        return;
+    case Form::Branches:
+        for (const std::uint32_t slot : listed(instruction, operands).subspan(1))
         {
             operands_.push_back(occupants_[slot]);
         }

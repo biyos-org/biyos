@@ -49,6 +49,9 @@ Form form_of(Operator op) noexcept
     case Operator::Product:
     case Operator::Max:
     case Operator::Min:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::If:
         return Form::Listed;
     case Operator::Negation:
     case Operator::Division:
@@ -74,6 +77,13 @@ Form form_of(Operator op) noexcept
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::Not:
         return Form::Direct;
     case Operator::PiecewiseLinear:
         return Form::Table;

@@ -7,6 +7,7 @@
 #include "expr/analysis/curvature/arithmetic.hpp"
 #include "expr/analysis/curvature/bends.hpp"
 #include "expr/analysis/curvature/exponents.hpp"
+#include "expr/analysis/curvature/logic.hpp"
 #include "expr/analysis/curvature/segments.hpp"
 #include "expr/analysis/curvature/shape.hpp"
 #include "expr/analysis/curvature/waves.hpp"
@@ -63,6 +64,11 @@ Curvature unknown(std::span<Argument> arguments) noexcept
 PiecewiseLinear piecewise_linear_of(const Graph &graph, Offset node) noexcept
 {
     return graph.points().piecewise_linear(graph.piecewise_linear(node));
+}
+
+Interval enclosure_of(std::span<const Interval> nodes, Offset node) noexcept
+{
+    return nodes[to_size(node)];
 }
 
 Curvature outer_of(const Graph &graph,
@@ -131,6 +137,18 @@ Curvature outer_of(const Graph &graph,
         return unary(bend(kErf, operands[0]), arguments);
     case Operator::PiecewiseLinear:
         return unary(segments(piecewise_linear_of(graph, node), operands[0]), arguments);
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+        return condition_curvature(enclosure_of(operands.nodes, node), arguments);
+    case Operator::If:
+        return branch_curvature(operands[0], arguments);
     case Operator::Atan2:
         return unknown(arguments);
     }

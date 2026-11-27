@@ -425,6 +425,15 @@ Graph every_operator()
     graph.add(Operator::SignPower, 1.5, one);
     graph.add(Operator::Power, x);
     graph.add(Operator::Atan2, x);
+    graph.add(Operator::LessEqual, x);
+    graph.add(Operator::GreaterEqual, x);
+    graph.add(Operator::Equal, x);
+    const std::array conditions{graph.add(Operator::Less, x), graph.add(Operator::Greater, x)};
+    graph.add(Operator::NotEqual, x);
+    graph.add(Operator::And, conditions);
+    graph.add(Operator::Or, conditions);
+    graph.add(Operator::Not, std::span(conditions).first(1));
+    graph.add(Operator::If, std::array{conditions[0], x[0], x[1]});
     graph.add(Operator::Max, x);
     graph.add(Operator::Min, x);
     for (const Operator op : kUnary)
