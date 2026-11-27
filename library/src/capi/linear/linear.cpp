@@ -143,12 +143,12 @@ BIYOS_status BIYOS_addlinterm(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_addrlintermsp(BIYOS_model *mdl,
                                  BIYOS_index n,
-                                 const BIYOS_index *idx,
+                                 const BIYOS_index *fun,
                                  const BIYOS_offset *cnt,
                                  const BIYOS_index *var,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_rows<List>>(mdl, List{n, idx}, cnt, var, coef);
+    return guarded<add_rows<List>>(mdl, List{n, fun}, cnt, var, coef);
 }
 
 BIYOS_status BIYOS_addrlintermrg(BIYOS_model *mdl,

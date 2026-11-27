@@ -102,10 +102,10 @@ BIYOS_status BIYOS_getnfun(const BIYOS_model *mdl, BIYOS_index *n)
 
 BIYOS_status BIYOS_addcstsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *fun,
                             const BIYOS_real *cst)
 {
-    return guarded<add_constants<List>>(mdl, List{n, idx}, cst);
+    return guarded<add_constants<List>>(mdl, List{n, fun}, cst);
 }
 
 BIYOS_status BIYOS_addcstrg(BIYOS_model *mdl,
@@ -118,10 +118,10 @@ BIYOS_status BIYOS_addcstrg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_setcstsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *fun,
                             const BIYOS_real *cst)
 {
-    return guarded<set_constants<List>>(mdl, List{n, idx}, cst);
+    return guarded<set_constants<List>>(mdl, List{n, fun}, cst);
 }
 
 BIYOS_status BIYOS_setcstrg(BIYOS_model *mdl,
@@ -134,10 +134,10 @@ BIYOS_status BIYOS_setcstrg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getcstsp(const BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *fun,
                             BIYOS_real *cst)
 {
-    return guarded<get_constants<List>>(mdl, List{n, idx}, cst);
+    return guarded<get_constants<List>>(mdl, List{n, fun}, cst);
 }
 
 BIYOS_status BIYOS_getcstrg(const BIYOS_model *mdl,
@@ -148,9 +148,9 @@ BIYOS_status BIYOS_getcstrg(const BIYOS_model *mdl,
     return guarded<get_constants<Range>>(mdl, Range{beg, end}, cst);
 }
 
-BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+BIYOS_status BIYOS_clrfunsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *fun)
 {
-    return guarded<clear_functions<List>>(mdl, List{n, idx});
+    return guarded<clear_functions<List>>(mdl, List{n, fun});
 }
 
 BIYOS_status BIYOS_clrfunrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)

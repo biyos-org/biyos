@@ -177,10 +177,10 @@ BIYOS_status BIYOS_addexpr(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_attachexprsp(BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *fun,
                                 const BIYOS_offset *node)
 {
-    return guarded<attach_expressions<List>>(mdl, List{n, idx}, node);
+    return guarded<attach_expressions<List>>(mdl, List{n, fun}, node);
 }
 
 BIYOS_status BIYOS_attachexprrg(BIYOS_model *mdl,
@@ -193,11 +193,11 @@ BIYOS_status BIYOS_attachexprrg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getnexprsp(const BIYOS_model *mdl,
                               BIYOS_index n,
-                              const BIYOS_index *idx,
+                              const BIYOS_index *fun,
                               BIYOS_offset *nnz,
                               BIYOS_offset *nval)
 {
-    return guarded<n_expressions<List>>(mdl, List{n, idx}, nnz, nval);
+    return guarded<n_expressions<List>>(mdl, List{n, fun}, nnz, nval);
 }
 
 BIYOS_status BIYOS_getnexprrg(const BIYOS_model *mdl,
@@ -211,7 +211,7 @@ BIYOS_status BIYOS_getnexprrg(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getexprsp(const BIYOS_model *mdl,
                              BIYOS_index n,
-                             const BIYOS_index *idx,
+                             const BIYOS_index *fun,
                              BIYOS_offset cap,
                              BIYOS_offset valcap,
                              BIYOS_offset *cnt,
@@ -225,7 +225,7 @@ BIYOS_status BIYOS_getexprsp(const BIYOS_model *mdl,
         .arguments = arg,
         .values = val,
     };
-    return guarded<get_expressions<List>>(mdl, List{n, idx}, cap, valcap, out);
+    return guarded<get_expressions<List>>(mdl, List{n, fun}, cap, valcap, out);
 }
 
 BIYOS_status BIYOS_getexprrg(const BIYOS_model *mdl,

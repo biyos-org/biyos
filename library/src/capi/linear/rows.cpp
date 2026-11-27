@@ -59,10 +59,10 @@ void get_rows(const Session &session,
 
 BIYOS_status BIYOS_getnrlintermsp(const BIYOS_model *mdl,
                                   BIYOS_index n,
-                                  const BIYOS_index *idx,
+                                  const BIYOS_index *fun,
                                   BIYOS_offset *nnz)
 {
-    return guarded<n_row_terms<List>>(mdl, List{n, idx}, nnz);
+    return guarded<n_row_terms<List>>(mdl, List{n, fun}, nnz);
 }
 
 BIYOS_status BIYOS_getnrlintermrg(const BIYOS_model *mdl,
@@ -75,13 +75,13 @@ BIYOS_status BIYOS_getnrlintermrg(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getrlintermsp(const BIYOS_model *mdl,
                                  BIYOS_index n,
-                                 const BIYOS_index *idx,
+                                 const BIYOS_index *fun,
                                  BIYOS_offset cap,
                                  BIYOS_offset *cnt,
                                  BIYOS_index *var,
                                  BIYOS_real *coef)
 {
-    return guarded<get_rows<List>>(mdl, List{n, idx}, cap, cnt, var, coef);
+    return guarded<get_rows<List>>(mdl, List{n, fun}, cap, cnt, var, coef);
 }
 
 BIYOS_status BIYOS_getrlintermrg(const BIYOS_model *mdl,
