@@ -4983,7 +4983,7 @@ class Model:
     @overload
     def setcconbnd(
         self,
-        idx: One[Complement],
+        ccon: One[Complement],
         lb: Real | None = None,
         ub: Real | None = None,
     ) -> None: ...
@@ -4991,14 +4991,14 @@ class Model:
     @overload
     def setcconbnd(
         self,
-        idx: Many[Complement, Complements],
+        ccon: Many[Complement, Complements],
         lb: Sequence[Real] | None = None,
         ub: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setcconbnd(
         self,
-        idx: Selection[Complement, Complements],
+        ccon: Selection[Complement, Complements],
         lb: Real | Sequence[Real] | None = None,
         ub: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -5006,7 +5006,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ccon
             The complements.
             An index or a view stands for one complement, and each other
             argument is then a scalar.
@@ -5018,7 +5018,7 @@ class Model:
         BIYOS_setcconbndsp
         BIYOS_setcconbndrg
         """
-        one, n, chosen = self._selected("BIYOS_setcconbnd", Complements, idx)
+        one, n, chosen = self._selected("BIYOS_setcconbnd", Complements, ccon)
         arrays = (
             doubles("lb", lb, n, one),
             doubles("ub", ub, n, one),
@@ -5026,21 +5026,21 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getcconbnd(self, idx: One[Complement]) -> tuple[Real, Real]: ...
+    def getcconbnd(self, ccon: One[Complement]) -> tuple[Real, Real]: ...
 
     @overload
     def getcconbnd(
-        self, idx: Many[Complement, Complements]
+        self, ccon: Many[Complement, Complements]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getcconbnd(
-        self, idx: Selection[Complement, Complements]
+        self, ccon: Selection[Complement, Complements]
     ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of complements.
 
         Parameters
         ----------
-        idx
+        ccon
             The complements, in any order, any of them more than once.
             An index or a view stands for one complement, and each result is
             then a scalar.
@@ -5058,13 +5058,13 @@ class Model:
         BIYOS_getcconbndrg
         """
         bounds = (c_real, c_real)
-        lb, ub = self._getlist("BIYOS_getcconbnd", Complements, idx, *bounds)
+        lb, ub = self._getlist("BIYOS_getcconbnd", Complements, ccon, *bounds)
         return lb, ub
 
     @overload
     def setccontol(
         self,
-        idx: One[Complement],
+        ccon: One[Complement],
         atol: Real | None = None,
         rtol: Real | None = None,
     ) -> None: ...
@@ -5072,14 +5072,14 @@ class Model:
     @overload
     def setccontol(
         self,
-        idx: Many[Complement, Complements],
+        ccon: Many[Complement, Complements],
         atol: Sequence[Real] | None = None,
         rtol: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setccontol(
         self,
-        idx: Selection[Complement, Complements],
+        ccon: Selection[Complement, Complements],
         atol: Real | Sequence[Real] | None = None,
         rtol: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -5093,7 +5093,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ccon
             The complements.
             An index or a view stands for one complement, and each other
             argument is then a scalar.
@@ -5106,7 +5106,7 @@ class Model:
         BIYOS_setccontolsp
         BIYOS_setccontolrg
         """
-        one, n, chosen = self._selected("BIYOS_setccontol", Complements, idx)
+        one, n, chosen = self._selected("BIYOS_setccontol", Complements, ccon)
         arrays = (
             doubles("atol", atol, n, one),
             doubles("rtol", rtol, n, one),
@@ -5115,16 +5115,16 @@ class Model:
 
     @overload
     def getccontol(
-        self, idx: One[Complement]
+        self, ccon: One[Complement]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getccontol(
-        self, idx: Many[Complement, Complements]
+        self, ccon: Many[Complement, Complements]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getccontol(
-        self, idx: Selection[Complement, Complements]
+        self, ccon: Selection[Complement, Complements]
     ) -> (
         tuple[Real | None, Real | None]
         | tuple[list[Real | None], list[Real | None]]
@@ -5133,7 +5133,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ccon
             The complements, in any order, any of them more than once.
             An index or a view stands for one complement, and each result is
             then a scalar.
@@ -5151,15 +5151,15 @@ class Model:
         BIYOS_getccontolrg
         """
         pair = (c_real, c_real)
-        atol, rtol = self._getlist("BIYOS_getccontol", Complements, idx, *pair)
+        atol, rtol = self._getlist("BIYOS_getccontol", Complements, ccon, *pair)
         return _each(_or_none, atol), _each(_or_none, rtol)
 
-    def delccontol(self, idx: Selection[Complement, Complements]) -> None:
+    def delccontol(self, ccon: Selection[Complement, Complements]) -> None:
         """Return complements to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
         ----------
-        idx
+        ccon
             The complements that lose their tolerances.
             An index or a view stands for one complement.
 
@@ -5168,7 +5168,7 @@ class Model:
         BIYOS_delccontolsp
         BIYOS_delccontolrg
         """
-        rows = picked(self, Complements, idx)
+        rows = picked(self, Complements, ccon)
         self._call(*self._chosen("BIYOS_delccontol", Complements, rows))
 
     def getnccon(self) -> Index:
@@ -5189,16 +5189,16 @@ class Model:
 
     @overload
     def getccon(
-        self, idx: One[Complement]
+        self, ccon: One[Complement]
     ) -> tuple[Function, Function, Real, Real]: ...
 
     @overload
     def getccon(
-        self, idx: Many[Complement, Complements] | None = None
+        self, ccon: Many[Complement, Complements] | None = None
     ) -> tuple[Functions, Functions, list[Real], list[Real]]: ...
 
     def getccon(
-        self, idx: Selection[Complement, Complements] | None = None
+        self, ccon: Selection[Complement, Complements] | None = None
     ) -> (
         tuple[Function, Function, Real, Real]
         | tuple[Functions, Functions, list[Real], list[Real]]
@@ -5210,7 +5210,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ccon
             The complements, in any order, any of them more than once; every
             complement by default.
             An index or a view stands for one complement, and each result is
@@ -5233,57 +5233,59 @@ class Model:
         BIYOS_getcconsp
         BIYOS_getcconrg
         """
-        every = range(self.getnccon()) if idx is None else idx
+        every = range(self.getnccon()) if ccon is None else ccon
         types = (Functions, Functions, c_real, c_real)
         found = self._getlist("BIYOS_getccon", Complements, every, *types)
         bounded, partners, lower, upper = found
         return bounded, partners, lower, upper
 
     @overload
-    def setcconname(self, idx: One[Complement], name: str) -> None: ...
+    def setcconname(self, ccon: One[Complement], name: str) -> None: ...
 
     @overload
     def setcconname(
-        self, idx: Many[Complement, Complements], name: Sequence[str]
+        self, ccon: Many[Complement, Complements], name: Sequence[str]
     ) -> None: ...
 
     def setcconname(
-        self, idx: Selection[Complement, Complements], name: str | Sequence[str]
+        self,
+        ccon: Selection[Complement, Complements],
+        name: str | Sequence[str],
     ) -> None:
         """Name complements of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        ccon
             The complements to name.
             An index or a view stands for one complement, and each other
             argument is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``ccon``.
 
         See Also
         --------
         BIYOS_setcconnamesp
         BIYOS_setcconnamerg
         """
-        self._setname("BIYOS_setcconname", Complements, idx, name)
+        self._setname("BIYOS_setcconname", Complements, ccon, name)
 
     @overload
-    def getcconname(self, idx: One[Complement]) -> str | None: ...
+    def getcconname(self, ccon: One[Complement]) -> str | None: ...
 
     @overload
     def getcconname(
-        self, idx: Many[Complement, Complements]
+        self, ccon: Many[Complement, Complements]
     ) -> list[str | None]: ...
 
     def getcconname(
-        self, idx: Selection[Complement, Complements]
+        self, ccon: Selection[Complement, Complements]
     ) -> str | None | list[str | None]:
         """Return the names of complements, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        ccon
             The complements to read.
             An index or a view stands for one complement, and the result is then
             a scalar.
@@ -5298,7 +5300,7 @@ class Model:
         BIYOS_getcconnamesp
         BIYOS_getcconnamerg
         """
-        return self._getname("BIYOS_getcconname", Complements, idx)
+        return self._getname("BIYOS_getcconname", Complements, ccon)
 
     def getcconidx(self, name: Sequence[str]) -> Complements:
         """Return the named complements, as ``getvaridx`` does.
@@ -5310,7 +5312,7 @@ class Model:
 
         Returns
         -------
-        idx
+        ccon
             The complement that alone holds each name, as a ``Complements``
             block.
 
@@ -5320,12 +5322,12 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getcconidx, Complements, name)
 
-    def delcconname(self, idx: Selection[Complement, Complements]) -> None:
+    def delcconname(self, ccon: Selection[Complement, Complements]) -> None:
         """Remove the names of complements, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        ccon
             The complements that lose their names.
             An index or a view stands for one complement.
 
@@ -5334,9 +5336,9 @@ class Model:
         BIYOS_delcconnamesp
         BIYOS_delcconnamerg
         """
-        self._delname("BIYOS_delcconname", Complements, idx)
+        self._delname("BIYOS_delcconname", Complements, ccon)
 
-    def delccon(self, idx: Selection[Complement, Complements]) -> list[Index]:
+    def delccon(self, ccon: Selection[Complement, Complements]) -> list[Index]:
         """Delete complements.
 
         The complements left keep their order and are numbered from 0 again. A
@@ -5346,7 +5348,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ccon
             The complements to delete, in any order, none of them twice.
             An index or a view stands for one complement.
 
@@ -5361,7 +5363,7 @@ class Model:
         BIYOS_delcconsp
         BIYOS_delcconrg
         """
-        return self._delete("BIYOS_delccon", Complements, idx)
+        return self._delete("BIYOS_delccon", Complements, ccon)
 
     def evalf(self, x: Sequence[Real]) -> list[Real]:
         """Evaluate the functions at a point.
