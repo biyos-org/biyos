@@ -157,7 +157,7 @@ void Model::check_kinds(std::span<const Index> indices, std::span<const Variable
 
 std::vector<Index> Model::delete_indicators(std::span<const Index> indices)
 {
-    std::vector<Index> map = renumbering(kNoun, n_indicators(), indices);
+    std::vector<Index> map = renumbering(Family::Indicator, n_indicators(), indices);
     keep(indicators_, map);
     renumber_names(Family::Indicator, map);
     return map;

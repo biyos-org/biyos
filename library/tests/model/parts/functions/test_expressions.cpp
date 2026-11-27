@@ -572,7 +572,7 @@ TEST(ExpressionTest, AttachRefused)
     const std::string bad = "invalid argument: ";
     EXPECT_EQ(attach_refusal(model, {2}, {x}), bad + "function 2: unknown");
     EXPECT_EQ(attach_refusal(model, {1, 1}, {x, y}),
-              bad + "argument 'idx': function 1 is repeated");
+              bad + "argument 'fun': function 1 is repeated");
     EXPECT_EQ(attach_refusal(model, {1, 0}, {x, 6}), bad + "function 0: node 6 is unknown");
     EXPECT_EQ(attach_refusal(model, {0}, {-1}), bad + "function 0: node -1 is unknown");
     EXPECT_EQ(attach_refusal(model, {1, 0}, {exponential, large}),

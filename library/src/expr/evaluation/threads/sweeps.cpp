@@ -2,6 +2,7 @@
 
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "expr/evaluation/derivatives/derivative.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
@@ -31,6 +32,7 @@ struct Job
 {
     const Tape &tape;
     std::span<const Real> point;
+    const Tolerances &tolerances;
     Team &team;
     std::span<Real> values;
     std::span<Real> gradients;
@@ -43,7 +45,7 @@ void forward_block(const Job &job,
                    std::span<Real> into) noexcept
 {
     const Workspace &lead = job.team.lead().workspace;
-    forward(block, job.point, lead.shared, member.workspace);
+    forward(block, job.point, lead.shared, job.tolerances, member.workspace);
     store(block, member.workspace, into);
 }
 
@@ -54,7 +56,7 @@ void linearize_block(const Job &job,
                      std::span<Real> into) noexcept
 {
     const Workspace &lead = job.team.lead().workspace;
-    linearize(block, job.point, lead.shared, partials, member.workspace);
+    linearize(block, job.point, lead.shared, job.tolerances, partials, member.workspace);
     store(block, member.workspace, into);
 }
 
@@ -207,6 +209,7 @@ void climb(const Job &job, Pool &pool)
 
 void forward(const Tape &tape,
              std::span<const Real> point,
+             const Tolerances &tolerances,
              Team &team,
              Pool &pool,
              std::span<Real> values)
@@ -214,6 +217,7 @@ void forward(const Tape &tape,
     check_sweep(tape, point, team.lead().workspace, values);
     const Job job{.tape = tape,
                   .point = point,
+                  .tolerances = tolerances,
                   .team = team,
                   .values = values,
                   .gradients = {},
@@ -224,6 +228,7 @@ void forward(const Tape &tape,
 
 void jacobian(const Tape &tape,
               std::span<const Real> point,
+              const Tolerances &tolerances,
               Team &team,
               Pool &pool,
               std::span<Real> values,
@@ -233,6 +238,7 @@ void jacobian(const Tape &tape,
     check_jacobian(tape, point, lead.workspace, lead.adjoints, values, gradients);
     const Job job{.tape = tape,
                   .point = point,
+                  .tolerances = tolerances,
                   .team = team,
                   .values = values,
                   .gradients = gradients,
@@ -244,6 +250,7 @@ void jacobian(const Tape &tape,
 void weighted_gradient(const Tape &tape,
                        std::span<const Real> point,
                        std::span<const Real> weights,
+                       const Tolerances &tolerances,
                        Team &team,
                        Pool &pool,
                        std::span<Real> values,
@@ -254,6 +261,7 @@ void weighted_gradient(const Tape &tape,
     std::ranges::fill(gradient, 0.0);
     const Job job{.tape = tape,
                   .point = point,
+                  .tolerances = tolerances,
                   .team = team,
                   .values = values,
                   .gradients = gradient,

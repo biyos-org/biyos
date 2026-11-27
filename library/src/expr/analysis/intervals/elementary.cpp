@@ -1,11 +1,13 @@
 #include "expr/analysis/intervals/elementary.hpp"
 
 #include "core/numbers.hpp"
+#include "core/numeric/angle.hpp"
 #include "core/numeric/limits.hpp"
 #include "expr/analysis/intervals/interval.hpp"
 #include "expr/analysis/intervals/rounding.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -26,6 +28,7 @@ constexpr Interval kAboveOne{1.0, kInfinity};
 constexpr Interval kUnit{-1.0, 1.0};
 constexpr Interval kQuarterTurn{-kHalfPiUp, kHalfPiUp};
 constexpr Interval kHalfTurn{0.0, kPiUp};
+constexpr Interval kWholeTurn{-kPiUp, kPiUp};
 
 struct Monotone
 {
@@ -201,6 +204,35 @@ Interval monotone(const Monotone &f, Interval value) noexcept
     return meet(meet(values, f.image), sign_of(f, inside));
 }
 
+bool meets_cut(Interval y, Interval x) noexcept
+{
+    return y.lower() < 0.0 && y.upper() >= 0.0 && x.lower() < 0.0;
+}
+
+Interval hull_of(Interval y, Interval x) noexcept
+{
+    const std::array values{
+        angle(y.lower(), x.lower()),
+        angle(y.lower(), x.upper()),
+        angle(y.upper(), x.lower()),
+        angle(y.upper(), x.upper()),
+    };
+    const auto [least, most] = std::ranges::minmax(values);
+    return {widen_down(least), widen_up(most)};
+}
+
+Interval turn_of(Interval x) noexcept
+{
+    return x.lower() >= 0.0 ? kQuarterTurn : kWholeTurn;
+}
+
+Interval side_of(Interval y, Interval x) noexcept
+{
+    const bool above = y.lower() >= 0.0;
+    const bool below = y.upper() < 0.0 || (y.upper() <= 0.0 && x.lower() >= 0.0);
+    return {above ? 0.0 : -kInfinity, below ? 0.0 : kInfinity};
+}
+
 Real entropy_value(Real value) noexcept
 {
     return value > 0.0 ? value * std::log(value) : 0.0;
@@ -257,7 +289,11 @@ Interval atan2(Interval y, Interval x) noexcept
     {
         return Interval::empty();
     }
-    return {-kPiUp, kPiUp};
+    if (meets_cut(y, x))
+    {
+        return kWholeTurn;
+    }
+    return meet(meet(hull_of(y, x), turn_of(x)), side_of(y, x));
 }
 
 Interval sinh(Interval value) noexcept

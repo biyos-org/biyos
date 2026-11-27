@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
 #include "expr/tape/tape.hpp"
@@ -18,7 +19,8 @@ struct Velocity
     std::vector<Real> slots;
     std::vector<Real> shared;
     std::vector<Real> partials;
-    std::vector<Real> spare;
+    std::vector<Real> running;
+    std::vector<Real> prefix;
     std::vector<Real> result;
 };
 
@@ -31,10 +33,13 @@ struct Pass
     Velocity velocity;
     Adjoints first;
     Adjoints second;
-    std::vector<Real> points;
     std::vector<Real> seeds;
 };
 
-void sweep(const Tape &tape, Offset element, Pass &pass) noexcept;
+void sweep(const Tape &tape,
+           Offset element,
+           std::span<const Real> point,
+           const Tolerances &tolerances,
+           Pass &pass) noexcept;
 
 }

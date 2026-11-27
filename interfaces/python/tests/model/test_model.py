@@ -611,14 +611,14 @@ def test_listed_refusals(env, model):
     assert message == "invalid argument: variable -1: unknown"
     other = biyos.Model(env)
     y = other.addvar(1)
-    with pytest.raises(ValueError, match="idx is a variable of another"):
+    with pytest.raises(ValueError, match="var is a variable of another"):
         model.getvarbnd([y[0]])
-    with pytest.raises(ValueError, match="idx is a block of another"):
+    with pytest.raises(ValueError, match="var is a block of another"):
         model.getvarknd(y)
     f = model.addfun(1)
     with pytest.raises(TypeError, match="is a function, not a variable"):
         model.getvarbnd([f[0]])
-    with pytest.raises(TypeError, match="an entry of idx must be an int"):
+    with pytest.raises(TypeError, match="an entry of var must be an int"):
         model.getvarknd([0.0])
     model._gen += 1
     with pytest.raises(ValueError, match="the block predates a deletion"):
@@ -682,7 +682,7 @@ def test_lengths(model):
 def test_wrong(model, kinds, error, message):
     with pytest.raises(error, match=message):
         model.addvar(1, kinds)
-    with pytest.raises(error, match=message.replace("knd", "idx")):
+    with pytest.raises(error, match=message.replace("knd", "var")):
         model.setvarbnd(kinds, [0.0])
     assert model.getnvar() == 0
 
@@ -709,7 +709,7 @@ def test_index(model):
 def test_numbers(model):
     with pytest.raises(TypeError, match="n must be an int, not str"):
         model.addvar("1")
-    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="var: 4294967296 does not fit"):
         model.getvar(range(2**32, 2**32 + 1))
     assert model.getnvar() == 0
 

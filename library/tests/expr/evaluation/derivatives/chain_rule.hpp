@@ -1,9 +1,11 @@
 #pragma once
 
 #include "core/numbers.hpp"
+#include "core/numeric/zero.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/graph/points.hpp"
+#include "reference.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -142,6 +144,19 @@ class ChainRule
                                    x);
         case Operator::Atan2:
             return std::atan2(x + 0.0, child(node, 1) + 0.0);
+        case Operator::LessEqual:
+        case Operator::GreaterEqual:
+        case Operator::Equal:
+        case Operator::Less:
+        case Operator::Greater:
+        case Operator::NotEqual:
+            return comparison(graph_.op(node), x, child(node, 1));
+        case Operator::And:
+        case Operator::Or:
+        case Operator::Not:
+            return connective(graph_.op(node), operands_of(node));
+        case Operator::If:
+            return select(x, child(node, 1), child(node, 2));
         }
         return (std::numeric_limits<Real>::quiet_NaN)();
     }
@@ -170,13 +185,14 @@ class ChainRule
         return total;
     }
 
+    std::vector<Real> operands_of(Offset node) const
+    {
+        return children_of(graph_, node, [this](Offset child) { return values_[at(child)]; });
+    }
+
     Real extreme_of(Offset node) const
     {
-        std::vector<Real> operands;
-        for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
-        {
-            operands.push_back(child(node, k));
-        }
+        const std::vector<Real> operands = operands_of(node);
         if (std::ranges::any_of(operands, [](Real value) { return std::isnan(value); }))
         {
             return (std::numeric_limits<Real>::quiet_NaN)();
@@ -187,6 +203,10 @@ class ChainRule
 
     std::size_t taken(Offset node) const
     {
+        if (graph_.op(node) == Operator::If)
+        {
+            return is_zero(child(node, 0)) ? 2 : 1;
+        }
         const auto bits = std::bit_cast<Bits>(values_[at(node)]);
         for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
         {
@@ -260,6 +280,7 @@ class ChainRule
             return x < 0.0L ? -1.0L : 1.0L;
         case Operator::Max:
         case Operator::Min:
+        case Operator::If:
             return k == taken(node) ? 1.0L : 0.0L;
         case Operator::Asin:
             return 1.0L / std::sqrt(1.0L - x * x);
@@ -290,6 +311,16 @@ class ChainRule
                                    child(node, 0));
         case Operator::Atan2:
             return angle_slope(x, child(node, 1), k);
+        case Operator::LessEqual:
+        case Operator::GreaterEqual:
+        case Operator::Equal:
+        case Operator::Less:
+        case Operator::Greater:
+        case Operator::NotEqual:
+        case Operator::And:
+        case Operator::Or:
+        case Operator::Not:
+            return 0.0L;
         }
         return 0.0L;
     }
@@ -322,6 +353,10 @@ class ChainRule
         if (op == Operator::Asin || op == Operator::Acos || op == Operator::Acosh ||
             op == Operator::Atanh)
         {
+            if (std::fpclassify(partial) == FP_ZERO)
+            {
+                return 0.0;
+            }
             return std::fabs(partial) * (1.0 + (1.0 + x * x) / std::fabs(1.0 - x * x));
         }
         return std::fabs(partial);
@@ -335,8 +370,9 @@ class ChainRule
 
     bool passed(Offset node, std::size_t k) const
     {
-        const bool extreme = graph_.op(node) == Operator::Max || graph_.op(node) == Operator::Min;
-        return extreme && !std::isnan(values_[at(node)]) && k != taken(node);
+        const Operator op = graph_.op(node);
+        const bool chosen = op == Operator::Max || op == Operator::Min || op == Operator::If;
+        return chosen && !std::isnan(values_[at(node)]) && k != taken(node);
     }
 
     void spread(Offset node)
@@ -360,7 +396,11 @@ class ChainRule
             {
                 adjoints_[at(children[k])] += adjoint * partial_k;
             }
-            sizes_[at(children[k])] += size * bound(node, partial_k);
+            const Real bound_k = bound(node, partial_k);
+            if (std::fpclassify(bound_k) != FP_ZERO)
+            {
+                sizes_[at(children[k])] += size * bound_k;
+            }
         }
     }
 

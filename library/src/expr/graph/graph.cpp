@@ -204,9 +204,10 @@ void Graph::truncate(const Mark &mark) noexcept
 void Graph::check(Operator op, Payload payload, std::span<const Offset> children) const
 {
     check_shape(op, payload, to_offset(children.size()));
-    for (const Offset child : children)
+    for (std::size_t k = 0; k < children.size(); ++k)
     {
-        check_child(child, size());
+        check_child(children[k], size());
+        check_operand(op, k, children[k], operators_[to_size(children[k])]);
     }
 }
 

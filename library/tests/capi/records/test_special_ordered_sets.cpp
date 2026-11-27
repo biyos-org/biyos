@@ -278,7 +278,7 @@ TEST(CApiTest, NullSets)
     EXPECT_EQ(BIYOS_getnsosvarrg(held, 0, 0, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
     EXPECT_EQ(BIYOS_getnsosvarsp(held, 1, nullptr, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'sos': is null");
 }
 
 TEST(CApiTest, RefusedSets)

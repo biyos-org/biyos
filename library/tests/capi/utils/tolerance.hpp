@@ -19,6 +19,7 @@ namespace biyos::test
 struct ToleranceCalls
 {
     std::string_view noun;
+    std::string_view word;
     decltype(&BIYOS_getnvar) count;
     decltype(&BIYOS_setvartolsp) set_listed;
     decltype(&BIYOS_setvartolrg) set_ranged;
@@ -30,6 +31,7 @@ struct ToleranceCalls
 
 inline const ToleranceCalls kVariableTolerances{
     .noun = "variable",
+    .word = "var",
     .count = BIYOS_getnvar,
     .set_listed = BIYOS_setvartolsp,
     .set_ranged = BIYOS_setvartolrg,
@@ -41,6 +43,7 @@ inline const ToleranceCalls kVariableTolerances{
 
 inline const ToleranceCalls kConstraintTolerances{
     .noun = "constraint",
+    .word = "con",
     .count = BIYOS_getncon,
     .set_listed = BIYOS_setcontolsp,
     .set_ranged = BIYOS_setcontolrg,
@@ -52,6 +55,7 @@ inline const ToleranceCalls kConstraintTolerances{
 
 inline const ToleranceCalls kConeTolerances{
     .noun = "cone",
+    .word = "cone",
     .count = BIYOS_getncone,
     .set_listed = BIYOS_setconetolsp,
     .set_ranged = BIYOS_setconetolrg,
@@ -114,6 +118,11 @@ inline std::string refusal_of(const ToleranceCalls &calls, int index, std::strin
            std::string(reason);
 }
 
+inline std::string null_refusal(const ToleranceCalls &calls)
+{
+    return "invalid argument: argument '" + std::string(calls.word) + "': is null";
+}
+
 inline void expect_own(const ToleranceCalls &calls, Fill fill)
 {
     const Env env;
@@ -162,7 +171,7 @@ inline void expect_rejected(const ToleranceCalls &calls, Fill fill)
     EXPECT_EQ(calls.set_listed(held, 1, &unknown, &small, &small), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refusal_of(calls, 3, "unknown"));
     EXPECT_EQ(calls.set_listed(held, 1, nullptr, &small, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), null_refusal(calls));
     const BIYOS_index indices[] = {0, 2};
     const double absolute[] = {0.5, kUnknown};
     EXPECT_EQ(calls.set_listed(held, 2, indices, absolute, nullptr), BIYOS_ERR_BADARG);
@@ -209,7 +218,7 @@ inline void expect_undeleted(const ToleranceCalls &calls, Fill fill)
     EXPECT_EQ(calls.delete_listed(held, 2, indices), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refusal_of(calls, 3, "unknown"));
     EXPECT_EQ(calls.delete_listed(held, 1, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), null_refusal(calls));
     EXPECT_EQ(calls.delete_ranged(held, 2, 4), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), refusal_of(calls, 3, "unknown"));
     expect_tolerances(read_tolerances(model, calls), before);

@@ -169,11 +169,19 @@ void step(const Instruction &instruction,
         spread_sum(instruction, partials, trail);
         return;
     case Operator::Product:
+    case Operator::And:
+    case Operator::Or:
         spread(listed(instruction, trail.operands), partials, trail);
         return;
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         add(slot(trail, instruction.first), partial(partials, 0, trail), trail);
         add(slot(trail, instruction.second), partial(partials, 1, trail), trail);
         return;
@@ -199,10 +207,12 @@ void step(const Instruction &instruction,
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
+    case Operator::Not:
         add(slot(trail, instruction.first), partials, trail);
         return;
     case Operator::Max:
     case Operator::Min:
+    case Operator::If:
         send(instruction, partials, trail);
         return;
     }

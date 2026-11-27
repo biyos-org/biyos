@@ -24,13 +24,13 @@ using biyos::widen_down;
 using biyos::widen_up;
 using biyos::test::exact;
 using biyos::test::holds;
+using biyos::test::kHalfPiUp;
+using biyos::test::kPiUp;
 using biyos::test::within;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
-constexpr Real kPiUp = 0x1.921fb54442d19p+1;
 constexpr Real kPi = std::numbers::pi;
 constexpr Real kHalfPi = std::numbers::pi / 2;
-constexpr Real kHalfPiUp = 0x1.921fb54442d19p+0;
 constexpr Real kHuge = 1e22;
 constexpr Real kSinPi = 0x1.1a62633145c07p-53;
 constexpr Real kSinHuge = -0x1.b453ab76bf397p-1;

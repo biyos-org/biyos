@@ -26,7 +26,7 @@ def x(model):
 
 
 def entries(model, *trees):
-    _, code, arg, val = postfix(model, trees)
+    _, code, arg, val = postfix(model, trees, {})
     return list(zip(code, arg)), val
 
 
@@ -57,7 +57,7 @@ def test_large(model, x):
     pairs, val = entries(model, e)
     assert pairs == [(VAR, 0), (VAR, 1), (Operator.SUM, 1), (Operator.SUM, 2)]
     assert val == [1e308, 1.0, 1e308, 1.0, 1.0]
-    assert len(model.addexpr(*postfix(model, [e]))) == 1
+    assert len(model.addexpr(*postfix(model, [e], {}))) == 1
 
 
 def test_operators(model, x):
@@ -110,7 +110,7 @@ def test_unmerged(model, x):
 def test_several(model, x):
     s = x[0] * x[1]
     pairs, _ = entries(model, s, x[2], biyos.log(s))
-    assert postfix(model, [s, x[2], biyos.log(s)])[0] == [4, 1, 2]
+    assert postfix(model, [s, x[2], biyos.log(s)], {})[0] == [4, 1, 2]
     assert pairs[3] == (Operator.KEEP, 1)
     assert pairs[5:] == [(Operator.REFERENCE, 3), (Operator.LOG, 1)]
 
@@ -119,7 +119,7 @@ def test_long(model, x):
     e = 0
     for k in range(10**5):
         e += x[k % 3]
-    cnt, code, arg, val = postfix(model, [e])
+    cnt, code, arg, val = postfix(model, [e], {})
     assert cnt == [10**5 + 1]
     assert code[-1] == Operator.SUM
     assert arg[-1] == 10**5
@@ -130,7 +130,7 @@ def test_deep(model, x):
     e = x[0]
     for _ in range(10**5):
         e = -e
-    cnt, code = postfix(model, [e])[:2]
+    cnt, code = postfix(model, [e], {})[:2]
     assert cnt == [10**5 + 1]
     assert code.count(Operator.NEGATION) == 10**5
 
@@ -139,16 +139,16 @@ def test_stale(model, x):
     e = x[0] + x[1]
     model.delvar([2])
     with pytest.raises(ValueError, match=STALE):
-        postfix(model, [e])
+        postfix(model, [e], {})
 
 
 def test_foreign(env, model, x):
     with biyos.Model(env) as other:
         y = other.addvar(1)
         with pytest.raises(ValueError, match="expr is a variable of another"):
-            postfix(model, [x[0] + y[0]])
+            postfix(model, [x[0] + y[0]], {})
 
 
 def test_refused(model):
     with pytest.raises(TypeError, match="expr must be an expression, not"):
-        postfix(model, [1.0])
+        postfix(model, [1.0], {})

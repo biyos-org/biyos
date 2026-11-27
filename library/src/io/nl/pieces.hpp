@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "io/utils/lines.hpp"
+#include "io/nl/source/source.hpp"
 
 #include <span>
 #include <vector>
@@ -15,6 +15,6 @@ struct Curve
     std::vector<Real> y;
 };
 
-Curve curve_of(const Lines &lines, std::span<const Real> slopes, std::span<const Real> breaks);
+Curve curve_of(const Source &source, std::span<const Real> slopes, std::span<const Real> breaks);
 
 }

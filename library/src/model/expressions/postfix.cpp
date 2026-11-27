@@ -213,6 +213,16 @@ void Decoder::build(Operator op, Offset argument)
     case Operator::Entropy:
     case Operator::Erf:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+    case Operator::If:
         builder_.apply(op, argument);
         return;
     }

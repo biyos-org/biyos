@@ -114,13 +114,13 @@ def test_views(env, model):
     assert names_of(model, "var")[3:] == ["a", "b"]
     other = biyos.Model(env)
     y = other.addvar(1)
-    with pytest.raises(ValueError, match="idx is a variable of another"):
+    with pytest.raises(ValueError, match="var is a variable of another"):
         model.getvarname([y[0]])
-    with pytest.raises(ValueError, match="idx is a block of another"):
+    with pytest.raises(ValueError, match="var is a block of another"):
         model.setvarname(y, ["a"])
     with pytest.raises(TypeError, match="is a variable, not a constraint"):
         model.setconname([x[0]], ["d"])
-    with pytest.raises(TypeError, match="idx is a constraint, not a"):
+    with pytest.raises(TypeError, match="var is a constraint, not a"):
         model.getvarname([c[0]])
     with pytest.raises(TypeError, match="of functions, not objectives"):
         model.setobjname(f, ["g"])
@@ -221,7 +221,7 @@ def test_types(model):
         model.setvarname([0], "x")
     with pytest.raises(TypeError, match="an entry of name must be a str"):
         model.getvaridx([None])
-    with pytest.raises(TypeError, match="idx must be an int, not str"):
+    with pytest.raises(TypeError, match="var must be an int, not str"):
         model.getvarname("x")
     with pytest.raises(ValueError, match="embedded null character"):
         model.setname("a\0b")

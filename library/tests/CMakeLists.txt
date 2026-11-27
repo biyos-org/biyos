@@ -52,7 +52,7 @@ biyos_add_test(test_core
     core/text/test_utf8.cpp
     core/timing/test_clock.cpp
     core/timing/test_timer.cpp)
-target_include_directories(test_core PRIVATE core/utils)
+target_include_directories(test_core PRIVATE core/utils expr/utils)
 target_link_libraries(test_core PRIVATE biyos_internal)
 
 biyos_add_test(test_allocation
@@ -74,26 +74,35 @@ set_tests_properties(NameTest.LocalBuffer PROPERTIES
 
 biyos_add_test(test_expr
     expr/analysis/curvature/draws.cpp
+    expr/analysis/curvature/test_angle.cpp
     expr/analysis/curvature/test_bends.cpp
     expr/analysis/curvature/test_curvature.cpp
     expr/analysis/curvature/test_segments.cpp
     expr/analysis/curvature/test_waves.cpp
+    expr/analysis/intervals/test_atan2.cpp
     expr/analysis/intervals/test_enclosure.cpp
     expr/analysis/intervals/test_interval.cpp
+    expr/analysis/intervals/test_logic.cpp
     expr/analysis/intervals/test_piecewise.cpp
     expr/evaluation/derivatives/test_angle.cpp
+    expr/evaluation/derivatives/test_branches.cpp
     expr/evaluation/derivatives/test_derivative.cpp
     expr/evaluation/derivatives/test_joiner.cpp
     expr/evaluation/derivatives/test_lanes.cpp
     expr/evaluation/derivatives/test_memo.cpp
     expr/evaluation/derivatives/test_partials.cpp
     expr/evaluation/derivatives/test_reach.cpp
+    expr/evaluation/hessian/test_colored.cpp
+    expr/evaluation/hessian/test_coloring.cpp
     expr/evaluation/hessian/test_elements.cpp
     expr/evaluation/hessian/test_hessian.cpp
+    expr/evaluation/hessian/test_pattern.cpp
+    expr/evaluation/hessian/test_pushing.cpp
     expr/evaluation/hessian/test_tangents.cpp
     expr/evaluation/threads/test_levels.cpp
     expr/evaluation/threads/test_threads.cpp
     expr/evaluation/values/test_arithmetic.cpp
+    expr/evaluation/values/test_conditions.cpp
     expr/evaluation/values/test_elementary.cpp
     expr/evaluation/values/test_exponents.cpp
     expr/evaluation/values/test_periodic.cpp
@@ -113,7 +122,7 @@ biyos_add_test(test_expr
     expr/utils/chords.cpp
     expr/utils/reference.cpp
     expr/utils/sampling.cpp)
-target_include_directories(test_expr PRIVATE expr/utils)
+target_include_directories(test_expr PRIVATE expr/utils utils)
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
 biyos_add_test(test_model
@@ -146,7 +155,7 @@ biyos_add_test(test_model
     model/session/test_timer.cpp
     model/session/test_warnings.cpp
     model/test_gather.cpp)
-target_include_directories(test_model PRIVATE core/utils model/utils)
+target_include_directories(test_model PRIVATE core/utils model/utils utils)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io
@@ -162,11 +171,12 @@ biyos_add_test(test_io
     io/native/test_random.cpp
     io/native/test_writes.cpp
     io/native/test_words.cpp
+    io/nl/test_binary.cpp
     io/nl/test_faults.cpp
     io/nl/test_nl.cpp
     io/nl/test_refusals.cpp
     io/test_lines.cpp)
-target_include_directories(test_io PRIVATE io/mps/utils io/native/utils io/nl/utils model/utils)
+target_include_directories(test_io PRIVATE io/mps/utils io/native/utils io/nl/utils model/utils utils)
 target_link_libraries(test_io PRIVATE biyos_internal)
 
 biyos_add_test(test_capi
@@ -212,7 +222,7 @@ biyos_add_test(test_capi
     capi/records/test_ranges.cpp
     capi/records/test_special_ordered_sets.cpp
     capi/utils/sample.cpp)
-target_include_directories(test_capi PRIVATE capi/utils io/nl/utils)
+target_include_directories(test_capi PRIVATE capi/utils io/nl/utils utils)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
 add_executable(test_capi_c capi/test_header.c)

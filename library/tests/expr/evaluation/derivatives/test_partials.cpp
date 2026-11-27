@@ -5,6 +5,7 @@
 #include "expr/graph/node.hpp"
 #include "expr/tape/tape.hpp"
 #include "graphs.hpp"
+#include "sweep.hpp"
 
 #include <gtest/gtest.h>
 
@@ -30,6 +31,7 @@ using biyos::Tape;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::constant;
+using biyos::test::default_tolerances;
 using biyos::test::every_operator;
 using biyos::test::listed;
 using biyos::test::power;
@@ -46,7 +48,7 @@ Partials partials_at(const Graph &graph, Offset root, std::span<const Real> poin
     const Tape tape(graph, std::span(&root, 1));
     Workspace workspace(tape);
     const Block &block = tape.blocks()[0];
-    linearize(block, point, workspace);
+    linearize(block, point, default_tolerances(), workspace);
     const std::span<const Real> all = region(block, std::span(workspace.partials), 1);
     const std::size_t last = block.instructions.size() - 1;
     const std::uint32_t start = block.places[last];
@@ -105,6 +107,16 @@ std::vector<Partials> cmath_partials(Real x, Real y, Real z, Real w)
         {2.0 / std::sqrt(std::numbers::pi) * std::exp(-z * z)},
         {y < 0.25 ? -2.0 : 1.2},
         {x / (x * x + z * z), -z / (x * x + z * z)},
+        {0.0, 0.0},
+        {0.0, 0.0},
+        {0.0, 0.0},
+        {0.0, 0.0},
+        {0.0, 0.0},
+        {0.0, 0.0},
+        {0.0, 0.0},
+        {0.0, 0.0},
+        {0.0},
+        {x > y ? 1.0 : 2.0},
     };
 }
 
