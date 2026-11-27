@@ -7,16 +7,17 @@
 #include "io/nl/bodies.hpp"
 #include "io/nl/expressions.hpp"
 #include "io/nl/header.hpp"
-#include "io/nl/tokens.hpp"
-#include "io/utils/lines.hpp"
+#include "io/nl/source/bounds.hpp"
+#include "io/nl/source/source.hpp"
+#include "io/nl/source/text.hpp"
 #include "io/utils/records.hpp"
 #include "io/utils/report.hpp"
 #include "model/model.hpp"
 
 #include <algorithm>
 #include <array>
-#include <ios>
 #include <istream>
+#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -43,23 +44,14 @@ bool same_variable(const LinearTerm &a, const LinearTerm &b) noexcept
     return a.variable == b.variable;
 }
 
-ObjectiveSense sense_of(const Lines &lines, std::string_view field)
+ObjectiveSense sense_of(Source &source)
 {
-    const Offset code = integer_of(lines, field);
+    const Offset code = source.integer();
     if (code != 0 && code != 1)
     {
-        bad_file(lines, "objective sense " + quote(field) + " is unknown");
+        source.bad("objective sense " + quote(source.token()) + " is unknown");
     }
     return code == 0 ? ObjectiveSense::Minimize : ObjectiveSense::Maximize;
-}
-
-Offset size_of(std::istream &input)
-{
-    const std::streampos start = input.tellg();
-    input.seekg(0, std::ios::end);
-    const std::streamoff size = input.tellg() - start;
-    input.seekg(start);
-    return size;
 }
 
 class NlReader
@@ -70,23 +62,20 @@ class NlReader
     Model read();
 
   private:
-    void segment(const Entry &entry);
+    void segment();
     void once(char key);
     bool seen(char key) const noexcept;
-    void read_defined(const Entry &entry);
-    void read_constraint(const Entry &entry);
-    void read_objective(const Entry &entry);
-    void read_ranges(const Entry &entry);
-    void read_bounds(const Entry &entry);
-    void read_columns(const Entry &entry);
-    void read_linear(const Entry &entry, Index size, Index offset, std::string_view noun);
-    void skip_suffix(const Entry &entry);
+    void read_defined();
+    void read_constraint();
+    void read_objective();
+    void read_ranges();
+    void read_bounds();
+    void read_columns();
+    void read_linear(Index size, Index offset, std::string_view noun);
+    void skip_suffix();
     Index suffix_size(Offset kind) const noexcept;
-    void skip_guesses(const Entry &entry,
-                      Index size,
-                      std::string_view noun,
-                      std::string_view notice);
-    std::vector<LinearTerm> read_terms(std::string_view field);
+    void skip_guesses(Index size, std::string_view noun, std::string_view notice);
+    std::vector<LinearTerm> read_terms(Index n);
     Bounds read_bound(std::string_view part);
     void finish();
     void check_bodies(Index first, Index n, std::string_view noun);
@@ -94,6 +83,8 @@ class NlReader
     Stream stream_;
     Lines lines_;
     Header header_;
+    std::unique_ptr<Source> owned_;
+    Source &source_;
     Model model_;
     Expressions expressions_;
     Bodies bodies_;
@@ -104,7 +95,8 @@ class NlReader
 
 NlReader::NlReader(Stream stream, std::istream &input, const std::string &file, Offset bytes)
     : stream_(stream), lines_(input, file), header_(read_header(lines_, bytes)),
-      expressions_(lines_, model_, header_.variables, header_.defined),
+      owned_(std::make_unique<TextSource>(lines_)), source_(*owned_),
+      expressions_(source_, model_, header_.variables, header_.defined),
       bodies_(header_.constraints + header_.objectives),
       senses_(to_size(header_.objectives), ObjectiveSense::Minimize)
 {
@@ -118,69 +110,69 @@ Model NlReader::read()
         variables.push_back(widest(kind));
     }
     model_.add_variables(variables);
-    while (advance(lines_))
+    while (source_.next())
     {
-        segment(Entry(lines_));
+        segment();
     }
     finish();
     return std::move(model_);
 }
 
-void NlReader::segment(const Entry &entry)
+void NlReader::segment()
 {
-    switch (entry.key())
+    switch (source_.key())
     {
     case 'F':
-        unsupported(lines_, "imported functions");
+        source_.refuse("imported functions");
     case 'S':
-        skip_suffix(entry);
+        skip_suffix();
         return;
     case 'L':
-        unsupported(lines_, "logical constraints");
+        source_.refuse("logical constraints");
     case 'V':
-        read_defined(entry);
+        read_defined();
         return;
     case 'C':
-        read_constraint(entry);
+        read_constraint();
         return;
     case 'O':
-        read_objective(entry);
+        read_objective();
         return;
     case 'd':
-        skip_guesses(entry, header_.constraints, "constraint", "dual guesses are skipped");
+        skip_guesses(header_.constraints, "constraint", "dual guesses are skipped");
         return;
     case 'x':
-        skip_guesses(entry, header_.variables, "variable", "starting point is skipped");
+        skip_guesses(header_.variables, "variable", "starting point is skipped");
         return;
     case 'r':
         once('r');
-        read_ranges(entry);
+        read_ranges();
         return;
     case 'b':
         once('b');
-        read_bounds(entry);
+        read_bounds();
         return;
     case 'k':
         once('k');
-        read_columns(entry);
+        read_columns();
         return;
     case 'J':
-        read_linear(entry, header_.constraints, 0, "constraint");
+        read_linear(header_.constraints, 0, "constraint");
         return;
     case 'G':
-        read_linear(entry, header_.objectives, header_.constraints, "objective");
+        read_linear(header_.objectives, header_.constraints, "objective");
         return;
     default:
         break;
     }
-    bad_file(lines_, "segment " + quote(fields_of(lines_).front()) + " is unknown");
+    source_.bad("segment " + quote(source_.head()) + " is unknown");
 }
 
 void NlReader::once(char key)
 {
     if (seen(key))
     {
-        bad_file(lines_, "segment " + quote(std::string(1, key)) + " is repeated");
+        source_.bad("segment " + quote(std::string(1, key)) + " is repeated");
     }
     seen_.push_back(key);
 }
@@ -190,137 +182,137 @@ bool NlReader::seen(char key) const noexcept
     return seen_.find(key) != std::string::npos;
 }
 
-void NlReader::read_defined(const Entry &entry)
+void NlReader::read_defined()
 {
-    check_size(lines_, entry.size(), 3);
+    source_.expect(3);
     const Index total = header_.variables + header_.defined;
-    const Index variable = index_in(lines_, entry[0], total, "variable");
+    const Index variable = source_.index(total, "variable");
     if (variable < header_.variables)
     {
-        bad_file(lines_, "variable " + text_of(variable) + " is not a defined variable");
+        source_.bad("variable " + text_of(variable) + " is not a defined variable");
     }
     if (expressions_.has(variable))
     {
-        bad_file(lines_, "defined variable " + text_of(variable) + " is repeated");
+        source_.bad("defined variable " + text_of(variable) + " is repeated");
     }
-    integer_of(lines_, entry[2]);
-    const std::vector<LinearTerm> terms = read_terms(entry[1]);
+    const Index n = source_.count();
+    source_.integer();
+    const std::vector<LinearTerm> terms = read_terms(n);
     expressions_.define(variable, terms, expressions_.read());
 }
 
-void NlReader::read_constraint(const Entry &entry)
+void NlReader::read_constraint()
 {
-    check_size(lines_, entry.size(), 1);
-    const Index constraint = index_in(lines_, entry[0], header_.constraints, "constraint");
+    source_.expect(1);
+    const Index constraint = source_.index(header_.constraints, "constraint");
     if (bodies_.has_body(constraint))
     {
-        bad_file(lines_, "constraint " + text_of(constraint) + " is repeated");
+        source_.bad("constraint " + text_of(constraint) + " is repeated");
     }
     bodies_.set_body(constraint, expressions_.read());
 }
 
-void NlReader::read_objective(const Entry &entry)
+void NlReader::read_objective()
 {
-    check_size(lines_, entry.size(), 2);
-    const Index objective = index_in(lines_, entry[0], header_.objectives, "objective");
+    source_.expect(2);
+    const Index objective = source_.index(header_.objectives, "objective");
     const Index function = header_.constraints + objective;
     if (bodies_.has_body(function))
     {
-        bad_file(lines_, "objective " + text_of(objective) + " is repeated");
+        source_.bad("objective " + text_of(objective) + " is repeated");
     }
-    senses_[to_size(objective)] = sense_of(lines_, entry[1]);
+    senses_[to_size(objective)] = sense_of(source_);
     bodies_.set_body(function, expressions_.read());
 }
 
-void NlReader::read_ranges(const Entry &entry)
+void NlReader::read_ranges()
 {
-    check_size(lines_, entry.size(), 0);
+    source_.expect(0);
     for (Index k = 0; k < header_.constraints; ++k)
     {
         ranges_.push_back(read_bound("the constraint bounds"));
     }
 }
 
-void NlReader::read_bounds(const Entry &entry)
+void NlReader::read_bounds()
 {
-    check_size(lines_, entry.size(), 0);
+    source_.expect(0);
     for (Index k = 0; k < header_.variables; ++k)
     {
         const Bounds bounds = read_bound("the variable bounds");
         Variable variable = model_.variable(k);
         variable.lower = bounds.lower;
         variable.upper = bounds.upper;
-        checked(lines_, [&] { model_.set_variables(std::span(&k, 1), std::span(&variable, 1)); });
+        checked(source_, [&] { model_.set_variables(std::span(&k, 1), std::span(&variable, 1)); });
     }
 }
 
-void NlReader::read_columns(const Entry &entry)
+void NlReader::read_columns()
 {
-    check_size(lines_, entry.size(), 1);
-    const Index n = count_of(lines_, entry[0]);
+    source_.expect(1);
+    const Index n = source_.count();
     const Index wanted = (std::max)(header_.variables - 1, Index{0});
     if (n != wanted)
     {
-        bad_file(lines_, "the k segment holds " + text_of(n) + " counts, not " + text_of(wanted));
+        source_.bad("the k segment holds " + text_of(n) + " counts, not " + text_of(wanted));
     }
     for (Index k = 0; k < n; ++k)
     {
-        advance_in(lines_, "the column counts");
-        const Fields fields = fields_of(lines_);
-        check_size(lines_, fields.size(), 1);
-        count_of(lines_, fields[0]);
+        source_.line("the column counts");
+        source_.expect(1);
+        source_.count();
     }
 }
 
-void NlReader::read_linear(const Entry &entry, Index size, Index offset, std::string_view noun)
+void NlReader::read_linear(Index size, Index offset, std::string_view noun)
 {
-    check_size(lines_, entry.size(), 2);
-    const Index index = index_in(lines_, entry[0], size, noun);
+    source_.expect(2);
+    const Index index = source_.index(size, noun);
     const Index function = offset + index;
     if (bodies_.has_terms(function))
     {
-        bad_file(lines_,
-                 "the linear part of " + std::string(noun) + " " + text_of(index) + " is repeated");
+        source_.bad("the linear part of " + std::string(noun) + " " + text_of(index) +
+                    " is repeated");
     }
-    std::vector<LinearTerm> terms = read_terms(entry[1]);
+    std::vector<LinearTerm> terms = read_terms(source_.count());
     std::ranges::sort(terms, {}, &LinearTerm::variable);
     const auto repeat = std::ranges::adjacent_find(terms, same_variable);
     if (repeat != terms.end())
     {
-        bad_file(lines_, "variable " + text_of(repeat->variable) + " is repeated");
+        source_.bad("variable " + text_of(repeat->variable) + " is repeated");
     }
     bodies_.set_terms(function, std::move(terms));
 }
 
-void NlReader::skip_suffix(const Entry &entry)
+void NlReader::skip_suffix()
 {
-    check_size(lines_, entry.size(), 3);
-    const Offset kind = integer_of(lines_, entry[0]);
+    source_.expect(3);
+    const Offset kind = source_.integer();
     if (kind < 0 || kind >= kSuffixKinds)
     {
-        bad_file(lines_, "suffix kind " + quote(entry[0]) + " is unknown");
+        source_.bad("suffix kind " + quote(source_.token()) + " is unknown");
     }
-    const Index n = count_of(lines_, entry[1]);
-    const std::string name = quote(entry[2]);
-    if (std::ranges::find(kSetSuffixes, entry[2]) != kSetSuffixes.end())
+    const Index n = source_.count();
+    const std::string text = source_.name();
+    const std::string name = quote(text);
+    if (std::ranges::find(kSetSuffixes, text) != kSetSuffixes.end())
     {
-        unsupported(lines_, "suffix " + name);
+        source_.refuse("suffix " + name);
     }
-    inform(stream_, lines_, "suffix " + name + " is skipped");
+    source_.inform(stream_, "suffix " + name + " is skipped");
     const std::string_view noun = kSuffixTargets[to_size(kind % kRealSuffix)];
     for (Index k = 0; k < n; ++k)
     {
-        advance_in(lines_, "a suffix");
-        const Fields fields = fields_of(lines_);
-        check_size(lines_, fields.size(), 2);
-        index_in(lines_, fields[0], suffix_size(kind), noun);
+        source_.line("a suffix");
+        source_.expect(2);
+        source_.index(suffix_size(kind), noun);
         if (kind >= kRealSuffix)
         {
-            value_of(lines_, fields[1]);
+            source_.real();
         }
         else
         {
-            integer_of(lines_, fields[1]);
+            source_.integer();
         }
     }
 }
@@ -331,47 +323,41 @@ Index NlReader::suffix_size(Offset kind) const noexcept
     return sizes[to_size(kind % kRealSuffix)];
 }
 
-void NlReader::skip_guesses(const Entry &entry,
-                            Index size,
-                            std::string_view noun,
-                            std::string_view notice)
+void NlReader::skip_guesses(Index size, std::string_view noun, std::string_view notice)
 {
-    once(entry.key());
-    inform(stream_, lines_, "the file's " + std::string(notice));
-    check_size(lines_, entry.size(), 1);
-    const Index n = count_of(lines_, entry[0]);
+    once(source_.key());
+    source_.inform(stream_, "the file's " + std::string(notice));
+    source_.expect(1);
+    const Index n = source_.count();
     for (Index k = 0; k < n; ++k)
     {
-        advance_in(lines_, "a list of values");
-        const Fields fields = fields_of(lines_);
-        check_size(lines_, fields.size(), 2);
-        index_in(lines_, fields[0], size, noun);
-        value_of(lines_, fields[1]);
+        source_.line("a list of values");
+        source_.expect(2);
+        source_.index(size, noun);
+        source_.real();
     }
 }
 
-std::vector<LinearTerm> NlReader::read_terms(std::string_view field)
+std::vector<LinearTerm> NlReader::read_terms(Index n)
 {
-    const Index n = count_of(lines_, field);
     std::vector<LinearTerm> terms;
     for (Index k = 0; k < n; ++k)
     {
-        advance_in(lines_, "a linear part");
-        const Fields fields = fields_of(lines_);
-        check_size(lines_, fields.size(), 2);
-        const Index variable = index_in(lines_, fields[0], header_.variables, "variable");
-        terms.push_back({.variable = variable, .coefficient = value_of(lines_, fields[1])});
+        source_.line("a linear part");
+        source_.expect(2);
+        const Index variable = source_.index(header_.variables, "variable");
+        terms.push_back({.variable = variable, .coefficient = source_.real()});
     }
     return terms;
 }
 
 Bounds NlReader::read_bound(std::string_view part)
 {
-    advance_in(lines_, part);
-    const std::optional<Bounds> bounds = bounds_of(lines_);
+    source_.line(part);
+    const std::optional<Bounds> bounds = bounds_of(source_);
     if (!bounds)
     {
-        unsupported(lines_, "complementarity constraints");
+        source_.refuse("complementarity constraints");
     }
     return *bounds;
 }
@@ -380,29 +366,29 @@ void NlReader::finish()
 {
     if (header_.constraints > 0 && !seen('r'))
     {
-        bad_file(lines_, "the file has no constraint bounds");
+        source_.bad("the file has no constraint bounds");
     }
     if (header_.variables > 0 && !seen('b'))
     {
-        bad_file(lines_, "the file has no variable bounds");
+        source_.bad("the file has no variable bounds");
     }
     check_bodies(0, header_.constraints, "constraint");
     check_bodies(header_.constraints, header_.objectives, "objective");
-    bodies_.add_to(lines_, model_);
+    bodies_.add_to(source_, model_);
     std::vector<Constraint> constraints;
     for (Index k = 0; k < header_.constraints; ++k)
     {
         const Bounds &bounds = ranges_[to_size(k)];
         constraints.push_back({.function = k, .lower = bounds.lower, .upper = bounds.upper});
     }
-    checked(lines_, [&] { model_.add_constraints(constraints); });
+    checked(source_, [&] { model_.add_constraints(constraints); });
     std::vector<Objective> objectives;
     for (Index k = 0; k < header_.objectives; ++k)
     {
         objectives.push_back(default_objective(header_.constraints + k, k));
         objectives.back().sense = senses_[to_size(k)];
     }
-    checked(lines_, [&] { model_.add_objectives(objectives); });
+    checked(source_, [&] { model_.add_objectives(objectives); });
 }
 
 void NlReader::check_bodies(Index first, Index n, std::string_view noun)
@@ -411,7 +397,7 @@ void NlReader::check_bodies(Index first, Index n, std::string_view noun)
     {
         if (!bodies_.has_body(first + k))
         {
-            bad_file(lines_, std::string(noun) + " " + text_of(k) + " has no expression");
+            source_.bad(std::string(noun) + " " + text_of(k) + " has no expression");
         }
     }
 }
