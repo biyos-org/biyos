@@ -164,4 +164,12 @@ G1 1
 0 2
 )";
 
+inline constexpr std::string_view kNlFiles[] = {
+    kLinearNlFile,
+    kNonlinearNlFile,
+    kKindsNlFile,
+    kOrderNlFile,
+    kObjectivesNlFile,
+};
+
 }

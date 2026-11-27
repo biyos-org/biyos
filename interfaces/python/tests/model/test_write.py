@@ -43,6 +43,15 @@ def test_round_trip(env, tmp_path):
             assert summary(back) == summary(model)
 
 
+def test_native(env, tmp_path):
+    source = written(tmp_path / "source.mps", STRUCTURE_MPS)
+    path = tmp_path / "structure.bys"
+    with biyos.Model.read(env, source, FileFormat.MPS) as model:
+        model.write(path, FileFormat.BYS)
+        with biyos.Model.read(env, path, FileFormat.BYS) as back:
+            assert model.compare(back) is None
+
+
 def structure(model):
     sets = range(model.getnsos())
     names = model.getsosname(sets)

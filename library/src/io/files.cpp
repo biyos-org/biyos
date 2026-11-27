@@ -10,12 +10,16 @@
 #include "io/leftovers.hpp"
 #include "io/mps/mps.hpp"
 #include "io/mps/print.hpp"
+#include "io/native/native.hpp"
+#include "io/native/print.hpp"
 #include "io/nl/nl.hpp"
+#include "io/report.hpp"
 #include "model/model.hpp"
 
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <ostream>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -41,7 +45,8 @@ std::string object_of(const std::string &file)
     throw Error(ErrorKind::FileAccess, object_of(file), std::string(reason));
 }
 
-void print_file(const Draft &draft, const std::string &file, std::string_view path)
+template <typename Print>
+void print_file(const std::string &file, std::string_view path, Print print)
 {
     const std::filesystem::path location = path_of(path);
     std::error_code code;
@@ -54,11 +59,25 @@ void print_file(const Draft &draft, const std::string &file, std::string_view pa
     {
         refuse(file, "cannot be opened");
     }
-    print_mps(draft, output);
+    print(output);
     output.close();
     if (output.fail())
     {
         refuse(file, "cannot be written");
+    }
+}
+
+void write_native(Stream stream,
+                  const Model &model,
+                  const Settings &settings,
+                  const std::string &file,
+                  std::string_view path)
+{
+    check_native(model);
+    print_file(file, path, [&model](std::ostream &output) { print_native(model, output); });
+    if (!settings.empty())
+    {
+        warn(stream, file, "the native format leaves out the model options");
     }
 }
 
@@ -98,9 +117,11 @@ Model read_file(Env &env, std::string_view path, FileFormat format)
     case FileFormat::FixedMps:
         return read_mps(env.stream(), input, file, MpsForm::Fixed);
     case FileFormat::Nl:
+        return read_nl(env.stream(), input, file);
+    case FileFormat::Bys:
         break;
     }
-    return read_nl(env.stream(), input, file);
+    return read_native(input, file);
 }
 
 void write_file(Stream stream,
@@ -121,9 +142,12 @@ void write_file(Stream stream,
                     "fixed MPS files are read, never written");
     case FileFormat::Nl:
         throw Error(ErrorKind::Unsupported, object_of(file), "NL files are read, never written");
+    case FileFormat::Bys:
+        write_native(stream, model, settings, file, path);
+        return;
     }
     const Draft draft = draft_of(model);
-    print_file(draft, file, path);
+    print_file(file, path, [&draft](std::ostream &output) { print_mps(draft, output); });
     warn_leftovers(stream, model, settings, file);
 }
 

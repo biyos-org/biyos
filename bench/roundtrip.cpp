@@ -142,7 +142,7 @@ std::optional<BIYOS_int> format_of(int argc, char **argv)
     }
     if (argc == 4 && std::strcmp(argv[3], "fixed") == 0)
     {
-        return BIYOS_FILEFMT_FIXEDMPS;
+        return BIYOS_FILEFMT_FIXMPS;
     }
     return std::nullopt;
 }

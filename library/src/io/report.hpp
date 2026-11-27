@@ -19,6 +19,7 @@ void warn(Stream stream,
 void warn(Stream stream, const Lines &lines, const std::string &text) noexcept;
 void warn(Stream stream, const std::string &file, const std::string &text) noexcept;
 void inform(Stream stream, const Lines &lines, const std::string &text) noexcept;
+[[noreturn]] void reject(const std::string &where, const Error &error);
 [[noreturn]] void reject(const Lines &lines, const Error &error);
 
 template <typename Call> auto checked(const Lines &lines, Call call)

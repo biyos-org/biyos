@@ -200,11 +200,15 @@ class FileFormat(IntEnum):
         Fixed MPS, for linear and mixed-integer models. Read only.
     NL
         Text NL, for nonlinear models. Read only.
+    BYS
+        The biyos format, which holds every part of a model but its
+        callbacks and its options.
     """
 
     MPS = 1
     FIXED_MPS = 2
     NL = 3
+    BYS = 4
 
 
 _INT_MAX = 2 ** (8 * sizeof(c_index) - 1) - 1

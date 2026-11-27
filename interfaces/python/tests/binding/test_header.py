@@ -59,8 +59,9 @@ OPERATORS = {
 
 FORMATS = {
     "BIYOS_FILEFMT_MPS": biyos.FileFormat.MPS,
-    "BIYOS_FILEFMT_FIXEDMPS": biyos.FileFormat.FIXED_MPS,
+    "BIYOS_FILEFMT_FIXMPS": biyos.FileFormat.FIXED_MPS,
     "BIYOS_FILEFMT_NL": biyos.FileFormat.NL,
+    "BIYOS_FILEFMT_BYS": biyos.FileFormat.BYS,
 }
 
 SENSES = {

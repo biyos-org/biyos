@@ -101,6 +101,18 @@ add_library(biyos_internal STATIC
     io/nl/operators.cpp
     io/nl/pieces.cpp
     io/nl/tokens.cpp
+    io/native/native.cpp
+    io/native/parts.cpp
+    io/native/print.cpp
+    io/native/readers/attributes.cpp
+    io/native/readers/functions.cpp
+    io/native/readers/records.cpp
+    io/native/utils/body.cpp
+    io/native/utils/escape.cpp
+    io/native/utils/record.cpp
+    io/native/writers/attributes.cpp
+    io/native/writers/functions.cpp
+    io/native/writers/records.cpp
     io/records.cpp
     io/report.cpp
     model/attributes/names.cpp

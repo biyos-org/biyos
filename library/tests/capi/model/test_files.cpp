@@ -5,6 +5,7 @@
 #include "files.hpp"
 #include "handles.hpp"
 #include "probes.hpp"
+#include "sample.hpp"
 
 #include "../../io/mps/utils/samples.hpp"
 
@@ -19,6 +20,8 @@ namespace
 {
 
 using biyos::FakeClock;
+using biyos::test::build_sample;
+using biyos::test::Engine;
 using biyos::test::Env;
 using biyos::test::kLpMpsFile;
 using biyos::test::mark;
@@ -94,7 +97,7 @@ TEST(CApiTest, ReadFixed)
         written("biyos_fixed.mps",
                 "NAME\nROWS\n L  cap one\nCOLUMNS\n    x 1       cap one   1.0\n"
                 "RHS\n              cap one   4.0\nENDATA\n");
-    const Read made = read(env, path.c_str(), BIYOS_FILEFMT_FIXEDMPS);
+    const Read made = read(env, path.c_str(), BIYOS_FILEFMT_FIXMPS);
     ASSERT_EQ(made.status, BIYOS_OK);
     EXPECT_EQ(count_of(BIYOS_getnvar, made.model), 1);
     EXPECT_EQ(count_of(BIYOS_getncon, made.model), 1);
@@ -185,6 +188,22 @@ TEST(CApiTest, WriteFile)
     EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
 }
 
+TEST(CApiTest, NativeFile)
+{
+    const Env env;
+    const Model model(env);
+    Engine engine(3);
+    build_sample(model.get(), engine);
+    const std::string path = testing::TempDir() + "biyos_native.bys";
+    ASSERT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_BYS), BIYOS_OK);
+    const Read back = read(env, path.c_str(), BIYOS_FILEFMT_BYS);
+    ASSERT_EQ(back.status, BIYOS_OK);
+    BIYOS_int same = 0;
+    EXPECT_EQ(BIYOS_cmpmdl(model.get(), back.model, &same), BIYOS_OK);
+    EXPECT_EQ(same, 1);
+    EXPECT_EQ(BIYOS_freemdl(back.model), BIYOS_OK);
+}
+
 TEST(CApiTest, WriteRefused)
 {
     const Env env;
@@ -209,7 +228,7 @@ TEST(CApiTest, WriteFixed)
     const Env env;
     const Model model(env);
     const std::string path = testing::TempDir() + "biyos_fixed_written.mps";
-    EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_FIXEDMPS),
+    EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_FIXMPS),
               BIYOS_ERR_UNSUPPORTED);
     const std::string reason = "fixed MPS files are read, never written";
     EXPECT_EQ(env.message(), "unsupported: file '" + path + "': " + reason);
