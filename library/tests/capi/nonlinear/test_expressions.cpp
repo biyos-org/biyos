@@ -461,8 +461,8 @@ TEST(CApiTest, PostfixErrors)
     EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_VAR}, {0, 1}, {})),
               bad + "2 operands left, not 1");
     EXPECT_EQ(refused(env, model, single({}, {}, {})), bad + "0 operands left, not 1");
-    EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, 35}, {0, 1}, {})),
-              bad + "entry 1: operator 35 is unknown");
+    EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, 45}, {0, 1}, {})),
+              bad + "entry 1: operator 45 is unknown");
     EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR, BIYOS_OP_PWL}, {0, 0}, {})),
               bad + "entry 1: pwl 0 is unknown");
     EXPECT_EQ(refused(env, model, single({BIYOS_OP_VAR}, {2}, {})),
