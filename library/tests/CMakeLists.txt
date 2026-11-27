@@ -93,7 +93,7 @@ biyos_add_test(test_expr
     expr/evaluation/threads/test_levels.cpp
     expr/evaluation/threads/test_threads.cpp
     expr/evaluation/values/test_arithmetic.cpp
-    expr/evaluation/values/test_comparisons.cpp
+    expr/evaluation/values/test_conditions.cpp
     expr/evaluation/values/test_elementary.cpp
     expr/evaluation/values/test_exponents.cpp
     expr/evaluation/values/test_periodic.cpp
