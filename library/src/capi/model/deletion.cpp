@@ -143,10 +143,10 @@ BIYOS_status BIYOS_delconrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delobjsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *obj,
                             BIYOS_index *map)
 {
-    return guarded<delete_objectives<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_objectives<List>>(mdl, List{n, obj}, map);
 }
 
 BIYOS_status BIYOS_delobjrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)

@@ -587,7 +587,7 @@ BIYOS_API BIYOS_status BIYOS_addobj(BIYOS_model *mdl,
                                     BIYOS_index *pos);
 BIYOS_API BIYOS_status BIYOS_setobjsensesp(BIYOS_model *mdl,
                                            BIYOS_index n,
-                                           const BIYOS_index *idx,
+                                           const BIYOS_index *obj,
                                            const BIYOS_int *sense);
 BIYOS_API BIYOS_status BIYOS_setobjsenserg(BIYOS_model *mdl,
                                            BIYOS_index beg,
@@ -595,7 +595,7 @@ BIYOS_API BIYOS_status BIYOS_setobjsenserg(BIYOS_model *mdl,
                                            const BIYOS_int *sense);
 BIYOS_API BIYOS_status BIYOS_getobjsensesp(const BIYOS_model *mdl,
                                            BIYOS_index n,
-                                           const BIYOS_index *idx,
+                                           const BIYOS_index *obj,
                                            BIYOS_int *sense);
 BIYOS_API BIYOS_status BIYOS_getobjsenserg(const BIYOS_model *mdl,
                                            BIYOS_index beg,
@@ -603,7 +603,7 @@ BIYOS_API BIYOS_status BIYOS_getobjsenserg(const BIYOS_model *mdl,
                                            BIYOS_int *sense);
 BIYOS_API BIYOS_status BIYOS_setobjpriosp(BIYOS_model *mdl,
                                           BIYOS_index n,
-                                          const BIYOS_index *idx,
+                                          const BIYOS_index *obj,
                                           const BIYOS_int *prio);
 BIYOS_API BIYOS_status BIYOS_setobjpriorg(BIYOS_model *mdl,
                                           BIYOS_index beg,
@@ -611,7 +611,7 @@ BIYOS_API BIYOS_status BIYOS_setobjpriorg(BIYOS_model *mdl,
                                           const BIYOS_int *prio);
 BIYOS_API BIYOS_status BIYOS_getobjpriosp(const BIYOS_model *mdl,
                                           BIYOS_index n,
-                                          const BIYOS_index *idx,
+                                          const BIYOS_index *obj,
                                           BIYOS_int *prio);
 BIYOS_API BIYOS_status BIYOS_getobjpriorg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
@@ -619,7 +619,7 @@ BIYOS_API BIYOS_status BIYOS_getobjpriorg(const BIYOS_model *mdl,
                                           BIYOS_int *prio);
 BIYOS_API BIYOS_status BIYOS_setobjcoefsp(BIYOS_model *mdl,
                                           BIYOS_index n,
-                                          const BIYOS_index *idx,
+                                          const BIYOS_index *obj,
                                           const BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_setobjcoefrg(BIYOS_model *mdl,
                                           BIYOS_index beg,
@@ -627,7 +627,7 @@ BIYOS_API BIYOS_status BIYOS_setobjcoefrg(BIYOS_model *mdl,
                                           const BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_getobjcoefsp(const BIYOS_model *mdl,
                                           BIYOS_index n,
-                                          const BIYOS_index *idx,
+                                          const BIYOS_index *obj,
                                           BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_getobjcoefrg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
@@ -635,7 +635,7 @@ BIYOS_API BIYOS_status BIYOS_getobjcoefrg(const BIYOS_model *mdl,
                                           BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_setobjtolsp(BIYOS_model *mdl,
                                          BIYOS_index n,
-                                         const BIYOS_index *idx,
+                                         const BIYOS_index *obj,
                                          const BIYOS_real *atol,
                                          const BIYOS_real *rtol);
 BIYOS_API BIYOS_status BIYOS_setobjtolrg(BIYOS_model *mdl,
@@ -645,7 +645,7 @@ BIYOS_API BIYOS_status BIYOS_setobjtolrg(BIYOS_model *mdl,
                                          const BIYOS_real *rtol);
 BIYOS_API BIYOS_status BIYOS_getobjtolsp(const BIYOS_model *mdl,
                                          BIYOS_index n,
-                                         const BIYOS_index *idx,
+                                         const BIYOS_index *obj,
                                          BIYOS_real *atol,
                                          BIYOS_real *rtol);
 BIYOS_API BIYOS_status BIYOS_getobjtolrg(const BIYOS_model *mdl,
@@ -656,7 +656,7 @@ BIYOS_API BIYOS_status BIYOS_getobjtolrg(const BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_getnobj(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getobjsp(const BIYOS_model *mdl,
                                       BIYOS_index n,
-                                      const BIYOS_index *idx,
+                                      const BIYOS_index *obj,
                                       BIYOS_index *fun,
                                       BIYOS_int *sense,
                                       BIYOS_int *prio,
@@ -670,7 +670,7 @@ BIYOS_API BIYOS_status BIYOS_getobjrg(const BIYOS_model *mdl,
                                       BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_setobjnamesp(BIYOS_model *mdl,
                                           BIYOS_index n,
-                                          const BIYOS_index *idx,
+                                          const BIYOS_index *obj,
                                           const char *const *name);
 BIYOS_API BIYOS_status BIYOS_setobjnamerg(BIYOS_model *mdl,
                                           BIYOS_index beg,
@@ -678,7 +678,7 @@ BIYOS_API BIYOS_status BIYOS_setobjnamerg(BIYOS_model *mdl,
                                           const char *const *name);
 BIYOS_API BIYOS_status BIYOS_getobjnamesp(const BIYOS_model *mdl,
                                           BIYOS_index n,
-                                          const BIYOS_index *idx,
+                                          const BIYOS_index *obj,
                                           const char **name);
 BIYOS_API BIYOS_status BIYOS_getobjnamerg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
@@ -687,12 +687,12 @@ BIYOS_API BIYOS_status BIYOS_getobjnamerg(const BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_getobjidx(const BIYOS_model *mdl,
                                        BIYOS_index n,
                                        const char *const *name,
-                                       BIYOS_index *idx);
-BIYOS_API BIYOS_status BIYOS_delobjnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+                                       BIYOS_index *obj);
+BIYOS_API BIYOS_status BIYOS_delobjnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *obj);
 BIYOS_API BIYOS_status BIYOS_delobjnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end);
 BIYOS_API BIYOS_status BIYOS_delobjsp(BIYOS_model *mdl,
                                       BIYOS_index n,
-                                      const BIYOS_index *idx,
+                                      const BIYOS_index *obj,
                                       BIYOS_index *map);
 BIYOS_API BIYOS_status BIYOS_delobjrg(BIYOS_model *mdl,
                                       BIYOS_index beg,
