@@ -1,8 +1,8 @@
-#include "io/nl/bodies.hpp"
+#include "io/nl/reader/bodies.hpp"
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
-#include "io/nl/expressions.hpp"
+#include "io/nl/reader/expressions.hpp"
 #include "io/nl/source/source.hpp"
 #include "io/utils/report.hpp"
 #include "model/model.hpp"

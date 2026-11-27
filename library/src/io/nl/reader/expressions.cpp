@@ -1,4 +1,4 @@
-#include "io/nl/expressions.hpp"
+#include "io/nl/reader/expressions.hpp"
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
@@ -6,7 +6,7 @@
 #include "expr/forms/terms.hpp"
 #include "expr/graph/node.hpp"
 #include "io/nl/operators.hpp"
-#include "io/nl/pieces.hpp"
+#include "io/nl/reader/pieces.hpp"
 #include "io/nl/source/source.hpp"
 #include "io/utils/records.hpp"
 #include "io/utils/report.hpp"

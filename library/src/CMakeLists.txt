@@ -90,12 +90,12 @@ add_library(biyos_internal STATIC
     io/mps/readers/values.cpp
     io/mps/readers/vectors.cpp
     io/mps/sections.cpp
-    io/nl/bodies.cpp
-    io/nl/expressions.cpp
     io/nl/header.cpp
     io/nl/nl.cpp
     io/nl/operators.cpp
-    io/nl/pieces.cpp
+    io/nl/reader/bodies.cpp
+    io/nl/reader/expressions.cpp
+    io/nl/reader/pieces.cpp
     io/nl/source/binary.cpp
     io/nl/source/bounds.cpp
     io/nl/source/source.cpp

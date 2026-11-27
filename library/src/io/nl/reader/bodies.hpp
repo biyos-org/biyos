@@ -2,7 +2,7 @@
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
-#include "io/nl/expressions.hpp"
+#include "io/nl/reader/expressions.hpp"
 #include "io/nl/source/source.hpp"
 #include "model/model.hpp"
 
