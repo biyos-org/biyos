@@ -11,7 +11,7 @@ using biyos::test::text;
 
 TEST(NativeTest, EmptyFile)
 {
-    EXPECT_EQ(native_fault(""), "bad file: file 't.biyos': is empty");
+    EXPECT_EQ(native_fault(""), "bad file: file 't.bys': is empty");
     EXPECT_EQ(native_fault(text({"", " "})), bad_line(2, "the file does not start with BIYOS"));
 }
 
@@ -24,9 +24,9 @@ TEST(NativeTest, NoMagic)
 TEST(NativeTest, Version)
 {
     EXPECT_EQ(native_fault(text({"BIYOS 2", "END"})),
-              "unsupported: file 't.biyos' line 1: version 2 is newer than 1");
+              "unsupported: file 't.bys' line 1: version 2 is newer than 1");
     EXPECT_EQ(native_fault(text({"BIYOS 2 x", "END"})),
-              "unsupported: file 't.biyos' line 1: version 2 is newer than 1");
+              "unsupported: file 't.bys' line 1: version 2 is newer than 1");
     EXPECT_EQ(native_fault(text({"BIYOS 0", "END"})), bad_line(1, "version 0 is unknown"));
     EXPECT_EQ(native_fault(text({"BIYOS one", "END"})), bad_line(1, "'one' is not an integer"));
     EXPECT_EQ(native_fault(text({"BIYOS", "END"})), bad_line(1, "the line ends early"));

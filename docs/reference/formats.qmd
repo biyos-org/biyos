@@ -226,7 +226,7 @@ Every other operator, among them `atan2`, the comparisons, the logical operators
 
 ## Native {#sec-native}
 
-`BIYOS_FILEFMT_NATIVE` is biyos's own format. It holds every part of a model but its callbacks and its options, and the reader reads a written file back to the same model, every number bit for bit.
+`BIYOS_FILEFMT_BYS` is biyos's own format. It holds every part of a model but its callbacks and its options, and the reader reads a written file back to the same model, every number bit for bit.
 
 ### Lines
 

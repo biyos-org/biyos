@@ -118,7 +118,7 @@ Model read_file(Env &env, std::string_view path, FileFormat format)
         return read_mps(env.stream(), input, file, MpsForm::Fixed);
     case FileFormat::Nl:
         return read_nl(env.stream(), input, file);
-    case FileFormat::Native:
+    case FileFormat::Bys:
         break;
     }
     return read_native(input, file);
@@ -142,7 +142,7 @@ void write_file(Stream stream,
                     "fixed MPS files are read, never written");
     case FileFormat::Nl:
         throw Error(ErrorKind::Unsupported, object_of(file), "NL files are read, never written");
-    case FileFormat::Native:
+    case FileFormat::Bys:
         write_native(stream, model, settings, file, path);
         return;
     }

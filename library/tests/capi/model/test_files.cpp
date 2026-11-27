@@ -194,9 +194,9 @@ TEST(CApiTest, NativeFile)
     const Model model(env);
     Engine engine(3);
     build_sample(model.get(), engine);
-    const std::string path = testing::TempDir() + "biyos_native.biyos";
-    ASSERT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_NATIVE), BIYOS_OK);
-    const Read back = read(env, path.c_str(), BIYOS_FILEFMT_NATIVE);
+    const std::string path = testing::TempDir() + "biyos_native.bys";
+    ASSERT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_BYS), BIYOS_OK);
+    const Read back = read(env, path.c_str(), BIYOS_FILEFMT_BYS);
     ASSERT_EQ(back.status, BIYOS_OK);
     BIYOS_int same = 0;
     EXPECT_EQ(BIYOS_cmpmdl(model.get(), back.model, &same), BIYOS_OK);

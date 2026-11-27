@@ -25,7 +25,7 @@ inline std::string native_text(const Model &model)
 inline Model native_model(std::string_view text)
 {
     std::istringstream input{std::string(text)};
-    return read_native(input, "t.biyos");
+    return read_native(input, "t.bys");
 }
 
 inline std::string native_fault(std::string_view text)
@@ -43,7 +43,7 @@ inline std::string native_fault(std::string_view text)
 
 inline std::string bad_line(int line, std::string_view message)
 {
-    return "bad file: file 't.biyos' line " + std::to_string(line) + ": " + std::string(message);
+    return "bad file: file 't.bys' line " + std::to_string(line) + ": " + std::string(message);
 }
 
 inline void expect_round(const Model &model)
