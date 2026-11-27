@@ -2,6 +2,7 @@
 
 #include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/evaluation/derivatives/partials.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
@@ -63,7 +64,10 @@ std::span<T> mine(std::span<T> region,
     return region.subspan(places[k] * lanes, (places[k + 1] - places[k]) * lanes);
 }
 
-Lift lift_of(const Block &block, std::span<const Real> point, Pass &pass) noexcept
+Lift lift_of(const Block &block,
+             std::span<const Real> point,
+             const Tolerances &tolerances,
+             Pass &pass) noexcept
 {
     const std::size_t lanes = pass.lanes;
     Workspace &workspace = pass.workspace;
@@ -77,6 +81,7 @@ Lift lift_of(const Block &block, std::span<const Real> point, Pass &pass) noexce
                 .result = workspace.result,
                 .spare = workspace.spare,
                 .lanes = kSingle,
+                .tolerances = tolerances,
             },
         .tangents =
             {
@@ -257,10 +262,14 @@ void load(const Block &block, std::size_t output, Pass &pass) noexcept
     }
 }
 
-void lift(const Block &block, std::size_t output, std::span<const Real> point, Pass &pass) noexcept
+void lift(const Block &block,
+          std::size_t output,
+          std::span<const Real> point,
+          const Tolerances &tolerances,
+          Pass &pass) noexcept
 {
     load(block, output, pass);
-    const Lift lift = lift_of(block, point, pass);
+    const Lift lift = lift_of(block, point, tolerances, pass);
     for (const Run run : slice(std::span(block.runs), block.starts, output))
     {
         for (std::uint32_t k = run.begin; k < run.end; ++k)
@@ -279,7 +288,11 @@ void hold(const Block &block, std::size_t output, Pass &pass) noexcept
     copy_row(pass.velocity.slots, slot, pass.velocity.shared, position, lanes);
 }
 
-void rise(const Tape &tape, Offset element, std::span<const Real> point, Pass &pass) noexcept
+void rise(const Tape &tape,
+          Offset element,
+          std::span<const Real> point,
+          const Tolerances &tolerances,
+          Pass &pass) noexcept
 {
     const std::span<const Block> prepass = tape.blocks().first(to_size(tape.prepass()));
     for (const Range range : tape.route(element))
@@ -288,7 +301,7 @@ void rise(const Tape &tape, Offset element, std::span<const Real> point, Pass &p
         {
             const Block &block = block_of(prepass, position);
             const std::size_t output = to_size(position - block.begin);
-            lift(block, output, point, pass);
+            lift(block, output, point, tolerances, pass);
             hold(block, output, pass);
         }
     }
@@ -514,13 +527,17 @@ Pass::Pass(const Tape &tape, std::size_t count)
 {
 }
 
-void sweep(const Tape &tape, Offset element, std::span<const Real> point, Pass &pass) noexcept
+void sweep(const Tape &tape,
+           Offset element,
+           std::span<const Real> point,
+           const Tolerances &tolerances,
+           Pass &pass) noexcept
 {
     const std::span<const Block> partition = tape.blocks().subspan(to_size(tape.prepass()));
     const Block &block = block_of(partition, element);
     const std::size_t output = to_size(element - block.begin);
-    rise(tape, element, point, pass);
-    lift(block, output, point, pass);
+    rise(tape, element, point, tolerances, pass);
+    lift(block, output, point, tolerances, pass);
     pass.first.slots[block.outputs[output]] = 1.0;
     retrace(block, output, pass);
     descend(tape, element, pass);

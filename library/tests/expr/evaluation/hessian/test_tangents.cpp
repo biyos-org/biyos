@@ -1,4 +1,5 @@
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "expr/evaluation/derivatives/partials.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
 #include "expr/evaluation/hessian/tangents.hpp"
@@ -7,6 +8,7 @@
 #include "expr/tape/frame.hpp"
 #include "expr/tape/tape.hpp"
 #include "graphs.hpp"
+#include "sweep.hpp"
 
 #include <gtest/gtest.h>
 
@@ -39,10 +41,12 @@ using biyos::Real;
 using biyos::region;
 using biyos::row;
 using biyos::Tape;
+using biyos::Tolerances;
 using biyos::widest_product;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::constant;
+using biyos::test::default_tolerances;
 using biyos::test::every_operator;
 using biyos::test::power;
 using biyos::test::sign_power;
@@ -77,7 +81,10 @@ void seed(const Instruction &instruction,
     }
 }
 
-Frame frame_of(const Block &block, std::span<const Real> point, Workspace &workspace)
+Frame frame_of(const Block &block,
+               std::span<const Real> point,
+               const Tolerances &tolerances,
+               Workspace &workspace)
 {
     return {
         .point = point,
@@ -87,6 +94,7 @@ Frame frame_of(const Block &block, std::span<const Real> point, Workspace &works
         .result = workspace.result,
         .spare = workspace.spare,
         .lanes = workspace.lanes,
+        .tolerances = tolerances,
     };
 }
 
@@ -99,7 +107,8 @@ Linear linear_at(const Graph &graph,
     const Tape tape(graph, std::span(&root, 1));
     Workspace workspace(tape);
     const Block &block = tape.blocks()[0];
-    const Frame frame = frame_of(block, point, workspace);
+    const Tolerances tolerances = default_tolerances();
+    const Frame frame = frame_of(block, point, tolerances, workspace);
     const std::span<Real> all = region(block, std::span(workspace.partials), 1);
     Values slots(tape.width() * lanes, 0.0);
     Values running(lanes, 0.0);

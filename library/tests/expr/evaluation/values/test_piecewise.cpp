@@ -35,6 +35,7 @@ using biyos::Pool;
 using biyos::Real;
 using biyos::Tape;
 using biyos::TimingTree;
+using biyos::test::default_tolerances;
 using biyos::test::jacobian_of;
 using biyos::test::values_of;
 
@@ -168,7 +169,7 @@ Real hessian_at(Hessian &hessian, Real t)
 {
     std::vector<Real> out(hessian.pattern().rows.size(), kNan);
     Pool pool;
-    hessian.values(std::array{t}, std::array{1.0}, out, pool);
+    hessian.values(std::array{t}, std::array{1.0}, default_tolerances(), out, pool);
     return out.front();
 }
 

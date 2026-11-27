@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
 #include "expr/tape/tape.hpp"
@@ -35,6 +36,10 @@ struct Pass
     std::vector<Real> seeds;
 };
 
-void sweep(const Tape &tape, Offset element, std::span<const Real> point, Pass &pass) noexcept;
+void sweep(const Tape &tape,
+           Offset element,
+           std::span<const Real> point,
+           const Tolerances &tolerances,
+           Pass &pass) noexcept;
 
 }

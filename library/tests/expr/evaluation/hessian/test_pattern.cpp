@@ -10,6 +10,7 @@
 #include "expr/graph/node.hpp"
 #include "expr/tape/tape.hpp"
 #include "graphs.hpp"
+#include "sweep.hpp"
 
 #include <gtest/gtest.h>
 
@@ -45,6 +46,7 @@ using biyos::TimingTree;
 using biyos::to_size;
 using biyos::test::arrow;
 using biyos::test::binary;
+using biyos::test::default_tolerances;
 using biyos::test::kBudgets;
 using biyos::test::kExponents;
 using biyos::test::kHeights;
@@ -96,7 +98,7 @@ Pairs nonzeros(const Graph &graph, Offset root, std::span<const Values> points)
     for (const Values &point : points)
     {
         Values out(lower.rows.size(), 0.0);
-        hessian.values(point, std::array{1.0}, out, pool);
+        hessian.values(point, std::array{1.0}, default_tolerances(), out, pool);
         for (std::size_t j = 0; j + 1 < lower.starts.size(); ++j)
         {
             for (auto k = to_size(lower.starts[j]); k < to_size(lower.starts[j + 1]); ++k)

@@ -7,6 +7,7 @@
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/graph/points.hpp"
+#include "sweep.hpp"
 
 #include <gtest/gtest.h>
 
@@ -41,6 +42,7 @@ using biyos::Real;
 using biyos::rises;
 using biyos::segments;
 using biyos::Shapes;
+using biyos::test::default_tolerances;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::uint64_t kSeed = 20261124;
@@ -99,7 +101,7 @@ Curvature nested(const Line &line, Operator op, Real sign, Interval x)
     const Offset pwl = graph.add_piecewise_linear(line.x, line.y);
     const Offset root = graph.add_piecewise(pwl, std::span(&child, 1));
     std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
-    enclose(graph, std::span(&x, 1), nodes);
+    enclose(graph, std::span(&x, 1), default_tolerances(), nodes);
     Shapes shapes(graph);
     shapes.classify(graph, nodes);
     return shapes.curvature(root);

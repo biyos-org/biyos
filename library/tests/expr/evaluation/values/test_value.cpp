@@ -1,4 +1,5 @@
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
@@ -32,10 +33,12 @@ using biyos::Operator;
 using biyos::Real;
 using biyos::Tape;
 using biyos::to_size;
+using biyos::Tolerances;
 using biyos::value_at;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::constant;
+using biyos::test::default_tolerances;
 using biyos::test::every_operator;
 using biyos::test::kBudgets;
 using biyos::test::kRoots;
@@ -445,10 +448,11 @@ TEST(ValueTest, Seeded)
         pinned += tape.pinned();
         Workspace workspace(tape);
         std::vector<Real> values(roots.size());
+        const Tolerances tolerances = default_tolerances();
         for (int k = 0; k < 3; ++k)
         {
             const std::vector<Real> point = random_point(random);
-            forward(tape, point, workspace, values);
+            forward(tape, point, tolerances, workspace, values);
             expect_reference(graph, roots, point, values);
         }
     }
@@ -470,23 +474,24 @@ TEST(ValueTest, Sizes)
     std::vector<Real> values(2);
     const std::array point{0.5, 0.25};
     const std::span<const Real> short_point = std::span(point).first(1);
-    EXPECT_EQ(refusal([&] { forward(tape, short_point, workspace, values); }),
+    const Tolerances tolerances = default_tolerances();
+    EXPECT_EQ(refusal([&] { forward(tape, short_point, tolerances, workspace, values); }),
               "invalid argument: point: size 1 does not cover variable 1");
     std::vector<Real> more(3);
-    EXPECT_EQ(refusal([&] { forward(tape, point, workspace, more); }),
+    EXPECT_EQ(refusal([&] { forward(tape, point, tolerances, workspace, more); }),
               "invalid argument: values: size 3, not the root count 2");
 
     const std::string other = "invalid argument: workspace: sized for another tape";
     Workspace empty(Tape(graph, {}));
-    EXPECT_EQ(refusal([&] { forward(tape, point, empty, values); }), other);
+    EXPECT_EQ(refusal([&] { forward(tape, point, tolerances, empty, values); }), other);
     const Tape whole(graph, std::span(&ratio, 1));
     ASSERT_EQ(whole.pinned(), 0);
     ASSERT_EQ(whole.width(), tape.width());
     Workspace unshared(whole);
-    EXPECT_EQ(refusal([&] { forward(tape, point, unshared, values); }), other);
+    EXPECT_EQ(refusal([&] { forward(tape, point, tolerances, unshared, values); }), other);
     const Tape thin(graph, std::array{sine, cosine}, 3);
     ASSERT_EQ(thin.pinned(), tape.pinned());
     ASSERT_LT(thin.width(), tape.width());
     Workspace few_slots(thin);
-    EXPECT_EQ(refusal([&] { forward(tape, point, few_slots, values); }), other);
+    EXPECT_EQ(refusal([&] { forward(tape, point, tolerances, few_slots, values); }), other);
 }

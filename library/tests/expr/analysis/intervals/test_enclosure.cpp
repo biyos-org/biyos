@@ -1,6 +1,7 @@
 #include "biyos/biyos.h"
 #include "bounds.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "expr/analysis/intervals/enclosure.hpp"
 #include "expr/analysis/intervals/interval.hpp"
 #include "expr/analysis/intervals/rounding.hpp"
@@ -10,6 +11,7 @@
 #include "reference.hpp"
 #include "refusal.hpp"
 #include "sampling.hpp"
+#include "sweep.hpp"
 
 #include <gtest/gtest.h>
 
@@ -33,9 +35,11 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::shifted;
+using biyos::Tolerances;
 using biyos::test::Box;
 using biyos::test::box_of;
 using biyos::test::Check;
+using biyos::test::default_tolerances;
 using biyos::test::enclosures;
 using biyos::test::Engine;
 using biyos::test::evaluate;
@@ -415,14 +419,15 @@ TEST(IntervalTest, Sizes)
     graph.add(Operator::Exp, std::span(&x, 1));
     const std::vector<Interval> box(4, Interval(0.0, 1.0));
     std::vector<Interval> small(1, Interval::empty());
-    EXPECT_EQ(refusal([&] { enclose(graph, box, small); }),
+    const Tolerances tolerances = default_tolerances();
+    EXPECT_EQ(refusal([&] { enclose(graph, box, tolerances, small); }),
               "invalid argument: nodes: size 1, not the node count 2");
     std::vector<Interval> nodes(2, Interval::empty());
     const std::array short_box{Interval(0.0, 1.0)};
-    EXPECT_EQ(refusal([&] { enclose(graph, short_box, nodes); }),
+    EXPECT_EQ(refusal([&] { enclose(graph, short_box, tolerances, nodes); }),
               "invalid argument: box: size 1 does not cover variable 3");
     EXPECT_TRUE(nodes[0].is_empty());
     EXPECT_TRUE(nodes[1].is_empty());
-    enclose(graph, box, nodes);
+    enclose(graph, box, tolerances, nodes);
     EXPECT_TRUE(holds(nodes[1], 1.0, std::exp(1.0)));
 }

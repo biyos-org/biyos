@@ -3,6 +3,7 @@
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/angle.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/text/text.hpp"
 #include "expr/evaluation/derivatives/partials.hpp"
 #include "expr/graph/node.hpp"
@@ -139,6 +140,7 @@ void piecewise(const Instruction &instruction, const Frame &frame) noexcept
 Frame enter(const Block &block,
             std::span<const Real> point,
             std::span<const Real> shared,
+            const Tolerances &tolerances,
             Workspace &workspace) noexcept
 {
     const std::span<Real> slots(workspace.slots);
@@ -156,6 +158,7 @@ Frame enter(const Block &block,
         .result = workspace.result,
         .spare = workspace.spare,
         .lanes = lanes,
+        .tolerances = tolerances,
     };
 }
 
@@ -375,17 +378,21 @@ void check_sweep(const Tape &tape,
     }
 }
 
-void forward(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept
+void forward(const Block &block,
+             std::span<const Real> point,
+             const Tolerances &tolerances,
+             Workspace &workspace) noexcept
 {
-    forward(block, point, workspace.shared, workspace);
+    forward(block, point, workspace.shared, tolerances, workspace);
 }
 
 void forward(const Block &block,
              std::span<const Real> point,
              std::span<const Real> shared,
+             const Tolerances &tolerances,
              Workspace &workspace) noexcept
 {
-    const Frame frame = enter(block, point, shared, workspace);
+    const Frame frame = enter(block, point, shared, tolerances, workspace);
     for (const Instruction &instruction : block.instructions)
     {
         evaluate(instruction, frame);
@@ -393,18 +400,22 @@ void forward(const Block &block,
     }
 }
 
-void linearize(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept
+void linearize(const Block &block,
+               std::span<const Real> point,
+               const Tolerances &tolerances,
+               Workspace &workspace) noexcept
 {
-    linearize(block, point, workspace.shared, workspace.partials, workspace);
+    linearize(block, point, workspace.shared, tolerances, workspace.partials, workspace);
 }
 
 void linearize(const Block &block,
                std::span<const Real> point,
                std::span<const Real> shared,
+               const Tolerances &tolerances,
                std::span<Real> all,
                Workspace &workspace) noexcept
 {
-    const Frame frame = enter(block, point, shared, workspace);
+    const Frame frame = enter(block, point, shared, tolerances, workspace);
     const std::size_t lanes = workspace.lanes;
     const std::span<Real> partials = region(block, all, lanes);
     for (std::size_t k = 0; k < block.instructions.size(); ++k)
@@ -431,6 +442,7 @@ void store(const Block &block, const Workspace &workspace, std::span<Real> outpu
 
 void forward(const Tape &tape,
              std::span<const Real> point,
+             const Tolerances &tolerances,
              Workspace &workspace,
              std::span<Real> values)
 {
@@ -439,7 +451,7 @@ void forward(const Tape &tape,
     const std::size_t prepass = to_size(tape.prepass());
     for (std::size_t k = 0; k < blocks.size(); ++k)
     {
-        forward(blocks[k], point, workspace);
+        forward(blocks[k], point, tolerances, workspace);
         const std::span<Real> outputs = k < prepass ? std::span(workspace.shared) : values;
         store(blocks[k], workspace, outputs);
     }

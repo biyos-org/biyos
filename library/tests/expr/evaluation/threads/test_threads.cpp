@@ -2,6 +2,7 @@
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/identical.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
@@ -41,7 +42,9 @@ using biyos::Tape;
 using biyos::Team;
 using biyos::TimingTree;
 using biyos::to_size;
+using biyos::Tolerances;
 using biyos::Worker;
+using biyos::test::default_tolerances;
 using biyos::test::kBudgets;
 using biyos::test::kListed;
 using biyos::test::listed;
@@ -150,10 +153,18 @@ Sweeps sweep(const Case &test, std::size_t threads, Pool &pool)
                  .gradients = std::vector<Real>(test.tape.pattern().variables.size()),
                  .gradient = std::vector<Real>(test.point.size())};
     std::vector<Real> values(kOutputs);
-    forward(test.tape, test.point, team, pool, values);
-    jacobian(test.tape, test.point, team, pool, found.values, found.gradients);
+    const Tolerances tolerances = default_tolerances();
+    forward(test.tape, test.point, tolerances, team, pool, values);
+    jacobian(test.tape, test.point, tolerances, team, pool, found.values, found.gradients);
     EXPECT_TRUE(same(values, found.values));
-    weighted_gradient(test.tape, test.point, test.weights, team, pool, values, found.gradient);
+    weighted_gradient(test.tape,
+                      test.point,
+                      test.weights,
+                      tolerances,
+                      team,
+                      pool,
+                      values,
+                      found.gradient);
     return found;
 }
 
@@ -165,8 +176,9 @@ Second second(const Case &test, std::size_t threads, Pool &pool)
     hessian.fit(threads);
     Second found{.values = std::vector<Real>(hessian.pattern().rows.size()),
                  .product = std::vector<Real>(test.point.size())};
-    hessian.values(test.point, test.weights, found.values, pool);
-    hessian.product(test.point, test.weights, test.direction, found.product, pool);
+    const Tolerances tolerances = default_tolerances();
+    hessian.values(test.point, test.weights, tolerances, found.values, pool);
+    hessian.product(test.point, test.weights, test.direction, tolerances, found.product, pool);
     return found;
 }
 
@@ -275,6 +287,7 @@ TEST(ThreadTest, Serial)
             biyos::test::gradient_of(test.tape, test.point, test.weights);
         checked += expect_close(found.gradient, gradient);
     }
+    const Tolerances tolerances = default_tolerances();
     for (std::uint64_t seed = 1; seed <= 40; ++seed)
     {
         SCOPED_TRACE(seed);
@@ -288,7 +301,7 @@ TEST(ThreadTest, Serial)
         team.fit(tape, 3);
         std::vector<Real> values(roots.size());
         std::vector<Real> gradient(point.size());
-        weighted_gradient(tape, point, weights, team, pool, values, gradient);
+        weighted_gradient(tape, point, weights, tolerances, team, pool, values, gradient);
         checked += expect_close(gradient, biyos::test::gradient_of(tape, point, weights));
     }
     EXPECT_GT(checked, 20);
@@ -303,13 +316,21 @@ TEST(ThreadTest, Cleared)
     std::vector<Real> values(kOutputs);
     std::vector<Real> gradients(test.tape.pattern().variables.size());
     std::vector<Real> gradient(test.point.size());
+    const Tolerances tolerances = default_tolerances();
     for (const std::size_t threads : {std::size_t{8}, std::size_t{2}})
     {
         team.fit(test.tape, threads);
         EXPECT_EQ(team.size(), threads);
-        jacobian(test.tape, test.point, team, pool, values, gradients);
+        jacobian(test.tape, test.point, tolerances, team, pool, values, gradients);
         EXPECT_TRUE(cleared(team));
-        weighted_gradient(test.tape, test.point, test.weights, team, pool, values, gradient);
+        weighted_gradient(test.tape,
+                          test.point,
+                          test.weights,
+                          tolerances,
+                          team,
+                          pool,
+                          values,
+                          gradient);
         EXPECT_TRUE(cleared(team));
     }
 }

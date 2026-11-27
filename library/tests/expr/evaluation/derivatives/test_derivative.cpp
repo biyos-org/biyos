@@ -1,5 +1,6 @@
 #include "chain_rule.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "expr/evaluation/derivatives/derivative.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
@@ -37,11 +38,13 @@ using biyos::Pattern;
 using biyos::Real;
 using biyos::Tape;
 using biyos::to_size;
+using biyos::Tolerances;
 using biyos::weighted_gradient;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::ChainRule;
 using biyos::test::constant;
+using biyos::test::default_tolerances;
 using biyos::test::every_operator;
 using biyos::test::gradient_of;
 using biyos::test::jacobian_of;
@@ -248,7 +251,10 @@ struct Call
 
 void call_jacobian(const Call &call)
 {
-    jacobian(*call.tape, call.point, *call.workspace, *call.adjoints, call.values, call.out);
+    Workspace &workspace = *call.workspace;
+    Adjoints &adjoints = *call.adjoints;
+    const Tolerances tolerances = default_tolerances();
+    jacobian(*call.tape, call.point, tolerances, workspace, adjoints, call.values, call.out);
 }
 
 void call_weighted(const Call &call)
@@ -256,7 +262,15 @@ void call_weighted(const Call &call)
     const Tape &tape = *call.tape;
     Workspace &workspace = *call.workspace;
     Adjoints &adjoints = *call.adjoints;
-    weighted_gradient(tape, call.point, call.weights, workspace, adjoints, call.values, call.out);
+    const Tolerances tolerances = default_tolerances();
+    weighted_gradient(tape,
+                      call.point,
+                      call.weights,
+                      tolerances,
+                      workspace,
+                      adjoints,
+                      call.values,
+                      call.out);
 }
 
 std::string refused(void (*sweep)(const Call &), const Call &call)
@@ -511,6 +525,7 @@ TEST(DerivativeTest, Seeded)
         const std::vector<Offset> roots = picks(random, graph, kRoots);
         const Tape tape(graph, roots, kBudgets[random.below(kBudgets.size())]);
         pinned += tape.pinned();
+        const Tolerances tolerances = default_tolerances();
         Workspace workspace(tape);
         Adjoints adjoints(tape);
         std::vector<Real> values(roots.size());
@@ -519,7 +534,7 @@ TEST(DerivativeTest, Seeded)
         {
             const bool inside = k % 2 == 0;
             const std::vector<Real> point = inside ? interior_point(random) : random_point(random);
-            jacobian(tape, point, workspace, adjoints, values, gradients);
+            jacobian(tape, point, tolerances, workspace, adjoints, values, gradients);
             EXPECT_TRUE(cleared(adjoints));
             const Rows rows = dense(tape, gradients, point.size());
             expect_rule(graph, roots, point, rows);
@@ -715,6 +730,7 @@ TEST(DerivativeTest, Weighted)
         const Graph graph = random_graph(random);
         const std::vector<Offset> roots = picks(random, graph, kRoots);
         const Tape tape(graph, roots, kBudgets[random.below(kBudgets.size())]);
+        const Tolerances tolerances = default_tolerances();
         Workspace workspace(tape);
         Adjoints adjoints(tape);
         std::vector<Real> values(roots.size());
@@ -724,7 +740,14 @@ TEST(DerivativeTest, Weighted)
             const std::vector<Real> point = random_point(random);
             const std::vector<Real> weights = random_weights(random, roots.size());
             std::ranges::fill(gradient, kNan);
-            weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
+            weighted_gradient(tape,
+                              point,
+                              weights,
+                              tolerances,
+                              workspace,
+                              adjoints,
+                              values,
+                              gradient);
             EXPECT_TRUE(cleared(adjoints));
             expect_weighted(tape, point, weights, gradient);
         }

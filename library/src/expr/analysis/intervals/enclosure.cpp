@@ -2,6 +2,7 @@
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/text/text.hpp"
 #include "expr/analysis/intervals/elementary.hpp"
 #include "expr/analysis/intervals/interval.hpp"
@@ -26,6 +27,7 @@ struct Pass
 {
     const Graph &graph;
     std::span<const Interval> box;
+    const Tolerances &tolerances;
     std::span<const Interval> nodes;
 };
 
@@ -195,10 +197,13 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
 
 }
 
-void enclose(const Graph &graph, std::span<const Interval> box, std::span<Interval> nodes)
+void enclose(const Graph &graph,
+             std::span<const Interval> box,
+             const Tolerances &tolerances,
+             std::span<Interval> nodes)
 {
     check_pass(graph, box, nodes);
-    const Pass pass{.graph = graph, .box = box, .nodes = nodes};
+    const Pass pass{.graph = graph, .box = box, .tolerances = tolerances, .nodes = nodes};
     for (Offset node = 0; node < graph.size(); ++node)
     {
         nodes[to_size(node)] = enclosure(pass, node);
