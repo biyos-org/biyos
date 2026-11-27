@@ -11,10 +11,6 @@
 namespace biyos
 {
 
-void settle(std::vector<Index> &items, std::vector<Index> &into);
-void settle(std::vector<Range> &items, std::vector<Range> &into);
-void join(std::span<const Range> items, std::vector<Range> &into);
-
 template <typename Item> class Memos
 {
   public:

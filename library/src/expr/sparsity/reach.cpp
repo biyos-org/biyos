@@ -3,6 +3,7 @@
 #include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/sparsity/joiner.hpp"
 #include "expr/sparsity/memo.hpp"
 #include "expr/sparsity/radix.hpp"
 #include "expr/tape/plan.hpp"

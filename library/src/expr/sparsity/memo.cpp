@@ -1,6 +1,7 @@
 #include "expr/sparsity/memo.hpp"
 
 #include "core/numbers.hpp"
+#include "expr/sparsity/joiner.hpp"
 #include "expr/sparsity/reach.hpp"
 #include "expr/tape/plan.hpp"
 
@@ -72,33 +73,6 @@ void unpack(std::span<const Offset> cells, std::vector<Range> &items)
     }
 }
 
-}
-
-void settle(std::vector<Index> &items, std::vector<Index> &into)
-{
-    std::ranges::sort(items);
-    const auto last = std::ranges::unique(items).begin();
-    into.insert(into.end(), items.begin(), last);
-}
-
-void settle(std::vector<Range> &items, std::vector<Range> &into)
-{
-    std::ranges::sort(items, {}, &Range::begin);
-    join(items, into);
-}
-
-void join(std::span<const Range> items, std::vector<Range> &into)
-{
-    const std::size_t start = into.size();
-    for (const Range &item : items)
-    {
-        if (into.size() > start && item.begin <= into.back().end)
-        {
-            into.back().end = (std::max)(into.back().end, item.end);
-            continue;
-        }
-        into.push_back(item);
-    }
 }
 
 template <typename Item>

@@ -83,6 +83,7 @@ biyos_add_test(test_expr
     expr/analysis/intervals/test_piecewise.cpp
     expr/evaluation/derivatives/test_angle.cpp
     expr/evaluation/derivatives/test_derivative.cpp
+    expr/evaluation/derivatives/test_joiner.cpp
     expr/evaluation/derivatives/test_lanes.cpp
     expr/evaluation/derivatives/test_memo.cpp
     expr/evaluation/derivatives/test_partials.cpp
