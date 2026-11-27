@@ -97,7 +97,7 @@ TEST(CApiTest, ReadFixed)
         written("biyos_fixed.mps",
                 "NAME\nROWS\n L  cap one\nCOLUMNS\n    x 1       cap one   1.0\n"
                 "RHS\n              cap one   4.0\nENDATA\n");
-    const Read made = read(env, path.c_str(), BIYOS_FILEFMT_FIXEDMPS);
+    const Read made = read(env, path.c_str(), BIYOS_FILEFMT_FIXMPS);
     ASSERT_EQ(made.status, BIYOS_OK);
     EXPECT_EQ(count_of(BIYOS_getnvar, made.model), 1);
     EXPECT_EQ(count_of(BIYOS_getncon, made.model), 1);
@@ -228,7 +228,7 @@ TEST(CApiTest, WriteFixed)
     const Env env;
     const Model model(env);
     const std::string path = testing::TempDir() + "biyos_fixed_written.mps";
-    EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_FIXEDMPS),
+    EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_FIXMPS),
               BIYOS_ERR_UNSUPPORTED);
     const std::string reason = "fixed MPS files are read, never written";
     EXPECT_EQ(env.message(), "unsupported: file '" + path + "': " + reason);

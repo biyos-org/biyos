@@ -2896,7 +2896,7 @@ text A model is read from a file in the format the caller names, never guessed f
 
 table Formats
 value BIYOS_FILEFMT_MPS Free MPS, for linear and mixed-integer models.
-value BIYOS_FILEFMT_FIXEDMPS Fixed MPS, for linear and mixed-integer models. Read only.
+value BIYOS_FILEFMT_FIXMPS Fixed MPS, for linear and mixed-integer models. Read only.
 value BIYOS_FILEFMT_NL Text NL, for nonlinear models. Read only.
 value BIYOS_FILEFMT_BYS The biyos format, which holds every part of a model but its callbacks and its options.
 since 0.1.0

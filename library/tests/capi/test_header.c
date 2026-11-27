@@ -106,7 +106,7 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
 #if !defined(BIYOS_OBJSENSE_MIN) || BIYOS_OBJSENSE_MIN != 1 || BIYOS_OBJSENSE_MAX != 2
 #error "a public objective sense changed"
 #endif
-#if !defined(BIYOS_FILEFMT_MPS) || BIYOS_FILEFMT_MPS != 1 || BIYOS_FILEFMT_FIXEDMPS != 2 ||        \
+#if !defined(BIYOS_FILEFMT_MPS) || BIYOS_FILEFMT_MPS != 1 || BIYOS_FILEFMT_FIXMPS != 2 ||          \
     BIYOS_FILEFMT_NL != 3 || BIYOS_FILEFMT_BYS != 4
 #error "a public file format changed"
 #endif

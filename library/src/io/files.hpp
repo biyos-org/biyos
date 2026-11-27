@@ -15,7 +15,7 @@ namespace biyos
 enum class FileFormat
 {
     Mps = BIYOS_FILEFMT_MPS,
-    FixedMps = BIYOS_FILEFMT_FIXEDMPS,
+    FixedMps = BIYOS_FILEFMT_FIXMPS,
     Nl = BIYOS_FILEFMT_NL,
     Bys = BIYOS_FILEFMT_BYS,
 };

@@ -189,7 +189,7 @@ BIYOS_API BIYOS_status BIYOS_fmtjson(const BIYOS_event *evt, size_t cap, char *b
 #define BIYOS_CONEKND_PSD 8
 
 #define BIYOS_FILEFMT_MPS 1
-#define BIYOS_FILEFMT_FIXEDMPS 2
+#define BIYOS_FILEFMT_FIXMPS 2
 #define BIYOS_FILEFMT_NL 3
 #define BIYOS_FILEFMT_BYS 4
 

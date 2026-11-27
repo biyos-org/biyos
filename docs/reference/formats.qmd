@@ -138,7 +138,7 @@ A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the 
 
 ## Fixed MPS {#sec-mps-fixed}
 
-`BIYOS_FILEFMT_FIXEDMPS` reads fixed MPS, the form of MPS in which each field of a data line starts in a set column and names may hold blanks. Every rule of free MPS above holds but the split of a data line into fields. The columns are those of the Gurobi [MPS reference](https://docs.gurobi.com/projects/optimizer/en/current/reference/fileformats/modelformats.html#mps-format), which states where each field starts; the CPLEX reference describes fields separated by white space alone. Fixed MPS is read, never written.
+`BIYOS_FILEFMT_FIXMPS` reads fixed MPS, the form of MPS in which each field of a data line starts in a set column and names may hold blanks. Every rule of free MPS above holds but the split of a data line into fields. The columns are those of the Gurobi [MPS reference](https://docs.gurobi.com/projects/optimizer/en/current/reference/fileformats/modelformats.html#mps-format), which states where each field starts; the CPLEX reference describes fields separated by white space alone. Fixed MPS is read, never written.
 
 | Field | Columns |
 |---|---|
