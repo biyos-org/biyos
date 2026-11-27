@@ -14,14 +14,24 @@ constexpr Interval kTrue{1.0, 1.0};
 constexpr Interval kFalse{0.0, 0.0};
 constexpr Interval kUnknown{0.0, 1.0};
 
+bool narrow(const Tolerances &tolerances) noexcept
+{
+    return !tolerances.at_most(1.0, 0.0);
+}
+
+bool settled(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return !(b < 0.0 && a > 0.0) || narrow(tolerances);
+}
+
 bool holds(const Tolerances &tolerances, Real a, Real b) noexcept
 {
-    return tolerances.at_most(a, b);
+    return settled(tolerances, a, b) && tolerances.at_most(a, b);
 }
 
 bool fails(const Tolerances &tolerances, Real a, Real b) noexcept
 {
-    return !tolerances.at_most(a, b);
+    return settled(tolerances, a, b) && !tolerances.at_most(a, b);
 }
 
 }

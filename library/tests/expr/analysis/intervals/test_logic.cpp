@@ -56,6 +56,24 @@ constexpr int kSteps = 200;
 
 constexpr std::array kBases{0.0, 1.0, -1.0, -0.5, 1e-3, 1e3, -1e3};
 
+constexpr std::array kWideMarks{
+    -1e3,
+    -10.0,
+    -5.0,
+    -2.5,
+    -1.0,
+    -0.9,
+    -0.5,
+    0.0,
+    0.5,
+    0.9,
+    1.0,
+    2.5,
+    5.0,
+    10.0,
+    100.0,
+};
+
 const std::array kRelations{
     Relation{.name = "le", .op = Operator::LessEqual, .enclose = biyos::less_equal},
     Relation{.name = "ge", .op = Operator::GreaterEqual, .enclose = biyos::greater_equal},
@@ -116,6 +134,11 @@ std::vector<Tolerances> narrow_bands()
             tolerances_of(0.1, 0.0),
             tolerances_of(0.0, 0.5),
             tolerances_of(0.05, 0.2)};
+}
+
+std::vector<Tolerances> wide_bands()
+{
+    return {tolerances_of(0.0, 1.5), tolerances_of(2.0, 0.0), tolerances_of(0.5, 1.0)};
 }
 
 Real upper_edge(const Tolerances &tolerances, Real base)
@@ -280,6 +303,14 @@ TEST(DecisionTest, Band)
     }
 }
 
+TEST(DecisionTest, Wide)
+{
+    for (const Tolerances &tolerances : wide_bands())
+    {
+        EXPECT_TRUE(sampled(tolerances, kWideMarks));
+    }
+}
+
 TEST(DecisionTest, Decided)
 {
     const Tolerances tolerances = tolerances_of(1e-6, 1e-6);
@@ -336,4 +367,38 @@ TEST(DecisionTest, Complement)
     EXPECT_TRUE(exact(complement(Interval(1.0, 1.0)), 0.0, 0.0));
     EXPECT_TRUE(exact(complement(Interval(0.0, 1.0)), 0.0, 1.0));
     EXPECT_TRUE(complement(Interval::empty()).is_empty());
+}
+
+TEST(DecisionTest, Straddle)
+{
+    const Tolerances tolerances = tolerances_of(0.0, 1.5);
+    const Interval point(-5.0, -5.0);
+    EXPECT_TRUE(exact(biyos::less_equal(tolerances, Interval(5.0, 10.0), point), 0.0, 1.0));
+    const Interval opposite(5.0, 5.0);
+    EXPECT_TRUE(exact(biyos::equal(tolerances, opposite, point), 0.0, 1.0));
+    EXPECT_TRUE(exact(biyos::not_equal(tolerances, opposite, point), 0.0, 1.0));
+    const Interval near(-0.9, -0.9);
+    EXPECT_TRUE(exact(biyos::less_equal(tolerances, Interval(0.9, 100.0), near), 0.0, 1.0));
+    EXPECT_TRUE(exact(biyos::less_equal(tolerances, Interval(0.9, 1.5), near), 0.0, 1.0));
+    const Tolerances absolute = tolerances_of(1.5, 0.0);
+    const Interval small(-0.2, -0.2);
+    EXPECT_TRUE(exact(biyos::less_equal(absolute, Interval(0.5, 1.2), small), 0.0, 1.0));
+    const Interval tiny(-2e-16, -2e-16);
+    const Tolerances unit = tolerances_of(0.0, 1.0);
+    EXPECT_TRUE(exact(biyos::less_equal(unit, Interval(1.5, 10.0), tiny), 0.0, 1.0));
+}
+
+TEST(DecisionTest, SameSign)
+{
+    const Tolerances tolerances = tolerances_of(0.0, 1.5);
+    const Interval zero(0.0, 0.0);
+    const Interval low(-10.0, -5.0);
+    const Interval high(5.0, 10.0);
+    EXPECT_TRUE(exact(biyos::less_equal(tolerances, high, zero), 1.0, 1.0));
+    EXPECT_TRUE(exact(biyos::less_equal(tolerances, zero, low), 1.0, 1.0));
+    EXPECT_TRUE(exact(biyos::less_equal(tolerances, high, Interval(20.0, 30.0)), 1.0, 1.0));
+    const Interval five(5.0, 5.0);
+    const Interval ten(10.0, 10.0);
+    EXPECT_TRUE(exact(biyos::equal(tolerances, five, ten), 1.0, 1.0));
+    EXPECT_TRUE(exact(biyos::not_equal(tolerances, five, ten), 0.0, 0.0));
 }
