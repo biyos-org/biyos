@@ -708,10 +708,12 @@ TEST(HessianTest, Timed)
         const Hessian hessian(graph, std::span(&wide, 1), {}, {env.stream(), tree});
     }
     const std::span<const TimingTree::Node> nodes = tree.nodes();
-    ASSERT_EQ(nodes.size(), 2U);
+    ASSERT_EQ(nodes.size(), 3U);
     EXPECT_EQ(nodes[0].name, "evaluation");
     EXPECT_EQ(nodes[1].name, "pattern");
     EXPECT_EQ(nodes[1].parent, 0U);
+    EXPECT_EQ(nodes[2].name, "coloring");
+    EXPECT_EQ(nodes[2].parent, 0U);
     TimingTree small;
     const Hessian hessian(graph, std::span(&narrow, 1), {}, {env.stream(), small});
     EXPECT_TRUE(small.nodes().empty());

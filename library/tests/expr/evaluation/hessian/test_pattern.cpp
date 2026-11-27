@@ -45,6 +45,7 @@ using biyos::Tape;
 using biyos::TimingTree;
 using biyos::to_size;
 using biyos::test::arrow;
+using biyos::test::band;
 using biyos::test::binary;
 using biyos::test::branch;
 using biyos::test::default_tolerances;
@@ -169,18 +170,6 @@ std::vector<Offset> every_rule(Graph &graph)
     roots.push_back(graph.add(Operator::Product, 1.0, std::array{x[0], x[0], x[1]}));
     roots.push_back(piecewise(graph, pwl, inner));
     return roots;
-}
-
-Offset band(Graph &graph, const std::vector<Offset> &x)
-{
-    std::vector<Offset> waves;
-    for (std::size_t k = 0; k + 2 < x.size(); ++k)
-    {
-        const std::array three{x[k], x[k + 1], x[k + 2]};
-        waves.push_back(unary(graph, Operator::Sin, graph.add_sum(0.0, three, Values(3, 1.0))));
-    }
-    const Offset total = graph.add_sum(0.0, waves, Values(waves.size(), 1.0));
-    return unary(graph, Operator::Abs, total);
 }
 
 Pairs arrow_pairs(Index size)
