@@ -35,7 +35,7 @@ class Pusher
         Listed,
     };
 
-    enum class Curve
+    enum class Bending
     {
         None,
         Full,
@@ -46,12 +46,12 @@ class Pusher
     struct Rule
     {
         Form form;
-        Curve curve;
+        Bending bending;
     };
 
     struct Node
     {
-        Curve curve;
+        Bending bending;
         std::uint32_t begin;
         std::uint32_t end;
     };

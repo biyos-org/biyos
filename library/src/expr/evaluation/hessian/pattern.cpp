@@ -56,28 +56,28 @@ Pusher::Rule Pusher::rule_of(const Instruction &instruction) noexcept
     switch (instruction.op)
     {
     case Operator::Constant:
-        return {.form = Form::Constant, .curve = Curve::None};
+        return {.form = Form::Constant, .bending = Bending::None};
     case Operator::Variable:
-        return {.form = Form::Variable, .curve = Curve::None};
+        return {.form = Form::Variable, .bending = Bending::None};
     case Operator::Sum:
     case Operator::Max:
     case Operator::Min:
-        return {.form = Form::Listed, .curve = Curve::None};
+        return {.form = Form::Listed, .bending = Bending::None};
     case Operator::Product:
-        return {.form = Form::Listed, .curve = Curve::Cross};
+        return {.form = Form::Listed, .bending = Bending::Cross};
     case Operator::Negation:
     case Operator::Abs:
     case Operator::PiecewiseLinear:
-        return {.form = Form::Unary, .curve = Curve::None};
+        return {.form = Form::Unary, .bending = Bending::None};
     case Operator::ConstantPower:
     case Operator::SignPower:
         return {.form = Form::Unary,
-                .curve = curved(constant_of(instruction)) ? Curve::Full : Curve::None};
+                .bending = curved(constant_of(instruction)) ? Bending::Full : Bending::None};
     case Operator::Division:
-        return {.form = Form::Binary, .curve = Curve::Quotient};
+        return {.form = Form::Binary, .bending = Bending::Quotient};
     case Operator::Power:
     case Operator::Atan2:
-        return {.form = Form::Binary, .curve = Curve::Full};
+        return {.form = Form::Binary, .bending = Bending::Full};
     case Operator::Exp:
     case Operator::Log:
     case Operator::Sqrt:
@@ -95,9 +95,9 @@ Pusher::Rule Pusher::rule_of(const Instruction &instruction) noexcept
     case Operator::Atanh:
     case Operator::Entropy:
     case Operator::Erf:
-        return {.form = Form::Unary, .curve = Curve::Full};
+        return {.form = Form::Unary, .bending = Bending::Full};
     }
-    return {.form = Form::Constant, .curve = Curve::None};
+    return {.form = Form::Constant, .bending = Bending::None};
 }
 
 void Pusher::start(Offset element)
@@ -156,7 +156,7 @@ void Pusher::enter(const Instruction &instruction, std::span<const std::uint32_t
     }
     const std::uint32_t begin = narrow(operands_.size());
     gather(instruction, rule.form, operands);
-    nodes_.push_back({.curve = rule.curve, .begin = begin, .end = narrow(operands_.size())});
+    nodes_.push_back({.bending = rule.bending, .begin = begin, .end = narrow(operands_.size())});
     occupants_[instruction.target] = variables_ + narrow(nodes_.size() - 1);
 }
 
@@ -223,18 +223,18 @@ void Pusher::push(std::uint32_t id, std::span<const std::uint32_t> operands)
 
 void Pusher::create(const Node &node, std::span<const std::uint32_t> operands)
 {
-    switch (node.curve)
+    switch (node.bending)
     {
-    case Curve::None:
+    case Bending::None:
         return;
-    case Curve::Full:
+    case Bending::Full:
         pairs(operands);
         return;
-    case Curve::Quotient:
+    case Bending::Quotient:
         link(operands.front(), operands.back());
         link(operands.back(), operands.back());
         return;
-    case Curve::Cross:
+    case Bending::Cross:
         for (std::size_t k = 0; k < operands.size(); ++k)
         {
             for (std::size_t m = k + 1; m < operands.size(); ++m)
