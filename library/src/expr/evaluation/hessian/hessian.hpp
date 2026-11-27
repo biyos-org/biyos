@@ -2,6 +2,7 @@
 
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
 #include "expr/evaluation/hessian/sweep.hpp"
@@ -33,11 +34,13 @@ class Hessian
     void fit(std::size_t threads);
     void values(std::span<const Real> point,
                 std::span<const Real> weights,
+                const Tolerances &tolerances,
                 std::span<Real> out,
                 Pool &pool);
     void product(std::span<const Real> point,
                  std::span<const Real> weights,
                  std::span<const Real> direction,
+                 const Tolerances &tolerances,
                  std::span<Real> out,
                  Pool &pool);
 
@@ -46,19 +49,25 @@ class Hessian
 
     void check(std::span<const Real> point, std::span<const Real> weights) const;
     void weigh(std::span<const Real> weights) noexcept;
-    void fill_blocks(std::size_t chunk, std::size_t worker, std::span<const Real> point) noexcept;
+    void fill_blocks(std::size_t chunk,
+                     std::size_t worker,
+                     std::span<const Real> point,
+                     const Tolerances &tolerances) noexcept;
     void fill_products(std::size_t chunk,
                        std::size_t worker,
                        std::span<const Real> point,
-                       std::span<const Real> direction) noexcept;
+                       std::span<const Real> direction,
+                       const Tolerances &tolerances) noexcept;
     void write_block(Offset e,
                      Real scale,
                      std::span<const Real> point,
+                     const Tolerances &tolerances,
                      std::vector<Pass> &passes) noexcept;
     void write_product(Offset e,
                        Real scale,
                        std::span<const Real> point,
                        std::span<const Real> direction,
+                       const Tolerances &tolerances,
                        Pass &pass) noexcept;
 
     std::size_t roots_;

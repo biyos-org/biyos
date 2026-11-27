@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "expr/graph/points.hpp"
 #include "expr/tape/tape.hpp"
 
@@ -21,6 +22,7 @@ struct Frame
     std::span<Real> result;
     std::span<Real> spare;
     std::size_t lanes;
+    const Tolerances &tolerances;
 };
 
 inline std::size_t place(std::uint64_t payload) noexcept

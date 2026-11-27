@@ -2,6 +2,8 @@
 #include "core/env/env.hpp"
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
+#include "core/options/lookup.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/analysis/curvature/curvature.hpp"
 #include "expr/analysis/intervals/enclosure.hpp"
@@ -20,6 +22,7 @@
 #include "expr/tape/tape.hpp"
 #include "utils/graphs.hpp"
 #include "utils/refusal.hpp"
+#include "utils/sweep.hpp"
 
 #include <gtest/gtest.h>
 
@@ -44,6 +47,7 @@ using biyos::Index;
 using biyos::Interval;
 using biyos::jacobian;
 using biyos::kLanes;
+using biyos::Lookup;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Pool;
@@ -54,11 +58,13 @@ using biyos::Tape;
 using biyos::Team;
 using biyos::TimingTree;
 using biyos::to_size;
+using biyos::Tolerances;
 using biyos::weighted_gradient;
 using biyos::Workspace;
 using biyos::test::allocated_bytes;
 using biyos::test::allocations;
 using biyos::test::arrow;
+using biyos::test::default_tolerances;
 using biyos::test::fail_after;
 using biyos::test::kWide;
 using biyos::test::refusal;
@@ -242,8 +248,9 @@ std::size_t hessian_cost(const Graph &graph,
     std::vector<Real> out(hessian.pattern().rows.size());
     const std::vector<Real> weights(roots.size(), 1.0);
     Pool pool;
+    const Tolerances tolerances{Lookup(env.options())};
     const std::size_t start = allocations();
-    hessian.values(point, weights, out, pool);
+    hessian.values(point, weights, tolerances, out, pool);
     return allocations() - start;
 }
 
@@ -257,8 +264,9 @@ std::size_t product_cost(const Graph &graph, std::span<const Offset> roots, std:
     std::vector<Real> out(point.size());
     const std::vector<Real> weights(roots.size(), 1.0);
     Pool pool;
+    const Tolerances tolerances{Lookup(env.options())};
     const std::size_t start = allocations();
-    hessian.product(point, weights, direction, out, pool);
+    hessian.product(point, weights, direction, tolerances, out, pool);
     return allocations() - start;
 }
 
@@ -269,8 +277,9 @@ std::size_t jacobian_cost(const Tape &tape)
     std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
     std::vector<Real> gradients(tape.pattern().variables.size());
     const std::array point{0.5, 2.0};
+    const Tolerances tolerances = default_tolerances();
     const std::size_t start = allocations();
-    jacobian(tape, point, workspace, adjoints, values, gradients);
+    jacobian(tape, point, tolerances, workspace, adjoints, values, gradients);
     return allocations() - start;
 }
 
@@ -282,8 +291,9 @@ std::size_t gradient_cost(const Tape &tape)
     const std::vector<Real> weights(values.size(), 0.5);
     const std::array point{0.5, 2.0};
     std::vector<Real> gradient(point.size());
+    const Tolerances tolerances = default_tolerances();
     const std::size_t start = allocations();
-    weighted_gradient(tape, point, weights, workspace, adjoints, values, gradient);
+    weighted_gradient(tape, point, weights, tolerances, workspace, adjoints, values, gradient);
     return allocations() - start;
 }
 
@@ -334,8 +344,9 @@ std::size_t sweep_cost(const Tape &tape)
     Workspace workspace(tape);
     std::vector<Real> values(static_cast<std::size_t>(tape.roots()));
     const std::array point{0.5, 2.0};
+    const Tolerances tolerances = default_tolerances();
     const std::size_t start = allocations();
-    forward(tape, point, workspace, values);
+    forward(tape, point, tolerances, workspace, values);
     return allocations() - start;
 }
 
@@ -363,6 +374,7 @@ struct Threaded
 
     Env env;
     TimingTree tree;
+    Tolerances tolerances{Lookup(env.options())};
     Tape tape;
     Team team;
     Hessian hessian;
@@ -387,11 +399,11 @@ Threaded::Threaded(const Graph &graph, std::span<const Offset> roots)
 
 void Threaded::run()
 {
-    forward(tape, point, team, pool, values);
-    jacobian(tape, point, team, pool, values, gradients);
-    weighted_gradient(tape, point, weights, team, pool, values, gradient);
-    hessian.values(point, weights, entries, pool);
-    hessian.product(point, weights, point, gradient, pool);
+    forward(tape, point, tolerances, team, pool, values);
+    jacobian(tape, point, tolerances, team, pool, values, gradients);
+    weighted_gradient(tape, point, weights, tolerances, team, pool, values, gradient);
+    hessian.values(point, weights, tolerances, entries, pool);
+    hessian.product(point, weights, point, tolerances, gradient, pool);
 }
 
 Graph every_operator()

@@ -2,6 +2,7 @@
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/text/text.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
@@ -62,11 +63,14 @@ void check_size(std::string_view object,
     }
 }
 
-void prepare(const Tape &tape, std::span<const Real> point, Workspace &workspace) noexcept
+void prepare(const Tape &tape,
+             std::span<const Real> point,
+             const Tolerances &tolerances,
+             Workspace &workspace) noexcept
 {
     for (const Block &block : tape.blocks().first(to_size(tape.prepass())))
     {
-        linearize(block, point, workspace);
+        linearize(block, point, tolerances, workspace);
         store(block, workspace, workspace.shared);
     }
 }
@@ -194,16 +198,17 @@ void pull(const Block &block, std::span<Real> shared, Adjoints &adjoints) noexce
 
 void jacobian(const Tape &tape,
               std::span<const Real> point,
+              const Tolerances &tolerances,
               Workspace &workspace,
               Adjoints &adjoints,
               std::span<Real> values,
               std::span<Real> gradients)
 {
     check_jacobian(tape, point, workspace, adjoints, values, gradients);
-    prepare(tape, point, workspace);
+    prepare(tape, point, tolerances, workspace);
     for (const Block &block : tape.blocks().subspan(to_size(tape.prepass())))
     {
-        linearize(block, point, workspace);
+        linearize(block, point, tolerances, workspace);
         store(block, workspace, values);
         differentiate(tape, block, workspace, workspace, adjoints, gradients);
     }
@@ -212,6 +217,7 @@ void jacobian(const Tape &tape,
 void weighted_gradient(const Tape &tape,
                        std::span<const Real> point,
                        std::span<const Real> weights,
+                       const Tolerances &tolerances,
                        Workspace &workspace,
                        Adjoints &adjoints,
                        std::span<Real> values,
@@ -219,12 +225,12 @@ void weighted_gradient(const Tape &tape,
 {
     check_weighted(tape, point, weights, workspace, adjoints, values, gradient);
     std::ranges::fill(gradient, 0.0);
-    prepare(tape, point, workspace);
+    prepare(tape, point, tolerances, workspace);
     const std::span<const Block> blocks = tape.blocks();
     const std::size_t prepass = to_size(tape.prepass());
     for (const Block &block : blocks.subspan(prepass))
     {
-        linearize(block, point, workspace);
+        linearize(block, point, tolerances, workspace);
         store(block, workspace, values);
         seed_weights(block, weights, adjoints);
         reverse(block, workspace, adjoints, gradient);

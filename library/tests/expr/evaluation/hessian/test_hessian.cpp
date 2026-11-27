@@ -1,6 +1,7 @@
 #include "core/env/env.hpp"
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
 #include "expr/evaluation/hessian/hessian.hpp"
@@ -44,8 +45,10 @@ using biyos::Tape;
 using biyos::Timer;
 using biyos::TimingTree;
 using biyos::to_size;
+using biyos::Tolerances;
 using biyos::test::arrow;
 using biyos::test::binary;
+using biyos::test::default_tolerances;
 using biyos::test::gradient_of;
 using biyos::test::kBudgets;
 using biyos::test::kVariables;
@@ -70,7 +73,7 @@ Values values_of(Hessian &hessian, std::span<const Real> point, std::span<const 
 {
     Values out(hessian.pattern().rows.size(), -1.0);
     Pool pool;
-    hessian.values(point, weights, out, pool);
+    hessian.values(point, weights, default_tolerances(), out, pool);
     return out;
 }
 
@@ -81,7 +84,7 @@ Values product_of(Hessian &hessian,
 {
     Values out(point.size(), -1.0);
     Pool pool;
-    hessian.product(point, weights, direction, out, pool);
+    hessian.product(point, weights, direction, default_tolerances(), out, pool);
     return out;
 }
 
@@ -666,17 +669,20 @@ TEST(HessianTest, Refused)
     const std::array point{1.0, 2.0};
     const std::array weights{1.0};
     Pool pool;
-    EXPECT_EQ(refusal([&] { hessian.values(std::array{1.0}, weights, out, pool); }),
+    const Tolerances tolerances = default_tolerances();
+    EXPECT_EQ(refusal([&] { hessian.values(std::array{1.0}, weights, tolerances, out, pool); }),
               "invalid argument: point: size 1 does not cover variable 1");
-    EXPECT_EQ(refusal([&] { hessian.values(point, std::array{1.0, 1.0}, out, pool); }),
+    EXPECT_EQ(refusal([&] { hessian.values(point, std::array{1.0, 1.0}, tolerances, out, pool); }),
               "invalid argument: weights: size 2, not the root count 1");
-    EXPECT_EQ(refusal([&] { hessian.values(point, weights, std::span(out).first(2), pool); }),
-              "invalid argument: out: size 2, not the pattern size 3");
+    EXPECT_EQ(
+        refusal([&] { hessian.values(point, weights, tolerances, std::span(out).first(2), pool); }),
+        "invalid argument: out: size 2, not the pattern size 3");
     const std::span<Real> two = std::span(out).first(2);
-    EXPECT_EQ(refusal([&] { hessian.product(point, weights, std::array{1.0}, two, pool); }),
-              "invalid argument: direction: size 1, not the point size 2");
+    EXPECT_EQ(
+        refusal([&] { hessian.product(point, weights, std::array{1.0}, tolerances, two, pool); }),
+        "invalid argument: direction: size 1, not the point size 2");
     const std::span<Real> one = std::span(out).first(1);
-    EXPECT_EQ(refusal([&] { hessian.product(point, weights, point, one, pool); }),
+    EXPECT_EQ(refusal([&] { hessian.product(point, weights, point, tolerances, one, pool); }),
               "invalid argument: out: size 1, not the point size 2");
 }
 

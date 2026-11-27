@@ -38,6 +38,7 @@ using biyos::TimingTree;
 using biyos::to_size;
 using biyos::test::binary;
 using biyos::test::bits;
+using biyos::test::default_tolerances;
 using biyos::test::gradient_of;
 using biyos::test::jacobian_of;
 using biyos::test::values_of;
@@ -98,7 +99,7 @@ std::vector<Real> hessian_at(const Point &point)
     Hessian hessian(made.graph, std::span(&made.root, 1), {}, {env.stream(), tree});
     std::vector<Real> out(hessian.pattern().rows.size(), -1.0);
     Pool pool;
-    hessian.values(point, kWeight, out, pool);
+    hessian.values(point, kWeight, default_tolerances(), out, pool);
     std::vector<Real> dense;
     for (Index i = 0; i < 2; ++i)
     {
