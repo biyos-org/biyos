@@ -19,6 +19,7 @@ namespace biyos::test
 {
 
 constexpr Index kVariables = 4;
+constexpr Index kWide = 20;
 constexpr Offset kNodes = 80;
 constexpr std::size_t kRoots = 12;
 constexpr std::array kBudgets{Offset{1}, Offset{3}, Offset{8}, Offset{30}, kBudget};
@@ -110,6 +111,32 @@ inline Offset sign_power(Graph &graph, Offset base, Real exponent)
 inline Offset listed(Graph &graph, Operator op, const std::vector<Offset> &children)
 {
     return graph.add(op, children);
+}
+
+inline std::vector<Offset> variables(Graph &graph, Index size)
+{
+    std::vector<Offset> nodes;
+    for (Index k = 0; k < size; ++k)
+    {
+        nodes.push_back(graph.add_variable(k));
+    }
+    return nodes;
+}
+
+inline Offset waves_of(Graph &graph, const std::vector<Offset> &x)
+{
+    std::vector<Offset> waves;
+    for (const Offset variable : x)
+    {
+        waves.push_back(unary(graph, Operator::Sin, variable));
+    }
+    return graph.add_sum(0.0, waves, std::vector<Real>(waves.size(), 1.0));
+}
+
+inline Offset arrow(Graph &graph, const std::vector<Offset> &x)
+{
+    const Offset grown = unary(graph, Operator::Exp, x[0]);
+    return graph.add(Operator::Product, 1.0, std::array{grown, waves_of(graph, x)});
 }
 
 inline void add_pwls(Graph &graph)

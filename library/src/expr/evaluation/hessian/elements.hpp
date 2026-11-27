@@ -36,6 +36,7 @@ struct Map
     std::vector<Offset> declared;
 };
 
+std::span<const Index> variables_of(const Pattern &pattern, Offset element) noexcept;
 Elements elements_of(const Graph &graph, std::span<const Offset> roots);
 Lower lower_of(const Pattern &blocks, std::span<const Entry> declared);
 Map map_of(const Lower &lower, const Pattern &blocks, std::span<const Entry> declared);

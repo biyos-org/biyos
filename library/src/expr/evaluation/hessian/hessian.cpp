@@ -56,11 +56,6 @@ void check_size(std::string_view object,
     }
 }
 
-std::span<const Index> variables_of(const Pattern &pattern, Offset e) noexcept
-{
-    return slice(std::span(pattern.variables), pattern.starts, to_size(e));
-}
-
 std::vector<std::size_t> widths_of(std::size_t lanes)
 {
     if (lanes > kWidest)

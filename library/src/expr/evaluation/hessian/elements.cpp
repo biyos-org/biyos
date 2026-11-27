@@ -69,11 +69,6 @@ Entry entry_of(Key key) noexcept
     return {.row = static_cast<Index>(key & 0xffffffffU), .column = static_cast<Index>(key >> 32)};
 }
 
-std::span<const Index> row_of(const Pattern &blocks, std::size_t element) noexcept
-{
-    return slice(std::span(blocks.variables), blocks.starts, element);
-}
-
 void check_declared(std::span<const Entry> declared)
 {
     for (std::size_t k = 0; k < declared.size(); ++k)
@@ -92,7 +87,7 @@ std::vector<Key> keys_of(const Pattern &blocks, std::span<const Entry> declared)
     std::vector<Key> keys;
     for (std::size_t e = 0; e + 1 < blocks.starts.size(); ++e)
     {
-        const std::span<const Index> variables = row_of(blocks, e);
+        const std::span<const Index> variables = variables_of(blocks, to_offset(e));
         for (std::size_t l = 0; l < variables.size(); ++l)
         {
             for (std::size_t a = l; a < variables.size(); ++a)
@@ -120,6 +115,11 @@ Index columns_of(const Pattern &blocks, std::span<const Entry> declared) noexcep
     return size;
 }
 
+}
+
+std::span<const Index> variables_of(const Pattern &pattern, Offset element) noexcept
+{
+    return slice(std::span(pattern.variables), pattern.starts, to_size(element));
 }
 
 Elements elements_of(const Graph &graph, std::span<const Offset> roots)
@@ -170,7 +170,7 @@ Map map_of(const Lower &lower, const Pattern &blocks, std::span<const Entry> dec
     map.starts.push_back(0);
     for (std::size_t e = 0; e + 1 < blocks.starts.size(); ++e)
     {
-        const std::span<const Index> variables = row_of(blocks, e);
+        const std::span<const Index> variables = variables_of(blocks, to_offset(e));
         for (std::size_t l = 0; l < variables.size(); ++l)
         {
             for (std::size_t a = l; a < variables.size(); ++a)
