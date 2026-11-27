@@ -3,6 +3,7 @@
 #include "core/numbers.hpp"
 #include "draws.hpp"
 #include "expr/analysis/curvature/curvature.hpp"
+#include "expr/analysis/curvature/logic.hpp"
 #include "expr/analysis/curvature/shape.hpp"
 #include "expr/analysis/intervals/interval.hpp"
 #include "expr/graph/graph.hpp"
@@ -23,6 +24,7 @@
 namespace
 {
 
+using biyos::Argument;
 using biyos::Curvature;
 using biyos::Graph;
 using biyos::Interval;
@@ -56,6 +58,8 @@ constexpr Curvature kAffine = Curvature::Affine;
 constexpr Curvature kConvex = Curvature::Convex;
 constexpr Curvature kConcave = Curvature::Concave;
 constexpr Curvature kNeither = Curvature::Unknown;
+
+using Leaf = Offset (*)(Graph &, Offset);
 
 std::span<const Offset> one(const Offset &node)
 {
@@ -93,17 +97,22 @@ Shapes expect_chords(const Graph &graph,
     return shapes;
 }
 
+Offset root(const Graph &graph)
+{
+    return graph.size() - 1;
+}
+
 void expect_operator(const Graph &graph,
                      std::span<const Interval> box,
                      Engine &engine,
                      int &reported)
 {
     const Shapes shapes = expect_chords(graph, box, engine, reported);
-    const Offset root = graph.size() - 1;
-    std::vector<Monotonicity> monotonicities(graph.children(root).size());
+    const Offset node = root(graph);
+    std::vector<Monotonicity> monotonicities(graph.children(node).size());
     for (std::size_t k = 0; k < monotonicities.size(); ++k)
     {
-        monotonicities[k] = shapes.monotonicity(root, k);
+        monotonicities[k] = shapes.monotonicity(node, k);
     }
     expect_monotonicities(
         {.graph = graph, .box = box, .monotonicities = monotonicities, .reported = reported},
@@ -114,7 +123,7 @@ Curvature root_of(const Graph &graph, std::span<const Interval> box)
 {
     Engine engine(kSeed);
     int reported = 0;
-    return expect_chords(graph, box, engine, reported).curvature(graph.size() - 1);
+    return expect_chords(graph, box, engine, reported).curvature(root(graph));
 }
 
 Curvature over(const Graph &graph, Interval x)
@@ -139,7 +148,7 @@ Offset affine(Graph &graph, Real constant, Offset child, Real weight)
     return graph.add_sum(constant, one(child), weights);
 }
 
-Graph composed(Operator op, Offset (*inner)(Graph &, Offset))
+Graph composed(Operator op, Leaf inner)
 {
     Graph graph;
     const Offset x = graph.add_variable(0);
@@ -175,6 +184,78 @@ Offset ring(Graph &graph, Offset x)
 Offset wave(Graph &graph, Offset x)
 {
     return unary(graph, Operator::Sin, x);
+}
+
+Graph compared(Operator op, Leaf left)
+{
+    Graph graph;
+    const std::array x{graph.add_variable(0), graph.add_variable(1)};
+    graph.add(op, std::array{left(graph, x[0]), unary(graph, Operator::Exp, x[1])});
+    return graph;
+}
+
+Graph branched(Leaf then, Leaf otherwise)
+{
+    Graph graph;
+    const std::array x{graph.add_variable(0), graph.add_variable(1), graph.add_variable(2)};
+    const Offset condition = graph.add(Operator::Less, std::array{x[0], x[1]});
+    graph.add(Operator::If, std::array{condition, then(graph, x[2]), otherwise(graph, x[2])});
+    return graph;
+}
+
+Offset logarithm(Graph &graph, Offset x)
+{
+    return unary(graph, Operator::Log, x);
+}
+
+Graph paired(Operator op)
+{
+    Graph graph;
+    graph.add(op, std::array{graph.add_variable(0), graph.add_variable(1)});
+    return graph;
+}
+
+Graph switched()
+{
+    Graph graph;
+    const std::array x{graph.add_variable(0), graph.add_variable(1)};
+    const Offset condition = graph.add(Operator::Less, x);
+    graph.add(Operator::If, std::array{condition, x[0], x[1]});
+    return graph;
+}
+
+void expect_shape(const Shapes &shapes,
+                  const Graph &graph,
+                  Curvature curvature,
+                  std::span<const Monotonicity> monotonicities)
+{
+    const Offset node = root(graph);
+    EXPECT_EQ(shapes.curvature(node), curvature);
+    for (std::size_t k = 0; k < monotonicities.size(); ++k)
+    {
+        EXPECT_EQ(shapes.monotonicity(node, k), monotonicities[k]) << k;
+    }
+}
+
+void expect_held(const Shapes &shapes, const Graph &graph, Offset node)
+{
+    EXPECT_EQ(shapes.curvature(node), kAffine) << node;
+    for (std::size_t k = 0; k < graph.children(node).size(); ++k)
+    {
+        EXPECT_EQ(shapes.monotonicity(node, k), Monotonicity::Constant) << node << " " << k;
+    }
+}
+
+Curvature undecided_by(Curvature (*rule)(Interval, std::span<Argument>))
+{
+    std::array<Argument, 3> arguments{};
+    arguments.fill(Argument{.monotonicity = Monotonicity::Constant});
+    const Curvature curvature = rule(Interval(0.0, 1.0), arguments);
+    for (const Argument &argument : arguments)
+    {
+        EXPECT_EQ(argument.monotonicity, Monotonicity::Unknown);
+    }
+    return curvature;
 }
 
 }
@@ -390,7 +471,7 @@ TEST(CurvatureTest, Comparisons)
         Graph graph;
         const std::array x{graph.add_variable(0), graph.add_variable(1)};
         const Offset node = graph.add(static_cast<Operator>(code), x);
-        const Shapes shapes = classified(graph, Box{Interval(1.0, 2.0), Interval(3.0, 4.0), kZero});
+        const Shapes shapes = classified(graph, Box{Interval(1.0, 3.0), Interval(2.0, 4.0), kZero});
         EXPECT_EQ(shapes.curvature(node), kNeither) << code;
         for (std::size_t k = 0; k < x.size(); ++k)
         {
@@ -425,6 +506,113 @@ TEST(CurvatureTest, Branches)
     {
         EXPECT_EQ(shapes.monotonicity(node, k), Monotonicity::Unknown) << k;
     }
+}
+
+TEST(CurvatureTest, DecidedComparisons)
+{
+    const Box box{Interval(1.0, 2.0), Interval(3.0, 4.0), kZero};
+    for (int code = BIYOS_OP_LE; code <= BIYOS_OP_NE; ++code)
+    {
+        const auto op = static_cast<Operator>(code);
+        const Graph graph = compared(op, squared);
+        Engine engine(kSeed);
+        int reported = 0;
+        const Shapes shapes = expect_chords(graph, box, engine, reported);
+        expect_held(shapes, graph, root(graph));
+        const Box wide{Interval(-3.0, 3.0), Interval(3.0, 4.0), kZero};
+        EXPECT_EQ(root_of(compared(op, wave), wide), kNeither) << code;
+    }
+}
+
+TEST(CurvatureTest, DecidedConnectives)
+{
+    Graph graph;
+    const std::array x{graph.add_variable(0), graph.add_variable(1), graph.add_variable(2)};
+    const Offset below = graph.add(Operator::Less, std::array{x[0], x[1]});
+    const Offset above = graph.add(Operator::Less, std::array{x[1], x[0]});
+    const Offset open = graph.add(Operator::Less, std::array{x[1], x[2]});
+    const Offset both = graph.add(Operator::And, std::array{below, open});
+    const Offset either = graph.add(Operator::Or, std::array{above, open});
+    const Offset undecided = graph.add(Operator::Or, std::array{below, open});
+    const Offset negated = graph.add(Operator::Not, one(below));
+    const Offset all = graph.add(Operator::And, std::array{above, negated});
+    const Offset any = graph.add(Operator::Or, std::array{below, above});
+    const Box box{Interval(3.0, 4.0), Interval(1.0, 2.0), Interval(1.0, 3.0)};
+    Engine engine(kSeed);
+    int reported = 0;
+    const Shapes shapes = expect_chords(graph, box, engine, reported);
+    for (const Offset node : {below, above, negated, all, any})
+    {
+        expect_held(shapes, graph, node);
+    }
+    for (const Offset node : {open, both, either, undecided})
+    {
+        EXPECT_EQ(shapes.curvature(node), kNeither) << node;
+    }
+    for (const Offset node : {both, either})
+    {
+        EXPECT_EQ(shapes.monotonicity(node, 1), Monotonicity::Constant) << node;
+    }
+    EXPECT_EQ(shapes.monotonicity(undecided, 0), Monotonicity::Constant);
+    EXPECT_EQ(shapes.monotonicity(undecided, 1), Monotonicity::Unknown);
+}
+
+TEST(CurvatureTest, Taken)
+{
+    const std::array then{Monotonicity::Constant,
+                          Monotonicity::Nondecreasing,
+                          Monotonicity::Constant};
+    const std::array otherwise{Monotonicity::Constant,
+                               Monotonicity::Constant,
+                               Monotonicity::Nondecreasing};
+    const Interval near(-1.0, 2.0);
+    const Box below{Interval(1.0, 2.0), Interval(3.0, 4.0), near};
+    const Box above{Interval(3.0, 4.0), Interval(1.0, 2.0), near};
+    const Graph graph = branched(squared, cap);
+    Engine engine(kSeed);
+    int reported = 0;
+    expect_shape(expect_chords(graph, below, engine, reported), graph, kConvex, then);
+    expect_shape(expect_chords(graph, above, engine, reported), graph, kConcave, otherwise);
+    const Graph waved = branched(squared, wave);
+    const Box wide{below[0], below[1], Interval(-3.0, 3.0)};
+    expect_shape(expect_chords(waved, wide, engine, reported), waved, kNeither, then);
+    const Graph missed = branched(squared, logarithm);
+    const Box negative{below[0], below[1], Interval(-3.0, -1.0)};
+    EXPECT_EQ(root_of(missed, negative), kNeither);
+}
+
+TEST(CurvatureTest, Undecided)
+{
+    EXPECT_EQ(undecided_by(biyos::condition_curvature), kNeither);
+    EXPECT_EQ(undecided_by(biyos::branch_curvature), kNeither);
+}
+
+TEST(CurvatureTest, DecidedSampled)
+{
+    Engine engine(kSeed);
+    int reported = 0;
+    int claimed = 0;
+    std::vector<Graph> curved{branched(squared, cap), branched(cap, wave)};
+    std::vector<Graph> plain{switched()};
+    for (int code = BIYOS_OP_LE; code <= BIYOS_OP_NE; ++code)
+    {
+        curved.push_back(compared(static_cast<Operator>(code), squared));
+        plain.push_back(paired(static_cast<Operator>(code)));
+    }
+    for (int round = 0; round < kBoxes; ++round)
+    {
+        const Box box = draw_box(engine);
+        for (const Graph &graph : curved)
+        {
+            const Shapes shapes = expect_chords(graph, box, engine, reported);
+            claimed += shapes.curvature(root(graph)) == kNeither ? 0 : 1;
+        }
+        for (const Graph &graph : plain)
+        {
+            expect_operator(graph, box, engine, reported);
+        }
+    }
+    EXPECT_GT(claimed, kBoxes);
 }
 
 TEST(CurvatureTest, Points)
