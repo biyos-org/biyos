@@ -6,7 +6,8 @@ import pytest
 import biyos
 from biyos import ConeKind, SpecialOrderedSetKind, VariableKind
 from biyos._capi import lib
-from biyos._convert.numbers import c_index, c_offset, c_real
+from biyos._convert.numbers import c_index, c_integer, c_offset, c_real
+from listed import indexed
 
 STALE = "the block predates a deletion from its model"
 
@@ -29,6 +30,11 @@ TERMS = [
     ("rlinterm", "fun", ("fun", "var")),
     ("clinterm", "var", ("fun", "var")),
     ("quadterm", "fun", ("fun", "var", "var")),
+]
+
+MEMBERS = [
+    ("sos", "sos", "sosvar", ("knd", "cnt", "var", "coef")),
+    ("cone", "cone", "conefun", ("knd", "cnt", "fun")),
 ]
 
 RECORDS = [
@@ -217,3 +223,41 @@ def test_copied_terms(model):
             fun.on(target), var1.on(target), var2.on(target), coef
         )
         assert model.compare(target) is None
+
+
+def member_array(name, count, size):
+    if name == "knd":
+        return (c_integer * count)()
+    if name == "cnt":
+        return (c_offset * count)()
+    if name == "coef":
+        return (c_real * size)()
+    return (c_index * size)()
+
+
+def membered(model, call, record, counter, columns):
+    count = getattr(model, f"getn{record}")()
+    size = getattr(model, f"getn{counter}")(range(count))
+    arrays = [member_array(name, count, size) for name in columns]
+    reader = getattr(lib, f"BIYOS_get{call}rg")
+    assert reader(model._handle, 0, count, size, *arrays) == 0
+    return [list(array) for array in arrays]
+
+
+@pytest.mark.parametrize(("call", "record", "counter", "columns"), MEMBERS)
+def test_members(model, call, record, counter, columns):
+    place = next(k for k, name in enumerate(columns) if name in FAMILIES)
+    block = getattr(model, f"get{call}")()[place]
+    assert type(block) is FAMILIES[columns[place]]
+    every = membered(model, call, record, counter, columns)
+    assert block.indices() == every[place]
+    stale(model, block)
+
+
+def test_copied_sets(model):
+    count = model.getnsos()
+    kinds, counts, var, weights = model.getsos()
+    with model.copy() as target:
+        target.addsos(kinds, counts, var.on(target), weights)
+        added = target.getsos(range(count, target.getnsos()))
+        assert indexed(added) == indexed(model.getsos())

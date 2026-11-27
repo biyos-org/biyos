@@ -4,6 +4,7 @@ from typing_extensions import assert_type
 
 from biyos import (
     Complements,
+    ConeKind,
     Cones,
     Constraints,
     Function,
@@ -12,6 +13,7 @@ from biyos import (
     Model,
     Objectives,
     ObjectiveSense,
+    SpecialOrderedSetKind,
     SpecialOrderedSets,
     Variable,
     Variables,
@@ -330,3 +332,11 @@ def terms(mdl: Model) -> None:
     assert_type(
         mdl.getquadterm(), tuple[Functions, Variables, Variables, list[float]]
     )
+
+
+def members(mdl: Model) -> None:
+    assert_type(
+        mdl.getsos(),
+        tuple[list[SpecialOrderedSetKind], list[int], Variables, list[float]],
+    )
+    assert_type(mdl.getcone(), tuple[list[ConeKind], list[int], Functions])

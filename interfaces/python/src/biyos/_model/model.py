@@ -4195,9 +4195,12 @@ class Model:
         | SpecialOrderedSets
         | None = None,
     ) -> tuple[
-        list[SpecialOrderedSetKind], list[Offset], list[Index], list[Real]
+        list[SpecialOrderedSetKind], list[Offset], Variables, list[Real]
     ]:
         """Read special ordered sets, as ``addsos`` takes them.
+
+        The members come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -4212,7 +4215,8 @@ class Model:
         cnt
             The number of members of each set.
         var
-            The variable of each member, each set's in the order added.
+            The variable of each member, each set's in the order added, as a
+            ``Variables`` block.
         coef
             The weight of each member.
 
@@ -4226,12 +4230,13 @@ class Model:
         n = len(every)
         kinds = (c_integer * n)()
         counts = (c_offset * n)()
-        members = (c_index * size)()
+        members = index_view(size)
         weights = (c_real * size)()
         chosen = self._chosen("BIYOS_getsos", SpecialOrderedSets, every)
-        self._call(*chosen, size, kinds, counts, members, weights)
+        self._call(*chosen, size, kinds, counts, index_array(members), weights)
         found = [SpecialOrderedSetKind(code) for code in kinds]
-        return found, list(counts), list(members), list(weights)
+        var = Variables(self, members, self._gen)
+        return found, list(counts), var, list(weights)
 
     @overload
     def setsosname(self, idx: One[SpecialOrderedSet], name: str) -> None: ...
@@ -4716,8 +4721,11 @@ class Model:
 
     def getcone(
         self, idx: Sequence[Index | Cone] | Cones | None = None
-    ) -> tuple[list[ConeKind], list[Offset], list[Index]]:
+    ) -> tuple[list[ConeKind], list[Offset], Functions]:
         """Read the kinds and members of cones.
+
+        The members come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -4733,7 +4741,7 @@ class Model:
             The number of members of each cone.
         fun
             The members of each cone in order, the ``cnt[j]`` of entry ``j``
-            following those of entry ``j - 1``.
+            following those of entry ``j - 1``, as a ``Functions`` block.
 
         See Also
         --------
@@ -4745,10 +4753,10 @@ class Model:
         chosen = self._chosen("BIYOS_getcone", Cones, every)
         kinds = (c_integer * len(every))()
         counts = (c_offset * len(every))()
-        members = (c_index * size)()
-        self._call(*chosen, size, kinds, counts, members)
+        members = index_view(size)
+        self._call(*chosen, size, kinds, counts, index_array(members))
         found = [ConeKind(kind) for kind in kinds]
-        return found, list(counts), list(members)
+        return found, list(counts), Functions(self, members, self._gen)
 
     def getnconeprm(
         self, idx: Sequence[Index | Cone] | Cones | None = None
