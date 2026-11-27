@@ -2752,7 +2752,9 @@ class Model:
             comparisons and conditions with other values.
         ValueError
             When an expression holds a variable of another model, or one
-            made before a deletion from the model.
+            made before a deletion from the model, a comparison alone is
+            ``<``, ``>`` or ``!=``, or a comparison in a condition has an
+            infinite bound.
 
         See Also
         --------

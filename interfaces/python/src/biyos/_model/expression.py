@@ -530,7 +530,7 @@ class ComparisonSense(Enum):
 
 
 class Comparison(Logical):
-    """A constraint written as a comparison of two operands.
+    """A comparison of two operands.
 
     ``<=``, ``>=`` and ``==`` between expressions, variables and numbers
     give a comparison, which ``Model.addcon`` takes. With an operand on each
@@ -597,7 +597,7 @@ class Comparison(Logical):
         return _formula(self._lhs, self._sense, self._rhs)
 
     def __bool__(self) -> bool:
-        """Return whether ``==`` names one variable twice.
+        """Return whether ``==`` or ``!=`` between two variables holds.
 
         Returns
         -------
@@ -608,7 +608,9 @@ class Comparison(Logical):
         Raises
         ------
         TypeError
-            For any other comparison, since it is a constraint, not a test.
+            For ``<=``, ``>=``, ``<`` and ``>``, and for ``==`` and ``!=``
+            with an expression or a number on a side, since such a
+            comparison is part of a model, not a test.
         """
         if self._same is None:
             raise TypeError(
@@ -636,7 +638,7 @@ class Comparison(Logical):
 
 
 class Condition(Logical):
-    """A logical constraint built from comparisons.
+    """A logical combination of comparisons.
 
     ``&``, ``|`` and ``~`` on comparisons and conditions give a condition,
     ``Operator.AND``, ``Operator.OR`` or ``Operator.NOT`` of its operands,
@@ -685,9 +687,9 @@ class Condition(Logical):
         Raises
         ------
         TypeError
-            Always, since a condition is a constraint, not a test.
+            Always, since a condition is part of a model, not a test.
         """
-        raise TypeError("a condition is a constraint and has no truth value")
+        raise TypeError("a condition has no truth value")
 
 
 _SIDES = {
