@@ -169,7 +169,14 @@ Real hessian_at(Hessian &hessian, Real t)
 {
     std::vector<Real> out(hessian.pattern().rows.size(), kNan);
     Pool pool;
-    hessian.values(std::array{t}, std::array{1.0}, default_tolerances(), out, pool);
+    Env env;
+    TimingTree tree;
+    hessian.values(std::array{t},
+                   std::array{1.0},
+                   default_tolerances(),
+                   out,
+                   pool,
+                   {env.stream(), tree});
     return out.front();
 }
 

@@ -18,9 +18,19 @@ struct Tangents
     std::size_t lanes;
 };
 
+struct Bends
+{
+    Real xx;
+    Real xy;
+    Real yy;
+};
+
 std::size_t widest_product(const Tape &tape) noexcept;
 Real scaled(Real tangent, Real factor) noexcept;
 bool curved(Real exponent) noexcept;
+Bends bends_of(const Instruction &instruction,
+               const Frame &frame,
+               std::span<const Real> partials) noexcept;
 void partial_tangents(const Instruction &instruction,
                       const Frame &frame,
                       const Tangents &tangents,

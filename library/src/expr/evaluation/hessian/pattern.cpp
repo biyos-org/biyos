@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace biyos
@@ -46,9 +47,16 @@ Shape Pusher::shape(Offset element)
     start(element);
     rise(element);
     const Block &block = block_of(tape_.blocks().subspan(to_size(tape_.prepass())), element);
-    walk(block, to_size(element - block.begin));
+    const std::size_t output = to_size(element - block.begin);
+    walk(block, output);
+    const std::uint32_t root = occupants_[block.outputs[output]];
     eliminate();
-    return {.entries = entries(), .pushes = pushes_};
+    return {.entries = entries(),
+            .pushes = pushes_,
+            .nodes = std::move(nodes_),
+            .operands = std::move(operands_),
+            .links = std::move(links_),
+            .root = root};
 }
 
 Pusher::Rule Pusher::rule_of(const Instruction &instruction) noexcept
@@ -65,30 +73,30 @@ Pusher::Rule Pusher::rule_of(const Instruction &instruction) noexcept
     case Operator::And:
     case Operator::Or:
     case Operator::Not:
-        return {.form = Form::Constant, .curve = Curve::None};
+        return {.form = Form::Constant, .bending = Bending::None};
     case Operator::Variable:
-        return {.form = Form::Variable, .curve = Curve::None};
+        return {.form = Form::Variable, .bending = Bending::None};
     case Operator::Sum:
     case Operator::Max:
     case Operator::Min:
-        return {.form = Form::Listed, .curve = Curve::None};
+        return {.form = Form::Listed, .bending = Bending::None};
     case Operator::If:
-        return {.form = Form::Branches, .curve = Curve::None};
+        return {.form = Form::Branches, .bending = Bending::None};
     case Operator::Product:
-        return {.form = Form::Listed, .curve = Curve::Cross};
+        return {.form = Form::Listed, .bending = Bending::Cross};
     case Operator::Negation:
     case Operator::Abs:
     case Operator::PiecewiseLinear:
-        return {.form = Form::Unary, .curve = Curve::None};
+        return {.form = Form::Unary, .bending = Bending::None};
     case Operator::ConstantPower:
     case Operator::SignPower:
         return {.form = Form::Unary,
-                .curve = curved(constant_of(instruction)) ? Curve::Full : Curve::None};
+                .bending = curved(constant_of(instruction)) ? Bending::Full : Bending::None};
     case Operator::Division:
-        return {.form = Form::Binary, .curve = Curve::Quotient};
+        return {.form = Form::Binary, .bending = Bending::Quotient};
     case Operator::Power:
     case Operator::Atan2:
-        return {.form = Form::Binary, .curve = Curve::Full};
+        return {.form = Form::Binary, .bending = Bending::Full};
     case Operator::Exp:
     case Operator::Log:
     case Operator::Sqrt:
@@ -106,9 +114,9 @@ Pusher::Rule Pusher::rule_of(const Instruction &instruction) noexcept
     case Operator::Atanh:
     case Operator::Entropy:
     case Operator::Erf:
-        return {.form = Form::Unary, .curve = Curve::Full};
+        return {.form = Form::Unary, .bending = Bending::Full};
     }
-    return {.form = Form::Constant, .curve = Curve::None};
+    return {.form = Form::Constant, .bending = Bending::None};
 }
 
 void Pusher::start(Offset element)
@@ -167,7 +175,7 @@ void Pusher::enter(const Instruction &instruction, std::span<const std::uint32_t
     }
     const std::uint32_t begin = narrow(operands_.size());
     gather(instruction, rule.form, operands);
-    nodes_.push_back({.curve = rule.curve, .begin = begin, .end = narrow(operands_.size())});
+    nodes_.push_back({.bending = rule.bending, .begin = begin, .end = narrow(operands_.size())});
     occupants_[instruction.target] = variables_ + narrow(nodes_.size() - 1);
 }
 
@@ -206,6 +214,7 @@ void Pusher::eliminate()
 {
     const std::size_t ids = variables_ + nodes_.size();
     rows_.resize((std::max)(rows_.size(), ids));
+    links_.assign(ids, 0);
     for (std::vector<std::uint32_t> &row : std::span(rows_).first(ids))
     {
         row.clear();
@@ -240,18 +249,18 @@ void Pusher::push(std::uint32_t id, std::span<const std::uint32_t> operands)
 
 void Pusher::create(const Node &node, std::span<const std::uint32_t> operands)
 {
-    switch (node.curve)
+    switch (node.bending)
     {
-    case Curve::None:
+    case Bending::None:
         return;
-    case Curve::Full:
+    case Bending::Full:
         pairs(operands);
         return;
-    case Curve::Quotient:
+    case Bending::Quotient:
         link(operands.front(), operands.back());
         link(operands.back(), operands.back());
         return;
-    case Curve::Cross:
+    case Bending::Cross:
         for (std::size_t k = 0; k < operands.size(); ++k)
         {
             for (std::size_t m = k + 1; m < operands.size(); ++m)
@@ -277,6 +286,7 @@ void Pusher::pairs(std::span<const std::uint32_t> operands)
 void Pusher::link(std::uint32_t a, std::uint32_t b)
 {
     rows_[(std::max)(a, b)].push_back((std::min)(a, b));
+    ++links_[(std::max)(a, b)];
     ++pushes_;
 }
 

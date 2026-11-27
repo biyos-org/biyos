@@ -177,7 +177,7 @@ Second second(const Case &test, std::size_t threads, Pool &pool)
     Second found{.values = std::vector<Real>(hessian.pattern().rows.size()),
                  .product = std::vector<Real>(test.point.size())};
     const Tolerances tolerances = default_tolerances();
-    hessian.values(test.point, test.weights, tolerances, found.values, pool);
+    hessian.values(test.point, test.weights, tolerances, found.values, pool, {env.stream(), tree});
     hessian.product(test.point, test.weights, test.direction, tolerances, found.product, pool);
     return found;
 }

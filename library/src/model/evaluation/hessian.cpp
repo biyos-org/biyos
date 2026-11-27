@@ -50,7 +50,7 @@ void Evaluation::hessian(const Lookup &lookup, const Point &point, std::span<Rea
     check("h", h.size(), hessian_pattern().rows.size());
     require(model_, Part::Hessian);
     fit(lookup);
-    program_.hessian.values(point.x, weights_, Tolerances(lookup), h, pool_);
+    program_.hessian.values(point.x, weights_, Tolerances(lookup), h, pool_, {stream_, tree_});
     term_hessian(point.w, h);
     evaluate_hessian(Checker(stream_, lookup, kModule), point, h);
 }

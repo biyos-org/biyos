@@ -1,11 +1,14 @@
 #pragma once
 
 #include "core/env/pool.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/evaluation/hessian/coloring.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
+#include "expr/evaluation/hessian/pattern.hpp"
+#include "expr/evaluation/hessian/pushing/lists.hpp"
 #include "expr/evaluation/hessian/sweep.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/tape/tape.hpp"
@@ -32,13 +35,15 @@ class Hessian
     const Lower &pattern() const noexcept;
     std::span<const Offset> declared() const noexcept;
     bool colored(Offset element) const noexcept;
+    bool pushed(Offset element) const noexcept;
     void widen(Index columns);
     void fit(std::size_t threads);
     void values(std::span<const Real> point,
                 std::span<const Real> weights,
                 const Tolerances &tolerances,
                 std::span<Real> out,
-                Pool &pool);
+                Pool &pool,
+                Timing timing);
     void product(std::span<const Real> point,
                  std::span<const Real> weights,
                  std::span<const Real> direction,
@@ -50,6 +55,7 @@ class Hessian
     struct Products;
 
     void color(Timing timing);
+    void choose(Offset e, Shape shape, Stream stream);
     std::size_t directions(Offset e) const noexcept;
     void check(std::span<const Real> point, std::span<const Real> weights) const;
     void weigh(std::span<const Real> weights) noexcept;
@@ -57,6 +63,14 @@ class Hessian
                      std::size_t worker,
                      std::span<const Real> point,
                      const Tolerances &tolerances) noexcept;
+    void fill_pushed(std::size_t k,
+                     std::size_t worker,
+                     std::span<const Real> point,
+                     const Tolerances &tolerances) noexcept;
+    void push_elements(std::span<const Real> point,
+                       const Tolerances &tolerances,
+                       Pool &pool,
+                       Timing timing);
     void fill_products(std::size_t chunk,
                        std::size_t worker,
                        std::span<const Real> point,
@@ -82,11 +96,15 @@ class Hessian
     std::size_t roots_;
     Elements elements_;
     Tape tape_;
+    std::vector<Shape> shapes_;
     Blocks blocks_;
     Lower lower_;
     Map map_;
     std::vector<Offset> places_;
     std::vector<Coloring> colorings_;
+    std::vector<Offset> pushed_;
+    std::vector<Elimination> eliminations_;
+    std::vector<PushSpace> spaces_;
     std::vector<std::size_t> widths_;
     std::vector<std::size_t> classes_;
     std::vector<std::vector<Pass>> workers_;

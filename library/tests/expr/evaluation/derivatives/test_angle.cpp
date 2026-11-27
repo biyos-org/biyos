@@ -99,7 +99,7 @@ std::vector<Real> hessian_at(const Point &point)
     Hessian hessian(made.graph, std::span(&made.root, 1), {}, {env.stream(), tree});
     std::vector<Real> out(hessian.pattern().rows.size(), -1.0);
     Pool pool;
-    hessian.values(point, kWeight, default_tolerances(), out, pool);
+    hessian.values(point, kWeight, default_tolerances(), out, pool, {env.stream(), tree});
     std::vector<Real> dense;
     for (Index i = 0; i < 2; ++i)
     {

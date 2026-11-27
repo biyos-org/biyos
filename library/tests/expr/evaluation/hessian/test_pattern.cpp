@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <numeric>
 #include <span>
 #include <utility>
 #include <vector>
@@ -26,6 +27,7 @@
 namespace
 {
 
+using biyos::Bending;
 using biyos::Elements;
 using biyos::elements_of;
 using biyos::Entry;
@@ -102,7 +104,8 @@ Pairs nonzeros(const Graph &graph, Offset root, std::span<const Values> points)
     for (const Values &point : points)
     {
         Values out(lower.rows.size(), 0.0);
-        hessian.values(point, std::array{1.0}, default_tolerances(), out, pool);
+        hessian
+            .values(point, std::array{1.0}, default_tolerances(), out, pool, {env.stream(), tree});
         for (std::size_t j = 0; j + 1 < lower.starts.size(); ++j)
         {
             for (auto k = to_size(lower.starts[j]); k < to_size(lower.starts[j + 1]); ++k)
@@ -279,6 +282,10 @@ TEST(PatternTest, Pushes)
     const Shape shape = pusher.shape(0);
     EXPECT_EQ(shape.pushes, 5);
     EXPECT_EQ(sorted(pairs_of(tape, 0, shape)), (Pairs{{0, 0}, {1, 0}, {1, 1}}));
+    EXPECT_EQ(std::accumulate(shape.links.begin(), shape.links.end(), Offset{0}), shape.pushes);
+    EXPECT_EQ(shape.links.size(), shape.nodes.size() + 2);
+    EXPECT_EQ(shape.root + 1, shape.links.size());
+    EXPECT_EQ(shape.nodes.back().bending, Bending::Full);
     EXPECT_EQ(pusher.shape(0).pushes, 5);
 }
 

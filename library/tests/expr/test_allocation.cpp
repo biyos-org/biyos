@@ -64,12 +64,14 @@ using biyos::Workspace;
 using biyos::test::allocated_bytes;
 using biyos::test::allocations;
 using biyos::test::arrow;
+using biyos::test::clique;
 using biyos::test::default_tolerances;
 using biyos::test::fail_after;
 using biyos::test::kWide;
 using biyos::test::refusal;
 using biyos::test::stop_failing;
 using biyos::test::variables;
+using biyos::test::waves_of;
 
 constexpr std::size_t kAttempts = 100;
 constexpr Index kSteps = 1000;
@@ -77,6 +79,8 @@ constexpr std::size_t kGrowth = 8;
 constexpr Index kTerms = 1000;
 constexpr Offset kWhole = Offset{1} << 40;
 constexpr Index kRing = 200;
+constexpr Index kClique = 64;
+constexpr Index kMany = 200;
 constexpr std::size_t kThreads = 3;
 constexpr std::array kPair{0.5, 2.0};
 
@@ -249,8 +253,9 @@ std::size_t hessian_cost(const Graph &graph,
     const std::vector<Real> weights(roots.size(), 1.0);
     Pool pool;
     const Tolerances tolerances{Lookup(env.options())};
+    tree.reserve(tree.nodes().size() + 1);
     const std::size_t start = allocations();
-    hessian.values(point, weights, tolerances, out, pool);
+    hessian.values(point, weights, tolerances, out, pool, {env.stream(), tree});
     return allocations() - start;
 }
 
@@ -402,7 +407,7 @@ void Threaded::run()
     forward(tape, point, tolerances, team, pool, values);
     jacobian(tape, point, tolerances, team, pool, values, gradients);
     weighted_gradient(tape, point, weights, tolerances, team, pool, values, gradient);
-    hessian.values(point, weights, tolerances, entries, pool);
+    hessian.values(point, weights, tolerances, entries, pool, {env.stream(), tree});
     hessian.product(point, weights, point, tolerances, gradient, pool);
 }
 
@@ -525,6 +530,18 @@ TEST(AllocationTest, HessianSweep)
     const std::vector<Real> point(to_size(kWide), 0.5);
     EXPECT_EQ(hessian_cost(wide, arrows, point, 1), 0U);
     EXPECT_EQ(hessian_cost(wide, arrows, point, kLanes), 0U);
+}
+
+TEST(AllocationTest, HessianPushed)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, kMany);
+    const std::array roots{clique(graph, x, waves_of(graph, x), kClique)};
+    Env env;
+    TimingTree tree;
+    ASSERT_TRUE(Hessian(graph, roots, {}, {env.stream(), tree}).pushed(0));
+    const std::vector<Real> point(to_size(kMany), 0.5);
+    EXPECT_EQ(hessian_cost(graph, roots, point, kLanes), 0U);
 }
 
 TEST(AllocationTest, HessianProduct)

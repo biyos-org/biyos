@@ -2,6 +2,8 @@
 
 #include "core/env/error.hpp"
 #include "core/env/pool.hpp"
+#include "core/events/event.hpp"
+#include "core/events/stream.hpp"
 #include "core/memory/resize.hpp"
 #include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
@@ -13,6 +15,8 @@
 #include "expr/evaluation/hessian/coloring.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
 #include "expr/evaluation/hessian/pattern.hpp"
+#include "expr/evaluation/hessian/pushing/lists.hpp"
+#include "expr/evaluation/hessian/pushing/push.hpp"
 #include "expr/evaluation/hessian/sweep.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/sparsity/reach.hpp"
@@ -23,6 +27,7 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -38,11 +43,26 @@ namespace
 constexpr std::size_t kWidest = std::size_t{1} << (std::numeric_limits<std::size_t>::digits - 1);
 constexpr Offset kGrain = 64;
 constexpr Offset kDense = -1;
+constexpr Offset kPush = 1;
 
 struct Chunk
 {
     std::size_t first;
     std::size_t count;
+};
+
+enum class Method
+{
+    Dense,
+    Coloring,
+    Pushing,
+};
+
+struct Choice
+{
+    Offset pushes;
+    Offset sweeps;
+    Offset length;
 };
 
 [[noreturn]] void refuse(std::string object, std::string reason)
@@ -134,28 +154,45 @@ bool any_large(const Pattern &pattern) noexcept
     return false;
 }
 
-void add_exact(Pusher &pusher, Offset e, Blocks &blocks)
-{
-    std::ranges::copy(pusher.shape(e).entries, std::back_inserter(blocks.entries));
-    blocks.starts.push_back(to_offset(blocks.entries.size()));
-}
-
-Blocks blocks_of(const Tape &tape, Timing timing)
+std::vector<Shape> shapes_of(const Tape &tape, Timing timing)
 {
     const Pattern &pattern = tape.pattern();
     if (!any_large(pattern))
     {
-        return dense_of(pattern);
+        return {};
     }
     const Timer timer(timing.stream, timing.tree, "expr", "pattern");
     Pusher pusher(tape);
-    Blocks blocks{.starts = {0}, .entries = {}};
+    std::vector<Shape> shapes(to_size(tape.roots()));
     for (Offset e = 0; e < tape.roots(); ++e)
     {
-        const std::size_t size = variables_of(pattern, e).size();
+        if (large(variables_of(pattern, e).size()))
+        {
+            shapes[to_size(e)] = pusher.shape(e);
+        }
+    }
+    return shapes;
+}
+
+void add_exact(std::span<const Entry> entries, Blocks &blocks)
+{
+    std::ranges::copy(entries, std::back_inserter(blocks.entries));
+    blocks.starts.push_back(to_offset(blocks.entries.size()));
+}
+
+Blocks blocks_of(const Pattern &pattern, std::span<const Shape> shapes)
+{
+    if (shapes.empty())
+    {
+        return dense_of(pattern);
+    }
+    Blocks blocks{.starts = {0}, .entries = {}};
+    for (std::size_t e = 0; e < shapes.size(); ++e)
+    {
+        const std::size_t size = variables_of(pattern, to_offset(e)).size();
         if (large(size))
         {
-            add_exact(pusher, e, blocks);
+            add_exact(shapes[e].entries, blocks);
         }
         else
         {
@@ -191,10 +228,55 @@ Offset length_of(const Tape &tape, Offset element)
     return length;
 }
 
-bool cheap(const Tape &tape, Offset element, std::span<const Entry> entries, std::size_t size)
+Offset sweeps_of(std::size_t directions) noexcept
 {
-    const auto sweeps = to_offset((size + kLanes - 1) / kLanes);
-    return star_work(entries, size) <= sweeps * length_of(tape, element);
+    return to_offset((directions + kLanes - 1) / kLanes);
+}
+
+bool cheap(std::span<const Entry> entries, std::size_t size, Offset length)
+{
+    return star_work(entries, size) <= sweeps_of(size) * length;
+}
+
+Method method_of(const Choice &choice, bool colorable) noexcept
+{
+    if (choice.pushes * kPush < choice.sweeps * choice.length)
+    {
+        return Method::Pushing;
+    }
+    return colorable ? Method::Coloring : Method::Dense;
+}
+
+std::string name_of(Method method)
+{
+    switch (method)
+    {
+    case Method::Dense:
+        return "dense";
+    case Method::Coloring:
+        return "coloring";
+    case Method::Pushing:
+        return "pushing";
+    }
+    return {};
+}
+
+void describe(Event &event, Offset e, Method method, const Choice &choice)
+{
+    const std::string name = name_of(method);
+    event.module = "expr";
+    event.text = "element " + text_of(e) + " takes " + name;
+    event.fields.push_back(Field{.name = "element", .value = text_of(e)});
+    event.fields.push_back(Field{.name = "method", .value = name});
+    event.fields.push_back(Field{.name = "pushes", .value = text_of(choice.pushes)});
+    event.fields.push_back(Field{.name = "sweeps", .value = text_of(choice.sweeps)});
+    event.fields.push_back(Field{.name = "length", .value = text_of(choice.length)});
+}
+
+void announce(Stream stream, Offset e, Method method, const Choice &choice) noexcept
+{
+    const auto fill = [&](Event &event) { describe(event, e, method, choice); };
+    stream.emit(EventKind::Message, EventLevel::Debug, fill);
 }
 
 std::vector<Offset> chunks_of(const Pattern &pattern)
@@ -245,7 +327,8 @@ Hessian::Hessian(const Graph &graph,
                  std::size_t lanes,
                  Offset budget)
     : roots_(roots.size()), elements_(elements_of(graph, roots)),
-      tape_(graph, elements_.nodes, budget), blocks_(blocks_of(tape_, timing)),
+      tape_(graph, elements_.nodes, budget), shapes_(shapes_of(tape_, timing)),
+      blocks_(blocks_of(tape_.pattern(), shapes_)),
       lower_(lower_of(tape_.pattern(), blocks_, declared)),
       map_(map_of(lower_, tape_.pattern(), blocks_, declared))
 {
@@ -272,6 +355,7 @@ Hessian::Hessian(const Graph &graph,
         c = places[c];
     }
     workers_.push_back(passes_of(tape_, widths_));
+    spaces_.push_back(space_of(tape_, eliminations_));
     chunks_ = chunks_of(tape_.pattern());
     scales_.assign(to_size(tape_.roots()), 0.0);
     parts_.assign((std::max)(map_.blocks.size(), tape_.pattern().variables.size()), 0.0);
@@ -280,25 +364,58 @@ Hessian::Hessian(const Graph &graph,
 void Hessian::color(Timing timing)
 {
     places_.assign(to_size(tape_.roots()), kDense);
-    if (!any_large(tape_.pattern()))
+    pushed_.assign(to_size(tape_.roots()), kDense);
+    std::vector<Shape> shapes = std::exchange(shapes_, {});
+    if (shapes.empty())
     {
         return;
     }
     const Timer timer(timing.stream, timing.tree, "expr", "coloring");
     for (Offset e = 0; e < tape_.roots(); ++e)
     {
-        const std::size_t size = variables_of(tape_.pattern(), e).size();
-        const std::span<const Entry> entries = entries_of(blocks_, e);
-        if (large(size) && cheap(tape_, e, entries, size))
+        if (large(variables_of(tape_.pattern(), e).size()))
         {
-            places_[to_size(e)] = to_offset(colorings_.size());
-            colorings_.push_back(star_coloring(entries, size));
+            choose(e, std::move(shapes[to_size(e)]), timing.stream);
         }
+    }
+}
+
+void Hessian::choose(Offset e, Shape shape, Stream stream)
+{
+    const std::size_t size = variables_of(tape_.pattern(), e).size();
+    const std::span<const Entry> entries = entries_of(blocks_, e);
+    const Offset length = length_of(tape_, e);
+    std::optional<Coloring> coloring;
+    if (cheap(entries, size, length))
+    {
+        coloring = star_coloring(entries, size);
+    }
+    const Choice choice{.pushes = shape.pushes,
+                        .sweeps = sweeps_of(coloring ? to_size(coloring->directions) : size),
+                        .length = length};
+    const Method method = method_of(choice, coloring.has_value());
+    announce(stream, e, method, choice);
+    switch (method)
+    {
+    case Method::Dense:
+        return;
+    case Method::Coloring:
+        places_[to_size(e)] = to_offset(colorings_.size());
+        colorings_.push_back(*std::move(coloring));
+        return;
+    case Method::Pushing:
+        pushed_[to_size(e)] = to_offset(eliminations_.size());
+        eliminations_.push_back(elimination_of(e, std::move(shape)));
+        return;
     }
 }
 
 std::size_t Hessian::directions(Offset e) const noexcept
 {
+    if (pushed(e))
+    {
+        return 0;
+    }
     const Offset place = places_[to_size(e)];
     return place == kDense ? variables_of(tape_.pattern(), e).size()
                            : to_size(colorings_[to_size(place)].directions);
@@ -307,6 +424,11 @@ std::size_t Hessian::directions(Offset e) const noexcept
 bool Hessian::colored(Offset element) const noexcept
 {
     return places_[to_size(element)] != kDense;
+}
+
+bool Hessian::pushed(Offset element) const noexcept
+{
+    return pushed_[to_size(element)] != kDense;
 }
 
 const Lower &Hessian::pattern() const noexcept
@@ -339,6 +461,7 @@ void Hessian::check(std::span<const Real> point, std::span<const Real> weights) 
 void Hessian::fit(std::size_t threads)
 {
     resize(workers_, threads, [&] { return passes_of(tape_, widths_); });
+    resize(spaces_, threads, [&] { return space_of(tape_, eliminations_); });
 }
 
 void Hessian::weigh(std::span<const Real> weights) noexcept
@@ -435,6 +558,10 @@ void Hessian::fill_blocks(std::size_t chunk,
 {
     for (Offset e = chunks_[chunk]; e < chunks_[chunk + 1]; ++e)
     {
+        if (pushed(e))
+        {
+            continue;
+        }
         const Real scale = scales_[to_size(e)];
         if (is_zero(scale))
         {
@@ -449,6 +576,42 @@ void Hessian::fill_blocks(std::size_t chunk,
             write_block(e, scale, point, tolerances, workers_[worker]);
         }
     }
+}
+
+void Hessian::fill_pushed(std::size_t k,
+                          std::size_t worker,
+                          std::span<const Real> point,
+                          const Tolerances &tolerances) noexcept
+{
+    const Elimination &elimination = eliminations_[k];
+    const Real scale = scales_[to_size(elimination.element)];
+    const std::span<Real> parts =
+        slice(std::span(parts_), map_.starts, to_size(elimination.element));
+    if (is_zero(scale))
+    {
+        std::ranges::fill(parts, 0.0);
+        return;
+    }
+    Workspace &workspace = workers_[worker].front().workspace;
+    push(tape_, elimination, point, tolerances, workspace, spaces_[worker], parts);
+    for (Real &part : parts)
+    {
+        part *= scale;
+    }
+}
+
+void Hessian::push_elements(std::span<const Real> point,
+                            const Tolerances &tolerances,
+                            Pool &pool,
+                            Timing timing)
+{
+    if (eliminations_.empty())
+    {
+        return;
+    }
+    const Timer timer(timing.stream, timing.tree, "expr", "pushing");
+    auto pushing = [&](auto k, auto worker) noexcept { fill_pushed(k, worker, point, tolerances); };
+    pool.run(workers_.size(), eliminations_.size(), pushing);
 }
 
 struct Hessian::Products
@@ -489,7 +652,8 @@ void Hessian::values(std::span<const Real> point,
                      std::span<const Real> weights,
                      const Tolerances &tolerances,
                      std::span<Real> out,
-                     Pool &pool)
+                     Pool &pool,
+                     Timing timing)
 {
     check(point, weights);
     check_size("out", out.size(), lower_.rows.size(), "the pattern size");
@@ -498,6 +662,7 @@ void Hessian::values(std::span<const Real> point,
     auto fill = [&](auto chunk, auto worker) noexcept
     { fill_blocks(chunk, worker, used, tolerances); };
     pool.run(workers_.size(), chunks_.size() - 1, fill);
+    push_elements(used, tolerances, pool, timing);
     std::ranges::fill(out, 0.0);
     gather(std::span<const Real>(parts_), std::span<const Offset>(map_.blocks), out);
 }

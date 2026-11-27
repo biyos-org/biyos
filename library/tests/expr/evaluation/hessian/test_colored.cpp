@@ -42,12 +42,12 @@ using biyos::to_size;
 using biyos::Tolerances;
 using biyos::test::arrow;
 using biyos::test::band;
+using biyos::test::clique;
 using biyos::test::default_tolerances;
 using biyos::test::products;
 using biyos::test::Random;
 using biyos::test::unary;
 using biyos::test::variables;
-using biyos::test::waves_of;
 
 using Values = std::vector<Real>;
 using Rows = std::vector<Values>;
@@ -111,7 +111,9 @@ Values values_of(Hessian &hessian, std::span<const Real> point)
 {
     Values out(hessian.pattern().rows.size(), -1.0);
     Pool pool;
-    hessian.values(point, std::array{1.0}, default_tolerances(), out, pool);
+    Env env;
+    TimingTree tree;
+    hessian.values(point, std::array{1.0}, default_tolerances(), out, pool, {env.stream(), tree});
     return out;
 }
 
@@ -146,19 +148,11 @@ bool colored(const Graph &graph, Offset root)
     return hessian_of(graph, std::span(&root, 1)).colored(0);
 }
 
-Offset clique(Graph &graph, const std::vector<Offset> &x, Offset waves, Index wide)
-{
-    const std::vector<Offset> head(x.begin(), x.begin() + wide);
-    const Offset total = graph.add_sum(0.0, head, Values(head.size(), 1.0));
-    const std::array terms{unary(graph, Operator::Exp, total), waves};
-    return unary(graph, Operator::Abs, graph.add_sum(0.0, terms, Values(terms.size(), 1.0)));
-}
-
 bool cheap(Index wide)
 {
     Graph graph;
     const std::vector<Offset> x = variables(graph, kNarrow);
-    return colored(graph, clique(graph, x, waves_of(graph, x), wide));
+    return colored(graph, clique(graph, x, arrow(graph, x), wide));
 }
 
 TEST(ColoringTest, Gradients)
@@ -172,7 +166,10 @@ TEST(ColoringTest, Guard)
     Graph graph;
     const std::vector<Offset> x = variables(graph, kGuarded);
     const Offset total = graph.add_sum(0.0, x, Values(x.size(), 1.0));
-    EXPECT_FALSE(colored(graph, unary(graph, Operator::Exp, total)));
+    const std::array root{unary(graph, Operator::Exp, total)};
+    const Hessian hessian = hessian_of(graph, root);
+    EXPECT_FALSE(hessian.colored(0));
+    EXPECT_FALSE(hessian.pushed(0));
 }
 
 TEST(ColoringTest, Threshold)
@@ -200,8 +197,8 @@ TEST(ColoringTest, Routed)
 {
     Graph graph;
     const std::vector<Offset> x = variables(graph, kNarrow);
-    const Offset waves = waves_of(graph, x);
-    const std::array roots{clique(graph, x, waves, kClique), unary(graph, Operator::Cos, waves)};
+    const Offset tail = arrow(graph, x);
+    const std::array roots{clique(graph, x, tail, kClique), unary(graph, Operator::Cos, tail)};
     EXPECT_TRUE(hessian_of(graph, roots, kLanes, kSplit).colored(0));
 }
 
