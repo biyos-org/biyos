@@ -114,7 +114,7 @@ def looked_up(model, short, names):
 @pytest.mark.parametrize("short", FAMILIES)
 def test_lookup(model, other, short):
     names = [f"{short}2", f"{short}0", f"{short}2"]
-    found = getattr(model, f"get{short}idx")(names)
+    found = getattr(model, f"find{short}")(names)
     assert type(found) is FAMILIES[short]
     assert found.indices() == looked_up(model, short, names)
     renamed(model, other, short, found)
@@ -143,7 +143,7 @@ def test_callback(model, call, short):
 
 
 def test_no_names(model):
-    found = model.getvaridx([])
+    found = model.findvar([])
     assert type(found) is biyos.Variables
     assert found.indices() == []
 

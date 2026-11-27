@@ -50,7 +50,7 @@ def calls(model, family):
     return (
         getattr(model, f"set{family}name"),
         getattr(model, f"get{family}name"),
-        getattr(model, f"get{family}idx"),
+        getattr(model, f"find{family}"),
         getattr(model, f"del{family}name"),
     )
 
@@ -168,8 +168,8 @@ def test_rename(model):
     assert names_of(model, "var") == ["b", "c", "a"]
     model.setvarname([2, 2], ["d", "e"])
     assert names_of(model, "var") == ["b", "c", "e"]
-    assert model.getvaridx(["b"]).indices() == [0]
-    message = refusal(model.getvaridx, ["d"])
+    assert model.findvar(["b"]).indices() == [0]
+    message = refusal(model.findvar, ["d"])
     assert message == "invalid argument: variable 'd': unknown"
 
 
@@ -214,13 +214,13 @@ def test_types(model):
     with pytest.raises(TypeError, match="an entry of name must be a str"):
         model.setvarname([0], [b"x"])
     with pytest.raises(TypeError, match="name must be a sequence of str"):
-        model.getvaridx("x")
+        model.findvar("x")
     with pytest.raises(TypeError, match="sequence of str, not NoneType"):
-        model.getvaridx(None)
+        model.findvar(None)
     with pytest.raises(TypeError, match="name must be a sequence of str"):
         model.setvarname([0], "x")
     with pytest.raises(TypeError, match="an entry of name must be a str"):
-        model.getvaridx([None])
+        model.findvar([None])
     with pytest.raises(TypeError, match="var must be an int, not str"):
         model.getvarname("x")
     with pytest.raises(ValueError, match="embedded null character"):
@@ -228,7 +228,7 @@ def test_types(model):
     with pytest.raises(ValueError, match="embedded null character"):
         model.setconname([0], ["c\0"])
     with pytest.raises(ValueError, match="embedded null character"):
-        model.getfunidx(["x\0"])
+        model.findfun(["x\0"])
     with pytest.raises(UnicodeEncodeError):
         model.setobjname([0], ["\udc80"])
     with pytest.raises(ValueError, match="name has length 1, not 2"):

@@ -311,14 +311,14 @@ def others(mdl: Model) -> None:
 
 
 def lookups(mdl: Model) -> None:
-    assert_type(mdl.getvaridx(names), Variables)
-    assert_type(mdl.getfunidx(names), Functions)
-    assert_type(mdl.getconidx(names), Constraints)
-    assert_type(mdl.getobjidx(names), Objectives)
-    assert_type(mdl.getindidx(names), Indicators)
-    assert_type(mdl.getsosidx(names), SpecialOrderedSets)
-    assert_type(mdl.getconeidx(names), Cones)
-    assert_type(mdl.getcconidx(names), Complements)
+    assert_type(mdl.findvar(names), Variables)
+    assert_type(mdl.findfun(names), Functions)
+    assert_type(mdl.findcon(names), Constraints)
+    assert_type(mdl.findobj(names), Objectives)
+    assert_type(mdl.findind(names), Indicators)
+    assert_type(mdl.findsos(names), SpecialOrderedSets)
+    assert_type(mdl.findcone(names), Cones)
+    assert_type(mdl.findccon(names), Complements)
 
 
 def callbacks(mdl: Model) -> None:
