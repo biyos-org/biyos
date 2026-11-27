@@ -280,7 +280,7 @@ def test_refused(model):
     expression = "invalid argument: expression 0: "
     cases = [
         (([2], [Operator.VARIABLE] * 2, [0, 1]), "2 operands left, not 1"),
-        (([1], [35], [0]), "entry 0: operator 35 is unknown"),
+        (([1], [45], [0]), "entry 0: operator 45 is unknown"),
         (([1], [Operator.VARIABLE], [3]), "entry 0: variable 3 is unknown"),
         (([1], [Operator.NODE], [1]), "entry 0: node 1 is unknown"),
         (

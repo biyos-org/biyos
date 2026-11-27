@@ -210,7 +210,10 @@ std::vector<int> biyos::test::sampled_codes()
     {
         codes.push_back(code);
     }
-    codes.push_back(BIYOS_OP_ATAN2);
+    for (int code = BIYOS_OP_ATAN2; code <= BIYOS_OP_NE; ++code)
+    {
+        codes.push_back(code);
+    }
     return codes;
 }
 
@@ -258,6 +261,12 @@ Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         graph.add(op, two);
         break;
     case Operator::Max:

@@ -80,6 +80,12 @@ std::optional<Shape> find_shape(Operator op) noexcept
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         return Shape{.payload = Payload::None, .least = 2, .most = 2};
     case Operator::Max:
     case Operator::Min:

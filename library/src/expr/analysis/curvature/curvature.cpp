@@ -54,6 +54,12 @@ Curvature unary(const Profile &profile, std::span<Argument> arguments) noexcept
     return profile.curvature;
 }
 
+Curvature unknown(std::span<Argument> arguments) noexcept
+{
+    std::ranges::fill(arguments, Argument{});
+    return Curvature::Unknown;
+}
+
 PiecewiseLinear piecewise_linear_of(const Graph &graph, Offset node) noexcept
 {
     return graph.points().piecewise_linear(graph.piecewise_linear(node));
@@ -127,6 +133,13 @@ Curvature outer_of(const Graph &graph,
         return unary(segments(piecewise_linear_of(graph, node), operands[0]), arguments);
     case Operator::Atan2:
         return angle_curvature(operands[0], operands[1], arguments);
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+        return unknown(arguments);
     }
     return Curvature::Unknown;
 }

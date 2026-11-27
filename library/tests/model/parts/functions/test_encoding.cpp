@@ -5,6 +5,7 @@
 #include "model/compare/match.hpp"
 #include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
+#include "operators.hpp"
 
 #include <gtest/gtest.h>
 
@@ -35,13 +36,15 @@ using biyos::Real;
 using biyos::to_size;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::test::Arity;
+using biyos::test::arity_of;
+using biyos::test::operator_code;
+using biyos::test::operator_count;
 
 using Engine = std::mt19937;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::array<std::uint32_t, 8> kSeeds{1, 2, 3, 5, 8, 13, 21, 34};
-constexpr std::array kWide{BIYOS_OP_SUM, BIYOS_OP_PROD, BIYOS_OP_MAX, BIYOS_OP_MIN};
-constexpr std::array kBinary{BIYOS_OP_DIV, BIYOS_OP_POW, BIYOS_OP_ATAN2};
 constexpr std::array kScaled{BIYOS_OP_CONST, BIYOS_OP_PROD, BIYOS_OP_CPOW};
 constexpr int kVariables = 4;
 constexpr int kNodes = 80;
@@ -121,15 +124,8 @@ Real value(Engine &engine)
 
 int arity(Engine &engine, int code)
 {
-    if (code == BIYOS_OP_CONST)
-    {
-        return 0;
-    }
-    if (among(kWide, code))
-    {
-        return 1 + below(engine, 3);
-    }
-    return among(kBinary, code) ? 2 : 1;
+    const Arity children = arity_of(static_cast<Operator>(code));
+    return children.listed ? children.least + below(engine, 3) : children.least;
 }
 
 std::vector<Real> values(Engine &engine, int code, int n)
@@ -159,8 +155,7 @@ int random_code(Engine &engine)
     {
         return below(engine, 2) == 0 ? BIYOS_OP_SUM : BIYOS_OP_PROD;
     }
-    const int code = 1 + below(engine, BIYOS_OP_ERF + 1);
-    return code > BIYOS_OP_ERF ? BIYOS_OP_ATAN2 : code;
+    return operator_code(BIYOS_OP_CONST, below(engine, operator_count(BIYOS_OP_CONST)));
 }
 
 Offset random_child(Engine &engine, const Model &model)

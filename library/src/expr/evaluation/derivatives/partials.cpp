@@ -316,6 +316,14 @@ void slopes_of(const Instruction &instruction,
     case Operator::Atan2:
         angle(instruction, frame, partials);
         return;
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+        std::ranges::fill(partials, 0.0);
+        return;
     }
 }
 
@@ -346,6 +354,12 @@ std::uint32_t n_partials(const Instruction &instruction) noexcept
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         return 2;
     case Operator::Sum:
     case Operator::Negation:

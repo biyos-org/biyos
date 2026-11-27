@@ -1,7 +1,9 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
+#include "expr/graph/node.hpp"
 #include "handles.hpp"
 #include "model/compare/compare.hpp"
+#include "operators.hpp"
 #include "sample.hpp"
 #include "tolerance.hpp"
 
@@ -19,6 +21,9 @@
 namespace
 {
 
+using biyos::Operator;
+using biyos::test::Arity;
+using biyos::test::arity_of;
 using biyos::test::below;
 using biyos::test::build_sample;
 using biyos::test::Engine;
@@ -27,6 +32,8 @@ using biyos::test::kConeTolerances;
 using biyos::test::kConstraintTolerances;
 using biyos::test::kVariableTolerances;
 using biyos::test::Model;
+using biyos::test::operator_code;
+using biyos::test::operator_count;
 using biyos::test::ToleranceCalls;
 
 using Counter = BIYOS_status (*)(const BIYOS_model *, BIYOS_index *);
@@ -34,7 +41,6 @@ using Getter = decltype(&BIYOS_getvarnamerg);
 using Setter = decltype(&BIYOS_setvarnamesp);
 
 constexpr std::array<std::uint32_t, 8> kSeeds{1, 2, 3, 5, 8, 13, 21, 34};
-constexpr std::array kWide{BIYOS_OP_SUM, BIYOS_OP_PROD, BIYOS_OP_MAX, BIYOS_OP_MIN};
 constexpr int kDepth = 4;
 
 struct Program
@@ -172,24 +178,13 @@ int random_code(Engine &engine)
     {
         return below(engine, 2) == 0 ? BIYOS_OP_SUM : BIYOS_OP_PROD;
     }
-    const int code = BIYOS_OP_NEG + below(engine, BIYOS_OP_ERF - BIYOS_OP_NEG + 2);
-    return code > BIYOS_OP_ERF ? BIYOS_OP_ATAN2 : code;
+    return operator_code(BIYOS_OP_NEG, below(engine, operator_count(BIYOS_OP_NEG)));
 }
 
 int arity(Engine &engine, int code)
 {
-    if (code == BIYOS_OP_DIV || code == BIYOS_OP_POW || code == BIYOS_OP_ATAN2)
-    {
-        return 2;
-    }
-    for (const int wide : kWide)
-    {
-        if (code == wide)
-        {
-            return 1 + below(engine, 3);
-        }
-    }
-    return 1;
+    const Arity children = arity_of(static_cast<Operator>(code));
+    return children.listed ? children.least + below(engine, 3) : children.least;
 }
 
 void put_values(Writer &writer, int code, int n)

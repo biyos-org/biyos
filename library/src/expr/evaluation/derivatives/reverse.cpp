@@ -174,6 +174,12 @@ void step(const Instruction &instruction,
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         add(slot(trail, instruction.first), partial(partials, 0, trail), trail);
         add(slot(trail, instruction.second), partial(partials, 1, trail), trail);
         return;

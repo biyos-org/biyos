@@ -179,6 +179,12 @@ void motion(const Instruction &instruction,
     switch (instruction.op)
     {
     case Operator::Constant:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         return;
     case Operator::Variable:
         std::ranges::copy(row(lift.seeds, place(instruction.payload), lanes), lift.result.begin());
@@ -422,6 +428,12 @@ void step(const Instruction &instruction,
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         both(instruction.first, partials[0], row(curves, 0, lanes), trail);
         both(instruction.second, partials[1], row(curves, 1, lanes), trail);
         return;

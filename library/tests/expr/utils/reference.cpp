@@ -1,6 +1,7 @@
 #include "reference.hpp"
 
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/graph/points.hpp"
@@ -18,6 +19,7 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::to_size;
+using biyos::Tolerances;
 
 constexpr Real kUndefined = std::numeric_limits<Real>::quiet_NaN();
 
@@ -131,6 +133,60 @@ Real angle(Real y, Real x)
     return std::atan2(y + 0.0, x + 0.0);
 }
 
+bool holds(Operator op, Real a, Real b)
+{
+    static const Tolerances tolerances = biyos::test::default_tolerances();
+    const bool near = tolerances.approx_equal(a, b);
+    switch (op)
+    {
+    case Operator::LessEqual:
+        return a < b || near;
+    case Operator::GreaterEqual:
+        return b < a || near;
+    case Operator::Equal:
+        return near;
+    case Operator::Less:
+        return a < b && !near;
+    case Operator::Greater:
+        return b < a && !near;
+    case Operator::NotEqual:
+        return !near;
+    case Operator::Constant:
+    case Operator::Variable:
+    case Operator::Sum:
+    case Operator::Product:
+    case Operator::Negation:
+    case Operator::Division:
+    case Operator::ConstantPower:
+    case Operator::Power:
+    case Operator::Exp:
+    case Operator::Log:
+    case Operator::Sqrt:
+    case Operator::Sin:
+    case Operator::Cos:
+    case Operator::Tan:
+    case Operator::Abs:
+    case Operator::Max:
+    case Operator::Min:
+    case Operator::Asin:
+    case Operator::Acos:
+    case Operator::Atan:
+    case Operator::Sinh:
+    case Operator::Cosh:
+    case Operator::Tanh:
+    case Operator::Asinh:
+    case Operator::Acosh:
+    case Operator::Atanh:
+    case Operator::Entropy:
+    case Operator::SignPower:
+    case Operator::Erf:
+    case Operator::PiecewiseLinear:
+    case Operator::Atan2:
+        break;
+    }
+    return false;
+}
+
 Real unary(Operator op, Real value)
 {
     switch (op)
@@ -185,6 +241,12 @@ Real unary(Operator op, Real value)
     case Operator::SignPower:
     case Operator::PiecewiseLinear:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         break;
     }
     return kUndefined;
@@ -240,10 +302,26 @@ Real value_of(const Frame &frame, Offset node)
                                first(frame, node));
     case Operator::Atan2:
         return angle(first(frame, node), second(frame, node));
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+        return biyos::test::comparison(graph.op(node), first(frame, node), second(frame, node));
     }
     return kUndefined;
 }
 
+}
+
+Real biyos::test::comparison(Operator op, Real a, Real b)
+{
+    if (std::isnan(a) || std::isnan(b))
+    {
+        return kUndefined;
+    }
+    return holds(op, a, b) ? 1.0 : 0.0;
 }
 
 void biyos::test::evaluate(const Graph &graph, std::span<const Real> point, std::span<Real> values)

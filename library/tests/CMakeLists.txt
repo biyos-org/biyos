@@ -95,6 +95,7 @@ biyos_add_test(test_expr
     expr/evaluation/threads/test_levels.cpp
     expr/evaluation/threads/test_threads.cpp
     expr/evaluation/values/test_arithmetic.cpp
+    expr/evaluation/values/test_comparisons.cpp
     expr/evaluation/values/test_elementary.cpp
     expr/evaluation/values/test_exponents.cpp
     expr/evaluation/values/test_periodic.cpp
@@ -147,7 +148,7 @@ biyos_add_test(test_model
     model/session/test_timer.cpp
     model/session/test_warnings.cpp
     model/test_gather.cpp)
-target_include_directories(test_model PRIVATE core/utils model/utils)
+target_include_directories(test_model PRIVATE core/utils model/utils utils)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io
@@ -214,7 +215,7 @@ biyos_add_test(test_capi
     capi/records/test_ranges.cpp
     capi/records/test_special_ordered_sets.cpp
     capi/utils/sample.cpp)
-target_include_directories(test_capi PRIVATE capi/utils io/nl/utils)
+target_include_directories(test_capi PRIVATE capi/utils io/nl/utils utils)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
 add_executable(test_capi_c capi/test_header.c)

@@ -420,6 +420,12 @@ Graph every_operator()
     graph.add(Operator::SignPower, 1.5, one);
     graph.add(Operator::Power, x);
     graph.add(Operator::Atan2, x);
+    graph.add(Operator::LessEqual, x);
+    graph.add(Operator::GreaterEqual, x);
+    graph.add(Operator::Equal, x);
+    graph.add(Operator::Less, x);
+    graph.add(Operator::Greater, x);
+    graph.add(Operator::NotEqual, x);
     graph.add(Operator::Max, x);
     graph.add(Operator::Min, x);
     for (const Operator op : kUnary)

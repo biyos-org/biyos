@@ -436,11 +436,18 @@ TEST(GraphTest, Codes)
     }
     EXPECT_EQ(operator_of(BIYOS_OP_PWL), Operator::PiecewiseLinear);
     EXPECT_EQ(operator_of(BIYOS_OP_ATAN2), Operator::Atan2);
+    EXPECT_EQ(operator_of(BIYOS_OP_LE), Operator::LessEqual);
+    EXPECT_EQ(operator_of(BIYOS_OP_GE), Operator::GreaterEqual);
+    EXPECT_EQ(operator_of(BIYOS_OP_EQ), Operator::Equal);
+    EXPECT_EQ(operator_of(BIYOS_OP_LT), Operator::Less);
+    EXPECT_EQ(operator_of(BIYOS_OP_GT), Operator::Greater);
+    EXPECT_EQ(operator_of(BIYOS_OP_NE), Operator::NotEqual);
     const std::array unknown{
         0,
         BIYOS_OP_NODE,
         BIYOS_OP_KEEP,
         BIYOS_OP_REF,
+        BIYOS_OP_NE + 1,
         -1,
         256,
         256 + BIYOS_OP_EXP,

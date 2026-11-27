@@ -8,6 +8,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cmath>
 #include <limits>
 
@@ -166,6 +167,11 @@ TEST(ToleranceTest, NanFails)
         EXPECT_FALSE(tolerances.approx_equal(0.0, kNan));
         EXPECT_FALSE(tolerances.approx_equal(kNan, kInfinity));
         EXPECT_FALSE(tolerances.approx_equal(-kInfinity, kNan));
+        EXPECT_FALSE(tolerances.at_most(kNan, kNan));
+        EXPECT_FALSE(tolerances.at_most(kNan, 0.0));
+        EXPECT_FALSE(tolerances.at_most(0.0, kNan));
+        EXPECT_FALSE(tolerances.at_most(kNan, kInfinity));
+        EXPECT_FALSE(tolerances.at_most(-kInfinity, kNan));
         for (const Real bound : {-kInfinity, 0.0, kInfinity})
         {
             EXPECT_FALSE(tolerances.satisfies_lower(kNan, bound));
@@ -175,6 +181,78 @@ TEST(ToleranceTest, NanFails)
         EXPECT_FALSE(tolerances.satisfies_upper(0.0, kNan));
         EXPECT_FALSE(tolerances.is_integral(kNan));
     }
+}
+
+TEST(ToleranceTest, AtMost)
+{
+    const Tolerances tolerances = defaults();
+    EXPECT_TRUE(tolerances.at_most(1.0, 2.0));
+    EXPECT_FALSE(tolerances.at_most(2.0, 1.0));
+    EXPECT_TRUE(tolerances.at_most(-1.0, -1.0));
+    EXPECT_TRUE(tolerances.at_most(5e-7, 0.0));
+    EXPECT_TRUE(tolerances.at_most(1e-6, 0.0));
+    EXPECT_FALSE(tolerances.at_most(std::nextafter(1e-6, 1.0), 0.0));
+    EXPECT_TRUE(tolerances.at_most(0.0, -1e-6));
+    EXPECT_FALSE(tolerances.at_most(0.0, -2e-6));
+    EXPECT_TRUE(tolerances.at_most(1e9 + 500.0, 1e9));
+    EXPECT_FALSE(tolerances.at_most(1e9 + 2000.0, 1e9));
+    EXPECT_TRUE(tolerances.at_most(-1e9, -1e9 - 500.0));
+    EXPECT_FALSE(tolerances.at_most(-1e9, -1e9 - 2000.0));
+
+    for (const Real x : {-kInfinity, -kLargest, 0.0, kLargest, kInfinity})
+    {
+        EXPECT_TRUE(tolerances.at_most(-kInfinity, x));
+        EXPECT_TRUE(tolerances.at_most(x, kInfinity));
+    }
+    EXPECT_FALSE(tolerances.at_most(kInfinity, kLargest));
+    EXPECT_FALSE(tolerances.at_most(-kLargest, -kInfinity));
+    EXPECT_FALSE(uniform(kInfinity).at_most(kInfinity, 0.0));
+
+    const Tolerances exact = uniform(0.0);
+    EXPECT_TRUE(exact.at_most(1.0, 1.0));
+    EXPECT_FALSE(exact.at_most(std::nextafter(1.0, 2.0), 1.0));
+}
+
+TEST(ToleranceTest, Looser)
+{
+    const std::array grid{
+        -1e9,
+        -2.0,
+        -1.8,
+        -1.0,
+        -0.5,
+        -1e-6,
+        0.0,
+        1e-6,
+        0.5,
+        1.0,
+        1.4,
+        1.8,
+        2.0,
+        1e9,
+    };
+    for (const Tolerances &tolerances : {defaults(), uniform(0.1), relative(0.5)})
+    {
+        for (const Real x : grid)
+        {
+            for (const Real bound : grid)
+            {
+                if (tolerances.satisfies_upper(x, bound))
+                {
+                    EXPECT_TRUE(tolerances.at_most(x, bound)) << x << " below " << bound;
+                }
+                if (tolerances.satisfies_lower(x, bound))
+                {
+                    EXPECT_TRUE(tolerances.at_most(bound, x)) << x << " above " << bound;
+                }
+            }
+        }
+    }
+    const Tolerances coarse = relative(0.5);
+    EXPECT_FALSE(coarse.satisfies_upper(1.8, 1.0));
+    EXPECT_TRUE(coarse.at_most(1.8, 1.0));
+    EXPECT_FALSE(coarse.satisfies_lower(-1.8, -1.0));
+    EXPECT_TRUE(coarse.at_most(-1.0, -1.8));
 }
 
 TEST(ToleranceTest, ReadsOptions)

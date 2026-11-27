@@ -125,6 +125,15 @@ Interval piecewise_of(const Pass &pass, Offset node) noexcept
                      first(pass, node));
 }
 
+Interval undecided(Interval a, Interval b) noexcept
+{
+    if (a.is_empty() || b.is_empty())
+    {
+        return Interval::empty();
+    }
+    return {0.0, 1.0};
+}
+
 Interval enclosure(const Pass &pass, Offset node) noexcept
 {
     switch (pass.graph.op(node))
@@ -191,6 +200,13 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
         return piecewise_of(pass, node);
     case Operator::Atan2:
         return atan2(first(pass, node), second(pass, node));
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+        return undecided(first(pass, node), second(pass, node));
     }
     return Interval::entire();
 }

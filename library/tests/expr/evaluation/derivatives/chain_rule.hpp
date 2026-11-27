@@ -4,6 +4,7 @@
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/graph/points.hpp"
+#include "reference.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -142,6 +143,13 @@ class ChainRule
                                    x);
         case Operator::Atan2:
             return std::atan2(x + 0.0, child(node, 1) + 0.0);
+        case Operator::LessEqual:
+        case Operator::GreaterEqual:
+        case Operator::Equal:
+        case Operator::Less:
+        case Operator::Greater:
+        case Operator::NotEqual:
+            return comparison(graph_.op(node), x, child(node, 1));
         }
         return (std::numeric_limits<Real>::quiet_NaN)();
     }
@@ -290,6 +298,13 @@ class ChainRule
                                    child(node, 0));
         case Operator::Atan2:
             return angle_slope(x, child(node, 1), k);
+        case Operator::LessEqual:
+        case Operator::GreaterEqual:
+        case Operator::Equal:
+        case Operator::Less:
+        case Operator::Greater:
+        case Operator::NotEqual:
+            return 0.0L;
         }
         return 0.0L;
     }
@@ -322,6 +337,10 @@ class ChainRule
         if (op == Operator::Asin || op == Operator::Acos || op == Operator::Acosh ||
             op == Operator::Atanh)
         {
+            if (std::fpclassify(partial) == FP_ZERO)
+            {
+                return 0.0;
+            }
             return std::fabs(partial) * (1.0 + (1.0 + x * x) / std::fabs(1.0 - x * x));
         }
         return std::fabs(partial);
@@ -360,7 +379,11 @@ class ChainRule
             {
                 adjoints_[at(children[k])] += adjoint * partial_k;
             }
-            sizes_[at(children[k])] += size * bound(node, partial_k);
+            const Real bound_k = bound(node, partial_k);
+            if (std::fpclassify(bound_k) != FP_ZERO)
+            {
+                sizes_[at(children[k])] += size * bound_k;
+            }
         }
     }
 

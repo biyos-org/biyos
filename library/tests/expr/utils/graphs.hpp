@@ -32,6 +32,14 @@ constexpr std::array kUnary{
 constexpr std::array kPowers{Operator::ConstantPower, Operator::SignPower};
 constexpr std::array kBinary{Operator::Division, Operator::Power, Operator::Atan2};
 constexpr std::array kListed{Operator::Max, Operator::Min};
+constexpr std::array kComparisons{
+    Operator::LessEqual,
+    Operator::GreaterEqual,
+    Operator::Equal,
+    Operator::Less,
+    Operator::Greater,
+    Operator::NotEqual,
+};
 constexpr std::array kExponents{2.0, 3.0, 0.5, -1.0, 1.5};
 constexpr std::array kKinks{-1.0, 0.25, 1.5};
 constexpr std::array kHeights{2.0, -0.5, 1.0};
@@ -191,6 +199,12 @@ inline std::vector<Offset> every_operator(Graph &graph)
         unary(graph, Operator::Erf, z),
         piecewise(graph, pwl, y),
         binary(graph, Operator::Atan2, z, x),
+        binary(graph, Operator::LessEqual, x, y),
+        binary(graph, Operator::GreaterEqual, x, y),
+        binary(graph, Operator::Equal, x, x),
+        binary(graph, Operator::Less, z, x),
+        binary(graph, Operator::Greater, z, x),
+        binary(graph, Operator::NotEqual, y, z),
     };
 }
 
@@ -242,7 +256,7 @@ inline Offset powered(Graph &graph, Random &random, Offset base)
 inline Offset grow(Graph &graph, Random &random)
 {
     const std::vector<Offset> children = picks(random, graph, 1 + random.below(4));
-    const std::size_t kind = random.below(8);
+    const std::size_t kind = random.below(9);
     const Real number = random.uniform(-2.0, 2.0);
     switch (kind)
     {
@@ -263,6 +277,11 @@ inline Offset grow(Graph &graph, Random &random)
         return graph.add(Operator::Product, number, children);
     case 6:
         return listed(graph, kListed[random.below(2)], children);
+    case 7:
+        return binary(graph,
+                      kComparisons[random.below(kComparisons.size())],
+                      children.front(),
+                      children.back());
     default:
         return piecewise(graph, static_cast<Offset>(random.below(kPiecewiseLinears)), children[0]);
     }

@@ -318,6 +318,24 @@ TEST(IntervalTest, EmptyChild)
     }
 }
 
+TEST(IntervalTest, Comparisons)
+{
+    const Interval held(1.0, 2.0);
+    for (int code = BIYOS_OP_LE; code <= BIYOS_OP_NE; ++code)
+    {
+        Graph graph;
+        const std::array children{graph.add_variable(0), graph.add_variable(1)};
+        const auto node =
+            static_cast<std::size_t>(graph.add(static_cast<Operator>(code), children));
+        const Box apart{held, Interval(3.0, 4.0), held};
+        EXPECT_TRUE(exact(enclosures(graph, apart)[node], 0.0, 1.0)) << code;
+        const Box first{Interval::empty(), held, held};
+        EXPECT_TRUE(enclosures(graph, first)[node].is_empty()) << code;
+        const Box second{held, Interval::empty(), held};
+        EXPECT_TRUE(enclosures(graph, second)[node].is_empty()) << code;
+    }
+}
+
 TEST(IntervalTest, Margin)
 {
     using biyos::kLibmSteps;
