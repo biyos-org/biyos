@@ -569,14 +569,14 @@ since 0.1.0
 function BIYOS_getevtfldname
 summary Give the name of a field of an event.
 param evt in The event.
-param idx in The number of the field.
+param fld in The number of the field.
 return The name of the field.
 since 0.1.0
 
 function BIYOS_getevtfldval
 summary Give the value of a field of an event.
 param evt in The event.
-param idx in The number of the field.
+param fld in The number of the field.
 return The value of the field, as text.
 since 0.1.0
 
