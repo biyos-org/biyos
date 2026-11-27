@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
+#include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "io/nl/writer/defined.hpp"
 #include "model/model.hpp"
@@ -45,6 +46,8 @@ class Printer
     void add(Piece piece, Offset node);
     void add_number(Real number);
     void add_scaled(Offset node, Real weight);
+    void add_products(std::span<const QuadraticTerm> terms);
+    void add_terms(Offset sum);
     void open(std::size_t count);
     void expand(Offset node);
     void expand_sum(Offset node);

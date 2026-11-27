@@ -80,6 +80,54 @@ constexpr std::array kUnary{
 };
 constexpr std::array kListed{Operator::Max, Operator::Min};
 constexpr unsigned kSeeds = 64;
+constexpr std::string_view kNegatedNlFile = "g3 1 1 0\n"
+                                            " 1 1 0 0 0\n"
+                                            " 1 0\n"
+                                            " 0 0\n"
+                                            " 1 0 0\n"
+                                            " 0 0 0 1\n"
+                                            " 0 0 0 0 0\n"
+                                            " 1 0\n"
+                                            " 0 0\n"
+                                            " 0 0 0 0 0\n"
+                                            "C0\n"
+                                            "o16\n"
+                                            "o41\n"
+                                            "v0\n"
+                                            "r\n"
+                                            "1 2\n"
+                                            "b\n"
+                                            "3\n"
+                                            "k0\n"
+                                            "J0 1\n"
+                                            "0 0\n";
+constexpr std::string_view kScaledNlFile = "g3 1 1 0\n"
+                                           " 1 1 0 0 0\n"
+                                           " 1 0\n"
+                                           " 0 0\n"
+                                           " 1 0 0\n"
+                                           " 0 0 0 1\n"
+                                           " 0 0 0 0 0\n"
+                                           " 1 0\n"
+                                           " 0 0\n"
+                                           " 0 0 0 0 0\n"
+                                           "C0\n"
+                                           "o0\n"
+                                           "o2\n"
+                                           "n2\n"
+                                           "o41\n"
+                                           "v0\n"
+                                           "o2\n"
+                                           "n3\n"
+                                           "o42\n"
+                                           "v0\n"
+                                           "r\n"
+                                           "1 2\n"
+                                           "b\n"
+                                           "3\n"
+                                           "k0\n"
+                                           "J0 1\n"
+                                           "0 0\n";
 
 using Build = Offset (*)(Model &, Offset);
 
@@ -336,6 +384,15 @@ std::vector<Real> point(const Model &model, Real x)
 TEST(NlTest, Samples)
 {
     for (const std::string_view text : {kLinearNlFile, kNonlinearNlFile, kObjectivesNlFile})
+    {
+        const Model model = read_sample(text);
+        EXPECT_EQ(difference(model, reread(model)), "") << printed(model);
+    }
+}
+
+TEST(NlTest, Bare)
+{
+    for (const std::string_view text : {kNegatedNlFile, kScaledNlFile})
     {
         const Model model = read_sample(text);
         EXPECT_EQ(difference(model, reread(model)), "") << printed(model);

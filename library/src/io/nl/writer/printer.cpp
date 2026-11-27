@@ -39,30 +39,21 @@ void Printer::print_top(Index function)
 {
     const auto terms = model_.quadratic_terms(function, function + 1);
     const Offset root = model_.roots(function, function + 1).front();
-    const bool unwrapped = root != kNoRoot && graph_.op(root) == Operator::Sum &&
-                           identical(graph_.constant(root), 0.0) && !defined_.has(root);
+    const Real constant = model_.constant(function);
+    const bool sum = root != kNoRoot && graph_.op(root) == Operator::Sum && !defined_.has(root);
+    const bool alone = terms.empty() && identical(constant, 0.0) && root != kNoRoot;
+    const bool bare = alone && (!sum || direct(graph_, root));
+    const bool unwrapped = !bare && sum && identical(graph_.constant(root), 0.0);
     const std::size_t items = root == kNoRoot ? 0 : unwrapped ? graph_.children(root).size() : 1;
-    open(1 + terms.size() + items);
-    add_number(model_.constant(function));
-    for (const QuadraticTerm &term : terms)
+    open((bare ? 0 : 1) + terms.size() + items);
+    if (!bare)
     {
-        if (!identical(term.coefficient, 1.0))
-        {
-            add(Piece::Opcode, kTimesCode);
-            add_number(term.coefficient);
-        }
-        add(Piece::Opcode, kTimesCode);
-        add(Piece::Variable, term.row);
-        add(Piece::Variable, term.column);
+        add_number(constant);
     }
+    add_products(terms);
     if (unwrapped)
     {
-        const auto weights = graph_.coefficients(root);
-        const auto children = graph_.children(root);
-        for (std::size_t k = 0; k < children.size(); ++k)
-        {
-            add_scaled(children[k], weights[k]);
-        }
+        add_terms(root);
     }
     else if (root != kNoRoot)
     {
@@ -165,6 +156,31 @@ void Printer::add_scaled(Offset node, Real weight)
         add_number(weight);
     }
     add(Piece::Node, node);
+}
+
+void Printer::add_products(std::span<const QuadraticTerm> terms)
+{
+    for (const QuadraticTerm &term : terms)
+    {
+        if (!identical(term.coefficient, 1.0))
+        {
+            add(Piece::Opcode, kTimesCode);
+            add_number(term.coefficient);
+        }
+        add(Piece::Opcode, kTimesCode);
+        add(Piece::Variable, term.row);
+        add(Piece::Variable, term.column);
+    }
+}
+
+void Printer::add_terms(Offset sum)
+{
+    const auto weights = graph_.coefficients(sum);
+    const auto children = graph_.children(sum);
+    for (std::size_t k = 0; k < children.size(); ++k)
+    {
+        add_scaled(children[k], weights[k]);
+    }
 }
 
 void Printer::open(std::size_t count)
@@ -279,10 +295,7 @@ void Printer::expand_sum(Offset node)
     {
         add_number(constant);
     }
-    for (std::size_t k = 0; k < children.size(); ++k)
-    {
-        add_scaled(children[k], weights[k]);
-    }
+    add_terms(node);
 }
 
 void Printer::expand_product(Offset node)
