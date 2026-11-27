@@ -167,7 +167,7 @@ biyos_add_test(test_io
     io/nl/test_nl.cpp
     io/nl/test_refusals.cpp
     io/test_lines.cpp)
-target_include_directories(test_io PRIVATE io/mps/utils io/native/utils io/nl/utils model/utils)
+target_include_directories(test_io PRIVATE io/mps/utils io/native/utils io/nl/utils model/utils utils)
 target_link_libraries(test_io PRIVATE biyos_internal)
 
 biyos_add_test(test_capi

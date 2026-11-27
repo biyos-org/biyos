@@ -1,3 +1,4 @@
+#include "operators.hpp"
 #include "texts.hpp"
 
 #include "biyos/biyos.h"
@@ -35,12 +36,14 @@ using biyos::Member;
 using biyos::Model;
 using biyos::Objective;
 using biyos::Offset;
+using biyos::Operator;
 using biyos::QuadraticTerm;
 using biyos::Real;
 using biyos::SpecialOrderedSetKind;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::test::expect_round;
+using biyos::test::takes_condition;
 
 namespace
 {
@@ -58,7 +61,6 @@ struct Op
     int code;
     int children;
     int values;
-    bool conditions = false;
 };
 
 constexpr std::array kOps{
@@ -70,9 +72,10 @@ constexpr std::array kOps{
     Op{.code = BIYOS_OP_ATAN2, .children = 2, .values = 0},
     Op{.code = BIYOS_OP_LE, .children = 2, .values = 0},
     Op{.code = BIYOS_OP_NE, .children = 2, .values = 0},
-    Op{.code = BIYOS_OP_AND, .children = 2, .values = 0, .conditions = true},
-    Op{.code = BIYOS_OP_OR, .children = 2, .values = 0, .conditions = true},
-    Op{.code = BIYOS_OP_NOT, .children = 1, .values = 0, .conditions = true},
+    Op{.code = BIYOS_OP_AND, .children = 2, .values = 0},
+    Op{.code = BIYOS_OP_OR, .children = 2, .values = 0},
+    Op{.code = BIYOS_OP_NOT, .children = 1, .values = 0},
+    Op{.code = BIYOS_OP_IF, .children = 3, .values = 0},
     Op{.code = BIYOS_OP_PROD, .children = 2, .values = 1},
     Op{.code = BIYOS_OP_SUM, .children = 2, .values = 3},
 };
@@ -184,10 +187,10 @@ Offset pick(Engine &engine, std::span<const Offset> nodes)
     return nodes[static_cast<std::size_t>(below(engine, static_cast<int>(nodes.size())))];
 }
 
-Offset operand(Model &model, Engine &engine, const Op &op, std::span<const Offset> nodes)
+Offset operand(Model &model, Engine &engine, bool condition, std::span<const Offset> nodes)
 {
     const Offset first = pick(engine, nodes);
-    if (!op.conditions)
+    if (!condition)
     {
         return first;
     }
@@ -198,10 +201,11 @@ Offset operand(Model &model, Engine &engine, const Op &op, std::span<const Offse
 Offset node(Model &model, Engine &engine, std::span<const Offset> nodes)
 {
     const Op op = any(engine, kOps);
+    const auto drawn = static_cast<Operator>(op.code);
     std::vector<Offset> children;
     for (int k = 0; k < op.children; ++k)
     {
-        children.push_back(operand(model, engine, op, nodes));
+        children.push_back(operand(model, engine, takes_condition(drawn, k), nodes));
     }
     std::vector<Real> values;
     for (int k = 0; k < op.values; ++k)

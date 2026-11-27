@@ -63,6 +63,7 @@ inline constexpr std::array kOperatorWords{
     Word{"le", BIYOS_OP_LE},       Word{"ge", BIYOS_OP_GE},       Word{"eq", BIYOS_OP_EQ},
     Word{"lt", BIYOS_OP_LT},       Word{"gt", BIYOS_OP_GT},       Word{"ne", BIYOS_OP_NE},
     Word{"and", BIYOS_OP_AND},     Word{"or", BIYOS_OP_OR},       Word{"not", BIYOS_OP_NOT},
+    Word{"if", BIYOS_OP_IF},
 };
 
 template <typename Value, std::size_t N>
