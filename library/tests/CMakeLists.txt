@@ -86,6 +86,7 @@ biyos_add_test(test_expr
     expr/evaluation/derivatives/test_lanes.cpp
     expr/evaluation/derivatives/test_memo.cpp
     expr/evaluation/derivatives/test_partials.cpp
+    expr/evaluation/derivatives/test_reach.cpp
     expr/evaluation/hessian/test_elements.cpp
     expr/evaluation/hessian/test_hessian.cpp
     expr/evaluation/hessian/test_tangents.cpp

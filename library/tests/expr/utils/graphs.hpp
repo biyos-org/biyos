@@ -3,6 +3,7 @@
 #include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
+#include "expr/sparsity/reach.hpp"
 #include "expr/tape/tape.hpp"
 
 #include <array>
@@ -13,14 +14,18 @@
 #include <limits>
 #include <random>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace biyos::test
 {
 
+using Ranges = std::vector<std::pair<Offset, Offset>>;
+
 constexpr Index kVariables = 4;
 constexpr Offset kNodes = 80;
 constexpr std::size_t kRoots = 12;
+constexpr std::size_t kBatchRoots = 150;
 constexpr std::array kBudgets{Offset{1}, Offset{3}, Offset{8}, Offset{30}, kBudget};
 constexpr std::array kUnary{
     Operator::Negation, Operator::Exp,   Operator::Log,     Operator::Sqrt, Operator::Sin,
@@ -79,6 +84,37 @@ inline bool ordered(const Graph &graph)
         }
     }
     return true;
+}
+
+inline std::vector<Offset> cone_of(const Graph &graph, Offset root)
+{
+    std::vector<bool> seen(to_size(graph.size()), false);
+    std::vector<Offset> stack{root};
+    std::vector<Offset> cone;
+    while (!stack.empty())
+    {
+        const Offset node = stack.back();
+        stack.pop_back();
+        if (seen[to_size(node)])
+        {
+            continue;
+        }
+        seen[to_size(node)] = true;
+        cone.push_back(node);
+        const auto children = graph.children(node);
+        stack.insert(stack.end(), children.begin(), children.end());
+    }
+    return cone;
+}
+
+inline Ranges pairs_of(std::span<const Range> runs)
+{
+    Ranges pairs;
+    for (const Range &run : runs)
+    {
+        pairs.emplace_back(run.begin, run.end);
+    }
+    return pairs;
 }
 
 inline Offset constant(Graph &graph, Real value)
