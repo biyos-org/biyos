@@ -165,14 +165,6 @@ def attached(model: "Model", trees: Sequence[Operand]) -> Functions:
     return funs
 
 
-def bounded(con: Logical) -> tuple[Operand, Real, Real]:
-    if isinstance(con, Comparison):
-        con._refuse_open()
-        return con._body, con._lb, con._ub
-    assert isinstance(con, Condition)
-    return expression_of(con), 1.0, 1.0
-
-
 def expression_of(top: Condition) -> Expression:
     made: dict[int, Expression] = {}
     stack: list[tuple[Logical, bool]] = [(top, False)]

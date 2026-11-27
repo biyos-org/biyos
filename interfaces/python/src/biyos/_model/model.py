@@ -100,7 +100,7 @@ from biyos._model.expression import (
     Operand,
 )
 from biyos._model.operators import Operator, node_values, postfix_values
-from biyos._model.postfix import attached, bounded, given
+from biyos._model.postfix import attached, expression_of, given
 
 
 class VariableKind(IntEnum):
@@ -331,6 +331,14 @@ def _total(counts: Array[c_offset] | None) -> Offset:
     if counts is None:
         return 0
     return sum(counts)
+
+
+def _bounded(con: Logical) -> tuple[Operand, Real, Real]:
+    if isinstance(con, Comparison):
+        con._refuse_open()
+        return con._body, con._lb, con._ub
+    assert isinstance(con, Condition)
+    return expression_of(con), 1.0, 1.0
 
 
 class Model:
@@ -5636,7 +5644,7 @@ class Model:
     ) -> Constraints:
         if lb is not None or ub is not None:
             raise TypeError("lb and ub come from the comparisons")
-        bodies, lower, upper = zip(*map(bounded, cons))
+        bodies, lower, upper = zip(*map(_bounded, cons))
         funs = attached(self, bodies)
         return self.addcon(funs, lower, upper)
 
