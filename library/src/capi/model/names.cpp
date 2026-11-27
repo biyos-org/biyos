@@ -495,10 +495,10 @@ BIYOS_status BIYOS_delconenamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index 
 
 BIYOS_status BIYOS_setcconnamesp(BIYOS_model *mdl,
                                  BIYOS_index n,
-                                 const BIYOS_index *idx,
+                                 const BIYOS_index *ccon,
                                  const char *const *name)
 {
-    return guarded<set_names<Family::Complement, List>>(mdl, List{n, idx}, name);
+    return guarded<set_names<Family::Complement, List>>(mdl, List{n, ccon}, name);
 }
 
 BIYOS_status BIYOS_setcconnamerg(BIYOS_model *mdl,
@@ -511,10 +511,10 @@ BIYOS_status BIYOS_setcconnamerg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getcconnamesp(const BIYOS_model *mdl,
                                  BIYOS_index n,
-                                 const BIYOS_index *idx,
+                                 const BIYOS_index *ccon,
                                  const char **name)
 {
-    return guarded<get_names<Family::Complement, List>>(mdl, List{n, idx}, name);
+    return guarded<get_names<Family::Complement, List>>(mdl, List{n, ccon}, name);
 }
 
 BIYOS_status BIYOS_getcconnamerg(const BIYOS_model *mdl,
@@ -528,14 +528,14 @@ BIYOS_status BIYOS_getcconnamerg(const BIYOS_model *mdl,
 BIYOS_status BIYOS_getcconidx(const BIYOS_model *mdl,
                               BIYOS_index n,
                               const char *const *name,
-                              BIYOS_index *idx)
+                              BIYOS_index *ccon)
 {
-    return guarded<get_indices<Family::Complement>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::Complement>>(mdl, n, name, ccon);
 }
 
-BIYOS_status BIYOS_delcconnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+BIYOS_status BIYOS_delcconnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *ccon)
 {
-    return guarded<delete_names<Family::Complement, List>>(mdl, List{n, idx});
+    return guarded<delete_names<Family::Complement, List>>(mdl, List{n, ccon});
 }
 
 BIYOS_status BIYOS_delcconnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)

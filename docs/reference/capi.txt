@@ -2261,7 +2261,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first complement of the range.
 param end in In the `rg` form, one past the last complement of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the complement of each entry; may be null when `n` is 0.
+param ccon in In the `sp` form, the complement of each entry; may be null when `n` is 0.
 param lb in The new lower bound of each; null leaves the lower bounds as they are.
 param ub in The new upper bound of each; null leaves the upper bounds as they are.
 return `BIYOS_OK` once the bounds are set. The functions and tolerances are kept.
@@ -2276,8 +2276,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first complement of the range.
 param end in In the `rg` form, one past the last complement of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the complement of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param lb out Entry `j` receives the lower bound of complement `idx[j]` or `beg + j`; skipped when null.
+param ccon in In the `sp` form, the complement of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param lb out Entry `j` receives the lower bound of complement `ccon[j]` or `beg + j`; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement or the range ends past the last complement.
@@ -2290,7 +2290,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first complement of the range.
 param end in In the `rg` form, one past the last complement of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the complement of each entry; may be null when `n` is 0.
+param ccon in In the `sp` form, the complement of each entry; may be null when `n` is 0.
 param atol in The new absolute tolerance of each; null leaves the absolute tolerances as they are.
 param rtol in The new relative tolerance of each; null leaves the relative tolerances as they are.
 return `BIYOS_OK` once the tolerances are set. A complement that held none keeps the options for the part not given.
@@ -2305,8 +2305,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first complement of the range.
 param end in In the `rg` form, one past the last complement of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the complement of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param atol out Entry `j` receives the absolute tolerance of complement `idx[j]` or `beg + j`, or NaN when it holds none; skipped when null.
+param ccon in In the `sp` form, the complement of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param atol out Entry `j` receives the absolute tolerance of complement `ccon[j]` or `beg + j`, or NaN when it holds none; skipped when null.
 param rtol out Entry `j` receives its relative tolerance, or NaN when it holds none; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement or the range ends past the last complement.
@@ -2320,7 +2320,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first complement of the range.
 param end in In the `rg` form, one past the last complement of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the complement of each entry; may be null when `n` is 0.
+param ccon in In the `sp` form, the complement of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the complements listed hold no tolerance of their own. One that held none, or listed more than once, is left without one.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement or the range ends past the last complement.
 see BIYOS_setccontolsp
@@ -2339,8 +2339,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first complement to read.
 param end in In the `rg` form, one past the last complement to read.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the complement of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param fun1 out Entry `j` receives the bounded function of complement `idx[j]` or `beg + j`; skipped when null.
+param ccon in In the `sp` form, the complement of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param fun1 out Entry `j` receives the bounded function of complement `ccon[j]` or `beg + j`; skipped when null.
 param fun2 out Entry `j` receives the function complementary to it; skipped when null.
 param lb out Entry `j` receives its lower bound; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
@@ -2356,7 +2356,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first complement to delete.
 param end in In the `rg` form, one past the last complement to delete.
 param n in In the `sp` form, the number of complements to delete.
-param idx in In the `sp` form, the complements to delete, in any order; may be null when `n` is 0.
+param ccon in In the `sp` form, the complements to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each complement the model held before the call: entry `i` is the new index of complement `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the complements are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement, a complement is listed more than once, with a message such as `invalid argument: argument 'idx': complement 1 is repeated`, or the range ends past the last complement.
@@ -2371,7 +2371,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first complement of the range.
 param end in In the `rg` form, one past the last complement of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the complement of each entry; may be null when `n` is 0.
+param ccon in In the `sp` form, the complement of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when there are no entries, and no entry may be null.
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement, the range ends past the last complement, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
@@ -2385,8 +2385,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first complement of the range.
 param end in In the `rg` form, one past the last complement of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the complement of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of complement `idx[j]` or `beg + j`, or an empty string when it has none; skipped when null.
+param ccon in In the `sp` form, the complement of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of complement `ccon[j]` or `beg + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement or the range ends past the last complement.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of complements and lists that complement succeeds, a call that deletes complements succeeds, or the model is freed.
@@ -2398,7 +2398,7 @@ summary Look up complements by name.
 param mdl in The model.
 param n in The number of names.
 param name in The names, each matched byte for byte; may be null only when `n` is 0, and no entry may be null.
-param idx out Entry `j` receives the index of the complement that alone holds `name[j]`; skipped when null.
+param ccon out Entry `j` receives the index of the complement that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no complement, with a message such as `invalid argument: complement 'c': unknown`, or by several, with a message that counts them, such as `invalid argument: complement 'c': names 2 complements`. The call fails at the first such name.
 note A lookup works as in `BIYOS_getvaridx`, among the complements alone.
@@ -2411,7 +2411,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first complement of the range.
 param end in In the `rg` form, one past the last complement of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the complement of each entry; may be null when `n` is 0.
+param ccon in In the `sp` form, the complement of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the complements listed have no name. One without a name, or listed more than once, is left without one.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement or the range ends past the last complement.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getcconnamesp` for a complement it lists is no longer valid.

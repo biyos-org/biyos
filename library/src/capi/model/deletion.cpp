@@ -195,10 +195,10 @@ BIYOS_status BIYOS_delconerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end,
 
 BIYOS_status BIYOS_delcconsp(BIYOS_model *mdl,
                              BIYOS_index n,
-                             const BIYOS_index *idx,
+                             const BIYOS_index *ccon,
                              BIYOS_index *map)
 {
-    return guarded<delete_complements<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_complements<List>>(mdl, List{n, ccon}, map);
 }
 
 BIYOS_status BIYOS_delcconrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
