@@ -39,6 +39,7 @@ using biyos::Option;
 using biyos::option_table;
 using biyos::Options;
 using biyos::OptionSpec;
+using biyos::OptionValue;
 using biyos::Real;
 using biyos::Scope;
 using biyos::SystemClock;
@@ -369,6 +370,19 @@ TEST(OptionTest, WrongKind)
               "invalid argument: option 'repro': is a string, not a bool");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_int(Option::TimeLimit)); }),
               "invalid argument: option 'maxtime': is a double, not an int");
+}
+
+TEST(OptionTest, Value)
+{
+    Listener listener;
+    Options options(listener.env);
+    options.set(Option::Seed, OptionValue(5));
+    options.set(Option::Reproducer, OptionValue(std::string_view("run.repro")));
+    EXPECT_EQ(options.get_int(Option::Seed), 5);
+    EXPECT_EQ(options.get_string(Option::Reproducer), "run.repro");
+    EXPECT_EQ(failure([&] { options.set(Option::Seed, OptionValue(1.0)); }),
+              "invalid argument: option 'seed': is an int, not a double");
+    EXPECT_EQ(options.get_int(Option::Seed), 5);
 }
 
 TEST(OptionTest, Names)
