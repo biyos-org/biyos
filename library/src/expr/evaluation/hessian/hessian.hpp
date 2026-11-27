@@ -53,6 +53,7 @@ class Hessian
     std::size_t roots_;
     Elements elements_;
     Tape tape_;
+    Blocks blocks_;
     Lower lower_;
     Map map_;
     std::vector<std::size_t> widths_;

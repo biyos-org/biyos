@@ -147,8 +147,9 @@ Hessian::Hessian(const Graph &graph,
                  std::size_t lanes,
                  Offset budget)
     : roots_(roots.size()), elements_(elements_of(graph, roots)),
-      tape_(graph, elements_.nodes, budget), lower_(lower_of(tape_.pattern(), declared)),
-      map_(map_of(lower_, tape_.pattern(), declared))
+      tape_(graph, elements_.nodes, budget), blocks_(dense_of(tape_.pattern())),
+      lower_(lower_of(tape_.pattern(), blocks_, declared)),
+      map_(map_of(lower_, tape_.pattern(), blocks_, declared))
 {
     const std::vector<std::size_t> widths = widths_of(lanes_of(lanes));
     std::vector<bool> used(widths.size(), false);
