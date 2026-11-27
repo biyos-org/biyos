@@ -29,6 +29,15 @@ inline Tolerances tolerances_of(Real absolute, Real relative)
     return Tolerances(Lookup(options));
 }
 
+inline Tolerances compare_tolerances(Real absolute, Real relative)
+{
+    Env env;
+    Options options(env);
+    options.set_double(Option::CmpAbs, absolute);
+    options.set_double(Option::CmpRel, relative);
+    return Tolerances(Lookup(options));
+}
+
 template <typename Value>
 std::vector<Real> children_of(const Graph &graph, Offset node, Value value)
 {

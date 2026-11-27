@@ -31,6 +31,7 @@ using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::bits;
 using biyos::test::branch;
+using biyos::test::compare_tolerances;
 using biyos::test::constant;
 using biyos::test::default_tolerances;
 using biyos::test::jacobian_of;
@@ -279,13 +280,14 @@ TEST(ComparisonTest, Negations)
 
 TEST(ComparisonTest, Options)
 {
-    const Tolerances wide = tolerances_of(0.1, 0.0);
+    const Tolerances wide = compare_tolerances(0.1, 0.0);
     EXPECT_EQ(bits(truths(0.0, 0.05, wide)), bits(kEqual));
     EXPECT_EQ(bits(truths(0.0, 0.2, wide)), bits(kBelow));
-    const Tolerances exact = tolerances_of(0.0, 0.0);
+    const Tolerances exact = compare_tolerances(0.0, 0.0);
     EXPECT_EQ(bits(truths(1.0, 1.0, exact)), bits(kEqual));
     EXPECT_EQ(bits(truths(1.0, std::nextafter(1.0, 2.0), exact)), bits(kBelow));
     EXPECT_EQ(bits(truths(std::nextafter(1.0, 2.0), 1.0, exact)), bits(kAbove));
+    EXPECT_EQ(bits(truths(0.0, 0.05, tolerances_of(0.1, 0.0))), bits(kBelow));
 }
 
 TEST(ComparisonTest, Slopes)

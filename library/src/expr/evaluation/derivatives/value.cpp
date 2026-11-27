@@ -52,17 +52,17 @@ Real truth(bool holds, Real a, Real b) noexcept
 
 bool less_equal(const Tolerances &tolerances, Real a, Real b) noexcept
 {
-    return tolerances.at_most(a, b);
+    return tolerances.compares_at_most(a, b);
 }
 
 bool greater_equal(const Tolerances &tolerances, Real a, Real b) noexcept
 {
-    return tolerances.at_most(b, a);
+    return tolerances.compares_at_most(b, a);
 }
 
 bool equal(const Tolerances &tolerances, Real a, Real b) noexcept
 {
-    return tolerances.approx_equal(a, b);
+    return tolerances.compares_equal(a, b);
 }
 
 bool less(const Tolerances &tolerances, Real a, Real b) noexcept

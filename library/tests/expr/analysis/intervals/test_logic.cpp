@@ -33,11 +33,11 @@ using biyos::taken;
 using biyos::Tape;
 using biyos::Tolerances;
 using biyos::Workspace;
+using biyos::test::compare_tolerances;
 using biyos::test::default_tolerances;
 using biyos::test::exact;
 using biyos::test::interval_text;
 using biyos::test::text;
-using biyos::test::tolerances_of;
 
 struct Relation
 {
@@ -119,14 +119,16 @@ class Oracle
 std::vector<Tolerances> narrow_bands()
 {
     return {default_tolerances(),
-            tolerances_of(0.1, 0.0),
-            tolerances_of(0.0, 0.5),
-            tolerances_of(0.05, 0.2)};
+            compare_tolerances(0.1, 0.0),
+            compare_tolerances(0.0, 0.5),
+            compare_tolerances(0.05, 0.2)};
 }
 
 std::vector<Tolerances> wide_bands()
 {
-    return {tolerances_of(0.0, 1.5), tolerances_of(2.0, 0.0), tolerances_of(0.5, 1.0)};
+    return {compare_tolerances(0.0, 1.5),
+            compare_tolerances(2.0, 0.0),
+            compare_tolerances(0.5, 1.0)};
 }
 
 Real upper_edge(const Tolerances &tolerances, Real base)
@@ -359,7 +361,7 @@ TEST(DecisionTest, Complement)
 
 TEST(DecisionTest, Straddle)
 {
-    const Tolerances tolerances = tolerances_of(0.0, 1.5);
+    const Tolerances tolerances = compare_tolerances(0.0, 1.5);
     const Interval point(-5.0, -5.0);
     EXPECT_TRUE(exact(biyos::less_equal(tolerances, Interval(5.0, 10.0), point), 0.0, 1.0));
     const Interval opposite(5.0, 5.0);
@@ -368,17 +370,17 @@ TEST(DecisionTest, Straddle)
     const Interval near(-0.9, -0.9);
     EXPECT_TRUE(exact(biyos::less_equal(tolerances, Interval(0.9, 100.0), near), 0.0, 1.0));
     EXPECT_TRUE(exact(biyos::less_equal(tolerances, Interval(0.9, 1.5), near), 0.0, 1.0));
-    const Tolerances absolute = tolerances_of(1.5, 0.0);
+    const Tolerances absolute = compare_tolerances(1.5, 0.0);
     const Interval small(-0.2, -0.2);
     EXPECT_TRUE(exact(biyos::less_equal(absolute, Interval(0.5, 1.2), small), 0.0, 1.0));
     const Interval tiny(-2e-16, -2e-16);
-    const Tolerances unit = tolerances_of(0.0, 1.0);
+    const Tolerances unit = compare_tolerances(0.0, 1.0);
     EXPECT_TRUE(exact(biyos::less_equal(unit, Interval(1.5, 10.0), tiny), 0.0, 1.0));
 }
 
 TEST(DecisionTest, SameSign)
 {
-    const Tolerances tolerances = tolerances_of(0.0, 1.5);
+    const Tolerances tolerances = compare_tolerances(0.0, 1.5);
     const Interval zero(0.0, 0.0);
     const Interval low(-10.0, -5.0);
     const Interval high(5.0, 10.0);

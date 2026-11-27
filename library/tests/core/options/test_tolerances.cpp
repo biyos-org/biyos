@@ -23,6 +23,7 @@ using biyos::Options;
 using biyos::Real;
 using biyos::Settings;
 using biyos::Tolerances;
+using biyos::test::compare_tolerances;
 using biyos::test::tolerances_of;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
@@ -39,7 +40,12 @@ Tolerances uniform(Real value)
 {
     Env env;
     Options options(env);
-    for (const Option option : {Option::FeasAbs, Option::FeasRel, Option::IntTol, Option::ZeroTol})
+    for (const Option option : {Option::FeasAbs,
+                                Option::FeasRel,
+                                Option::CmpAbs,
+                                Option::CmpRel,
+                                Option::IntTol,
+                                Option::ZeroTol})
     {
         options.set_double(option, value);
     }
@@ -204,6 +210,23 @@ TEST(ToleranceTest, AtMost)
     const Tolerances exact = uniform(0.0);
     EXPECT_TRUE(exact.at_most(1.0, 1.0));
     EXPECT_FALSE(exact.at_most(std::nextafter(1.0, 2.0), 1.0));
+}
+
+TEST(ToleranceTest, Comparisons)
+{
+    Env env;
+    Options options(env);
+    options.set_double(Option::FeasAbs, 0.0);
+    options.set_double(Option::FeasRel, 0.0);
+    options.set_double(Option::CmpAbs, 0.5);
+    const Tolerances wide(Lookup{options});
+    EXPECT_FALSE(wide.approx_equal(1.0, 1.4));
+    EXPECT_TRUE(wide.compares_equal(1.0, 1.4));
+    EXPECT_TRUE(wide.compares_at_most(1.4, 1.0));
+    EXPECT_FALSE(wide.compares_at_most(1.6, 1.0));
+    const Tolerances exact = uniform(0.0);
+    EXPECT_FALSE(exact.compares_equal(1.0, std::nextafter(1.0, 2.0)));
+    EXPECT_TRUE(compare_tolerances(0.0, 0.0).approx_equal(1.0, 1.0 + 1e-9));
 }
 
 TEST(ToleranceTest, Looser)

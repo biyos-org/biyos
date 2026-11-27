@@ -2464,9 +2464,9 @@ value BIYOS_OP_PWL $p(e)$, the piecewise linear function through the points of a
 value BIYOS_OP_KEEP No operator: in postfix, the operand before it kept as a node of its own.
 value BIYOS_OP_REF No operator: in postfix, the node kept by an earlier `BIYOS_OP_KEEP` entry of the same call, named by that entry's position.
 value BIYOS_OP_ATAN2 $\operatorname{atan2}(e_1, e_2)$, the angle of the point $(e_2, e_1)$, in $(-\pi, \pi]$. A zero counts as $+0$ whatever its sign, so the angle is $\pi$ on the whole negative $e_2$ axis and 0 at the origin.
-value BIYOS_OP_LE $e_1 \le e_2$: 1 when $e_1$ is below $e_2$ or equal to it within `feastol_abs` and `feastol_rel`, else 0, and NaN when either child is NaN.
+value BIYOS_OP_LE $e_1 \le e_2$: 1 when $e_1$ is below $e_2$ or equal to it within `cmptol_abs` and `cmptol_rel`, else 0, and NaN when either child is NaN.
 value BIYOS_OP_GE $e_1 \ge e_2$, which is `BIYOS_OP_LE` with its children swapped.
-value BIYOS_OP_EQ $e_1 = e_2$: 1 when $e_1$ equals $e_2$ within `feastol_abs` and `feastol_rel`, else 0, and NaN when either child is NaN.
+value BIYOS_OP_EQ $e_1 = e_2$: 1 when $e_1$ equals $e_2$ within `cmptol_abs` and `cmptol_rel`, else 0, and NaN when either child is NaN.
 value BIYOS_OP_LT $e_1 < e_2$, the negation of `BIYOS_OP_GE`: 1 where it gives 0, 0 where it gives 1, and NaN where it gives NaN.
 value BIYOS_OP_GT $e_1 > e_2$, the negation of `BIYOS_OP_LE`.
 value BIYOS_OP_NE $e_1 \ne e_2$, the negation of `BIYOS_OP_EQ`.

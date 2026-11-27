@@ -16,10 +16,21 @@ bool same_infinity(Real a, Real b)
     return std::isinf(a) && std::isinf(b) && std::signbit(a) == std::signbit(b);
 }
 
+bool close(Real a, Real b, Real absolute, Real relative)
+{
+    if (std::isinf(a) || std::isinf(b))
+    {
+        return same_infinity(a, b);
+    }
+    const Real scale = (std::max)({1.0, std::abs(a), std::abs(b)});
+    return std::abs(a - b) <= absolute || std::abs(a / scale - b / scale) <= relative;
+}
+
 }
 
 Tolerances::Tolerances(const Lookup &lookup)
     : feasabs_(lookup.get_double(Option::FeasAbs)), feasrel_(lookup.get_double(Option::FeasRel)),
+      cmpabs_(lookup.get_double(Option::CmpAbs)), cmprel_(lookup.get_double(Option::CmpRel)),
       inttol_(lookup.get_double(Option::IntTol)), zerotol_(lookup.get_double(Option::ZeroTol))
 {
 }
@@ -31,17 +42,22 @@ bool Tolerances::is_zero(Real x) const noexcept
 
 bool Tolerances::approx_equal(Real a, Real b) const noexcept
 {
-    if (std::isinf(a) || std::isinf(b))
-    {
-        return same_infinity(a, b);
-    }
-    const Real scale = (std::max)({1.0, std::abs(a), std::abs(b)});
-    return within(std::abs(a - b), std::abs(a / scale - b / scale));
+    return close(a, b, feasabs_, feasrel_);
 }
 
 bool Tolerances::at_most(Real a, Real b) const noexcept
 {
     return a <= b || approx_equal(a, b);
+}
+
+bool Tolerances::compares_equal(Real a, Real b) const noexcept
+{
+    return close(a, b, cmpabs_, cmprel_);
+}
+
+bool Tolerances::compares_at_most(Real a, Real b) const noexcept
+{
+    return a <= b || compares_equal(a, b);
 }
 
 bool Tolerances::satisfies_lower(Real x, Real lower) const noexcept
