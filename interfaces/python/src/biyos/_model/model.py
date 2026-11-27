@@ -1227,7 +1227,7 @@ class Model:
         Variable ``var[j]`` takes the name ``name[j]``, under the rules of
         ``setname``. A variable listed more than once takes the last of
         its names. Names may repeat: several variables may hold one name,
-        and ``getvaridx`` then refuses to choose among them. Every other
+        and ``findvar`` then refuses to choose among them. Every other
         family is named the same way, each apart.
 
         Parameters
@@ -1289,7 +1289,7 @@ class Model:
         """
         return self._getname("BIYOS_getvarname", Variables, var)
 
-    def getvaridx(self, name: Sequence[str]) -> Variables:
+    def findvar(self, name: Sequence[str]) -> Variables:
         """Return the variables with names.
 
         Parameters
@@ -1317,9 +1317,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getvaridx
+        BIYOS_findvar
         """
-        return self._getidx(lib.BIYOS_getvaridx, Variables, name)
+        return self._find(lib.BIYOS_findvar, Variables, name)
 
     def delvarname(self, var: Selection[Variable, Variables]) -> None:
         """Remove the names of variables, which then have none.
@@ -1579,8 +1579,8 @@ class Model:
         """
         return self._getname("BIYOS_getfunname", Functions, fun)
 
-    def getfunidx(self, name: Sequence[str]) -> Functions:
-        """Return the named functions, as ``getvaridx`` does.
+    def findfun(self, name: Sequence[str]) -> Functions:
+        """Return the named functions, as ``findvar`` does.
 
         Parameters
         ----------
@@ -1594,9 +1594,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getfunidx
+        BIYOS_findfun
         """
-        return self._getidx(lib.BIYOS_getfunidx, Functions, name)
+        return self._find(lib.BIYOS_findfun, Functions, name)
 
     def delfunname(self, fun: Selection[Function, Functions]) -> None:
         """Remove the names of functions, as ``delvarname`` does.
@@ -3082,8 +3082,8 @@ class Model:
         """
         return self._getname("BIYOS_getconname", Constraints, con)
 
-    def getconidx(self, name: Sequence[str]) -> Constraints:
-        """Return the named constraints, as ``getvaridx`` does.
+    def findcon(self, name: Sequence[str]) -> Constraints:
+        """Return the named constraints, as ``findvar`` does.
 
         Parameters
         ----------
@@ -3098,9 +3098,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getconidx
+        BIYOS_findcon
         """
-        return self._getidx(lib.BIYOS_getconidx, Constraints, name)
+        return self._find(lib.BIYOS_findcon, Constraints, name)
 
     def delconname(self, con: Selection[Constraint, Constraints]) -> None:
         """Remove the names of constraints, as ``delvarname`` does.
@@ -3642,8 +3642,8 @@ class Model:
         """
         return self._getname("BIYOS_getobjname", Objectives, obj)
 
-    def getobjidx(self, name: Sequence[str]) -> Objectives:
-        """Return the named objectives, as ``getvaridx`` does.
+    def findobj(self, name: Sequence[str]) -> Objectives:
+        """Return the named objectives, as ``findvar`` does.
 
         Parameters
         ----------
@@ -3657,9 +3657,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getobjidx
+        BIYOS_findobj
         """
-        return self._getidx(lib.BIYOS_getobjidx, Objectives, name)
+        return self._find(lib.BIYOS_findobj, Objectives, name)
 
     def delobjname(self, obj: Selection[Objective, Objectives]) -> None:
         """Remove the names of objectives, as ``delvarname`` does.
@@ -4054,8 +4054,8 @@ class Model:
         """
         return self._getname("BIYOS_getindname", Indicators, ind)
 
-    def getindidx(self, name: Sequence[str]) -> Indicators:
-        """Return the named indicators, as ``getvaridx`` does.
+    def findind(self, name: Sequence[str]) -> Indicators:
+        """Return the named indicators, as ``findvar`` does.
 
         Parameters
         ----------
@@ -4069,9 +4069,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getindidx
+        BIYOS_findind
         """
-        return self._getidx(lib.BIYOS_getindidx, Indicators, name)
+        return self._find(lib.BIYOS_findind, Indicators, name)
 
     def delindname(self, ind: Selection[Indicator, Indicators]) -> None:
         """Remove the names of indicators, as ``delvarname`` does.
@@ -4324,8 +4324,8 @@ class Model:
         """
         return self._getname("BIYOS_getsosname", SpecialOrderedSets, sos)
 
-    def getsosidx(self, name: Sequence[str]) -> SpecialOrderedSets:
-        """Return the named special ordered sets, as ``getvaridx`` does.
+    def findsos(self, name: Sequence[str]) -> SpecialOrderedSets:
+        """Return the named special ordered sets, as ``findvar`` does.
 
         Parameters
         ----------
@@ -4340,9 +4340,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getsosidx
+        BIYOS_findsos
         """
-        return self._getidx(lib.BIYOS_getsosidx, SpecialOrderedSets, name)
+        return self._find(lib.BIYOS_findsos, SpecialOrderedSets, name)
 
     def delsosname(
         self, sos: Selection[SpecialOrderedSet, SpecialOrderedSets]
@@ -4895,8 +4895,8 @@ class Model:
         """
         return self._getname("BIYOS_getconename", Cones, cone)
 
-    def getconeidx(self, name: Sequence[str]) -> Cones:
-        """Return the named cones, as ``getvaridx`` does.
+    def findcone(self, name: Sequence[str]) -> Cones:
+        """Return the named cones, as ``findvar`` does.
 
         Parameters
         ----------
@@ -4910,9 +4910,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getconeidx
+        BIYOS_findcone
         """
-        return self._getidx(lib.BIYOS_getconeidx, Cones, name)
+        return self._find(lib.BIYOS_findcone, Cones, name)
 
     def delconename(self, cone: Selection[Cone, Cones]) -> None:
         """Remove the names of cones, as ``delvarname`` does.
@@ -5323,8 +5323,8 @@ class Model:
         """
         return self._getname("BIYOS_getcconname", Complements, ccon)
 
-    def getcconidx(self, name: Sequence[str]) -> Complements:
-        """Return the named complements, as ``getvaridx`` does.
+    def findccon(self, name: Sequence[str]) -> Complements:
+        """Return the named complements, as ``findvar`` does.
 
         Parameters
         ----------
@@ -5339,9 +5339,9 @@ class Model:
 
         See Also
         --------
-        BIYOS_getcconidx
+        BIYOS_findccon
         """
-        return self._getidx(lib.BIYOS_getcconidx, Complements, name)
+        return self._find(lib.BIYOS_findccon, Complements, name)
 
     def delcconname(self, ccon: Selection[Complement, Complements]) -> None:
         """Remove the names of complements, as ``delvarname`` does.
@@ -5960,7 +5960,7 @@ class Model:
                 raise cause
             raise error from cause
 
-    def _getidx(
+    def _find(
         self,
         function: Callable[..., int],
         family: type[_Block],

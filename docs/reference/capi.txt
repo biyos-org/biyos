@@ -872,7 +872,7 @@ return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, an entry of `name` is null, or a name is empty or not well-formed UTF-8, with a message such as `invalid argument: variable 3: name is empty`.
 note A variable may appear more than once: its entries apply in order, so the last one wins, and each must be accepted. No name is checked against the others, so several variables may hold one name.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` for a variable it lists is no longer valid.
-see BIYOS_getvarnamesp BIYOS_getvaridx BIYOS_delvarnamesp
+see BIYOS_getvarnamesp BIYOS_findvar BIYOS_delvarnamesp
 since 0.1.0
 
 function BIYOS_getvarnamesp BIYOS_getvarnamerg
@@ -886,10 +886,10 @@ param name out Entry `j` receives the name of variable `var[j]` or `beg + j`, or
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable or the range ends past the last variable.
 note Each pointer stays valid until a call that sets or removes names of variables and lists that variable succeeds, a call that deletes variables succeeds, or the model is freed. Adding items, naming other variables, a failed call and a copy of the model leave it valid.
-see BIYOS_setvarnamesp BIYOS_getvaridx
+see BIYOS_setvarnamesp BIYOS_findvar
 since 0.1.0
 
-function BIYOS_getvaridx
+function BIYOS_findvar
 summary Look up variables by name.
 param mdl in The model.
 param n in The number of names.
@@ -1021,7 +1021,7 @@ param name in The new name of each, which the model copies; may be null only whe
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a function, the range ends past the last function, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note A function may appear more than once and several functions may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getfunnamesp` for a function it lists is no longer valid.
-see BIYOS_getfunnamesp BIYOS_getfunidx BIYOS_delfunnamesp
+see BIYOS_getfunnamesp BIYOS_findfun BIYOS_delfunnamesp
 since 0.1.0
 
 function BIYOS_getfunnamesp BIYOS_getfunnamerg
@@ -1035,10 +1035,10 @@ param name out Entry `j` receives the name of function `fun[j]` or `beg + j`, or
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a function or the range ends past the last function.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of functions and lists that function succeeds, a call that deletes functions succeeds, or the model is freed.
-see BIYOS_setfunnamesp BIYOS_getfunidx
+see BIYOS_setfunnamesp BIYOS_findfun
 since 0.1.0
 
-function BIYOS_getfunidx
+function BIYOS_findfun
 summary Look up functions by name.
 param mdl in The model.
 param n in The number of names.
@@ -1046,7 +1046,7 @@ param name in The names, each matched byte for byte; may be null only when `n` i
 param fun out Entry `j` receives the index of the function that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no function, with a message such as `invalid argument: function 'f': unknown`, or by several, with a message that counts them, such as `invalid argument: function 'f': names 2 functions`. The call fails at the first such name.
-note A lookup works as in `BIYOS_getvaridx`, among the functions alone.
+note A lookup works as in `BIYOS_findvar`, among the functions alone.
 see BIYOS_setfunnamesp BIYOS_getfunnamesp
 since 0.1.0
 
@@ -1386,7 +1386,7 @@ param name in The new name of each, which the model copies; may be null only whe
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a constraint, the range ends past the last constraint, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note A constraint may appear more than once and several constraints may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getconnamesp` for a constraint it lists is no longer valid.
-see BIYOS_getconnamesp BIYOS_getconidx BIYOS_delconnamesp
+see BIYOS_getconnamesp BIYOS_findcon BIYOS_delconnamesp
 since 0.1.0
 
 function BIYOS_getconnamesp BIYOS_getconnamerg
@@ -1400,10 +1400,10 @@ param name out Entry `j` receives the name of constraint `con[j]` or `beg + j`, 
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a constraint or the range ends past the last constraint.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of constraints and lists that constraint succeeds, a call that deletes constraints succeeds, or the model is freed.
-see BIYOS_setconnamesp BIYOS_getconidx
+see BIYOS_setconnamesp BIYOS_findcon
 since 0.1.0
 
-function BIYOS_getconidx
+function BIYOS_findcon
 summary Look up constraints by name.
 param mdl in The model.
 param n in The number of names.
@@ -1411,7 +1411,7 @@ param name in The names, each matched byte for byte; may be null only when `n` i
 param con out Entry `j` receives the index of the constraint that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no constraint, with a message such as `invalid argument: constraint 'c': unknown`, or by several, with a message that counts them, such as `invalid argument: constraint 'c': names 3 constraints`. The call fails at the first such name.
-note A lookup works as in `BIYOS_getvaridx`, among the constraints alone.
+note A lookup works as in `BIYOS_findvar`, among the constraints alone.
 see BIYOS_setconnamesp BIYOS_getconnamesp
 since 0.1.0
 
@@ -1613,7 +1613,7 @@ param name in The new name of each, which the model copies; may be null only whe
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an objective, the range ends past the last objective, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note An objective may appear more than once and several objectives may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getobjnamesp` for an objective it lists is no longer valid.
-see BIYOS_getobjnamesp BIYOS_getobjidx BIYOS_delobjnamesp
+see BIYOS_getobjnamesp BIYOS_findobj BIYOS_delobjnamesp
 since 0.1.0
 
 function BIYOS_getobjnamesp BIYOS_getobjnamerg
@@ -1627,10 +1627,10 @@ param name out Entry `j` receives the name of objective `obj[j]` or `beg + j`, o
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an objective or the range ends past the last objective.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of objectives and lists that objective succeeds, a call that deletes objectives succeeds, or the model is freed.
-see BIYOS_setobjnamesp BIYOS_getobjidx
+see BIYOS_setobjnamesp BIYOS_findobj
 since 0.1.0
 
-function BIYOS_getobjidx
+function BIYOS_findobj
 summary Look up objectives by name.
 param mdl in The model.
 param n in The number of names.
@@ -1638,7 +1638,7 @@ param name in The names, each matched byte for byte; may be null only when `n` i
 param obj out Entry `j` receives the index of the objective that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no objective, with a message such as `invalid argument: objective 'o': unknown`, or by several, with a message that counts them, such as `invalid argument: objective 'o': names 2 objectives`. The call fails at the first such name.
-note A lookup works as in `BIYOS_getvaridx`, among the objectives alone.
+note A lookup works as in `BIYOS_findvar`, among the objectives alone.
 see BIYOS_setobjnamesp BIYOS_getobjnamesp
 since 0.1.0
 
@@ -1783,7 +1783,7 @@ param name in The new name of each, which the model copies; may be null only whe
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an indicator, the range ends past the last indicator, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note An indicator may appear more than once and several indicators may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getindnamesp` for an indicator it lists is no longer valid.
-see BIYOS_getindnamesp BIYOS_getindidx BIYOS_delindnamesp
+see BIYOS_getindnamesp BIYOS_findind BIYOS_delindnamesp
 since 0.1.0
 
 function BIYOS_getindnamesp BIYOS_getindnamerg
@@ -1797,10 +1797,10 @@ param name out Entry `j` receives the name of indicator `ind[j]` or `beg + j`, o
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an indicator or the range ends past the last indicator.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of indicators and lists that indicator succeeds, a call that deletes indicators succeeds, or the model is freed.
-see BIYOS_setindnamesp BIYOS_getindidx
+see BIYOS_setindnamesp BIYOS_findind
 since 0.1.0
 
-function BIYOS_getindidx
+function BIYOS_findind
 summary Look up indicators by name.
 param mdl in The model.
 param n in The number of names.
@@ -1808,7 +1808,7 @@ param name in The names, each matched byte for byte; may be null only when `n` i
 param ind out Entry `j` receives the index of the indicator that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no indicator, with a message such as `invalid argument: indicator 'on': unknown`, or by several, with a message that counts them, such as `invalid argument: indicator 'on': names 2 indicators`. The call fails at the first such name.
-note A lookup works as in `BIYOS_getvaridx`, among the indicators alone.
+note A lookup works as in `BIYOS_findvar`, among the indicators alone.
 see BIYOS_setindnamesp BIYOS_getindnamesp
 since 0.1.0
 
@@ -1914,7 +1914,7 @@ param name in The new name of each, which the model copies; may be null only whe
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a set, the range ends past the last set, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note A set may appear more than once and several sets may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getsosnamesp` for a set it lists is no longer valid.
-see BIYOS_getsosnamesp BIYOS_getsosidx BIYOS_delsosnamesp
+see BIYOS_getsosnamesp BIYOS_findsos BIYOS_delsosnamesp
 since 0.1.0
 
 function BIYOS_getsosnamesp BIYOS_getsosnamerg
@@ -1928,10 +1928,10 @@ param name out Entry `j` receives the name of set `sos[j]` or `beg + j`, or an e
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a set or the range ends past the last set.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of sets and lists that set succeeds, a call that deletes sets succeeds, or the model is freed.
-see BIYOS_setsosnamesp BIYOS_getsosidx
+see BIYOS_setsosnamesp BIYOS_findsos
 since 0.1.0
 
-function BIYOS_getsosidx
+function BIYOS_findsos
 summary Look up special ordered sets by name.
 param mdl in The model.
 param n in The number of names.
@@ -1939,7 +1939,7 @@ param name in The names, each matched byte for byte; may be null only when `n` i
 param sos out Entry `j` receives the index of the set that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no set, with a message such as `invalid argument: set 's': unknown`, or by several, with a message that counts them, such as `invalid argument: set 's': names 2 sets`. The call fails at the first such name.
-note A lookup works as in `BIYOS_getvaridx`, among the sets alone.
+note A lookup works as in `BIYOS_findvar`, among the sets alone.
 see BIYOS_setsosnamesp BIYOS_getsosnamesp
 since 0.1.0
 
@@ -2193,7 +2193,7 @@ param name in The new name of each, which the model copies; may be null only whe
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone, the range ends past the last cone, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note A cone may appear more than once and several cones may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getconenamesp` for a cone it lists is no longer valid.
-see BIYOS_getconenamesp BIYOS_getconeidx BIYOS_delconenamesp
+see BIYOS_getconenamesp BIYOS_findcone BIYOS_delconenamesp
 since 0.1.0
 
 function BIYOS_getconenamesp BIYOS_getconenamerg
@@ -2207,10 +2207,10 @@ param name out Entry `j` receives the name of cone `cone[j]` or `beg + j`, or an
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone or the range ends past the last cone.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of cones and lists that cone succeeds, a call that deletes cones succeeds, or the model is freed.
-see BIYOS_setconenamesp BIYOS_getconeidx
+see BIYOS_setconenamesp BIYOS_findcone
 since 0.1.0
 
-function BIYOS_getconeidx
+function BIYOS_findcone
 summary Look up cones by name.
 param mdl in The model.
 param n in The number of names.
@@ -2218,7 +2218,7 @@ param name in The names, each matched byte for byte; may be null only when `n` i
 param cone out Entry `j` receives the index of the cone that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no cone, with a message such as `invalid argument: cone 'k': unknown`, or by several, with a message that counts them, such as `invalid argument: cone 'k': names 2 cones`. The call fails at the first such name.
-note A lookup works as in `BIYOS_getvaridx`, among the cones alone.
+note A lookup works as in `BIYOS_findvar`, among the cones alone.
 see BIYOS_setconenamesp BIYOS_getconenamesp
 since 0.1.0
 
@@ -2376,7 +2376,7 @@ param name in The new name of each, which the model copies; may be null only whe
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement, the range ends past the last complement, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
 note A complement may appear more than once and several complements may hold one name, as in `BIYOS_setvarnamesp`. Once the call succeeds, a pointer read earlier with `BIYOS_getcconnamesp` for a complement it lists is no longer valid.
-see BIYOS_getcconnamesp BIYOS_getcconidx BIYOS_delcconnamesp
+see BIYOS_getcconnamesp BIYOS_findccon BIYOS_delcconnamesp
 since 0.1.0
 
 function BIYOS_getcconnamesp BIYOS_getcconnamerg
@@ -2390,10 +2390,10 @@ param name out Entry `j` receives the name of complement `ccon[j]` or `beg + j`,
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement or the range ends past the last complement.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of complements and lists that complement succeeds, a call that deletes complements succeeds, or the model is freed.
-see BIYOS_setcconnamesp BIYOS_getcconidx
+see BIYOS_setcconnamesp BIYOS_findccon
 since 0.1.0
 
-function BIYOS_getcconidx
+function BIYOS_findccon
 summary Look up complements by name.
 param mdl in The model.
 param n in The number of names.
@@ -2401,7 +2401,7 @@ param name in The names, each matched byte for byte; may be null only when `n` i
 param ccon out Entry `j` receives the index of the complement that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no complement, with a message such as `invalid argument: complement 'c': unknown`, or by several, with a message that counts them, such as `invalid argument: complement 'c': names 2 complements`. The call fails at the first such name.
-note A lookup works as in `BIYOS_getvaridx`, among the complements alone.
+note A lookup works as in `BIYOS_findvar`, among the complements alone.
 see BIYOS_setcconnamesp BIYOS_getcconnamesp
 since 0.1.0
 

@@ -36,7 +36,7 @@ const std::array<Calls, 8> kFamilies{{
         .word = "var",
         .set = BIYOS_setvarnamesp,
         .get = BIYOS_getvarnamesp,
-        .find = BIYOS_getvaridx,
+        .find = BIYOS_findvar,
         .remove = BIYOS_delvarnamesp,
     },
     {
@@ -44,7 +44,7 @@ const std::array<Calls, 8> kFamilies{{
         .word = "fun",
         .set = BIYOS_setfunnamesp,
         .get = BIYOS_getfunnamesp,
-        .find = BIYOS_getfunidx,
+        .find = BIYOS_findfun,
         .remove = BIYOS_delfunnamesp,
     },
     {
@@ -52,7 +52,7 @@ const std::array<Calls, 8> kFamilies{{
         .word = "con",
         .set = BIYOS_setconnamesp,
         .get = BIYOS_getconnamesp,
-        .find = BIYOS_getconidx,
+        .find = BIYOS_findcon,
         .remove = BIYOS_delconnamesp,
     },
     {
@@ -60,7 +60,7 @@ const std::array<Calls, 8> kFamilies{{
         .word = "obj",
         .set = BIYOS_setobjnamesp,
         .get = BIYOS_getobjnamesp,
-        .find = BIYOS_getobjidx,
+        .find = BIYOS_findobj,
         .remove = BIYOS_delobjnamesp,
     },
     {
@@ -68,7 +68,7 @@ const std::array<Calls, 8> kFamilies{{
         .word = "ind",
         .set = BIYOS_setindnamesp,
         .get = BIYOS_getindnamesp,
-        .find = BIYOS_getindidx,
+        .find = BIYOS_findind,
         .remove = BIYOS_delindnamesp,
     },
     {
@@ -76,7 +76,7 @@ const std::array<Calls, 8> kFamilies{{
         .word = "sos",
         .set = BIYOS_setsosnamesp,
         .get = BIYOS_getsosnamesp,
-        .find = BIYOS_getsosidx,
+        .find = BIYOS_findsos,
         .remove = BIYOS_delsosnamesp,
     },
     {
@@ -84,7 +84,7 @@ const std::array<Calls, 8> kFamilies{{
         .word = "cone",
         .set = BIYOS_setconenamesp,
         .get = BIYOS_getconenamesp,
-        .find = BIYOS_getconeidx,
+        .find = BIYOS_findcone,
         .remove = BIYOS_delconenamesp,
     },
     {
@@ -92,7 +92,7 @@ const std::array<Calls, 8> kFamilies{{
         .word = "ccon",
         .set = BIYOS_setcconnamesp,
         .get = BIYOS_getcconnamesp,
-        .find = BIYOS_getcconidx,
+        .find = BIYOS_findccon,
         .remove = BIYOS_delcconnamesp,
     },
 }};
@@ -391,7 +391,7 @@ TEST(CApiTest, CopiedName)
     ASSERT_EQ(BIYOS_freemdl(source), BIYOS_OK);
     EXPECT_STREQ(found, "x");
     BIYOS_index at = -1;
-    EXPECT_EQ(BIYOS_getvaridx(copy, 1, &name, &at), BIYOS_OK);
+    EXPECT_EQ(BIYOS_findvar(copy, 1, &name, &at), BIYOS_OK);
     EXPECT_EQ(at, 0);
     EXPECT_EQ(BIYOS_freemdl(copy), BIYOS_OK);
 }
