@@ -156,10 +156,10 @@ BIYOS_status BIYOS_delobjrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delindsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *ind,
                             BIYOS_index *map)
 {
-    return guarded<delete_indicators<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_indicators<List>>(mdl, List{n, ind}, map);
 }
 
 BIYOS_status BIYOS_delindrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)

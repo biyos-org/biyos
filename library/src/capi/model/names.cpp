@@ -345,10 +345,10 @@ BIYOS_status BIYOS_delobjnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index e
 
 BIYOS_status BIYOS_setindnamesp(BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *ind,
                                 const char *const *name)
 {
-    return guarded<set_names<Family::Indicator, List>>(mdl, List{n, idx}, name);
+    return guarded<set_names<Family::Indicator, List>>(mdl, List{n, ind}, name);
 }
 
 BIYOS_status BIYOS_setindnamerg(BIYOS_model *mdl,
@@ -361,10 +361,10 @@ BIYOS_status BIYOS_setindnamerg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getindnamesp(const BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *ind,
                                 const char **name)
 {
-    return guarded<get_names<Family::Indicator, List>>(mdl, List{n, idx}, name);
+    return guarded<get_names<Family::Indicator, List>>(mdl, List{n, ind}, name);
 }
 
 BIYOS_status BIYOS_getindnamerg(const BIYOS_model *mdl,
@@ -378,14 +378,14 @@ BIYOS_status BIYOS_getindnamerg(const BIYOS_model *mdl,
 BIYOS_status BIYOS_getindidx(const BIYOS_model *mdl,
                              BIYOS_index n,
                              const char *const *name,
-                             BIYOS_index *idx)
+                             BIYOS_index *ind)
 {
-    return guarded<get_indices<Family::Indicator>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::Indicator>>(mdl, n, name, ind);
 }
 
-BIYOS_status BIYOS_delindnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+BIYOS_status BIYOS_delindnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *ind)
 {
-    return guarded<delete_names<Family::Indicator, List>>(mdl, List{n, idx});
+    return guarded<delete_names<Family::Indicator, List>>(mdl, List{n, ind});
 }
 
 BIYOS_status BIYOS_delindnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)

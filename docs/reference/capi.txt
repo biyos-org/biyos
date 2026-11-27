@@ -1680,7 +1680,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first indicator of the range.
 param end in In the `rg` form, one past the last indicator of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
+param ind in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
 param lb in The new lower bound of each; null leaves the lower bounds as they are.
 param ub in The new upper bound of each; null leaves the upper bounds as they are.
 return `BIYOS_OK` once the bounds are set. The variables, values and functions are kept.
@@ -1695,8 +1695,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first indicator of the range.
 param end in In the `rg` form, one past the last indicator of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param lb out Entry `j` receives the lower bound of indicator `idx[j]` or `beg + j`; skipped when null.
+param ind in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param lb out Entry `j` receives the lower bound of indicator `ind[j]` or `beg + j`; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an indicator or the range ends past the last indicator.
@@ -1709,7 +1709,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first indicator of the range.
 param end in In the `rg` form, one past the last indicator of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
+param ind in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
 param var in The new binary variable of each; null leaves the variables as they are.
 param val in The new value of each, 0 or 1; null leaves the values as they are.
 return `BIYOS_OK` once the variables and values are set. The functions and bounds are kept.
@@ -1724,8 +1724,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first indicator of the range.
 param end in In the `rg` form, one past the last indicator of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param var out Entry `j` receives the variable of indicator `idx[j]` or `beg + j`; skipped when null.
+param ind in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param var out Entry `j` receives the variable of indicator `ind[j]` or `beg + j`; skipped when null.
 param val out Entry `j` receives its value; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an indicator or the range ends past the last indicator.
@@ -1745,8 +1745,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first indicator to read.
 param end in In the `rg` form, one past the last indicator to read.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param var out Entry `j` receives the variable of indicator `idx[j]` or `beg + j`; skipped when null.
+param ind in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param var out Entry `j` receives the variable of indicator `ind[j]` or `beg + j`; skipped when null.
 param val out Entry `j` receives its value; skipped when null.
 param fun out Entry `j` receives its function; skipped when null.
 param lb out Entry `j` receives its lower bound; skipped when null.
@@ -1763,7 +1763,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first indicator to delete.
 param end in In the `rg` form, one past the last indicator to delete.
 param n in In the `sp` form, the number of indicators to delete.
-param idx in In the `sp` form, the indicators to delete, in any order; may be null when `n` is 0.
+param ind in In the `sp` form, the indicators to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each indicator the model held before the call: entry `i` is the new index of indicator `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the indicators are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an indicator, an indicator is listed more than once, with a message such as `invalid argument: argument 'idx': indicator 1 is repeated`, or the range ends past the last indicator.
@@ -1778,7 +1778,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first indicator of the range.
 param end in In the `rg` form, one past the last indicator of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
+param ind in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when there are no entries, and no entry may be null.
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an indicator, the range ends past the last indicator, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
@@ -1792,8 +1792,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first indicator of the range.
 param end in In the `rg` form, one past the last indicator of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of indicator `idx[j]` or `beg + j`, or an empty string when it has none; skipped when null.
+param ind in In the `sp` form, the indicator of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of indicator `ind[j]` or `beg + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an indicator or the range ends past the last indicator.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of indicators and lists that indicator succeeds, a call that deletes indicators succeeds, or the model is freed.
@@ -1805,7 +1805,7 @@ summary Look up indicators by name.
 param mdl in The model.
 param n in The number of names.
 param name in The names, each matched byte for byte; may be null only when `n` is 0, and no entry may be null.
-param idx out Entry `j` receives the index of the indicator that alone holds `name[j]`; skipped when null.
+param ind out Entry `j` receives the index of the indicator that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no indicator, with a message such as `invalid argument: indicator 'on': unknown`, or by several, with a message that counts them, such as `invalid argument: indicator 'on': names 2 indicators`. The call fails at the first such name.
 note A lookup works as in `BIYOS_getvaridx`, among the indicators alone.
@@ -1818,7 +1818,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first indicator of the range.
 param end in In the `rg` form, one past the last indicator of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
+param ind in In the `sp` form, the indicator of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the indicators listed have no name. One without a name, or listed more than once, is left without one.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an indicator or the range ends past the last indicator.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getindnamesp` for an indicator it lists is no longer valid.
