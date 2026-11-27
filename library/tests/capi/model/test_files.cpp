@@ -1,6 +1,8 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
 #include "core/env/env.hpp"
+#include "core/env/version.hpp"
+#include "core/options/text.hpp"
 #include "core/timing/clock.hpp"
 #include "files.hpp"
 #include "handles.hpp"
@@ -19,7 +21,9 @@
 namespace
 {
 
+using biyos::dotted;
 using biyos::FakeClock;
+using biyos::version;
 using biyos::test::build_sample;
 using biyos::test::Engine;
 using biyos::test::Env;
@@ -296,4 +300,70 @@ TEST(CApiTest, ReadWarned)
     EXPECT_EQ(shared, std::vector<const BIYOS_model *>(shared.size(), nullptr));
     EXPECT_TRUE(own.empty());
     EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
+}
+
+TEST(CApiTest, ReproFile)
+{
+    const Env env;
+    const Model model(env);
+    Engine engine(3);
+    build_sample(model.get(), engine);
+    ASSERT_EQ(BIYOS_setenvintopt(env.get(), BIYOS_OPT_SEED, 5), BIYOS_OK);
+    ASSERT_EQ(BIYOS_setmdlboolopt(model.get(), BIYOS_OPT_PRESOLVE, 0), BIYOS_OK);
+    const std::string path = testing::TempDir() + "biyos_sample.repro";
+    ASSERT_EQ(BIYOS_writerepro(model.get(), path.c_str()), BIYOS_OK);
+    const Env other;
+    ASSERT_EQ(BIYOS_setenvintopt(other.get(), BIYOS_OPT_THREADS, 1), BIYOS_OK);
+    BIYOS_model *back = nullptr;
+    ASSERT_EQ(BIYOS_readrepro(other.get(), path.c_str(), &back), BIYOS_OK);
+    BIYOS_int same = 0;
+    EXPECT_EQ(BIYOS_cmpmdl(model.get(), back, &same), BIYOS_OK);
+    EXPECT_EQ(same, 1);
+    BIYOS_int seed = -1;
+    BIYOS_int presolve = -1;
+    BIYOS_int source = -1;
+    EXPECT_EQ(BIYOS_getenvintopt(other.get(), BIYOS_OPT_SEED, &seed), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getmdlboolopt(back, BIYOS_OPT_PRESOLVE, &presolve), BIYOS_OK);
+    EXPECT_EQ(BIYOS_getmdloptsrc(back, BIYOS_OPT_PRESOLVE, &source), BIYOS_OK);
+    EXPECT_EQ(seed, 5);
+    EXPECT_EQ(presolve, 0);
+    EXPECT_EQ(source, BIYOS_OPTSRC_MDL);
+    EXPECT_EQ(BIYOS_freemdl(back), BIYOS_OK);
+}
+
+TEST(CApiTest, ReproRefused)
+{
+    const Env env;
+    const Model model(env);
+    const std::string path = written("biyos_bad.repro", "REPRO 1\nVERSION 0.0.1\nOPTIONS x\n");
+    BIYOS_model *made = model.get();
+    EXPECT_EQ(BIYOS_readrepro(env.get(), path.c_str(), &made), BIYOS_ERR_BADFILE);
+    EXPECT_EQ(made, nullptr);
+    EXPECT_EQ(env.message(), "bad file: file '" + path + "' line 3: 'x' is not a count");
+    EXPECT_EQ(BIYOS_readrepro(env.get(), nullptr, &made), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'path': is null");
+    EXPECT_EQ(BIYOS_readrepro(env.get(), path.c_str(), nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_readrepro(nullptr, path.c_str(), &made), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_writerepro(model.get(), nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(BIYOS_writerepro(nullptr, path.c_str()), BIYOS_ERR_BADARG);
+    const std::string folder = testing::TempDir();
+    EXPECT_EQ(BIYOS_writerepro(model.get(), folder.c_str()), BIYOS_ERR_FILEIO);
+    EXPECT_EQ(env.message(), "file access: file '" + folder + "': is a directory");
+}
+
+TEST(CApiTest, ReproWarned)
+{
+    const Env env;
+    std::vector<std::string> heard;
+    BIYOS_index id = -1;
+    ASSERT_EQ(BIYOS_addenvhook(env.get(), keep, &heard, BIYOS_EVTKND_MSG, BIYOS_EVTLVL_WARN, &id),
+              BIYOS_OK);
+    const std::string path =
+        written("biyos_old.repro", "REPRO 1\nVERSION 0.0.1\nOPTIONS 0\nBIYOS 1\nEND\n");
+    BIYOS_model *made = nullptr;
+    ASSERT_EQ(BIYOS_readrepro(env.get(), path.c_str(), &made), BIYOS_OK);
+    const std::string text = "the file is from biyos 0.0.1, read by " + dotted(version());
+    EXPECT_EQ(heard,
+              std::vector{"io/file '" + path + "' line 2: " + text + " file=" + path + " line=2"});
+    EXPECT_EQ(BIYOS_freemdl(made), BIYOS_OK);
 }

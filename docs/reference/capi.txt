@@ -518,7 +518,7 @@ param idx out Receives the id of the hook.
 return `BIYOS_OK`, with the id in `*idx`. Ids count from 1 in each model and are never reused.
 error BIYOS_ERR_BADARG `knd` or `lvl` is unknown.
 error BIYOS_ERR_NOMEMORY The model has given out 2147483646 ids.
-note The hook receives every event of a call on `mdl`, its error message, warnings, failed checks and spans, before the hooks of its environment receive it, and the events of no other call. `BIYOS_newmdl` and `BIYOS_readmdl` are calls on the environment. `BIYOS_copymdl` is a call on its source, so a copy into another environment sends nothing there, and `BIYOS_cmpmdl` is a call on `a`. A copy made by `BIYOS_copymdl` has none of the hooks of its source.
+note The hook receives every event of a call on `mdl`, its error message, warnings, failed checks and spans, before the hooks of its environment receive it, and the events of no other call. `BIYOS_newmdl`, `BIYOS_readmdl` and `BIYOS_readrepro` are calls on the environment. `BIYOS_copymdl` is a call on its source, so a copy into another environment sends nothing there, and `BIYOS_cmpmdl` is a call on `a`. A copy made by `BIYOS_copymdl` has none of the hooks of its source.
 note A failed call adds nothing.
 see BIYOS_delmdlhook BIYOS_addenvhook BIYOS_hook
 since 0.1.0
@@ -2932,6 +2932,35 @@ note The call sends the span `write` from module `io` ([Events biyos sends](#sec
 see BIYOS_readmdl
 since 0.1.0
 
+function BIYOS_writerepro
+summary Write a reproducer: the options in force and the model.
+param mdl in The model.
+param path in The path of the file, in UTF-8. A file already there is replaced.
+return `BIYOS_OK` once the file is written.
+error BIYOS_ERR_BADARG `path` is null, or the environment of `mdl` delivers an event.
+error BIYOS_ERR_FILEIO The file cannot be opened or written.
+error BIYOS_ERR_UNSUPPORTED The model holds a callback. The message names the first.
+note The file holds the version of biyos, then every option with the value in force for `mdl` and its source: `model` for its own value, else `environment` for that of its environment, else `default`, written without a value. The model follows in the biyos format. [Reproducer](#sec-repro) gives the rules.
+note The call sends the span `write` from module `io` ([Events biyos sends](#sec-capi-sent)).
+see BIYOS_readrepro BIYOS_writemdl
+since 0.1.0
+
+function BIYOS_readrepro
+summary Read a reproducer: set the options of an environment and of a new model, and read the model.
+param env in The environment whose options are set and on which the model is made.
+param path in The path of the file, in UTF-8.
+param mdl out Receives the model; set to null on failure.
+return `BIYOS_OK`, with the model in `*mdl`, and its options and those of `env` set from the file.
+error BIYOS_ERR_BADARG `path` or `mdl` is null, or `env` delivers an event.
+error BIYOS_ERR_FILEIO The file cannot be opened or read.
+error BIYOS_ERR_BADFILE The file breaks a rule of the format, gives an option a value it does not take, or gives the model a value of an option of environment scope. The message names the file and the line.
+error BIYOS_ERR_UNSUPPORTED The file is of a later version of the format, or its model holds a part the reader does not handle.
+note An option of source `model` is set on the new model, one of source `environment` on `env`, and one of source `default`, or left out, is unset on `env`. So the hooks of `env` stay and the options in force are those of the run that wrote the file. They are set once the whole file is read: a failed call leaves `env` as it was.
+note A file written by another version of biyos is read, with a warning event from module `io` naming both versions. An option this version does not know, or has retired, is skipped with a warning event naming it. Both carry the fields `file` and `line`. Setting a deprecated option sends its usual warning. One at its default is not set, so it sends none. [Reproducer](#sec-repro) gives the rules.
+note The call sends the span `read` from module `io` ([Events biyos sends](#sec-capi-sent)).
+see BIYOS_writerepro BIYOS_readmdl BIYOS_freemdl
+since 0.1.0
+
 group status Solve status
 text Three groups of constants describe how a solve ended. The termination says why the solve stopped, a result status says what a returned point is, the primal and the dual point each having one, and the claim says what was proved. They are kept apart, so a result never says more than its method proved. None of them is an error code: a limit reached or an infeasible model is an outcome, not a failed call. No call returns them yet.
 text Terminations are grouped by hundreds, like the error codes: 100 to 199 solved, 200 to 299 stopped early by a limit or by the user, 300 to 399 infeasibility or unboundedness detected, 400 to 499 no progress. A new one joins its group, so test a group by range. For the dual point, feasible means feasible for the dual problem.
@@ -2970,7 +2999,7 @@ value BIYOS_CLM_GLOBAL What the termination says holds for the whole model.
 since 0.1.0
 
 group sent Events biyos sends
-text A field is a name and a value, both text. The messages so far are an error when a call fails, a warning when a deprecated option is set, the warnings of `BIYOS_readmdl` and `BIYOS_writemdl` from module `io`, and an info message when two compared models differ.
+text A field is a name and a value, both text. The messages so far are an error when a call fails, a warning when a deprecated option is set, the warnings of `BIYOS_readmdl`, `BIYOS_writemdl` and `BIYOS_readrepro` from module `io`, and an info message when two compared models differ.
 text A call on an environment that fails sends an error message, unless the environment is delivering an event. Its level is `BIYOS_EVTLVL_ERR`, its module `capi`, its text the message `BIYOS_lasterror` reads for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a hook can tell the group from the range.
 text Setting a deprecated option sends a warning message at level `BIYOS_EVTLVL_WARN` from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. No option is deprecated yet.
 text `BIYOS_cmpmdl` sends an info message at level `BIYOS_EVTLVL_INFO` from module `model` when the two models differ. Its text names the first difference, such as `variable 0: upper bound 1 against 2` or `model name 'a' against none`, and it has no fields.
