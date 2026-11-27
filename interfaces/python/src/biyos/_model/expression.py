@@ -754,6 +754,33 @@ def atan(x: Term) -> Expression:
     return _apply(Operator.ATAN, x)
 
 
+def atan2(y: Term, x: Term) -> Expression:
+    """Return the angle of the point ``(x, y)``.
+
+    The angle lies in ``(-pi, pi]``. A zero counts as ``+0`` whatever
+    its sign, so the angle is ``pi`` on the whole negative ``x`` axis
+    and 0 at the origin.
+
+    Parameters
+    ----------
+    y
+        The ordinate, an expression, a variable or a number.
+    x
+        The abscissa, an expression, a variable or a number.
+
+    Returns
+    -------
+    expr
+        The expression ``atan2(y, x)``.
+
+    Raises
+    ------
+    TypeError
+        When ``y`` or ``x`` is of another type.
+    """
+    return _apply(Operator.ATAN2, y, x)
+
+
 def sinh(x: Term) -> Expression:
     """Return the hyperbolic sine of an operand.
 

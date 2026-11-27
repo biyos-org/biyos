@@ -171,6 +171,14 @@ def test_operator(env, model, x, build, code, arg, val):
     assert records(model, objective(model, objs)) == expected
 
 
+def test_atan2(env, model, x):
+    objs = model.addobj(biyos.atan2(x[1], x[0]))
+    funs = objective(model, objs)
+    code = [VAR, VAR, Operator.ATAN2]
+    assert model.getexpr(funs) == ([3], code, [1, 0, 2], [])
+    assert records(model, funs) == by_hand(env, code, [1, 0, 2], [])
+
+
 def test_shared(model, x):
     s = x[0] * x[1]
     objs = model.addobj(biyos.exp(s) * biyos.sin(s))
