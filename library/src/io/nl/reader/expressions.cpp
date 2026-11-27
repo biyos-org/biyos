@@ -176,6 +176,8 @@ std::size_t Expressions::operand_count(const Opcode &opcode)
         return 1;
     case Arity::Two:
         return 2;
+    case Arity::Three:
+        return 3;
     case Arity::Many:
         break;
     }

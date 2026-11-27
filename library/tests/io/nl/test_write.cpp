@@ -56,6 +56,7 @@ using biyos::test::nl::kOrderNlFile;
 using biyos::test::nl::less_of;
 using biyos::test::nl::log10_of;
 using biyos::test::nl::node;
+using biyos::test::nl::outside_of;
 using biyos::test::nl::pieces_of;
 using biyos::test::nl::printed;
 using biyos::test::nl::read_sample;
@@ -63,6 +64,7 @@ using biyos::test::nl::reread;
 using biyos::test::nl::square_of;
 using biyos::test::nl::sum_of;
 using biyos::test::nl::tiny_wanted;
+using biyos::test::nl::window_of;
 using biyos::test::nl::writable;
 
 namespace
@@ -430,6 +432,8 @@ TEST(NlTest, Forms)
         shared_of,
         lifted_of,
         spread_of,
+        window_of,
+        outside_of,
     };
     for (const Build build : builds)
     {

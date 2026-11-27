@@ -200,7 +200,7 @@ A bound line starts with a code: `0` gives a lower and an upper bound, `1` an up
 
 ### Expressions
 
-An expression is written in prefix order, one item a line: `n` and a number for a constant, `v` and an index for a variable or a defined variable, `o` and a code for an operator followed by its operands. An operator that takes any number of operands, `min`, `max` and `sum`, has its count on the next line.
+An expression is written in prefix order, one item a line: `n` and a number for a constant, `v` and an index for a variable or a defined variable, `o` and a code for an operator followed by its operands. An operator that takes any number of operands, `min`, `max`, `sum` and the list forms of `and` and `or`, has its count on the next line.
 
 | Operators | Read as |
 |---|---|
@@ -215,8 +215,11 @@ An expression is written in prefix order, one item a line: `n` and a number for 
 | `atan2` | The same function, its first operand $y$ in $\operatorname{atan2}(y, x)$. |
 | `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh` | The same function. |
 | `plterm` | A piecewise linear function of one variable. |
+| `lt`, `le`, `eq`, `ge`, `gt`, `ne` | The same comparison, which holds within `feastol_abs` and `feastol_rel` as for `BIYOS_OP_LE`. |
+| `and`, `or`, `not` | The same operator, both the two-operand and the list form of `and` and `or`. |
+| `if` | `BIYOS_OP_IF`, its first operand a condition. |
 
-Every other operator, among them the comparisons, the logical operators, `if`, `floor`, `ceil` and `round`, is refused with `BIYOS_ERR_UNSUPPORTED`, as are imported functions (`f`) and strings (`h`).
+Every other operator, among them `implies`, `iff`, `floor`, `ceil` and `round`, is refused with `BIYOS_ERR_UNSUPPORTED`, as are imported functions (`f`) and strings (`h`).
 
 ### Choices {#sec-nl-choices}
 
@@ -250,12 +253,12 @@ A model read from NL reads back the same, every number bit for bit, when the `J`
 | Bounds | `r` and `b` give each constraint and variable a bound code, in the order above: `4` when the bounds are equal, `3` when both are infinite, `1` or `2` when one is, else `0`. |
 | Linear terms | A `J` or `G` segment for each record, with each linear term of its function, then a term of coefficient 0 for each variable its expression uses and no linear term holds. `k` counts the `J` entries of each variable. |
 | Expressions | A `C` or `O` segment for each record. A function with no constant and no quadratic terms whose expression is not a sum, or is one written as `plus`, `sum` or `minus`, is its expression alone. Any other is a sum of its constant, one product for each quadratic term, its coefficient a factor when it is not 1, then the expression, written out as its terms when it is a sum with no constant. The reader splits such a sum back into the same parts, and keeps the expression alone whole. |
-| Operators | A sum of two or more terms with no constant and weights of 1 is `plus` or `sum`, one of two terms with weights 1 and $-1$ `minus`, any other a `plus` or `sum` of its constant, when it is not 0, and its terms, each weight a factor when it is not 1. A product is a chain of `mult`, its coefficient a factor when it is not 1. A constant power is `pow` with a number. A product of $\log_{10} e$ and a logarithm is `log10`. Every other operator the reader reads is written as the code it reads. |
+| Operators | A sum of two or more terms with no constant and weights of 1 is `plus` or `sum`, one of two terms with weights 1 and $-1$ `minus`, any other a `plus` or `sum` of its constant, when it is not 0, and its terms, each weight a factor when it is not 1. A product is a chain of `mult`, its coefficient a factor when it is not 1. A constant power is `pow` with a number. A product of $\log_{10} e$ and a logarithm is `log10`. `and` and `or` are their list forms. Every other operator the reader reads is written as the code it reads. |
 | Piecewise linear functions | `plterm` with the slopes and the inner breakpoints of the points, plus the value at 0 when it is not 0. The reader rebuilds the points from the slopes, so points whose slopes are not exact in floating point read back moved by a rounding. |
 | Defined variables | A node used by several parents, the operand of a piecewise linear function, the constant exponent of a power, and a sum that is not `plus`, `sum` or `minus` and whose terms are variables, or variables then one term of weight 1 with no constant, each written once as a `V` segment and named again. Such a sum has its variables as the linear terms of the segment, the form in which the reader reads a defined variable back. Those used by several records come first, the others just before the segment of their record, with the third integer Gay gives. |
 | Functions | A function several records use is written once for each, and reads back as that many functions. A function no record uses is left out, with an info event from module `io`, with the field `file`, naming it. |
 
-The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the way: a callback, a cone or an indicator; a complement whose first function is not one variable with coefficient 1, whose bounds are not those of that variable, whose variable is free, or whose variable another complement holds; an empty special ordered set, or a variable in two sets; a semi-continuous or semi-integer variable; an objective with a weight other than 1; an expression that holds `BIYOS_OP_ENT`, `BIYOS_OP_SPOW`, `BIYOS_OP_ERF`, `BIYOS_OP_ATAN2`, a comparison, `BIYOS_OP_AND`, `BIYOS_OP_OR`, `BIYOS_OP_NOT` or `BIYOS_OP_IF`.
+The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the way: a callback, a cone or an indicator; a complement whose first function is not one variable with coefficient 1, whose bounds are not those of that variable, whose variable is free, or whose variable another complement holds; an empty special ordered set, or a variable in two sets; a semi-continuous or semi-integer variable; an objective with a weight other than 1; an expression that holds `BIYOS_OP_ENT`, `BIYOS_OP_SPOW`, `BIYOS_OP_ERF` or `BIYOS_OP_ATAN2`.
 
 A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of each objective, and the model's options, as for MPS; then the binary variables written as integers, and the names. Hooks are not part of the problem and are left out with no event.
 

@@ -12,6 +12,7 @@ enum class Arity
 {
     One,
     Two,
+    Three,
     Many,
 };
 
@@ -36,6 +37,8 @@ constexpr int kPowerCode = 5;
 constexpr int kLog10Code = 42;
 constexpr int kSumCode = 54;
 constexpr int kPiecesCode = 64;
+constexpr int kAndListCode = 70;
+constexpr int kOrListCode = 71;
 
 struct Opcode
 {
