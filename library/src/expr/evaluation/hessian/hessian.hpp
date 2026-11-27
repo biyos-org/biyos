@@ -104,7 +104,7 @@ class Hessian
     std::vector<Coloring> colorings_;
     std::vector<Offset> pushed_;
     std::vector<Elimination> eliminations_;
-    std::vector<Lists> lists_;
+    std::vector<PushSpace> spaces_;
     std::vector<std::size_t> widths_;
     std::vector<std::size_t> classes_;
     std::vector<std::vector<Pass>> workers_;

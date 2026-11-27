@@ -27,7 +27,7 @@ struct Elimination
     std::vector<Offset> parts;
 };
 
-struct Lists
+struct PushSpace
 {
     std::vector<std::uint32_t> columns;
     std::vector<Real> values;
@@ -40,13 +40,13 @@ struct Lists
 };
 
 Elimination elimination_of(Offset element, Shape shape);
-Lists lists_of(const Tape &tape, std::span<const Elimination> eliminations);
+PushSpace space_of(const Tape &tape, std::span<const Elimination> eliminations);
 void push(const Tape &tape,
           const Elimination &elimination,
           std::span<const Real> point,
           const Tolerances &tolerances,
           Workspace &workspace,
-          Lists &lists,
+          PushSpace &space,
           std::span<Real> parts) noexcept;
 
 }

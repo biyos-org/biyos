@@ -42,15 +42,15 @@ using biyos::Field;
 using biyos::Graph;
 using biyos::Hessian;
 using biyos::Index;
-using biyos::Lists;
-using biyos::lists_of;
 using biyos::Lower;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Pass;
 using biyos::Pool;
 using biyos::Pusher;
+using biyos::PushSpace;
 using biyos::Real;
+using biyos::space_of;
 using biyos::Tape;
 using biyos::TimingTree;
 using biyos::to_index;
@@ -89,7 +89,7 @@ constexpr std::array kWeights{1.0, -2.5, 0.0};
 struct Pushed
 {
     std::vector<Elimination> eliminations;
-    Lists lists;
+    PushSpace space;
     Workspace workspace;
 };
 
@@ -101,9 +101,9 @@ Pushed pushed_of(const Tape &tape)
     {
         eliminations.push_back(elimination_of(e, pusher.shape(e)));
     }
-    Lists lists = lists_of(tape, eliminations);
+    PushSpace space = space_of(tape, eliminations);
     return {.eliminations = std::move(eliminations),
-            .lists = std::move(lists),
+            .space = std::move(space),
             .workspace = Workspace(tape)};
 }
 
@@ -111,7 +111,7 @@ Values parts_of(const Tape &tape, Pushed &pushed, Offset e, std::span<const Real
 {
     const Elimination &elimination = pushed.eliminations[to_size(e)];
     Values parts(elimination.parts.size(), -1.0);
-    push(tape, elimination, point, default_tolerances(), pushed.workspace, pushed.lists, parts);
+    push(tape, elimination, point, default_tolerances(), pushed.workspace, pushed.space, parts);
     return parts;
 }
 

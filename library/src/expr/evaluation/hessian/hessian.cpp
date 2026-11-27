@@ -354,7 +354,7 @@ Hessian::Hessian(const Graph &graph,
         c = places[c];
     }
     workers_.push_back(passes_of(tape_, widths_));
-    lists_.push_back(lists_of(tape_, eliminations_));
+    spaces_.push_back(space_of(tape_, eliminations_));
     chunks_ = chunks_of(tape_.pattern());
     scales_.assign(to_size(tape_.roots()), 0.0);
     parts_.assign((std::max)(map_.blocks.size(), tape_.pattern().variables.size()), 0.0);
@@ -460,7 +460,7 @@ void Hessian::check(std::span<const Real> point, std::span<const Real> weights) 
 void Hessian::fit(std::size_t threads)
 {
     resize(workers_, threads, [&] { return passes_of(tape_, widths_); });
-    resize(lists_, threads, [&] { return lists_of(tape_, eliminations_); });
+    resize(spaces_, threads, [&] { return space_of(tape_, eliminations_); });
 }
 
 void Hessian::weigh(std::span<const Real> weights) noexcept
@@ -592,7 +592,7 @@ void Hessian::fill_pushed(std::size_t k,
         return;
     }
     Workspace &workspace = workers_[worker].front().workspace;
-    push(tape_, elimination, point, tolerances, workspace, lists_[worker], parts);
+    push(tape_, elimination, point, tolerances, workspace, spaces_[worker], parts);
     for (Real &part : parts)
     {
         part *= scale;

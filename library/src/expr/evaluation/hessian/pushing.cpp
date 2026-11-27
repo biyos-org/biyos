@@ -46,14 +46,14 @@ struct Walk
     const Tolerances &tolerances;
     Workspace &workspace;
     const Elimination &elimination;
-    Lists &lists;
+    PushSpace &space;
     std::size_t node;
 };
 
 struct Push
 {
     const Elimination &elimination;
-    Lists &lists;
+    PushSpace &space;
 };
 
 std::uint32_t bends_in(const Node &node) noexcept
@@ -273,11 +273,11 @@ void describe(const Instruction &instruction,
     const Node &node = elimination.nodes[walk.node];
     const std::uint32_t first = elimination.bends[walk.node];
     const std::span<Real> slopes =
-        std::span(walk.lists.slopes).subspan(node.begin, node.end - node.begin);
+        std::span(walk.space.slopes).subspan(node.begin, node.end - node.begin);
     const std::span<Real> bends =
-        std::span(walk.lists.bends).subspan(first, elimination.bends[walk.node + 1] - first);
+        std::span(walk.space.bends).subspan(first, elimination.bends[walk.node + 1] - first);
     slopes_of(instruction, frame, partials, slopes);
-    bend(instruction, frame, partials, node.bending, walk.lists.suffix, bends);
+    bend(instruction, frame, partials, node.bending, walk.space.suffix, bends);
     mark_undefined(frame, bends);
     ++walk.node;
 }
@@ -355,36 +355,36 @@ void link(const Push &push, std::uint32_t a, std::uint32_t b, Real value, bool a
         return;
     }
     const std::uint32_t row = (std::max)(a, b);
-    const auto at = to_size(push.elimination.rows[row] + push.lists.sizes[row]++);
-    push.lists.columns[at] = (std::min)(a, b);
-    push.lists.values[at] = across && a == b ? 2.0 * value : value;
+    const auto at = to_size(push.elimination.rows[row] + push.space.sizes[row]++);
+    push.space.columns[at] = (std::min)(a, b);
+    push.space.values[at] = across && a == b ? 2.0 * value : value;
 }
 
 Offset merge(const Push &push, std::size_t row) noexcept
 {
-    Lists &lists = push.lists;
+    PushSpace &space = push.space;
     const Offset begin = push.elimination.rows[row];
-    const Offset end = begin + std::exchange(lists.sizes[row], 0);
+    const Offset end = begin + std::exchange(space.sizes[row], 0);
     Offset merged = begin;
     for (Offset k = begin; k < end; ++k)
     {
-        const std::uint32_t column = lists.columns[to_size(k)];
-        Offset &mark = lists.marks[column];
+        const std::uint32_t column = space.columns[to_size(k)];
+        Offset &mark = space.marks[column];
         if (mark == kNone)
         {
             mark = merged;
-            lists.columns[to_size(merged)] = column;
-            lists.values[to_size(merged)] = lists.values[to_size(k)];
+            space.columns[to_size(merged)] = column;
+            space.values[to_size(merged)] = space.values[to_size(k)];
             ++merged;
         }
         else
         {
-            lists.values[to_size(mark)] += lists.values[to_size(k)];
+            space.values[to_size(mark)] += space.values[to_size(k)];
         }
     }
     for (Offset k = begin; k < merged; ++k)
     {
-        lists.marks[lists.columns[to_size(k)]] = kNone;
+        space.marks[space.columns[to_size(k)]] = kNone;
     }
     return merged;
 }
@@ -455,18 +455,18 @@ void create(const Push &push,
 void eliminate(const Push &push, std::size_t n) noexcept
 {
     const Elimination &elimination = push.elimination;
-    Lists &lists = push.lists;
+    PushSpace &space = push.space;
     const Node &node = elimination.nodes[n];
     const std::size_t id = elimination.variables + n;
     const std::size_t count = node.end - node.begin;
     const std::span<const std::uint32_t> operands =
         std::span(elimination.operands).subspan(node.begin, count);
-    const std::span<const Real> slopes = std::span(lists.slopes).subspan(node.begin, count);
+    const std::span<const Real> slopes = std::span(space.slopes).subspan(node.begin, count);
     const Offset end = merge(push, id);
     for (auto k = to_size(elimination.rows[id]); k < to_size(end); ++k)
     {
-        const std::uint32_t neighbour = lists.columns[k];
-        const Real weight = lists.values[k];
+        const std::uint32_t neighbour = space.columns[k];
+        const Real weight = space.values[k];
         if (neighbour == id)
         {
             square(push, operands, slopes, weight);
@@ -476,49 +476,49 @@ void eliminate(const Push &push, std::size_t n) noexcept
             spread(push, operands, slopes, neighbour, weight);
         }
     }
-    const Real adjoint = std::exchange(lists.adjoints[id], 0.0);
+    const Real adjoint = std::exchange(space.adjoints[id], 0.0);
     if (is_zero(adjoint))
     {
         return;
     }
     for (std::size_t k = 0; k < count; ++k)
     {
-        lists.adjoints[operands[k]] += times(adjoint, slopes[k]);
+        space.adjoints[operands[k]] += times(adjoint, slopes[k]);
     }
     const std::uint32_t first = elimination.bends[n];
     const std::span<const Real> bends =
-        std::span(lists.bends).subspan(first, elimination.bends[n + 1] - first);
+        std::span(space.bends).subspan(first, elimination.bends[n + 1] - first);
     create(push, node, operands, bends, adjoint);
 }
 
 void scatter(const Push &push, std::uint32_t row, std::span<Real> parts) noexcept
 {
     const Elimination &elimination = push.elimination;
-    Lists &lists = push.lists;
+    PushSpace &space = push.space;
     const std::span<const std::uint32_t> columns =
         slice(std::span(elimination.columns), elimination.starts, row);
     const std::span<const Offset> places =
         slice(std::span(elimination.parts), elimination.starts, row);
     for (std::size_t k = 0; k < columns.size(); ++k)
     {
-        lists.marks[columns[k]] = places[k];
+        space.marks[columns[k]] = places[k];
     }
     const auto begin = to_size(elimination.rows[row]);
-    const auto end = begin + to_size(std::exchange(lists.sizes[row], 0));
+    const auto end = begin + to_size(std::exchange(space.sizes[row], 0));
     for (std::size_t k = begin; k < end; ++k)
     {
-        parts[to_size(lists.marks[lists.columns[k]])] += lists.values[k];
+        parts[to_size(space.marks[space.columns[k]])] += space.values[k];
     }
     for (const std::uint32_t column : columns)
     {
-        lists.marks[column] = kNone;
+        space.marks[column] = kNone;
     }
-    lists.adjoints[row] = 0.0;
+    space.adjoints[row] = 0.0;
 }
 
 }
 
-Lists lists_of(const Tape &tape, std::span<const Elimination> eliminations)
+PushSpace space_of(const Tape &tape, std::span<const Elimination> eliminations)
 {
     const Widest widest = widest_of(eliminations);
     return {
@@ -558,7 +558,7 @@ void push(const Tape &tape,
           std::span<const Real> point,
           const Tolerances &tolerances,
           Workspace &workspace,
-          Lists &lists,
+          PushSpace &space,
           std::span<Real> parts) noexcept
 {
     Walk walk{
@@ -566,7 +566,7 @@ void push(const Tape &tape,
         .tolerances = tolerances,
         .workspace = workspace,
         .elimination = elimination,
-        .lists = lists,
+        .space = space,
         .node = 0,
     };
     rise(tape, walk);
@@ -574,8 +574,8 @@ void push(const Tape &tape,
     const Block &block = block_of(partition, elimination.element);
     walk_block(block, to_size(elimination.element - block.begin), walk);
     std::ranges::fill(parts, 0.0);
-    const Push pushing{.elimination = elimination, .lists = lists};
-    lists.adjoints[elimination.root] = 1.0;
+    const Push pushing{.elimination = elimination, .space = space};
+    space.adjoints[elimination.root] = 1.0;
     for (std::size_t n = elimination.nodes.size(); n > 0; --n)
     {
         eliminate(pushing, n - 1);
