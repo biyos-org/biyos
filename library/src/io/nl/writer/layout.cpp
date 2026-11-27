@@ -109,19 +109,21 @@ bool nonlinear(const Model &model, Index function)
 Records records_of(const Model &model)
 {
     check_records(model);
-    Records records{.constraints = {}, .nonlinear_constraints = 0, .nonlinear_objectives = 0};
+    Records records{.rows = {}, .nonlinear_rows = 0, .nonlinear_objectives = 0};
     for (const bool wanted : {true, false})
     {
         for (Index k = 0; k < model.n_constraints(); ++k)
         {
-            if (nonlinear(model, model.constraint(k).function) == wanted)
+            const Index function = model.constraint(k).function;
+            if (nonlinear(model, function) == wanted)
             {
-                records.constraints.push_back(k);
+                records.rows.push_back(
+                    {.family = Family::Constraint, .record = k, .function = function});
             }
         }
         if (wanted)
         {
-            records.nonlinear_constraints = to_index(records.constraints.size());
+            records.nonlinear_rows = to_index(records.rows.size());
         }
     }
     for (Index q = 0; q < model.n_objectives(); ++q)

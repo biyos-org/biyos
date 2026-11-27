@@ -110,7 +110,7 @@ bool named(const Model &model)
 }
 
 Plan::Plan(const Model &model)
-    : model_(model), records_(records_of(model)), usage_(model, records_.constraints),
+    : model_(model), records_(records_of(model)), usage_(model, records_.rows),
       columns_(columns_of(model, usage_)), entries_(model, usage_, columns_.position),
       defined_(model, usage_)
 {
@@ -163,7 +163,7 @@ void Plan::print_header(std::ostream &output) const
         equations += bound == Bound::Equal ? 1 : 0;
     }
     Offset jacobian = 0;
-    for (Index m = 0; m < model_.n_constraints(); ++m)
+    for (Index m = 0; m < n_rows(); ++m)
     {
         jacobian += to_offset(entries_.of(function_of(m)).size());
     }
@@ -175,10 +175,8 @@ void Plan::print_header(std::ostream &output) const
     const Counts &counts = columns_.counts;
     const auto defined = defined_.counts();
     output << "g3 1 1 0\n";
-    print_row(
-        output,
-        {model_.n_variables(), model_.n_constraints(), model_.n_objectives(), ranges, equations});
-    print_row(output, {records_.nonlinear_constraints, records_.nonlinear_objectives});
+    print_row(output, {model_.n_variables(), n_rows(), model_.n_objectives(), ranges, equations});
+    print_row(output, {records_.nonlinear_rows, records_.nonlinear_objectives});
     print_row(output, {0, 0});
     print_row(output, {counts.in_constraints, counts.in_objectives, counts.in_both});
     print_row(output, {0, 0, 0, 1});
@@ -195,7 +193,7 @@ void Plan::print_header(std::ostream &output) const
 
 void Plan::print_records(std::ostream &output, Printer &printer) const
 {
-    for (Index m = 0; m < model_.n_constraints(); ++m)
+    for (Index m = 0; m < n_rows(); ++m)
     {
         for (const Definition &definition : defined_.of(Scope::Constraint, m))
         {
@@ -219,14 +217,14 @@ void Plan::print_records(std::ostream &output, Printer &printer) const
 
 void Plan::print_ranges(std::ostream &output) const
 {
-    if (model_.n_constraints() == 0)
+    if (records_.rows.empty())
     {
         return;
     }
     output << "r\n";
-    for (const Index k : records_.constraints)
+    for (const Row &row : records_.rows)
     {
-        const Constraint &constraint = model_.constraint(k);
+        const Constraint &constraint = model_.constraint(row.record);
         print_bound(output, constraint.lower, constraint.upper);
     }
 }
@@ -252,7 +250,7 @@ void Plan::print_columns(std::ostream &output) const
         return;
     }
     std::vector<Offset> counts(to_size(model_.n_variables()), 0);
-    for (Index m = 0; m < model_.n_constraints(); ++m)
+    for (Index m = 0; m < n_rows(); ++m)
     {
         for (const LinearTerm &term : entries_.of(function_of(m)))
         {
@@ -270,7 +268,7 @@ void Plan::print_columns(std::ostream &output) const
 
 void Plan::print_entries(std::ostream &output) const
 {
-    for (Index m = 0; m < model_.n_constraints(); ++m)
+    for (Index m = 0; m < n_rows(); ++m)
     {
         const auto terms = entries_.of(function_of(m));
         if (!terms.empty())
@@ -290,9 +288,14 @@ void Plan::print_entries(std::ostream &output) const
     }
 }
 
-Index Plan::function_of(Index constraint) const noexcept
+Index Plan::function_of(Index row) const noexcept
 {
-    return model_.constraint(records_.constraints[to_size(constraint)]).function;
+    return records_.rows[to_size(row)].function;
+}
+
+Index Plan::n_rows() const noexcept
+{
+    return to_index(records_.rows.size());
 }
 
 }

@@ -11,8 +11,8 @@ namespace biyos::nl
 
 struct Records
 {
-    std::vector<Index> constraints;
-    Index nonlinear_constraints;
+    std::vector<Row> rows;
+    Index nonlinear_rows;
     Index nonlinear_objectives;
 };
 

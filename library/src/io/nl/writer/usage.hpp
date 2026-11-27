@@ -23,10 +23,17 @@ inline constexpr Reach kUnreached{.constraint = kNobody, .objective = kNobody};
 
 bool reached(const Reach &reach) noexcept;
 
+struct Row
+{
+    Family family;
+    Index record;
+    Index function;
+};
+
 class Usage
 {
   public:
-    Usage(const Model &model, std::span<const Index> constraints);
+    Usage(const Model &model, std::span<const Row> rows);
 
     bool used(Offset node) const noexcept;
     bool shared(Offset node) const noexcept;
@@ -35,7 +42,7 @@ class Usage
     const Reach &variable_reach(Index variable) const noexcept;
 
   private:
-    void reach_functions(const Model &model, std::span<const Index> constraints);
+    void reach_functions(const Model &model, std::span<const Row> rows);
     void reach_roots(const Model &model);
     void reach_nodes(const Graph &graph);
     void reach_variables(const Model &model);
