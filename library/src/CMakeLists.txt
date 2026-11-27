@@ -96,6 +96,7 @@ add_library(biyos_internal STATIC
     io/nl/reader/bodies.cpp
     io/nl/reader/expressions.cpp
     io/nl/reader/pieces.cpp
+    io/nl/reader/suffixes.cpp
     io/nl/source/binary.cpp
     io/nl/source/bounds.cpp
     io/nl/source/source.cpp

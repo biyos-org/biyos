@@ -7,6 +7,7 @@
 #include "io/nl/header.hpp"
 #include "io/nl/reader/bodies.hpp"
 #include "io/nl/reader/expressions.hpp"
+#include "io/nl/reader/suffixes.hpp"
 #include "io/nl/source/bounds.hpp"
 #include "io/nl/source/source.hpp"
 #include "io/utils/records.hpp"
@@ -14,7 +15,6 @@
 #include "model/model.hpp"
 
 #include <algorithm>
-#include <array>
 #include <istream>
 #include <memory>
 #include <optional>
@@ -29,14 +29,6 @@ namespace biyos::nl
 
 namespace
 {
-
-constexpr std::array<std::string_view, 2> kSetSuffixes{"sosno", "ref"};
-constexpr std::array<std::string_view, 4> kSuffixTargets{"variable",
-                                                         "constraint",
-                                                         "objective",
-                                                         "problem"};
-constexpr Offset kSuffixKinds = 8;
-constexpr Offset kRealSuffix = 4;
 
 bool same_variable(const LinearTerm &a, const LinearTerm &b) noexcept
 {
@@ -71,8 +63,6 @@ class NlReader
     void read_bounds();
     void read_columns();
     void read_linear(Index size, Index offset, std::string_view noun);
-    void skip_suffix();
-    Index suffix_size(Offset kind) const noexcept;
     void skip_guesses(Index size, std::string_view noun, std::string_view notice);
     std::vector<LinearTerm> read_terms(Index n);
     Bounds read_bound(std::string_view part);
@@ -87,6 +77,7 @@ class NlReader
     Model model_;
     Expressions expressions_;
     Bodies bodies_;
+    Suffixes suffixes_;
     std::vector<Bounds> ranges_;
     std::vector<ObjectiveSense> senses_;
     std::string seen_;
@@ -96,7 +87,7 @@ NlReader::NlReader(Stream stream, std::istream &input, const std::string &file, 
     : stream_(stream), lines_(input, file), header_(read_header(lines_, bytes)),
       owned_(source_of(lines_, input, header_.encoding, bytes)), source_(*owned_),
       expressions_(source_, model_, header_.variables, header_.defined),
-      bodies_(header_.constraints + header_.objectives),
+      bodies_(header_.constraints + header_.objectives), suffixes_(stream, source_, header_),
       senses_(to_size(header_.objectives), ObjectiveSense::Minimize)
 {
 }
@@ -124,7 +115,7 @@ void NlReader::segment()
     case 'F':
         source_.refuse("imported functions");
     case 'S':
-        skip_suffix();
+        suffixes_.read();
         return;
     case 'L':
         source_.refuse("logical constraints");
@@ -281,45 +272,6 @@ void NlReader::read_linear(Index size, Index offset, std::string_view noun)
         source_.bad("variable " + text_of(repeat->variable) + " is repeated");
     }
     bodies_.set_terms(function, std::move(terms));
-}
-
-void NlReader::skip_suffix()
-{
-    source_.expect(3);
-    const Offset kind = source_.integer();
-    if (kind < 0 || kind >= kSuffixKinds)
-    {
-        source_.bad("suffix kind " + quote(source_.last_field()) + " is unknown");
-    }
-    const Index n = source_.count();
-    const std::string text = source_.name();
-    const std::string name = quote(text);
-    if (std::ranges::find(kSetSuffixes, text) != kSetSuffixes.end())
-    {
-        source_.refuse("suffix " + name);
-    }
-    source_.inform(stream_, "suffix " + name + " is skipped");
-    const std::string_view noun = kSuffixTargets[to_size(kind % kRealSuffix)];
-    for (Index k = 0; k < n; ++k)
-    {
-        source_.line("a suffix");
-        source_.expect(2);
-        source_.index(suffix_size(kind), noun);
-        if (kind >= kRealSuffix)
-        {
-            source_.real();
-        }
-        else
-        {
-            source_.integer();
-        }
-    }
-}
-
-Index NlReader::suffix_size(Offset kind) const noexcept
-{
-    const std::array sizes{header_.variables, header_.constraints, header_.objectives, Index{1}};
-    return sizes[to_size(kind % kRealSuffix)];
 }
 
 void NlReader::skip_guesses(Index size, std::string_view noun, std::string_view notice)
