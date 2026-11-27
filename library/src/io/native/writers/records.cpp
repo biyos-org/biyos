@@ -3,6 +3,7 @@
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "io/native/parts.hpp"
+#include "io/native/utils/words.hpp"
 #include "model/model.hpp"
 
 #include <ostream>
@@ -14,14 +15,9 @@ namespace biyos::native
 namespace
 {
 
-template <typename Kind> int enum_value(Kind kind) noexcept
-{
-    return static_cast<int>(kind);
-}
-
 void print_variable(std::ostream &output, const Variable &variable)
 {
-    output << enum_value(variable.kind) << ' ' << text_of(variable.lower) << ' '
+    output << word_of(variable.kind, kVariableWords) << ' ' << text_of(variable.lower) << ' '
            << text_of(variable.upper) << '\n';
 }
 
@@ -33,9 +29,9 @@ void print_constraint(std::ostream &output, const Constraint &constraint)
 
 void print_objective(std::ostream &output, const Objective &objective)
 {
-    output << objective.function << ' ' << enum_value(objective.sense) << ' ' << objective.priority
-           << ' ' << text_of(objective.weight) << ' ' << text_of(objective.absolute) << ' '
-           << text_of(objective.relative) << '\n';
+    output << objective.function << ' ' << word_of(objective.sense, kSenseWords) << ' '
+           << objective.priority << ' ' << text_of(objective.weight) << ' '
+           << text_of(objective.absolute) << ' ' << text_of(objective.relative) << '\n';
 }
 
 void print_indicator(std::ostream &output, const Indicator &indicator)
@@ -67,7 +63,7 @@ void print_items(std::ostream &output, Part part, std::span<const Item> items, P
 void print_set(const Model &model, std::ostream &output, Index set)
 {
     const std::span<const Member> members = model.members(set, set + 1);
-    output << enum_value(model.kind_of_special_ordered_set(set)) << ' ' << members.size();
+    output << word_of(model.kind_of_special_ordered_set(set), kSetWords) << ' ' << members.size();
     for (const Member &member : members)
     {
         output << ' ' << member.variable << ' ' << text_of(member.weight);
@@ -79,7 +75,8 @@ void print_cone(const Model &model, std::ostream &output, Index cone)
 {
     const std::span<const Index> functions = model.cone_functions(cone, cone + 1);
     const std::span<const Real> parameters = model.cone_parameters(cone, cone + 1);
-    output << enum_value(model.cone_kinds(cone, cone + 1).front()) << ' ' << functions.size();
+    const ConeKind kind = model.cone_kinds(cone, cone + 1).front();
+    output << word_of(kind, kConeWords) << ' ' << functions.size();
     for (const Index function : functions)
     {
         output << ' ' << function;

@@ -3,6 +3,7 @@
 #include "core/numbers.hpp"
 #include "io/native/utils/body.hpp"
 #include "io/native/utils/record.hpp"
+#include "io/native/utils/words.hpp"
 #include "model/model.hpp"
 
 #include <vector>
@@ -16,7 +17,7 @@ namespace
 Variable variable_of(Record record)
 {
     const Variable variable{
-        .kind = kind_of(record, kVariableKinds, "variable kind"),
+        .kind = lookup(record, kVariableWords, "a variable kind"),
         .lower = record.real(),
         .upper = record.real(),
     };
@@ -39,7 +40,7 @@ Objective objective_of(Record record)
 {
     const Objective objective{
         .function = record.index(),
-        .sense = kind_of(record, kSenses, "objective sense"),
+        .sense = lookup(record, kSenseWords, "an objective sense"),
         .priority = record.integer(),
         .weight = record.real(),
         .absolute = record.real(),
@@ -93,7 +94,7 @@ struct Sets
 
 void add_set(Record record, Sets &sets)
 {
-    sets.kinds.push_back(kind_of(record, kSpecialOrderedSetKinds, "set kind"));
+    sets.kinds.push_back(lookup(record, kSetWords, "a set kind"));
     const Offset count = record.entries(2);
     for (Offset k = 0; k < count; ++k)
     {
@@ -114,7 +115,7 @@ struct Cones
 
 void add_cone(Record record, Cones &cones)
 {
-    cones.kinds.push_back(kind_of(record, kConeKinds, "cone kind"));
+    cones.kinds.push_back(lookup(record, kConeWords, "a cone kind"));
     const Offset members = record.entries(1);
     for (Offset k = 0; k < members; ++k)
     {

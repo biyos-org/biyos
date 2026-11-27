@@ -5,6 +5,7 @@
 #include "expr/forms/terms.hpp"
 #include "expr/graph/points.hpp"
 #include "io/native/parts.hpp"
+#include "io/native/utils/words.hpp"
 #include "model/expressions/nodes.hpp"
 #include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
@@ -48,7 +49,7 @@ std::size_t print_entry(std::ostream &output,
 {
     const int code = encoding.codes[entry];
     const Offset argument = encoding.arguments[entry];
-    output << code << ' ' << argument;
+    output << word_of(code, kOperatorWords) << ' ' << argument;
     const std::size_t end = at + to_size(n_values(code, argument));
     for (; at < end; ++at)
     {

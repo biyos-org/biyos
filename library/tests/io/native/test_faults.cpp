@@ -54,7 +54,7 @@ TEST(NativeTest, Ends)
 {
     EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 0"})),
               bad_line(2, "the file ends without END"));
-    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 2", "1 0 1"})),
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 2", "cont 0 1"})),
               bad_line(3, "the file ends inside VARIABLES"));
     EXPECT_EQ(native_fault(text({"BIYOS 1", "END", "", "END"})), bad_line(4, "a line follows END"));
 }
@@ -63,29 +63,51 @@ TEST(NativeTest, Fields)
 {
     EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES -1", "END"})),
               bad_line(2, "'-1' is not a count"));
-    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "1 0", "END"})),
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "cont 0", "END"})),
               bad_line(3, "the line ends early"));
-    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "1 0 1 1", "END"})),
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "cont 0 1 1", "END"})),
               bad_line(3, "the line holds too many fields"));
-    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "9 0 1", "END"})),
-              bad_line(3, "variable kind 9 is unknown"));
-    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "1 0 1x", "END"})),
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "cont 0 1x", "END"})),
               bad_line(3, "'1x' is not a number"));
     EXPECT_EQ(native_fault(text({"BIYOS 1", "FUNCTIONS 1", "0", "CONSTRAINTS 1", "f 0 1", "END"})),
               bad_line(5, "'f' is not an index"));
-    EXPECT_EQ(native_fault(text({"BIYOS 1", "OBJECTIVES 1", "0 3 0 1 0 0", "END"})),
-              bad_line(3, "objective sense 3 is unknown"));
+}
+
+TEST(NativeTest, Words)
+{
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "real 0 1", "END"})),
+              bad_line(3, "'real' is not a variable kind"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "1 0 1", "END"})),
+              bad_line(3, "'1' is not a variable kind"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "sin 0 1", "END"})),
+              bad_line(3, "'sin' is not a variable kind"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "VARIABLES 1", "CONT 0 1", "END"})),
+              bad_line(3, "'CONT' is not a variable kind"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "OBJECTIVES 1", "0 1 0 1 0 0", "END"})),
+              bad_line(3, "'1' is not an objective sense"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "OBJECTIVES 1", "0 cont 0 1 0 0", "END"})),
+              bad_line(3, "'cont' is not an objective sense"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "SETS 1", "soc 0", "END"})),
+              bad_line(3, "'soc' is not a set kind"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "CONES 1", "one 0 0", "END"})),
+              bad_line(3, "'one' is not a cone kind"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "EXPRESSIONS 1", "0 1", "9 1", "END"})),
+              bad_line(4, "'9' is not an operator"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "EXPRESSIONS 1", "0 1", "sine 1", "END"})),
+              bad_line(4, "'sine' is not an operator"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "EXPRESSIONS 1", "0 1", "semicont 1", "END"})),
+              bad_line(4, "'semicont' is not an operator"));
 }
 
 TEST(NativeTest, Entries)
 {
     EXPECT_EQ(native_fault(text({"BIYOS 1", "PIECEWISE 1", "3 0 0 1 1", "END"})),
               bad_line(3, "the line holds fewer than 3 entries"));
-    EXPECT_EQ(native_fault(text({"BIYOS 1", "SETS 1", "1 2 0 1", "END"})),
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "SETS 1", "one 2 0 1", "END"})),
               bad_line(3, "the line holds fewer than 2 entries"));
-    EXPECT_EQ(native_fault(text({"BIYOS 1", "EXPRESSIONS 1", "0 1", "1 0", "END"})),
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "EXPRESSIONS 1", "0 1", "const 0", "END"})),
               bad_line(4, "the line ends early"));
-    EXPECT_EQ(native_fault(text({"BIYOS 1", "EXPRESSIONS 1", "0 2", "1 0 1"})),
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "EXPRESSIONS 1", "0 2", "const 0 1"})),
               bad_line(4, "the file ends inside EXPRESSIONS"));
 }
 
@@ -111,7 +133,7 @@ TEST(NativeTest, ModelFaults)
 {
     EXPECT_EQ(native_fault(text({"BIYOS 1", "CONSTRAINTS 1", "0 0 1", "END"})),
               bad_line(2, "constraint 0: function 0 is unknown"));
-    EXPECT_EQ(
-        native_fault(text({"BIYOS 1", "VARIABLES 1", "1 0 1", "NAMES variable 1", "3 x", "END"})),
-        bad_line(4, "variable 3: unknown"));
+    EXPECT_EQ(native_fault(
+                  text({"BIYOS 1", "VARIABLES 1", "cont 0 1", "NAMES variable 1", "3 x", "END"})),
+              bad_line(4, "variable 3: unknown"));
 }

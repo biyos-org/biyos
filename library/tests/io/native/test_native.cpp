@@ -49,9 +49,9 @@ constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr std::string_view kSmallNativeFile = R"(BIYOS 1
 NAME small\20model
 VARIABLES 3
-1 -0 2.5
-2 0 1
-3 -inf 3
+cont -0 2.5
+bin 0 1
+int -inf 3
 FUNCTIONS 3
 1.5
 0
@@ -64,18 +64,18 @@ PIECEWISE 1
 2 0 0 1 2
 EXPRESSIONS 2
 0 5
-2 0
-9 1
-32 1
-33 2
-3 2 0 1 -2
+var 0
+exp 1
+keep 1
+ref 2
+sum 2 0 1 -2
 1 2
-33 2
-31 0
+ref 2
+pwl 0
 CONSTRAINTS 1
 0 -1 1
 OBJECTIVES 1
-1 1 0 1 0 0
+1 min 0 1 0 0
 NAMES variable 2
 0 x
 2 a\5Cb
@@ -86,9 +86,9 @@ END
 
 constexpr std::string_view kInterleavedNativeFile = R"(BIYOS 1
 VARIABLES 3
-1 -0 2.5
-2 0 1
-3 -inf 3
+cont -0 2.5
+bin 0 1
+int -inf 3
 FUNCTIONS 3
 1.5
 0
@@ -420,7 +420,7 @@ TEST(NativeTest, Numbers)
         {.kind = biyos::VariableKind::SemiContinuous, .lower = 5e-324, .upper = kInfinity},
     };
     const Model model = built(parts);
-    EXPECT_NE(native_text(model).find("1 -0 0.1\n1 -inf 1e+300\n4 5e-324 inf\n"),
+    EXPECT_NE(native_text(model).find("cont -0 0.1\ncont -inf 1e+300\nsemicont 5e-324 inf\n"),
               std::string::npos);
     expect_round(model);
 }
