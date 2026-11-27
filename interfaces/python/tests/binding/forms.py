@@ -340,3 +340,5 @@ def members(mdl: Model) -> None:
         tuple[list[SpecialOrderedSetKind], list[int], Variables, list[float]],
     )
     assert_type(mdl.getcone(), tuple[list[ConeKind], list[int], Functions])
+    assert_type(mdl.getgpat(), tuple[list[int], Variables])
+    assert_type(mdl.gethpat(), tuple[list[int], Variables])

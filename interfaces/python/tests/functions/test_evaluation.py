@@ -5,6 +5,7 @@ import pytest
 
 import biyos
 from biyos import exp, piecewise, sin
+from listed import indexed
 
 CALLBACK = -300
 BUSY = -202
@@ -164,8 +165,8 @@ def test_product(model, x):
 
 def test_patterns(model):
     build(model)
-    assert model.getgpat() == ([4, 3, 1], [0, 1, 2, 3, 1, 2, 3, 1])
-    assert model.gethpat() == ([2, 2, 1, 1], [0, 3, 1, 2, 2, 3])
+    assert indexed(model.getgpat()) == ([4, 3, 1], [0, 1, 2, 3, 1, 2, 3, 1])
+    assert indexed(model.gethpat()) == ([2, 2, 1, 1], [0, 3, 1, 2, 2, 3])
     assert model.getngpat() == 8
     assert model.getnhpat() == 6
     funs = model.getobj()[0]
@@ -174,11 +175,12 @@ def test_patterns(model):
     assert model.getngpat(range(1, 3)) == 4
     assert model.getnhpat([3, 1]) == 3
     assert model.getnhpat(range(2, 4)) == 2
-    assert model.getgpat([2, 0, 2]) == ([1, 4, 1], [1, 0, 1, 2, 3, 1])
-    assert model.getgpat(funs) == model.getgpat(range(2))
-    assert model.getgpat(range(1, 3)) == ([3, 1], [1, 2, 3, 1])
-    assert model.gethpat([3, 1]) == ([1, 2], [3, 1, 2])
-    assert model.gethpat(range(4)) == model.gethpat([0, 1, 2, 3])
+    assert indexed(model.getgpat([2, 0, 2])) == ([1, 4, 1], [1, 0, 1, 2, 3, 1])
+    assert indexed(model.getgpat(funs)) == indexed(model.getgpat(range(2)))
+    assert indexed(model.getgpat(range(1, 3))) == ([3, 1], [1, 2, 3, 1])
+    assert indexed(model.gethpat([3, 1])) == ([1, 2], [3, 1, 2])
+    columns = indexed(model.gethpat([0, 1, 2, 3]))
+    assert indexed(model.gethpat(range(4))) == columns
     assert len(model.evalg(POINTS[0])) == 8
     assert len(model.evalh(POINTS[0], WEIGHTS)) == 6
 
@@ -296,6 +298,6 @@ def test_empty(model):
     assert model.evalg([]) == []
     assert model.evalh([], []) == []
     assert model.evalhv([], [], []) == []
-    assert model.getgpat() == ([], [])
-    assert model.gethpat() == ([], [])
+    assert indexed(model.getgpat()) == ([], [])
+    assert indexed(model.gethpat()) == ([], [])
     assert model.getngpat() == model.getnhpat() == 0

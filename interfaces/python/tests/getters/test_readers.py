@@ -35,6 +35,8 @@ TERMS = [
 MEMBERS = [
     ("sos", "sos", "sosvar", ("knd", "cnt", "var", "coef")),
     ("cone", "cone", "conefun", ("knd", "cnt", "fun")),
+    ("gpat", "fun", "gpat", ("cnt", "var")),
+    ("hpat", "var", "hpat", ("cnt", "var")),
 ]
 
 RECORDS = [

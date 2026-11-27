@@ -5533,8 +5533,11 @@ class Model:
 
     def getgpat(
         self, idx: Sequence[Index | Function] | Functions | None = None
-    ) -> tuple[list[Offset], list[Index]]:
+    ) -> tuple[list[Offset], Variables]:
         """Read the Jacobian pattern of functions.
+
+        The variables come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -5548,7 +5551,7 @@ class Model:
             The number of variables in the pattern of each function.
         var
             The variables of each function's pattern, sorted, those of
-            ``idx[0]`` first.
+            ``idx[0]`` first, as a ``Variables`` block.
 
         See Also
         --------
@@ -5586,8 +5589,11 @@ class Model:
 
     def gethpat(
         self, idx: Sequence[Index | Variable] | Variables | None = None
-    ) -> tuple[list[Offset], list[Index]]:
+    ) -> tuple[list[Offset], Variables]:
         """Read the Hessian pattern in columns of its lower triangle.
+
+        The variables come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -5601,7 +5607,7 @@ class Model:
             The number of rows in each column.
         var
             The rows of each column, sorted, each at least the column's
-            variable, those of ``idx[0]`` first.
+            variable, those of ``idx[0]`` first, as a ``Variables`` block.
 
         See Also
         --------
@@ -5904,13 +5910,13 @@ class Model:
         name: str,
         family: type[Block[View]],
         idx: Sequence[SupportsIndex] | Block[View],
-    ) -> tuple[list[Offset], list[Index]]:
+    ) -> tuple[list[Offset], Variables]:
         nnz = self._count(f"BIYOS_getn{name}", family, idx)
         cnt = (c_offset * len(idx))()
-        var = (c_index * nnz)()
+        var = index_view(nnz)
         chosen = self._chosen(f"BIYOS_get{name}", family, idx)
-        self._call(*chosen, nnz, cnt, var)
-        return list(cnt), list(var)
+        self._call(*chosen, nnz, cnt, index_array(var))
+        return list(cnt), Variables(self, var, self._gen)
 
     def _point(self, x: Sequence[Real]) -> Array[c_real] | None:
         return doubles("x", x, self.getnvar())
