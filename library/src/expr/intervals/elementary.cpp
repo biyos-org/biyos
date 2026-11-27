@@ -251,6 +251,15 @@ Interval atan(Interval value) noexcept
     return monotone(kAtan, value);
 }
 
+Interval atan2(Interval y, Interval x) noexcept
+{
+    if (y.is_empty() || x.is_empty())
+    {
+        return Interval::empty();
+    }
+    return {-kPiUp, kPiUp};
+}
+
 Interval sinh(Interval value) noexcept
 {
     return monotone(kSinh, value);

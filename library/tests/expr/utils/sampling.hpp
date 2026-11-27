@@ -36,6 +36,7 @@ struct Check
     int &reported;
 };
 
+std::vector<int> sampled_codes();
 Parameters parameters_of(Operator op, Engine &engine);
 Graph operator_graph(Operator op, const Parameters &parameters);
 Box box_of(Engine &engine);

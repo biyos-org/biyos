@@ -172,12 +172,13 @@ int random_code(Engine &engine)
     {
         return below(engine, 2) == 0 ? BIYOS_OP_SUM : BIYOS_OP_PROD;
     }
-    return BIYOS_OP_NEG + below(engine, BIYOS_OP_ERF - BIYOS_OP_NEG + 1);
+    const int code = BIYOS_OP_NEG + below(engine, BIYOS_OP_ERF - BIYOS_OP_NEG + 2);
+    return code > BIYOS_OP_ERF ? BIYOS_OP_ATAN2 : code;
 }
 
 int arity(Engine &engine, int code)
 {
-    if (code == BIYOS_OP_DIV || code == BIYOS_OP_POW)
+    if (code == BIYOS_OP_DIV || code == BIYOS_OP_POW || code == BIYOS_OP_ATAN2)
     {
         return 2;
     }

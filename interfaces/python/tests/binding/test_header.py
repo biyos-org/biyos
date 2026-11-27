@@ -55,6 +55,7 @@ OPERATORS = {
     "BIYOS_OP_PWL": biyos.Operator.PIECEWISE_LINEAR,
     "BIYOS_OP_KEEP": biyos.Operator.KEEP,
     "BIYOS_OP_REF": biyos.Operator.REFERENCE,
+    "BIYOS_OP_ATAN2": biyos.Operator.ATAN2,
 }
 
 FORMATS = {

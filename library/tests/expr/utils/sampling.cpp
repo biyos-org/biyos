@@ -202,6 +202,17 @@ void expect_point(const Check &check, const Point &point)
 
 }
 
+std::vector<int> biyos::test::sampled_codes()
+{
+    std::vector<int> codes;
+    for (int code = BIYOS_OP_CONST; code <= BIYOS_OP_ERF; ++code)
+    {
+        codes.push_back(code);
+    }
+    codes.push_back(BIYOS_OP_ATAN2);
+    return codes;
+}
+
 biyos::test::Parameters biyos::test::parameters_of(Operator op, Engine &engine)
 {
     Parameters parameters{};
@@ -245,6 +256,7 @@ Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
         break;
     case Operator::Division:
     case Operator::Power:
+    case Operator::Atan2:
         graph.add(op, two);
         break;
     case Operator::Max:

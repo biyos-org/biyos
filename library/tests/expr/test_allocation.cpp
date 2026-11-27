@@ -389,6 +389,7 @@ Graph every_operator()
     graph.add(Operator::ConstantPower, 2.0, one);
     graph.add(Operator::SignPower, 1.5, one);
     graph.add(Operator::Power, x);
+    graph.add(Operator::Atan2, x);
     graph.add(Operator::Max, x);
     graph.add(Operator::Min, x);
     for (const Operator op : kUnary)

@@ -96,7 +96,7 @@ Real entropy_of(Real value)
 
 Real signed_power(Real value, Real exponent)
 {
-    return value < 0.0 ? -std::pow(-value, exponent) : std::pow(value, exponent);
+    return std::copysign(std::pow(std::fabs(value), exponent), value);
 }
 
 std::vector<Real> cmath_values(const Point &point)
@@ -136,6 +136,7 @@ std::vector<Real> cmath_values(const Point &point)
         std::copysign(std::pow(std::fabs(z), 1.5), z),
         std::erf(z),
         y < 0.25 ? 2.0 - 2.0 * (y + 1.0) : -0.5 + 1.2 * (y - 0.25),
+        std::atan2(z, x),
     };
 }
 
@@ -236,6 +237,8 @@ Real Reference::compute(Offset node)
     case Operator::PiecewiseLinear:
         return value_at(graph_.points().piecewise_linear(graph_.piecewise_linear(node)),
                         child(node, 0));
+    case Operator::Atan2:
+        return std::atan2(child(node, 0) + 0.0, child(node, 1) + 0.0);
     }
     return kNan;
 }

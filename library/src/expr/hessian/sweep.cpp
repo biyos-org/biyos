@@ -181,6 +181,7 @@ void motion(const Instruction &instruction,
         return;
     case Operator::Division:
     case Operator::Power:
+    case Operator::Atan2:
         add(lift, tangent(lift, instruction.first), row(partials, 0, lanes));
         add(lift, tangent(lift, instruction.second), row(partials, 1, lanes));
         return;
@@ -409,6 +410,7 @@ void step(const Instruction &instruction,
         return;
     case Operator::Division:
     case Operator::Power:
+    case Operator::Atan2:
         both(instruction.first, row(partials, 0, lanes), row(curves, 0, lanes), trail);
         both(instruction.second, row(partials, 1, lanes), row(curves, 1, lanes), trail);
         return;

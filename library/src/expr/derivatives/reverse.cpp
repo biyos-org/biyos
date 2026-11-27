@@ -173,6 +173,7 @@ void step(const Instruction &instruction,
         return;
     case Operator::Division:
     case Operator::Power:
+    case Operator::Atan2:
         add(slot(trail, instruction.first), partial(partials, 0, trail), trail);
         add(slot(trail, instruction.second), partial(partials, 1, trail), trail);
         return;

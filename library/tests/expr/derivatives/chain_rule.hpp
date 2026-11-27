@@ -41,7 +41,7 @@ class ChainRule
         sizes_[at(root)] = 1.0;
         for (Offset node = root; node >= 0; --node)
         {
-            if (reached_[at(node)] && std::fpclassify(sizes_[at(node)]) != FP_ZERO)
+            if (reached_[at(node)] && carries(node))
             {
                 spread(node);
             }
@@ -140,6 +140,8 @@ class ChainRule
         case Operator::PiecewiseLinear:
             return biyos::value_at(graph_.points().piecewise_linear(graph_.piecewise_linear(node)),
                                    x);
+        case Operator::Atan2:
+            return std::atan2(x + 0.0, child(node, 1) + 0.0);
         }
         return (std::numeric_limits<Real>::quiet_NaN)();
     }
@@ -208,6 +210,12 @@ class ChainRule
         }
         const Wide base = std::fpclassify(x) == FP_ZERO ? 0.0L : x;
         return exponent * std::pow(base, exponent - 1.0L);
+    }
+
+    static Wide angle_slope(Wide y, Wide x, std::size_t k)
+    {
+        const Wide radius = x * x + y * y;
+        return k == 0 ? x / radius : -y / radius;
     }
 
     Wide exponent_slope(Offset node, Wide x) const
@@ -280,6 +288,8 @@ class ChainRule
         case Operator::PiecewiseLinear:
             return biyos::slope_at(graph_.points().piecewise_linear(graph_.piecewise_linear(node)),
                                    child(node, 0));
+        case Operator::Atan2:
+            return angle_slope(x, child(node, 1), k);
         }
         return 0.0L;
     }
@@ -295,6 +305,10 @@ class ChainRule
 
     Real bound(Offset node, Real partial) const
     {
+        if (std::isnan(partial))
+        {
+            return 0.0;
+        }
         const Real x = child(node, 0);
         const Operator op = graph_.op(node);
         if (op == Operator::Cosh)
@@ -311,6 +325,12 @@ class ChainRule
             return std::fabs(partial) * (1.0 + (1.0 + x * x) / std::fabs(1.0 - x * x));
         }
         return std::fabs(partial);
+    }
+
+    bool carries(Offset node) const
+    {
+        return std::fpclassify(sizes_[at(node)]) != FP_ZERO ||
+               std::fpclassify(adjoints_[at(node)]) != FP_ZERO;
     }
 
     bool passed(Offset node, std::size_t k) const

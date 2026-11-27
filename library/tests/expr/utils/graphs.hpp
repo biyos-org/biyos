@@ -29,7 +29,7 @@ constexpr std::array kUnary{
     Operator::Acosh,    Operator::Atanh, Operator::Entropy, Operator::Erf,
 };
 constexpr std::array kPowers{Operator::ConstantPower, Operator::SignPower};
-constexpr std::array kBinary{Operator::Division, Operator::Power};
+constexpr std::array kBinary{Operator::Division, Operator::Power, Operator::Atan2};
 constexpr std::array kListed{Operator::Max, Operator::Min};
 constexpr std::array kExponents{2.0, 3.0, 0.5, -1.0, 1.5};
 constexpr std::array kKinks{-1.0, 0.25, 1.5};
@@ -163,6 +163,7 @@ inline std::vector<Offset> every_operator(Graph &graph)
         sign_power(graph, z, 1.5),
         unary(graph, Operator::Erf, z),
         piecewise(graph, pwl, y),
+        binary(graph, Operator::Atan2, z, x),
     };
 }
 
@@ -225,7 +226,10 @@ inline Offset grow(Graph &graph, Random &random)
     case 2:
         return powered(graph, random, children[0]);
     case 3:
-        return binary(graph, kBinary[random.below(2)], children.front(), children.back());
+        return binary(graph,
+                      kBinary[random.below(kBinary.size())],
+                      children.front(),
+                      children.back());
     case 4:
         return sum(graph, random, number, children);
     case 5:

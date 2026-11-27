@@ -2461,6 +2461,7 @@ value BIYOS_OP_NODE No operator: in postfix, a node the model already holds, nam
 value BIYOS_OP_PWL $p(e)$, the piecewise linear function through the points of a pwl the model holds, extended past both ends by its end segments. At a breakpoint its slope is the one on the right.
 value BIYOS_OP_KEEP No operator: in postfix, the operand before it kept as a node of its own.
 value BIYOS_OP_REF No operator: in postfix, the node kept by an earlier `BIYOS_OP_KEEP` entry of the same call, named by that entry's position.
+value BIYOS_OP_ATAN2 $\operatorname{atan2}(e_1, e_2)$, the angle of the point $(e_2, e_1)$, in $(-\pi, \pi]$. A zero counts as $+0$ whatever its sign, so the angle is $\pi$ on the whole negative $e_2$ axis and 0 at the origin.
 since 0.1.0
 
 function BIYOS_addvarnode
