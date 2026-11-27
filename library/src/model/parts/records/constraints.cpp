@@ -83,7 +83,7 @@ void Model::set_constraints(std::span<const Index> indices, std::span<const Cons
 
 std::vector<Index> Model::delete_constraints(std::span<const Index> indices)
 {
-    std::vector<Index> map = renumbering(kNoun, n_constraints(), indices);
+    std::vector<Index> map = renumbering(Family::Constraint, n_constraints(), indices);
     keep(constraints_, map);
     renumber_tolerances(Family::Constraint, map);
     renumber_names(Family::Constraint, map);

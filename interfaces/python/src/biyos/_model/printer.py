@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import NamedTuple, Protocol, TypeGuard
+from typing import NamedTuple, Protocol, TypeGuard, cast
 
 from biyos._convert.numbers import Real
 from biyos._model.operators import Operator
@@ -11,10 +11,23 @@ class _Node(Protocol):
     _values: tuple[Real, ...]
 
 
-Piece = str | tuple[object, int]
+class _Sense(Protocol):
+    value: str
+
+
+class _Compared(Protocol):
+    _lhs: object
+    _sense: _Sense
+    _rhs: object
+
+
+Place = Callable[[object, int], list["Piece"]]
+Entry = tuple[object, int, Place]
+Piece = str | tuple[object, int] | Entry
 Form = Callable[[_Node, "_Row"], list[Piece]]
 
 _SUM, _PRODUCT, _UNARY, _POWER, _ATOM = range(1, 6)
+_ANY, _ALL, _NOT = range(1, 4)
 _PLUS = " + "
 _MINUS = " - "
 _SIGN = "-"
@@ -30,15 +43,34 @@ class _Row(NamedTuple):
 
 
 def printed(tree: object) -> str:
+    return _walked(tree, _placed)
+
+
+def printed_condition(tree: object) -> str:
+    return _walked(tree, _logic)
+
+
+def _walked(tree: object, place: Place) -> str:
     out: list[str] = []
-    stack: list[Piece] = [(tree, 0)]
+    stack: list[str | Entry] = [(tree, 0, place)]
     while stack:
         item = stack.pop()
         if isinstance(item, str):
             out.append(item)
         else:
-            stack.extend(reversed(_placed(*item)))
+            stack.extend(_entries(item))
     return "".join(out)
+
+
+def _entries(item: Entry) -> list[str | Entry]:
+    tree, need, place = item
+    return [_entry(piece, place) for piece in reversed(place(tree, need))]
+
+
+def _entry(piece: Piece, place: Place) -> str | Entry:
+    if isinstance(piece, str) or len(piece) == 3:
+        return piece
+    return (piece[0], piece[1], place)
 
 
 def _placed(item: object, need: int) -> list[Piece]:
@@ -50,6 +82,30 @@ def _placed(item: object, need: int) -> list[Piece]:
     if _level(node) < need:
         return ["(", *pieces, ")"]
     return pieces
+
+
+def _logic(item: object, need: int) -> list[Piece]:
+    if not _node(item):
+        return _compared(cast(_Compared, item), need)
+    row = _LOGIC[item._op]
+    pieces = row.form(item, row)
+    if row.level < need:
+        return ["(", *pieces, ")"]
+    return pieces
+
+
+def _compared(item: _Compared, need: int) -> list[Piece]:
+    sense = f" {item._sense.value} "
+    pieces: list[Piece] = [(item._lhs, 0, _placed), sense, _side(item._rhs)]
+    if need:
+        return ["(", *pieces, ")"]
+    return pieces
+
+
+def _side(value: object) -> Piece:
+    if isinstance(value, float):
+        return _text(value)
+    return (value, 0, _placed)
 
 
 def _node(value: object) -> TypeGuard[_Node]:
@@ -186,6 +242,12 @@ def _piecewise(node: _Node, row: _Row) -> list[Piece]:
     return _written(node, row, lead)
 
 
+def _ifelse(node: _Node, row: _Row) -> list[Piece]:
+    cond = getattr(node, "_cond", None)
+    lead: list[Piece] = [] if cond is None else [(cond, 0, _logic)]
+    return _written(node, row, lead)
+
+
 def _written(
     node: _Node, row: _Row, lead: Sequence[Piece] = ()
 ) -> list[Piece]:
@@ -244,5 +306,11 @@ _ROWS = {
     Operator.AND: _Row(_written, "and"),
     Operator.OR: _Row(_written, "or"),
     Operator.NOT: _Row(_written, "not"),
-    Operator.IF: _Row(_written, "if"),
+    Operator.IF: _Row(_ifelse, "ifelse"),
+}
+
+_LOGIC = {
+    Operator.OR: _Row(_infix, " | ", _ANY, _ANY, _ALL),
+    Operator.AND: _Row(_infix, " & ", _ALL, _ALL, _NOT),
+    Operator.NOT: _Row(_prefix, "~", _NOT, right=_NOT),
 }

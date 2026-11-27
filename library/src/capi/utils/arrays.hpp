@@ -34,7 +34,7 @@ template <typename T> std::span<T> span_of(T *items, std::size_t size, std::stri
 template <typename T>
 std::span<const T> listed(BIYOS_index n,
                           const T *items,
-                          std::string_view name = "idx",
+                          std::string_view name,
                           std::string_view count = "n")
 {
     return span_of(items, length(n, count), name);

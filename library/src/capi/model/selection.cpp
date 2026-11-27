@@ -16,20 +16,20 @@ namespace biyos::capi
 
 std::span<const Index> selected(Family family, Index total, List list)
 {
-    return selected(noun_of(family), total, list);
+    return selected(noun_of(family), word_of(family), total, list);
 }
 
 std::vector<Index> selected(Family family, Index total, Range range)
 {
-    return selected(noun_of(family), total, range);
+    return selected(noun_of(family), word_of(family), total, range);
 }
 
-std::span<const Index> selected(std::string_view, Index, List list)
+std::span<const Index> selected(std::string_view, std::string_view word, Index, List list)
 {
-    return listed(list.n, list.indices);
+    return listed(list.n, list.indices, word);
 }
 
-std::vector<Index> selected(std::string_view noun, Index total, Range range)
+std::vector<Index> selected(std::string_view noun, std::string_view, Index total, Range range)
 {
     check_span(noun, range.start, range.stop, total);
     std::vector<Index> indices(to_size(range.stop - range.start));
