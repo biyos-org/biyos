@@ -2752,7 +2752,7 @@ class Model:
     @overload
     def setconbnd(
         self,
-        idx: One[Constraint],
+        con: One[Constraint],
         lb: Real | None = None,
         ub: Real | None = None,
     ) -> None: ...
@@ -2760,14 +2760,14 @@ class Model:
     @overload
     def setconbnd(
         self,
-        idx: Many[Constraint, Constraints],
+        con: Many[Constraint, Constraints],
         lb: Sequence[Real] | None = None,
         ub: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setconbnd(
         self,
-        idx: Selection[Constraint, Constraints],
+        con: Selection[Constraint, Constraints],
         lb: Real | Sequence[Real] | None = None,
         ub: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -2775,7 +2775,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        con
             The constraints.
             An index or a view stands for one constraint, and each other
             argument is then a scalar.
@@ -2787,7 +2787,7 @@ class Model:
         BIYOS_setconbndsp
         BIYOS_setconbndrg
         """
-        one, n, chosen = self._selected("BIYOS_setconbnd", Constraints, idx)
+        one, n, chosen = self._selected("BIYOS_setconbnd", Constraints, con)
         arrays = (
             doubles("lb", lb, n, one),
             doubles("ub", ub, n, one),
@@ -2795,21 +2795,21 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getconbnd(self, idx: One[Constraint]) -> tuple[Real, Real]: ...
+    def getconbnd(self, con: One[Constraint]) -> tuple[Real, Real]: ...
 
     @overload
     def getconbnd(
-        self, idx: Many[Constraint, Constraints]
+        self, con: Many[Constraint, Constraints]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getconbnd(
-        self, idx: Selection[Constraint, Constraints]
+        self, con: Selection[Constraint, Constraints]
     ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of constraints.
 
         Parameters
         ----------
-        idx
+        con
             The constraints, in any order, any of them more than once.
             An index or a view stands for one constraint, and each result is
             then a scalar.
@@ -2827,13 +2827,13 @@ class Model:
         BIYOS_getconbndrg
         """
         bounds = (c_real, c_real)
-        lb, ub = self._getlist("BIYOS_getconbnd", Constraints, idx, *bounds)
+        lb, ub = self._getlist("BIYOS_getconbnd", Constraints, con, *bounds)
         return lb, ub
 
     @overload
     def setcontol(
         self,
-        idx: One[Constraint],
+        con: One[Constraint],
         atol: Real | None = None,
         rtol: Real | None = None,
     ) -> None: ...
@@ -2841,14 +2841,14 @@ class Model:
     @overload
     def setcontol(
         self,
-        idx: Many[Constraint, Constraints],
+        con: Many[Constraint, Constraints],
         atol: Sequence[Real] | None = None,
         rtol: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setcontol(
         self,
-        idx: Selection[Constraint, Constraints],
+        con: Selection[Constraint, Constraints],
         atol: Real | Sequence[Real] | None = None,
         rtol: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -2861,7 +2861,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        con
             The constraints.
             An index or a view stands for one constraint, and each other
             argument is then a scalar.
@@ -2874,7 +2874,7 @@ class Model:
         BIYOS_setcontolsp
         BIYOS_setcontolrg
         """
-        one, n, chosen = self._selected("BIYOS_setcontol", Constraints, idx)
+        one, n, chosen = self._selected("BIYOS_setcontol", Constraints, con)
         arrays = (
             doubles("atol", atol, n, one),
             doubles("rtol", rtol, n, one),
@@ -2883,16 +2883,16 @@ class Model:
 
     @overload
     def getcontol(
-        self, idx: One[Constraint]
+        self, con: One[Constraint]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getcontol(
-        self, idx: Many[Constraint, Constraints]
+        self, con: Many[Constraint, Constraints]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getcontol(
-        self, idx: Selection[Constraint, Constraints]
+        self, con: Selection[Constraint, Constraints]
     ) -> (
         tuple[Real | None, Real | None]
         | tuple[list[Real | None], list[Real | None]]
@@ -2901,7 +2901,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        con
             The constraints, in any order, any of them more than once.
             An index or a view stands for one constraint, and each result is
             then a scalar.
@@ -2919,15 +2919,15 @@ class Model:
         BIYOS_getcontolrg
         """
         pair = (c_real, c_real)
-        atol, rtol = self._getlist("BIYOS_getcontol", Constraints, idx, *pair)
+        atol, rtol = self._getlist("BIYOS_getcontol", Constraints, con, *pair)
         return _each(_or_none, atol), _each(_or_none, rtol)
 
-    def delcontol(self, idx: Selection[Constraint, Constraints]) -> None:
+    def delcontol(self, con: Selection[Constraint, Constraints]) -> None:
         """Return constraints to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
         ----------
-        idx
+        con
             The constraints that lose their tolerances.
             An index or a view stands for one constraint.
 
@@ -2936,7 +2936,7 @@ class Model:
         BIYOS_delcontolsp
         BIYOS_delcontolrg
         """
-        rows = picked(self, Constraints, idx)
+        rows = picked(self, Constraints, con)
         self._call(*self._chosen("BIYOS_delcontol", Constraints, rows))
 
     def getncon(self) -> Index:
@@ -2956,15 +2956,15 @@ class Model:
         return count.value
 
     @overload
-    def getcon(self, idx: One[Constraint]) -> tuple[Function, Real, Real]: ...
+    def getcon(self, con: One[Constraint]) -> tuple[Function, Real, Real]: ...
 
     @overload
     def getcon(
-        self, idx: Many[Constraint, Constraints] | None = None
+        self, con: Many[Constraint, Constraints] | None = None
     ) -> tuple[Functions, list[Real], list[Real]]: ...
 
     def getcon(
-        self, idx: Selection[Constraint, Constraints] | None = None
+        self, con: Selection[Constraint, Constraints] | None = None
     ) -> tuple[Function, Real, Real] | tuple[Functions, list[Real], list[Real]]:
         """Read the functions and bounds of constraints.
 
@@ -2973,7 +2973,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        con
             The constraints, in any order, any of them more than once; every
             constraint by default.
             An index or a view stands for one constraint, and each result is
@@ -2994,57 +2994,57 @@ class Model:
         BIYOS_getconsp
         BIYOS_getconrg
         """
-        every = range(self.getncon()) if idx is None else idx
+        every = range(self.getncon()) if con is None else con
         types = (Functions, c_real, c_real)
         found = self._getlist("BIYOS_getcon", Constraints, every, *types)
         functions, lower, upper = found
         return functions, lower, upper
 
     @overload
-    def setconname(self, idx: One[Constraint], name: str) -> None: ...
+    def setconname(self, con: One[Constraint], name: str) -> None: ...
 
     @overload
     def setconname(
-        self, idx: Many[Constraint, Constraints], name: Sequence[str]
+        self, con: Many[Constraint, Constraints], name: Sequence[str]
     ) -> None: ...
 
     def setconname(
-        self, idx: Selection[Constraint, Constraints], name: str | Sequence[str]
+        self, con: Selection[Constraint, Constraints], name: str | Sequence[str]
     ) -> None:
         """Name constraints of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        con
             The constraints to name.
             An index or a view stands for one constraint, and each other
             argument is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``con``.
 
         See Also
         --------
         BIYOS_setconnamesp
         BIYOS_setconnamerg
         """
-        self._setname("BIYOS_setconname", Constraints, idx, name)
+        self._setname("BIYOS_setconname", Constraints, con, name)
 
     @overload
-    def getconname(self, idx: One[Constraint]) -> str | None: ...
+    def getconname(self, con: One[Constraint]) -> str | None: ...
 
     @overload
     def getconname(
-        self, idx: Many[Constraint, Constraints]
+        self, con: Many[Constraint, Constraints]
     ) -> list[str | None]: ...
 
     def getconname(
-        self, idx: Selection[Constraint, Constraints]
+        self, con: Selection[Constraint, Constraints]
     ) -> str | None | list[str | None]:
         """Return the names of constraints, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        con
             The constraints to read.
             An index or a view stands for one constraint, and the result is then
             a scalar.
@@ -3059,7 +3059,7 @@ class Model:
         BIYOS_getconnamesp
         BIYOS_getconnamerg
         """
-        return self._getname("BIYOS_getconname", Constraints, idx)
+        return self._getname("BIYOS_getconname", Constraints, con)
 
     def getconidx(self, name: Sequence[str]) -> Constraints:
         """Return the named constraints, as ``getvaridx`` does.
@@ -3071,7 +3071,7 @@ class Model:
 
         Returns
         -------
-        idx
+        con
             The constraint that alone holds each name, as a ``Constraints``
             block.
 
@@ -3081,12 +3081,12 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getconidx, Constraints, name)
 
-    def delconname(self, idx: Selection[Constraint, Constraints]) -> None:
+    def delconname(self, con: Selection[Constraint, Constraints]) -> None:
         """Remove the names of constraints, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        con
             The constraints that lose their names.
             An index or a view stands for one constraint.
 
@@ -3095,9 +3095,9 @@ class Model:
         BIYOS_delconnamesp
         BIYOS_delconnamerg
         """
-        self._delname("BIYOS_delconname", Constraints, idx)
+        self._delname("BIYOS_delconname", Constraints, con)
 
-    def delcon(self, idx: Selection[Constraint, Constraints]) -> list[Index]:
+    def delcon(self, con: Selection[Constraint, Constraints]) -> list[Index]:
         """Delete constraints.
 
         The constraints left keep their order and are numbered from 0 again. A
@@ -3107,7 +3107,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        con
             The constraints to delete, in any order, none of them twice.
             An index or a view stands for one constraint.
 
@@ -3122,7 +3122,7 @@ class Model:
         BIYOS_delconsp
         BIYOS_delconrg
         """
-        return self._delete("BIYOS_delcon", Constraints, idx)
+        return self._delete("BIYOS_delcon", Constraints, con)
 
     def addobj(
         self,
