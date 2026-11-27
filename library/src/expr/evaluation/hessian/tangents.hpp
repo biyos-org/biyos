@@ -12,11 +12,13 @@ namespace biyos
 
 struct Tangents
 {
-    std::span<const Real> slots;
+    std::span<Real> slots;
     std::span<Real> spare;
+    std::span<Real> prefix;
+    std::size_t lanes;
 };
 
-std::size_t tangent_rows(const Tape &tape) noexcept;
+std::size_t widest_product(const Tape &tape) noexcept;
 Real scaled(Real tangent, Real factor) noexcept;
 bool curved(Real exponent) noexcept;
 void partial_tangents(const Instruction &instruction,

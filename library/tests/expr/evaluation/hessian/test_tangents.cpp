@@ -38,8 +38,8 @@ using biyos::place;
 using biyos::Real;
 using biyos::region;
 using biyos::row;
-using biyos::tangent_rows;
 using biyos::Tape;
+using biyos::widest_product;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::constant;
@@ -97,12 +97,13 @@ Linear linear_at(const Graph &graph,
                  std::size_t lanes = 1)
 {
     const Tape tape(graph, std::span(&root, 1));
-    Workspace workspace(tape, lanes);
+    Workspace workspace(tape);
     const Block &block = tape.blocks()[0];
     const Frame frame = frame_of(block, point, workspace);
-    const std::span<Real> all = region(block, std::span(workspace.partials), lanes);
+    const std::span<Real> all = region(block, std::span(workspace.partials), 1);
     Values slots(tape.width() * lanes, 0.0);
-    Values spare(tangent_rows(tape) * lanes, 0.0);
+    Values spare(lanes, 0.0);
+    Values prefix(widest_product(tape), 0.0);
     const std::size_t last = block.instructions.size() - 1;
     for (std::size_t k = 0; k < last; ++k)
     {
@@ -111,12 +112,16 @@ Linear linear_at(const Graph &graph,
         keep(block.instructions[k], frame);
     }
     const Instruction &instruction = block.instructions[last];
-    const std::size_t start = block.places[last] * lanes;
-    const std::span<Real> mine = all.subspan(start, block.places[last + 1] * lanes - start);
-    Values out(mine.size(), 0.0);
+    const std::size_t start = block.places[last];
+    const std::span<Real> mine = all.subspan(start, block.places[last + 1] - start);
+    Values out(mine.size() * lanes, 0.0);
     evaluate(instruction, frame);
     partials_of(instruction, frame, mine);
-    partial_tangents(instruction, frame, {slots, spare}, mine, out);
+    partial_tangents(instruction,
+                     frame,
+                     {.slots = slots, .spare = spare, .prefix = prefix, .lanes = lanes},
+                     mine,
+                     out);
     return {{mine.begin(), mine.end()}, out};
 }
 
@@ -374,23 +379,19 @@ TEST(TangentTest, Lanes)
 {
     Graph graph;
     const std::vector<Offset> roots = every_operator(graph);
-    const std::array other{1.3, 0.6, 0.4, -0.5};
     const std::array turned{-0.2, 0.7, 0.0, -0.9};
-    Values point(2 * kInterior.size());
-    Values direction(point.size());
-    for (std::size_t j = 0; j < kInterior.size(); ++j)
+    Values direction(2 * kDirection.size());
+    for (std::size_t j = 0; j < kDirection.size(); ++j)
     {
-        point[2 * j] = kInterior[j];
-        point[2 * j + 1] = other[j];
         direction[2 * j] = kDirection[j];
         direction[2 * j + 1] = turned[j];
     }
     for (std::size_t k = 0; k < roots.size(); ++k)
     {
         SCOPED_TRACE(k);
-        const Values both = linear_at(graph, roots[k], point, direction, 2).tangents;
+        const Values both = linear_at(graph, roots[k], kInterior, direction, 2).tangents;
         const Values first = linear_at(graph, roots[k], kInterior, kDirection).tangents;
-        const Values second = linear_at(graph, roots[k], other, turned).tangents;
+        const Values second = linear_at(graph, roots[k], kInterior, turned).tangents;
         Values wanted(both.size());
         for (std::size_t p = 0; p < first.size(); ++p)
         {

@@ -19,6 +19,7 @@ struct Velocity
     std::vector<Real> shared;
     std::vector<Real> partials;
     std::vector<Real> spare;
+    std::vector<Real> prefix;
     std::vector<Real> result;
 };
 
@@ -31,10 +32,9 @@ struct Pass
     Velocity velocity;
     Adjoints first;
     Adjoints second;
-    std::vector<Real> points;
     std::vector<Real> seeds;
 };
 
-void sweep(const Tape &tape, Offset element, Pass &pass) noexcept;
+void sweep(const Tape &tape, Offset element, std::span<const Real> point, Pass &pass) noexcept;
 
 }

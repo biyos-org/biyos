@@ -451,6 +451,33 @@ TEST(HessianTest, Chunks)
     EXPECT_EQ(check_differences(graph, roots, point, weights, rows), 49U);
 }
 
+TEST(HessianTest, Classes)
+{
+    Env env;
+    TimingTree tree;
+    for (std::uint64_t seed = 1; seed <= 10; ++seed)
+    {
+        SCOPED_TRACE(seed);
+        Random random(seed);
+        const Graph graph = random_graph(random);
+        const std::vector<Offset> roots = picks(random, graph, kPicked);
+        const Offset budget = kBudgets[random.below(kBudgets.size())];
+        const Values point = interior_point(random);
+        const Values weights = random_weights(random, roots.size());
+        const Values direction = random_weights(random, point.size());
+        Hessian widest(graph, roots, {}, {env.stream(), tree}, kLanes, budget);
+        const Values wanted = values_of(widest, point, weights);
+        const Values moved = product_of(widest, point, weights, direction);
+        for (std::size_t lanes = 1; lanes < kLanes; ++lanes)
+        {
+            SCOPED_TRACE(lanes);
+            Hessian hessian(graph, roots, {}, {env.stream(), tree}, lanes, budget);
+            expect_same(values_of(hessian, point, weights), wanted);
+            expect_same(product_of(hessian, point, weights, direction), moved);
+        }
+    }
+}
+
 TEST(HessianTest, Threshold)
 {
     const auto lanes = static_cast<Index>(kLanes);
