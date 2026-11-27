@@ -4,7 +4,7 @@
 #include "core/timing/clock.hpp"
 #include "probes.hpp"
 
-#include "../../io/mps/utils/samples.hpp"
+#include "../../../io/mps/utils/samples.hpp"
 
 #include <gtest/gtest.h>
 

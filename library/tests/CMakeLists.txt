@@ -168,6 +168,9 @@ target_include_directories(test_io PRIVATE io/mps/utils io/native/utils io/nl/ut
 target_link_libraries(test_io PRIVATE biyos_internal)
 
 biyos_add_test(test_capi
+    capi/env/events/test_events.cpp
+    capi/env/events/test_format.cpp
+    capi/env/events/test_spans.cpp
     capi/env/test_env.cpp
     capi/env/test_firewall.cpp
     capi/env/test_interrupt.cpp
@@ -179,9 +182,6 @@ biyos_add_test(test_capi
     capi/evaluation/test_callbacks.cpp
     capi/evaluation/test_evaluation.cpp
     capi/evaluation/test_patterns.cpp
-    capi/events/test_events.cpp
-    capi/events/test_format.cpp
-    capi/events/test_spans.cpp
     capi/linear/test_adders.cpp
     capi/linear/test_constants.cpp
     capi/linear/test_functions.cpp
@@ -209,8 +209,8 @@ biyos_add_test(test_capi
     capi/records/test_objectives.cpp
     capi/records/test_ranges.cpp
     capi/records/test_special_ordered_sets.cpp
-    capi/sample.cpp)
-target_include_directories(test_capi PRIVATE capi io/nl/utils)
+    capi/utils/sample.cpp)
+target_include_directories(test_capi PRIVATE capi/utils io/nl/utils)
 target_link_libraries(test_capi PRIVATE biyos::biyos biyos_internal)
 
 add_executable(test_capi_c capi/test_header.c)
