@@ -25,14 +25,13 @@ class Settings
     void set_double(Option option, Real value, Stream stream);
     void set_string(Option option, std::string_view value, Stream stream);
     void set_flags(Option option, Masks value, Stream stream);
+    void set(Option option, const OptionValue &value, Stream stream);
 
     const OptionValue *find(Option option) const;
     void erase(Option option);
     bool empty() const noexcept;
 
   private:
-    void store(Option option, const OptionValue &value, Stream stream);
-
     struct Entry
     {
         Option option;

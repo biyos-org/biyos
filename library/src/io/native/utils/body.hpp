@@ -5,6 +5,7 @@
 #include "io/utils/lines.hpp"
 
 #include <string>
+#include <string_view>
 
 namespace biyos::native
 {
@@ -25,5 +26,6 @@ class Body
 };
 
 bool next_line(Lines &lines);
+void read_start(Lines &lines, std::string_view whole, std::string_view magic, int newest);
 
 }

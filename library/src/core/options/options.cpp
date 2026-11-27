@@ -12,6 +12,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -93,30 +94,30 @@ std::vector<OptionValue> Options::defaults()
 
 void Options::set_bool(Option option, bool value)
 {
-    store(option, value);
+    set(option, value);
 }
 
 void Options::set_int(Option option, int value)
 {
-    store(option, value);
+    set(option, value);
 }
 
 void Options::set_double(Option option, Real value)
 {
-    store(option, value);
+    set(option, value);
 }
 
 void Options::set_string(Option option, std::string_view value)
 {
-    store(option, value);
+    set(option, value);
 }
 
 void Options::set_flags(Option option, Masks value)
 {
-    store(option, value);
+    set(option, value);
 }
 
-void Options::store(Option option, const OptionValue &value)
+void Options::set(Option option, const OptionValue &value)
 {
     const OptionSpec &spec = checked_row(table_, option, value);
     values_[index_of(option)] = kept(strings_, value);
@@ -130,6 +131,14 @@ void Options::drop(Option option)
     const OptionSpec &spec = row_of(table_, option);
     values_[index_of(option)] = kept(strings_, default_of(spec));
     sources_[index_of(option)] = OptionSource::Default;
+}
+
+void Options::replace(Options &&other) noexcept
+{
+    table_ = other.table_;
+    strings_ = std::move(other.strings_);
+    values_ = std::move(other.values_);
+    sources_ = std::move(other.sources_);
 }
 
 bool Options::get_bool(Option option) const

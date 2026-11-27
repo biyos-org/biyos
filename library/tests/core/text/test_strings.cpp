@@ -4,6 +4,7 @@
 
 #include <string>
 #include <string_view>
+#include <utility>
 
 using biyos::Strings;
 
@@ -36,4 +37,15 @@ TEST(StringTest, Stable)
     }
     EXPECT_EQ(first, "first");
     EXPECT_EQ(strings.keep("first").data(), first.data());
+}
+
+TEST(StringTest, Move)
+{
+    Strings strings;
+    const std::string_view kept = strings.keep("a name too long to sit inside the string itself");
+    Strings moved(std::move(strings));
+    EXPECT_EQ(moved.keep(kept).data(), kept.data());
+    Strings other;
+    other = std::move(moved);
+    EXPECT_EQ(other.keep(kept).data(), kept.data());
 }

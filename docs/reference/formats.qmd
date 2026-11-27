@@ -331,3 +331,54 @@ NAMES variable 1
 0 x
 END
 ```
+
+## Reproducer {#sec-repro}
+
+A reproducer holds a run: the options in force and the model. `BIYOS_writerepro` and `Model.writerepro` write one, and `BIYOS_readrepro` and `Model.readrepro` read it back onto an environment, which then holds the options of the run that wrote it. Its lines follow the rules of the [native format](#sec-native) and come in the order of the table.
+
+| Part | Holds |
+|---|---|
+| `REPRO 1` | The version of the format; a later version is refused with `BIYOS_ERR_UNSUPPORTED`. |
+| `VERSION` | The version of biyos that wrote the file, such as `0.1.0`. |
+| `OPTIONS` | The number of options, then one line for each: the name of the option, its source and its value. |
+| The model | The model in the native format, from `BIYOS 1` to `END`. |
+
+| Source | Means |
+|---|---|
+| `model` | The model holds its own value of the option. |
+| `environment` | The value is that of the environment. |
+| `default` | Neither set the option. The line holds no value. |
+
+| Kind of option | Value written as |
+|---|---|
+| Bool | `true` or `false`. |
+| Int | A whole decimal number. |
+| Double | A number of the native format, `inf` and `-inf` included. |
+| String | One field, escaped as a name of the native format. An empty string is no field. |
+| Enum | The name of its value, such as `full` for `BIYOS_CHK_FULL`. |
+| Flags | One field for each part set on or off: `+` or `-`, then the name of the part. A part left at its default is no field. |
+
+The writer writes every option but those retired, in the order of the option table, each with the value in force for the model and its source: its own value, else that of its environment, else the default. A model with a callback is refused with `BIYOS_ERR_UNSUPPORTED`, naming the first, before the file is made.
+
+The reader reads the whole file before it sets any option, so a refused file leaves the environment as it was. An option of source `model` is then set on the new model, one of source `environment` on the environment, and one of source `default`, or left out, is unset on the environment. Setting a deprecated option sends its usual warning; one at its default is not set, so it sends none. A file written by another version of biyos is read, with a warning event from module `io` naming both versions. An option this version does not know, or has retired, is skipped with a warning event naming it. Both warnings carry the fields `file` and `line`. An option given twice, given a value it does not take, or of environment scope with source `model`, is refused with `BIYOS_ERR_BADFILE` at its line.
+
+```
+REPRO 1
+VERSION 0.1.0
+OPTIONS 11
+seed environment 7
+maxtime default
+checking environment full
+presolve model false
+repro default
+feastol_abs default
+feastol_rel default
+inttol default
+zerotol default
+maxcputime default
+threads default
+BIYOS 1
+VARIABLES 1
+cont 0 1
+END
+```

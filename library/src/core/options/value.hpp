@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <span>
+#include <string>
 #include <string_view>
 
 namespace biyos
@@ -15,6 +16,8 @@ namespace biyos
 const OptionSpec &checked_row(std::span<const OptionSpec> table,
                               Option option,
                               const OptionValue &value);
+
+std::string retired_notice(std::span<const OptionSpec> table, const OptionSpec &spec);
 
 void warn_deprecated(Stream stream,
                      std::span<const OptionSpec> table,

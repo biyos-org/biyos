@@ -177,6 +177,15 @@ TEST_F(SettingTest, Set)
     EXPECT_TRUE(heard.empty());
 }
 
+TEST_F(SettingTest, Value)
+{
+    settings.set(kNew, OptionValue(5), env.stream());
+    EXPECT_EQ(held(settings, kNew), 5);
+    EXPECT_EQ(failure([&] { settings.set(kNew, OptionValue(2.0), env.stream()); }),
+              "invalid argument: option 'new': is an int, not a double");
+    EXPECT_EQ(held(settings, kNew), 5);
+}
+
 TEST_F(SettingTest, Erase)
 {
     settings.set_int(kNew, 5, env.stream());

@@ -17,6 +17,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -38,7 +39,9 @@ using biyos::name_of;
 using biyos::Option;
 using biyos::option_table;
 using biyos::Options;
+using biyos::OptionSource;
 using biyos::OptionSpec;
+using biyos::OptionValue;
 using biyos::Real;
 using biyos::Scope;
 using biyos::SystemClock;
@@ -371,6 +374,34 @@ TEST(OptionTest, WrongKind)
               "invalid argument: option 'maxtime': is a double, not an int");
 }
 
+TEST(OptionTest, Value)
+{
+    Listener listener;
+    Options options(listener.env);
+    options.set(Option::Seed, OptionValue(5));
+    options.set(Option::Reproducer, OptionValue(std::string_view("run.repro")));
+    EXPECT_EQ(options.get_int(Option::Seed), 5);
+    EXPECT_EQ(options.get_string(Option::Reproducer), "run.repro");
+    EXPECT_EQ(failure([&] { options.set(Option::Seed, OptionValue(1.0)); }),
+              "invalid argument: option 'seed': is an int, not a double");
+    EXPECT_EQ(options.get_int(Option::Seed), 5);
+}
+
+TEST(OptionTest, Replace)
+{
+    Listener listener;
+    Options options(listener.env);
+    options.set_int(Option::Seed, 3);
+    Options next(listener.env);
+    next.set_string(Option::Reproducer, "a name too long to sit inside the string itself");
+    options.replace(std::move(next));
+    EXPECT_EQ(options.get_int(Option::Seed), 0);
+    EXPECT_EQ(options.source_of(Option::Seed), OptionSource::Default);
+    EXPECT_EQ(options.get_string(Option::Reproducer),
+              "a name too long to sit inside the string itself");
+    EXPECT_EQ(options.source_of(Option::Reproducer), OptionSource::Environment);
+}
+
 TEST(OptionTest, Names)
 {
     for (const Option option : {Option::Seed,
@@ -448,7 +479,6 @@ TEST(OptionTest, MissingRow)
 
 TEST(OptionTest, Sources)
 {
-    using biyos::OptionSource;
     Listener listener;
     Options options(listener.env);
     EXPECT_EQ(options.source_of(Option::Seed), OptionSource::Default);

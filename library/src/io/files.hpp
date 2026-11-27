@@ -3,6 +3,7 @@
 #include "biyos/biyos.h"
 #include "core/env/env.hpp"
 #include "core/events/stream.hpp"
+#include "core/options/lookup.hpp"
 #include "core/options/settings.hpp"
 #include "model/model.hpp"
 
@@ -34,5 +35,10 @@ void write_file(Stream stream,
                 const Settings &settings,
                 std::string_view path,
                 FileFormat format);
+Model read_reproducer(Env &env, Settings &settings, std::string_view path);
+void write_reproducer(Stream stream,
+                      const Model &model,
+                      const Lookup &lookup,
+                      std::string_view path);
 
 }

@@ -81,9 +81,7 @@ const OptionSpec &settable(std::span<const OptionSpec> table, Option option)
     {
         return spec;
     }
-    const std::string_view replacement = row_of(table, *spec.replacement).name;
-    const std::string reason = notice("retired", *spec.versions.retired, replacement);
-    throw Error(ErrorKind::InvalidArgument, subject(spec.name), reason);
+    throw Error(ErrorKind::InvalidArgument, subject(spec.name), retired_notice(table, spec));
 }
 
 void admit(const OptionSpec &spec, bool)
@@ -149,6 +147,12 @@ const OptionSpec &checked_row(std::span<const OptionSpec> table,
     const OptionSpec &spec = settable(table, option);
     std::visit([&spec](const auto &held) { admit(spec, held); }, value);
     return spec;
+}
+
+std::string retired_notice(std::span<const OptionSpec> table, const OptionSpec &spec)
+{
+    const std::string_view replacement = row_of(table, *spec.replacement).name;
+    return notice("retired", *spec.versions.retired, replacement);
 }
 
 void warn_deprecated(Stream stream,

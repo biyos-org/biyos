@@ -175,7 +175,9 @@ class Options
     void set_double(Option option, Real value);
     void set_string(Option option, std::string_view value);
     void set_flags(Option option, Masks value);
+    void set(Option option, const OptionValue &value);
     void drop(Option option);
+    void replace(Options &&other) noexcept;
 
     bool get_bool(Option option) const;
     int get_int(Option option) const;
@@ -196,8 +198,6 @@ class Options
 
   private:
     std::vector<OptionValue> defaults();
-
-    void store(Option option, const OptionValue &value);
 
     int enum_value(Option option) const;
 

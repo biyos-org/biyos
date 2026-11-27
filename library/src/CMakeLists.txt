@@ -132,6 +132,9 @@ add_library(biyos_internal STATIC
     io/native/writers/attributes.cpp
     io/native/writers/functions.cpp
     io/native/writers/records.cpp
+    io/reproducer/header.cpp
+    io/reproducer/reproducer.cpp
+    io/reproducer/values.cpp
     io/utils/codes.cpp
     io/utils/directory.cpp
     io/utils/leftovers.cpp

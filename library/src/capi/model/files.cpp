@@ -12,11 +12,14 @@ using biyos::Env;
 using biyos::FileFormat;
 using biyos::find_format;
 using biyos::read_file;
+using biyos::read_reproducer;
 using biyos::Session;
 using biyos::write_file;
+using biyos::write_reproducer;
 using biyos::capi::guarded;
 using biyos::capi::idle;
 using biyos::capi::require;
+using biyos::capi::writable;
 
 namespace
 {
@@ -44,6 +47,23 @@ void save(const Session &session, const char *path, BIYOS_int fmt)
                format);
 }
 
+void load_repro(Env &env, const char *path, BIYOS_model **mdl)
+{
+    const char *file = require(path, "path");
+    BIYOS_model **made = require(mdl, "mdl");
+    Env &target = writable(env);
+    auto fresh = std::make_unique<BIYOS_model>(target);
+    fresh->change() = read_reproducer(target, fresh->settings(), std::string_view(file));
+    *made = fresh.release();
+}
+
+void save_repro(const Session &session, const char *path)
+{
+    const char *file = require(path, "path");
+    idle(session.env(), "environment");
+    write_reproducer(session.stream(), session.model(), session.lookup(), std::string_view(file));
+}
+
 }
 
 BIYOS_status BIYOS_readmdl(BIYOS_env *env, const char *path, BIYOS_int fmt, BIYOS_model **mdl)
@@ -58,4 +78,18 @@ BIYOS_status BIYOS_readmdl(BIYOS_env *env, const char *path, BIYOS_int fmt, BIYO
 BIYOS_status BIYOS_writemdl(const BIYOS_model *mdl, const char *path, BIYOS_int fmt)
 {
     return guarded<save>(mdl, path, fmt);
+}
+
+BIYOS_status BIYOS_readrepro(BIYOS_env *env, const char *path, BIYOS_model **mdl)
+{
+    if (mdl != nullptr)
+    {
+        *mdl = nullptr;
+    }
+    return guarded<load_repro>(env, path, mdl);
+}
+
+BIYOS_status BIYOS_writerepro(const BIYOS_model *mdl, const char *path)
+{
+    return guarded<save_repro>(mdl, path);
 }

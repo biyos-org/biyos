@@ -28,6 +28,7 @@ class Record
     Real real();
     std::optional<Real> tolerance();
     std::string name();
+    bool ended() const noexcept;
     void end() const;
     [[noreturn]] void refuse(const std::string &message) const;
 

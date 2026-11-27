@@ -42,30 +42,30 @@ Settings::Settings(const Settings &other) : table_(other.table_)
 
 void Settings::set_bool(Option option, bool value, Stream stream)
 {
-    store(option, value, stream);
+    set(option, value, stream);
 }
 
 void Settings::set_int(Option option, int value, Stream stream)
 {
-    store(option, value, stream);
+    set(option, value, stream);
 }
 
 void Settings::set_double(Option option, Real value, Stream stream)
 {
-    store(option, value, stream);
+    set(option, value, stream);
 }
 
 void Settings::set_string(Option option, std::string_view value, Stream stream)
 {
-    store(option, value, stream);
+    set(option, value, stream);
 }
 
 void Settings::set_flags(Option option, Masks value, Stream stream)
 {
-    store(option, value, stream);
+    set(option, value, stream);
 }
 
-void Settings::store(Option option, const OptionValue &value, Stream stream)
+void Settings::set(Option option, const OptionValue &value, Stream stream)
 {
     check_scope(row_of(table_, option));
     const OptionSpec &spec = checked_row(table_, option, value);

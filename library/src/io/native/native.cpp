@@ -2,7 +2,6 @@
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
-#include "core/text/text.hpp"
 #include "io/native/parts.hpp"
 #include "io/native/readers/attributes.hpp"
 #include "io/native/readers/functions.hpp"
@@ -33,6 +32,7 @@ using native::kMagic;
 using native::kVersion;
 using native::next_line;
 using native::Part;
+using native::read_start;
 using native::Record;
 
 struct Key
@@ -57,28 +57,28 @@ Family family_of(Record &record)
 class NativeReader
 {
   public:
-    NativeReader(std::istream &input, const std::string &file);
+    NativeReader(Lines &lines, std::string_view whole);
 
     Model read();
 
   private:
-    void version();
     void section();
     void enter(Key key, const std::string &word);
     void apply(Record &header, Part part, const std::string &word);
     void fill(Body &body, Part part, Family family);
     void rest();
 
-    Lines lines_;
+    Lines &lines_;
+    std::string_view whole_;
     Model model_;
     std::optional<Key> last_;
 };
 
-NativeReader::NativeReader(std::istream &input, const std::string &file) : lines_(input, file) {}
+NativeReader::NativeReader(Lines &lines, std::string_view whole) : lines_(lines), whole_(whole) {}
 
 Model NativeReader::read()
 {
-    version();
+    read_start(lines_, whole_, kMagic, kVersion);
     while (last_ == std::nullopt || last_->part != Part::End)
     {
         if (!next_line(lines_))
@@ -89,31 +89,6 @@ Model NativeReader::read()
     }
     rest();
     return std::move(model_);
-}
-
-void NativeReader::version()
-{
-    const bool found = next_line(lines_);
-    if (lines_.number() == 0)
-    {
-        bad_file(lines_, "is empty");
-    }
-    if (!found || lines_.fields().front() != kMagic)
-    {
-        bad_file(lines_, "the file does not start with " + std::string(kMagic));
-    }
-    Record record(lines_);
-    record.word();
-    const int version = record.integer();
-    if (version > kVersion)
-    {
-        unsupported(lines_, "version " + text_of(version) + " is newer than " + text_of(kVersion));
-    }
-    record.end();
-    if (version < 1)
-    {
-        record.refuse("version " + text_of(version) + " is unknown");
-    }
 }
 
 void NativeReader::section()
@@ -233,9 +208,16 @@ void NativeReader::rest()
 
 }
 
+Model read_native(Lines &lines)
+{
+    NativeReader reader(lines, "the model");
+    return reader.read();
+}
+
 Model read_native(std::istream &input, const std::string &file)
 {
-    NativeReader reader(input, file);
+    Lines lines(input, file);
+    NativeReader reader(lines, "the file");
     return reader.read();
 }
 
