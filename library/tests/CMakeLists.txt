@@ -52,7 +52,7 @@ biyos_add_test(test_core
     core/text/test_utf8.cpp
     core/timing/test_clock.cpp
     core/timing/test_timer.cpp)
-target_include_directories(test_core PRIVATE core/utils)
+target_include_directories(test_core PRIVATE core/utils expr/utils)
 target_link_libraries(test_core PRIVATE biyos_internal)
 
 biyos_add_test(test_allocation
@@ -82,6 +82,7 @@ biyos_add_test(test_expr
     expr/analysis/intervals/test_atan2.cpp
     expr/analysis/intervals/test_enclosure.cpp
     expr/analysis/intervals/test_interval.cpp
+    expr/analysis/intervals/test_logic.cpp
     expr/analysis/intervals/test_piecewise.cpp
     expr/evaluation/derivatives/test_angle.cpp
     expr/evaluation/derivatives/test_branches.cpp
@@ -116,7 +117,7 @@ biyos_add_test(test_expr
     expr/utils/chords.cpp
     expr/utils/reference.cpp
     expr/utils/sampling.cpp)
-target_include_directories(test_expr PRIVATE expr/utils)
+target_include_directories(test_expr PRIVATE expr/utils utils)
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
 biyos_add_test(test_model

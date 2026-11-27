@@ -39,6 +39,7 @@ add_library(biyos_internal STATIC
     expr/analysis/intervals/elementary.cpp
     expr/analysis/intervals/enclosure.cpp
     expr/analysis/intervals/interval.cpp
+    expr/analysis/intervals/logic.cpp
     expr/analysis/intervals/periodic.cpp
     expr/analysis/intervals/piecewise.cpp
     expr/analysis/intervals/powers.cpp

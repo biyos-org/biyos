@@ -6,6 +6,7 @@
 #include "core/text/text.hpp"
 #include "expr/analysis/intervals/elementary.hpp"
 #include "expr/analysis/intervals/interval.hpp"
+#include "expr/analysis/intervals/logic.hpp"
 #include "expr/analysis/intervals/periodic.hpp"
 #include "expr/analysis/intervals/piecewise.hpp"
 #include "expr/analysis/intervals/powers.hpp"
@@ -125,26 +126,15 @@ Interval piecewise_of(const Pass &pass, Offset node) noexcept
                      first(pass, node));
 }
 
-Interval undecided(const Pass &pass, Offset node) noexcept
+Interval compared(const Pass &pass, Offset node, Comparison compare) noexcept
 {
-    for (const Offset child : pass.graph.children(node))
-    {
-        if (pass.nodes[to_size(child)].is_empty())
-        {
-            return Interval::empty();
-        }
-    }
-    return {0.0, 1.0};
+    return compare(pass.tolerances, first(pass, node), second(pass, node));
 }
 
 Interval branches_of(const Pass &pass, Offset node) noexcept
 {
-    if (first(pass, node).is_empty())
-    {
-        return Interval::empty();
-    }
     const std::span<const Offset> children = pass.graph.children(node);
-    return hull(pass.nodes[to_size(children[1])], pass.nodes[to_size(children[2])]);
+    return taken(first(pass, node), second(pass, node), pass.nodes[to_size(children[2])]);
 }
 
 Interval enclosure(const Pass &pass, Offset node) noexcept
@@ -214,15 +204,23 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
     case Operator::Atan2:
         return atan2(first(pass, node), second(pass, node));
     case Operator::LessEqual:
+        return compared(pass, node, less_equal);
     case Operator::GreaterEqual:
+        return compared(pass, node, greater_equal);
     case Operator::Equal:
+        return compared(pass, node, equal);
     case Operator::Less:
+        return compared(pass, node, less);
     case Operator::Greater:
+        return compared(pass, node, greater);
     case Operator::NotEqual:
+        return compared(pass, node, not_equal);
     case Operator::And:
+        return smallest(pass, node);
     case Operator::Or:
+        return largest(pass, node);
     case Operator::Not:
-        return undecided(pass, node);
+        return complement(first(pass, node));
     case Operator::If:
         return branches_of(pass, node);
     }

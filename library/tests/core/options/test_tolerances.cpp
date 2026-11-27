@@ -5,6 +5,7 @@
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
+#include "reference.hpp"
 
 #include <gtest/gtest.h>
 
@@ -22,6 +23,7 @@ using biyos::Options;
 using biyos::Real;
 using biyos::Settings;
 using biyos::Tolerances;
+using biyos::test::tolerances_of;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
@@ -31,15 +33,6 @@ Tolerances defaults()
 {
     Env env;
     return Tolerances(Lookup(Options(env)));
-}
-
-Tolerances relative(Real rel)
-{
-    Env env;
-    Options options(env);
-    options.set_double(Option::FeasAbs, 0.0);
-    options.set_double(Option::FeasRel, rel);
-    return Tolerances(Lookup(options));
 }
 
 Tolerances uniform(Real value)
@@ -231,7 +224,7 @@ TEST(ToleranceTest, Looser)
         2.0,
         1e9,
     };
-    for (const Tolerances &tolerances : {defaults(), uniform(0.1), relative(0.5)})
+    for (const Tolerances &tolerances : {defaults(), uniform(0.1), tolerances_of(0.0, 0.5)})
     {
         for (const Real x : grid)
         {
@@ -248,7 +241,7 @@ TEST(ToleranceTest, Looser)
             }
         }
     }
-    const Tolerances coarse = relative(0.5);
+    const Tolerances coarse = tolerances_of(0.0, 0.5);
     EXPECT_FALSE(coarse.satisfies_upper(1.8, 1.0));
     EXPECT_TRUE(coarse.at_most(1.8, 1.0));
     EXPECT_FALSE(coarse.satisfies_lower(-1.8, -1.0));
@@ -284,7 +277,7 @@ TEST(ToleranceTest, ReadsOptions)
 
 TEST(ToleranceTest, Scale)
 {
-    const Tolerances fine = relative(1e-3);
+    const Tolerances fine = tolerances_of(0.0, 1e-3);
     EXPECT_TRUE(fine.approx_equal(0.0, 5e-4));
     EXPECT_TRUE(fine.approx_equal(5e-4, 0.0));
     EXPECT_FALSE(fine.approx_equal(0.0, 2e-3));
@@ -293,7 +286,7 @@ TEST(ToleranceTest, Scale)
     EXPECT_TRUE(fine.satisfies_upper(5e-4, 0.0));
     EXPECT_FALSE(fine.satisfies_upper(2e-3, 0.0));
 
-    const Tolerances coarse = relative(0.5);
+    const Tolerances coarse = tolerances_of(0.0, 0.5);
     EXPECT_TRUE(coarse.approx_equal(1.0, 1.9));
     EXPECT_TRUE(coarse.approx_equal(1.9, 1.0));
     EXPECT_FALSE(coarse.approx_equal(1.0, 2.1));
@@ -305,13 +298,13 @@ TEST(ToleranceTest, Scale)
 
 TEST(ToleranceTest, Overflow)
 {
-    const Tolerances wide = relative(1.5);
+    const Tolerances wide = tolerances_of(0.0, 1.5);
     EXPECT_FALSE(wide.approx_equal(kLargest, -kLargest));
     EXPECT_FALSE(wide.satisfies_lower(-kLargest, kLargest));
     EXPECT_FALSE(wide.satisfies_upper(kLargest, -kLargest));
     EXPECT_TRUE(wide.approx_equal(kLargest, kLargest / 4));
 
-    const Tolerances wider = relative(2.5);
+    const Tolerances wider = tolerances_of(0.0, 2.5);
     EXPECT_TRUE(wider.approx_equal(kLargest, -kLargest));
     EXPECT_TRUE(wider.satisfies_lower(-kLargest, kLargest));
     EXPECT_TRUE(wider.satisfies_upper(kLargest, -kLargest));

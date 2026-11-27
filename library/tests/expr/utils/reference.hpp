@@ -4,6 +4,7 @@
 #include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
 #include "core/options/lookup.hpp"
+#include "core/options/options.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 
@@ -17,6 +18,15 @@ inline Tolerances default_tolerances()
 {
     Env env;
     return Tolerances(Lookup(env.options()));
+}
+
+inline Tolerances tolerances_of(Real absolute, Real relative)
+{
+    Env env;
+    Options options(env);
+    options.set_double(Option::FeasAbs, absolute);
+    options.set_double(Option::FeasRel, relative);
+    return Tolerances(Lookup(options));
 }
 
 template <typename Value>
