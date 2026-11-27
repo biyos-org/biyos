@@ -2,8 +2,12 @@
 #include "sample.hpp"
 #include "written.hpp"
 
+#include "core/env/env.hpp"
+#include "core/events/event.hpp"
 #include "core/numbers.hpp"
+#include "core/options/settings.hpp"
 #include "expr/graph/node.hpp"
+#include "io/files.hpp"
 #include "model/model.hpp"
 
 #include <gtest/gtest.h>
@@ -12,12 +16,19 @@
 #include <string_view>
 #include <vector>
 
+using biyos::Env;
+using biyos::Event;
+using biyos::EventKind;
+using biyos::EventLevel;
+using biyos::FileFormat;
 using biyos::Index;
 using biyos::Model;
 using biyos::Offset;
 using biyos::Operator;
+using biyos::Settings;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::write_file;
 using biyos::test::built;
 using biyos::test::Parts;
 using biyos::test::sample;
@@ -57,6 +68,26 @@ std::string refused(std::string_view record, std::string_view part)
 std::string warned(std::string_view text)
 {
     return "file 't.nl': NL " + std::string(text);
+}
+
+std::string left_path()
+{
+    return testing::TempDir() + "biyos_left.nl";
+}
+
+std::string left(std::string_view text)
+{
+    return "file '" + left_path() + "': NL " + std::string(text);
+}
+
+std::vector<std::string> heard(const Model &model)
+{
+    Env env;
+    std::vector<std::string> texts;
+    const auto record = [&texts](const Event &event) { texts.push_back(event.text); };
+    env.events().add_hook(EventKind::Message, EventLevel::Info, record);
+    write_file(env.stream(), model, Settings(), left_path(), FileFormat::Nl);
+    return texts;
 }
 
 Offset entropy_of(Model &model, Offset x)
@@ -160,4 +191,17 @@ TEST(NlTest, Reports)
     EXPECT_EQ(reports_of(built(unnamed())), std::vector{binaries});
     const std::vector<std::string> wanted{binaries, warned("leaves out the names")};
     EXPECT_EQ(reports_of(built(writable())), wanted);
+}
+
+TEST(NlTest, Leftovers)
+{
+    Parts parts = unnamed();
+    parts.objectives[1].absolute = 0.5;
+    parts.objectives[1].priority = 5;
+    const std::vector<std::string> wanted{
+        left("leaves out the objective tolerances"),
+        left("leaves out the objective priority"),
+        left("writes the nonlinear binary variables as integers"),
+    };
+    EXPECT_EQ(heard(built(parts)), wanted);
 }
