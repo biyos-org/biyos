@@ -1,11 +1,13 @@
 #include "io/native/utils/body.hpp"
 
 #include "core/numbers.hpp"
+#include "core/text/text.hpp"
 #include "io/native/utils/record.hpp"
 #include "io/utils/lines.hpp"
 #include "io/utils/report.hpp"
 
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace biyos::native
@@ -50,6 +52,31 @@ bool next_line(Lines &lines)
         }
     }
     return false;
+}
+
+void read_start(Lines &lines, std::string_view whole, std::string_view magic, int newest)
+{
+    const bool found = next_line(lines);
+    if (lines.number() == 0)
+    {
+        bad_file(lines, "is empty");
+    }
+    if (!found || lines.fields().front() != magic)
+    {
+        bad_file(lines, std::string(whole) + " does not start with " + std::string(magic));
+    }
+    Record record(lines);
+    record.word();
+    const int version = record.integer();
+    if (version > newest)
+    {
+        unsupported(lines, "version " + text_of(version) + " is newer than " + text_of(newest));
+    }
+    record.end();
+    if (version < 1)
+    {
+        record.refuse("version " + text_of(version) + " is unknown");
+    }
 }
 
 }
