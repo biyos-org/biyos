@@ -21,6 +21,11 @@ namespace
 
 constexpr Offset kSeveral = -2;
 
+std::size_t lanes_for(std::size_t roots) noexcept
+{
+    return (std::min)(Memos<Index>::kLanes, roots);
+}
+
 void merge(Offset &label, Offset other) noexcept
 {
     if (label == kUnset)
@@ -50,7 +55,9 @@ class Reacher
                 std::vector<Item> &found,
                 std::vector<Item> &own);
     void link(const std::vector<Offset> &memo_of);
-    void trace(Offset root, Reach &reach);
+    void trace(std::span<const Offset> batch, Reach &reach);
+    void start(Offset root, std::size_t lane);
+    void finish(std::size_t lane, Reach &reach);
     void collect(Offset start);
     void take(Offset node);
     void choose(Offset head);
@@ -74,6 +81,8 @@ class Reacher
     std::vector<Offset> links_;
     std::vector<Index> own_names_;
     std::vector<Range> own_runs_;
+    std::vector<std::vector<Index>> lane_names_;
+    std::vector<Joiner> lane_runs_;
     std::vector<Offset> stack_;
     Offset walk_ = 0;
 };
@@ -84,7 +93,8 @@ Reacher::Reacher(const Graph &graph,
     : graph_(graph), positions_(positions), roots_(roots), labels_(to_size(graph.size()), kUnset),
       regions_(to_size(graph.size()), kUnset), heads_(to_size(graph.size()), false),
       seen_(to_size(graph.size()), false), chosen_(to_size(graph.size()), kUnset),
-      names_of_(to_size(graph.size()), kUnset), runs_of_(to_size(graph.size()), kUnset)
+      names_of_(to_size(graph.size()), kUnset), runs_of_(to_size(graph.size()), kUnset),
+      lane_names_(lanes_for(roots.size())), lane_runs_(lanes_for(roots.size()))
 {
 }
 
@@ -96,9 +106,12 @@ Reach Reacher::reach()
         .route = {.runs = {}, .starts = {0}},
         .pattern = {.variables = {}, .starts = {0}},
     };
-    for (const Offset root : roots_)
+    std::span<const Offset> rest = roots_;
+    while (!rest.empty())
     {
-        trace(root, reach);
+        const std::span<const Offset> batch = rest.first(lanes_for(rest.size()));
+        trace(batch, reach);
+        rest = rest.subspan(batch.size());
     }
     return reach;
 }
@@ -181,7 +194,21 @@ void Reacher::link(const std::vector<Offset> &memo_of)
     links_.erase(std::ranges::unique(links_).begin(), links_.end());
 }
 
-void Reacher::trace(Offset root, Reach &reach)
+void Reacher::trace(std::span<const Offset> batch, Reach &reach)
+{
+    for (std::size_t lane = 0; lane < batch.size(); ++lane)
+    {
+        start(batch[lane], lane);
+    }
+    names_.walk(std::span(lane_names_).first(batch.size()));
+    runs_.walk(std::span(lane_runs_).first(batch.size()));
+    for (std::size_t lane = 0; lane < batch.size(); ++lane)
+    {
+        finish(lane, reach);
+    }
+}
+
+void Reacher::start(Offset root, std::size_t lane)
 {
     if (heads_[to_size(root)])
     {
@@ -194,12 +221,17 @@ void Reacher::trace(Offset root, Reach &reach)
         collect(root);
     }
     link(names_of_);
-    names_.gather(links_, variables_);
+    names_.seed(links_, lane);
     link(runs_of_);
-    runs_.gather(links_, pieces_);
-    settle(variables_, reach.pattern.variables);
-    radix_.sort(pieces_);
-    join(pieces_, reach.route.runs);
+    runs_.seed(links_, lane);
+    lane_names_[lane].swap(variables_);
+    lane_runs_[lane].start(pieces_);
+}
+
+void Reacher::finish(std::size_t lane, Reach &reach)
+{
+    settle(lane_names_[lane], reach.pattern.variables);
+    lane_runs_[lane].finish(radix_, reach.route.runs);
     reach.pattern.starts.push_back(to_offset(reach.pattern.variables.size()));
     reach.route.starts.push_back(to_offset(reach.route.runs.size()));
 }
