@@ -124,6 +124,11 @@ std::string Record::name()
     return std::move(*name);
 }
 
+bool Record::ended() const noexcept
+{
+    return next_ == lines_.fields().size();
+}
+
 void Record::end() const
 {
     if (next_ < lines_.fields().size())

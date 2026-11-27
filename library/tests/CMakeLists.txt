@@ -59,6 +59,7 @@ biyos_add_test(test_allocation
     core/memory/test_allocation.cpp
     core/utils/allocations.cpp
     expr/test_allocation.cpp
+    io/test_allocation.cpp
     model/evaluation/test_allocation.cpp
     model/test_allocation.cpp)
 target_include_directories(test_allocation PRIVATE core/utils)
@@ -163,7 +164,8 @@ biyos_add_test(test_io
     io/nl/test_faults.cpp
     io/nl/test_nl.cpp
     io/nl/test_refusals.cpp
-    io/test_lines.cpp)
+    io/test_lines.cpp
+    io/test_reproducer.cpp)
 target_include_directories(test_io PRIVATE io/mps/utils io/native/utils io/nl/utils model/utils)
 target_link_libraries(test_io PRIVATE biyos_internal)
 
