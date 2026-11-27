@@ -195,7 +195,9 @@ TEST(CApiTest, OptionIds)
                            "inttol",
                            "zerotol",
                            "maxcputime",
-                           "threads"};
+                           "threads",
+                           "cmptol_abs",
+                           "cmptol_rel"};
     const int ids[] = {BIYOS_OPT_SEED,
                        BIYOS_OPT_MAXTIME,
                        BIYOS_OPT_CHK,
@@ -206,8 +208,10 @@ TEST(CApiTest, OptionIds)
                        BIYOS_OPT_INTTOL,
                        BIYOS_OPT_ZEROTOL,
                        BIYOS_OPT_MAXCPUTIME,
-                       BIYOS_OPT_THREADS};
-    for (int i = 0; i < 11; ++i)
+                       BIYOS_OPT_THREADS,
+                       BIYOS_OPT_CMPTOLABS,
+                       BIYOS_OPT_CMPTOLREL};
+    for (std::size_t i = 0; i < std::size(ids); ++i)
     {
         BIYOS_int id = 0;
         EXPECT_EQ(BIYOS_getoptid(env.get(), names[i], &id), BIYOS_OK);
@@ -228,7 +232,9 @@ TEST(CApiTest, OptionKinds)
                        BIYOS_OPT_INTTOL,
                        BIYOS_OPT_ZEROTOL,
                        BIYOS_OPT_MAXCPUTIME,
-                       BIYOS_OPT_THREADS};
+                       BIYOS_OPT_THREADS,
+                       BIYOS_OPT_CMPTOLABS,
+                       BIYOS_OPT_CMPTOLREL};
     const int kinds[] = {BIYOS_OPTKND_INT,
                          BIYOS_OPTKND_DBL,
                          BIYOS_OPTKND_ENUM,
@@ -239,8 +245,10 @@ TEST(CApiTest, OptionKinds)
                          BIYOS_OPTKND_DBL,
                          BIYOS_OPTKND_DBL,
                          BIYOS_OPTKND_DBL,
-                         BIYOS_OPTKND_INT};
-    for (int i = 0; i < 11; ++i)
+                         BIYOS_OPTKND_INT,
+                         BIYOS_OPTKND_DBL,
+                         BIYOS_OPTKND_DBL};
+    for (std::size_t i = 0; i < std::size(ids); ++i)
     {
         BIYOS_int kind = 0;
         EXPECT_EQ(BIYOS_getoptknd(env.get(), ids[i], &kind), BIYOS_OK);
@@ -251,7 +259,7 @@ TEST(CApiTest, OptionKinds)
 TEST(CApiTest, OptionVersions)
 {
     const Env env;
-    for (int id = BIYOS_OPT_SEED; id <= BIYOS_OPT_THREADS; ++id)
+    for (int id = BIYOS_OPT_SEED; id <= BIYOS_OPT_CMPTOLREL; ++id)
     {
         BIYOS_int since = -1;
         BIYOS_int deprecated = -1;
@@ -269,8 +277,8 @@ TEST(CApiTest, VersionArguments)
     BIYOS_int since = -1;
     BIYOS_int deprecated = -1;
     BIYOS_int retired = -1;
-    EXPECT_EQ(BIYOS_getoptver(env.get(), 12, &since, &deprecated, &retired), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: option 12: unknown");
+    EXPECT_EQ(BIYOS_getoptver(env.get(), 14, &since, &deprecated, &retired), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: option 14: unknown");
     EXPECT_EQ(BIYOS_getoptver(env.get(), BIYOS_OPT_SEED, nullptr, &deprecated, &retired),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'since': is null");

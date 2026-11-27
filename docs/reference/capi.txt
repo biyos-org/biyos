@@ -194,6 +194,8 @@ value BIYOS_OPT_INTTOL The id of `inttol`.
 value BIYOS_OPT_ZEROTOL The id of `zerotol`.
 value BIYOS_OPT_MAXCPUTIME The id of `maxcputime`.
 value BIYOS_OPT_THREADS The id of `threads`.
+value BIYOS_OPT_CMPTOLABS The id of `cmptol_abs`.
+value BIYOS_OPT_CMPTOLREL The id of `cmptol_rel`.
 since 0.1.0
 
 table Checking

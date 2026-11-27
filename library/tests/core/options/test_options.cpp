@@ -170,6 +170,8 @@ TEST(OptionTest, Defaults)
     EXPECT_DOUBLE_EQ(options.get_double(Option::ZeroTol), 1e-9);
     EXPECT_DOUBLE_EQ(options.get_double(Option::CpuTimeLimit), kInfinity);
     EXPECT_EQ(options.get_int(Option::Threads), 1);
+    EXPECT_DOUBLE_EQ(options.get_double(Option::CmpAbs), 1e-6);
+    EXPECT_DOUBLE_EQ(options.get_double(Option::CmpRel), 1e-6);
 }
 
 TEST(OptionTest, Bool)
@@ -269,7 +271,12 @@ TEST(OptionTest, ToleranceRange)
 {
     Listener listener;
     Options options(listener.env);
-    for (const Option option : {Option::FeasAbs, Option::FeasRel, Option::IntTol, Option::ZeroTol})
+    for (const Option option : {Option::FeasAbs,
+                                Option::FeasRel,
+                                Option::CmpAbs,
+                                Option::CmpRel,
+                                Option::IntTol,
+                                Option::ZeroTol})
     {
         const std::string name(name_of(option));
         options.set_double(option, 0.0);
@@ -383,7 +390,9 @@ TEST(OptionTest, Names)
                                 Option::IntTol,
                                 Option::ZeroTol,
                                 Option::CpuTimeLimit,
-                                Option::Threads})
+                                Option::Threads,
+                                Option::CmpAbs,
+                                Option::CmpRel})
     {
         EXPECT_EQ(find_option(name_of(option)), option);
         EXPECT_EQ(find_option(static_cast<int>(option)), option);
@@ -405,6 +414,8 @@ TEST(OptionTest, Kinds)
     EXPECT_EQ(kind_of(Option::ZeroTol), OptionKind::Double);
     EXPECT_EQ(kind_of(Option::CpuTimeLimit), OptionKind::Double);
     EXPECT_EQ(kind_of(Option::Threads), OptionKind::Int);
+    EXPECT_EQ(kind_of(Option::CmpAbs), OptionKind::Double);
+    EXPECT_EQ(kind_of(Option::CmpRel), OptionKind::Double);
 }
 
 TEST(OptionTest, Versions)
@@ -424,7 +435,7 @@ TEST(OptionTest, UnknownName)
 TEST(OptionTest, UnknownId)
 {
     EXPECT_EQ(failure([] { find_option(0); }), "invalid argument: option 0: unknown");
-    EXPECT_EQ(failure([] { find_option(12); }), "invalid argument: option 12: unknown");
+    EXPECT_EQ(failure([] { find_option(14); }), "invalid argument: option 14: unknown");
     EXPECT_EQ(failure([] { find_option(-3); }), "invalid argument: option -3: unknown");
 }
 
@@ -432,18 +443,18 @@ TEST(OptionTest, MissingRow)
 {
     Listener listener;
     Options options(listener.env);
-    const Option past = static_cast<Option>(12);
+    const Option past = static_cast<Option>(14);
     const Option zero = static_cast<Option>(0);
     EXPECT_EQ(failure([&] { options.set_int(past, 1); }),
-              "internal error: option 12: has no table row");
+              "internal error: option 14: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(options.get_string(zero)); }),
               "internal error: option 0: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(name_of(past)); }),
-              "internal error: option 12: has no table row");
+              "internal error: option 14: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(kind_of(past)); }),
-              "internal error: option 12: has no table row");
+              "internal error: option 14: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(versions_of(past)); }),
-              "internal error: option 12: has no table row");
+              "internal error: option 14: has no table row");
 }
 
 TEST(OptionTest, Sources)
@@ -458,8 +469,8 @@ TEST(OptionTest, Sources)
     static_cast<void>(failure([&] { options.set_double(Option::TimeLimit, -1.0); }));
     EXPECT_EQ(options.source_of(Option::TimeLimit), OptionSource::Default);
     EXPECT_EQ(std::get<int>(options.value_of(Option::Seed)), 3);
-    EXPECT_EQ(failure([&] { static_cast<void>(options.source_of(Option{12})); }),
-              "internal error: option 12: has no table row");
+    EXPECT_EQ(failure([&] { static_cast<void>(options.source_of(Option{14})); }),
+              "internal error: option 14: has no table row");
     EXPECT_EQ(failure([&] { static_cast<void>(options.value_of(Option{0})); }),
               "internal error: option 0: has no table row");
 }
@@ -475,8 +486,8 @@ TEST(OptionTest, Drop)
     EXPECT_EQ(options.source_of(Option::Seed), OptionSource::Default);
     options.drop(Option::TimeLimit);
     EXPECT_EQ(options.source_of(Option::TimeLimit), OptionSource::Default);
-    EXPECT_EQ(failure([&] { options.drop(Option{12}); }),
-              "internal error: option 12: has no table row");
+    EXPECT_EQ(failure([&] { options.drop(Option{14}); }),
+              "internal error: option 14: has no table row");
 }
 
 TEST(OptionTest, DropKept)

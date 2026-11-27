@@ -25,6 +25,8 @@ DEFAULTS = {
     "zerotol": 1e-9,
     "maxcputime": biyos.inf,
     "threads": 1,
+    "cmptol_abs": 1e-6,
+    "cmptol_rel": 1e-6,
 }
 
 VALUES = {
@@ -39,6 +41,8 @@ VALUES = {
     "zerotol": 1e-12,
     "maxcputime": 60.0,
     "threads": 4,
+    "cmptol_abs": 1e-7,
+    "cmptol_rel": 1e-8,
 }
 
 ENVIRONMENT = {"threads"}
