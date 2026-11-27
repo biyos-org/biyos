@@ -44,7 +44,7 @@ const Opcode &opcode_of(Source &source)
     const Opcode *opcode = find_opcode(source.integer());
     if (opcode == nullptr)
     {
-        source.bad("operator " + quote(source.token()) + " is unknown");
+        source.bad("operator " + quote(source.last_field()) + " is unknown");
     }
     return *opcode;
 }
@@ -117,7 +117,7 @@ void Expressions::define(Index variable, std::span<const LinearTerm> terms, cons
 void Expressions::take()
 {
     const char key = source_.key();
-    if (source_.holds(key))
+    if (source_.is_constant(key))
     {
         source_.expect(1);
         operands_.push_back({.node = kNoRoot, .value = source_.constant(key)});
@@ -138,7 +138,7 @@ void Expressions::take()
     default:
         break;
     }
-    source_.bad("expected an expression, not " + quote(source_.head()));
+    source_.bad("expected an expression, not " + quote(source_.key_text()));
 }
 
 void Expressions::open(const Opcode &opcode)
@@ -292,7 +292,7 @@ Offset Expressions::piecewise()
     source_.item(kPlterm);
     if (source_.key() != 'v')
     {
-        source_.bad("a plterm ends with a variable, not " + quote(source_.head()));
+        source_.bad("a plterm ends with a variable, not " + quote(source_.key_text()));
     }
     const Offset child = variable_node();
     const Curve curve = curve_of(source_, slopes_, breaks_);
@@ -305,9 +305,9 @@ Real Expressions::piece()
 {
     source_.item(kPlterm);
     const char key = source_.key();
-    if (!source_.holds(key))
+    if (!source_.is_constant(key))
     {
-        source_.bad("a plterm holds numbers, not " + quote(source_.head()));
+        source_.bad("a plterm holds numbers, not " + quote(source_.key_text()));
     }
     source_.expect(1);
     return source_.constant(key);

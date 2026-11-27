@@ -43,7 +43,7 @@ char TextSource::key() const noexcept
     return entry_.key();
 }
 
-std::string TextSource::head() const
+std::string TextSource::key_text() const
 {
     return std::string(fields_of(lines_).front());
 }
@@ -73,9 +73,9 @@ Offset TextSource::code()
     return integer();
 }
 
-bool TextSource::holds(char leaf) const noexcept
+bool TextSource::is_constant(char key) const noexcept
 {
-    return leaf == 'n';
+    return key == 'n';
 }
 
 Real TextSource::constant(char)
@@ -83,9 +83,9 @@ Real TextSource::constant(char)
     return real();
 }
 
-std::string TextSource::token() const
+std::string TextSource::last_field() const
 {
-    return std::string(token_);
+    return std::string(last_);
 }
 
 std::string TextSource::where() const
@@ -123,9 +123,9 @@ std::string_view TextSource::take()
     {
         check_size(lines_, size(), taken_ + 1);
     }
-    token_ = keyed_ ? entry_[taken_] : fields_[taken_];
+    last_ = keyed_ ? entry_[taken_] : fields_[taken_];
     ++taken_;
-    return token_;
+    return last_;
 }
 
 }

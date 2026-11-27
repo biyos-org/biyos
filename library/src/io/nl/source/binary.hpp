@@ -23,15 +23,15 @@ class BinarySource final : public Source
     void item(std::string_view part) override;
     void line(std::string_view part) override;
     char key() const noexcept override;
-    std::string head() const override;
+    std::string key_text() const override;
     void expect(std::size_t n) const override;
     Offset integer() override;
     Real real() override;
     std::string name() override;
     Offset code() override;
-    bool holds(char leaf) const noexcept override;
+    bool is_constant(char key) const noexcept override;
     Real constant(char leaf) override;
-    std::string token() const override;
+    std::string last_field() const override;
     std::string where() const override;
     void inform(Stream stream, const std::string &text) const override;
 
@@ -51,7 +51,7 @@ class BinarySource final : public Source
     Offset start_;
     std::string part_;
     char key_ = '\0';
-    std::string token_;
+    std::string last_;
 };
 
 }

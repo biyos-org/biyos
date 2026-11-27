@@ -49,7 +49,7 @@ Bounds coded_bounds(Source &source, Offset code)
     default:
         break;
     }
-    source.bad("bound code " + quote(source.token()) + " is unknown");
+    source.bad("bound code " + quote(source.last_field()) + " is unknown");
 }
 
 }

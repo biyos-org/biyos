@@ -48,7 +48,7 @@ ObjectiveSense sense_of(Source &source)
     const Offset code = source.integer();
     if (code != 0 && code != 1)
     {
-        source.bad("objective sense " + quote(source.token()) + " is unknown");
+        source.bad("objective sense " + quote(source.last_field()) + " is unknown");
     }
     return code == 0 ? ObjectiveSense::Minimize : ObjectiveSense::Maximize;
 }
@@ -164,7 +164,7 @@ void NlReader::segment()
     default:
         break;
     }
-    source_.bad("segment " + quote(source_.head()) + " is unknown");
+    source_.bad("segment " + quote(source_.key_text()) + " is unknown");
 }
 
 void NlReader::once(char key)
@@ -289,7 +289,7 @@ void NlReader::skip_suffix()
     const Offset kind = source_.integer();
     if (kind < 0 || kind >= kSuffixKinds)
     {
-        source_.bad("suffix kind " + quote(source_.token()) + " is unknown");
+        source_.bad("suffix kind " + quote(source_.last_field()) + " is unknown");
     }
     const Index n = source_.count();
     const std::string text = source_.name();

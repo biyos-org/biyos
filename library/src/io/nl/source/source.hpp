@@ -24,15 +24,15 @@ class Source
     virtual void item(std::string_view part) = 0;
     virtual void line(std::string_view part) = 0;
     virtual char key() const noexcept = 0;
-    virtual std::string head() const = 0;
+    virtual std::string key_text() const = 0;
     virtual void expect(std::size_t n) const = 0;
     virtual Offset integer() = 0;
     virtual Real real() = 0;
     virtual std::string name() = 0;
     virtual Offset code() = 0;
-    virtual bool holds(char leaf) const noexcept = 0;
+    virtual bool is_constant(char key) const noexcept = 0;
     virtual Real constant(char leaf) = 0;
-    virtual std::string token() const = 0;
+    virtual std::string last_field() const = 0;
     virtual std::string where() const = 0;
     virtual void inform(Stream stream, const std::string &text) const = 0;
 

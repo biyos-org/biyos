@@ -26,7 +26,7 @@ Index Source::count()
     const Offset value = integer();
     if (value < 0 || value > kMostIndex)
     {
-        bad(quote(token()) + " is not a count");
+        bad(quote(last_field()) + " is not a count");
     }
     return static_cast<Index>(value);
 }

@@ -73,7 +73,7 @@ char BinarySource::key() const noexcept
     return key_;
 }
 
-std::string BinarySource::head() const
+std::string BinarySource::key_text() const
 {
     return shown(key_);
 }
@@ -83,7 +83,7 @@ void BinarySource::expect(std::size_t) const {}
 Offset BinarySource::integer()
 {
     const auto value = std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(bits(kIntSize)));
-    token_ = text_of(value);
+    last_ = text_of(value);
     return value;
 }
 
@@ -110,13 +110,13 @@ std::string BinarySource::name()
 Offset BinarySource::code()
 {
     const char code = byte();
-    token_ = shown(code);
+    last_ = shown(code);
     return Offset{code} - '0';
 }
 
-bool BinarySource::holds(char leaf) const noexcept
+bool BinarySource::is_constant(char key) const noexcept
 {
-    return leaf == 'n' || leaf == 's' || leaf == 'l';
+    return key == 'n' || key == 's' || key == 'l';
 }
 
 Real BinarySource::constant(char leaf)
@@ -132,9 +132,9 @@ Real BinarySource::constant(char leaf)
     return real();
 }
 
-std::string BinarySource::token() const
+std::string BinarySource::last_field() const
 {
-    return token_;
+    return last_;
 }
 
 std::string BinarySource::where() const
@@ -199,7 +199,7 @@ void BinarySource::begin(std::string_view part)
 Offset BinarySource::small()
 {
     const auto value = std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(bits(kShortSize)));
-    token_ = text_of(value);
+    last_ = text_of(value);
     return value;
 }
 
