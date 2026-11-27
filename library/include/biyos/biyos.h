@@ -803,7 +803,7 @@ BIYOS_API BIYOS_status BIYOS_addsos(BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_getnsos(const BIYOS_model *mdl, BIYOS_index *n);
 BIYOS_API BIYOS_status BIYOS_getnsosvarsp(const BIYOS_model *mdl,
                                           BIYOS_index n,
-                                          const BIYOS_index *idx,
+                                          const BIYOS_index *sos,
                                           BIYOS_offset *nnz);
 BIYOS_API BIYOS_status BIYOS_getnsosvarrg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
@@ -811,7 +811,7 @@ BIYOS_API BIYOS_status BIYOS_getnsosvarrg(const BIYOS_model *mdl,
                                           BIYOS_offset *nnz);
 BIYOS_API BIYOS_status BIYOS_getsossp(const BIYOS_model *mdl,
                                       BIYOS_index n,
-                                      const BIYOS_index *idx,
+                                      const BIYOS_index *sos,
                                       BIYOS_offset cap,
                                       BIYOS_int *knd,
                                       BIYOS_offset *cnt,
@@ -827,7 +827,7 @@ BIYOS_API BIYOS_status BIYOS_getsosrg(const BIYOS_model *mdl,
                                       BIYOS_real *coef);
 BIYOS_API BIYOS_status BIYOS_setsosnamesp(BIYOS_model *mdl,
                                           BIYOS_index n,
-                                          const BIYOS_index *idx,
+                                          const BIYOS_index *sos,
                                           const char *const *name);
 BIYOS_API BIYOS_status BIYOS_setsosnamerg(BIYOS_model *mdl,
                                           BIYOS_index beg,
@@ -835,7 +835,7 @@ BIYOS_API BIYOS_status BIYOS_setsosnamerg(BIYOS_model *mdl,
                                           const char *const *name);
 BIYOS_API BIYOS_status BIYOS_getsosnamesp(const BIYOS_model *mdl,
                                           BIYOS_index n,
-                                          const BIYOS_index *idx,
+                                          const BIYOS_index *sos,
                                           const char **name);
 BIYOS_API BIYOS_status BIYOS_getsosnamerg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
@@ -844,12 +844,12 @@ BIYOS_API BIYOS_status BIYOS_getsosnamerg(const BIYOS_model *mdl,
 BIYOS_API BIYOS_status BIYOS_getsosidx(const BIYOS_model *mdl,
                                        BIYOS_index n,
                                        const char *const *name,
-                                       BIYOS_index *idx);
-BIYOS_API BIYOS_status BIYOS_delsosnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx);
+                                       BIYOS_index *sos);
+BIYOS_API BIYOS_status BIYOS_delsosnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *sos);
 BIYOS_API BIYOS_status BIYOS_delsosnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end);
 BIYOS_API BIYOS_status BIYOS_delsossp(BIYOS_model *mdl,
                                       BIYOS_index n,
-                                      const BIYOS_index *idx,
+                                      const BIYOS_index *sos,
                                       BIYOS_index *map);
 BIYOS_API BIYOS_status BIYOS_delsosrg(BIYOS_model *mdl,
                                       BIYOS_index beg,

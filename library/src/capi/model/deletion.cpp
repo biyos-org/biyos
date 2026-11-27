@@ -169,10 +169,10 @@ BIYOS_status BIYOS_delindrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delsossp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *sos,
                             BIYOS_index *map)
 {
-    return guarded<delete_special_ordered_sets<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_special_ordered_sets<List>>(mdl, List{n, sos}, map);
 }
 
 BIYOS_status BIYOS_delsosrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)

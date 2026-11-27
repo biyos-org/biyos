@@ -395,10 +395,10 @@ BIYOS_status BIYOS_delindnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index e
 
 BIYOS_status BIYOS_setsosnamesp(BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *sos,
                                 const char *const *name)
 {
-    return guarded<set_names<Family::SpecialOrderedSet, List>>(mdl, List{n, idx}, name);
+    return guarded<set_names<Family::SpecialOrderedSet, List>>(mdl, List{n, sos}, name);
 }
 
 BIYOS_status BIYOS_setsosnamerg(BIYOS_model *mdl,
@@ -411,10 +411,10 @@ BIYOS_status BIYOS_setsosnamerg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getsosnamesp(const BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *sos,
                                 const char **name)
 {
-    return guarded<get_names<Family::SpecialOrderedSet, List>>(mdl, List{n, idx}, name);
+    return guarded<get_names<Family::SpecialOrderedSet, List>>(mdl, List{n, sos}, name);
 }
 
 BIYOS_status BIYOS_getsosnamerg(const BIYOS_model *mdl,
@@ -428,14 +428,14 @@ BIYOS_status BIYOS_getsosnamerg(const BIYOS_model *mdl,
 BIYOS_status BIYOS_getsosidx(const BIYOS_model *mdl,
                              BIYOS_index n,
                              const char *const *name,
-                             BIYOS_index *idx)
+                             BIYOS_index *sos)
 {
-    return guarded<get_indices<Family::SpecialOrderedSet>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::SpecialOrderedSet>>(mdl, n, name, sos);
 }
 
-BIYOS_status BIYOS_delsosnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+BIYOS_status BIYOS_delsosnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *sos)
 {
-    return guarded<delete_names<Family::SpecialOrderedSet, List>>(mdl, List{n, idx});
+    return guarded<delete_names<Family::SpecialOrderedSet, List>>(mdl, List{n, sos});
 }
 
 BIYOS_status BIYOS_delsosnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)
