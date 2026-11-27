@@ -445,10 +445,10 @@ BIYOS_status BIYOS_delsosnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index e
 
 BIYOS_status BIYOS_setconenamesp(BIYOS_model *mdl,
                                  BIYOS_index n,
-                                 const BIYOS_index *idx,
+                                 const BIYOS_index *cone,
                                  const char *const *name)
 {
-    return guarded<set_names<Family::Cone, List>>(mdl, List{n, idx}, name);
+    return guarded<set_names<Family::Cone, List>>(mdl, List{n, cone}, name);
 }
 
 BIYOS_status BIYOS_setconenamerg(BIYOS_model *mdl,
@@ -461,10 +461,10 @@ BIYOS_status BIYOS_setconenamerg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getconenamesp(const BIYOS_model *mdl,
                                  BIYOS_index n,
-                                 const BIYOS_index *idx,
+                                 const BIYOS_index *cone,
                                  const char **name)
 {
-    return guarded<get_names<Family::Cone, List>>(mdl, List{n, idx}, name);
+    return guarded<get_names<Family::Cone, List>>(mdl, List{n, cone}, name);
 }
 
 BIYOS_status BIYOS_getconenamerg(const BIYOS_model *mdl,
@@ -478,14 +478,14 @@ BIYOS_status BIYOS_getconenamerg(const BIYOS_model *mdl,
 BIYOS_status BIYOS_getconeidx(const BIYOS_model *mdl,
                               BIYOS_index n,
                               const char *const *name,
-                              BIYOS_index *idx)
+                              BIYOS_index *cone)
 {
-    return guarded<get_indices<Family::Cone>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::Cone>>(mdl, n, name, cone);
 }
 
-BIYOS_status BIYOS_delconenamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+BIYOS_status BIYOS_delconenamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *cone)
 {
-    return guarded<delete_names<Family::Cone, List>>(mdl, List{n, idx});
+    return guarded<delete_names<Family::Cone, List>>(mdl, List{n, cone});
 }
 
 BIYOS_status BIYOS_delconenamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)

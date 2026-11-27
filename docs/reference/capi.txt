@@ -2063,7 +2063,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone of the range.
 param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the cone of each entry; may be null when `n` is 0.
+param cone in In the `sp` form, the cone of each entry; may be null when `n` is 0.
 param atol in The new absolute tolerance of each; null leaves the absolute tolerances as they are.
 param rtol in The new relative tolerance of each; null leaves the relative tolerances as they are.
 return `BIYOS_OK` once the tolerances are set. A cone that held none keeps the options for the part not given.
@@ -2078,8 +2078,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone of the range.
 param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param atol out Entry `j` receives the absolute tolerance of cone `idx[j]` or `beg + j`, or NaN when it holds none; skipped when null.
+param cone in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param atol out Entry `j` receives the absolute tolerance of cone `cone[j]` or `beg + j`, or NaN when it holds none; skipped when null.
 param rtol out Entry `j` receives its relative tolerance, or NaN when it holds none; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone or the range ends past the last cone.
@@ -2093,7 +2093,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone of the range.
 param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the cone of each entry; may be null when `n` is 0.
+param cone in In the `sp` form, the cone of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the cones listed hold no tolerance of their own. One that held none, or listed more than once, is left without one.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone or the range ends past the last cone.
 see BIYOS_setconetolsp
@@ -2112,7 +2112,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone of the range.
 param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cone in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param nnz out Receives the number of members of the entries, a cone counted each time it appears.
 return `BIYOS_OK`, with the number in `*nnz`.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone, the range ends past the last cone, or `nnz` is null.
@@ -2126,9 +2126,9 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone of the range.
 param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cone in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of members `fun` holds.
-param knd out Entry `j` receives the kind of cone `idx[j]` or `beg + j`; skipped when null.
+param knd out Entry `j` receives the kind of cone `cone[j]` or `beg + j`; skipped when null.
 param cnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
 param fun out Receives the members of each entry, in order; skipped when null.
 return `BIYOS_OK` once the arrays are written, the `cnt[j]` members of entry `j` following those of entry `j - 1` in `fun`.
@@ -2143,7 +2143,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone of the range.
 param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cone in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param nnz out Receives the number of parameters of the entries, a cone counted each time it appears.
 return `BIYOS_OK`, with the number in `*nnz`.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone, the range ends past the last cone, or `nnz` is null.
@@ -2157,7 +2157,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone of the range.
 param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param cone in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of parameters `prm` holds.
 param prmcnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
 param prm out Receives the parameters of each entry, in order; skipped when null.
@@ -2173,7 +2173,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone to delete.
 param end in In the `rg` form, one past the last cone to delete.
 param n in In the `sp` form, the number of cones to delete.
-param idx in In the `sp` form, the cones to delete, in any order; may be null when `n` is 0.
+param cone in In the `sp` form, the cones to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each cone the model held before the call: entry `i` is the new index of cone `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the cones are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone, a cone is listed more than once, with a message such as `invalid argument: argument 'idx': cone 1 is repeated`, or the range ends past the last cone.
@@ -2188,7 +2188,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone of the range.
 param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the cone of each entry; may be null when `n` is 0.
+param cone in In the `sp` form, the cone of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when there are no entries, and no entry may be null.
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone, the range ends past the last cone, an entry of `name` is null, or a name is empty or not well-formed UTF-8.
@@ -2202,8 +2202,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone of the range.
 param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of cone `idx[j]` or `beg + j`, or an empty string when it has none; skipped when null.
+param cone in In the `sp` form, the cone of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of cone `cone[j]` or `beg + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone or the range ends past the last cone.
 note Each pointer stays valid as in `BIYOS_getvarnamesp`: until a call that sets or removes names of cones and lists that cone succeeds, a call that deletes cones succeeds, or the model is freed.
@@ -2215,7 +2215,7 @@ summary Look up cones by name.
 param mdl in The model.
 param n in The number of names.
 param name in The names, each matched byte for byte; may be null only when `n` is 0, and no entry may be null.
-param idx out Entry `j` receives the index of the cone that alone holds `name[j]`; skipped when null.
+param cone out Entry `j` receives the index of the cone that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no cone, with a message such as `invalid argument: cone 'k': unknown`, or by several, with a message that counts them, such as `invalid argument: cone 'k': names 2 cones`. The call fails at the first such name.
 note A lookup works as in `BIYOS_getvaridx`, among the cones alone.
@@ -2228,7 +2228,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first cone of the range.
 param end in In the `rg` form, one past the last cone of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the cone of each entry; may be null when `n` is 0.
+param cone in In the `sp` form, the cone of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the cones listed have no name. One without a name, or listed more than once, is left without one.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone or the range ends past the last cone.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getconenamesp` for a cone it lists is no longer valid.

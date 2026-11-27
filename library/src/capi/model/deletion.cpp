@@ -182,10 +182,10 @@ BIYOS_status BIYOS_delsosrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delconesp(BIYOS_model *mdl,
                              BIYOS_index n,
-                             const BIYOS_index *idx,
+                             const BIYOS_index *cone,
                              BIYOS_index *map)
 {
-    return guarded<delete_cones<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_cones<List>>(mdl, List{n, cone}, map);
 }
 
 BIYOS_status BIYOS_delconerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
