@@ -155,11 +155,11 @@ def test_functions(model):
     assert model.delfun([2, 0]) == [-1, 0, -1, 1]
     assert model.getfunname(range(2)) == ["r1", None]
     assert model.getcst(range(2)) == [1.0, 3.0]
-    assert model.getcon()[0] == [1]
+    assert model.getcon()[0].indices() == [1]
     with pytest.raises(ValueError, match=STALE):
         model.getfunname(f)
     assert model.delfun(range(1)) == [-1, 0]
-    assert model.getcon()[0] == [0]
+    assert model.getcon()[0].indices() == [0]
 
 
 def test_used(model):
@@ -173,7 +173,7 @@ def test_used(model):
     assert model.delfun([]) == [0, 1, 2, 3]
     assert model.getfunname(f) == NAMES + [None]
     assert model.getcst(f) == [0.0, 1.0, 2.0, 3.0]
-    assert model.getcon()[0] == [3]
+    assert model.getcon()[0].indices() == [3]
 
 
 def in_use(model, idx):

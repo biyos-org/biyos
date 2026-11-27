@@ -5,6 +5,7 @@ import pytest
 
 import biyos
 from biyos import EventKind, EventLevel
+from listed import indexed
 from refusal import LOCKED, refusal
 
 NAN = float("nan")
@@ -41,7 +42,7 @@ def tolerances(model):
 def test_add(model):
     added = add_sample(model)
     assert model.getnccon() == 3
-    assert model.getccon() == SAMPLE
+    assert indexed(model.getccon()) == SAMPLE
     assert type(added) is biyos.Complements
     assert [index(complement) for complement in added] == [0, 1, 2]
     assert all(type(item) is biyos.Complement for item in added)
@@ -50,17 +51,17 @@ def test_add(model):
 
 def test_range(model):
     add_sample(model)
-    found = model.getccon(range(1, 3))
+    found = indexed(model.getccon(range(1, 3)))
     assert found == tuple(column[1:] for column in SAMPLE)
-    found = model.getccon([2, 0, 2])
+    found = indexed(model.getccon([2, 0, 2]))
     assert found == tuple([c[2], c[0], c[2]] for c in SAMPLE)
-    assert model.getccon(range(3, 3)) == ([], [], [], [])
+    assert indexed(model.getccon(range(3, 3))) == ([], [], [], [])
 
 
 def test_defaults(model):
     model.addccon([0, 1], [1, 0])
     model.addccon([2], [2], ub=[1.0])
-    assert model.getccon() == (
+    assert indexed(model.getccon()) == (
         [0, 1, 2],
         [1, 0, 2],
         [0.0, 0.0, 0.0],
@@ -71,8 +72,8 @@ def test_defaults(model):
 def test_shared(model):
     model.addcon([1], [0.0], [2.0])
     model.addccon([1, 1], [1, 2], [-biyos.inf, 0.0])
-    assert model.getcon() == ([1], [0.0], [2.0])
-    assert model.getccon()[:2] == ([1, 1], [1, 2])
+    assert indexed(model.getcon()) == ([1], [0.0], [2.0])
+    assert indexed(model.getccon()[:2]) == ([1, 1], [1, 2])
     assert model.getnfun() == 3
 
 
@@ -82,7 +83,7 @@ def test_bounds(model):
     model.setcconbnd(range(2, 3), ub=[5.0])
     found = model.getcconbnd(range(3))
     assert found == ([3.0, 2.0, -biyos.inf], [biyos.inf, 2.0, 5.0])
-    assert model.getccon()[:2] == (BOUNDED, PARTNERS)
+    assert indexed(model.getccon()[:2]) == (BOUNDED, PARTNERS)
 
 
 def test_tolerances(model):
@@ -97,7 +98,7 @@ def test_tolerances(model):
     model.delccontol(c[1:])
     model.delccontol([0, 0])
     assert tolerances(model) == UNSET
-    assert model.getccon() == SAMPLE
+    assert indexed(model.getccon()) == SAMPLE
 
 
 def test_views(env, model):
@@ -105,7 +106,7 @@ def test_views(env, model):
     f = model.addfun(1)
     x = model.addvar(1)
     model.addccon(f, [f[0]])
-    assert model.getccon([3]) == ([3], [3], [0.0], [biyos.inf])
+    assert indexed(model.getccon([3])) == ([3], [3], [0.0], [biyos.inf])
     other = biyos.Model(env)
     g = other.addfun(1)
     d = other.addccon(g, g)
@@ -149,7 +150,7 @@ def test_refused(model):
     assert message == "invalid argument: complement 3: unknown"
     message = refusal(model.getccon, [3])
     assert message == "invalid argument: complement 3: unknown"
-    assert model.getccon() == SAMPLE
+    assert indexed(model.getccon()) == SAMPLE
     assert tolerances(model) == UNSET
 
 
@@ -179,7 +180,7 @@ def test_locked(env, model):
                 call()
             except biyos.Error as error:
                 seen.append(str(error))
-        seen.append(model.getccon())
+        seen.append(indexed(model.getccon()))
 
     add_sample(model)
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
@@ -209,11 +210,11 @@ def test_copy(model):
     c = add_sample(model)
     model.setccontol(c[2:], [0.5], [0.25])
     copy = model.copy()
-    assert copy.getccon() == SAMPLE
+    assert indexed(copy.getccon()) == SAMPLE
     assert copy.getccontol([2]) == ([0.5], [0.25])
     copy.setcconbnd(c[1:].on(copy), [0.0, 0.0])
     copy.delccontol(c.on(copy))
     assert copy.getcconbnd(range(3))[0] == [0.0, 0.0, 0.0]
-    assert model.getccon() == SAMPLE
+    assert indexed(model.getccon()) == SAMPLE
     assert model.getccontol([2]) == ([0.5], [0.25])
     copy.close()

@@ -1,4 +1,5 @@
 from ctypes import byref, c_char_p
+from operator import index
 
 import pytest
 
@@ -20,7 +21,17 @@ FAMILIES = {
     "ccon": biyos.Complements,
 }
 
+VIEWS = {"var": biyos.Variable, "fun": biyos.Function}
+
 CALLBACKS = [("cbfun", "fun"), ("cbvar", "var")]
+
+RECORDS = [
+    ("con", "con", ("fun", None, None)),
+    ("obj", "obj", ("fun", None, None, None)),
+    ("ind", "ind", ("var", None, "fun", None, None)),
+    ("indvar", "ind", ("var", None)),
+    ("ccon", "ccon", ("fun", "fun", None, None)),
+]
 
 
 @pytest.fixture
@@ -68,10 +79,11 @@ def renamed(model, other, short, block):
     assert model.compare(other) is None
 
 
-def stale(model, block):
+def stale(model, *blocks):
     model.delccon([0])
-    with pytest.raises(ValueError, match=STALE):
-        len(block)
+    for block in blocks:
+        with pytest.raises(ValueError, match=STALE):
+            len(block)
 
 
 def looked_up(model, short, names):
@@ -118,3 +130,39 @@ def test_no_names(model):
     found = model.getvaridx([])
     assert type(found) is biyos.Variables
     assert found.indices() == []
+
+
+def buffer(short, count):
+    return None if short is None else (c_index * count)()
+
+
+def ranged(model, call, columns, count):
+    arrays = [buffer(short, count) for short in columns]
+    reader = getattr(lib, f"BIYOS_get{call}rg")
+    assert reader(model._handle, 0, count, *arrays) == 0
+    return [list(array) for array in arrays if array is not None]
+
+
+def blocks_of(found, columns):
+    return [(block, short) for block, short in zip(found, columns) if short]
+
+
+@pytest.mark.parametrize(("call", "short", "columns"), RECORDS)
+def test_record(model, other, call, short, columns):
+    count = getattr(model, f"getn{short}")()
+    found = blocks_of(getattr(model, f"get{call}")(range(count)), columns)
+    assert all(type(block) is FAMILIES[family] for block, family in found)
+    listed = [block.indices() for block, _ in found]
+    assert listed == ranged(model, call, columns, count)
+    for block, family in found:
+        renamed(model, other, family, block)
+    stale(model, *[block for block, _ in found])
+
+
+@pytest.mark.parametrize(("call", "short", "columns"), RECORDS)
+def test_record_one(model, call, short, columns):
+    count = getattr(model, f"getn{short}")()
+    every = ranged(model, call, columns, count)
+    found = blocks_of(getattr(model, f"get{call}")(0), columns)
+    assert all(type(view) is VIEWS[family] for view, family in found)
+    assert [index(view) for view, _ in found] == [column[0] for column in every]

@@ -210,6 +210,7 @@ class FileFormat(IntEnum):
 _INT_MAX = 2 ** (8 * sizeof(c_index) - 1) - 1
 _Block = TypeVar("_Block", bound=Block[View])
 _Argument = tuple[type[Block[View]], str, Any]
+_Column = type[c_integer | c_real] | type[Block[View]]
 
 _COUNTS: dict[type[Block[View]], str] = {
     Variables: "getnvar",
@@ -308,6 +309,18 @@ def _single(
         for family, name, entries in others
     ]
     return lifted, _lifted(coef, many)
+
+
+def _output(column: _Column, n: Index) -> "Array[Any] | memoryview[int]":
+    if issubclass(column, Block):
+        return index_view(n)
+    return (column * n)()
+
+
+def _argument(found: "Array[Any] | memoryview[int]") -> Array[Any]:
+    if isinstance(found, memoryview):
+        return index_array(found)
+    return found
 
 
 def _total(counts: Array[c_offset] | None) -> Offset:
@@ -2925,17 +2938,20 @@ class Model:
         return count.value
 
     @overload
-    def getcon(self, idx: One[Constraint]) -> tuple[Index, Real, Real]: ...
+    def getcon(self, idx: One[Constraint]) -> tuple[Function, Real, Real]: ...
 
     @overload
     def getcon(
         self, idx: Many[Constraint, Constraints] | None = None
-    ) -> tuple[list[Index], list[Real], list[Real]]: ...
+    ) -> tuple[Functions, list[Real], list[Real]]: ...
 
     def getcon(
         self, idx: Selection[Constraint, Constraints] | None = None
-    ) -> tuple[Index, Real, Real] | tuple[list[Index], list[Real], list[Real]]:
+    ) -> tuple[Function, Real, Real] | tuple[Functions, list[Real], list[Real]]:
         """Read the functions and bounds of constraints.
+
+        The functions come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -2948,7 +2964,8 @@ class Model:
         Returns
         -------
         fun
-            The function each constraint bounds.
+            The function each constraint bounds, as a ``Functions`` block,
+            or a ``Function`` for one constraint.
         lb
             The lower bound of each.
         ub
@@ -2960,7 +2977,7 @@ class Model:
         BIYOS_getconrg
         """
         every = range(self.getncon()) if idx is None else idx
-        types = (c_index, c_real, c_real)
+        types = (Functions, c_real, c_real)
         found = self._getlist("BIYOS_getcon", Constraints, every, *types)
         functions, lower, upper = found
         return functions, lower, upper
@@ -3475,20 +3492,23 @@ class Model:
     @overload
     def getobj(
         self, idx: One[Objective]
-    ) -> tuple[Index, ObjectiveSense, int, Real]: ...
+    ) -> tuple[Function, ObjectiveSense, int, Real]: ...
 
     @overload
     def getobj(
         self, idx: Many[Objective, Objectives] | None = None
-    ) -> tuple[list[Index], list[ObjectiveSense], list[int], list[Real]]: ...
+    ) -> tuple[Functions, list[ObjectiveSense], list[int], list[Real]]: ...
 
     def getobj(
         self, idx: Selection[Objective, Objectives] | None = None
     ) -> (
-        tuple[Index, ObjectiveSense, int, Real]
-        | tuple[list[Index], list[ObjectiveSense], list[int], list[Real]]
+        tuple[Function, ObjectiveSense, int, Real]
+        | tuple[Functions, list[ObjectiveSense], list[int], list[Real]]
     ):
         """Read objectives.
+
+        The functions come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -3501,7 +3521,8 @@ class Model:
         Returns
         -------
         fun
-            The function each objective optimizes.
+            The function each objective optimizes, as a ``Functions`` block,
+            or a ``Function`` for one objective.
         sense
             The sense of each.
         prio
@@ -3515,7 +3536,7 @@ class Model:
         BIYOS_getobjrg
         """
         every = range(self.getnobj()) if idx is None else idx
-        types = (c_index, c_integer, c_integer, c_real)
+        types = (Functions, c_integer, c_integer, c_real)
         found = self._getlist("BIYOS_getobj", Objectives, every, *types)
         functions, codes, priorities, weights = found
         senses = _each(ObjectiveSense, codes)
@@ -3821,17 +3842,20 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getindvar(self, idx: One[Indicator]) -> tuple[Index, int]: ...
+    def getindvar(self, idx: One[Indicator]) -> tuple[Variable, int]: ...
 
     @overload
     def getindvar(
         self, idx: Many[Indicator, Indicators]
-    ) -> tuple[list[Index], list[int]]: ...
+    ) -> tuple[Variables, list[int]]: ...
 
     def getindvar(
         self, idx: Selection[Indicator, Indicators]
-    ) -> tuple[Index, int] | tuple[list[Index], list[int]]:
+    ) -> tuple[Variable, int] | tuple[Variables, list[int]]:
         """Read the variables that switch indicators on, and their values.
+
+        The variables come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -3843,7 +3867,8 @@ class Model:
         Returns
         -------
         var
-            The variable of each.
+            The variable of each, as a ``Variables`` block, or a ``Variable``
+            for one indicator.
         val
             The value of each.
 
@@ -3852,7 +3877,7 @@ class Model:
         BIYOS_getindvarsp
         BIYOS_getindvarrg
         """
-        pair = (c_index, c_integer)
+        pair = (Variables, c_integer)
         found = self._getlist("BIYOS_getindvar", Indicators, idx, *pair)
         variables, values = found
         return variables, values
@@ -3876,20 +3901,24 @@ class Model:
     @overload
     def getind(
         self, idx: One[Indicator]
-    ) -> tuple[Index, int, Index, Real, Real]: ...
+    ) -> tuple[Variable, int, Function, Real, Real]: ...
 
     @overload
     def getind(
         self, idx: Many[Indicator, Indicators] | None = None
-    ) -> tuple[list[Index], list[int], list[Index], list[Real], list[Real]]: ...
+    ) -> tuple[Variables, list[int], Functions, list[Real], list[Real]]: ...
 
     def getind(
         self, idx: Selection[Indicator, Indicators] | None = None
     ) -> (
-        tuple[Index, int, Index, Real, Real]
-        | tuple[list[Index], list[int], list[Index], list[Real], list[Real]]
+        tuple[Variable, int, Function, Real, Real]
+        | tuple[Variables, list[int], Functions, list[Real], list[Real]]
     ):
         """Read indicators.
+
+        The variables and the functions come as blocks, which raise
+        ``ValueError`` once the model has had a deletion. ``indices`` gives
+        them as lists.
 
         Parameters
         ----------
@@ -3902,11 +3931,13 @@ class Model:
         Returns
         -------
         var
-            The variable that switches each indicator on.
+            The variable that switches each indicator on, as a ``Variables``
+            block, or a ``Variable`` for one indicator.
         val
             The value of each variable that switches its indicator on.
         fun
-            The function each indicator bounds.
+            The function each indicator bounds, as a ``Functions`` block, or
+            a ``Function`` for one indicator.
         lb
             The lower bound of each.
         ub
@@ -3918,7 +3949,7 @@ class Model:
         BIYOS_getindrg
         """
         every = range(self.getnind()) if idx is None else idx
-        types = (c_index, c_integer, c_index, c_real, c_real)
+        types = (Variables, c_integer, Functions, c_real, c_real)
         found = self._getlist("BIYOS_getind", Indicators, every, *types)
         variables, values, functions, lower, upper = found
         return variables, values, functions, lower, upper
@@ -5133,20 +5164,23 @@ class Model:
     @overload
     def getccon(
         self, idx: One[Complement]
-    ) -> tuple[Index, Index, Real, Real]: ...
+    ) -> tuple[Function, Function, Real, Real]: ...
 
     @overload
     def getccon(
         self, idx: Many[Complement, Complements] | None = None
-    ) -> tuple[list[Index], list[Index], list[Real], list[Real]]: ...
+    ) -> tuple[Functions, Functions, list[Real], list[Real]]: ...
 
     def getccon(
         self, idx: Selection[Complement, Complements] | None = None
     ) -> (
-        tuple[Index, Index, Real, Real]
-        | tuple[list[Index], list[Index], list[Real], list[Real]]
+        tuple[Function, Function, Real, Real]
+        | tuple[Functions, Functions, list[Real], list[Real]]
     ):
         """Read the functions and bounds of complements.
+
+        The functions come as blocks, which raise ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as lists.
 
         Parameters
         ----------
@@ -5159,9 +5193,10 @@ class Model:
         Returns
         -------
         fun1
-            The bounded function of each complement.
+            The bounded function of each complement, as a ``Functions``
+            block, or a ``Function`` for one complement.
         fun2
-            The function complementary to it.
+            The function complementary to it, in the same form.
         lb
             The lower bound of each.
         ub
@@ -5173,7 +5208,7 @@ class Model:
         BIYOS_getcconrg
         """
         every = range(self.getnccon()) if idx is None else idx
-        types = (c_index, c_index, c_real, c_real)
+        types = (Functions, Functions, c_real, c_real)
         found = self._getlist("BIYOS_getccon", Complements, every, *types)
         bounded, partners, lower, upper = found
         return bounded, partners, lower, upper
@@ -5735,14 +5770,19 @@ class Model:
         call: str,
         family: type[Block[View]],
         idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
-        *types: type[c_index | c_integer | c_real],
+        *types: _Column,
     ) -> list[Any]:
         one, n, chosen = self._selected(call, family, idx, len(types))
-        found = [(element * n)() for element in types]
-        self._call(*chosen, *found)
-        if one:
-            return [values[0] for values in found]
-        return [list(values) for values in found]
+        found = [_output(column, n) for column in types]
+        self._call(*chosen, *map(_argument, found))
+        columns = zip(types, found)
+        return [self._column(column, values, one) for column, values in columns]
+
+    def _column(self, column: _Column, values: Any, one: bool) -> Any:
+        if issubclass(column, Block):
+            block = column(self, values, self._gen)
+            return block[0] if one else block
+        return values[0] if one else list(values)
 
     def _count(
         self,

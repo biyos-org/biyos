@@ -14,6 +14,6 @@ with biyos.Env() as env, biyos.Model(env) as model:
     x, p = build(model)
     assert model.getpwl(p) == ([3], [0.0, 1.0, 2.0], [0.0, 1.0, 3.0])
     f = model.getobj()[0]
-    assert model.getrlinterm(f) == (f, [1], [1.0])
+    assert model.getrlinterm(f) == (f.indices(), [1], [1.0])
     assert model.getexpr(f)[1] == [Operator.VARIABLE, Operator.PIECEWISE_LINEAR]
     print(model.getnpwl(), model.getnpwlpt())

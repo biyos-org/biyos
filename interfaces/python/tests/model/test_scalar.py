@@ -6,6 +6,7 @@ import pytest
 import biyos
 from biyos import ConeKind, ObjectiveSense, SpecialOrderedSetKind
 from biyos import VariableKind
+from listed import indexed
 
 NAMED = ("var", "fun", "con", "obj", "ind", "sos", "cone", "ccon")
 TOLERANCES = ("var", "con", "obj", "cone", "ccon")
@@ -171,7 +172,7 @@ def read(model):
             found.append(call())
         else:
             found.append(call(range(last(model, short) + 1)))
-    return repr(found)
+    return repr(indexed(found))
 
 
 def listed(args):
@@ -265,7 +266,7 @@ def test_indvar_view(model):
     blocks = build(model)
     x = blocks["var"]
     model.setindvar(blocks["ind"][1], x[2], 1)
-    assert model.getindvar([1]) == ([2], [1])
+    assert indexed(model.getindvar([1])) == ([2], [1])
 
 
 def test_delcb_scalar(model):
@@ -295,21 +296,22 @@ def test_reader_scalar(model, method, short):
     build(model)
     k = last(model, short)
     call = getattr(model, method)
-    assert repr(call(k)) == repr(unwrapped(call([k])))
+    assert repr(indexed(call(k))) == repr(indexed(unwrapped(call([k]))))
 
 
 @pytest.mark.parametrize("method, short", SCALAR_READERS)
 def test_reader_view(model, method, short):
     view = build(model)[short][-1]
     call = getattr(model, method)
-    assert repr(call(view)) == repr(call(index(view)))
+    assert repr(indexed(call(view))) == repr(indexed(call(index(view))))
 
 
 @pytest.mark.parametrize("method, short", DEFAULT_READERS)
 def test_reader_every(model, method, short):
     build(model)
     call = getattr(model, method)
-    assert call() == call(range(last(model, short) + 1))
+    every = call(range(last(model, short) + 1))
+    assert indexed(call()) == indexed(every)
 
 
 @pytest.mark.parametrize("method", sorted(LIST_READERS) + list(LIST_COUNTERS))
