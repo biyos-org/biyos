@@ -142,9 +142,9 @@ std::string BinarySource::where() const
     return "file '" + file_ + "' byte " + text_of(start_);
 }
 
-void BinarySource::inform(Stream stream, const std::string &text) const
+Place BinarySource::place() const
 {
-    biyos::inform(stream, file_, "byte", to_size(start_), text);
+    return {.file = file_, .unit = "byte", .at = to_size(start_)};
 }
 
 std::size_t BinarySource::take(char *data, std::size_t n)

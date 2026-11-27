@@ -33,7 +33,7 @@ class TextSource final : public Source
     Real constant(char leaf) override;
     std::string last_field() const override;
     std::string where() const override;
-    void inform(Stream stream, const std::string &text) const override;
+    Place place() const override;
 
   private:
     void start(bool keyed);

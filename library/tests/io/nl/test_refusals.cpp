@@ -21,11 +21,7 @@ constexpr std::string_view kFormats = "hzBGHZ";
 constexpr std::string_view kFunctionsTail = R"(F0 1 -1 myfunc
 )";
 
-constexpr std::string_view kSosnoTail = R"(S0 1 sosno
-0 1
-)";
-
-constexpr std::string_view kRefTail = R"(S4 1 ref
+constexpr std::string_view kSosnoTail = R"(S4 1 sosno
 0 1.5
 )";
 
@@ -121,8 +117,7 @@ TEST(NlTest, Functions)
 
 TEST(NlTest, Sets)
 {
-    EXPECT_EQ(tiny_fault(kSosnoTail), refused(11, "suffix 'sosno'"));
-    EXPECT_EQ(tiny_fault(kRefTail), refused(11, "suffix 'ref'"));
+    EXPECT_EQ(tiny_fault(kSosnoTail), refused(11, "real values of suffix 'sosno'"));
 }
 
 TEST(NlTest, Logical)

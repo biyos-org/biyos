@@ -18,18 +18,22 @@ using biyos::Constraint;
 using biyos::difference;
 using biyos::Index;
 using biyos::LinearTerm;
+using biyos::Member;
 using biyos::Model;
 using biyos::ObjectiveSense;
 using biyos::Offset;
+using biyos::SpecialOrderedSetKind;
 using biyos::test::nl::add_goal;
 using biyos::test::nl::bad;
 using biyos::test::nl::continuous;
 using biyos::test::nl::fault_of;
+using biyos::test::nl::infos_of;
 using biyos::test::nl::kInfinity;
 using biyos::test::nl::read_sample;
 using biyos::test::nl::refused;
 using biyos::test::nl::square_of;
 using biyos::test::nl::tiny_fault;
+using biyos::test::nl::tiny_with;
 
 namespace
 {
@@ -176,6 +180,115 @@ b
 3
 )";
 
+constexpr std::string_view kSetsNlFile = R"(g3 1 1 0
+ 4 0 1 0 0
+ 0 0
+ 0 0
+ 0 0 0
+ 0 0 0 1
+ 0 0 0 0 0
+ 0 4
+ 0 0
+ 0 0 0 0 0
+O0 0
+n0
+b
+2 0
+2 0
+2 0
+2 0
+k3
+0
+0
+0
+G0 4
+0 1
+1 1
+2 1
+3 1
+)";
+
+constexpr std::string_view kSetsTail = R"(S0 4 sosno
+3 -2
+0 1
+2 -2
+1 1
+S4 3 ref
+0 1
+1 2.5
+3 4
+)";
+
+constexpr std::string_view kIntegerTail = R"(S0 1 ref
+0 3
+S0 1 sosno
+0 1
+)";
+
+constexpr std::string_view kPlainTail = R"(C0
+n0
+O0 0
+n0
+r
+3
+b
+3
+)";
+
+constexpr std::string_view kRepeatedSuffixTail = R"(S0 1 sosno
+0 1
+S0 1 sosno
+0 1
+)";
+
+constexpr std::string_view kRepeatedEntryTail = R"(S0 2 ref
+0 1
+0 2
+)";
+
+constexpr std::string_view kSameWeightTail = R"(S0 2 sosno
+0 1
+1 1
+S0 2 ref
+0 2
+1 2
+)";
+
+constexpr std::string_view kDefaultTail = R"(S0 4 sosno
+3 -2
+0 1
+2 -2
+1 1
+S0 1 ref
+0 5
+)";
+
+constexpr std::string_view kWeightsTail = R"(S4 1 ref
+0 1.5
+S1 1 sosno
+0 1
+)";
+
+std::string with(std::string_view text, std::string_view tail)
+{
+    return std::string(text) + std::string(tail);
+}
+
+Model numbered()
+{
+    Model model = read_sample(kSetsNlFile);
+    model.add_special_ordered_sets(
+        std::vector{SpecialOrderedSetKind::One, SpecialOrderedSetKind::Two},
+        std::vector<Offset>{0, 2, 4},
+        std::vector{
+            Member{.variable = 0, .weight = 1.0},
+            Member{.variable = 1, .weight = 2.5},
+            Member{.variable = 2, .weight = 0.0},
+            Member{.variable = 3, .weight = 4.0},
+        });
+    return model;
+}
+
 Model nonnegative()
 {
     Model model;
@@ -274,4 +387,59 @@ TEST(NlTest, CrowdedHeader)
 TEST(NlTest, PairedTwice)
 {
     EXPECT_EQ(fault_of(kTwiceNlFile), refused(19, "variable 0 is complemented twice"));
+}
+
+TEST(NlTest, SetSuffixes)
+{
+    EXPECT_EQ(difference(read_sample(with(kSetsNlFile, kSetsTail)), numbered()), "");
+}
+
+TEST(NlTest, IntegerWeights)
+{
+    Model wanted = read_sample(tiny_with(kPlainTail));
+    const Member member{.variable = 0, .weight = 3.0};
+    wanted.add_special_ordered_sets(std::vector{SpecialOrderedSetKind::One},
+                                    std::vector<Offset>{0, 1},
+                                    std::span(&member, 1));
+    EXPECT_EQ(difference(read_sample(tiny_with(with(kIntegerTail, kPlainTail))), wanted), "");
+}
+
+TEST(NlTest, RepeatedSuffix)
+{
+    EXPECT_EQ(tiny_fault(kRepeatedSuffixTail), bad(13, "suffix 'sosno' is repeated"));
+}
+
+TEST(NlTest, RepeatedEntry)
+{
+    EXPECT_EQ(tiny_fault(kRepeatedEntryTail), bad(13, "variable 0 is repeated"));
+}
+
+TEST(NlTest, DefaultWeights)
+{
+    Model wanted = read_sample(kSetsNlFile);
+    wanted.add_special_ordered_sets(
+        std::vector{SpecialOrderedSetKind::One, SpecialOrderedSetKind::Two},
+        std::vector<Offset>{0, 2, 4},
+        std::vector{
+            Member{.variable = 0, .weight = 5.0},
+            Member{.variable = 1, .weight = 0.0},
+            Member{.variable = 2, .weight = 1.0},
+            Member{.variable = 3, .weight = 2.0},
+        });
+    EXPECT_EQ(difference(read_sample(with(kSetsNlFile, kDefaultTail)), wanted), "");
+}
+
+TEST(NlTest, SameWeight)
+{
+    EXPECT_EQ(fault_of(with(kSetsNlFile, kSameWeightTail)),
+              refused(32, "set 0: weight 2 is repeated"));
+}
+
+TEST(NlTest, LoneWeights)
+{
+    const std::vector<std::string> wanted{
+        "file 't.nl' line 13: suffix 'sosno' is skipped",
+        "file 't.nl' line 11: suffix 'ref' is skipped",
+    };
+    EXPECT_EQ(infos_of(tiny_with(with(kWeightsTail, kPlainTail))), wanted);
 }

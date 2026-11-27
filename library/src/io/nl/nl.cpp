@@ -358,6 +358,7 @@ void NlReader::finish()
     }
     checked(source_, [&] { model_.add_objectives(objectives); });
     add_complements(source_, model_, first, pairings_);
+    suffixes_.add_to(model_);
 }
 
 void NlReader::check_bodies(Index first, Index n, std::string_view noun)
