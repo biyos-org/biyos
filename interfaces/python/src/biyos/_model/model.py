@@ -2660,7 +2660,7 @@ class Model:
         self._call(lib.BIYOS_getcbvar, integer("cb", cb), n, index_array(found))
         return Variables(self, found, self._gen)
 
-    def delcb(self, idx: Index | Sequence[Index]) -> list[Index]:
+    def delcb(self, cb: Index | Sequence[Index]) -> list[Index]:
         """Delete callbacks.
 
         The callbacks left keep their order, their functions and their
@@ -2671,7 +2671,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        cb
             The callbacks to delete, in any order, none of them twice.
             An index stands for one callback.
 
@@ -2686,9 +2686,9 @@ class Model:
         BIYOS_delcbsp
         BIYOS_delcbrg
         """
-        one, n = counted(idx)
+        one, n = counted(cb)
         found = (c_index * self._callbacks.total())()
-        self._call(lib.BIYOS_delcbsp, n, ints("idx", idx, n, one), found)
+        self._call(lib.BIYOS_delcbsp, n, ints("idx", cb, n, one), found)
         renumbered = list(found)
         self._callbacks.deleted(renumbered)
         return renumbered
