@@ -47,7 +47,7 @@ constexpr std::array kOpcodes{
     Opcode{45, "cosh", Rule::Same, Arity::One, Operator::Cosh},
     Opcode{46, "cos", Rule::Same, Arity::One, Operator::Cos},
     Opcode{47, "atanh", Rule::Same, Arity::One, Operator::Atanh},
-    Opcode{48, "atan2", Rule::Refused},
+    Opcode{48, "atan2", Rule::Same, Arity::Two, Operator::Atan2},
     Opcode{49, "atan", Rule::Same, Arity::One, Operator::Atan},
     Opcode{50, "asinh", Rule::Same, Arity::One, Operator::Asinh},
     Opcode{51, "asin", Rule::Same, Arity::One, Operator::Asin},

@@ -17,6 +17,7 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <numbers>
 #include <span>
 #include <string>
 #include <string_view>
@@ -111,6 +112,18 @@ b
 3
 )";
 
+constexpr std::string_view kAtan2Tail = R"(C0
+n0
+O0 0
+o48
+n1
+v0
+r
+3
+b
+3
+)";
+
 constexpr std::string_view kPiecesTail = R"(C0
 n0
 O0 0
@@ -172,6 +185,12 @@ Real objective_at(const Model &model, Real x)
     std::vector<Real> f(static_cast<std::size_t>(model.n_functions()));
     evaluation.values(Lookup(env.options()), std::vector{x}, f);
     return f[1];
+}
+
+Offset atan2_of(Model &model, Offset x)
+{
+    const Offset one = node(model, Operator::Constant, {}, {1.0});
+    return node(model, Operator::Atan2, {one, x}, {});
 }
 
 Model curved()
@@ -264,6 +283,14 @@ TEST(NlTest, Less)
     EXPECT_DOUBLE_EQ(objective_at(model, 3.5), 2.5);
     EXPECT_DOUBLE_EQ(objective_at(model, -2.0), 0.0);
     EXPECT_TRUE(std::isnan(objective_at(model, kNan)));
+}
+
+TEST(NlTest, Atan2)
+{
+    const Model model = read_sample(tiny_with(kAtan2Tail));
+    EXPECT_EQ(difference(model, tiny_wanted(atan2_of)), "");
+    EXPECT_DOUBLE_EQ(objective_at(model, 1.0), std::numbers::pi / 4.0);
+    EXPECT_DOUBLE_EQ(objective_at(model, -1.0), 3.0 * std::numbers::pi / 4.0);
 }
 
 TEST(NlTest, Pieces)

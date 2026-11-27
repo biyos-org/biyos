@@ -212,10 +212,11 @@ An expression is written in prefix order, one item a line: `n` and a number for 
 | `neg`, `abs`, `min`, `max` | The same operator. |
 | `sqrt`, `exp`, `log`, `log10` | The same function, `log10` as the natural logarithm times $\log_{10} e$. |
 | `sin`, `cos`, `tan`, `asin`, `acos`, `atan` | The same function. |
+| `atan2` | The same function, its first operand $y$ in $\operatorname{atan2}(y, x)$. |
 | `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh` | The same function. |
 | `plterm` | A piecewise linear function of one variable. |
 
-Every other operator, among them `atan2`, the comparisons, the logical operators, `if`, `floor`, `ceil` and `round`, is refused with `BIYOS_ERR_UNSUPPORTED`, as are imported functions (`f`) and strings (`h`).
+Every other operator, among them the comparisons, the logical operators, `if`, `floor`, `ceil` and `round`, is refused with `BIYOS_ERR_UNSUPPORTED`, as are imported functions (`f`) and strings (`h`).
 
 ### Choices {#sec-nl-choices}
 
@@ -250,7 +251,7 @@ A model read from NL reads back the same, every number bit for bit, when the `J`
 | Defined variables | A node used by several parents, the operand of a piecewise linear function, the constant exponent of a power, and a sum that is not `plus`, `sum` or `minus` and whose terms are variables, or variables then one term of weight 1 with no constant, each written once as a `V` segment and named again. Such a sum has its variables as the linear terms of the segment, the form in which the reader reads a defined variable back. Those used by several records come first, the others just before the segment of their record, with the third integer Gay gives. |
 | Functions | A function several records use is written once for each, and reads back as that many functions. A function no record uses is left out, with an info event from module `io`, with the field `file`, naming it. |
 
-The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the way: a callback, a cone, a complement, an indicator or a special ordered set; a semi-continuous or semi-integer variable; an objective with a weight other than 1; an expression that holds `BIYOS_OP_ENT`, `BIYOS_OP_SPOW`, `BIYOS_OP_ERF` or `BIYOS_OP_ATAN2`, the last because the reader refuses `atan2`.
+The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the way: a callback, a cone, a complement, an indicator or a special ordered set; a semi-continuous or semi-integer variable; an objective with a weight other than 1; an expression that holds `BIYOS_OP_ENT`, `BIYOS_OP_SPOW`, `BIYOS_OP_ERF` or `BIYOS_OP_ATAN2`.
 
 A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of each objective, and the model's options, as for MPS; then the binary variables written as integers, and the names. Hooks are not part of the problem and are left out with no event.
 
