@@ -158,15 +158,15 @@ BIYOS_index BIYOS_getnevtfld(const BIYOS_event *evt)
     return evt == nullptr ? 0 : to_index(evt->core->fields.size());
 }
 
-const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index idx)
+const char *BIYOS_getevtfldname(const BIYOS_event *evt, BIYOS_index fld)
 {
-    const Field *found = field_of(evt, idx);
+    const Field *found = field_of(evt, fld);
     return found == nullptr ? "" : found->name.c_str();
 }
 
-const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index idx)
+const char *BIYOS_getevtfldval(const BIYOS_event *evt, BIYOS_index fld)
 {
-    const Field *found = field_of(evt, idx);
+    const Field *found = field_of(evt, fld);
     return found == nullptr ? "" : found->value.c_str();
 }
 

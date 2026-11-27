@@ -67,10 +67,10 @@ void get_pairs(const Session &session,
 
 BIYOS_status BIYOS_getnquadtermsp(const BIYOS_model *mdl,
                                   BIYOS_index n,
-                                  const BIYOS_index *idx,
+                                  const BIYOS_index *fun,
                                   BIYOS_offset *nnz)
 {
-    return guarded<n_pairs<List>>(mdl, List{n, idx}, nnz);
+    return guarded<n_pairs<List>>(mdl, List{n, fun}, nnz);
 }
 
 BIYOS_status BIYOS_getnquadtermrg(const BIYOS_model *mdl,
@@ -83,7 +83,7 @@ BIYOS_status BIYOS_getnquadtermrg(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getquadtermsp(const BIYOS_model *mdl,
                                  BIYOS_index n,
-                                 const BIYOS_index *idx,
+                                 const BIYOS_index *fun,
                                  BIYOS_offset cap,
                                  BIYOS_offset *cnt,
                                  BIYOS_index *var1,
@@ -91,7 +91,7 @@ BIYOS_status BIYOS_getquadtermsp(const BIYOS_model *mdl,
                                  BIYOS_real *coef)
 {
     const Pairs out{.rows = var1, .columns = var2, .values = coef};
-    return guarded<get_pairs<List>>(mdl, List{n, idx}, cap, cnt, out);
+    return guarded<get_pairs<List>>(mdl, List{n, fun}, cap, cnt, out);
 }
 
 BIYOS_status BIYOS_getquadtermrg(const BIYOS_model *mdl,

@@ -112,10 +112,10 @@ void get_pattern(Session &session,
 
 BIYOS_status BIYOS_getngpatsp(BIYOS_model *mdl,
                               BIYOS_index n,
-                              const BIYOS_index *idx,
+                              const BIYOS_index *fun,
                               BIYOS_offset *nnz)
 {
-    return guarded<n_pattern<Jacobian, List>>(mdl, List{n, idx}, nnz);
+    return guarded<n_pattern<Jacobian, List>>(mdl, List{n, fun}, nnz);
 }
 
 BIYOS_status BIYOS_getngpatrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_offset *nnz)
@@ -125,12 +125,12 @@ BIYOS_status BIYOS_getngpatrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end
 
 BIYOS_status BIYOS_getgpatsp(BIYOS_model *mdl,
                              BIYOS_index n,
-                             const BIYOS_index *idx,
+                             const BIYOS_index *fun,
                              BIYOS_offset cap,
                              BIYOS_offset *cnt,
                              BIYOS_index *var)
 {
-    return guarded<get_pattern<Jacobian, List>>(mdl, List{n, idx}, cap, cnt, var);
+    return guarded<get_pattern<Jacobian, List>>(mdl, List{n, fun}, cap, cnt, var);
 }
 
 BIYOS_status BIYOS_getgpatrg(BIYOS_model *mdl,
@@ -145,10 +145,10 @@ BIYOS_status BIYOS_getgpatrg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getnhpatsp(BIYOS_model *mdl,
                               BIYOS_index n,
-                              const BIYOS_index *idx,
+                              const BIYOS_index *fun,
                               BIYOS_offset *nnz)
 {
-    return guarded<n_pattern<Hessian, List>>(mdl, List{n, idx}, nnz);
+    return guarded<n_pattern<Hessian, List>>(mdl, List{n, fun}, nnz);
 }
 
 BIYOS_status BIYOS_getnhpatrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_offset *nnz)
@@ -158,12 +158,12 @@ BIYOS_status BIYOS_getnhpatrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end
 
 BIYOS_status BIYOS_gethpatsp(BIYOS_model *mdl,
                              BIYOS_index n,
-                             const BIYOS_index *idx,
+                             const BIYOS_index *fun,
                              BIYOS_offset cap,
                              BIYOS_offset *cnt,
                              BIYOS_index *var)
 {
-    return guarded<get_pattern<Hessian, List>>(mdl, List{n, idx}, cap, cnt, var);
+    return guarded<get_pattern<Hessian, List>>(mdl, List{n, fun}, cap, cnt, var);
 }
 
 BIYOS_status BIYOS_gethpatrg(BIYOS_model *mdl,

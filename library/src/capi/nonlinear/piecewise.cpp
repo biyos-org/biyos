@@ -164,10 +164,10 @@ BIYOS_status BIYOS_getnpwl(const BIYOS_model *mdl, BIYOS_index *n)
 
 BIYOS_status BIYOS_getnpwlptsp(const BIYOS_model *mdl,
                                BIYOS_index n,
-                               const BIYOS_index *idx,
+                               const BIYOS_index *pwl,
                                BIYOS_offset *nnz)
 {
-    return guarded<n_points<List>>(mdl, List{n, idx}, nnz);
+    return guarded<n_points<List>>(mdl, List{n, pwl}, nnz);
 }
 
 BIYOS_status BIYOS_getnpwlptrg(const BIYOS_model *mdl,
@@ -180,7 +180,7 @@ BIYOS_status BIYOS_getnpwlptrg(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getpwlsp(const BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *pwl,
                             BIYOS_offset cap,
                             BIYOS_offset *cnt,
                             BIYOS_real *x,
@@ -191,7 +191,7 @@ BIYOS_status BIYOS_getpwlsp(const BIYOS_model *mdl,
         .x = x,
         .y = y,
     };
-    return guarded<get_pwls<List>>(mdl, List{n, idx}, cap, out);
+    return guarded<get_pwls<List>>(mdl, List{n, pwl}, cap, out);
 }
 
 BIYOS_status BIYOS_getpwlrg(const BIYOS_model *mdl,

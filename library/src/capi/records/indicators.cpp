@@ -139,11 +139,11 @@ BIYOS_status BIYOS_addind(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_setindbndsp(BIYOS_model *mdl,
                                BIYOS_index n,
-                               const BIYOS_index *idx,
+                               const BIYOS_index *ind,
                                const BIYOS_real *lb,
                                const BIYOS_real *ub)
 {
-    return guarded<set_chosen<List>>(mdl, List{n, idx}, Fields{.lower = lb, .upper = ub});
+    return guarded<set_chosen<List>>(mdl, List{n, ind}, Fields{.lower = lb, .upper = ub});
 }
 
 BIYOS_status BIYOS_setindbndrg(BIYOS_model *mdl,
@@ -157,11 +157,11 @@ BIYOS_status BIYOS_setindbndrg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getindbndsp(const BIYOS_model *mdl,
                                BIYOS_index n,
-                               const BIYOS_index *idx,
+                               const BIYOS_index *ind,
                                BIYOS_real *lb,
                                BIYOS_real *ub)
 {
-    return guarded<get_chosen<List>>(mdl, List{n, idx}, Outputs{.lower = lb, .upper = ub});
+    return guarded<get_chosen<List>>(mdl, List{n, ind}, Outputs{.lower = lb, .upper = ub});
 }
 
 BIYOS_status BIYOS_getindbndrg(const BIYOS_model *mdl,
@@ -175,12 +175,12 @@ BIYOS_status BIYOS_getindbndrg(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_setindvarsp(BIYOS_model *mdl,
                                BIYOS_index n,
-                               const BIYOS_index *idx,
+                               const BIYOS_index *ind,
                                const BIYOS_index *var,
                                const BIYOS_int *val)
 {
     const Fields fields{.variables = var, .values = val};
-    return guarded<set_chosen<List>>(mdl, List{n, idx}, fields);
+    return guarded<set_chosen<List>>(mdl, List{n, ind}, fields);
 }
 
 BIYOS_status BIYOS_setindvarrg(BIYOS_model *mdl,
@@ -195,12 +195,12 @@ BIYOS_status BIYOS_setindvarrg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getindvarsp(const BIYOS_model *mdl,
                                BIYOS_index n,
-                               const BIYOS_index *idx,
+                               const BIYOS_index *ind,
                                BIYOS_index *var,
                                BIYOS_int *val)
 {
     const Outputs outputs{.variables = var, .values = val};
-    return guarded<get_chosen<List>>(mdl, List{n, idx}, outputs);
+    return guarded<get_chosen<List>>(mdl, List{n, ind}, outputs);
 }
 
 BIYOS_status BIYOS_getindvarrg(const BIYOS_model *mdl,
@@ -220,7 +220,7 @@ BIYOS_status BIYOS_getnind(const BIYOS_model *mdl, BIYOS_index *n)
 
 BIYOS_status BIYOS_getindsp(const BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *ind,
                             BIYOS_index *var,
                             BIYOS_int *val,
                             BIYOS_index *fun,
@@ -234,7 +234,7 @@ BIYOS_status BIYOS_getindsp(const BIYOS_model *mdl,
         .lower = lb,
         .upper = ub,
     };
-    return guarded<get_chosen<List>>(mdl, List{n, idx}, outputs);
+    return guarded<get_chosen<List>>(mdl, List{n, ind}, outputs);
 }
 
 BIYOS_status BIYOS_getindrg(const BIYOS_model *mdl,

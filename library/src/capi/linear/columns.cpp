@@ -76,10 +76,10 @@ void get_ranged(const Session &session,
 
 BIYOS_status BIYOS_getnclintermsp(const BIYOS_model *mdl,
                                   BIYOS_index n,
-                                  const BIYOS_index *idx,
+                                  const BIYOS_index *var,
                                   BIYOS_offset *nnz)
 {
-    return guarded<n_column_terms<List>>(mdl, List{n, idx}, nnz);
+    return guarded<n_column_terms<List>>(mdl, List{n, var}, nnz);
 }
 
 BIYOS_status BIYOS_getnclintermrg(const BIYOS_model *mdl,
@@ -92,13 +92,13 @@ BIYOS_status BIYOS_getnclintermrg(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getclintermsp(const BIYOS_model *mdl,
                                  BIYOS_index n,
-                                 const BIYOS_index *idx,
+                                 const BIYOS_index *var,
                                  BIYOS_offset cap,
                                  BIYOS_offset *cnt,
                                  BIYOS_index *fun,
                                  BIYOS_real *coef)
 {
-    return guarded<get_listed>(mdl, List{n, idx}, cap, cnt, fun, coef);
+    return guarded<get_listed>(mdl, List{n, var}, cap, cnt, fun, coef);
 }
 
 BIYOS_status BIYOS_getclintermrg(const BIYOS_model *mdl,

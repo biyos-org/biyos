@@ -104,13 +104,13 @@ BIYOS_status BIYOS_addquadterm(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_addquadtermsp(BIYOS_model *mdl,
                                  BIYOS_index n,
-                                 const BIYOS_index *idx,
+                                 const BIYOS_index *fun,
                                  const BIYOS_offset *cnt,
                                  const BIYOS_index *var1,
                                  const BIYOS_index *var2,
                                  const BIYOS_real *coef)
 {
-    return guarded<add_counted<List>>(mdl, List{n, idx}, cnt, var1, var2, coef);
+    return guarded<add_counted<List>>(mdl, List{n, fun}, cnt, var1, var2, coef);
 }
 
 BIYOS_status BIYOS_addquadtermrg(BIYOS_model *mdl,

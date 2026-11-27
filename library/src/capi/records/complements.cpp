@@ -129,11 +129,11 @@ BIYOS_status BIYOS_addccon(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_setcconbndsp(BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *ccon,
                                 const BIYOS_real *lb,
                                 const BIYOS_real *ub)
 {
-    return guarded<set_bounds<List>>(mdl, List{n, idx}, Fields{.lower = lb, .upper = ub});
+    return guarded<set_bounds<List>>(mdl, List{n, ccon}, Fields{.lower = lb, .upper = ub});
 }
 
 BIYOS_status BIYOS_setcconbndrg(BIYOS_model *mdl,
@@ -147,11 +147,11 @@ BIYOS_status BIYOS_setcconbndrg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getcconbndsp(const BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *ccon,
                                 BIYOS_real *lb,
                                 BIYOS_real *ub)
 {
-    return guarded<get_chosen<List>>(mdl, List{n, idx}, Outputs{.lower = lb, .upper = ub});
+    return guarded<get_chosen<List>>(mdl, List{n, ccon}, Outputs{.lower = lb, .upper = ub});
 }
 
 BIYOS_status BIYOS_getcconbndrg(const BIYOS_model *mdl,
@@ -165,11 +165,11 @@ BIYOS_status BIYOS_getcconbndrg(const BIYOS_model *mdl,
 
 BIYOS_status BIYOS_setccontolsp(BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *ccon,
                                 const BIYOS_real *atol,
                                 const BIYOS_real *rtol)
 {
-    return guarded<set_tolerances<List>>(mdl, Family::Complement, List{n, idx}, atol, rtol);
+    return guarded<set_tolerances<List>>(mdl, Family::Complement, List{n, ccon}, atol, rtol);
 }
 
 BIYOS_status BIYOS_setccontolrg(BIYOS_model *mdl,
@@ -183,11 +183,11 @@ BIYOS_status BIYOS_setccontolrg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getccontolsp(const BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *ccon,
                                 BIYOS_real *atol,
                                 BIYOS_real *rtol)
 {
-    return guarded<get_tolerances<List>>(mdl, Family::Complement, List{n, idx}, atol, rtol);
+    return guarded<get_tolerances<List>>(mdl, Family::Complement, List{n, ccon}, atol, rtol);
 }
 
 BIYOS_status BIYOS_getccontolrg(const BIYOS_model *mdl,
@@ -199,9 +199,9 @@ BIYOS_status BIYOS_getccontolrg(const BIYOS_model *mdl,
     return guarded<get_tolerances<Range>>(mdl, Family::Complement, Range{beg, end}, atol, rtol);
 }
 
-BIYOS_status BIYOS_delccontolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+BIYOS_status BIYOS_delccontolsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *ccon)
 {
-    return guarded<delete_tolerances<List>>(mdl, Family::Complement, List{n, idx});
+    return guarded<delete_tolerances<List>>(mdl, Family::Complement, List{n, ccon});
 }
 
 BIYOS_status BIYOS_delccontolrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)
@@ -216,7 +216,7 @@ BIYOS_status BIYOS_getnccon(const BIYOS_model *mdl, BIYOS_index *n)
 
 BIYOS_status BIYOS_getcconsp(const BIYOS_model *mdl,
                              BIYOS_index n,
-                             const BIYOS_index *idx,
+                             const BIYOS_index *ccon,
                              BIYOS_index *fun1,
                              BIYOS_index *fun2,
                              BIYOS_real *lb,
@@ -228,7 +228,7 @@ BIYOS_status BIYOS_getcconsp(const BIYOS_model *mdl,
         .lower = lb,
         .upper = ub,
     };
-    return guarded<get_chosen<List>>(mdl, List{n, idx}, outputs);
+    return guarded<get_chosen<List>>(mdl, List{n, ccon}, outputs);
 }
 
 BIYOS_status BIYOS_getcconrg(const BIYOS_model *mdl,

@@ -104,10 +104,10 @@ void delete_callbacks(Session &session, Selection selection, BIYOS_index *map)
 
 BIYOS_status BIYOS_delvarsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *var,
                             BIYOS_index *map)
 {
-    return guarded<delete_variables<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_variables<List>>(mdl, List{n, var}, map);
 }
 
 BIYOS_status BIYOS_delvarrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
@@ -117,10 +117,10 @@ BIYOS_status BIYOS_delvarrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delfunsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *fun,
                             BIYOS_index *map)
 {
-    return guarded<delete_functions<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_functions<List>>(mdl, List{n, fun}, map);
 }
 
 BIYOS_status BIYOS_delfunrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
@@ -130,10 +130,10 @@ BIYOS_status BIYOS_delfunrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delconsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *con,
                             BIYOS_index *map)
 {
-    return guarded<delete_constraints<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_constraints<List>>(mdl, List{n, con}, map);
 }
 
 BIYOS_status BIYOS_delconrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
@@ -143,10 +143,10 @@ BIYOS_status BIYOS_delconrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delobjsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *obj,
                             BIYOS_index *map)
 {
-    return guarded<delete_objectives<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_objectives<List>>(mdl, List{n, obj}, map);
 }
 
 BIYOS_status BIYOS_delobjrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
@@ -156,10 +156,10 @@ BIYOS_status BIYOS_delobjrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delindsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *ind,
                             BIYOS_index *map)
 {
-    return guarded<delete_indicators<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_indicators<List>>(mdl, List{n, ind}, map);
 }
 
 BIYOS_status BIYOS_delindrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
@@ -169,10 +169,10 @@ BIYOS_status BIYOS_delindrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delsossp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *sos,
                             BIYOS_index *map)
 {
-    return guarded<delete_special_ordered_sets<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_special_ordered_sets<List>>(mdl, List{n, sos}, map);
 }
 
 BIYOS_status BIYOS_delsosrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
@@ -182,10 +182,10 @@ BIYOS_status BIYOS_delsosrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delconesp(BIYOS_model *mdl,
                              BIYOS_index n,
-                             const BIYOS_index *idx,
+                             const BIYOS_index *cone,
                              BIYOS_index *map)
 {
-    return guarded<delete_cones<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_cones<List>>(mdl, List{n, cone}, map);
 }
 
 BIYOS_status BIYOS_delconerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
@@ -195,10 +195,10 @@ BIYOS_status BIYOS_delconerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end,
 
 BIYOS_status BIYOS_delcconsp(BIYOS_model *mdl,
                              BIYOS_index n,
-                             const BIYOS_index *idx,
+                             const BIYOS_index *ccon,
                              BIYOS_index *map)
 {
-    return guarded<delete_complements<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_complements<List>>(mdl, List{n, ccon}, map);
 }
 
 BIYOS_status BIYOS_delcconrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
@@ -206,12 +206,9 @@ BIYOS_status BIYOS_delcconrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end,
     return guarded<delete_complements<Range>>(mdl, Range{beg, end}, map);
 }
 
-BIYOS_status BIYOS_delcbsp(BIYOS_model *mdl,
-                           BIYOS_index n,
-                           const BIYOS_index *idx,
-                           BIYOS_index *map)
+BIYOS_status BIYOS_delcbsp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *cb, BIYOS_index *map)
 {
-    return guarded<delete_callbacks<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_callbacks<List>>(mdl, List{n, cb}, map);
 }
 
 BIYOS_status BIYOS_delcbrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)
