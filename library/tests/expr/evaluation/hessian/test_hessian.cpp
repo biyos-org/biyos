@@ -48,6 +48,7 @@ using biyos::to_size;
 using biyos::Tolerances;
 using biyos::test::arrow;
 using biyos::test::binary;
+using biyos::test::constant;
 using biyos::test::default_tolerances;
 using biyos::test::gradient_of;
 using biyos::test::kBudgets;
@@ -221,6 +222,12 @@ Real entry_of(Hessian &hessian, std::span<const Real> point, Index row, Index co
     return std::nan("");
 }
 
+void expect_rows_at(Hessian &hessian, std::span<const Real> point, const Rows &wanted)
+{
+    const Values out = values_of(hessian, point, std::array{1.0});
+    expect_rows(dense(hessian.pattern(), out, point.size()), wanted);
+}
+
 void expect_zero(Real value)
 {
     EXPECT_EQ(std::bit_cast<Bits>(value), std::bit_cast<Bits>(0.0)) << value;
@@ -335,6 +342,33 @@ TEST(HessianTest, Weights)
     EXPECT_FALSE(std::isnan(loud[1][1]));
 }
 
+TEST(HessianTest, Comparison)
+{
+    Env env;
+    TimingTree tree;
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset root = unary(graph, Operator::Sqrt, x[0]);
+    const Offset below = binary(graph, Operator::LessEqual, root, constant(graph, 1.0));
+    const Offset product = graph.add(Operator::Product, 3.0, std::array{below, x[1], x[1]});
+    Hessian hessian(graph, std::span(&product, 1), {}, {env.stream(), tree});
+    expect_rows_at(hessian, std::array{0.0, 0.5}, {{0.0, 0.0}, {0.0, 6.0}});
+    expect_rows_at(hessian, std::array{4.0, 0.5}, {{0.0, 0.0}, {0.0, 0.0}});
+}
+
+TEST(HessianTest, Indicator)
+{
+    Env env;
+    TimingTree tree;
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset below = binary(graph, Operator::LessEqual, x[0], x[1]);
+    const Offset product = graph.add(Operator::Product, 1.0, std::array{below, x[0], x[1]});
+    Hessian hessian(graph, std::span(&product, 1), {}, {env.stream(), tree});
+    expect_rows_at(hessian, std::array{1.0, 2.0}, {{0.0, 1.0}, {1.0, 0.0}});
+    expect_rows_at(hessian, std::array{2.0, 1.0}, {{0.0, 0.0}, {0.0, 0.0}});
+}
+
 TEST(HessianTest, Masked)
 {
     Env env;
@@ -371,6 +405,11 @@ TEST(HessianTest, Undefined)
     const Offset root = vanished(graph, top, x[1]);
     Hessian hessian(graph, std::span(&root, 1), {}, {env.stream(), tree});
     EXPECT_TRUE(std::isnan(entry_of(hessian, std::array{-1.0, 2.0}, 1, 1)));
+    const Offset compared =
+        binary(graph, Operator::LessEqual, unary(graph, Operator::Log, x[0]), x[1]);
+    Hessian below(graph, std::span(&compared, 1), {}, {env.stream(), tree});
+    EXPECT_TRUE(std::isnan(entry_of(below, std::array{-1.0, 2.0}, 0, 0)));
+    EXPECT_DOUBLE_EQ(entry_of(below, std::array{1.0, 2.0}, 0, 0), 0.0);
 }
 
 TEST(HessianTest, Stale)

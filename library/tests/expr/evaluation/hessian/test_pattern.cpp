@@ -48,6 +48,7 @@ using biyos::test::arrow;
 using biyos::test::binary;
 using biyos::test::default_tolerances;
 using biyos::test::kBudgets;
+using biyos::test::kComparisons;
 using biyos::test::kExponents;
 using biyos::test::kHeights;
 using biyos::test::kKinks;
@@ -346,4 +347,20 @@ TEST(PatternTest, Linear)
     const Offset linear = graph.add_sum(0.0, std::array{x[0], x[1]}, std::array{1.0, 2.0});
     const Offset shifted = unary(graph, Operator::Negation, unary(graph, Operator::Abs, linear));
     EXPECT_TRUE(exact(graph, shifted).empty());
+}
+
+TEST(PatternTest, Comparisons)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const Offset curved = scaled(graph, 1.0, x[0], x[1]);
+    const Offset grown = unary(graph, Operator::Exp, x[2]);
+    const Pairs own{{1, 0}, {2, 2}};
+    for (const Operator op : kComparisons)
+    {
+        SCOPED_TRACE(static_cast<int>(op));
+        const Offset root = binary(graph, op, curved, grown);
+        EXPECT_EQ(sorted(exact(graph, root)), own);
+        EXPECT_EQ(sorted(exact(graph, scaled(graph, 2.0, root, x[2]))), own);
+    }
 }

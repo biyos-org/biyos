@@ -32,6 +32,14 @@ constexpr std::array kUnary{
 constexpr std::array kPowers{Operator::ConstantPower, Operator::SignPower};
 constexpr std::array kBinary{Operator::Division, Operator::Power, Operator::Atan2};
 constexpr std::array kListed{Operator::Max, Operator::Min};
+constexpr std::array kComparisons{
+    Operator::LessEqual,
+    Operator::GreaterEqual,
+    Operator::Equal,
+    Operator::Less,
+    Operator::Greater,
+    Operator::NotEqual,
+};
 constexpr std::array kExponents{2.0, 3.0, 0.5, -1.0, 1.5};
 constexpr std::array kKinks{-1.0, 0.25, 1.5};
 constexpr std::array kHeights{2.0, -0.5, 1.0};

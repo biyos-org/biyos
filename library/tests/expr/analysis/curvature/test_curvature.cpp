@@ -382,6 +382,22 @@ TEST(CurvatureTest, Reclassified)
     }
 }
 
+TEST(CurvatureTest, Comparisons)
+{
+    for (int code = BIYOS_OP_LE; code <= BIYOS_OP_NE; ++code)
+    {
+        Graph graph;
+        const std::array x{graph.add_variable(0), graph.add_variable(1)};
+        const Offset node = graph.add(static_cast<Operator>(code), x);
+        const Shapes shapes = classified(graph, Box{Interval(1.0, 2.0), Interval(3.0, 4.0), kZero});
+        EXPECT_EQ(shapes.curvature(node), kNeither) << code;
+        for (std::size_t k = 0; k < x.size(); ++k)
+        {
+            EXPECT_EQ(shapes.monotonicity(node, k), Monotonicity::Unknown) << code;
+        }
+    }
+}
+
 TEST(CurvatureTest, Points)
 {
     Graph graph;
