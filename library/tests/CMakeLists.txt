@@ -80,6 +80,7 @@ biyos_add_test(test_expr
     expr/analysis/curvature/test_waves.cpp
     expr/analysis/intervals/test_enclosure.cpp
     expr/analysis/intervals/test_interval.cpp
+    expr/analysis/intervals/test_logic.cpp
     expr/analysis/intervals/test_piecewise.cpp
     expr/evaluation/derivatives/test_angle.cpp
     expr/evaluation/derivatives/test_branches.cpp

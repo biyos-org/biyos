@@ -406,7 +406,7 @@ TEST(CurvatureTest, Connectives)
         const std::array x{graph.add_variable(0), graph.add_variable(1)};
         const Offset condition = graph.add(Operator::Less, x);
         const Offset node = graph.add(static_cast<Operator>(code), std::span(&condition, 1));
-        const Shapes shapes = classified(graph, Box{Interval(1.0, 2.0), Interval(3.0, 4.0), kZero});
+        const Shapes shapes = classified(graph, Box{Interval(1.0, 3.0), Interval(2.0, 4.0), kZero});
         EXPECT_EQ(shapes.curvature(node), kNeither) << code;
         EXPECT_EQ(shapes.monotonicity(node, 0), Monotonicity::Unknown) << code;
     }
@@ -418,7 +418,7 @@ TEST(CurvatureTest, Branches)
     const std::array x{graph.add_variable(0), graph.add_variable(1)};
     const Offset condition = graph.add(Operator::Less, x);
     const Offset node = graph.add(Operator::If, std::array{condition, x[0], x[1]});
-    const Shapes shapes = classified(graph, Box{Interval(1.0, 2.0), Interval(3.0, 4.0), kZero});
+    const Shapes shapes = classified(graph, Box{Interval(1.0, 3.0), Interval(2.0, 4.0), kZero});
     EXPECT_EQ(shapes.curvature(node), kNeither);
     for (std::size_t k = 0; k < 3; ++k)
     {

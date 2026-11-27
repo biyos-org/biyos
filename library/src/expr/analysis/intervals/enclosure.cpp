@@ -6,6 +6,7 @@
 #include "core/text/text.hpp"
 #include "expr/analysis/intervals/elementary.hpp"
 #include "expr/analysis/intervals/interval.hpp"
+#include "expr/analysis/intervals/logic.hpp"
 #include "expr/analysis/intervals/periodic.hpp"
 #include "expr/analysis/intervals/piecewise.hpp"
 #include "expr/analysis/intervals/powers.hpp"
@@ -125,6 +126,11 @@ Interval piecewise_of(const Pass &pass, Offset node) noexcept
                      first(pass, node));
 }
 
+Interval compared(const Pass &pass, Offset node, Comparison compare) noexcept
+{
+    return compare(pass.tolerances, first(pass, node), second(pass, node));
+}
+
 Interval undecided(const Pass &pass, Offset node) noexcept
 {
     for (const Offset child : pass.graph.children(node))
@@ -214,11 +220,17 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
     case Operator::Atan2:
         return atan2(first(pass, node), second(pass, node));
     case Operator::LessEqual:
+        return compared(pass, node, less_equal);
     case Operator::GreaterEqual:
+        return compared(pass, node, greater_equal);
     case Operator::Equal:
+        return compared(pass, node, equal);
     case Operator::Less:
+        return compared(pass, node, less);
     case Operator::Greater:
+        return compared(pass, node, greater);
     case Operator::NotEqual:
+        return compared(pass, node, not_equal);
     case Operator::And:
     case Operator::Or:
     case Operator::Not:

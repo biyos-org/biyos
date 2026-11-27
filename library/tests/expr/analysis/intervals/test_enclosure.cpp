@@ -363,14 +363,18 @@ TEST(IntervalTest, Branches)
 TEST(IntervalTest, Comparisons)
 {
     const Interval held(1.0, 2.0);
+    const std::array decided{1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
     for (int code = BIYOS_OP_LE; code <= BIYOS_OP_NE; ++code)
     {
         Graph graph;
         const std::array children{graph.add_variable(0), graph.add_variable(1)};
         const auto node =
             static_cast<std::size_t>(graph.add(static_cast<Operator>(code), children));
+        const Real truth = decided[static_cast<std::size_t>(code - BIYOS_OP_LE)];
         const Box apart{held, Interval(3.0, 4.0), held};
-        EXPECT_TRUE(exact(enclosures(graph, apart)[node], 0.0, 1.0)) << code;
+        EXPECT_TRUE(exact(enclosures(graph, apart)[node], truth, truth)) << code;
+        const Box overlap{held, Interval(1.5, 3.0), held};
+        EXPECT_TRUE(exact(enclosures(graph, overlap)[node], 0.0, 1.0)) << code;
         const Box first{Interval::empty(), held, held};
         EXPECT_TRUE(enclosures(graph, first)[node].is_empty()) << code;
         const Box second{held, Interval::empty(), held};
