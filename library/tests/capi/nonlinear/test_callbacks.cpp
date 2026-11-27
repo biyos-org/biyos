@@ -682,7 +682,7 @@ TEST(CallbackTest, DropRefused)
     cover(model);
     EXPECT_EQ(drop_refusal(env, model, {3}), kBad + "callback 3: unknown");
     EXPECT_EQ(drop_refusal(env, model, {0, -1}), kBad + "callback -1: unknown");
-    EXPECT_EQ(drop_refusal(env, model, {2, 0, 2}), kBad + "argument 'idx': callback 2 is repeated");
+    EXPECT_EQ(drop_refusal(env, model, {2, 0, 2}), kBad + "argument 'cb': callback 2 is repeated");
     EXPECT_EQ(failed(env, BIYOS_delcbsp(model.get(), -1, nullptr, nullptr)),
               kBad + "argument 'n': -1 is negative");
     EXPECT_EQ(failed(env, BIYOS_delcbsp(model.get(), 1, nullptr, nullptr)),

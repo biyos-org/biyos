@@ -628,7 +628,7 @@ TEST(CApiTest, RefusedAttach)
     EXPECT_EQ(attach(model, {2}, {x}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function 2: unknown");
     EXPECT_EQ(attach(model, {1, 1}, {x, x}), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'idx': function 1 is repeated");
+    EXPECT_EQ(env.message(), bad + "argument 'fun': function 1 is repeated");
     EXPECT_EQ(attach(model, {1}, {big + 1}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function 1: node 2 is unknown");
     EXPECT_EQ(attach(model, {1, 0}, {x, big}), BIYOS_ERR_BADARG);

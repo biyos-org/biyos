@@ -268,7 +268,7 @@ void Model::add_cones(std::span<const ConeKind> kinds,
 
 std::vector<Index> Model::delete_cones(std::span<const Index> indices)
 {
-    std::vector<Index> map = renumbering(kNoun, n_cones(), indices);
+    std::vector<Index> map = renumbering(Family::Cone, n_cones(), indices);
     keep(cone_kinds_, map);
     keep_parts(cone_ends_, cone_functions_, map);
     keep_parts(cone_parameter_ends_, cone_parameters_, map);
