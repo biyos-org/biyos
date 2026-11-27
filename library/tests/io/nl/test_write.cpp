@@ -3,9 +3,12 @@
 #include "loading.hpp"
 #include "written.hpp"
 
+#include "core/env/env.hpp"
 #include "core/numbers.hpp"
+#include "core/options/settings.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/node.hpp"
+#include "io/files.hpp"
 #include "model/compare/compare.hpp"
 #include "model/model.hpp"
 
@@ -15,12 +18,15 @@
 #include <cstddef>
 #include <random>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
 using biyos::Constraint;
 using biyos::default_objective;
 using biyos::difference;
+using biyos::Env;
+using biyos::FileFormat;
 using biyos::Index;
 using biyos::LinearTerm;
 using biyos::Model;
@@ -29,9 +35,12 @@ using biyos::ObjectiveSense;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::QuadraticTerm;
+using biyos::read_file;
 using biyos::Real;
+using biyos::Settings;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::write_file;
 using biyos::test::built;
 using biyos::test::nl::add_goal;
 using biyos::test::nl::continuous;
@@ -387,6 +396,15 @@ TEST(NlTest, Generated)
             expect_kept(model, point(model, x));
         }
     }
+}
+
+TEST(NlTest, File)
+{
+    const std::string path = testing::TempDir() + "biyos_written.nl";
+    const Model model = read_sample(kNonlinearNlFile);
+    Env env;
+    write_file(env.stream(), model, Settings(), path, FileFormat::Nl);
+    EXPECT_EQ(difference(model, read_file(env, path, FileFormat::Nl)), "");
 }
 
 TEST(NlTest, Printed)
