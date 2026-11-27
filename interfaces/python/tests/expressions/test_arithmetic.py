@@ -166,6 +166,16 @@ def test_extreme(x, function, op):
         function(x[0], x[1], "a")
 
 
+def test_atan2(x):
+    assert tree(biyos.atan2(x[1], x[0])) == (Operator.ATAN2, (), 1, 0)
+    one = (Operator.CONSTANT, (1.0,))
+    assert tree(biyos.atan2(1, x[2])) == (Operator.ATAN2, (), one, 2)
+    with pytest.raises(TypeError, match="not str"):
+        biyos.atan2(x[0], "a")
+    with pytest.raises(TypeError, match="not bool"):
+        biyos.atan2(True, x[0])
+
+
 def test_builtins():
     assert "max" not in biyos.__all__
     assert "min" not in biyos.__all__
@@ -179,6 +189,7 @@ def test_operators():
         Operator.PIECEWISE_LINEAR,
         Operator.MAX,
         Operator.MIN,
+        Operator.ATAN2,
         Operator.SUM,
         Operator.PRODUCT,
         Operator.NEGATION,
@@ -193,7 +204,6 @@ def test_operators():
         Operator.NODE,
         Operator.KEEP,
         Operator.REFERENCE,
-        Operator.ATAN2,
     }
     assert reached | postfix == set(Operator)
     assert not reached & postfix

@@ -34,7 +34,6 @@ def direct(x):
         (Expression(Operator.NODE, (), (3.0,)), "node(3)"),
         (Expression(Operator.KEEP, (a + b,), ()), "x[0] + x[1]"),
         (Expression(Operator.REFERENCE, (), (4.0,)), "ref(4)"),
-        (Expression(Operator.ATAN2, (a, b), ()), "atan2(x[0], x[1])"),
     ]
 
 
@@ -59,6 +58,7 @@ def built(x):
         (biyos.asin(a), "asin(x[0])"),
         (biyos.acos(a), "acos(x[0])"),
         (biyos.atan(a), "atan(x[0])"),
+        (biyos.atan2(b, a), "atan2(x[1], x[0])"),
         (biyos.sinh(a), "sinh(x[0])"),
         (biyos.cosh(a), "cosh(x[0])"),
         (biyos.tanh(a), "tanh(x[0])"),
@@ -179,6 +179,7 @@ NAMES = (
     "asin",
     "acos",
     "atan",
+    "atan2",
     "sinh",
     "cosh",
     "tanh",
