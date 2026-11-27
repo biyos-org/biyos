@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from enum import Enum
 from math import isinf, isnan
-from typing import Any, SupportsIndex, TypeGuard
+from typing import Any, SupportsIndex, TypeGuard, cast
 
 from biyos._capi import inf
 from biyos._convert.integers import integer
@@ -457,7 +457,7 @@ class Piecewise(Expression):
 class Logical:
     __slots__ = ()
 
-    def __and__(self, other: "Logical") -> "Condition":
+    def __and__(self, other: "Comparison | Condition") -> "Condition":
         """Return the condition that both hold.
 
         Parameters
@@ -472,9 +472,9 @@ class Logical:
         """
         if not isinstance(other, Logical):
             return NotImplemented
-        return Condition(Operator.AND, (self, other))
+        return _joined(Operator.AND, self, other)
 
-    def __or__(self, other: "Logical") -> "Condition":
+    def __or__(self, other: "Comparison | Condition") -> "Condition":
         """Return the condition that one or both hold.
 
         Parameters
@@ -489,7 +489,7 @@ class Logical:
         """
         if not isinstance(other, Logical):
             return NotImplemented
-        return Condition(Operator.OR, (self, other))
+        return _joined(Operator.OR, self, other)
 
     def __invert__(self) -> "Condition":
         """Return the condition that this one does not hold.
@@ -499,7 +499,7 @@ class Logical:
         cond
             The condition ``~self``.
         """
-        return Condition(Operator.NOT, (self,))
+        return _joined(Operator.NOT, self)
 
 
 class ComparisonSense(Enum):
@@ -650,7 +650,9 @@ class Condition(Logical):
 
     __slots__ = ("_args", "_op")
 
-    def __init__(self, op: Operator, args: tuple[Logical, ...]) -> None:
+    def __init__(
+        self, op: Operator, args: tuple["Comparison | Condition", ...]
+    ) -> None:
         self._op = op
         self._args = args
 
@@ -660,7 +662,7 @@ class Condition(Logical):
         return self._op
 
     @property
-    def operands(self) -> tuple[Logical, ...]:
+    def operands(self) -> tuple["Comparison | Condition", ...]:
         """The comparisons and conditions the operator takes."""
         return self._args
 
@@ -702,6 +704,10 @@ _NEGATED = {
     ComparisonSense.GREATER: ComparisonSense.LESS_EQUAL,
     ComparisonSense.NOT_EQUAL: ComparisonSense.EQUAL,
 }
+
+
+def _joined(op: Operator, *args: Logical) -> Condition:
+    return Condition(op, cast("tuple[Comparison | Condition, ...]", args))
 
 
 def _formula(lhs: Operand, sense: ComparisonSense, rhs: Operand | Real) -> str:
