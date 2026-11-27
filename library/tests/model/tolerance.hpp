@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "model/attributes/records.hpp"
 #include "model/compare/compare.hpp"
 #include "model/model.hpp"
+#include "model/parts/attributes/records.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>

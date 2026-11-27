@@ -1,4 +1,4 @@
-#include "model/compressed.hpp"
+#include "model/utils/compressed.hpp"
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"

@@ -3,7 +3,7 @@
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
-#include "model/attributes/names.hpp"
+#include "model/parts/attributes/names.hpp"
 #include "model/utils/checks.hpp"
 
 #include <cstddef>

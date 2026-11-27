@@ -7,9 +7,9 @@
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/uses.hpp"
-#include "model/compressed.hpp"
-#include "model/functions/merge.hpp"
+#include "model/parts/functions/merge.hpp"
 #include "model/utils/checks.hpp"
+#include "model/utils/compressed.hpp"
 #include "model/utils/rollback.hpp"
 
 #include <algorithm>

@@ -1,4 +1,4 @@
-#include "model/functions/terms.hpp"
+#include "model/parts/functions/terms.hpp"
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"

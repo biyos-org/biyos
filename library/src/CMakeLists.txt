@@ -115,16 +115,11 @@ add_library(biyos_internal STATIC
     io/utils/lines.cpp
     io/utils/records.cpp
     io/utils/report.cpp
-    model/attributes/names.cpp
-    model/attributes/naming.cpp
-    model/attributes/records.cpp
-    model/attributes/tolerances.cpp
     model/compare/compare.cpp
     model/compare/fields.cpp
     model/compare/match.cpp
     model/compare/records.cpp
     model/compare/tables.cpp
-    model/compressed.cpp
     model/evaluation/callbacks.cpp
     model/evaluation/evaluation.cpp
     model/evaluation/hessian.cpp
@@ -135,23 +130,28 @@ add_library(biyos_internal STATIC
     model/expressions/patterns.cpp
     model/expressions/postfix.cpp
     model/expressions/users.cpp
-    model/functions/attach.cpp
-    model/functions/functions.cpp
-    model/functions/merge.cpp
-    model/functions/pairs.cpp
-    model/functions/quadratic.cpp
-    model/functions/terms.cpp
-    model/functions/transpose.cpp
     model/model.cpp
-    model/records/complements.cpp
-    model/records/cones.cpp
-    model/records/constraints.cpp
-    model/records/indicators.cpp
-    model/records/objectives.cpp
-    model/records/special_ordered_sets.cpp
-    model/records/variables.cpp
+    model/parts/attributes/names.cpp
+    model/parts/attributes/naming.cpp
+    model/parts/attributes/records.cpp
+    model/parts/attributes/tolerances.cpp
+    model/parts/functions/attach.cpp
+    model/parts/functions/functions.cpp
+    model/parts/functions/merge.cpp
+    model/parts/functions/pairs.cpp
+    model/parts/functions/quadratic.cpp
+    model/parts/functions/terms.cpp
+    model/parts/functions/transpose.cpp
+    model/parts/records/complements.cpp
+    model/parts/records/cones.cpp
+    model/parts/records/constraints.cpp
+    model/parts/records/indicators.cpp
+    model/parts/records/objectives.cpp
+    model/parts/records/special_ordered_sets.cpp
+    model/parts/records/variables.cpp
     model/session/session.cpp
     model/utils/checks.cpp
+    model/utils/compressed.cpp
     model/utils/renumber.cpp)
 
 target_include_directories(biyos_internal PUBLIC

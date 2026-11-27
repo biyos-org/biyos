@@ -3,9 +3,9 @@
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/points.hpp"
-#include "model/attributes/records.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/model.hpp"
+#include "model/parts/attributes/records.hpp"
 
 #include <span>
 #include <string>

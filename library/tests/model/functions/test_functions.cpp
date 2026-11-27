@@ -1,8 +1,8 @@
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "model/compare/compare.hpp"
-#include "model/functions/transpose.hpp"
 #include "model/model.hpp"
+#include "model/parts/functions/transpose.hpp"
 #include "refusal.hpp"
 
 #include <gtest/gtest.h>

@@ -1,6 +1,6 @@
 #include "core/numbers.hpp"
-#include "model/functions/transpose.hpp"
 #include "model/model.hpp"
+#include "model/parts/functions/transpose.hpp"
 #include "refusal.hpp"
 #include "tolerance.hpp"
 

@@ -4,8 +4,8 @@
 #include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
-#include "model/compressed.hpp"
 #include "model/utils/checks.hpp"
+#include "model/utils/compressed.hpp"
 #include "model/utils/renumber.hpp"
 
 #include <algorithm>

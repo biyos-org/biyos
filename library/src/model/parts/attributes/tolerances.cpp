@@ -1,7 +1,7 @@
 #include "model/model.hpp"
 
 #include "core/numbers.hpp"
-#include "model/attributes/records.hpp"
+#include "model/parts/attributes/records.hpp"
 #include "model/utils/checks.hpp"
 
 #include <cstddef>

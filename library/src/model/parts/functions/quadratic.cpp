@@ -3,10 +3,10 @@
 #include "core/env/error.hpp"
 #include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
-#include "model/compressed.hpp"
-#include "model/functions/merge.hpp"
-#include "model/functions/pairs.hpp"
+#include "model/parts/functions/merge.hpp"
+#include "model/parts/functions/pairs.hpp"
 #include "model/utils/checks.hpp"
+#include "model/utils/compressed.hpp"
 
 #include <cstddef>
 #include <span>

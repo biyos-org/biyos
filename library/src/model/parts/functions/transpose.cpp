@@ -1,4 +1,4 @@
-#include "model/functions/transpose.hpp"
+#include "model/parts/functions/transpose.hpp"
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"

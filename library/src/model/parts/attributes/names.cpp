@@ -1,4 +1,4 @@
-#include "model/attributes/names.hpp"
+#include "model/parts/attributes/names.hpp"
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"

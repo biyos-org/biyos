@@ -4,7 +4,7 @@
 #include "io/utils/directory.hpp"
 #include "io/utils/lines.hpp"
 #include "io/utils/report.hpp"
-#include "model/attributes/names.hpp"
+#include "model/parts/attributes/names.hpp"
 
 #include <cstddef>
 #include <optional>
