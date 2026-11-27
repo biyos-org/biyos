@@ -139,6 +139,19 @@ inline Offset arrow(Graph &graph, const std::vector<Offset> &x)
     return graph.add(Operator::Product, 1.0, std::array{grown, waves_of(graph, x)});
 }
 
+inline Offset band(Graph &graph, const std::vector<Offset> &x)
+{
+    std::vector<Offset> waves;
+    for (std::size_t k = 0; k + 2 < x.size(); ++k)
+    {
+        const std::array three{x[k], x[k + 1], x[k + 2]};
+        const Offset window = graph.add_sum(0.0, three, std::vector<Real>(3, 1.0));
+        waves.push_back(unary(graph, Operator::Sin, window));
+    }
+    const Offset total = graph.add_sum(0.0, waves, std::vector<Real>(waves.size(), 1.0));
+    return unary(graph, Operator::Abs, total);
+}
+
 inline void add_pwls(Graph &graph)
 {
     graph.add_piecewise_linear(kKinks, kHeights);
